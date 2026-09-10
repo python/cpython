@@ -158,7 +158,11 @@ def updatecache(filename, module_globals=None):
         if data is None:
             # The file may be inside an archive on the module search path,
             # such as a zip file.
-            data = _read_from_archive(fullname)
+            try:
+                data = _read_from_archive(fullname)
+            except ImportError:
+                # Can happen if the interpreter is shutting down.
+                return []
         if data is not None:
             entry = (
                 len(data),
@@ -215,14 +219,17 @@ def _read_from_archive(filename):
     """
     import os
     import sys
+    importers = sys.path_importer_cache
+    if importers is None:
+        # Cleared while the interpreter is shutting down.
+        return None
     path = filename
     while True:
         parent = os.path.dirname(path)
         if parent == path:
             return None
         path = parent
-        get_data = getattr(sys.path_importer_cache.get(path), 'get_data',
-                           None)
+        get_data = getattr(importers.get(path), 'get_data', None)
         if get_data is None:
             continue
         try:

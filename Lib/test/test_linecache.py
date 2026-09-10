@@ -361,6 +361,17 @@ class LineCacheTests(unittest.TestCase):
         self.assertEqual(stdout, b'')
         self.assertEqual(stderr, b'')
 
+    def test_path_importer_cache_None(self):
+        # sys.path_importer_cache is set to None while the interpreter is
+        # shutting down, before objects with a __del__ that may end up here
+        # are released.
+        filename = os.path.abspath(os_helper.TESTFN + '.py')
+        with support.swap_attr(sys, 'path_importer_cache', None):
+            self.assertEqual(linecache.getlines(filename), [])
+            self.assertEqual(linecache.getline(filename, 1), '')
+        self.assertNotIn(filename, linecache.cache)
+
+
 class LineCacheInvalidationTests(unittest.TestCase):
     def setUp(self):
         super().setUp()
