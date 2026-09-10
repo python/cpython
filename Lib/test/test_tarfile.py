@@ -4829,7 +4829,7 @@ class TestExtractionFilters(unittest.TestCase):
     @symlink_test
     def test_extract_filters_target_none(self):
         # Test that when extract() falls back to extracting (rather than
-        # linking) a hardlink target, the member is rejected if the filter
+        # linking) a hardlink target, the member is skipped if the filter
         # returns None.
         with ArchiveMaker() as arc:
             arc.add('a/b/s', symlink_to='../escape')
@@ -4839,7 +4839,6 @@ class TestExtractionFilters(unittest.TestCase):
                 return tarfile.data_filter(member, path)
             except tarfile.FilterError as error:
                 return None
-        tempdir = pathlib.Path(TEMPDIR) / 'extract'
         with self.check_context(arc.open(), filter_unsafe_members):
             if os_helper.can_symlink():
                 self.expect_file('a/b/s', symlink_to='../escape')
