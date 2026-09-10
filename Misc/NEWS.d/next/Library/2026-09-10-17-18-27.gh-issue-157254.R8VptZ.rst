@@ -1,0 +1,4 @@
+Preserve existing message content when built-in :mod:`email` content
+handlers fail, and avoid changing the parent MIME structure when preparing a
+new part fails. Reject unsupported content transfer encodings for bytes
+content.
