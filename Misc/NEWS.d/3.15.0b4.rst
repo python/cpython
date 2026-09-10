@@ -1213,15 +1213,6 @@ are no longer replaced with a generic :exc:`TypeError`.
 
 ..
 
-.. date: 2026-06-11-06-56-31
-.. gh-issue: 150994
-.. nonce: gd1wVw
-.. section: Library
-
-Make type annotations in the private ``_colorize`` module resolvable.
-
-..
-
 .. date: 2026-06-06-06-29-17
 .. gh-issue: 150994
 .. nonce: I2119M
