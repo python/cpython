@@ -1,0 +1,3 @@
+:mod:`linecache` can now read the source of a module that was imported from
+a zip archive on :data:`sys.path` when given only the file name, as
+:mod:`pdb`, :mod:`warnings` and :mod:`doctest` do.
