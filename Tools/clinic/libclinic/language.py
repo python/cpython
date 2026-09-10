@@ -35,6 +35,9 @@ class Language(metaclass=abc.ABCMeta):
     def parse_line(self, line: str) -> None:
         ...
 
+    def render_properties(self, clinic: Clinic) -> None:
+        ...
+
     def validate(self) -> None:
         def assert_only_one(
                 attr: str,
