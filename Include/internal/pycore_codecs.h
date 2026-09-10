@@ -45,7 +45,7 @@ extern int _PyCodec_UnregisterError(const char *name);
    in Python 3.5+?
 
  */
-extern PyObject* _PyCodec_LookupTextEncoding(
+PyAPI_FUNC(PyObject*) _PyCodec_LookupTextEncoding(
    const char *encoding,
    const char *alternate_command);
 

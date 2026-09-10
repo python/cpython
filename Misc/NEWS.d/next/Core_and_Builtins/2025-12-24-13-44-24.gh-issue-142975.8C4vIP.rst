@@ -1,2 +1,0 @@
-Fix crash after unfreezing all objects tracked by the garbage collector on
-the :term:`free threaded <free threading>` build.

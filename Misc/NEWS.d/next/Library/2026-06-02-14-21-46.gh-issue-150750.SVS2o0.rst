@@ -1,0 +1,1 @@
+Fix a race condition in :meth:`collections.deque.index` with free-threading.

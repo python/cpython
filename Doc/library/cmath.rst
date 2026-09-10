@@ -124,7 +124,7 @@ rectangular coordinates to polar coordinates and back.
 
    The modulus (absolute value) of a complex number *z* can be
    computed using the built-in :func:`abs` function.  There is no
-   separate :mod:`cmath` module function for this operation.
+   separate :mod:`!cmath` module function for this operation.
 
 
 .. function:: polar(z)
@@ -357,7 +357,7 @@ Note that the selection of functions is similar, but not identical, to that in
 module :mod:`math`.  The reason for having two modules is that some users aren't
 interested in complex numbers, and perhaps don't even know what they are.  They
 would rather have ``math.sqrt(-1)`` raise an exception than return a complex
-number. Also note that the functions defined in :mod:`cmath` always return a
+number. Also note that the functions defined in :mod:`!cmath` always return a
 complex number, even if the answer can be expressed as a real number (in which
 case the complex number has an imaginary part of zero).
 

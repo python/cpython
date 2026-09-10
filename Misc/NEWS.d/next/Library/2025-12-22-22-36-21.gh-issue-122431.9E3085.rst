@@ -1,1 +1,0 @@
-Corrected the error message in :func:`readline.append_history_file` to state that ``nelements`` must be non-negative instead of positive.

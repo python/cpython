@@ -85,22 +85,29 @@ grow_thread_array(struct _qsbr_shared *shared)
         new_size = MIN_ARRAY_SIZE;
     }
 
-    struct _qsbr_pad *array = PyMem_RawCalloc(new_size, sizeof(*array));
-    if (array == NULL) {
+    // Overallocate by 63 bytes so we can align to a 64-byte boundary.
+    // This avoids potential false sharing between the first entry and other
+    // allocations.
+    size_t alignment = 64;
+    size_t alloc_size = (size_t)new_size * sizeof(struct _qsbr_pad) + alignment - 1;
+    void *raw = PyMem_RawCalloc(1, alloc_size);
+    if (raw == NULL) {
         return -1;
     }
+    struct _qsbr_pad *array = _Py_ALIGN_UP(raw, alignment);
 
-    struct _qsbr_pad *old = shared->array;
-    if (old != NULL) {
+    void *old_raw = shared->array_raw;
+    if (shared->array != NULL) {
         memcpy(array, shared->array, shared->size * sizeof(*array));
     }
 
     shared->array = array;
+    shared->array_raw = raw;
     shared->size = new_size;
     shared->freelist = NULL;
     initialize_new_array(shared);
 
-    PyMem_RawFree(old);
+    PyMem_RawFree(old_raw);
     return 0;
 }
 
@@ -257,8 +264,9 @@ void
 _Py_qsbr_fini(PyInterpreterState *interp)
 {
     struct _qsbr_shared *shared = &interp->qsbr;
-    PyMem_RawFree(shared->array);
+    PyMem_RawFree(shared->array_raw);
     shared->array = NULL;
+    shared->array_raw = NULL;
     shared->size = 0;
     shared->freelist = NULL;
 }

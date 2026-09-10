@@ -1,2 +1,0 @@
-Add blocking mode to Tachyon for accurate stack traces in applications with
-many generators or fast-changing call stacks. Patch by Pablo Galindo.

@@ -1,4 +1,0 @@
-The non-``compat32`` :mod:`email` policies now correctly handle refolding
-encoded words that contain bytes that can not be decoded in their specified
-character set.  Previously this resulted in an encoding exception during
-folding.

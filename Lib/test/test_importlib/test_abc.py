@@ -533,7 +533,10 @@ class SourceLoader(SourceOnlyLoader):
 
     def __init__(self, path, magic=None):
         super().__init__(path)
-        self.bytecode_path = self.util.cache_from_source(self.path)
+        try:
+            self.bytecode_path = self.util.cache_from_source(self.path)
+        except NotImplementedError:
+            self.bytecode_path = None
         self.source_size = len(self.source)
         if magic is None:
             magic = self.util.MAGIC_NUMBER
@@ -579,7 +582,10 @@ class SourceLoaderTestHarness:
             module_name = 'mod'
             self.path = os.path.join(self.package, '.'.join(['mod', 'py']))
             self.name = '.'.join([self.package, module_name])
-        self.cached = self.util.cache_from_source(self.path)
+        try:
+            self.cached = self.util.cache_from_source(self.path)
+        except NotImplementedError:
+            self.cached = None
         self.loader = self.loader_mock(self.path, **kwargs)
 
     def verify_module(self, module):
@@ -656,6 +662,8 @@ class SourceOnlyLoaderTests(SourceLoaderTestHarness):
 
 
 @unittest.skipIf(sys.dont_write_bytecode, "sys.dont_write_bytecode is true")
+@unittest.skipIf(sys.implementation.cache_tag is None,
+                 "sys.implementation.cache_tag is None")
 class SourceLoaderBytecodeTests(SourceLoaderTestHarness):
 
     """Test importlib.abc.SourceLoader's use of bytecode.

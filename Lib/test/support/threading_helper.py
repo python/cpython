@@ -250,21 +250,32 @@ def requires_working_threading(*, module=False):
         return unittest.skipUnless(can_start_thread, msg)
 
 
-def run_concurrently(worker_func, nthreads, args=(), kwargs={}):
+def run_concurrently(worker_func, nthreads=None, args=(), kwargs={}):
     """
-    Run the worker function concurrently in multiple threads.
+    Run the worker function(s) concurrently in multiple threads.
+
+    If `worker_func` is a single callable, it is used for all threads.
+    If it is a list of callables, each callable is used for one thread.
     """
+    from collections.abc import Iterable
+
+    if nthreads is None:
+        nthreads = len(worker_func)
+    if not isinstance(worker_func, Iterable):
+        worker_func = [worker_func] * nthreads
+    assert len(worker_func) == nthreads
+
     barrier = threading.Barrier(nthreads)
 
-    def wrapper_func(*args, **kwargs):
+    def wrapper_func(func, *args, **kwargs):
         # Wait for all threads to reach this point before proceeding.
         barrier.wait()
-        worker_func(*args, **kwargs)
+        func(*args, **kwargs)
 
     with catch_threading_exception() as cm:
         workers = [
-            threading.Thread(target=wrapper_func, args=args, kwargs=kwargs)
-            for _ in range(nthreads)
+            threading.Thread(target=wrapper_func, args=(func, *args), kwargs=kwargs)
+            for func in worker_func
         ]
         with start_threads(workers):
             pass

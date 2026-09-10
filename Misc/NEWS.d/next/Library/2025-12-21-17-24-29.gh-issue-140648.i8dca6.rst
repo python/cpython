@@ -1,3 +1,0 @@
-The :mod:`asyncio` REPL now respects the :option:`-I` flag (isolated mode).
-Previously, it would load and execute :envvar:`PYTHONSTARTUP` even if the
-flag was set. Contributed by Bartosz Sławecki.

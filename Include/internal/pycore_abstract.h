@@ -16,10 +16,11 @@ _PyIndex_Check(PyObject *obj)
     return (tp_as_number != NULL && tp_as_number->nb_index != NULL);
 }
 
-PyObject *_PyNumber_PowerNoMod(PyObject *lhs, PyObject *rhs);
-PyObject *_PyNumber_InPlacePowerNoMod(PyObject *lhs, PyObject *rhs);
+// Exported for external JIT support
+PyAPI_FUNC(PyObject *) _PyNumber_PowerNoMod(PyObject *lhs, PyObject *rhs);
+PyAPI_FUNC(PyObject *) _PyNumber_InPlacePowerNoMod(PyObject *lhs, PyObject *rhs);
 
-extern int _PyObject_HasLen(PyObject *o);
+PyAPI_FUNC(int) _PyObject_HasLen(PyObject *o);
 
 /* === Sequence protocol ================================================ */
 
@@ -58,6 +59,14 @@ PyAPI_FUNC(int) _Py_convert_optional_to_non_negative_ssize_t(PyObject *, void *)
 // Same as PyNumber_Index() but can return an instance of a subclass of int.
 // Export for 'math' shared extension.
 PyAPI_FUNC(PyObject*) _PyNumber_Index(PyObject *o);
+
+typedef struct {
+    PyObject *object;
+    PySendResult kind;
+} PySendResultPair;
+
+// Same as PyIter_Send but returns a struct for MSVC tailcall support
+PyAPI_FUNC(PySendResultPair) _PyIter_Send(PyObject *iter, PyObject *arg);
 
 #ifdef __cplusplus
 }

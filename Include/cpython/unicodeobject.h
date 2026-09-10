@@ -496,7 +496,7 @@ PyAPI_FUNC(int) PyUnicodeWriter_WriteWideChar(
     Py_ssize_t size);
 PyAPI_FUNC(int) PyUnicodeWriter_WriteUCS4(
     PyUnicodeWriter *writer,
-    Py_UCS4 *str,
+    const Py_UCS4 *str,
     Py_ssize_t size);
 
 PyAPI_FUNC(int) PyUnicodeWriter_WriteStr(

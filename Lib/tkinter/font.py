@@ -1,3 +1,5 @@
+"""Utilities to help work with fonts in Tkinter."""
+
 # Tkinter font wrapper
 #
 # written by Fredrik Lundh, February 1998
@@ -70,34 +72,62 @@ class Font:
         if root is None:
             root = tkinter._get_default_root('use font')
         tk = getattr(root, 'tk', root)
-        if font:
-            # get actual settings corresponding to the given font
-            font = tk.splitlist(tk.call("font", "actual", font))
+        self.delete_font = False
+        if exists and not name:
+            if not font:
+                raise TypeError("font name or description is required if exists=True")
+            if options:
+                raise TypeError("cannot specify font options when wrapping an "
+                                "existing font description")
+            # Wrap the description without creating a new named font, so that
+            # it is used as is by actual(), measure() and metrics().  'name' is
+            # then the description rather than a string.
+            self.name = font
         else:
-            font = self._set(options)
-        if not name:
-            name = "font" + str(next(self.counter))
-        self.name = name
-
-        if exists:
-            self.delete_font = False
-            # confirm font exists
-            if self.name not in tk.splitlist(tk.call("font", "names")):
-                raise tkinter._tkinter.TclError(
-                    "named font %s does not already exist" % (self.name,))
-            # if font config info supplied, apply it
             if font:
-                tk.call("font", "configure", self.name, *font)
-        else:
-            # create new font (raises TclError if the font exists)
-            tk.call("font", "create", self.name, *font)
-            self.delete_font = True
+                # start from the settings of the given font
+                try:
+                    # a named font: copy its options, preserving the size,
+                    # which can be negative (specified in pixels)
+                    font = tk.splitlist(tk.call("font", "configure", font))
+                except tkinter.TclError:
+                    # a font description: resolve it ("font configure" only
+                    # accepts a font name); this loses a size in pixels
+                    font = tk.splitlist(tk.call("font", "actual", font))
+                if options:
+                    # explicit options override the corresponding settings
+                    settings = self._mkdict(font)
+                    settings.update(options)
+                    font = self._set(settings)
+            else:
+                font = self._set(options)
+            if exists:
+                self.name = name
+                # confirm font exists
+                if self.name not in tk.splitlist(tk.call("font", "names")):
+                    raise tkinter._tkinter.TclError(
+                        "named font %s does not already exist" % (self.name,))
+                # if font config info supplied, apply it
+                if font:
+                    tk.call("font", "configure", self.name, *font)
+            else:
+                if name:
+                    self.name = name
+                else:
+                    self.name = "font" + str(next(self.counter))
+                # create new font (raises TclError if the font exists)
+                tk.call("font", "create", self.name, *font)
+                self.delete_font = True  # set after creation
         self._tk = tk
         self._split = tk.splitlist
         self._call  = tk.call
 
     def __str__(self):
-        return self.name
+        # A wrapped description is a list or tuple, not a string; format it as
+        # a Tcl word so it can be used as an option value (as ttk does).
+        if isinstance(self.name, str):
+            return self.name
+        return tkinter._join(self.name)
 
     def __repr__(self):
         return f"<{self.__class__.__module__}.{self.__class__.__qualname__}" \
@@ -125,7 +155,7 @@ class Font:
 
     def copy(self):
         "Return a distinct copy of the current font"
-        return Font(self._tk, **self.actual())
+        return Font(self._tk, self.name)
 
     def actual(self, option=None, displayof=None):
         "Return actual font attributes"

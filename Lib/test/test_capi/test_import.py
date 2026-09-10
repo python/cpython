@@ -289,7 +289,10 @@ class ImportTests(unittest.TestCase):
             self.check_executecodemodule(execute_code_func, NULL, pathname)
 
         # Test NULL pathname and non-NULL cpathname
-        pyc_filename = importlib.util.cache_from_source(__file__)
+        try:
+            pyc_filename = importlib.util.cache_from_source(__file__)
+        except NotImplementedError:
+            return
         py_filename = importlib.util.source_from_cache(pyc_filename)
         origin = self.check_executecodemodule(execute_code_func, NULL, pyc_filename)
         if not object:

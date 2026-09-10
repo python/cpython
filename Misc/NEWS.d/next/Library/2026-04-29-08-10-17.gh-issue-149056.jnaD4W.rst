@@ -1,0 +1,2 @@
+Fix :func:`json.load` not forwarding the *array_hook* argument to
+:func:`json.loads`. Patch by Thomas Kowalski.

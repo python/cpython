@@ -315,8 +315,12 @@ _set_char(const char *name, Py_UCS4 *target, PyObject *src, Py_UCS4 dflt)
 static int
 _set_str(const char *name, PyObject **target, PyObject *src, const char *dflt)
 {
-    if (src == NULL)
+    if (src == NULL) {
         *target = PyUnicode_DecodeASCII(dflt, strlen(dflt), NULL);
+        if (*target == NULL) {
+            return -1;
+        }
+    }
     else {
         if (!PyUnicode_Check(src)) {
             PyErr_Format(PyExc_TypeError,
@@ -497,13 +501,13 @@ dialect_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     Py_XINCREF(skipinitialspace);
     Py_XINCREF(strict);
     if (dialect != NULL) {
-#define DIALECT_GETATTR(v, n)                            \
-        do {                                             \
-            if (v == NULL) {                             \
-                v = PyObject_GetAttrString(dialect, n);  \
-                if (v == NULL)                           \
-                    PyErr_Clear();                       \
-            }                                            \
+#define DIALECT_GETATTR(v, n)                                               \
+        do {                                                                \
+            if (v == NULL) {                                                \
+                if (PyObject_GetOptionalAttrString(dialect, n, &v) < 0) {   \
+                    goto err;                                               \
+                }                                                           \
+            }                                                               \
         } while (0)
         DIALECT_GETATTR(delimiter, "delimiter");
         DIALECT_GETATTR(doublequote, "doublequote");
@@ -582,9 +586,34 @@ Dialect_reduce(PyObject *self, PyObject *args) {
     return NULL;
 }
 
+PyDoc_STRVAR(dialect_replace_doc,
+"__replace__($self, /, **changes)\n"
+"--\n"
+"\n"
+"Return a copy of the dialect with the specified options replaced.");
+
+static PyObject *
+Dialect_replace(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    if (PyTuple_GET_SIZE(args) != 0) {
+        PyErr_SetString(PyExc_TypeError,
+                        "__replace__() takes no positional arguments");
+        return NULL;
+    }
+    PyObject *newargs = PyTuple_Pack(1, self);
+    if (newargs == NULL) {
+        return NULL;
+    }
+    PyObject *result = dialect_new(Py_TYPE(self), newargs, kwargs);
+    Py_DECREF(newargs);
+    return result;
+}
+
 static struct PyMethodDef dialect_methods[] = {
     {"__reduce__", Dialect_reduce, METH_VARARGS, dialect_reduce_doc},
     {"__reduce_ex__", Dialect_reduce, METH_VARARGS, dialect_reduce_doc},
+    {"__replace__", _PyCFunction_CAST(Dialect_replace),
+     METH_VARARGS | METH_KEYWORDS, dialect_replace_doc},
     {NULL, NULL}
 };
 
@@ -958,6 +987,12 @@ Reader_iternext_lock_held(PyObject *op)
                          "(the file should be opened in text mode)",
                          Py_TYPE(lineobj)->tp_name
                 );
+            Py_DECREF(lineobj);
+            return NULL;
+        }
+        if (self->fields == NULL) {
+            PyErr_SetString(module_state->error_obj,
+                            "iterator has already advanced the reader");
             Py_DECREF(lineobj);
             return NULL;
         }
@@ -1829,6 +1864,7 @@ csv_exec(PyObject *module) {
 }
 
 static PyModuleDef_Slot csv_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, csv_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

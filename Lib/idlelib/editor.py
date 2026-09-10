@@ -26,8 +26,7 @@ from idlelib import pyparse
 from idlelib import query
 from idlelib import replace
 from idlelib import search
-from idlelib.tree import wheel_event
-from idlelib.util import py_extensions
+from idlelib.util import bind_wheel, py_extensions, wheel_event
 from idlelib import window
 from idlelib.help import _get_dochome
 
@@ -115,10 +114,7 @@ class EditorWindow:
             # Elsewhere, use right-click for popup menus.
             text.bind("<3>",self.right_menu_event)
 
-        text.bind('<MouseWheel>', wheel_event)
-        if text._windowingsystem == 'x11':
-            text.bind('<Button-4>', wheel_event)
-            text.bind('<Button-5>', wheel_event)
+        bind_wheel(text, wheel_event)
         text.bind('<Configure>', self.handle_winconfig)
         text.bind("<<cut>>", self.cut)
         text.bind("<<copy>>", self.copy)
@@ -311,6 +307,9 @@ class EditorWindow:
             text.bind("<<toggle-line-numbers>>", self.toggle_line_numbers_event)
         else:
             self.update_menu_state('options', '*ine*umbers', 'disabled')
+
+        self.mtime = self.last_mtime()
+        text_frame.bind('<FocusIn>', self.focus_in_event)
 
     def handle_winconfig(self, event=None):
         self.set_width()
@@ -857,9 +856,8 @@ class EditorWindow:
             self.text.event_delete(event, *keylist)
         for extensionName in self.get_standard_extension_names():
             xkeydefs = idleConf.GetExtensionBindings(extensionName)
-            if xkeydefs:
-                for event, keylist in xkeydefs.items():
-                    self.text.event_delete(event, *keylist)
+            for event, keylist in xkeydefs.items():
+                self.text.event_delete(event, *keylist)
 
     def ApplyKeybindings(self):
         """Apply the virtual, configurable keybindings.
@@ -1027,6 +1025,8 @@ class EditorWindow:
 
     def set_saved(self, flag):
         self.undo.set_saved(flag)
+        if flag:
+            self.mtime = self.last_mtime()
 
     def reset_undo(self):
         self.undo.reset_undo()
@@ -1112,6 +1112,21 @@ class EditorWindow:
             # unless override: unregister from flist, terminate if last window
             self.close_hook()
 
+    def last_mtime(self):
+        file = self.io.filename
+        return os.path.getmtime(file) if file else 0
+
+    def focus_in_event(self, event):
+        mtime = self.last_mtime()
+        if self.mtime != mtime:
+            self.mtime = mtime
+            if self. askyesno(
+              'Reload', '"%s"\n\nThis script has been modified by another program.'
+              '\nDo you want to reload it?' % self.io.filename, parent=self.text):
+                self.io.loadfile(self.io.filename)
+            else:
+                self.set_saved(False)
+
     def load_extensions(self):
         self.extensions = {}
         self.load_standard_extensions()
@@ -1156,12 +1171,7 @@ class EditorWindow:
         if keydefs:
             self.apply_bindings(keydefs)
             for vevent in keydefs:
-                methodname = vevent.replace("-", "_")
-                while methodname[:1] == '<':
-                    methodname = methodname[1:]
-                while methodname[-1:] == '>':
-                    methodname = methodname[:-1]
-                methodname = methodname + "_event"
+                methodname = vevent.strip("<>").replace("-", "_") + "_event"
                 if hasattr(ins, methodname):
                     self.text.bind(vevent, getattr(ins, methodname))
 
@@ -1685,19 +1695,10 @@ def get_accelerator(keydefs, eventname):
     return s
 
 
-def fixwordbreaks(root):
-    # On Windows, tcl/tk breaks 'words' only on spaces, as in Command Prompt.
-    # We want Motif style everywhere. See #21474, msg218992 and followup.
-    tk = root.tk
-    tk.call('tcl_wordBreakAfter', 'a b', 0) # make sure word.tcl is loaded
-    tk.call('set', 'tcl_wordchars', r'\w')
-    tk.call('set', 'tcl_nonwordchars', r'\W')
-
-
-def _editor_window(parent):  # htest #
-    # error if close master window first - timer event, after script
-    root = parent
-    fixwordbreaks(root)
+def _editor_window(root):  # htest #
+    # Error if close master window first - timer event, after script
+    from util import fix_word_breaks
+    fix_word_breaks(root)
     if sys.argv[1:]:
         filename = sys.argv[1]
     else:

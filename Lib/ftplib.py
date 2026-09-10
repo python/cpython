@@ -883,7 +883,16 @@ def ftpcp(source, sourcename, target, targetname = '', type = 'I'):
     type = 'TYPE ' + type
     source.voidcmd(type)
     target.voidcmd(type)
-    sourcehost, sourceport = parse227(source.sendcmd('PASV'))
+    # Don't trust the IPv4 address the source server advertises in its PASV
+    # reply: a malicious source could otherwise point the target's data
+    # connection at an arbitrary host (SSRF).  A caller that needs the old
+    # behavior can set trust_server_pasv_ipv4_address on the source FTP
+    # object.  See FTP.makepasv(), which applies the same rule.
+    untrusted_host, sourceport = parse227(source.sendcmd('PASV'))
+    if source.trust_server_pasv_ipv4_address:
+        sourcehost = untrusted_host
+    else:
+        sourcehost = source.sock.getpeername()[0]
     target.sendport(sourcehost, sourceport)
     # RFC 959: the user must "listen" [...] BEFORE sending the
     # transfer request.

@@ -1,0 +1,1 @@
+Fixed venv exporting mixed path styles to PATH on Windows inside fish (via Cygwin, MinGW or MSYS2)

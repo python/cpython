@@ -182,8 +182,7 @@ extern void _Py_set_387controlword(unsigned short);
 //     (extended precision), and we don't know how to change
 //     the rounding precision.
 #if !defined(DOUBLE_IS_LITTLE_ENDIAN_IEEE754) && \
-    !defined(DOUBLE_IS_BIG_ENDIAN_IEEE754) && \
-    !defined(DOUBLE_IS_ARM_MIXED_ENDIAN_IEEE754)
+    !defined(DOUBLE_IS_BIG_ENDIAN_IEEE754)
 #  define _PY_SHORT_FLOAT_REPR 0
 #endif
 

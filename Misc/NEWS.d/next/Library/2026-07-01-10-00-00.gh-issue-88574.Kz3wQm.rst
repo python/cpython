@@ -1,0 +1,4 @@
+:mod:`imaplib` no longer fails when a server sends a spurious blank line
+after the counted data of a literal, including after a literal that
+terminates a response (such as a mailbox name returned by ``LIST``).
+Such blank lines are now skipped without swallowing the following line.

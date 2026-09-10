@@ -556,7 +556,9 @@ mmap_mmap_set_name(PyObject *self, PyObject *arg)
         PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = mmap_mmap_set_name_impl((mmap_object *)self, name);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -879,4 +881,4 @@ exit:
 #ifndef MMAP_MMAP_MADVISE_METHODDEF
     #define MMAP_MMAP_MADVISE_METHODDEF
 #endif /* !defined(MMAP_MMAP_MADVISE_METHODDEF) */
-/*[clinic end generated code: output=8389e3c8e3db3a78 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1122b93314aebc5c input=a9049054013a1b77]*/

@@ -110,6 +110,7 @@ enum _PyCompile_FBlockType {
      COMPILE_FBLOCK_EXCEPTION_HANDLER,
      COMPILE_FBLOCK_EXCEPTION_GROUP_HANDLER,
      COMPILE_FBLOCK_ASYNC_COMPREHENSION_GENERATOR,
+     COMPILE_FBLOCK_INLINED_COMPREHENSION,
      COMPILE_FBLOCK_STOP_ITERATION,
 };
 
@@ -131,11 +132,13 @@ int _PyCompile_PushFBlock(struct _PyCompiler *c, _Py_SourceLocation loc,
 void _PyCompile_PopFBlock(struct _PyCompiler *c, enum _PyCompile_FBlockType t,
                           _PyJumpTargetLabel block_label);
 _PyCompile_FBlockInfo *_PyCompile_TopFBlock(struct _PyCompiler *c);
+bool _PyCompile_InExceptionHandler(struct _PyCompiler *c);
 
 int _PyCompile_EnterScope(struct _PyCompiler *c, identifier name, int scope_type,
                           void *key, int lineno, PyObject *private,
                           _PyCompile_CodeUnitMetadata *umd);
 void _PyCompile_ExitScope(struct _PyCompiler *c);
+int _PyCompile_SetQualname(struct _PyCompiler *c);
 Py_ssize_t _PyCompile_AddConst(struct _PyCompiler *c, PyObject *o);
 _PyInstructionSequence *_PyCompile_InstrSequence(struct _PyCompiler *c);
 int _PyCompile_StartAnnotationSetup(struct _PyCompiler *c);

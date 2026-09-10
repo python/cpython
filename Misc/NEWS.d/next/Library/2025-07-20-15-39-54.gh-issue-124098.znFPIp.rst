@@ -1,4 +1,0 @@
-Fix issue where methods in handlers that lacked the protocol name but
-matched a valid base handler method (e.g., ``_open()`` or ``error()``)
-were incorrectly added to :class:`urllib.request.OpenerDirector`'s
-handlers. Contributed by Andrea Mattei.

@@ -12,7 +12,9 @@ PyDoc_STRVAR(_symtable_symtable__doc__,
 "symtable($module, source, filename, startstr, /, *, module=None)\n"
 "--\n"
 "\n"
-"Return symbol and scope dictionaries used internally by compiler.");
+"Return symbol and scope dictionaries used internally by compiler.\n"
+"\n"
+"The source can be a string, a bytes object, or an AST object.");
 
 #define _SYMTABLE_SYMTABLE_METHODDEF    \
     {"symtable", _PyCFunction_CAST(_symtable_symtable), METH_FASTCALL|METH_KEYWORDS, _symtable_symtable__doc__},
@@ -95,4 +97,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=0137be60c487c841 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=23523cada784726e input=a9049054013a1b77]*/

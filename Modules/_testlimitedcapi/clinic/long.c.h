@@ -84,8 +84,8 @@ PyDoc_STRVAR(_testlimitedcapi_test_long_as_size_t__doc__,
 "\n"
 "Test the PyLong_As{Size,Ssize}_t API.\n"
 "\n"
-"At present this just tests that non-integer arguments are handled correctly.\n"
-"It should be extended to test overflow handling.");
+"At present this just tests that non-integer arguments are handled\n"
+"correctly.  It should be extended to test overflow handling.");
 
 #define _TESTLIMITEDCAPI_TEST_LONG_AS_SIZE_T_METHODDEF    \
     {"test_long_as_size_t", (PyCFunction)_testlimitedcapi_test_long_as_size_t, METH_NOARGS, _testlimitedcapi_test_long_as_size_t__doc__},
@@ -140,4 +140,4 @@ PyDoc_STRVAR(_testlimitedcapi_PyLong_AsInt__doc__,
 
 #define _TESTLIMITEDCAPI_PYLONG_ASINT_METHODDEF    \
     {"PyLong_AsInt", (PyCFunction)_testlimitedcapi_PyLong_AsInt, METH_O, _testlimitedcapi_PyLong_AsInt__doc__},
-/*[clinic end generated code: output=bc52b73c599f96c2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fb5c95bd0a4bdad8 input=a9049054013a1b77]*/

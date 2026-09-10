@@ -56,9 +56,6 @@ class PackageFiles(typing.NamedTuple):
 # values to 'exclude' if we create new files within tracked
 # directories that aren't sourced from third-party packages.
 PACKAGE_TO_FILES = {
-    "mpdecimal": PackageFiles(
-        include=["Modules/_decimal/libmpdec/**"]
-    ),
     "expat": PackageFiles(
         include=["Modules/expat/**"],
         exclude=[

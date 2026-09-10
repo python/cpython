@@ -31,18 +31,8 @@ struct _pymem_allocators {
         debug_alloc_api_t obj;
     } debug;
     int is_debug_enabled;
+    int use_hugepages;
     PyObjectArenaAllocator obj_arena;
-};
-
-enum _py_float_format_type {
-    _py_float_format_unknown,
-    _py_float_format_ieee_big_endian,
-    _py_float_format_ieee_little_endian,
-};
-
-struct _Py_float_runtime_state {
-    enum _py_float_format_type float_format;
-    enum _py_float_format_type double_format;
 };
 
 struct pyhash_runtime_state {
@@ -168,10 +158,18 @@ struct pyruntimestate {
     /* Is Python preinitialized? Set to 1 by Py_PreInitialize() */
     int preinitialized;
 
-    /* Is Python core initialized? Set to 1 by _Py_InitializeCore() */
+    /* Is Python core initialized? Set to 1 by _Py_InitializeCore().
+
+       Use _PyRuntimeState_GetCoreInitialized() and
+       _PyRuntimeState_SetCoreInitialized() to access it,
+       don't access it directly. */
     int core_initialized;
 
-    /* Is Python fully initialized? Set to 1 by Py_Initialize() */
+    /* Is Python fully initialized? Set to 1 by Py_Initialize().
+
+       Use _PyRuntimeState_GetInitialized() and
+       _PyRuntimeState_SetInitialized() to access it,
+       don't access it directly. */
     int initialized;
 
     /* Set by Py_FinalizeEx(). Only reset to NULL if Py_Initialize()
@@ -269,10 +267,19 @@ struct pyruntimestate {
     } audit_hooks;
 
     struct _py_object_runtime_state object_state;
-    struct _Py_float_runtime_state float_state;
     struct _Py_unicode_runtime_state unicode_state;
     struct _types_runtime_state types;
     struct _Py_time_runtime_state time;
+
+#if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
+    // Used in "Python/emscripten_trampoline.c" to choose between wasm-gc
+    // trampoline and JavaScript trampoline.
+    PyObject* (*emscripten_trampoline)(int* success,
+                                       PyCFunctionWithKeywords func,
+                                       PyObject* self,
+                                       PyObject* args,
+                                       PyObject* kw);
+#endif
 
     /* All the objects that are shared by the runtime's interpreters. */
     struct _Py_cached_objects cached_objects;

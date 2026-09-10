@@ -290,9 +290,9 @@ PyDoc_STRVAR(float___getformat____doc__,
 "\n"
 "It exists mainly to be used in Python\'s test suite.\n"
 "\n"
-"This function returns whichever of \'unknown\', \'IEEE, big-endian\' or \'IEEE,\n"
-"little-endian\' best describes the format of floating-point numbers used by the\n"
-"C type named by typestr.");
+"This function returns whichever of \'IEEE, big-endian\' or \'IEEE,\n"
+"little-endian\' best describes the format of floating-point numbers\n"
+"used by the C type named by typestr.");
 
 #define FLOAT___GETFORMAT___METHODDEF    \
     {"__getformat__", (PyCFunction)float___getformat__, METH_O|METH_CLASS, float___getformat____doc__},
@@ -353,4 +353,4 @@ float___format__(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=927035897ea3573f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5d7b0bf9e47ff997 input=a9049054013a1b77]*/

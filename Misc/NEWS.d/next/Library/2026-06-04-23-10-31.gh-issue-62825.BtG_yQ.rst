@@ -1,0 +1,2 @@
+Encodings "KS_C_5601-1987", "KS X 1001", etc are now aliases of "CP949"
+instead of "EUC-KR".

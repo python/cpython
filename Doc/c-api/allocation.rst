@@ -2,7 +2,7 @@
 
 .. _allocating-objects:
 
-Allocating Objects on the Heap
+Allocating objects on the heap
 ==============================
 
 
@@ -153,10 +153,12 @@ Allocating Objects on the Heap
       To allocate and create extension modules.
 
 
-Deprecated aliases
-^^^^^^^^^^^^^^^^^^
+Soft-deprecated aliases
+^^^^^^^^^^^^^^^^^^^^^^^
 
-These are :term:`soft deprecated` aliases to existing functions and macros.
+.. soft-deprecated:: 3.15
+
+These are aliases to existing functions and macros.
 They exist solely for backwards compatibility.
 
 
@@ -164,7 +166,7 @@ They exist solely for backwards compatibility.
    :widths: auto
    :header-rows: 1
 
-   * * Deprecated alias
+   * * Soft-deprecated alias
      * Function
    * * .. c:macro:: PyObject_NEW(type, typeobj)
      * :c:macro:`PyObject_New`

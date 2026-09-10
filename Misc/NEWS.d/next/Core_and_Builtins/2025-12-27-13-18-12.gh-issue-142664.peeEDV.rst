@@ -1,3 +1,0 @@
-Fix a use-after-free crash in :meth:`memoryview.__hash__ <object.__hash__>`
-when the ``__hash__`` method of the referenced object mutates that object or
-the view. Patch by Bénédikt Tran.

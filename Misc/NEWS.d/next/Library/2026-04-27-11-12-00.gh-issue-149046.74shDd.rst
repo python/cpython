@@ -1,0 +1,2 @@
+:mod:`io`: Fix :class:`io.StringIO` serialization: no longer call ``str(obj)`` on :class:`str`
+subclasses. Patch by Thomas Kowalski.

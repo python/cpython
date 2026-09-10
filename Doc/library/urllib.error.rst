@@ -4,17 +4,14 @@
 .. module:: urllib.error
    :synopsis: Exception classes raised by urllib.request.
 
-.. moduleauthor:: Jeremy Hylton <jeremy@alum.mit.edu>
-.. sectionauthor:: Senthil Kumaran <orsenthil@gmail.com>
-
 **Source code:** :source:`Lib/urllib/error.py`
 
 --------------
 
-The :mod:`urllib.error` module defines the exception classes for exceptions
+The :mod:`!urllib.error` module defines the exception classes for exceptions
 raised by :mod:`urllib.request`.  The base exception class is :exc:`URLError`.
 
-The following exceptions are raised by :mod:`urllib.error` as appropriate:
+The following exceptions are raised by :mod:`!urllib.error` as appropriate:
 
 .. exception:: URLError
 

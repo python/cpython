@@ -18,7 +18,9 @@
 #include <signal.h>
 #include <unistd.h>             /* pause(), also getthrid() on OpenBSD */
 
-#if defined(__linux__)
+#ifdef HAVE_GETTID
+#   include <unistd.h>          // gettid()
+#elif defined(__linux__)
 #   include <sys/syscall.h>     /* syscall(SYS_gettid) */
 #elif defined(__FreeBSD__)
 #   include <pthread_np.h>      /* pthread_getthreadid_np() */
@@ -380,6 +382,9 @@ PyThread_get_thread_native_id(void)
 #ifdef __APPLE__
     uint64_t native_id;
     (void) pthread_threadid_np(NULL, &native_id);
+#elif defined(HAVE_GETTID)
+    pid_t native_id;
+    native_id = gettid();
 #elif defined(__linux__)
     pid_t native_id;
     native_id = syscall(SYS_gettid);
@@ -399,8 +404,8 @@ PyThread_get_thread_native_id(void)
     lwpid_t native_id;
     native_id = _lwp_self();
 #elif defined(__DragonFly__)
-    lwpid_t native_id;
-    native_id = lwp_gettid();
+    // lwp_gettid() is only unique within a process, so combine it with the pid.
+    unsigned long native_id = (unsigned long)getpid() << 32 | lwp_gettid();
 #elif defined(__sun__) && SIZEOF_LONG >= 8
     unsigned long native_id = (unsigned long)getpid() << 32 | thr_self();
 #endif
