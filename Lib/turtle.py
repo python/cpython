@@ -1095,6 +1095,8 @@ class TurtleScreen(TurtleScreenBase):
             self.mode("world")
         xspan = float(urx - llx)
         yspan = float(ury - lly)
+        if xspan == 0 or yspan == 0:
+            raise ValueError("Width and height must be greater than zero")
         wx, wy = self._window_size()
         self.screensize(wx-20, wy-20)
         oldxscale, oldyscale = self.xscale, self.yscale
@@ -2055,6 +2057,8 @@ class TNavigator(object):
         if steps is None:
             frac = abs(extent)/self._fullcircle
             steps = 1+int(min(11+abs(radius)/6.0, 59.0)*frac)
+        if steps == 0:
+            raise ValueError("steps must not be zero")
         w = 1.0 * extent / steps
         w2 = 0.5 * w
         l = 2.0 * radius * math.sin(math.radians(w2)*self._degreesPerAU)
