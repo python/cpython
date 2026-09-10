@@ -551,6 +551,7 @@ codegen_unwind_fblock(compiler *c, location *ploc,
         case COMPILE_FBLOCK_EXCEPTION_HANDLER:
         case COMPILE_FBLOCK_EXCEPTION_GROUP_HANDLER:
         case COMPILE_FBLOCK_ASYNC_COMPREHENSION_GENERATOR:
+        case COMPILE_FBLOCK_INLINED_COMPREHENSION:
         case COMPILE_FBLOCK_STOP_ITERATION:
             return SUCCESS;
 
@@ -4976,8 +4977,11 @@ codegen_push_inlined_comprehension_locals(compiler *c, location loc,
         NEW_JUMP_TARGET_LABEL(c, cleanup);
         state->cleanup = cleanup;
 
-        // no need to push an fblock for this "virtual" try/finally; there can't
-        // be return/continue/break inside a comprehension
+        // Count against CO_MAXBLOCKS: SETUP_FINALLY consumes an except-stack
+        // slot even though return/continue/break cannot appear here.
+        RETURN_IF_ERROR(_PyCompile_PushFBlock(
+            c, loc, COMPILE_FBLOCK_INLINED_COMPREHENSION,
+            cleanup, NO_LABEL, NULL));
         ADDOP_JUMP(c, loc, SETUP_FINALLY, cleanup);
     }
     return SUCCESS;
@@ -5023,6 +5027,8 @@ codegen_pop_inlined_comprehension_locals(compiler *c, location loc,
 {
     if (state->pushed_locals) {
         ADDOP(c, NO_LOCATION, POP_BLOCK);
+        _PyCompile_PopFBlock(c, COMPILE_FBLOCK_INLINED_COMPREHENSION,
+                             state->cleanup);
 
         NEW_JUMP_TARGET_LABEL(c, end);
         ADDOP_JUMP(c, NO_LOCATION, JUMP_NO_INTERRUPT, end);
@@ -5048,6 +5054,38 @@ pop_inlined_comprehension_state(compiler *c, location loc,
 {
     RETURN_IF_ERROR(codegen_pop_inlined_comprehension_locals(c, loc, state));
     RETURN_IF_ERROR(_PyCompile_RevertInlinedComprehensionScopes(c, loc, state));
+    return SUCCESS;
+}
+
+static int
+codegen_comprehension_init_container(compiler *c, location loc, int type,
+                                     int is_inlined, bool avoid_creation)
+{
+    int op;
+    switch (type) {
+    case COMP_LISTCOMP:
+        op = BUILD_LIST;
+        break;
+    case COMP_SETCOMP:
+        op = BUILD_SET;
+        break;
+    case COMP_DICTCOMP:
+        op = BUILD_MAP;
+        break;
+    default:
+        PyErr_Format(PyExc_SystemError,
+                     "unknown comprehension type %d", type);
+        return ERROR;
+    }
+
+    if (!avoid_creation) {
+        ADDOP_I(c, loc, op, 0);
+        if (is_inlined) {
+            ADDOP_I(c, loc, SWAP, 2);
+        }
+    } else {
+        ADDOP_I(c, loc, COPY, 1);
+    }
     return SUCCESS;
 }
 
@@ -5089,19 +5127,22 @@ codegen_comprehension(compiler *c, expr_ty e, int type,
         if (type == COMP_GENEXP) {
             /* Insert GET_ITER before RETURN_GENERATOR.
                https://docs.python.org/3/reference/expressions.html#generator-expressions */
-            RETURN_IF_ERROR(
-                _PyInstructionSequence_InsertInstruction(
+            if(_PyInstructionSequence_InsertInstruction(
                     INSTR_SEQUENCE(c), 0,
-                    RESUME, RESUME_AT_GEN_EXPR_START, NO_LOCATION));
-            RETURN_IF_ERROR(
-                _PyInstructionSequence_InsertInstruction(
+                    RESUME, RESUME_AT_GEN_EXPR_START, NO_LOCATION) < 0) {
+                goto error_in_scope;
+            }
+            if(_PyInstructionSequence_InsertInstruction(
                     INSTR_SEQUENCE(c), 1,
-                    LOAD_FAST, 0, LOC(outermost->iter)));
-            RETURN_IF_ERROR(
-                _PyInstructionSequence_InsertInstruction(
+                    LOAD_FAST, 0, LOC(outermost->iter)) < 0) {
+                goto error_in_scope;
+            }
+            if(_PyInstructionSequence_InsertInstruction(
                     INSTR_SEQUENCE(c), 2,
                     outermost->is_async ? GET_AITER : GET_ITER,
-                    0, LOC(outermost->iter)));
+                    0, LOC(outermost->iter)) < 0) {
+                goto error_in_scope;
+            }
             iter_state = ITERATOR_ON_STACK;
         }
         else {
@@ -5111,30 +5152,9 @@ codegen_comprehension(compiler *c, expr_ty e, int type,
     Py_CLEAR(entry);
 
     if (type != COMP_GENEXP) {
-        int op;
-        switch (type) {
-        case COMP_LISTCOMP:
-            op = BUILD_LIST;
-            break;
-        case COMP_SETCOMP:
-            op = BUILD_SET;
-            break;
-        case COMP_DICTCOMP:
-            op = BUILD_MAP;
-            break;
-        default:
-            PyErr_Format(PyExc_SystemError,
-                         "unknown comprehension type %d", type);
+        if (codegen_comprehension_init_container(
+            c, loc, type, is_inlined, avoid_creation) < 0) {
             goto error_in_scope;
-        }
-
-        if (!avoid_creation) {
-            ADDOP_I(c, loc, op, 0);
-            if (is_inlined) {
-                ADDOP_I(c, loc, SWAP, 2);
-            }
-        } else {
-            ADDOP_I(c, loc, COPY, 1);
         }
     }
     if (codegen_comprehension_generator(c, loc, generators, 0, 0,
@@ -5150,7 +5170,7 @@ codegen_comprehension(compiler *c, expr_ty e, int type,
     }
 
     if (type != COMP_GENEXP) {
-        ADDOP(c, LOC(e), RETURN_VALUE);
+        ADDOP_IN_SCOPE(c, LOC(e), RETURN_VALUE);
     }
     if (type == COMP_GENEXP) {
         if (codegen_wrap_in_stopiteration_handler(c) < 0) {

@@ -255,6 +255,19 @@ class UstarReadTest(ReadTest, unittest.TestCase):
         self.add_dir_and_getmember('bar')
         self.add_dir_and_getmember('a'*101)
 
+    def test_extract_name_with_trailing_slash(self):
+        # gh-127636: './mydir/' is deliberately a regular-file member
+        # (REGTYPE, not DIRTYPE) whose stored name ends in a slash.  It
+        # extracts as a file.  Do not "fix" this by setting DIRTYPE; the
+        # trailing-slash name on a non-directory is what is being tested.
+        with tarfile.open(tmpname, 'w') as tar:
+            tar.addfile(tarfile.TarInfo('./mydir/'))
+        with os_helper.temp_dir() as tmpdir, tarfile.open(tmpname) as tar:
+            names = tar.getnames()
+            self.assertEqual(names, ['./mydir/'])
+            tar.extract(names[0], tmpdir, filter='fully_trusted')
+            self.assertTrue(os.path.isfile(os.path.join(tmpdir, 'mydir')))
+
     @unittest.skipUnless(hasattr(os, "getuid") and hasattr(os, "getgid"),
                          "Missing getuid or getgid implementation")
     def add_dir_and_getmember(self, name):
