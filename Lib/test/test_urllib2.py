@@ -1473,6 +1473,46 @@ class HandlerTests(unittest.TestCase):
         fp = urllib.request.urlopen("http://python.org/path")
         self.assertEqual(fp.geturl(), "http://python.org/path?query")
 
+    def redirect_with_sensitive_headers(self, from_url, to_url):
+        h = urllib.request.HTTPRedirectHandler()
+        o = h.parent = MockOpener()
+        req = Request(from_url)
+        req.add_header("Authorization", "Basic foo")
+        req.add_header("Cookie", "bar")
+        req.timeout = socket._GLOBAL_DEFAULT_TIMEOUT
+        h.http_error_302(req, MockFile(), 302, "",
+            MockHeaders({"location": to_url}))
+        return o.req.headers
+
+    def test_redirect_to_same_origin_with_sensitive_header(self):
+        for to_url in [
+            "http://example.com/index.html",
+            "http://example.com/other.html",
+        ]:
+            with self.subTest(to_url):
+                headers = self.redirect_with_sensitive_headers(
+                    "http://example.com/index.html", to_url)
+                self.assertIn("Authorization", headers)
+                self.assertIn("Cookie", headers)
+
+    def test_redirect_to_other_origin_with_sensitive_header(self):
+        # The origin includes the scheme, the host and the port, so
+        # credentials are not sent if any of them differs (gh-77842).
+        for from_url, to_url in [
+            # other host
+            ("http://example.com/index.html", "http://cracker.com/index.html"),
+            # other port
+            ("http://example.com/index.html", "http://example.com:8080/i.html"),
+            # downgrade from HTTPS to HTTP
+            ("https://example.com/index.html", "http://example.com/index.html"),
+            # upgrade from HTTP to HTTPS
+            ("http://example.com/index.html", "https://example.com/index.html"),
+        ]:
+            with self.subTest(from_url=from_url, to_url=to_url):
+                headers = self.redirect_with_sensitive_headers(from_url, to_url)
+                self.assertNotIn("Authorization", headers)
+                self.assertNotIn("Cookie", headers)
+
     def test_redirect_encoding(self):
         # Some characters in the redirect target may need special handling,
         # but most ASCII characters should be treated as already encoded
