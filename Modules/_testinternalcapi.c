@@ -30,6 +30,7 @@
 #include "pycore_instruction_sequence.h"  // _PyInstructionSequence_New()
 #include "pycore_interpframe.h"   // _PyFrame_GetFunction()
 #include "pycore_jit.h"           // _PyJIT_AddressInJitCode()
+#include "pycore_jit_unwind.h"    // DWRF_EH_PE_* constants
 #include "pycore_object.h"        // _PyObject_IsFreed()
 #include "pycore_optimizer.h"     // _Py_Executor_DependsOn
 #include "pycore_pathconfig.h"    // _PyPathConfig_ClearGlobal()
@@ -2718,6 +2719,121 @@ _testinternalcapi_test_long_numbits_impl(PyObject *module)
     Py_RETURN_NONE;
 }
 
+#if defined(PY_HAVE_PERF_TRAMPOLINE)
+#include "trampoline_ehframe.h"
+
+/* Structural checks on the generated perf trampoline .eh_frame and the
+ * field offsets Python/jit_unwind.c patches. Raises instead of assert()
+ * so the checks also run in release builds. */
+static PyObject *
+test_trampoline_ehframe(PyObject *self, PyObject *Py_UNUSED(args))
+{
+#define CHECK(cond, msg)                                            \
+    do {                                                            \
+        if (!(cond)) {                                              \
+            PyErr_SetString(PyExc_AssertionError,                   \
+                            "trampoline_ehframe: " msg);            \
+            return NULL;                                            \
+        }                                                           \
+    } while (0)
+
+    const uint8_t *data = _trampoline_ehframe;
+    size_t size = TRAMPOLINE_EHFRAME_SIZE;
+    size_t field_size = TRAMPOLINE_EHFRAME_FDE_FIELD_SIZE;
+
+    CHECK(field_size == 4 || field_size == 8, "unsupported FDE field size");
+    CHECK(size >= 8 + 8 + 2 * field_size + 1, "data too small for a CIE and an FDE");
+
+    /* CIE: length, CIE_id == 0, version 1, augmentation "zR". */
+    uint32_t cie_length;
+    memcpy(&cie_length, data, sizeof(cie_length));
+    CHECK(cie_length > 0 && cie_length < size, "bad CIE length");
+
+    uint32_t cie_id;
+    memcpy(&cie_id, data + 4, sizeof(cie_id));
+    CHECK(cie_id == 0, "first entry is not a CIE");
+
+    CHECK(data[8] == 1, "CIE version is not 1");
+    CHECK(data[9] == 'z' && data[10] == 'R' && data[11] == '\0',
+          "CIE augmentation is not \"zR\"");
+
+    /* Exactly one FDE must follow the CIE, and the walk below must stay
+     * inside the data. */
+    size_t cie_total = 4 + cie_length;
+    CHECK(cie_total + 8 + 2 * field_size <= size,
+          "no room for an FDE after the CIE");
+
+    /* FDE pointer encoding byte: skip version(1), "zR\0"(3), code_align
+     * (ULEB128), data_align (SLEB128), RA column (1 byte in version 1),
+     * augmentation data length (ULEB128). */
+    size_t pos = 12;
+    while (pos < cie_total && (data[pos] & 0x80)) {  /* code alignment */
+        pos++;
+    }
+    pos++;
+    while (pos < cie_total && (data[pos] & 0x80)) {  /* data alignment */
+        pos++;
+    }
+    pos++;
+    pos++;                                            /* RA column */
+    /* Augmentation data length (ULEB128) must be 1: the encoding byte. */
+    uint32_t aug_length = 0;
+    int shift = 0;
+    while (pos < cie_total && (data[pos] & 0x80)) {
+        CHECK(shift < 28, "CIE augmentation data length is too long");
+        aug_length |= (uint32_t)(data[pos] & 0x7f) << shift;
+        shift += 7;
+        pos++;
+    }
+    CHECK(pos < cie_total, "CIE augmentation data length is truncated");
+    CHECK((uint32_t)(data[pos] & 0x7f) <= (UINT32_MAX >> shift),
+          "CIE augmentation data length overflows");
+    aug_length |= (uint32_t)(data[pos] & 0x7f) << shift;
+    pos++;
+    CHECK(aug_length == 1 && pos < cie_total,
+          "CIE augmentation data length is not 1");
+    uint8_t fde_enc = data[pos];
+    CHECK(fde_enc == (DWRF_EH_PE_pcrel | DWRF_EH_PE_sdata4)
+          || fde_enc == (DWRF_EH_PE_pcrel | DWRF_EH_PE_absptr),
+          "unsupported FDE pointer encoding");
+    size_t enc_field_size = (fde_enc & 0x0f) == DWRF_EH_PE_sdata4 ? 4 : 8;
+    CHECK(enc_field_size == field_size,
+          "FDE field size does not match the CIE pointer encoding");
+
+    /* The FDE ends exactly at the end of the data. */
+    uint32_t fde_length;
+    memcpy(&fde_length, data + cie_total, sizeof(fde_length));
+    CHECK(fde_length > 0, "FDE length is zero");
+    CHECK(cie_total + 4 + fde_length == size,
+          "FDE does not end at the end of the data");
+
+    /* The CIE pointer is the distance from its own field back to the CIE. */
+    uint32_t fde_cie_ptr;
+    memcpy(&fde_cie_ptr, data + cie_total + 4, sizeof(fde_cie_ptr));
+    CHECK(fde_cie_ptr == cie_total + 4, "FDE CIE pointer does not point at the CIE");
+
+    /* The runtime patches initial_location and address_range at the
+     * recorded offsets. They must be the two fields after the CIE pointer
+     * and must be zeroed placeholders in the header. */
+    CHECK(TRAMPOLINE_EHFRAME_FDE_PC_OFFSET == cie_total + 8,
+          "FDE initial_location offset is wrong");
+    CHECK(TRAMPOLINE_EHFRAME_FDE_RANGE_OFFSET
+              == TRAMPOLINE_EHFRAME_FDE_PC_OFFSET + field_size,
+          "FDE address_range offset is wrong");
+    for (size_t i = 0; i < 2 * field_size; i++) {
+        CHECK(data[TRAMPOLINE_EHFRAME_FDE_PC_OFFSET + i] == 0,
+              "FDE placeholder fields are not zero");
+    }
+    /* The FDE's own augmentation data length must follow and be 0. */
+    size_t fde_aug_offset = TRAMPOLINE_EHFRAME_FDE_RANGE_OFFSET + field_size;
+    CHECK(fde_aug_offset < size, "FDE augmentation data length byte is missing");
+    CHECK(data[fde_aug_offset] == 0, "FDE augmentation data length is not 0");
+
+#undef CHECK
+    Py_RETURN_NONE;
+}
+#endif /* PY_HAVE_PERF_TRAMPOLINE */
+
 static PyObject *
 compile_perf_trampoline_entry(PyObject *self, PyObject *args)
 {
@@ -3353,6 +3469,9 @@ static PyMethodDef module_functions[] = {
     {"interpreter_refcount_linked", interpreter_refcount_linked, METH_O},
     {"compile_perf_trampoline_entry", compile_perf_trampoline_entry, METH_VARARGS},
     {"perf_trampoline_set_persist_after_fork", perf_trampoline_set_persist_after_fork, METH_VARARGS},
+#if defined(PY_HAVE_PERF_TRAMPOLINE)
+    {"test_trampoline_ehframe", test_trampoline_ehframe, METH_NOARGS},
+#endif
     {"get_crossinterp_data",    _PyCFunction_CAST(get_crossinterp_data),
      METH_VARARGS | METH_KEYWORDS},
     {"restore_crossinterp_data", restore_crossinterp_data,       METH_VARARGS},
