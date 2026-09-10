@@ -509,8 +509,8 @@ Glossary
       An :term:`iterator` that has produced all of its values is said to be
       :dfn:`exhausted`.
       Further attempts to get the next value (for example, calls to
-      :py:func:`next`) raise :py:exc:`StopIteration`
-      (or :py:exc:`StopAsyncIteration` in the case of an :term:`asynchronous
+      :func:`next`) raise :exc:`StopIteration`
+      (or :exc:`StopAsyncIteration` in the case of an :term:`asynchronous
       iterator`).
 
    expression
