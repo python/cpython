@@ -319,6 +319,8 @@ struct _import_runtime_state {
 struct _import_state {
     /* cached sys.modules dictionary */
     PyObject *modules;
+    /* Incremented when sys.modules or module lookup metadata changes. */
+    uint64_t module_registry_version;
     /* This is the list of module objects for all legacy (single-phase init)
        extension modules ever loaded in this process (i.e. imported
        in this interpreter or in any other).  Py_None stands in for

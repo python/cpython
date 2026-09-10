@@ -298,6 +298,7 @@ def clear_caches():
         inspect._shadowed_dict_from_weakref_mro_tuple.cache_clear()
         inspect._filesbymodname.clear()
         inspect.modulesbyfile.clear()
+        inspect._modulesbyfile_cache = (None, {}, {}, ())
 
     try:
         importlib_metadata = sys.modules['importlib.metadata']
