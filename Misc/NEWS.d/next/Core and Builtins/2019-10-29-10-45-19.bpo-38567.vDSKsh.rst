@@ -1,0 +1,2 @@
+Made ``urllib.parse.unquote_plus()`` accept both string and bytes.  Patch by 
+Stein Karlsen.
