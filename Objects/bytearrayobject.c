@@ -286,6 +286,7 @@ bytearray_resize_lock_held(PyObject *self, Py_ssize_t requested_size)
            _PyBytes_Resize will do a malloc + memcpy internally. */
         memmove(obj->ob_bytes, obj->ob_start,
                 Py_MIN(requested_size, Py_SIZE(self)));
+        obj->ob_start = obj->ob_bytes;
     }
 
     if (_PyBytes_ResizeKeepOnError(&obj->ob_bytes_object, alloc) < 0) {

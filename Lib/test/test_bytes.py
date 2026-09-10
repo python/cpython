@@ -1560,6 +1560,7 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         # the bytearray must be left unchanged.
         _testcapi = import_helper.import_module('_testcapi')
 
+        # Simple bytearray
         data = b'some data'
         ba = bytearray(data)
         try:
@@ -1568,7 +1569,19 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
                 ba.resize(1024)
         finally:
             _testcapi.remove_mem_hooks()
-        self.assertEqual(ba, data)
+        self.assertEqual(ba, bytearray(data))
+
+        # bytearray with non-zero logical start
+        ba = bytearray(b'0123456789')
+        expected = ba[3:]
+        del ba[:3]
+        try:
+            with self.assertRaises(MemoryError):
+                _testcapi.set_nomemory(0)
+                ba.resize(1024)
+        finally:
+            _testcapi.remove_mem_hooks()
+        self.assertEqual(ba, expected)
 
     def test_take_bytes(self):
         ba = bytearray(b'ab')
