@@ -538,12 +538,15 @@ extern "C" {
 //
 // Example: _Py_TYPEOF(x) x_copy = (x);
 //
-// On C23, use typeof(). Otherwise, the macro is only defined
-// if GCC or clang compiler is used.
+// On C23, use typeof(). Otherwise __typeof__() if on GCC, clang or
+// MSVC 17.9 and newer. Else if on C++11 or newer, decltype() is used.
 #if defined (__STDC_VERSION__) && __STDC_VERSION__ >= 202311L
 #  define _Py_TYPEOF(expr) typeof(expr)
-#elif defined(__GNUC__) || defined(__clang__)
+#elif defined(__GNUC__) || defined(__clang__) || \
+    (defined(_MSC_VER) && _MSC_VER >= 1939)
 #  define _Py_TYPEOF(expr) __typeof__(expr)
+#elif defined(__cplusplus) && __cplusplus >= 201103L
+#  define _Py_TYPEOF(expr) decltype(expr)
 #endif
 
 
