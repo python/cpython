@@ -224,6 +224,8 @@ class Parameter:
     # (`None` signifies that there is no deprecation)
     deprecated_positional: VersionTuple | None = None
     deprecated_keyword: VersionTuple | None = None
+    # The release in which the parameter will be removed.
+    deprecated_until: VersionTuple | None = None
     # Line of the file on which the parameter is declared.
     line_number: int | None = None
     right_bracket_count: int = dc.field(init=False, default=0)
