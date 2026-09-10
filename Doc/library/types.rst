@@ -356,7 +356,7 @@ Standard names are defined for the following types:
 
    .. method:: resolve()
 
-      Resolve the lazy object by reifying the lazily imported module.
+      Reify the lazy import and return the "real" object being imported.
 
 
 .. class:: GetSetDescriptorType
