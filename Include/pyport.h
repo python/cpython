@@ -545,9 +545,7 @@ extern "C" {
 // the /Zc:__cplusplus flag is used.
 #if defined (__STDC_VERSION__) && __STDC_VERSION__ >= 202311L
 #  define _Py_TYPEOF(expr) typeof(expr)
-#elif defined(__cplusplus) && __cplusplus >= 201103L
-#  define _Py_TYPEOF(expr) decltype(expr)
-#elif defined(_MSVC_LANG) && _MSVC_LANG >= 201103L
+#elif defined(__cplusplus) && (__cplusplus >= 201103L ||  _MSVC_LANG >= 201103L)
 #  define _Py_TYPEOF(expr) decltype(expr)
 #elif defined(__GNUC__) || defined(__clang__) || \
     (defined(_MSC_VER) && _MSC_VER >= 1939)
