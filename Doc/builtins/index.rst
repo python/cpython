@@ -16,6 +16,11 @@ be used by all Python code without the need of an :keyword:`import` statement.
 Some of these are defined by the core language, but many are not essential for
 the core semantics and are only described here.
 
+.. seealso::
+
+   In addition to the built-ins, Python provides an extensive importable
+   standard library, see :ref:`library-index`.
+
 .. We don't use :numbered: option for the TOC below as it enforces
    numbered sections for the entire builtin docs.  If desired,
    :numbered: can be enabled on a per-page basis.
