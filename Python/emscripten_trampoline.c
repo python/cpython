@@ -94,6 +94,9 @@ addOnPreRun(function setEmscriptenTrampoline() {
 });
 );
 
+EM_JS_DEPS(_PyEM_TrampolineCall,
+           "$wasmTable,$wasmMemory,$addFunction,$addOnPreRun");
+
 PyObject*
 _PyEM_TrampolineCall(PyCFunctionWithKeywords func,
                      PyObject* self,
