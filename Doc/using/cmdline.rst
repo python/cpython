@@ -159,6 +159,12 @@ source.
    containing that file is added to the start of :data:`sys.path`, and the
    file is executed as the :mod:`__main__` module.
 
+   If the script name refers to a link, the behavior depends on the link
+   type and operating system. On Unix-like systems, symbolic links are
+   resolved to the target file's directory when added to :data:`sys.path`.
+   Hard links use the link's own directory. On Windows, both hard links
+   and symbolic links use the link's own directory.
+
    If the script name refers to a directory or zipfile, the script name is
    added to the start of :data:`sys.path` and the ``__main__.py`` file in
    that location is executed as the :mod:`__main__` module.
