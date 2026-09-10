@@ -13,6 +13,8 @@
 #include "pycore_traceback.h"     // _PyTraceBack_FromFrame()
 #include "pycore_unicodeobject.h" // _PyUnicode_Equal()
 
+#include "../Parser/tokenizer/tokenizer.h"
+
 #ifdef MS_WINDOWS
 #  include <windows.h>
 #  include <winbase.h>
@@ -2049,9 +2051,6 @@ PyErr_ProgramText(const char *filename, int lineno)
     Py_DECREF(filename_obj);
     return res;
 }
-
-/* Function from Parser/tokenizer/file_tokenizer.c */
-extern char* _PyTokenizer_FindEncodingFilename(int, PyObject *);
 
 PyObject *
 _PyErr_ProgramDecodedTextObject(PyObject *filename, int lineno, const char* encoding)

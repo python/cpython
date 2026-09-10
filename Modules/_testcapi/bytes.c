@@ -4,6 +4,8 @@
 #include "parts.h"
 #include "util.h"
 
+#include <stddef.h>               // offsetof()
+
 #include "pycore_bytesobject.h"   // _PyBytesWriter_CreateByteArray()
 
 
@@ -150,8 +152,8 @@ writer_write_bytes(PyObject *self_raw, PyObject *args)
     }
 
     char *bytes;
-    Py_ssize_t size;
-    if (!PyArg_ParseTuple(args, "yn", &bytes, &size)) {
+    Py_ssize_t unused_size, size;
+    if (!PyArg_ParseTuple(args, "y#n", &bytes, &unused_size, &size)) {
         return NULL;
     }
 
@@ -351,12 +353,114 @@ error:
 }
 
 
+static size_t
+pybyteswriter_small_buffer_size(void)
+{
+    return offsetof(PyBytesWriter, obj);
+}
+
+
+// Test the "Pointer" API of PyBytesWriter
+static PyObject *
+test_byteswriter_ptr(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
+{
+    // Test PyBytesWriter_FinishWithPointer(): create the string "abc"
+    PyBytesWriter *writer = PyBytesWriter_Create(3);
+    if (writer == NULL) {
+        return NULL;
+    }
+    char *str = PyBytesWriter_GetData(writer);
+    memcpy(str, "abc", 3);
+    str += 3;
+    PyObject *result = PyBytesWriter_FinishWithPointer(writer, str);
+    if (result == NULL) {
+        return NULL;
+    }
+    assert(PyBytes_GET_SIZE(result) == 3);
+    assert(memcmp(PyBytes_AS_STRING(result), "abc", 3) == 0);
+    Py_DECREF(result);
+
+    // Test PyBytesWriter_GrowAndUpdatePointer().
+    // Start by using the small buffer, and then resize to use a bytes object.
+    writer = PyBytesWriter_Create(0);
+    if (writer == NULL) {
+        return NULL;
+    }
+    str = PyBytesWriter_GetData(writer);
+
+    str = PyBytesWriter_GrowAndUpdatePointer(writer, 100, str);
+    if (str == NULL) {
+        PyBytesWriter_Discard(writer);
+        return NULL;
+    }
+    memset(str, 'x', 100);
+    str += 100;
+
+    // make sure that the test switchs to a bytes object
+    assert((100 + 200) > pybyteswriter_small_buffer_size());
+    char *old_str = str;
+    str = PyBytesWriter_GrowAndUpdatePointer(writer, 200, str);
+    if (str == NULL) {
+        PyBytesWriter_Discard(writer);
+        return NULL;
+    }
+    // make sure that we moved from the small buffer to a bytes object
+    assert(str != old_str);
+    memset(str, 'y', 200);
+    str += 200;
+
+    result = PyBytesWriter_FinishWithPointer(writer, str);
+    if (result == NULL) {
+        return NULL;
+    }
+    assert(PyBytes_GET_SIZE(result) == 300);
+    str = PyBytes_AS_STRING(result);
+    for (Py_ssize_t i=0; i < 100; i++) {
+        assert(str[i] == 'x');
+    }
+    for (Py_ssize_t i=0; i < 200; i++) {
+        assert(str[100 + i] == 'y');
+    }
+    Py_DECREF(result);
+
+    // Check that PyBytesWriter_FinishWithPointer() rejects pointer
+    // after the buffer end (create a string larger than the allocated size)
+    writer = PyBytesWriter_Create(3);
+    if (writer == NULL) {
+        return NULL;
+    }
+    str = PyBytesWriter_GetData(writer);
+    memcpy(str, "abc", 3);
+    str += 4;  // off-by-one bug on purpose
+    result = PyBytesWriter_FinishWithPointer(writer, str);
+    assert(result == NULL);
+    assert(PyErr_ExceptionMatches(PyExc_ValueError));
+    PyErr_Clear();
+
+    // Check that PyBytesWriter_FinishWithPointer() rejects pointer
+    // before the buffer start (negative size)
+    writer = PyBytesWriter_Create(3);
+    if (writer == NULL) {
+        return NULL;
+    }
+    str = PyBytesWriter_GetData(writer);
+    str--;     // bug on purpose: go before the buffer start
+    result = PyBytesWriter_FinishWithPointer(writer, str);
+    assert(result == NULL);
+    assert(PyErr_ExceptionMatches(PyExc_ValueError));
+    PyErr_Clear();
+
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef test_methods[] = {
     {"bytes_resize", bytes_resize, METH_VARARGS},
     {"bytes_join", bytes_join, METH_VARARGS},
     {"byteswriter_abc", byteswriter_abc, METH_NOARGS},
     {"byteswriter_resize", byteswriter_resize, METH_NOARGS},
     {"byteswriter_highlevel", byteswriter_highlevel, METH_NOARGS},
+    {"test_byteswriter_ptr", test_byteswriter_ptr, METH_NOARGS},
     {NULL},
 };
 
@@ -376,6 +480,13 @@ _PyTestCapi_Init_Bytes(PyObject *m)
         return -1;
     }
     Py_DECREF(writer_type);
+
+    // PyBytesWriter.obj is the second member, small_buffer is the first member
+    long size = (long)pybyteswriter_small_buffer_size();
+    if (PyModule_AddIntConstant(m, "PyBytesWriter_small_buffer", size) < 0) {
+        Py_DECREF(writer_type);
+        return -1;
+    }
 
     return 0;
 }

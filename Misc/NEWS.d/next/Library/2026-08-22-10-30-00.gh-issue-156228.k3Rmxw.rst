@@ -1,0 +1,4 @@
+The :mod:`ssl` and :mod:`hashlib` modules now route OpenSSL memory
+allocations through the Python raw memory allocators, making OpenSSL memory
+usage visible to :mod:`tracemalloc` and to custom allocators installed with
+:c:func:`PyMem_SetAllocator`.

@@ -899,6 +899,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self._chained_exception_index = 0
 
     def _get_asyncio_task(self):
+        # If asyncio has never been imported there cannot be a running task,
+        # so skip the import rather than pay for it on every interaction.
+        if 'asyncio' not in sys.modules:
+            return None
         try:
             task = asyncio.current_task()
         except RuntimeError:
