@@ -324,7 +324,7 @@ _Py_get_machine_stack_pointer(void) {
 #elif defined(__aarch64__)
     __asm__ ("mov %0, sp" : "=r" (result));
 #elif defined(__x86_64__)
-    __asm__("{movq %%rsp, %0" : "=r" (result));
+    __asm__("movq %%rsp, %0" : "=r" (result));
 #else
     char here;
     result = (uintptr_t)&here;
