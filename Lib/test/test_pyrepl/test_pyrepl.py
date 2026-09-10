@@ -2202,6 +2202,20 @@ class TestMain(ReplTestCase):
         self.assertNotIn("Exception", output)
         self.assertNotIn("Traceback", output)
 
+    def test_bracketed_paste_newline_after_end_marker(self):
+        # A newline arriving in the same read as the closing marker must
+        # execute the pasted block instead of being inserted as text.
+        # See #156186.
+        env = os.environ.copy()
+        commands = ("\x1b[200~x = 1\nprint(f'^{x=}')\n\x1b[201~"
+                    "\n"
+                    "exit()\n")
+        output, exit_code = self.run_repl(commands, env=env, skip=True)
+        self.assertEqual(exit_code, 0)
+        self.assertIn("^x=1", output)
+        self.assertNotIn("Exception", output)
+        self.assertNotIn("Traceback", output)
+
     @force_not_colorized
     def test_no_pyrepl_source_in_exc(self):
         # Avoid using _pyrepl/__main__.py in traceback reports

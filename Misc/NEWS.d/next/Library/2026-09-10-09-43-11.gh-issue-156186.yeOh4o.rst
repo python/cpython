@@ -1,0 +1,2 @@
+Fix PyREPL so that a newline sent right after a pasted block runs the block,
+instead of being added to the pasted text.
