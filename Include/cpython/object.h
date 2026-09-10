@@ -350,7 +350,7 @@ PyAPI_FUNC(PyObject *) _PyObject_FunctionStr(PyObject *);
 #ifdef _Py_TYPEOF
 #define Py_SETREF(dst, src) \
     do { \
-        _Py_TYPEOF(dst)* _tmp_dst_ptr = &(dst); \
+        _Py_TYPEOF(&(dst)) _tmp_dst_ptr = &(dst); \
         _Py_TYPEOF(dst) _tmp_old_dst = (*_tmp_dst_ptr); \
         *_tmp_dst_ptr = (src); \
         Py_DECREF(_tmp_old_dst); \
@@ -372,7 +372,7 @@ PyAPI_FUNC(PyObject *) _PyObject_FunctionStr(PyObject *);
 #ifdef _Py_TYPEOF
 #define Py_XSETREF(dst, src) \
     do { \
-        _Py_TYPEOF(dst)* _tmp_dst_ptr = &(dst); \
+        _Py_TYPEOF(&(dst)) _tmp_dst_ptr = &(dst); \
         _Py_TYPEOF(dst) _tmp_old_dst = (*_tmp_dst_ptr); \
         *_tmp_dst_ptr = (src); \
         Py_XDECREF(_tmp_old_dst); \
