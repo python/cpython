@@ -1596,9 +1596,15 @@ class IpaddrUnitTest(unittest.TestCase):
 
     def testNextNetworkOutOfAddressSpace(self):
         ipv4 = ipaddress.IPv4Network('255.255.255.0/24')
-        self.assertRaises(ValueError, ipv4.next_network)
+        self.assertRaisesRegex(
+            ValueError,
+            'out of address space, cannot make another /24 network',
+            ipv4.next_network)
         ipv6 = ipaddress.IPv6Network('ffff:ffff:ffff:ffff:ffff:ffff:ffff:0/112')
-        self.assertRaises(ValueError, ipv6.next_network)
+        self.assertRaisesRegex(
+            ValueError,
+            'out of address space, cannot make another /112 network',
+            ipv6.next_network)
 
     def testFancySubnetting(self):
         self.assertEqual(sorted(self.ipv4_network.subnets(prefixlen_diff=3)),
