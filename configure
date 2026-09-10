@@ -14663,8 +14663,28 @@ esac ;; #(
     perf_trampoline=no
  ;;
 esac
+perf_trampoline_missing_python=no
+if test "x$perf_trampoline" = xyes
+then :
+
+  if $PYTHON_FOR_REGEN -c 'import sys; sys.exit(sys.version_info < (3, 7))' >/dev/null 2>&1
+then :
+
+else case e in #(
+  e) perf_trampoline=no
+     PERF_TRAMPOLINE_OBJ=""
+     perf_trampoline_missing_python=yes ;;
+esac
+fi
+
+fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $perf_trampoline" >&5
 printf "%s\n" "$perf_trampoline" >&6; }
+if test "x$perf_trampoline_missing_python" = xyes
+then :
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: perf trampoline disabled: PYTHON_FOR_REGEN ($PYTHON_FOR_REGEN) is missing or older than 3.7 (needed to generate trampoline_ehframe.h)" >&5
+printf "%s\n" "$as_me: WARNING: perf trampoline disabled: PYTHON_FOR_REGEN ($PYTHON_FOR_REGEN) is missing or older than 3.7 (needed to generate trampoline_ehframe.h)" >&2;}
+fi
 
 if test "x$perf_trampoline" = xyes
 then :

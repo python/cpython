@@ -1,0 +1,2 @@
+Generate the perf trampoline's unwind information from its compiled assembly
+at build time. Building the trampoline now requires a Python interpreter.
