@@ -4656,6 +4656,24 @@ class TestExtractionFilters(unittest.TestCase):
                     self.expect_file("s", symlink_to=os.path.join('..', 'escape'))
 
     @symlink_test
+    @os_helper.skip_unless_hardlink
+    def test_sneaky_hardlink_relocation(self):
+        with ArchiveMaker() as arc:
+            arc.add("a/escape", content="decoy")
+            arc.add("a/b/s", symlink_to=os.path.join("..", "escape"))
+            arc.add("s", hardlink_to=os.path.join("a", "b", "s"))
+
+        for filter in 'data', 'tar':
+            with self.subTest(filter), self.check_context(arc.open(), filter):
+                self.expect_file("a/escape", content="decoy")
+                if os_helper.can_symlink():
+                    self.expect_file("a/b/s", symlink_to=os.path.join('..', 'escape'))
+                else:
+                    self.expect_file("a/b/s", content="decoy")
+                self.expect_file("s", content="decoy")
+                self.assertFalse((self.destdir / "s").is_symlink())
+
+    @symlink_test
     def test_exfiltration_via_symlink(self):
         # (CVE-2025-4138)
         # Test changing symlinks that result in a symlink pointing outside
