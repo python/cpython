@@ -27,6 +27,29 @@ PyAPI_FUNC(Py_complex) _Py_cr_prod(Py_complex, double);
 PyAPI_FUNC(Py_complex) _Py_cr_quot(Py_complex, double);
 PyAPI_FUNC(Py_complex) _Py_rc_quot(double, Py_complex);
 
+static inline bool
+_Py_c_isnan(Py_complex a)
+{
+    return isnan(a.real) || isnan(a.imag);
+}
+
+static inline bool
+_Py_c_isinf(Py_complex a)
+{
+    return isinf(a.real) || isinf(a.imag);
+}
+
+static inline bool
+_Py_c_isfinite(Py_complex a)
+{
+    return isfinite(a.real) && isfinite(a.imag);
+}
+
+static inline bool
+_Py_c_iszero(Py_complex a)
+{
+    return a.real == 0.0 && a.imag == 0.0;
+}
 
 #ifdef __cplusplus
 }
