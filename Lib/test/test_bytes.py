@@ -1659,6 +1659,25 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         self.assertEqual(ba, bytearray(b'A'))
         self.assertEqual(ord(b'c'), ord('c'))
 
+    def test_take_bytes_error(self):
+        # gh-157242: If bytearray.take_bytes() fails (memory allocation
+        # failure), the bytearray must be left unchanged.
+        _testcapi = import_helper.import_module('_testcapi')
+
+        for mem_error in (0, 1):
+            for to_take in (5, None):
+                with self.subTest(mem_error=mem_error, to_take=to_take):
+                    ba = bytearray(b'0123456789')
+                    expected = ba[3:]
+                    del ba[:3]
+                    with self.assertRaises(MemoryError):
+                        try:
+                            _testcapi.set_nomemory(mem_error)
+                            ba.take_bytes(5)
+                        finally:
+                            _testcapi.remove_mem_hooks()
+                    self.assertEqual(ba, expected)
+
     @support.cpython_only  # tests an implementation detail
     def test_take_bytes_optimization(self):
         # Validate optimization around taking lots of little chunks out of a

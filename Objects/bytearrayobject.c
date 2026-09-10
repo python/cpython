@@ -1621,6 +1621,7 @@ bytearray_take_bytes_impl(PyByteArrayObject *self, PyObject *n)
     }
 
     Py_ssize_t remaining_length = size - to_take;
+
     // optimization: If taking less than leaving, just copy the small to_take
     // portion out and move ob_start.
     if (to_take < remaining_length) {
@@ -1642,15 +1643,30 @@ bytearray_take_bytes_impl(PyByteArrayObject *self, PyObject *n)
     memcpy(PyBytes_AS_STRING(remaining), self->ob_start + to_take,
            remaining_length);
 
-    // If the bytes are offset inside the buffer must first align.
-    if (self->ob_start != self->ob_bytes) {
-        memmove(self->ob_bytes, self->ob_start, to_take);
-        self->ob_start = self->ob_bytes;
-    }
+    size_t logical_offset = (size_t) (self->ob_start - self->ob_bytes);
+    if (logical_offset == 0 || remaining_length == 0) {
+        // If the bytes are offset inside the buffer must first align.
+        if (logical_offset != 0) {
+            memmove(self->ob_bytes, self->ob_start, to_take);
+            self->ob_start = self->ob_bytes;
+        }
 
-    if (_PyBytes_ResizeKeepOnError(&self->ob_bytes_object, to_take) == -1) {
-        Py_DECREF(remaining);
-        return NULL;
+        if (_PyBytes_ResizeKeepOnError(&self->ob_bytes_object, to_take) == -1) {
+            Py_DECREF(remaining);
+            return NULL;
+        }
+    }
+    else {
+        // Using memmove() would be unsafe, since _PyBytes_ResizeKeepOnError()
+        // failure code path would be unable to restore the bytearray to its
+        // previous state.
+        PyObject *resized = PyBytes_FromStringAndSize(NULL, to_take);
+        if (resized == NULL) {
+            Py_DECREF(remaining);
+            return NULL;
+        }
+        memcpy(PyBytes_AS_STRING(resized), self->ob_start, to_take);
+        Py_SETREF(self->ob_bytes_object, resized);
     }
 
     // Point the bytearray towards the buffer with the remaining data.
