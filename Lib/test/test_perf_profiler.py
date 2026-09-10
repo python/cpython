@@ -746,6 +746,7 @@ def _fde_pointer_encoding(eh_frame):
     return eh_frame[pos]
 
 
+@unittest.skipIf(support.check_bolt_optimized(), "fails on BOLT instrumented binaries")
 class TestJitdumpFileFormat(unittest.TestCase):
     """Validate the jitdump written by -Xperf_jit without requiring perf."""
 
