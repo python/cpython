@@ -4,9 +4,6 @@
 Introduction
 ************
 
-Note: the built-in functions and classes (which can be used without an
-:keyword:`import` statement) are described in :ref:`builtins-index`.
-
 The Python standard library consists of a collection of modules. There are
 many ways to dissect this collection.  Some modules are written in C and compiled
 into the Python interpreter; others are written in Python and imported in
@@ -31,7 +28,10 @@ read the sections of this manual, it helps to first read
 :ref:`built-in-funcs` in :ref:`builtins-index`, as the remainder of this section
 assumes familiarity with this material.
 
-Let the show begin!
+.. seealso::
+
+   The built-in functions and classes (which can be used without an
+   :keyword:`import` statement) are described in :ref:`builtins-index`.
 
 
 .. _availability:
