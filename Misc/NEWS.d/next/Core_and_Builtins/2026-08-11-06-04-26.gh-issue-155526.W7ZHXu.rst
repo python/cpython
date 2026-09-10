@@ -1,3 +1,4 @@
 Fix spurious :exc:`OverflowError` for ``abs(nan)`` in case :c:data:`errno` was
-previously set to :c:macro:`!ERANGE` by some library call.  Patch by Sergey B
-Kirpichev.
+previously set to :c:macro:`!ERANGE` by some library call.
+:c:func:`_Py_c_abs` no longer sets :c:data:`errno` to zero on success,
+but rather leaves it unchanged.  Patch by Sergey B Kirpichev.
