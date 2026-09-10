@@ -444,12 +444,24 @@ class ZipArchiveTests(unittest.TestCase):
         self.assertEqual(linecache.getline(filename, 4),
                          '    return "from the zip"\n')
         self.assertEqual(linecache.getline(filename, 5), '')
-
-    def test_getline_from_code_object(self):
         code = self.zipmod.f.__code__
-        self.assertEqual(
-            linecache.getline(code.co_filename, code.co_firstlineno),
-            'def f():\n')
+        self.assertEqual(code.co_filename, filename)
+        self.assertEqual(linecache.getline(filename, code.co_firstlineno),
+                         'def f():\n')
+
+    def test_relative_archive_path(self):
+        # A relative sys.path entry gives its modules a relative __file__.
+        tmpdir, zip_base = os.path.split(self.zip_name)
+        self.addCleanup(sys.path_importer_cache.pop, zip_base, None)
+        self.addCleanup(zipimport._zip_directory_cache.pop, zip_base, None)
+        sys.path.insert(0, zip_base)
+        self.addCleanup(sys.path.remove, zip_base)
+        with os_helper.change_cwd(tmpdir):
+            zippkg = importlib.import_module('zippkg')
+            self.assertEqual(zippkg.__file__,
+                             os.path.join(zip_base, 'zippkg', '__init__.py'))
+            self.assertEqual(linecache.getlines(zippkg.__file__),
+                             ['value = 42\n'])
 
     def test_package(self):
         zippkg = importlib.import_module('zippkg')

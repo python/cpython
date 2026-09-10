@@ -144,6 +144,7 @@ def updatecache(filename, module_globals=None):
         lazy_entry = entry if entry is not None and len(entry) == 1 else None
         if lazy_entry is None:
             lazy_entry = _make_lazycache_entry(filename, module_globals)
+        data = None
         if lazy_entry is not None:
             try:
                 data = lazy_entry[0]()
@@ -154,18 +155,10 @@ def updatecache(filename, module_globals=None):
                     # No luck, the PEP302 loader cannot find the source
                     # for this module.
                     return []
-                entry = (
-                    len(data),
-                    None,
-                    [line + '\n' for line in data.splitlines()],
-                    fullname
-                )
-                cache[filename] = entry
-                return entry[2]
-
-        # The file may be inside an archive on the module search path, such
-        # as a zip file.
-        data = _read_from_archive(fullname)
+        if data is None:
+            # The file may be inside an archive on the module search path,
+            # such as a zip file.
+            data = _read_from_archive(fullname)
         if data is not None:
             entry = (
                 len(data),
@@ -220,11 +213,8 @@ def _read_from_archive(filename):
     look for a finder registered for one of them.  Return None if the file
     is not in such an archive.
     """
-    import importlib.util
     import os
     import sys
-    if not os.path.isabs(filename):
-        return None
     path = filename
     while True:
         parent = os.path.dirname(path)
@@ -239,6 +229,7 @@ def _read_from_archive(filename):
             data = get_data(filename)
         except (ImportError, OSError):
             continue
+        import importlib.util
         try:
             return importlib.util.decode_source(data)
         except (UnicodeDecodeError, SyntaxError):
