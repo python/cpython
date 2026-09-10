@@ -1563,24 +1563,36 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         # Simple bytearray
         data = b'some data'
         ba = bytearray(data)
-        try:
-            with self.assertRaises(MemoryError):
+        with self.assertRaises(MemoryError):
+            try:
                 _testcapi.set_nomemory(0)
                 ba.resize(1024)
-        finally:
-            _testcapi.remove_mem_hooks()
+            finally:
+                _testcapi.remove_mem_hooks()
         self.assertEqual(ba, bytearray(data))
 
-        # bytearray with non-zero logical start
+        # growing bytearray with non-zero logical start
         ba = bytearray(b'0123456789')
         expected = ba[3:]
         del ba[:3]
-        try:
-            with self.assertRaises(MemoryError):
+        with self.assertRaises(MemoryError):
+            try:
                 _testcapi.set_nomemory(0)
                 ba.resize(1024)
-        finally:
-            _testcapi.remove_mem_hooks()
+            finally:
+                _testcapi.remove_mem_hooks()
+        self.assertEqual(ba, expected)
+
+        # shrink bytearray with non-zero logical start
+        ba = bytearray(b'0123456789')
+        expected = ba[3:]
+        del ba[:3]
+        with self.assertRaises(MemoryError):
+            try:
+                _testcapi.set_nomemory(0)
+                ba.resize(1)
+            finally:
+                _testcapi.remove_mem_hooks()
         self.assertEqual(ba, expected)
 
     def test_take_bytes(self):

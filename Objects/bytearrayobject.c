@@ -281,19 +281,31 @@ bytearray_resize_lock_held(PyObject *self, Py_ssize_t requested_size)
         return -1;
     }
 
-    /* Re-align data to the start of the allocation. */
-    if (logical_offset > 0) {
-        /* optimization tradeoff: This is faster than a new allocation when
-           the number of bytes being removed in a resize is small; for large
-           size changes it may be better to just make a new bytes object as
-           _PyBytes_Resize will do a malloc + memcpy internally. */
-        memmove(obj->ob_bytes, obj->ob_start,
-                Py_MIN(requested_size, Py_SIZE(self)));
-        obj->ob_start = obj->ob_bytes;
-    }
+    if (logical_offset == 0 || requested_size >= Py_SIZE(self)) {
+        /* Re-align data to the start of the allocation. */
+        if (logical_offset > 0) {
+            /* optimization tradeoff: This is faster than a new allocation when
+               the number of bytes being removed in a resize is small; for large
+               size changes it may be better to just make a new bytes object as
+               _PyBytes_Resize will do a malloc + memcpy internally. */
+            memmove(obj->ob_bytes, obj->ob_start, Py_SIZE(self));
+            obj->ob_start = obj->ob_bytes;
+        }
 
-    if (_PyBytes_ResizeKeepOnError(&obj->ob_bytes_object, alloc) < 0) {
-        return -1;
+        if (_PyBytes_ResizeKeepOnError(&obj->ob_bytes_object, alloc) < 0) {
+            return -1;
+        }
+    }
+    else {
+        // Using memmove() would be unsafe, since _PyBytes_ResizeKeepOnError()
+        // failure code path would be unable to restore the bytearray to its
+        // previous state.
+        PyObject *resized = PyBytes_FromStringAndSize(NULL, requested_size);
+        if (resized == NULL) {
+            return -1;
+        }
+        memcpy(PyBytes_AS_STRING(resized), obj->ob_start, requested_size);
+        Py_SETREF(obj->ob_bytes_object, resized);
     }
 
     bytearray_reinit_from_bytes(obj, size, alloc);
