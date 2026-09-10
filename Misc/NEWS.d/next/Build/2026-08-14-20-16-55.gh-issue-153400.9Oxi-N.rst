@@ -1,0 +1,1 @@
+Support os.getrandom() when building Python with old glibc versions and recent Linux kernel (glibc 2.25 or older and Linux kernel 3.17 or newer). Get the syscall number from kernel headers, rather than glibc headers.
