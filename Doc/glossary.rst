@@ -505,6 +505,14 @@ Glossary
       of an object, such as the value of type aliases created with the :keyword:`type`
       statement.
 
+   exhausted
+      An :term:`iterator` that has produced all of its values is said to be
+      :dfn:`exhausted`.
+      Further attempts to get the next value (for example, calls to
+      :func:`next`) raise :exc:`StopIteration`
+      (or :exc:`StopAsyncIteration` in the case of an :term:`asynchronous
+      iterator`).
+
    expression
       A piece of syntax which can be evaluated to some value.  In other words,
       an expression is an accumulation of expression elements like literals,
@@ -869,7 +877,7 @@ Glossary
       :meth:`~iterator.__next__` method (or passing it to the built-in function
       :func:`next`) return successive items in the stream.  When no more data
       are available a :exc:`StopIteration` exception is raised instead.  At this
-      point, the iterator object is exhausted and any further calls to its
+      point, the iterator object is :term:`exhausted` and any further calls to its
       :meth:`!__next__` method just raise :exc:`StopIteration` again.  Iterators
       are required to have an :meth:`~iterator.__iter__` method that returns the iterator
       object itself so every iterator is also iterable and may be used in most
