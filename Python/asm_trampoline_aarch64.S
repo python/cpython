@@ -44,13 +44,28 @@ __Py_trampoline_func_start:
     .globl	_Py_trampoline_func_start
 _Py_trampoline_func_start:
 #endif
+    .cfi_startproc
     SIGN_LR
+#if defined(__ARM_FEATURE_PAC_DEFAULT)
+    .cfi_negate_ra_state
+#endif
     stp     x29, x30, [sp, -16]!
+    .cfi_def_cfa_offset 16
+    .cfi_offset x29, -16
+    .cfi_offset x30, -8
     mov     x29, sp
+    .cfi_def_cfa_register x29
     blr     x3
     ldp     x29, x30, [sp], 16
+    .cfi_restore x30
+    .cfi_restore x29
+    .cfi_def_cfa sp, 0
     VERIFY_LR
+#if defined(__ARM_FEATURE_PAC_DEFAULT)
+    .cfi_negate_ra_state
+#endif
     ret
+    .cfi_endproc
 #if defined(__APPLE__)
     .globl	__Py_trampoline_func_end
 __Py_trampoline_func_end:
