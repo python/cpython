@@ -317,13 +317,19 @@ class BaseWriterTest:
 
     def test_finish_with_size(self):
         # Test PyBytesWriter_FinishWithSize()
-        writer = self.create_writer(10, b'abc')
+        writer = self.create_writer(10, b'abcdef')
         self.assertEqual(writer.get_size(), 10)
         self.assertEqual(writer.finish_with_size(3), self.result_type(b'abc'))
 
+        # Error if the size is negative
         writer = self.create_writer(3, b'abc')
-        with self.assertRaises(SystemError):
+        with self.assertRaises(ValueError):
             writer.finish_with_size(-3)
+
+        # Error if the requested size is larger than the allocated size
+        writer = self.create_writer(3, b'abc')
+        with self.assertRaises(ValueError):
+            writer.finish_with_size(4)
 
     def test_write_bytes(self):
          # Test PyBytesWriter_WriteBytes()
@@ -378,15 +384,6 @@ class BaseWriterTest:
         writer.format_i(b'y=%i', 456)
         self.assertEqual(writer.finish(), self.result_type(b'x=123, y=456'))
 
-    def test_example_abc(self):
-        self.assertEqual(_testcapi.byteswriter_abc(), b'abc')
-
-    def test_example_resize(self):
-        self.assertEqual(_testcapi.byteswriter_resize(), b'Hello World')
-
-    def test_example_highlevel(self):
-        self.assertEqual(_testcapi.byteswriter_highlevel(), b'Hello World!')
-
 
 class BytesWriterTest(BaseWriterTest, unittest.TestCase):
     result_type = bytes
@@ -423,6 +420,15 @@ class BytesWriterTest(BaseWriterTest, unittest.TestCase):
             unused_text = b'x' * (small_buffer * 2)
             writer.write_bytes(unused_text, len(unused_text))
             self.assertIs(writer.finish_with_size(1), singletons[ch])
+
+    def test_example_abc(self):
+        self.assertEqual(_testcapi.byteswriter_abc(), b'abc')
+
+    def test_example_resize(self):
+        self.assertEqual(_testcapi.byteswriter_resize(), b'Hello World')
+
+    def test_example_highlevel(self):
+        self.assertEqual(_testcapi.byteswriter_highlevel(), b'Hello World!')
 
 
 class ByteArrayWriterTest(BaseWriterTest, unittest.TestCase):

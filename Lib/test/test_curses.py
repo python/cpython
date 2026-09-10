@@ -3459,6 +3459,8 @@ class ScreenTests(NewtermTestBase):
             with self.assertRaises(curses.error):
                 prescr.use(func)
         # Affecting the state before initscr() is what such a screen is for.
+        # use_env() is process-wide, not a property of this screen.
+        self.addCleanup(curses.use_env, True)
         prescr.use(lambda scr: curses.use_env(False))
         # The current screen is unchanged.
         screen.stdscr.refresh()
