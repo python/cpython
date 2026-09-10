@@ -24,6 +24,21 @@ extern PyTypeObject _PyMethodWrapper_Type;
 
 extern void *_PyMember_GetOffset(PyObject *, PyMemberDef *);
 
+/* Return a borrowed reference to the mapping wrapped by a mappingproxy.
+ * The struct layout matches mappingproxyobject in Objects/descrobject.c.
+ */
+static inline PyObject *
+_PyDictProxy_GetMapping(PyObject *op)
+{
+    typedef struct {
+        PyObject_HEAD
+        PyObject *mapping;
+    } _PyMappingProxyObject;
+    assert(op != NULL);
+    assert(PyObject_TypeCheck(op, &PyDictProxy_Type));
+    return ((_PyMappingProxyObject *)op)->mapping;
+}
+
 #ifdef __cplusplus
 }
 #endif
