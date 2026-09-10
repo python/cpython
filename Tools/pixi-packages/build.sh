@@ -7,13 +7,21 @@ if [[ "${PYTHON_VARIANT}" == "freethreading" ]]; then
 elif [[ "${PYTHON_VARIANT}" == "asan" ]]; then
     CONFIGURE_EXTRA="--with-address-sanitizer"
     export ASAN_OPTIONS="strict_init_order=true"
-elif [[ "${PYTHON_VARIANT}" == "tsan-freethreading" ]]; then
+elif [[ "${PYTHON_VARIANT}" == "tsan_freethreading" ]]; then
     CONFIGURE_EXTRA="--disable-gil --with-thread-sanitizer"
     export TSAN_OPTIONS="suppressions=${SRC_DIR}/Tools/tsan/suppressions_free_threading.txt"
 elif [[ "${PYTHON_VARIANT}" == "default" ]]; then
     CONFIGURE_EXTRA=""
 else
     echo "Unknown PYTHON_VARIANT: ${PYTHON_VARIANT}"
+    exit 1
+fi
+
+VER_REF=$(grep "\[PYTHON_VERSION\]\, \[" configure.ac | sed -n 's/.*\[\([0-9.]*\)\].*/\1/p')
+VER=$(echo ${PKG_VERSION} | sed -E 's/^([0-9]+\.[0-9]+).*/\1/')
+
+if [[ "${VER_REF}" != "${VER}" ]]; then
+    echo "Unexpected version from conda package. Got ${VER}. Expected ${VER_REF}. Do you need to update 'version' in 'variants.yaml'?"
     exit 1
 fi
 

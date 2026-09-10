@@ -123,9 +123,11 @@ extern void _PyErr_SetNone(PyThreadState *tstate, PyObject *exception);
 
 extern PyObject* _PyErr_NoMemory(PyThreadState *tstate);
 
-extern int _PyErr_EmitSyntaxWarning(PyObject *msg, PyObject *filename, int lineno, int col_offset,
-                                    int end_lineno, int end_col_offset,
-                                    PyObject *module);
+// Export for test_peg_generator
+PyAPI_FUNC(int) _PyErr_EmitSyntaxWarning(PyObject *msg, PyObject *filename,
+                                         int lineno, int col_offset,
+                                         int end_lineno, int end_col_offset,
+                                         PyObject *module);
 extern void _PyErr_RaiseSyntaxError(PyObject *msg, PyObject *filename, int lineno, int col_offset,
                                     int end_lineno, int end_col_offset);
 

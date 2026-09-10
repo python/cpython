@@ -1087,6 +1087,18 @@ On Windows, ``cpXXX`` codecs are available for all code pages.
 But only codecs listed in the following table are guaranteed to exist on
 other platforms.
 
+On platforms that provide the C library's :manpage:`iconv(3)` function
+(such as those using the GNU C Library),
+every encoding known to ``iconv`` for which Python has no built-in codec
+is available as well.
+Such an encoding is looked up by its ``iconv`` name (for example ``cp1133``).
+Prefixing the name with ``iconv:`` forces the use of the ``iconv``-based codec
+even when a built-in codec of the same name exists (for example ``iconv:latin1``),
+which is mostly useful for testing.
+
+.. versionchanged:: next
+   Added support for encodings provided by the C library's ``iconv``.
+
 .. impl-detail::
 
    Some common encodings can bypass the codecs lookup machinery to
@@ -1437,6 +1449,14 @@ encodings.
 |                    |         | Beware that Python source |
 |                    |         | code actually uses UTF-8  |
 |                    |         | by default.               |
++--------------------+---------+---------------------------+
+| utf-7-imap         | mUTF-7  | Modified UTF-7 encoding   |
+|                    |         | of :rfc:`3501` for IMAP4  |
+|                    |         | mailbox names.  Only      |
+|                    |         | ``errors='strict'`` is    |
+|                    |         | supported.                |
+|                    |         |                           |
+|                    |         | .. versionadded:: next    |
 +--------------------+---------+---------------------------+
 
 .. versionchanged:: 3.8

@@ -19,6 +19,11 @@ All Platforms
 * :meth:`loop.add_reader` and :meth:`loop.add_writer`
   cannot be used to monitor file I/O.
 
+* :meth:`loop.connect_read_pipe` and :meth:`loop.connect_write_pipe`
+  cannot be used with regular files.  See :ref:`Supported pipe objects
+  <asyncio-pipe-objects>` for the objects that are accepted on each
+  platform.
+
 
 Windows
 =======
@@ -61,6 +66,10 @@ All event loops on Windows do not support the following methods:
 
 * The :meth:`loop.add_reader` and :meth:`loop.add_writer`
   methods are not supported.
+
+* :meth:`loop.connect_read_pipe` and :meth:`loop.connect_write_pipe` only
+  accept a handle opened for overlapped I/O.
+  See :ref:`Supported pipe objects <asyncio-pipe-objects>` for which objects are supported.
 
 The resolution of the monotonic clock on Windows is usually around 15.6
 milliseconds.  The best resolution is 0.5 milliseconds. The resolution depends on the

@@ -87,6 +87,13 @@ class BinaryCollector(Collector):
         """Record a failed sample attempt (no-op for binary format)."""
         pass
 
+    def set_stats(self, sample_interval_usec, duration_sec, sample_rate,
+                  error_rate=None, missed_samples=None, **kwargs):
+        """Persist measured statistics for later replay."""
+        self._writer.set_stats(
+            duration_sec, sample_rate, error_rate, missed_samples
+        )
+
     def export(self, filename=None):
         """Finalize and close the binary file.
 
@@ -94,6 +101,7 @@ class BinaryCollector(Collector):
             filename: Ignored (binary files are written incrementally)
         """
         self._writer.finalize()
+        return True
 
     @property
     def total_samples(self):

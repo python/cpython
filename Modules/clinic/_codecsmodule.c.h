@@ -1629,6 +1629,90 @@ exit:
 
 #endif /* defined(MS_WINDOWS) */
 
+#if defined(HAVE_ICONV)
+
+PyDoc_STRVAR(_codecs_iconv_decode__doc__,
+"iconv_decode($module, encoding, data, errors=None, final=False, /)\n"
+"--\n"
+"\n");
+
+#define _CODECS_ICONV_DECODE_METHODDEF    \
+    {"iconv_decode", _PyCFunction_CAST(_codecs_iconv_decode), METH_FASTCALL, _codecs_iconv_decode__doc__},
+
+static PyObject *
+_codecs_iconv_decode_impl(PyObject *module, const char *encoding,
+                          Py_buffer *data, const char *errors, int final);
+
+static PyObject *
+_codecs_iconv_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    const char *encoding;
+    Py_buffer data = {NULL, NULL};
+    const char *errors = NULL;
+    int final = 0;
+
+    if (!_PyArg_CheckPositional("iconv_decode", nargs, 2, 4)) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("iconv_decode", "argument 1", "str", args[0]);
+        goto exit;
+    }
+    Py_ssize_t encoding_length;
+    encoding = PyUnicode_AsUTF8AndSize(args[0], &encoding_length);
+    if (encoding == NULL) {
+        goto exit;
+    }
+    if (strlen(encoding) != (size_t)encoding_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+    if (PyObject_GetBuffer(args[1], &data, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    if (args[2] == Py_None) {
+        errors = NULL;
+    }
+    else if (PyUnicode_Check(args[2])) {
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[2], &errors_length);
+        if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+    }
+    else {
+        _PyArg_BadArgument("iconv_decode", "argument 3", "str or None", args[2]);
+        goto exit;
+    }
+    if (nargs < 4) {
+        goto skip_optional;
+    }
+    final = PyObject_IsTrue(args[3]);
+    if (final < 0) {
+        goto exit;
+    }
+skip_optional:
+    return_value = _codecs_iconv_decode_impl(module, encoding, &data, errors, final);
+
+exit:
+    /* Cleanup for data */
+    if (data.obj) {
+       PyBuffer_Release(&data);
+    }
+
+    return return_value;
+}
+
+#endif /* defined(HAVE_ICONV) */
+
 PyDoc_STRVAR(_codecs_readbuffer_encode__doc__,
 "readbuffer_encode($module, data, errors=None, /)\n"
 "--\n"
@@ -2643,6 +2727,79 @@ exit:
 
 #endif /* defined(MS_WINDOWS) */
 
+#if defined(HAVE_ICONV)
+
+PyDoc_STRVAR(_codecs_iconv_encode__doc__,
+"iconv_encode($module, encoding, str, errors=None, /)\n"
+"--\n"
+"\n");
+
+#define _CODECS_ICONV_ENCODE_METHODDEF    \
+    {"iconv_encode", _PyCFunction_CAST(_codecs_iconv_encode), METH_FASTCALL, _codecs_iconv_encode__doc__},
+
+static PyObject *
+_codecs_iconv_encode_impl(PyObject *module, const char *encoding,
+                          PyObject *str, const char *errors);
+
+static PyObject *
+_codecs_iconv_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    const char *encoding;
+    PyObject *str;
+    const char *errors = NULL;
+
+    if (!_PyArg_CheckPositional("iconv_encode", nargs, 2, 3)) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("iconv_encode", "argument 1", "str", args[0]);
+        goto exit;
+    }
+    Py_ssize_t encoding_length;
+    encoding = PyUnicode_AsUTF8AndSize(args[0], &encoding_length);
+    if (encoding == NULL) {
+        goto exit;
+    }
+    if (strlen(encoding) != (size_t)encoding_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[1])) {
+        _PyArg_BadArgument("iconv_encode", "argument 2", "str", args[1]);
+        goto exit;
+    }
+    str = args[1];
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    if (args[2] == Py_None) {
+        errors = NULL;
+    }
+    else if (PyUnicode_Check(args[2])) {
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[2], &errors_length);
+        if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+    }
+    else {
+        _PyArg_BadArgument("iconv_encode", "argument 3", "str or None", args[2]);
+        goto exit;
+    }
+skip_optional:
+    return_value = _codecs_iconv_encode_impl(module, encoding, str, errors);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_ICONV) */
+
 PyDoc_STRVAR(_codecs_register_error__doc__,
 "register_error($module, errors, handler, /)\n"
 "--\n"
@@ -2857,6 +3014,10 @@ exit:
     #define _CODECS_CODE_PAGE_DECODE_METHODDEF
 #endif /* !defined(_CODECS_CODE_PAGE_DECODE_METHODDEF) */
 
+#ifndef _CODECS_ICONV_DECODE_METHODDEF
+    #define _CODECS_ICONV_DECODE_METHODDEF
+#endif /* !defined(_CODECS_ICONV_DECODE_METHODDEF) */
+
 #ifndef _CODECS_MBCS_ENCODE_METHODDEF
     #define _CODECS_MBCS_ENCODE_METHODDEF
 #endif /* !defined(_CODECS_MBCS_ENCODE_METHODDEF) */
@@ -2868,4 +3029,8 @@ exit:
 #ifndef _CODECS_CODE_PAGE_ENCODE_METHODDEF
     #define _CODECS_CODE_PAGE_ENCODE_METHODDEF
 #endif /* !defined(_CODECS_CODE_PAGE_ENCODE_METHODDEF) */
-/*[clinic end generated code: output=505edef891a06329 input=a9049054013a1b77]*/
+
+#ifndef _CODECS_ICONV_ENCODE_METHODDEF
+    #define _CODECS_ICONV_ENCODE_METHODDEF
+#endif /* !defined(_CODECS_ICONV_ENCODE_METHODDEF) */
+/*[clinic end generated code: output=912e04020d6a6144 input=a9049054013a1b77]*/

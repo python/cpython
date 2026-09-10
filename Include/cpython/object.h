@@ -246,6 +246,8 @@ struct _typeobject {
       * This function must escape to any code that can result in
       * the GC being run, such as Py_DECREF.  */
     _Py_iteritemfunc _tp_iteritem;
+
+    void *_tp_cache;
 };
 
 #define _Py_ATTR_CACHE_UNUSED (30000)  // (see tp_versions_used)

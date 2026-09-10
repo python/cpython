@@ -709,6 +709,16 @@ except Exception:
                             ["f'{ {{}} }'", # dict in a set
                              ])
 
+    def test_double_brace_ast_location_covers_both_source_braces(self):
+        value = ast.parse('f"a{{"').body[0].value.values[0]
+        self.assertIsInstance(value, ast.Constant)
+        self.assertEqual(value.value, "a{")
+        self.assertEqual(
+            (value.lineno, value.col_offset, value.end_lineno,
+             value.end_col_offset),
+            (1, 2, 1, 5),
+        )
+
     def test_compile_time_concat(self):
         x = 'def'
         self.assertEqual('abc' f'## {x}ghi', 'abc## defghi')
@@ -1593,6 +1603,8 @@ except Exception:
         self.assertEqual(f'''{
 3
 =}''', '\n3\n=3')
+        x = 1
+        self.assertEqual(eval('f"""{(\nx\n)=}"""'), '(\nx\n)=1')
 
         # Since = is handled specially, make sure all existing uses of
         # it still work.
@@ -1645,6 +1657,7 @@ except Exception:
         self.assertEqual(f'{C()=:x}', 'C()=FORMAT-x')
         self.assertEqual(f'{C()=!r:*^20}', 'C()=********REPR********')
         self.assertEqual(f"{C():{20=}}", 'FORMAT-20=20')
+        self.assertEqual(f"{C():{C():{4=}}}", 'FORMAT-FORMAT-4=4')
 
         self.assertRaises(SyntaxError, eval, "f'{C=]'")
 
@@ -1667,6 +1680,20 @@ except Exception:
 
         self.assertEqual(f'{" # nooo "=}', '" # nooo "=\' # nooo \'')
         self.assertEqual(f'{" \" # nooo \" "=}', '" \\" # nooo \\" "=\' " # nooo " \'')
+        self.assertEqual(f'{"""a" # inside"""=}',
+                         '"""a" # inside"""=\'a" # inside\'')
+        self.assertEqual(f"{'''a' # inside'''=}",
+                         "'''a' # inside'''=\"a' # inside\"")
+        self.assertEqual(f'{"""a""""#" # outside
+=}', '"""a""""#" \n=\'a#\'')
+
+        x, y = 1, 2
+        self.assertEqual(f'{x != y # outside
+=}', 'x != y \n=True')
+
+        d = {'a#b': 42}
+        self.assertEqual(f'''{f"{d["a#b"]}"=}''',
+                         'f"{d["a#b"]}"=\'42\'')
 
         self.assertEqual(f'{ # some comment goes here
   """hello"""=}',  ' \n  """hello"""=\'hello\'')
@@ -1706,6 +1733,9 @@ except Exception:
         with self.assertRaisesRegex(SyntaxError,
                                     "f-string: expecting '=', or '!', or ':', or '}'"):
             compile("f'{a $ b}'", "?", "exec")
+        with self.assertRaisesRegex(SyntaxError,
+                                    "f-string: expecting '!', or ':', or '}'"):
+            compile("f'{a=b}'", "?", "exec")
 
     def test_with_two_commas_in_format_specifier(self):
         error_msg = re.escape("Cannot specify ',' with ','.")
