@@ -12,7 +12,7 @@ from libclinic.language import Language
 from libclinic.function import (
     Module, Class, Function, Parameter,
     group_to_variable_name,
-    GETTER, METHOD_INIT,
+    GETTER, METHOD_INIT, METHOD_NEW,
     ACCESSORS, SETTERS)
 from libclinic.converters import self_converter
 from libclinic.parse_args import ParseArgsCodeGen
@@ -352,6 +352,9 @@ class CLanguage(Language):
         if f.kind not in SETTERS | {METHOD_INIT}:
             f.return_converter.render(f, data)
         template_dict['impl_return_type'] = f.return_converter.type
+        # tp_init returns int; every other parser returns an object.
+        template_dict['return_type'] = (
+            'int' if f.kind is METHOD_INIT else 'PyObject *')
 
         template_dict['declarations'] = libclinic.format_escape("\n".join(data.declarations))
         template_dict['initializers'] = "\n\n".join(data.initializers)
@@ -370,6 +373,21 @@ class CLanguage(Language):
         template_dict['impl_parameters'] = ", ".join(data.impl_parameters)
         template_dict['parser_parameters'] = ", ".join(data.impl_parameters[1:])
         template_dict['impl_arguments'] = ", ".join(data.impl_arguments)
+
+        # First vectorcall argument depends on method.
+        if f.vectorcall and f.cls:
+            if f.kind is METHOD_INIT:
+                vc_first = f"({f.cls.typedef})self"
+            elif f.kind is METHOD_NEW:
+                vc_first = "_PyType_CAST(type)"
+            else:
+                raise AssertionError(
+                    f"Unhandled function kind for vectorcall: {f.kind!r}"
+                )
+            vc_impl_args = [vc_first] + data.impl_arguments[1:]
+            template_dict['vectorcall_impl_arguments'] = ", ".join(vc_impl_args)
+        else:
+            pass
 
         template_dict['return_conversion'] = libclinic.format_escape("".join(data.return_conversion).rstrip())
         template_dict['post_parsing'] = libclinic.format_escape("".join(data.post_parsing).rstrip())
