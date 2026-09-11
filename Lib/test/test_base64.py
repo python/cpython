@@ -886,6 +886,27 @@ class BaseXYTestCase(unittest.TestCase):
         # Incorrect "padding"
         self.assertRaises(binascii.Error, base64.b16decode, '010')
 
+    def test_b16decode_empty_ignorechars(self):
+        for ignorechars in (b'', bytearray(), memoryview(b'')):
+            with self.subTest(ignorechars=ignorechars):
+                self.assertEqual(base64.b16decode(b'', ignorechars=ignorechars),
+                                 b'')
+                self.assertEqual(base64.b16decode(b'00AF', ignorechars=ignorechars),
+                                 b'\x00\xaf')
+                # Deleting a lowercase digit must not turn invalid input
+                # into valid input, including an empty string.
+                for digit in b'abcdef':
+                    lower = bytes([digit])
+                    for data in (lower, lower * 2, lower + b'00',
+                                 b'0' + lower + b'0', b'00' + lower):
+                        for s in (data, data.decode('ascii'),
+                                  bytearray(data), memoryview(data)):
+                            with self.subTest(s=s):
+                                with self.assertRaisesRegex(
+                                    binascii.Error, '^Non-base16 digit found$'
+                                ):
+                                    base64.b16decode(s, ignorechars=ignorechars)
+
     def test_b16decode_ignorechars(self):
         self._common_test_ignorechars(base64.b16decode)
         eq = self.assertEqual
