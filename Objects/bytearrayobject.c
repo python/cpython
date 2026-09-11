@@ -225,41 +225,36 @@ PyByteArray_AsString(PyObject *self)
 
 
 static int
-bytearray_realign_data_lock_held(PyByteArrayObject *self, Py_ssize_t new_size, Py_ssize_t alloc)
+bytearray_realign_data_lock_held(PyByteArrayObject *self,
+                                 Py_ssize_t new_size, Py_ssize_t alloc)
 {
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
     assert(1 <= new_size && new_size <= alloc);
 
     Py_ssize_t size = Py_SIZE(self);
-    size_t logical_offset = (size_t) (self->ob_start - self->ob_bytes);
 
-    if (logical_offset == 0 || new_size >= size) {
-        /* Re-align data to the start of the allocation. */
-        if (logical_offset != 0) {
-            /* optimization tradeoff: This is faster than a new allocation when
-               the number of bytes being removed in a resize is small; for
-               large size changes it may be better to just make a new bytes
-               object as _PyBytes_Resize will do a malloc + memcpy internally.
-               */
-            memmove(self->ob_bytes, self->ob_start, size);
-            self->ob_start = self->ob_bytes;
-        }
-
-        if (_PyBytes_ResizeKeepOnError(&self->ob_bytes_object, alloc) < 0) {
-            bytearray_write_trailing_null_byte(self);
-            return -1;
-        }
+    /* Re-align data to the start of the allocation. */
+    char *old_start = self->ob_start;
+    if (self->ob_start != self->ob_bytes) {
+        /* optimization tradeoff: This is faster than a new allocation when
+           the number of bytes being removed in a resize is small; for
+           large size changes it may be better to just make a new bytes
+           object as _PyBytes_Resize will do a malloc + memcpy internally.
+           */
+        Py_ssize_t move = Py_MIN(new_size, size);
+        memmove(self->ob_bytes, self->ob_start, move);
+        self->ob_start = self->ob_bytes;
     }
-    else {
-        // Using memmove() would be unsafe, since _PyBytes_ResizeKeepOnError()
-        // failure code path would be unable to restore the bytearray to its
-        // previous state.
-        PyObject *resized = PyBytes_FromStringAndSize(NULL, alloc);
-        if (resized == NULL) {
-            return -1;
+
+    if (_PyBytes_ResizeKeepOnError(&self->ob_bytes_object, alloc) < 0) {
+        if (new_size < size) {
+            // Move remaining bytes
+            Py_ssize_t moved = new_size;
+            Py_ssize_t remaining = size - moved;
+            memmove(self->ob_bytes + moved, old_start + moved, remaining);
         }
-        memcpy(PyBytes_AS_STRING(resized), self->ob_start, new_size);
-        Py_SETREF(self->ob_bytes_object, resized);
+        bytearray_write_trailing_null_byte(self);
+        return -1;
     }
     return 0;
 }
