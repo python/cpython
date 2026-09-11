@@ -2135,18 +2135,16 @@ if test "$Py_BOLT" = 'true' ; then
     [whether ${LLVM_BOLT} supports safe identical code folding],
     [py_cv_bolt_icf_safe],
     [
-      saved_cflags="$CFLAGS"
-      saved_ldflags="$LDFLAGS"
-      CFLAGS="$CFLAGS_NODIST"
-      LDFLAGS="$LDFLAGS_NODIST"
-      AC_LINK_IFELSE(
-        [AC_LANG_PROGRAM([[]], [[]])],
-        [py_cv_bolt_icf_safe=no
-         ${LLVM_BOLT} -icf=safe -o conftest.bolt conftest$EXEEXT >&AS_MESSAGE_LOG_FD 2>&1 dnl
-         && py_cv_bolt_icf_safe=yes],
-        [AC_MSG_FAILURE([could not compile empty test program])])
-      CFLAGS="$saved_cflags"
-      LDFLAGS="$saved_ldflags"
+      WITH_SAVE_ENV([
+        CFLAGS="$CFLAGS_NODIST"
+        LDFLAGS="$LDFLAGS_NODIST"
+        AC_LINK_IFELSE(
+          [AC_LANG_PROGRAM([], [])],
+          [py_cv_bolt_icf_safe=no
+           ${LLVM_BOLT} -icf=safe -o conftest.bolt conftest$EXEEXT >&AS_MESSAGE_LOG_FD 2>&1 dnl
+           && py_cv_bolt_icf_safe=yes],
+          [AC_MSG_FAILURE([could not compile empty test program])])
+      ])
     ]
   )
   if test "$py_cv_bolt_icf_safe" = no; then
