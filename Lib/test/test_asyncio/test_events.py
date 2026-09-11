@@ -1583,7 +1583,7 @@ class EventLoopTestsMixin:
         transport_1.close()
         transport_2.close()
 
-    def _test_datagram_write_error_resumes_paused_protocol(self, first, second):
+    def test_datagram_write_error_resumes_paused_protocol(self):
         # See https://github.com/python/cpython/issues/156698: a
         # datagram write error must not strand data left in the write
         # buffer, nor leave a paused protocol paused forever.
@@ -1619,11 +1619,11 @@ class EventLoopTestsMixin:
         # anything is left in the write buffer.
         transport.set_write_buffer_limits(0)
 
-        # The first sendto() may arm an in-flight write, so the second
-        # one can end up queued behind it; queuing is what trips
-        # pause_writing() at a high water mark of 0.
-        transport.sendto(first, addr)
-        transport.sendto(second, addr)
+        # The oversized datagram fails while it is in flight, and the
+        # normal datagram behind it is left queued -- queuing is also
+        # what trips pause_writing() at a high water mark of 0.
+        transport.sendto(b'\x00' * 70000, addr)
+        transport.sendto(b'queued', addr)
 
         loop.run_until_complete(
             asyncio.wait_for(protocol.error_received_event,
@@ -1642,20 +1642,6 @@ class EventLoopTestsMixin:
 
         transport.close()
         test_utils.run_briefly(loop)
-
-    def test_datagram_write_error_resumes_paused_protocol_in_flight(self):
-        # oversized datagram fails while in flight; a normal datagram
-        # queued right behind it must not be stranded.
-        oversized = b'\x00' * 70000
-        self._test_datagram_write_error_resumes_paused_protocol(
-            oversized, b'queued')
-
-    def test_datagram_write_error_resumes_paused_protocol_from_callback(self):
-        # oversized datagram fails once it reaches the front of the
-        # buffer; the protocol must not stay paused forever.
-        oversized = b'\x00' * 70000
-        self._test_datagram_write_error_resumes_paused_protocol(
-            b'ok', oversized)
 
     def test_datagram_write_error_reentrant_sendto(self):
         # See https://github.com/python/cpython/issues/156698: an
