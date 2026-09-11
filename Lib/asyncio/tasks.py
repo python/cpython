@@ -772,6 +772,11 @@ class _GatheringFuture(futures.Future):
         return ret
 
 
+def _discard_awaited_by(children, waiter, outer):
+    for fut in children:
+        futures.future_discard_from_awaited_by(fut, waiter)
+
+
 def gather(*coros_or_futures, return_exceptions=False):
     """Return a future aggregating results from the given coroutines/futures.
 
@@ -905,6 +910,10 @@ def gather(*coros_or_futures, return_exceptions=False):
         children.append(fut)
 
     outer = _GatheringFuture(children, loop=loop)
+    if cur_task is not None:
+        # gh-157213: a child outliving gather() must lose the awaited-by edge
+        outer.add_done_callback(
+            functools.partial(_discard_awaited_by, children, cur_task))
     # Run done callbacks after GatheringFuture created so any post-processing
     # can be performed at this point
     # optimization: in the special case that *all* futures finished eagerly,
