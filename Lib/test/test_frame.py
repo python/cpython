@@ -18,6 +18,11 @@ from test.support.script_helper import assert_python_ok
 from test import mapping_tests
 
 
+class FailingKeysDict(dict):
+    def keys(self):
+        raise RuntimeError("keys() failed")
+
+
 class ClearTest(unittest.TestCase):
     """
     Tests for frame.clear().
@@ -547,6 +552,9 @@ class TestFrameLocals(unittest.TestCase):
         self.assertEqual(d['x'], 3)
         self.assertEqual(d['z'], 4)
 
+        with self.assertRaisesRegex(RuntimeError, r"keys\(\) failed"):
+            d.update(FailingKeysDict())
+
         with self.assertRaises(TypeError):
             d.update([1, 2])
 
@@ -566,6 +574,8 @@ class TestFrameLocals(unittest.TestCase):
         self.assertEqual(d['z'], 3)
         d |= {'y': 3}
         self.assertEqual(d['y'], 3)
+        with self.assertRaisesRegex(RuntimeError, r"keys\(\) failed"):
+            d |= FailingKeysDict()
         with self.assertRaises(TypeError):
             d |= 3
         with self.assertRaises(TypeError):
