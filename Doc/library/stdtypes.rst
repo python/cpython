@@ -5994,6 +5994,13 @@ available (for example, ``==``, ``<``, or ``^``).  While using set operators,
 set-like views accept any iterable as the other operand,
 unlike sets which only accept sets as the input.
 
+Equality (``==``) is an exception to this rule: a set-like view compares equal
+only to another object that is itself set-like (another set-like view, a
+:class:`set`, or a :class:`frozenset`).  Comparing a set-like view to a
+:class:`list`, :class:`tuple`, or other non-set iterable always returns
+``False``, even if the elements match, because such objects are never
+instances of :class:`collections.abc.Set`.
+
 An example of dictionary view usage::
 
    >>> dishes = {'eggs': 2, 'sausage': 1, 'bacon': 1, 'spam': 500}
@@ -6026,6 +6033,13 @@ An example of dictionary view usage::
    >>> keys ^ {'sausage', 'juice'} == {'juice', 'sausage', 'bacon', 'spam'}
    True
    >>> keys | ['juice', 'juice', 'juice'] == {'bacon', 'spam', 'juice'}
+   True
+
+   >>> # unlike other set operators, == does not accept arbitrary iterables:
+   >>> # a list is never equal to a set-like view, regardless of its elements
+   >>> keys == ['bacon', 'spam']
+   False
+   >>> keys == {'bacon', 'spam'}
    True
 
    >>> # get back a read-only proxy for the original dictionary
