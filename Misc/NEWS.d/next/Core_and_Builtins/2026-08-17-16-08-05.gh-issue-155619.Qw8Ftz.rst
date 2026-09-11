@@ -1,0 +1,9 @@
+Fix data races in the per-interpreter context watcher registry on
+:term:`free-threaded <free threading>` builds.  :c:func:`PyContext_AddWatcher`
+now claims a slot with an atomic compare-and-swap, so concurrent callers can
+no longer select the same slot or receive the same watcher ID, and
+notification loads each callback with an acquire load and skips one that
+:c:func:`PyContext_ClearWatcher` has retired concurrently.  Previously a
+context switch racing with :c:func:`PyContext_ClearWatcher` could reach an
+assertion in a debug build, or call a ``NULL`` function pointer in a release
+build.
