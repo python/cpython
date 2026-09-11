@@ -3392,18 +3392,23 @@ _PyBytes_ResizeKeepOnError(PyObject **pv, Py_ssize_t newsize)
         Py_DECREF(v);
         return 0;
     }
-
     assert(v != bytes_get_empty());
-    result = (PyObject *)PyObject_Realloc(v, PyBytesObject_SIZE + newsize);
-    if (result == NULL) {
-        PyErr_NoMemory();
-        return -1;
-    }
 
 #ifdef Py_TRACE_REFS
     _Py_ForgetReference(v);
 #endif
     _PyReftracerTrack(v, PyRefTracer_DESTROY);
+
+    result = (PyObject *)PyObject_Realloc(v, PyBytesObject_SIZE + newsize);
+    if (result == NULL) {
+#ifdef Py_TRACE_REFS
+        _Py_AddToAllObjects(v);
+#endif
+        _PyReftracerTrack(v, PyRefTracer_CREATE);
+
+        PyErr_NoMemory();
+        return -1;
+    }
 
     v = result;
     _Py_NewReferenceNoTotal(v);
