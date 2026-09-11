@@ -75,6 +75,8 @@ PyAPI_FUNC(PyObject *) _PyBytes_Repeat(PyObject *self, Py_ssize_t n);
 */
 #define _PyBytesObject_SIZE (offsetof(PyBytesObject, ob_sval) + 1)
 
+extern int _PyBytes_ResizeKeepOnError(PyObject **pv, Py_ssize_t newsize);
+
 /* --- PyBytesWriter ------------------------------------------------------ */
 
 struct PyBytesWriter {

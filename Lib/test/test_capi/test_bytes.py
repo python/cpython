@@ -446,6 +446,24 @@ class BytesWriterTest(BaseWriterTest, unittest.TestCase):
     def test_example_highlevel(self):
         self.assertEqual(_testcapi.byteswriter_highlevel(), b'Hello World!')
 
+    def test_resize_error(self):
+        small_buffer = _testcapi.PyBytesWriter_small_buffer
+        init = b'x' * (small_buffer * 2)
+        writer = self.create_writer(len(init), init)
+        size = len(init) + 100
+        try:
+            with self.assertRaises(MemoryError):
+                _testcapi.set_nomemory(0)
+                writer.resize(size, b'')
+        finally:
+            _testcapi.remove_mem_hooks()
+        suffix = b'still working'
+        writer.write_bytes(suffix, -1)
+        self.assertEqual(writer.finish(), self.result_type(init + suffix))
+
+        # Note: PyBytesWriter_Resize() leaves the buffer unchanged (no resize)
+        # if the new size is smaller than the allocated size
+
 
 class ByteArrayWriterTest(BaseWriterTest, unittest.TestCase):
     result_type = bytearray

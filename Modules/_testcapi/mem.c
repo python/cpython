@@ -177,18 +177,29 @@ fm_remove_hooks(void)
     }
 }
 
+static void
+fm_set_nomemory(int start, int stop)
+{
+    /* Memory allocation fails after 'start' allocation requests, and until
+     * 'stop' allocation requests except when 'stop' is negative or equal
+     * to 0 (default) in which case allocation failures never stop. */
+    FmData.start = start;
+    FmData.stop = stop;
+    FmData.count = 0;
+    fm_setup_hooks();
+}
+
 static PyObject *
 set_nomemory(PyObject *self, PyObject *args)
 {
     /* Memory allocation fails after 'start' allocation requests, and until
      * 'stop' allocation requests except when 'stop' is negative or equal
      * to 0 (default) in which case allocation failures never stop. */
-    FmData.count = 0;
-    FmData.stop = 0;
-    if (!PyArg_ParseTuple(args, "i|i", &FmData.start, &FmData.stop)) {
+    int start, stop = 0;
+    if (!PyArg_ParseTuple(args, "i|i", &start, &stop)) {
         return NULL;
     }
-    fm_setup_hooks();
+    fm_set_nomemory(start, stop);
     Py_RETURN_NONE;
 }
 
@@ -821,6 +832,129 @@ error:
 #endif
 
 
+struct bytes_resize_tracer {
+    PyObject *create;
+    PyObject *destroy;
+};
+
+
+static int
+bytes_resize_tracer(PyObject *obj, PyRefTracerEvent event, void* data)
+{
+    if (event != PyRefTracer_CREATE && event != PyRefTracer_DESTROY) {
+        return 0;
+    }
+
+    struct bytes_resize_tracer *tracer = (struct bytes_resize_tracer*)data;
+    if (!PyBytes_Check(obj)) {
+        return 0;
+    }
+
+    switch (event) {
+        case PyRefTracer_CREATE:
+            tracer->create = obj;
+            break;
+        case PyRefTracer_DESTROY:
+            tracer->destroy = obj;
+            break;
+        default:
+            break;
+    }
+    return 0;
+}
+
+
+// When _PyBytes_Resize() resizes a bytes object in-place, check that
+// PyRefTracer_DESTROY and PyRefTracer_CREATE events are emitted.
+// If no_memory is non-zero, inject MemoryError.
+static int
+check_bytes_resize_tracer(int no_memory)
+{
+    PyObject *bytes = NULL;
+    PyRefTracer old_tracer = NULL;
+    void *old_tracer_data = NULL;
+    int restore_tracer = 0;
+
+    bytes = PyBytes_FromString("hello");
+    if (bytes == NULL) {
+        goto error;
+    }
+    assert(PyUnstable_Object_IsUniquelyReferenced(bytes));
+
+    old_tracer = PyRefTracer_GetTracer(&old_tracer_data);
+    restore_tracer = 1;
+
+    struct bytes_resize_tracer tracer = {0};
+    if (PyRefTracer_SetTracer(bytes_resize_tracer, &tracer) != 0) {
+        goto error;
+    }
+
+    PyObject *old_bytes = bytes;  // borrowed reference
+    if (no_memory) {
+        fm_set_nomemory(0, 0);
+        int res = _PyBytes_Resize(&bytes, 100);
+        assert(res < 0);
+        assert(bytes == NULL);
+        fm_remove_hooks();
+
+        assert(PyErr_ExceptionMatches(PyExc_MemoryError));
+        PyErr_Clear();
+    }
+    else {
+        if (_PyBytes_Resize(&bytes, 100) < 0) {
+            assert(bytes == NULL);
+            goto error;
+        }
+    }
+
+    if (tracer.destroy != old_bytes) {
+        PyErr_SetString(PyExc_AssertionError, "PyRefTracer_DESTROY not seen");
+        goto error;
+    }
+
+    int seen_create;
+    if (no_memory) {
+        seen_create = (tracer.create == old_bytes);
+    }
+    else {
+        seen_create = (tracer.create == bytes);
+    }
+    if (!seen_create) {
+        PyErr_SetString(PyExc_AssertionError, "PyRefTracer_CREATE not seen");
+        goto error;
+    }
+
+    Py_CLEAR(bytes);
+    if (PyRefTracer_SetTracer(old_tracer, old_tracer_data) != 0) {
+        restore_tracer = 0;
+        goto error;
+    }
+    return 0;
+
+error:
+    Py_XDECREF(bytes);
+    if (restore_tracer) {
+        if (PyRefTracer_SetTracer(old_tracer, old_tracer_data) != 0) {
+            return -1;
+        }
+    }
+    return -1;
+}
+
+
+static PyObject*
+test_bytes_resize_tracer(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    if (check_bytes_resize_tracer(0) < 0) {
+        return NULL;
+    }
+    if (check_bytes_resize_tracer(1) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef test_methods[] = {
     {"pymem_api_misuse",              pymem_api_misuse,              METH_NOARGS},
     {"pymem_buffer_overflow",         pymem_buffer_overflow,         METH_NOARGS},
@@ -838,6 +972,7 @@ static PyMethodDef test_methods[] = {
 #if TARGET_OS_OSX || defined(__FreeBSD__)
     {"get_process_memory_usage",      get_process_memory_usage,      METH_VARARGS},
 #endif
+    {"test_bytes_resize_tracer",      test_bytes_resize_tracer,      METH_NOARGS},
 
     // Tracemalloc tests
     {"tracemalloc_track",             tracemalloc_track,             METH_VARARGS},
