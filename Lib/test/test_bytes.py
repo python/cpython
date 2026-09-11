@@ -1573,28 +1573,30 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         # gh-157242: If bytearray.resize() fails (memory allocation failure),
         # the bytearray must be left unchanged.
 
-        # Simple bytearray
-        data = b'some data'
-        ba = bytearray(data)
-        with inject_memory_error(self, 0):
-            ba.resize(1024)
-        self.assertEqual(ba, bytearray(data))
+        offset = 3
+        for logical_offset in (False, True):
+            with self.subTest(logical_offset=logical_offset):
+                # grow bytearray
+                ba = bytearray(b'0123456789')
+                if logical_offset:
+                    expected = ba[offset:]
+                    del ba[:offset]
+                else:
+                    expected = ba.copy()
+                with inject_memory_error(self, 0):
+                    ba.resize(1024)
+                self.assertEqual(ba, expected)
 
-        # growing bytearray with non-zero logical start
-        ba = bytearray(b'0123456789')
-        expected = ba[3:]
-        del ba[:3]
-        with inject_memory_error(self, 0):
-            ba.resize(1024)
-        self.assertEqual(ba, expected)
-
-        # shrink bytearray with non-zero logical start
-        ba = bytearray(b'0123456789')
-        expected = ba[3:]
-        del ba[:3]
-        with inject_memory_error(self, 0):
-            ba.resize(1)
-        self.assertEqual(ba, expected)
+                # shrink bytearray
+                ba = bytearray(b'0123456789')
+                if logical_offset:
+                    expected = ba[offset:]
+                    del ba[:offset]
+                else:
+                    expected = ba.copy()
+                with inject_memory_error(self, 0):
+                    ba.resize(1)
+                self.assertEqual(ba, expected)
 
     def test_take_bytes(self):
         ba = bytearray(b'ab')

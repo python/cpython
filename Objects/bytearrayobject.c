@@ -225,8 +225,8 @@ PyByteArray_AsString(PyObject *self)
 
 
 static int
-bytearray_realign_data_lock_held(PyByteArrayObject *self,
-                                 Py_ssize_t new_size, Py_ssize_t alloc)
+bytearray_resize_storage(PyByteArrayObject *self,
+                         Py_ssize_t new_size, Py_ssize_t alloc)
 {
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
     assert(1 <= new_size && new_size <= alloc);
@@ -247,7 +247,7 @@ bytearray_realign_data_lock_held(PyByteArrayObject *self,
     }
 
     if (_PyBytes_ResizeKeepOnError(&self->ob_bytes_object, alloc) < 0) {
-        if (new_size < size) {
+        if (old_start != self->ob_bytes && new_size < size) {
             // Move remaining bytes
             Py_ssize_t moved = new_size;
             Py_ssize_t remaining = size - moved;
@@ -330,8 +330,7 @@ bytearray_resize_lock_held(PyObject *self, Py_ssize_t requested_size)
         return -1;
     }
 
-    if (bytearray_realign_data_lock_held(obj, requested_size,
-                                         (Py_ssize_t)alloc) < 0) {
+    if (bytearray_resize_storage(obj, requested_size, (Py_ssize_t)alloc) < 0) {
         return -1;
     }
 
@@ -1670,7 +1669,7 @@ bytearray_take_bytes_impl(PyByteArrayObject *self, PyObject *n)
     memcpy(PyBytes_AS_STRING(remaining), self->ob_start + to_take,
            remaining_length);
 
-    if (bytearray_realign_data_lock_held(self, to_take, to_take) < 0) {
+    if (bytearray_resize_storage(self, to_take, to_take) < 0) {
         Py_DECREF(remaining);
         return NULL;
     }
