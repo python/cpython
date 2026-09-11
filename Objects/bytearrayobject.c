@@ -43,6 +43,15 @@ _getbytevalue(PyObject* arg, int *value)
     return 1;
 }
 
+static inline void
+bytearray_write_trailing_null_byte(PyByteArrayObject *self)
+{
+    char *data = PyByteArray_AS_STRING(self);
+    Py_ssize_t size = PyByteArray_GET_SIZE(self);
+    data[size] = '\0';
+}
+
+
 static void
 bytearray_reinit_from_bytes(PyByteArrayObject *self, Py_ssize_t size)
 {
@@ -237,7 +246,7 @@ bytearray_realign_data_lock_held(PyByteArrayObject *self, Py_ssize_t new_size, P
         }
 
         if (_PyBytes_ResizeKeepOnError(&self->ob_bytes_object, alloc) < 0) {
-            self->ob_start[size] = '\0'; /* Trailing null */
+            bytearray_write_trailing_null_byte(self);
             return -1;
         }
     }
@@ -306,7 +315,7 @@ bytearray_resize_lock_held(PyObject *self, Py_ssize_t requested_size)
             /* Minor downsize; quick exit */
             Py_SET_SIZE(self, size);
             /* Add mid-buffer null; end provided by bytes. */
-            PyByteArray_AS_STRING(self)[size] = '\0'; /* Trailing null */
+            bytearray_write_trailing_null_byte(_PyByteArray_CAST(self));
             return 0;
         }
     }
@@ -334,7 +343,7 @@ bytearray_resize_lock_held(PyObject *self, Py_ssize_t requested_size)
     bytearray_reinit_from_bytes(obj, size);
     if (alloc != size) {
         /* Add mid-buffer null; end provided by bytes. */
-        obj->ob_bytes[size] = '\0';
+        bytearray_write_trailing_null_byte(obj);
     }
     return 0;
 }
@@ -1154,7 +1163,7 @@ slowpath:
         /* Append the byte */
         if (Py_SIZE(self) + 1 < self->ob_alloc) {
             Py_SET_SIZE(self, Py_SIZE(self) + 1);
-            PyByteArray_AS_STRING(self)[Py_SIZE(self)] = '\0';
+            bytearray_write_trailing_null_byte(self);
         }
         else if (PyByteArray_Resize((PyObject *)self, Py_SIZE(self)+1) < 0)
             goto error;
