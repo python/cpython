@@ -301,14 +301,11 @@ def b16decode(s, casefold=False, *, ignorechars=b''):
         s = _bytes_from_decode_data(s)
         if not isinstance(ignorechars, bytes):
             ignorechars = bytes(memoryview(ignorechars))
+        for b in b'abcdef':
+            if b in s and b not in ignorechars:
+                raise binascii.Error('Non-base16 digit found')
         if ignorechars:
-            for b in b'abcdef':
-                if b in s and b not in ignorechars:
-                    raise binascii.Error('Non-base16 digit found')
-        translated = s.translate(None, delete=b'abcdef')
-        if not ignorechars and len(translated) != len(s):
-            raise binascii.Error('Non-base16 digit found')
-        s = translated
+            s = s.translate(None, delete=b'abcdef')
     return binascii.unhexlify(s, ignorechars=ignorechars)
 
 #
