@@ -121,7 +121,6 @@ As a consequence of this, split keys have a maximum size of 16.
 #include "pycore_ceval.h"         // _PyEval_GetBuiltin()
 #include "pycore_code.h"          // stats
 #include "pycore_critical_section.h" // Py_BEGIN_CRITICAL_SECTION, Py_END_CRITICAL_SECTION
-#include "pycore_descrobject.h"   // _PyDictProxy_GetMapping()
 #include "pycore_dict.h"          // export _PyDict_SizeOf()
 #include "pycore_freelist.h"      // _PyFreeListState_GET()
 #include "pycore_gc.h"            // _PyObject_GC_IS_TRACKED()
@@ -4309,11 +4308,15 @@ dict_merge(PyObject *a, PyObject *b, int override, PyObject **dupkey)
     /* Mapping proxies (including type.__dict__) wrap a real dict. Unwrap
      * so we take the locked dict-to-dict path instead of iterating the
      * proxy without holding the underlying dict's critical section.
-     * See gh-157217.
+     * Layout must match mappingproxyobject in descrobject.c. See gh-157217.
      */
+    typedef struct {
+        PyObject_HEAD
+        PyObject *mapping;
+    } mappingproxyobject;
     PyObject *source = b;
-    if (PyObject_TypeCheck(b, &PyDictProxy_Type)) {
-        source = _PyDictProxy_GetMapping(b);
+    if (Py_IS_TYPE(b, &PyDictProxy_Type)) {
+        source = ((mappingproxyobject *)b)->mapping;
     }
 
     int res = 0;
