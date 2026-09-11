@@ -290,9 +290,10 @@ Tools/jit/                    @brandtbucher @savannahostrowski @diegorusso
 InternalDocs/jit.md           @brandtbucher @savannahostrowski @diegorusso @AA-Turner
 
 # Lazy imports (PEP 810)
-Objects/lazyimportobject.c                  @yhg1s @DinoV @pablogsal
-Include/internal/pycore_lazyimportobject.h  @yhg1s @DinoV @pablogsal
-Lib/test/test_lazy_import                   @yhg1s @DinoV @pablogsal
+.github/workflows/reusable-test-lazy-imports-all.yml    @yhg1s @DinoV @pablogsal
+Objects/lazyimportobject.c                              @yhg1s @DinoV @pablogsal
+Include/internal/pycore_lazyimportobject.h              @yhg1s @DinoV @pablogsal
+Lib/test/test_lazy_import                               @yhg1s @DinoV @pablogsal
 
 # Micro-op / μop / Tier 2 Optimiser
 Python/optimizer.c            @markshannon @Fidget-Spinner
@@ -654,6 +655,9 @@ Modules/**/clinic/
 Objects/**/clinic/
 PC/**/clinic/
 Python/**/clinic/
+
+# Exclude Lazy Imports=all CI carve out file
+Lib/test/lazy_imports_all_exclude.txt
 
 # Exclude HTML IDs list
 Doc/tools/removed-ids.txt
