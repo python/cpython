@@ -173,6 +173,33 @@ class CallStackTestBase:
 
         self.assertEqual(len(result.call_stack), 2)
 
+    async def test_stack_wait_for_non_positive_timeout(self):
+        # gh-157058: wait_for(fut, 0) must still record the waiter
+        cleanup = asyncio.Future()
+
+        async def worker():
+            try:
+                await asyncio.Future()
+            finally:
+                await cleanup
+
+        async def probe(t):
+            await asyncio.wait_for(t, 0)
+
+        t = asyncio.ensure_future(worker())
+        p = asyncio.create_task(probe(t), name='probe')
+        for _ in range(5):
+            await asyncio.sleep(0)
+
+        stack = capture_test_stack(fut=t)
+
+        cleanup.set_result(None)
+        await asyncio.gather(p, t, return_exceptions=True)
+
+        self.assertEqual(stack[0][2], [
+            ['T<probe>', ['a _cancel_and_wait', 'a wait_for', 'a probe'], []],
+        ])
+
     async def test_stack_gather(self):
 
         stack_for_deep = None
@@ -201,6 +228,29 @@ class CallStackTestBase:
                 ['T<anon>', ['a main', 'a test_stack_gather'], []]
             ]
         ])
+
+    async def test_stack_gather_survivor(self):
+        # gh-157213: a child that outlives gather() must not be shown as awaited
+
+        async def fail():
+            raise ValueError
+
+        async def survivor():
+            await asyncio.Future()
+
+        t = asyncio.create_task(survivor(), name='survivor')
+        with self.assertRaises(ValueError):
+            await asyncio.gather(t, fail())
+
+        self.assertEqual(capture_test_stack(fut=t)[0], [
+            'T<survivor>',
+            ['a survivor'],
+            []
+        ])
+
+        t.cancel()
+        with self.assertRaises(asyncio.CancelledError):
+            await t
 
     async def test_stack_shield(self):
 

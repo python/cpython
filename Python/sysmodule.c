@@ -2348,7 +2348,9 @@ sys_activate_stack_trampoline_impl(PyObject *module, const char *backend)
 {
 #ifdef PY_HAVE_PERF_TRAMPOLINE
 #ifdef _Py_JIT
-    if (_PyInterpreterState_GET()->jit) {
+    // Perf state is process-wide, and only the main interpreter can enable
+    // the JIT. Check it even when called from a subinterpreter (gh-157247).
+    if (_PyInterpreterState_Main()->jit) {
         PyErr_SetString(PyExc_ValueError, "Cannot activate the perf trampoline if the JIT is active");
         return NULL;
     }
