@@ -1503,7 +1503,7 @@ odict_tp_clear(PyObject *op)
 static PyObject *
 odict_richcompare_lock_held(PyObject *v, PyObject *w, int op)
 {
-    if (!PyODict_Check(v) || !PyDict_Check(w)) {
+    if (!PyODict_Check(v) || !PyAnyDict_Check(w)) {
         Py_RETURN_NOTIMPLEMENTED;
     }
 
@@ -1958,11 +1958,13 @@ odictiter_new(PyODictObject *od, int kind)
     }
 
     di->kind = kind;
+    Py_BEGIN_CRITICAL_SECTION(od);
     node = reversed ? _odict_LAST(od) : _odict_FIRST(od);
     di->di_current = node ? Py_NewRef(_odictnode_KEY(node)) : NULL;
     di->di_size = PyODict_SIZE(od);
     di->di_state = od->od_state;
     di->di_odict = (PyODictObject*)Py_NewRef(od);
+    Py_END_CRITICAL_SECTION();
 
     _PyObject_GC_TRACK(di);
     return (PyObject *)di;
@@ -2370,7 +2372,7 @@ mutablemapping_update(PyObject *self, PyObject *args, PyObject *kwargs)
     }
 
     /* now handle kwargs */
-    assert(kwargs == NULL || PyDict_Check(kwargs));
+    assert(kwargs == NULL || PyAnyDict_Check(kwargs));
     if (kwargs != NULL && PyDict_GET_SIZE(kwargs)) {
         PyObject *items = PyDict_Items(kwargs);
         if (items == NULL)

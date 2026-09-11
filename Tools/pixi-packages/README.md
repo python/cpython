@@ -10,7 +10,8 @@ in a [Pixi workspace](https://pixi.sh/latest/first_workspace/), like:
 ```toml
 [dependencies]
 python.git = "https://github.com/python/cpython"
-python.subdirectory = "Tools/pixi-packages/asan"
+python.subdirectory = "Tools/pixi-packages"
+python.flags = ["asan"]
 ```
 
 This is particularly useful when developers need to build CPython from source
@@ -18,17 +19,18 @@ This is particularly useful when developers need to build CPython from source
 clone or build steps. Instead, Pixi will automatically handle both the build
 and installation of the package.
 
-Each package definition is contained in a subdirectory, but they share the build script
-`build.sh` in this directory. Currently defined package variants:
+Each package variant carries a 'flag' to enable selection of that variant — see
+[the Pixi docs](https://pixi.prefix.dev/latest/concepts/package_specifications/#extras-and-flags)
+for details of how to use this. Currently defined package variants:
 
 - `default`
 - `freethreading`
 - `asan`: ASan-instrumented build
-- `tsan-freethreading`: TSan-instrumented free-threading build
+- `tsan_freethreading`: TSan-instrumented free-threading build
 
 ## Maintenance
 
-- Keep the `abi_tag` and `version` fields in each `variants.yaml` up to date with the
+- Keep the `version` field in `variants.yaml` up to date with the
   Python version
 - Update `build.sh` for any breaking changes in the `configure` and `make` workflow
 
@@ -36,8 +38,6 @@ Each package definition is contained in a subdirectory, but they share the build
 
 - More package variants (such as UBSan)
 - Support for Windows
-- Using a single `pixi.toml` for all package variants is blocked on
-  [pixi#5248](https://github.com/prefix-dev/pixi/issues/5248)
 
 ## Troubleshooting
 

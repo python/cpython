@@ -1604,7 +1604,7 @@ class Treeview(Widget, tkinter.XView, tkinter.YView):
 
         Without arguments, return a tuple of all detached items (but not
         their descendants; see detached_all).  With item, return whether item
-        is detached; since Tk 9.1, also return true if an ancestor of item
+        is detached; since Tk 9.1, also return True if an ancestor of item
         is detached.
 
         * Availability: Tk 9.0"""
@@ -2031,8 +2031,8 @@ class Treeview(Widget, tkinter.XView, tkinter.YView):
 
 
     def tag_has(self, tagname, item=None):
-        """If item is specified, returns 1 or 0 depending on whether the
-        specified item has the given tagname. Otherwise, returns a list of
+        """If item is specified, returns True if the specified item has the
+        given tagname, False otherwise. Otherwise, returns a list of
         all items which have the specified tag.
 
         * Availability: Tk 8.6"""

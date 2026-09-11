@@ -1,0 +1,2 @@
+Add :func:`ctypes.util.wrap_dll_function` for creating
+:class:`~ctypes._CFuncPtr` objects from a function signature.

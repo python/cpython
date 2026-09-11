@@ -1,0 +1,4 @@
+Fix :meth:`array.array.byteswap` corrupting data for ``'Zd'`` (complex
+double) arrays with more than one element: the 16-byte item loop advanced
+the buffer pointer by only 8 bytes per iteration, causing items after the
+first to be scrambled.

@@ -12,10 +12,10 @@ env:
 jobs:
   build-emscripten-reusable:
     name: 'build and test'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 40
     steps:
-    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       with:
         persist-credentials: false
     - name: "Read Emscripten config"
@@ -77,3 +77,5 @@ jobs:
       run: python3 Platforms/emscripten pythoninfo-host
     - name: "Test"
       run: python3 Platforms/emscripten run --test
+    - name: "Test Repl"
+      run: Platforms/emscripten/browser_test/run_test.sh

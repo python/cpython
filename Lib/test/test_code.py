@@ -533,7 +533,8 @@ class CodeTest(unittest.TestCase):
                 ("PUSH_EXC_INFO", None),
                 ("LOAD_COMMON_CONSTANT", None), # artificial 'None'
                 ("STORE_NAME", "e"),  # XX: we know the location for this
-                ("DELETE_NAME", "e"),
+                ("PUSH_NULL", None),
+                ("STORE_NAME", "e"),
                 ("RERAISE", 1),
                 ("COPY", 3),
                 ("POP_EXCEPT", None),
@@ -1539,21 +1540,26 @@ class CodeLocationTest(unittest.TestCase):
             [(1,1,3)])
 
 if check_impl_detail(cpython=True) and ctypes is not None:
-    py = ctypes.pythonapi
-    freefunc = ctypes.CFUNCTYPE(None,ctypes.c_voidp)
+    import ctypes.util
+    freefunc = ctypes.CFUNCTYPE(None, ctypes.c_voidp)
 
-    RequestCodeExtraIndex = py.PyUnstable_Eval_RequestCodeExtraIndex
-    RequestCodeExtraIndex.argtypes = (freefunc,)
-    RequestCodeExtraIndex.restype = ctypes.c_ssize_t
+    @ctypes.util.wrap_dll_function(ctypes.pythonapi)
+    def PyUnstable_Eval_RequestCodeExtraIndex(free: freefunc) -> ctypes.c_ssize_t:
+        pass
 
-    SetExtra = py.PyUnstable_Code_SetExtra
-    SetExtra.argtypes = (ctypes.py_object, ctypes.c_ssize_t, ctypes.c_voidp)
-    SetExtra.restype = ctypes.c_int
+    @ctypes.util.wrap_dll_function(ctypes.pythonapi)
+    def PyUnstable_Code_SetExtra(code: ctypes.py_object,
+                                 index: ctypes.c_ssize_t,
+                                 extra: ctypes.c_voidp) -> ctypes.c_int:
+        pass
+    SetExtra = PyUnstable_Code_SetExtra
 
-    GetExtra = py.PyUnstable_Code_GetExtra
-    GetExtra.argtypes = (ctypes.py_object, ctypes.c_ssize_t,
-                         ctypes.POINTER(ctypes.c_voidp))
-    GetExtra.restype = ctypes.c_int
+    @ctypes.util.wrap_dll_function(ctypes.pythonapi)
+    def PyUnstable_Code_GetExtra(code: ctypes.py_object,
+                                 index: ctypes.c_ssize_t,
+                                 extra: ctypes.POINTER(ctypes.c_voidp)) -> ctypes.c_int:
+        pass
+    GetExtra = PyUnstable_Code_GetExtra
 
     LAST_FREED = None
     def myfree(ptr):
@@ -1561,7 +1567,7 @@ if check_impl_detail(cpython=True) and ctypes is not None:
         LAST_FREED = ptr
 
     FREE_FUNC = freefunc(myfree)
-    FREE_INDEX = RequestCodeExtraIndex(FREE_FUNC)
+    FREE_INDEX = PyUnstable_Eval_RequestCodeExtraIndex(FREE_FUNC)
     # Make sure myfree sticks around at least as long as the interpreter,
     # since we (currently) can't unregister the function and leaving a
     # dangling pointer will cause a crash on deallocation of code objects if

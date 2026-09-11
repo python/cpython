@@ -30,7 +30,7 @@ class IOBindingTest(unittest.TestCase):
         cls.editwin._close()
         del cls.editwin
         cls.root.update_idletasks()
-        for id in cls.root.tk.call('after', 'info'):
+        for id in cls.root.after_info():
             cls.root.after_cancel(id)  # Need for EditorWindow.
         cls.root.destroy()
         del cls.root
