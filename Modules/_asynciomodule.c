@@ -3460,6 +3460,7 @@ task_eager_start(_PyThreadStateImpl *ts, asyncio_state *state, TaskObj *task)
     // it will continue as a regular (non-eager) asyncio task
     register_task(ts, task);
 
+    assert(PyContext_CheckExact(task->task_context));
     if (_PyContext_Enter(&ts->base, task->task_context) == -1) {
         // gh-157301: a failed enter must not leave the task current and registered
         task->task_log_destroy_pending = 0;
