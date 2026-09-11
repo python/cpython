@@ -314,6 +314,9 @@ class ParseArgsTestCase(unittest.TestCase):
                 # test another resource which is not part of "all"
                 ns = self.parse_args([opt, 'extralargefile'])
                 self.assertEqual(ns.use_resources, {'extralargefile': None})
+                ns = self.parse_args([opt, 'netraw'])
+                self.assertEqual(ns.use_resources, {'netraw': None})
+                self.assertNotIn('netraw', cmdline.ALL_RESOURCES)
 
                 # test resource with value
                 ns = self.parse_args([opt, 'xpickle=2.7'])
