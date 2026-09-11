@@ -1,0 +1,2 @@
+Fix :func:`asyncio.print_call_graph` truncating the call stack at the awaitable
+returned by the callable form of :func:`aiter`.

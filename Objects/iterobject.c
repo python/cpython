@@ -805,7 +805,7 @@ acallawaitable_start(acallawaitableobject *aw)
         }
         return -1;
     }
-    aw->aw_wrapped = awaitable;
+    FT_ATOMIC_STORE_PTR_RELEASE(aw->aw_wrapped, awaitable);
     return 0;
 }
 
@@ -932,6 +932,24 @@ acallawaitable_close(PyObject *op, PyObject *Py_UNUSED(dummy))
     return result;
 }
 
+static PyObject *
+acallawaitable_get_wrapped(PyObject *op, void *Py_UNUSED(closure))
+{
+    acallawaitableobject *aw = acallawaitableobject_CAST(op);
+    PyObject *wrapped = FT_ATOMIC_LOAD_PTR_ACQUIRE(aw->aw_wrapped);
+    if (wrapped == NULL) {
+        Py_RETURN_NONE;
+    }
+    return Py_NewRef(wrapped);
+}
+
+static PyGetSetDef acallawaitable_getset[] = {
+    {"aw_wrapped", acallawaitable_get_wrapped, NULL,
+     PyDoc_STR("Awaitable returned by the callable, or None before it is called."),
+     NULL},
+    {NULL}
+};
+
 static PyMethodDef acallawaitable_methods[] = {
     {"send", acallawaitable_send, METH_O, send_doc},
     {"throw", acallawaitable_throw, METH_VARARGS, throw_doc},
@@ -958,4 +976,5 @@ PyTypeObject _PyACallIterAwaitable_Type = {
     .tp_iter = PyObject_SelfIter,
     .tp_iternext = acallawaitable_iternext,
     .tp_methods = acallawaitable_methods,
+    .tp_getset = acallawaitable_getset,
 };

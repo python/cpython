@@ -87,6 +87,13 @@ are always available.  They are listed here in alphabetical order.
    The callable is only called when the result of :meth:`~object.__anext__`
    is awaited.
 
+   .. impl-detail::
+
+      The awaitable returned by :meth:`~object.__anext__` exposes the object
+      returned by *callable* through its read-only ``aw_wrapped`` attribute.
+      This attribute is ``None`` until the callable is invoked, and retains
+      the returned object after the awaitable completes or is closed.
+
    *stop_exception* is an exception class or a tuple of exception classes.
    If *stop_value* is not specified,
    the iteration stops only when the callable raises an exception.

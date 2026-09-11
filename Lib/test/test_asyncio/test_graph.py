@@ -173,6 +173,51 @@ class CallStackTestBase:
 
         self.assertEqual(len(result.call_stack), 2)
 
+    async def test_stack_aiter_callable(self):
+        for nested in (False, True):
+            with self.subTest(nested=nested):
+                entered = asyncio.Event()
+                blocked = asyncio.Event()
+
+                async def deep():
+                    entered.set()
+                    await blocked.wait()
+
+                async def produce():
+                    await deep()
+                    return None
+
+                async def worker():
+                    iterator = aiter(produce, None)
+                    if nested:
+                        iterator = aiter(iterator.__anext__, None)
+                    async for _ in iterator:
+                        pass
+
+                task = asyncio.create_task(worker(), name='worker')
+                try:
+                    await entered.wait()
+                    stack, printed = capture_test_stack(fut=task)
+                    self.assertEqual(stack[:2], [
+                        'T<worker>',
+                        ['a wait', 'a deep', 'a produce', 'a worker'],
+                    ])
+                    for name in ('deep', 'produce', 'worker'):
+                        self.assertIn(f'.<locals>.{name}()', printed)
+                    for limit, names in (
+                        (0, []),
+                        (2, ['produce', 'worker']),
+                        (-2, ['wait', 'deep']),
+                    ):
+                        graph = asyncio.capture_call_graph(task, limit=limit)
+                        self.assertEqual(
+                            [entry.frame.f_code.co_name
+                             for entry in graph.call_stack], names)
+                finally:
+                    task.cancel()
+                    with self.assertRaises(asyncio.CancelledError):
+                        await task
+
     async def test_stack_gather(self):
 
         stack_for_deep = None

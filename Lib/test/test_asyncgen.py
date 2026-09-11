@@ -909,12 +909,87 @@ class AsyncGenAsyncioTest(unittest.TestCase):
     def test_aiter_callable_awaitable(self):
         it = aiter(self.make_counter(), 10)
         awaitable = it.__anext__()
+        self.assertIsNone(awaitable.aw_wrapped)
         self.assertIsNone(awaitable.close())
+        self.assertIsNone(awaitable.aw_wrapped)
         with self.assertRaises(RuntimeError):
             self.loop.run_until_complete(awaitable)
         awaitable = it.__anext__()
         with self.assertRaises(KeyError):
             awaitable.throw(KeyError('injected'))
+        self.assertIsNone(awaitable.aw_wrapped)
+
+    def test_aiter_callable_wrapped(self):
+        async def produce():
+            await awaitable()
+            await awaitable()
+            return 1
+
+        class CustomAwaitable:
+            def __init__(self):
+                self.iterator = self.iterate()
+
+            def iterate(self):
+                yield ('result',)
+
+            def __await__(self):
+                return self.iterator
+
+        for factory in (produce, awaitable, CustomAwaitable):
+            for action in ('complete', 'close', 'throw'):
+                with self.subTest(factory=factory, action=action):
+                    calls = []
+
+                    def get_awaitable():
+                        wrapped = factory()
+                        calls.append(wrapped)
+                        return wrapped
+
+                    wrapper = anext(aiter(get_awaitable, object()))
+                    try:
+                        self.assertIsNone(wrapper.aw_wrapped)
+                        self.assertEqual(calls, [])
+                        with self.assertRaises(AttributeError):
+                            wrapper.aw_wrapped = None
+                        with self.assertRaises(AttributeError):
+                            del wrapper.aw_wrapped
+                        self.assertEqual(next(wrapper), ('result',))
+                        self.assertIs(wrapper.aw_wrapped, calls[0])
+                        if factory is produce:
+                            delegate = calls[0].cr_await
+                            self.assertEqual(wrapper.send(None), ('result',))
+                            self.assertIs(wrapper.aw_wrapped, calls[0])
+                            self.assertIsNot(calls[0].cr_await, delegate)
+                        if action == 'complete':
+                            with self.assertRaises(StopIteration):
+                                wrapper.send(None)
+                        elif action == 'throw':
+                            with self.assertRaises(AwaitException):
+                                wrapper.throw(AwaitException)
+                        else:
+                            wrapper.close()
+                        self.assertIs(wrapper.aw_wrapped, calls[0])
+                    finally:
+                        wrapper.close()
+
+    def test_aiter_callable_wrapped_sentinel(self):
+        async def produce():
+            return 1
+
+        iterator = aiter(produce, 1)
+        wrapper = anext(iterator)
+        with self.assertRaises(StopAsyncIteration):
+            wrapper.send(None)
+        wrapped = wrapper.aw_wrapped
+        self.assertIsNotNone(wrapped)
+        self.assertEqual(inspect.getcoroutinestate(wrapped),
+                         inspect.CORO_CLOSED)
+        wrapper.close()
+        self.assertIs(wrapper.aw_wrapped, wrapped)
+        exhausted = anext(iterator)
+        with self.assertRaises(StopAsyncIteration):
+            exhausted.send(None)
+        self.assertIsNone(exhausted.aw_wrapped)
 
     def test_aiter_callable_cancel(self):
         # Cancellation is delivered to the awaited callable result
@@ -931,9 +1006,15 @@ class AsyncGenAsyncioTest(unittest.TestCase):
         async def main():
             task = asyncio.ensure_future(consume())
             await asyncio.sleep(0)
+            wrapper = task.get_coro().cr_await
+            wrapped = wrapper.aw_wrapped
+            self.assertIsNotNone(wrapped)
             task.cancel()
             with self.assertRaises(asyncio.CancelledError):
                 await task
+            self.assertIs(wrapper.aw_wrapped, wrapped)
+            self.assertEqual(inspect.getcoroutinestate(wrapped),
+                             inspect.CORO_CLOSED)
         self.loop.run_until_complete(main())
         self.assertEqual(cancelled, [1])
 
