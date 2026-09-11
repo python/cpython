@@ -35,7 +35,8 @@ details that are unchanged.
 .. note::
 
    Tcl/Tk 8.5 (2007) introduced a modern set of themed user interface components
-   along with a new API to use them. Both old and new APIs are still available.
+   along with a new API to use them (see :mod:`tkinter.ttk`).
+   Both old and new APIs are still available.
    Most documentation you will find online still uses the old API and
    can be woefully outdated.
 
@@ -525,6 +526,17 @@ Use the config() method to update multiple attrs subsequent to object creation
 
       fred.config(fg="red", bg="blue")
 
+.. note::
+
+   The ``fg`` and ``bg`` options used here,
+   and other options that control a widget's appearance,
+   belong to the classic :mod:`!tkinter` widgets.
+   The themed :mod:`tkinter.ttk` widgets recommended in the introduction
+   do not accept them;
+   style a themed widget through the :class:`ttk.Style <tkinter.ttk.Style>`
+   class instead.
+   The three ways of setting an option shown above apply to both widget sets.
+
 For a complete explanation of a given option and its behavior, see the Tk man
 pages for the widget in question.
 
@@ -573,65 +585,84 @@ their values.  This is meant only as an example.
 
 
 .. _pack-the-packer:
+.. _tkinter-geometry-management:
+.. _the-packer:
+.. _packer-options:
 
-The packer
-^^^^^^^^^^
+Geometry management
+^^^^^^^^^^^^^^^^^^^
 
-.. index:: single: packing (widgets)
+.. index::
+   single: geometry management (widgets)
+   single: packing (widgets)
 
-The packer is one of Tk's geometry-management mechanisms.    Geometry managers
-are used to specify the relative positioning of widgets within their container.
-In contrast to the more cumbersome *placer* (which is
-used less commonly, and we do not cover here), the packer takes qualitative
-relationship specification - *above*, *to the left of*, *filling*, etc - and
-works everything out to determine the exact placement coordinates for you.
+Creating a widget does not display it.
+A widget appears only after it has been handed to a *geometry manager*,
+which works out its size and position inside its container
+and keeps the layout up to date as the container is resized or its content changes.
+Forgetting to call a geometry manager is a common early mistake:
+the widget is created, but nothing shows up.
 
-The size of any container widget is determined by the size of the "content widgets"
-inside.  The packer is used to control where content widgets appear inside the
-container into which they are packed.  You can pack widgets into frames, and frames
-into other frames, in order to achieve the kind of layout you desire.
-Additionally, the arrangement is dynamically adjusted to accommodate incremental
-changes to the configuration, once it is packed.
+Tk provides three geometry managers.
+Each is inherited by every widget, so any widget can be managed by any of them
+(but see the warning below about the incompatibility of grid and pack).
+The choice depends on the kind of layout you want.
 
-Note that widgets do not appear until they have had their geometry specified
-with a geometry manager.
-It's a common early mistake to leave out the geometry specification, and then
-be surprised when the widget is created but nothing appears.
-A widget will appear only after it has had, for example, the packer's
-:meth:`~Pack.pack` method applied to it.
+:meth:`grid <Grid.grid_configure>`
+   Arranges widgets in a two-dimensional table of rows and columns.
+   It is the most flexible manager and the one to reach for by default:
+   layouts that would otherwise need several nested frames can often be
+   expressed as a single grid,
+   and rows and columns can be told how to absorb extra space.
 
-The pack() method can be called with keyword-option/value pairs that control
-where the widget is to appear within its container, and how it is to behave when
-the main application window is resized.  Here are some examples::
+   ::
 
-   fred.pack()                     # defaults to side = "top"
-   fred.pack(side="left")
-   fred.pack(expand=1)
+      ttk.Label(frm, text="Name:").grid(column=0, row=0, sticky="w")
+      ttk.Entry(frm).grid(column=1, row=0)
+      ttk.Button(frm, text="OK").grid(column=1, row=1, sticky="e")
 
+:meth:`pack <Pack.pack_configure>`
+   Stacks widgets against one side of their container
+   -- ``"top"`` (the default), ``"bottom"``, ``"left"`` or ``"right"`` --
+   and can make them fill or expand into the space that is left.
+   It is convenient for simple arrangements,
+   such as a single row or column of widgets
+   or a content area framed by a toolbar and a status bar.
 
-Packer options
-^^^^^^^^^^^^^^
+   ::
 
-For more extensive information on the packer and the options that it can take,
-see the man pages and page 183 of John Ousterhout's book.
+      toolbar.pack(side="top", fill="x")
+      status.pack(side="bottom", fill="x")
+      body.pack(side="left", expand=True, fill="both")
 
-anchor
-   Anchor type.  Denotes where the packer is to place each content in its parcel.
+:meth:`place <Place.place_configure>`
+   Positions each widget at an explicit spot,
+   given either as absolute screen distances or as a fraction of the container's size.
+   It offers the most control but the least automatic behavior, and is used the least;
+   it suits special cases such as overlapping widgets or precise custom layouts.
 
-expand
-   boolean, ``0`` or ``1``.
+   ::
 
-fill
-   Legal values: ``'x'``, ``'y'``, ``'both'``, ``'none'``.
+      background.place(x=0, y=0, relwidth=1.0, relheight=1.0)
+      badge.place(relx=1.0, rely=0.0, anchor="ne")
 
-ipadx and ipady
-   A distance - designating internal padding on each side of the content.
+Layouts are built up by nesting:
+grid or pack widgets, including frames, inside a frame or toplevel.
+Toplevels are managed by the OS window manager.
+Classic and themed :mod:`tkinter.ttk` widgets can be managed interchangeably.
 
-padx and pady
-   A distance - designating external padding on each side of the content.
+.. warning::
 
-side
-   Legal values are: ``'left'``, ``'right'``, ``'top'``, ``'bottom'``.
+   Do not apply :meth:`!pack` and :meth:`!grid` to two widgets that share the same container.
+   The two managers negotiate sizes in incompatible ways,
+   and the application can hang as they repeatedly resize the container against each other.
+   To combine them, keep each manager's widgets in a separate frame.
+
+The full set of options accepted by each manager, with their values and defaults,
+is documented under :meth:`Grid.grid_configure`, :meth:`Pack.pack_configure`
+and :meth:`Place.place_configure`;
+see also the :manpage:`grid(3tk)`, :manpage:`pack(3tk)` and :manpage:`place(3tk)`
+man pages.
 
 
 .. _coupling-widget-variables:
@@ -639,105 +670,98 @@ side
 Coupling widget variables
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The current-value setting of some widgets (like text entry widgets) can be
-connected directly to application variables by using special options.  These
-options are ``variable``, ``textvariable``, ``onvalue``, ``offvalue``, and
-``value``.  This connection works both ways: if the variable changes for any
-reason, the widget it's connected to will be updated to reflect the new value.
+Some widgets can tie their current value directly to a program variable,
+so that the two stay in sync.
+Options such as ``variable``, ``textvariable``, ``value``, ``onvalue`` and
+``offvalue`` set up this connection:
+when the user changes the widget the variable is updated,
+and when the variable is set the widget redraws to match.
 
-Unfortunately, in the current implementation of :mod:`!tkinter` it is not
-possible to hand over an arbitrary Python variable to a widget through a
-``variable`` or ``textvariable`` option.  The only kinds of variables for which
-this works are variables that are subclassed from a class called Variable,
-defined in :mod:`!tkinter`.
+A widget can be linked only to a :class:`Variable` object,
+not to an ordinary Python variable.
+This is not a limitation of :mod:`!tkinter`
+but a consequence of how the two languages differ:
+the link relies on Tcl being notified every time the value changes,
+and Python offers no way to react when a plain variable is reassigned.
+A :class:`Variable` sidesteps this by keeping its value inside the Tcl interpreter
+and exposing it through explicit :meth:`~Variable.get` and :meth:`~Variable.set` methods.
 
-There are many useful subclasses of Variable already defined:
-:class:`StringVar`, :class:`IntVar`, :class:`DoubleVar`, and
-:class:`BooleanVar`.
-To read the current value of such a variable, call the :meth:`~Variable.get`
-method on it, and to change its value you call the :meth:`!set` method.
-If you follow this protocol, the widget will always track the value of the
-variable, with no further intervention on your part.
+Ready-made subclasses cover the common types:
+:class:`StringVar`, :class:`IntVar`, :class:`DoubleVar` and :class:`BooleanVar`.
+Pass one as a widget's ``textvariable`` (or ``variable``) option,
+then read and update it with :meth:`~Variable.get` and :meth:`~Variable.set`;
+the widget tracks it with no further work on your part.
 
-Keep a reference to the variable for as long as a widget uses it, for example
-by storing it as an attribute (see :class:`Variable`).
+Keep a reference to the variable for as long as the widget uses it
+-- for example by storing it as an attribute.
+A :class:`Variable` that is garbage collected removes its underlying Tcl variable,
+breaking the connection to the widget (see :class:`Variable`).
 
 For example::
 
    import tkinter as tk
-
-   class App(tk.Frame):
-       def __init__(self, master):
-           super().__init__(master)
-           self.pack()
-
-           self.entrythingy = tk.Entry()
-           self.entrythingy.pack()
-
-           # Create the application variable.
-           self.contents = tk.StringVar()
-           # Set it to some value.
-           self.contents.set("this is a variable")
-           # Tell the entry widget to watch this variable.
-           self.entrythingy["textvariable"] = self.contents
-
-           # Define a callback for when the user hits return.
-           # It prints the current value of the variable.
-           self.entrythingy.bind('<Key-Return>',
-                                self.print_contents)
-
-       def print_contents(self, event):
-           print("Hi. The current entry content is:",
-                 self.contents.get())
+   from tkinter import ttk
 
    root = tk.Tk()
-   myapp = App(root)
-   myapp.mainloop()
+
+   # Create the application variable and give it an initial value.
+   contents = tk.StringVar(value="this is a variable")
+
+   # Tell the entry widget to track the variable.
+   entry = ttk.Entry(root, textvariable=contents)
+   entry.pack()
+
+   # Print the current value whenever the user presses Return.
+   def print_contents(event):
+       print("The current entry content is:", contents.get())
+
+   entry.bind("<Return>", print_contents)
+
+   # Setting the variable from the program updates the entry through the
+   # same link.
+   def clear():
+       contents.set("")
+
+   ttk.Button(root, text="Clear", command=clear).pack()
+
+   root.mainloop()
+
+.. _tkinter-window-manager:
 
 The window manager
 ^^^^^^^^^^^^^^^^^^
 
 .. index:: single: window manager (widgets)
 
-In Tk, there is a utility command, ``wm``, for interacting with the window
-manager.  Options to the ``wm`` command allow you to control things like titles,
-placement, icon bitmaps, and the like.  In :mod:`!tkinter`, these commands have
-been implemented as methods on the :class:`Wm` class.  Toplevel widgets are
-subclassed from the :class:`Wm` class, and so can call the :class:`Wm` methods
-directly.
+The *window manager* is the part of the desktop responsible for the title bar,
+border and controls drawn around each top-level window,
+and for such things as its title, position, size and icon.
+Tk gives access to these through the :class:`Wm` mixin,
+which is inherited by the :class:`Tk` root window and by every :class:`Toplevel`.
+You therefore call the window-manager methods directly on a top-level window.
+Each has a short name and an equivalent ``wm_``-prefixed name,
+for example :meth:`~Wm.title` and :meth:`~Wm.wm_title`.
 
-To get at the toplevel window that contains a given widget, you can often just
-refer to the widget's :attr:`~Tk.master`.
-Of course if the widget has been packed inside of a frame, the :attr:`!master`
-won't represent a toplevel window.
-To get at the toplevel window that contains an arbitrary widget, you can call
-the :meth:`~Misc.winfo_toplevel` method.
-There is also a :meth:`!_root` method; it begins with an underscore to denote
-the fact that this function is part of the implementation, and not an interface
-to Tk functionality.
-It returns the application's root window rather than the nearest enclosing
-toplevel.
+These methods act on the top-level window
+whether its content is built from the classic widgets or the themed :mod:`tkinter.ttk` widgets.
+To reach the top-level window containing an arbitrary widget,
+call its :meth:`~Misc.winfo_toplevel` method.
 
-Here are some examples of typical usage::
+For example::
 
    import tkinter as tk
+   from tkinter import ttk
 
-   class App(tk.Frame):
-       def __init__(self, master=None):
-           super().__init__(master)
-           self.pack()
+   root = tk.Tk()
+   root.title("My Application")
+   root.geometry("640x480")
+   root.minsize(320, 240)
 
-   # create the application
-   myapp = App()
+   ttk.Label(root, text="Hello").pack(padx=20, pady=20)
 
-   #
-   # here are method calls to the window manager class
-   #
-   myapp.master.title("My Do-Nothing Application")
-   myapp.master.maxsize(1000, 400)
+   root.mainloop()
 
-   # start the program
-   myapp.mainloop()
+See :class:`Wm` for the full set of window-manager methods.
 
 
 .. _Tk-option-data-types:
@@ -746,6 +770,9 @@ Tk option data types
 ^^^^^^^^^^^^^^^^^^^^
 
 .. index:: single: Tk Option Data Types
+
+Many widget options documented in the reference
+accept values of a small number of common types, described here.
 
 anchor
    Legal values are points of the compass: ``"n"``, ``"ne"``, ``"e"``, ``"se"``,
@@ -772,7 +799,8 @@ color
    Colors can be given as the names of X colors in the rgb.txt file, or as strings
    representing RGB values in 4 bit: ``"#RGB"``, 8 bit: ``"#RRGGBB"``, 12 bit:
    ``"#RRRGGGBBB"``, or 16 bit: ``"#RRRRGGGGBBBB"`` ranges, where R,G,B here
-   represent any legal hex digit.  See page 160 of Ousterhout's book for details.
+   represent any legal hex digit.  See the :manpage:`colors(3tk)` man page for
+   the list of named colors.
 
 cursor
    The name of the mouse cursor to display while the pointer is over the widget.
@@ -856,8 +884,7 @@ sequence
    ``<modifier-modifier-type-detail>`` form (for example ``"<Enter>"`` or
    ``"<Control-Button-1>"``); application-defined virtual events use double angle
    brackets, as in ``"<<Paste>>"``.  (See the
-   :manpage:`bind(3tk)` man page, and page 201 of John Ousterhout's book,
-   :title-reference:`Tcl and the Tk Toolkit (2nd edition)`, for details).
+   :manpage:`bind(3tk)` man page for details.)
 
 func
    is a Python function, taking one argument, to be invoked when the event occurs.
@@ -929,9 +956,32 @@ point at a specific place in a Text widget, or to particular characters in an
 Entry widget, or to particular menu items in a Menu widget.
 
 Entry widget indexes (index, view index, etc.)
-   Entry widgets have options that refer to character positions in the text being
-   displayed.  You can use these :mod:`!tkinter` functions to access these special
-   points in text widgets:
+   Entry widgets have methods and options that refer to character positions
+   in the text being displayed.
+   Anytime an index is needed, you may pass in:
+
+   * an integer which refers to the numeric position of a character,
+     counted from the beginning of the text, starting with 0;
+
+   * the string ``"anchor"``,
+     which refers to the anchor point of the selection,
+     set with the widget's selection methods;
+
+   * the string ``"end"``,
+     which refers to the position just after the last character;
+
+   * the string ``"insert"``,
+     which refers to the character just after the insertion cursor;
+
+   * the strings ``"sel.first"`` and ``"sel.last"``,
+     which refer to the first character in the selection
+     and the position just after the last
+     (it is an error to use these if there is no selection);
+
+   * a string consisting of ``@`` followed by an integer, as in ``"@6"``,
+     where the integer is interpreted as an x pixel coordinate
+     in the entry's coordinate system,
+     selecting the character spanning that point.
 
 Text widget indexes
    The index notation for Text widgets is very rich and is best described in the Tk
@@ -949,8 +999,9 @@ Menu indexes (menu.invoke(), menu.entryconfig(), etc.)
 
    * the string ``"last"`` which refers to the last menu item;
 
-   * An integer preceded by ``@``, as in ``@6``, where the integer is interpreted
-     as a y pixel coordinate in the menu's coordinate system;
+   * a string consisting of ``@`` followed by an integer, as in ``"@6"``, where
+     the integer is interpreted as a y pixel coordinate in the menu's coordinate
+     system;
 
    * the string ``"none"``, which indicates no menu entry at all, most often used
      with menu.activate() to deactivate all entries, and finally,
@@ -2346,6 +2397,7 @@ Base and mixin classes
    available on every top-level window.
    Each method has two equivalent spellings: a short name and a
    ``wm_``-prefixed name (for example, :meth:`title` and :meth:`wm_title`).
+   See also :ref:`tkinter-window-manager`.
 
    .. method:: wm_aspect(minNumer=None, minDenom=None, maxNumer=None, maxDenom=None)
       :no-typesetting:
@@ -2913,7 +2965,7 @@ Base and mixin classes
    The :class:`!Pack` mix-in is inherited by all widgets (through
    :class:`Widget`) and provides the methods for managing a widget with the
    *pack* geometry manager.
-   See also :ref:`pack-the-packer`.
+   See also :ref:`tkinter-geometry-management`.
 
    .. note::
 
@@ -3045,6 +3097,7 @@ Base and mixin classes
    their container.
    The :class:`!Place` mix-in is inherited by all widgets (through
    :class:`Widget`).
+   See also :ref:`tkinter-geometry-management`.
 
    .. method:: configure(cnf={}, **kw)
       :no-typesetting:
@@ -3137,6 +3190,7 @@ Base and mixin classes
    columns within their container.
    The :class:`!Grid` mix-in is inherited by all widgets (through
    :class:`Widget`).
+   See also :ref:`tkinter-geometry-management`.
 
    .. method:: configure(cnf={}, **kw)
       :no-typesetting:

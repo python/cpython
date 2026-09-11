@@ -1884,19 +1884,31 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         # The global path configuration (_Py_path_config) must be a copy
         # of the path configuration of PyInterpreter.config (PyConfig).
         ctypes = import_helper.import_module('ctypes')
+        import ctypes.util  # noqa: F811
 
-        def get_func(name):
-            func = getattr(ctypes.pythonapi, name)
-            func.argtypes = ()
-            func.restype = ctypes.c_wchar_p
-            return func
+        @ctypes.util.wrap_dll_function(ctypes.pythonapi)
+        def Py_GetPath() -> ctypes.c_wchar_p:
+            pass
 
-        Py_GetPath = get_func('Py_GetPath')
-        Py_GetPrefix = get_func('Py_GetPrefix')
-        Py_GetExecPrefix = get_func('Py_GetExecPrefix')
-        Py_GetProgramName = get_func('Py_GetProgramName')
-        Py_GetProgramFullPath = get_func('Py_GetProgramFullPath')
-        Py_GetPythonHome = get_func('Py_GetPythonHome')
+        @ctypes.util.wrap_dll_function(ctypes.pythonapi)
+        def Py_GetPrefix() -> ctypes.c_wchar_p:
+            pass
+
+        @ctypes.util.wrap_dll_function(ctypes.pythonapi)
+        def Py_GetExecPrefix() -> ctypes.c_wchar_p:
+            pass
+
+        @ctypes.util.wrap_dll_function(ctypes.pythonapi)
+        def Py_GetProgramName() -> ctypes.c_wchar_p:
+            pass
+
+        @ctypes.util.wrap_dll_function(ctypes.pythonapi)
+        def Py_GetProgramFullPath() -> ctypes.c_wchar_p:
+            pass
+
+        @ctypes.util.wrap_dll_function(ctypes.pythonapi)
+        def Py_GetPythonHome() -> ctypes.c_wchar_p:
+            pass
 
         config = _testinternalcapi.get_configs()['config']
 

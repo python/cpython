@@ -188,6 +188,8 @@ class BaseRequestRateTest(BaseRobotTest):
                         parsed_request_rate.seconds,
                         self.request_rate.seconds
                     )
+                else:
+                    self.assertIsNone(parsed_request_rate)
 
 
 class EmptyFileTest(BaseRequestRateTest, unittest.TestCase):
@@ -244,6 +246,32 @@ Crawl-delay: pears
     good = ['/foo.html']
     # bug report says "/" should be denied, but that is not in the RFC
     bad = []
+
+
+class NonDecimalDigitsTest(BaseRequestRateTest, unittest.TestCase):
+    # Non-decimal Unicode digits pass str.isdigit() but int() rejects
+    # them, so the directive must be silently ignored, not raise.
+    robots_txt = """\
+User-Agent: *
+Disallow: /tmp/
+Crawl-delay: ²
+Request-rate: ²/5
+    """
+    good = ['/foo.html']
+    bad = ['/tmp/']
+    crawl_delay = None
+    request_rate = None
+
+
+class NonDecimalDenominatorTest(BaseRequestRateTest, unittest.TestCase):
+    robots_txt = """\
+User-agent: *
+Disallow: /tmp/
+Request-rate: 5/²
+    """
+    good = ['/foo.html']
+    request_rate = None
+    bad = ['/tmp/']
 
 
 class AnotherInvalidRequestRateTest(BaseRobotTest, unittest.TestCase):

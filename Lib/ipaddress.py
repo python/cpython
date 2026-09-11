@@ -1124,10 +1124,14 @@ class _BaseNetwork(_IPAddressBase):
 
         Args:
             next_prefix: The desired next prefix length, if not specified the
-            same self.prefixlen will be used
+            same self.prefixlen will be used.
 
         Returns:
             An IPv(4|6) Network object of the next closest network.
+
+        Raises:
+            ValueError: If next_prefix is outside the range of valid prefix
+            lengths, or if no further network of that size exists.
 
         """
         if next_prefix is None:
@@ -1150,15 +1154,13 @@ class _BaseNetwork(_IPAddressBase):
             ((new_netmask._ip & self.network_address._ip) >> bit_shift) + 1
         ) << bit_shift
 
-        try:
-            return self.__class__(
-                f"{self._string_from_ip_int(next_ip)}/{next_prefix}"
-            )
-        except OverflowError:
+        if next_ip > self._ALL_ONES:
             raise ValueError(
                 f"out of address space, cannot make another /{next_prefix} "
                 "network"
-            ) from None
+            )
+
+        return self.__class__((next_ip, next_prefix))
 
 
 class _BaseConstants:
@@ -1911,14 +1913,18 @@ class _BaseV6:
         elif isinstance(self, IPv6Interface):
             ip_str = str(self.ip)
         else:
-            ip_str = str(self)
+            ip_str = self._string_from_ip_int(self._ip)
 
         ip_int = self._ip_int_from_string(ip_str)
         hex_str = '%032x' % ip_int
-        parts = [hex_str[x:x+4] for x in range(0, 32, 4)]
-        if isinstance(self, (_BaseNetwork, IPv6Interface)):
-            return '%s/%d' % (':'.join(parts), self._prefixlen)
-        return ':'.join(parts)
+        exploded = ':'.join([hex_str[x:x+4] for x in range(0, 32, 4)])
+        if isinstance(self, _BaseNetwork):
+            return '%s/%d' % (exploded, self._prefixlen)
+        if self._scope_id:
+            exploded = '%s%%%s' % (exploded, self._scope_id)
+        if isinstance(self, IPv6Interface):
+            return '%s/%d' % (exploded, self._prefixlen)
+        return exploded
 
     def _reverse_pointer(self):
         """Return the reverse DNS pointer name for the IPv6 address.

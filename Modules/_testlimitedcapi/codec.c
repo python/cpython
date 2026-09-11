@@ -1,7 +1,8 @@
 #include "pyconfig.h"   // Py_GIL_DISABLED
-
-// Need limited C API version 3.5 for PyCodec_NameReplaceErrors()
-#if !defined(Py_GIL_DISABLED) && !defined(Py_LIMITED_API)
+#ifdef Py_GIL_DISABLED
+#  define Py_TARGET_ABI3T 0x030f0000
+#else
+   // Need limited C API version 3.5 for PyCodec_NameReplaceErrors()
 #  define Py_LIMITED_API 0x03050000
 #endif
 

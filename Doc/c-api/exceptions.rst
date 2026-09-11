@@ -119,6 +119,21 @@ Printing and clearing
    .. versionadded:: 3.12
 
 
+.. c:function:: void PyErr_Display(PyObject *unused, PyObject *value, PyObject *tb)
+
+   Legacy variant of :c:func:`PyErr_DisplayException`.
+
+   Print the exception *value* with its traceback to :data:`sys.stderr`.
+   If *value* has no traceback set, *tb* is used as its traceback.
+   The first argument is ignored.
+
+   If :data:`sys.stderr` is ``None``, nothing is printed.
+   If :data:`sys.stderr` is not set, the exception is dumped to the
+   C ``stderr`` stream instead.
+
+   .. deprecated:: 3.12
+      Use :c:func:`PyErr_DisplayException` instead.
+
 Raising exceptions
 ==================
 
@@ -499,12 +514,12 @@ Querying the error indicator
 .. c:function:: void PyErr_SetRaisedException(PyObject *exc)
 
    Set *exc* as the exception currently being raised,
-   clearing the existing exception if one is set.
+   clearing the existing exception if one is set.  If *exc* is ``NULL``,
+   just clear the existing exception.
 
-   .. warning::
+   *exc* must be a valid exception or ``NULL``.
 
-      This call ":term:`steals <steal>`" a reference to *exc*,
-      which must be a valid exception.
+   This call ":term:`steals <steal>`" a reference to *exc*.
 
    .. versionadded:: 3.12
 

@@ -181,22 +181,6 @@ jobs:
       free-threading: ${{ matrix.free-threading }}
       interpreter: ${{ matrix.interpreter }}
 
-  build-windows-msi:
-    # ${{ '' } is a hack to nest jobs under the same sidebar category.
-    name: Windows MSI${{ '' }}  # zizmor: ignore[obfuscation]
-    needs: build-context
-    if: fromJSON(needs.build-context.outputs.run-windows-msi)
-    strategy:
-      fail-fast: false
-      matrix:
-        arch:
-        - x86
-        - x64
-        - arm64
-    uses: ./.github/workflows/reusable-windows-msi.yml
-    with:
-      arch: ${{ matrix.arch }}
-
   build-macos:
     name: >-
       macOS
@@ -261,6 +245,12 @@ jobs:
       os: ${{ matrix.os }}
       test-opts: ${{ matrix.test-opts || '' }}
 
+  build-ubuntu-installed:
+    name: 'Ubuntu (installed)'
+    needs: build-context
+    if: needs.build-context.outputs.run-ubuntu == 'true'
+    uses: ./.github/workflows/reusable-install.yml
+
   build-ubuntu-ssltests:
     name: 'Ubuntu SSL tests'
     runs-on: ${{ matrix.os }}
@@ -278,13 +268,13 @@ jobs:
           # unsupported as it most resembles other 1.1.1-work-a-like ssl APIs
           # supported by important vendors such as AWS-LC.
           - { name: openssl, version: 1.1.1w }
-          - { name: openssl, version: 3.0.21 }
-          - { name: openssl, version: 3.4.6 }
-          - { name: openssl, version: 3.5.7 }
-          - { name: openssl, version: 3.6.3 }
-          - { name: openssl, version: 4.0.1 }
+          - { name: openssl, version: 3.0.22 }
+          - { name: openssl, version: 3.4.7 }
+          - { name: openssl, version: 3.5.8 }
+          - { name: openssl, version: 3.6.4 }
+          - { name: openssl, version: 4.0.2 }
           ## AWS-LC
-          - { name: aws-lc, version: 5.0.0 }
+          - { name: aws-lc, version: 5.5.0 }
     env:
       SSLLIB_VER: ${{ matrix.ssllib.version }}
       MULTISSL_DIR: ${{ github.workspace }}/multissl
@@ -354,7 +344,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Build and test
-        run: JAVA_HOME="${JAVA_HOME_21_X64:-$JAVA_HOME_21_arm64}" python3 Platforms/Android ci --fast-ci ${{ matrix.arch }}-linux-android
+        run: python3 Platforms/Android ci --fast-ci ${{ matrix.arch }}-linux-android
 
   build-ios:
     name: iOS
@@ -389,7 +379,7 @@ jobs:
     needs: build-context
     if: needs.build-context.outputs.run-ubuntu == 'true'
     env:
-      OPENSSL_VER: 3.5.7
+      OPENSSL_VER: 3.5.8
       PYTHONSTRICTEXTENSIONBUILD: 1
     steps:
     - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -497,7 +487,7 @@ jobs:
       matrix:
         os: [ubuntu-26.04]
     env:
-      OPENSSL_VER: 3.5.7
+      OPENSSL_VER: 3.5.8
       PYTHONSTRICTEXTENSIONBUILD: 1
       ASAN_OPTIONS: detect_leaks=0:allocator_may_return_null=1:handle_segv=0
     steps:
@@ -650,9 +640,9 @@ jobs:
     - check-generated-files
     - check-c-api-docs
     - build-windows
-    - build-windows-msi
     - build-macos
     - build-ubuntu
+    - build-ubuntu-installed
     - build-ubuntu-ssltests
     - build-ios
     - build-emscripten
@@ -671,7 +661,6 @@ jobs:
         allowed-failures: >-
           build-android,
           build-emscripten,
-          build-windows-msi,
           build-ubuntu-ssltests,
           test-hypothesis,
           cifuzz,
@@ -703,6 +692,7 @@ jobs:
             !fromJSON(needs.build-context.outputs.run-ubuntu)
             && '
             build-ubuntu,
+            build-ubuntu-installed,
             build-ubuntu-ssltests,
             test-hypothesis,
             build-asan,

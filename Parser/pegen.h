@@ -26,9 +26,6 @@
 
 #define CURRENT_POS (-5)
 
-#define TOK_GET_MODE(tok) (&(tok->tok_mode_stack[tok->tok_mode_stack_index]))
-#define TOK_GET_STRING_PREFIX(tok) (TOK_GET_MODE(tok)->string_kind == TSTRING ? 't' : 'f')
-
 typedef struct _memo {
     int type;
     void *node;
@@ -42,6 +39,10 @@ typedef struct {
     int level;
     int lineno, col_offset, end_lineno, end_col_offset;
     Memo *memo;
+    // Filter over the rule types present in `memo` (bit `type & 63` is set
+    // for every entry): lets lookups skip walking the list on definite
+    // misses, which are the common case.
+    uint64_t memo_mask;
     PyObject *metadata;
 } Token;
 
@@ -67,6 +68,8 @@ typedef struct {
     int end_col_offset;
 } location;
 
+typedef struct _identifier_cache_entry IdentifierCacheEntry;
+
 typedef struct {
     struct tok_state *tok;
     Token **tokens;
@@ -91,6 +94,7 @@ typedef struct {
     int call_invalid_rules;
     int debug;
     location last_stmt_location;
+    IdentifierCacheEntry *identifier_cache;
 } Parser;
 
 typedef struct {

@@ -5167,8 +5167,9 @@ class PdbTestReadline(unittest.TestCase):
 
         self.assertIn('I love Python', output)
 
-    @unittest.skipIf(sys.platform.startswith('freebsd'),
-                     '\\x08 is not interpreted as backspace on FreeBSD')
+    @unittest.skipIf(sys.platform.startswith(('freebsd', 'dragonfly', 'sunos')),
+                     '\\x08 does not remove the auto-indentation with '
+                     'GNU readline on this platform')
     def test_multiline_auto_indent(self):
         script = textwrap.dedent("""
             import pdb; pdb.Pdb().set_trace()
@@ -5207,8 +5208,9 @@ class PdbTestReadline(unittest.TestCase):
 
         self.assertIn('42', output)
 
-    @unittest.skipIf(sys.platform.startswith('freebsd'),
-                     '\\x08 is not interpreted as backspace on FreeBSD')
+    @unittest.skipIf(sys.platform.startswith(('freebsd', 'dragonfly', 'sunos')),
+                     '\\x08 does not remove the auto-indentation with '
+                     'GNU readline on this platform')
     def test_multiline_indent_completion(self):
         script = textwrap.dedent("""
             import pdb; pdb.Pdb().set_trace()

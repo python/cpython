@@ -3393,6 +3393,10 @@ def func2():
         self._check_error('\nfgdfgf\n1,\\#\n2\n',
                           "unexpected character after line continuation character",
                           lineno=3, offset=4)
+        for prefix in ("f", "t"):
+            self._check_error(f'{prefix}"""{{\n\\ x}}"""',
+                              "unexpected character after line continuation character",
+                              lineno=2, offset=2)
 
     def test_invalid_line_continuation_left_recursive(self):
         # Check bpo-42218: SyntaxErrors following left-recursive rules
@@ -3518,6 +3522,21 @@ while 1:
                       break
 """
         self._check_error(source, "too many statically nested blocks")
+
+    @support.cpython_only
+    def test_nested_inlined_comprehensions_block_limit(self):
+        # Each inlined comprehension with locals emits SETUP_FINALLY, which
+        # must count toward CO_MAXBLOCKS (gh-156091).
+        def src(depth):
+            e = "i for i in r"
+            for _ in range(depth - 1):
+                e = "[" + e + "] for i in r"
+            return "x = [" + e + "]"
+
+        CO_MAXBLOCKS = 21
+        compile(src(CO_MAXBLOCKS), "<testcase>", "exec")
+        self._check_error(src(CO_MAXBLOCKS + 1),
+                          "too many statically nested blocks")
 
     @support.cpython_only
     def test_error_on_parser_stack_overflow(self):

@@ -1,0 +1,4 @@
+Fix :func:`os.path.realpath` on Windows: the unresolved part of the path is
+now appended, not joined, so a file name which looks like a drive (e.g.
+``spam:eggs``) no longer discards the resolved part.  A path relative to
+another drive is now resolved against the root directory of that drive.
