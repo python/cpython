@@ -3410,13 +3410,13 @@ _PyBytes_ResizeKeepOnError(PyObject **pv, Py_ssize_t newsize)
         return -1;
     }
 
+    *pv = result;
     v = result;
     _Py_NewReferenceNoTotal(v);
     PyBytesObject *sv = (PyBytesObject *)v;
     Py_SET_SIZE(sv, newsize);
     sv->ob_sval[newsize] = '\0';
     set_ob_shash(sv, -1);          /* invalidate cached hash value */
-    *pv = v;
     return 0;
 }
 
