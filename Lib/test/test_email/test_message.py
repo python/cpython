@@ -709,6 +709,46 @@ class TestEmailMessageBase:
                 getattr(m, method)('')
             self.assertEqual(str(ar.exception), 'test')
 
+    def test_add_multipart_failure_preserves_content(self):
+        for method, existing_subtypes in (
+                ('add_related', (None, 'related')),
+                ('add_alternative', (None, 'related', 'alternative')),
+                ('add_attachment', (None, 'related', 'mixed'))):
+            for existing in existing_subtypes:
+                for content, kw, error in (
+                        ('replacement', {'charset': 'does-not-exist'},
+                         LookupError),
+                        (b'abc', {'maintype': 'application',
+                                  'subtype': 'octet-stream', 'cte': 'unknown'},
+                         ValueError)):
+                    with self.subTest(method=method, existing=existing, kw=kw):
+                        m = self._make_message()
+                        m.set_content('original')
+                        if existing is not None:
+                            getattr(m, 'make_' + existing)()
+                        original = m.as_bytes()
+                        parts = list(m.iter_parts())
+                        with self.assertRaises(error):
+                            getattr(m, method)(content, **kw)
+                        self.assertEqual(m.as_bytes(), original)
+                        self.assertEqual(m.is_multipart(), existing is not None)
+                        self.assertEqual(list(m.iter_parts()), parts)
+
+    def test_add_multipart_checks_conversion_before_content(self):
+        for existing, target in (('mixed', 'related'),
+                                 ('mixed', 'alternative'),
+                                 ('alternative', 'related')):
+            with self.subTest(existing=existing, target=target):
+                m = self._make_message()
+                m.set_content('original')
+                getattr(m, 'make_' + existing)()
+                original = m.as_bytes()
+                with self.assertRaisesRegex(
+                        ValueError, f'Cannot convert {existing} to {target}'):
+                    getattr(m, 'add_' + target)(
+                        'replacement', charset='does-not-exist')
+                self.assertEqual(m.as_bytes(), original)
+
     def message_as_clear(self, body_parts, attachments, parts, msg):
         m = self._str_msg(msg)
         m.clear()
