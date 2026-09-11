@@ -4621,15 +4621,15 @@ class TestExtractionFilters(unittest.TestCase):
         for filter in 'tar', 'fully_trusted':
             with self.subTest(filter), self.check_context(arc.open(), filter):
                 if not os_helper.can_symlink():
-                    if filter == 'tar':
+                    if filter == 'fully_trusted' or sys.platform == "win32":
+                        self.expect_file("a/t/dummy")
+                        self.expect_file("b/")
+                        self.expect_file("c/")
+                    else:
                         self.expect_exception(
                             tarfile.LinkFallbackError,
                             "link 'boom' would be extracted as a copy of "
                             + "'c/escape', which was rejected")
-                    else:
-                        self.expect_file("a/t/dummy")
-                        self.expect_file("b/")
-                        self.expect_file("c/")
                 else:
                     self.expect_file("a/t/dummy")
                     self.expect_file("b/")
