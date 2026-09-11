@@ -404,6 +404,9 @@ class BaseWriterTest:
         writer.write_bytes(suffix, -1)
         self.assertEqual(writer.finish(), self.result_type(init + suffix))
 
+        # Note: PyBytesWriter_Resize() leaves the buffer unchanged (no resize)
+        # if the new size is smaller than the allocated size
+
     def test_format_i(self):
         # Test PyBytesWriter_Format()
         writer = self.create_writer()
