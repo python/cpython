@@ -2205,7 +2205,7 @@ class TestMain(ReplTestCase):
     def test_bracketed_paste_newline_after_end_marker(self):
         # A newline arriving in the same read as the closing marker must
         # execute the pasted block instead of being inserted as text.
-        # See #156186.
+        # See gh-156186.
         env = os.environ.copy()
         commands = ("\x1b[200~x = 1\nprint(f'^{x=}')\n\x1b[201~"
                     "\n"
