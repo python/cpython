@@ -131,10 +131,14 @@ we also call *flavours*:
       >>> PurePath(Path('foo'), Path('bar'))
       PurePosixPath('foo/bar')
 
-   When *pathsegments* is empty, the current directory is assumed::
+   When *pathsegments* is empty or a single empty string,
+   the current directory is assumed::
 
-      >>> PurePath()
-      PurePosixPath('.')
+      >>> PurePath(), PurePath('')
+      (PurePosixPath('.'), PurePosixPath('.'))
+
+   The boolean value of either expression is True.
+   This differs from ``os.path.exists("")``, which returns ``False``.
 
    If a segment is an absolute path, all previous segments are ignored
    (like :func:`os.path.join`)::
