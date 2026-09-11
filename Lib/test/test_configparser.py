@@ -1406,6 +1406,17 @@ class RawConfigParserNoValueAndExtendedInterpolationTest(
 ):
     config_class = configparser.RawConfigParser
 
+class BasicInterpolationWithAllowNoValueTest(unittest.TestCase):
+    def test_interpolation_with_allow_no_value(self):
+        cf = configparser.ConfigParser(allow_no_value=True)
+        cf.read_string(textwrap.dedent("""
+            [s]
+            a
+            b = %(a)s
+        """))
+        self.assertIsNone(cf["s"]["a"])
+        self.assertEqual(cf.get("s", "b"), "")
+
 
 class ConfigParserTestCaseTrickyFile(CfgParserTestCaseClass, unittest.TestCase):
     config_class = configparser.ConfigParser
