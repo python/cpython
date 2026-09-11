@@ -5,6 +5,7 @@ the latter should be modernized).
 """
 
 import array
+import contextlib
 import operator
 import os
 import re
@@ -46,6 +47,19 @@ class Indexable:
         self.value = value
     def __index__(self):
         return self.value
+
+
+@contextlib.contextmanager
+def inject_memory_error(testcase, start):
+    # Raise SkipTest if _testcapi extension module is missing
+    _testcapi = import_helper.import_module('_testcapi')
+
+    with testcase.assertRaises(MemoryError):
+        try:
+            _testcapi.set_nomemory(start)
+            yield
+        finally:
+            _testcapi.remove_mem_hooks()
 
 
 class BaseBytesTest:
@@ -1558,41 +1572,28 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
     def test_resize_error(self):
         # gh-157242: If bytearray.resize() fails (memory allocation failure),
         # the bytearray must be left unchanged.
-        _testcapi = import_helper.import_module('_testcapi')
 
         # Simple bytearray
         data = b'some data'
         ba = bytearray(data)
-        with self.assertRaises(MemoryError):
-            try:
-                _testcapi.set_nomemory(0)
-                ba.resize(1024)
-            finally:
-                _testcapi.remove_mem_hooks()
+        with inject_memory_error(self, 0):
+            ba.resize(1024)
         self.assertEqual(ba, bytearray(data))
 
         # growing bytearray with non-zero logical start
         ba = bytearray(b'0123456789')
         expected = ba[3:]
         del ba[:3]
-        with self.assertRaises(MemoryError):
-            try:
-                _testcapi.set_nomemory(0)
-                ba.resize(1024)
-            finally:
-                _testcapi.remove_mem_hooks()
+        with inject_memory_error(self, 0):
+            ba.resize(1024)
         self.assertEqual(ba, expected)
 
         # shrink bytearray with non-zero logical start
         ba = bytearray(b'0123456789')
         expected = ba[3:]
         del ba[:3]
-        with self.assertRaises(MemoryError):
-            try:
-                _testcapi.set_nomemory(0)
-                ba.resize(1)
-            finally:
-                _testcapi.remove_mem_hooks()
+        with inject_memory_error(self, 0):
+            ba.resize(1)
         self.assertEqual(ba, expected)
 
     def test_take_bytes(self):
@@ -1662,7 +1663,6 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
     def test_take_bytes_error(self):
         # gh-157242: If bytearray.take_bytes() fails (memory allocation
         # failure), the bytearray must be left unchanged.
-        _testcapi = import_helper.import_module('_testcapi')
 
         for to_take, mem_errors in (
             (5, (0, 1)),
@@ -1673,12 +1673,8 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
                     ba = bytearray(b'0123456789')
                     expected = ba[3:]
                     del ba[:3]
-                    with self.assertRaises(MemoryError):
-                        try:
-                            _testcapi.set_nomemory(mem_error)
-                            ba.take_bytes(to_take)
-                        finally:
-                            _testcapi.remove_mem_hooks()
+                    with inject_memory_error(self, mem_error):
+                        ba.take_bytes(to_take)
                     self.assertEqual(ba, expected)
 
     @support.cpython_only  # tests an implementation detail
