@@ -237,6 +237,7 @@ bytearray_realign_data_lock_held(PyByteArrayObject *self, Py_ssize_t new_size, P
         }
 
         if (_PyBytes_ResizeKeepOnError(&self->ob_bytes_object, alloc) < 0) {
+            self->ob_start[size] = '\0'; /* Trailing null */
             return -1;
         }
     }
