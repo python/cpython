@@ -4,6 +4,8 @@
 #include "parts.h"
 #include "util.h"
 
+#include <stddef.h>               // offsetof()
+
 #include "pycore_bytesobject.h"   // _PyBytesWriter_CreateByteArray()
 
 
@@ -373,6 +375,14 @@ error:
 }
 
 
+static size_t
+pybyteswriter_small_buffer_size(void)
+{
+    // PyBytesWriter.obj is the second member, small_buffer is the first member
+    return offsetof(PyBytesWriter, obj);
+}
+
+
 static PyMethodDef test_methods[] = {
     {"bytes_resize", bytes_resize, METH_VARARGS},
     {"bytes_join", bytes_join, METH_VARARGS},
@@ -398,6 +408,11 @@ _PyTestCapi_Init_Bytes(PyObject *m)
         return -1;
     }
     Py_DECREF(writer_type);
+
+    long size = (long)pybyteswriter_small_buffer_size();
+    if (PyModule_AddIntConstant(m, "PyBytesWriter_small_buffer", size) < 0) {
+        return -1;
+    }
 
     return 0;
 }

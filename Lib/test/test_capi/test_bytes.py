@@ -316,11 +316,11 @@ class CAPITest(unittest.TestCase):
             bytes_join(b'', NULL)
 
 
-class BytesWriterTest(unittest.TestCase):
-    RESULT_TYPE = bytes
+class BaseWriterTest:
+    RESULT_TYPE = NotImplementedError
 
     def create_writer(self, alloc=0, string=b''):
-        return _testcapi.PyBytesWriter(alloc, string, 0)
+        raise NotImplementedError
 
     def bytes_equal(self, result, expected):
         # Similar to assertEqual(), but check also that the result type
@@ -420,6 +420,13 @@ class BytesWriterTest(unittest.TestCase):
         writer.write_bytes(b'after', -1)
         self.bytes_equal(writer.finish(), b'after')
 
+
+class BytesWriterTest(BaseWriterTest, unittest.TestCase):
+    RESULT_TYPE = bytes
+
+    def create_writer(self, alloc=0, string=b''):
+        return _testcapi.PyBytesWriter(alloc, string, 0)
+
     def test_example_abc(self):
         self.assertEqual(_testcapi.byteswriter_abc(), b'abc')
 
@@ -429,8 +436,26 @@ class BytesWriterTest(unittest.TestCase):
     def test_example_highlevel(self):
         self.assertEqual(_testcapi.byteswriter_highlevel(), b'Hello World!')
 
+    def test_resize_error(self):
+        small_buffer = _testcapi.PyBytesWriter_small_buffer
+        init = b'x' * (small_buffer * 2)
+        writer = self.create_writer(len(init), init)
+        size = len(init) + 100
+        try:
+            with self.assertRaises(MemoryError):
+                _testcapi.set_nomemory(0)
+                writer.resize(size, b'')
+        finally:
+            _testcapi.remove_mem_hooks()
+        suffix = b'still working'
+        writer.write_bytes(suffix, -1)
+        self.bytes_equal(writer.finish(), init + suffix)
 
-class ByteArrayWriterTest(BytesWriterTest):
+        # Note: PyBytesWriter_Resize() leaves the buffer unchanged (no resize)
+        # if the new size is smaller than the allocated size
+
+
+class ByteArrayWriterTest(BaseWriterTest, unittest.TestCase):
     RESULT_TYPE = bytearray
 
     def create_writer(self, alloc=0, string=b''):
