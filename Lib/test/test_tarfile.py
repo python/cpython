@@ -255,6 +255,19 @@ class UstarReadTest(ReadTest, unittest.TestCase):
         self.add_dir_and_getmember('bar')
         self.add_dir_and_getmember('a'*101)
 
+    def test_extract_name_with_trailing_slash(self):
+        # gh-127636: './mydir/' is deliberately a regular-file member
+        # (REGTYPE, not DIRTYPE) whose stored name ends in a slash.  It
+        # extracts as a file.  Do not "fix" this by setting DIRTYPE; the
+        # trailing-slash name on a non-directory is what is being tested.
+        with tarfile.open(tmpname, 'w') as tar:
+            tar.addfile(tarfile.TarInfo('./mydir/'))
+        with os_helper.temp_dir() as tmpdir, tarfile.open(tmpname) as tar:
+            names = tar.getnames()
+            self.assertEqual(names, ['./mydir/'])
+            tar.extract(names[0], tmpdir, filter='fully_trusted')
+            self.assertTrue(os.path.isfile(os.path.join(tmpdir, 'mydir')))
+
     @unittest.skipUnless(hasattr(os, "getuid") and hasattr(os, "getgid"),
                          "Missing getuid or getgid implementation")
     def add_dir_and_getmember(self, name):
@@ -2499,6 +2512,35 @@ class PaxWriteTest(GNUWriteTest):
         finally:
             tar.close()
 
+    def test_pax_global_header_empty_archive(self):
+        # An archive that contains only a global header and no regular
+        # members should be opened successfully (gh-149578).
+        pax_headers = {"foo": "bar"}
+
+        # Create a PAX archive with global headers but no file entries.
+        with tarfile.open(tmpname, "w", format=tarfile.PAX_FORMAT,
+                          pax_headers=pax_headers):
+            pass
+
+        # Reading the archive should work and preserve global headers.
+        with tarfile.open(tmpname) as tar:
+            self.assertEqual(tar.pax_headers, pax_headers)
+            self.assertEqual(tar.getmembers(), [])
+
+        # Appending to the archive should work.
+        with tarfile.open(tmpname, "a") as tar:
+            self.assertEqual(tar.pax_headers, pax_headers)
+            self.assertEqual(tar.getmembers(), [])
+            tar.addfile(tarfile.TarInfo("test"))
+
+        # Verify the appended member is present and global headers
+        # are preserved.
+        with tarfile.open(tmpname) as tar:
+            self.assertEqual(tar.pax_headers, pax_headers)
+            members = tar.getmembers()
+            self.assertEqual(len(members), 1)
+            self.assertEqual(members[0].name, "test")
+
     def test_pax_extended_header(self):
         # The fields from the pax header have priority over the
         # TarInfo.
@@ -4579,9 +4621,15 @@ class TestExtractionFilters(unittest.TestCase):
         for filter in 'tar', 'fully_trusted':
             with self.subTest(filter), self.check_context(arc.open(), filter):
                 if not os_helper.can_symlink():
-                    self.expect_file("a/t/dummy")
-                    self.expect_file("b/")
-                    self.expect_file("c/")
+                    if filter == 'tar':
+                        self.expect_exception(
+                            tarfile.LinkFallbackError,
+                            "link 'boom' would be extracted as a copy of "
+                            + "'c/escape', which was rejected")
+                    else:
+                        self.expect_file("a/t/dummy")
+                        self.expect_file("b/")
+                        self.expect_file("c/")
                 else:
                     self.expect_file("a/t/dummy")
                     self.expect_file("b/")
@@ -4612,6 +4660,24 @@ class TestExtractionFilters(unittest.TestCase):
                 else:
                     self.expect_file("a/b/s", symlink_to=os.path.join('..', 'escape'))
                     self.expect_file("s", symlink_to=os.path.join('..', 'escape'))
+
+    @symlink_test
+    @os_helper.skip_unless_hardlink
+    def test_sneaky_hardlink_relocation(self):
+        with ArchiveMaker() as arc:
+            arc.add("a/escape", content="decoy")
+            arc.add("a/b/s", symlink_to=os.path.join("..", "escape"))
+            arc.add("s", hardlink_to=os.path.join("a", "b", "s"))
+
+        for filter in 'data', 'tar':
+            with self.subTest(filter), self.check_context(arc.open(), filter):
+                self.expect_file("a/escape", content="decoy")
+                if os_helper.can_symlink():
+                    self.expect_file("a/b/s", symlink_to=os.path.join('..', 'escape'))
+                else:
+                    self.expect_file("a/b/s", content="decoy")
+                self.expect_file("s", content="decoy")
+                self.assertFalse((self.destdir / "s").is_symlink())
 
     @symlink_test
     def test_exfiltration_via_symlink(self):
@@ -4759,6 +4825,25 @@ class TestExtractionFilters(unittest.TestCase):
             path = tempdir / 'link'
             if os_helper.can_chmod():
                 self.assertFalse(path.stat().st_mode & stat.S_IWUSR)
+
+    @symlink_test
+    def test_extract_filters_target_none(self):
+        # Test that when extract() falls back to extracting (rather than
+        # linking) a hardlink target, the member is skipped if the filter
+        # returns None.
+        with ArchiveMaker() as arc:
+            arc.add('a/b/s', symlink_to='../escape')
+            arc.add('q', hardlink_to='a/b/s')
+        def filter_unsafe_members(member, path):
+            try:
+                return tarfile.data_filter(member, path)
+            except tarfile.FilterError as error:
+                return None
+        with self.check_context(arc.open(), filter_unsafe_members):
+            if os_helper.can_symlink():
+                self.expect_file('a/b/s', symlink_to='../escape')
+            else:
+                self.expect_file('a/b/')  # symlink is not extracted
 
     def test_link_fallback_normalizes(self):
         # Make sure hardlink fallbacks work for non-normalized paths for all

@@ -122,6 +122,7 @@ class Function:
     line_number: int | None = None
     # Line on which the docstring starts (`None` if there is no docstring).
     docstring_line_number: int | None = None
+    vectorcall: bool = False
 
     def __post_init__(self) -> None:
         self.parent = self.cls or self.module
@@ -136,6 +137,21 @@ class Function:
             return self.cls.name
         else:
             return self.name
+
+    @functools.cached_property
+    def c_basename_vectorcall(self) -> str:
+        """C function name for vectorcall parser.
+
+        Strips the __init__/__new__ suffix from c_basename and appends
+        _vectorcall.  Respects 'as' renaming in clinic input, e.g.
+        'str.__new__ as unicode_new' produces 'unicode_vectorcall'.
+        """
+        name = self.c_basename
+        for suffix in ('___init__', '___new__', '_new', '_init'):
+            if name.endswith(suffix):
+                name = name.removesuffix(suffix)
+                break
+        return f'{name}_vectorcall'
 
     @functools.cached_property
     def fulldisplayname(self) -> str:
@@ -311,6 +327,25 @@ def walk_definitions(
         for module in parent.modules.values():
             yield depth, module.name, module
             yield from walk_definitions(module, module.name, depth + 1)
+
+
+def group_to_variable_name(group: int) -> str:
+    adjective = "left_" if group < 0 else "right_"
+    return "group_" + adjective + str(abs(group))
+
+
+def count_required(subset: ParamTuple) -> int:
+    """Return the number of arguments which cannot be omitted.
+
+    A parameter in an optional group is passed together with its group,
+    so only trailing parameters with a default value can be omitted.
+    """
+    count = len(subset)
+    for p in reversed(subset):
+        if p.group or not p.is_optional():
+            break
+        count -= 1
+    return count
 
 
 def permute_left_option_groups(

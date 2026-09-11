@@ -879,10 +879,16 @@ xmlcharrefreplace(PyBytesWriter *writer, char *str,
 
     /* generate replacement */
     for (i = collstart; i < collend; ++i) {
-        size = sprintf(str, "&#%d;", PyUnicode_READ(kind, data, i));
-        if (size < 0) {
-            return NULL;
-        }
+        // Use snprintf() with a temporary buffer to not write the trailing
+        // NUL byte in the writer buffer.
+        Py_BUILD_ASSERT(_Py_MAX_UNICODE <= 0x10ffff);
+        // len('&#1114111;\0') is 11 bytes.
+        char buffer[11];
+        Py_UCS4 ch = PyUnicode_READ(kind, data, i);
+        size = snprintf(buffer, sizeof(buffer), "&#%d;", ch);
+        assert(4 <= size && (size_t)size <= (sizeof(buffer) - 1));
+
+        memcpy(str, buffer, size);
         str += size;
     }
     return str;

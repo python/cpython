@@ -110,6 +110,7 @@ def _gettextwriter(out, encoding):
                             write_through=True)
 
 class XMLGenerator(handler.ContentHandler):
+    """Content handler which writes the events back as an XML document."""
 
     def __init__(self, out=None, encoding="iso-8859-1", short_empty_elements=False):
         handler.ContentHandler.__init__(self)
@@ -186,9 +187,9 @@ class XMLGenerator(handler.ContentHandler):
 
         for prefix, uri in self._undeclared_ns_maps:
             if prefix:
-                self._write(' xmlns:%s="%s"' % (prefix, uri))
+                self._write(' xmlns:%s=%s' % (prefix, quoteattr(uri)))
             else:
-                self._write(' xmlns="%s"' % uri)
+                self._write(' xmlns=%s' % quoteattr(uri))
         self._undeclared_ns_maps = []
 
         for (name, value) in attrs.items():

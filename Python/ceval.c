@@ -131,7 +131,9 @@ hardware_stack_limits(uintptr_t *base, uintptr_t *top, uintptr_t sp)
     GetCurrentThreadStackLimits(&low, &high);
     *top = (uintptr_t)high;
     ULONG guarantee = 0;
+#ifdef MS_WINDOWS_DESKTOP
     SetThreadStackGuarantee(&guarantee);
+#endif
     *base = (uintptr_t)low + guarantee;
 #elif defined(__APPLE__)
     pthread_t this_thread = pthread_self();
@@ -1996,9 +1998,11 @@ clear_gen_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
     assert(tstate->exc_info == &gen->gi_exc_state);
     tstate->exc_info = gen->gi_exc_state.previous_item;
     gen->gi_exc_state.previous_item = NULL;
-    assert(frame->frame_obj == NULL || frame->frame_obj->f_frame == frame);
     frame->previous = NULL;
+    Py_BEGIN_CRITICAL_SECTION(gen);
+    assert(frame->frame_obj == NULL || frame->frame_obj->f_frame == frame);
     _PyFrame_ClearExceptCode(frame);
+    Py_END_CRITICAL_SECTION();
     _PyErr_ClearExcState(&gen->gi_exc_state);
     // gh-143939: There must not be any escaping calls between setting
     // the generator return kind and returning from _PyEval_EvalFrame.

@@ -161,6 +161,9 @@
 #ifdef HAVE_SYS_SYSCALL_H
 #  include <sys/syscall.h>        // syscall(), __NR_xxx syscall numbers
 #endif
+#if !defined(SYS_getrandom) && defined(__NR_getrandom)
+#  define SYS_getrandom __NR_getrandom
+#endif
 
 #ifdef HAVE_POSIX_SPAWN
 #  include <spawn.h>              // posix_spawn()
@@ -1702,25 +1705,6 @@ idtype_t_converter(PyObject *arg, void *addr)
 }
 #endif
 
-#ifdef MS_WINDOWS
-    typedef long long Py_off_t;
-#else
-    typedef off_t Py_off_t;
-#endif
-
-static int
-Py_off_t_converter(PyObject *arg, void *addr)
-{
-#ifdef HAVE_LARGEFILE_SUPPORT
-    *((Py_off_t *)addr) = PyLong_AsLongLong(arg);
-#else
-    *((Py_off_t *)addr) = PyLong_AsLong(arg);
-#endif
-    if (PyErr_Occurred())
-        return 0;
-    return 1;
-}
-
 static PyObject *
 PyLong_FromPy_off_t(Py_off_t offset)
 {
@@ -2040,6 +2024,14 @@ win32_wchdir(LPCWSTR path)
 #define HAVE_STRUCT_STAT_ST_FILE_ATTRIBUTES 1
 #define HAVE_STRUCT_STAT_ST_REPARSE_TAG 1
 
+/* The \\?\ prefix disables the path normalization, in particular
+   stripping of trailing dots and spaces. */
+static int
+is_extended_path(const wchar_t *path)
+{
+    return wcsncmp(path, L"\\\\?\\", 4) == 0;
+}
+
 static void
 find_data_to_file_info(WIN32_FIND_DATAW *pFileData,
                        FILE_BASIC_INFO* basic_info,
@@ -2113,12 +2105,20 @@ update_st_mode_from_path(const wchar_t *path, DWORD attr,
            GetSecurityInfo, OpenThreadToken/OpenProcessToken, and
            AccessCheck to check for generic read, write, and execute
            access. */
-        const wchar_t *fileExtension = wcsrchr(path, '.');
-        if (fileExtension) {
-            if (_wcsicmp(fileExtension, L".exe") == 0 ||
-                _wcsicmp(fileExtension, L".bat") == 0 ||
-                _wcsicmp(fileExtension, L".cmd") == 0 ||
-                _wcsicmp(fileExtension, L".com") == 0) {
+        size_t len = wcslen(path);
+        if (!is_extended_path(path)) {
+            /* Trailing dots and spaces are stripped from the last component
+               of the path. */
+            while (len > 0 && (path[len - 1] == L'.' || path[len - 1] == L' ')) {
+                len--;
+            }
+        }
+        if (len >= 4) {
+            const wchar_t *fileExtension = path + len - 4;
+            if (_wcsnicmp(fileExtension, L".exe", 4) == 0 ||
+                _wcsnicmp(fileExtension, L".bat", 4) == 0 ||
+                _wcsnicmp(fileExtension, L".cmd", 4) == 0 ||
+                _wcsnicmp(fileExtension, L".com", 4) == 0) {
                 result->st_mode |= 0111;
             }
         }
@@ -3221,18 +3221,6 @@ class dev_t_return_converter(unsigned_long_return_converter):
     conversion_fn = '_PyLong_FromDev'
     unsigned_cast = '(dev_t)'
 
-class pid_t_converter(CConverter):
-    type = 'pid_t'
-    format_unit = '" _Py_PARSE_PID "'
-
-    def parse_arg(self, argname, displayname, *, limited_capi):
-        return self.format_code("""
-            {paramname} = PyLong_AsPid({argname});
-            if ({paramname} == (pid_t)(-1) && PyErr_Occurred()) {{{{
-                goto exit;
-            }}}}
-            """, argname=argname)
-
 class idtype_t_converter(CConverter):
     type = 'idtype_t'
     converter = 'idtype_t_converter'
@@ -3261,10 +3249,6 @@ class intptr_t_converter(CConverter):
             }}}}
             """, argname=argname)
 
-class Py_off_t_converter(CConverter):
-    type = 'Py_off_t'
-    converter = 'Py_off_t_converter'
-
 class Py_off_t_return_converter(long_return_converter):
     type = 'Py_off_t'
     conversion_fn = 'PyLong_FromPy_off_t'
@@ -3284,7 +3268,7 @@ class confname_converter(CConverter):
         """, argname=argname, converter=self.converter, table=self.table)
 
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=ddbf3ac90a981122]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=e459765bdf453ebf]*/
 
 /*[clinic input]
 
@@ -4418,6 +4402,14 @@ static PyObject *
 os_chroot_impl(PyObject *module, path_t *path)
 /*[clinic end generated code: output=de80befc763a4475 input=14822965652c3dc3]*/
 {
+#ifdef __ANDROID__
+    // On Android, calling this function as a non-root user leads to a process crash
+    // rather than returning a permission error.
+    if (getuid() != 0) {
+        errno = EPERM;
+        return path_error(path);
+    }
+#endif
     int res;
     Py_BEGIN_ALLOW_THREADS
     res = chroot(path->narrow);
@@ -9894,6 +9886,14 @@ os_initgroups_impl(PyObject *module, PyObject *oname, gid_t gid)
 /*[clinic end generated code: output=59341244521a9e3f input=7e4514dff4526a95]*/
 #endif
 {
+#ifdef __ANDROID__
+    // On Android, calling this function as a non-root user leads to a process crash
+    // rather than returning a permission error.
+    if (getuid() != 0) {
+        errno = EPERM;
+        return posix_error();
+    }
+#endif
     const char *username = PyBytes_AS_STRING(oname);
 
     if (initgroups(username, gid) == -1)
@@ -10320,6 +10320,14 @@ static PyObject *
 os_setuid_impl(PyObject *module, uid_t uid)
 /*[clinic end generated code: output=a0a41fd0d1ec555f input=c921a3285aa22256]*/
 {
+#ifdef __ANDROID__
+    // On Android, calling this function as a non-root user leads to a process crash
+    // rather than returning a permission error.
+    if (getuid() != 0) {
+        errno = EPERM;
+        return posix_error();
+    }
+#endif
     if (setuid(uid) < 0)
         return posix_error();
     Py_RETURN_NONE;
@@ -10341,6 +10349,14 @@ static PyObject *
 os_seteuid_impl(PyObject *module, uid_t euid)
 /*[clinic end generated code: output=102e3ad98361519a input=ba93d927e4781aa9]*/
 {
+#ifdef __ANDROID__
+    // On Android, calling this function as a non-root user leads to a process crash
+    // rather than returning a permission error.
+    if (getuid() != 0) {
+        errno = EPERM;
+        return posix_error();
+    }
+#endif
     if (seteuid(euid) < 0)
         return posix_error();
     Py_RETURN_NONE;
@@ -10362,6 +10378,14 @@ static PyObject *
 os_setegid_impl(PyObject *module, gid_t egid)
 /*[clinic end generated code: output=4e4b825a6a10258d input=4080526d0ccd6ce3]*/
 {
+#ifdef __ANDROID__
+    // On Android, calling this function as a non-root user leads to a process crash
+    // rather than returning a permission error.
+    if (getuid() != 0) {
+        errno = EPERM;
+        return posix_error();
+    }
+#endif
     if (setegid(egid) < 0)
         return posix_error();
     Py_RETURN_NONE;
@@ -10384,6 +10408,14 @@ static PyObject *
 os_setreuid_impl(PyObject *module, uid_t ruid, uid_t euid)
 /*[clinic end generated code: output=62d991210006530a input=0ca8978de663880c]*/
 {
+#ifdef __ANDROID__
+    // On Android, calling this function as a non-root user leads to a process crash
+    // rather than returning a permission error.
+    if (getuid() != 0) {
+        errno = EPERM;
+        return posix_error();
+    }
+#endif
     if (setreuid(ruid, euid) < 0) {
         return posix_error();
     } else {
@@ -10408,6 +10440,14 @@ static PyObject *
 os_setregid_impl(PyObject *module, gid_t rgid, gid_t egid)
 /*[clinic end generated code: output=aa803835cf5342f3 input=c59499f72846db78]*/
 {
+#ifdef __ANDROID__
+    // On Android, calling this function as a non-root user leads to a process crash
+    // rather than returning a permission error.
+    if (getuid() != 0) {
+        errno = EPERM;
+        return posix_error();
+    }
+#endif
     if (setregid(rgid, egid) < 0)
         return posix_error();
     Py_RETURN_NONE;
@@ -10428,6 +10468,14 @@ static PyObject *
 os_setgid_impl(PyObject *module, gid_t gid)
 /*[clinic end generated code: output=bdccd7403f6ad8c3 input=27d30c4059045dc6]*/
 {
+#ifdef __ANDROID__
+    // On Android, calling this function as a non-root user leads to a process crash
+    // rather than returning a permission error.
+    if (getuid() != 0) {
+        errno = EPERM;
+        return posix_error();
+    }
+#endif
     if (setgid(gid) < 0)
         return posix_error();
     Py_RETURN_NONE;
@@ -11519,9 +11567,9 @@ os.timerfd_settime_ns
     flags: int = 0
         0 or a bit mask of TFD_TIMER_ABSTIME or TFD_TIMER_CANCEL_ON_SET.
     initial: long_long = 0
-        initial expiration timing in seconds.
+        initial expiration timing in nanoseconds.
     interval: long_long = 0
-        interval for the timer in seconds.
+        interval for the timer in nanoseconds.
 
 Alter a timer file descriptor's internal timer in nanoseconds.
 [clinic start generated code]*/
@@ -11529,7 +11577,7 @@ Alter a timer file descriptor's internal timer in nanoseconds.
 static PyObject *
 os_timerfd_settime_ns_impl(PyObject *module, int fd, int flags,
                            long long initial, long long interval)
-/*[clinic end generated code: output=6273ec7d7b4cc0b3 input=261e105d6e42f5bc]*/
+/*[clinic end generated code: output=6273ec7d7b4cc0b3 input=94bdcea7292157eb]*/
 {
     struct itimerspec new_value;
     struct itimerspec old_value;
@@ -11559,12 +11607,12 @@ os.timerfd_gettime
         A timer file descriptor.
     /
 
-Return a tuple of a timer file descriptor's (interval, next expiration) in float seconds.
+Return a tuple of a timer file descriptor's (next expiration, interval) in float seconds.
 [clinic start generated code]*/
 
 static PyObject *
 os_timerfd_gettime_impl(PyObject *module, int fd)
-/*[clinic end generated code: output=ec5a94a66cfe6ab4 input=05f7d568a4820dc6]*/
+/*[clinic end generated code: output=ec5a94a66cfe6ab4 input=7b0a7cc61ea9e31a]*/
 {
     struct itimerspec curr_value;
     int result;
@@ -11586,12 +11634,12 @@ os.timerfd_gettime_ns
         A timer file descriptor.
     /
 
-Return a tuple of a timer file descriptor's (interval, next expiration) in nanoseconds.
+Return a tuple of a timer file descriptor's (next expiration, interval) in nanoseconds.
 [clinic start generated code]*/
 
 static PyObject *
 os_timerfd_gettime_ns_impl(PyObject *module, int fd)
-/*[clinic end generated code: output=580633a4465f39fe input=d0de95b9782179c5]*/
+/*[clinic end generated code: output=580633a4465f39fe input=89702268455fa93b]*/
 {
     struct itimerspec curr_value;
     int result;
@@ -12642,7 +12690,7 @@ done:
     }
 #endif
     off_t offset;
-    if (!Py_off_t_converter(offobj, &offset))
+    if (!_Py_Off_t_Converter(offobj, &offset))
         return NULL;
 
 #if defined(__sun) && defined(__SVR4)
@@ -13176,14 +13224,14 @@ os_copy_file_range_impl(PyObject *module, int src, int dst, Py_ssize_t count,
 
 
     if (offset_src != Py_None) {
-        if (!Py_off_t_converter(offset_src, &offset_src_val)) {
+        if (!_Py_Off_t_Converter(offset_src, &offset_src_val)) {
             return NULL;
         }
         p_offset_src = &offset_src_val;
     }
 
     if (offset_dst != Py_None) {
-        if (!Py_off_t_converter(offset_dst, &offset_dst_val)) {
+        if (!_Py_Off_t_Converter(offset_dst, &offset_dst_val)) {
             return NULL;
         }
         p_offset_dst = &offset_dst_val;
@@ -13247,14 +13295,14 @@ os_splice_impl(PyObject *module, int src, int dst, Py_ssize_t count,
 
 
     if (offset_src != Py_None) {
-        if (!Py_off_t_converter(offset_src, &offset_src_val)) {
+        if (!_Py_Off_t_Converter(offset_src, &offset_src_val)) {
             return NULL;
         }
         p_offset_src = &offset_src_val;
     }
 
     if (offset_dst != Py_None) {
-        if (!Py_off_t_converter(offset_dst, &offset_dst_val)) {
+        if (!_Py_Off_t_Converter(offset_dst, &offset_dst_val)) {
             return NULL;
         }
         p_offset_dst = &offset_dst_val;
@@ -15525,6 +15573,14 @@ static PyObject *
 os_setresuid_impl(PyObject *module, uid_t ruid, uid_t euid, uid_t suid)
 /*[clinic end generated code: output=834a641e15373e97 input=9e33cb79a82792f3]*/
 {
+#ifdef __ANDROID__
+    // On Android, calling this function as a non-root user leads to a process crash
+    // rather than returning a permission error.
+    if (getuid() != 0) {
+        errno = EPERM;
+        return posix_error();
+    }
+#endif
     if (setresuid(ruid, euid, suid) < 0)
         return posix_error();
     Py_RETURN_NONE;
@@ -15548,6 +15604,14 @@ static PyObject *
 os_setresgid_impl(PyObject *module, gid_t rgid, gid_t egid, gid_t sgid)
 /*[clinic end generated code: output=6aa402f3d2e514a9 input=33e9e0785ef426b1]*/
 {
+#ifdef __ANDROID__
+    // On Android, calling this function as a non-root user leads to a process crash
+    // rather than returning a permission error.
+    if (getuid() != 0) {
+        errno = EPERM;
+        return posix_error();
+    }
+#endif
     if (setresgid(rgid, egid, sgid) < 0)
         return posix_error();
     Py_RETURN_NONE;
@@ -16752,12 +16816,6 @@ static PyType_Spec DirEntryType_spec = {
 
 
 #ifdef MS_WINDOWS
-
-static int
-is_extended_path(const wchar_t *path)
-{
-    return wcsncmp(path, L"\\\\?\\", 4) == 0;
-}
 
 static wchar_t *
 join_path_filenameW(const wchar_t *path_wide, const wchar_t *filename,

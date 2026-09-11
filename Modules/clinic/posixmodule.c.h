@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_fileutils.h"     // _Py_Off_t_Converter()
 #include "pycore_long.h"          // _PyLong_UnsignedInt_Converter()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
@@ -7076,9 +7077,9 @@ PyDoc_STRVAR(os_timerfd_settime_ns__doc__,
 "  flags\n"
 "    0 or a bit mask of TFD_TIMER_ABSTIME or TFD_TIMER_CANCEL_ON_SET.\n"
 "  initial\n"
-"    initial expiration timing in seconds.\n"
+"    initial expiration timing in nanoseconds.\n"
 "  interval\n"
-"    interval for the timer in seconds.");
+"    interval for the timer in nanoseconds.");
 
 #define OS_TIMERFD_SETTIME_NS_METHODDEF    \
     {"timerfd_settime_ns", _PyCFunction_CAST(os_timerfd_settime_ns), METH_FASTCALL|METH_KEYWORDS, os_timerfd_settime_ns__doc__},
@@ -7174,7 +7175,7 @@ PyDoc_STRVAR(os_timerfd_gettime__doc__,
 "timerfd_gettime($module, fd, /)\n"
 "--\n"
 "\n"
-"Return a tuple of a timer file descriptor\'s (interval, next expiration) in float seconds.\n"
+"Return a tuple of a timer file descriptor\'s (next expiration, interval) in float seconds.\n"
 "\n"
 "  fd\n"
 "    A timer file descriptor.");
@@ -7209,7 +7210,7 @@ PyDoc_STRVAR(os_timerfd_gettime_ns__doc__,
 "timerfd_gettime_ns($module, fd, /)\n"
 "--\n"
 "\n"
-"Return a tuple of a timer file descriptor\'s (interval, next expiration) in nanoseconds.\n"
+"Return a tuple of a timer file descriptor\'s (next expiration, interval) in nanoseconds.\n"
 "\n"
 "  fd\n"
 "    A timer file descriptor.");
@@ -7761,7 +7762,7 @@ os_lockf(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (command == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    if (!Py_off_t_converter(args[2], &length)) {
+    if (!_Py_Off_t_Converter(args[2], &length)) {
         goto exit;
     }
     return_value = os_lockf_impl(module, fd, command, length);
@@ -7813,7 +7814,7 @@ os_lseek(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    if (!Py_off_t_converter(args[1], &position)) {
+    if (!_Py_Off_t_Converter(args[1], &position)) {
         goto exit;
     }
     how = PyLong_AsInt(args[2]);
@@ -8024,7 +8025,7 @@ os_pread(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         }
         length = ival;
     }
-    if (!Py_off_t_converter(args[2], &offset)) {
+    if (!_Py_Off_t_Converter(args[2], &offset)) {
         goto exit;
     }
     return_value = os_pread_impl(module, fd, length, offset);
@@ -8084,7 +8085,7 @@ os_preadv(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     buffers = args[1];
-    if (!Py_off_t_converter(args[2], &offset)) {
+    if (!_Py_Off_t_Converter(args[2], &offset)) {
         goto exit;
     }
     if (nargs < 4) {
@@ -8223,10 +8224,10 @@ os_sendfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     if (in_fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    if (!Py_off_t_converter(args[2], &offset)) {
+    if (!_Py_Off_t_Converter(args[2], &offset)) {
         goto exit;
     }
-    if (!Py_off_t_converter(args[3], &sbytes)) {
+    if (!_Py_Off_t_Converter(args[3], &sbytes)) {
         goto exit;
     }
     if (!noptargs) {
@@ -8328,7 +8329,7 @@ os_sendfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     if (in_fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    if (!Py_off_t_converter(args[2], &offset)) {
+    if (!_Py_Off_t_Converter(args[2], &offset)) {
         goto exit;
     }
     {
@@ -8757,7 +8758,7 @@ os_pwrite(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (PyObject_GetBuffer(args[1], &buffer, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!Py_off_t_converter(args[2], &offset)) {
+    if (!_Py_Off_t_Converter(args[2], &offset)) {
         goto exit;
     }
     _return_value = os_pwrite_impl(module, fd, &buffer, offset);
@@ -8830,7 +8831,7 @@ os_pwritev(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     buffers = args[1];
-    if (!Py_off_t_converter(args[2], &offset)) {
+    if (!_Py_Off_t_Converter(args[2], &offset)) {
         goto exit;
     }
     if (nargs < 4) {
@@ -9444,7 +9445,7 @@ os_ftruncate(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    if (!Py_off_t_converter(args[1], &length)) {
+    if (!_Py_Off_t_Converter(args[1], &length)) {
         goto exit;
     }
     return_value = os_ftruncate_impl(module, fd, length);
@@ -9516,7 +9517,7 @@ os_truncate(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     if (!path_converter(args[0], &path)) {
         goto exit;
     }
-    if (!Py_off_t_converter(args[1], &length)) {
+    if (!_Py_Off_t_Converter(args[1], &length)) {
         goto exit;
     }
     return_value = os_truncate_impl(module, &path, length);
@@ -9564,10 +9565,10 @@ os_posix_fallocate(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    if (!Py_off_t_converter(args[1], &offset)) {
+    if (!_Py_Off_t_Converter(args[1], &offset)) {
         goto exit;
     }
-    if (!Py_off_t_converter(args[2], &length)) {
+    if (!_Py_Off_t_Converter(args[2], &length)) {
         goto exit;
     }
     return_value = os_posix_fallocate_impl(module, fd, offset, length);
@@ -9617,10 +9618,10 @@ os_posix_fadvise(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    if (!Py_off_t_converter(args[1], &offset)) {
+    if (!_Py_Off_t_Converter(args[1], &offset)) {
         goto exit;
     }
-    if (!Py_off_t_converter(args[2], &length)) {
+    if (!_Py_Off_t_Converter(args[2], &length)) {
         goto exit;
     }
     advice = PyLong_AsInt(args[3]);
@@ -13746,4 +13747,4 @@ exit:
 #ifndef OS__EMSCRIPTEN_LOG_METHODDEF
     #define OS__EMSCRIPTEN_LOG_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_LOG_METHODDEF) */
-/*[clinic end generated code: output=f77ed566165d51da input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d4e858cbdf280235 input=a9049054013a1b77]*/

@@ -624,9 +624,13 @@ class EnumType(type):
                     '__invert__'
                 ):
                 if name not in classdict:
+                    # check for mixin overrides before replacing
                     enum_method = getattr(Flag, name)
-                    setattr(enum_class, name, enum_method)
-                    classdict[name] = enum_method
+                    found_method = getattr(enum_class, name)
+                    data_type_method = getattr(member_type, name, None)
+                    if found_method in (enum_method, data_type_method):
+                        setattr(enum_class, name, enum_method)
+                        classdict[name] = enum_method
         #
         # replace any other __new__ with our own (as long as Enum is not None,
         # anyway) -- again, this is to support pickle
