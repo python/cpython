@@ -1611,6 +1611,14 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
             self.assertRaises(BufferError, ba.take_bytes)
         self.assertEqual(ba.take_bytes(), b'abc')
 
+        # Leaving one byte must not adopt the shared single-byte bytes object
+        # as the buffer.
+        ba = bytearray(b'abc')
+        self.assertEqual(ba.take_bytes(2), b'ab')
+        ba[0] = ord('A')
+        self.assertEqual(ba, bytearray(b'A'))
+        self.assertEqual(ord(b'c'), ord('c'))
+
     @support.cpython_only  # tests an implementation detail
     def test_take_bytes_optimization(self):
         # Validate optimization around taking lots of little chunks out of a
@@ -1827,6 +1835,30 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         b = bytearray(range(256))
         b[8:] = b
         self.assertEqual(b, bytearray(list(range(8)) + list(range(256))))
+
+    def test_setslice_reentrant_resize(self):
+        # gh-153578: a buffer argument whose __buffer__ resizes the bytearray
+        # while the buffer is being acquired must not leave the slice bounds
+        # with lo > hi, which drove a negative-size memmove (an out-of-bounds
+        # write) in the setslice path reached through extend().
+        class Evil:
+            def __init__(self, resize):
+                self.resize = resize
+            def __buffer__(self, flags):
+                self.resize()
+                return memoryview(b'ABCDEFGH')
+        # clear() during __buffer__: extend appends to the emptied bytearray.
+        b = bytearray(b'x' * 100)
+        b.extend(Evil(b.clear))
+        self.assertEqual(b, b'ABCDEFGH')
+        # partial shrink during __buffer__.
+        b = bytearray(b'x' * 100)
+        b.extend(Evil(lambda: b.__delitem__(slice(30, None))))
+        self.assertEqual(b, b'x' * 30 + b'ABCDEFGH')
+        # grow during __buffer__: the data lands at the original end.
+        b = bytearray(b'x' * 10)
+        b.extend(Evil(lambda: b.extend(b'y' * 100)))
+        self.assertEqual(b, b'x' * 10 + b'ABCDEFGH' + b'y' * 100)
 
     def test_iconcat(self):
         b = bytearray(b"abc")
@@ -3030,6 +3062,19 @@ class FreeThreadingTest(unittest.TestCase):
         threads = [threading.Thread(target=resize_stress, args=(ba,)) for _ in range(4)]
         with threading_helper.start_threads(threads):
             pass
+
+    @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
+    def test_free_threading_bytearray_resize_other_thread(self):
+        # Shrinking a bytearray whose buffer another thread owns must not
+        # adopt the immortal single-byte bytes object a the buffer.
+        ba = bytearray(b'abc')
+        thread = threading.Thread(target=ba.resize, args=(1,))
+        with threading_helper.start_threads([thread]):
+            pass
+        ba[0] = ord('X')
+        self.assertEqual(ba, bytearray(b'X'))
+        self.assertEqual(ord(b'a'), ord('a'))
 
 if __name__ == "__main__":
     unittest.main()

@@ -6,6 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #endif
 #include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_long.h"          // _PyLong_UnsignedShort_Converter()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_runtime.h"       // _Py_ID()
@@ -3477,6 +3478,209 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(only_group__doc__,
+"only_group([a])");
+
+#define ONLY_GROUP_METHODDEF    \
+    {"only_group", _PyCFunction_CAST(only_group), METH_FASTCALL, only_group__doc__},
+
+static PyObject *
+only_group_impl(PyObject *module, int group_right_1, PyObject *a);
+
+static PyObject *
+only_group(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int group_right_1 = 0;
+    PyObject *a = NULL;
+
+    if (nargs > 1) {
+        PyErr_SetString(PyExc_TypeError, "only_group requires 0 to 1 arguments");
+        goto exit;
+    }
+    if (nargs >= 1) {
+        a = args[0];
+        group_right_1 = 1;
+    }
+    return_value = only_group_impl(module, group_right_1, a);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(group_and_opt__doc__,
+"group_and_opt([a, b,] c=None)");
+
+#define GROUP_AND_OPT_METHODDEF    \
+    {"group_and_opt", _PyCFunction_CAST(group_and_opt), METH_FASTCALL, group_and_opt__doc__},
+
+static PyObject *
+group_and_opt_impl(PyObject *module, int group_left_1, PyObject *a,
+                   PyObject *b, PyObject *c);
+
+static PyObject *
+group_and_opt(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int group_left_1 = 0;
+    PyObject *a = NULL;
+    PyObject *b = NULL;
+    PyObject *c = Py_None;
+
+    Py_ssize_t offset = 0;
+    if (nargs > 3) {
+        PyErr_SetString(PyExc_TypeError, "group_and_opt requires 0 to 3 arguments");
+        goto exit;
+    }
+    if (nargs >= 2) {
+        a = args[0];
+        b = args[1];
+        offset += 2;
+        group_left_1 = 1;
+    }
+    if (nargs <= offset) {
+        goto skip_optional;
+    }
+    c = args[offset];
+skip_optional:
+    return_value = group_and_opt_impl(module, group_left_1, a, b, c);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(two_groups_on_left__doc__,
+"two_groups_on_left([a, b,] [c,] d)");
+
+#define TWO_GROUPS_ON_LEFT_METHODDEF    \
+    {"two_groups_on_left", _PyCFunction_CAST(two_groups_on_left), METH_FASTCALL, two_groups_on_left__doc__},
+
+static PyObject *
+two_groups_on_left_impl(PyObject *module, int group_left_1, PyObject *a,
+                        PyObject *b, int group_left_2, PyObject *c,
+                        PyObject *d);
+
+static PyObject *
+two_groups_on_left(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int group_left_1 = 0;
+    PyObject *a = NULL;
+    PyObject *b = NULL;
+    int group_left_2 = 0;
+    PyObject *c = NULL;
+    PyObject *d;
+
+    if (nargs < 1 || nargs > 4) {
+        PyErr_SetString(PyExc_TypeError, "two_groups_on_left requires 1 to 4 arguments");
+        goto exit;
+    }
+    if (nargs >= 3) {
+        a = args[0];
+        b = args[1];
+        group_left_1 = 1;
+    }
+    if (nargs == 2 || nargs == 4) {
+        c = args[nargs - 2];
+        group_left_2 = 1;
+    }
+    d = args[nargs - 1];
+    return_value = two_groups_on_left_impl(module, group_left_1, a, b, group_left_2, c, d);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(two_groups_on_right__doc__,
+"two_groups_on_right(a, [b,] [c, d])");
+
+#define TWO_GROUPS_ON_RIGHT_METHODDEF    \
+    {"two_groups_on_right", _PyCFunction_CAST(two_groups_on_right), METH_FASTCALL, two_groups_on_right__doc__},
+
+static PyObject *
+two_groups_on_right_impl(PyObject *module, PyObject *a, int group_right_1,
+                         PyObject *b, int group_right_2, PyObject *c,
+                         PyObject *d);
+
+static PyObject *
+two_groups_on_right(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *a;
+    int group_right_1 = 0;
+    PyObject *b = NULL;
+    int group_right_2 = 0;
+    PyObject *c = NULL;
+    PyObject *d = NULL;
+
+    if (nargs < 1 || nargs > 4) {
+        PyErr_SetString(PyExc_TypeError, "two_groups_on_right requires 1 to 4 arguments");
+        goto exit;
+    }
+    a = args[0];
+    if (nargs == 2 || nargs == 4) {
+        b = args[1];
+        group_right_1 = 1;
+    }
+    if (nargs >= 3) {
+        c = args[nargs - 2];
+        d = args[nargs - 1];
+        group_right_2 = 1;
+    }
+    return_value = two_groups_on_right_impl(module, a, group_right_1, b, group_right_2, c, d);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(group_and_two_opt__doc__,
+"group_and_two_opt([a, b, c,] d=None, e=None)");
+
+#define GROUP_AND_TWO_OPT_METHODDEF    \
+    {"group_and_two_opt", _PyCFunction_CAST(group_and_two_opt), METH_FASTCALL, group_and_two_opt__doc__},
+
+static PyObject *
+group_and_two_opt_impl(PyObject *module, int group_left_1, PyObject *a,
+                       PyObject *b, PyObject *c, PyObject *d, PyObject *e);
+
+static PyObject *
+group_and_two_opt(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int group_left_1 = 0;
+    PyObject *a = NULL;
+    PyObject *b = NULL;
+    PyObject *c = NULL;
+    PyObject *d = Py_None;
+    PyObject *e = Py_None;
+
+    Py_ssize_t offset = 0;
+    if (nargs > 5) {
+        PyErr_SetString(PyExc_TypeError, "group_and_two_opt requires 0 to 5 arguments");
+        goto exit;
+    }
+    if (nargs >= 3) {
+        a = args[0];
+        b = args[1];
+        c = args[2];
+        offset += 3;
+        group_left_1 = 1;
+    }
+    if (nargs <= offset) {
+        goto skip_optional;
+    }
+    d = args[offset];
+    if (nargs <= offset + 1) {
+        goto skip_optional;
+    }
+    e = args[offset + 1];
+skip_optional:
+    return_value = group_and_two_opt_impl(module, group_left_1, a, b, c, d, e);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(gh_32092_oob__doc__,
 "gh_32092_oob($module, /, pos1, pos2, *varargs, kw1=None, kw2=None)\n"
 "--\n"
@@ -4600,4 +4804,397 @@ _testclinic_TestClass_posonly_poskw_varpos_array_no_fastcall(PyObject *type, PyO
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9971dbbc5f62b8d2 input=a9049054013a1b77]*/
+
+static PyObject *
+vc_plain_new_impl(PyTypeObject *type, PyObject *a);
+
+static PyObject *
+vc_plain_new_helper(PyTypeObject *type, PyObject *const *args,
+    Py_ssize_t nargs, Py_ssize_t nkw, PyObject *kwargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { _Py_LATIN1_CHR('a'), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"a", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "VcNew",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject * const *fastargs;
+    Py_ssize_t noptargs = nargs + nkw - 0;
+    PyObject *a = Py_None;
+
+    fastargs = _PyArg_UnpackKeywords(args, nargs, kwargs, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!fastargs) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    a = fastargs[0];
+skip_optional_pos:
+    return_value = vc_plain_new_impl(type, a);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+vc_plain_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    return vc_plain_new_helper(type, _PyTuple_CAST(args)->ob_item,
+        PyTuple_GET_SIZE(args),
+        kwargs ? PyDict_GET_SIZE(kwargs) : 0,
+        kwargs, NULL);
+}
+
+static PyObject *
+vc_plain_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    PyObject *a = Py_None;
+
+    assert(Py_Is(_PyType_CAST(type), &VcNew_Type));
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    if (kwnames != NULL || nargs > 1) {
+        return vc_plain_new_helper(_PyType_CAST(type), args, nargs,
+            kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
+            NULL, kwnames);
+    }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    a = args[0];
+skip_optional:
+    return_value = vc_plain_new_impl(_PyType_CAST(type), a);
+
+    return return_value;
+}
+
+static int
+vc_posorkw_init_impl(PyObject *self, PyObject *a, PyObject *b);
+
+static int
+vc_posorkw_init_helper(PyObject *self, PyObject *const *args,
+    Py_ssize_t nargs, Py_ssize_t nkw, PyObject *kwargs, PyObject *kwnames)
+{
+    int return_value = -1;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { _Py_LATIN1_CHR('b'), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"", "b", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "VcInit",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    PyObject * const *fastargs;
+    Py_ssize_t noptargs = nargs + nkw - 1;
+    PyObject *a;
+    PyObject *b = Py_None;
+
+    fastargs = _PyArg_UnpackKeywords(args, nargs, kwargs, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!fastargs) {
+        goto exit;
+    }
+    a = fastargs[0];
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    b = fastargs[1];
+skip_optional_pos:
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = vc_posorkw_init_impl(self, a, b);
+    Py_END_CRITICAL_SECTION();
+
+exit:
+    return return_value;
+}
+
+static int
+vc_posorkw_init(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    return vc_posorkw_init_helper(self, _PyTuple_CAST(args)->ob_item,
+        PyTuple_GET_SIZE(args),
+        kwargs ? PyDict_GET_SIZE(kwargs) : 0,
+        kwargs, NULL);
+}
+
+static PyObject *
+vc_posorkw_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    PyObject *self;
+    int _result;
+    PyObject *a;
+    PyObject *b = Py_None;
+
+    assert(Py_Is(_PyType_CAST(type), &VcInit_Type));
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    if (kwnames != NULL || nargs < 1 || nargs > 2) {
+        self = _PyType_CAST(type)->tp_new(_PyType_CAST(type),
+            (PyObject *)&_Py_SINGLETON(tuple_empty), NULL);
+        if (self == NULL) {
+            return NULL;
+        }
+        _result = vc_posorkw_init_helper(self, args, nargs,
+            kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
+            NULL, kwnames);
+        if (_result != 0) {
+            Py_DECREF(self);
+            return NULL;
+        }
+        return self;
+    }
+    a = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    b = args[1];
+skip_optional:
+    self = _PyType_CAST(type)->tp_new(_PyType_CAST(type),
+        (PyObject *)&_Py_SINGLETON(tuple_empty), NULL);
+    if (self == NULL) {
+        goto exit;
+    }
+    Py_BEGIN_CRITICAL_SECTION(self);
+    _result = vc_posorkw_init_impl((PyObject *)self, a, b);
+    Py_END_CRITICAL_SECTION();
+    if (_result != 0) {
+        Py_DECREF(self);
+        goto exit;
+    }
+    return_value = self;
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+vc_base_new_impl(PyTypeObject *type, PyObject *a, PyObject *b);
+
+static PyObject *
+vc_base_new_helper(PyTypeObject *type, PyObject *const *args,
+    Py_ssize_t nargs, Py_ssize_t nkw, PyObject *kwargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { _Py_LATIN1_CHR('b'), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"", "b", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "VcNewBase",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    PyObject * const *fastargs;
+    Py_ssize_t noptargs = nargs + nkw - 1;
+    PyObject *a;
+    PyObject *b = Py_None;
+
+    fastargs = _PyArg_UnpackKeywords(args, nargs, kwargs, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!fastargs) {
+        goto exit;
+    }
+    a = fastargs[0];
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    b = fastargs[1];
+skip_optional_pos:
+    return_value = vc_base_new_impl(type, a, b);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+vc_base_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    return vc_base_new_helper(type, _PyTuple_CAST(args)->ob_item,
+        PyTuple_GET_SIZE(args),
+        kwargs ? PyDict_GET_SIZE(kwargs) : 0,
+        kwargs, NULL);
+}
+
+static PyObject *
+vc_base_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    PyObject *a;
+    PyObject *b = Py_None;
+
+    assert(Py_Is(_PyType_CAST(type), &VcNewBase_Type));
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    if (kwnames != NULL || nargs < 1 || nargs > 2) {
+        return vc_base_new_helper(_PyType_CAST(type), args, nargs,
+            kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
+            NULL, kwnames);
+    }
+    a = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    b = args[1];
+skip_optional:
+    return_value = vc_base_new_impl(_PyType_CAST(type), a, b);
+
+    return return_value;
+}
+
+static PyObject *
+vc_kwonly_new_impl(PyTypeObject *type, PyObject *a, PyObject *b);
+
+static PyObject *
+vc_kwonly_new_helper(PyTypeObject *type, PyObject *const *args,
+    Py_ssize_t nargs, Py_ssize_t nkw, PyObject *kwargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { _Py_LATIN1_CHR('a'), _Py_LATIN1_CHR('b'), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"a", "b", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "VcKwOnly",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    PyObject * const *fastargs;
+    Py_ssize_t noptargs = nargs + nkw - 1;
+    PyObject *a;
+    PyObject *b = Py_None;
+
+    fastargs = _PyArg_UnpackKeywords(args, nargs, kwargs, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!fastargs) {
+        goto exit;
+    }
+    a = fastargs[0];
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    b = fastargs[1];
+skip_optional_kwonly:
+    return_value = vc_kwonly_new_impl(type, a, b);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+vc_kwonly_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    return vc_kwonly_new_helper(type, _PyTuple_CAST(args)->ob_item,
+        PyTuple_GET_SIZE(args),
+        kwargs ? PyDict_GET_SIZE(kwargs) : 0,
+        kwargs, NULL);
+}
+
+static PyObject *
+vc_kwonly_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+
+    assert(Py_Is(_PyType_CAST(type), &VcKwOnly_Type));
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    return vc_kwonly_new_helper(_PyType_CAST(type), args, nargs,
+        kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
+        NULL, kwnames);
+}
+/*[clinic end generated code: output=10fcd30a5d85ce11 input=a9049054013a1b77]*/
