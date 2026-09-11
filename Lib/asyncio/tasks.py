@@ -103,11 +103,20 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         self._coro = coro
         if context is None:
             self._context = contextvars.copy_context()
+        elif not isinstance(context, contextvars.Context):
+            # gh-157301: the passed value must be a contextvars.Context
+            self._log_destroy_pending = False
+            raise TypeError('a contextvars.Context was expected, '
+                            f'got {type(context).__name__}')
         else:
             self._context = context
 
         if eager_start and self._loop.is_running():
-            self.__eager_start()
+            try:
+                self.__eager_start()
+            except BaseException:
+                self._log_destroy_pending = False
+                raise
         else:
             self._loop.call_soon(self.__step, context=self._context)
             _py_register_task(self)
