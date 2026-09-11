@@ -69,6 +69,22 @@ class EagerTaskFactoryLoopTests:
 
         self.assertEqual(self.run_coro(run()), 'my message')
 
+    def test_awaited_by_during_eager_step(self):
+        # gh-157299
+
+        async def run():
+            parent = asyncio.current_task()
+
+            async def coro():
+                self.assertEqual(asyncio.current_task()._asyncio_awaited_by,
+                                 frozenset({parent}))
+
+            t = self.loop.create_task(coro())
+            self.assertFalse(t._asyncio_awaited_by)
+            await t
+
+        self.run_coro(run())
+
     def test_eager_completion(self):
 
         async def coro():
@@ -290,11 +306,29 @@ class PyEagerTaskFactoryLoopTests(EagerTaskFactoryLoopTests, test_utils.TestCase
         self._current_task = asyncio.current_task
         asyncio.current_task = asyncio.tasks.current_task = asyncio.tasks._py_current_task
         asyncio.all_tasks = asyncio.tasks.all_tasks = asyncio.tasks._py_all_tasks
+
+        futures = asyncio.futures
+
+        self._future_add_to_awaited_by = asyncio.future_add_to_awaited_by
+        futures.future_add_to_awaited_by = futures._py_future_add_to_awaited_by
+        asyncio.future_add_to_awaited_by = futures.future_add_to_awaited_by
+
+        self._future_discard_from_awaited_by = asyncio.future_discard_from_awaited_by
+        futures.future_discard_from_awaited_by = futures._py_future_discard_from_awaited_by
+        asyncio.future_discard_from_awaited_by = futures.future_discard_from_awaited_by
         return super().setUp()
 
     def tearDown(self):
         asyncio.current_task = asyncio.tasks.current_task = self._current_task
         asyncio.all_tasks = asyncio.tasks.all_tasks = self._all_tasks
+
+        futures = asyncio.futures
+
+        futures.future_discard_from_awaited_by = self._future_discard_from_awaited_by
+        asyncio.future_discard_from_awaited_by = self._future_discard_from_awaited_by
+
+        futures.future_add_to_awaited_by = self._future_add_to_awaited_by
+        asyncio.future_add_to_awaited_by = self._future_add_to_awaited_by
         return super().tearDown()
 
 
@@ -309,11 +343,29 @@ class CEagerTaskFactoryLoopTests(EagerTaskFactoryLoopTests, test_utils.TestCase)
         self._all_tasks = asyncio.all_tasks
         asyncio.current_task = asyncio.tasks.current_task = asyncio.tasks._c_current_task
         asyncio.all_tasks = asyncio.tasks.all_tasks = asyncio.tasks._c_all_tasks
+
+        futures = asyncio.futures
+
+        self._future_add_to_awaited_by = asyncio.future_add_to_awaited_by
+        futures.future_add_to_awaited_by = futures._c_future_add_to_awaited_by
+        asyncio.future_add_to_awaited_by = futures.future_add_to_awaited_by
+
+        self._future_discard_from_awaited_by = asyncio.future_discard_from_awaited_by
+        futures.future_discard_from_awaited_by = futures._c_future_discard_from_awaited_by
+        asyncio.future_discard_from_awaited_by = futures.future_discard_from_awaited_by
         return super().setUp()
 
     def tearDown(self):
         asyncio.current_task = asyncio.tasks.current_task = self._current_task
         asyncio.all_tasks = asyncio.tasks.all_tasks = self._all_tasks
+
+        futures = asyncio.futures
+
+        futures.future_discard_from_awaited_by = self._future_discard_from_awaited_by
+        asyncio.future_discard_from_awaited_by = self._future_discard_from_awaited_by
+
+        futures.future_add_to_awaited_by = self._future_add_to_awaited_by
+        asyncio.future_add_to_awaited_by = self._future_add_to_awaited_by
         return super().tearDown()
 
     def test_issue105987(self):
