@@ -1,0 +1,2 @@
+Fix :func:`sys.activate_stack_trampoline` allowing activation from a
+subinterpreter while the JIT is enabled in the main interpreter.
