@@ -1869,9 +1869,10 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
       PyObject *tp_iternext(PyObject *self);
 
-   When the iterator is exhausted, it must return ``NULL``; a :exc:`StopIteration`
-   exception may or may not be set.  When another error occurs, it must return
-   ``NULL`` too.  Its presence signals that the instances of this type are
+   When the iterator is :term:`exhausted`, the ``tp_iternext`` function must
+   return ``NULL``; a :exc:`StopIteration` exception may or may not be set.
+   When another error occurs, it must return ``NULL`` too.
+   The presence of ``tp_iternext`` signals that the instances of this type are
    iterators.
 
    Iterator types should also define the :c:member:`~PyTypeObject.tp_iter` function, and that
