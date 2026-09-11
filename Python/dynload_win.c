@@ -307,6 +307,36 @@ dl_funcptr _PyImport_FindSharedFuncptrWindows(const char *prefix,
         hDLL = LoadLibraryExW(wpathname, NULL,
                               LOAD_LIBRARY_SEARCH_DEFAULT_DIRS |
                               LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
+        if (hDLL == NULL) {
+            DWORD attributes = GetFileAttributesW(wpathname);
+            if (attributes != INVALID_FILE_ATTRIBUTES &&
+                !(attributes & FILE_ATTRIBUTE_DIRECTORY)) {
+                size_t path_length = wcslen(wpathname);
+                int is_unc = wpathname[0] == L'\\' && wpathname[1] == L'\\';
+                size_t prefix_length = is_unc ? 8 : 4;
+                wchar_t *extended_path = PyMem_RawMalloc(
+                    (path_length + prefix_length + 1) * sizeof(wchar_t));
+                if (extended_path != NULL) {
+                    if (is_unc) {
+                        wcscpy_s(extended_path, path_length + prefix_length + 1,
+                                 L"\\\\?\\UNC\\");
+                        wcscat_s(extended_path, path_length + prefix_length + 1,
+                                 wpathname + 2);
+                    }
+                    else {
+                        wcscpy_s(extended_path, path_length + prefix_length + 1,
+                                 L"\\\\?\\");
+                        wcscat_s(extended_path, path_length + prefix_length + 1,
+                                 wpathname);
+                    }
+                    hDLL = LoadLibraryExW(
+                        extended_path, NULL,
+                        LOAD_LIBRARY_SEARCH_DEFAULT_DIRS |
+                        LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
+                    PyMem_RawFree(extended_path);
+                }
+            }
+        }
         Py_END_ALLOW_THREADS
         PyMem_Free(wpathname);
 

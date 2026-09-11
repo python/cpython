@@ -1,0 +1,1 @@
+Fix loading extension modules from long Windows paths by retrying with an extended-length path after the initial load fails and the target is confirmed to be a regular file.
