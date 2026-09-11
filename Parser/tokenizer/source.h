@@ -5,7 +5,8 @@
 
 typedef Py_ssize_t _PyTok_Off;
 
-/* Half-open byte offsets into a _PyTok_SourceText. */
+/* Spans use half-open logical byte offsets into decoded input. Their backing
+   storage may retain only the current input window. */
 typedef struct {
     _PyTok_Off start;
     _PyTok_Off end;
@@ -32,6 +33,7 @@ typedef struct {
 
 typedef struct {
     char *bytes;
+    _PyTok_Off base_offset;
     _PyTok_Off len;
     _PyTok_Off cap;
     _PyTok_Off *line_checkpoints;
@@ -41,9 +43,18 @@ typedef struct {
     Py_ssize_t implicit_cap;
 } _PyTok_SourceText;
 
+static inline const char *
+_PyTok_SourceData(const _PyTok_SourceText *source)
+{
+    return source->bytes != NULL ? source->bytes : "";
+}
+
 PyAPI_FUNC(void) _PyTok_SourceInit(_PyTok_SourceText *);
 /* Clear invalidates all cursors, spans, and views for the source. */
 PyAPI_FUNC(void) _PyTok_SourceClear(_PyTok_SourceText *);
+/* Discard the retained window and invalidate its cursors, spans, and views.
+   Keep its allocation and advance the logical base to the end of the window. */
+PyAPI_FUNC(void) _PyTok_SourceDiscard(_PyTok_SourceText *);
 /* Append one nonempty logical line and return its start offset. The input may
    contain one newline, as its final byte. An unterminated line must be the
    final line. implicit_newline means that the final newline was synthesized.
@@ -54,8 +65,8 @@ PyAPI_FUNC(_PyTok_Off) _PyTok_SourceAppendLine(
 /* The returned view is invalidated by SourceAppendLine and SourceClear. */
 PyAPI_FUNC(const char *) _PyTok_SourceSpanView(
     const _PyTok_SourceText *, _PyTok_Span, Py_ssize_t *);
-/* Look up a 1-based line. Empty and newline-terminated sources have an empty
-   virtual line at EOF. */
+/* Look up a 1-based line in the retained window. Empty and newline-terminated
+   sources have an empty virtual line at EOF. */
 PyAPI_FUNC(int) _PyTok_SourceLine(
     const _PyTok_SourceText *, int, _PyTok_Line *);
 /* Return false for invalid line numbers and the virtual EOF line. */
@@ -81,19 +92,21 @@ _PyTok_SpanIsValid(_PyTok_Span span)
 static inline _PyTok_Off
 _PyTok_SourceFindLineEnd(const _PyTok_SourceText *source, _PyTok_Off start)
 {
-    if (source->bytes == NULL || start < 0 || start >= source->len) {
+    if (source->bytes == NULL || start < source->base_offset ||
+            start - source->base_offset >= source->len) {
         PyErr_SetString(PyExc_SystemError,
                         "corrupt tokenizer source line index");
         return -1;
     }
+    _PyTok_Off relative_start = start - source->base_offset;
     const char *newline = memchr(
-        source->bytes + start, '\n', source->len - start);
+        source->bytes + relative_start, '\n', source->len - relative_start);
     if (newline == NULL) {
         PyErr_SetString(PyExc_SystemError,
                         "corrupt tokenizer source line index");
         return -1;
     }
-    return newline - source->bytes + 1;
+    return source->base_offset + (newline - source->bytes) + 1;
 }
 
 #endif

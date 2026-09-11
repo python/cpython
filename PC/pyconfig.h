@@ -152,7 +152,7 @@ WIN32 is still required for the locale module.
  *
  * win_amd64 MSVC (x86_64-pc-windows-msvc): 1
  * win32 MSVC (i686-pc-windows-msvc): 1
- * win_arm64 MSVC (aarch64-pc-windows-msvc): 3
+ * win_arm64 MSVC (aarch64-pc-windows-msvc): 2
  * other archs and ICC: 0
  */
 #ifdef MS_WIN64
@@ -170,7 +170,7 @@ WIN32 is still required for the locale module.
 #define PYD_PLATFORM_TAG "win_amd64"
 #elif defined(_M_ARM64)
 #define _Py_COMPILER _Py_PASTE_VERSION("64 bit (ARM64)")
-#define PY_SUPPORT_TIER 3
+#define PY_SUPPORT_TIER 2
 #define PYD_PLATFORM_TAG "win_arm64"
 #else
 #define _Py_COMPILER _Py_PASTE_VERSION("64 bit (Unknown)")

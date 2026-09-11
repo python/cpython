@@ -578,29 +578,25 @@ AC_ARG_ENABLE([framework],
 
 	case $enableval in
 	no)
-		case $ac_sys_system in
-			iOS) AC_MSG_ERROR([iOS builds must use --enable-framework]) ;;
-			*)
-				PYTHONFRAMEWORK=
-				PYTHONFRAMEWORKDIR=no-framework
-				PYTHONFRAMEWORKPREFIX=
-				PYTHONFRAMEWORKINSTALLDIR=
-				PYTHONFRAMEWORKINSTALLNAMEPREFIX=
-				RESSRCDIR=
-				FRAMEWORKINSTALLFIRST=
-				FRAMEWORKINSTALLLAST=
-				FRAMEWORKALTINSTALLFIRST=
-				FRAMEWORKALTINSTALLLAST=
-				FRAMEWORKPYTHONW=
-				INSTALLTARGETS="commoninstall bininstall maninstall"
+		PYTHONFRAMEWORK=
+		PYTHONFRAMEWORKDIR=no-framework
+		PYTHONFRAMEWORKPREFIX=
+		PYTHONFRAMEWORKINSTALLDIR=
+		PYTHONFRAMEWORKINSTALLNAMEPREFIX=
+		RESSRCDIR=
+		FRAMEWORKINSTALLFIRST=
+		FRAMEWORKINSTALLLAST=
+		FRAMEWORKALTINSTALLFIRST=
+		FRAMEWORKALTINSTALLLAST=
+		FRAMEWORKPYTHONW=
+		INSTALLTARGETS="commoninstall bininstall maninstall"
 
-				if test "x${prefix}" = "xNONE"; then
-					FRAMEWORKUNIXTOOLSPREFIX="${ac_default_prefix}"
-				else
-					FRAMEWORKUNIXTOOLSPREFIX="${prefix}"
-				fi
-				enable_framework=
-		esac
+		if test "x${prefix}" = "xNONE"; then
+			FRAMEWORKUNIXTOOLSPREFIX="${ac_default_prefix}"
+		else
+			FRAMEWORKUNIXTOOLSPREFIX="${prefix}"
+		fi
+		enable_framework=
 		;;
 	*)
 		PYTHONFRAMEWORKPREFIX="${enableval}"
@@ -688,28 +684,24 @@ AC_ARG_ENABLE([framework],
 			esac
 		esac
 	],[
-	case $ac_sys_system in
-		iOS) AC_MSG_ERROR([iOS builds must use --enable-framework]) ;;
-		*)
-			PYTHONFRAMEWORK=
-			PYTHONFRAMEWORKDIR=no-framework
-			PYTHONFRAMEWORKPREFIX=
-			PYTHONFRAMEWORKINSTALLDIR=
-			PYTHONFRAMEWORKINSTALLNAMEPREFIX=
-			RESSRCDIR=
-			FRAMEWORKINSTALLFIRST=
-			FRAMEWORKINSTALLLAST=
-			FRAMEWORKALTINSTALLFIRST=
-			FRAMEWORKALTINSTALLLAST=
-			FRAMEWORKPYTHONW=
-			INSTALLTARGETS="commoninstall bininstall maninstall"
-			if test "x${prefix}" = "xNONE" ; then
-				FRAMEWORKUNIXTOOLSPREFIX="${ac_default_prefix}"
-			else
-				FRAMEWORKUNIXTOOLSPREFIX="${prefix}"
-			fi
-			enable_framework=
-	esac
+	PYTHONFRAMEWORK=
+	PYTHONFRAMEWORKDIR=no-framework
+	PYTHONFRAMEWORKPREFIX=
+	PYTHONFRAMEWORKINSTALLDIR=
+	PYTHONFRAMEWORKINSTALLNAMEPREFIX=
+	RESSRCDIR=
+	FRAMEWORKINSTALLFIRST=
+	FRAMEWORKINSTALLLAST=
+	FRAMEWORKALTINSTALLFIRST=
+	FRAMEWORKALTINSTALLLAST=
+	FRAMEWORKPYTHONW=
+	INSTALLTARGETS="commoninstall bininstall maninstall"
+	if test "x${prefix}" = "xNONE" ; then
+		FRAMEWORKUNIXTOOLSPREFIX="${ac_default_prefix}"
+	else
+		FRAMEWORKUNIXTOOLSPREFIX="${prefix}"
+	fi
+	enable_framework=
 ])
 AC_SUBST([PYTHONFRAMEWORK])
 AC_SUBST([PYTHONFRAMEWORKIDENTIFIER])
@@ -1255,19 +1247,19 @@ dnl
 AC_MSG_CHECKING([for PEP 11 support tier])
 AS_CASE([$host/$ac_cv_cc_name],
   [x86_64-*-linux-gnu/gcc],              [PY_SUPPORT_TIER=1], dnl Linux on AMD64, any vendor, glibc, gcc
-  [x86_64-apple-darwin*/clang],          [PY_SUPPORT_TIER=1], dnl macOS on Intel, any version
   [aarch64-apple-darwin*/clang],         [PY_SUPPORT_TIER=1], dnl macOS on M1, any version
+  [aarch64-*-linux-gnu/gcc],             [PY_SUPPORT_TIER=1], dnl Linux ARM64, glibc, gcc
   [i686-pc-windows-msvc/msvc],           [PY_SUPPORT_TIER=1], dnl 32bit Windows on Intel, MSVC
   [x86_64-pc-windows-msvc/msvc],         [PY_SUPPORT_TIER=1], dnl 64bit Windows on AMD64, MSVC
 
-  [aarch64-*-linux-gnu/gcc],             [PY_SUPPORT_TIER=2], dnl Linux ARM64, glibc, gcc+clang
-  [aarch64-*-linux-gnu/clang],           [PY_SUPPORT_TIER=2],
-  [powerpc64le-*-linux-gnu/gcc],         [PY_SUPPORT_TIER=2], dnl Linux on PPC64 little endian, glibc, gcc
+  [aarch64-*-linux-gnu/clang],           [PY_SUPPORT_TIER=2], dnl Linux ARM64, glibc, clang
+  [aarch64-pc-windows-msvc/msvc],        [PY_SUPPORT_TIER=2], dnl Windows ARM64, MSVC
   [wasm32-unknown-wasip1/clang],         [PY_SUPPORT_TIER=2], dnl WebAssembly System Interface preview1, clang
+  [x86_64-apple-darwin*/clang],          [PY_SUPPORT_TIER=2], dnl macOS on Intel, any version
   [x86_64-*-linux-gnu/clang],            [PY_SUPPORT_TIER=2], dnl Linux on AMD64, any vendor, glibc, clang
 
-  [aarch64-pc-windows-msvc/msvc],        [PY_SUPPORT_TIER=3], dnl Windows ARM64, MSVC
   [armv7l-*-linux-gnueabihf/gcc],        [PY_SUPPORT_TIER=3], dnl ARMv7 LE with hardware floats, any vendor, glibc, gcc
+  [powerpc64le-*-linux-gnu/gcc],         [PY_SUPPORT_TIER=3], dnl Linux on PPC64 little endian, glibc, gcc
   [powerpc64le-*-linux-gnu/clang],       [PY_SUPPORT_TIER=3], dnl Linux on PPC64 little endian, glibc, clang
   [riscv64-*-linux-gnu/gcc],             [PY_SUPPORT_TIER=3], dnl Linux on RISC-V 64bit, glibc, gcc+clang
   [riscv64-*-linux-gnu/clang],           [PY_SUPPORT_TIER=3],
@@ -1676,6 +1668,9 @@ if test $enable_shared = "yes"; then
       RUNSHARED=DYLD_LIBRARY_PATH=`pwd`${DYLD_LIBRARY_PATH:+:${DYLD_LIBRARY_PATH}}
       ;;
     iOS)
+      if test -z "$PYTHONFRAMEWORK"; then
+        AC_MSG_ERROR([iOS shared builds must use --enable-framework; an iOS app can only load a signed framework, never a bare dylib])
+      fi
       LDLIBRARY='libpython$(LDVERSION).dylib'
       ;;
     AIX*)
@@ -2445,7 +2440,7 @@ AS_CASE([$ac_sys_system],
     dnl Include file system support
     AS_VAR_APPEND([LINKFORSHARED], [" -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"])
     AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV,HEAPU32,TTY,ERRNO_CODES"])
-    AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_FUNCTIONS=_main,_Py_Version,__PyRuntime,_PyGILState_GetThisThreadState,__PyEM_EMSCRIPTEN_TRAMPOLINE_OFFSET"])
+    AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_FUNCTIONS=_main,_Py_Version,_PyGILState_GetThisThreadState,__PyEM_EMSCRIPTEN_TRAMPOLINE_OFFSET"])
     AS_VAR_APPEND([LINKFORSHARED], [" -sSTACK_SIZE=5MB"])
     dnl Avoid bugs in JS fallback string decoding path
     AS_VAR_APPEND([LINKFORSHARED], [" -sTEXTDECODER=2"])
@@ -3836,7 +3831,11 @@ then
 			fi
 			LINKFORSHARED="$LINKFORSHARED"
 		elif test $ac_sys_system = "iOS"; then
-			LINKFORSHARED="-Wl,-stack_size,$stack_size $LINKFORSHARED "'$(PYTHONFRAMEWORKDIR)/$(PYTHONFRAMEWORK)'
+			LINKFORSHARED="-Wl,-stack_size,$stack_size $LINKFORSHARED"
+
+			if test "$enable_framework"; then
+				LINKFORSHARED="$LINKFORSHARED "'$(PYTHONFRAMEWORKDIR)/$(PYTHONFRAMEWORK)'
+			fi
 		fi
 		;;
 	OpenUNIX*|UnixWare*) LINKFORSHARED="-Wl,-Bexport";;
@@ -5494,14 +5493,9 @@ else
 fi
 
 if test "$ac_sys_system" = "Linux-android"; then
-  # When these functions are used in an unprivileged process, they crash rather
-  # than returning an error.
-  blocked_funcs="chroot initgroups setegid seteuid setgid sethostname
-    setregid setresgid setresuid setreuid setuid"
-
   # These functions are unimplemented and always return an error
   # (https://android.googlesource.com/platform/system/sepolicy/+/refs/heads/android13-release/public/domain.te#1044)
-  blocked_funcs="$blocked_funcs sem_open sem_unlink"
+  blocked_funcs="sem_open sem_unlink"
 
   # Before API level 23, when fchmodat is called with the unimplemented flag
   # AT_SYMLINK_NOFOLLOW, instead of returning ENOTSUP as it should, it actually
@@ -5528,7 +5522,8 @@ AC_CHECK_FUNCS([ \
   getgrnam_r getgrouplist gethostname getitimer getloadavg getlogin getlogin_r \
   getpeername getpgid getpid getppid getpriority _getpty \
   getpwent getpwnam_r getpwuid getpwuid_r getresgid getresuid getrusage getsid getspent \
-  getspnam gettid getuid getwd grantpt if_nameindex initgroups kill killpg lchown linkat \
+  getspnam gettid getuid getwd grantpt if_indextoname if_nameindex \
+  if_nametoindex initgroups kill killpg lchown linkat \
   lockf lstat lutimes madvise mbrtowc memrchr mkdirat mkfifo mkfifoat \
   mknod mknodat mktime mmap mremap nice openat opendir pathconf pause \
   pidfd_open pidfd_getfd pidfd_send_signal pipe \
@@ -6782,8 +6777,8 @@ if test "$PY_ENABLE_SHARED" = "1" && ( test -n "$ANDROID_API_LEVEL" || test "$MA
   LIBPYTHON="-lpython${VERSION}${ABIFLAGS}"
 fi
 
-# On iOS the shared libraries must be linked with the Python framework
-if test "$ac_sys_system" = "iOS"; then
+# On iOS the shared libraries must be linked with the framework, when built
+if test "$ac_sys_system" = "iOS" && test "$enable_framework"; then
   MODULE_DEPS_SHARED="$MODULE_DEPS_SHARED \$(PYTHONFRAMEWORKDIR)/\$(PYTHONFRAMEWORK)"
 fi
 
@@ -7900,7 +7895,11 @@ AC_LINK_IFELSE(
     #include <stddef.h>
     #include <unistd.h>
     #include <sys/syscall.h>
-    #include <linux/random.h>
+    #include <linux/random.h>  // GRND_NONBLOCK
+
+    #if !defined(SYS_getrandom) && defined(__NR_getrandom)
+    #  define SYS_getrandom __NR_getrandom
+    #endif
 
     int main(void) {
         char buffer[1];
@@ -8173,6 +8172,11 @@ AC_ARG_ENABLE([test-modules],
   AS_VAR_IF([enable_test_modules], [yes], [TEST_MODULES=yes], [TEST_MODULES=no])
 ], [TEST_MODULES=yes])
 AC_MSG_RESULT([$TEST_MODULES])
+dnl Some test modules can only be built as shared libraries (see
+dnl Modules/Setup.stdlib.in), which a non-framework iOS build cannot do.
+AS_IF([test "$ac_sys_system" = "iOS" && test -z "$PYTHONFRAMEWORK"],
+  [AS_IF([test "$TEST_MODULES" != "no"],
+    [AC_MSG_ERROR([iOS non-framework builds must use --disable-test-modules])])])
 AC_SUBST([TEST_MODULES])
 
 # Check for --with-build-details-suffix
@@ -8411,6 +8415,12 @@ AS_CASE([$host_cpu],
   [MODULE_BUILDTYPE=${MODULE_BUILDTYPE:-shared}]
 )
 AC_SUBST([MODULE_BUILDTYPE])
+
+dnl A non-framework iOS build has no framework for a shared extension module
+dnl to link against, so every extension module must be built into libpython.
+AS_IF([test "$ac_sys_system" = "iOS" && test -z "$PYTHONFRAMEWORK"],
+  [AS_IF([test "$MODULE_BUILDTYPE" != "static"],
+    [AC_MSG_ERROR([iOS non-framework builds must use MODULE_BUILDTYPE=static])])])
 
 dnl _MODULE_BLOCK_ADD([VAR], [VALUE])
 dnl internal: adds $1=quote($2) to MODULE_BLOCK

@@ -26,9 +26,6 @@
 
 #define CURRENT_POS (-5)
 
-#define TOK_GET_MODE(tok) (&(tok->tok_mode_stack[tok->tok_mode_stack_index]))
-#define TOK_GET_STRING_PREFIX(tok) (TOK_GET_MODE(tok)->string_kind == TSTRING ? 't' : 'f')
-
 typedef struct _memo {
     int type;
     void *node;

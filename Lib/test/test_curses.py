@@ -796,6 +796,9 @@ class TestCurses(unittest.TestCase):
         self.assertEqual(str(s[1:]), 'bc')
         self.assertEqual(str(s[::-1]), 'cbA')
         self.assertEqual(str(s + curses.complexstr(['Z'])), 'AbcZ')
+        # Concatenating anything else raises instead of returning NotImplemented.
+        self.assertRaises(TypeError, lambda: s + 'Z')
+        self.assertRaises(TypeError, lambda: s + cc('Z'))
         # The empty complexstr.
         self.assertEqual(len(curses.complexstr([])), 0)
         self.assertEqual(str(curses.complexstr('')), '')
@@ -3383,6 +3386,23 @@ class ScreenTests(NewtermTestBase):
         # close() is idempotent.
         screen.close()
 
+    def test_close_then_write_with_attr_keeps_no_reference(self):
+        # A write with an *attr* argument on a detached window fails while
+        # setting the rendition, and has to release the bytes it converted.
+        s = self.make_pty()
+        screen = curses.newterm('xterm', s, s)
+        win = screen.stdscr
+        screen.close()
+        writes = [lambda b: win.addstr(b, curses.A_BOLD),
+                  lambda b: win.addnstr(b, 4, curses.A_BOLD),
+                  lambda b: win.insstr(b, curses.A_BOLD),
+                  lambda b: win.insnstr(b, 4, curses.A_BOLD)]
+        data = b'x' * 8
+        nrefs = sys.getrefcount(data)
+        for write in writes:
+            self.assertRaises(curses.error, write, data)
+        self.assertEqual(sys.getrefcount(data), nrefs)
+
     @requires_curses_func('panel')
     def test_close_then_panel_replace(self):
         # A detached window has no underlying curses window, so replace()
@@ -3439,6 +3459,8 @@ class ScreenTests(NewtermTestBase):
             with self.assertRaises(curses.error):
                 prescr.use(func)
         # Affecting the state before initscr() is what such a screen is for.
+        # use_env() is process-wide, not a property of this screen.
+        self.addCleanup(curses.use_env, True)
         prescr.use(lambda scr: curses.use_env(False))
         # The current screen is unchanged.
         screen.stdscr.refresh()
@@ -3479,10 +3501,10 @@ class SLKTests(NewtermTestBase):
     # slk_init() must run before newterm()/initscr(), so each test sets up its
     # own screen rather than reusing the one TestCurses builds in setUp().
 
-    def make_slk_screen(self, fmt=0):
+    def make_slk_screen(self, fmt=0, term='xterm'):
         s = self.make_pty()
         curses.slk_init(fmt)
-        return curses.newterm('xterm', s, s)
+        return curses.newterm(term, s, s)
 
     def test_init_reserves_a_line(self):
         # Every layout takes the bottom line for the labels; the index-line
@@ -3564,6 +3586,26 @@ class SLKTests(NewtermTestBase):
         curses.slk_attr_set(curses.A_BOLD)
         curses.slk_attr_set(curses.A_BOLD, 0)
         curses.slk_color(0)
+
+    def test_color_wide_pair(self):
+        # Drive a terminal with enough color pairs to reach past a short,
+        # rather than relying on whatever $TERM happens to be.
+        try:
+            self.make_slk_screen(term='xterm-256color')
+        except curses.error:
+            self.skipTest('no xterm-256color terminfo entry')
+        if not curses.has_colors():
+            self.skipTest('requires colors support')
+        curses.start_color()
+        if not (curses.has_extended_color_support()
+                and curses.COLOR_PAIRS > SHORT_MAX + 1):
+            self.skipTest('requires extended color support')
+        # A pair that does not fit in a short is still a valid pair here.
+        curses.slk_color(SHORT_MAX + 1)
+        # The low 16 bits of this are pair 5, but the pair itself is out of
+        # range, so it must raise instead of selecting pair 5.
+        self.assertRaises(curses.error, curses.slk_color,
+                          curses.COLOR_PAIRS * 2 + 5)
 
 
 @unittest.skipUnless(hasattr(curses, 'newterm'), 'requires curses.newterm()')

@@ -198,3 +198,6 @@ the :ref:`Number Protocol <number>` API or use native complex types, like
    On overflow, this function sets :c:data:`errno` to :c:macro:`!ERANGE`.
 
    .. deprecated:: 3.15
+
+   .. versionchanged:: next
+      This function leaves :c:data:`errno` unchanged on success.
