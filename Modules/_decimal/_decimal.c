@@ -346,30 +346,6 @@ static const char *dec_signal_string[MPD_NUM_FLAGS] = {
     "Underflow",
 };
 
-static const char *invalid_rounding_err =
-"valid values for rounding are:\n\
-  [ROUND_CEILING, ROUND_FLOOR, ROUND_UP, ROUND_DOWN,\n\
-   ROUND_HALF_UP, ROUND_HALF_DOWN, ROUND_HALF_EVEN,\n\
-   ROUND_05UP]";
-
-static const char *invalid_signals_err =
-"valid values for signals are:\n\
-  [InvalidOperation, FloatOperation, DivisionByZero,\n\
-   Overflow, Underflow, Subnormal, Inexact, Rounded,\n\
-   Clamped]";
-
-#ifdef EXTRA_FUNCTIONALITY
-static const char *invalid_flags_err =
-"valid values for _flags or _traps are:\n\
-  signals:\n\
-    [DecIEEEInvalidOperation, DecFloatOperation, DecDivisionByZero,\n\
-     DecOverflow, DecUnderflow, DecSubnormal, DecInexact, DecRounded,\n\
-     DecClamped]\n\
-  conditions which trigger DecIEEEInvalidOperation:\n\
-    [DecInvalidOperation, DecConversionSyntax, DecDivisionImpossible,\n\
-     DecDivisionUndefined, DecFpuError, DecInvalidContext, DecMallocError]";
-#endif
-
 static int
 value_error_int(const char *mesg)
 {
@@ -440,7 +416,11 @@ exception_as_flag(decimal_state *state, PyObject *ex)
         }
     }
 
-    PyErr_SetString(PyExc_KeyError, invalid_signals_err);
+    PyErr_SetString(PyExc_KeyError,
+        "valid values for signals are:\n"
+        "  [InvalidOperation, FloatOperation, DivisionByZero,\n"
+        "   Overflow, Underflow, Subnormal, Inexact, Rounded,\n"
+        "   Clamped]");
     return DEC_INVALID_SIGNALS;
 }
 
@@ -599,7 +579,15 @@ long_as_flags(PyObject *v)
         return DEC_ERR_OCCURRED;
     }
     if (x < 0 || x > (long)MPD_Max_status) {
-        PyErr_SetString(PyExc_TypeError, invalid_flags_err);
+        PyErr_SetString(PyExc_TypeError,
+            "valid values for _flags or _traps are:\n"
+            "  signals:\n"
+            "    [DecIEEEInvalidOperation, DecFloatOperation, DecDivisionByZero,\n"
+            "     DecOverflow, DecUnderflow, DecSubnormal, DecInexact, DecRounded,\n"
+            "     DecClamped]\n"
+            "  conditions which trigger DecIEEEInvalidOperation:\n"
+            "    [DecInvalidOperation, DecConversionSyntax, DecDivisionImpossible,\n"
+            "     DecDivisionUndefined, DecFpuError, DecInvalidContext, DecMallocError]");
         return DEC_INVALID_SIGNALS;
     }
 
@@ -655,7 +643,11 @@ getround(decimal_state *state, PyObject *v)
         }
     }
 
-    return type_error_int(invalid_rounding_err);
+    return type_error_int(
+        "valid values for rounding are:\n"
+        "  [ROUND_CEILING, ROUND_FLOOR, ROUND_UP, ROUND_DOWN,\n"
+        "   ROUND_HALF_UP, ROUND_HALF_DOWN, ROUND_HALF_EVEN,\n"
+        "   ROUND_05UP]");
 }
 
 
@@ -669,7 +661,7 @@ getround(decimal_state *state, PyObject *v)
    initialized to new SignalDicts. Once a SignalDict is tied to
    a context, it cannot be deleted. */
 
-static const char *INVALID_SIGNALDICT_ERROR_MSG = "invalid signal dict";
+static const char *const INVALID_SIGNALDICT_ERROR_MSG = "invalid signal dict";
 
 static int
 signaldict_init(PyObject *self,
