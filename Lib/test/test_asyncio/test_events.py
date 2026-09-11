@@ -1626,7 +1626,8 @@ class EventLoopTestsMixin:
         transport.sendto(second, addr)
 
         loop.run_until_complete(
-            asyncio.wait_for(protocol.error_received_event, 10))
+            asyncio.wait_for(protocol.error_received_event,
+                             support.SHORT_TIMEOUT))
         self.assertTrue(protocol.errors)
         self.assertIsInstance(protocol.errors[0], OSError)
 
@@ -1699,7 +1700,8 @@ class EventLoopTestsMixin:
         # The 'extra' datagram sent from error_received() is delivered
         # back to the same socket; waiting for it proves the write loop
         # kept running instead of wedging or crashing.
-        loop.run_until_complete(asyncio.wait_for(protocol.done, 10))
+        loop.run_until_complete(
+            asyncio.wait_for(protocol.done, support.SHORT_TIMEOUT))
 
         test_utils.run_until(
             loop, lambda: transport.get_write_buffer_size() == 0)
@@ -1759,7 +1761,8 @@ class EventLoopTestsMixin:
         transport.sendto(b'second', addr)
         transport.close()
 
-        loop.run_until_complete(asyncio.wait_for(protocol.lost, 10))
+        loop.run_until_complete(
+            asyncio.wait_for(protocol.lost, support.SHORT_TIMEOUT))
 
         test_utils.run_until(
             loop, lambda: len(receiver.received) >= 2)
@@ -1806,7 +1809,8 @@ class EventLoopTestsMixin:
         transport.sendto(oversized, addr)
         transport.close()
 
-        loop.run_until_complete(asyncio.wait_for(protocol.lost, 10))
+        loop.run_until_complete(
+            asyncio.wait_for(protocol.lost, support.SHORT_TIMEOUT))
         self.assertTrue(protocol.errors)
 
     def test_datagram_write_error_close_from_callback(self):
@@ -1847,7 +1851,8 @@ class EventLoopTestsMixin:
         transport.sendto(oversized, addr)
         transport.sendto(oversized, addr)
 
-        loop.run_until_complete(asyncio.wait_for(protocol.lost, 10))
+        loop.run_until_complete(
+            asyncio.wait_for(protocol.lost, support.SHORT_TIMEOUT))
         self.assertEqual(len(protocol.errors), 2)
 
     def test_datagram_recvfrom_connection_reset_recovers(self):
