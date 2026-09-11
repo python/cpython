@@ -9748,11 +9748,15 @@ then :
   printf %s "(cached) " >&6
 else case e in #(
   e)
-      saved_cflags="$CFLAGS"
-      saved_ldflags="$LDFLAGS"
-      CFLAGS="$CFLAGS_NODIST"
-      LDFLAGS="$LDFLAGS_NODIST"
-      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+      save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+        CFLAGS="$CFLAGS_NODIST"
+        LDFLAGS="$LDFLAGS_NODIST"
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 int
@@ -9766,7 +9770,7 @@ _ACEOF
 if ac_fn_c_try_link "$LINENO"
 then :
   py_cv_bolt_icf_safe=no
-         ${LLVM_BOLT} -icf=safe -o conftest.bolt conftest$EXEEXT >&5 2>&1          && py_cv_bolt_icf_safe=yes
+           ${LLVM_BOLT} -icf=safe -o conftest.bolt conftest$EXEEXT >&5 2>&1            && py_cv_bolt_icf_safe=yes
 else case e in #(
   e) { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: error: in '$ac_pwd':" >&5
 printf "%s\n" "$as_me: error: in '$ac_pwd':" >&2;}
@@ -9776,8 +9780,13 @@ esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam \
     conftest$ac_exeext conftest.$ac_ext
-      CFLAGS="$saved_cflags"
-      LDFLAGS="$saved_ldflags"
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
 
    ;;
 esac
