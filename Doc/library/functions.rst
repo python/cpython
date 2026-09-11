@@ -129,7 +129,7 @@ are always available.  They are listed here in alphabetical order.
                        anext(async_iterator, default, /)
 
    When awaited, return the next item from the given :term:`asynchronous
-   iterator`, or *default* if given and the iterator is exhausted.
+   iterator`, or *default* if given and the iterator is :term:`exhausted`.
 
    This is the async variant of the :func:`next` builtin, and behaves
    similarly.
@@ -1223,7 +1223,7 @@ are always available.  They are listed here in alphabetical order.
               process_block(block)
 
    *stop_exception* is useful for callables
-   which report exhaustion by raising an exception
+   which report :term:`exhaustion <exhausted>` by raising an exception
    instead of returning a special value.
    For example, draining a queue::
 
@@ -1315,7 +1315,7 @@ are always available.  They are listed here in alphabetical order.
    yielding the results.  If additional *iterables* arguments are passed,
    *function* must take that many arguments and is applied to the items from all
    iterables in parallel.  With multiple iterables, the iterator stops when the
-   shortest iterable is exhausted.  If *strict* is ``True`` and one of the
+   shortest iterable is :term:`exhausted`.  If *strict* is ``True`` and one of the
    iterables is exhausted before the others, a :exc:`ValueError` is raised. For
    cases where the function inputs are already arranged into argument tuples,
    see :func:`itertools.starmap`.
@@ -1397,7 +1397,7 @@ are always available.  They are listed here in alphabetical order.
 
    Retrieve the next item from the :term:`iterator` by calling its
    :meth:`~iterator.__next__` method.  If *default* is given, it is returned
-   if the iterator is exhausted, otherwise :exc:`StopIteration` is raised.
+   if the iterator is :term:`exhausted`, otherwise :exc:`StopIteration` is raised.
 
 
 .. class:: object()
@@ -2312,7 +2312,7 @@ are always available.  They are listed here in alphabetical order.
    the code that prepared these iterables.  Python offers three different
    approaches to dealing with this issue:
 
-   * By default, :func:`zip` stops when the shortest iterable is exhausted.
+   * By default, :func:`zip` stops when the shortest iterable is :term:`exhausted`.
      It will ignore the remaining items in the longer iterables, cutting off
      the result to the length of the shortest iterable::
 
@@ -2327,7 +2327,7 @@ are always available.  They are listed here in alphabetical order.
         [('a', 1), ('b', 2), ('c', 3)]
 
      Unlike the default behavior, it raises a :exc:`ValueError` if one iterable
-     is exhausted before the others:
+     is :term:`exhausted` before the others:
 
         >>> for item in zip(range(3), ['fee', 'fi', 'fo', 'fum'], strict=True):  # doctest: +SKIP
         ...     print(item)

@@ -644,7 +644,9 @@ class ClinicWholeFileTest(TestCase):
              - 'methoddef_define'
              - 'impl_prototype'
              - 'parser_prototype'
+             - 'parser_helper'
              - 'parser_definition'
+             - 'vectorcall_definition'
              - 'cpp_endif'
              - 'methoddef_ifndef'
              - 'impl_definition'
@@ -2887,6 +2889,112 @@ class ClinicParserTest(TestCase):
         """
         self.expect_failure(block, err, lineno=2)
 
+    def test_duplicate_vectorcall(self):
+        err = "Called @vectorcall twice"
+        block = """
+            module m
+            class Foo "FooObject *" ""
+            @vectorcall
+            @vectorcall
+            Foo.__init__
+        """
+        self.expect_failure(block, err, lineno=3)
+
+    def test_vectorcall_on_regular_method(self):
+        err = "@vectorcall can only be used with __init__ and __new__ methods"
+        block = """
+            module m
+            class Foo "FooObject *" ""
+            @vectorcall
+            Foo.some_method
+        """
+        self.expect_failure(block, err, lineno=3)
+
+    def test_vectorcall_on_module_function(self):
+        err = "@vectorcall can only be used with __init__ and __new__ methods"
+        block = """
+            module m
+            @vectorcall
+            m.fn
+        """
+        self.expect_failure(block, err, lineno=2)
+
+    def test_vectorcall_on_init(self):
+        block = """
+            module m
+            class Foo "FooObject *" "Foo_Type"
+            @vectorcall
+            Foo.__init__
+                iterable: object = NULL
+                /
+        """
+        func = self.parse_function(block, signatures_in_block=3,
+                                   function_index=2)
+        self.assertTrue(func.vectorcall)
+
+    def test_vectorcall_on_new(self):
+        block = """
+            module m
+            class Foo "FooObject *" "Foo_Type"
+            @classmethod
+            @vectorcall
+            Foo.__new__
+                x: object = NULL
+                /
+        """
+        func = self.parse_function(block, signatures_in_block=3,
+                                   function_index=2)
+        self.assertTrue(func.vectorcall)
+
+    def test_vectorcall_takes_no_arguments(self):
+        err = "at_vectorcall() takes 1 positional argument but 2 were given"
+        block = """
+            module m
+            class Foo "FooObject *" "Foo_Type"
+            @vectorcall bogus=True
+            Foo.__init__
+        """
+        self.expect_failure(block, err, lineno=2)
+
+    def test_vectorcall_without_type_object(self):
+        err = "@vectorcall requires the type object of 'Foo'"
+        block = """
+            module m
+            class Foo "FooObject *" ""
+            @vectorcall
+            Foo.__init__
+        """
+        self.expect_failure(block, err, lineno=3)
+
+    def test_vectorcall_unsupported_converter(self):
+        # str(encoding=...) has no parse_arg() implementation.
+        err = ("@vectorcall requires all converters to support "
+               "parse_arg(); parameter 's' does not")
+        block = """
+            module m
+            class Foo "FooObject *" "Foo_Type"
+            @classmethod
+            @vectorcall
+            Foo.__new__
+                s: str(encoding="utf-8")
+                /
+        """
+        self.expect_failure(block, err, lineno=6)
+
+    def test_vectorcall_with_option_groups(self):
+        err = "@vectorcall does not support optional groups"
+        block = """
+            module m
+            class Foo "FooObject *" "Foo_Type"
+            @vectorcall
+            Foo.__init__
+                [
+                a: object
+                ]
+                /
+        """
+        self.expect_failure(block, err, lineno=7)
+
     def test_unused_param(self):
         block = self.parse("""
             module foo
@@ -5018,6 +5126,105 @@ class ClinicFunctionalTest(unittest.TestCase):
         kwds = {'y': 'y', 'z': 'z'}
         self.assertEqual(ac_tester.kwds_with_pos_only_and_stararg(1, 2, 'lobster', 'thermidor', y='y', z='z'), (1, 2, args, kwds))
         self.assertEqual(ac_tester.kwds_with_pos_only_and_stararg(1, 2, *args, **kwds), (1, 2, args, kwds))
+
+
+@unittest.skipIf(ac_tester is None, "_testclinic is missing")
+class VectorcallFunctionalTest(unittest.TestCase):
+    """Runtime tests for @vectorcall exemplar types."""
+
+    def test_vc_new(self):
+        self.assertIsInstance(ac_tester.VcNew(), ac_tester.VcNew)
+        self.assertIsInstance(ac_tester.VcNew(1), ac_tester.VcNew)
+        self.assertIsInstance(ac_tester.VcNew(a=1), ac_tester.VcNew)
+
+    def test_vc_new_rejects_extra_args(self):
+        with self.assertRaises(TypeError):
+            ac_tester.VcNew(1, 2)
+
+    def test_vc_init(self):
+        self.assertIsInstance(ac_tester.VcInit(1), ac_tester.VcInit)
+        self.assertIsInstance(ac_tester.VcInit(1, 2), ac_tester.VcInit)
+        self.assertIsInstance(ac_tester.VcInit(1, b=2), ac_tester.VcInit)
+
+    def test_vc_init_missing_required(self):
+        with self.assertRaises(TypeError):
+            ac_tester.VcInit()
+
+    def test_vc_init_rejects_a_as_keyword(self):
+        # 'a' is positional-only
+        with self.assertRaises(TypeError):
+            ac_tester.VcInit(a=1)
+
+    def test_vc_new_base(self):
+        self.assertIsInstance(ac_tester.VcNewBase(1), ac_tester.VcNewBase)
+        self.assertIsInstance(ac_tester.VcNewBase(1, 2), ac_tester.VcNewBase)
+        self.assertIsInstance(ac_tester.VcNewBase(1, b=2), ac_tester.VcNewBase)
+
+    def test_vc_new_base_missing_required(self):
+        with self.assertRaises(TypeError):
+            ac_tester.VcNewBase()
+
+    def test_vc_new_base_subclass(self):
+        # tp_vectorcall is not inherited, so the subclass is constructed
+        # through tp_new.  The generated vectorcall asserts on that, so a
+        # debug build aborts here if that ever stops holding.
+        Sub = type('Sub', (ac_tester.VcNewBase,), {})
+        obj = Sub(1)
+        self.assertIsInstance(obj, Sub)
+        self.assertIsInstance(obj, ac_tester.VcNewBase)
+
+    def test_vc_kwonly(self):
+        # keyword-only 'b': vectorcall has no kwnames==NULL fast path,
+        # so every call goes through the helper.
+        self.assertIsInstance(ac_tester.VcKwOnly(1), ac_tester.VcKwOnly)
+        self.assertIsInstance(ac_tester.VcKwOnly(1, b=2), ac_tester.VcKwOnly)
+        self.assertIsInstance(ac_tester.VcKwOnly(a=1, b=2), ac_tester.VcKwOnly)
+
+    def test_vc_kwonly_b_as_positional(self):
+        with self.assertRaises(TypeError):
+            ac_tester.VcKwOnly(1, 2)
+
+    def test_vc_kwonly_missing_required(self):
+        with self.assertRaises(TypeError):
+            ac_tester.VcKwOnly()
+
+    def test_parse_errors_match_slot(self):
+        # tp_vectorcall and tp_new/tp_init slot should match in argument parsing
+        # error messages. Explicit calls to __new__ and __init__, as well as
+        # subtype calls, will not hit the vectorcall slot. Test errors match.
+        def error(func, args, kwargs):
+            try:
+                func(*args, **kwargs)
+            except TypeError as exc:
+                return str(exc)
+            return None
+
+        def through_new(cls):
+            return cls, partial(cls.__new__, cls)
+
+        def through_init(cls):
+            # Not subclassable, and tp_new is PyType_GenericNew, so reach
+            # tp_init through the __init__ slot wrapper on an instance.
+            return cls, partial(cls.__init__, cls(1))
+
+        entry_points = [
+            through_new(enumerate),   # the only non-test @vectorcall function
+            through_new(ac_tester.VcNew),
+            through_new(ac_tester.VcNewBase),
+            through_new(ac_tester.VcKwOnly),
+            through_init(ac_tester.VcInit),
+        ]
+        invalid_calls = [
+            ((), {}),           # too few positional arguments
+            ((1, 2, 3), {}),    # too many positional arguments
+            ((), {'zz': 1}),    # unknown keyword argument
+        ]
+
+        for direct, slot in entry_points:
+            for args, kwargs in invalid_calls:
+                with self.subTest(cls=direct, args=args, kwargs=kwargs):
+                    self.assertEqual(error(direct, args, kwargs),
+                                     error(slot, args, kwargs))
 
 
 class LimitedCAPIOutputTests(unittest.TestCase):
