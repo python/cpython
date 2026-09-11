@@ -117,7 +117,12 @@ typedef struct {
     Py_UCS4 quotechar;          /* quote character */
     Py_UCS4 escapechar;         /* escape character */
     PyObject *lineterminator;   /* string to write between records */
-
+    /* Cache for the writer: bit c is set if the ASCII character c needs
+       quoting or escaping (delimiter, quotechar, escapechar, '\r', '\n'
+       and the characters of lineterminator). */
+    uint64_t special_chars[2];
+    /* Whether any of the special characters is non-ASCII. */
+    bool nonascii_special;
 } DialectObj;
 
 typedef struct {
@@ -330,6 +335,55 @@ _set_str(const char *name, PyObject **target, PyObject *src, const char *dflt)
         Py_XSETREF(*target, Py_NewRef(src));
     }
     return 0;
+}
+
+static void
+dialect_add_special_char(DialectObj *self, Py_UCS4 c)
+{
+    if (c == NOT_SET) {
+        return;
+    }
+    if (c < 128) {
+        self->special_chars[c / 64] |= (uint64_t)1 << (c % 64);
+    }
+    else {
+        self->nonascii_special = true;
+    }
+}
+
+/* Fill the cache of special characters used by the writer. */
+static void
+dialect_init_special_chars(DialectObj *self)
+{
+    self->special_chars[0] = self->special_chars[1] = 0;
+    self->nonascii_special = false;
+    dialect_add_special_char(self, self->delimiter);
+    dialect_add_special_char(self, self->quotechar);
+    dialect_add_special_char(self, self->escapechar);
+    dialect_add_special_char(self, '\r');
+    dialect_add_special_char(self, '\n');
+    PyObject *lt = self->lineterminator;
+    for (Py_ssize_t i = 0; i < PyUnicode_GET_LENGTH(lt); i++) {
+        dialect_add_special_char(self, PyUnicode_READ_CHAR(lt, i));
+    }
+}
+
+/* Whether the character needs quoting or escaping by the writer. */
+static inline int
+dialect_is_special_char(DialectObj *self, Py_UCS4 c)
+{
+    if (c < 128) {
+        return (self->special_chars[c / 64] >> (c % 64)) & 1;
+    }
+    if (!self->nonascii_special) {
+        return 0;
+    }
+    return (c == self->delimiter ||
+            c == self->quotechar ||
+            c == self->escapechar ||
+            PyUnicode_FindChar(self->lineterminator, c, 0,
+                               PyUnicode_GET_LENGTH(self->lineterminator),
+                               1) >= 0);
 }
 
 static int
@@ -558,6 +612,7 @@ dialect_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     {
         goto err;
     }
+    dialect_init_special_chars(self);
 
     ret = Py_NewRef(self);
 err:
@@ -1208,14 +1263,7 @@ join_append_data(WriterObj *self, int field_kind, const void *field_data,
         Py_UCS4 c = PyUnicode_READ(field_kind, field_data, i);
         int want_escape = 0;
 
-        if (c == dialect->delimiter ||
-            c == dialect->escapechar ||
-            c == dialect->quotechar  ||
-            c == '\n'  ||
-            c == '\r'  ||
-            PyUnicode_FindChar(
-                dialect->lineterminator, c, 0,
-                PyUnicode_GET_LENGTH(dialect->lineterminator), 1) >= 0) {
+        if (dialect_is_special_char(dialect, c)) {
             if (dialect->quoting == QUOTE_NONE)
                 want_escape = 1;
             else {
