@@ -1,0 +1,5 @@
+Add the :envvar:`PYTHON_TURTLE_LANG` environment variable to select the
+language of :mod:`turtle` docstrings, and allow the docstring dictionary to
+be provided as a submodule of the :pypi:`turtle-translations` package.
+Entries naming a method which does not exist in the running version are now
+ignored.
