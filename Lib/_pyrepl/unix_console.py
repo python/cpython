@@ -19,8 +19,6 @@
 # CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
 # CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-from __future__ import annotations
-
 import errno
 import os
 import re
@@ -34,7 +32,7 @@ import platform
 from collections.abc import Callable
 from dataclasses import dataclass
 from fcntl import ioctl
-from typing import TYPE_CHECKING, overload
+from typing import AbstractSet, IO, Literal, overload
 
 from _colorize import ANSIColors
 
@@ -61,9 +59,6 @@ except ImportError:
     posix = None
 
 # types
-if TYPE_CHECKING:
-    from typing import AbstractSet, IO, Literal
-
 type _MoveFunc = Callable[[int, int], None]
 type _PendingWrite = tuple[str | bytes, bool]
 

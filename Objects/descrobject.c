@@ -621,9 +621,17 @@ static PyObject *
 descr_get_qualname(PyObject *self, void *Py_UNUSED(ignored))
 {
     PyDescrObject *descr = (PyDescrObject *)self;
-    if (descr->d_qualname == NULL)
-        descr->d_qualname = calculate_qualname(descr);
-    return Py_XNewRef(descr->d_qualname);
+    PyObject *qualname;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    if (descr->d_qualname == NULL) {
+        PyObject *new_qualname = calculate_qualname(descr);
+        if (new_qualname != NULL) {
+            Py_XSETREF(descr->d_qualname, new_qualname);
+        }
+    }
+    qualname = Py_XNewRef(descr->d_qualname);
+    Py_END_CRITICAL_SECTION();
+    return qualname;
 }
 
 static PyObject *

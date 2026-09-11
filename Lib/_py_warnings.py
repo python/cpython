@@ -873,7 +873,8 @@ class deprecated:
 _DEPRECATED_MSG = "{name!r} is deprecated and slated for removal in Python {remove}"
 
 
-def _deprecated(name, message=_DEPRECATED_MSG, *, remove, _version=sys.version_info):
+def _deprecated(name, message=_DEPRECATED_MSG, *, remove, _version=sys.version_info,
+                stacklevel=3):
     """Warn that *name* is deprecated or should be removed.
 
     RuntimeError is raised if *remove* specifies a major/minor tuple older than
@@ -889,7 +890,7 @@ def _deprecated(name, message=_DEPRECATED_MSG, *, remove, _version=sys.version_i
         raise RuntimeError(msg)
     else:
         msg = message.format(name=name, remove=remove_formatted)
-        _wm.warn(msg, DeprecationWarning, stacklevel=3)
+        _wm.warn(msg, DeprecationWarning, stacklevel=stacklevel)
 
 
 # Private utility function called by _PyErr_WarnUnawaitedCoroutine

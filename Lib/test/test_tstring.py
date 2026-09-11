@@ -177,6 +177,15 @@ class TestTString(unittest.TestCase, TStringBaseCase):
                 self.assertTStringEqual(template, strings, [interpolation])
                 self.assertEqual(fstring(template), rendered)
 
+        class C:
+            def __format__(self, spec):
+                return f"FORMAT-{spec}"
+
+        x = y = C()
+        t = t"{x:{y:{value=}}}"
+        self.assertEqual(t.interpolations[0].format_spec,
+                         "FORMAT-value=42")
+
     def test_interpolation_expression_whitespace(self):
         x = 42
         for template, expected in (
@@ -358,6 +367,23 @@ class TestTString(unittest.TestCase, TStringBaseCase):
             t, ("\n        Hello,\n        ", "\n        "), [(name, "name")]
         )
         self.assertEqual(fstring(t), "\n        Hello,\n        Python\n        ")
+
+        t = t'{"""a" # inside"""}'
+        self.assertEqual(t.interpolations[0].expression,
+                         '"""a" # inside"""')
+
+        t = t'{"""a""""#" # outside
+}'
+        self.assertEqual(t.interpolations[0].expression, '"""a""""#" \n')
+
+        x, y = 1, 2
+        t = t'{x != y # outside
+}'
+        self.assertEqual(t.interpolations[0].expression, 'x != y \n')
+
+        d = {'a#b': 42}
+        t = t'''{f"{d["a#b"]}"}'''
+        self.assertEqual(t.interpolations[0].expression, 'f"{d["a#b"]}"')
 
 if __name__ == '__main__':
     unittest.main()

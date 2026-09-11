@@ -16,7 +16,7 @@ from http.cookiejar import (time2isoz, http2time, iso2time, time2netscape,
      CookieJar, DefaultCookiePolicy, LWPCookieJar, MozillaCookieJar,
      LoadError, lwp_cookie_str, DEFAULT_HTTP_PORT, escape_path,
      reach, is_HDN, domain_match, user_domain_match, request_path,
-     request_port, request_host)
+     request_port, request_host, NETSCAPE_HEADER_TEXT)
 
 mswindows = (sys.platform == "win32")
 
@@ -458,6 +458,31 @@ class FileCookieJarTests(unittest.TestCase):
                     self.assertRaises(LoadError, c.load, filename)
         finally:
             os_helper.unlink(filename)
+
+    def test_magic_ignores_case(self):
+        filename = os_helper.TESTFN
+        self.addCleanup(os_helper.unlink, filename)
+        for magic in ("# Netscape HTTP Cookie File",
+                      "# netscape http cookie file",
+                      "# HTTP Cookie File",
+                      "# http cookie file"):
+            with self.subTest(magic=magic):
+                with open(filename, "w") as f:
+                    f.write(magic + "\n")
+                MozillaCookieJar().load(filename)
+
+    def test_magic_is_not_unicode(self):
+        # Unicode case folding must not be used: 'ſ' (U+017F) and 'K'
+        # (U+212A) are case-insensitively equal to 's' and 'k' in Unicode.
+        filename = os_helper.TESTFN
+        self.addCleanup(os_helper.unlink, filename)
+        for magic in ("# Netſcape HTTP Cookie File",
+                      "# Netscape HTTP CooKie File"):
+            with self.subTest(magic=magic):
+                with open(filename, "w", encoding="utf-8") as f:
+                    f.write(magic + "\n")
+                self.assertRaises(LoadError, MozillaCookieJar().load, filename)
+
 
 class CookieTests(unittest.TestCase):
     # XXX
@@ -2022,6 +2047,63 @@ class LWPCookieTests(unittest.TestCase):
         self.assertEqual(counter["session_after"], 0)
             # we didn't have session cookies in the first place
         self.assertNotEqual(counter["session_before"], 0)
+
+    def test_save_session_cookies(self):
+        # Session cookies are saved with 0 in the expiration time field,
+        # as curl and Wget do (gh-61366).
+        filename = os_helper.TESTFN
+        self.addCleanup(os_helper.unlink, filename)
+        expires = int(time.time() + 3600)
+        c = MozillaCookieJar()
+        c.set_cookie(Cookie(0, "perm", "bar", None, False,
+                            "www.foo.com", True, False, "/", False, False,
+                            expires, False, None, None, {}))
+        c.set_cookie(Cookie(0, "session", "bar", None, False,
+                            "www.foo.com", True, False, "/", False, False,
+                            None, True, None, None, {}))
+        c.save(filename, ignore_discard=True)
+
+        saved = {}
+        with open(filename) as f:
+            for line in f:
+                if line.strip() and not line.startswith("#"):
+                    fields = line.split("\t")
+                    saved[fields[5]] = fields[4]
+        self.assertEqual(saved, {"perm": str(expires), "session": "0"})
+
+        # The saved file can be read back.
+        c = MozillaCookieJar()
+        c.revert(filename, ignore_discard=True)
+        self.assertEqual(sorted(cookie.name for cookie in c),
+                         ["perm", "session"])
+
+    def test_load_session_cookies(self):
+        # curl and Wget write 0 in the expires field for session cookies,
+        # while we write an empty field.  Both should be read (gh-61366).
+        filename = os_helper.TESTFN
+        self.addCleanup(os_helper.unlink, filename)
+        expires = int(time.time() + 3600)
+        with open(filename, "w") as f:
+            f.write(NETSCAPE_HEADER_TEXT)
+            f.write("www.foo.com\tFALSE\t/\tFALSE\t%u\tperm\tbar\n" % expires)
+            f.write("www.foo.com\tFALSE\t/\tFALSE\t0\tcurl_session\tbar\n")
+            f.write("www.foo.com\tFALSE\t/\tFALSE\t\tour_session\tbar\n")
+
+        c = MozillaCookieJar()
+        c.revert(filename)
+        self.assertEqual([cookie.name for cookie in c], ["perm"])
+
+        c = MozillaCookieJar()
+        c.revert(filename, ignore_discard=True)
+        self.assertEqual(sorted(cookie.name for cookie in c),
+                         ["curl_session", "our_session", "perm"])
+        for cookie in c:
+            if cookie.name == "perm":
+                self.assertEqual(cookie.expires, expires)
+                self.assertFalse(cookie.discard)
+            else:
+                self.assertIsNone(cookie.expires)
+                self.assertTrue(cookie.discard)
 
 
 if __name__ == "__main__":

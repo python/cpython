@@ -84,6 +84,10 @@ class ComplexTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         # check that relative difference < eps
         self.assertTrue(abs(x-y)/abs(y) < eps)
 
+    def assertSameSign(self, x, y):
+        if copysign(1., x) != copysign(1., y):
+            self.fail(f'{x!r} and {y!r} have different signs')
+
     def check_div(self, x, y):
         """Compute complex z=x*y, and check that z/x==y and z/y==x."""
         z = x * y
@@ -362,6 +366,16 @@ class ComplexTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertRaises(TypeError, pow, None, 1j)
         self.assertAlmostEqual(pow(1j, 0.5), 0.7071067811865476+0.7071067811865475j)
 
+        # gh-156886: an infinite phase is not a zero base.
+        for base, exp in [(complex(INF), 1j),
+                          (complex(INF, 1), 1j),
+                          (1e300, 1e308j),
+                          (complex(2), complex(0, INF))]:
+            with self.subTest(base=base, exponent=exp):
+                r = base ** exp
+                self.assertTrue(isnan(r.real))
+                self.assertTrue(isnan(r.imag))
+
         a = 3.33+4.43j
         self.assertEqual(a ** 0j, 1)
         self.assertEqual(a ** 0.+0.j, 1)
@@ -445,6 +459,63 @@ class ComplexTest(ComplexesAreIdenticalMixin, unittest.TestCase):
                         complex_pow = "overflow"
                     self.assertEqual(str(float_pow), str(int_pow))
                     self.assertEqual(str(complex_pow), str(int_pow))
+
+        # Check that complex numbers with special components
+        # are correctly handled.
+        values = [complex(x, y)
+                  for x in [5, -5, +0.0, -0.0, INF, -INF, NAN]
+                  for y in [12, -12, +0.0, -0.0, INF, -INF, NAN]]
+        for c in values:
+            with self.subTest(value=c):
+                self.assertComplexesAreIdentical(c**0, complex(1, +0.0))
+                self.assertComplexesAreIdentical(c**1, c)
+                self.assertComplexesAreIdentical(c**2, c*c)
+                self.assertComplexesAreIdentical(c**3, c*(c*c))
+                self.assertComplexesAreIdentical(c**3, (c*c)*c)
+                if not c:
+                    continue
+                for n in range(1, 9):
+                    with self.subTest(exponent=-n):
+                        self.assertComplexesAreIdentical(c**-n, 1/(c**n))
+
+        # Special cases for complex division.
+        for x in [+2, -2]:
+            for y in [+0.0, -0.0]:
+                c = complex(x, y)
+                with self.subTest(value=c):
+                    self.assertComplexesAreIdentical(c**-1, complex(1/x, -y))
+                c = complex(y, x)
+                with self.subTest(value=c):
+                    self.assertComplexesAreIdentical(c**-1, complex(y, -1/x))
+        for x in [+INF, -INF]:
+            for y in [+1, -1]:
+                c = complex(x, y)
+                with self.subTest(value=c):
+                    self.assertComplexesAreIdentical(c**-1, complex(1/x, -0.0*y))
+                    self.assertComplexesAreIdentical(c**-2, complex(0.0, -y/x))
+                c = complex(y, x)
+                with self.subTest(value=c):
+                    self.assertComplexesAreIdentical(c**-1, complex(+0.0*y, -1/x))
+                    self.assertComplexesAreIdentical(c**-2, complex(-0.0, -y/x))
+
+        # Test that zeroes has the same sign as small non-zero values.
+        eps = 1e-11
+        pairs = [(complex(x, y), complex(x, copysign(0.0, y)))
+                 for x in [+1, -1] for y in [+eps, -eps]]
+        pairs += [(complex(y, x), complex(copysign(0.0, y), x))
+                  for x in [+1, -1] for y in [+eps, -eps]]
+        for c1, c2 in pairs:
+            for n in exponents:
+                with self.subTest(value=c1, exponent=n):
+                    r1 = c1**n
+                    r2 = c2**n
+                    self.assertClose(r1, r2)
+                    self.assertSameSign(r1.real, r2.real)
+                    self.assertSameSign(r1.imag, r2.imag)
+                    self.assertNotEqual(r1.real, 0.0)
+                    if n != 0:
+                        self.assertNotEqual(r1.imag, 0.0)
+                    self.assertTrue(r2.real == 0.0 or r2.imag == 0.0)
 
     def test_boolcontext(self):
         for i in range(100):

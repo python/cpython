@@ -186,10 +186,9 @@
     <ClCompile Include="..\Parser\lexer\lexer.c" />
     <ClCompile Include="..\Parser\lexer\number.c" />
     <ClCompile Include="..\Parser\lexer\string.c" />
-    <ClCompile Include="..\Parser\tokenizer\string_tokenizer.c" />
-    <ClCompile Include="..\Parser\tokenizer\file_tokenizer.c" />
-    <ClCompile Include="..\Parser\tokenizer\utf8_tokenizer.c" />
-    <ClCompile Include="..\Parser\tokenizer\readline_tokenizer.c" />
+    <ClCompile Include="..\Parser\tokenizer\decoder.c" />
+    <ClCompile Include="..\Parser\tokenizer\reader.c" />
+    <ClCompile Include="..\Parser\tokenizer\source.c" />
     <ClCompile Include="..\Parser\tokenizer\helpers.c" />
     <ClCompile Include="..\PC\invalid_parameter_handler.c" />
     <ClCompile Include="..\PC\msvcrtmodule.c" />
@@ -316,31 +315,6 @@
       <ModName>codecs</ModName>
       <IntFile>$(IntDir)codecs.g.h</IntFile>
       <OutFile>$(GeneratedFrozenModulesDir)Python\frozen_modules\codecs.h</OutFile>
-    </None>
-    <None Include="..\Lib\encodings\__init__.py">
-      <ModName>encodings</ModName>
-      <IntFile>$(IntDir)encodings.g.h</IntFile>
-      <OutFile>$(GeneratedFrozenModulesDir)Python\frozen_modules\encodings.h</OutFile>
-    </None>
-    <None Include="..\Lib\encodings\aliases.py">
-      <ModName>encodings.aliases</ModName>
-      <IntFile>$(IntDir)encodings.aliases.g.h</IntFile>
-      <OutFile>$(GeneratedFrozenModulesDir)Python\frozen_modules\encodings.aliases.h</OutFile>
-    </None>
-    <None Include="..\Lib\encodings\utf_8.py">
-      <ModName>encodings.utf_8</ModName>
-      <IntFile>$(IntDir)encodings.utf_8.g.h</IntFile>
-      <OutFile>$(GeneratedFrozenModulesDir)Python\frozen_modules\encodings.utf_8.h</OutFile>
-    </None>
-    <None Include="..\Lib\encodings\_win_cp_codecs.py">
-      <ModName>encodings._win_cp_codecs</ModName>
-      <IntFile>$(IntDir)encodings._win_cp_codecs.g.h</IntFile>
-      <OutFile>$(GeneratedFrozenModulesDir)Python\frozen_modules\encodings._win_cp_codecs.h</OutFile>
-    </None>
-    <None Include="..\Lib\encodings\_iconv_codecs.py">
-      <ModName>encodings._iconv_codecs</ModName>
-      <IntFile>$(IntDir)encodings._iconv_codecs.g.h</IntFile>
-      <OutFile>$(GeneratedFrozenModulesDir)Python\frozen_modules\encodings._iconv_codecs.h</OutFile>
     </None>
     <None Include="..\Lib\io.py">
       <ModName>io</ModName>

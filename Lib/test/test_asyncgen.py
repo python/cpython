@@ -619,6 +619,33 @@ class AsyncGenTest(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "coroutine ignored GeneratorExit"):
             gen.close()
 
+    def test_async_gen_athrow_send_non_none(self):
+        # gh-120321: sending a non-None value to a just-started athrow()
+        # awaitable must not claim the generator, so the generator stays
+        # usable and the awaitable can still be awaited afterwards.
+        class MyExc(Exception):
+            pass
+
+        async def agenfn():
+            try:
+                yield 1
+            except MyExc:
+                yield 2
+
+        agen = agenfn()
+        with self.assertRaises(StopIteration):
+            agen.asend(None).send(None)
+
+        gen = agen.athrow(MyExc)
+        with self.assertRaisesRegex(RuntimeError, "non-None value"):
+            gen.send(42)
+        self.assertFalse(agen.ag_running)
+
+        # The awaitable is still in its initial state and works normally.
+        with self.assertRaises(StopIteration) as cm:
+            gen.send(None)
+        self.assertEqual(cm.exception.value, 2)
+
 
 class AsyncGenAsyncioTest(unittest.TestCase):
 
@@ -761,6 +788,164 @@ class AsyncGenAsyncioTest(unittest.TestCase):
         applied_once = aiter(gen())
         applied_twice = aiter(applied_once)
         self.assertIs(applied_once, applied_twice)
+
+    def make_counter(self):
+        state = {'n': 0}
+        async def counter():
+            state['n'] += 1
+            return state['n']
+        return counter
+
+    def collect(self, ait):
+        async def consume():
+            return [i async for i in ait]
+        return self.loop.run_until_complete(consume())
+
+    def test_aiter_callable_stop(self):
+        self.assertEqual(self.collect(aiter(self.make_counter(), 4)), [1, 2, 3])
+        self.assertEqual(self.collect(aiter(self.make_counter(), stop_value=4)),
+                         [1, 2, 3])
+
+    def test_aiter_callable_stop_exception(self):
+        counter = self.make_counter()
+        async def spam():
+            value = await counter()
+            if value > 3:
+                raise LookupError
+            return value
+        self.assertEqual(self.collect(aiter(spam, stop_exception=LookupError)),
+                         [1, 2, 3])
+        counter = self.make_counter()
+        self.assertEqual(
+            self.collect(aiter(spam, stop_exception=(ZeroDivisionError,
+                                                     LookupError))),
+            [1, 2, 3])
+
+    def test_aiter_callable_stop_and_exception(self):
+        counter = self.make_counter()
+        async def spam():
+            value = await counter()
+            if value > 5:
+                raise LookupError
+            return value
+        self.assertEqual(
+            self.collect(aiter(spam, 3, stop_exception=LookupError)), [1, 2])
+        counter = self.make_counter()
+        self.assertEqual(
+            self.collect(aiter(spam, 100, stop_exception=LookupError)),
+            [1, 2, 3, 4, 5])
+
+    def test_aiter_callable_stop_async_iteration(self):
+        # StopAsyncIteration is the default stop exception
+        counter = self.make_counter()
+        async def spam():
+            value = await counter()
+            if value > 3:
+                raise StopAsyncIteration
+            return value
+        self.assertEqual(
+            self.collect(aiter(spam, stop_exception=StopAsyncIteration)),
+            [1, 2, 3])
+
+    def test_aiter_callable_leak_from_await(self):
+        # A StopAsyncIteration leaking from the await is replaced with
+        # RuntimeError (see PEP 525)
+        async def spam():
+            raise StopAsyncIteration
+        it = aiter(spam, 10, stop_exception=LookupError)
+        with self.assertRaisesRegex(RuntimeError,
+                                    'callable raised StopAsyncIteration') as cm:
+            self.loop.run_until_complete(anext(it))
+        self.assertIsInstance(cm.exception.__cause__, StopAsyncIteration)
+        # but if it matches stop_exception, it stops the iteration
+        it = aiter(spam, 10, stop_exception=(LookupError, StopAsyncIteration))
+        with self.assertRaises(StopAsyncIteration):
+            self.loop.run_until_complete(anext(it))
+
+    def test_aiter_callable_leak_from_call(self):
+        # StopIteration and StopAsyncIteration leaking from the call are
+        # replaced with RuntimeError (see PEP 525)
+        for exc in StopIteration, StopAsyncIteration:
+            with self.subTest(exc=exc):
+                def spam():
+                    raise exc
+                it = aiter(spam, 10, stop_exception=LookupError)
+                with self.assertRaisesRegex(
+                        RuntimeError, f'callable raised {exc.__name__}') as cm:
+                    self.loop.run_until_complete(anext(it))
+                self.assertIsInstance(cm.exception.__cause__, exc)
+                # but if it matches stop_exception, it stops the iteration
+                it = aiter(spam, 10, stop_exception=(LookupError, exc))
+                with self.assertRaises(StopAsyncIteration):
+                    self.loop.run_until_complete(anext(it))
+
+    def test_aiter_callable_other_exception(self):
+        async def spam():
+            raise ZeroDivisionError
+        it = aiter(spam, stop_exception=LookupError)
+        with self.assertRaises(ZeroDivisionError):
+            self.loop.run_until_complete(anext(it))
+
+    def test_aiter_callable_exhausted(self):
+        it = aiter(self.make_counter(), 3)
+        self.assertEqual(self.collect(it), [1, 2])
+        self.assertEqual(self.loop.run_until_complete(anext(it, 'default')),
+                         'default')
+        with self.assertRaises(StopAsyncIteration):
+            self.loop.run_until_complete(anext(it))
+
+    def test_aiter_callable_lazy(self):
+        # The callable is only called when the awaitable is awaited
+        calls = []
+        async def spam():
+            calls.append(1)
+            return len(calls)
+        it = aiter(spam, 10)
+        awaitable = it.__anext__()
+        self.assertEqual(calls, [])
+        self.assertEqual(self.loop.run_until_complete(awaitable), 1)
+        self.assertEqual(calls, [1])
+
+    def test_aiter_callable_awaitable(self):
+        it = aiter(self.make_counter(), 10)
+        awaitable = it.__anext__()
+        self.assertIsNone(awaitable.close())
+        with self.assertRaises(RuntimeError):
+            self.loop.run_until_complete(awaitable)
+        awaitable = it.__anext__()
+        with self.assertRaises(KeyError):
+            awaitable.throw(KeyError('injected'))
+
+    def test_aiter_callable_cancel(self):
+        # Cancellation is delivered to the awaited callable result
+        cancelled = []
+        async def spam():
+            try:
+                await asyncio.sleep(10)
+            except asyncio.CancelledError:
+                cancelled.append(1)
+                raise
+        async def consume():
+            async for _ in aiter(spam, None):
+                pass
+        async def main():
+            task = asyncio.ensure_future(consume())
+            await asyncio.sleep(0)
+            task.cancel()
+            with self.assertRaises(asyncio.CancelledError):
+                await task
+        self.loop.run_until_complete(main())
+        self.assertEqual(cancelled, [1])
+
+    def test_aiter_callable_errors(self):
+        async def gen():
+            yield 1
+        self.assertRaises(TypeError, aiter, gen(), 1)
+        self.assertRaises(TypeError, aiter, [1, 2], stop_exception=LookupError)
+        self.assertRaises(TypeError, aiter, len, stop_exception=42)
+        self.assertRaises(TypeError, aiter, len,
+                          stop_exception=(LookupError, 42))
+        self.assertRaises(TypeError, aiter, len, stop_exception=LookupError())
 
     def test_anext_bad_args(self):
         async def gen():
@@ -1949,6 +2134,41 @@ class AsyncGenAsyncioTest(unittest.TestCase):
             r"cannot reuse already awaited aclose\(\)/athrow\(\)"
         ):
             nxt.throw(MyException)
+
+    def test_async_gen_send_same_athrow_coro_after_completion(self):
+        # gh-120321: an athrow() awaitable that needs more than one send()
+        # to complete must be closed on completion; sending to it again
+        # must raise instead of resuming the generator.
+        class YieldOnce:
+            def __await__(self):
+                yield
+
+        async def async_iterate():
+            try:
+                yield 1
+            except ValueError:
+                await YieldOnce()
+            yield 2
+
+        it = async_iterate()
+        with self.assertRaises(StopIteration):
+            it.__anext__().send(None)
+
+        nxt = it.athrow(ValueError)
+        # The exception handler suspends before the operation completes.
+        nxt.send(None)
+        with self.assertRaises(StopIteration) as cm:
+            nxt.send(None)
+        self.assertEqual(cm.exception.value, 2)
+
+        with self.assertRaisesRegex(
+            RuntimeError,
+            r"cannot reuse already awaited aclose\(\)/athrow\(\)"
+        ):
+            nxt.send(None)
+
+        with self.assertRaises(StopIteration):
+            it.aclose().send(None)
 
     def test_async_gen_aclose_twice_with_different_coros(self):
         # Regression test for https://bugs.python.org/issue39606

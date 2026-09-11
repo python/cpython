@@ -5,7 +5,7 @@
 #       Doc/library/token-list.inc
 #       Doc/library/token.rst  (checked, not generated)
 #   make_h:
-#       Include/token.h
+#       Include/internal/pycore_token.h
 #   make_c:
 #       Parser/token.c
 #   make_py:

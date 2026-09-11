@@ -327,6 +327,28 @@ class ProactorTests(WindowsEventsTestCase):
         stop.set()
         thr.join()
 
+    def test_custom_poll_integration(self):
+        # gh-154971: a caller can wait on the completion port and process statuses itself
+        proactor = self.loop._proactor
+
+        a, b = socket.socketpair()
+        self.addCleanup(a.close)
+        self.addCleanup(b.close)
+
+        fut = proactor.recv(a, 100)
+        self.assertFalse(fut.done())
+
+        b.send(b'data')
+
+        deadline = time.monotonic() + support.SHORT_TIMEOUT
+        while not fut.done() and time.monotonic() < deadline:
+            status = _overlapped.GetQueuedCompletionStatus(proactor._iocp, 100)
+            if status is not None:
+                proactor._process_completion_status(status)
+
+        self.assertTrue(fut.done())
+        self.assertEqual(fut.result(), b'data')
+
 
 class ProactorPipeObjectSupportTests(unittest.TestCase):
 

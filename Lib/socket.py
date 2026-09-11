@@ -327,7 +327,17 @@ class socket(_socket.socket):
             rawmode += "w"
         raw = SocketIO(self, rawmode)
         self._io_refs += 1
+        line_buffering = False
         if buffering is None:
+            buffering = -1
+        if buffering == 1:
+            if binary:
+                import warnings
+                warnings.warn("line buffering (buffering=1) isn't supported "
+                              "in binary mode, the default buffer size will "
+                              "be used", RuntimeWarning, 2)
+            else:
+                line_buffering = True
             buffering = -1
         if buffering < 0:
             buffering = io.DEFAULT_BUFFER_SIZE
@@ -345,7 +355,8 @@ class socket(_socket.socket):
         if binary:
             return buffer
         encoding = io.text_encoding(encoding)
-        text = io.TextIOWrapper(buffer, encoding, errors, newline)
+        text = io.TextIOWrapper(
+            buffer, encoding, errors, newline, line_buffering)
         text.mode = mode
         return text
 
