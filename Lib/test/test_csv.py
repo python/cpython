@@ -535,7 +535,7 @@ class Test_Csv(unittest.TestCase):
     def test_write_formatter_errors(self):
         with self.assertRaisesRegex(TypeError, 'must be callable or None'):
             csv.writer(StringIO(), formatter='str')
-        with self.assertRaisesRegex(csv.Error, 'must return a string'):
+        with self.assertRaisesRegex(TypeError, 'must return a string'):
             self._write_test([1], '', formatter=lambda index, value: index)
         self._write_error_test(ZeroDivisionError, [1],
                                formatter=lambda index, value: 1/0)

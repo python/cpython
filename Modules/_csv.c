@@ -1463,7 +1463,7 @@ csv_writerow_lock_held(PyObject *op, PyObject *seq)
                 str = PyObject_CallFunction(self->formatter, "nO",
                                             field_index, field);
                 if (str != NULL && !PyUnicode_Check(str)) {
-                    PyErr_Format(self->error_obj,
+                    PyErr_Format(PyExc_TypeError,
                                  "formatter must return a string, not %T", str);
                     Py_CLEAR(str);
                 }
