@@ -31,7 +31,7 @@
 /**
  * Checks the SQLite error code and sets the appropriate DB-API exception.
  */
-void set_error_from_db(pysqlite_state *state, sqlite3 *db);
+int set_error_from_db(pysqlite_state *state, sqlite3 *db);
 void set_error_from_code(pysqlite_state *state, int code);
 
 sqlite_int64 _pysqlite_long_as_int64(PyObject * value);

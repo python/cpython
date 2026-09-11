@@ -1,6 +1,8 @@
 import contextlib
 import errno
 import importlib
+import itertools
+import inspect
 import io
 import logging
 import os
@@ -17,6 +19,8 @@ import unittest
 import warnings
 
 from test import support
+from test.support import isolation
+from test.support import hashlib_helper
 from test.support import import_helper
 from test.support import os_helper
 from test.support import script_helper
@@ -93,9 +97,15 @@ class TestSupport(unittest.TestCase):
                         self.test_get_attribute)
         self.assertRaises(unittest.SkipTest, support.get_attribute, self, "foo")
 
-    @unittest.skip("failing buildbots")
+    @unittest.skipIf(support.is_android or support.is_apple_mobile,
+                     'Mobile platforms redirect stdout to system log')
     def test_get_original_stdout(self):
-        self.assertEqual(support.get_original_stdout(), sys.stdout)
+        if isinstance(sys.stdout, io.StringIO):
+            # gh-55258: When --junit-xml is used, stdout is a StringIO:
+            # use sys.__stdout__ in this case.
+            self.assertEqual(support.get_original_stdout(), sys.__stdout__)
+        else:
+            self.assertEqual(support.get_original_stdout(), sys.stdout)
 
     def test_unload(self):
         import sched  # noqa: F401
@@ -482,6 +492,7 @@ class TestSupport(unittest.TestCase):
 
         self.assertRaises(AssertionError, support.check__all__, self, unittest)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @unittest.skipUnless(hasattr(os, 'waitpid') and hasattr(os, 'WNOHANG'),
                          'need os.waitpid() and os.WNOHANG')
     @support.requires_fork()
@@ -559,13 +570,25 @@ class TestSupport(unittest.TestCase):
             # -X options
             ['-X', 'dev'],
             ['-Wignore', '-X', 'dev'],
+            ['-X', 'cpu_count=4'],
+            ['-X', 'disable-remote-debug'],
             ['-X', 'faulthandler'],
             ['-X', 'importtime'],
             ['-X', 'importtime=2'],
+            ['-X', 'int_max_str_digits=1000'],
+            ['-X', 'lazy_imports=all'],
+            ['-X', 'no_debug_ranges'],
             ['-X', 'showrefcount'],
             ['-X', 'tracemalloc'],
             ['-X', 'tracemalloc=3'],
+            ['-X', 'warn_default_encoding'],
         ):
+            with self.subTest(opts=opts):
+                self.check_options(opts, 'args_from_interpreter_flags')
+
+        with os_helper.temp_dir() as temp_path:
+            prefix = os.path.join(temp_path, 'pycache')
+            opts = ['-X', f'pycache_prefix={prefix}']
             with self.subTest(opts=opts):
                 self.check_options(opts, 'args_from_interpreter_flags')
 
@@ -662,6 +685,7 @@ class TestSupport(unittest.TestCase):
         """)
         script_helper.assert_python_ok("-c", code)
 
+    @support.skip_if_unlimited_stack_size
     def test_recursion(self):
         # Test infinite_recursion() and get_recursion_available() functions.
         def recursive_function(depth):
@@ -777,6 +801,7 @@ class TestSupport(unittest.TestCase):
             (128 + int(signal.SIGABRT), 'SIGABRT'),
             (3221225477, "STATUS_ACCESS_VIOLATION"),
             (0xC00000FD, "STATUS_STACK_OVERFLOW"),
+            (0xC0000906, "0xC0000906"),
         ):
             self.assertEqual(support.get_signal_name(exitcode), expected,
                              exitcode)
@@ -784,14 +809,14 @@ class TestSupport(unittest.TestCase):
     def test_linked_to_musl(self):
         linked = support.linked_to_musl()
         self.assertIsNotNone(linked)
-        if support.is_wasi or support.is_emscripten:
+        if support.is_wasm32:
             self.assertTrue(linked)
         # The value is cached, so make sure it returns the same value again.
         self.assertIs(linked, support.linked_to_musl())
-        # The unlike libc, the musl version is a triple.
+        # The musl version is either triple or just a major version number.
         if linked:
             self.assertIsInstance(linked, tuple)
-            self.assertEqual(3, len(linked))
+            self.assertIn(len(linked), (1, 3))
             for v in linked:
                 self.assertIsInstance(v, int)
 
@@ -816,6 +841,481 @@ class TestSupport(unittest.TestCase):
     # can_symlink
     # skip_unless_symlink
     # SuppressCrashReport
+
+
+@hashlib_helper.requires_builtin_hashes()
+class TestHashlibSupport(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.hashlib = import_helper.import_module("hashlib")
+        cls.hmac = import_helper.import_module("hmac")
+
+        # All C extension modules must be present since blocking
+        # the built-in implementation while allowing OpenSSL or vice-versa
+        # may result in failures depending on the exposed built-in hashes.
+        cls._hashlib = import_helper.import_module("_hashlib")
+        cls._hmac = import_helper.import_module("_hmac")
+        cls._md5 = import_helper.import_module("_md5")
+
+    def skip_if_fips_mode(self):
+        if self._hashlib.get_fips_mode():
+            self.skipTest("disabled in FIPS mode")
+
+    def skip_if_not_fips_mode(self):
+        if not self._hashlib.get_fips_mode():
+            self.skipTest("requires FIPS mode")
+
+    def check_context(self, disabled=True):
+        if disabled:
+            return self.assertRaises(ValueError)
+        return contextlib.nullcontext()
+
+    def try_import_attribute(self, fullname, default=None):
+        if fullname is None:
+            return default
+        assert fullname.count('.') == 1, fullname
+        module_name, attribute = fullname.split('.', maxsplit=1)
+        try:
+            module = importlib.import_module(module_name)
+        except ImportError:
+            return default
+        try:
+            return getattr(module, attribute, default)
+        except TypeError:
+            return default
+
+    def fetch_hash_function(self, name, implementation):
+        info = hashlib_helper.get_hash_func_info(name)
+        match hashlib_helper.Implementation(implementation):
+            case hashlib_helper.Implementation.hashlib:
+                method_name = info.hashlib.member_name
+                assert isinstance(method_name, str), method_name
+                return getattr(self.hashlib, method_name)
+            case hashlib_helper.Implementation.openssl:
+                method_name = info.openssl.member_name
+                assert isinstance(method_name, str | None), method_name
+                return getattr(self._hashlib, method_name or "", None)
+        fullname = info[implementation].fullname
+        return self.try_import_attribute(fullname)
+
+    def fetch_hmac_function(self, name):
+        target = hashlib_helper.get_hmac_item_info(name)
+        return target.import_member()
+
+    def check_openssl_hash(self, name, *, disabled=True):
+        """Check that OpenSSL HASH interface is enabled/disabled."""
+        with self.check_context(disabled):
+            _ = self._hashlib.new(name)
+        if do_hash := self.fetch_hash_function(name, "openssl"):
+            self.assertStartsWith(do_hash.__name__, 'openssl_')
+            with self.check_context(disabled):
+                _ = do_hash(b"")
+
+    def check_openssl_hmac(self, name, *, disabled=True):
+        """Check that OpenSSL HMAC interface is enabled/disabled."""
+        if name in hashlib_helper.NON_HMAC_DIGEST_NAMES:
+            # HMAC-BLAKE and HMAC-SHAKE raise a ValueError as they are not
+            # supported at all (they do not make any sense in practice).
+            with self.assertRaises(ValueError):
+                self._hashlib.hmac_digest(b"", b"", name)
+        else:
+            with self.check_context(disabled):
+                _ = self._hashlib.hmac_digest(b"", b"", name)
+        # OpenSSL does not provide one-shot explicit HMAC functions
+
+    def check_builtin_hash(self, name, *, disabled=True):
+        """Check that HACL* HASH interface is enabled/disabled."""
+        if do_hash := self.fetch_hash_function(name, "builtin"):
+            self.assertEqual(do_hash.__name__, name)
+            with self.check_context(disabled):
+                _ = do_hash(b"")
+
+    def check_builtin_hmac(self, name, *, disabled=True):
+        """Check that HACL* HMAC interface is enabled/disabled."""
+        if name in hashlib_helper.NON_HMAC_DIGEST_NAMES:
+            # HMAC-BLAKE and HMAC-SHAKE raise a ValueError as they are not
+            # supported at all (they do not make any sense in practice).
+            with self.assertRaises(ValueError):
+                self._hmac.compute_digest(b"", b"", name)
+        else:
+            with self.check_context(disabled):
+                _ = self._hmac.compute_digest(b"", b"", name)
+
+        with self.check_context(disabled):
+            _ = self._hmac.new(b"", b"", name)
+
+        if do_hmac := self.fetch_hmac_function(name):
+            self.assertStartsWith(do_hmac.__name__, 'compute_')
+            with self.check_context(disabled):
+                _ = do_hmac(b"", b"")
+        else:
+            self.assertIn(name, hashlib_helper.NON_HMAC_DIGEST_NAMES)
+
+    @support.subTests(
+        ('name', 'allow_openssl', 'allow_builtin'),
+        itertools.product(
+            hashlib_helper.CANONICAL_DIGEST_NAMES,
+            [True, False],
+            [True, False],
+        )
+    )
+    def test_disable_hash(self, name, allow_openssl, allow_builtin):
+        # In FIPS mode, the function may be available but would still need
+        # to raise a ValueError, so we will test the helper separately.
+        self.skip_if_fips_mode()
+        flags = dict(allow_openssl=allow_openssl, allow_builtin=allow_builtin)
+        is_fully_disabled = not allow_builtin and not allow_openssl
+
+        with hashlib_helper.block_algorithm(name, **flags):
+            # OpenSSL's blake2s and blake2b are unknown names
+            # when only the OpenSSL interface is available.
+            if allow_openssl and not allow_builtin:
+                aliases = {'blake2s': 'blake2s256', 'blake2b': 'blake2b512'}
+                name_for_hashlib_new = aliases.get(name, name)
+            else:
+                name_for_hashlib_new = name
+
+            with self.check_context(is_fully_disabled):
+                _ = self.hashlib.new(name_for_hashlib_new)
+
+            # Since _hashlib is present, explicit blake2b/blake2s constructors
+            # use the built-in implementation, while others (since we are not
+            # in FIPS mode and since _hashlib exists) use the OpenSSL function.
+            with self.check_context(is_fully_disabled):
+                _ = getattr(self.hashlib, name)()
+
+            self.check_openssl_hash(name, disabled=not allow_openssl)
+            self.check_builtin_hash(name, disabled=not allow_builtin)
+
+            if name not in hashlib_helper.NON_HMAC_DIGEST_NAMES:
+                with self.check_context(is_fully_disabled):
+                    _ = self.hmac.new(b"", b"", name)
+                with self.check_context(is_fully_disabled):
+                    _ = self.hmac.HMAC(b"", b"", name)
+                with self.check_context(is_fully_disabled):
+                    _ = self.hmac.digest(b"", b"", name)
+
+                self.check_openssl_hmac(name, disabled=not allow_openssl)
+                self.check_builtin_hmac(name, disabled=not allow_builtin)
+
+    @hashlib_helper.block_algorithm("md5")
+    def test_disable_hash_md5_in_fips_mode(self):
+        self.skip_if_not_fips_mode()
+
+        self.assertRaises(ValueError, self.hashlib.new, "md5")
+        self.assertRaises(ValueError, self._hashlib.new, "md5")
+        self.assertRaises(ValueError, self.hashlib.md5)
+        self.assertRaises(ValueError, self._hashlib.openssl_md5)
+
+        kwargs = dict(usedforsecurity=True)
+        self.assertRaises(ValueError, self.hashlib.new, "md5", **kwargs)
+        self.assertRaises(ValueError, self._hashlib.new, "md5", **kwargs)
+        self.assertRaises(ValueError, self.hashlib.md5, **kwargs)
+        self.assertRaises(ValueError, self._hashlib.openssl_md5, **kwargs)
+
+    @hashlib_helper.block_algorithm("md5", allow_openssl=True)
+    def test_disable_hash_md5_in_fips_mode_allow_openssl(self):
+        self.skip_if_not_fips_mode()
+        # Allow the OpenSSL interface to be used but not the HACL* one.
+        # hashlib.new("md5") is dispatched to hashlib.openssl_md5()
+        self.assertRaises(ValueError, self.hashlib.new, "md5")
+        # dispatched to hashlib.openssl_md5() in FIPS mode
+        h2 = self.hashlib.new("md5", usedforsecurity=False)
+        self.assertIsInstance(h2, self._hashlib.HASH)
+
+        # block_algorithm() does not mock hashlib.md5 and _hashlib.openssl_md5
+        self.assertNotHasAttr(self.hashlib.md5, "__wrapped__")
+        self.assertNotHasAttr(self._hashlib.openssl_md5, "__wrapped__")
+
+        hashlib_md5 = inspect.unwrap(self.hashlib.md5)
+        self.assertIs(hashlib_md5, self._hashlib.openssl_md5)
+        self.assertRaises(ValueError, self.hashlib.md5)
+        # allow MD5 to be used in FIPS mode if usedforsecurity=False
+        h3 = self.hashlib.md5(usedforsecurity=False)
+        self.assertIsInstance(h3, self._hashlib.HASH)
+
+    @hashlib_helper.block_algorithm("md5", allow_builtin=True)
+    def test_disable_hash_md5_in_fips_mode_allow_builtin(self):
+        self.skip_if_not_fips_mode()
+        # Allow the HACL* interface to be used but not the OpenSSL one.
+        h1 = self.hashlib.new("md5")  # dispatched to _md5.md5()
+        self.assertNotIsInstance(h1, self._hashlib.HASH)
+        h2 = self.hashlib.new("md5", usedforsecurity=False)
+        self.assertIsInstance(h2, type(h1))
+
+        # block_algorithm() mocks hashlib.md5 and _hashlib.openssl_md5
+        self.assertHasAttr(self.hashlib.md5, "__wrapped__")
+        self.assertHasAttr(self._hashlib.openssl_md5, "__wrapped__")
+
+        hashlib_md5 = inspect.unwrap(self.hashlib.md5)
+        openssl_md5 = inspect.unwrap(self._hashlib.openssl_md5)
+        self.assertIs(hashlib_md5, openssl_md5)
+        self.assertRaises(ValueError, self.hashlib.md5)
+        self.assertRaises(ValueError, self.hashlib.md5,
+                          usedforsecurity=False)
+
+    @hashlib_helper.block_algorithm("md5",
+                                    allow_openssl=True,
+                                    allow_builtin=True)
+    def test_disable_hash_md5_in_fips_mode_allow_all(self):
+        self.skip_if_not_fips_mode()
+        # hashlib.new() isn't blocked as it falls back to _md5.md5
+        self.assertIsInstance(self.hashlib.new("md5"), self._md5.MD5Type)
+        self.assertRaises(ValueError, self._hashlib.new, "md5")
+        h = self._hashlib.new("md5", usedforsecurity=False)
+        self.assertIsInstance(h, self._hashlib.HASH)
+
+        self.assertNotHasAttr(self.hashlib.md5, "__wrapped__")
+        self.assertNotHasAttr(self._hashlib.openssl_md5, "__wrapped__")
+
+        self.assertIs(self.hashlib.md5, self._hashlib.openssl_md5)
+        self.assertRaises(ValueError, self.hashlib.md5)
+        h = self.hashlib.md5(usedforsecurity=False)
+        self.assertIsInstance(h, self._hashlib.HASH)
+
+
+class TestIsolated(unittest.TestCase):
+    # Drive the sample tests in test._isolated_sample (which really spawn
+    # subprocesses through @isolation.runInSubprocess()) under a private
+    # TestResult, and check that each subprocess outcome is replayed in the parent.
+
+    @staticmethod
+    def _run(name):
+        suite = unittest.TestLoader().loadTestsFromName(
+            'test._isolated_sample.' + name)
+        result = unittest.TestResult()
+        suite.run(result)
+        return result
+
+    @staticmethod
+    def _names(items):
+        # Map outcome entries (which are (test, detail) pairs, except
+        # unexpectedSuccesses which are bare tests) to their method names.
+        names = []
+        for item in items:
+            test = item[0] if isinstance(item, tuple) else item
+            names.append(test.id().rpartition('.')[2])
+        return sorted(names)
+
+    @support.requires_subprocess()
+    def test_method_outcomes(self):
+        result = self._run('MethodSample')
+        self.assertEqual(result.testsRun, 6)
+        self.assertEqual(self._names(result.failures), ['test_fail'])
+        self.assertEqual(self._names(result.errors), ['test_error'])
+        self.assertEqual(self._names(result.skipped), ['test_skip'])
+        self.assertEqual(self._names(result.expectedFailures),
+                         ['test_expected_failure'])
+        self.assertEqual(self._names(result.unexpectedSuccesses),
+                         ['test_unexpected_success'])
+
+    @support.requires_subprocess()
+    def test_class_outcomes(self):
+        result = self._run('ClassSample')
+        self.assertEqual(result.testsRun, 3)
+        self.assertEqual(self._names(result.failures), ['test_fail'])
+        self.assertEqual(self._names(result.expectedFailures),
+                         ['test_expected_failure'])
+        self.assertEqual(result.errors, [])
+        self.assertEqual(result.unexpectedSuccesses, [])
+
+    @support.requires_subprocess()
+    def test_subtests_reported_individually(self):
+        result = self._run('SubtestSample')
+        self.assertEqual(result.testsRun, 1)
+        self.assertEqual(len(result.failures), 1)
+        test, _ = result.failures[0]
+        self.assertIn('i=1', str(test))
+
+    @support.requires_subprocess()
+    def test_skip_reason_propagated(self):
+        result = self._run('MethodSample.test_skip')
+        self.assertEqual([reason for _, reason in result.skipped], ['nope'])
+
+    @support.requires_subprocess()
+    def test_subprocess_traceback_is_cause(self):
+        result = self._run('MethodSample.test_fail')
+        self.assertEqual(len(result.failures), 1)
+        _, tb = result.failures[0]
+        # The real assertion that failed in the subprocess is shown ...
+        self.assertIn('self.assertEqual(1, 2)', tb)
+        # ... as the direct cause of the replayed failure ...
+        self.assertIn('direct cause', tb)
+        # ... without leaking the parent-side replay frames.
+        self.assertNotIn('isolation.py', tb)
+
+    @support.requires_subprocess()
+    def test_durations_forwarded_for_class(self):
+        from test._isolated_sample import DURATION_SLEEP
+        result = unittest.TestResult()
+        suite = unittest.TestLoader().loadTestsFromName(
+            'test._isolated_sample.DurationSample')
+        suite.run(result)
+        # The duration reported in the parent is the one measured in the
+        # subprocess (around the sleep), not the near-instant replay time.
+        self.assertEqual(len(result.collectedDurations), 1)
+        name, elapsed = result.collectedDurations[0]
+        self.assertEqual(name.split()[0], 'test_slow')
+        self.assertGreaterEqual(elapsed, DURATION_SLEEP / 2)
+
+    @support.requires_subprocess()
+    def test_subclass_of_isolated_class(self):
+        # Both samples pass only if the fixtures are bound to the runtime class
+        # and what the subclass adds or overrides runs in the subprocess.
+        for name, count in (('SubclassingSample', 1), ('SubclassSample', 2)):
+            with self.subTest(sample=name):
+                result = self._run(name)
+                self.assertEqual(result.testsRun, count)
+                self.assertEqual(result.failures, [])
+                self.assertEqual(result.errors, [])
+
+    @support.requires_subprocess()
+    def test_subclass_bypassing_setupclass_is_reported(self):
+        # A class that never ran in a subprocess must error out, not pass with
+        # no outcome to replay.
+        result = self._run('BrokenSubclassSample')
+        self.assertEqual(result.testsRun, 1)
+        self.assertEqual(len(result.errors), 1)
+        self.assertIn('did not run in a subprocess', result.errors[0][1])
+
+    @support.requires_subprocess()
+    def test_subprocess_dying_after_the_test_is_reported(self):
+        from test._isolated_sample import EXIT_CODE
+        result = self._run('MethodExitSample.test_passes_then_dies')
+        self.assertEqual(result.testsRun, 1)
+        self.assertEqual(len(result.errors), 1)
+        self.assertIn(f'exited with code {EXIT_CODE}', result.errors[0][1])
+
+    @support.requires_subprocess()
+    def test_subprocess_dying_does_not_hide_the_failure(self):
+        result = self._run('MethodExitSample.test_fails_and_dies')
+        self.assertEqual(self._names(result.failures), ['test_fails_and_dies'])
+        self.assertEqual(result.errors, [])
+
+    @support.requires_subprocess()
+    def test_class_subprocess_dying_after_the_tests_is_reported(self):
+        # The tests that ran are still reported, and the crash once, for the class.
+        from test._isolated_sample import EXIT_CODE
+        result = self._run('ClassExitSample')
+        self.assertEqual(result.testsRun, 2)
+        self.assertEqual(result.failures, [])
+        self.assertEqual(len(result.errors), 1)
+        self.assertIn('tearDownClass', str(result.errors[0][0]))
+        self.assertIn(f'exited with code {EXIT_CODE}', result.errors[0][1])
+
+    @support.requires_subprocess()
+    def test_options_passed_to_subprocess(self):
+        result = self._run('OptionsSample')
+        self.assertEqual(result.testsRun, 1)
+        self.assertEqual(result.failures, [])
+        self.assertEqual(result.errors, [])
+
+    @support.requires_subprocess()
+    def test_env_passed_to_subprocess(self):
+        # The samples check the variable, so set it here to let them tell
+        # env= from the inherited environment.
+        with os_helper.EnvironmentVarGuard() as env:
+            env['_PYTHON_ISOLATION_PROBE'] = 'set-by-parent'
+            result = self._run('EnvSample')
+        self.assertEqual(result.testsRun, 3)
+        self.assertEqual(result.failures, [])
+        self.assertEqual(result.errors, [])
+
+    @support.requires_subprocess()
+    def test_timeout_reported_as_error(self):
+        from test._isolated_sample import TIMEOUT
+        result = self._run('TimeoutSample')
+        self.assertEqual(result.testsRun, 1)
+        self.assertEqual(len(result.errors), 1)
+        self.assertIn(f'within {TIMEOUT} seconds', result.errors[0][1])
+
+    @support.requires_subprocess()
+    def test_bigmemtest_isolates_a_real_run(self):
+        # A dummy run (no -M) stays in this process, a real run does not.
+        for memlimit in (0, support._1G):
+            with self.subTest(real_max_memuse=memlimit):
+                with support.swap_attr(support, 'real_max_memuse', memlimit):
+                    result = self._run('BigmemSample')
+                self.assertEqual(result.testsRun, 1)
+                self.assertEqual(self._names(result.failures), [])
+                self.assertEqual(self._names(result.errors), [])
+
+    def test_skipped_without_subprocess_support(self):
+        # On a platform without subprocess support the test is skipped in the
+        # parent, before any subprocess is spawned.
+        calls = []
+        orig = isolation._start_test
+        with support.swap_attr(support, 'has_subprocess_support', False):
+            isolation._start_test = lambda *a, **k: calls.append(a)
+            try:
+                result = self._run('MethodSample.test_pass')
+            finally:
+                isolation._start_test = orig
+        self.assertEqual(result.testsRun, 1)
+        self.assertEqual(len(result.skipped), 1)
+        self.assertEqual(calls, [])
+
+
+class TestSubTests(unittest.TestCase):
+
+    def run_test(self, cls):
+        result = unittest.TestResult()
+        cls('test_it').run(result)
+        return result
+
+    def test_sync(self):
+        ran = []
+
+        class Sample(unittest.TestCase):
+            @support.subTests('a', [1, 2, 3])
+            def test_it(self, a):
+                ran.append(a)
+                self.assertNotEqual(a, 2)
+
+        result = self.run_test(Sample)
+        self.assertEqual(ran, [1, 2, 3])
+        self.assertEqual(result.testsRun, 1)
+        self.assertEqual(len(result.failures), 1)
+        self.assertEndsWith(result.failures[0][0].id(), 'test_it (a=2)')
+
+    # Running an asyncio event loop needs a working socket.
+    @support.requires_working_socket()
+    def test_async(self):
+        # An asynchronous test must be awaited: a synchronous wrapper would
+        # make it silently not run at all.
+        ran = []
+
+        class Sample(unittest.IsolatedAsyncioTestCase):
+            @support.subTests('a', [1, 2, 3])
+            async def test_it(self, a):
+                ran.append(a)
+                self.assertNotEqual(a, 2)
+
+        result = self.run_test(Sample)
+        self.assertEqual(ran, [1, 2, 3])
+        self.assertEqual(result.testsRun, 1)
+        self.assertEqual(len(result.failures), 1)
+        self.assertEndsWith(result.failures[0][0].id(), 'test_it (a=2)')
+
+    def test_multiple_parameters(self):
+        ran = []
+
+        class Sample(unittest.TestCase):
+            @support.subTests('a,b', [(1, 'x'), (2, 'y')])
+            def test_it(self, a, b):
+                ran.append((a, b))
+
+        result = self.run_test(Sample)
+        self.assertTrue(result.wasSuccessful(), result.errors)
+        self.assertEqual(ran, [(1, 'x'), (2, 'y')])
+
+    def test_cannot_decorate_class(self):
+        with self.assertRaises(TypeError):
+            @support.subTests('a', [1])
+            class Sample(unittest.TestCase):
+                pass
 
 
 if __name__ == '__main__':

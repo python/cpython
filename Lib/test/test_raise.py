@@ -186,18 +186,14 @@ class TestCause(unittest.TestCase):
             self.fail("No exception raised")
 
     def test_class_cause_nonexception_result(self):
-        class ConstructsNone(BaseException):
-            @classmethod
+        # See https://github.com/python/cpython/issues/140530.
+        class ConstructMortal(BaseException):
             def __new__(*args, **kwargs):
-                return None
-        try:
-            raise IndexError from ConstructsNone
-        except TypeError as e:
-            self.assertIn("should have returned an instance of BaseException", str(e))
-        except IndexError:
-            self.fail("Wrong kind of exception raised")
-        else:
-            self.fail("No exception raised")
+                return ["mortal value"]
+
+        msg = ".*should have returned an instance of BaseException.*"
+        with self.assertRaisesRegex(TypeError, msg):
+            raise IndexError from ConstructMortal
 
     def test_instance_cause(self):
         cause = KeyError()

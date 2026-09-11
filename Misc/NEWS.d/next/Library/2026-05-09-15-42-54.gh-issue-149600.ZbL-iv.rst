@@ -1,0 +1,1 @@
+Remove deprecated :func:`!asyncio.iscoroutinefunction` function.

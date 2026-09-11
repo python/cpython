@@ -1,0 +1,2 @@
+Fix :func:`os.openpty` on Solaris and illumos: it no longer leaves the
+pseudo-terminal as the controlling terminal of the calling process.

@@ -181,7 +181,22 @@ class Repr:
         return s
 
     def repr_int(self, x, level):
-        s = builtins.repr(x) # XXX Hope this isn't too slow...
+        try:
+            s = builtins.repr(x)
+        except ValueError as exc:
+            assert 'sys.set_int_max_str_digits()' in str(exc)
+            # Those imports must be deferred due to Python's build system
+            # where the reprlib module is imported before the math module.
+            import math, sys
+            # Integers with more than sys.get_int_max_str_digits() digits
+            # are rendered differently as their repr() raises a ValueError.
+            # See https://github.com/python/cpython/issues/135487.
+            k = 1 + int(math.log10(abs(x)))
+            # Note: math.log10(abs(x)) may be overestimated or underestimated,
+            # but for simplicity, we do not compute the exact number of digits.
+            max_digits = sys.get_int_max_str_digits()
+            return (f'<{x.__class__.__name__} instance with roughly {k} '
+                    f'digits (limit at {max_digits}) at 0x{id(x):x}>')
         if len(s) > self.maxlong:
             i = max(0, (self.maxlong-3)//2)
             j = max(0, self.maxlong-3-i)

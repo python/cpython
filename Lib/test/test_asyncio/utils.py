@@ -388,8 +388,8 @@ class TestLoop(base_events.BaseEventLoop):
             else:  # pragma: no cover
                 raise AssertionError("Time generator is not finished")
 
-    def _add_reader(self, fd, callback, *args):
-        self.readers[fd] = events.Handle(callback, args, self, None)
+    def _add_reader(self, fd, callback, *args, context=None):
+        self.readers[fd] = events.Handle(callback, args, self, context)
 
     def _remove_reader(self, fd):
         self.remove_reader_count[fd] += 1
@@ -414,8 +414,8 @@ class TestLoop(base_events.BaseEventLoop):
         if fd in self.readers:
             raise AssertionError(f'fd {fd} is registered')
 
-    def _add_writer(self, fd, callback, *args):
-        self.writers[fd] = events.Handle(callback, args, self, None)
+    def _add_writer(self, fd, callback, *args, context=None):
+        self.writers[fd] = events.Handle(callback, args, self, context)
 
     def _remove_writer(self, fd):
         self.remove_writer_count[fd] += 1

@@ -4,9 +4,6 @@
   Functional Programming HOWTO
 ********************************
 
-:Author: A. M. Kuchling
-:Release: 0.32
-
 In this document, we'll take a tour of Python's features suitable for
 implementing programs in a functional style.  After an introduction to the
 concepts of functional programming, we'll look at language features such as
@@ -602,7 +599,7 @@ generators:
   raise an exception inside the generator; the exception is raised by the
   ``yield`` expression where the generator's execution is paused.
 
-* :meth:`~generator.close` raises a :exc:`GeneratorExit` exception inside the
+* :meth:`~generator.close` sends a :exc:`GeneratorExit` exception to the
   generator to terminate the iteration.  On receiving this exception, the
   generator's code must either raise :exc:`GeneratorExit` or
   :exc:`StopIteration`; catching the exception and doing anything else is
@@ -723,9 +720,10 @@ returns them in a tuple::
     zip(['a', 'b', 'c'], (1, 2, 3)) =>
       ('a', 1), ('b', 2), ('c', 3)
 
-It doesn't construct an in-memory list and exhaust all the input iterators
-before returning; instead tuples are constructed and returned only if they're
-requested.  (The technical term for this behaviour is `lazy evaluation
+It doesn't construct an in-memory list and :term:`exhaust <exhausted>` all
+the input iterators before returning; instead tuples are constructed and
+returned only if they're requested.
+(The technical term for this behaviour is `lazy evaluation
 <https://en.wikipedia.org/wiki/Lazy_evaluation>`__.)
 
 This iterator is intended to be used with iterables that are all of the same
@@ -786,7 +784,7 @@ element *n* times, or returns the element endlessly if *n* is not provided. ::
 :func:`itertools.chain(iterA, iterB, ...) <itertools.chain>` takes an arbitrary
 number of iterables as input, and returns all the elements of the first
 iterator, then all the elements of the second, and so on, until all of the
-iterables have been exhausted. ::
+iterables have been :term:`exhausted`. ::
 
     itertools.chain(['a', 'b', 'c'], (1, 2, 3)) =>
       a, b, c, 1, 2, 3
@@ -881,7 +879,7 @@ iterable's results. ::
 
 :func:`itertools.compress(data, selectors) <itertools.compress>` takes two
 iterators and returns only those elements of *data* for which the corresponding
-element of *selectors* is true, stopping whenever either one is exhausted::
+element of *selectors* is true, stopping whenever either one is :term:`exhausted`::
 
     itertools.compress([1, 2, 3, 4, 5], [True, True, False, False, True]) =>
        1, 2, 5
@@ -1031,7 +1029,7 @@ that takes two elements and returns a single value.  :func:`functools.reduce`
 takes the first two elements A and B returned by the iterator and calculates
 ``func(A, B)``.  It then requests the third element, C, calculates
 ``func(func(A, B), C)``, combines this result with the fourth element returned,
-and continues until the iterable is exhausted.  If the iterable returns no
+and continues until the iterable is :term:`exhausted`.  If the iterable returns no
 values at all, a :exc:`TypeError` exception is raised.  If the initial value is
 supplied, it's used as a starting point and ``func(initial_value, A)`` is the
 first calculation. ::
@@ -1042,7 +1040,7 @@ first calculation. ::
     >>> functools.reduce(operator.concat, [])
     Traceback (most recent call last):
       ...
-    TypeError: reduce() of empty sequence with no initial value
+    TypeError: reduce() of empty iterable with no initial value
     >>> functools.reduce(operator.mul, [1, 2, 3], 1)
     6
     >>> functools.reduce(operator.mul, [], 1)
@@ -1185,7 +1183,8 @@ about whether this lambda-free style is better.
 Revision History and Acknowledgements
 =====================================
 
-The author would like to thank the following people for offering suggestions,
+This HOWTO was originally written by A. M. Kuchling. The author would like to
+thank the following people for offering suggestions,
 corrections and assistance with various drafts of this article: Ian Bicking,
 Nick Coghlan, Nick Efford, Raymond Hettinger, Jim Jewett, Mike Krell, Leandro
 Lameiro, Jussi Salmela, Collin Winter, Blake Winton.
@@ -1217,7 +1216,7 @@ flow inside a program.  The book uses Scheme for its examples, but many of the
 design approaches described in these chapters are applicable to functional-style
 Python code.
 
-https://www.defmacro.org/ramblings/fp.html: A general introduction to functional
+https://defmacro.org/2006/06/19/fp.html: A general introduction to functional
 programming that uses Java examples and has a lengthy historical introduction.
 
 https://en.wikipedia.org/wiki/Functional_programming: General Wikipedia entry
@@ -1239,9 +1238,9 @@ Text Processing".
 
 Mertz also wrote a 3-part series of articles on functional programming
 for IBM's DeveloperWorks site; see
-`part 1 <https://developer.ibm.com/articles/l-prog/>`__,
-`part 2 <https://developer.ibm.com/tutorials/l-prog2/>`__, and
-`part 3 <https://developer.ibm.com/tutorials/l-prog3/>`__,
+`part 1 <https://web.archive.org/web/20211006103639/https://developer.ibm.com/articles/l-prog/>`__,
+`part 2 <https://web.archive.org/web/20211205224606/https://developer.ibm.com/tutorials/l-prog2/>`__, and
+`part 3 <https://web.archive.org/web/20211127083846/https://developer.ibm.com/tutorials/l-prog3/>`__.
 
 
 Python documentation

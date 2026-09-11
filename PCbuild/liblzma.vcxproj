@@ -92,7 +92,7 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <PreprocessorDefinitions>WIN32;HAVE_CONFIG_H;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(lzmaDir)windows/vs2019;$(lzmaDir)src/liblzma/common;$(lzmaDir)src/common;$(lzmaDir)src/liblzma/api;$(lzmaDir)src/liblzma/check;$(lzmaDir)src/liblzma/delta;$(lzmaDir)src/liblzma/lz;$(lzmaDir)src/liblzma/lzma;$(lzmaDir)src/liblzma/rangecoder;$(lzmaDir)src/liblzma/simple;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(lzmaDir)windows;$(lzmaDir)src/liblzma/common;$(lzmaDir)src/common;$(lzmaDir)src/liblzma/api;$(lzmaDir)src/liblzma/check;$(lzmaDir)src/liblzma/delta;$(lzmaDir)src/liblzma/lz;$(lzmaDir)src/liblzma/lzma;$(lzmaDir)src/liblzma/rangecoder;$(lzmaDir)src/liblzma/simple;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4244;4267;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <AdditionalOptions Condition="$(PlatformToolset) == 'ClangCL'">%(AdditionalOptions) -Wno-deprecated-declarations</AdditionalOptions>
     </ClCompile>
@@ -102,9 +102,7 @@
     <ClCompile Include="$(lzmaDir)src\common\tuklib_physmem.c" />
     <ClCompile Include="$(lzmaDir)src\liblzma\check\check.c" />
     <ClCompile Include="$(lzmaDir)src\liblzma\check\crc32_fast.c" />
-    <ClCompile Include="$(lzmaDir)src\liblzma\check\crc32_table.c" />
     <ClCompile Include="$(lzmaDir)src\liblzma\check\crc64_fast.c" />
-    <ClCompile Include="$(lzmaDir)src\liblzma\check\crc64_table.c" />
     <ClCompile Include="$(lzmaDir)src\liblzma\check\sha256.c" />
     <ClCompile Include="$(lzmaDir)src\liblzma\common\alone_decoder.c" />
     <ClCompile Include="$(lzmaDir)src\liblzma\common\alone_encoder.c" />
@@ -163,6 +161,7 @@
     <ClCompile Include="$(lzmaDir)src\liblzma\lz\lz_encoder_mf.c" />
     <ClCompile Include="$(lzmaDir)src\liblzma\rangecoder\price_table.c" />
     <ClCompile Include="$(lzmaDir)src\liblzma\simple\arm.c" />
+    <ClCompile Include="$(lzmaDir)src\liblzma\simple\arm64.c" />
     <ClCompile Include="$(lzmaDir)src\liblzma\simple\armthumb.c" />
     <ClCompile Include="$(lzmaDir)src\liblzma\simple\ia64.c" />
     <ClCompile Include="$(lzmaDir)src\liblzma\simple\powerpc.c" />
@@ -239,7 +238,7 @@
     <ClInclude Include="$(lzmaDir)src\liblzma\simple\simple_decoder.h" />
     <ClInclude Include="$(lzmaDir)src\liblzma\simple\simple_encoder.h" />
     <ClInclude Include="$(lzmaDir)src\liblzma\simple\simple_private.h" />
-    <ClInclude Include="$(lzmaDir)windows\vs2019\config.h" />
+    <ClInclude Include="$(lzmaDir)windows\config.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

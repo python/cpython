@@ -23,7 +23,7 @@
 #  define _Py_thread_local __thread
 #endif
 
-#if defined(Py_FFI_SUPPORT_C_COMPLEX)
+#if defined(_Py_FFI_SUPPORT_C_COMPLEX)
 #  include <complex.h>            // csqrt()
 #  undef I                        // for _ctypes_test_generated.c.h
 #endif
@@ -446,7 +446,7 @@ EXPORT(char *)my_strtok(char *token, const char *delim)
     return strtok(token, delim);
 }
 
-EXPORT(char *)my_strchr(const char *s, int c)
+EXPORT(const char *) my_strchr(const char *s, int c)
 {
     return strchr(s, c);
 }
@@ -457,7 +457,7 @@ EXPORT(double) my_sqrt(double a)
     return sqrt(a);
 }
 
-#if defined(Py_FFI_SUPPORT_C_COMPLEX)
+#if defined(_Py_FFI_SUPPORT_C_COMPLEX)
 EXPORT(double complex) my_csqrt(double complex a)
 {
     return csqrt(a);
@@ -989,13 +989,10 @@ EXPORT(RECT) ReturnRect(int i, RECT ar, RECT* br, POINT cp, RECT dr,
     {
     case 0:
         return ar;
-        break;
     case 1:
         return dr;
-        break;
     case 2:
         return gr;
-        break;
 
     }
     return ar;

@@ -17,9 +17,11 @@ from urllib.request import pathname2url
 
 from test.support import import_helper
 from test.support import cpython_only
-from test.support import is_emscripten, is_wasi
+from test.support import is_emscripten, is_wasi, is_wasm32
 from test.support import infinite_recursion
 from test.support import os_helper
+from test.support import requires_root_user
+from test.support import requires_non_root_user
 from test.support.os_helper import TESTFN, FS_NONASCII, FakePath
 try:
     import fcntl
@@ -33,11 +35,6 @@ try:
     import posix
 except ImportError:
     posix = None
-
-
-root_in_posix = False
-if hasattr(os, 'geteuid'):
-    root_in_posix = (os.geteuid() == 0)
 
 
 def patch_replace(old_test):
@@ -84,7 +81,7 @@ class UnsupportedOperationTest(unittest.TestCase):
 class LazyImportTest(unittest.TestCase):
     @cpython_only
     def test_lazy_import(self):
-        import_helper.ensure_lazy_imports("pathlib", {"shutil"})
+        import_helper.ensure_lazy_imports("pathlib", {"glob", "shutil"})
 
 
 #
@@ -292,6 +289,12 @@ class PurePathTest(unittest.TestCase):
                     self.assertEqual(pp, p)
                     self.assertEqual(hash(pp), hash(p))
                     self.assertEqual(str(pp), str(p))
+
+    def test_unpicking_3_13(self):
+        data = (b"\x80\x04\x95'\x00\x00\x00\x00\x00\x00\x00\x8c\x0e"
+                b"pathlib._local\x94\x8c\rPurePosixPath\x94\x93\x94)R\x94.")
+        p = pickle.loads(data)
+        self.assertIsInstance(p, pathlib.PurePosixPath)
 
     def test_repr_common(self):
         for pathstr in ('a', 'a/b', 'a/b/c', '/', '/a/b', '/a/b/c'):
@@ -538,12 +541,6 @@ class PurePathTest(unittest.TestCase):
         self.assertRaises(ValueError, P('/').with_stem, 'd')
         self.assertRaises(ValueError, P('a/b').with_stem, '')
         self.assertRaises(ValueError, P('a/b').with_stem, '.')
-
-    def test_is_reserved_deprecated(self):
-        P = self.cls
-        p = P('a/b')
-        with self.assertWarns(DeprecationWarning):
-            p.is_reserved()
 
     def test_full_match_case_sensitive(self):
         P = self.cls
@@ -1554,7 +1551,7 @@ class PathTest(PurePathTest):
             self.assertRaises(FileNotFoundError, source.copy, target)
 
     @unittest.skipIf(sys.platform == "win32" or sys.platform == "wasi", "directories are always readable on Windows and WASI")
-    @unittest.skipIf(root_in_posix, "test fails with root privilege")
+    @requires_non_root_user
     def test_copy_dir_no_read_permission(self):
         base = self.cls(self.base)
         source = base / 'dirE'
@@ -2027,7 +2024,7 @@ class PathTest(PurePathTest):
         self.assertEqual(expected_name, p.owner())
 
     @unittest.skipUnless(pwd, "the pwd module is needed for this test")
-    @unittest.skipUnless(root_in_posix, "test needs root privilege")
+    @requires_root_user
     def test_owner_no_follow_symlinks(self):
         all_users = [u.pw_uid for u in pwd.getpwall()]
         if len(all_users) < 2:
@@ -2062,7 +2059,7 @@ class PathTest(PurePathTest):
         self.assertEqual(expected_name, p.group())
 
     @unittest.skipUnless(grp, "the grp module is needed for this test")
-    @unittest.skipUnless(root_in_posix, "test needs root privilege")
+    @requires_root_user
     def test_group_no_follow_symlinks(self):
         all_groups = [g.gr_gid for g in grp.getgrall()]
         if len(all_groups) < 2:
@@ -2495,6 +2492,116 @@ class PathTest(PurePathTest):
                 self.assertNotIn(str(p12), concurrently_created)
             self.assertTrue(p.exists())
 
+    @unittest.skipIf(
+        is_emscripten or is_wasi,
+        "umask is not implemented on Emscripten/WASI."
+    )
+    @unittest.skipIf(
+        sys.platform == "android",
+        "Android filesystem may not honor requested permissions."
+    )
+    def test_mkdir_parents_umask(self):
+        # Test that parent directories respect umask when parent_mode is not set
+        p = self.cls(self.base, 'umasktest', 'child')
+        self.assertFalse(p.exists())
+        if os.name != 'nt':
+            with os_helper.temp_umask(0o002):
+                p.mkdir(0o755, parents=True)
+                self.assertTrue(p.exists())
+                # Leaf directory gets the specified mode
+                self.assertEqual(p.stat().st_mode & 0o777, 0o755)
+                # Parent directory respects umask (0o777 & ~0o002 = 0o775)
+                self.assertEqual(p.parent.stat().st_mode & 0o777, 0o775)
+
+    @unittest.skipIf(
+        is_emscripten or is_wasi,
+        "umask is not implemented on Emscripten/WASI."
+    )
+    @unittest.skipIf(
+        sys.platform == "android",
+        "Android filesystem may not honor requested permissions."
+    )
+    def test_mkdir_with_parent_mode(self):
+        # Test the parent_mode parameter
+        p = self.cls(self.base, 'newdirPM', 'subdirPM')
+        self.assertFalse(p.exists())
+        if os.name != 'nt':
+            with os_helper.temp_umask(0o022):
+                # Specify different modes for parent and leaf directories
+                p.mkdir(0o755, parents=True, parent_mode=0o750)
+                self.assertTrue(p.exists())
+                self.assertTrue(p.is_dir())
+                # Leaf directory gets the mode parameter
+                self.assertEqual(p.stat().st_mode & 0o777, 0o755)
+                # Parent directory gets the parent_mode parameter
+                self.assertEqual(p.parent.stat().st_mode & 0o777, 0o750)
+
+    @unittest.skipIf(
+        is_emscripten or is_wasi,
+        "umask is not implemented on Emscripten/WASI."
+    )
+    @unittest.skipIf(
+        sys.platform == "android",
+        "Android filesystem may not honor requested permissions."
+    )
+    def test_mkdir_parent_mode_deep_hierarchy(self):
+        # Test parent_mode with deep directory hierarchy
+        p = self.cls(self.base, 'level1PM', 'level2PM', 'level3PM')
+        self.assertFalse(p.exists())
+        if os.name != 'nt':
+            with os_helper.temp_umask(0o022):
+                p.mkdir(0o755, parents=True, parent_mode=0o700)
+                self.assertTrue(p.exists())
+                # Check that all parent directories have parent_mode
+                level1 = self.cls(self.base, 'level1PM')
+                level2 = level1 / 'level2PM'
+                self.assertEqual(level1.stat().st_mode & 0o777, 0o700)
+                self.assertEqual(level2.stat().st_mode & 0o777, 0o700)
+                # Leaf directory has the regular mode
+                self.assertEqual(p.stat().st_mode & 0o777, 0o755)
+
+    @unittest.skipIf(
+        is_emscripten or is_wasi,
+        "umask is not implemented on Emscripten/WASI."
+    )
+    @unittest.skipIf(
+        sys.platform == "android",
+        "Android filesystem may not honor requested permissions."
+    )
+    def test_mkdir_parent_mode_combined_with_umask(self):
+        # parent_mode, like mode, is combined with the process umask; it does
+        # not bypass it.
+        p = self.cls(self.base, 'umaskPM', 'child')
+        self.assertFalse(p.exists())
+        if os.name != 'nt':
+            with os_helper.temp_umask(0o022):
+                p.mkdir(0o777, parents=True, parent_mode=0o777)
+                self.assertTrue(p.exists())
+                # 0o777 is masked down to 0o755 by the 0o022 umask, for both
+                # the leaf (mode) and the parent (parent_mode).
+                self.assertEqual(p.stat().st_mode & 0o777, 0o755)
+                self.assertEqual(p.parent.stat().st_mode & 0o777, 0o755)
+
+    @unittest.skipIf(
+        is_emscripten or is_wasi,
+        "umask is not implemented on Emscripten/WASI."
+    )
+    @unittest.skipIf(
+        sys.platform == "android",
+        "Android filesystem may not honor requested permissions."
+    )
+    def test_mkdir_parent_mode_same_as_mode(self):
+        # Test setting parent_mode same as mode
+        p = self.cls(self.base, 'samedirPM', 'subdirPM')
+        self.assertFalse(p.exists())
+        if os.name != 'nt':
+            with os_helper.temp_umask(0o022):
+                p.mkdir(0o705, parents=True, parent_mode=0o705)
+                self.assertTrue(p.exists())
+                # Both directories should have the same mode
+                self.assertEqual(p.stat().st_mode & 0o777, 0o705)
+                self.assertEqual(p.parent.stat().st_mode & 0o777, 0o705)
+
     @needs_symlinks
     def test_symlink_to(self):
         P = self.cls(self.base)
@@ -2763,6 +2870,7 @@ class PathTest(PurePathTest):
             if (isinstance(e, PermissionError) or
                     "AF_UNIX path too long" in str(e)):
                 self.skipTest("cannot bind Unix socket: " + str(e))
+            raise
         self.assertTrue(P.is_socket())
         self.assertFalse(P.is_fifo())
         self.assertFalse(P.is_file())
@@ -2954,7 +3062,13 @@ class PathTest(PurePathTest):
         else:
             # ".." segments are normalized first on Windows, so this path is stat()able.
             self.assertEqual(set(p.glob("xyzzy/..")), { P(self.base, "xyzzy", "..") })
-        self.assertEqual(set(p.glob("/".join([".."] * 50))), { P(self.base, *[".."] * 50)})
+        if sys.platform == "emscripten":
+            # Emscripten will return ELOOP if there are 49 or more ..'s.
+            # Can remove when https://github.com/emscripten-core/emscripten/pull/24591 is merged.
+            NDOTDOTS = 48
+        else:
+            NDOTDOTS = 50
+        self.assertEqual(set(p.glob("/".join([".."] * NDOTDOTS))), { P(self.base, *[".."] * NDOTDOTS)})
 
     def test_glob_inaccessible(self):
         P = self.cls
@@ -3158,7 +3272,7 @@ class PathTest(PurePathTest):
         self.assertEqual(str(P('//a/b').absolute()), '//a/b')
 
     @unittest.skipIf(
-        is_emscripten or is_wasi,
+        is_wasm32,
         "umask is not implemented on Emscripten/WASI."
     )
     @needs_posix
@@ -3189,7 +3303,7 @@ class PathTest(PurePathTest):
             os.chdir(current_directory)
 
     @unittest.skipIf(
-        is_emscripten or is_wasi,
+        is_wasm32,
         "umask is not implemented on Emscripten/WASI."
     )
     @needs_posix

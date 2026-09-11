@@ -1,5 +1,8 @@
 """Constants and membership tests for ASCII characters"""
 
+# A character-cell type, present on wide and narrow builds.
+from _curses import complexchar as _complexchar
+
 NUL     = 0x00  # ^@
 SOH     = 0x01  # ^A
 STX     = 0x02  # ^B
@@ -48,8 +51,12 @@ controlnames = [
 def _ctoi(c):
     if isinstance(c, str):
         return ord(c)
-    else:
-        return c
+    if isinstance(c, _complexchar):
+        # A character cell: its single character, or -1 (matches no class)
+        # for a cell with combining characters.
+        s = str(c)
+        return ord(s) if len(s) == 1 else -1
+    return c
 
 def isalnum(c): return isalpha(c) or isdigit(c)
 def isalpha(c): return isupper(c) or islower(c)
@@ -69,22 +76,23 @@ def isctrl(c): return 0 <= _ctoi(c) < 32
 def ismeta(c): return _ctoi(c) > 127
 
 def ascii(c):
-    if isinstance(c, str):
-        return chr(_ctoi(c) & 0x7f)
-    else:
+    if isinstance(c, int):
         return _ctoi(c) & 0x7f
+    else:
+        return chr(_ctoi(c) & 0x7f)
 
 def ctrl(c):
-    if isinstance(c, str):
-        return chr(_ctoi(c) & 0x1f)
-    else:
-        return _ctoi(c) & 0x1f
+    code = _ctoi(c)
+    if not 0 <= code < 128:
+        # No control character outside ASCII: return c unchanged.
+        return c if isinstance(c, int) else str(c)
+    return code & 0x1f if isinstance(c, int) else chr(code & 0x1f)
 
 def alt(c):
-    if isinstance(c, str):
-        return chr(_ctoi(c) | 0x80)
-    else:
+    if isinstance(c, int):
         return _ctoi(c) | 0x80
+    else:
+        return chr(_ctoi(c) | 0x80)
 
 def unctrl(c):
     bits = _ctoi(c)

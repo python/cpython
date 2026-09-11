@@ -2,51 +2,13 @@
 #include <errcode.h>
 
 #include "pycore_pyerrors.h"      // _PyErr_ProgramDecodedTextObject()
+#include "pycore_runtime.h"       // _Py_ID()
+#include "pycore_tuple.h"         // _PyTuple_FromPair
 #include "lexer/state.h"
 #include "lexer/lexer.h"
 #include "pegen.h"
 
 // TOKENIZER ERRORS
-
-void
-_PyPegen_raise_tokenizer_init_error(PyObject *filename)
-{
-    if (!(PyErr_ExceptionMatches(PyExc_LookupError)
-          || PyErr_ExceptionMatches(PyExc_SyntaxError)
-          || PyErr_ExceptionMatches(PyExc_ValueError)
-          || PyErr_ExceptionMatches(PyExc_UnicodeDecodeError))) {
-        return;
-    }
-    PyObject *errstr = NULL;
-    PyObject *tuple = NULL;
-    PyObject *type;
-    PyObject *value;
-    PyObject *tback;
-    PyErr_Fetch(&type, &value, &tback);
-    errstr = PyObject_Str(value);
-    if (!errstr) {
-        goto error;
-    }
-
-    PyObject *tmp = Py_BuildValue("(OiiO)", filename, 0, -1, Py_None);
-    if (!tmp) {
-        goto error;
-    }
-
-    tuple = PyTuple_Pack(2, errstr, tmp);
-    Py_DECREF(tmp);
-    if (!value) {
-        goto error;
-    }
-    PyErr_SetObject(PyExc_SyntaxError, tuple);
-
-error:
-    Py_XDECREF(type);
-    Py_XDECREF(value);
-    Py_XDECREF(tback);
-    Py_XDECREF(errstr);
-    Py_XDECREF(tuple);
-}
 
 static inline void
 raise_unclosed_parentheses_error(Parser *p) {
@@ -100,7 +62,7 @@ _Pypegen_tokenizer_error(Parser *p)
             msg = "too many levels of indentation";
             break;
         case E_LINECONT: {
-            col_offset = p->tok->cur - p->tok->buf - 1;
+            col_offset = p->tok->cur - p->tok->line_start - 1;
             msg = "unexpected character after line continuation character";
             break;
         }
@@ -201,10 +163,8 @@ _PyPegen_tokenize_full_source_to_check_for_errors(Parser *p) {
 
 exit:
     _PyToken_Free(&new_token);
-    // If we're in an f-string, we want the syntax error in the expression part
-    // to propagate, so that tokenizer errors (like expecting '}') that happen afterwards
-    // do not swallow it.
-    if (PyErr_Occurred() && p->tok->tok_mode_stack_index <= 0) {
+    // Preserve expression errors over later formatted-string errors.
+    if (PyErr_Occurred() && _PyLexer_CurrentFTString(p->tok) == NULL) {
         Py_XDECREF(value);
         Py_XDECREF(type);
         Py_XDECREF(traceback);
@@ -385,7 +345,7 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
     if (!tmp) {
         goto error;
     }
-    value = PyTuple_Pack(2, errstr, tmp);
+    value = _PyTuple_FromPair(errstr, tmp);
     Py_DECREF(tmp);
     if (!value) {
         goto error;

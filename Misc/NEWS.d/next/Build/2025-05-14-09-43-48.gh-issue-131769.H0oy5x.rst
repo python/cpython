@@ -1,1 +1,0 @@
-Fix detecting when the build Python in a cross-build is a pydebug build.

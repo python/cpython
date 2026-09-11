@@ -70,7 +70,7 @@ warn_invalid_escape_sequence(Parser *p, const char* buffer, const char *first_in
     char first_quote = 0;
     if (lineno == t->lineno) {
         int quote_count = 0;
-        char* tok = PyBytes_AsString(t->bytes);
+        const char* tok = PyBytes_AsString(t->bytes);
         for (int i = 0; i < PyBytes_Size(t->bytes); i++) {
             if (tok[i] == '\'' || tok[i] == '\"') {
                 if (quote_count == 0) {
@@ -88,7 +88,7 @@ warn_invalid_escape_sequence(Parser *p, const char* buffer, const char *first_in
     }
 
     if (PyErr_WarnExplicitObject(category, msg, p->tok->filename,
-                                 lineno, NULL, NULL) < 0) {
+                                 lineno, p->tok->module, NULL) < 0) {
         if (PyErr_ExceptionMatches(category)) {
             /* Replace the Syntax/DeprecationWarning exception with a SyntaxError
                to get a more accurate error report */

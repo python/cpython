@@ -132,7 +132,7 @@ class DictComprehensionTest(unittest.TestCase):
 
     def test_exception_locations(self):
         # The location of an exception raised from __init__ or
-        # __next__ should should be the iterator expression
+        # __next__ should be the iterator expression
         def init_raises():
             try:
                 {x:x for x in BrokenIter(init_raises=True)}
@@ -164,6 +164,14 @@ class DictComprehensionTest(unittest.TestCase):
                 self.assertEqual(f.end_lineno, co.co_firstlineno + 2)
                 self.assertEqual(f.line[f.colno - indent : f.end_colno - indent],
                                  expected)
+
+    def test_hash_error(self):
+        class Unhashable:
+            def __hash__(self):
+                0/0
+
+        with self.assertRaises(ZeroDivisionError):
+            {unhashable: 1 for unhashable in [Unhashable()]}
 
 
 if __name__ == "__main__":

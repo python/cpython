@@ -1,0 +1,2 @@
+Move functions run.fix_scaling, editor.fixwordbreaks (as fix_word_breaks)
+and pyshell.fix_x11_paste to idlelib.util.

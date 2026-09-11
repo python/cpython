@@ -38,7 +38,7 @@ def process_glossary_nodes(
             rendered = app.builder.render_partial(definition)
             terms[term.lower()] = {
                 'title': term,
-                'body': rendered['html_body'],
+                'body': rendered['fragment'],
             }
 
 

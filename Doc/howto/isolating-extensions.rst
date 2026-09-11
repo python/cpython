@@ -168,7 +168,7 @@ possible, consider explicit locking.
 If it is necessary to use process-global state, the simplest way to
 avoid issues with multiple interpreters is to explicitly prevent a
 module from being loaded more than once per process—see
-`Opt-Out: Limiting to One Module Object per Process`_.
+:ref:`isolating-extensions-optout`.
 
 
 Managing Per-Module State
@@ -206,6 +206,8 @@ An example of a module with per-module state is currently available as
 `xxlimited <https://github.com/python/cpython/blob/master/Modules/xxlimited.c>`__;
 example module initialization shown at the bottom of the file.
 
+
+.. _isolating-extensions-optout:
 
 Opt-Out: Limiting to One Module Object per Process
 --------------------------------------------------
@@ -351,7 +353,7 @@ garbage collection protocol.
 That is, heap types should:
 
 - Have the :c:macro:`Py_TPFLAGS_HAVE_GC` flag.
-- Define a traverse function using ``Py_tp_traverse``, which
+- Define a traverse function using :c:data:`Py_tp_traverse`, which
   visits the type (e.g. using ``Py_VISIT(Py_TYPE(self))``).
 
 Please refer to the documentation of
@@ -451,7 +453,7 @@ Avoiding ``PyObject_New``
 
 GC-tracked objects need to be allocated using GC-aware functions.
 
-If you use use :c:func:`PyObject_New` or :c:func:`PyObject_NewVar`:
+If you use :c:func:`PyObject_New` or :c:func:`PyObject_NewVar`:
 
 - Get and call type's :c:member:`~PyTypeObject.tp_alloc` slot, if possible.
   That is, replace ``TYPE *o = PyObject_New(TYPE, typeobj)`` with::
@@ -624,8 +626,7 @@ Open Issues
 
 Several issues around per-module state and heap types are still open.
 
-Discussions about improving the situation are best held on the `capi-sig
-mailing list <https://mail.python.org/mailman3/lists/capi-sig.python.org/>`__.
+Discussions about improving the situation are best held on the `discuss forum under c-api tag <https://discuss.python.org/c/core-dev/c-api/30>`__.
 
 
 Per-Class Scope

@@ -4,13 +4,11 @@
 .. module:: ipaddress
    :synopsis: IPv4/IPv6 manipulation library.
 
-.. moduleauthor:: Peter Moody
-
 **Source code:** :source:`Lib/ipaddress.py`
 
 --------------
 
-:mod:`ipaddress` provides the capabilities to create, manipulate and
+:mod:`!ipaddress` provides the capabilities to create, manipulate and
 operate on IPv4 and IPv6 addresses and networks.
 
 The functions and classes in this module make it straightforward to handle
@@ -34,7 +32,7 @@ This is the full module API reference—for an overview and introduction, see
 Convenience factory functions
 -----------------------------
 
-The :mod:`ipaddress` module provides factory functions to conveniently create
+The :mod:`!ipaddress` module provides factory functions to conveniently create
 IP addresses, networks and interfaces:
 
 .. function:: ip_address(address)
@@ -240,7 +238,16 @@ write code that handles both IP versions correctly.  Address objects are
 
    .. attribute:: is_reserved
 
-      ``True`` if the address is otherwise IETF reserved.
+      ``True`` if the address is noted as reserved by the IETF.
+      For IPv4, this is only ``240.0.0.0/4``, the ``Reserved`` address block.
+      For IPv6, this is all addresses `allocated <iana-ipv6-address-space_>`__ as
+      ``Reserved by IETF`` for future use.
+
+      .. note:: For IPv4, ``is_reserved`` is not related to the address block value of the
+        ``Reserved-by-Protocol`` column in iana-ipv4-special-registry_.
+
+      .. caution:: For IPv6, ``fec0::/10`` a former Site-Local scoped address prefix is
+         currently excluded from that list (see :attr:`~IPv6Address.is_site_local` & :rfc:`3879`).
 
    .. attribute:: is_loopback
 
@@ -261,6 +268,7 @@ write code that handles both IP versions correctly.  Address objects are
 
 .. _iana-ipv4-special-registry: https://www.iana.org/assignments/iana-ipv4-special-registry/iana-ipv4-special-registry.xhtml
 .. _iana-ipv6-special-registry: https://www.iana.org/assignments/iana-ipv6-special-registry/iana-ipv6-special-registry.xhtml
+.. _iana-ipv6-address-space: https://www.iana.org/assignments/ipv6-address-space/ipv6-address-space.xhtml
 
 .. method:: IPv4Address.__format__(fmt)
 
@@ -359,9 +367,9 @@ write code that handles both IP versions correctly.  Address objects are
 
    .. attribute:: ipv4_mapped
 
-      For addresses that appear to be IPv4 mapped addresses (starting with
-      ``::FFFF/96``), this property will report the embedded IPv4 address.
-      For any other address, this property will be ``None``.
+      For addresses that appear to be IPv4 mapped addresses in the range
+      ``::FFFF:0:0/96`` as defined by :RFC:`4291`, this property reports the
+      embedded IPv4 address. For any other address, this property will be ``None``.
 
    .. attribute:: scope_id
 
@@ -710,6 +718,35 @@ dictionaries.
       .. deprecated:: 3.7
          It uses the same ordering and comparison algorithm as "<", "==", and ">"
 
+   .. method:: next_network(next_prefix=None)
+
+      Finds the next closest network of prefix size *next_prefix*.  If
+      *next_prefix=None*, then the current network prefix will be used.
+      Returns a single network object.
+
+      Raises :exc:`ValueError` if *next_prefix* is out of range or no further
+      network of the requested size exists.
+
+         >>> IPv4Network('192.0.2.0/24').next_network()
+         IPv4Network('192.0.3.0/24')
+         >>> IPv4Network('192.0.2.0/24').next_network(next_prefix=25)
+         IPv4Network('192.0.3.0/25')
+         >>> IPv4Network('192.0.2.0/24').next_network(next_prefix=23)
+         IPv4Network('192.0.4.0/23')
+         >>> IPv4Network('192.0.80.0/22').next_network(next_prefix=18)
+         IPv4Network('192.0.128.0/18')
+         >>> IPv4Network('192.0.80.0/22').next_network(next_prefix=50)
+         Traceback (most recent call last):
+            File "<stdin>", line 1, in <module>
+               raise ValueError(
+         ValueError: next prefix must be between 1 and 32
+         >>> IPv4Network('255.255.255.0/24').next_network()
+         Traceback (most recent call last):
+            File "<stdin>", line 1, in <module>
+               raise ValueError(
+         ValueError: out of address space, cannot make another /24 network
+
+      .. versionadded:: 3.16
 
 .. class:: IPv6Network(address, strict=True)
 
@@ -782,6 +819,7 @@ dictionaries.
    .. method:: supernet(prefixlen_diff=1, new_prefix=None)
    .. method:: subnet_of(other)
    .. method:: supernet_of(other)
+   .. method:: next_network(next_prefix=None)
    .. method:: compare_networks(other)
 
       Refer to the corresponding attribute documentation in
@@ -1017,7 +1055,7 @@ The module also provides the following module level functions:
      IPv4Address('192.0.2.0') <= IPv4Network('192.0.2.0/24')
 
    doesn't make sense.  There are some times however, where you may wish to
-   have :mod:`ipaddress` sort these anyway.  If you need to do this, you can use
+   have :mod:`!ipaddress` sort these anyway.  If you need to do this, you can use
    this function as the *key* argument to :func:`sorted`.
 
    *obj* is either a network or address object.

@@ -17,6 +17,7 @@ from test.support import socket_helper
 from test.support import threading_helper
 from test.support import asynchat
 from test.support import asyncore
+from test.support import control_characters_c0
 
 
 test_support.requires_working_socket(module=True)
@@ -184,7 +185,8 @@ class DummyPOP3Handler(asynchat.async_chat):
                 elif err.args[0] == ssl.SSL_ERROR_EOF:
                     return self.handle_close()
                 # TODO: SSLError does not expose alert information
-                elif ("SSLV3_ALERT_BAD_CERTIFICATE" in err.args[1] or
+                elif ("TLS_ALERT_BAD_CERTIFICATE" in err.args[1] or
+                      "SSLV3_ALERT_BAD_CERTIFICATE" in err.args[1] or
                       "SSLV3_ALERT_CERTIFICATE_UNKNOWN" in err.args[1]):
                     return self.handle_close()
                 raise
@@ -395,6 +397,13 @@ class TestPOP3Class(TestCase):
         self.assertIsNone(self.client.sock)
         self.assertIsNone(self.client.file)
 
+    def test_control_characters(self):
+        for c0 in control_characters_c0():
+            with self.assertRaises(ValueError):
+                self.client.user(f'user{c0}')
+            with self.assertRaises(ValueError):
+                self.client.pass_(f'{c0}pass')
+
     @requires_ssl
     def test_stls_capa(self):
         capa = self.client.capa()
@@ -415,6 +424,7 @@ class TestPOP3Class(TestCase):
         self.assertEqual(ctx.check_hostname, True)
         with self.assertRaises(ssl.CertificateError):
             resp = self.client.stls(context=ctx)
+
         self.client = poplib.POP3("localhost", self.server.port,
                                   timeout=test_support.LOOPBACK_TIMEOUT)
         resp = self.client.stls(context=ctx)

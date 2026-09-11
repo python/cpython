@@ -1,0 +1,2 @@
+Fix an out-of-bounds access in reverse dictionary iterators when the
+underlying dictionary is cleared and modified after the iterator is created.

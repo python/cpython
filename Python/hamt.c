@@ -4,6 +4,7 @@
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_long.h"          // _PyLong_Format()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
+#include "pycore_tuple.h"         // _PyTuple_FromPair
 
 #include <stddef.h>               // offsetof()
 
@@ -256,9 +257,9 @@ Debug
 =====
 
 The HAMT datatype is accessible for testing purposes under the
-`_testcapi` module:
+`_testinternalcapi` module:
 
-    >>> from _testcapi import hamt
+    >>> from _testinternalcapi import hamt
     >>> h = hamt()
     >>> h2 = h.set('a', 2)
     >>> h3 = h2.set('b', 3)
@@ -701,6 +702,7 @@ hamt_node_bitmap_assoc(PyHamtNode_Bitmap *self,
 
             PyHamtNode_Bitmap *ret = hamt_node_bitmap_clone(self);
             if (ret == NULL) {
+                Py_DECREF(sub_node);
                 return NULL;
             }
             Py_SETREF(ret->b_array[val_idx], (PyObject*)sub_node);
@@ -993,6 +995,7 @@ hamt_node_bitmap_without(PyHamtNode_Bitmap *self,
 
                 PyHamtNode_Bitmap *clone = hamt_node_bitmap_clone(self);
                 if (clone == NULL) {
+                    Py_DECREF(sub_node);
                     return W_ERROR;
                 }
 
@@ -1176,7 +1179,7 @@ hamt_node_bitmap_dump(PyHamtNode_Bitmap *node,
         }
 
         if (key_or_null == NULL) {
-            if (PyUnicodeWriter_WriteUTF8(writer, "NULL:\n", -1) < 0) {
+            if (PyUnicodeWriter_WriteASCII(writer, "NULL:\n", 6) < 0) {
                 goto error;
             }
 
@@ -1194,7 +1197,7 @@ hamt_node_bitmap_dump(PyHamtNode_Bitmap *node,
             }
         }
 
-        if (PyUnicodeWriter_WriteUTF8(writer, "\n", 1) < 0) {
+        if (PyUnicodeWriter_WriteASCII(writer, "\n", 1) < 0) {
             goto error;
         }
     }
@@ -1915,7 +1918,7 @@ hamt_node_array_dump(PyHamtNode_Array *node,
             goto error;
         }
 
-        if (PyUnicodeWriter_WriteUTF8(writer, "\n", 1) < 0) {
+        if (PyUnicodeWriter_WriteASCII(writer, "\n", 1) < 0) {
             goto error;
         }
     }
@@ -2328,6 +2331,10 @@ _PyHamt_Eq(PyHamtObject *v, PyHamtObject *w)
         return 0;
     }
 
+    Py_INCREF(v);
+    Py_INCREF(w);
+
+    int res = 1;
     PyHamtIteratorState iter;
     hamt_iter_t iter_res;
     hamt_find_t find_res;
@@ -2343,25 +2350,38 @@ _PyHamt_Eq(PyHamtObject *v, PyHamtObject *w)
             find_res = hamt_find(w, v_key, &w_val);
             switch (find_res) {
                 case F_ERROR:
-                    return -1;
+                    res = -1;
+                    goto done;
 
                 case F_NOT_FOUND:
-                    return 0;
+                    res = 0;
+                    goto done;
 
                 case F_FOUND: {
+                    Py_INCREF(v_key);
+                    Py_INCREF(v_val);
+                    Py_INCREF(w_val);
                     int cmp = PyObject_RichCompareBool(v_val, w_val, Py_EQ);
+                    Py_DECREF(v_key);
+                    Py_DECREF(v_val);
+                    Py_DECREF(w_val);
                     if (cmp < 0) {
-                        return -1;
+                        res = -1;
+                        goto done;
                     }
                     if (cmp == 0) {
-                        return 0;
+                        res = 0;
+                        goto done;
                     }
                 }
             }
         }
     } while (iter_res != I_END);
 
-    return 1;
+done:
+    Py_DECREF(v);
+    Py_DECREF(w);
+    return res;
 }
 
 Py_ssize_t
@@ -2431,6 +2451,10 @@ hamt_baseiter_tp_clear(PyObject *op)
 {
     PyHamtIterator *it = (PyHamtIterator*)op;
     Py_CLEAR(it->hi_obj);
+    /* i_nodes holds borrowed pointers into the tree that hi_obj was keeping
+       alive, so the cursor must not be used again.  A negative i_level makes
+       hamt_iterator_next() report I_END without touching i_nodes. */
+    it->hi_iter.i_level = -1;
     return 0;
 }
 
@@ -2477,6 +2501,10 @@ static Py_ssize_t
 hamt_baseiter_tp_len(PyObject *op)
 {
     PyHamtIterator *it = (PyHamtIterator*)op;
+    if (it->hi_obj == NULL) {
+        /* tp_clear() ran on this iterator. */
+        return 0;
+    }
     return it->hi_obj->h_count;
 }
 
@@ -2497,6 +2525,7 @@ hamt_baseiter_new(PyTypeObject *type, binaryfunc yield, PyHamtObject *o)
 
     hamt_iterator_init(&it->hi_iter, o->h_root);
 
+    PyObject_GC_Track(it);
     return (PyObject*)it;
 }
 
@@ -2525,7 +2554,7 @@ PyTypeObject _PyHamtItems_Type = {
 static PyObject *
 hamt_iter_yield_items(PyObject *key, PyObject *val)
 {
-    return PyTuple_Pack(2, key, val);
+    return _PyTuple_FromPair(key, val);
 }
 
 PyObject *

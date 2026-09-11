@@ -8,6 +8,8 @@
  *
  * 1. https://www.131002.net/siphash/siphash24.c
  * 2. https://www.131002.net/siphash/
+ *
+ * SPDX-License-Identifier: CC0-1.0
  * --------------------------------------------------------------------------
  * HISTORY:
  *
@@ -100,6 +102,7 @@
 
 #include <stddef.h> /* size_t */
 #include <stdint.h> /* uint64_t uint32_t uint8_t */
+#include "fallthrough.h"
 
 /*
  * Workaround to not require a C++11 compiler for using ULL suffix
@@ -234,25 +237,25 @@ sip24_final(struct siphash *H) {
   switch (left) {
   case 7:
     b |= (uint64_t)H->buf[6] << 48;
-    /* fall through */
+    EXPAT_FALLTHROUGH;
   case 6:
     b |= (uint64_t)H->buf[5] << 40;
-    /* fall through */
+    EXPAT_FALLTHROUGH;
   case 5:
     b |= (uint64_t)H->buf[4] << 32;
-    /* fall through */
+    EXPAT_FALLTHROUGH;
   case 4:
     b |= (uint64_t)H->buf[3] << 24;
-    /* fall through */
+    EXPAT_FALLTHROUGH;
   case 3:
     b |= (uint64_t)H->buf[2] << 16;
-    /* fall through */
+    EXPAT_FALLTHROUGH;
   case 2:
     b |= (uint64_t)H->buf[1] << 8;
-    /* fall through */
+    EXPAT_FALLTHROUGH;
   case 1:
     b |= (uint64_t)H->buf[0] << 0;
-    /* fall through */
+    EXPAT_FALLTHROUGH;
   case 0:
     break;
   }

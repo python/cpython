@@ -7,7 +7,9 @@ from .errors import (
 )
 from .formatting import (
     SIG_END_MARKER,
-    c_repr,
+    c_str_repr,
+    c_bytes_repr,
+    c_unichar_repr,
     docstring_for_c_string,
     format_escape,
     indent_all_lines,
@@ -24,13 +26,16 @@ from .identifiers import (
     is_legal_py_identifier,
 )
 from .utils import (
+    FileChange,
+    FileWriter,
     FormatCounterFormatter,
     NULL,
-    Null,
+    NullType,
     Sentinels,
     VersionTuple,
     compute_checksum,
     create_regex,
+    read_file,
     unknown,
     unspecified,
     write_file,
@@ -45,7 +50,9 @@ __all__ = [
 
     # Formatting helpers
     "SIG_END_MARKER",
-    "c_repr",
+    "c_str_repr",
+    "c_bytes_repr",
+    "c_unichar_repr",
     "docstring_for_c_string",
     "format_escape",
     "indent_all_lines",
@@ -62,13 +69,16 @@ __all__ = [
     "is_legal_py_identifier",
 
     # Utility functions
+    "FileChange",
+    "FileWriter",
     "FormatCounterFormatter",
     "NULL",
-    "Null",
+    "NullType",
     "Sentinels",
     "VersionTuple",
     "compute_checksum",
     "create_regex",
+    "read_file",
     "unknown",
     "unspecified",
     "write_file",
@@ -84,6 +94,7 @@ CLINIC_PREFIXED_ARGS: Final = frozenset(
         "argsbuf",
         "fastargs",
         "kwargs",
+        "kwds",
         "kwnames",
         "nargs",
         "noptargs",

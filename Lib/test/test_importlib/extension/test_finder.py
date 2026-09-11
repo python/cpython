@@ -1,10 +1,11 @@
-from test.support import is_apple_mobile
+from test.support import is_apple_mobile, Py_GIL_DISABLED
 from test.test_importlib import abc, util
 
 machinery = util.import_importlib('importlib.machinery')
 
 import unittest
 import sys
+import sysconfig
 
 
 class FinderTests(abc.FinderTests):
@@ -58,6 +59,28 @@ class FinderTests(abc.FinderTests):
 
     def test_failure(self):
         self.assertIsNone(self.find_spec('asdfjkl;'))
+
+    def test_abi3_extension_suffixes(self):
+        suffixes = self.machinery.EXTENSION_SUFFIXES
+        platform = sysconfig.get_config_var("SOABI_PLATFORM")
+        if 'win32' in sys.platform:
+            # Either "_d.pyd" or ".pyd" must be in suffixes
+            self.assertTrue({"_d.pyd", ".pyd"}.intersection(suffixes))
+        elif 'cygwin' in sys.platform:
+            pass
+        else:
+            if Py_GIL_DISABLED:
+                self.assertNotIn(".abi3.so", suffixes)
+            else:
+                self.assertIn(".abi3.so", suffixes)
+            self.assertIn(".abi3t.so", suffixes)
+
+            if platform:
+                if Py_GIL_DISABLED:
+                    self.assertNotIn(f".abi3-{platform}.so", suffixes)
+                else:
+                    self.assertIn(f".abi3-{platform}.so", suffixes)
+                self.assertIn(f".abi3t-{platform}.so", suffixes)
 
 
 (Frozen_FinderTests,
