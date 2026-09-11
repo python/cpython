@@ -146,6 +146,33 @@ class CallStackTestBase:
             'async generator CallStackTestBase.test_stack_async_gen.<locals>.gen()',
             stack_for_gen_nested_call[1])
 
+    async def test_stack_wait_for_non_positive_timeout(self):
+        # gh-157058: wait_for(fut, 0) must still record the waiter
+        cleanup = asyncio.Future()
+
+        async def worker():
+            try:
+                await asyncio.Future()
+            finally:
+                await cleanup
+
+        async def probe(t):
+            await asyncio.wait_for(t, 0)
+
+        t = asyncio.ensure_future(worker())
+        p = asyncio.create_task(probe(t), name='probe')
+        for _ in range(5):
+            await asyncio.sleep(0)
+
+        stack = capture_test_stack(fut=t)
+
+        cleanup.set_result(None)
+        await asyncio.gather(p, t, return_exceptions=True)
+
+        self.assertEqual(stack[0][2], [
+            ['T<probe>', ['a _cancel_and_wait', 'a wait_for', 'a probe'], []],
+        ])
+
     async def test_stack_gather(self):
 
         stack_for_deep = None
