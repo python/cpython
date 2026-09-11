@@ -73,7 +73,8 @@ The :mod:`!csv` module defines the following functions:
    in which case unquoted fields are transformed with the optional *converter* argument,
    or into floats if it is not given.
    *converter* is called as ``converter(index, field)``,
-   where *index* is the 0-based position of the field in the row.
+   where *index* is the 0-based position of the field in the row,
+   so the conversion can depend on the column.
 
    A short usage example::
 
@@ -120,6 +121,7 @@ The :mod:`!csv` module defines the following functions:
    or with :func:`str` if it is not given.
    *formatter* is called as ``formatter(index, value)``,
    where *index* is the 0-based position of the field in the row,
+   so the formatting can depend on the column,
    and must return a string.
    Quoting is still determined by the original value.
 
@@ -729,6 +731,26 @@ done::
    import csv
    for row in csv.reader(['one,two,three']):
        print(row)
+
+Converting each column to its own type when reading::
+
+   import csv
+   from decimal import Decimal
+   types = [str, int, Decimal]
+   with open('prices.csv', newline='') as f:
+       reader = csv.reader(f, quoting=csv.QUOTE_NONNUMERIC,
+                           converter=lambda index, field: types[index](field))
+       for row in reader:
+           print(row)
+
+Writing the third column with two decimal places::
+
+   import csv
+   def formatter(index, value):
+       return format(value, '.2f') if index == 2 else str(value)
+   with open('prices.csv', 'w', newline='') as f:
+       writer = csv.writer(f, formatter=formatter)
+       writer.writerows(someiterable)
 
 
 .. rubric:: Footnotes
