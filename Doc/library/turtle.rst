@@ -2571,6 +2571,16 @@ Public classes
    * ``a.rotate(angle)`` rotation
 
 
+Exceptions
+==========
+
+.. exception:: TurtleGraphicsError
+
+   Raised when an invalid turtle graphics operation is requested, such as
+   using an unsupported shape or an invalid color value.
+   This exception inherits from :exc:`Exception`.
+
+
 .. _turtle-explanation:
 
 Explanation
