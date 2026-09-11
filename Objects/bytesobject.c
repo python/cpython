@@ -3344,43 +3344,53 @@ PyBytes_ConcatAndDel(PyObject **pv, PyObject *w)
    does *not* include that), and a trailing \0 byte is stored.
 */
 
+// Similar to _PyBytes_Resize(), but leaves the object unchanged on error.
 int
-_PyBytes_Resize(PyObject **pv, Py_ssize_t newsize)
+_PyBytes_ResizeKeepOnError(PyObject **pv, Py_ssize_t newsize)
 {
-    PyObject *v;
-    PyBytesObject *sv;
-    v = *pv;
+    PyObject *v = *pv;
+    PyObject *result;
+
     if (!PyBytes_Check(v) || newsize < 0) {
-        *pv = 0;
-        Py_DECREF(v);
         PyErr_BadInternalCall();
         return -1;
     }
+
     Py_ssize_t oldsize = PyBytes_GET_SIZE(v);
     if (oldsize == newsize) {
         /* return early if newsize equals to v->ob_size */
         return 0;
     }
+
     if (oldsize == 0) {
-        *pv = _PyBytes_FromSize(newsize, 0);
-        Py_DECREF(v);
-        return (*pv == NULL) ? -1 : 0;
-    }
-    if (newsize == 0) {
-        *pv = bytes_get_empty();
+        result = _PyBytes_FromSize(newsize, 0);
+        if (result == NULL) {
+            return -1;
+        }
+        *pv = result;
         Py_DECREF(v);
         return 0;
     }
+
+    if (newsize == 0) {
+        *pv = bytes_get_empty();  // cannot fail
+        Py_DECREF(v);
+        return 0;
+    }
+
     if (!_PyObject_IsUniquelyReferenced(v)) {
         // Allocate and then copy so we don't get a shared immortal
         // one-character singleton!
-        *pv = _PyBytes_FromSize(newsize, 0);
-        if (*pv) {
-            memcpy(PyBytes_AS_STRING(*pv), PyBytes_AS_STRING(v),
-                   Py_MIN(oldsize, newsize));
+        result = _PyBytes_FromSize(newsize, 0);
+        if (!result) {
+            return -1;
         }
+
+        memcpy(PyBytes_AS_STRING(result), PyBytes_AS_STRING(v),
+               Py_MIN(oldsize, newsize));
+        *pv = result;
         Py_DECREF(v);
-        return (*pv == NULL) ? -1 : 0;
+        return 0;
     }
     assert(v != bytes_get_empty());
 
@@ -3388,22 +3398,39 @@ _PyBytes_Resize(PyObject **pv, Py_ssize_t newsize)
     _Py_ForgetReference(v);
 #endif
     _PyReftracerTrack(v, PyRefTracer_DESTROY);
-    *pv = (PyObject *)
-        PyObject_Realloc(v, PyBytesObject_SIZE + newsize);
-    if (*pv == NULL) {
-#ifdef Py_REF_DEBUG
-        _Py_DecRefTotal(_PyThreadState_GET());
+
+    result = (PyObject *)PyObject_Realloc(v, PyBytesObject_SIZE + newsize);
+    if (result == NULL) {
+#ifdef Py_TRACE_REFS
+        _Py_AddToAllObjects(v);
 #endif
-        PyObject_Free(v);
+        _PyReftracerTrack(v, PyRefTracer_CREATE);
+
         PyErr_NoMemory();
         return -1;
     }
-    _Py_NewReferenceNoTotal(*pv);
-    sv = (PyBytesObject *) *pv;
+
+    *pv = result;
+    v = result;
+    _Py_NewReferenceNoTotal(v);
+    PyBytesObject *sv = (PyBytesObject *)v;
     Py_SET_SIZE(sv, newsize);
     sv->ob_sval[newsize] = '\0';
     set_ob_shash(sv, -1);          /* invalidate cached hash value */
     return 0;
+}
+
+
+int
+_PyBytes_Resize(PyObject **pv, Py_ssize_t newsize)
+{
+    int res = _PyBytes_ResizeKeepOnError(pv, newsize);
+    if (res < 0) {
+        PyObject *v = *pv;
+        *pv = NULL;
+        Py_DECREF(v);
+    }
+    return res;
 }
 
 
@@ -3644,7 +3671,8 @@ byteswriter_resize(PyBytesWriter *writer, Py_ssize_t size, int resize)
             }
         }
         else {
-            if (_PyBytes_Resize(&writer->obj, size)) {
+            if (_PyBytes_ResizeKeepOnError(&writer->obj, size)) {
+                assert(writer->obj != NULL);
                 return -1;
             }
         }
