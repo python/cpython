@@ -591,6 +591,109 @@ class TestUnicodeError(unittest.TestCase):
                 self.assertEqual(exc.end, new_end)
                 self._check_no_crash(exc)
 
+    def test_unicode_encode_error_get_object(self):
+        get_object = _testcapi.unicode_encode_get_object
+        self._test_unicode_error_get_object('x', UnicodeEncodeError, get_object)
+
+    def test_unicode_decode_error_get_object(self):
+        get_object = _testcapi.unicode_decode_get_object
+        self._test_unicode_error_get_object(b'x', UnicodeDecodeError, get_object)
+
+    def test_unicode_translate_error_get_object(self):
+        get_object = _testcapi.unicode_translate_get_object
+        self._test_unicode_error_get_object('x', TestUnicodeTranslateError, get_object)
+
+    def _test_unicode_error_get_object(self, literal, exc_type, get_object):
+        for obj_len in range(5):
+            obj = literal * obj_len
+            with self.subTest(obj, exc_type=exc_type):
+                exc = exc_type('utf-8', obj, 0, obj_len, 'reason')
+                self.assertEqual(get_object(exc), obj)
+                # the C API getter agrees with the attribute
+                self.assertEqual(get_object(exc), exc.object)
+                self._check_no_crash(exc)
+
+    def test_unicode_encode_error_get_reason(self):
+        get_reason = _testcapi.unicode_encode_get_reason
+        self._test_unicode_error_get_reason('x', UnicodeEncodeError, get_reason)
+
+    def test_unicode_decode_error_get_reason(self):
+        get_reason = _testcapi.unicode_decode_get_reason
+        self._test_unicode_error_get_reason(b'x', UnicodeDecodeError, get_reason)
+
+    def test_unicode_translate_error_get_reason(self):
+        get_reason = _testcapi.unicode_translate_get_reason
+        self._test_unicode_error_get_reason('x', TestUnicodeTranslateError, get_reason)
+
+    def _test_unicode_error_get_reason(self, literal, exc_type, get_reason):
+        obj_len = 5
+        obj = literal * obj_len
+        for reason in ['reason', '', 'a' * 100, 'non-ascii \xe9']:
+            with self.subTest(exc_type=exc_type, reason=reason):
+                exc = exc_type('utf-8', obj, 0, obj_len, reason)
+                self.assertEqual(get_reason(exc), reason)
+                # the C API getter agrees with the attribute
+                self.assertEqual(get_reason(exc), exc.reason)
+                self._check_no_crash(exc)
+
+    def test_unicode_encode_error_set_reason(self):
+        set_reason = _testcapi.unicode_encode_set_reason
+        self._test_unicode_error_set_reason('x', UnicodeEncodeError, set_reason)
+
+    def test_unicode_decode_error_set_reason(self):
+        set_reason = _testcapi.unicode_decode_set_reason
+        self._test_unicode_error_set_reason(b'x', UnicodeDecodeError, set_reason)
+
+    def test_unicode_translate_error_set_reason(self):
+        set_reason = _testcapi.unicode_translate_set_reason
+        self._test_unicode_error_set_reason('x', TestUnicodeTranslateError, set_reason)
+
+    def _test_unicode_error_set_reason(self, literal, exc_type, set_reason):
+        obj_len = 5
+        obj = literal * obj_len
+        for new_reason in ['new reason', '', 'a' * 100]:
+            with self.subTest('C-API', exc_type=exc_type, reason=new_reason):
+                exc = exc_type('utf-8', obj, 0, obj_len, 'reason')
+                set_reason(exc, new_reason)
+                self.assertEqual(exc.reason, new_reason)
+                self._check_no_crash(exc)
+
+            with self.subTest('Py-API', exc_type=exc_type, reason=new_reason):
+                exc = exc_type('utf-8', obj, 0, obj_len, 'reason')
+                exc.reason = new_reason
+                self.assertEqual(exc.reason, new_reason)
+                self._check_no_crash(exc)
+
+    def test_unicode_error_object_reason_bad_type(self):
+        # the C API getters and setters require a UnicodeError instance
+        bad_objects = [ValueError('x'), 'not an exception', 42, None]
+        getters = [
+            ('UnicodeEncodeError', _testcapi.unicode_encode_get_object),
+            ('UnicodeDecodeError', _testcapi.unicode_decode_get_object),
+            ('UnicodeTranslateError', _testcapi.unicode_translate_get_object),
+            ('UnicodeEncodeError', _testcapi.unicode_encode_get_reason),
+            ('UnicodeDecodeError', _testcapi.unicode_decode_get_reason),
+            ('UnicodeTranslateError', _testcapi.unicode_translate_get_reason),
+        ]
+        for expect_type, getter in getters:
+            regex = f'expecting a {expect_type} object'
+            for bad in bad_objects:
+                with self.subTest(getter=getter, bad=bad):
+                    with self.assertRaisesRegex(TypeError, regex):
+                        getter(bad)
+
+        setters = [
+            ('UnicodeEncodeError', _testcapi.unicode_encode_set_reason),
+            ('UnicodeDecodeError', _testcapi.unicode_decode_set_reason),
+            ('UnicodeTranslateError', _testcapi.unicode_translate_set_reason),
+        ]
+        for expect_type, setter in setters:
+            regex = f'expecting a {expect_type} object'
+            for bad in bad_objects:
+                with self.subTest(setter=setter, bad=bad):
+                    with self.assertRaisesRegex(TypeError, regex):
+                        setter(bad, 'reason')
+
 
 class Test_PyUnstable_Exc_PrepReraiseStar(ExceptionIsLikeMixin, unittest.TestCase):
 

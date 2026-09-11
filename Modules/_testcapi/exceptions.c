@@ -517,6 +517,93 @@ unicode_translate_set_end(PyObject *Py_UNUSED(module), PyObject *args)
     Py_RETURN_NONE;
 }
 
+/* Test PyUnicodeEncodeError_GetObject */
+static PyObject *
+unicode_encode_get_object(PyObject *Py_UNUSED(module), PyObject *arg)
+{
+    return PyUnicodeEncodeError_GetObject(arg);
+}
+
+/* Test PyUnicodeDecodeError_GetObject */
+static PyObject *
+unicode_decode_get_object(PyObject *Py_UNUSED(module), PyObject *arg)
+{
+    return PyUnicodeDecodeError_GetObject(arg);
+}
+
+/* Test PyUnicodeTranslateError_GetObject */
+static PyObject *
+unicode_translate_get_object(PyObject *Py_UNUSED(module), PyObject *arg)
+{
+    return PyUnicodeTranslateError_GetObject(arg);
+}
+
+/* Test PyUnicodeEncodeError_GetReason */
+static PyObject *
+unicode_encode_get_reason(PyObject *Py_UNUSED(module), PyObject *arg)
+{
+    return PyUnicodeEncodeError_GetReason(arg);
+}
+
+/* Test PyUnicodeDecodeError_GetReason */
+static PyObject *
+unicode_decode_get_reason(PyObject *Py_UNUSED(module), PyObject *arg)
+{
+    return PyUnicodeDecodeError_GetReason(arg);
+}
+
+/* Test PyUnicodeTranslateError_GetReason */
+static PyObject *
+unicode_translate_get_reason(PyObject *Py_UNUSED(module), PyObject *arg)
+{
+    return PyUnicodeTranslateError_GetReason(arg);
+}
+
+/* Test PyUnicodeEncodeError_SetReason */
+static PyObject *
+unicode_encode_set_reason(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    PyObject *exc;
+    const char *reason;
+    if (!PyArg_ParseTuple(args, "Os", &exc, &reason)) {
+        return NULL;
+    }
+    if (PyUnicodeEncodeError_SetReason(exc, reason) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+/* Test PyUnicodeDecodeError_SetReason */
+static PyObject *
+unicode_decode_set_reason(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    PyObject *exc;
+    const char *reason;
+    if (!PyArg_ParseTuple(args, "Os", &exc, &reason)) {
+        return NULL;
+    }
+    if (PyUnicodeDecodeError_SetReason(exc, reason) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+/* Test PyUnicodeTranslateError_SetReason */
+static PyObject *
+unicode_translate_set_reason(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    PyObject *exc;
+    const char *reason;
+    if (!PyArg_ParseTuple(args, "Os", &exc, &reason)) {
+        return NULL;
+    }
+    if (PyUnicodeTranslateError_SetReason(exc, reason) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
 /*
  * Define the PyRecurdingInfinitelyError_Type
  */
@@ -572,6 +659,15 @@ static PyMethodDef test_methods[] = {
     {"unicode_encode_set_end", unicode_encode_set_end,           METH_VARARGS},
     {"unicode_decode_set_end", unicode_decode_set_end,           METH_VARARGS},
     {"unicode_translate_set_end", unicode_translate_set_end,     METH_VARARGS},
+    {"unicode_encode_get_object", unicode_encode_get_object,     METH_O},
+    {"unicode_decode_get_object", unicode_decode_get_object,     METH_O},
+    {"unicode_translate_get_object", unicode_translate_get_object, METH_O},
+    {"unicode_encode_get_reason", unicode_encode_get_reason,     METH_O},
+    {"unicode_decode_get_reason", unicode_decode_get_reason,     METH_O},
+    {"unicode_translate_get_reason", unicode_translate_get_reason, METH_O},
+    {"unicode_encode_set_reason", unicode_encode_set_reason,     METH_VARARGS},
+    {"unicode_decode_set_reason", unicode_decode_set_reason,     METH_VARARGS},
+    {"unicode_translate_set_reason", unicode_translate_set_reason, METH_VARARGS},
     {NULL},
 };
 
