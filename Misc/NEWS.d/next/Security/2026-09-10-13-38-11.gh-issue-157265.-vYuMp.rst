@@ -1,0 +1,3 @@
+In :mod:`tarfile`, when extracting a link falls back to extracting a member
+of the archive, skip the member when the filter function returns None when
+called with the extracted member's name replaced with the link's.
