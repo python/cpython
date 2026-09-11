@@ -708,7 +708,7 @@ Specifying function pointers using type annotations
 
       @wrap_dll_function(dll_to_wrap)
       def function_ptr_name(arg_name: ctypes_type, ...) -> ctypes_type:
-         """Optional docstring. There should be no function body."""
+          """Optional docstring. There should be no function body."""
 
    The body of the decorated function is ignored, and any parameters that are
    missing type annotations are skipped. The names of the parameters are ignored
@@ -728,7 +728,7 @@ Specifying function pointers using type annotations
 
       @wrap_dll_function(ctypes.pythonapi)
       def PyObject_GetAttrString(op: ctypes.py_object, attr: ctypes.c_char_p) -> ctypes.py_object:
-         pass
+          pass
 
       PyObject_GetAttrString(42, b"real")
 
@@ -3207,7 +3207,7 @@ fields, or any other data types containing pointer type fields.
       that should be merged into a containing structure or union.
 
 
-.. decorator:: struct(*, align=None, layout, endian='native', pack=None)
+.. decorator:: struct(*, align=None, layout=None, endian='native', pack=None)
    :module: ctypes.util
 
    A :term:`decorator` that allows generating structure types using an
@@ -3244,14 +3244,18 @@ fields, or any other data types containing pointer type fields.
 
    .. code-block:: python
 
+      from typing import Annotated
+      from ctypes import c_ssize_t, c_void_p
+      from ctypes.util import struct, CFieldInfo
+
       @struct
       class PyObject:
-         ob_refcnt: c_ssize_t
-         ob_type: c_void_p
+          ob_refcnt: c_ssize_t
+          ob_type: c_void_p
 
       @struct
       class PyHovercraftObject:
-         ob_base: Annotated[PyObject, CFieldInfo(anonymous=True)]
+          ob_base: Annotated[PyObject, CFieldInfo(anonymous=True)]
 
    .. versionadded:: next
 
