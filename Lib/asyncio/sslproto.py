@@ -323,6 +323,8 @@ class SSLProtocol(protocols.BufferedProtocol):
         self._outgoing = ssl.MemoryBIO()
         self._state = SSLProtocolState.UNWRAPPED
         self._conn_lost = 0  # Set when connection_lost called
+        self._shutdown_exc = None
+        self._shutdown_close_pending = False
         if call_connection_made:
             self._app_state = AppProtocolState.STATE_INIT
         else:
@@ -397,6 +399,11 @@ class SSLProtocol(protocols.BufferedProtocol):
         meaning a regular EOF is received or the connection was
         aborted or closed).
         """
+        if exc is None and self._shutdown_exc is not None:
+            exc = self._shutdown_exc
+        self._shutdown_exc = None
+        self._shutdown_close_pending = False
+
         self._write_backlog.clear()
         self._outgoing.read()
         self._conn_lost += 1
@@ -669,14 +676,21 @@ class SSLProtocol(protocols.BufferedProtocol):
             self._on_shutdown_complete(None)
 
     def _on_shutdown_complete(self, shutdown_exc):
-        if self._shutdown_timeout_handle is not None:
-            self._shutdown_timeout_handle.cancel()
-            self._shutdown_timeout_handle = None
+        # close() lets the raw transport flush data queued by
+        # _process_outgoing().  _fatal_error() would force-close it and
+        # discard the close_notify that shutdown just produced. Keep the
+        # shutdown timeout active until connection_lost() bounds the drain.
+        if shutdown_exc is not None:
+            self._shutdown_exc = shutdown_exc
+        self._shutdown_close_pending = True
+        if not self._ssl_writing_paused:
+            self._loop.call_soon(self._close_transport)
 
-        if shutdown_exc:
-            self._fatal_error(shutdown_exc)
-        else:
-            self._loop.call_soon(self._transport.close)
+    def _close_transport(self):
+        if self._shutdown_close_pending:
+            self._shutdown_close_pending = False
+            if self._transport is not None:
+                self._transport.close()
 
     def _abort(self, exc):
         self._set_state(SSLProtocolState.UNWRAPPED)
@@ -927,6 +941,8 @@ class SSLProtocol(protocols.BufferedProtocol):
         assert self._ssl_writing_paused
         self._ssl_writing_paused = False
         self._process_outgoing()
+        if self._shutdown_close_pending:
+            self._loop.call_soon(self._close_transport)
 
     def _fatal_error(self, exc, message='Fatal error on transport'):
         if self._transport:
