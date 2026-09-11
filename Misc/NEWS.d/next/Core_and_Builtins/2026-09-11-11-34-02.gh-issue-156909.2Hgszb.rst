@@ -1,0 +1,2 @@
+Fix a crash in :func:`repr` of AST nodes when the AST node's type lacks the
+``_fields`` attribute. Patched by Shamil Abdulaev.
