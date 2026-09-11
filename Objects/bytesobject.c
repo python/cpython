@@ -3017,7 +3017,7 @@ _PyBytes_FromSequence_lock_held(PyObject *x, PyObject **result)
         }
         *str++ = (char) value;
     }
-    *result = PyBytesWriter_FinishWithPointer(writer, str);
+    *result = PyBytesWriter_Finish(writer);
     return *result != NULL ? 1 : -1;
 }
 
