@@ -3,6 +3,7 @@
 import collections
 import errno
 import selectors
+import signal
 import socket
 import sys
 import unittest
@@ -149,6 +150,119 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
     def test_read_from_self_exception(self):
         self.loop._ssock.recv.side_effect = OSError
         self.assertRaises(OSError, self.loop._read_from_self)
+
+    def test_read_from_self_eof_rebuilds_self_pipe(self):
+        # gh-156344: a clean EOF (recv returns b'') must rebuild the
+        # socketpair instead of leaving the reader registered on a socket
+        # that is readable forever, which would busy-loop the CPU at 100%.
+        loop = self.loop
+        old_ssock = loop._ssock
+        loop._ssock.recv.return_value = b''
+        loop._remove_reader = mock.Mock()
+        loop._add_reader = mock.Mock()
+        with mock.patch('asyncio.selector_events.socket.socketpair',
+                        return_value=(mock.Mock(), mock.Mock())) as socketpair:
+            self.assertIsNone(loop._read_from_self())
+            self.assertTrue(socketpair.called)
+        self.assertIsNot(loop._ssock, old_ssock)
+        loop._remove_reader.assert_called_with(old_ssock.fileno())
+        loop._add_reader.assert_called_with(loop._ssock.fileno(),
+                                            loop._read_from_self)
+
+    def test_read_from_self_blocking_is_not_eof(self):
+        # gh-156344: only a clean EOF triggers the rebuild -- a would-block
+        # read must not.
+        self.loop._ssock.recv.side_effect = BlockingIOError
+        with mock.patch('asyncio.selector_events.socket.socketpair') as sp:
+            self.assertIsNone(self.loop._read_from_self())
+            self.assertFalse(sp.called)
+
+    def test_self_pipe_eof_rebuild_functional(self):
+        # gh-156344 functional test on a real selector loop: kill the
+        # self-pipe with a graceful half-close and verify the pair is
+        # rebuilt, the reader lives only on the new fd, and wakeups keep
+        # working through the new pair.
+        loop = selector_events.BaseSelectorEventLoop()
+        self.addCleanup(loop.close)
+        old_ssock = loop._ssock
+        old_fd = old_ssock.fileno()
+        old_csock = loop._csock
+
+        old_csock.shutdown(socket.SHUT_WR)
+        loop._read_from_self()
+
+        # pair rebuilt and reader registered on the new fd only
+        self.assertIsNot(loop._ssock, old_ssock)
+        self.assertNotEqual(loop._ssock.fileno(), old_fd)
+        self.assertNotIn(old_fd, loop._selector.get_map())
+        self.assertIn(loop._ssock.fileno(), loop._selector.get_map())
+
+        # wakeups through the new pair still work
+        loop._write_to_self()
+        data = loop._ssock.recv(4096)
+        self.assertEqual(data, b'\0')
+
+    @mock.patch('asyncio.selector_events.socket.socketpair')
+    def test_rebuild_self_pipe_moves_wakeup_fd(self, socketpair):
+        # gh-156344: on Unix the wakeup fd registered by add_signal_handler()
+        # names _csock; a rebuild must move it to the new socket and must not
+        # touch a registration owned by someone else.
+        loop = self.loop
+        old_ssock, old_csock = loop._ssock, loop._csock
+        loop._remove_reader = mock.Mock()
+        loop._add_reader = mock.Mock()
+
+        new_ssock, new_csock = mock.Mock(), mock.Mock()
+        socketpair.return_value = (new_ssock, new_csock)
+
+        # Simulate the Unix mixin's signal state: _signal_handlers non-empty
+        # and the wakeup fd naming our _csock.
+        loop._signal_handlers = {signal.SIGINT: mock.Mock()}
+        with mock.patch('asyncio.selector_events.signal.set_wakeup_fd',
+                        return_value=old_csock.fileno()) as m_wakeup_fd:
+            loop._rebuild_self_pipe()
+        # moved: new fd registered, old one not re-registered
+        self.assertEqual(m_wakeup_fd.call_args_list,
+                         [mock.call(new_csock.fileno())])
+        # old reader removed, old sockets closed, reader re-armed on the new
+        loop._remove_reader.assert_called_with(old_ssock.fileno())
+        self.assertTrue(old_ssock.close.called)
+        self.assertTrue(old_csock.close.called)
+        self.assertIs(loop._ssock, new_ssock)
+        self.assertIs(loop._csock, new_csock)
+        loop._add_reader.assert_called_with(new_ssock.fileno(),
+                                            loop._read_from_self)
+
+    @mock.patch('asyncio.selector_events.socket.socketpair')
+    def test_rebuild_self_pipe_leaves_foreign_wakeup_fd(self, socketpair):
+        # set_wakeup_fd returned a fd that is not ours: it belongs to someone
+        # else and must be restored untouched.
+        loop = self.loop
+        loop._remove_reader = mock.Mock()
+        loop._add_reader = mock.Mock()
+        new_ssock, new_csock = mock.Mock(), mock.Mock()
+        socketpair.return_value = (new_ssock, new_csock)
+
+        loop._signal_handlers = {signal.SIGINT: mock.Mock()}
+        with mock.patch('asyncio.selector_events.signal.set_wakeup_fd',
+                        return_value=999) as m_wakeup_fd:
+            loop._rebuild_self_pipe()
+        self.assertEqual(m_wakeup_fd.call_args_list,
+                         [mock.call(new_csock.fileno()),
+                          mock.call(999)])
+
+    @mock.patch('asyncio.selector_events.socket.socketpair')
+    def test_rebuild_self_pipe_no_signals(self, socketpair):
+        # Without add_signal_handler() state the wakeup fd is untouched.
+        self.loop._remove_reader = mock.Mock()
+        self.loop._add_reader = mock.Mock()
+        new_ssock, new_csock = mock.Mock(), mock.Mock()
+        socketpair.return_value = (new_ssock, new_csock)
+
+        with mock.patch('asyncio.selector_events.signal.set_wakeup_fd',
+                        return_value=self.loop._csock.fileno()) as m_wakeup_fd:
+            self.loop._rebuild_self_pipe()
+        self.assertFalse(m_wakeup_fd.called)
 
     def test_write_to_self_tryagain(self):
         self.loop._csock.send.side_effect = BlockingIOError
