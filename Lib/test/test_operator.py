@@ -2,6 +2,7 @@ import unittest
 import inspect
 import pickle
 import sys
+import weakref
 from decimal import Decimal
 from fractions import Fraction
 
@@ -510,6 +511,20 @@ class OperatorTestCase:
 
         f = operator.methodcaller('return_arguments', *many_positional_arguments, **many_kw_arguments)
         self.assertEqual(f(a), (many_positional_arguments, many_kw_arguments))
+
+    def test_methodcaller_cyclic_gc(self):
+        operator = self.module
+
+        class C:
+            pass
+
+        c = C()
+        ref = weakref.ref(c)
+        c.m = operator.methodcaller('foo', c)
+        del c
+
+        support.gc_collect()
+        self.assertIsNone(ref())
 
     def test_inplace(self):
         operator = self.module
