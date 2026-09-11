@@ -3336,6 +3336,51 @@ class BadElementTest(ElementTestCase, unittest.TestCase):
         e.extend([ET.Element(f'c{i}') for i in range(10)])
         e[:] = V()
 
+    def test_treebuilder_data(self):
+        # single data() call: pass the string object
+        b = ET.TreeBuilder()
+        b.start('root', {})
+        b.data('ABCD')
+        b.end('root')
+        elem = b.close()
+        self.assertEqual(elem.text, 'ABCD')
+
+        # two data() calls: join the two strings
+        b = ET.TreeBuilder()
+        b.start('root', {})
+        b.data('ABCD')
+        b.data('EFGH')
+        b.end('root')
+        elem = b.close()
+        self.assertEqual(elem.text, 'ABCDEFGH')
+
+    def test_treebuilder_data_wrong_types(self):
+        for obj in (b'bytes', 123, 1.0):
+            # single data() call
+            try:
+                b = ET.TreeBuilder()
+                b.start('tag', {})
+                b.data(obj)
+                b.end('tag')
+            except TypeError:
+                # Python implementation raises TypeError,
+                # C implementation doesn't.
+                pass
+            else:
+                elem = b.close()
+                self.assertEqual(elem.text, obj)
+
+            # two data() calls
+            errmsg = f'expected str instance, {type(obj).__name__} found'
+            with self.assertRaisesRegex(TypeError, errmsg):
+                b = ET.TreeBuilder()
+                b.start('tag', {})
+                b.data(obj)
+                b.data(obj)
+                b.end('tag')
+                elem = b.close()
+                _ = elem.text
+
     def test_treebuilder_start(self):
         # Issue #27863
         def element_factory(x, y):
