@@ -1570,7 +1570,7 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         self.assertRaises(MemoryError, bytearray(1000).resize, sys.maxsize)
 
     def test_resize_error(self):
-        # gh-157242: If bytearray.resize() fails (memory allocation failure),
+        # gh-157242: If bytearray.resize() fails (MemoryError),
         # the bytearray must be left unchanged.
 
         offset = 3
@@ -1663,18 +1663,23 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         self.assertEqual(ord(b'c'), ord('c'))
 
     def test_take_bytes_error(self):
-        # gh-157242: If bytearray.take_bytes() fails (memory allocation
-        # failure), the bytearray must be left unchanged.
+        # gh-157242: If bytearray.take_bytes() fails (MemoryError),
+        # the bytearray must be left unchanged.
 
-        for to_take, mem_errors in (
-            (5, (0, 1)),
-            (None, (0,)),
+        for logical_offset, to_take, mem_errors in (
+            (True, 5, (0, 1)),
+            (False, 5, (0, 1)),
+            (True, None, (0,)),
         ):
             for mem_error in mem_errors:
-                with self.subTest(mem_error=mem_error, to_take=to_take):
+                with self.subTest(logical_offset=logical_offset,
+                                  to_take=to_take, mem_error=mem_error):
                     ba = bytearray(b'0123456789')
-                    expected = ba[3:]
-                    del ba[:3]
+                    if logical_offset:
+                        expected = ba[3:]
+                        del ba[:3]
+                    else:
+                        expected = ba.copy()
                     with inject_memory_error(self, mem_error):
                         ba.take_bytes(to_take)
                     self.assertEqual(ba, expected)
