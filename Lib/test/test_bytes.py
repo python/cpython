@@ -1664,8 +1664,11 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         # failure), the bytearray must be left unchanged.
         _testcapi = import_helper.import_module('_testcapi')
 
-        for mem_error in (0, 1):
-            for to_take in (5, None):
+        for to_take, mem_errors in (
+            (5, (0, 1)),
+            (None, (0,)),
+        ):
+            for mem_error in mem_errors:
                 with self.subTest(mem_error=mem_error, to_take=to_take):
                     ba = bytearray(b'0123456789')
                     expected = ba[3:]
@@ -1673,7 +1676,7 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
                     with self.assertRaises(MemoryError):
                         try:
                             _testcapi.set_nomemory(mem_error)
-                            ba.take_bytes(5)
+                            ba.take_bytes(to_take)
                         finally:
                             _testcapi.remove_mem_hooks()
                     self.assertEqual(ba, expected)
