@@ -175,6 +175,29 @@ class CallStackTestBase:
             ]
         ])
 
+    async def test_stack_gather_survivor(self):
+        # gh-157213: a child that outlives gather() must not be shown as awaited
+
+        async def fail():
+            raise ValueError
+
+        async def survivor():
+            await asyncio.Future()
+
+        t = asyncio.create_task(survivor(), name='survivor')
+        with self.assertRaises(ValueError):
+            await asyncio.gather(t, fail())
+
+        self.assertEqual(capture_test_stack(fut=t)[0], [
+            'T<survivor>',
+            ['a survivor'],
+            []
+        ])
+
+        t.cancel()
+        with self.assertRaises(asyncio.CancelledError):
+            await t
+
     async def test_stack_shield(self):
 
         stack_for_shield = None
