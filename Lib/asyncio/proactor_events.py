@@ -574,28 +574,20 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport,
     def _loop_reading(self, fut=None):
         data = None
         try:
-            if self._conn_lost:
+            if self._closing:
                 return
 
-            assert self._read_fut is fut or (self._read_fut is None and
-                                             self._closing)
+            assert self._read_fut is fut
 
             self._read_fut = None
             if fut is not None:
                 res = fut.result()
-
-                if self._closing:
-                    # since close() has been called we ignore any read data
-                    data = None
-                    return
 
                 if self._address is not None:
                     data, addr = res, self._address
                 else:
                     data, addr = res
 
-            if self._conn_lost:
-                return
             if self._address is not None:
                 self._read_fut = self._loop._proactor.recv(self._sock,
                                                            self.max_size)
