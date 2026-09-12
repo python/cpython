@@ -101,6 +101,12 @@ The output will then be:
    :meth:`close` is called.  *data* must be :class:`str`.
 
 
+.. method:: HTMLParser.flush()
+
+   Process all data fed insofar as it consists of complete elements. Incomplete
+   data remains buffered.
+
+
 .. method:: HTMLParser.close()
 
    Force processing of all buffered data as if it were followed by an end-of-file
