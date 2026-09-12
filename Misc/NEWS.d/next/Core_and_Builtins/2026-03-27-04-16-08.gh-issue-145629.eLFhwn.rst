@@ -1,0 +1,1 @@
+Fix missed ``LOAD_FAST_BORROW`` optimization for ternary expressions by improving basic block inlining during the compiler's control flow graph optimization phase.
