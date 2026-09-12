@@ -1,0 +1,1 @@
+Fixed an issue where destructors and exit handlers had no access to builtins.
