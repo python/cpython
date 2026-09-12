@@ -350,9 +350,14 @@ class LogRecord(object):
         if logThreads:
             self.thread = threading.get_ident()
             self.threadName = threading.current_thread().name
+            if threading._HAVE_THREAD_NATIVE_ID:
+                self.nativeThreadId = threading.get_native_id()
+            else: # pragma: no cover
+                self.nativeThreadId = None
         else: # pragma: no cover
             self.thread = None
             self.threadName = None
+            self.nativeThreadId = None
         if not logMultiprocessing: # pragma: no cover
             self.processName = None
         else:
