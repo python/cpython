@@ -68,6 +68,7 @@ try:
         _filters_mutated_lock_held,
         _onceregistry as onceregistry,
         _release_lock,
+        _set_module as _set_c_module,
         _warnings_context,
         filters,
         warn,
@@ -91,9 +92,13 @@ except ImportError:
 
 # Module initialization
 _set_module(sys.modules[__name__])
+if _warnings_defaults:
+    _set_c_module(sys.modules[__name__])
 _processoptions(sys.warnoptions)
 if not _warnings_defaults:
     _setup_defaults()
 
 del _warnings_defaults
+if "_set_c_module" in globals():
+    del _set_c_module
 del _setup_defaults
