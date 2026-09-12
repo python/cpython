@@ -276,6 +276,22 @@ FTP objects
       prints the line to :data:`sys.stdout`.
 
 
+   .. attribute:: FTP.prefer_epsv
+
+       A :class:`bool` that controls whether passive mode data connections
+       try the EPSV command (:rfc:`2428`) before falling back to PASV on IPv4
+       connections.  Defaults to ``True``.
+
+       EPSV responses contain only a port number and no IP address, making them
+       transparent to firewall FTP Application Layer Gateways (ALGs) that
+       commonly intercept and mangle PASV responses.  If the server does not
+       support EPSV, the connection falls back to PASV automatically.
+
+      Set to ``False`` to restore the legacy PASV-first behavior on IPv4.
+
+      .. versionadded:: 3.15
+
+
    .. method:: FTP.set_pasv(val)
 
       Enable "passive" mode if *val* is true, otherwise disable passive mode.
