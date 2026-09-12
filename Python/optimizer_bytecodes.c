@@ -2469,11 +2469,12 @@ dummy_func(void) {
     }
 
     op(_BINARY_SLICE, (container, start, stop -- res)) {
-        // Slicing a string/list/tuple always returns the same type.
+        // Slicing a string/list/tuple/bytes always returns the same type.
         PyTypeObject *type = sym_get_type(container);
         if (type == &PyUnicode_Type ||
             type == &PyList_Type ||
-            type == &PyTuple_Type)
+            type == &PyTuple_Type ||
+            type == &PyBytes_Type)
         {
             res = sym_new_type(ctx, type);
         }

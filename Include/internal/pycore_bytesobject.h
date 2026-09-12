@@ -18,6 +18,7 @@ extern PyObject* _PyBytes_FormatEx(
  * specializing interpreter. Unlike PyBytes_Concat(), this returns a new
  * reference rather than modifying its first argument in place. */
 extern PyObject* _PyBytes_Concat(PyObject *a, PyObject *b);
+PyAPI_FUNC(PyObject *) _PyBytes_BinarySlice(PyObject *, PyObject *, PyObject *);
 
 extern PyObject* _PyBytes_FromHex(
     PyObject *string,

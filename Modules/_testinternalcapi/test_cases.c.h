@@ -1448,6 +1448,12 @@
                     res_o = _PyUnicode_BinarySlice(container_o, start_o, stop_o);
                     _PyFrame_StackPointerInvalidate(frame);
                 }
+                else if (PyBytes_CheckExact(container_o)) {
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    _PyFrame_StackPointerValidate(frame);
+                    res_o = _PyBytes_BinarySlice(container_o, start_o, stop_o);
+                    _PyFrame_StackPointerInvalidate(frame);
+                }
                 else {
                     PyObject *slice = PySlice_New(start_o, stop_o, NULL);
                     if (slice == NULL) {
