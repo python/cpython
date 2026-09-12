@@ -1,0 +1,4 @@
+Creating a virtual environment with :mod:`venv` now writes the activation
+scripts using permissions derived from the process umask (and any default
+ACL), consistent with the other files it creates, instead of a fixed mode
+copied from the packaged templates. Patch by tonghuaroot.
