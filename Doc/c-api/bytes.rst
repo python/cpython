@@ -8,6 +8,10 @@ Bytes Objects
 These functions raise :exc:`TypeError` when expecting a bytes parameter and
 called with a non-bytes parameter.
 
+A :c:type:`PyBytesObject` allocates an extra trailing null byte for
+compatibility with null terminated C strings. It is not counted in
+:c:func:`PyBytes_Size` length.
+
 .. index:: pair: object; bytes
 
 
