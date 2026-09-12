@@ -417,6 +417,11 @@ Importing Modules
    (Custom importers should do this in their
    :py:meth:`~importlib.abc.Loader.exec_module` method.)
 
+   If the spec's name is registered in :c:var:`PyImport_Inittab` (which
+   includes the :mod:`sys` and :mod:`builtins` modules), raise
+   :exc:`ImportError`; a module cannot be both a built-in module and one
+   created by this function.
+
    On error, return NULL with an exception set.
 
    .. versionadded:: 3.15

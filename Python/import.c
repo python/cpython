@@ -2486,10 +2486,10 @@ is_builtin(PyObject *name)
 }
 
 static struct _inittab*
-lookup_inittab_entry(const struct _Py_ext_module_loader_info* info)
+lookup_inittab_entry(PyObject *name)
 {
     for (struct _inittab *p = INITTAB; p->name != NULL; p++) {
-        if (_PyUnicode_EqualToASCIIString(info->name, p->name)) {
+        if (_PyUnicode_EqualToASCIIString(name, p->name)) {
             return p;
         }
     }
@@ -2534,7 +2534,7 @@ create_builtin(
 
     PyModInitFunction p0 = NULL;
     if (initfunc == NULL) {
-        struct _inittab *entry = lookup_inittab_entry(&info);
+        struct _inittab *entry = lookup_inittab_entry(info.name);
         if (entry == NULL) {
             mod = NULL;
             _PyErr_SetModuleNotFoundError(name);
@@ -2597,6 +2597,19 @@ PyImport_CreateModuleFromInitfunc(
     if (!PyUnicode_Check(name)) {
         PyErr_Format(PyExc_TypeError,
                      "spec name must be string, not %T", name);
+        Py_DECREF(name);
+        return NULL;
+    }
+
+    /* Built-in modules (including the core "sys" and "builtins" modules)
+     * share the extensions cache and sys.modules with modules created here.
+     * Refuse to create a module under a name registered in the inittab,
+     * rather than silently ignoring either initfunc or the other module. */
+    if (lookup_inittab_entry(name) != NULL) {
+        PyErr_Format(PyExc_ImportError,
+                     "cannot create module %R from an init function: "
+                     "a built-in module with this name is registered "
+                     "in PyImport_Inittab", name);
         Py_DECREF(name);
         return NULL;
     }

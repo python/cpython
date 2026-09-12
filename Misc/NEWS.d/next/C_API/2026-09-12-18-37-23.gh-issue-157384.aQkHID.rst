@@ -1,0 +1,3 @@
+:c:func:`PyImport_CreateModuleFromInitfunc` now raises :exc:`ImportError` if
+the spec's name is registered in :c:var:`PyImport_Inittab`, instead of
+silently ignoring *initfunc* or replacing the built-in module.

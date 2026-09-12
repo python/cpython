@@ -278,6 +278,15 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
                          "my_test_extension.exec_slot_ran='yes'\n"
                          "<module 'embedded_ext' (static-extension)>\n"
                          "embedded_ext.executed='yes'\n"
+                         "ImportError: cannot create module 'sys' from an "
+                         "init function: a built-in module with this name "
+                         "is registered in PyImport_Inittab\n"
+                         "ImportError: cannot create module "
+                         "'create_static_module' from an init function: "
+                         "a built-in module with this name is registered "
+                         "in PyImport_Inittab\n"
+                         "sys.modules[\"create_static_module\"] "
+                         "is create_static_module=True\n"
                          )
 
     def test_inittab_submodule_multiphase(self):

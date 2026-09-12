@@ -2425,6 +2425,13 @@ create_module(PyObject* self, PyObject* spec)
         Py_DECREF(name);
         return PyImport_CreateModuleFromInitfunc(spec, PyInit_embedded_ext);
     }
+    if (PyUnicode_EqualToUTF8(name, "sys")
+        || PyUnicode_EqualToUTF8(name, "create_static_module")) {
+        // names registered in the inittab (core module / builtin):
+        // must be refused before the init function is called
+        Py_DECREF(name);
+        return PyImport_CreateModuleFromInitfunc(spec, PyInit_embedded_ext);
+    }
     PyErr_Format(PyExc_LookupError, "static module %R not found", name);
     Py_DECREF(name);
     return NULL;
@@ -2472,6 +2479,10 @@ test_create_module_from_initfunc(void)
         L"import embedded_ext;"
         L"print(embedded_ext);"
         L"print(f'{embedded_ext.executed=}');"
+        // Names registered in the inittab are refused
+        L"try_create('sys');"
+        L"try_create('create_static_module');"
+        L"print(f'{sys.modules[\"create_static_module\"] is create_static_module=}');"
     };
     PyConfig config;
     if (PyImport_AppendInittab("create_static_module",
@@ -2502,6 +2513,14 @@ test_create_module_from_initfunc(void)
         "       create_static_module.exec_module(module)\n"
         "       module.executed = 'yes'\n"
         "sys.meta_path.append(StaticExtensionImporter)\n"
+        "def try_create(name):\n"
+        "   spec = spec_from_loader(name, StaticExtensionImporter)\n"
+        "   try:\n"
+        "       create_static_module.create_module(spec)\n"
+        "   except ImportError as exc:\n"
+        "       print(f'ImportError: {exc}')\n"
+        "   else:\n"
+        "       print(f'no ImportError for {name}!')\n"
     );
     if (result < 0) {
         fprintf(stderr, "PyRun_SimpleString() failed\n");
