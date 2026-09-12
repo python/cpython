@@ -2179,6 +2179,40 @@ BITWISE_LONGS_ACTION(compactlongs_and, &)
 BITWISE_LONGS_ACTION(compactlongs_xor, ^)
 #undef BITWISE_LONGS_ACTION
 
+static int
+small_power_guard(PyObject *lhs, PyObject *rhs)
+{
+    if (!is_compactlong(lhs) || !is_compactlong(rhs)) {
+        return false;
+    }
+    Py_ssize_t exponent = _PyLong_CompactValue((PyLongObject *)rhs);
+    if (exponent == 2) {
+        /* |x| < 2^30 (compact), so x*x < 2^60: fits a 64-bit
+           intermediate even where Py_ssize_t is 32 bits. */
+        return true;
+    }
+    if (exponent == 3) {
+        /* Need |x*x*x| < 2^60, so |x| < 2^20. */
+        Py_ssize_t x = _PyLong_CompactValue((PyLongObject *)lhs);
+        return x < (1 << 20) && x > -(1 << 20);
+    }
+    return false;
+}
+
+static PyObject *
+small_power(PyObject *lhs, PyObject *rhs)
+{
+    /* Compute in int64_t (not Py_ssize_t): the guard bounds keep the
+       product below 2^60, which overflows a 32-bit Py_ssize_t. */
+    int64_t x = (int64_t)_PyLong_CompactValue((PyLongObject *)lhs);
+    int64_t exponent = (int64_t)_PyLong_CompactValue((PyLongObject *)rhs);
+    assert(exponent == 2 || exponent == 3);
+    if (exponent == 2) {
+        return PyLong_FromLongLong(x * x);
+    }
+    return PyLong_FromLongLong(x * x * x);
+}
+
 /* float-long */
 
 static inline int
@@ -2258,6 +2292,11 @@ static _PyBinaryOpSpecializationDescr binaryop_extend_descrs[] = {
     {NB_INPLACE_OR, compactlongs_guard, compactlongs_or, &PyLong_Type, 1, NULL, NULL},
     {NB_INPLACE_AND, compactlongs_guard, compactlongs_and, &PyLong_Type, 1, NULL, NULL},
     {NB_INPLACE_XOR, compactlongs_guard, compactlongs_xor, &PyLong_Type, 1, NULL, NULL},
+
+    /* x ** 2 / x ** 3 for compact ints; PyLong_FromLongLong may return
+       the cached immortal small ints, which result_unique accepts. */
+    {NB_POWER, small_power_guard, small_power, &PyLong_Type, 1, NULL, NULL},
+    {NB_INPLACE_POWER, small_power_guard, small_power, &PyLong_Type, 1, NULL, NULL},
 
     /* float-long arithmetic: guards also check NaN and compactness. */
     {NB_ADD, float_compactlong_guard, float_compactlong_add, &PyFloat_Type, 1, NULL, NULL},
