@@ -1,0 +1,5 @@
+Restore the :meth:`!__ne__` method (identical to :meth:`object.__ne__`) in
+:class:`collections.abc.Set` and :class:`collections.abc.Mapping` classes.
+This guarantees that the ``!=`` operator is consistent with the ``==``
+operator, even if the :meth:`!__ne__` method was defined in other parent
+class.
