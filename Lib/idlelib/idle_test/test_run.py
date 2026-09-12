@@ -2,6 +2,7 @@
 
 from idlelib import run
 import io
+import pickle
 import sys
 from test.support import captured_output, captured_stderr
 import unittest
@@ -520,6 +521,32 @@ class ExecRuncodeTest(unittest.TestCase):
         t, e, tb = ex.user_exc_info
         self.assertIs(t, TypeError)
         self.assertTrue(isinstance(e.__context__, ZeroDivisionError))
+
+    def test_setup_last_exception(self):
+        # gh-89723: sys.last_* are set for a SyntaxError caught in the GUI.
+        attrs = 'last_type', 'last_value', 'last_traceback', 'last_exc'
+        saved = {a: getattr(sys, a) for a in attrs if hasattr(sys, a)}
+        def restore():
+            for a in attrs:
+                if a in saved:
+                    setattr(sys, a, saved[a])
+                elif hasattr(sys, a):
+                    delattr(sys, a)
+        self.addCleanup(restore)
+
+        try:
+            compile('1 +', '<pyshell#0>', 'exec')
+        except SyntaxError as e:
+            exc = e
+        # The exception reaches the user process pickled, without a traceback.
+        exc = pickle.loads(pickle.dumps(exc))
+        self.assertIsNone(exc.__traceback__)
+
+        self.ex.setup_last_exception(exc)
+        self.assertIs(sys.last_exc, exc)
+        self.assertIs(sys.last_value, exc)
+        self.assertIs(sys.last_type, SyntaxError)
+        self.assertIsNone(sys.last_traceback)
 
 
 if __name__ == '__main__':
