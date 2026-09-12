@@ -245,9 +245,6 @@ called with a non-bytes parameter.
    be mutated using :c:func:`PyBytesWriter_GetData`; except if *newsize* is
    zero in which case it returns the immutable empty bytes string.
 
-   This API is now soft depreacated and the :c:type:`PyBytesWriter` API should
-   be used instead.
-
    .. soft-deprecated:: 3.15
       Use the :c:type:`PyBytesWriter` API instead.
 
