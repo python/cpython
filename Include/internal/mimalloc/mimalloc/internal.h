@@ -844,48 +844,54 @@ static inline size_t mi_ctz(uintptr_t x) {
 }
 
 #else
-static inline size_t mi_ctz32(uint32_t x) {
-  // de Bruijn multiplication, see <http://supertech.csail.mit.edu/papers/debruijn.pdf>
-  static const unsigned char debruijn[32] = {
+static inline size_t mi_ctz_generic32(uint32_t x) {
+  static const uint8_t debruijn[32] = {
     0, 1, 28, 2, 29, 14, 24, 3, 30, 22, 20, 15, 25, 17, 4, 8,
     31, 27, 13, 23, 21, 19, 16, 7, 26, 12, 18, 6, 11, 5, 10, 9
   };
-  if (x==0) return 32;
-  return debruijn[((x & -(int32_t)x) * 0x077CB531UL) >> 27];
+  if (x == 0) return 32;
+  return debruijn[(uint32_t)((x & -(int32_t)x) * (uint32_t)(0x077CB531U)) >> 27];
 }
-static inline size_t mi_clz32(uint32_t x) {
-  // de Bruijn multiplication, see <http://supertech.csail.mit.edu/papers/debruijn.pdf>
+
+static inline size_t mi_clz_generic32(uint32_t x) {
   static const uint8_t debruijn[32] = {
     31, 22, 30, 21, 18, 10, 29, 2, 20, 17, 15, 13, 9, 6, 28, 1,
     23, 19, 11, 3, 16, 14, 7, 24, 12, 4, 8, 25, 5, 26, 27, 0
   };
-  if (x==0) return 32;
+  if (x == 0) return 32;
   x |= x >> 1;
   x |= x >> 2;
   x |= x >> 4;
   x |= x >> 8;
   x |= x >> 16;
-  return debruijn[(uint32_t)(x * 0x07C4ACDDUL) >> 27];
+  return debruijn[(uint32_t)(x * (uint32_t)(0x07C4ACDDU)) >> 27];
 }
 
-static inline size_t mi_clz(uintptr_t x) {
-  if (x==0) return MI_INTPTR_BITS;
-#if (MI_INTPTR_BITS <= 32)
-  return mi_clz32((uint32_t)x);
+static inline size_t mi_ctz(size_t x) {
+  if (x == 0) return MI_SIZE_BITS;
+#if (MI_SIZE_BITS <= 32)
+  return mi_ctz_generic32((uint32_t)x);
 #else
-  size_t count = mi_clz32((uint32_t)(x >> 32));
-  if (count < 32) return count;
-  return (32 + mi_clz32((uint32_t)x));
+  const uint32_t lo = (uint32_t)x;
+  if (lo != 0) {
+    return mi_ctz_generic32(lo);
+  } else {
+    return 32 + mi_ctz_generic32((uint32_t)(x >> 32));
+  }
 #endif
 }
-static inline size_t mi_ctz(uintptr_t x) {
-  if (x==0) return MI_INTPTR_BITS;
-#if (MI_INTPTR_BITS <= 32)
-  return mi_ctz32((uint32_t)x);
+
+static inline size_t mi_clz(size_t x) {
+  if (x == 0) return MI_SIZE_BITS;
+#if (MI_SIZE_BITS <= 32)
+  return mi_clz_generic32((uint32_t)x);
 #else
-  size_t count = mi_ctz32((uint32_t)x);
-  if (count < 32) return count;
-  return (32 + mi_ctz32((uint32_t)(x>>32)));
+  const uint32_t hi = (uint32_t)(x >> 32);
+  if (hi != 0) {
+    return mi_clz_generic32(hi);
+  } else {
+    return 32 + mi_clz_generic32((uint32_t)x);
+  }
 #endif
 }
 
