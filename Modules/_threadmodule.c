@@ -8,6 +8,7 @@
 #include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_object_deferred.h" // _PyObject_SetDeferredRefcount()
+#include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_LOAD_SIZE_RELAXED()
 #include "pycore_pylifecycle.h"
 #include "pycore_pystate.h"       // _PyThreadState_SetCurrent()
 #include "pycore_time.h"          // _PyTime_FromSeconds()
@@ -1207,7 +1208,7 @@ _thread_RLock__acquire_restore_impl(rlockobject *self, PyObject *state)
 
     _PyRecursiveMutex_Lock(&self->lock);
     _Py_atomic_store_ullong_relaxed(&self->lock.thread, owner);
-    self->lock.level = (size_t)count - 1;
+    FT_ATOMIC_STORE_SIZE_RELAXED(self->lock.level, (size_t)count - 1);
     Py_RETURN_NONE;
 }
 
@@ -1230,7 +1231,8 @@ _thread_RLock__release_save_impl(rlockobject *self)
 
     PyThread_ident_t owner = self->lock.thread;
     Py_ssize_t count = self->lock.level + 1;
-    self->lock.level = 0;  // ensure the unlock releases the lock
+    // ensure the unlock releases the lock
+    FT_ATOMIC_STORE_SIZE_RELAXED(self->lock.level, 0);
     _PyRecursiveMutex_Unlock(&self->lock);
     return Py_BuildValue("n" Py_PARSE_THREAD_IDENT_T, count, owner);
 }
@@ -1292,7 +1294,7 @@ rlock_repr(PyObject *op)
     int locked = rlock_locked_impl(self);
     size_t count;
     if (locked) {
-        count = self->lock.level + 1;
+        count = FT_ATOMIC_LOAD_SIZE_RELAXED(self->lock.level) + 1;
     }
     else {
         count = 0;
