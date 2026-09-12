@@ -1,0 +1,1 @@
+:func:`plistlib.load` and :func:`plistlib.loads` now raise :exc:`plistlib.InvalidFileException` for XML plists that are not well-formed or that declare an unknown encoding, instead of leaking the underlying :exc:`~xml.parsers.expat.ExpatError` or :exc:`LookupError`.
