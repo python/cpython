@@ -146,6 +146,40 @@ class TestFrameRaces(unittest.TestCase):
 
         threading_helper.run_concurrently([reader, reader, clearer])
 
+    def test_f_back_after_thread_return(self):
+        # gh-149110: Accessing frame.f_back cross-thread while the owning
+        # thread is returning caused a spurious assertion failure in
+        # PyFrame_GetBack on free-threaded builds.
+        frames = []
+        lock = threading.Lock()
+
+        def target():
+            frame = sys._getframe()
+            with lock:
+                frames.append(frame)
+
+        def inspector():
+            for _ in range(50):
+                frame = None
+                with lock:
+                    if frames:
+                        frame = frames[-1]
+                if frame is not None:
+                    try:
+                        _ = frame.f_back
+                    except Exception:
+                        pass
+                sys._clear_internal_caches()
+
+        threads = [threading.Thread(target=target) for _ in range(20)]
+        insp = threading.Thread(target=inspector)
+        insp.start()
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+        insp.join()
+
 
 if __name__ == "__main__":
     unittest.main()
