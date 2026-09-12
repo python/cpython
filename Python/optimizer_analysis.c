@@ -704,13 +704,6 @@ const uint16_t op_without_push[MAX_UOP_ID + 1] = {
     [_PUSH_NULL] = _NOP,
 };
 
-const bool op_skip[MAX_UOP_ID + 1] = {
-    [_NOP] = true,
-    [_CHECK_VALIDITY] = true,
-    [_CHECK_PERIODIC] = true,
-    [_SET_IP] = true,
-};
-
 const uint16_t op_without_pop[MAX_UOP_ID + 1] = {
     [_POP_TOP] = _NOP,
     [_POP_TOP_NOP] = _NOP,
@@ -719,6 +712,144 @@ const uint16_t op_without_pop[MAX_UOP_ID + 1] = {
     [_POP_TOP_UNICODE] = _NOP,
 };
 
+typedef struct {
+    uint16_t nos_guard;
+    uint16_t fused_guard;
+} GuardFusion;
+
+static const GuardFusion guard_fusion[MAX_UOP_ID + 1] = {
+    [_GUARD_TOS_INT] = {_GUARD_NOS_INT, _GUARD_TOS_AND_NOS_INT},
+    [_GUARD_TOS_OVERFLOWED] = {
+        _GUARD_NOS_OVERFLOWED, _GUARD_TOS_AND_NOS_OVERFLOWED},
+    [_GUARD_TOS_FLOAT] = {_GUARD_NOS_FLOAT, _GUARD_TOS_AND_NOS_FLOAT},
+    [_GUARD_TOS_UNICODE] = {
+        _GUARD_NOS_UNICODE, _GUARD_TOS_AND_NOS_UNICODE},
+};
+
+/* Type analysis has already processed both guards before this cleanup pass.
+ * Only combine guards that are strictly adjacent because they come from the
+ * same macro expansion. Require the same side exit so removing the NOS guard
+ * preserves deoptimization behavior. */
+static void
+combine_matching_tos_nos_guards(
+    _PyUOpInstruction *buffer, int pc, int buffer_size)
+{
+    if (pc + 1 >= buffer_size) {
+        return;
+    }
+    GuardFusion fusion = guard_fusion[buffer[pc].opcode];
+    if (fusion.nos_guard == 0 ||
+        buffer[pc + 1].opcode != fusion.nos_guard ||
+        uop_get_target(&buffer[pc]) != uop_get_target(&buffer[pc + 1]))
+    {
+        return;
+    }
+    buffer[pc].opcode = fusion.fused_guard;
+    buffer[pc + 1].opcode = _NOP;
+}
+
+static int
+previous_peephole_uop(_PyUOpInstruction *buffer, int pc)
+{
+    while (pc >= 0 && buffer[pc].opcode == _NOP) {
+        pc--;
+    }
+    return pc;
+}
+
+/* Remove redundant stack shuffles left by constant-folding rewrites:
+ *     push push _SWAP(2) pop
+ *     push push push _RROT_3 pop pop
+ * In both forms, only the push closest to the shuffle survives. */
+static bool
+remove_folded_stack_shuffle(_PyUOpInstruction *buffer, int pc, int arity)
+{
+    assert(arity == 2 || arity == 3);
+    int pops[2];
+    int idx = pc;
+    for (int i = 0; i < arity - 1; i++) {
+        if (idx < 0 || op_without_pop[buffer[idx].opcode] != _NOP) {
+            return false;
+        }
+        pops[i] = idx;
+        idx = previous_peephole_uop(buffer, idx - 1);
+    }
+    int shuf = idx;
+    if (shuf < 0) {
+        return false;
+    }
+    uint16_t shuf_op = buffer[shuf].opcode;
+    bool is_shuffle =
+        (arity == 2 && shuf_op == _SWAP && buffer[shuf].oparg == 2) ||
+        (arity == 3 && shuf_op == _RROT_3);
+    if (!is_shuffle) {
+        return false;
+    }
+
+    int dead_pushes[2];
+    for (int i = 0; i < arity; i++) {
+        idx = previous_peephole_uop(buffer, idx - 1);
+        if (idx < 0) {
+            return false;
+        }
+        uint16_t push_op = buffer[idx].opcode;
+        if (push_op == _COPY || op_without_push[push_op] != _NOP) {
+            return false;
+        }
+        if (i > 0) {
+            dead_pushes[i - 1] = idx;
+        }
+    }
+
+    for (int i = 0; i < arity - 1; i++) {
+        buffer[dead_pushes[i]].opcode = _NOP;
+    }
+    buffer[shuf].opcode = _NOP;
+    for (int i = 0; i < arity - 1; i++) {
+        buffer[pops[i]].opcode = _NOP;
+    }
+    return true;
+}
+
+static bool
+remove_adjacent_push_pop(_PyUOpInstruction *buffer, int pc)
+{
+    int last = previous_peephole_uop(buffer, pc - 1);
+    if (last < 0) {
+        return false;
+    }
+    uint16_t push_replacement = op_without_push[buffer[last].opcode];
+    uint16_t pop_replacement = op_without_pop[buffer[pc].opcode];
+    if (push_replacement == 0 || pop_replacement == 0) {
+        return false;
+    }
+    buffer[last].opcode = push_replacement;
+    buffer[pc].opcode = pop_replacement;
+    return true;
+}
+
+/* Cancel out pushes and pops, repeatedly. So:
+ *     _LOAD_FAST + _POP_TOP + _POP_TOP + _LOAD_CONST_INLINE_BORROW + _POP_TOP
+ * ...becomes:
+ *     _NOP + _NOP + _POP_TOP + _NOP + _NOP */
+static void
+peephole_uops(_PyUOpInstruction *buffer, int buffer_size)
+{
+    for (int pc = 0; pc < buffer_size; pc++) {
+        combine_matching_tos_nos_guards(buffer, pc, buffer_size);
+        int opcode = buffer[pc].opcode;
+        while (op_without_pop[opcode]) {
+            if (remove_folded_stack_shuffle(buffer, pc, 2) ||
+                remove_folded_stack_shuffle(buffer, pc, 3) ||
+                remove_adjacent_push_pop(buffer, pc))
+            {
+                opcode = buffer[pc].opcode;
+                continue;
+            }
+            break;
+        }
+    }
+}
 
 static int
 remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
@@ -750,27 +881,6 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
             case _EXIT_TRACE:
             default:
             {
-                // Cancel out pushes and pops, repeatedly. So:
-                //     _LOAD_FAST + _POP_TOP + _POP_TOP + _LOAD_CONST_INLINE_BORROW + _POP_TOP
-                // ...becomes:
-                //     _NOP + _NOP + _POP_TOP + _NOP + _NOP
-                while (op_without_pop[opcode]) {
-                    _PyUOpInstruction *last = &buffer[pc - 1];
-                    while (op_skip[last->opcode]) {
-                        last--;
-                    }
-                    if (op_without_push[last->opcode] && op_without_pop[opcode]) {
-                        last->opcode = op_without_push[last->opcode];
-                        opcode = buffer[pc].opcode = op_without_pop[opcode];
-                        if (op_without_pop[last->opcode]) {
-                            opcode = last->opcode;
-                            pc = (int)(last - buffer);
-                        }
-                    }
-                    else {
-                        break;
-                    }
-                }
                 /* _PUSH_FRAME doesn't escape or error, but it
                  * does need the IP for the return address */
                 bool needs_ip = (opcode == _PUSH_FRAME || opcode == _YIELD_VALUE || opcode == _DYNAMIC_EXIT || opcode == _EXIT_TRACE);
@@ -820,6 +930,11 @@ _Py_uop_analyze_and_optimize(
     }
 
     assert(length > 0);
+
+    length = remove_unneeded_uops(output, length);
+    assert(length > 0);
+
+    peephole_uops(output, length);
 
     length = remove_unneeded_uops(output, length);
     assert(length > 0);
