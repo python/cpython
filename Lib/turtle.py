@@ -1558,13 +1558,14 @@ class TurtleScreen(TurtleScreenBase):
         filename = Path(filename)
         if not filename.parent.exists():
             raise FileNotFoundError(
-                f"The directory '{filename.parent}' does not exist."
-                " Cannot save to it."
+                "The directory does not exist. Cannot save to it",
+                filename=str(filename.parent),
             )
         if not overwrite and filename.exists():
             raise FileExistsError(
-                f"The file '{filename}' already exists. To overwrite it use"
-                " the 'overwrite=True' argument of the save function."
+                "The file already exists. To overwrite it use"
+                " the 'overwrite=True' argument of the save function",
+                filename=str(filename),
             )
         if (ext := filename.suffix) not in {".ps", ".eps"}:
             raise ValueError(
