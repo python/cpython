@@ -1447,6 +1447,7 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
         // objects from that generation and all generations younger than it.
         generation = gc_select_generation(gcstate);
         if (generation < 0) {
+            gcstate->frame = NULL;
             // No generation needs to be collected.
             _Py_atomic_store_int(&gcstate->collecting, 0);
             return 0;
