@@ -411,7 +411,6 @@ PEGEN_HEADERS= \
 		$(srcdir)/Parser/string_parser.h
 
 TOKENIZER_HEADERS= \
-		Parser/lexer/lexer.h \
 		Parser/lexer/lexer_internal.h \
 		Parser/lexer/state.h \
 		Parser/tokenizer/reader.h \

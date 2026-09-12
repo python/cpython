@@ -378,12 +378,4 @@ _PyTokenizer_print_escape(FILE *f, const char *s, Py_ssize_t size)
     }
     putc('"', f);
 }
-
-void
-_PyTokenizer_tok_dump(int type, char *start, char *end)
-{
-    fprintf(stderr, "%s", _PyParser_TokenNames[type]);
-    if (type == NAME || type == NUMBER || type == STRING || type == OP)
-        fprintf(stderr, "(%.*s)", (int)(end - start), start);
-}
 #endif

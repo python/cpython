@@ -10,8 +10,6 @@
 #define MAXFTSTRINGLEVEL 150
 #define FTSTRING_STACK_INLINE_CAPACITY 1
 
-
-
 typedef enum {
     FTSTRING_MODE_MIDDLE,
     FTSTRING_MODE_EXPRESSION,
@@ -71,14 +69,6 @@ typedef struct {
     int comment_newline;
     indentation_level stack[MAXINDENT];
 } lexer_layout_state;
-
-/* Supplemental source context for a terminal error. location is the reporting
-   cursor, independent of the scanner cursor; lineno == 0 means absent.
-   The text span may cover multiple physical lines. */
-typedef struct {
-    _PyTok_Loc location;
-    _PyTok_Span text_span;
-} _PyTokenizer_Diagnostic;
 
 /* Tokenizer state */
 struct tok_state {

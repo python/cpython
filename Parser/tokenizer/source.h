@@ -44,24 +44,4 @@ PyAPI_FUNC(const char *) _PyTok_SourceLineView(
 PyAPI_FUNC(int) _PyTok_SourceLineIsImplicit(
     const _PyTok_SourceText *, int);
 
-static inline _PyTok_Off
-_PyTok_SourceFindLineEnd(const _PyTok_SourceText *source, _PyTok_Off start)
-{
-    if (source->bytes == NULL || start < source->base_offset ||
-            start - source->base_offset >= source->len) {
-        PyErr_SetString(PyExc_SystemError,
-                        "corrupt tokenizer source line index");
-        return -1;
-    }
-    _PyTok_Off relative_start = start - source->base_offset;
-    const char *newline = memchr(
-        source->bytes + relative_start, '\n', source->len - relative_start);
-    if (newline == NULL) {
-        PyErr_SetString(PyExc_SystemError,
-                        "corrupt tokenizer source line index");
-        return -1;
-    }
-    return source->base_offset + (newline - source->bytes) + 1;
-}
-
 #endif
