@@ -147,6 +147,8 @@ typedef enum _WIN32_THREADSTATE {
 #define MAX_STACK_CHUNK_SIZE (16 * 1024 * 1024)  /* 16 MB max for stack chunks */
 #define MAX_LONG_DIGITS 64  /* Allows values up to ~2^1920 */
 #define MAX_SET_TABLE_SIZE (1 << 20)  /* 1 million entries max for set iteration */
+#define MAX_FRAME_CHAIN_DEPTH (1024 + 512)  /* Iteration bound for frame chain walks */
+#define MAX_TASK_WAITER_WALK_TASKS (1 << 14)  /* Total-task bound for waiter walks */
 
 #ifndef MAX
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
@@ -478,12 +480,6 @@ typedef int (*thread_processor_func)(
     void *context
 );
 
-typedef int (*set_entry_processor_func)(
-    RemoteUnwinderObject *unwinder,
-    uintptr_t key_addr,
-    void *context
-);
-
 typedef int (*interpreter_processor_func)(
     RuntimeOffsets *offsets,
     uintptr_t interpreter_state_addr,
@@ -528,7 +524,6 @@ extern int validate_debug_offsets(struct _Py_DebugOffsets *debug_offsets);
  * ============================================================================ */
 
 extern int read_ptr(RemoteUnwinderObject *unwinder, uintptr_t address, uintptr_t *result);
-extern int read_Py_ssize_t(RemoteUnwinderObject *unwinder, uintptr_t address, Py_ssize_t *result);
 extern int read_char(RemoteUnwinderObject *unwinder, uintptr_t address, char *result);
 extern int read_py_ptr(RemoteUnwinderObject *unwinder, uintptr_t address, uintptr_t *ptr_addr);
 
@@ -729,12 +724,6 @@ extern int parse_task(
     PyObject *render_to
 );
 
-extern int parse_coro_chain(
-    RemoteUnwinderObject *unwinder,
-    uintptr_t coro_address,
-    PyObject *render_to
-);
-
 extern int parse_async_frame_chain(
     RemoteUnwinderObject *unwinder,
     PyObject *calls,
@@ -742,32 +731,10 @@ extern int parse_async_frame_chain(
     uintptr_t running_task_code_obj
 );
 
-/* Set iteration */
-extern int iterate_set_entries(
-    RemoteUnwinderObject *unwinder,
-    uintptr_t set_addr,
-    set_entry_processor_func processor,
-    void *context
-);
-
-/* Task awaited_by processing */
-extern int process_task_awaited_by(
-    RemoteUnwinderObject *unwinder,
-    uintptr_t task_address,
-    set_entry_processor_func processor,
-    void *context
-);
-
 extern int process_single_task_node(
     RemoteUnwinderObject *unwinder,
     uintptr_t task_addr,
     PyObject **task_info,
-    PyObject *result
-);
-
-extern int process_task_and_waiters(
-    RemoteUnwinderObject *unwinder,
-    uintptr_t task_addr,
     PyObject *result
 );
 
