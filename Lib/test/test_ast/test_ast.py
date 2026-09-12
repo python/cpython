@@ -1165,6 +1165,20 @@ class AST_Tests(unittest.TestCase):
                                     r"Exceeds the limit \(\d+ digits\)"):
             repr(ast.Constant(value=eval(source)))
 
+    def test_repr_missing_fields_crash(self):
+        class FieldsMissingMeta(type):
+            def __getattribute__(self, name):
+                if name == "_fields":
+                    raise AttributeError
+                return super().__getattribute__(name)
+
+        class FieldsMissing(ast.AST, metaclass=FieldsMissingMeta):
+            def __init__(self):
+                pass
+
+        node = FieldsMissing()
+        self.assertEqual(repr(node), "FieldsMissing()")
+
     def test_tstring(self):
         # Test AST structure for simple t-string
         tree = ast.parse('t"Hello"')

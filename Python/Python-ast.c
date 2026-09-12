@@ -5810,6 +5810,11 @@ ast_repr_max_depth(AST_object *self, int depth)
         return NULL;
     }
 
+    if (fields == NULL) {
+        Py_ReprLeave((PyObject *)self);
+        return PyUnicode_FromFormat("%s()", Py_TYPE(self)->tp_name);
+    }
+
     Py_ssize_t numfields = PySequence_Size(fields);
     if (numfields < 0) {
         Py_ReprLeave((PyObject *)self);
