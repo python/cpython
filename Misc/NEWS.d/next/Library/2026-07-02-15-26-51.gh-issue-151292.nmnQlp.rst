@@ -1,0 +1,3 @@
+Fix ``profiling.sampling --binary`` leaving unreadable profile files when
+the ``_remote_debugging`` binary writer raises :exc:`OverflowError`. Patch
+by Maurycy Pawłowski-Wieroński.
