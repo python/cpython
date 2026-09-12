@@ -1,0 +1,2 @@
+Accept urlsafe base64 in email headers, as those are sometimes created by
+email clients.
