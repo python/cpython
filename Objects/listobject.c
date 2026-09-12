@@ -2968,6 +2968,22 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
     saved_ob_size = Py_SIZE(self);
     saved_ob_item = self->ob_item;
     saved_allocated = self->allocated;
+#ifdef Py_GIL_DISABLED
+    // We can't use in-place sort for free-threaded, because list can be concurrently 
+    // read by other threads, leading to data race.
+    PyObject **orig_ob_item = saved_ob_item;
+    if (saved_ob_size >= 2 && _PyObject_GC_IS_SHARED(self)) {
+        // sort only take place when size >= 2, see `nremaining`
+        _PyListArray *sort_array = list_allocate_array((size_t)saved_allocated);
+        if (sort_array == NULL) {
+            PyErr_NoMemory();
+            return NULL;
+        }
+        memcpy(sort_array->ob_item, saved_ob_item,
+               (size_t)saved_ob_size * sizeof(PyObject *));
+        saved_ob_item = sort_array->ob_item;
+    }
+#endif
     Py_SET_SIZE(self, 0);
     FT_ATOMIC_STORE_PTR_RELEASE(self->ob_item, NULL);
     self->allocated = -1; /* any operation will reset it to >= 0 */
@@ -3202,6 +3218,13 @@ keyfunc_fail:
 #endif
         free_list_items(final_ob_item, use_qsbr);
     }
+#ifdef Py_GIL_DISABLED
+    if (saved_ob_item != orig_ob_item) {
+        // Only release memory, don't decref, because elements are owned by the published sorted array now.
+        ensure_shared_on_resize(self);
+        free_list_items(orig_ob_item, _PyObject_GC_IS_SHARED(self));
+    }
+#endif
     return Py_XNewRef(result);
 }
 #undef IFLT
