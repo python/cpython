@@ -31,6 +31,7 @@ import pprint
 import sys
 import builtins
 import pkgutil
+import types
 from inspect import iscoroutinefunction
 import threading
 from annotationlib import Format
@@ -1470,6 +1471,8 @@ class _patch(object):
             original = getattr(target, name, DEFAULT)
         else:
             local = True
+            if isinstance(original, types.LazyImportType):
+             original = original.resolve()
 
         if name in _builtins and isinstance(target, ModuleType):
             self.create = True

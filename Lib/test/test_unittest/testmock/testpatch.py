@@ -13,6 +13,7 @@ from test.test_unittest.testmock.support import SomeClass, is_instance
 
 from test.support.import_helper import DirsOnSysPath
 from test.test_importlib.util import uncache
+lazy from json import dumps as lazy_dumps # noqa: F401
 from unittest.mock import (
     NonCallableMock, CallableMixin, sentinel,
     MagicMock, Mock, NonCallableMagicMock, patch, _patch,
@@ -2100,6 +2101,13 @@ class PatchTest(unittest.TestCase):
 
         test()
 
+
+    def test_patch_autospec_lazy_import(self):
+        self.assertIn("lazy_dumps", globals())
+
+        with patch(f"{__name__}.lazy_dumps", autospec=True) as mock_dumps:
+            mock_dumps({})
+            mock_dumps.assert_called_once_with({})
 
 if __name__ == '__main__':
     unittest.main()
