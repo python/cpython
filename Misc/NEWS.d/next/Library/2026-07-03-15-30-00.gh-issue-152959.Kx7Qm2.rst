@@ -1,0 +1,2 @@
+:mod:`plistlib` now raises :exc:`ValueError` for a ``<key>`` outside a
+``<dict>`` in an XML plist. Patch by tonghuaroot.
