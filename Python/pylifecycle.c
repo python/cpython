@@ -924,8 +924,14 @@ pycore_init_builtins(PyThreadState *tstate)
         return _PyStatus_ERR("failed to add exceptions to builtins");
     }
 
-    if (_PyBuiltin_InitPythonFunctions(builtins_dict) < 0) {
-        return _PyStatus_ERR("failed to add Python-implemented builtins");
+    /* The Python-implemented builtins live in the frozen _builtins module.
+       Programs/_freeze_module has no frozen modules (it's what creates
+       them) and opts out via _install_importlib, like the import system. */
+    const PyConfig *config = _PyInterpreterState_GetConfig(interp);
+    if (config->_install_importlib) {
+        if (_PyBuiltin_InitPythonFunctions(builtins_dict) < 0) {
+            return _PyStatus_ERR("failed to add Python-implemented builtins");
+        }
     }
 
     interp->builtins_copy = PyDict_Copy(interp->builtins);

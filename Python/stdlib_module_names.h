@@ -12,6 +12,7 @@ static const char* _Py_stdlib_module_names[] = {
 "_asyncio",
 "_bisect",
 "_blake2",
+"_builtins",
 "_bz2",
 "_codecs",
 "_codecs_cn",

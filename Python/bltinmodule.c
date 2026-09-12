@@ -3494,97 +3494,42 @@ static struct PyModuleDef builtinsmodule = {
 
 /* Builtins implemented in Python.
 
-   Each entry below pairs the name of a builtin with the Python source that
-   defines it.  _PyBuiltin_InitPythonFunctions() compiles and runs each
-   source in a shared private namespace and copies the named function into
-   the builtins dict.
-
-*/
-
-static const char anext_source[] =
-    "_NOT_GIVEN = object()\n"
-    "\n"
-    "\n"
-    "def anext(async_iterator, default=_NOT_GIVEN, /):\n"
-    "    \"\"\"Return the next item from the async iterator.\n"
-    "\n"
-    "    If default is given and the async iterator is exhausted,\n"
-    "    it is returned instead of raising StopAsyncIteration.\n"
-    "    \"\"\"\n"
-    "    cls = type(async_iterator)\n"
-    "    try:\n"
-    "        # Looked up on the type, like the C slot am_anext.\n"
-    "        anext_method = cls.__anext__\n"
-    "    except AttributeError:\n"
-    "        raise TypeError(\n"
-    "            f\"'{cls.__name__}' object is not an async iterator\"\n"
-    "        ) from None\n"
-    "    awaitable = anext_method(async_iterator)\n"
-    "    if default is _NOT_GIVEN:\n"
-    "        return awaitable\n"
-    "    return _anext_with_default(awaitable, default)\n"
-    "\n"
-    "\n"
-    "async def _anext_with_default(awaitable, default):\n"
-    "    try:\n"
-    "        return await awaitable\n"
-    "    except StopAsyncIteration:\n"
-    "        return default\n";
-
-struct builtin_python_function {
-    PyObject *name;
-    const char *source;
-};
-
-static const struct builtin_python_function builtin_python_functions[] = {
-    {&_Py_ID(anext), anext_source},
-    {NULL, NULL},
-};
-
-_Py_DECLARE_STR(anon_builtins, "<builtins>");
+   Lib/_builtins.py is frozen into the interpreter as a bootstrap module
+   (see Tools/build/freeze_modules.py), so it can be imported here before
+   the import system exists.  The names in its __all__ are copied into the
+   builtins dict. */
 
 int
 _PyBuiltin_InitPythonFunctions(PyObject *dict)
 {
-    int rc = -1;
-
-    PyObject *globals = PyDict_New();
-    if (globals == NULL) {
+    if (PyImport_ImportFrozenModule("_builtins") <= 0) {
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(PyExc_ImportError,
+                            "frozen module _builtins not found");
+        }
         return -1;
     }
-    if (PyDict_SetItem(globals, &_Py_ID(__builtins__), dict) < 0) {
-        goto done;
-    }
-    if (PyDict_SetItem(globals, &_Py_ID(__name__), &_Py_ID(builtins)) < 0) {
-        goto done;
+    PyObject *mod = PyImport_AddModuleRef("_builtins");
+    if (mod == NULL) {
+        return -1;
     }
 
-    for (const struct builtin_python_function *f = builtin_python_functions;
-         f->name != NULL; f++)
-    {
-        PyObject *code = Py_CompileStringObject(f->source,
-                                                &_Py_STR(anon_builtins),
-                                                Py_file_input, NULL, 0);
-        if (code == NULL) {
+    int rc = -1;
+    PyObject *all = PyObject_GetAttr(mod, &_Py_ID(__all__));
+    if (all == NULL) {
+        goto done;
+    }
+    Py_ssize_t n = PyList_Size(all);
+    if (n < 0) {
+        goto done;
+    }
+    for (Py_ssize_t i = 0; i < n; i++) {
+        PyObject *name = PyList_GET_ITEM(all, i);
+        PyObject *func = PyObject_GetAttr(mod, name);
+        if (func == NULL) {
             goto done;
         }
-        PyObject *result = PyEval_EvalCode(code, globals, globals);
-        Py_DECREF(code);
-        if (result == NULL) {
-            goto done;
-        }
-        Py_DECREF(result);
-
-        PyObject *func;
-        if (PyDict_GetItemRef(globals, f->name, &func) != 1) {
-            if (!PyErr_Occurred()) {
-                PyErr_Format(PyExc_SystemError,
-                             "builtin %U not defined by its Python source",
-                             f->name);
-            }
-            goto done;
-        }
-        int r = PyDict_SetItem(dict, f->name, func);
+        int r = PyDict_SetItem(dict, name, func);
         Py_DECREF(func);
         if (r < 0) {
             goto done;
@@ -3593,7 +3538,8 @@ _PyBuiltin_InitPythonFunctions(PyObject *dict)
     rc = 0;
 
 done:
-    Py_DECREF(globals);
+    Py_XDECREF(all);
+    Py_DECREF(mod);
     return rc;
 }
 
