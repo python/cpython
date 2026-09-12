@@ -1024,6 +1024,7 @@ parse_hh_mm_ss_ff(const char *tstr, const char *tstr_end, int *hour,
     int *vals[3] = {hour, minute, second};
     // This is initialized to satisfy an erroneous compiler warning.
     unsigned char has_separator = 1;
+    unsigned char has_fraction = 0;
 
     // Parse [HH[:?MM[:?SS]]]
     for (size_t i = 0; i < 3; ++i) {
@@ -1044,6 +1045,7 @@ parse_hh_mm_ss_ff(const char *tstr, const char *tstr_end, int *hour,
             if (p >= p_end) {
                 return -3;  // Decimal mark not followed by any digit
             }
+            has_fraction = 1;
             break;
         }
         else if (p >= p_end) {
@@ -1061,6 +1063,14 @@ parse_hh_mm_ss_ff(const char *tstr, const char *tstr_end, int *hour,
         else {
             return -4;  // Malformed time separator
         }
+    }
+
+    // A fractional component must be introduced by a decimal mark.  Falling
+    // out of the loop above without having seen one means the basic format
+    // left unconsumed characters after SS (e.g. "12345678"), which would
+    // otherwise be silently parsed as a fraction.
+    if (!has_fraction) {
+        return -4;  // Malformed microsecond separator
     }
 
     // Parse fractional components
