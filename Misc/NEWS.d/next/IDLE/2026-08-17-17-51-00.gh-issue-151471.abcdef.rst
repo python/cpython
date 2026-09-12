@@ -1,0 +1,1 @@
+IDLE now colorizes ``type`` as a soft keyword when it begins a statement.
