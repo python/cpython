@@ -24,23 +24,26 @@ import os
 import shlex
 from sys import executable, platform  # Platform is set for one test.
 
-from tkinter import Toplevel, StringVar, BooleanVar, W, E, S
-from tkinter.ttk import Frame, Button, Entry, Label, Checkbutton
+from tkinter import StringVar, BooleanVar, W, S, EW, LEFT
+from tkinter.ttk import Button, Checkbutton, Entry, Label
 from tkinter import filedialog
 from tkinter.font import Font
-from tkinter.simpledialog import _setup_dialog
+from tkinter.simpledialog import Dialog
 
-class Query(Toplevel):
+class Query(Dialog):
     """Base class for getting verified answer from a user.
 
     For this base class, accept any non-blank string.
+    Built on tkinter.simpledialog.Dialog, which provides the modal
+    behavior and the OK/Cancel buttons (with <Return>, <Escape>, and
+    Alt-underline keyboard equivalents).
     """
     def __init__(self, parent, title, message, *, text0='', used_names={},
                  _htest=False, _utest=False):
         """Create modal popup, return when destroyed.
 
-        Additional subclass init must be done before this unless
-        _utest=True is passed to suppress wait_window().
+        Additional subclass init must be done before calling this
+        unless _utest=True is passed to suppress wait_window().
 
         title - string, title of popup dialog
         message - string, informational message to display
@@ -49,78 +52,56 @@ class Query(Toplevel):
         _htest - bool, change box location when running htest
         _utest - bool, leave window hidden and not modal
         """
-        self.parent = parent  # Needed for Font call.
         self.message = message
         self.text0 = text0
         self.used_names = used_names
+        self._htest = _htest
+        self._utest = _utest
+        super().__init__(parent, title, use_ttk=True)
 
-        Toplevel.__init__(self, parent)
-        self.withdraw()  # Hide while configuring, especially geometry.
-        self.title(title)
-        self.transient(parent)
-        if not _utest:  # Otherwise fail when directly run unittest.
-            self.grab_set()
+    def _show_modal(self):
+        "Suppress the modal wait when unit testing."
+        if not self._utest:
+            super()._show_modal()
 
-        _setup_dialog(self)
-        if self._windowingsystem == 'aqua':
-            self.bind("<Command-.>", self.cancel)
-        self.bind('<Key-Escape>', self.cancel)
-        self.protocol("WM_DELETE_WINDOW", self.cancel)
-        self.bind('<Key-Return>', self.ok)
-        self.bind("<KP_Enter>", self.ok)
-
-        self.create_widgets()
-        self.update_idletasks()  # Need here for winfo_reqwidth below.
-        self.geometry(  # Center dialog over parent (or below htest box).
-                "+%d+%d" % (
-                    parent.winfo_rootx() +
-                    (parent.winfo_width()/2 - self.winfo_reqwidth()/2),
-                    parent.winfo_rooty() +
-                    ((parent.winfo_height()/2 - self.winfo_reqheight()/2)
-                    if not _htest else 150)
-                ) )
-        self.resizable(height=False, width=False)
-
-        if not _utest:
-            self.deiconify()  # Unhide now that geometry set.
-            self.entry.focus_set()
-            self.wait_window()
-
-    def create_widgets(self, ok_text='OK'):  # Do not replace.
-        """Create entry (rows, extras, buttons.
+    def body(self, master):  # Do not replace.
+        """Create entry widgets; return the entry for initial focus.
 
         Entry stuff on rows 0-2, spanning cols 0-2.
-        Buttons on row 99, cols 1, 2.
+        Subclass extras (create_extra) go on rows 10-12.
         """
         # Bind to self the widgets needed for entry_ok or unittest.
-        self.frame = frame = Frame(self, padding=10)
-        frame.grid(column=0, row=0, sticky='news')
-        frame.grid_columnconfigure(0, weight=1)
+        self.frame = master
+        master.columnconfigure(0, weight=1)
 
-        entrylabel = Label(frame, anchor='w', justify='left',
-                           text=self.message)
+        entrylabel = Label(master, anchor=W, justify=LEFT, text=self.message)
         self.entryvar = StringVar(self, self.text0)
-        self.entry = Entry(frame, width=30, textvariable=self.entryvar)
+        self.entry = Entry(master, width=30, textvariable=self.entryvar)
         self.error_font = Font(name='TkCaptionFont',
                                exists=True, root=self.parent)
-        self.entry_error = Label(frame, text=' ', foreground='red',
+        self.entry_error = Label(master, text=' ', foreground='red',
                                  font=self.error_font)
         # Display or blank error by setting ['text'] =.
-        entrylabel.grid(column=0, row=0, columnspan=3, padx=5, sticky=W)
-        self.entry.grid(column=0, row=1, columnspan=3, padx=5, sticky=W+E,
-                        pady=[10,0])
-        self.entry_error.grid(column=0, row=2, columnspan=3, padx=5,
-                              sticky=W+E)
+        entrylabel.grid(column=0, row=0, columnspan=3, padx='2m', pady='2m',
+                        sticky=EW)
+        self.entry.grid(column=0, row=1, columnspan=3, padx='2m',
+                        pady=(0, '2m'), sticky=EW)
+        self.entry_error.grid(column=0, row=2, columnspan=3, padx='2m',
+                              pady=(0, '2m'), sticky=EW)
 
         self.create_extra()
 
-        self.button_ok = Button(
-                frame, text=ok_text, default='active', command=self.ok)
-        self.button_cancel = Button(
-                frame, text='Cancel', command=self.cancel)
+        self.resizable(height=False, width=False)
+        if self._windowingsystem == 'aqua':
+            self.bind("<Command-.>", self.cancel)
+        self.bind("<KP_Enter>", self.ok)
+        return self.entry
 
-        self.button_ok.grid(column=1, row=99, padx=5)
-        self.button_cancel.grid(column=2, row=99, padx=5)
+    def buttonbox(self):  # Do not replace.
+        "Add the standard buttons and expose them for unittest."
+        super().buttonbox()
+        self.button_ok = self.nametowidget('ok')
+        self.button_cancel = self.nametowidget('cancel')
 
     def create_extra(self): pass  # Override to add widgets.
 
@@ -136,28 +117,18 @@ class Query(Toplevel):
             return None
         return entry
 
-    def ok(self, event=None):  # Do not replace.
-        '''If entry is valid, bind it to 'result' and destroy tk widget.
+    def validate(self):  # Do not replace.
+        """If entry is valid, store it in 'result' and return True.
 
-        Otherwise leave dialog open for user to correct entry or cancel.
-        '''
+        Otherwise show the error and leave the dialog open (Dialog.ok
+        puts the focus back on the entry).
+        """
         self.entry_error['text'] = ''
         entry = self.entry_ok()
-        if entry is not None:
-            self.result = entry
-            self.destroy()
-        else:
-            # [Ok] moves focus.  (<Return> does not.)  Move it back.
-            self.entry.focus_set()
-
-    def cancel(self, event=None):  # Do not replace.
-        "Set dialog result to None and destroy tk widget."
-        self.result = None
-        self.destroy()
-
-    def destroy(self):
-        self.grab_release()
-        super().destroy()
+        if entry is None:
+            return False
+        self.result = entry
+        return True
 
 
 class SectionName(Query):
@@ -260,9 +231,9 @@ class HelpSource(Query):
                 used_names=used_names, _htest=_htest, _utest=_utest)
 
     def create_extra(self):
-        "Add path widjets to rows 10-12."
+        "Add path widgets to rows 10-12."
         frame = self.frame
-        pathlabel = Label(frame, anchor='w', justify='left',
+        pathlabel = Label(frame, anchor=W, justify=LEFT,
                           text='Help File Path: Enter URL or browse for file')
         self.pathvar = StringVar(self, self.filepath)
         self.path = Entry(frame, textvariable=self.pathvar, width=40)
@@ -271,13 +242,14 @@ class HelpSource(Query):
         self.path_error = Label(frame, text=' ', foreground='red',
                                 font=self.error_font)
 
-        pathlabel.grid(column=0, row=10, columnspan=3, padx=5, pady=[10,0],
-                       sticky=W)
-        self.path.grid(column=0, row=11, columnspan=2, padx=5, sticky=W+E,
-                       pady=[10,0])
-        browse.grid(column=2, row=11, padx=5, sticky=W+S)
-        self.path_error.grid(column=0, row=12, columnspan=3, padx=5,
-                             sticky=W+E)
+        pathlabel.grid(column=0, row=10, columnspan=3, padx='2m',
+                       pady=(0, '2m'), sticky=EW)
+        self.path.grid(column=0, row=11, columnspan=2, padx='2m',
+                       pady=(0, '2m'), sticky=EW)
+        browse.grid(column=2, row=11, padx=(0, '2m'), pady=(0, '2m'),
+                    sticky=W+S)
+        self.path_error.grid(column=0, row=12, columnspan=3, padx='2m',
+                             pady=(0, '2m'), sticky=EW)
 
     def askfilename(self, filetypes, initdir, initfile):  # htest #
         # Extracted from browse_file so can mock for unittests.
@@ -361,9 +333,10 @@ class CustomRun(Query):
         self.args_error = Label(frame, text=' ', foreground='red',
                                 font=self.error_font)
 
-        restart.grid(column=0, row=10, columnspan=3, padx=5, sticky='w')
-        self.args_error.grid(column=0, row=12, columnspan=3, padx=5,
-                             sticky='we')
+        restart.grid(column=0, row=10, columnspan=3, padx='2m',
+                     pady=(0, '2m'), sticky=W)
+        self.args_error.grid(column=0, row=12, columnspan=3, padx='2m',
+                             pady=(0, '2m'), sticky=EW)
 
     def cli_args_ok(self):
         "Return command line arg list or None if error."
