@@ -1,0 +1,3 @@
+Fix :mod:`venv` activation under (t)csh for environments whose path or
+``--prompt`` contains ``!``: ``activate.csh`` is now quoted so that csh does
+not perform history expansion on it.
