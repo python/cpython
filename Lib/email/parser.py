@@ -12,6 +12,8 @@ from io import StringIO, TextIOWrapper
 from email.feedparser import FeedParser, BytesFeedParser
 from email._policybase import compat32
 
+_FEED_CHUNK_SIZE = 8192
+
 
 class Parser:
     def __init__(self, _class=None, *, policy=compat32):
@@ -38,6 +40,18 @@ class Parser:
         self._class = _class
         self.policy = policy
 
+    def _parse_chunks(self, chunk_generator, headersonly=False):
+        """Internal method / implementation detail
+
+        Parses chunks from a chunk generator into a FeedParser
+        """
+        feedparser = FeedParser(self._class, policy=self.policy)
+        if headersonly:
+            feedparser._set_headersonly()
+        for data in chunk_generator:
+            feedparser.feed(data)
+        return feedparser.close()
+
     def parse(self, fp, headersonly=False):
         """Create a message structure from the data in a file.
 
@@ -46,12 +60,12 @@ class Parser:
         parsing after reading the headers or not.  The default is False,
         meaning it parses the entire contents of the file.
         """
-        feedparser = FeedParser(self._class, policy=self.policy)
-        if headersonly:
-            feedparser._set_headersonly()
-        while data := fp.read(8192):
-            feedparser.feed(data)
-        return feedparser.close()
+        def _fp_get_chunks():
+            while data := fp.read(_FEED_CHUNK_SIZE):
+                yield data
+        _chunk_generator = _fp_get_chunks()
+
+        return self._parse_chunks(_chunk_generator, headersonly)
 
     def parsestr(self, text, headersonly=False):
         """Create a message structure from a string.
@@ -61,7 +75,12 @@ class Parser:
         not.  The default is False, meaning it parses the entire contents of
         the file.
         """
-        return self.parse(StringIO(text), headersonly=headersonly)
+        _chunk_generator = (
+            text[offset:offset + _FEED_CHUNK_SIZE]
+            for offset in range(0, len(text), _FEED_CHUNK_SIZE)
+        )
+
+        return self._parse_chunks(_chunk_generator, headersonly)
 
 
 class HeaderParser(Parser):
@@ -115,8 +134,13 @@ class BytesParser:
         not.  The default is False, meaning it parses the entire contents of
         the file.
         """
-        text = text.decode('ASCII', errors='surrogateescape')
-        return self.parser.parsestr(text, headersonly)
+        _chunk_generator = (
+            text[offset:offset + _FEED_CHUNK_SIZE].decode(
+                'ASCII', errors='surrogateescape')
+            for offset in range(0, len(text), _FEED_CHUNK_SIZE)
+        )
+
+        return self.parser._parse_chunks(_chunk_generator, headersonly)
 
 
 class BytesHeaderParser(BytesParser):
