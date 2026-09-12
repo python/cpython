@@ -276,6 +276,11 @@ initialize_token(Parser *p, Token *parser_token, struct token *new_token, int to
 
 static int
 _resize_tokens_array(Parser *p) {
+    if (p->size > INT_MAX / 2 ||
+        (size_t)p->size > PY_SSIZE_T_MAX / (2 * sizeof(*p->tokens))) {
+        PyErr_NoMemory();
+        return -1;
+    }
     int newsize = p->size * 2;
     Token **new_tokens = PyMem_Realloc(p->tokens, (size_t)newsize * sizeof(Token *));
     if (new_tokens == NULL) {
@@ -284,13 +289,13 @@ _resize_tokens_array(Parser *p) {
     }
     p->tokens = new_tokens;
 
+    Token *chunk = PyMem_Calloc((size_t)(newsize - p->size), sizeof(Token));
+    if (chunk == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
     for (int i = p->size; i < newsize; i++) {
-        p->tokens[i] = PyMem_Calloc(1, sizeof(Token));
-        if (p->tokens[i] == NULL) {
-            p->size = i; // Needed, in order to cleanup correctly after parser fails
-            PyErr_NoMemory();
-            return -1;
-        }
+        p->tokens[i] = &chunk[i - p->size];
     }
     p->size = newsize;
     return 0;
@@ -948,7 +953,9 @@ _PyPegen_Parser_Free(Parser *p)
 {
     PyMem_Free(p->identifier_cache);
     Py_XDECREF(p->normalize);
-    for (int i = 0; i < p->size; i++) {
+    // Resizes allocate blocks starting at indices 1, 2, 4, and so on.
+    PyMem_Free(p->tokens[0]);
+    for (int i = 1; i < p->size; i *= 2) {
         PyMem_Free(p->tokens[i]);
     }
     PyMem_Free(p->tokens);
