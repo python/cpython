@@ -1,0 +1,3 @@
+Fix :c:func:`PyBytesWriter_Resize` to handle properly memory allocation
+failure. Leave the writer unchanged on error, instead of leaving it in an
+inconsistent state. Patch by Victor Stinner.
