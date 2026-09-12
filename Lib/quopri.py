@@ -109,14 +109,16 @@ def encodestring(s, quotetabs=False, header=False):
 
 
 
-def decode(input, output, header=False):
+def decode(input, output, header=False, strip_ws=False):
     """Read 'input', apply quoted-printable decoding, and write to 'output'.
     'input' and 'output' are binary file objects.
-    If 'header' is true, decode underscore as space (per RFC 1522)."""
+    If 'header' is true, decode underscore as space (per RFC 1522).
+    If 'strip_ws' is true, strip whitespace at the end of a line (per
+    RFC 2045)."""
 
     if a2b_qp is not None:
         data = input.read()
-        odata = a2b_qp(data, header=header)
+        odata = a2b_qp(data, header=header, strip_ws=strip_ws)
         output.write(odata)
         return
 
@@ -125,11 +127,19 @@ def decode(input, output, header=False):
         i, n = 0, len(line)
         if n > 0 and line[n-1:n] == b'\n':
             partial = 0; n = n-1
-            # Strip trailing whitespace
-            while n > 0 and line[n-1:n] in b" \t\r":
-                n = n-1
+            # Separate off the line ending (keeping it to re-add after
+            # decoding) so that a trailing "=" -- possibly before the "\r" of
+            # a "\r\n" pair -- is recognized as a soft line break.
+            if n > 0 and line[n-1:n] == b'\r':
+                n = n-1; eol = b'\r\n'
+            else:
+                eol = b'\n'
         else:
-            partial = 1
+            partial = 1; eol = b''
+        if strip_ws:
+            # Strip trailing whitespace (RFC 2045).
+            while n > 0 and line[n-1:n] in b" \t":
+                n = n-1
         while i < n:
             c = line[i:i+1]
             if c == b'_' and header:
@@ -138,25 +148,23 @@ def decode(input, output, header=False):
                 new = new + c; i = i+1
             elif i+1 == n and not partial:
                 partial = 1; break
-            elif i+1 < n and line[i+1:i+2] == ESCAPE:
-                new = new + ESCAPE; i = i+2
             elif i+2 < n and ishex(line[i+1:i+2]) and ishex(line[i+2:i+3]):
                 new = new + bytes((unhex(line[i+1:i+3]),)); i = i+3
             else: # Bad escape sequence -- leave it in
                 new = new + c; i = i+1
         if not partial:
-            output.write(new + b'\n')
+            output.write(new + eol)
             new = b''
     if new:
         output.write(new)
 
-def decodestring(s, header=False):
+def decodestring(s, header=False, strip_ws=False):
     if a2b_qp is not None:
-        return a2b_qp(s, header=header)
+        return a2b_qp(s, header=header, strip_ws=strip_ws)
     from io import BytesIO
     infp = BytesIO(s)
     outfp = BytesIO()
-    decode(infp, outfp, header=header)
+    decode(infp, outfp, header=header, strip_ws=strip_ws)
     return outfp.getvalue()
 
 

@@ -1418,6 +1418,10 @@ class BinASCIITest(unittest.TestCase):
         self.assertEqual(a2b_qp(type2test(b"=")), b"")
         self.assertEqual(a2b_qp(type2test(b"= ")), b"= ")
         self.assertEqual(a2b_qp(type2test(b"==")), b"=")
+        # A stray "=" is left in place and the next character is rescanned,
+        # so "=41" after it is decoded as a fresh escape (gh-62222).
+        self.assertEqual(a2b_qp(type2test(b"==41")), b"=A")
+        self.assertEqual(a2b_qp(type2test(b"==g")), b"==g")
         self.assertEqual(a2b_qp(type2test(b"=\nAB")), b"AB")
         self.assertEqual(a2b_qp(type2test(b"=\r\nAB")), b"AB")
         self.assertEqual(a2b_qp(type2test(b"=\rAB")), b"")  # ?
@@ -1430,6 +1434,21 @@ class BinASCIITest(unittest.TestCase):
 
         self.assertEqual(a2b_qp(type2test(b'_')), b'_')
         self.assertEqual(a2b_qp(type2test(b'_'), header=True), b' ')
+
+        # strip_ws strips whitespace at the end of a line (RFC 2045), but
+        # leaves whitespace that was encoded (=20/=09) untouched. By default
+        # trailing whitespace is kept.
+        self.assertEqual(a2b_qp(type2test(b"foo   \n")), b"foo   \n")
+        self.assertEqual(a2b_qp(type2test(b"foo   \n"), strip_ws=True), b"foo\n")
+        self.assertEqual(a2b_qp(type2test(b"foo   "), strip_ws=True), b"foo")
+        self.assertEqual(a2b_qp(type2test(b"a b \nc\n"), strip_ws=True), b"a b\nc\n")
+        self.assertEqual(a2b_qp(type2test(b"a=20  \n"), strip_ws=True), b"a \n")
+        self.assertEqual(a2b_qp(type2test(b"= \n"), strip_ws=True), b"")
+        self.assertEqual(a2b_qp(type2test(b"foo =\n"), strip_ws=True), b"foo ")
+        self.assertEqual(a2b_qp(type2test(b"foo  \r\n"), strip_ws=True), b"foo\r\n")
+        # A bare CR is not a line separator (RFC 2045: CR occurs only in CRLF),
+        # so whitespace before it is kept.
+        self.assertEqual(a2b_qp(type2test(b"foo \rbar"), strip_ws=True), b"foo \rbar")
 
         self.assertRaises(TypeError, b2a_qp, foo="bar")
         self.assertEqual(a2b_qp(type2test(b"=00\r\n=00")), b"\x00\r\n\x00")
