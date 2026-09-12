@@ -1,0 +1,2 @@
+Fix curses detection when a curses library is already in ``LIBS``.
+Patch by Shamil Abdulaev.
