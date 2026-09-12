@@ -673,6 +673,7 @@ StructUnionType_paramfunc(ctypes_state *st, CDataObject *self)
     if ((size_t)self->b_size > sizeof(void*)) {
         ptr = PyMem_Malloc(self->b_size);
         if (ptr == NULL) {
+            PyErr_NoMemory();
             return NULL;
         }
         memcpy(ptr, self->b_ptr, self->b_size);
