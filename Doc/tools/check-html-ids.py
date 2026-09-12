@@ -45,6 +45,7 @@ class IDGatherer(html.parser.HTMLParser):
                     self.__ids.add(value)
 
 
+@functools.cache
 def get_ids_from_file(path):
     ids = set()
     gatherer = IDGatherer(ids)
