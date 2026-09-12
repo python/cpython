@@ -943,7 +943,7 @@ error:
 
 
 static PyObject*
-test_bytes_resize_tracer(PyObject *self, PyObject *Py_UNUSED(ignored))
+_test_bytes_resize_tracer(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     if (check_bytes_resize_tracer(0) < 0) {
         return NULL;
@@ -972,7 +972,7 @@ static PyMethodDef test_methods[] = {
 #if TARGET_OS_OSX || defined(__FreeBSD__)
     {"get_process_memory_usage",      get_process_memory_usage,      METH_VARARGS},
 #endif
-    {"test_bytes_resize_tracer",      test_bytes_resize_tracer,      METH_NOARGS},
+    {"_test_bytes_resize_tracer",      _test_bytes_resize_tracer,      METH_NOARGS},
 
     // Tracemalloc tests
     {"tracemalloc_track",             tracemalloc_track,             METH_VARARGS},
