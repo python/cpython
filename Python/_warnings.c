@@ -574,11 +574,34 @@ get_filter(PyInterpreterState *interp, PyObject *category,
 
 
 static int
-already_warned(PyInterpreterState *interp, PyObject *registry, PyObject *key,
-               int should_set)
+already_warned_in_registry(PyObject *registry, PyObject *key, int should_set)
 {
     PyObject *already_warned;
 
+    if (key == NULL)
+        return -1;
+
+    if (PyDict_GetItemRef(registry, key, &already_warned) < 0) {
+        return -1;
+    }
+    if (already_warned != NULL) {
+        int rc = PyObject_IsTrue(already_warned);
+        Py_DECREF(already_warned);
+        if (rc != 0)
+            return rc;
+    }
+
+    /* This warning wasn't found in the registry, set it. */
+    if (should_set)
+        return PyDict_SetItem(registry, key, Py_True);
+    return 0;
+}
+
+
+static int
+already_warned(PyInterpreterState *interp, PyObject *registry, PyObject *key,
+               int should_set)
+{
     if (key == NULL)
         return -1;
 
@@ -607,22 +630,8 @@ already_warned(PyInterpreterState *interp, PyObject *registry, PyObject *key,
         }
         Py_DECREF(version_obj);
     }
-    else {
-        if (PyDict_GetItemRef(registry, key, &already_warned) < 0) {
-            return -1;
-        }
-        if (already_warned != NULL) {
-            int rc = PyObject_IsTrue(already_warned);
-            Py_DECREF(already_warned);
-            if (rc != 0)
-                return rc;
-        }
-    }
 
-    /* This warning wasn't found in the registry, set it. */
-    if (should_set)
-        return PyDict_SetItem(registry, key, Py_True);
-    return 0;
+    return already_warned_in_registry(registry, key, should_set);
 }
 
 static int
@@ -639,6 +648,22 @@ update_registry(PyInterpreterState *interp, PyObject *registry, PyObject *text,
 
     rc = already_warned(interp, registry, altkey, 1);
     Py_XDECREF(altkey);
+    return rc;
+}
+
+
+static int
+update_once_registry(PyInterpreterState *interp, PyObject *text,
+                     PyObject *category)
+{
+    PyObject *registry = get_once_registry(interp);
+    if (registry == NULL) {
+        return -1;
+    }
+
+    PyObject *key = _PyTuple_FromPair(text, category);
+    int rc = already_warned_in_registry(registry, key, 1);
+    Py_XDECREF(key);
     return rc;
 }
 
@@ -855,13 +880,8 @@ warn_explicit(PyThreadState *tstate, PyObject *category, PyObject *message,
         }
 
         if (_PyUnicode_EqualToASCIIString(action, "once")) {
-            if (registry == NULL || registry == Py_None) {
-                registry = get_once_registry(interp);
-                if (registry == NULL)
-                    goto cleanup;
-            }
             /* WarningsState.once_registry[(text, category)] = 1 */
-            rc = update_registry(interp, registry, text, category, 0);
+            rc = update_once_registry(interp, text, category);
         }
         else if (_PyUnicode_EqualToASCIIString(action, "module")) {
             /* registry[(text, category, 0)] = 1 */
