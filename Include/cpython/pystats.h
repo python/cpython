@@ -120,6 +120,10 @@ typedef struct _ft_stats {
     uint64_t qsbr_polls;
     // number of times stop-the-world mechanism was used
     uint64_t world_stops;
+    // total time the world was stopped, in nanoseconds
+    uint64_t world_stop_total_ns;
+    // duration of the longest single world stop, in nanoseconds
+    uint64_t world_stop_max_ns;
 } FTStats;
 #endif
 
