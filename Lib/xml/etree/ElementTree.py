@@ -1351,9 +1351,8 @@ class XMLPullParser:
         Events are consumed from the internal event queue as they are
         retrieved from the iterator.
         """
-        events = self._events_queue
-        while events:
-            event = events.popleft()
+        for event in iter(self._events_queue.popleft,
+                          stop_exception=IndexError):
             if isinstance(event, Exception):
                 raise event
             else:
