@@ -1232,6 +1232,23 @@ class IssuesTestCase(BaseTestCase):
 
 
 class TestRegressions(unittest.TestCase):
+    def test_clear_all_file_breaks_with_multiple_bps_same_line(self):
+        """Regression test: gh-149015.
+        clear_all_file_breaks must remove all breakpoints even when
+        multiple breakpoints share the same (file, line)."""
+        dbg = Bdb()
+        src = canonic(__file__)
+        dbg.set_break(src, 10)
+        dbg.set_break(src, 10)
+        dbg.set_break(src, 10)
+        self.assertEqual(len(Breakpoint.bplist[(src, 10)]), 3)
+        dbg.clear_all_file_breaks(src)
+        self.assertNotIn((src, 10), Breakpoint.bplist)
+        for bp in list(Breakpoint.bpbynumber):
+            if bp is not None:
+                bp.deleteMe()
+
+
     def test_format_stack_entry_no_lineno(self):
         # See gh-101517
         self.assertIn('Warning: lineno is None',
