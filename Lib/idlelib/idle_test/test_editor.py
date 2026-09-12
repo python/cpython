@@ -3,6 +3,7 @@
 from idlelib import editor
 import unittest
 from collections import namedtuple
+from unittest import mock
 from test.support import requires
 from tkinter import Tk, Text
 
@@ -29,6 +30,18 @@ class EditorWindowTest(unittest.TestCase):
         e = Editor(root=self.root)
         self.assertEqual(e.root, self.root)
         e._close()
+
+    def test_set_width_zero_char_width(self):
+        # A zero-width '0' must not raise ZeroDivisionError (gh-90304).
+        e = Editor(root=self.root)
+        try:
+            with mock.patch.object(editor, 'Font') as MockFont:
+                MockFont.return_value.measure.return_value = 0
+                e.set_width()
+            self.assertEqual(e.width,
+                             e.text.tk.getint(e.text.cget('width')))
+        finally:
+            e._close()
 
 
 class GetLineIndentTest(unittest.TestCase):
