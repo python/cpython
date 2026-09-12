@@ -125,6 +125,132 @@ _Py_atomic_add_ssize(Py_ssize_t *obj, Py_ssize_t value)
 }
 
 
+// --- _Py_atomic_add_relaxed ------------------------------------------------
+
+// The "_nf" (no fence) intrinsic variants provide relaxed memory order on
+// ARM64. On x86 and x86-64 they do not exist; the plain interlocked
+// intrinsics are used instead, which have stronger (sequentially consistent)
+// ordering. That is a conforming implementation of relaxed memory order;
+// x86 simply has no cheaper atomic read-modify-write.
+
+static inline int8_t
+_Py_atomic_add_int8_relaxed(int8_t *obj, int8_t value)
+{
+    _Py_atomic_ASSERT_ARG_TYPE(char);
+#if defined(_M_ARM64)
+    return (int8_t)_InterlockedExchangeAdd8_nf((volatile char *)obj, (char)value);
+#else
+    return (int8_t)_InterlockedExchangeAdd8((volatile char *)obj, (char)value);
+#endif
+}
+
+static inline int16_t
+_Py_atomic_add_int16_relaxed(int16_t *obj, int16_t value)
+{
+    _Py_atomic_ASSERT_ARG_TYPE(short);
+#if defined(_M_ARM64)
+    return (int16_t)_InterlockedExchangeAdd16_nf((volatile short *)obj, (short)value);
+#else
+    return (int16_t)_InterlockedExchangeAdd16((volatile short *)obj, (short)value);
+#endif
+}
+
+static inline int32_t
+_Py_atomic_add_int32_relaxed(int32_t *obj, int32_t value)
+{
+    _Py_atomic_ASSERT_ARG_TYPE(long);
+#if defined(_M_ARM64)
+    return (int32_t)_InterlockedExchangeAdd_nf((volatile long *)obj, (long)value);
+#else
+    return (int32_t)_InterlockedExchangeAdd((volatile long *)obj, (long)value);
+#endif
+}
+
+static inline int64_t
+_Py_atomic_add_int64_relaxed(int64_t *obj, int64_t value)
+{
+#if defined(_M_ARM64)
+    _Py_atomic_ASSERT_ARG_TYPE(__int64);
+    return (int64_t)_InterlockedExchangeAdd64_nf((volatile __int64 *)obj, (__int64)value);
+#elif defined(_M_X64)
+    _Py_atomic_ASSERT_ARG_TYPE(__int64);
+    return (int64_t)_InterlockedExchangeAdd64((volatile __int64 *)obj, (__int64)value);
+#else
+    int64_t old_value = _Py_atomic_load_int64_relaxed(obj);
+    for (;;) {
+        int64_t new_value = old_value + value;
+        if (_Py_atomic_compare_exchange_int64(obj, &old_value, new_value)) {
+            return old_value;
+        }
+    }
+#endif
+}
+
+static inline uint8_t
+_Py_atomic_add_uint8_relaxed(uint8_t *obj, uint8_t value)
+{
+    return (uint8_t)_Py_atomic_add_int8_relaxed((int8_t *)obj, (int8_t)value);
+}
+
+static inline uint16_t
+_Py_atomic_add_uint16_relaxed(uint16_t *obj, uint16_t value)
+{
+    return (uint16_t)_Py_atomic_add_int16_relaxed((int16_t *)obj, (int16_t)value);
+}
+
+static inline uint32_t
+_Py_atomic_add_uint32_relaxed(uint32_t *obj, uint32_t value)
+{
+    return (uint32_t)_Py_atomic_add_int32_relaxed((int32_t *)obj, (int32_t)value);
+}
+
+static inline int
+_Py_atomic_add_int_relaxed(int *obj, int value)
+{
+    _Py_atomic_ASSERT_ARG_TYPE(int32_t);
+    return (int)_Py_atomic_add_int32_relaxed((int32_t *)obj, (int32_t)value);
+}
+
+static inline unsigned int
+_Py_atomic_add_uint_relaxed(unsigned int *obj, unsigned int value)
+{
+    _Py_atomic_ASSERT_ARG_TYPE(int32_t);
+    return (unsigned int)_Py_atomic_add_int32_relaxed((int32_t *)obj, (int32_t)value);
+}
+
+static inline uint64_t
+_Py_atomic_add_uint64_relaxed(uint64_t *obj, uint64_t value)
+{
+    return (uint64_t)_Py_atomic_add_int64_relaxed((int64_t *)obj, (int64_t)value);
+}
+
+static inline intptr_t
+_Py_atomic_add_intptr_relaxed(intptr_t *obj, intptr_t value)
+{
+#if SIZEOF_VOID_P == 8
+    _Py_atomic_ASSERT_ARG_TYPE(int64_t);
+    return (intptr_t)_Py_atomic_add_int64_relaxed((int64_t *)obj, (int64_t)value);
+#else
+    _Py_atomic_ASSERT_ARG_TYPE(int32_t);
+    return (intptr_t)_Py_atomic_add_int32_relaxed((int32_t *)obj, (int32_t)value);
+#endif
+}
+
+static inline uintptr_t
+_Py_atomic_add_uintptr_relaxed(uintptr_t *obj, uintptr_t value)
+{
+    _Py_atomic_ASSERT_ARG_TYPE(intptr_t);
+    return (uintptr_t)_Py_atomic_add_intptr_relaxed((intptr_t *)obj, (intptr_t)value);
+}
+
+static inline Py_ssize_t
+_Py_atomic_add_ssize_relaxed(Py_ssize_t *obj, Py_ssize_t value)
+{
+    _Py_atomic_ASSERT_ARG_TYPE(intptr_t);
+    return (Py_ssize_t)_Py_atomic_add_intptr_relaxed((intptr_t *)obj, (intptr_t)value);
+}
+
+
 // --- _Py_atomic_compare_exchange -------------------------------------------
 
 static inline int
@@ -277,6 +403,200 @@ _Py_atomic_compare_exchange_ssize(Py_ssize_t *obj, Py_ssize_t *expected, Py_ssiz
     return _Py_atomic_compare_exchange_ptr((void**)obj,
                                            (void**)expected,
                                            (void*)value);
+}
+
+
+// --- _Py_atomic_compare_exchange_relaxed -----------------------------------
+
+// As with _Py_atomic_add_*_relaxed, the "_nf" (no fence) intrinsic variants
+// provide relaxed memory order on ARM64, and the plain interlocked intrinsics
+// stand in for them on x86 and x86-64, where they do not exist.
+
+static inline int
+_Py_atomic_compare_exchange_int8_relaxed(int8_t *obj, int8_t *expected, int8_t value)
+{
+    _Py_atomic_ASSERT_ARG_TYPE(char);
+#if defined(_M_ARM64)
+    int8_t initial = (int8_t)_InterlockedCompareExchange8_nf(
+                                       (volatile char *)obj,
+                                       (char)value,
+                                       (char)*expected);
+#else
+    int8_t initial = (int8_t)_InterlockedCompareExchange8(
+                                       (volatile char *)obj,
+                                       (char)value,
+                                       (char)*expected);
+#endif
+    if (initial == *expected) {
+        return 1;
+    }
+    *expected = initial;
+    return 0;
+}
+
+static inline int
+_Py_atomic_compare_exchange_int16_relaxed(int16_t *obj, int16_t *expected, int16_t value)
+{
+    _Py_atomic_ASSERT_ARG_TYPE(short);
+#if defined(_M_ARM64)
+    int16_t initial = (int16_t)_InterlockedCompareExchange16_nf(
+                                       (volatile short *)obj,
+                                       (short)value,
+                                       (short)*expected);
+#else
+    int16_t initial = (int16_t)_InterlockedCompareExchange16(
+                                       (volatile short *)obj,
+                                       (short)value,
+                                       (short)*expected);
+#endif
+    if (initial == *expected) {
+        return 1;
+    }
+    *expected = initial;
+    return 0;
+}
+
+static inline int
+_Py_atomic_compare_exchange_int32_relaxed(int32_t *obj, int32_t *expected, int32_t value)
+{
+    _Py_atomic_ASSERT_ARG_TYPE(long);
+#if defined(_M_ARM64)
+    int32_t initial = (int32_t)_InterlockedCompareExchange_nf(
+                                       (volatile long *)obj,
+                                       (long)value,
+                                       (long)*expected);
+#else
+    int32_t initial = (int32_t)_InterlockedCompareExchange(
+                                       (volatile long *)obj,
+                                       (long)value,
+                                       (long)*expected);
+#endif
+    if (initial == *expected) {
+        return 1;
+    }
+    *expected = initial;
+    return 0;
+}
+
+static inline int
+_Py_atomic_compare_exchange_int64_relaxed(int64_t *obj, int64_t *expected, int64_t value)
+{
+    _Py_atomic_ASSERT_ARG_TYPE(__int64);
+#if defined(_M_ARM64)
+    int64_t initial = (int64_t)_InterlockedCompareExchange64_nf(
+                                       (volatile __int64 *)obj,
+                                       (__int64)value,
+                                       (__int64)*expected);
+#else
+    int64_t initial = (int64_t)_InterlockedCompareExchange64(
+                                       (volatile __int64 *)obj,
+                                       (__int64)value,
+                                       (__int64)*expected);
+#endif
+    if (initial == *expected) {
+        return 1;
+    }
+    *expected = initial;
+    return 0;
+}
+
+static inline int
+_Py_atomic_compare_exchange_ptr_relaxed(void *obj, void *expected, void *value)
+{
+#if defined(_M_ARM64)
+    void *initial = _InterlockedCompareExchangePointer_nf(
+                                       (void**)obj,
+                                       value,
+                                       *(void**)expected);
+#else
+    void *initial = _InterlockedCompareExchangePointer(
+                                       (void**)obj,
+                                       value,
+                                       *(void**)expected);
+#endif
+    if (initial == *(void**)expected) {
+        return 1;
+    }
+    *(void**)expected = initial;
+    return 0;
+}
+
+
+static inline int
+_Py_atomic_compare_exchange_uint8_relaxed(uint8_t *obj, uint8_t *expected, uint8_t value)
+{
+    return _Py_atomic_compare_exchange_int8_relaxed((int8_t *)obj,
+                                                    (int8_t *)expected,
+                                                    (int8_t)value);
+}
+
+static inline int
+_Py_atomic_compare_exchange_uint16_relaxed(uint16_t *obj, uint16_t *expected, uint16_t value)
+{
+    return _Py_atomic_compare_exchange_int16_relaxed((int16_t *)obj,
+                                                     (int16_t *)expected,
+                                                     (int16_t)value);
+}
+
+static inline int
+_Py_atomic_compare_exchange_uint32_relaxed(uint32_t *obj, uint32_t *expected, uint32_t value)
+{
+    return _Py_atomic_compare_exchange_int32_relaxed((int32_t *)obj,
+                                                     (int32_t *)expected,
+                                                     (int32_t)value);
+}
+
+static inline int
+_Py_atomic_compare_exchange_int_relaxed(int *obj, int *expected, int value)
+{
+    _Py_atomic_ASSERT_ARG_TYPE(int32_t);
+    return _Py_atomic_compare_exchange_int32_relaxed((int32_t *)obj,
+                                                     (int32_t *)expected,
+                                                     (int32_t)value);
+}
+
+static inline int
+_Py_atomic_compare_exchange_uint_relaxed(unsigned int *obj, unsigned int *expected, unsigned int value)
+{
+    _Py_atomic_ASSERT_ARG_TYPE(int32_t);
+    return _Py_atomic_compare_exchange_int32_relaxed((int32_t *)obj,
+                                                     (int32_t *)expected,
+                                                     (int32_t)value);
+}
+
+static inline int
+_Py_atomic_compare_exchange_uint64_relaxed(uint64_t *obj, uint64_t *expected, uint64_t value)
+{
+    return _Py_atomic_compare_exchange_int64_relaxed((int64_t *)obj,
+                                                     (int64_t *)expected,
+                                                     (int64_t)value);
+}
+
+static inline int
+_Py_atomic_compare_exchange_intptr_relaxed(intptr_t *obj, intptr_t *expected, intptr_t value)
+{
+    _Py_atomic_ASSERT_ARG_TYPE(void*);
+    return _Py_atomic_compare_exchange_ptr_relaxed((void**)obj,
+                                                   (void**)expected,
+                                                   (void*)value);
+}
+
+static inline int
+_Py_atomic_compare_exchange_uintptr_relaxed(uintptr_t *obj, uintptr_t *expected, uintptr_t value)
+{
+    _Py_atomic_ASSERT_ARG_TYPE(void*);
+    return _Py_atomic_compare_exchange_ptr_relaxed((void**)obj,
+                                                   (void**)expected,
+                                                   (void*)value);
+}
+
+static inline int
+_Py_atomic_compare_exchange_ssize_relaxed(Py_ssize_t *obj, Py_ssize_t *expected, Py_ssize_t value)
+{
+    _Py_atomic_ASSERT_ARG_TYPE(void*);
+    return _Py_atomic_compare_exchange_ptr_relaxed((void**)obj,
+                                                   (void**)expected,
+                                                   (void*)value);
 }
 
 
