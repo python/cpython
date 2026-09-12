@@ -1545,6 +1545,192 @@ class ElementTreeTest(unittest.TestCase):
                          {'{http://www.w3.org/XML/1998/namespace}lang': 'eng'})
 
 
+class XMLValidationTest(unittest.TestCase):
+
+    def check(self, elem):
+        self.assertRaises(ValueError,
+            ET.tostring, elem, validate=True)
+        ET.tostring(elem)  # no exception
+
+    def check_valid(self, elem, expected):
+        self.assertEqual(ET.tostring(elem, validate=True), expected)
+
+    @support.subTests('text', ('a--b', ' B+, B, or B-',
+                               '\x00', '\x01', '\ud8ff', '\ufffe'))
+    def test_invalid_comment(self, text):
+        self.check(ET.Comment(text))
+
+    def test_invalid_processing_instruction(self):
+        self.check(ET.PI(''))
+        self.check(ET.PI('0'))
+        self.check(ET.PI('a/b'))
+        self.check(ET.PI('foo\xa0bar'))
+        self.check(ET.PI('foo\fbar'))
+        self.check(ET.PI('xml'))
+        self.check(ET.PI('XML'))
+        self.check(ET.PI('xml', 'encoding="UTF-8"'))
+        self.check(ET.PI('foo', 'a?>b'))
+        self.check(ET.PI('foo', '\x00'))
+        self.check(ET.PI('foo', '\x01'))
+        self.check(ET.PI('foo', '\ud8ff'))
+        self.check(ET.PI('foo', '\ufffe'))
+
+        self.check_valid(ET.PI('foo\tbar'), b'<?foo\tbar?>')
+        self.check_valid(ET.PI('foo\nbar'), b'<?foo\nbar?>')
+        self.check_valid(ET.PI('foo\rbar'), b'<?foo\rbar?>')
+
+    @support.subTests('name', ('', '0', 'a/b'))
+    def test_invalid_tag(self, name):
+        self.check(ET.Element(name))
+        self.check(ET.Element(ET.QName(name)))
+
+    @support.subTests('name', ('', '0', 'a/b'))
+    def test_invalid_attr_name(self, name):
+        self.check(ET.Element('tag', attrib={name: 'value'}))
+        self.check(ET.Element('tag', attrib={ET.QName(name): 'value'}))
+
+    @support.subTests('value', ('\x00', '\ud8ff', '\ufffe'))
+    def test_invalid_attr_value(self, value):
+        self.check(ET.Element('tag', attrib={'key': value}))
+        self.check(ET.Element('tag', attrib={'key': ET.QName(value)}))
+
+    @support.subTests('text', ('\x00', '\ud8ff', '\ufffe'))
+    def test_invalid_text(self, text):
+        elem = ET.Element('tag')
+        elem.text = text
+        self.check(elem)
+
+    @support.subTests('tail', ('\x00', '\ud8ff', '\ufffe'))
+    def test_invalid_tail(self, tail):
+        elem = ET.Element('tag')
+        elem.tail = tail
+        self.check(elem)
+
+    @support.subTests('text', ('\x00', '\ud8ff', '\ufffe'))
+    def test_invalid_text_without_tag(self, text):
+        elem = ET.Element(None)
+        elem.text = text
+        self.check(elem)
+
+    def test_invalid_subelements(self):
+        elem = ET.Element('tag')
+        subelem = ET.SubElement(elem, 'subtag')
+        ET.SubElement(subelem, '\x00')
+        self.check(elem)
+        elem.tag = None
+        self.check(elem)
+
+    @support.subTests('uri', ('\x00', '\ud8ff', '\ufffe'))
+    def test_invalid_namespace_uri(self, uri):
+        self.check(ET.Element('{%s}tag' % uri))
+        self.check(ET.Element(ET.QName(uri, 'tag')))
+
+
+class HTMLValidationTest(unittest.TestCase):
+
+    def check(self, elem):
+        self.assertRaises(ValueError,
+            ET.tostring, elem, method='html', validate=True)
+        ET.tostring(elem, method='html')  # no exception
+
+    @support.subTests('text', ('>', '->', 'a-->b', 'a--!>b',
+                               'a\x00b', 'a\ud8ffb'))
+    def test_invalid_comment(self, text):
+        self.check(ET.Comment(text))
+
+    @support.subTests('text', ('a>b', 'a\x00b', 'a\ud8ffb'))
+    def test_invalid_processing_instruction(self, text):
+        self.check(ET.PI(text))
+
+    @support.subTests('name', ('', '0', 'a/b'))
+    def test_invalid_tag(self, name):
+        self.check(ET.Element(name))
+        self.check(ET.Element(ET.QName(name)))
+
+    @support.subTests('name', ('?', '!', ' a', 'a b', 'a\nb', 'a>b',
+                               'a\x00b', 'a\ud8ffb'))
+    def test_invalid_tag_str_only(self, name):
+        self.check(ET.Element(name))
+
+    @support.subTests('name', ('', 'a/b'))
+    def test_invalid_attr_name(self, name):
+        self.check(ET.Element('tag', attrib={name: 'value'}))
+        self.check(ET.Element('tag', attrib={ET.QName(name): 'value'}))
+
+    @support.subTests('name', ('\x00', '\ud8ff', 'a=b',
+                               'a\x00b', 'a\ud8ffb'))
+    def test_invalid_attr_name_str_only(self, name):
+        self.check(ET.Element('tag', attrib={name: 'value'}))
+
+    @support.subTests('value', ('\x00', '\ud8ff'))
+    def test_invalid_attr_value(self, value):
+        self.check(ET.Element('tag', attrib={'key': value}))
+        self.check(ET.Element('tag', attrib={'key': ET.QName(value)}))
+
+    @support.subTests('value', ('a"b', 'a&b'))
+    def test_invalid_attr_value_qname(self, value):
+        # a string value is escaped, a QName is written as is
+        self.check(ET.Element('tag', attrib={'key': ET.QName(value)}))
+
+    @support.subTests('text', ('\x00', '\ud8ff'))
+    def test_invalid_text(self, text):
+        elem = ET.Element('tag')
+        elem.text = text
+        self.check(elem)
+
+    @support.subTests('tail', ('\x00', '\ud8ff'))
+    def test_invalid_tail(self, tail):
+        elem = ET.Element('tag')
+        elem.tail = tail
+        self.check(elem)
+
+    @support.subTests('text', ('\x00', '\ud8ff'))
+    def test_invalid_text_without_tag(self, text):
+        elem = ET.Element(None)
+        elem.text = text
+        self.check(elem)
+
+    def test_invalid_subelements(self):
+        elem = ET.Element('tag')
+        subelem = ET.SubElement(elem, 'subtag')
+        ET.SubElement(subelem, '\x00')
+        self.check(elem)
+        elem.tag = None
+        self.check(elem)
+
+    @support.subTests('uri', ('\x00', '\ud8ff'))
+    def test_invalid_namespace_uri(self, uri):
+        self.check(ET.Element('{%s}tag' % uri))
+        self.check(ET.Element(ET.QName(uri, 'tag')))
+
+    @support.subTests('tag', ("script", "style", "xmp", "iframe", "noembed", "noframes"))
+    def test_invalid_cdata_content(self, tag):
+        elem = ET.Element(tag.upper())
+        elem.text = 'a</%s>b' % tag.title()
+        self.check(elem)
+        elem.text = 'a</%s b' % tag.title()
+        self.check(elem)
+        elem.text = 'a</%s/b' % tag.title()
+        self.check(elem)
+        elem.text = 'a\x00b'
+        self.check(elem)
+        elem.text = 'a\ud8ffb'
+        self.check(elem)
+
+    @support.subTests('tag', ("script", "style", "xmp", "iframe", "noembed", "noframes"))
+    def test_cdata_subelements(self, tag):
+        elem = ET.Element(tag)
+        ET.SubElement(elem, 'subtag')
+        self.check(elem)
+
+    def test_invalid_plaintext_content(self):
+        elem = ET.Element('plaintext')
+        elem.text = 'a\x00b'
+        self.check(elem)
+        elem.text = 'a\ud8ffb'
+        self.check(elem)
+
+
 class IterparseTest(unittest.TestCase):
     # Test iterparse interface.
 
