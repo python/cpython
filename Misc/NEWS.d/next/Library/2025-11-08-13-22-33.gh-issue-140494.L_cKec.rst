@@ -1,0 +1,2 @@
+Require that Tcl is always built with thread support.
+This requirement only affects Tcl 8.x, as Tcl 9.x is always thread-enabled.
