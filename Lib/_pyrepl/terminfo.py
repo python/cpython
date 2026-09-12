@@ -1,7 +1,6 @@
 """Pure Python curses-like terminal capability queries."""
 
 from dataclasses import dataclass, field
-import errno
 import os
 from pathlib import Path
 import re
@@ -151,7 +150,7 @@ def _read_terminfo_file(terminal_name: str) -> bytes:
         if path.is_file():
             return path.read_bytes()
 
-    raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), filename)
+    raise FileNotFoundError(filename=filename)
 
 
 # Hard-coded terminal capabilities for common terminals
