@@ -1,0 +1,2 @@
+Improve :exc:`SyntaxError` when :keyword:`match` alternative patterns bind
+different names. Patch by Bénédikt Tran.
