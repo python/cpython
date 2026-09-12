@@ -762,8 +762,9 @@ static PyObject *
 pylong_asint32(PyObject *module, PyObject *arg)
 {
     NULLABLE(arg);
-    int32_t value;
+    int32_t value = UNINITIALIZED_INT;
     if (PyLong_AsInt32(arg, &value) < 0) {
+        assert(value == UNINITIALIZED_INT);
         return NULL;
     }
     return PyLong_FromInt32(value);
@@ -773,8 +774,9 @@ static PyObject *
 pylong_asuint32(PyObject *module, PyObject *arg)
 {
     NULLABLE(arg);
-    uint32_t value;
+    uint32_t value = UNINITIALIZED_INT;
     if (PyLong_AsUInt32(arg, &value) < 0) {
+        assert(value == UNINITIALIZED_INT);
         return NULL;
     }
     return PyLong_FromUInt32(value);
@@ -785,8 +787,9 @@ static PyObject *
 pylong_asint64(PyObject *module, PyObject *arg)
 {
     NULLABLE(arg);
-    int64_t value;
+    int64_t value = UNINITIALIZED_INT;
     if (PyLong_AsInt64(arg, &value) < 0) {
+        assert(value == UNINITIALIZED_INT);
         return NULL;
     }
     return PyLong_FromInt64(value);
@@ -796,8 +799,9 @@ static PyObject *
 pylong_asuint64(PyObject *module, PyObject *arg)
 {
     NULLABLE(arg);
-    uint64_t value;
+    uint64_t value = UNINITIALIZED_INT;
     if (PyLong_AsUInt64(arg, &value) < 0) {
+        assert(value == UNINITIALIZED_INT);
         return NULL;
     }
     return PyLong_FromUInt64(value);
