@@ -57,6 +57,14 @@ Examining Symbol Tables
 
       Used for the symbol table of a class.
 
+   .. attribute:: INLINED_COMPREHENSION
+      :value: "inlined comprehension"
+
+      Used for the symbol table of a list, set or dict comprehension that
+      is inlined into the enclosing code unit (see :pep:`709`). A symbol
+      table of this type represents a sub-scope of the enclosing code unit's
+      scope, and it does not correspond to a separate compilation unit.
+
    The following members refer to different flavors of
    :ref:`annotation scopes <annotation-scopes>`.
 
