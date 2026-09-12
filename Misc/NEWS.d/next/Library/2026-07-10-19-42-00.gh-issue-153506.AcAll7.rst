@@ -1,0 +1,2 @@
+IDLE no longer fails to show module-name completions when the interactive
+namespace has a non-iterable ``__all__``.
