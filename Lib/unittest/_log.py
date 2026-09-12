@@ -33,7 +33,7 @@ class _AssertLogsContext(_BaseTestCaseContext):
     def __init__(self, test_case, logger_name, level, no_logs, formatter=None):
         _BaseTestCaseContext.__init__(self, test_case)
         self.logger_name = logger_name
-        if level:
+        if level is not None:
             self.level = logging._nameToLevel.get(level, level)
         else:
             self.level = logging.INFO
