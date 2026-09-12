@@ -54,6 +54,9 @@ struct _Py_global_strings {
         STRUCT_FOR_STR(native, "<native>")
         STRUCT_FOR_STR(str_replace_inf, "1e309")
         STRUCT_FOR_STR(type_params, ".type_params")
+        STRUCT_FOR_STR(unknown_file, "<unknown file>")
+        STRUCT_FOR_STR(unknown_function, "<unknown function>")
+        STRUCT_FOR_STR(unreadable_frame, "<unreadable frame>")
         STRUCT_FOR_STR(utf_8, "utf-8")
     } literals;
 
