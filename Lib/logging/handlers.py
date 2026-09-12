@@ -758,6 +758,16 @@ class DatagramHandler(SocketHandler):
             family = socket.AF_UNIX
         else:
             family = socket.AF_INET
+            # The host can have no IPv4 address, for example if it is an
+            # IPv6 address.  Leave resolution errors to sendto().
+            try:
+                infos = socket.getaddrinfo(self.host, self.port,
+                                           type=socket.SOCK_DGRAM)
+            except OSError:
+                pass
+            else:
+                if not any(info[0] == family for info in infos):
+                    family = infos[0][0]
         s = socket.socket(family, socket.SOCK_DGRAM)
         return s
 
