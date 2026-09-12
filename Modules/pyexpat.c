@@ -5,6 +5,7 @@
 #include "Python.h"
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "pycore_codecs.h"        // _PyCodec_LookupTextEncoding()
+#include "pycore_dict.h"          // _PyDict_SetItem_Take2()
 #include "pycore_import.h"        // _PyImport_SetModule()
 #include "pycore_pyhash.h"        // _Py_HashSecret
 #include "pycore_traceback.h"     // _PyTraceback_Add()
@@ -469,16 +470,10 @@ my_StartElementHandler(void *userData,
                 PyList_SET_ITEM(container, i, n);
                 PyList_SET_ITEM(container, i+1, v);
             }
-            else if (PyDict_SetItem(container, n, v)) {
+            else if (_PyDict_SetItem_Take2((PyDictObject *)container, n, v)) {
                 flag_error(self);
-                Py_DECREF(n);
-                Py_DECREF(v);
                 Py_DECREF(container);
                 return;
-            }
-            else {
-                Py_DECREF(n);
-                Py_DECREF(v);
             }
         }
         args = string_intern(self, name);
