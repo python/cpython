@@ -278,6 +278,9 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
                          "my_test_extension.exec_slot_ran='yes'\n"
                          "<module 'embedded_ext' (static-extension)>\n"
                          "embedded_ext.executed='yes'\n"
+                         "ascii(mp.__name__)=\"'m\\\\xf6dul_mp'\" mp.executed='yes'\n"
+                         "SystemError: 'initialization of m\\xf6dul_sp "
+                         "did not return PyModuleDef'\n"
                          )
 
     def test_inittab_submodule_multiphase(self):
