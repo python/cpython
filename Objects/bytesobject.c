@@ -3624,9 +3624,8 @@ byteswriter_check_canary_byte(PyBytesWriter *writer)
     unsigned char canary = data[writer->size];
     if (canary != PyBytesWriter_CANARY_BYTE) {
         _Py_FatalErrorFormat(__func__,
-                             "Buffer overflow detected in PyBytesWriter %p: "
-                             "one byte written after the buffer "
-                             "(at position %zd)",
+                             "Buffer overflow detected in PyBytesWriter %p "
+                             "at position %zd",
                              writer, writer->size);
     }
 }
