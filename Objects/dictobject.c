@@ -8006,6 +8006,9 @@ PyObject_ClearManagedDict(PyObject *obj)
             // values. We need to materialize the keys. Nothing can modify
             // this object, but we need to lock the dictionary.
             int err;
+            // gh-152083: an exception may already be set, so keep it.
+            // The OOM path below reports via PyErr_FormatUnraisable() which clears it.
+            PyObject *exc = PyErr_GetRaisedException();
             Py_BEGIN_CRITICAL_SECTION(dict);
             err = detach_dict_from_object(dict, obj);
             Py_END_CRITICAL_SECTION();
@@ -8025,6 +8028,7 @@ PyObject_ClearManagedDict(PyObject *obj)
                 clear_inline_values(_PyObject_InlineValues(obj));
                 Py_END_CRITICAL_SECTION();
             }
+            PyErr_SetRaisedException(exc);
         }
     }
     Py_CLEAR(_PyObject_ManagedDictPointer(obj)->dict);
