@@ -1,0 +1,4 @@
+:meth:`http.cookies.BaseCookie.load` is now atomic: if the cookie string
+contains an illegal key or attribute that raises
+:exc:`~http.cookies.CookieError`, the cookie jar is left unchanged instead of
+being partially updated with the cookies that preceded the error.
