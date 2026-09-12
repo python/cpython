@@ -1,0 +1,1 @@
+Use color to highlight error locations in tracebacks. Patch by Pablo Galindo

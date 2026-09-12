@@ -1,0 +1,2 @@
+In EUC-JP, b'\x8f\xa2\xb7' now decodes to ～ (FULLWIDTH TILDE) instead of ~
+(TILDE).
