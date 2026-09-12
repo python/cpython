@@ -1,0 +1,2 @@
+Fix crash in :meth:`xml.etree.ElementTree.Element.iter` when memory
+allocation fails during iterator construction.
