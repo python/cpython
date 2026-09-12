@@ -16,3 +16,10 @@ Pending removal in Python 3.18
   * ``import`` lines in :file:`{name}.pth` files are silently ignored.
 
   (Contributed by Barry Warsaw in :gh:`148641`.)
+
+* :mod:`http.client`:
+
+  * :meth:`!http.client.HTTPMessage.getallmatchingheaders` has been deprecated
+    since Python 3.16.  It has returned an empty list for every input since
+    Python 3.0; use :meth:`email.message.Message.get_all` instead.
+    (Contributed by Julian Soreavis in :gh:`153648`.)
