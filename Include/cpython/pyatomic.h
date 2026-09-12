@@ -582,7 +582,7 @@ static inline void _Py_atomic_fence_release(void);
 #  define Py_ATOMIC_GCC_H
 #  include "pyatomic_gcc.h"
 #  undef Py_ATOMIC_GCC_H
-#elif __STDC_VERSION__ >= 201112L && !defined(__STDC_NO_ATOMICS__)
+#elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L && !defined(__STDC_NO_ATOMICS__)
 #  define Py_ATOMIC_STD_H
 #  include "pyatomic_std.h"
 #  undef Py_ATOMIC_STD_H
