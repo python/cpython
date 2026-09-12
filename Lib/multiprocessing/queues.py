@@ -124,7 +124,17 @@ class Queue(object):
         return self._maxsize - self._sem.get_value()
 
     def empty(self):
-        return not self._poll()
+        # Preserve the historical "closed queue may raise OSError" behavior.
+        # q.close() is a no-op for unused queues, so this only raises once the
+        # reader end has actually been closed.
+        if self._closed:
+            self._poll()
+
+        try:
+            return self._sem.get_value() == self._maxsize
+        except NotImplementedError:
+            # Fallback for platforms without sem_getvalue() (for example macOS).
+            return not self._poll()
 
     def full(self):
         return self._sem._semlock._is_zero()
