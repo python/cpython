@@ -3497,6 +3497,40 @@ _PyEval_FormatKwargsError(PyThreadState *tstate, PyObject *func, PyObject *kwarg
     }
 }
 
+/* Merge the mapping 'kwargs' into 'dict' for a call to 'func',
+   raising TypeError on a duplicate key or a non-mapping (DICT_MERGE).
+   Kept out of the instruction bodies: taking the address of a local
+   there defeats the tail-calling interpreter on MSVC (C4737). */
+int
+_PyEval_MergeKwargs(PyThreadState *tstate, PyObject *func,
+                    PyObject *dict, PyObject *kwargs)
+{
+    PyObject *dupkey = NULL;
+    if (_PyDict_MergeUniq(dict, kwargs, &dupkey) < 0) {
+        _PyEval_FormatKwargsError(tstate, func, kwargs, dupkey);
+        Py_XDECREF(dupkey);
+        return -1;
+    }
+    assert(dupkey == NULL);
+    return 0;
+}
+
+/* Return a new exact dict with the items of the mapping 'kwargs',
+   raising the same TypeError as DICT_MERGE on failure. */
+PyObject *
+_PyEval_KwargsToDict(PyThreadState *tstate, PyObject *func, PyObject *kwargs)
+{
+    PyObject *dict = PyDict_New();
+    if (dict == NULL) {
+        return NULL;
+    }
+    if (_PyEval_MergeKwargs(tstate, func, dict, kwargs) < 0) {
+        Py_DECREF(dict);
+        return NULL;
+    }
+    return dict;
+}
+
 void
 _PyEval_FormatExcCheckArg(PyThreadState *tstate, PyObject *exc,
                           const char *format_str, PyObject *obj)
