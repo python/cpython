@@ -25,7 +25,7 @@ configuration problem notification and resolution.
 """
 # TODOs added Oct 2014, tjr
 
-from configparser import ConfigParser
+from configparser import ConfigParser, Error
 import os
 import sys
 
@@ -75,7 +75,11 @@ class IdleConfParser(ConfigParser):
         "Load the configuration file from disk."
         if self.file and os.path.exists(self.file):
             with open(self.file, encoding='utf-8', errors='replace') as f:
-                self.read_file(f)
+                try:
+                    self.read_file(f)
+                except Error as err:  # any configparser parse error
+                    _warn(f'\nInvalid config file, using default config:\n'
+                          f'{self.file!r}\n{err}\n', self.file)
 
 class IdleUserConfParser(IdleConfParser):
     """
