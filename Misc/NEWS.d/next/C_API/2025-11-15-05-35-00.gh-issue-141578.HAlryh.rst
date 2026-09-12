@@ -1,0 +1,3 @@
+Improve overflow error messages in :c:func:`PyLong_AsLong` and :c:func:`PyLong_AsInt`
+to indicate whether the value exceeds the maximum or minimum bounds, instead of
+showing generic overflow messages.
