@@ -34,9 +34,6 @@
 
 #ifdef MS_WINDOWS
 #  include "malloc.h"             // alloca()
-#endif
-
-#ifdef MS_WINDOWS
 #  undef BYTE
 #  include "windows.h"
 #endif
