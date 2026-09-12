@@ -205,62 +205,84 @@ class ExceptHookTest(unittest.TestCase):
     # Python/pythonrun.c::PyErr_PrintEx() is tricky.
 
 
+def raise_system_exit(*args, **kwargs):
+    raise SystemExit(*args, **kwargs)
+
+
 class SysModuleTest(unittest.TestCase):
 
     def tearDown(self):
         test.support.reap_children()
 
     def test_exit(self):
-        # call with two arguments
+        # call with two arguments is only forbidden for sys.exit()
         self.assertRaises(TypeError, sys.exit, 42, 42)
+        with self.subTest('sys.exit'):
+            self.do_test_exit(sys.exit)
+        with self.subTest('raise SystemExit'):
+            self.do_test_exit(raise_system_exit)
 
+    def do_test_exit(self, sys_exit_raiser):
         # call without argument
         with self.assertRaises(SystemExit) as cm:
-            sys.exit()
+            sys_exit_raiser()
+        self.assertIsNone(cm.exception.code)
+        with self.assertRaises(SystemExit) as cm:
+            sys_exit_raiser(None)
         self.assertIsNone(cm.exception.code)
 
-        rc, out, err = assert_python_ok('-c', 'import sys; sys.exit()')
+        # call with integer argument
+        with self.assertRaises(SystemExit) as cm:
+            sys_exit_raiser(42)
+        self.assertEqual(cm.exception.code, 42)
+
+        # gh-133548: call with tuple argument with one entry
+        with self.assertRaises(SystemExit) as cm:
+            sys_exit_raiser((42,))
+        self.assertEqual(cm.exception.code, (42,))
+
+        # call with string argument
+        with self.assertRaises(SystemExit) as cm:
+            sys_exit_raiser("exit")
+        self.assertEqual(cm.exception.code, "exit")
+
+        # call with tuple argument with two entries
+        with self.assertRaises(SystemExit) as cm:
+            sys_exit_raiser((42, 42))
+        self.assertEqual(cm.exception.args, ((42, 42),))
+        self.assertEqual(cm.exception.code, (42, 42))
+
+    def test_exit_message(self):
+        with self.subTest('sys.exit'):
+            self.do_test_exit_message("sys.exit")
+        with self.subTest('raise SystemExit'):
+            self.do_test_exit_message("raise SystemExit")
+
+    def do_test_exit_message(self, call_statement):
+        def sys_exit_impl(value='', prolog=''):
+            return f'import sys\n{prolog}\n{call_statement}({value})'
+
+        rc, out, err = assert_python_ok('-c', sys_exit_impl())
         self.assertEqual(rc, 0)
         self.assertEqual(out, b'')
         self.assertEqual(err, b'')
 
         # gh-125842: Windows uses 32-bit unsigned integers for exit codes
         # so a -1 exit code is sometimes interpreted as 0xffff_ffff.
-        rc, out, err = assert_python_failure('-c', 'import sys; sys.exit(0xffff_ffff)')
+        rc, out, err = assert_python_failure('-c', sys_exit_impl(0xffff_ffff))
         self.assertIn(rc, (-1, 0xff, 0xffff_ffff))
         self.assertEqual(out, b'')
         self.assertEqual(err, b'')
 
         # Overflow results in a -1 exit code, which may be converted to 0xff
         # or 0xffff_ffff.
-        rc, out, err = assert_python_failure('-c', 'import sys; sys.exit(2**128)')
+        rc, out, err = assert_python_failure('-c', sys_exit_impl(2**128))
         self.assertIn(rc, (-1, 0xff, 0xffff_ffff))
         self.assertEqual(out, b'')
         self.assertEqual(err, b'')
 
-        # call with integer argument
-        with self.assertRaises(SystemExit) as cm:
-            sys.exit(42)
-        self.assertEqual(cm.exception.code, 42)
-
-        # call with tuple argument with one entry
-        # entry will be unpacked
-        with self.assertRaises(SystemExit) as cm:
-            sys.exit((42,))
-        self.assertEqual(cm.exception.code, 42)
-
-        # call with string argument
-        with self.assertRaises(SystemExit) as cm:
-            sys.exit("exit")
-        self.assertEqual(cm.exception.code, "exit")
-
-        # call with tuple argument with two entries
-        with self.assertRaises(SystemExit) as cm:
-            sys.exit((17, 23))
-        self.assertEqual(cm.exception.code, (17, 23))
-
-        # test that the exit machinery handles SystemExits properly
-        rc, out, err = assert_python_failure('-c', 'raise SystemExit(47)')
+        # test that the exit machinery handles custom codes properly
+        rc, out, err = assert_python_failure('-c', sys_exit_impl(47))
         self.assertEqual(rc, 47)
         self.assertEqual(out, b'')
         self.assertEqual(err, b'')
@@ -274,19 +296,19 @@ class SysModuleTest(unittest.TestCase):
         # test that stderr buffer is flushed before the exit message is written
         # into stderr
         check_exit_message(
-            r'import sys; sys.stderr.write("unflushed,"); sys.exit("message")',
+            sys_exit_impl("'message'", 'sys.stderr.write("unflushed,")'),
             b"unflushed,message")
 
         # test that the exit message is written with backslashreplace error
         # handler to stderr
         check_exit_message(
-            r'import sys; sys.exit("surrogates:\uDCFF")',
+            sys_exit_impl(r"'surrogates:\uDCFF'"),
             b"surrogates:\\udcff")
 
         # test that the unicode message is encoded to the stderr encoding
         # instead of the default encoding (utf8)
         check_exit_message(
-            r'import sys; sys.exit("h\xe9")',
+            sys_exit_impl(r"'h\xe9'"),
             b"h\xe9", PYTHONIOENCODING='latin-1')
 
     @support.requires_subprocess()
