@@ -43,7 +43,7 @@ struct mutex_entry {
 };
 
 void
-_Py_yield(void)
+_Py_sched_yield(void)
 {
 #ifdef MS_WINDOWS
     SwitchToThread();
@@ -51,6 +51,93 @@ _Py_yield(void)
     sched_yield();
 #endif
 }
+
+
+#if defined(__aarch64__)
+
+// The following implementation was based on:
+//   https://github.com/ARM-software/progress64/blob/master/src/arch/aarch64.h
+// with some slight modifications for readability.
+// Also see:
+//   https://developer.arm.com/community/arm-community-blogs/b/architectures-and-processors-blog/posts/multi-threaded-applications-arm
+
+// This code does not include the v8.7 nano_delay implementation.
+// Using that requires runtime dispatch of the function based on CPU feature
+// checks to be mediated by the OS. Future patches might improve on this and add
+// the required runtime dispatching logic.
+
+static inline unsigned long
+counter_read(void)
+{
+    unsigned long cnt;
+    __asm __volatile("mrs %0,cntvct_el0" : "=r" (cnt));
+    return cnt;
+}
+
+static inline unsigned long
+counter_freq(void)
+{
+    unsigned long freq;
+    __asm("mrs %0,cntfrq_el0" : "=r" (freq));
+    return freq;
+}
+
+static void
+nano_delay(unsigned long delay_ns)
+{
+    // Prevent speculation of subsequent counter/timer reads and memory accesses
+    __asm __volatile("isb");
+    if (delay_ns > 18) {
+        // Adjust for overhead of initial ISB
+        delay_ns -= 18;
+        // Approximately results in delay_ns * counter_freq() / 1_000_000_000
+        unsigned long delay_ticks = (delay_ns + delay_ns / 16) * counter_freq() >> 30;
+        if (delay_ticks != 0) {
+            unsigned long start = counter_read();
+            // Delay using ISB for all but the last ticks
+            if (delay_ticks > 40) {
+                do {
+                    __asm __volatile("isb" ::: "memory");
+                } while (counter_read() - start < delay_ticks - 40);
+            }
+            // Spin in empty loop for the last 1..40 ticks to increase accuracy
+            while (counter_read() - start < delay_ticks) { }
+        }
+    }
+}
+
+#else
+#define DONT_HAVE_NANO_DELAY
+#endif
+
+void
+_Py_yield(void)
+{
+#ifdef DONT_HAVE_NANO_DELAY
+    _Py_sched_yield();
+#else
+    nano_delay(64);
+#endif
+}
+
+void
+_Py_yield_with_contention_hint(Py_ssize_t contention)
+{
+#ifdef DONT_HAVE_NANO_DELAY
+    _Py_sched_yield();
+    return;
+#else
+    assert(contention >= 0);
+    Py_ssize_t exponent = contention;
+    if (exponent > 12) {
+        exponent = 12;
+    }
+    Py_ssize_t delay_ns = ((Py_ssize_t)1 << exponent) + 50;
+    nano_delay(delay_ns);
+#endif
+}
+
+#undef DONT_HAVE_NANO_DELAY
 
 PyLockStatus
 _PyMutex_LockTimed(PyMutex *m, PyTime_t timeout, _PyLockFlags flags)
@@ -102,7 +189,7 @@ _PyMutex_LockTimed(PyMutex *m, PyTime_t timeout, _PyLockFlags flags)
 
         if (!(v & _Py_HAS_PARKED) && spin_count < MAX_SPIN_COUNT) {
             // Spin for a bit.
-            _Py_yield();
+            _Py_yield_with_contention_hint(spin_count);
             spin_count++;
             if (((spin_count + tid) & RELOAD_SPIN_MASK) == 0) {
                 v = _Py_atomic_load_uint8_relaxed(&m->_bits);
