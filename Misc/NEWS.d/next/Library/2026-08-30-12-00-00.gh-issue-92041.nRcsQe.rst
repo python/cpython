@@ -1,0 +1,2 @@
+Speed up :func:`inspect.getmodule` for objects resolved by filename, such
+as frames, tracebacks and code objects.
