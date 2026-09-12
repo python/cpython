@@ -338,8 +338,10 @@ _tooltip_spec = {
 _tree_widget_spec = {
     'file': 'tree',
     'kwds': {},
-    'msg': "The canvas is scrollable.\n"
-           "Click on folders up to the lowest level."
+    'msg': "The tree of the attributes of the sys module.\n"
+           "Open and close rows with the mouse and with the keyboard.\n"
+           "Names and values are shown in separate columns.\n"
+           "The tree scrolls if the text does not fit."
     }
 
 _undo_delegator_spec = {
