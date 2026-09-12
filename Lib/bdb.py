@@ -572,7 +572,8 @@ class Bdb:
         # the name "until" is borrowed from gdb
         if lineno is None:
             lineno = frame.f_lineno + 1
-        self._set_stopinfo(frame, frame, lineno)
+        self._set_stopinfo(frame, frame, lineno,
+                           cmdframe=frame, cmdlineno=frame.f_lineno)
 
     def set_step(self):
         """Stop after one line of code."""
