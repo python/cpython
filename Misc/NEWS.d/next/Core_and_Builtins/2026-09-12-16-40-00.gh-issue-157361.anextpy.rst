@@ -1,0 +1,4 @@
+Implement :func:`anext` in Python instead of C, in a frozen ``_builtins``
+module. The awaitable returned by ``anext(it, default)`` is now a plain
+coroutine, so introspection tools such as :func:`asyncio.print_call_graph`
+can see through it into :meth:`~object.__anext__`.
