@@ -221,9 +221,9 @@ gc_get_count_impl(PyObject *module)
     _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
     struct _gc_thread_state *gc = &tstate->gc;
 
-    // Flush the local allocation count to the global count
-    _Py_atomic_add_int(&gcstate->young.count, (int)gc->alloc_count);
-    gc->alloc_count = 0;
+    // Don't flush: record_allocation() checks the threshold only when it fills.
+    int young = _Py_atomic_load_int_relaxed(&gcstate->young.count);
+    young += (int)gc->alloc_count;
 #endif
 
 #ifndef Py_GIL_DISABLED
@@ -233,7 +233,7 @@ gc_get_count_impl(PyObject *module)
                          gcstate->generations[2].count);
 #else
     return Py_BuildValue("(iii)",
-                         _Py_atomic_load_int_relaxed(&gcstate->young.count),
+                         young,
                          gcstate->old[0].count,
                          gcstate->old[1].count);
 #endif

@@ -1658,6 +1658,19 @@ class GCTogglingTests(unittest.TestCase):
         finally:
             gc.enable()
 
+    @gc_threshold(1000, 0, 0)
+    def test_get_count_does_not_prevent_collection(self):
+        junk = []
+        gc.collect()
+        detector = GC_Detector()
+        for _ in range(10000):
+            junk.append([])
+            gc.get_count()
+            if detector.gc_happened:
+                break
+        else:
+            self.fail("gc didn't happen after 10000 iterations")
+
     # Ensure that setting *threshold0* to zero disables collection.
     @gc_threshold(0)
     def test_threshold_zero(self):
