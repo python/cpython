@@ -1899,6 +1899,9 @@ print(f'''{{
         self.assertEqual(f"{UnchangedFormat():{r'\xFF'}}", '\\xFF')
         self.assertEqual(rf"{UnchangedFormat():{r'\xFF'}}", '\\xFF')
 
+        self.assertEqual(rf"{UnchangedFormat():{f'\xFF'}}\n", 'ÿ\\n')
+        self.assertEqual(f"{UnchangedFormat():{rf'\xFF'}}\n", '\\xFF\n')
+
         # Test continuation character in format specs
         self.assertEqual(f"""{UnchangedFormat():{'a'\
                         'b'}}""", 'ab')
