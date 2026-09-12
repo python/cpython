@@ -1,0 +1,1 @@
+Avoid materializing large sequence ranges in :meth:`mailbox.MH.get_sequences`.
