@@ -1432,19 +1432,21 @@ set_inflate_zdict_ZlibDecompressor(zlibstate *state, ZlibDecompressor *self)
 static Py_ssize_t
 arrange_output_buffer_with_maximum(uint32_t *avail_out,
                                    uint8_t **next_out,
-                                   PyObject **buffer,
+                                   PyBytesWriter **writer,
                                    Py_ssize_t length,
                                    Py_ssize_t max_length)
 {
     Py_ssize_t occupied;
 
-    if (*buffer == NULL) {
-        if (!(*buffer = PyBytes_FromStringAndSize(NULL, length)))
+    if (*writer == NULL) {
+        *writer = PyBytesWriter_Create(length);
+        if (*writer == NULL) {
             return -1;
+        }
         occupied = 0;
     }
     else {
-        occupied = *next_out - (uint8_t *)PyBytes_AS_STRING(*buffer);
+        occupied = *next_out - (uint8_t *)PyBytesWriter_GetData(*writer);
 
         if (length == occupied) {
             Py_ssize_t new_length;
@@ -1456,14 +1458,15 @@ arrange_output_buffer_with_maximum(uint32_t *avail_out,
                 new_length = length << 1;
             else
                 new_length = max_length;
-            if (_PyBytes_Resize(buffer, new_length) < 0)
+            if (PyBytesWriter_Resize(*writer, new_length) < 0) {
                 return -1;
+            }
             length = new_length;
         }
     }
 
     *avail_out = (uint32_t)Py_MIN((size_t)(length - occupied), UINT32_MAX);
-    *next_out = (uint8_t *)PyBytes_AS_STRING(*buffer) + occupied;
+    *next_out = (uint8_t *)PyBytesWriter_GetData(*writer) + occupied;
 
     return length;
 }
@@ -1480,7 +1483,7 @@ decompress_buf(ZlibDecompressor *self, Py_ssize_t max_length)
     /* data_size is strictly positive, but because we repeatedly have to
        compare against max_length and PyBytes_GET_SIZE we declare it as
        signed */
-    PyObject *return_value = NULL;
+    PyBytesWriter *writer = NULL;
     Py_ssize_t hard_limit;
     Py_ssize_t obuflen;
     zlibstate *state = PyType_GetModuleState(Py_TYPE(self));
@@ -1511,10 +1514,10 @@ decompress_buf(ZlibDecompressor *self, Py_ssize_t max_length)
 
         do {
             obuflen = arrange_output_buffer_with_maximum(&(self->zst.avail_out),
-                                                        &(self->zst.next_out),
-                                                        &return_value,
-                                                        obuflen,
-                                                        hard_limit);
+                                                         &(self->zst.next_out),
+                                                         &writer,
+                                                         obuflen,
+                                                         hard_limit);
             if (obuflen == -1){
                 PyErr_SetString(PyExc_MemoryError,
                                 "Insufficient memory for buffer allocation");
@@ -1559,16 +1562,11 @@ decompress_buf(ZlibDecompressor *self, Py_ssize_t max_length)
 
     self->avail_in_real += self->zst.avail_in;
 
-    if (_PyBytes_Resize(&return_value, self->zst.next_out -
-                        (uint8_t *)PyBytes_AS_STRING(return_value)) != 0) {
-        goto error;
-    }
+    return PyBytesWriter_FinishWithPointer(writer, self->zst.next_out);
 
-    goto success;
 error:
-    Py_CLEAR(return_value);
-success:
-    return return_value;
+    PyBytesWriter_Discard(writer);
+    return NULL;
 }
 
 
