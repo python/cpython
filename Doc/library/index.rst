@@ -4,14 +4,15 @@
   The Python standard library
 ###############################
 
-While :ref:`reference-index` describes the exact syntax and
-semantics of the Python language, and :ref:`builtins-index` describes
-the built-ins, this library reference manual
-describes the standard library that is distributed with Python. It also
-describes some of the optional components that are commonly included
-in Python distributions.
+This library reference manual describes the standard library
+distributed with Python. It also describes some of the optional
+components that are commonly included in Python distributions.
 
-Python's standard library is very extensive, offering a wide range of
+Elsewhere, :ref:`reference-index` describes the exact syntax and
+semantics of the Python language, and :ref:`builtins-index` describes
+the built-in functions.
+
+Python's standard library is extensive, offering a wide range of
 facilities as indicated by the long table of contents listed below. The
 library contains built-in modules (written in C) that provide access to
 system functionality such as file I/O that would otherwise be

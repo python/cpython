@@ -5,9 +5,11 @@
 #################################
 
 This reference manual describes the syntax and core semantics of the
-language. It is terse, but attempts to be exact and complete. The semantics of
-built-in object types and of the built-in functions and modules
-are described in :ref:`builtins-index` and :ref:`library-index`.
+language. It is terse, but attempts to be exact and complete.
+
+Elsewhere, the built-in object types and functions are described in
+:ref:`builtins-index`. Standard library modules are described in :ref:`library-index`.
+
 For an informal introduction to the
 language, see :ref:`tutorial-index`. For C or C++ programmers, two additional
 manuals exist: :ref:`extending-index` describes the high-level picture of how to
