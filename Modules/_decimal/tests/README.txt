@@ -1,9 +1,6 @@
 
 
-This directory contains extended tests and a benchmark against decimal.py:
-
-  bench.py  ->  Benchmark for small and large precisions.
-  Usage: ../../../python bench.py
+This directory contains extended tests against decimal.py:
 
   formathelper.py   ->
   randdec.py        ->  Generate test cases for deccheck.py.
