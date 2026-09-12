@@ -196,7 +196,9 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
     SPEC(show_ref_count, BOOL, READ_ONLY, NO_SYS, NO_GLOBAL),
     SPEC(site_import, BOOL, READ_ONLY, NO_SYS, GLOBAL(&Py_NoSiteFlag, 1)),  // sys.flags.no_site
     SPEC(skip_source_first_line, BOOL, READ_ONLY, NO_SYS, NO_GLOBAL),
-    SPEC(stdio_encoding, WSTR, READ_ONLY, NO_SYS, NO_GLOBAL),
+    SPEC(stderr_encoding, WSTR, READ_ONLY, NO_SYS, NO_GLOBAL),
+    SPEC(stdin_encoding, WSTR, READ_ONLY, NO_SYS, NO_GLOBAL),
+    SPEC(stdout_encoding, WSTR, READ_ONLY, NO_SYS, NO_GLOBAL),
     SPEC(stdio_errors, WSTR, READ_ONLY, NO_SYS, NO_GLOBAL),
     SPEC(tracemalloc, UINT, READ_ONLY, NO_SYS, NO_GLOBAL),
     SPEC(use_frozen_modules, BOOL, READ_ONLY, NO_SYS, NO_GLOBAL),
@@ -1074,7 +1076,9 @@ config_check_consistency(const PyConfig *config)
     assert(config->module_search_paths_set >= 0);
     assert(config->filesystem_encoding != NULL);
     assert(config->filesystem_errors != NULL);
-    assert(config->stdio_encoding != NULL);
+    assert(config->stdin_encoding != NULL);
+    assert(config->stdout_encoding != NULL);
+    assert(config->stderr_encoding != NULL);
     assert(config->stdio_errors != NULL);
 #ifdef MS_WINDOWS
     assert(config->legacy_windows_stdio >= 0);
@@ -1140,7 +1144,9 @@ PyConfig_Clear(PyConfig *config)
 
     CLEAR(config->filesystem_encoding);
     CLEAR(config->filesystem_errors);
-    CLEAR(config->stdio_encoding);
+    CLEAR(config->stdin_encoding);
+    CLEAR(config->stdout_encoding);
+    CLEAR(config->stderr_encoding);
     CLEAR(config->stdio_errors);
     CLEAR(config->run_command);
     CLEAR(config->run_module);
@@ -2646,6 +2652,62 @@ config_get_locale_encoding(PyConfig *config, const PyPreConfig *preconfig,
 }
 
 
+#ifdef MS_WINDOWS
+/* The encoding of the device, or the locale encoding if it is not
+   a console.  See also _Py_device_encoding(). */
+static PyStatus
+config_get_device_encoding(PyConfig *config, const PyPreConfig *preconfig,
+                           int fd, wchar_t **result)
+{
+    UINT cp = 0;
+    HANDLE handle = (HANDLE)_Py_get_osfhandle_noraise(fd);
+    if (handle != INVALID_HANDLE_VALUE && GetFileType(handle) == FILE_TYPE_CHAR) {
+        DWORD temp;
+        /* GetConsoleMode() only succeeds for a console handle. */
+        if (!GetConsoleMode(handle, &temp)) {
+            /* Assume that access denied implies an output handle. */
+            if (GetLastError() == ERROR_ACCESS_DENIED) {
+                cp = GetConsoleOutputCP();
+            }
+        }
+        else if (GetNumberOfConsoleInputEvents(handle, &temp)) {
+            cp = GetConsoleCP();
+        }
+        else {
+            cp = GetConsoleOutputCP();
+        }
+    }
+    if (cp == 0) {
+        return config_get_locale_encoding(config, preconfig, result);
+    }
+    if (cp == CP_UTF8) {
+        return PyConfig_SetString(config, result, L"utf-8");
+    }
+    wchar_t encoding[20];
+    swprintf(encoding, Py_ARRAY_LENGTH(encoding), L"cp%u", (unsigned int)cp);
+    return PyConfig_SetString(config, result, encoding);
+}
+#endif
+
+
+/* The default encoding of the standard stream with the file descriptor fd. */
+static PyStatus
+config_get_stdio_encoding(PyConfig *config, const PyPreConfig *preconfig,
+                          int fd, wchar_t **result)
+{
+    if (*result != NULL) {
+        return _PyStatus_OK();
+    }
+#ifdef MS_WINDOWS
+    if (config->legacy_windows_stdio) {
+        /* gh-86427: the standard streams are ordinary files here. */
+        return config_get_device_encoding(config, preconfig, fd, result);
+    }
+#endif
+    return config_get_locale_encoding(config, preconfig, result);
+}
+
+
 static PyStatus
 config_init_stdio_encoding(PyConfig *config,
                            const PyPreConfig *preconfig)
@@ -2653,7 +2715,9 @@ config_init_stdio_encoding(PyConfig *config,
     PyStatus status;
 
     // Exit if encoding and errors are defined
-    if (config->stdio_encoding != NULL && config->stdio_errors != NULL) {
+    if (config->stdin_encoding != NULL && config->stdout_encoding != NULL
+        && config->stderr_encoding != NULL && config->stdio_errors != NULL)
+    {
         return _PyStatus_OK();
     }
 
@@ -2676,8 +2740,14 @@ config_init_stdio_encoding(PyConfig *config,
 
         /* Does PYTHONIOENCODING contain an encoding? */
         if (pythonioencoding[0]) {
-            if (config->stdio_encoding == NULL) {
-                status = CONFIG_SET_BYTES_STR(config, &config->stdio_encoding,
+            wchar_t **encodings[] = {&config->stdin_encoding,
+                                     &config->stdout_encoding,
+                                     &config->stderr_encoding};
+            for (size_t i = 0; i < Py_ARRAY_LENGTH(encodings); i++) {
+                if (*encodings[i] != NULL) {
+                    continue;
+                }
+                status = CONFIG_SET_BYTES_STR(config, encodings[i],
                                               pythonioencoding,
                                               "PYTHONIOENCODING environment variable");
                 if (_PyStatus_EXCEPTION(status)) {
@@ -2709,34 +2779,20 @@ config_init_stdio_encoding(PyConfig *config,
     }
 
     /* Choose the default error handler based on the current locale. */
-    if (config->stdio_encoding == NULL) {
-#ifdef MS_WINDOWS
-        /* gh-86427: use the console code page.  Only one encoding can be
-           specified, so the output code page is used: it affects two
-           streams of three. */
-        UINT cp = config->legacy_windows_stdio ? GetConsoleOutputCP() : 0;
-        if (cp != 0) {
-            if (cp == CP_UTF8) {
-                status = PyConfig_SetString(config, &config->stdio_encoding,
-                                            L"utf-8");
-            }
-            else {
-                wchar_t encoding[20];
-                swprintf(encoding, Py_ARRAY_LENGTH(encoding), L"cp%u",
-                         (unsigned int)cp);
-                status = PyConfig_SetString(config, &config->stdio_encoding,
-                                            encoding);
-            }
-        }
-        else
-#endif
-        {
-            status = config_get_locale_encoding(config, preconfig,
-                                                &config->stdio_encoding);
-        }
-        if (_PyStatus_EXCEPTION(status)) {
-            return status;
-        }
+    status = config_get_stdio_encoding(config, preconfig, 0,
+                                       &config->stdin_encoding);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+    status = config_get_stdio_encoding(config, preconfig, 1,
+                                       &config->stdout_encoding);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+    status = config_get_stdio_encoding(config, preconfig, 2,
+                                       &config->stderr_encoding);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
     }
     if (config->stdio_errors == NULL) {
         const wchar_t *errors = config_get_stdio_errors(preconfig);

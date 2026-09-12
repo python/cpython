@@ -171,7 +171,9 @@ typedef struct PyConfig {
     int user_site_directory;
     int configure_c_stdio;
     int buffered_stdio;
-    wchar_t *stdio_encoding;
+    wchar_t *stdin_encoding;
+    wchar_t *stdout_encoding;
+    wchar_t *stderr_encoding;
     wchar_t *stdio_errors;
 #ifdef MS_WINDOWS
     int legacy_windows_stdio;

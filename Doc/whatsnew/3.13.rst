@@ -2440,7 +2440,7 @@ Removed C APIs
   * :c:func:`!Py_SetPath`:
     Set :c:member:`PyConfig.module_search_paths` instead.
   * :c:func:`!Py_SetStandardStreamEncoding`:
-    Set :c:member:`PyConfig.stdio_encoding` instead,
+    Set :c:member:`!PyConfig.stdio_encoding` instead,
     and set also maybe :c:member:`PyConfig.legacy_windows_stdio` (on Windows).
   * :c:func:`!_Py_SetProgramFullPath`:
     Set :c:member:`PyConfig.executable` instead.

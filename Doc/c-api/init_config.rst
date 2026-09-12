@@ -477,8 +477,16 @@ Configuration Options
      - :c:member:`skip_source_first_line <PyConfig.skip_source_first_line>`
      - ``bool``
      - Read-only
-   * - ``"stdio_encoding"``
-     - :c:member:`stdio_encoding <PyConfig.stdio_encoding>`
+   * - ``"stderr_encoding"``
+     - :c:member:`stderr_encoding <PyConfig.stderr_encoding>`
+     - ``str``
+     - Read-only
+   * - ``"stdin_encoding"``
+     - :c:member:`stdin_encoding <PyConfig.stdin_encoding>`
+     - ``str``
+     - Read-only
+   * - ``"stdout_encoding"``
+     - :c:member:`stdout_encoding <PyConfig.stdout_encoding>`
      - ``str``
      - Read-only
    * - ``"stdio_errors"``
@@ -1863,12 +1871,14 @@ PyConfig
 
       Default: ``0``.
 
-   .. c:member:: wchar_t* stdio_encoding
+   .. c:member:: wchar_t* stdin_encoding
+   .. c:member:: wchar_t* stdout_encoding
+   .. c:member:: wchar_t* stderr_encoding
    .. c:member:: wchar_t* stdio_errors
 
-      Encoding and encoding errors of :data:`sys.stdin`, :data:`sys.stdout` and
-      :data:`sys.stderr` (but :data:`sys.stderr` always uses
-      ``"backslashreplace"`` error handler).
+      Encoding of :data:`sys.stdin`, :data:`sys.stdout` and :data:`sys.stderr`
+      respectively, and encoding errors of all of them (but :data:`sys.stderr`
+      always uses the ``"backslashreplace"`` error handler).
 
       Use the :envvar:`PYTHONIOENCODING` environment variable if it is
       non-empty.
