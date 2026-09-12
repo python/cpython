@@ -64,12 +64,48 @@ else:
 _extension_details()
 
 
+_MISSING = object()
+
+
+@contextlib.contextmanager
+def _restore_import_metadata():
+    """Keep the source copy of importlib out of other modules' metadata.
+
+    Importing importlib with _frozen_importlib blocked runs
+    importlib._bootstrap._setup(), which fills in __spec__ and __loader__ on
+    every builtin and frozen module that lacks them. After the import, this
+    context restores the original values of those attributes on all modules that
+    were modified so those modifications don't leak into other tests.
+    """
+    incomplete = {}
+    for name, module in list(sys.modules.items()):
+        if isinstance(module, types.ModuleType):
+            for attr in ('__spec__', '__loader__'):
+                value = getattr(module, attr, _MISSING)
+                if value is None or value is _MISSING:
+                    incomplete[name, attr] = value
+    try:
+        yield
+    finally:
+        for (name, attr), value in incomplete.items():
+            module = sys.modules.get(name)
+            if module is not None and getattr(module, attr, _MISSING) is not value:
+                if value is _MISSING:
+                    delattr(module, attr)
+                else:
+                    setattr(module, attr, value)
+
+
 def import_importlib(module_name):
     """Import a module from importlib both w/ and w/o _frozen_importlib."""
     fresh = ('importlib',) if '.' in module_name else ()
     frozen = import_helper.import_fresh_module(module_name)
-    source = import_helper.import_fresh_module(module_name, fresh=fresh,
-                                         blocked=('_frozen_importlib', '_frozen_importlib_external'))
+    with _restore_import_metadata():
+        source = import_helper.import_fresh_module(
+            module_name,
+            fresh=fresh,
+            blocked=('_frozen_importlib', '_frozen_importlib_external'),
+        )
     return {'Frozen': frozen, 'Source': source}
 
 
