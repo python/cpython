@@ -3655,6 +3655,7 @@ byteswriter_resize(PyBytesWriter *writer, Py_ssize_t size, int resize)
 
     Py_ssize_t old_allocated = byteswriter_allocated(writer);
     if (size <= old_allocated) {
+        // Do not shrink the buffer before PyBytesWriter_FinishWithSize()
         return 0;
     }
 
