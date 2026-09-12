@@ -64,6 +64,75 @@ class TestLoadSuperAttrCache(unittest.TestCase):
 
 
 class TestLoadAttrCache(unittest.TestCase):
+    @requires_specialization
+    def test_load_attr_replaced_dict_specializes(self):
+        class C:
+            class_value = "class"
+
+            def method(self):
+                return "class method"
+
+        c = C()
+        c.__dict__ = {
+            "instance_value": 42,
+            "class_value": "instance",
+            "method": "instance method",
+        }
+
+        def get_values():
+            return c.instance_value, c.class_value, c.method
+
+        expected = (42, "instance", "instance method")
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+            self.assertEqual(get_values(), expected)
+
+        opnames = [
+            instruction.opname
+            for instruction in dis.get_instructions(get_values, adaptive=True)
+        ]
+        self.assertEqual(opnames.count("LOAD_ATTR_WITH_HINT"), 3)
+
+    @requires_specialization
+    def test_load_attr_replaced_general_dict_does_not_specialize(self):
+        class C:
+            pass
+
+        c = C()
+        c.__dict__ = {"x": 42, 1: None}
+
+        def get_x():
+            return c.x
+
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+            self.assertEqual(get_x(), 42)
+
+        opnames = {
+            instruction.opname
+            for instruction in dis.get_instructions(get_x, adaptive=True)
+        }
+        self.assertNotIn("LOAD_ATTR_WITH_HINT", opnames)
+
+    @requires_specialization
+    def test_load_attr_replaced_dict_ignores_stale_shared_key(self):
+        class C:
+            x = "class"
+
+        c = C()
+        c.x = "instance"
+        c.__dict__ = {}
+
+        def get_x():
+            return c.x
+
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+            self.assertEqual(get_x(), "class")
+
+        opnames = {
+            instruction.opname
+            for instruction in dis.get_instructions(get_x, adaptive=True)
+        }
+        self.assertNotIn("LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES", opnames)
+
     def test_descriptor_added_after_optimization(self):
         class Descriptor:
             pass
@@ -1082,6 +1151,30 @@ class TestRacesDoNotCrash(TestBase):
         def write(items):
             for item in items:
                 item.__dict__[None] = None
+
+        opname = "LOAD_ATTR_WITH_HINT"
+        self.assert_races_do_not_crash(opname, get_items, read, write)
+
+    @requires_specialization
+    def test_load_attr_with_hint_replaced_dict(self):
+        def get_items():
+            class C:
+                pass
+
+            items = []
+            for _ in range(self.ITEMS):
+                item = C()
+                item.__dict__ = {"a": None}
+                items.append(item)
+            return items
+
+        def read(items):
+            for item in items:
+                item.a
+
+        def write(items):
+            for item in items:
+                item.__dict__ = {"padding": None, "a": None}
 
         opname = "LOAD_ATTR_WITH_HINT"
         self.assert_races_do_not_crash(opname, get_items, read, write)
