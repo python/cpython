@@ -1,0 +1,5 @@
+Track JIT-allocated machine-code buffers with Valgrind client requests, so
+that memcheck's leak checker can see them. ``jit_alloc()`` and ``jit_free()``
+use ``mmap`` and ``munmap`` directly, which Valgrind does not track as
+allocations, making a forgotten free invisible. Guarded by the existing
+:option:`--with-valgrind` configure option.
