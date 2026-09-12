@@ -990,6 +990,16 @@ def singledispatch(func):
                         f"Invalid annotation for {argname!r}. "
                         f"{cls!r} is not a class."
                     )
+            if argname == 'return':
+                import warnings
+                warnings.warn(
+                    "Using the return annotation to infer the dispatch type "
+                    "is deprecated and will raise TypeError in Python 3.18. "
+                    "Annotate the dispatch parameter or pass the dispatch "
+                    "type explicitly to register() decorator.",
+                    DeprecationWarning,
+                    skip_file_prefixes=(__file__,),
+                )
 
         if isinstance(cls, UnionType):
             for arg in cls.__args__:

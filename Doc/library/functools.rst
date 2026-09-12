@@ -506,9 +506,9 @@ The :mod:`!functools` module defines the following functions:
       :no-typesetting:
 
    To add overloaded implementations to the function, use the :func:`!register`
-   attribute of the generic function, which can be used as a decorator.  For
-   functions annotated with types, the decorator will infer the type of the
-   first argument automatically::
+   attribute of the generic function, which can be used as a decorator. For
+   functions annotated with types, the decorator can infer the dispatch type
+   automatically::
 
      >>> @fun.register
      ... def _(arg: int, verbose=False):
@@ -540,8 +540,9 @@ The :mod:`!functools` module defines the following functions:
     ...         print(i, elem)
     ...
 
-   For code which doesn't use type annotations, the appropriate type
-   argument can be passed explicitly to the decorator itself::
+   For code which doesn't use type annotations, or where the first resolved
+   annotation does not belong to the dispatch argument, the appropriate type
+   can be passed explicitly to the decorator itself::
 
      >>> @fun.register(complex)
      ... def _(arg, verbose=False):
@@ -662,6 +663,12 @@ The :mod:`!functools` module defines the following functions:
       The :func:`~singledispatch.register` attribute now supports
       :class:`typing.Union` as a type annotation.
 
+   .. deprecated:: 3.16
+      Using a return annotation to infer the dispatch type is deprecated and
+      will raise :exc:`TypeError` in Python 3.18. Annotate the dispatch
+      parameter or pass the dispatch type explicitly to :func:`!register`
+      instead.
+
 
 .. class:: singledispatchmethod(func)
 
@@ -685,6 +692,20 @@ The :mod:`!functools` module defines the following functions:
         @neg.register
         def _(self, arg: bool):
             return not arg
+
+   When *self* or *cls* is annotated, pass the dispatch type explicitly rather
+   than relying on annotation inference::
+
+    from typing import Self
+
+    class Negator:
+        @singledispatchmethod
+        def neg(self, arg):
+            raise NotImplementedError("Cannot negate a")
+
+        @neg.register(int)
+        def _(self: Self, arg: int):
+            return -arg
 
    ``@singledispatchmethod`` supports nesting with other decorators such as
    :deco:`classmethod`. Note that to allow for

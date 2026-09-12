@@ -1,0 +1,5 @@
+Deprecate using a return annotation to infer the dispatch type for
+:func:`functools.singledispatch` and
+:class:`functools.singledispatchmethod`. It will raise :exc:`TypeError` in
+Python 3.18. Annotate the dispatch parameter or pass the dispatch type
+explicitly instead. Patch by Bartosz Sławecki.
