@@ -1410,19 +1410,30 @@ This codec is special in that it can be used to implement many different codecs
 included in the :mod:`!encodings` package). The codec uses mappings to encode and
 decode characters.  The mapping objects provided must support the
 :meth:`~object.__getitem__` mapping interface; dictionaries and sequences work well.
+For decoding, a :class:`str` can also be used directly as a lookup table; see
+:c:func:`PyUnicode_DecodeCharmap`.
 
 These are the mapping codec APIs:
 
 .. c:function:: PyObject* PyUnicode_DecodeCharmap(const char *str, Py_ssize_t length, \
                               PyObject *mapping, const char *errors)
 
-   Create a Unicode object by decoding *size* bytes of the encoded string *str*
-   using the given *mapping* object.  Return ``NULL`` if an exception was raised
-   by the codec.
+   Create a Unicode object by decoding *length* bytes of the encoded string
+   *str* using the given *mapping* object.  Return ``NULL`` if an exception was
+   raised by the codec.
 
-   If *mapping* is ``NULL``, Latin-1 decoding will be applied.  Else
-   *mapping* must map bytes ordinals (integers in the range from 0 to 255)
-   to Unicode strings, integers (which are then interpreted as Unicode
+   If *mapping* is ``NULL``, Latin-1 decoding will be applied.
+
+   If *mapping* is an exact :class:`str` object (not an instance of a
+   subclass), it is used as a decoding table: the byte with ordinal *b* is
+   decoded to the character ``mapping[b]``.  Bytes whose ordinal is greater
+   than or equal to ``len(mapping)``, as well as bytes which map to
+   ``'\ufffe'``, are treated as undefined mappings and cause an error.  This
+   is the form used by the ``decoding_table`` of the modules in the
+   :mod:`!encodings` package.
+
+   Otherwise, *mapping* must map bytes ordinals (integers in the range from 0
+   to 255) to Unicode strings, integers (which are then interpreted as Unicode
    ordinals) or ``None``.  Unmapped data bytes -- ones which cause a
    :exc:`LookupError`, as well as ones which get mapped to ``None``,
    ``0xFFFE`` or ``'\ufffe'``, are treated as undefined mappings and cause
