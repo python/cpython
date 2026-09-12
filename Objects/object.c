@@ -198,10 +198,11 @@ refchain_init(PyInterpreterState *interp)
         return 0;
     }
     _Py_hashtable_allocator_t alloc = {
-        // Don't use default PyMem_Malloc() and PyMem_Free() which
-        // require the caller to hold the GIL.
-        .malloc = PyMem_RawMalloc,
-        .free = PyMem_RawFree,
+        // Use directly malloc() and free() of the C library. Using
+        // PyMem_RawMalloc() and PyMem_RawFree() prevents testing
+        // _testcapi.set_nomemory().
+        .malloc = malloc,
+        .free = free,
     };
     REFCHAIN(interp) = _Py_hashtable_new_full(
         _Py_hashtable_hash_ptr, _Py_hashtable_compare_direct,
