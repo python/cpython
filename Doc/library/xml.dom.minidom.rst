@@ -274,6 +274,10 @@ rules apply:
      and produced an invalid document,
      but removing an absent attribute raised :exc:`~xml.dom.NotFoundErr`.
 
+  .. versionchanged:: next
+     Namespaces are now validated in the factory methods and when setting
+     :attr:`~xml.dom.Node.prefix` of an attribute.
+
 The following interfaces have no implementation in :mod:`!xml.dom.minidom`:
 
 * :class:`DOMTimeStamp`
