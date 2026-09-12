@@ -1,0 +1,3 @@
+If :meth:`bytearray.resize` or :meth:`bytearray.take_bytes` fails, leave the
+:class:`bytearray` unchanged, instead of clearing it. Patch by Victor
+Stinner.
