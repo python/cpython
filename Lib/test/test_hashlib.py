@@ -18,6 +18,8 @@ import sysconfig
 import threading
 import unittest
 import warnings
+from functools import partial
+from operator import attrgetter
 from test import support
 from test.support import _4G, bigmemtest
 from test.support.import_helper import import_fresh_module
@@ -52,16 +54,42 @@ if not get_fips_mode:
     def get_fips_mode():
         return 0
 
+
+try:
+    import _md5
+except ImportError:
+    _md5 = None
+requires_md5 = unittest.skipUnless(_md5, 'requires _md5')
+
+
 try:
     import _blake2
 except ImportError:
     _blake2 = None
-
 requires_blake2 = unittest.skipUnless(_blake2, 'requires _blake2')
 
+
+try:
+    import _sha1
+except ImportError:
+    _sha1 = None
+requires_sha1 = unittest.skipUnless(_sha1, 'requires _sha1')
+
+
+try:
+    import _sha2
+except ImportError:
+    _sha2 = None
+requires_sha2 = unittest.skipUnless(_sha2, 'requires _sha2')
+
+
+try:
+    import _sha3
+except ImportError:
+    _sha3 = None
 # bpo-46913: Don't test the _sha3 extension on a Python UBSAN build
 # TODO(gh-99108): Revisit this after _sha3 uses HACL*.
-SKIP_SHA3 = support.check_sanitizer(ub=True)
+SKIP_SHA3 = _sha3 is None or support.check_sanitizer(ub=True)
 requires_sha3 = unittest.skipUnless(not SKIP_SHA3, 'requires _sha3')
 
 
@@ -1271,6 +1299,71 @@ class KDFTests(unittest.TestCase):
 
         with self.assertRaises(BlockingIOError):
             hashlib.file_digest(NonBlocking(), hashlib.sha256)
+
+
+@threading_helper.requires_working_threading()
+class TestTSAN(unittest.TestCase):
+
+    @threading_helper.reap_threads
+    def check_attribute(self, write, read, expected, nthreads=8):
+        ready = threading.Event()
+        barrier = threading.Barrier(nthreads)
+
+        def writer():
+            barrier.wait()
+            while not ready.is_set():
+                write()
+
+        def reader():
+            barrier.wait()
+            while not ready.is_set():
+                self.assertEqual(read(), expected)
+
+        targets = [writer if i % 2 else reader for i in range(nthreads)]
+        workers = [threading.Thread(target=target) for target in targets]
+        with threading_helper.start_threads(workers, unlock=ready.set):
+            pass
+
+    def check_HACL_attribute(self, module, version, attrname):
+        blob = b"A" * 65536
+        obj = getattr(module, version)()
+        update = partial(obj.update, blob)
+        read = attrgetter(attrname)
+        self.check_attribute(update, partial(read, obj), read(obj))
+
+    @requires_md5
+    @support.subTests("attrname", ["block_size", "digest_size"])
+    def test_HACL_md5_attributes(self, attrname):
+        self.check_HACL_attribute(_md5, "md5", attrname)
+
+    @requires_sha1
+    @support.subTests("attrname", ["block_size", "digest_size"])
+    def test_HACL_sha1_attributes(self, attrname):
+        self.check_HACL_attribute(_sha1, "sha1", attrname)
+
+    @requires_sha2
+    @support.subTests("size", [224, 256, 384, 512])
+    @support.subTests("attrname", ["block_size", "digest_size"])
+    def test_HACL_sha2_attributes(self, size, attrname):
+        self.check_HACL_attribute(_sha2, f"sha{size}", attrname)
+
+    @requires_sha3
+    @support.subTests("size", [224, 256, 384, 512])
+    @support.subTests(
+        "attrname",
+        ["block_size", "digest_size", "_capacity_bits", "_rate_bits"],
+    )
+    def test_HACL_sha3_attributes(self, size, attrname):
+        self.check_HACL_attribute(_sha3, f"sha3_{size}", attrname)
+
+    @requires_sha3
+    @support.subTests("size", [128, 256])
+    @support.subTests(
+        "attrname",
+        ["block_size", "digest_size", "_capacity_bits", "_rate_bits"],
+    )
+    def test_HACL_shake_attributes(self, size, attrname):
+        self.check_HACL_attribute(_sha3, f"shake_{size}", attrname)
 
 
 if __name__ == "__main__":
