@@ -535,6 +535,114 @@ class CAPITest(unittest.TestCase):
         check_format("repr=   12",
                      b'repr=%5.2V', None, b'123')
 
+        # test the escaping mode ("#" flag) with %c
+        check_format('A',
+                     b'%#c', c_int(ord('A')))
+        check_format('\\n',
+                     b'%#c', c_int(ord('\n')))
+        check_format('\\\\',
+                     b'%#c', c_int(ord('\\')))
+        check_format('\\x1b',
+                     b'%#c', c_int(0x1b))
+        check_format('\\x7f',
+                     b'%#c', c_int(0x7f))
+        check_format('\\u009f',
+                     b'%#c', c_int(0x9f))
+        check_format('\xe9',
+                     b'%#c', c_int(0xe9))
+        check_format('\\u2028',
+                     b'%#c', c_int(0x2028))
+        check_format('\U0001f600',
+                     b'%#c', c_int(0x1f600))
+        check_format('\\ud800',
+                     b'%#c', c_int(0xd800))
+        check_format('\\udc9f',
+                     b'%#c', c_int(0xdc9f))
+        check_format('\\u00e9',
+                     b'%+#c', c_int(0xe9))
+        check_format('\\u20ac',
+                     b'%+#c', c_int(0x20ac))
+        check_format('\\U0001f600',
+                     b'%+#c', c_int(0x1f600))
+
+        # test the escaping mode with %s
+        check_format('a\\tb\\r\\nc\\\\d',
+                     b'%#s', b'a\tb\r\nc\\d')
+        check_format('quote\'"',
+                     b'%#s', b'quote\'"')
+        check_format('caf\xe9',
+                     b'%#s', b'caf\xc3\xa9')
+        check_format('caf\\u00e9',
+                     b'%+#s', b'caf\xc3\xa9')
+        # valid UTF-8 is escaped as a character, invalid -- as a raw byte
+        check_format('\\u009f',
+                     b'%#s', b'\xc2\x9f')
+        check_format('\\x9f',
+                     b'%#s', b'\x9f')
+        check_format('\\x9f',
+                     b'%+#s', b'\x9f')
+        check_format('a\\xffb',
+                     b'%#s', b'a\xffb')
+        check_format('abc\\xc3',
+                     b'%#s', b'abc\xc3')
+        # the precision is applied before escaping, the width -- after
+        check_format('ab\\n',
+                     b'%#.3s', b'ab\ncd')
+        check_format('  ab\\n',
+                     b'%#6.3s', b'ab\ncd')
+        check_format('ab\\n  ',
+                     b'%-#6.3s', b'ab\ncd')
+        check_format('a\\xff',
+                     b'%#.2s', b'a\xffbc')
+        check_format('abc',
+                     b'%#.4s', b'abc\xc3\xa9')
+
+        # test the escaping mode with %U, %V and %S
+        check_format('a\\tb',
+                     b'%#U', 'a\tb')
+        check_format('caf\xe9',
+                     b'%#U', 'caf\xe9')
+        check_format('caf\\u00e9',
+                     b'%+#U', 'caf\xe9')
+        check_format('a\\tb',
+                     b'%#S', 'a\tb')
+        check_format('caf\xe9',
+                     b'%#S', 'caf\xe9')
+        check_format('caf\\u00e9',
+                     b'%+#S', 'caf\xe9')
+        check_format('   ab',
+                     b'%#5.2S', 'ab\ncd')
+        # a lone surrogate in a string argument stays a surrogate
+        check_format('\\udc9f',
+                     b'%#U', '\udc9f')
+        check_format('\\udc9f',
+                     b'%+#U', '\udc9f')
+        check_format('   ab',
+                     b'%#5.2U', 'ab\ncd')
+        check_format('a\\tb',
+                     b'%#V', 'a\tb', b'ignored')
+        check_format('\\u009f',
+                     b'%#V', None, b'\xc2\x9f')
+        check_format('\\x9f',
+                     b'%#V', None, b'\x9f')
+
+        # test the escaping mode with %ls and %lV
+        check_format('a\\tb',
+                     b'%#ls', c_wchar_p('a\tb'))
+        check_format('caf\xe9',
+                     b'%#ls', c_wchar_p('caf\xe9'))
+        check_format('caf\\u00e9',
+                     b'%+#ls', c_wchar_p('caf\xe9'))
+        check_format('a\\tb',
+                     b'%#lV', None, c_wchar_p('a\tb'))
+
+        # "+" requires "#" and is only supported for %c, %s, %S, %U and %V
+        for format in (b'%+c', b'%+s', b'%+S', b'%+U', b'%+d', b'%+#d',
+                       b'%+#R', b'%+#A', b'%+#T', b'%+#p'):
+            with self.subTest(format=format):
+                with self.assertRaises(SystemError):
+                    PyUnicode_FromFormat(format, py_object('abc'))
+
         # test integer formats (%i, %d, %u, %o, %x, %X)
         check_format('010',
                      b'%03i', c_int(10))
@@ -2002,6 +2110,11 @@ class PyUnicodeWriterFormatTest(unittest.TestCase):
         self.writer_format(writer, b'%s %i', b'abc', c_int(123))
         writer.write_char(ord('.'))
         self.assertEqual(writer.finish(), 'abc 123.')
+
+    def test_format_escape(self):
+        writer = self.create_writer(0)
+        self.writer_format(writer, b'%#s %+#s', b'a\tb\xff', b'caf\xc3\xa9')
+        self.assertEqual(writer.finish(), 'a\\tb\\xff caf\\u00e9')
 
     def test_recover_error(self):
         # test recovering from PyUnicodeWriter_Format() error

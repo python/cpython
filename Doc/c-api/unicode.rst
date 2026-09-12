@@ -477,6 +477,30 @@ APIs:
    | ``-`` | The converted value is left adjusted (overrides the ``0``   |
    |       | flag if both are given).                                    |
    +-------+-------------------------------------------------------------+
+   | ``#`` | Escape special and non-printable characters for the ``c``,  |
+   |       | ``s``, ``S``, ``U`` and ``V`` conversions.                  |
+   |       | Use a colon as a separator for the ``T`` and ``N``          |
+   |       | conversions.                                                |
+   +-------+-------------------------------------------------------------+
+   | ``+`` | Escape also all non-ASCII characters (only in combination   |
+   |       | with the ``#`` flag for the ``c``, ``s``, ``S``, ``U`` and  |
+   |       | ``V`` conversions).                                         |
+   +-------+-------------------------------------------------------------+
+
+   With the ``#`` flag, the ``c``, ``s``, ``S``, ``U`` and ``V``
+   conversions escape special and non-printable characters
+   like :func:`repr` does,
+   but without adding surrounding quotes:
+   backslash, tab, carriage return and line feed are escaped as
+   ``\\``, ``\t``, ``\r`` and ``\n`` respectively,
+   other non-printable characters are escaped as ``\xNN`` if they are
+   ASCII, and as ``\uNNNN`` or ``\UNNNNNNNN`` otherwise.
+   With the ``+`` flag, all non-ASCII characters are escaped as well.
+   For the ``s`` and ``V`` conversions,
+   bytes which cannot be decoded from UTF-8 are escaped as ``\xNN``,
+   so they can always be distinguished from valid non-ASCII characters.
+   The precision is applied to the string before escaping,
+   the width -- after escaping.
 
    The length modifiers for following integer conversions (``d``, ``i``,
    ``o``, ``u``, ``x``, or ``X``) specify the type of the argument
@@ -629,6 +653,10 @@ APIs:
 
    .. versionchanged:: 3.13
       Support for ``%T``, ``%#T``, ``%N`` and ``%#N`` formats added.
+
+   .. versionchanged:: next
+      Support for flags ``#`` and ``+`` for the ``c``, ``s``, ``S``,
+      ``U`` and ``V`` conversions added.
 
 
 .. c:function:: PyObject* PyUnicode_FromFormatV(const char *format, va_list vargs)

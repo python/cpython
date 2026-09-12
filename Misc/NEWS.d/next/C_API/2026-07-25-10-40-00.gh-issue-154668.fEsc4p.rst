@@ -1,0 +1,5 @@
+Add the escaping mode to :c:func:`PyUnicode_FromFormat`:
+with the ``#`` flag,
+the ``c``, ``s``, ``S``, ``U`` and ``V`` conversions now escape special
+and non-printable characters,
+and with the additional ``+`` flag -- also all non-ASCII characters.
