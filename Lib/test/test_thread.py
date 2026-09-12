@@ -345,6 +345,53 @@ class ThreadRunningTests(BasicThreadTest):
             handle = thread.start_joinable_thread(func, handle=None)
             handle.join()
 
+class StartNewThreadKwargsRace(unittest.TestCase):
+
+    def setUp(self):
+        key = threading_helper.threading_setup()
+        self.addCleanup(threading_helper.threading_cleanup, *key)
+
+    @unittest.skipUnless(support.Py_GIL_DISABLED, "GIL must be disabled")
+    def test_dict_growsup_when_thread_start(self):
+        # See gh-149816 - (62) Concurrent kwargs growth causes heap overwrite
+        # This test is meant to be run under a free-threaded build, where the GIL is
+        # disabled and concurrent mutations of the same dict can cause heap
+        # corruption.
+        results = []
+        def mutator(shared, stop, prefix, burst):
+            i = 0
+            while not stop.locked():
+                for _ in range(burst):
+                    shared[f"{prefix}_{i}"] = i
+                    i += 1
+                time.sleep(0)
+            results.append(prefix)
+
+        def nop(i, **kwargs):
+            results.append(i)
+
+        with threading_helper.wait_threads_exit():
+            stop = thread.lock()
+            shared = {f"base_{i}": i for i in range(20000)}
+            n = 4
+            for i in range(n):
+                args=(shared, stop, f"dynamic_{i}", 1000)
+                thread.start_new_thread(mutator, args)
+
+            snt = 16
+            for i in range(snt):
+                try:
+                    thread.start_new_thread(nop, (i,), shared)
+                except RuntimeError:
+                    break
+
+            stop.acquire()
+            # wait for all mutator/nop threads stop.
+            for _ in support.sleeping_retry(support.SHORT_TIMEOUT):
+                if len(results) == n+snt:
+                    break
+            self.assertTrue(True, "successful test")
+
 
 class Barrier:
     def __init__(self, num_threads):
