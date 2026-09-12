@@ -2583,7 +2583,7 @@ def get_parameter(value):
             for t in token:
                 if t.token_type == 'extended-attrtext':
                     break
-            t.token_type == 'attrtext'
+            t.token_type = 'attrtext'
             appendto.append(t)
             param.charset = t.value
         if value[0] != "'":
