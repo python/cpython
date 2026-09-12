@@ -473,6 +473,26 @@ class BaseWriterTest:
                 self.assertEqual(writer.get_data(), b'')
                 self.assertEqual(writer.finish(),  b'')
 
+    @support.nomemtest
+    def test_resize_error(self):
+        # Test PyBytesWriter_Resize() error
+        init = b'x' * self.LARGE_BUFFER
+        writer = self.create_writer(len(init))
+        writer.write(0, init)
+        size = len(init) + 100
+        try:
+            with self.assertRaises(MemoryError):
+                _testcapi.set_nomemory(0)
+                writer.resize(size)
+        finally:
+            _testcapi.remove_mem_hooks()
+        suffix = b'still working'
+        writer.write_bytes(suffix, -1)
+        self.assertEqual(writer.finish(), init + suffix)
+
+        # Note: PyBytesWriter_Resize() leaves the buffer unchanged (no resize)
+        # if the new size is smaller than the allocated size
+
     def test_grow(self):
         # Test PyBytesWriter_Grow()
         writer = self.create_writer(0)
@@ -533,26 +553,24 @@ class BaseWriterTest:
                 self.assertEqual(writer.get_data(), b'')
                 self.assertEqual(writer.finish(),  b'')
 
-
     @support.nomemtest
-    def test_resize_error(self):
-        # Test PyBytesWriter_Resize() error
+    def test_grow_error(self):
+        # Test PyBytesWriter_Grow() error
         init = b'x' * self.LARGE_BUFFER
         writer = self.create_writer(len(init))
         writer.write(0, init)
-        size = len(init) + 100
         try:
             with self.assertRaises(MemoryError):
                 _testcapi.set_nomemory(0)
-                writer.resize(size)
+                writer.grow(100)
         finally:
             _testcapi.remove_mem_hooks()
         suffix = b'still working'
         writer.write_bytes(suffix, -1)
         self.assertEqual(writer.finish(), init + suffix)
 
-        # Note: PyBytesWriter_Resize() leaves the buffer unchanged (no resize)
-        # if the new size is smaller than the allocated size
+        # Note: PyBytesWriter_Grow() leaves the buffer unchanged (no resize)
+        # if grow is negative.
 
     def test_format_i(self):
         # Test PyBytesWriter_Format()

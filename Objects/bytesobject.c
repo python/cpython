@@ -3883,21 +3883,21 @@ PyBytesWriter_GetSize(PyBytesWriter *writer)
 
 
 int
-PyBytesWriter_Resize(PyBytesWriter *writer, Py_ssize_t size)
+PyBytesWriter_Resize(PyBytesWriter *writer, Py_ssize_t new_size)
 {
-    if (size < 0) {
+    if (new_size < 0) {
         PyErr_SetString(PyExc_ValueError, "size must be >= 0");
         return -1;
     }
-    if (writer->size < size) {
-        if (byteswriter_resize(writer, size, 1) < 0) {
+    if (writer->size < new_size) {
+        if (byteswriter_resize(writer, new_size, 1) < 0) {
             return -1;
         }
     }
     else {
         // The buffer is already large enough. Never shrink the buffer.
     }
-    writer->size = size;
+    writer->size = new_size;
 #ifdef Py_DEBUG
     byteswriter_write_canary_byte(writer);
 #endif
@@ -3925,24 +3925,27 @@ PyBytesWriter_Grow(PyBytesWriter *writer, Py_ssize_t grow)
         return 0;
     }
 
-    if (grow >= 0) {
+    if (grow > 0) {
         if (grow > PY_SSIZE_T_MAX - writer->size) {
             PyErr_NoMemory();
             return -1;
         }
+        Py_ssize_t new_size = writer->size + grow;
+
+        if (byteswriter_resize(writer, new_size, 1) < 0) {
+            return -1;
+        }
+        writer->size = new_size;
     }
     else {
         if (writer->size + grow < 0) {
             PyErr_SetString(PyExc_ValueError, "invalid size");
             return -1;
         }
+        // The buffer is already large enough. Never shrink the buffer.
+        writer->size = writer->size + grow;
     }
-    Py_ssize_t size = writer->size + grow;
 
-    if (byteswriter_resize(writer, size, 1) < 0) {
-        return -1;
-    }
-    writer->size = size;
 #ifdef Py_DEBUG
     byteswriter_write_canary_byte(writer);
 #endif
