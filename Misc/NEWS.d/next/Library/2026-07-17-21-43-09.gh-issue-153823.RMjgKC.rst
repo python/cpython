@@ -1,0 +1,3 @@
+Fix :data:`email.policy.default` to parse apostrophes in unquoted MIME
+parameter values as valid token characters.  This restores attachment
+filename and multipart boundary handling consistent with ``compat32``.
