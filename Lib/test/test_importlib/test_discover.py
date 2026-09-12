@@ -1,4 +1,4 @@
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from test.test_importlib import util
 
@@ -113,6 +113,68 @@ class TestFileFinder:
             example = finder.find_spec('example')
             with self.assertRaises(ValueError):
                 list(finder.discover(example))
+
+    def _patch_scandir(self, scandir):
+        module_os = self.machinery.FileFinder._fill_cache.__globals__['_os']
+        return patch.object(module_os, 'scandir', scandir)
+
+    def test_discover_persistently_failing_scan(self):
+        # gh-155935: an iterator that raises OSError on every next() call
+        # must end the listing instead of looping forever.
+        class FailingScandirIterator:
+            calls = 0
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                return False
+
+            def __next__(self):
+                self.calls += 1
+                if self.calls > 100:
+                    # Safety net so regressed code fails fast on the call
+                    # count below instead of hanging the test forever.
+                    raise StopIteration
+                raise OSError('persistently failing directory scan')
+
+        scan_iterator = FailingScandirIterator()
+        with self._patch_scandir(lambda path: scan_iterator):
+            finder = self.get_finder('dummy')
+            discovered = list(finder.discover())
+        self.assertEqual(discovered, [])
+        # A failed scan must not be retried.
+        self.assertEqual(scan_iterator.calls, 1)
+
+    def test_find_children_failing_direntry(self):
+        # An entry whose DirEntry methods raise OSError is skipped; the
+        # remaining entries are still listed.
+        failing = Mock()
+        failing.name = 'failing'
+        failing.is_dir.side_effect = OSError('stat failed')
+        good = Mock()
+        good.name = 'example.py'
+        good.is_dir.return_value = False
+        good.is_file.return_value = True
+
+        class FakeScandirIterator:
+            def __init__(self, entries):
+                self._iterator = iter(entries)
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                return False
+
+            def __next__(self):
+                return next(self._iterator)
+
+        with self._patch_scandir(
+                lambda path: FakeScandirIterator([failing, good])):
+            finder = self.get_finder('dummy')
+            children = list(finder._find_children())
+        self.assertEqual(children, ['example'])
 
 
 (
