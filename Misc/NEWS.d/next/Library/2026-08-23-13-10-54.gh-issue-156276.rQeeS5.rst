@@ -1,0 +1,2 @@
+Fix :mod:`asyncio` losing received TLS data when
+:meth:`~asyncio.BufferedProtocol.get_buffer` returns a :class:`bytearray`.
