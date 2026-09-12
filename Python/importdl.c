@@ -158,9 +158,22 @@ _Py_ext_module_loader_info_init_for_builtin(
     assert(PyUnicode_Check(name));
     assert(PyUnicode_GetLength(name) > 0);
 
+    /* The encoded name is only used for error messages, so unlike
+     * get_encoded_name() we keep the full dotted name.  Non-ASCII names
+     * are allowed, but only for multi-phase init modules; hook_prefixes
+     * records which case we are in. */
+    const struct hook_prefixes *hook_prefixes = &ascii_only_prefixes;
     PyObject *name_encoded = PyUnicode_AsEncodedString(name, "ascii", NULL);
     if (name_encoded == NULL) {
-        return -1;
+        if (!PyErr_ExceptionMatches(PyExc_UnicodeEncodeError)) {
+            return -1;
+        }
+        PyErr_Clear();
+        name_encoded = PyUnicode_AsUTF8String(name);
+        if (name_encoded == NULL) {
+            return -1;
+        }
+        hook_prefixes = &nonascii_prefixes;
     }
 
     *info = (struct _Py_ext_module_loader_info){
@@ -169,7 +182,7 @@ _Py_ext_module_loader_info_init_for_builtin(
         /* We won't need filename. */
         .path=name,
         .origin=_Py_ext_module_origin_BUILTIN,
-        .hook_prefixes=&ascii_only_prefixes,
+        .hook_prefixes=hook_prefixes,
         .newcontext=NULL,
     };
     return 0;

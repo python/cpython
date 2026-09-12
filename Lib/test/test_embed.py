@@ -282,6 +282,9 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
                          "sp_pkg.sp_submod.__name__='sp_pkg.sp_submod'\n"
                          "sys.modules[\"sp_pkg.sp_submod\"] is sp_pkg.sp_submod=True\n"
                          "\"sp_submod\" in sys.modules=False\n"
+                         "ascii(mp.__name__)=\"'m\\\\xf6dul_mp'\" mp.executed='yes'\n"
+                         "SystemError: 'initialization of m\\xf6dul_sp "
+                         "did not return PyModuleDef'\n"
                          )
 
     def test_inittab_submodule_multiphase(self):
