@@ -269,4 +269,86 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c782fcf9dd6690e0 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(fcntl_getlk__doc__,
+"getlk($module, fd, cmd, len=0, start=0, whence=0, /)\n"
+"--\n"
+"\n"
+"A wrapper around the fcntl(F_GETLK) locking call.\n"
+"\n"
+"`fd` is the file descriptor of the file whose lock status to get.  `cmd`\n"
+"is one of the following values:\n"
+"\n"
+"    LOCK_SH - check for conflicting exclusive lock\n"
+"    LOCK_EX - check for conflicting shared or exclusive lock\n"
+"\n"
+"Note that the returned information identifies a lock that would conflict\n"
+"with acquiring the type of lock specified in `cmd`.  Calling with\n"
+"LOCK_SH therefore only returns information on a conflicting LOCK_EX,\n"
+"while calling with LOCK_EX returns information on either LOCK_SH or\n"
+"LOCK_EX locks.\n"
+"\n"
+"The remaining parameters are as with `lockf`.\n"
+"\n"
+"Returns a tuple of (pid, cmd, len, start, whence) if a conflicting\n"
+"lock is found.  If more than one lock conflicts, platform code chooses\n"
+"one.  There may not be an associated process, in which case pid will\n"
+"be -1.\n"
+"\n"
+"If no other lock would conflict with the request, this function returns\n"
+"None.\n"
+"\n"
+"The information returned by this call may already be outdated by the\n"
+"time it returns.  Additionally, only locks acquired using `lockf` (or\n"
+"`fcntl(F_SETLK)`) are considered by this call.");
+
+#define FCNTL_GETLK_METHODDEF    \
+    {"getlk", _PyCFunction_CAST(fcntl_getlk), METH_FASTCALL, fcntl_getlk__doc__},
+
+static PyObject *
+fcntl_getlk_impl(PyObject *module, int fd, int code, PyObject *lenobj,
+                 PyObject *startobj, int whence);
+
+static PyObject *
+fcntl_getlk(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int fd;
+    int code;
+    PyObject *lenobj = NULL;
+    PyObject *startobj = NULL;
+    int whence = 0;
+
+    if (!_PyArg_CheckPositional("getlk", nargs, 2, 5)) {
+        goto exit;
+    }
+    fd = PyObject_AsFileDescriptor(args[0]);
+    if (fd < 0) {
+        goto exit;
+    }
+    code = PyLong_AsInt(args[1]);
+    if (code == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    lenobj = args[2];
+    if (nargs < 4) {
+        goto skip_optional;
+    }
+    startobj = args[3];
+    if (nargs < 5) {
+        goto skip_optional;
+    }
+    whence = PyLong_AsInt(args[4]);
+    if (whence == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
+    return_value = fcntl_getlk_impl(module, fd, code, lenobj, startobj, whence);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=0213f8eee17bf80e input=a9049054013a1b77]*/
