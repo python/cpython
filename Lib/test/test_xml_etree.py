@@ -3893,7 +3893,7 @@ class ElementIterTest(unittest.TestCase):
         self.assertEqual(next(ET.iterparse(sourcefile, parser=parser))[0], 'end')
 
         tree = ET.ElementTree(None)
-        self.assertRaises(AttributeError, tree.iter)
+        self.assertEqual(list(tree.iter()), [])
 
         # Issue #16913
         doc = ET.XML("<root>a&amp;<sub>b&amp;</sub>c&amp;</root>")
@@ -3989,6 +3989,179 @@ class ElementIterTest(unittest.TestCase):
             with self.assertRaises((TypeError, pickle.PicklingError)):
                 pickle.dumps(it, proto)
 
+
+
+class DocumentChildrenTest(unittest.TestCase):
+    # gh-68475: comments and processing instructions outside the root element
+
+    sample = ('<!--lead--><?pi data?><r><?in?><a/></r><?after?><!--tail-->')
+
+    def parse(self, text=None):
+        builder = ET.TreeBuilder(insert_comments=True, insert_pis=True)
+        tree = ET.ElementTree()
+        tree.parse(io.StringIO(text if text is not None else self.sample),
+                   ET.XMLParser(target=builder))
+        return tree
+
+    def test_only_the_root_by_default(self):
+        tree = ET.ElementTree()
+        tree.parse(io.StringIO(self.sample))
+        self.assertEqual(summarize_list(tree.children), ['r'])
+        self.assertEqual(len(tree.children), 1)
+        self.assertIs(tree.children[0], tree.getroot())
+
+    def test_parse_keeps_the_prolog_and_the_epilog(self):
+        tree = self.parse()
+        self.assertEqual(summarize_list(tree.children),
+                         [ET.Comment, ET.ProcessingInstruction, 'r',
+                          ET.ProcessingInstruction, ET.Comment])
+        self.assertEqual(tree.children[0].text, 'lead')
+        self.assertEqual(tree.children[-1].text, 'tail')
+        self.assertIs(tree.getroot(), tree.children[2])
+
+    def test_write(self):
+        tree = self.parse()
+        file = io.StringIO()
+        tree.write(file, encoding='unicode')
+        self.assertEqual(file.getvalue(),
+                '<!--lead--><?pi data?><r><?in?><a /></r>'
+                '<?after?><!--tail-->')
+
+    def test_iter(self):
+        tree = self.parse()
+        self.assertEqual(summarize_list(tree.iter()),
+                         [ET.Comment, ET.ProcessingInstruction, 'r',
+                          ET.ProcessingInstruction, 'a',
+                          ET.ProcessingInstruction, ET.Comment])
+        self.assertEqual(summarize_list(tree.iter('*')),
+                         [ET.Comment, ET.ProcessingInstruction, 'r',
+                          ET.ProcessingInstruction, 'a',
+                          ET.ProcessingInstruction, ET.Comment])
+        self.assertEqual(summarize_list(tree.iter('a')), ['a'])
+        # comments and processing instructions can be selected by the factory
+        self.assertEqual(summarize_list(tree.iter(ET.ProcessingInstruction)),
+                         [ET.ProcessingInstruction] * 3)
+        self.assertEqual(summarize_list(tree.iter(ET.Comment)),
+                         [ET.Comment, ET.Comment])
+
+    def test_find_searches_from_the_root(self):
+        tree = self.parse()
+        # find() and friends search from the root element, so they return
+        # the processing instruction inside it, but not those outside
+        self.assertEqual(summarize_list(tree.findall('*')),
+                         [ET.ProcessingInstruction, 'a'])
+        self.assertEqual(summarize_list(tree.findall('.//*')),
+                         [ET.ProcessingInstruction, 'a'])
+        self.assertEqual(tree.find('a').tag, 'a')
+
+    def test_append_and_insert(self):
+        tree = ET.ElementTree(ET.Element('r'))
+        tree.children.insert(0, ET.Comment('lead'))
+        tree.children.append(ET.ProcessingInstruction('pi', 'data'))
+        self.assertEqual(summarize_list(tree.children),
+                         [ET.Comment, 'r', ET.ProcessingInstruction])
+        self.assertIs(tree.getroot(), tree.children[1])
+
+    def test_the_first_element_becomes_the_root(self):
+        tree = ET.ElementTree()
+        tree.children.append(ET.Comment('lead'))
+        self.assertIsNone(tree.getroot())
+        elem = ET.Element('r')
+        tree.children.append(elem)
+        self.assertIs(tree.getroot(), elem)
+
+    def test_only_one_element(self):
+        tree = ET.ElementTree(ET.Element('r'))
+        children = tree.children
+        children.insert(0, ET.Comment('lead'))
+        self.assertRaises(ValueError, children.append, ET.Element('second'))
+        self.assertRaises(ValueError, children.insert, 0, ET.Element('second'))
+        self.assertRaises(ValueError, children.extend, [ET.Element('second')])
+        # the comment cannot be replaced by an element either
+        self.assertRaises(ValueError, children.__setitem__, 0,
+                          ET.Element('second'))
+        self.assertEqual(summarize_list(tree.children), [ET.Comment, 'r'])
+        self.assertEqual(tree.getroot().tag, 'r')
+        # but the root element can be replaced
+        children[1] = ET.Element('other')
+        self.assertEqual(tree.getroot().tag, 'other')
+
+    def test_not_an_element(self):
+        tree = ET.ElementTree(ET.Element('r'))
+        self.assertRaises(TypeError, tree.children.append, 'text')
+        self.assertRaises(TypeError, tree.children.insert, 0, None)
+        self.assertEqual(summarize_list(tree.children), ['r'])
+
+    def test_remove_and_delete(self):
+        tree = self.parse()
+        root = tree.getroot()
+        tree.children.remove(root)
+        self.assertIsNone(tree.getroot())
+        self.assertEqual(summarize_list(tree.children),
+                         [ET.Comment, ET.ProcessingInstruction,
+                          ET.ProcessingInstruction, ET.Comment])
+        del tree.children[0]
+        self.assertEqual(summarize_list(tree.children),
+                         [ET.ProcessingInstruction, ET.ProcessingInstruction,
+                          ET.Comment])
+        tree.children.clear()
+        self.assertEqual(summarize_list(tree.children), [])
+        self.assertIsNone(tree.getroot())
+
+    def test_slices(self):
+        tree = self.parse()
+        root = tree.getroot()
+        tree.children[0:2] = [ET.Comment('one')]
+        self.assertEqual(summarize_list(tree.children),
+                         [ET.Comment, 'r', ET.ProcessingInstruction,
+                          ET.Comment])
+        self.assertIs(tree.getroot(), root)
+        # the slice which replaces the root element can add another one
+        new = ET.Element('new')
+        tree.children[1:2] = [new]
+        self.assertIs(tree.getroot(), new)
+        # but not two
+        self.assertRaises(ValueError, tree.children.__setitem__,
+                          slice(0, 2), [ET.Element('a'), ET.Element('b')])
+        self.assertIs(tree.getroot(), new)
+        del tree.children[1:2]
+        self.assertIsNone(tree.getroot())
+
+    def test_the_root_cannot_be_a_comment(self):
+        self.assertRaises(ValueError, ET.ElementTree, ET.Comment('c'))
+        self.assertRaises(ValueError, ET.ElementTree,
+                          ET.ProcessingInstruction('pi'))
+        tree = ET.ElementTree(ET.Element('r'))
+        self.assertRaises(ValueError, tree._setroot, ET.Comment('c'))
+
+    def test_tostring_of_a_comment(self):
+        # tostring() serializes a single node, which can be a comment
+        self.assertEqual(ET.tostring(ET.Comment('c')), b'<!--c-->')
+        self.assertEqual(ET.tostring(ET.ProcessingInstruction('t', 'd')),
+                         b'<?t d?>')
+
+    def test_document_without_the_root(self):
+        tree = ET.ElementTree()
+        tree.children.extend([ET.Comment('a'), ET.ProcessingInstruction('p')])
+        file = io.StringIO()
+        tree.write(file, encoding='unicode')
+        self.assertEqual(file.getvalue(), '<!--a--><?p?>')
+
+    def test_builder_document(self):
+        builder = ET.TreeBuilder(insert_comments=True, insert_pis=True)
+        parser = ET.XMLParser(target=builder)
+        parser.feed(self.sample)
+        root = parser.close()
+        self.assertEqual(root.tag, 'r')
+        self.assertEqual(len(builder.get_document_children()), 5)
+        self.assertIs(builder.get_document_children()[2], root)
+
+    def test_builder_document_without_inserting(self):
+        builder = ET.TreeBuilder()
+        parser = ET.XMLParser(target=builder)
+        parser.feed(self.sample)
+        root = parser.close()
+        self.assertEqual(builder.get_document_children(), [root])
 
 class TreeBuilderTest(unittest.TestCase):
     sample1 = ('<!DOCTYPE html PUBLIC'

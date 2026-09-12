@@ -1479,4 +1479,22 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e2e9cf288c4400f6 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_elementtree_TreeBuilder_get_document_children__doc__,
+"get_document_children($self, /)\n"
+"--\n"
+"\n"
+"Return the children of the document.");
+
+#define _ELEMENTTREE_TREEBUILDER_GET_DOCUMENT_CHILDREN_METHODDEF    \
+    {"get_document_children", (PyCFunction)_elementtree_TreeBuilder_get_document_children, METH_NOARGS, _elementtree_TreeBuilder_get_document_children__doc__},
+
+static PyObject *
+_elementtree_TreeBuilder_get_document_children_impl(TreeBuilderObject *self);
+
+static PyObject *
+_elementtree_TreeBuilder_get_document_children(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _elementtree_TreeBuilder_get_document_children_impl((TreeBuilderObject *)self);
+}
+/*[clinic end generated code: output=f9e762b3d94385d3 input=a9049054013a1b77]*/
