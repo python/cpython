@@ -647,6 +647,14 @@ _PyPegen_name_from_token(Parser *p, Token* t)
         p->error_indicator = 1;
         return NULL;
     }
+    if (p->identifier_cache == NULL) {
+        p->identifier_cache = PyMem_Calloc(
+            IDENTIFIER_CACHE_SIZE, sizeof(*p->identifier_cache));
+        if (p->identifier_cache == NULL) {
+            p->error_indicator = 1;
+            return (expr_ty)PyErr_NoMemory();
+        }
+    }
     IdentifierCacheEntry *free_slot = NULL;
     size_t idx = (size_t)hash & (IDENTIFIER_CACHE_SIZE - 1);
     for (int probe = 0; probe < IDENTIFIER_CACHE_MAX_PROBES; probe++) {
@@ -914,15 +922,7 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int flags,
     p->flags = flags;
     p->feature_version = feature_version;
     p->known_err_token = NULL;
-    p->identifier_cache = PyMem_Calloc(
-        IDENTIFIER_CACHE_SIZE, sizeof(*p->identifier_cache));
-    if (p->identifier_cache == NULL) {
-        growable_comment_array_deallocate(&p->type_ignore_comments);
-        PyMem_Free(p->tokens[0]);
-        PyMem_Free(p->tokens);
-        PyMem_Free(p);
-        return (Parser *) PyErr_NoMemory();
-    }
+    p->identifier_cache = NULL;
     p->tstate = PyThreadState_Get();
     // Stack limits are initialized when the thread state is attached.
     assert(((_PyThreadStateImpl *)p->tstate)->c_stack_hard_limit != 0);
