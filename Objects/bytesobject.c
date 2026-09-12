@@ -2276,7 +2276,6 @@ bytes_translate_impl(PyBytesObject *self, PyObject *table,
     PyObject *input_obj = (PyObject*)self;
     const char *output_start, *del_table_chars=NULL;
     Py_ssize_t inlen, tablen, dellen = 0;
-    PyObject *result;
     int trans_table[256];
 
     if (PyBytes_Check(table)) {
@@ -2321,13 +2320,13 @@ bytes_translate_impl(PyBytesObject *self, PyObject *table,
     }
 
     inlen = PyBytes_GET_SIZE(input_obj);
-    result = PyBytes_FromStringAndSize((char *)NULL, inlen);
-    if (result == NULL) {
+    PyBytesWriter *writer = PyBytesWriter_Create(inlen);
+    if (writer == NULL) {
         PyBuffer_Release(&del_table_view);
         PyBuffer_Release(&table_view);
         return NULL;
     }
-    output_start = output = PyBytes_AS_STRING(result);
+    output_start = output = PyBytesWriter_GetData(writer);
     input = PyBytes_AS_STRING(input_obj);
 
     if (dellen == 0 && table_chars != NULL) {
@@ -2336,14 +2335,17 @@ bytes_translate_impl(PyBytesObject *self, PyObject *table,
             c = Py_CHARMASK(*input++);
             *output++ = table_chars[c];
         }
+        PyObject *result = PyBytesWriter_Finish(writer);
+
         /* Check if anything changed (for returning original object) */
         /* We save this check until the end so that the compiler will */
         /* unroll the loop above leading to MUCH faster code. */
-        if (PyBytes_CheckExact(input_obj)) {
+        if (result != NULL && PyBytes_CheckExact(input_obj)) {
             if (memcmp(PyBytes_AS_STRING(input_obj), output_start, inlen) == 0) {
                 Py_SETREF(result, Py_NewRef(input_obj));
             }
         }
+
         PyBuffer_Release(&del_table_view);
         PyBuffer_Release(&table_view);
         return result;
@@ -2370,13 +2372,11 @@ bytes_translate_impl(PyBytesObject *self, PyObject *table,
         changed = 1;
     }
     if (!changed && PyBytes_CheckExact(input_obj)) {
-        Py_DECREF(result);
+        PyBytesWriter_Discard(writer);
         return Py_NewRef(input_obj);
     }
     /* Fix the size of the resulting byte string */
-    if (inlen > 0)
-        _PyBytes_Resize(&result, output - output_start);
-    return result;
+    return PyBytesWriter_FinishWithPointer(writer, output);
 }
 
 
@@ -3889,8 +3889,13 @@ PyBytesWriter_Resize(PyBytesWriter *writer, Py_ssize_t size)
         PyErr_SetString(PyExc_ValueError, "size must be >= 0");
         return -1;
     }
-    if (byteswriter_resize(writer, size, 1) < 0) {
-        return -1;
+    if (writer->size < size) {
+        if (byteswriter_resize(writer, size, 1) < 0) {
+            return -1;
+        }
+    }
+    else {
+        // The buffer is already large enough. Never shrink the buffer.
     }
     writer->size = size;
 #ifdef Py_DEBUG
@@ -3913,22 +3918,26 @@ _PyBytesWriter_ResizeAndUpdatePointer(PyBytesWriter *writer, Py_ssize_t size,
 
 
 int
-PyBytesWriter_Grow(PyBytesWriter *writer, Py_ssize_t size)
+PyBytesWriter_Grow(PyBytesWriter *writer, Py_ssize_t grow)
 {
-    if (size < 0) {
-        PyErr_SetString(PyExc_ValueError, "size must be >= 0");
-        return -1;
-    }
-    if (size == 0) {
+    if (grow == 0) {
         // Nothing to do
         return 0;
     }
 
-    if (size > PY_SSIZE_T_MAX - writer->size) {
-        PyErr_NoMemory();
-        return -1;
+    if (grow >= 0) {
+        if (grow > PY_SSIZE_T_MAX - writer->size) {
+            PyErr_NoMemory();
+            return -1;
+        }
     }
-    size = writer->size + size;
+    else {
+        if (writer->size + grow < 0) {
+            PyErr_SetString(PyExc_ValueError, "invalid size");
+            return -1;
+        }
+    }
+    Py_ssize_t size = writer->size + grow;
 
     if (byteswriter_resize(writer, size, 1) < 0) {
         return -1;
