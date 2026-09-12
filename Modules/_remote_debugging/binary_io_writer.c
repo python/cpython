@@ -44,6 +44,22 @@
         } \
     } while (0)
 
+#define CHECK_TUPLE_ITEMS(obj, n) do { \
+    if (!PyTuple_Check(obj) || PyTuple_GET_SIZE(obj) < (n)) { \
+        PyErr_Format(PyExc_TypeError, \
+                     #obj " must be a tuple of at least %zd items", \
+                     (Py_ssize_t)(n)); \
+        return -1; \
+    } \
+} while (0)
+
+#define CHECK_LIST(obj) do { \
+    if (!PyList_Check(obj)) { \
+        PyErr_SetString(PyExc_TypeError, #obj " must be a list"); \
+        return -1; \
+    } \
+} while (0)
+
 /* ============================================================================
  * WRITER-SPECIFIC UTILITY HELPERS
  * ============================================================================ */
@@ -838,8 +854,8 @@ build_frame_stack(BinaryWriter *writer, PyObject *frame_list,
     *curr_depth = (stack_depth < MAX_STACK_DEPTH) ? stack_depth : MAX_STACK_DEPTH;
 
     for (Py_ssize_t k = 0; k < (Py_ssize_t)*curr_depth; k++) {
-        /* Use unchecked accessors since we control the data structures */
         PyObject *frame_info = PyList_GET_ITEM(frame_list, k);
+        CHECK_TUPLE_ITEMS(frame_info, 4);
 
         /* Get filename, location, funcname, opcode from FrameInfo using unchecked access */
         PyObject *filename = PyStructSequence_GET_ITEM(frame_info, 0);
@@ -854,20 +870,13 @@ build_frame_stack(BinaryWriter *writer, PyObject *frame_list,
         int32_t end_column = LOCATION_NOT_AVAILABLE;
 
         if (location != Py_None) {
+            CHECK_TUPLE_ITEMS(location, 4);
             /* LocationInfo is a struct sequence or tuple with:
              * (lineno, end_lineno, column, end_column) */
-            PyObject *lineno_obj = PyTuple_Check(location) ?
-                PyTuple_GET_ITEM(location, 0) :
-                PyStructSequence_GET_ITEM(location, 0);
-            PyObject *end_lineno_obj = PyTuple_Check(location) ?
-                PyTuple_GET_ITEM(location, 1) :
-                PyStructSequence_GET_ITEM(location, 1);
-            PyObject *column_obj = PyTuple_Check(location) ?
-                PyTuple_GET_ITEM(location, 2) :
-                PyStructSequence_GET_ITEM(location, 2);
-            PyObject *end_column_obj = PyTuple_Check(location) ?
-                PyTuple_GET_ITEM(location, 3) :
-                PyStructSequence_GET_ITEM(location, 3);
+            PyObject *lineno_obj = PyTuple_GET_ITEM(location, 0);
+            PyObject *end_lineno_obj = PyTuple_GET_ITEM(location, 1);
+            PyObject *column_obj = PyTuple_GET_ITEM(location, 2);
+            PyObject *end_column_obj = PyTuple_GET_ITEM(location, 3);
 
             PYLONG_TO_INT32_OR_DEFAULT(lineno_obj, lineno, LOCATION_NOT_AVAILABLE);
             PYLONG_TO_INT32_OR_DEFAULT(end_lineno_obj, end_lineno, LOCATION_NOT_AVAILABLE);
@@ -925,9 +934,11 @@ static int
 process_thread_sample(BinaryWriter *writer, PyObject *thread_info,
                       uint32_t interpreter_id, uint64_t timestamp_us)
 {
+    CHECK_TUPLE_ITEMS(thread_info, 3);
     PyObject *thread_id_obj = PyStructSequence_GET_ITEM(thread_info, 0);
     PyObject *status_obj = PyStructSequence_GET_ITEM(thread_info, 1);
     PyObject *frame_list = PyStructSequence_GET_ITEM(thread_info, 2);
+    CHECK_LIST(frame_list);
 
     uint64_t thread_id = PyLong_AsUnsignedLongLong(thread_id_obj);
     if (thread_id == (uint64_t)-1 && PyErr_Occurred()) {
@@ -1010,17 +1021,16 @@ process_thread_sample(BinaryWriter *writer, PyObject *thread_info,
 int
 binary_writer_write_sample(BinaryWriter *writer, PyObject *stack_frames, uint64_t timestamp_us)
 {
-    if (!PyList_Check(stack_frames)) {
-        PyErr_SetString(PyExc_TypeError, "stack_frames must be a list");
-        return -1;
-    }
+    CHECK_LIST(stack_frames);
 
     Py_ssize_t num_interpreters = PyList_GET_SIZE(stack_frames);
     for (Py_ssize_t i = 0; i < num_interpreters; i++) {
         PyObject *interp_info = PyList_GET_ITEM(stack_frames, i);
+        CHECK_TUPLE_ITEMS(interp_info, 2);
 
         PyObject *interp_id_obj = PyStructSequence_GET_ITEM(interp_info, 0);
         PyObject *threads = PyStructSequence_GET_ITEM(interp_info, 1);
+        CHECK_LIST(threads);
 
         unsigned long interp_id_long = PyLong_AsUnsignedLong(interp_id_obj);
         if (interp_id_long == (unsigned long)-1 && PyErr_Occurred()) {
