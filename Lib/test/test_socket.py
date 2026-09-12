@@ -5209,6 +5209,61 @@ class InterruptedTimeoutBase:
             signal.alarm(seconds)
 
 
+@unittest.skipUnless(sys.platform == "linux",
+                     "requires Linux TCP backlog behavior")
+@requireAttrs(signal, "setitimer", "siginterrupt")
+class InterruptedConnectTimeoutTest(unittest.TestCase):
+
+    def setUp(self):
+        super().setUp()
+        # On Linux, listen(0) allows one connection to be queued. Filling the
+        # queue makes the next connect() wait without requiring an external
+        # TCP blackhole.
+        self.listener = socket.socket()
+        self.addCleanup(self.listener.close)
+        self.listener.bind((HOST, 0))
+        self.listener.listen(0)
+
+        queued = socket.socket()
+        self.addCleanup(queued.close)
+        queued.connect(self.listener.getsockname())
+
+        self.client = socket.socket()
+        self.addCleanup(self.client.close)
+
+    def setAlarm(self, handler, delay, interval=0):
+        old_handler = signal.signal(signal.SIGALRM, handler)
+        self.addCleanup(signal.signal, signal.SIGALRM, old_handler)
+        signal.setitimer(signal.ITIMER_REAL, delay, interval)
+        self.addCleanup(signal.setitimer, signal.ITIMER_REAL, 0)
+
+    def test_connect_retries_after_signal(self):
+        self.client.settimeout(0.25)
+
+        signals = 0
+
+        def handler(signum, frame):
+            nonlocal signals
+            signals += 1
+
+        self.setAlarm(handler, 0.03, 0.03)
+
+        with self.assertRaises(TimeoutError):
+            self.client.connect(self.listener.getsockname())
+        self.assertGreater(signals, 0)
+
+    def test_connect_propagates_signal_handler_exception(self):
+        self.client.settimeout(support.LOOPBACK_TIMEOUT)
+
+        def handler(signum, frame):
+            1 / 0
+
+        self.setAlarm(handler, 0.03)
+
+        with self.assertRaises(ZeroDivisionError):
+            self.client.connect(self.listener.getsockname())
+
+
 # Require siginterrupt() in order to ensure that system calls are
 # interrupted by default.
 @requireAttrs(signal, "siginterrupt")
