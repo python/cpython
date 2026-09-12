@@ -1,0 +1,1 @@
+Don't crash when using GTK and readline in Xvfb
