@@ -316,7 +316,7 @@ bytes_join(PyObject *self, PyObject *iterable_of_bytes)
 }
 
 PyDoc_STRVAR(bytes_find__doc__,
-"find($self, sub[, start[, end]], /)\n"
+"find($self, sub, start=0, end=sys.maxsize, /)\n"
 "--\n"
 "\n"
 "Return the lowest index in B where subsection \'sub\' is found, such that \'sub\' is contained within B[start,end].\n"
@@ -367,7 +367,7 @@ exit:
 }
 
 PyDoc_STRVAR(bytes_index__doc__,
-"index($self, sub[, start[, end]], /)\n"
+"index($self, sub, start=0, end=sys.maxsize, /)\n"
 "--\n"
 "\n"
 "Return the lowest index in B where subsection \'sub\' is found, such that \'sub\' is contained within B[start,end].\n"
@@ -418,7 +418,7 @@ exit:
 }
 
 PyDoc_STRVAR(bytes_rfind__doc__,
-"rfind($self, sub[, start[, end]], /)\n"
+"rfind($self, sub, start=0, end=sys.maxsize, /)\n"
 "--\n"
 "\n"
 "Return the highest index in B where subsection \'sub\' is found, such that \'sub\' is contained within B[start,end].\n"
@@ -469,7 +469,7 @@ exit:
 }
 
 PyDoc_STRVAR(bytes_rindex__doc__,
-"rindex($self, sub[, start[, end]], /)\n"
+"rindex($self, sub, start=0, end=sys.maxsize, /)\n"
 "--\n"
 "\n"
 "Return the highest index in B where subsection \'sub\' is found, such that \'sub\' is contained within B[start,end].\n"
@@ -623,7 +623,7 @@ exit:
 }
 
 PyDoc_STRVAR(bytes_count__doc__,
-"count($self, sub[, start[, end]], /)\n"
+"count($self, sub, start=0, end=sys.maxsize, /)\n"
 "--\n"
 "\n"
 "Return the number of non-overlapping occurrences of subsection \'sub\' in bytes B[start:end].\n"
@@ -1455,4 +1455,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c20458db7a2123db input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4a4c26423d743589 input=a9049054013a1b77]*/
