@@ -1,5 +1,6 @@
 #include "Python.h"
 #include "pycore_initconfig.h"    // _PyStatus_ERR
+#include "pycore_long.h"          // _PyLong_DivmodNear()
 #include "pycore_pystate.h"       // _Py_AssertHoldsTstate()
 #include "pycore_runtime.h"       // _PyRuntime
 #include "pycore_time.h"          // export _PyLong_FromTime_t()
@@ -449,33 +450,241 @@ pytime_double_to_denominator(double d, time_t *sec, long *numerator,
 }
 
 
+/* Convert a number to a fraction representation.
+ *
+ * Set *ratio to a 2-tuple (numerator, denominator) and return 1 on success.
+ * Return 0 if the number has neither the as_integer_ratio() method nor
+ * the numerator and denominator attributes.
+ * Return -1 on error.
+ */
+static int
+maybe_as_integer_ratio(PyObject *number, PyObject **ratio)
+{
+    *ratio = NULL;
+    if (PyType_Check(number)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "required a number, not type");
+        return -1;
+    }
+    PyObject *meth;
+    if (PyObject_GetOptionalAttr(number, &_Py_ID(as_integer_ratio), &meth) < 0) {
+        return -1;
+    }
+    if (meth) {
+        *ratio = PyObject_CallNoArgs(meth);
+        Py_DECREF(meth);
+        if (*ratio == NULL) {
+            return -1;
+        }
+        if (!PyTuple_Check(*ratio)) {
+            PyErr_Format(PyExc_TypeError,
+                         "unexpected return type from %T.as_integer_ratio(): "
+                         "expected tuple, not '%T'",
+                         number, *ratio);
+            Py_CLEAR(*ratio);
+            return -1;
+        }
+        if (PyTuple_GET_SIZE(*ratio) != 2) {
+            PyErr_Format(PyExc_ValueError,
+                         "%T.as_integer_ratio() must return a 2-tuple",
+                         number);
+            Py_CLEAR(*ratio);
+            return -1;
+        }
+        return 1;
+    }
+
+    PyObject *numerator, *denominator;
+    int rc = PyObject_GetOptionalAttr(number, &_Py_ID(numerator), &numerator);
+    if (rc <= 0) {
+        return rc;
+    }
+    rc = PyObject_GetOptionalAttr(number, &_Py_ID(denominator), &denominator);
+    if (rc <= 0) {
+        Py_DECREF(numerator);
+        return rc;
+    }
+    *ratio = PyTuple_Pack(2, numerator, denominator);
+    Py_DECREF(numerator);
+    Py_DECREF(denominator);
+    return *ratio ? 1 : -1;
+}
+
+/* PyNumber_Divmod() that always returns a 2-tuple. */
+static PyObject *
+checked_divmod(PyObject *a, PyObject *b)
+{
+    PyObject *result = PyNumber_Divmod(a, b);
+    if (result != NULL) {
+        if (!PyTuple_Check(result)) {
+            PyErr_Format(PyExc_TypeError,
+                         "divmod() returned non-tuple (type %T)",
+                         result);
+            Py_DECREF(result);
+            return NULL;
+        }
+        if (PyTuple_GET_SIZE(result) != 2) {
+            PyErr_Format(PyExc_TypeError,
+                         "divmod() returned a tuple of size %zd",
+                         PyTuple_GET_SIZE(result));
+            Py_DECREF(result);
+            return NULL;
+        }
+    }
+    return result;
+}
+
+/* Calculate numerator / denominator rounded to integer using
+ * the specified rounding mode. */
+static PyObject *
+divide_and_round(PyObject *numerator, PyObject *denominator, _PyTime_round_t round)
+{
+    if (round == _PyTime_ROUND_UP) {
+        int isneg = PyObject_RichCompareBool(numerator, _PyLong_GetZero(), Py_LT);
+        if (isneg < 0) {
+            return NULL;
+        }
+        round = isneg ? _PyTime_ROUND_FLOOR : _PyTime_ROUND_CEILING;
+    }
+
+    if (round == _PyTime_ROUND_FLOOR) {
+        return PyNumber_FloorDivide(numerator, denominator);
+    }
+
+    PyObject *divmod, *result;
+    if (round == _PyTime_ROUND_CEILING) {
+        divmod = checked_divmod(numerator, denominator);
+        if (divmod == NULL) {
+            return NULL;
+        }
+        int nonzero = PyObject_IsTrue(PyTuple_GET_ITEM(divmod, 1));
+        if (nonzero < 0) {
+            result = NULL;
+        }
+        else if (nonzero) {
+            result = PyNumber_Add(PyTuple_GET_ITEM(divmod, 0), _PyLong_GetOne());
+        }
+        else {
+            result = Py_NewRef(PyTuple_GET_ITEM(divmod, 0));
+        }
+    }
+    else {
+        assert(round == _PyTime_ROUND_HALF_EVEN);
+        divmod = _PyLong_DivmodNear(numerator, denominator);
+        if (divmod == NULL) {
+            return NULL;
+        }
+        result = Py_NewRef(PyTuple_GET_ITEM(divmod, 0));
+    }
+    Py_DECREF(divmod);
+    return result;
+}
+
+/* Calculate scale * numerator / denominator rounded to integer using
+ * the specified rounding mode. */
+static PyObject *
+multiply_divide_and_round(long scale, PyObject *numerator, PyObject *denominator,
+                          _PyTime_round_t round)
+{
+    PyObject *scaleobj = PyLong_FromLong(scale);
+    if (scaleobj == NULL) {
+        return NULL;
+    }
+    numerator = PyNumber_Multiply(numerator, scaleobj);
+    Py_DECREF(scaleobj);
+    if (numerator == NULL) {
+        return NULL;
+    }
+    PyObject *result = divide_and_round(numerator, denominator, round);
+    Py_DECREF(numerator);
+    return result;
+}
+
+static int
+pytime_ratio_to_denominator(PyObject *numerator, PyObject *denominator,
+                            time_t *sec, long *subsec,
+                            long scale, _PyTime_round_t round)
+{
+    PyObject *divmod = checked_divmod(numerator, denominator);
+    if (divmod == NULL) {
+        return -1;
+    }
+    *sec = _PyLong_AsTime_t(PyTuple_GET_ITEM(divmod, 0));
+    if (*sec == (time_t)-1 && PyErr_Occurred()) {
+        Py_DECREF(divmod);
+        return -1;
+    }
+    PyObject *tmp = multiply_divide_and_round(scale,
+                                              PyTuple_GET_ITEM(divmod, 1),
+                                              denominator,
+                                              _PyTime_ROUND_HALF_EVEN);
+    Py_DECREF(divmod);
+    *subsec = PyLong_AsLong(tmp);
+    Py_DECREF(tmp);
+    if (*subsec == -1 && PyErr_Occurred()) {
+        return -1;
+    }
+    if (*subsec < 0) {
+        *subsec += scale;
+        if (*sec <= PY_TIME_T_MIN) {
+            pytime_time_t_overflow();
+            return -1;
+        }
+        *sec -= 1;
+    }
+    else if (*subsec >= scale) {
+        *subsec -= scale;
+        if (*sec >= PY_TIME_T_MAX) {
+            pytime_time_t_overflow();
+            return -1;
+        }
+        *sec += 1;
+    }
+    return 0;
+}
+
+
 static int
 pytime_object_to_denominator(PyObject *obj, time_t *sec, long *numerator,
                              long denominator, _PyTime_round_t round)
 {
     assert(denominator >= 1);
 
+    *numerator = 0;
     if (PyIndex_Check(obj)) {
         *sec = _PyLong_AsTime_t(obj);
-        *numerator = 0;
         if (*sec == (time_t)-1 && PyErr_Occurred()) {
             return -1;
         }
         return 0;
     }
-    else {
+    else if (PyFloat_Check(obj)) {
+fromfloat:;
         double d = PyFloat_AsDouble(obj);
         if (d == -1 && PyErr_Occurred()) {
-            *numerator = 0;
             return -1;
         }
         if (isnan(d)) {
-            *numerator = 0;
             PyErr_SetString(PyExc_ValueError, "Invalid value NaN (not a number)");
             return -1;
         }
         return pytime_double_to_denominator(d, sec, numerator,
                                             denominator, round);
+    }
+    else {
+        PyObject *ratio;
+        if (maybe_as_integer_ratio(obj, &ratio) < 0) {
+            return -1;
+        }
+        if (ratio == NULL) {
+            goto fromfloat;
+        }
+        int rc = pytime_ratio_to_denominator(PyTuple_GET_ITEM(ratio, 0),
+                                             PyTuple_GET_ITEM(ratio, 1),
+                                             sec, numerator,
+                                             denominator, round);
+        Py_DECREF(ratio);
+        return rc;
     }
 }
 
@@ -490,7 +699,8 @@ _PyTime_ObjectToTime_t(PyObject *obj, time_t *sec, _PyTime_round_t round)
         }
         return 0;
     }
-    else {
+    else if (PyFloat_Check(obj)) {
+fromfloat:;
         double intpart;
         /* volatile avoids optimization changing how numbers are rounded */
         volatile double d;
@@ -513,6 +723,28 @@ _PyTime_ObjectToTime_t(PyObject *obj, time_t *sec, _PyTime_round_t round)
             return -1;
         }
         *sec = (time_t)intpart;
+        return 0;
+    }
+    else {
+        PyObject *ratio;
+        if (maybe_as_integer_ratio(obj, &ratio) < 0) {
+            return -1;
+        }
+        if (ratio == NULL) {
+            goto fromfloat;
+        }
+        PyObject *secobj = divide_and_round(PyTuple_GET_ITEM(ratio, 0),
+                                            PyTuple_GET_ITEM(ratio, 1),
+                                            round);
+        Py_DECREF(ratio);
+        if (secobj == NULL) {
+            return -1;
+        }
+        *sec = _PyLong_AsTime_t(secobj);
+        Py_DECREF(secobj);
+        if (*sec == (time_t)-1 && PyErr_Occurred()) {
+            return -1;
+        }
         return 0;
     }
 }
@@ -671,7 +903,8 @@ pytime_from_object(PyTime_t *tp, PyObject *obj, _PyTime_round_t round,
         *tp = ns;
         return 0;
     }
-    else {
+    else if (PyFloat_Check(obj)) {
+fromfloat:;
         double d;
         d = PyFloat_AsDouble(obj);
         if (d == -1 && PyErr_Occurred()) {
@@ -682,6 +915,26 @@ pytime_from_object(PyTime_t *tp, PyObject *obj, _PyTime_round_t round,
             return -1;
         }
         return pytime_from_double(tp, d, round, unit_to_ns);
+    }
+    else {
+        PyObject *ratio;
+        if (maybe_as_integer_ratio(obj, &ratio) < 0) {
+            return -1;
+        }
+        if (ratio == NULL) {
+            goto fromfloat;
+        }
+        PyObject *nsobj = multiply_divide_and_round(unit_to_ns,
+                                                    PyTuple_GET_ITEM(ratio, 0),
+                                                    PyTuple_GET_ITEM(ratio, 1),
+                                                    round);
+        Py_DECREF(ratio);
+        if (nsobj == NULL) {
+            return -1;
+        }
+        int rc = PyLong_AsInt64(nsobj, tp);
+        Py_DECREF(nsobj);
+        return rc;
     }
 }
 

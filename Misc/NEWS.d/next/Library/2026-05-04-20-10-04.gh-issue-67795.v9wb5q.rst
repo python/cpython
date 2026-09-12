@@ -1,0 +1,3 @@
+Avoid the precision loss caused by the :class:`float` type in functions that
+take more precise numbers (such as :class:`~decimal.Decimal` and
+:class:`~fractions.Fraction`) as timestamp or timeout arguments.
