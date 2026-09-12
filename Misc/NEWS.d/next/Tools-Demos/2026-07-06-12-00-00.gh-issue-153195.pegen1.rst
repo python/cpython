@@ -1,0 +1,12 @@
+The rules used for generating specialized syntax error messages
+(the ``invalid_*`` rules) have been moved from :file:`Grammar/python.gram`
+to a new file :file:`Grammar/python_errors.gram`.
+The main grammar no longer contains any references to them,
+and by itself produces a complete parser
+which only emits generic error messages.
+The pegen parser generator can now read several grammar files,
+and supports rule extensions
+which insert additional alternatives into rules
+defined in another grammar file,
+at an automatically deduced position
+or before all existing alternatives.

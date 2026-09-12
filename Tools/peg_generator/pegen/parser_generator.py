@@ -25,6 +25,7 @@ from pegen.grammar import (
     Repeat1,
     Rhs,
     Rule,
+    Splice,
     StringLeaf,
 )
 
@@ -60,6 +61,8 @@ class KeywordCollectorVisitor(GrammarVisitor):
 
 
 class RuleCheckingVisitor(GrammarVisitor):
+    """Check for dangling rule references and misplaced "..."."""
+
     def __init__(self, rules: dict[str, Rule], tokens: set[str]):
         self.rules = rules
         self.tokens = tokens
@@ -83,6 +86,12 @@ class RuleCheckingVisitor(GrammarVisitor):
             raise GrammarError(f"Variable names cannot start with underscore: '{node.name}'")
         self.visit(node.item)
 
+    def visit_Splice(self, node: Splice) -> None:
+        raise GrammarError(
+            '"..." can only be used in a rule with the "extend" flag, '
+            "extending a rule defined in a preceding grammar file"
+        )
+
 
 class ParserGenerator:
     callmakervisitor: GrammarVisitor
@@ -96,6 +105,11 @@ class ParserGenerator:
         self.validate_rule_names()
         if "trailer" not in grammar.metas and "start" not in self.rules:
             raise GrammarError("Grammar without a trailer must have a 'start' rule")
+        if grammar.extensions:
+            raise GrammarError(
+                f"Rule {grammar.extensions[0].name!r} has the 'extend' flag, "
+                f"but there is no rule with this name in preceding grammar files"
+            )
         checker = RuleCheckingVisitor(self.rules, self.tokens)
         for rule in self.rules.values():
             checker.visit(rule)

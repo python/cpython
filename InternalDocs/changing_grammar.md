@@ -14,7 +14,10 @@ Below is a checklist of things that may need to change.
 
 * [`Grammar/python.gram`](../Grammar/python.gram): The grammar definition,
   with actions that build AST nodes.
-  After changing it, run ``make regen-pegen`` (or ``build.bat --regen`` on Windows),
+  Rules used only for generating specialized syntax error messages are
+  in [`Grammar/python_errors.gram`](../Grammar/python_errors.gram).
+  After changing either of them, run ``make regen-pegen``
+  (or ``build.bat --regen`` on Windows),
   to regenerate [`Parser/parser.c`](../Parser/parser.c).
   (This runs Python's parser generator, [`Tools/peg_generator`](../Tools/peg_generator)).
 

@@ -9,7 +9,7 @@ from pegen.grammar import Grammar, Rule
 argparser = argparse.ArgumentParser(
     prog="pegen", description="Pretty print the AST for a given PEG grammar"
 )
-argparser.add_argument("filename", help="Grammar description")
+argparser.add_argument("filenames", nargs="+", help="Grammar description(s)")
 
 
 class ASTGrammarPrinter:
@@ -51,7 +51,7 @@ def main() -> None:
     args = argparser.parse_args()
 
     try:
-        grammar, parser, tokenizer = build_parser(args.filename)
+        grammar, parser, tokenizer = build_parser(args.filenames)
     except Exception as err:
         print("ERROR: Failed to parse grammar file", err, file=sys.stderr)
         sys.exit(1)
