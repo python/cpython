@@ -1,0 +1,2 @@
+Preserve the handled exception state when delegating a generator's
+:meth:`~generator.throw` through ``yield from`` or ``await``.

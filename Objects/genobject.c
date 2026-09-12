@@ -682,8 +682,13 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
             tstate->current_frame = frame;
             /* Close the generator that we are currently iterating with
                'yield from' or awaiting on with 'await'. */
+            _PyErr_StackItem *prev_exc_info = tstate->exc_info;
+            gen->gi_exc_state.previous_item = prev_exc_info;
+            tstate->exc_info = &gen->gi_exc_state;
             ret = _gen_throw((PyGenObject *)yf, close_on_genexit,
                              typ, val, tb);
+            tstate->exc_info = prev_exc_info;
+            gen->gi_exc_state.previous_item = NULL;
             _PyThreadState_UpdateLastProfiledFrame(tstate, frame, prev);
             tstate->current_frame = prev;
             frame->previous = NULL;
@@ -704,7 +709,12 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
             _PyInterpreterFrame *prev = tstate->current_frame;
             frame->previous = prev;
             tstate->current_frame = frame;
+            _PyErr_StackItem *prev_exc_info = tstate->exc_info;
+            gen->gi_exc_state.previous_item = prev_exc_info;
+            tstate->exc_info = &gen->gi_exc_state;
             ret = PyObject_CallFunctionObjArgs(meth, typ, val, tb, NULL);
+            tstate->exc_info = prev_exc_info;
+            gen->gi_exc_state.previous_item = NULL;
             _PyThreadState_UpdateLastProfiledFrame(tstate, frame, prev);
             tstate->current_frame = prev;
             frame->previous = NULL;
