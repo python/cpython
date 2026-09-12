@@ -378,7 +378,11 @@ class Sniffer:
         """
         from collections import Counter, defaultdict
 
-        data = list(filter(None, data.split('\n')))
+        lines = data.split('\n')
+        if len(lines) > 1 and not data.endswith(('\r', '\n')):
+            # The sample may have been cut off in the middle of the last row.
+            lines.pop()
+        data = list(filter(None, lines))
 
         # build frequency tables
         chunkLength = min(10, len(data))
