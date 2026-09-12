@@ -1,0 +1,2 @@
+Update :mod:`ssl` documentation for legacy protocol constants unavailable
+with OpenSSL 4.0 and later.
