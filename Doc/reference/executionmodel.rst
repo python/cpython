@@ -331,15 +331,16 @@ This means that the following code will print 42::
 .. XXX from * also invalid with relative imports (at least currently)
 
 The :func:`eval` and :func:`exec` functions do not have access to the full
-environment for resolving names.  Names may be resolved in the local and global
-namespaces of the caller.  Free variables are not resolved in the nearest
-enclosing namespace, but in the global namespace.  [#]_ The :func:`exec` and
-:func:`eval` functions have optional arguments to override the global and local
-namespace.  If only one namespace is specified, it is used for both.
+environment for resolving names.  When their *source* argument is a string,
+names may be resolved in the local and global namespaces of the caller.  Free
+variables are not resolved in the nearest enclosing namespace, but in the
+global namespace.  [#]_ The :func:`exec` and :func:`eval` functions have
+optional arguments to override the global and local namespace.  If only one
+namespace is specified, it is used for both.
 
-.. XXX(ncoghlan) above is only accurate for string execution. When executing code objects,
-   closure cells may now be passed explicitly to resolve co_freevars references.
-   Docs issue: https://github.com/python/cpython/issues/122826
+When :func:`exec` is passed a code object containing free variables, the
+*closure* argument may be used to explicitly supply the required closure
+cells.
 
 .. _exceptions:
 
