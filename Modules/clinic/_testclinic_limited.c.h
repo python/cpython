@@ -206,4 +206,36 @@ get_file_descriptor(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=03fd7811c056dc74 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(required_kwonly__doc__,
+"required_kwonly($module, /, a, b=None, *, c, d=None)\n"
+"--\n"
+"\n"
+"Mix an optional parameter with a required keyword-only one.");
+
+#define REQUIRED_KWONLY_METHODDEF    \
+    {"required_kwonly", (PyCFunction)(void(*)(void))required_kwonly, METH_VARARGS|METH_KEYWORDS, required_kwonly__doc__},
+
+static PyObject *
+required_kwonly_impl(PyObject *module, PyObject *a, PyObject *b, PyObject *c,
+                     PyObject *d);
+
+static PyObject *
+required_kwonly(PyObject *module, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    static char *_keywords[] = {"a", "b", "c", "d", NULL};
+    PyObject *a;
+    PyObject *b = Py_None;
+    PyObject *c;
+    PyObject *d = Py_None;
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|O$$O|O:required_kwonly", _keywords,
+        &a, &b, &c, &d))
+        goto exit;
+    return_value = required_kwonly_impl(module, a, b, c, d);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=030f62e40d565db2 input=a9049054013a1b77]*/
