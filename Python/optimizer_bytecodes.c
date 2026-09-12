@@ -517,7 +517,27 @@ dummy_func(void) {
             assert(d->lhs_type != NULL && d->rhs_type != NULL);
             bool lhs_known = sym_matches_type(left, d->lhs_type);
             bool rhs_known = sym_matches_type(right, d->rhs_type);
-            if (lhs_known && rhs_known) {
+            bool is_float_truediv = (
+                (d->oparg == NB_TRUE_DIVIDE || d->oparg == NB_INPLACE_TRUE_DIVIDE) &&
+                d->lhs_type == &PyFloat_Type &&
+                d->rhs_type == &PyFloat_Type &&
+                d->result_type == &PyFloat_Type &&
+                d->result_unique
+            );
+            if (is_float_truediv) {
+                if (!rhs_known) {
+                    ADD_OP(_GUARD_TOS_FLOAT, 0, 0);
+                    sym_set_type(right, &PyFloat_Type);
+                }
+                if (!lhs_known) {
+                    ADD_OP(_GUARD_NOS_FLOAT, 0, 0);
+                    sym_set_type(left, &PyFloat_Type);
+                }
+                if (lhs_known && rhs_known) {
+                    ADD_OP(_NOP, 0, 0);
+                }
+            }
+            else if (lhs_known && rhs_known) {
                 ADD_OP(_NOP, 0, 0);
             }
             else if (lhs_known) {
@@ -533,7 +553,34 @@ dummy_func(void) {
 
     op(_BINARY_OP_EXTEND, (descr/4, left, right -- res, l, r)) {
         _PyBinaryOpSpecializationDescr *d = (_PyBinaryOpSpecializationDescr *)descr;
-        if (d != NULL && d->result_type != NULL) {
+        l = left;
+        r = right;
+        bool is_float_truediv = (
+            d != NULL &&
+            d->guard == NULL &&
+            (d->oparg == NB_TRUE_DIVIDE || d->oparg == NB_INPLACE_TRUE_DIVIDE) &&
+            d->lhs_type == &PyFloat_Type &&
+            d->rhs_type == &PyFloat_Type &&
+            d->result_type == &PyFloat_Type &&
+            d->result_unique
+        );
+        if (is_float_truediv) {
+            if (PyJitRef_IsUnique(left)) {
+                ADD_OP(_BINARY_OP_TRUEDIV_FLOAT_INPLACE, 0, 0);
+                l = sym_new_null(ctx);
+                r = right;
+            }
+            else if (PyJitRef_IsUnique(right)) {
+                ADD_OP(_BINARY_OP_TRUEDIV_FLOAT_INPLACE_RIGHT, 0, 0);
+                l = left;
+                r = sym_new_null(ctx);
+            }
+            else {
+                ADD_OP(_BINARY_OP_TRUEDIV_FLOAT, 0, 0);
+            }
+            res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyFloat_Type));
+        }
+        else if (d != NULL && d->result_type != NULL) {
             res = sym_new_type(ctx, d->result_type);
             if (d->result_unique) {
                 res = PyJitRef_MakeUnique(res);
@@ -542,8 +589,6 @@ dummy_func(void) {
         else {
             res = sym_new_not_null(ctx);
         }
-        l = left;
-        r = right;
     }
 
     op(_BINARY_OP_INPLACE_ADD_UNICODE, (left, right -- res)) {

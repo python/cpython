@@ -2179,6 +2179,19 @@ BITWISE_LONGS_ACTION(compactlongs_and, &)
 BITWISE_LONGS_ACTION(compactlongs_xor, ^)
 #undef BITWISE_LONGS_ACTION
 
+/* float-float */
+
+static PyObject *
+floats_true_div(PyObject *lhs, PyObject *rhs)
+{
+    double divisor = PyFloat_AS_DOUBLE(rhs);
+    if (divisor == 0.0) {
+        PyErr_SetString(PyExc_ZeroDivisionError, "division by zero");
+        return NULL;
+    }
+    return PyFloat_FromDouble(PyFloat_AS_DOUBLE(lhs) / divisor);
+}
+
 /* float-long */
 
 static inline int
@@ -2258,6 +2271,10 @@ static _PyBinaryOpSpecializationDescr binaryop_extend_descrs[] = {
     {NB_INPLACE_OR, compactlongs_guard, compactlongs_or, &PyLong_Type, 1, NULL, NULL},
     {NB_INPLACE_AND, compactlongs_guard, compactlongs_and, &PyLong_Type, 1, NULL, NULL},
     {NB_INPLACE_XOR, compactlongs_guard, compactlongs_xor, &PyLong_Type, 1, NULL, NULL},
+
+    /* float-float true division */
+    {NB_TRUE_DIVIDE, NULL, floats_true_div, &PyFloat_Type, 1, &PyFloat_Type, &PyFloat_Type},
+    {NB_INPLACE_TRUE_DIVIDE, NULL, floats_true_div, &PyFloat_Type, 1, &PyFloat_Type, &PyFloat_Type},
 
     /* float-long arithmetic: guards also check NaN and compactness. */
     {NB_ADD, float_compactlong_guard, float_compactlong_add, &PyFloat_Type, 1, NULL, NULL},
