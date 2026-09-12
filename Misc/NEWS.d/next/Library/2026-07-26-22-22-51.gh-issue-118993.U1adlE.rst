@@ -1,0 +1,4 @@
+On Windows, :func:`uuid.uuid1` now uses the system
+``UuidCreateSequential()`` function when neither *node* nor *clock_seq* is
+given, so concurrent processes no longer produce colliding UUIDs and the
+result is reported as safe by :attr:`uuid.UUID.is_safe`.

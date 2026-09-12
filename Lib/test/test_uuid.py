@@ -636,8 +636,17 @@ class BaseTestUUID:
             self.assertEqual(u.is_safe, self.uuid.SafeUUID.unknown)
             self.assertEqual(u.version, 1)
 
+    def test_uuid1_windows_safe(self):
+        if self.uuid._UuidCreate is None:
+            self.skipTest('requires _uuid.UuidCreate')
+        u = self.uuid.uuid1()
+        self.assertEqual(u.is_safe, self.uuid.SafeUUID.safe)
+        self.assertEqual(u.version, 1)
+        self.assertEqual(u.variant, self.uuid.RFC_4122)
+
     def test_uuid1_time(self):
         with mock.patch.object(self.uuid, '_generate_time_safe', None), \
+             mock.patch.object(self.uuid, '_UuidCreate', None), \
              mock.patch.object(self.uuid, '_last_timestamp', None), \
              mock.patch.object(self.uuid, 'getnode', return_value=93328246233727), \
              mock.patch('time.time_ns', return_value=1545052026752910643), \
