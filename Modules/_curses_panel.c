@@ -454,20 +454,21 @@ PyCursesPanel_Dealloc(PyObject *self)
     PyObject_GC_UnTrack(self);
 
     PyCursesPanelObject *po = _PyCursesPanelObject_CAST(self);
-    if (PyCursesPanel_Clear(self) < 0) {
+    PyObject *extra = (PyObject *)panel_userptr(po->pan);
+    if (extra != NULL && set_panel_userptr(po->pan, NULL) == ERR) {
+        curses_panel_panel_set_error(po, "set_panel_userptr", "__del__");
+        PyErr_FormatUnraisable("Exception ignored in PyCursesPanel_Dealloc()");
+    }
+    if (po->wo != NULL && remove_lop(po) < 0) {
+        PyErr_SetString(PyExc_RuntimeError, "__del__: no panel object to delete");
         PyErr_FormatUnraisable("Exception ignored in PyCursesPanel_Dealloc()");
     }
     if (del_panel(po->pan) == ERR && !PyErr_Occurred()) {
         curses_panel_panel_set_error(po, "del_panel", "__del__");
         PyErr_FormatUnraisable("Exception ignored in PyCursesPanel_Dealloc()");
     }
-    if (po->wo != NULL) {
-        Py_DECREF(po->wo);
-        if (remove_lop(po) < 0) {
-            PyErr_SetString(PyExc_RuntimeError, "__del__: no panel object to delete");
-            PyErr_FormatUnraisable("Exception ignored in PyCursesPanel_Dealloc()");
-        }
-    }
+    Py_XDECREF(extra);
+    Py_XDECREF(po->wo);
     tp->tp_free(po);
     Py_DECREF(tp);
 }
