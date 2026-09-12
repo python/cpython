@@ -2037,7 +2037,9 @@ pack_single(PyMemoryViewObject *self, char *ptr, PyObject *item, const char *fmt
             goto err_occurred;
         CHECK_RELEASED_INT_AGAIN(self);
         if (fmt[0] == 'f') {
-            PACK_SINGLE(ptr, d, float);
+            if (PyFloat_Pack4(d, ptr, endian) < 0) {
+                goto err_occurred;
+            }
         }
         else if (fmt[0] == 'd') {
             PACK_SINGLE(ptr, d, double);
@@ -2064,9 +2066,15 @@ pack_single(PyMemoryViewObject *self, char *ptr, PyObject *item, const char *fmt
                 memcpy(ptr, &x, sizeof(x));
             }
             else {
-                float x[2] = {(float)c.real, (float)c.imag};
+                char tmp[4];
 
-                memcpy(ptr, &x, sizeof(x));
+                if (PyFloat_Pack4(c.real, tmp, endian) < 0) {
+                    goto err_occurred;
+                }
+                if (PyFloat_Pack4(c.imag, ptr + 4, endian) < 0) {
+                    goto err_occurred;
+                }
+                memcpy(ptr, tmp, 4);
             }
             break;
 
