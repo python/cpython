@@ -2185,14 +2185,14 @@
 /* Define on NetBSD to activate all library features */
 #undef _NETBSD_SOURCE
 
-/* Define to activate features from IEEE Std 1003.1-2024 */
-#undef _POSIX_C_SOURCE
-
 /* Define if you have POSIX threads, and your system does not define that. */
 #undef _POSIX_THREADS
 
 /* framework name */
 #undef _PYTHONFRAMEWORK
+
+/* Define to configure _POSIX_C_SOURCE in pyconfig.h */
+#undef _PYTHON_POSIX_C_SOURCE
 
 /* Maximum length in bytes of a thread name */
 #undef _PYTHREAD_NAME_MAXLEN
@@ -2285,6 +2285,15 @@
 /* Define the macros needed if on a UnixWare 7.x system. */
 #if defined(__USLC__) && defined(__SCO_VERSION__)
 #define STRICT_SYSV_CURSES /* Don't use ncurses extensions */
+#endif
+
+/* Define _POSIX_C_SOURCE only when it was not defined by an earlier
+   system-header include. */
+#ifdef _PYTHON_POSIX_C_SOURCE
+#  ifndef _POSIX_C_SOURCE
+#    define _POSIX_C_SOURCE 202405L
+#  endif
+#  undef _PYTHON_POSIX_C_SOURCE
 #endif
 
 #endif /*Py_PYCONFIG_H*/
