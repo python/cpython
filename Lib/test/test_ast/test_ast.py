@@ -162,6 +162,15 @@ class AST_Tests(unittest.TestCase):
             self.assertRaises(TypeError, ast.parse, ast.Constant(42),
                               optimize=optval)
 
+    def test_parse_ast_func_type(self):
+        # see gh-156689
+        tree = ast.parse('(int, str) -> bool', mode='func_type')
+        self.assertEqual(ast.dump(ast.parse(tree, mode='func_type')),
+                         ast.dump(tree))
+        self.assertRaises(TypeError, ast.parse, ast.Constant(42),
+                          mode='func_type')
+        self.assertRaises(TypeError, ast.parse, tree, mode='exec')
+
     def test_optimization_levels__debug__(self):
         cases = [(-1, '__debug__'), (0, '__debug__'), (1, False), (2, False)]
         for (optval, expected) in cases:

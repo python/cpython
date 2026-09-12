@@ -2254,7 +2254,7 @@ and classes for traversing abstract syntax trees:
 
    In addition, if ``mode`` is ``'func_type'``, the input syntax is
    modified to correspond to :pep:`484` "signature type comments",
-   e.g. ``(str, int) -> List[str]``.
+   for example ``(str, int) -> List[str]``.
 
    Setting ``feature_version`` to a tuple ``(major, minor)`` will result in
    a "best-effort" attempt to parse using that Python version's grammar.
