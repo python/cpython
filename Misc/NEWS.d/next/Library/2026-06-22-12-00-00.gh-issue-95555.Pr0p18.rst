@@ -1,4 +1,6 @@
 Regular expressions now support Unicode property escapes ``\p{...}`` and
-``\P{...}`` for properties that the engine can resolve without the unicodedata
-database: many ``General_Category`` values, a number of binary properties, the
-POSIX compatibility classes, and properties derivable from the code point.
+``\P{...}`` for properties that can be examined from Python, including the
+``General_Category``, ``Bidi_Class``, ``East_Asian_Width``,
+``Grapheme_Cluster_Break`` and ``Indic_Conjunct_Break`` properties, a number
+of binary properties, the POSIX compatibility classes, and properties
+derivable from the code point.

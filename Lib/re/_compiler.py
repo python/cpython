@@ -288,6 +288,10 @@ def dis(code):
                 arg = str(CHCODES[arg])
                 assert arg[:9] == 'CATEGORY_'
                 print_(op, arg[9:])
+            elif op is CATEGORY_UCD:
+                arg = code[i]
+                i += 1
+                print_(op, '%#x' % arg)
             elif op in (IN, IN_IGNORE, IN_UNI_IGNORE, IN_LOC_IGNORE):
                 skip = code[i]
                 print_(op, skip, to=i+skip)
