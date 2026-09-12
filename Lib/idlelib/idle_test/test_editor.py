@@ -1,6 +1,9 @@
 "Test editor, coverage 53%."
 
 from idlelib import editor
+import os
+import tempfile
+import types
 import unittest
 from collections import namedtuple
 from test.support import requires
@@ -286,6 +289,26 @@ class RMenuTest(unittest.TestCase):
         text.tag_add('sel', '1.0', '1.3')  # Includes '1.0' click.
         eq(self.window.rmenu_check_copy(), 'normal')
         eq(self.window.rmenu_check_cut(), 'normal')
+
+
+class LastMtimeTest(unittest.TestCase):
+    # Exercise last_mtime as an unbound method on a stub; no GUI needed.
+
+    def test_deleted_file_does_not_raise(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = os.path.join(d, 'gone.py')
+            open(p, 'w').close()
+            mtime = os.path.getmtime(p)
+            os.remove(p)
+            stub = types.SimpleNamespace(
+                io=types.SimpleNamespace(filename=p), mtime=mtime)
+            # Must not raise; returns the last known mtime.
+            self.assertEqual(Editor.last_mtime(stub), mtime)
+
+    def test_no_filename_returns_zero(self):
+        stub = types.SimpleNamespace(
+            io=types.SimpleNamespace(filename=None), mtime=123)
+        self.assertEqual(Editor.last_mtime(stub), 0)
 
 
 if __name__ == '__main__':
