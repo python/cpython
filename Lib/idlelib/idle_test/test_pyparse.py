@@ -41,8 +41,9 @@ class PyParseTest(unittest.TestCase):
         setcode = p.set_code
 
         # Not empty and doesn't end with newline.
-        with self.assertRaises(AssertionError):
-            setcode('a')
+        if __debug__:  # Assertions are removed with -O.
+            with self.assertRaises(AssertionError):
+                setcode('a')
 
         tests = ('',
                  'a\n')
@@ -131,8 +132,9 @@ class PyParseTest(unittest.TestCase):
         p.set_code(code)
 
         # Previous character is not a newline.
-        with self.assertRaises(AssertionError):
-            p.set_lo(5)
+        if __debug__:  # Assertions are removed with -O.
+            with self.assertRaises(AssertionError):
+                p.set_lo(5)
 
         # A value of 0 doesn't change self.code.
         p.set_lo(0)
@@ -326,9 +328,10 @@ class PyParseTest(unittest.TestCase):
              )
 
         # Must be C_BRACKET continuation type.
-        setcode('def function1(self, a, b):\n')
-        with self.assertRaises(AssertionError):
-            indent()
+        if __debug__:  # Assertions are removed with -O.
+            setcode('def function1(self, a, b):\n')
+            with self.assertRaises(AssertionError):
+                indent()
 
         for test in tests:
             setcode(test.string)
@@ -345,11 +348,12 @@ class PyParseTest(unittest.TestCase):
                   ('    """ (\\\n'),                 # Docstring.
                   ('a = #\\\n'),                     # Inline comment.
                   )
-        for string in errors:
-            with self.subTest(string=string):
-                setcode(string)
-                with self.assertRaises(AssertionError):
-                    indent()
+        if __debug__:  # Assertions are removed with -O.
+            for string in errors:
+                with self.subTest(string=string):
+                    setcode(string)
+                    with self.assertRaises(AssertionError):
+                        indent()
 
         TestInfo = namedtuple('TestInfo', ('string', 'spaces'))
         tests = (TestInfo('a = (1 + 2) - 5 *\\\n', 4),
