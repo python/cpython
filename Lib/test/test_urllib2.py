@@ -831,7 +831,7 @@ class HandlerTests(unittest.TestCase):
             # ftp authentication not yet implemented by FTPHandler
             self.assertEqual(h.user, user)
             self.assertEqual(h.passwd, passwd)
-            self.assertEqual(h.host, socket.gethostbyname(host))
+            self.assertEqual(h.host, host)
             self.assertEqual(h.port, port)
             self.assertEqual(h.dirs, dirs)
             self.assertEqual(h.ftpwrapper.filename, filename)
@@ -840,6 +840,45 @@ class HandlerTests(unittest.TestCase):
             self.assertEqual(headers.get("Content-type"), mimetype)
             self.assertEqual(int(headers["Content-length"]), len(data))
             r.close()
+
+    def test_ftp_no_hostname_resolution(self):
+        # gh-44672: the host must reach connect_ftp unresolved so that
+        # ftplib resolves it via getaddrinfo(), which supports IPv6.
+        class MockFTPWrapper:
+            def retrfile(self, filename, filetype):
+                return io.StringIO(""), 0
+
+            def close(self):
+                pass
+
+        class NullFTPHandler(urllib.request.FTPHandler):
+            def connect_ftp(self, user, passwd, host, port, dirs, timeout):
+                self.host = host
+                return MockFTPWrapper()
+
+        h = NullFTPHandler()
+        req = Request("ftp://localhost/foo/bar.html")
+        req.timeout = None
+        with mock.patch.object(socket, "gethostbyname",
+                               side_effect=AssertionError(
+                                   "ftp_open must not pre-resolve the host")):
+            r = h.ftp_open(req)
+        r.close()
+        self.assertEqual(h.host, "localhost")
+
+    def test_ftp_gaierror(self):
+        # gh-44672: without pre-resolution the lookup failure now surfaces
+        # from ftplib as socket.gaierror; it must still become a URLError.
+        class GaiErrorFTPHandler(urllib.request.FTPHandler):
+            def connect_ftp(self, user, passwd, host, port, dirs, timeout):
+                raise socket.gaierror(-2, "Name or service not known")
+
+        h = GaiErrorFTPHandler()
+        req = Request("ftp://nonexistent.invalid/")
+        req.timeout = None
+        with self.assertRaises(urllib.error.URLError) as cm:
+            h.ftp_open(req)
+        self.assertIsInstance(cm.exception.__cause__, socket.gaierror)
 
     @support.requires_resource("network")
     def test_ftp_error(self):
