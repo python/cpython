@@ -1,0 +1,2 @@
+:meth:`socket.socket.listen` no longer clamps a negative *backlog* to 0, but
+passes it on to the system, whose interpretation of it is system dependent.
