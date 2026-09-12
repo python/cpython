@@ -2940,6 +2940,14 @@
                     JUMP_TO_PREDICTED(CALL_FUNCTION_EX);
                 }
             }
+            // _CHECK_RECURSION_REMAINING
+            {
+                if (tstate->py_recursion_remaining <= 1) {
+                    UPDATE_MISS_STATS(CALL_FUNCTION_EX);
+                    assert(_PyOpcode_Deopt[opcode] == (CALL_FUNCTION_EX));
+                    JUMP_TO_PREDICTED(CALL_FUNCTION_EX);
+                }
+            }
             // _PY_FRAME_EX
             {
                 kwargs_st = stack_pointer[-1];
@@ -3566,6 +3574,14 @@
                 _PyFrame_StackPointerInvalidate(frame);
             }
             // flush
+            // _CHECK_RECURSION_REMAINING
+            {
+                if (tstate->py_recursion_remaining <= 1) {
+                    UPDATE_MISS_STATS(CALL_KW);
+                    assert(_PyOpcode_Deopt[opcode] == (CALL_KW));
+                    JUMP_TO_PREDICTED(CALL_KW);
+                }
+            }
             // _PY_FRAME_KW
             {
                 kwnames = stack_pointer[-1];
