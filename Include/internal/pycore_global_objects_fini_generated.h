@@ -1842,6 +1842,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(initval));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(inner_size));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(input));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(insert_cdata));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(insert_comments));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(insert_pis));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(instructions));
