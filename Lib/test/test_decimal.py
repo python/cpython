@@ -2989,6 +2989,34 @@ class ContextAPItests:
             assert_signals(self, c, 'traps', [InvalidOperation, DivisionByZero,
                                               Overflow])
 
+    def test_signaldict_reentrant_dealloc(self):
+        # A __bool__ that deallocates the owning context while assigning to or
+        # comparing Context.flags must raise, not crash.
+        if self.decimal is not C:
+            self.skipTest("SignalDict only exists in the C implementation")
+        Context = self.decimal.Context
+        InvalidOperation = self.decimal.InvalidOperation
+
+        class Evil:
+            def __init__(self, box):
+                self.box = box
+            def __bool__(self):
+                import gc
+                self.box.clear()
+                gc.collect()
+                return True
+
+        box = [Context()]
+        flags = box[0].flags
+        with self.assertRaises(ValueError):
+            flags[InvalidOperation] = Evil(box)
+
+        box = [Context()]
+        other = box[0].flags.copy()
+        other[InvalidOperation] = Evil(box)
+        with self.assertRaises(ValueError):
+            box[0].flags == other
+
     def test_pickle(self):
 
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
