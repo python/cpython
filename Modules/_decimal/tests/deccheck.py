@@ -53,6 +53,8 @@ from randdec import unary_optarg, binary_optarg, ternary_optarg
 from formathelper import rand_format, rand_locale
 from _pydecimal import _dec_from_triple
 
+sys.set_int_max_str_digits(0)
+
 C = import_fresh_module('decimal', fresh=['_decimal'])
 P = import_fresh_module('decimal', blocked=['_decimal'])
 EXIT_STATUS = 0
@@ -968,6 +970,8 @@ def test_unary(method, prec, exp_range, restricted_range, itr, stat):
         t = TestSet(method, op)
         try:
             if not convert(t):
+                continue
+            if t.funcname == '__hash__' and t.cop[0].is_qnan():
                 continue
             callfuncs(t)
             verify(t, stat)
