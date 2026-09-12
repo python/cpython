@@ -1,0 +1,3 @@
+Fix an issue where duplicated or improper extra fields were written to
+the local file entry if :attr:`ZipInfo.extra <zipfile.ZipInfo.extra>`
+had them.
