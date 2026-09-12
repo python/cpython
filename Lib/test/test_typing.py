@@ -9959,6 +9959,36 @@ class AnnotatedTests(BaseTestCase):
             class C(Annotated):
                 pass
 
+    def test_subclass(self):
+        # gh-89132: subclassing an annotated type is the same as subclassing
+        # the annotated type itself.
+        class MyGeneric(Generic[T]):
+            pass
+
+        for tp in (list, List, List[int], list[int], MyGeneric[int],
+                   collections.abc.Sequence[int]):
+            with self.subTest(tp=tp):
+                class C(Annotated[tp, "a decoration"]):
+                    pass
+
+                class D(tp):
+                    pass
+
+                self.assertEqual(C.__bases__, D.__bases__)
+                self.assertEqual(C.__mro__[1:], D.__mro__[1:])
+
+    def test_cannot_subclass_not_subclassable(self):
+        # gh-89132: the error message is the same as for the annotated type.
+        for tp in (Union[int, str], int | str, T):
+            with self.subTest(tp=tp):
+                with self.assertRaises(TypeError) as cm:
+                    class D(tp):
+                        pass
+                with self.assertRaises(TypeError) as cm2:
+                    class C(Annotated[tp, "a decoration"]):
+                        pass
+                self.assertEqual(str(cm2.exception), str(cm.exception))
+
     def test_cannot_check_instance(self):
         with self.assertRaises(TypeError):
             isinstance(5, Annotated[int, "positive"])
