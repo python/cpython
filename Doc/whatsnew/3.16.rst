@@ -1018,6 +1018,10 @@ Porting to Python 3.16
   if the value cannot be marshalled.
   (Contributed by Serhiy Storchaka in :gh:`155907`.)
 
+* :c:func:`_Py_c_abs` no longer sets :c:data:`errno` to zero on success,
+  but rather leaves it unchanged.
+  (Contributed by Sergey B Kirpichev in :gh:`155526`.)
+
 Deprecated C APIs
 -----------------
 
