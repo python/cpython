@@ -2,6 +2,7 @@
 # E-mail: fuzzyman AT voidspace DOT org DOT uk
 # http://www.voidspace.org.uk/python/mock/
 
+import functools
 import os
 import sys
 from collections import OrderedDict
@@ -1074,6 +1075,37 @@ class PatchTest(unittest.TestCase):
             self.assertRaises(TypeError, method)
             self.assertRaises(TypeError, method, 1)
             self.assertRaises(TypeError, method, 1, 2, 3, c=4)
+
+
+    def test_autospec_partialmethod(self):
+        # autospeccing a functools.partialmethod attribute used to
+        # produce a NonCallableMagicMock (the attribute has no __call__ of
+        # its own), making the mock entirely uncallable. It should behave
+        # like autospeccing any other bound method, with `self` and the
+        # partialmethod's own pre-bound arguments excluded from the
+        # enforced signature.
+        class Foo:
+            def method(self, a, b, c=3):
+                return a, b, c
+            partial_method = functools.partialmethod(method, 1)
+
+        results = Foo().partial_method(2)
+        self.assertEqual(results, (1, 2, 3))
+
+        with patch.object(Foo, 'partial_method', autospec=True) as method:
+            self.assertNotIsInstance(method, NonCallableMagicMock)
+            foo = Foo()
+
+            result = foo.partial_method(2)
+            self.assertEqual(result, method.return_value)
+            method.assert_called_once_with(2)
+
+            foo.partial_method(2, c=4)
+            method.assert_called_with(2, c=4)
+
+            self.assertRaises(TypeError, foo.partial_method)
+            self.assertRaises(TypeError, foo.partial_method, 2, 3, 4)
+            self.assertRaises(TypeError, foo.partial_method, 2, foo="lish")
 
 
     def test_autospec_with_new(self):

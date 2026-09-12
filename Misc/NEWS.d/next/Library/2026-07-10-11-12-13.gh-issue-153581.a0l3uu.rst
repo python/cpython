@@ -1,0 +1,6 @@
+Fix :func:`unittest.mock.create_autospec` (and ``mock.patch(...,
+autospec=True)``) producing a completely uncallable
+:class:`~unittest.mock.NonCallableMagicMock` when the autospecced attribute
+is a :class:`functools.partialmethod`. The mock is now callable and enforces
+the partial method's effective signature (``self`` and the partialmethod's
+own pre-bound arguments excluded).
