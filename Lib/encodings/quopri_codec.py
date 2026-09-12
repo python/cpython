@@ -7,15 +7,23 @@ import codecs
 import quopri
 from io import BytesIO
 
+### Codec Helpers
+
+def _assert_strict(errors):
+    if errors != 'strict':
+        raise ValueError(f'Unsupported error handling mode: "{errors}" - must be "strict"')
+
+### Codec APIs
+
 def quopri_encode(input, errors='strict'):
-    assert errors == 'strict'
+    _assert_strict(errors)
     f = BytesIO(input)
     g = BytesIO()
     quopri.encode(f, g, quotetabs=True)
     return (g.getvalue(), len(input))
 
 def quopri_decode(input, errors='strict'):
-    assert errors == 'strict'
+    _assert_strict(errors)
     f = BytesIO(input)
     g = BytesIO()
     quopri.decode(f, g)
