@@ -1,0 +1,5 @@
+Improves error messages for ``{}``-style formatters for ``str``, ``float``,
+``int``, and ``complex``. Make error messages handle Unicode characters
+properly. Make grouping characters ``,`` and ``_`` in fractional part only
+allowed for floating-point presentation types (``e``, ``f``, ``g``, ``E``,
+``G``, ``%``, and ``F``).
