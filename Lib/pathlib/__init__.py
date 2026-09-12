@@ -1086,11 +1086,17 @@ class Path(PurePath):
         root_dir = str(self)
         if not follow_symlinks:
             follow_symlinks = os._walk_symlinks_as_files
-        results = os.walk(root_dir, top_down, on_error, follow_symlinks)
-        for path_str, dirnames, filenames in results:
-            if root_dir == '.':
-                path_str = path_str[2:]
-            yield self._from_parsed_string(path_str), dirnames, filenames
+        try:
+            results = os.walk(root_dir, top_down, on_error, follow_symlinks)
+            for path_str, dirnames, filenames in results:
+                if root_dir == '.':
+                    path_str = path_str[2:]
+                yield self._from_parsed_string(path_str), dirnames, filenames
+        except OSError as err:
+            if on_error is not None:
+                on_error(err)
+            else:
+                raise
 
     def absolute(self):
         """Return an absolute version of this path
