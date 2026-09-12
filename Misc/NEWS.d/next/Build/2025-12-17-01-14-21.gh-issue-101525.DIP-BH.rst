@@ -1,0 +1,2 @@
+Determine if we need to skip optimizations of functions with computed gotos
+during BOLT runs, depending on the llvm version and the compilation options.
