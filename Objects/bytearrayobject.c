@@ -256,6 +256,7 @@ bytearray_resize_storage(PyByteArrayObject *self,
         bytearray_write_trailing_null_byte(self);
         return -1;
     }
+    assert(_PyBytes_IsMutable(self->ob_bytes_object));
     return 0;
 }
 

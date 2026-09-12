@@ -37,7 +37,7 @@ static Py_ssize_t _PyBytesWriter_ResizeToAllocated(PyBytesWriter *writer);
 
 #define CHARACTERS _Py_SINGLETON(bytes_characters)
 #define CHARACTER(ch) \
-     ((PyBytesObject *)&(CHARACTERS[ch]));
+     ((PyBytesObject *)&(CHARACTERS[ch]))
 #define EMPTY (&_Py_SINGLETON(bytes_empty))
 
 
@@ -3294,6 +3294,29 @@ PyBytes_ConcatAndDel(PyObject **pv, PyObject *w)
 }
 
 
+#ifndef NDEBUG
+// Make sure that a bytes object can still be mutated.
+//
+// Usage: assert(_PyBytes_IsMutable(obj)).
+int
+_PyBytes_IsMutable(PyObject *v)
+{
+    // Singleton objects must never be modified
+    assert(!_Py_IsImmortal(v));
+
+    Py_ssize_t size = PyBytes_GET_SIZE(v);
+    if (size == 0) {
+        assert(v != bytes_get_empty());
+    }
+    else if (size == 1) {
+        unsigned char ch = PyBytes_AS_STRING(v)[0];
+        assert(v != (PyObject*)CHARACTER(ch));
+    }
+    return 1;
+}
+#endif
+
+
 /* The following function breaks the notion that bytes are immutable:
    it changes the size of a bytes object.  You can think of it
    as creating a new bytes object and destroying the old one, only
@@ -3331,6 +3354,7 @@ _PyBytes_ResizeKeepOnError(PyObject **pv, Py_ssize_t newsize)
         }
         *pv = result;
         Py_DECREF(v);
+        assert(_PyBytes_IsMutable(*pv));
         return 0;
     }
 
@@ -3352,9 +3376,12 @@ _PyBytes_ResizeKeepOnError(PyObject **pv, Py_ssize_t newsize)
                Py_MIN(oldsize, newsize));
         *pv = result;
         Py_DECREF(v);
+        assert(_PyBytes_IsMutable(*pv));
         return 0;
     }
-    assert(v != bytes_get_empty());
+
+    // Only mutable bytes can be resized in-place
+    assert(_PyBytes_IsMutable(v));
 
     if ((size_t)newsize > (size_t)PY_SSIZE_T_MAX - PyBytesObject_SIZE) {
         PyErr_SetString(PyExc_OverflowError,
@@ -3385,6 +3412,7 @@ _PyBytes_ResizeKeepOnError(PyObject **pv, Py_ssize_t newsize)
     Py_SET_SIZE(sv, newsize);
     sv->ob_sval[newsize] = '\0';
     set_ob_shash(sv, -1);          /* invalidate cached hash value */
+    assert(_PyBytes_IsMutable(*pv));
     return 0;
 }
 
@@ -3647,6 +3675,7 @@ byteswriter_resize(PyBytesWriter *writer, Py_ssize_t size, int resize)
                 assert(writer->obj != NULL);
                 return -1;
             }
+            assert(_PyBytes_IsMutable(writer->obj));
         }
         assert(writer->obj != NULL);
     }
@@ -3673,6 +3702,7 @@ byteswriter_resize(PyBytesWriter *writer, Py_ssize_t size, int resize)
                    writer->small_buffer,
                    sizeof(writer->small_buffer));
         }
+        assert(_PyBytes_IsMutable(writer->obj));
     }
 
 #ifdef Py_DEBUG
