@@ -2495,6 +2495,55 @@ class HTTPResponseTest(TestCase):
         header = self.resp.getheader('No-Such-Header',default=42)
         self.assertEqual(header, 42)
 
+class ConnectTests(TestCase):
+
+    class Socket(FakeSocket):
+        def __init__(self, setsockopt_error=None):
+            super().__init__(b'')
+            self.setsockopt_error = setsockopt_error
+            self.closed = False
+
+        def setsockopt(self, level, optname, value):
+            if self.setsockopt_error is not None:
+                raise self.setsockopt_error
+
+        def close(self):
+            self.closed = True
+
+    def make_connection(self, sock):
+        conn = client.HTTPConnection('example.com')
+        conn._create_connection = lambda *args, **kwargs: sock
+        return conn
+
+    def test_connect(self):
+        sock = self.Socket()
+        conn = self.make_connection(sock)
+        conn.connect()
+        self.assertIs(conn.sock, sock)
+        self.assertFalse(sock.closed)
+
+    def test_connect_tcp_nodelay_unsupported(self):
+        # An OS without TCP_NODELAY leaves the connection usable.
+        error = OSError(errno.ENOPROTOOPT, 'Protocol not available')
+        sock = self.Socket(setsockopt_error=error)
+        conn = self.make_connection(sock)
+        conn.connect()
+        self.assertIs(conn.sock, sock)
+        self.assertFalse(sock.closed)
+
+    def test_connect_tcp_nodelay_error_closes_socket(self):
+        # gh-157174: any other error setting TCP_NODELAY (macOS raises EINVAL
+        # once the peer has reset the connection) must not leak the socket.
+        error = OSError(errno.EINVAL, 'Invalid argument')
+        sock = self.Socket(setsockopt_error=error)
+        conn = self.make_connection(sock)
+        with self.assertRaises(OSError) as cm:
+            conn.connect()
+        self.assertIs(cm.exception, error)
+        self.assertIsNone(conn.sock)
+        self.assertTrue(sock.closed)
+
+
 class TunnelTests(TestCase):
     def setUp(self):
         response_text = (
