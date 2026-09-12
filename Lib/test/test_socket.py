@@ -1187,6 +1187,17 @@ class GeneralModuleTests(unittest.TestCase):
         finally:
             socket.sethostname(oldhn)
 
+    def test_getfqdn_undefined_address(self):
+        for addr in ('', '0.0.0.0', '::'):
+            with self.subTest(addr=addr):
+                called = []
+                with mock.patch.object(
+                    socket, 'gethostbyaddr',
+                    side_effect=lambda addr: called.append(addr) or ("", [], [])
+                ):
+                    socket.getfqdn(addr)
+                self.assertFalse(called, f"gethostbyaddr was called for undefined address {addr!r}")
+
     @unittest.skipUnless(hasattr(socket, 'if_nameindex'),
                          'socket.if_nameindex() not available.')
     @support.skip_android_selinux('if_nameindex')
