@@ -24,19 +24,25 @@ def execute(c, sql, suppress_errors=True, theme=theme_no_color):
     'sql' is the SQL string to execute.
     """
 
-    try:
-        for row in c.execute(sql):
-            print(row)
-    except sqlite3.Error as e:
-        t = theme.traceback
-        tp = type(e).__name__
+    error = None
+    if "\0" in sql:
+        # A NUL makes c.execute() raise a broad ValueError; pre-check it.
+        error = ValueError("embedded null character")
+    else:
         try:
-            tp += f" ({e.sqlite_errorname})"
+            for row in c.execute(sql):
+                print(row)
+        except (sqlite3.Error, UnicodeEncodeError) as e:  # or a lone surrogate
+            error = e
+    if error is not None:
+        t = theme.traceback
+        tp = type(error).__name__
+        try:
+            tp += f" ({error.sqlite_errorname})"
         except AttributeError:
             pass
-        print(
-            f"{t.type}{tp}{t.reset}: {t.message}{e}{t.reset}", file=sys.stderr
-        )
+        print(f"{t.type}{tp}{t.reset}: {t.message}{error}{t.reset}",
+              file=sys.stderr)
         if not suppress_errors:
             sys.exit(1)
 
@@ -80,7 +86,22 @@ class SqliteInteractiveConsole(InteractiveConsole):
                     self.write(f'{t.type}Error{t.reset}: {t.message}unknown '
                                f'command: "{unknown}"{t.reset}\n')
         else:
-            if not sqlite3.complete_statement(source):
+            error = None
+            if "\0" in source:
+                # A NUL makes complete_statement() raise a broad ValueError;
+                # pre-check it so ValueError from other code still surfaces.
+                error = ValueError("embedded null character")
+            else:
+                try:
+                    complete = sqlite3.complete_statement(source)
+                except UnicodeEncodeError as e:  # a lone surrogate
+                    error = e
+            if error is not None:
+                t = theme.traceback
+                self.write(f"{t.type}{type(error).__name__}{t.reset}: "
+                           f"{t.message}{error}{t.reset}\n")
+                return False
+            if not complete:
                 return True
             execute(self._cur, source, theme=theme)
         return False
