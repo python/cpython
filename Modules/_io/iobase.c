@@ -184,8 +184,16 @@ _io__IOBase_flush_impl(PyObject *self)
     return NULL;
 }
 
+/*[clinic input]
+@getter
+_io._IOBase.closed
+
+True if the file is closed.
+[clinic start generated code]*/
+
 static PyObject *
-iobase_closed_get(PyObject *self, void *context)
+_io__IOBase_closed_get_impl(PyObject *self)
+/*[clinic end generated code: output=cb72a562de7b4082 input=8b68e9a4e2950776]*/
 {
     int closed = iobase_is_closed(self);
     if (closed < 0) {
@@ -225,25 +233,51 @@ _PyIOBase_check_closed(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-static PyObject *
-iobase_check_seekable(PyObject *self, PyObject *args)
-{
-    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
-    return _PyIOBase_check_seekable(state, self, args);
-}
+/*[clinic input]
+_io._IOBase._checkClosed
+[clinic start generated code]*/
 
 static PyObject *
-iobase_check_readable(PyObject *self, PyObject *args)
+_io__IOBase__checkClosed_impl(PyObject *self)
+/*[clinic end generated code: output=8fb8412185623f1a input=8d18d2e67b2270bb]*/
 {
-    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
-    return _PyIOBase_check_readable(state, self, args);
+    return _PyIOBase_check_closed(self, NULL);
 }
 
+/*[clinic input]
+_io._IOBase._checkSeekable
+[clinic start generated code]*/
+
 static PyObject *
-iobase_check_writable(PyObject *self, PyObject *args)
+_io__IOBase__checkSeekable_impl(PyObject *self)
+/*[clinic end generated code: output=10f09b515a9f4c4f input=479853eded776b0e]*/
 {
     _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
-    return _PyIOBase_check_writable(state, self, args);
+    return _PyIOBase_check_seekable(state, self, NULL);
+}
+
+/*[clinic input]
+_io._IOBase._checkReadable
+[clinic start generated code]*/
+
+static PyObject *
+_io__IOBase__checkReadable_impl(PyObject *self)
+/*[clinic end generated code: output=33ccab8a7c4550fb input=63fbf50b36772323]*/
+{
+    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
+    return _PyIOBase_check_readable(state, self, NULL);
+}
+
+/*[clinic input]
+_io._IOBase._checkWritable
+[clinic start generated code]*/
+
+static PyObject *
+_io__IOBase__checkWritable_impl(PyObject *self)
+/*[clinic end generated code: output=8cfc6b4b2469d2a3 input=2758c7291cf5911e]*/
+{
+    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
+    return _PyIOBase_check_writable(state, self, NULL);
 }
 
 PyObject *
@@ -495,8 +529,15 @@ _PyIOBase_check_writable(_PyIO_State *state, PyObject *self, PyObject *args)
 
 /* Context manager */
 
+/*[clinic input]
+_io._IOBase.__enter__
+
+Context management protocol.  Returns the stream itself.
+[clinic start generated code]*/
+
 static PyObject *
-iobase_enter(PyObject *self, PyObject *args)
+_io__IOBase___enter___impl(PyObject *self)
+/*[clinic end generated code: output=d1e8e5b58bde3680 input=92e2d5e34ee714e5]*/
 {
     if (iobase_check_closed(self))
         return NULL;
@@ -504,8 +545,16 @@ iobase_enter(PyObject *self, PyObject *args)
     return Py_NewRef(self);
 }
 
+/*[clinic input]
+_io._IOBase.__exit__
+    *args: tuple
+
+Context management protocol.  Calls close().
+[clinic start generated code]*/
+
 static PyObject *
-iobase_exit(PyObject *self, PyObject *args)
+_io__IOBase___exit___impl(PyObject *self, PyObject *args)
+/*[clinic end generated code: output=452f3e33a34e2c5c input=fd3f46a32773a170]*/
 {
     return PyObject_CallMethodNoArgs(self, &_Py_ID(close));
 }
@@ -841,16 +890,16 @@ static PyMethodDef iobase_methods[] = {
     _IO__IOBASE_READABLE_METHODDEF
     _IO__IOBASE_WRITABLE_METHODDEF
 
-    {"_checkClosed",   _PyIOBase_check_closed, METH_NOARGS},
-    {"_checkSeekable", iobase_check_seekable, METH_NOARGS},
-    {"_checkReadable", iobase_check_readable, METH_NOARGS},
-    {"_checkWritable", iobase_check_writable, METH_NOARGS},
+    _IO__IOBASE__CHECKCLOSED_METHODDEF
+    _IO__IOBASE__CHECKSEEKABLE_METHODDEF
+    _IO__IOBASE__CHECKREADABLE_METHODDEF
+    _IO__IOBASE__CHECKWRITABLE_METHODDEF
 
     _IO__IOBASE_FILENO_METHODDEF
     _IO__IOBASE_ISATTY_METHODDEF
 
-    {"__enter__", iobase_enter, METH_NOARGS},
-    {"__exit__", iobase_exit, METH_VARARGS},
+    _IO__IOBASE___ENTER___METHODDEF
+    _IO__IOBASE___EXIT___METHODDEF
 
     _IO__IOBASE_READLINE_METHODDEF
     _IO__IOBASE_READLINES_METHODDEF
@@ -861,7 +910,7 @@ static PyMethodDef iobase_methods[] = {
 
 static PyGetSetDef iobase_getset[] = {
     {"__dict__", PyObject_GenericGetDict, NULL, NULL},
-    {"closed", iobase_closed_get, NULL, NULL},
+    _IO__IOBASE_CLOSED_GETSETDEF
     {NULL}
 };
 
@@ -1018,15 +1067,29 @@ _io__RawIOBase_readall_impl(PyObject *self)
     return PyBytesWriter_Finish(writer);
 }
 
+/*[clinic input]
+_io._RawIOBase.readinto
+    buffer: object
+    /
+[clinic start generated code]*/
+
 static PyObject *
-rawiobase_readinto(PyObject *self, PyObject *args)
+_io__RawIOBase_readinto(PyObject *self, PyObject *buffer)
+/*[clinic end generated code: output=081b8cdfaf3a40ff input=99d4bea2acd659c8]*/
 {
     PyErr_SetNone(PyExc_NotImplementedError);
     return NULL;
 }
 
+/*[clinic input]
+_io._RawIOBase.write
+    buffer: object
+    /
+[clinic start generated code]*/
+
 static PyObject *
-rawiobase_write(PyObject *self, PyObject *args)
+_io__RawIOBase_write(PyObject *self, PyObject *buffer)
+/*[clinic end generated code: output=7add3f2c8715c3a8 input=e6a1534adb876fe2]*/
 {
     PyErr_SetNone(PyExc_NotImplementedError);
     return NULL;
@@ -1035,8 +1098,8 @@ rawiobase_write(PyObject *self, PyObject *args)
 static PyMethodDef rawiobase_methods[] = {
     _IO__RAWIOBASE_READ_METHODDEF
     _IO__RAWIOBASE_READALL_METHODDEF
-    {"readinto", rawiobase_readinto, METH_VARARGS},
-    {"write", rawiobase_write, METH_VARARGS},
+    _IO__RAWIOBASE_READINTO_METHODDEF
+    _IO__RAWIOBASE_WRITE_METHODDEF
     {NULL, NULL}
 };
 
