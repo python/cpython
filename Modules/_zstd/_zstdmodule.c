@@ -353,7 +353,8 @@ _zstd_finalize_dict_impl(PyObject *module, PyBytesObject *custom_dict_bytes,
 {
     Py_ssize_t chunks_number;
     size_t *chunk_sizes = NULL;
-    PyObject *dst_dict_bytes = NULL;
+    PyBytesWriter *dst_dict_bytes = NULL;
+    PyObject *result = NULL;
     size_t zstd_ret;
     ZDICT_params_t params;
 
@@ -372,7 +373,7 @@ _zstd_finalize_dict_impl(PyObject *module, PyBytesObject *custom_dict_bytes,
     }
 
     /* Allocate dict buffer */
-    dst_dict_bytes = PyBytes_FromStringAndSize(NULL, dict_size);
+    dst_dict_bytes = PyBytesWriter_Create(dict_size);
     if (dst_dict_bytes == NULL) {
         goto error;
     }
@@ -389,7 +390,8 @@ _zstd_finalize_dict_impl(PyObject *module, PyBytesObject *custom_dict_bytes,
     /* Finalize the dictionary */
     Py_BEGIN_ALLOW_THREADS
     zstd_ret = ZDICT_finalizeDictionary(
-                        PyBytes_AS_STRING(dst_dict_bytes), dict_size,
+                        PyBytesWriter_GetData(dst_dict_bytes),
+                        PyBytesWriter_GetSize(dst_dict_bytes),
                         PyBytes_AS_STRING(custom_dict_bytes),
                         Py_SIZE(custom_dict_bytes),
                         PyBytes_AS_STRING(samples_bytes), chunk_sizes,
@@ -404,18 +406,15 @@ _zstd_finalize_dict_impl(PyObject *module, PyBytesObject *custom_dict_bytes,
     }
 
     /* Resize dict_buffer */
-    if (_PyBytes_Resize(&dst_dict_bytes, zstd_ret) < 0) {
-        goto error;
-    }
-
-    goto success;
+    result = PyBytesWriter_FinishWithSize(dst_dict_bytes, zstd_ret);
+    goto done;
 
 error:
-    Py_CLEAR(dst_dict_bytes);
+    PyBytesWriter_Discard(dst_dict_bytes);
 
-success:
+done:
     PyMem_Free(chunk_sizes);
-    return dst_dict_bytes;
+    return result;
 }
 
 
