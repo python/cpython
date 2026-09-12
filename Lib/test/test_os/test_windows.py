@@ -601,5 +601,43 @@ class Win32NtTests(unittest.TestCase):
         self.assertGreaterEqual(stat1.st_atime, stat2.st_atime)
 
 
+class Win32StatExecutableTests(unittest.TestCase):
+    # gh-84419: Windows strips trailing dots and spaces from the last
+    # component of the path, so they should be ignored when guessing
+    # the execute permissions from the file extension.
+
+    SUFFIXES = ['', ' ', '   ', '.', '..', ' . .']
+
+    def check(self, ext, mask):
+        filename = os_helper.TESTFN + ext
+        create_file(filename)
+        try:
+            for suffix in self.SUFFIXES:
+                with self.subTest(suffix=suffix):
+                    mode = os.stat(filename + suffix).st_mode
+                    self.assertEqual(mode & 0o111, mask)
+        finally:
+            os_helper.unlink(filename)
+
+    def test_executable_extension(self):
+        for ext in '.exe', '.bat', '.cmd', '.com', '.EXE', '.Bat':
+            with self.subTest(ext=ext):
+                self.check(ext, 0o111)
+
+    def test_not_executable_extension(self):
+        for ext in '.txt', '.py', '.exe.txt', '':
+            with self.subTest(ext=ext):
+                self.check(ext, 0)
+
+    def test_extended_path(self):
+        # The \\?\ prefix disables normalization: trailing spaces and dots
+        # are part of the file name.
+        filename = os.path.abspath(os_helper.TESTFN + '.exe')
+        create_file(filename)
+        self.addCleanup(os_helper.unlink, filename)
+        self.assertEqual(os.stat('\\\\?\\' + filename).st_mode & 0o111, 0o111)
+        self.assertRaises(OSError, os.stat, '\\\\?\\' + filename + ' ')
+
+
 if __name__ == "__main__":
     unittest.main()
