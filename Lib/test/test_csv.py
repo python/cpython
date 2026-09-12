@@ -754,7 +754,7 @@ class TestDialectRegistry(unittest.TestCase):
         self.assertEqual(dialect.delimiter, ';')
         self.assertEqual(dialect.quoting, csv.QUOTE_ALL)
         self.assertEqual(list(csv.reader(['a:b'], new)), [['a', 'b']])
-        # "strict" is supported even if it is not set on the class.
+        # "strict" is supported even if it is not set on the subclass.
         self.assertTrue(copy.replace(dialect, strict=True).strict)
 
         with self.assertRaises(csv.Error):
