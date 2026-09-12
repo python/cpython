@@ -1,0 +1,1 @@
+Fix the unimplemented ``get_value`` method of the ``_multiprocessing.SemLock`` class on MacOSX by adding a specific inherited class between ``multiprocessing.SemLock`` and :class:`multiprocessing.Semaphore`.
