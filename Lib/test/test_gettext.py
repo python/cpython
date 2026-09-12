@@ -11,7 +11,8 @@ from test.support.import_helper import ensure_lazy_imports
 
 
 # TODO:
-#  - Add new tests, for example for "dgettext"
+#  - Add new tests, for example for "dgettext", "dngettext", "dpgettext",
+#    "dnpgettext" (gh-130655)
 #  - Tests should have only one assert.
 
 GNU_MO_DATA = b'''\
@@ -942,6 +943,110 @@ class TranslationFallbackTestCase(unittest.TestCase):
         with os_helper.temp_cwd() as tempdir:
             t = gettext.translation('gettext', localedir=tempdir, fallback=True)
             self.assertIsInstance(t, gettext.NullTranslations)
+
+
+class DGettextTests(GettextBaseTest):
+
+    def setUp(self):
+        super().setUp()
+        gettext.bindtextdomain('gettext', os.curdir)
+        gettext.textdomain('gettext')
+
+    def test_dgettext_translation(self):
+        cases = [
+            ('gettext', 'nudge nudge', 'wink wink'),
+            ('gettext', 'mullusk', 'bacon'),
+            ('gettext', 'Raymond Luxury Yach-t', 'Throatwobbler Mangrove'),
+            ('gettext', 'albatross', 'albatross'),
+            ('gettext', 'missing message', 'missing message'),
+            ('nonexistent_domain', 'mullusk', 'mullusk'),
+            ('', 'mullusk', 'mullusk'),
+        ]
+        for domain, msgid, expected in cases:
+            with self.subTest(domain=domain, msgid=msgid):
+                self.assertEqual(gettext.dgettext(domain, msgid), expected)
+
+
+class DnGettextTests(GettextBaseTest):
+
+    def setUp(self):
+        super().setUp()
+        gettext.bindtextdomain('gettext', os.curdir)
+        gettext.textdomain('gettext')
+
+    def test_dngettext_translation(self):
+        cases = [
+            ('gettext', 'There is %s file', 'There are %s files', 1,
+             'Hay %s fichero'),
+            ('gettext', 'There is %s file', 'There are %s files', 5,
+             'Hay %s ficheros'),
+            ('gettext', '%d file deleted', '%d files deleted', 1,
+             '%d file deleted'),
+            ('gettext', '%d file deleted', '%d files deleted', 5,
+             '%d files deleted'),
+            ('nonexistent_domain', 'There is %s file', 'There are %s files', 1,
+             'There is %s file'),
+            ('nonexistent_domain', 'There is %s file', 'There are %s files', 5,
+             'There are %s files'),
+        ]
+        for domain, msgid1, msgid2, n, expected in cases:
+            with self.subTest(domain=domain, n=n):
+                self.assertEqual(gettext.dngettext(domain, msgid1, msgid2, n),
+                                 expected)
+
+
+class DpGettextTests(GettextBaseTest):
+
+    def setUp(self):
+        super().setUp()
+        gettext.bindtextdomain('gettext', os.curdir)
+        gettext.textdomain('gettext')
+
+    def test_dpgettext_translation(self):
+        cases = [
+            ('gettext', 'my context', 'nudge nudge',
+             'wink wink (in "my context")'),
+            ('gettext', 'my other context', 'nudge nudge',
+             'wink wink (in "my other context")'),
+            ('gettext', 'my context', 'albatross', 'albatross'),
+            ('gettext', 'wrong context', 'nudge nudge', 'nudge nudge'),
+            ('nonexistent_domain', 'my context', 'nudge nudge', 'nudge nudge'),
+        ]
+        for domain, context, msgid, expected in cases:
+            with self.subTest(domain=domain, context=context):
+                self.assertEqual(gettext.dpgettext(domain, context, msgid),
+                                 expected)
+
+
+class DnpGettextTests(GettextBaseTest):
+
+    def setUp(self):
+        super().setUp()
+        gettext.bindtextdomain('gettext', os.curdir)
+        gettext.textdomain('gettext')
+
+    def test_dnpgettext_translation(self):
+        cases = [
+            ('gettext', 'With context', 'There is %s file',
+             'There are %s files', 1, 'Hay %s fichero (context)'),
+            ('gettext', 'With context', 'There is %s file',
+             'There are %s files', 5, 'Hay %s ficheros (context)'),
+            ('gettext', 'With context', '%d file deleted',
+             '%d files deleted', 1, '%d file deleted'),
+            ('gettext', 'With context', '%d file deleted',
+             '%d files deleted', 5, '%d files deleted'),
+            ('gettext', 'Wrong context', 'There is %s file',
+             'There are %s files', 1, 'There is %s file'),
+            ('nonexistent_domain', 'With context', 'There is %s file',
+             'There are %s files', 1, 'There is %s file'),
+            ('nonexistent_domain', 'With context', 'There is %s file',
+             'There are %s files', 5, 'There are %s files'),
+        ]
+        for domain, context, msgid1, msgid2, n, expected in cases:
+            with self.subTest(domain=domain, context=context, n=n):
+                self.assertEqual(
+                    gettext.dnpgettext(domain, context, msgid1, msgid2, n),
+                    expected)
 
 
 if __name__ == '__main__':
