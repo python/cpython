@@ -230,6 +230,9 @@ Signature algorithms
    :meth:`SSLContext.set_client_sigalgs` and
    :meth:`SSLContext.set_server_sigalgs` methods.
 
+   This function will raise :exc:`NotImplementedError` if the OpenSSL library
+   is older than 3.4.
+
    .. versionadded:: 3.15
 
 
@@ -1315,6 +1318,9 @@ SSL sockets also have the following additional methods and attributes:
    Return the group used for doing key agreement on this connection. If no
    connection has been established, returns ``None``.
 
+   This method will raise :exc:`NotImplementedError` if the OpenSSL library
+   is older than 3.2.
+
    .. versionadded:: 3.15
 
 .. method:: SSLSocket.client_sigalg()
@@ -1323,6 +1329,9 @@ SSL sockets also have the following additional methods and attributes:
    authentication on this connection, or ``None`` if no connection has been
    established or client authentication didn't occur.
 
+   This method will raise :exc:`NotImplementedError` if the OpenSSL library
+   is older than 3.5.
+
    .. versionadded:: 3.15
 
 .. method:: SSLSocket.server_sigalg()
@@ -1330,6 +1339,9 @@ SSL sockets also have the following additional methods and attributes:
    Return the signature algorithm used by the server to complete the TLS
    handshake on this connection, or ``None`` if no connection has been
    established or the cipher suite has no signature.
+
+   This method will raise :exc:`NotImplementedError` if the OpenSSL library
+   is older than 3.5.
 
    .. versionadded:: 3.15
 
@@ -1707,6 +1719,9 @@ to speed up repeated connections from the same clients.
    :const:`True` this method will also return any associated aliases such as
    the ECDH curve names supported in older versions of OpenSSL.
 
+   This method will raise :exc:`NotImplementedError` if the OpenSSL library
+   is older than 3.5.
+
    .. versionadded:: 3.15
 
 .. method:: SSLContext.set_default_verify_paths()
@@ -1910,6 +1925,10 @@ to speed up repeated connections from the same clients.
    :data:`OP_SINGLE_ECDH_USE` option to further improve security.
 
    This method is not available if :data:`HAS_ECDH` is ``False``.
+
+   For more control, including selecting several groups in order of
+   preference or offering post-quantum hybrid groups, use the more general
+   :meth:`~SSLContext.set_groups` method.
 
    .. versionadded:: 3.3
 
@@ -2933,6 +2952,10 @@ of TLS/SSL. Some new TLS 1.3 features are not yet available.
   and the method :meth:`SSLSocket.cipher` returns information about the
   negotiated cipher for both TLS 1.3 and earlier versions once a connection
   is established.
+- Key agreement can use post-quantum hybrid groups such as
+  ``X25519MLKEM768`` when linked against OpenSSL 3.5 or later.  Use
+  :meth:`SSLContext.set_groups` to choose which groups are offered and
+  :meth:`SSLSocket.group` to see which one was negotiated.
 - Session tickets are no longer sent as part of the initial handshake and
   are handled differently.  :attr:`SSLSocket.session` and :class:`SSLSession`
   are not compatible with TLS 1.3.
