@@ -1,0 +1,3 @@
+Add support for CIDR-notated IP addresses in urllib Proxy Bypass lists. This
+includes the ``NO_PROXY`` environment variable, as well as SystemConfig on
+MacOS and the Windows registry.
