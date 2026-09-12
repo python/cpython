@@ -1097,6 +1097,15 @@ class ContextTests(unittest.TestCase):
         if CAN_IGNORE_UNKNOWN_OPENSSL_SIGALGS:
             self.assertIsNone(ctx.set_server_sigalgs('rsa_pss_rsae_sha256:?foo'))
 
+    @unittest.skipUnless(CAN_GET_SELECTED_OPENSSL_GROUP,
+                         "SSL library doesn't support getting selected group")
+    def test_no_session_group_does_not_crash(self):
+        # Ensure that .group() does not crash because of OpenSSL itself.
+        # See https://github.com/python/cpython/issues/155782.
+        ctx = ssl.create_default_context()
+        obj = ctx.wrap_bio(ssl.MemoryBIO(), ssl.MemoryBIO())
+        self.assertIsNone(obj.group())
+
     def test_options(self):
         # Test default SSLContext options
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
