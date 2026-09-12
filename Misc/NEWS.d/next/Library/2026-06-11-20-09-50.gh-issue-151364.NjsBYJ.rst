@@ -1,0 +1,2 @@
+Fix thread-safety issues in :func:`select.kqueue` objects. Patch by Victor
+Stinner.
