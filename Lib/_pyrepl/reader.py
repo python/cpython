@@ -126,7 +126,7 @@ default_keymap: Keymap = tuple(
         (r"\M-9", "digit-arg"),
         (r"\M-\n", "accept"),
         ("\\\\", "self-insert"),
-        (r"\x1b[200~", "perform-bracketed-paste"),
+        (r"\<bracketed paste>", "perform-bracketed-paste"),
         (r"\x03", "ctrl-c"),
     ]
     + [(c, "self-insert") for c in map(chr, range(32, 127)) if c != "\\"]
