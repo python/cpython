@@ -1,0 +1,2 @@
+Fix :class:`~compression.zstd.ZstdFile` creating an invalid zero-byte archive
+when an output file is closed without any writes.
