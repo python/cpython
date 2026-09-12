@@ -2800,6 +2800,42 @@ class TestInternalFrameApi(unittest.TestCase):
         firstline = self.func.__code__.co_firstlineno
         self.assertEqual(line, firstline + 2)
 
+    # get_frame_locals() returns the caller frame's locals as a name -> value
+    # dict via PyUnstable_InterpreterFrame_GetLocal (one strong reference per
+    # localsplus index).
+    def helper_plain(self, a, b):
+        c = a + b
+        return _testinternalcapi.get_frame_locals()
+
+    def test_get_local_plain(self):
+        d = self.helper_plain(3, 4)
+        self.assertEqual(d['a'], 3)
+        self.assertEqual(d['b'], 4)
+        self.assertEqual(d['c'], 7)
+        self.assertIs(d['self'], self)
+
+    def test_get_local_cell(self):
+        # y is a cell variable of this frame because inner closes over it.
+        y = 100
+
+        def inner():
+            return y
+
+        d = _testinternalcapi.get_frame_locals()
+        self.assertEqual(d['y'], 100)
+        self.assertIs(d['inner'], inner)
+
+    def test_get_local_free(self):
+        # z is a free variable of inner, read from the closure.
+        z = 7
+
+        def inner():
+            _ = z
+            return _testinternalcapi.get_frame_locals()
+
+        d = inner()
+        self.assertEqual(d['z'], 7)
+
 
 SUFFICIENT_TO_DEOPT_AND_SPECIALIZE = 100
 
