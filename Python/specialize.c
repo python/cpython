@@ -1010,7 +1010,7 @@ _Py_Specialize_LoadAttr(_PyStackRef owner_st, _Py_CODEUNIT *instr, PyObject *nam
         SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OTHER);
         fail = true;
     }
-    else if (Py_TYPE(owner)->tp_getattro == PyModule_Type.tp_getattro) {
+    else if (PyModule_CheckExact(owner)) {
         fail = specialize_module_load_attr(owner, instr, name);
     }
     else if (PyType_Check(owner)) {

@@ -2211,6 +2211,35 @@ class TestSpecializer(TestBase):
 
     @cpython_only
     @requires_specialization
+    def test_load_attr_module_subclass_with_data_descriptor(self):
+        # gh-156399: a types.ModuleType subclass inherits
+        # PyModule_Type.tp_getattro, so guarding specialization on tp_getattro
+        # alone let subclasses take LOAD_ATTR_MODULE. That reads the module
+        # dict directly, silently bypassing a data descriptor defined on the
+        # subclass once the instruction had specialized.
+        class Descriptor:
+            def __get__(self, instance, owner=None):
+                return "from descriptor"
+
+            def __set__(self, instance, value):
+                instance.__dict__["attr"] = value
+
+        class Module(types.ModuleType):
+            attr = Descriptor()
+
+        module = Module("test_module_subclass")
+        module.__dict__["attr"] = "from dict"
+
+        def load_module_attr():
+            return module.attr
+
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+            self.assertEqual(load_module_attr(), "from descriptor")
+
+        self.assert_no_opcode(load_module_attr, "LOAD_ATTR_MODULE")
+
+    @cpython_only
+    @requires_specialization
     def test_specialized_iter_doesnt_skip_send_check(self):
         def gen_func(seq):
             yield from seq
