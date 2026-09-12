@@ -199,12 +199,8 @@ convert_global_to_const(_PyUOpInstruction *inst, PyObject *obj)
     if (res == NULL) {
         return NULL;
     }
-    if (_Py_IsImmortal(res)) {
-        inst->opcode = _LOAD_CONST_INLINE_BORROW;
-    } else {
-        inst->opcode = _LOAD_CONST_INLINE;
-    }
-    inst->operand0 = (uint64_t)res;
+    inst->opcode = _Py_IsImmortal(res) ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE;
+    inst->operand0 = _PyUop_PrepareOperand0(inst->opcode, (uint64_t)res);
     return res;
 }
 
@@ -255,7 +251,7 @@ add_op(JitOptContext *ctx, _PyUOpInstruction *this_instr,
     out->format = this_instr->format;
     out->oparg = (oparg);
     out->target = this_instr->target;
-    out->operand0 = (operand0);
+    out->operand0 = _PyUop_PrepareOperand0(opcode, (uint64_t)operand0);
     out->operand1 = this_instr->operand1;
 #ifdef Py_STATS
     out->fitness = this_instr->fitness;
