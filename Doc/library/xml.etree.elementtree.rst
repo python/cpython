@@ -160,8 +160,37 @@ some storage device.  In such cases, blocking reads are unacceptable.
 Because it's so flexible, :class:`XMLPullParser` can be inconvenient to use for
 simpler use-cases.  If you don't mind your application blocking on reading XML
 data but would still like to have incremental parsing capabilities, take a look
-at :func:`iterparse`.  It can be useful when you're reading a large XML document
-and don't want to hold it wholly in memory.
+at :func:`iterparse`.
+
+Note that both parsers build the tree incrementally: it is not freed
+incrementally, so every parsed element is kept until the whole document is
+read.  To keep the memory usage low, get rid of the data which is not needed
+any more.
+
+If the processed elements are large, it is enough to clear them.
+This works wherever they are in the tree,
+but the emptied elements are left in it::
+
+   for event, elem in ET.iterparse(source):
+       if elem.tag == 'record':
+           process(elem)
+           elem.clear()
+
+If an element has a large number of children,
+remove the processed children from it::
+
+   for event, elem in ET.iterparse(source, events=('start', 'end')):
+       if event == 'start' and elem.tag == 'parent':
+           parent = elem
+       elif event == 'end' and elem.tag == 'child':
+           process(elem)
+           parent.remove(elem)
+
+These examples are not universal,
+they only give an idea for two common cases.
+If you do not need a tree at all,
+parse with :class:`XMLParser` and a custom target instead;
+it is not built then, and nothing has to be removed.
 
 Where *immediate* feedback through events is wanted, calling method
 :meth:`XMLPullParser.flush` can help reduce delay;
@@ -634,6 +663,10 @@ Functions
    blocking reads on *source* (or the file it names).  As such, it's unsuitable
    for applications where blocking reads can't be made.  For fully non-blocking
    parsing, see :class:`XMLPullParser`.
+
+   The tree is only built incrementally, it is not freed incrementally:
+   every parsed element is kept until the whole document is read.
+   See :ref:`elementtree-pull-parsing` for how to keep the memory usage low.
 
    .. note::
 
