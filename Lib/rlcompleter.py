@@ -31,12 +31,12 @@ Notes:
 
 import atexit
 import builtins
-import inspect
 import keyword
-import re
 import __main__
 import warnings
 import types
+lazy import inspect
+lazy import re
 
 __all__ = ["Completer"]
 

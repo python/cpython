@@ -1,0 +1,1 @@
+Speed up the :mod:`rlcompleter` module's import time.
