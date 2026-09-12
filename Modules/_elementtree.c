@@ -1230,24 +1230,6 @@ checkpath(PyObject* tag)
         }
         return 0;
     }
-    if (PyBytes_Check(tag)) {
-        const char *p = PyBytes_AS_STRING(tag);
-        const Py_ssize_t len = PyBytes_GET_SIZE(tag);
-        if (len >= 3 && p[0] == '{' && (
-                p[1] == '}' || (p[1] == '*' && p[2] == '}'))) {
-            /* wildcard: '{}tag' or '{*}tag' */
-            return 1;
-        }
-        for (i = 0; i < len; i++) {
-            if (p[i] == '{')
-                check = 0;
-            else if (p[i] == '}')
-                check = 1;
-            else if (check && PATHCHAR(p[i]))
-                return 1;
-        }
-        return 0;
-    }
 
     return 1; /* unknown type; might be path expression */
 }
@@ -1550,10 +1532,6 @@ _elementtree_Element_iter_impl(ElementObject *self, PyTypeObject *cls,
 {
     if (PyUnicode_Check(tag)) {
         if (PyUnicode_GET_LENGTH(tag) == 1 && PyUnicode_READ_CHAR(tag, 0) == '*')
-            tag = Py_None;
-    }
-    else if (PyBytes_Check(tag)) {
-        if (PyBytes_GET_SIZE(tag) == 1 && *PyBytes_AS_STRING(tag) == '*')
             tag = Py_None;
     }
 
@@ -2935,17 +2913,7 @@ treebuilder_handle_data(TreeBuilderObject* self, PyObject* data)
         self->data = Py_NewRef(data);
     } else {
         /* more than one item; use a list to collect items */
-        if (PyBytes_CheckExact(self->data)
-            && _PyObject_IsUniquelyReferenced(self->data)
-            && PyBytes_CheckExact(data) && PyBytes_GET_SIZE(data) == 1) {
-            /* XXX this code path unused in Python 3? */
-            /* expat often generates single character data sections; handle
-               the most common case by resizing the existing string... */
-            Py_ssize_t size = PyBytes_GET_SIZE(self->data);
-            if (_PyBytes_Resize(&self->data, size + 1) < 0)
-                return NULL;
-            PyBytes_AS_STRING(self->data)[size] = PyBytes_AS_STRING(data)[0];
-        } else if (PyList_CheckExact(self->data)) {
+        if (PyList_CheckExact(self->data)) {
             if (PyList_Append(self->data, data) < 0)
                 return NULL;
         } else {
@@ -4363,18 +4331,14 @@ _elementtree_XMLParser__setevents_impl(XMLParserObject *self,
 
     for (i = 0; i < PySequence_Fast_GET_SIZE(events_seq); ++i) {
         PyObject *event_name_obj = PySequence_Fast_GET_ITEM(events_seq, i);
-        const char *event_name = NULL;
-        if (PyUnicode_Check(event_name_obj)) {
-            event_name = PyUnicode_AsUTF8(event_name_obj);
-        } else if (PyBytes_Check(event_name_obj)) {
-            event_name = PyBytes_AS_STRING(event_name_obj);
+        if (!PyUnicode_Check(event_name_obj)) {
+            goto unknown_event;
         }
+        const char *event_name = PyUnicode_AsUTF8(event_name_obj);
         if (event_name == NULL) {
             Py_DECREF(events_seq);
-            PyErr_Format(PyExc_ValueError, "invalid events sequence");
             return NULL;
         }
-
         if (strcmp(event_name, "start") == 0) {
             Py_XSETREF(target->start_event_obj, Py_NewRef(event_name_obj));
         } else if (strcmp(event_name, "end") == 0) {
@@ -4406,7 +4370,8 @@ _elementtree_XMLParser__setevents_impl(XMLParserObject *self,
                 (XML_ProcessingInstructionHandler) expat_pi_handler
                 );
         } else {
-            PyErr_Format(PyExc_ValueError, "unknown event '%s'", event_name);
+unknown_event:
+            PyErr_Format(PyExc_ValueError, "unknown event %R", event_name_obj);
             Py_DECREF(events_seq);
             return NULL;
         }
