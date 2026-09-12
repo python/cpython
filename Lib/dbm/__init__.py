@@ -32,7 +32,6 @@ __all__ = ['open', 'whichdb', 'error']
 import io
 import os
 import struct
-import sys
 
 
 class error(Exception):
@@ -187,8 +186,3 @@ def whichdb(filename):
 
     # Unknown
     return ""
-
-
-if __name__ == "__main__":
-    for filename in sys.argv[1:]:
-        print(whichdb(filename) or "UNKNOWN", filename)
