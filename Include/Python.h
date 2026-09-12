@@ -104,6 +104,7 @@ __pragma(warning(disable: 4201))
 #include "moduleobject.h"
 #include "cpython/monitoring.h"
 #include "cpython/funcobject.h"
+#include "classobject.h"
 #include "cpython/classobject.h"
 #include "fileobject.h"
 #include "pycapsule.h"

@@ -2832,3 +2832,6 @@
 
 [function.PyObject_CallFinalizerFromDealloc]
     added = '3.15'
+
+[function.PyMethod_New]
+    added = '3.16'
