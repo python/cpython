@@ -278,6 +278,7 @@ typedef struct {
     PyObject *it;
     PyObject *old;
     PyObject *result;
+    uint8_t running;
 } pairwiseobject;
 
 #define pairwiseobject_CAST(op) ((pairwiseobject *)(op))
@@ -344,36 +345,44 @@ pairwise_traverse(PyObject *op, visitproc visit, void *arg)
 }
 
 static PyObject *
-pairwise_next(PyObject *op)
+pairwise_next_lock_held(PyObject *op)
 {
     pairwiseobject *po = pairwiseobject_CAST(op);
+
+    // Re-entrancy guard. The enclosing critical section serializes calls
+    // from different threads; this flag catches same-thread re-entry (the
+    // input iterator's __next__ calling back into pairwise.__next__) and
+    // raises, matching itertools.tee and generators.
+    if (po->running) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "pairwise() iterator already executing");
+        return NULL;
+    }
+    po->running = 1;
+
     PyObject *it = po->it;
     PyObject *old = po->old;
     PyObject *new, *result;
 
     if (it == NULL) {
-        return NULL;
+        result = NULL;
+        goto done;
     }
     if (old == NULL) {
         old = (*Py_TYPE(it)->tp_iternext)(it);
-        Py_XSETREF(po->old, old);
         if (old == NULL) {
             Py_CLEAR(po->it);
-            return NULL;
+            result = NULL;
+            goto done;
         }
-        it = po->it;
-        if (it == NULL) {
-            Py_CLEAR(po->old);
-            return NULL;
-        }
+        po->old = old;  // po->old was NULL; no decref needed
     }
-    Py_INCREF(old);
     new = (*Py_TYPE(it)->tp_iternext)(it);
     if (new == NULL) {
         Py_CLEAR(po->it);
         Py_CLEAR(po->old);
-        Py_DECREF(old);
-        return NULL;
+        result = NULL;
+        goto done;
     }
 
     result = po->result;
@@ -393,8 +402,20 @@ pairwise_next(PyObject *op)
         result = _PyTuple_FromPair(old, new);
     }
 
-    Py_XSETREF(po->old, new);
-    Py_DECREF(old);
+    Py_SETREF(po->old, new);  // po->old == old, known non-NULL
+
+done:
+    po->running = 0;
+    return result;
+}
+
+static PyObject *
+pairwise_next(PyObject *op)
+{
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = pairwise_next_lock_held(op);
+    Py_END_CRITICAL_SECTION();
     return result;
 }
 
