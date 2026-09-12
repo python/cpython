@@ -1,0 +1,1 @@
+Add subprocess-based tests for the :mod:`zipapp` command-line interface.

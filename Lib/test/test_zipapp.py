@@ -3,12 +3,13 @@
 import io
 import pathlib
 import stat
+import subprocess
 import sys
 import tempfile
 import unittest
 import zipapp
 import zipfile
-from test.support import requires_zlib
+from test.support import requires_zlib, requires_subprocess
 from test.support import os_helper
 
 from unittest.mock import patch
@@ -453,6 +454,129 @@ class ZipAppCmdlineTest(unittest.TestCase):
             zipapp.main(args)
         # Program should exit with a non-zero return code.
         self.assertTrue(cm.exception.code)
+
+
+@requires_subprocess()
+class CommandLineTest(unittest.TestCase):
+    """Test the ``python -m zipapp`` command-line interface via subprocess."""
+
+    def setUp(self):
+        tmpdir = tempfile.TemporaryDirectory()
+        self.addCleanup(tmpdir.cleanup)
+        self.tmpdir = pathlib.Path(tmpdir.name)
+
+    def _run(self, *args):
+        return subprocess.run(
+            [sys.executable, '-m', 'zipapp', *args],
+            capture_output=True,
+        )
+
+    def _make_source(self, *, main_content=b''):
+        source = self.tmpdir / 'source'
+        source.mkdir()
+        (source / '__main__.py').write_bytes(main_content)
+        return source
+
+    def _make_archive(self, *, interpreter=None):
+        source = self._make_source()
+        target = self.tmpdir / 'source.pyz'
+        zipapp.create_archive(source, target, interpreter=interpreter)
+        return target
+
+    def test_help(self):
+        result = self._run('--help')
+        self.assertEqual(result.returncode, 0)
+        self.assertIn(b'usage:', result.stdout)
+
+    def test_create_archive(self):
+        source = self._make_source()
+        result = self._run(str(source))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        target = source.with_suffix('.pyz')
+        self.assertTrue(target.is_file())
+
+    def test_create_archive_with_output(self):
+        source = self._make_source()
+        target = self.tmpdir / 'out.pyz'
+        result = self._run(str(source), '-o', str(target))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue(target.is_file())
+
+    def test_create_archive_with_interpreter(self):
+        source = self._make_source()
+        target = self.tmpdir / 'out.pyz'
+        result = self._run(str(source), '-o', str(target), '-p', '/usr/bin/env python3')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue(target.is_file())
+        self.assertEqual(zipapp.get_interpreter(target), '/usr/bin/env python3')
+
+    def test_create_archive_with_main(self):
+        source = self.tmpdir / 'pkg'
+        source.mkdir()
+        (source / 'mod.py').write_text('def fn(): pass\n', encoding='utf-8')
+        target = self.tmpdir / 'out.pyz'
+        result = self._run(str(source), '-o', str(target), '-m', 'mod:fn')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue(target.is_file())
+        with zipfile.ZipFile(target, 'r') as z:
+            self.assertIn('__main__.py', z.namelist())
+
+    @requires_zlib()
+    def test_create_archive_with_compress(self):
+        source = self._make_source(main_content=b'print("hello")\n')
+        target = self.tmpdir / 'out.pyz'
+        result = self._run(str(source), '-o', str(target), '-c')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        with zipfile.ZipFile(target, 'r') as z:
+            self.assertEqual(z.getinfo('__main__.py').compress_type,
+                             zipfile.ZIP_DEFLATED)
+
+    def test_info_command(self):
+        target = self._make_archive(interpreter='python3')
+        result = self._run(str(target), '--info')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn(b'Interpreter: python3', result.stdout)
+
+    def test_info_no_interpreter(self):
+        target = self._make_archive()
+        result = self._run(str(target), '--info')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn(b'Interpreter: <none>', result.stdout)
+
+    def test_info_nonexistent_file(self):
+        target = self.tmpdir / 'nonexistent.pyz'
+        result = self._run(str(target), '--info')
+        self.assertNotEqual(result.returncode, 0)
+
+    def test_copy_archive(self):
+        original = self._make_archive()
+        target = self.tmpdir / 'copy.pyz'
+        result = self._run(str(original), '-o', str(target))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue(target.is_file())
+
+    def test_copy_archive_inplace_fails(self):
+        original = self._make_archive()
+        result = self._run(str(original), '-o', str(original))
+        self.assertNotEqual(result.returncode, 0)
+
+    def test_copy_archive_change_main_fails(self):
+        original = self._make_archive()
+        target = self.tmpdir / 'copy.pyz'
+        result = self._run(str(original), '-o', str(target), '-m', 'foo:bar')
+        self.assertNotEqual(result.returncode, 0)
+
+    def test_no_source_argument(self):
+        result = self._run()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn(b'usage:', result.stderr)
+
+    def test_no_main_in_source(self):
+        source = self.tmpdir / 'empty'
+        source.mkdir()
+        (source / 'foo.py').touch()
+        result = self._run(str(source))
+        self.assertNotEqual(result.returncode, 0)
 
 
 if __name__ == "__main__":
