@@ -1,0 +1,2 @@
+Multiline regexes starting with a caret, such as ``re.compile("^foo",
+re.MULTILINE)``, now run significantly faster.
