@@ -553,7 +553,7 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport,
                 # This write failed, so there is no completion callback
                 # pending to re-enter the loop -- schedule one (gh-156698).
                 def write_next():
-                    # error_received() may have armed a write of its own,
+                    # error_received() may have scheduled a write of its own,
                     # directly or with call_soon(); its completion callback
                     # will drain the rest of the buffer.
                     if self._write_fut is None:

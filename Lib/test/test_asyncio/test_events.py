@@ -1646,7 +1646,7 @@ class EventLoopTestsMixin:
     def test_datagram_write_error_reentrant_sendto(self):
         # See https://github.com/python/cpython/issues/156698: an
         # error_received() callback that sends more data synchronously
-        # can itself arm a new write. The write-loop restart scheduled
+        # can itself schedule a new write. The write-loop restart scheduled
         # for the failed write must notice that and not try to start a
         # second, conflicting one.
         loop = self.loop
@@ -1760,9 +1760,9 @@ class EventLoopTestsMixin:
     def test_datagram_close_during_write_error_calls_connection_lost(self):
         # See https://github.com/python/cpython/issues/156920: if the
         # write that's outstanding when close() is called goes on to fail
-        # (rather than succeed), the failure handler used to only re-arm
+        # (rather than succeed), the failure handler used to only re-schedule
         # the write loop when data was still queued behind it. If that
-        # failing write was the last thing in the buffer, nothing re-armed
+        # failing write was the last thing in the buffer, nothing re-scheduled
         # the loop, so the close() in progress never got to call
         # connection_lost() -- it hung forever instead of finishing once
         # the buffer was actually empty.
