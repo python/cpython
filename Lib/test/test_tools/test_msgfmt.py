@@ -145,12 +145,6 @@ msgstr "bar"
 
 
 class POParserTest(unittest.TestCase):
-    @classmethod
-    def tearDownClass(cls):
-        # msgfmt uses a global variable to store messages,
-        # clear it after the tests.
-        msgfmt.MESSAGES.clear()
-
     def test_strings(self):
         # Test that the PO parser correctly handles and unescape
         # strings in the PO file.
@@ -202,8 +196,6 @@ class POParserTest(unittest.TestCase):
                     # check the result.
                     po = f'msgid {po_string}\nmsgstr "translation"'
                     Path('messages.po').write_text(po)
-                    # Reset the global MESSAGES dictionary
-                    msgfmt.MESSAGES.clear()
                     msgfmt.make('messages.po', 'messages.mo')
 
                     with open('messages.mo', 'rb') as f:
@@ -235,8 +227,6 @@ class POParserTest(unittest.TestCase):
                 with self.subTest(string=invalid_string):
                     po = f'msgid {invalid_string}\nmsgstr "translation"'
                     Path('messages.po').write_text(po)
-                    # Reset the global MESSAGES dictionary
-                    msgfmt.MESSAGES.clear()
                     with self.assertRaises(Exception):
                         msgfmt.make('messages.po', 'messages.mo')
 
