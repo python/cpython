@@ -5,7 +5,7 @@
 #include <pycore_ast.h>
 #include <pycore_token.h>
 
-#include "lexer/state.h"
+#include "tokenizer/tokenizer.h"
 
 #if 0
 #define PyPARSE_YIELD_IS_KEYWORD        0x0001
@@ -37,6 +37,7 @@ typedef struct {
     int type;
     PyObject *bytes;
     int level;
+    int is_raw;
     int lineno, col_offset, end_lineno, end_col_offset;
     Memo *memo;
     // Filter over the rule types present in `memo` (bit `type & 63` is set

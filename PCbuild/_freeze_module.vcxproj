@@ -181,12 +181,12 @@
     <ClCompile Include="..\Parser\action_helpers.c" />
     <ClCompile Include="..\Parser\string_parser.c" />
     <ClCompile Include="..\Parser\token.c" />
-    <ClCompile Include="..\Parser\lexer\buffer.c" />
     <ClCompile Include="..\Parser\lexer\state.c" />
     <ClCompile Include="..\Parser\lexer\lexer.c" />
     <ClCompile Include="..\Parser\lexer\number.c" />
     <ClCompile Include="..\Parser\lexer\string.c" />
     <ClCompile Include="..\Parser\tokenizer\decoder.c" />
+    <ClCompile Include="..\Parser\tokenizer\api.c" />
     <ClCompile Include="..\Parser\tokenizer\reader.c" />
     <ClCompile Include="..\Parser\tokenizer\source.c" />
     <ClCompile Include="..\Parser\tokenizer\helpers.c" />

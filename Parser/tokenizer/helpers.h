@@ -5,6 +5,8 @@
 
 #include "../lexer/state.h"
 
+int _PyTokenizer_syntaxerror_at(struct tok_state *, const char *,
+    Py_ssize_t, int, int, int, const char *, ...);
 int _PyTokenizer_syntaxerror(struct tok_state *tok, const char *format, ...);
 int _PyTokenizer_syntaxerror_known_range(struct tok_state *tok, int col_offset, int end_col_offset, const char *format, ...);
 int _PyTokenizer_indenterror(struct tok_state *tok);

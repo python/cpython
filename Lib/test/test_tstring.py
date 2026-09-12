@@ -159,6 +159,14 @@ class TestTString(unittest.TestCase, TStringBaseCase):
         t = tr"{path}\Documents"
         self.assertTStringEqual(t, ("", r"\Documents"), [(path, "path")])
 
+        value = 42
+        t = rt"{value:{f'\xFF'}}\n"
+        self.assertTStringEqual(
+            t, ("", "\\n"), [(value, "value", None, 'ÿ')])
+        t = t"{value:{rf'\xFF'}}\n"
+        self.assertTStringEqual(
+            t, ("", "\n"), [(value, "value", None, '\\xFF')])
+
     def test_template_concatenation(self):
         # Test template + template
         t1 = t"Hello, "
@@ -226,6 +234,10 @@ class TestTString(unittest.TestCase, TStringBaseCase):
             ("t'{x=!}'", "t-string: missing conversion character"),
             ("t'{x!z}'", "t-string: invalid conversion character 'z': "
                          "expected 's', 'r', or 'a'"),
+            ("f\"{t'{x!z}'}\"", "t-string: invalid conversion character 'z': "
+                                "expected 's', 'r', or 'a'"),
+            ("t'{f\"{x!z}\"}'", "f-string: invalid conversion character 'z': "
+                                "expected 's', 'r', or 'a'"),
             ("t'{lambda:1}'", "t-string: lambda expressions are not allowed "
                               "without parentheses"),
             ("t'{x:{;}}'", "t-string: expecting a valid expression after '{'"),

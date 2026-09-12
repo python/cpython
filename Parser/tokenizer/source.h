@@ -3,20 +3,7 @@
 
 #include "Python.h"
 
-typedef Py_ssize_t _PyTok_Off;
-
-/* Spans use half-open logical byte offsets into decoded input. Their backing
-   storage may retain only the current input window. */
-typedef struct {
-    _PyTok_Off start;
-    _PyTok_Off end;
-} _PyTok_Span;
-
-/* Lines are 1-based and byte columns are 0-based. */
-typedef struct {
-    int lineno;
-    int byte_col;
-} _PyTok_Loc;
+#include "types.h"
 
 typedef enum {
     _PYTOK_AFFINITY_LEFT,
@@ -76,18 +63,6 @@ PyAPI_FUNC(int) _PyTok_SourceLineIsImplicit(
    right affinity selects the following line at byte column zero. */
 PyAPI_FUNC(int) _PyTok_SourceLocation(
     const _PyTok_SourceText *, _PyTok_Off, _PyTok_Affinity, _PyTok_Loc *);
-
-static inline _PyTok_Span
-_PyTok_SpanFromBounds(_PyTok_Off start, _PyTok_Off end)
-{
-    return (_PyTok_Span){start, end};
-}
-
-static inline int
-_PyTok_SpanIsValid(_PyTok_Span span)
-{
-    return span.start >= 0 && span.end >= span.start;
-}
 
 static inline _PyTok_Off
 _PyTok_SourceFindLineEnd(const _PyTok_SourceText *source, _PyTok_Off start)
