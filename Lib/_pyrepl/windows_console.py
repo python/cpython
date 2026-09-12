@@ -627,7 +627,8 @@ class WindowsConsole(Console):
         """
         Push a character to the console event queue.
         """
-        raise NotImplementedError("push_char not supported on Windows")
+        trace("push char {char!r}", char=char)
+        self.event_queue.push(char)
 
     def beep(self) -> None:
         self.__write("\x07")
@@ -671,6 +672,7 @@ class WindowsConsole(Console):
             e2 = self.event_queue.get()
             if e2:
                 e.data += e2.data
+                e.raw += e2.raw
 
         recs, rec_count = self._read_input_bulk(1024)
         for i in range(rec_count):
@@ -689,6 +691,7 @@ class WindowsConsole(Console):
                 if ch == "\r":
                     ch = "\n"
                 e.data += ch
+                e.raw += ch.encode(self.event_queue.encoding, "replace")
         return e
 
     def wait_for_event(self, timeout: float | None) -> bool:
