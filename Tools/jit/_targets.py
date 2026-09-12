@@ -65,6 +65,7 @@ class _Target(typing.Generic[_S, _R]):
     condition: str
     _: dataclasses.KW_ONLY
     args: typing.Sequence[str] = ()
+    stencil_args: typing.Sequence[str] = ()
     optimizer: type[_optimizers.Optimizer] = _optimizers.Optimizer
     label_prefix: typing.ClassVar[str]
     symbol_prefix: typing.ClassVar[str]
@@ -250,6 +251,7 @@ class _Target(typing.Generic[_S, _R]):
         if self.frame_pointers:
             args_s += ["-Xclang", "-mframe-pointer=reserved"]
         args_s += self._compile_args()
+        args_s += self.stencil_args
         # Allow user-provided CFLAGS to override any defaults
         args_s += shlex.split(self.cflags)
         await _llvm.run(
@@ -720,7 +722,12 @@ def get_target(host: str) -> _COFF32 | _COFF64 | _ELF | _MachO:
         host = "aarch64-apple-darwin"
         condition = "defined(__aarch64__) && defined(__APPLE__)"
         optimizer = _optimizers.OptimizerAArch64
-        target = _MachO(host, condition, optimizer=optimizer)
+        target = _MachO(
+            host,
+            condition,
+            optimizer=optimizer,
+            stencil_args=["-mllvm", "-aarch64-enable-collect-loh=false"],
+        )
     elif re.fullmatch(r"aarch64-pc-windows-msvc", host):
         host = "aarch64-pc-windows-msvc"
         condition = "defined(_M_ARM64)"
