@@ -72,20 +72,11 @@ chunk_set_unicode(struct tok_state *tok, _PyTok_Chunk *chunk,
     return 0;
 }
 
-char *
-_PyTok_NormalizeNewlines(const char *data, Py_ssize_t len, int preserve_crlf,
-                         int add_final_newline, Py_ssize_t *out_len,
-                         int *implicit_newline)
+static void
+normalize_newlines_into(char *result, const char *data, Py_ssize_t len,
+                        int preserve_crlf, int add_final_newline,
+                        Py_ssize_t *out_len, int *implicit_newline)
 {
-    if (len > PY_SSIZE_T_MAX - 2) {
-        PyErr_NoMemory();
-        return NULL;
-    }
-    char *result = PyMem_Malloc((size_t)len + 2);
-    if (result == NULL) {
-        PyErr_NoMemory();
-        return NULL;
-    }
     Py_ssize_t write = 0;
     if (memchr(data, '\r', len) == NULL) {
         // No carriage returns: nothing to translate, copy verbatim.
@@ -111,6 +102,24 @@ _PyTok_NormalizeNewlines(const char *data, Py_ssize_t len, int preserve_crlf,
     result[write] = '\0';
     *out_len = write;
     *implicit_newline = implicit;
+}
+
+char *
+_PyTok_NormalizeNewlines(const char *data, Py_ssize_t len, int preserve_crlf,
+                         int add_final_newline, Py_ssize_t *out_len,
+                         int *implicit_newline)
+{
+    if (len > PY_SSIZE_T_MAX - 2) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    char *result = PyMem_Malloc((size_t)len + 2);
+    if (result == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    normalize_newlines_into(result, data, len, preserve_crlf,
+                            add_final_newline, out_len, implicit_newline);
     return result;
 }
 
@@ -296,6 +305,8 @@ store_prepared_source(struct tok_state *tok, const char *data, Py_ssize_t len,
                       int preserve_crlf, int add_final_newline)
 {
     Py_ssize_t pos = 0;
+    char *normalized = NULL;
+    Py_ssize_t capacity = 0;
     while (pos < len) {
         Py_ssize_t raw_line_len;
         if (preserve_crlf) {
@@ -318,29 +329,51 @@ store_prepared_source(struct tok_state *tok, const char *data, Py_ssize_t len,
 
         const char *line = data + pos;
         Py_ssize_t line_len = raw_line_len;
-        char *normalized = NULL;
         int implicit = 0;
         if (normalize) {
-            normalized = _PyTok_NormalizeNewlines(
-                line, line_len, preserve_crlf, add_newline,
-                &line_len, &implicit);
-            if (normalized == NULL) {
+            if (line_len > PY_SSIZE_T_MAX - 2) {
+                PyErr_NoMemory();
                 tok->done = E_NOMEM;
-                return -1;
+                goto error;
             }
+            Py_ssize_t needed = line_len + 2;
+            if (needed > capacity) {
+                Py_ssize_t next_capacity = capacity > 0 ? capacity : 256;
+                while (next_capacity < needed) {
+                    if (next_capacity > PY_SSIZE_T_MAX / 2) {
+                        next_capacity = needed;
+                        break;
+                    }
+                    next_capacity *= 2;
+                }
+                char *resized = PyMem_Realloc(normalized, next_capacity);
+                if (resized == NULL) {
+                    PyErr_NoMemory();
+                    tok->done = E_NOMEM;
+                    goto error;
+                }
+                normalized = resized;
+                capacity = next_capacity;
+            }
+            normalize_newlines_into(normalized, line, line_len,
+                                    preserve_crlf, add_newline,
+                                    &line_len, &implicit);
             line = normalized;
         }
         _PyTok_Off appended = _PyTok_SourceAppendLine(
             &tok->source, line, line_len, implicit);
-        PyMem_Free(normalized);
         if (appended < 0) {
             tok->done = PyErr_ExceptionMatches(PyExc_MemoryError)
                 ? E_NOMEM : E_ERROR;
-            return -1;
+            goto error;
         }
         pos += raw_line_len;
     }
+    PyMem_Free(normalized);
     return 0;
+error:
+    PyMem_Free(normalized);
+    return -1;
 }
 
 int
