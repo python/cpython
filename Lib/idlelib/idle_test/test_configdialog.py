@@ -165,8 +165,8 @@ class FontPageTest(unittest.TestCase):
         font = d.fontlist.get('active')
 
         # Test Down key.
-        fontlist.focus_force()
         fontlist.update()
+        fontlist.focus_force()
         fontlist.event_generate('<Key-Down>')
         fontlist.event_generate('<KeyRelease-Down>')
 
@@ -175,8 +175,8 @@ class FontPageTest(unittest.TestCase):
         self.assertIn(d.font_name.get(), down_font.lower())
 
         # Test Up key.
-        fontlist.focus_force()
         fontlist.update()
+        fontlist.focus_force()
         fontlist.event_generate('<Key-Up>')
         fontlist.event_generate('<KeyRelease-Up>')
 
