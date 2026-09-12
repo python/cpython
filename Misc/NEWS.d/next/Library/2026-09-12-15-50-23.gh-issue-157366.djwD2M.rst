@@ -1,5 +1,6 @@
 Remove the accidental acceptance of :class:`bytes` in the C implementation of
-:mod:`xml.etree.ElementTree` for paths of :meth:`~xml.etree.ElementTree.Element.find`
+:mod:`xml.etree.ElementTree`, a leftover of the Python 2 to Python 3 migration,
+for paths of :meth:`~xml.etree.ElementTree.Element.find`
 and similar methods, for the tag of :meth:`~xml.etree.ElementTree.Element.iter`,
 and for the names of events of :class:`~xml.etree.ElementTree.XMLPullParser`
 and :func:`~xml.etree.ElementTree.iterparse`.  It now raises the same
