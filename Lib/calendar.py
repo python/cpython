@@ -150,13 +150,20 @@ except ValueError:
     standalone_month_name = month_name
     standalone_month_abbr = month_abbr
 else:
-    # Some systems that do not support '%OB' will keep it as-is (i.e.,
-    # we get [..., '%OB', '%OB', '%OB']), so for non-distinct names,
-    # we fall back to month_name/month_abbr.
-    if len(set(standalone_month_name)) != len(set(month_name)):
-        standalone_month_name = month_name
-    if len(set(standalone_month_abbr)) != len(set(month_abbr)):
-        standalone_month_abbr = month_abbr
+        # Some systems that do not support '%OB' will keep it as-is (i.e.,
+        # we get [..., '%OB', '%OB', '%OB']), so for non-distinct names,
+        # we fall back to month_name/month_abbr. The strftime() calls
+        # inside set() are evaluated lazily here, so on platforms that
+        # accept '%OB' at construction time but reject it later (e.g.
+        # under Wine), this can still raise ValueError.
+        try:
+            if len(set(standalone_month_name)) != len(set(month_name)):
+                standalone_month_name = month_name
+            if len(set(standalone_month_abbr)) != len(set(month_abbr)):
+                standalone_month_abbr = month_abbr
+        except ValueError:
+            standalone_month_name = month_name
+            standalone_month_abbr = month_abbr
 
 
 def isleap(year):
