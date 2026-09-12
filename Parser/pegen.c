@@ -810,10 +810,18 @@ parsenumber(const char *s)
 expr_ty
 _PyPegen_number_token(Parser *p)
 {
+    int mark = p->mark;
     Token *t = _PyPegen_expect_token(p, NUMBER);
     if (t == NULL) {
         return NULL;
     }
+
+    p->mark = mark;
+    expr_ty cached = NULL;
+    if (_PyPegen_is_memoized(p, NUMBER, &cached)) {
+        return cached;
+    }
+    p->mark = mark + 1;
 
     const char *num_raw = PyBytes_AsString(t->bytes);
     if (num_raw == NULL) {
@@ -859,8 +867,13 @@ _PyPegen_number_token(Parser *p)
         return NULL;
     }
 
-    return _PyAST_Constant(c, NULL, t->lineno, t->col_offset, t->end_lineno,
-                           t->end_col_offset, p->arena);
+    expr_ty result = _PyAST_Constant(c, NULL, t->lineno, t->col_offset,
+                                    t->end_lineno, t->end_col_offset, p->arena);
+    if (result != NULL && _PyPegen_insert_memo(p, mark, NUMBER, result) < 0) {
+        p->error_indicator = 1;
+        return NULL;
+    }
+    return result;
 }
 
 
