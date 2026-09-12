@@ -3549,6 +3549,12 @@ while 1:
                 self._check_error(
                     src, "starred assignment target must be in a list or tuple")
 
+    def test_syntax_error_in_nested_inlined_async_comprehension(self):
+        self._check_error(
+            "async def f(it):\n"
+            "    return [[f(a=1, a=2) for y in z] async for x in it]\n",
+            "keyword argument repeated")
+
     @support.cpython_only
     def test_error_on_parser_stack_overflow(self):
         source = "-" * 100000 + "4"
