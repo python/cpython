@@ -294,8 +294,11 @@ Miscellaneous options
 
 .. option:: -E
 
-   Ignore all ``PYTHON*`` environment variables, e.g.
+   Ignore all ``PYTHON*`` environment variables, for example,
    :envvar:`PYTHONPATH` and :envvar:`PYTHONHOME`, that might be set.
+   This is useful for running commands that should not take into account the
+   user's current environment settings, but does not necessarily mean that the
+   current environment will have no effect.
 
    See also the :option:`-P` and :option:`-I` (isolated) options.
 
@@ -324,8 +327,9 @@ Miscellaneous options
 
    In isolated mode :data:`sys.path` contains neither the script's directory nor
    the user's site-packages directory. All ``PYTHON*`` environment
-   variables are ignored, too. Further restrictions may be imposed to prevent
-   the user from injecting malicious code.
+   variables are ignored, too. This feature is not a security boundary.
+   Further restrictions need to be imposed to prevent the user from injecting
+   malicious code.
 
    .. versionadded:: 3.4
 
@@ -362,6 +366,8 @@ Miscellaneous options
    * ``python -c code`` and ``python`` (REPL) command lines: Don't prepend an
      empty string, which means the current working directory.
 
+   This feature is not a security boundary. Further restrictions need to be
+   imposed to prevent the user from injecting malicious code.
    See also the :envvar:`PYTHONSAFEPATH` environment variable, and :option:`-E`
    and :option:`-I` (isolated) options.
 
