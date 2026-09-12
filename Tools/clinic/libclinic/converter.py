@@ -330,10 +330,31 @@ class CConverter(metaclass=CConverterAutoRegister):
             data.keywords.append(parameter.name)
 
         # format_units
-        if self.is_optional() and '|' not in data.format_units:
+        if not parameter.is_keyword_only():
+            if self.is_optional() and '|' not in data.format_units:
+                data.format_units.append('|')
+        elif not data.kwonly_marker:
+            # The first keyword-only parameter.  '$' only inherits the
+            # state of the positional parameters, '%' sets its own.
+            if self.is_optional():
+                if '|' not in data.format_units:
+                    data.format_units.append('|')
+                data.kwonly_marker = '$'
+                data.kwonly_optional = True
+            elif ('|' in data.format_units
+                  or any(p.converter.is_optional()
+                         for p in parameter.function.render_parameters
+                         if p.is_keyword_only())):
+                # Required before or after an optional parameter:
+                # only '%' can express this.
+                data.kwonly_marker = '%'
+            else:
+                data.kwonly_marker = '$'
+            data.format_units.append(data.kwonly_marker)
+        elif self.is_optional() and not data.kwonly_optional:
+            # The first optional keyword-only parameter after '%'.
+            data.kwonly_optional = True
             data.format_units.append('|')
-        if parameter.is_keyword_only() and '$' not in data.format_units:
-            data.format_units.append('$')
         data.format_units.append(self.format_unit)
 
         # parse_arguments
