@@ -1,0 +1,20 @@
+name: Full tests when ready for review
+
+on:
+  pull_request:
+    types: [ready_for_review]
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  dispatch-tests:
+    name: Dispatch full test matrix
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run Tests workflow on the PR branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        run: gh workflow run build.yml --ref "$HEAD_REF"
