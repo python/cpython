@@ -1216,6 +1216,9 @@ specialize_class_load_attr(PyObject *owner, _Py_CODEUNIT *instr,
             // special case for enums which has Py_TYPE(descr) == cls
             // so guarding on type version is sufficient
             if (Py_TYPE(descr) != cls) {
+#ifdef Py_GIL_DISABLED
+                maybe_enable_deferred_ref_count(descr);
+#endif
                 SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_MUTABLE_CLASS);
                 Py_XDECREF(descr);
                 return -1;
