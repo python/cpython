@@ -72,7 +72,7 @@ outputs:
           - libuuid
       - libmpdec-devel
       - expat
-      - if: osx and "san" in variant
+      - if: '"san" in variant'
         then:
           - libcompiler-rt
 
