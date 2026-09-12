@@ -8,6 +8,8 @@
 
 --------------
 
+.. _sax-parser-modules:
+
 SAX parsers implement the :class:`XMLReader` interface. They are implemented in
 a Python module, which must provide a function :func:`create_parser`. This
 function is invoked by  :func:`xml.sax.make_parser` with no arguments to create
