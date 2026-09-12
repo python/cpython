@@ -9,6 +9,7 @@ import textwrap
 import time
 import io
 import itertools
+import math
 import sys
 import os
 import gc
@@ -624,11 +625,14 @@ class _TestProcess(BaseTestCase):
         if hasattr(signal, 'alarm'):
             # On the Gentoo buildbot waitpid() often seems to block forever.
             # We use alarm() to interrupt it if it blocks for too long.
+            # The timeout only has to catch a hang, so use LONG_TIMEOUT:
+            # a shorter one fires on a slow build where reaping the child
+            # legitimately takes a while.
             def handler(*args):
                 raise RuntimeError('join took too long: %s' % p)
             old_handler = signal.signal(signal.SIGALRM, handler)
             try:
-                signal.alarm(10)
+                signal.alarm(math.ceil(support.LONG_TIMEOUT))
                 self.assertEqual(join(), None)
             finally:
                 signal.alarm(0)
