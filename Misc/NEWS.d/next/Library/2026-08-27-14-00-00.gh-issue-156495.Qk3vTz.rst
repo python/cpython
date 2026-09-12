@@ -1,0 +1,4 @@
+Fix a false-positive :exc:`RuntimeWarning` from :mod:`site` when a virtual
+environment interpreter is started through a non-normalised path such as
+``../.venv/bin/python``.  ``sys.prefix`` and the prefix derived from
+:data:`sys.executable` are now compared in normalised form.
