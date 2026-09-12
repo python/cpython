@@ -586,9 +586,10 @@ The AF_* and SOCK_* constants are now :class:`AddressFamily` and
 
 .. data:: ETH_P_ALL
 
-   :data:`!ETH_P_ALL` can be used in the :class:`~socket.socket`
-   constructor as *proto* for the :const:`AF_PACKET` family in order to
-   capture every packet, regardless of protocol.
+   To capture every packet, regardless of protocol, with an
+   :const:`AF_PACKET` socket, pass ``htons(ETH_P_ALL)`` as *proto* to the
+   :class:`~socket.socket` constructor.  The call to :func:`htons` converts
+   the protocol number to network byte order.
 
    For more information, see the :manpage:`packet(7)` manpage.
 
