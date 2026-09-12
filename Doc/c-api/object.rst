@@ -812,8 +812,7 @@ Object Protocol
 
       For objects where :c:expr:`Py_REFCNT(op) == 1` is always true this
       function will return false when checked in a different thread than the
-      allocation. This can lead to subtle behavior change bugs between the
-      free-threaded and GIL-enabled builds (:gh:`156995`).
+      allocation.
 
    .. versionadded:: 3.14
 
