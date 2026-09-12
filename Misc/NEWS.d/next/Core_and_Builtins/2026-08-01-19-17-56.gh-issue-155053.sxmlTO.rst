@@ -1,0 +1,2 @@
+Fix a crash in :class:`types.GenericAlias` during substitution of a
+``TypeVarTuple`` under allocation failure.
