@@ -1,3 +1,4 @@
+import os
 import threading
 import unittest
 
@@ -87,6 +88,24 @@ class StressTests(TestBase):
                 _interpreters.create()
         finally:
             _testcapi.remove_mem_hooks()
+
+    @support.requires_fork()
+    def test_unclosed_interpreter_on_fork(self):
+        interp = interpreters.create()
+        interp.exec("pass")
+
+        fds = os.pipe()
+        pid = os.fork()
+
+        if pid == 0:
+            os.close(fds[0])
+            os.write(fds[1], b"OK")
+            os._exit(0)
+        else:
+            os.close(fds[1])
+            self.addCleanup(os.close, fds[0])
+            value = os.read(fds[0], 100)
+            self.assertEqual(value, b"OK")
 
 
 if __name__ == '__main__':
