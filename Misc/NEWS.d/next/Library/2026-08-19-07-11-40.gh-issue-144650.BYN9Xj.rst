@@ -1,0 +1,2 @@
+Removed unnecessary gc support for :mod:`!_decimal` module.  That provide
+1.07x-1.14x speedup on standard pyperformance benchmarks.
