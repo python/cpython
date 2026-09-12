@@ -28,3 +28,13 @@ Pending removal in Python 3.21
 
   * ``tempfile._TemporaryFileWrapper`` will be removed in Python 3.21. Use the
     public :class:`tempfile.TemporaryFileWrapper` instead.
+
+* :mod:`threading`:
+
+  * ``threading.Condition.notifyAll``, ``threading.Event.isSet``,  and
+    ``threading.activeCount`` will be removed in Python 3.21. Use the snake case
+    names (e.g., ``notify_all``) instead.
+  * ``threading.Thread.isDaemon``, ``threading.Thread.setDaemon`` will be removed
+    in Python 3.21. Use the property ``threading.Thread.daemon`` instead.
+  * ``threading.Thread.getName`` and ``threading.Thread.setName`` will be removed
+    in Python 3.21. Use the property ``threading.Thread.name`` instead.
