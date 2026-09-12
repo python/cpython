@@ -212,7 +212,7 @@ Diff generation
    .. method:: make_file(fromlines, tolines, fromdesc='', todesc='', context=False, \
                          numlines=5, *, charset='utf-8')
 
-      Compares *fromlines* and *tolines* (lists of strings) and returns a string which
+      Compares *fromlines* and *tolines* (sequences of strings) and returns a string which
       is a complete HTML file containing a table showing line by line differences with
       inter-line and intra-line changes highlighted.
 
@@ -239,7 +239,7 @@ Diff generation
 
    .. method:: make_table(fromlines, tolines, fromdesc='', todesc='', context=False, numlines=5)
 
-      Compares *fromlines* and *tolines* (lists of strings) and returns a string which
+      Compares *fromlines* and *tolines* (sequences of strings) and returns a string which
       is a complete HTML table showing line by line differences with inter-line and
       intra-line changes highlighted.
 
@@ -250,7 +250,7 @@ Diff generation
 
 .. function:: context_diff(a, b, fromfile='', tofile='', fromfiledate='', tofiledate='', n=3, lineterm='\n', *, autojunk=True)
 
-   Compare *a* and *b* (lists of strings); return a delta (a :term:`generator`
+   Compare *a* and *b* (sequences of strings); return a delta (a :term:`generator`
    generating the delta lines) in context diff format.
 
    Context diffs are a compact way of showing just the lines that have changed plus
@@ -335,7 +335,7 @@ Diff generation
 
 .. function:: ndiff(a, b, linejunk=None, charjunk=IS_CHARACTER_JUNK, *, autojunk=True)
 
-   Compare *a* and *b* (lists of strings); return a :class:`Differ`\ -style
+   Compare *a* and *b* (sequences of strings); return a :class:`Differ`\ -style
    delta (a :term:`generator` generating the delta lines).
 
    Optional keyword parameters *linejunk* and *charjunk* are filtering functions
@@ -401,7 +401,7 @@ Diff generation
 
 .. function:: unified_diff(a, b, fromfile='', tofile='', fromfiledate='', tofiledate='', n=3, lineterm='\n', *, autojunk=True, color=False)
 
-   Compare *a* and *b* (lists of strings); return a delta (a :term:`generator`
+   Compare *a* and *b* (sequences of strings); return a delta (a :term:`generator`
    generating the delta lines) in unified diff format.
 
    Unified diffs are a compact way of showing just the lines that have changed plus
@@ -492,6 +492,32 @@ Junk definition functions
 
 .. _sequence-matcher:
 
+.. class:: Match
+
+   The type of the objects returned by :meth:`SequenceMatcher.find_longest_match`
+   and :meth:`SequenceMatcher.get_matching_blocks`.  It is an object with a
+   :term:`named tuple` interface: values can be accessed by index and by
+   attribute name.  It has the following fields:
+
+   .. list-table::
+
+      * - Index
+        - Attribute
+        - Value
+
+      * - 0
+        - .. attribute:: a
+        - The index in the first sequence of the matching block.
+
+      * - 1
+        - .. attribute:: b
+        - The index in the second sequence of the matching block.
+
+      * - 2
+        - .. attribute:: size
+        - The number of elements in the matching block.
+
+
 SequenceMatcher objects
 -----------------------
 
@@ -556,7 +582,8 @@ SequenceMatcher objects
       Find longest matching block in ``a[alo:ahi]`` and ``b[blo:bhi]``.
 
       If *isjunk* was omitted or ``None``, :meth:`find_longest_match` returns
-      ``(i, j, k)`` such that ``a[i:i+k]`` is equal to ``b[j:j+k]``, where ``alo
+      a :class:`Match` named tuple ``(i, j, k)`` such that ``a[i:i+k]`` is
+      equal to ``b[j:j+k]``, where ``alo
       <= i <= i+k <= ahi`` and ``blo <= j <= j+k <= bhi``. For all ``(i', j',
       k')`` meeting those conditions, the additional conditions ``k >= k'``, ``i
       <= i'``, and if ``i == i'``, ``j <= j'`` are also met. In other words, of
@@ -584,9 +611,7 @@ SequenceMatcher objects
          >>> s.find_longest_match(0, 5, 0, 9)
          Match(a=1, b=0, size=4)
 
-      If no blocks match, this returns ``(alo, blo, 0)``.
-
-      This method returns a :term:`named tuple` ``Match(a, b, size)``.
+      If no blocks match, this returns ``Match(alo, blo, 0)``.
 
       .. versionchanged:: 3.9
          Added default arguments.
@@ -594,8 +619,8 @@ SequenceMatcher objects
 
    .. method:: get_matching_blocks()
 
-      Return list of triples describing non-overlapping matching subsequences.
-      Each triple is of the form ``(i, j, n)``,
+      Return list of :class:`Match` triples describing non-overlapping matching
+      subsequences.  Each triple is of the form ``(i, j, n)``,
       and means that ``a[i:i+n] == b[j:j+n]``.  The
       triples are monotonically increasing in *i* and *j*.
 
