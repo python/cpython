@@ -2460,6 +2460,19 @@ class POSIXProcessTestCase(BaseTestCase):
                     f"Command 'fake cmd' returned non-zero "
                     f"exit status {returncode}.")
 
+    def test_TimeoutExpired_str(self):
+        # timeout command string
+        err = subprocess.TimeoutExpired("fake cmd", 1)
+        self.assertEqual(str(err), "Command 'fake cmd' timed out after 1 seconds")
+
+        # timeout command string with a single-quote
+        err = subprocess.TimeoutExpired("fake ' cmd", 1)
+        self.assertEqual(str(err), 'Command "fake \' cmd" timed out after 1 seconds')
+
+        # timeout command list
+        err = subprocess.TimeoutExpired(["fake", "cmd"], 1)
+        self.assertEqual(str(err), "Command ['fake', 'cmd'] timed out after 1 seconds")
+
     def test_preexec(self):
         # DISCLAIMER: Setting environment variables is *not* a good use
         # of a preexec_fn.  This is merely a test.
