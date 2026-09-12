@@ -488,6 +488,17 @@ General Options
    otherwise one will be generated from the ``MULTIARCH`` tag with
    ``-free-threading`` and ``-debug``, as appropriate.
 
+   CPython's ``build-details.json`` also provides the CPython-specific
+   ``arbitrary_data.extension_compiler_flags`` list.  These are compiler
+   arguments recommended when building extension modules so they preserve
+   properties of the interpreter build, such as usable frame pointers.  They
+   are not required for ABI compatibility.
+
+   This key is an implementation-specific extension to the standardized
+   format and may be superseded by a standard field in a later schema
+   version.  Consumers should prefer such a standard field when available
+   and otherwise use this key as a fallback.
+
    .. versionadded:: 3.16
 
 
