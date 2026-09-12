@@ -808,13 +808,13 @@ class NonCallableMock(Base):
         elif (self._spec_set and self._mock_methods is not None and
             name not in self._mock_methods and
             name not in self.__dict__):
-            raise AttributeError("Mock object has no attribute '%s'" % name)
+            raise AttributeError(f"Mock object has no attribute {name!r}")
         elif name in _unsupported_magics:
-            msg = 'Attempting to set unsupported magic method %r.' % name
+            msg = f'Attempting to set unsupported magic method {name!r}.'
             raise AttributeError(msg)
         elif name in _all_magics:
             if self._mock_methods is not None and name not in self._mock_methods:
-                raise AttributeError("Mock object has no attribute '%s'" % name)
+                raise AttributeError(f"Mock object has no attribute {name!r}")
 
             if not _is_instance_mock(value):
                 setattr(type(self), name, _get_method(name, value))

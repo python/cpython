@@ -3954,7 +3954,7 @@ class Context(object):
             return object.__setattr__(self, name, value)
         else:
             raise AttributeError(
-                "'decimal.Context' object has no attribute '%s'" % name)
+                f"'decimal.Context' object has no attribute {name!r}")
 
     def __delattr__(self, name):
         raise AttributeError("%s cannot be deleted" % name)

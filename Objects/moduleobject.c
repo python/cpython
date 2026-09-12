@@ -1422,7 +1422,7 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
     if (!mod_name || !PyUnicode_Check(mod_name)) {
         Py_XDECREF(mod_name);
         PyErr_Format(PyExc_AttributeError,
-                    "module has no attribute '%U'", name);
+                    "module has no attribute %R", name);
         return NULL;
     }
     PyObject *spec;
@@ -1432,7 +1432,7 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
     }
     if (spec == NULL) {
         PyErr_Format(PyExc_AttributeError,
-                     "module '%U' has no attribute '%U'",
+                     "module '%U' has no attribute %R",
                      mod_name, name);
         Py_DECREF(mod_name);
         return NULL;
@@ -1466,9 +1466,9 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
     if (is_possibly_shadowing_stdlib) {
         assert(origin);
         PyErr_Format(PyExc_AttributeError,
-                    "module '%U' has no attribute '%U' "
-                    "(consider renaming '%U' since it has the same "
-                    "name as the standard library module named '%U' "
+                    "module %R has no attribute %R "
+                    "(consider renaming %R since it has the same "
+                    "name as the standard library module named %R "
                     "and prevents importing that standard library module)",
                     mod_name, name, origin, mod_name);
     }
@@ -1483,22 +1483,22 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
                 // For non-stdlib modules, only mention the possibility of
                 // shadowing if the module is being initialized.
                 PyErr_Format(PyExc_AttributeError,
-                            "module '%U' has no attribute '%U' "
-                            "(consider renaming '%U' if it has the same name "
+                            "module %R has no attribute %R "
+                            "(consider renaming %R if it has the same name "
                             "as a library you intended to import)",
                             mod_name, name, origin);
             }
             else if (origin) {
                 PyErr_Format(PyExc_AttributeError,
                             "partially initialized "
-                            "module '%U' from '%U' has no attribute '%U' "
+                            "module %R from %R has no attribute %R "
                             "(most likely due to a circular import)",
                             mod_name, origin, name);
             }
             else {
                 PyErr_Format(PyExc_AttributeError,
                             "partially initialized "
-                            "module '%U' has no attribute '%U' "
+                            "module %R has no attribute %R "
                             "(most likely due to a circular import)",
                             mod_name, name);
             }
@@ -1514,7 +1514,7 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
             }
             else if (rc == 0) {
                 PyErr_Format(PyExc_AttributeError,
-                            "module '%U' has no attribute '%U'",
+                            "module %R has no attribute %R",
                             mod_name, name);
             }
         }

@@ -3731,6 +3731,19 @@ class ContextAPItests:
         self.assertRaises(TypeError, c.to_integral_value, '10')
         self.assertRaises(TypeError, c.to_integral_value, 10, 'x')
 
+    def test_setattr(self):
+        Context = self.decimal.Context
+
+        ctx = Context()
+        ctx.prec = 123
+        with self.assertRaises(AttributeError):
+            ctx.xyz = 1
+        with self.assertRaises(AttributeError) as cm:
+            setattr(ctx, "a'b", 1)
+        self.assertEqual(str(cm.exception),
+                         ''''decimal.Context' object has no attribute "a'b"''')
+
+
 @requires_cdecimal
 class CContextAPItests(ContextAPItests, unittest.TestCase):
     decimal = C
