@@ -224,6 +224,7 @@ struct gc_stats {
 struct _gc_runtime_state {
     /* Is automatic collection enabled? */
     int enabled;
+    int automatic_collection_pause_count;
     int debug;
     /* linked lists of container objects */
 #ifndef Py_GIL_DISABLED
