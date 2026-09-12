@@ -3944,7 +3944,7 @@ AS_CASE([$PLATFORM_TRIPLET],
   [perf_trampoline=no]
 )
 dnl Generating the trampoline's unwind data (trampoline_ehframe.h) at build
-dnl time needs a Python interpreter, 3.9 or newer (Tools/jit/_trampoline_ehframe.py).
+dnl time needs a Python interpreter, 3.9 or newer (Tools/build/generate_trampoline_ehframe.py).
 perf_trampoline_missing_python=no
 AS_VAR_IF([perf_trampoline], [yes], [
   AS_IF([$PYTHON_FOR_REGEN -c 'import sys; sys.exit(sys.version_info < (3, 9))' >/dev/null 2>&1],

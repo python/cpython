@@ -8,9 +8,9 @@ from test.support.os_helper import temp_dir
 from test.test_tools import imports_under_tool, skip_if_missing
 
 
-skip_if_missing("jit")
-with imports_under_tool("jit"):
-    import _trampoline_ehframe as ehframe
+skip_if_missing("build")
+with imports_under_tool("build"):
+    import generate_trampoline_ehframe as ehframe
 
 
 DW_EH_PE_PCREL_SDATA4 = 0x1B
