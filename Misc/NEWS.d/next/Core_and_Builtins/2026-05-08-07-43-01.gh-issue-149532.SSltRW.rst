@@ -1,0 +1,2 @@
+Remove :meth:`!bool.__invert__` magic method, which was deprecated since
+3.12.

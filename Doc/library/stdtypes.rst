@@ -881,11 +881,6 @@ return a bool equivalent to the logical operations "and", "or", "xor". However,
 the logical operators ``and``, ``or`` and ``!=`` should be preferred
 over ``&``, ``|`` and ``^``.
 
-.. deprecated:: 3.12
-
-   The use of the bitwise inversion operator ``~`` is deprecated and will
-   raise an error in Python 3.16.
-
 :class:`bool` is a subclass of :class:`int` (see :ref:`typesnumeric`). In
 many numeric contexts, ``False`` and ``True`` behave like the integers 0 and 1, respectively.
 However, relying on this is discouraged; explicitly convert using :func:`int`
