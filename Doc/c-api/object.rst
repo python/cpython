@@ -624,6 +624,10 @@ Object Protocol
 
    .. versionadded:: 3.12
 
+   .. versionchanged:: 3.15
+
+      Added to the limited C API.
+
 .. c:function:: int PyObject_VisitManagedDict(PyObject *obj, visitproc visit, void *arg)
 
    Visit the managed dictionary of *obj*.
