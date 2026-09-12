@@ -1,0 +1,2 @@
+Avoid skipping symbolic links to relative paths in :func:`shutil.copytree` when
+``ignore_dangling_symlinks=True`` and ``symlinks=False``.
