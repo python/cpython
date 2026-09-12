@@ -197,11 +197,7 @@ _get_keyword_or_name_type(Parser *p, const char *text, Py_ssize_t length)
     return NAME;
 }
 
-// Token types whose text is consumed by grammar actions or helpers, other
-// than NAME-derived tokens (identifiers and keywords), which always keep
-// their text: error actions may print keyword text (e.g. invalid_kwarg's
-// "cannot assign to True"). For every other type the token text is never
-// read again, so materializing a PyBytes for it is wasted work.
+// Only names, literals and type comments need their token text.
 static inline int
 token_needs_text(int type)
 {
@@ -216,7 +212,6 @@ token_needs_text(int type)
         case TSTRING_MIDDLE:
         case TSTRING_END:
         case TYPE_COMMENT:
-        case NOTEQUAL:  // _PyPegen_check_barry_as_flufl() reads its text
             return 1;
         default:
             return 0;
@@ -231,7 +226,7 @@ initialize_token(Parser *p, Token *parser_token, struct token *new_token, int to
     const char *text = _PyToken_TextView(p->tok, new_token, &length);
     parser_token->type = token_type == NAME
         ? _get_keyword_or_name_type(p, text, length) : token_type;
-    if (token_type == NAME || token_needs_text(parser_token->type)) {
+    if (token_needs_text(parser_token->type)) {
         parser_token->bytes = PyBytes_FromStringAndSize(text, length);
         if (parser_token->bytes == NULL) {
             return -1;
@@ -256,6 +251,7 @@ initialize_token(Parser *p, Token *parser_token, struct token *new_token, int to
 
     parser_token->level = new_token->level;
     parser_token->is_raw = new_token->is_raw;
+    parser_token->is_barry = token_type == NOTEQUAL && text[0] == '<';
     parser_token->lineno = new_token->start_loc.lineno;
     parser_token->col_offset = new_token->end_loc.lineno == p->starting_lineno
         ? p->starting_col_offset + new_token->start_loc.byte_col
