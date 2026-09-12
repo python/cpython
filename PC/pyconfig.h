@@ -150,7 +150,7 @@ WIN32 is still required for the locale module.
 
 #ifdef __clang__
 #define _Py_CLANG_COMPILER(platform) ( \
-   "[Clang " _Py_STRINGIZE(__clang_major__)"." _Py_STRINGIZE(__clang_minor__ ) \
+   "[Clang " _Py_STRINGIZE(__clang_major__) "." _Py_STRINGIZE(__clang_minor__) \
    "." _Py_STRINGIZE(__clang_patchlevel__) " " platform \
    " with MSC v." _Py_STRINGIZE(_MSC_VER) " CRT]")
 #endif
