@@ -1130,13 +1130,14 @@ class BaseBytesTest:
         self.assertRaises(ValueError, b.translate, bytes(range(255)))
 
         c = b.translate(rosetta, b'hello')
-        self.assertEqual(b, b'hello')
-        self.assertIsInstance(c, self.type2test)
+        self.assertEqual(c, b'')
+        self.assertEqual(type(c), self.type2test)
 
         c = b.translate(rosetta)
         d = b.translate(rosetta, b'')
-        self.assertEqual(c, d)
         self.assertEqual(c, b'helle')
+        self.assertEqual(type(c), self.type2test)
+        self.assertEqual(d, b'helle')
 
         c = b.translate(rosetta, b'l')
         self.assertEqual(c, b'hee')
