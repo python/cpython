@@ -41,7 +41,13 @@ runpy_run_path(const char *filename, const char *modname)
     if (run_path == NULL) {
         return NULL;
     }
-    PyObject *args = Py_BuildValue("(sOs)", filename, Py_None, modname);
+    PyObject *path = PyUnicode_DecodeFSDefault(filename);
+    if (path == NULL) {
+        Py_DECREF(run_path);
+        return NULL;
+    }
+    PyObject *args = Py_BuildValue("(OOs)", path, Py_None, modname);
+    Py_DECREF(path);
     if (args == NULL) {
         Py_DECREF(run_path);
         return NULL;

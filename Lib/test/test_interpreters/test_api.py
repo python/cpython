@@ -1683,6 +1683,25 @@ class TestInterpreterCall(TestBase):
         self.assertEqual(after, 0)
         self.assertEqual(counts, [0, 1, 4])
 
+    def test_surrogate_filename_in___main__(self):
+        interp = interpreters.create()
+        import __main__
+        orig_file = getattr(__main__, '__file__', None)
+        try:
+            for surrogate in ('\ud800', '\udcff'):
+                with self.subTest(surrogate=ascii(surrogate)):
+                    __main__.__file__ = f'my_script_{surrogate}.py'
+                    res = interp.call(lambda x: x, [1])
+                    self.assertEqual(res, [1])
+        finally:
+            if orig_file is None:
+                try:
+                    del __main__.__file__
+                except AttributeError:
+                    pass
+            else:
+                __main__.__file__ = orig_file
+
     def test_raises(self):
         interp = interpreters.create()
         with self.assertRaises(ExecutionFailed):

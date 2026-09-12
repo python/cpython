@@ -991,14 +991,17 @@ _PyModule_GetFilenameUTF8(PyObject *mod, char *buffer, Py_ssize_t maxlen)
         size = 0;
     }
     else {
-        const char *filename = PyUnicode_AsUTF8AndSize(filenameobj, &size);
-        assert(size >= 0);
-        if (size > maxlen) {
-            size = -1;
-            PyErr_SetString(PyExc_ValueError, "__file__ too long");
-        }
-        else {
-            (void)strcpy(buffer, filename);
+        PyObject *bytes = PyUnicode_EncodeFSDefault(filenameobj);
+        if (bytes != NULL) {
+            size = PyBytes_GET_SIZE(bytes);
+            if (size > maxlen) {
+                size = -1;
+                PyErr_SetString(PyExc_ValueError, "__file__ too long");
+            }
+            else {
+                memcpy(buffer, PyBytes_AS_STRING(bytes), size + 1);
+            }
+            Py_DECREF(bytes);
         }
     }
     Py_DECREF(filenameobj);
