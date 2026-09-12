@@ -98,7 +98,7 @@ Executor Objects
       Signal the executor that it should free any resources that it is using
       when the currently pending futures are done executing.  Calls to
       :meth:`Executor.submit` and :meth:`Executor.map` made after shutdown will
-      raise :exc:`RuntimeError`.
+      raise :exc:`ExecutorShutdownError`.
 
       If *wait* is ``True`` then this method will not return until all the
       pending futures are done executing and the resources associated with the
@@ -715,6 +715,14 @@ Exception classes
    in the current state.
 
    .. versionadded:: 3.8
+
+.. exception:: ExecutorShutdownError
+
+   Derived from :exc:`RuntimeError`, this exception class is raised when work
+   is submitted to an executor that cannot accept new futures because it has
+   been shut down.
+
+   .. versionadded:: 3.16
 
 .. currentmodule:: concurrent.futures.thread
 
