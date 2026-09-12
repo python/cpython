@@ -732,7 +732,8 @@ star_expressions[expr_ty]:
     | a=star_expression b=(',' c=star_expression { c })+ [','] {
         _PyAST_Tuple(CHECK(asdl_expr_seq*, _PyPegen_seq_insert_in_front(p, a, b)), Load, EXTRA) }
     | a=star_expression ',' { _PyAST_Tuple(CHECK(asdl_expr_seq*, _PyPegen_singleton_seq(p, a)), Load, EXTRA) }
-    | star_expression
+    | expression
+    | invalid_lone_star_expression
 
 star_expression[expr_ty] (memo):
     | '*' a=bitwise_or { _PyAST_Starred(a, Load, EXTRA) }
@@ -1245,7 +1246,7 @@ expression_without_invalid[expr_ty]:
     | disjunction
     | lambdef
 invalid_legacy_expression:
-    | a=NAME !'(' b=star_expressions {
+    | a=NAME !'(' !'*' b=star_expressions {
         _PyPegen_check_legacy_stmt(p, a) ? RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b,
             "Missing parentheses in call to '%U'. Did you mean %U(...)?", a->v.Name.id, a->v.Name.id) : NULL}
 
@@ -1295,6 +1296,9 @@ invalid_named_expression(memo):
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "cannot assign to %s here. Maybe you meant '==' instead of '='?",
                                           _PyPegen_get_expr_name(a)) }
 
+invalid_lone_star_expression:
+    | a='*' b=bitwise_or { RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "can't use starred expression here") }
+
 invalid_assignment:
     | a=invalid_ann_assign_target ':' expression {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
@@ -1325,6 +1329,8 @@ invalid_raise_stmt:
     | 'raise' expression a='from' {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "did you forget an expression after 'from'?") }
 invalid_del_stmt:
+    | 'del' &'*' a=star_expression {
+        RAISE_SYNTAX_ERROR_INVALID_TARGET(DEL_TARGETS, a) }
     | 'del' a=star_expressions {
         RAISE_SYNTAX_ERROR_INVALID_TARGET(DEL_TARGETS, a) }
 invalid_assert_stmt:
