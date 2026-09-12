@@ -1,0 +1,2 @@
+Fix an assertion failure when python is built in a debug mode
+that happened in :meth:`str.replace` under a limited memory situation.
