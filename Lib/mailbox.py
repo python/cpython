@@ -18,6 +18,8 @@ import email.message
 import email.generator
 import io
 import contextlib
+import shutil
+import tempfile
 from types import GenericAlias
 try:
     import fcntl
@@ -1073,8 +1075,11 @@ class MH(Mailbox):
             if self._locked:
                 _lock_file(f)
             try:
-                os.close(os.open(path, os.O_WRONLY | os.O_TRUNC))
-                self._dump_message(message, f)
+                with tempfile.TemporaryFile(mode='w+b') as new_file:
+                    self._dump_message(message, new_file)
+                    new_file.seek(0)
+                    os.close(os.open(path, os.O_WRONLY | os.O_TRUNC))
+                    shutil.copyfileobj(new_file, f)
                 if isinstance(message, MHMessage):
                     self._dump_sequences(message, key)
             finally:

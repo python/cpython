@@ -1,0 +1,3 @@
+Prevent :class:`mailbox.MH` message replacement from truncating or partially
+overwriting the original message when serializing the replacement raises an
+exception.
