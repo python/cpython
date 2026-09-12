@@ -436,6 +436,22 @@ writer_write_str(PyObject *self_raw, PyObject *obj)
 
 
 static PyObject*
+writer_write_rawstr(PyObject *self_raw, PyObject *obj)
+{
+    WriterObject *self = (WriterObject *)self_raw;
+    if (writer_check(self) < 0) {
+        return NULL;
+    }
+
+    NULLABLE(obj);
+    if (PyUnicodeWriter_WriteRawStr(self->writer, obj) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
+static PyObject*
 writer_write_repr(PyObject *self_raw, PyObject *obj)
 {
     WriterObject *self = (WriterObject *)self_raw;
@@ -539,6 +555,7 @@ static PyMethodDef writer_methods[] = {
     {"write_widechar", _PyCFunction_CAST(writer_write_widechar), METH_VARARGS},
     {"write_ucs4", _PyCFunction_CAST(writer_write_ucs4), METH_VARARGS},
     {"write_str", _PyCFunction_CAST(writer_write_str), METH_O},
+    {"write_rawstr", _PyCFunction_CAST(writer_write_rawstr), METH_O},
     {"write_repr", _PyCFunction_CAST(writer_write_repr), METH_O},
     {"write_substring", _PyCFunction_CAST(writer_write_substring), METH_VARARGS},
     {"decodeutf8stateful", _PyCFunction_CAST(writer_decodeutf8stateful), METH_VARARGS},
