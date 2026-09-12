@@ -1,0 +1,11 @@
+Fix :class:`asyncio.ProactorEventLoop` UDP transports and sockets so
+that ``ERROR_PORT_UNREACHABLE``/``WSAECONNRESET`` (reported when the
+same socket was previously used to send to an address that isn't
+listening) is surfaced as a :exc:`ConnectionResetError` instead of
+being silently swallowed. Datagram transports now deliver it to the
+protocol via :meth:`~asyncio.DatagramProtocol.error_received` and
+re-arm the read loop, and :meth:`~asyncio.loop.sock_recvfrom` /
+:meth:`~asyncio.loop.sock_recvfrom_into` now raise it, matching the
+behaviour :class:`asyncio.SelectorEventLoop` already had. This
+corrects the fix applied in gh-91227, which papered over the issue by
+discarding the error.
