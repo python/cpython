@@ -396,6 +396,22 @@ static int quitMainLoop = 0;
 static int errorInCmd = 0;
 static PyObject *excInCmd;
 
+/* State for the custom notifier installed by _tkinter.set_notifier(). */
+typedef struct {
+    PyObject *set_timer;
+    PyObject *wait_for_event;
+    PyObject *create_file_handler;
+    PyObject *delete_file_handler;
+    PyObject *init_notifier;
+    PyObject *finalize_notifier;
+    PyObject *alert_notifier;
+    PyObject *service_mode_hook;
+    int installed;
+} TkinterNotifierState;
+
+static TkinterNotifierState TkinterNotifier = {0};
+static Tcl_NotifierProcs TkinterNotifierProcs;
+
 
 static PyObject *Tkapp_UnicodeResult(TkappObject *);
 
@@ -3525,6 +3541,495 @@ _tkinter_getbusywaitinterval_impl(PyObject *module)
     return Tkinter_busywaitinterval;
 }
 
+/*[clinic input]
+_tkinter.set_service_mode
+
+    mode: int
+    /
+
+Set the service mode and return the previous mode.
+
+Tcl service mode controls whether Tcl_ServiceAll services timer and file
+events.
+[clinic start generated code]*/
+
+static PyObject *
+_tkinter_set_service_mode_impl(PyObject *module, int mode)
+/*[clinic end generated code: output=85edc78d2cef7113 input=b2edea75614d0858]*/
+{
+    int result = Tcl_SetServiceMode(mode);
+    return PyLong_FromLong(result);
+}
+
+/*[clinic input]
+_tkinter.service_all
+
+Service all pending Tcl events.
+
+This is the equivalent of calling Tcl_DoOneEvent in a loop until no
+more events are pending.
+[clinic start generated code]*/
+
+static PyObject *
+_tkinter_service_all_impl(PyObject *module)
+/*[clinic end generated code: output=22071d2f09be50bf input=e22558f65ceb89bf]*/
+{
+    ENTER_TCL
+
+    Tcl_ServiceAll();
+
+    LEAVE_TCL
+
+    if (errorInCmd) {
+        errorInCmd = 0;
+        PyErr_SetRaisedException(excInCmd);
+        excInCmd = NULL;
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
+/* A Tcl_Event wrapping a Python callable.  Tcl_Event must be the first
+   member so a TkinterEvent* can be passed as a Tcl_Event*. */
+typedef struct {
+    Tcl_Event ev;
+    PyObject *func;  /* New reference */
+} TkinterEvent;
+
+/* Event proc invoked by Tcl when the queued event is serviced.
+   A Tcl_EventProc must return nonzero if the event was handled (Tcl then
+   frees it) and zero if it should be kept for a later retry.  Following
+   that contract: we return nonzero when the Python callable returned a
+   truthy value (handled) and zero when it returned a falsy value
+   (keep the event).  The Python callable's reference is only released
+   when the event is actually handled and freed by Tcl. */
+static int
+TkinterEventProc(Tcl_Event *evPtr, int flags)
+{
+    TkinterEvent *event = (TkinterEvent *)evPtr;
+    PyObject *func = event->func;
+    PyObject *flags_obj;
+    PyObject *res;
+    int handled = 0;
+
+    ENTER_PYTHON
+
+    flags_obj = PyLong_FromLong(flags);
+    if (flags_obj == NULL) {
+        errorInCmd = 1;
+        excInCmd = PyErr_GetRaisedException();
+        Py_CLEAR(event->func);
+        LEAVE_PYTHON
+        return 1;
+    }
+
+    res = PyObject_CallOneArg(func, flags_obj);
+    Py_DECREF(flags_obj);
+
+    if (res == NULL) {
+        errorInCmd = 1;
+        excInCmd = PyErr_GetRaisedException();
+        handled = 1;
+    }
+    else {
+        int truth = PyObject_IsTrue(res);
+        Py_DECREF(res);
+
+        if (truth < 0) {
+            errorInCmd = 1;
+            excInCmd = PyErr_GetRaisedException();
+            handled = 1;
+        }
+        else {
+            handled = (truth != 0);
+        }
+    }
+
+    if (handled) {
+        Py_CLEAR(event->func);
+    }
+
+    LEAVE_PYTHON
+
+    return handled;
+}
+
+/*[clinic input]
+_tkinter.queue_event
+
+    func: object
+    /
+
+Queue a Python callable as a Tcl event for an external event loop.
+
+The callable is invoked with a single argument holding the Tcl event
+flags.  It should return a truthy value when the event has been
+handled.
+[clinic start generated code]*/
+
+static PyObject *
+_tkinter_queue_event(PyObject *module, PyObject *func)
+/*[clinic end generated code: output=40997bbe62000307 input=7509b7f24d100fce]*/
+{
+    TkinterEvent *event;
+
+    if (!PyCallable_Check(func)) {
+        PyErr_SetString(PyExc_TypeError, "callable expected");
+        return NULL;
+    }
+
+    event = (TkinterEvent *)attemptckalloc(sizeof(TkinterEvent));
+    if (event == NULL) {
+        return PyErr_NoMemory();
+    }
+
+    event->ev.proc = TkinterEventProc;
+    event->ev.nextPtr = NULL;
+    event->func = Py_NewRef(func);
+
+    Tcl_QueueEvent((Tcl_Event *)event, TCL_QUEUE_TAIL);
+
+    Py_RETURN_NONE;
+}
+
+/* Convert a Tcl_Time* to a Python None or a (sec, usec) tuple. */
+static PyObject *
+Tcl_Time_ToPython(const Tcl_Time *timePtr)
+{
+    if (timePtr == NULL) {
+        return Py_NewRef(Py_None);
+    }
+    return Py_BuildValue("(ll)", (long)timePtr->sec, (long)timePtr->usec);
+}
+
+/* All of the notifier procedures below are invoked by Tcl, possibly from a
+   thread that does not hold the GIL, and call back into Python.  They wrap
+   every Python call in PyGILState_Ensure()/Release() and swallow exceptions
+   (reporting them via PyErr_WriteUnraisable), since Tcl notifier procedures
+   return void (or an int) and cannot propagate Python exceptions.
+   A NULL callable indicates that the corresponding slot was not provided
+   (a custom notifier does not have to supply every procedure). */
+
+#define NOTIFIER_CALL_1(fn, arg) \
+    do { \
+        PyObject *res; \
+        if (TkinterNotifier.fn == NULL) break; \
+        res = PyObject_CallOneArg(TkinterNotifier.fn, arg); \
+        if (res == NULL) { \
+            PyErr_WriteUnraisable(TkinterNotifier.fn); \
+        } \
+        else { \
+            Py_DECREF(res); \
+        } \
+    } while (0)
+
+static void
+Notifier_SetTimer(const Tcl_Time *timePtr)
+{
+    PyObject *arg;
+    PyGILState_STATE gilstate;
+
+    if (TkinterNotifier.set_timer == NULL) {
+        return;
+    }
+
+    gilstate = PyGILState_Ensure();
+
+    arg = Tcl_Time_ToPython(timePtr);
+    if (arg != NULL) {
+        NOTIFIER_CALL_1(set_timer, arg);
+        Py_DECREF(arg);
+    }
+
+    PyGILState_Release(gilstate);
+}
+
+static int
+Notifier_WaitForEvent(const Tcl_Time *timePtr)
+{
+    PyObject *arg;
+    PyObject *res;
+    PyGILState_STATE gilstate;
+    int rv = 0;
+
+    if (TkinterNotifier.wait_for_event == NULL) {
+        return 0;
+    }
+
+    gilstate = PyGILState_Ensure();
+
+    arg = Tcl_Time_ToPython(timePtr);
+    if (arg != NULL) {
+        res = PyObject_CallOneArg(
+            TkinterNotifier.wait_for_event,
+            arg
+        );
+        Py_DECREF(arg);
+
+        if (res != NULL) {
+            long tmp = PyLong_AsLong(res);
+            Py_DECREF(res);
+
+            if (tmp == -1 && PyErr_Occurred()) {
+                PyErr_WriteUnraisable(
+                    TkinterNotifier.wait_for_event
+                );
+            }
+            else {
+                rv = (int)tmp;
+            }
+        }
+        else {
+            PyErr_WriteUnraisable(
+                TkinterNotifier.wait_for_event
+            );
+        }
+    }
+
+    PyGILState_Release(gilstate);
+    return rv;
+}
+
+static void
+Notifier_CreateFileHandler(int fd, int mask, Tcl_FileProc *proc,
+                           ClientData clientData)
+{
+    PyObject *fd_obj;
+    PyObject *mask_obj;
+    PyObject *proc_obj;
+    PyObject *cd_obj;
+    PyObject *res;
+    PyGILState_STATE gilstate;
+
+    if (TkinterNotifier.create_file_handler == NULL) {
+        return;
+    }
+
+    gilstate = PyGILState_Ensure();
+
+    fd_obj = PyLong_FromLong(fd);
+    mask_obj = PyLong_FromLong(mask);
+    proc_obj = PyLong_FromVoidPtr((void *)proc);
+    cd_obj = PyLong_FromVoidPtr(clientData);
+
+    if (fd_obj != NULL && mask_obj != NULL &&
+        proc_obj != NULL && cd_obj != NULL) {
+        res = PyObject_CallFunctionObjArgs(
+            TkinterNotifier.create_file_handler,
+            fd_obj,
+            mask_obj,
+            proc_obj,
+            cd_obj,
+            NULL
+        );
+
+        if (res == NULL) {
+            PyErr_WriteUnraisable(
+                TkinterNotifier.create_file_handler
+            );
+        }
+        else {
+            Py_DECREF(res);
+        }
+    }
+
+    Py_XDECREF(fd_obj);
+    Py_XDECREF(mask_obj);
+    Py_XDECREF(proc_obj);
+    Py_XDECREF(cd_obj);
+
+    PyGILState_Release(gilstate);
+}
+
+static void
+Notifier_DeleteFileHandler(int fd)
+{
+    PyObject *arg;
+    PyGILState_STATE gilstate;
+
+    if (TkinterNotifier.delete_file_handler == NULL) {
+        return;
+    }
+    gilstate = PyGILState_Ensure();
+    arg = PyLong_FromLong(fd);
+    if (arg != NULL) {
+        NOTIFIER_CALL_1(delete_file_handler, arg);
+        Py_DECREF(arg);
+    }
+    PyGILState_Release(gilstate);
+}
+
+static ClientData
+Notifier_InitNotifier(void)
+{
+    PyGILState_STATE gilstate;
+
+    if (TkinterNotifier.init_notifier == NULL) {
+        return NULL;
+    }
+    gilstate = PyGILState_Ensure();
+    NOTIFIER_CALL_1(init_notifier, Py_None);
+    PyGILState_Release(gilstate);
+    return NULL;
+}
+
+static void
+Notifier_FinalizeNotifier(ClientData clientData)
+{
+    PyObject *arg;
+    PyGILState_STATE gilstate;
+
+    if (TkinterNotifier.finalize_notifier == NULL) {
+        return;
+    }
+
+    gilstate = PyGILState_Ensure();
+
+    arg = PyLong_FromVoidPtr(clientData);
+    if (arg != NULL) {
+        NOTIFIER_CALL_1(finalize_notifier, arg);
+        Py_DECREF(arg);
+    }
+
+    PyGILState_Release(gilstate);
+}
+
+static void
+Notifier_AlertNotifier(ClientData clientData)
+{
+    PyObject *arg;
+    PyGILState_STATE gilstate;
+
+    if (TkinterNotifier.alert_notifier == NULL) {
+        return;
+    }
+
+    gilstate = PyGILState_Ensure();
+
+    arg = PyLong_FromVoidPtr(clientData);
+    if (arg != NULL) {
+        NOTIFIER_CALL_1(alert_notifier, arg);
+        Py_DECREF(arg);
+    }
+
+    PyGILState_Release(gilstate);
+}
+
+static void
+Notifier_ServiceModeHook(int mode)
+{
+    PyObject *arg;
+    PyGILState_STATE gilstate;
+
+    if (TkinterNotifier.service_mode_hook == NULL) {
+        return;
+    }
+    gilstate = PyGILState_Ensure();
+    arg = PyLong_FromLong(mode);
+    if (arg != NULL) {
+        NOTIFIER_CALL_1(service_mode_hook, arg);
+        Py_DECREF(arg);
+    }
+    PyGILState_Release(gilstate);
+}
+
+/*[clinic input]
+_tkinter.set_notifier
+
+    set_timer: object
+    wait_for_event: object
+    create_file_handler: object
+    delete_file_handler: object
+    init_notifier: object
+    finalize_notifier: object
+    alert_notifier: object
+    service_mode_hook: object
+    /
+
+Install a custom Tcl notifier for use by an external event loop.
+
+This must be called before the first Tcl interpreter is created (that
+is, before creating any Tk() window), and can only be called once.
+Each argument is a callable:
+
+set_timer(t)  - arm/cancel next timer (None or (sec, usec))
+  wait_for_event(timeout) - wait for an event, returning 0
+  create_file_handler(fd, mask, proc, cd) - watch a file descriptor
+  delete_file_handler(fd) - stop watching a file descriptor
+  init_notifier()       - initialize the notifier
+  finalize_notifier(cd) - finalize the notifier
+  alert_notifier(cd)    - wake the notifier up
+  service_mode_hook(mode) - called when the service mode changes
+
+Pass None for a callback slot that should not be overridden.
+[clinic start generated code]*/
+
+static PyObject *
+_tkinter_set_notifier_impl(PyObject *module, PyObject *set_timer,
+                           PyObject *wait_for_event,
+                           PyObject *create_file_handler,
+                           PyObject *delete_file_handler,
+                           PyObject *init_notifier,
+                           PyObject *finalize_notifier,
+                           PyObject *alert_notifier,
+                           PyObject *service_mode_hook)
+/*[clinic end generated code: output=27f343695f5a456f input=13144ededf29fe02]*/
+{
+    if (TkinterNotifier.installed) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "the Tcl notifier has already been installed");
+        return NULL;
+    }
+
+    /* Each callback may be a callable or None (meaning "not overridden"). */
+    PyObject *callbacks[] = {set_timer, wait_for_event, create_file_handler,
+                             delete_file_handler, init_notifier,
+                             finalize_notifier, alert_notifier,
+                             service_mode_hook};
+    static const char *names[] = {"set_timer", "wait_for_event",
+                                  "create_file_handler", "delete_file_handler",
+                                  "init_notifier", "finalize_notifier",
+                                  "alert_notifier", "service_mode_hook"};
+    for (Py_ssize_t i = 0; i < 8; i++) {
+        if (callbacks[i] != Py_None && !PyCallable_Check(callbacks[i])) {
+            PyErr_Format(PyExc_TypeError, "%s must be a callable or None",
+                         names[i]);
+            return NULL;
+        }
+    }
+
+    Py_XSETREF(TkinterNotifier.set_timer,
+               (set_timer == Py_None) ? NULL : Py_NewRef(set_timer));
+    Py_XSETREF(TkinterNotifier.wait_for_event,
+               (wait_for_event == Py_None) ? NULL : Py_NewRef(wait_for_event));
+    Py_XSETREF(TkinterNotifier.create_file_handler,
+               (create_file_handler == Py_None) ? NULL : Py_NewRef(create_file_handler));
+    Py_XSETREF(TkinterNotifier.delete_file_handler,
+               (delete_file_handler == Py_None) ? NULL : Py_NewRef(delete_file_handler));
+    Py_XSETREF(TkinterNotifier.init_notifier,
+               (init_notifier == Py_None) ? NULL : Py_NewRef(init_notifier));
+    Py_XSETREF(TkinterNotifier.finalize_notifier,
+               (finalize_notifier == Py_None) ? NULL : Py_NewRef(finalize_notifier));
+    Py_XSETREF(TkinterNotifier.alert_notifier,
+               (alert_notifier == Py_None) ? NULL : Py_NewRef(alert_notifier));
+    Py_XSETREF(TkinterNotifier.service_mode_hook,
+               (service_mode_hook == Py_None) ? NULL : Py_NewRef(service_mode_hook));
+
+    TkinterNotifierProcs.setTimerProc = Notifier_SetTimer;
+    TkinterNotifierProcs.waitForEventProc = Notifier_WaitForEvent;
+    TkinterNotifierProcs.createFileHandlerProc = Notifier_CreateFileHandler;
+    TkinterNotifierProcs.deleteFileHandlerProc = Notifier_DeleteFileHandler;
+    TkinterNotifierProcs.initNotifierProc = Notifier_InitNotifier;
+    TkinterNotifierProcs.finalizeNotifierProc = Notifier_FinalizeNotifier;
+    TkinterNotifierProcs.alertNotifierProc = Notifier_AlertNotifier;
+    TkinterNotifierProcs.serviceModeHookProc = Notifier_ServiceModeHook;
+
+    Tcl_SetNotifier(&TkinterNotifierProcs);
+    TkinterNotifier.installed = 1;
+    Py_RETURN_NONE;
+}
+
 #include "clinic/_tkinter.c.h"
 
 static PyMethodDef Tktt_methods[] =
@@ -3622,6 +4127,10 @@ static PyMethodDef moduleMethods[] =
     _TKINTER_CREATE_METHODDEF
     _TKINTER_SETBUSYWAITINTERVAL_METHODDEF
     _TKINTER_GETBUSYWAITINTERVAL_METHODDEF
+    _TKINTER_SET_SERVICE_MODE_METHODDEF
+    _TKINTER_SERVICE_ALL_METHODDEF
+    _TKINTER_QUEUE_EVENT_METHODDEF
+    _TKINTER_SET_NOTIFIER_METHODDEF
     {NULL,                 NULL}
 };
 
@@ -3744,6 +4253,15 @@ DisableEventHook(void)
 static int
 module_clear(PyObject *Py_UNUSED(mod))
 {
+    Py_CLEAR(TkinterNotifier.set_timer);
+    Py_CLEAR(TkinterNotifier.wait_for_event);
+    Py_CLEAR(TkinterNotifier.create_file_handler);
+    Py_CLEAR(TkinterNotifier.delete_file_handler);
+    Py_CLEAR(TkinterNotifier.init_notifier);
+    Py_CLEAR(TkinterNotifier.finalize_notifier);
+    Py_CLEAR(TkinterNotifier.alert_notifier);
+    Py_CLEAR(TkinterNotifier.service_mode_hook);
+
     Py_CLEAR(Tkinter_TclError);
     Py_CLEAR(Tkapp_Type);
     Py_CLEAR(Tktt_Type);
@@ -3754,6 +4272,15 @@ module_clear(PyObject *Py_UNUSED(mod))
 static int
 module_traverse(PyObject *Py_UNUSED(module), visitproc visit, void *arg)
 {
+    Py_VISIT(TkinterNotifier.set_timer);
+    Py_VISIT(TkinterNotifier.wait_for_event);
+    Py_VISIT(TkinterNotifier.create_file_handler);
+    Py_VISIT(TkinterNotifier.delete_file_handler);
+    Py_VISIT(TkinterNotifier.init_notifier);
+    Py_VISIT(TkinterNotifier.finalize_notifier);
+    Py_VISIT(TkinterNotifier.alert_notifier);
+    Py_VISIT(TkinterNotifier.service_mode_hook);
+
     Py_VISIT(Tkinter_TclError);
     Py_VISIT(Tkapp_Type);
     Py_VISIT(Tktt_Type);
@@ -3840,6 +4367,14 @@ PyInit__tkinter(void)
         Py_DECREF(m);
         return NULL;
     }
+    if (PyModule_AddIntConstant(m, "SERVICE_NONE", TCL_SERVICE_NONE)) {
+        Py_DECREF(m);
+        return NULL;
+    }
+    if (PyModule_AddIntConstant(m, "SERVICE_ALL", TCL_SERVICE_ALL)) {
+        Py_DECREF(m);
+        return NULL;
+    }
     if (PyModule_AddStringConstant(m, "TK_VERSION", TK_VERSION)) {
         Py_DECREF(m);
         return NULL;
@@ -3866,7 +4401,6 @@ PyInit__tkinter(void)
         Py_DECREF(m);
         return NULL;
     }
-
 
     /* This helps the dynamic loader; in Unicode aware Tcl versions
        it also helps Tcl find its encodings. */
