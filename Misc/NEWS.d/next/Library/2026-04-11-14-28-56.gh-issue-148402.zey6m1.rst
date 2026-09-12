@@ -1,0 +1,2 @@
+Warnings emitted by :class:`subprocess.Popen` now correctly report the
+caller's source location instead of a line inside :mod:`subprocess`.
