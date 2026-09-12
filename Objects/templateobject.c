@@ -222,21 +222,22 @@ static PyObject *
 template_iter(PyObject *op)
 {
     templateobject *self = templateobject_CAST(op);
-    templateiterobject *iter = PyObject_GC_New(templateiterobject, &_PyTemplateIter_Type);
-    if (iter == NULL) {
-        return NULL;
-    }
 
     PyObject *stringsiter = PyObject_GetIter(self->strings);
     if (stringsiter == NULL) {
-        Py_DECREF(iter);
         return NULL;
     }
 
     PyObject *interpolationsiter = PyObject_GetIter(self->interpolations);
     if (interpolationsiter == NULL) {
-        Py_DECREF(iter);
         Py_DECREF(stringsiter);
+        return NULL;
+    }
+
+    templateiterobject *iter = PyObject_GC_New(templateiterobject, &_PyTemplateIter_Type);
+    if (iter == NULL) {
+        Py_DECREF(stringsiter);
+        Py_DECREF(interpolationsiter);
         return NULL;
     }
 
