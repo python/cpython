@@ -171,6 +171,7 @@ html, body {
   width: var(--sidebar-width);
   background: var(--bg-secondary);
   border-right: 1px solid var(--border);
+  scrollbar-color: var(--border) var(--bg-secondary);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
@@ -754,6 +755,7 @@ body.resizing-sidebar {
   min-width: 0;
   overflow: hidden;
   background: var(--bg-primary);
+  scrollbar-color: var(--border) var(--bg-secondary);
   position: relative;
 }
 
