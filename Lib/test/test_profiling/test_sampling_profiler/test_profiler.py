@@ -751,6 +751,7 @@ class TestPrintSampledStats(unittest.TestCase):
                 and not "calls" in line  # Skip summary lines
                 and not "total time" in line  # Skip summary lines
                 and not "cumulative time" in line
+                and not "filename:lineno(function)" in line  # Skip header line
             ):  # Skip summary lines
                 data_lines.append(line)
 
