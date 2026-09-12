@@ -504,6 +504,57 @@ class TestCParser(unittest.TestCase):
         """
         self.run_test(grammar_source, test_source)
 
+    def test_first_set_dispatch(self) -> None:
+        grammar = parse_string(
+            """
+            start: expr NEWLINE
+            expr: NAME | NUMBER | '(' NAME ')'
+            """,
+            GrammarParser,
+        )
+        parser_source = generate_c_parser_source(grammar)
+        self.assertIn("switch (_current_token_type)", parser_source)
+
+        overlapping_grammar = parse_string(
+            "start: expr NEWLINE $\nexpr: NAME '+' NAME | NAME\n",
+            GrammarParser,
+        )
+        parser_source = generate_c_parser_source(overlapping_grammar)
+        self.assertIn("_first_set_mask", parser_source)
+        self.run_test(
+            "start: expr NEWLINE $\nexpr: NAME '+' NAME | NAME\n",
+            'self.check_input_strings_for_grammar(["a\\n", "a + b\\n"])',
+        )
+
+        nullable_grammar = parse_string(
+            "start: expr NEWLINE\nexpr: ['+'] | NUMBER\n",
+            GrammarParser,
+        )
+        parser_source = generate_c_parser_source(nullable_grammar)
+        self.assertNotIn("switch (_current_token_type)", parser_source)
+
+    def test_first_set_dispatch_soft_keywords(self) -> None:
+        grammar_source = 'start: ("foo" | "bar") NEWLINE $\n'
+        grammar = parse_string(grammar_source, GrammarParser)
+        parser_source = generate_c_parser_source(grammar)
+        self.assertIn("_first_set_mask", parser_source)
+        self.run_test(
+            grammar_source,
+            'self.check_input_strings_for_grammar(["foo\\n", "bar\\n"], ["baz\\n"])',
+        )
+
+    def test_first_set_dispatch_invalid_rules(self) -> None:
+        grammar_source = """
+        start: value NEWLINE $
+        value: NAME '+' NAME | invalid_value
+        invalid_value: NAME { RAISE_SYNTAX_ERROR("expected an addition") }
+        """
+        test_source = """
+        with self.assertRaisesRegex(SyntaxError, "expected an addition"):
+            parse.parse_string("name\\n", mode=0)
+        """
+        self.run_test(grammar_source, test_source)
+
     def test_forced(self) -> None:
         grammar_source = """
         start: NAME &&':' | NAME
