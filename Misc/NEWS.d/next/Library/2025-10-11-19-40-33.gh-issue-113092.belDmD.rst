@@ -1,0 +1,1 @@
+Add ``fstore`` type, ``F_PREALLOCATE`` and related constants support to the :mod:`fcntl` module

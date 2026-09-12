@@ -11,6 +11,10 @@
 #include <fcntl.h>                // fcntl()
 #include <string.h>               // memcpy()
 #include <sys/ioctl.h>            // ioctl()
+
+#ifdef F_PREALLOCATE
+#  include <stddef.h>             // offsetof()
+#endif
 #ifdef HAVE_SYS_FILE_H
 #  include <sys/file.h>           // flock()
 #endif
@@ -25,10 +29,18 @@
 // NUL followed by random bytes.
 static const char guard[GUARDSZ] _Py_NONSTRING = "\x00\xfa\x69\xc4\x67\xa3\x6c\x58";
 
+#ifdef F_PREALLOCATE
+typedef struct {
+    PyObject_HEAD
+    struct fstore fstore;
+} FStoreObject;
+#endif /* F_PREALLOCATE */
+
 /*[clinic input]
 module fcntl
+class fcntl.fstore "FStoreObject *" "&PyType_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=124b58387c158179]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=54136216ba908cf8]*/
 
 #include "clinic/fcntlmodule.c.h"
 
@@ -525,6 +537,118 @@ fcntl_lockf_impl(PyObject *module, int fd, int code, PyObject *lenobj,
     Py_RETURN_NONE;
 }
 
+#ifdef F_PREALLOCATE
+
+/*[clinic input]
+fcntl.fstore.__init__
+
+    flags: int = 0
+    posmode: int = 0
+    offset: long = 0
+    length: long = 0
+
+Initialize an fstore structure.
+
+This structure is used with the F_PREALLOCATE command to preallocate
+file space on macOS systems.
+[clinic start generated code]*/
+
+static int
+fcntl_fstore___init___impl(FStoreObject *self, int flags, int posmode,
+                           long offset, long length)
+/*[clinic end generated code: output=4fcf4413aa57e2dd input=f4caa1fbbe7a0e32]*/
+{
+    memset(&self->fstore, 0, sizeof(struct fstore));
+    self->fstore.fst_flags = flags;
+    self->fstore.fst_posmode = posmode;
+    self->fstore.fst_offset = (off_t)offset;
+    self->fstore.fst_length = (off_t)length;
+
+    return 0;
+}
+
+static int
+fstore_getbuffer(FStoreObject *self, Py_buffer *view, int flags)
+{
+    return PyBuffer_FillInfo(view, (PyObject *)self, (void *)&self->fstore,
+                             sizeof(struct fstore), 1, flags);
+}
+
+/*[clinic input]
+@classmethod
+fcntl.fstore.from_buffer
+
+    data: Py_buffer
+    /
+
+Create an fstore instance from bytes data.
+
+This is useful for creating an fstore instance from the result of
+fcntl.fcntl when using the F_PREALLOCATE command.
+
+Raises ValueError if the data is not exactly the size of struct fstore.
+[clinic start generated code]*/
+
+static PyObject *
+fcntl_fstore_from_buffer_impl(PyTypeObject *type, Py_buffer *data)
+/*[clinic end generated code: output=e401a2f775342265 input=3148957e92e9570f]*/
+{
+    FStoreObject *self;
+
+    if (data->len != sizeof(struct fstore)) {
+        PyErr_Format(PyExc_ValueError,
+                     "data must be exactly %zu bytes, got %zd bytes",
+                     sizeof(struct fstore), data->len);
+        return NULL;
+    }
+
+    self = (FStoreObject *)PyType_GenericNew(type, NULL, NULL);
+    if (self == NULL) {
+        return NULL;
+    }
+
+    memcpy(&self->fstore, data->buf, sizeof(struct fstore));
+
+    return (PyObject *)self;
+}
+
+static PyMethodDef fstore_methods[] = {
+    FCNTL_FSTORE_FROM_BUFFER_METHODDEF
+    {NULL, NULL}
+};
+
+static PyMemberDef fstore_members[] = {
+    {"flags", Py_T_INT, offsetof(FStoreObject, fstore.fst_flags), 0,
+     "Allocation flags"},
+    {"posmode", Py_T_INT, offsetof(FStoreObject, fstore.fst_posmode), 0,
+     "Position mode"},
+    {"offset", Py_T_LONGLONG, offsetof(FStoreObject, fstore.fst_offset), 0,
+     "File offset"},
+    {"length", Py_T_LONGLONG, offsetof(FStoreObject, fstore.fst_length), 0,
+     "Length to allocate"},
+    {"bytesalloc", Py_T_LONGLONG, offsetof(FStoreObject, fstore.fst_bytesalloc), Py_READONLY,
+     "Number of bytes actually allocated"},
+    {NULL},
+};
+
+static PyType_Slot fstore_slots[] = {
+    {Py_tp_init, (initproc)fcntl_fstore___init__},
+    {Py_tp_members, fstore_members},
+    {Py_tp_methods, fstore_methods},
+    {Py_tp_doc, "fstore structure for F_PREALLOCATE"},
+    {Py_bf_getbuffer, (getbufferproc)fstore_getbuffer},
+    {0, NULL},
+};
+
+static PyType_Spec fstore_spec = {
+    .name = "fcntl.fstore",
+    .basicsize = sizeof(FStoreObject),
+    .flags = Py_TPFLAGS_DEFAULT,
+    .slots = fstore_slots,
+};
+
+#endif /* F_PREALLOCATE */
+
 /* List of functions */
 
 static PyMethodDef fcntl_methods[] = {
@@ -710,6 +834,24 @@ all_ins(PyObject* m)
 #ifdef F_NOCACHE
     if (PyModule_AddIntMacro(m, F_NOCACHE)) return -1;
 #endif
+#ifdef F_PREALLOCATE
+    if (PyModule_AddIntMacro(m, F_PREALLOCATE)) return -1;
+#endif
+#ifdef F_ALLOCATECONTIG
+    if (PyModule_AddIntMacro(m, F_ALLOCATECONTIG)) return -1;
+#endif
+#ifdef F_ALLOCATEALL
+    if (PyModule_AddIntMacro(m, F_ALLOCATEALL)) return -1;
+#endif
+#ifdef F_ALLOCATEPERSIST
+    if (PyModule_AddIntMacro(m, F_ALLOCATEPERSIST)) return -1;
+#endif
+#ifdef F_PEOFPOSMODE
+    if (PyModule_AddIntMacro(m, F_PEOFPOSMODE)) return -1;
+#endif
+#ifdef F_VOLPOSMODE
+    if (PyModule_AddIntMacro(m, F_VOLPOSMODE)) return -1;
+#endif
 
 /* FreeBSD specifics */
 #ifdef F_DUP2FD
@@ -831,6 +973,18 @@ fcntl_exec(PyObject *module)
     if (all_ins(module) < 0) {
         return -1;
     }
+
+#ifdef F_PREALLOCATE
+    PyObject *fstore_type = PyType_FromSpec(&fstore_spec);
+    if (fstore_type == NULL) {
+        return -1;
+    }
+    if (PyModule_AddObject(module, "fstore", fstore_type) < 0) {
+        Py_DECREF(fstore_type);
+        return -1;
+    }
+#endif
+
     return 0;
 }
 
