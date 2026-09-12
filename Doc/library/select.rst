@@ -527,7 +527,8 @@ Kqueue objects
 
 .. method:: kqueue.control(changelist, max_events[, timeout])
 
-   Low level interface to kevent, returning a list of events.
+   Low level interface to kevent, returning a list of :ref:`kevent <kevent-objects>`
+   objects.
 
    - changelist must be an iterable of kevent objects or ``None``
    - max_events must be 0 or a positive integer
@@ -562,6 +563,10 @@ https://man.freebsd.org/cgi/man.cgi?query=kqueue&sektion=2
 
    Name of the kernel filter.
 
+.. currentmodule:: select
+
+The following constants can be used with :attr:`kevent.filter`:
+
    +---------------------------+---------------------------------------------+
    | Constant                  | Meaning                                     |
    +===========================+=============================================+
@@ -591,6 +596,10 @@ https://man.freebsd.org/cgi/man.cgi?query=kqueue&sektion=2
 
    Filter action.
 
+.. currentmodule:: select
+
+The following constants can be used with :attr:`kevent.flags`:
+
    +---------------------------+----------------------------------------------+
    | Constant                  | Meaning                                      |
    +===========================+==============================================+
@@ -619,6 +628,11 @@ https://man.freebsd.org/cgi/man.cgi?query=kqueue&sektion=2
 .. attribute:: kevent.fflags
 
    Filter-specific flags.
+
+.. currentmodule:: select
+
+The following flags can be used with :attr:`kevent.fflags`, depending on the
+filter type.
 
    :const:`KQ_FILTER_READ` and  :const:`KQ_FILTER_WRITE` filter flags:
 
