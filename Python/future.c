@@ -1,9 +1,10 @@
 #include "Python.h"
 #include "pycore_ast.h"           // _PyAST_GetDocString()
+#include "pycore_pyerrors.h"      // _Py_CalculateSuggestions()
 #include "pycore_symtable.h"      // _PyFutureFeatures
 #include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
 
-#define UNDEFINED_FUTURE_FEATURE "future feature %.100s is not defined"
+#define UNDEFINED_FUTURE_FEATURE "future feature '%.100s' is not defined"
 
 static int
 future_check_features(_PyFutureFeatures *ff, stmt_ty s, PyObject *filename)
@@ -38,7 +39,7 @@ future_check_features(_PyFutureFeatures *ff, stmt_ty s, PyObject *filename)
             continue;
         } else if (strcmp(feature, FUTURE_ANNOTATIONS) == 0) {
             ff->ff_features |= CO_FUTURE_ANNOTATIONS;
-        } else if (strcmp(feature, "braces") == 0) {
+        } else if (strcmp(feature, FUTURE_BRACES) == 0) {
             PyErr_SetString(PyExc_SyntaxError,
                             "not a chance");
             PyErr_RangedSyntaxLocationObject(filename,
@@ -48,8 +49,36 @@ future_check_features(_PyFutureFeatures *ff, stmt_ty s, PyObject *filename)
                                              name->end_col_offset + 1);
             return 0;
         } else {
-            PyErr_Format(PyExc_SyntaxError,
-                         UNDEFINED_FUTURE_FEATURE, feature);
+            PyObject *suggestion;
+            PyObject *future_features = Py_BuildValue("[sssssssssss]",
+                                                      FUTURE_NESTED_SCOPES,
+                                                      FUTURE_GENERATORS,
+                                                      FUTURE_DIVISION,
+                                                      FUTURE_ABSOLUTE_IMPORT,
+                                                      FUTURE_WITH_STATEMENT,
+                                                      FUTURE_PRINT_FUNCTION,
+                                                      FUTURE_UNICODE_LITERALS,
+                                                      FUTURE_BARRY_AS_BDFL,
+                                                      FUTURE_GENERATOR_STOP,
+                                                      FUTURE_ANNOTATIONS,
+                                                      FUTURE_BRACES);
+            if (
+                future_features != NULL &&
+                (suggestion = _Py_CalculateSuggestions(future_features, name->name)) != NULL
+            ) {
+                PyErr_Format(PyExc_SyntaxError,
+                             UNDEFINED_FUTURE_FEATURE ". Did you mean: %R?",
+                             feature, suggestion);
+                Py_DECREF(suggestion);
+            }
+            else {
+                // Do not fail on missing suggestion,
+                // just show the default message.
+                PyErr_Format(PyExc_SyntaxError,
+                             UNDEFINED_FUTURE_FEATURE,
+                             feature);
+            }
+            Py_XDECREF(future_features);
             PyErr_RangedSyntaxLocationObject(filename,
                                              name->lineno,
                                              name->col_offset + 1,
