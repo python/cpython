@@ -9,6 +9,19 @@ call ..\PCbuild\find_python.bat %PYTHON%
 
 if not defined PYTHON set PYTHON=py
 
+if "%1" NEQ "doctest" goto :skipversioncheck
+for /f "usebackq" %%v in (`%PYTHON% -c "import sys; print(sys.version_info[0], sys.version_info[1], sep='.')"`) do set PYVERSION=%%v
+for /f "usebackq" %%v in (`%PYTHON% tools/extensions/patchlevel.py --short`) do set TREEVERSION=%%v
+if "%PYVERSION%" NEQ "%TREEVERSION%" (
+    echo.
+    echo.%PYTHON% is Python %PYVERSION%, but this source tree is Python %TREEVERSION%.
+    echo.The doctests are executed by that interpreter, so they would test
+    echo.Python %PYVERSION% rather than the code documented here.
+    popd
+    exit /B 1
+)
+:skipversioncheck
+
 if not defined SPHINXBUILD (
     %PYTHON% -c "import sphinx" > nul 2> nul
     if errorlevel 1 (
