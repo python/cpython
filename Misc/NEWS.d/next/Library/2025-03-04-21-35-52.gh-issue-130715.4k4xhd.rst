@@ -1,0 +1,1 @@
+Turtle library - added optional rotate_image_shape parameter to addshape() method to allow turtle head rotation when shape is set to an image.
