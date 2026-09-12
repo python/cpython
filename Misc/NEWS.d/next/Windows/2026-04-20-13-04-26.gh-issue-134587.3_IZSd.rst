@@ -1,0 +1,1 @@
+Fix :func:`os.mkdir` for mode 0o700 when running in Windows AppContainer
