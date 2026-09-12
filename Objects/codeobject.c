@@ -2181,10 +2181,10 @@ static void
 clear_executors(PyCodeObject *co)
 {
     assert(co->co_executors);
-    for (int i = 0; i < co->co_executors->size; i++) {
-        if (co->co_executors->executors[i]) {
-            _Py_ExecutorDetach(co->co_executors->executors[i]);
-            assert(co->co_executors->executors[i] == NULL);
+    for (int i = 0; i < _PyExecutorArray_SIZE(co->co_executors); i++) {
+        if (_PyExecutorArray_EXECUTORS(co->co_executors)[i]) {
+            _Py_ExecutorDetach(_PyExecutorArray_EXECUTORS(co->co_executors)[i]);
+            assert(_PyExecutorArray_EXECUTORS(co->co_executors)[i] == NULL);
         }
     }
     PyMem_Free(co->co_executors);
