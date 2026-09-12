@@ -1,0 +1,3 @@
+Fix truncated :data:`sys.version` in case of clang-cl versions greater or
+equal 22 on Windows. Also fixes the Windows on Arm case, where the Microsoft
+compiler was reported instead of clang. Patch by Chris Eibl.
