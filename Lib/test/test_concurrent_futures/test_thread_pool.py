@@ -115,6 +115,61 @@ class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, BaseTestCase):
         # ident='third' is cancelled because it remained in the collection of futures
         self.assertListEqual(log, ["ident='first' started", "ident='first' stopped"])
 
+    def test_shutdown_cancels_pending_futures(self):
+        # gh-109934: ensure shutdown cancels and notifies pending futures
+        def waiter(b1, b2):
+            b1.wait(3)
+            b2.wait(3)
+        def noop():
+            pass
+        b1 = threading.Barrier(2)
+        b2 = threading.Barrier(2)
+        called_back_1 = threading.Event()
+        called_back_2 = threading.Event()
+        with self.executor_type(max_workers=1) as pool:
+
+            # Submit two futures, the first of which will block and prevent the
+            # second from running
+            f1 = pool.submit(waiter, b1, b2)
+            f2 = pool.submit(noop)
+            f1.add_done_callback(lambda f: called_back_1.set())
+            f2.add_done_callback(lambda f: called_back_2.set())
+            fs = {f1, f2}
+
+            completed_iter = futures.as_completed(fs, timeout=0)
+            self.assertRaises(TimeoutError, next, completed_iter)
+
+            # Ensure the first task has started running then shutdown the
+            # pool, cancelling the unstarted task
+            b1.wait(3)
+            pool.shutdown(wait=False, cancel_futures=True)
+            self.assertTrue(f1.running())
+            self.assertTrue(f2.cancelled())
+            self.assertFalse(called_back_1.is_set())
+            self.assertTrue(called_back_2.is_set())
+
+            completed_iter = futures.as_completed(fs, timeout=0)
+            f = next(completed_iter)
+            self.assertIs(f, f2)
+            self.assertRaises(TimeoutError, next, completed_iter)
+
+            result = futures.wait(fs, timeout=0)
+            self.assertEqual(result.not_done, {f1})
+            self.assertEqual(result.done, {f2})
+
+            # Unblock and wait for the first future to complete
+            b2.wait(3)
+            called_back_1.wait(3)
+            self.assertTrue(f1.done())
+            self.assertTrue(called_back_1.is_set())
+
+            completed = set(futures.as_completed(fs, timeout=0))
+            self.assertEqual(set(fs), completed)
+
+            result = futures.wait(fs, timeout=0)
+            self.assertEqual(result.not_done, set())
+            self.assertEqual(result.done, set(fs))
+
 
 def setUpModule():
     setup_module()
