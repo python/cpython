@@ -1745,6 +1745,12 @@ class MinidomTest(unittest.TestCase):
         doc.appendChild(doc.createComment("foo--bar"))
         self.assertRaises(ValueError, doc.toxml)
 
+    def testSerializeCommentNodeWithTrailingHyphen(self):
+        # A trailing '-' would fuse with the closing '-->' into '--->'.
+        doc = create_doc_without_doctype()
+        doc.appendChild(doc.createComment("foo-"))
+        self.assertRaises(ValueError, doc.toxml)
+
 
     def testEmptyXMLNSValue(self):
         doc = parseString("<element xmlns=''>\n"
