@@ -103,6 +103,103 @@ class ArrayTestCase(unittest.TestCase):
         with self.assertRaises(TypeError):
             del ca[0]
 
+    def test_ctypes_array_class_assignment_incompatible(self):
+        A = c_long * 3
+        B = c_long * 5
+        x = A(1, 2, 3)
+
+        with self.assertRaises(TypeError):
+            x.__class__ = B
+
+    def test_ctypes_array_class_assignment_incompatible_target(self):
+        A = c_int * 3
+        class OtherArray(Array):
+            _type_ = c_int
+            _length_ = 4   # incompatible length
+
+        a = A()
+
+        with self.assertRaises(TypeError):
+            a.__class__ = OtherArray
+
+
+    def test_ctypes_array_class_assignment_zero_length(self):
+        A = c_long * 0
+        B = c_long * 1
+        a = A()
+
+        with self.assertRaises(TypeError):
+            a.__class__ = B
+
+    def test_ctypes_array_class_assignment_incompatible_element_type(self):
+        A = c_int * 3
+        B = c_double * 3
+        a = A()
+
+        with self.assertRaises(TypeError):
+            a.__class__ = B
+
+    def test_ctypes_array_class_assignment_signed_unsigned(self):
+        A = c_long * 3
+        B = c_ulonglong * 3
+        a = A()
+
+        with self.assertRaises(TypeError):
+            a.__class__ = B
+
+    def test_ctypes_array_class_assignment_compatible(self):
+        A = c_int * 3
+        class SameArray(Array):
+            _type_ = c_int
+            _length_ = 3
+        a = A(1, 2, 3)
+        a.__class__ = SameArray
+
+    def test_ctypes_array_class_assignment_non_ctypes_target(self):
+        A = c_int * 3
+        a = A()
+        class Dummy:
+            pass
+
+        with self.assertRaises(TypeError):
+            a.__class__ = Dummy
+
+    def test_ctypes_array_class_assignment_abstract_target(self):
+        A = c_int * 3
+        a = A()
+        AbstractArray = PyCArrayType.__new__(PyCArrayType, "AbstractArray", (Array,), {})
+
+        with self.assertRaises(TypeError):
+            a.__class__ = AbstractArray
+
+    def test_ctypes_array_class_assignment_same_size_ints(self):
+        if sizeof(c_int) != sizeof(c_long):
+            self.skipTest("sizes differ on this platform")
+        A = c_int * 3
+        B = c_long * 3
+        a = A(1, 2, 3)
+        a.__class__ = B
+
+    def test_ctypes_array_class_assignment_structs(self):
+        class S1(Structure):
+            _fields_ = [("x", c_int)]
+        A = S1 * 2
+        B = S1 * 2
+        a = A()
+        a.__class__ = B
+
+    def test_ctypes_array_class_assignment_pointer_arrays(self):
+        from ctypes import POINTER
+        A = POINTER(c_int) * 2
+        B = POINTER(c_int) * 2
+        a = A()
+        a.__class__ = B
+
+    def test_ctypes_array_from_param_incompatible(self):
+        A = c_int * 3
+        with self.assertRaises(TypeError):
+            A.from_param(object())
+
     def test_step_overflow(self):
         a = (c_int * 5)()
         a[3::sys.maxsize] = (1,)
