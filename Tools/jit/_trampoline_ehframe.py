@@ -5,7 +5,7 @@ one block per architecture (a fat Mach-O file yields several).  The FDE's
 initial_location and address_range are left zeroed for Python/jit_unwind.c
 to patch at runtime.
 
-This runs during bootstrap with Python 3.7 or newer, using only the standard
+This runs during bootstrap with Python 3.9 or newer, using only the standard
 library. Keep annotations postponed so newer type syntax is not evaluated.
 """
 

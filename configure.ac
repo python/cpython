@@ -3944,10 +3944,10 @@ AS_CASE([$PLATFORM_TRIPLET],
   [perf_trampoline=no]
 )
 dnl Generating the trampoline's unwind data (trampoline_ehframe.h) at build
-dnl time needs a Python interpreter, 3.7 or newer (Tools/jit/_trampoline_ehframe.py).
+dnl time needs a Python interpreter, 3.9 or newer (Tools/jit/_trampoline_ehframe.py).
 perf_trampoline_missing_python=no
 AS_VAR_IF([perf_trampoline], [yes], [
-  AS_IF([$PYTHON_FOR_REGEN -c 'import sys; sys.exit(sys.version_info < (3, 7))' >/dev/null 2>&1],
+  AS_IF([$PYTHON_FOR_REGEN -c 'import sys; sys.exit(sys.version_info < (3, 9))' >/dev/null 2>&1],
     [],
     [perf_trampoline=no
      PERF_TRAMPOLINE_OBJ=""
@@ -3955,7 +3955,7 @@ AS_VAR_IF([perf_trampoline], [yes], [
 ])
 AC_MSG_RESULT([$perf_trampoline])
 AS_VAR_IF([perf_trampoline_missing_python], [yes],
-  [AC_MSG_WARN([perf trampoline disabled: PYTHON_FOR_REGEN ($PYTHON_FOR_REGEN) is missing or older than 3.7 (needed to generate trampoline_ehframe.h)])])
+  [AC_MSG_WARN([perf trampoline disabled: PYTHON_FOR_REGEN ($PYTHON_FOR_REGEN) is missing or older than 3.9 (needed to generate trampoline_ehframe.h)])])
 
 AS_VAR_IF([perf_trampoline], [yes], [
   AC_DEFINE([PY_HAVE_PERF_TRAMPOLINE], [1], [Define to 1 if you have the perf trampoline.])
