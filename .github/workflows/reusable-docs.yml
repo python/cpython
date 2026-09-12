@@ -86,6 +86,9 @@ jobs:
           --fail-if-regression \
           --fail-if-improved \
           --fail-if-new-news-nit
+    - name: 'Build list of changes'
+      run: |
+        make -C Doc/ PYTHON=../python changes
     - name: 'Collect HTML IDs'
       if: github.event_name == 'pull_request'
       run: python Doc/tools/check-html-ids.py collect Doc/build/html -o Doc/build/html-ids-head.json.gz
