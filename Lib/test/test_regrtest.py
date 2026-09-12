@@ -24,9 +24,11 @@ import threading
 import textwrap
 import unittest
 import unittest.mock
+import zipfile
+import zipimport
 from xml.etree import ElementTree
 
-from test.libregrtest.findtests import collect_cases
+from test.libregrtest.findtests import collect_cases, findtests
 from test.libregrtest.filter import set_match_tests
 from test.libregrtest.run_workers import MultiprocessIterator
 from test import support
@@ -2637,6 +2639,28 @@ class FindTestsTestCase(BaseTestCase):
                                                    test_dir=self.tmptestdir)
         self.assertEqual(cases_by_module, {})
         self.assertIn(testname, skipped)
+
+    def test_findtests_not_on_file_system(self):
+        # gh-157144: the test directory may not be on the file system,
+        # e.g. the standard library is a zip archive on sys.path.
+        zip_path = os.path.join(self.tmptestdir, 'tests.zip')
+        with zipfile.ZipFile(zip_path, 'w') as zf:
+            zf.writestr('tests/test_a.py', '')
+            zf.writestr('tests/test_b.py', '')
+            zf.writestr('tests/not_a_test.py', '')
+            zf.writestr('tests/test_data.txt', '')
+            zf.writestr('tests/test_pkg/__init__.py', '')
+            zf.writestr('tests/test_pkg/test_c.py', '')
+        testdir = os.path.join(zip_path, 'tests')
+        self.addCleanup(zipimport._zip_directory_cache.pop, zip_path, None)
+        for path in (testdir, os.path.join(testdir, 'test_pkg')):
+            self.addCleanup(sys.path_importer_cache.pop, path, None)
+
+        tests = findtests(testdir=testdir)
+        self.assertEqual(tests, ['test_a', 'test_b', 'test_pkg'])
+
+        tests = findtests(testdir=testdir, split_test_dirs={'test_pkg'})
+        self.assertEqual(tests, ['test.test_pkg.test_c', 'test_a', 'test_b'])
 
 
 class MultiprocessIteratorTestCase(unittest.TestCase):
