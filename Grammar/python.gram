@@ -760,7 +760,7 @@ named_expression[expr_ty]:
     | invalid_named_expression
     | expression !':='
 
-disjunction[expr_ty] (memo):
+disjunction[expr_ty] (memo, fastpath=_PyPegen_atom_fast_path):
     | a=conjunction b=('or' c=conjunction { c })+ { _PyAST_BoolOp(
         Or,
         CHECK(asdl_expr_seq*, _PyPegen_seq_insert_in_front(p, a, b)),
@@ -774,7 +774,7 @@ conjunction[expr_ty] (memo):
         EXTRA) }
     | inversion
 
-inversion[expr_ty] (memo):
+inversion[expr_ty] (memo, fastpath=_PyPegen_atom_fast_path):
     | 'not' a=inversion { _PyAST_UnaryOp(Not, a, EXTRA) }
     | comparison
 
