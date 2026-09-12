@@ -382,6 +382,13 @@ expect a function argument.
           return caller
 
 
+.. function:: identity(obj, /)
+
+   Returns *obj* unchanged.
+
+   .. versionadded:: next
+
+
 .. _operator-map:
 
 Mapping Operators to Functions
