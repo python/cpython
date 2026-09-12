@@ -151,6 +151,35 @@ class StatsTestCase(unittest.TestCase):
         self.assertIn('pass2', funcs_called)
         self.assertIn('pass3', funcs_called)
 
+    def test_get_stats_profile_duplicate_func_names(self):
+        class Test1:
+            def pass_fn(self):
+                pass
+
+        class Test2:
+            def pass_fn(self):
+                pass
+
+        def main():
+            Test1().pass_fn()
+            Test2().pass_fn()
+
+        pr = cProfile.Profile()
+        pr.enable()
+        main()
+        pr.create_stats()
+        ps = pstats.Stats(pr)
+        stats_profile = ps.get_stats_profile()
+        # Functions with same name have different keys in func_profiles_by_loc
+        pass_fn_keys = [
+            (file_name, line_number, func_name)
+            for file_name, line_number, func_name
+            in stats_profile.func_profiles_by_loc
+            if func_name == "pass_fn"
+        ]
+
+        self.assertEqual(len(pass_fn_keys), 2)
+
     def test_SortKey_enum(self):
         self.assertEqual(SortKey.FILENAME, 'filename')
         self.assertNotEqual(SortKey.FILENAME, SortKey.CALLS)
