@@ -60,17 +60,17 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     outputs:
-      run-android: ${{ steps.changes.outputs.run-android }}
-      run-ci-fuzz: ${{ steps.changes.outputs.run-ci-fuzz }}
-      run-ci-fuzz-stdlib: ${{ steps.changes.outputs.run-ci-fuzz-stdlib }}
-      run-docs: ${{ steps.changes.outputs.run-docs }}
-      run-ios: ${{ steps.changes.outputs.run-ios }}
-      run-macos: ${{ steps.changes.outputs.run-macos }}
-      run-tests: ${{ steps.changes.outputs.run-tests }}
-      run-ubuntu: ${{ steps.changes.outputs.run-ubuntu }}
-      run-emscripten: ${{ steps.changes.outputs.run-emscripten }}
-      run-wasi: ${{ steps.changes.outputs.run-wasi }}
-      run-windows-tests: ${{ steps.changes.outputs.run-windows-tests }}
+      run-android: ${{ steps.filtered.outputs.run-android }}
+      run-ci-fuzz: ${{ steps.filtered.outputs.run-ci-fuzz }}
+      run-ci-fuzz-stdlib: ${{ steps.filtered.outputs.run-ci-fuzz-stdlib }}
+      run-docs: ${{ steps.filtered.outputs.run-docs }}
+      run-ios: ${{ steps.filtered.outputs.run-ios }}
+      run-macos: ${{ steps.filtered.outputs.run-macos }}
+      run-tests: ${{ steps.filtered.outputs.run-tests }}
+      run-ubuntu: ${{ steps.filtered.outputs.run-ubuntu }}
+      run-emscripten: ${{ steps.filtered.outputs.run-emscripten }}
+      run-wasi: ${{ steps.filtered.outputs.run-wasi }}
+      run-windows-tests: ${{ steps.filtered.outputs.run-windows-tests }}
     steps:
     - name: Set up Python
       uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
@@ -123,3 +123,51 @@ jobs:
         GITHUB_EVENT_NAME: ${{ github.event_name }}
         CCF_TARGET_REF: ${{ github.base_ref || github.event.repository.default_branch }}
         CCF_HEAD_REF: ${{ github.event.pull_request.head.sha || github.sha }}
+
+    # Draft PRs are still useful for early feedback, but running the complete
+    # platform matrix on every incremental push is unnecessarily expensive.
+    # Dedicated lightweight workflows (for example lint and JIT's interpreter
+    # build) can continue to run while these outputs suppress the full matrix.
+    - name: Filter draft PRs
+      id: filtered
+      shell: bash
+      run: |
+        if [[ "${DRAFT_PR}" == "true" ]]; then
+          value=false
+          echo "run-android=${value}" >> "$GITHUB_OUTPUT"
+          echo "run-ci-fuzz=${value}" >> "$GITHUB_OUTPUT"
+          echo "run-ci-fuzz-stdlib=${value}" >> "$GITHUB_OUTPUT"
+          echo "run-docs=${value}" >> "$GITHUB_OUTPUT"
+          echo "run-ios=${value}" >> "$GITHUB_OUTPUT"
+          echo "run-macos=${value}" >> "$GITHUB_OUTPUT"
+          echo "run-tests=${value}" >> "$GITHUB_OUTPUT"
+          echo "run-ubuntu=${value}" >> "$GITHUB_OUTPUT"
+          echo "run-emscripten=${value}" >> "$GITHUB_OUTPUT"
+          echo "run-wasi=${value}" >> "$GITHUB_OUTPUT"
+          echo "run-windows-tests=${value}" >> "$GITHUB_OUTPUT"
+        else
+          echo "run-android=${RUN_ANDROID}" >> "$GITHUB_OUTPUT"
+          echo "run-ci-fuzz=${RUN_CI_FUZZ}" >> "$GITHUB_OUTPUT"
+          echo "run-ci-fuzz-stdlib=${RUN_CI_FUZZ_STDLIB}" >> "$GITHUB_OUTPUT"
+          echo "run-docs=${RUN_DOCS}" >> "$GITHUB_OUTPUT"
+          echo "run-ios=${RUN_IOS}" >> "$GITHUB_OUTPUT"
+          echo "run-macos=${RUN_MACOS}" >> "$GITHUB_OUTPUT"
+          echo "run-tests=${RUN_TESTS}" >> "$GITHUB_OUTPUT"
+          echo "run-ubuntu=${RUN_UBUNTU}" >> "$GITHUB_OUTPUT"
+          echo "run-emscripten=${RUN_EMSCRIPTEN}" >> "$GITHUB_OUTPUT"
+          echo "run-wasi=${RUN_WASI}" >> "$GITHUB_OUTPUT"
+          echo "run-windows-tests=${RUN_WINDOWS_TESTS}" >> "$GITHUB_OUTPUT"
+        fi
+      env:
+        DRAFT_PR: ${{ github.event_name == 'pull_request' && github.event.pull_request.draft }}
+        RUN_ANDROID: ${{ steps.changes.outputs.run-android }}
+        RUN_CI_FUZZ: ${{ steps.changes.outputs.run-ci-fuzz }}
+        RUN_CI_FUZZ_STDLIB: ${{ steps.changes.outputs.run-ci-fuzz-stdlib }}
+        RUN_DOCS: ${{ steps.changes.outputs.run-docs }}
+        RUN_IOS: ${{ steps.changes.outputs.run-ios }}
+        RUN_MACOS: ${{ steps.changes.outputs.run-macos }}
+        RUN_TESTS: ${{ steps.changes.outputs.run-tests }}
+        RUN_UBUNTU: ${{ steps.changes.outputs.run-ubuntu }}
+        RUN_EMSCRIPTEN: ${{ steps.changes.outputs.run-emscripten }}
+        RUN_WASI: ${{ steps.changes.outputs.run-wasi }}
+        RUN_WINDOWS_TESTS: ${{ steps.changes.outputs.run-windows-tests }}

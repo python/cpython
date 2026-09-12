@@ -1,6 +1,7 @@
 name: JIT
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
     paths: &paths
       - '**jit**'
       - 'Python/bytecodes.c'
@@ -47,6 +48,7 @@ jobs:
           ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
   windows:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     name: ${{ matrix.target }} (${{ matrix.debug && 'Debug' || 'Release' }})
 
     runs-on: ${{ matrix.runner }}
@@ -87,6 +89,7 @@ jobs:
           ./PCbuild/rt.bat ${{ matrix.debug && '-d' || '' }} -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
   macos:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     name: ${{ matrix.target }} (${{ matrix.debug && 'Debug' || 'Release' }})
 
     runs-on: ${{ matrix.runner }}
@@ -130,6 +133,7 @@ jobs:
           ./python.exe -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
   linux:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     name: ${{ matrix.target }} (${{ matrix.debug && 'Debug' || 'Release' }})
 
     runs-on: ${{ matrix.runner }}
@@ -168,6 +172,7 @@ jobs:
           ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
   linux-extras:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     name: ${{ matrix.name }}
 
     runs-on: ubuntu-26.04
