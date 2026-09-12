@@ -7,8 +7,8 @@
 
 import builtins
 import sys
-import traceback
 from codeop import CommandCompiler, compile_command
+lazy import traceback
 
 __all__ = ["InteractiveInterpreter", "InteractiveConsole", "interact",
            "compile_command"]
