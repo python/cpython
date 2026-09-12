@@ -318,6 +318,8 @@ class FormatTest(unittest.TestCase):
                         "format argument 1: too big for width")
         test_exc_common('%*r', (-2**1000, 1), OverflowError,
                         "format argument 1: too big for width")
+        test_exc_common('%*r', (-maxsize - 1, 1), OverflowError,
+                        "format argument 1: too big for width")
         test_exc_common('%.*r', (2**1000, 1), OverflowError,
                         "format argument 1: too big for precision")
         test_exc_common('%.*r', (-2**1000, 1), OverflowError,

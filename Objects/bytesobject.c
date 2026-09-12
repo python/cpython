@@ -803,6 +803,11 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                 }
                 if (width < 0) {
                     flags |= F_LJUST;
+                    if (width < -PY_SSIZE_T_MAX) {
+                        FORMAT_ERROR(PyExc_OverflowError,
+                                     "too big for width%s", "");
+                        goto error;
+                    }
                     width = -width;
                 }
                 if (--fmtcnt >= 0)
