@@ -715,6 +715,14 @@ xml
   building a tree for it.
   (Contributed by Serhiy Storchaka in :gh:`63102`.)
 
+* Add :class:`~xml.etree.ElementTree.XMLPullTarget`, a parser target which
+  reports elements without children, and
+  :meth:`~xml.etree.ElementTree.XMLPullParser.expand`, which builds the
+  subtree of a reported element.
+  They allow to process a document of any size with a constant amount of
+  memory, like :mod:`xml.dom.pulldom`, but much faster.
+  (Contributed by Serhiy Storchaka in :gh:`63102`.)
+
 zipfile
 -------
 

@@ -1681,6 +1681,42 @@ class IterparseTest(unittest.TestCase):
             ])
             self.assertIsNone(it.root)
 
+    def test_pull_target(self):
+        with open(SIMPLE_XMLFILE, 'rb') as f:
+            it = ET.iterparse(f, events=('start', 'end'),
+                              target=ET.XMLPullTarget())
+            self.assertEqual([(action, elem.tag) for action, elem in it], [
+                ('start', 'root'),
+                ('start', 'element'),
+                ('end', 'element'),
+                ('start', 'element'),
+                ('end', 'element'),
+                ('start', 'empty-element'),
+                ('end', 'empty-element'),
+                ('end', 'root'),
+            ])
+            self.assertIsNone(it.root)
+
+    def test_pull_target_expand(self):
+        with open(SIMPLE_XMLFILE, 'rb') as f:
+            it = ET.iterparse(f, events=('start', 'end'),
+                              target=ET.XMLPullTarget())
+            action, root = next(it)
+            self.assertEqual((action, root.tag), ('start', 'root'))
+            action, elem = next(it)
+            self.assertEqual((action, elem.tag), ('start', 'element'))
+            self.assertIs(it.expand(elem), elem)
+            self.assertEqual(ET.tostring(elem).rstrip(),
+                             b'<element key="value">text</element>')
+            # the events of the subtree are consumed
+            self.assertEqual([(action, elem.tag) for action, elem in it], [
+                ('start', 'element'),
+                ('end', 'element'),
+                ('start', 'empty-element'),
+                ('end', 'empty-element'),
+                ('end', 'root'),
+            ])
+
     def test_parser_with_target(self):
         with open(SIMPLE_XMLFILE, 'rb') as f:
             parser = ET.XMLParser(target=self.Target())
@@ -1878,6 +1914,59 @@ class XMLPullParserTest(unittest.TestCase):
         self.assertEqual(
             list(islice(parser.read_events(), max_events)),
             expected)
+
+    def test_pull_target(self):
+        # the target reports elements without children
+        parser = ET.XMLPullParser(events=('start', 'end', 'comment', 'pi'),
+                                  target=ET.XMLPullTarget())
+        self._feed(parser,
+                   "<root a='1'><!-- c --><?pitarget data?><a>t<b/></a></root>")
+        events = list(parser.read_events())
+        self.assertEqual([(action, getattr(obj.tag, '__name__', obj.tag))
+                          for action, obj in events],
+                         [('start', 'root'), ('comment', 'Comment'),
+                          ('pi', 'ProcessingInstruction'),
+                          ('start', 'a'), ('start', 'b'), ('end', 'b'),
+                          ('end', 'a'), ('end', 'root')])
+        root = events[0][1]
+        self.assertEqual(root.attrib, {'a': '1'})
+        self.assertEqual(len(root), 0)
+        self.assertEqual(events[1][1].text, ' c ')
+        self.assertEqual(events[2][1].text, 'pitarget data')
+        a_start, a_end = events[3][1], events[-2][1]
+        self.assertIs(a_start, a_end)
+        self.assertEqual(a_end.text, 't')
+        self.assertEqual(len(a_end), 0)
+        self.assertIsNone(parser.close())
+
+    def test_pull_target_expand(self):
+        parser = ET.XMLPullParser(events=('start', 'end'),
+                                  target=ET.XMLPullTarget())
+        self._feed(parser, "<root><a x='1'>t<b>deep</b></a><c/></root>")
+        parser.close()
+        events = parser.read_events()
+        action, root = next(events)
+        self.assertEqual((action, root.tag), ('start', 'root'))
+        action, a = next(events)
+        self.assertEqual((action, a.tag), ('start', 'a'))
+        self.assertIs(parser.expand(a), a)
+        self.assertEqual(ET.tostring(a), b'<a x="1">t<b>deep</b></a>')
+        # the events of the subtree are consumed, the rest is intact
+        self.assertEqual([(action, obj.tag) for action, obj in events],
+                         [('start', 'c'), ('end', 'c'), ('end', 'root')])
+
+    def test_pull_target_expand_incomplete(self):
+        parser = ET.XMLPullParser(events=('start', 'end'),
+                                  target=ET.XMLPullTarget())
+        self._feed(parser, "<root><a>t")
+        events = parser.read_events()
+        next(events)
+        action, a = next(events)
+        with self.assertRaises(ValueError):
+            parser.expand(a)
+        self._feed(parser, "</a></root>")
+        self.assertIs(parser.expand(a), a)
+        self.assertEqual(ET.tostring(a), b'<a>t</a>')
 
     def assert_event_tags(self, parser, expected, max_events=None):
         events = islice(parser.read_events(), max_events)

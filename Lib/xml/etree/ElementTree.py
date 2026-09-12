@@ -84,7 +84,7 @@ __all__ = [
     "tostring", "tostringlist",
     "TreeBuilder",
     "XML", "XMLID",
-    "XMLParser", "XMLPullParser",
+    "XMLParser", "XMLPullParser", "XMLPullTarget",
     "register_namespace",
     "canonicalize", "C14NWriterTarget",
     ]
@@ -1287,6 +1287,17 @@ def iterparse(source, events=None, parser=None, *, target=None):
     class IterParseIterator(collections.abc.Iterator):
         __next__ = gen.__next__
 
+        def expand(self, element):
+            """Build the subtree of *element*, reading more data if needed."""
+            while True:
+                try:
+                    return pullparser.expand(element)
+                except ValueError:
+                    data = source.read(16 * 1024)
+                    if not data:
+                        raise
+                    pullparser.feed(data)
+
         def close(self):
             nonlocal close_source
             if close_source:
@@ -1364,6 +1375,39 @@ class XMLPullParser:
                 raise event
             else:
                 yield event
+
+    def expand(self, element):
+        """Build the subtree of *element* from the queued events.
+
+        The events of the descendants of *element* are consumed and the
+        corresponding objects are added to it, up to the "end" event of
+        *element* itself.  Returns *element*.
+
+        Both the "start" and the "end" events should be reported, and
+        the "start" event of *element* should be already read.
+        Raise ValueError if the element is not complete yet: feed more data
+        and call expand() again.
+        """
+        events = self._events_queue
+        stack = [element]
+        n = 0
+        for event in events:
+            n += 1
+            if isinstance(event, Exception):
+                raise event
+            kind, obj = event
+            if kind == 'start':
+                stack[-1].append(obj)
+                stack.append(obj)
+            elif kind == 'end':
+                if obj is element:
+                    for _ in range(n):
+                        events.popleft()
+                    return element
+                stack.pop()
+            elif kind in ('comment', 'pi'):
+                stack[-1].append(obj)
+        raise ValueError("the element is not complete yet")
 
     def flush(self):
         if self._parser is None:
@@ -1549,6 +1593,82 @@ class TreeBuilder:
                 self._elem[-1].append(elem)
             self._tail = 1
         return elem
+
+
+class XMLPullTarget:
+    """Parser target which reports elements without building a tree.
+
+    It can be used with XMLPullParser and iterparse().  The reported object
+    is an Element with the tag, the attributes and, for the "end" event, the
+    text, but without children: they are reported as their own events.
+    Nothing is kept, so a document of any size can be parsed with a constant
+    amount of memory.
+
+    Use XMLPullParser.expand() to build the subtree of an element.
+
+    """
+    def __init__(self, element_factory=None):
+        if element_factory is None:
+            element_factory = Element
+        self._factory = element_factory
+        self._stack = []
+        self._last = None
+        self._tail = False
+
+    def start(self, tag, attrib):
+        """Open a new element.
+
+        Returns the new Element, without children and text.
+        """
+        elem = self._factory(tag, attrib)
+        self._stack.append(elem)
+        self._last = elem
+        self._tail = False
+        return elem
+
+    def data(self, data):
+        """Add text to the current element or to the last closed one."""
+        last = self._last
+        if last is None:
+            return
+        if self._tail:
+            last.tail = last.tail + data if last.tail else data
+        else:
+            last.text = last.text + data if last.text else data
+
+    def end(self, tag):
+        """Close the current element.
+
+        Returns the same Element which was returned by start(), with its
+        text, but still without children.
+        """
+        elem = self._stack.pop()
+        self._last = elem
+        self._tail = True
+        return elem
+
+    def comment(self, text):
+        """Handle a comment.  Returns a comment element."""
+        elem = Comment(text)
+        self._last = elem
+        self._tail = True
+        return elem
+
+    def pi(self, target, text=None):
+        """Handle a processing instruction.
+
+        Returns a processing instruction element.
+        """
+        elem = ProcessingInstruction(target, text)
+        self._last = elem
+        self._tail = True
+        return elem
+
+    def close(self):
+        """Flush the buffers and return None."""
+        self._stack.clear()
+        self._last = None
+        return None
 
 
 # also see ElementTree and TreeBuilder
