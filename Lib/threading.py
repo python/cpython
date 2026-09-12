@@ -1144,7 +1144,21 @@ class Thread:
             with _active_limbo_lock:
                 del _limbo[self]
             raise
-        self._started.wait()  # Will set ident and native_id
+        # Wait for the thread to signal that it has started (this also
+        # ensures that ident and native_id are set).  Waiting on the
+        # Python-level _started event alone can hang forever: if the thread
+        # dies during its bootstrap (e.g. a MemoryError while calling
+        # _bootstrap), _started is never set.  The C-level event is also
+        # notified when the thread exits, so this wait cannot hang
+        # (see gh-140746).
+        self._os_thread_handle._wait_for_started()
+        if not self._started.is_set():
+            # The thread terminated before signalling that it started: it
+            # never ran and never will.  Clean up and fail loudly rather
+            # than returning a dead, half-initialized thread.
+            with _active_limbo_lock:
+                del _limbo[self]
+            raise RuntimeError("thread failed to start")
 
     def run(self):
         """Method representing the thread's activity.
@@ -1205,6 +1219,9 @@ class Thread:
                 self._set_native_id()
             self._set_os_name()
             self._started.set()
+            # Signal the C-level event *after* _started so that a waiter
+            # woken by it always observes _started as set (gh-140746).
+            self._os_thread_handle._set_started()
             with _active_limbo_lock:
                 _active[self._ident] = self
                 del _limbo[self]
