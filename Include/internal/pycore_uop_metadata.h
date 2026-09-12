@@ -103,6 +103,7 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_UNARY_INVERT] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_GUARD_NOS_INT] = HAS_EXIT_FLAG,
     [_GUARD_TOS_INT] = HAS_EXIT_FLAG,
+    [_GUARD_TOS_EXACT_INT] = HAS_EXIT_FLAG,
     [_GUARD_NOS_OVERFLOWED] = HAS_EXIT_FLAG,
     [_GUARD_TOS_OVERFLOWED] = HAS_EXIT_FLAG,
     [_BINARY_OP_MULTIPLY_INT] = HAS_EXIT_FLAG | HAS_PURE_FLAG,
@@ -1059,6 +1060,15 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { 1, 1, _GUARD_TOS_INT_r11 },
             { 2, 2, _GUARD_TOS_INT_r22 },
             { 3, 3, _GUARD_TOS_INT_r33 },
+        },
+    },
+    [_GUARD_TOS_EXACT_INT] = {
+        .best = { 0, 1, 2, 3 },
+        .entries = {
+            { 1, 0, _GUARD_TOS_EXACT_INT_r01 },
+            { 1, 1, _GUARD_TOS_EXACT_INT_r11 },
+            { 2, 2, _GUARD_TOS_EXACT_INT_r22 },
+            { 3, 3, _GUARD_TOS_EXACT_INT_r33 },
         },
     },
     [_GUARD_NOS_OVERFLOWED] = {
@@ -4145,6 +4155,10 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_GUARD_TOS_INT_r11] = _GUARD_TOS_INT,
     [_GUARD_TOS_INT_r22] = _GUARD_TOS_INT,
     [_GUARD_TOS_INT_r33] = _GUARD_TOS_INT,
+    [_GUARD_TOS_EXACT_INT_r01] = _GUARD_TOS_EXACT_INT,
+    [_GUARD_TOS_EXACT_INT_r11] = _GUARD_TOS_EXACT_INT,
+    [_GUARD_TOS_EXACT_INT_r22] = _GUARD_TOS_EXACT_INT,
+    [_GUARD_TOS_EXACT_INT_r33] = _GUARD_TOS_EXACT_INT,
     [_GUARD_NOS_OVERFLOWED_r02] = _GUARD_NOS_OVERFLOWED,
     [_GUARD_NOS_OVERFLOWED_r12] = _GUARD_NOS_OVERFLOWED,
     [_GUARD_NOS_OVERFLOWED_r22] = _GUARD_NOS_OVERFLOWED,
@@ -5583,6 +5597,11 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_GUARD_TOS_DICT_r11] = "_GUARD_TOS_DICT_r11",
     [_GUARD_TOS_DICT_r22] = "_GUARD_TOS_DICT_r22",
     [_GUARD_TOS_DICT_r33] = "_GUARD_TOS_DICT_r33",
+    [_GUARD_TOS_EXACT_INT] = "_GUARD_TOS_EXACT_INT",
+    [_GUARD_TOS_EXACT_INT_r01] = "_GUARD_TOS_EXACT_INT_r01",
+    [_GUARD_TOS_EXACT_INT_r11] = "_GUARD_TOS_EXACT_INT_r11",
+    [_GUARD_TOS_EXACT_INT_r22] = "_GUARD_TOS_EXACT_INT_r22",
+    [_GUARD_TOS_EXACT_INT_r33] = "_GUARD_TOS_EXACT_INT_r33",
     [_GUARD_TOS_FLOAT] = "_GUARD_TOS_FLOAT",
     [_GUARD_TOS_FLOAT_r01] = "_GUARD_TOS_FLOAT_r01",
     [_GUARD_TOS_FLOAT_r11] = "_GUARD_TOS_FLOAT_r11",
@@ -6359,6 +6378,8 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _GUARD_NOS_INT:
             return 0;
         case _GUARD_TOS_INT:
+            return 0;
+        case _GUARD_TOS_EXACT_INT:
             return 0;
         case _GUARD_NOS_OVERFLOWED:
             return 0;
