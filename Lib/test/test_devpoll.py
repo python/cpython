@@ -72,9 +72,15 @@ class DevPollTests(unittest.TestCase):
 
         self.assertEqual(bufs, [MSG] * NUM_PIPES)
 
+    def create_pipe(self):
+        w, r = os.pipe()
+        self.addCleanup(os.close, w)
+        self.addCleanup(os.close, r)
+        return (w, r)
+
     def test_timeout_overflow(self):
         pollster = select.devpoll()
-        w, r = os.pipe()
+        w, r = self.create_pipe()
         pollster.register(w)
 
         pollster.poll(-1)
@@ -129,7 +135,7 @@ class DevPollTests(unittest.TestCase):
 
     def test_events_mask_overflow(self):
         pollster = select.devpoll()
-        w, r = os.pipe()
+        w, r = self.create_pipe()
         pollster.register(w)
         # Issue #17919
         self.assertRaises(ValueError, pollster.register, 0, -1)
@@ -141,7 +147,7 @@ class DevPollTests(unittest.TestCase):
     def test_events_mask_overflow_c_limits(self):
         from _testcapi import USHRT_MAX
         pollster = select.devpoll()
-        w, r = os.pipe()
+        w, r = self.create_pipe()
         pollster.register(w)
         # Issue #17919
         self.assertRaises(OverflowError, pollster.register, 0, USHRT_MAX + 1)

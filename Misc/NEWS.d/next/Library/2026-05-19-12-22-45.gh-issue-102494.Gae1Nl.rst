@@ -1,0 +1,1 @@
+:mod:`select`: Fixed excessive memory allocation and data race issues in Solaris specific :func:`select.devpoll`. Patch by Jakub Kulik.
