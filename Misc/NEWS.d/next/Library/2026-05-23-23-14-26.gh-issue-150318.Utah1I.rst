@@ -1,1 +1,2 @@
-Fix ``quantiles(method='exclusive')`` returning unsorted cut points for duplicate floats.
+Fix :func:`statistics.quantiles` returning unsorted cut points for duplicate
+floats.
