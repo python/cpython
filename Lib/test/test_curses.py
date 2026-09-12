@@ -2698,6 +2698,18 @@ class TestCurses(unittest.TestCase):
             self.assertEqual(box.gather(), text + ' ')
 
     @requires_wide_build
+    def test_textbox_combining_fill_last_cell(self):
+        # A combining mark typed into the lower-right cell, which is written
+        # with insch(), attaches to the character already there instead of
+        # taking a cell of its own.
+        text = 'abe\u0301'          # 'e' + COMBINING ACUTE ACCENT in the corner
+        if self._encodable(text):
+            box, win = self._make_textbox(1, 3, stripspaces=0)
+            for ch in text:
+                box.do_command(ch)
+            self.assertEqual(box.gather(), text)
+
+    @requires_wide_build
     def test_textbox_double_width(self):
         # A double-width (East Asian) character occupies two cells.  gather()
         # reads a whole line at a time so that the second cell, which holds
