@@ -1793,6 +1793,76 @@ _encoder_iterate_dict_lock_held(PyEncoderObject *s, PyUnicodeWriter *writer,
     return 0;
 }
 
+/* Sort the (key, value) pairs in separate groups, because keys of
+   different types are not comparable: strings, numbers and None.
+   Unsupported keys are skipped if skipkeys is true and reported otherwise.
+   Return a new list, or NULL on error. */
+static PyObject *
+encoder_sort_items(PyObject *items, int skipkeys)
+{
+    enum {STRINGS, NUMBERS, NONES, NGROUPS};
+    PyObject *groups[NGROUPS] = {NULL};
+    PyObject *result = NULL;
+
+    for (int i = 0; i < NGROUPS; i++) {
+        groups[i] = PyList_New(0);
+        if (groups[i] == NULL) {
+            goto done;
+        }
+    }
+    for (Py_ssize_t i = 0; i < PyList_GET_SIZE(items); i++) {
+        PyObject *item = PyList_GET_ITEM(items, i);
+        if (!PyTuple_Check(item) || PyTuple_GET_SIZE(item) != 2) {
+            PyErr_SetString(PyExc_ValueError, "items must return 2-tuples");
+            goto done;
+        }
+        PyObject *key = PyTuple_GET_ITEM(item, 0);
+        int group;
+        if (PyUnicode_Check(key)) {
+            group = STRINGS;
+        }
+        else if (key == Py_None) {
+            group = NONES;
+        }
+        else if (PyLong_Check(key) || PyFloat_Check(key)) {  // includes bool
+            group = NUMBERS;
+        }
+        else if (skipkeys) {
+            continue;
+        }
+        else {
+            PyErr_Format(PyExc_TypeError,
+                         "keys must be str, int, float, bool or None, "
+                         "not %.100s", Py_TYPE(key)->tp_name);
+            goto done;
+        }
+        if (PyList_Append(groups[group], item) < 0) {
+            goto done;
+        }
+    }
+    /* There is at most one None key. */
+    if (PyList_Sort(groups[STRINGS]) < 0 ||
+        PyList_Sort(groups[NUMBERS]) < 0)
+    {
+        goto done;
+    }
+    result = groups[STRINGS];
+    groups[STRINGS] = NULL;
+    for (int i = STRINGS + 1; i < NGROUPS; i++) {
+        Py_ssize_t size = PyList_GET_SIZE(result);
+        if (PyList_SetSlice(result, size, size, groups[i]) < 0) {
+            Py_CLEAR(result);
+            goto done;
+        }
+    }
+
+done:
+    for (int i = 0; i < NGROUPS; i++) {
+        Py_XDECREF(groups[i]);
+    }
+    return result;
+}
+
 static int
 encoder_listencode_dict(PyEncoderObject *s, PyUnicodeWriter *writer,
                        PyObject *dct,
@@ -1837,9 +1907,20 @@ encoder_listencode_dict(PyEncoderObject *s, PyUnicodeWriter *writer,
 
     if (s->sort_keys || !PyAnyDict_CheckExact(dct)) {
         PyObject *items = PyMapping_Items(dct);
-        if (items == NULL || (s->sort_keys && PyList_Sort(items) < 0)) {
-            Py_XDECREF(items);
+        if (items == NULL) {
             goto bail;
+        }
+        if (s->sort_keys && PyList_Sort(items) < 0) {
+            if (!PyErr_ExceptionMatches(PyExc_TypeError)) {
+                Py_DECREF(items);
+                goto bail;
+            }
+            /* Keys of different types are not comparable. */
+            PyErr_Clear();
+            Py_SETREF(items, encoder_sort_items(items, s->skipkeys));
+            if (items == NULL) {
+                goto bail;
+            }
         }
 
         int result;
