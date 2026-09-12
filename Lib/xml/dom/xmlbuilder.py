@@ -336,8 +336,6 @@ del NodeFilter
 class DocumentLS:
     """Mixin to create documents that conform to the load/save spec."""
 
-    async_ = False
-
     def _get_async(self):
         return False
 
@@ -345,6 +343,8 @@ class DocumentLS:
         if flag:
             raise xml.dom.NotSupportedErr(
                 "asynchronous document loading is not supported")
+
+    async_ = property(_get_async, _set_async)
 
     def abort(self):
         # What does it mean to "clear" a document?  Does the
