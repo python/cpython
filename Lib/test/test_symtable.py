@@ -555,6 +555,76 @@ class ComprehensionTests(unittest.TestCase):
                 self.assertEqual(len([x for x in ids if x == 'x']), 1)
 
 
+class EntryAttributeTests(unittest.TestCase):
+    """Scope attributes of the low-level symbol table entries."""
+
+    @classmethod
+    def setUpClass(cls):
+        import _symtable
+        cls.TYPE_ANNOTATION = _symtable.TYPE_ANNOTATION
+        cls.top = _symtable.symtable(
+            "async def agen(): yield\n"
+            "def gen(): yield\n"
+            "def f(): pass\n"
+            "x: int = 1\n"
+            "class C:\n"
+            "    def m(self): return __class__\n"
+            "    if x:\n"
+            "        y: int = 2\n"
+            "class P:\n"
+            "    pass\n",
+            "<test>", "exec")
+
+    @staticmethod
+    def find(table, name):
+        return next(c for c in table.children if c.name == name)
+
+    def test_is_generator(self):
+        self.assertTrue(self.find(self.top, "agen").is_generator)
+        self.assertTrue(self.find(self.top, "gen").is_generator)
+        self.assertFalse(self.find(self.top, "f").is_generator)
+
+    def test_is_coroutine(self):
+        self.assertTrue(self.find(self.top, "agen").is_coroutine)
+        self.assertFalse(self.find(self.top, "gen").is_coroutine)
+        self.assertFalse(self.find(self.top, "f").is_coroutine)
+
+    def test_has_annotations(self):
+        self.assertTrue(self.top.has_annotations)
+        self.assertTrue(self.find(self.top, "C").has_annotations)
+        self.assertFalse(self.find(self.top, "f").has_annotations)
+
+    def test_has_conditional_annotations(self):
+        # Module annotations are always conditional.
+        self.assertTrue(self.top.has_conditional_annotations)
+        self.assertTrue(
+            self.find(self.top, "C").has_conditional_annotations)
+        self.assertFalse(
+            self.find(self.top, "P").has_conditional_annotations)
+
+    def test_needs_class_closure(self):
+        self.assertTrue(self.find(self.top, "C").needs_class_closure)
+        self.assertFalse(self.find(self.top, "P").needs_class_closure)
+
+    def test_needs_classdict(self):
+        self.assertTrue(self.find(self.top, "C").needs_classdict)
+        self.assertFalse(self.find(self.top, "P").needs_classdict)
+
+    def test_annotation_block(self):
+        anno = self.top.annotation_block
+        self.assertIsNotNone(anno)
+        self.assertIn(anno, self.top.children)
+        self.assertEqual(anno.type, self.TYPE_ANNOTATION)
+        self.assertIsNone(self.find(self.top, "f").annotation_block)
+        self.assertIsNotNone(self.find(self.top, "C").annotation_block)
+
+    def test_can_see_class_scope(self):
+        C = self.find(self.top, "C")
+        self.assertTrue(C.annotation_block.can_see_class_scope)
+        self.assertFalse(self.top.annotation_block.can_see_class_scope)
+        self.assertFalse(self.find(self.top, "f").can_see_class_scope)
+
+
 class ASTInputTests(unittest.TestCase):
     maxDiff = None
 
