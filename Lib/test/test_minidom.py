@@ -561,6 +561,92 @@ class MinidomTest(unittest.TestCase):
         dom.unlink()
         self.assertEqual(str, domstr)
 
+    def testWriteXMLNamespaceDeclarations(self):
+        dom = Document()
+        root = dom.appendChild(
+            dom.createElementNS("http://xml.python.org/ns", "p:root"))
+        child = root.appendChild(
+            dom.createElementNS("http://xml.python.org/ns", "p:child"))
+        child.setAttributeNS("http://xml.python.org/ns2", "q:attr", "value")
+        self.assertEqual(dom.documentElement.toxml(),
+                '<p:root xmlns:p="http://xml.python.org/ns">'
+                '<p:child xmlns:q="http://xml.python.org/ns2" '
+                'q:attr="value"/></p:root>')
+        dom.unlink()
+
+    def testWriteXMLDefaultNamespace(self):
+        dom = Document()
+        root = dom.appendChild(
+            dom.createElementNS("http://xml.python.org/ns", "root"))
+        root.appendChild(
+            dom.createElementNS("http://xml.python.org/ns", "child"))
+        # An element in no namespace undeclares the default namespace.
+        root.appendChild(dom.createElement("nons"))
+        self.assertEqual(dom.documentElement.toxml(),
+                '<root xmlns="http://xml.python.org/ns">'
+                '<child/><nons xmlns=""/></root>')
+        dom.unlink()
+
+    def testWriteXMLAttributeNamespacePrefix(self):
+        dom = Document()
+        root = dom.appendChild(dom.createElement("root"))
+        # Attributes cannot use the default namespace, a prefix is invented.
+        root.setAttributeNS("http://xml.python.org/ns", "attr", "value")
+        root.setAttributeNS("http://xml.python.org/ns2", "attr2", "value2")
+        self.assertEqual(dom.documentElement.toxml(),
+                '<root xmlns:ns0="http://xml.python.org/ns" '
+                'xmlns:ns1="http://xml.python.org/ns2" '
+                'ns0:attr="value" ns1:attr2="value2"/>')
+        dom.unlink()
+
+    def testWriteXMLXMLPrefix(self):
+        dom = Document()
+        root = dom.appendChild(dom.createElement("root"))
+        # The "xml" prefix is bound by definition and is never declared.
+        root.setAttributeNS(xml.dom.XML_NAMESPACE, "xml:lang", "en")
+        self.assertEqual(dom.documentElement.toxml(), '<root xml:lang="en"/>')
+        dom.unlink()
+
+    def testWriteXMLExistingNamespaceDeclarations(self):
+        for str in [
+            '<p:root xmlns:p="http://xml.python.org/ns"><p:child/></p:root>',
+            '<root xmlns="http://xml.python.org/ns"><child xmlns=""/></root>',
+            '<p:root xmlns:p="http://xml.python.org/ns">'
+                '<p:child xmlns:p="http://xml.python.org/ns2"/></p:root>',
+            '<root xmlns:p="http://xml.python.org/ns" p:attr="value"/>',
+        ]:
+            with self.subTest(str=str):
+                dom = parseString(str)
+                self.assertEqual(dom.documentElement.toxml(), str)
+                dom.unlink()
+
+    def testWriteXMLNotANamespaceDeclaration(self):
+        # an attribute whose name only starts with "xmlns" is not one
+        dom = parseString('<root xmlns="http://xml.python.org/ns">'
+                          '<child xmlnsabc="v"><g/></child></root>')
+        self.assertEqual(dom.documentElement.toxml(),
+                '<root xmlns="http://xml.python.org/ns">'
+                '<child xmlnsabc="v"><g/></child></root>')
+        dom.unlink()
+
+        dom = Document()
+        root = dom.appendChild(
+            dom.createElementNS("http://xml.python.org/ns", "root"))
+        child = root.appendChild(dom.createElement("child"))
+        child.setAttribute("xmlnsabc", "v")
+        self.assertEqual(dom.documentElement.toxml(),
+                '<root xmlns="http://xml.python.org/ns">'
+                '<child xmlns="" xmlnsabc="v"/></root>')
+        dom.unlink()
+
+    def testWriteXMLDoesNotModifyDocument(self):
+        dom = Document()
+        root = dom.appendChild(
+            dom.createElementNS("http://xml.python.org/ns", "p:root"))
+        root.toxml()
+        self.assertEqual(root.attributes.length, 0)
+        dom.unlink()
+
     def test_toxml_quote_text(self):
         dom = Document()
         elem = dom.appendChild(dom.createElement('elem'))
