@@ -47,10 +47,12 @@ find_module_state_by_def(PyTypeObject *type)
 module _collections
 class _tuplegetter "_tuplegetterobject *" "clinic_state()->tuplegetter_type"
 class _collections.deque "dequeobject *" "clinic_state()->deque_type"
+class _collections.defaultdict "defdictobject *" "clinic_state()->defdict_type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=a033cc2a8476b3f1]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=9c364d64d6b7ca9a]*/
 
 typedef struct dequeobject dequeobject;
+typedef struct defdictobject defdictobject;
 
 /* We can safely assume type to be the defining class,
  * since tuplegetter is not a base type */
@@ -2214,27 +2216,36 @@ static PyType_Spec dequereviter_spec = {
 
 /* defaultdict type *********************************************************/
 
-typedef struct {
+struct defdictobject {
     PyDictObject dict;
     PyObject *default_factory;
-} defdictobject;
+};
 
 #define defdictobject_CAST(op)  ((defdictobject *)(op))
 
 static PyType_Spec defdict_spec;
 
-PyDoc_STRVAR(defdict_missing_doc,
-"__missing__(key) # Called by __getitem__ for missing key; pseudo-code:\n\
-  if self.default_factory is None: raise KeyError((key,))\n\
-  self[key] = value = self.default_factory()\n\
-  return value\n\
-");
+/*[clinic input]
+@critical_section
+_collections.defaultdict.__missing__ as defdict_missing
+
+    key: object
+    /
+
+Called by __getitem__ for missing key.
+
+Pseudo-code:
+  if self.default_factory is None:
+    raise KeyError((key,))
+  self[key] = value = self.default_factory()
+  return value
+[clinic start generated code]*/
 
 static PyObject *
-defdict_missing(PyObject *op, PyObject *key)
+defdict_missing_impl(defdictobject *self, PyObject *key)
+/*[clinic end generated code: output=a21796ca845265e6 input=cd46877f8d688f3e]*/
 {
-    defdictobject *dd = defdictobject_CAST(op);
-    PyObject *factory = dd->default_factory;
+    PyObject *factory = self->default_factory;
     PyObject *value;
     if (factory == NULL || factory == Py_None) {
         /* XXX Call dict.__missing__(key) */
@@ -2249,7 +2260,7 @@ defdict_missing(PyObject *op, PyObject *key)
     if (value == NULL)
         return value;
     PyObject *result = NULL;
-    (void)PyDict_SetDefaultRef(op, key, value, &result);
+    (void)PyDict_SetDefaultRef((PyObject *)self, key, value, &result);
     // 'result' is NULL, or a strong reference to 'value' or 'op[key]'
     Py_DECREF(value);
     return result;
@@ -2338,8 +2349,7 @@ of the dictionary's keys and values");
 
 
 static PyMethodDef defdict_methods[] = {
-    {"__missing__", defdict_missing, METH_O,
-     defdict_missing_doc},
+    DEFDICT_MISSING_METHODDEF
     {"copy", defdict_copy, METH_NOARGS,
      defdict_copy_doc},
     {"__copy__", defdict_copy, METH_NOARGS,
@@ -2371,8 +2381,9 @@ defdict_dealloc(PyObject *op)
 }
 
 static PyObject *
-defdict_repr(PyObject *op)
+defdict_repr_lock_held(PyObject *op)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
     defdictobject *dd = defdictobject_CAST(op);
     PyObject *baserepr;
     PyObject *defrepr;
@@ -2407,6 +2418,16 @@ defdict_repr(PyObject *op)
     Py_DECREF(defrepr);
     Py_DECREF(baserepr);
     return result;
+}
+
+static PyObject *
+defdict_repr(PyObject *op)
+{
+    PyObject *return_value;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    return_value = defdict_repr_lock_held(op);
+    Py_END_CRITICAL_SECTION();
+    return return_value;
 }
 
 static PyObject*
