@@ -2410,6 +2410,58 @@ static int test_repeated_init_and_inittab(void)
     return 0;
 }
 
+// Two different single-phase init functions for the same module name.
+static int cmfi_initfunc_a_calls = 0;
+static int cmfi_initfunc_b_calls = 0;
+
+static PyModuleDef cmfi_same_name_a_def = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "same_name",
+    .m_size = -1,
+};
+
+static PyModuleDef cmfi_same_name_b_def = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "same_name",
+    .m_size = -1,
+};
+
+static PyObject*
+PyInit_cmfi_same_name_a(void)
+{
+    cmfi_initfunc_a_calls++;
+    PyObject *mod = PyModule_Create(&cmfi_same_name_a_def);
+    if (mod == NULL || PyModule_AddStringConstant(mod, "which", "A") < 0) {
+        Py_XDECREF(mod);
+        return NULL;
+    }
+    return mod;
+}
+
+static PyObject*
+PyInit_cmfi_same_name_b(void)
+{
+    cmfi_initfunc_b_calls++;
+    PyObject *mod = PyModule_Create(&cmfi_same_name_b_def);
+    if (mod == NULL || PyModule_AddStringConstant(mod, "which", "B") < 0) {
+        Py_XDECREF(mod);
+        return NULL;
+    }
+    return mod;
+}
+
+static PyObject*
+create_same_name_b(PyObject* self, PyObject* spec)
+{
+    return PyImport_CreateModuleFromInitfunc(spec, PyInit_cmfi_same_name_b);
+}
+
+static PyObject*
+initfunc_calls(PyObject* self, PyObject* Py_UNUSED(args))
+{
+    return Py_BuildValue("(ii)", cmfi_initfunc_a_calls, cmfi_initfunc_b_calls);
+}
+
 static PyObject*
 create_module(PyObject* self, PyObject* spec)
 {
@@ -2424,6 +2476,10 @@ create_module(PyObject* self, PyObject* spec)
     if (PyUnicode_EqualToUTF8(name, "embedded_ext")) {
         Py_DECREF(name);
         return PyImport_CreateModuleFromInitfunc(spec, PyInit_embedded_ext);
+    }
+    if (PyUnicode_EqualToUTF8(name, "same_name")) {
+        Py_DECREF(name);
+        return PyImport_CreateModuleFromInitfunc(spec, PyInit_cmfi_same_name_a);
     }
     PyErr_Format(PyExc_LookupError, "static module %R not found", name);
     Py_DECREF(name);
@@ -2441,6 +2497,8 @@ exec_module(PyObject* self, PyObject* mod)
 
 static PyMethodDef create_static_module_methods[] = {
     {"create_module", create_module, METH_O, NULL},
+    {"create_same_name_b", create_same_name_b, METH_O, NULL},
+    {"initfunc_calls", initfunc_calls, METH_NOARGS, NULL},
     {"exec_module", exec_module, METH_O, NULL},
     {NULL}
 };
@@ -2472,6 +2530,12 @@ test_create_module_from_initfunc(void)
         L"import embedded_ext;"
         L"print(embedded_ext);"
         L"print(f'{embedded_ext.executed=}');"
+        // Same name, different initfuncs: the first one wins
+        L"spec = spec_from_loader('same_name', StaticExtensionImporter);"
+        L"a = create_static_module.create_module(spec);"
+        L"b = create_static_module.create_same_name_b(spec);"
+        L"print(f'{a.which=} {b.which=} {a is b=}');"
+        L"print(f'{create_static_module.initfunc_calls()=}');"
     };
     PyConfig config;
     if (PyImport_AppendInittab("create_static_module",
@@ -2496,7 +2560,10 @@ test_create_module_from_initfunc(void)
         "       return None\n"
         "   @staticmethod\n"
         "   def create_module(spec):\n"
-        "       return create_static_module.create_module(spec)\n"
+        "       mod = create_static_module.create_module(spec)\n"
+        "       print(f'created {spec.name}: '\n"
+        "             f'in sys.modules={spec.name in sys.modules}')\n"
+        "       return mod\n"
         "   @staticmethod\n"
         "   def exec_module(module):\n"
         "       create_static_module.exec_module(module)\n"
