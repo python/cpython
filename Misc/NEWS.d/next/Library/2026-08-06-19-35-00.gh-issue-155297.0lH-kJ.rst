@@ -1,0 +1,2 @@
+Fix incorrect ``\p{...}`` matches in character classes with
+:const:`~re.IGNORECASE`.
