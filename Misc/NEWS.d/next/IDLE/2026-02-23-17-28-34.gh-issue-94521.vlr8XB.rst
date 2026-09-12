@@ -1,0 +1,1 @@
+Copy or cut the current line when no text is selected in IDLE. Patch by Shixian Li.
