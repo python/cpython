@@ -245,6 +245,20 @@ writer_grow(PyObject *self_raw, PyObject *args)
 
 
 static PyObject*
+writer_get_data(PyObject *self_raw, PyObject *Py_UNUSED(args))
+{
+    WriterObject *self = (WriterObject *)self_raw;
+    if (writer_check(self) < 0) {
+        return NULL;
+    }
+
+    const char *data = PyBytesWriter_GetData(self->writer);
+    Py_ssize_t size = PyBytesWriter_GetSize(self->writer);
+    return PyBytes_FromStringAndSize(data, size);
+}
+
+
+static PyObject*
 writer_get_size(PyObject *self_raw, PyObject *Py_UNUSED(args))
 {
     WriterObject *self = (WriterObject *)self_raw;
@@ -252,8 +266,8 @@ writer_get_size(PyObject *self_raw, PyObject *Py_UNUSED(args))
         return NULL;
     }
 
-    Py_ssize_t alloc = PyBytesWriter_GetSize(self->writer);
-    return PyLong_FromSsize_t(alloc);
+    Py_ssize_t size = PyBytesWriter_GetSize(self->writer);
+    return PyLong_FromSsize_t(size);
 }
 
 
@@ -296,6 +310,7 @@ static PyMethodDef writer_methods[] = {
     {"format_i", _PyCFunction_CAST(writer_format_i), METH_VARARGS},
     {"resize", _PyCFunction_CAST(writer_resize), METH_VARARGS},
     {"grow", _PyCFunction_CAST(writer_grow), METH_VARARGS},
+    {"get_data", _PyCFunction_CAST(writer_get_data), METH_NOARGS},
     {"get_size", _PyCFunction_CAST(writer_get_size), METH_NOARGS},
     {"finish", _PyCFunction_CAST(writer_finish), METH_NOARGS},
     {"finish_with_size", _PyCFunction_CAST(writer_finish_with_size), METH_VARARGS},

@@ -3624,6 +3624,8 @@ _PyBytes_RepeatBuffer(char* dest, Py_ssize_t len_dest,
 
 // --- PyBytesWriter API -----------------------------------------------------
 
+#define PyBytesWrite_NEW_BYTE 0xff
+
 static inline char*
 byteswriter_data(PyBytesWriter *writer)
 {
@@ -3714,7 +3716,7 @@ byteswriter_resize(PyBytesWriter *writer, Py_ssize_t size, int resize)
 #ifdef Py_DEBUG
     Py_ssize_t allocated = byteswriter_allocated(writer);
     if (resize && allocated > old_allocated) {
-        memset(byteswriter_data(writer) + old_allocated, 0xff,
+        memset(byteswriter_data(writer) + old_allocated, PyBytesWrite_NEW_BYTE,
                allocated - old_allocated);
     }
 #endif
@@ -3752,7 +3754,8 @@ byteswriter_create(Py_ssize_t size, int use_bytearray)
         writer->size = size;
     }
 #ifdef Py_DEBUG
-    memset(byteswriter_data(writer), 0xff, byteswriter_allocated(writer));
+    memset(byteswriter_data(writer), PyBytesWrite_NEW_BYTE,
+           byteswriter_allocated(writer));
 #endif
     return writer;
 }

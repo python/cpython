@@ -321,6 +321,7 @@ class BaseWriterTest:
     SMALL_BUFFER = 11  # bytes
     assert SMALL_BUFFER < _testcapi.PyBytesWriter_small_buffer
     LARGE_BUFFER = _testcapi.PyBytesWriter_small_buffer + 17  # bytes
+    NEW_BYTE = b'\xff'
 
     def create_writer(self, alloc=0, string=b''):
         raise NotImplementedError
@@ -337,6 +338,39 @@ class BaseWriterTest:
         result = writer.finish()
         self.assertEqual(result, b'abc')
         self.assertEqual(type(result), self.RESULT_TYPE)
+
+    @unittest.skipUnless(support.Py_DEBUG, 'need Py_DEBUG')
+    def test_get_data(self):
+        # Test PyBytesWriter_GetData()
+        writer = self.create_writer(6)
+        NEW_BYTE = self.NEW_BYTE
+        self.assertEqual(writer.get_data(), NEW_BYTE * 6)
+        writer.write(0, b'abc')
+        self.assertEqual(writer.get_data(), b'abc' + NEW_BYTE * 3)
+        writer.write(3, b'123')
+        self.assertEqual(writer.get_data(), b'abc123')
+
+        # Switch from small buffer to large buffer
+        small, large = self.SMALL_BUFFER, self.LARGE_BUFFER
+        writer = self.create_writer(small)
+        self.assertEqual(writer.get_data(), NEW_BYTE * small)
+        writer.write(0, b's' * small)
+        self.assertEqual(writer.get_data(), b's' * small)
+        writer.resize(large)
+        self.assertEqual(writer.get_data(), b's' * small + NEW_BYTE * (large - small))
+        writer.write(small, b'L' * (large - small))
+        self.assertEqual(writer.get_data(), b's' * small + b'L' * (large - small))
+
+        # Resize large buffer
+        small, large = self.SMALL_BUFFER, self.LARGE_BUFFER
+        writer = self.create_writer(large)
+        self.assertEqual(writer.get_data(), NEW_BYTE * large)
+        writer.write(0, b'L' * large)
+        self.assertEqual(writer.get_data(), b'L' * large)
+        writer.resize(large + 10)
+        self.assertEqual(writer.get_data(), b'L' * large + NEW_BYTE * 10)
+        writer.write(large, b'#' * 10)
+        self.assertEqual(writer.get_data(), b'L' * large + b'#' * 10)
 
     def test_finish_with_size(self):
         # Test PyBytesWriter_FinishWithSize()
@@ -390,7 +424,7 @@ class BaseWriterTest:
 
         # Switch from small buffer to large buffer
         writer = self.create_writer()
-        small, large = (self.SMALL_BUFFER, self.LARGE_BUFFER)
+        small, large = self.SMALL_BUFFER, self.LARGE_BUFFER
         writer.resize(small)
         writer.write(0, b's' * small)
         writer.resize(large)
@@ -429,7 +463,7 @@ class BaseWriterTest:
 
         # Switch from small buffer to large buffer
         writer = self.create_writer()
-        small, large = (self.SMALL_BUFFER, self.LARGE_BUFFER)
+        small, large = self.SMALL_BUFFER, self.LARGE_BUFFER
         writer.grow(small)
         writer.write(0, b's' * small)
         writer.grow(large - small)
