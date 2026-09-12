@@ -6,7 +6,6 @@
 #include "helpers.h"
 #include "reader.h"
 #include "reader_internal.h"
-#include "../lexer/lexer.h"
 #include "../lexer/state.h"
 
 #ifdef HAVE_UNISTD_H
@@ -611,11 +610,6 @@ _PyTok_ReaderUnderflow(struct tok_state *tok)
         return 0;
     }
 
-    Py_ssize_t scan_len = chunk.len;
-    if (kind == _PYTOK_READER_INTERACTIVE &&
-            chunk.implicit_newline) {
-        scan_len--;
-    }
     if (!prepared) {
         if (streaming && reset_buffer) {
             reset_streaming_buffer(tok);
@@ -635,7 +629,7 @@ _PyTok_ReaderUnderflow(struct tok_state *tok)
             tok->line_start = tok->buf_offset;
             tok->start = -1;
         }
-        tok->inp = source_start + scan_len;
+        tok->inp = source_start + chunk.len;
     }
     if (prepared) {
         if (tok->start < 0 && _PyLexer_CurrentFTString(tok) == NULL) {
@@ -666,7 +660,6 @@ tokenizer_new_with_reader(_PyTok_ReaderKind kind)
         return NULL;
     }
     tok->start = tok->line_start = -1;
-    tok->report_warnings = 1;
     _PyTok_SourceInit(&tok->source);
     tok->done = E_OK;
     tok->layout.at_bol = 1;

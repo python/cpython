@@ -357,7 +357,7 @@ _PyLexer_scan_string(struct tok_state *tok, struct token *token, int c)
         if (c == EOF || (quote_size == 1 && c == '\n')) {
             int end_lineno = tok->lineno;
             _PyTok_Loc location = tok->start_loc;
-            const char *line = tok->start - location.byte_col;
+            const char *line = _PyLexer_BufferPointer(tok, tok->start) - location.byte_col;
             Py_ssize_t cursor_offset = (Py_ssize_t)location.byte_col + 1;
 
             const ftstring_state *state = _PyLexer_CurrentFTString(tok);
@@ -478,7 +478,7 @@ _PyLexer_get_ftstring(struct tok_state *tok, ftstring_state *current, struct tok
                     tok->done = E_EOFS;
                 }
                 return string_error_token(tok, token,
-                    _PyLexer_BufferPointer(tok, current->start), location);
+                    current->start, location);
             }
             else {
                 _PyTokenizer_syntaxerror_at(
@@ -486,7 +486,7 @@ _PyLexer_get_ftstring(struct tok_state *tok, ftstring_state *current, struct tok
                     "unterminated %c-string literal (detected at line %d)",
                     _PyLexer_StringPrefix(current->kind), end_lineno);
                 return string_error_token(tok, token,
-                    _PyLexer_BufferPointer(tok, current->start), location);
+                    current->start, location);
             }
         }
 

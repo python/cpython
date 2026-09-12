@@ -321,9 +321,6 @@
     <ClInclude Include="..\Objects\unicodetype_db.h">
       <Filter>Objects</Filter>
     </ClInclude>
-    <ClInclude Include="..\Parser\lexer\lexer.h">
-      <Filter>Parser</Filter>
-    </ClInclude>
     <ClInclude Include="..\Parser\lexer\state.h">
       <Filter>Parser</Filter>
     </ClInclude>

@@ -421,7 +421,6 @@
     <ClInclude Include="..\Objects\stringlib\split.h" />
     <ClInclude Include="..\Objects\unicodetype_db.h" />
     <ClInclude Include="..\Parser\lexer\state.h" />
-    <ClInclude Include="..\Parser\lexer\lexer.h" />
     <ClInclude Include="..\Parser\lexer\lexer_internal.h" />
     <ClInclude Include="..\Parser\tokenizer\reader.h" />
     <ClInclude Include="..\Parser\tokenizer\reader_internal.h" />
