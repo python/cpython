@@ -101,6 +101,22 @@ TryAddRef(PyObject *cnv, CDataObject *obj)
 }
 #endif
 
+static int
+is_narrow_int_ffi_type(int type)
+{
+    switch (type) {
+    case FFI_TYPE_SINT8:
+    case FFI_TYPE_UINT8:
+    case FFI_TYPE_SINT16:
+    case FFI_TYPE_UINT16:
+    case FFI_TYPE_SINT32:
+    case FFI_TYPE_UINT32:
+        return 1;
+    default:
+        return 0;
+    }
+}
+
 /******************************************************************************
  *
  * Call the python object with all arguments
@@ -222,13 +238,14 @@ static void _CallPythonObject(ctypes_state *st,
     if (restype != &ffi_type_void && result) {
         assert(setfunc);
 
-#ifdef WORDS_BIGENDIAN
-        /* See the corresponding code in _ctypes_callproc():
-           in callproc.c, around line 1219. */
-        if (restype->type != FFI_TYPE_FLOAT && restype->size < sizeof(ffi_arg)) {
-            mem = (char *)mem + sizeof(ffi_arg) - restype->size;
-        }
-#endif
+        /* libffi's closure contract requires integral results narrower
+           than ffi_arg to fill a whole register, sign-extended if signed;
+           setfunc() only writes restype->size bytes. Cf. _ctypes_callproc()
+           in callproc.c. */
+        ffi_arg widened = 0;
+        int narrow = restype->size < sizeof(ffi_arg) &&
+                     is_narrow_int_ffi_type(restype->type);
+        void *resmem = narrow ? &widened : mem;
 
         /* keep is an object we have to keep alive so that the result
            stays valid.  If there is no such object, the setfunc will
@@ -239,7 +256,33 @@ static void _CallPythonObject(ctypes_state *st,
            be the result.  EXCEPT when restype is py_object - Python
            itself knows how to manage the refcount of these objects.
         */
-        PyObject *keep = setfunc(mem, result, restype->size);
+        PyObject *keep = setfunc(resmem, result, restype->size);
+
+        if (narrow && keep != NULL) {
+            switch (restype->type) {
+            case FFI_TYPE_SINT8:
+                widened = (ffi_arg)(ffi_sarg)*(int8_t *)&widened;
+                break;
+            case FFI_TYPE_SINT16:
+                widened = (ffi_arg)(ffi_sarg)*(int16_t *)&widened;
+                break;
+            case FFI_TYPE_SINT32:
+                widened = (ffi_arg)(ffi_sarg)*(int32_t *)&widened;
+                break;
+            case FFI_TYPE_UINT8:
+                widened = *(uint8_t *)&widened;
+                break;
+            case FFI_TYPE_UINT16:
+                widened = *(uint16_t *)&widened;
+                break;
+            case FFI_TYPE_UINT32:
+                widened = *(uint32_t *)&widened;
+                break;
+            default:
+                break;
+            }
+            memcpy(mem, &widened, sizeof(ffi_arg));
+        }
 
         if (keep == NULL) {
             /* Could not convert callback result. */
