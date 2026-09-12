@@ -1,0 +1,2 @@
+:mod:`http.cookiejar`: fix allowed and blocked IPv6 domains
+in :class:`~http.cookiejar.DefaultCookiePolicy`.
