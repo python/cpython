@@ -82,7 +82,8 @@ language using this mechanism:
      * 3.7.0b1
      * Never [1]_
      * :pep:`563`: *Postponed evaluation of annotations*,
-       :pep:`649`: *Deferred evaluation of annotations using descriptors*
+       :pep:`649`: *Deferred evaluation of annotations using descriptors*;
+       see :ref:`annotations`
 
 .. XXX Adding a new entry?  Remember to update simple_stmts.rst, too.
 
