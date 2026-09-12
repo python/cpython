@@ -1,0 +1,4 @@
+Add :func:`unicodedata.aliases` for looking up all Unicode character name
+aliases associated with a given character. This is especially useful for
+characters that don't have a name (like ``"\n"``) or characters where
+there's a mistake in the official Unicode name (like ``"︘"``).
