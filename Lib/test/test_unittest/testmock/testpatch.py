@@ -2,6 +2,7 @@
 # E-mail: fuzzyman AT voidspace DOT org DOT uk
 # http://www.voidspace.org.uk/python/mock/
 
+import functools
 import os
 import sys
 from collections import OrderedDict
@@ -1224,6 +1225,40 @@ class PatchTest(unittest.TestCase):
                 method.call_args_list,
                 [call(3), call(2), call(1), call(0)],
             )
+
+
+    def test_autospec_stacked_functools_wraps_decorators(self):
+        # a method wrapped by 2+ layers of functools.wraps decorators will have
+        # a chain of  __wrapped__ attributes. autospec must still see the
+        # original method's (self, ...) signature through that chain and
+        # strip `self`, rather than falling back to (*args, **kwargs) and
+        # miscounting positional arguments.
+        def bar(f):
+            @functools.wraps(f)
+            def wrapper(*args, **kwargs):
+                return f(*args, **kwargs)
+            return wrapper
+
+        def tender(f):
+            @functools.wraps(f)
+            def wrapper(*args, **kwargs):
+                return f(*args, **kwargs)
+            return wrapper
+
+        class Foo:
+            @bar
+            @tender
+            def f(self, a, b):
+                return ('real', a, b)
+
+        with patch.object(Foo, 'f', autospec=True, wraps=Foo.f) as method:
+            foo = Foo()
+            self.assertEqual(foo.f(1, 2), ('real', 1, 2))
+            method.assert_called_once_with(1, 2)
+
+            self.assertRaises(TypeError, foo.f)
+            self.assertRaises(TypeError, foo.f, 1)
+            self.assertRaises(TypeError, foo.f, 1, 2, 3)
 
 
     def test_autospec_with_new(self):
