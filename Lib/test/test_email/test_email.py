@@ -3308,6 +3308,24 @@ class TestMiscellaneous(TestEmailBase):
         # formataddr() quotes the name if there's a dot in it
         self.assertEqual(utils.formataddr((a, b)), y)
 
+    def test_formataddr_non_ascii_name_with_specials(self):
+        # gh-100900: with a charset that doesn't RFC 2047-encode the name,
+        # formataddr() must still quote a non-ASCII name containing specials
+        # so it round-trips through getaddresses().
+        charset = Charset('utf-8')
+        charset.header_encoding = None
+        formatted = utils.formataddr(('Fôo, Bar', 'a@b.com'), charset)
+        self.assertEqual(formatted, '"Fôo, Bar" <a@b.com>')
+        self.assertEqual(utils.getaddresses([formatted]), [('Fôo, Bar', 'a@b.com')])
+        # " and \ in the name are escaped within the quotes.
+        name = 'Fô"o\\Bar'
+        formatted = utils.formataddr((name, 'a@b.com'), charset)
+        self.assertEqual(formatted, '"Fô\\"o\\\\Bar" <a@b.com>')
+        self.assertEqual(utils.getaddresses([formatted]), [(name, 'a@b.com')])
+        # A non-ASCII name without specials is emitted unquoted.
+        self.assertEqual(utils.formataddr(('Fôo Bar', 'a@b.com'), charset),
+                         'Fôo Bar <a@b.com>')
+
     def test_parseaddr_preserves_quoted_pairs_in_addresses(self):
         # issue 10005.  Note that in the third test the second pair of
         # backslashes is not actually a quoted pair because it is not inside a
