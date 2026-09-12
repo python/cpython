@@ -2695,9 +2695,15 @@ convenience.
 +-----------+--------------------------------+------------------------+-------+
 | Directive | Meaning                        | Example                | Notes |
 +===========+================================+========================+=======+
-|  ``%f``   | Microsecond as a decimal       | 000000, 000001, ...,   | \(5)  |
+|  ``%f``   | Microseconds as a decimal      | 000000, 000001, ...,   | \(5)  |
 |           | number, zero-padded to 6       | 999999                 |       |
 |           | digits.                        |                        |       |
++-----------+--------------------------------+------------------------+-------+
+|  ``%Nf``  | Microseconds as a decimal      | 0, ..., 9 (``%1f``);   | \(5)  |
+|           | fraction of a second (without  | 000, ..., 999          |       |
+|           | the point), rounded down to N  | (``%3f``);             |       |
+|           | digits (``1 <= N <= 6``).      | 000000, ..., 999999;   |       |
+|           |                                | (``%6f``)              |       |
 +-----------+--------------------------------+------------------------+-------+
 | ``%:z``   | UTC offset in the form         | (empty), +00:00,       | \(6)  |
 |           | ``±HH:MM[:SS[.ffffff]]``       | -04:00, +10:30,        |       |
@@ -2719,6 +2725,10 @@ differences between platforms in handling of unsupported format specifiers.
 
 .. versionadded:: 3.15
    ``%D``, ``%F``, ``%n``, ``%t``, and ``%:z`` were added for
+   :meth:`~.datetime.strptime`.
+
+.. versionadded:: 3.16
+   ``%Nf`` was added for :meth:`~.datetime.strftime` and
    :meth:`~.datetime.strptime`.
 
 
@@ -2825,11 +2835,19 @@ Notes:
    leap seconds.
 
 (5)
+   The ``%f`` directive formats the microsecond part zero-padded to 6 digits.
+   The ``%Nf`` directive (where ``1 <= N <= 6``) formats or parses the microsecond
+   part to *N* decimal places (e.g. ``%3f`` for milliseconds).
    When used with the :meth:`~.datetime.strptime` method, the ``%f`` directive
-   accepts from one to six digits and zero pads on the right. ``%f`` is
-   an extension to the set of format characters in the C standard (but
+   accepts from one to six digits and zero pads on the right, whereas the
+   ``%Nf`` directive requires an exact match of *N* digits. Both ``%f`` and
+   ``%Nf`` are extensions to the set of format characters in the C standard (but
    implemented separately in datetime objects, and therefore always
    available).
+
+   .. versionchanged:: 3.16
+      Added the ``%Nf`` format code for :meth:`~.datetime.strftime` and
+      :meth:`~.datetime.strptime`.
 
 (6)
    For a naive object, the ``%z``, ``%:z`` and ``%Z`` format codes are replaced

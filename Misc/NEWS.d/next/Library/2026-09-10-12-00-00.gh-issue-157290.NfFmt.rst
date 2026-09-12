@@ -1,0 +1,4 @@
+Add ``%Nf`` format code support (where ``1 <= N <= 6``) to
+:meth:`datetime.datetime.strftime`, :meth:`datetime.time.strftime`,
+:meth:`datetime.date.strftime`, and :meth:`datetime.datetime.strptime` for
+formatting and parsing subsecond/microsecond precision.
