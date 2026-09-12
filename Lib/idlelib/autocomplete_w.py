@@ -58,8 +58,6 @@ class AutoCompleteWindow:
             self.winconfigid = self.keyreleaseid = self.doubleclickid = None
         # Flag set if last keypress was a tab
         self.lastkey_was_tab = False
-        # Flag set to avoid recursive <Configure> callback invocations.
-        self.is_configuring = False
 
     def _change_start(self, newstart):
         min_len = min(len(self.start), len(newstart))
@@ -224,30 +222,36 @@ class AutoCompleteWindow:
         self.widget.event_add(KEYRELEASE_VIRTUAL_EVENT_NAME,KEYRELEASE_SEQUENCE)
         self.listupdateid = listbox.bind(LISTUPDATE_SEQUENCE,
                                          self.listselect_event)
-        self.is_configuring = False
-        self.winconfigid = acw.bind(WINCONFIG_SEQUENCE, self.winconfig_event)
         self.doubleclickid = listbox.bind(DOUBLECLICK_SEQUENCE,
                                           self.doubleclick_event)
+
+        # Schedule self.winconfig_event to be called once the completion
+        # window is rendered, since we need its size to correctly position it.
+        self.winconfigid = acw.bind(WINCONFIG_SEQUENCE, self.winconfig_event)
         return None
 
     def winconfig_event(self, event):
-        if self.is_configuring:
-            # Avoid running on recursive <Configure> callback invocations.
-            return
-
-        self.is_configuring = True
         if not self.is_active():
             return
 
-        # Since the <Configure> event may occur after the completion window is gone,
-        # catch potential TclError exceptions when accessing acw.  See: bpo-41611.
+        acw = self.autocompletewindow
+
+        # Unbind this event handler, since it should only run once.
+        try:
+            acw.unbind(WINCONFIG_SEQUENCE, self.winconfigid)
+        except TclError:
+            pass
+        self.winconfigid = None
+
+        # Since the <Configure> event may occur after the completion window is
+        # gone, catch potential TclError exceptions when accessing acw.
+        # See: bpo-41611.
         try:
             # Position the completion list window
             text = self.widget
             text.see(self.startindex)
             x, y, cx, cy = text.bbox(self.startindex)
-            acw = self.autocompletewindow
-            if platform.system().startswith('Windows'):
+            if platform.system() == 'Windows':
                 # On Windows an update() call is needed for the completion
                 # list window to be created, so that we can fetch its width
                 # and height.  However, this is not needed on other platforms
@@ -270,18 +274,6 @@ class AutoCompleteWindow:
             acw.update_idletasks()
         except TclError:
             pass
-
-        if platform.system().startswith('Windows'):
-            # See issue 15786.  When on Windows platform, Tk will misbehave
-            # to call winconfig_event multiple times, we need to prevent this,
-            # otherwise mouse button double click will not be able to used.
-            try:
-                acw.unbind(WINCONFIG_SEQUENCE, self.winconfigid)
-            except TclError:
-                pass
-            self.winconfigid = None
-
-        self.is_configuring = False
 
     def _hide_event_check(self):
         if not self.autocompletewindow:
