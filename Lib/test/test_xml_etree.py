@@ -1656,6 +1656,43 @@ class IterparseTest(unittest.TestCase):
             del cm
             gc_collect()
 
+    class Target:
+        # a target which does not build a tree
+        def start(self, tag, attrib):
+            return tag
+        def end(self, tag):
+            return tag
+        def data(self, data):
+            pass
+
+    def test_target(self):
+        # gh-63102: a custom target reports its own objects
+        with open(SIMPLE_XMLFILE, 'rb') as f:
+            it = ET.iterparse(f, events=('start', 'end'), target=self.Target())
+            self.assertEqual(list(it), [
+                ('start', 'root'),
+                ('start', 'element'),
+                ('end', 'element'),
+                ('start', 'element'),
+                ('end', 'element'),
+                ('start', 'empty-element'),
+                ('end', 'empty-element'),
+                ('end', 'root'),
+            ])
+            self.assertIsNone(it.root)
+
+    def test_parser_with_target(self):
+        with open(SIMPLE_XMLFILE, 'rb') as f:
+            parser = ET.XMLParser(target=self.Target())
+            it = ET.iterparse(f, events=('start',), parser=parser)
+            self.assertEqual(next(it), ('start', 'root'))
+
+    def test_target_and_parser(self):
+        with self.assertRaisesRegex(ValueError,
+                                    "can't specify both parser and target"):
+            ET.iterparse(SIMPLE_XMLFILE, parser=ET.XMLParser(),
+                         target=self.Target())
+
     def test_non_utf8(self):
         source = io.BytesIO(
             b"<?xml version='1.0' encoding='iso-8859-1'?>\n"
@@ -2066,6 +2103,58 @@ class XMLPullParserTest(unittest.TestCase):
         parser = ET.XMLPullParser(events=DummyIter())
         self._feed(parser, "<foo>bar</foo>")
         self.assert_event_tags(parser, [('start', 'foo'), ('end', 'foo')])
+
+    # gh-63102: the pull parser reports events from any target
+    class SimpleTarget:
+        def start(self, tag, attrib):
+            return ('start', tag)
+        def end(self, tag):
+            return ('end', tag)
+        def data(self, data):
+            pass
+        def comment(self, text):
+            return ('comment', text)
+        def pi(self, target, data=None):
+            return ('pi', target)
+        def close(self):
+            return 'closed'
+
+    def test_custom_target(self):
+        parser = ET.XMLPullParser(events=('start', 'end'),
+                                  target=self.SimpleTarget())
+        self._feed(parser, "<root><element/></root>")
+        self.assert_event_tuples(parser, [
+            ('start', ('start', 'root')),
+            ('start', ('start', 'element')),
+            ('end', ('end', 'element')),
+            ('end', ('end', 'root')),
+        ])
+
+    def test_custom_target_comment_pi(self):
+        parser = ET.XMLPullParser(events=('comment', 'pi'),
+                                  target=self.SimpleTarget())
+        self._feed(parser, "<root><!-- text --><?pitarget data?></root>")
+        self.assert_event_tuples(parser, [
+            ('comment', ('comment', ' text ')),
+            ('pi', ('pi', 'pitarget')),
+        ])
+
+    def test_custom_target_ns_events(self):
+        # the target does not implement start_ns()/end_ns(),
+        # so the prefix and the uri are reported
+        parser = ET.XMLPullParser(events=('start-ns', 'end-ns'),
+                                  target=self.SimpleTarget())
+        self._feed(parser, "<root xmlns='namespace' />")
+        self.assert_event_tuples(parser, [
+            ('start-ns', ('', 'namespace')),
+            ('end-ns', None),
+        ])
+
+    def test_custom_target_close(self):
+        parser = ET.XMLPullParser(events=('end',), target=self.SimpleTarget())
+        self._feed(parser, "<root/>")
+        parser.close()
+        self.assert_event_tuples(parser, [('end', ('end', 'root'))])
 
     def test_unknown_event(self):
         with self.assertRaises(ValueError):
