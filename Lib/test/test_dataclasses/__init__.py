@@ -41,6 +41,20 @@ class TestImportTime(unittest.TestCase):
             "dataclasses", {"inspect", "re", "copy"}
         )
 
+    @cpython_only
+    def test_slots_does_not_import_inspect(self):
+        create_slotted_class = textwrap.dedent(
+            """
+            @dataclasses.dataclass(slots=True)
+            class C:
+                x: int = 0
+            """
+        )
+        import_helper.ensure_lazy_imports(
+            "dataclasses", {"inspect"},
+            additional_code=create_slotted_class,
+        )
+
 
 class TestCase(unittest.TestCase):
     def test_no_fields(self):
