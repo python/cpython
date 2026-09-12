@@ -452,6 +452,14 @@ math
   (Contributed by Jeff Epler in :gh:`150534`.)
 
 
+math.integer
+------------
+
+* Add :func:`math.integer.isqrt_rem` to compute integer square root with
+  a remainder.
+  (Contributed by Sergey B Kirpichev in :gh:`90345`.)
+
+
 multiprocessing
 ---------------
 
