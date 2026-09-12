@@ -88,8 +88,8 @@ writer_init(PyObject *self_raw, PyObject *args, PyObject *kwargs)
     }
 
     Py_ssize_t size;
-    int use_bytearray;
-    if (!PyArg_ParseTuple(args, "ni", &size, &use_bytearray)) {
+    int use_bytearray = 0;
+    if (!PyArg_ParseTuple(args, "n|i", &size, &use_bytearray)) {
         return -1;
     }
 
@@ -202,6 +202,7 @@ writer_format_i(PyObject *self_raw, PyObject *args)
 }
 
 
+// PyBytesWriter_Resize
 static PyObject*
 writer_resize(PyObject *self_raw, PyObject *args)
 {
@@ -216,6 +217,27 @@ writer_resize(PyObject *self_raw, PyObject *args)
     }
 
     if (PyBytesWriter_Resize(self->writer, size) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
+// Test PyBytesWriter_Grow()
+static PyObject*
+writer_grow(PyObject *self_raw, PyObject *args)
+{
+    WriterObject *self = (WriterObject *)self_raw;
+    if (writer_check(self) < 0) {
+        return NULL;
+    }
+
+    Py_ssize_t size;
+    if (!PyArg_ParseTuple(args, "n", &size)) {
+        return NULL;
+    }
+
+    if (PyBytesWriter_Grow(self->writer, size) < 0) {
         return NULL;
     }
     Py_RETURN_NONE;
@@ -273,6 +295,7 @@ static PyMethodDef writer_methods[] = {
     {"write_bytes", _PyCFunction_CAST(writer_write_bytes), METH_VARARGS},
     {"format_i", _PyCFunction_CAST(writer_format_i), METH_VARARGS},
     {"resize", _PyCFunction_CAST(writer_resize), METH_VARARGS},
+    {"grow", _PyCFunction_CAST(writer_grow), METH_VARARGS},
     {"get_size", _PyCFunction_CAST(writer_get_size), METH_NOARGS},
     {"finish", _PyCFunction_CAST(writer_finish), METH_NOARGS},
     {"finish_with_size", _PyCFunction_CAST(writer_finish_with_size), METH_VARARGS},

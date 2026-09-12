@@ -318,6 +318,8 @@ class CAPITest(unittest.TestCase):
 
 class BaseWriterTest:
     result_type = NotImplementedError
+    BUFFER_SIZES = [11, _testcapi.PyBytesWriter_small_buffer + 17]
+    assert BUFFER_SIZES[0] < _testcapi.PyBytesWriter_small_buffer
 
     def create_writer(self, alloc=0, string=b''):
         raise NotImplementedError
@@ -353,15 +355,15 @@ class BaseWriterTest:
             writer.finish_with_size(4)
 
     def test_write_bytes(self):
-         # Test PyBytesWriter_WriteBytes()
-         writer = self.create_writer()
-         writer.write_bytes(b'Hello World!', -1)
-         self.assertEqual(writer.finish(), self.result_type(b'Hello World!'))
+        # Test PyBytesWriter_WriteBytes()
+        writer = self.create_writer()
+        writer.write_bytes(b'Hello World!', -1)
+        self.assertEqual(writer.finish(), self.result_type(b'Hello World!'))
 
-         writer = self.create_writer()
-         writer.write_bytes(b'Hello ', -1)
-         writer.write_bytes(b'World! <truncated>', 6)
-         self.assertEqual(writer.finish(), self.result_type(b'Hello World!'))
+        writer = self.create_writer()
+        writer.write_bytes(b'Hello ', -1)
+        writer.write_bytes(b'World! <truncated>', 6)
+        self.assertEqual(writer.finish(), self.result_type(b'Hello World!'))
 
     def test_resize(self):
         # Test PyBytesWriter_Resize()
@@ -404,8 +406,54 @@ class BaseWriterTest:
         writer.write(len(b'number=123'), b'456')
         self.assertEqual(writer.finish(), self.result_type(b'number=123456'))
 
+        # invalid size
+        for size in self.BUFFER_SIZES:
+            with self.subTest(size=size):
+                writer = self.create_writer()
+                writer.write_bytes(b'x' * size, -1)
+                with self.assertRaisesRegex(ValueError, 'size must be >= 0'):
+                    writer.resize(-1)
+                with self.assertRaises((MemoryError, OverflowError)):
+                    writer.resize(_testcapi.PY_SSIZE_T_MAX)
+
+    def test_grow(self):
+        # Test PyBytesWriter_Grow()
+        writer = self.create_writer(0)
+        writer.grow(len(b'number=123456'))
+        writer.write(0, b'number=123456')
+        self.assertEqual(writer.finish(), self.result_type(b'number=123456'))
+
+        writer = self.create_writer()
+        writer.grow(0)
+        writer.grow(len(b'number=123456'))
+        writer.write(0, b'number=123456')
+        writer.grow(0)
+        self.assertEqual(writer.finish(), self.result_type(b'number=123456'))
+
+        writer = self.create_writer()
+        writer.grow(len(b'number'))
+        writer.write(0, b'number')
+        writer.grow(len(b'='))
+        writer.write(len(b'number'), b'=')
+        writer.grow(len(b'123'), )
+        writer.write(len(b'number='), b'123')
+        writer.grow(len(b'456'))
+        writer.write(len(b'number=123'), b'456')
+        self.assertEqual(writer.finish(), self.result_type(b'number=123456'))
+
+        # invalid size
+        for size in self.BUFFER_SIZES:
+            with self.subTest(size=size):
+                writer = self.create_writer()
+                writer.write_bytes(b'x' * size, -1)
+                with self.assertRaisesRegex(ValueError, 'size must be >= 0'):
+                    writer.grow(-1)
+                with self.assertRaises(MemoryError):
+                    writer.grow(_testcapi.PY_SSIZE_T_MAX)
+
     @support.nomemtest
     def test_resize_error(self):
+        # Test PyBytesWriter_Resize() error
         small_buffer = _testcapi.PyBytesWriter_small_buffer
         init = b'x' * (small_buffer * 2)
         writer = self.create_writer(len(init))
