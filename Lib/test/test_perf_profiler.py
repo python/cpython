@@ -1,3 +1,4 @@
+import struct
 import unittest
 import string
 import subprocess
@@ -683,6 +684,164 @@ class TestPerfProfilerWithDwarf(unittest.TestCase, TestPerfProfilerMixin):
         files_to_delete = files_to_delete - self.perf_files
         for file in files_to_delete:
             file.unlink()
+
+
+JITDUMP_MAGIC = 0x4A695444  # "JiTD"
+JITDUMP_VERSION = 1
+PERF_LOAD = 0
+PERF_UNWINDING_INFO = 4
+JITDUMP_ENDIAN = "<" if sys.byteorder == "little" else ">"
+# Every jitdump record starts with event(u32), size(u32), timestamp(u64).
+JITDUMP_RECORD_HEADER_SIZE = 16
+# CodeLoadEvent: record header, pid(u32), tid(u32), vma(u64), code_addr(u64),
+# code_size(u64), code_id(u64), then the NUL-terminated name.
+CODE_LOAD_CODE_SIZE_OFFSET = JITDUMP_RECORD_HEADER_SIZE + 4 + 4 + 8 + 8
+CODE_LOAD_NAME_OFFSET = CODE_LOAD_CODE_SIZE_OFFSET + 8 + 8
+# CodeUnwindingInfoEvent: record header, unwind_data_size(u64),
+# eh_frame_hdr_size(u64), mapped_size(u64), then the .eh_frame bytes followed
+# by perf's 20-byte eh_frame_hdr (EhFrameHeader in perf_jit_trampoline.c),
+# whose "from" field is the signed distance back to the code.
+UNWIND_DATA_SIZE_OFFSET = JITDUMP_RECORD_HEADER_SIZE
+UNWIND_EH_FRAME_OFFSET = JITDUMP_RECORD_HEADER_SIZE + 3 * 8
+EH_FRAME_HDR_SIZE = 20
+EH_FRAME_HDR_FROM_OFFSET = 12
+# DWARF FDE pointer encodings: DW_EH_PE_pcrel | DW_EH_PE_sdata4 (ELF
+# assemblers) and DW_EH_PE_pcrel | DW_EH_PE_absptr (Darwin assemblers).
+DW_EH_PE_PCREL_SDATA4 = 0x1B
+DW_EH_PE_PCREL_ABSPTR = 0x10
+
+
+def _jitdump_records(data):
+    """Yield (event, offset, size) for each record of a jitdump file."""
+    header_size = struct.unpack_from(f"{JITDUMP_ENDIAN}I", data, 8)[0]
+    pos = header_size
+    while pos < len(data):
+        if pos + JITDUMP_RECORD_HEADER_SIZE > len(data):
+            raise ValueError(f"truncated record header at offset {pos}")
+        event, size = struct.unpack_from(f"{JITDUMP_ENDIAN}II", data, pos)
+        if size < JITDUMP_RECORD_HEADER_SIZE or pos + size > len(data):
+            raise ValueError(f"record at offset {pos} has a bad size {size}")
+        yield event, pos, size
+        pos += size
+
+
+def _fde_pointer_encoding(eh_frame):
+    """Return the FDE pointer encoding byte of a version 1 "zR" CIE."""
+    cie_length = struct.unpack_from(f"{JITDUMP_ENDIAN}I", eh_frame, 0)[0]
+    cie_total = 4 + cie_length
+    pos = 12  # past length, CIE_id, version and "zR\0"
+    for _ in range(2):  # code and data alignment factors (LEB128)
+        while eh_frame[pos] & 0x80:
+            pos += 1
+        pos += 1
+    pos += 1  # return address column
+    while eh_frame[pos] & 0x80:  # augmentation data length (LEB128)
+        pos += 1
+    pos += 1
+    if pos >= cie_total:
+        raise ValueError("truncated CIE augmentation data")
+    return eh_frame[pos]
+
+
+@unittest.skipIf(support.check_bolt_optimized(), "fails on BOLT instrumented binaries")
+class TestJitdumpFileFormat(unittest.TestCase):
+    """Validate the jitdump written by -Xperf_jit without requiring perf."""
+
+    def _run_and_get_jitdump(self, code):
+        # The child prints its pid so we open exactly its own jitdump file
+        # rather than whatever another test worker left in /tmp.
+        code = "import os, sys\nsys.stdout.write(str(os.getpid()))\n" + code
+        _, out, _ = assert_python_ok("-Xperf_jit", "-c", code, PYTHON_JIT="0")
+        path = pathlib.Path(f"/tmp/jit-{int(out)}.dump")
+        try:
+            data = path.read_bytes()
+        except FileNotFoundError:
+            # perf_map_jit_init() gives up silently when it cannot create
+            # the file (for example an unwritable /tmp).
+            self.skipTest("jitdump file was not created")
+        self.addCleanup(path.unlink)
+        if not data:
+            # The file is created before the executable mapping of the
+            # jitdump; if that mapping fails (for example a noexec /tmp) the
+            # backend gives up silently and never writes the header.
+            self.skipTest("jitdump could not be initialized")
+        return data
+
+    def _check_code_load(self, data, pos, size):
+        """Validate a code load record and return its name and code size."""
+        code_size = struct.unpack_from(
+            f"{JITDUMP_ENDIAN}Q", data, pos + CODE_LOAD_CODE_SIZE_OFFSET)[0]
+        name_start = pos + CODE_LOAD_NAME_OFFSET
+        name_end = data.find(b"\x00", name_start, pos + size)
+        self.assertGreater(name_end, 0)
+        name = data[name_start:name_end].decode("utf-8", errors="replace")
+        # The machine code follows the name inside the load record.
+        self.assertLessEqual(name_end + 1 + code_size, pos + size, name)
+        return name, code_size
+
+    def _check_unwind_info(self, data, pos, size, name, code_size):
+        """Check the FDE and perf header against their code load record."""
+        unwind_data_size, eh_frame_hdr_size = struct.unpack_from(
+            f"{JITDUMP_ENDIAN}QQ", data, pos + UNWIND_DATA_SIZE_OFFSET)
+        self.assertEqual(eh_frame_hdr_size, EH_FRAME_HDR_SIZE)
+        self.assertLessEqual(UNWIND_EH_FRAME_OFFSET + unwind_data_size, size)
+        eh_frame_size = unwind_data_size - eh_frame_hdr_size
+        self.assertGreater(eh_frame_size, 0)
+        start = pos + UNWIND_EH_FRAME_OFFSET
+        eh_frame = data[start:start + eh_frame_size]
+
+        cie_length, cie_id = struct.unpack_from(f"{JITDUMP_ENDIAN}II", eh_frame, 0)
+        self.assertEqual(cie_id, 0, "first entry must be a CIE")
+        self.assertEqual(eh_frame[8], 1, "CIE version must be 1")
+        self.assertEqual(eh_frame[9:12], b"zR\x00")
+        encoding = _fde_pointer_encoding(eh_frame)
+        if encoding == DW_EH_PE_PCREL_SDATA4:
+            fields = "iI"
+        elif encoding == DW_EH_PE_PCREL_ABSPTR:
+            fields = "qQ"
+        else:
+            self.fail(f"unexpected FDE pointer encoding {encoding:#x}")
+        # jit_unwind.c patches initial_location and address_range for
+        # perf's DSO layout, where the .eh_frame follows the code at
+        # code_size rounded up to 8 bytes.
+        pc_offset = 4 + cie_length + 8
+        initial_location, address_range = struct.unpack_from(
+            f"{JITDUMP_ENDIAN}{fields}", eh_frame, pc_offset)
+        self.assertEqual(address_range, code_size, name)
+        rounded_code_size = (code_size + 7) & ~7
+        self.assertEqual(initial_location, -(rounded_code_size + pc_offset), name)
+        # perf's eh_frame_hdr must point back at the code with the same
+        # rounding as the FDE.
+        hdr_from = struct.unpack_from(
+            f"{JITDUMP_ENDIAN}i", data,
+            start + eh_frame_size + EH_FRAME_HDR_FROM_OFFSET)[0]
+        self.assertEqual(hdr_from, -(rounded_code_size + eh_frame_size), name)
+
+    def _check_unwinding_records(self, data):
+        """Return {name: code_size} after checking each unwind/load pair."""
+        records = list(_jitdump_records(data))
+        regions = {}
+        for index, (event, pos, size) in enumerate(records):
+            if event != PERF_UNWINDING_INFO:
+                continue
+            # Unwinding info immediately precedes the code it describes.
+            self.assertLess(index + 1, len(records))
+            load_event, load_pos, load_size = records[index + 1]
+            self.assertEqual(load_event, PERF_LOAD)
+            name, code_size = self._check_code_load(data, load_pos, load_size)
+            with self.subTest(region=name):
+                self._check_unwind_info(data, pos, size, name, code_size)
+            regions[name] = code_size
+        self.assertTrue(regions, "no CodeUnwindingInfoEvent found")
+        return regions
+
+    def test_jitdump_unwinding_info(self):
+        """Each region's .eh_frame is patched for that region's size."""
+        data = self._run_and_get_jitdump("def my_test_func(): pass\nmy_test_func()")
+        magic, version = struct.unpack_from(f"{JITDUMP_ENDIAN}II", data, 0)
+        self.assertEqual((magic, version), (JITDUMP_MAGIC, JITDUMP_VERSION))
+        regions = self._check_unwinding_records(data)
+        self.assertTrue(any("my_test_func" in name for name in regions))
 
 
 if __name__ == "__main__":
