@@ -3,10 +3,24 @@ import keyword
 import re
 import time
 
+from _pyrepl.utils import gen_colors
+
 from idlelib.config import idleConf
 from idlelib.delegator import Delegator
 
 DEBUG = False
+
+# Map gen_colors' syntax categories to IDLE's tags (gh-140347).
+# "number" and "op" have no IDLE tag and stay uncolored.
+_category_to_tag = {
+    "keyword": "KEYWORD",
+    "keyword_constant": "KEYWORD",
+    "soft_keyword": "KEYWORD",
+    "builtin": "BUILTIN",
+    "definition": "DEFINITION",
+    "string": "STRING",
+    "comment": "COMMENT",
+}
 
 
 def any(name, alternates):
@@ -346,14 +360,18 @@ class ColorDelegator(Delegator):
 
             `head` is the index in the text widget where the text is found.
         """
+        # Colors come from the tokenizer, which handles grammar that regexps
+        # cannot, such as soft keywords and f-strings (gh-140347).  Span is
+        # inclusive, so the tag ends one past span.end.
+        for span, category in gen_colors(chars):
+            tag = _category_to_tag.get(category)
+            if tag:
+                self._add_tag(span.start, span.end + 1, head, tag)
+        # SYNC boundaries (newlines outside strings) still come from the regexp.
         for m in self.prog.finditer(chars):
-            for name, matched_text in matched_named_groups(m):
-                a, b = m.span(name)
-                self._add_tag(a, b, head, name)
-                if matched_text in ("def", "class"):
-                    if m1 := self.idprog.match(chars, b):
-                        a, b = m1.span(1)
-                        self._add_tag(a, b, head, "DEFINITION")
+            if m.group("SYNC"):
+                a, b = m.span("SYNC")
+                self._add_tag(a, b, head, "SYNC")
 
     def removecolors(self):
         "Remove all colorizing tags."
