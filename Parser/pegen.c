@@ -626,11 +626,31 @@ error:
 }
 
 static expr_ty
+name_from_identifier(Parser *p, Token *t, PyObject *id)
+{
+    expr_ty result = _PyAST_Name(id, Load, t->lineno, t->col_offset,
+                                t->end_lineno, t->end_col_offset, p->arena);
+    if (result != NULL && _PyPegen_insert_memo(p, p->mark - 1, NAME, result) < 0) {
+        p->error_indicator = 1;
+        return NULL;
+    }
+    return result;
+}
+
+static expr_ty
 _PyPegen_name_from_token(Parser *p, Token* t)
 {
     if (t == NULL) {
         return NULL;
     }
+    // Token kinds can be memo keys: generated grammar rule IDs start at 1000.
+    int mark = p->mark - 1;
+    p->mark = mark;
+    expr_ty cached = NULL;
+    if (_PyPegen_is_memoized(p, NAME, &cached)) {
+        return cached;
+    }
+    p->mark = mark + 1;
     const char *s = PyBytes_AsString(t->bytes);
     if (!s) {
         p->error_indicator = 1;
@@ -667,8 +687,7 @@ _PyPegen_name_from_token(Parser *p, Token* t)
         if (entry->hash == hash && entry->len == len &&
             memcmp(entry->key, s, len) == 0)
         {
-            return _PyAST_Name(entry->value, Load, t->lineno, t->col_offset,
-                               t->end_lineno, t->end_col_offset, p->arena);
+            return name_from_identifier(p, t, entry->value);
         }
     }
     PyObject *id = _PyPegen_new_identifier(p, s);
@@ -682,8 +701,7 @@ _PyPegen_name_from_token(Parser *p, Token* t)
         free_slot->hash = hash;
         free_slot->value = id;
     }
-    return _PyAST_Name(id, Load, t->lineno, t->col_offset, t->end_lineno,
-                       t->end_col_offset, p->arena);
+    return name_from_identifier(p, t, id);
 }
 
 expr_ty
