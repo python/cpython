@@ -10,6 +10,9 @@ specific object types which directly implement weak references.  The first is a
 simple reference object, and the second acts as a proxy for the original object
 as much as it can.
 
+.. c:type:: PyWeakReference
+
+   The C structure of the objects used to describe weak references objects.
 
 .. c:function:: int PyWeakref_Check(PyObject *ob)
 
