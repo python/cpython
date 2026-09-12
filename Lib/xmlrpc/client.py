@@ -938,11 +938,12 @@ def dumps(params, methodname=None, methodresponse=None, encoding=None,
     where necessary.
     """
 
-    assert isinstance(params, (tuple, Fault)), "argument must be tuple or Fault instance"
+    if not isinstance(params, (tuple, Fault)):
+        raise TypeError("argument must be tuple or Fault instance")
     if isinstance(params, Fault):
         methodresponse = 1
-    elif methodresponse and isinstance(params, tuple):
-        assert len(params) == 1, "response tuple must be a singleton"
+    elif methodresponse and len(params) != 1:
+        raise ValueError("response tuple must be a singleton")
 
     if not encoding:
         encoding = "utf-8"
