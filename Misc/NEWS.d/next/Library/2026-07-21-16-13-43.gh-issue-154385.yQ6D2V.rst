@@ -1,0 +1,2 @@
+Fix a potential crash in :func:`readline.get_begidx` and
+:func:`readline.get_endidx` caused by an out-of-memory error.
