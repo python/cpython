@@ -2,6 +2,7 @@
 Tests for the html module functions.
 """
 
+import codecs
 import html
 import unittest
 
@@ -97,6 +98,27 @@ class HtmlTests(unittest.TestCase):
         check('&Eacuteric&Eacute;ric&alphacentauri&alpha;centauri',
               'ÉricÉric&alphacentauriαcentauri')
         check('&co;', '&co;')
+
+    def test_htmlcharrefreplace_errors(self):
+        codecs.register_error('htmlcharrefreplace',
+                              html.htmlcharrefreplace_errors)
+        self.assertEqual('\u2200 x\u2208\u211c'.encode('ascii',
+                                                       'htmlcharrefreplace'),
+                         b'&forall; x&isin;&real;')
+        # Characters without a name are replaced with a numeric reference.
+        self.assertEqual('[$\xa5\u20a3\u20ac\U0001d56b]'.encode(
+                             'latin1', 'htmlcharrefreplace'),
+                         b'[$\xa5&#8355;&euro;&#120171;]')
+        # Surrogates have no name either.
+        self.assertEqual('\udcff'.encode('ascii', 'htmlcharrefreplace'),
+                         b'&#56575;')
+
+    def test_htmlcharrefreplace_errors_bad_exception(self):
+        with self.assertRaises(UnicodeDecodeError):
+            html.htmlcharrefreplace_errors(
+                UnicodeDecodeError('ascii', b'\xff', 0, 1, 'ordinal'))
+        with self.assertRaises(TypeError):
+            html.htmlcharrefreplace_errors(TypeError('spam'))
 
 
 if __name__ == '__main__':
