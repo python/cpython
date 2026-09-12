@@ -4,6 +4,15 @@ Released on 2026-10-01
 =========================
 
 
+gh-152966: Add a Bytecode Browser to IDLE, opened from the new Browse
+menu.  It shows the disassembled bytecode of the editor content, the
+Shell input, or the selection, as collapsible code objects colored by
+operand kind.  Selecting an instruction highlights the matching source,
+and selecting source selects the instructions.  While the debugger is
+stopped, the browser instead shows the code object that is executing and
+marks the current instruction.  Patch by Serhiy Storchaka and Claude
+Code.
+
 gh-152745:  When "Run... Customized" with "Restart shell" unchecked
 while Shell is running code, including waiting for an input('prompt:')
 response, just report that the shell is executing instead of
