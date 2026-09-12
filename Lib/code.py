@@ -44,8 +44,8 @@ class InteractiveInterpreter:
         One of several things can happen:
 
         1) The input is incorrect; compile_command() raised an
-        exception (SyntaxError or OverflowError).  A syntax traceback
-        will be printed by calling the showsyntaxerror() method.
+        exception.  A syntax traceback will be printed by calling
+        the showsyntaxerror() method.
 
         2) The input is incomplete, and more input is required;
         compile_command() returned None.  Nothing happens.
@@ -62,7 +62,7 @@ class InteractiveInterpreter:
         """
         try:
             code = self.compile(source, filename, symbol)
-        except (OverflowError, SyntaxError, ValueError):
+        except (OverflowError, SyntaxError, ValueError, SystemError):
             # Case 1
             self.showsyntaxerror(filename, source=source)
             return False
