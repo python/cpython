@@ -365,5 +365,10 @@ class StructSeqTest(unittest.TestCase):
 
         self.assertTrue(gc.is_tracked(replaced_struct))
 
+    def test_gc_tracked(self):
+        # PyStructSequence objects created via C API or Python should be GC-tracked
+        self.assertTrue(gc.is_tracked(time.gmtime()))
+        self.assertTrue(gc.is_tracked(os.stat(__file__)))
+
 if __name__ == "__main__":
     unittest.main()

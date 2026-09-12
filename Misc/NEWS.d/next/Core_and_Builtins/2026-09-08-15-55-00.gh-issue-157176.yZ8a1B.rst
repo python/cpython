@@ -1,0 +1,1 @@
+Fix GC tracking for :class:`!PyStructSequence` instances created via :c:func:`PyStructSequence_New`. Patch by Shamil Abdulaev.
