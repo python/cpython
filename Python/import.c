@@ -1292,50 +1292,68 @@ del_extensions_cache_value(void *raw)
     }
 }
 
-static void *
-hashtable_key_from_2_strings(PyObject *str1, PyObject *str2, const char sep)
-{
-    const char *str1_data = _PyUnicode_AsUTF8NoNUL(str1);
-    const char *str2_data = _PyUnicode_AsUTF8NoNUL(str2);
-    if (str1_data == NULL || str2_data == NULL) {
-        return NULL;
-    }
-    Py_ssize_t str1_len = strlen(str1_data);
-    Py_ssize_t str2_len = strlen(str2_data);
+/* The key of the extensions cache: the raw content of two strings.
 
-    /* Make sure sep and the NULL byte won't cause an overflow. */
-    assert(SIZE_MAX - str1_len - str2_len > 2);
-    size_t size = str1_len + 1 + str2_len + 1;
+   The UTF-8 encoding is not used, because the strings can contain lone
+   surrogates, e.g. a file name undecodable in the filesystem encoding. */
+struct hashtable_key {
+    size_t size;        /* the total size of the key */
+    unsigned char kind1;
+    unsigned char kind2;
+    Py_ssize_t len1;
+    /* followed by the raw content of both strings */
+};
+
+static void *
+hashtable_key_from_2_strings(PyObject *str1, PyObject *str2)
+{
+    Py_ssize_t len1 = PyUnicode_GET_LENGTH(str1);
+    Py_ssize_t len2 = PyUnicode_GET_LENGTH(str2);
+    int kind1 = PyUnicode_KIND(str1);
+    int kind2 = PyUnicode_KIND(str2);
+    size_t size1 = (size_t)len1 * kind1;
+    size_t size2 = (size_t)len2 * kind2;
+
+    assert(SIZE_MAX - sizeof(struct hashtable_key) - size1 > size2);
+    size_t size = sizeof(struct hashtable_key) + size1 + size2;
 
     // XXX Use a buffer if it's a temp value (every case but "set").
-    char *key = PyMem_RawMalloc(size);
+    struct hashtable_key *key = PyMem_RawMalloc(size);
     if (key == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
 
-    memcpy(key, str1_data, str1_len);
-    key[str1_len] = sep;
-    memcpy(key + str1_len + 1, str2_data, str2_len);
-    key[size - 1] = '\0';
-    assert(strlen(key) == size - 1);
+    /* Clear the padding: the key is hashed and compared as raw bytes. */
+    memset(key, 0, sizeof(struct hashtable_key));
+    key->size = size;
+    key->kind1 = (unsigned char)kind1;
+    key->kind2 = (unsigned char)kind2;
+    key->len1 = len1;
+    char *data = (char *)(key + 1);
+    memcpy(data, PyUnicode_DATA(str1), size1);
+    memcpy(data + size1, PyUnicode_DATA(str2), size2);
     return key;
 }
 
 static Py_uhash_t
-hashtable_hash_str(const void *key)
+hashtable_hash_key(const void *key)
 {
-    return Py_HashBuffer(key, strlen((const char *)key));
+    return Py_HashBuffer(key, ((const struct hashtable_key *)key)->size);
 }
 
 static int
-hashtable_compare_str(const void *key1, const void *key2)
+hashtable_compare_key(const void *key1, const void *key2)
 {
-    return strcmp((const char *)key1, (const char *)key2) == 0;
+    size_t size = ((const struct hashtable_key *)key1)->size;
+    if (size != ((const struct hashtable_key *)key2)->size) {
+        return 0;
+    }
+    return memcmp(key1, key2, size) == 0;
 }
 
 static void
-hashtable_destroy_str(void *ptr)
+hashtable_destroy_key(void *ptr)
 {
     PyMem_RawFree(ptr);
 }
@@ -1375,16 +1393,15 @@ _find_cached_def(PyModuleDef *def)
 }
 #endif
 
-#define HTSEP ':'
 
 static int
 _extensions_cache_init(void)
 {
     _Py_hashtable_allocator_t alloc = {PyMem_RawMalloc, PyMem_RawFree};
     EXTENSIONS.hashtable = _Py_hashtable_new_full(
-        hashtable_hash_str,
-        hashtable_compare_str,
-        hashtable_destroy_str,  // key
+        hashtable_hash_key,
+        hashtable_compare_key,
+        hashtable_destroy_key,  // key
         del_extensions_cache_value,  // value
         &alloc
     );
@@ -1402,7 +1419,7 @@ _extensions_cache_find_unlocked(PyObject *path, PyObject *name,
     if (EXTENSIONS.hashtable == NULL) {
         return NULL;
     }
-    void *key = hashtable_key_from_2_strings(path, name, HTSEP);
+    void *key = hashtable_key_from_2_strings(path, name);
     if (key == NULL) {
         return NULL;
     }
@@ -1412,7 +1429,7 @@ _extensions_cache_find_unlocked(PyObject *path, PyObject *name,
         *p_key = key;
     }
     else {
-        hashtable_destroy_str(key);
+        hashtable_destroy_key(key);
     }
     return entry;
 }
@@ -1550,7 +1567,7 @@ finally:
 finally_oldvalue:
     extensions_lock_release();
     if (key != NULL) {
-        hashtable_destroy_str(key);
+        hashtable_destroy_key(key);
     }
 
     return value;
@@ -1594,7 +1611,6 @@ _extensions_cache_clear_all(void)
     EXTENSIONS.hashtable = NULL;
 }
 
-#undef HTSEP
 
 
 static bool
