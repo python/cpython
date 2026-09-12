@@ -178,6 +178,9 @@ INCLUDES = format_tsv_lines([
 MACROS = format_tsv_lines([
     # (glob, name, value)
 
+    # Alignment does not affect global-state classification.
+    ('*', '_Py_ALIGNED_DEF(N, T)', 'T'),
+
     ('Include/internal/*.h', 'Py_BUILD_CORE', '1'),
     ('Python/**/*.c', 'Py_BUILD_CORE', '1'),
     ('Python/**/*.h', 'Py_BUILD_CORE', '1'),
