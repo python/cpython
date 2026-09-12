@@ -4305,11 +4305,25 @@ dict_merge(PyObject *a, PyObject *b, int override, PyObject **dupkey)
 
     PyDictObject *mp = _PyAnyDict_CAST(a);
 
+    /* Mapping proxies (including type.__dict__) wrap a real dict. Unwrap
+     * so we take the locked dict-to-dict path instead of iterating the
+     * proxy without holding the underlying dict's critical section.
+     * Layout must match mappingproxyobject in descrobject.c. See gh-157217.
+     */
+    typedef struct {
+        PyObject_HEAD
+        PyObject *mapping;
+    } mappingproxyobject;
+    PyObject *source = b;
+    if (Py_IS_TYPE(b, &PyDictProxy_Type)) {
+        source = ((mappingproxyobject *)b)->mapping;
+    }
+
     int res = 0;
-    if (PyAnyDict_Check(b) && (Py_TYPE(b)->tp_iter == dict_iter)) {
-        PyDictObject *other = (PyDictObject*)b;
+    if (PyAnyDict_Check(source) && (Py_TYPE(source)->tp_iter == dict_iter)) {
+        PyDictObject *other = (PyDictObject*)source;
         int res;
-        Py_BEGIN_CRITICAL_SECTION2(a, b);
+        Py_BEGIN_CRITICAL_SECTION2(a, source);
         assert(can_modify_dict(mp));
         res = dict_dict_merge((PyDictObject *)a, other, override, dupkey);
         ASSERT_CONSISTENT(a);
