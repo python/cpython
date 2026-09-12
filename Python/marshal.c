@@ -117,6 +117,9 @@ typedef struct {
     const char *end;
     char *buf;
     _Py_hashtable_t *hashtable;
+    /* Maps sets to tuples of their elements in marshalling order.
+       See w_set_order(). */
+    _Py_hashtable_t *set_orders;
     int version;
     int allow_code;
 } WFILE;
@@ -275,7 +278,7 @@ w_short_pstring(const void *s, Py_ssize_t n, WFILE *p)
 } while(0)
 
 static PyObject *
-_PyMarshal_WriteObjectToString(PyObject *x, int version, int allow_code);
+w_set_order(PyObject *v, WFILE *p);
 
 #define _r_digits(bitsize)                                                \
 static void                                                               \
@@ -659,59 +662,24 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         }
     }
     else if (PyAnySet_CheckExact(v)) {
-        PyObject *value;
-        Py_ssize_t pos = 0;
-        Py_hash_t hash;
-
-        if (PyFrozenSet_CheckExact(v))
-            W_TYPE(TYPE_FROZENSET, p);
-        else
-            W_TYPE(TYPE_SET, p);
-        n = PySet_GET_SIZE(v);
-        W_SIZE(n, p);
         // bpo-37596: To support reproducible builds, sets and frozensets need
         // to have their elements serialized in a consistent order (even when
         // they have been scrambled by hash randomization). To ensure this, we
         // use an order equivalent to sorted(v, key=marshal.dumps):
-        PyObject *pairs = PyList_New(n);
-        if (pairs == NULL) {
-            p->error = WFERR_NOMEMORY;
+        PyObject *order = w_set_order(v, p);
+        if (order == NULL) {
+            assert(p->error != WFERR_OK);
             return;
         }
-        Py_ssize_t i = 0;
-        Py_BEGIN_CRITICAL_SECTION(v);
-        while (_PySet_NextEntryRef(v, &pos, &value, &hash)) {
-            PyObject *dump = _PyMarshal_WriteObjectToString(value,
-                                    p->version, p->allow_code);
-            if (dump == NULL) {
-                p->error = WFERR_UNMARSHALLABLE;
-                Py_DECREF(value);
-                break;
-            }
-            PyObject *pair = _PyTuple_FromPairSteal(dump, value);
-            if (pair == NULL) {
-                p->error = WFERR_NOMEMORY;
-                break;
-            }
-            PyList_SET_ITEM(pairs, i++, pair);
+        if (PyFrozenSet_CheckExact(v))
+            W_TYPE(TYPE_FROZENSET, p);
+        else
+            W_TYPE(TYPE_SET, p);
+        n = PyTuple_GET_SIZE(order);
+        W_SIZE(n, p);
+        for (i = 0; i < n; i++) {
+            w_object(PyTuple_GET_ITEM(order, i), p);
         }
-        Py_END_CRITICAL_SECTION();
-        if (p->error == WFERR_UNMARSHALLABLE || p->error == WFERR_NOMEMORY) {
-            Py_DECREF(pairs);
-            return;
-        }
-        assert(i == n);
-        if (PyList_Sort(pairs)) {
-            p->error = WFERR_NOMEMORY;
-            Py_DECREF(pairs);
-            return;
-        }
-        for (Py_ssize_t i = 0; i < n; i++) {
-            PyObject *pair = PyList_GET_ITEM(pairs, i);
-            value = PyTuple_GET_ITEM(pair, 1);
-            w_object(value, p);
-        }
-        Py_DECREF(pairs);
     }
     else if (PyCode_Check(v)) {
         if (!p->allow_code) {
@@ -806,6 +774,149 @@ w_clear_refs(WFILE *wf)
     }
 }
 
+/* Marshal a set element on its own, to be used as a sort key by
+   w_set_order().  The nested writer has its own reference table, so the
+   key does not depend on the position of the element in the stream, but
+   it shares the nesting depth and the set order cache with p.
+   Return a new reference, or NULL with p->error set. */
+static PyObject *
+w_set_key(PyObject *value, WFILE *p)
+{
+    WFILE wf;
+
+    assert(p->set_orders != NULL);
+    memset(&wf, 0, sizeof(wf));
+    wf.str = PyBytes_FromStringAndSize((char *)NULL, 50);
+    if (wf.str == NULL) {
+        p->error = WFERR_NOMEMORY;
+        return NULL;
+    }
+    wf.ptr = wf.buf = PyBytes_AS_STRING(wf.str);
+    wf.end = wf.ptr + PyBytes_GET_SIZE(wf.str);
+    wf.error = WFERR_OK;
+    wf.depth = p->depth;
+    wf.version = p->version;
+    wf.allow_code = p->allow_code;
+    wf.set_orders = p->set_orders;
+    if (w_init_refs(&wf, wf.version) < 0) {
+        Py_DECREF(wf.str);
+        p->error = WFERR_NOMEMORY;
+        return NULL;
+    }
+    w_object(value, &wf);
+    w_clear_refs(&wf);
+    if (wf.error != WFERR_OK) {
+        Py_XDECREF(wf.str);
+        p->error = wf.error;
+        return NULL;
+    }
+    if (wf.str == NULL) {
+        /* w_reserve() failed to grow the buffer. */
+        p->error = WFERR_NOMEMORY;
+        return NULL;
+    }
+    const char *base = PyBytes_AS_STRING(wf.str);
+    if (_PyBytes_Resize(&wf.str, (Py_ssize_t)(wf.ptr - base)) < 0) {
+        p->error = WFERR_NOMEMORY;
+        return NULL;
+    }
+    return wf.str;
+}
+
+/* Return the elements of the set v in the order in which they are
+   marshalled: sorted by their marshalled form, so that the output does
+   not depend on hash randomization (see bpo-37596).
+
+   The order is cached in p->set_orders.  The sort key of an element is
+   its own marshalled form, so without the cache a nested set would be
+   sorted again, and its elements marshalled again, for every enclosing
+   set, taking time exponential in the nesting depth (see gh-155901).
+
+   The cache does not own a reference to the set: it is kept alive by the
+   object being marshalled, and an extra reference would make w_ref()
+   treat a uniquely referenced set as shared, changing the output.
+
+   Return a borrowed reference to a tuple, or NULL with p->error set. */
+static PyObject *
+w_set_order(PyObject *v, WFILE *p)
+{
+    if (p->set_orders == NULL) {
+        p->set_orders = _Py_hashtable_new_full(_Py_hashtable_hash_ptr,
+                                               _Py_hashtable_compare_direct,
+                                               NULL, w_decref_entry, NULL);
+        if (p->set_orders == NULL) {
+            p->error = WFERR_NOMEMORY;
+            return NULL;
+        }
+    }
+    PyObject *order = _Py_hashtable_get(p->set_orders, v);
+    if (order != NULL) {
+        return order;
+    }
+
+    Py_ssize_t n = PySet_GET_SIZE(v);
+    PyObject *pairs = PyList_New(n);
+    if (pairs == NULL) {
+        p->error = WFERR_NOMEMORY;
+        return NULL;
+    }
+    Py_ssize_t i = 0;
+    Py_ssize_t pos = 0;
+    PyObject *value;
+    Py_hash_t hash;
+    Py_BEGIN_CRITICAL_SECTION(v);
+    while (_PySet_NextEntryRef(v, &pos, &value, &hash)) {
+        PyObject *key = w_set_key(value, p);
+        if (key == NULL) {
+            Py_DECREF(value);
+            break;
+        }
+        PyObject *pair = _PyTuple_FromPairSteal(key, value);
+        if (pair == NULL) {
+            p->error = WFERR_NOMEMORY;
+            break;
+        }
+        PyList_SET_ITEM(pairs, i++, pair);
+    }
+    Py_END_CRITICAL_SECTION();
+    if (p->error != WFERR_OK) {
+        Py_DECREF(pairs);
+        return NULL;
+    }
+    assert(i == n);
+    if (PyList_Sort(pairs) < 0) {
+        p->error = WFERR_NOMEMORY;
+        Py_DECREF(pairs);
+        return NULL;
+    }
+    order = PyTuple_New(n);
+    if (order == NULL) {
+        p->error = WFERR_NOMEMORY;
+        Py_DECREF(pairs);
+        return NULL;
+    }
+    for (i = 0; i < n; i++) {
+        PyObject *pair = PyList_GET_ITEM(pairs, i);
+        PyTuple_SET_ITEM(order, i, Py_NewRef(PyTuple_GET_ITEM(pair, 1)));
+    }
+    Py_DECREF(pairs);
+    if (_Py_hashtable_set(p->set_orders, v, order) < 0) {
+        Py_DECREF(order);
+        p->error = WFERR_NOMEMORY;
+        return NULL;
+    }
+    return order;
+}
+
+static void
+w_clear_set_orders(WFILE *wf)
+{
+    if (wf->set_orders != NULL) {
+        _Py_hashtable_destroy(wf->set_orders);
+        wf->set_orders = NULL;
+    }
+}
+
 /* Set the exception indicator according to the recorded error. */
 static void
 w_set_exception(WFILE *p)
@@ -874,6 +985,7 @@ PyMarshal_WriteObjectToFile(PyObject *x, FILE *fp, int version)
     }
     w_object(x, &wf);
     w_clear_refs(&wf);
+    w_clear_set_orders(&wf);
     w_flush(&wf);
     if (wf.error != WFERR_OK) {
         w_set_exception(&wf);
@@ -2018,6 +2130,7 @@ _PyMarshal_WriteObjectToString(PyObject *x, int version, int allow_code)
     }
     w_object(x, &wf);
     w_clear_refs(&wf);
+    w_clear_set_orders(&wf);
     if (wf.str != NULL) {
         const char *base = PyBytes_AS_STRING(wf.str);
         if (_PyBytes_Resize(&wf.str, (Py_ssize_t)(wf.ptr - base)) < 0)

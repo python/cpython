@@ -317,6 +317,40 @@ class BugsTestCase(unittest.TestCase):
         last.append([0])
         self.assertRaises(ValueError, marshal.dumps, head)
 
+        # gh-155901: the limit also applies to nesting through set elements.
+        head = 0
+        for i in range(MAX_MARSHAL_STACK_DEPTH - 1):
+            head = frozenset({head})
+        new_head = marshal.loads(marshal.dumps(head))
+        depth = 0
+        while isinstance(new_head, frozenset):
+            new_head, = new_head
+            depth += 1
+        self.assertEqual(depth, MAX_MARSHAL_STACK_DEPTH - 1)
+        self.assertEqual(new_head, 0)
+
+        head = frozenset({head})
+        self.assertRaises(ValueError, marshal.dumps, head)
+
+    def test_nested_sets(self):
+        # gh-155901: marshalling nested sets took time exponential in the
+        # nesting depth, because every set element was marshalled twice
+        # (once to compute a sort key and once to write it out).
+        obj = frozenset()
+        for i in range(100):
+            obj = frozenset({obj, i})
+        for version in range(marshal.version + 1):
+            with self.subTest(version=version):
+                self.assertEqual(marshal.loads(marshal.dumps(obj, version)), obj)
+
+        # Nested sets shared between elements of the same set.
+        obj = frozenset()
+        for i in range(10):
+            obj = frozenset({obj, (obj, i), i})
+        for version in range(marshal.version + 1):
+            with self.subTest(version=version):
+                self.assertEqual(marshal.loads(marshal.dumps(obj, version)), obj)
+
     def test_reference_loop_list(self):
         a = []
         a.append(a)
@@ -535,6 +569,9 @@ class BugsTestCase(unittest.TestCase):
                 "float('nan'), b'a', b'b', b'c', 'x', 'y', 'z'",
                 # Also test for bad interactions with backreferencing:
                 "('Spam', 0), ('Spam', 1), ('Spam', 2), ('Spam', 3), ('Spam', 4), ('Spam', 5)",
+                # Nested sets are sorted only once (gh-155901); make sure
+                # that the cached order does not depend on the hash seed:
+                "frozenset({'a', 'b', 'c'}), frozenset({'d', 'e', 'f'}), 'g', 'h', 'i', 'j'",
             ):
                 s = f"{kind}([{elements}])"
                 with self.subTest(s):
