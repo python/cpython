@@ -1,0 +1,5 @@
+Corrected the language specification to match CPython's behavior: names in a
+`global` statement are only restricted from being used or assigned prior to
+their declaration in scope. Additional limitations previously suggested by
+the spec do not apply in CPython.
+Change by Beomsoo Kim
