@@ -81,6 +81,16 @@ AboutDialog_spec = {
            "Verify x.y.z versions and test each button, including Close.\n "
     }
 
+_ast_browser_spec = {
+    'file': 'astbrowser',
+    'kwds': {},
+    'msg': "Expand nodes in the AST tree and verify the matching source\n"
+           "regions are highlighted in the sample editor above.  Select\n"
+           "text in the editor and verify the enclosing node is selected.\n"
+           "Press Escape and verify the browser hides and the editor cursor\n"
+           "is at the node."
+    }
+
 # TODO implement ^\; adding '<Control-Key-\\>' to function does not work.
 _calltip_window_spec = {
     'file': 'calltip_w',

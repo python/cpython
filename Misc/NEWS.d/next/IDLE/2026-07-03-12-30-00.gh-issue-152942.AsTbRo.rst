@@ -1,0 +1,4 @@
+Add an AST Browser to IDLE, opened from the Browse menu.  It shows the abstract
+syntax tree of the editor content, the Shell input, or the selection.
+Selecting a node highlights the matching region in the editor, and selecting
+text in the editor selects the innermost enclosing node.
