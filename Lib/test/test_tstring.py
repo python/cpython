@@ -215,6 +215,8 @@ class TestTString(unittest.TestCase, TStringBaseCase):
 
     def test_syntax_errors(self):
         for case, err in (
+            ('t"""{(\n1\n)}\ntail', "unterminated triple-quoted t-string literal"),
+            ('f"""{(\n1\n)}\ntail', "unterminated triple-quoted f-string literal"),
             ("t'", "unterminated t-string literal"),
             ("t'''", "unterminated triple-quoted t-string literal"),
             ("t''''", "unterminated triple-quoted t-string literal"),

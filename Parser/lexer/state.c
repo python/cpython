@@ -1,60 +1,10 @@
 #include "Python.h"
-#include "pycore_pystate.h"
 #include "pycore_token.h"
 #include "errcode.h"
 
 #include "state.h"
 #include "../tokenizer/helpers.h"
 #include "../tokenizer/reader.h"
-
-/* Create and initialize a new tok_state structure */
-struct tok_state *
-_PyTokenizer_tok_new(void)
-{
-    struct tok_state *tok = (struct tok_state *)PyMem_Calloc(
-                                            1,
-                                            sizeof(struct tok_state));
-    if (tok == NULL) {
-        PyErr_NoMemory();
-        return NULL;
-    }
-
-    tok->cur = tok->inp = 0;
-    tok->line_start = -1;
-    tok->fp_interactive = 0;
-    tok->interactive_src_start = NULL;
-    tok->interactive_src_end = NULL;
-    tok->start = -1;
-    tok->done = E_OK;
-    tok->fp = NULL;
-    tok->indent = 0;
-    tok->indstack[0] = 0;
-    tok->atbol = 1;
-    tok->pendin = 0;
-    tok->prompt = NULL;
-    tok->lineno = 0;
-    tok->start_loc = (_PyTok_Loc){-1, -1};
-    tok->level = 0;
-    tok->altindstack[0] = 0;
-    tok->encoding = NULL;
-    tok->filename = NULL;
-    tok->module = NULL;
-    tok->type_comments = 0;
-    tok->interactive_underflow = IUNDERFLOW_NORMAL;
-    tok->str = NULL;
-    tok->report_warnings = 1;
-    tok->tok_extra_tokens = 0;
-    tok->comment_newline = 0;
-    tok->implicit_newline = 0;
-    _PyTok_SourceInit(&tok->source);
-    tok->reader = NULL;
-    tok->ftstring_stack = tok->ftstring_stack_inline;
-    tok->ftstring_capacity = FTSTRING_STACK_INLINE_CAPACITY;
-#ifdef Py_DEBUG
-    tok->debug = _Py_GetConfig()->parser_debug;
-#endif
-    return tok;
-}
 
 ftstring_state *
 _PyLexer_PushFTString(struct tok_state *tok)

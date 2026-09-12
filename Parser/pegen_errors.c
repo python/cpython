@@ -206,7 +206,9 @@ _PyPegen_raise_error(Parser *p, PyObject *errtype, int use_mark, const char *err
     Py_ssize_t end_col_offset = -1;
     if (t->col_offset == -1) {
         _PyTokenizer_Info info = _PyTokenizer_GetInfo(p->tok);
-        if (info.cursor == info.input_span.start) {
+        if (info.diagnostic.location.lineno != 0) {
+            col_offset = info.diagnostic.location.byte_col;
+        } else if (info.cursor == info.input_span.start) {
             col_offset = 0;
         } else {
             col_offset = Py_SAFE_DOWNCAST(
@@ -256,8 +258,10 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
     PyObject *tmp = NULL;
     p->error_indicator = 1;
     _PyTokenizer_Info info = _PyTokenizer_GetInfo(p->tok);
-    _PyTok_Loc location = info.location;
-    _PyTok_Span text_span = info.line_span;
+    _PyTok_Loc location = info.diagnostic.location.lineno != 0
+        ? info.diagnostic.location : info.location;
+    _PyTok_Span text_span = info.diagnostic.location.lineno != 0
+        ? info.diagnostic.text_span : info.line_span;
 
     if (end_lineno == CURRENT_POS) {
         end_lineno = location.lineno;
