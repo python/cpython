@@ -7,6 +7,7 @@ import weakref
 import operator
 import contextlib
 import copy
+import pickle
 import threading
 import time
 import random
@@ -44,6 +45,14 @@ def create_function():
 
 def create_bound_method():
     return C().method
+
+
+class WeakValueDictionaryWithSlots(weakref.WeakValueDictionary):
+    __slots__ = ('x', 'y')
+
+
+class WeakKeyDictionaryWithSlots(weakref.WeakKeyDictionary):
+    __slots__ = ('x', 'y')
 
 
 class Object:
@@ -1316,6 +1325,55 @@ class WeakMethodTestCase(unittest.TestCase):
         # If it wasn't hashed when alive, a dead WeakMethod cannot be hashed.
         self.assertRaises(TypeError, hash, c)
 
+    def test_pickle(self):
+        # The bound method is rebuilt on unpickling, bound to the same
+        # restored instance regardless of pickling order.  A callback does
+        # not prevent pickling.
+        o = Object(1)
+        r = weakref.WeakMethod(o.some_method, lambda arg: None)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                o2, r2 = pickle.loads(pickle.dumps([o, r], proto))
+                self.assertIsInstance(r2, weakref.WeakMethod)
+                self.assertIs(r2().__self__, o2)
+                self.assertEqual(r2()(), 4)
+                r2, o2 = pickle.loads(pickle.dumps([r, o], proto))
+                self.assertIs(r2().__self__, o2)
+                self.assertEqual(r2()(), 4)
+
+    def test_pickle_dead(self):
+        # A WeakMethod to a dead object (or a dead method) cannot be pickled.
+        o = Object(1)
+        r = weakref.WeakMethod(o.some_method)
+        del o
+        gc.collect()
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                self.assertRaises(TypeError, pickle.dumps, r, proto)
+
+    def test_pickle_without_strong_ref(self):
+        # As for weakref.ref, an instance with no strong reference in the
+        # pickle is refused.
+        o = Object(1)
+        r = weakref.WeakMethod(o.some_method)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                self.assertRaises(pickle.PicklingError, pickle.dumps, r, proto)
+
+    def test_copy(self):
+        # Copying rebuilds an equal weak method bound to the same instance
+        # (weak references are atomic under copy).
+        o = Object(1)
+        r = weakref.WeakMethod(o.some_method)
+        for copyfunc in copy.copy, copy.deepcopy:
+            with self.subTest(copyfunc=copyfunc):
+                r2 = copyfunc(r)
+                self.assertIsInstance(r2, weakref.WeakMethod)
+                self.assertIsNot(r2, r)
+                self.assertEqual(r2, r)
+                self.assertIs(r2().__self__, o)
+                self.assertEqual(r2()(), 4)
+
 
 class MappingTestCase(TestBase):
 
@@ -1656,8 +1714,8 @@ class MappingTestCase(TestBase):
         dict2 = weakref.WeakKeyDictionary(dict)
         self.assertEqual(dict[o], 364)
 
-    def make_weak_keyed_dict(self):
-        dict = weakref.WeakKeyDictionary()
+    def make_weak_keyed_dict(self, cls=weakref.WeakKeyDictionary):
+        dict = cls()
         objects = list(map(Object, range(self.COUNT)))
         for o in objects:
             dict[o] = o.arg
@@ -1686,12 +1744,58 @@ class MappingTestCase(TestBase):
             self.assertEqual(list(d.keys()), [kw])
             self.assertEqual(d[kw], o)
 
-    def make_weak_valued_dict(self):
-        dict = weakref.WeakValueDictionary()
+    def make_weak_valued_dict(self, cls=weakref.WeakValueDictionary):
+        dict = cls()
         objects = list(map(Object, range(self.COUNT)))
         for o in objects:
             dict[o.arg] = o
         return dict, objects
+
+    def test_pickling(self):
+        # The weak values/keys must be strongly referenced elsewhere in the
+        # pickle.  'x' is a slot attribute in the *WithSlots subclasses and a
+        # dict attribute in the bases; 'z' is a dict attribute; 'y' stays
+        # unset.
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            for cls in weakref.WeakValueDictionary, WeakValueDictionaryWithSlots:
+                with self.subTest(proto=proto, cls=cls):
+                    d, objects = self.make_weak_valued_dict(cls)
+                    d.x = ['x']
+                    d.z = ['z']
+                    d2, objects2 = pickle.loads(pickle.dumps((d, objects),
+                                                             proto))
+                    self.assertIsInstance(d2, cls)
+                    self.assertEqual(dict(d2), dict(d))
+                    self.assertEqual(set(map(id, d2.values())),
+                                     set(map(id, objects2)))
+                    self.assertEqual(d2.x, ['x'])
+                    self.assertEqual(d2.z, ['z'])
+                    self.assertNotHasAttr(d2, 'y')
+
+            for cls in weakref.WeakKeyDictionary, WeakKeyDictionaryWithSlots:
+                with self.subTest(proto=proto, cls=cls):
+                    d, objects = self.make_weak_keyed_dict(cls)
+                    d.x = ['x']
+                    d.z = ['z']
+                    d2, objects2 = pickle.loads(pickle.dumps((d, objects),
+                                                             proto))
+                    self.assertIsInstance(d2, cls)
+                    self.assertEqual(dict(d2), dict(d))
+                    self.assertEqual(set(map(id, d2.keys())),
+                                     set(map(id, objects2)))
+                    self.assertEqual(d2.x, ['x'])
+                    self.assertEqual(d2.z, ['z'])
+                    self.assertNotHasAttr(d2, 'y')
+
+    def test_pickling_without_strong_ref(self):
+        # A key/value with no strong reference in the pickle is refused.
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            d, objects = self.make_weak_valued_dict()
+            with self.assertRaises(pickle.PicklingError):
+                pickle.dumps(d, proto)
+            d, objects = self.make_weak_keyed_dict()
+            with self.assertRaises(pickle.PicklingError):
+                pickle.dumps(d, proto)
 
     def check_popitem(self, klass, key1, value1, key2, value2):
         weakdict = klass()

@@ -126,6 +126,17 @@ See :ref:`__slots__ documentation <slots>` for details.
    Weak references are :ref:`generic <generics>` over the type of the object they
    reference.
 
+   A weak reference can be pickled
+   if the referent is strongly referenced elsewhere in the same pickle;
+   otherwise pickling raises :exc:`pickle.PicklingError`.
+   The unpickled weak reference refers to the unpickled referent.
+   A reference to a dead object unpickles as a reference to a dead object.
+   The *callback* is not preserved.
+
+   Weak references are atomic for the :mod:`copy` module:
+   :func:`copy.copy` and :func:`copy.deepcopy` return
+   the original weak reference without copying the referent.
+
    .. attribute:: __callback__
 
       This read-only attribute returns the callback currently associated to the
@@ -137,6 +148,9 @@ See :ref:`__slots__ documentation <slots>` for details.
 
    .. versionchanged:: next
       Raise :exc:`!TypeError` if *callback* is not callable or ``None``.
+
+   .. versionchanged:: next
+      Weak references can now be pickled.
 
 
 .. function:: proxy(object[, callback])
@@ -203,8 +217,15 @@ See :ref:`__slots__ documentation <slots>` for details.
       >>> d[k2] = 2   # d = {k2: 2}
       >>> del k1      # d = {k2: 2}
 
+   A :class:`!WeakKeyDictionary` can be copied,
+   and pickled if the keys are strongly referenced
+   elsewhere in the same pickle (see :class:`ref`).
+
    .. versionchanged:: 3.9
       Added support for ``|`` and ``|=`` operators, as specified in :pep:`584`.
+
+   .. versionchanged:: next
+      :class:`!WeakKeyDictionary` can now be pickled.
 
 :class:`WeakKeyDictionary` objects have an additional method that
 exposes the internal references directly.  The references are not guaranteed to
@@ -224,8 +245,15 @@ than needed.
    Mapping class that references values weakly.  Entries in the dictionary will be
    discarded when no strong reference to the value exists any more.
 
+   A :class:`!WeakValueDictionary` can be copied,
+   and pickled if the values are strongly referenced
+   elsewhere in the same pickle (see :class:`ref`).
+
    .. versionchanged:: 3.9
       Added support for ``|`` and ``|=`` operators, as specified in :pep:`584`.
+
+   .. versionchanged:: next
+      :class:`!WeakValueDictionary` can now be pickled.
 
 :class:`WeakValueDictionary` objects have an additional method that has the
 same issues as the :meth:`WeakKeyDictionary.keyrefs` method.
@@ -240,6 +268,14 @@ same issues as the :meth:`WeakKeyDictionary.keyrefs` method.
 
    Set class that keeps weak references to its elements.  An element will be
    discarded when no strong reference to it exists any more.
+
+   A :class:`!WeakSet` can be pickled if the elements are strongly
+   referenced elsewhere in the same pickle (see :class:`ref`).
+   A copy or a deep copy shares the elements with the original;
+   user-defined attributes are copied or deep-copied.
+
+   .. versionchanged:: next
+      :class:`!WeakSet` can now be pickled and copied.
 
 
 .. class:: WeakMethod(method[, callback])
@@ -270,7 +306,15 @@ same issues as the :meth:`WeakKeyDictionary.keyrefs` method.
 
    *callback* is the same as the parameter of the same name to the :func:`ref` function.
 
+   A :class:`!WeakMethod` can be copied,
+   and pickled if the object the method is bound to is strongly referenced
+   elsewhere in the same pickle (see :class:`ref`).
+   A copy or a deep copy is an equal weak method to the same object.
+
    .. versionadded:: 3.4
+
+   .. versionchanged:: next
+      :class:`!WeakMethod` can now be pickled and copied.
 
 .. class:: finalize(obj, func, /, *args, **kwargs)
 
