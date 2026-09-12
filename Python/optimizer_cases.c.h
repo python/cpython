@@ -1729,6 +1729,10 @@
             break;
         }
 
+        case _GUARD_TOS_NON_NEGATIVE_COMPACT_INT: {
+            break;
+        }
+
         case _STORE_SUBSCR_LIST_INT: {
             JitOptRef sub_st;
             JitOptRef list_st;

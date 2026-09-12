@@ -823,11 +823,16 @@
             _PyStackRef res;
             _PyStackRef ls;
             _PyStackRef ss;
-            // _GUARD_TOS_INT
+            // _GUARD_TOS_NON_NEGATIVE_COMPACT_INT
             {
                 value = stack_pointer[-1];
                 PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
-                if (!_PyLong_CheckExactAndCompact(value_o)) {
+                if (!PyLong_CheckExact(value_o)) {
+                    UPDATE_MISS_STATS(BINARY_OP);
+                    assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
+                    JUMP_TO_PREDICTED(BINARY_OP);
+                }
+                if (!_PyLong_IsNonNegativeCompact((PyLongObject *)value_o)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
                     JUMP_TO_PREDICTED(BINARY_OP);
@@ -853,9 +858,6 @@
                 assert(PyLong_CheckExact(sub));
                 assert(PyList_CheckExact(list));
                 Py_ssize_t index = _PyLong_CompactValue((PyLongObject *)sub);
-                if (index < 0) {
-                    index += PyList_GET_SIZE(list);
-                }
                 #ifdef Py_GIL_DISABLED
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyFrame_StackPointerValidate(frame);
@@ -1002,11 +1004,16 @@
             _PyStackRef res;
             _PyStackRef s;
             _PyStackRef i;
-            // _GUARD_TOS_INT
+            // _GUARD_TOS_NON_NEGATIVE_COMPACT_INT
             {
                 value = stack_pointer[-1];
                 PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
-                if (!_PyLong_CheckExactAndCompact(value_o)) {
+                if (!PyLong_CheckExact(value_o)) {
+                    UPDATE_MISS_STATS(BINARY_OP);
+                    assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
+                    JUMP_TO_PREDICTED(BINARY_OP);
+                }
+                if (!_PyLong_IsNonNegativeCompact((PyLongObject *)value_o)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
                     JUMP_TO_PREDICTED(BINARY_OP);
@@ -1036,11 +1043,6 @@
                 PyObject *str = PyStackRef_AsPyObjectBorrow(str_st);
                 assert(PyLong_CheckExact(sub));
                 assert(PyUnicode_CheckExact(str));
-                if (!_PyLong_IsNonNegativeCompact((PyLongObject*)sub)) {
-                    UPDATE_MISS_STATS(BINARY_OP);
-                    assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    JUMP_TO_PREDICTED(BINARY_OP);
-                }
                 Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
                 if (PyUnicode_GET_LENGTH(str) <= index) {
                     UPDATE_MISS_STATS(BINARY_OP);
@@ -1091,11 +1093,16 @@
             _PyStackRef res;
             _PyStackRef ts;
             _PyStackRef ss;
-            // _GUARD_TOS_INT
+            // _GUARD_TOS_NON_NEGATIVE_COMPACT_INT
             {
                 value = stack_pointer[-1];
                 PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
-                if (!_PyLong_CheckExactAndCompact(value_o)) {
+                if (!PyLong_CheckExact(value_o)) {
+                    UPDATE_MISS_STATS(BINARY_OP);
+                    assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
+                    JUMP_TO_PREDICTED(BINARY_OP);
+                }
+                if (!_PyLong_IsNonNegativeCompact((PyLongObject *)value_o)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
                     JUMP_TO_PREDICTED(BINARY_OP);
@@ -1119,11 +1126,6 @@
                 PyObject *tuple = PyStackRef_AsPyObjectBorrow(tuple_st);
                 assert(PyLong_CheckExact(sub));
                 assert(PyTuple_CheckExact(tuple));
-                if (!_PyLong_IsNonNegativeCompact((PyLongObject *)sub)) {
-                    UPDATE_MISS_STATS(BINARY_OP);
-                    assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    JUMP_TO_PREDICTED(BINARY_OP);
-                }
                 Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
                 if (index >= PyTuple_GET_SIZE(tuple)) {
                     UPDATE_MISS_STATS(BINARY_OP);
@@ -1184,11 +1186,16 @@
             _PyStackRef res;
             _PyStackRef s;
             _PyStackRef i;
-            // _GUARD_TOS_INT
+            // _GUARD_TOS_NON_NEGATIVE_COMPACT_INT
             {
                 value = stack_pointer[-1];
                 PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
-                if (!_PyLong_CheckExactAndCompact(value_o)) {
+                if (!PyLong_CheckExact(value_o)) {
+                    UPDATE_MISS_STATS(BINARY_OP);
+                    assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
+                    JUMP_TO_PREDICTED(BINARY_OP);
+                }
+                if (!_PyLong_IsNonNegativeCompact((PyLongObject *)value_o)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
                     JUMP_TO_PREDICTED(BINARY_OP);
@@ -1213,11 +1220,6 @@
                 PyObject *str = PyStackRef_AsPyObjectBorrow(str_st);
                 assert(PyLong_CheckExact(sub));
                 assert(PyUnicode_CheckExact(str));
-                if (!_PyLong_IsNonNegativeCompact((PyLongObject*)sub)) {
-                    UPDATE_MISS_STATS(BINARY_OP);
-                    assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    JUMP_TO_PREDICTED(BINARY_OP);
-                }
                 Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
                 if (PyUnicode_GET_LENGTH(str) <= index) {
                     UPDATE_MISS_STATS(BINARY_OP);
@@ -12753,11 +12755,16 @@
             _PyStackRef sub_st;
             _PyStackRef ls;
             _PyStackRef ss;
-            // _GUARD_TOS_INT
+            // _GUARD_TOS_NON_NEGATIVE_COMPACT_INT
             {
                 value = stack_pointer[-1];
                 PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
-                if (!_PyLong_CheckExactAndCompact(value_o)) {
+                if (!PyLong_CheckExact(value_o)) {
+                    UPDATE_MISS_STATS(STORE_SUBSCR);
+                    assert(_PyOpcode_Deopt[opcode] == (STORE_SUBSCR));
+                    JUMP_TO_PREDICTED(STORE_SUBSCR);
+                }
+                if (!_PyLong_IsNonNegativeCompact((PyLongObject *)value_o)) {
                     UPDATE_MISS_STATS(STORE_SUBSCR);
                     assert(_PyOpcode_Deopt[opcode] == (STORE_SUBSCR));
                     JUMP_TO_PREDICTED(STORE_SUBSCR);
@@ -12790,10 +12797,7 @@
                     JUMP_TO_PREDICTED(STORE_SUBSCR);
                 }
                 Py_ssize_t len = PyList_GET_SIZE(list);
-                if (index < 0) {
-                    index += len;
-                }
-                if (index < 0 || index >= len) {
+                if (index >= len) {
                     UNLOCK_OBJECT(list);
                     if (true) {
                         UPDATE_MISS_STATS(STORE_SUBSCR);
