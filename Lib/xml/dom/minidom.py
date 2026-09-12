@@ -230,16 +230,19 @@ class Node(xml.dom.Node):
         # Overridden in Element and Attr where localName can be Non-Null
         return None
 
-    # Node interfaces from Level 3 (WD 9 April 2002)
+    # Node interfaces from DOM Level 3
 
     def isSameNode(self, other):
         return self is other
 
-    def getInterface(self, feature):
-        if self.isSupported(feature, None):
+    def getFeature(self, feature, version):
+        if self.isSupported(feature, version):
             return self
         else:
             return None
+
+    def getInterface(self, feature):
+        return self.getFeature(feature, None)
 
     # The "user data" functions use a dictionary that is only present
     # if some user data has been set, so be careful not to assume it
@@ -507,9 +510,12 @@ class Attr(Node):
         else:
             return info.getAttributeType(self.nodeName)
 
+    _get_schemaTypeInfo = _get_schemaType
+
 defproperty(Attr, "isId",       doc="True if this attribute is an ID.")
 defproperty(Attr, "localName",  doc="Namespace-local name of this attribute.")
 defproperty(Attr, "schemaType", doc="Schema type for this attribute.")
+defproperty(Attr, "schemaTypeInfo", doc="Schema type for this attribute.")
 
 
 class NamedNodeMap(object):
@@ -715,7 +721,7 @@ class Element(Node):
                'nextSibling', 'previousSibling')
     nodeType = Node.ELEMENT_NODE
     nodeValue = None
-    schemaType = _no_type
+    schemaType = schemaTypeInfo = _no_type
 
     _magic_id_nodes = 0
 
@@ -1223,7 +1229,12 @@ class Text(CharacterData):
         else:
             return info.isElementContent()
 
+    _get_isElementContentWhitespace = _get_isWhitespaceInElementContent
+
 defproperty(Text, "isWhitespaceInElementContent",
+            doc="True iff this text node contains only whitespace"
+                " and is in element content.")
+defproperty(Text, "isElementContentWhitespace",
             doc="True iff this text node contains only whitespace"
                 " and is in element content.")
 defproperty(Text, "wholeText",
@@ -1432,11 +1443,35 @@ class Entity(Identified, Node):
     def _get_actualEncoding(self):
         return self.actualEncoding
 
+    def _get_inputEncoding(self):
+        return self.actualEncoding
+
+    def _set_inputEncoding(self, value):
+        self.actualEncoding = value
+
+    inputEncoding = property(_get_inputEncoding, _set_inputEncoding)
+
     def _get_encoding(self):
         return self.encoding
 
+    def _get_xmlEncoding(self):
+        return self.encoding
+
+    def _set_xmlEncoding(self, value):
+        self.encoding = value
+
+    xmlEncoding = property(_get_xmlEncoding, _set_xmlEncoding)
+
     def _get_version(self):
         return self.version
+
+    def _get_xmlVersion(self):
+        return self.version
+
+    def _set_xmlVersion(self, value):
+        self.version = value
+
+    xmlVersion = property(_get_xmlVersion, _set_xmlVersion)
 
     def appendChild(self, newChild):
         raise xml.dom.HierarchyRequestErr(
@@ -1570,13 +1605,16 @@ class DOMImplementation(DOMImplementationLS):
         doctype.systemId = systemId
         return doctype
 
-    # DOM Level 3 (WD 9 April 2002)
+    # DOM Level 3
 
-    def getInterface(self, feature):
-        if self.hasFeature(feature, None):
+    def getFeature(self, feature, version):
+        if self.hasFeature(feature, version):
             return self
         else:
             return None
+
+    def getInterface(self, feature):
+        return self.getFeature(feature, None)
 
     # internal
     def _create_document(self):
@@ -1647,7 +1685,7 @@ class Document(Node, DocumentLS):
     previousSibling = nextSibling = None
 
 
-    # Document attributes from Level 3 (WD 9 April 2002)
+    # Document attributes from DOM Level 3
 
     actualEncoding = None
     encoding = None
@@ -1678,6 +1716,14 @@ class Document(Node, DocumentLS):
     def _get_actualEncoding(self):
         return self.actualEncoding
 
+    def _get_inputEncoding(self):
+        return self.actualEncoding
+
+    def _set_inputEncoding(self, value):
+        self.actualEncoding = value
+
+    inputEncoding = property(_get_inputEncoding, _set_inputEncoding)
+
     def _get_doctype(self):
         return self.doctype
 
@@ -1687,17 +1733,41 @@ class Document(Node, DocumentLS):
     def _get_encoding(self):
         return self.encoding
 
+    def _get_xmlEncoding(self):
+        return self.encoding
+
+    def _set_xmlEncoding(self, value):
+        self.encoding = value
+
+    xmlEncoding = property(_get_xmlEncoding, _set_xmlEncoding)
+
     def _get_errorHandler(self):
         return self.errorHandler
 
     def _get_standalone(self):
         return self.standalone
 
+    def _get_xmlStandalone(self):
+        return self.standalone
+
+    def _set_xmlStandalone(self, value):
+        self.standalone = value
+
+    xmlStandalone = property(_get_xmlStandalone, _set_xmlStandalone)
+
     def _get_strictErrorChecking(self):
         return self.strictErrorChecking
 
     def _get_version(self):
         return self.version
+
+    def _get_xmlVersion(self):
+        return self.version
+
+    def _set_xmlVersion(self, value):
+        self.version = value
+
+    xmlVersion = property(_get_xmlVersion, _set_xmlVersion)
 
     def _check_new_child(self, newChild, oldChild=None):
         Node._check_new_child(self, newChild, oldChild)
