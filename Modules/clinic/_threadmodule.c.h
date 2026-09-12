@@ -6,7 +6,92 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
-#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+
+#if !defined(_thread__ThreadHandle_ident_DOCSTR)
+#  define _thread__ThreadHandle_ident_DOCSTR NULL
+#endif
+#if defined(_THREAD__THREADHANDLE_IDENT_GETSETDEF)
+#  undef _THREAD__THREADHANDLE_IDENT_GETSETDEF
+#  define _THREAD__THREADHANDLE_IDENT_GETSETDEF {"ident", (getter)_thread__ThreadHandle_ident_get, (setter)_thread__ThreadHandle_ident_set, _thread__ThreadHandle_ident_DOCSTR},
+#else
+#  define _THREAD__THREADHANDLE_IDENT_GETSETDEF {"ident", (getter)_thread__ThreadHandle_ident_get, NULL, _thread__ThreadHandle_ident_DOCSTR},
+#endif
+
+static PyObject *
+_thread__ThreadHandle_ident_get_impl(PyObject *self);
+
+static PyObject *
+_thread__ThreadHandle_ident_get(PyObject *self, void *Py_UNUSED(context))
+{
+    return _thread__ThreadHandle_ident_get_impl(self);
+}
+
+PyDoc_STRVAR(_thread__ThreadHandle_join__doc__,
+"join($self, timeout=None, /)\n"
+"--\n"
+"\n");
+
+#define _THREAD__THREADHANDLE_JOIN_METHODDEF    \
+    {"join", _PyCFunction_CAST(_thread__ThreadHandle_join), METH_FASTCALL, _thread__ThreadHandle_join__doc__},
+
+static PyObject *
+_thread__ThreadHandle_join_impl(PyObject *self, PyObject *timeout_obj);
+
+static PyObject *
+_thread__ThreadHandle_join(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *timeout_obj = Py_None;
+
+    if (!_PyArg_CheckPositional("join", nargs, 0, 1)) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    timeout_obj = args[0];
+skip_optional:
+    return_value = _thread__ThreadHandle_join_impl(self, timeout_obj);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_thread__ThreadHandle_is_done__doc__,
+"is_done($self, /)\n"
+"--\n"
+"\n");
+
+#define _THREAD__THREADHANDLE_IS_DONE_METHODDEF    \
+    {"is_done", (PyCFunction)_thread__ThreadHandle_is_done, METH_NOARGS, _thread__ThreadHandle_is_done__doc__},
+
+static PyObject *
+_thread__ThreadHandle_is_done_impl(PyObject *self);
+
+static PyObject *
+_thread__ThreadHandle_is_done(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _thread__ThreadHandle_is_done_impl(self);
+}
+
+PyDoc_STRVAR(_thread__ThreadHandle__set_done__doc__,
+"_set_done($self, /)\n"
+"--\n"
+"\n");
+
+#define _THREAD__THREADHANDLE__SET_DONE_METHODDEF    \
+    {"_set_done", (PyCFunction)_thread__ThreadHandle__set_done, METH_NOARGS, _thread__ThreadHandle__set_done__doc__},
+
+static PyObject *
+_thread__ThreadHandle__set_done_impl(PyObject *self);
+
+static PyObject *
+_thread__ThreadHandle__set_done(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _thread__ThreadHandle__set_done_impl(self);
+}
 
 PyDoc_STRVAR(_thread_lock_acquire__doc__,
 "acquire($self, /, blocking=True, timeout=-1)\n"
@@ -637,6 +722,457 @@ _thread_RLock__at_fork_reinit(PyObject *self, PyObject *Py_UNUSED(ignored))
 
 #endif /* defined(HAVE_FORK) */
 
+PyDoc_STRVAR(_thread_daemon_threads_allowed__doc__,
+"daemon_threads_allowed($module, /)\n"
+"--\n"
+"\n"
+"Return True if daemon threads are allowed in the current interpreter.\n"
+"\n"
+"Return False otherwise.");
+
+#define _THREAD_DAEMON_THREADS_ALLOWED_METHODDEF    \
+    {"daemon_threads_allowed", (PyCFunction)_thread_daemon_threads_allowed, METH_NOARGS, _thread_daemon_threads_allowed__doc__},
+
+static PyObject *
+_thread_daemon_threads_allowed_impl(PyObject *module);
+
+static PyObject *
+_thread_daemon_threads_allowed(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _thread_daemon_threads_allowed_impl(module);
+}
+
+PyDoc_STRVAR(_thread_start_new_thread__doc__,
+"start_new_thread($module, function, args, kwargs={}, /)\n"
+"--\n"
+"\n"
+"Start a new thread and return its identifier.\n"
+"\n"
+"The thread will call the function with positional arguments from the\n"
+"tuple args and keyword arguments taken from the optional dictionary\n"
+"kwargs.  The thread exits when the function returns; the return value\n"
+"is ignored.  The thread will also exit when the function raises an\n"
+"unhandled exception; a stack trace will be printed unless the exception\n"
+"is SystemExit.");
+
+#define _THREAD_START_NEW_THREAD_METHODDEF    \
+    {"start_new_thread", _PyCFunction_CAST(_thread_start_new_thread), METH_FASTCALL, _thread_start_new_thread__doc__},
+
+static PyObject *
+_thread_start_new_thread_impl(PyObject *module, PyObject *func,
+                              PyObject *args, PyObject *kwargs);
+
+static PyObject *
+_thread_start_new_thread(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *func;
+    PyObject *__clinic_args;
+    PyObject *__clinic_kwargs = NULL;
+
+    if (!_PyArg_CheckPositional("start_new_thread", nargs, 2, 3)) {
+        goto exit;
+    }
+    func = args[0];
+    if (!PyTuple_Check(args[1])) {
+        _PyArg_BadArgument("start_new_thread", "argument 2", "tuple", args[1]);
+        goto exit;
+    }
+    __clinic_args = args[1];
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    if (!PyDict_Check(args[2])) {
+        _PyArg_BadArgument("start_new_thread", "argument 3", "dict", args[2]);
+        goto exit;
+    }
+    __clinic_kwargs = args[2];
+skip_optional:
+    return_value = _thread_start_new_thread_impl(module, func, __clinic_args, __clinic_kwargs);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_thread_start_joinable_thread__doc__,
+"start_joinable_thread($module, /, function, handle=None, daemon=True)\n"
+"--\n"
+"\n"
+"*For internal use only*: start a new thread.\n"
+"\n"
+"Like start_new_thread(), this starts a new thread calling the given\n"
+"function.  Unlike start_new_thread(), this returns a handle object with\n"
+"methods to join or detach the given thread.\n"
+"This function is not for third-party code, please use the `threading`\n"
+"module instead.  During finalization the runtime will not wait for the\n"
+"thread to exit if daemon is True.  If handle is provided it must be a\n"
+"newly created thread._ThreadHandle instance.");
+
+#define _THREAD_START_JOINABLE_THREAD_METHODDEF    \
+    {"start_joinable_thread", _PyCFunction_CAST(_thread_start_joinable_thread), METH_FASTCALL|METH_KEYWORDS, _thread_start_joinable_thread__doc__},
+
+static PyObject *
+_thread_start_joinable_thread_impl(PyObject *module, PyObject *func,
+                                   PyObject *hobj, int daemon);
+
+static PyObject *
+_thread_start_joinable_thread(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 3
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(function), &_Py_ID(handle), &_Py_ID(daemon), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"function", "handle", "daemon", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "start_joinable_thread",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[3];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    PyObject *func;
+    PyObject *hobj = Py_None;
+    int daemon = 1;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    func = args[0];
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[1]) {
+        hobj = args[1];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    daemon = PyObject_IsTrue(args[2]);
+    if (daemon < 0) {
+        goto exit;
+    }
+skip_optional_pos:
+    return_value = _thread_start_joinable_thread_impl(module, func, hobj, daemon);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_thread_exit__doc__,
+"exit($module, /)\n"
+"--\n"
+"\n"
+"Raise SystemExit.\n"
+"\n"
+"It will cause the current thread to exit silently unless the exception\n"
+"is caught.");
+
+#define _THREAD_EXIT_METHODDEF    \
+    {"exit", (PyCFunction)_thread_exit, METH_NOARGS, _thread_exit__doc__},
+
+static PyObject *
+_thread_exit_impl(PyObject *module);
+
+static PyObject *
+_thread_exit(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _thread_exit_impl(module);
+}
+
+PyDoc_STRVAR(_thread_interrupt_main__doc__,
+"interrupt_main($module, signum=signal.SIGINT, /)\n"
+"--\n"
+"\n"
+"Simulate the arrival of the given signal in the main thread.\n"
+"\n"
+"The corresponding signal handler will be executed.\n"
+"If *signum* is omitted, SIGINT is assumed.\n"
+"A subthread can use this function to interrupt the main thread.\n"
+"\n"
+"Note: the default signal handler for SIGINT raises\n"
+"``KeyboardInterrupt``.");
+
+#define _THREAD_INTERRUPT_MAIN_METHODDEF    \
+    {"interrupt_main", _PyCFunction_CAST(_thread_interrupt_main), METH_FASTCALL, _thread_interrupt_main__doc__},
+
+static PyObject *
+_thread_interrupt_main_impl(PyObject *module, int signum);
+
+static PyObject *
+_thread_interrupt_main(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int signum = SIGINT;
+
+    if (!_PyArg_CheckPositional("interrupt_main", nargs, 0, 1)) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    signum = PyLong_AsInt(args[0]);
+    if (signum == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
+    return_value = _thread_interrupt_main_impl(module, signum);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_thread_allocate_lock__doc__,
+"allocate_lock($module, /)\n"
+"--\n"
+"\n"
+"Create a new lock object.\n"
+"\n"
+"See help(type(threading.Lock())) for information about locks.");
+
+#define _THREAD_ALLOCATE_LOCK_METHODDEF    \
+    {"allocate_lock", (PyCFunction)_thread_allocate_lock, METH_NOARGS, _thread_allocate_lock__doc__},
+
+static PyObject *
+_thread_allocate_lock_impl(PyObject *module);
+
+static PyObject *
+_thread_allocate_lock(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _thread_allocate_lock_impl(module);
+}
+
+PyDoc_STRVAR(_thread_get_ident__doc__,
+"get_ident($module, /)\n"
+"--\n"
+"\n"
+"Return a non-zero integer that uniquely identifies the current thread.\n"
+"\n"
+"It is unique amongst other threads that exist simultaneously.\n"
+"This may be used to identify per-thread resources.\n"
+"Even though on some platforms threads identities may appear to be\n"
+"allocated consecutive numbers starting at 1, this behavior should not\n"
+"be relied upon, and the number should be seen purely as a magic cookie.\n"
+"A thread\'s identity may be reused for another thread after it exits.");
+
+#define _THREAD_GET_IDENT_METHODDEF    \
+    {"get_ident", (PyCFunction)_thread_get_ident, METH_NOARGS, _thread_get_ident__doc__},
+
+static PyObject *
+_thread_get_ident_impl(PyObject *module);
+
+static PyObject *
+_thread_get_ident(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _thread_get_ident_impl(module);
+}
+
+#if defined(PY_HAVE_THREAD_NATIVE_ID)
+
+PyDoc_STRVAR(_thread_get_native_id__doc__,
+"get_native_id($module, /)\n"
+"--\n"
+"\n"
+"Return a non-negative integer identifying the thread.\n"
+"\n"
+"It is reported by the OS (kernel).  This may be used to uniquely\n"
+"identify a particular thread within a system.");
+
+#define _THREAD_GET_NATIVE_ID_METHODDEF    \
+    {"get_native_id", (PyCFunction)_thread_get_native_id, METH_NOARGS, _thread_get_native_id__doc__},
+
+static PyObject *
+_thread_get_native_id_impl(PyObject *module);
+
+static PyObject *
+_thread_get_native_id(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _thread_get_native_id_impl(module);
+}
+
+#endif /* defined(PY_HAVE_THREAD_NATIVE_ID) */
+
+PyDoc_STRVAR(_thread__count__doc__,
+"_count($module, /)\n"
+"--\n"
+"\n"
+"Return the number of currently running Python threads.\n"
+"\n"
+"The main thread is excluded.  The returned number comprises all threads\n"
+"created through `start_new_thread()` as well as `threading.Thread`, and\n"
+"not yet finished.\n"
+"\n"
+"This function is meant for internal and specialized purposes only.\n"
+"In most applications `threading.enumerate()` should be used instead.");
+
+#define _THREAD__COUNT_METHODDEF    \
+    {"_count", (PyCFunction)_thread__count, METH_NOARGS, _thread__count__doc__},
+
+static PyObject *
+_thread__count_impl(PyObject *module);
+
+static PyObject *
+_thread__count(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _thread__count_impl(module);
+}
+
+PyDoc_STRVAR(_thread_stack_size__doc__,
+"stack_size($module, size=0, /)\n"
+"--\n"
+"\n"
+"Return the thread stack size used when creating new threads.\n"
+"\n"
+"The optional size argument specifies the stack size (in bytes) to be\n"
+"used for subsequently created threads, and must be 0 (use platform or\n"
+"configured default) or a positive integer value of at least 32,768 (32\n"
+"KiB).  If changing the thread stack size is unsupported, a ThreadError\n"
+"exception is raised.  If the specified size is invalid, a ValueError\n"
+"exception is raised, and the stack size is unmodified.  32 KiB\n"
+"currently is the minimum supported stack size value to guarantee\n"
+"sufficient stack space for the interpreter itself.\n"
+"\n"
+"Note that some systems may have particular restrictions on values for\n"
+"the stack size, such as requiring a minimum stack size larger than 32\n"
+"KiB or requiring allocation in multiples of the system memory page size\n"
+"- platform documentation should be referred to for more information\n"
+"(4 KiB pages are common; using multiples of 4096 for the stack size is\n"
+"the suggested approach in the absence of more specific information).");
+
+#define _THREAD_STACK_SIZE_METHODDEF    \
+    {"stack_size", _PyCFunction_CAST(_thread_stack_size), METH_FASTCALL, _thread_stack_size__doc__},
+
+static PyObject *
+_thread_stack_size_impl(PyObject *module, Py_ssize_t new_size);
+
+static PyObject *
+_thread_stack_size(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t new_size = 0;
+
+    if (!_PyArg_CheckPositional("stack_size", nargs, 0, 1)) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[0]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        new_size = ival;
+    }
+skip_optional:
+    return_value = _thread_stack_size_impl(module, new_size);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_thread__excepthook__doc__,
+"_excepthook($module, args, /)\n"
+"--\n"
+"\n"
+"Handle uncaught Thread.run() exception.");
+
+#define _THREAD__EXCEPTHOOK_METHODDEF    \
+    {"_excepthook", (PyCFunction)_thread__excepthook, METH_O, _thread__excepthook__doc__},
+
+PyDoc_STRVAR(_thread__is_main_interpreter__doc__,
+"_is_main_interpreter($module, /)\n"
+"--\n"
+"\n"
+"Return True if the current interpreter is the main Python interpreter.");
+
+#define _THREAD__IS_MAIN_INTERPRETER_METHODDEF    \
+    {"_is_main_interpreter", (PyCFunction)_thread__is_main_interpreter, METH_NOARGS, _thread__is_main_interpreter__doc__},
+
+static PyObject *
+_thread__is_main_interpreter_impl(PyObject *module);
+
+static PyObject *
+_thread__is_main_interpreter(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _thread__is_main_interpreter_impl(module);
+}
+
+PyDoc_STRVAR(_thread__shutdown__doc__,
+"_shutdown($module, /)\n"
+"--\n"
+"\n"
+"Wait for all non-daemon threads (other than the calling thread) to stop.");
+
+#define _THREAD__SHUTDOWN_METHODDEF    \
+    {"_shutdown", (PyCFunction)_thread__shutdown, METH_NOARGS, _thread__shutdown__doc__},
+
+static PyObject *
+_thread__shutdown_impl(PyObject *module);
+
+static PyObject *
+_thread__shutdown(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _thread__shutdown_impl(module);
+}
+
+PyDoc_STRVAR(_thread__make_thread_handle__doc__,
+"_make_thread_handle($module, ident, /)\n"
+"--\n"
+"\n"
+"Internal only.\n"
+"\n"
+"Make a thread handle for threads not spawned by the _thread or\n"
+"threading module.");
+
+#define _THREAD__MAKE_THREAD_HANDLE_METHODDEF    \
+    {"_make_thread_handle", (PyCFunction)_thread__make_thread_handle, METH_O, _thread__make_thread_handle__doc__},
+
+PyDoc_STRVAR(_thread__get_main_thread_ident__doc__,
+"_get_main_thread_ident($module, /)\n"
+"--\n"
+"\n"
+"Internal only.\n"
+"\n"
+"Return a non-zero integer that uniquely identifies the main thread of\n"
+"the main interpreter.");
+
+#define _THREAD__GET_MAIN_THREAD_IDENT_METHODDEF    \
+    {"_get_main_thread_ident", (PyCFunction)_thread__get_main_thread_ident, METH_NOARGS, _thread__get_main_thread_ident__doc__},
+
+static PyObject *
+_thread__get_main_thread_ident_impl(PyObject *module);
+
+static PyObject *
+_thread__get_main_thread_ident(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _thread__get_main_thread_ident_impl(module);
+}
+
 #if (defined(HAVE_PTHREAD_GETNAME_NP) || defined(HAVE_PTHREAD_GET_NAME_NP) || defined(MS_WINDOWS))
 
 PyDoc_STRVAR(_thread__get_name__doc__,
@@ -733,6 +1269,10 @@ exit:
     #define _THREAD_RLOCK__AT_FORK_REINIT_METHODDEF
 #endif /* !defined(_THREAD_RLOCK__AT_FORK_REINIT_METHODDEF) */
 
+#ifndef _THREAD_GET_NATIVE_ID_METHODDEF
+    #define _THREAD_GET_NATIVE_ID_METHODDEF
+#endif /* !defined(_THREAD_GET_NATIVE_ID_METHODDEF) */
+
 #ifndef _THREAD__GET_NAME_METHODDEF
     #define _THREAD__GET_NAME_METHODDEF
 #endif /* !defined(_THREAD__GET_NAME_METHODDEF) */
@@ -740,4 +1280,4 @@ exit:
 #ifndef _THREAD_SET_NAME_METHODDEF
     #define _THREAD_SET_NAME_METHODDEF
 #endif /* !defined(_THREAD_SET_NAME_METHODDEF) */
-/*[clinic end generated code: output=0f1707cbafc0e8f2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=cd1b9c78d32ab693 input=a9049054013a1b77]*/
