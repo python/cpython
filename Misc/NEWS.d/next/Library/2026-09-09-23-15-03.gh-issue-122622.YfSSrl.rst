@@ -1,0 +1,3 @@
+Add an optional ``_pyrepl.pre_execution_hook`` callable that is invoked with
+the submitted source before each interactive statement is executed. This
+allows external tools to implement features such as shell integration.
