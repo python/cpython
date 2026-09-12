@@ -1,0 +1,1 @@
+Add the :mod:`multiprocessing.shared_memory.SharedMemory.rename` method for FreeBSD.

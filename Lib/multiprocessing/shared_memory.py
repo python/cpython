@@ -11,6 +11,7 @@ __all__ = [ 'SharedMemory', 'ShareableList' ]
 from functools import partial
 import mmap
 import os
+import platform
 import errno
 import struct
 import secrets
@@ -35,6 +36,10 @@ if _USE_POSIX:
     _SHM_NAME_PREFIX = '/psm_'
 else:
     _SHM_NAME_PREFIX = 'wnsm_'
+
+if _USE_POSIX and hasattr(_posixshmem, "shm_rename"):
+    from _posixshmem import SHM_RENAME_EXCHANGE
+    from _posixshmem import SHM_RENAME_NOREPLACE
 
 
 def _make_filename():
@@ -252,6 +257,27 @@ class SharedMemory:
             _posixshmem.shm_unlink(self._name)
             if self._track:
                 resource_tracker.unregister(self._name, "shared_memory")
+
+    if _USE_POSIX and hasattr(_posixshmem, "shm_rename"):
+        def rename(self, newname, flags=0):
+            """Renames a shared memory block.
+
+            The policy how the operation is handled depends on the flag passed.
+            The default behavior is if the newname already exists, it will
+            be unlinked beforehand.
+            With the SHM_RENAME_EXCHANGE flag, the old and new name will
+            be exchanged.
+            With the SHM_RENAME_NOREPLACE flag, an error will be returned
+            if the new name exists.
+            """
+            oldname = self._name
+            if _USE_POSIX and self._prepend_leading_slash:
+                newname = "/" + newname
+            self._fd = _posixshmem.shm_rename(self._name, newname, flags)
+            if self._track:
+                resource_tracker.unregister(oldname, "shared_memory")
+                resource_tracker.register(newname, "shared_memory")
+            self._name = newname
 
 
 _encoding = "utf8"
