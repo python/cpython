@@ -4902,6 +4902,44 @@ class _TestSharedMemory(BaseTestCase):
 
         sms.close()
 
+    @unittest.skipUnless(shared_memory._USE_POSIX,
+                         "POSIX shared memory required")
+    def test_shared_memory_attach_failure_preserves_block(self):
+        # A failure to mmap while *attaching* to an existing shared memory
+        # block (create=False) must not unlink (destroy) the block, which
+        # is owned by another party.
+        name = self._new_shm_name('test_attach_fail')
+        owner = shared_memory.SharedMemory(name, create=True, size=1024)
+        self.addCleanup(owner.unlink)
+        self.addCleanup(owner.close)
+
+        with unittest.mock.patch(
+                'multiprocessing.shared_memory.mmap.mmap',
+                side_effect=OSError("simulated mmap failure")):
+            with self.assertRaises(OSError):
+                shared_memory.SharedMemory(name)  # attach must not unlink
+
+        # The owner's block must still be attachable.
+        attached = shared_memory.SharedMemory(name)
+        self.addCleanup(attached.close)
+        self.assertGreaterEqual(attached.size, 1024)
+
+    @unittest.skipUnless(shared_memory._USE_POSIX,
+                         "POSIX shared memory required")
+    def test_shared_memory_create_failure_cleans_up(self):
+        # A failure to mmap while *creating* a block must destroy the
+        # just-created block so that it is not leaked.
+        name = self._new_shm_name('test_create_fail')
+        with unittest.mock.patch(
+                'multiprocessing.shared_memory.mmap.mmap',
+                side_effect=OSError("simulated mmap failure")):
+            with self.assertRaises(OSError):
+                shared_memory.SharedMemory(name, create=True, size=1024)
+
+        # The half-created block must not survive.
+        with self.assertRaises(FileNotFoundError):
+            shared_memory.SharedMemory(name)
+
     def test_shared_memory_recreate(self):
         # Test if shared memory segment is created properly,
         # when _make_filename returns an existing shared memory segment name
