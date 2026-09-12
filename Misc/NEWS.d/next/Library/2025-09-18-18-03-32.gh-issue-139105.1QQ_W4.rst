@@ -1,0 +1,1 @@
+Correct the EOF key shown in the :mod:`sqlite3` CLI ``.help`` text on Windows.
