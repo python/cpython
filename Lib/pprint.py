@@ -195,7 +195,10 @@ class PrettyPrinter:
             return
         rep = self._repr(object, context, level)
         max_width = self._width - indent - allowance
-        if len(rep) > max_width:
+        # Past the depth limit _safe_repr already folded this to '...'; do not
+        # re-expand it just because it does not fit the width.
+        if len(rep) > max_width and not (
+                self._depth is not None and level >= self._depth):
             p = self._dispatch.get(type(object).__repr__, None)
             # Lazy import to improve module import time
             from dataclasses import is_dataclass

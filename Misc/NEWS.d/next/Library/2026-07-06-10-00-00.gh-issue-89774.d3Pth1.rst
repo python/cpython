@@ -1,0 +1,2 @@
+Fix :mod:`pprint` ignoring the *depth* limit when a small *width* forces
+nested structures onto multiple lines.
