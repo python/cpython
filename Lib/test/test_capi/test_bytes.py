@@ -431,25 +431,6 @@ class BaseWriterTest:
         writer.resize(len(b'number=123'))  # noop
         self.assertEqual(writer.finish(), b'number=123')
 
-        CANARY_BYTE = self.CANARY_BYTE
-        for size in (self.SMALL_BUFFER, self.LARGE_BUFFER):
-            with self.subTest(size=size):
-                # Truncate the last byte
-                data = b'x' * size
-                writer = self.create_writer(size)
-                writer.write(0, data)
-                self.assertEqual(get_data_canary(writer), data + CANARY_BYTE)
-                writer.resize(size - 1)
-                self.assertEqual(get_data_canary(writer), data[:-1] + CANARY_BYTE)
-                self.assertEqual(writer.finish(),  data[:-1])
-
-                # Make the buffer empty
-                writer = self.create_writer(size)
-                writer.write(0, data)
-                writer.resize(0)
-                self.assertEqual(writer.get_data(), b'')
-                self.assertEqual(writer.finish(),  b'')
-
         # Switch from small buffer to large buffer
         writer = self.create_writer()
         small, large = self.SMALL_BUFFER, self.LARGE_BUFFER
@@ -471,6 +452,27 @@ class BaseWriterTest:
                     writer.resize(_testcapi.PY_SSIZE_T_MAX)
                 self.assertEqual(writer.finish(), b'x' * size)
 
+    @unittest.skipUnless(support.Py_DEBUG, 'need debug build')
+    def test_resize_canary(self):
+        CANARY_BYTE = self.CANARY_BYTE
+        for size in (self.SMALL_BUFFER, self.LARGE_BUFFER):
+            with self.subTest(size=size):
+                # Truncate the last byte
+                data = b'x' * size
+                writer = self.create_writer(size)
+                writer.write(0, data)
+                self.assertEqual(get_data_canary(writer), data + CANARY_BYTE)
+                writer.resize(size - 1)
+                self.assertEqual(get_data_canary(writer), data[:-1] + CANARY_BYTE)
+                self.assertEqual(writer.finish(),  data[:-1])
+
+                # Make the buffer empty
+                writer = self.create_writer(size)
+                writer.write(0, data)
+                writer.resize(0)
+                self.assertEqual(writer.get_data(), b'')
+                self.assertEqual(writer.finish(),  b'')
+
     def test_grow(self):
         # Test PyBytesWriter_Grow()
         writer = self.create_writer(0)
@@ -488,25 +490,6 @@ class BaseWriterTest:
         writer.write(len(b'number='), b'123')
         writer.grow(0)  # noop
         self.assertEqual(writer.finish(), b'number=123')
-
-        CANARY_BYTE = self.CANARY_BYTE
-        for size in (self.SMALL_BUFFER, self.LARGE_BUFFER):
-            with self.subTest(size=size):
-                # Truncate the last byte
-                data = b'x' * size
-                writer = self.create_writer(size)
-                writer.write(0, data)
-                self.assertEqual(get_data_canary(writer), data + CANARY_BYTE)
-                writer.grow(-1)
-                self.assertEqual(get_data_canary(writer), data[:-1] + CANARY_BYTE)
-                self.assertEqual(writer.finish(),  data[:-1])
-
-                # Make the buffer empty
-                writer = self.create_writer(size)
-                writer.write(0, data)
-                writer.grow(-size)
-                self.assertEqual(writer.get_data(), b'')
-                self.assertEqual(writer.finish(),  b'')
 
         # Switch from small buffer to large buffer
         writer = self.create_writer()
@@ -528,6 +511,28 @@ class BaseWriterTest:
                 with self.assertRaises(MemoryError):
                     writer.grow(_testcapi.PY_SSIZE_T_MAX)
                 self.assertEqual(writer.finish(), b'x' * size)
+
+    @unittest.skipUnless(support.Py_DEBUG, 'need debug build')
+    def test_grow_canary(self):
+        CANARY_BYTE = self.CANARY_BYTE
+        for size in (self.SMALL_BUFFER, self.LARGE_BUFFER):
+            with self.subTest(size=size):
+                # Truncate the last byte
+                data = b'x' * size
+                writer = self.create_writer(size)
+                writer.write(0, data)
+                self.assertEqual(get_data_canary(writer), data + CANARY_BYTE)
+                writer.grow(-1)
+                self.assertEqual(get_data_canary(writer), data[:-1] + CANARY_BYTE)
+                self.assertEqual(writer.finish(),  data[:-1])
+
+                # Make the buffer empty
+                writer = self.create_writer(size)
+                writer.write(0, data)
+                writer.grow(-size)
+                self.assertEqual(writer.get_data(), b'')
+                self.assertEqual(writer.finish(),  b'')
+
 
     @support.nomemtest
     def test_resize_error(self):
@@ -587,7 +592,7 @@ class BaseWriterTest:
                 self.assertIn(f'at position {size}'.encode(),
                               proc.err)
 
-    @unittest.skipUnless(support.Py_DEBUG, 'need Py_DEBUG')
+    @unittest.skipUnless(support.Py_DEBUG, 'need debug build')
     def test_get_data_canary(self):
         # Test PyBytesWriter_GetData()
         NEW_BYTE = self.NEW_BYTE
