@@ -968,6 +968,7 @@ reset_parser_state_for_error_pass(Parser *p)
     p->last_stmt_location.end_col_offset = 0;
     for (int i = 0; i < p->fill; i++) {
         p->tokens[i]->memo = NULL;
+        p->tokens[i]->memo_mask = 0;
     }
     p->mark = 0;
     p->call_invalid_rules = 1;
