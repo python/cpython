@@ -1,2 +1,1 @@
-Fix a crash that could occur after an out-of-memory error when re-importing
-an extension module.
+Fix a fatal error in debug builds when re-importing a single-phase extension module fails with :exc:MemoryError: the cleanup path removed the module from :data:sys.modules while the exception was still set.
