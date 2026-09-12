@@ -3167,7 +3167,7 @@ class _TestPool(BaseTestCase):
 
         processes = 4
         p = self.Pool(processes)
-        last_produced_task_arg = Value("i")
+        last_produced_task_arg = self.Value("i", 0)
 
         def produce_args():
             for arg in itertools.count(1):
@@ -3204,7 +3204,7 @@ class _TestPool(BaseTestCase):
 
         processes = 4
         p = self.Pool(processes)
-        last_produced_task_arg = Value("i")
+        last_produced_task_arg = self.Value("i", 0)
 
         def produce_args():
             for arg in itertools.count(1):
