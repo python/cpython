@@ -1,0 +1,3 @@
+Fix Windows ARM64 Release builds with MSVC v145 by replacing the generated
+Unicode numeric-value switch with compact binary-search tables. This avoids
+excessive compiler memory usage.
