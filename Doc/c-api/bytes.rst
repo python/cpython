@@ -429,7 +429,7 @@ Low-level API
    On success, return ``0``.
    On error, set an exception and return ``-1``.
 
-   *size* can be negative to shrink the writer.
+   *grow* can be negative to shrink the writer.
 
 .. c:function:: void* PyBytesWriter_GrowAndUpdatePointer(PyBytesWriter *writer, Py_ssize_t size, void *buf)
 

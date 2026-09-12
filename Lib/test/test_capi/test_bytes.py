@@ -461,6 +461,24 @@ class BaseWriterTest:
         writer.grow(0)  # noop
         self.assertEqual(writer.finish(), b'number=123')
 
+        for size in (self.SMALL_BUFFER, self.LARGE_BUFFER):
+            with self.subTest(size=size):
+                # Truncate the last byte
+                data = b'x' * size
+                writer = self.create_writer(size)
+                writer.write(0, data)
+                self.assertEqual(writer.get_data(), data)
+                writer.grow(-1)
+                self.assertEqual(writer.get_data(), data[:-1])
+                self.assertEqual(writer.finish(),  data[:-1])
+
+                # Make the buffer empty
+                writer = self.create_writer(size)
+                writer.write(0, data)
+                writer.grow(-size)
+                self.assertEqual(writer.get_data(), b'')
+                self.assertEqual(writer.finish(),  b'')
+
         # Switch from small buffer to large buffer
         writer = self.create_writer()
         small, large = self.SMALL_BUFFER, self.LARGE_BUFFER
@@ -476,8 +494,8 @@ class BaseWriterTest:
             with self.subTest(size=size):
                 writer = self.create_writer()
                 writer.write_bytes(b'x' * size, -1)
-                with self.assertRaisesRegex(ValueError, 'size must be >= 0'):
-                    writer.grow(-1)
+                with self.assertRaisesRegex(ValueError, 'invalid size'):
+                    writer.grow(-size - 1)
                 with self.assertRaises(MemoryError):
                     writer.grow(_testcapi.PY_SSIZE_T_MAX)
                 self.assertEqual(writer.finish(), b'x' * size)
