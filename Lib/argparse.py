@@ -773,43 +773,21 @@ class HelpFormatter(object):
             yield from get_subactions()
             self._dedent()
 
+    def _text_len(self, text):
+        # Measure the visible width of *text*, ignoring any ANSI color escape
+        # sequences that may have been inserted for colored help output.
+        return len(self._decolor(text))
+
     def _split_lines(self, text, width):
         text = self._whitespace_matcher.sub(' ', text).strip()
-        decolored = self._decolor(text)
-        if decolored == text:
-            return textwrap.wrap(text, width)
-
-        # gh-142035: colors inflate textwrap's length counts, so wrap
-        # the decolored text and re-apply colors per word; if textwrap
-        # split a word, keep the plain lines (colors can't be mapped).
-        plain = self._whitespace_matcher.sub(' ', decolored).strip()
-        if not plain:
-            # nothing visible to wrap (e.g. an empty interpolated value)
-            return [text]
-        plain_lines = textwrap.wrap(plain, width)
-        plain_words = plain.split()
-        colored_words = text.split()
-        # Drop escape-only tokens (e.g. an empty interpolated value).
-        if len(colored_words) != len(plain_words):
-            colored_words = [
-                word for word in colored_words if self._decolor(word)
-            ]
-        colored_lines = []
-        start = 0
-        for plain_line in plain_lines:
-            plain_line_words = plain_line.split()
-            end = start + len(plain_line_words)
-            if plain_words[start:end] != plain_line_words:
-                return plain_lines
-            colored_lines.append(' '.join(colored_words[start:end]))
-            start = end
-        return colored_lines
+        return textwrap.wrap(text, width, text_len=self._text_len)
 
     def _fill_text(self, text, width, indent):
         text = self._whitespace_matcher.sub(' ', text).strip()
         return textwrap.fill(text, width,
                              initial_indent=indent,
-                             subsequent_indent=indent)
+                             subsequent_indent=indent,
+                             text_len=self._text_len)
 
     def _get_help_string(self, action):
         return action.help
