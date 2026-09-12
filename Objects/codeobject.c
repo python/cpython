@@ -647,19 +647,19 @@ remove_column_info(PyObject *locations)
 {
     Py_ssize_t offset = 0;
     const uint8_t *data = (const uint8_t *)PyBytes_AS_STRING(locations);
-    PyObject *res = PyBytes_FromStringAndSize(NULL, 32);
+    PyBytesWriter *res = PyBytesWriter_Create(32);
     if (res == NULL) {
-        PyErr_NoMemory();
         return NULL;
     }
-    uint8_t *output = (uint8_t *)PyBytes_AS_STRING(res);
+    uint8_t *output = (uint8_t *)PyBytesWriter_GetData(res);
     while (offset < PyBytes_GET_SIZE(locations)) {
-        Py_ssize_t write_offset = output - (uint8_t *)PyBytes_AS_STRING(res);
-        if (write_offset + 16 >= PyBytes_GET_SIZE(res)) {
-            if (_PyBytes_Resize(&res, PyBytes_GET_SIZE(res) * 2) < 0) {
+        Py_ssize_t write_offset = output - (uint8_t *)PyBytesWriter_GetData(res);
+        if (write_offset + 16 >= PyBytesWriter_GetSize(res)) {
+            if (PyBytesWriter_Resize(res, PyBytesWriter_GetSize(res) * 2) < 0) {
+                PyBytesWriter_Discard(res);
                 return NULL;
             }
-            output = (uint8_t *)PyBytes_AS_STRING(res) + write_offset;
+            output = (uint8_t *)PyBytesWriter_GetData(res) + write_offset;
         }
         int code = (data[offset] >> 3) & 15;
         if (code == PY_CODE_LOCATION_INFO_NONE) {
@@ -678,11 +678,7 @@ remove_column_info(PyObject *locations)
             offset++;
         }
     }
-    Py_ssize_t write_offset = output - (uint8_t *)PyBytes_AS_STRING(res);
-    if (_PyBytes_Resize(&res, write_offset)) {
-        return NULL;
-    }
-    return res;
+    return PyBytesWriter_FinishWithPointer(res, output);
 }
 
 static int
