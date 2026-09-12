@@ -13,7 +13,6 @@
 import _sre
 from . import _parser
 from ._constants import *
-from ._casefix import _EXTRA_CASES
 from ._optimizer import (
     _combine_flags, _compile_charset, _optimize_charset, _compile_info,
     _simple, _CHARSET_ALL, _CODEBITS, MAXCODE, optimize,
@@ -41,12 +40,12 @@ def _compile(code, pattern, flags):
     ASSERT_CODES = _ASSERT_CODES
     iscased = None
     tolower = None
-    fixes = None
+    isunicode = False
     if flags & SRE_FLAG_IGNORECASE and not flags & SRE_FLAG_LOCALE:
         if flags & SRE_FLAG_UNICODE:
             iscased = _sre.unicode_iscased
             tolower = _sre.unicode_tolower
-            fixes = _EXTRA_CASES
+            isunicode = True
         else:
             iscased = _sre.ascii_iscased
             tolower = _sre.ascii_tolower
@@ -62,25 +61,10 @@ def _compile(code, pattern, flags):
                 emit(op)
                 emit(av)
             else:
-                lo = tolower(av)
-                if not fixes:  # ascii
-                    emit(OP_IGNORE[op])
-                    emit(lo)
-                elif lo not in fixes:
-                    emit(OP_UNICODE_IGNORE[op])
-                    emit(lo)
-                else:
-                    emit(IN_UNI_IGNORE)
-                    skip = _len(code); emit(0)
-                    if op is NOT_LITERAL:
-                        emit(NEGATE)
-                    for k in (lo,) + fixes[lo]:
-                        emit(LITERAL)
-                        emit(k)
-                    emit(FAILURE)
-                    code[skip] = _len(code) - skip
+                emit(OP_UNICODE_IGNORE[op] if isunicode else OP_IGNORE[op])
+                emit(tolower(av))
         elif op is IN:
-            charset, hascased = _optimize_charset(av, iscased, tolower, fixes)
+            charset, hascased = _optimize_charset(av, iscased, tolower, isunicode)
             if not charset:
                 emit(FAILURE)
             elif charset == _CHARSET_ALL:
@@ -90,7 +74,7 @@ def _compile(code, pattern, flags):
                     emit(IN_LOC_IGNORE)
                 elif not hascased:
                     emit(IN)
-                elif not fixes:  # ascii
+                elif not isunicode:
                     emit(IN_IGNORE)
                 else:
                     emit(IN_UNI_IGNORE)
@@ -192,7 +176,7 @@ def _compile(code, pattern, flags):
                 emit(op)
             elif flags & SRE_FLAG_LOCALE:
                 emit(GROUPREF_LOC_IGNORE)
-            elif not fixes:  # ascii
+            elif not isunicode:
                 emit(GROUPREF_IGNORE)
             else:
                 emit(GROUPREF_UNI_IGNORE)

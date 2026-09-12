@@ -1,0 +1,3 @@
+Fix case-insensitive matching of a backreference in :mod:`re`: it now matches
+the characters which are matched as a literal, so that ``(?i)(.)\1`` matches
+``'ςσ'``.
