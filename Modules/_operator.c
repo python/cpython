@@ -1740,7 +1740,7 @@ methodcaller_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return (PyObject *)mc;
 }
 
-static void
+static int
 methodcaller_clear(PyObject *op)
 {
     methodcallerobject *mc = methodcallerobject_CAST(op);
@@ -1749,6 +1749,7 @@ methodcaller_clear(PyObject *op)
     Py_CLEAR(mc->kwds);
     Py_CLEAR(mc->vectorcall_args);
     Py_CLEAR(mc->vectorcall_kwnames);
+    return 0;
 }
 
 static void
