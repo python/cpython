@@ -651,7 +651,7 @@ check_missing___main___attr(PyObject *exc)
     PyObject *args = PyException_GetArgs(exc);
     if (args == NULL || args == Py_None || PyObject_Size(args) < 1) {
         Py_XDECREF(args);
-        assert(!PyErr_Occurred());
+        PyErr_Clear();
         return 0;
     }
     PyObject *msgobj = args;
@@ -662,8 +662,17 @@ check_missing___main___attr(PyObject *exc)
             PyErr_Clear();
             return 0;
         }
+        if (!PyUnicode_Check(msgobj)) {
+            Py_DECREF(msgobj);
+            return 0;
+        }
     }
     const char *err = PyUnicode_AsUTF8(msgobj);
+    if (err == NULL) {
+        Py_DECREF(msgobj);
+        PyErr_Clear();
+        return 0;
+    }
 
     // Check if it's a missing __main__ attr.
     int cmp = strncmp(err, "module '__main__' has no attribute '", 36);

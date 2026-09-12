@@ -1741,6 +1741,28 @@ class TestInterpreterCall(TestBase):
             with self.assertRaises(interpreters.NotShareableError):
                 interp.call(func, op, 'eggs!')
 
+    def test_call_unpickle_bad_attribute_error(self):
+        # gh-156121: unpickling in the other interpreter may fail
+        # with an AttributeError whose message is not a str
+        # or cannot be encoded as UTF-8.
+        interp = interpreters.create()
+        script = dedent("""
+            x = 1
+            def f():
+                return x  # forces the pickle fallback
+            """)
+        with defined_in___main__('f', script) as func:
+            for arg in (42, '\ud800'):
+                with self.subTest(arg):
+                    interp.exec(dedent(f"""
+                        import pickle
+                        def loads(data):
+                            raise AttributeError({arg!r})
+                        pickle.loads = loads
+                        """))
+                    with self.assertRaises(interpreters.NotShareableError):
+                        interp.call(func)
+
     def test_callable_requires_frame(self):
         # There are various functions that require a current frame.
         interp = interpreters.create()
