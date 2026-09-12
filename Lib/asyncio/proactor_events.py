@@ -545,7 +545,7 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport,
         except OSError as exc:
             self._protocol.error_received(exc)
             # error_received() is arbitrary protocol code: it may have sent
-            # (arming a write of its own, directly or via call_soon()),
+            # (scheduling a write of its own, directly or via call_soon()),
             # closed, or aborted the transport.
             if self._buffer or self._closing:
                 # Either data is still queued, or a close() is waiting on
