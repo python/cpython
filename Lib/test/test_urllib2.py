@@ -8,6 +8,7 @@ from unittest import mock
 
 import os
 import io
+import mmap
 import ftplib
 import socket
 import array
@@ -18,10 +19,11 @@ import subprocess
 import urllib.request
 # The proxy bypass method imported below has logic specific to the
 # corresponding system but is testable on all platforms.
-from urllib.request import (Request, OpenerDirector, HTTPBasicAuthHandler,
-                            HTTPPasswordMgrWithPriorAuth, _parse_proxy,
-                            _proxy_bypass_winreg_override,
-                            _proxy_bypass_macosx_sysconf,
+from urllib.request import (HTTPDefaultErrorHandler, HTTPErrorProcessor,
+                            Request, OpenerDirector, HTTPBasicAuthHandler,
+                            HTTPPasswordMgrWithPriorAuth, _AuthBodyReiterator,
+                            _parse_proxy, _proxy_bypass_winreg_override,
+                            _proxy_bypass_macosx_sysconf, _prepare_auth_retry_body,
                             AbstractDigestAuthHandler)
 from urllib.parse import urlsplit
 import urllib.error
@@ -598,6 +600,113 @@ class MockHTTPHandlerCheckAuth(urllib.request.BaseHandler):
         name = http.client.responses[self.code]
         return MockResponse(self.code, name, MockFile(), "", req.get_full_url())
 
+
+class _AuthRetrySocket:
+    def __init__(self, response, sent_requests):
+        self._response = io.BytesIO(response)
+        self._sent_requests = sent_requests
+        self._closed = False
+
+    def sendall(self, data):
+        self._sent_requests.append(data)
+
+    def makefile(self, mode='r', buffering=None, *, encoding=None, errors=None):
+        return self
+
+    def read(self, amt=-1):
+        if self._closed:
+            return b""
+        return self._response.read(amt)
+
+    def readline(self, length=-1):
+        if self._closed:
+            return b""
+        return self._response.readline(length)
+
+    def flush(self):
+        self._response.flush()
+
+    def close(self):
+        self._closed = True
+
+def _open_with_auth_retry(auth_handler, http_handler_cls, conn_cls, url, data):
+    conn_cls.sent_requests.clear()
+    conn_cls._request_count = 0
+    opener = OpenerDirector()
+    opener.add_handler(auth_handler)
+    opener.add_handler(http_handler_cls())
+    opener.add_handler(HTTPErrorProcessor())
+    opener.add_handler(HTTPDefaultErrorHandler())
+    opener.open(Request(url, data, method="POST"))
+    return conn_cls.sent_requests
+
+def _decode_chunked_http_body(raw):
+    body = raw
+    result = b""
+    while body:
+        size_line, sep, body = body.partition(b"\r\n")
+        if not sep:
+            break
+        size = int(size_line.split(b";", 1)[0], 16)
+        if size == 0:
+            break
+        result += body[:size]
+        body = body[size+2:]
+    return result
+
+def _group_sent_by_request(sent):
+    groups = []
+    current = []
+    for chunk in sent:
+        if chunk.startswith(b"POST ") and current:
+            groups.append(current)
+            current = [chunk]
+        else:
+            current.append(chunk)
+
+    if current:
+        groups.append(current)
+    return groups
+
+def _body_from_request_chunks(chunks):
+    return _body_from_sent_http_request(b"".join(chunks))
+
+def _body_from_sent_http_request(raw):
+    _, sep, body = raw.partition(b"\r\n\r\n")
+    if not sep:
+        return b""
+    header_block = raw[:raw.index(sep)].lower()
+    if b"transfer-encoding: chunked" in header_block:
+        return _decode_chunked_http_body(body)
+    if b"content-length: 0" in header_block:
+        return b""
+    return body.split(b"\r\n", 1)[0]
+
+def _make_auth_retry_http_connection(responses):
+    class AuthRetryHTTPConnection(http.client.HTTPConnection):
+        sent_requests = []
+        _request_count = 0
+
+        def connect(self):
+            request_index = type(self)._request_count
+            type(self)._request_count += 1
+            response = responses[request_index]
+            self.sock = _AuthRetrySocket(response, type(self).sent_requests)
+
+    return AuthRetryHTTPConnection
+
+def _make_auth_retry_http_handler(responses):
+    conn_cls = _make_auth_retry_http_connection(responses)
+
+    class AuthRetryHTTPHandler(urllib.request.HTTPHandler):
+        def __init__(self):
+            super().__init__()
+            self.httpconn = conn_cls
+
+        def http_open(self, req):
+            return self.do_open(self.httpconn, req)
+
+    return AuthRetryHTTPHandler, conn_cls
 
 
 class MockPasswordManager:
@@ -1920,6 +2029,170 @@ class HandlerTests(unittest.TestCase):
 
         # expect request to be sent with auth header
         self.assertTrue(http_handler.has_auth_header)
+
+    def test_auth_body_reiterator(self):
+        content = b"hello auth retry"
+        source = io.BytesIO(content)
+        source.read()
+        reiterator = _AuthBodyReiterator(source)
+        self.assertEqual(b"".join(reiterator), content)
+        self.assertEqual(b"".join(reiterator), content)
+
+
+    def test_prepare_auth_retry_body(self):
+        req = Request("http://example.com/", io.BytesIO(b"abc"))
+        req.add_unredirected_header("Content-length", "3")
+        _prepare_auth_retry_body(req)
+        self.assertIsInstance(req.data, _AuthBodyReiterator)
+        self.assertNotIn("Content-length", req.unredirected_hdrs)
+
+    def test_prepare_auth_retry_body_non_seekable(self):
+        class NonSeekableReader:
+            def read(self, n=-1):
+                return b"abc"
+
+        req = Request("http://example.com", NonSeekableReader())
+        with self.assertRaisesRegex(ValueError, "seekable file-like Request.data"):
+            _prepare_auth_retry_body(req)
+
+    def test_basic_auth_retry_file_body(self):
+        realm = "acme"
+        url = "http://example.com/"
+        body = b"basic auth retry file body"
+        auth_401 = (
+            b"HTTP/1.1 401 Unauthorized\r\n"
+            b'WWW-Authenticate: Basic realm="' + realm.encode() + b'"\r\n'
+            b"Connection: close\r\n\r\n"
+        )
+        auth_200 = b"HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n"
+        http_handler_cls, conn_cls = _make_auth_retry_http_handler([auth_401, auth_200])
+
+        password_manager = MockPasswordManager()
+        password_manager.add_password(realm, url, "user", "pass")
+        auth_handler = HTTPBasicAuthHandler(password_manager)
+
+        sent = _open_with_auth_retry(auth_handler, http_handler_cls, conn_cls, url, io.BytesIO(body))
+        groups = _group_sent_by_request(sent)
+        self.assertEqual(len(groups), 2)
+        self.assertEqual(_body_from_request_chunks(groups[0]), body)
+        self.assertEqual(_body_from_request_chunks(groups[1]), body)
+
+    def test_basic_auth_retry_mmap_body(self):
+        realm = "acme"
+        url = "http://www.example.com/"
+        body = b"mmap auth retry file body"
+        auth_401 = (
+            b"HTTP/1.1 401 Unauthorized\r\n"
+            b'WWW-Authenticate: Basic realm="' + realm.encode() + b'"\r\n'
+            b"Connection: close\r\n\r\n"
+        )
+        auth_200 = b"HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n"
+        http_handler_cls, conn_cls = _make_auth_retry_http_handler([auth_401, auth_200])
+        password_manager = MockPasswordManager()
+        password_manager.add_password(realm, url, "user", "pass")
+        auth_handler = HTTPBasicAuthHandler(password_manager)
+
+        with tempfile.NamedTemporaryFile() as tmp:
+            tmp.write(body)
+            tmp.flush()
+            with mmap.mmap(tmp.fileno(), 0, access=mmap.ACCESS_READ) as mm:
+                sent = _open_with_auth_retry(auth_handler, http_handler_cls, conn_cls, url, mm)
+
+        groups = _group_sent_by_request(sent)
+        self.assertEqual(len(groups), 2)
+        self.assertEqual(_body_from_request_chunks(groups[0]), body)
+        self.assertEqual(_body_from_request_chunks(groups[1]), body)
+
+    def test_digest_auth_retry_file_body(self):
+        realm = "acme"
+        url = "http://example.com/"
+        body = b"digest auth retry file body"
+        auth_401 = (
+            b"HTTP/1.1 401 Unauthorized\r\n"
+            b'WWW-Authenticate: Digest realm="' + realm.encode() + b'", '
+            b'qop="auth", nonce="abc", opaque="def"\r\n'
+            b"Connection: close\r\n\r\n"
+        )
+        auth_200 = b"HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n"
+        http_handler_cls, conn_cls = _make_auth_retry_http_handler([auth_401, auth_200])
+
+        password_manager = MockPasswordManager()
+        password_manager.add_password(realm, url, "user", "pass")
+        auth_handler = urllib.request.HTTPDigestAuthHandler(password_manager)
+
+        sent = _open_with_auth_retry(auth_handler, http_handler_cls, conn_cls, url, io.BytesIO(body))
+        groups = _group_sent_by_request(sent)
+        self.assertEqual(len(groups), 2)
+        self.assertEqual(_body_from_request_chunks(groups[0]), body)
+        self.assertEqual(_body_from_request_chunks(groups[1]), body)
+
+    def test_basic_auth_retry_explicit_content_length(self):
+        realm = "acme"
+        url = "http://example.com/"
+        body = b"x" * 30
+        auth_401 = (
+            b"HTTP/1.1 401 Unauthorized\r\n"
+            b'WWW-Authenticate: Basic realm="' + realm.encode() + b'"\r\n'
+            b"Connection: close\r\n\r\n"
+        )
+        auth_200 = b"HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n"
+        http_handler_cls, conn_cls = _make_auth_retry_http_handler([auth_401, auth_200])
+
+        password_manager = MockPasswordManager()
+        password_manager.add_password(realm, url, "user", "pass")
+        auth_handler = HTTPBasicAuthHandler(password_manager)
+
+        conn_cls.sent_requests.clear()
+        conn_cls._request_count = 0
+        opener = OpenerDirector()
+        opener.add_handler(auth_handler)
+        opener.add_handler(http_handler_cls())
+        opener.add_handler(HTTPErrorProcessor())
+        opener.add_handler(HTTPDefaultErrorHandler())
+
+        req = Request(url, io.BytesIO(body), {"Content-Length": "30"})
+        opener.open(req)
+        sent = conn_cls.sent_requests
+
+        groups = _group_sent_by_request(sent)
+        self.assertEqual(len(groups), 2)
+        self.assertEqual(_body_from_request_chunks(groups[0]), body)
+        self.assertEqual(_body_from_request_chunks(groups[1]), body)
+
+    def test_basic_auth_retry_non_seekable_body(self):
+        realm = "acme"
+        url = "http://example.com/"
+        auth_401 = (
+            b"HTTP/1.1 401 Unauthorized\r\n"
+            b'WWW-Authenticate: Basic realm="' + realm.encode() + b'"\r\n'
+            b"Connection: close\r\n\r\n"
+        )
+        auth_200 = b"HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n"
+        http_handler_cls, conn_cls = _make_auth_retry_http_handler([auth_401, auth_200])
+
+        password_manager = MockPasswordManager()
+        password_manager.add_password(realm, url, "user", "pass")
+        auth_handler = HTTPBasicAuthHandler(password_manager)
+
+        class NonSeekableReader:
+            _data = b"pipe-data"
+
+            def read(self, n=-1):
+                if self._data is None:
+                    return b""
+                chunk = self._data
+                self._data = None
+                return chunk
+
+        opener = OpenerDirector()
+        opener.add_handler(auth_handler)
+        opener.add_handler(http_handler_cls())
+        opener.add_handler(HTTPErrorProcessor())
+        opener.add_handler(HTTPDefaultErrorHandler())
+
+        req = Request(url, NonSeekableReader(), method="POST")
+        with self.assertRaisesRegex(ValueError, "seekable file-like Request.data"):
+                opener.open(req)
 
     def test_http_closed(self):
         """Test the connection is cleaned up when the response is closed"""
