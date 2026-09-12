@@ -11,7 +11,7 @@
  * See the sre.c file for information on usage and redistribution.
  */
 
-#define SRE_MAGIC 20260622
+#define SRE_MAGIC 20260625
 #define SRE_OP_FAILURE 0
 #define SRE_OP_SUCCESS 1
 #define SRE_OP_ANY 2
@@ -55,6 +55,7 @@
 #define SRE_OP_LITERAL_UNI_IGNORE 40
 #define SRE_OP_NOT_LITERAL_UNI_IGNORE 41
 #define SRE_OP_RANGE_UNI_IGNORE 42
+#define SRE_OP_INVERT 43
 #define SRE_AT_BEGINNING 0
 #define SRE_AT_BEGINNING_LINE 1
 #define SRE_AT_BEGINNING_STRING 2
