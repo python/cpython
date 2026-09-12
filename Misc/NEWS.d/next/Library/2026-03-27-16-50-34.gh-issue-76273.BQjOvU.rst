@@ -1,0 +1,2 @@
+Calling ``unittest.mock.patch`` with ``autospec`` on an instance or class method
+will now correctly consume the ``self`` / ``cls`` argument.
