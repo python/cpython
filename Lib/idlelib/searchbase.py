@@ -26,7 +26,7 @@ class SearchDialogBase:
     add widgets.
     '''
 
-    title = "Search Dialog"  # replace in subclasses
+    title = "Find"  # replace in subclasses
     icon = "Search"
     needwrapbutton = 1  # not in Find in Files
 
@@ -92,8 +92,6 @@ class SearchDialogBase:
         top.grid_rowconfigure(0, weight=100)
 
         self.row = 0
-        self.frame.grid_columnconfigure(0, pad=2, weight=0)
-        self.frame.grid_columnconfigure(1, pad=2, minsize=100, weight=100)
 
         self.create_entries()  # row 0 (and maybe 1), cols 0, 1
         self.create_option_buttons()  # next row, cols 0, 1
@@ -109,13 +107,13 @@ class SearchDialogBase:
         label = Label(self.frame, text=label_text)
         label.grid(row=self.row, column=0, sticky="nw")
         entry = Entry(self.frame, textvariable=var, exportselection=0)
-        entry.grid(row=self.row, column=1, sticky="nwe")
-        self.row = self.row + 1
+        entry.grid(row=self.row, column=1, columnspan=2, padx=4, pady=4, sticky="nwe")
+        self.row += 1
         return entry, label
 
     def create_entries(self):
         "Create one or more entry lines with make_entry."
-        self.ent = self.make_entry("Find:", self.engine.patvar)[0]
+        self.ent = self.make_entry("Find", self.engine.patvar)[0]
 
     def make_frame(self,labeltext=None):
         '''Return (frame, label).
@@ -179,10 +177,7 @@ class SearchDialogBase:
     def create_command_buttons(self):
         "Place buttons in vertical command frame gridded on right."
         f = self.buttonframe = Frame(self.frame)
-        f.grid(row=0,column=2,padx=2,pady=2,ipadx=2,ipady=2)
-
-        b = self.make_button("Close", self.close)
-        b.lower()
+        f.grid(row=2, column=2, padx=4, pady=4)
 
 
 class _searchbase(SearchDialogBase):  # htest #
