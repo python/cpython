@@ -1669,6 +1669,14 @@ find_keyword_str(PyObject *kwnames, PyObject *const *kwstack, const char *key)
 
 #define IS_END_OF_FORMAT(c) (c == '\0' || c == ';' || c == ':')
 
+/* Whether "|" occurs in the format string. */
+static int
+has_optional_marker(const char *format)
+{
+    const char *bar = strpbrk(format, "|:;");
+    return bar != NULL && *bar == '|';
+}
+
 static int
 vgetargskeywords_impl(PyObject *const *args, Py_ssize_t nargs,
                       PyObject *kwargs, PyObject *kwnames,
@@ -1680,6 +1688,8 @@ vgetargskeywords_impl(PyObject *const *args, Py_ssize_t nargs,
     const char *fname, *msg, *custom_msg;
     int min = INT_MAX;
     int max = INT_MAX;
+    /* The index of the first optional keyword-only argument. */
+    int minkw = INT_MAX;
     int i, pos, len;
     int skip = 0;
     Py_ssize_t nkwargs;
@@ -1758,20 +1768,16 @@ vgetargskeywords_impl(PyObject *const *args, Py_ssize_t nargs,
     /* convert tuple args and keyword args in same loop, using kwlist to drive process */
     for (i = 0; i < len; i++) {
         if (*format == '|') {
-            if (min != INT_MAX) {
+            /* The optional arguments start here: the positional ones before
+               "$", which sets "max", and the keyword-only ones after it. */
+            int *popt = (max == INT_MAX) ? &min : &minkw;
+            if (*popt != INT_MAX) {
                 PyErr_SetString(PyExc_SystemError,
                                 "Invalid format string (| specified twice)");
                 return cleanreturn(0, &freelist);
             }
-
-            min = i;
+            *popt = i;
             format++;
-
-            if (max != INT_MAX) {
-                PyErr_SetString(PyExc_SystemError,
-                                "Invalid format string ($ before |)");
-                return cleanreturn(0, &freelist);
-            }
         }
         if (*format == '$') {
             if (max != INT_MAX) {
@@ -1781,6 +1787,9 @@ vgetargskeywords_impl(PyObject *const *args, Py_ssize_t nargs,
             }
 
             max = i;
+            /* The keyword-only arguments are required until "|", and inherit
+               the state of the positional arguments if it does not follow. */
+            minkw = has_optional_marker(format) ? INT_MAX : min;
             format++;
 
             if (max < pos) {
@@ -1854,7 +1863,7 @@ vgetargskeywords_impl(PyObject *const *args, Py_ssize_t nargs,
                 continue;
             }
 
-            if (i < min) {
+            if (i < (i < max ? min : minkw)) {
                 if (i < pos) {
                     assert (min == INT_MAX);
                     assert (max == INT_MAX);
@@ -1877,7 +1886,9 @@ vgetargskeywords_impl(PyObject *const *args, Py_ssize_t nargs,
              * fulfilled and no keyword args left, with no further
              * validation. XXX Maybe skip this in debug build ?
              */
-            if (!nkwargs && !skip) {
+            if (!nkwargs && !skip &&
+                (i >= minkw || !has_optional_marker(format)))
+            {
                 return cleanreturn(1, &freelist);
             }
         }
@@ -2046,7 +2057,7 @@ scan_keywords(const char * const *keywords, int *ptotal, int *pposonly)
 static int
 parse_format(const char *format, int total, int npos,
              const char **pfname, const char **pcustommsg,
-             int *pmin, int *pmax)
+             int *pmin, int *pmax, int *pminkw)
 {
     /* grab the function name or custom error msg first (mutually exclusive) */
     const char *custommsg;
@@ -2064,19 +2075,19 @@ parse_format(const char *format, int total, int npos,
 
     int min = INT_MAX;
     int max = INT_MAX;
+    /* The index of the first optional keyword-only argument. */
+    int minkw = INT_MAX;
     for (int i = 0; i < total; i++) {
         if (*format == '|') {
-            if (min != INT_MAX) {
+            /* The optional arguments start here: the positional ones before
+               "$", which sets "max", and the keyword-only ones after it. */
+            int *popt = (max == INT_MAX) ? &min : &minkw;
+            if (*popt != INT_MAX) {
                 PyErr_SetString(PyExc_SystemError,
                                 "Invalid format string (| specified twice)");
                 return -1;
             }
-            if (max != INT_MAX) {
-                PyErr_SetString(PyExc_SystemError,
-                                "Invalid format string ($ before |)");
-                return -1;
-            }
-            min = i;
+            *popt = i;
             format++;
         }
         if (*format == '$') {
@@ -2091,6 +2102,9 @@ parse_format(const char *format, int total, int npos,
                 return -1;
             }
             max = i;
+            /* The keyword-only arguments are required until "|", and inherit
+               the state of the positional arguments if it does not follow. */
+            minkw = has_optional_marker(format) ? INT_MAX : min;
             format++;
         }
         if (IS_END_OF_FORMAT(*format)) {
@@ -2107,6 +2121,8 @@ parse_format(const char *format, int total, int npos,
             return -1;
         }
     }
+    /* Without "$" the optional arguments are not keyword-only. */
+    minkw = Py_MIN((max == INT_MAX) ? min : minkw, total);
     min = Py_MIN(min, total);
     max = Py_MIN(max, total);
 
@@ -2121,6 +2137,7 @@ parse_format(const char *format, int total, int npos,
     *pcustommsg = custommsg;
     *pmin = min;
     *pmax = max;
+    *pminkw = minkw;
     return 0;
 }
 
@@ -2164,11 +2181,11 @@ _parser_init(void *arg)
     }
 
     const char *fname, *custommsg = NULL;
-    int min = 0, max = 0;
+    int min = 0, max = 0, minkw = 0;
     if (parser->format) {
         assert(parser->fname == NULL);
         if (parse_format(parser->format, len, pos,
-                         &fname, &custommsg, &min, &max) < 0) {
+                         &fname, &custommsg, &min, &max, &minkw) < 0) {
             return -1;
         }
     }
@@ -2211,6 +2228,7 @@ _parser_init(void *arg)
     parser->custom_msg = custommsg;
     parser->min = min;
     parser->max = max;
+    parser->minkw = minkw;
     parser->kwtuple = kwtuple;
     parser->is_kwtuple_owned = owned;
 
@@ -2383,6 +2401,10 @@ vgetargskeywordsfast_impl(PyObject *const *args, Py_ssize_t nargs,
         if (*format == '$') {
             format++;
         }
+        if (*format == '|') {
+            /* Optional keyword-only arguments after "$". */
+            format++;
+        }
         assert(!IS_END_OF_FORMAT(*format));
 
         PyObject *current_arg;
@@ -2418,7 +2440,7 @@ vgetargskeywordsfast_impl(PyObject *const *args, Py_ssize_t nargs,
             continue;
         }
 
-        if (i < parser->min) {
+        if (i < (i < parser->max ? parser->min : parser->minkw)) {
             /* Less arguments than required */
             if (i < pos) {
                 int min = Py_MIN(pos, parser->min);
@@ -2446,7 +2468,7 @@ vgetargskeywordsfast_impl(PyObject *const *args, Py_ssize_t nargs,
          * fulfilled and no keyword args left, with no further
          * validation. XXX Maybe skip this in debug build ?
          */
-        if (!nkwargs) {
+        if (!nkwargs && i >= parser->minkw) {
             return cleanreturn(1, &freelist);
         }
 

@@ -402,17 +402,25 @@ inside nested parentheses.  They are:
    For example, the format string ``"OO|OO"`` corresponds to the Python
    signature ``f(a, b, c=None, d=None)``.
 
+   :c:func:`PyArg_ParseTupleAndKeywords` only:
+   after ``$`` it indicates that the remaining keyword-only arguments are optional.
+
 ``$``
    :c:func:`PyArg_ParseTupleAndKeywords` only:
    Indicates that the remaining arguments in the Python argument list are
    keyword-only.
-   They are optional if ``|`` was specified before ``$``, and required otherwise.
-   ``|`` cannot be specified after ``$``.
-   For example, the format string ``"O|O$O"`` corresponds to the Python
-   signature ``f(a, b=None, *, c=None)``,
+   They are required until ``|``, if it follows.
+   Otherwise they are optional if ``|`` was specified before ``$``,
+   and required if it was not.
+   For example, the format string ``"O|O$O|O"`` corresponds to the Python
+   signature ``f(a, b=None, *, c, d=None)``,
+   the format string ``"O|O$O"`` corresponds to ``f(a, b=None, *, c=None)``,
    and the format string ``"OO$OO"`` corresponds to ``f(a, b, *, c, d)``.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: next
+      ``|`` can be specified after ``$``.
 
 ``:``
    The list of format units ends here; the string after the colon is used as the

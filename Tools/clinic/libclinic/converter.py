@@ -330,10 +330,24 @@ class CConverter(metaclass=CConverterAutoRegister):
             data.keywords.append(parameter.name)
 
         # format_units
-        if self.is_optional() and '|' not in data.format_units:
-            data.format_units.append('|')
-        if parameter.is_keyword_only() and '$' not in data.format_units:
+        if not parameter.is_keyword_only():
+            if self.is_optional() and '|' not in data.format_units:
+                data.format_units.append('|')
+        elif '$' not in data.format_units:
+            # The first keyword-only parameter.
+            if self.is_optional():
+                if '|' not in data.format_units:
+                    data.format_units.append('|')
+                data.kwonly_optional = True
+            elif '|' in data.format_units:
+                # Inheriting the state of the positional parameters would
+                # make it optional: it is required until '|'.
+                data.kwonly_required = True
             data.format_units.append('$')
+        elif self.is_optional() and not data.kwonly_optional:
+            # The first optional keyword-only parameter.
+            data.kwonly_optional = True
+            data.format_units.append('|')
         data.format_units.append(self.format_unit)
 
         # parse_arguments
