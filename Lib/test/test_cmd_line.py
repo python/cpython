@@ -1069,8 +1069,9 @@ class CmdLineTest(unittest.TestCase):
 
     @unittest.skipUnless(support.MS_WINDOWS, 'Test only applicable on Windows')
     def test_python_legacy_windows_stdio_encoding(self):
-        # gh-86427: In the legacy mode the encoding of the standard streams
-        # is the encoding of the console.
+        # gh-86427: In the legacy mode the encoding of a standard stream is
+        # the encoding of the console it is connected to, which can differ
+        # for input and output.
         import ctypes
         kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
         try:
@@ -1080,7 +1081,7 @@ class CmdLineTest(unittest.TestCase):
         # We cannot use PIPE, because the standard streams should be
         # connected to the console.  So we use the exit code.
         code = ("import sys; sys.exit(sys.stdin.encoding != 'cp850' or "
-                "sys.stdout.encoding != 'cp850')")
+                "sys.stdout.encoding != 'cp437')")
         env = os.environ.copy()
         env['PYTHONLEGACYWINDOWSSTDIO'] = '1'
         env['PYTHONUTF8'] = '0'
@@ -1091,7 +1092,7 @@ class CmdLineTest(unittest.TestCase):
             try:
                 if not kernel32.SetConsoleCP(850):
                     self.skipTest('cannot set the console input code page')
-                if not kernel32.SetConsoleOutputCP(850):
+                if not kernel32.SetConsoleOutputCP(437):
                     self.skipTest('cannot set the console output code page')
                 proc = subprocess.run([sys.executable, '-c', code], env=env,
                                       stdin=fin, stdout=fout,

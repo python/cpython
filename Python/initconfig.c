@@ -196,7 +196,7 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
     SPEC(show_ref_count, BOOL, READ_ONLY, NO_SYS, NO_GLOBAL),
     SPEC(site_import, BOOL, READ_ONLY, NO_SYS, GLOBAL(&Py_NoSiteFlag, 1)),  // sys.flags.no_site
     SPEC(skip_source_first_line, BOOL, READ_ONLY, NO_SYS, NO_GLOBAL),
-    SPEC(stdio_encoding, WSTR, READ_ONLY, NO_SYS, NO_GLOBAL),
+    SPEC(stdio_encoding, WSTR_OPT, READ_ONLY, NO_SYS, NO_GLOBAL),
     SPEC(stdio_errors, WSTR, READ_ONLY, NO_SYS, NO_GLOBAL),
     SPEC(tracemalloc, UINT, READ_ONLY, NO_SYS, NO_GLOBAL),
     SPEC(use_frozen_modules, BOOL, READ_ONLY, NO_SYS, NO_GLOBAL),
@@ -1074,11 +1074,14 @@ config_check_consistency(const PyConfig *config)
     assert(config->module_search_paths_set >= 0);
     assert(config->filesystem_encoding != NULL);
     assert(config->filesystem_errors != NULL);
-    assert(config->stdio_encoding != NULL);
-    assert(config->stdio_errors != NULL);
 #ifdef MS_WINDOWS
+    /* stdio_encoding can be NULL in the legacy Windows stdio mode. */
+    assert(config->stdio_encoding != NULL || config->legacy_windows_stdio);
     assert(config->legacy_windows_stdio >= 0);
+#else
+    assert(config->stdio_encoding != NULL);
 #endif
+    assert(config->stdio_errors != NULL);
     /* -c and -m options are exclusive */
     assert(!(config->run_command != NULL && config->run_module != NULL));
     assert(config->check_hash_pycs_mode != NULL);
@@ -2709,31 +2712,14 @@ config_init_stdio_encoding(PyConfig *config,
     }
 
     /* Choose the default error handler based on the current locale. */
-    if (config->stdio_encoding == NULL) {
+    if (config->stdio_encoding == NULL
 #ifdef MS_WINDOWS
-        /* gh-86427: use the console code page.  Only one encoding can be
-           specified, so the output code page is used: it affects two
-           streams of three. */
-        UINT cp = config->legacy_windows_stdio ? GetConsoleOutputCP() : 0;
-        if (cp != 0) {
-            if (cp == CP_UTF8) {
-                status = PyConfig_SetString(config, &config->stdio_encoding,
-                                            L"utf-8");
-            }
-            else {
-                wchar_t encoding[20];
-                swprintf(encoding, Py_ARRAY_LENGTH(encoding), L"cp%u",
-                         (unsigned int)cp);
-                status = PyConfig_SetString(config, &config->stdio_encoding,
-                                            encoding);
-            }
-        }
-        else
+        /* gh-86427: it is determined for each stream. */
+        && !config->legacy_windows_stdio
 #endif
-        {
-            status = config_get_locale_encoding(config, preconfig,
-                                                &config->stdio_encoding);
-        }
+       ) {
+        status = config_get_locale_encoding(config, preconfig,
+                                            &config->stdio_encoding);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }
