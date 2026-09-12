@@ -41,6 +41,9 @@ extern double _Py_parse_inf_or_nan(const char *p, char **endptr);
 
 extern int _Py_convert_int_to_double(PyObject **v, double *dbl);
 
+// Export for '_json' shared extension.
+PyAPI_FUNC(PyObject*) _PyFloat_FromString(const char *str, Py_ssize_t len);
+
 /* Should match endianness of the platform in most (all?) cases. */
 
 #ifdef DOUBLE_IS_BIG_ENDIAN_IEEE754
