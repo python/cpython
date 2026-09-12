@@ -3356,6 +3356,12 @@ _PyBytes_ResizeKeepOnError(PyObject **pv, Py_ssize_t newsize)
     }
     assert(v != bytes_get_empty());
 
+    if ((size_t)newsize > (size_t)PY_SSIZE_T_MAX - PyBytesObject_SIZE) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "byte string is too large");
+        return -1;
+    }
+
 #ifdef Py_TRACE_REFS
     _Py_ForgetReference(v);
 #endif
@@ -3580,6 +3586,8 @@ _PyBytes_RepeatBuffer(char* dest, Py_ssize_t len_dest,
 
 // --- PyBytesWriter API -----------------------------------------------------
 
+#define PyBytesWrite_NEW_BYTE 0xff
+
 static inline char*
 byteswriter_data(PyBytesWriter *writer)
 {
@@ -3617,6 +3625,7 @@ byteswriter_resize(PyBytesWriter *writer, Py_ssize_t size, int resize)
 
     Py_ssize_t old_allocated = byteswriter_allocated(writer);
     if (size <= old_allocated) {
+        // Do not shrink the buffer before PyBytesWriter_FinishWithSize()
         return 0;
     }
 
@@ -3633,6 +3642,7 @@ byteswriter_resize(PyBytesWriter *writer, Py_ssize_t size, int resize)
             }
         }
         else {
+            // Can raise MemoryError or OverflowError
             if (_PyBytes_ResizeKeepOnError(&writer->obj, size)) {
                 assert(writer->obj != NULL);
                 return -1;
@@ -3668,7 +3678,7 @@ byteswriter_resize(PyBytesWriter *writer, Py_ssize_t size, int resize)
 #ifdef Py_DEBUG
     Py_ssize_t allocated = byteswriter_allocated(writer);
     if (resize && allocated > old_allocated) {
-        memset(byteswriter_data(writer) + old_allocated, 0xff,
+        memset(byteswriter_data(writer) + old_allocated, PyBytesWrite_NEW_BYTE,
                allocated - old_allocated);
     }
 #endif
@@ -3706,7 +3716,8 @@ byteswriter_create(Py_ssize_t size, int use_bytearray)
         writer->size = size;
     }
 #ifdef Py_DEBUG
-    memset(byteswriter_data(writer), 0xff, byteswriter_allocated(writer));
+    memset(byteswriter_data(writer), PyBytesWrite_NEW_BYTE,
+           byteswriter_allocated(writer));
 #endif
     return writer;
 }
@@ -3857,10 +3868,15 @@ _PyBytesWriter_ResizeAndUpdatePointer(PyBytesWriter *writer, Py_ssize_t size,
 int
 PyBytesWriter_Grow(PyBytesWriter *writer, Py_ssize_t size)
 {
-    if (size < 0 && writer->size + size < 0) {
-        PyErr_SetString(PyExc_ValueError, "invalid size");
+    if (size < 0) {
+        PyErr_SetString(PyExc_ValueError, "size must be >= 0");
         return -1;
     }
+    if (size == 0) {
+        // Nothing to do
+        return 0;
+    }
+
     if (size > PY_SSIZE_T_MAX - writer->size) {
         PyErr_NoMemory();
         return -1;
