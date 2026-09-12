@@ -1175,6 +1175,7 @@ LDFLAGS
 LIBS
 CPPFLAGS
 CPP
+CXX
 PROFILE_TASK
 BOLT_COMMON_FLAGS
 BOLT_INSTRUMENT_FLAGS
@@ -2030,6 +2031,7 @@ Some influential environment variables:
   CPPFLAGS    (Objective) C/C++ preprocessor flags, e.g. -I<include dir> if
               you have headers in a nonstandard directory <include dir>
   CPP         C preprocessor
+  CXX         C++ compiler command
   PROFILE_TASK
               Python args for PGO generation task
   BOLT_COMMON_FLAGS

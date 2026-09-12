@@ -1140,7 +1140,7 @@ AC_CACHE_CHECK([for GCC compatible compiler],
                [ac_cv_gcc_compat=yes],
                [ac_cv_gcc_compat=no])])
 
-AC_SUBST([CXX])
+AC_ARG_VAR([CXX], [C++ compiler command])
 
 preset_cxx="$CXX"
 if test -z "$CXX"
