@@ -1,0 +1,5 @@
+Fix a race in the import system where a submodule was briefly visible as
+fully imported before being set as an attribute of its parent package.  A
+package importing its submodules from a module-level ``__getattr__`` could
+raise :exc:`RecursionError` when several threads first used the same
+submodule.
