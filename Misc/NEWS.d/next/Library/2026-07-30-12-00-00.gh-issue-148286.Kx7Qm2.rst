@@ -1,0 +1,2 @@
+Fix undefined behaviour when reading and writing :mod:`ctypes` bit fields of
+a signed type.
