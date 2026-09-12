@@ -91,6 +91,9 @@ _WHATWG_C0_CONTROL_OR_SPACE = '\x00\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\x0c\
 # Unsafe bytes to be removed per WHATWG spec
 _UNSAFE_URL_BYTES_TO_REMOVE = ['\t', '\r', '\n']
 
+# Allowed valid characters in parse_qsl as per RFC 3986.
+_VALID_RFC3986_QUERY_CHARS = "-._~!$&'()*+,;=:@/?%"
+
 def clear_cache():
     """Clear internal performance caches. Undocumented; some tests want it."""
     urlsplit.cache_clear()
@@ -898,6 +901,15 @@ def parse_qs(qs, keep_blank_values=False, strict_parsing=False,
             parsed_result[name] = [value]
     return parsed_result
 
+def _is_valid_rfc3986_query(chars):
+    """Return True if all characters are valid per RFC 3986."""
+    for ch in chars:
+        if not ch.isascii():
+            return False
+        if ch.isalnum() or ch in _VALID_RFC3986_QUERY_CHARS:
+            continue
+        return False
+    return True
 
 def parse_qsl(qs, keep_blank_values=False, strict_parsing=False,
               encoding='utf-8', errors='replace', max_num_fields=None, separator='&', *, _stacklevel=1):
@@ -974,6 +986,13 @@ def parse_qsl(qs, keep_blank_values=False, strict_parsing=False,
             name, has_eq, value = name_value.partition(eq)
             if not has_eq and strict_parsing:
                 raise ValueError("bad query field: %r" % (name_value,))
+            if strict_parsing:
+                # Validate RFC3986 characters
+                to_check = _unquote(name_value)
+                if isinstance(to_check, (bytes, bytearray)):
+                    to_check = to_check.decode(encoding, errors)
+                if not _is_valid_rfc3986_query(to_check):
+                    raise ValueError(f"Invalid characters in query string per RFC 3986: {name_value!r}")
             if value or keep_blank_values:
                 name = _unquote(name)
                 value = _unquote(value)
