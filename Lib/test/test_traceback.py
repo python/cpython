@@ -1827,6 +1827,7 @@ class TestKeywordTypoSuggestions(unittest.TestCase):
         ("function f():", "def"),
         ("func f():", "def"),
         ("void f():", "def"),
+        (f"{"a="*10}0;tpye x = int;{"z="*10}1", "type"),
     ]
 
     def test_keyword_suggestions_from_file(self):
