@@ -1,0 +1,3 @@
+The :mod:`turtledemo` viewer now reads each demo script using
+:func:`tokenize.open`, decoding it with the encoding detected from the
+source file.
