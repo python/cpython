@@ -590,7 +590,9 @@ extern "C" {
 #endif
 
 #ifndef _Py_NO_SANITIZE_ADDRESS
+_Py_COMP_DIAG_PUSH
 #  define _Py_NO_SANITIZE_ADDRESS
+_Py_COMP_DIAG_POP
 #endif
 #ifndef _Py_NO_SANITIZE_THREAD
 #  define _Py_NO_SANITIZE_THREAD
