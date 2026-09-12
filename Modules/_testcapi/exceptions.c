@@ -54,6 +54,24 @@ err_restore(PyObject *self, PyObject *args) {
     return NULL;
 }
 
+static PyObject *
+err_givenexceptionmatches(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    PyObject *err, *exc;
+    if (!PyArg_ParseTuple(args, "OO", &err, &exc)) {
+        return NULL;
+    }
+    assert(!PyErr_Occurred());
+    int res = PyErr_GivenExceptionMatches(err, exc);
+    /* PyErr_GivenExceptionMatches() has no failure return value, but it can
+     * set RecursionError on a deeply nested tuple; report that to the caller.
+     */
+    if (res == 0 && PyErr_Occurred()) {
+        return NULL;
+    }
+    return PyBool_FromLong(res);
+}
+
 /*[clinic input]
 _testcapi.exception_print
     exception as exc: object
@@ -544,6 +562,7 @@ static PyTypeObject PyRecursingInfinitelyError_Type = {
 
 static PyMethodDef test_methods[] = {
     {"err_restore",             err_restore,                     METH_VARARGS},
+    {"err_givenexceptionmatches", err_givenexceptionmatches,     METH_VARARGS},
     {"err_writeunraisable",     err_writeunraisable,             METH_VARARGS},
     {"err_formatunraisable",    err_formatunraisable,            METH_VARARGS},
     _TESTCAPI_ERR_SET_RAISED_METHODDEF
