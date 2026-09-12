@@ -78,6 +78,7 @@ update_eval_breaker_for_thread(PyInterpreterState *interp, PyThreadState *tstate
     return;
 #endif
 
+    Py_GCC_ATTRIBUTE((unused))
     int32_t npending = _Py_atomic_load_int32_relaxed(
         &interp->ceval.pending.npending);
     if (npending) {
