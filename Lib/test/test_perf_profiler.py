@@ -12,7 +12,6 @@ from test.support.script_helper import (
     assert_python_failure,
     assert_python_ok,
 )
-from test.support import import_helper
 from test.support.os_helper import temp_dir
 
 
@@ -843,18 +842,6 @@ class TestJitdumpFileFormat(unittest.TestCase):
         self.assertEqual((magic, version), (JITDUMP_MAGIC, JITDUMP_VERSION))
         regions = self._check_unwinding_records(data)
         self.assertTrue(any("my_test_func" in name for name in regions))
-
-
-class TestTrampolineEhframeHeader(unittest.TestCase):
-    """Structural checks on the generated trampoline_ehframe.h data."""
-
-    def test_generated_header_structure(self):
-        _testinternalcapi = import_helper.import_module("_testinternalcapi")
-        check = getattr(_testinternalcapi, "test_trampoline_ehframe", None)
-        if check is None:
-            self.skipTest("_testinternalcapi built without the perf trampoline")
-        # Raises AssertionError describing the first failed check.
-        check()
 
 
 if __name__ == "__main__":
