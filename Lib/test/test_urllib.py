@@ -1660,14 +1660,17 @@ class Pathname_Tests(unittest.TestCase):
         url = urllib.parse.quote(os_helper.FS_NONASCII, encoding=encoding, errors=errors)
         self.assertEqual(urllib.request.pathname2url(os_helper.FS_NONASCII), url)
 
+    @unittest.skipUnless(os_helper.TESTFN_UNDECODABLE,
+                         'need os_helper.TESTFN_UNDECODABLE')
     def test_pathname2url_surrogates(self):
         # gh-156713: the filesystem encoding and error handler are used,
         # so that paths containing surrogate characters can be converted.
         encoding = sys.getfilesystemencoding()
         errors = sys.getfilesystemencodeerrors()
-        tail = urllib.parse.quote('a\udcff', encoding=encoding, errors=errors)
-        self.assertEqual(nturl2path.pathname2url('C:\\a\udcff'),
-                         '///C:/' + tail)
+        path = os.fsdecode(os_helper.TESTFN_UNDECODABLE)
+        url = urllib.parse.quote(path, encoding=encoding, errors=errors)
+        self.assertEqual(nturl2path.pathname2url('C:\\' + path),
+                         '///C:/' + url)
 
     @unittest.skipUnless(sys.platform == 'win32',
                          'test specific to Windows pathnames.')
@@ -1730,14 +1733,17 @@ class Pathname_Tests(unittest.TestCase):
         url = urllib.parse.quote(url, encoding=encoding, errors=errors)
         self.assertEqual(urllib.request.url2pathname(url), os_helper.FS_NONASCII)
 
+    @unittest.skipUnless(os_helper.TESTFN_UNDECODABLE,
+                         'need os_helper.TESTFN_UNDECODABLE')
     def test_url2pathname_surrogates(self):
         # gh-156713: the filesystem encoding and error handler are used, so
         # that URLs containing percent-encoded surrogates can be converted.
         encoding = sys.getfilesystemencoding()
         errors = sys.getfilesystemencodeerrors()
-        url = urllib.parse.quote('a\udcff', encoding=encoding, errors=errors)
+        path = os.fsdecode(os_helper.TESTFN_UNDECODABLE)
+        url = urllib.parse.quote(path, encoding=encoding, errors=errors)
         self.assertEqual(nturl2path.url2pathname('///C:/' + url),
-                         'C:\\a\udcff')
+                         'C:\\' + path)
 
 class Utility_Tests(unittest.TestCase):
     """Testcase to test the various utility functions in the urllib."""
