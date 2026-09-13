@@ -1447,6 +1447,9 @@ make_unraisable_hook_args(PyThreadState *tstate, PyObject *exc_type,
         Py_DECREF(args);
         return NULL;
     }
+    // PyStructSequence_New() does not track the object, and it can be
+    // a part of a reference cycle via the traceback.
+    PyObject_GC_Track(args);
     return args;
 }
 

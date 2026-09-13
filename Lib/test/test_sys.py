@@ -1515,6 +1515,27 @@ class UnraisableHookTest(unittest.TestCase):
             expected = None
             hook_args = None
 
+    def test_unraisablehook_args_reference_cycle(self):
+        # gh-157443: The hook argument can be a part of a reference cycle
+        # via the traceback, which must be collected by the GC.
+        import weakref
+        class Holder:
+            pass
+        def f():
+            holder = Holder()
+            def hook(unraisable):
+                holder.unraisable = unraisable
+            with test.support.swap_attr(sys, 'unraisablehook', hook):
+                class C:
+                    def __del__(self):
+                        raise ValueError
+                C()
+            self.assertTrue(gc.is_tracked(holder.unraisable))
+            return weakref.ref(holder)
+        wr = f()
+        support.gc_collect()
+        self.assertIsNone(wr())
+
     def test_custom_unraisablehook_fail(self):
         _testcapi = import_helper.import_module('_testcapi')
         from _testcapi import err_writeunraisable
