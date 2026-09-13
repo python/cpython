@@ -30,6 +30,28 @@ class EditorWindowTest(unittest.TestCase):
         self.assertEqual(e.root, self.root)
         e._close()
 
+    def test_reset_browsers(self):
+        # Open browsers follow config changes; closed ones are forgotten.
+        class Browser:
+            def __init__(self, exists):
+                self.exists = exists
+                self.styled = False
+            def winfo_exists(self):
+                return self.exists
+            def configure_style(self):
+                self.styled = True
+
+        e = Editor(root=self.root)
+        open_browser, closed_browser = Browser(True), Browser(False)
+        e.browsers = [open_browser, closed_browser]
+        e.ResetColorizer()
+        self.assertEqual(e.browsers, [open_browser])
+        self.assertTrue(open_browser.styled)
+        open_browser.styled = False
+        e.ResetFont()
+        self.assertTrue(open_browser.styled)
+        e._close()
+
 
 class GetLineIndentTest(unittest.TestCase):
     def test_empty_lines(self):
