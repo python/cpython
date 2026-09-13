@@ -2684,9 +2684,9 @@ The docstrings of the public methods of the Screen and Turtle classes, and of
 the functions derived from them, can be replaced by translations, so that
 :func:`help` and IDE tooltips are shown in another language.
 
-The translations are not part of Python. They are distributed on PyPI in the
-:pypi:`turtle-translations` package, which holds the docstring dictionaries of
-all available languages. To use it, you must first install it with :program:`pip`::
+Translation catalogues can be installed from PyPI using the
+:pypi:`turtle-translations` package, which holds the docstring dictionaries
+for various languages. To use it, you must first install it with :program:`pip`::
 
    python -m pip install turtle-translations
 
@@ -2698,6 +2698,7 @@ English docstrings are kept.
 .. envvar:: PYTHON_TURTLE_LANG
 
    The name of the language to read the docstring dictionary for.
+   Ignored when the :option:`-E` or :option:`-I` command line options are used.
 
    .. versionadded:: 3.16
 

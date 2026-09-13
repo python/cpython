@@ -4042,7 +4042,9 @@ def read_docstrings(lang):
         except Exception:
             print("Bad docstring-entry: %s" % key)
 
-_LANGUAGE = environ.get("PYTHON_TURTLE_LANG") or _CFG["language"]
+_LANGUAGE = _CFG["language"]
+if not sys.flags.ignore_environment:
+    _LANGUAGE = environ.get("PYTHON_TURTLE_LANG") or _LANGUAGE
 
 try:
     if _LANGUAGE != "english":
