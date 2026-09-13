@@ -15,7 +15,7 @@ def convert(obj, /, conversion):
         return str(obj)
     if conversion == 'a':
         return ascii(obj)
-    raise ValueError(f'invalid conversion specifier: {conversion}')
+    raise ValueError(f'Invalid conversion specifier: {conversion}')
 
 def _template_unpickle(*args):
     import itertools
