@@ -434,7 +434,10 @@ if sys.platform.startswith("win"):
                           file=sys.__stderr__)
                     mode = 0
                 if stat.S_ISDIR(mode):
-                    _waitfor(_rmtree_inner, fullname, waitall=True)
+                    # Do not follow junctions, which os.lstat() reports
+                    # as directories.
+                    if not os.path.isjunction(fullname):
+                        _waitfor(_rmtree_inner, fullname, waitall=True)
                     _force_run(fullname, os.rmdir, fullname)
                 else:
                     _force_run(fullname, os.unlink, fullname)

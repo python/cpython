@@ -1,0 +1,2 @@
+Add a ``@vectorcall`` decorator to Argument Clinic to generate :ref:`vectorcall`
+parsing code for :func:`object.__init__` and :func:`object.__new__`.
