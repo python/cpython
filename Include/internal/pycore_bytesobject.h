@@ -77,6 +77,10 @@ PyAPI_FUNC(PyObject *) _PyBytes_Repeat(PyObject *self, Py_ssize_t n);
 
 extern int _PyBytes_ResizeKeepOnError(PyObject **pv, Py_ssize_t newsize);
 
+#ifndef NDEBUG
+extern int _PyBytes_IsMutable(PyObject *obj);
+#endif
+
 /* --- PyBytesWriter ------------------------------------------------------ */
 
 struct PyBytesWriter {
