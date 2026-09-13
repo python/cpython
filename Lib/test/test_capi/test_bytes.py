@@ -591,24 +591,42 @@ class BaseWriterTest:
 
         # Test small buffer and large buffer
         for size in (0, self.SMALL_BUFFER, self.LARGE_BUFFER):
-            with self.subTest(size=size):
-                code = textwrap.dedent(f"""
-                    from test.support import SuppressCrashReport
-                    import _testcapi
-                    size = {size}
-                    # Add an extra '#' byte to trigger a buffer overflow
-                    data = b'x' * size + b'#'
-                    use_bytearray = {use_bytearray}
-                    writer = _testcapi.PyBytesWriter(size, use_bytearray)
-                    with SuppressCrashReport():
-                        writer.write(0, data, check=False)
-                        writer.finish()
-                """)
-                proc = assert_python_failure('-c', code)
-                self.assertIn(b'Buffer overflow detected in PyBytesWriter',
-                              proc.err)
-                self.assertIn(f'at position {size}'.encode(),
-                              proc.err)
+            for operation in (
+                'writer.get_data()',
+                'writer.get_size()',
+                f'writer.resize({size} * 2)',
+                f'writer.grow({size})',
+                'writer.discard()',
+                'writer.finish()',
+            ):
+                with self.subTest(size=size, operation=operation):
+                    code = textwrap.dedent(f"""
+                        from test.support import SuppressCrashReport
+                        import os
+                        import _testcapi
+                        size = {size}
+                        # Add an extra '#' byte to trigger a buffer overflow
+                        data = b'x' * size + b'#'
+                        use_bytearray = {use_bytearray}
+                        writer = _testcapi.PyBytesWriter(size, use_bytearray)
+                        with SuppressCrashReport():
+                            writer.write(0, data, check=False)
+                            try:
+                                {operation}
+                            except:
+                                # Ignore all exceptions
+                                pass
+                            # If we reached this line, the operation didn't
+                            # detect the overflow. Exit immediatetly without
+                            # calling the writer destructor since it can detect
+                            # the overflow.
+                            os._exit(0)
+                    """)
+                    proc = assert_python_failure('-c', code)
+                    self.assertIn(b'Buffer overflow detected in PyBytesWriter',
+                                  proc.err)
+                    self.assertIn(f'at position {size}'.encode(),
+                                  proc.err)
 
     @unittest.skipUnless(support.Py_DEBUG, 'need debug build')
     def test_get_data_canary(self):
