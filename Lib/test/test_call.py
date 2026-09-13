@@ -975,7 +975,6 @@ class A:
     def method_one_arg_named_self(self):
         pass
 
-    @classmethod
     def classmethod_one_named_cls(cls):
         pass
 
@@ -1111,7 +1110,7 @@ class TestIncorrectNumberOfPositionalArgs(unittest.TestCase):
 
     def test_when_arg_named_cls_doesnt_hint(self):
         with self.assertRaises(TypeError) as cm:
-            A.classmethod_one_named_cls("arg1")
+            A().classmethod_one_named_cls("arg1")
         self.assertNotIn("Did you forget", str(cm.exception))
 
 
