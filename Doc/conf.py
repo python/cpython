@@ -306,6 +306,9 @@ html_last_updated_use_utc = True
 # Path to find HTML templates to override theme
 templates_path = ['tools/templates']
 
+# Link to sources on GitHub instead of copying them into the HTML output.
+html_copy_source = False
+
 # Custom sidebar templates, filenames relative to this file.
 html_sidebars = {
     # Defaults taken from https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-html_sidebars
