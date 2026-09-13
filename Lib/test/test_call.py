@@ -975,7 +975,7 @@ class A:
     def method_one_arg_named_self(self):
         pass
 
-    def classmethod_one_named_cls(cls):
+    def method_one_arg_named_cls(cls):
         pass
 
 
@@ -1003,7 +1003,7 @@ class TestIncorrectNumberOfPositionalArgs(unittest.TestCase):
     @contextlib.contextmanager
     def assert_type_error_and_msg_in(self, message: str):
         with self.assertRaises(TypeError) as cm:
-            yield
+            yield cm
         self.assertIn(message, str(cm.exception))
 
     def test_too_many_positional_with_defaults_suggests_missing_self(self):
@@ -1053,64 +1053,72 @@ class TestIncorrectNumberOfPositionalArgs(unittest.TestCase):
     def test_classmethod_missing_cls_does_not_suggest_missing_self(self):
         """A classmethod missing cls conceptually should not suggest self."""
         msg = ".classmethod_one_arg() takes 1 positional argument but 2 were given"
-        with self.assert_type_error_and_msg_in(msg):
-            A.classmethod_one_arg("poodle")
+        with self.assert_type_error_and_msg_in(msg) as cm:
+            A.classmethod_one_arg("arg1")
+        self.assertNotIn("Did you forget", str(cm.exception))
 
     def test_classmethod_missing_cls_via_instance_does_not_suggest_missing_self(self):
         """A classmethod called through an instance should not suggest self."""
         msg = ".classmethod_one_arg() takes 1 positional argument but 2 were given"
-        with self.assert_type_error_and_msg_in(msg):
+        with self.assert_type_error_and_msg_in(msg) as cm:
             A().classmethod_one_arg("poodle")
+        self.assertNotIn("Did you forget", str(cm.exception))
 
     def test_staticmethod_too_many_args_does_not_suggest_missing_self(self):
         """A staticmethod with too many arguments should not suggest self."""
         msg = ".static_one_arg() takes 1 positional argument but 2 were given"
-        with self.assert_type_error_and_msg_in(msg):
+        with self.assert_type_error_and_msg_in(msg) as cm:
             A.static_one_arg(1, 2)
+        self.assertNotIn("Did you forget", str(cm.exception))
 
     def test_staticmethod_too_many_args_via_instance_does_not_suggest_missing_self(self):
         """A staticmethod called through an instance should not suggest self."""
         msg = ".static_one_arg() takes 1 positional argument but 2 were given"
-        with self.assert_type_error_and_msg_in(msg):
+        with self.assert_type_error_and_msg_in(msg) as cm:
             A().static_one_arg(1, 2)
+        self.assertNotIn("Did you forget", str(cm.exception))
 
     def test_metaclass_missing_receiver_does_not_suggest_missing_self(self):
         """A metaclass receiver error should not suggest an instance self."""
         msg = "AMeta.method_one_arg() takes 1 positional argument but 2 were given"
-        with self.assert_type_error_and_msg_in(msg):
+        with self.assert_type_error_and_msg_in(msg) as cm:  
             AClassWithMetaclass.method_one_arg("standard")
+        self.assertNotIn("Did you forget", str(cm.exception))
 
     def test_metaclass_method_too_many_args_does_not_suggest_missing_self(self):
         """A metaclass method with too many arguments should not suggest self."""
         msg = "AMeta.method_two_arg() takes 2 positional arguments but 3 were given"
-        with self.assert_type_error_and_msg_in(msg):
+        with self.assert_type_error_and_msg_in(msg) as cm:
             AClassWithMetaclass.method_two_arg("trail", "river")
+        self.assertNotIn("Did you forget", str(cm.exception))
 
     def test_metaclass_classmethod_does_not_suggest_missing_self(self):
         """A classmethod on a metaclass should not suggest instance self."""
         msg = "AMeta.classmethod_one_arg() takes 1 positional argument but 2 were given"
-        with self.assert_type_error_and_msg_in(msg):
+        with self.assert_type_error_and_msg_in(msg) as cm:
             AClassWithMetaclass.classmethod_one_arg("standard")
+        self.assertNotIn("Did you forget", str(cm.exception))
 
     def test_metaclass_staticmethod_does_not_suggest_missing_self(self):
         """A staticmethod on a metaclass should not suggest instance self."""
         msg = "AMeta.static_one_arg() takes 1 positional argument but 2 were given"
-        with self.assert_type_error_and_msg_in(msg):
+        with self.assert_type_error_and_msg_in(msg) as cm:
             AClassWithMetaclass.static_one_arg("show", "working")
-
-    def test_more_than_two_surplus_args_dont_hint(self):
-        with self.assertRaises(TypeError) as cm:
-            A().method_one_arg("arg1", "arg2")
         self.assertNotIn("Did you forget", str(cm.exception))
 
-    def test_when_arg_named_self_doesnt_hint(self):
+    def test_more_than_two_surplus_args_does_not_suggest(self):
+        with self.assertRaises(TypeError) as cm:
+            A().method_one_arg("arg1", "arg2", "arg3")
+        self.assertNotIn("Did you forget", str(cm.exception))
+
+    def test_when_arg_named_self_does_not_suggest(self):
         with self.assertRaises(TypeError) as cm:
             A().method_one_arg_named_self("arg1")
         self.assertNotIn("Did you forget", str(cm.exception))
 
-    def test_when_arg_named_cls_doesnt_hint(self):
+    def test_when_arg_named_cls_does_not_suggest(self):
         with self.assertRaises(TypeError) as cm:
-            A().classmethod_one_named_cls("arg1")
+            A().method_one_arg_named_cls("arg1")
         self.assertNotIn("Did you forget", str(cm.exception))
 
 
