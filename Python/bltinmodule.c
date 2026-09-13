@@ -1929,38 +1929,6 @@ builtin_iter_impl(PyObject *module, PyObject *object, PyObject *stop_value,
 
 
 /*[clinic input]
-@text_signature "($module, object, /, [stop_value], *, stop_exception=StopAsyncIteration)"
-aiter as builtin_aiter
-
-    object: object
-    /
-    stop_value: object = NULL
-    *
-    stop_exception: object = NULL
-
-Return an AsyncIterator for an AsyncIterable object.
-
-In the second form, the callable is called and its result is awaited
-until it returns the stop value or raises the specified exception.
-[clinic start generated code]*/
-
-static PyObject *
-builtin_aiter_impl(PyObject *module, PyObject *object, PyObject *stop_value,
-                   PyObject *stop_exception)
-/*[clinic end generated code: output=2865edb3fbc45693 input=2adb37d12adafd0c]*/
-{
-    if (stop_value == NULL && stop_exception == NULL) {
-        return PyObject_GetAIter(object);
-    }
-    if (!PyCallable_Check(object)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "aiter(): the first argument must be callable");
-        return NULL;
-    }
-    return _PyACallIter_New(object, stop_value, stop_exception);
-}
-
-/*[clinic input]
 len as builtin_len
 
     obj: object
@@ -3448,7 +3416,6 @@ static PyMethodDef builtin_methods[] = {
     BUILTIN_ISINSTANCE_METHODDEF
     BUILTIN_ISSUBCLASS_METHODDEF
     BUILTIN_ITER_METHODDEF
-    BUILTIN_AITER_METHODDEF
     BUILTIN_LEN_METHODDEF
     BUILTIN_LOCALS_METHODDEF
     {"max", _PyCFunction_CAST(builtin_max), METH_FASTCALL | METH_KEYWORDS, max_doc},

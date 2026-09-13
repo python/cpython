@@ -931,86 +931,6 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(builtin_aiter__doc__,
-"aiter($module, object, /, [stop_value], *, stop_exception=StopAsyncIteration)\n"
-"--\n"
-"\n"
-"Return an AsyncIterator for an AsyncIterable object.\n"
-"\n"
-"In the second form, the callable is called and its result is awaited\n"
-"until it returns the stop value or raises the specified exception.");
-
-#define BUILTIN_AITER_METHODDEF    \
-    {"aiter", _PyCFunction_CAST(builtin_aiter), METH_FASTCALL|METH_KEYWORDS, builtin_aiter__doc__},
-
-static PyObject *
-builtin_aiter_impl(PyObject *module, PyObject *object, PyObject *stop_value,
-                   PyObject *stop_exception);
-
-static PyObject *
-builtin_aiter(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
-{
-    PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    #define NUM_KEYWORDS 2
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        Py_hash_t ob_hash;
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_hash = -1,
-        .ob_item = { &_Py_ID(stop_value), &_Py_ID(stop_exception), },
-    };
-    #undef NUM_KEYWORDS
-    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #else  // !Py_BUILD_CORE
-    #  define KWTUPLE NULL
-    #endif  // !Py_BUILD_CORE
-
-    static const char * const _keywords[] = {"", "stop_value", "stop_exception", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "aiter",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[3];
-    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
-    PyObject *object;
-    PyObject *stop_value = NULL;
-    PyObject *stop_exception = NULL;
-
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
-        goto exit;
-    }
-    object = args[0];
-    if (!noptargs) {
-        goto skip_optional_pos;
-    }
-    if (args[1]) {
-        stop_value = args[1];
-        if (!--noptargs) {
-            goto skip_optional_pos;
-        }
-    }
-skip_optional_pos:
-    if (!noptargs) {
-        goto skip_optional_kwonly;
-    }
-    stop_exception = args[2];
-skip_optional_kwonly:
-    return_value = builtin_aiter_impl(module, object, stop_value, stop_exception);
-
-exit:
-    return return_value;
-}
-
 PyDoc_STRVAR(builtin_len__doc__,
 "len($module, obj, /)\n"
 "--\n"
@@ -1501,4 +1421,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b56739f2e13f616a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c9eee63c37544586 input=a9049054013a1b77]*/
