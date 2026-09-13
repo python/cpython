@@ -675,6 +675,16 @@ tkinter
   with no unit suffix to :class:`int` or :class:`float`.
   (Contributed by Serhiy Storchaka in :gh:`153513`.)
 
+
+turtle
+------
+
+* Translations of the :mod:`turtle` docstrings are now distributed on PyPI
+  in the :pypi:`turtle-translations` package. Additionally, added the
+  :envvar:`PYTHON_TURTLE_LANG` environment variable to select the language.
+  (Contributed by Stan Ulbrych in :gh:`156360`.)
+
+
 xml
 ---
 
