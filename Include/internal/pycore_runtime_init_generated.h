@@ -1840,6 +1840,7 @@ extern "C" {
     INIT_ID(initval), \
     INIT_ID(inner_size), \
     INIT_ID(input), \
+    INIT_ID(insert_cdata), \
     INIT_ID(insert_comments), \
     INIT_ID(insert_pis), \
     INIT_ID(instructions), \

@@ -1464,6 +1464,55 @@ class ElementTreeTest(unittest.TestCase):
         # no comments in text serialization
         self.assertEqual(ET.tostring(comm, method='text'), b'')
 
+    def test_cdata_serialization(self):
+        elem = ET.Element('root')
+        elem.text = ET.CDATA('<spam> & ham')
+        # the content of a CDATA section is not escaped
+        self.assertEqual(ET.tostring(elem),
+                         b'<root><![CDATA[<spam> & ham]]></root>')
+        # but it is character data
+        self.assertEqual(ET.tostring(elem, method='text'), b'<spam> & ham')
+        # an empty CDATA section is preserved
+        elem.text = ET.CDATA('')
+        self.assertEqual(ET.tostring(elem), b'<root><![CDATA[]]></root>')
+        empty = ET.Element('root')
+        sub = ET.SubElement(empty, 'sub')
+        sub.tail = ET.CDATA('')
+        self.assertEqual(ET.tostring(empty),
+                         b'<root><sub /><![CDATA[]]></root>')
+        # "]]>" cannot occur in a CDATA section, it is split in two
+        elem.text = ET.CDATA('a]]>b')
+        self.assertEqual(ET.tostring(elem),
+                         b'<root><![CDATA[a]]]]><![CDATA[>b]]></root>')
+
+    def test_cdata_as_tail(self):
+        elem = ET.XML('<root>before<b /></root>')
+        elem[0].tail = ET.CDATA('<spam> & ham')
+        self.assertEqual(ET.tostring(elem),
+                         b'<root>before<b /><![CDATA[<spam> & ham]]></root>')
+        self.assertEqual(ET.tostring(elem, method='text'),
+                         b'before<spam> & ham')
+        # the written form is parsed back to the same text
+        self.assertEqual(''.join(ET.fromstring(ET.tostring(elem)).itertext()),
+                         'before<spam> & ham')
+
+    def test_cdata_is_str(self):
+        cdata = ET.CDATA('text')
+        self.assertIsInstance(cdata, str)
+        self.assertEqual(cdata, 'text')
+        # an ordinary string is not serialized as a CDATA section
+        elem = ET.Element('root')
+        elem.text = str(cdata)
+        self.assertEqual(ET.tostring(elem), b'<root>text</root>')
+
+    def test_cdata_subclass(self):
+        class MyCDATA(ET.CDATA):
+            pass
+
+        elem = ET.Element('root')
+        elem.text = MyCDATA('<spam>')
+        self.assertEqual(ET.tostring(elem), b'<root><![CDATA[<spam>]]></root>')
+
     def test_processinginstruction_serialization(self):
         # Test ProcessingInstruction directly
 
@@ -4058,6 +4107,176 @@ class TreeBuilderTest(unittest.TestCase):
         self.assertEqual(b.pi('target'), (len('target'), None))
         self.assertEqual(b.pi('pitarget', ' text '), (len('pitarget'), ' text '))
 
+    def test_treebuilder_cdata(self):
+        b = ET.TreeBuilder()
+        # nothing is created unless insert_cdata is true
+        self.assertIsNone(b.start_cdata())
+        self.assertIsNone(b.end_cdata())
+
+        b = ET.TreeBuilder(insert_cdata=True)
+        b.start('a', {})
+        b.data('before')
+        b.start_cdata()
+        b.data('a < b')
+        elem = b.end_cdata()
+        self.assertIsNone(elem.tag)
+        self.assertEqual(elem.text, 'a < b')
+        self.assertIsInstance(elem.text, ET.CDATA)
+        b.data('after')
+        b.end('a')
+        a = b.close()
+        self.assertEqual(ET.tostring(a),
+                         b'<a>before<![CDATA[a < b]]>after</a>')
+
+    def test_parse_cdata_alternating(self):
+        parser = ET.XMLParser(target=ET.TreeBuilder(insert_cdata=True))
+        xml = '<a><![CDATA[x]]>t1<![CDATA[y]]>t2</a>'
+        parser.feed(xml)
+        a = parser.close()
+        # each section is the text of its element, the text which follows
+        # it is the tail
+        self.assertEqual(summarize_list(a), [None, None])
+        self.assertIsNone(a.text)
+        self.assertEqual(a[0].text, 'x')
+        self.assertIsInstance(a[0].text, ET.CDATA)
+        self.assertEqual(a[0].tail, 't1')
+        self.assertEqual(a[1].text, 'y')
+        self.assertIsInstance(a[1].text, ET.CDATA)
+        self.assertEqual(a[1].tail, 't2')
+        self.assertEqual(ET.tostring(a, encoding='unicode'), xml)
+
+    def test_parse_cdata(self):
+        xml = '<a>before<![CDATA[a < b]]>after<b><![CDATA[deep]]></b></a>'
+        # by default the content of a CDATA section is ordinary text
+        a = ET.fromstring(xml)
+        self.assertEqual(ET.tostring(a),
+                         b'<a>beforea &lt; bafter<b>deep</b></a>')
+
+        parser = ET.XMLParser(target=ET.TreeBuilder(insert_cdata=True))
+        parser.feed(xml)
+        a = parser.close()
+        self.assertEqual(summarize_list(a), [None, 'b'])
+        self.assertEqual(a.text, 'before')
+        self.assertEqual(a[0].text, 'a < b')
+        self.assertIsInstance(a[0].text, ET.CDATA)
+        self.assertEqual(a[0].tail, 'after')
+        # no element is needed for the section which is the whole content
+        self.assertEqual(summarize_list(a[1]), [])
+        self.assertEqual(a[1].text, 'deep')
+        self.assertIsInstance(a[1].text, ET.CDATA)
+        # the content of a CDATA section is a part of the inner text
+        self.assertEqual(''.join(a.itertext()), 'beforea < bafterdeep')
+        # the tree is serialized back to the source
+        self.assertEqual(ET.tostring(a, encoding='unicode'), xml)
+
+    def test_parse_empty_cdata(self):
+        parser = ET.XMLParser(target=ET.TreeBuilder(insert_cdata=True))
+        parser.feed('<a><![CDATA[]]></a>')
+        a = parser.close()
+        # no element is needed, the content is the text of the parent
+        self.assertEqual(summarize_list(a), [])
+        self.assertEqual(a.text, '')
+        self.assertIsInstance(a.text, ET.CDATA)
+        # an empty section is written back
+        self.assertEqual(ET.tostring(a), b'<a><![CDATA[]]></a>')
+
+    def test_parse_cdata_merged(self):
+        # No element is created if the content can be the text of the parent
+        # or the tail of the preceding sibling.
+        def parse(xml):
+            parser = ET.XMLParser(target=ET.TreeBuilder(insert_cdata=True))
+            parser.feed(xml)
+            return parser.close()
+
+        a = parse('<a><![CDATA[x]]></a>')
+        self.assertEqual(summarize_list(a), [])
+        self.assertEqual(a.text, 'x')
+        self.assertIsInstance(a.text, ET.CDATA)
+
+        a = parse('<a><b /><![CDATA[x]]></a>')
+        self.assertEqual(summarize_list(a), ['b'])
+        self.assertEqual(a[0].tail, 'x')
+        self.assertIsInstance(a[0].tail, ET.CDATA)
+
+        # a section does not share the place with what follows it
+        a = parse('<a><![CDATA[x]]><![CDATA[y]]></a>')
+        self.assertEqual(summarize_list(a), [None, None])
+        self.assertIsNone(a.text)
+        self.assertEqual(a[0].text, 'x')
+        self.assertEqual(a[1].text, 'y')
+
+        a = parse('<a><b /><![CDATA[x]]><![CDATA[y]]></a>')
+        self.assertEqual(summarize_list(a), ['b', None, None])
+        self.assertIsNone(a[0].tail)
+        self.assertEqual(a[1].text, 'x')
+        self.assertEqual(a[2].text, 'y')
+
+        # the element is needed if the preceding text is not empty
+        a = parse('<a>text<![CDATA[x]]></a>')
+        self.assertEqual(summarize_list(a), [None])
+        a = parse('<a><b />t<![CDATA[x]]></a>')
+        self.assertEqual(summarize_list(a), ['b', None])
+        # if text follows the section, it is moved to an element
+        # and the text becomes its tail
+        a = parse('<a><![CDATA[x]]>tail</a>')
+        self.assertEqual(summarize_list(a), [None])
+        self.assertIsNone(a.text)
+        self.assertEqual(a[0].text, 'x')
+        self.assertIsInstance(a[0].text, ET.CDATA)
+        self.assertEqual(a[0].tail, 'tail')
+
+    @support.subTests('xml', (
+        '<a><![CDATA[x]]></a>',
+        '<a><![CDATA[x]]>tail</a>',
+        '<a>text<![CDATA[x]]></a>',
+        '<a><b /><![CDATA[x]]></a>',
+        '<a><b />t<![CDATA[x]]></a>',
+        '<a><![CDATA[x]]><![CDATA[y]]></a>',
+        '<a><b /><![CDATA[x]]><![CDATA[y]]></a>',
+        '<a><![CDATA[x]]><b /></a>',
+        '<a><b><![CDATA[x]]></b><![CDATA[y]]></a>',
+    ))
+    def test_parse_cdata_roundtrip(self, xml):
+        parser = ET.XMLParser(target=ET.TreeBuilder(insert_cdata=True))
+        parser.feed(xml)
+        self.assertEqual(ET.tostring(parser.close(), encoding='unicode'), xml)
+
+    def test_parse_cdata_subclass(self):
+        class TreeBuilderSubclass(ET.TreeBuilder):
+            pass
+
+        xml = '<a>text<![CDATA[a < b]]>tail</a>'
+        parser = ET.XMLParser(target=TreeBuilderSubclass(insert_cdata=True))
+        parser.feed(xml)
+        a = parser.close()
+        self.assertEqual(a.text, 'text')
+        self.assertEqual(a[0].text, 'a < b')
+        self.assertEqual(a[0].tail, 'tail')
+
+    def test_parse_cdata_custom_target(self):
+        events = []
+        class Target:
+            def start(self, tag, attrib):
+                events.append(('start', tag))
+            def end(self, tag):
+                events.append(('end', tag))
+            def data(self, data):
+                events.append(('data', data))
+            def start_cdata(self):
+                events.append(('start_cdata',))
+            def end_cdata(self):
+                events.append(('end_cdata',))
+            def close(self):
+                return events
+
+        parser = ET.XMLParser(target=Target())
+        parser.feed('<a>text<![CDATA[a < b]]>tail</a>')
+        self.assertEqual(parser.close(), [
+            ('start', 'a'), ('data', 'text'),
+            ('start_cdata',), ('data', 'a < b'), ('end_cdata',),
+            ('data', 'tail'), ('end', 'a'),
+        ])
+
     def test_late_tail(self):
         # Issue #37399: The tail of an ignored comment could overwrite the text before it.
         class TreeBuilderSubclass(ET.TreeBuilder):
@@ -5140,9 +5359,9 @@ def setUpModule(module=None):
     unittest.addModuleCleanup(setattr, ElementPath, "_cache", path_cache)
     ElementPath._cache = path_cache.copy()
 
-    # Align the Comment/PI factories.
+    # Align the Comment/PI factories and the CDATA type.
     if hasattr(ET, '_set_factories'):
-        old_factories = ET._set_factories(ET.Comment, ET.PI)
+        old_factories = ET._set_factories(ET.Comment, ET.PI, ET.CDATA)
         unittest.addModuleCleanup(ET._set_factories, *old_factories)
 
 

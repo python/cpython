@@ -72,6 +72,7 @@
 
 __all__ = [
     # public symbols
+    "CDATA",
     "Comment",
     "dump",
     "Element", "ElementTree",
@@ -432,6 +433,19 @@ def SubElement(parent, tag, /, attrib={}, **extra):
     element = parent.makeelement(tag, attrib)
     parent.append(element)
     return element
+
+
+class CDATA(str):
+    """Character data which is serialized as a CDATA section.
+
+    It is a string, and can be used as the text or the tail of an element:
+
+        elem.text = CDATA("<raw> & unescaped")
+
+    The parser creates such strings for the content of CDATA sections
+    if the CDATA sections are preserved.
+    """
+    __slots__ = ()
 
 
 def Comment(text=None):
@@ -877,6 +891,7 @@ def _serialize_xml(write, elem, qnames, namespaces,
                    short_empty_elements, **kwargs):
     tag = elem.tag
     text = elem.text
+    has_text = text or isinstance(text, CDATA)
     if tag is Comment:
         write("<!--%s-->" % text)
     elif tag is ProcessingInstruction:
@@ -884,7 +899,7 @@ def _serialize_xml(write, elem, qnames, namespaces,
     else:
         tag = qnames[tag]
         if tag is None:
-            if text:
+            if has_text:
                 write(_escape_cdata(text))
             for e in elem:
                 _serialize_xml(write, e, qnames, None,
@@ -910,9 +925,9 @@ def _serialize_xml(write, elem, qnames, namespaces,
                     else:
                         v = _escape_attrib(v)
                     write(" %s=\"%s\"" % (qnames[k], v))
-            if text or len(elem) or not short_empty_elements:
+            if has_text or len(elem) or not short_empty_elements:
                 write(">")
-                if text:
+                if has_text:
                     write(_escape_cdata(text))
                 for e in elem:
                     _serialize_xml(write, e, qnames, None,
@@ -920,8 +935,9 @@ def _serialize_xml(write, elem, qnames, namespaces,
                 write("</" + tag + ">")
             else:
                 write(" />")
-    if elem.tail:
-        write(_escape_cdata(elem.tail))
+    tail = elem.tail
+    if tail or isinstance(tail, CDATA):
+        write(_escape_cdata(tail))
 
 _CDATA_CONTENT_ELEMENTS = {"script", "style", "xmp", "iframe", "noembed",
                            "noframes", "plaintext"}
@@ -933,6 +949,7 @@ HTML_EMPTY = {"area", "base", "basefont", "br", "col", "embed", "frame", "hr",
 def _serialize_html(write, elem, qnames, namespaces, **kwargs):
     tag = elem.tag
     text = elem.text
+    has_text = text or isinstance(text, CDATA)
     if tag is Comment:
         write("<!--%s-->" % text)
     elif tag is ProcessingInstruction:
@@ -940,7 +957,7 @@ def _serialize_html(write, elem, qnames, namespaces, **kwargs):
     else:
         tag = qnames[tag]
         if tag is None:
-            if text:
+            if has_text:
                 write(_escape_cdata(text))
             for e in elem:
                 _serialize_html(write, e, qnames, None)
@@ -971,7 +988,7 @@ def _serialize_html(write, elem, qnames, namespaces, **kwargs):
                         write(" %s=\"%s\"" % (k, v))
             write(">")
             ltag = tag.lower()
-            if text:
+            if has_text:
                 if ltag in _CDATA_CONTENT_ELEMENTS:
                     write(text)
                 else:
@@ -980,8 +997,9 @@ def _serialize_html(write, elem, qnames, namespaces, **kwargs):
                 _serialize_html(write, e, qnames, None)
             if ltag not in HTML_EMPTY:
                 write("</" + tag + ">")
-    if elem.tail:
-        write(_escape_cdata(elem.tail))
+    tail = elem.tail
+    if tail or isinstance(tail, CDATA):
+        write(_escape_cdata(tail))
 
 def _serialize_text(write, elem):
     for part in elem.itertext():
@@ -1035,8 +1053,17 @@ def _raise_serialization_error(text):
         "cannot serialize %r (type %s)" % (text, type(text).__name__)
         )
 
+def _cdata_section(text):
+    # write character data as a CDATA section
+    if "]]>" in text:
+        # a CDATA section cannot contain "]]>", split it in two
+        text = text.replace("]]>", "]]]]><![CDATA[>")
+    return "<![CDATA[" + text + "]]>"
+
 def _escape_cdata(text):
     # escape character data
+    if isinstance(text, CDATA):
+        return _cdata_section(text)
     try:
         # it's worth avoiding do-nothing calls for strings that are
         # shorter than 500 characters, or so.  assume that's, by far,
@@ -1443,10 +1470,15 @@ class TreeBuilder:
     *pi_factory* is a factory to create processing instructions to be used
     instead of the standard factory.  If *insert_pis* is false (the default),
     processing instructions will not be inserted into the tree.
+
+    If *insert_cdata* is false (the default), the content of CDATA sections
+    is added to the tree as ordinary text.  Otherwise it is added as a
+    :class:`CDATA` string, in a separate element with the tag ``None``.
     """
     def __init__(self, element_factory=None, *,
                  comment_factory=None, pi_factory=None,
-                 insert_comments=False, insert_pis=False):
+                 insert_comments=False, insert_pis=False,
+                 insert_cdata=False):
         self._data = [] # data collector
         self._elem = [] # element stack
         self._last = None # last element
@@ -1460,6 +1492,7 @@ class TreeBuilder:
             pi_factory = ProcessingInstruction
         self._pi_factory = pi_factory
         self.insert_pis = insert_pis
+        self.insert_cdata = insert_cdata
         if element_factory is None:
             element_factory = Element
         self._factory = element_factory
@@ -1473,14 +1506,48 @@ class TreeBuilder:
     def _flush(self):
         if self._data:
             if self._last is not None:
-                text = "".join(self._data)
-                if self._tail:
-                    assert self._last.tail is None, "internal error (tail)"
-                    self._last.tail = text
-                else:
-                    assert self._last.text is None, "internal error (text)"
-                    self._last.text = text
+                self._add_text("".join(self._data))
             self._data = []
+
+    def _add_text(self, text):
+        # Add character data at the current position: as the text or the tail
+        # of the last element if it is not set yet, and otherwise in a new
+        # element with the tag None (which only happens with CDATA sections).
+        last = self._last
+        if self._tail:
+            value = last.tail
+        else:
+            value = last.text
+        if value is None:
+            if self._tail:
+                last.tail = text
+            else:
+                last.text = text
+            return None
+        assert self.insert_cdata, "internal error (text)"
+        if isinstance(value, CDATA):
+            # a CDATA section does not share the place with what follows it,
+            # so move it into its own element
+            if self._tail:
+                last.tail = None
+            else:
+                last.text = None
+            last = self._new_text_element(last, value)
+            if not isinstance(text, CDATA):
+                last.tail = text
+                return last
+        return self._new_text_element(last, text)
+
+    def _new_text_element(self, last, text):
+        elem = self._factory(None, {})
+        elem.text = text
+        if self._tail:
+            self._elem[-1].append(elem)
+        else:
+            last.append(elem)
+        self._last = elem
+        self._tail = 1
+        return elem
 
     def data(self, data):
         """Add text to current element."""
@@ -1533,6 +1600,30 @@ class TreeBuilder:
         """
         return self._handle_single(
             self._pi_factory, self.insert_pis, target, text)
+
+    def start_cdata(self):
+        """Begin a CDATA section.
+
+        The data collected until the matching end_cdata() call is the
+        content of the section.
+        """
+        if self.insert_cdata:
+            self._flush()
+
+    def end_cdata(self):
+        """End a CDATA section and add its content to the tree.
+
+        The content is added as a CDATA string: as the text of the current
+        element or the tail of the last one if they are not set yet, and
+        otherwise in a new element with the tag ``None``, which is returned.
+        """
+        if not self.insert_cdata:
+            return None
+        text = CDATA("".join(self._data))
+        self._data = []
+        if self._last is None:
+            return None
+        return self._add_text(text)
 
     def _handle_single(self, factory, insert, *args):
         elem = factory(*args)
@@ -1591,6 +1682,10 @@ class XMLParser:
             parser.CommentHandler = target.comment
         if hasattr(target, 'pi'):
             parser.ProcessingInstructionHandler = target.pi
+        if hasattr(target, 'start_cdata'):
+            parser.StartCdataSectionHandler = target.start_cdata
+        if hasattr(target, 'end_cdata'):
+            parser.EndCdataSectionHandler = target.end_cdata
         # Configure pyexpat: buffering, new-style attribute handling.
         parser.buffer_text = 1
         parser.ordered_attributes = 1
@@ -2132,7 +2227,7 @@ try:
 except ImportError:
     pass
 else:
-    _set_factories(Comment, ProcessingInstruction)
+    _set_factories(Comment, ProcessingInstruction, CDATA)
 
 
 # --------------------------------------------------------------------

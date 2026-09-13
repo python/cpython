@@ -1277,6 +1277,28 @@ QName Objects
 ^^^^^^^^^^^^^
 
 
+.. class:: CDATA(text)
+
+   A subclass of :class:`str` for character data
+   which is serialized as a CDATA section.
+   It can be used as the text or the tail of an element::
+
+      elem.text = CDATA('<raw> & unescaped')
+
+   The content of a CDATA section is character data:
+   it is not escaped when serialized, and it is a part of the inner text
+   returned by :meth:`Element.itertext` and by the ``"text"``
+   serialization method.
+   ``"]]>"`` cannot occur in a CDATA section,
+   so a content which contains it is split into several sections.
+
+   Note that CDATA sections in the input are parsed as ordinary character
+   data by default, and a :class:`CDATA` string is only created if the
+   parser target preserves them; see :class:`TreeBuilder`.
+
+   .. versionadded:: next
+
+
 .. class:: QName(text_or_uri, tag=None)
 
    QName wrapper.  This can be used to wrap a QName attribute value, in order
@@ -1295,7 +1317,8 @@ TreeBuilder Objects
 
 
 .. class:: TreeBuilder(element_factory=None, *, comment_factory=None, \
-                       pi_factory=None, insert_comments=False, insert_pis=False)
+                       pi_factory=None, insert_comments=False, \
+                       insert_pis=False, insert_cdata=False)
 
    Generic element structure builder.  This builder converts a sequence of
    start, data, end, comment and pi method calls to a well-formed element
@@ -1313,6 +1336,20 @@ TreeBuilder Objects
    comments/pis will be inserted into the tree if they appear within the root
    element (but not outside of it).
 
+   When *insert_cdata* is true, the content of a CDATA section is added to
+   the tree as a :class:`CDATA` string, so that the section is preserved
+   when the tree is serialized.
+   It becomes the text or the tail of an element if that is not set yet,
+   and otherwise a new element with the tag ``None`` is created to hold it.
+   A section does not share the place with what follows it: if character data
+   or another section follows it, it is moved to such an element, and the
+   character data becomes the tail of that element.
+   When *insert_cdata* is false (the default),
+   the content is added as ordinary character data.
+
+   .. versionchanged:: next
+      Added the *insert_cdata* argument.
+
    .. method:: close()
 
       Flushes the builder buffers, and returns the toplevel document
@@ -1328,6 +1365,27 @@ TreeBuilder Objects
 
       Closes the current element.  *tag* is the element name.  Returns the
       closed element.
+
+
+   .. method:: start_cdata()
+
+      Begins a CDATA section.
+      The text added by :meth:`data` until the matching :meth:`end_cdata`
+      call is the content of the section.
+
+      .. versionadded:: next
+
+
+   .. method:: end_cdata()
+
+      Ends a CDATA section.
+      If *insert_cdata* is true, adds the collected content to the tree as a
+      :class:`CDATA` string, and returns the element created to hold it, or
+      ``None`` if it was added as the text or the tail of an existing element.
+      If *insert_cdata* is false, returns ``None`` and the collected content
+      is left as ordinary character data.
+
+      .. versionadded:: next
 
 
    .. method:: start(tag, attrs)
