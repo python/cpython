@@ -351,9 +351,8 @@ dialect_add_special_char(DialectObj *self, Py_UCS4 c)
     }
 }
 
-/* Fill the cache of special characters used by the writer. */
 static void
-dialect_init_special_chars(DialectObj *self)
+dialect_init_special_chars_cache(DialectObj *self)
 {
     self->special_chars[0] = self->special_chars[1] = 0;
     self->nonascii_special = false;
@@ -612,7 +611,7 @@ dialect_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     {
         goto err;
     }
-    dialect_init_special_chars(self);
+    dialect_init_special_chars_cache(self);
 
     ret = Py_NewRef(self);
 err:
