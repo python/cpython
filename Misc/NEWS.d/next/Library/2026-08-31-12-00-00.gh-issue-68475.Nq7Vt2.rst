@@ -2,8 +2,8 @@
 the :attr:`~xml.etree.ElementTree.ElementTree.children` attribute,
 a sequence of the children of the document:
 the root element and the comments and processing instructions around it.
-When *insert_comments* or *insert_pis* is true,
-:class:`~xml.etree.ElementTree.TreeBuilder` no longer discards comments
-and processing instructions which occur outside of the root element;
-they are returned by the new :meth:`!get_document_children` method
-and are used by :func:`~xml.etree.ElementTree.parse`.
+The new :class:`~xml.etree.ElementTree.DocumentBuilder` parser target
+keeps comments and processing instructions which occur outside of the root
+element when *insert_comments* or *insert_pis* is true,
+and returns the children of the document from its ``close()`` method,
+which is used by :func:`~xml.etree.ElementTree.parse`.

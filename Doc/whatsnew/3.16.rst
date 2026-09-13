@@ -707,8 +707,8 @@ xml
   :class:`~xml.etree.ElementTree.ElementTree` now has the
   :attr:`~xml.etree.ElementTree.ElementTree.children` attribute,
   a sequence of the children of the document,
-  and :class:`~xml.etree.ElementTree.TreeBuilder` returns them
-  from the new :meth:`!get_document_children` method
+  and the new :class:`~xml.etree.ElementTree.DocumentBuilder` parser target
+  returns them from its ``close()`` method
   when *insert_comments* or *insert_pis* is true.
   (Contributed by Serhiy Storchaka in :gh:`68475`.)
 

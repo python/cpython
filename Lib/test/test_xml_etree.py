@@ -4104,7 +4104,7 @@ class DocumentChildrenTest(unittest.TestCase):
     sample = ('<!--lead--><?pi data?><r><?in?><a/></r><?after?><!--tail-->')
 
     def parse(self, text=None):
-        builder = ET.TreeBuilder(insert_comments=True, insert_pis=True)
+        builder = ET.DocumentBuilder(insert_comments=True, insert_pis=True)
         tree = ET.ElementTree()
         tree.parse(io.StringIO(text if text is not None else self.sample),
                    ET.XMLParser(target=builder))
@@ -4116,6 +4116,14 @@ class DocumentChildrenTest(unittest.TestCase):
         self.assertEqual(summarize_list(tree.children), ['r'])
         self.assertEqual(len(tree.children), 1)
         self.assertIs(tree.children[0], tree.getroot())
+
+    def test_tree_builder_discards_the_prolog_and_the_epilog(self):
+        builder = ET.TreeBuilder(insert_comments=True, insert_pis=True)
+        tree = ET.ElementTree()
+        tree.parse(io.StringIO(self.sample), ET.XMLParser(target=builder))
+        self.assertEqual(summarize_list(tree.children), ['r'])
+        self.assertEqual(summarize_list(tree.getroot()),
+                         [ET.ProcessingInstruction, 'a'])
 
     def test_parse_keeps_the_prolog_and_the_epilog(self):
         tree = self.parse()
@@ -4254,21 +4262,46 @@ class DocumentChildrenTest(unittest.TestCase):
         tree.write(file, encoding='unicode')
         self.assertEqual(file.getvalue(), '<!--a--><?p?>')
 
-    def test_builder_document(self):
-        builder = ET.TreeBuilder(insert_comments=True, insert_pis=True)
+    def test_document_builder(self):
+        builder = ET.DocumentBuilder(insert_comments=True, insert_pis=True)
         parser = ET.XMLParser(target=builder)
         parser.feed(self.sample)
-        root = parser.close()
-        self.assertEqual(root.tag, 'r')
-        self.assertEqual(len(builder.get_document_children()), 5)
-        self.assertIs(builder.get_document_children()[2], root)
+        document = parser.close()
+        self.assertIsInstance(document, list)
+        self.assertEqual(summarize_list(document),
+                         [ET.Comment, ET.ProcessingInstruction, 'r',
+                          ET.ProcessingInstruction, ET.Comment])
+        self.assertEqual(summarize_list(document[2]),
+                         [ET.ProcessingInstruction, 'a'])
 
-    def test_builder_document_without_inserting(self):
-        builder = ET.TreeBuilder()
+    def test_document_builder_without_inserting(self):
+        builder = ET.DocumentBuilder()
         parser = ET.XMLParser(target=builder)
         parser.feed(self.sample)
-        root = parser.close()
-        self.assertEqual(builder.get_document_children(), [root])
+        document = parser.close()
+        self.assertEqual(summarize_list(document), ['r'])
+        self.assertEqual(summarize_list(document[0]), ['a'])
+
+    def test_document_builder_subclass(self):
+        class Builder(ET.DocumentBuilder):
+            pass
+        builder = Builder(insert_comments=True)
+        parser = ET.XMLParser(target=builder)
+        parser.feed(self.sample)
+        self.assertEqual(summarize_list(parser.close()),
+                         [ET.Comment, 'r', ET.Comment])
+
+    def test_document_builder_xmlid(self):
+        parser = ET.XMLParser(target=ET.DocumentBuilder(insert_comments=True))
+        document, ids = ET.XMLID('<!--c--><r id="x"><a id="y"/></r>', parser)
+        self.assertEqual(summarize_list(document), [ET.Comment, 'r'])
+        self.assertEqual(sorted(ids), ['x', 'y'])
+        self.assertIs(ids['x'], document[1])
+
+    def test_document_builder_fromstring(self):
+        parser = ET.XMLParser(target=ET.DocumentBuilder(insert_comments=True))
+        document = ET.fromstring(self.sample, parser)
+        self.assertEqual(summarize_list(document), [ET.Comment, 'r', ET.Comment])
 
 class TreeBuilderTest(unittest.TestCase):
     sample1 = ('<!DOCTYPE html PUBLIC'

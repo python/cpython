@@ -82,7 +82,7 @@ __all__ = [
     "QName",
     "SubElement",
     "tostring", "tostringlist",
-    "TreeBuilder",
+    "TreeBuilder", "DocumentBuilder",
     "XML", "XMLID",
     "XMLParser", "XMLPullParser",
     "register_namespace",
@@ -698,15 +698,13 @@ class ElementTree:
                     return self._root
             while data := source.read(65536):
                 parser.feed(data)
-            # close() releases the target, ask it for the document first
-            document = getattr(getattr(parser, 'target', None),
-                               'get_document_children', None)
             result = parser.close()
-            # a custom target can return anything, even None
-            self._root = result
-            if document is not None:
-                self._children[:] = document()
+            if isinstance(result, list):
+                # a DocumentBuilder returns the children of the document
+                self.children[:] = result
             else:
+                # a custom target can return anything, even None
+                self._root = result
                 self._children = [result] if iselement(result) else []
             return self._root
         finally:
@@ -1546,10 +1544,13 @@ def XMLID(text, parser=None):
     parser.feed(text)
     tree = parser.close()
     ids = {}
-    for elem in tree.iter():
-        id = elem.get("id")
-        if id:
-            ids[id] = elem
+    # a DocumentBuilder returns the children of the document
+    nodes = tree if isinstance(tree, list) else [tree]
+    for node in nodes:
+        for elem in node.iter():
+            id = elem.get("id")
+            if id:
+                ids[id] = elem
     return tree, ids
 
 # Parse XML document from string constant.  Alias for XML().
@@ -1600,7 +1601,6 @@ class TreeBuilder:
         self._elem = [] # element stack
         self._last = None # last element
         self._root = None # root element
-        self._document = [] # the children of the document
         self._tail = None # true if we're after an end tag
         if comment_factory is None:
             comment_factory = Comment
@@ -1649,7 +1649,6 @@ class TreeBuilder:
             self._elem[-1].append(elem)
         elif self._root is None:
             self._root = elem
-            self._document.append(elem)
         self._elem.append(elem)
         self._tail = 0
         return elem
@@ -1692,19 +1691,39 @@ class TreeBuilder:
             self._last = elem
             if self._elem:
                 self._elem[-1].append(elem)
-            else:
-                # outside the root element: the prolog or the epilog
-                self._document.append(elem)
             self._tail = 1
         return elem
 
-    def get_document_children(self):
-        """Return the children of the document.
 
-        These are the root element and the comments and processing
-        instructions which were inserted outside of it.
-        """
-        return list(self._document)
+class DocumentBuilder(TreeBuilder):
+    """Generic document structure builder.
+
+    This builder is like TreeBuilder, but its close() method returns
+    the list of the children of the document: the root element, and
+    the comments and processing instructions outside of it if
+    *insert_comments* or *insert_pis* is true.
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._document = [] # the children of the document
+
+    def close(self):
+        """Flush builder buffers and return the children of the document."""
+        assert len(self._elem) == 0, "missing end tags"
+        return self._document
+
+    def start(self, tag, attrs):
+        elem = super().start(tag, attrs)
+        if elem is self._root:
+            self._document.append(elem)
+        return elem
+
+    def _handle_single(self, factory, insert, *args):
+        elem = super()._handle_single(factory, insert, *args)
+        if insert and not self._elem:
+            # outside the root element: the prolog or the epilog
+            self._document.append(elem)
+        return elem
 
 
 # also see ElementTree and TreeBuilder

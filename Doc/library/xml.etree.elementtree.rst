@@ -609,7 +609,8 @@ Functions
    Parses an XML section from a string constant.  Same as :func:`XML`.  *text*
    is a string containing XML data.  *parser* is an optional parser instance.
    If not given, the standard :class:`XMLParser` parser is used.
-   Returns an :class:`Element` instance.
+   Returns an :class:`Element` instance
+   (the result of :meth:`XMLParser.close` with a custom *parser*).
 
 
 .. function:: fromstringlist(sequence, parser=None)
@@ -617,7 +618,8 @@ Functions
    Parses an XML document from a sequence of string fragments.  *sequence* is a
    list or other sequence containing XML data fragments.  *parser* is an
    optional parser instance.  If not given, the standard :class:`XMLParser`
-   parser is used.  Returns an :class:`Element` instance.
+   parser is used.  Returns an :class:`Element` instance
+   (the result of :meth:`XMLParser.close` with a custom *parser*).
 
    .. versionadded:: 3.2
 
@@ -815,7 +817,8 @@ Functions
    Parses an XML section from a string constant.  This function can be used to
    embed "XML literals" in Python code.  *text* is a string containing XML
    data.  *parser* is an optional parser instance.  If not given, the standard
-   :class:`XMLParser` parser is used.  Returns an :class:`Element` instance.
+   :class:`XMLParser` parser is used.  Returns an :class:`Element` instance
+   (the result of :meth:`XMLParser.close` with a custom *parser*).
 
 
 .. function:: XMLID(text, parser=None)
@@ -824,7 +827,11 @@ Functions
    which maps from element id:s to elements.  *text* is a string containing XML
    data.  *parser* is an optional parser instance.  If not given, the standard
    :class:`XMLParser` parser is used.  Returns a tuple containing an
-   :class:`Element` instance and a dictionary.
+   :class:`Element` instance (the result of :meth:`XMLParser.close` with
+   a custom *parser*) and a dictionary.
+
+   .. versionchanged:: next
+      Support a *parser* whose target is a :class:`DocumentBuilder`.
 
 
 .. _elementtree-xinclude:
@@ -1274,6 +1281,12 @@ ElementTree Objects
       name or :term:`file object`.  *parser* is an optional parser instance.
       If not given, the standard :class:`XMLParser` parser is used.  Returns the
       section root element.
+      If the target of the parser is a :class:`DocumentBuilder`,
+      the comments and processing instructions outside of the root element
+      are loaded too, into :attr:`children`.
+
+      .. versionchanged:: next
+         Added support for :class:`DocumentBuilder`.
 
 
    .. method:: write(file, encoding="us-ascii", xml_declaration=None, \
@@ -1388,12 +1401,8 @@ TreeBuilder Objects
    create comments and processing instructions.  When not given, the default
    factories will be used.  When *insert_comments* and/or *insert_pis* is true,
    comments/pis will be inserted into the tree if they appear within the root
-   element.  Those which appear outside of it are returned by
-   :meth:`get_document_children`.
-
-   .. versionchanged:: next
-      Comments and processing instructions outside the root element
-      are no longer discarded.
+   element.  Those which appear outside of it are discarded;
+   use :class:`DocumentBuilder` to keep them.
 
    .. method:: close()
 
@@ -1404,16 +1413,6 @@ TreeBuilder Objects
    .. method:: data(data)
 
       Adds text to the current element.  *data* is a string.
-
-
-   .. method:: get_document_children()
-
-      Returns the children of the document:
-      the root element, and the comments and processing instructions
-      which were inserted outside of it.
-      Returns a list of :class:`Element` instances.
-
-      .. versionadded:: next
 
 
    .. method:: end(tag)
@@ -1471,6 +1470,27 @@ TreeBuilder Objects
       out of scope.
 
       .. versionadded:: 3.8
+
+
+.. class:: DocumentBuilder(element_factory=None, *, comment_factory=None, \
+                           pi_factory=None, insert_comments=False, \
+                           insert_pis=False)
+
+   A :class:`TreeBuilder` which builds the whole document, not only the tree
+   of the root element.
+   The arguments are the same as for :class:`TreeBuilder`.
+   When *insert_comments* and/or *insert_pis* is true,
+   comments/pis which appear outside of the root element are kept
+   as the children of the document.
+
+   .. versionadded:: next
+
+   .. method:: close()
+
+      Flushes the builder buffers, and returns the children of the document:
+      the root element, and the comments and processing instructions
+      which were inserted outside of it.
+      Returns a list of :class:`Element` instances.
 
 
 .. class:: C14NWriterTarget(write, *, \

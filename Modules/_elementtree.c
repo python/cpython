@@ -99,6 +99,7 @@ typedef struct {
     PyTypeObject *Element_Type;
     PyTypeObject *ElementIter_Type;
     PyTypeObject *TreeBuilder_Type;
+    PyTypeObject *DocumentBuilder_Type;
     PyTypeObject *XMLParser_Type;
 
     PyObject *expat_capsule;
@@ -158,6 +159,7 @@ elementtree_clear(PyObject *m)
     Py_CLEAR(st->Element_Type);
     Py_CLEAR(st->ElementIter_Type);
     Py_CLEAR(st->TreeBuilder_Type);
+    Py_CLEAR(st->DocumentBuilder_Type);
     Py_CLEAR(st->XMLParser_Type);
     Py_CLEAR(st->expat_capsule);
 
@@ -179,6 +181,7 @@ elementtree_traverse(PyObject *m, visitproc visit, void *arg)
     Py_VISIT(st->Element_Type);
     Py_VISIT(st->ElementIter_Type);
     Py_VISIT(st->TreeBuilder_Type);
+    Py_VISIT(st->DocumentBuilder_Type);
     Py_VISIT(st->XMLParser_Type);
     Py_VISIT(st->expat_capsule);
     return 0;
@@ -409,9 +412,10 @@ get_attrib_from_keywords(PyObject *kwds)
 module _elementtree
 class _elementtree.Element "ElementObject *" "clinic_state()->Element_Type"
 class _elementtree.TreeBuilder "TreeBuilderObject *" "clinic_state()->TreeBuilder_Type"
+class _elementtree.DocumentBuilder "TreeBuilderObject *" "clinic_state()->DocumentBuilder_Type"
 class _elementtree.XMLParser "XMLParserObject *" "clinic_state()->XMLParser_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=6c83ea832d2b0ef1]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=a64a192a4483f2e7]*/
 
 static int
 element_init(PyObject *self, PyObject *args, PyObject *kwds)
@@ -2484,13 +2488,17 @@ typedef struct {
     /* element tracing */
     char insert_comments;
     char insert_pis;
-    PyObject *document; /* the children of the document, or NULL */
+    PyObject *document; /* the children of the document (DocumentBuilder), or NULL */
     elementtreestate *state;
 } TreeBuilderObject;
 
 
 #define _TreeBuilder_CAST(op) ((TreeBuilderObject *)(op))
-#define TreeBuilder_CheckExact(st, op) Py_IS_TYPE((op), (st)->TreeBuilder_Type)
+/* True for the exact TreeBuilder and DocumentBuilder types, for which
+   the parser calls the handlers directly, bypassing the methods. */
+#define TreeBuilder_CheckExact(st, op) \
+    (Py_IS_TYPE((op), (st)->TreeBuilder_Type) \
+     || Py_IS_TYPE((op), (st)->DocumentBuilder_Type))
 
 /* -------------------------------------------------------------------- */
 /* constructor and destructor */
@@ -2517,17 +2525,48 @@ treebuilder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         t->index = 0;
 
         t->insert_comments = t->insert_pis = 0;
-        t->document = PyList_New(0);
-        if (!t->document) {
-            Py_DECREF(t->this);
-            Py_DECREF(t->last);
-            Py_DECREF(t->stack);
-            Py_DECREF((PyObject *) t);
-            return NULL;
-        }
+        t->document = NULL;
         t->state = get_elementtree_state_by_type(type);
     }
     return (PyObject *)t;
+}
+
+static int
+treebuilder_init(TreeBuilderObject *self, PyObject *element_factory,
+                 PyObject *comment_factory, PyObject *pi_factory,
+                 int insert_comments, int insert_pis)
+{
+    if (element_factory != Py_None) {
+        Py_XSETREF(self->element_factory, Py_NewRef(element_factory));
+    } else {
+        Py_CLEAR(self->element_factory);
+    }
+
+    if (comment_factory == Py_None) {
+        elementtreestate *st = self->state;
+        comment_factory = st->comment_factory;
+    }
+    if (comment_factory) {
+        Py_XSETREF(self->comment_factory, Py_NewRef(comment_factory));
+        self->insert_comments = insert_comments;
+    } else {
+        Py_CLEAR(self->comment_factory);
+        self->insert_comments = 0;
+    }
+
+    if (pi_factory == Py_None) {
+        elementtreestate *st = self->state;
+        pi_factory = st->pi_factory;
+    }
+    if (pi_factory) {
+        Py_XSETREF(self->pi_factory, Py_NewRef(pi_factory));
+        self->insert_pis = insert_pis;
+    } else {
+        Py_CLEAR(self->pi_factory);
+        self->insert_pis = 0;
+    }
+
+    return 0;
 }
 
 /*[clinic input]
@@ -2568,36 +2607,46 @@ _elementtree_TreeBuilder___init___impl(TreeBuilderObject *self,
                                        int insert_comments, int insert_pis)
 /*[clinic end generated code: output=8571d4dcadfdf952 input=24fb5a482d93f8e4]*/
 {
-    if (element_factory != Py_None) {
-        Py_XSETREF(self->element_factory, Py_NewRef(element_factory));
-    } else {
-        Py_CLEAR(self->element_factory);
-    }
+    return treebuilder_init(self, element_factory, comment_factory,
+                            pi_factory, insert_comments, insert_pis);
+}
 
-    if (comment_factory == Py_None) {
-        elementtreestate *st = self->state;
-        comment_factory = st->comment_factory;
-    }
-    if (comment_factory) {
-        Py_XSETREF(self->comment_factory, Py_NewRef(comment_factory));
-        self->insert_comments = insert_comments;
-    } else {
-        Py_CLEAR(self->comment_factory);
-        self->insert_comments = 0;
-    }
+/*[clinic input]
+_elementtree.DocumentBuilder.__init__
 
-    if (pi_factory == Py_None) {
-        elementtreestate *st = self->state;
-        pi_factory = st->pi_factory;
-    }
-    if (pi_factory) {
-        Py_XSETREF(self->pi_factory, Py_NewRef(pi_factory));
-        self->insert_pis = insert_pis;
-    } else {
-        Py_CLEAR(self->pi_factory);
-        self->insert_pis = 0;
-    }
+    element_factory: object = None
+    *
+    comment_factory: object = None
+    pi_factory: object = None
+    insert_comments: bool = False
+    insert_pis: bool = False
 
+Generic document structure builder.
+
+This builder is like TreeBuilder, but its close() method returns
+the list of the children of the document: the root element, and
+the comments and processing instructions outside of it if
+*insert_comments* or *insert_pis* is true.
+[clinic start generated code]*/
+
+static int
+_elementtree_DocumentBuilder___init___impl(TreeBuilderObject *self,
+                                           PyObject *element_factory,
+                                           PyObject *comment_factory,
+                                           PyObject *pi_factory,
+                                           int insert_comments,
+                                           int insert_pis)
+/*[clinic end generated code: output=273d144ac40e137f input=f4451df96264a514]*/
+{
+    if (treebuilder_init(self, element_factory, comment_factory,
+                         pi_factory, insert_comments, insert_pis) < 0) {
+        return -1;
+    }
+    PyObject *document = PyList_New(0);
+    if (document == NULL) {
+        return -1;
+    }
+    Py_XSETREF(self->document, document);
     return 0;
 }
 
@@ -2843,7 +2892,7 @@ treebuilder_handle_start(TreeBuilderObject* self, PyObject* tag,
             goto error;
         }
         self->root = Py_NewRef(node);
-        if (PyList_Append(self->document, node) < 0) {
+        if (self->document && PyList_Append(self->document, node) < 0) {
             goto error;
         }
     }
@@ -2948,7 +2997,8 @@ treebuilder_handle_comment(TreeBuilderObject* self, PyObject* text)
                 Py_XSETREF(self->last_for_tail, Py_NewRef(comment));
             }
             /* outside the root element: the prolog or the epilog */
-            else if (PyList_Append(self->document, comment) < 0) {
+            else if (self->document
+                     && PyList_Append(self->document, comment) < 0) {
                 goto error;
             }
         }
@@ -2989,7 +3039,8 @@ treebuilder_handle_pi(TreeBuilderObject* self, PyObject* target, PyObject* text)
                 Py_XSETREF(self->last_for_tail, Py_NewRef(pi));
             }
             /* outside the root element: the prolog or the epilog */
-            else if (PyList_Append(self->document, pi) < 0) {
+            else if (self->document
+                     && PyList_Append(self->document, pi) < 0) {
                 goto error;
             }
         }
@@ -3091,7 +3142,10 @@ treebuilder_done(TreeBuilderObject* self)
 
     /* FIXME: check stack size? */
 
-    if (self->root)
+    if (self->document)
+        /* DocumentBuilder: the children of the document */
+        res = self->document;
+    else if (self->root)
         res = self->root;
     else
         res = Py_None;
@@ -4509,21 +4563,7 @@ static PyType_Spec element_spec = {
     .slots = element_slots,
 };
 
-/*[clinic input]
-_elementtree.TreeBuilder.get_document_children
-
-Return the children of the document.
-[clinic start generated code]*/
-
-static PyObject *
-_elementtree_TreeBuilder_get_document_children_impl(TreeBuilderObject *self)
-/*[clinic end generated code: output=64bb75aa4dd144b9 input=bee07a0ff2788878]*/
-{
-    return PyList_GetSlice(self->document, 0, PyList_GET_SIZE(self->document));
-}
-
 static PyMethodDef treebuilder_methods[] = {
-    _ELEMENTTREE_TREEBUILDER_GET_DOCUMENT_CHILDREN_METHODDEF
     _ELEMENTTREE_TREEBUILDER_DATA_METHODDEF
     _ELEMENTTREE_TREEBUILDER_START_METHODDEF
     _ELEMENTTREE_TREEBUILDER_END_METHODDEF
@@ -4550,6 +4590,22 @@ static PyType_Spec treebuilder_spec = {
     .basicsize = sizeof(TreeBuilderObject),
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE,
     .slots = treebuilder_slots,
+};
+
+static PyType_Slot documentbuilder_slots[] = {
+    {Py_tp_doc, (void *)_elementtree_DocumentBuilder___init____doc__},
+    {Py_tp_dealloc, treebuilder_dealloc},
+    {Py_tp_traverse, treebuilder_gc_traverse},
+    {Py_tp_clear, treebuilder_gc_clear},
+    {Py_tp_init, _elementtree_DocumentBuilder___init__},
+    {0, NULL},
+};
+
+static PyType_Spec documentbuilder_spec = {
+    .name = "xml.etree.ElementTree.DocumentBuilder",
+    .basicsize = sizeof(TreeBuilderObject),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE,
+    .slots = documentbuilder_slots,
 };
 
 static PyMethodDef xmlparser_methods[] = {
@@ -4611,6 +4667,13 @@ module_exec(PyObject *m)
     /* Initialize object types */
     CREATE_TYPE(m, st->ElementIter_Type, &elementiter_spec);
     CREATE_TYPE(m, st->TreeBuilder_Type, &treebuilder_spec);
+    if (st->DocumentBuilder_Type == NULL) {
+        st->DocumentBuilder_Type = (PyTypeObject *)PyType_FromModuleAndSpec(
+            m, &documentbuilder_spec, (PyObject *)st->TreeBuilder_Type);
+        if (st->DocumentBuilder_Type == NULL) {
+            goto error;
+        }
+    }
     CREATE_TYPE(m, st->Element_Type, &element_spec);
     CREATE_TYPE(m, st->XMLParser_Type, &xmlparser_spec);
 
@@ -4685,6 +4748,7 @@ module_exec(PyObject *m)
     PyTypeObject *types[] = {
         st->Element_Type,
         st->TreeBuilder_Type,
+        st->DocumentBuilder_Type,
         st->XMLParser_Type
     };
 
