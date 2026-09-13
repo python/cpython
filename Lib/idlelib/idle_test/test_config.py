@@ -312,29 +312,29 @@ class IdleConfTest(unittest.TestCase):
         eq(conf.userCfg['foo'].Get('Foo Bar', 'foo'), 'newbar')
         eq(conf.userCfg['foo'].GetOptionList('Foo Bar'), ['foo'])
 
-    def test_load_cfg_files_bad(self):
-        # gh-66172: an unparsable user file is renamed, not fatal, not lost.
+    def test_load_cfg_files_bad_format(self):
+        # gh-66172: rename an unparsable user file and save the exception.
         conf = self.new_config(_utest=True)
         tmpdir = tempfile.TemporaryDirectory()
         self.addCleanup(tmpdir.cleanup)
-        badpath = os.path.join(tmpdir.name, 'config-extensions.cfg')
-        with open(badpath, 'w') as f:
+        confpath = os.path.join(tmpdir.name, 'config-extensions.cfg')
+        with open(confpath, 'w') as f:
             f.write('enable=1\n')  # No section header.
         conf.defaultCfg['foo'] = config.IdleConfParser('')  # Empty, valid.
-        conf.userCfg['foo'] = config.IdleUserConfParser(badpath)
+        conf.userCfg['foo'] = config.IdleUserConfParser(confpath)
 
         self.assertIsNone(conf.file_load_error_message())
         conf.LoadCfgFiles()  # Must not raise.
 
         self.assertEqual(len(conf.file_load_errors), 1)
         file, err = conf.file_load_errors[0]
-        self.assertEqual(file, badpath)
+        self.assertEqual(file, confpath)
         # The bad file is moved aside, not left to be overwritten or deleted.
-        self.assertFalse(os.path.exists(badpath))
-        with open(badpath + '.bad') as f:
+        self.assertFalse(os.path.exists(confpath))
+        with open(confpath + '.bad') as f:
             self.assertEqual(f.read(), 'enable=1\n')
         message = conf.file_load_error_message()
-        self.assertIn(badpath, message)
+        self.assertIn(confpath, message)
         self.assertIn('MissingSectionHeaderError', message)
 
     def test_load_cfg_files_bad_encoding(self):
@@ -342,18 +342,18 @@ class IdleConfTest(unittest.TestCase):
         conf = self.new_config(_utest=True)
         tmpdir = tempfile.TemporaryDirectory()
         self.addCleanup(tmpdir.cleanup)
-        badpath = os.path.join(tmpdir.name, 'config-main.cfg')
-        with open(badpath, 'wb') as f:
+        confpath = os.path.join(tmpdir.name, 'config-main.cfg')
+        with open(confpath, 'wb') as f:
             f.write(b'[Section]\nkey = \xff\n')  # Invalid UTF-8.
         conf.defaultCfg['foo'] = config.IdleConfParser('')  # Empty, valid.
-        conf.userCfg['foo'] = config.IdleUserConfParser(badpath)
+        conf.userCfg['foo'] = config.IdleUserConfParser(confpath)
 
         conf.LoadCfgFiles()  # Must not raise.
 
         self.assertEqual(len(conf.file_load_errors), 1)
         self.assertIsInstance(conf.file_load_errors[0][1], UnicodeDecodeError)
-        self.assertFalse(os.path.exists(badpath))
-        self.assertTrue(os.path.exists(badpath + '.bad'))
+        self.assertFalse(os.path.exists(confpath))
+        self.assertTrue(os.path.exists(confpath + '.bad'))
 
     def test_save_user_cfg_files(self):
         conf = self.mock_config()
