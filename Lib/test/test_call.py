@@ -1081,7 +1081,7 @@ class TestIncorrectNumberOfPositionalArgs(unittest.TestCase):
     def test_metaclass_missing_receiver_does_not_suggest_missing_self(self):
         """A metaclass receiver error should not suggest an instance self."""
         msg = "AMeta.method_one_arg() takes 1 positional argument but 2 were given"
-        with self.assert_type_error_and_msg_in(msg) as cm:  
+        with self.assert_type_error_and_msg_in(msg) as cm:
             AClassWithMetaclass.method_one_arg("standard")
         self.assertNotIn("Did you forget", str(cm.exception))
 
