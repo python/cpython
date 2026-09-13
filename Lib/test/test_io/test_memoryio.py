@@ -754,6 +754,7 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
         self.assertEqual(memio.getvalue(), b"01AAA56789")
         self.assertEqual(memio.tell(), 5)
 
+    @support.nomemtest
     def test_memory_error(self):
         # gh-157242: io.BytesIO() must not close the file on MemoryError
         _testcapi = import_helper.import_module('_testcapi')
