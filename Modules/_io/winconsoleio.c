@@ -1009,7 +1009,6 @@ _io__WindowsConsoleIO_read_impl(winconsoleio *self, PyTypeObject *cls,
                                 Py_ssize_t size)
 /*[clinic end generated code: output=7e569a586537c0ae input=a14570a5da273365]*/
 {
-    PyObject *bytes;
     Py_ssize_t bytes_size;
 
     if (self->fd == -1)
@@ -1026,26 +1025,20 @@ _io__WindowsConsoleIO_read_impl(winconsoleio *self, PyTypeObject *cls,
         return NULL;
     }
 
-    bytes = PyBytes_FromStringAndSize(NULL, size);
-    if (bytes == NULL)
+    PyBytesWriter *writer = PyBytesWriter_Create(size);
+    if (writer == NULL) {
         return NULL;
+    }
 
     _PyIO_State *state = get_io_state_by_cls(cls);
-    bytes_size = readinto(state, self, PyBytes_AS_STRING(bytes),
-                          PyBytes_GET_SIZE(bytes));
+    bytes_size = readinto(state, self, PyBytesWriter_GetData(writer),
+                          PyBytesWriter_GetSize(writer));
     if (bytes_size < 0) {
-        Py_CLEAR(bytes);
+        PyBytesWriter_Discard(writer);
         return NULL;
     }
 
-    if (bytes_size < PyBytes_GET_SIZE(bytes)) {
-        if (_PyBytes_Resize(&bytes, bytes_size) < 0) {
-            Py_CLEAR(bytes);
-            return NULL;
-        }
-    }
-
-    return bytes;
+    return PyBytesWriter_FinishWithSize(writer, bytes_size);
 }
 
 /*[clinic input]
