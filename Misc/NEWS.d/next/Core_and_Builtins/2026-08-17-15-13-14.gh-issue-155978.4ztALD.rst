@@ -1,0 +1,2 @@
+Fix a memory leak in the free-threaded build when setting or deleting a
+special method (such as ``__repr__``) on a class that has many subclasses.

@@ -1,0 +1,6 @@
+Implement :meth:`~xml.dom.minidom.Node.writexml` for document fragments
+in :mod:`xml.dom.minidom`,
+so that :meth:`~xml.dom.minidom.Node.toxml` and
+:meth:`~xml.dom.minidom.Node.toprettyxml` now work for them.
+They write the children of the fragment,
+without adding a level of indentation.

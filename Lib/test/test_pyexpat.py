@@ -1045,6 +1045,9 @@ class ParentParserLifetimeTest(unittest.TestCase):
         del parser
         del subparser
 
+    # gh-155485: GetReparseDeferralEnabled always returns False with Expat <2.6.0.
+    @unittest.skipIf(not expat.ParserCreate().GetReparseDeferralEnabled(),
+                     "requires Python compiled with Expat >= 2.6.0")
     def test_subparser_inherits_reparse_deferral(self):
         for enabled in (True, False):
             parser = expat.ParserCreate()

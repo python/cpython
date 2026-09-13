@@ -64,6 +64,8 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
         self.isabs = os.path.isabs
         self.splitdrive = os.path.splitdrive
         self._config_vars = sysconfig._CONFIG_VARS, copy(sysconfig._CONFIG_VARS)
+        self._cached_prefixes = (sysconfig._config_vars_cached_prefix,
+                                 sysconfig._config_vars_cached_exec_prefix)
         self._added_envvars = []
         self._changed_envvars = []
         for var in ('MACOSX_DEPLOYMENT_TARGET', 'PATH'):
@@ -92,6 +94,11 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
         sysconfig._CONFIG_VARS = self._config_vars[0]
         sysconfig._CONFIG_VARS.clear()
         sysconfig._CONFIG_VARS.update(self._config_vars[1])
+        # Restoring _CONFIG_VARS is not enough: if the cached prefixes are
+        # left over from the test, the next get_config_vars() call finds
+        # the cache stale and replaces _CONFIG_VARS with a new dict.
+        (sysconfig._config_vars_cached_prefix,
+         sysconfig._config_vars_cached_exec_prefix) = self._cached_prefixes
         for var, value in self._changed_envvars:
             os.environ[var] = value
         for var in self._added_envvars:

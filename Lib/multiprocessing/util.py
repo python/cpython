@@ -10,6 +10,7 @@
 import os
 import itertools
 import sys
+import tempfile
 import weakref
 import atexit
 import threading        # we want threading to install it's
@@ -143,6 +144,7 @@ else:
     # On Windows platforms, we do not create AF_UNIX sockets.
     _SUN_PATH_MAX = None if os.name == 'nt' else 92
 
+
 def _remove_temp_dir(rmtree, tempdir):
     rmtree(tempdir)
 
@@ -152,7 +154,8 @@ def _remove_temp_dir(rmtree, tempdir):
     if current_process is not None:
         current_process._config['tempdir'] = None
 
-def _get_base_temp_dir(tempfile):
+
+def _get_base_temp_dir():
     """Get a temporary directory where socket files will be created.
 
     To prevent additional imports, pass a pre-imported 'tempfile' module.
@@ -208,12 +211,13 @@ def _get_base_temp_dir(tempfile):
     assert len(base_system_tempdir) + 14 + 14 < _SUN_PATH_MAX
     return base_system_tempdir
 
+
 def get_temp_dir():
     # get name of a temp directory which will be automatically cleaned up
     tempdir = process.current_process()._config.get('tempdir')
     if tempdir is None:
-        import shutil, tempfile
-        base_tempdir = _get_base_temp_dir(tempfile)
+        import shutil
+        base_tempdir = _get_base_temp_dir()
         tempdir = tempfile.mkdtemp(prefix='pymp-', dir=base_tempdir)
         info('created temp directory %s', tempdir)
         # keep a strong reference to shutil.rmtree(), since the finalizer
@@ -222,6 +226,27 @@ def get_temp_dir():
                  exitpriority=-100)
         process.current_process()._config['tempdir'] = tempdir
     return tempdir
+
+
+def _has_writeable_tempdir():
+    # 'forkserver' requires writeable temporary files. This function is
+    # called to determine the default context's start method.
+    #
+    # See: https://github.com/python/cpython/issues/155717.
+
+    path = _get_base_temp_dir()
+    if path is None:
+        return False
+
+    # os.access() is advisory and racy. It can lie on read-only filesystems,
+    # NFS/network mounts, containers, and immutable-flag files, so we simply
+    # try to create a file to check if this works and delete it otherwise.
+    try:
+        with tempfile.NamedTemporaryFile(dir=path):
+            return True
+    except OSError:
+        return False
+
 
 #
 # Support for reinitialization of objects when bootstrapping a child process

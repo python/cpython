@@ -18,10 +18,7 @@
 # CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
 # CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-from __future__ import annotations
-
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
 
 import re
 from . import commands, console, reader
@@ -30,9 +27,7 @@ from .reader import Reader
 
 
 # types
-Command = commands.Command
-if TYPE_CHECKING:
-    from .types import CompletionAction, Keymap
+lazy from .types import CompletionAction, Keymap
 
 
 def prefix(wordlist: list[str], j: int = 0) -> str:
@@ -285,7 +280,7 @@ class CompletingReader(Reader):
         return super().collect_keymap() + (
             (r'\t', 'complete'),)
 
-    def after_command(self, cmd: Command) -> None:
+    def after_command(self, cmd: commands.Command) -> None:
         super().after_command(cmd)
         if not isinstance(cmd, (complete, self_insert)):
             self.cmpltn_reset()

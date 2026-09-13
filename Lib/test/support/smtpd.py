@@ -862,7 +862,7 @@ if __name__ == '__main__':
         except ImportError:
             print('Cannot import module "pwd"; try running with -n option.', file=sys.stderr)
             sys.exit(1)
-        nobody = pwd.getpwnam('nobody')[2]
+        nobody = pwd.getpwnam('nobody').pw_uid
         try:
             os.setuid(nobody)
         except PermissionError:
