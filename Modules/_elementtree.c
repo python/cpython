@@ -4186,6 +4186,26 @@ _elementtree_XMLParser__setevents_impl(XMLParserObject *self,
             return NULL;
         }
 
+        /* the target must implement the method of the event,
+           except for the namespace events */
+        PyObject *handler = Py_None;
+        if (strcmp(event_name, "start") == 0) {
+            handler = self->handle_start;
+        } else if (strcmp(event_name, "end") == 0) {
+            handler = self->handle_end;
+        } else if (strcmp(event_name, "comment") == 0) {
+            handler = self->handle_comment;
+        } else if (strcmp(event_name, "pi") == 0) {
+            handler = self->handle_pi;
+        }
+        if (handler == NULL) {
+            PyErr_Format(PyExc_TypeError,
+                         "the target does not support %R events",
+                         event_name_obj);
+            Py_DECREF(events_seq);
+            return NULL;
+        }
+
         if (strcmp(event_name, "start") == 0) {
             Py_XSETREF(self->start_event_obj, Py_NewRef(event_name_obj));
         } else if (strcmp(event_name, "end") == 0) {

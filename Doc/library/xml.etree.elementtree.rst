@@ -624,12 +624,14 @@ Functions
    *parser* is an optional parser instance.
    If not given, the standard :class:`XMLParser` parser is used.
    *parser* must be an instance of :class:`XMLParser` or its subclass.
-   *target* is the target of the standard parser;
+   *target* is the target of the standard parser,
+   as for :class:`XMLPullParser`;
    it cannot be used together with *parser*.
    Returns an :term:`iterator` providing ``(event, obj)`` pairs,
    as described for :meth:`XMLPullParser.read_events`;
    it has a ``root`` attribute that references the root element of the
-   resulting XML tree once *source* is fully read.
+   resulting XML tree, or the value returned by the ``close()`` method
+   of a custom target, once *source* is fully read.
    If a custom target is used, it is set to the value returned
    by the :meth:`!close` method of the target.
 
@@ -1517,8 +1519,10 @@ XMLPullParser Objects
    With other targets the reported object is the value returned
    by the corresponding method of the target,
    so no tree is built if the target does not build one.
-   The ``"start-ns"`` and ``"end-ns"`` events are reported as before
-   if the target does not implement :meth:`!start_ns` and :meth:`!end_ns`.
+   The target must implement the methods for all requested events,
+   except :meth:`!start_ns` and :meth:`!end_ns`:
+   if they are not implemented, a ``(prefix, uri)`` tuple and ``None``
+   are reported for the ``"start-ns"`` and ``"end-ns"`` events.
 
    .. versionchanged:: next
       Added the *target* parameter.

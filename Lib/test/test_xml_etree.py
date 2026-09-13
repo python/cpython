@@ -2139,6 +2139,24 @@ class XMLPullParserTest(unittest.TestCase):
             ('pi', ('pi', 'pitarget')),
         ])
 
+    def test_custom_target_without_method(self):
+        class Target:
+            def close(self):
+                pass
+        for event in ('start', 'end', 'comment', 'pi'):
+            with self.subTest(event=event):
+                with self.assertRaisesRegex(TypeError,
+                        "the target does not support %r events" % event):
+                    ET.XMLPullParser(events=(event,), target=Target())
+        # the namespace events do not need methods of the target
+        parser = ET.XMLPullParser(events=('start-ns', 'end-ns'),
+                                  target=Target())
+        self._feed(parser, "<root xmlns='namespace' />")
+        self.assert_event_tuples(parser, [
+            ('start-ns', ('', 'namespace')),
+            ('end-ns', None),
+        ])
+
     def test_custom_target_ns_events(self):
         # the target does not implement start_ns()/end_ns(),
         # so the prefix and the uri are reported

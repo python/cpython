@@ -1617,6 +1617,10 @@ class XMLParser:
         parser = self._parser
         append = events_queue.append
         for event_name in events_to_report:
+            if (event_name in ("start", "end", "comment", "pi")
+                    and not hasattr(self.target, event_name)):
+                raise TypeError("the target does not support %r events"
+                                 % event_name)
             if event_name == "start":
                 parser.ordered_attributes = 1
                 def handler(tag, attrib_in, event=event_name, append=append,
@@ -1649,13 +1653,14 @@ class XMLParser:
                         append((event, None))
                 parser.EndNamespaceDeclHandler = handler
             elif event_name == 'comment':
-                def handler(text, event=event_name, append=append, self=self):
-                    append((event, self.target.comment(text)))
+                def handler(text, event=event_name, append=append,
+                            comment=self.target.comment):
+                    append((event, comment(text)))
                 parser.CommentHandler = handler
             elif event_name == 'pi':
                 def handler(pi_target, data, event=event_name, append=append,
-                            self=self):
-                    append((event, self.target.pi(pi_target, data)))
+                            pi=self.target.pi):
+                    append((event, pi(pi_target, data)))
                 parser.ProcessingInstructionHandler = handler
             else:
                 raise ValueError("unknown event %r" % event_name)
