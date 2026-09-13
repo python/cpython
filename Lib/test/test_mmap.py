@@ -953,6 +953,24 @@ class MmapTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     m.resize(start_size)
 
+    def test_setitem_resize_reentrancy(self):
+        """Resizing the mmap from inside __index__ while assigning to a
+        single item must not access memory past the new bounds (gh-157335)."""
+        size = 2 * PAGESIZE
+        new_size = PAGESIZE
+
+        class ResizeOnIndex:
+            def __init__(self, m):
+                self.m = m
+            def __index__(self):
+                self.m.resize(new_size)
+                return 0
+
+        with mmap.mmap(-1, size) as m:
+            with self.assertRaises(IndexError):
+                m[size - 1] = ResizeOnIndex(m)
+            self.assertEqual(len(m), new_size)
+
     @unittest.skipUnless(os.name == 'nt', 'requires Windows')
     def test_resize_fails_if_mapping_held_elsewhere(self):
         """If more than one mapping is held against a named file on Windows, neither

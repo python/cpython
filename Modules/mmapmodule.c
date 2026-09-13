@@ -1687,6 +1687,13 @@ mmap_ass_subscript_lock_held(PyObject *op, PyObject *item, PyObject *value)
             return -1;
         }
         CHECK_VALID(-1);
+        /* value's __index__ may have resized the mmap, invalidating
+         * the earlier bounds check on i. */
+        if (i >= self->size) {
+            PyErr_SetString(PyExc_IndexError,
+                            "mmap index out of range");
+            return -1;
+        }
 
         char v_char = (char) v;
         if (safe_byte_copy(self->data + i, &v_char) < 0) {
