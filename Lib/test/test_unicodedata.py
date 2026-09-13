@@ -381,7 +381,7 @@ class BaseUnicodeFunctionsTest:
         # New in 17.0.0
         self.assertEqual(self.db.decomposition('\uA7F1'), '' if self.old else '<super> 0053')
         # New in 18.0.0
-        self.assertEqual(self.db.decomposition('\u055B'), '' if self.old else '<super> 0567')
+        self.assertEqual(self.db.decomposition('\u0558'), '' if self.old else '<super> 0567')
 
         # Hangul characters
         self.assertEqual(self.db.decomposition('\uAC00'), '1100 1161')
@@ -704,7 +704,7 @@ class BaseUnicodeFunctionsTest:
         # New in 17.0.0
         self.assertEqual(eaw('\U00016FF2'), 'N' if self.old else 'W')
         # New in 18.0.0
-        self.assertEqual(eaw('\U0001F7DB'), 'N' if self.old else 'W')
+        self.assertEqual(eaw('\U0001F7DA'), 'N' if self.old else 'W')
 
     def test_east_asian_width_unassigned(self):
         eaw = self.db.east_asian_width
