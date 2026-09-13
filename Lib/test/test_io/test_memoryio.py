@@ -5,6 +5,7 @@ BytesIO -- for bytes
 
 import unittest
 from test import support
+from test.support import import_helper
 
 import gc
 import io
@@ -753,6 +754,35 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
         self.assertEqual(memio.getvalue(), b"01AAA56789")
         self.assertEqual(memio.tell(), 5)
 
+    def test_memory_error(self):
+        # gh-157242: io.BytesIO() must not close the file on MemoryError
+        _testcapi = import_helper.import_module('_testcapi')
+
+        # write()
+        stream = self.ioclass()
+        stream.write(self.buftype('abc'))
+        with self.assertRaises(MemoryError):
+            try:
+                data = self.buftype('def')
+                _testcapi.set_nomemory(0)
+                stream.write(data)
+            finally:
+                _testcapi.remove_mem_hooks()
+        stream.write(self.buftype('123'))
+        self.assertEqual(stream.getvalue(), self.buftype('abc123'))
+
+        # truncate()
+        data = self.buftype('x' * 100)
+        stream = self.ioclass()
+        stream.write(data)
+        with self.assertRaises(MemoryError):
+            try:
+                _testcapi.set_nomemory(0)
+                stream.truncate(5)
+            finally:
+                _testcapi.remove_mem_hooks()
+        self.assertEqual(stream.getvalue(), data)
+
 
 class TextIOTestMixin:
 
@@ -1024,6 +1054,18 @@ class CBytesIOTest(PyBytesIOTest):
         old_rc = sys.getrefcount(ba)
         memio = self.ioclass(ba)
         self.assertEqual(sys.getrefcount(ba), old_rc)
+
+    def test_write_with_export(self):
+        memio = self.ioclass(b"abcd")
+        memio.seek(2)
+        with memio.getbuffer() as view:
+            self.assertRaises(BufferError, memio.__init__, b"replacement")
+            self.assertEqual(memio.tell(), 2)
+            self.assertEqual(memio.getvalue(), b"abcd")
+            self.assertEqual(bytes(view), b"abcd")
+        memio.write(b"X")
+        self.assertEqual(memio.getvalue(), b"abXd")
+
 
 class CStringIOTest(PyStringIOTest):
     ioclass = io.StringIO

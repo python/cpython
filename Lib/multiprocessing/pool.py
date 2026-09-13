@@ -763,6 +763,16 @@ class Pool(object):
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.terminate()
 
+def _chain_context(exc, context):
+    'Set context as the context of exc, avoiding a cycle.'
+    seen = {id(context)}
+    while exc is not None and id(exc) not in seen:
+        seen.add(id(exc))
+        if exc.__context__ is None:
+            exc.__context__ = context
+            return
+        exc = exc.__context__
+
 #
 # Class whose instances are returned by `Pool.apply_async()`
 #
@@ -800,13 +810,25 @@ class ApplyResult(object):
 
     def _set(self, i, obj):
         self._success, self._value = obj
-        if self._callback and self._success:
-            self._callback(self._value)
-        if self._error_callback and not self._success:
-            self._error_callback(self._value)
-        self._event.set()
-        del self._cache[self._job]
-        self._pool = None
+        try:
+            if self._success:
+                if self._callback:
+                    self._callback(self._value)
+            else:
+                if self._error_callback:
+                    self._error_callback(self._value)
+        except BaseException as exc:
+            # A failed callback becomes the result of the job.  If it
+            # propagated, it would kill the result handler thread.
+            if not self._success:
+                # do not lose the original error
+                _chain_context(exc, self._value)
+            self._success = False
+            self._value = exc
+        finally:
+            self._event.set()
+            del self._cache[self._job]
+            self._pool = None
 
     __class_getitem__ = classmethod(types.GenericAlias)
 
@@ -837,11 +859,16 @@ class MapResult(ApplyResult):
         if success and self._success:
             self._value[i*self._chunksize:(i+1)*self._chunksize] = result
             if self._number_left == 0:
-                if self._callback:
-                    self._callback(self._value)
-                del self._cache[self._job]
-                self._event.set()
-                self._pool = None
+                try:
+                    if self._callback:
+                        self._callback(self._value)
+                except BaseException as exc:
+                    self._success = False
+                    self._value = exc
+                finally:
+                    del self._cache[self._job]
+                    self._event.set()
+                    self._pool = None
         else:
             if not success and self._success:
                 # only store first exception
@@ -849,11 +876,16 @@ class MapResult(ApplyResult):
                 self._value = result
             if self._number_left == 0:
                 # only consider the result ready once all jobs are done
-                if self._error_callback:
-                    self._error_callback(self._value)
-                del self._cache[self._job]
-                self._event.set()
-                self._pool = None
+                try:
+                    if self._error_callback:
+                        self._error_callback(self._value)
+                except BaseException as exc:
+                    _chain_context(exc, self._value)
+                    self._value = exc
+                finally:
+                    del self._cache[self._job]
+                    self._event.set()
+                    self._pool = None
 
 #
 # Class whose instances are returned by `Pool.imap()`
