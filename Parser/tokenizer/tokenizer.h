@@ -28,8 +28,17 @@ typedef struct {
     int at_eof;
 } _PyToken_View;
 
+/* Supplemental source context for a terminal error. location is the reporting
+   cursor, independent of the scanner cursor; lineno == 0 means absent.
+   The text span may cover multiple physical lines. */
+typedef struct {
+    _PyTok_Loc location;
+    _PyTok_Span text_span;
+} _PyTokenizer_Diagnostic;
+
 typedef struct {
     int status;
+    _PyTokenizer_Diagnostic diagnostic;
     _PyTok_Loc location;
     _PyTok_Off cursor;
     _PyTok_Span input_span;
@@ -97,7 +106,5 @@ struct tok_state *_PyTokenizer_FromFile(
 /* Return the declared encoding in PyMem-allocated storage, or NULL.
    An exception is set on error. */
 char *_PyTokenizer_FindEncodingFilename(int, PyObject *);
-
-#define tok_dump _Py_tok_dump
 
 #endif /* !Py_TOKENIZER_H */

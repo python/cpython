@@ -5,5 +5,7 @@ struct tok_state;
 
 void _PyTok_ReaderFree(struct tok_state *);
 int _PyTok_ReaderUnderflow(struct tok_state *);
+int _PyTok_ReaderIsInteractive(const struct tok_state *);
+void _PyTok_ReaderStopInteractive(struct tok_state *);
 
 #endif
