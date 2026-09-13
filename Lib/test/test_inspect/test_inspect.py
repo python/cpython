@@ -5656,6 +5656,20 @@ class TestParameterObject(unittest.TestCase):
         self.assertEqual(param.kind, inspect.Parameter.POSITIONAL_ONLY)
         self.assertEqual(param.name, 'implicit0')
 
+    @cpython_only
+    def test_signature_from_code_unusual_names(self):
+        def f(a, b): pass
+        f.__code__ = f.__code__.replace(co_varnames=('.0', 'b'))
+        sig = inspect.signature(f)
+        self.assertEqual(list(sig.parameters), ['implicit0', 'b'])
+        self.assertEqual(sig.parameters['implicit0'].kind,
+                         inspect.Parameter.POSITIONAL_ONLY)
+
+        f.__code__ = f.__code__.replace(co_varnames=('if', 'b'))
+        with self.assertRaisesRegex(ValueError,
+                                    'is not a valid parameter name'):
+            inspect.signature(f)
+
     def test_signature_parameter_immutability(self):
         p = inspect.Parameter('spam', kind=inspect.Parameter.KEYWORD_ONLY)
 
