@@ -81,6 +81,15 @@ AboutDialog_spec = {
            "Verify x.y.z versions and test each button, including Close.\n "
     }
 
+CharSelectWindow_spec = {
+    'file': 'charselect',
+    'kwds': {'_htest': True},
+    'msg': "Pick a block from the dropdown and scroll the grid.\n"
+           "Click a character to see its details in the tabs below.\n"
+           "Search for 'heart' or 'U+1F600' and press Go.\n"
+           "Press the Copy buttons and verify the status bar feedback."
+    }
+
 # TODO implement ^\; adding '<Control-Key-\\>' to function does not work.
 _calltip_window_spec = {
     'file': 'calltip_w',
