@@ -3677,25 +3677,26 @@ byteswriter_write_canary_byte(PyBytesWriter *writer)
 #endif
 
 static inline int
-byteswriter_resize(PyBytesWriter *writer, Py_ssize_t size, int resize)
+byteswriter_resize(PyBytesWriter *writer, Py_ssize_t new_size, int resize)
 {
-    assert(size >= 0);
+    assert(new_size >= 0);
 
     Py_ssize_t old_allocated = byteswriter_allocated(writer);
-    if (size <= old_allocated) {
+    if (new_size <= old_allocated) {
         // Do not shrink the buffer before PyBytesWriter_FinishWithSize()
         return 0;
     }
 
+    Py_ssize_t alloc = new_size;
     if (resize && writer->overallocate) {
-        if (size <= (PY_SSIZE_T_MAX - size / OVERALLOCATE_FACTOR)) {
-            size += size / OVERALLOCATE_FACTOR;
+        if (alloc <= (PY_SSIZE_T_MAX - alloc / OVERALLOCATE_FACTOR)) {
+            alloc += alloc / OVERALLOCATE_FACTOR;
         }
     }
 
     if (writer->obj != NULL) {
         if (writer->use_bytearray) {
-            if (PyByteArray_Resize(writer->obj, size)) {
+            if (PyByteArray_Resize(writer->obj, alloc)) {
 #ifdef Py_DEBUG
                 // bytearray can override the canary byte on error
                 byteswriter_write_canary_byte(writer);
@@ -3705,7 +3706,7 @@ byteswriter_resize(PyBytesWriter *writer, Py_ssize_t size, int resize)
         }
         else {
             // Can raise MemoryError or OverflowError
-            if (_PyBytes_ResizeKeepOnError(&writer->obj, size)) {
+            if (_PyBytes_ResizeKeepOnError(&writer->obj, alloc)) {
                 assert(writer->obj != NULL);
                 return -1;
             }
@@ -3713,37 +3714,40 @@ byteswriter_resize(PyBytesWriter *writer, Py_ssize_t size, int resize)
         }
         assert(writer->obj != NULL);
     }
-    else if (writer->use_bytearray) {
-        writer->obj = PyByteArray_FromStringAndSize(NULL, size);
-        if (writer->obj == NULL) {
-            return -1;
-        }
-        if (resize) {
-            assert((size_t)size > sizeof(writer->small_buffer));
-            memcpy(PyByteArray_AS_STRING(writer->obj),
-                   writer->small_buffer,
-                   sizeof(writer->small_buffer));
-        }
-    }
     else {
-        writer->obj = PyBytes_FromStringAndSize(NULL, size);
-        if (writer->obj == NULL) {
-            return -1;
+        char *data;
+        if (writer->use_bytearray) {
+            writer->obj = PyByteArray_FromStringAndSize(NULL, alloc);
+            if (writer->obj == NULL) {
+                return -1;
+            }
+            data = PyByteArray_AS_STRING(writer->obj);
         }
+        else {
+            writer->obj = PyBytes_FromStringAndSize(NULL, alloc);
+            if (writer->obj == NULL) {
+                return -1;
+            }
+            assert(_PyBytes_IsMutable(writer->obj));
+            data = PyBytes_AS_STRING(writer->obj);
+        }
+
         if (resize) {
-            assert((size_t)size > sizeof(writer->small_buffer));
-            memcpy(PyBytes_AS_STRING(writer->obj),
-                   writer->small_buffer,
-                   sizeof(writer->small_buffer));
+            // Copy data from the small buffer
+            Py_ssize_t old_size = writer->size;
+            assert((size_t)old_size <= sizeof(writer->small_buffer));
+            assert(old_size <= alloc);
+            memcpy(data, writer->small_buffer, old_size);
         }
-        assert(_PyBytes_IsMutable(writer->obj));
     }
 
 #ifdef Py_DEBUG
     Py_ssize_t allocated = byteswriter_allocated(writer);
-    if (resize && allocated > old_allocated) {
-        memset(byteswriter_data(writer) + old_allocated, PyBytesWrite_NEW_BYTE,
-               allocated - old_allocated);
+    if (resize) {
+        Py_ssize_t old_size = writer->size;
+        assert(allocated > old_size);
+        memset(byteswriter_data(writer) + old_size, PyBytesWrite_NEW_BYTE,
+               allocated - old_size);
     }
 #endif
 
