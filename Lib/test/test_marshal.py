@@ -118,9 +118,10 @@ class StringTestCase(unittest.TestCase, HelperMixin):
 
     @support.cpython_only
     def test_bytes_singleton(self):
-        for sample in [b"", b"x"]:
-            new = marshal.loads(marshal.dumps(sample))
-            self.assertIs(new, sample)
+        for version in range(marshal.version + 1):
+            for sample in [b"", b"x"]:
+                new = marshal.loads(marshal.dumps(sample, version))
+                self.assertIs(new, sample)
 
 
 class ExceptionTestCase(unittest.TestCase):
