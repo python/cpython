@@ -2348,8 +2348,8 @@ def _signature_from_function(cls, func, skip_bound_arg=True,
         return _signature_fromstr(cls, func, s, skip_bound_arg)
 
     Parameter = cls._parameter_cls
-    if Parameter is _Parameter and not is_duck_function:
-        Parameter = _parameter_from_code
+    if Parameter is Signature._parameter_cls and not is_duck_function:
+        Parameter = Parameter._from_code
 
     # Parameter information.
     func_code = func.__code__
@@ -2748,6 +2748,18 @@ class Parameter:
 
         self._name = name
 
+    @classmethod
+    def _from_code(cls, name, kind, *, default=_empty, annotation=_empty):
+        # Fast path for Python functions: only the name needs validation.
+        if iskeyword(name) or not name.isidentifier():
+            return cls(name, kind, default=default, annotation=annotation)
+        self = object.__new__(cls)
+        self._name = name
+        self._kind = kind
+        self._default = default
+        self._annotation = annotation
+        return self
+
     def __reduce__(self):
         return (type(self),
                 (self._name, self._kind),
@@ -2835,25 +2847,6 @@ class Parameter:
                 self._kind == other._kind and
                 self._default == other._default and
                 self._annotation == other._annotation)
-
-
-_Parameter = Parameter
-
-
-def _parameter_from_code(name, kind, *, default=_empty, annotation=_empty):
-    """Private helper: fast Parameter construction for Python functions.
-
-    The kind and default are taken from the function itself and are
-    known to be valid, so only the name has to be checked.
-    """
-    if iskeyword(name) or not name.isidentifier():
-        return _Parameter(name, kind, default=default, annotation=annotation)
-    self = object.__new__(_Parameter)
-    self._name = name
-    self._kind = kind
-    self._default = default
-    self._annotation = annotation
-    return self
 
 
 class BoundArguments:
