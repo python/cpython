@@ -187,12 +187,22 @@ module documentation.  This section lists the differences between the API and
 
    The *standalone* argument behaves exactly as in :meth:`writexml`.
 
+   No indentation is added inside an element
+   which is marked with ``xml:space="preserve"``,
+   which is declared in the DTD as not having element content,
+   or, in absence of such declaration, which contains text,
+   because this would change its content.
+
    .. versionchanged:: 3.8
       The :meth:`toprettyxml` method now preserves the attribute order specified
       by the user.
 
    .. versionchanged:: 3.9
       The *standalone* parameter was added.
+
+   .. versionchanged:: next
+      Whitespace is no longer added inside an element with mixed content
+      or marked with ``xml:space="preserve"``.
 
 .. _dom-example:
 
