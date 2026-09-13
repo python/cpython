@@ -1612,6 +1612,12 @@ def main():
     root.withdraw()
     fix_scaling(root)
 
+    # Warn about configuration files that could not be parsed (gh-66172).
+    config_error = idleConf.file_load_error_message()
+    if config_error:
+        messagebox.showwarning('IDLE Configuration Warning', config_error,
+                               parent=root)
+
     # set application icon
     icondir = os.path.join(os.path.dirname(__file__), 'Icons')
     if system() == 'Windows':

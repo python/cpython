@@ -1,0 +1,3 @@
+IDLE no longer fails to start when a user configuration file is corrupt.
+The unparsable file is renamed with a ".bad" suffix, default settings are
+used instead, and a warning lists the affected files.
