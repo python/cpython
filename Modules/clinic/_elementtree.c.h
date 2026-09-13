@@ -1076,6 +1076,118 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_elementtree_DocumentBuilder___init____doc__,
+"DocumentBuilder(element_factory=None, *, comment_factory=None,\n"
+"                pi_factory=None, insert_comments=False,\n"
+"                insert_pis=False)\n"
+"--\n"
+"\n"
+"Generic document structure builder.\n"
+"\n"
+"This builder is like TreeBuilder, but its close() method returns\n"
+"the list of the children of the document: the root element, and\n"
+"the comments and processing instructions outside of it if\n"
+"*insert_comments* or *insert_pis* is true.");
+
+static int
+_elementtree_DocumentBuilder___init___impl(TreeBuilderObject *self,
+                                           PyObject *element_factory,
+                                           PyObject *comment_factory,
+                                           PyObject *pi_factory,
+                                           int insert_comments,
+                                           int insert_pis);
+
+static int
+_elementtree_DocumentBuilder___init__(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    int return_value = -1;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 5
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(element_factory), &_Py_ID(comment_factory), &_Py_ID(pi_factory), &_Py_ID(insert_comments), &_Py_ID(insert_pis), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"element_factory", "comment_factory", "pi_factory", "insert_comments", "insert_pis", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "DocumentBuilder",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[5];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
+    PyObject *element_factory = Py_None;
+    PyObject *comment_factory = Py_None;
+    PyObject *pi_factory = Py_None;
+    int insert_comments = 0;
+    int insert_pis = 0;
+
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!fastargs) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (fastargs[0]) {
+        element_factory = fastargs[0];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+skip_optional_pos:
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (fastargs[1]) {
+        comment_factory = fastargs[1];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (fastargs[2]) {
+        pi_factory = fastargs[2];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (fastargs[3]) {
+        insert_comments = PyObject_IsTrue(fastargs[3]);
+        if (insert_comments < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    insert_pis = PyObject_IsTrue(fastargs[4]);
+    if (insert_pis < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = _elementtree_DocumentBuilder___init___impl((TreeBuilderObject *)self, element_factory, comment_factory, pi_factory, insert_comments, insert_pis);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_elementtree__set_factories__doc__,
 "_set_factories($module, comment_factory, pi_factory, /)\n"
 "--\n"
@@ -1479,4 +1591,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e2e9cf288c4400f6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=29e26595ddcba924 input=a9049054013a1b77]*/
