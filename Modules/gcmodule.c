@@ -224,6 +224,9 @@ gc_get_count_impl(PyObject *module)
     // Don't flush: record_allocation() checks the threshold only when it fills.
     int young = _Py_atomic_load_int_relaxed(&gcstate->young.count);
     young += (int)gc->alloc_count;
+    if (young < 0) {
+        young = 0;
+    }
 #endif
 
 #ifndef Py_GIL_DISABLED

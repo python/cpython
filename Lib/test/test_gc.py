@@ -1658,6 +1658,12 @@ class GCTogglingTests(unittest.TestCase):
         finally:
             gc.enable()
 
+    def test_get_count_nonnegative(self):
+        xs = [[] for _ in range(1500)]
+        gc.collect()
+        del xs[:1000]
+        self.assertGreaterEqual(gc.get_count()[0], 0)
+
     @gc_threshold(1000, 0, 0)
     def test_get_count_does_not_prevent_collection(self):
         junk = []
