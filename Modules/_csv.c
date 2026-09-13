@@ -368,14 +368,14 @@ dialect_init_special_chars_cache(DialectObj *self)
 }
 
 /* Whether the character needs quoting or escaping by the writer. */
-static inline int
+static inline bool
 dialect_is_special_char(DialectObj *self, Py_UCS4 c)
 {
     if (c < 128) {
         return (self->special_chars[c / 64] >> (c % 64)) & 1;
     }
     if (!self->nonascii_special) {
-        return 0;
+        return false;
     }
     return (c == self->delimiter ||
             c == self->quotechar ||
