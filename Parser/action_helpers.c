@@ -346,7 +346,8 @@ _PyPegen_set_expr_context(Parser *p, expr_ty expr, expr_context_ty ctx)
     return new;
 }
 
-/* Check the target form before copying it into Store or Del context. */
+/* Invalid targets return NULL without raising, allowing parsing to backtrack.
+   Copy valid targets to preserve the memoized expression's context. */
 expr_ty
 _PyPegen_make_target(Parser *p, expr_ty expr, TARGETS_TYPE targets_type)
 {
@@ -1249,7 +1250,8 @@ _PyPegen_get_invalid_target(expr_ty e, TARGETS_TYPE targets_type)
         return NULL;
     }
 
-    if (targets_type == SINGLE_TARGETS || targets_type == ATTRIBUTE_OR_SUBSCRIPT_TARGETS) {
+    if (targets_type == SINGLE_TARGETS ||
+        targets_type == ATTRIBUTE_OR_SUBSCRIPT_TARGETS) {
         if (targets_type == SINGLE_TARGETS && e->kind == Name_kind) {
             return NULL;
         }

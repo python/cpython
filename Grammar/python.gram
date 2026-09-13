@@ -786,7 +786,8 @@ comparison[expr_ty]:
 
 compare_op_bitwise_or_pair[CmpopExprPair*]:
     | '==' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, Eq, a) }
-    | (tok='!=' { _PyPegen_check_barry_as_flufl(p, tok) ? NULL : tok}) a=bitwise_or {_PyPegen_cmpop_expr_pair(p, NotEq, a) }
+    | (tok='!=' { _PyPegen_check_barry_as_flufl(p, tok) ? NULL : tok }) a=bitwise_or {
+        _PyPegen_cmpop_expr_pair(p, NotEq, a) }
     | '<=' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, LtE, a) }
     | '<' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, Lt, a) }
     | '>=' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, GtE, a) }
@@ -1110,8 +1111,7 @@ star_targets[expr_ty]:
         _PyAST_Tuple(CHECK(asdl_expr_seq*, _PyPegen_seq_insert_in_front(p, a, b)), Store, EXTRA) }
 
 star_target[expr_ty] (memo):
-    | '*' a=(!'*' star_target) {
-        _PyAST_Starred(a, Store, EXTRA) }
+    | '*' a=(!'*' star_target) { _PyAST_Starred(a, Store, EXTRA) }
     | target
 
 target[expr_ty] (memo):

@@ -712,7 +712,14 @@ class AST_Tests(unittest.TestCase):
                             self.assertIsInstance(child.ctx, ast.Load)
 
     def test_container_target_context(self):
-        for expression in ('(a, [b, c])', '[a, (b, c)]', '((a))', '()', '[]'):
+        cases = (
+            ('(a, [b, c])', '(a, [b, c])'),
+            ('[a, (b, c)]', '[a, (b, c)]'),
+            ('((a))', 'a'),
+            ('()', '()'),
+            ('[]', '[]'),
+        )
+        for expression, expected_segment in cases:
             for context in (ast.Load, ast.Store, ast.Del):
                 with self.subTest(expression=expression, context=context):
                     if context is ast.Load:
@@ -727,8 +734,7 @@ class AST_Tests(unittest.TestCase):
                         if hasattr(child, 'ctx'):
                             self.assertIsInstance(child.ctx, context)
                     self.assertEqual(ast.get_source_segment(source, node),
-                                     ast.get_source_segment(expression,
-                                         ast.parse(expression, mode='eval').body))
+                                     expected_segment)
 
         node = ast.parse('[a, *[b, *c]] = value').body[0].targets[0]
         for child in ast.walk(node):
