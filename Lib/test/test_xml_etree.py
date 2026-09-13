@@ -4211,6 +4211,21 @@ class TreeBuilderTest(unittest.TestCase):
             ('html', '-//W3C//DTD XHTML 1.0 Transitional//EN',
              'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'))
 
+        for doctype, expected in [
+            ('<!DOCTYPE html>', ('html', None, None)),
+            ('<!DOCTYPE html [<!ENTITY e "v">]>', ('html', None, None)),
+            ('<!DOCTYPE html SYSTEM "a.dtd">', ('html', None, 'a.dtd')),
+            ('<!DOCTYPE html SYSTEM "a.dtd" [<!ENTITY e "v">]>',
+             ('html', None, 'a.dtd')),
+            ('<!DOCTYPE html PUBLIC "-//P" "a.dtd">', ('html', '-//P', 'a.dtd')),
+            ("<!DOCTYPE\nhtml\nPUBLIC\n'-//P'\n'a.dtd'\n>",
+             ('html', '-//P', 'a.dtd')),
+        ]:
+            with self.subTest(doctype=doctype):
+                parser = ET.XMLParser(target=DoctypeParser())
+                parser.feed(doctype + '<html/>')
+                self.assertEqual(parser.close(), expected)
+
     def test_builder_lookup_errors(self):
         class RaisingBuilder:
             def __init__(self, raise_in=None, what=ValueError):
