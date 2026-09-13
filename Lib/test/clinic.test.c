@@ -5786,21 +5786,15 @@ Test___init__(PyObject *self, PyObject *args, PyObject *kwargs)
         !_PyArg_NoKeywords("Test", kwargs)) {
         goto exit;
     }
-    switch (PyTuple_GET_SIZE(args)) {
-        case 1:
-            if (!PyArg_ParseTuple(args, "O:__init__", &a)) {
-                goto exit;
-            }
-            break;
-        case 2:
-            if (!PyArg_ParseTuple(args, "OO:__init__", &a, &b)) {
-                goto exit;
-            }
-            group_right_1 = 1;
-            break;
-        default:
-            PyErr_SetString(PyExc_TypeError, "Test.__init__ requires 1 to 2 arguments");
-            goto exit;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    if (nargs < 1 || nargs > 2) {
+        PyErr_SetString(PyExc_TypeError, "Test.__init__ requires 1 to 2 arguments");
+        goto exit;
+    }
+    a = PyTuple_GET_ITEM(args, 0);
+    if (nargs >= 2) {
+        b = PyTuple_GET_ITEM(args, 1);
+        group_right_1 = 1;
     }
     return_value = Test___init___impl((TestObj *)self, a, group_right_1, b);
 
@@ -5811,7 +5805,7 @@ exit:
 static int
 Test___init___impl(TestObj *self, PyObject *a, int group_right_1,
                    PyObject *b)
-/*[clinic end generated code: output=2bbb8ea60e8f57a6 input=10f5d0f1e8e466ef]*/
+/*[clinic end generated code: output=72fdd2de63c05b9e input=10f5d0f1e8e466ef]*/
 
 
 /*[clinic input]
@@ -5828,30 +5822,25 @@ PyDoc_STRVAR(only_optional_group__doc__,
 "The only parameter is in an optional group.");
 
 #define ONLY_OPTIONAL_GROUP_METHODDEF    \
-    {"only_optional_group", (PyCFunction)only_optional_group, METH_VARARGS, only_optional_group__doc__},
+    {"only_optional_group", _PyCFunction_CAST(only_optional_group), METH_FASTCALL, only_optional_group__doc__},
 
 static PyObject *
 only_optional_group_impl(PyObject *module, int group_right_1, PyObject *a);
 
 static PyObject *
-only_optional_group(PyObject *module, PyObject *args)
+only_optional_group(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int group_right_1 = 0;
     PyObject *a = NULL;
 
-    switch (PyTuple_GET_SIZE(args)) {
-        case 0:
-            break;
-        case 1:
-            if (!PyArg_ParseTuple(args, "O:only_optional_group", &a)) {
-                goto exit;
-            }
-            group_right_1 = 1;
-            break;
-        default:
-            PyErr_SetString(PyExc_TypeError, "only_optional_group requires 0 to 1 arguments");
-            goto exit;
+    if (nargs > 1) {
+        PyErr_SetString(PyExc_TypeError, "only_optional_group requires 0 to 1 arguments");
+        goto exit;
+    }
+    if (nargs >= 1) {
+        a = args[0];
+        group_right_1 = 1;
     }
     return_value = only_optional_group_impl(module, group_right_1, a);
 
@@ -5861,7 +5850,7 @@ exit:
 
 static PyObject *
 only_optional_group_impl(PyObject *module, int group_right_1, PyObject *a)
-/*[clinic end generated code: output=e7546b9441793d7d input=426c64055af7bcab]*/
+/*[clinic end generated code: output=4c7959fcc06bd216 input=426c64055af7bcab]*/
 
 
 /*[clinic input]
@@ -5880,14 +5869,14 @@ PyDoc_STRVAR(group_and_optional_parameter__doc__,
 "The optional parameter can be omitted with or without the group.");
 
 #define GROUP_AND_OPTIONAL_PARAMETER_METHODDEF    \
-    {"group_and_optional_parameter", (PyCFunction)group_and_optional_parameter, METH_VARARGS, group_and_optional_parameter__doc__},
+    {"group_and_optional_parameter", _PyCFunction_CAST(group_and_optional_parameter), METH_FASTCALL, group_and_optional_parameter__doc__},
 
 static PyObject *
 group_and_optional_parameter_impl(PyObject *module, int group_left_1,
                                   PyObject *a, PyObject *b, PyObject *c);
 
 static PyObject *
-group_and_optional_parameter(PyObject *module, PyObject *args)
+group_and_optional_parameter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int group_left_1 = 0;
@@ -5895,24 +5884,22 @@ group_and_optional_parameter(PyObject *module, PyObject *args)
     PyObject *b = NULL;
     PyObject *c = Py_None;
 
-    switch (PyTuple_GET_SIZE(args)) {
-        case 0:
-        case 1:
-            if (!PyArg_ParseTuple(args, "|O:group_and_optional_parameter", &c)) {
-                goto exit;
-            }
-            break;
-        case 2:
-        case 3:
-            if (!PyArg_ParseTuple(args, "OO|O:group_and_optional_parameter", &a, &b, &c)) {
-                goto exit;
-            }
-            group_left_1 = 1;
-            break;
-        default:
-            PyErr_SetString(PyExc_TypeError, "group_and_optional_parameter requires 0 to 3 arguments");
-            goto exit;
+    Py_ssize_t offset = 0;
+    if (nargs > 3) {
+        PyErr_SetString(PyExc_TypeError, "group_and_optional_parameter requires 0 to 3 arguments");
+        goto exit;
     }
+    if (nargs >= 2) {
+        a = args[0];
+        b = args[1];
+        offset += 2;
+        group_left_1 = 1;
+    }
+    if (nargs <= offset) {
+        goto skip_optional;
+    }
+    c = args[offset];
+skip_optional:
     return_value = group_and_optional_parameter_impl(module, group_left_1, a, b, c);
 
 exit:
@@ -5922,7 +5909,7 @@ exit:
 static PyObject *
 group_and_optional_parameter_impl(PyObject *module, int group_left_1,
                                   PyObject *a, PyObject *b, PyObject *c)
-/*[clinic end generated code: output=3faea69eafd5bbbe input=7f0fbb6124f5a972]*/
+/*[clinic end generated code: output=651f2361ffc5e256 input=7f0fbb6124f5a972]*/
 
 
 /*[clinic input]
@@ -5944,7 +5931,7 @@ PyDoc_STRVAR(two_groups_on_the_same_level__doc__,
 "Groups on the same level are independent of each other.");
 
 #define TWO_GROUPS_ON_THE_SAME_LEVEL_METHODDEF    \
-    {"two_groups_on_the_same_level", (PyCFunction)two_groups_on_the_same_level, METH_VARARGS, two_groups_on_the_same_level__doc__},
+    {"two_groups_on_the_same_level", _PyCFunction_CAST(two_groups_on_the_same_level), METH_FASTCALL, two_groups_on_the_same_level__doc__},
 
 static PyObject *
 two_groups_on_the_same_level_impl(PyObject *module, int group_left_1,
@@ -5952,7 +5939,7 @@ two_groups_on_the_same_level_impl(PyObject *module, int group_left_1,
                                   PyObject *c, PyObject *d);
 
 static PyObject *
-two_groups_on_the_same_level(PyObject *module, PyObject *args)
+two_groups_on_the_same_level(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int group_left_1 = 0;
@@ -5962,35 +5949,20 @@ two_groups_on_the_same_level(PyObject *module, PyObject *args)
     PyObject *c = NULL;
     PyObject *d;
 
-    switch (PyTuple_GET_SIZE(args)) {
-        case 1:
-            if (!PyArg_ParseTuple(args, "O:two_groups_on_the_same_level", &d)) {
-                goto exit;
-            }
-            break;
-        case 2:
-            if (!PyArg_ParseTuple(args, "OO:two_groups_on_the_same_level", &c, &d)) {
-                goto exit;
-            }
-            group_left_2 = 1;
-            break;
-        case 3:
-            if (!PyArg_ParseTuple(args, "OOO:two_groups_on_the_same_level", &a, &b, &d)) {
-                goto exit;
-            }
-            group_left_1 = 1;
-            break;
-        case 4:
-            if (!PyArg_ParseTuple(args, "OOOO:two_groups_on_the_same_level", &a, &b, &c, &d)) {
-                goto exit;
-            }
-            group_left_1 = 1;
-            group_left_2 = 1;
-            break;
-        default:
-            PyErr_SetString(PyExc_TypeError, "two_groups_on_the_same_level requires 1 to 4 arguments");
-            goto exit;
+    if (nargs < 1 || nargs > 4) {
+        PyErr_SetString(PyExc_TypeError, "two_groups_on_the_same_level requires 1 to 4 arguments");
+        goto exit;
     }
+    if (nargs >= 3) {
+        a = args[0];
+        b = args[1];
+        group_left_1 = 1;
+    }
+    if (nargs == 2 || nargs == 4) {
+        c = args[nargs - 2];
+        group_left_2 = 1;
+    }
+    d = args[nargs - 1];
     return_value = two_groups_on_the_same_level_impl(module, group_left_1, a, b, group_left_2, c, d);
 
 exit:
@@ -6001,7 +5973,7 @@ static PyObject *
 two_groups_on_the_same_level_impl(PyObject *module, int group_left_1,
                                   PyObject *a, PyObject *b, int group_left_2,
                                   PyObject *c, PyObject *d)
-/*[clinic end generated code: output=508a61ee582da21e input=1b45d9b675b32d1a]*/
+/*[clinic end generated code: output=737c3f543296e916 input=1b45d9b675b32d1a]*/
 
 
 /*[clinic input]

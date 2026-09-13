@@ -1846,6 +1846,32 @@ class ContextTests(unittest.TestCase):
         self.assertEqual(ctx.verify_mode, ssl.CERT_OPTIONAL)
         self.assertTrue(ctx.check_hostname)
 
+    def test_delete_sslobject_attributes(self):
+        # None of the attributes of _ssl._SSLSocket can be deleted.
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        sslobj = ctx.wrap_bio(ssl.MemoryBIO(), ssl.MemoryBIO())._sslobj
+        for name in 'context', 'owner', 'session', 'session_reused':
+            with self.subTest(name=name):
+                value = getattr(sslobj, name)
+                with self.assertRaises(AttributeError):
+                    delattr(sslobj, name)
+                self.assertEqual(getattr(sslobj, name), value)
+
+    def test_delete_attributes(self):
+        # None of the attributes implemented in C can be deleted.
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        names = ['check_hostname', 'verify_mode', 'verify_flags', 'options',
+                 'minimum_version', 'maximum_version', 'sni_callback',
+                 '_host_flags', 'security_level', 'post_handshake_auth']
+        if hasattr(ctx, 'num_tickets'):
+            names.append('num_tickets')
+        for name in names:
+            with self.subTest(name=name):
+                value = getattr(ctx, name)
+                with self.assertRaises(AttributeError):
+                    delattr(ctx, name)
+                self.assertEqual(getattr(ctx, name), value)
+
     def test_check_hostname(self):
         with warnings_helper.check_warnings():
             ctx = ssl.SSLContext(ssl.PROTOCOL_TLS)
@@ -5518,6 +5544,12 @@ class TestSSLDebug(unittest.TestCase):
         with self.assertRaises(TypeError):
             ctx.keylog_filename = 1
 
+        ctx.keylog_filename = os_helper.TESTFN
+        with self.assertRaisesRegex(AttributeError, 'cannot be deleted'):
+            del ctx.keylog_filename
+        # a failed deletion does not change the value
+        self.assertEqual(ctx.keylog_filename, os_helper.TESTFN)
+
     def test_keylog_filename(self):
         self.addCleanup(os_helper.unlink, os_helper.TESTFN)
         client_context, server_context, hostname = testing_context()
@@ -5591,6 +5623,18 @@ class TestSSLDebug(unittest.TestCase):
         self.assertIs(client_context._msg_callback, msg_cb)
         with self.assertRaises(TypeError):
             client_context._msg_callback = object()
+
+        # the attribute of the underlying C type accepts only a callable
+        # and cannot be deleted
+        descr = _ssl._SSLContext.__dict__['_msg_callback']
+        with self.assertRaises(TypeError):
+            descr.__set__(client_context, object())
+        # a failed assignment does not change the value
+        self.assertIs(client_context._msg_callback, msg_cb)
+        with self.assertRaisesRegex(AttributeError, 'cannot be deleted'):
+            descr.__delete__(client_context)
+        # a failed deletion does not change the value
+        self.assertIs(client_context._msg_callback, msg_cb)
 
     def test_msg_callback_exception(self):
         client_context, server_context, hostname = testing_context()

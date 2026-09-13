@@ -1,0 +1,5 @@
+Fix a crash when the same :func:`os.scandir` iterator is used concurrently
+from multiple threads.  It no longer releases the directory handle while
+another thread is reading from it.  Sharing an iterator between threads
+remains subject to race conditions: which entries each thread receives is
+unspecified.
