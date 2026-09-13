@@ -611,14 +611,6 @@ def collect_sysconfig(info_add):
         value = normalize_text(value)
         info_add('sysconfig[%s]' % name, value)
 
-    PY_CFLAGS = sysconfig.get_config_var('PY_CFLAGS')
-    NDEBUG = (PY_CFLAGS and '-DNDEBUG' in PY_CFLAGS)
-    if NDEBUG:
-        text = 'ignore assertions (macro defined)'
-    else:
-        text= 'build assertions (macro not defined)'
-    info_add('build.NDEBUG',text)
-
     for name in (
         'WITH_DOC_STRINGS',
         'WITH_DTRACE',
@@ -844,6 +836,8 @@ def collect_support(info_add):
              support.check_sanitizer(memory=True))
     info_add('support.check_sanitizer(ub=True)',
              support.check_sanitizer(ub=True))
+    info_add('support.built_with_c_assertions',
+             support.built_with_c_assertions())
 
 
 def collect_support_os_helper(info_add):

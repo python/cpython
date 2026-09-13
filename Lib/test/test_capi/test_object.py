@@ -342,5 +342,20 @@ class CAPITest(unittest.TestCase):
         self.assertRegex(output, r'<object at .* is freed>')
 
 
+class RefTracerTest(unittest.TestCase):
+    @support.requires_resource('cpu')
+    @support.skip_emscripten_stack_overflow()
+    @support.skip_wasi_stack_overflow()
+    def test_destroy_traced_for_trashcan_deferred_objects(self):
+        depth = 200_000
+        chain = None
+        for _ in range(depth):
+            chain = [chain]
+        _testcapi.start_counting_list_destroys()
+        del chain
+        destroys = _testcapi.stop_counting_list_destroys()
+        self.assertEqual(destroys, depth)
+
+
 if __name__ == "__main__":
     unittest.main()
