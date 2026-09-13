@@ -4,6 +4,12 @@ Released on 2026-10-01
 =========================
 
 
+gh-152942: Add an AST Browser to IDLE, opened from the new Browse menu.
+It shows the abstract syntax tree of the editor content, the Shell input,
+or the selection.  Selecting a node highlights the matching region in
+the editor, and selecting text in the editor selects the innermost
+enclosing node.  Patch by Serhiy Storchaka and Claude Code.
+
 gh-152745:  When "Run... Customized" with "Restart shell" unchecked
 while Shell is running code, including waiting for an input('prompt:')
 response, just report that the shell is executing instead of
