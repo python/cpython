@@ -1,0 +1,4 @@
+Fix :func:`!nturl2path.pathname2url` and :func:`!nturl2path.url2pathname`:
+the filesystem encoding and error handler are now used for percent-encoding
+and decoding, as in :mod:`urllib.request`.  Previously paths containing
+surrogate characters raised :exc:`UnicodeEncodeError`.

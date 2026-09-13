@@ -1,4 +1,6 @@
+import sys
 import unittest
+import urllib.parse
 
 from test.support import warnings_helper
 
@@ -58,6 +60,15 @@ class NTURL2PathTest(unittest.TestCase):
         for url in urls:
             self.assertEqual(fn(nturl2path.url2pathname(url)), url)
 
+    def test_pathname2url_surrogates(self):
+        # gh-156713: the filesystem encoding and error handler are used,
+        # so that paths containing surrogate characters can be converted.
+        encoding = sys.getfilesystemencoding()
+        errors = sys.getfilesystemencodeerrors()
+        tail = urllib.parse.quote('a\udcff', encoding=encoding, errors=errors)
+        self.assertEqual(nturl2path.pathname2url('C:\\a\udcff'),
+                         '///C:/' + tail)
+
     def test_url2pathname(self):
         fn = nturl2path.url2pathname
         self.assertEqual(fn('/'), '\\')
@@ -101,6 +112,16 @@ class NTURL2PathTest(unittest.TestCase):
                  r'C:\foo\bar\spam.foo']
         for path in paths:
             self.assertEqual(fn(nturl2path.pathname2url(path)), path)
+
+
+    def test_url2pathname_surrogates(self):
+        # gh-156713: the filesystem encoding and error handler are used, so
+        # that URLs containing percent-encoded surrogates can be converted.
+        encoding = sys.getfilesystemencoding()
+        errors = sys.getfilesystemencodeerrors()
+        url = urllib.parse.quote('a\udcff', encoding=encoding, errors=errors)
+        self.assertEqual(nturl2path.url2pathname('///C:/' + url),
+                         'C:\\a\udcff')
 
 
 if __name__ == '__main__':
