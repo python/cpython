@@ -1,0 +1,3 @@
+On Free Threading, ``_PyBytes_Resize(&obj, 1)`` no longer returns a single byte
+singleton is the current thread is different than the thread which created the
+object. Patch by Stan Ulbrych.
