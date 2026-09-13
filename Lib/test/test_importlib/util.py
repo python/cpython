@@ -70,7 +70,7 @@ def import_importlib(module_name):
     frozen = import_helper.import_fresh_module(module_name)
     source = import_helper.import_fresh_module(module_name, fresh=fresh,
                                          blocked=('_frozen_importlib', '_frozen_importlib_external',
-                                                  '_builtins'))
+                                                  '_pybuiltins'))
     return {'Frozen': frozen, 'Source': source}
 
 
