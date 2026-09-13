@@ -571,6 +571,21 @@ class MinidomTest(unittest.TestCase):
         dom.unlink()
         self.assertEqual(str, domstr)
 
+    def testWriteXMLDocumentFragment(self):
+        dom = parseString('<doc><a b="c"/>text<!--comment--></doc>')
+        frag = dom.createDocumentFragment()
+        for node in list(dom.documentElement.childNodes):
+            frag.appendChild(node)
+        self.assertEqual(frag.toxml(), '<a b="c"/>text<!--comment-->')
+        self.assertEqual(frag.toprettyxml(),
+                         '<a b="c"/>\ntext\n<!--comment-->\n')
+        # the fragment itself does not add a level of indentation
+        writer = io.StringIO()
+        frag.writexml(writer, "  ", "  ", "\n")
+        self.assertEqual(writer.getvalue(),
+                         '  <a b="c"/>\n  text\n  <!--comment-->\n')
+        self.assertEqual(dom.createDocumentFragment().toxml(), '')
+
     def testWriteXMLNamespaceDeclarations(self):
         dom = Document()
         root = dom.appendChild(

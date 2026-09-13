@@ -157,6 +157,7 @@ module documentation.  This section lists the differences between the API and
    .. versionchanged:: next
       Namespace declarations missing for the serialized element
       and its attributes are now written.
+      It now works for :class:`!DocumentFragment` nodes.
 
 .. method:: Node.toxml(encoding=None, standalone=None)
 
@@ -178,6 +179,9 @@ module documentation.  This section lists the differences between the API and
 
    .. versionchanged:: 3.9
       The *standalone* parameter was added.
+
+   .. versionchanged:: next
+      It now works for :class:`!DocumentFragment` nodes.
 
 .. method:: Node.toprettyxml(indent="\t", newl="\n", encoding=None, \
                              standalone=None)
@@ -207,6 +211,7 @@ module documentation.  This section lists the differences between the API and
    .. versionchanged:: next
       Whitespace is no longer added inside an element with mixed content
       or marked with ``xml:space="preserve"``.
+      It now works for :class:`!DocumentFragment` nodes.
 
 .. _dom-example:
 
