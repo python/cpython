@@ -42,7 +42,7 @@ VERSION = "3.3"
 # The Unicode Database
 # --------------------
 # When changing UCD version please update
-#   * Doc/library/stdtypes.rst, and
+#   * Doc/builtins/stdtypes.rst (four occurrences)
 #   * Doc/library/unicodedata.rst
 #   * Doc/reference/lexical_analysis.rst (two occurrences)
 UNIDATA_VERSION = "15.1.0"
