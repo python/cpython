@@ -428,8 +428,7 @@ del tables[0]
 assert name == "D.1"
 
 RandAL = set(gen_bidirectional(["R","AL"]))
-# Skip assert for now
-# assert set(table.keys()) == RandAL
+assert set(table.keys()) == RandAL
 
 print("""
 def in_table_d1(code):
@@ -442,8 +441,7 @@ del tables[0]
 assert name == "D.2"
 
 L = set(gen_bidirectional(["L"]))
-# Skip assert for now
-# assert set(table.keys()) == L
+assert set(table.keys()) == L
 
 print("""
 def in_table_d2(code):
