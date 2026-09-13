@@ -56,7 +56,8 @@ or as base classes.
    using the reference concrete syntax.
 
 
-.. class:: XMLGenerator(out=None, encoding='iso-8859-1', short_empty_elements=False)
+.. class:: XMLGenerator(out=None, encoding='iso-8859-1', short_empty_elements=False, \
+                        *, validate=False)
 
    This class implements the :class:`~xml.sax.handler.ContentHandler` interface
    by writing SAX
@@ -68,8 +69,19 @@ or as base classes.
    content:  if ``False`` (the default) they are emitted as a pair of start/end
    tags, if set to ``True`` they are emitted as a single self-closed tag.
 
+   If *validate* is true, check that all characters are legal,
+   that element and attribute names and namespace prefixes are valid,
+   and that the content of processing instructions
+   does not contain illegal sequences.
+   Raise :exc:`ValueError` if any check fails.
+   By default no validation is performed, because the events produced
+   by a parser are always valid.
+
    .. versionchanged:: 3.2
       Added the *short_empty_elements* parameter.
+
+   .. versionchanged:: next
+      Added the *validate* parameter.
 
 
 .. class:: XMLFilterBase(base)
