@@ -329,7 +329,9 @@ class EditorWindow:
         # http://www.tcl.tk/man/tcl8.6/TkCmd/text.htm#M21
         zero_char_width = \
             Font(text, font=text.cget('font')).measure('0')
-        self.width = pixel_width // zero_char_width
+        # Some fonts report a zero width for '0' (gh-90304).
+        self.width = (pixel_width // zero_char_width if zero_char_width
+                      else text.tk.getint(text.cget('width')))
 
     def new_callback(self, event):
         dirname, basename = self.io.defaultfilename()
