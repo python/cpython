@@ -1385,8 +1385,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertTrue(is_immortal(0))
         self.assertTrue(is_immortal(b''))
         self.assertTrue(is_immortal(''))
-        # Use encode to get the bytes singleton
-        self.assertTrue(is_immortal('x'.encode()))
+        self.assertTrue(is_immortal(b'x'))
         self.assertTrue(is_immortal('x'))
         self.assertTrue(is_immortal(()))
 
