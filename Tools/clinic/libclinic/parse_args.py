@@ -921,6 +921,15 @@ class ParseArgsCodeGen:
         Set the method flags and the prototype, and return the expression of
         the number of arguments and the format of an argument expression.
         """
+        if self.requires_defining_class:
+            # METH_METHOD only supports the METH_FASTCALL|METH_KEYWORDS
+            # calling convention, so the wrapper still receives kwnames.
+            # A positional-only function simply rejects any keywords
+            # instead of setting up a _PyArg_Parser.
+            assert self.fastcall
+            self.flags = "METH_METHOD|METH_FASTCALL|METH_KEYWORDS"
+            self.parser_prototype = PARSER_PROTOTYPE_DEF_CLASS
+            return 'nargs', 'args[%s]'
         if self.fastcall:
             self.flags = "METH_FASTCALL"
             self.parser_prototype = PARSER_PROTOTYPE_FASTCALL
@@ -1005,6 +1014,14 @@ class ParseArgsCodeGen:
                     goto exit;
                 }}
                 """, indent=4) % parse_call]
+        if self.requires_defining_class:
+            self.codegen.add_include('pycore_modsupport.h',
+                                     '_PyArg_NoKwnames()')
+            parser_code.insert(0, libclinic.normalize_snippet("""
+                if (!_PyArg_NoKwnames("{name}", kwnames)) {{
+                    goto exit;
+                }}
+                """, indent=4))
         self.parser_body(*parser_code)
 
     def parse_var_keyword(self) -> None:
@@ -1683,8 +1700,9 @@ class ParseArgsCodeGen:
             self.parse_option_groups()
         elif self.var_keyword is not None:
             self.parse_var_keyword()
-        elif (not self.requires_defining_class
-              and self.pos_only == len(self.parameters)):
+        elif (self.pos_only == len(self.parameters)
+              and (not self.requires_defining_class
+                   or (self.fastcall and not self.limited_capi))):
             self.parse_pos_only()
         else:
             self.parse_general(clang)
