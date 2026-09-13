@@ -835,7 +835,9 @@ how the command-line arguments should be handled. The supplied actions are:
     >>> parser.parse_args(['-vvv'])
     Namespace(verbose=3)
 
-  Note, the *default* will be ``None`` unless explicitly set to *0*.
+  Unless explicitly set, the *default* will be ``None``. If the default
+  value is a non-zero number, the count starts from that number rather
+  than from zero.
 
 * ``'help'`` - This prints a complete help message for all the options in the
   current parser and then exits. By default a help action is automatically

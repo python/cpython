@@ -31,14 +31,6 @@ The Document Object Model is being defined by the W3C in stages, or "levels" in
 their terminology.  The Python mapping of the API is substantially based on the
 DOM Level 2 recommendation.
 
-.. What if your needs are somewhere between SAX and the DOM?  Perhaps
-   you cannot afford to load the entire tree in memory but you find the
-   SAX model somewhat cumbersome and low-level.  There is also a module
-   called xml.dom.pulldom that allows you to build trees of only the
-   parts of a document that you need structured access to.  It also has
-   features that allow you to find your way around the DOM.
-   See http://www.prescod.net/python/pulldom
-
 DOM applications typically start by parsing some XML into a DOM.  How this is
 accomplished is not covered at all by DOM Level 1, and Level 2 provides only
 limited improvements: There is a :class:`DOMImplementation` object class which
@@ -152,6 +144,11 @@ Objects in the DOM
 ------------------
 
 The definitive documentation for the DOM is the DOM specification from the W3C.
+
+The names documented in this section are DOM interfaces.
+With the exception of :class:`Node` and the exception classes,
+they are not provided by the :mod:`!xml.dom` module itself,
+but by concrete DOM implementations, such as :mod:`xml.dom.minidom`.
 
 Note that DOM attributes may also be manipulated as nodes instead of as simple
 strings.  It is fairly rare that you must do this, however, so this usage is not
@@ -690,6 +687,10 @@ inherits properties from :class:`Node`.
    :meth:`~Node.insertBefore` or :meth:`~Node.appendChild`.
 
    Raise :exc:`InvalidCharacterErr` if the name is not a valid XML name.
+   Raise :exc:`NamespaceErr` if the qualified name is malformed,
+   if it has a prefix and the namespace URI is empty,
+   or if the prefix is ``'xml'``
+   and the namespace URI is not the XML namespace.
 
 
 .. method:: Document.createTextNode(data)
@@ -743,6 +744,11 @@ inherits properties from :class:`Node`.
    :class:`Element` object to use the newly created attribute instance.
 
    Raise :exc:`InvalidCharacterErr` if the name is not a valid XML name.
+   Raise :exc:`NamespaceErr` if the qualified name is malformed,
+   if it has a prefix and the namespace URI is empty,
+   if the prefix is ``'xml'`` and the namespace URI is not the XML namespace,
+   or if the name or the prefix is ``'xmlns'``
+   and the namespace URI is not the XMLNS namespace, or vice versa.
 
 
 .. method:: Document.getElementById(id)
@@ -908,6 +914,11 @@ of that class.
    Note that a qname is the whole attribute name.  This is different than above.
 
    Raise :exc:`InvalidCharacterErr` if the name is not a valid XML name.
+   Raise :exc:`NamespaceErr` if the qualified name is malformed,
+   if it has a prefix and the namespace URI is empty,
+   if the prefix is ``'xml'`` and the namespace URI is not the XML namespace,
+   or if the name or the prefix is ``'xmlns'``
+   and the namespace URI is not the XMLNS namespace, or vice versa.
 
 
 .. _dom-attr-objects:
