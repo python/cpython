@@ -1346,8 +1346,8 @@ UTF-8 mode
 
 Windows still uses legacy encodings for the system encoding (the ANSI Code
 Page).  When the :ref:`Python UTF-8 Mode <utf8-mode>` is disabled, Python
-uses it for the default encoding of text files (for example,
-:func:`locale.getencoding`).
+uses the ANSI Code Page as the default encoding of text files, as
+returned by :func:`locale.getencoding`.
 
 This may cause issues because UTF-8 is widely used on the internet
 and most Unix systems, including WSL (Windows Subsystem for Linux).
