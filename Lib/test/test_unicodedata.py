@@ -57,7 +57,7 @@ class UnicodeMethodsTest(unittest.TestCase):
     # update this, if the database changes
     expectedchecksum = ('2bb59305a65254fee9cd6ef981cc3cab7551c60e'
                         if quicktest else
-                        '8b2615a9fc627676cbc0b6fac0191177df97ef5f')
+                        'bb69894a259aee5971445eca8e617a1686a432e2')
 
     def test_method_checksum(self):
         h = hashlib.sha1()
@@ -732,7 +732,7 @@ class UnicodeFunctionsTest(unittest.TestCase, BaseUnicodeFunctionsTest):
     # (e.g. 'make distclean && make') to get the correct checksum.
     expectedchecksum = ('04a01eac45fd6ca3cfa5aafe90f278c1f7d62aa2'
                         if quicktest else
-                        'ebfc9dd281c2226998fd435744dd2e9321899beb')
+                        'f5354bfdd674d0229dbec9f8f038a86b31cf6b4b')
 
     @requires_resource('network')
     def test_all_names(self):
@@ -1128,7 +1128,7 @@ class Unicode_3_2_0_FunctionsTest(unittest.TestCase, BaseUnicodeFunctionsTest):
     old = True
     expectedchecksum = ('883824cb6c0ccf994e4451ebf281e2d6d479af47'
                         if quicktest else
-                        '68cd01e2c680b851c1fcab012efb5635b2229c2b')
+                        '677542db0fed40ddbd491b95622cb649a4b7fca0')
 
 
 class UnicodeMiscTest(unittest.TestCase):
