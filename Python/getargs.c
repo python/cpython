@@ -1680,6 +1680,9 @@ vgetargskeywords_impl(PyObject *const *args, Py_ssize_t nargs,
     const char *fname, *msg, *custom_msg;
     int min = INT_MAX;
     int max = INT_MAX;
+    /* The index of the first optional keyword-only argument. */
+    int minkw = INT_MAX;
+    char kwonly_marker = 0;
     int i, pos, len;
     int skip = 0;
     Py_ssize_t nkwargs;
@@ -1758,22 +1761,23 @@ vgetargskeywords_impl(PyObject *const *args, Py_ssize_t nargs,
     /* convert tuple args and keyword args in same loop, using kwlist to drive process */
     for (i = 0; i < len; i++) {
         if (*format == '|') {
-            if (min != INT_MAX) {
-                PyErr_SetString(PyExc_SystemError,
-                                "Invalid format string (| specified twice)");
-                return cleanreturn(0, &freelist);
-            }
-
-            min = i;
-            format++;
-
-            if (max != INT_MAX) {
+            if (kwonly_marker == '$') {
                 PyErr_SetString(PyExc_SystemError,
                                 "Invalid format string ($ before |)");
                 return cleanreturn(0, &freelist);
             }
+            /* The optional arguments start here: the positional ones before
+               '%', the keyword-only ones after it. */
+            int *popt = kwonly_marker ? &minkw : &min;
+            if (*popt != INT_MAX) {
+                PyErr_SetString(PyExc_SystemError,
+                                "Invalid format string (| specified twice)");
+                return cleanreturn(0, &freelist);
+            }
+            *popt = i;
+            format++;
         }
-        if (*format == '$') {
+        if (*format == '$' || *format == '%') {
             if (max != INT_MAX) {
                 PyErr_SetString(PyExc_SystemError,
                                 "Invalid format string ($ specified twice)");
@@ -1781,6 +1785,10 @@ vgetargskeywords_impl(PyObject *const *args, Py_ssize_t nargs,
             }
 
             max = i;
+            kwonly_marker = *format;
+            /* '$' inherits the state of the positional arguments,
+               '%' starts with required arguments. */
+            minkw = (kwonly_marker == '$') ? min : INT_MAX;
             format++;
 
             if (max < pos) {
@@ -1854,7 +1862,7 @@ vgetargskeywords_impl(PyObject *const *args, Py_ssize_t nargs,
                 continue;
             }
 
-            if (i < min) {
+            if (i < (i < max ? min : minkw)) {
                 if (i < pos) {
                     assert (min == INT_MAX);
                     assert (max == INT_MAX);
@@ -1877,7 +1885,9 @@ vgetargskeywords_impl(PyObject *const *args, Py_ssize_t nargs,
              * fulfilled and no keyword args left, with no further
              * validation. XXX Maybe skip this in debug build ?
              */
-            if (!nkwargs && !skip) {
+            if (!nkwargs && !skip &&
+                (i >= minkw || strchr(format, '%') == NULL))
+            {
                 return cleanreturn(1, &freelist);
             }
         }
@@ -1905,7 +1915,9 @@ vgetargskeywords_impl(PyObject *const *args, Py_ssize_t nargs,
         return cleanreturn(0, &freelist);
     }
 
-    if (!IS_END_OF_FORMAT(*format) && (*format != '|') && (*format != '$')) {
+    if (!IS_END_OF_FORMAT(*format) && (*format != '|') && (*format != '$') &&
+        (*format != '%'))
+    {
         PyErr_Format(PyExc_SystemError,
             "more argument specifiers than keyword list entries "
             "(remaining format:'%s')", format);
@@ -2046,7 +2058,7 @@ scan_keywords(const char * const *keywords, int *ptotal, int *pposonly)
 static int
 parse_format(const char *format, int total, int npos,
              const char **pfname, const char **pcustommsg,
-             int *pmin, int *pmax)
+             int *pmin, int *pmax, int *pminkw)
 {
     /* grab the function name or custom error msg first (mutually exclusive) */
     const char *custommsg;
@@ -2064,22 +2076,28 @@ parse_format(const char *format, int total, int npos,
 
     int min = INT_MAX;
     int max = INT_MAX;
+    /* The index of the first optional keyword-only argument. */
+    int minkw = INT_MAX;
+    char kwonly_marker = 0;
     for (int i = 0; i < total; i++) {
         if (*format == '|') {
-            if (min != INT_MAX) {
-                PyErr_SetString(PyExc_SystemError,
-                                "Invalid format string (| specified twice)");
-                return -1;
-            }
-            if (max != INT_MAX) {
+            if (kwonly_marker == '$') {
                 PyErr_SetString(PyExc_SystemError,
                                 "Invalid format string ($ before |)");
                 return -1;
             }
-            min = i;
+            /* The optional arguments start here: the positional ones before
+               '%', the keyword-only ones after it. */
+            int *popt = kwonly_marker ? &minkw : &min;
+            if (*popt != INT_MAX) {
+                PyErr_SetString(PyExc_SystemError,
+                                "Invalid format string (| specified twice)");
+                return -1;
+            }
+            *popt = i;
             format++;
         }
-        if (*format == '$') {
+        if (*format == '$' || *format == '%') {
             if (max != INT_MAX) {
                 PyErr_SetString(PyExc_SystemError,
                                 "Invalid format string ($ specified twice)");
@@ -2091,6 +2109,10 @@ parse_format(const char *format, int total, int npos,
                 return -1;
             }
             max = i;
+            kwonly_marker = *format;
+            /* '$' inherits the state of the positional arguments,
+               '%' starts with required arguments. */
+            minkw = (kwonly_marker == '$') ? min : INT_MAX;
             format++;
         }
         if (IS_END_OF_FORMAT(*format)) {
@@ -2107,6 +2129,8 @@ parse_format(const char *format, int total, int npos,
             return -1;
         }
     }
+    /* Without a marker the optional arguments are not keyword-only. */
+    minkw = Py_MIN((max == INT_MAX) ? min : minkw, total);
     min = Py_MIN(min, total);
     max = Py_MIN(max, total);
 
@@ -2121,6 +2145,7 @@ parse_format(const char *format, int total, int npos,
     *pcustommsg = custommsg;
     *pmin = min;
     *pmax = max;
+    *pminkw = minkw;
     return 0;
 }
 
@@ -2164,11 +2189,11 @@ _parser_init(void *arg)
     }
 
     const char *fname, *custommsg = NULL;
-    int min = 0, max = 0;
+    int min = 0, max = 0, minkw = 0;
     if (parser->format) {
         assert(parser->fname == NULL);
         if (parse_format(parser->format, len, pos,
-                         &fname, &custommsg, &min, &max) < 0) {
+                         &fname, &custommsg, &min, &max, &minkw) < 0) {
             return -1;
         }
     }
@@ -2211,6 +2236,7 @@ _parser_init(void *arg)
     parser->custom_msg = custommsg;
     parser->min = min;
     parser->max = max;
+    parser->minkw = minkw;
     parser->kwtuple = kwtuple;
     parser->is_kwtuple_owned = owned;
 
@@ -2380,7 +2406,11 @@ vgetargskeywordsfast_impl(PyObject *const *args, Py_ssize_t nargs,
         if (*format == '|') {
             format++;
         }
-        if (*format == '$') {
+        if (*format == '$' || *format == '%') {
+            format++;
+        }
+        if (*format == '|') {
+            /* optional keyword-only arguments after '%' */
             format++;
         }
         assert(!IS_END_OF_FORMAT(*format));
@@ -2418,7 +2448,7 @@ vgetargskeywordsfast_impl(PyObject *const *args, Py_ssize_t nargs,
             continue;
         }
 
-        if (i < parser->min) {
+        if (i < (i < parser->max ? parser->min : parser->minkw)) {
             /* Less arguments than required */
             if (i < pos) {
                 int min = Py_MIN(pos, parser->min);
@@ -2446,7 +2476,7 @@ vgetargskeywordsfast_impl(PyObject *const *args, Py_ssize_t nargs,
          * fulfilled and no keyword args left, with no further
          * validation. XXX Maybe skip this in debug build ?
          */
-        if (!nkwargs) {
+        if (!nkwargs && i >= parser->minkw) {
             return cleanreturn(1, &freelist);
         }
 
