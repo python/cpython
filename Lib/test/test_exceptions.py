@@ -1660,14 +1660,14 @@ class ExceptionTests(unittest.TestCase):
         # the size of the list of preallocated MemoryError instances, the
         # Fatal Python error message mentions MemoryError.
         code = """if 1:
-            import _testcapi
+            from test import support
             class C(): pass
             def recurse(cnt):
                 cnt -= 1
                 if cnt:
                     recurse(cnt)
                 else:
-                    _testcapi.set_nomemory(0)
+                    support.inject_memory_error()
                     C()
             recurse(16)
         """
@@ -1843,9 +1843,10 @@ class ExceptionTests(unittest.TestCase):
     @support.nomemtest
     def test_memory_error_in_PyErr_PrintEx(self):
         code = """if 1:
-            import _testcapi
+            from test import support
+            stop = %d
             class C(): pass
-            _testcapi.set_nomemory(0, %d)
+            support.inject_memory_error(0, stop)
             C()
         """
 
@@ -2010,8 +2011,8 @@ class ExceptionTests(unittest.TestCase):
         warmup_code = "a = list(range(0, 1))\n" * 60
         user_input = warmup_code + dedent("""
             try:
-                import _testcapi
-                _testcapi.set_nomemory(0)
+                from test import support
+                support.inject_memory_error()
                 b = list(range(1000, 2000))
             except Exception as e:
                 import traceback

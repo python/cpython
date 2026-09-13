@@ -1032,11 +1032,8 @@ class TestInlineValues(unittest.TestCase):
             d = a.__dict__
             try:
                 with support.catch_unraisable_exception() as ex:
-                    _testcapi.set_nomemory(n, n + 1)
-                    try:
+                    with support.with_memory_error(n, n + 1):
                         del a
-                    finally:
-                        _testcapi.remove_mem_hooks()
                     exc_type = ex.unraisable and ex.unraisable.exc_type
             except MemoryError:
                 # The failing allocation was not in the deallocation code.
