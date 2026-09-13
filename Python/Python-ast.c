@@ -5815,6 +5815,7 @@ ast_repr_max_depth(AST_object *self, int depth)
 
     int status = Py_ReprEnter((PyObject *)self);
     if (status != 0) {
+        Py_DECREF(fields);
         if (status < 0) {
             return NULL;
         }
