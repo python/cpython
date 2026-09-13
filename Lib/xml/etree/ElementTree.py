@@ -1591,10 +1591,10 @@ class XMLParser:
             parser.CommentHandler = target.comment
         if hasattr(target, 'pi'):
             parser.ProcessingInstructionHandler = target.pi
+        parser.StartDoctypeDeclHandler = self._start_doctype
         # Configure pyexpat: buffering, new-style attribute handling.
         parser.buffer_text = 1
         parser.ordered_attributes = 1
-        self._doctype = None
         self.entity = {}
         try:
             self.version = "Expat %d.%d.%d" % expat.version_info
@@ -1713,38 +1713,15 @@ class XMLParser:
                 err.lineno = self.parser.ErrorLineNumber
                 err.offset = self.parser.ErrorColumnNumber
                 raise err
-        elif prefix == "<" and text[:9] == "<!DOCTYPE":
-            self._doctype = [] # inside a doctype declaration
-        elif self._doctype is not None:
-            # parse doctype contents
-            if prefix == ">":
-                self._doctype = None
-                return
-            text = text.strip(_XML_WHITESPACE)
-            if not text:
-                return
-            self._doctype.append(text)
-            n = len(self._doctype)
-            if n > 2:
-                type = self._doctype[1]
-                if type == "PUBLIC" and n == 4:
-                    name, type, pubid, system = self._doctype
-                    if pubid:
-                        pubid = pubid[1:-1]
-                elif type == "SYSTEM" and n == 3:
-                    name, type, system = self._doctype
-                    pubid = None
-                else:
-                    return
-                if hasattr(self.target, "doctype"):
-                    self.target.doctype(name, pubid, system[1:-1])
-                elif hasattr(self, "doctype"):
-                    warnings.warn(
-                        "The doctype() method of XMLParser is ignored.  "
-                        "Define doctype() method on the TreeBuilder target.",
-                        RuntimeWarning)
 
-                self._doctype = None
+    def _start_doctype(self, name, system, pubid, has_internal_subset):
+        if hasattr(self.target, "doctype"):
+            self.target.doctype(name, pubid, system)
+        elif hasattr(self, "doctype"):
+            warnings.warn(
+                "The doctype() method of XMLParser is ignored.  "
+                "Define doctype() method on the TreeBuilder target.",
+                RuntimeWarning)
 
     def feed(self, data):
         """Feed encoded data to parser."""
