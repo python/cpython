@@ -162,6 +162,8 @@ class EditorWindow:
             text.bind("<<close-all-windows>>", self.flist.close_all_callback)
             text.bind("<<open-class-browser>>", self.open_module_browser)
             text.bind("<<open-path-browser>>", self.open_path_browser)
+            text.bind("<<open-bytecode-browser>>",
+                      self.open_bytecode_browser)
             text.bind("<<open-turtle-demo>>", self.open_turtle_demo)
 
         self.set_status_bar()
@@ -228,6 +230,7 @@ class EditorWindow:
         self.color = None # initialized below in self.ResetColorizer
         self.code_context = None # optionally initialized later below
         self.line_numbers = None # optionally initialized later below
+        self.browsers = []       # browser windows opened on this one
         if filename:
             if os.path.exists(filename) and not os.path.isdir(filename):
                 if io.loadfile(filename):
@@ -421,6 +424,7 @@ class EditorWindow:
         ("edit", "_Edit"),
         ("format", "F_ormat"),
         ("run", "_Run"),
+        ("browse", "_Browse"),
         ("options", "_Options"),
         ("window", "_Window"),
         ("help", "_Help"),
@@ -736,6 +740,11 @@ class EditorWindow:
         pathbrowser.PathBrowser(self.root)
         return "break"
 
+    def open_bytecode_browser(self, event=None):
+        from idlelib import bytecodebrowser
+        bytecodebrowser.open(self)
+        return "break"
+
     def open_turtle_demo(self, event = None):
         import subprocess
 
@@ -805,6 +814,8 @@ class EditorWindow:
         if self.line_numbers is not None:
             self.line_numbers.update_colors()
 
+        self.reset_browsers()
+
     IDENTCHARS = string.ascii_letters + string.digits + "_"
 
     def colorize_syntax_error(self, text, pos):
@@ -844,6 +855,14 @@ class EditorWindow:
         new_font = idleConf.GetFont(self.root, 'main', 'EditorWindow')
         self.text['font'] = new_font
         self.set_width()
+
+        self.reset_browsers()
+
+    def reset_browsers(self):
+        "Update the browser windows opened on this one from the Browse menu."
+        self.browsers = [w for w in self.browsers if w.winfo_exists()]
+        for window in self.browsers:
+            window.configure_style()
 
     def RemoveKeybindings(self):
         """Remove the virtual, configurable keybindings.
