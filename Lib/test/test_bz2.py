@@ -1222,6 +1222,20 @@ class OpenTest(BaseTest):
             self.assertEqual(f.readlines(), [text])
 
 
+class TestMissingModuleImport(unittest.TestCase):
+    # Test that module import fails if _bz2 is not available
+    # See: https://github.com/python/cpython/issues/150167
+    @support.thread_unsafe("Modifies global import state")
+    def test_under_lazy_all(self):
+        import_state = sys.get_lazy_imports()
+        try:
+            sys.set_lazy_imports("all")
+            with self.assertRaises(ImportError):
+                import_helper.import_fresh_module("bz2", blocked=("_bz2",))
+        finally:
+            sys.set_lazy_imports(import_state)
+
+
 def tearDownModule():
     support.reap_children()
 
