@@ -741,6 +741,50 @@ class AST_Tests(unittest.TestCase):
             if hasattr(child, 'ctx'):
                 self.assertIsInstance(child.ctx, ast.Store)
 
+    def test_mixed_binop_associativity_and_locations(self):
+        cases = [
+            ('<<', '>>', ast.LShift, ast.RShift),
+            ('+', '-', ast.Add, ast.Sub),
+            ('-', '+', ast.Sub, ast.Add),
+            ('*', '/', ast.Mult, ast.Div),
+            ('/', '//', ast.Div, ast.FloorDiv),
+            ('//', '%', ast.FloorDiv, ast.Mod),
+            ('%', '@', ast.Mod, ast.MatMult),
+            ('@', '*', ast.MatMult, ast.Mult),
+        ]
+        for first, second, first_op, second_op in cases:
+            source = f'(a {first} b\n {second} c)'
+            with self.subTest(source=source):
+                node = ast.parse(source, mode='eval').body
+                self.assertIsInstance(node, ast.BinOp)
+                self.assertIsInstance(node.op, second_op)
+                self.assertIsInstance(node.left, ast.BinOp)
+                self.assertIsInstance(node.left.op, first_op)
+                self.assertEqual(ast.get_source_segment(source, node), source[1:-1])
+                self.assertEqual(ast.get_source_segment(source, node.left),
+                                 f'a {first} b')
+
+    def test_expression_tail_locations(self):
+        cases = [
+            ('a', ast.Name),
+            ('a,', ast.Tuple),
+            ('a, b', ast.Tuple),
+            ('a, b,', ast.Tuple),
+            ('a or b or c', ast.BoolOp),
+            ('a and b and c', ast.BoolOp),
+            ('a < b <= c', ast.Compare),
+            ('a ** b ** c', ast.BinOp),
+        ]
+        for expression, node_type in cases:
+            for mode in ('eval', 'exec'):
+                with self.subTest(expression=expression, mode=mode):
+                    source = expression + '  # comment\n'
+                    tree = ast.parse(source, mode=mode)
+                    node = tree.body if mode == 'eval' else tree.body[0].value
+                    self.assertIsInstance(node, node_type)
+                    self.assertEqual(ast.get_source_segment(source, node),
+                                     expression)
+
     def test_issue39579_dotted_name_end_col_offset(self):
         tree = ast.parse('@a.b.c\ndef f(): pass')
         attr_b = tree.body[0].decorator_list[0].value

@@ -708,10 +708,10 @@ type_param_starred_default[expr_ty]: '=' e=star_expression {
 # -----------
 
 expressions[expr_ty]:
-    | a=expression b=(',' c=expression { c })+ [','] {
-        _PyAST_Tuple(CHECK(asdl_expr_seq*, _PyPegen_seq_insert_in_front(p, a, b)), Load, EXTRA) }
-    | a=expression ',' { _PyAST_Tuple(CHECK(asdl_expr_seq*, _PyPegen_singleton_seq(p, a)), Load, EXTRA) }
-    | expression
+    | a=expression b=[(',' c=expression { c })+] trailing=[','] {
+        (b ? b : trailing) ? _PyAST_Tuple(
+            b ? CHECK(asdl_expr_seq*, _PyPegen_seq_insert_in_front(p, a, b)) :
+                CHECK(asdl_expr_seq*, _PyPegen_singleton_seq(p, a)), Load, EXTRA) : a }
 
 expression[expr_ty] (memo):
     | invalid_if_expression
@@ -729,10 +729,10 @@ yield_expr[expr_ty]:
     | 'yield' a=[star_expressions] { _PyAST_Yield(a, EXTRA) }
 
 star_expressions[expr_ty]:
-    | a=star_expression b=(',' c=star_expression { c })+ [','] {
-        _PyAST_Tuple(CHECK(asdl_expr_seq*, _PyPegen_seq_insert_in_front(p, a, b)), Load, EXTRA) }
-    | a=star_expression ',' { _PyAST_Tuple(CHECK(asdl_expr_seq*, _PyPegen_singleton_seq(p, a)), Load, EXTRA) }
-    | star_expression
+    | a=star_expression b=[(',' c=star_expression { c })+] trailing=[','] {
+        (b ? b : trailing) ? _PyAST_Tuple(
+            b ? CHECK(asdl_expr_seq*, _PyPegen_seq_insert_in_front(p, a, b)) :
+                CHECK(asdl_expr_seq*, _PyPegen_singleton_seq(p, a)), Load, EXTRA) : a }
 
 star_expression[expr_ty] (memo):
     | '*' a=bitwise_or { _PyAST_Starred(a, Load, EXTRA) }
@@ -755,18 +755,14 @@ named_expression[expr_ty]:
     | expression !':='
 
 disjunction[expr_ty] (memo):
-    | a=conjunction b=('or' c=conjunction { c })+ { _PyAST_BoolOp(
-        Or,
-        CHECK(asdl_expr_seq*, _PyPegen_seq_insert_in_front(p, a, b)),
-        EXTRA) }
-    | conjunction
+    | a=conjunction b=[('or' c=conjunction { c })+] {
+        b ? _PyAST_BoolOp(Or,
+            CHECK(asdl_expr_seq*, _PyPegen_seq_insert_in_front(p, a, b)), EXTRA) : a }
 
 conjunction[expr_ty] (memo):
-    | a=inversion b=('and' c=inversion { c })+ { _PyAST_BoolOp(
-        And,
-        CHECK(asdl_expr_seq*, _PyPegen_seq_insert_in_front(p, a, b)),
-        EXTRA) }
-    | inversion
+    | a=inversion b=[('and' c=inversion { c })+] {
+        b ? _PyAST_BoolOp(And,
+            CHECK(asdl_expr_seq*, _PyPegen_seq_insert_in_front(p, a, b)), EXTRA) : a }
 
 inversion[expr_ty] (memo):
     | 'not' a=inversion { _PyAST_UnaryOp(Not, a, EXTRA) }
@@ -776,13 +772,10 @@ inversion[expr_ty] (memo):
 # --------------------
 
 comparison[expr_ty]:
-    | a=bitwise_or b=compare_op_bitwise_or_pair+ {
-        _PyAST_Compare(
-            a,
+    | a=bitwise_or b=[compare_op_bitwise_or_pair+] {
+        b ? _PyAST_Compare(a,
             CHECK(asdl_int_seq*, _PyPegen_get_cmpops(p, b)),
-            CHECK(asdl_expr_seq*, _PyPegen_get_exprs(p, b)),
-            EXTRA) }
-    | bitwise_or
+            CHECK(asdl_expr_seq*, _PyPegen_get_exprs(p, b)), EXTRA) : a }
 
 compare_op_bitwise_or_pair[CmpopExprPair*]:
     | '==' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, Eq, a) }
@@ -815,24 +808,24 @@ bitwise_and[expr_ty]:
     | shift_expr
 
 shift_expr[expr_ty]:
-    | a=shift_expr '<<' b=sum { _PyAST_BinOp(a, LShift, b, EXTRA) }
-    | a=shift_expr '>>' b=sum { _PyAST_BinOp(a, RShift, b, EXTRA) }
+    | a=shift_expr op[Token*]=('<<' | '>>') b=sum {
+        _PyAST_BinOp(a, op->type == LEFTSHIFT ? LShift : RShift, b, EXTRA) }
     | sum
 
 # Arithmetic operators
 # --------------------
 
 sum[expr_ty]:
-    | a=sum '+' b=term { _PyAST_BinOp(a, Add, b, EXTRA) }
-    | a=sum '-' b=term { _PyAST_BinOp(a, Sub, b, EXTRA) }
+    | a=sum op[Token*]=('+' | '-') b=term {
+        _PyAST_BinOp(a, op->type == PLUS ? Add : Sub, b, EXTRA) }
     | invalid_arithmetic
     | term
 
 term[expr_ty]:
-    | a=term '*' b=factor { _PyAST_BinOp(a, Mult, b, EXTRA) }
-    | a=term '/' b=factor { _PyAST_BinOp(a, Div, b, EXTRA) }
-    | a=term '//' b=factor { _PyAST_BinOp(a, FloorDiv, b, EXTRA) }
-    | a=term '%' b=factor { _PyAST_BinOp(a, Mod, b, EXTRA) }
+    | a=term op[Token*]=('*' | '/' | '//' | '%') b=factor {
+        _PyAST_BinOp(a, op->type == STAR ? Mult :
+                       op->type == SLASH ? Div :
+                       op->type == DOUBLESLASH ? FloorDiv : Mod, b, EXTRA) }
     | a=term '@' b=factor { CHECK_VERSION(expr_ty, 5, "The '@' operator is", _PyAST_BinOp(a, MatMult, b, EXTRA)) }
     | factor
 
@@ -844,8 +837,8 @@ factor[expr_ty] (memo):
     | invalid_factor
 
 power[expr_ty]:
-    | a=await_primary '**' b=factor { _PyAST_BinOp(a, Pow, b, EXTRA) }
-    | await_primary
+    | a=await_primary b=['**' c=factor { c }] {
+        b ? _PyAST_BinOp(a, Pow, b, EXTRA) : a }
 
 # Primary elements
 # ----------------

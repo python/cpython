@@ -1,0 +1,2 @@
+Speed up parsing expressions by factoring shared prefixes and optional tails
+in the grammar.
