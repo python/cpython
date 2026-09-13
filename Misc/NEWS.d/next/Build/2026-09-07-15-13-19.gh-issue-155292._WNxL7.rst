@@ -1,0 +1,3 @@
+In ``makeunicodedata.py``, the script for updating Unicode data, skip
+generating ``stringprep.py`` if the current interpreter's Unicode data
+version does not match the target version.

@@ -16,6 +16,8 @@ deprecations/index.html: pending-removal-in-python-3-16
 deprecations/index.html: c-api-pending-removal-in-python-3-15
 deprecations/index.html: c-api-pending-removal-in-python-3-16
 
+tutorial/modules.html: packages-in-multiple-directories
+
 # Removed libmpdec
 using/configure.html: cmdoption-with-system-libmpdec
 
@@ -66,3 +68,17 @@ using/windows.html: return-codes
 using/windows.html: the-full-installer-deprecated
 using/windows.html: virtual-environments
 using/windows.html: windows-full
+
+# Moved to library/stdtypes:
+reference/expressions.html: agen.__anext__
+reference/expressions.html: agen.aclose
+reference/expressions.html: agen.asend
+reference/expressions.html: agen.athrow
+reference/expressions.html: asynchronous-generator-iterator-methods
+reference/expressions.html: asynchronous-generator-methods
+reference/expressions.html: generator-iterator-methods
+reference/expressions.html: generator-methods
+reference/expressions.html: generator.__next__
+reference/expressions.html: generator.close
+reference/expressions.html: generator.send
+reference/expressions.html: generator.throw

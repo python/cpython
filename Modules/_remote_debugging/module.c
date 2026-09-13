@@ -1781,6 +1781,53 @@ _remote_debugging_BinaryWriter_write_sample_impl(BinaryWriterObject *self,
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+_remote_debugging.BinaryWriter.set_stats
+    duration_sec: double
+    sample_rate: double
+    error_rate: object = None
+    missed_samples: object = None
+
+Store measured profile statistics in the binary file.
+[clinic start generated code]*/
+
+static PyObject *
+_remote_debugging_BinaryWriter_set_stats_impl(BinaryWriterObject *self,
+                                              double duration_sec,
+                                              double sample_rate,
+                                              PyObject *error_rate,
+                                              PyObject *missed_samples)
+/*[clinic end generated code: output=28ab1bdd7c631a97 input=1646e7182f4c2259]*/
+{
+    if (!self->writer) {
+        PyErr_SetString(PyExc_ValueError, "Writer is closed");
+        return NULL;
+    }
+    uint32_t present = 0;
+    double error_rate_value = 0.0;
+    double missed_samples_value = 0.0;
+    if (error_rate != Py_None) {
+        error_rate_value = PyFloat_AsDouble(error_rate);
+        if (error_rate_value == -1.0 && PyErr_Occurred()) {
+            return NULL;
+        }
+        present |= PROFILE_STATS_ERROR_RATE;
+    }
+    if (missed_samples != Py_None) {
+        missed_samples_value = PyFloat_AsDouble(missed_samples);
+        if (missed_samples_value == -1.0 && PyErr_Occurred()) {
+            return NULL;
+        }
+        present |= PROFILE_STATS_MISSED;
+    }
+    if (binary_writer_set_stats(self->writer, duration_sec, sample_rate,
+                                error_rate_value, missed_samples_value,
+                                present) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
 /* Finalize the writer, cache total_samples, and destroy it.
  *
  * The cache assignment must happen AFTER binary_writer_finalize(): finalize
@@ -1928,6 +1975,7 @@ static PyGetSetDef BinaryWriter_getset[] = {
 
 static PyMethodDef BinaryWriter_methods[] = {
     _REMOTE_DEBUGGING_BINARYWRITER_WRITE_SAMPLE_METHODDEF
+    _REMOTE_DEBUGGING_BINARYWRITER_SET_STATS_METHODDEF
     _REMOTE_DEBUGGING_BINARYWRITER_FINALIZE_METHODDEF
     _REMOTE_DEBUGGING_BINARYWRITER_CLOSE_METHODDEF
     _REMOTE_DEBUGGING_BINARYWRITER___ENTER___METHODDEF

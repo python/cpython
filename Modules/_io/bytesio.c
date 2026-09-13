@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_bytesobject.h"       // _PyBytes_ResizeKeepOnError()
 #include "pycore_critical_section.h"  // Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_object.h"
 #include "pycore_pyatomic_ft_wrappers.h"
@@ -108,7 +109,7 @@ resize_unshared_buffer_lock_held(bytesio *self, Py_ssize_t size)
        Callers must detach first. */
     assert(!self->buf_shared);
 #endif
-    int ret = _PyBytes_Resize(&self->buf, size);
+    int ret = _PyBytes_ResizeKeepOnError(&self->buf, size);
     if (ret == 0) {
         clear_shared_buf(self);
     }
@@ -758,9 +759,12 @@ _io_BytesIO_truncate_impl(bytesio *self, PyObject *size)
     }
 
     if (new_size < self->string_size) {
+        Py_ssize_t old_string_size = self->string_size;
         self->string_size = new_size;
-        if (resize_buffer_lock_held(self, new_size) < 0)
+        if (resize_buffer_lock_held(self, new_size) < 0) {
+            self->string_size = old_string_size;
             return NULL;
+        }
     }
 
     return PyLong_FromSsize_t(new_size);
@@ -1126,15 +1130,16 @@ static int
 _io_BytesIO___init___impl(bytesio *self, PyObject *initvalue)
 /*[clinic end generated code: output=65c0c51e24c5b621 input=3da5a74ee4c4f1ac]*/
 {
-    /* In case, __init__ is called multiple times. */
-    self->string_size = 0;
-    self->pos = 0;
-
     if (FT_ATOMIC_LOAD_SSIZE_RELAXED(self->exports) > 0) {
         PyErr_SetString(PyExc_BufferError,
                         "Existing exports of data: object cannot be re-sized");
         return -1;
     }
+
+    /* In case, __init__ is called multiple times. */
+    self->string_size = 0;
+    self->pos = 0;
+
     if (initvalue && initvalue != Py_None) {
         if (PyBytes_CheckExact(initvalue)) {
             Py_XSETREF(self->buf, Py_NewRef(initvalue));

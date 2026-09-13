@@ -6800,58 +6800,62 @@ PyObject* PyLong_FromUInt64(uint64_t value)
     PYLONG_FROM_UINT(uint64_t, value);
 }
 
-#define LONG_TO_INT(obj, value, type_name) \
+#define LONG_TO_INT(type, obj, result) \
     do { \
+        type value; \
         int flags = (Py_ASNATIVEBYTES_NATIVE_ENDIAN \
                      | Py_ASNATIVEBYTES_ALLOW_INDEX); \
-        Py_ssize_t bytes = PyLong_AsNativeBytes(obj, value, sizeof(*value), flags); \
+        Py_ssize_t bytes = PyLong_AsNativeBytes(obj, &value, sizeof(value), flags); \
         if (bytes < 0) { \
             return -1; \
         } \
-        if ((size_t)bytes > sizeof(*value)) { \
+        if ((size_t)bytes > sizeof(value)) { \
             PyErr_SetString(PyExc_OverflowError, \
-                            "Python int too large to convert to " type_name); \
+                            "Python int too large to convert to C " #type); \
             return -1; \
         } \
+        *result = value; \
         return 0; \
     } while (0)
 
-int PyLong_AsInt32(PyObject *obj, int32_t *value)
+int PyLong_AsInt32(PyObject *obj, int32_t *result)
 {
-    LONG_TO_INT(obj, value, "C int32_t");
+    LONG_TO_INT(int32_t, obj, result);
 }
 
-int PyLong_AsInt64(PyObject *obj, int64_t *value)
+int PyLong_AsInt64(PyObject *obj, int64_t *result)
 {
-    LONG_TO_INT(obj, value, "C int64_t");
+    LONG_TO_INT(int64_t, obj, result);
 }
 
-#define LONG_TO_UINT(obj, value, type_name) \
+#define LONG_TO_UINT(type, obj, result) \
     do { \
+        type value; \
         int flags = (Py_ASNATIVEBYTES_NATIVE_ENDIAN \
                      | Py_ASNATIVEBYTES_UNSIGNED_BUFFER \
                      | Py_ASNATIVEBYTES_REJECT_NEGATIVE \
                      | Py_ASNATIVEBYTES_ALLOW_INDEX); \
-        Py_ssize_t bytes = PyLong_AsNativeBytes(obj, value, sizeof(*value), flags); \
+        Py_ssize_t bytes = PyLong_AsNativeBytes(obj, &value, sizeof(value), flags); \
         if (bytes < 0) { \
             return -1; \
         } \
-        if ((size_t)bytes > sizeof(*value)) { \
+        if ((size_t)bytes > sizeof(value)) { \
             PyErr_SetString(PyExc_OverflowError, \
-                            "Python int too large to convert to " type_name); \
+                            "Python int too large to convert to C " #type); \
             return -1; \
         } \
+        *result = value; \
         return 0; \
     } while (0)
 
-int PyLong_AsUInt32(PyObject *obj, uint32_t *value)
+int PyLong_AsUInt32(PyObject *obj, uint32_t *result)
 {
-    LONG_TO_UINT(obj, value, "C uint32_t");
+    LONG_TO_UINT(uint32_t, obj, result);
 }
 
-int PyLong_AsUInt64(PyObject *obj, uint64_t *value)
+int PyLong_AsUInt64(PyObject *obj, uint64_t *result)
 {
-    LONG_TO_UINT(obj, value, "C uint64_t");
+    LONG_TO_UINT(uint64_t, obj, result);
 }
 
 
