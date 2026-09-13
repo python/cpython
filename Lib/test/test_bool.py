@@ -4,6 +4,8 @@ import unittest
 from test.support import os_helper
 
 import os
+import re
+
 
 class BoolTest(unittest.TestCase):
 
@@ -58,22 +60,6 @@ class BoolTest(unittest.TestCase):
         self.assertEqual(-True, -1)
         self.assertEqual(abs(True), 1)
         self.assertIsNot(abs(True), True)
-        with self.assertWarns(DeprecationWarning):
-            # We need to put the bool in a variable, because the constant
-            # ~False is evaluated at compile time due to constant folding;
-            # consequently the DeprecationWarning would be issued during
-            # module loading and not during test execution.
-            false = False
-            self.assertEqual(~false, -1)
-        with self.assertWarns(DeprecationWarning):
-            # also check that the warning is issued in case of constant
-            # folding at compile time
-            self.assertEqual(eval("~False"), -1)
-        with self.assertWarns(DeprecationWarning):
-            true = True
-            self.assertEqual(~true, -2)
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(eval("~True"), -2)
 
         self.assertEqual(False+2, 2)
         self.assertEqual(True+2, 3)
@@ -168,6 +154,25 @@ class BoolTest(unittest.TestCase):
 
         self.assertIs(not True, False)
         self.assertIs(not False, True)
+
+    def test_invert(self):
+        # See gh-149532
+        msg = re.escape("bad operand type for unary ~: 'bool'")
+
+        # Check constants in case of a folding:
+        with self.assertRaisesRegex(TypeError, msg):
+            ~False
+        with self.assertRaisesRegex(TypeError, msg):
+            ~True
+
+        # Check variable:
+        for bool_val in [True, False]:
+            with self.subTest(bool_val), self.assertRaisesRegex(TypeError, msg):
+                ~bool_val
+
+        # Check `eval`:
+        with self.assertRaisesRegex(TypeError, msg):
+            eval("~False")
 
     def test_convert(self):
         self.assertRaises(TypeError, bool, 42, 42)
