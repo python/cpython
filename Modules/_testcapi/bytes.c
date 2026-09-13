@@ -135,22 +135,29 @@ writer_check(WriterObject *self)
 
 
 static PyObject*
-writer_write(PyObject *self_raw, PyObject *args)
+writer_write(PyObject *self_raw, PyObject *args, PyObject *kwargs)
 {
     WriterObject *self = (WriterObject *)self_raw;
     if (writer_check(self) < 0) {
         return NULL;
     }
 
+    static char *kwlist[] = {"pos", "str", "check", NULL};
     Py_ssize_t pos, size;
     char *str;
-    if (!PyArg_ParseTuple(args, "ny#", &pos, &str, &size)) {
+    int check = 1;
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
+                                     "ny#|i", kwlist,
+                                     &pos, &str, &size, &check)) {
         return NULL;
     }
 
-    if (pos < 0 || (pos + size) > PyBytesWriter_GetSize(self->writer)) {
-        PyErr_SetString(PyExc_ValueError, "invalid position or size");
-        return NULL;
+    // Use check=0 to trigger a buffer overflow for example
+    if (check) {
+        if (pos < 0 || (pos + size) > PyBytesWriter_GetSize(self->writer)) {
+            PyErr_SetString(PyExc_ValueError, "invalid position or size");
+            return NULL;
+        }
     }
 
     char *data = PyBytesWriter_GetData(self->writer);
@@ -168,7 +175,7 @@ writer_write_bytes(PyObject *self_raw, PyObject *args)
         return NULL;
     }
 
-    char *bytes;
+    const char *bytes;
     Py_ssize_t unused_size, size;
     if (!PyArg_ParseTuple(args, "y#n", &bytes, &unused_size, &size)) {
         return NULL;
@@ -245,15 +252,19 @@ writer_grow(PyObject *self_raw, PyObject *args)
 
 
 static PyObject*
-writer_get_data(PyObject *self_raw, PyObject *Py_UNUSED(args))
+writer_get_data(PyObject *self_raw, PyObject *args)
 {
     WriterObject *self = (WriterObject *)self_raw;
     if (writer_check(self) < 0) {
         return NULL;
     }
 
-    const char *data = PyBytesWriter_GetData(self->writer);
     Py_ssize_t size = PyBytesWriter_GetSize(self->writer);
+    if (!PyArg_ParseTuple(args, "|n", &size)) {
+        return NULL;
+    }
+
+    const char *data = PyBytesWriter_GetData(self->writer);
     return PyBytes_FromStringAndSize(data, size);
 }
 
@@ -304,16 +315,31 @@ writer_finish_with_size(PyObject *self_raw, PyObject *args)
 }
 
 
+static PyObject*
+writer_discard(PyObject *self_raw, PyObject *Py_UNUSED(args))
+{
+    WriterObject *self = (WriterObject *)self_raw;
+    if (writer_check(self) < 0) {
+        return NULL;
+    }
+
+    PyBytesWriter_Discard(self->writer);
+    self->writer = NULL;
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef writer_methods[] = {
-    {"write", _PyCFunction_CAST(writer_write), METH_VARARGS},
+    {"write", _PyCFunction_CAST(writer_write), METH_VARARGS | METH_KEYWORDS},
     {"write_bytes", _PyCFunction_CAST(writer_write_bytes), METH_VARARGS},
     {"format_i", _PyCFunction_CAST(writer_format_i), METH_VARARGS},
     {"resize", _PyCFunction_CAST(writer_resize), METH_VARARGS},
     {"grow", _PyCFunction_CAST(writer_grow), METH_VARARGS},
-    {"get_data", _PyCFunction_CAST(writer_get_data), METH_NOARGS},
+    {"get_data", _PyCFunction_CAST(writer_get_data), METH_VARARGS},
     {"get_size", _PyCFunction_CAST(writer_get_size), METH_NOARGS},
     {"finish", _PyCFunction_CAST(writer_finish), METH_NOARGS},
     {"finish_with_size", _PyCFunction_CAST(writer_finish_with_size), METH_VARARGS},
+    {"discard", _PyCFunction_CAST(writer_discard), METH_VARARGS},
     {NULL,              NULL}           /* sentinel */
 };
 

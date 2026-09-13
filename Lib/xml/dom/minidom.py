@@ -19,7 +19,8 @@ import io
 import xml
 import xml.dom
 
-from xml.dom import EMPTY_NAMESPACE, EMPTY_PREFIX, XMLNS_NAMESPACE, domreg
+from xml.dom import (EMPTY_NAMESPACE, EMPTY_PREFIX, XML_NAMESPACE,
+                     XMLNS_NAMESPACE, domreg)
 from xml.dom.minicompat import *
 from xml.dom.xmlbuilder import DOMImplementationLS, DocumentLS
 
@@ -305,6 +306,35 @@ def _check_name(name):
             "%r is not a valid XML name" % (name,))
 
 
+def _check_prefix(prefix, namespaceURI, attribute=False):
+    if not xml.is_valid_name(prefix) or ':' in prefix:
+        raise xml.dom.InvalidCharacterErr(
+            "%r is not a valid namespace prefix" % (prefix,))
+    if not namespaceURI:
+        raise xml.dom.NamespaceErr(
+            "cannot use the prefix %r with an empty namespace" % (prefix,))
+    if prefix == "xml" and namespaceURI != XML_NAMESPACE:
+        raise xml.dom.NamespaceErr(
+            "illegal use of the 'xml' prefix for the wrong namespace")
+    if attribute and (prefix == "xmlns") != (namespaceURI == XMLNS_NAMESPACE):
+        raise xml.dom.NamespaceErr(
+            "illegal use of the 'xmlns' prefix for the wrong namespace")
+
+
+def _check_qualified_name(namespaceURI, qualifiedName, attribute=False):
+    """Check a namespace URI and a qualified name (see DOM Level 2 Core)."""
+    _check_name(qualifiedName)
+    prefix, sep, localName = qualifiedName.partition(':')
+    if sep:
+        if not localName or ':' in localName or not xml.is_valid_name(localName):
+            raise xml.dom.NamespaceErr(
+                "%r is not a valid qualified name" % (qualifiedName,))
+        _check_prefix(prefix, namespaceURI, attribute)
+    elif attribute and (qualifiedName == "xmlns") != (namespaceURI == XMLNS_NAMESPACE):
+        raise xml.dom.NamespaceErr(
+            "illegal use of the 'xmlns' attribute for the wrong namespace")
+
+
 def _is_ancestor(node, other):
     "Returns true iff node is an ancestor of other."
     other = other.parentNode
@@ -444,11 +474,8 @@ class Attr(Node):
         return self._prefix
 
     def _set_prefix(self, prefix):
-        nsuri = self.namespaceURI
-        if prefix == "xmlns":
-            if nsuri and nsuri != XMLNS_NAMESPACE:
-                raise xml.dom.NamespaceErr(
-                    "illegal use of 'xmlns' prefix for the wrong namespace")
+        if prefix is not None:
+            _check_prefix(prefix, self.namespaceURI, True)
         self._prefix = prefix
         if prefix is None:
             newName = self.localName
@@ -807,10 +834,10 @@ class Element(Node):
                 _clear_id_cache(self)
 
     def setAttributeNS(self, namespaceURI, qualifiedName, value):
+        _check_qualified_name(namespaceURI, qualifiedName, True)
         prefix, localname = _nssplit(qualifiedName)
         attr = self.getAttributeNodeNS(namespaceURI, localname)
         if attr is None:
-            _check_name(qualifiedName)
             attr = Attr(qualifiedName, namespaceURI, localname, prefix)
             attr.value = value
             attr.ownerDocument = self.ownerDocument
@@ -940,6 +967,10 @@ class Element(Node):
                 self.childNodes[0].nodeType in (
                         Node.TEXT_NODE, Node.CDATA_SECTION_NODE)):
                 self.childNodes[0].writexml(writer, '', '', '')
+            elif self._preserves_whitespace():
+                # Adding whitespace here would change the content.
+                for node in self.childNodes:
+                    node.writexml(writer, '', '', '')
             else:
                 writer.write(newl)
                 for node in self.childNodes:
@@ -948,6 +979,25 @@ class Element(Node):
             writer.write("</%s>%s" % (self.tagName, newl))
         else:
             writer.write("/>%s"%(newl))
+
+    def _preserves_whitespace(self):
+        """Returns true iff whitespace in the content is significant.
+
+        This is the case if the element is marked with xml:space="preserve",
+        if the DTD declares that its content model is not element content,
+        or, in absence of such declaration, if it contains text.
+        """
+        if self.getAttribute("xml:space") == "preserve":
+            return True
+        doc = self.ownerDocument
+        info = doc and doc._get_elem_info(self)
+        if info is not None:
+            # Only whitespace in element content is ignorable
+            # (see XML 1.0, 3.2.1).
+            return not info.isElementContent()
+        return any(node.nodeType in (Node.TEXT_NODE, Node.CDATA_SECTION_NODE)
+                   and node.data.strip(_XML_WHITESPACE)
+                   for node in self.childNodes)
 
     def _get_attributes(self):
         self._ensure_attributes()
@@ -1817,14 +1867,14 @@ class Document(Node, DocumentLS):
         return a
 
     def createElementNS(self, namespaceURI, qualifiedName):
-        _check_name(qualifiedName)
+        _check_qualified_name(namespaceURI, qualifiedName)
         prefix, localName = _nssplit(qualifiedName)
         e = Element(qualifiedName, namespaceURI, prefix)
         e.ownerDocument = self
         return e
 
     def createAttributeNS(self, namespaceURI, qualifiedName):
-        _check_name(qualifiedName)
+        _check_qualified_name(namespaceURI, qualifiedName, True)
         prefix, localName = _nssplit(qualifiedName)
         a = Attr(qualifiedName, namespaceURI, localName, prefix)
         a.ownerDocument = self

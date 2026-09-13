@@ -136,9 +136,46 @@ class TestTString(unittest.TestCase, TStringBaseCase):
         # Test white space in debug specifier
         t = t"Value: {value = }"
         self.assertTStringEqual(
-            t, ("Value: value = ", ""), [(value, "value", "r")]
+            t, ("Value: value = ", ""), [(value, "value ", "r")]
         )
         self.assertEqual(fstring(t), "Value: value = 42")
+
+        # Explicit line continuations after the debug marker are part of
+        # the debug text, not the interpolation expression.
+        for template, strings, interpolation, rendered in (
+            (
+                t"""Value: {value =\
+}""",
+                ("Value: value =\\\n", ""),
+                (value, "value ", "r"),
+                "Value: value =\\\n42",
+            ),
+            (
+                t"""Value: {value =\
+!r}""",
+                ("Value: value =\\\n", ""),
+                (value, "value ", "r"),
+                "Value: value =\\\n42",
+            ),
+            (
+                t"""Value: {value =\
+:04}""",
+                ("Value: value =\\\n", ""),
+                (value, "value ", None, "04"),
+                "Value: value =\\\n0042",
+            ),
+            (
+                t"""Value: {value =\
+\
+}""",
+                ("Value: value =\\\n\\\n", ""),
+                (value, "value ", "r"),
+                "Value: value =\\\n\\\n42",
+            ),
+        ):
+            with self.subTest(template=template):
+                self.assertTStringEqual(template, strings, [interpolation])
+                self.assertEqual(fstring(template), rendered)
 
         class C:
             def __format__(self, spec):
@@ -148,6 +185,41 @@ class TestTString(unittest.TestCase, TStringBaseCase):
         t = t"{x:{y:{value=}}}"
         self.assertEqual(t.interpolations[0].format_spec,
                          "FORMAT-value=42")
+
+    def test_interpolation_expression_whitespace(self):
+        x = 42
+        for template, expected in (
+            (t"{x}", "x"),
+            (t"{x }", "x "),
+            (t"{ x}", " x"),
+            (t"{ x }", " x "),
+            (t"{  x  }", "  x  "),
+            (t"""{
+  x
+}""", "\n  x\n"),
+            (t"{ x !r}", " x "),
+            (t"{ x :.2f}", " x "),
+            (t"{ x = }", " x "),
+            (t"{ x = !r}", " x "),
+            (t"{ x = :.2f}", " x "),
+            (t"{x == 42 = }", "x == 42 "),
+        ):
+            with self.subTest(template=template):
+                self.assertEqual(
+                    template.interpolations[0].expression,
+                    expected,
+                )
+
+    def test_interpolation_expression_with_reconstructed_metadata(self):
+        regular = t'''{(
+            1,  # Force lexer metadata reconstruction.
+            "\"#")}'''
+        debug = t'''{(
+            1,  # Force lexer metadata reconstruction.
+            "\"#")=}'''
+        expected = '(\n            1,  \n            "\\"#")'
+        self.assertEqual(regular.interpolations[0].expression, expected)
+        self.assertEqual(debug.interpolations[0].expression, expected)
 
     def test_raw_tstrings(self):
         path = r"C:\Users"
@@ -314,12 +386,12 @@ class TestTString(unittest.TestCase, TStringBaseCase):
 
         t = t'{"""a""""#" # outside
 }'
-        self.assertEqual(t.interpolations[0].expression, '"""a""""#"')
+        self.assertEqual(t.interpolations[0].expression, '"""a""""#" \n')
 
         x, y = 1, 2
         t = t'{x != y # outside
 }'
-        self.assertEqual(t.interpolations[0].expression, 'x != y')
+        self.assertEqual(t.interpolations[0].expression, 'x != y \n')
 
         d = {'a#b': 42}
         t = t'''{f"{d["a#b"]}"}'''
