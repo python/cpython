@@ -3614,7 +3614,12 @@ _PyBytes_RepeatBuffer(char* dest, Py_ssize_t len_dest,
 
 // --- PyBytesWriter API -----------------------------------------------------
 
+// Byte pattern to fill newly allocated bytes
 #define PyBytesWrite_NEW_BYTE 0xff
+
+// Use a value different than NUL (0) to be able to detect overflow writing
+// one extra NUL byte which is a common error.
+#define PyBytesWriter_CANARY_BYTE PYMEM_DEADBYTE
 
 static inline char*
 byteswriter_data(PyBytesWriter *writer)
@@ -3627,7 +3632,8 @@ static inline Py_ssize_t
 byteswriter_allocated(PyBytesWriter *writer)
 {
     if (writer->obj == NULL) {
-        return sizeof(writer->small_buffer);
+        // Reserve the last byte for the canary byte
+        return sizeof(writer->small_buffer) - 1;
     }
     else if (writer->use_bytearray) {
         return PyByteArray_GET_SIZE(writer->obj);
@@ -3636,6 +3642,30 @@ byteswriter_allocated(PyBytesWriter *writer)
         return PyBytes_GET_SIZE(writer->obj);
     }
 }
+
+
+#ifdef Py_DEBUG
+static void
+byteswriter_check_canary_byte(PyBytesWriter *writer)
+{
+    const unsigned char *data = (const unsigned char*)byteswriter_data(writer);
+    unsigned char canary = data[writer->size];
+    if (canary != PyBytesWriter_CANARY_BYTE) {
+        _Py_FatalErrorFormat(__func__,
+                             "Buffer overflow detected in PyBytesWriter %p "
+                             "at position %zd",
+                             writer, writer->size);
+    }
+}
+
+
+static void
+byteswriter_write_canary_byte(PyBytesWriter *writer)
+{
+    unsigned char *data = (unsigned char*)byteswriter_data(writer);
+    data[writer->size] = PyBytesWriter_CANARY_BYTE;
+}
+#endif
 
 
 #ifdef MS_WINDOWS
@@ -3748,6 +3778,7 @@ byteswriter_create(Py_ssize_t size, int use_bytearray)
 #ifdef Py_DEBUG
     memset(byteswriter_data(writer), PyBytesWrite_NEW_BYTE,
            byteswriter_allocated(writer));
+    byteswriter_write_canary_byte(writer);
 #endif
     return writer;
 }
@@ -3792,6 +3823,19 @@ PyBytesWriter_FinishWithSize(PyBytesWriter *writer, Py_ssize_t size)
         PyErr_SetString(PyExc_ValueError, "size larger than allocated size");
         goto error;
     }
+
+#ifdef Py_DEBUG
+    // Check for buffer overflow
+    byteswriter_check_canary_byte(writer);
+
+    if (writer->obj != NULL) {
+        // byteswriter_write_canary_byte() can override the trailing NUL byte.
+        // So reset the trailing NUL byte to NUL.
+        Py_ssize_t allocated = byteswriter_allocated(writer);
+        char *data = byteswriter_data(writer);
+        data[allocated] = '\0';
+    }
+#endif
 
     PyObject *result;
     if (size == 0) {
@@ -3869,21 +3913,24 @@ PyBytesWriter_GetSize(PyBytesWriter *writer)
 
 
 int
-PyBytesWriter_Resize(PyBytesWriter *writer, Py_ssize_t size)
+PyBytesWriter_Resize(PyBytesWriter *writer, Py_ssize_t new_size)
 {
-    if (size < 0) {
+    if (new_size < 0) {
         PyErr_SetString(PyExc_ValueError, "size must be >= 0");
         return -1;
     }
-    if (writer->size < size) {
-        if (byteswriter_resize(writer, size, 1) < 0) {
+    if (writer->size < new_size) {
+        if (byteswriter_resize(writer, new_size, 1) < 0) {
             return -1;
         }
     }
     else {
         // The buffer is already large enough. Never shrink the buffer.
     }
-    writer->size = size;
+    writer->size = new_size;
+#ifdef Py_DEBUG
+    byteswriter_write_canary_byte(writer);
+#endif
     return 0;
 }
 
@@ -3908,24 +3955,30 @@ PyBytesWriter_Grow(PyBytesWriter *writer, Py_ssize_t grow)
         return 0;
     }
 
-    if (grow >= 0) {
+    if (grow > 0) {
         if (grow > PY_SSIZE_T_MAX - writer->size) {
             PyErr_NoMemory();
             return -1;
         }
+        Py_ssize_t new_size = writer->size + grow;
+
+        if (byteswriter_resize(writer, new_size, 1) < 0) {
+            return -1;
+        }
+        writer->size = new_size;
     }
     else {
         if (writer->size + grow < 0) {
             PyErr_SetString(PyExc_ValueError, "invalid size");
             return -1;
         }
+        // The buffer is already large enough. Never shrink the buffer.
+        writer->size = writer->size + grow;
     }
-    Py_ssize_t size = writer->size + grow;
 
-    if (byteswriter_resize(writer, size, 1) < 0) {
-        return -1;
-    }
-    writer->size = size;
+#ifdef Py_DEBUG
+    byteswriter_write_canary_byte(writer);
+#endif
     return 0;
 }
 
@@ -3991,5 +4044,8 @@ _PyBytesWriter_ResizeToAllocated(PyBytesWriter *writer)
 {
     Py_ssize_t allocated = byteswriter_allocated(writer);
     writer->size = allocated;
+#ifdef Py_DEBUG
+    byteswriter_write_canary_byte(writer);
+#endif
     return allocated;
 }
