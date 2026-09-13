@@ -1,0 +1,1 @@
+Update the memory layout of how :class:`dict` handles the memory of the keys to improve performance.
