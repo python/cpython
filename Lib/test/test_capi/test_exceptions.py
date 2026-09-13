@@ -228,7 +228,7 @@ class Test_ErrSetAndRestore(unittest.TestCase):
         # is superclass, so does not wrap
         with self.assertRaises(PermissionError) as e:
             _testcapi.exc_set_object(OSError, PermissionError(24))
-        self.assertEqual(e.exception.args, (24,))
+        self.assertEqual(e.exception.args, (errno.EACCES, 24))
 
         class Meta(type):
             def __subclasscheck__(cls, sub):
@@ -305,7 +305,7 @@ class Test_ErrSetAndRestore(unittest.TestCase):
         with self.assertRaises(FileNotFoundError) as e:
             setfromerrnowithfilename(ENOENT, OSError, b'file')
         self.assertEqual(e.exception.args,
-                         (ENOENT, 'No such file or directory'))
+                         (ENOENT, 'No such file or directory', 'file'))
         self.assertEqual(e.exception.errno, ENOENT)
         self.assertEqual(e.exception.filename, 'file')
 
@@ -325,7 +325,7 @@ class Test_ErrSetAndRestore(unittest.TestCase):
 
         with self.assertRaises(OSError) as e:
             setfromerrnowithfilename(0, OSError, b'file')
-        self.assertEqual(e.exception.args, (0, 'Error'))
+        self.assertEqual(e.exception.args, (0, 'Error', 'file'))
         self.assertEqual(e.exception.errno, 0)
         self.assertEqual(e.exception.filename, 'file')
 

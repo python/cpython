@@ -1,0 +1,13 @@
+Improve the :exc:`OSError` constructor.
+The *errno* argument can now be omitted:
+it then defaults to the error code which corresponds to the exception class,
+like :data:`~errno.ENOENT` for :exc:`FileNotFoundError`.
+The *strerror* argument can be omitted too;
+it is derived from the resulting :attr:`~OSError.errno`,
+or on Windows from :attr:`~OSError.winerror` if that was given.
+The *filename*, *winerror* and *filename2* arguments
+can now be passed by keyword,
+as can *characters_written* for :exc:`BlockingIOError`.
+The :attr:`~BaseException.args` attribute is no longer truncated
+when a file name is given,
+so that an exception which carries a file name now survives pickling.

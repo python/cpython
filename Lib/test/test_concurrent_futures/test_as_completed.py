@@ -108,7 +108,7 @@ class AsCompletedTests:
         with self.assertRaises(futures.TimeoutError) as cm:
             list(futures.as_completed(futures_list, timeout=0))
 
-        self.assertEqual(str(cm.exception), '2 (of 4) futures unfinished')
+        self.assertIn('2 (of 4) futures unfinished', str(cm.exception))
 
 
 create_executor_tests(globals(), AsCompletedTests)

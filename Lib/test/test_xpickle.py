@@ -1,5 +1,6 @@
 # This test covers backwards compatibility with previous versions of Python
 # by bouncing pickled objects through Python versions by running xpickle_worker.py.
+import errno
 import io
 import os
 import pickle
@@ -223,6 +224,33 @@ class AbstractCompatTests(pickletester.AbstractPickleTests):
     # which cannot be properly imported by the xpickle worker.
     test_recursive_nested_names = None
     test_recursive_nested_names2 = None
+
+    def test_oserror_attributes(self):
+        # An OSError is reconstructed by calling its class with args, so its
+        # attributes have to survive being built by the other version.
+        if self.py_version < (3, 3):
+            self.skipTest('OSError subclasses need Python >= 3.3')
+        strerror = os.strerror(errno.ENOENT)
+        cases = [
+            OSError(errno.ENOENT, strerror),
+            OSError(errno.ENOENT, strerror, 'foo.txt'),
+            OSError(errno.ENOENT, strerror, 'foo.txt', None, 'bar.txt'),
+            FileNotFoundError(filename='foo.txt'),
+            BlockingIOError(errno.EAGAIN, 'would block', 5),
+            BlockingIOError(characters_written=5),
+        ]
+        for orig in cases:
+            for proto in pickletester.protocols:
+                with self.subTest(exc=repr(orig), proto=proto):
+                    exc = self.loads(self.dumps(orig, proto))
+                    self.assertIs(type(exc), type(orig))
+                    self.assertEqual(exc.args, orig.args)
+                    self.assertEqual(exc.errno, orig.errno)
+                    self.assertEqual(exc.strerror, orig.strerror)
+                    self.assertEqual(exc.filename, orig.filename)
+                    self.assertEqual(exc.filename2, orig.filename2)
+                    self.assertEqual(getattr(exc, 'characters_written', None),
+                                     getattr(orig, 'characters_written', None))
 
     # Attribute lookup problems are expected, disable the test
     test_dynamic_class = None

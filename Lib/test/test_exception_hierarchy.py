@@ -95,6 +95,22 @@ class HierarchyTest(unittest.TestCase):
             e = OSError(errcode, "Some message")
             self.assertIs(type(e), OSError, repr(e))
 
+    def _defaults(self):
+        # The first errno listed for a class is the one it defaults to.
+        defaults = {}
+        for errcode, exc in self._map.items():
+            defaults.setdefault(exc, errcode)
+        return defaults
+
+    def test_default_errno(self):
+        for exc, errcode in self._defaults().items():
+            with self.subTest(exc=exc.__name__):
+                self.assertEqual(exc.default_errno, errcode)
+                e = exc()
+                self.assertEqual(e.errno, errcode)
+                self.assertEqual(e.strerror, os.strerror(errcode))
+                self.assertEqual(e.args, (errcode, os.strerror(errcode)))
+
     def test_try_except(self):
         filename = "some_hopefully_non_existing_file"
 
@@ -136,6 +152,80 @@ class AttributesTest(unittest.TestCase):
         if os.name == "nt":
             self.assertEqual(e.winerror, None)
 
+    def test_strerror_derived_from_errno(self):
+        e = FileNotFoundError()
+        self.assertEqual(e.errno, errno.ENOENT)
+        self.assertEqual(e.strerror, os.strerror(errno.ENOENT))
+        # an explicit strerror wins over the one derived from errno
+        e = FileNotFoundError('not found')
+        self.assertEqual(e.errno, errno.ENOENT)
+        self.assertEqual(e.strerror, 'not found')
+        self.assertEqual(e.args, (errno.ENOENT, 'not found'))
+        # ... including an explicit None
+        e = FileNotFoundError(errno.ENOENT, None)
+        self.assertIsNone(e.strerror)
+
+    @unittest.skipUnless(os.name == "nt", "Windows-specific test")
+    def test_strerror_derived_from_winerror(self):
+        # the message of the Windows error code is more specific than the one
+        # of the errno it is translated to
+        import ctypes
+        e = OSError(filename="foo.txt", winerror=183)
+        self.assertEqual(e.errno, EEXIST)
+        expected = ctypes.WinError(183).strerror.rstrip(" .")
+        self.assertEqual(e.strerror, expected)
+        # a code which the system has no message for
+        e = OSError(winerror=99999)
+        self.assertEqual(e.errno, errno.EINVAL)
+        self.assertEqual(e.strerror, "Windows Error 0x%x" % 99999)
+
+    def test_strerror_not_derived_from_bogus_errno(self):
+        for code in 2**31, -2**31-1, 2**1000, -2**1000, 'x':
+            with self.subTest(default_errno=code):
+                cls = type('E', (OSError,), {'default_errno': code})
+                e = cls()
+                self.assertEqual(e.errno, code)
+                self.assertIsNone(e.strerror)
+
+    @unittest.skipUnless(os.name == "nt", "Windows-specific test")
+    def test_strerror_not_derived_from_bogus_winerror(self):
+        # a winerror out of the C long range is rejected
+        for code in 2**31, -2**31-1, 2**1000, -2**1000:
+            with self.subTest(winerror=code):
+                self.assertRaises(OverflowError, OSError, winerror=code)
+        # a winerror which is not an integer is not translated at all
+        e = OSError(winerror='x')
+        self.assertIsNone(e.errno)
+        self.assertIsNone(e.strerror)
+        self.assertEqual(e.winerror, 'x')
+
+    def test_keyword_arguments(self):
+        e = FileNotFoundError(filename='foo.txt')
+        self.assertEqual(e.errno, errno.ENOENT)
+        self.assertEqual(e.strerror, os.strerror(errno.ENOENT))
+        self.assertEqual(e.filename, 'foo.txt')
+        self.assertIsNone(e.filename2)
+
+        e = OSError('cannot open', filename='foo.txt', filename2='bar.txt')
+        self.assertIsNone(e.errno)
+        self.assertEqual(e.strerror, 'cannot open')
+        self.assertEqual(e.filename, 'foo.txt')
+        self.assertEqual(e.filename2, 'bar.txt')
+
+        e = OSError(EEXIST, 'exists', filename='foo.txt')
+        self.assertEqual(e.errno, EEXIST)
+        self.assertEqual(e.filename, 'foo.txt')
+
+    def test_keyword_argument_errors(self):
+        # errno and strerror are positional-only
+        self.assertRaises(TypeError, OSError, errno=EEXIST)
+        self.assertRaises(TypeError, OSError, strerror='exists')
+        # and cannot be given twice
+        self.assertRaises(TypeError, OSError,
+                          EEXIST, 'exists', 'foo.txt', filename='bar.txt')
+        # more than five arguments
+        self.assertRaises(TypeError, OSError, 1, 2, 3, 4, 5, 6)
+
     @unittest.skipUnless(os.name == "nt", "Windows-specific test")
     def test_errno_translation(self):
         # ERROR_ALREADY_EXISTS (183) -> EEXIST
@@ -143,6 +233,13 @@ class AttributesTest(unittest.TestCase):
         self.assertEqual(e.winerror, 183)
         self.assertEqual(e.errno, EEXIST)
         self.assertEqual(e.args[0], EEXIST)
+        self.assertEqual(e.strerror, "File already exists")
+        self.assertEqual(e.filename, "foo.txt")
+        # winerror can also be given by keyword
+        e = OSError("File already exists", filename="foo.txt", winerror=183)
+        self.assertEqual(e.winerror, 183)
+        self.assertEqual(e.errno, EEXIST)
+        self.assertEqual(e.args, (EEXIST, "File already exists", "foo.txt", 183))
         self.assertEqual(e.strerror, "File already exists")
         self.assertEqual(e.filename, "foo.txt")
 
@@ -161,6 +258,26 @@ class AttributesTest(unittest.TestCase):
         del e.characters_written
         with self.assertRaises(AttributeError):
             e.characters_written
+
+        # characters_written can also be given by keyword
+        e = BlockingIOError("would block", characters_written=3)
+        self.assertEqual(e.strerror, "would block")
+        self.assertEqual(e.characters_written, 3)
+        # including when the class is chosen by errno
+        e = OSError(errno.EAGAIN, "would block", characters_written=3)
+        self.assertIs(type(e), BlockingIOError)
+        self.assertEqual(e.characters_written, 3)
+        # but only for BlockingIOError
+        for cls in OSError, FileNotFoundError:
+            with self.subTest(cls=cls.__name__):
+                self.assertRaises(TypeError, cls, characters_written=3)
+        # and not together with a file name, which it is an alternative to
+        self.assertRaises(TypeError, BlockingIOError,
+                          filename="foo.txt", characters_written=3)
+        self.assertRaises(TypeError, BlockingIOError,
+                          errno.EAGAIN, "would block", 3, characters_written=3)
+        # and it is keyword-only
+        self.assertRaises(TypeError, BlockingIOError, 1, 2, 3, 4, 5, 6)
 
 
 class ExplicitSubclassingTest(unittest.TestCase):

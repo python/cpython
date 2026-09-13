@@ -136,6 +136,12 @@ PyAPI_FUNC(void) _PyErr_SetString(
     PyObject *exception,
     const char *string);
 
+#ifdef MS_WINDOWS
+/* Return the message for a Windows error code as a new reference,
+   or NULL with an exception set. */
+extern PyObject* _PyErr_WindowsErrorMessage(unsigned long err);
+#endif
+
 /*
  * Set an exception with the error message decoded from the current locale
  * encoding (LC_CTYPE).
