@@ -1,8 +1,11 @@
+import marshal
+import os.path
 import unittest
 
 from test import support
 from test.support import import_helper
-from test.test_marshal import HelperMixin
+from test.support import os_helper
+from test.test_marshal import HelperMixin, omit_last_byte
 
 
 # Skip this test if _testcapi is are not available.
