@@ -154,6 +154,10 @@ module documentation.  This section lists the differences between the API and
    .. versionchanged:: 3.9
       The *standalone* parameter was added.
 
+   .. versionchanged:: next
+      Namespace declarations missing for the serialized element
+      and its attributes are now written.
+
 .. method:: Node.toxml(encoding=None, standalone=None)
 
    Return a string or byte string containing the XML represented by
