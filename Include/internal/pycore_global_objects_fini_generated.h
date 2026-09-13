@@ -1645,6 +1645,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(capitals));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(category));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(cb_type));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(cdata_factory));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(certfile));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(chain));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(check_same_thread));
@@ -1842,6 +1843,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(initval));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(inner_size));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(input));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(insert_cdata));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(insert_comments));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(insert_pis));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(instructions));

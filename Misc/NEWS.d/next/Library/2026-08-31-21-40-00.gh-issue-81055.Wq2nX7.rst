@@ -1,0 +1,12 @@
+Add :func:`xml.etree.ElementTree.CDATA`, a factory of special elements
+which are serialized as CDATA sections.
+Their content is character data:
+it is not escaped when serialized, and it is returned by
+:meth:`~xml.etree.ElementTree.Element.itertext`
+and by the ``"text"`` serialization method.
+:class:`~xml.etree.ElementTree.TreeBuilder` now supports
+the *cdata_factory* and *insert_cdata* arguments,
+which make the parser keep CDATA sections instead of parsing them as text,
+and the new :meth:`!start_cdata` and :meth:`!end_cdata` methods,
+which :class:`~xml.etree.ElementTree.XMLParser` calls
+for the boundaries of a CDATA section.

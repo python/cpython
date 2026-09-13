@@ -548,6 +548,28 @@ Functions
    .. versionadded:: 3.8
 
 
+.. function:: CDATA(text=None)
+
+   CDATA section factory.
+   This factory function creates a special element
+   which the standard serializer serializes as a CDATA section.
+   *text* is a string containing the content of the CDATA section.
+
+   The content of a CDATA section is character data:
+   it is not escaped when serialized, and it is returned
+   by :meth:`Element.itertext` and by the ``"text"`` serialization method.
+   ``"]]>"`` cannot occur in a CDATA section,
+   so the content which contains it is split into several sections.
+
+   Note that a CDATA section in the input is parsed as text by default:
+   its content is added to the tree as ordinary character data.
+   A tree only contains CDATA sections if they have been inserted into it
+   using one of the :class:`Element` methods,
+   or if the parser target collects them; see :class:`TreeBuilder`.
+
+   .. versionadded:: next
+
+
 .. function:: Comment(text=None)
 
    Comment element factory.  This factory function creates a special element
@@ -1066,8 +1088,13 @@ Element Objects
 
       Creates a text iterator.  The iterator loops over this element and all
       subelements, in document order, and returns all inner text.
+      The content of CDATA sections is a part of the inner text,
+      but the content of comments and processing instructions is not.
 
       .. versionadded:: 3.2
+
+      .. versionchanged:: next
+         The content of CDATA sections is returned.
 
 
    .. method:: makeelement(tag, attrib)
@@ -1295,7 +1322,9 @@ TreeBuilder Objects
 
 
 .. class:: TreeBuilder(element_factory=None, *, comment_factory=None, \
-                       pi_factory=None, insert_comments=False, insert_pis=False)
+                       pi_factory=None, cdata_factory=None, \
+                       insert_comments=False, insert_pis=False, \
+                       insert_cdata=False)
 
    Generic element structure builder.  This builder converts a sequence of
    start, data, end, comment and pi method calls to a well-formed element
@@ -1312,6 +1341,16 @@ TreeBuilder Objects
    factories will be used.  When *insert_comments* and/or *insert_pis* is true,
    comments/pis will be inserted into the tree if they appear within the root
    element (but not outside of it).
+
+   The *cdata_factory* function, when given,
+   should behave like the :func:`CDATA` function.
+   If *insert_cdata* is true, a CDATA section in the input is created
+   with this factory and inserted into the tree;
+   otherwise its content is added to the tree as ordinary character data
+   and the factory is not called.
+
+   .. versionchanged:: next
+      Added the *cdata_factory* and *insert_cdata* arguments.
 
    .. method:: close()
 
@@ -1350,6 +1389,26 @@ TreeBuilder Objects
       If ``insert_pis`` is true, this will also add it to the tree.
 
       .. versionadded:: 3.8
+
+
+   .. method:: start_cdata()
+
+      Begins a CDATA section.
+      The text added by :meth:`data` until the matching :meth:`end_cdata`
+      call is the content of the section.
+
+      .. versionadded:: next
+
+
+   .. method:: end_cdata()
+
+      Ends a CDATA section.
+      If ``insert_cdata`` is true, creates a CDATA section
+      with the collected content and adds it to the tree,
+      and returns it.  Otherwise returns ``None``
+      and the collected content is left as ordinary character data.
+
+      .. versionadded:: next
 
 
    In addition, a custom :class:`TreeBuilder` object can provide the

@@ -1643,6 +1643,7 @@ extern "C" {
     INIT_ID(capitals), \
     INIT_ID(category), \
     INIT_ID(cb_type), \
+    INIT_ID(cdata_factory), \
     INIT_ID(certfile), \
     INIT_ID(chain), \
     INIT_ID(check_same_thread), \
@@ -1840,6 +1841,7 @@ extern "C" {
     INIT_ID(initval), \
     INIT_ID(inner_size), \
     INIT_ID(input), \
+    INIT_ID(insert_cdata), \
     INIT_ID(insert_comments), \
     INIT_ID(insert_pis), \
     INIT_ID(instructions), \
