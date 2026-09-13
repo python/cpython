@@ -40,6 +40,9 @@ from typing import Iterator, List, Optional, Set, Tuple
 SCRIPT = os.path.normpath(sys.argv[0])
 VERSION = "3.3"
 
+# Local cache location
+DATA_DIR = os.path.join('Tools', 'unicode', 'data')
+
 # The Unicode Database
 # --------------------
 # When changing UCD version please update
@@ -816,9 +819,30 @@ def makeunicodename(unicode, trace):
 def makestringprep():
     FILE = "Lib/stringprep.py"
 
+    RFC_LOCAL = os.path.join(DATA_DIR, "rfc3454.txt")
+    RFC_URL = "https://www.rfc-editor.org/rfc/rfc3454.txt"
+
     print("--- Preparing", FILE, "...")
 
+    # mkstringprep expects a local copy of RFC 3454. Download it now.
+    # (stringprep is used for URL handling, and if it's not matched
+    # with the compiled unicodedata, downloads would fail.)
+    if not os.path.exists(RFC_LOCAL):
+        download_data(RFC_LOCAL, RFC_URL)
+
     MKSTRINGPREP = "Tools/unicode/mkstringprep.py"
+
+    # mkstringprep needs to be run with a Python version that has "its"
+    # unicode data, since it uses str.lower() and similar.
+    import unicodedata
+    if unicodedata.unidata_version != UNIDATA_VERSION:
+        print()
+        print("!! Skipping mkstringprep -- mismatched Unicode version !!")
+        print()
+        print("Please compile CPython with the updated Unicode database,")
+        print("then use that interpreter to run:")
+        print(f"    python {MKSTRINGPREP} > {FILE}")
+        return
 
     with open(FILE, "w") as f:
         f.truncate()
@@ -929,24 +953,27 @@ def merge_old_version(version, new, old):
                         normalization_changes))
 
 
-DATA_DIR = os.path.join('Tools', 'unicode', 'data')
-
 def open_data(template, version):
     local = os.path.join(DATA_DIR, template % ('-'+version,))
     if not os.path.exists(local):
-        import urllib.request
         if version == '3.2.0':
             # irregular url structure
             url = ('https://www.unicode.org/Public/3.2-Update/'+template) % ('-'+version,)
         else:
             url = ('https://www.unicode.org/Public/%s/ucd/'+template) % (version, '')
-        os.makedirs(os.path.dirname(local), exist_ok=True)
-        urllib.request.urlretrieve(url, filename=local)
+        download_data(local, url)
     if local.endswith('.txt'):
         return open(local, encoding='utf-8')
     else:
         # Unihan.zip
         return open(local, 'rb')
+
+
+def download_data(local, url):
+    import urllib.request
+    os.makedirs(os.path.dirname(local), exist_ok=True)
+    print(f'Downloading {url} to {local}')
+    urllib.request.urlretrieve(url, filename=local)
 
 
 def expand_range(char_range: str) -> Iterator[int]:
