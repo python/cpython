@@ -484,7 +484,15 @@ class MinidomTest(unittest.TestCase):
         self.assertEqual(child2.getAttributeNS("http://www.python.org", "missing"),
                          '')
 
-    def testGetAttributeNode(self): pass
+    def testGetAttributeNode(self):
+        dom = parseString("<doc a='1'/>")
+        elem = dom.documentElement
+        attr = elem.getAttributeNode("a")
+        self.assertEqual(attr.name, "a")
+        self.assertEqual(attr.value, "1")
+        self.assertIs(attr.ownerElement, elem)
+        self.assertIsNone(elem.getAttributeNode("b"))
+        dom.unlink()
 
     def testGetElementsByTagNameNS(self):
         d="""<foo xmlns:minidom='http://pyxml.sf.net/minidom'>
@@ -611,38 +619,106 @@ class MinidomTest(unittest.TestCase):
         self.assertEqual(domstr, str.replace("\n", "\r\n"))
 
     def test_toprettyxml_with_text_nodes(self):
-        # see issue #4147, text nodes are not indented
+        # see gh-48397 and gh-81623,
+        # the content of an element with text is not changed
         decl = '<?xml version="1.0" ?>\n'
         self.assertEqual(parseString('<B>A</B>').toprettyxml(),
                          decl + '<B>A</B>\n')
         self.assertEqual(parseString('<C>A<B>A</B></C>').toprettyxml(),
-                         decl + '<C>\n\tA\n\t<B>A</B>\n</C>\n')
+                         decl + '<C>A<B>A</B></C>\n')
         self.assertEqual(parseString('<C><B>A</B>A</C>').toprettyxml(),
-                         decl + '<C>\n\t<B>A</B>\n\tA\n</C>\n')
+                         decl + '<C><B>A</B>A</C>\n')
         self.assertEqual(parseString('<C><B>A</B><B>A</B></C>').toprettyxml(),
                          decl + '<C>\n\t<B>A</B>\n\t<B>A</B>\n</C>\n')
         self.assertEqual(parseString('<C><B>A</B>A<B>A</B></C>').toprettyxml(),
-                         decl + '<C>\n\t<B>A</B>\n\tA\n\t<B>A</B>\n</C>\n')
+                         decl + '<C><B>A</B>A<B>A</B></C>\n')
+        # toprettyxml treats whitespace between elements as insignificant
+        self.assertEqual(parseString('<C> <B>A</B> </C>').toprettyxml(),
+                         decl + '<C>\n\t \n\t<B>A</B>\n\t \n</C>\n')
 
     def test_toprettyxml_with_adjacent_text_nodes(self):
-        # see issue #4147, adjacent text nodes are indented normally
+        # see gh-81623, adjacent text nodes are not separated
         dom = Document()
         elem = dom.createElement('elem')
         elem.appendChild(dom.createTextNode('TEXT'))
         elem.appendChild(dom.createTextNode('TEXT'))
         dom.appendChild(elem)
         decl = '<?xml version="1.0" ?>\n'
-        self.assertEqual(dom.toprettyxml(),
-                         decl + '<elem>\n\tTEXT\n\tTEXT\n</elem>\n')
+        self.assertEqual(dom.toprettyxml(), decl + '<elem>TEXTTEXT</elem>\n')
+
+    def test_toprettyxml_preserve(self):
+        decl = '<?xml version="1.0" ?>\n'
+        # xml:space="preserve" applies to the whole subtree
+        self.assertEqual(
+            parseString('<C xml:space="preserve"><B>A</B><B>A</B></C>'
+                        ).toprettyxml(),
+            decl + '<C xml:space="preserve"><B>A</B><B>A</B></C>\n')
+        self.assertEqual(
+            parseString('<C xml:space="preserve"><B><D/></B></C>'
+                        ).toprettyxml(),
+            decl + '<C xml:space="preserve"><B><D/></B></C>\n')
+        # other values do not preserve whitespace
+        self.assertEqual(
+            parseString('<C xml:space="default"><B>A</B></C>').toprettyxml(),
+            decl + '<C xml:space="default">\n\t<B>A</B>\n</C>\n')
+
+    def test_toprettyxml_with_non_xml_whitespace(self):
+        # only " \t\r\n" are whitespace in XML (see XML 1.0, 2.3)
+        decl = '<?xml version="1.0" ?>\n'
+        self.assertEqual(parseString('<C>\xa0<B>A</B></C>').toprettyxml(),
+                         decl + '<C>\xa0<B>A</B></C>\n')
+
+    def test_toprettyxml_with_dtd(self):
+        decl = '<?xml version="1.0" ?>\n'
+        # only whitespace in element content is ignorable
+        doctype = ('<!DOCTYPE C [<!ELEMENT C (#PCDATA|B)*>'
+                   '<!ELEMENT B (#PCDATA)>]>')
+        self.assertEqual(
+            parseString(doctype + '<C><B>A</B><B>A</B></C>').toprettyxml(),
+            decl + doctype + '\n<C><B>A</B><B>A</B></C>\n')
+        doctype = '<!DOCTYPE C [<!ELEMENT C (B)*><!ELEMENT B (#PCDATA)>]>'
+        self.assertEqual(
+            parseString(doctype + '<C><B>A</B><B>A</B></C>').toprettyxml(),
+            decl + doctype + '\n<C>\n\t<B>A</B>\n\t<B>A</B>\n</C>\n')
+
+    def test_toprettyxml_with_cdata_section(self):
+        decl = '<?xml version="1.0" ?>\n'
+        self.assertEqual(
+            parseString('<C><![CDATA[A]]><B>A</B></C>').toprettyxml(),
+            decl + '<C><![CDATA[A]]><B>A</B></C>\n')
 
     def test_toprettyxml_preserves_content_of_text_node(self):
-        # see issue #4147
+        # see gh-48397
         for str in ('<B>A</B>', '<A><B>C</B></A>'):
             dom = parseString(str)
             dom2 = parseString(dom.toprettyxml())
             self.assertEqual(
                 dom.getElementsByTagName('B')[0].childNodes[0].toxml(),
                 dom2.getElementsByTagName('B')[0].childNodes[0].toxml())
+
+    def test_isWhitespaceInElementContent(self):
+        # only " \t\r\n" are whitespace in XML (see XML 1.0, 2.3)
+        dom = parseString('<!DOCTYPE a [<!ELEMENT a (b)*><!ELEMENT b (#PCDATA)>]>'
+                          '<a> <b>x</b>\xa0</a>')
+        children = dom.documentElement.childNodes
+        self.assertTrue(children[0].isWhitespaceInElementContent)
+        self.assertFalse(children[2].isWhitespaceInElementContent)
+        dom.unlink()
+
+    def test_remove_whitespace_in_element_content(self):
+        from xml.dom.xmlbuilder import DOMBuilder, DOMInputSource
+        builder = DOMBuilder()
+        builder.setFeature("whitespace-in-element-content", False)
+        source = DOMInputSource()
+        source.byteStream = io.BytesIO(
+            b'<!DOCTYPE a [<!ELEMENT a (b)*><!ELEMENT b (#PCDATA)>]>'
+            b'<a> <b>x</b>\xc2\xa0</a>')
+        dom = builder.parse(source)
+        children = dom.documentElement.childNodes
+        # ignorable whitespace is removed, other characters are not
+        self.assertEqual([node.nodeName for node in children], ['b', '#text'])
+        self.assertEqual(children[1].data, '\xa0')
+        dom.unlink()
 
     def testProcessingInstruction(self):
         dom = parseString('<e><?mypi \t\n data \t\n ?></e>')
@@ -673,9 +749,34 @@ class MinidomTest(unittest.TestCase):
         self.assertEqual(str(el), repr(el))
         self.assertEqual('<DOM Text node "\'foo\'">', str(el))
 
-    def testWriteText(self): pass
+    def testWriteText(self):
+        dom = parseString("<doc><a>text</a><b>&lt;&amp;&gt;</b></doc>")
+        elem = dom.documentElement
+        writer = io.StringIO()
+        elem.writexml(writer)
+        self.assertEqual(writer.getvalue(),
+                "<doc><a>text</a><b>&lt;&amp;&gt;</b></doc>")
+        writer = io.StringIO()
+        elem.writexml(writer, indent="  ", addindent="  ", newl="\n")
+        self.assertEqual(writer.getvalue(),
+                "  <doc>\n"
+                "    <a>text</a>\n"
+                "    <b>&lt;&amp;&gt;</b>\n"
+                "  </doc>\n")
+        dom.unlink()
 
-    def testDocumentElement(self): pass
+    def testDocumentElement(self):
+        dom = parseString("<!-- comment --><doc/><?pi data?>")
+        elem = dom.documentElement
+        self.assertEqual(elem.tagName, "doc")
+        self.assertIs(elem, dom.childNodes[1])
+        dom.unlink()
+
+        dom = Document()
+        self.assertIsNone(dom.documentElement)
+        elem = dom.appendChild(dom.createElement("doc"))
+        self.assertIs(dom.documentElement, elem)
+        dom.unlink()
 
     def testTooManyDocumentElements(self):
         doc = parseString("<doc/>")
@@ -685,25 +786,126 @@ class MinidomTest(unittest.TestCase):
         elem.unlink()
         doc.unlink()
 
-    def testCreateElementNS(self): pass
+    def testCreateElementNS(self):
+        dom = Document()
+        elem = dom.createElementNS("http://xml.python.org/ns", "p:elem")
+        self.assertEqual(elem.nodeType, Node.ELEMENT_NODE)
+        self.assertEqual(elem.tagName, "p:elem")
+        self.assertEqual(elem.nodeName, "p:elem")
+        self.assertEqual(elem.namespaceURI, "http://xml.python.org/ns")
+        self.assertEqual(elem.prefix, "p")
+        self.assertEqual(elem.localName, "elem")
+        self.assertIs(elem.ownerDocument, dom)
+        self.assertIsNone(elem.parentNode)
 
-    def testCreateAttributeNS(self): pass
+        elem = dom.createElementNS("http://xml.python.org/ns", "elem")
+        self.assertEqual(elem.tagName, "elem")
+        self.assertIsNone(elem.prefix)
+        self.assertEqual(elem.localName, "elem")
+        dom.unlink()
 
-    def testParse(self): pass
+    def testCreateAttributeNS(self):
+        dom = Document()
+        attr = dom.createAttributeNS("http://xml.python.org/ns", "p:attr")
+        self.assertEqual(attr.nodeType, Node.ATTRIBUTE_NODE)
+        self.assertEqual(attr.name, "p:attr")
+        self.assertEqual(attr.nodeName, "p:attr")
+        self.assertEqual(attr.namespaceURI, "http://xml.python.org/ns")
+        self.assertEqual(attr.prefix, "p")
+        self.assertEqual(attr.localName, "attr")
+        self.assertEqual(attr.value, "")
+        self.assertIs(attr.ownerDocument, dom)
+        self.assertIsNone(attr.ownerElement)
 
-    def testParseString(self): pass
+        elem = dom.appendChild(dom.createElement("doc"))
+        elem.setAttributeNode(attr)
+        self.assertIs(attr.ownerElement, elem)
+        self.assertIs(elem.getAttributeNodeNS("http://xml.python.org/ns",
+                                              "attr"), attr)
+        dom.unlink()
 
-    def testComment(self): pass
+    def testParse(self):
+        # parsing from a file object is tested in testParseFromBinaryFile
+        # and testParseFromTextFile
+        dom = parse(tstfile)
+        self.assertEqual(dom.nodeType, Node.DOCUMENT_NODE)
+        self.assertEqual(dom.documentElement.tagName, "HTML")
+        dom.unlink()
 
-    def testAttrListItem(self): pass
+        self.assertRaises(ExpatError, parseString, "<doc>")
 
-    def testAttrListItems(self): pass
+    def testParseString(self):
+        dom = parseString("<doc>text</doc>")
+        self.assertEqual(dom.nodeType, Node.DOCUMENT_NODE)
+        self.assertEqual(dom.documentElement.tagName, "doc")
+        self.assertEqual(dom.documentElement.firstChild.data, "text")
+        dom.unlink()
 
-    def testAttrListItemNS(self): pass
+        dom = parseString(b"<?xml version='1.0' encoding='utf-8'?>"
+                          b"<doc>\xc3\xa9</doc>")
+        self.assertEqual(dom.documentElement.firstChild.data, "\xe9")
+        dom.unlink()
 
-    def testAttrListKeys(self): pass
+    def testComment(self):
+        dom = Document()
+        comment = dom.createComment("comment")
+        self.assertEqual(comment.nodeType, Node.COMMENT_NODE)
+        self.assertEqual(comment.nodeName, "#comment")
+        self.assertEqual(comment.data, "comment")
+        self.assertEqual(comment.nodeValue, "comment")
+        self.assertIsNone(comment.attributes)
+        dom.appendChild(comment)
+        self.assertEqual(dom.toxml(),
+                         '<?xml version="1.0" ?><!--comment-->')
+        dom.unlink()
 
-    def testAttrListKeysNS(self): pass
+        dom = parseString("<doc><!--comment--></doc>")
+        comment = dom.documentElement.firstChild
+        self.assertEqual(comment.nodeType, Node.COMMENT_NODE)
+        self.assertEqual(comment.data, "comment")
+        dom.unlink()
+
+    def testAttrListItem(self):
+        dom = parseString("<doc a='1' b='2'/>")
+        attrs = dom.documentElement.attributes
+        self.assertEqual(attrs.item(0).name, "a")
+        self.assertEqual(attrs.item(1).name, "b")
+        self.assertIsNone(attrs.item(2))
+        dom.unlink()
+
+    def testAttrListItems(self):
+        dom = parseString("<doc a='1' b='2'/>")
+        attrs = dom.documentElement.attributes
+        self.assertEqual(attrs.items(), [("a", "1"), ("b", "2")])
+        dom.unlink()
+
+    def testAttrListItemNS(self):
+        dom = parseString("<doc xmlns:p='http://xml.python.org/ns' "
+                          "p:a='1' b='2'/>")
+        attrs = dom.documentElement.attributes
+        self.assertEqual(attrs.itemsNS(), [
+            ((xml.dom.XMLNS_NAMESPACE, "p"), "http://xml.python.org/ns"),
+            (("http://xml.python.org/ns", "a"), "1"),
+            ((None, "b"), "2"),
+        ])
+        dom.unlink()
+
+    def testAttrListKeys(self):
+        dom = parseString("<doc a='1' b='2'/>")
+        attrs = dom.documentElement.attributes
+        self.assertEqual(list(attrs.keys()), ["a", "b"])
+        dom.unlink()
+
+    def testAttrListKeysNS(self):
+        dom = parseString("<doc xmlns:p='http://xml.python.org/ns' "
+                          "p:a='1' b='2'/>")
+        attrs = dom.documentElement.attributes
+        self.assertEqual(list(attrs.keysNS()), [
+            (xml.dom.XMLNS_NAMESPACE, "p"),
+            ("http://xml.python.org/ns", "a"),
+            (None, "b"),
+        ])
+        dom.unlink()
 
     def testRemoveNamedItem(self):
         doc = parseString("<doc a=''/>")
@@ -724,29 +926,162 @@ class MinidomTest(unittest.TestCase):
         self.assertRaises(xml.dom.NotFoundErr, attrs.removeNamedItemNS,
                           "http://xml.python.org/", "b")
 
-    def testAttrListValues(self): pass
+    def testAttrListValues(self):
+        dom = parseString("<doc a='1' b='2'/>")
+        attrs = dom.documentElement.attributes
+        self.assertEqual([attr.name for attr in attrs.values()], ["a", "b"])
+        self.assertEqual([attr.value for attr in attrs.values()], ["1", "2"])
+        dom.unlink()
 
-    def testAttrListLength(self): pass
+    def testAttrListLength(self):
+        dom = parseString("<doc a='1' b='2'/>")
+        attrs = dom.documentElement.attributes
+        self.assertEqual(attrs.length, 2)
+        self.assertEqual(len(attrs), 2)
+        dom.unlink()
 
-    def testAttrList__getitem__(self): pass
+        dom = parseString("<doc/>")
+        self.assertEqual(dom.documentElement.attributes.length, 0)
+        dom.unlink()
 
-    def testAttrList__setitem__(self): pass
+    def testAttrList__getitem__(self):
+        dom = parseString("<doc xmlns:p='http://xml.python.org/ns' "
+                          "p:a='1' b='2'/>")
+        attrs = dom.documentElement.attributes
+        self.assertEqual(attrs["b"].value, "2")
+        self.assertEqual(attrs[("http://xml.python.org/ns", "a")].value, "1")
+        self.assertRaises(KeyError, attrs.__getitem__, "missing")
+        self.assertRaises(KeyError, attrs.__getitem__, (None, "missing"))
+        dom.unlink()
 
-    def testSetAttrValueandNodeValue(self): pass
+    def testAttrList__setitem__(self):
+        dom = parseString("<doc a='1'/>")
+        elem = dom.documentElement
+        attrs = elem.attributes
+        attrs["a"] = "2"
+        self.assertEqual(elem.getAttribute("a"), "2")
+        attrs["b"] = "3"
+        self.assertEqual(elem.getAttribute("b"), "3")
+        self.assertEqual(attrs.length, 2)
 
-    def testParseElement(self): pass
+        attr = dom.createAttribute("c")
+        attr.value = "4"
+        attrs["c"] = attr
+        self.assertIs(elem.getAttributeNode("c"), attr)
+        self.assertEqual(elem.getAttribute("c"), "4")
+        dom.unlink()
 
-    def testParseAttributes(self): pass
+    def testSetAttrValueandNodeValue(self):
+        dom = parseString("<doc a='1'/>")
+        attr = dom.documentElement.getAttributeNode("a")
+        self.assertEqual(attr.value, "1")
+        self.assertEqual(attr.nodeValue, "1")
+        attr.value = "2"
+        self.assertEqual(attr.nodeValue, "2")
+        attr.nodeValue = "3"
+        self.assertEqual(attr.value, "3")
+        self.assertEqual(dom.documentElement.getAttribute("a"), "3")
+        dom.unlink()
 
-    def testParseElementNamespaces(self): pass
+    def testParseElement(self):
+        dom = parseString("<doc><child/><child/></doc>")
+        elem = dom.documentElement
+        self.assertEqual(elem.nodeType, Node.ELEMENT_NODE)
+        self.assertEqual(elem.tagName, "doc")
+        self.assertIsNone(elem.namespaceURI)
+        self.assertIs(elem.parentNode, dom)
+        self.assertIs(elem.ownerDocument, dom)
+        self.assertEqual([child.tagName for child in elem.childNodes],
+                         ["child", "child"])
+        dom.unlink()
 
-    def testParseAttributeNamespaces(self): pass
+    def testParseAttributes(self):
+        dom = parseString("<doc a='1' b='&amp;'/>")
+        elem = dom.documentElement
+        self.assertEqual(elem.getAttribute("a"), "1")
+        self.assertEqual(elem.getAttribute("b"), "&")
+        self.assertEqual(elem.getAttribute("missing"), "")
+        self.assertTrue(elem.hasAttribute("a"))
+        self.assertFalse(elem.hasAttribute("missing"))
+        attr = elem.getAttributeNode("a")
+        self.assertTrue(attr.specified)
+        self.assertIsNone(attr.namespaceURI)
+        dom.unlink()
 
-    def testParseProcessingInstructions(self): pass
+    def testParseElementNamespaces(self):
+        dom = parseString("<p:doc xmlns:p='http://xml.python.org/ns'"
+                          " xmlns='http://xml.python.org/default'>"
+                          "<child/></p:doc>")
+        elem = dom.documentElement
+        self.assertEqual(elem.tagName, "p:doc")
+        self.assertEqual(elem.namespaceURI, "http://xml.python.org/ns")
+        self.assertEqual(elem.prefix, "p")
+        self.assertEqual(elem.localName, "doc")
+        child = elem.getElementsByTagName("child")[0]
+        self.assertEqual(child.namespaceURI, "http://xml.python.org/default")
+        self.assertIsNone(child.prefix)
+        self.assertEqual(child.localName, "child")
+        dom.unlink()
 
-    def testChildNodes(self): pass
+    def testParseAttributeNamespaces(self):
+        dom = parseString("<doc xmlns:p='http://xml.python.org/ns'"
+                          " p:a='1' b='2'/>")
+        elem = dom.documentElement
+        self.assertEqual(elem.getAttributeNS("http://xml.python.org/ns", "a"),
+                         "1")
+        self.assertEqual(elem.getAttributeNS(None, "b"), "2")
+        attr = elem.getAttributeNodeNS("http://xml.python.org/ns", "a")
+        self.assertEqual(attr.name, "p:a")
+        self.assertEqual(attr.prefix, "p")
+        self.assertEqual(attr.localName, "a")
+        declaration = elem.getAttributeNode("xmlns:p")
+        self.assertEqual(declaration.namespaceURI, xml.dom.XMLNS_NAMESPACE)
+        self.assertEqual(declaration.value, "http://xml.python.org/ns")
+        dom.unlink()
 
-    def testFirstChild(self): pass
+    def testParseProcessingInstructions(self):
+        # the content of a processing instruction is tested
+        # in testProcessingInstruction
+        dom = parseString("<?before data?><doc/><?after?>")
+        pi = dom.childNodes[0]
+        self.assertEqual(pi.nodeType, Node.PROCESSING_INSTRUCTION_NODE)
+        self.assertEqual(pi.target, "before")
+        self.assertEqual(pi.data, "data")
+        self.assertIs(pi.parentNode, dom)
+        pi = dom.childNodes[2]
+        self.assertEqual(pi.target, "after")
+        self.assertEqual(pi.data, "")
+        dom.unlink()
+
+    def testChildNodes(self):
+        dom = parseString("<doc>text<child/><!--comment--></doc>")
+        children = dom.documentElement.childNodes
+        self.assertEqual(len(children), 3)
+        self.assertEqual([child.nodeType for child in children],
+                         [Node.TEXT_NODE, Node.ELEMENT_NODE, Node.COMMENT_NODE])
+        for child in children:
+            self.assertIs(child.parentNode, dom.documentElement)
+        dom.unlink()
+
+        dom = parseString("<doc/>")
+        self.assertEqual(len(dom.documentElement.childNodes), 0)
+        dom.unlink()
+
+    def testFirstChild(self):
+        dom = parseString("<doc><a/><b/></doc>")
+        elem = dom.documentElement
+        self.assertEqual(elem.firstChild.tagName, "a")
+        self.assertEqual(elem.lastChild.tagName, "b")
+        self.assertIs(elem.firstChild, elem.childNodes[0])
+        self.assertIs(elem.lastChild, elem.childNodes[-1])
+        self.assertIsNone(elem.firstChild.previousSibling)
+        self.assertIs(elem.firstChild.nextSibling, elem.lastChild)
+        dom.unlink()
+
+        dom = parseString("<doc/>")
+        self.assertIsNone(dom.documentElement.firstChild)
+        self.assertIsNone(dom.documentElement.lastChild)
+        dom.unlink()
 
     def testHasChildNodes(self):
         dom = parseString("<doc><foo/></doc>")

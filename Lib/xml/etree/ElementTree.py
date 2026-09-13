@@ -101,6 +101,12 @@ import weakref
 from . import ElementPath
 
 
+# The white space characters of the XML specification (see XML 1.0, 2.3).
+_XML_WHITESPACE = " \t\r\n"
+
+# The xml:space attribute (see XML 1.0, 2.10).
+_XML_SPACE = "{http://www.w3.org/XML/1998/namespace}space"
+
 class ParseError(SyntaxError):
     """An error when parsing an XML document.
 
@@ -128,9 +134,6 @@ class Element:
     An element's length is its number of subelements.  That means if you
     want to check if an element is truly empty, you should check BOTH
     its length AND its text attribute.
-
-    The element tag, attribute names, and attribute values can be either
-    bytes or strings.
 
     *tag* is the element name.  *attrib* is an optional dictionary containing
     element attributes. *extra* are additional element attributes given as
@@ -359,21 +362,17 @@ class Element:
         self.attrib[key] = value
 
     def keys(self):
-        """Get list of attribute names.
+        """Get attribute names.
 
-        Names are returned in an arbitrary order, just like an ordinary
-        Python dict.  Equivalent to attrib.keys()
+        Equivalent to attrib.keys()
 
         """
         return self.attrib.keys()
 
     def items(self):
-        """Get element attributes as a sequence.
+        """Get element attributes as (name, value) pairs.
 
-        The attributes are returned in arbitrary order.  Equivalent to
-        attrib.items().
-
-        Return a list of (name, value) tuples.
+        Equivalent to attrib.items().
 
         """
         return self.attrib.items()
@@ -697,7 +696,8 @@ class ElementTree:
               xml_declaration=None,
               default_namespace=None,
               method=None, *,
-              short_empty_elements=True):
+              short_empty_elements=True,
+              standalone=None):
         """Write element tree to a file as XML.
 
         Arguments:
@@ -722,6 +722,10 @@ class ElementTree:
                                     self-closed tag, otherwise they are
                                     emitted as a pair of start/end tags
 
+          *standalone* -- bool for the standalone document declaration in
+                          the XML declaration.  If None (default), the
+                          standalone document declaration is omitted
+
         """
         if self._root is None:
             raise TypeError('ElementTree not initialized')
@@ -729,6 +733,11 @@ class ElementTree:
             method = "xml"
         elif method not in _serialize:
             raise ValueError("unknown method %r" % method)
+        if standalone is not None:
+            if xml_declaration is not None and not xml_declaration:
+                raise ValueError("the standalone document declaration "
+                                 "requires the XML declaration")
+            xml_declaration = True
         if not encoding:
             encoding = "us-ascii"
         with _get_writer(file_or_filename, encoding) as (write, declared_encoding):
@@ -738,8 +747,13 @@ class ElementTree:
                     (xml_declaration is None and
                      encoding.lower() != "unicode" and
                      declared_encoding.lower() not in ("utf-8", "us-ascii"))):
-                write("<?xml version='1.0' encoding='%s'?>\n" % (
-                    declared_encoding,))
+                if standalone is None:
+                    sddecl = ""
+                else:
+                    sddecl = " standalone='%s'" % (
+                        "yes" if standalone else "no",)
+                write("<?xml version='1.0' encoding='%s'%s?>\n" % (
+                    declared_encoding, sddecl))
             if method == "text":
                 _serialize_text(write, self._root)
             else:
@@ -1085,7 +1099,7 @@ def _escape_attrib_html(text):
 
 def tostring(element, encoding=None, method=None, *,
              xml_declaration=None, default_namespace=None,
-             short_empty_elements=True):
+             short_empty_elements=True, standalone=None):
     """Generate string representation of XML element.
 
     All subelements are included.  If encoding is "unicode", a string
@@ -1094,7 +1108,9 @@ def tostring(element, encoding=None, method=None, *,
     *element* is an Element instance, *encoding* is an optional output
     encoding defaulting to US-ASCII, *method* is an optional output which
     can be one of "xml" (default), "html" or "text",
-    *default_namespace* sets the default XML namespace (for "xmlns").
+    *default_namespace* sets the default XML namespace (for "xmlns"),
+    *standalone* is the value of the standalone document declaration
+    in the XML declaration (omitted if None).
 
     Returns an (optionally) encoded string containing the XML data.
 
@@ -1104,7 +1120,8 @@ def tostring(element, encoding=None, method=None, *,
                                xml_declaration=xml_declaration,
                                default_namespace=default_namespace,
                                method=method,
-                               short_empty_elements=short_empty_elements)
+                               short_empty_elements=short_empty_elements,
+                               standalone=standalone)
     return stream.getvalue()
 
 class _ListDataStream(io.BufferedIOBase):
@@ -1126,14 +1143,15 @@ class _ListDataStream(io.BufferedIOBase):
 
 def tostringlist(element, encoding=None, method=None, *,
                  xml_declaration=None, default_namespace=None,
-                 short_empty_elements=True):
+                 short_empty_elements=True, standalone=None):
     lst = []
     stream = _ListDataStream(lst)
     ElementTree(element).write(stream, encoding,
                                xml_declaration=xml_declaration,
                                default_namespace=default_namespace,
                                method=method,
-                               short_empty_elements=short_empty_elements)
+                               short_empty_elements=short_empty_elements,
+                               standalone=standalone)
     return lst
 
 
@@ -1181,7 +1199,20 @@ def indent(tree, space="  ", level=0):
     # Reduce the memory consumption by reusing indentation strings.
     indentations = ["\n" + level * space]
 
+    def _preserves_whitespace(elem):
+        # True iff whitespace in the content of the element is significant.
+        if elem.get(_XML_SPACE) == "preserve":
+            return True
+        if elem.text and elem.text.strip(_XML_WHITESPACE):
+            return True
+        return any(child.tail and child.tail.strip(_XML_WHITESPACE)
+                   for child in elem)
+
     def _indent_children(elem, level):
+        if _preserves_whitespace(elem):
+            # Adding whitespace here would change the content.
+            return
+
         # Start a new indentation level for the first child.
         child_level = level + 1
         try:
@@ -1190,18 +1221,15 @@ def indent(tree, space="  ", level=0):
             child_indentation = indentations[level] + space
             indentations.append(child_indentation)
 
-        if not elem.text or not elem.text.strip():
-            elem.text = child_indentation
+        elem.text = child_indentation
 
         for child in elem:
             if len(child):
                 _indent_children(child, child_level)
-            if not child.tail or not child.tail.strip():
-                child.tail = child_indentation
+            child.tail = child_indentation
 
         # Dedent after the last child by overwriting the previous indentation.
-        if not child.tail.strip():
-            child.tail = indentations[level]
+        child.tail = indentations[level]
 
     _indent_children(tree, 0)
 
@@ -1224,7 +1252,7 @@ def parse(source, parser=None):
     return tree
 
 
-def iterparse(source, events=None, parser=None):
+def iterparse(source, events=None, parser=None, *, target=None):
     """Incrementally parse XML document into ElementTree.
 
     This class also reports what's going on to the user based on the
@@ -1235,14 +1263,14 @@ def iterparse(source, events=None, parser=None):
 
     *source* is a filename or file object containing XML data, *events* is
     a list of events to report back, *parser* is an optional parser
-    instance.
+    instance, *target* is an optional target of the standard parser.
 
     Returns an iterator providing (event, elem) pairs.
 
     """
     # Use the internal, undocumented _parser argument for now; When the
     # parser argument of iterparse is removed, this can be killed.
-    pullparser = XMLPullParser(events=events, _parser=parser)
+    pullparser = XMLPullParser(events=events, target=target, _parser=parser)
 
     if not hasattr(source, "read"):
         source = open(source, "rb")
@@ -1294,13 +1322,19 @@ def iterparse(source, events=None, parser=None):
 
 class XMLPullParser:
 
-    def __init__(self, events=None, *, _parser=None):
+    def __init__(self, events=None, *, target=None, _parser=None):
         # The _parser argument is for internal use only and must not be relied
         # upon in user code. It will be removed in a future release.
         # See https://bugs.python.org/issue17741 for more details.
 
         self._events_queue = collections.deque()
-        self._parser = _parser or XMLParser(target=TreeBuilder())
+        if _parser is None:
+            if target is None:
+                target = TreeBuilder()
+            _parser = XMLParser(target=target)
+        elif target is not None:
+            raise ValueError("can't specify both parser and target")
+        self._parser = _parser
         # wire up the parser for event reporting
         if events is None:
             events = ("end",)
@@ -1576,10 +1610,10 @@ class XMLParser:
             parser.CommentHandler = target.comment
         if hasattr(target, 'pi'):
             parser.ProcessingInstructionHandler = target.pi
+        parser.StartDoctypeDeclHandler = self._start_doctype
         # Configure pyexpat: buffering, new-style attribute handling.
         parser.buffer_text = 1
         parser.ordered_attributes = 1
-        self._doctype = None
         self.entity = {}
         try:
             self.version = "Expat %d.%d.%d" % expat.version_info
@@ -1596,6 +1630,10 @@ class XMLParser:
         parser = self._parser
         append = events_queue.append
         for event_name in events_to_report:
+            if (event_name in ("start", "end", "comment", "pi")
+                    and not hasattr(self.target, event_name)):
+                raise TypeError("the target does not support %r events"
+                                 % event_name)
             if event_name == "start":
                 parser.ordered_attributes = 1
                 def handler(tag, attrib_in, event=event_name, append=append,
@@ -1628,13 +1666,14 @@ class XMLParser:
                         append((event, None))
                 parser.EndNamespaceDeclHandler = handler
             elif event_name == 'comment':
-                def handler(text, event=event_name, append=append, self=self):
-                    append((event, self.target.comment(text)))
+                def handler(text, event=event_name, append=append,
+                            comment=self.target.comment):
+                    append((event, comment(text)))
                 parser.CommentHandler = handler
             elif event_name == 'pi':
                 def handler(pi_target, data, event=event_name, append=append,
-                            self=self):
-                    append((event, self.target.pi(pi_target, data)))
+                            pi=self.target.pi):
+                    append((event, pi(pi_target, data)))
                 parser.ProcessingInstructionHandler = handler
             else:
                 raise ValueError("unknown event %r" % event_name)
@@ -1698,38 +1737,15 @@ class XMLParser:
                 err.lineno = self.parser.ErrorLineNumber
                 err.offset = self.parser.ErrorColumnNumber
                 raise err
-        elif prefix == "<" and text[:9] == "<!DOCTYPE":
-            self._doctype = [] # inside a doctype declaration
-        elif self._doctype is not None:
-            # parse doctype contents
-            if prefix == ">":
-                self._doctype = None
-                return
-            text = text.strip()
-            if not text:
-                return
-            self._doctype.append(text)
-            n = len(self._doctype)
-            if n > 2:
-                type = self._doctype[1]
-                if type == "PUBLIC" and n == 4:
-                    name, type, pubid, system = self._doctype
-                    if pubid:
-                        pubid = pubid[1:-1]
-                elif type == "SYSTEM" and n == 3:
-                    name, type, system = self._doctype
-                    pubid = None
-                else:
-                    return
-                if hasattr(self.target, "doctype"):
-                    self.target.doctype(name, pubid, system[1:-1])
-                elif hasattr(self, "doctype"):
-                    warnings.warn(
-                        "The doctype() method of XMLParser is ignored.  "
-                        "Define doctype() method on the TreeBuilder target.",
-                        RuntimeWarning)
 
-                self._doctype = None
+    def _start_doctype(self, name, system, pubid, has_internal_subset):
+        if hasattr(self.target, "doctype"):
+            self.target.doctype(name, pubid, system)
+        elif hasattr(self, "doctype"):
+            warnings.warn(
+                "The doctype() method of XMLParser is ignored.  "
+                "Define doctype() method on the TreeBuilder target.",
+                RuntimeWarning)
 
     def feed(self, data):
         """Feed encoded data to parser."""
@@ -1921,7 +1937,7 @@ class C14NWriterTarget:
         data = _join_text(self._data)
         del self._data[:]
         if self._strip_text and not self._preserve_space[-1]:
-            data = data.strip()
+            data = data.strip(_XML_WHITESPACE)
         if self._pending_start is not None:
             args, self._pending_start = self._pending_start, None
             qname_text = data if data and _looks_like_prefix_name(data) else None

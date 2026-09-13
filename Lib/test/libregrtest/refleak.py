@@ -1,6 +1,7 @@
 import os
 import sys
 import warnings
+from array import array
 from inspect import isabstract
 from typing import Any
 import linecache
@@ -100,24 +101,20 @@ def runtest_refleak(test_name, test_func,
     for obj in ByteString.__subclasses__() + [ByteString]:  # type: ignore[attr-defined]
         abcs[obj] = _get_dump(obj)[0]
 
-    # bpo-31217: Integer pool to get a single integer object for the same
-    # value. The pool is used to prevent false alarm when checking for memory
-    # block leaks. Fill the pool with values in -1000..1000 which are the most
-    # common (reference, memory block, file descriptor) differences.
-    int_pool = {value: value for value in range(-1000, 1000)}
-    def get_pooled_int(value):
-        return int_pool.setdefault(value, value)
-
     warmups = hunt_refleak.warmups
     runs = hunt_refleak.runs
     filename = hunt_refleak.filename
     repcount = warmups + runs
 
-    # Pre-allocate to ensure that the loop doesn't allocate anything new
+    # Pre-allocate to ensure that the loop doesn't allocate anything new.
+    # Store the deltas as raw values in arrays rather than as int objects in
+    # lists: each unique delta stored as an object would live until the end of
+    # the loop and show up in the following repetition's reference and memory
+    # block deltas (gh-75400, gh-155981).
     rep_range = list(range(repcount))
-    rc_deltas = [0] * repcount
-    alloc_deltas = [0] * repcount
-    fd_deltas = [0] * repcount
+    rc_deltas = array('q', [0]) * repcount
+    alloc_deltas = array('q', [0]) * repcount
+    fd_deltas = array('q', [0]) * repcount
     getallocatedblocks = sys.getallocatedblocks
     gettotalrefcount = sys.gettotalrefcount
     getunicodeinternedsize = sys.getunicodeinternedsize
@@ -161,12 +158,11 @@ def runtest_refleak(test_name, test_func,
         rc_after = gettotalrefcount()
         fd_after = fd_count()
 
-        rc_deltas[i] = get_pooled_int(rc_after - rc_before)
-        alloc_deltas[i] = get_pooled_int(alloc_after - alloc_before)
-        fd_deltas[i] = get_pooled_int(fd_after - fd_before)
+        rc_deltas[i] = rc_after - rc_before
+        alloc_deltas[i] = alloc_after - alloc_before
+        fd_deltas[i] = fd_after - fd_before
 
         if not quiet:
-            # use max, not sum, so total_leaks is one of the pooled ints
             total_leaks = max(rc_deltas[i], alloc_deltas[i], fd_deltas[i])
             if total_leaks <= 0:
                 symbol = '.'
@@ -212,13 +208,13 @@ def runtest_refleak(test_name, test_func,
         return any(deltas)
 
     failed = False
-    for deltas, item_name, checker in [
+    for raw_deltas, item_name, checker in [
         (rc_deltas, 'references', check_rc_deltas),
         (alloc_deltas, 'memory blocks', check_rc_deltas),
         (fd_deltas, 'file descriptors', check_fd_deltas)
     ]:
-        # ignore warmup runs
-        deltas = deltas[warmups:]
+        # ignore warmup runs; convert to a list for reporting
+        deltas = list(raw_deltas[warmups:])
         failing = checker(deltas)
         suspicious = any(deltas)
         if failing or suspicious:
