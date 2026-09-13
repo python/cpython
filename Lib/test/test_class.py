@@ -1016,8 +1016,6 @@ class TestInlineValues(unittest.TestCase):
     @support.nomemtest
     @isolation.runInSubprocess()
     def test_detach_materialized_dict_no_memory(self):
-        import _testcapi
-
         class A:
             def __init__(self):
                 self.a = 1
