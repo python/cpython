@@ -5051,22 +5051,33 @@ time_richcompare(PyObject *self, PyObject *other, int op)
     }
     /* The hard case: both aware with different UTC offsets */
     else if (offset1 != Py_None && offset2 != Py_None) {
-        int offsecs1, offsecs2;
+        long long norm_us1, norm_us2;
         assert(offset1 != offset2); /* else last "if" handled it */
-        offsecs1 = TIME_GET_HOUR(self) * 3600 +
-                   TIME_GET_MINUTE(self) * 60 +
-                   TIME_GET_SECOND(self) -
-                   GET_TD_DAYS(offset1) * 86400 -
-                   GET_TD_SECONDS(offset1);
-        offsecs2 = TIME_GET_HOUR(other) * 3600 +
-                   TIME_GET_MINUTE(other) * 60 +
-                   TIME_GET_SECOND(other) -
-                   GET_TD_DAYS(offset2) * 86400 -
-                   GET_TD_SECONDS(offset2);
-        diff = offsecs1 - offsecs2;
-        if (diff == 0)
-            diff = TIME_GET_MICROSECOND(self) -
-                   TIME_GET_MICROSECOND(other);
+        norm_us1 =
+            ((TIME_GET_HOUR(self) * 3600 +
+              TIME_GET_MINUTE(self) * 60 +
+              TIME_GET_SECOND(self)) * 1000000LL +
+             TIME_GET_MICROSECOND(self)) -
+            ((GET_TD_DAYS(offset1) * 86400LL +
+              GET_TD_SECONDS(offset1)) * 1000000LL +
+             GET_TD_MICROSECONDS(offset1));
+        norm_us2 =
+            ((TIME_GET_HOUR(other) * 3600 +
+              TIME_GET_MINUTE(other) * 60 +
+              TIME_GET_SECOND(other)) * 1000000LL +
+             TIME_GET_MICROSECOND(other)) -
+            ((GET_TD_DAYS(offset2) * 86400LL +
+              GET_TD_SECONDS(offset2)) * 1000000LL +
+             GET_TD_MICROSECONDS(offset2));
+        if (norm_us1 < norm_us2) {
+            diff = -1;
+        }
+        else if (norm_us1 > norm_us2) {
+            diff = 1;
+        }
+        else {
+            diff = 0;
+        }
         result = diff_to_bool(diff, op);
     }
     else if (op == Py_EQ) {
@@ -6761,6 +6772,9 @@ local_timezone_from_timestamp(time_t timestamp)
     struct tm local_time_tm;
     PyObject *nameo = NULL;
     const char *zone = NULL;
+#ifndef HAVE_STRUCT_TM_TM_ZONE
+    char buf[100];  // for zone, which is used after the block below
+#endif
 
     if (_PyTime_localtime(timestamp, &local_time_tm) != 0)
         return NULL;
@@ -6771,9 +6785,9 @@ local_timezone_from_timestamp(time_t timestamp)
     {
         PyObject *local_time, *utc_time;
         struct tm utc_time_tm;
-        char buf[100];
-        strftime(buf, sizeof(buf), "%Z", &local_time_tm);
-        zone = buf;
+        if (strftime(buf, sizeof(buf), "%Z", &local_time_tm) != 0) {
+            zone = buf;
+        }
         local_time = new_datetime(local_time_tm.tm_year + 1900,
                                   local_time_tm.tm_mon + 1,
                                   local_time_tm.tm_mday,
@@ -6783,8 +6797,10 @@ local_timezone_from_timestamp(time_t timestamp)
         if (local_time == NULL) {
             return NULL;
         }
-        if (_PyTime_gmtime(timestamp, &utc_time_tm) != 0)
+        if (_PyTime_gmtime(timestamp, &utc_time_tm) != 0) {
+            Py_DECREF(local_time);
             return NULL;
+        }
         utc_time = new_datetime(utc_time_tm.tm_year + 1900,
                                 utc_time_tm.tm_mon + 1,
                                 utc_time_tm.tm_mday,
