@@ -2196,7 +2196,9 @@ class TarFile(object):
            than once in the archive, its last occurrence is assumed to be the
            most up-to-date version.
         """
-        tarinfo = self._getmember(name.rstrip('/'))
+        tarinfo = self._getmember(name)
+        if tarinfo is None and name.endswith('/'):
+            tarinfo = self._getmember(name.rstrip('/'))
         if tarinfo is None:
             raise KeyError("filename %r not found" % name)
         return tarinfo
@@ -2813,7 +2815,11 @@ class TarFile(object):
                     if os.path.lexists(targetpath):
                         # Avoid FileExistsError on following os.link.
                         os.unlink(targetpath)
-                    os.link(tarinfo._link_target, targetpath)
+                    # Resolve the target so the hard link points to the file
+                    # itself. Otherwise os.link() may duplicate a symlink to a
+                    # shallower location, where its relative target escapes the
+                    # destination directory. (CVE-2026-82049)
+                    os.link(os.path.realpath(tarinfo._link_target), targetpath)
                     return
         except symlink_exception:
             keyerror_to_extracterror = True
@@ -2835,9 +2841,11 @@ class TarFile(object):
                     "makelink_with_filter: if filter_function is not None, "
                     + "extraction_root must also not be None")
             try:
-                filter_function(
+                filtered = filter_function(
                     unfiltered.replace(name=tarinfo.name, deep=False),
                     extraction_root)
+                if filtered is None:
+                    return
                 filtered = filter_function(unfiltered, extraction_root)
             except _FILTER_ERRORS as cause:
                 raise LinkFallbackError(tarinfo, unfiltered.name) from cause
