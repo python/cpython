@@ -4,6 +4,7 @@ import urllib.parse
 import urllib.request
 import urllib.error
 import http.client
+import nturl2path
 import email.message
 import io
 import unittest
@@ -1659,6 +1660,15 @@ class Pathname_Tests(unittest.TestCase):
         url = urllib.parse.quote(os_helper.FS_NONASCII, encoding=encoding, errors=errors)
         self.assertEqual(urllib.request.pathname2url(os_helper.FS_NONASCII), url)
 
+    def test_pathname2url_surrogates(self):
+        # gh-156713: the filesystem encoding and error handler are used,
+        # so that paths containing surrogate characters can be converted.
+        encoding = sys.getfilesystemencoding()
+        errors = sys.getfilesystemencodeerrors()
+        tail = urllib.parse.quote('a\udcff', encoding=encoding, errors=errors)
+        self.assertEqual(nturl2path.pathname2url('C:\\a\udcff'),
+                         '///C:/' + tail)
+
     @unittest.skipUnless(sys.platform == 'win32',
                          'test specific to Windows pathnames.')
     def test_url2pathname_win(self):
@@ -1719,6 +1729,15 @@ class Pathname_Tests(unittest.TestCase):
         self.assertEqual(urllib.request.url2pathname(url), os_helper.FS_NONASCII)
         url = urllib.parse.quote(url, encoding=encoding, errors=errors)
         self.assertEqual(urllib.request.url2pathname(url), os_helper.FS_NONASCII)
+
+    def test_url2pathname_surrogates(self):
+        # gh-156713: the filesystem encoding and error handler are used, so
+        # that URLs containing percent-encoded surrogates can be converted.
+        encoding = sys.getfilesystemencoding()
+        errors = sys.getfilesystemencodeerrors()
+        url = urllib.parse.quote('a\udcff', encoding=encoding, errors=errors)
+        self.assertEqual(nturl2path.url2pathname('///C:/' + url),
+                         'C:\\a\udcff')
 
 class Utility_Tests(unittest.TestCase):
     """Testcase to test the various utility functions in the urllib."""

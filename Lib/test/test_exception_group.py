@@ -234,6 +234,18 @@ class StrAndReprTests(unittest.TestCase):
             "ExceptionGroup('test', deque([ValueError(1), TypeError(2)]))"
         )
 
+    def test_repr_small_size_args(self):
+        eg = ExceptionGroup("msg", [ValueError()])
+        eg.args = ()
+        # repr of the ExceptionGroup with empty args should not crash
+        self.assertEqual(repr(eg), "ExceptionGroup('msg', (ValueError(),))")
+
+        eg.args = (1,)
+        # repr of the ExceptionGroup with 1-size args should not crash
+        self.assertEqual(repr(eg), "ExceptionGroup('msg', (ValueError(),))")
+
+
+
     def test_repr_raises(self):
         class MySeq(collections.abc.Sequence):
             def __init__(self, raises):
