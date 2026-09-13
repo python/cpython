@@ -1239,7 +1239,7 @@ def parse(source, parser=None):
     return tree
 
 
-def iterparse(source, events=None, parser=None):
+def iterparse(source, events=None, parser=None, *, target=None):
     """Incrementally parse XML document into ElementTree.
 
     This class also reports what's going on to the user based on the
@@ -1250,14 +1250,14 @@ def iterparse(source, events=None, parser=None):
 
     *source* is a filename or file object containing XML data, *events* is
     a list of events to report back, *parser* is an optional parser
-    instance.
+    instance, *target* is an optional target of the standard parser.
 
     Returns an iterator providing (event, elem) pairs.
 
     """
     # Use the internal, undocumented _parser argument for now; When the
     # parser argument of iterparse is removed, this can be killed.
-    pullparser = XMLPullParser(events=events, _parser=parser)
+    pullparser = XMLPullParser(events=events, target=target, _parser=parser)
 
     if not hasattr(source, "read"):
         source = open(source, "rb")
@@ -1309,13 +1309,19 @@ def iterparse(source, events=None, parser=None):
 
 class XMLPullParser:
 
-    def __init__(self, events=None, *, _parser=None):
+    def __init__(self, events=None, *, target=None, _parser=None):
         # The _parser argument is for internal use only and must not be relied
         # upon in user code. It will be removed in a future release.
         # See https://bugs.python.org/issue17741 for more details.
 
         self._events_queue = collections.deque()
-        self._parser = _parser or XMLParser(target=TreeBuilder())
+        if _parser is None:
+            if target is None:
+                target = TreeBuilder()
+            _parser = XMLParser(target=target)
+        elif target is not None:
+            raise ValueError("can't specify both parser and target")
+        self._parser = _parser
         # wire up the parser for event reporting
         if events is None:
             events = ("end",)
@@ -1611,6 +1617,10 @@ class XMLParser:
         parser = self._parser
         append = events_queue.append
         for event_name in events_to_report:
+            if (event_name in ("start", "end", "comment", "pi")
+                    and not hasattr(self.target, event_name)):
+                raise TypeError("the target does not support %r events"
+                                 % event_name)
             if event_name == "start":
                 parser.ordered_attributes = 1
                 def handler(tag, attrib_in, event=event_name, append=append,
@@ -1643,13 +1653,14 @@ class XMLParser:
                         append((event, None))
                 parser.EndNamespaceDeclHandler = handler
             elif event_name == 'comment':
-                def handler(text, event=event_name, append=append, self=self):
-                    append((event, self.target.comment(text)))
+                def handler(text, event=event_name, append=append,
+                            comment=self.target.comment):
+                    append((event, comment(text)))
                 parser.CommentHandler = handler
             elif event_name == 'pi':
                 def handler(pi_target, data, event=event_name, append=append,
-                            self=self):
-                    append((event, self.target.pi(pi_target, data)))
+                            pi=self.target.pi):
+                    append((event, pi(pi_target, data)))
                 parser.ProcessingInstructionHandler = handler
             else:
                 raise ValueError("unknown event %r" % event_name)
