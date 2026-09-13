@@ -315,6 +315,20 @@ writer_finish_with_size(PyObject *self_raw, PyObject *args)
 }
 
 
+static PyObject*
+writer_discard(PyObject *self_raw, PyObject *Py_UNUSED(args))
+{
+    WriterObject *self = (WriterObject *)self_raw;
+    if (writer_check(self) < 0) {
+        return NULL;
+    }
+
+    PyBytesWriter_Discard(self->writer);
+    self->writer = NULL;
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef writer_methods[] = {
     {"write", _PyCFunction_CAST(writer_write), METH_VARARGS | METH_KEYWORDS},
     {"write_bytes", _PyCFunction_CAST(writer_write_bytes), METH_VARARGS},
@@ -325,6 +339,7 @@ static PyMethodDef writer_methods[] = {
     {"get_size", _PyCFunction_CAST(writer_get_size), METH_NOARGS},
     {"finish", _PyCFunction_CAST(writer_finish), METH_NOARGS},
     {"finish_with_size", _PyCFunction_CAST(writer_finish_with_size), METH_VARARGS},
+    {"discard", _PyCFunction_CAST(writer_discard), METH_VARARGS},
     {NULL,              NULL}           /* sentinel */
 };
 
