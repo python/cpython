@@ -420,20 +420,29 @@ def _fixup_namespaces(element, nsmap):
         declarations.append(("xmlns", ""))
 
     items = []
+    prefixes = None  # namespace URI -> prefix, built only when needed
+    n = 0
     for name, value, attr_uri, attr in entries:
         if attr_uri is not None:
             # Unprefixed attributes are in no namespace, so an attribute
             # in a namespace always needs a prefix.
             prefix, _, _ = name.rpartition(':')
             if not prefix:
-                n = 0
-                while nsmap.get("ns%d" % n) is not None:
-                    n += 1
-                prefix = "ns%d" % n
+                # Reuse a prefix bound to the namespace, or invent one.
+                if prefixes is None:
+                    prefixes = {u: p for p, u in nsmap.items()
+                                if p is not None}
+                prefix = prefixes.get(attr_uri)
+                if prefix is None:
+                    while nsmap.get("ns%d" % n) is not None:
+                        n += 1
+                    prefix = "ns%d" % n
                 name = "%s:%s" % (prefix, attr.localName)
             if nsmap.get(prefix) != attr_uri:
                 nsmap = _bind_namespace(nsmap, inherited, prefix, attr_uri)
                 declarations.append(("xmlns:" + prefix, attr_uri))
+                if prefixes is not None:
+                    prefixes[attr_uri] = prefix
         items.append((name, value))
 
     if declarations:

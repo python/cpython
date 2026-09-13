@@ -597,6 +597,44 @@ class MinidomTest(unittest.TestCase):
                 '<root xmlns:ns0="http://xml.python.org/ns" '
                 'xmlns:ns1="http://xml.python.org/ns2" '
                 'ns0:attr="value" ns1:attr2="value2"/>')
+        # The same namespace gets the same prefix.
+        root.setAttributeNS("http://xml.python.org/ns", "attr3", "value3")
+        self.assertEqual(dom.documentElement.toxml(),
+                '<root xmlns:ns0="http://xml.python.org/ns" '
+                'xmlns:ns1="http://xml.python.org/ns2" '
+                'ns0:attr="value" ns1:attr2="value2" ns0:attr3="value3"/>')
+        dom.unlink()
+
+    def testWriteXMLAttributeNamespacePrefixReused(self):
+        # A prefix already bound to the namespace of the attribute is used.
+        dom = Document()
+        root = dom.appendChild(
+            dom.createElementNS("http://xml.python.org/ns", "p:root"))
+        root.setAttributeNS("http://xml.python.org/ns", "attr", "value")
+        self.assertEqual(dom.documentElement.toxml(),
+                '<p:root xmlns:p="http://xml.python.org/ns" p:attr="value"/>')
+        # The prefix can be bound for an ancestor.
+        child = root.appendChild(dom.createElement("child"))
+        child.setAttributeNS("http://xml.python.org/ns", "attr", "value")
+        self.assertEqual(child.toxml(), '<child p:attr="value"/>')
+        # The prefix bound for a preceding attribute is reused.
+        root.setAttributeNS("http://xml.python.org/ns3", "q:attr3", "value3")
+        root.setAttributeNS("http://xml.python.org/ns3", "attr4", "value4")
+        self.assertEqual(dom.documentElement.toxml(),
+                '<p:root xmlns:p="http://xml.python.org/ns" '
+                'xmlns:q="http://xml.python.org/ns3" '
+                'p:attr="value" q:attr3="value3" q:attr4="value4">'
+                '<child p:attr="value"/></p:root>')
+        root.removeAttributeNS("http://xml.python.org/ns3", "attr3")
+        root.removeAttributeNS("http://xml.python.org/ns3", "attr4")
+        # The prefix must not be taken by an explicit declaration.
+        root.setAttributeNS(xml.dom.XMLNS_NAMESPACE, "xmlns:ns0", "other")
+        root.setAttributeNS("http://xml.python.org/ns2", "attr2", "value2")
+        self.assertEqual(dom.documentElement.toxml(),
+                '<p:root xmlns:p="http://xml.python.org/ns" '
+                'xmlns:ns1="http://xml.python.org/ns2" '
+                'p:attr="value" xmlns:ns0="other" ns1:attr2="value2">'
+                '<child p:attr="value"/></p:root>')
         dom.unlink()
 
     def testWriteXMLXMLPrefix(self):
