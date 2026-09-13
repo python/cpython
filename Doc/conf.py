@@ -622,6 +622,4 @@ rediraffe_redirects = {
     "library/stdtypes.rst": "builtins/stdtypes.rst",
     "library/constants.rst": "builtins/constants.rst",
     "library/exceptions.rst": "builtins/exceptions.rst",
-    "library/threadsafety.rst": "builtins/threadsafety.rst",
-    "library/time-complexity.rst": "builtins/time-complexity.rst",
 }

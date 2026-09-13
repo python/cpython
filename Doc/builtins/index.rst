@@ -31,5 +31,3 @@ the core semantics and are only described here.
    constants.rst
    functions.rst
    exceptions.rst
-   threadsafety.rst
-   time-complexity.rst
