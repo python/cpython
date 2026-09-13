@@ -765,6 +765,42 @@ gh_99240_clear_args(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+/* f(a, b=None, *, c, d=None) parsed with a cached _PyArg_Parser. */
+static PyObject *
+getargs_fast_required_kwonly(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    static const char * const keywords[] = {"a", "b", "c", "d", NULL};
+    static _PyArg_Parser parser = {
+        .format = "O|O$O|O:getargs_fast_required_kwonly",
+        .keywords = keywords,
+    };
+    PyObject *a, *b = Py_None, *c, *d = Py_None;
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &parser,
+                                          &a, &b, &c, &d))
+    {
+        return NULL;
+    }
+    return Py_BuildValue("OOOO", a, b, c, d);
+}
+
+/* f(a, b, *, c, d) parsed with a cached _PyArg_Parser. */
+static PyObject *
+getargs_fast_kwonly(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    static const char * const keywords[] = {"a", "b", "c", "d", NULL};
+    static _PyArg_Parser parser = {
+        .format = "OO$OO:getargs_fast_kwonly",
+        .keywords = keywords,
+    };
+    PyObject *a, *b, *c, *d;
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &parser,
+                                          &a, &b, &c, &d))
+    {
+        return NULL;
+    }
+    return Py_BuildValue("OOOO", a, b, c, d);
+}
+
 static PyMethodDef test_methods[] = {
     {"get_args",                get_args,                        METH_VARARGS},
     {"get_kwargs", _PyCFunction_CAST(get_kwargs), METH_VARARGS|METH_KEYWORDS},
@@ -809,6 +845,10 @@ static PyMethodDef test_methods[] = {
     {"getargs_z_hash",          getargs_z_hash,                  METH_VARARGS},
     {"getargs_z_star",          getargs_z_star,                  METH_VARARGS},
     {"parse_tuple_and_keywords", parse_tuple_and_keywords,       METH_VARARGS},
+    {"getargs_fast_required_kwonly",
+     _PyCFunction_CAST(getargs_fast_required_kwonly), METH_VARARGS|METH_KEYWORDS},
+    {"getargs_fast_kwonly", _PyCFunction_CAST(getargs_fast_kwonly),
+                                                 METH_VARARGS|METH_KEYWORDS},
     {"gh_99240_clear_args",     gh_99240_clear_args,             METH_VARARGS},
     {"test_w_code_invalid",     test_w_code_invalid,             METH_NOARGS},
     {NULL},
