@@ -1373,7 +1373,11 @@ def nomemtest(test):
         import_module('_testcapi')
         return test(*args, **kwargs)
 
-    return cpython_only(internal)
+    use_tsan = check_sanitizer(thread=True)
+    reason ='not working with thread sanitizer (gh-157415)'
+    skip_if_tsan = unittest.skipIf(use_tsan, reason)
+
+    return cpython_only(skip_if_tsan(internal))
 
 def bigaddrspacetest(f):
     """Decorator for tests that fill the address space."""
