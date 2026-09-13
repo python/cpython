@@ -28,7 +28,7 @@ argparser = argparse.ArgumentParser(
     prog="calculate_first_sets",
     description="Calculate the first sets of a grammar",
 )
-argparser.add_argument("grammar_file", help="The grammar file")
+argparser.add_argument("grammar_files", nargs="+", help="The grammar file(s)")
 
 
 class FirstSetCalculator(GrammarVisitor):
@@ -135,7 +135,7 @@ def main() -> None:
     args = argparser.parse_args()
 
     try:
-        grammar, parser, tokenizer = build_parser(args.grammar_file)
+        grammar, parser, tokenizer = build_parser(args.grammar_files)
     except Exception as err:
         print("ERROR: Failed to parse grammar file", err, file=sys.stderr)
         sys.exit(1)

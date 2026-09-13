@@ -34,7 +34,9 @@ from pegen.grammar import (
     Rule,
     RuleList,
     RuleName,
+    RuleNameList,
     Grammar,
+    Splice,
     StringLeaf,
 )
 
@@ -136,21 +138,21 @@ class GeneratedParser(Parser):
             and
             (rules := self.rules())
         ):
-            return [rule] + rules
+            return rule + rules
         self._reset(mark)
         if (
             (rule := self.rule())
         ):
-            return [rule]
+            return rule
         self._reset(mark)
         return None
 
     @memoize
-    def rule(self) -> Optional[Rule]:
-        # rule: rulename flags? ":" alts NEWLINE INDENT more_alts DEDENT | rulename flags? ":" NEWLINE INDENT more_alts DEDENT | rulename flags? ":" alts NEWLINE
+    def rule(self) -> Optional[RuleList]:
+        # rule: rulenames flags? ":" alts NEWLINE INDENT more_alts DEDENT | rulenames flags? ":" NEWLINE INDENT more_alts DEDENT | rulenames flags? ":" alts NEWLINE
         mark = self._mark()
         if (
-            (rulename := self.rulename())
+            (rulenames := self.rulenames())
             and
             (flags := self.flags(),)
             and
@@ -166,10 +168,10 @@ class GeneratedParser(Parser):
             and
             (_dedent := self.expect('DEDENT'))
         ):
-            return Rule ( rulename [0] , rulename [1] , Rhs ( alts . alts + more_alts . alts ) , flags = flags )
+            return [Rule ( name , type , Rhs ( alts . alts + more_alts . alts ) , flags = flags ) for name , type in rulenames]
         self._reset(mark)
         if (
-            (rulename := self.rulename())
+            (rulenames := self.rulenames())
             and
             (flags := self.flags(),)
             and
@@ -183,10 +185,10 @@ class GeneratedParser(Parser):
             and
             (_dedent := self.expect('DEDENT'))
         ):
-            return Rule ( rulename [0] , rulename [1] , more_alts , flags = flags )
+            return [Rule ( name , type , more_alts , flags = flags ) for name , type in rulenames]
         self._reset(mark)
         if (
-            (rulename := self.rulename())
+            (rulenames := self.rulenames())
             and
             (flags := self.flags(),)
             and
@@ -196,7 +198,27 @@ class GeneratedParser(Parser):
             and
             (_newline := self.expect('NEWLINE'))
         ):
-            return Rule ( rulename [0] , rulename [1] , alts , flags = flags )
+            return [Rule ( name , type , alts , flags = flags ) for name , type in rulenames]
+        self._reset(mark)
+        return None
+
+    @memoize
+    def rulenames(self) -> Optional[RuleNameList]:
+        # rulenames: '(' '|'.rulename+ ')' | rulename
+        mark = self._mark()
+        if (
+            (literal := self.expect('('))
+            and
+            (a := self._gather_2())
+            and
+            (literal_1 := self.expect(')'))
+        ):
+            return a
+        self._reset(mark)
+        if (
+            (rulename := self.rulename())
+        ):
+            return [rulename]
         self._reset(mark)
         return None
 
@@ -225,7 +247,7 @@ class GeneratedParser(Parser):
         if (
             (literal := self.expect('('))
             and
-            (a := self._gather_2())
+            (a := self._gather_4())
             and
             (literal_1 := self.expect(')'))
         ):
@@ -292,7 +314,7 @@ class GeneratedParser(Parser):
 
     @memoize
     def alt(self) -> Optional[Alt]:
-        # alt: items '$' action | items '$' | items action | items
+        # alt: items '$' action | items '$' | items action | items | "..."
         mark = self._mark()
         if (
             (items := self.items())
@@ -321,6 +343,11 @@ class GeneratedParser(Parser):
             (items := self.items())
         ):
             return Alt ( items , action = None )
+        self._reset(mark)
+        if (
+            (literal := self.expect("..."))
+        ):
+            return Alt ( [NamedItem ( None , Splice ( ) )] , action = None )
         self._reset(mark)
         return None
 
@@ -674,7 +701,37 @@ class GeneratedParser(Parser):
 
     @memoize
     def _loop0_1(self) -> Optional[Any]:
-        # _loop0_1: ',' flag
+        # _loop0_1: '|' rulename
+        mark = self._mark()
+        children = []
+        while (
+            (literal := self.expect('|'))
+            and
+            (elem := self.rulename())
+        ):
+            children.append(elem)
+            mark = self._mark()
+        self._reset(mark)
+        return children
+
+    @memoize
+    def _gather_2(self) -> Optional[Any]:
+        # _gather_2: rulename _loop0_1
+        mark = self._mark()
+        if (
+            (elem := self.rulename())
+            is not None
+            and
+            (seq := self._loop0_1())
+            is not None
+        ):
+            return [elem] + seq
+        self._reset(mark)
+        return None
+
+    @memoize
+    def _loop0_3(self) -> Optional[Any]:
+        # _loop0_3: ',' flag
         mark = self._mark()
         children = []
         while (
@@ -688,14 +745,14 @@ class GeneratedParser(Parser):
         return children
 
     @memoize
-    def _gather_2(self) -> Optional[Any]:
-        # _gather_2: flag _loop0_1
+    def _gather_4(self) -> Optional[Any]:
+        # _gather_4: flag _loop0_3
         mark = self._mark()
         if (
             (elem := self.flag())
             is not None
             and
-            (seq := self._loop0_1())
+            (seq := self._loop0_3())
             is not None
         ):
             return [elem] + seq

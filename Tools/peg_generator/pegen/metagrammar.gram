@@ -25,7 +25,9 @@ from pegen.grammar import (
     Rule,
     RuleList,
     RuleName,
+    RuleNameList,
     Grammar,
+    Splice,
     StringLeaf,
 )
 """
@@ -46,15 +48,22 @@ meta[MetaTuple]:
     | "@" NAME STRING NEWLINE { (name.string, literal_eval(string.string)) }
 
 rules[RuleList]:
-    | rule rules { [rule] + rules }
-    | rule { [rule] }
+    | rule rules { rule + rules }
+    | rule { rule }
 
-rule[Rule]:
-    | rulename flags=flags? ":" alts NEWLINE INDENT more_alts DEDENT {
-          Rule(rulename[0], rulename[1], Rhs(alts.alts + more_alts.alts), flags=flags) }
-    | rulename flags=flags? ":" NEWLINE INDENT more_alts DEDENT {
-          Rule(rulename[0], rulename[1], more_alts, flags=flags) }
-    | rulename flags=flags? ":" alts NEWLINE { Rule(rulename[0], rulename[1], alts, flags=flags) }
+# A rule with several names (e.g. "(name_1 | name_2) (extend):") defines
+# a rule with the same alternatives for every name.
+rule[RuleList]:
+    | rulenames flags=flags? ":" alts NEWLINE INDENT more_alts DEDENT {
+          [Rule(name, type, Rhs(alts.alts + more_alts.alts), flags=flags) for name, type in rulenames] }
+    | rulenames flags=flags? ":" NEWLINE INDENT more_alts DEDENT {
+          [Rule(name, type, more_alts, flags=flags) for name, type in rulenames] }
+    | rulenames flags=flags? ":" alts NEWLINE {
+          [Rule(name, type, alts, flags=flags) for name, type in rulenames] }
+
+rulenames[RuleNameList]:
+    | '(' a='|'.rulename+ ')' { a }
+    | rulename { [rulename] }
 
 rulename[RuleName]:
     | NAME annotation { (name.string, annotation) }
@@ -79,6 +88,7 @@ alt[Alt]:
     | items '$' { Alt(items + [NamedItem(None, NameLeaf('ENDMARKER'))], action=None) }
     | items action { Alt(items, action=action) }
     | items { Alt(items, action=None) }
+    | "..." { Alt([NamedItem(None, Splice())], action=None) }
 
 items[NamedItemList]:
     | named_item items { [named_item] + items }
