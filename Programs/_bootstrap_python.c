@@ -13,7 +13,7 @@
 #include "Python/frozen_modules/importlib._bootstrap.h"
 #include "Python/frozen_modules/importlib._bootstrap_external.h"
 #include "Python/frozen_modules/zipimport.h"
-#include "Python/frozen_modules/_builtins.h"
+#include "Python/frozen_modules/_pybuiltins.h"
 /* End includes */
 
 /* Note that a negative size indicates a package. */
@@ -22,7 +22,7 @@ static const struct _frozen bootstrap_modules[] = {
     {"_frozen_importlib", _Py_M__importlib__bootstrap, (int)sizeof(_Py_M__importlib__bootstrap)},
     {"_frozen_importlib_external", _Py_M__importlib__bootstrap_external, (int)sizeof(_Py_M__importlib__bootstrap_external)},
     {"zipimport", _Py_M__zipimport, (int)sizeof(_Py_M__zipimport)},
-    {"_builtins", _Py_M___builtins, (int)sizeof(_Py_M___builtins)},
+    {"_pybuiltins", _Py_M___pybuiltins, (int)sizeof(_Py_M___pybuiltins)},
     {0, 0, 0} /* bootstrap sentinel */
 };
 static const struct _frozen stdlib_modules[] = {

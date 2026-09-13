@@ -3494,7 +3494,7 @@ static struct PyModuleDef builtinsmodule = {
 
 /* Builtins implemented in Python.
 
-   Lib/_builtins.py is frozen into the interpreter as a bootstrap module
+   Lib/_pybuiltins.py is frozen into the interpreter as a bootstrap module
    (see Tools/build/freeze_modules.py), so it can be imported here before
    the import system exists.  The names in its __all__ are copied into the
    builtins dict. */
@@ -3502,14 +3502,14 @@ static struct PyModuleDef builtinsmodule = {
 int
 _PyBuiltin_InitPythonFunctions(PyObject *dict)
 {
-    if (PyImport_ImportFrozenModule("_builtins") <= 0) {
+    if (PyImport_ImportFrozenModule("_pybuiltins") <= 0) {
         if (!PyErr_Occurred()) {
             PyErr_SetString(PyExc_ImportError,
-                            "frozen module _builtins not found");
+                            "frozen module _pybuiltins not found");
         }
         return -1;
     }
-    PyObject *mod = PyImport_AddModuleRef("_builtins");
+    PyObject *mod = PyImport_AddModuleRef("_pybuiltins");
     if (mod == NULL) {
         return -1;
     }

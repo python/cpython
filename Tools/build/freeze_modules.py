@@ -46,7 +46,7 @@ FROZEN = [
         # on a builtin zip file instead of a filesystem.
         'zipimport',
         # Builtins implemented in Python; loaded while builtins is set up.
-        '_builtins',
+        '_pybuiltins',
         ]),
     # (You can delete entries from here down to the end of the list.)
     ('stdlib - startup, without site (python -S)', [
@@ -93,7 +93,7 @@ BOOTSTRAP = {
     'importlib._bootstrap',
     'importlib._bootstrap_external',
     'zipimport',
-    '_builtins',
+    '_pybuiltins',
 }
 
 

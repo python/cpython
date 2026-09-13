@@ -1624,7 +1624,7 @@ BOOTSTRAP_HEADERS = \
 	Python/frozen_modules/importlib._bootstrap.h \
 	Python/frozen_modules/importlib._bootstrap_external.h \
 	Python/frozen_modules/zipimport.h \
-	Python/frozen_modules/_builtins.h
+	Python/frozen_modules/_pybuiltins.h
 
 Programs/_bootstrap_python.o: Programs/_bootstrap_python.c $(BOOTSTRAP_HEADERS) $(PYTHON_HEADERS)
 
@@ -1665,7 +1665,7 @@ FROZEN_FILES_IN = \
 		Lib/importlib/_bootstrap.py \
 		Lib/importlib/_bootstrap_external.py \
 		Lib/zipimport.py \
-		Lib/_builtins.py \
+		Lib/_pybuiltins.py \
 		Lib/abc.py \
 		Lib/codecs.py \
 		Lib/io.py \
@@ -1692,7 +1692,7 @@ FROZEN_FILES_OUT = \
 		Python/frozen_modules/importlib._bootstrap.h \
 		Python/frozen_modules/importlib._bootstrap_external.h \
 		Python/frozen_modules/zipimport.h \
-		Python/frozen_modules/_builtins.h \
+		Python/frozen_modules/_pybuiltins.h \
 		Python/frozen_modules/abc.h \
 		Python/frozen_modules/codecs.h \
 		Python/frozen_modules/io.h \
@@ -1738,8 +1738,8 @@ Python/frozen_modules/importlib._bootstrap_external.h: Lib/importlib/_bootstrap_
 Python/frozen_modules/zipimport.h: Lib/zipimport.py $(FREEZE_MODULE_BOOTSTRAP_DEPS)
 	$(FREEZE_MODULE_BOOTSTRAP) zipimport $(srcdir)/Lib/zipimport.py Python/frozen_modules/zipimport.h
 
-Python/frozen_modules/_builtins.h: Lib/_builtins.py $(FREEZE_MODULE_BOOTSTRAP_DEPS)
-	$(FREEZE_MODULE_BOOTSTRAP) _builtins $(srcdir)/Lib/_builtins.py Python/frozen_modules/_builtins.h
+Python/frozen_modules/_pybuiltins.h: Lib/_pybuiltins.py $(FREEZE_MODULE_BOOTSTRAP_DEPS)
+	$(FREEZE_MODULE_BOOTSTRAP) _pybuiltins $(srcdir)/Lib/_pybuiltins.py Python/frozen_modules/_pybuiltins.h
 
 Python/frozen_modules/abc.h: Lib/abc.py $(FREEZE_MODULE_DEPS)
 	$(FREEZE_MODULE) abc $(srcdir)/Lib/abc.py Python/frozen_modules/abc.h

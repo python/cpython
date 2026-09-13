@@ -549,7 +549,7 @@
     <None Include="..\Lib\zipimport.py">
       <Filter>Python Files</Filter>
     </None>
-    <None Include="..\Lib\_builtins.py">
+    <None Include="..\Lib\_pybuiltins.py">
       <Filter>Python Files</Filter>
     </None>
     <None Include="..\Lib\abc.py">

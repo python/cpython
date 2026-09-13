@@ -7,7 +7,7 @@ copied into the ``builtins`` module.
 
 __all__ = ['anext']
 
-_NOT_GIVEN = object()
+_NOT_GIVEN = sentinel("_NOT_GIVEN")
 
 
 def anext(async_iterator, default=_NOT_GIVEN, /):
