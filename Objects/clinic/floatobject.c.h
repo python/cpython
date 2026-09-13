@@ -210,7 +210,7 @@ PyDoc_STRVAR(float_new__doc__,
 "float(x=0, /)\n"
 "--\n"
 "\n"
-"Convert a string or number to a floating-point number, if possible.");
+"Convert a string, number, or bytes-like object to a float, if possible.");
 
 static PyObject *
 float_new_impl(PyTypeObject *type, PyObject *x);
@@ -353,4 +353,4 @@ float___format__(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5d7b0bf9e47ff997 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=de62deb586e0486a input=a9049054013a1b77]*/
