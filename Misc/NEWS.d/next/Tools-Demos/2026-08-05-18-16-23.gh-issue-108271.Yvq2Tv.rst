@@ -1,0 +1,3 @@
+Argument Clinic: add support for parameter aliases.
+A keyword-only parameter with a default value which shares the C name of a
+preceding parameter declares an alternative name for it.
