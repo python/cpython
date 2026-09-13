@@ -46,7 +46,7 @@ DATA_DIR = os.path.join('Tools', 'unicode', 'data')
 # The Unicode Database
 # --------------------
 # When changing UCD version please update
-#   * Doc/library/stdtypes.rst (four occurrences)
+#   * Doc/builtins/stdtypes.rst (four occurrences)
 #   * Doc/library/unicodedata.rst
 #   * Doc/library/re.rst
 #   * Doc/reference/lexical_analysis.rst (three occurrences)
