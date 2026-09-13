@@ -188,9 +188,17 @@ remove the processed children from it::
 
 These examples are not universal,
 they only give an idea for two common cases.
-If you do not need a tree at all,
-parse with :class:`XMLParser` and a custom target instead;
-it is not built then, and nothing has to be removed.
+If you do not need the tree,
+parse with the :class:`XMLPullTarget` target instead:
+it reports the elements without building a tree,
+and :meth:`XMLPullParser.expand` builds the subtree of an element
+when it is needed::
+
+   it = ET.iterparse(source, events=('start', 'end'), target=ET.XMLPullTarget())
+   for event, elem in it:
+       if event == 'start' and elem.tag == 'record':
+           it.expand(elem)
+           process(elem)
 
 Where *immediate* feedback through events is wanted, calling method
 :meth:`XMLPullParser.flush` can help reduce delay;
