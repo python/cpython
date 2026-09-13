@@ -1,0 +1,4 @@
+Fix :mod:`configparser` failing to parse an option with an empty value when
+the delimiter ends in whitespace (for example ``delimiters=(' ',)``). Such an
+option, including the output produced by :meth:`~configparser.RawConfigParser.write`,
+is now read back correctly.

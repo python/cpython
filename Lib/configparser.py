@@ -599,8 +599,9 @@ class _CommentSpec:
         )
         self.pattern = re.compile('|'.join(itertools.chain(full_patterns, inline_patterns)))
 
-    def strip(self, text):
-        return self.pattern.sub('', text).rstrip()
+    def strip(self, text, *, rstrip=True):
+        text = self.pattern.sub('', text)
+        return text.rstrip() if rstrip else text
 
     def wrap(self, text):
         return _Line(text, self)
@@ -1156,7 +1157,13 @@ class RawConfigParser(MutableMapping):
         # an option line?
         st.indent_level = st.cur_indent_level
 
-        mo = self._optcre.match(line.clean)
+        # `line.clean` strips trailing whitespace, but for a whitespace delimiter
+        # that whitespace is the separator before an (empty) value, so match
+        # against a form that preserves it.  `optval` is stripped below, so
+        # ordinary values are unaffected.
+        match_target = self._comments.strip(str(line).strip('\r\n').lstrip(),
+                                             rstrip=False)
+        mo = self._optcre.match(match_target)
         if not mo:
             # a non-fatal parsing error occurred. set up the
             # exception but keep going. the exception will be

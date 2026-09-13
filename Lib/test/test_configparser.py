@@ -385,6 +385,23 @@ boolean {0[0]} NO
         self.assertEqual(cf.options('all'), ['foo'])
         self.assertEqual(cf.get('all', 'foo'), 'bar=baz')
 
+    def test_whitespace_delimiter_empty_value(self):
+        # gh-157456: an option with a whitespace-ending delimiter and an empty
+        # value must parse rather than raise ParsingError, and the parser must
+        # read back the output produced by write().
+        cf = self.newconfig(delimiters=(' ',))
+        cf.read_string("[all]\nkey \n")
+        # With allow_no_value a whitespace delimiter cannot distinguish an
+        # empty value from a valueless option, so the value is None there;
+        # otherwise it is the empty string.
+        expected = None if cf._allow_no_value else ''
+        self.assertEqual(cf.get('all', 'key'), expected)
+        output = io.StringIO()
+        cf.write(output)
+        cf2 = self.newconfig(delimiters=(' ',))
+        cf2.read_string(output.getvalue())
+        self.assertEqual(cf2.get('all', 'key'), expected)
+
     def test_basic_from_dict(self):
         config = {
             "Foo Bar": {
