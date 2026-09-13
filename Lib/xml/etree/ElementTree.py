@@ -135,9 +135,6 @@ class Element:
     want to check if an element is truly empty, you should check BOTH
     its length AND its text attribute.
 
-    The element tag, attribute names, and attribute values can be either
-    bytes or strings.
-
     *tag* is the element name.  *attrib* is an optional dictionary containing
     element attributes. *extra* are additional element attributes given as
     keyword arguments.
@@ -365,21 +362,17 @@ class Element:
         self.attrib[key] = value
 
     def keys(self):
-        """Get list of attribute names.
+        """Get attribute names.
 
-        Names are returned in an arbitrary order, just like an ordinary
-        Python dict.  Equivalent to attrib.keys()
+        Equivalent to attrib.keys()
 
         """
         return self.attrib.keys()
 
     def items(self):
-        """Get element attributes as a sequence.
+        """Get element attributes as (name, value) pairs.
 
-        The attributes are returned in arbitrary order.  Equivalent to
-        attrib.items().
-
-        Return a list of (name, value) tuples.
+        Equivalent to attrib.items().
 
         """
         return self.attrib.items()
@@ -703,7 +696,8 @@ class ElementTree:
               xml_declaration=None,
               default_namespace=None,
               method=None, *,
-              short_empty_elements=True):
+              short_empty_elements=True,
+              standalone=None):
         """Write element tree to a file as XML.
 
         Arguments:
@@ -728,6 +722,10 @@ class ElementTree:
                                     self-closed tag, otherwise they are
                                     emitted as a pair of start/end tags
 
+          *standalone* -- bool for the standalone document declaration in
+                          the XML declaration.  If None (default), the
+                          standalone document declaration is omitted
+
         """
         if self._root is None:
             raise TypeError('ElementTree not initialized')
@@ -735,6 +733,11 @@ class ElementTree:
             method = "xml"
         elif method not in _serialize:
             raise ValueError("unknown method %r" % method)
+        if standalone is not None:
+            if xml_declaration is not None and not xml_declaration:
+                raise ValueError("the standalone document declaration "
+                                 "requires the XML declaration")
+            xml_declaration = True
         if not encoding:
             encoding = "us-ascii"
         with _get_writer(file_or_filename, encoding) as (write, declared_encoding):
@@ -744,8 +747,13 @@ class ElementTree:
                     (xml_declaration is None and
                      encoding.lower() != "unicode" and
                      declared_encoding.lower() not in ("utf-8", "us-ascii"))):
-                write("<?xml version='1.0' encoding='%s'?>\n" % (
-                    declared_encoding,))
+                if standalone is None:
+                    sddecl = ""
+                else:
+                    sddecl = " standalone='%s'" % (
+                        "yes" if standalone else "no",)
+                write("<?xml version='1.0' encoding='%s'%s?>\n" % (
+                    declared_encoding, sddecl))
             if method == "text":
                 _serialize_text(write, self._root)
             else:
@@ -1091,7 +1099,7 @@ def _escape_attrib_html(text):
 
 def tostring(element, encoding=None, method=None, *,
              xml_declaration=None, default_namespace=None,
-             short_empty_elements=True):
+             short_empty_elements=True, standalone=None):
     """Generate string representation of XML element.
 
     All subelements are included.  If encoding is "unicode", a string
@@ -1100,7 +1108,9 @@ def tostring(element, encoding=None, method=None, *,
     *element* is an Element instance, *encoding* is an optional output
     encoding defaulting to US-ASCII, *method* is an optional output which
     can be one of "xml" (default), "html" or "text",
-    *default_namespace* sets the default XML namespace (for "xmlns").
+    *default_namespace* sets the default XML namespace (for "xmlns"),
+    *standalone* is the value of the standalone document declaration
+    in the XML declaration (omitted if None).
 
     Returns an (optionally) encoded string containing the XML data.
 
@@ -1110,7 +1120,8 @@ def tostring(element, encoding=None, method=None, *,
                                xml_declaration=xml_declaration,
                                default_namespace=default_namespace,
                                method=method,
-                               short_empty_elements=short_empty_elements)
+                               short_empty_elements=short_empty_elements,
+                               standalone=standalone)
     return stream.getvalue()
 
 class _ListDataStream(io.BufferedIOBase):
@@ -1132,14 +1143,15 @@ class _ListDataStream(io.BufferedIOBase):
 
 def tostringlist(element, encoding=None, method=None, *,
                  xml_declaration=None, default_namespace=None,
-                 short_empty_elements=True):
+                 short_empty_elements=True, standalone=None):
     lst = []
     stream = _ListDataStream(lst)
     ElementTree(element).write(stream, encoding,
                                xml_declaration=xml_declaration,
                                default_namespace=default_namespace,
                                method=method,
-                               short_empty_elements=short_empty_elements)
+                               short_empty_elements=short_empty_elements,
+                               standalone=standalone)
     return lst
 
 
@@ -1592,10 +1604,10 @@ class XMLParser:
             parser.CommentHandler = target.comment
         if hasattr(target, 'pi'):
             parser.ProcessingInstructionHandler = target.pi
+        parser.StartDoctypeDeclHandler = self._start_doctype
         # Configure pyexpat: buffering, new-style attribute handling.
         parser.buffer_text = 1
         parser.ordered_attributes = 1
-        self._doctype = None
         self.entity = {}
         try:
             self.version = "Expat %d.%d.%d" % expat.version_info
@@ -1714,38 +1726,15 @@ class XMLParser:
                 err.lineno = self.parser.ErrorLineNumber
                 err.offset = self.parser.ErrorColumnNumber
                 raise err
-        elif prefix == "<" and text[:9] == "<!DOCTYPE":
-            self._doctype = [] # inside a doctype declaration
-        elif self._doctype is not None:
-            # parse doctype contents
-            if prefix == ">":
-                self._doctype = None
-                return
-            text = text.strip(_XML_WHITESPACE)
-            if not text:
-                return
-            self._doctype.append(text)
-            n = len(self._doctype)
-            if n > 2:
-                type = self._doctype[1]
-                if type == "PUBLIC" and n == 4:
-                    name, type, pubid, system = self._doctype
-                    if pubid:
-                        pubid = pubid[1:-1]
-                elif type == "SYSTEM" and n == 3:
-                    name, type, system = self._doctype
-                    pubid = None
-                else:
-                    return
-                if hasattr(self.target, "doctype"):
-                    self.target.doctype(name, pubid, system[1:-1])
-                elif hasattr(self, "doctype"):
-                    warnings.warn(
-                        "The doctype() method of XMLParser is ignored.  "
-                        "Define doctype() method on the TreeBuilder target.",
-                        RuntimeWarning)
 
-                self._doctype = None
+    def _start_doctype(self, name, system, pubid, has_internal_subset):
+        if hasattr(self.target, "doctype"):
+            self.target.doctype(name, pubid, system)
+        elif hasattr(self, "doctype"):
+            warnings.warn(
+                "The doctype() method of XMLParser is ignored.  "
+                "Define doctype() method on the TreeBuilder target.",
+                RuntimeWarning)
 
     def feed(self, data):
         """Feed encoded data to parser."""

@@ -648,7 +648,7 @@ Improved error messages
 :pep:`784`: Zstandard support in the standard library
 -----------------------------------------------------
 
-The new :mod:`!compression` package contains modules :mod:`!compression.lzma`,
+The new :mod:`compression` package contains modules :mod:`!compression.lzma`,
 :mod:`!compression.bz2`, :mod:`!compression.gzip` and :mod:`!compression.zlib`
 which re-export the :mod:`lzma`, :mod:`bz2`, :mod:`gzip` and :mod:`zlib`
 modules respectively. The new import names under :mod:`!compression` are the
@@ -657,7 +657,7 @@ the existing modules names have not been deprecated. Any deprecation or removal
 of the existing compression modules will occur no sooner than five years after
 the release of 3.14.
 
-The new :mod:`!compression.zstd` module provides compression and decompression
+The new :mod:`compression.zstd` module provides compression and decompression
 APIs for the Zstandard format via bindings to `Meta's zstd library
 <https://facebook.github.io/zstd/>`__. Zstandard is a widely adopted, highly
 efficient, and fast compression format. In addition to the APIs introduced in
