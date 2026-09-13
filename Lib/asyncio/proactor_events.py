@@ -571,6 +571,15 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport,
             else:
                 self._read_fut = self._loop._proactor.recvfrom(self._sock,
                                                                self.max_size)
+        except ConnectionResetError as exc:
+            # WSARecvFrom() reports a stale ICMP port unreachable
+            # notification as a synchronous ConnectionResetError when the
+            # same socket was used to send to an address that is not
+            # listening.  This is transient, so reschedule the read loop
+            # instead of leaving it dead.
+            self._protocol.error_received(exc)
+            if not self._closing:
+                self._loop.call_soon(self._loop_reading)
         except OSError as exc:
             self._protocol.error_received(exc)
         except exceptions.CancelledError:
@@ -757,8 +766,8 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
     async def _sendfile_native(self, transp, file, offset, count):
         resume_reading = transp.is_reading()
         transp.pause_reading()
-        await transp._make_empty_waiter()
         try:
+            await transp._make_empty_waiter()
             return await self.sock_sendfile(transp._sock, file, offset, count,
                                             fallback=False)
         finally:
