@@ -604,3 +604,9 @@ underlying object supports it:
 Resizing or reallocating the underlying object (such as calling
 :meth:`bytearray.resize`) while a memoryview is exported raises
 :exc:`BufferError`. This is enforced regardless of threading.
+
+In the :term:`free-threaded build`, :meth:`~memoryview.release` is
+thread-safe. If another thread has an in-flight operation on the memoryview
+when it is released, the underlying buffer may remain exported until that
+operation completes. Restrictions on the exporter, such as prohibiting
+resizing, remain in effect until then.
