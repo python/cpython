@@ -773,9 +773,10 @@ class ElementTreeTest(unittest.TestCase):
         ET.indent(elem)
         self.assertEqual(ET.tostring(elem), b'<html>\n  <body>text</body>\n</html>')
 
+        # an element with mixed content is not indented
         elem = ET.XML("<html><body>text</body>tail</html>")
         ET.indent(elem)
-        self.assertEqual(ET.tostring(elem), b'<html>\n  <body>text</body>tail</html>')
+        self.assertEqual(ET.tostring(elem), b'<html><body>text</body>tail</html>')
 
         elem = ET.XML("<html><body><p>par</p>\n<p>text</p>\t<p><br/></p></body></html>")
         ET.indent(elem)
@@ -851,8 +852,38 @@ class ElementTreeTest(unittest.TestCase):
         ET.indent(elem)
         self.assertEqual(
             ET.tostring(elem),
-            b'<html>&#160;<body>\n    <p>text</p>&#160;</body>\n</html>'
+            b'<html>&#160;<body><p>text</p>&#160;</body></html>'
         )
+
+    def test_indent_preserve(self):
+        # xml:space="preserve" applies to the whole subtree
+        elem = ET.XML('<html xml:space="preserve"> <body><p>text</p></body> </html>')
+        ET.indent(elem)
+        self.assertEqual(
+            ET.tostring(elem),
+            b'<html xml:space="preserve"> <body><p>text</p></body> </html>'
+        )
+        # other values do not preserve whitespace
+        elem = ET.XML('<html xml:space="default"><body><p>text</p></body></html>')
+        ET.indent(elem)
+        self.assertEqual(
+            ET.tostring(elem),
+            b'<html xml:space="default">\n'
+            b'  <body>\n'
+            b'    <p>text</p>\n'
+            b'  </body>\n'
+            b'</html>'
+        )
+
+    def test_indent_mixed_content(self):
+        # whitespace in an element which contains text is significant
+        elem = ET.XML('<p>hello <b>x</b> <i>y</i></p>')
+        ET.indent(elem)
+        self.assertEqual(ET.tostring(elem), b'<p>hello <b>x</b> <i>y</i></p>')
+        # the subtree of such element is not indented either
+        elem = ET.XML('<p>hello <b><i>y</i></b></p>')
+        ET.indent(elem)
+        self.assertEqual(ET.tostring(elem), b'<p>hello <b><i>y</i></b></p>')
 
     def test_indent_level(self):
         elem = ET.XML("<html><body><p>pre<br/>post</p><p>text</p></body></html>")
@@ -909,6 +940,70 @@ class ElementTreeTest(unittest.TestCase):
         EXPECTED_MSG = '^cannot use non-qualified names with default_namespace option$'
         with self.assertRaisesRegex(ValueError, EXPECTED_MSG):
             ET.tostring(elem, encoding='unicode', default_namespace='foobar')
+
+    def test_tostring_default_namespace_attributes(self):
+        # gh-61290: the default namespace does not apply to attribute names
+        elem = ET.XML('<body xmlns="http://effbot.org/ns" attr="value">'
+                      '<tag attr="value" /></body>')
+        self.assertEqual(
+            ET.tostring(elem, encoding='unicode',
+                        default_namespace='http://effbot.org/ns'),
+            '<body xmlns="http://effbot.org/ns" attr="value">'
+            '<tag attr="value" /></body>'
+        )
+
+    def test_tostring_default_namespace_qualified_attributes(self):
+        # a qualified attribute name always needs a prefix, even if it is
+        # in the default namespace
+        elem = ET.Element('{http://effbot.org/ns}body',
+                          {'{http://effbot.org/ns}attr': 'value'})
+        self.assertEqual(
+            ET.tostring(elem, encoding='unicode',
+                        default_namespace='http://effbot.org/ns'),
+            '<body xmlns="http://effbot.org/ns" '
+            'xmlns:ns1="http://effbot.org/ns" ns1:attr="value" />'
+        )
+        # an attribute in another namespace uses the prefix of that namespace
+        elem = ET.Element('{http://effbot.org/ns}body',
+                          {'{foobar}attr': 'value', 'plain': 'value'})
+        self.assertEqual(
+            ET.tostring(elem, encoding='unicode',
+                        default_namespace='http://effbot.org/ns'),
+            '<body xmlns="http://effbot.org/ns" xmlns:ns1="foobar" '
+            'ns1:attr="value" plain="value" />'
+        )
+
+    def test_tostring_default_namespace_attributes_round_trip(self):
+        xml = ('<body xmlns="http://effbot.org/ns" xmlns:ns1="foobar" '
+               'attr="1"><tag ns1:attr="2" /></body>')
+        elem = ET.XML(xml)
+        self.assertEqual(
+            ET.tostring(elem, encoding='unicode',
+                        default_namespace='http://effbot.org/ns'),
+            xml
+        )
+        self.assertEqual(
+            [sorted(e.attrib.items()) for e in ET.XML(xml).iter()],
+            [sorted(e.attrib.items()) for e in elem.iter()]
+        )
+
+    def test_tostring_default_namespace_registered_empty_prefix(self):
+        # gh-118416: the empty prefix is registered for other namespace,
+        # so it cannot be used for the default namespace
+        nsmap = ET.register_namespace._namespace_map
+        self.addCleanup(nsmap.pop, 'default', None)
+        ET.register_namespace('', 'default')
+        elem = ET.Element('{default}elem')
+        self.assertEqual(
+            ET.tostring(elem, encoding='unicode',
+                        default_namespace='otherdefault'),
+            '<ns1:elem xmlns="otherdefault" xmlns:ns1="default" />'
+        )
+        # without the option the registered prefix is used
+        self.assertEqual(
+            ET.tostring(elem, encoding='unicode'),
+            '<elem xmlns="default" />'
+        )
 
     def test_tostring_no_xml_declaration(self):
         elem = ET.XML('<body><tag/></body>')
@@ -978,6 +1073,14 @@ class ElementTreeTest(unittest.TestCase):
                     ),
                     expected_retval
                 )
+
+    def test_tostring_default_namespace_attributes_html(self):
+        elem = ET.XML('<body xmlns="http://effbot.org/ns" attr="value" />')
+        self.assertEqual(
+            ET.tostring(elem, encoding='unicode', method='html',
+                        default_namespace='http://effbot.org/ns'),
+            '<body xmlns="http://effbot.org/ns" attr="value"></body>'
+        )
 
     def test_tostring_standalone(self):
         elem = ET.XML('<body><tag/></body>')
@@ -1842,6 +1945,43 @@ class IterparseTest(unittest.TestCase):
             del cm
             gc_collect()
 
+    class Target:
+        # a target which does not build a tree
+        def start(self, tag, attrib):
+            return tag
+        def end(self, tag):
+            return tag
+        def data(self, data):
+            pass
+
+    def test_target(self):
+        # gh-63102: a custom target reports its own objects
+        with open(SIMPLE_XMLFILE, 'rb') as f:
+            it = ET.iterparse(f, events=('start', 'end'), target=self.Target())
+            self.assertEqual(list(it), [
+                ('start', 'root'),
+                ('start', 'element'),
+                ('end', 'element'),
+                ('start', 'element'),
+                ('end', 'element'),
+                ('start', 'empty-element'),
+                ('end', 'empty-element'),
+                ('end', 'root'),
+            ])
+            self.assertIsNone(it.root)
+
+    def test_parser_with_target(self):
+        with open(SIMPLE_XMLFILE, 'rb') as f:
+            parser = ET.XMLParser(target=self.Target())
+            it = ET.iterparse(f, events=('start',), parser=parser)
+            self.assertEqual(next(it), ('start', 'root'))
+
+    def test_target_and_parser(self):
+        with self.assertRaisesRegex(ValueError,
+                                    "can't specify both parser and target"):
+            ET.iterparse(SIMPLE_XMLFILE, parser=ET.XMLParser(),
+                         target=self.Target())
+
     def test_non_utf8(self):
         source = io.BytesIO(
             b"<?xml version='1.0' encoding='iso-8859-1'?>\n"
@@ -2252,6 +2392,76 @@ class XMLPullParserTest(unittest.TestCase):
         parser = ET.XMLPullParser(events=DummyIter())
         self._feed(parser, "<foo>bar</foo>")
         self.assert_event_tags(parser, [('start', 'foo'), ('end', 'foo')])
+
+    # gh-63102: the pull parser reports events from any target
+    class SimpleTarget:
+        def start(self, tag, attrib):
+            return ('start', tag)
+        def end(self, tag):
+            return ('end', tag)
+        def data(self, data):
+            pass
+        def comment(self, text):
+            return ('comment', text)
+        def pi(self, target, data=None):
+            return ('pi', target)
+        def close(self):
+            return 'closed'
+
+    def test_custom_target(self):
+        parser = ET.XMLPullParser(events=('start', 'end'),
+                                  target=self.SimpleTarget())
+        self._feed(parser, "<root><element/></root>")
+        self.assert_event_tuples(parser, [
+            ('start', ('start', 'root')),
+            ('start', ('start', 'element')),
+            ('end', ('end', 'element')),
+            ('end', ('end', 'root')),
+        ])
+
+    def test_custom_target_comment_pi(self):
+        parser = ET.XMLPullParser(events=('comment', 'pi'),
+                                  target=self.SimpleTarget())
+        self._feed(parser, "<root><!-- text --><?pitarget data?></root>")
+        self.assert_event_tuples(parser, [
+            ('comment', ('comment', ' text ')),
+            ('pi', ('pi', 'pitarget')),
+        ])
+
+    def test_custom_target_without_method(self):
+        class Target:
+            def close(self):
+                pass
+        for event in ('start', 'end', 'comment', 'pi'):
+            with self.subTest(event=event):
+                with self.assertRaisesRegex(TypeError,
+                        "the target does not support %r events" % event):
+                    ET.XMLPullParser(events=(event,), target=Target())
+        # the namespace events do not need methods of the target
+        parser = ET.XMLPullParser(events=('start-ns', 'end-ns'),
+                                  target=Target())
+        self._feed(parser, "<root xmlns='namespace' />")
+        self.assert_event_tuples(parser, [
+            ('start-ns', ('', 'namespace')),
+            ('end-ns', None),
+        ])
+
+    def test_custom_target_ns_events(self):
+        # the target does not implement start_ns()/end_ns(),
+        # so the prefix and the uri are reported
+        parser = ET.XMLPullParser(events=('start-ns', 'end-ns'),
+                                  target=self.SimpleTarget())
+        self._feed(parser, "<root xmlns='namespace' />")
+        self.assert_event_tuples(parser, [
+            ('start-ns', ('', 'namespace')),
+            ('end-ns', None),
+        ])
+
+    def test_custom_target_close(self):
+        parser = ET.XMLPullParser(events=('end',), target=self.SimpleTarget())
+        self._feed(parser, "<root/>")
+        parser.close()
+        self.assert_event_tuples(parser, [('end', ('end', 'root'))])
 
     def test_unknown_event(self):
         with self.assertRaises(ValueError):
@@ -4396,6 +4606,21 @@ class TreeBuilderTest(unittest.TestCase):
         self.assertEqual(parser.close(),
             ('html', '-//W3C//DTD XHTML 1.0 Transitional//EN',
              'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'))
+
+        for doctype, expected in [
+            ('<!DOCTYPE html>', ('html', None, None)),
+            ('<!DOCTYPE html [<!ENTITY e "v">]>', ('html', None, None)),
+            ('<!DOCTYPE html SYSTEM "a.dtd">', ('html', None, 'a.dtd')),
+            ('<!DOCTYPE html SYSTEM "a.dtd" [<!ENTITY e "v">]>',
+             ('html', None, 'a.dtd')),
+            ('<!DOCTYPE html PUBLIC "-//P" "a.dtd">', ('html', '-//P', 'a.dtd')),
+            ("<!DOCTYPE\nhtml\nPUBLIC\n'-//P'\n'a.dtd'\n>",
+             ('html', '-//P', 'a.dtd')),
+        ]:
+            with self.subTest(doctype=doctype):
+                parser = ET.XMLParser(target=DoctypeParser())
+                parser.feed(doctype + '<html/>')
+                self.assertEqual(parser.close(), expected)
 
     def test_builder_lookup_errors(self):
         class RaisingBuilder:
