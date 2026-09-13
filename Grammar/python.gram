@@ -800,21 +800,21 @@ compare_op_bitwise_or_pair[CmpopExprPair*]:
 # Bitwise operators
 # -----------------
 
-bitwise_or[expr_ty]:
+bitwise_or[expr_ty] (operator_loop):
     | a=bitwise_or '|' b=bitwise_xor { _PyAST_BinOp(a, BitOr, b, EXTRA) }
     | invalid_bitwise_or
     | bitwise_xor
 
-bitwise_xor[expr_ty]:
+bitwise_xor[expr_ty] (operator_loop):
     | a=bitwise_xor '^' b=bitwise_and { _PyAST_BinOp(a, BitXor, b, EXTRA) }
     | bitwise_and
 
-bitwise_and[expr_ty]:
+bitwise_and[expr_ty] (operator_loop):
     | a=bitwise_and '&' b=shift_expr { _PyAST_BinOp(a, BitAnd, b, EXTRA) }
     | invalid_bitwise_and
     | shift_expr
 
-shift_expr[expr_ty]:
+shift_expr[expr_ty] (operator_loop):
     | a=shift_expr '<<' b=sum { _PyAST_BinOp(a, LShift, b, EXTRA) }
     | a=shift_expr '>>' b=sum { _PyAST_BinOp(a, RShift, b, EXTRA) }
     | sum
@@ -822,13 +822,13 @@ shift_expr[expr_ty]:
 # Arithmetic operators
 # --------------------
 
-sum[expr_ty]:
+sum[expr_ty] (operator_loop):
     | a=sum '+' b=term { _PyAST_BinOp(a, Add, b, EXTRA) }
     | a=sum '-' b=term { _PyAST_BinOp(a, Sub, b, EXTRA) }
     | invalid_arithmetic
     | term
 
-term[expr_ty]:
+term[expr_ty] (operator_loop):
     | a=term '*' b=factor { _PyAST_BinOp(a, Mult, b, EXTRA) }
     | a=term '/' b=factor { _PyAST_BinOp(a, Div, b, EXTRA) }
     | a=term '//' b=factor { _PyAST_BinOp(a, FloorDiv, b, EXTRA) }

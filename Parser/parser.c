@@ -12989,10 +12989,96 @@ compare_op_bitwise_or_pair_rule(Parser *p)
 
 // Left-recursive
 // bitwise_or: bitwise_or '|' bitwise_xor | invalid_bitwise_or | bitwise_xor
+static expr_ty
+bitwise_or_operator_loop(Parser *p)
+{
+    if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
+        _Pypegen_stack_overflow(p);
+    }
+    if (p->error_indicator) {
+        p->level--;
+        return NULL;
+    }
+    expr_ty _res = NULL;
+    if (_PyPegen_is_memoized(p, bitwise_or_type, &_res)) {
+        p->level--;
+        return _res;
+    }
+    int _mark = p->mark;
+    if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
+        p->error_indicator = 1;
+        p->level--;
+        return NULL;
+    }
+    int _start_lineno = p->tokens[_mark]->lineno;
+    UNUSED(_start_lineno); // Only used by EXTRA macro
+    int _start_col_offset = p->tokens[_mark]->col_offset;
+    UNUSED(_start_col_offset); // Only used by EXTRA macro
+    _res = bitwise_xor_rule(p);
+    if (p->error_indicator) {
+        p->level--;
+        return NULL;
+    }
+    if (_res == NULL) {
+        p->mark = _mark;
+        goto done;
+    }
+    while (1) {
+        int _operator_mark = p->mark;
+        if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
+            p->error_indicator = 1;
+            p->level--;
+            return NULL;
+        }
+        switch (p->tokens[p->mark]->type) {
+            case 18: {
+                expr_ty a = _res;
+                p->mark++;
+                expr_ty b = bitwise_xor_rule(p);
+                if (p->error_indicator) {
+                    p->level--;
+                    return NULL;
+                }
+                if (b == NULL) {
+                    p->mark = _operator_mark;
+                    goto done;
+                }
+                Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
+                if (_token == NULL) {
+                    p->level--;
+                    return NULL;
+                }
+                int _end_lineno = _token->end_lineno;
+                UNUSED(_end_lineno); // Only used by EXTRA macro
+                int _end_col_offset = _token->end_col_offset;
+                UNUSED(_end_col_offset); // Only used by EXTRA macro
+                _res = _PyAST_BinOp ( a , BitOr , b , EXTRA );
+                if ((_res == NULL || p->error_indicator) && PyErr_Occurred()) {
+                    p->error_indicator = 1;
+                    p->level--;
+                    return NULL;
+                }
+                break;
+            }
+            default: goto done;
+        }
+    }
+  done:
+    if (_PyPegen_insert_memo(p, _mark, bitwise_or_type, _res) < 0) {
+        p->error_indicator = 1;
+        p->level--;
+        return NULL;
+    }
+    p->level--;
+    return _res;
+}
 static expr_ty bitwise_or_raw(Parser *);
 static expr_ty
 bitwise_or_rule(Parser *p)
 {
+    if (!p->call_invalid_rules) {
+        return bitwise_or_operator_loop(p);
+    }
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
         _Pypegen_stack_overflow(p);
     }
@@ -13132,10 +13218,96 @@ bitwise_or_raw(Parser *p)
 
 // Left-recursive
 // bitwise_xor: bitwise_xor '^' bitwise_and | bitwise_and
+static expr_ty
+bitwise_xor_operator_loop(Parser *p)
+{
+    if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
+        _Pypegen_stack_overflow(p);
+    }
+    if (p->error_indicator) {
+        p->level--;
+        return NULL;
+    }
+    expr_ty _res = NULL;
+    if (_PyPegen_is_memoized(p, bitwise_xor_type, &_res)) {
+        p->level--;
+        return _res;
+    }
+    int _mark = p->mark;
+    if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
+        p->error_indicator = 1;
+        p->level--;
+        return NULL;
+    }
+    int _start_lineno = p->tokens[_mark]->lineno;
+    UNUSED(_start_lineno); // Only used by EXTRA macro
+    int _start_col_offset = p->tokens[_mark]->col_offset;
+    UNUSED(_start_col_offset); // Only used by EXTRA macro
+    _res = bitwise_and_rule(p);
+    if (p->error_indicator) {
+        p->level--;
+        return NULL;
+    }
+    if (_res == NULL) {
+        p->mark = _mark;
+        goto done;
+    }
+    while (1) {
+        int _operator_mark = p->mark;
+        if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
+            p->error_indicator = 1;
+            p->level--;
+            return NULL;
+        }
+        switch (p->tokens[p->mark]->type) {
+            case 32: {
+                expr_ty a = _res;
+                p->mark++;
+                expr_ty b = bitwise_and_rule(p);
+                if (p->error_indicator) {
+                    p->level--;
+                    return NULL;
+                }
+                if (b == NULL) {
+                    p->mark = _operator_mark;
+                    goto done;
+                }
+                Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
+                if (_token == NULL) {
+                    p->level--;
+                    return NULL;
+                }
+                int _end_lineno = _token->end_lineno;
+                UNUSED(_end_lineno); // Only used by EXTRA macro
+                int _end_col_offset = _token->end_col_offset;
+                UNUSED(_end_col_offset); // Only used by EXTRA macro
+                _res = _PyAST_BinOp ( a , BitXor , b , EXTRA );
+                if ((_res == NULL || p->error_indicator) && PyErr_Occurred()) {
+                    p->error_indicator = 1;
+                    p->level--;
+                    return NULL;
+                }
+                break;
+            }
+            default: goto done;
+        }
+    }
+  done:
+    if (_PyPegen_insert_memo(p, _mark, bitwise_xor_type, _res) < 0) {
+        p->error_indicator = 1;
+        p->level--;
+        return NULL;
+    }
+    p->level--;
+    return _res;
+}
 static expr_ty bitwise_xor_raw(Parser *);
 static expr_ty
 bitwise_xor_rule(Parser *p)
 {
+    if (!p->call_invalid_rules) {
+        return bitwise_xor_operator_loop(p);
+    }
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
         _Pypegen_stack_overflow(p);
     }
@@ -13256,10 +13428,96 @@ bitwise_xor_raw(Parser *p)
 
 // Left-recursive
 // bitwise_and: bitwise_and '&' shift_expr | invalid_bitwise_and | shift_expr
+static expr_ty
+bitwise_and_operator_loop(Parser *p)
+{
+    if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
+        _Pypegen_stack_overflow(p);
+    }
+    if (p->error_indicator) {
+        p->level--;
+        return NULL;
+    }
+    expr_ty _res = NULL;
+    if (_PyPegen_is_memoized(p, bitwise_and_type, &_res)) {
+        p->level--;
+        return _res;
+    }
+    int _mark = p->mark;
+    if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
+        p->error_indicator = 1;
+        p->level--;
+        return NULL;
+    }
+    int _start_lineno = p->tokens[_mark]->lineno;
+    UNUSED(_start_lineno); // Only used by EXTRA macro
+    int _start_col_offset = p->tokens[_mark]->col_offset;
+    UNUSED(_start_col_offset); // Only used by EXTRA macro
+    _res = shift_expr_rule(p);
+    if (p->error_indicator) {
+        p->level--;
+        return NULL;
+    }
+    if (_res == NULL) {
+        p->mark = _mark;
+        goto done;
+    }
+    while (1) {
+        int _operator_mark = p->mark;
+        if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
+            p->error_indicator = 1;
+            p->level--;
+            return NULL;
+        }
+        switch (p->tokens[p->mark]->type) {
+            case 19: {
+                expr_ty a = _res;
+                p->mark++;
+                expr_ty b = shift_expr_rule(p);
+                if (p->error_indicator) {
+                    p->level--;
+                    return NULL;
+                }
+                if (b == NULL) {
+                    p->mark = _operator_mark;
+                    goto done;
+                }
+                Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
+                if (_token == NULL) {
+                    p->level--;
+                    return NULL;
+                }
+                int _end_lineno = _token->end_lineno;
+                UNUSED(_end_lineno); // Only used by EXTRA macro
+                int _end_col_offset = _token->end_col_offset;
+                UNUSED(_end_col_offset); // Only used by EXTRA macro
+                _res = _PyAST_BinOp ( a , BitAnd , b , EXTRA );
+                if ((_res == NULL || p->error_indicator) && PyErr_Occurred()) {
+                    p->error_indicator = 1;
+                    p->level--;
+                    return NULL;
+                }
+                break;
+            }
+            default: goto done;
+        }
+    }
+  done:
+    if (_PyPegen_insert_memo(p, _mark, bitwise_and_type, _res) < 0) {
+        p->error_indicator = 1;
+        p->level--;
+        return NULL;
+    }
+    p->level--;
+    return _res;
+}
 static expr_ty bitwise_and_raw(Parser *);
 static expr_ty
 bitwise_and_rule(Parser *p)
 {
+    if (!p->call_invalid_rules) {
+        return bitwise_and_operator_loop(p);
+    }
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
         _Pypegen_stack_overflow(p);
     }
@@ -13399,10 +13657,125 @@ bitwise_and_raw(Parser *p)
 
 // Left-recursive
 // shift_expr: shift_expr '<<' sum | shift_expr '>>' sum | sum
+static expr_ty
+shift_expr_operator_loop(Parser *p)
+{
+    if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
+        _Pypegen_stack_overflow(p);
+    }
+    if (p->error_indicator) {
+        p->level--;
+        return NULL;
+    }
+    expr_ty _res = NULL;
+    if (_PyPegen_is_memoized(p, shift_expr_type, &_res)) {
+        p->level--;
+        return _res;
+    }
+    int _mark = p->mark;
+    if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
+        p->error_indicator = 1;
+        p->level--;
+        return NULL;
+    }
+    int _start_lineno = p->tokens[_mark]->lineno;
+    UNUSED(_start_lineno); // Only used by EXTRA macro
+    int _start_col_offset = p->tokens[_mark]->col_offset;
+    UNUSED(_start_col_offset); // Only used by EXTRA macro
+    _res = sum_rule(p);
+    if (p->error_indicator) {
+        p->level--;
+        return NULL;
+    }
+    if (_res == NULL) {
+        p->mark = _mark;
+        goto done;
+    }
+    while (1) {
+        int _operator_mark = p->mark;
+        if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
+            p->error_indicator = 1;
+            p->level--;
+            return NULL;
+        }
+        switch (p->tokens[p->mark]->type) {
+            case 33: {
+                expr_ty a = _res;
+                p->mark++;
+                expr_ty b = sum_rule(p);
+                if (p->error_indicator) {
+                    p->level--;
+                    return NULL;
+                }
+                if (b == NULL) {
+                    p->mark = _operator_mark;
+                    goto done;
+                }
+                Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
+                if (_token == NULL) {
+                    p->level--;
+                    return NULL;
+                }
+                int _end_lineno = _token->end_lineno;
+                UNUSED(_end_lineno); // Only used by EXTRA macro
+                int _end_col_offset = _token->end_col_offset;
+                UNUSED(_end_col_offset); // Only used by EXTRA macro
+                _res = _PyAST_BinOp ( a , LShift , b , EXTRA );
+                if ((_res == NULL || p->error_indicator) && PyErr_Occurred()) {
+                    p->error_indicator = 1;
+                    p->level--;
+                    return NULL;
+                }
+                break;
+            }
+            case 34: {
+                expr_ty a = _res;
+                p->mark++;
+                expr_ty b = sum_rule(p);
+                if (p->error_indicator) {
+                    p->level--;
+                    return NULL;
+                }
+                if (b == NULL) {
+                    p->mark = _operator_mark;
+                    goto done;
+                }
+                Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
+                if (_token == NULL) {
+                    p->level--;
+                    return NULL;
+                }
+                int _end_lineno = _token->end_lineno;
+                UNUSED(_end_lineno); // Only used by EXTRA macro
+                int _end_col_offset = _token->end_col_offset;
+                UNUSED(_end_col_offset); // Only used by EXTRA macro
+                _res = _PyAST_BinOp ( a , RShift , b , EXTRA );
+                if ((_res == NULL || p->error_indicator) && PyErr_Occurred()) {
+                    p->error_indicator = 1;
+                    p->level--;
+                    return NULL;
+                }
+                break;
+            }
+            default: goto done;
+        }
+    }
+  done:
+    if (_PyPegen_insert_memo(p, _mark, shift_expr_type, _res) < 0) {
+        p->error_indicator = 1;
+        p->level--;
+        return NULL;
+    }
+    p->level--;
+    return _res;
+}
 static expr_ty shift_expr_raw(Parser *);
 static expr_ty
 shift_expr_rule(Parser *p)
 {
+    if (!p->call_invalid_rules) {
+        return shift_expr_operator_loop(p);
+    }
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
         _Pypegen_stack_overflow(p);
     }
@@ -13562,10 +13935,125 @@ shift_expr_raw(Parser *p)
 
 // Left-recursive
 // sum: sum '+' term | sum '-' term | invalid_arithmetic | term
+static expr_ty
+sum_operator_loop(Parser *p)
+{
+    if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
+        _Pypegen_stack_overflow(p);
+    }
+    if (p->error_indicator) {
+        p->level--;
+        return NULL;
+    }
+    expr_ty _res = NULL;
+    if (_PyPegen_is_memoized(p, sum_type, &_res)) {
+        p->level--;
+        return _res;
+    }
+    int _mark = p->mark;
+    if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
+        p->error_indicator = 1;
+        p->level--;
+        return NULL;
+    }
+    int _start_lineno = p->tokens[_mark]->lineno;
+    UNUSED(_start_lineno); // Only used by EXTRA macro
+    int _start_col_offset = p->tokens[_mark]->col_offset;
+    UNUSED(_start_col_offset); // Only used by EXTRA macro
+    _res = term_rule(p);
+    if (p->error_indicator) {
+        p->level--;
+        return NULL;
+    }
+    if (_res == NULL) {
+        p->mark = _mark;
+        goto done;
+    }
+    while (1) {
+        int _operator_mark = p->mark;
+        if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
+            p->error_indicator = 1;
+            p->level--;
+            return NULL;
+        }
+        switch (p->tokens[p->mark]->type) {
+            case 14: {
+                expr_ty a = _res;
+                p->mark++;
+                expr_ty b = term_rule(p);
+                if (p->error_indicator) {
+                    p->level--;
+                    return NULL;
+                }
+                if (b == NULL) {
+                    p->mark = _operator_mark;
+                    goto done;
+                }
+                Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
+                if (_token == NULL) {
+                    p->level--;
+                    return NULL;
+                }
+                int _end_lineno = _token->end_lineno;
+                UNUSED(_end_lineno); // Only used by EXTRA macro
+                int _end_col_offset = _token->end_col_offset;
+                UNUSED(_end_col_offset); // Only used by EXTRA macro
+                _res = _PyAST_BinOp ( a , Add , b , EXTRA );
+                if ((_res == NULL || p->error_indicator) && PyErr_Occurred()) {
+                    p->error_indicator = 1;
+                    p->level--;
+                    return NULL;
+                }
+                break;
+            }
+            case 15: {
+                expr_ty a = _res;
+                p->mark++;
+                expr_ty b = term_rule(p);
+                if (p->error_indicator) {
+                    p->level--;
+                    return NULL;
+                }
+                if (b == NULL) {
+                    p->mark = _operator_mark;
+                    goto done;
+                }
+                Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
+                if (_token == NULL) {
+                    p->level--;
+                    return NULL;
+                }
+                int _end_lineno = _token->end_lineno;
+                UNUSED(_end_lineno); // Only used by EXTRA macro
+                int _end_col_offset = _token->end_col_offset;
+                UNUSED(_end_col_offset); // Only used by EXTRA macro
+                _res = _PyAST_BinOp ( a , Sub , b , EXTRA );
+                if ((_res == NULL || p->error_indicator) && PyErr_Occurred()) {
+                    p->error_indicator = 1;
+                    p->level--;
+                    return NULL;
+                }
+                break;
+            }
+            default: goto done;
+        }
+    }
+  done:
+    if (_PyPegen_insert_memo(p, _mark, sum_type, _res) < 0) {
+        p->error_indicator = 1;
+        p->level--;
+        return NULL;
+    }
+    p->level--;
+    return _res;
+}
 static expr_ty sum_raw(Parser *);
 static expr_ty
 sum_rule(Parser *p)
 {
+    if (!p->call_invalid_rules) {
+        return sum_operator_loop(p);
+    }
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
         _Pypegen_stack_overflow(p);
     }
@@ -13750,10 +14238,212 @@ sum_raw(Parser *p)
 //     | term '%' factor
 //     | term '@' factor
 //     | factor
+static expr_ty
+term_operator_loop(Parser *p)
+{
+    if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
+        _Pypegen_stack_overflow(p);
+    }
+    if (p->error_indicator) {
+        p->level--;
+        return NULL;
+    }
+    expr_ty _res = NULL;
+    if (_PyPegen_is_memoized(p, term_type, &_res)) {
+        p->level--;
+        return _res;
+    }
+    int _mark = p->mark;
+    if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
+        p->error_indicator = 1;
+        p->level--;
+        return NULL;
+    }
+    int _start_lineno = p->tokens[_mark]->lineno;
+    UNUSED(_start_lineno); // Only used by EXTRA macro
+    int _start_col_offset = p->tokens[_mark]->col_offset;
+    UNUSED(_start_col_offset); // Only used by EXTRA macro
+    _res = factor_rule(p);
+    if (p->error_indicator) {
+        p->level--;
+        return NULL;
+    }
+    if (_res == NULL) {
+        p->mark = _mark;
+        goto done;
+    }
+    while (1) {
+        int _operator_mark = p->mark;
+        if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
+            p->error_indicator = 1;
+            p->level--;
+            return NULL;
+        }
+        switch (p->tokens[p->mark]->type) {
+            case 16: {
+                expr_ty a = _res;
+                p->mark++;
+                expr_ty b = factor_rule(p);
+                if (p->error_indicator) {
+                    p->level--;
+                    return NULL;
+                }
+                if (b == NULL) {
+                    p->mark = _operator_mark;
+                    goto done;
+                }
+                Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
+                if (_token == NULL) {
+                    p->level--;
+                    return NULL;
+                }
+                int _end_lineno = _token->end_lineno;
+                UNUSED(_end_lineno); // Only used by EXTRA macro
+                int _end_col_offset = _token->end_col_offset;
+                UNUSED(_end_col_offset); // Only used by EXTRA macro
+                _res = _PyAST_BinOp ( a , Mult , b , EXTRA );
+                if ((_res == NULL || p->error_indicator) && PyErr_Occurred()) {
+                    p->error_indicator = 1;
+                    p->level--;
+                    return NULL;
+                }
+                break;
+            }
+            case 17: {
+                expr_ty a = _res;
+                p->mark++;
+                expr_ty b = factor_rule(p);
+                if (p->error_indicator) {
+                    p->level--;
+                    return NULL;
+                }
+                if (b == NULL) {
+                    p->mark = _operator_mark;
+                    goto done;
+                }
+                Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
+                if (_token == NULL) {
+                    p->level--;
+                    return NULL;
+                }
+                int _end_lineno = _token->end_lineno;
+                UNUSED(_end_lineno); // Only used by EXTRA macro
+                int _end_col_offset = _token->end_col_offset;
+                UNUSED(_end_col_offset); // Only used by EXTRA macro
+                _res = _PyAST_BinOp ( a , Div , b , EXTRA );
+                if ((_res == NULL || p->error_indicator) && PyErr_Occurred()) {
+                    p->error_indicator = 1;
+                    p->level--;
+                    return NULL;
+                }
+                break;
+            }
+            case 47: {
+                expr_ty a = _res;
+                p->mark++;
+                expr_ty b = factor_rule(p);
+                if (p->error_indicator) {
+                    p->level--;
+                    return NULL;
+                }
+                if (b == NULL) {
+                    p->mark = _operator_mark;
+                    goto done;
+                }
+                Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
+                if (_token == NULL) {
+                    p->level--;
+                    return NULL;
+                }
+                int _end_lineno = _token->end_lineno;
+                UNUSED(_end_lineno); // Only used by EXTRA macro
+                int _end_col_offset = _token->end_col_offset;
+                UNUSED(_end_col_offset); // Only used by EXTRA macro
+                _res = _PyAST_BinOp ( a , FloorDiv , b , EXTRA );
+                if ((_res == NULL || p->error_indicator) && PyErr_Occurred()) {
+                    p->error_indicator = 1;
+                    p->level--;
+                    return NULL;
+                }
+                break;
+            }
+            case 24: {
+                expr_ty a = _res;
+                p->mark++;
+                expr_ty b = factor_rule(p);
+                if (p->error_indicator) {
+                    p->level--;
+                    return NULL;
+                }
+                if (b == NULL) {
+                    p->mark = _operator_mark;
+                    goto done;
+                }
+                Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
+                if (_token == NULL) {
+                    p->level--;
+                    return NULL;
+                }
+                int _end_lineno = _token->end_lineno;
+                UNUSED(_end_lineno); // Only used by EXTRA macro
+                int _end_col_offset = _token->end_col_offset;
+                UNUSED(_end_col_offset); // Only used by EXTRA macro
+                _res = _PyAST_BinOp ( a , Mod , b , EXTRA );
+                if ((_res == NULL || p->error_indicator) && PyErr_Occurred()) {
+                    p->error_indicator = 1;
+                    p->level--;
+                    return NULL;
+                }
+                break;
+            }
+            case 49: {
+                expr_ty a = _res;
+                p->mark++;
+                expr_ty b = factor_rule(p);
+                if (p->error_indicator) {
+                    p->level--;
+                    return NULL;
+                }
+                if (b == NULL) {
+                    p->mark = _operator_mark;
+                    goto done;
+                }
+                Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
+                if (_token == NULL) {
+                    p->level--;
+                    return NULL;
+                }
+                int _end_lineno = _token->end_lineno;
+                UNUSED(_end_lineno); // Only used by EXTRA macro
+                int _end_col_offset = _token->end_col_offset;
+                UNUSED(_end_col_offset); // Only used by EXTRA macro
+                _res = CHECK_VERSION ( expr_ty , 5 , "The '@' operator is" , _PyAST_BinOp ( a , MatMult , b , EXTRA ) );
+                if ((_res == NULL || p->error_indicator) && PyErr_Occurred()) {
+                    p->error_indicator = 1;
+                    p->level--;
+                    return NULL;
+                }
+                break;
+            }
+            default: goto done;
+        }
+    }
+  done:
+    if (_PyPegen_insert_memo(p, _mark, term_type, _res) < 0) {
+        p->error_indicator = 1;
+        p->level--;
+        return NULL;
+    }
+    p->level--;
+    return _res;
+}
 static expr_ty term_raw(Parser *);
 static expr_ty
 term_rule(Parser *p)
 {
+    if (!p->call_invalid_rules) {
+        return term_operator_loop(p);
+    }
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
         _Pypegen_stack_overflow(p);
     }

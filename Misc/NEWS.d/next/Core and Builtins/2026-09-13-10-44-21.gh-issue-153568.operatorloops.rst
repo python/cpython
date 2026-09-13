@@ -1,0 +1,2 @@
+Speed up arithmetic parsing by generating operator loops for explicitly
+marked grammar rules.
