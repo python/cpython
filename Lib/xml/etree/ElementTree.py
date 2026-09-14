@@ -698,7 +698,8 @@ class ElementTree:
               default_namespace=None,
               method=None, *,
               short_empty_elements=True,
-              standalone=None):
+              standalone=None,
+              namespaces=None):
         """Write element tree to a file as XML.
 
         Arguments:
@@ -726,6 +727,11 @@ class ElementTree:
           *standalone* -- bool for the standalone document declaration in
                           the XML declaration.  If None (default), the
                           standalone document declaration is omitted
+
+          *namespaces* -- a mapping from namespace prefixes to URIs which
+                          overrides the prefixes registered with
+                          register_namespace() for this serialization.
+                          The empty prefix sets the default namespace
 
         """
         if self._root is None:
@@ -759,7 +765,7 @@ class ElementTree:
                 _serialize_text(write, self._root)
             else:
                 qnames, attr_qnames, namespaces = _namespaces(
-                    self._root, default_namespace)
+                    self._root, default_namespace, namespaces)
                 serialize = _serialize[method]
                 serialize(write, self._root, qnames, attr_qnames, namespaces,
                           short_empty_elements=short_empty_elements)
@@ -817,8 +823,23 @@ def _get_writer(file_or_filename, encoding):
                 stack.callback(file.detach)
                 yield file.write, encoding
 
-def _namespaces(elem, default_namespace=None):
+def _namespaces(elem, default_namespace=None, prefix_map=None):
     # identify namespaces used in this tree
+
+    # maps uri:s to the prefixes preferred for this serialization
+    preferred = {}
+    if prefix_map is None:
+        prefix_map = {}
+    else:
+        for prefix, uri in prefix_map.items():
+            _check_prefix(prefix, uri)
+            if not prefix:
+                if default_namespace is None:
+                    default_namespace = uri
+                elif default_namespace != uri:
+                    raise ValueError("conflicting default namespace")
+            else:
+                preferred.setdefault(uri, prefix)
 
     # maps qnames to *encoded* prefix:local names
     qnames = {None: None}
@@ -848,7 +869,12 @@ def _namespaces(elem, default_namespace=None):
             prefix = prefixes.get(uri)
         if prefix is not None:
             return prefix
-        prefix = _namespace_map.get(uri)
+        prefix = preferred.get(uri)
+        if prefix is None:
+            prefix = _namespace_map.get(uri)
+            if prefix is not None and prefix in prefix_map:
+                # the prefix is reserved for other uri in this serialization
+                prefix = None
         if prefix is None or not prefix and (isattr or default_namespace):
             # the empty prefix is of no use for an attribute name,
             # and the default namespace is used for other uri
@@ -1152,7 +1178,7 @@ def _escape_attrib_html(text):
 
 def tostring(element, encoding=None, method=None, *,
              xml_declaration=None, default_namespace=None,
-             short_empty_elements=True, standalone=None):
+             short_empty_elements=True, standalone=None, namespaces=None):
     """Generate string representation of XML element.
 
     All subelements are included.  If encoding is "unicode", a string
@@ -1163,7 +1189,9 @@ def tostring(element, encoding=None, method=None, *,
     can be one of "xml" (default), "html" or "text",
     *default_namespace* sets the default XML namespace (for "xmlns"),
     *standalone* is the value of the standalone document declaration
-    in the XML declaration (omitted if None).
+    in the XML declaration (omitted if None),
+    *namespaces* is a mapping from namespace prefixes to URIs which
+    overrides the prefixes registered with register_namespace().
 
     Returns an (optionally) encoded string containing the XML data.
 
@@ -1174,7 +1202,8 @@ def tostring(element, encoding=None, method=None, *,
                                default_namespace=default_namespace,
                                method=method,
                                short_empty_elements=short_empty_elements,
-                               standalone=standalone)
+                               standalone=standalone,
+                               namespaces=namespaces)
     return stream.getvalue()
 
 class _ListDataStream(io.BufferedIOBase):
@@ -1196,7 +1225,8 @@ class _ListDataStream(io.BufferedIOBase):
 
 def tostringlist(element, encoding=None, method=None, *,
                  xml_declaration=None, default_namespace=None,
-                 short_empty_elements=True, standalone=None):
+                 short_empty_elements=True, standalone=None,
+                 namespaces=None):
     lst = []
     stream = _ListDataStream(lst)
     ElementTree(element).write(stream, encoding,
@@ -1204,7 +1234,8 @@ def tostringlist(element, encoding=None, method=None, *,
                                default_namespace=default_namespace,
                                method=method,
                                short_empty_elements=short_empty_elements,
-                               standalone=standalone)
+                               standalone=standalone,
+                               namespaces=namespaces)
     return lst
 
 

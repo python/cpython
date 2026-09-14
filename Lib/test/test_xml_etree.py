@@ -1082,6 +1082,84 @@ class ElementTreeTest(unittest.TestCase):
             '<body xmlns="http://effbot.org/ns" attr="value"></body>'
         )
 
+    def test_tostring_namespaces(self):
+        # gh-57587: the prefixes for a particular serialization
+        house = 'http://localhost/house'
+        geo = 'http://localhost/geo'
+        elem = ET.XML('<house:iq xmlns:house="%s"/>' % house)
+        self.assertEqual(serialize(elem),
+                         '<ns0:iq xmlns:ns0="http://localhost/house" />')
+        self.assertEqual(serialize(elem, namespaces={'house': house}),
+                         '<house:iq xmlns:house="http://localhost/house" />')
+        self.assertEqual(serialize(elem, namespaces={'home': house}),
+                         '<home:iq xmlns:home="http://localhost/house" />')
+        # the empty prefix sets the default namespace
+        self.assertEqual(serialize(elem, namespaces={'': house}),
+                         '<iq xmlns="http://localhost/house" />')
+        self.assertEqual(serialize(elem, namespaces={'': house},
+                                   default_namespace=house),
+                         '<iq xmlns="http://localhost/house" />')
+        with self.assertRaisesRegex(ValueError, 'conflicting default'):
+            serialize(elem, namespaces={'': house}, default_namespace=geo)
+        # only the namespaces used in the tree are declared
+        self.assertEqual(serialize(elem, namespaces={'house': house, 'geo': geo}),
+                         '<house:iq xmlns:house="http://localhost/house" />')
+
+    def test_tostring_namespaces_registry(self):
+        house = 'http://localhost/house'
+        geo = 'http://localhost/geo'
+        elem = ET.XML('<doc><geo:town xmlns:geo="%s">'
+                      '<house:iq xmlns:house="%s"/></geo:town></doc>'
+                      % (geo, house))
+        ET.register_namespace('geo', geo)
+        self.addCleanup(ET._namespace_map.pop, geo, None)
+        self.assertEqual(serialize(elem),
+            '<doc xmlns:geo="http://localhost/geo" '
+            'xmlns:ns1="http://localhost/house">'
+            '<geo:town><ns1:iq /></geo:town></doc>')
+        # the mapping takes precedence over the registry
+        self.assertEqual(serialize(elem, namespaces={'g': geo}),
+            '<doc xmlns:g="http://localhost/geo" '
+            'xmlns:ns1="http://localhost/house">'
+            '<g:town><ns1:iq /></g:town></doc>')
+        # a registered prefix is not used if the mapping reserves it
+        # for another namespace
+        self.assertEqual(serialize(elem, namespaces={'geo': house}),
+            '<doc xmlns:geo="http://localhost/house" '
+            'xmlns:ns0="http://localhost/geo">'
+            '<ns0:town><geo:iq /></ns0:town></doc>')
+
+    def test_tostring_namespaces_attributes(self):
+        house = 'http://localhost/house'
+        geo = 'http://localhost/geo'
+        elem = ET.Element('{%s}a' % house, {'{%s}k' % geo: 'v', 'x': '1'})
+        self.assertEqual(serialize(elem, namespaces={'': house, 'g': geo}),
+                         '<a xmlns="http://localhost/house" '
+                         'xmlns:g="http://localhost/geo" g:k="v" x="1" />')
+        # an attribute cannot use the default namespace
+        elem = ET.Element('{%s}a' % house, {'{%s}k' % house: 'v'})
+        self.assertEqual(serialize(elem, namespaces={'': house, 'h': house}),
+                         '<a xmlns="http://localhost/house" '
+                         'xmlns:h="http://localhost/house" h:k="v" />')
+
+    def test_tostring_namespaces_invalid(self):
+        elem = ET.XML('<a/>')
+        for namespaces in [{'ns0': 'uri'}, {'ns12': 'uri'}, {'xml': 'uri'},
+                           {'xmlns': 'uri'}, {'a:b': 'uri'}, {'1': 'uri'},
+                           {'a b': 'uri'}]:
+            with self.subTest(namespaces=namespaces):
+                self.assertRaises(ValueError, serialize, elem,
+                                  namespaces=namespaces)
+        for namespaces in [{1: 'uri'}, {'a': 1}, {b'a': 'uri'}]:
+            with self.subTest(namespaces=namespaces):
+                self.assertRaises(TypeError, serialize, elem,
+                                  namespaces=namespaces)
+        # the xml prefix can only be mapped to its namespace
+        self.assertEqual(
+            serialize(elem, namespaces={
+                'xml': 'http://www.w3.org/XML/1998/namespace'}),
+            '<a />')
+
     def test_tostring_standalone(self):
         elem = ET.XML('<body><tag/></body>')
         self.assertEqual(

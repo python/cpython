@@ -742,6 +742,11 @@ Functions
    :exc:`ValueError` is raised if *prefix* is invalid or reserved
    (``ns`` followed by digits is reserved for the serializer).
 
+   The registry is meant for well-known prefixes of the application.
+   To choose the prefixes for a particular serialization,
+   use the *namespaces* parameter of :func:`tostring`, :func:`tostringlist`
+   and :meth:`ElementTree.write` instead.
+
    .. versionadded:: 3.2
 
    .. versionchanged:: next
@@ -767,15 +772,17 @@ Functions
 
 .. function:: tostring(element, encoding="us-ascii", method="xml", *, \
                        xml_declaration=None, default_namespace=None, \
-                       short_empty_elements=True, standalone=None)
+                       short_empty_elements=True, standalone=None, \
+                       namespaces=None)
 
    Generates a string representation of an XML element, including all
    subelements.  *element* is an :class:`Element` instance.  *encoding* [1]_ is
    the output encoding (default is US-ASCII).  Use ``encoding="unicode"`` to
    generate a Unicode string (otherwise, a bytestring is generated).  *method*
    is either ``"xml"``, ``"html"`` or ``"text"`` (default is ``"xml"``).
-   *xml_declaration*, *default_namespace*, *short_empty_elements* and
-   *standalone* has the same meaning as in :meth:`ElementTree.write`.
+   *xml_declaration*, *default_namespace*, *short_empty_elements*,
+   *standalone* and *namespaces* have the same meaning as in
+   :meth:`ElementTree.write`.
    Returns an (optionally) encoded string containing the XML data.
 
    .. versionchanged:: 3.4
@@ -789,20 +796,22 @@ Functions
       specified by the user.
 
    .. versionchanged:: next
-      Added the *standalone* parameter.
+      Added the *standalone* and *namespaces* parameters.
 
 
 .. function:: tostringlist(element, encoding="us-ascii", method="xml", *, \
                            xml_declaration=None, default_namespace=None, \
-                           short_empty_elements=True, standalone=None)
+                           short_empty_elements=True, standalone=None, \
+                           namespaces=None)
 
    Generates a string representation of an XML element, including all
    subelements.  *element* is an :class:`Element` instance.  *encoding* [1]_ is
    the output encoding (default is US-ASCII).  Use ``encoding="unicode"`` to
    generate a Unicode string (otherwise, a bytestring is generated).  *method*
    is either ``"xml"``, ``"html"`` or ``"text"`` (default is ``"xml"``).
-   *xml_declaration*, *default_namespace*, *short_empty_elements* and
-   *standalone* has the same meaning as in :meth:`ElementTree.write`.
+   *xml_declaration*, *default_namespace*, *short_empty_elements*,
+   *standalone* and *namespaces* have the same meaning as in
+   :meth:`ElementTree.write`.
    Returns a list of (optionally) encoded strings containing the XML data.
    It does not guarantee any specific sequence,
    except that ``b"".join(tostringlist(element)) == tostring(element)``.
@@ -820,7 +829,7 @@ Functions
       specified by the user.
 
    .. versionchanged:: next
-      Added the *standalone* parameter.
+      Added the *standalone* and *namespaces* parameters.
 
 
 .. function:: XML(text, parser=None)
@@ -1258,7 +1267,8 @@ ElementTree Objects
 
    .. method:: write(file, encoding="us-ascii", xml_declaration=None, \
                      default_namespace=None, method="xml", *, \
-                     short_empty_elements=True, standalone=None)
+                     short_empty_elements=True, standalone=None, \
+                     namespaces=None)
 
       Writes the element tree to a file, as XML.  *file* is a file name, or a
       :term:`file object` opened for writing.  *encoding* [1]_ is the output
@@ -1281,6 +1291,14 @@ ElementTree Objects
       An XML declaration is written if *standalone* is not ``None``;
       combining it with ``xml_declaration=False`` raises a :exc:`ValueError`.
 
+      The keyword-only *namespaces* parameter is a mapping from namespace
+      prefixes to URIs, which is used to choose the prefixes for this
+      serialization instead of the prefixes registered with
+      :func:`register_namespace`.
+      Only the namespaces used in the tree are declared.
+      The empty prefix sets the default namespace, like *default_namespace*.
+      The prefixes are validated as in :func:`register_namespace`.
+
       The output is either a string (:class:`str`) or binary (:class:`bytes`).
       This is controlled by the *encoding* argument.  If *encoding* is
       ``"unicode"``, the output is a string; otherwise, it's binary.  Note that
@@ -1296,7 +1314,7 @@ ElementTree Objects
          by the user.
 
       .. versionchanged:: next
-         Added the *standalone* parameter.
+         Added the *standalone* and *namespaces* parameters.
 
 
 This is the XML file that is going to be manipulated::

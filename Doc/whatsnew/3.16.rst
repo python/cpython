@@ -751,6 +751,13 @@ xml
   now work for :class:`!DocumentFragment` nodes in :mod:`xml.dom.minidom`.
   (Contributed by Serhiy Storchaka in :gh:`54092`.)
 
+* Add the *namespaces* parameter to :func:`~xml.etree.ElementTree.tostring`,
+  :func:`~xml.etree.ElementTree.tostringlist` and
+  :meth:`ElementTree.write <xml.etree.ElementTree.ElementTree.write>`,
+  a mapping from namespace prefixes to URIs which chooses the prefixes
+  for this serialization instead of the global registry.
+  (Contributed by Serhiy Storchaka in :gh:`57587`.)
+
 * :class:`~xml.etree.ElementTree.XMLPullParser` and
   :func:`~xml.etree.ElementTree.iterparse` now support the *target* parameter.
   The reported object is the value returned by the corresponding method of
