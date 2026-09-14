@@ -1112,5 +1112,31 @@ class DefinitionOrderTests(unittest.TestCase):
         self.assertEqual(list(namespace), ['b', 'a'])
 
 
+    @support.nomemtest
+    @isolation.runInSubprocess()
+    def test_clear_managed_dict_no_memory_keeps_exception(self):
+        # gh-152083: an exception may already be set when the managed dict is
+        # cleared under low memory.  PyErr_FormatUnraisable() must not clear it.
+        import _testcapi
+
+        class A:
+            def __init__(self):
+                self.a = 1
+                self.b = 2
+
+        def f():
+            a = A()
+            a.__dict__
+            return [None] * 1000
+
+        for start in range(120):
+            _testcapi.set_nomemory(start)
+            try:
+                f()
+            except BaseException:
+                pass
+        _testcapi.remove_mem_hooks()
+
+
 if __name__ == '__main__':
     unittest.main()
