@@ -53,11 +53,13 @@ static inline PyModuleDef *_PyModule_GetDefOrNull(PyObject *arg) {
     return NULL;
 }
 
+// Get md_token. Used in _DuringGC functions; must have no side effects.
 static inline PyModuleDef *_PyModule_GetToken(PyObject *arg) {
     PyModuleObject *mod = _PyModule_CAST(arg);
     return (PyModuleDef *)mod->md_token;
 }
 
+// Get md_state. Used in _DuringGC functions; must have no side effects.
 static inline void* _PyModule_GetState(PyObject* mod) {
     return _PyModule_CAST(mod)->md_state;
 }

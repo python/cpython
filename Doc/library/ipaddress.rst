@@ -367,9 +367,9 @@ write code that handles both IP versions correctly.  Address objects are
 
    .. attribute:: ipv4_mapped
 
-      For addresses that appear to be IPv4 mapped addresses (starting with
-      ``::FFFF/96``), this property will report the embedded IPv4 address.
-      For any other address, this property will be ``None``.
+      For addresses that appear to be IPv4 mapped addresses in the range
+      ``::FFFF:0:0/96`` as defined by :RFC:`4291`, this property reports the
+      embedded IPv4 address. For any other address, this property will be ``None``.
 
    .. attribute:: scope_id
 
@@ -718,6 +718,35 @@ dictionaries.
       .. deprecated:: 3.7
          It uses the same ordering and comparison algorithm as "<", "==", and ">"
 
+   .. method:: next_network(next_prefix=None)
+
+      Finds the next closest network of prefix size *next_prefix*.  If
+      *next_prefix=None*, then the current network prefix will be used.
+      Returns a single network object.
+
+      Raises :exc:`ValueError` if *next_prefix* is out of range or no further
+      network of the requested size exists.
+
+         >>> IPv4Network('192.0.2.0/24').next_network()
+         IPv4Network('192.0.3.0/24')
+         >>> IPv4Network('192.0.2.0/24').next_network(next_prefix=25)
+         IPv4Network('192.0.3.0/25')
+         >>> IPv4Network('192.0.2.0/24').next_network(next_prefix=23)
+         IPv4Network('192.0.4.0/23')
+         >>> IPv4Network('192.0.80.0/22').next_network(next_prefix=18)
+         IPv4Network('192.0.128.0/18')
+         >>> IPv4Network('192.0.80.0/22').next_network(next_prefix=50)
+         Traceback (most recent call last):
+            File "<stdin>", line 1, in <module>
+               raise ValueError(
+         ValueError: next prefix must be between 1 and 32
+         >>> IPv4Network('255.255.255.0/24').next_network()
+         Traceback (most recent call last):
+            File "<stdin>", line 1, in <module>
+               raise ValueError(
+         ValueError: out of address space, cannot make another /24 network
+
+      .. versionadded:: 3.16
 
 .. class:: IPv6Network(address, strict=True)
 
@@ -790,6 +819,7 @@ dictionaries.
    .. method:: supernet(prefixlen_diff=1, new_prefix=None)
    .. method:: subnet_of(other)
    .. method:: supernet_of(other)
+   .. method:: next_network(next_prefix=None)
    .. method:: compare_networks(other)
 
       Refer to the corresponding attribute documentation in

@@ -1,2 +1,0 @@
-Fixed segmentation fault when called repr for BaseExceptionGroup with empty
-or 1-size tuple args.

@@ -1,7 +1,6 @@
 """Widget classes for the live profiling collector UI."""
 
 import curses
-import time
 from abc import ABC, abstractmethod
 
 from .constants import (
@@ -13,24 +12,14 @@ from .constants import (
     WIDTH_THRESHOLD_CUMUL_PCT,
     WIDTH_THRESHOLD_CUMTIME,
     MICROSECONDS_PER_SECOND,
-    DISPLAY_UPDATE_INTERVAL_SEC,
     MIN_BAR_WIDTH,
     MAX_SAMPLE_RATE_BAR_WIDTH,
     MAX_EFFICIENCY_BAR_WIDTH,
     MIN_SAMPLE_RATE_FOR_SCALING,
     FOOTER_LINES,
-    FINISHED_BANNER_EXTRA_LINES,
     OPCODE_PANEL_HEIGHT,
 )
-from ..constants import (
-    THREAD_STATUS_HAS_GIL,
-    THREAD_STATUS_ON_CPU,
-    THREAD_STATUS_UNKNOWN,
-    THREAD_STATUS_GIL_REQUESTED,
-    PROFILING_MODE_CPU,
-    PROFILING_MODE_GIL,
-    PROFILING_MODE_WALL,
-)
+from ..constants import PROFILING_MODE_GIL
 from ..opcode_utils import get_opcode_info, format_opcode
 
 

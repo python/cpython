@@ -18,13 +18,50 @@ this database is compiled from the `UCD version 17.0.0
 
 The module uses the same names and symbols as defined by Unicode
 Standard Annex #44, `"Unicode Character Database"
-<https://www.unicode.org/reports/tr44/>`_.  It defines the
-following functions:
+<https://www.unicode.org/reports/tr44/>`_.
 
 .. seealso::
 
    The :ref:`unicode-howto` for more information about Unicode and how to use
    this module.
+
+
+============================================================  ===========================================================
+**Lookup**
+-------------------------------------------------------------------------------------------------------------------------
+:func:`lookup(name) <lookup>`                                 Look up character by name
+:func:`name(chr) <name>`                                      Return the name assigned to a character
+
+**Numeric values**
+-------------------------------------------------------------------------------------------------------------------------
+:func:`decimal(chr) <decimal>`                                Decimal value of a character
+:func:`digit(chr) <digit>`                                    Digit value of a character
+:func:`numeric(chr) <numeric>`                                Numeric value of a character
+
+**Properties**
+-------------------------------------------------------------------------------------------------------------------------
+:func:`bidirectional(chr) <bidirectional>`                    Bidirectional class of a character
+:func:`block(chr) <block>`                                    Unicode block of a character
+:func:`category(chr) <category>`                              General category of a character
+:func:`combining(chr) <combining>`                            Canonical combining class of a character
+:func:`decomposition(chr) <decomposition>`                    Character decomposition mapping
+:func:`east_asian_width(chr) <east_asian_width>`              East Asian width of a character
+:func:`extended_pictographic(chr) <extended_pictographic>`    Check if a character has the Extended_Pictographic property
+:func:`grapheme_cluster_break(chr) <grapheme_cluster_break>`  Grapheme_Cluster_Break property of a character
+:func:`indic_conjunct_break(chr) <indic_conjunct_break>`      Indic_Conjunct_Break property of a character
+:func:`isxidcontinue(chr) <isxidcontinue>`                    Check if a character is a valid identifier continuation
+:func:`isxidstart(chr) <isxidstart>`                          Check if a character is a valid identifier start
+:func:`mirrored(chr) <mirrored>`                              Mirrored property of a character
+
+**Normalization**
+-------------------------------------------------------------------------------------------------------------------------
+:func:`normalize(form, unistr) <normalize>`                   Return the normalized form of a string
+:func:`is_normalized(form, unistr) <is_normalized>`           Check if a Unicode string is normalized
+
+**Text segmentation**
+-------------------------------------------------------------------------------------------------------------------------
+:func:`iter_graphemes(unistr) <iter_graphemes>`               Iterate over grapheme clusters in a string
+============================================================  ===========================================================
 
 
 .. function:: lookup(name, /)
@@ -273,7 +310,7 @@ following functions:
    .. versionadded:: 3.15
 
 
-In addition, the module exposes the following constant:
+In addition, the module exposes the following constants:
 
 .. data:: unidata_version
 

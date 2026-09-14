@@ -165,6 +165,14 @@ class DictComprehensionTest(unittest.TestCase):
                 self.assertEqual(f.line[f.colno - indent : f.end_colno - indent],
                                  expected)
 
+    def test_hash_error(self):
+        class Unhashable:
+            def __hash__(self):
+                0/0
+
+        with self.assertRaises(ZeroDivisionError):
+            {unhashable: 1 for unhashable in [Unhashable()]}
+
 
 if __name__ == "__main__":
     unittest.main()

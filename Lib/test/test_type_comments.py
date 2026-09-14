@@ -398,6 +398,9 @@ class TypeCommentTests(unittest.TestCase):
         with self.assertRaises(UnicodeDecodeError):
             _testcapi.Py_CompileStringExFlags(
                 b"a=1 # type: \x80", "<test>", 256, flags)
+        with self.assertRaises(UnicodeDecodeError):
+            _testcapi.Py_CompileStringExFlags(
+                b"def a(f=8, #type: \x80\n\x80", "<test>", 256, flags)
 
     def test_func_type_input(self):
 

@@ -1,0 +1,1 @@
+Fix a race condition in ``_PyBytes_FromList`` in free-threading mode.

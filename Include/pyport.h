@@ -58,26 +58,6 @@
 #endif
 
 
-/* Defines to build Python and its standard library:
- *
- * - Py_BUILD_CORE: Build Python core. Give access to Python internals, but
- *   should not be used by third-party modules.
- * - Py_BUILD_CORE_BUILTIN: Build a Python stdlib module as a built-in module.
- * - Py_BUILD_CORE_MODULE: Build a Python stdlib module as a dynamic library.
- *
- * Py_BUILD_CORE_BUILTIN and Py_BUILD_CORE_MODULE imply Py_BUILD_CORE.
- *
- * On Windows, Py_BUILD_CORE_MODULE exports "PyInit_xxx" symbol, whereas
- * Py_BUILD_CORE_BUILTIN does not.
- */
-#if defined(Py_BUILD_CORE_BUILTIN) && !defined(Py_BUILD_CORE)
-#  define Py_BUILD_CORE
-#endif
-#if defined(Py_BUILD_CORE_MODULE) && !defined(Py_BUILD_CORE)
-#  define Py_BUILD_CORE
-#endif
-
-
 /**************************************************************************
 Symbols and macros to supply platform-independent interfaces to basic
 C language & library operations whose spellings vary across platforms.
@@ -385,17 +365,6 @@ extern "C" {
 #  define Py_NO_INLINE
 #endif
 
-#include "exports.h"
-
-#ifdef Py_LIMITED_API
-   // The internal C API must not be used with the limited C API: make sure
-   // that Py_BUILD_CORE macro is not defined in this case. These 3 macros are
-   // used by exports.h, so only undefine them afterwards.
-#  undef Py_BUILD_CORE
-#  undef Py_BUILD_CORE_BUILTIN
-#  undef Py_BUILD_CORE_MODULE
-#endif
-
 /* limits.h constants that may be missing */
 
 #ifndef INT_MAX
@@ -569,11 +538,17 @@ extern "C" {
 //
 // Example: _Py_TYPEOF(x) x_copy = (x);
 //
-// On C23, use typeof(). Otherwise, the macro is only defined
-// if GCC or clang compiler is used.
+// On C23, use typeof(). On C++11, use decltype(). Otherwise, use __typeof__()
+// if on GCC, clang or MSVC 17.9 and newer.
+//
+// On MSVC, check also _MSVC_LANG since __cplusplus is 199711L unless
+// the /Zc:__cplusplus flag is used.
 #if defined (__STDC_VERSION__) && __STDC_VERSION__ >= 202311L
 #  define _Py_TYPEOF(expr) typeof(expr)
-#elif defined(__GNUC__) || defined(__clang__)
+#elif defined(__cplusplus) && (__cplusplus >= 201103L ||  _MSVC_LANG >= 201103L)
+#  define _Py_TYPEOF(expr) decltype(expr)
+#elif defined(__GNUC__) || defined(__clang__) || \
+    (defined(_MSC_VER) && _MSC_VER >= 1939)
 #  define _Py_TYPEOF(expr) __typeof__(expr)
 #endif
 
@@ -584,6 +559,7 @@ extern "C" {
 #    if !defined(_Py_MEMORY_SANITIZER)
 #      define _Py_MEMORY_SANITIZER
 #      define _Py_NO_SANITIZE_MEMORY __attribute__((no_sanitize_memory))
+#      define _Py_MSAN_UNPOISON(PTR, SIZE)  (__msan_unpoison(PTR, SIZE))
 #    endif
 #  endif
 #  if __has_feature(address_sanitizer)
@@ -621,6 +597,9 @@ extern "C" {
 #endif
 #ifndef _Py_NO_SANITIZE_MEMORY
 #  define _Py_NO_SANITIZE_MEMORY
+#endif
+#ifndef _Py_MSAN_UNPOISON
+#  define _Py_MSAN_UNPOISON(PTR, SIZE)
 #endif
 
 /* AIX has __bool__ redefined in it's system header file. */

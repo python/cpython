@@ -4,7 +4,3 @@ rules:
   dangerous-triggers:
     ignore:
       - documentation-links.yml
-  unpinned-uses:
-    config:
-      policies:
-        "*": ref-pin

@@ -33,6 +33,7 @@ extern PyObject* _PyUnicode_ResizeCompact(
     Py_ssize_t length);
 extern PyObject* _PyUnicode_GetEmpty(void);
 PyAPI_FUNC(PyObject*) _PyUnicode_BinarySlice(PyObject *, PyObject *, PyObject *);
+PyAPI_FUNC(PyObject *) _PyUnicode_Repeat(PyObject *str, Py_ssize_t len);
 
 
 /* Generic helper macro to convert characters of different types.
@@ -180,6 +181,22 @@ extern int _PyUnicodeWriter_FormatV(
     PyUnicodeWriter *writer,
     const char *format,
     va_list vargs);
+
+/* --- iconv Codec -------------------------------------------------------- */
+
+#ifdef HAVE_ICONV
+extern PyObject* _PyUnicode_DecodeIconv(
+    const char *encoding,       /* iconv encoding name */
+    const char *string,         /* encoded string */
+    Py_ssize_t length,          /* size of string */
+    const char *errors,         /* error handling */
+    Py_ssize_t *consumed);      /* bytes consumed, or NULL for non-stateful */
+
+extern PyObject* _PyUnicode_EncodeIconv(
+    const char *encoding,       /* iconv encoding name */
+    PyObject *unicode,          /* Unicode object */
+    const char *errors);        /* error handling */
+#endif
 
 /* --- UTF-7 Codecs ------------------------------------------------------- */
 

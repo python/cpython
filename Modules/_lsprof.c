@@ -292,9 +292,10 @@ static void clearEntries(ProfilerObject *pObj)
     RotatingTree_Enum(pObj->profilerEntries, freeEntry, NULL);
     pObj->profilerEntries = EMPTY_ROTATING_TREE;
     /* release the memory hold by the ProfilerContexts */
-    if (pObj->currentProfilerContext) {
-        PyMem_Free(pObj->currentProfilerContext);
-        pObj->currentProfilerContext = NULL;
+    while (pObj->currentProfilerContext) {
+        ProfilerContext *pContext = pObj->currentProfilerContext;
+        pObj->currentProfilerContext = pContext->previous;
+        PyMem_Free(pContext);
     }
     while (pObj->freelistProfilerContext) {
         ProfilerContext *c = pObj->freelistProfilerContext;
@@ -820,7 +821,6 @@ _lsprof_Profiler_enable_impl(ProfilerObject *self, int subcalls,
                                           "use_tool_id", "is",
                                           self->tool_id, "cProfile");
     if (check == NULL) {
-        PyErr_Format(PyExc_ValueError, "Another profiling tool is already active");
         goto error;
     }
     Py_DECREF(check);
@@ -1125,6 +1125,7 @@ _lsprof_exec(PyObject *module)
 }
 
 static PyModuleDef_Slot _lsprofslots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, _lsprof_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

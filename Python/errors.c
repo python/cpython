@@ -13,6 +13,8 @@
 #include "pycore_traceback.h"     // _PyTraceBack_FromFrame()
 #include "pycore_unicodeobject.h" // _PyUnicode_Equal()
 
+#include "../Parser/tokenizer/tokenizer.h"
+
 #ifdef MS_WINDOWS
 #  include <windows.h>
 #  include <winbase.h>
@@ -246,13 +248,23 @@ PyErr_SetObject(PyObject *exception, PyObject *value)
     _PyErr_SetObject(tstate, exception, value);
 }
 
-/* Set a key error with the specified argument, wrapping it in a
- * tuple automatically so that tuple keys are not unpacked as the
- * exception arguments. */
+/* Set a key error with the specified argument. This function should be used to
+ * raise a KeyError with an argument instead of PyErr_SetObject(PyExc_KeyError,
+ * arg) which has a special behavior. PyErr_SetObject() unpacks arg if it's a
+ * tuple, and it uses arg instead of creating a new exception if arg is an
+ * exception.
+ *
+ * If an exception is already set, override the exception. */
 void
 _PyErr_SetKeyError(PyObject *arg)
 {
     PyThreadState *tstate = _PyThreadState_GET();
+
+    // PyObject_CallOneArg() must not be called with an exception set,
+    // otherwise _Py_CheckFunctionResult() can fail if the function returned
+    // a result with an excception set.
+    _PyErr_Clear(tstate);
+
     PyObject *exc = PyObject_CallOneArg(PyExc_KeyError, arg);
     if (!exc) {
         /* caller will expect error to be set anyway */
@@ -2039,9 +2051,6 @@ PyErr_ProgramText(const char *filename, int lineno)
     Py_DECREF(filename_obj);
     return res;
 }
-
-/* Function from Parser/tokenizer/file_tokenizer.c */
-extern char* _PyTokenizer_FindEncodingFilename(int, PyObject *);
 
 PyObject *
 _PyErr_ProgramDecodedTextObject(PyObject *filename, int lineno, const char* encoding)

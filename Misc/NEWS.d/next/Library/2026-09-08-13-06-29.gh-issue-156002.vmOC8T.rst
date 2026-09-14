@@ -1,0 +1,6 @@
+:mod:`zipfile` again reads members through a third-party decompressor
+installed by monkey-patching the private ``_get_decompressor()`` to return an
+object that only implements old BZ2Decompressor API from Python 3.3.
+Calling decompress() with one argument is deprecated.
+Note that decompressors without ``needs_input`` and two-argument
+``decompress()`` are vulnerable to :cve:`2026-15310`.

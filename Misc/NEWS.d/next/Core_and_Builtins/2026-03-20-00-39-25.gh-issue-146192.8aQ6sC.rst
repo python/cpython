@@ -1,2 +1,0 @@
-Add Base32 support to :mod:`binascii` and improve the performance of the
-Base32 converters in :mod:`base64`. Patch by James Seo.

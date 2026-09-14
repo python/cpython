@@ -256,7 +256,7 @@ Ensuring unique enumeration values
 ----------------------------------
 
 By default, enumerations allow multiple names as aliases for the same value.
-When this behavior isn't desired, you can use the :func:`unique` decorator::
+When this behavior isn't desired, you can use the :deco:`unique` decorator::
 
     >>> from enum import Enum, unique
     >>> @unique
@@ -371,7 +371,7 @@ Equality comparisons are defined though::
     >>> Color.BLUE == Color.BLUE
     True
 
-Comparisons against non-enumeration values will always compare not equal
+Equality comparisons against non-enumeration values will always return ``False``
 (again, :class:`IntEnum` was explicitly designed to behave differently, see
 below)::
 
@@ -509,7 +509,7 @@ to use the standard :func:`repr`.
 
 .. note::
 
-   Adding :func:`~dataclasses.dataclass` decorator to :class:`Enum`
+   Adding :deco:`~dataclasses.dataclass` decorator to :class:`Enum`
    and its subclasses is not supported. It will not raise any errors,
    but it will produce very strange results at runtime, such as members
    being equal to each other::

@@ -178,6 +178,7 @@ void _PyAST_Fini(PyInterpreterState *interp)
     Py_CLEAR(state->__module__);
     Py_CLEAR(state->_attributes);
     Py_CLEAR(state->_fields);
+    Py_CLEAR(state->abstract_types);
     Py_CLEAR(state->alias_type);
     Py_CLEAR(state->annotation);
     Py_CLEAR(state->arg);
@@ -5197,12 +5198,89 @@ ast_clear(PyObject *op)
     return 0;
 }
 
+/*
+ * Format the names in the set 'missing' into a natural language list,
+ * sorted in the order in which they appear in 'fields'.
+ *
+ * Similar to format_missing() from 'Python/ceval.c'.
+ *
+ * Parameters
+ *
+ *      missing     Set of missing field names to render.
+ *      fields      Sequence of AST node field names (self._fields).
+ */
+static PyObject *
+format_missing(PyObject *missing, PyObject *fields)
+{
+    Py_ssize_t num_fields, num_total, num_left;
+    num_fields = PySequence_Size(fields);
+    if (num_fields == -1) {
+        return NULL;
+    }
+    num_total = num_left = PySet_GET_SIZE(missing);
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
+    if (writer == NULL) {
+        goto error;
+    }
+    // Iterate all AST node fields in order so that the missing positional
+    // arguments are rendered in the order in which __init__ expects them.
+    for (Py_ssize_t i = 0; i < num_fields; i++) {
+        PyObject *name = PySequence_GetItem(fields, i);
+        if (name == NULL) {
+            goto error;
+        }
+        int contains = PySet_Contains(missing, name);
+        if (contains == -1) {
+            Py_DECREF(name);
+            goto error;
+        }
+        else if (contains == 1) {
+            const char* fmt = NULL;
+            if (num_left == 1) {
+                fmt = "'%U'";
+            }
+            else if (num_total == 2) {
+                fmt = "'%U' and ";
+            }
+            else if (num_left == 2) {
+                fmt = "'%U', and ";
+            }
+            else {
+                fmt = "'%U', ";
+            }
+            num_left--;
+            if (PyUnicodeWriter_Format(writer, fmt, name) < 0) {
+                Py_DECREF(name);
+                goto error;
+            }
+        }
+        Py_DECREF(name);
+    }
+    return PyUnicodeWriter_Finish(writer);
+error:
+    PyUnicodeWriter_Discard(writer);
+    return NULL;
+}
+
 static int
 ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
 {
     struct ast_state *state = get_ast_state();
     if (state == NULL) {
         return -1;
+    }
+
+    int contains = PySet_Contains(state->abstract_types, (PyObject *)Py_TYPE(self));
+    if (contains == -1) {
+        return -1;
+    }
+    else if (contains == 1) {
+        if (PyErr_WarnFormat(
+                PyExc_DeprecationWarning, 1,
+                "Instantiating abstract AST node class %T is deprecated. "
+                "This will become an error in Python 3.20", self) < 0) {
+            return -1;
+        }
     }
 
     Py_ssize_t i, numfields = 0;
@@ -5225,10 +5303,9 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
 
     res = 0; /* if no error occurs, this stays 0 to the end */
     if (numfields < PyTuple_GET_SIZE(args)) {
-        PyErr_Format(PyExc_TypeError, "%.400s constructor takes at most "
+        PyErr_Format(PyExc_TypeError, "%T constructor takes at most "
                      "%zd positional argument%s",
-                     _PyType_Name(Py_TYPE(self)),
-                     numfields, numfields == 1 ? "" : "s");
+                     self, numfields, numfields == 1 ? "" : "s");
         res = -1;
         goto cleanup;
     }
@@ -5266,8 +5343,8 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
                 }
                 if (p == 0) {
                     PyErr_Format(PyExc_TypeError,
-                        "%.400s got multiple values for argument %R",
-                        Py_TYPE(self)->tp_name, key);
+                        "%T got multiple values for argument %R",
+                        self, key);
                     res = -1;
                     goto cleanup;
                 }
@@ -5287,16 +5364,11 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
                     goto cleanup;
                 }
                 else if (contains == 0) {
-                    if (PyErr_WarnFormat(
-                        PyExc_DeprecationWarning, 1,
-                        "%.400s.__init__ got an unexpected keyword argument %R. "
-                        "Support for arbitrary keyword arguments is deprecated "
-                        "and will be removed in Python 3.15.",
-                        Py_TYPE(self)->tp_name, key
-                    ) < 0) {
-                        res = -1;
-                        goto cleanup;
-                    }
+                    PyErr_Format(PyExc_TypeError,
+                        "%T.__init__ got an unexpected keyword argument %R",
+                        self, key);
+                    res = -1;
+                    goto cleanup;
                 }
             }
             res = PyObject_SetAttr(self, key, value);
@@ -5306,7 +5378,7 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
         }
     }
     Py_ssize_t size = PySet_Size(remaining_fields);
-    PyObject *field_types = NULL, *remaining_list = NULL;
+    PyObject *field_types = NULL, *remaining_list = NULL, *missing_names = NULL;
     if (size > 0) {
         if (PyObject_GetOptionalAttr((PyObject*)Py_TYPE(self), &_Py_ID(_field_types),
                                      &field_types) < 0) {
@@ -5323,6 +5395,10 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
         if (!remaining_list) {
             goto set_remaining_cleanup;
         }
+        missing_names = PySet_New(NULL);
+        if (!missing_names) {
+            goto set_remaining_cleanup;
+        }
         for (Py_ssize_t i = 0; i < size; i++) {
             PyObject *name = PyList_GET_ITEM(remaining_list, i);
             PyObject *type = PyDict_GetItemWithError(field_types, name);
@@ -5331,14 +5407,10 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
                     goto set_remaining_cleanup;
                 }
                 else {
-                    if (PyErr_WarnFormat(
-                        PyExc_DeprecationWarning, 1,
-                        "Field %R is missing from %.400s._field_types. "
-                        "This will become an error in Python 3.15.",
-                        name, Py_TYPE(self)->tp_name
-                    ) < 0) {
-                        goto set_remaining_cleanup;
-                    }
+                    PyErr_Format(PyExc_TypeError,
+                        "Field %R is missing from %T._field_types",
+                        name, self);
+                    goto set_remaining_cleanup;
                 }
             }
             else if (_PyUnion_Check(type)) {
@@ -5366,16 +5438,25 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
             }
             else {
                 // simple field (e.g., identifier)
-                if (PyErr_WarnFormat(
-                    PyExc_DeprecationWarning, 1,
-                    "%.400s.__init__ missing 1 required positional argument: %R. "
-                    "This will become an error in Python 3.15.",
-                    Py_TYPE(self)->tp_name, name
-                ) < 0) {
+                res = PySet_Add(missing_names, name);
+                if (res < 0) {
                     goto set_remaining_cleanup;
                 }
             }
         }
+        Py_ssize_t num_missing = PySet_GET_SIZE(missing_names);
+        if (num_missing > 0) {
+            PyObject *name_str = format_missing(missing_names, fields);
+            if (!name_str) {
+                goto set_remaining_cleanup;
+            }
+            PyErr_Format(PyExc_TypeError,
+                "%T.__init__ missing %d required positional argument%s: %U",
+                self, num_missing, num_missing == 1 ? "" : "s", name_str);
+            Py_DECREF(name_str);
+            goto set_remaining_cleanup;
+        }
+        Py_DECREF(missing_names);
         Py_DECREF(remaining_list);
         Py_DECREF(field_types);
     }
@@ -5385,6 +5466,7 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
     Py_XDECREF(remaining_fields);
     return res;
   set_remaining_cleanup:
+    Py_XDECREF(missing_names);
     Py_XDECREF(remaining_list);
     Py_XDECREF(field_types);
     res = -1;
@@ -5466,182 +5548,6 @@ cleanup:
     Py_XDECREF(fields);
     Py_XDECREF(positional_args);
     return result;
-}
-
-/*
- * Perform the following validations:
- *
- *   - All keyword arguments are known 'fields' or 'attributes'.
- *   - No field or attribute would be left unfilled after copy.replace().
- *
- * On success, this returns 1. Otherwise, set a TypeError
- * exception and returns -1 (no exception is set if some
- * other internal errors occur).
- *
- * Parameters
- *
- *      self          The AST node instance.
- *      dict          The AST node instance dictionary (self.__dict__).
- *      fields        The list of fields (self._fields).
- *      attributes    The list of attributes (self._attributes).
- *      kwargs        Keyword arguments passed to ast_type_replace().
- *
- * The 'dict', 'fields', 'attributes' and 'kwargs' arguments can be NULL.
- *
- * Note: this function can be removed in 3.15 since the verification
- *       will be done inside the constructor.
- */
-static inline int
-ast_type_replace_check(PyObject *self,
-                       PyObject *dict,
-                       PyObject *fields,
-                       PyObject *attributes,
-                       PyObject *kwargs)
-{
-    // While it is possible to make some fast paths that would avoid
-    // allocating objects on the stack, this would cost us readability.
-    // For instance, if 'fields' and 'attributes' are both empty, and
-    // 'kwargs' is not empty, we could raise a TypeError immediately.
-    PyObject *expecting = PySet_New(fields);
-    if (expecting == NULL) {
-        return -1;
-    }
-    if (attributes) {
-        if (_PySet_Update(expecting, attributes) < 0) {
-            Py_DECREF(expecting);
-            return -1;
-        }
-    }
-    // Any keyword argument that is neither a field nor attribute is rejected.
-    // We first need to check whether a keyword argument is accepted or not.
-    // If all keyword arguments are accepted, we compute the required fields
-    // and attributes. A field or attribute is not needed if:
-    //
-    //  1) it is given in 'kwargs', or
-    //  2) it already exists on 'self'.
-    if (kwargs) {
-        Py_ssize_t pos = 0;
-        PyObject *key, *value;
-        while (PyDict_Next(kwargs, &pos, &key, &value)) {
-            int rc = PySet_Discard(expecting, key);
-            if (rc < 0) {
-                Py_DECREF(expecting);
-                return -1;
-            }
-            if (rc == 0) {
-                PyErr_Format(PyExc_TypeError,
-                             "%.400s.__replace__ got an unexpected keyword "
-                             "argument %R.", Py_TYPE(self)->tp_name, key);
-                Py_DECREF(expecting);
-                return -1;
-            }
-        }
-    }
-    // check that the remaining fields or attributes would be filled
-    if (dict) {
-        Py_ssize_t pos = 0;
-        PyObject *key, *value;
-        while (PyDict_Next(dict, &pos, &key, &value)) {
-            // Mark fields or attributes that are found on the instance
-            // as non-mandatory. If they are not given in 'kwargs', they
-            // will be shallow-coied; otherwise, they would be replaced
-            // (not in this function).
-            if (PySet_Discard(expecting, key) < 0) {
-                Py_DECREF(expecting);
-                return -1;
-            }
-        }
-        if (attributes) {
-            // Some attributes may or may not be present at runtime.
-            // In particular, now that we checked whether 'kwargs'
-            // is correct or not, we allow any attribute to be missing.
-            //
-            // Note that fields must still be entirely determined when
-            // calling the constructor later.
-            PyObject *unused = PyObject_CallMethodOneArg(expecting,
-                                                         &_Py_ID(difference_update),
-                                                         attributes);
-            if (unused == NULL) {
-                Py_DECREF(expecting);
-                return -1;
-            }
-            Py_DECREF(unused);
-        }
-    }
-
-    // Discard fields from 'expecting' that default to None
-    PyObject *field_types = NULL;
-    if (PyObject_GetOptionalAttr((PyObject*)Py_TYPE(self),
-                                 &_Py_ID(_field_types),
-                                 &field_types) < 0)
-    {
-        Py_DECREF(expecting);
-        return -1;
-    }
-    if (field_types != NULL) {
-        Py_ssize_t pos = 0;
-        PyObject *field_name, *field_type;
-        while (PyDict_Next(field_types, &pos, &field_name, &field_type)) {
-            if (_PyUnion_Check(field_type)) {
-                // optional field
-                if (PySet_Discard(expecting, field_name) < 0) {
-                    Py_DECREF(expecting);
-                    Py_DECREF(field_types);
-                    return -1;
-                }
-            }
-        }
-        Py_DECREF(field_types);
-    }
-
-    // Now 'expecting' contains the fields or attributes
-    // that would not be filled inside ast_type_replace().
-    Py_ssize_t m = PySet_GET_SIZE(expecting);
-    if (m > 0) {
-        PyObject *names = PyList_New(m);
-        if (names == NULL) {
-            Py_DECREF(expecting);
-            return -1;
-        }
-        Py_ssize_t i = 0, pos = 0;
-        PyObject *item;
-        Py_hash_t hash;
-        while (_PySet_NextEntry(expecting, &pos, &item, &hash)) {
-            PyObject *name = PyObject_Repr(item);
-            if (name == NULL) {
-                Py_DECREF(expecting);
-                Py_DECREF(names);
-                return -1;
-            }
-            // steal the reference 'name'
-            PyList_SET_ITEM(names, i++, name);
-        }
-        Py_DECREF(expecting);
-        if (PyList_Sort(names) < 0) {
-            Py_DECREF(names);
-            return -1;
-        }
-        PyObject *sep = PyUnicode_FromString(", ");
-        if (sep == NULL) {
-            Py_DECREF(names);
-            return -1;
-        }
-        PyObject *str_names = PyUnicode_Join(sep, names);
-        Py_DECREF(sep);
-        Py_DECREF(names);
-        if (str_names == NULL) {
-            return -1;
-        }
-        PyErr_Format(PyExc_TypeError,
-                     "%.400s.__replace__ missing %ld keyword argument%s: %U.",
-                     Py_TYPE(self)->tp_name, m, m == 1 ? "" : "s", str_names);
-        Py_DECREF(str_names);
-        return -1;
-    }
-    else {
-        Py_DECREF(expecting);
-        return 1;
-    }
 }
 
 /*
@@ -5731,9 +5637,6 @@ ast_type_replace(PyObject *self, PyObject *args, PyObject *kwargs)
         goto cleanup;
     }
     if (PyObject_GetOptionalAttr(self, state->__dict__, &dict) < 0) {
-        goto cleanup;
-    }
-    if (ast_type_replace_check(self, dict, fields, attributes, kwargs) < 0) {
         goto cleanup;
     }
     empty_tuple = PyTuple_New(0);
@@ -5889,35 +5792,34 @@ ast_repr_max_depth(AST_object *self, int depth)
         return NULL;
     }
 
-    if (depth <= 0) {
-        return PyUnicode_FromFormat("%s(...)", Py_TYPE(self)->tp_name);
-    }
-
-    int status = Py_ReprEnter((PyObject *)self);
-    if (status != 0) {
-        if (status < 0) {
-            return NULL;
-        }
-        return PyUnicode_FromFormat("%s(...)", Py_TYPE(self)->tp_name);
-    }
-
     PyObject *fields;
     if (PyObject_GetOptionalAttr((PyObject *)Py_TYPE(self), state->_fields, &fields) < 0) {
-        Py_ReprLeave((PyObject *)self);
         return NULL;
     }
 
     Py_ssize_t numfields = PySequence_Size(fields);
     if (numfields < 0) {
-        Py_ReprLeave((PyObject *)self);
         Py_DECREF(fields);
         return NULL;
     }
 
     if (numfields == 0) {
-        Py_ReprLeave((PyObject *)self);
         Py_DECREF(fields);
         return PyUnicode_FromFormat("%s()", Py_TYPE(self)->tp_name);
+    }
+
+    if (depth <= 0) {
+        Py_DECREF(fields);
+        return PyUnicode_FromFormat("%s(...)", Py_TYPE(self)->tp_name);
+    }
+
+    int status = Py_ReprEnter((PyObject *)self);
+    if (status != 0) {
+        Py_DECREF(fields);
+        if (status < 0) {
+            return NULL;
+        }
+        return PyUnicode_FromFormat("%s(...)", Py_TYPE(self)->tp_name);
     }
 
     const char* tp_name = Py_TYPE(self)->tp_name;
@@ -6122,7 +6024,9 @@ static PyObject* ast2obj_int(struct ast_state *Py_UNUSED(state), long b)
 
 /* Conversion Python -> AST */
 
-static int obj2ast_object(struct ast_state *Py_UNUSED(state), PyObject* obj, PyObject** out, PyArena* arena)
+static int obj2ast_object(struct ast_state *Py_UNUSED(state), PyObject* obj,
+                          PyObject** out,
+                          const char* Py_UNUSED(field), PyArena* arena)
 {
     if (obj == Py_None)
         obj = NULL;
@@ -6139,7 +6043,9 @@ static int obj2ast_object(struct ast_state *Py_UNUSED(state), PyObject* obj, PyO
     return 0;
 }
 
-static int obj2ast_constant(struct ast_state *Py_UNUSED(state), PyObject* obj, PyObject** out, PyArena* arena)
+static int obj2ast_constant(struct ast_state *Py_UNUSED(state), PyObject* obj,
+                            PyObject** out,
+                            const char* Py_UNUSED(field), PyArena* arena)
 {
     if (_PyArena_AddPyObject(arena, obj) < 0) {
         *out = NULL;
@@ -6149,29 +6055,29 @@ static int obj2ast_constant(struct ast_state *Py_UNUSED(state), PyObject* obj, P
     return 0;
 }
 
-static int obj2ast_identifier(struct ast_state *state, PyObject* obj, PyObject** out, PyArena* arena)
+static int obj2ast_identifier(struct ast_state *state, PyObject* obj, PyObject** out, const char* field, PyArena* arena)
 {
     if (!PyUnicode_CheckExact(obj) && obj != Py_None) {
-        PyErr_SetString(PyExc_TypeError, "AST identifier must be of type str");
+        PyErr_Format(PyExc_TypeError, "field '%s' was expecting a string object, got %T", field, obj);
         return -1;
     }
-    return obj2ast_object(state, obj, out, arena);
+    return obj2ast_object(state, obj, out, field, arena);
 }
 
-static int obj2ast_string(struct ast_state *state, PyObject* obj, PyObject** out, PyArena* arena)
+static int obj2ast_string(struct ast_state *state, PyObject* obj, PyObject** out, const char* field, PyArena* arena)
 {
     if (!PyUnicode_CheckExact(obj) && !PyBytes_CheckExact(obj)) {
-        PyErr_SetString(PyExc_TypeError, "AST string must be of type str");
+        PyErr_Format(PyExc_TypeError, "field '%s' was expecting a string or bytes object, got %T", field, obj);
         return -1;
     }
-    return obj2ast_object(state, obj, out, arena);
+    return obj2ast_object(state, obj, out, field, arena);
 }
 
-static int obj2ast_int(struct ast_state* Py_UNUSED(state), PyObject* obj, int* out, PyArena* arena)
+static int obj2ast_int(struct ast_state* Py_UNUSED(state), PyObject* obj, int* out, const char* field, PyArena* arena)
 {
     int i;
     if (!PyLong_Check(obj)) {
-        PyErr_Format(PyExc_ValueError, "invalid integer value: %R", obj);
+        PyErr_Format(PyExc_ValueError, "field \"%s\" got an invalid integer value: %R", field, obj);
         return -1;
     }
 
@@ -6210,6 +6116,13 @@ init_types(void *arg)
     if (!state->AST_type) {
         return -1;
     }
+    state->abstract_types = PySet_New(NULL);
+    if (!state->abstract_types) {
+        return -1;
+    }
+    if (PySet_Add(state->abstract_types, state->AST_type) < 0) {
+        return -1;
+    }
     if (add_ast_fields(state) < 0) {
         return -1;
     }
@@ -6220,6 +6133,7 @@ init_types(void *arg)
         "    | FunctionType(expr* argtypes, expr returns)");
     if (!state->mod_type) return -1;
     if (add_attributes(state, state->mod_type, NULL, 0) < 0) return -1;
+    if (PySet_Add(state->abstract_types, state->mod_type) < 0) return -1;
     state->Module_type = make_type(state, "Module", state->mod_type,
                                    Module_fields, 2,
         "Module(stmt* body, type_ignore* type_ignores)");
@@ -6269,6 +6183,7 @@ init_types(void *arg)
     if (!state->stmt_type) return -1;
     if (add_attributes(state, state->stmt_type, stmt_attributes, 4) < 0) return
         -1;
+    if (PySet_Add(state->abstract_types, state->stmt_type) < 0) return -1;
     if (PyObject_SetAttr(state->stmt_type, state->end_lineno, Py_None) == -1)
         return -1;
     if (PyObject_SetAttr(state->stmt_type, state->end_col_offset, Py_None) ==
@@ -6458,6 +6373,7 @@ init_types(void *arg)
     if (!state->expr_type) return -1;
     if (add_attributes(state, state->expr_type, expr_attributes, 4) < 0) return
         -1;
+    if (PySet_Add(state->abstract_types, state->expr_type) < 0) return -1;
     if (PyObject_SetAttr(state->expr_type, state->end_lineno, Py_None) == -1)
         return -1;
     if (PyObject_SetAttr(state->expr_type, state->end_col_offset, Py_None) ==
@@ -6604,6 +6520,8 @@ init_types(void *arg)
         "expr_context = Load | Store | Del");
     if (!state->expr_context_type) return -1;
     if (add_attributes(state, state->expr_context_type, NULL, 0) < 0) return -1;
+    if (PySet_Add(state->abstract_types, state->expr_context_type) < 0) return
+        -1;
     state->Load_type = make_type(state, "Load", state->expr_context_type, NULL,
                                  0,
         "Load");
@@ -6628,6 +6546,7 @@ init_types(void *arg)
         "boolop = And | Or");
     if (!state->boolop_type) return -1;
     if (add_attributes(state, state->boolop_type, NULL, 0) < 0) return -1;
+    if (PySet_Add(state->abstract_types, state->boolop_type) < 0) return -1;
     state->And_type = make_type(state, "And", state->boolop_type, NULL, 0,
         "And");
     if (!state->And_type) return -1;
@@ -6645,6 +6564,7 @@ init_types(void *arg)
         "operator = Add | Sub | Mult | MatMult | Div | Mod | Pow | LShift | RShift | BitOr | BitXor | BitAnd | FloorDiv");
     if (!state->operator_type) return -1;
     if (add_attributes(state, state->operator_type, NULL, 0) < 0) return -1;
+    if (PySet_Add(state->abstract_types, state->operator_type) < 0) return -1;
     state->Add_type = make_type(state, "Add", state->operator_type, NULL, 0,
         "Add");
     if (!state->Add_type) return -1;
@@ -6739,6 +6659,7 @@ init_types(void *arg)
         "unaryop = Invert | Not | UAdd | USub");
     if (!state->unaryop_type) return -1;
     if (add_attributes(state, state->unaryop_type, NULL, 0) < 0) return -1;
+    if (PySet_Add(state->abstract_types, state->unaryop_type) < 0) return -1;
     state->Invert_type = make_type(state, "Invert", state->unaryop_type, NULL,
                                    0,
         "Invert");
@@ -6769,6 +6690,7 @@ init_types(void *arg)
         "cmpop = Eq | NotEq | Lt | LtE | Gt | GtE | Is | IsNot | In | NotIn");
     if (!state->cmpop_type) return -1;
     if (add_attributes(state, state->cmpop_type, NULL, 0) < 0) return -1;
+    if (PySet_Add(state->abstract_types, state->cmpop_type) < 0) return -1;
     state->Eq_type = make_type(state, "Eq", state->cmpop_type, NULL, 0,
         "Eq");
     if (!state->Eq_type) return -1;
@@ -6842,6 +6764,8 @@ init_types(void *arg)
     if (!state->excepthandler_type) return -1;
     if (add_attributes(state, state->excepthandler_type,
         excepthandler_attributes, 4) < 0) return -1;
+    if (PySet_Add(state->abstract_types, state->excepthandler_type) < 0) return
+        -1;
     if (PyObject_SetAttr(state->excepthandler_type, state->end_lineno, Py_None)
         == -1)
         return -1;
@@ -6932,6 +6856,7 @@ init_types(void *arg)
     if (!state->pattern_type) return -1;
     if (add_attributes(state, state->pattern_type, pattern_attributes, 4) < 0)
         return -1;
+    if (PySet_Add(state->abstract_types, state->pattern_type) < 0) return -1;
     state->MatchValue_type = make_type(state, "MatchValue",
                                        state->pattern_type, MatchValue_fields,
                                        1,
@@ -6982,6 +6907,8 @@ init_types(void *arg)
         "type_ignore = TypeIgnore(int lineno, string tag)");
     if (!state->type_ignore_type) return -1;
     if (add_attributes(state, state->type_ignore_type, NULL, 0) < 0) return -1;
+    if (PySet_Add(state->abstract_types, state->type_ignore_type) < 0) return
+        -1;
     state->TypeIgnore_type = make_type(state, "TypeIgnore",
                                        state->type_ignore_type,
                                        TypeIgnore_fields, 2,
@@ -6995,6 +6922,7 @@ init_types(void *arg)
     if (!state->type_param_type) return -1;
     if (add_attributes(state, state->type_param_type, type_param_attributes, 4)
         < 0) return -1;
+    if (PySet_Add(state->abstract_types, state->type_param_type) < 0) return -1;
     state->TypeVar_type = make_type(state, "TypeVar", state->type_param_type,
                                     TypeVar_fields, 3,
         "TypeVar(identifier name, expr? bound, expr? default_value)");
@@ -7028,43 +6956,52 @@ init_types(void *arg)
 }
 
 static int obj2ast_mod(struct ast_state *state, PyObject* obj, mod_ty* out,
-                       PyArena* arena);
+                       const char* field, PyArena* arena);
 static int obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out,
-                        PyArena* arena);
+                        const char* field, PyArena* arena);
 static int obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out,
-                        PyArena* arena);
+                        const char* field, PyArena* arena);
 static int obj2ast_expr_context(struct ast_state *state, PyObject* obj,
-                                expr_context_ty* out, PyArena* arena);
+                                expr_context_ty* out, const char* field,
+                                PyArena* arena);
 static int obj2ast_boolop(struct ast_state *state, PyObject* obj, boolop_ty*
-                          out, PyArena* arena);
+                          out, const char* field, PyArena* arena);
 static int obj2ast_operator(struct ast_state *state, PyObject* obj,
-                            operator_ty* out, PyArena* arena);
+                            operator_ty* out, const char* field, PyArena*
+                            arena);
 static int obj2ast_unaryop(struct ast_state *state, PyObject* obj, unaryop_ty*
-                           out, PyArena* arena);
+                           out, const char* field, PyArena* arena);
 static int obj2ast_cmpop(struct ast_state *state, PyObject* obj, cmpop_ty* out,
-                         PyArena* arena);
+                         const char* field, PyArena* arena);
 static int obj2ast_comprehension(struct ast_state *state, PyObject* obj,
-                                 comprehension_ty* out, PyArena* arena);
+                                 comprehension_ty* out, const char* field,
+                                 PyArena* arena);
 static int obj2ast_excepthandler(struct ast_state *state, PyObject* obj,
-                                 excepthandler_ty* out, PyArena* arena);
+                                 excepthandler_ty* out, const char* field,
+                                 PyArena* arena);
 static int obj2ast_arguments(struct ast_state *state, PyObject* obj,
-                             arguments_ty* out, PyArena* arena);
+                             arguments_ty* out, const char* field, PyArena*
+                             arena);
 static int obj2ast_arg(struct ast_state *state, PyObject* obj, arg_ty* out,
-                       PyArena* arena);
+                       const char* field, PyArena* arena);
 static int obj2ast_keyword(struct ast_state *state, PyObject* obj, keyword_ty*
-                           out, PyArena* arena);
+                           out, const char* field, PyArena* arena);
 static int obj2ast_alias(struct ast_state *state, PyObject* obj, alias_ty* out,
-                         PyArena* arena);
+                         const char* field, PyArena* arena);
 static int obj2ast_withitem(struct ast_state *state, PyObject* obj,
-                            withitem_ty* out, PyArena* arena);
+                            withitem_ty* out, const char* field, PyArena*
+                            arena);
 static int obj2ast_match_case(struct ast_state *state, PyObject* obj,
-                              match_case_ty* out, PyArena* arena);
+                              match_case_ty* out, const char* field, PyArena*
+                              arena);
 static int obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty*
-                           out, PyArena* arena);
+                           out, const char* field, PyArena* arena);
 static int obj2ast_type_ignore(struct ast_state *state, PyObject* obj,
-                               type_ignore_ty* out, PyArena* arena);
+                               type_ignore_ty* out, const char* field, PyArena*
+                               arena);
 static int obj2ast_type_param(struct ast_state *state, PyObject* obj,
-                              type_param_ty* out, PyArena* arena);
+                              type_param_ty* out, const char* field, PyArena*
+                              arena);
 
 mod_ty
 _PyAST_Module(asdl_stmt_seq * body, asdl_type_ignore_seq * type_ignores,
@@ -10929,7 +10866,8 @@ failed:
 
 
 int
-obj2ast_mod(struct ast_state *state, PyObject* obj, mod_ty* out, PyArena* arena)
+obj2ast_mod(struct ast_state *state, PyObject* obj, mod_ty* out, const char*
+            field, PyArena* arena)
 {
     int isinstance;
 
@@ -10939,6 +10877,15 @@ obj2ast_mod(struct ast_state *state, PyObject* obj, mod_ty* out, PyArena* arena)
     if (obj == Py_None) {
         *out = NULL;
         return 0;
+    }
+    tp = state->mod_type;
+    isinstance = PyObject_IsInstance(obj, tp);
+    if (isinstance == -1) {
+        return 1;
+    }
+    if (!isinstance && field != NULL) {
+        PyErr_Format(PyExc_TypeError, "field '%s' was expecting node of type 'mod', got '%T'", field, obj);
+        return 1;
     }
     tp = state->Module_type;
     isinstance = PyObject_IsInstance(obj, tp);
@@ -10963,7 +10910,7 @@ obj2ast_mod(struct ast_state *state, PyObject* obj, mod_ty* out, PyArena* arena)
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "Module field \"body\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "Module field \"body\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -10975,7 +10922,7 @@ obj2ast_mod(struct ast_state *state, PyObject* obj, mod_ty* out, PyArena* arena)
                 if (_Py_EnterRecursiveCall(" while traversing 'Module' node")) {
                     goto failed;
                 }
-                res = obj2ast_stmt(state, tmp2, &val, arena);
+                res = obj2ast_stmt(state, tmp2, &val, "body", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -11001,7 +10948,7 @@ obj2ast_mod(struct ast_state *state, PyObject* obj, mod_ty* out, PyArena* arena)
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "Module field \"type_ignores\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "Module field \"type_ignores\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -11013,7 +10960,7 @@ obj2ast_mod(struct ast_state *state, PyObject* obj, mod_ty* out, PyArena* arena)
                 if (_Py_EnterRecursiveCall(" while traversing 'Module' node")) {
                     goto failed;
                 }
-                res = obj2ast_type_ignore(state, tmp2, &val, arena);
+                res = obj2ast_type_ignore(state, tmp2, &val, "type_ignores", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -11051,7 +10998,7 @@ obj2ast_mod(struct ast_state *state, PyObject* obj, mod_ty* out, PyArena* arena)
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "Interactive field \"body\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "Interactive field \"body\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -11063,7 +11010,7 @@ obj2ast_mod(struct ast_state *state, PyObject* obj, mod_ty* out, PyArena* arena)
                 if (_Py_EnterRecursiveCall(" while traversing 'Interactive' node")) {
                     goto failed;
                 }
-                res = obj2ast_stmt(state, tmp2, &val, arena);
+                res = obj2ast_stmt(state, tmp2, &val, "body", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -11099,7 +11046,7 @@ obj2ast_mod(struct ast_state *state, PyObject* obj, mod_ty* out, PyArena* arena)
             if (_Py_EnterRecursiveCall(" while traversing 'Expression' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &body, arena);
+            res = obj2ast_expr(state, tmp, &body, "body", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -11131,7 +11078,7 @@ obj2ast_mod(struct ast_state *state, PyObject* obj, mod_ty* out, PyArena* arena)
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "FunctionType field \"argtypes\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "FunctionType field \"argtypes\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -11143,7 +11090,7 @@ obj2ast_mod(struct ast_state *state, PyObject* obj, mod_ty* out, PyArena* arena)
                 if (_Py_EnterRecursiveCall(" while traversing 'FunctionType' node")) {
                     goto failed;
                 }
-                res = obj2ast_expr(state, tmp2, &val, arena);
+                res = obj2ast_expr(state, tmp2, &val, "argtypes", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -11167,7 +11114,7 @@ obj2ast_mod(struct ast_state *state, PyObject* obj, mod_ty* out, PyArena* arena)
             if (_Py_EnterRecursiveCall(" while traversing 'FunctionType' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &returns, arena);
+            res = obj2ast_expr(state, tmp, &returns, "returns", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -11184,8 +11131,8 @@ obj2ast_mod(struct ast_state *state, PyObject* obj, mod_ty* out, PyArena* arena)
 }
 
 int
-obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
-             arena)
+obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, const char*
+             field, PyArena* arena)
 {
     int isinstance;
 
@@ -11200,6 +11147,15 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
         *out = NULL;
         return 0;
     }
+    tp = state->stmt_type;
+    isinstance = PyObject_IsInstance(obj, tp);
+    if (isinstance == -1) {
+        return 1;
+    }
+    if (!isinstance && field != NULL) {
+        PyErr_Format(PyExc_TypeError, "field '%s' was expecting node of type 'stmt', got '%T'", field, obj);
+        return 1;
+    }
     if (PyObject_GetOptionalAttr(obj, state->lineno, &tmp) < 0) {
         return -1;
     }
@@ -11212,7 +11168,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
         if (_Py_EnterRecursiveCall(" while traversing 'stmt' node")) {
             goto failed;
         }
-        res = obj2ast_int(state, tmp, &lineno, arena);
+        res = obj2ast_int(state, tmp, &lineno, "lineno", arena);
         _Py_LeaveRecursiveCall();
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
@@ -11229,7 +11185,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
         if (_Py_EnterRecursiveCall(" while traversing 'stmt' node")) {
             goto failed;
         }
-        res = obj2ast_int(state, tmp, &col_offset, arena);
+        res = obj2ast_int(state, tmp, &col_offset, "col_offset", arena);
         _Py_LeaveRecursiveCall();
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
@@ -11246,7 +11202,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
         if (_Py_EnterRecursiveCall(" while traversing 'stmt' node")) {
             goto failed;
         }
-        res = obj2ast_int(state, tmp, &end_lineno, arena);
+        res = obj2ast_int(state, tmp, &end_lineno, "end_lineno", arena);
         _Py_LeaveRecursiveCall();
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
@@ -11263,7 +11219,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
         if (_Py_EnterRecursiveCall(" while traversing 'stmt' node")) {
             goto failed;
         }
-        res = obj2ast_int(state, tmp, &end_col_offset, arena);
+        res = obj2ast_int(state, tmp, &end_col_offset, "end_col_offset", arena);
         _Py_LeaveRecursiveCall();
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
@@ -11294,7 +11250,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'FunctionDef' node")) {
                 goto failed;
             }
-            res = obj2ast_identifier(state, tmp, &name, arena);
+            res = obj2ast_identifier(state, tmp, &name, "name", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -11311,7 +11267,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'FunctionDef' node")) {
                 goto failed;
             }
-            res = obj2ast_arguments(state, tmp, &args, arena);
+            res = obj2ast_arguments(state, tmp, &args, "args", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -11330,7 +11286,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "FunctionDef field \"body\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "FunctionDef field \"body\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -11342,7 +11298,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
                 if (_Py_EnterRecursiveCall(" while traversing 'FunctionDef' node")) {
                     goto failed;
                 }
-                res = obj2ast_stmt(state, tmp2, &val, arena);
+                res = obj2ast_stmt(state, tmp2, &val, "body", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -11368,7 +11324,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "FunctionDef field \"decorator_list\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "FunctionDef field \"decorator_list\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -11380,7 +11336,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
                 if (_Py_EnterRecursiveCall(" while traversing 'FunctionDef' node")) {
                     goto failed;
                 }
-                res = obj2ast_expr(state, tmp2, &val, arena);
+                res = obj2ast_expr(state, tmp2, &val, "decorator_list", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -11404,7 +11360,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'FunctionDef' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &returns, arena);
+            res = obj2ast_expr(state, tmp, &returns, "returns", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -11421,7 +11377,8 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'FunctionDef' node")) {
                 goto failed;
             }
-            res = obj2ast_string(state, tmp, &type_comment, arena);
+            res = obj2ast_string(state, tmp, &type_comment, "type_comment",
+                                 arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -11440,7 +11397,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "FunctionDef field \"type_params\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "FunctionDef field \"type_params\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -11452,7 +11409,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
                 if (_Py_EnterRecursiveCall(" while traversing 'FunctionDef' node")) {
                     goto failed;
                 }
-                res = obj2ast_type_param(state, tmp2, &val, arena);
+                res = obj2ast_type_param(state, tmp2, &val, "type_params", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -11497,7 +11454,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'AsyncFunctionDef' node")) {
                 goto failed;
             }
-            res = obj2ast_identifier(state, tmp, &name, arena);
+            res = obj2ast_identifier(state, tmp, &name, "name", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -11514,7 +11471,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'AsyncFunctionDef' node")) {
                 goto failed;
             }
-            res = obj2ast_arguments(state, tmp, &args, arena);
+            res = obj2ast_arguments(state, tmp, &args, "args", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -11533,7 +11490,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "AsyncFunctionDef field \"body\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "AsyncFunctionDef field \"body\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -11545,7 +11502,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
                 if (_Py_EnterRecursiveCall(" while traversing 'AsyncFunctionDef' node")) {
                     goto failed;
                 }
-                res = obj2ast_stmt(state, tmp2, &val, arena);
+                res = obj2ast_stmt(state, tmp2, &val, "body", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -11571,7 +11528,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "AsyncFunctionDef field \"decorator_list\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "AsyncFunctionDef field \"decorator_list\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -11583,7 +11540,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
                 if (_Py_EnterRecursiveCall(" while traversing 'AsyncFunctionDef' node")) {
                     goto failed;
                 }
-                res = obj2ast_expr(state, tmp2, &val, arena);
+                res = obj2ast_expr(state, tmp2, &val, "decorator_list", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -11607,7 +11564,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'AsyncFunctionDef' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &returns, arena);
+            res = obj2ast_expr(state, tmp, &returns, "returns", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -11624,7 +11581,8 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'AsyncFunctionDef' node")) {
                 goto failed;
             }
-            res = obj2ast_string(state, tmp, &type_comment, arena);
+            res = obj2ast_string(state, tmp, &type_comment, "type_comment",
+                                 arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -11643,7 +11601,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "AsyncFunctionDef field \"type_params\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "AsyncFunctionDef field \"type_params\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -11655,7 +11613,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
                 if (_Py_EnterRecursiveCall(" while traversing 'AsyncFunctionDef' node")) {
                     goto failed;
                 }
-                res = obj2ast_type_param(state, tmp2, &val, arena);
+                res = obj2ast_type_param(state, tmp2, &val, "type_params", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -11699,7 +11657,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'ClassDef' node")) {
                 goto failed;
             }
-            res = obj2ast_identifier(state, tmp, &name, arena);
+            res = obj2ast_identifier(state, tmp, &name, "name", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -11718,7 +11676,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "ClassDef field \"bases\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "ClassDef field \"bases\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -11730,7 +11688,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
                 if (_Py_EnterRecursiveCall(" while traversing 'ClassDef' node")) {
                     goto failed;
                 }
-                res = obj2ast_expr(state, tmp2, &val, arena);
+                res = obj2ast_expr(state, tmp2, &val, "bases", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -11756,7 +11714,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "ClassDef field \"keywords\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "ClassDef field \"keywords\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -11768,7 +11726,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
                 if (_Py_EnterRecursiveCall(" while traversing 'ClassDef' node")) {
                     goto failed;
                 }
-                res = obj2ast_keyword(state, tmp2, &val, arena);
+                res = obj2ast_keyword(state, tmp2, &val, "keywords", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -11794,7 +11752,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "ClassDef field \"body\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "ClassDef field \"body\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -11806,7 +11764,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
                 if (_Py_EnterRecursiveCall(" while traversing 'ClassDef' node")) {
                     goto failed;
                 }
-                res = obj2ast_stmt(state, tmp2, &val, arena);
+                res = obj2ast_stmt(state, tmp2, &val, "body", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -11832,7 +11790,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "ClassDef field \"decorator_list\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "ClassDef field \"decorator_list\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -11844,7 +11802,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
                 if (_Py_EnterRecursiveCall(" while traversing 'ClassDef' node")) {
                     goto failed;
                 }
-                res = obj2ast_expr(state, tmp2, &val, arena);
+                res = obj2ast_expr(state, tmp2, &val, "decorator_list", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -11870,7 +11828,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "ClassDef field \"type_params\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "ClassDef field \"type_params\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -11882,7 +11840,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
                 if (_Py_EnterRecursiveCall(" while traversing 'ClassDef' node")) {
                     goto failed;
                 }
-                res = obj2ast_type_param(state, tmp2, &val, arena);
+                res = obj2ast_type_param(state, tmp2, &val, "type_params", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -11920,7 +11878,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'Return' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &value, arena);
+            res = obj2ast_expr(state, tmp, &value, "value", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -11952,7 +11910,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "Delete field \"targets\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "Delete field \"targets\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -11964,7 +11922,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
                 if (_Py_EnterRecursiveCall(" while traversing 'Delete' node")) {
                     goto failed;
                 }
-                res = obj2ast_expr(state, tmp2, &val, arena);
+                res = obj2ast_expr(state, tmp2, &val, "targets", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -12005,7 +11963,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "Assign field \"targets\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "Assign field \"targets\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -12017,7 +11975,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
                 if (_Py_EnterRecursiveCall(" while traversing 'Assign' node")) {
                     goto failed;
                 }
-                res = obj2ast_expr(state, tmp2, &val, arena);
+                res = obj2ast_expr(state, tmp2, &val, "targets", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -12041,7 +11999,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'Assign' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &value, arena);
+            res = obj2ast_expr(state, tmp, &value, "value", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -12058,7 +12016,8 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'Assign' node")) {
                 goto failed;
             }
-            res = obj2ast_string(state, tmp, &type_comment, arena);
+            res = obj2ast_string(state, tmp, &type_comment, "type_comment",
+                                 arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -12090,7 +12049,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'TypeAlias' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &name, arena);
+            res = obj2ast_expr(state, tmp, &name, "name", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -12109,7 +12068,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "TypeAlias field \"type_params\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "TypeAlias field \"type_params\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -12121,7 +12080,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
                 if (_Py_EnterRecursiveCall(" while traversing 'TypeAlias' node")) {
                     goto failed;
                 }
-                res = obj2ast_type_param(state, tmp2, &val, arena);
+                res = obj2ast_type_param(state, tmp2, &val, "type_params", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -12145,7 +12104,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'TypeAlias' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &value, arena);
+            res = obj2ast_expr(state, tmp, &value, "value", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -12177,7 +12136,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'AugAssign' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &target, arena);
+            res = obj2ast_expr(state, tmp, &target, "target", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -12194,7 +12153,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'AugAssign' node")) {
                 goto failed;
             }
-            res = obj2ast_operator(state, tmp, &op, arena);
+            res = obj2ast_operator(state, tmp, &op, "op", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -12211,7 +12170,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'AugAssign' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &value, arena);
+            res = obj2ast_expr(state, tmp, &value, "value", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -12244,7 +12203,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'AnnAssign' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &target, arena);
+            res = obj2ast_expr(state, tmp, &target, "target", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -12261,7 +12220,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'AnnAssign' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &annotation, arena);
+            res = obj2ast_expr(state, tmp, &annotation, "annotation", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -12278,7 +12237,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'AnnAssign' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &value, arena);
+            res = obj2ast_expr(state, tmp, &value, "value", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -12295,7 +12254,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'AnnAssign' node")) {
                 goto failed;
             }
-            res = obj2ast_int(state, tmp, &simple, arena);
+            res = obj2ast_int(state, tmp, &simple, "simple", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -12329,7 +12288,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'For' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &target, arena);
+            res = obj2ast_expr(state, tmp, &target, "target", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -12346,7 +12305,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'For' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &iter, arena);
+            res = obj2ast_expr(state, tmp, &iter, "iter", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -12365,7 +12324,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "For field \"body\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "For field \"body\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -12377,7 +12336,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
                 if (_Py_EnterRecursiveCall(" while traversing 'For' node")) {
                     goto failed;
                 }
-                res = obj2ast_stmt(state, tmp2, &val, arena);
+                res = obj2ast_stmt(state, tmp2, &val, "body", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -12403,7 +12362,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "For field \"orelse\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "For field \"orelse\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -12415,7 +12374,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
                 if (_Py_EnterRecursiveCall(" while traversing 'For' node")) {
                     goto failed;
                 }
-                res = obj2ast_stmt(state, tmp2, &val, arena);
+                res = obj2ast_stmt(state, tmp2, &val, "orelse", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -12439,7 +12398,8 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'For' node")) {
                 goto failed;
             }
-            res = obj2ast_string(state, tmp, &type_comment, arena);
+            res = obj2ast_string(state, tmp, &type_comment, "type_comment",
+                                 arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -12473,7 +12433,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'AsyncFor' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &target, arena);
+            res = obj2ast_expr(state, tmp, &target, "target", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -12490,7 +12450,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'AsyncFor' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &iter, arena);
+            res = obj2ast_expr(state, tmp, &iter, "iter", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -12509,7 +12469,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "AsyncFor field \"body\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "AsyncFor field \"body\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -12521,7 +12481,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
                 if (_Py_EnterRecursiveCall(" while traversing 'AsyncFor' node")) {
                     goto failed;
                 }
-                res = obj2ast_stmt(state, tmp2, &val, arena);
+                res = obj2ast_stmt(state, tmp2, &val, "body", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -12547,7 +12507,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "AsyncFor field \"orelse\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "AsyncFor field \"orelse\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -12559,7 +12519,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
                 if (_Py_EnterRecursiveCall(" while traversing 'AsyncFor' node")) {
                     goto failed;
                 }
-                res = obj2ast_stmt(state, tmp2, &val, arena);
+                res = obj2ast_stmt(state, tmp2, &val, "orelse", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -12583,7 +12543,8 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'AsyncFor' node")) {
                 goto failed;
             }
-            res = obj2ast_string(state, tmp, &type_comment, arena);
+            res = obj2ast_string(state, tmp, &type_comment, "type_comment",
+                                 arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -12616,7 +12577,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'While' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &test, arena);
+            res = obj2ast_expr(state, tmp, &test, "test", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -12635,7 +12596,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "While field \"body\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "While field \"body\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -12647,7 +12608,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
                 if (_Py_EnterRecursiveCall(" while traversing 'While' node")) {
                     goto failed;
                 }
-                res = obj2ast_stmt(state, tmp2, &val, arena);
+                res = obj2ast_stmt(state, tmp2, &val, "body", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -12673,7 +12634,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "While field \"orelse\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "While field \"orelse\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -12685,7 +12646,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
                 if (_Py_EnterRecursiveCall(" while traversing 'While' node")) {
                     goto failed;
                 }
-                res = obj2ast_stmt(state, tmp2, &val, arena);
+                res = obj2ast_stmt(state, tmp2, &val, "orelse", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -12724,7 +12685,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'If' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &test, arena);
+            res = obj2ast_expr(state, tmp, &test, "test", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -12743,7 +12704,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "If field \"body\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "If field \"body\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -12755,7 +12716,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
                 if (_Py_EnterRecursiveCall(" while traversing 'If' node")) {
                     goto failed;
                 }
-                res = obj2ast_stmt(state, tmp2, &val, arena);
+                res = obj2ast_stmt(state, tmp2, &val, "body", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -12781,7 +12742,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "If field \"orelse\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "If field \"orelse\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -12793,7 +12754,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
                 if (_Py_EnterRecursiveCall(" while traversing 'If' node")) {
                     goto failed;
                 }
-                res = obj2ast_stmt(state, tmp2, &val, arena);
+                res = obj2ast_stmt(state, tmp2, &val, "orelse", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -12834,7 +12795,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "With field \"items\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "With field \"items\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -12846,7 +12807,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
                 if (_Py_EnterRecursiveCall(" while traversing 'With' node")) {
                     goto failed;
                 }
-                res = obj2ast_withitem(state, tmp2, &val, arena);
+                res = obj2ast_withitem(state, tmp2, &val, "items", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -12872,7 +12833,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "With field \"body\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "With field \"body\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -12884,7 +12845,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
                 if (_Py_EnterRecursiveCall(" while traversing 'With' node")) {
                     goto failed;
                 }
-                res = obj2ast_stmt(state, tmp2, &val, arena);
+                res = obj2ast_stmt(state, tmp2, &val, "body", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -12908,7 +12869,8 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'With' node")) {
                 goto failed;
             }
-            res = obj2ast_string(state, tmp, &type_comment, arena);
+            res = obj2ast_string(state, tmp, &type_comment, "type_comment",
+                                 arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -12942,7 +12904,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "AsyncWith field \"items\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "AsyncWith field \"items\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -12954,7 +12916,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
                 if (_Py_EnterRecursiveCall(" while traversing 'AsyncWith' node")) {
                     goto failed;
                 }
-                res = obj2ast_withitem(state, tmp2, &val, arena);
+                res = obj2ast_withitem(state, tmp2, &val, "items", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -12980,7 +12942,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "AsyncWith field \"body\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "AsyncWith field \"body\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -12992,7 +12954,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
                 if (_Py_EnterRecursiveCall(" while traversing 'AsyncWith' node")) {
                     goto failed;
                 }
-                res = obj2ast_stmt(state, tmp2, &val, arena);
+                res = obj2ast_stmt(state, tmp2, &val, "body", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -13016,7 +12978,8 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'AsyncWith' node")) {
                 goto failed;
             }
-            res = obj2ast_string(state, tmp, &type_comment, arena);
+            res = obj2ast_string(state, tmp, &type_comment, "type_comment",
+                                 arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -13047,7 +13010,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'Match' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &subject, arena);
+            res = obj2ast_expr(state, tmp, &subject, "subject", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -13066,7 +13029,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "Match field \"cases\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "Match field \"cases\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -13078,7 +13041,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
                 if (_Py_EnterRecursiveCall(" while traversing 'Match' node")) {
                     goto failed;
                 }
-                res = obj2ast_match_case(state, tmp2, &val, arena);
+                res = obj2ast_match_case(state, tmp2, &val, "cases", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -13116,7 +13079,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'Raise' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &exc, arena);
+            res = obj2ast_expr(state, tmp, &exc, "exc", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -13133,7 +13096,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'Raise' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &cause, arena);
+            res = obj2ast_expr(state, tmp, &cause, "cause", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -13168,7 +13131,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "Try field \"body\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "Try field \"body\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -13180,7 +13143,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
                 if (_Py_EnterRecursiveCall(" while traversing 'Try' node")) {
                     goto failed;
                 }
-                res = obj2ast_stmt(state, tmp2, &val, arena);
+                res = obj2ast_stmt(state, tmp2, &val, "body", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -13206,7 +13169,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "Try field \"handlers\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "Try field \"handlers\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -13218,7 +13181,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
                 if (_Py_EnterRecursiveCall(" while traversing 'Try' node")) {
                     goto failed;
                 }
-                res = obj2ast_excepthandler(state, tmp2, &val, arena);
+                res = obj2ast_excepthandler(state, tmp2, &val, "handlers", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -13244,7 +13207,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "Try field \"orelse\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "Try field \"orelse\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -13256,7 +13219,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
                 if (_Py_EnterRecursiveCall(" while traversing 'Try' node")) {
                     goto failed;
                 }
-                res = obj2ast_stmt(state, tmp2, &val, arena);
+                res = obj2ast_stmt(state, tmp2, &val, "orelse", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -13282,7 +13245,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "Try field \"finalbody\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "Try field \"finalbody\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -13294,7 +13257,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
                 if (_Py_EnterRecursiveCall(" while traversing 'Try' node")) {
                     goto failed;
                 }
-                res = obj2ast_stmt(state, tmp2, &val, arena);
+                res = obj2ast_stmt(state, tmp2, &val, "finalbody", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -13336,7 +13299,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "TryStar field \"body\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "TryStar field \"body\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -13348,7 +13311,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
                 if (_Py_EnterRecursiveCall(" while traversing 'TryStar' node")) {
                     goto failed;
                 }
-                res = obj2ast_stmt(state, tmp2, &val, arena);
+                res = obj2ast_stmt(state, tmp2, &val, "body", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -13374,7 +13337,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "TryStar field \"handlers\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "TryStar field \"handlers\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -13386,7 +13349,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
                 if (_Py_EnterRecursiveCall(" while traversing 'TryStar' node")) {
                     goto failed;
                 }
-                res = obj2ast_excepthandler(state, tmp2, &val, arena);
+                res = obj2ast_excepthandler(state, tmp2, &val, "handlers", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -13412,7 +13375,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "TryStar field \"orelse\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "TryStar field \"orelse\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -13424,7 +13387,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
                 if (_Py_EnterRecursiveCall(" while traversing 'TryStar' node")) {
                     goto failed;
                 }
-                res = obj2ast_stmt(state, tmp2, &val, arena);
+                res = obj2ast_stmt(state, tmp2, &val, "orelse", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -13450,7 +13413,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "TryStar field \"finalbody\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "TryStar field \"finalbody\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -13462,7 +13425,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
                 if (_Py_EnterRecursiveCall(" while traversing 'TryStar' node")) {
                     goto failed;
                 }
-                res = obj2ast_stmt(state, tmp2, &val, arena);
+                res = obj2ast_stmt(state, tmp2, &val, "finalbody", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -13500,7 +13463,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'Assert' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &test, arena);
+            res = obj2ast_expr(state, tmp, &test, "test", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -13517,7 +13480,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'Assert' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &msg, arena);
+            res = obj2ast_expr(state, tmp, &msg, "msg", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -13550,7 +13513,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "Import field \"names\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "Import field \"names\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -13562,7 +13525,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
                 if (_Py_EnterRecursiveCall(" while traversing 'Import' node")) {
                     goto failed;
                 }
-                res = obj2ast_alias(state, tmp2, &val, arena);
+                res = obj2ast_alias(state, tmp2, &val, "names", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -13586,7 +13549,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'Import' node")) {
                 goto failed;
             }
-            res = obj2ast_int(state, tmp, &is_lazy, arena);
+            res = obj2ast_int(state, tmp, &is_lazy, "is_lazy", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -13619,7 +13582,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'ImportFrom' node")) {
                 goto failed;
             }
-            res = obj2ast_identifier(state, tmp, &module, arena);
+            res = obj2ast_identifier(state, tmp, &module, "module", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -13638,7 +13601,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "ImportFrom field \"names\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "ImportFrom field \"names\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -13650,7 +13613,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
                 if (_Py_EnterRecursiveCall(" while traversing 'ImportFrom' node")) {
                     goto failed;
                 }
-                res = obj2ast_alias(state, tmp2, &val, arena);
+                res = obj2ast_alias(state, tmp2, &val, "names", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -13674,7 +13637,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'ImportFrom' node")) {
                 goto failed;
             }
-            res = obj2ast_int(state, tmp, &level, arena);
+            res = obj2ast_int(state, tmp, &level, "level", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -13691,7 +13654,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'ImportFrom' node")) {
                 goto failed;
             }
-            res = obj2ast_int(state, tmp, &is_lazy, arena);
+            res = obj2ast_int(state, tmp, &is_lazy, "is_lazy", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -13723,7 +13686,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "Global field \"names\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "Global field \"names\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -13735,7 +13698,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
                 if (_Py_EnterRecursiveCall(" while traversing 'Global' node")) {
                     goto failed;
                 }
-                res = obj2ast_identifier(state, tmp2, &val, arena);
+                res = obj2ast_identifier(state, tmp2, &val, "names", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -13774,7 +13737,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "Nonlocal field \"names\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "Nonlocal field \"names\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -13786,7 +13749,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
                 if (_Py_EnterRecursiveCall(" while traversing 'Nonlocal' node")) {
                     goto failed;
                 }
-                res = obj2ast_identifier(state, tmp2, &val, arena);
+                res = obj2ast_identifier(state, tmp2, &val, "names", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -13823,7 +13786,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'Expr' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &value, arena);
+            res = obj2ast_expr(state, tmp, &value, "value", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -13877,8 +13840,8 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
 }
 
 int
-obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
-             arena)
+obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, const char*
+             field, PyArena* arena)
 {
     int isinstance;
 
@@ -13893,6 +13856,15 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
         *out = NULL;
         return 0;
     }
+    tp = state->expr_type;
+    isinstance = PyObject_IsInstance(obj, tp);
+    if (isinstance == -1) {
+        return 1;
+    }
+    if (!isinstance && field != NULL) {
+        PyErr_Format(PyExc_TypeError, "field '%s' was expecting node of type 'expr', got '%T'", field, obj);
+        return 1;
+    }
     if (PyObject_GetOptionalAttr(obj, state->lineno, &tmp) < 0) {
         return -1;
     }
@@ -13905,7 +13877,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
         if (_Py_EnterRecursiveCall(" while traversing 'expr' node")) {
             goto failed;
         }
-        res = obj2ast_int(state, tmp, &lineno, arena);
+        res = obj2ast_int(state, tmp, &lineno, "lineno", arena);
         _Py_LeaveRecursiveCall();
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
@@ -13922,7 +13894,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
         if (_Py_EnterRecursiveCall(" while traversing 'expr' node")) {
             goto failed;
         }
-        res = obj2ast_int(state, tmp, &col_offset, arena);
+        res = obj2ast_int(state, tmp, &col_offset, "col_offset", arena);
         _Py_LeaveRecursiveCall();
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
@@ -13939,7 +13911,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
         if (_Py_EnterRecursiveCall(" while traversing 'expr' node")) {
             goto failed;
         }
-        res = obj2ast_int(state, tmp, &end_lineno, arena);
+        res = obj2ast_int(state, tmp, &end_lineno, "end_lineno", arena);
         _Py_LeaveRecursiveCall();
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
@@ -13956,7 +13928,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
         if (_Py_EnterRecursiveCall(" while traversing 'expr' node")) {
             goto failed;
         }
-        res = obj2ast_int(state, tmp, &end_col_offset, arena);
+        res = obj2ast_int(state, tmp, &end_col_offset, "end_col_offset", arena);
         _Py_LeaveRecursiveCall();
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
@@ -13982,7 +13954,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'BoolOp' node")) {
                 goto failed;
             }
-            res = obj2ast_boolop(state, tmp, &op, arena);
+            res = obj2ast_boolop(state, tmp, &op, "op", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -14001,7 +13973,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "BoolOp field \"values\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "BoolOp field \"values\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -14013,7 +13985,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
                 if (_Py_EnterRecursiveCall(" while traversing 'BoolOp' node")) {
                     goto failed;
                 }
-                res = obj2ast_expr(state, tmp2, &val, arena);
+                res = obj2ast_expr(state, tmp2, &val, "values", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -14051,7 +14023,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'NamedExpr' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &target, arena);
+            res = obj2ast_expr(state, tmp, &target, "target", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -14068,7 +14040,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'NamedExpr' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &value, arena);
+            res = obj2ast_expr(state, tmp, &value, "value", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -14100,7 +14072,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'BinOp' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &left, arena);
+            res = obj2ast_expr(state, tmp, &left, "left", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -14117,7 +14089,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'BinOp' node")) {
                 goto failed;
             }
-            res = obj2ast_operator(state, tmp, &op, arena);
+            res = obj2ast_operator(state, tmp, &op, "op", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -14134,7 +14106,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'BinOp' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &right, arena);
+            res = obj2ast_expr(state, tmp, &right, "right", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -14165,7 +14137,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'UnaryOp' node")) {
                 goto failed;
             }
-            res = obj2ast_unaryop(state, tmp, &op, arena);
+            res = obj2ast_unaryop(state, tmp, &op, "op", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -14182,7 +14154,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'UnaryOp' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &operand, arena);
+            res = obj2ast_expr(state, tmp, &operand, "operand", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -14213,7 +14185,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'Lambda' node")) {
                 goto failed;
             }
-            res = obj2ast_arguments(state, tmp, &args, arena);
+            res = obj2ast_arguments(state, tmp, &args, "args", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -14230,7 +14202,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'Lambda' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &body, arena);
+            res = obj2ast_expr(state, tmp, &body, "body", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -14262,7 +14234,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'IfExp' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &test, arena);
+            res = obj2ast_expr(state, tmp, &test, "test", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -14279,7 +14251,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'IfExp' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &body, arena);
+            res = obj2ast_expr(state, tmp, &body, "body", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -14296,7 +14268,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'IfExp' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &orelse, arena);
+            res = obj2ast_expr(state, tmp, &orelse, "orelse", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -14329,7 +14301,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "Dict field \"keys\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "Dict field \"keys\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -14341,7 +14313,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
                 if (_Py_EnterRecursiveCall(" while traversing 'Dict' node")) {
                     goto failed;
                 }
-                res = obj2ast_expr(state, tmp2, &val, arena);
+                res = obj2ast_expr(state, tmp2, &val, "keys", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -14367,7 +14339,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "Dict field \"values\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "Dict field \"values\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -14379,7 +14351,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
                 if (_Py_EnterRecursiveCall(" while traversing 'Dict' node")) {
                     goto failed;
                 }
-                res = obj2ast_expr(state, tmp2, &val, arena);
+                res = obj2ast_expr(state, tmp2, &val, "values", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -14418,7 +14390,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "Set field \"elts\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "Set field \"elts\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -14430,7 +14402,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
                 if (_Py_EnterRecursiveCall(" while traversing 'Set' node")) {
                     goto failed;
                 }
-                res = obj2ast_expr(state, tmp2, &val, arena);
+                res = obj2ast_expr(state, tmp2, &val, "elts", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -14468,7 +14440,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'ListComp' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &elt, arena);
+            res = obj2ast_expr(state, tmp, &elt, "elt", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -14487,7 +14459,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "ListComp field \"generators\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "ListComp field \"generators\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -14499,7 +14471,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
                 if (_Py_EnterRecursiveCall(" while traversing 'ListComp' node")) {
                     goto failed;
                 }
-                res = obj2ast_comprehension(state, tmp2, &val, arena);
+                res = obj2ast_comprehension(state, tmp2, &val, "generators", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -14537,7 +14509,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'SetComp' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &elt, arena);
+            res = obj2ast_expr(state, tmp, &elt, "elt", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -14556,7 +14528,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "SetComp field \"generators\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "SetComp field \"generators\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -14568,7 +14540,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
                 if (_Py_EnterRecursiveCall(" while traversing 'SetComp' node")) {
                     goto failed;
                 }
-                res = obj2ast_comprehension(state, tmp2, &val, arena);
+                res = obj2ast_comprehension(state, tmp2, &val, "generators", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -14607,7 +14579,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'DictComp' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &key, arena);
+            res = obj2ast_expr(state, tmp, &key, "key", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -14624,7 +14596,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'DictComp' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &value, arena);
+            res = obj2ast_expr(state, tmp, &value, "value", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -14643,7 +14615,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "DictComp field \"generators\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "DictComp field \"generators\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -14655,7 +14627,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
                 if (_Py_EnterRecursiveCall(" while traversing 'DictComp' node")) {
                     goto failed;
                 }
-                res = obj2ast_comprehension(state, tmp2, &val, arena);
+                res = obj2ast_comprehension(state, tmp2, &val, "generators", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -14693,7 +14665,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'GeneratorExp' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &elt, arena);
+            res = obj2ast_expr(state, tmp, &elt, "elt", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -14712,7 +14684,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "GeneratorExp field \"generators\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "GeneratorExp field \"generators\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -14724,7 +14696,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
                 if (_Py_EnterRecursiveCall(" while traversing 'GeneratorExp' node")) {
                     goto failed;
                 }
-                res = obj2ast_comprehension(state, tmp2, &val, arena);
+                res = obj2ast_comprehension(state, tmp2, &val, "generators", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -14761,7 +14733,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'Await' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &value, arena);
+            res = obj2ast_expr(state, tmp, &value, "value", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -14791,7 +14763,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'Yield' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &value, arena);
+            res = obj2ast_expr(state, tmp, &value, "value", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -14821,7 +14793,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'YieldFrom' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &value, arena);
+            res = obj2ast_expr(state, tmp, &value, "value", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -14853,7 +14825,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'Compare' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &left, arena);
+            res = obj2ast_expr(state, tmp, &left, "left", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -14872,7 +14844,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "Compare field \"ops\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "Compare field \"ops\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -14884,7 +14856,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
                 if (_Py_EnterRecursiveCall(" while traversing 'Compare' node")) {
                     goto failed;
                 }
-                res = obj2ast_cmpop(state, tmp2, &val, arena);
+                res = obj2ast_cmpop(state, tmp2, &val, "ops", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -14910,7 +14882,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "Compare field \"comparators\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "Compare field \"comparators\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -14922,7 +14894,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
                 if (_Py_EnterRecursiveCall(" while traversing 'Compare' node")) {
                     goto failed;
                 }
-                res = obj2ast_expr(state, tmp2, &val, arena);
+                res = obj2ast_expr(state, tmp2, &val, "comparators", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -14961,7 +14933,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'Call' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &func, arena);
+            res = obj2ast_expr(state, tmp, &func, "func", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -14980,7 +14952,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "Call field \"args\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "Call field \"args\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -14992,7 +14964,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
                 if (_Py_EnterRecursiveCall(" while traversing 'Call' node")) {
                     goto failed;
                 }
-                res = obj2ast_expr(state, tmp2, &val, arena);
+                res = obj2ast_expr(state, tmp2, &val, "args", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -15018,7 +14990,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "Call field \"keywords\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "Call field \"keywords\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -15030,7 +15002,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
                 if (_Py_EnterRecursiveCall(" while traversing 'Call' node")) {
                     goto failed;
                 }
-                res = obj2ast_keyword(state, tmp2, &val, arena);
+                res = obj2ast_keyword(state, tmp2, &val, "keywords", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -15069,7 +15041,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'FormattedValue' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &value, arena);
+            res = obj2ast_expr(state, tmp, &value, "value", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -15086,7 +15058,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'FormattedValue' node")) {
                 goto failed;
             }
-            res = obj2ast_int(state, tmp, &conversion, arena);
+            res = obj2ast_int(state, tmp, &conversion, "conversion", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -15103,7 +15075,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'FormattedValue' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &format_spec, arena);
+            res = obj2ast_expr(state, tmp, &format_spec, "format_spec", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -15137,7 +15109,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'Interpolation' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &value, arena);
+            res = obj2ast_expr(state, tmp, &value, "value", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -15154,7 +15126,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'Interpolation' node")) {
                 goto failed;
             }
-            res = obj2ast_constant(state, tmp, &str, arena);
+            res = obj2ast_constant(state, tmp, &str, "str", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -15171,7 +15143,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'Interpolation' node")) {
                 goto failed;
             }
-            res = obj2ast_int(state, tmp, &conversion, arena);
+            res = obj2ast_int(state, tmp, &conversion, "conversion", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -15188,7 +15160,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'Interpolation' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &format_spec, arena);
+            res = obj2ast_expr(state, tmp, &format_spec, "format_spec", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -15221,7 +15193,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "JoinedStr field \"values\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "JoinedStr field \"values\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -15233,7 +15205,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
                 if (_Py_EnterRecursiveCall(" while traversing 'JoinedStr' node")) {
                     goto failed;
                 }
-                res = obj2ast_expr(state, tmp2, &val, arena);
+                res = obj2ast_expr(state, tmp2, &val, "values", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -15272,7 +15244,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "TemplateStr field \"values\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "TemplateStr field \"values\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -15284,7 +15256,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
                 if (_Py_EnterRecursiveCall(" while traversing 'TemplateStr' node")) {
                     goto failed;
                 }
-                res = obj2ast_expr(state, tmp2, &val, arena);
+                res = obj2ast_expr(state, tmp2, &val, "values", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -15322,7 +15294,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'Constant' node")) {
                 goto failed;
             }
-            res = obj2ast_constant(state, tmp, &value, arena);
+            res = obj2ast_constant(state, tmp, &value, "value", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -15339,7 +15311,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'Constant' node")) {
                 goto failed;
             }
-            res = obj2ast_string(state, tmp, &kind, arena);
+            res = obj2ast_string(state, tmp, &kind, "kind", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -15371,7 +15343,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'Attribute' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &value, arena);
+            res = obj2ast_expr(state, tmp, &value, "value", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -15388,7 +15360,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'Attribute' node")) {
                 goto failed;
             }
-            res = obj2ast_identifier(state, tmp, &attr, arena);
+            res = obj2ast_identifier(state, tmp, &attr, "attr", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -15405,7 +15377,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'Attribute' node")) {
                 goto failed;
             }
-            res = obj2ast_expr_context(state, tmp, &ctx, arena);
+            res = obj2ast_expr_context(state, tmp, &ctx, "ctx", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -15437,7 +15409,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'Subscript' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &value, arena);
+            res = obj2ast_expr(state, tmp, &value, "value", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -15454,7 +15426,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'Subscript' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &slice, arena);
+            res = obj2ast_expr(state, tmp, &slice, "slice", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -15471,7 +15443,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'Subscript' node")) {
                 goto failed;
             }
-            res = obj2ast_expr_context(state, tmp, &ctx, arena);
+            res = obj2ast_expr_context(state, tmp, &ctx, "ctx", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -15502,7 +15474,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'Starred' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &value, arena);
+            res = obj2ast_expr(state, tmp, &value, "value", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -15519,7 +15491,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'Starred' node")) {
                 goto failed;
             }
-            res = obj2ast_expr_context(state, tmp, &ctx, arena);
+            res = obj2ast_expr_context(state, tmp, &ctx, "ctx", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -15550,7 +15522,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'Name' node")) {
                 goto failed;
             }
-            res = obj2ast_identifier(state, tmp, &id, arena);
+            res = obj2ast_identifier(state, tmp, &id, "id", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -15567,7 +15539,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'Name' node")) {
                 goto failed;
             }
-            res = obj2ast_expr_context(state, tmp, &ctx, arena);
+            res = obj2ast_expr_context(state, tmp, &ctx, "ctx", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -15600,7 +15572,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "List field \"elts\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "List field \"elts\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -15612,7 +15584,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
                 if (_Py_EnterRecursiveCall(" while traversing 'List' node")) {
                     goto failed;
                 }
-                res = obj2ast_expr(state, tmp2, &val, arena);
+                res = obj2ast_expr(state, tmp2, &val, "elts", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -15636,7 +15608,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'List' node")) {
                 goto failed;
             }
-            res = obj2ast_expr_context(state, tmp, &ctx, arena);
+            res = obj2ast_expr_context(state, tmp, &ctx, "ctx", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -15669,7 +15641,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "Tuple field \"elts\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "Tuple field \"elts\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -15681,7 +15653,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
                 if (_Py_EnterRecursiveCall(" while traversing 'Tuple' node")) {
                     goto failed;
                 }
-                res = obj2ast_expr(state, tmp2, &val, arena);
+                res = obj2ast_expr(state, tmp2, &val, "elts", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -15705,7 +15677,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'Tuple' node")) {
                 goto failed;
             }
-            res = obj2ast_expr_context(state, tmp, &ctx, arena);
+            res = obj2ast_expr_context(state, tmp, &ctx, "ctx", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -15737,7 +15709,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'Slice' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &lower, arena);
+            res = obj2ast_expr(state, tmp, &lower, "lower", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -15754,7 +15726,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'Slice' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &upper, arena);
+            res = obj2ast_expr(state, tmp, &upper, "upper", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -15771,7 +15743,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'Slice' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &step, arena);
+            res = obj2ast_expr(state, tmp, &step, "step", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -15790,7 +15762,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
 
 int
 obj2ast_expr_context(struct ast_state *state, PyObject* obj, expr_context_ty*
-                     out, PyArena* arena)
+                     out, const char* field, PyArena* arena)
 {
     int isinstance;
 
@@ -15824,8 +15796,8 @@ obj2ast_expr_context(struct ast_state *state, PyObject* obj, expr_context_ty*
 }
 
 int
-obj2ast_boolop(struct ast_state *state, PyObject* obj, boolop_ty* out, PyArena*
-               arena)
+obj2ast_boolop(struct ast_state *state, PyObject* obj, boolop_ty* out, const
+               char* field, PyArena* arena)
 {
     int isinstance;
 
@@ -15852,7 +15824,7 @@ obj2ast_boolop(struct ast_state *state, PyObject* obj, boolop_ty* out, PyArena*
 
 int
 obj2ast_operator(struct ast_state *state, PyObject* obj, operator_ty* out,
-                 PyArena* arena)
+                 const char* field, PyArena* arena)
 {
     int isinstance;
 
@@ -15966,8 +15938,8 @@ obj2ast_operator(struct ast_state *state, PyObject* obj, operator_ty* out,
 }
 
 int
-obj2ast_unaryop(struct ast_state *state, PyObject* obj, unaryop_ty* out,
-                PyArena* arena)
+obj2ast_unaryop(struct ast_state *state, PyObject* obj, unaryop_ty* out, const
+                char* field, PyArena* arena)
 {
     int isinstance;
 
@@ -16009,8 +15981,8 @@ obj2ast_unaryop(struct ast_state *state, PyObject* obj, unaryop_ty* out,
 }
 
 int
-obj2ast_cmpop(struct ast_state *state, PyObject* obj, cmpop_ty* out, PyArena*
-              arena)
+obj2ast_cmpop(struct ast_state *state, PyObject* obj, cmpop_ty* out, const
+              char* field, PyArena* arena)
 {
     int isinstance;
 
@@ -16101,7 +16073,7 @@ obj2ast_cmpop(struct ast_state *state, PyObject* obj, cmpop_ty* out, PyArena*
 
 int
 obj2ast_comprehension(struct ast_state *state, PyObject* obj, comprehension_ty*
-                      out, PyArena* arena)
+                      out, const char* field, PyArena* arena)
 {
     PyObject* tmp = NULL;
     expr_ty target;
@@ -16121,7 +16093,7 @@ obj2ast_comprehension(struct ast_state *state, PyObject* obj, comprehension_ty*
         if (_Py_EnterRecursiveCall(" while traversing 'comprehension' node")) {
             goto failed;
         }
-        res = obj2ast_expr(state, tmp, &target, arena);
+        res = obj2ast_expr(state, tmp, &target, "target", arena);
         _Py_LeaveRecursiveCall();
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
@@ -16138,7 +16110,7 @@ obj2ast_comprehension(struct ast_state *state, PyObject* obj, comprehension_ty*
         if (_Py_EnterRecursiveCall(" while traversing 'comprehension' node")) {
             goto failed;
         }
-        res = obj2ast_expr(state, tmp, &iter, arena);
+        res = obj2ast_expr(state, tmp, &iter, "iter", arena);
         _Py_LeaveRecursiveCall();
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
@@ -16157,7 +16129,7 @@ obj2ast_comprehension(struct ast_state *state, PyObject* obj, comprehension_ty*
         Py_ssize_t len;
         Py_ssize_t i;
         if (!PyList_Check(tmp)) {
-            PyErr_Format(PyExc_TypeError, "comprehension field \"ifs\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+            PyErr_Format(PyExc_TypeError, "comprehension field \"ifs\" must be a list, not a %T", tmp);
             goto failed;
         }
         len = PyList_GET_SIZE(tmp);
@@ -16169,7 +16141,7 @@ obj2ast_comprehension(struct ast_state *state, PyObject* obj, comprehension_ty*
             if (_Py_EnterRecursiveCall(" while traversing 'comprehension' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp2, &val, arena);
+            res = obj2ast_expr(state, tmp2, &val, "ifs", arena);
             _Py_LeaveRecursiveCall();
             Py_DECREF(tmp2);
             if (res != 0) goto failed;
@@ -16193,7 +16165,7 @@ obj2ast_comprehension(struct ast_state *state, PyObject* obj, comprehension_ty*
         if (_Py_EnterRecursiveCall(" while traversing 'comprehension' node")) {
             goto failed;
         }
-        res = obj2ast_int(state, tmp, &is_async, arena);
+        res = obj2ast_int(state, tmp, &is_async, "is_async", arena);
         _Py_LeaveRecursiveCall();
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
@@ -16208,7 +16180,7 @@ failed:
 
 int
 obj2ast_excepthandler(struct ast_state *state, PyObject* obj, excepthandler_ty*
-                      out, PyArena* arena)
+                      out, const char* field, PyArena* arena)
 {
     int isinstance;
 
@@ -16223,6 +16195,15 @@ obj2ast_excepthandler(struct ast_state *state, PyObject* obj, excepthandler_ty*
         *out = NULL;
         return 0;
     }
+    tp = state->excepthandler_type;
+    isinstance = PyObject_IsInstance(obj, tp);
+    if (isinstance == -1) {
+        return 1;
+    }
+    if (!isinstance && field != NULL) {
+        PyErr_Format(PyExc_TypeError, "field '%s' was expecting node of type 'excepthandler', got '%T'", field, obj);
+        return 1;
+    }
     if (PyObject_GetOptionalAttr(obj, state->lineno, &tmp) < 0) {
         return -1;
     }
@@ -16235,7 +16216,7 @@ obj2ast_excepthandler(struct ast_state *state, PyObject* obj, excepthandler_ty*
         if (_Py_EnterRecursiveCall(" while traversing 'excepthandler' node")) {
             goto failed;
         }
-        res = obj2ast_int(state, tmp, &lineno, arena);
+        res = obj2ast_int(state, tmp, &lineno, "lineno", arena);
         _Py_LeaveRecursiveCall();
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
@@ -16252,7 +16233,7 @@ obj2ast_excepthandler(struct ast_state *state, PyObject* obj, excepthandler_ty*
         if (_Py_EnterRecursiveCall(" while traversing 'excepthandler' node")) {
             goto failed;
         }
-        res = obj2ast_int(state, tmp, &col_offset, arena);
+        res = obj2ast_int(state, tmp, &col_offset, "col_offset", arena);
         _Py_LeaveRecursiveCall();
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
@@ -16269,7 +16250,7 @@ obj2ast_excepthandler(struct ast_state *state, PyObject* obj, excepthandler_ty*
         if (_Py_EnterRecursiveCall(" while traversing 'excepthandler' node")) {
             goto failed;
         }
-        res = obj2ast_int(state, tmp, &end_lineno, arena);
+        res = obj2ast_int(state, tmp, &end_lineno, "end_lineno", arena);
         _Py_LeaveRecursiveCall();
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
@@ -16286,7 +16267,7 @@ obj2ast_excepthandler(struct ast_state *state, PyObject* obj, excepthandler_ty*
         if (_Py_EnterRecursiveCall(" while traversing 'excepthandler' node")) {
             goto failed;
         }
-        res = obj2ast_int(state, tmp, &end_col_offset, arena);
+        res = obj2ast_int(state, tmp, &end_col_offset, "end_col_offset", arena);
         _Py_LeaveRecursiveCall();
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
@@ -16313,7 +16294,7 @@ obj2ast_excepthandler(struct ast_state *state, PyObject* obj, excepthandler_ty*
             if (_Py_EnterRecursiveCall(" while traversing 'ExceptHandler' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &type, arena);
+            res = obj2ast_expr(state, tmp, &type, "type", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -16330,7 +16311,7 @@ obj2ast_excepthandler(struct ast_state *state, PyObject* obj, excepthandler_ty*
             if (_Py_EnterRecursiveCall(" while traversing 'ExceptHandler' node")) {
                 goto failed;
             }
-            res = obj2ast_identifier(state, tmp, &name, arena);
+            res = obj2ast_identifier(state, tmp, &name, "name", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -16349,7 +16330,7 @@ obj2ast_excepthandler(struct ast_state *state, PyObject* obj, excepthandler_ty*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "ExceptHandler field \"body\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "ExceptHandler field \"body\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -16361,7 +16342,7 @@ obj2ast_excepthandler(struct ast_state *state, PyObject* obj, excepthandler_ty*
                 if (_Py_EnterRecursiveCall(" while traversing 'ExceptHandler' node")) {
                     goto failed;
                 }
-                res = obj2ast_stmt(state, tmp2, &val, arena);
+                res = obj2ast_stmt(state, tmp2, &val, "body", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -16387,7 +16368,7 @@ obj2ast_excepthandler(struct ast_state *state, PyObject* obj, excepthandler_ty*
 
 int
 obj2ast_arguments(struct ast_state *state, PyObject* obj, arguments_ty* out,
-                  PyArena* arena)
+                  const char* field, PyArena* arena)
 {
     PyObject* tmp = NULL;
     asdl_arg_seq* posonlyargs;
@@ -16412,7 +16393,7 @@ obj2ast_arguments(struct ast_state *state, PyObject* obj, arguments_ty* out,
         Py_ssize_t len;
         Py_ssize_t i;
         if (!PyList_Check(tmp)) {
-            PyErr_Format(PyExc_TypeError, "arguments field \"posonlyargs\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+            PyErr_Format(PyExc_TypeError, "arguments field \"posonlyargs\" must be a list, not a %T", tmp);
             goto failed;
         }
         len = PyList_GET_SIZE(tmp);
@@ -16424,7 +16405,7 @@ obj2ast_arguments(struct ast_state *state, PyObject* obj, arguments_ty* out,
             if (_Py_EnterRecursiveCall(" while traversing 'arguments' node")) {
                 goto failed;
             }
-            res = obj2ast_arg(state, tmp2, &val, arena);
+            res = obj2ast_arg(state, tmp2, &val, "posonlyargs", arena);
             _Py_LeaveRecursiveCall();
             Py_DECREF(tmp2);
             if (res != 0) goto failed;
@@ -16450,7 +16431,7 @@ obj2ast_arguments(struct ast_state *state, PyObject* obj, arguments_ty* out,
         Py_ssize_t len;
         Py_ssize_t i;
         if (!PyList_Check(tmp)) {
-            PyErr_Format(PyExc_TypeError, "arguments field \"args\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+            PyErr_Format(PyExc_TypeError, "arguments field \"args\" must be a list, not a %T", tmp);
             goto failed;
         }
         len = PyList_GET_SIZE(tmp);
@@ -16462,7 +16443,7 @@ obj2ast_arguments(struct ast_state *state, PyObject* obj, arguments_ty* out,
             if (_Py_EnterRecursiveCall(" while traversing 'arguments' node")) {
                 goto failed;
             }
-            res = obj2ast_arg(state, tmp2, &val, arena);
+            res = obj2ast_arg(state, tmp2, &val, "args", arena);
             _Py_LeaveRecursiveCall();
             Py_DECREF(tmp2);
             if (res != 0) goto failed;
@@ -16486,7 +16467,7 @@ obj2ast_arguments(struct ast_state *state, PyObject* obj, arguments_ty* out,
         if (_Py_EnterRecursiveCall(" while traversing 'arguments' node")) {
             goto failed;
         }
-        res = obj2ast_arg(state, tmp, &vararg, arena);
+        res = obj2ast_arg(state, tmp, &vararg, "vararg", arena);
         _Py_LeaveRecursiveCall();
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
@@ -16505,7 +16486,7 @@ obj2ast_arguments(struct ast_state *state, PyObject* obj, arguments_ty* out,
         Py_ssize_t len;
         Py_ssize_t i;
         if (!PyList_Check(tmp)) {
-            PyErr_Format(PyExc_TypeError, "arguments field \"kwonlyargs\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+            PyErr_Format(PyExc_TypeError, "arguments field \"kwonlyargs\" must be a list, not a %T", tmp);
             goto failed;
         }
         len = PyList_GET_SIZE(tmp);
@@ -16517,7 +16498,7 @@ obj2ast_arguments(struct ast_state *state, PyObject* obj, arguments_ty* out,
             if (_Py_EnterRecursiveCall(" while traversing 'arguments' node")) {
                 goto failed;
             }
-            res = obj2ast_arg(state, tmp2, &val, arena);
+            res = obj2ast_arg(state, tmp2, &val, "kwonlyargs", arena);
             _Py_LeaveRecursiveCall();
             Py_DECREF(tmp2);
             if (res != 0) goto failed;
@@ -16543,7 +16524,7 @@ obj2ast_arguments(struct ast_state *state, PyObject* obj, arguments_ty* out,
         Py_ssize_t len;
         Py_ssize_t i;
         if (!PyList_Check(tmp)) {
-            PyErr_Format(PyExc_TypeError, "arguments field \"kw_defaults\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+            PyErr_Format(PyExc_TypeError, "arguments field \"kw_defaults\" must be a list, not a %T", tmp);
             goto failed;
         }
         len = PyList_GET_SIZE(tmp);
@@ -16555,7 +16536,7 @@ obj2ast_arguments(struct ast_state *state, PyObject* obj, arguments_ty* out,
             if (_Py_EnterRecursiveCall(" while traversing 'arguments' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp2, &val, arena);
+            res = obj2ast_expr(state, tmp2, &val, "kw_defaults", arena);
             _Py_LeaveRecursiveCall();
             Py_DECREF(tmp2);
             if (res != 0) goto failed;
@@ -16579,7 +16560,7 @@ obj2ast_arguments(struct ast_state *state, PyObject* obj, arguments_ty* out,
         if (_Py_EnterRecursiveCall(" while traversing 'arguments' node")) {
             goto failed;
         }
-        res = obj2ast_arg(state, tmp, &kwarg, arena);
+        res = obj2ast_arg(state, tmp, &kwarg, "kwarg", arena);
         _Py_LeaveRecursiveCall();
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
@@ -16598,7 +16579,7 @@ obj2ast_arguments(struct ast_state *state, PyObject* obj, arguments_ty* out,
         Py_ssize_t len;
         Py_ssize_t i;
         if (!PyList_Check(tmp)) {
-            PyErr_Format(PyExc_TypeError, "arguments field \"defaults\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+            PyErr_Format(PyExc_TypeError, "arguments field \"defaults\" must be a list, not a %T", tmp);
             goto failed;
         }
         len = PyList_GET_SIZE(tmp);
@@ -16610,7 +16591,7 @@ obj2ast_arguments(struct ast_state *state, PyObject* obj, arguments_ty* out,
             if (_Py_EnterRecursiveCall(" while traversing 'arguments' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp2, &val, arena);
+            res = obj2ast_expr(state, tmp2, &val, "defaults", arena);
             _Py_LeaveRecursiveCall();
             Py_DECREF(tmp2);
             if (res != 0) goto failed;
@@ -16632,7 +16613,8 @@ failed:
 }
 
 int
-obj2ast_arg(struct ast_state *state, PyObject* obj, arg_ty* out, PyArena* arena)
+obj2ast_arg(struct ast_state *state, PyObject* obj, arg_ty* out, const char*
+            field, PyArena* arena)
 {
     PyObject* tmp = NULL;
     identifier arg;
@@ -16655,7 +16637,7 @@ obj2ast_arg(struct ast_state *state, PyObject* obj, arg_ty* out, PyArena* arena)
         if (_Py_EnterRecursiveCall(" while traversing 'arg' node")) {
             goto failed;
         }
-        res = obj2ast_identifier(state, tmp, &arg, arena);
+        res = obj2ast_identifier(state, tmp, &arg, "arg", arena);
         _Py_LeaveRecursiveCall();
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
@@ -16672,7 +16654,7 @@ obj2ast_arg(struct ast_state *state, PyObject* obj, arg_ty* out, PyArena* arena)
         if (_Py_EnterRecursiveCall(" while traversing 'arg' node")) {
             goto failed;
         }
-        res = obj2ast_expr(state, tmp, &annotation, arena);
+        res = obj2ast_expr(state, tmp, &annotation, "annotation", arena);
         _Py_LeaveRecursiveCall();
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
@@ -16689,7 +16671,7 @@ obj2ast_arg(struct ast_state *state, PyObject* obj, arg_ty* out, PyArena* arena)
         if (_Py_EnterRecursiveCall(" while traversing 'arg' node")) {
             goto failed;
         }
-        res = obj2ast_string(state, tmp, &type_comment, arena);
+        res = obj2ast_string(state, tmp, &type_comment, "type_comment", arena);
         _Py_LeaveRecursiveCall();
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
@@ -16706,7 +16688,7 @@ obj2ast_arg(struct ast_state *state, PyObject* obj, arg_ty* out, PyArena* arena)
         if (_Py_EnterRecursiveCall(" while traversing 'arg' node")) {
             goto failed;
         }
-        res = obj2ast_int(state, tmp, &lineno, arena);
+        res = obj2ast_int(state, tmp, &lineno, "lineno", arena);
         _Py_LeaveRecursiveCall();
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
@@ -16723,7 +16705,7 @@ obj2ast_arg(struct ast_state *state, PyObject* obj, arg_ty* out, PyArena* arena)
         if (_Py_EnterRecursiveCall(" while traversing 'arg' node")) {
             goto failed;
         }
-        res = obj2ast_int(state, tmp, &col_offset, arena);
+        res = obj2ast_int(state, tmp, &col_offset, "col_offset", arena);
         _Py_LeaveRecursiveCall();
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
@@ -16740,7 +16722,7 @@ obj2ast_arg(struct ast_state *state, PyObject* obj, arg_ty* out, PyArena* arena)
         if (_Py_EnterRecursiveCall(" while traversing 'arg' node")) {
             goto failed;
         }
-        res = obj2ast_int(state, tmp, &end_lineno, arena);
+        res = obj2ast_int(state, tmp, &end_lineno, "end_lineno", arena);
         _Py_LeaveRecursiveCall();
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
@@ -16757,7 +16739,7 @@ obj2ast_arg(struct ast_state *state, PyObject* obj, arg_ty* out, PyArena* arena)
         if (_Py_EnterRecursiveCall(" while traversing 'arg' node")) {
             goto failed;
         }
-        res = obj2ast_int(state, tmp, &end_col_offset, arena);
+        res = obj2ast_int(state, tmp, &end_col_offset, "end_col_offset", arena);
         _Py_LeaveRecursiveCall();
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
@@ -16772,8 +16754,8 @@ failed:
 }
 
 int
-obj2ast_keyword(struct ast_state *state, PyObject* obj, keyword_ty* out,
-                PyArena* arena)
+obj2ast_keyword(struct ast_state *state, PyObject* obj, keyword_ty* out, const
+                char* field, PyArena* arena)
 {
     PyObject* tmp = NULL;
     identifier arg;
@@ -16795,7 +16777,7 @@ obj2ast_keyword(struct ast_state *state, PyObject* obj, keyword_ty* out,
         if (_Py_EnterRecursiveCall(" while traversing 'keyword' node")) {
             goto failed;
         }
-        res = obj2ast_identifier(state, tmp, &arg, arena);
+        res = obj2ast_identifier(state, tmp, &arg, "arg", arena);
         _Py_LeaveRecursiveCall();
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
@@ -16812,7 +16794,7 @@ obj2ast_keyword(struct ast_state *state, PyObject* obj, keyword_ty* out,
         if (_Py_EnterRecursiveCall(" while traversing 'keyword' node")) {
             goto failed;
         }
-        res = obj2ast_expr(state, tmp, &value, arena);
+        res = obj2ast_expr(state, tmp, &value, "value", arena);
         _Py_LeaveRecursiveCall();
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
@@ -16829,7 +16811,7 @@ obj2ast_keyword(struct ast_state *state, PyObject* obj, keyword_ty* out,
         if (_Py_EnterRecursiveCall(" while traversing 'keyword' node")) {
             goto failed;
         }
-        res = obj2ast_int(state, tmp, &lineno, arena);
+        res = obj2ast_int(state, tmp, &lineno, "lineno", arena);
         _Py_LeaveRecursiveCall();
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
@@ -16846,7 +16828,7 @@ obj2ast_keyword(struct ast_state *state, PyObject* obj, keyword_ty* out,
         if (_Py_EnterRecursiveCall(" while traversing 'keyword' node")) {
             goto failed;
         }
-        res = obj2ast_int(state, tmp, &col_offset, arena);
+        res = obj2ast_int(state, tmp, &col_offset, "col_offset", arena);
         _Py_LeaveRecursiveCall();
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
@@ -16863,7 +16845,7 @@ obj2ast_keyword(struct ast_state *state, PyObject* obj, keyword_ty* out,
         if (_Py_EnterRecursiveCall(" while traversing 'keyword' node")) {
             goto failed;
         }
-        res = obj2ast_int(state, tmp, &end_lineno, arena);
+        res = obj2ast_int(state, tmp, &end_lineno, "end_lineno", arena);
         _Py_LeaveRecursiveCall();
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
@@ -16880,7 +16862,7 @@ obj2ast_keyword(struct ast_state *state, PyObject* obj, keyword_ty* out,
         if (_Py_EnterRecursiveCall(" while traversing 'keyword' node")) {
             goto failed;
         }
-        res = obj2ast_int(state, tmp, &end_col_offset, arena);
+        res = obj2ast_int(state, tmp, &end_col_offset, "end_col_offset", arena);
         _Py_LeaveRecursiveCall();
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
@@ -16895,8 +16877,8 @@ failed:
 }
 
 int
-obj2ast_alias(struct ast_state *state, PyObject* obj, alias_ty* out, PyArena*
-              arena)
+obj2ast_alias(struct ast_state *state, PyObject* obj, alias_ty* out, const
+              char* field, PyArena* arena)
 {
     PyObject* tmp = NULL;
     identifier name;
@@ -16918,7 +16900,7 @@ obj2ast_alias(struct ast_state *state, PyObject* obj, alias_ty* out, PyArena*
         if (_Py_EnterRecursiveCall(" while traversing 'alias' node")) {
             goto failed;
         }
-        res = obj2ast_identifier(state, tmp, &name, arena);
+        res = obj2ast_identifier(state, tmp, &name, "name", arena);
         _Py_LeaveRecursiveCall();
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
@@ -16935,7 +16917,7 @@ obj2ast_alias(struct ast_state *state, PyObject* obj, alias_ty* out, PyArena*
         if (_Py_EnterRecursiveCall(" while traversing 'alias' node")) {
             goto failed;
         }
-        res = obj2ast_identifier(state, tmp, &asname, arena);
+        res = obj2ast_identifier(state, tmp, &asname, "asname", arena);
         _Py_LeaveRecursiveCall();
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
@@ -16952,7 +16934,7 @@ obj2ast_alias(struct ast_state *state, PyObject* obj, alias_ty* out, PyArena*
         if (_Py_EnterRecursiveCall(" while traversing 'alias' node")) {
             goto failed;
         }
-        res = obj2ast_int(state, tmp, &lineno, arena);
+        res = obj2ast_int(state, tmp, &lineno, "lineno", arena);
         _Py_LeaveRecursiveCall();
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
@@ -16969,7 +16951,7 @@ obj2ast_alias(struct ast_state *state, PyObject* obj, alias_ty* out, PyArena*
         if (_Py_EnterRecursiveCall(" while traversing 'alias' node")) {
             goto failed;
         }
-        res = obj2ast_int(state, tmp, &col_offset, arena);
+        res = obj2ast_int(state, tmp, &col_offset, "col_offset", arena);
         _Py_LeaveRecursiveCall();
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
@@ -16986,7 +16968,7 @@ obj2ast_alias(struct ast_state *state, PyObject* obj, alias_ty* out, PyArena*
         if (_Py_EnterRecursiveCall(" while traversing 'alias' node")) {
             goto failed;
         }
-        res = obj2ast_int(state, tmp, &end_lineno, arena);
+        res = obj2ast_int(state, tmp, &end_lineno, "end_lineno", arena);
         _Py_LeaveRecursiveCall();
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
@@ -17003,7 +16985,7 @@ obj2ast_alias(struct ast_state *state, PyObject* obj, alias_ty* out, PyArena*
         if (_Py_EnterRecursiveCall(" while traversing 'alias' node")) {
             goto failed;
         }
-        res = obj2ast_int(state, tmp, &end_col_offset, arena);
+        res = obj2ast_int(state, tmp, &end_col_offset, "end_col_offset", arena);
         _Py_LeaveRecursiveCall();
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
@@ -17019,7 +17001,7 @@ failed:
 
 int
 obj2ast_withitem(struct ast_state *state, PyObject* obj, withitem_ty* out,
-                 PyArena* arena)
+                 const char* field, PyArena* arena)
 {
     PyObject* tmp = NULL;
     expr_ty context_expr;
@@ -17037,7 +17019,7 @@ obj2ast_withitem(struct ast_state *state, PyObject* obj, withitem_ty* out,
         if (_Py_EnterRecursiveCall(" while traversing 'withitem' node")) {
             goto failed;
         }
-        res = obj2ast_expr(state, tmp, &context_expr, arena);
+        res = obj2ast_expr(state, tmp, &context_expr, "context_expr", arena);
         _Py_LeaveRecursiveCall();
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
@@ -17054,7 +17036,7 @@ obj2ast_withitem(struct ast_state *state, PyObject* obj, withitem_ty* out,
         if (_Py_EnterRecursiveCall(" while traversing 'withitem' node")) {
             goto failed;
         }
-        res = obj2ast_expr(state, tmp, &optional_vars, arena);
+        res = obj2ast_expr(state, tmp, &optional_vars, "optional_vars", arena);
         _Py_LeaveRecursiveCall();
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
@@ -17069,7 +17051,7 @@ failed:
 
 int
 obj2ast_match_case(struct ast_state *state, PyObject* obj, match_case_ty* out,
-                   PyArena* arena)
+                   const char* field, PyArena* arena)
 {
     PyObject* tmp = NULL;
     pattern_ty pattern;
@@ -17088,7 +17070,7 @@ obj2ast_match_case(struct ast_state *state, PyObject* obj, match_case_ty* out,
         if (_Py_EnterRecursiveCall(" while traversing 'match_case' node")) {
             goto failed;
         }
-        res = obj2ast_pattern(state, tmp, &pattern, arena);
+        res = obj2ast_pattern(state, tmp, &pattern, "pattern", arena);
         _Py_LeaveRecursiveCall();
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
@@ -17105,7 +17087,7 @@ obj2ast_match_case(struct ast_state *state, PyObject* obj, match_case_ty* out,
         if (_Py_EnterRecursiveCall(" while traversing 'match_case' node")) {
             goto failed;
         }
-        res = obj2ast_expr(state, tmp, &guard, arena);
+        res = obj2ast_expr(state, tmp, &guard, "guard", arena);
         _Py_LeaveRecursiveCall();
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
@@ -17124,7 +17106,7 @@ obj2ast_match_case(struct ast_state *state, PyObject* obj, match_case_ty* out,
         Py_ssize_t len;
         Py_ssize_t i;
         if (!PyList_Check(tmp)) {
-            PyErr_Format(PyExc_TypeError, "match_case field \"body\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+            PyErr_Format(PyExc_TypeError, "match_case field \"body\" must be a list, not a %T", tmp);
             goto failed;
         }
         len = PyList_GET_SIZE(tmp);
@@ -17136,7 +17118,7 @@ obj2ast_match_case(struct ast_state *state, PyObject* obj, match_case_ty* out,
             if (_Py_EnterRecursiveCall(" while traversing 'match_case' node")) {
                 goto failed;
             }
-            res = obj2ast_stmt(state, tmp2, &val, arena);
+            res = obj2ast_stmt(state, tmp2, &val, "body", arena);
             _Py_LeaveRecursiveCall();
             Py_DECREF(tmp2);
             if (res != 0) goto failed;
@@ -17157,8 +17139,8 @@ failed:
 }
 
 int
-obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
-                PyArena* arena)
+obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out, const
+                char* field, PyArena* arena)
 {
     int isinstance;
 
@@ -17173,6 +17155,15 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
         *out = NULL;
         return 0;
     }
+    tp = state->pattern_type;
+    isinstance = PyObject_IsInstance(obj, tp);
+    if (isinstance == -1) {
+        return 1;
+    }
+    if (!isinstance && field != NULL) {
+        PyErr_Format(PyExc_TypeError, "field '%s' was expecting node of type 'pattern', got '%T'", field, obj);
+        return 1;
+    }
     if (PyObject_GetOptionalAttr(obj, state->lineno, &tmp) < 0) {
         return -1;
     }
@@ -17185,7 +17176,7 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
         if (_Py_EnterRecursiveCall(" while traversing 'pattern' node")) {
             goto failed;
         }
-        res = obj2ast_int(state, tmp, &lineno, arena);
+        res = obj2ast_int(state, tmp, &lineno, "lineno", arena);
         _Py_LeaveRecursiveCall();
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
@@ -17202,7 +17193,7 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
         if (_Py_EnterRecursiveCall(" while traversing 'pattern' node")) {
             goto failed;
         }
-        res = obj2ast_int(state, tmp, &col_offset, arena);
+        res = obj2ast_int(state, tmp, &col_offset, "col_offset", arena);
         _Py_LeaveRecursiveCall();
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
@@ -17219,7 +17210,7 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
         if (_Py_EnterRecursiveCall(" while traversing 'pattern' node")) {
             goto failed;
         }
-        res = obj2ast_int(state, tmp, &end_lineno, arena);
+        res = obj2ast_int(state, tmp, &end_lineno, "end_lineno", arena);
         _Py_LeaveRecursiveCall();
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
@@ -17236,7 +17227,7 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
         if (_Py_EnterRecursiveCall(" while traversing 'pattern' node")) {
             goto failed;
         }
-        res = obj2ast_int(state, tmp, &end_col_offset, arena);
+        res = obj2ast_int(state, tmp, &end_col_offset, "end_col_offset", arena);
         _Py_LeaveRecursiveCall();
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
@@ -17261,7 +17252,7 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
             if (_Py_EnterRecursiveCall(" while traversing 'MatchValue' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &value, arena);
+            res = obj2ast_expr(state, tmp, &value, "value", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -17291,7 +17282,7 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
             if (_Py_EnterRecursiveCall(" while traversing 'MatchSingleton' node")) {
                 goto failed;
             }
-            res = obj2ast_constant(state, tmp, &value, arena);
+            res = obj2ast_constant(state, tmp, &value, "value", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -17323,7 +17314,7 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "MatchSequence field \"patterns\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "MatchSequence field \"patterns\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -17335,7 +17326,7 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
                 if (_Py_EnterRecursiveCall(" while traversing 'MatchSequence' node")) {
                     goto failed;
                 }
-                res = obj2ast_pattern(state, tmp2, &val, arena);
+                res = obj2ast_pattern(state, tmp2, &val, "patterns", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -17376,7 +17367,7 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "MatchMapping field \"keys\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "MatchMapping field \"keys\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -17388,7 +17379,7 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
                 if (_Py_EnterRecursiveCall(" while traversing 'MatchMapping' node")) {
                     goto failed;
                 }
-                res = obj2ast_expr(state, tmp2, &val, arena);
+                res = obj2ast_expr(state, tmp2, &val, "keys", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -17414,7 +17405,7 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "MatchMapping field \"patterns\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "MatchMapping field \"patterns\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -17426,7 +17417,7 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
                 if (_Py_EnterRecursiveCall(" while traversing 'MatchMapping' node")) {
                     goto failed;
                 }
-                res = obj2ast_pattern(state, tmp2, &val, arena);
+                res = obj2ast_pattern(state, tmp2, &val, "patterns", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -17450,7 +17441,7 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
             if (_Py_EnterRecursiveCall(" while traversing 'MatchMapping' node")) {
                 goto failed;
             }
-            res = obj2ast_identifier(state, tmp, &rest, arena);
+            res = obj2ast_identifier(state, tmp, &rest, "rest", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -17483,7 +17474,7 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
             if (_Py_EnterRecursiveCall(" while traversing 'MatchClass' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &cls, arena);
+            res = obj2ast_expr(state, tmp, &cls, "cls", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -17502,7 +17493,7 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "MatchClass field \"patterns\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "MatchClass field \"patterns\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -17514,7 +17505,7 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
                 if (_Py_EnterRecursiveCall(" while traversing 'MatchClass' node")) {
                     goto failed;
                 }
-                res = obj2ast_pattern(state, tmp2, &val, arena);
+                res = obj2ast_pattern(state, tmp2, &val, "patterns", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -17540,7 +17531,7 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "MatchClass field \"kwd_attrs\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "MatchClass field \"kwd_attrs\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -17552,7 +17543,7 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
                 if (_Py_EnterRecursiveCall(" while traversing 'MatchClass' node")) {
                     goto failed;
                 }
-                res = obj2ast_identifier(state, tmp2, &val, arena);
+                res = obj2ast_identifier(state, tmp2, &val, "kwd_attrs", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -17578,7 +17569,7 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "MatchClass field \"kwd_patterns\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "MatchClass field \"kwd_patterns\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -17590,7 +17581,7 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
                 if (_Py_EnterRecursiveCall(" while traversing 'MatchClass' node")) {
                     goto failed;
                 }
-                res = obj2ast_pattern(state, tmp2, &val, arena);
+                res = obj2ast_pattern(state, tmp2, &val, "kwd_patterns", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -17628,7 +17619,7 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
             if (_Py_EnterRecursiveCall(" while traversing 'MatchStar' node")) {
                 goto failed;
             }
-            res = obj2ast_identifier(state, tmp, &name, arena);
+            res = obj2ast_identifier(state, tmp, &name, "name", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -17659,7 +17650,7 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
             if (_Py_EnterRecursiveCall(" while traversing 'MatchAs' node")) {
                 goto failed;
             }
-            res = obj2ast_pattern(state, tmp, &pattern, arena);
+            res = obj2ast_pattern(state, tmp, &pattern, "pattern", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -17676,7 +17667,7 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
             if (_Py_EnterRecursiveCall(" while traversing 'MatchAs' node")) {
                 goto failed;
             }
-            res = obj2ast_identifier(state, tmp, &name, arena);
+            res = obj2ast_identifier(state, tmp, &name, "name", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -17708,7 +17699,7 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "MatchOr field \"patterns\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "MatchOr field \"patterns\" must be a list, not a %T", tmp);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -17720,7 +17711,7 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
                 if (_Py_EnterRecursiveCall(" while traversing 'MatchOr' node")) {
                     goto failed;
                 }
-                res = obj2ast_pattern(state, tmp2, &val, arena);
+                res = obj2ast_pattern(state, tmp2, &val, "patterns", arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
@@ -17746,7 +17737,7 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
 
 int
 obj2ast_type_ignore(struct ast_state *state, PyObject* obj, type_ignore_ty*
-                    out, PyArena* arena)
+                    out, const char* field, PyArena* arena)
 {
     int isinstance;
 
@@ -17756,6 +17747,15 @@ obj2ast_type_ignore(struct ast_state *state, PyObject* obj, type_ignore_ty*
     if (obj == Py_None) {
         *out = NULL;
         return 0;
+    }
+    tp = state->type_ignore_type;
+    isinstance = PyObject_IsInstance(obj, tp);
+    if (isinstance == -1) {
+        return 1;
+    }
+    if (!isinstance && field != NULL) {
+        PyErr_Format(PyExc_TypeError, "field '%s' was expecting node of type 'type_ignore', got '%T'", field, obj);
+        return 1;
     }
     tp = state->TypeIgnore_type;
     isinstance = PyObject_IsInstance(obj, tp);
@@ -17778,7 +17778,7 @@ obj2ast_type_ignore(struct ast_state *state, PyObject* obj, type_ignore_ty*
             if (_Py_EnterRecursiveCall(" while traversing 'TypeIgnore' node")) {
                 goto failed;
             }
-            res = obj2ast_int(state, tmp, &lineno, arena);
+            res = obj2ast_int(state, tmp, &lineno, "lineno", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -17795,7 +17795,7 @@ obj2ast_type_ignore(struct ast_state *state, PyObject* obj, type_ignore_ty*
             if (_Py_EnterRecursiveCall(" while traversing 'TypeIgnore' node")) {
                 goto failed;
             }
-            res = obj2ast_string(state, tmp, &tag, arena);
+            res = obj2ast_string(state, tmp, &tag, "tag", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -17813,7 +17813,7 @@ obj2ast_type_ignore(struct ast_state *state, PyObject* obj, type_ignore_ty*
 
 int
 obj2ast_type_param(struct ast_state *state, PyObject* obj, type_param_ty* out,
-                   PyArena* arena)
+                   const char* field, PyArena* arena)
 {
     int isinstance;
 
@@ -17828,6 +17828,15 @@ obj2ast_type_param(struct ast_state *state, PyObject* obj, type_param_ty* out,
         *out = NULL;
         return 0;
     }
+    tp = state->type_param_type;
+    isinstance = PyObject_IsInstance(obj, tp);
+    if (isinstance == -1) {
+        return 1;
+    }
+    if (!isinstance && field != NULL) {
+        PyErr_Format(PyExc_TypeError, "field '%s' was expecting node of type 'type_param', got '%T'", field, obj);
+        return 1;
+    }
     if (PyObject_GetOptionalAttr(obj, state->lineno, &tmp) < 0) {
         return -1;
     }
@@ -17840,7 +17849,7 @@ obj2ast_type_param(struct ast_state *state, PyObject* obj, type_param_ty* out,
         if (_Py_EnterRecursiveCall(" while traversing 'type_param' node")) {
             goto failed;
         }
-        res = obj2ast_int(state, tmp, &lineno, arena);
+        res = obj2ast_int(state, tmp, &lineno, "lineno", arena);
         _Py_LeaveRecursiveCall();
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
@@ -17857,7 +17866,7 @@ obj2ast_type_param(struct ast_state *state, PyObject* obj, type_param_ty* out,
         if (_Py_EnterRecursiveCall(" while traversing 'type_param' node")) {
             goto failed;
         }
-        res = obj2ast_int(state, tmp, &col_offset, arena);
+        res = obj2ast_int(state, tmp, &col_offset, "col_offset", arena);
         _Py_LeaveRecursiveCall();
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
@@ -17874,7 +17883,7 @@ obj2ast_type_param(struct ast_state *state, PyObject* obj, type_param_ty* out,
         if (_Py_EnterRecursiveCall(" while traversing 'type_param' node")) {
             goto failed;
         }
-        res = obj2ast_int(state, tmp, &end_lineno, arena);
+        res = obj2ast_int(state, tmp, &end_lineno, "end_lineno", arena);
         _Py_LeaveRecursiveCall();
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
@@ -17891,7 +17900,7 @@ obj2ast_type_param(struct ast_state *state, PyObject* obj, type_param_ty* out,
         if (_Py_EnterRecursiveCall(" while traversing 'type_param' node")) {
             goto failed;
         }
-        res = obj2ast_int(state, tmp, &end_col_offset, arena);
+        res = obj2ast_int(state, tmp, &end_col_offset, "end_col_offset", arena);
         _Py_LeaveRecursiveCall();
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
@@ -17918,7 +17927,7 @@ obj2ast_type_param(struct ast_state *state, PyObject* obj, type_param_ty* out,
             if (_Py_EnterRecursiveCall(" while traversing 'TypeVar' node")) {
                 goto failed;
             }
-            res = obj2ast_identifier(state, tmp, &name, arena);
+            res = obj2ast_identifier(state, tmp, &name, "name", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -17935,7 +17944,7 @@ obj2ast_type_param(struct ast_state *state, PyObject* obj, type_param_ty* out,
             if (_Py_EnterRecursiveCall(" while traversing 'TypeVar' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &bound, arena);
+            res = obj2ast_expr(state, tmp, &bound, "bound", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -17952,7 +17961,8 @@ obj2ast_type_param(struct ast_state *state, PyObject* obj, type_param_ty* out,
             if (_Py_EnterRecursiveCall(" while traversing 'TypeVar' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &default_value, arena);
+            res = obj2ast_expr(state, tmp, &default_value, "default_value",
+                               arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -17983,7 +17993,7 @@ obj2ast_type_param(struct ast_state *state, PyObject* obj, type_param_ty* out,
             if (_Py_EnterRecursiveCall(" while traversing 'ParamSpec' node")) {
                 goto failed;
             }
-            res = obj2ast_identifier(state, tmp, &name, arena);
+            res = obj2ast_identifier(state, tmp, &name, "name", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -18000,7 +18010,8 @@ obj2ast_type_param(struct ast_state *state, PyObject* obj, type_param_ty* out,
             if (_Py_EnterRecursiveCall(" while traversing 'ParamSpec' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &default_value, arena);
+            res = obj2ast_expr(state, tmp, &default_value, "default_value",
+                               arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -18031,7 +18042,7 @@ obj2ast_type_param(struct ast_state *state, PyObject* obj, type_param_ty* out,
             if (_Py_EnterRecursiveCall(" while traversing 'TypeVarTuple' node")) {
                 goto failed;
             }
-            res = obj2ast_identifier(state, tmp, &name, arena);
+            res = obj2ast_identifier(state, tmp, &name, "name", arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -18048,7 +18059,8 @@ obj2ast_type_param(struct ast_state *state, PyObject* obj, type_param_ty* out,
             if (_Py_EnterRecursiveCall(" while traversing 'TypeVarTuple' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &default_value, arena);
+            res = obj2ast_expr(state, tmp, &default_value, "default_value",
+                               arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -18065,6 +18077,28 @@ obj2ast_type_param(struct ast_state *state, PyObject* obj, type_param_ty* out,
     return -1;
 }
 
+
+/* Helper for checking if a node class is abstract in the tests. */
+static PyObject *
+ast_is_abstract(PyObject *Py_UNUSED(module), PyObject *cls) {
+    struct ast_state *state = get_ast_state();
+    if (state == NULL) {
+        return NULL;
+    }
+    int contains = PySet_Contains(state->abstract_types, cls);
+    if (contains == -1) {
+        return NULL;
+    }
+    else if (contains == 1) {
+        Py_RETURN_TRUE;
+    }
+    Py_RETURN_FALSE;
+}
+
+static struct PyMethodDef astmodule_methods[] = {
+    {"_is_abstract", ast_is_abstract, METH_O, NULL},
+    {NULL}  /* Sentinel */
+};
 
 static int
 astmodule_exec(PyObject *m)
@@ -18480,6 +18514,7 @@ astmodule_exec(PyObject *m)
 }
 
 static PyModuleDef_Slot astmodule_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, astmodule_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
@@ -18491,7 +18526,8 @@ static struct PyModuleDef _astmodule = {
     .m_name = "_ast",
     // The _ast module uses a per-interpreter state (PyInterpreterState.ast)
     .m_size = 0,
-    .m_slots = astmodule_slots,
+    .m_methods = astmodule_methods,
+    .m_slots = astmodule_slots
 };
 
 PyMODINIT_FUNC
@@ -18512,29 +18548,32 @@ PyObject* PyAST_mod2obj(mod_ty t)
     return result;
 }
 
-/* mode is 0 for "exec", 1 for "eval" and 2 for "single" input */
+/* mode is 0 for "exec", 1 for "eval", 2 for "single" and 3 for "func_type"
+   input */
 int PyAst_CheckMode(PyObject *ast, int mode)
 {
-    const char * const req_name[] = {"Module", "Expression", "Interactive"};
+    const char * const req_name[] = {"Module", "Expression", "Interactive",
+                                     "FunctionType"};
 
     struct ast_state *state = get_ast_state();
     if (state == NULL) {
         return -1;
     }
 
-    PyObject *req_type[3];
+    PyObject *req_type[4];
     req_type[0] = state->Module_type;
     req_type[1] = state->Expression_type;
     req_type[2] = state->Interactive_type;
+    req_type[3] = state->FunctionType_type;
 
-    assert(0 <= mode && mode <= 2);
+    assert(0 <= mode && mode <= 3);
     int isinstance = PyObject_IsInstance(ast, req_type[mode]);
     if (isinstance == -1) {
         return -1;
     }
     if (!isinstance) {
-        PyErr_Format(PyExc_TypeError, "expected %s node, got %.400s",
-                     req_name[mode], _PyType_Name(Py_TYPE(ast)));
+        PyErr_Format(PyExc_TypeError, "expected %s node, got %T",
+                     req_name[mode], ast);
         return -1;
     }
     return 0;
@@ -18556,7 +18595,7 @@ mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode)
     }
 
     mod_ty res = NULL;
-    if (obj2ast_mod(state, ast, &res, arena) != 0)
+    if (obj2ast_mod(state, ast, &res, NULL, arena) != 0)
         return NULL;
     else
         return res;

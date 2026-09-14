@@ -40,7 +40,7 @@ headers.
 
    *name* and *value* are passed to ``BaseHeader`` from the
    :attr:`~email.policy.EmailPolicy.header_factory` call.  The string value of
-   any header object is the *value* fully decoded to unicode.
+   any header object is the *value* fully decoded to a string.
 
    This base class defines the following read-only properties:
 
@@ -93,11 +93,12 @@ headers.
    ``kwds`` is a dictionary containing one pre-initialized key, ``defects``.
    ``defects`` is an empty list.  The parse method should append any detected
    defects to this list.  On return, the ``kwds`` dictionary *must* contain
-   values for at least the keys ``decoded`` and ``defects``.  ``decoded``
-   should be the string value for the header (that is, the header value fully
-   decoded to unicode).  The parse method should assume that *string* may
+   values for at least the keys ``decoded``, ``defects`` and ``parse_tree``.
+   ``decoded`` should be the string value for the header (that is, the header
+   value fully decoded to a string). ``parse_tree`` is set to the parse tree obtained
+   from parsing the header. The parse method should assume that *string* may
    contain content-transfer-encoded parts, but should correctly handle all valid
-   unicode characters as well so that it can parse un-encoded header values.
+   Unicode characters as well so that it can parse un-encoded header values.
 
    ``BaseHeader``'s ``__new__`` then creates the header instance, and calls its
    ``init`` method.  The specialized class only needs to provide an ``init``
@@ -125,7 +126,7 @@ headers.
    mechanism for encoding non-ASCII text as ASCII characters within a header
    value.  When a *value* containing encoded words is passed to the
    constructor, the ``UnstructuredHeader`` parser converts such encoded words
-   into unicode, following the :rfc:`2047` rules for unstructured text.  The
+   into a string, following the :rfc:`2047` rules for unstructured text.  The
    parser uses heuristics to attempt to decode certain non-compliant encoded
    words.  Defects are registered in such cases, as well as defects for issues
    such as invalid characters within the encoded words or the non-encoded text.
@@ -202,8 +203,8 @@ headers.
       the list of addresses is "flattened" into a one dimensional list).
 
    The ``decoded`` value of the header will have all encoded words decoded to
-   unicode.  :class:`~encodings.idna` encoded domain names are also decoded to
-   unicode.  The ``decoded`` value is set by :ref:`joining <meth-str-join>` the
+   a string.  :class:`~encodings.idna` encoded domain names are also decoded to
+   a string.  The ``decoded`` value is set by :ref:`joining <meth-str-join>` the
    :class:`str` value of the elements of the ``groups`` attribute with ``',
    '``.
 
@@ -391,7 +392,7 @@ construct structured values to assign to specific headers.
    *domain*, in which case *username* and *domain* will be parsed from the
    *addr_spec*.  An *addr_spec* must be a properly RFC quoted string; if it is
    not ``Address`` will raise an error.  Unicode characters are allowed and
-   will be property encoded when serialized.  However, per the RFCs, unicode is
+   will be property encoded when serialized.  However, per the RFCs, Unicode is
    *not* allowed in the username portion of the address.
 
    .. attribute:: display_name

@@ -1,2 +1,0 @@
-Fix translation in :func:`base64.b64decode` when altchars overlaps with the
-standard ones.

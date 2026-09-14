@@ -95,9 +95,21 @@ _testcext_exec(PyObject *module)
     Py_BUILD_ASSERT(sizeof(int) == sizeof(unsigned int));
     assert(Py_BUILD_ASSERT_EXPR(sizeof(int) == sizeof(unsigned int)) == 0);
 
-    // Test Py_CLEAR()
-    obj = NULL;
+    // Test Py_CLEAR(): use typeof()/__typeof__() if available, or memcpy()
+    obj = Py_None;
     Py_CLEAR(obj);
+    assert(obj == NULL);
+
+#ifndef Py_LIMITED_API
+    // Test Py_SETREF(): use typeof()/__typeof__() if available, or memcpy()
+    obj = Py_None;
+    Py_SETREF(obj, NULL);
+    assert(obj == NULL);
+#endif
+
+    // Test that Py_BEGIN_CRITICAL_SECTION is available
+    Py_BEGIN_CRITICAL_SECTION(module);
+    Py_END_CRITICAL_SECTION();
 
     return 0;
 }
@@ -119,13 +131,15 @@ _Py_COMP_DIAG_PUSH
 #endif
 
 PyDoc_STRVAR(_testcext_doc, "C test extension.");
+PyABIInfo_VAR(abi_info);
 
-static PyModuleDef_Slot _testcext_slots[] = {
-    {Py_mod_name, STR(MODULE_NAME)},
-    {Py_mod_doc, (void*)(char*)_testcext_doc},
-    {Py_mod_exec, (void*)_testcext_exec},
-    {Py_mod_methods, _testcext_methods},
-    {0, NULL}
+static PySlot _testcext_slots[] = {
+    PySlot_STATIC_DATA(Py_mod_abi, &abi_info),
+    PySlot_STATIC_DATA(Py_mod_name, STR(MODULE_NAME)),
+    PySlot_STATIC_DATA(Py_mod_doc, (void*)(char*)_testcext_doc),
+    PySlot_FUNC(Py_mod_exec, (void*)_testcext_exec),
+    PySlot_STATIC_DATA(Py_mod_methods, _testcext_methods),
+    PySlot_END,
 };
 
 _Py_COMP_DIAG_POP

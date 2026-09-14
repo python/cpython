@@ -18,7 +18,7 @@ The module supports uncompressed PCM and IEEE floating-point WAV formats.
    Support for ``WAVE_FORMAT_EXTENSIBLE`` headers was added, provided that the
    extended format is ``KSDATAFORMAT_SUBTYPE_PCM``.
 
-.. versionchanged:: next
+.. versionchanged:: 3.15
 
    Support for reading and writing ``WAVE_FORMAT_IEEE_FLOAT`` files was added.
 
@@ -124,6 +124,8 @@ Wave_read Objects
 
       This is one of :data:`WAVE_FORMAT_PCM`,
       :data:`WAVE_FORMAT_IEEE_FLOAT`, or :data:`WAVE_FORMAT_EXTENSIBLE`.
+
+      .. versionadded:: 3.15
 
 
    .. method:: getcomptype()
@@ -283,6 +285,8 @@ Wave_write Objects
    .. method:: getformat()
 
       Return the current frame format code.
+
+      .. versionadded:: 3.15
 
 
    .. method:: setparams(tuple)

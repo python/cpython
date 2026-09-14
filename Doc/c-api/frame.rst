@@ -1,6 +1,6 @@
 .. highlight:: c
 
-Frame Objects
+Frame objects
 -------------
 
 .. c:type:: PyFrameObject
@@ -147,7 +147,7 @@ See also :ref:`Reflection <reflection>`.
    Return the line number that *frame* is currently executing.
 
 
-Frame Locals Proxies
+Frame locals proxies
 ^^^^^^^^^^^^^^^^^^^^
 
 .. versionadded:: 3.13
@@ -169,7 +169,7 @@ See :pep:`667` for more information.
    Return non-zero if *obj* is a frame :func:`locals` proxy.
 
 
-Legacy Local Variable APIs
+Legacy local variable APIs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 These APIs are :term:`soft deprecated`. As of Python 3.13, they do nothing.
@@ -178,40 +178,34 @@ They exist solely for backwards compatibility.
 
 .. c:function:: void PyFrame_LocalsToFast(PyFrameObject *f, int clear)
 
-   This function is :term:`soft deprecated` and does nothing.
-
    Prior to Python 3.13, this function would copy the :attr:`~frame.f_locals`
    attribute of *f* to the internal "fast" array of local variables, allowing
    changes in frame objects to be visible to the interpreter. If *clear* was
    true, this function would process variables that were unset in the locals
    dictionary.
 
-   .. versionchanged:: 3.13
+   .. soft-deprecated:: 3.13
       This function now does nothing.
 
 
 .. c:function:: void PyFrame_FastToLocals(PyFrameObject *f)
-
-   This function is :term:`soft deprecated` and does nothing.
 
    Prior to Python 3.13, this function would copy the internal "fast" array
    of local variables (which is used by the interpreter) to the
    :attr:`~frame.f_locals` attribute of *f*, allowing changes in local
    variables to be visible to frame objects.
 
-   .. versionchanged:: 3.13
+   .. soft-deprecated:: 3.13
       This function now does nothing.
 
 
 .. c:function:: int PyFrame_FastToLocalsWithError(PyFrameObject *f)
 
-   This function is :term:`soft deprecated` and does nothing.
-
    Prior to Python 3.13, this function was similar to
    :c:func:`PyFrame_FastToLocals`, but would return ``0`` on success, and
    ``-1`` with an exception set on failure.
 
-   .. versionchanged:: 3.13
+   .. soft-deprecated:: 3.13
       This function now does nothing.
 
 
@@ -219,7 +213,7 @@ They exist solely for backwards compatibility.
    :pep:`667`
 
 
-Internal Frames
+Internal frames
 ^^^^^^^^^^^^^^^
 
 Unless using :pep:`523`, you will not need this.
@@ -249,5 +243,3 @@ Unless using :pep:`523`, you will not need this.
    Return the currently executing line number, or -1 if there is no line number.
 
    .. versionadded:: 3.12
-
-

@@ -1,6 +1,0 @@
-Changed some implementation details in :class:`struct.Struct`: calling it
-with non-ASCII string format will now raise a :exc:`ValueError` instead of
-:exc:`UnicodeEncodeError`, calling it with non-ASCII bytes format will now
-raise a :exc:`ValueError` instead of :exc:`struct.error`, getting
-the :attr:`!format` attribute of uninitialized object will now raise an
-:exc:`AttributeError` instead of :exc:`RuntimeError`.

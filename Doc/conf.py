@@ -8,15 +8,13 @@
 
 import os
 import sys
-from importlib import import_module
 from importlib.util import find_spec
 
 # Make our custom extensions available to Sphinx
 sys.path.append(os.path.abspath('tools/extensions'))
 sys.path.append(os.path.abspath('includes'))
 
-# Python specific content from Doc/Tools/extensions/pyspecific.py
-from pyspecific import SOURCE_URI
+from patchlevel import get_header_version_info, get_version_info
 
 # General configuration
 # ---------------------
@@ -43,9 +41,10 @@ extensions = [
 
 # Skip if downstream redistributors haven't installed them
 _OPTIONAL_EXTENSIONS = (
-    'linklint.ext',
+    'sphinx_linklint.ext',
     'notfound.extension',
     'sphinxext.opengraph',
+    'sphinxext.rediraffe',
     'sphinxcontrib.rsvgconverter',
 )
 for optional_ext in _OPTIONAL_EXTENSIONS:
@@ -73,11 +72,12 @@ manpages_url = 'https://manpages.debian.org/{path}'
 # General substitutions.
 project = 'Python'
 copyright = "2001 Python Software Foundation"
+_doc_authors = 'Python documentation authors'
 
 # We look for the Include/patchlevel.h file in the current Python source tree
 # and replace the values accordingly.
 # See Doc/tools/extensions/patchlevel.py
-version, release = import_module('patchlevel').get_version_info()
+version, release = get_version_info()
 
 rst_epilog = f"""
 .. |python_version_literal| replace:: ``Python {version}``
@@ -177,6 +177,7 @@ nitpick_ignore = [
     ('c:type', '__int64'),
     ('c:type', 'unsigned __int64'),
     ('c:type', 'double'),
+    ('c:type', '_Float16'),
     # Standard C structures
     ('c:struct', 'in6_addr'),
     ('c:struct', 'in_addr'),
@@ -347,8 +348,6 @@ latex_elements = {
   \sphinxstrong{Python Software Foundation}\\
   Email: \sphinxemail{docs@python.org}
 }
-\let\Verbatim=\OriginalVerbatim
-\let\endVerbatim=\endOriginalVerbatim
 \setcounter{tocdepth}{2}
 ''',
     # The paper size ('letterpaper' or 'a4paper').
@@ -360,69 +359,87 @@ latex_elements = {
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, document class [howto/manual]).
-_stdauthor = 'The Python development team'
 latex_documents = [
-    ('c-api/index', 'c-api.tex', 'The Python/C API', _stdauthor, 'manual'),
+    (
+        'c-api/index',
+        'c-api.tex',
+        'The Python/C API',
+        _doc_authors,
+        'manual',
+    ),
     (
         'extending/index',
         'extending.tex',
         'Extending and Embedding Python',
-        _stdauthor,
+        _doc_authors,
         'manual',
     ),
     (
         'installing/index',
         'installing.tex',
         'Installing Python Modules',
-        _stdauthor,
+        _doc_authors,
+        'manual',
+    ),
+    (
+        'builtins/index',
+        'builtins.tex',
+        'Python Built-ins Reference',
+        _doc_authors,
         'manual',
     ),
     (
         'library/index',
         'library.tex',
         'The Python Library Reference',
-        _stdauthor,
+        _doc_authors,
         'manual',
     ),
     (
         'reference/index',
         'reference.tex',
         'The Python Language Reference',
-        _stdauthor,
+        _doc_authors,
         'manual',
     ),
     (
         'tutorial/index',
         'tutorial.tex',
         'Python Tutorial',
-        _stdauthor,
+        _doc_authors,
         'manual',
     ),
     (
         'using/index',
         'using.tex',
         'Python Setup and Usage',
-        _stdauthor,
+        _doc_authors,
         'manual',
     ),
     (
         'faq/index',
         'faq.tex',
         'Python Frequently Asked Questions',
-        _stdauthor,
+        _doc_authors,
         'manual',
     ),
     (
         'whatsnew/' + version,
         'whatsnew.tex',
         'What\'s New in Python',
-        'A. M. Kuchling',
+        _doc_authors,
         'howto',
     ),
 ]
 # Collect all HOWTOs individually
 latex_documents.extend(
-    ('howto/' + fn[:-4], 'howto-' + fn[:-4] + '.tex', '', _stdauthor, 'howto')
+    (
+        'howto/' + fn[:-4],
+        'howto-' + fn[:-4] + '.tex',
+        '',
+        _doc_authors,
+        'howto',
+    )
     for fn in os.listdir('howto')
     if fn.endswith('.rst') and fn != 'index.rst'
 )
@@ -433,7 +450,7 @@ latex_appendices = ['glossary', 'about', 'license', 'copyright']
 # Options for Epub output
 # -----------------------
 
-epub_author = 'Python Documentation Authors'
+epub_author = _doc_authors
 epub_publisher = 'Python Software Foundation'
 epub_exclude_files = (
     'index.xhtml',
@@ -550,8 +567,12 @@ linkcheck_ignore = [
     r'https://unix.org/version2/whatsnew/lp64_wp.html',
 ]
 
+
 # Options for sphinx.ext.extlinks
 # -------------------------------
+
+v = get_header_version_info()
+branch = "main" if v.releaselevel == "alpha" else f"{v.major}.{v.minor}"
 
 # This config is a dictionary of external sites,
 # mapping unique short aliases to a base URL and a prefix.
@@ -559,7 +580,7 @@ linkcheck_ignore = [
 extlinks = {
     "oss-fuzz": ("https://issues.oss-fuzz.com/issues/%s", "#%s"),
     "pypi": ("https://pypi.org/project/%s/", "%s"),
-    "source": (SOURCE_URI, "%s"),
+    "source": (f"https://github.com/python/cpython/tree/{branch}/%s", "%s"),
 }
 extlinks_detect_hardcoded_links = True
 
@@ -570,6 +591,17 @@ extlinks_detect_hardcoded_links = True
 refcount_file = 'data/refcounts.dat'
 stable_abi_file = 'data/stable_abi.dat'
 threadsafety_file = 'data/threadsafety.dat'
+
+# Options for notfound.extension
+# -------------------------------
+
+if not os.getenv("READTHEDOCS"):
+    if language_code:
+        notfound_urls_prefix = (
+            f'/{language_code.replace("_", "-").lower()}/{version}/'
+        )
+    else:
+        notfound_urls_prefix = f'/{version}/'
 
 # Options for sphinxext-opengraph
 # -------------------------------
@@ -588,3 +620,16 @@ if 'create-social-cards' not in tags:  # noqa: F821
         '<meta property="og:image:width" content="200">',
         '<meta property="og:image:height" content="200">',
     )
+
+# Options for sphinxext-rediraffe
+# -------------------------------
+
+rediraffe_redirects = {
+    # Splitting builtins from library
+    "library/functions.rst": "builtins/functions.rst",
+    "library/stdtypes.rst": "builtins/stdtypes.rst",
+    "library/constants.rst": "builtins/constants.rst",
+    "library/exceptions.rst": "builtins/exceptions.rst",
+    "library/threadsafety.rst": "builtins/threadsafety.rst",
+    "library/time-complexity.rst": "builtins/time-complexity.rst",
+}

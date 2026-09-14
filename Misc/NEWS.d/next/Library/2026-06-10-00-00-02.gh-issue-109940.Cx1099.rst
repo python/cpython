@@ -1,0 +1,2 @@
+Fix Windows :mod:`venv` activation in ``cmd.exe`` to respect
+``VIRTUAL_ENV_DISABLE_PROMPT``.

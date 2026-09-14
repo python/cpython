@@ -1,0 +1,4 @@
+Fix :meth:`!urllib.request.AbstractHTTPHandler.do_open` to give regular
+headers set via :meth:`~urllib.request.Request.add_header` priority over
+unredirected headers, consistent with :meth:`~urllib.request.Request.get_header`
+and :meth:`~urllib.request.Request.header_items`.

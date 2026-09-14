@@ -139,26 +139,35 @@ read_single(pysqlite_Blob *self, Py_ssize_t offset)
     return PyLong_FromUnsignedLong((unsigned long)buf);
 }
 
-static PyObject *
-read_multiple(pysqlite_Blob *self, Py_ssize_t length, Py_ssize_t offset)
+static int
+inner_read(pysqlite_Blob *self, char *buf, Py_ssize_t length,
+           Py_ssize_t offset)
 {
     assert(length <= sqlite3_blob_bytes(self->blob));
     assert(offset < sqlite3_blob_bytes(self->blob));
 
+    int rc;
+    Py_BEGIN_ALLOW_THREADS
+    rc = sqlite3_blob_read(self->blob, buf, (int)length, (int)offset);
+    Py_END_ALLOW_THREADS
+
+    if (rc != SQLITE_OK) {
+        blob_seterror(self, rc);
+        return -1;
+    }
+    return 0;
+}
+
+static PyObject *
+read_multiple(pysqlite_Blob *self, Py_ssize_t length, Py_ssize_t offset)
+{
     PyBytesWriter *writer = PyBytesWriter_Create(length);
     if (writer == NULL) {
         return NULL;
     }
-    char *raw_buffer = PyBytesWriter_GetData(writer);
 
-    int rc;
-    Py_BEGIN_ALLOW_THREADS
-    rc = sqlite3_blob_read(self->blob, raw_buffer, (int)length, (int)offset);
-    Py_END_ALLOW_THREADS
-
-    if (rc != SQLITE_OK) {
+    if (inner_read(self, PyBytesWriter_GetData(writer), length, offset) < 0) {
         PyBytesWriter_Discard(writer);
-        blob_seterror(self, rc);
         return NULL;
     }
     return PyBytesWriter_Finish(writer);
@@ -166,7 +175,6 @@ read_multiple(pysqlite_Blob *self, Py_ssize_t length, Py_ssize_t offset)
 
 
 /*[clinic input]
-@permit_long_docstring_body
 _sqlite3.Blob.read as blob_read
 
     length: int = -1
@@ -175,14 +183,14 @@ _sqlite3.Blob.read as blob_read
 
 Read data at the current offset position.
 
-If the end of the blob is reached, the data up to end of file will be returned.
-When length is not specified, or is negative, Blob.read() will read until the
-end of the blob.
+If the end of the blob is reached, the data up to end of file will
+be returned.  When length is not specified, or is negative,
+Blob.read() will read until the end of the blob.
 [clinic start generated code]*/
 
 static PyObject *
 blob_read_impl(pysqlite_Blob *self, int length)
-/*[clinic end generated code: output=1fc99b2541360dde input=e5715bcddbcfca5a]*/
+/*[clinic end generated code: output=1fc99b2541360dde input=6b745ad37720e556]*/
 {
     if (!check_blob(self)) {
         return NULL;
@@ -235,7 +243,6 @@ inner_write(pysqlite_Blob *self, const void *buf, Py_ssize_t len,
 
 
 /*[clinic input]
-@permit_long_docstring_body
 _sqlite3.Blob.write as blob_write
 
     data: Py_buffer
@@ -243,13 +250,13 @@ _sqlite3.Blob.write as blob_write
 
 Write data at the current offset.
 
-This function cannot change the blob length.  Writing beyond the end of the
-blob will result in an exception being raised.
+This function cannot change the blob length.  Writing beyond the end
+of the blob will result in an exception being raised.
 [clinic start generated code]*/
 
 static PyObject *
 blob_write_impl(pysqlite_Blob *self, Py_buffer *data)
-/*[clinic end generated code: output=b34cf22601b570b2 input=203d3458f244814b]*/
+/*[clinic end generated code: output=b34cf22601b570b2 input=0d372cb0240a5d49]*/
 {
     if (!check_blob(self)) {
         return NULL;
@@ -265,7 +272,6 @@ blob_write_impl(pysqlite_Blob *self, Py_buffer *data)
 
 
 /*[clinic input]
-@permit_long_docstring_body
 _sqlite3.Blob.seek as blob_seek
 
     offset: int
@@ -274,14 +280,15 @@ _sqlite3.Blob.seek as blob_seek
 
 Set the current access position to offset.
 
-The origin argument defaults to os.SEEK_SET (absolute blob positioning).
-Other values for origin are os.SEEK_CUR (seek relative to the current position)
-and os.SEEK_END (seek relative to the blob's end).
+The origin argument defaults to os.SEEK_SET (absolute blob
+positioning).  Other values for origin are os.SEEK_CUR (seek
+relative to the current position) and os.SEEK_END (seek relative to
+the blob's end).
 [clinic start generated code]*/
 
 static PyObject *
 blob_seek_impl(pysqlite_Blob *self, int offset, int origin)
-/*[clinic end generated code: output=854c5a0e208547a5 input=ee4d88e1dc0b1048]*/
+/*[clinic end generated code: output=854c5a0e208547a5 input=84aea1b6b48607dd]*/
 {
     if (!check_blob(self)) {
         return NULL;
@@ -447,7 +454,14 @@ subscript_slice(pysqlite_Blob *self, PyObject *item)
         return read_multiple(self, len, start);
     }
 
-    PyObject *blob = read_multiple(self, stop - start, start);
+    // Compute the contiguous blob region covering all slice elements, then
+    // copy each element using the standard size_t-cursor pattern that handles
+    // both positive and negative steps via unsigned arithmetic.
+    Py_ssize_t last = start + (len - 1) * step;
+    Py_ssize_t read_offset = Py_MIN(start, last);
+    Py_ssize_t read_length = Py_ABS(start - last) + 1;
+
+    PyObject *blob = read_multiple(self, read_length, read_offset);
     if (blob == NULL) {
         return NULL;
     }
@@ -458,10 +472,12 @@ subscript_slice(pysqlite_Blob *self, PyObject *item)
         return NULL;
     }
     char *res_buf = PyBytesWriter_GetData(writer);
+    const char *blob_buf = PyBytes_AS_STRING(blob);
 
-    char *blob_buf = PyBytes_AS_STRING(blob);
-    for (Py_ssize_t i = 0, j = 0; i < len; i++, j += step) {
-        res_buf[i] = blob_buf[j];
+    size_t cur;
+    Py_ssize_t i;
+    for (cur = (size_t)start, i = 0; i < len; cur += (size_t)step, i++) {
+        res_buf[i] = blob_buf[(Py_ssize_t)cur - read_offset];
     }
     Py_DECREF(blob);
     return PyBytesWriter_Finish(writer);
@@ -533,32 +549,53 @@ ass_subscript_slice(pysqlite_Blob *self, PyObject *item, PyObject *value)
         return -1;
     }
 
-    if (len == 0) {
-        return 0;
-    }
-
     Py_buffer vbuf;
     if (PyObject_GetBuffer(value, &vbuf, PyBUF_SIMPLE) < 0) {
         return -1;
     }
 
-    int rc = -1;
     if (vbuf.len != len) {
         PyErr_SetString(PyExc_IndexError,
                         "Blob slice assignment is wrong size");
+        PyBuffer_Release(&vbuf);
+        return -1;
     }
-    else if (step == 1) {
+
+    if (len == 0) {
+        PyBuffer_Release(&vbuf);
+        return 0;
+    }
+
+    int rc = -1;
+    if (step == 1) {
         rc = inner_write(self, vbuf.buf, len, start);
     }
     else {
-        PyObject *blob_bytes = read_multiple(self, stop - start, start);
-        if (blob_bytes != NULL) {
-            char *blob_buf = PyBytes_AS_STRING(blob_bytes);
-            for (Py_ssize_t i = 0, j = 0; i < len; i++, j += step) {
-                blob_buf[j] = ((char *)vbuf.buf)[i];
+        /* Compute the contiguous blob region covering all slice elements,
+           read it, patch each element and write it back.  The object
+           returned by read_multiple() cannot be used as the buffer, because
+           for a single byte it is an immortal singleton. */
+        Py_ssize_t last = start + (len - 1) * step;
+        Py_ssize_t write_offset = Py_MIN(start, last);
+        Py_ssize_t write_length = Py_ABS(start - last) + 1;
+        char *buf = PyMem_Malloc(write_length);
+        if (buf == NULL) {
+            PyErr_NoMemory();
+        }
+        else {
+            if (inner_read(self, buf, write_length, write_offset) == 0) {
+                /* The size_t cursor handles both positive and negative steps
+                   via unsigned arithmetic. */
+                size_t cur;
+                Py_ssize_t i;
+                for (cur = (size_t)start, i = 0; i < len;
+                     cur += (size_t)step, i++) {
+                    buf[(Py_ssize_t)cur - write_offset] =
+                        ((char *)vbuf.buf)[i];
+                }
+                rc = inner_write(self, buf, write_length, write_offset);
             }
-            rc = inner_write(self, blob_buf, stop - start, start);
-            Py_DECREF(blob_bytes);
+            PyMem_Free(buf);
         }
     }
     PyBuffer_Release(&vbuf);
