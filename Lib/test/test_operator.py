@@ -2,6 +2,7 @@ import unittest
 import inspect
 import pickle
 import sys
+import weakref
 from decimal import Decimal
 from fractions import Fraction
 
@@ -515,6 +516,21 @@ class OperatorTestCase:
         operator = self.module
         with self.assertRaisesRegex(TypeError, "keywords must be strings"):
             operator.methodcaller('x', **{1: 'x'})
+
+    def test_methodcaller_cyclic_gc(self):
+        # gh-156762: Check for undefined behavior on calling methodcaller_clear()
+        operator = self.module
+
+        class C:
+            pass
+
+        c = C()
+        ref = weakref.ref(c)
+        c.m = operator.methodcaller('foo', c)
+        del c
+
+        support.gc_collect()
+        self.assertIsNone(ref())
 
     def test_inplace(self):
         operator = self.module

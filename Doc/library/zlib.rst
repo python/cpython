@@ -27,7 +27,7 @@ The available exception and functions in this module are:
    Exception raised on compression and decompression errors.
 
 
-.. function:: adler32(data[, value])
+.. function:: adler32(data, value=1, /)
 
    Computes an Adler-32 checksum of *data*.  (An Adler-32 checksum is almost as
    reliable as a CRC32 but can be computed much more quickly.)  The result
@@ -127,7 +127,7 @@ The available exception and functions in this module are:
       Added the *zdict* parameter and keyword argument support.
 
 
-.. function:: crc32(data[, value])
+.. function:: crc32(data, value=0, /)
 
    .. index::
       single: Cyclic Redundancy Check
@@ -205,7 +205,7 @@ The available exception and functions in this module are:
    .. versionchanged:: 3.6
       *wbits* and *bufsize* can be used as keyword arguments.
 
-.. function:: decompressobj(wbits=MAX_WBITS[, zdict])
+.. function:: decompressobj(wbits=MAX_WBITS, zdict=b'')
 
    Returns a decompression object, to be used for decompressing data streams that
    won't fit into memory at once.
@@ -231,7 +231,7 @@ The available exception and functions in this module are:
 Compression objects support the following methods:
 
 
-.. method:: Compress.compress(data)
+.. method:: Compress.compress(data, /)
 
    Compress *data*, returning a bytes object containing compressed data for at least
    part of the data in *data*.  This data should be concatenated to the output
@@ -239,7 +239,7 @@ Compression objects support the following methods:
    be kept in internal buffers for later processing.
 
 
-.. method:: Compress.flush([mode])
+.. method:: Compress.flush(mode=Z_FINISH, /)
 
    All pending input is processed, and a bytes object containing the remaining compressed
    output is returned.  *mode* can be selected from the constants
@@ -294,7 +294,7 @@ Decompression objects support the following methods and attributes:
    .. versionadded:: 3.3
 
 
-.. method:: Decompress.decompress(data, max_length=0)
+.. method:: Decompress.decompress(data, /, max_length=0)
 
    Decompress *data*, returning a bytes object containing the uncompressed data
    corresponding to at least part of the data in *string*.  This data should be
@@ -318,7 +318,7 @@ Decompression objects support the following methods and attributes:
       *max_length* can be used as a keyword argument.
 
 
-.. method:: Decompress.flush([length])
+.. method:: Decompress.flush(length=DEF_BUF_SIZE, /)
 
    All pending input is processed, and a bytes object containing the remaining
    uncompressed output is returned.  After calling :meth:`flush`, the
