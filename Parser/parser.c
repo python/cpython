@@ -4204,12 +4204,14 @@ dotted_name_rule(Parser *p)
     }
     int _mark = p->mark;
     int _resmark = p->mark;
+    Memo *_memo = _PyPegen_insert_memo_direct(p, _mark, dotted_name_type);
+    if (_memo == NULL) {
+        p->level--;
+        return NULL;
+    }
     while (1) {
-        int tmpvar_0 = _PyPegen_update_memo(p, _mark, dotted_name_type, _res);
-        if (tmpvar_0) {
-            p->level--;
-            return _res;
-        }
+        _memo->node = _res;
+        _memo->mark = p->mark;
         p->mark = _mark;
         void *_raw = dotted_name_raw(p);
         if (p->error_indicator) {
@@ -9646,12 +9648,14 @@ attr_rule(Parser *p)
     }
     int _mark = p->mark;
     int _resmark = p->mark;
+    Memo *_memo = _PyPegen_insert_memo_direct(p, _mark, attr_type);
+    if (_memo == NULL) {
+        p->level--;
+        return NULL;
+    }
     while (1) {
-        int tmpvar_1 = _PyPegen_update_memo(p, _mark, attr_type, _res);
-        if (tmpvar_1) {
-            p->level--;
-            return _res;
-        }
+        _memo->node = _res;
+        _memo->mark = p->mark;
         p->mark = _mark;
         void *_raw = attr_raw(p);
         if (p->error_indicator) {
@@ -13517,12 +13521,14 @@ bitwise_or_rule(Parser *p)
     }
     int _mark = p->mark;
     int _resmark = p->mark;
+    Memo *_memo = _PyPegen_insert_memo_direct(p, _mark, bitwise_or_type);
+    if (_memo == NULL) {
+        p->level--;
+        return NULL;
+    }
     while (1) {
-        int tmpvar_2 = _PyPegen_update_memo(p, _mark, bitwise_or_type, _res);
-        if (tmpvar_2) {
-            p->level--;
-            return _res;
-        }
+        _memo->node = _res;
+        _memo->mark = p->mark;
         p->mark = _mark;
         void *_raw = bitwise_or_raw(p);
         if (p->error_indicator) {
@@ -13658,12 +13664,14 @@ bitwise_xor_rule(Parser *p)
     }
     int _mark = p->mark;
     int _resmark = p->mark;
+    Memo *_memo = _PyPegen_insert_memo_direct(p, _mark, bitwise_xor_type);
+    if (_memo == NULL) {
+        p->level--;
+        return NULL;
+    }
     while (1) {
-        int tmpvar_3 = _PyPegen_update_memo(p, _mark, bitwise_xor_type, _res);
-        if (tmpvar_3) {
-            p->level--;
-            return _res;
-        }
+        _memo->node = _res;
+        _memo->mark = p->mark;
         p->mark = _mark;
         void *_raw = bitwise_xor_raw(p);
         if (p->error_indicator) {
@@ -13780,12 +13788,14 @@ bitwise_and_rule(Parser *p)
     }
     int _mark = p->mark;
     int _resmark = p->mark;
+    Memo *_memo = _PyPegen_insert_memo_direct(p, _mark, bitwise_and_type);
+    if (_memo == NULL) {
+        p->level--;
+        return NULL;
+    }
     while (1) {
-        int tmpvar_4 = _PyPegen_update_memo(p, _mark, bitwise_and_type, _res);
-        if (tmpvar_4) {
-            p->level--;
-            return _res;
-        }
+        _memo->node = _res;
+        _memo->mark = p->mark;
         p->mark = _mark;
         void *_raw = bitwise_and_raw(p);
         if (p->error_indicator) {
@@ -13921,12 +13931,14 @@ shift_expr_rule(Parser *p)
     }
     int _mark = p->mark;
     int _resmark = p->mark;
+    Memo *_memo = _PyPegen_insert_memo_direct(p, _mark, shift_expr_type);
+    if (_memo == NULL) {
+        p->level--;
+        return NULL;
+    }
     while (1) {
-        int tmpvar_5 = _PyPegen_update_memo(p, _mark, shift_expr_type, _res);
-        if (tmpvar_5) {
-            p->level--;
-            return _res;
-        }
+        _memo->node = _res;
+        _memo->mark = p->mark;
         p->mark = _mark;
         void *_raw = shift_expr_raw(p);
         if (p->error_indicator) {
@@ -14082,12 +14094,14 @@ sum_rule(Parser *p)
     }
     int _mark = p->mark;
     int _resmark = p->mark;
+    Memo *_memo = _PyPegen_insert_memo_direct(p, _mark, sum_type);
+    if (_memo == NULL) {
+        p->level--;
+        return NULL;
+    }
     while (1) {
-        int tmpvar_6 = _PyPegen_update_memo(p, _mark, sum_type, _res);
-        if (tmpvar_6) {
-            p->level--;
-            return _res;
-        }
+        _memo->node = _res;
+        _memo->mark = p->mark;
         p->mark = _mark;
         void *_raw = sum_raw(p);
         if (p->error_indicator) {
@@ -14268,12 +14282,14 @@ term_rule(Parser *p)
     }
     int _mark = p->mark;
     int _resmark = p->mark;
+    Memo *_memo = _PyPegen_insert_memo_direct(p, _mark, term_type);
+    if (_memo == NULL) {
+        p->level--;
+        return NULL;
+    }
     while (1) {
-        int tmpvar_7 = _PyPegen_update_memo(p, _mark, term_type, _res);
-        if (tmpvar_7) {
-            p->level--;
-            return _res;
-        }
+        _memo->node = _res;
+        _memo->mark = p->mark;
         p->mark = _mark;
         void *_raw = term_raw(p);
         if (p->error_indicator) {
@@ -14904,12 +14920,14 @@ primary_rule(Parser *p)
     }
     int _mark = p->mark;
     int _resmark = p->mark;
+    Memo *_memo = _PyPegen_insert_memo_direct(p, _mark, primary_type);
+    if (_memo == NULL) {
+        p->level--;
+        return NULL;
+    }
     while (1) {
-        int tmpvar_8 = _PyPegen_update_memo(p, _mark, primary_type, _res);
-        if (tmpvar_8) {
-            p->level--;
-            return _res;
-        }
+        _memo->node = _res;
+        _memo->mark = p->mark;
         p->mark = _mark;
         void *_raw = primary_raw(p);
         if (p->error_indicator) {
@@ -20067,12 +20085,14 @@ t_primary_rule(Parser *p)
     }
     int _mark = p->mark;
     int _resmark = p->mark;
+    Memo *_memo = _PyPegen_insert_memo_direct(p, _mark, t_primary_type);
+    if (_memo == NULL) {
+        p->level--;
+        return NULL;
+    }
     while (1) {
-        int tmpvar_9 = _PyPegen_update_memo(p, _mark, t_primary_type, _res);
-        if (tmpvar_9) {
-            p->level--;
-            return _res;
-        }
+        _memo->node = _res;
+        _memo->mark = p->mark;
         p->mark = _mark;
         void *_raw = t_primary_raw(p);
         if (p->error_indicator) {
