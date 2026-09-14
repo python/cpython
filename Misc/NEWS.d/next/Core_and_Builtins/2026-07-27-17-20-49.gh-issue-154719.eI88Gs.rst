@@ -1,0 +1,7 @@
+Trailing whitespace in a t-string interpolation expression is now preserved
+in :attr:`string.templatelib.Interpolation.expression`, up to the closing ``}``
+or the conversion (``!``), format (``:``), or debug (``=``) delimiter.
+Explicit line continuations following a debug ``=`` remain part of the debug
+text and are excluded from :attr:`~string.templatelib.Interpolation.expression`.
+Escaped quotes are now preserved while reconstructing t-string interpolation
+metadata and f-string debug text containing comments.
