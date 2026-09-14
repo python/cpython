@@ -396,7 +396,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         self.cleanup_statements: list[str] = []
 
     def add_level(self) -> None:
-        self.print("if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {")
+        self.print("if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {")
         with self.indent():
             self.print("_Pypegen_stack_overflow(p);")
         self.print("}")
