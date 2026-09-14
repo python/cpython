@@ -239,7 +239,17 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
         self._over_ssl = transport.get_extra_info('sslcontext') is not None
         if self._client_connected_cb is not None:
             writer = StreamWriter(transport, self, reader, self._loop)
-            res = self._client_connected_cb(reader, writer)
+            try:
+                res = self._client_connected_cb(reader, writer)
+            except Exception as exc:
+                self._loop.call_exception_handler({
+                    'message': 'Unhandled exception in client_connected_cb',
+                    'exception': exc,
+                    'transport': transport,
+                })
+                transport.close()
+                self._strong_reader = None
+                return
             if coroutines.iscoroutine(res):
                 def callback(task):
                     if task.cancelled():

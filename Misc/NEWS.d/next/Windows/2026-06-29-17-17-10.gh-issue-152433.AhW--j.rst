@@ -1,0 +1,2 @@
+Fix errors in :func:`sys.getwindowsversion` for Universal Windows Platform
+build.

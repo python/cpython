@@ -22,6 +22,9 @@ from libclinic.return_converters import (
     return_converters, ReturnConverterType)
 from libclinic.clanguage import CLanguage
 from libclinic.app import Clinic
+from libclinic.dsl_parser import render_text_signature
+from libclinic.function import (
+    Class, Definition, Module, GETTER, SETTER, walk_definitions)
 
 
 # TODO:
@@ -54,7 +57,7 @@ def parse_file(
         output: str | None = None,
         verify: bool = True,
         writer: libclinic.FileWriter | None = None,
-) -> None:
+) -> Clinic | None:
     if not output:
         output = filename
     if writer is None:
@@ -78,7 +81,7 @@ def parse_file(
     # exit quickly if there are no clinic markers in the file
     find_start_re = BlockParser("", language).find_start_re
     if not find_start_re.search(raw):
-        return
+        return None
 
     if LIMITED_CAPI_REGEX.search(raw):
         limited_capi = True
@@ -89,9 +92,39 @@ def parse_file(
                     filename=filename,
                     limited_capi=limited_capi,
                     writer=writer)
+    index = len(writer.files)
     cooked = clinic.parse(raw)
-
     writer.write(output, cooked)
+
+    files = writer.files[index:]
+    writer.update_times(output,
+                        [fn for fn, _ in files if fn != output],
+                        any(changed for _, changed in files))
+    return clinic
+
+
+def format_definition(depth: int, name: str, definition: Definition) -> str:
+    indent = "  " * (depth + 1)
+    if isinstance(definition, Module):
+        return f"{indent}module {name}"
+    if isinstance(definition, Class):
+        return f"{indent}class {name}"
+    if definition.kind is GETTER:
+        return f"{indent}getter {name}"
+    if definition.kind is SETTER:
+        return f"{indent}setter {name}"
+    signature = render_text_signature(definition, definition.render_parameters,
+                                      name=name, line_width=None)
+    return indent + signature
+
+
+def print_definitions(clinic: Clinic) -> None:
+    """Print the modules, classes and functions defined in the parsed file."""
+    lines = [format_definition(depth, name, definition)
+             for depth, name, definition in walk_definitions(clinic)]
+    if lines:
+        print(clinic.filename)
+        print("\n".join(lines))
 
 
 def create_cli() -> argparse.ArgumentParser:
@@ -121,6 +154,10 @@ For more information see https://devguide.python.org/development-tools/clinic/""
                                "and return converters; if files are "
                                "specified, print only the converters "
                                "which they define"))
+    cmdline.add_argument("--list", action='store_true',
+                         help=("don't write any file, only list the modules, "
+                               "classes and functions which the specified "
+                               "files define, with their signatures"))
     cmdline.add_argument("--make", action='store_true',
                          help="walk --srcdir to run over all relevant files")
     cmdline.add_argument("--srcdir", type=str, default=os.curdir,
@@ -247,7 +284,7 @@ def run_clinic(parser: argparse.ArgumentParser, ns: argparse.Namespace) -> None:
     dry_run = ns.dry_run or ns.diff
     # The report is written to the standard output, so the progress
     # is written to the standard error stream to not mix them.
-    verbose_file = sys.stderr if dry_run else sys.stdout
+    verbose_file = sys.stderr if dry_run or ns.list else sys.stdout
 
     filenames: Iterable[str]
     if ns.make:
@@ -263,6 +300,12 @@ def run_clinic(parser: argparse.ArgumentParser, ns: argparse.Namespace) -> None:
             parser.error("can't use -o with multiple filenames")
         filenames = ns.filename
 
+    if ns.list:
+        if dry_run:
+            parser.error("can't use --dry-run or --diff with --list")
+        if ns.converters:
+            parser.error("can't use --converters with --list")
+
     if ns.converters:
         if dry_run:
             parser.error("can't use --dry-run or --diff with --converters")
@@ -275,20 +318,22 @@ def run_clinic(parser: argparse.ArgumentParser, ns: argparse.Namespace) -> None:
         builtin_legacy_converters = dict(legacy_converters)
         builtin_return_converters = dict(return_converters)
 
-    writer = libclinic.FileWriter(dry_run=dry_run or ns.converters)
+    writer = libclinic.FileWriter(dry_run=dry_run or ns.converters or ns.list)
     for filename in filenames:
         if ns.verbose:
             print(filename, file=verbose_file)
-        parse_file(filename, output=ns.output,
-                   verify=not ns.force, limited_capi=ns.limited_capi,
-                   writer=writer)
+        clinic = parse_file(filename, output=ns.output,
+                            verify=not ns.force, limited_capi=ns.limited_capi,
+                            writer=writer)
+        if ns.list and clinic is not None:
+            print_definitions(clinic)
 
     if ns.converters:
         print_converters(
             defined_in_files(converters, builtin_converters),
             defined_in_files(legacy_converters, builtin_legacy_converters),
             defined_in_files(return_converters, builtin_return_converters))
-    else:
+    elif not ns.list:
         report_changes(writer, diff=ns.diff)
 
 

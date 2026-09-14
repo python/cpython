@@ -545,6 +545,12 @@ class OutputTestCase(unittest.TestCase):
             result_2009_6_html
         )
 
+    def test_formatmonthpage_no_width(self):
+        # gh-140212: formatmonthpage must not accept a 'width' argument.
+        cal = calendar.HTMLCalendar()
+        self.assertIn(b'class="month">June 2009', cal.formatmonthpage(2009, 6))
+        self.assertRaises(TypeError, cal.formatmonthpage, 2009, 6, width=3)
+
 
 class CalendarTestCase(unittest.TestCase):
 
