@@ -38,11 +38,10 @@ typedef struct _memo {
 
 typedef struct {
     int type;
-    // Text for names, literals and type comments; otherwise NULL.
+    // Text required by grammar actions or helpers; otherwise NULL.
     PyObject *bytes;
     int level;
-    unsigned int is_raw : 1;
-    unsigned int is_barry : 1;  // The '<>' spelling of NOTEQUAL.
+    int is_raw;
     int lineno, col_offset, end_lineno, end_col_offset;
     Memo *memo;
     // Filter over the rule types present in `memo` (bit `type & 63` is set

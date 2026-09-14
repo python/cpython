@@ -946,14 +946,16 @@ _PyPegen_add_type_comment_to_arg(Parser *p, arg_ty a, Token *tc)
 0 indicates success and nonzero indicates failure (an exception may be set) */
 int
 _PyPegen_check_barry_as_flufl(Parser *p, Token* t) {
+    assert(t->bytes != NULL);
     assert(t->type == NOTEQUAL);
 
-    if (p->flags & PyPARSE_BARRY_AS_BDFL && !t->is_barry) {
+    const char* tok_str = PyBytes_AS_STRING(t->bytes);
+    if (p->flags & PyPARSE_BARRY_AS_BDFL && strcmp(tok_str, "<>") != 0) {
         RAISE_SYNTAX_ERROR("with Barry as BDFL, use '<>' instead of '!='");
         return -1;
     }
     if (!(p->flags & PyPARSE_BARRY_AS_BDFL)) {
-        return t->is_barry;
+        return strcmp(tok_str, "!=");
     }
     return 0;
 }
