@@ -1881,8 +1881,8 @@ PyThreadState_Clear(PyThreadState *tstate)
     // Flush the thread's local GC allocation count to the global count
     // before the thread state is cleared, otherwise the count is lost.
     _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
-    _Py_atomic_add_int(&tstate->interp->gc.young.count,
-                       (int)tstate_impl->gc.alloc_count);
+    _Py_atomic_add_int_relaxed(&tstate->interp->gc.young.count,
+                               (int)tstate_impl->gc.alloc_count);
     tstate_impl->gc.alloc_count = 0;
 
     // Merge our thread-local refcounts into the type's own refcount and
