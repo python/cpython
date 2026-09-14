@@ -43,6 +43,8 @@ class TestImportTime(unittest.TestCase):
 
     @cpython_only
     def test_slots_does_not_import_inspect(self):
+        # inspect is only needed to unwrap user-defined methods
+        # that are wrapped by a decorator.
         create_slotted_class = textwrap.dedent(
             """
             @dataclasses.dataclass(slots=True)
