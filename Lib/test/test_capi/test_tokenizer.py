@@ -9,6 +9,9 @@ class TokenizerTests(unittest.TestCase):
     def test_source(self):
         _testinternalcapi.test_tokenizer_source()
 
+    def test_source_discard(self):
+        _testinternalcapi.test_tokenizer_source_discard()
+
     def test_cursor(self):
         _testinternalcapi.test_tokenizer_cursor()
 
