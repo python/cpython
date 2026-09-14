@@ -113,13 +113,12 @@ _PyPegen_stack_exhausted(Parser *p)
 {
 #if _Py_STACK_GROWS_DOWN
     if (_Py_get_machine_stack_pointer() > p->stack_soft_limit) {
-        return 0;
-    }
 #else
     if (_Py_get_machine_stack_pointer() <= p->stack_soft_limit) {
+#endif
+        assert(!_Py_ReachedRecursionLimitWithMargin(p->tstate, 1));
         return 0;
     }
-#endif
     return _Py_ReachedRecursionLimitWithMargin(p->tstate, 1);
 }
 
