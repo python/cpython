@@ -107,11 +107,12 @@
 #   endif
 #endif
 
-#if defined(_Py_TYPEOF) && !defined(__cplusplus)
+#if ((defined(__GNUC__) || defined(__clang__)) \
+     && defined(_Py_TYPEOF) && !defined(__cplusplus))
    // Implement Py_MIN(), Py_MAX() and Py_ABS() using _Py_TYPEOF() and
    // statement expression to only evaluate each argument only once.
    // It cannot be used in C++: ISO C++ forbids braced-groups within
-   // expressions.
+   // expressions. Statement expression is a GNU extension.
 
    /* Minimum value between x and y */
 #  define Py_MIN(x, y) \
