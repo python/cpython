@@ -543,7 +543,7 @@ class BasicSocketTests(unittest.TestCase):
                    (('emailAddress', 'python-dev@python.org'),))
         self.assertEqual(p['subject'], subject)
         self.assertEqual(p['issuer'], subject)
-        if ssl._OPENSSL_API_VERSION >= (0, 9, 8):
+        if ssl.OPENSSL_API_VERSION_INFO >= (0, 9, 8):
             san = (('DNS', 'altnull.python.org\x00example.com'),
                    ('email', 'null@python.org\x00user@example.org'),
                    ('URI', 'http://null.python.org\x00http://example.org'),
@@ -599,6 +599,14 @@ class BasicSocketTests(unittest.TestCase):
         self.assertIsInstance(n, int)
         self.assertIsInstance(t, tuple)
         self.assertIsInstance(s, str)
+        self.assertEqual(len(t), 5)
+        self.assertEqual(t, (t.major, t.minor, t.fix, t.patch, t.status))
+        a = ssl.OPENSSL_API_VERSION_INFO
+        self.assertIsInstance(a, tuple)
+        self.assertEqual(len(a), 5)
+        self.assertEqual(a, (a.major, a.minor, a.fix, a.patch, a.status))
+        self.assertIs(ssl._OPENSSL_API_VERSION, a)
+        self.assertEqual(a.major, t.major)
         # Some sanity checks follow
         # >= 1.1.1
         self.assertGreaterEqual(n, 0x10101000)

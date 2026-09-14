@@ -982,13 +982,25 @@ Constants
 
 .. data:: OPENSSL_VERSION_INFO
 
-   A tuple of five integers representing version information about the
-   OpenSSL library::
+   A named tuple of five integers representing version information about the
+   OpenSSL library loaded by the interpreter:
+   *major*, *minor*, *fix*, *patch* and *status*::
 
     >>> ssl.OPENSSL_VERSION_INFO
-    (1, 0, 2, 11, 15)
+    ssl.OPENSSL_VERSION_INFO(major=3, minor=0, fix=0, patch=13, status=0)
 
    .. versionadded:: 3.2
+
+   .. versionchanged:: next
+      It is now a named tuple.
+
+.. data:: OPENSSL_API_VERSION_INFO
+
+   A named tuple containing the version of the OpenSSL library that was used
+   for building the module, with the same fields as :const:`OPENSSL_VERSION_INFO`.
+   This may be different from the OpenSSL library actually used at runtime.
+
+   .. versionadded:: next
 
 .. data:: OPENSSL_VERSION_NUMBER
 
