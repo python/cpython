@@ -1,0 +1,3 @@
+Fix possible memory leak with instance of :class:`!_thread._local` when
+some finalizer uses this object after ``thread_local_key`` was cleared.
+Patch by Mikhail Efimov.
