@@ -1,0 +1,4 @@
+The ``__getformat__()`` class method of the :class:`float` is deprecated.  On
+CPython, ``float.__getformat__()`` always return a string, prefixed with
+``"IEEE"``: to build CPython, you need support for IEEE 754 floating-point
+numbers since Python 3.11.  Patch by Sergey B Kirpichev.
