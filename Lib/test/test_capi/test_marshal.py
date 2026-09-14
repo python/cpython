@@ -91,13 +91,17 @@ class CAPI_TestCase(unittest.TestCase):
                 return res
 
         limit = 2 ** 31
+        values = [
+            _testcapi.LONG_MIN, _testcapi.LONG_MAX,
+            -limit, -limit + 2, limit - 2, limit - 1,
+            0, 123, -123,
+        ]
+        # Test values larger than 32-bit on platforms with 64-bit C long
+        if _testcapi.LONG_MAX > (2**31-1):
+            values.extend((-limit - 2, limit, limit + 2))
+
         for version in range(marshal.version + 1):
-            for value in (
-                _testcapi.LONG_MIN, _testcapi.LONG_MAX,
-                -limit - 2, -limit, -limit + 2,
-                limit - 2, limit, limit + 2,
-                0, 123, -123,
-            ):
+            for value in values:
                 with self.subTest(value=value, version=version):
                     write_long_to_file(value, filename, version)
                     data = read_file(filename)
