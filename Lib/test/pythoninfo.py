@@ -505,7 +505,7 @@ def collect_tkinter(info_add):
     except ImportError:
         pass
     else:
-        attributes = ('TK_VERSION', 'TCL_VERSION')
+        attributes = ('TK_PATCH_LEVEL', 'TCL_PATCH_LEVEL')
         copy_attributes(info_add, _tkinter, 'tkinter.%s', attributes)
 
     try:

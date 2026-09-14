@@ -170,6 +170,9 @@ def _parse_version(version):
         releaselevel = {'a': 'alpha', 'b': 'beta'}[releaselevel]
     return _VersionInfoType(major, minor, micro, releaselevel, serial)
 
+TCL_VERSION_INFO = _parse_version(_tkinter.TCL_PATCH_LEVEL)
+TK_VERSION_INFO = _parse_version(_tkinter.TK_PATCH_LEVEL)
+
 
 @enum._simple_enum(enum.StrEnum)
 class EventType:

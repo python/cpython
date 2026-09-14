@@ -580,6 +580,11 @@ tkinter
   methods (without recursion) also work on Tk older than 9.1.
   (Contributed by Serhiy Storchaka in :gh:`151910`.)
 
+* Added constants :const:`~tkinter.TCL_VERSION_INFO` and
+  :const:`~tkinter.TK_VERSION_INFO`, named tuples with the versions of
+  the Tcl and Tk libraries that were used for building the module.
+  (Contributed by Serhiy Storchaka in :gh:`157514`.)
+
 * Added new :class:`!tkinter.Text` methods :meth:`~tkinter.Text.edit_canundo`
   and :meth:`~tkinter.Text.edit_canredo` which return whether an undo or redo
   is possible.

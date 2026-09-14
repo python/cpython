@@ -1,0 +1,4 @@
+Add constants :const:`tkinter.TCL_VERSION_INFO` and
+:const:`tkinter.TK_VERSION_INFO`, named tuples with the versions of the Tcl
+and Tk libraries that were used for building the module, and
+``_tkinter.TCL_PATCH_LEVEL`` and ``_tkinter.TK_PATCH_LEVEL`` strings.

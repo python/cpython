@@ -3848,6 +3848,14 @@ PyInit__tkinter(void)
         Py_DECREF(m);
         return NULL;
     }
+    if (PyModule_AddStringConstant(m, "TK_PATCH_LEVEL", TK_PATCH_LEVEL)) {
+        Py_DECREF(m);
+        return NULL;
+    }
+    if (PyModule_AddStringConstant(m, "TCL_PATCH_LEVEL", TCL_PATCH_LEVEL)) {
+        Py_DECREF(m);
+        return NULL;
+    }
 
     Tkapp_Type = PyType_FromSpec(&Tkapp_Type_spec);
     if (PyModule_AddObjectRef(m, "TkappType", Tkapp_Type)) {
