@@ -437,11 +437,11 @@ PyCursesPanel_Clear(PyObject *op)
     PyCursesPanelObject *self = _PyCursesPanelObject_CAST(op);
     PyObject *extra = (PyObject *)panel_userptr(self->pan);
     if (extra != NULL) {
-        Py_DECREF(extra);
         if (set_panel_userptr(self->pan, NULL) == ERR) {
             curses_panel_panel_set_error(self, "set_panel_userptr", NULL);
             return -1;
         }
+        Py_DECREF(extra);
     }
     // self->wo should not be cleared because an associated WINDOW may exist
     return 0;
