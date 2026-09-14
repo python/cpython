@@ -1,0 +1,2 @@
+CSV dialects (instances of :class:`csv.Dialect` subclasses and dialect
+objects returned by :func:`csv.get_dialect`) now support :func:`copy.replace`.

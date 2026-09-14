@@ -1384,10 +1384,6 @@ _asyncio_Future__asyncio_future_blocking_set_impl(FutureObj *self,
     if (future_ensure_alive(self)) {
         return -1;
     }
-    if (value == NULL) {
-        PyErr_SetString(PyExc_AttributeError, "cannot delete attribute");
-        return -1;
-    }
 
     int is_true = PyObject_IsTrue(value);
     if (is_true < 0) {
@@ -1427,10 +1423,6 @@ static int
 _asyncio_Future__log_traceback_set_impl(FutureObj *self, PyObject *value)
 /*[clinic end generated code: output=9ce8e19504f42f54 input=30ac8217754b08c2]*/
 {
-    if (value == NULL) {
-        PyErr_SetString(PyExc_AttributeError, "cannot delete attribute");
-        return -1;
-    }
     int is_true = PyObject_IsTrue(value);
     if (is_true < 0) {
         return -1;
@@ -1592,10 +1584,6 @@ static int
 _asyncio_Future__cancel_message_set_impl(FutureObj *self, PyObject *value)
 /*[clinic end generated code: output=0854b2f77bff2209 input=f461d17f2d891fad]*/
 {
-    if (value == NULL) {
-        PyErr_SetString(PyExc_AttributeError, "cannot delete attribute");
-        return -1;
-    }
     Py_INCREF(value);
     Py_XSETREF(self->fut_cancel_msg, value);
     return 0;
@@ -2450,10 +2438,6 @@ static int
 _asyncio_Task__log_destroy_pending_set_impl(TaskObj *self, PyObject *value)
 /*[clinic end generated code: output=7ebc030bb92ec5ce input=49b759c97d1216a4]*/
 {
-    if (value == NULL) {
-        PyErr_SetString(PyExc_AttributeError, "cannot delete attribute");
-        return -1;
-    }
     int is_true = PyObject_IsTrue(value);
     if (is_true < 0) {
         return -1;
@@ -3067,8 +3051,13 @@ task_step_impl(asyncio_state *state, TaskObj *task, PyObject *exc)
     if (task->task_must_cancel) {
         assert(exc != Py_None);
 
-        if (!exc || !PyErr_GivenExceptionMatches(exc, state->asyncio_CancelledError)) {
-            /* exc was not a CancelledError */
+        /* Replace exc with a CancelledError unless it already is one, or
+        it is SystemExit/KeyboardInterrupt, which must propagate
+        unchanged (gh-108549). */
+        if (!exc ||
+            (!PyErr_GivenExceptionMatches(exc, state->asyncio_CancelledError) &&
+            !PyErr_GivenExceptionMatches(exc, PyExc_KeyboardInterrupt) &&
+            !PyErr_GivenExceptionMatches(exc, PyExc_SystemExit))) {
             exc = create_cancelled_error(state, (FutureObj*)task);
 
             if (!exc) {

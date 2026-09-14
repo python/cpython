@@ -205,7 +205,7 @@ _PyLocals_GetKind(PyObject *kinds, int i)
 {
     assert(PyBytes_Check(kinds));
     assert(0 <= i && i < PyBytes_GET_SIZE(kinds));
-    char *ptr = PyBytes_AS_STRING(kinds);
+    const char *ptr = PyBytes_AS_STRING(kinds);
     return (_PyLocals_Kind)(ptr[i]);
 }
 
