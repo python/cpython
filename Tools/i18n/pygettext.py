@@ -826,6 +826,10 @@ def main():
             expanded.extend(getFilesForName(arg))
     args = expanded
 
+    # xgettext-compatible: no input file given is an error
+    if not args:
+        usage(1, "pygettext: no input file given\nTry 'pygettext --help' for more information.")
+
     # slurp through all the files
     visitor = GettextVisitor(options)
     for filename in args:
@@ -840,6 +844,13 @@ def main():
                 source = fp.read()
 
         visitor.visit_file(source, filename)
+
+    # xgettext-compatible: no output is generated if there are no messages
+    if not visitor.messages:
+        if options.verbose:
+            print("No module matched or no strings to extract; no output file generated.",
+                  file=sys.stderr)
+        sys.exit(0)
 
     # write the output
     if options.outfile == '-':
