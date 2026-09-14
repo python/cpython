@@ -894,7 +894,7 @@ Querying the terminal
 .. function:: termname()
 
    Return the name of the terminal in use, as a bytes object.
-   This is the name passed to :func:`initscr`, :func:`newterm` or
+   This is the name passed to :func:`newterm` or
    :func:`setupterm`, or the value of the :envvar:`TERM` environment variable
    if none was given.  Some curses libraries truncate it to 14 characters.
 
