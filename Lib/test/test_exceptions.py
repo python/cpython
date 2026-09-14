@@ -250,6 +250,16 @@ class ExceptionTests(unittest.TestCase):
                 self.assertEqual(cm.exception.offset, offset)
                 self.assertEqual(cm.exception.end_offset, end_offset)
 
+    def testSyntaxErrorNonUTF8Offset(self):
+        # gh-157378: the position was reported one column short for each
+        # multi-byte character preceding the invalid byte on the same line
+        check = self.check
+        check(b'X\x80', 1, 2, 1, 2)
+        check(b'\xc3\xa9X\x80', 1, 3, 1, 3)
+        check(b'\t\xc3\xa9X\x80', 1, 4, 1, 4)
+        check(b'a\xc3\xa9b\x80c', 1, 4, 1, 4)
+        check(b'a\n\xc3\xa9X\x80', 2, 3, 2, 3)
+
     def testSyntaxErrorOffset(self):
         check = self.check
         check('def fact(x):\n\treturn x!\n', 2, 10)
