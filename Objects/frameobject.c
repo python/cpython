@@ -380,16 +380,32 @@ framelocalsproxy_keys(PyObject *self, PyObject *Py_UNUSED(ignored))
     if (names == NULL) {
         return NULL;
     }
+    // An inlined comprehension cell can share a name with a free var.
+    PyObject *seen = PySet_New(NULL);
+    if (seen == NULL) {
+        Py_DECREF(names);
+        return NULL;
+    }
 
     for (int i = 0; i < co->co_nlocalsplus; i++) {
         if (framelocalsproxy_hasval(frame->f_frame, co, i)) {
             PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
+            int found = PySet_Contains(seen, name);
+            if (found < 0) {
+                goto error;
+            }
+            if (found) {
+                continue;
+            }
+            if (PySet_Add(seen, name) < 0) {
+                goto error;
+            }
             if (PyList_Append(names, name) < 0) {
-                Py_DECREF(names);
-                return NULL;
+                goto error;
             }
         }
     }
+    Py_DECREF(seen);
 
     // Iterate through the extra locals
     if (frame->f_extra_locals) {
@@ -408,6 +424,11 @@ framelocalsproxy_keys(PyObject *self, PyObject *Py_UNUSED(ignored))
     }
 
     return names;
+
+error:
+    Py_DECREF(seen);
+    Py_DECREF(names);
+    return NULL;
 }
 
 static void

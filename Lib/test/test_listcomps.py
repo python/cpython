@@ -277,6 +277,20 @@ class ListComprehensionTest(unittest.TestCase):
         outputs = {"y": [1]}
         self._check_in_scopes(code, outputs, scopes=["module", "function"])
 
+    def test_inlined_comp_cell_with_enclosing_free(self):
+        # The listcomp cell and the enclosing free must not share an index.
+        code = """
+            def outer(y):
+                def inner():
+                    return [lambda: x for x in (1, 2)], y
+                return inner()
+            funcs, val = outer(99)
+            z = [f() for f in funcs]
+            w = val
+        """
+        outputs = {"z": [2, 2], "w": 99}
+        self._check_in_scopes(code, outputs)
+
     def test_free_inner_cell_outer(self):
         code = """
             g = 2
@@ -406,6 +420,97 @@ class ListComprehensionTest(unittest.TestCase):
         """
         outputs = {"y": [[0, 1], [0, 1, 4]]}
         self._check_in_scopes(code, outputs)
+
+    def test_nested_inner_uses_outer_iter(self):
+        # Inner comprehension reads the outer iteration variable. In a class
+        # this must not be treated as a class-level name of the same name.
+        code = """
+            x = 99
+            y = [[x for _ in (0,)] for x in (42,)]
+        """
+        outputs = {"y": [[42]]}
+        self._check_in_scopes(code, outputs)
+
+    def test_nested_mixed_comprehensions_use_outer_iter(self):
+        cases = [
+            ("""
+            x = 99
+            y = [{x for _ in (0,)} for x in (42,)]
+            """, {"y": [{42}]}),
+            ("""
+            x = 99
+            y = [{x: x for _ in (0,)} for x in (42,)]
+            """, {"y": [{42: 42}]}),
+            ("""
+            x = 99
+            y = {[x for _ in (0,)][0] for x in (42,)}
+            """, {"y": {42}}),
+            ("""
+            x = 99
+            y = {x: [x for _ in (0,)] for x in (42,)}
+            """, {"y": {42: [42]}}),
+        ]
+        for code, outputs in cases:
+            with self.subTest(code=code):
+                self._check_in_scopes(code, outputs)
+
+    def test_nested_triple_inner_uses_outer_iter(self):
+        code = """
+            x = 99
+            y = [[[x for _ in (0,)] for _ in (0,)] for x in (42,)]
+        """
+        outputs = {"y": [[[42]]]}
+        self._check_in_scopes(code, outputs)
+
+    def test_nested_inner_uses_outer_iter_in_iter(self):
+        code = """
+            x = 99
+            y = [[_ for _ in (x,)] for x in (42,)]
+        """
+        outputs = {"y": [[42]]}
+        self._check_in_scopes(code, outputs)
+
+    def test_nested_inner_uses_outer_iter_in_if(self):
+        code = """
+            x = 99
+            y = [[1 for _ in (0,) if x] for x in (42,)]
+        """
+        outputs = {"y": [[1]]}
+        self._check_in_scopes(code, outputs)
+
+    def test_nested_sibling_inners_use_outer_iter(self):
+        code = """
+            x = 99
+            y = [([x for _ in (0,)], [x for _ in (1,)]) for x in (42,)]
+        """
+        outputs = {"y": [([42], [42])]}
+        self._check_in_scopes(code, outputs)
+
+    def test_nested_lambda_captures_outer_iter(self):
+        code = """
+            x = 99
+            y = [[lambda: x for _ in (0,)] for x in (42,)]
+            z = y[0][0]()
+        """
+        outputs = {"z": 42}
+        self._check_in_scopes(code, outputs)
+
+    def test_nested_references___class__(self):
+        code = """
+            res = [[__class__ for _ in (0,)] for _ in (1,)]
+        """
+        self._check_in_scopes(code, raises=NameError)
+
+    def test_nested_references___class___via_lambda(self):
+        class _C:
+            res = [[lambda: __class__ for _ in (0,)] for _ in (1,)]
+        self.assertIs(_C.res[0][0](), _C)
+
+    def test_nested_references_super(self):
+        code = """
+            res = [[super for _ in (0,)] for _ in (1,)]
+        """
+        self._check_in_scopes(code, outputs={"res": [[super]]})
 
     def test_nested_2(self):
         code = """
@@ -702,6 +807,23 @@ class ListComprehensionTest(unittest.TestCase):
             val = [sys._getframe().f_locals["a"] for a in [0]][0]
         """
         self._check_in_scopes(code, {"val": 0}, ns={"sys": sys})
+
+    def test_frame_locals_comp_cell_and_enclosing_free(self):
+        # The inlined listcomp cell and the enclosing free share a name.
+        # f_locals keys must still be unique so dict(**f_locals) works.
+        code = """
+            def outer(x):
+                def inner():
+                    return [(lambda: x, dict(**sys._getframe().f_locals))
+                            for x in x]
+                return inner()
+            result = outer([1, 2])
+            snaps = [d['x'] for _, d in result]
+            vals = [fn() for fn, _ in result]
+        """
+        import sys
+        self._check_in_scopes(code, {"snaps": [1, 2], "vals": [2, 2]},
+                              ns={"sys": sys}, scopes=["module", "function"])
 
     def _recursive_replace(self, maybe_code):
         if not isinstance(maybe_code, types.CodeType):

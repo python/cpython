@@ -33,6 +33,10 @@ typedef enum _block_type {
     // i.e., a TypeVar, a TypeVarTuple or a ParamSpec object (the latter two
     // do not support a bound or a constraint tuple).
     TypeVariableBlock,
+    // Comprehension which is inlined into the enclosing code unit (see PEP 709).
+    // Represents a sub-scope of the enclosing code unit's scope rather than a
+    // separate scope.
+    InlinedComprehensionBlock,
 } _Py_block_ty;
 
 typedef enum _comprehension_type {
@@ -119,7 +123,6 @@ typedef struct _symtable_entry {
                                              should be created */
     unsigned ste_needs_classdict : 1; /* for class scopes, true if a closure
                                          over the class dict should be created */
-    unsigned ste_comp_inlined : 1; /* true if this comprehension is inlined */
     unsigned ste_comp_iter_target : 1; /* true if visiting comprehension target */
     unsigned ste_can_see_class_scope : 1; /* true if this block can see names bound in an
                                              enclosing class scope */
@@ -132,6 +135,7 @@ typedef struct _symtable_entry {
     int ste_comp_iter_expr; /* non-zero if visiting a comprehension range expression */
     _Py_SourceLocation ste_loc; /* source location of block */
     struct _symtable_entry *ste_annotation_block; /* symbol table entry for this entry's annotations */
+    struct _symtable_entry *ste_parent; /* st entry for the enclosing block if this entry is a sub-scope, NULL otherwise */
     struct symtable *ste_table;
 } PySTEntryObject;
 
@@ -142,6 +146,7 @@ extern PyTypeObject PySTEntry_Type;
 extern long _PyST_GetSymbol(PySTEntryObject *, PyObject *);
 extern int _PyST_GetScope(PySTEntryObject *, PyObject *);
 extern int _PyST_IsFunctionLike(PySTEntryObject *);
+extern int _PyST_IsClassClosureName(PyObject *);
 
 extern struct symtable* _PySymtable_Build(
     struct _mod *mod,
@@ -172,7 +177,6 @@ _Py_IsPrivateName(PyObject *);
 #define DEF_ANNOT (2<<7)         /* this name is annotated */
 #define DEF_COMP_ITER (2<<8)     /* this name is a comprehension iteration variable */
 #define DEF_TYPE_PARAM (2<<9)    /* this name is a type parameter */
-#define DEF_COMP_CELL (2<<10)    /* this name is a cell in an inlined comprehension */
 
 #define DEF_BOUND (DEF_LOCAL | DEF_PARAM | DEF_IMPORT)
 

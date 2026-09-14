@@ -520,13 +520,15 @@ compute_localsplus_info(_PyCompile_CodeUnitMetadata *umd, int nlocalsplus,
 
             _PyLocals_Kind kind = CO_FAST_LOCAL | argvarkinds[i].kind;
 
-            int has_key = PyDict_Contains(umd->u_fasthidden, k);
-            RETURN_IF_ERROR(has_key);
-            if (has_key) {
-                kind |= CO_FAST_HIDDEN;
+            if (umd->u_fasthidden != NULL) {
+                int hidden = PySet_Contains(umd->u_fasthidden, k);
+                RETURN_IF_ERROR(hidden);
+                if (hidden) {
+                    kind |= CO_FAST_HIDDEN;
+                }
             }
 
-            has_key = PyDict_Contains(umd->u_cellvars, k);
+            int has_key = PyDict_Contains(umd->u_cellvars, k);
             RETURN_IF_ERROR(has_key);
             if (has_key) {
                 kind |= CO_FAST_CELL;

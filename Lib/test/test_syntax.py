@@ -3538,6 +3538,17 @@ while 1:
         self._check_error(src(CO_MAXBLOCKS + 1),
                           "too many statically nested blocks")
 
+    def test_invalid_starred_for_target_in_async_comprehension(self):
+        sources = [
+            "async def f():\n    {a async for b in d for *(b,) in e}",
+            "async def f():\n    [a async for b in d for *(b,) in e]",
+            "async def f():\n    {a: a async for b in d for *(b,) in e}",
+        ]
+        for src in sources:
+            with self.subTest(src=src):
+                self._check_error(
+                    src, "starred assignment target must be in a list or tuple")
+
     @support.cpython_only
     def test_error_on_parser_stack_overflow(self):
         source = "-" * 100000 + "4"
