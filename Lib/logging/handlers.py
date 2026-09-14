@@ -1127,29 +1127,36 @@ class SMTPHandler(logging.Handler):
             msg['Subject'] = self.getSubject(record)
             msg['Date'] = email.utils.localtime()
             msg.set_content(self.format(record))
-            if self.username:
-                if self.secure is not None:
-                    import ssl
+            try:
+                if self.username:
+                    if self.secure is not None:
+                        import ssl
 
-                    try:
-                        keyfile = self.secure[0]
-                    except IndexError:
-                        keyfile = None
+                        try:
+                            keyfile = self.secure[0]
+                        except IndexError:
+                            keyfile = None
 
-                    try:
-                        certfile = self.secure[1]
-                    except IndexError:
-                        certfile = None
+                        try:
+                            certfile = self.secure[1]
+                        except IndexError:
+                            certfile = None
 
-                    context = ssl._create_stdlib_context(
-                        certfile=certfile, keyfile=keyfile
-                    )
-                    smtp.ehlo()
-                    smtp.starttls(context=context)
-                    smtp.ehlo()
-                smtp.login(self.username, self.password)
-            smtp.send_message(msg)
-            smtp.quit()
+                        context = ssl._create_stdlib_context(
+                            certfile=certfile, keyfile=keyfile
+                        )
+                        smtp.ehlo()
+                        smtp.starttls(context=context)
+                        smtp.ehlo()
+                    smtp.login(self.username, self.password)
+                smtp.send_message(msg)
+                smtp.quit()
+            except Exception:
+                try:
+                    smtp.close()
+                except Exception:
+                    pass
+                raise
         except Exception:
             self.handleError(record)
 
