@@ -48,6 +48,9 @@ API_ISOLATED = 3
 INIT_LOOPS = 4
 MAX_HASH_SEED = 4294967295
 
+# Environment variables that change runtime but should not break embedding.
+RUNTIME_ENVVARS = ('PYTHON_GIL', 'PYTHON_JIT_STRESS', 'PYTHON_UOPS_OPTIMIZE')
+
 ABI_THREAD = 't' if support.Py_GIL_DISABLED else ''
 # PLATSTDLIB_LANDMARK copied from Modules/getpath.py
 if os.name == 'nt':
@@ -133,21 +136,24 @@ class EmbeddingTestsMixin:
 
     def run_embedded_interpreter(self, *args, env=None,
                                  timeout=None, returncode=0, input=None,
-                                 cwd=None):
+                                 cwd=None, runtime_envvars=True):
         """Runs a test in the embedded interpreter"""
         cmd = [self.test_exe]
         cmd.extend(args)
-        if env is not None and MS_WINDOWS:
-            # Windows requires at least the SYSTEMROOT environment variable to
-            # start Python.
-            env = env.copy()
-            env['SYSTEMROOT'] = os.environ['SYSTEMROOT']
+        safe_env = remove_python_envvars()
+        # Copy across runtime-modifying variables.
+        if runtime_envvars:
+            for name in RUNTIME_ENVVARS:
+                if name in os.environ:
+                    safe_env[name] = os.environ[name]
+        if env:
+            safe_env.update(env)
 
         kwargs = dict(
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             universal_newlines=True,
-            env=env,
+            env=safe_env,
             cwd=cwd,
         )
         if input is not None:
@@ -302,7 +308,7 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
 
     def test_forced_io_encoding(self):
         # Checks forced configuration of embedded interpreter IO streams
-        env = dict(os.environ, PYTHONIOENCODING="utf-8:surrogateescape")
+        env = {'PYTHONIOENCODING': 'utf-8:surrogateescape'}
         out, err = self.run_embedded_interpreter("test_forced_io_encoding", env=env)
         if support.verbose > 1:
             print()
@@ -348,7 +354,7 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         Checks some key parts of the C-API that need to work before the runtime
         is initialized (via Py_Initialize()).
         """
-        env = dict(os.environ, PYTHONPATH=os.pathsep.join(sys.path))
+        env = {'PYTHONPATH': os.pathsep.join(sys.path)}
         out, err = self.run_embedded_interpreter("test_pre_initialization_api", env=env)
         if support.verbose > 1:
             print()
@@ -369,8 +375,7 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         Checks that sys.warnoptions and sys._xoptions can be set before the
         runtime is initialized (otherwise they won't be effective).
         """
-        env = remove_python_envvars()
-        env['PYTHONPATH'] = os.pathsep.join(sys.path)
+        env = {'PYTHONPATH': os.pathsep.join(sys.path)}
         out, err = self.run_embedded_interpreter(
                         "test_pre_initialization_sys_options", env=env)
         if support.verbose > 1:
@@ -628,10 +633,8 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
             with open(filename, 'x') as fp:
                 fp.write(CODE_EXITCODE_123)
 
-            env = dict(os.environ)
-            env['PYTHONSTARTUP'] = filename
             self.check_program_exitcode("test_init_run_main_interactive_exitcode",
-                                        env=env,
+                                        env={'PYTHONSTARTUP': filename},
                                         check_stderr=False)
 
     def test_init_run_main_module_exitcode(self):
@@ -641,10 +644,8 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
             with open(filename, 'x', encoding='utf8') as fp:
                 fp.write(CODE_EXITCODE_123)
 
-            env = dict(os.environ)
-            env['PYTHONPATH'] = tmpdir
             self.check_program_exitcode("test_init_run_main_module_exitcode",
-                                        modname, env=env)
+                                        modname, env={'PYTHONPATH': tmpdir})
 
 
 def config_dev_mode(preconfig, config):
@@ -1035,11 +1036,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                           modify_path_cb=None,
                           stderr=None, *, api, preconfig_api=None,
                           env=None, ignore_stderr=False, cwd=None):
-        new_env = remove_python_envvars()
-        if env is not None:
-            new_env.update(env)
-        env = new_env
-
         if preconfig_api is None:
             preconfig_api = api
         if preconfig_api == API_ISOLATED:
@@ -1068,8 +1064,9 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                                  env,
                                  api, modify_path_cb)
 
-        out, err = self.run_embedded_interpreter(testname,
-                                                 env=env, cwd=cwd)
+        # Ignore runtime flags like PYTHON_GIL to get the build configuration.
+        out, err = self.run_embedded_interpreter(testname, env=env, cwd=cwd,
+                                                 runtime_envvars=False)
         if stderr is None and not expected_config['verbose']:
             stderr = ""
         if stderr is not None and not ignore_stderr:
@@ -1858,8 +1855,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         ]
         out, err = self.run_embedded_interpreter(
             "test_init_initialize_config",
-            env={**remove_python_envvars(),
-                 "PYTHONPATH": os.path.pathsep.join(c[0] for c in CASES)}
+            env={"PYTHONPATH": os.path.pathsep.join(c[0] for c in CASES)}
         )
         self.assertEqual(err, "")
         try:
@@ -2072,7 +2068,7 @@ class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):
             print("import sys", file=f)
             print("sys.__interactivehook__ = lambda: None", file=f)
         try:
-            env = {**remove_python_envvars(), "PYTHONSTARTUP": startup}
+            env = {"PYTHONSTARTUP": startup}
             self.run_embedded_interpreter("test_audit_run_interactivehook",
                                           timeout=support.SHORT_TIMEOUT,
                                           returncode=10, env=env)
@@ -2084,7 +2080,7 @@ class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):
         with open(startup, "w", encoding="utf-8") as f:
             print("pass", file=f)
         try:
-            env = {**remove_python_envvars(), "PYTHONSTARTUP": startup}
+            env = {"PYTHONSTARTUP": startup}
             self.run_embedded_interpreter("test_audit_run_startup",
                                           timeout=support.SHORT_TIMEOUT,
                                           returncode=10, env=env)
@@ -2126,8 +2122,7 @@ class MiscTests(EmbeddingTestsMixin, unittest.TestCase):
                      'Py_FrozenMain is not exported on Windows')
     @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
     def test_frozenmain(self):
-        env = dict(os.environ)
-        env['PYTHONUNBUFFERED'] = '1'
+        env = {'PYTHONUNBUFFERED': '1'}
         out, err = self.run_embedded_interpreter("test_frozenmain", env=env)
         executable = os.path.realpath('./argv0')
         expected = textwrap.dedent(f"""
