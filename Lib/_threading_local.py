@@ -36,11 +36,13 @@ class _localimpl:
     def get_dict(self):
         """Return the dict for the current thread. Raises KeyError if none
         defined."""
+        from threading import current_thread
         thread = current_thread()
         return self.dicts[id(thread)][1]
 
     def create_dict(self):
         """Create a new dict for the current thread, and return it."""
+        from threading import current_thread
         localdict = {}
         key = self.key
         thread = current_thread()
@@ -85,6 +87,7 @@ class local:
     def __new__(cls, /, *args, **kw):
         if (args or kw) and (cls.__init__ is object.__init__):
             raise TypeError("Initialization arguments are not supported")
+        from threading import RLock
         self = object.__new__(cls)
         impl = _localimpl()
         impl.localargs = (args, kw)
@@ -115,6 +118,3 @@ class local:
                 % self.__class__.__name__)
         with _patch(self):
             return object.__delattr__(self, name)
-
-
-from threading import current_thread, RLock
