@@ -87,15 +87,22 @@ _PyTok_NormalizeNewlines(const char *data, Py_ssize_t len, int preserve_crlf,
         return NULL;
     }
     Py_ssize_t write = 0;
-    for (Py_ssize_t read = 0; read < len; read++) {
-        char c = data[read];
-        if (!preserve_crlf && c == '\r') {
-            if (read + 1 < len && data[read + 1] == '\n') {
-                read++;
+    if (memchr(data, '\r', len) == NULL) {
+        // No carriage returns: nothing to translate, copy verbatim.
+        memcpy(result, data, len);
+        write = len;
+    }
+    else {
+        for (Py_ssize_t read = 0; read < len; read++) {
+            char c = data[read];
+            if (!preserve_crlf && c == '\r') {
+                if (read + 1 < len && data[read + 1] == '\n') {
+                    read++;
+                }
+                c = '\n';
             }
-            c = '\n';
+            result[write++] = c;
         }
-        result[write++] = c;
     }
     int implicit = add_final_newline && write > 0 && result[write - 1] != '\n';
     if (implicit) {
