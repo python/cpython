@@ -307,6 +307,36 @@ One-shot (de)compression
    .. versionchanged:: 3.3
       Support for multi-stream inputs was added.
 
+
+Miscellaneous
+-------------
+
+Information about the version of the bzip2 compression library
+actually loaded by the interpreter is available through the following
+constants.
+The version used for building the module is not available,
+because the bzip2 library does not provide it.
+
+
+.. data:: bzlib_version
+
+   The version string of the bzip2 compression library
+   actually loaded by the interpreter.
+
+   .. versionadded:: next
+
+
+.. data:: bzlib_version_info
+
+   A named tuple containing the three components of the bzip2 compression
+   library version actually loaded by the interpreter:
+   *major*, *minor*, and *patch*.  All values are integers.
+   The components can also be accessed by name, so ``bz2.bzlib_version_info[0]``
+   is equivalent to ``bz2.bzlib_version_info.major`` and so on.
+
+   .. versionadded:: next
+
+
 .. _bz2-usage-examples:
 
 Examples of usage
