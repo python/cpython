@@ -1046,6 +1046,21 @@ class PatchTest(unittest.TestCase):
             method.assert_called_once_with()
 
 
+    def test_autospec_method_signature(self):
+        # Patched methods should have the same signature
+        # https://github.com/python/cpython/issues/76273
+        class Foo:
+            def method(self, a, b=10, *, c): pass
+
+        with patch.object(Foo, 'method', autospec=True) as mock_method:
+            foo = Foo()
+            foo.method(1, 2, c=3)
+            mock_method.assert_called_once_with(1, 2, c=3)
+            self.assertRaises(TypeError, foo.method)
+            self.assertRaises(TypeError, foo.method, 1)
+            self.assertRaises(TypeError, foo.method, 1, 2, 3, c=4)
+
+
     def test_autospec_staticmethod_signature(self):
         # Patched methods which are decorated with @staticmethod should have the same signature
         class Foo:
@@ -1059,6 +1074,14 @@ class PatchTest(unittest.TestCase):
             self.assertRaises(TypeError, method)
             self.assertRaises(TypeError, method, 1)
             self.assertRaises(TypeError, method, 1, 2, 3, c=4)
+
+        with patch.object(Foo, 'static_method', autospec=True) as method:
+            foo = Foo()
+            foo.static_method(1, 2, c=3)
+            method.assert_called_once_with(1, 2, c=3)
+            self.assertRaises(TypeError, foo.static_method)
+            self.assertRaises(TypeError, foo.static_method, 1)
+            self.assertRaises(TypeError, foo.static_method, 1, 2, 3, c=4)
 
 
     def test_autospec_classmethod_signature(self):
@@ -1074,6 +1097,14 @@ class PatchTest(unittest.TestCase):
             self.assertRaises(TypeError, method)
             self.assertRaises(TypeError, method, 1)
             self.assertRaises(TypeError, method, 1, 2, 3, c=4)
+
+        with patch.object(Foo, 'class_method', autospec=True) as method:
+            foo = Foo()
+            foo.class_method(1, 2, c=3)
+            method.assert_called_once_with(1, 2, c=3)
+            self.assertRaises(TypeError, foo.class_method)
+            self.assertRaises(TypeError, foo.class_method, 1)
+            self.assertRaises(TypeError, foo.class_method, 1, 2, 3, c=4)
 
 
     def test_autospec_with_new(self):
