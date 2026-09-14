@@ -1,0 +1,5 @@
+Fix a memory leak when Python runs on a C stack the interpreter does not know
+about, such as user-space threads, fibers or coroutines. :c:func:`Py_DECREF`
+deferred the deallocation of every garbage-collected object to the trashcan
+and never freed them. Objects are now deallocated immediately on such stacks,
+matching how the C recursion check already treats them.

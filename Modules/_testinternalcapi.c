@@ -3082,6 +3082,51 @@ test_threadstate_set_stack_protection(PyObject *self, PyObject *Py_UNUSED(args))
     Py_RETURN_NONE;
 }
 
+
+// gh-157519: _Py_Dealloc() must not defer objects to tstate->delete_later
+// when the stack pointer is outside the known stack (user-space threads),
+// since the chain would never be destroyed.
+static PyObject *
+test_dealloc_on_unknown_stack(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    PyThreadState *tstate = PyThreadState_GET();
+    assert(!PyErr_Occurred());
+    if (tstate->delete_later != NULL) {
+        PyErr_SetString(PyExc_AssertionError,
+                        "delete_later is not empty before the test");
+        return NULL;
+    }
+
+    // Set the stack limits far away from the actual stack pointer
+    size_t size = _PyOS_MIN_STACK_SIZE;
+    uintptr_t here_addr = _Py_get_machine_stack_pointer();
+#if _Py_STACK_GROWS_DOWN
+    void *start = (void *)(here_addr + 64 * _PyOS_STACK_MARGIN_BYTES);
+#else
+    void *start = (void *)(here_addr - 64 * _PyOS_STACK_MARGIN_BYTES - size);
+#endif
+    if (PyUnstable_ThreadState_SetStackProtection(tstate, start, size) < 0) {
+        return NULL;
+    }
+
+    PyObject *result = NULL;
+    PyObject *list = PyList_New(0);
+    if (list == NULL) {
+        goto done;
+    }
+    Py_DECREF(list);
+    if (tstate->delete_later != NULL) {
+        PyErr_SetString(PyExc_AssertionError,
+                        "_Py_Dealloc() deferred an object on an unknown stack");
+        goto done;
+    }
+    result = Py_NewRef(Py_None);
+
+done:
+    PyUnstable_ThreadState_ResetStackProtection(tstate);
+    return result;
+}
+
 #define NUM_GUARDS 100
 
 static PyObject *
@@ -3389,6 +3434,7 @@ static PyMethodDef module_functions[] = {
     {"module_get_gc_hooks", module_get_gc_hooks, METH_O},
     {"test_threadstate_set_stack_protection",
      test_threadstate_set_stack_protection, METH_NOARGS},
+    {"test_dealloc_on_unknown_stack", test_dealloc_on_unknown_stack, METH_NOARGS},
     {"_pyerr_setkeyerror", _pyerr_setkeyerror, METH_O},
     {"test_interp_guard_countdown", test_interp_guard_countdown, METH_NOARGS},
     {"test_interp_view_countdown", test_interp_view_countdown, METH_NOARGS},
