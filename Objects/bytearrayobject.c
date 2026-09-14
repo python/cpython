@@ -1272,6 +1272,21 @@ static void
 bytearray_dealloc(PyObject *op)
 {
     PyByteArrayObject *self = _PyByteArray_CAST(op);
+
+#ifdef Py_DEBUG
+    // Make sure that the trailing null byte was not modified
+    if (self->ob_bytes_object != NULL) {
+        char *data = PyByteArray_AS_STRING(self);
+        Py_ssize_t size = PyByteArray_GET_SIZE(self);
+        if (data[size] != '\0') {
+            _Py_FatalErrorFormat(__func__,
+                                 "Buffer overflow detected in bytearray "
+                                 "object %p at position %zd",
+                                 self, size);
+        }
+    }
+#endif
+
     if (self->ob_exports > 0) {
         PyErr_SetString(PyExc_SystemError,
                         "deallocated bytearray object has exported buffers");

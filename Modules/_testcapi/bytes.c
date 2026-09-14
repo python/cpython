@@ -528,6 +528,37 @@ test_byteswriter_ptr(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
 }
 
 
+static PyObject *
+bytes_overflow(PyObject *Py_UNUSED(module), PyObject *arg)
+{
+    PyObject *bytes = PyObject_CallOneArg((PyObject*)&PyBytes_Type, arg);
+    if (bytes == NULL) {
+        return NULL;
+    }
+
+    char *data = PyBytes_AS_STRING(bytes);
+    Py_ssize_t size = PyBytes_GET_SIZE(bytes);
+    memset(data, 'x', size);
+    data[size] = '#';  // Buffer overflow!
+    return bytes;
+}
+
+
+static PyObject *
+bytearray_overflow(PyObject *Py_UNUSED(module), PyObject *arg)
+{
+    PyObject *bytearray = PyObject_CallOneArg((PyObject*)&PyByteArray_Type, arg);
+    if (bytearray == NULL) {
+        return NULL;
+    }
+
+    char *data = PyByteArray_AS_STRING(bytearray);
+    Py_ssize_t size = PyByteArray_GET_SIZE(bytearray);
+    data[size] = '#';  // Buffer overflow!
+    return bytearray;
+}
+
+
 static PyMethodDef test_methods[] = {
     {"bytes_resize", bytes_resize, METH_VARARGS},
     {"bytes_join", bytes_join, METH_VARARGS},
@@ -535,6 +566,8 @@ static PyMethodDef test_methods[] = {
     {"byteswriter_resize", byteswriter_resize, METH_NOARGS},
     {"byteswriter_highlevel", byteswriter_highlevel, METH_NOARGS},
     {"test_byteswriter_ptr", test_byteswriter_ptr, METH_NOARGS},
+    {"bytes_overflow", bytes_overflow, METH_O},
+    {"bytearray_overflow", bytearray_overflow, METH_O},
     {NULL},
 };
 

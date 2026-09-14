@@ -317,6 +317,24 @@ class CAPITest(unittest.TestCase):
         with self.assertRaises(SystemError):
             bytes_join(b'', NULL)
 
+    @unittest.skipUnless(support.Py_DEBUG, 'need debug build (Py_DEBUG)')
+    def test_detect_overflow(self):
+        # Test detection of buffer overflow
+        size = 123
+        code = textwrap.dedent(f'''
+            from test.support import SuppressCrashReport
+            import _testcapi
+
+            size = {size}
+            with SuppressCrashReport():
+                # Trigger a buffer overflow in a new bytes
+                ba = _testcapi.bytes_overflow(size)
+                ba = None
+        ''')
+        proc = assert_python_failure('-c', code)
+        self.assertIn(b'Buffer overflow detected in bytes object', proc.err)
+        self.assertIn(f'at position {size}'.encode(), proc.err)
+
 
 def get_data_canary(writer):
     size = writer.get_size() + 1
