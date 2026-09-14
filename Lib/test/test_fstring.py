@@ -865,6 +865,27 @@ except Exception:
                              """f'{"s"!{"r"}}'""",
                              ])
 
+    def test_nested_replacement_field_restores_format_specifier(self):
+        class CaptureFormat:
+            def __format__(self, format_spec):
+                self.format_spec = format_spec
+                return ""
+
+        x = CaptureFormat()
+        y = "Y"
+        z = "Z"
+
+        def check_format_spec(result, expected):
+            self.assertEqual(x.format_spec, expected)
+            self.assertEqual(result, "")
+
+        check_format_spec(f'{x:{y}}', "Y")
+        check_format_spec(f'{x:{{y}}}', "{'Y'}")
+        check_format_spec(f'{x:{y}{{z}}}', "Y{'Z'}")
+        check_format_spec(f'{x:{y!s}{{z}}}', "Y{'Z'}")
+        check_format_spec(f'{x:{y=}{{z}}}', "y='Y'{'Z'}")
+        check_format_spec(f'''{x:{y}{{z}}}''', "Y{'Z'}")
+
     def test_custom_format_specifier(self):
         class CustomFormat:
             def __format__(self, format_spec):
@@ -1858,6 +1879,7 @@ print(f'''{{
     def test_newlines_in_format_specifiers(self):
         cases = [
             """f'{1:d\n}'""",
+            """f'{x:{y}\n}'""",
             """f'__{
                 1:d
             }__'""",
