@@ -179,17 +179,6 @@ class TestObjectLoading(unittest.TestCase):
 
 
 class TestHeaderGeneration(unittest.TestCase):
-    def _build_trampoline_objects(self):
-        """The object(s) the Makefile fed to the generator."""
-        builddir = pathlib.Path(sysconfig.get_config_var("abs_builddir") or ".")
-        universal2 = builddir / "Python" / "asm_trampoline_universal2.o"
-        if universal2.exists():
-            return [universal2]
-        return sorted(
-            path for path in (builddir / "Python").glob("asm_trampoline_*.o")
-            if "apple-darwin" not in path.name
-        )
-
     def test_failed_replace_preserves_header(self):
         cie = _fake_cie()
         obj = ehframe.ObjectSlice(
@@ -210,15 +199,18 @@ class TestHeaderGeneration(unittest.TestCase):
 
     def test_generated_header_is_current(self):
         """The header in the build directory matches a fresh generation."""
-        objects = self._build_trampoline_objects()
         builddir = pathlib.Path(sysconfig.get_config_var("abs_builddir") or ".")
+        configured = sysconfig.get_config_var("PERF_TRAMPOLINE_OBJ")
         header = builddir / "trampoline_ehframe.h"
-        if not objects or not header.exists():
-            self.skipTest("trampoline object or generated header not found")
+        if not configured or not header.exists():
+            self.skipTest("perf trampoline not built or generated header not found")
+        obj = builddir / configured
+        if not obj.exists():
+            self.skipTest(f"{configured} not found in the build directory")
         current = header.read_text()
         with temp_dir() as tmp:
             fresh_path = pathlib.Path(tmp) / "trampoline_ehframe.h"
-            ehframe.generate(objects, fresh_path)
+            ehframe.generate([obj], fresh_path)
             fresh = fresh_path.read_text()
         self.assertEqual(current, fresh)
 

@@ -1,4 +1,6 @@
+import mmap
 import struct
+import tempfile
 import unittest
 import string
 import subprocess
@@ -747,24 +749,30 @@ def _fde_pointer_encoding(eh_frame):
 class TestJitdumpFileFormat(unittest.TestCase):
     """Validate the jitdump written by -Xperf_jit without requiring perf."""
 
+    def _require_usable_jitdump_dir(self):
+        """Skip unless /tmp can hold and, except on macOS, exec-map a file."""
+        try:
+            with tempfile.NamedTemporaryFile(dir="/tmp", prefix="jit-probe-") as f:
+                if sys.platform != "darwin":
+                    f.write(bytes(mmap.PAGESIZE))
+                    f.flush()
+                    with mmap.mmap(f.fileno(), mmap.PAGESIZE, flags=mmap.MAP_PRIVATE,
+                                   prot=mmap.PROT_READ | mmap.PROT_EXEC):
+                        pass
+        except OSError as exc:
+            self.skipTest(f"/tmp is not usable for jitdump files: {exc}")
+
     def _run_and_get_jitdump(self, code):
+        self._require_usable_jitdump_dir()
         # The child prints its pid so we open exactly its own jitdump file
         # rather than whatever another test worker left in /tmp.
         code = "import os, sys\nsys.stdout.write(str(os.getpid()))\n" + code
         _, out, _ = assert_python_ok("-Xperf_jit", "-c", code, PYTHON_JIT="0")
         path = pathlib.Path(f"/tmp/jit-{int(out)}.dump")
-        try:
-            data = path.read_bytes()
-        except FileNotFoundError:
-            # perf_map_jit_init() gives up silently when it cannot create
-            # the file (for example an unwritable /tmp).
-            self.skipTest("jitdump file was not created")
+        self.assertTrue(path.exists(), f"{path} was not created")
         self.addCleanup(path.unlink)
-        if not data:
-            # The file is created before the executable mapping of the
-            # jitdump; if that mapping fails (for example a noexec /tmp) the
-            # backend gives up silently and never writes the header.
-            self.skipTest("jitdump could not be initialized")
+        data = path.read_bytes()
+        self.assertTrue(data, f"{path} is empty, the jitdump header was not written")
         return data
 
     def _check_code_load(self, data, pos, size):

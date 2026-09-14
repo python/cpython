@@ -97,8 +97,11 @@ class EhFrame:
 
     data: bytes
     fde_pc_offset: int
-    fde_range_offset: int
     field_size: int
+
+    @property
+    def fde_range_offset(self) -> int:
+        return self.fde_pc_offset + self.field_size
 
 
 def _elf_slice(data: bytes, source: str) -> ObjectSlice:
@@ -401,7 +404,7 @@ def parse_ehframe(eh_frame: bytes, endian: str, text_size: int) -> EhFrame:
 
     # Zero the placeholders. The runtime fills in the real values.
     data[fde_pc_offset : fde_range_offset + field_size] = bytes(2 * field_size)
-    return EhFrame(bytes(data), fde_pc_offset, fde_range_offset, field_size)
+    return EhFrame(bytes(data), fde_pc_offset, field_size)
 
 
 def build_ehframe(obj_slice: ObjectSlice) -> EhFrame:
