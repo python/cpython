@@ -2478,6 +2478,26 @@ class TestSpecial(unittest.TestCase):
         globals()['T'] = T
         test_pickle_dump_load(self.assertIs, SomeEnum.first)
 
+    def test_protocol_mixin_as_enum_member_value(self):
+        class Example(typing.Protocol):
+            def method(self) -> None: ...
+
+        class Impl(Example):
+            def method(self) -> None: ...
+
+        class CompatEnumType(type(typing.Protocol), EnumType): ...
+
+        class ProtoEnum(Example, Enum, metaclass=CompatEnumType):
+            __qualname__ = 'ProtoEnum'  # needed for pickle protocol 4
+            impl = Impl()
+
+        self.assertIsInstance(ProtoEnum.impl.value, Impl)
+        globals()['Example'] = Example
+        globals()['Impl'] = Impl
+        globals()['ProtoEnum'] = ProtoEnum
+        ProtoEnum.__reduce_ex__ = enum.pickle_by_enum_name
+        test_pickle_dump_load(self.assertIs, ProtoEnum.impl)
+
     def test_duplicate_values_give_unique_enum_items(self):
         class AutoNumber(Enum):
             first = ()
