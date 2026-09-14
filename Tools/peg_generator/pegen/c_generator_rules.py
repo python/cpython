@@ -194,6 +194,9 @@ class CRuleEmitter:
                     self._returns.emit("_res")
                 self._print("}")
             self._print("int _mark = p->mark;")
+            for prefix in self._rule.prefixes:
+                self._print(f"{prefix.type} {prefix.result} = NULL;")
+                self._print(f"int {prefix.end} = 0, {prefix.valid} = 0;")
             if self._rule.uses_locations:
                 self._emit_token_start_metadata()
             for alt in self._rule.alternatives:
@@ -354,7 +357,7 @@ class CRuleEmitter:
         self._print("}")
 
     def _emit_recursion_check(self) -> None:
-        self._print("if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {")
+        self._print("if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {")
         with self._indent():
             self._print("_Pypegen_stack_overflow(p);")
         self._print("}")

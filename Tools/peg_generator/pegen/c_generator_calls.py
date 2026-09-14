@@ -11,6 +11,7 @@ from pegen.c_generator_model import (
     CAction,
     CAlternative,
     CBindingKind,
+    CPrefix,
     CRule,
     CRuleSignature,
     CVariable,
@@ -69,6 +70,35 @@ def bind_call(node: NamedItem, call: FunctionCall) -> FunctionCall:
         assigned_variable_type=node.type or call.assigned_variable_type,
         binding_kind=CBindingKind.NORMAL if node.name else call.binding_kind,
     )
+
+
+def consuming_rules(rules: dict[str, Rule]) -> set[str]:
+    """Conservatively prove which rules consume a token whenever they succeed."""
+    consuming: set[str] = set()
+
+    def consumes(node: Any) -> bool:
+        if isinstance(node, NamedItem):
+            return consumes(node.item)
+        if isinstance(node, NameLeaf):
+            return node.value not in rules or node.value in consuming
+        if isinstance(node, StringLeaf):
+            return True
+        if isinstance(node, Group):
+            return consumes(node.rhs)
+        if isinstance(node, Rhs):
+            return bool(node.alts) and all(any(consumes(i) for i in alt.items) for alt in node.alts)
+        if isinstance(node, (Forced, Repeat1, Gather)):
+            return consumes(node.node)
+        # Predicates, cuts, optional items, and zero-or-more items can succeed
+        # without consuming. Actions are assumed not to rewrite parser marks.
+        return False
+
+    while True:
+        added = {name for name, rule in rules.items()
+                 if name not in consuming and consumes(rule.rhs)}
+        if not added:
+            return consuming
+        consuming.update(added)
 
 
 class CCallMakerVisitor(GrammarVisitor):
@@ -310,6 +340,8 @@ class CCallMakerVisitor(GrammarVisitor):
     def make_lowerer(self) -> "CCallLowerer":
         return CCallLowerer(
             calls=self._calls,
+            rules=self._registry.all_rules,
+            original_rules=self._registry.rules,
             signatures={
                 name: rule_signature(rule) for name, rule in self._registry.all_rules.items()
             },
@@ -326,10 +358,50 @@ class CCallLowerer:
         self,
         *,
         calls: Mapping[NamedItem, tuple[Item, FunctionCall]],
+        rules: Mapping[str, Rule],
+        original_rules: dict[str, Rule],
         signatures: Mapping[str, CRuleSignature],
     ):
         self._calls = MappingProxyType(dict(calls))
         self._signatures = MappingProxyType(dict(signatures))
+        self._prefixes: dict[str, tuple[CPrefix, ...]] = {}
+        self._prefix_calls: dict[NamedItem, CPrefix] = {}
+        consuming = consuming_rules(original_rules)
+        counter = 0
+
+        def candidate(alt: Alt) -> Rule | None:
+            if not alt.items or not isinstance(alt.items[0].item, NameLeaf):
+                return None
+            rule = original_rules.get(alt.items[0].item.value)
+            if rule is None or rule.name not in consuming:
+                return None
+            if ("memo" in rule.flags and not rule.left_recursive) or (
+                rule.left_recursive and rule.leader
+            ):
+                return rule
+            return None
+
+        for rule in rules.values():
+            if rule.kind in {RuleKind.LOOP0, RuleKind.LOOP1}:
+                continue
+            # Reuse a consuming prefix only within a consecutive group.
+            # Diagnostic calls still invoke the original rule.
+            prefixes = []
+            alts = rule.flatten().alts
+            i = 0
+            while i < len(alts):
+                prefix_rule = candidate(alts[i])
+                j = i + 1
+                while prefix_rule is not None and j < len(alts) and candidate(alts[j]) is prefix_rule:
+                    j += 1
+                if prefix_rule is not None and j - i > 1:
+                    prefix = CPrefix(f"_prefix_{counter}", prefix_rule.type or "void *")
+                    counter += 1
+                    prefixes.append(prefix)
+                    for alt in alts[i:j]:
+                        self._prefix_calls[alt.items[0]] = prefix
+                i = j
+            self._prefixes[rule.name] = tuple(prefixes)
 
     def prepare_rule(self, rule: Rule, *, skip_actions: bool = False) -> CRule:
         if (signature := self._signatures.get(rule.name)) is None:
@@ -348,6 +420,7 @@ class CCallLowerer:
             leader=rule.leader,
             memoize="memo" in rule.flags and not rule.left_recursive,
             disable_invalid_rules=rule.name.endswith("without_invalid"),
+            prefixes=self._prefixes.get(rule.name, ()),
         )
 
     def prepare_alt(
@@ -365,6 +438,18 @@ class CCallLowerer:
             if recorded is None or recorded[0] is not item.item:
                 raise RuntimeError(f"Item {item} was not discovered")
             call = bind_call(item, recorded[1])
+            if (prefix := self._prefix_calls.get(item)) is not None:
+                result, end, valid = prefix.result, prefix.end, prefix.valid
+                original = call.expression()
+                call = replace(
+                    call,
+                    function=(
+                        f"((!p->call_invalid_rules && {valid}) ? "
+                        f"(p->mark = {end}, {result}) : "
+                        f"({result} = {original}, {end} = p->mark, {valid} = 1, {result}))"
+                    ),
+                    arguments=(),
+                )
             if original_name := call.assigned_variable:
                 name = original_name
                 counter = 0

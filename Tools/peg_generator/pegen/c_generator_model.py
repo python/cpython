@@ -96,6 +96,24 @@ class CAlternative:
 
 
 @dataclass(frozen=True, slots=True)
+class CPrefix:
+    name: str
+    type: str
+
+    @property
+    def result(self) -> str:
+        return self.name + "_result"
+
+    @property
+    def end(self) -> str:
+        return self.name + "_end"
+
+    @property
+    def valid(self) -> str:
+        return self.name + "_valid"
+
+
+@dataclass(frozen=True, slots=True)
 class CRule:
     signature: CRuleSignature
     text: str
@@ -104,6 +122,7 @@ class CRule:
     leader: bool
     memoize: bool
     disable_invalid_rules: bool
+    prefixes: tuple[CPrefix, ...] = ()
 
     @property
     def uses_locations(self) -> bool:
