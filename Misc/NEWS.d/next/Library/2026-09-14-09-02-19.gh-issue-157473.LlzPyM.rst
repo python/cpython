@@ -1,0 +1,3 @@
+Add constant :const:`pyexpat.VERSION_INFO` which provides information about
+the version of the Expat library that was used for building the module.
+:const:`pyexpat.version_info` is now a named tuple.

@@ -60,10 +60,29 @@ This module provides the following exception, type object and data items:
    like ``'expat_2.8.4'``.
 
 
+.. data:: VERSION_INFO
+
+   A named tuple containing the three components of the Expat library
+   version that was used for building the module:
+   *major*, *minor*, and *micro*.
+   All values are integers.
+   The components can also be accessed by name,
+   so ``pyexpat.VERSION_INFO[0]`` is equivalent to
+   ``pyexpat.VERSION_INFO.major`` and so on.
+   This may be different from the Expat library actually used at runtime,
+   which is available as :const:`version_info`.
+
+   .. versionadded:: next
+
+
 .. data:: version_info
 
-   The version of the Expat library loaded by the interpreter,
-   as a tuple of three integers: major, minor and micro version.
+   A named tuple containing the version of the Expat library
+   loaded by the interpreter,
+   with the same fields as :const:`VERSION_INFO`.
+
+   .. versionchanged:: next
+      It is now a named tuple.
 
 
 .. data:: features
