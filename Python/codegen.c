@@ -5640,6 +5640,9 @@ codegen_visit_expr_impl(compiler *c, expr_ty e, bool result_is_unused)
             return _PyCompile_Error(c, loc,
                 "starred assignment target must be in a list or tuple");
         default:
+            /* In non-Store contexts, "lone" star expressions (that is,
+             * ones without a comma after them) should not be allowed by
+             * the grammar. */
             return _PyCompile_Error(c, loc,
                 "can't use starred expression here");
         }
