@@ -17,6 +17,7 @@ from pegen.grammar import (
     Plain,
     Rhs,
     Rule,
+    RuleKind,
     StringLeaf,
 )
 from pegen.grammar_analysis import (
@@ -177,10 +178,14 @@ class ParserGenerator:
         self.counter += 1
         if is_repeat1:
             prefix = "_loop1_"
+            kind = RuleKind.LOOP1
         else:
             prefix = "_loop0_"
+            kind = RuleKind.LOOP0
         name = f"{prefix}{self.counter}"
-        self.all_rules[name] = Rule(name, None, Rhs([Alt([NamedItem(None, node)])]))
+        self.all_rules[name] = Rule(
+            name, None, Rhs([Alt([NamedItem(None, node)])]), kind=kind
+        )
         return name
 
     def artificial_rule_from_gather(self, node: Gather) -> str:
@@ -194,6 +199,7 @@ class ParserGenerator:
             extra_function_name,
             None,
             Rhs([extra_function_alt]),
+            kind=RuleKind.LOOP0,
         )
         self.counter += 1
         name = f"_gather_{self.counter}"
@@ -204,6 +210,7 @@ class ParserGenerator:
             name,
             None,
             Rhs([alt]),
+            kind=RuleKind.GATHER,
         )
         return name
 
