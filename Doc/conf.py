@@ -310,7 +310,7 @@ html_last_updated_use_utc = True
 # Path to find HTML templates to override theme
 templates_path = ['tools/templates']
 
-# Link to sources on GitHub instead of copying them into the HTML output.
+# We link to sources on GitHub, so don't copy them into the HTML output.
 html_copy_source = False
 
 # Custom sidebar templates, filenames relative to this file.
