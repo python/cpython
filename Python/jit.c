@@ -586,13 +586,13 @@ patch_aarch64_trampoline(unsigned char *location, int ordinal, jit_state *state)
     uint32_t *p = (uint32_t *)get_symbol_slot(ordinal, &state->trampolines, TRAMPOLINE_SIZE);
 
     /* Generate the trampoline
-       0: 58000048      ldr     x8, 8
-       4: d61f0100      br      x8
+       0: 58000050      ldr     x16, 8
+       4: d61f0200      br      x16
        8: 00000000      // The next two words contain the 64-bit address to jump to.
        c: 00000000
     */
-    p[0] = 0x58000048;
-    p[1] = 0xD61F0100;
+    p[0] = 0x58000050;
+    p[1] = 0xD61F0200;
     p[2] = value & 0xffffffff;
     p[3] = value >> 32;
 
