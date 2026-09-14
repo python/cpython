@@ -1,0 +1,4 @@
+Fix :func:`gc.get_count` on the free-threaded build resetting the thread-local
+allocation counter that schedules automatic garbage collection. A thread that
+called it while allocating could prevent cyclic garbage from ever being
+collected.
