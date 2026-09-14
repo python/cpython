@@ -1984,7 +1984,7 @@ builtin_anext_impl(PyObject *module, PyObject *aiterator,
     PyObject *awaitable;
 
     t = Py_TYPE(aiterator);
-    if (t->tp_as_async == NULL || t->tp_as_async->am_anext == NULL) {
+    if (t->tp_as_async->am_anext == NULL) {
         PyErr_Format(PyExc_TypeError,
             "'%.200s' object is not an async iterator",
             t->tp_name);

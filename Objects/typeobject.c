@@ -8735,7 +8735,7 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
 
     if (type->tp_as_number != NULL && base->tp_as_number != NULL) {
         basebase = base->tp_base;
-        if (basebase->tp_as_number == NULL)
+        if (basebase != NULL && basebase->tp_as_number == NULL)
             basebase = NULL;
         COPYNUM(nb_add);
         COPYNUM(nb_subtract);
@@ -8776,7 +8776,7 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
 
     if (type->tp_as_async != NULL && base->tp_as_async != NULL) {
         basebase = base->tp_base;
-        if (basebase->tp_as_async == NULL)
+        if (basebase != NULL && basebase->tp_as_async == NULL)
             basebase = NULL;
         COPYASYNC(am_await);
         COPYASYNC(am_aiter);
@@ -8785,7 +8785,7 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
 
     if (type->tp_as_sequence != NULL && base->tp_as_sequence != NULL) {
         basebase = base->tp_base;
-        if (basebase->tp_as_sequence == NULL)
+        if (basebase != NULL && basebase->tp_as_sequence == NULL)
             basebase = NULL;
         COPYSEQ(sq_length);
         COPYSEQ(sq_concat);
@@ -8799,7 +8799,7 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
 
     if (type->tp_as_mapping != NULL && base->tp_as_mapping != NULL) {
         basebase = base->tp_base;
-        if (basebase->tp_as_mapping == NULL)
+        if (basebase != NULL && basebase->tp_as_mapping == NULL)
             basebase = NULL;
         COPYMAP(mp_length);
         COPYMAP(mp_subscript);
@@ -8808,7 +8808,7 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
 
     if (type->tp_as_buffer != NULL && base->tp_as_buffer != NULL) {
         basebase = base->tp_base;
-        if (basebase->tp_as_buffer == NULL)
+        if (basebase != NULL && basebase->tp_as_buffer == NULL)
             basebase = NULL;
         COPYBUF(bf_getbuffer);
         COPYBUF(bf_releasebuffer);
@@ -9012,6 +9012,12 @@ type_ready_set_bases(PyTypeObject *type, int initial)
 }
 
 
+static PyNumberMethods pynumber_methods_null = {0};
+static PySequenceMethods pysequence_methods_null = {0};
+static PyMappingMethods pymapping_methods_null = {0};
+static PyAsyncMethods pyasync_methods_null = {0};
+static PyBufferProcs pybuffer_procs_null = {0};
+
 static int
 type_ready_set_dict(PyTypeObject *type)
 {
@@ -9172,6 +9178,30 @@ type_ready_mro(PyTypeObject *type, int initial)
 }
 
 
+// If a "tp_as_xxx" member is NULL, set it to a structure filled with NULL
+// pointers, so functions using "tp_as_xxx" members don't have to check if
+// it's NULL.
+static void
+type_ready_copy_null_methods(PyTypeObject *type)
+{
+    if (type->tp_as_async == NULL) {
+        type->tp_as_async = &pyasync_methods_null;
+    }
+    if (type->tp_as_number == NULL) {
+        type->tp_as_number = &pynumber_methods_null;
+    }
+    if (type->tp_as_sequence == NULL) {
+        type->tp_as_sequence = &pysequence_methods_null;
+    }
+    if (type->tp_as_mapping == NULL) {
+        type->tp_as_mapping = &pymapping_methods_null;
+    }
+    if (type->tp_as_buffer == NULL) {
+        type->tp_as_buffer = &pybuffer_procs_null;
+    }
+}
+
+
 // For static types, inherit tp_as_xxx structures from the base class
 // if it's NULL.
 //
@@ -9232,6 +9262,7 @@ type_ready_inherit(PyTypeObject *type)
     if (base != NULL) {
         type_ready_inherit_as_structs(type, base);
     }
+    type_ready_copy_null_methods(type);
 
     /* Sanity check for tp_free. */
     if (_PyType_IS_GC(type) && (type->tp_flags & Py_TPFLAGS_BASETYPE) &&
@@ -9928,7 +9959,7 @@ getindex(PyObject *self, PyObject *arg)
         return -1;
     if (i < 0) {
         PySequenceMethods *sq = Py_TYPE(self)->tp_as_sequence;
-        if (sq && sq->sq_length) {
+        if (sq->sq_length) {
             Py_ssize_t n = (*sq->sq_length)(self);
             if (n < 0) {
                 assert(PyErr_Occurred());
@@ -10510,10 +10541,8 @@ FUNCNAME(PyObject *self, PyObject *other) \
     PyObject* stack[2]; \
     PyThreadState *tstate = _PyThreadState_GET(); \
     int do_other = !Py_IS_TYPE(self, Py_TYPE(other)) && \
-        Py_TYPE(other)->tp_as_number != NULL && \
         Py_TYPE(other)->tp_as_number->SLOTNAME == TESTFUNC; \
-    if (Py_TYPE(self)->tp_as_number != NULL && \
-        Py_TYPE(self)->tp_as_number->SLOTNAME == TESTFUNC) { \
+    if (Py_TYPE(self)->tp_as_number->SLOTNAME == TESTFUNC) { \
         PyObject *r; \
         if (do_other && PyType_IsSubtype(Py_TYPE(other), Py_TYPE(self))) { \
             int ok = method_is_overloaded(self, other, &_Py_ID(RDUNDER)); \
@@ -10690,10 +10719,8 @@ slot_nb_power(PyObject *self, PyObject *other, PyObject *modulus)
     PyObject* stack[3];
     PyThreadState *tstate = _PyThreadState_GET();
     int do_other = !Py_IS_TYPE(self, Py_TYPE(other)) &&
-        Py_TYPE(other)->tp_as_number != NULL &&
         Py_TYPE(other)->tp_as_number->nb_power == slot_nb_power;
-    if (Py_TYPE(self)->tp_as_number != NULL &&
-        Py_TYPE(self)->tp_as_number->nb_power == slot_nb_power) {
+    if (Py_TYPE(self)->tp_as_number->nb_power == slot_nb_power) {
         PyObject *r;
         if (do_other && PyType_IsSubtype(Py_TYPE(other), Py_TYPE(self))) {
             int ok = method_is_overloaded(self, other, &_Py_ID(__rpow__));
@@ -11222,7 +11249,6 @@ bufferwrapper_releasebuf(PyObject *self, Py_buffer *view)
     // We only need to call bf_releasebuffer if it's a Python function. If it's a C
     // bf_releasebuf, it will be called when the memoryview is released.
     if (((PyMemoryViewObject *)mv)->view.obj != obj
-            && Py_TYPE(obj)->tp_as_buffer != NULL
             && Py_TYPE(obj)->tp_as_buffer->bf_releasebuffer == slot_bf_releasebuffer) {
         releasebuffer_call_python(obj, view);
     }
@@ -11322,8 +11348,7 @@ releasebuffer_maybe_call_super_unlocked(PyObject *self, Py_buffer *buffer)
             continue;
         }
         PyTypeObject *base_type = (PyTypeObject *)obj;
-        if (base_type->tp_as_buffer != NULL
-            && base_type->tp_as_buffer->bf_releasebuffer != NULL
+        if (base_type->tp_as_buffer->bf_releasebuffer != NULL
             && base_type->tp_as_buffer->bf_releasebuffer != slot_bf_releasebuffer) {
             return base_type->tp_as_buffer->bf_releasebuffer;
         }

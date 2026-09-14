@@ -1132,7 +1132,6 @@ static PyObject *
 actual_complex_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *res = NULL;
-    PyNumberMethods *nbr;
 
     if (PyTuple_GET_SIZE(args) > 1 || (kwargs != NULL && PyDict_GET_SIZE(kwargs))) {
         return complex_new(type, args, kwargs);
@@ -1170,8 +1169,8 @@ actual_complex_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         Py_complex c = ((PyComplexObject*)arg)->cval;
         res = complex_subtype_from_doubles(type, c.real, c.imag);
     }
-    else if ((nbr = Py_TYPE(arg)->tp_as_number) != NULL &&
-             (nbr->nb_float != NULL || nbr->nb_index != NULL))
+    else if ((Py_TYPE(arg)->tp_as_number->nb_float != NULL
+             || Py_TYPE(arg)->tp_as_number->nb_index != NULL))
     {
         /* The argument really is entirely real, and contributes
            nothing in the imaginary direction.
@@ -1231,8 +1230,7 @@ complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i)
     }
 
     nbr = Py_TYPE(r)->tp_as_number;
-    if (nbr == NULL ||
-        (nbr->nb_float == NULL && nbr->nb_index == NULL && !PyComplex_Check(r)))
+    if (nbr->nb_float == NULL && nbr->nb_index == NULL && !PyComplex_Check(r))
     {
         PyErr_Format(PyExc_TypeError,
                      "complex() argument 'real' must be a real number, not %T",
@@ -1244,8 +1242,7 @@ complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i)
     }
     if (i != NULL) {
         nbi = Py_TYPE(i)->tp_as_number;
-        if (nbi == NULL ||
-            (nbi->nb_float == NULL && nbi->nb_index == NULL && !PyComplex_Check(i)))
+        if (nbi->nb_float == NULL && nbi->nb_index == NULL && !PyComplex_Check(i))
         {
             PyErr_Format(PyExc_TypeError,
                          "complex() argument 'imag' must be a real number, not %T",
@@ -1277,8 +1274,7 @@ complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i)
             Py_DECREF(r);
         }
         nbr = Py_TYPE(orig_r)->tp_as_number;
-        if (nbr == NULL ||
-            (nbr->nb_float == NULL && nbr->nb_index == NULL))
+        if (nbr->nb_float == NULL && nbr->nb_index == NULL)
         {
             if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
                     "complex() argument 'real' must be a real number, not %T",

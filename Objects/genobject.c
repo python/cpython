@@ -1256,7 +1256,6 @@ gen_is_coroutine(PyObject *o)
 PyObject *
 _PyCoro_GetAwaitableIter(PyObject *o)
 {
-    unaryfunc getter = NULL;
     PyTypeObject *ot;
 
     if (PyCoro_CheckExact(o) || gen_is_coroutine(o)) {
@@ -1265,9 +1264,7 @@ _PyCoro_GetAwaitableIter(PyObject *o)
     }
 
     ot = Py_TYPE(o);
-    if (ot->tp_as_async != NULL) {
-        getter = ot->tp_as_async->am_await;
-    }
+    unaryfunc getter = ot->tp_as_async->am_await;
     if (getter != NULL) {
         PyObject *res = (*getter)(o);
         if (res != NULL) {

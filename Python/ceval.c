@@ -3546,7 +3546,7 @@ _PyEval_FormatExcUnbound(PyThreadState *tstate, PyCodeObject *co, int oparg)
 void
 _PyEval_FormatAwaitableError(PyThreadState *tstate, PyTypeObject *type, int oparg)
 {
-    if (type->tp_as_async == NULL || type->tp_as_async->am_await == NULL) {
+    if (type->tp_as_async->am_await == NULL) {
         if (oparg == 1) {
             _PyErr_Format(tstate, PyExc_TypeError,
                           "'async with' received an object from __aenter__ "
@@ -3609,16 +3609,12 @@ void Py_LeaveRecursiveCall(void)
 PyObject *
 _PyEval_GetANext(PyObject *aiter)
 {
-    unaryfunc getter = NULL;
     PyObject *next_iter = NULL;
     PyTypeObject *type = Py_TYPE(aiter);
     if (PyAsyncGen_CheckExact(aiter)) {
         return type->tp_as_async->am_anext(aiter);
     }
-    if (type->tp_as_async != NULL){
-        getter = type->tp_as_async->am_anext;
-    }
-
+    unaryfunc getter = type->tp_as_async->am_anext;
     if (getter != NULL) {
         next_iter = (*getter)(aiter);
         if (next_iter == NULL) {

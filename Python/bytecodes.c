@@ -1286,13 +1286,11 @@ dummy_func(
 
         op(_GUARD_NOS_DICT_SUBSCRIPT, (nos, unused -- nos, unused)) {
             PyObject *o = PyStackRef_AsPyObjectBorrow(nos);
-            DEOPT_IF(!Py_TYPE(o)->tp_as_mapping);
             DEOPT_IF(Py_TYPE(o)->tp_as_mapping->mp_subscript != _PyDict_Subscript);
         }
 
         op(_GUARD_NOS_DICT_STORE_SUBSCRIPT, (unused, nos, unused -- unused, nos, unused)) {
             PyObject *o = PyStackRef_AsPyObjectBorrow(nos);
-            DEOPT_IF(!Py_TYPE(o)->tp_as_mapping);
             DEOPT_IF(Py_TYPE(o)->tp_as_mapping->mp_ass_subscript != _PyDict_StoreSubscript);
         }
 
@@ -1605,15 +1603,11 @@ dummy_func(
             _RETURN_VALUE;
 
         inst(GET_AITER, (obj -- iter)) {
-            unaryfunc getter = NULL;
             PyObject *obj_o = PyStackRef_AsPyObjectBorrow(obj);
             PyObject *iter_o;
             PyTypeObject *type = Py_TYPE(obj_o);
 
-            if (type->tp_as_async != NULL) {
-                getter = type->tp_as_async->am_aiter;
-            }
-
+            unaryfunc getter = type->tp_as_async->am_aiter;
             if (getter == NULL) {
                 _PyErr_Format(tstate, PyExc_TypeError,
                               "'async for' requires an object with "
@@ -1627,8 +1621,7 @@ dummy_func(
             PyStackRef_CLOSE(obj);
             ERROR_IF(iter_o == NULL);
 
-            if (Py_TYPE(iter_o)->tp_as_async == NULL ||
-                    Py_TYPE(iter_o)->tp_as_async->am_anext == NULL) {
+            if (Py_TYPE(iter_o)->tp_as_async->am_anext == NULL) {
 
                 _PyErr_Format(tstate, PyExc_TypeError,
                               "'async for' received an object from __aiter__ "

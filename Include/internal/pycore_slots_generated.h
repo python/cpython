@@ -153,130 +153,88 @@ _PySlot_type_getslot(PyTypeObject *tp, uint16_t slot_id)
 {
     switch (slot_id) {
         case Py_mp_subscript:
-            if (!(tp->tp_as_mapping)) return NULL;
             return (void*)tp->tp_as_mapping->mp_subscript;
         case Py_nb_absolute:
-            if (!(tp->tp_as_number)) return NULL;
             return (void*)tp->tp_as_number->nb_absolute;
         case Py_nb_add:
-            if (!(tp->tp_as_number)) return NULL;
             return (void*)tp->tp_as_number->nb_add;
         case Py_nb_and:
-            if (!(tp->tp_as_number)) return NULL;
             return (void*)tp->tp_as_number->nb_and;
         case Py_nb_bool:
-            if (!(tp->tp_as_number)) return NULL;
             return (void*)tp->tp_as_number->nb_bool;
         case Py_nb_divmod:
-            if (!(tp->tp_as_number)) return NULL;
             return (void*)tp->tp_as_number->nb_divmod;
         case Py_nb_float:
-            if (!(tp->tp_as_number)) return NULL;
             return (void*)tp->tp_as_number->nb_float;
         case Py_nb_floor_divide:
-            if (!(tp->tp_as_number)) return NULL;
             return (void*)tp->tp_as_number->nb_floor_divide;
         case Py_nb_index:
-            if (!(tp->tp_as_number)) return NULL;
             return (void*)tp->tp_as_number->nb_index;
         case Py_nb_inplace_add:
-            if (!(tp->tp_as_number)) return NULL;
             return (void*)tp->tp_as_number->nb_inplace_add;
         case Py_nb_inplace_and:
-            if (!(tp->tp_as_number)) return NULL;
             return (void*)tp->tp_as_number->nb_inplace_and;
         case Py_nb_inplace_floor_divide:
-            if (!(tp->tp_as_number)) return NULL;
             return (void*)tp->tp_as_number->nb_inplace_floor_divide;
         case Py_nb_inplace_lshift:
-            if (!(tp->tp_as_number)) return NULL;
             return (void*)tp->tp_as_number->nb_inplace_lshift;
         case Py_nb_inplace_multiply:
-            if (!(tp->tp_as_number)) return NULL;
             return (void*)tp->tp_as_number->nb_inplace_multiply;
         case Py_nb_inplace_or:
-            if (!(tp->tp_as_number)) return NULL;
             return (void*)tp->tp_as_number->nb_inplace_or;
         case Py_nb_inplace_power:
-            if (!(tp->tp_as_number)) return NULL;
             return (void*)tp->tp_as_number->nb_inplace_power;
         case Py_nb_inplace_remainder:
-            if (!(tp->tp_as_number)) return NULL;
             return (void*)tp->tp_as_number->nb_inplace_remainder;
         case Py_nb_inplace_rshift:
-            if (!(tp->tp_as_number)) return NULL;
             return (void*)tp->tp_as_number->nb_inplace_rshift;
         case Py_nb_inplace_subtract:
-            if (!(tp->tp_as_number)) return NULL;
             return (void*)tp->tp_as_number->nb_inplace_subtract;
         case Py_nb_inplace_true_divide:
-            if (!(tp->tp_as_number)) return NULL;
             return (void*)tp->tp_as_number->nb_inplace_true_divide;
         case Py_nb_inplace_xor:
-            if (!(tp->tp_as_number)) return NULL;
             return (void*)tp->tp_as_number->nb_inplace_xor;
         case Py_nb_int:
-            if (!(tp->tp_as_number)) return NULL;
             return (void*)tp->tp_as_number->nb_int;
         case Py_nb_invert:
-            if (!(tp->tp_as_number)) return NULL;
             return (void*)tp->tp_as_number->nb_invert;
         case Py_nb_lshift:
-            if (!(tp->tp_as_number)) return NULL;
             return (void*)tp->tp_as_number->nb_lshift;
         case Py_nb_multiply:
-            if (!(tp->tp_as_number)) return NULL;
             return (void*)tp->tp_as_number->nb_multiply;
         case Py_nb_negative:
-            if (!(tp->tp_as_number)) return NULL;
             return (void*)tp->tp_as_number->nb_negative;
         case Py_nb_or:
-            if (!(tp->tp_as_number)) return NULL;
             return (void*)tp->tp_as_number->nb_or;
         case Py_nb_positive:
-            if (!(tp->tp_as_number)) return NULL;
             return (void*)tp->tp_as_number->nb_positive;
         case Py_nb_power:
-            if (!(tp->tp_as_number)) return NULL;
             return (void*)tp->tp_as_number->nb_power;
         case Py_nb_remainder:
-            if (!(tp->tp_as_number)) return NULL;
             return (void*)tp->tp_as_number->nb_remainder;
         case Py_nb_rshift:
-            if (!(tp->tp_as_number)) return NULL;
             return (void*)tp->tp_as_number->nb_rshift;
         case Py_nb_subtract:
-            if (!(tp->tp_as_number)) return NULL;
             return (void*)tp->tp_as_number->nb_subtract;
         case Py_nb_true_divide:
-            if (!(tp->tp_as_number)) return NULL;
             return (void*)tp->tp_as_number->nb_true_divide;
         case Py_nb_xor:
-            if (!(tp->tp_as_number)) return NULL;
             return (void*)tp->tp_as_number->nb_xor;
         case Py_sq_ass_item:
-            if (!(tp->tp_as_sequence)) return NULL;
             return (void*)tp->tp_as_sequence->sq_ass_item;
         case Py_sq_concat:
-            if (!(tp->tp_as_sequence)) return NULL;
             return (void*)tp->tp_as_sequence->sq_concat;
         case Py_sq_contains:
-            if (!(tp->tp_as_sequence)) return NULL;
             return (void*)tp->tp_as_sequence->sq_contains;
         case Py_sq_inplace_concat:
-            if (!(tp->tp_as_sequence)) return NULL;
             return (void*)tp->tp_as_sequence->sq_inplace_concat;
         case Py_sq_inplace_repeat:
-            if (!(tp->tp_as_sequence)) return NULL;
             return (void*)tp->tp_as_sequence->sq_inplace_repeat;
         case Py_sq_item:
-            if (!(tp->tp_as_sequence)) return NULL;
             return (void*)tp->tp_as_sequence->sq_item;
         case Py_sq_length:
-            if (!(tp->tp_as_sequence)) return NULL;
             return (void*)tp->tp_as_sequence->sq_length;
         case Py_sq_repeat:
-            if (!(tp->tp_as_sequence)) return NULL;
             return (void*)tp->tp_as_sequence->sq_repeat;
         case Py_tp_alloc:
             return (void*)tp->tp_alloc;
@@ -335,24 +293,18 @@ _PySlot_type_getslot(PyTypeObject *tp, uint16_t slot_id)
         case Py_tp_free:
             return (void*)tp->tp_free;
         case Py_nb_matrix_multiply:
-            if (!(tp->tp_as_number)) return NULL;
             return (void*)tp->tp_as_number->nb_matrix_multiply;
         case Py_nb_inplace_matrix_multiply:
-            if (!(tp->tp_as_number)) return NULL;
             return (void*)tp->tp_as_number->nb_inplace_matrix_multiply;
         case Py_am_await:
-            if (!(tp->tp_as_async)) return NULL;
             return (void*)tp->tp_as_async->am_await;
         case Py_am_aiter:
-            if (!(tp->tp_as_async)) return NULL;
             return (void*)tp->tp_as_async->am_aiter;
         case Py_am_anext:
-            if (!(tp->tp_as_async)) return NULL;
             return (void*)tp->tp_as_async->am_anext;
         case Py_tp_finalize:
             return (void*)tp->tp_finalize;
         case Py_am_send:
-            if (!(tp->tp_as_async)) return NULL;
             return (void*)tp->tp_as_async->am_send;
         case Py_tp_vectorcall:
             return (void*)tp->tp_vectorcall;
@@ -360,16 +312,12 @@ _PySlot_type_getslot(PyTypeObject *tp, uint16_t slot_id)
             if (!(tp->tp_flags & Py_TPFLAGS_HEAPTYPE)) return NULL;
             return (void*)((PyHeapTypeObject*)tp)->ht_token;
         case Py_bf_getbuffer:
-            if (!(tp->tp_as_buffer)) return NULL;
             return (void*)tp->tp_as_buffer->bf_getbuffer;
         case Py_bf_releasebuffer:
-            if (!(tp->tp_as_buffer)) return NULL;
             return (void*)tp->tp_as_buffer->bf_releasebuffer;
         case Py_mp_ass_subscript:
-            if (!(tp->tp_as_mapping)) return NULL;
             return (void*)tp->tp_as_mapping->mp_ass_subscript;
         case Py_mp_length:
-            if (!(tp->tp_as_mapping)) return NULL;
             return (void*)tp->tp_as_mapping->mp_length;
     }
     _PySlot_err_bad_slot("PyType_GetSlot", slot_id);

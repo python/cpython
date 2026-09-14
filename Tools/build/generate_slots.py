@@ -216,10 +216,14 @@ def write_private_header(f, slots):
                             val = f'((PyHeapTypeObject*)tp)->{field}'
                         else:
                             table = TABLES[table_ident]
-                            cond = f'tp->tp_{table}'
+                            if not table.startswith('as_'):
+                                cond = f'tp->tp_{table}'
+                            else:
+                                cond = None
                             val = f'tp->tp_{table}->{field}'
                         out(f'case {slot.name}:')
-                        out(f'    if (!({cond})) return NULL;')
+                        if cond:
+                            out(f'    if (!({cond})) return NULL;')
                         out(f'    return (void*){val};')
         out(f'_PySlot_err_bad_slot("PyType_GetSlot", slot_id);')
         out(f'return NULL;')

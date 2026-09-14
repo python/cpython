@@ -1389,7 +1389,7 @@ convertbuffer(PyObject *arg, const void **p, const char **errmsg)
 
     *errmsg = NULL;
     *p = NULL;
-    if (pb != NULL && pb->bf_releasebuffer != NULL) {
+    if (pb->bf_releasebuffer != NULL) {
         *errmsg = "read-only bytes-like object";
         return -1;
     }

@@ -661,11 +661,6 @@
             {
                 nos = stack_pointer[-2];
                 PyObject *o = PyStackRef_AsPyObjectBorrow(nos);
-                if (!Py_TYPE(o)->tp_as_mapping) {
-                    UPDATE_MISS_STATS(BINARY_OP);
-                    assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    JUMP_TO_PREDICTED(BINARY_OP);
-                }
                 if (Py_TYPE(o)->tp_as_mapping->mp_subscript != _PyDict_Subscript) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
@@ -6708,13 +6703,10 @@
             _PyStackRef obj;
             _PyStackRef iter;
             obj = stack_pointer[-1];
-            unaryfunc getter = NULL;
             PyObject *obj_o = PyStackRef_AsPyObjectBorrow(obj);
             PyObject *iter_o;
             PyTypeObject *type = Py_TYPE(obj_o);
-            if (type->tp_as_async != NULL) {
-                getter = type->tp_as_async->am_aiter;
-            }
+            unaryfunc getter = type->tp_as_async->am_aiter;
             if (getter == NULL) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyFrame_StackPointerValidate(frame);
@@ -6744,8 +6736,7 @@
             if (iter_o == NULL) {
                 JUMP_TO_LABEL(error);
             }
-            if (Py_TYPE(iter_o)->tp_as_async == NULL ||
-                Py_TYPE(iter_o)->tp_as_async->am_anext == NULL) {
+            if (Py_TYPE(iter_o)->tp_as_async->am_anext == NULL) {
                 assert(stack_pointer == _PyFrame_GetStackPointer(frame));
                 _PyFrame_StackPointerValidate(frame);
                 _PyErr_Format(tstate, PyExc_TypeError,
@@ -12683,11 +12674,6 @@
             {
                 nos = stack_pointer[-2];
                 PyObject *o = PyStackRef_AsPyObjectBorrow(nos);
-                if (!Py_TYPE(o)->tp_as_mapping) {
-                    UPDATE_MISS_STATS(STORE_SUBSCR);
-                    assert(_PyOpcode_Deopt[opcode] == (STORE_SUBSCR));
-                    JUMP_TO_PREDICTED(STORE_SUBSCR);
-                }
                 if (Py_TYPE(o)->tp_as_mapping->mp_ass_subscript != _PyDict_StoreSubscript) {
                     UPDATE_MISS_STATS(STORE_SUBSCR);
                     assert(_PyOpcode_Deopt[opcode] == (STORE_SUBSCR));
