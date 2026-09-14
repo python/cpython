@@ -105,10 +105,23 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 |                 |                   | reserved for return       |
 |                 |                   | annotations.              |
 +-----------------+-------------------+---------------------------+
+|                 | __annotate__      | The annotate function for |
+|                 |                   | lazy evaluation of        |
+|                 |                   | :ref:`annotations         |
+|                 |                   | <annotations-howto>`, or  |
+|                 |                   | None if the function has  |
+|                 |                   | no annotations.           |
++-----------------+-------------------+---------------------------+
 |                 | __type_params__   | A tuple containing the    |
 |                 |                   | :ref:`type parameters     |
 |                 |                   | <type-params>` of         |
 |                 |                   | a generic function        |
++-----------------+-------------------+---------------------------+
+|                 | __closure__       | Contains the cells that   |
+|                 |                   | store values for free     |
+|                 |                   | variables (variables from |
+|                 |                   | outer scopes) used in     |
+|                 |                   | nested functions.         |
 +-----------------+-------------------+---------------------------+
 |                 | __module__        | name of module in which   |
 |                 |                   | this function was defined |
@@ -351,7 +364,8 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 
 .. versionchanged:: 3.14
 
-   Add ``f_generator`` attribute to frames.
+   Add ``__annotate__`` attribute to functions and ``f_generator`` attribute
+   to frames.
 
 .. versionchanged:: 3.15
 
