@@ -224,6 +224,47 @@ ascii_escape_unicode_and_size(const void *input, int kind, Py_ssize_t input_char
 }
 
 static PyObject *
+quote_unescaped_ascii(PyObject *pystr)
+{
+    assert(PyUnicode_IS_ASCII(pystr));
+    Py_ssize_t len = PyUnicode_GET_LENGTH(pystr);
+    PyObject *rval = PyUnicode_New(len + 2, 127);
+    if (rval == NULL) {
+        return NULL;
+    }
+    Py_UCS1 *output = PyUnicode_1BYTE_DATA(rval);
+    output[0] = '"';
+    memcpy(output + 1, PyUnicode_1BYTE_DATA(pystr), (size_t)len);
+    output[len + 1] = '"';
+#ifdef Py_DEBUG
+    assert(_PyUnicode_CheckConsistency(rval, 1));
+#endif
+    return rval;
+}
+
+static PyObject *
+quote_unescaped_unicode(PyObject *pystr)
+{
+    Py_ssize_t len = PyUnicode_GET_LENGTH(pystr);
+    PyObject *rval = PyUnicode_New(len + 2, PyUnicode_MAX_CHAR_VALUE(pystr));
+    if (rval == NULL) {
+        return NULL;
+    }
+    int kind = PyUnicode_KIND(rval);
+    void *data = PyUnicode_DATA(rval);
+    /* No escapes means the output has the same maxchar class as the input,
+       so PyUnicode_New() gave us the same kind and a raw copy is valid. */
+    assert(kind == PyUnicode_KIND(pystr));
+    PyUnicode_WRITE(kind, data, 0, '"');
+    memcpy((char *)data + kind, PyUnicode_DATA(pystr), (size_t)len * kind);
+    PyUnicode_WRITE(kind, data, len + 1, '"');
+#ifdef Py_DEBUG
+    assert(_PyUnicode_CheckConsistency(rval, 1));
+#endif
+    return rval;
+}
+
+static PyObject *
 ascii_escape_unicode(PyObject *pystr)
 {
     /* Take a PyUnicode pystr and return a new ASCII-only escaped PyUnicode */
@@ -234,6 +275,11 @@ ascii_escape_unicode(PyObject *pystr)
     Py_ssize_t output_size = ascii_escape_size(input, kind, input_chars);
     if (output_size < 0) {
         return NULL;
+    }
+
+    if (output_size == input_chars + 2) {
+        /* No escaping needed, so every character is printable ASCII */
+        return quote_unescaped_ascii(pystr);
     }
 
     return ascii_escape_unicode_and_size(input, kind, input_chars, output_size);
@@ -381,6 +427,10 @@ escape_unicode(PyObject *pystr)
     Py_ssize_t output_size = escape_size(input, kind, input_chars);
     if (output_size < 0) {
         return NULL;
+    }
+
+    if (output_size == input_chars + 2) {
+        return quote_unescaped_unicode(pystr);
     }
 
     return escape_unicode_and_size(input, kind, maxchar, input_chars, output_size);
