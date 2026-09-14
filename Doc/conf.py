@@ -77,6 +77,8 @@ _doc_authors = 'Python documentation authors'
 # and replace the values accordingly.
 # See Doc/tools/extensions/patchlevel.py
 version, release = get_version_info()
+v = get_header_version_info()
+branch = "main" if v.releaselevel == "alpha" else f"{v.major}.{v.minor}"
 
 rst_epilog = f"""
 .. |python_version_literal| replace:: ``Python {version}``
@@ -297,6 +299,7 @@ html_context = {
     "repository_url": repository_url or None,
     "pr_id": os.getenv("READTHEDOCS_VERSION"),
     "enable_analytics": os.getenv("PYTHON_DOCS_ENABLE_ANALYTICS"),
+    "source_branch": branch,
 }
 
 # This 'Last updated on:' timestamp is inserted at the bottom of every page.
@@ -559,9 +562,6 @@ linkcheck_ignore = [
 
 # Options for sphinx.ext.extlinks
 # -------------------------------
-
-v = get_header_version_info()
-branch = "main" if v.releaselevel == "alpha" else f"{v.major}.{v.minor}"
 
 # This config is a dictionary of external sites,
 # mapping unique short aliases to a base URL and a prefix.
