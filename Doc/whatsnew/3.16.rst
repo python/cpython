@@ -758,10 +758,10 @@ xml
   building a tree for it.
   (Contributed by Serhiy Storchaka in :gh:`63102`.)
 
-* Added constant :const:`~pyexpat.VERSION_INFO` in the
+* Added constant :const:`~xml.parsers.expat.VERSION_INFO` in the
   :mod:`XML parser <xml.parsers.expat>` module, which provides information
   about the version of the Expat library that was used for building the module.
-  :const:`~pyexpat.version_info` is now a named tuple.
+  :const:`~xml.parsers.expat.version_info` is now a named tuple.
   (Contributed by Serhiy Storchaka in :gh:`157473`.)
 
 zipfile

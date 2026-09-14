@@ -67,8 +67,8 @@ This module provides the following exception, type object and data items:
    *major*, *minor*, and *micro*.
    All values are integers.
    The components can also be accessed by name,
-   so ``pyexpat.VERSION_INFO[0]`` is equivalent to
-   ``pyexpat.VERSION_INFO.major`` and so on.
+   so ``xml.parsers.expat.VERSION_INFO[0]`` is equivalent to
+   ``xml.parsers.expat.VERSION_INFO.major`` and so on.
    This may be different from the Expat library actually used at runtime,
    which is available as :const:`version_info`.
 
