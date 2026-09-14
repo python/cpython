@@ -2152,8 +2152,7 @@ _parser_init(void *arg)
     struct _PyArg_Parser *parser = (struct _PyArg_Parser *)arg;
     const char * const *keywords = parser->keywords;
     assert(keywords != NULL);
-    assert(parser->pos == 0 &&
-           (parser->format == NULL || parser->fname == NULL) &&
+    assert((parser->format == NULL || parser->fname == NULL) &&
            parser->custom_msg == NULL &&
            parser->min == 0 &&
            parser->max == 0);
@@ -2162,6 +2161,7 @@ _parser_init(void *arg)
     if (scan_keywords(keywords, &len, &pos) < 0) {
         return -1;
     }
+    assert(parser->pos == 0 || parser->pos == pos);  // may be set statically
 
     const char *fname, *custommsg = NULL;
     int min = 0, max = 0;
@@ -2211,8 +2211,9 @@ _parser_init(void *arg)
     parser->custom_msg = custommsg;
     parser->min = min;
     parser->max = max;
-    parser->kwtuple = kwtuple;
     parser->is_kwtuple_owned = owned;
+    // Set last: see _PyArg_UnpackKeywords()
+    _Py_atomic_store_ptr_release(&parser->kwtuple, kwtuple);
 
     assert(parser->next == NULL);
     parser->next = _Py_atomic_load_ptr(&_PyRuntime.getargs.static_parsers);
@@ -2243,7 +2244,6 @@ parser_clear(struct _PyArg_Parser *parser)
         assert(parser->fname != NULL);
     }
     parser->custom_msg = NULL;
-    parser->pos = 0;
     parser->min = 0;
     parser->max = 0;
     parser->is_kwtuple_owned = 0;
@@ -2546,11 +2546,19 @@ _PyArg_UnpackKeywords(PyObject *const *args, Py_ssize_t nargs,
         args = buf;
     }
 
-    if (parser_init(parser) < 0) {
-        return NULL;
+    // No initialization needed for a static kwtuple
+    kwtuple = _Py_atomic_load_ptr_acquire(&parser->kwtuple);
+    if (kwtuple == NULL) {
+        if (parser_init(parser) < 0) {
+            return NULL;
+        }
+        kwtuple = parser->kwtuple;
     }
-
-    kwtuple = parser->kwtuple;
+#ifndef NDEBUG
+    for (i = 0; parser->keywords[i] && !*parser->keywords[i]; i++) {
+    }
+    assert(parser->pos == i);
+#endif
     posonly = parser->pos;
     minposonly = Py_MIN(posonly, minpos);
     maxargs = posonly + (int)PyTuple_GET_SIZE(kwtuple);

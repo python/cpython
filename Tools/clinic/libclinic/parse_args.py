@@ -20,6 +20,7 @@ def declare_parser(
     f: Function,
     *,
     hasformat: bool = False,
+    pos_only: int = 0,
     codegen: CodeGen,
 ) -> str:
     """
@@ -87,15 +88,16 @@ def declare_parser(
         codegen.add_include('pycore_runtime.h', '_Py_ID()',
                             condition=condition)
 
+    fields = ['.keywords = _keywords,', format_ or fname, '.kwtuple = KWTUPLE,']
+    if pos_only:
+        fields.append(f'.pos = {pos_only},')
     declarations += """
             static const char * const _keywords[] = {{{keywords_c} NULL}};
             static _PyArg_Parser _parser = {{
-                .keywords = _keywords,
                 %s
-                .kwtuple = KWTUPLE,
             }};
             #undef KWTUPLE
-    """ % (format_ or fname)
+    """ % '\n                '.join(fields)
     return libclinic.normalize_snippet(declarations)
 
 
@@ -1144,7 +1146,8 @@ class ParseArgsCodeGen:
             if self.fastcall:
                 self.flags = "METH_FASTCALL|METH_KEYWORDS"
                 self.parser_prototype = PARSER_PROTOTYPE_FASTCALL_KEYWORDS
-                self.declarations = declare_parser(self.func, codegen=self.codegen)
+                self.declarations = declare_parser(self.func, codegen=self.codegen,
+                                                   pos_only=self.pos_only)
                 self.declarations += "\nPyObject *argsbuf[%s];" % (len(self.converters) or 1)
                 if self.varpos:
                     self.declarations += "\nPyObject * const *fastargs;"
@@ -1163,7 +1166,8 @@ class ParseArgsCodeGen:
                 self.parser_prototype = PARSER_PROTOTYPE_KEYWORD_HELPER
                 argsname = 'fastargs'
                 argname_fmt = 'fastargs[%d]'
-                self.declarations = declare_parser(self.func, codegen=self.codegen)
+                self.declarations = declare_parser(self.func, codegen=self.codegen,
+                                                   pos_only=self.pos_only)
                 self.declarations += "\nPyObject *argsbuf[%s];" % (len(self.converters) or 1)
                 self.declarations += "\nPyObject * const *fastargs;"
                 if has_optional_kw:
@@ -1177,7 +1181,8 @@ class ParseArgsCodeGen:
                 self.parser_prototype = PARSER_PROTOTYPE_KEYWORD
                 argsname = 'fastargs'
                 argname_fmt = 'fastargs[%d]'
-                self.declarations = declare_parser(self.func, codegen=self.codegen)
+                self.declarations = declare_parser(self.func, codegen=self.codegen,
+                                                   pos_only=self.pos_only)
                 self.declarations += "\nPyObject *argsbuf[%s];" % (len(self.converters) or 1)
                 self.declarations += "\nPyObject * const *fastargs;"
                 self.declarations += "\nPy_ssize_t nargs = PyTuple_GET_SIZE(args);"

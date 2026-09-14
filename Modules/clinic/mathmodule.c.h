@@ -1012,6 +1012,7 @@ math_prod(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
         .keywords = _keywords,
         .fname = "prod",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
@@ -1082,6 +1083,7 @@ math_nextafter(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
         .keywords = _keywords,
         .fname = "nextafter",
         .kwtuple = KWTUPLE,
+        .pos = 2,
     };
     #undef KWTUPLE
     PyObject *argsbuf[3];
@@ -1164,4 +1166,4 @@ math_ulp(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=3452ce8caa2d1bd7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7820b7b4210b69a0 input=a9049054013a1b77]*/

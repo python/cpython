@@ -176,6 +176,7 @@ _asyncio_Future_set_result(PyObject *self, PyTypeObject *cls, PyObject *const *a
         .keywords = _keywords,
         .fname = "set_result",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -226,6 +227,7 @@ _asyncio_Future_set_exception(PyObject *self, PyTypeObject *cls, PyObject *const
         .keywords = _keywords,
         .fname = "set_exception",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -291,6 +293,7 @@ _asyncio_Future_add_done_callback(PyObject *self, PyTypeObject *cls, PyObject *c
         .keywords = _keywords,
         .fname = "add_done_callback",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
@@ -347,6 +350,7 @@ _asyncio_Future_remove_done_callback(PyObject *self, PyTypeObject *cls, PyObject
         .keywords = _keywords,
         .fname = "remove_done_callback",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -2258,4 +2262,4 @@ _asyncio_future_discard_from_awaited_by(PyObject *module, PyObject *const *args,
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=46d50c477614b57e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f42ee6fcf2fca4f0 input=a9049054013a1b77]*/

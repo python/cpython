@@ -66,6 +66,7 @@ _io__TextIOBase_read(PyObject *self, PyTypeObject *cls, PyObject *const *args, P
         .keywords = _keywords,
         .fname = "read",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -121,6 +122,7 @@ _io__TextIOBase_readline(PyObject *self, PyTypeObject *cls, PyObject *const *arg
         .keywords = _keywords,
         .fname = "readline",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -176,6 +178,7 @@ _io__TextIOBase_write(PyObject *self, PyTypeObject *cls, PyObject *const *args, 
         .keywords = _keywords,
         .fname = "write",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -1362,4 +1365,4 @@ _io_TextIOWrapper_buffer_get(PyObject *self, void *Py_UNUSED(context))
 
     return return_value;
 }
-/*[clinic end generated code: output=e93032a0691ff0e4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=288255702d785163 input=a9049054013a1b77]*/
