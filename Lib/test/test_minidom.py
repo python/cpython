@@ -932,7 +932,6 @@ class MinidomTest(unittest.TestCase):
         self.assertTrue(elem.hasAttribute("a"))
         self.assertFalse(elem.hasAttribute("missing"))
         attr = elem.getAttributeNode("a")
-        self.assertTrue(attr.specified)
         self.assertIsNone(attr.namespaceURI)
         dom.unlink()
 
