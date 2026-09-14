@@ -2006,6 +2006,7 @@ _PyMarshal_WriteObjectToString(PyObject *x, int version, int allow_code)
     if (wf.writer == NULL) {
         return NULL;
     }
+    wf.writer->overallocate = 0;
     wf.ptr = wf.buf = PyBytesWriter_GetData(wf.writer);
     wf.end = wf.ptr + PyBytesWriter_GetSize(wf.writer);
     wf.error = WFERR_OK;
