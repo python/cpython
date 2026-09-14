@@ -3675,27 +3675,51 @@ static PyObject *
 count_repr(PyObject *op)
 {
     countobject *lz = countobject_CAST(op);
-    if (lz->long_cnt == NULL) {
-        Py_ssize_t cnt = FT_ATOMIC_LOAD_SSIZE_RELAXED(lz->cnt);
-        return PyUnicode_FromFormat("%s(%zd)",
-                                    _PyType_Name(Py_TYPE(lz)), cnt);
+    PyObject *long_cnt, *long_step;
+
+    Py_BEGIN_CRITICAL_SECTION(lz);
+    long_cnt = Py_XNewRef(lz->long_cnt);
+    long_step = Py_NewRef(lz->long_step);
+    Py_END_CRITICAL_SECTION();
+
+    if (long_cnt == NULL) {
+        /* Fast mode: cnt is advanced by count_next()'s lock-free atomic CAS,
+           which never takes the critical section above, so read it atomically.
+           Fast mode also implies that long_step is the integer 1. */
+        long_cnt = PyLong_FromSsize_t(FT_ATOMIC_LOAD_SSIZE_RELAXED(lz->cnt));
     }
 
-    if (PyLong_Check(lz->long_step)) {
-        long step = PyLong_AsLong(lz->long_step);
+    /* Don't display step when it is an integer equal to 1 */
+    int hide_step = 0;
+    if (PyLong_Check(long_step)) {
+        long step = PyLong_AsLong(long_step);
         if (step == -1 && PyErr_Occurred()) {
             PyErr_Clear();
         }
-        if (step == 1) {
-            /* Don't display step when it is an integer equal to 1 */
-            return PyUnicode_FromFormat("%s(%R)",
-                                        _PyType_Name(Py_TYPE(lz)),
-                                        lz->long_cnt);
-        }
+        hide_step = (step == 1);
     }
-    return PyUnicode_FromFormat("%s(%R, %R)",
-                                _PyType_Name(Py_TYPE(lz)),
-                                lz->long_cnt, lz->long_step);
+
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
+    int rc = (writer == NULL || long_cnt == NULL) ? -1 : 0;
+    if (rc == 0) {
+        rc = PyUnicodeWriter_Format(writer, "%s(%R",
+                                    _PyType_Name(Py_TYPE(lz)), long_cnt);
+    }
+    if (rc == 0 && !hide_step) {
+        rc = PyUnicodeWriter_Format(writer, ", %R", long_step);
+    }
+    if (rc == 0) {
+        rc = PyUnicodeWriter_WriteChar(writer, ')');
+    }
+
+    Py_XDECREF(long_cnt);
+    Py_DECREF(long_step);
+
+    if (rc < 0) {
+        PyUnicodeWriter_Discard(writer);
+        return NULL;
+    }
+    return PyUnicodeWriter_Finish(writer);
 }
 
 static PyType_Slot count_slots[] = {
