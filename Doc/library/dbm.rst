@@ -253,6 +253,38 @@ functionality like crash tolerance.
    A string of characters the *flag* parameter of :meth:`~dbm.gnu.open` supports.
 
 
+.. data:: GDBM_VERSION_INFO
+
+   A named tuple containing the three components of the GDBM library
+   version that was used for building the module:
+   *major*, *minor*, and *patch*.
+   All values are integers.
+   The components can also be accessed by name,
+   so ``dbm.gnu.GDBM_VERSION_INFO[0]`` is equivalent to
+   ``dbm.gnu.GDBM_VERSION_INFO.major`` and so on.
+   This may be different from the GDBM library actually used at runtime,
+   which is available as :const:`gdbm_version_info`.
+
+   .. versionadded:: next
+
+
+.. data:: gdbm_version_info
+
+   A named tuple containing the version of the GDBM library
+   actually loaded by the interpreter,
+   with the same fields as :const:`GDBM_VERSION_INFO`.
+
+   .. versionadded:: next
+
+
+.. data:: gdbm_version
+
+   The release string of the GDBM library actually loaded by the interpreter,
+   like ``'GDBM version 1.26. 30/07/2025'``.
+
+   .. versionadded:: next
+
+
 .. function:: open(filename, flag="r", mode=0o666, /)
 
    Open a GDBM database and return a :class:`!gdbm` object.
