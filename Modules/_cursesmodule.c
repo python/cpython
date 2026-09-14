@@ -1590,7 +1590,10 @@ complexstr_concat(PyObject *a, PyObject *b)
 {
     cursesmodule_state *state = get_cursesmodule_state_by_cls(Py_TYPE(a));
     if (!Py_IS_TYPE(b, state->complexstr_type)) {
-        Py_RETURN_NOTIMPLEMENTED;
+        PyErr_Format(PyExc_TypeError,
+                     "can only concatenate complexstr to complexstr, not %T",
+                     b);
+        return NULL;
     }
     PyCursesComplexStrObject *sa = _PyCursesComplexStrObject_CAST(a);
     PyCursesComplexStrObject *sb = _PyCursesComplexStrObject_CAST(b);
@@ -4361,6 +4364,7 @@ _curses_window_insnstr_impl(PyCursesWindowObject *self, int group_left_1,
             curses_wattrset(self, attr, "insnstr") < 0)
         {
             curses_release_wstr(strtype, wstr);
+            Py_XDECREF(bytesobj);
             return NULL;
         }
     }
@@ -8863,7 +8867,13 @@ _curses_slk_color_impl(PyObject *module, int pair)
 /*[clinic end generated code: output=ffe4de805f9c65f5 input=b1e691a9cc6177ee]*/
 {
     PyCursesStatefulInitialised(module);
-    return curses_check_err(module, slk_color((short)pair), "slk_color", NULL);
+    int rtn;
+#if _NCURSES_EXTENDED_COLOR_FUNCS
+    rtn = extended_slk_color(pair);
+#else
+    rtn = slk_color((short)pair);
+#endif
+    return curses_check_err(module, rtn, "slk_color", NULL);
 }
 #endif /* HAVE_CURSES_SLK_COLOR */
 

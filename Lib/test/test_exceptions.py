@@ -233,6 +233,33 @@ class ExceptionTests(unittest.TestCase):
         check = self.check
         check('"\\\n"(1 for c in I,\\\n\\', 2, 2)
 
+    def testSyntaxErrorRange(self):
+        # gh-156894: the position was reported in bytes, not in characters,
+        # for the errors which cover a range
+        for source, offset, end_offset in [
+            ('abcd = 00010', 8, 11),
+            ('\u03b1\u03b2\u03b3\u03b4 = 00010', 8, 11),
+            ('a\u0301b\u0308c\u20d7d\u1ab0 = 00010', 12, 15),
+            ("abcd = ub'a'", 8, 10),
+            ("\u03b1\u03b2\u03b3\u03b4 = ub'a'", 8, 10),
+            ("a\u0301b\u0308c\u20d7d\u1ab0 = ub'a'", 12, 14),
+        ]:
+            with self.subTest(source=source):
+                with self.assertRaises(SyntaxError) as cm:
+                    compile(source, '<testcase>', 'exec')
+                self.assertEqual(cm.exception.offset, offset)
+                self.assertEqual(cm.exception.end_offset, end_offset)
+
+    def testSyntaxErrorNonUTF8Offset(self):
+        # gh-157378: the position was reported one column short for each
+        # multi-byte character preceding the invalid byte on the same line
+        check = self.check
+        check(b'X\x80', 1, 2, 1, 2)
+        check(b'\xc3\xa9X\x80', 1, 3, 1, 3)
+        check(b'\t\xc3\xa9X\x80', 1, 4, 1, 4)
+        check(b'a\xc3\xa9b\x80c', 1, 4, 1, 4)
+        check(b'a\n\xc3\xa9X\x80', 2, 3, 2, 3)
+
     def testSyntaxErrorOffset(self):
         check = self.check
         check('def fact(x):\n\treturn x!\n', 2, 10)

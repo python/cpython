@@ -331,6 +331,9 @@ _Py_c_pow(Py_complex a, Py_complex b)
         r.real = len*cos(phase);
         r.imag = len*sin(phase);
 
+        /* Don't rely on errno set by the math functions above, for
+           example cos() and sin() set EDOM for an infinite phase. */
+        errno = 0;
         if (isfinite(a.real) && isfinite(a.imag)
             && isfinite(b.real) && isfinite(b.imag))
         {
@@ -376,8 +379,9 @@ c_powi(Py_complex x, long n)
 double
 _Py_c_abs(Py_complex z)
 {
-    /* sets errno = ERANGE on overflow;  otherwise errno = 0 */
+    /* sets errno = ERANGE on overflow */
     double result;
+    int saved_errno = errno;
 
     if (!isfinite(z.real) || !isfinite(z.imag)) {
         /* C99 rules: if either the real or the imaginary part is an
@@ -385,23 +389,24 @@ _Py_c_abs(Py_complex z)
            NaN. */
         if (isinf(z.real)) {
             result = fabs(z.real);
-            errno = 0;
+            errno = saved_errno;
             return result;
         }
         if (isinf(z.imag)) {
             result = fabs(z.imag);
-            errno = 0;
+            errno = saved_errno;
             return result;
         }
         /* either the real or imaginary part is a NaN,
            and neither is infinite. Result should be NaN. */
+        errno = saved_errno;
         return Py_NAN;
     }
     result = hypot(z.real, z.imag);
     if (!isfinite(result))
         errno = ERANGE;
     else
-        errno = 0;
+        errno = saved_errno;
     return result;
 }
 
@@ -809,7 +814,10 @@ static PyObject *
 complex_abs(PyObject *op)
 {
     PyComplexObject *v = _PyComplexObject_CAST(op);
-    double result = _Py_c_abs(v->cval);
+    double result;
+
+    errno = 0;
+    result = _Py_c_abs(v->cval);
     if (errno == ERANGE) {
         PyErr_SetString(PyExc_OverflowError,
                         "absolute value too large");

@@ -251,6 +251,7 @@ class DSLParser:
     positional_only: bool
     deprecated_positional: VersionTuple | None
     deprecated_keyword: VersionTuple | None
+    deprecated_until: VersionTuple | None
     group_stack: list[int]
     group_count: int
     parameter_state: ParamState
@@ -266,6 +267,7 @@ class DSLParser:
     # Line of the file which is being parsed.
     line_number: int | None
     from_version_re = re.compile(r'([*/]) +\[from +(.+)\]')
+    until_version_re = re.compile(r'\[until +(.+?)\] +(.+)')
     permit_long_summary = False
     permit_long_docstring_body = False
 
@@ -295,6 +297,7 @@ class DSLParser:
         self.positional_only = False
         self.deprecated_positional = None
         self.deprecated_keyword = None
+        self.deprecated_until = None
         self.group_stack = []
         self.group_count = 0
         self.parameter_state: ParamState = ParamState.START
@@ -307,6 +310,7 @@ class DSLParser:
         self.critical_section = False
         self.target_critical_section = []
         self.disable_fastcall = False
+        self.vectorcall: bool = False
         self.permit_long_summary = False
         self.permit_long_docstring_body = False
 
@@ -481,6 +485,11 @@ class DSLParser:
             fail("Can't set @staticmethod, function is not a normal callable")
         self.kind = STATIC_METHOD
 
+    def at_vectorcall(self) -> None:
+        if self.vectorcall:
+            fail("Called @vectorcall twice!")
+        self.vectorcall = True
+
     def at_coexist(self) -> None:
         if self.coexist:
             fail("Called @coexist twice!")
@@ -622,6 +631,17 @@ class DSLParser:
         elif name == '__init__':
             self.kind = METHOD_INIT
 
+        # Validate @vectorcall usage.
+        if self.vectorcall:
+            if not self.kind.new_or_init:
+                fail("@vectorcall can only be used with __init__ and __new__ "
+                     "methods currently")
+            # Guaranteed by the __new__ / __init__ checks above.
+            assert cls is not None
+            if not cls.type_object:
+                fail(f"@vectorcall requires the type object of {cls.name!r}, "
+                     f"which was declared without one")
+
     def resolve_return_converter(
         self, full_name: str, forced_converter: str
     ) -> CReturnConverter:
@@ -750,6 +770,7 @@ class DSLParser:
             target_critical_section=self.target_critical_section,
             forced_text_signature=self.forced_text_signature,
             line_number=self.line_number,
+            vectorcall=self.vectorcall,
         )
         self.add_function(func)
 
@@ -903,6 +924,12 @@ class DSLParser:
         if match:
             line = match[1]
             version = self.parse_version(match[2])
+
+        self.deprecated_until = None
+        match = self.until_version_re.fullmatch(line)
+        if match:
+            self.deprecated_until = self.parse_version(match[1], 'until')
+            line = match[2]
 
         func = self.function
         match line:
@@ -1153,6 +1180,7 @@ class DSLParser:
 
         p = Parameter(parameter_name, kind, function=self.function,
                       converter=converter, default=value,
+                      deprecated_until=self.deprecated_until,
                       group=self.group_stack[-1] if self.group_stack else 0,
                       group_depth=len(self.group_stack),
                       deprecated_positional=self.deprecated_positional,
@@ -1163,6 +1191,26 @@ class DSLParser:
             fail(f"You can't have two parameters named {parameter_name!r}!")
         elif names and parameter_name == names[0] and c_name is None:
             fail(f"Parameter {parameter_name!r} requires a custom C name")
+
+        # A parameter which shares the C variable of a preceding parameter
+        # is an alternative name (an alias) of it.
+        for existing in self.function.parameters.values():
+            if existing.converter.name == converter.name:
+                if not self.keyword_only:
+                    fail(f"Alias {parameter_name!r} of the parameter "
+                         f"{existing.name!r} must be keyword-only.")
+                if value is unspecified:
+                    fail(f"Alias {parameter_name!r} of the parameter "
+                         f"{existing.name!r} must have a default value.")
+                converter.alias_of = existing
+                break
+
+        # A deprecated parameter is going away, so calls which do not pass
+        # it must already be valid.
+        if self.deprecated_until is not None and value is unspecified:
+            fail(f"Deprecated parameter {parameter_name!r} "
+                 f"must have a default value.")
+
 
         key = f"{parameter_name}_as_{c_name}" if c_name else parameter_name
         self.function.parameters[key] = p
@@ -1193,17 +1241,18 @@ class DSLParser:
                     "Annotations must be either a name, a function call, or a string."
                 )
 
-    def parse_version(self, thenceforth: str) -> VersionTuple:
-        """Parse Python version in `[from ...]` marker."""
+    def parse_version(self, version: str, marker: str = 'from') -> VersionTuple:
+        """Parse Python version in `[from ...]` or `[until ...]` marker."""
         assert isinstance(self.function, Function)
 
         try:
-            major, minor = thenceforth.split(".")
+            major, minor = version.split(".")
             return int(major), int(minor)
         except ValueError:
             fail(
-                f"Function {self.function.name!r}: expected format '[from major.minor]' "
-                f"where 'major' and 'minor' are integers; got {thenceforth!r}"
+                f"Function {self.function.name!r}: expected format "
+                f"'[{marker} major.minor]' where 'major' and 'minor' are "
+                f"integers; got {version!r}"
             )
 
     def parse_star(self, function: Function, version: VersionTuple | None) -> None:
@@ -1325,12 +1374,23 @@ class DSLParser:
             fail(f"Function {function.name!r} has an unsupported group configuration. "
                  f"(Unexpected state {self.parameter_state}.d)")
         # fixup preceding parameters
+        deprecated = None
         for p in function.parameters.values():
             if p.kind is inspect.Parameter.POSITIONAL_OR_KEYWORD:
                 if version is None:
                     p.kind = inspect.Parameter.POSITIONAL_ONLY
                 elif p.deprecated_keyword is None:
                     p.deprecated_keyword = version
+            if p.kind is inspect.Parameter.POSITIONAL_ONLY:
+                # A positional-only argument can only be passed after all
+                # preceding ones, so removing a parameter would leave no
+                # way to pass those which follow it.
+                if p.deprecated_until is not None:
+                    deprecated = p
+                elif deprecated is not None:
+                    fail(f"Parameter {p.name!r} cannot follow the deprecated "
+                         f"parameter {deprecated.name!r}: only the last "
+                         f"positional-only parameters can be deprecated.")
 
     def state_parameter_docstring_start(self, line: str) -> None:
         assert self.indent.margin is not None, "self.margin.infer() has not yet been called to set the margin"
@@ -1485,7 +1545,10 @@ class DSLParser:
         lines.insert(0, '{signature}')
 
         # finalize docstring
-        params = f.render_parameters
+        # An alias is not shown in the signature: only one of the
+        # alternative names can be used in a call.
+        params = [p for p in f.render_parameters
+                  if p.converter.alias_of is None]
         parameters = self.format_docstring_parameters(params)
         signature = self.format_docstring_signature(f, params)
         docstring = "\n".join(lines)
@@ -1526,6 +1589,27 @@ class DSLParser:
             fail(f"Function {self.function.name!r} uses '*' more than once.")
 
 
+    def check_vectorcall_parameters(self, lineno: int) -> None:
+        assert self.function is not None
+        if not self.function.vectorcall:
+            return
+        for i, p in enumerate(self.function.parameters.values()):
+            if p.group:
+                fail("@vectorcall does not support optional groups",
+                     line_number=lineno)
+            if p.is_vararg() or p.is_var_keyword():
+                continue
+            if isinstance(p.converter, (self_converter,
+                                        defining_class_converter)):
+                continue
+            parse_arg = p.converter.parse_arg(f'args[{i}]',
+                                              p.get_displayname(i),
+                                              limited_capi=False)
+            if parse_arg is None:
+                fail("@vectorcall requires all converters to support "
+                     f"parse_arg(); parameter {p.name!r} does not",
+                     line_number=lineno)
+
     def do_post_block_processing_cleanup(self, lineno: int) -> None:
         """
         Called when processing the block is done.
@@ -1534,6 +1618,7 @@ class DSLParser:
             return
 
         self.check_remaining_star(lineno)
+        self.check_vectorcall_parameters(lineno)
         try:
             self.function.docstring = self.format_docstring()
         except ClinicError as exc:
