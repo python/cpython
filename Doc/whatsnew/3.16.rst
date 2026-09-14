@@ -340,6 +340,16 @@ concurrent.futures
   (Contributed by xzmeng and Serhiy Storchaka in :gh:`108518`.)
 
 
+decimal
+-------
+
+* Added constants :const:`~decimal.LIBMPDEC_VERSION`,
+  :const:`~decimal.libmpdec_version`, :const:`~decimal.LIBMPDEC_VERSION_INFO`,
+  and :const:`~decimal.libmpdec_version_info` in the C implementation,
+  which provide information about the version of the libmpdec library in use.
+  (Contributed by Serhiy Storchaka in :gh:`157475`.)
+
+
 difflib
 -------
 
