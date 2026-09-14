@@ -178,8 +178,12 @@ Python/frozen_modules/MANIFEST
 /python
 !/Python/
 
-# People's custom https://docs.anthropic.com/en/docs/claude-code/memory configs.
-/.claude/
+# Local AI agent scratch state (per-PR and per-branch notebooks, sandbox
+# experiments) and personal agent overrides, none of which are committed.
+/.claude/pr-*
+/.claude/branch-*
+/.claude/sandbox/
+AGENTS.local.md
 CLAUDE.local.md
 
 #### main branch only stuff below this line, things to backport go above. ####
