@@ -1,0 +1,3 @@
+Empty :mod:`AST <ast>` node representations no longer include ``...`` when
+the recursion depth limit is exceeded, making them easier to distinguish
+from non-empty ones. Patch by Bartosz Sławecki.
