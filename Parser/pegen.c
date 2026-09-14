@@ -197,7 +197,8 @@ _get_keyword_or_name_type(Parser *p, const char *text, Py_ssize_t length)
     return NAME;
 }
 
-// Only names, literals and type comments need their token text.
+// Only names, literals and type comments need their token text. Keyword
+// error actions use fixed spellings; NOTEQUAL keeps its spelling in is_barry.
 static inline int
 token_needs_text(int type)
 {
@@ -285,6 +286,8 @@ _resize_tokens_array(Parser *p) {
     }
     p->tokens = new_tokens;
 
+    // Allocate new tokens together without moving existing ones: parser rules
+    // may still hold pointers into earlier blocks. Parser_Free frees each block.
     Token *chunk = PyMem_Calloc((size_t)(newsize - p->size), sizeof(Token));
     if (chunk == NULL) {
         PyErr_NoMemory();
@@ -643,6 +646,8 @@ _PyPegen_name_from_token(Parser *p, Token* t)
     if (t == NULL) {
         return NULL;
     }
+    // Reuse the AST node when backtracking revisits this token. Memo lookup
+    // starts before the token and restores the position after it on a hit.
     // Token kinds can be memo keys: generated grammar rule IDs start at 1000.
     int mark = p->mark - 1;
     p->mark = mark;
@@ -667,6 +672,7 @@ _PyPegen_name_from_token(Parser *p, Token* t)
         p->error_indicator = 1;
         return NULL;
     }
+    // Parses without identifiers do not need this cache.
     if (p->identifier_cache == NULL) {
         p->identifier_cache = PyMem_Calloc(
             IDENTIFIER_CACHE_SIZE, sizeof(*p->identifier_cache));
@@ -816,6 +822,8 @@ _PyPegen_number_token(Parser *p)
         return NULL;
     }
 
+    // Look up the node at the token's start, as for NAME tokens. A memo hit
+    // advances the mark; on a miss, restore the position after the token.
     p->mark = mark;
     expr_ty cached = NULL;
     if (_PyPegen_is_memoized(p, NUMBER, &cached)) {

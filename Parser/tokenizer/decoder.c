@@ -72,6 +72,8 @@ chunk_set_unicode(struct tok_state *tok, _PyTok_Chunk *chunk,
     return 0;
 }
 
+// The caller must provide len + 2 bytes: normalization can append a final
+// newline and always writes a NUL terminator.
 static void
 normalize_newlines_into(char *result, const char *data, Py_ssize_t len,
                         int preserve_crlf, int add_final_newline,
@@ -305,6 +307,7 @@ store_prepared_source(struct tok_state *tok, const char *data, Py_ssize_t len,
                       int preserve_crlf, int add_final_newline)
 {
     Py_ssize_t pos = 0;
+    // SourceAppendLine copies the bytes, so reuse this buffer for each line.
     char *normalized = NULL;
     Py_ssize_t capacity = 0;
     while (pos < len) {
@@ -336,8 +339,10 @@ store_prepared_source(struct tok_state *tok, const char *data, Py_ssize_t len,
                 tok->done = E_NOMEM;
                 goto error;
             }
+            // Reserve space for an optional final '\n' and the NUL terminator.
             Py_ssize_t needed = line_len + 2;
             if (needed > capacity) {
+                // Grow geometrically to avoid reallocating for every longer line.
                 Py_ssize_t next_capacity = capacity > 0 ? capacity : 256;
                 while (next_capacity < needed) {
                     if (next_capacity > PY_SSIZE_T_MAX / 2) {
