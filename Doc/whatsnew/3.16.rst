@@ -558,6 +558,12 @@ sqlite3
   :exc:`SystemError` or :exc:`ValueError`.
   (Contributed by Jiseok CHOI in :gh:`150449`.)
 
+* Added constants :const:`~sqlite3.SQLITE_VERSION` and
+  :const:`~sqlite3.SQLITE_VERSION_INFO` which provide information
+  about the version of the SQLite library that was used for building the module.
+  :const:`~sqlite3.sqlite_version_info` is now a named tuple.
+  (Contributed by Serhiy Storchaka in :gh:`157470`.)
+
 
 symtable
 --------

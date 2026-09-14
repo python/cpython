@@ -439,6 +439,87 @@ error:
 #endif
 }
 
+PyDoc_STRVAR(sqlite_version_info__doc__,
+"_sqlite3.sqlite_version_info\n\
+\n\
+SQLite version information as a named tuple.");
+
+static PyStructSequence_Field sqlite_version_info_fields[] = {
+    {"major", "Major release number"},
+    {"minor", "Minor release number"},
+    {"patch", "Patch release number"},
+    {0}
+};
+
+static PyStructSequence_Desc sqlite_version_info_desc = {
+    "_sqlite3.sqlite_version_info",     /* name */
+    sqlite_version_info__doc__,         /* doc */
+    sqlite_version_info_fields,         /* fields */
+    3
+};
+
+static PyObject *
+make_sqlite_version_info(PyTypeObject *type, int number)
+{
+    PyObject *version;
+    int pos = 0;
+    int major = number / 1000000;
+    int minor = (number % 1000000) / 1000;
+    int patch = number % 1000;
+
+    version = PyStructSequence_New(type);
+    if (version == NULL) {
+        return NULL;
+    }
+
+#define SetItem(VALUE) \
+    PyStructSequence_SET_ITEM(version, pos++, VALUE); \
+    if (PyErr_Occurred()) { \
+        Py_DECREF(version); \
+        return NULL; \
+    }
+
+    SetItem(PyLong_FromLong(major))
+    SetItem(PyLong_FromLong(minor))
+    SetItem(PyLong_FromLong(patch))
+#undef SetItem
+
+    return version;
+}
+
+static int
+add_version_constants(PyObject *module)
+{
+    if (PyModule_AddStringMacro(module, SQLITE_VERSION) < 0) {
+        return -1;
+    }
+    if (PyModule_AddStringConstant(module, "sqlite_version",
+                                   sqlite3_libversion()) < 0)
+    {
+        return -1;
+    }
+    PyTypeObject *version_type;
+    version_type = PyStructSequence_NewType(&sqlite_version_info_desc);
+    if (version_type == NULL) {
+        return -1;
+    }
+    if (PyModule_Add(module, "SQLITE_VERSION_INFO",
+            make_sqlite_version_info(version_type, SQLITE_VERSION_NUMBER)) < 0)
+    {
+        Py_DECREF(version_type);
+        return -1;
+    }
+    if (PyModule_Add(module, "sqlite_version_info",
+            make_sqlite_version_info(version_type,
+                                     sqlite3_libversion_number())) < 0)
+    {
+        Py_DECREF(version_type);
+        return -1;
+    }
+    Py_DECREF(version_type);
+    return 0;
+}
+
 static int
 add_integer_constants(PyObject *module) {
 #define ADD_INT(ival)                                           \
@@ -741,7 +822,7 @@ module_exec(PyObject *module)
         goto error;
     }
 
-    if (PyModule_AddStringConstant(module, "sqlite_version", sqlite3_libversion())) {
+    if (add_version_constants(module) < 0) {
         goto error;
     }
 

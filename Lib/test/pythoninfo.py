@@ -701,7 +701,7 @@ def collect_sqlite(info_add):
     except ImportError:
         return
 
-    attributes = ('sqlite_version',)
+    attributes = ('SQLITE_VERSION', 'sqlite_version')
     copy_attributes(info_add, sqlite3, 'sqlite3.%s', attributes)
 
 
