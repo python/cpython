@@ -1,0 +1,3 @@
+Fix a bug where parsing certain invalid Python code could raise a
+:exc:`SystemError` instead of the expected :exc:`SyntaxError`. Patch by
+Alexander Domenti.
