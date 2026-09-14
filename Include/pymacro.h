@@ -112,20 +112,24 @@
    // Implement Py_MIN(), Py_MAX() and Py_ABS() using _Py_TYPEOF() and
    // statement expression to only evaluate each argument only once.
    // It cannot be used in C++: ISO C++ forbids braced-groups within
-   // expressions. Statement expression is a GNU extension.
+   // expressions. Statement expression is a GNU extension. Use __extension__
+   // to avoid compiler warning in pedantic mode.
 
    /* Minimum value between x and y */
 #  define Py_MIN(x, y) \
+       __extension__ \
        ({ _Py_TYPEOF (x) _x = (x); \
           _Py_TYPEOF (y) _y = (y); \
           _x < _y ? _x : _y; })
    /* Maximum value between x and y */
 #  define Py_MAX(x, y) \
+       __extension__ \
        ({ _Py_TYPEOF (x) _x = (x); \
           _Py_TYPEOF (y) _y = (y); \
           _x > _y ? _x : _y; })
    /* Absolute value of the number x */
 #  define Py_ABS(x) \
+       __extension__ \
        ({ _Py_TYPEOF (x) _x = (x); \
           _x < 0 ? -_x : _x; })
 #else
