@@ -1,0 +1,5 @@
+Fix :mod:`configparser` leaving a trailing space at the end of the line when
+:meth:`~configparser.ConfigParser.write` writes an option with an empty
+value and ``space_around_delimiters`` is true. The space is still written
+when the delimiter itself ends in whitespace, where it is needed to read the
+option back.

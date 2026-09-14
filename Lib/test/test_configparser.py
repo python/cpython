@@ -752,6 +752,27 @@ boolean {0[0]} NO
                     )
             self.assertEqual(output.getvalue(), expect_string)
 
+    def test_write_empty_value(self):
+        # gh-157466: an empty value must not leave the space that
+        # `space_around_delimiters` appends dangling at end of line,
+        # while a value that really ends in whitespace keeps it.
+        cf = self.newconfig()
+        cf.add_section('sect')
+        cf.set('sect', 'empty', '')
+        cf.set('sect', 'padded', 'value  ')
+        for space_around_delimiters in (True, False):
+            delimiter = self.delimiters[0]
+            if space_around_delimiters:
+                delimiter = " {} ".format(delimiter)
+            output = io.StringIO()
+            cf.write(output, space_around_delimiters=space_around_delimiters)
+            self.assertEqual(
+                output.getvalue(),
+                "[sect]\n"
+                "empty{}\n"
+                "padded{}value  \n"
+                "\n".format(delimiter.rstrip(' '), delimiter))
+
     def test_set_string_types(self):
         cf = self.fromstring("[sect]\n"
                              "option1{eq}foo\n".format(eq=self.delimiters[0]))
