@@ -1617,7 +1617,8 @@ to speed up repeated connections from the same clients.
    :data:`CERT_NONE`.  At least one of *cafile* or *capath* must be specified.
 
    This method can also load certification revocation lists (CRLs) in PEM or
-   DER format. In order to make use of CRLs, :attr:`SSLContext.verify_flags`
+   DER format, but only through *cafile* or *capath* (not *cadata*).
+   In order to make use of CRLs, :attr:`SSLContext.verify_flags`
    must be configured properly.
 
    The *cafile* string, if present, is the path to a file of concatenated
@@ -1634,6 +1635,8 @@ to speed up repeated connections from the same clients.
    PEM-encoded certificates or a :term:`bytes-like object` of DER-encoded
    certificates. Like with *capath* extra lines around PEM-encoded
    certificates are ignored but at least one certificate must be present.
+   Unlike *cafile* and *capath*, *cadata* accepts certificates only; CRLs
+   supplied through *cadata* are rejected.
 
    .. versionchanged:: 3.4
       New optional argument *cadata*
