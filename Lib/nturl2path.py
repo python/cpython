@@ -14,7 +14,9 @@ def url2pathname(url):
     #   ///C:/foo/bar/spam.foo
     # become
     #   C:\foo\bar\spam.foo
-    import string, urllib.parse
+    import string, sys, urllib.parse
+    encoding = sys.getfilesystemencoding()
+    errors = sys.getfilesystemencodeerrors()
     if url[:3] == '///':
         # URL has an empty authority section, so the path begins on the third
         # character.
@@ -30,13 +32,15 @@ def url2pathname(url):
     if not '|' in url:
         # No drive specifier, just convert slashes
         # make sure not to convert quoted slashes :-)
-        return urllib.parse.unquote(url.replace('/', '\\'))
+        return urllib.parse.unquote(url.replace('/', '\\'),
+                                    encoding=encoding, errors=errors)
     comp = url.split('|')
     if len(comp) != 2 or comp[0][-1] not in string.ascii_letters:
         error = 'Bad URL: ' + url
         raise OSError(error)
     drive = comp[0][-1].upper()
-    tail = urllib.parse.unquote(comp[1].replace('/', '\\'))
+    tail = urllib.parse.unquote(comp[1].replace('/', '\\'),
+                                encoding=encoding, errors=errors)
     return drive + ':' + tail
 
 def pathname2url(p):
@@ -46,7 +50,9 @@ def pathname2url(p):
     #   C:\foo\bar\spam.foo
     # becomes
     #   ///C:/foo/bar/spam.foo
-    import urllib.parse
+    import sys, urllib.parse
+    encoding = sys.getfilesystemencoding()
+    errors = sys.getfilesystemencodeerrors()
     # First, clean up some special forms. We are going to sacrifice
     # the additional information anyway
     p = p.replace('\\', '/')
@@ -58,12 +64,12 @@ def pathname2url(p):
             raise OSError('Bad path: ' + p)
     if not ':' in p:
         # No DOS drive specified, just quote the pathname
-        return urllib.parse.quote(p)
+        return urllib.parse.quote(p, encoding=encoding, errors=errors)
     comp = p.split(':', maxsplit=2)
     if len(comp) != 2 or len(comp[0]) > 1:
         error = 'Bad path: ' + p
         raise OSError(error)
 
     drive = urllib.parse.quote(comp[0].upper())
-    tail = urllib.parse.quote(comp[1])
+    tail = urllib.parse.quote(comp[1], encoding=encoding, errors=errors)
     return '///' + drive + ':' + tail
