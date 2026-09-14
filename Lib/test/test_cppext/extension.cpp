@@ -325,6 +325,14 @@ _testcppext_exec(PyObject *module)
 PyDoc_STRVAR(_testcppext_doc, "C++ test extension.");
 PyABIInfo_VAR(abi_info);
 
+// Need to ignore "-Wpedantic" warnings; see VirtualPyObject_Slots above
+_Py_COMP_DIAG_PUSH
+#if defined(__GNUC__)
+#pragma GCC diagnostic ignored "-Wpedantic"
+#elif defined(__clang__)
+#pragma clang diagnostic ignored "-Wpedantic"
+#endif
+
 static PySlot _testcppext_slots[] = {
     PySlot_PTR_STATIC(Py_mod_abi, &abi_info),
     PySlot_PTR_STATIC(Py_mod_name, (void*)STR(MODULE_NAME)),
@@ -334,6 +342,8 @@ static PySlot _testcppext_slots[] = {
     PySlot_PTR_STATIC(Py_mod_gil, Py_MOD_GIL_NOT_USED),
     PySlot_END,
 };
+
+_Py_COMP_DIAG_POP
 
 
 #define _FUNC_NAME(NAME) PyModExport_ ## NAME
