@@ -943,7 +943,7 @@ checking for that feed.
    }
 
 
-Proxy Settings
+Proxy settings
 --------------
 
 .. versionadded:: 26.4
