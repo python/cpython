@@ -696,6 +696,51 @@ class AST_Tests(unittest.TestCase):
         self.assertEqual(grandchild_binop.end_col_offset, 3)
         self.assertEqual(grandchild_binop.end_lineno, 1)
 
+    def test_primary_target_context(self):
+        for expression in ('factory().field[index]', 'factory()[index].field'):
+            for context in (ast.Load, ast.Store, ast.Del):
+                with self.subTest(expression=expression, context=context):
+                    if context is ast.Load:
+                        node = ast.parse(expression).body[0].value
+                    elif context is ast.Store:
+                        node = ast.parse(f'{expression} = value').body[0].targets[0]
+                    else:
+                        node = ast.parse(f'del {expression}').body[0].targets[0]
+                    self.assertIsInstance(node.ctx, context)
+                    for child in ast.walk(node):
+                        if child is not node and hasattr(child, 'ctx'):
+                            self.assertIsInstance(child.ctx, ast.Load)
+
+    def test_container_target_context(self):
+        cases = (
+            ('(a, [b, c])', '(a, [b, c])'),
+            ('[a, (b, c)]', '[a, (b, c)]'),
+            ('((a))', 'a'),
+            ('()', '()'),
+            ('[]', '[]'),
+        )
+        for expression, expected_segment in cases:
+            for context in (ast.Load, ast.Store, ast.Del):
+                with self.subTest(expression=expression, context=context):
+                    if context is ast.Load:
+                        source = expression
+                    elif context is ast.Store:
+                        source = f'{expression} = value'
+                    else:
+                        source = f'del {expression}'
+                    statement = ast.parse(source).body[0]
+                    node = statement.value if context is ast.Load else statement.targets[0]
+                    for child in ast.walk(node):
+                        if hasattr(child, 'ctx'):
+                            self.assertIsInstance(child.ctx, context)
+                    self.assertEqual(ast.get_source_segment(source, node),
+                                     expected_segment)
+
+        node = ast.parse('[a, *[b, *c]] = value').body[0].targets[0]
+        for child in ast.walk(node):
+            if hasattr(child, 'ctx'):
+                self.assertIsInstance(child.ctx, ast.Store)
+
     def test_issue39579_dotted_name_end_col_offset(self):
         tree = ast.parse('@a.b.c\ndef f(): pass')
         attr_b = tree.body[0].decorator_list[0].value

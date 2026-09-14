@@ -1,0 +1,2 @@
+Speed up parsing by sharing expression rules with assignment and deletion
+targets, and simplify comparison and keyword argument rules.

@@ -196,13 +196,15 @@ Py_ssize_t _PyPegen_byte_offset_to_character_offset_line(PyObject *line, Py_ssiz
 Py_ssize_t _PyPegen_byte_offset_to_character_offset(PyObject *line, Py_ssize_t col_offset);
 Py_ssize_t _PyPegen_byte_offset_to_character_offset_raw(const char*, Py_ssize_t col_offset);
 
-// Error handling functions and APIs
 typedef enum {
     STAR_TARGETS,
     DEL_TARGETS,
-    FOR_TARGETS
+    FOR_TARGETS,
+    SINGLE_TARGETS,
+    ATTRIBUTE_OR_SUBSCRIPT_TARGETS
 } TARGETS_TYPE;
 
+// Error handling functions and APIs
 int _Pypegen_raise_decode_error(Parser *p);
 int _Pypegen_tokenizer_error(Parser *p);
 void *_PyPegen_raise_error(Parser *p, PyObject *errtype, int use_mark, const char *errmsg, ...);
@@ -355,6 +357,7 @@ CmpopExprPair *_PyPegen_cmpop_expr_pair(Parser *, cmpop_ty, expr_ty);
 asdl_int_seq *_PyPegen_get_cmpops(Parser *p, asdl_seq *);
 asdl_expr_seq *_PyPegen_get_exprs(Parser *, asdl_seq *);
 expr_ty _PyPegen_set_expr_context(Parser *, expr_ty, expr_context_ty);
+expr_ty _PyPegen_make_target(Parser *, expr_ty, TARGETS_TYPE);
 KeyValuePair *_PyPegen_key_value_pair(Parser *, expr_ty, expr_ty);
 asdl_expr_seq *_PyPegen_get_keys(Parser *, asdl_seq *);
 asdl_expr_seq *_PyPegen_get_values(Parser *, asdl_seq *);
