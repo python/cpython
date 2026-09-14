@@ -209,6 +209,57 @@ and "hidden left-recursion" like:
     rule: 'optional'? rule '@' some_other_rule
 ```
 
+Explicit operator loops
+----------------------
+
+A C grammar can request an operator loop for a particular left-recursive rule
+with the `(operator_loop)` flag:
+
+```
+    sum[expr_ty] (operator_loop):
+        | a=sum '+' b=term { _PyAST_BinOp(a, Add, b, EXTRA) }
+        | a=sum '-' b=term { _PyAST_BinOp(a, Sub, b, EXTRA) }
+        | term
+```
+
+Unmarked rules keep the general left-recursion algorithm. The generator checks
+each marked rule and raises a rule-specific error if its shape or operand
+dependency is unsupported. The flag takes no value and cannot be combined with
+other rule flags. In `skip_actions` mode the generator still validates marked
+rules, but emits the general algorithm instead of AST-folding loops.
+
+The flag also asserts an action contract; the generator cannot prove properties
+of arbitrary C code. Actions reachable from a marked rule must preserve the
+grammar-derived token position and parser-control state when they succeed.
+They must not make hidden calls to generated parser rules, inspect or modify
+provisional left-recursion memo entries, or mutate the buffered input. The
+existing generated `without_invalid` scopes remain supported. AST constructors,
+feature checks, warnings and normal error reporting remain permitted. Existing
+restrictions on modifying shared AST nodes also apply. Changes to relevant
+actions and their C helpers must preserve this contract.
+
+After excluding alternatives guarded by `call_invalid_rules`, each marked rule
+must consist of `left=self exact-token right=operand` alternatives followed by
+one plain operand alternative. Operator tokens must be distinct. The result and
+operand types must be `expr_ty`. Recursive actions must construct `_PyAST_BinOp`
+using the bound operands and a constant operator kind, optionally wrapped in
+`CHECK_VERSION`. Cuts, predicates, other recursive actions and other alternative
+shapes are unsupported.
+
+The operand must consume input and cannot call the marked rule again at the same
+position through the grammar. It must use ordinary `(memo)`, or also be marked
+`(operator_loop)` and pass validation. This preserves the
+original algorithm's final base retry as memo reuse, rather than executing an
+operand action again. The loop retains result memoization but does not publish
+intermediate seeds. Normal right-operand failure restores the position before
+the operator; fatal errors propagate.
+
+Loops run when `call_invalid_rules` is false. The original leader and raw rule
+remain available while it is true. This includes diagnostic parsing: an
+`expression_without_invalid` scope temporarily disables invalid rules and may
+therefore use loops. The transformation changes stack usage and allocation
+order; the flag does not promise identical resource-limit boundaries.
+
 Variables in the grammar
 ------------------------
 
