@@ -4159,7 +4159,6 @@ class TestExtractionFilters(unittest.TestCase):
             if sys.platform != 'win32':
                 self.assertFalse(path.stat().st_mode & stat.S_IWUSR)
 
-    @symlink_test
     def test_extract_filters_target_none(self):
         # Test that when extract() falls back to extracting (rather than
         # linking) a hardlink target, the member is skipped if the filter
