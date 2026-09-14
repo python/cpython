@@ -80,15 +80,15 @@ normalize_newlines_into(char *result, const char *data, Py_ssize_t len,
                         Py_ssize_t *out_len, int *implicit_newline)
 {
     Py_ssize_t write = 0;
-    if (memchr(data, '\r', len) == NULL) {
-        // No carriage returns: nothing to translate, copy verbatim.
+    if (preserve_crlf || memchr(data, '\r', len) == NULL) {
+        // No translation needed: copy verbatim.
         memcpy(result, data, len);
         write = len;
     }
     else {
         for (Py_ssize_t read = 0; read < len; read++) {
             char c = data[read];
-            if (!preserve_crlf && c == '\r') {
+            if (c == '\r') {
                 if (read + 1 < len && data[read + 1] == '\n') {
                     read++;
                 }
@@ -341,24 +341,9 @@ store_prepared_source(struct tok_state *tok, const char *data, Py_ssize_t len,
             }
             // Reserve space for an optional final '\n' and the NUL terminator.
             Py_ssize_t needed = line_len + 2;
-            if (needed > capacity) {
-                // Grow geometrically to avoid reallocating for every longer line.
-                Py_ssize_t next_capacity = capacity > 0 ? capacity : 256;
-                while (next_capacity < needed) {
-                    if (next_capacity > PY_SSIZE_T_MAX / 2) {
-                        next_capacity = needed;
-                        break;
-                    }
-                    next_capacity *= 2;
-                }
-                char *resized = PyMem_Realloc(normalized, next_capacity);
-                if (resized == NULL) {
-                    PyErr_NoMemory();
-                    tok->done = E_NOMEM;
-                    goto error;
-                }
-                normalized = resized;
-                capacity = next_capacity;
+            if (_PyTok_ReserveBuffer(&normalized, &capacity, needed, 256) < 0) {
+                tok->done = E_NOMEM;
+                goto error;
             }
             normalize_newlines_into(normalized, line, line_len,
                                     preserve_crlf, add_newline,

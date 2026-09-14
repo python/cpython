@@ -628,16 +628,62 @@ error:
     return NULL;
 }
 
-static expr_ty
-name_from_identifier(Parser *p, Token *t, PyObject *id)
+// Return an arena-owned identifier; callers borrow the reference.
+static PyObject *
+get_cached_identifier(Parser *p, PyObject *bytes)
 {
-    expr_ty result = _PyAST_Name(id, Load, t->lineno, t->col_offset,
-                                t->end_lineno, t->end_col_offset, p->arena);
-    if (result != NULL && _PyPegen_insert_memo(p, p->mark - 1, NAME, result) < 0) {
+    const char *s = PyBytes_AsString(bytes);
+    if (!s) {
         p->error_indicator = 1;
         return NULL;
     }
-    return result;
+    // Identifiers repeat constantly; a small span-keyed cache skips the
+    // UTF-8 decode + intern for repeated occurrences. Keys point into
+    // arena-owned token bytes and values are arena-owned interned strings,
+    // so borrowed references are valid for the lifetime of the parse
+    // (including the second error pass, which reuses parser and arena).
+    Py_ssize_t len = PyBytes_GET_SIZE(bytes);
+    Py_hash_t hash = PyObject_Hash(bytes);
+    if (hash == -1) {
+        p->error_indicator = 1;
+        return NULL;
+    }
+    // Parses without identifiers do not need this cache.
+    if (p->identifier_cache == NULL) {
+        p->identifier_cache = PyMem_Calloc(
+            IDENTIFIER_CACHE_SIZE, sizeof(*p->identifier_cache));
+        if (p->identifier_cache == NULL) {
+            p->error_indicator = 1;
+            return PyErr_NoMemory();
+        }
+    }
+    IdentifierCacheEntry *free_slot = NULL;
+    size_t idx = (size_t)hash & (IDENTIFIER_CACHE_SIZE - 1);
+    for (int probe = 0; probe < IDENTIFIER_CACHE_MAX_PROBES; probe++) {
+        IdentifierCacheEntry *entry = &p->identifier_cache[
+            (idx + probe) & (IDENTIFIER_CACHE_SIZE - 1)];
+        if (entry->key == NULL) {
+            free_slot = entry;
+            break;
+        }
+        if (entry->hash == hash && entry->len == len &&
+            memcmp(entry->key, s, len) == 0)
+        {
+            return entry->value;
+        }
+    }
+    PyObject *id = _PyPegen_new_identifier(p, s);
+    if (id == NULL) {
+        p->error_indicator = 1;
+        return NULL;
+    }
+    if (free_slot != NULL) {
+        free_slot->key = s;
+        free_slot->len = len;
+        free_slot->hash = hash;
+        free_slot->value = id;
+    }
+    return id;
 }
 
 static expr_ty
@@ -656,58 +702,17 @@ _PyPegen_name_from_token(Parser *p, Token* t)
         return cached;
     }
     p->mark = mark + 1;
-    const char *s = PyBytes_AsString(t->bytes);
-    if (!s) {
-        p->error_indicator = 1;
-        return NULL;
-    }
-    // Identifiers repeat constantly; a small span-keyed cache skips the
-    // UTF-8 decode + intern for repeated occurrences. Keys point into
-    // arena-owned token bytes and values are arena-owned interned strings,
-    // so borrowed references are valid for the lifetime of the parse
-    // (including the second error pass, which reuses parser and arena).
-    Py_ssize_t len = PyBytes_GET_SIZE(t->bytes);
-    Py_hash_t hash = PyObject_Hash(t->bytes);
-    if (hash == -1) {
-        p->error_indicator = 1;
-        return NULL;
-    }
-    // Parses without identifiers do not need this cache.
-    if (p->identifier_cache == NULL) {
-        p->identifier_cache = PyMem_Calloc(
-            IDENTIFIER_CACHE_SIZE, sizeof(*p->identifier_cache));
-        if (p->identifier_cache == NULL) {
-            p->error_indicator = 1;
-            return (expr_ty)PyErr_NoMemory();
-        }
-    }
-    IdentifierCacheEntry *free_slot = NULL;
-    size_t idx = (size_t)hash & (IDENTIFIER_CACHE_SIZE - 1);
-    for (int probe = 0; probe < IDENTIFIER_CACHE_MAX_PROBES; probe++) {
-        IdentifierCacheEntry *entry = &p->identifier_cache[
-            (idx + probe) & (IDENTIFIER_CACHE_SIZE - 1)];
-        if (entry->key == NULL) {
-            free_slot = entry;
-            break;
-        }
-        if (entry->hash == hash && entry->len == len &&
-            memcmp(entry->key, s, len) == 0)
-        {
-            return name_from_identifier(p, t, entry->value);
-        }
-    }
-    PyObject *id = _PyPegen_new_identifier(p, s);
+    PyObject *id = get_cached_identifier(p, t->bytes);
     if (id == NULL) {
+        return NULL;
+    }
+    expr_ty result = _PyAST_Name(id, Load, t->lineno, t->col_offset,
+                                t->end_lineno, t->end_col_offset, p->arena);
+    if (result != NULL && _PyPegen_insert_memo(p, mark, NAME, result) < 0) {
         p->error_indicator = 1;
         return NULL;
     }
-    if (free_slot != NULL) {
-        free_slot->key = s;
-        free_slot->len = len;
-        free_slot->hash = hash;
-        free_slot->value = id;
-    }
-    return name_from_identifier(p, t, id);
+    return result;
 }
 
 expr_ty
