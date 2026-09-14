@@ -978,6 +978,9 @@ class A:
     def method_one_arg_named_cls(cls):
         pass
 
+    def method_two_arg_second_param_self(arg1, self):
+        pass
+
 
 class AMeta(type):
 
@@ -1119,6 +1122,11 @@ class TestIncorrectNumberOfPositionalArgs(unittest.TestCase):
     def test_when_arg_named_cls_does_not_suggest(self):
         with self.assertRaises(TypeError) as cm:
             A().method_one_arg_named_cls("arg1")
+        self.assertNotIn("Did you forget", str(cm.exception))
+
+    def test_when_second_param_is_self(self):
+        with self.assertRaises(TypeError) as cm:
+            A().method_two_arg_second_param_self()
         self.assertNotIn("Did you forget", str(cm.exception))
 
 
