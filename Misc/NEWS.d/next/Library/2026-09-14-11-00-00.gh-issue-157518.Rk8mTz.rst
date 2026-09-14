@@ -1,0 +1,4 @@
+:func:`xml.etree.ElementTree.register_namespace` now raises
+:exc:`ValueError` for an invalid prefix, for the reserved ``xmlns`` prefix,
+and for the ``xml`` prefix or the XML namespace bound to each other's wrong
+counterpart, instead of accepting them and serializing invalid XML.

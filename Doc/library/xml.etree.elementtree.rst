@@ -739,8 +739,14 @@ Functions
    *prefix* is a namespace prefix.  *uri* is a namespace uri.  Tags and
    attributes in this namespace will be serialized with the given prefix, if at
    all possible.
+   :exc:`ValueError` is raised if *prefix* is not a valid prefix,
+   is reserved (``xmlns`` and ``ns`` followed by digits),
+   or if *prefix* is ``xml`` and *uri* is not the XML namespace or vice versa.
 
    .. versionadded:: 3.2
+
+   .. versionchanged:: next
+      Invalid and reserved prefixes are now rejected.
 
 
 .. function:: SubElement(parent, tag, /, attrib={}, **extra)
