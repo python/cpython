@@ -116,6 +116,11 @@ asyncio
   socket file created for *path*.
   (Contributed by Sam Bull in :gh:`94984`.)
 
+* Add :func:`asyncio.start_guest_run` to run asyncio cooperatively inside
+  a host event loop, such as a GUI toolkit's main loop, that owns the
+  thread.  See :ref:`asyncio-guest`.
+  (Contributed by Cong Zhang in :gh:`145342`.)
+
 
 codecs
 ------
