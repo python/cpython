@@ -1,0 +1,2 @@
+Add :c:func:`PyObject_GetItemData` and
+:c:func:`PyObject_GetItemData_DuringGC` to the limited C API and stable ABI.
