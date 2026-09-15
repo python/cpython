@@ -3543,7 +3543,7 @@ while 1:
         source = "-" * 100000 + "4"
         for mode in ["exec", "eval", "single"]:
             with self.subTest(mode=mode):
-                with self.assertRaisesRegex(MemoryError, r"too complex"):
+                with self.assertRaisesRegex(SyntaxError, r"too complex to parse"):
                     compile(source, "<string>", mode)
 
     @support.cpython_only

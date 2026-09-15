@@ -92,7 +92,7 @@ _symtable_symtable_impl(PyObject *module, PyObject *source,
         cf.cf_flags = PyCF_SOURCE_IS_UTF8;
         const char *str = _Py_SourceAsString(source, "symtable",
                                              "string, bytes or AST",
-                                             &cf, &source_copy);
+                                             filename, &cf, &source_copy);
         if (str == NULL) {
             return NULL;
         }

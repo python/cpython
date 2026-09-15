@@ -2,6 +2,7 @@
 #include "pycore_ast.h"           // _PyAST_Validate(),
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_parser.h"        // _PYPEGEN_NSTATISTICS
+#include "pycore_compile.h"       // _PyCompile_CheckRecursionError()
 #include "pycore_pyerrors.h"      // PyExc_IncompleteInputError
 #include "pycore_runtime.h"       // _PyRuntime
 #include "pycore_unicodeobject.h" // _PyUnicode_InternImmortal
@@ -1063,6 +1064,7 @@ _PyPegen_run_parser(Parser *p)
         p->start_rule == Py_eval_input)
     {
         if (!_PyAST_Validate(res)) {
+            _PyCompile_CheckRecursionError();
             return NULL;
         }
     }

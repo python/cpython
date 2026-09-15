@@ -25,6 +25,7 @@ extern const char* _Py_SourceAsString(
     PyObject *cmd,
     const char *funcname,
     const char *what,
+    PyObject *filename,
     PyCompilerFlags *cf,
     PyObject **cmd_copy);
 

@@ -446,6 +446,13 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
                           mode='eval', source='0', filename='tmp')
         compile('print("\xe5")\n', '', 'exec')
         self.assertRaises(SyntaxError, compile, chr(0), 'f', 'exec')
+        with self.assertRaises(SyntaxError) as cm:
+            compile("x = 1\ny = 'ab\udc80cd'\n", 'f', 'exec')
+        self.assertEqual((cm.exception.filename, cm.exception.lineno,
+                          cm.exception.offset, cm.exception.text),
+                         ('f', 2, 8, "y = 'ab\udc80cd'"))
+        self.assertRaises(SyntaxError, eval, '\udc80')
+        self.assertRaises(SyntaxError, exec, '\udc80')
         self.assertRaises(ValueError, compile, str('a = 1'), 'f', 'bad')
 
         # test the optimize argument

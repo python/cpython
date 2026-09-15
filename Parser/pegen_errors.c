@@ -391,6 +391,5 @@ void
 _Pypegen_stack_overflow(Parser *p)
 {
     p->error_indicator = 1;
-    PyErr_SetString(PyExc_MemoryError,
-        "Parser stack overflowed - Python source too complex to parse");
+    RAISE_SYNTAX_ERROR("Python source too complex to parse");
 }

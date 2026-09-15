@@ -763,7 +763,8 @@ class TestSpecifics(unittest.TestCase):
             compile(expect_ok, '<test>', mode)
             broken = prefix + repeated * crash_depth
             details = f"Compiling ({prefix!r} + {repeated!r} * {crash_depth})"
-            with self.assertRaises(RecursionError, msg=details):
+            with self.assertRaisesRegex(SyntaxError, "too complex to compile",
+                                        msg=details):
                 compile(broken, '<test>', mode)
 
         check_limit("a", "()")

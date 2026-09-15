@@ -949,7 +949,8 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
         goto finally;
     }
 
-    str = _Py_SourceAsString(source, "compile", "string, bytes or AST", &cf, &source_copy);
+    str = _Py_SourceAsString(source, "compile", "string, bytes or AST",
+                             filename, &cf, &source_copy);
     if (str == NULL)
         goto error;
 
@@ -1116,7 +1117,8 @@ builtin_eval_impl(PyObject *module, PyObject *source, PyObject *globals,
     else {
         PyCompilerFlags cf = _PyCompilerFlags_INIT;
         cf.cf_flags = PyCF_SOURCE_IS_UTF8;
-        str = _Py_SourceAsString(source, "eval", "string, bytes or code", &cf, &source_copy);
+        str = _Py_SourceAsString(source, "eval", "string, bytes or code",
+                                 NULL, &cf, &source_copy);
         if (str == NULL)
             goto error;
 
@@ -1286,7 +1288,7 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
         PyCompilerFlags cf = _PyCompilerFlags_INIT;
         cf.cf_flags = PyCF_SOURCE_IS_UTF8;
         str = _Py_SourceAsString(source, "exec",
-                                       "string, bytes or code", &cf,
+                                       "string, bytes or code", NULL, &cf,
                                        &source_copy);
         if (str == NULL)
             goto error;

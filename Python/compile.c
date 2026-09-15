@@ -1524,6 +1524,18 @@ _PyCompile_OptimizeAndAssemble(compiler *c, int addNone)
     return optimize_and_assemble_code_unit(u, const_cache, code_flags, filename);
 }
 
+/* Replace a RecursionError raised while processing too deeply nested
+   source with a SyntaxError, as the parser raises for such source. */
+void
+_PyCompile_CheckRecursionError(void)
+{
+    if (PyErr_ExceptionMatches(PyExc_RecursionError)) {
+        PyErr_Clear();
+        PyErr_SetString(PyExc_SyntaxError,
+                        "Python source too complex to compile");
+    }
+}
+
 PyCodeObject *
 _PyAST_Compile(mod_ty mod, PyObject *filename, PyCompilerFlags *pflags,
                int optimize, PyArena *arena, PyObject *module)
@@ -1531,12 +1543,16 @@ _PyAST_Compile(mod_ty mod, PyObject *filename, PyCompilerFlags *pflags,
     assert(!PyErr_Occurred());
     compiler *c = new_compiler(mod, filename, pflags, optimize, arena, module);
     if (c == NULL) {
+        _PyCompile_CheckRecursionError();
         return NULL;
     }
 
     PyCodeObject *co = compiler_mod(c, mod);
     compiler_free(c);
     assert(co || PyErr_Occurred());
+    if (co == NULL) {
+        _PyCompile_CheckRecursionError();
+    }
     return co;
 }
 
@@ -1556,6 +1572,7 @@ _PyCompile_AstPreprocess(mod_ty mod, PyObject *filename, PyCompilerFlags *cf,
     if (!_PyAST_Preprocess(mod, arena, filename, optimize, flags,
                            no_const_folding, 0, module))
     {
+        _PyCompile_CheckRecursionError();
         return -1;
     }
     return 0;

@@ -384,8 +384,12 @@ are always available.  They are listed here in alphabetical order.
    It is needed to unambiguous :ref:`filter <warning-filter>` syntax warnings
    by module name.
 
-   This function raises :exc:`SyntaxError` or :exc:`ValueError` if the compiled
-   source is invalid.
+   This function raises :exc:`SyntaxError` if the compiled source is invalid,
+   including a *source* containing a null or surrogate character,
+   that cannot be decoded,
+   or that is too complex to parse or compile,
+   for example an expression with many thousands of nested operators;
+   and :exc:`ValueError` if *mode* or *flags* is invalid.
 
    If you want to parse Python code into its AST representation, see
    :func:`ast.parse`.
@@ -417,12 +421,22 @@ are always available.  They are listed here in alphabetical order.
       Previously, :exc:`TypeError` was raised when null bytes were encountered
       in *source*.
 
-   .. versionadded:: 3.8
+   .. versionchanged:: 3.8
       ``ast.PyCF_ALLOW_TOP_LEVEL_AWAIT`` can now be passed in flags to enable
       support for top-level ``await``, ``async for``, and ``async with``.
 
-   .. versionadded:: 3.15
+   .. versionchanged:: 3.12
+      :exc:`SyntaxError` is raised instead of :exc:`ValueError` when null bytes
+      are encountered in *source*.
+
+   .. versionchanged:: 3.15
       Added the *module* parameter.
+
+   .. versionchanged:: 3.16
+      :exc:`SyntaxError` is raised instead of :exc:`ValueError` when surrogate
+      characters are encountered in *source*,
+      and instead of :exc:`MemoryError` or :exc:`RecursionError`
+      when *source* is too complex.
 
 
 .. class:: complex(number=0, /)
