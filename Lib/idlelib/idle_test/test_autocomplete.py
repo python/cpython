@@ -218,6 +218,12 @@ class AutoCompleteTest(unittest.TestCase):
         self.assertTrue(acp.open_completions(ac.TAB))
         self.text.delete('1.0', 'end')
 
+        # No file name starts with the text (gh-60402).
+        self.text.insert('1.0', '"hello wor')
+        self.assertIsNone(acp.open_completions(ac.TAB))
+        self.assertTrue(acp.open_completions(ac.FORCE))
+        self.text.delete('1.0', 'end')
+
     def test_completion_kwds(self):
         self.assertIn('and', ac.completion_kwds)
         self.assertIn('case', ac.completion_kwds)
