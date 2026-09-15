@@ -1,0 +1,3 @@
+Change the API and contract of ``_PyExecutorObject`` to return the
+next_instr pointer, instead of the frame, and to always execute at least one
+instruction.
