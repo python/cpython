@@ -1,0 +1,2 @@
+Add :func:`threading.run` and :func:`threading.run_daemon` functions as
+a convenient way to start threads.
