@@ -1,3 +1,4 @@
 Fix out-of-bounds write in :meth:`mmap.mmap.__setitem__` that could occur
-when the assigned value's :meth:`~object.__index__` method resized the
-mmap object during the assignment.
+when converting the index or the assigned value (via :meth:`~object.__index__`
+for a single item, or via the buffer protocol for a slice) resized the mmap
+object during the assignment.

@@ -971,6 +971,27 @@ class MmapTests(unittest.TestCase):
                 m[size - 1] = ResizeOnIndex(m)
             self.assertEqual(len(m), new_size)
 
+    def test_setitem_slice_resize_reentrancy(self):
+        """Resizing the mmap from inside a value's buffer-protocol
+        callback while assigning to a slice must not access memory past
+        the new bounds (gh-157335)."""
+        size = 2 * PAGESIZE
+        new_size = PAGESIZE
+
+        class ResizeOnBuffer:
+            def __init__(self, m, data):
+                self.m = m
+                self.data = data
+            def __buffer__(self, flags):
+                self.m.resize(new_size)
+                return memoryview(self.data)
+
+        with mmap.mmap(-1, size) as m:
+            value = ResizeOnBuffer(m, bytes(size))
+            with self.assertRaises(IndexError):
+                m[0:size] = value
+            self.assertEqual(len(m), new_size)
+
     @unittest.skipUnless(os.name == 'nt', 'requires Windows')
     def test_resize_fails_if_mapping_held_elsewhere(self):
         """If more than one mapping is held against a named file on Windows, neither

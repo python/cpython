@@ -1687,8 +1687,9 @@ mmap_ass_subscript_lock_held(PyObject *op, PyObject *item, PyObject *value)
             return -1;
         }
         CHECK_VALID(-1);
-        /* value's __index__ may have resized the mmap, invalidating
-         * the earlier bounds check on i. */
+        /* value's __index__ may have resized the mmap, invalidating the
+         * bounds check on i above (i is already non-negative here, so
+         * only the upper bound can have changed). */
         if (i >= self->size) {
             PyErr_SetString(PyExc_IndexError,
                             "mmap index out of range");
@@ -1724,6 +1725,24 @@ mmap_ass_subscript_lock_held(PyObject *op, PyObject *item, PyObject *value)
         }
 
         CHECK_VALID_OR_RELEASE(-1, vbuf);
+        /* Acquiring the buffer above may have run arbitrary code (e.g. a
+         * __buffer__ method) that resized this mmap, invalidating the
+         * start/stop/slicelen computed earlier against the old size. */
+        if (slicelen > 0) {
+            Py_ssize_t lo = start;
+            Py_ssize_t hi = start + (slicelen - 1) * step;
+            if (lo > hi) {
+                Py_ssize_t tmp = lo;
+                lo = hi;
+                hi = tmp;
+            }
+            if (lo < 0 || hi >= self->size) {
+                PyErr_SetString(PyExc_IndexError,
+                    "mmap slice assignment is out of range");
+                PyBuffer_Release(&vbuf);
+                return -1;
+            }
+        }
         int result = 0;
         if (slicelen == 0) {
         }
