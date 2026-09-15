@@ -189,7 +189,7 @@ class Header:
 
         Optional s is the initial header value.  If None, the initial header
         value is not set.  You can later append to the header with .append()
-        method calls.  s may be a byte string or a Unicode string, but see the
+        method calls.  s may be a byte string or a string, but see the
         .append() documentation for semantics.
 
         Optional charset serves two purposes: it has the same meaning as the
@@ -263,7 +263,7 @@ class Header:
     # have or explicitly disable <, <=, >, >= operators?
     def __eq__(self, other):
         # other may be a Header or a string.  Both are fine so coerce
-        # ourselves to a unicode (of the unencoded header value), swap the
+        # ourselves to a str (of the unencoded header value), swap the
         # args and do another comparison.
         return other == str(self)
 
@@ -275,10 +275,10 @@ class Header:
         value of None (the default) means that the charset given in the
         constructor is used.
 
-        s may be a byte string or a Unicode string.  If it is a byte string
+        s may be a byte string or a string.  If it is a byte string
         (i.e. isinstance(s, str) is false), then charset is the encoding of
         that byte string, and a UnicodeError will be raised if the string
-        cannot be decoded with that charset.  If s is a Unicode string, then
+        cannot be decoded with that charset.  If s is a string, then
         charset is a hint specifying the character set of the characters in
         the string.  In either case, when producing an RFC 2822 compliant
         header using RFC 2047 rules, the string will be encoded using the
@@ -397,7 +397,7 @@ class Header:
 
     def _normalize(self):
         # Step 1: Normalize the chunks so that all runs of identical charsets
-        # get collapsed into a single unicode string.
+        # get collapsed into a single string.
         chunks = []
         last_charset = None
         last_chunk = []
