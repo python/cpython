@@ -1843,6 +1843,7 @@ class Utility_Tests(unittest.TestCase):
         self.assertEqual(splitport('parrot:cheese'), ('parrot:cheese', None))
         self.assertEqual(splitport('[::1]:88'), ('[::1]', '88'))
         self.assertEqual(splitport('[::1]'), ('[::1]', None))
+        self.assertEqual(splitport('::1'), ('::1', None))
         self.assertEqual(splitport(':88'), ('', '88'))
 
     def test_splitnport(self):
