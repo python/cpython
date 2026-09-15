@@ -20,6 +20,7 @@ from .pstats_collector import PstatsCollector
 from .stack_collector import CollapsedStackCollector, FlamegraphCollector, DiffFlamegraphCollector
 from .heatmap_collector import HeatmapCollector
 from .gecko_collector import GeckoCollector
+from .perfetto_collector import PerfettoCollector
 from .jsonl_collector import JsonlCollector
 from .binary_collector import BinaryCollector
 from .binary_reader import BinaryReader
@@ -101,6 +102,7 @@ FORMAT_EXTENSIONS = {
     "flamegraph": "html",
     "diff_flamegraph": "html",
     "gecko": "json",
+    "perfetto": "pftrace",
     "heatmap": "html",
     "jsonl": "jsonl",
     "binary": "bin",
@@ -112,6 +114,7 @@ COLLECTOR_MAP = {
     "flamegraph": FlamegraphCollector,
     "diff_flamegraph": DiffFlamegraphCollector,
     "gecko": GeckoCollector,
+    "perfetto": PerfettoCollector,
     "heatmap": HeatmapCollector,
     "jsonl": JsonlCollector,
     "binary": BinaryCollector,
@@ -484,6 +487,13 @@ def _add_format_options(parser, include_compression=True, include_binary=True):
         help="Generate Gecko format for Firefox Profiler",
     )
     format_group.add_argument(
+        "--perfetto",
+        action="store_const",
+        const="perfetto",
+        dest="format",
+        help="Generate a Perfetto trace (StackSample protos) for the Perfetto UI",
+    )
+    format_group.add_argument(
         "--heatmap",
         action="store_const",
         const="heatmap",
@@ -631,7 +641,7 @@ def _sort_to_mode(sort_choice):
 
 def _create_collector(format_type, sample_interval_usec, skip_idle, opcodes=False,
                       mode=None, output_file=None, compression='auto',
-                      diff_baseline=None):
+                      diff_baseline=None, target_pid=None):
     """Create the appropriate collector based on format type.
 
     Args:
@@ -645,6 +655,7 @@ def _create_collector(format_type, sample_interval_usec, skip_idle, opcodes=Fals
         output_file: Output file path (required for binary format)
         compression: Compression type for binary format ('auto', 'zstd', 'none')
         diff_baseline: Path to baseline binary file for differential flamegraph
+        target_pid: PID of the process being profiled
 
     Returns:
         A collector instance of the appropriate type
@@ -676,6 +687,13 @@ def _create_collector(format_type, sample_interval_usec, skip_idle, opcodes=Fals
     if format_type == "gecko":
         skip_idle = False
         return collector_class(sample_interval_usec, skip_idle=skip_idle, opcodes=opcodes)
+
+    if format_type == "perfetto":
+        # Like gecko, keep all threads so idle/GIL-wait state intervals are seen.
+        return collector_class(
+            sample_interval_usec, skip_idle=False, opcodes=opcodes,
+            pid=target_pid,
+        )
 
     if format_type == "jsonl":
         return collector_class(
@@ -959,7 +977,7 @@ def _validate_args(args, parser):
         )
 
     # Validate --opcodes is only used with compatible formats
-    opcodes_compatible_formats = ("live", "gecko", "flamegraph", "diff_flamegraph", "heatmap", "binary")
+    opcodes_compatible_formats = ("live", "gecko", "perfetto", "flamegraph", "diff_flamegraph", "heatmap", "binary")
     if getattr(args, 'opcodes', False) and args.format not in opcodes_compatible_formats:
         parser.error(
             f"--opcodes is only compatible with {', '.join('--' + f for f in opcodes_compatible_formats)}."
@@ -1179,7 +1197,8 @@ def _handle_attach(args):
         args.format, args.sample_interval_usec, skip_idle, args.opcodes, mode,
         output_file=output_file,
         compression=getattr(args, 'compression', 'auto'),
-        diff_baseline=args.diff_baseline
+        diff_baseline=args.diff_baseline,
+        target_pid=args.pid,
     )
 
     with _get_child_monitor_context(args, args.pid):
@@ -1286,7 +1305,8 @@ def _handle_run(args):
         args.format, args.sample_interval_usec, skip_idle, args.opcodes, mode,
         output_file=output_file,
         compression=getattr(args, 'compression', 'auto'),
-        diff_baseline=args.diff_baseline
+        diff_baseline=args.diff_baseline,
+        target_pid=process.pid,
     )
 
     with _get_child_monitor_context(args, process.pid):
