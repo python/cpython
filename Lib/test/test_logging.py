@@ -3741,6 +3741,35 @@ class ConfigDictTest(BaseTest):
             threading_helper.join_thread(t)
 
     @support.requires_working_socket()
+    def test_listen_truncated_request_does_not_spin(self):
+        # gh-156378: a client that declares a length and then closes without
+        # sending the body used to leave handle() calling recv() forever,
+        # burning a CPU core, because recv() keeps returning b'' at EOF.
+        t = logging.config.listen(0)
+        t.start()
+        self.assertTrue(t.ready.wait(support.LONG_TIMEOUT),
+                        msg='the listener did not start')
+        port = t.port
+        t.ready.clear()
+        before = threading.active_count()
+        try:
+            sock = socket.create_connection(('localhost', port), timeout=2.0)
+            # Announce one byte of configuration, then hang up without it.
+            sock.sendall(struct.pack('>L', 1))
+            sock.close()
+            # The handler must notice EOF and finish. Wait rather than assert
+            # immediately, so a slow machine does not make this flaky; only a
+            # handler that never exits fails here.
+            deadline = time.monotonic() + support.SHORT_TIMEOUT
+            while threading.active_count() > before:
+                if time.monotonic() > deadline:
+                    self.fail('the request handler did not exit after EOF')
+                time.sleep(0.01)
+        finally:
+            logging.config.stopListening()
+            threading_helper.join_thread(t)
+
+    @support.requires_working_socket()
     def test_listen_config_10_ok(self):
         with support.captured_stdout() as output:
             self.setup_via_listener(json.dumps(self.config10))
