@@ -79,6 +79,8 @@ Available make targets are:
 
 * "text", which builds a plain text file for each source file.
 
+* "texinfo", which builds Texinfo source files.
+
 * "epub", which builds an EPUB document, suitable to be viewed on e-book
   readers.
 
@@ -96,6 +98,10 @@ Available make targets are:
 * "pydoc-topics", which builds a Python module containing a dictionary with
   plain text documentation for the labels defined in
   ``tools/pyspecific.py`` -- pydoc needs these to show topic and keyword help.
+
+* "doctest", which runs doctests in the documentation.
+
+* "gettext", which generates gettext message catalog templates.
 
 * "check", which checks for frequent markup errors.
 
