@@ -448,6 +448,7 @@ test_pyobject_new(PyObject *self, PyObject *Py_UNUSED(ignored))
     if (obj == NULL) {
         goto alloc_failed;
     }
+    memset(PyBytes_AS_STRING(obj), 0, 3 + 1);  // +1 for the null byte
     Py_DECREF(obj);
 
     // PyObject_NEW_VAR()
@@ -455,6 +456,7 @@ test_pyobject_new(PyObject *self, PyObject *Py_UNUSED(ignored))
     if (obj == NULL) {
         goto alloc_failed;
     }
+    memset(PyBytes_AS_STRING(obj), 0, 3 + 1);  // +1 for the null byte
     Py_DECREF(obj);
 
     Py_RETURN_NONE;
