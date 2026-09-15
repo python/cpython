@@ -81,6 +81,13 @@ extern int _PyBytes_ResizeKeepOnError(PyObject **pv, Py_ssize_t newsize);
 extern int _PyBytes_IsMutable(PyObject *obj);
 #endif
 
+#ifdef Py_DEBUG
+extern void _PyBytes_CheckOverflow(
+    PyObject *op,
+    void *addr,
+    const char *type_name);
+#endif
+
 /* --- PyBytesWriter ------------------------------------------------------ */
 
 struct PyBytesWriter {
