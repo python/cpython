@@ -9,6 +9,7 @@
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_strhex.h"        // _Py_strhex_with_sep()
 #include "pycore_long.h"          // _PyLong_FromUnsignedChar()
+#include "pycore_list.h"          // _PyList_GetItemRef
 #include "pycore_pyatomic_ft_wrappers.h"
 #include "bytesobject.h"
 
