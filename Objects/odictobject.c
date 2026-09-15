@@ -1095,7 +1095,12 @@ _odict_popkey_hash(PyObject *od, PyObject *key, PyObject *failobj,
         /* Now delete the value from the dict. */
         if (_PyDict_Pop_KnownHash((PyDictObject *)od, key, hash,
                                   &value) == 0) {
-            value = Py_NewRef(failobj);
+            if (failobj) {
+                value = Py_NewRef(failobj);
+            }
+            else {
+                PyErr_SetObject(PyExc_KeyError, key);
+            }
         }
     }
     else if (value == NULL && !PyErr_Occurred()) {
