@@ -181,6 +181,11 @@ _PyImport_InitModules(PyInterpreterState *interp)
     if (MODULES(interp) == NULL) {
         return NULL;
     }
+    interp->imports.module_registry_version = 1;
+    if (PyDict_Watch(MODULE_WATCHER_ID, MODULES(interp)) < 0) {
+        Py_CLEAR(MODULES(interp));
+        return NULL;
+    }
     return MODULES(interp);
 }
 
@@ -5098,6 +5103,29 @@ _imp_release_lock_impl(PyObject *module)
 
 
 /*[clinic input]
+_imp._get_module_registry_version
+
+    modules: object
+    /
+
+Return the canonical module registry's filename-lookup version, or None.
+[clinic start generated code]*/
+
+static PyObject *
+_imp__get_module_registry_version(PyObject *module, PyObject *modules)
+/*[clinic end generated code: output=f4aa8c97595da312 input=a223282dad9ff65d]*/
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (modules != MODULES(interp)) {
+        Py_RETURN_NONE;
+    }
+    uint64_t version = FT_ATOMIC_LOAD_UINT64_ACQUIRE(
+        interp->imports.module_registry_version);
+    return PyLong_FromUnsignedLongLong(version);
+}
+
+
+/*[clinic input]
 _imp._fix_co_filename
 
     code: object(type="PyCodeObject *", subclass_of="&PyCode_Type")
@@ -5671,6 +5699,7 @@ static PyMethodDef imp_methods[] = {
     _IMP_IS_BUILTIN_METHODDEF
     _IMP_IS_FROZEN_METHODDEF
     _IMP__FROZEN_MODULE_NAMES_METHODDEF
+    _IMP__GET_MODULE_REGISTRY_VERSION_METHODDEF
     _IMP__OVERRIDE_FROZEN_MODULES_FOR_TESTS_METHODDEF
     _IMP__OVERRIDE_MULTI_INTERP_EXTENSIONS_CHECK_METHODDEF
     _IMP_CREATE_DYNAMIC_METHODDEF
