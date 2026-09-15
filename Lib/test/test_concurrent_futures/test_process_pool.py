@@ -524,7 +524,8 @@ class ProcessPoolExecutorTest(ExecutorTest):
             worker_process = list(executor._processes.values())[0]
             getattr(executor, function_name)()
 
-            self.assertRaises(RuntimeError, executor.submit, time.sleep, 0)
+            self.assertRaises(futures.ExecutorShutdownError,
+                              executor.submit, time.sleep, 0)
 
             # A signal sent, is not a signal reacted to.
             # So wait a moment here for the process to die.

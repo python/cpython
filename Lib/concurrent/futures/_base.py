@@ -50,6 +50,10 @@ class InvalidStateError(Error):
     """The operation is not allowed in this state."""
     pass
 
+class ExecutorShutdownError(RuntimeError):
+    """Raised when submitting work to an executor that cannot accept new futures."""
+    pass
+
 class _Waiter(object):
     """Provides the event that wait() and as_completed() block on."""
     def __init__(self):
