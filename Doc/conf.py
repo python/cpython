@@ -77,6 +77,8 @@ _doc_authors = 'Python documentation authors'
 # and replace the values accordingly.
 # See Doc/tools/extensions/patchlevel.py
 version, release = get_version_info()
+v = get_header_version_info()
+branch = "main" if v.releaselevel == "alpha" else f"{v.major}.{v.minor}"
 
 rst_epilog = f"""
 .. |python_version_literal| replace:: ``Python {version}``
@@ -301,6 +303,7 @@ html_context = {
     "repository_url": repository_url or None,
     "pr_id": os.getenv("READTHEDOCS_VERSION"),
     "enable_analytics": os.getenv("PYTHON_DOCS_ENABLE_ANALYTICS"),
+    "source_branch": branch,
 }
 
 # This 'Last updated on:' timestamp is inserted at the bottom of every page.
@@ -309,6 +312,9 @@ html_last_updated_use_utc = True
 
 # Path to find HTML templates to override theme
 templates_path = ['tools/templates']
+
+# We link to sources on GitHub, so don't copy them into the HTML output.
+html_copy_source = False
 
 # Custom sidebar templates, filenames relative to this file.
 html_sidebars = {
@@ -570,9 +576,6 @@ linkcheck_ignore = [
 
 # Options for sphinx.ext.extlinks
 # -------------------------------
-
-v = get_header_version_info()
-branch = "main" if v.releaselevel == "alpha" else f"{v.major}.{v.minor}"
 
 # This config is a dictionary of external sites,
 # mapping unique short aliases to a base URL and a prefix.
