@@ -386,6 +386,16 @@ class BugsTestCase(unittest.TestCase):
         for v in range(marshal.version + 1):
             self.assertRaises(ValueError, marshal.dumps, a, v)
 
+    def test_shared_reference_frozendict(self):
+        # A frozendict referenced more than once must round-trip with the
+        # shared identity preserved, like frozenset.
+        fd = frozendict({'a': 1, 'b': 2})
+        out = marshal.loads(marshal.dumps([fd, fd]))
+        self.assertEqual(out[0], fd)
+        self.assertIs(out[0], out[1])
+        nested = marshal.loads(marshal.dumps(frozendict({'x': fd, 'y': fd})))
+        self.assertIs(nested['x'], nested['y'])
+
     def test_loads_reference_loop_list(self):
         data = b'\xdb\x01\x00\x00\x00r\x00\x00\x00\x00' # [<R>]
         a = marshal.loads(data)
