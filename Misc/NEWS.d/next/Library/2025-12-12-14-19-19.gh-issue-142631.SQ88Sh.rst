@@ -1,0 +1,1 @@
+Enable deferred reference counting on :class:`functools.lru_cache` objects for better scaling in free-threaded builds. Patch by Kumar Aditya.
