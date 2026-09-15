@@ -822,6 +822,13 @@ def _get_field(cls, a_name, a_type, default_kw_only):
     # If the default value isn't derived from Field, then it's only a
     # normal default value.  Convert it to a Field().
     default = getattr(cls, a_name, MISSING)
+    # Check if default is a data descriptor that returns itself when
+    # accessed at the class level, meaning it is not providing a
+    # default value.
+    if (hasattr(default, "__get__") and default is cls.__dict__.get(a_name)
+            and (hasattr(default, "__set__") or hasattr(default, "__delete__"))):
+        default = MISSING
+
     if isinstance(default, Field):
         f = default
     else:
