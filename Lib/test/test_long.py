@@ -204,7 +204,56 @@ class LongTest(unittest.TestCase):
         self.check_division(710031681576388032, 26769404391308)
         self.check_division(1933622614268221, 30212853348836)
 
+    def test_divmod_full_limbs(self):
+        # Use saturated limbs and q near BASE to maximize |z| (~BASE*q)
+        # in the x_divrem inner loop: z = vk[i] + zhi - q*w0[i].
+        for n_div in (2, 3, 5, 8):
+            # n_div MASK limbs for the divisor (w0)
+            w = (1 << (n_div * SHIFT)) - 1
+            for n_num in (n_div, n_div + 1, n_div + 4):
+                # n_num MASK limbs for the dividend (vk)
+                v = (1 << (n_num * SHIFT)) - 1
+                with self.subTest(n_div=n_div, n_num=n_num):
+                    self.check_division(v, w)
 
+            # Known quotient and remainder: q includes values
+            # near BASE and r spans 0 .. w-1.
+            for q in (1, 2, MASK, BASE - 1, BASE, BASE + 1):
+                for r in (0, 1, MASK, w - 1):
+                    with self.subTest(n_div=n_div, q=q, r=r):
+                        v = q * w + r
+                        self.assertEqual(divmod(v, w), (q, r))
+                        self.check_division(v, w)
+
+    @support.requires_IEEE_754
+    def test_intradigit_shift(self):
+        # Unit tests for v_lshift and v_rshift in longobject.c.
+        # These two functions are not used by Python << and >>,
+        # so it is different with tests of test_xxx_l|rshift.
+        # We test them with other functions that use them.
+
+        # Full limb values.
+        one = (1 << SHIFT) - 1
+        two = (1 << (2 * SHIFT)) - 1
+        three = (1 << (3 * SHIFT)) - 1
+        four = (1 << (4 * SHIFT)) - 1
+        # Powers of 10.
+        ten_to_40 = 10**40
+        ten_to_20 = 10**20
+
+        # Test with "_PyLong_Frexp" (n -> float):
+        # - n.bit_length() <= 55  => v_lshift,
+        # - n.bit_length() > 55   => v_rshift.
+        self.check_float_conversion(one)
+        self.check_float_conversion(two)
+        self.check_float_conversion(ten_to_40)
+
+        # Test with "long_true_divide" (a / b):
+        # - (a.bit_length() - b.bit_length()) <= 55  => v_lshift,
+        # - (a.bit_length() - b.bit_length()) > 55   => v_rshift.
+        self.check_truediv(three, two)
+        self.check_truediv(four, two)
+        self.check_truediv(ten_to_40, ten_to_20)
 
     def test_karatsuba(self):
         digits = list(range(1, 5)) + list(range(KARATSUBA_CUTOFF,
