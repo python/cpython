@@ -6,10 +6,28 @@ import re
 import textwrap
 import time
 import unittest
-from test.support import script_helper
+from test.support import import_helper, script_helper
 
 
 class StructSeqTest(unittest.TestCase):
+
+    def test_newtype_rejects_negative_n_in_sequence(self):
+        # gh-154387: n_in_sequence must not be negative.
+        _testcapi = import_helper.import_module("_testcapi")
+        with self.assertRaises(SystemError):
+            _testcapi.structseq_newtype_negative_n_in_sequence()
+
+    def test_newtype_rejects_unnamed_hidden_field(self):
+        # gh-154387: an unnamed field must be a visible sequence field.
+        _testcapi = import_helper.import_module("_testcapi")
+        with self.assertRaises(SystemError):
+            _testcapi.structseq_newtype_unnamed_hidden_field()
+
+    def test_newtype_rejects_n_in_sequence_over_n_fields(self):
+        # gh-154387: n_in_sequence must not exceed the number of fields.
+        _testcapi = import_helper.import_module("_testcapi")
+        with self.assertRaises(SystemError):
+            _testcapi.structseq_newtype_too_many_visible_fields()
 
     def test_tuple(self):
         t = time.gmtime()
