@@ -1180,6 +1180,57 @@ class TestIsolated(unittest.TestCase):
         self.assertEqual(len(result.errors), 1)
         self.assertIn('did not run in a subprocess', result.errors[0][1])
 
+    @support.requires_subprocess()
+    def test_subprocess_dying_after_the_test_is_reported(self):
+        from test._isolated_sample import EXIT_CODE
+        result = self._run('MethodExitSample.test_passes_then_dies')
+        self.assertEqual(result.testsRun, 1)
+        self.assertEqual(len(result.errors), 1)
+        self.assertIn(f'exited with code {EXIT_CODE}', result.errors[0][1])
+
+    @support.requires_subprocess()
+    def test_subprocess_dying_does_not_hide_the_failure(self):
+        result = self._run('MethodExitSample.test_fails_and_dies')
+        self.assertEqual(self._names(result.failures), ['test_fails_and_dies'])
+        self.assertEqual(result.errors, [])
+
+    @support.requires_subprocess()
+    def test_class_subprocess_dying_after_the_tests_is_reported(self):
+        # The tests that ran are still reported, and the crash once, for the class.
+        from test._isolated_sample import EXIT_CODE
+        result = self._run('ClassExitSample')
+        self.assertEqual(result.testsRun, 2)
+        self.assertEqual(result.failures, [])
+        self.assertEqual(len(result.errors), 1)
+        self.assertIn('tearDownClass', str(result.errors[0][0]))
+        self.assertIn(f'exited with code {EXIT_CODE}', result.errors[0][1])
+
+    @support.requires_subprocess()
+    def test_options_passed_to_subprocess(self):
+        result = self._run('OptionsSample')
+        self.assertEqual(result.testsRun, 1)
+        self.assertEqual(result.failures, [])
+        self.assertEqual(result.errors, [])
+
+    @support.requires_subprocess()
+    def test_env_passed_to_subprocess(self):
+        # The samples check the variable, so set it here to let them tell
+        # env= from the inherited environment.
+        with os_helper.EnvironmentVarGuard() as env:
+            env['_PYTHON_ISOLATION_PROBE'] = 'set-by-parent'
+            result = self._run('EnvSample')
+        self.assertEqual(result.testsRun, 3)
+        self.assertEqual(result.failures, [])
+        self.assertEqual(result.errors, [])
+
+    @support.requires_subprocess()
+    def test_timeout_reported_as_error(self):
+        from test._isolated_sample import TIMEOUT
+        result = self._run('TimeoutSample')
+        self.assertEqual(result.testsRun, 1)
+        self.assertEqual(len(result.errors), 1)
+        self.assertIn(f'within {TIMEOUT} seconds', result.errors[0][1])
+
     def test_skipped_without_subprocess_support(self):
         # On a platform without subprocess support the test is skipped in the
         # parent, before any subprocess is spawned.
