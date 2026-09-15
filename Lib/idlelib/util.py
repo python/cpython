@@ -103,8 +103,10 @@ def wheel_event(event, widget=None):
     A <Button-4> or <Button-5> event (see x11_buttons) says up or down
     by its number, and has no delta; a wheel event has no number.
 
-    If the Shift modifier is set in event.state, as for horizontal
-    scrolling with a touchpad, scroll horizontally.
+    If the Shift modifier is set in event.state, scroll horizontally.
+    Tk 9 reports horizontal scrolling, as with a touchpad, as a
+    <Shift-MouseWheel> event on all systems, and Tk 8.6.10 and newer
+    on X11 report it as a <Shift-Button-4> or <Shift-Button-5> event.
 
     The widget parameter is needed so tree label bindings can pass the
     underlying canvas.  If tree is replaced by ttk.Treeview, it can go.
