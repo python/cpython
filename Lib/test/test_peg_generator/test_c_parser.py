@@ -145,6 +145,35 @@ class TestCParser(unittest.TestCase):
             TEST_TEMPLATE.format(extension_path=self.tmp_path, test_source=test_source),
         )
 
+    def test_prefix_reuses_position(self) -> None:
+        grammar_source = """
+        start:
+            | prefix ':' NAME NEWLINE? ENDMARKER
+            | prefix ':' NUMBER NEWLINE? ENDMARKER
+            | prefix '=' NUMBER NEWLINE? ENDMARKER
+        prefix (memo): NAME NAME
+        """
+        self.run_test(grammar_source, """
+        self.check_input_strings_for_grammar(
+            valid_cases=['one two : name', 'one two : 3', 'one two = 3'],
+            invalid_cases=['one = 3', 'one two = name', 'one two :'],
+        )
+        """)
+
+    def test_prefix_respects_cut(self) -> None:
+        grammar_source = """
+        start:
+            | prefix ':' ~ NAME NEWLINE? ENDMARKER
+            | prefix ':' NUMBER NEWLINE? ENDMARKER
+        prefix (memo): NAME NAME
+        """
+        self.run_test(grammar_source, """
+        self.check_input_strings_for_grammar(
+            valid_cases=['one two : name'],
+            invalid_cases=['one two : 3'],
+        )
+        """)
+
     def test_c_parser(self) -> None:
         grammar_source = """
         start[mod_ty]: a[asdl_stmt_seq*]=stmt* $ { _PyAST_Module(a, NULL, p->arena) }

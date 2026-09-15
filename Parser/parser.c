@@ -11409,6 +11409,8 @@ expressions_rule(Parser *p)
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
+    expr_ty _prefix_0_result = NULL;
+    int _prefix_0_end = 0, _prefix_0_valid = 0;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
         p->level--;
@@ -11429,7 +11431,7 @@ expressions_rule(Parser *p)
         expr_ty a;
         asdl_seq * b;
         if (
-            (a = expression_rule(p))  // expression
+            (a = ((!p->call_invalid_rules && _prefix_0_valid) ? (p->mark = _prefix_0_end, _prefix_0_result) : (_prefix_0_result = expression_rule(p), _prefix_0_end = p->mark, _prefix_0_valid = 1, _prefix_0_result)))  // expression
             &&
             (b = _loop1_55_rule(p))  // ((',' expression))+
             &&
@@ -11467,7 +11469,7 @@ expressions_rule(Parser *p)
         Token * _literal;
         expr_ty a;
         if (
-            (a = expression_rule(p))  // expression
+            (a = ((!p->call_invalid_rules && _prefix_0_valid) ? (p->mark = _prefix_0_end, _prefix_0_result) : (_prefix_0_result = expression_rule(p), _prefix_0_end = p->mark, _prefix_0_valid = 1, _prefix_0_result)))  // expression
             &&
             (_literal = _PyPegen_expect_token(p, 12))  // token=','
         )
@@ -11502,7 +11504,7 @@ expressions_rule(Parser *p)
         D(fprintf(stderr, "%*c> expressions[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "expression"));
         expr_ty expression_var;
         if (
-            (expression_var = expression_rule(p))  // expression
+            (expression_var = ((!p->call_invalid_rules && _prefix_0_valid) ? (p->mark = _prefix_0_end, _prefix_0_result) : (_prefix_0_result = expression_rule(p), _prefix_0_end = p->mark, _prefix_0_valid = 1, _prefix_0_result)))  // expression
         )
         {
             D(fprintf(stderr, "%*c+ expressions[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "expression"));
@@ -11855,6 +11857,8 @@ star_expressions_rule(Parser *p)
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
+    expr_ty _prefix_1_result = NULL;
+    int _prefix_1_end = 0, _prefix_1_valid = 0;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
         p->level--;
@@ -11875,7 +11879,7 @@ star_expressions_rule(Parser *p)
         expr_ty a;
         asdl_seq * b;
         if (
-            (a = star_expression_rule(p))  // star_expression
+            (a = ((!p->call_invalid_rules && _prefix_1_valid) ? (p->mark = _prefix_1_end, _prefix_1_result) : (_prefix_1_result = star_expression_rule(p), _prefix_1_end = p->mark, _prefix_1_valid = 1, _prefix_1_result)))  // star_expression
             &&
             (b = _loop1_56_rule(p))  // ((',' star_expression))+
             &&
@@ -11913,7 +11917,7 @@ star_expressions_rule(Parser *p)
         Token * _literal;
         expr_ty a;
         if (
-            (a = star_expression_rule(p))  // star_expression
+            (a = ((!p->call_invalid_rules && _prefix_1_valid) ? (p->mark = _prefix_1_end, _prefix_1_result) : (_prefix_1_result = star_expression_rule(p), _prefix_1_end = p->mark, _prefix_1_valid = 1, _prefix_1_result)))  // star_expression
             &&
             (_literal = _PyPegen_expect_token(p, 12))  // token=','
         )
@@ -11948,7 +11952,7 @@ star_expressions_rule(Parser *p)
         D(fprintf(stderr, "%*c> star_expressions[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "star_expression"));
         expr_ty star_expression_var;
         if (
-            (star_expression_var = star_expression_rule(p))  // star_expression
+            (star_expression_var = ((!p->call_invalid_rules && _prefix_1_valid) ? (p->mark = _prefix_1_end, _prefix_1_result) : (_prefix_1_result = star_expression_rule(p), _prefix_1_end = p->mark, _prefix_1_valid = 1, _prefix_1_result)))  // star_expression
         )
         {
             D(fprintf(stderr, "%*c+ star_expressions[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "star_expression"));
@@ -12352,6 +12356,8 @@ disjunction_rule(Parser *p)
         return _res;
     }
     int _mark = p->mark;
+    expr_ty _prefix_2_result = NULL;
+    int _prefix_2_end = 0, _prefix_2_valid = 0;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
         p->level--;
@@ -12370,7 +12376,7 @@ disjunction_rule(Parser *p)
         expr_ty a;
         asdl_seq * b;
         if (
-            (a = conjunction_rule(p))  // conjunction
+            (a = ((!p->call_invalid_rules && _prefix_2_valid) ? (p->mark = _prefix_2_end, _prefix_2_result) : (_prefix_2_result = conjunction_rule(p), _prefix_2_end = p->mark, _prefix_2_valid = 1, _prefix_2_result)))  // conjunction
             &&
             (b = _loop1_59_rule(p))  // (('or' conjunction))+
         )
@@ -12405,7 +12411,7 @@ disjunction_rule(Parser *p)
         D(fprintf(stderr, "%*c> disjunction[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "conjunction"));
         expr_ty conjunction_var;
         if (
-            (conjunction_var = conjunction_rule(p))  // conjunction
+            (conjunction_var = ((!p->call_invalid_rules && _prefix_2_valid) ? (p->mark = _prefix_2_end, _prefix_2_result) : (_prefix_2_result = conjunction_rule(p), _prefix_2_end = p->mark, _prefix_2_valid = 1, _prefix_2_result)))  // conjunction
         )
         {
             D(fprintf(stderr, "%*c+ disjunction[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "conjunction"));
@@ -12440,6 +12446,8 @@ conjunction_rule(Parser *p)
         return _res;
     }
     int _mark = p->mark;
+    expr_ty _prefix_3_result = NULL;
+    int _prefix_3_end = 0, _prefix_3_valid = 0;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
         p->level--;
@@ -12458,7 +12466,7 @@ conjunction_rule(Parser *p)
         expr_ty a;
         asdl_seq * b;
         if (
-            (a = inversion_rule(p))  // inversion
+            (a = ((!p->call_invalid_rules && _prefix_3_valid) ? (p->mark = _prefix_3_end, _prefix_3_result) : (_prefix_3_result = inversion_rule(p), _prefix_3_end = p->mark, _prefix_3_valid = 1, _prefix_3_result)))  // inversion
             &&
             (b = _loop1_60_rule(p))  // (('and' inversion))+
         )
@@ -12493,7 +12501,7 @@ conjunction_rule(Parser *p)
         D(fprintf(stderr, "%*c> conjunction[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "inversion"));
         expr_ty inversion_var;
         if (
-            (inversion_var = inversion_rule(p))  // inversion
+            (inversion_var = ((!p->call_invalid_rules && _prefix_3_valid) ? (p->mark = _prefix_3_end, _prefix_3_result) : (_prefix_3_result = inversion_rule(p), _prefix_3_end = p->mark, _prefix_3_valid = 1, _prefix_3_result)))  // inversion
         )
         {
             D(fprintf(stderr, "%*c+ conjunction[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "inversion"));
@@ -12612,6 +12620,8 @@ comparison_rule(Parser *p)
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
+    expr_ty _prefix_4_result = NULL;
+    int _prefix_4_end = 0, _prefix_4_valid = 0;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
         p->level--;
@@ -12630,7 +12640,7 @@ comparison_rule(Parser *p)
         expr_ty a;
         asdl_seq * b;
         if (
-            (a = bitwise_or_rule(p))  // bitwise_or
+            (a = ((!p->call_invalid_rules && _prefix_4_valid) ? (p->mark = _prefix_4_end, _prefix_4_result) : (_prefix_4_result = bitwise_or_rule(p), _prefix_4_end = p->mark, _prefix_4_valid = 1, _prefix_4_result)))  // bitwise_or
             &&
             (b = _loop1_61_rule(p))  // compare_op_bitwise_or_pair+
         )
@@ -12665,7 +12675,7 @@ comparison_rule(Parser *p)
         D(fprintf(stderr, "%*c> comparison[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "bitwise_or"));
         expr_ty bitwise_or_var;
         if (
-            (bitwise_or_var = bitwise_or_rule(p))  // bitwise_or
+            (bitwise_or_var = ((!p->call_invalid_rules && _prefix_4_valid) ? (p->mark = _prefix_4_end, _prefix_4_result) : (_prefix_4_result = bitwise_or_rule(p), _prefix_4_end = p->mark, _prefix_4_valid = 1, _prefix_4_result)))  // bitwise_or
         )
         {
             D(fprintf(stderr, "%*c+ comparison[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "bitwise_or"));
@@ -13448,6 +13458,8 @@ shift_expr_raw(Parser *p)
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
+    expr_ty _prefix_5_result = NULL;
+    int _prefix_5_end = 0, _prefix_5_valid = 0;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
         p->level--;
@@ -13467,7 +13479,7 @@ shift_expr_raw(Parser *p)
         expr_ty a;
         expr_ty b;
         if (
-            (a = shift_expr_rule(p))  // shift_expr
+            (a = ((!p->call_invalid_rules && _prefix_5_valid) ? (p->mark = _prefix_5_end, _prefix_5_result) : (_prefix_5_result = shift_expr_rule(p), _prefix_5_end = p->mark, _prefix_5_valid = 1, _prefix_5_result)))  // shift_expr
             &&
             (_literal = _PyPegen_expect_token(p, 33))  // token='<<'
             &&
@@ -13506,7 +13518,7 @@ shift_expr_raw(Parser *p)
         expr_ty a;
         expr_ty b;
         if (
-            (a = shift_expr_rule(p))  // shift_expr
+            (a = ((!p->call_invalid_rules && _prefix_5_valid) ? (p->mark = _prefix_5_end, _prefix_5_result) : (_prefix_5_result = shift_expr_rule(p), _prefix_5_end = p->mark, _prefix_5_valid = 1, _prefix_5_result)))  // shift_expr
             &&
             (_literal = _PyPegen_expect_token(p, 34))  // token='>>'
             &&
@@ -13611,6 +13623,8 @@ sum_raw(Parser *p)
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
+    expr_ty _prefix_6_result = NULL;
+    int _prefix_6_end = 0, _prefix_6_valid = 0;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
         p->level--;
@@ -13630,7 +13644,7 @@ sum_raw(Parser *p)
         expr_ty a;
         expr_ty b;
         if (
-            (a = sum_rule(p))  // sum
+            (a = ((!p->call_invalid_rules && _prefix_6_valid) ? (p->mark = _prefix_6_end, _prefix_6_result) : (_prefix_6_result = sum_rule(p), _prefix_6_end = p->mark, _prefix_6_valid = 1, _prefix_6_result)))  // sum
             &&
             (_literal = _PyPegen_expect_token(p, 14))  // token='+'
             &&
@@ -13669,7 +13683,7 @@ sum_raw(Parser *p)
         expr_ty a;
         expr_ty b;
         if (
-            (a = sum_rule(p))  // sum
+            (a = ((!p->call_invalid_rules && _prefix_6_valid) ? (p->mark = _prefix_6_end, _prefix_6_result) : (_prefix_6_result = sum_rule(p), _prefix_6_end = p->mark, _prefix_6_valid = 1, _prefix_6_result)))  // sum
             &&
             (_literal = _PyPegen_expect_token(p, 15))  // token='-'
             &&
@@ -13799,6 +13813,8 @@ term_raw(Parser *p)
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
+    expr_ty _prefix_7_result = NULL;
+    int _prefix_7_end = 0, _prefix_7_valid = 0;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
         p->level--;
@@ -13818,7 +13834,7 @@ term_raw(Parser *p)
         expr_ty a;
         expr_ty b;
         if (
-            (a = term_rule(p))  // term
+            (a = ((!p->call_invalid_rules && _prefix_7_valid) ? (p->mark = _prefix_7_end, _prefix_7_result) : (_prefix_7_result = term_rule(p), _prefix_7_end = p->mark, _prefix_7_valid = 1, _prefix_7_result)))  // term
             &&
             (_literal = _PyPegen_expect_token(p, 16))  // token='*'
             &&
@@ -13857,7 +13873,7 @@ term_raw(Parser *p)
         expr_ty a;
         expr_ty b;
         if (
-            (a = term_rule(p))  // term
+            (a = ((!p->call_invalid_rules && _prefix_7_valid) ? (p->mark = _prefix_7_end, _prefix_7_result) : (_prefix_7_result = term_rule(p), _prefix_7_end = p->mark, _prefix_7_valid = 1, _prefix_7_result)))  // term
             &&
             (_literal = _PyPegen_expect_token(p, 17))  // token='/'
             &&
@@ -13896,7 +13912,7 @@ term_raw(Parser *p)
         expr_ty a;
         expr_ty b;
         if (
-            (a = term_rule(p))  // term
+            (a = ((!p->call_invalid_rules && _prefix_7_valid) ? (p->mark = _prefix_7_end, _prefix_7_result) : (_prefix_7_result = term_rule(p), _prefix_7_end = p->mark, _prefix_7_valid = 1, _prefix_7_result)))  // term
             &&
             (_literal = _PyPegen_expect_token(p, 47))  // token='//'
             &&
@@ -13935,7 +13951,7 @@ term_raw(Parser *p)
         expr_ty a;
         expr_ty b;
         if (
-            (a = term_rule(p))  // term
+            (a = ((!p->call_invalid_rules && _prefix_7_valid) ? (p->mark = _prefix_7_end, _prefix_7_result) : (_prefix_7_result = term_rule(p), _prefix_7_end = p->mark, _prefix_7_valid = 1, _prefix_7_result)))  // term
             &&
             (_literal = _PyPegen_expect_token(p, 24))  // token='%'
             &&
@@ -13974,7 +13990,7 @@ term_raw(Parser *p)
         expr_ty a;
         expr_ty b;
         if (
-            (a = term_rule(p))  // term
+            (a = ((!p->call_invalid_rules && _prefix_7_valid) ? (p->mark = _prefix_7_end, _prefix_7_result) : (_prefix_7_result = term_rule(p), _prefix_7_end = p->mark, _prefix_7_valid = 1, _prefix_7_result)))  // term
             &&
             (_literal = _PyPegen_expect_token(p, 49))  // token='@'
             &&
@@ -14220,6 +14236,8 @@ power_rule(Parser *p)
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
+    expr_ty _prefix_8_result = NULL;
+    int _prefix_8_end = 0, _prefix_8_valid = 0;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
         p->level--;
@@ -14239,7 +14257,7 @@ power_rule(Parser *p)
         expr_ty a;
         expr_ty b;
         if (
-            (a = await_primary_rule(p))  // await_primary
+            (a = ((!p->call_invalid_rules && _prefix_8_valid) ? (p->mark = _prefix_8_end, _prefix_8_result) : (_prefix_8_result = await_primary_rule(p), _prefix_8_end = p->mark, _prefix_8_valid = 1, _prefix_8_result)))  // await_primary
             &&
             (_literal = _PyPegen_expect_token(p, 35))  // token='**'
             &&
@@ -14276,7 +14294,7 @@ power_rule(Parser *p)
         D(fprintf(stderr, "%*c> power[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "await_primary"));
         expr_ty await_primary_var;
         if (
-            (await_primary_var = await_primary_rule(p))  // await_primary
+            (await_primary_var = ((!p->call_invalid_rules && _prefix_8_valid) ? (p->mark = _prefix_8_end, _prefix_8_result) : (_prefix_8_result = await_primary_rule(p), _prefix_8_end = p->mark, _prefix_8_valid = 1, _prefix_8_result)))  // await_primary
         )
         {
             D(fprintf(stderr, "%*c+ power[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "await_primary"));
@@ -14437,6 +14455,8 @@ primary_raw(Parser *p)
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
+    expr_ty _prefix_9_result = NULL;
+    int _prefix_9_end = 0, _prefix_9_valid = 0;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
         p->level--;
@@ -14456,7 +14476,7 @@ primary_raw(Parser *p)
         expr_ty a;
         expr_ty b;
         if (
-            (a = primary_rule(p))  // primary
+            (a = ((!p->call_invalid_rules && _prefix_9_valid) ? (p->mark = _prefix_9_end, _prefix_9_result) : (_prefix_9_result = primary_rule(p), _prefix_9_end = p->mark, _prefix_9_valid = 1, _prefix_9_result)))  // primary
             &&
             (_literal = _PyPegen_expect_token(p, 23))  // token='.'
             &&
@@ -14494,7 +14514,7 @@ primary_raw(Parser *p)
         expr_ty a;
         expr_ty b;
         if (
-            (a = primary_rule(p))  // primary
+            (a = ((!p->call_invalid_rules && _prefix_9_valid) ? (p->mark = _prefix_9_end, _prefix_9_result) : (_prefix_9_result = primary_rule(p), _prefix_9_end = p->mark, _prefix_9_valid = 1, _prefix_9_result)))  // primary
             &&
             (b = genexp_rule(p))  // genexp
         )
@@ -14532,7 +14552,7 @@ primary_raw(Parser *p)
         expr_ty a;
         void *b;
         if (
-            (a = primary_rule(p))  // primary
+            (a = ((!p->call_invalid_rules && _prefix_9_valid) ? (p->mark = _prefix_9_end, _prefix_9_result) : (_prefix_9_result = primary_rule(p), _prefix_9_end = p->mark, _prefix_9_valid = 1, _prefix_9_result)))  // primary
             &&
             (_literal = _PyPegen_expect_token(p, 7))  // token='('
             &&
@@ -14574,7 +14594,7 @@ primary_raw(Parser *p)
         expr_ty a;
         expr_ty b;
         if (
-            (a = primary_rule(p))  // primary
+            (a = ((!p->call_invalid_rules && _prefix_9_valid) ? (p->mark = _prefix_9_end, _prefix_9_result) : (_prefix_9_result = primary_rule(p), _prefix_9_end = p->mark, _prefix_9_valid = 1, _prefix_9_result)))  // primary
             &&
             (_literal = _PyPegen_expect_token(p, 9))  // token='['
             &&
@@ -18823,6 +18843,8 @@ star_targets_rule(Parser *p)
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
+    expr_ty _prefix_10_result = NULL;
+    int _prefix_10_end = 0, _prefix_10_valid = 0;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
         p->level--;
@@ -18840,7 +18862,7 @@ star_targets_rule(Parser *p)
         D(fprintf(stderr, "%*c> star_targets[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "star_target !','"));
         expr_ty a;
         if (
-            (a = star_target_rule(p))  // star_target
+            (a = ((!p->call_invalid_rules && _prefix_10_valid) ? (p->mark = _prefix_10_end, _prefix_10_result) : (_prefix_10_result = star_target_rule(p), _prefix_10_end = p->mark, _prefix_10_valid = 1, _prefix_10_result)))  // star_target
             &&
             _PyPegen_lookahead_with_int(0, _PyPegen_expect_token, p, 12)  // token=','
         )
@@ -18869,7 +18891,7 @@ star_targets_rule(Parser *p)
         expr_ty a;
         asdl_seq * b;
         if (
-            (a = star_target_rule(p))  // star_target
+            (a = ((!p->call_invalid_rules && _prefix_10_valid) ? (p->mark = _prefix_10_end, _prefix_10_result) : (_prefix_10_result = star_target_rule(p), _prefix_10_end = p->mark, _prefix_10_valid = 1, _prefix_10_result)))  // star_target
             &&
             (b = _loop0_98_rule(p))  // ((',' star_target))*
             &&
@@ -20013,6 +20035,8 @@ expression_without_invalid_rule(Parser *p)
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
+    expr_ty _prefix_11_result = NULL;
+    int _prefix_11_end = 0, _prefix_11_valid = 0;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
         p->call_invalid_rules = _prev_call_invalid;
@@ -20036,7 +20060,7 @@ expression_without_invalid_rule(Parser *p)
         expr_ty b;
         expr_ty c;
         if (
-            (a = disjunction_rule(p))  // disjunction
+            (a = ((!p->call_invalid_rules && _prefix_11_valid) ? (p->mark = _prefix_11_end, _prefix_11_result) : (_prefix_11_result = disjunction_rule(p), _prefix_11_end = p->mark, _prefix_11_valid = 1, _prefix_11_result)))  // disjunction
             &&
             (_keyword = _PyPegen_expect_token(p, 700))  // token='if'
             &&
@@ -20080,7 +20104,7 @@ expression_without_invalid_rule(Parser *p)
         D(fprintf(stderr, "%*c> expression_without_invalid[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "disjunction"));
         expr_ty disjunction_var;
         if (
-            (disjunction_var = disjunction_rule(p))  // disjunction
+            (disjunction_var = ((!p->call_invalid_rules && _prefix_11_valid) ? (p->mark = _prefix_11_end, _prefix_11_result) : (_prefix_11_result = disjunction_rule(p), _prefix_11_end = p->mark, _prefix_11_valid = 1, _prefix_11_result)))  // disjunction
         )
         {
             D(fprintf(stderr, "%*c+ expression_without_invalid[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "disjunction"));
@@ -20271,6 +20295,8 @@ invalid_expression_rule(Parser *p)
     }
     void * _res = NULL;
     int _mark = p->mark;
+    expr_ty _prefix_12_result = NULL;
+    int _prefix_12_end = 0, _prefix_12_valid = 0;
     { // STRING ((!STRING expression_without_invalid))+ STRING
         if (p->error_indicator) {
             p->level--;
@@ -20340,7 +20366,7 @@ invalid_expression_rule(Parser *p)
         expr_ty a;
         expr_ty b;
         if (
-            (a = disjunction_rule(p))  // disjunction
+            (a = ((!p->call_invalid_rules && _prefix_12_valid) ? (p->mark = _prefix_12_end, _prefix_12_result) : (_prefix_12_result = disjunction_rule(p), _prefix_12_end = p->mark, _prefix_12_valid = 1, _prefix_12_result)))  // disjunction
             &&
             (_keyword = _PyPegen_expect_token(p, 700))  // token='if'
             &&
@@ -20373,7 +20399,7 @@ invalid_expression_rule(Parser *p)
         expr_ty a;
         expr_ty b;
         if (
-            (a = disjunction_rule(p))  // disjunction
+            (a = ((!p->call_invalid_rules && _prefix_12_valid) ? (p->mark = _prefix_12_end, _prefix_12_result) : (_prefix_12_result = disjunction_rule(p), _prefix_12_end = p->mark, _prefix_12_valid = 1, _prefix_12_result)))  // disjunction
             &&
             (_keyword = _PyPegen_expect_token(p, 700))  // token='if'
             &&
@@ -20520,6 +20546,8 @@ invalid_if_expression_rule(Parser *p)
     }
     void * _res = NULL;
     int _mark = p->mark;
+    expr_ty _prefix_13_result = NULL;
+    int _prefix_13_end = 0, _prefix_13_valid = 0;
     { // disjunction 'if' disjunction 'else' '*'
         if (p->error_indicator) {
             p->level--;
@@ -20532,7 +20560,7 @@ invalid_if_expression_rule(Parser *p)
         expr_ty b;
         expr_ty disjunction_var;
         if (
-            (disjunction_var = disjunction_rule(p))  // disjunction
+            (disjunction_var = ((!p->call_invalid_rules && _prefix_13_valid) ? (p->mark = _prefix_13_end, _prefix_13_result) : (_prefix_13_result = disjunction_rule(p), _prefix_13_end = p->mark, _prefix_13_valid = 1, _prefix_13_result)))  // disjunction
             &&
             (_keyword = _PyPegen_expect_token(p, 700))  // token='if'
             &&
@@ -20568,7 +20596,7 @@ invalid_if_expression_rule(Parser *p)
         expr_ty b;
         expr_ty disjunction_var;
         if (
-            (disjunction_var = disjunction_rule(p))  // disjunction
+            (disjunction_var = ((!p->call_invalid_rules && _prefix_13_valid) ? (p->mark = _prefix_13_end, _prefix_13_result) : (_prefix_13_result = disjunction_rule(p), _prefix_13_end = p->mark, _prefix_13_valid = 1, _prefix_13_result)))  // disjunction
             &&
             (_keyword = _PyPegen_expect_token(p, 700))  // token='if'
             &&
@@ -25460,6 +25488,8 @@ invalid_kvpair_unpacking_rule(Parser *p)
     }
     void * _res = NULL;
     int _mark = p->mark;
+    expr_ty _prefix_14_result = NULL;
+    int _prefix_14_end = 0, _prefix_14_valid = 0;
     { // '**' if_expression
         if (p->error_indicator) {
             p->level--;
@@ -25564,7 +25594,7 @@ invalid_kvpair_unpacking_rule(Parser *p)
         expr_ty b;
         expr_ty expression_var;
         if (
-            (expression_var = expression_rule(p))  // expression
+            (expression_var = ((!p->call_invalid_rules && _prefix_14_valid) ? (p->mark = _prefix_14_end, _prefix_14_result) : (_prefix_14_result = expression_rule(p), _prefix_14_end = p->mark, _prefix_14_valid = 1, _prefix_14_result)))  // expression
             &&
             (_literal = _PyPegen_expect_token(p, 11))  // token=':'
             &&
@@ -25597,7 +25627,7 @@ invalid_kvpair_unpacking_rule(Parser *p)
         expr_ty b;
         expr_ty expression_var;
         if (
-            (expression_var = expression_rule(p))  // expression
+            (expression_var = ((!p->call_invalid_rules && _prefix_14_valid) ? (p->mark = _prefix_14_end, _prefix_14_result) : (_prefix_14_result = expression_rule(p), _prefix_14_end = p->mark, _prefix_14_valid = 1, _prefix_14_result)))  // expression
             &&
             (_literal = _PyPegen_expect_token(p, 11))  // token=':'
             &&
@@ -25642,6 +25672,8 @@ invalid_kvpair_rule(Parser *p)
     }
     void * _res = NULL;
     int _mark = p->mark;
+    expr_ty _prefix_15_result = NULL;
+    int _prefix_15_end = 0, _prefix_15_valid = 0;
     { // expression !(':')
         if (p->error_indicator) {
             p->level--;
@@ -25650,7 +25682,7 @@ invalid_kvpair_rule(Parser *p)
         D(fprintf(stderr, "%*c> invalid_kvpair[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "expression !(':')"));
         expr_ty a;
         if (
-            (a = expression_rule(p))  // expression
+            (a = ((!p->call_invalid_rules && _prefix_15_valid) ? (p->mark = _prefix_15_end, _prefix_15_result) : (_prefix_15_result = expression_rule(p), _prefix_15_end = p->mark, _prefix_15_valid = 1, _prefix_15_result)))  // expression
             &&
             _PyPegen_lookahead_with_int(0, _PyPegen_expect_token, p, 11)  // token=(':')
         )
@@ -25679,7 +25711,7 @@ invalid_kvpair_rule(Parser *p)
         expr_ty bitwise_or_var;
         expr_ty expression_var;
         if (
-            (expression_var = expression_rule(p))  // expression
+            (expression_var = ((!p->call_invalid_rules && _prefix_15_valid) ? (p->mark = _prefix_15_end, _prefix_15_result) : (_prefix_15_result = expression_rule(p), _prefix_15_end = p->mark, _prefix_15_valid = 1, _prefix_15_result)))  // expression
             &&
             (_literal = _PyPegen_expect_token(p, 11))  // token=':'
             &&
@@ -25712,7 +25744,7 @@ invalid_kvpair_rule(Parser *p)
         expr_ty bitwise_or_var;
         expr_ty expression_var;
         if (
-            (expression_var = expression_rule(p))  // expression
+            (expression_var = ((!p->call_invalid_rules && _prefix_15_valid) ? (p->mark = _prefix_15_end, _prefix_15_result) : (_prefix_15_result = expression_rule(p), _prefix_15_end = p->mark, _prefix_15_valid = 1, _prefix_15_result)))  // expression
             &&
             (_literal = _PyPegen_expect_token(p, 11))  // token=':'
             &&
@@ -25743,7 +25775,7 @@ invalid_kvpair_rule(Parser *p)
         Token * a;
         expr_ty expression_var;
         if (
-            (expression_var = expression_rule(p))  // expression
+            (expression_var = ((!p->call_invalid_rules && _prefix_15_valid) ? (p->mark = _prefix_15_end, _prefix_15_result) : (_prefix_15_result = expression_rule(p), _prefix_15_end = p->mark, _prefix_15_valid = 1, _prefix_15_result)))  // expression
             &&
             (a = _PyPegen_expect_token(p, 11))  // token=':'
             &&
