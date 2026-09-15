@@ -1516,6 +1516,7 @@ extern "C" {
     INIT_ID(__str__), \
     INIT_ID(__sub__), \
     INIT_ID(__subclasscheck__), \
+    INIT_ID(__subclasses__), \
     INIT_ID(__subclasshook__), \
     INIT_ID(__truediv__), \
     INIT_ID(__trunc__), \

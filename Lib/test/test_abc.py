@@ -556,6 +556,144 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             self.assertNotIsSubclass(C, A)
             self.assertNotIsSubclass(C, (A,))
 
+        def test_subclasshook_of_subclass(self):
+            # The hook of a subclass of an ABC applies to the ABC too.
+            class A(metaclass=abc_ABCMeta):
+                pass
+            class B(A):
+                @classmethod
+                def __subclasshook__(cls, C):
+                    if cls is B:
+                        return 'foo' in C.__dict__
+                    return NotImplemented
+            class C:
+                foo = 42
+            class D:
+                spam = 42
+            self.assertIsSubclass(C, A)
+            self.assertIsSubclass(C, B)
+            self.assertNotIsSubclass(D, A)
+            self.assertNotIsSubclass(D, B)
+            self.assertIsInstance(C(), A)
+            self.assertNotIsInstance(D(), A)
+
+        def test_subclasscheck_of_subclass_metaclass(self):
+            # A __subclasscheck__ override on the metaclass of a subclass
+            # is honoured when walking the subclass tree of an ABC.
+            class Meta(abc_ABCMeta):
+                def __subclasscheck__(cls, subclass):
+                    if subclass is int:
+                        return True
+                    return super().__subclasscheck__(subclass)
+            class A(metaclass=abc_ABCMeta):
+                pass
+            class B(A, metaclass=Meta):
+                pass
+            self.assertIsSubclass(int, B)
+            self.assertIsSubclass(int, A)
+            self.assertNotIsSubclass(str, A)
+            self.assertIsInstance(1, A)
+            self.assertNotIsInstance('', A)
+
+        def test_subclasses_override_of_subclass(self):
+            # A __subclasses__ override in a subclass is honoured.
+            class Other:
+                pass
+            class A(metaclass=abc_ABCMeta):
+                pass
+            class B(A):
+                @classmethod
+                def __subclasses__(cls):
+                    return [Other]
+            self.assertIsSubclass(Other, B)
+            self.assertIsSubclass(Other, A)
+            self.assertNotIsSubclass(int, A)
+
+        def test_registration_in_subclass_tree(self):
+            class A(metaclass=abc_ABCMeta):
+                pass
+            class B(A):
+                pass
+            class C(B):
+                pass
+            class D:
+                pass
+            class E(D):
+                pass
+            self.assertNotIsSubclass(E, A)
+            C.register(D)
+            self.assertIsSubclass(D, C)
+            self.assertIsSubclass(D, B)
+            self.assertIsSubclass(D, A)
+            self.assertIsSubclass(E, A)
+            self.assertIsInstance(E(), A)
+            self.assertNotIsSubclass(int, A)
+
+        def test_instancecheck_class_attribute(self):
+            class A(metaclass=abc_ABCMeta):
+                pass
+            class B(A):
+                pass
+            class ClassProperty:
+                @property
+                def __class__(self):
+                    return B
+            class GetAttribute:
+                def __getattribute__(self, name):
+                    if name == '__class__':
+                        return B
+                    return object.__getattribute__(self, name)
+            class ClassAttributeNotAType:
+                __class__ = 42
+            self.assertIsInstance(ClassProperty(), A)
+            self.assertIsInstance(GetAttribute(), A)
+            self.assertNotIsInstance(ClassProperty(), int)
+            with self.assertRaises(TypeError):
+                isinstance(ClassAttributeNotAType(), A)
+
+        def test_cache_with_transient_classes(self):
+            # Classes come and go, and their addresses get reused; the
+            # caches must never confuse a dead class with a new one.
+            import gc
+            class A(metaclass=abc_ABCMeta):
+                pass
+            for i in range(50):
+                class Sub(A):
+                    pass
+                class NotSub:
+                    pass
+                self.assertIsSubclass(Sub, A)
+                self.assertNotIsSubclass(NotSub, A)
+                self.assertIsInstance(Sub(), A)
+                self.assertNotIsInstance(NotSub(), A)
+                A.register(NotSub)
+                self.assertIsSubclass(NotSub, A)
+                del Sub, NotSub
+                gc.collect()
+
+        def test_negative_cache_not_populated_in_subclass_tree(self):
+            # gh-92810: checking a class against an ABC must not add it to
+            # the negative cache of every subclass of that ABC.
+            if abc_ABCMeta is not abc.ABCMeta:
+                self.skipTest('C implementation only')
+            try:
+                from _abc import _get_dump
+            except ImportError:
+                self.skipTest('C implementation only')
+            class A(metaclass=abc_ABCMeta):
+                pass
+            subclasses = [type(f'B{i}', (A,), {}) for i in range(10)]
+            class C:
+                pass
+            self.assertNotIsSubclass(C, A)
+            self.assertEqual(len(_get_dump(A)[2]), 1)
+            for B in subclasses:
+                self.assertEqual(_get_dump(B)[2], set())
+            # Results are cached at the top level only.
+            self.assertNotIsSubclass(C, A)
+            self.assertNotIsSubclass(C, subclasses[0])
+            self.assertEqual(len(_get_dump(subclasses[0])[2]), 1)
+
         def test_all_new_methods_are_called(self):
             class A(metaclass=abc_ABCMeta):
                 pass

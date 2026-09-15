@@ -229,6 +229,7 @@ _PyStaticObjects_CheckAll(PyInterpreterState *interp) {
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(__str__), "__str__", 7);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(__sub__), "__sub__", 7);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(__subclasscheck__), "__subclasscheck__", 17);
+    _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(__subclasses__), "__subclasses__", 14);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(__subclasshook__), "__subclasshook__", 16);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(__truediv__), "__truediv__", 11);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(__trunc__), "__trunc__", 9);

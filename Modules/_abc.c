@@ -4,11 +4,17 @@
 #endif
 
 #include "Python.h"
-#include "pycore_moduleobject.h"  // _PyModule_GetState()
-#include "pycore_object.h"        // _PyType_GetSubclasses()
-#include "pycore_runtime.h"       // _Py_ID()
-#include "pycore_setobject.h"     // _PySet_NextEntry()
-#include "pycore_weakref.h"       // _PyWeakref_GET_REF()
+#include "pycore_critical_section.h"  // Py_BEGIN_CRITICAL_SECTION()
+#include "pycore_moduleobject.h"      // _PyModule_GetState()
+#include "pycore_object.h"            // _PyType_LookupStackRefAndVersion()
+#include "pycore_object_deferred.h"   // _PyObject_SetDeferredRefcount()
+#include "pycore_pyatomic_ft_wrappers.h"  // FT_ATOMIC_LOAD_PTR_ACQUIRE()
+#include "pycore_pymem.h"             // _PyMem_FreeDelayed()
+#include "pycore_pystate.h"           // _PyThreadState_GET()
+#include "pycore_runtime.h"           // _Py_ID()
+#include "pycore_stackref.h"          // _PyStackRef
+#include "pycore_typeobject.h"        // _PyType_GetSubclasses()
+#include "pycore_pyhash.h"
 #include "clinic/_abc.c.h"
 
 /*[clinic input]
@@ -22,6 +28,14 @@ PyDoc_STRVAR(_abc__doc__,
 typedef struct {
     PyTypeObject *_abc_data_type;
     uint64_t abc_invalidation_counter;
+    // Default implementations, compared by identity to skip the call
+    // when a class doesn't override them.
+    PyObject *object_class_descr;
+    PyObject *object_subclasshook;
+    PyObject *type_subclasses;
+    // ABCMeta.__subclasscheck__, set by abc.py on import. Classes using it
+    // are checked directly instead of going through issubclass().
+    PyObject *subclasscheck_func;
 } _abcmodule_state;
 
 static inline _abcmodule_state*
@@ -35,57 +49,297 @@ get_abc_state(PyObject *module)
 static inline uint64_t
 get_invalidation_counter(_abcmodule_state *state)
 {
-#ifdef Py_GIL_DISABLED
-    return _Py_atomic_load_uint64(&state->abc_invalidation_counter);
-#else
-    return state->abc_invalidation_counter;
-#endif
+    return FT_ATOMIC_LOAD_UINT64_RELAXED(state->abc_invalidation_counter);
 }
 
 static inline void
 increment_invalidation_counter(_abcmodule_state *state)
 {
-#ifdef Py_GIL_DISABLED
-    _Py_atomic_add_uint64(&state->abc_invalidation_counter, 1);
-#else
-    state->abc_invalidation_counter++;
-#endif
+    FT_ATOMIC_ADD_UINT64(state->abc_invalidation_counter, 1);
 }
 
-/* This object stores internal state for ABCs.
-   Note that we can use normal sets for caches,
-   since they are never iterated over. */
+
+// The registry and the caches of an ABC are sets of classes, stored as
+// open addressed hash tables keyed by the address of the class.
+//
+// Each entry also holds a weakref to the class. It is only used to check
+// that the class is still alive, as the address of a dead class can be
+// reused by a new one. The weakrefs have no callback, so the same weakref
+// is shared by all the tables a class is in, and dead entries are only
+// removed when the table is rebuilt.
+typedef struct {
+    PyObject *key;   /* borrowed ref of a class */
+    PyObject *ref;   /* weakref to key */
+} abc_entry;
+
+typedef struct {
+    size_t mask;     /* number of entries - 1 */
+    size_t used;     /* entries with a key, live or dead */
+    abc_entry entries[];
+} abc_table;
+
+#define TABLE_MIN_SIZE 8
+#define PERTURB_SHIFT 5
+
+// Shared empty table, so that lookups don't need a NULL check.
+// It is never modified or freed.
+static abc_table empty_table_struct = {
+    0,              /* mask */
+    0,              /* used */
+    {{NULL, NULL}}, /* entries */
+};
+
+#define EMPTY_TABLE (&empty_table_struct)
+
+static inline size_t
+abc_table_nbytes(size_t size)
+{
+    return offsetof(abc_table, entries) + size * sizeof(abc_entry);
+}
+
+static abc_table *
+abc_table_new(size_t size)
+{
+    assert((size & (size - 1)) == 0 && size >= TABLE_MIN_SIZE);
+    abc_table *table = PyMem_Calloc(1, abc_table_nbytes(size));
+    if (table == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    table->mask = size - 1;
+    table->used = 0;
+    return table;
+}
+
+// Free a table and its weakrefs. Use delayed if other threads
+// can still be reading the table.
+static void
+abc_table_release(abc_table *table, int delayed)
+{
+    if (table == EMPTY_TABLE) {
+        return;
+    }
+    for (size_t i = 0; i <= table->mask; i++) {
+        PyObject *ref = table->entries[i].ref;
+        if (delayed) {
+            _PyObject_XDecRefDelayed(ref);
+        }
+        else {
+            Py_XDECREF(ref);
+        }
+    }
+    if (delayed) {
+        _PyMem_FreeDelayed(table, abc_table_nbytes(table->mask + 1));
+    }
+    else {
+        PyMem_Free(table);
+    }
+}
+
+static inline size_t
+abc_hash(PyObject *key)
+{
+    return (size_t)_Py_HashPointerRaw(key);
+}
+
+static inline int
+abc_entry_is_live(PyObject *ref, PyObject *key)
+{
+    // The caller holds a strong reference to key, so a weakref pointing
+    // to key cannot be of a dead class which was at the same address.
+    // wr_object only changes when key dies, so a relaxed load is enough.
+    assert(ref != NULL);
+    PyWeakReference *wr = (PyWeakReference *)ref;
+    return FT_ATOMIC_LOAD_PTR_RELAXED(wr->wr_object) == key;
+}
+
+static abc_entry *
+abc_table_find(abc_table *table, PyObject *key, PyObject **found)
+{
+    size_t mask = table->mask;
+    size_t perturb = abc_hash(key);
+    size_t i = perturb & mask;
+    for (;;) {
+        abc_entry *entry = &table->entries[i];
+        PyObject *k = FT_ATOMIC_LOAD_PTR_ACQUIRE(entry->key);
+        if (k == NULL || k == key) {
+            *found = k;
+            return entry;
+        }
+        perturb >>= PERTURB_SHIFT;
+        i = (i * 5 + perturb + 1) & mask;
+    }
+}
+
+// Lock-free, the caller must hold a strong reference to key.
+static int
+abc_table_contains(abc_table *table, PyObject *key)
+{
+    PyObject *found;
+    abc_entry *entry = abc_table_find(table, key, &found);
+    if (found == NULL) {
+        return 0;
+    }
+    PyObject *ref = FT_ATOMIC_LOAD_PTR_ACQUIRE(entry->ref);
+    return abc_entry_is_live(ref, key);
+}
+
+static abc_table *
+abc_table_rebuild(abc_table *old, size_t extra)
+{
+    size_t live = 0;
+    for (size_t i = 0; i <= old->mask; i++) {
+        abc_entry *entry = &old->entries[i];
+        if (entry->key != NULL && abc_entry_is_live(entry->ref, entry->key)) {
+            live++;
+        }
+    }
+    size_t size = TABLE_MIN_SIZE;
+    while (size < (live + extra) * 2) {
+        size <<= 1;
+    }
+    abc_table *table = abc_table_new(size);
+    if (table == NULL) {
+        return NULL;
+    }
+    for (size_t i = 0; i <= old->mask; i++) {
+        abc_entry *entry = &old->entries[i];
+        if (entry->key == NULL) {
+            continue;
+        }
+        if (abc_entry_is_live(entry->ref, entry->key)) {
+            PyObject *found;
+            abc_entry *dst = abc_table_find(table, entry->key, &found);
+            assert(found == NULL);
+            dst->key = entry->key;
+            dst->ref = entry->ref;
+            table->used++;
+        }
+        else {
+            _PyObject_XDecRefDelayed(entry->ref);
+        }
+    }
+    return table;
+}
+
+static int
+abc_table_add(abc_table **ptable, PyObject *key, PyObject *ref)
+{
+    abc_table *table = *ptable;
+    PyObject *found;
+    abc_entry *entry = abc_table_find(table, key, &found);
+    if (found == key) {
+        // The existing weakref can be of a dead class at the same address.
+        PyObject *old = entry->ref;
+        if (old == ref) {
+            Py_DECREF(ref);
+        }
+        else {
+            FT_ATOMIC_STORE_PTR_RELEASE(entry->ref, ref);
+            _PyObject_XDecRefDelayed(old);
+        }
+        return 0;
+    }
+    // Always true for EMPTY_TABLE.
+    if ((table->used + 1) * 3 > (table->mask + 1) * 2) {
+        abc_table *newtable = abc_table_rebuild(table, 1);
+        if (newtable == NULL) {
+            Py_DECREF(ref);
+            return -1;
+        }
+        FT_ATOMIC_STORE_PTR_RELEASE(*ptable, newtable);
+        if (table != EMPTY_TABLE) {
+            // The weakrefs were moved to newtable.
+            _PyMem_FreeDelayed(table, abc_table_nbytes(table->mask + 1));
+        }
+        table = newtable;
+        entry = abc_table_find(table, key, &found);
+    }
+    assert(found == NULL);
+    FT_ATOMIC_STORE_PTR_RELAXED(entry->ref, ref);
+    FT_ATOMIC_STORE_PTR_RELEASE(entry->key, key);
+    table->used++;
+    return 0;
+}
+
+static void
+abc_table_clear(abc_table **ptable)
+{
+    abc_table *table = *ptable;
+    if (table != EMPTY_TABLE) {
+        FT_ATOMIC_STORE_PTR_RELAXED(*ptable, EMPTY_TABLE);
+        abc_table_release(table, 1);
+    }
+}
+
+static PyObject *
+abc_table_snapshot(abc_table *table)
+{
+    PyObject *list = PyList_New(0);
+    if (list == NULL) {
+        return NULL;
+    }
+    for (size_t i = 0; i <= table->mask; i++) {
+        abc_entry *entry = &table->entries[i];
+        if (entry->key == NULL) {
+            continue;
+        }
+        PyObject *obj;
+        if (PyWeakref_GetRef(entry->ref, &obj) < 0) {
+            Py_DECREF(list);
+            return NULL;
+        }
+        if (obj == NULL) {
+            continue;
+        }
+        int rc = PyList_Append(list, obj);
+        Py_DECREF(obj);
+        if (rc < 0) {
+            Py_DECREF(list);
+            return NULL;
+        }
+    }
+    return list;
+}
+
+static int
+abc_table_traverse(abc_table *table, visitproc visit, void *arg)
+{
+    for (size_t i = 0; i <= table->mask; i++) {
+        Py_VISIT(table->entries[i].ref);
+    }
+    return 0;
+}
+
+
+// Internal state of an ABC, stored in its _abc_impl attribute.
+
 typedef struct {
     PyObject_HEAD
-    /* These sets of weak references are lazily created. Once created, they
-       will point to the same sets until the ABCMeta object is destroyed or
-       cleared, both of which will only happen while the object is visible to a
-       single thread. */
-    PyObject *_abc_registry;
-    PyObject *_abc_cache;
-    PyObject *_abc_negative_cache;
-    uint64_t _abc_negative_cache_version;
+    abc_table *registry;
+    abc_table *cache;
+    abc_table *negative_cache;
+    uint64_t negative_cache_version;
 } _abc_data;
 
 #define _abc_data_CAST(op)  ((_abc_data *)(op))
 
+// The version is updated after the negative cache is cleared and read
+// before the negative cache is, so a reader which sees the new version
+// never sees the old entries.
 static inline uint64_t
 get_cache_version(_abc_data *impl)
 {
-#ifdef Py_GIL_DISABLED
-    return _Py_atomic_load_uint64(&impl->_abc_negative_cache_version);
-#else
-    return impl->_abc_negative_cache_version;
-#endif
+    return FT_ATOMIC_LOAD_UINT64_ACQUIRE(impl->negative_cache_version);
 }
 
 static inline void
 set_cache_version(_abc_data *impl, uint64_t version)
 {
 #ifdef Py_GIL_DISABLED
-    _Py_atomic_store_uint64(&impl->_abc_negative_cache_version, version);
+    _Py_atomic_store_uint64_release(&impl->negative_cache_version, version);
 #else
-    impl->_abc_negative_cache_version = version;
+    impl->negative_cache_version = version;
 #endif
 }
 
@@ -94,9 +348,12 @@ abc_data_traverse(PyObject *op, visitproc visit, void *arg)
 {
     _abc_data *self = _abc_data_CAST(op);
     Py_VISIT(Py_TYPE(self));
-    Py_VISIT(self->_abc_registry);
-    Py_VISIT(self->_abc_cache);
-    Py_VISIT(self->_abc_negative_cache);
+    if (abc_table_traverse(self->registry, visit, arg) < 0
+        || abc_table_traverse(self->cache, visit, arg) < 0
+        || abc_table_traverse(self->negative_cache, visit, arg) < 0)
+    {
+        return -1;
+    }
     return 0;
 }
 
@@ -104,9 +361,15 @@ static int
 abc_data_clear(PyObject *op)
 {
     _abc_data *self = _abc_data_CAST(op);
-    Py_CLEAR(self->_abc_registry);
-    Py_CLEAR(self->_abc_cache);
-    Py_CLEAR(self->_abc_negative_cache);
+    abc_table *registry = self->registry;
+    abc_table *cache = self->cache;
+    abc_table *negative_cache = self->negative_cache;
+    self->registry = EMPTY_TABLE;
+    self->cache = EMPTY_TABLE;
+    self->negative_cache = EMPTY_TABLE;
+    abc_table_release(registry, 0);
+    abc_table_release(cache, 0);
+    abc_table_release(negative_cache, 0);
     return 0;
 }
 
@@ -135,10 +398,12 @@ abc_data_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    self->_abc_registry = NULL;
-    self->_abc_cache = NULL;
-    self->_abc_negative_cache = NULL;
-    self->_abc_negative_cache_version = get_invalidation_counter(state);
+    self->registry = EMPTY_TABLE;
+    self->cache = EMPTY_TABLE;
+    self->negative_cache = EMPTY_TABLE;
+    self->negative_cache_version = get_invalidation_counter(state);
+    // Avoid refcount contention between threads.
+    _PyObject_SetDeferredRefcount((PyObject *)self);
     return (PyObject *) self;
 }
 
@@ -162,99 +427,117 @@ static PyType_Spec _abc_data_type_spec = {
 };
 
 static _abc_data *
-_get_impl(PyObject *module, PyObject *self)
+lookup_impl(_abcmodule_state *state, PyObject *self, _PyCStackRef *cref)
 {
-    _abcmodule_state *state = get_abc_state(module);
-    PyObject *impl = PyObject_GetAttr(self, &_Py_ID(_abc_impl));
-    if (impl == NULL) {
+    if (!PyType_Check(self)) {
         return NULL;
     }
+    _PyType_LookupStackRefAndVersion((PyTypeObject *)self, &_Py_ID(_abc_impl),
+                                     &cref->ref);
+    if (PyStackRef_IsNull(cref->ref)) {
+        return NULL;
+    }
+    PyObject *impl = PyStackRef_AsPyObjectBorrow(cref->ref);
     if (!Py_IS_TYPE(impl, state->_abc_data_type)) {
-        PyErr_SetString(PyExc_TypeError, "_abc_impl is set to a wrong type");
-        Py_DECREF(impl);
+        PyStackRef_CLOSE(cref->ref);
+        cref->ref = PyStackRef_NULL;
         return NULL;
     }
     return (_abc_data *)impl;
 }
 
-static int
-_in_weak_set(_abc_data *impl, PyObject **pset, PyObject *obj)
+// Like lookup_impl() but falls back to a full attribute lookup,
+// and sets an exception on failure.
+static _abc_data *
+get_impl(_abcmodule_state *state, PyObject *self, _PyCStackRef *cref)
 {
-    PyObject *set;
-    Py_BEGIN_CRITICAL_SECTION(impl);
-    set = *pset;
-    Py_END_CRITICAL_SECTION();
-    if (set == NULL || PySet_GET_SIZE(set) == 0) {
-        return 0;
+    _abc_data *impl = lookup_impl(state, self, cref);
+    if (impl != NULL) {
+        return impl;
     }
-    PyObject *ref = PyWeakref_NewRef(obj, NULL);
-    if (ref == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_TypeError)) {
-            PyErr_Clear();
-            return 0;
-        }
-        return -1;
+    cref->ref = _PyObject_GetAttrStackRef(self, &_Py_ID(_abc_impl));
+    if (PyStackRef_IsNull(cref->ref)) {
+        return NULL;
     }
-    int res = PySet_Contains(set, ref);
-    Py_DECREF(ref);
+    impl = (_abc_data *)PyStackRef_AsPyObjectBorrow(cref->ref);
+    if (!Py_IS_TYPE(impl, state->_abc_data_type)) {
+        PyErr_SetString(PyExc_TypeError, "_abc_impl is set to a wrong type");
+        PyStackRef_CLOSE(cref->ref);
+        cref->ref = PyStackRef_NULL;
+        return NULL;
+    }
+    return impl;
+}
+
+static int
+type_lookup_is(PyTypeObject *type, PyObject *name, PyObject *expected)
+{
+    _PyStackRef ref;
+    _PyType_LookupStackRefAndVersion(type, name, &ref);
+    if (PyStackRef_IsNull(ref)) {
+        return expected == NULL;
+    }
+    int res = (PyStackRef_AsPyObjectBorrow(ref) == expected);
+    PyStackRef_CLOSE(ref);
     return res;
 }
 
-static PyObject *
-_destroy(PyObject *setweakref, PyObject *objweakref)
+static int
+add_to_table(_abc_data *impl, abc_table **ptable, PyObject *cls)
 {
-    PyObject *set = _PyWeakref_GET_REF(setweakref);
-    if (set == NULL) {
-        Py_RETURN_NONE;
+    // PyWeakref_NewRef() can lock cls, call it outside the critical section.
+    PyObject *ref = PyWeakref_NewRef(cls, NULL);
+    if (ref == NULL) {
+        return -1;
     }
-    if (PySet_Discard(set, objweakref) < 0) {
-        Py_DECREF(set);
-        return NULL;
-    }
-    Py_DECREF(set);
-    Py_RETURN_NONE;
+    int res;
+    Py_BEGIN_CRITICAL_SECTION(impl);
+    res = abc_table_add(ptable, cls, ref);
+    Py_END_CRITICAL_SECTION();
+    return res;
 }
 
-static PyMethodDef _destroy_def = {
-    "_destroy", _destroy, METH_O
-};
+typedef enum {
+    CACHE_UNKNOWN = -1,  // not cached or stale
+    CACHE_NEGATIVE = 0,  // in the negative cache
+    CACHE_POSITIVE = 1,  // in the positive cache
+} cache_result;
 
-static int
-_add_to_weak_set(_abc_data *impl, PyObject **pset, PyObject *obj)
+static cache_result
+lookup_caches(_abcmodule_state *state, _abc_data *impl, PyObject *subclass)
 {
-    PyObject *set;
+    abc_table *table = FT_ATOMIC_LOAD_PTR_ACQUIRE(impl->cache);
+    if (abc_table_contains(table, subclass)) {
+        return CACHE_POSITIVE;
+    }
+    if (get_cache_version(impl) == get_invalidation_counter(state)) {
+        table = FT_ATOMIC_LOAD_PTR_ACQUIRE(impl->negative_cache);
+        if (abc_table_contains(table, subclass)) {
+            return CACHE_NEGATIVE;
+        }
+    }
+    return CACHE_UNKNOWN;
+}
+
+// Clear the negative cache if register() was called since it was last
+// validated. Returns 1 if it was cleared.
+static int
+validate_negative_cache(_abc_data *impl, uint64_t counter)
+{
+    if (get_cache_version(impl) == counter) {
+        return 0;
+    }
+    int cleared = 0;
     Py_BEGIN_CRITICAL_SECTION(impl);
-    set = *pset;
-    if (set == NULL) {
-        set = *pset = PySet_New(NULL);
+    if (impl->negative_cache_version != counter) {
+        abc_table_clear(&impl->negative_cache);
+        set_cache_version(impl, counter);
+        cleared = 1;
     }
     Py_END_CRITICAL_SECTION();
-    if (set == NULL) {
-        return -1;
-    }
-
-    PyObject *ref, *wr;
-    PyObject *destroy_cb;
-    wr = PyWeakref_NewRef(set, NULL);
-    if (wr == NULL) {
-        return -1;
-    }
-    destroy_cb = PyCFunction_NewEx(&_destroy_def, wr, NULL);
-    if (destroy_cb == NULL) {
-        Py_DECREF(wr);
-        return -1;
-    }
-    ref = PyWeakref_NewRef(obj, destroy_cb);
-    Py_DECREF(destroy_cb);
-    if (ref == NULL) {
-        Py_DECREF(wr);
-        return -1;
-    }
-    int ret = PySet_Add(set, ref);
-    Py_DECREF(wr);
-    Py_DECREF(ref);
-    return ret;
+    return cleared;
 }
+
 
 /*[clinic input]
 _abc._reset_registry
@@ -271,19 +554,19 @@ static PyObject *
 _abc__reset_registry(PyObject *module, PyObject *self)
 /*[clinic end generated code: output=92d591a43566cc10 input=12a0b7eb339ac35c]*/
 {
-    _abc_data *impl = _get_impl(module, self);
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyCStackRef cref;
+    _PyThreadState_PushCStackRef(tstate, &cref);
+    _abc_data *impl = get_impl(get_abc_state(module), self, &cref);
+    if (impl != NULL) {
+        Py_BEGIN_CRITICAL_SECTION(impl);
+        abc_table_clear(&impl->registry);
+        Py_END_CRITICAL_SECTION();
+    }
+    _PyThreadState_PopCStackRef(tstate, &cref);
     if (impl == NULL) {
         return NULL;
     }
-    PyObject *registry;
-    Py_BEGIN_CRITICAL_SECTION(impl);
-    registry = impl->_abc_registry;
-    Py_END_CRITICAL_SECTION();
-    if (registry != NULL && PySet_Clear(registry) < 0) {
-        Py_DECREF(impl);
-        return NULL;
-    }
-    Py_DECREF(impl);
     Py_RETURN_NONE;
 }
 
@@ -302,26 +585,44 @@ static PyObject *
 _abc__reset_caches(PyObject *module, PyObject *self)
 /*[clinic end generated code: output=f296f0d5c513f80c input=c0ac616fd8acfb6f]*/
 {
-    _abc_data *impl = _get_impl(module, self);
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyCStackRef cref;
+    _PyThreadState_PushCStackRef(tstate, &cref);
+    _abc_data *impl = get_impl(get_abc_state(module), self, &cref);
+    if (impl != NULL) {
+        Py_BEGIN_CRITICAL_SECTION(impl);
+        abc_table_clear(&impl->cache);
+        abc_table_clear(&impl->negative_cache);
+        Py_END_CRITICAL_SECTION();
+    }
+    _PyThreadState_PopCStackRef(tstate, &cref);
     if (impl == NULL) {
         return NULL;
     }
-    PyObject *cache, *negative_cache;
-    Py_BEGIN_CRITICAL_SECTION(impl);
-    cache = impl->_abc_cache;
-    negative_cache = impl->_abc_negative_cache;
-    Py_END_CRITICAL_SECTION();
-    if (cache != NULL && PySet_Clear(cache) < 0) {
-        Py_DECREF(impl);
-        return NULL;
-    }
-    /* also the second cache */
-    if (negative_cache != NULL && PySet_Clear(negative_cache) < 0) {
-        Py_DECREF(impl);
-        return NULL;
-    }
-    Py_DECREF(impl);
     Py_RETURN_NONE;
+}
+
+static PyObject *
+weakref_set_from_list(PyObject *list)
+{
+    PyObject *set = PySet_New(NULL);
+    if (set == NULL) {
+        return NULL;
+    }
+    for (Py_ssize_t i = 0; i < PyList_GET_SIZE(list); i++) {
+        PyObject *ref = PyWeakref_NewRef(PyList_GET_ITEM(list, i), NULL);
+        if (ref == NULL) {
+            Py_DECREF(set);
+            return NULL;
+        }
+        int rc = PySet_Add(set, ref);
+        Py_DECREF(ref);
+        if (rc < 0) {
+            Py_DECREF(set);
+            return NULL;
+        }
+    }
+    return set;
 }
 
 /*[clinic input]
@@ -341,19 +642,41 @@ static PyObject *
 _abc__get_dump(PyObject *module, PyObject *self)
 /*[clinic end generated code: output=9d9569a8e2c1c443 input=2c5deb1bfe9e3c79]*/
 {
-    _abc_data *impl = _get_impl(module, self);
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyCStackRef cref;
+    _PyThreadState_PushCStackRef(tstate, &cref);
+    _abc_data *impl = get_impl(get_abc_state(module), self, &cref);
     if (impl == NULL) {
+        _PyThreadState_PopCStackRef(tstate, &cref);
         return NULL;
     }
-    PyObject *res;
+    PyObject *lists[3] = {NULL, NULL, NULL};
+    PyObject *sets[3] = {NULL, NULL, NULL};
+    PyObject *res = NULL;
+    uint64_t version;
     Py_BEGIN_CRITICAL_SECTION(impl);
-    res = Py_BuildValue("NNNK",
-                        PySet_New(impl->_abc_registry),
-                        PySet_New(impl->_abc_cache),
-                        PySet_New(impl->_abc_negative_cache),
-                        get_cache_version(impl));
+    lists[0] = abc_table_snapshot(impl->registry);
+    lists[1] = abc_table_snapshot(impl->cache);
+    lists[2] = abc_table_snapshot(impl->negative_cache);
+    version = get_cache_version(impl);
     Py_END_CRITICAL_SECTION();
-    Py_DECREF(impl);
+    _PyThreadState_PopCStackRef(tstate, &cref);
+    for (int i = 0; i < 3; i++) {
+        if (lists[i] == NULL) {
+            goto done;
+        }
+        sets[i] = weakref_set_from_list(lists[i]);
+        if (sets[i] == NULL) {
+            goto done;
+        }
+    }
+    res = Py_BuildValue("OOOK", sets[0], sets[1], sets[2],
+                        (unsigned long long)version);
+done:
+    for (int i = 0; i < 3; i++) {
+        Py_XDECREF(lists[i]);
+        Py_XDECREF(sets[i]);
+    }
     return res;
 }
 
@@ -580,18 +903,20 @@ _abc__abc_register_impl(PyObject *module, PyObject *self, PyObject *subclass)
     if (result < 0) {
         return NULL;
     }
-    _abc_data *impl = _get_impl(module, self);
-    if (impl == NULL) {
+    _abcmodule_state *state = get_abc_state(module);
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyCStackRef cref;
+    _PyThreadState_PushCStackRef(tstate, &cref);
+    _abc_data *impl = get_impl(state, self, &cref);
+    int err = (impl == NULL
+               || add_to_table(impl, &impl->registry, subclass) < 0);
+    _PyThreadState_PopCStackRef(tstate, &cref);
+    if (err) {
         return NULL;
     }
-    if (_add_to_weak_set(impl, &impl->_abc_registry, subclass) < 0) {
-        Py_DECREF(impl);
-        return NULL;
-    }
-    Py_DECREF(impl);
 
     /* Invalidate negative cache */
-    increment_invalidation_counter(get_abc_state(module));
+    increment_invalidation_counter(state);
 
     /* Set Py_TPFLAGS_SEQUENCE or Py_TPFLAGS_MAPPING flag */
     if (PyType_Check(self)) {
@@ -606,6 +931,16 @@ _abc__abc_register_impl(PyObject *module, PyObject *self, PyObject *subclass)
     return Py_NewRef(subclass);
 }
 
+
+// True if instance.__class__ is type(instance) and the lookup
+// doesn't run any Python code.
+static inline int
+has_default_class_attr(_abcmodule_state *state, PyObject *instance)
+{
+    PyTypeObject *tp = Py_TYPE(instance);
+    return tp->tp_getattro == PyObject_GenericGetAttr
+        && type_lookup_is(tp, &_Py_ID(__class__), state->object_class_descr);
+}
 
 /*[clinic input]
 @permit_long_summary
@@ -623,52 +958,54 @@ _abc__abc_instancecheck_impl(PyObject *module, PyObject *self,
                              PyObject *instance)
 /*[clinic end generated code: output=b8b5148f63b6b56f input=0bbc8da0ea346719]*/
 {
-    PyObject *subtype, *result = NULL, *subclass = NULL;
-    _abc_data *impl = _get_impl(module, self);
-    if (impl == NULL) {
-        return NULL;
+    _abcmodule_state *state = get_abc_state(module);
+    PyObject *subtype = (PyObject *)Py_TYPE(instance);
+    // subclass is either subtype, which is kept alive by instance, or
+    // subclass_owned. The fast path doesn't incref subtype to avoid
+    // refcount contention between threads.
+    PyObject *subclass = subtype;
+    PyObject *subclass_owned = NULL;
+    PyObject *result = NULL;
+
+    if (!has_default_class_attr(state, instance)) {
+        if (PyObject_GetOptionalAttr(instance, &_Py_ID(__class__),
+                                     &subclass_owned) < 0) {
+            return NULL;
+        }
+        /* Fall back to the type when the instance has no __class__,
+           matching the behaviour of the built-in isinstance()
+           (gh-153772). */
+        if (subclass_owned != NULL) {
+            subclass = subclass_owned;
+        }
     }
 
-    if (PyObject_GetOptionalAttr(instance, &_Py_ID(__class__), &subclass) < 0) {
-        Py_DECREF(impl);
+    // Fast path: cache hits don't need any locking.
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyCStackRef cref;
+    _PyThreadState_PushCStackRef(tstate, &cref);
+    _abc_data *impl = get_impl(state, self, &cref);
+    cache_result incache = CACHE_UNKNOWN;
+    if (impl != NULL) {
+        incache = lookup_caches(state, impl, subclass);
+    }
+    _PyThreadState_PopCStackRef(tstate, &cref);
+    if (impl == NULL) {
+        Py_XDECREF(subclass_owned);
         return NULL;
     }
-    if (subclass == NULL) {
-        /* Fall back to the type when the instance has no __class__, matching
-           the behaviour of the built-in isinstance() (gh-153772). */
-        subclass = Py_NewRef((PyObject *)Py_TYPE(instance));
+    if (incache == CACHE_POSITIVE
+        || (incache == CACHE_NEGATIVE && subtype == subclass))
+    {
+        Py_XDECREF(subclass_owned);
+        return PyBool_FromLong(incache);
     }
-    /* Inline the cache checking. */
-    int incache = _in_weak_set(impl, &impl->_abc_cache, subclass);
-    if (incache < 0) {
-        goto end;
-    }
-    if (incache > 0) {
-        result = Py_NewRef(Py_True);
-        goto end;
-    }
-    subtype = (PyObject *)Py_TYPE(instance);
-    if (subtype == subclass) {
-        if (get_cache_version(impl) == get_invalidation_counter(get_abc_state(module))) {
-            incache = _in_weak_set(impl, &impl->_abc_negative_cache, subclass);
-            if (incache < 0) {
-                goto end;
-            }
-            if (incache > 0) {
-                result = Py_NewRef(Py_False);
-                goto end;
-            }
-        }
-        /* Fall back to the subclass check. */
-        result = PyObject_CallMethodOneArg(self, &_Py_ID(__subclasscheck__),
-                                           subclass);
-        goto end;
-    }
+
     /* A subclass check can change the instance's actual type. */
     Py_INCREF(subtype);
     result = PyObject_CallMethodOneArg(self, &_Py_ID(__subclasscheck__),
                                        subclass);
-    if (result == NULL) {
+    if (result == NULL || subtype == subclass) {
         Py_DECREF(subtype);
         goto end;
     }
@@ -690,17 +1027,215 @@ _abc__abc_instancecheck_impl(PyObject *module, PyObject *self,
     Py_DECREF(subtype);
 
 end:
-    Py_XDECREF(impl);
-    Py_XDECREF(subclass);
+    Py_XDECREF(subclass_owned);
     return result;
 }
 
 
-// Return -1 when exception occurred.
-// Return 1 when result is set.
-// Return 0 otherwise.
-static int subclasscheck_check_registry(_abc_data *impl, PyObject *subclass,
-                                        PyObject **result);
+static int subclasscheck(_abcmodule_state *state, _abc_data *impl,
+                         PyObject *self, PyObject *subclass, int nested);
+
+// Like PyObject_IsSubclass(subclass, cls), but doesn't add subclass to the
+// negative cache of cls if cls uses the default ABCMeta.__subclasscheck__.
+static int
+issubclass_nested(_abcmodule_state *state, PyObject *subclass, PyObject *cls)
+{
+    assert(PyType_Check(cls));
+    if (type_lookup_is(Py_TYPE(cls), &_Py_ID(__subclasscheck__),
+                       state->subclasscheck_func))
+    {
+        PyThreadState *tstate = _PyThreadState_GET();
+        _PyCStackRef cref;
+        _PyThreadState_PushCStackRef(tstate, &cref);
+        _abc_data *impl = lookup_impl(state, cls, &cref);
+        int res = -1;
+        if (impl != NULL) {
+            if (!Py_EnterRecursiveCall(" in __subclasscheck__")) {
+                res = subclasscheck(state, impl, cls, subclass, 1);
+                Py_LeaveRecursiveCall();
+            }
+        }
+        _PyThreadState_PopCStackRef(tstate, &cref);
+        if (impl != NULL) {
+            return res;
+        }
+    }
+    return PyObject_IsSubclass(subclass, cls);
+}
+
+// Check if subclass is a subclass of a registered class.
+// Returns -1 on error.
+static int
+check_registry(_abcmodule_state *state, _abc_data *impl, PyObject *subclass)
+{
+    abc_table *registry = FT_ATOMIC_LOAD_PTR_ACQUIRE(impl->registry);
+    // Fast path: subclass is registered directly.
+    if (abc_table_contains(registry, subclass)) {
+        return 1;
+    }
+    // The registry can be modified by the checks, iterate over a copy.
+    PyObject *classes;
+    Py_BEGIN_CRITICAL_SECTION(impl);
+    classes = abc_table_snapshot(impl->registry);
+    Py_END_CRITICAL_SECTION();
+    if (classes == NULL) {
+        return -1;
+    }
+    int res = 0;
+    for (Py_ssize_t i = 0; i < PyList_GET_SIZE(classes); i++) {
+        res = PyObject_IsSubclass(subclass, PyList_GET_ITEM(classes, i));
+        if (res != 0) {
+            break;
+        }
+    }
+    Py_DECREF(classes);
+    return res;
+}
+
+// Check if subclass is a subclass of a subclass of self.
+// Returns -1 on error.
+static int
+check_subclasses(_abcmodule_state *state, PyObject *self, PyObject *subclass)
+{
+    PyObject *subclasses;
+    int native = 0;
+    if (PyType_Check(self)
+        && type_lookup_is((PyTypeObject *)self, &_Py_ID(__subclasses__), NULL)
+        && type_lookup_is(Py_TYPE(self), &_Py_ID(__subclasses__),
+                          state->type_subclasses))
+    {
+        // __subclasses__() is not overridden, get the subclasses directly.
+        PyTypeObject *type = (PyTypeObject *)self;
+        if (!(type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN)
+            && FT_ATOMIC_LOAD_PTR_RELAXED(type->tp_subclasses) == NULL)
+        {
+            return 0;
+        }
+        subclasses = _PyType_GetSubclasses(type);
+        native = 1;
+    }
+    else {
+        subclasses = PyObject_CallMethodNoArgs(self, &_Py_ID(__subclasses__));
+        if (subclasses != NULL && !PyList_Check(subclasses)) {
+            PyErr_SetString(PyExc_TypeError, "__subclasses__() must return a list");
+            Py_DECREF(subclasses);
+            return -1;
+        }
+    }
+    if (subclasses == NULL) {
+        return -1;
+    }
+    int res = 0;
+    for (Py_ssize_t i = 0; i < PyList_GET_SIZE(subclasses); i++) {
+        PyObject *scls = PyList_GetItemRef(subclasses, i);
+        if (scls == NULL) {
+            res = -1;
+            break;
+        }
+        if (native) {
+            res = issubclass_nested(state, subclass, scls);
+        }
+        else {
+            res = PyObject_IsSubclass(subclass, scls);
+        }
+        Py_DECREF(scls);
+        if (res != 0) {
+            break;
+        }
+    }
+    Py_DECREF(subclasses);
+    return res;
+}
+
+// Implementation of ABCMeta.__subclasscheck__. Returns -1 on error.
+//
+// nested is set when checking the subclasses of another ABC. Negative
+// results are not cached then, otherwise every class in the hierarchy
+// would cache them which is quadratic in the number of classes.
+static int
+subclasscheck(_abcmodule_state *state, _abc_data *impl,
+              PyObject *self, PyObject *subclass, int nested)
+{
+    uint64_t counter = get_invalidation_counter(state);
+
+    /* 1. Check cache. 2. Check negative cache; may have to invalidate. */
+    if (!validate_negative_cache(impl, counter)) {
+        cache_result incache = lookup_caches(state, impl, subclass);
+        if (incache != CACHE_UNKNOWN) {
+            return incache;
+        }
+    }
+    else {
+        abc_table *cache = FT_ATOMIC_LOAD_PTR_ACQUIRE(impl->cache);
+        if (abc_table_contains(cache, subclass)) {
+            return 1;
+        }
+    }
+
+    /* 3. Check the subclass hook. */
+    // The default hook always returns NotImplemented, skip the call.
+    if (!(PyType_Check(self)
+          && type_lookup_is((PyTypeObject *)self, &_Py_ID(__subclasshook__),
+                            state->object_subclasshook)))
+    {
+        PyObject *ok = PyObject_CallMethodOneArg(
+                self, &_Py_ID(__subclasshook__), subclass);
+        if (ok == NULL) {
+            return -1;
+        }
+        if (ok == Py_True) {
+            goto positive;
+        }
+        if (ok == Py_False) {
+            goto negative;
+        }
+        if (ok != Py_NotImplemented) {
+            Py_DECREF(ok);
+            PyErr_SetString(PyExc_AssertionError, "__subclasshook__ must return either"
+                                                  " False, True, or NotImplemented");
+            return -1;
+        }
+    }
+
+    /* 4. Check if it's a direct subclass. */
+    if (PyType_IsSubtype((PyTypeObject *)subclass, (PyTypeObject *)self)) {
+        goto positive;
+    }
+
+    /* 5. Check if it's a subclass of a registered class (recursive). */
+    int res = check_registry(state, impl, subclass);
+    if (res < 0) {
+        return -1;
+    }
+    if (res > 0) {
+        goto positive;
+    }
+
+    /* 6. Check if it's a subclass of a subclass (recursive). */
+    res = check_subclasses(state, self, subclass);
+    if (res < 0) {
+        return -1;
+    }
+    if (res > 0) {
+        goto positive;
+    }
+
+negative:
+    /* No dice; update negative cache. */
+    // The result can be stale if register() was called in the meantime.
+    if (!nested && get_invalidation_counter(state) == counter) {
+        if (add_to_table(impl, &impl->negative_cache, subclass) < 0) {
+            return -1;
+        }
+    }
+    return 0;
+
+positive:
+    if (add_to_table(impl, &impl->cache, subclass) < 0) {
+        return -1;
+    }
+    return 1;
+}
 
 /*[clinic input]
 @permit_long_summary
@@ -723,199 +1258,45 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
         return NULL;
     }
 
-    PyObject *ok, *subclasses = NULL, *result = NULL;
-    _abcmodule_state *state = NULL;
-    Py_ssize_t pos;
-    int incache;
-    _abc_data *impl = _get_impl(module, self);
-    if (impl == NULL) {
+    _abcmodule_state *state = get_abc_state(module);
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyCStackRef cref;
+    _PyThreadState_PushCStackRef(tstate, &cref);
+    _abc_data *impl = get_impl(state, self, &cref);
+    int res = -1;
+    if (impl != NULL) {
+        res = lookup_caches(state, impl, subclass);
+        if (res == CACHE_UNKNOWN) {
+            res = subclasscheck(state, impl, self, subclass, 0);
+        }
+    }
+    _PyThreadState_PopCStackRef(tstate, &cref);
+    if (res < 0) {
         return NULL;
     }
-
-    /* 1. Check cache. */
-    incache = _in_weak_set(impl, &impl->_abc_cache, subclass);
-    if (incache < 0) {
-        goto end;
-    }
-    if (incache > 0) {
-        result = Py_True;
-        goto end;
-    }
-
-    state = get_abc_state(module);
-    /* 2. Check negative cache; may have to invalidate. */
-    uint64_t invalidation_counter = get_invalidation_counter(state);
-    if (get_cache_version(impl) < invalidation_counter) {
-        /* Invalidate the negative cache. */
-        PyObject *negative_cache;
-        Py_BEGIN_CRITICAL_SECTION(impl);
-        negative_cache = impl->_abc_negative_cache;
-        Py_END_CRITICAL_SECTION();
-        if (negative_cache != NULL && PySet_Clear(negative_cache) < 0) {
-            goto end;
-        }
-        set_cache_version(impl, invalidation_counter);
-    }
-    else {
-        incache = _in_weak_set(impl, &impl->_abc_negative_cache, subclass);
-        if (incache < 0) {
-            goto end;
-        }
-        if (incache > 0) {
-            result = Py_False;
-            goto end;
-        }
-    }
-
-    /* 3. Check the subclass hook. */
-    ok = PyObject_CallMethodOneArg(
-            (PyObject *)self, &_Py_ID(__subclasshook__), subclass);
-    if (ok == NULL) {
-        goto end;
-    }
-    if (ok == Py_True) {
-        Py_DECREF(ok);
-        if (_add_to_weak_set(impl, &impl->_abc_cache, subclass) < 0) {
-            goto end;
-        }
-        result = Py_True;
-        goto end;
-    }
-    if (ok == Py_False) {
-        Py_DECREF(ok);
-        if (_add_to_weak_set(impl, &impl->_abc_negative_cache, subclass) < 0) {
-            goto end;
-        }
-        result = Py_False;
-        goto end;
-    }
-    if (ok != Py_NotImplemented) {
-        Py_DECREF(ok);
-        PyErr_SetString(PyExc_AssertionError, "__subclasshook__ must return either"
-                                              " False, True, or NotImplemented");
-        goto end;
-    }
-    Py_DECREF(ok);
-
-    /* 4. Check if it's a direct subclass. */
-    if (PyType_IsSubtype((PyTypeObject *)subclass, (PyTypeObject *)self)) {
-        if (_add_to_weak_set(impl, &impl->_abc_cache, subclass) < 0) {
-            goto end;
-        }
-        result = Py_True;
-        goto end;
-    }
-
-    /* 5. Check if it's a subclass of a registered class (recursive). */
-    if (subclasscheck_check_registry(impl, subclass, &result)) {
-        // Exception occurred or result is set.
-        goto end;
-    }
-
-    /* 6. Check if it's a subclass of a subclass (recursive). */
-    subclasses = PyObject_CallMethod(self, "__subclasses__", NULL);
-    if (subclasses == NULL) {
-        goto end;
-    }
-    if (!PyList_Check(subclasses)) {
-        PyErr_SetString(PyExc_TypeError, "__subclasses__() must return a list");
-        goto end;
-    }
-    for (pos = 0; pos < PyList_GET_SIZE(subclasses); pos++) {
-        PyObject *scls = PyList_GetItemRef(subclasses, pos);
-        if (scls == NULL) {
-            goto end;
-        }
-        int r = PyObject_IsSubclass(subclass, scls);
-        Py_DECREF(scls);
-        if (r > 0) {
-            if (_add_to_weak_set(impl, &impl->_abc_cache, subclass) < 0) {
-                goto end;
-            }
-            result = Py_True;
-            goto end;
-        }
-        if (r < 0) {
-            goto end;
-        }
-    }
-
-    /* No dice; update negative cache. */
-    if (_add_to_weak_set(impl, &impl->_abc_negative_cache, subclass) < 0) {
-        goto end;
-    }
-    result = Py_False;
-
-end:
-    Py_DECREF(impl);
-    Py_XDECREF(subclasses);
-    return Py_XNewRef(result);
+    return PyBool_FromLong(res);
 }
 
+/*[clinic input]
+_abc._set_subclasscheck
 
-static int
-subclasscheck_check_registry(_abc_data *impl, PyObject *subclass,
-                             PyObject **result)
+    func: object
+    /
+
+Internal ABC helper to register ABCMeta.__subclasscheck__.
+
+Classes whose metaclass resolves __subclasscheck__ to func are checked
+natively when walking the subclass tree of an ABC.
+[clinic start generated code]*/
+
+static PyObject *
+_abc__set_subclasscheck(PyObject *module, PyObject *func)
+/*[clinic end generated code: output=1dc657738311dea5 input=c2e47dd519524e44]*/
 {
-    // Fast path: check subclass is in weakref directly.
-    int ret = _in_weak_set(impl, &impl->_abc_registry, subclass);
-    if (ret < 0) {
-        *result = NULL;
-        return -1;
-    }
-    if (ret > 0) {
-        *result = Py_True;
-        return 1;
-    }
-
-    PyObject *registry_shared;
-    Py_BEGIN_CRITICAL_SECTION(impl);
-    registry_shared = impl->_abc_registry;
-    Py_END_CRITICAL_SECTION();
-    if (registry_shared == NULL) {
-        return 0;
-    }
-
-    // Make a local copy of the registry to protect against concurrent
-    // modifications of _abc_registry.
-    PyObject *registry = PyFrozenSet_New(registry_shared);
-    if (registry == NULL) {
-        return -1;
-    }
-    PyObject *key;
-    Py_ssize_t pos = 0;
-    Py_hash_t hash;
-
-    while (_PySet_NextEntry(registry, &pos, &key, &hash)) {
-        PyObject *rkey;
-        if (PyWeakref_GetRef(key, &rkey) < 0) {
-            // Someone inject non-weakref type in the registry.
-            ret = -1;
-            break;
-        }
-
-        if (rkey == NULL) {
-            continue;
-        }
-        int r = PyObject_IsSubclass(subclass, rkey);
-        Py_DECREF(rkey);
-        if (r < 0) {
-            ret = -1;
-            break;
-        }
-        if (r > 0) {
-            if (_add_to_weak_set(impl, &impl->_abc_cache, subclass) < 0) {
-                ret = -1;
-                break;
-            }
-            *result = Py_True;
-            ret = 1;
-            break;
-        }
-    }
-
-    Py_DECREF(registry);
-    return ret;
+    _abcmodule_state *state = get_abc_state(module);
+    assert(state->subclasscheck_func == NULL);
+    state->subclasscheck_func = Py_NewRef(func);
+    Py_RETURN_NONE;
 }
 
 /*[clinic input]
@@ -945,8 +1326,22 @@ static struct PyMethodDef _abcmodule_methods[] = {
     _ABC__ABC_REGISTER_METHODDEF
     _ABC__ABC_INSTANCECHECK_METHODDEF
     _ABC__ABC_SUBCLASSCHECK_METHODDEF
+    _ABC__SET_SUBCLASSCHECK_METHODDEF
     {NULL,       NULL}          /* sentinel */
 };
+
+static int
+get_type_dict_item(PyTypeObject *type, PyObject *name, PyObject **result)
+{
+    if (PyDict_GetItemRef(_PyType_GetDict(type), name, result) < 0) {
+        return -1;
+    }
+    if (*result == NULL) {
+        PyErr_Format(PyExc_SystemError, "%s has no %U", type->tp_name, name);
+        return -1;
+    }
+    return 0;
+}
 
 static int
 _abcmodule_exec(PyObject *module)
@@ -957,7 +1352,15 @@ _abcmodule_exec(PyObject *module)
     if (state->_abc_data_type == NULL) {
         return -1;
     }
-
+    if (get_type_dict_item(&PyBaseObject_Type, &_Py_ID(__class__),
+                           &state->object_class_descr) < 0
+        || get_type_dict_item(&PyBaseObject_Type, &_Py_ID(__subclasshook__),
+                              &state->object_subclasshook) < 0
+        || get_type_dict_item(&PyType_Type, &_Py_ID(__subclasses__),
+                              &state->type_subclasses) < 0)
+    {
+        return -1;
+    }
     return 0;
 }
 
@@ -966,6 +1369,10 @@ _abcmodule_traverse(PyObject *module, visitproc visit, void *arg)
 {
     _abcmodule_state *state = get_abc_state(module);
     Py_VISIT(state->_abc_data_type);
+    Py_VISIT(state->object_class_descr);
+    Py_VISIT(state->object_subclasshook);
+    Py_VISIT(state->type_subclasses);
+    Py_VISIT(state->subclasscheck_func);
     return 0;
 }
 
@@ -974,6 +1381,10 @@ _abcmodule_clear(PyObject *module)
 {
     _abcmodule_state *state = get_abc_state(module);
     Py_CLEAR(state->_abc_data_type);
+    Py_CLEAR(state->object_class_descr);
+    Py_CLEAR(state->object_subclasshook);
+    Py_CLEAR(state->type_subclasses);
+    Py_CLEAR(state->subclasscheck_func);
     return 0;
 }
 
