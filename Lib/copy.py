@@ -51,7 +51,7 @@ __getstate__() and __setstate__().  See the documentation for module
 
 import types
 import weakref
-from copyreg import dispatch_table
+from copyreg import dispatch_table, copy_dispatch_table, deepcopy_dispatch_table
 
 class Error(Exception):
     pass
@@ -69,9 +69,10 @@ def copy(x):
 
     if cls in _copy_atomic_types:
         return x
-    if cls in _copy_builtin_containers:
-        return cls.copy(x)
 
+    copier = copy_dispatch_table.get(cls)
+    if copier is not None:
+        return copier(x)
 
     if issubclass(cls, type):
         # treat it as a regular class:
@@ -105,7 +106,13 @@ _copy_atomic_types = frozenset({types.NoneType, int, float, bool, complex, str, 
           types.BuiltinFunctionType, types.EllipsisType,
           types.NotImplementedType, types.FunctionType, types.CodeType,
           weakref.ref, super})
-_copy_builtin_containers = frozenset({list, dict, set, bytearray})
+
+# The handlers for the built-in container types are registered in the
+# public copyreg.copy_dispatch_table.
+copy_dispatch_table.setdefault(list, list.copy)
+copy_dispatch_table.setdefault(dict, dict.copy)
+copy_dispatch_table.setdefault(set, set.copy)
+copy_dispatch_table.setdefault(bytearray, bytearray.copy)
 
 def deepcopy(x, memo=None):
     """Deep copy operation on arbitrary Python objects.
@@ -126,7 +133,7 @@ def deepcopy(x, memo=None):
         if y is not None:
             return y
 
-    copier = _deepcopy_dispatch.get(cls)
+    copier = deepcopy_dispatch_table.get(cls)
     if copier is not None:
         y = copier(x, memo)
     else:
@@ -166,9 +173,6 @@ _atomic_types = frozenset({types.NoneType, types.EllipsisType, types.NotImplemen
           int, float, bool, complex, bytes, str, types.CodeType, type, range,
           types.BuiltinFunctionType, types.FunctionType, weakref.ref, property})
 
-_deepcopy_dispatch = d = {}
-
-
 def _deepcopy_list(x, memo, deepcopy=deepcopy):
     y = []
     memo[id(x)] = y
@@ -176,7 +180,7 @@ def _deepcopy_list(x, memo, deepcopy=deepcopy):
     for a in x:
         append(deepcopy(a, memo))
     return y
-d[list] = _deepcopy_list
+deepcopy_dispatch_table.setdefault(list, _deepcopy_list)
 
 def _deepcopy_tuple(x, memo, deepcopy=deepcopy):
     y = [deepcopy(a, memo) for a in x]
@@ -193,7 +197,7 @@ def _deepcopy_tuple(x, memo, deepcopy=deepcopy):
     else:
         y = x
     return y
-d[tuple] = _deepcopy_tuple
+deepcopy_dispatch_table.setdefault(tuple, _deepcopy_tuple)
 
 def _deepcopy_dict(x, memo, deepcopy=deepcopy):
     y = {}
@@ -201,7 +205,7 @@ def _deepcopy_dict(x, memo, deepcopy=deepcopy):
     for key, value in x.items():
         y[deepcopy(key, memo)] = deepcopy(value, memo)
     return y
-d[dict] = _deepcopy_dict
+deepcopy_dispatch_table.setdefault(dict, _deepcopy_dict)
 
 def _deepcopy_frozendict(x, memo, deepcopy=deepcopy):
     y = {}
@@ -216,13 +220,12 @@ def _deepcopy_frozendict(x, memo, deepcopy=deepcopy):
     except KeyError:
         pass
     return frozendict(y)
-d[frozendict] = _deepcopy_frozendict
+deepcopy_dispatch_table.setdefault(frozendict, _deepcopy_frozendict)
 
 def _deepcopy_method(x, memo): # Copy instance methods
     return type(x)(x.__func__, deepcopy(x.__self__, memo))
-d[types.MethodType] = _deepcopy_method
+deepcopy_dispatch_table.setdefault(types.MethodType, _deepcopy_method)
 
-del d
 
 def _keep_alive(x, memo):
     """Keeps a reference to the object x in the memo.

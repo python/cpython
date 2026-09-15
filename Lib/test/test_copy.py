@@ -8,6 +8,7 @@ from operator import le, lt, ge, gt, eq, ne, attrgetter
 
 import unittest
 from test import support
+from test.support import script_helper
 
 order_comparisons = le, lt, ge, gt
 equality_comparisons = eq, ne
@@ -54,6 +55,67 @@ class TestCopy(unittest.TestCase):
         self.assertIsNot(x, y)
         self.assertEqual(type(y), C)
         self.assertEqual(y.foo, x.foo)
+
+    def test_copy_dispatch_table(self):
+        class C:
+            def __copy__(self):
+                return "__copy__"
+        x = C()
+        copyreg.copy(C, lambda obj: (obj, "registered"))
+        try:
+            self.assertEqual(copy.copy(x), (x, "registered"))
+        finally:
+            del copyreg.copy_dispatch_table[C]
+        self.assertEqual(copy.copy(x), "__copy__")
+
+    def test_copy_dispatch_table_exact_type(self):
+        class C:
+            def __copy__(self):
+                return "__copy__"
+        class D(C):
+            pass
+        copyreg.copy(C, lambda obj: "registered")
+        try:
+            self.assertEqual(copy.copy(C()), "registered")
+            self.assertEqual(copy.copy(D()), "__copy__")
+        finally:
+            del copyreg.copy_dispatch_table[C]
+
+    def test_copy_dispatch_table_independent(self):
+        # A registered copy function affects neither deepcopy nor pickling.
+        class C:
+            pass
+        copyreg.copy(C, lambda obj: "copy")
+        try:
+            x = C()
+            self.assertEqual(copy.copy(x), "copy")
+            y = copy.deepcopy(x)
+            self.assertIsInstance(y, C)
+        finally:
+            del copyreg.copy_dispatch_table[C]
+
+    def test_copy_dispatch_table_builtin(self):
+        # The registry is the same table that holds the built-in
+        # handlers, so they can be overridden.
+        orig = copyreg.copy_dispatch_table[list]
+        copyreg.copy(list, lambda obj: "registered")
+        try:
+            self.assertEqual(copy.copy([1]), "registered")
+        finally:
+            copyreg.copy_dispatch_table[list] = orig
+        self.assertEqual(copy.copy([1]), [1])
+
+    def test_copy_register_before_import(self):
+        # Registrations made before importing the copy module are
+        # preserved when it registers the built-in handlers.
+        code = """if True:
+            import copyreg
+            copyreg.copy(list, lambda obj: "registered")
+            import copy
+            print(copy.copy([1]))
+            """
+        rc, out, err = script_helper.assert_python_ok('-c', code)
+        self.assertEqual(out.strip(), b"registered")
 
     def test_copy_reduce_ex(self):
         class C(object):
@@ -313,6 +375,73 @@ class TestCopy(unittest.TestCase):
         y = copy.deepcopy(x)
         self.assertEqual(y.__class__, x.__class__)
         self.assertEqual(y.foo, x.foo)
+
+    def test_deepcopy_dispatch_table(self):
+        class C:
+            def __deepcopy__(self, memo):
+                return "__deepcopy__"
+        x = C()
+        def copier(obj, memo):
+            self.assertIsInstance(memo, dict)
+            return (obj, "registered")
+        copyreg.deepcopy(C, copier)
+        try:
+            self.assertEqual(copy.deepcopy(x), (x, "registered"))
+        finally:
+            del copyreg.deepcopy_dispatch_table[C]
+        self.assertEqual(copy.deepcopy(x), "__deepcopy__")
+
+    def test_deepcopy_dispatch_table_memo(self):
+        class C:
+            pass
+        calls = []
+        def copier(obj, memo):
+            calls.append(obj)
+            return C()
+        copyreg.deepcopy(C, copier)
+        try:
+            x = C()
+            y = copy.deepcopy([x, x])
+            self.assertIs(y[0], y[1])
+            self.assertEqual(len(calls), 1)
+        finally:
+            del copyreg.deepcopy_dispatch_table[C]
+
+    def test_deepcopy_dispatch_table_exact_type(self):
+        class C:
+            def __deepcopy__(self, memo):
+                return "__deepcopy__"
+        class D(C):
+            pass
+        copyreg.deepcopy(C, lambda obj, memo: "registered")
+        try:
+            self.assertEqual(copy.deepcopy(C()), "registered")
+            self.assertEqual(copy.deepcopy(D()), "__deepcopy__")
+        finally:
+            del copyreg.deepcopy_dispatch_table[C]
+
+    def test_deepcopy_dispatch_table_builtin(self):
+        # The registry is the same table that holds the built-in
+        # handlers, so they can be overridden.
+        orig = copyreg.deepcopy_dispatch_table[list]
+        copyreg.deepcopy(list, lambda obj, memo: "registered")
+        try:
+            self.assertEqual(copy.deepcopy([1]), "registered")
+        finally:
+            copyreg.deepcopy_dispatch_table[list] = orig
+        self.assertEqual(copy.deepcopy([1]), [1])
+
+    def test_deepcopy_register_before_import(self):
+        # Registrations made before importing the copy module are
+        # preserved when it registers the built-in handlers.
+        code = """if True:
+            import copyreg
+            copyreg.deepcopy(list, lambda obj, memo: "registered")
+            import copy
+            print(copy.deepcopy([1]))
+            """
+        rc, out, err = script_helper.assert_python_ok('-c', code)
+        self.assertEqual(out.strip(), b"registered")
 
     def test_deepcopy_registry(self):
         class C(object):
@@ -1027,7 +1156,11 @@ class TestReplace(unittest.TestCase):
 
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
-        support.check__all__(self, copy, not_exported={"dispatch_table", "error"})
+        support.check__all__(self, copy,
+                             not_exported={"dispatch_table",
+                                           "copy_dispatch_table",
+                                           "deepcopy_dispatch_table",
+                                           "error"})
 
 def global_foo(x, y): return x+y
 
