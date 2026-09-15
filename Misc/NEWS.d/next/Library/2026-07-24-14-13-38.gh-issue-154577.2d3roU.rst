@@ -1,0 +1,1 @@
+Fix data race of incremental encoder/decoder objects

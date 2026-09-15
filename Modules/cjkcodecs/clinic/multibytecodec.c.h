@@ -6,6 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
+#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(_multibytecodec_MultibyteCodec_encode__doc__,
@@ -258,7 +259,9 @@ _multibytecodec_MultibyteIncrementalEncoder_encode(PyObject *self, PyObject *con
         goto exit;
     }
 skip_optional_pos:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _multibytecodec_MultibyteIncrementalEncoder_encode_impl((MultibyteIncrementalEncoderObject *)self, input, final);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -278,7 +281,13 @@ _multibytecodec_MultibyteIncrementalEncoder_getstate_impl(MultibyteIncrementalEn
 static PyObject *
 _multibytecodec_MultibyteIncrementalEncoder_getstate(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _multibytecodec_MultibyteIncrementalEncoder_getstate_impl((MultibyteIncrementalEncoderObject *)self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _multibytecodec_MultibyteIncrementalEncoder_getstate_impl((MultibyteIncrementalEncoderObject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_multibytecodec_MultibyteIncrementalEncoder_setstate__doc__,
@@ -304,7 +313,9 @@ _multibytecodec_MultibyteIncrementalEncoder_setstate(PyObject *self, PyObject *a
         goto exit;
     }
     statelong = (PyLongObject *)arg;
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _multibytecodec_MultibyteIncrementalEncoder_setstate_impl((MultibyteIncrementalEncoderObject *)self, statelong);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -324,7 +335,13 @@ _multibytecodec_MultibyteIncrementalEncoder_reset_impl(MultibyteIncrementalEncod
 static PyObject *
 _multibytecodec_MultibyteIncrementalEncoder_reset(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _multibytecodec_MultibyteIncrementalEncoder_reset_impl((MultibyteIncrementalEncoderObject *)self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _multibytecodec_MultibyteIncrementalEncoder_reset_impl((MultibyteIncrementalEncoderObject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_multibytecodec_MultibyteIncrementalDecoder_decode__doc__,
@@ -392,7 +409,9 @@ _multibytecodec_MultibyteIncrementalDecoder_decode(PyObject *self, PyObject *con
         goto exit;
     }
 skip_optional_pos:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _multibytecodec_MultibyteIncrementalDecoder_decode_impl((MultibyteIncrementalDecoderObject *)self, &input, final);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     /* Cleanup for input */
@@ -417,7 +436,13 @@ _multibytecodec_MultibyteIncrementalDecoder_getstate_impl(MultibyteIncrementalDe
 static PyObject *
 _multibytecodec_MultibyteIncrementalDecoder_getstate(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _multibytecodec_MultibyteIncrementalDecoder_getstate_impl((MultibyteIncrementalDecoderObject *)self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _multibytecodec_MultibyteIncrementalDecoder_getstate_impl((MultibyteIncrementalDecoderObject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_multibytecodec_MultibyteIncrementalDecoder_setstate__doc__,
@@ -443,7 +468,9 @@ _multibytecodec_MultibyteIncrementalDecoder_setstate(PyObject *self, PyObject *a
         goto exit;
     }
     state = arg;
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _multibytecodec_MultibyteIncrementalDecoder_setstate_impl((MultibyteIncrementalDecoderObject *)self, state);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -463,7 +490,13 @@ _multibytecodec_MultibyteIncrementalDecoder_reset_impl(MultibyteIncrementalDecod
 static PyObject *
 _multibytecodec_MultibyteIncrementalDecoder_reset(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _multibytecodec_MultibyteIncrementalDecoder_reset_impl((MultibyteIncrementalDecoderObject *)self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _multibytecodec_MultibyteIncrementalDecoder_reset_impl((MultibyteIncrementalDecoderObject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_multibytecodec_MultibyteStreamReader_read__doc__,
@@ -492,7 +525,9 @@ _multibytecodec_MultibyteStreamReader_read(PyObject *self, PyObject *const *args
     }
     sizeobj = args[0];
 skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _multibytecodec_MultibyteStreamReader_read_impl((MultibyteStreamReaderObject *)self, sizeobj);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -524,7 +559,9 @@ _multibytecodec_MultibyteStreamReader_readline(PyObject *self, PyObject *const *
     }
     sizeobj = args[0];
 skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _multibytecodec_MultibyteStreamReader_readline_impl((MultibyteStreamReaderObject *)self, sizeobj);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -556,7 +593,9 @@ _multibytecodec_MultibyteStreamReader_readlines(PyObject *self, PyObject *const 
     }
     sizehintobj = args[0];
 skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _multibytecodec_MultibyteStreamReader_readlines_impl((MultibyteStreamReaderObject *)self, sizehintobj);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -576,7 +615,13 @@ _multibytecodec_MultibyteStreamReader_reset_impl(MultibyteStreamReaderObject *se
 static PyObject *
 _multibytecodec_MultibyteStreamReader_reset(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _multibytecodec_MultibyteStreamReader_reset_impl((MultibyteStreamReaderObject *)self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _multibytecodec_MultibyteStreamReader_reset_impl((MultibyteStreamReaderObject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_multibytecodec_MultibyteStreamWriter_write__doc__,
@@ -618,7 +663,9 @@ _multibytecodec_MultibyteStreamWriter_write(PyObject *self, PyTypeObject *cls, P
         goto exit;
     }
     strobj = args[0];
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _multibytecodec_MultibyteStreamWriter_write_impl((MultibyteStreamWriterObject *)self, cls, strobj);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -663,7 +710,9 @@ _multibytecodec_MultibyteStreamWriter_writelines(PyObject *self, PyTypeObject *c
         goto exit;
     }
     lines = args[0];
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _multibytecodec_MultibyteStreamWriter_writelines_impl((MultibyteStreamWriterObject *)self, cls, lines);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -684,11 +733,18 @@ _multibytecodec_MultibyteStreamWriter_reset_impl(MultibyteStreamWriterObject *se
 static PyObject *
 _multibytecodec_MultibyteStreamWriter_reset(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
+    PyObject *return_value = NULL;
+
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "reset() takes no arguments");
-        return NULL;
+        goto exit;
     }
-    return _multibytecodec_MultibyteStreamWriter_reset_impl((MultibyteStreamWriterObject *)self, cls);
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _multibytecodec_MultibyteStreamWriter_reset_impl((MultibyteStreamWriterObject *)self, cls);
+    Py_END_CRITICAL_SECTION();
+
+exit:
+    return return_value;
 }
 
 PyDoc_STRVAR(_multibytecodec___create_codec__doc__,
@@ -698,4 +754,4 @@ PyDoc_STRVAR(_multibytecodec___create_codec__doc__,
 
 #define _MULTIBYTECODEC___CREATE_CODEC_METHODDEF    \
     {"__create_codec", (PyCFunction)_multibytecodec___create_codec, METH_O, _multibytecodec___create_codec__doc__},
-/*[clinic end generated code: output=a84b1544d7d01abb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=cb747fb3277c7d72 input=a9049054013a1b77]*/
