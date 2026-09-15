@@ -75,7 +75,7 @@ class MmapTests(unittest.TestCase):
 
         # Shouldn't crash on boundary (Issue #5292)
         self.assertRaises(IndexError, m.__getitem__, len(m))
-        self.assertRaises(IndexError, m.__setitem__, len(m), b'\0')
+        self.assertRaises(IndexError, m.__setitem__, len(m), 0)
 
         # Modify the file's content
         m[0] = b'3'[0]
