@@ -2144,6 +2144,7 @@ class TestTemporaryDirectory(BaseTestCase):
         and sysconfig.get_config_var('PY_SUPPORT_TIER') <= 3,
         'regression test for supported platforms')
     @unittest.skipIf(support.MS_WINDOWS, 'dirfd not used on Windows')
+    @unittest.skipIf(support.is_wasi, 'WASI has no chmod')
     def test_cleanup_safe(self):
         """Verify that cleanup uses the safer code path"""
         # This is a regression test. Feel free to add exceptions for new
