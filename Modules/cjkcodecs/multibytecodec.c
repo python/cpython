@@ -223,8 +223,8 @@ expand_encodebuffer(MultibyteEncodeBuffer *buf, Py_ssize_t esize)
         return -1;
 
     unsigned char *data = PyBytesWriter_GetData(buf->writer);
-    buf->outbuf = (unsigned char *)data + orgpos;
-    buf->outbuf_end = (unsigned char *)data + PyBytesWriter_GetSize(buf->writer);
+    buf->outbuf = data + orgpos;
+    buf->outbuf_end = data + PyBytesWriter_GetSize(buf->writer);
 
     return 0;
 }
