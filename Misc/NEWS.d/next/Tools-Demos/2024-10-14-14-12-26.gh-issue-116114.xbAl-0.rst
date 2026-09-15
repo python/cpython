@@ -1,0 +1,2 @@
+Replace :c:var:`Py_OptimizeFlag` in ``makefreeze.py`` with
+:c:member:`PyConfig.optimization_level`.
