@@ -2850,6 +2850,7 @@ def cli():
     directory.  If <name> contains a '{sep}', it is treated as a filename; if
     it names a directory, documentation is written for all the contents.
 """.format(cmd=cmd, sep=os.sep))
+        sys.exit(1)
 
 if __name__ == '__main__':
     cli()
