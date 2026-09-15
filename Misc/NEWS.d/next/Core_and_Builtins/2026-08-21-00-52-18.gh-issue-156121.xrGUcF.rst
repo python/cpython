@@ -1,0 +1,3 @@
+Fix a crash in cross-interpreter unpickling
+when the :exc:`AttributeError` raised by :func:`pickle.loads`
+has a non-string argument or a message that cannot be encoded as UTF-8.
