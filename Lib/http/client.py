@@ -195,8 +195,8 @@ def _strip_ipv6_iface(enc_name: bytes) -> bytes:
 class HTTPMessage(email.message.Message):
 
     # The getallmatchingheaders() method was only used by the CGI handler
-    # that was removed in Python 3.15. However, since the public API was not
-    # properly defined, it will be kept for backwards compatibility reasons.
+    # that was removed in Python 3.15. It has returned an empty list for every
+    # input since Python 3.0.
 
     def getallmatchingheaders(self, name):
         """Find all header lines matching a given header name.
@@ -208,6 +208,15 @@ class HTTPMessage(email.message.Message):
         occurrences are returned.  Case is not important in the header name.
 
         """
+        import warnings
+        warnings._deprecated(
+            "http.client.HTTPMessage.getallmatchingheaders",
+            message=(
+                "{name!r} is deprecated and slated for removal in Python "
+                "{remove}. Use email.message.Message.get_all() instead."
+            ),
+            remove=(3, 18),
+        )
         name = name.lower() + ':'
         n = len(name)
         lst = []
