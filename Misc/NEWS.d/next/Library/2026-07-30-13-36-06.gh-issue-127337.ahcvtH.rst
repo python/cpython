@@ -1,0 +1,9 @@
+Fix a regression in :mod:`importlib.resources` where functions such as
+:func:`~importlib.resources.is_resource` and
+:func:`~importlib.resources.contents` raised :exc:`TypeError` for a package
+whose loader provides only a legacy
+:class:`~importlib.resources.abc.ResourceReader`.  The internal
+``CompatibilityFiles`` traversables wrapping such a reader now accept the
+zero-or-more argument ``joinpath()`` signature specified by
+:meth:`importlib.resources.abc.Traversable.joinpath`.
+Patch by pikammmmm.
