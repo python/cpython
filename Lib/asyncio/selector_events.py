@@ -12,7 +12,9 @@ import functools
 import itertools
 import os
 import selectors
+import signal
 import socket
+import threading
 import warnings
 import weakref
 try:
@@ -124,6 +126,49 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         self._internal_fds += 1
         self._add_reader(self._ssock.fileno(), self._read_from_self)
 
+    def _rebuild_self_pipe(self):
+        # gh-156344: the self-pipe socketpair reached EOF -- the OS tore the
+        # connection down (e.g. across a power/session state change on
+        # Windows).  A closed-for-read socket is permanently readable, so
+        # the registered reader would re-fire on every select() iteration,
+        # busy-looping the CPU.  Rebuild the pair instead: allocate the
+        # replacement before touching the old sockets, so an allocation
+        # failure leaves the previous state intact.
+        ssock, csock = socket.socketpair()
+        try:
+            ssock.setblocking(False)
+            csock.setblocking(False)
+            old_ssock = self._ssock
+            old_csock = self._csock
+            keep_old_csock = False
+            if getattr(self, '_signal_handlers', None):
+                # The Unix mixin registers the process-wide wakeup fd on
+                # _csock in add_signal_handler().  set_wakeup_fd() returns
+                # the previous fd: move ours to the new socket, but restore
+                # anything that belongs to someone else.  A signal arriving
+                # within this window can be lost -- the same unavoidable
+                # window close() has.
+                if threading.current_thread() is threading.main_thread():
+                    prev = signal.set_wakeup_fd(csock.fileno())
+                    if prev != old_csock.fileno():
+                        signal.set_wakeup_fd(prev)
+                else:
+                    # The wakeup fd cannot be moved from a worker thread;
+                    # keep the old write end open so signal delivery keeps
+                    # working (one leaked socket beats a process-wide wakeup
+                    # fd writing into whatever reuses the number).
+                    keep_old_csock = True
+        except BaseException:
+            ssock.close()
+            csock.close()
+            raise
+        self._remove_reader(old_ssock.fileno())
+        old_ssock.close()
+        if not keep_old_csock:
+            old_csock.close()
+        self._ssock, self._csock = ssock, csock
+        self._add_reader(self._ssock.fileno(), self._read_from_self)
+
     def _process_self_data(self, data):
         pass
 
@@ -132,7 +177,8 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             try:
                 data = self._ssock.recv(4096)
                 if not data:
-                    break
+                    self._rebuild_self_pipe()
+                    return
                 self._process_self_data(data)
             except InterruptedError:
                 continue
