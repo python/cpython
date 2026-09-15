@@ -48,10 +48,13 @@ ALL_RESOURCES = ('audio', 'console', 'curses', 'largefile', 'network',
 #
 # - extralagefile (ex: test_zipfile64): really too slow to be enabled
 #   "by default"
+# - netraw: raw sockets may require elevated privileges and can trigger
+#   behavior monitoring systems.
 # - tzdata: while needed to validate fully test_datetime, it makes
 #   test_datetime too slow (15-20 min on some buildbots) and so is disabled by
 #   default (see bpo-30822).
-RESOURCE_NAMES = ALL_RESOURCES + ('extralargefile', 'tzdata', 'xpickle', 'wantobjects')
+RESOURCE_NAMES = ALL_RESOURCES + (
+    'extralargefile', 'netraw', 'tzdata', 'xpickle', 'wantobjects')
 
 
 # Types for types hints
