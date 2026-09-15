@@ -2459,6 +2459,10 @@ stop_the_world(struct _stoptheworld_state *stw)
     stw->stop_event = (PyEvent){0};  // zero-initialize (unset)
     stw->requester = _PyThreadState_GET();  // may be NULL
     FT_STAT_WORLD_STOP_INC();
+#ifdef Py_STATS
+    // silently ignore error: cannot report error to the caller
+    (void)PyTime_MonotonicRaw(&stw->start_time);
+#endif
 
     _Py_FOR_EACH_STW_INTERP(stw, i) {
         _Py_FOR_EACH_TSTATE_UNLOCKED(i, t) {
@@ -2503,6 +2507,14 @@ start_the_world(struct _stoptheworld_state *stw)
     assert(PyMutex_IsLocked(&stw->mutex));
 
     HEAD_LOCK(runtime);
+#ifdef Py_STATS
+    // Records the full pause, from the stop request until the threads are
+    // about to be resumed.
+    PyTime_t now;
+    if (PyTime_MonotonicRaw(&now) == 0) {
+        FT_STAT_WORLD_STOP_TIME(now - stw->start_time);
+    }
+#endif
     stw->requested = 0;
     stw->world_stopped = 0;
     // Switch threads back to the detached state.
