@@ -21,7 +21,7 @@ fi
 # Returns the actual prefix where this script was installed to.
 installed_prefix ()
 {
-    RESULT=$(dirname $(cd $(dirname "$1") && pwd -P))
+    RESULT=$(dirname $(cd $(dirname $(realpath "$1")) && pwd -P))
     if which readlink >/dev/null 2>&1 ; then
         if readlink -f "$RESULT" >/dev/null 2>&1; then
           RESULT=$(readlink -f "$RESULT")

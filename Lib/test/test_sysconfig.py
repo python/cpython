@@ -8,6 +8,7 @@ import shutil
 import json
 import textwrap
 from unittest.mock import patch
+import tempfile
 from copy import copy
 
 from test import support
@@ -766,6 +767,46 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
         self.assertEqual(config_vars['base'], sys.prefix)
         self.assertEqual(config_vars['exec_prefix'], sys.exec_prefix)
         self.assertEqual(config_vars['platbase'], sys.exec_prefix)
+
+    @unittest.skipUnless(
+        os.name == "posix" and sys.platform != "darwin",
+        "requires shell python-config",
+    )
+    @skip_unless_symlink
+    @requires_subprocess()
+    def test_python_config_symlink(self):
+        if not is_python_build():
+            self.skipTest("requires a CPython build directory")
+
+        python_config = os.path.join(_PROJECT_BASE, "python-config")
+        if not os.path.isfile(python_config):
+            self.skipTest("python-config was not built")
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            real_prefix = os.path.join(tmpdir, "real")
+            real_bindir = os.path.join(real_prefix, "bin")
+            os.makedirs(real_bindir)
+
+            real_config = os.path.join(real_bindir, "python-config")
+            shutil.copyfile(python_config, real_config)
+
+            link_prefix = os.path.join(tmpdir, "link")
+            link_bindir = os.path.join(link_prefix, "bin")
+            os.makedirs(link_bindir)
+
+            linked_config = os.path.join(link_bindir, "python-config")
+            os.symlink(real_config, linked_config)
+
+            def get_prefix(config):
+                return subprocess.check_output(
+                    ["/bin/sh", config, "--prefix"],
+                    text=True,
+                ).strip()
+
+            expected = os.path.realpath(real_prefix)
+
+            self.assertEqual(get_prefix(real_config), expected)
+            self.assertEqual(get_prefix(linked_config), expected)
 
 
 class MakefileTests(unittest.TestCase):
