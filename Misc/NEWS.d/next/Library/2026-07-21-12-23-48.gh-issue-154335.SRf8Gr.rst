@@ -1,0 +1,1 @@
+Allow disabling terminal coloring for Tachyon's pstats collector.
