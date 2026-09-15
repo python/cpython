@@ -1,0 +1,4 @@
+Fix :mod:`xml.sax` not reporting an external entity whose content is not
+well-formed. The parser created for the entity was never finalized, so errors
+which are only detectable at the end of its input, such as an unclosed
+element, were silently ignored.
