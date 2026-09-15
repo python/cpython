@@ -67,23 +67,11 @@ class BaseWinregTests(unittest.TestCase):
     def setUp(self):
         # Make sure that the test key is absent when the test
         # starts.
-        self.delete_tree(HKEY_CURRENT_USER, test_key_name)
-
-    def delete_tree(self, root, subkey):
         try:
-            hkey = OpenKey(root, subkey, 0, KEY_ALL_ACCESS)
+            DeleteTree(HKEY_CURRENT_USER, test_key_name)
         except OSError:
-            # subkey does not exist
-            return
-        while True:
-            try:
-                subsubkey = EnumKey(hkey, 0)
-            except OSError:
-                # no more subkeys
-                break
-            self.delete_tree(hkey, subsubkey)
-        CloseKey(hkey)
-        DeleteKey(root, subkey)
+            # Key doesn't exist, which is fine
+            pass
 
     def _write_test_data(self, root_key, subkeystr="sub_key",
                          CreateKey=CreateKey):
