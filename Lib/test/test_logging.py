@@ -1999,7 +1999,7 @@ class DatagramHandlerTest(BaseTest):
         server.ready.wait()
         hcls = logging.handlers.DatagramHandler
         if isinstance(server.server_address, tuple):
-            self.sock_hdlr = hcls('localhost', server.port)
+            self.sock_hdlr = hcls(self.address[0], server.port)
         else:
             self.sock_hdlr = hcls(server.server_address, None)
         self.log_output = ''
@@ -2032,11 +2032,28 @@ class DatagramHandlerTest(BaseTest):
             self.skipTest(self.server_exception)
         logger = logging.getLogger("udp")
         logger.error("spam")
-        self.handled.wait()
+        self.handled.wait(support.LONG_TIMEOUT)
         self.handled.clear()
         logger.error("eggs")
-        self.handled.wait()
+        self.handled.wait(support.LONG_TIMEOUT)
         self.assertEqual(self.log_output, "spam\neggs\n")
+
+@unittest.skipUnless(socket_helper.IPV6_ENABLED,
+                     'IPv6 support required for this test.')
+class IPv6DatagramHandlerTest(DatagramHandlerTest):
+
+    """Test for DatagramHandler with IPv6 host."""
+
+    server_class = TestUDPServer
+    address = ('::1', 0)
+
+    def setUp(self):
+        self.server_class.address_family = socket.AF_INET6
+        super().setUp()
+
+    def tearDown(self):
+        self.server_class.address_family = socket.AF_INET
+        super().tearDown()
 
 @unittest.skipUnless(hasattr(socket, "AF_UNIX"), "Unix sockets required")
 class UnixDatagramHandlerTest(DatagramHandlerTest):
