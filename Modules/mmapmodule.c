@@ -1713,7 +1713,7 @@ mmap_ass_subscript_lock_held(PyObject *op, PyObject *item, PyObject *value)
             return -1;
 
         /* Acquiring the buffer above may have run arbitrary code (e.g. a
-         * __buffer__ method) that resized this mmap, so the slice bounds
+         * __buffer__ method) that resized or closed this mmap, so the slice bounds
          * are only computed now, against the current size. */
         CHECK_VALID_OR_RELEASE(-1, vbuf);
         slicelen = PySlice_AdjustIndices(self->size, &start, &stop, step);
