@@ -34,6 +34,8 @@ typedef struct {
     int flags; /* flags used when compiling pattern source */
     PyObject *weakreflist; /* List of weak references */
     int isbytes; /* pattern type (1 - bytes, 0 - string, -1 - None) */
+    int reused_groups; /* a group number is opened in more than one place
+                          (a redefined named group) */
 #ifdef Py_DEBUG
     /* for simulation of user interruption */
     int fail_after_count;
@@ -100,7 +102,8 @@ typedef struct {
     int save_marks; /* if nonzero, save and restore mark values on
                        backtracking instead of only rewinding the lastmark
                        index; counts enclosing repeat contexts and
-                       possessive bodies */
+                       possessive bodies, over a base of 1 if the pattern
+                       reuses group numbers */
     /* dynamically allocated stuff */
     char* data_stack;
     size_t data_stack_size;
