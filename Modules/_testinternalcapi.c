@@ -3206,6 +3206,19 @@ test_thread_state_ensure_from_view_interp_switch(PyObject *self, PyObject *unuse
     Py_RETURN_NONE;
 }
 
+static PyObject *
+is_gc_frame_clear(PyObject *self, PyObject *unused)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    assert(interp != NULL);
+
+    if (!interp->gc.frame) {
+        Py_RETURN_TRUE;
+    }
+
+    Py_RETURN_FALSE;
+}
+
 /* Self interrupting context manager */
 
 typedef struct {
@@ -3393,6 +3406,7 @@ static PyMethodDef module_functions[] = {
     {"test_interp_guard_countdown", test_interp_guard_countdown, METH_NOARGS},
     {"test_interp_view_countdown", test_interp_view_countdown, METH_NOARGS},
     {"test_thread_state_ensure_from_view_interp_switch", test_thread_state_ensure_from_view_interp_switch, METH_NOARGS},
+    {"is_gc_frame_clear", is_gc_frame_clear, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
