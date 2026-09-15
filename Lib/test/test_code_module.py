@@ -132,10 +132,14 @@ class TestInteractiveConsole(unittest.TestCase, MockSys):
         self.console.interact()
         output = ''.join(''.join(call[1]) for call in self.stderr.method_calls)
         output = output[output.index('(InteractiveConsole)'):]
-        output = output[output.index('\n') + 1:]
-        self.assertStartsWith(output, 'UnicodeEncodeError: ')
-        self.assertIs(self.sysmod.last_type, UnicodeEncodeError)
-        self.assertIs(type(self.sysmod.last_value), UnicodeEncodeError)
+        output = output[:output.index('\nnow exiting')]
+        self.assertEqual(output.splitlines()[1:], [
+            '  File "<console>", line 1',
+            "    '\ud800'",
+            '     ^',
+            'SyntaxError: source code string cannot contain surrogate characters'])
+        self.assertIs(self.sysmod.last_type, SyntaxError)
+        self.assertIs(type(self.sysmod.last_value), SyntaxError)
         self.assertIsNone(self.sysmod.last_traceback)
         self.assertIsNone(self.sysmod.last_value.__traceback__)
         self.assertIs(self.sysmod.last_exc, self.sysmod.last_value)

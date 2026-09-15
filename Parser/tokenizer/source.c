@@ -146,7 +146,7 @@ validate_line(const _PyTok_SourceText *source, const char *bytes,
     }
     if (source->nlines == INT_MAX ||
             (source->nlines == INT_MAX - 1 && newline != NULL)) {
-        PyErr_SetString(PyExc_OverflowError, "too many tokenizer source lines");
+        PyErr_SetString(PyExc_SyntaxError, "too many lines in source");
         return -1;
     }
     return 0;

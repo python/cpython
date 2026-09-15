@@ -295,7 +295,7 @@ _PyPegen_parse_string(Parser *p, Token *t)
     assert(len >= 1);
 
     if (len > INT_MAX) {
-        PyErr_SetString(PyExc_OverflowError, "string to parse is too long");
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(t, "string literal is too long");
         return NULL;
     }
     if (s[--len] != quote) {
