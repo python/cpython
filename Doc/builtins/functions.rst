@@ -388,9 +388,10 @@ are always available.  They are listed here in alphabetical order.
    including a *source* containing a null character or that cannot be decoded;
    :exc:`ValueError` if *mode* or *flags* is invalid,
    or if a string *source* contains surrogate characters;
-   and :exc:`MemoryError` or :exc:`RecursionError` if *source* is too complex
+   :exc:`MemoryError` or :exc:`RecursionError` if *source* is too complex
    to parse or compile,
-   for example an expression with many thousands of nested operators.
+   for example an expression with many thousands of nested operators;
+   and :exc:`OverflowError` if *source* is too large.
 
    If you want to parse Python code into its AST representation, see
    :func:`ast.parse`.
