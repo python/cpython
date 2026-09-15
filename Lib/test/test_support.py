@@ -84,6 +84,23 @@ class TestSupport(unittest.TestCase):
             messages = [str(w.message) for w in warning_objs]
         self.assertEqual(len(messages), 0, messages)
 
+    def test_check_warnings_when_module_is_not_in_sys_modules(self):
+        warnings_module = sys.modules.pop("warnings", None)
+        original_catch_warnings = warnings_helper.warnings.catch_warnings
+        try:
+            def catch_warnings(*, record):
+                return original_catch_warnings(
+                    record=record, module=warnings_helper.warnings
+                )
+
+            warnings_helper.warnings.catch_warnings = catch_warnings
+            with warnings_helper.check_warnings(quiet=True):
+                pass
+        finally:
+            warnings_helper.warnings.catch_warnings = original_catch_warnings
+            if warnings_module is not None:
+                sys.modules["warnings"] = warnings_module
+
     def test_import_module(self):
         import_helper.import_module("ftplib")
         self.assertRaises(unittest.SkipTest,

@@ -1,0 +1,2 @@
+Fix ``test.support.warnings_helper.check_warnings()`` failing with a
+``KeyError`` when lazy imports have not populated ``sys.modules``.
