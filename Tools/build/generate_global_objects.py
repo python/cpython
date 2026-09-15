@@ -355,19 +355,20 @@ def generate_static_strings_initializer(identifiers, strings):
         printer.write(START)
         printer.write("static inline void")
         with printer.block("_PyUnicode_InitStaticStrings(PyInterpreterState *interp)"):
-            printer.write(f'PyObject *string;')
-            for i in sorted(identifiers):
-                # This use of _Py_ID() is ignored by iter_global_strings()
-                # since iter_files() ignores .h files.
-                printer.write(f'string = &_Py_ID({i});')
-                printer.write(f'_PyUnicode_InternStatic(interp, &string);')
-                printer.write(f'assert(_PyUnicode_CheckConsistency(string, 1));')
-                printer.write(f'assert(PyUnicode_GET_LENGTH(string) != 1);')
-            for value, name in sorted(strings.items()):
-                printer.write(f'string = &_Py_STR({name});')
-                printer.write(f'_PyUnicode_InternStatic(interp, &string);')
-                printer.write(f'assert(_PyUnicode_CheckConsistency(string, 1));')
-                printer.write(f'assert(PyUnicode_GET_LENGTH(string) != 1);')
+            printer.write('// Offsets avoid a pointer relocation for each string.')
+            with printer.block('static const size_t offsets[] =', ';'):
+                for i in sorted(identifiers):
+                    printer.write('offsetof(struct _Py_global_strings, '
+                                  f'identifiers._py_{i}._ascii.ob_base),')
+                for value, name in sorted(strings.items()):
+                    printer.write('offsetof(struct _Py_global_strings, '
+                                  f'literals._py_{name}._ascii.ob_base),')
+            printer.write('char *base = (char *)&_Py_SINGLETON(strings);')
+            with printer.block('for (size_t i = 0; i < Py_ARRAY_LENGTH(offsets); i++)'):
+                printer.write('PyObject *string = (PyObject *)(base + offsets[i]);')
+                printer.write('_PyUnicode_InternStatic(interp, &string);')
+                printer.write('assert(_PyUnicode_CheckConsistency(string, 1));')
+                printer.write('assert(PyUnicode_GET_LENGTH(string) != 1);')
         printer.write(END)
         printer.write(after)
 
