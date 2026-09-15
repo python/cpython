@@ -541,6 +541,10 @@ async def _cancel_and_wait(fut):
     cb = functools.partial(_release_waiter, waiter)
     fut.add_done_callback(cb)
 
+    # gh-157058: awaiting the waiter leaves no edge on fut, add it here
+    cur_task = current_task()
+    futures.future_add_to_awaited_by(fut, cur_task)
+
     try:
         fut.cancel()
         # We cannot wait on *fut* directly to make
@@ -548,6 +552,7 @@ async def _cancel_and_wait(fut):
         await waiter
     finally:
         fut.remove_done_callback(cb)
+        futures.future_discard_from_awaited_by(fut, cur_task)
 
 
 class _AsCompletedIterator:
@@ -770,6 +775,11 @@ class _GatheringFuture(futures.Future):
         return ret
 
 
+def _discard_awaited_by(children, waiter, outer):
+    for fut in children:
+        futures.future_discard_from_awaited_by(fut, waiter)
+
+
 def gather(*coros_or_futures, return_exceptions=False):
     """Return a future aggregating results from the given coroutines/futures.
 
@@ -903,6 +913,10 @@ def gather(*coros_or_futures, return_exceptions=False):
         children.append(fut)
 
     outer = _GatheringFuture(children, loop=loop)
+    if cur_task is not None:
+        # gh-157213: a child outliving gather() must lose the awaited-by edge
+        outer.add_done_callback(
+            functools.partial(_discard_awaited_by, children, cur_task))
     # Run done callbacks after GatheringFuture created so any post-processing
     # can be performed at this point
     # optimization: in the special case that *all* futures finished eagerly,
@@ -999,6 +1013,9 @@ def shield(arg):
             # Keep only one callback to log on cancel
             inner.remove_done_callback(_log_on_exception)
             inner.add_done_callback(_log_on_exception)
+            if cur_task is not None:
+                inner.remove_done_callback(_clear_awaited_by_callback)
+                futures.future_discard_from_awaited_by(inner, cur_task)
 
     if cur_task is not None:
         inner.add_done_callback(_clear_awaited_by_callback)
