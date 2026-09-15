@@ -178,7 +178,7 @@ ZipFile objects
 
 .. class:: ZipFile(file, mode='r', compression=ZIP_STORED, allowZip64=True, \
                    compresslevel=None, *, strict_timestamps=True, \
-                   metadata_encoding=None)
+                   metadata_encoding=None, max_entries=None)
 
    Open a ZIP file, where *file* can be a path to a file (a string), a
    file-like object or a :term:`path-like object`.
@@ -230,6 +230,10 @@ ZipFile objects
    When mode is ``'r'``, *metadata_encoding* may be set to the name of a codec,
    which will be used to decode metadata such as the names of members and ZIP
    comments.
+
+   The *max_entries* argument can be set to a nonnegative integer,
+   which will be the limit of how many entries the internal cache will store metadata for.
+   If the limit is reached, a :exc:`BadZipFile` will be raised.
 
    If the file is created with mode ``'w'``, ``'x'`` or ``'a'`` and then
    :meth:`closed <close>` without adding any files to the archive, the appropriate
