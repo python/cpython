@@ -286,7 +286,7 @@ if any('htmlhelp' in arg for arg in sys.argv):
     print("It may be removed in the future\n")
 
 # Short title used e.g. for <title> HTML tags.
-html_short_title = f'{release} Documentation'
+html_short_title = f'Python {release} Documentation'
 
 # Deployment preview information
 # (See .readthedocs.yml and https://docs.readthedocs.io/en/stable/reference/environment-variables.html)
