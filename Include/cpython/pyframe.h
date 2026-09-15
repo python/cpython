@@ -35,3 +35,8 @@ PyAPI_FUNC(int) PyUnstable_InterpreterFrame_GetLasti(struct _PyInterpreterFrame 
 /* Returns the currently executing line number, or -1 if there is no line number.
  * Does not raise an exception. */
 PyAPI_FUNC(int) PyUnstable_InterpreterFrame_GetLine(struct _PyInterpreterFrame *frame);
+
+/* Returns a new (strong) reference to the local variable at `index` in the
+ * frame's localsplus array. */
+PyAPI_FUNC(PyObject *) PyUnstable_InterpreterFrame_GetLocal(
+    struct _PyInterpreterFrame *frame, Py_ssize_t index);
