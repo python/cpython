@@ -31,6 +31,17 @@
 
 #include <stddef.h>               // ptrdiff_t
 
+
+// Forward declaration
+static PyObject *
+object_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
+static PyObject *
+type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds);
+#ifdef Py_DEBUG
+static void count_static_types(PyTypeObject *type);
+#endif
+
+
 /*[clinic input]
 class type "PyTypeObject *" "&PyType_Type"
 class object "PyObject *" "&PyBaseObject_Type"
@@ -4164,10 +4175,6 @@ _PyType_CalculateMetaclass(PyTypeObject *metatype, PyObject *bases)
 }
 
 
-// Forward declaration
-static PyObject *
-type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds);
-
 typedef struct {
     PyTypeObject *metatype;
     PyObject *args;
@@ -7258,10 +7265,6 @@ PyTypeObject PyType_Type = {
    (IOW, if __new__() is overridden or __init__() is not overridden).
 */
 
-/* Forward */
-static PyObject *
-object_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
-
 static int
 excess_args(PyObject *args, PyObject *kwds)
 {
@@ -9589,6 +9592,12 @@ init_static_type(PyInterpreterState *interp, PyTypeObject *self,
             assert(next_version_tag != 0);
             _PyType_SetVersion(self, next_version_tag);
         }
+
+#ifdef Py_DEBUG
+        if (isbuiltin) {
+            count_static_types(self);
+        }
+#endif
     }
     else {
         assert(!initial);
@@ -13005,3 +13014,50 @@ PyTypeObject PySuper_Type = {
     PyObject_GC_Del,                            /* tp_free */
     .tp_vectorcall = super_vectorcall,
 };
+
+
+#ifdef Py_DEBUG
+extern size_t _Py_num_static_types;
+extern PyTypeObject **_Py_static_types;
+
+extern size_t _Py_num_static_exceptions;
+extern struct static_exception *_Py_static_exceptions;
+
+static size_t num_static_extra_types = 0;
+static PyTypeObject* static_extra_types[_Py_NUM_MANAGED_STATIC_EXTRA_TYPES] = {0};
+
+// Maintain a list of "static extra types" to make sure that
+// _Py_NUM_MANAGED_STATIC_EXTRA_TYPES macro is up to date
+static void
+count_static_types(PyTypeObject *type)
+{
+        int found = 0;
+        for (size_t i=0; i < _Py_num_static_types; i++) {
+            if (type == _Py_static_types[i]) {
+                found = 1;
+                break;
+            }
+        }
+        for (size_t i=0; i < _Py_num_static_exceptions; i++) {
+            if (type == _Py_static_exceptions[i].exc) {
+                found = 1;
+                break;
+            }
+        }
+        if (!found) {
+            for (size_t i=0; i < num_static_extra_types; i++) {
+                if (type == static_extra_types[i]) {
+                    found = 1;
+                    break;
+                }
+            }
+            if (!found) {
+                // If this assertion fails, _Py_NUM_MANAGED_STATIC_EXTRA_TYPES
+                // must be updated
+                assert(num_static_extra_types < Py_ARRAY_LENGTH(static_extra_types));
+                static_extra_types[num_static_extra_types] = type;
+                num_static_extra_types++;
+            }
+        }
+}
+#endif

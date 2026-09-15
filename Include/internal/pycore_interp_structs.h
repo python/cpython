@@ -535,12 +535,15 @@ struct _py_func_state {
 
 /* For now we hard-code this to a value for which we are confident
    all the static builtin types will fit (for all builds).
-   If you add a new static type to the standard library, you may have to
+   If you add a new static type or exception to the standard library, you must
    update one of these numbers.
    */
 #define _Py_NUM_MANAGED_PREINITIALIZED_TYPES 122
+#define _Py_NUM_MANAGED_STATIC_EXTRA_TYPES 14
+#define _Py_NUM_STATIC_EXCEPTIONS 69
 #define _Py_MAX_MANAGED_STATIC_BUILTIN_TYPES \
-    (_Py_NUM_MANAGED_PREINITIALIZED_TYPES + 83)
+    (_Py_NUM_MANAGED_PREINITIALIZED_TYPES + _Py_NUM_STATIC_EXCEPTIONS \
+     + _Py_NUM_MANAGED_STATIC_EXTRA_TYPES)
 #define _Py_MAX_MANAGED_STATIC_EXT_TYPES 10
 #define _Py_MAX_MANAGED_STATIC_TYPES \
     (_Py_MAX_MANAGED_STATIC_BUILTIN_TYPES + _Py_MAX_MANAGED_STATIC_EXT_TYPES)
