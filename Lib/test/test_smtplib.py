@@ -1504,6 +1504,7 @@ class SMTPUTF8SimTests(unittest.TestCase):
         self.assertIn('SMTPUTF8', self.serv.last_mail_options)
         self.assertEqual(self.serv.last_rcpt_options, [])
 
+    @support.run_with_tz('UTC-02')
     def test_send_message_uses_smtputf8_if_addrs_non_ascii(self):
         msg = EmailMessage()
         msg['From'] = "Páolo <főo@bar.com>"
@@ -1514,6 +1515,20 @@ class SMTPUTF8SimTests(unittest.TestCase):
         msg.set_content("oh là là, know what I mean, know what I mean?\n\n")
         # XXX smtpd converts received /r/n to /n, so we can't easily test that
         # we are successfully sending /r/n :(.
+        smtp = smtplib.SMTP(
+            HOST, self.port, local_hostname='localhost',
+            timeout=support.LOOPBACK_TIMEOUT)
+        self.addCleanup(smtp.close)
+        self.assertEqual(smtp.send_message(msg), {})
+
+        last_message = self.serv.last_message.decode()
+        date = email.message_from_string(last_message)['Date']
+        # asserts RFC 5322 section 3.3 4th Paragraph
+        self.assertEqual(
+            email.utils.parsedate_to_datetime(date).tzname(),
+            "UTC+02:00"
+        )
+
         expected = textwrap.dedent("""\
             From: Páolo <főo@bar.com>
             To: Dinsdale
@@ -1521,17 +1536,14 @@ class SMTPUTF8SimTests(unittest.TestCase):
             Content-Type: text/plain; charset="utf-8"
             Content-Transfer-Encoding: 8bit
             MIME-Version: 1.0
+            Date: {}
 
             oh là là, know what I mean, know what I mean?
-            """)
-        smtp = smtplib.SMTP(
-            HOST, self.port, local_hostname='localhost',
-            timeout=support.LOOPBACK_TIMEOUT)
-        self.addCleanup(smtp.close)
-        self.assertEqual(smtp.send_message(msg), {})
+            """.format(date))
+
         self.assertEqual(self.serv.last_mailfrom, 'főo@bar.com')
         self.assertEqual(self.serv.last_rcpttos, ['Dinsdale'])
-        self.assertEqual(self.serv.last_message.decode(), expected)
+        self.assertEqual(last_message, expected)
         self.assertIn('BODY=8BITMIME', self.serv.last_mail_options)
         self.assertIn('SMTPUTF8', self.serv.last_mail_options)
         self.assertEqual(self.serv.last_rcpt_options, [])
