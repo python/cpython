@@ -4733,6 +4733,15 @@ AS_CASE([$ac_cv_search_dbm_open],
 )
 AC_MSG_RESULT([$have_ndbm ($dbm_ndbm)])
 
+dnl gdbm's ndbm.h includes gdbm.h; libgdbm is then needed for the version info.
+AC_CACHE_CHECK([whether ndbm.h is provided by gdbm], [ac_cv_ndbm_h_is_gdbm],
+               [AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+                 #include <ndbm.h>
+                 #ifndef _GDBM_H_
+                 #error "not gdbm"
+                 #endif
+               ]])], [ac_cv_ndbm_h_is_gdbm=yes], [ac_cv_ndbm_h_is_gdbm=no])])
+
 dnl "gdbm-ndbm.h" and "gdbm/ndbm.h" are both normalized to "gdbm_ndbm_h"
 AC_CACHE_CHECK([for gdbm/ndbm.h], [ac_cv_header_gdbm_slash_ndbm_h],
                [AC_PREPROC_IFELSE([AC_LANG_SOURCE([@%:@include <gdbm/ndbm.h>])],
@@ -4815,6 +4824,7 @@ for db in $with_dbmliborder; do
       if test "$have_ndbm" = yes; then
         DBM_CFLAGS="-DUSE_NDBM"
         DBM_LIBS="$dbm_ndbm"
+        AS_VAR_IF([ac_cv_ndbm_h_is_gdbm], [yes], [DBM_LIBS="$DBM_LIBS $GDBM_LIBS"])
         have_dbm=yes
         break
       fi
@@ -4822,7 +4832,7 @@ for db in $with_dbmliborder; do
     gdbm)
       if test "$have_gdbm_compat" = yes; then
         DBM_CFLAGS="-DUSE_GDBM_COMPAT"
-        DBM_LIBS="-lgdbm_compat"
+        DBM_LIBS="-lgdbm_compat $GDBM_LIBS"
         have_dbm=yes
         break
       fi

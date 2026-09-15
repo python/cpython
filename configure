@@ -18454,6 +18454,34 @@ esac
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $have_ndbm ($dbm_ndbm)" >&5
 printf "%s\n" "$have_ndbm ($dbm_ndbm)" >&6; }
 
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether ndbm.h is provided by gdbm" >&5
+printf %s "checking whether ndbm.h is provided by gdbm... " >&6; }
+if test ${ac_cv_ndbm_h_is_gdbm+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+                 #include <ndbm.h>
+                 #ifndef _GDBM_H_
+                 #error "not gdbm"
+                 #endif
+
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_ndbm_h_is_gdbm=yes
+else case e in #(
+  e) ac_cv_ndbm_h_is_gdbm=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_ndbm_h_is_gdbm" >&5
+printf "%s\n" "$ac_cv_ndbm_h_is_gdbm" >&6; }
+
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for gdbm/ndbm.h" >&5
 printf %s "checking for gdbm/ndbm.h... " >&6; }
 if test ${ac_cv_header_gdbm_slash_ndbm_h+y}
@@ -18729,6 +18757,10 @@ for db in $with_dbmliborder; do
       if test "$have_ndbm" = yes; then
         DBM_CFLAGS="-DUSE_NDBM"
         DBM_LIBS="$dbm_ndbm"
+        if test "x$ac_cv_ndbm_h_is_gdbm" = xyes
+then :
+  DBM_LIBS="$DBM_LIBS $GDBM_LIBS"
+fi
         have_dbm=yes
         break
       fi
@@ -18736,7 +18768,7 @@ for db in $with_dbmliborder; do
     gdbm)
       if test "$have_gdbm_compat" = yes; then
         DBM_CFLAGS="-DUSE_GDBM_COMPAT"
-        DBM_LIBS="-lgdbm_compat"
+        DBM_LIBS="-lgdbm_compat $GDBM_LIBS"
         have_dbm=yes
         break
       fi
