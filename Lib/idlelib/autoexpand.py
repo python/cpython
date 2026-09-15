@@ -13,12 +13,10 @@ its state.
 There is only one instance of Autoexpand.
 '''
 import re
-import string
 
+_LAST_WORD_RE = re.compile(r'\b\w+\Z')
 
 class AutoExpand:
-    wordchars = string.ascii_letters + string.digits + "_"
-
     def __init__(self, editwin):
         self.text = editwin.text
         self.bell = self.text.bell
@@ -85,10 +83,8 @@ class AutoExpand:
     def getprevword(self):
         "Return the word prefix before the cursor."
         line = self.text.get("insert linestart", "insert")
-        i = len(line)
-        while i > 0 and line[i-1] in self.wordchars:
-            i = i-1
-        return line[i:]
+        m = _LAST_WORD_RE.search(line)
+        return m[0] if m else ''
 
 
 if __name__ == '__main__':
