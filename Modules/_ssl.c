@@ -7242,12 +7242,62 @@ parse_openssl_version(unsigned long libver,
     *major = libver & 0xFF;
 }
 
+PyDoc_STRVAR(openssl_version_info__doc__,
+"ssl.OPENSSL_VERSION_INFO\n\
+\n\
+OpenSSL version information as a named tuple.");
+
+static PyStructSequence_Field openssl_version_info_fields[] = {
+    {"major", "Major release number"},
+    {"minor", "Minor release number"},
+    {"fix", "Fix release number"},
+    {"patch", "Patch release number"},
+    {"status", "Release status"},
+    {0}
+};
+
+static PyStructSequence_Desc openssl_version_info_desc = {
+    "ssl.OPENSSL_VERSION_INFO",     /* name */
+    openssl_version_info__doc__,    /* doc */
+    openssl_version_info_fields,    /* fields */
+    5
+};
+
+static PyObject *
+make_openssl_version_info(PyTypeObject *type, unsigned long libver)
+{
+    PyObject *version;
+    int pos = 0;
+    unsigned int major, minor, fix, patch, status;
+
+    parse_openssl_version(libver, &major, &minor, &fix, &patch, &status);
+    version = PyStructSequence_New(type);
+    if (version == NULL) {
+        return NULL;
+    }
+
+#define SetItem(VALUE) \
+    PyStructSequence_SET_ITEM(version, pos++, VALUE); \
+    if (PyErr_Occurred()) { \
+        Py_DECREF(version); \
+        return NULL; \
+    }
+
+    SetItem(PyLong_FromUnsignedLong(major))
+    SetItem(PyLong_FromUnsignedLong(minor))
+    SetItem(PyLong_FromUnsignedLong(fix))
+    SetItem(PyLong_FromUnsignedLong(patch))
+    SetItem(PyLong_FromUnsignedLong(status))
+#undef SetItem
+
+    return version;
+}
+
 static int
 sslmodule_init_versioninfo(PyObject *m)
 {
     PyObject *r;
     unsigned long libver;
-    unsigned int major, minor, fix, patch, status;
 
     /* OpenSSL version */
     /* SSLeay() gives us the version of the library linked against,
@@ -7258,20 +7308,33 @@ sslmodule_init_versioninfo(PyObject *m)
     if (PyModule_Add(m, "OPENSSL_VERSION_NUMBER", r) < 0)
         return -1;
 
-    parse_openssl_version(libver, &major, &minor, &fix, &patch, &status);
-    r = Py_BuildValue("IIIII", major, minor, fix, patch, status);
-    if (PyModule_Add(m, "OPENSSL_VERSION_INFO", r) < 0)
-        return -1;
-
     r = PyUnicode_FromString(OpenSSL_version(OPENSSL_VERSION));
     if (PyModule_Add(m, "OPENSSL_VERSION", r) < 0)
         return -1;
 
-    libver = OPENSSL_VERSION_NUMBER;
-    parse_openssl_version(libver, &major, &minor, &fix, &patch, &status);
-    r = Py_BuildValue("IIIII", major, minor, fix, patch, status);
-    if (PyModule_Add(m, "_OPENSSL_API_VERSION", r) < 0)
+    PyTypeObject *version_type;
+    version_type = PyStructSequence_NewType(&openssl_version_info_desc);
+    if (version_type == NULL) {
         return -1;
+    }
+    if (PyModule_Add(m, "OPENSSL_VERSION_INFO",
+            make_openssl_version_info(version_type, libver)) < 0)
+    {
+        Py_DECREF(version_type);
+        return -1;
+    }
+    r = make_openssl_version_info(version_type, OPENSSL_VERSION_NUMBER);
+    Py_DECREF(version_type);
+    if (r == NULL) {
+        return -1;
+    }
+    if (PyModule_AddObjectRef(m, "OPENSSL_API_VERSION_INFO", r) < 0 ||
+        PyModule_AddObjectRef(m, "_OPENSSL_API_VERSION", r) < 0)
+    {
+        Py_DECREF(r);
+        return -1;
+    }
+    Py_DECREF(r);
 
     return 0;
 }
