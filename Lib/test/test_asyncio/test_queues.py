@@ -213,6 +213,58 @@ class QueueGetTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(len(queue._getters), 0)
 
+    async def test_get_can_break_fifo_order_with_pending_getters(self):
+        # See gh-83055, prevents inappropriate get items because of
+        # pending getters or a woken getter.
+        async def _get(q, results):
+            item = await q.get()
+            results.append(item)
+
+        maxsize = 1
+        q = asyncio.Queue(maxsize)
+        n = 0
+        results = []
+        g = 3
+        for _ in range(g):
+            asyncio.create_task(_get(q, results))
+        await asyncio.sleep(0.0)
+
+        await q.put(n:=n+1)
+        g -= 1
+
+        # queue Empty: 1 item in queue, 2 tasks into the _getters, 1 woken getter
+        self.assertEqual(len(q._getters), g)
+        self.assertEqual(q.qsize(), maxsize)
+        self.assertTrue(q._woken_getter)
+
+        await q.put(n:=n+1)
+        g -= 1
+
+        # queue full: 1 item in queue, 2 task into the _getters,
+        # 1 item in transit
+        self.assertEqual(len(q._getters), g)
+        self.assertEqual(q.qsize(), 1)
+        self.assertTrue(q._woken_getter)
+
+        with self.assertRaises(asyncio.QueueWithPendingTasks):
+            await q.get()
+
+        await q.put(n:=n+1)
+        g -= 1
+        # queue full: 1 item in queue, 0 item waiting into the _getters,
+        # 1 item in transit
+        with self.assertRaises(asyncio.QueueWithPendingTasks):
+            q.get_nowait()
+
+        self.assertEqual(len(q._getters), 0)
+        self.assertEqual(q.qsize(), 1)
+        self.assertTrue(q._woken_getter)
+
+        # This is the end
+        await asyncio.sleep(0.0)
+        self.assertListEqual(results, list(range(1, n+1)))
+        self.assertTrue(q.empty())
+
 
 class QueuePutTests(unittest.IsolatedAsyncioTestCase):
 
@@ -430,6 +482,64 @@ class QueuePutTests(unittest.IsolatedAsyncioTestCase):
         # If the ValueError is silenced we should catch a CancelledError.
         with self.assertRaises(asyncio.CancelledError):
             await put_task
+
+    async def test_put_can_break_fifo_order_with_pending_putters(self):
+        # See gh-83055, prevents inappropriate get items because of
+        # pending getters or a woken getter.
+        maxsize = 1
+        q = asyncio.Queue(maxsize)
+        n = 3
+        results = []
+        for i in range(n):
+            asyncio.create_task(q.put(i+1))
+        await asyncio.sleep(0.0)
+        g = n
+
+        # Queue full: 1 item in queue, 2 items waiting into the _putters
+        self.assertEqual(len(q._putters), g-maxsize)
+        self.assertFalse(q._woken_putter)
+
+        item = await q.get()
+        results.append(item)
+        g -= 1
+        # queue empty: 0 item in queue, 1 item into the _putters,
+        # 1 item in transit
+        self.assertEqual(len(q._putters), g-maxsize)
+        self.assertTrue(q._woken_putter)
+
+        # queue is empty, but put_nowait fails,
+        self.assertTrue(q.empty())
+        with self.assertRaises(asyncio.QueueWithPendingTasks):
+            q.put_nowait(n+1)
+
+        # get an another item
+        item = await q.get()
+        results.append(item)
+        g -= 1
+
+        # Queue empty: 0 item in queue, 0 item into the _putters,
+        # 1 item in transit
+        self.assertEqual(len(q._putters), g-maxsize)
+        self.assertTrue(q._woken_putter)
+
+        # queue is empty, but put fails,
+        self.assertTrue(q.empty())
+        with self.assertRaises(asyncio.QueueWithPendingTasks):
+            await q.put(n+1)
+
+        # get an another item
+        await asyncio.sleep(0)
+        item = await q.get()
+        results.append(item)
+        g -= 1
+        # Queue empty: 0 item in queue, 0 item into the _putters,
+        # 0 item in transit
+        self.assertEqual(len(q._putters), 0)
+        self.assertFalse(q._woken_putter)
+
+        # This is the end
+        self.assertListEqual(results, list(range(1, n+1)))
+        self.assertTrue(q.empty())
 
 
 class LifoQueueTests(unittest.IsolatedAsyncioTestCase):
