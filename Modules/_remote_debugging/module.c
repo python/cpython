@@ -281,7 +281,7 @@ class _remote_debugging.RemoteUnwinder "RemoteUnwinderObject *" "&RemoteUnwinder
 /*[clinic input]
 @permit_long_summary
 _remote_debugging.RemoteUnwinder.__init__
-    pid: int
+    pid: pid_t
     *
     all_threads: bool = False
     only_active_thread: bool = False
@@ -334,14 +334,14 @@ Raises:
 
 static int
 _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
-                                               int pid, int all_threads,
+                                               pid_t pid, int all_threads,
                                                int only_active_thread,
                                                int mode, int debug,
                                                int skip_non_matching_threads,
                                                int native, int gc,
                                                int opcodes, int cache_frames,
                                                int stats)
-/*[clinic end generated code: output=0031f743f4b9ad52 input=9d25ae328d62626d]*/
+/*[clinic end generated code: output=acfe554c8a92cf6b input=3b5a5ad153709125]*/
 {
     // Validate that all_threads and only_active_thread are not both True
     if (all_threads && only_active_thread) {
@@ -1376,7 +1376,7 @@ cleanup_runtime_offsets(RuntimeOffsets *offsets)
 }
 
 static int
-init_runtime_offsets(RuntimeOffsets *offsets, int pid, int debug)
+init_runtime_offsets(RuntimeOffsets *offsets, pid_t pid, int debug)
 {
     offsets->debug = debug;
     if (_Py_RemoteDebug_InitProcHandle(&offsets->handle, pid) < 0) {
@@ -1414,7 +1414,7 @@ class _remote_debugging.GCMonitor "GCMonitorObject *" "&GCMonitor_Type"
 /*[clinic input]
 @permit_long_summary
 _remote_debugging.GCMonitor.__init__
-    pid: int
+    pid: pid_t
     *
     debug: bool = False
 
@@ -1437,9 +1437,9 @@ Raises:
 [clinic start generated code]*/
 
 static int
-_remote_debugging_GCMonitor___init___impl(GCMonitorObject *self, int pid,
+_remote_debugging_GCMonitor___init___impl(GCMonitorObject *self, pid_t pid,
                                           int debug)
-/*[clinic end generated code: output=2cdf351c2f6335db input=03da0b2d3282ae1b]*/
+/*[clinic end generated code: output=03b4c92bef0673ad input=dcc6ee2ec5a16fa1]*/
 {
     return init_runtime_offsets(&self->offsets, pid, debug);
 }
@@ -1781,6 +1781,53 @@ _remote_debugging_BinaryWriter_write_sample_impl(BinaryWriterObject *self,
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+_remote_debugging.BinaryWriter.set_stats
+    duration_sec: double
+    sample_rate: double
+    error_rate: object = None
+    missed_samples: object = None
+
+Store measured profile statistics in the binary file.
+[clinic start generated code]*/
+
+static PyObject *
+_remote_debugging_BinaryWriter_set_stats_impl(BinaryWriterObject *self,
+                                              double duration_sec,
+                                              double sample_rate,
+                                              PyObject *error_rate,
+                                              PyObject *missed_samples)
+/*[clinic end generated code: output=28ab1bdd7c631a97 input=1646e7182f4c2259]*/
+{
+    if (!self->writer) {
+        PyErr_SetString(PyExc_ValueError, "Writer is closed");
+        return NULL;
+    }
+    uint32_t present = 0;
+    double error_rate_value = 0.0;
+    double missed_samples_value = 0.0;
+    if (error_rate != Py_None) {
+        error_rate_value = PyFloat_AsDouble(error_rate);
+        if (error_rate_value == -1.0 && PyErr_Occurred()) {
+            return NULL;
+        }
+        present |= PROFILE_STATS_ERROR_RATE;
+    }
+    if (missed_samples != Py_None) {
+        missed_samples_value = PyFloat_AsDouble(missed_samples);
+        if (missed_samples_value == -1.0 && PyErr_Occurred()) {
+            return NULL;
+        }
+        present |= PROFILE_STATS_MISSED;
+    }
+    if (binary_writer_set_stats(self->writer, duration_sec, sample_rate,
+                                error_rate_value, missed_samples_value,
+                                present) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
 /* Finalize the writer, cache total_samples, and destroy it.
  *
  * The cache assignment must happen AFTER binary_writer_finalize(): finalize
@@ -1928,6 +1975,7 @@ static PyGetSetDef BinaryWriter_getset[] = {
 
 static PyMethodDef BinaryWriter_methods[] = {
     _REMOTE_DEBUGGING_BINARYWRITER_WRITE_SAMPLE_METHODDEF
+    _REMOTE_DEBUGGING_BINARYWRITER_SET_STATS_METHODDEF
     _REMOTE_DEBUGGING_BINARYWRITER_FINALIZE_METHODDEF
     _REMOTE_DEBUGGING_BINARYWRITER_CLOSE_METHODDEF
     _REMOTE_DEBUGGING_BINARYWRITER___ENTER___METHODDEF
@@ -2226,7 +2274,7 @@ _remote_debugging_zstd_available_impl(PyObject *module)
 /*[clinic input]
 _remote_debugging.get_child_pids
 
-    pid: int
+    pid: pid_t
         Process ID of the parent process
     *
     recursive: bool = True
@@ -2248,24 +2296,24 @@ Raises:
 [clinic start generated code]*/
 
 static PyObject *
-_remote_debugging_get_child_pids_impl(PyObject *module, int pid,
+_remote_debugging_get_child_pids_impl(PyObject *module, pid_t pid,
                                       int recursive)
-/*[clinic end generated code: output=1ae2289c6b953e4b input=c6437b52e2fdd880]*/
+/*[clinic end generated code: output=fa3dfd1b02eed29b input=3325d95e9f39d75d]*/
 {
-    return enumerate_child_pids((pid_t)pid, recursive);
+    return enumerate_child_pids(pid, recursive);
 }
 
 /*[clinic input]
 _remote_debugging.is_python_process
 
-    pid: int
+    pid: pid_t
 
 Check if a process is a Python process.
 [clinic start generated code]*/
 
 static PyObject *
-_remote_debugging_is_python_process_impl(PyObject *module, int pid)
-/*[clinic end generated code: output=22947dc8afcac362 input=13488e28c7295d84]*/
+_remote_debugging_is_python_process_impl(PyObject *module, pid_t pid)
+/*[clinic end generated code: output=63541478c889e536 input=ff998fef4aeef433]*/
 {
     proc_handle_t handle;
 
@@ -2288,7 +2336,7 @@ _remote_debugging_is_python_process_impl(PyObject *module, int pid)
 /*[clinic input]
 _remote_debugging.get_gc_stats
 
-    pid: int
+    pid: pid_t
     *
     all_interpreters: bool = False
         If True, return GC statistics from all interpreters.
@@ -2314,9 +2362,9 @@ Raises:
 [clinic start generated code]*/
 
 static PyObject *
-_remote_debugging_get_gc_stats_impl(PyObject *module, int pid,
+_remote_debugging_get_gc_stats_impl(PyObject *module, pid_t pid,
                                     int all_interpreters)
-/*[clinic end generated code: output=d9dce5f7add149bb input=a2a08a45a8f0b119]*/
+/*[clinic end generated code: output=dd33199ccb6a56e9 input=41399e77788aa369]*/
 {
     RuntimeOffsets offsets;
     if (init_runtime_offsets(&offsets, pid, /*debug=*/1) < 0) {

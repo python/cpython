@@ -585,7 +585,9 @@ ZipFile objects
                            strict_descriptor=True[, chunk_size])
 
    Rewrites the archive to remove unreferenced local file entries, shrinking
-   its file size.  The archive must be opened with mode ``'a'``.
+   its file size.  The archive must be opened with mode ``'a'``, and any file
+   object returned by :meth:`ZipFile.open` must be closed first, since
+   repacking moves the member data such objects refer to.
 
    If *removed* is provided, it must be a sequence of :class:`ZipInfo` objects
    representing the recently removed members, and only their corresponding
