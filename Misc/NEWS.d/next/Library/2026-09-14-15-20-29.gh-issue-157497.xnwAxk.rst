@@ -1,0 +1,1 @@
+:func:`socket.gethostbyaddr` now works with IPv6 addresses on Solaris.
