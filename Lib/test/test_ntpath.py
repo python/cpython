@@ -149,13 +149,15 @@ class TestNtpath(NtpathTestCase):
                          (b'\\\\ser\x00ver\\sha\x00re', b'\\di\x00r'))
         self.assertEqual(splitdrive("\\\\\udfff\\\udffe\\\udffd"),
                          ('\\\\\udfff\\\udffe', '\\\udffd'))
-        if sys.platform == 'win32':
-            self.assertRaises(UnicodeDecodeError, splitdrive, b'\\\\\xff\\share\\dir')
-            self.assertRaises(UnicodeDecodeError, splitdrive, b'\\\\server\\\xff\\dir')
-            self.assertRaises(UnicodeDecodeError, splitdrive, b'\\\\server\\share\\\xff')
-        else:
-            self.assertEqual(splitdrive(b'\\\\\xff\\\xfe\\\xfd'),
-                             (b'\\\\\xff\\\xfe', b'\\\xfd'))
+        # Undecodable bytes paths (gh-122143).
+        self.assertEqual(splitdrive(b'\\\\\xff\\share\\dir'),
+                         (b'\\\\\xff\\share', b'\\dir'))
+        self.assertEqual(splitdrive(b'\\\\server\\\xff\\dir'),
+                         (b'\\\\server\\\xff', b'\\dir'))
+        self.assertEqual(splitdrive(b'\\\\server\\share\\\xff'),
+                         (b'\\\\server\\share', b'\\\xff'))
+        self.assertEqual(splitdrive(b'\\\\\xff\\\xfe\\\xfd'),
+                         (b'\\\\\xff\\\xfe', b'\\\xfd'))
 
     def test_splitroot(self):
         tester("ntpath.splitroot('')", ('', '', ''))
@@ -255,13 +257,17 @@ class TestNtpath(NtpathTestCase):
                          (b'\\\\ser\x00ver\\sha\x00re', b'\\', b'di\x00r'))
         self.assertEqual(splitroot("\\\\\udfff\\\udffe\\\udffd"),
                          ('\\\\\udfff\\\udffe', '\\', '\udffd'))
-        if sys.platform == 'win32':
-            self.assertRaises(UnicodeDecodeError, splitroot, b'\\\\\xff\\share\\dir')
-            self.assertRaises(UnicodeDecodeError, splitroot, b'\\\\server\\\xff\\dir')
-            self.assertRaises(UnicodeDecodeError, splitroot, b'\\\\server\\share\\\xff')
-        else:
-            self.assertEqual(splitroot(b'\\\\\xff\\\xfe\\\xfd'),
-                             (b'\\\\\xff\\\xfe', b'\\', b'\xfd'))
+        # Undecodable bytes paths (gh-122143).
+        self.assertEqual(splitroot(b'\\\\\xff\\share\\dir'),
+                         (b'\\\\\xff\\share', b'\\', b'dir'))
+        self.assertEqual(splitroot(b'\\\\server\\\xff\\dir'),
+                         (b'\\\\server\\\xff', b'\\', b'dir'))
+        self.assertEqual(splitroot(b'\\\\server\\share\\\xff'),
+                         (b'\\\\server\\share', b'\\', b'\xff'))
+        self.assertEqual(splitroot(b'\\\\\xff\\\xfe\\\xfd'),
+                         (b'\\\\\xff\\\xfe', b'\\', b'\xfd'))
+        self.assertEqual(splitroot(FakePath(b'c:\\\xff')),
+                         (b'c:', b'\\', b'\xff'))
 
     def test_split(self):
         tester('ntpath.split("c:\\foo\\bar")', ('c:\\foo', 'bar'))
@@ -283,12 +289,10 @@ class TestNtpath(NtpathTestCase):
                          (b'c:\\fo\x00o', b'ba\x00r'))
         self.assertEqual(split('c:\\\udfff\\\udffe'),
                          ('c:\\\udfff', '\udffe'))
-        if sys.platform == 'win32':
-            self.assertRaises(UnicodeDecodeError, split, b'c:\\\xff\\bar')
-            self.assertRaises(UnicodeDecodeError, split, b'c:\\foo\\\xff')
-        else:
-            self.assertEqual(split(b'c:\\\xff\\\xfe'),
-                             (b'c:\\\xff', b'\xfe'))
+        # Undecodable bytes paths (gh-122143).
+        self.assertEqual(split(b'c:\\\xff\\bar'), (b'c:\\\xff', b'bar'))
+        self.assertEqual(split(b'c:\\foo\\\xff'), (b'c:\\foo', b'\xff'))
+        self.assertEqual(split(b'c:\\\xff\\\xfe'), (b'c:\\\xff', b'\xfe'))
 
     def test_isabs(self):
         tester('ntpath.isabs("foo\\bar")', 0)
@@ -481,12 +485,10 @@ class TestNtpath(NtpathTestCase):
         self.assertEqual(normpath(b'fo\x00o\\..\\bar'), b'bar')
         self.assertEqual(normpath('\udfff'), '\udfff')
         self.assertEqual(normpath('\udfff\\..\\foo'), 'foo')
-        if sys.platform == 'win32':
-            self.assertRaises(UnicodeDecodeError, normpath, b'\xff')
-            self.assertRaises(UnicodeDecodeError, normpath, b'\xff\\..\\foo')
-        else:
-            self.assertEqual(normpath(b'\xff'), b'\xff')
-            self.assertEqual(normpath(b'\xff\\..\\foo'), b'foo')
+        # Undecodable bytes paths (gh-122143).
+        self.assertEqual(normpath(b'\xff'), b'\xff')
+        self.assertEqual(normpath(b'\xff\\..\\foo'), b'foo')
+        self.assertEqual(normpath(b'C:\\\xff\\..\\foo'), b'C:\\foo')
 
     def test_realpath_curdir(self):
         expected = ntpath.normpath(os.getcwd())
@@ -643,19 +645,33 @@ class TestNtpath(NtpathTestCase):
         self.assertEqual(realpath(path, strict=ALLOW_MISSING), ABSTFNb + b'\\nonexistent')
 
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
-    @_parameterize({}, {'strict': True}, {'strict': ALL_BUT_LAST}, {'strict': ALLOW_MISSING})
-    def test_realpath_invalid_unicode_paths(self, kwargs):
+    def test_realpath_invalid_unicode_paths(self):
+        # gh-122143: Undecodable bytes paths are handled like other paths
+        # which cannot be passed to the OS, e.g. paths with embedded nulls.
         realpath = ntpath.realpath
         ABSTFN = ntpath.abspath(os_helper.TESTFN)
         ABSTFNb = os.fsencode(ABSTFN)
         path = ABSTFNb + b'\xff'
-        self.assertRaises(UnicodeDecodeError, realpath, path, **kwargs)
+        self.assertEqual(realpath(path, strict=False), path)
+        self.assertRaises(OSError, realpath, path, strict=ALL_BUT_LAST)
+        self.assertRaises(OSError, realpath, path, strict=True)
+        self.assertRaises(OSError, realpath, path, strict=ALLOW_MISSING)
         path = ABSTFNb + b'\\nonexistent\\\xff'
-        self.assertRaises(UnicodeDecodeError, realpath, path, **kwargs)
+        self.assertEqual(realpath(path, strict=False), path)
+        self.assertRaises(OSError, realpath, path, strict=ALL_BUT_LAST)
+        self.assertRaises(OSError, realpath, path, strict=True)
+        self.assertRaises(OSError, realpath, path, strict=ALLOW_MISSING)
         path = ABSTFNb + b'\xff\\..'
-        self.assertRaises(UnicodeDecodeError, realpath, path, **kwargs)
+        self.assertEqual(realpath(path, strict=False), os.getcwdb())
+        self.assertEqual(realpath(path, strict=ALL_BUT_LAST), os.getcwdb())
+        self.assertEqual(realpath(path, strict=True), os.getcwdb())
+        self.assertEqual(realpath(path, strict=ALLOW_MISSING), os.getcwdb())
         path = ABSTFNb + b'\\nonexistent\\\xff\\..'
-        self.assertRaises(UnicodeDecodeError, realpath, path, **kwargs)
+        self.assertEqual(realpath(path, strict=False), ABSTFNb + b'\\nonexistent')
+        self.assertRaises(OSError, realpath, path, strict=ALL_BUT_LAST)
+        self.assertRaises(OSError, realpath, path, strict=True)
+        self.assertEqual(realpath(path, strict=ALLOW_MISSING),
+                         ABSTFNb + b'\\nonexistent')
 
     @os_helper.skip_unless_symlink
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
@@ -1268,12 +1284,9 @@ class TestNtpath(NtpathTestCase):
         self.assertEqual(abspath(b'c:\\fo\x00o\\..\\bar'), b'c:\\bar')
         self.assertEqual(abspath('c:\\\udfff'), 'c:\\\udfff')
         self.assertEqual(abspath('c:\\\udfff\\..\\foo'), 'c:\\foo')
-        if sys.platform == 'win32':
-            self.assertRaises(UnicodeDecodeError, abspath, b'c:\\\xff')
-            self.assertRaises(UnicodeDecodeError, abspath, b'c:\\\xff\\..\\foo')
-        else:
-            self.assertEqual(abspath(b'c:\\\xff'), b'c:\\\xff')
-            self.assertEqual(abspath(b'c:\\\xff\\..\\foo'), b'c:\\foo')
+        # Undecodable bytes paths (gh-122143).
+        self.assertEqual(abspath(b'c:\\\xff'), b'c:\\\xff')
+        self.assertEqual(abspath(b'c:\\\xff\\..\\foo'), b'c:\\foo')
 
     def test_relpath(self):
         tester('ntpath.relpath("a")', 'a')
