@@ -3590,7 +3590,7 @@ dummy_func(
         tier1 inst(ENTER_EXECUTOR, (--)) {
             #ifdef _Py_TIER2
             PyCodeObject *code = _PyFrame_GetCode(frame);
-            _PyExecutorObject *executor = code->co_executors->executors[oparg & 255];
+            _PyExecutorObject *executor = _PyExecutorArray_EXECUTORS(code->co_executors)[oparg & 255];
             if (IS_JIT_TRACING()) {
                 int og_opcode = executor->vm_data.opcode;
                 int og_oparg = (oparg & ~255) | executor->vm_data.oparg;
@@ -6266,7 +6266,7 @@ dummy_func(
             _PyExecutorObject *executor;
             if (target->op.code == ENTER_EXECUTOR) {
                 PyCodeObject *code = _PyFrame_GetCode(frame);
-                executor = code->co_executors->executors[target->op.arg];
+                executor = _PyExecutorArray_EXECUTORS(code->co_executors)[target->op.arg];
                 if (executor == _PyExecutor_FromExit(exit)) {
                     _Py_ExecutorDetach(executor);
                     GOTO_TIER_ONE(target);
