@@ -1,0 +1,2 @@
+IDLE no longer crashes with a traceback when a file open in the editor is
+deleted or renamed by another program and the editor window is refocused.
