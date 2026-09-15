@@ -1,0 +1,3 @@
+:exc:`TypeError` messages for some instance methods called with too many
+positional arguments now suggest checking whether the method definition is
+missing the ``self`` parameter.
