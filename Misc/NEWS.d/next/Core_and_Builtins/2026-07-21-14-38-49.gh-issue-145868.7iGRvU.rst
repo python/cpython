@@ -1,0 +1,2 @@
+Calculate suggestions during :exc:`SyntaxError` on typos when importing
+names from :mod:`__future__`.
