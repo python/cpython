@@ -1593,6 +1593,8 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    If no bytes were read, it will return ``-1`` and set errno to
    :const:`errno.EAGAIN`.
 
+   This flag can be used with :func:`os.preadv`.
+
    .. availability:: Linux >= 4.14.
 
    .. versionadded:: 3.7
@@ -1607,6 +1609,8 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    Currently, on Linux, this feature is usable only on a file descriptor opened
    using the :data:`O_DIRECT` flag.
 
+   This flag can be used with :func:`os.preadv`.
+
    .. availability:: Linux >= 4.6.
 
    .. versionadded:: 3.7
@@ -1616,6 +1620,8 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
    Use uncached buffered IO.
 
+   This flag can be used with :func:`os.preadv` and :func:`os.pwritev`.
+
    .. availability:: Linux >= 6.14
 
    .. versionadded:: 3.15
@@ -1624,6 +1630,8 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 .. data:: RWF_ATOMIC
 
    Write data atomically. Requires alignment to the device's atomic write unit.
+
+   This flag can be used with :func:`os.pwritev`.
 
    .. availability:: Linux >= 6.11
 
@@ -1694,6 +1702,8 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    Provide a per-write equivalent of the :data:`O_DSYNC` :func:`os.open` flag.
    This flag effect applies only to the data range written by the system call.
 
+   This flag can be used with :func:`os.pwritev`.
+
    .. availability:: Linux >= 4.7.
 
    .. versionadded:: 3.7
@@ -1703,6 +1713,8 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
    Provide a per-write equivalent of the :data:`O_SYNC` :func:`os.open` flag.
    This flag effect applies only to the data range written by the system call.
+
+   This flag can be used with :func:`os.pwritev`.
 
    .. availability:: Linux >= 4.7.
 
@@ -2032,7 +2044,9 @@ Querying the size of a terminal
 
 .. class:: terminal_size
 
-   A subclass of tuple, holding ``(columns, lines)`` of the terminal window size.
+   Size of the terminal window returned by :func:`os.get_terminal_size` and
+   :func:`shutil.get_terminal_size`.
+   A subclass of tuple, holding ``(columns, lines)``.
 
    .. attribute:: columns
 
@@ -5714,28 +5728,51 @@ written in Python, such as a mail server's external command delivery program.
 .. function:: times()
 
    Returns the current global process times.
-   The return value is an object with five attributes:
-
-   * :attr:`!user` - user time
-   * :attr:`!system` - system time
-   * :attr:`!children_user` - user time of all child processes
-   * :attr:`!children_system` - system time of all child processes
-   * :attr:`!elapsed` - elapsed real time since a fixed point in the past
-
-   For backwards compatibility, this object also behaves like a five-tuple
-   containing :attr:`!user`, :attr:`!system`, :attr:`!children_user`,
-   :attr:`!children_system`, and :attr:`!elapsed` in that order.
+   The return value is a :class:`times_result`.
 
    See the Unix manual page
    :manpage:`times(2)` and `times(3) <https://man.freebsd.org/cgi/man.cgi?time(3)>`_ manual page on Unix or `the GetProcessTimes MSDN
    <https://docs.microsoft.com/windows/win32/api/processthreadsapi/nf-processthreadsapi-getprocesstimes>`_
-   on Windows. On Windows, only :attr:`!user` and :attr:`!system` are known; the other attributes are zero.
+   on Windows. On Windows, only :attr:`~times_result.user` and
+   :attr:`~times_result.system` are known; the other attributes are zero.
 
    .. availability:: Unix, Windows.
 
    .. versionchanged:: 3.3
       Return type changed from a tuple to a tuple-like object
       with named attributes.
+
+
+.. class:: times_result
+
+   Process times returned by :func:`os.times`.
+   All attributes are floating-point numbers, in seconds.
+
+   For backwards compatibility, this object is also iterable, behaving
+   like a five-tuple containing :attr:`~times_result.user`,
+   :attr:`~times_result.system`, :attr:`~times_result.children_user`,
+   :attr:`~times_result.children_system`, and :attr:`~times_result.elapsed`
+   in that order.
+
+   .. attribute:: user
+
+      User CPU time.
+
+   .. attribute:: system
+
+      System CPU time.
+
+   .. attribute:: children_user
+
+      User CPU time of all child processes.
+
+   .. attribute:: children_system
+
+      System CPU time of all child processes.
+
+   .. attribute:: elapsed
+
+      Elapsed real time since a fixed point in the past.
 
 
 .. function:: wait()
@@ -5772,14 +5809,7 @@ written in Python, such as a mail server's external command delivery program.
    :data:`WSTOPPED` or :data:`WCONTINUED` is required;
    :data:`WNOHANG` and :data:`WNOWAIT` are additional optional flags.
 
-   The return value is an object representing the data contained in the
-   :c:type:`siginfo_t` structure with the following attributes:
-
-   * :attr:`!si_pid` (process ID)
-   * :attr:`!si_uid` (real user ID of the child)
-   * :attr:`!si_signo` (always :const:`~signal.SIGCHLD`)
-   * :attr:`!si_status` (the exit status or signal number, depending on :attr:`!si_code`)
-   * :attr:`!si_code` (see :data:`CLD_EXITED` for possible values)
+   The return value is a :class:`waitid_result`.
 
    If :data:`WNOHANG` is specified and there are no matching children in the
    requested state, ``None`` is returned.
@@ -5792,6 +5822,43 @@ written in Python, such as a mail server's external command delivery program.
 
    .. versionchanged:: 3.13
       This function is now available on macOS as well.
+
+
+.. class:: waitid_result
+
+   Information about a child process returned by :func:`os.waitid`.
+   The attributes correspond to the members of the :c:type:`siginfo_t`
+   structure; see :manpage:`waitid(2)` for more details.
+
+   For backwards compatibility, this object is also iterable, behaving
+   like a five-tuple containing :attr:`~waitid_result.si_pid`,
+   :attr:`~waitid_result.si_uid`, :attr:`~waitid_result.si_signo`,
+   :attr:`~waitid_result.si_status`, and :attr:`~waitid_result.si_code`
+   in that order.
+
+   .. attribute:: si_pid
+
+      Process ID of the child.
+
+   .. attribute:: si_uid
+
+      Real user ID of the child.
+
+   .. attribute:: si_signo
+
+      Always :const:`~signal.SIGCHLD`.
+
+   .. attribute:: si_status
+
+      Either the exit status of the child or the number of the signal that
+      caused it to terminate, stop or continue, depending on
+      :attr:`~waitid_result.si_code`.
+
+   .. attribute:: si_code
+
+      Why the child changed state: one of :data:`CLD_EXITED`,
+      :data:`CLD_KILLED`, :data:`CLD_DUMPED`, :data:`CLD_TRAPPED`,
+      :data:`CLD_STOPPED` or :data:`CLD_CONTINUED`.
 
 
 .. function:: waitpid(pid, options, /)
@@ -5958,8 +6025,14 @@ written in Python, such as a mail server's external command delivery program.
           CLD_STOPPED
           CLD_CONTINUED
 
-   These are the possible values for :attr:`!si_code` in the result returned by
-   :func:`waitid`.
+   These are the possible values for :attr:`waitid_result.si_code`:
+
+   * :data:`!CLD_EXITED` - the child exited normally.
+   * :data:`!CLD_KILLED` - the child was terminated by a signal.
+   * :data:`!CLD_DUMPED` - the child was terminated by a signal and dumped core.
+   * :data:`!CLD_TRAPPED` - a traced child has trapped.
+   * :data:`!CLD_STOPPED` - the child was stopped by a signal.
+   * :data:`!CLD_CONTINUED` - a stopped child has continued.
 
    .. availability:: Unix, not WASI, not Android, not iOS.
 
