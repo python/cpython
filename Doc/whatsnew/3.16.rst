@@ -758,6 +758,12 @@ xml
   building a tree for it.
   (Contributed by Serhiy Storchaka in :gh:`63102`.)
 
+* Add the *validate* option to :func:`~xml.etree.ElementTree.tostring`,
+  :func:`~xml.etree.ElementTree.tostringlist` and
+  :meth:`ElementTree.write <xml.etree.ElementTree.ElementTree.write>`,
+  which makes them check that the produced document is well-formed.
+  (Contributed by Serhiy Storchaka in :gh:`149468`.)
+
 zipfile
 -------
 
