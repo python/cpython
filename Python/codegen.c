@@ -4765,40 +4765,16 @@ codegen_sync_comprehension_generator(compiler *c, location loc,
 }
 
 static int
-codegen_async_comprehension_generator(compiler *c, location loc,
-                                      asdl_comprehension_seq *generators,
-                                      int gen_index, int depth,
-                                      expr_ty elt, expr_ty val, int type,
-                                      IterStackPosition iter_pos, bool avoid_creation)
+codegen_async_comprehension_generator_body(
+    compiler *c, location loc,
+    asdl_comprehension_seq *generators, int gen_index, int depth,
+    expr_ty elt, expr_ty val, int type, bool avoid_creation,
+    comprehension_ty gen, jump_target_label start)
 {
-    NEW_JUMP_TARGET_LABEL(c, start);
     NEW_JUMP_TARGET_LABEL(c, send);
     NEW_JUMP_TARGET_LABEL(c, except);
     NEW_JUMP_TARGET_LABEL(c, if_cleanup);
-
-    comprehension_ty gen = (comprehension_ty)asdl_seq_GET(generators,
-                                                          gen_index);
-
-    if (iter_pos == ITERABLE_IN_LOCAL) {
-        if (gen_index == 0) {
-            assert(METADATA(c)->u_argcount == 1);
-            ADDOP_I(c, loc, LOAD_FAST, 0);
-        }
-        else {
-            /* Sub-iter - calculate on the fly */
-            VISIT(c, expr, gen->iter);
-        }
-    }
-    if (iter_pos != ITERATOR_ON_STACK) {
-        ADDOP(c, LOC(gen->iter), GET_AITER);
-    }
-
     USE_LABEL(c, start);
-    /* Runtime will push a block here, so we need to account for that */
-    RETURN_IF_ERROR(
-        _PyCompile_PushFBlock(c, loc, COMPILE_FBLOCK_ASYNC_COMPREHENSION_GENERATOR,
-                              start, NO_LABEL, NULL));
-
     ADDOP_JUMP(c, loc, SETUP_FINALLY, except);
     ADDOP(c, loc, GET_ANEXT);
     ADDOP(c, loc, PUSH_NULL);
@@ -4907,13 +4883,49 @@ codegen_async_comprehension_generator(compiler *c, location loc,
     USE_LABEL(c, if_cleanup);
     ADDOP_JUMP(c, elt_loc, JUMP, start);
 
-    _PyCompile_PopFBlock(c, COMPILE_FBLOCK_ASYNC_COMPREHENSION_GENERATOR, start);
-
     USE_LABEL(c, except);
 
     ADDOP_JUMP(c, loc, END_ASYNC_FOR, send);
 
     return SUCCESS;
+}
+
+static int
+codegen_async_comprehension_generator(compiler *c, location loc,
+                                      asdl_comprehension_seq *generators,
+                                      int gen_index, int depth,
+                                      expr_ty elt, expr_ty val, int type,
+                                      IterStackPosition iter_pos, bool avoid_creation)
+{
+    NEW_JUMP_TARGET_LABEL(c, start);
+
+    comprehension_ty gen = (comprehension_ty)asdl_seq_GET(generators,
+                                                          gen_index);
+
+    if (iter_pos == ITERABLE_IN_LOCAL) {
+        if (gen_index == 0) {
+            assert(METADATA(c)->u_argcount == 1);
+            ADDOP_I(c, loc, LOAD_FAST, 0);
+        }
+        else {
+            /* Sub-iter - calculate on the fly */
+            VISIT(c, expr, gen->iter);
+        }
+    }
+    if (iter_pos != ITERATOR_ON_STACK) {
+        ADDOP(c, LOC(gen->iter), GET_AITER);
+    }
+
+    /* Runtime will push a block here, so we need to account for that */
+    RETURN_IF_ERROR(
+        _PyCompile_PushFBlock(c, loc, COMPILE_FBLOCK_ASYNC_COMPREHENSION_GENERATOR,
+                              start, NO_LABEL, NULL));
+
+    int ret = codegen_async_comprehension_generator_body(
+        c, loc, generators, gen_index, depth, elt, val, type, avoid_creation,
+        gen, start);
+    _PyCompile_PopFBlock(c, COMPILE_FBLOCK_ASYNC_COMPREHENSION_GENERATOR, start);
+    return ret;
 }
 
 static int
