@@ -3168,6 +3168,13 @@ class ScreenTests(NewtermTestBase):
 
     @unittest.skipUnless(hasattr(curses, 'new_prescr'),
                          'requires curses.new_prescr()')
+    def test_new_prescr_returns_existing_screen(self):
+        pre1 = curses.new_prescr()
+        pre2 = curses.new_prescr()
+        self.assertIs(pre1, pre2)
+
+    @unittest.skipUnless(hasattr(curses, 'new_prescr'),
+                         'requires curses.new_prescr()')
     def test_newterm_after_new_prescr_keeps_screen_alive(self):
         # newterm() adopts the SCREEN created by new_prescr().  Dropping the
         # pre-screen wrapper must not delete the live screen.

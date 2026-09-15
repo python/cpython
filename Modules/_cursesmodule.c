@@ -6909,18 +6909,24 @@ static PyObject *
 _curses_new_prescr_impl(PyObject *module)
 /*[clinic end generated code: output=e7de5031da7511e2 input=1a3a89d630b641c3]*/
 {
+    cursesmodule_state *state = get_cursesmodule_state(module);
+    if (state->prescreen != NULL) {
+        return Py_NewRef(state->prescreen);
+    }
+
     SCREEN *screen = new_prescr();
     if (screen == NULL) {
         curses_set_null_error(module, "new_prescr", NULL);
         return NULL;
     }
-    cursesmodule_state *state = get_cursesmodule_state(module);
+
     PyObject *screenobj = PyCursesScreen_New(state, screen, NULL, NULL, NULL);
     if (screenobj == NULL) {
         delscreen(screen);
         return NULL;
     }
-    Py_XSETREF(state->prescreen, Py_NewRef(screenobj));
+
+    state->prescreen = Py_NewRef(screenobj);
     return screenobj;
 }
 #endif /* HAVE_CURSES_NEW_PRESCR */
