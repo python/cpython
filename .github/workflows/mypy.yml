@@ -22,6 +22,7 @@ on:
       - "Tools/build/generate_levenshtein_examples.py"
       - "Tools/build/generate_sbom.py"
       - "Tools/build/generate_stdlib_module_names.py"
+      - "Tools/build/generate_trampoline_ehframe.py"
       - "Tools/build/mypy.ini"
       - "Tools/build/umarshal.py"
       - "Tools/build/update_file.py"

@@ -172,10 +172,8 @@ typedef PyObject *(*py_evaluator)(PyThreadState *, _PyInterpreterFrame *,
 typedef PyObject *(*py_trampoline)(PyThreadState *, _PyInterpreterFrame *, int,
                                    py_evaluator);
 
-extern void *_Py_trampoline_func_start;  // Start of the template of the
-                                         // assembly trampoline
-extern void *
-    _Py_trampoline_func_end;  // End of the template of the assembly trampoline
+extern char _Py_trampoline_func_start;  // Start of the assembly trampoline template
+extern char _Py_trampoline_func_end;    // End of the assembly trampoline template
 
 struct code_arena_st {
     char *start_addr;    // Start of the memory arena
@@ -334,8 +332,8 @@ new_code_arena(void)
         return -1;
     }
     (void)_PyAnnotateMemoryMap(memory, mem_size, "cpython:perf_trampoline");
-    void *start = &_Py_trampoline_func_start;
-    void *end = &_Py_trampoline_func_end;
+    char *start = &_Py_trampoline_func_start;
+    char *end = &_Py_trampoline_func_end;
     size_t code_size = end - start;
     size_t unaligned_size = code_size + trampoline_api.code_padding;
     size_t chunk_size = round_up(unaligned_size, trampoline_api.code_alignment);

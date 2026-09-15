@@ -306,6 +306,7 @@ SHLIBS=		@SHLIBS@
 DLINCLDIR=	@DLINCLDIR@
 DYNLOADFILE=	@DYNLOADFILE@
 MACHDEP_OBJS=	@MACHDEP_OBJS@
+PERF_TRAMPOLINE_OBJ=	@PERF_TRAMPOLINE_OBJ@
 LIBOBJDIR=	Python/
 LIBOBJS=	@LIBOBJS@
 
@@ -589,7 +590,7 @@ OBJECT_OBJS=	\
 		Objects/unicodeobject.o \
 		Objects/unionobject.o \
 		Objects/weakrefobject.o \
-		@PERF_TRAMPOLINE_OBJ@
+		$(PERF_TRAMPOLINE_OBJ)
 
 ##########################################################################
 # objects that get linked into the Python library
@@ -3185,8 +3186,15 @@ jit_shim-universal2-apple-darwin.o: jit_shim-aarch64-apple-darwin.o jit_shim-x86
 Python/jit.o: $(srcdir)/Python/jit.c @JIT_STENCILS_H@
 	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
 
-Python/jit_unwind.o: $(srcdir)/Python/jit_unwind.c $(JIT_UNWIND_INFO_H)
+TRAMPOLINE_EHFRAME_H = $(if $(PERF_TRAMPOLINE_OBJ),trampoline_ehframe.h)
+
+trampoline_ehframe.h: $(PERF_TRAMPOLINE_OBJ) $(srcdir)/Tools/build/generate_trampoline_ehframe.py
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/build/generate_trampoline_ehframe.py \
+		-o $@ $(PERF_TRAMPOLINE_OBJ)
+
+Python/jit_unwind.o: $(srcdir)/Python/jit_unwind.c $(JIT_UNWIND_INFO_H) $(TRAMPOLINE_EHFRAME_H)
 	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
+
 
 .PHONY: regen-jit
 regen-jit: $(JIT_TARGETS)
@@ -3289,6 +3297,7 @@ clean-retain-profile: pycremoval
 	-rm -f Python/frozen_modules/MANIFEST
 	-find build -type f -a ! -name '*.gc??' -exec rm -f {} ';'
 	-rm -f Include/pydtrace_probes.h
+	-rm -f trampoline_ehframe.h trampoline_ehframe.h.tmp
 	-rm -f profile-gen-stamp
 	-rm -rf Platforms/Apple/iOS/testbed/Python.xcframework/ios-*/bin
 	-rm -rf Platforms/Apple/iOS/testbed/Python.xcframework/ios-*/lib
