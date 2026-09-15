@@ -5534,7 +5534,14 @@ static PyMethodDef PyCursesScreen_methods[] = {
     {NULL, NULL}  /* sentinel */
 };
 
+PyDoc_STRVAR(PyCursesScreen_Type_doc,
+"A curses screen.\n"
+"\n"
+"Screen objects are returned by newterm() and new_prescr(), and represent\n"
+"a terminal together with its standard window, stdscr.");
+
 static PyType_Slot PyCursesScreen_Type_slots[] = {
+    {Py_tp_doc, (void *)PyCursesScreen_Type_doc},
     {Py_tp_methods, PyCursesScreen_methods},
     {Py_tp_getset, PyCursesScreen_getsets},
     {Py_tp_dealloc, PyCursesScreen_dealloc},
@@ -6929,12 +6936,12 @@ _curses.initscr
 
 Initialize the library.
 
-Return a WindowObject which represents the whole screen.
+Return a window object which represents the whole screen.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_initscr_impl(PyObject *module)
-/*[clinic end generated code: output=619fb68443810b7b input=514f4bce1821f6b5]*/
+/*[clinic end generated code: output=619fb68443810b7b input=e2bf3a061b7d948a]*/
 {
     WINDOW *win;
 
