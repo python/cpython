@@ -677,6 +677,10 @@ specialize_dict_access_hint(
         SPECIALIZATION_FAIL(base_op, SPEC_FAIL_ATTR_SPLIT_DICT);
         return 0;
     }
+    if (dict->ma_keys->dk_kind != DICT_KEYS_UNICODE) {
+        SPECIALIZATION_FAIL(base_op, SPEC_FAIL_ATTR_NON_STRING);
+        return 0;
+    }
     Py_ssize_t index = _PyDict_LookupIndex(dict, name);
     if (index != (uint16_t)index) {
         SPECIALIZATION_FAIL(base_op,
@@ -750,10 +754,9 @@ specialize_attr_loadclassattr(PyObject *owner, _Py_CODEUNIT *instr,
                               uint32_t shared_keys_version);
 static int specialize_class_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject* name);
 
-/* Returns true if instances of obj's class are
- * likely to have `name` in their __dict__.
- * For objects with inline values, we check in the shared keys.
- * For other objects, we check their actual dictionary.
+/* Returns true if obj is likely to have `name` in its __dict__.
+ * For objects with valid inline values, we check in the shared keys.
+ * Otherwise, we check their actual dictionary.
  */
 static bool
 instance_has_key(PyObject *obj, PyObject *name, uint32_t *shared_keys_version)
@@ -762,7 +765,8 @@ instance_has_key(PyObject *obj, PyObject *name, uint32_t *shared_keys_version)
     if ((cls->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0) {
         return false;
     }
-    if (cls->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
+    if ((cls->tp_flags & Py_TPFLAGS_INLINE_VALUES) &&
+        FT_ATOMIC_LOAD_UINT8(_PyObject_InlineValues(obj)->valid)) {
         PyDictKeysObject *keys = ((PyHeapTypeObject *)cls)->ht_cached_keys;
         Py_ssize_t index =
             _PyDictKeys_StringLookupAndVersion(keys, name, shared_keys_version);
@@ -1281,14 +1285,14 @@ specialize_attr_loadclassattr(PyObject *owner, _Py_CODEUNIT *instr,
 
     unsigned long tp_flags = PyType_GetFlags(owner_cls);
     if (tp_flags & Py_TPFLAGS_INLINE_VALUES) {
-        #ifndef Py_GIL_DISABLED
-        assert(_PyDictKeys_StringLookup(
-                   ((PyHeapTypeObject *)owner_cls)->ht_cached_keys, name) < 0);
-        #endif
         if (shared_keys_version == 0) {
             SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OUT_OF_VERSIONS);
             return 0;
         }
+        #ifndef Py_GIL_DISABLED
+        assert(_PyDictKeys_StringLookup(
+                   ((PyHeapTypeObject *)owner_cls)->ht_cached_keys, name) < 0);
+        #endif
         specialize(instr, is_method ? LOAD_ATTR_METHOD_WITH_VALUES : LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES);
     }
     else {
