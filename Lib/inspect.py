@@ -2348,6 +2348,8 @@ def _signature_from_function(cls, func, skip_bound_arg=True,
         return _signature_fromstr(cls, func, s, skip_bound_arg)
 
     Parameter = cls._parameter_cls
+    if Parameter is Signature._parameter_cls and not is_duck_function:
+        Parameter = Parameter._from_code
 
     # Parameter information.
     func_code = func.__code__
@@ -2745,6 +2747,18 @@ class Parameter:
             raise ValueError('{!r} is not a valid parameter name'.format(name))
 
         self._name = name
+
+    @classmethod
+    def _from_code(cls, name, kind, *, default=_empty, annotation=_empty):
+        # Fast path for Python functions: only the name needs validation.
+        if iskeyword(name) or not name.isidentifier():
+            return cls(name, kind, default=default, annotation=annotation)
+        self = object.__new__(cls)
+        self._name = name
+        self._kind = kind
+        self._default = default
+        self._annotation = annotation
+        return self
 
     def __reduce__(self):
         return (type(self),

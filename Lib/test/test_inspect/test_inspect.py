@@ -3556,6 +3556,48 @@ class TestSignatureObject(unittest.TestCase):
 
         self.assertEqual(str(inspect.signature(funclike)), '(marker)')
 
+    @cpython_only
+    def test_signature_functionlike_invalid_names(self):
+        # The code object of a function-like object is not guaranteed
+        # to have valid parameter names, so they must be validated.
+        def func(a, b):
+            pass
+
+        class funclike:
+            __name__ = func.__name__
+            __code__ = func.__code__.replace(co_varnames=('a', '$b'))
+            __annotations__ = {}
+            __defaults__ = None
+            __kwdefaults__ = None
+
+            def __call__(self, *args):
+                pass
+
+        with self.assertRaisesRegex(ValueError,
+                                    'is not a valid parameter name'):
+            inspect.signature(funclike())
+
+    def test_signature_parameter_cls_subclass(self):
+        # A Signature subclass can override _parameter_cls with a
+        # Parameter subclass that has its own constructor.
+        class MyParameter(inspect.Parameter):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.extra = 'spam'
+
+        class MySignature(inspect.Signature):
+            _parameter_cls = MyParameter
+
+        def f(a, /, b=1, *args, c, d=2, **kwargs):
+            pass
+
+        sig = MySignature.from_callable(f)
+        self.assertEqual(len(sig.parameters), 6)
+        for param in sig.parameters.values():
+            self.assertIs(type(param), MyParameter)
+            self.assertEqual(param.extra, 'spam')
+        self.assertEqual(sig, inspect.signature(f))
+
     def test_signature_on_method(self):
         class Test:
             def __init__(*args):
@@ -5655,6 +5697,20 @@ class TestParameterObject(unittest.TestCase):
             '.0', kind=inspect.Parameter.POSITIONAL_OR_KEYWORD)
         self.assertEqual(param.kind, inspect.Parameter.POSITIONAL_ONLY)
         self.assertEqual(param.name, 'implicit0')
+
+    @cpython_only
+    def test_signature_from_code_unusual_names(self):
+        def f(a, b): pass
+        f.__code__ = f.__code__.replace(co_varnames=('.0', 'b'))
+        sig = inspect.signature(f)
+        self.assertEqual(list(sig.parameters), ['implicit0', 'b'])
+        self.assertEqual(sig.parameters['implicit0'].kind,
+                         inspect.Parameter.POSITIONAL_ONLY)
+
+        f.__code__ = f.__code__.replace(co_varnames=('if', 'b'))
+        with self.assertRaisesRegex(ValueError,
+                                    'is not a valid parameter name'):
+            inspect.signature(f)
 
     def test_signature_parameter_immutability(self):
         p = inspect.Parameter('spam', kind=inspect.Parameter.KEYWORD_ONLY)
