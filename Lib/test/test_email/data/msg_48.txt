@@ -1,0 +1,31 @@
+From: <foo@bar.baz>
+To: <baz@bar.foo>
+Subject: test
+In-Reply-To: <somelonglonglonglonglongunwrappablemessageidtoreplyto@mail.foo.bar>
+MIME-Version: 1.0
+Content-Type: multipart/signed; boundary="borderline";
+	protocol="application/pgp-signature"; micalg=pgp-sha1
+
+This is an OpenPGP/MIME signed message (RFC 2440 and 3156)
+--borderline
+Content-Type: text/plain
+In-Reply-To:
+	<someotherlonglonglonglongunwrappablemessageidtoreplyto@mail.foo.bar>
+MIME-Version: 1.0
+
+This is the signed contents.
+
+--borderline
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.6 (GNU/Linux)
+
+iD8DBQFG03voRhp6o4m9dFsRApSZAKCCAN3IkJlVRg6NvAiMHlvvIuMGPQCeLZtj
+FGwfnRHFBFO/S4/DKysm0lI=
+=t7+s
+-----END PGP SIGNATURE-----
+
+--borderline--

@@ -15,6 +15,7 @@ from copy import deepcopy
 from io import StringIO, BytesIO
 from email.utils import _has_surrogates
 from email.errors import HeaderWriteError
+from email.header import _HeaderValueWithRaw
 
 UNDERSCORE = '_'
 NL = '\n'  # XXX: no longer used by the code below.
@@ -225,7 +226,12 @@ class Generator:
 
     def _write_headers(self, msg):
         for h, v in msg.raw_items():
-            folded = self.policy.fold(h, v)
+            # For messages that are signed, the message headers are reconstructed
+            # from the raw form to conform to the opaque requirement from RFC3156 3.
+            if msg.is_signed_data() and isinstance(v, _HeaderValueWithRaw):
+                folded = f"{h}:{v._raw_value}"
+            else:
+                folded = self.policy.fold(h, v)
             if self.policy.verify_generated_headers:
                 linesep = self.policy.linesep
                 if not folded.endswith(linesep):
@@ -324,17 +330,6 @@ class Generator:
                 epilogue = msg.epilogue
             self._write_lines(epilogue)
 
-    def _handle_multipart_signed(self, msg):
-        # The contents of signed parts has to stay unmodified in order to keep
-        # the signature intact per RFC1847 2.1, so we disable header wrapping.
-        # RDM: This isn't enough to completely preserve the part, but it helps.
-        p = self.policy
-        self.policy = p.clone(max_line_length=0)
-        try:
-            self._handle_multipart(msg)
-        finally:
-            self.policy = p
-
     def _handle_message_delivery_status(self, msg):
         # We can't just write the headers directly to self's file object
         # because this will leave an extra newline between the last header
@@ -430,7 +425,12 @@ class BytesGenerator(Generator):
         # This is almost the same as the string version, except for handling
         # strings with 8bit bytes.
         for h, v in msg.raw_items():
-            folded = self.policy.fold_binary(h, v)
+            # For messages that are signed, the message headers are reconstructed
+            # from the raw form to conform to the opaque requirement from RFC3156 3.
+            if msg.is_signed_data() and isinstance(v, _HeaderValueWithRaw):
+                folded = self._encode(f"{h}:{v._raw_value}")
+            else:
+                folded = self.policy.fold_binary(h, v)
             if self.policy.verify_generated_headers:
                 linesep = self.policy.linesep.encode()
                 if not folded.endswith(linesep):

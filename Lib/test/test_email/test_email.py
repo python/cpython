@@ -2953,6 +2953,10 @@ class TestIdempotent(TestEmailBase):
         msg, text = self._msgobj('msg_45.txt')
         self._idempotent(msg, text)
 
+    def test_prewrapped_header_message_signed_idempotent(self):
+        msg, text = self._msgobj('msg_48.txt')
+        self._idempotent(msg, text)
+
     def test_content_type(self):
         eq = self.assertEqual
         # Get a message object and reset the seek pointer for other tests
@@ -5976,6 +5980,30 @@ class TestSigned(TestEmailBase):
         Generator(fp).flatten(msg)
         result = fp.getvalue()
         self._signed_parts_eq(original, result)
+
+    def test_long_prewrapped_headers_as_string(self):
+        original, msg = self._msg_and_obj('msg_48.txt')
+        result = msg.as_string()
+        self._signed_parts_eq(original, result)
+
+    def test_long_prewrapped_headers_as_string_maxheaderlen(self):
+        original, msg = self._msg_and_obj('msg_48.txt')
+        result = msg.as_string(maxheaderlen=60)
+        self._signed_parts_eq(original, result)
+
+    def test_long_prewrapped_headers_flatten(self):
+        original, msg = self._msg_and_obj('msg_48.txt')
+        fp = StringIO()
+        Generator(fp).flatten(msg)
+        result = fp.getvalue()
+        self._signed_parts_eq(original, result)
+
+    def test_if_parts_are_correctly_marked_as_signed_data(self):
+        msg = self._msgobj('msg_48.txt')
+        self.assertFalse(msg.is_signed_data())
+        self.assertTrue(msg.get_payload(0).is_signed_data())
+        self.assertFalse(msg.get_payload(1).is_signed_data())
+
 
 class TestHeaderRegistry(TestEmailBase):
     # See issue gh-93010.
