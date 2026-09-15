@@ -272,6 +272,25 @@ New runtime versions may be added using ``py install``. One or more tags may be
 specified, and the special tag ``default`` may be used to select the default.
 Ranges are not supported for installation.
 
+CPython publishes multiple runtime variants. For most users,
+``PythonCore`` is recommended and provides the standard CPython runtime.
+
+``PythonTest`` includes the standard runtime together with the test suite
+and debugging symbols. It is intended for contributors or users who need
+these additional files for testing or debugging Python.
+
+``PythonEmbed`` provides a minimal embeddable distribution for
+applications that bundle Python rather than for interactive use.
+
+To see the available runtime variants, run::
+
+   py list --online
+
+To install a specific variant, include it in the tag passed to
+``py install``::
+
+   py install PythonTest\3.14
+
 The ``--source=<URL>`` option allows overriding the online index that is used to
 obtain runtimes. This may be used with an offline index, as shown in
 :ref:`pymanager-offline`.
