@@ -997,7 +997,6 @@ _match_number_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t start, Py_
     Py_ssize_t idx = start;
     int is_float = 0;
     PyObject *rval;
-    PyObject *numstr = NULL;
     PyObject *custom_func;
 
     str = PyUnicode_DATA(pystr);
@@ -1064,32 +1063,58 @@ _match_number_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t start, Py_
 
     if (custom_func) {
         /* copy the section we determined to be a number */
-        numstr = PyUnicode_FromKindAndData(kind,
-                                           (char*)str + kind * start,
-                                           idx - start);
-        if (numstr == NULL)
+        PyObject *numstr = PyUnicode_FromKindAndData(kind,
+                                                     (char*)str + kind * start,
+                                                     idx - start);
+        if (numstr == NULL) {
             return NULL;
+        }
         rval = PyObject_CallOneArg(custom_func, numstr);
+        Py_DECREF(numstr);
     }
     else {
         Py_ssize_t i, n;
-        char *buf;
         /* Straight conversion to ASCII, to avoid costly conversion of
            decimal unicode digits (which cannot appear here) */
         n = idx - start;
-        numstr = PyBytes_FromStringAndSize(NULL, n);
-        if (numstr == NULL)
-            return NULL;
-        buf = PyBytes_AS_STRING(numstr);
-        for (i = 0; i < n; i++) {
-            buf[i] = (char) PyUnicode_READ(kind, str, i + start);
+        PyBytesWriter *writer;
+        char *buf;
+        if (is_float) {
+            writer = PyBytesWriter_Create(n);
+            if (writer == NULL) {
+                return NULL;
+            }
+            buf = PyBytesWriter_GetData(writer);
         }
-        if (is_float)
-            rval = PyFloat_FromString(numstr);
-        else
+        else {
+            writer = NULL;
+            buf = PyMem_Malloc(n + 1);
+            if (buf == NULL) {
+                PyErr_NoMemory();
+                return NULL;
+            }
+        }
+        for (i = 0; i < n; i++) {
+            Py_UCS4 ch = PyUnicode_READ(kind, str, i + start);
+            assert(ch <= 127);
+            buf[i] = (char)ch;
+        }
+        if (is_float) {
+            PyObject *numstr = PyBytesWriter_Finish(writer);
+            if (numstr != NULL) {
+                rval = PyFloat_FromString(numstr);
+                Py_DECREF(numstr);
+            }
+            else {
+                rval = NULL;
+            }
+        }
+        else {
+            buf[n] = '\0';
             rval = PyLong_FromString(buf, NULL, 10);
+            PyMem_Free(buf);
+        }
     }
-    Py_DECREF(numstr);
     *next_idx_ptr = idx;
     return rval;
 }
