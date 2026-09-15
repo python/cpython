@@ -185,12 +185,19 @@ extern int _PyUnicodeWriter_FormatV(
 /* --- iconv Codec -------------------------------------------------------- */
 
 #ifdef HAVE_ICONV
+#include <iconv.h>
+
+/* Open a conversion for decoding ENCODING, to reuse across calls.  Returns
+   (iconv_t)-1 with an exception set on failure. */
+extern iconv_t _PyUnicode_IconvOpenDecoder(const char *encoding);
+
 extern PyObject* _PyUnicode_DecodeIconv(
     const char *encoding,       /* iconv encoding name */
     const char *string,         /* encoded string */
     Py_ssize_t length,          /* size of string */
     const char *errors,         /* error handling */
-    Py_ssize_t *consumed);      /* bytes consumed, or NULL for non-stateful */
+    Py_ssize_t *consumed,       /* bytes consumed, or NULL for non-stateful */
+    iconv_t *cdp);              /* conversion to reuse, or NULL to open one */
 
 extern PyObject* _PyUnicode_EncodeIconv(
     const char *encoding,       /* iconv encoding name */

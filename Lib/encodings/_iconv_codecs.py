@@ -1,7 +1,7 @@
 import codecs
 
 def create_iconv_codec(name, encoding):
-    from _codecs import iconv_encode, iconv_decode
+    from _codecs import iconv_encode, iconv_decode, IconvDecoder
 
     def encode(input, errors='strict'):
         return iconv_encode(encoding, input, errors)
@@ -14,16 +14,32 @@ def create_iconv_codec(name, encoding):
             return iconv_encode(encoding, input, self.errors)[0]
 
     class IncrementalDecoder(codecs.BufferedIncrementalDecoder):
+        def __init__(self, errors='strict'):
+            super().__init__(errors)
+            self._decoder = IconvDecoder(encoding)
+
         def _buffer_decode(self, input, errors, final):
-            return iconv_decode(encoding, input, errors, final)
+            return self._decoder.decode(input, errors, final)
+
+        def reset(self):
+            super().reset()
+            self._decoder = IconvDecoder(encoding)
 
     class StreamWriter(codecs.StreamWriter):
         def encode(self, input, errors='strict'):
             return iconv_encode(encoding, input, errors)
 
     class StreamReader(codecs.StreamReader):
+        def __init__(self, stream, errors='strict'):
+            super().__init__(stream, errors)
+            self._decoder = IconvDecoder(encoding)
+
         def decode(self, input, errors, final=False):
-            return iconv_decode(encoding, input, errors, final)
+            return self._decoder.decode(input, errors, final)
+
+        def reset(self):
+            super().reset()
+            self._decoder = IconvDecoder(encoding)
 
     return codecs.CodecInfo(
         name=name,
