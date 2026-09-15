@@ -2,6 +2,7 @@ import unittest
 
 from test import test_tools
 
+test_tools.skip_if_missing("peg_generator")
 with test_tools.imports_under_tool("peg_generator"):
     from pegen.c_generator import consuming_rules
     from pegen.testutil import GrammarParser, parse_string
