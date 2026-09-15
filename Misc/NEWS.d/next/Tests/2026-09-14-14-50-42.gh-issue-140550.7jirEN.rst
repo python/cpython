@@ -1,0 +1,2 @@
+Enable limited C API tests on Free Threading in test_cext and test_cppext:
+test the :c:macro:`Py_TARGET_ABI3T` macro. Patch by Victor Stinner.
