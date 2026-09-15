@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 import collections
+import errno
 import importlib.machinery
 import json
 import os
@@ -93,7 +94,8 @@ def generate_data(schema_version: str) -> collections.defaultdict[str, Any]:
         has_dynamic_library = hasattr(sys, 'dllhandle')
         has_static_library = not has_dynamic_library
     else:
-        raise NotADirectoryError(f'Unknown platform: {os.name}')
+        raise NotADirectoryError(errno.ENOTDIR,
+                                 f'Unknown platform: {os.name}')
 
     # On POSIX, EXT_SUFFIX is set regardless if extension modules are supported
     # or not, and on Windows older versions of CPython only set EXT_SUFFIX when
