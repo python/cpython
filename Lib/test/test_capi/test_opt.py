@@ -458,10 +458,34 @@ class TestUops(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertIn("_GET_ITER_TRAD", uops)
+        self.assertIn("_ITER_NEXT_INLINE", uops)
+        self.assertNotIn("_GUARD_TYPE_ITER", uops)
         self.assertNotIn("_GET_ITER", uops)
         self.assertNotIn("_GET_ITER_VIRTUAL", uops)
         self.assertNotIn("_GET_ITER_SELF", uops)
 
+    def test_get_iter_trad_set(self):
+        s = set(range(10))
+        def testfunc(n):
+            total = 0
+            while n:
+                n -= 1
+                for value in s:
+                    total += value
+                    break
+            return total
+
+        total = testfunc(TIER2_THRESHOLD)
+        self.assertEqual(total, next(iter(s)) * TIER2_THRESHOLD)
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_GET_ITER_TRAD", uops)
+        self.assertIn("_ITER_NEXT_INLINE", uops)
+        self.assertNotIn("_GUARD_TYPE_ITER", uops)
+        self.assertNotIn("_GET_ITER", uops)
+        self.assertNotIn("_GET_ITER_VIRTUAL", uops)
+        self.assertNotIn("_GET_ITER_SELF", uops)
 
     def test_for_iter_range(self):
         def testfunc(n):
