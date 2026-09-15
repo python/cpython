@@ -1,0 +1,3 @@
+Add a sequence counter to GC statistics to prevent :mod:`!_remote_debugging`
+returning inconsistent snapshots caused by non-atomic reads. Patch by Maurycy
+Pawłowski-Wieroński.
