@@ -1017,7 +1017,7 @@ math_1a(PyObject *arg, double (*func) (double), const char *err_msg)
    The last rule is used to catch overflow on platforms which follow
    C89 but for which HUGE_VAL is not an infinity.
 
-   For most two-argument functions (copysign, fmod, hypot, atan2)
+   For most two-argument functions (fmod, hypot)
    these rules are enough to ensure that Python's functions behave as
    specified in 'Annex F' of the C99 standard, with the 'invalid' and
    'divide-by-zero' floating-point exceptions mapping to Python's
@@ -1060,6 +1060,28 @@ math_2(PyObject *const *args, Py_ssize_t nargs,
         return PyFloat_FromDouble(r);
 }
 
+/* variant of math_2, to be used when the function being wrapped is known NOT
+   to need error checking (i.e., no overflow, invalid, or divide-by-zero).  */
+
+static PyObject *
+math_2ne(PyObject *const *args, Py_ssize_t nargs,
+         double (*func) (double, double), const char *funcname)
+{
+    double x, y, r;
+    if (!_PyArg_CheckPositional(funcname, nargs, 2, 2))
+        return NULL;
+    x = PyFloat_AsDouble(args[0]);
+    if (x == -1.0 && PyErr_Occurred()) {
+        return NULL;
+    }
+    y = PyFloat_AsDouble(args[1]);
+    if (y == -1.0 && PyErr_Occurred()) {
+        return NULL;
+    }
+    r = (*func)(x, y);  // Ignore errno on purpose.
+    return PyFloat_FromDouble(r);
+}
+
 #define FUNC1(funcname, func, can_overflow, docstring)                  \
     static PyObject * math_##funcname(PyObject *self, PyObject *args) { \
         return math_1(args, func, can_overflow, NULL);                  \
@@ -1087,6 +1109,12 @@ math_2(PyObject *const *args, Py_ssize_t nargs,
 #define FUNC2(funcname, func, docstring) \
     static PyObject * math_##funcname(PyObject *self, PyObject *const *args, Py_ssize_t nargs) { \
         return math_2(args, nargs, func, #funcname); \
+    }\
+    PyDoc_STRVAR(math_##funcname##_doc, docstring);
+
+#define FUNC2NE(funcname, func, docstring) \
+    static PyObject * math_##funcname(PyObject *self, PyObject *const *args, Py_ssize_t nargs) { \
+        return math_2ne(args, nargs, func, #funcname); \
     }\
     PyDoc_STRVAR(math_##funcname##_doc, docstring);
 
@@ -1121,11 +1149,11 @@ FUNC1(atan, atan, 0,
       "atan($module, x, /)\n--\n\n"
       "Return the arc tangent (measured in radians) of x.\n\n"
       "The result is between -pi/2 and pi/2.")
-FUNC2(atan2, atan2,
+FUNC2NE(atan2, atan2,  // gh-153144: Ignore atan2() errno on purpose.
       "atan2($module, y, x, /)\n--\n\n"
       "Return the arc tangent (measured in radians) of y/x.\n\n"
       "Unlike atan(y/x), the signs of both x and y are considered.")
-FUNC2(atan2pi, m_atan2pi,
+FUNC2NE(atan2pi, m_atan2pi,  // gh-153144: Ignore atan2pi() errno on purpose.
       "atan2pi($module, y, x, /)\n--\n\n"
       "Return the arc tangent (measured in half-turns) of y/x.\n\n"
       "Unlike atanpi(y/x), the signs of both x and y are considered.")
@@ -1178,7 +1206,7 @@ math_ceil(PyObject *module, PyObject *number)
     return PyLong_FromDouble(ceil(x));
 }
 
-FUNC2(copysign, copysign,
+FUNC2NE(copysign, copysign,
       "copysign($module, x, y, /)\n--\n\n"
        "Return a float with the magnitude (absolute value) of x but the sign of y.\n\n"
       "On platforms that support signed zeros, copysign(1.0, -0.0)\n"

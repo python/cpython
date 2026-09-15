@@ -406,8 +406,6 @@ class CMathTests(ComplexesAreIdenticalMixin, unittest.TestCase):
                 _testcapi.set_errno(0)
         self.check_polar(polar_with_errno_set)
 
-    @unittest.skipIf(sys.platform.startswith("sunos"),
-                     "skipping, see gh-138573")
     def test_phase(self):
         self.assertAlmostEqual(phase(0), 0.)
         self.assertAlmostEqual(phase(1.), 0.)
@@ -422,6 +420,16 @@ class CMathTests(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertEqual(phase(complex(0.0, -0.0)), -0.0)
         self.assertEqual(phase(complex(-0.0, 0.0)), pi)
         self.assertEqual(phase(complex(-0.0, -0.0)), -pi)
+
+        # overflow and underflow of imag/real
+        self.assertEqual(phase(complex(1E300, 1E-320)), 0.0)
+        self.assertEqual(phase(complex(1E300, -1E-320)), -0.0)
+        self.assertAlmostEqual(phase(complex(1E-320, 1E300)), pi/2)
+        self.assertAlmostEqual(phase(complex(-1E-320, 1E300)), pi/2)
+        self.assertAlmostEqual(phase(complex(-1E300, 1E-320)), pi)
+        self.assertAlmostEqual(phase(complex(-1E300, -1E-320)), -pi)
+        self.assertAlmostEqual(phase(complex(1E-320, -1E300)), -pi/2)
+        self.assertAlmostEqual(phase(complex(-1E-320, -1E300)), -pi/2)
 
         # infinities
         self.assertAlmostEqual(phase(complex(-INF, -0.0)), -pi)
