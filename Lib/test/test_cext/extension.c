@@ -139,6 +139,7 @@ static PySlot _testcext_slots[] = {
     PySlot_STATIC_DATA(Py_mod_doc, (void*)(char*)_testcext_doc),
     PySlot_FUNC(Py_mod_exec, (void*)_testcext_exec),
     PySlot_STATIC_DATA(Py_mod_methods, _testcext_methods),
+    PySlot_DATA(Py_mod_gil, Py_MOD_GIL_NOT_USED),
     PySlot_END,
 };
 
