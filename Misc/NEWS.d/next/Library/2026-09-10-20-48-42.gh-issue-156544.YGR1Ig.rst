@@ -1,0 +1,1 @@
+Fix free-threading race in which UserDict.__getitem__ may not call __missing__ and UserDict.get() may not return the default.
