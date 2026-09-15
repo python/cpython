@@ -1689,6 +1689,26 @@ class IDNACodecTest(unittest.TestCase):
                 self.assertEqual(exc.start, expected.start, msg=f'reason: {exc.reason}')
                 self.assertEqual(exc.end, expected.end)
 
+    def test_decode_bytes_like(self):
+        # Bytes-like objects other than bytes are still accepted.
+        for case in (bytearray(b"xn--pythn-mua.org"),
+                     memoryview(b"xn--pythn-mua.org")):
+            with self.subTest(case=case):
+                self.assertEqual(codecs.decode(case, "idna"), "pyth\xf6n.org")
+
+    def test_decode_invalid_type(self):
+        # The decoder used to call bytes(input) on any non-bytes input, which
+        # silently produced nonsense for objects bytes() happens to accept:
+        # decoding 5 returned '\x00\x00\x00\x00\x00' and [65, 66] returned 'AB'.
+        for case in ("python.org", "", 5, 0, [65, 66], (67,), None, 3.5, {}):
+            with self.subTest(case=case):
+                with self.assertRaises(TypeError) as cm:
+                    codecs.decode(case, "idna")
+                self.assertEqual(
+                    str(cm.exception),
+                    "a bytes-like object is required, "
+                    f"not '{type(case).__name__}'")
+
     def test_builtin_encode(self):
         self.assertEqual("python.org".encode("idna"), b"python.org")
         self.assertEqual("python.org.".encode("idna"), b"python.org.")
