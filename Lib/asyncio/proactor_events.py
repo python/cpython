@@ -850,17 +850,31 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
                     if self._debug:
                         logger.debug("%r got a new connection from %r: %r",
                                      server, addr, conn)
-                    protocol = protocol_factory()
-                    if sslcontext is not None:
-                        self._make_ssl_transport(
-                            conn, protocol, sslcontext, server_side=True,
-                            extra={'peername': addr}, server=server,
-                            ssl_handshake_timeout=ssl_handshake_timeout,
-                            ssl_shutdown_timeout=ssl_shutdown_timeout)
-                    else:
-                        self._make_socket_transport(
-                            conn, protocol,
-                            extra={'peername': addr}, server=server)
+                    protocol = None
+                    try:
+                        protocol = protocol_factory()
+                        if sslcontext is not None:
+                            self._make_ssl_transport(
+                                conn, protocol, sslcontext, server_side=True,
+                                extra={'peername': addr}, server=server,
+                                ssl_handshake_timeout=ssl_handshake_timeout,
+                                ssl_shutdown_timeout=ssl_shutdown_timeout)
+                        else:
+                            self._make_socket_transport(
+                                conn, protocol,
+                                extra={'peername': addr}, server=server)
+                    except (SystemExit, KeyboardInterrupt):
+                        raise
+                    except BaseException as exc:
+                        conn.close()
+                        context = {
+                            'message': 'Error on transport creation '
+                                       'for incoming connection',
+                            'exception': exc,
+                        }
+                        if protocol is not None:
+                            context['protocol'] = protocol
+                        self.call_exception_handler(context)
                 if self.is_closed():
                     return
                 f = self._proactor.accept(sock)

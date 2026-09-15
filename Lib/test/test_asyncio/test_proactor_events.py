@@ -866,6 +866,50 @@ class BaseProactorEventLoopTests(test_utils.TestCase):
         self.assertTrue(self.sock.close.called)
         self.assertTrue(m_log.error.called)
 
+    def test_create_server_transport_creation_error(self):
+        # gh-156365: a protocol_factory() failure closes the accepted socket
+        # and keeps the server accepting; the listening socket stays open.
+        pf = mock.Mock(side_effect=RuntimeError)
+        call_soon = self.loop.call_soon = mock.Mock()
+        self.loop.call_exception_handler = mock.Mock()
+
+        self.loop._start_serving(pf, self.sock)
+        loop = call_soon.call_args[0][0]
+        loop()
+        self.proactor.accept.reset_mock()
+
+        conn = mock.Mock()
+        fut = mock.Mock()
+        fut.result.return_value = (conn, ('127.0.0.1', 1234))
+        loop(fut)
+
+        self.assertTrue(conn.close.called)
+        self.assertFalse(self.sock.close.called)
+        self.assertTrue(self.proactor.accept.called)
+        self.loop.call_exception_handler.assert_called_once()
+
+    def test_create_server_transport_oserror_keeps_listening(self):
+        # gh-156365: an OSError from transport creation must not close the
+        # listening socket (mistaken for an accept failure).
+        pf = mock.Mock()
+        call_soon = self.loop.call_soon = mock.Mock()
+        self.loop.call_exception_handler = mock.Mock()
+        self.loop._make_socket_transport = mock.Mock(side_effect=OSError)
+
+        self.loop._start_serving(pf, self.sock)
+        loop = call_soon.call_args[0][0]
+        loop()
+        self.proactor.accept.reset_mock()
+
+        conn = mock.Mock()
+        fut = mock.Mock()
+        fut.result.return_value = (conn, ('127.0.0.1', 1234))
+        loop(fut)
+
+        self.assertTrue(conn.close.called)
+        self.assertFalse(self.sock.close.called)
+        self.assertTrue(self.proactor.accept.called)
+
     def test_create_server_cancel(self):
         pf = mock.Mock()
         call_soon = self.loop.call_soon = mock.Mock()
