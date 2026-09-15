@@ -60,7 +60,8 @@ class CollapsedStackCollector(StackTraceCollector):
 
         lines.sort(key=lambda x: (-x[1], x[0]))
 
-        with open(filename, "w") as f:
+        with open(filename, "w",
+                  encoding="utf-8", errors="surrogatepass") as f:
             for stack, count in lines:
                 f.write(f"{stack} {count}\n")
         print(f"Collapsed stack output written to {filename}")
@@ -103,7 +104,6 @@ class FlamegraphCollector(StackTraceCollector):
         """Override to track thread status statistics before processing frames."""
         # Weight is number of timestamps (samples with identical stack)
         weight = len(timestamps_us) if timestamps_us else 1
-
         # Increment sample count by weight
         self._sample_count += weight
 
@@ -147,6 +147,21 @@ class FlamegraphCollector(StackTraceCollector):
             "missed_samples": missed_samples,
             "mode": mode
         }
+
+    def set_replay_stats(self, info):
+        """Restore measured statistics stored in a binary profile."""
+        duration_sec = info.get("duration_sec")
+        sample_rate = info.get("sample_rate")
+        if duration_sec is None or sample_rate is None:
+            return
+        self.set_stats(
+            self.sample_interval_usec,
+            duration_sec,
+            sample_rate,
+            error_rate=info.get("error_rate"),
+            missed_samples=info.get("missed_samples"),
+            mode=self.stats.get("mode"),
+        )
 
     def export(self, filename):
         flamegraph_data = self._convert_to_flamegraph_format()

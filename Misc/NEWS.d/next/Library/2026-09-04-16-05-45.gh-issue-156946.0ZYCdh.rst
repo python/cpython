@@ -1,0 +1,3 @@
+Fix a crash in :mod:`curses.panel` when the finalizer of a panel's user
+pointer runs while the panel is being deallocated.  The panel is now taken
+off the panel stack before its user pointer is dropped.
