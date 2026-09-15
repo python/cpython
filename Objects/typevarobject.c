@@ -807,8 +807,19 @@ typevar_typing_prepare_subst_impl(typevarobject *self, PyObject *alias,
             return NULL;
         }
         if (dflt != &_Py_NoDefaultStruct) {
-            PyObject *new_args = PyTuple_Pack(1, dflt);
+            // The default may refer to type parameters that appear earlier in
+            // the same type parameter list; those are already resolved in
+            // "args", so substitute them in.
+            PyObject *resolve_args[4] = {(PyObject *)self, dflt, params, args};
+            PyObject *resolved = call_typing_func_object(
+                "_resolve_type_param_default", resolve_args, 4);
             Py_DECREF(dflt);
+            if (resolved == NULL) {
+                Py_DECREF(params);
+                return NULL;
+            }
+            PyObject *new_args = PyTuple_Pack(1, resolved);
+            Py_DECREF(resolved);
             if (new_args == NULL) {
                 Py_DECREF(params);
                 return NULL;
