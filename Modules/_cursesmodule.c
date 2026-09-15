@@ -7894,7 +7894,11 @@ update_lines_cols(PyObject *private_module)
         goto error;
     }
 
-    o = PyLong_FromLong(LINES);
+    int lines = LINES;
+    if (stdscr != NULL) {
+        lines = getmaxy(stdscr);
+    }
+    o = PyLong_FromLong(lines);
     if (o == NULL) {
         goto error;
     }
@@ -7906,7 +7910,11 @@ update_lines_cols(PyObject *private_module)
     }
     Py_DECREF(o);
 
-    o = PyLong_FromLong(COLS);
+    int cols = COLS;
+    if (stdscr != NULL) {
+        cols = getmaxx(stdscr);
+    }
+    o = PyLong_FromLong(cols);
     if (o == NULL) {
         goto error;
     }
@@ -7917,6 +7925,32 @@ update_lines_cols(PyObject *private_module)
         goto error;
     }
     Py_DECREF(o);
+
+    if (curses_start_color_called) {
+        o = PyLong_FromUnsignedLongLong((unsigned long long)COLORS);
+        if (o == NULL) {
+            goto error;
+        }
+        if (PyDict_SetItemString(exposed_module_dict, "COLORS", o) < 0) {
+            goto error;
+        }
+        if (PyDict_SetItemString(private_module_dict, "COLORS", o) < 0) {
+            goto error;
+        }
+        Py_DECREF(o);
+
+        o = PyLong_FromUnsignedLongLong((unsigned long long)COLOR_PAIRS);
+        if (o == NULL) {
+            goto error;
+        }
+        if (PyDict_SetItemString(exposed_module_dict, "COLOR_PAIRS", o) < 0) {
+            goto error;
+        }
+        if (PyDict_SetItemString(private_module_dict, "COLOR_PAIRS", o) < 0) {
+            goto error;
+        }
+        Py_DECREF(o);
+    }
     Py_DECREF(exposed_module);
     return 1;
 

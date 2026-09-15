@@ -3343,6 +3343,42 @@ class ScreenTests(NewtermTestBase):
         self.assertIs(curses.set_term(a), b)  # returns the previous one
         self.assertIs(curses.set_term(b), a)
 
+    def test_set_term_refreshes_lines_cols_colors(self):
+        from test.support import os_helper
+        s1 = self.make_pty()
+        s2 = self.make_pty()
+        
+        with os_helper.EnvironmentVarGuard() as env:
+            env['LINES'] = '25'
+            env['COLUMNS'] = '80'
+            a = curses.newterm('xterm', s1, s1)
+            if hasattr(curses, 'start_color'):
+                try:
+                    curses.start_color()
+                except curses.error:
+                    pass
+            
+            env['LINES'] = '30'
+            env['COLUMNS'] = '100'
+            b = curses.newterm('xterm-256color', s2, s2)
+            if hasattr(curses, 'start_color'):
+                try:
+                    curses.start_color()
+                except curses.error:
+                    pass
+
+        curses.set_term(a)
+        self.assertEqual((curses.LINES, curses.COLS), a.stdscr.getmaxyx())
+        self.assertNotEqual((curses.LINES, curses.COLS), b.stdscr.getmaxyx())
+        if hasattr(curses, 'COLORS'):
+            self.assertEqual(curses.COLORS, 8)
+
+        self.assertEqual(curses.set_term(b), a)
+        self.assertEqual((curses.LINES, curses.COLS), b.stdscr.getmaxyx())
+        self.assertNotEqual((curses.LINES, curses.COLS), a.stdscr.getmaxyx())
+        if hasattr(curses, 'COLORS'):
+            self.assertEqual(curses.COLORS, 256)
+
     def test_window_keeps_screen_alive(self):
         # The standard window keeps its screen alive; dropping every other
         # reference and collecting must not invalidate the window.
