@@ -335,7 +335,7 @@ function createPythonTooltip(data) {
     const childCount = d.children ? d.children.length : 0;
     const source = d.data.source;
 
-    const funcname = resolveString(d.data.funcname) || resolveString(d.data.name);
+    const funcname = escapeHtml(resolveString(d.data.funcname) || resolveString(d.data.name) || "");
     const filename = resolveString(d.data.filename) || "";
     const moduleName = resolveString(d.data.module) || "";
     const displayName = escapeHtml(useModuleNames ? (moduleName || filename) : filename);
