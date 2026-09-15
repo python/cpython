@@ -1,6 +1,7 @@
 """Introspection utils for tasks call graphs."""
 
 import dataclasses
+import inspect
 import io
 import sys
 import types
@@ -65,6 +66,11 @@ def _build_graph_for_future(
             # A native async generator or duck-type compatible iterator
             st.append(FrameCallGraphEntry(coro.ag_frame))
             coro = coro.ag_await
+        elif hasattr(coro, 'gi_yieldfrom'):
+            # gen-based coroutine (@types.coroutine)
+            if inspect.isawaitable(coro):
+                st.append(FrameCallGraphEntry(coro.gi_frame))
+            coro = coro.gi_yieldfrom
         else:
             break
 

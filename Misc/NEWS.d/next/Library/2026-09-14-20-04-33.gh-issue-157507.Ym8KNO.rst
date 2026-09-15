@@ -1,0 +1,2 @@
+Fix :func:`asyncio.print_call_graph` losing the call stack below a
+generator-based coroutine.

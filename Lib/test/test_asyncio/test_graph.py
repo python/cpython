@@ -1,6 +1,7 @@
 import asyncio
 import io
 import sys
+import types
 import unittest
 from unittest import mock
 
@@ -27,6 +28,8 @@ def capture_test_stack(*, fut=None, depth=1):
                             f"a {entry.frame.f_generator.cr_code.co_name}"
                             if hasattr(entry.frame.f_generator, 'cr_code') else
                             f"ag {entry.frame.f_generator.ag_code.co_name}"
+                            if hasattr(entry.frame.f_generator, 'ag_code') else
+                            f"g {entry.frame.f_generator.gi_code.co_name}"
                         )
                 ) for entry in s.call_stack
             ]
@@ -434,6 +437,32 @@ class CallStackTestBase:
             'T<there there>',
             ['s capture_test_stack', 'a inner', 'a c1'],
             [['T<anon>', ['a c2', 'a main', 'a test_stack_task'], []]]
+        ])
+
+    async def test_stack_generator_based_coroutine(self):
+        # gh-157507: the stack must continue through a generator-based coroutine
+
+        async def sleep_coro():
+            await asyncio.sleep(10)
+
+        @types.coroutine
+        def coro():
+            yield from sleep_coro()
+
+        async def main():
+            await coro()
+
+        t = asyncio.create_task(main(), name='gencoro')
+        await asyncio.sleep(0)
+        stack = capture_test_stack(fut=t)
+        t.cancel()
+        with self.assertRaises(asyncio.CancelledError):
+            await t
+
+        self.assertEqual(stack[0], [
+            'T<gencoro>',
+            ['a sleep', 'a sleep_coro', 'g coro', 'a main'],
+            []
         ])
 
     async def test_stack_future(self):
