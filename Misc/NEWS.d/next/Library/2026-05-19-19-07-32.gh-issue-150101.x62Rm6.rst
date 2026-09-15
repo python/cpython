@@ -1,0 +1,1 @@
+Expose OpenSSL's error queue through SSLError.error_queue
