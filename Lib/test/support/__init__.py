@@ -3453,3 +3453,38 @@ def built_with_c_assertions():
         return Py_DEBUG
     else:
         return bool(_testlimitedcapi._py_getbuiltwithassert())
+
+
+def inject_memory_error(start=0, stop=0):
+    """
+    Memory allocation fails after 'start' allocation requests, and until 'stop'
+    allocation requests except when 'stop' is negative or equal to 0 (default)
+    in which case allocation failures never stop.
+
+    Raise SkipTest if the _testcapi extension module is missing
+    """
+    try:
+        import _testcapi
+    except ImportError:
+        raise unittest.SkipTest("_testcapi required")
+
+    _testcapi.set_nomemory(start, stop)
+
+
+@contextlib.contextmanager
+def memory_error_cm(start=0, stop=0):
+    """
+    Similar to inject_memory_error() but can be used as a context manager.
+
+    Raise SkipTest if the _testcapi extension module is missing
+    """
+    try:
+        import _testcapi
+    except ImportError:
+        raise unittest.SkipTest("_testcapi required")
+
+    try:
+        _testcapi.set_nomemory(start, stop)
+        yield
+    finally:
+        _testcapi.remove_mem_hooks()
