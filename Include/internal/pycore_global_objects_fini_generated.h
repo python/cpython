@@ -68,7 +68,7 @@ _PyStaticObject_CheckUnicodeCharSingleton(PyObject *obj,
     _PyObject_ASSERT(obj, _PyUnicode_CheckConsistency(obj, 1));
     _PyObject_ASSERT(obj, PyUnicode_GET_LENGTH(obj) == length);
     _PyObject_ASSERT(obj, PyUnicode_KIND(obj) == PyUnicode_1BYTE_KIND);
-    Py_UCS1 *data = PyUnicode_1BYTE_DATA(obj);
+    const Py_UCS1 *data = PyUnicode_1BYTE_DATA(obj);
     _PyObject_ASSERT(obj, data[0] == ch);
     if (length > 0) {
         _PyObject_ASSERT(obj, data[1] == 0);
@@ -84,7 +84,7 @@ _PyStaticObject_CheckUnicodeSingleton(PyObject *obj,
     _PyObject_ASSERT(obj, _PyUnicode_CheckConsistency(obj, 1));
     _PyObject_ASSERT(obj, PyUnicode_GET_LENGTH(obj) == length);
     _PyObject_ASSERT(obj, PyUnicode_IS_ASCII(obj));
-    Py_UCS1 *data = (const char *)PyUnicode_1BYTE_DATA(obj);
+    const Py_UCS1 *data = PyUnicode_1BYTE_DATA(obj);
     _PyObject_ASSERT(obj, memcmp(data, str, length) == 0);
     _PyObject_ASSERT(obj, data[length] == 0);
 }
