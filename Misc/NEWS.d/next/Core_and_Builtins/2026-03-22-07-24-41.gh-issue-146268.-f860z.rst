@@ -1,0 +1,3 @@
+Fixed extended slice assignment (e.g. ``l[::2] = x``) hanging when the
+right-hand side is an infinite iterator. A bounded iteration is now used so
+that a :exc:`ValueError` is raised promptly. Patch by Charles Machalow.
