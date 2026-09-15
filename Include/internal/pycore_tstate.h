@@ -16,12 +16,14 @@ extern "C" {
 #include "pycore_uop.h"             // struct _PyUOpInstruction
 #include "pycore_structs.h"
 
-#ifdef Py_GIL_DISABLED
 struct _gc_thread_state {
+    /* Number of active automatic collection deferrals owned by this thread. */
+    int automatic_collection_pause_count;
+#ifdef Py_GIL_DISABLED
     /* Thread-local allocation count. */
     Py_ssize_t alloc_count;
-};
 #endif
+};
 
 
 // Every PyThreadState is actually allocated as a _PyThreadStateImpl. The
@@ -64,11 +66,11 @@ typedef struct _PyThreadStateImpl {
     struct llist_node asyncio_tasks_head;
     struct _qsbr_thread_state *qsbr;  // only used by free-threaded build
     struct llist_node mem_free_queue; // delayed free queue
+    struct _gc_thread_state gc;
 
 #ifdef Py_GIL_DISABLED
     // Stack references for the current thread that exist on the C stack
     struct _PyCStackRef *c_stack_refs;
-    struct _gc_thread_state gc;
     struct _mimalloc_thread_state mimalloc;
     struct _Py_freelists freelists;
     struct _brc_thread_state brc;
