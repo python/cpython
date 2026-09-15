@@ -6,7 +6,11 @@ from typing import IO
 from pegen import grammar
 from pegen.c_generator_calls import (
     CCallMakerVisitor as CCallMakerVisitor,
+)
+from pegen.c_generator_calls import (
     FunctionCall as FunctionCall,
+)
+from pegen.c_generator_calls import (
     NodeTypes as NodeTypes,
 )
 from pegen.c_generator_file import CParserEmitter
