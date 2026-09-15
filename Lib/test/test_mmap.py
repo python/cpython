@@ -976,7 +976,8 @@ class MmapTests(unittest.TestCase):
     def test_setitem_slice_resize_reentrancy(self):
         """Resizing the mmap from inside a value's buffer-protocol
         callback while assigning to a slice must not access memory past
-        the new bounds (gh-157335)."""
+        the new bounds (gh-157335).
+        """
         size = 2 * PAGESIZE
         new_size = PAGESIZE
 
