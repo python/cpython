@@ -2331,7 +2331,8 @@ class AsyncMockMixin(Base):
                     raise StopAsyncIteration
                 if _is_exception(result):
                     raise result
-            elif iscoroutinefunction(effect):
+            elif (iscoroutinefunction(effect) or
+                  iscoroutinefunction(getattr(effect, '__call__', None))):
                 result = await effect(*args, **kwargs)
             else:
                 result = effect(*args, **kwargs)
