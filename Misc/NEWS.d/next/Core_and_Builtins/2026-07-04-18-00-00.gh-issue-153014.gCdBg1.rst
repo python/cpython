@@ -1,0 +1,2 @@
+Fix a data race on the garbage collector debug flag in free-threading builds:
+:func:`gc.set_debug` and :func:`gc.get_debug` now access it atomically.
