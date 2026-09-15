@@ -99,10 +99,17 @@ _PyFileIO_closed(PyObject *self)
 /* Because this can call arbitrary code, it shouldn't be called when
    the refcount is 0 (that is, not directly from tp_dealloc unless
    the refcount has been temporarily re-incremented). */
+/*[clinic input]
+_io.FileIO._dealloc_warn
+
+    source: object
+    /
+[clinic start generated code]*/
+
 static PyObject *
-fileio_dealloc_warn(PyObject *op, PyObject *source)
+_io_FileIO__dealloc_warn_impl(fileio *self, PyObject *source)
+/*[clinic end generated code: output=c7b7d122decd6575 input=3ea7e1cc0685edc2]*/
 {
-    fileio *self = PyFileIO_CAST(op);
     if (self->fd >= 0 && self->closefd) {
         PyObject *exc = PyErr_GetRaisedException();
         if (PyErr_ResourceWarning(source, 1, "unclosed file %R", source)) {
@@ -176,7 +183,7 @@ _io_FileIO_close_impl(fileio *self, PyTypeObject *cls)
         exc = PyErr_GetRaisedException();
     }
     if (self->finalizing) {
-        PyObject *r = fileio_dealloc_warn((PyObject*)self, (PyObject *) self);
+        PyObject *r = _io_FileIO__dealloc_warn_impl(self, (PyObject *)self);
         if (r) {
             Py_DECREF(r);
         }
@@ -1250,10 +1257,14 @@ _io_FileIO_isatty_impl(fileio *self)
    information. Use the stat result to skip a system call. Outside of that
    context TOCTOU issues (the fd could be arbitrarily modified by
    surrounding code). */
+/*[clinic input]
+_io.FileIO._isatty_open_only
+[clinic start generated code]*/
+
 static PyObject *
-_io_FileIO_isatty_open_only(PyObject *op, PyObject *Py_UNUSED(dummy))
+_io_FileIO__isatty_open_only_impl(fileio *self)
+/*[clinic end generated code: output=2b4689154d4b8b84 input=228767ff567cdfb6]*/
 {
-    fileio *self = PyFileIO_CAST(op);
     if (self->stat_atopen != NULL && !S_ISCHR(self->stat_atopen->st_mode)) {
         Py_RETURN_FALSE;
     }
@@ -1276,40 +1287,68 @@ static PyMethodDef fileio_methods[] = {
     _IO_FILEIO_WRITABLE_METHODDEF
     _IO_FILEIO_FILENO_METHODDEF
     _IO_FILEIO_ISATTY_METHODDEF
-    {"_isatty_open_only", _io_FileIO_isatty_open_only, METH_NOARGS},
-    {"_dealloc_warn", fileio_dealloc_warn, METH_O, NULL},
+    _IO_FILEIO__ISATTY_OPEN_ONLY_METHODDEF
+    _IO_FILEIO__DEALLOC_WARN_METHODDEF
     {"__getstate__", _PyIOBase_cannot_pickle, METH_NOARGS},
     {NULL,           NULL}             /* sentinel */
 };
 
 /* 'closed' and 'mode' are attributes for backwards compatibility reasons. */
 
+/*[clinic input]
+@getter
+_io.FileIO.closed
+
+True if the file is closed.
+[clinic start generated code]*/
+
 static PyObject *
-fileio_get_closed(PyObject *op, void *closure)
+_io_FileIO_closed_get_impl(fileio *self)
+/*[clinic end generated code: output=6605122cc0377bf6 input=4696b7fb11103a0f]*/
 {
-    fileio *self = PyFileIO_CAST(op);
     return PyBool_FromLong((long)(self->fd < 0));
 }
 
+/*[clinic input]
+@getter
+_io.FileIO.closefd
+
+True if the file descriptor will be closed by close().
+[clinic start generated code]*/
+
 static PyObject *
-fileio_get_closefd(PyObject *op, void *closure)
+_io_FileIO_closefd_get_impl(fileio *self)
+/*[clinic end generated code: output=f9932a0320687395 input=fc4d979307a724b6]*/
 {
-    fileio *self = PyFileIO_CAST(op);
     return PyBool_FromLong((long)(self->closefd));
 }
 
+/*[clinic input]
+@getter
+_io.FileIO.mode
+
+String giving the file mode.
+[clinic start generated code]*/
+
 static PyObject *
-fileio_get_mode(PyObject *op, void *closure)
+_io_FileIO_mode_get_impl(fileio *self)
+/*[clinic end generated code: output=d5178215493e2e7e input=300a448fc9b2fea4]*/
 {
-    fileio *self = PyFileIO_CAST(op);
     return PyUnicode_FromString(mode_string(self));
 }
 
+/*[clinic input]
+@getter
+_io.FileIO._blksize
+
+Stat st_blksize if available.
+[clinic start generated code]*/
+
 static PyObject *
-fileio_get_blksize(PyObject *op, void *closure)
+_io_FileIO__blksize_get_impl(fileio *self)
+/*[clinic end generated code: output=885b8dcac7f47ab7 input=0020e9e6a591f2a2]*/
 {
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
-    fileio *self = PyFileIO_CAST(op);
     if (self->stat_atopen != NULL && self->stat_atopen->st_blksize > 1) {
         return PyLong_FromLong(self->stat_atopen->st_blksize);
     }
@@ -1318,11 +1357,10 @@ fileio_get_blksize(PyObject *op, void *closure)
 }
 
 static PyGetSetDef fileio_getsetlist[] = {
-    {"closed", fileio_get_closed, NULL, "True if the file is closed"},
-    {"closefd", fileio_get_closefd, NULL,
-        "True if the file descriptor will be closed by close()."},
-    {"mode", fileio_get_mode, NULL, "String giving the file mode"},
-    {"_blksize", fileio_get_blksize, NULL, "Stat st_blksize if available"},
+    _IO_FILEIO_CLOSED_GETSETDEF
+    _IO_FILEIO_CLOSEFD_GETSETDEF
+    _IO_FILEIO_MODE_GETSETDEF
+    _IO_FILEIO__BLKSIZE_GETSETDEF
     {NULL},
 };
 
