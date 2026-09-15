@@ -135,22 +135,22 @@ static PyObject *
 decode_unicode_with_escapes(Parser *parser, const char *s, size_t len, Token *t)
 {
     PyObject *v;
-    PyObject *u;
     char *buf;
     char *p;
     const char *end;
 
     /* check for integer overflow */
-    if (len > (size_t)PY_SSIZE_T_MAX / 6) {
+    if (len > ((size_t)PY_SSIZE_T_MAX - 1) / 6) {
         return NULL;
     }
-    /* "ä" (2 bytes) may become "\U000000E4" (10 bytes), or 1:5
-       "\ä" (3 bytes) may become "\u005c\U000000E4" (16 bytes), or ~1:6 */
-    u = PyBytes_FromStringAndSize((char *)NULL, (Py_ssize_t)len * 6);
-    if (u == NULL) {
+    /* "ä" (2 bytes) may become "\U000000E4" (10 bytes), or 1:5.
+     * "\ä" (3 bytes) may become "\u005c\U000000E4" (16 bytes), or ~1:6.
+     * Add +1 to allow writing a trailing null byte (for strcpy/sprintf). */
+    PyBytesWriter *writer = PyBytesWriter_Create((Py_ssize_t)len * 6 + 1);
+    if (writer == NULL) {
         return NULL;
     }
-    p = buf = PyBytes_AsString(u);
+    p = buf = PyBytesWriter_GetData(writer);
     if (p == NULL) {
         return NULL;
     }
@@ -174,7 +174,7 @@ decode_unicode_with_escapes(Parser *parser, const char *s, size_t len, Token *t)
             Py_ssize_t i;
             w = decode_utf8(&s, end);
             if (w == NULL) {
-                Py_DECREF(u);
+                PyBytesWriter_Discard(writer);
                 return NULL;
             }
             kind = PyUnicode_KIND(w);
@@ -186,7 +186,7 @@ decode_unicode_with_escapes(Parser *parser, const char *s, size_t len, Token *t)
                 p += 10;
             }
             /* Should be impossible to overflow */
-            assert(p - buf <= PyBytes_GET_SIZE(u));
+            assert(p - buf <= PyBytesWriter_GetSize(writer));
             Py_DECREF(w);
         }
         else {
@@ -206,14 +206,14 @@ decode_unicode_with_escapes(Parser *parser, const char *s, size_t len, Token *t)
     // when we are decoding the string but we preserve the line numbers.
     if (v != NULL && first_invalid_escape_ptr != NULL && t != NULL) {
         if (warn_invalid_escape_sequence(parser, s, first_invalid_escape_ptr, t) < 0) {
-            /* We have not decref u before because first_invalid_escape_ptr
-               points inside u. */
-            Py_XDECREF(u);
+            /* We have not discarded the writer before because
+             * first_invalid_escape_ptr points inside the writer buffer. */
+            PyBytesWriter_Discard(writer);
             Py_DECREF(v);
             return NULL;
         }
     }
-    Py_XDECREF(u);
+    PyBytesWriter_Discard(writer);
     return v;
 }
 
