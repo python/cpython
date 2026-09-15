@@ -1424,6 +1424,17 @@ def unpack_archive(filename, extract_dir=None, format=None, *, filter=None):
         # we need to look at the registered unpackers supported extensions
         format = _find_unpack_format(filename)
         if format is None:
+            # Surface the real error (e.g. FileNotFoundError, PermissionError)
+            # when filename itself is the problem, instead of masking it with
+            # a generic "unknown format" message. os.stat() alone catches a
+            # missing path but not an unreadable *regular* file, so also
+            # open() regular files specifically -- opening a FIFO/socket/etc.
+            # could block indefinitely, and directories already fail the
+            # is-a-regular-file check the same way they always have.
+            st = os.stat(filename)
+            if stat.S_ISREG(st.st_mode):
+                with open(filename, 'rb'):
+                    pass
             raise ReadError("Unknown archive format '{0}'".format(filename))
 
         func = _UNPACK_FORMATS[format][1]
