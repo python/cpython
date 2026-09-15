@@ -748,6 +748,12 @@ _Py_atomic_load_ssize_relaxed(const Py_ssize_t *obj)
     return *(volatile Py_ssize_t *)obj;
 }
 
+static inline size_t
+_Py_atomic_load_size_relaxed(const size_t *obj)
+{
+    return *(volatile size_t *)obj;
+}
+
 static inline void*
 _Py_atomic_load_ptr_relaxed(const void *obj)
 {
@@ -938,6 +944,12 @@ static inline void
 _Py_atomic_store_ssize_relaxed(Py_ssize_t *obj, Py_ssize_t value)
 {
     *(volatile Py_ssize_t *)obj = value;
+}
+
+static inline void
+_Py_atomic_store_size_relaxed(size_t *obj, size_t value)
+{
+    *(volatile size_t *)obj = value;
 }
 
 static inline void
