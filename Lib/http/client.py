@@ -1067,6 +1067,7 @@ class HTTPConnection:
             self.sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
         except OSError as e:
             if e.errno != errno.ENOPROTOOPT:
+                self.close()
                 raise
 
         if self._tunnel_host:
