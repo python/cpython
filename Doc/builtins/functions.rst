@@ -1,7 +1,7 @@
 .. XXX document all delegations to __special__ methods
 .. _built-in-funcs:
 
-Built-in Functions
+Built-in functions
 ==================
 
 The Python interpreter has a number of functions and types built into it that
@@ -1459,7 +1459,8 @@ are always available.  They are listed here in alphabetical order.
    already exists), ``'x'`` for exclusive creation, and ``'a'`` for appending
    (which on *some* Unix systems, means that *all* writes append to the end of
    the file regardless of the current seek position).  In text mode, if
-   *encoding* is not specified the encoding used is platform-dependent:
+   *encoding* is not specified, UTF-8 is used by default; if
+   :ref:`Python UTF-8 Mode <utf8-mode>` is disabled,
    :func:`locale.getencoding` is called to get the current locale encoding.
    (For reading and writing raw bytes use binary mode and leave
    *encoding* unspecified.)  The available modes are:
@@ -1490,7 +1491,7 @@ are always available.  They are listed here in alphabetical order.
    argument) return contents as :class:`bytes` objects without any decoding.  In
    text mode (the default, or when ``'t'`` is included in the *mode* argument),
    the contents of the file are returned as :class:`str`, the bytes having been
-   first decoded using a platform-dependent encoding or using the specified
+   first decoded using the default encoding or using the specified
    *encoding* if given.
 
    .. note::
@@ -1519,9 +1520,11 @@ are always available.  They are listed here in alphabetical order.
      described above for binary files.
 
    *encoding* is the name of the encoding used to decode or encode the file.
-   This should only be used in text mode.  The default encoding is platform
-   dependent (whatever :func:`locale.getencoding` returns), but any
-   :term:`text encoding` supported by Python can be used.
+   This should only be used in text mode.  The default encoding is UTF-8;
+   if :ref:`Python UTF-8 Mode <utf8-mode>` is disabled, the default is
+   platform-dependent (whatever :func:`locale.getencoding` returns).
+   Any :term:`text encoding` supported by Python can be used, and
+   ``encoding="locale"`` specifies the current locale encoding explicitly.
    See the :mod:`codecs` module for the list of supported encodings.
 
    *errors* is an optional string that specifies how encoding and decoding
@@ -1637,6 +1640,10 @@ are always available.  They are listed here in alphabetical order.
 
    .. versionchanged:: 3.11
       The ``'U'`` mode has been removed.
+
+   .. versionchanged:: 3.15
+      UTF-8 is now the default encoding, instead of the
+      platform-dependent locale encoding (:pep:`686`).
 
 .. function:: ord(character, /)
 
