@@ -235,6 +235,42 @@ class ReferencesTestCase(TestBase):
         self.assertRaises(ReferenceError, bool, ref3)
         self.assertEqual(self.cbcalled, 2)
 
+    @support.refcount_test
+    def test_proxy_dead_arg_refcount(self):
+        class C:
+            def __add__(self, other):
+                return NotImplemented
+            def __radd__(self, other):
+                return NotImplemented
+            def __getitem__(self, item):
+                return None
+            def __eq__(self, other):
+                return NotImplemented
+            def __pow__(self, other, modulo=None):
+                return NotImplemented
+
+        dead_obj = C()
+        dead = weakref.proxy(dead_obj)
+        del dead_obj
+        gc_collect()
+
+        cases = [
+            lambda live: live + dead,
+            lambda live: live[dead],
+            lambda live: live == dead,
+            lambda live: pow(live, dead),
+            lambda live: pow(live, 2, dead),
+        ]
+        for case in cases:
+            with self.subTest(case=case):
+                live_obj = C()
+                live = weakref.proxy(live_obj)
+                refcount = sys.getrefcount(live_obj)
+                for _ in range(100):
+                    with self.assertRaises(ReferenceError):
+                        case(live)
+                self.assertEqual(sys.getrefcount(live_obj), refcount)
+
     @support.cpython_only
     def test_proxy_repr(self):
         obj = C()
