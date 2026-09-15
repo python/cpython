@@ -542,16 +542,22 @@ ZipFile objects
       If set, it uses this value as the modification timestamp for the file
       written into the ZIP archive, instead of using the current time.
 
-.. method:: ZipFile.mkdir(zinfo_or_directory, mode=511)
+.. method:: ZipFile.mkdir(zinfo_or_directory, mode=0o777)
 
    Create a directory inside the archive.  If *zinfo_or_directory* is a string,
    a directory is created inside the archive with the mode that is specified in
-   the *mode* argument. If, however, *zinfo_or_directory* is
-   a :class:`ZipInfo` instance then the *mode* argument is ignored.
+   the *mode* argument.  Only the permission bits of *mode* are used; other
+   bits are ignored.  If, however, *zinfo_or_directory* is a :class:`ZipInfo`
+   instance then the *mode* argument is ignored.
 
    The archive must be opened with mode ``'w'``, ``'x'`` or ``'a'``.
 
    .. versionadded:: 3.11
+
+   .. versionchanged:: next
+      Bits of *mode* other than the permission bits are now ignored.
+      Previously, file type bits in *mode* could mark the created entry as
+      something other than a directory.
 
 
 .. method:: ZipFile.remove(zinfo_or_arcname)
