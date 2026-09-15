@@ -8347,14 +8347,29 @@ _PyObject_InlineValuesConsistencyCheck(PyObject *obj)
 // --- frozendict implementation ---------------------------------------------
 
 static PyObject *
-frozendict_getnewargs(PyObject *op, PyObject *Py_UNUSED(dummy))
+frozendict_reduce(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
-    // Call dict(op): convert 'op' frozendict to a dict
+    // Mirror frozenset.__reduce__ so frozendict pickles at every protocol
+    // (__getnewargs__ alone only works at protocol 2 and above).
+    // Call dict(op) to convert the frozendict to a dict argument.
     PyObject *arg = PyObject_CallOneArg((PyObject*)&PyDict_Type, op);
     if (arg == NULL) {
         return NULL;
     }
-    return Py_BuildValue("(N)", arg);
+    PyObject *args = PyTuple_Pack(1, arg);
+    Py_DECREF(arg);
+    if (args == NULL) {
+        return NULL;
+    }
+    PyObject *state = _PyObject_GetState(op);
+    if (state == NULL) {
+        Py_DECREF(args);
+        return NULL;
+    }
+    PyObject *result = PyTuple_Pack(3, Py_TYPE(op), args, state);
+    Py_DECREF(args);
+    Py_DECREF(state);
+    return result;
 }
 
 
@@ -8380,7 +8395,8 @@ static PyMethodDef frozendict_methods[] = {
     DICT___REVERSED___METHODDEF
     {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS,
      PyDoc_STR("frozendicts are generic over two types, signifying (respectively) the types of the frozendict's keys and values")},
-    {"__getnewargs__", frozendict_getnewargs, METH_NOARGS},
+    {"__reduce__", frozendict_reduce, METH_NOARGS,
+     PyDoc_STR("Return state information for pickling.")},
     {NULL,              NULL}   /* sentinel */
 };
 
