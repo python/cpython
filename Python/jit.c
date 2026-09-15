@@ -39,6 +39,13 @@
     #include <sys/mman.h>
 #endif
 
+#ifdef WITH_VALGRIND
+    // VALGRIND_MALLOCLIKE_BLOCK and VALGRIND_FREELIKE_BLOCK live in
+    // valgrind.h, which is the header configure already probes for
+    // --with-valgrind (see also Objects/obmalloc.c).
+    #include <valgrind/valgrind.h>
+#endif
+
 static size_t
 get_page_size(void)
 {
@@ -139,6 +146,13 @@ jit_alloc(size_t size)
         jit_error("unable to allocate memory");
         return NULL;
     }
+#ifdef WITH_VALGRIND
+    // Let memcheck track this JIT code region like a heap allocation, so its
+    // leak checker and addressability/definedness tracking apply to it. The
+    // whole region is always freed in one jit_free() call (never partially),
+    // matching the "one MALLOCLIKE_BLOCK per FREELIKE_BLOCK" contract.
+    VALGRIND_MALLOCLIKE_BLOCK(memory, size, /*redzone=*/0, /*is_zeroed=*/0);
+#endif
     return memory;
 }
 
@@ -147,6 +161,9 @@ jit_free(unsigned char *memory, size_t size)
 {
     assert(size);
     assert(size % get_page_size() == 0);
+#ifdef WITH_VALGRIND
+    VALGRIND_FREELIKE_BLOCK(memory, /*redzone=*/0);
+#endif
 #ifdef MS_WINDOWS
     int failed = !VirtualFree(memory, 0, MEM_RELEASE);
 #else
