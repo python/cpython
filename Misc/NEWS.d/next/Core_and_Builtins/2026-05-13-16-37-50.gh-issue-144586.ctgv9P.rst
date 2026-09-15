@@ -1,0 +1,2 @@
+Changed the implementation of ``_Py_yield`` to use lightweight CPU-specific instructions on AArch64, instead of using the OS scheduler.
+Changed ``_PyMutex_LockTimed`` to use an exponential backoff strategy based on this change.
