@@ -1,0 +1,5 @@
+:class:`contextlib.ExitStack` and :class:`contextlib.AsyncExitStack` now
+preserve the exception ``__context__`` chain for exceptions raised by their
+callbacks while unwinding after the body completed normally, matching the
+behaviour of equivalent nested :keyword:`with` statements.  Previously the
+earlier callback exceptions were dropped from the chain.
