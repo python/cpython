@@ -130,15 +130,12 @@ def rgb_to_hsv(r, g, b):
     if minc == maxc:
         return 0.0, 0.0, v
     s = rangec / maxc
-    rc = (maxc-r) / rangec
-    gc = (maxc-g) / rangec
-    bc = (maxc-b) / rangec
     if r == maxc:
-        h = bc-gc
+        h = (g-b) / rangec
     elif g == maxc:
-        h = 2.0+rc-bc
+        h = 2.0 + (b-r) / rangec
     else:
-        h = 4.0+gc-rc
+        h = 4.0 + (r-g) / rangec
     h = (h/6.0) % 1.0
     return h, s, v
 
