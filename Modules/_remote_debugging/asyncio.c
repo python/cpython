@@ -513,8 +513,24 @@ error:
  * TASK AWAITED_BY PROCESSING
  * ============================================================================ */
 
-// Forward declaration for mutual recursion
-static int process_waiter_task(RemoteUnwinderObject *unwinder, uintptr_t key_addr, void *context);
+// The awaited_by graph is walked with an explicit, heap-allocated work-stack
+// rather than C recursion. A deeply nested -- or, in a corrupted or
+// concurrently-mutated remote process, cyclic -- chain would otherwise drive
+// unbounded recursion and overflow the debugger's own C stack: each level holds
+// a SIZEOF_TASK_OBJ buffer (see process_task_awaited_by), so even a few hundred
+// levels can exhaust a 1 MB stack. MAX_TASK_AWAITED_BY_DEPTH bounds the walk so
+// a cycle terminates.
+typedef struct {
+    uintptr_t addr;
+    int depth;
+} awaited_by_entry_t;
+
+typedef struct {
+    awaited_by_entry_t *items;
+    Py_ssize_t size;
+    Py_ssize_t capacity;
+    int current_depth;
+} awaited_by_stack_t;
 
 // Processor function for parsing tasks in sets
 static int
@@ -658,30 +674,89 @@ error:
     return -1;
 }
 
+static int
+awaited_by_stack_push(
+    RemoteUnwinderObject *unwinder,
+    awaited_by_stack_t *stack,
+    uintptr_t addr,
+    int depth
+) {
+    if (stack->size >= stack->capacity) {
+        Py_ssize_t new_capacity = stack->capacity ? stack->capacity * 2 : 16;
+        awaited_by_entry_t *new_items = PyMem_Realloc(
+            stack->items, (size_t)new_capacity * sizeof(awaited_by_entry_t));
+        if (new_items == NULL) {
+            PyErr_NoMemory();
+            set_exception_cause(unwinder, PyExc_MemoryError,
+                                "Failed to grow awaited_by work-stack");
+            return -1;
+        }
+        stack->items = new_items;
+        stack->capacity = new_capacity;
+    }
+    stack->items[stack->size].addr = addr;
+    stack->items[stack->size].depth = depth;
+    stack->size++;
+    return 0;
+}
+
+// set_entry_processor_func: enqueue a task waiting on the one currently being
+// expanded, one level deeper. The depth bound makes a cyclic or corrupted
+// awaited_by graph terminate instead of looping forever.
+static int
+push_awaited_by_waiter(
+    RemoteUnwinderObject *unwinder,
+    uintptr_t key_addr,
+    void *context
+) {
+    awaited_by_stack_t *stack = (awaited_by_stack_t *)context;
+    if (stack->current_depth >= MAX_TASK_AWAITED_BY_DEPTH) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "Task awaited_by chain is too deep or cyclic "
+                        "(corrupted remote memory)");
+        set_exception_cause(unwinder, PyExc_RuntimeError,
+                            "Task awaited_by depth limit exceeded");
+        return -1;
+    }
+    return awaited_by_stack_push(unwinder, stack, key_addr,
+                                 stack->current_depth + 1);
+}
+
+// Drain the work-stack: append each task node to result, then enqueue the
+// tasks waiting on it. Depth-first, with no C recursion over the graph.
+static int
+drain_awaited_by_stack(
+    RemoteUnwinderObject *unwinder,
+    PyObject *result,
+    awaited_by_stack_t *stack
+) {
+    while (stack->size > 0) {
+        awaited_by_entry_t entry = stack->items[--stack->size];
+        if (process_single_task_node(unwinder, entry.addr, NULL, result) < 0) {
+            return -1;
+        }
+        stack->current_depth = entry.depth;
+        if (process_task_awaited_by(unwinder, entry.addr,
+                                    push_awaited_by_waiter, stack) < 0) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
 int
 process_task_and_waiters(
     RemoteUnwinderObject *unwinder,
     uintptr_t task_addr,
     PyObject *result
 ) {
-    // First, add this task to the result
-    if (process_single_task_node(unwinder, task_addr, NULL, result) < 0) {
-        return -1;
+    awaited_by_stack_t stack = {0};
+    int result_code = -1;
+    if (awaited_by_stack_push(unwinder, &stack, task_addr, 0) == 0) {
+        result_code = drain_awaited_by_stack(unwinder, result, &stack);
     }
-
-    // Now find all tasks that are waiting for this task and process them
-    return process_task_awaited_by(unwinder, task_addr, process_waiter_task, result);
-}
-
-// Processor function for task waiters
-static int
-process_waiter_task(
-    RemoteUnwinderObject *unwinder,
-    uintptr_t key_addr,
-    void *context
-) {
-    PyObject *result = (PyObject *)context;
-    return process_task_and_waiters(unwinder, key_addr, result);
+    PyMem_Free(stack.items);
+    return result_code;
 }
 
 /* ============================================================================
@@ -977,8 +1052,17 @@ process_running_task_chain(
         return -1;
     }
 
-    // Now find all tasks that are waiting for this task and process them
-    if (process_task_awaited_by(unwinder, running_task_addr, process_waiter_task, result) < 0) {
+    // Now find all tasks that are waiting for this task and process them with
+    // the same iterative, heap-stacked walk as process_task_and_waiters (the
+    // running task itself is already recorded via the frame chain above).
+    awaited_by_stack_t stack = {0};
+    int waiters_code = process_task_awaited_by(unwinder, running_task_addr,
+                                               push_awaited_by_waiter, &stack);
+    if (waiters_code == 0) {
+        waiters_code = drain_awaited_by_stack(unwinder, result, &stack);
+    }
+    PyMem_Free(stack.items);
+    if (waiters_code < 0) {
         return -1;
     }
 
