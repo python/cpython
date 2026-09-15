@@ -4,6 +4,7 @@ import unittest
 import time
 
 import asyncio
+from asyncio import CancelledError
 
 from test.test_asyncio.utils import await_without_task
 
@@ -298,6 +299,18 @@ class TimeoutTests(unittest.IsolatedAsyncioTestCase):
         self.assertIs(e2.__context__, e22)
 
     async def test_timeout_after_cancellation(self):
+        asyncio.current_task().cancel()
+        with self.assertRaises(asyncio.CancelledError):
+            async with asyncio.timeout(0.1):
+                await asyncio.sleep(1)
+
+    async def test_timeout_immediately_after_cancellation(self):
+        asyncio.current_task().cancel()
+        with self.assertRaises(asyncio.CancelledError):
+            async with asyncio.timeout(0.0):
+                await asyncio.sleep(1)
+
+    async def test_timeout_while_handling_cancellation(self):
         try:
             asyncio.current_task().cancel()
             await asyncio.sleep(1)  # work which will be cancelled
@@ -308,7 +321,7 @@ class TimeoutTests(unittest.IsolatedAsyncioTestCase):
                 async with asyncio.timeout(0.0):
                     await asyncio.sleep(1)  # some cleanup
 
-    async def test_cancel_in_timeout_after_cancellation(self):
+    async def test_cancel_in_timeout_while_handling_cancellation(self):
         try:
             asyncio.current_task().cancel()
             await asyncio.sleep(1)  # work which will be cancelled
