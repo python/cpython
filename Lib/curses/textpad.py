@@ -2,6 +2,7 @@
 
 import curses
 import curses.ascii
+import unicodedata
 
 def rectangle(win, uly, ulx, lry, lrx):
     """Draw a rectangle with corners at the provided upper-left
@@ -98,7 +99,14 @@ class Textbox:
                 # the cursor out of the window (an error, and it scrolls a
                 # scrollable window).
                 if isinstance(ch, int):
-                    self.win.insch(self._decode(ch), ch & curses.A_ATTRIBUTES)
+                    ch, attr = self._decode(ch), ch & curses.A_ATTRIBUTES
+                else:
+                    attr = curses.A_NORMAL
+                if isinstance(ch, str) and unicodedata.combining(ch):
+                    cell = self.win.in_wch()
+                    ch = curses.complexchar(str(cell) + ch, cell.attr, cell.pair)
+                if isinstance(ch, str):
+                    self.win.insch(ch, attr)
                 else:
                     self.win.insch(ch)
                 break
