@@ -137,11 +137,34 @@ IDENTIFIERS = [
 
 NON_GENERATED_IMMORTAL_OBJECTS = [
     # The generated ones come from generate_runtime_init().
-    '(PyObject *)&_Py_SINGLETON(bytes_empty)',
-    '(PyObject *)&_Py_SINGLETON(tuple_empty)',
-    '(PyObject *)&_Py_SINGLETON(hamt_bitmap_node_empty)',
-    '(PyObject *)&_Py_INTERP_SINGLETON(interp, hamt_empty)',
-    '(PyObject *)&_Py_SINGLETON(context_token_missing)',
+
+    # b'' (empty bytes string)
+    ('_PyStaticObject_CheckBytesSingleton({}, 0, 0);',
+     '(PyObject *)&_Py_SINGLETON(bytes_empty)'),
+    # () (empty tuple)
+    ('_PyStaticObject_CheckSingleton({}, &PyTuple_Type);',
+     '(PyObject *)&_Py_SINGLETON(tuple_empty)'),
+    ('_PyStaticObject_CheckSingleton({}, &_PyHamt_BitmapNode_Type);',
+     '(PyObject *)&_Py_SINGLETON(hamt_bitmap_node_empty)'),
+    ('_PyStaticObject_CheckSingleton({}, &_PyHamt_Type);',
+     '(PyObject *)&_Py_INTERP_SINGLETON(interp, hamt_empty)'),
+    ('_PyStaticObject_CheckSingleton({}, &_PyContextTokenMissing_Type);',
+     '(PyObject *)&_Py_SINGLETON(context_token_missing)'),
+    # False
+    ('_PyStaticObject_CheckLongSingleton({}, 0, 1);',
+     '(PyObject *)&_Py_FalseStruct '),
+    # True
+    ('_PyStaticObject_CheckLongSingleton({}, 1, 1);',
+     '(PyObject *)&_Py_TrueStruct'),
+    # None
+    ('_PyStaticObject_CheckSingleton({}, &_PyNone_Type);',
+     '(PyObject *)&_Py_NoneStruct'),
+    # Ellipsis (...)
+    ('_PyStaticObject_CheckSingleton({}, &PyEllipsis_Type);',
+     '(PyObject *)&_Py_EllipsisObject'),
+    # Py_NotImplemented
+    ('_PyStaticObject_CheckSingleton({}, &_PyNotImplemented_Type);',
+     '(PyObject *)&_Py_NotImplementedStruct'),
 ]
 
 
@@ -299,28 +322,45 @@ def generate_runtime_init(identifiers, strings):
         with printer.block('#define _Py_small_ints_INIT', continuation=True):
             for i in range(-nsmallnegints, nsmallposints):
                 printer.write(f'_PyLong_DIGIT_INIT({i}),')
-                immortal_objects.append(f'(PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + {i}]')
+                immortal_objects.append((
+                    f'_PyStaticObject_CheckLongSingleton({{}}, {i}, 0);',
+                    f'(PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + {i}]',
+                ))
         printer.write('')
         with printer.block('#define _Py_bytes_characters_INIT', continuation=True):
             for i in range(256):
                 printer.write(f'_PyBytes_CHAR_INIT({i}),')
-                immortal_objects.append(f'(PyObject *)&_Py_SINGLETON(bytes_characters)[{i}]')
+                immortal_objects.append((
+                    f'_PyStaticObject_CheckBytesSingleton({{}}, 1, {i});',
+                    f'(PyObject *)&_Py_SINGLETON(bytes_characters)[{i}]',
+                ))
         printer.write('')
         with printer.block('#define _Py_str_literals_INIT', continuation=True):
             for literal, name in sorted(strings.items(), key=lambda x: x[1]):
                 printer.write(f'INIT_STR({name}, "{literal}"),')
-                immortal_objects.append(f'(PyObject *)&_Py_STR({name})')
+                escaped = literal.replace("{", "{{").replace("}", "}}")
+                immortal_objects.append((
+                    f'_PyStaticObject_CheckUnicodeSingleton({{}}, "{escaped}", {len(literal)});',
+                    f'(PyObject *)&_Py_STR({name})',
+                ))
         printer.write('')
         with printer.block('#define _Py_str_identifiers_INIT', continuation=True):
             for name in sorted(identifiers):
                 assert name.isidentifier(), name
                 printer.write(f'INIT_ID({name}),')
-                immortal_objects.append(f'(PyObject *)&_Py_ID({name})')
+                assert all(ch not in "{}" for ch in name)
+                immortal_objects.append((
+                    f'_PyStaticObject_CheckUnicodeSingleton({{}}, "{name}", {len(name)});',
+                    f'(PyObject *)&_Py_ID({name})',
+                ))
         printer.write('')
         with printer.block('#define _Py_str_ascii_INIT', continuation=True):
             for i in range(128):
                 printer.write(f'_PyASCIIObject_INIT("\\x{i:02x}"),')
-                immortal_objects.append(f'(PyObject *)&_Py_SINGLETON(strings).ascii[{i}]')
+                immortal_objects.append((
+                    f'_PyStaticObject_CheckUnicodeCharSingleton({{}}, 1, {i});',
+                    f'(PyObject *)&_Py_SINGLETON(strings).ascii[{i}]',
+                ))
         printer.write('')
         with printer.block('#define _Py_str_latin1_INIT', continuation=True):
             for i in range(128, 256):
@@ -329,7 +369,10 @@ def generate_runtime_init(identifiers, strings):
                     utf8.append(f"\\x{c:02x}")
                 utf8.append('"')
                 printer.write(f'_PyUnicode_LATIN1_INIT("\\x{i:02x}", {"".join(utf8)}),')
-                immortal_objects.append(f'(PyObject *)&_Py_SINGLETON(strings).latin1[{i} - 128]')
+                immortal_objects.append((
+                    f'_PyStaticObject_CheckUnicodeCharSingleton({{}}, 1, {i});',
+                    f'(PyObject *)&_Py_SINGLETON(strings).latin1[{i} - 128]',
+                ))
         printer.write(END)
         printer.write(after)
         return immortal_objects
@@ -391,16 +434,18 @@ def generate_global_object_finalizers(generated_immortal_objects):
         printer.write(before)
         printer.write(START)
         printer.write('#ifdef Py_DEBUG')
+        printer.write('// Check static objects consistency: detect if a C extension modified')
+        printer.write('// an immutable singleton by mistake.')
         printer.write("static inline void")
         with printer.block(
-                "_PyStaticObjects_CheckRefcnt(PyInterpreterState *interp)"):
+                "_PyStaticObjects_CheckAll(PyInterpreterState *interp)"):
             printer.write('/* generated runtime-global */')
             printer.write('// (see pycore_runtime_init_generated.h)')
-            for ref in generated_immortal_objects:
-                printer.write(f'_PyStaticObject_CheckRefcnt({ref});')
+            for fmt, ref in generated_immortal_objects:
+                printer.write(fmt.format(ref))
             printer.write('/* non-generated */')
-            for ref in NON_GENERATED_IMMORTAL_OBJECTS:
-                printer.write(f'_PyStaticObject_CheckRefcnt({ref});')
+            for fmt, ref in NON_GENERATED_IMMORTAL_OBJECTS:
+                printer.write(fmt.format(ref))
         printer.write('#endif  // Py_DEBUG')
         printer.write(END)
         printer.write(after)
