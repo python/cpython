@@ -54,6 +54,9 @@ _TEMPLATE = {
     },
     "c_api": {
     },
+    "arbitrary_data": {
+        "extension_compiler_flags": [],
+    },
 }
 
 
