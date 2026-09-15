@@ -3192,20 +3192,26 @@ bytes_iteritem(PyObject *obj, Py_ssize_t index)
 }
 
 #ifdef Py_DEBUG
-static void
-bytes_dealloc(PyObject *op)
+void
+_PyBytes_CheckOverflow(PyObject *self, void *addr, const char *type_name)
 {
     // Make sure that the trailing null byte was not modified
-    PyBytesObject *self = _PyBytes_CAST(op);
     char *data = PyBytes_AS_STRING(self);
     Py_ssize_t size = PyBytes_GET_SIZE(self);
     if (data[size] != '\0') {
         _Py_FatalErrorFormat(__func__,
-                             "Buffer overflow detected in bytes object %p "
+                             "Buffer overflow detected in %s object %p "
                              "at position %zd",
-                             self, size);
+                             type_name, addr, size);
     }
+}
 
+
+static void
+bytes_dealloc(PyObject *op)
+{
+    PyBytesObject *self = _PyBytes_CAST(op);
+    _PyBytes_CheckOverflow(op, op, "bytes");
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
 #endif
