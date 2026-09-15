@@ -646,9 +646,16 @@ class HTTPRedirectHandler(BaseHandler):
         # but it is kept for compatibility with other callers.
         newurl = newurl.replace(' ', '%20')
 
-        CONTENT_HEADERS = ("content-length", "content-type")
+        # Headers to not relay to the new target.
+        # * Content-Length/Content-Type: The new request doesn't
+        #   have a body, so these headers are no longer needed.
+        # * Proxy-Authorization: Shouldn't be automatically forwarded.
+        #   Instead, the ProxyHandler should re-add the header if needed.
+        remove_headers = ("content-length", "content-type",
+                          "proxy-authorization")
+
         newheaders = {k: v for k, v in req.headers.items()
-                      if k.lower() not in CONTENT_HEADERS}
+                      if k.lower() not in remove_headers}
         return Request(newurl,
                        method="HEAD" if m == "HEAD" else "GET",
                        headers=newheaders,
@@ -787,7 +794,7 @@ class ProxyHandler(BaseHandler):
             user_pass = '%s:%s' % (unquote(user),
                                    unquote(password))
             creds = base64.b64encode(user_pass.encode()).decode("ascii")
-            req.add_header('Proxy-authorization', 'Basic ' + creds)
+            req.add_unredirected_header('Proxy-authorization', 'Basic ' + creds)
         hostport = unquote(hostport)
         req.set_proxy(hostport, proxy_type)
         if orig_type == proxy_type or orig_type == 'https':
