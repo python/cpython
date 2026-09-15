@@ -1,0 +1,3 @@
+Fix :meth:`zipfile.Path.is_symlink` raising :exc:`KeyError` for paths not
+present in the archive.  It now returns ``False``, consistent with the other
+:class:`zipfile.Path` predicates and with :meth:`pathlib.Path.is_symlink`.
