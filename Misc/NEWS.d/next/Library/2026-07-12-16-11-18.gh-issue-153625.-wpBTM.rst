@@ -1,0 +1,1 @@
+Fix an issue that an auto-sanitized filename corrupts a ZIP archive when rewritten to the central directory in append mode.
