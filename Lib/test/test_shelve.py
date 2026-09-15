@@ -5,6 +5,7 @@ import shelve
 import pickle
 import os
 
+from unittest import mock
 from test.support import import_helper, os_helper, subTests
 from collections.abc import MutableMapping
 from test.test_dbm import dbm_iterator
@@ -46,6 +47,12 @@ class byteskeydict(MutableMapping):
 class TestCase(unittest.TestCase):
     dirname = os_helper.TESTFN
     fn = os.path.join(os_helper.TESTFN, "shelftemp.db")
+
+    @mock.patch("dbm.open", autospec=True)
+    def test_open_calls_dbm_as_expected(self, dbm_open):
+        shelf_open_mode = 0o433
+        shelve.open(filename=self.fn, mode=shelf_open_mode)
+        dbm_open.assert_called_once_with(self.fn, 'c', shelf_open_mode)
 
     def test_close(self):
         d1 = {}
