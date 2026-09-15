@@ -28,7 +28,7 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: 'Install Dependencies'
-      run: ./.github/workflows/posix-deps-zypp.sh
+      run: sh ./.github/posix-deps-zypp.sh
       # apt-get install wamerican
 
     - name: 'Configure CPython'

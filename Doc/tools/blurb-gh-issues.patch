@@ -1,0 +1,65 @@
+Backport GitHub issue support for NEWS reading and merging to blurb 1.0.7.
+Based on upstream commit a2e8eeca0c72343fb30e67aaf33a6f0c1db440b1:
+https://github.com/python/blurb/commit/a2e8eeca0c72343fb30e67aaf33a6f0c1db440b1
+
+Keep Python 3.6 and pip 18.1 support. Only the documentation build's private
+copy is patched; the installed blurb package and NEWS fragments are unchanged.
+
+--- a/blurb.py
++++ b/blurb.py
+@@ -1,6 +1,6 @@
+ #!/usr/bin/env python3
+ """Command-line tool to manage CPython Misc/NEWS.d entries."""
+-__version__ = "1.0.7"
++__version__ = "1.0.7+gh"
+ 
+ ##
+ ## blurb version 1.0
+@@ -468,7 +468,7 @@
+             if not body:
+                 throw("Blurb 'body' text must not be empty!")
+             text = textwrap_body(body)
+-            for naughty_prefix in ("- ", "Issue #", "bpo-"):
++            for naughty_prefix in ("- ", "Issue #", "bpo-", "gh-", "gh-issue-"):
+                 if text.startswith(naughty_prefix):
+                     throw("Blurb 'body' can't start with " + repr(naughty_prefix) + "!")
+ 
+@@ -481,11 +481,12 @@
+                 elif section not in sections:
+                     throw("Invalid 'section'!  You must use one of the predefined sections.")
+ 
+-            bpo = None
++            issue_kind = 'gh-issue' if 'gh-issue' in metadata else 'bpo'
++            issue_number = metadata.get(issue_kind)
+             try:
+-                bpo = int(metadata.get('bpo'))
++                int(issue_number)
+             except (TypeError, ValueError):
+-                throw("Invalid bpo issue number! (" + repr(bpo) + ")")
++                throw("Invalid " + issue_kind + " issue number! (" + repr(issue_number) + ")")
+ 
+             self.append((metadata, text))
+             metadata = {}
+@@ -568,7 +569,7 @@
+         metadata = {"date": fields[0], "nonce": fields[-2], "section": section}
+ 
+         for field in fields[1:-2]:
+-            for name in ("bpo",):
++            for name in ("gh-issue", "bpo"):
+                 _, got, value = field.partition(name + "-")
+                 if got:
+                     metadata[name] = value.strip()
+@@ -1094,9 +1095,10 @@
+                 print("-" * len(section))
+                 print()
+ 
+-            bpo = metadata['bpo']
+-            if int(bpo):
+-                body = "bpo-" + bpo + ": " + body
++            issue_kind = 'gh-issue' if 'gh-issue' in metadata else 'bpo'
++            issue_number = metadata[issue_kind]
++            if int(issue_number):
++                body = issue_kind + "-" + issue_number + ": " + body
+             body = "- " + body
+             text = textwrap_body(body, subsequent_indent='  ')
+             print(text)

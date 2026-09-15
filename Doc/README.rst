@@ -39,9 +39,21 @@ build the HTML output files::
 
   make html
 
-By default, if the virtual environment is not created, the Makefile will
-look for instances of sphinxbuild and blurb installed on your process PATH
-(configurable with the SPHINXBUILD and BLURB variables).
+This branch pins the Python tools in ``requirements.txt`` for Python 3.6.
+The ``venv`` target also requires GNU ``patch``. It copies blurb 1.0.7 to
+``venv/blurb.py`` and applies ``tools/blurb-gh-issues.patch`` to that private
+copy so NEWS generation accepts both Roundup and GitHub issue numbers.
+The installed blurb package and NEWS fragments are not modified. Repeating
+``make venv`` recreates the patched copy from the installed package.
+
+The Makefile looks for Sphinx in the virtual environment and then on PATH.
+It uses the private blurb copy by default. Override ``SPHINXBUILD`` or ``BLURB``
+to use other tools; an external blurb must support GitHub issue entries.
+
+To run the documentation-tool regression tests::
+
+  venv/bin/python3 tools/test_blurb.py
+  venv/bin/python3 tools/test_extensions.py
 
 On Windows, we try to emulate the Makefile as closely as possible with a
 ``make.bat`` file. If you need to specify the Python interpreter to use,

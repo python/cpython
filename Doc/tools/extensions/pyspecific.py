@@ -40,6 +40,7 @@ import suspicious
 
 
 ISSUE_URI = 'https://bugs.python.org/issue%s'
+GH_ISSUE_URI = 'https://github.com/python/cpython/issues/%s'
 SOURCE_URI = 'https://github.com/python/cpython/tree/3.6/%s'
 
 # monkey-patch reST parser to disable alphabetic and roman enumerated lists
@@ -87,6 +88,15 @@ def issue_role(typ, rawtext, text, lineno, inliner, options={}, content=[]):
     issue = utils.unescape(text)
     text = 'bpo-' + issue
     refnode = nodes.reference(text, text, refuri=ISSUE_URI % issue)
+    return [refnode], []
+
+
+# Support for linking to GitHub issues in backported NEWS entries.
+
+def gh_issue_role(typ, rawtext, text, lineno, inliner, options={}, content=[]):
+    issue = utils.unescape(text)
+    text = 'gh-' + issue
+    refnode = nodes.reference(text, text, refuri=GH_ISSUE_URI % issue)
     return [refnode], []
 
 
@@ -248,6 +258,7 @@ class DeprecatedRemoved(Directive):
 # Support for including Misc/NEWS
 
 issue_re = re.compile('(?:[Ii]ssue #|bpo-)([0-9]+)')
+gh_issue_re = re.compile(r'gh-issue-([0-9]+)')
 whatsnew_re = re.compile(r"(?im)^what's new in (.*?)\??$")
 
 
@@ -279,6 +290,8 @@ class MiscNews(Directive):
             return [node]
         content = issue_re.sub(r'`bpo-\1 <https://bugs.python.org/issue\1>`__',
                                content)
+        content = gh_issue_re.sub(
+            r'`gh-\1 <https://github.com/python/cpython/issues/\1>`__', content)
         content = whatsnew_re.sub(r'\1', content)
         # remove first 3 lines as they are the main heading
         lines = ['.. default-role:: obj', ''] + content.splitlines()[3:]
@@ -399,6 +412,7 @@ def parse_pdb_command(env, sig, signode):
 
 def setup(app):
     app.add_role('issue', issue_role)
+    app.add_role('gh', gh_issue_role)
     app.add_role('source', source_role)
     app.add_directive('impl-detail', ImplementationDetail)
     app.add_directive('deprecated-removed', DeprecatedRemoved)

@@ -121,8 +121,8 @@ class CheckSuspiciousMarkupBuilder(Builder):
     def finish(self):
         unused_rules = [rule for rule in self.rules if not rule.used]
         if unused_rules:
-            self.warn('Found %s/%s unused rules:' %
-                      (len(unused_rules), len(self.rules)))
+            self.logger.warning('Found %s/%s unused rules:' %
+                                (len(unused_rules), len(self.rules)))
             for rule in unused_rules:
                 self.logger.info(repr(rule))
         return
@@ -154,14 +154,14 @@ class CheckSuspiciousMarkupBuilder(Builder):
         return False
 
     def report_issue(self, text, lineno, issue):
-        if not self.any_issue: self.logger.info()
+        if not self.any_issue: self.logger.info('')
         self.any_issue = True
         self.write_log_entry(lineno, issue, text)
         if py3:
-            self.warn('[%s:%d] "%s" found in "%-.120s"' %
-                      (self.docname, lineno, issue, text))
+            self.logger.warning('[%s:%d] "%s" found in "%-.120s"' %
+                                (self.docname, lineno, issue, text))
         else:
-            self.warn('[%s:%d] "%s" found in "%-.120s"' % (
+            self.logger.warning('[%s:%d] "%s" found in "%-.120s"' % (
                 self.docname.encode(sys.getdefaultencoding(),'replace'),
                 lineno,
                 issue.encode(sys.getdefaultencoding(),'replace'),

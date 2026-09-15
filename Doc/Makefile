@@ -7,7 +7,7 @@
 PYTHON       = python3
 VENVDIR      = ./venv
 SPHINXBUILD  = PATH=$(VENVDIR)/bin:$$PATH sphinx-build
-BLURB        = PATH=$(VENVDIR)/bin:$$PATH blurb
+BLURB        = $(VENVDIR)/bin/python3 $(VENVDIR)/blurb.py
 PAPER        =
 SOURCES      =
 DISTVERSION  = $(shell $(PYTHON) tools/extensions/patchlevel.py)
@@ -49,7 +49,6 @@ build:
 		cp ../Misc/NEWS build/NEWS; \
 	elif [ -d ../Misc/NEWS.d ]; then \
 		echo "Building NEWS from Misc/NEWS.d with blurb"; \
-		$(BLURB) --version; \
 		$(BLURB) merge -f build/NEWS; \
 	else \
 		echo "Neither Misc/NEWS.d nor Misc/NEWS found; cannot build docs"; \
@@ -124,8 +123,10 @@ clean:
 
 venv:
 	$(PYTHON) -m venv $(VENVDIR)
-	$(VENVDIR)/bin/python3 -m pip install -U Sphinx==2.3.1 \
-		git+https://github.com/python/blurb.git@3696908d9621d284837715d6f1db7cc167be7514
+	$(VENVDIR)/bin/python3 -m pip install -r requirements.txt
+	# Patch a private copy, leaving the installed package unchanged.
+	cp "$$($(VENVDIR)/bin/python3 -c 'import blurb; print(blurb.__file__)')" $(VENVDIR)/blurb.py
+	patch --batch $(VENVDIR)/blurb.py tools/blurb-gh-issues.patch
 	@echo "The venv has been created in the $(VENVDIR) directory"
 
 dist:

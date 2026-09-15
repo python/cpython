@@ -491,7 +491,7 @@ be finalized; only the internally used file object will be closed. See the
       Return an :class:`io.BufferedReader` object.
 
 .. attribute:: TarFile.errorlevel
-   :type: int
+   :annotation: : int
 
    If *errorlevel* is ``0``, errors are ignored when using :meth:`TarFile.extract`
    and :meth:`TarFile.extractall`.
@@ -676,19 +676,19 @@ A ``TarInfo`` object has the following public data attributes:
 
 
 .. attribute:: TarInfo.name
-   :type: str
+   :annotation: : str
 
    Name of the archive member.
 
 
 .. attribute:: TarInfo.size
-   :type: int
+   :annotation: : int
 
    Size in bytes.
 
 
 .. attribute:: TarInfo.mtime
-   :type: int | float
+   :annotation: : int | float
 
    Time of last modification in seconds since the :ref:`epoch <epoch>`,
    as in :attr:`os.stat_result.st_mtime`.
@@ -700,7 +700,7 @@ A ``TarInfo`` object has the following public data attributes:
       attribute.
 
 .. attribute:: TarInfo.mode
-   :type: int
+   :annotation: : int
 
    Permission bits, as for :func:`os.chmod`.
 
@@ -720,14 +720,14 @@ A ``TarInfo`` object has the following public data attributes:
 
 
 .. attribute:: TarInfo.linkname
-   :type: str
+   :annotation: : str
 
    Name of the target file name, which is only present in :class:`TarInfo` objects
    of type :const:`LNKTYPE` and :const:`SYMTYPE`.
 
 
 .. attribute:: TarInfo.uid
-   :type: int
+   :annotation: : int
 
    User ID of the user who originally stored this member.
 
@@ -738,7 +738,7 @@ A ``TarInfo`` object has the following public data attributes:
       attribute.
 
 .. attribute:: TarInfo.gid
-   :type: int
+   :annotation: : int
 
    Group ID of the user who originally stored this member.
 
@@ -749,7 +749,7 @@ A ``TarInfo`` object has the following public data attributes:
       attribute.
 
 .. attribute:: TarInfo.uname
-   :type: str
+   :annotation: : str
 
    User name.
 
@@ -760,7 +760,7 @@ A ``TarInfo`` object has the following public data attributes:
       attribute.
 
 .. attribute:: TarInfo.gname
-   :type: str
+   :annotation: : str
 
    Group name.
 
@@ -771,7 +771,7 @@ A ``TarInfo`` object has the following public data attributes:
       attribute.
 
 .. attribute:: TarInfo.pax_headers
-   :type: dict
+   :annotation: : dict
 
    A dictionary containing key-value pairs of an associated pax extended header.
 

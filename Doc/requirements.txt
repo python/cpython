@@ -1,0 +1,5 @@
+Sphinx==2.3.1
+blurb==1.0.7
+
+# docutils 0.18's meta node conflicts with Sphinx 2.3.1 under -W.
+docutils==0.15.2
