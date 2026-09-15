@@ -404,9 +404,8 @@ write_escaped_unicode(PyUnicodeWriter *writer, PyObject *pystr)
         if (PyUnicodeWriter_WriteChar(writer, '"') < 0) {
             return -1;
         }
-        // gh-148241: Avoid PyUnicodeWriter_WriteStr() which calls str(obj)
-        // on str subclasses
-        if (_PyUnicodeWriter_WriteStr((_PyUnicodeWriter*)writer, pystr) < 0) {
+        // Use WriteRawStr() to handle str subclasses correctly
+        if (PyUnicodeWriter_WriteRawStr(writer, pystr) < 0) {
             return -1;
         }
         return PyUnicodeWriter_WriteChar(writer, '"');
