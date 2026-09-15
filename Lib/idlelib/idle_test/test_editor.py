@@ -44,6 +44,23 @@ class EditorWindowTest(unittest.TestCase):
             e._close()
 
 
+    def test_fit_to_screen(self):
+        # gh-57471: shorten the text if the window does not fit in the
+        # work area even at its top.
+        e = Editor(root=self.root)
+        top = e.top
+        top.update()
+        y = e.get_geometry()[3]
+        title = top.winfo_rooty() - y
+        lines = int(e.text['height'])
+        bottom = y + title + top.winfo_reqheight() - 100
+        e.fit_to_screen((y, bottom))
+        top.update()
+        self.assertLess(int(e.text['height']), lines)
+        self.assertLessEqual(y + title + top.winfo_reqheight(), bottom)
+        e._close()
+
+
 class GetLineIndentTest(unittest.TestCase):
     def test_empty_lines(self):
         for tabwidth in [1, 2, 4, 6, 8]:

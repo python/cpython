@@ -1,0 +1,2 @@
+IDLE windows on Windows no longer open partially hidden behind the taskbar:
+they are moved up, and shortened if that is not enough.

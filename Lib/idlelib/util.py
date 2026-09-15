@@ -45,6 +45,36 @@ if sys.platform == 'win32':  # pragma: no cover
         except (ImportError, AttributeError, OSError):
             pass
 
+def win_workarea(top):  # Called in editor.
+    """Return the (top, bottom) screen y-coordinates of the work area.
+
+    The work area is the part of the screen of window top not covered
+    by the taskbar.  Return None where Tk does not report it, that is
+    anywhere but on Windows; there the window manager keeps windows
+    in the work area itself.
+    """
+    if sys.platform != 'win32':
+        return None
+    import ctypes
+    from ctypes import wintypes
+    class MONITORINFO(ctypes.Structure):
+        _fields_ = [('cbSize', wintypes.DWORD),
+                    ('rcMonitor', wintypes.RECT),
+                    ('rcWork', wintypes.RECT),
+                    ('dwFlags', wintypes.DWORD)]
+    try:
+        user32 = ctypes.windll.user32
+        hwnd = int(top.wm_frame(), 16)
+        MONITOR_DEFAULTTONEAREST = 2
+        monitor = user32.MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST)
+        info = MONITORINFO(cbSize=ctypes.sizeof(MONITORINFO))
+        if not user32.GetMonitorInfoW(monitor, ctypes.byref(info)):
+            return None
+    except (AttributeError, OSError, ValueError):
+        return None
+    return info.rcWork.top, info.rcWork.bottom
+
+
 def fix_word_breaks(root):  # Called in editor htest, filelist _test, pyshell.
     # On Windows, tcl/tk breaks 'words' only on spaces, as in Command Prompt.
     # We want Motif style everywhere. See #21474, msg218992 and followup.
