@@ -432,7 +432,7 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.15
       Added the *module* parameter.
 
-   .. versionchanged:: 3.16
+   .. versionchanged:: next
       :exc:`SyntaxError` is raised instead of :exc:`ValueError` when surrogate
       characters are encountered in *source*,
       and instead of :exc:`MemoryError` or :exc:`RecursionError`
