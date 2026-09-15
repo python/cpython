@@ -1,0 +1,1 @@
+Added overridable methods for handling duplicate sections and options in ConfigParser.
