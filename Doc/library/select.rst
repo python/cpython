@@ -417,6 +417,22 @@ on bits for the fds of interest, and then afterward the whole bitmap has to be
 linearly scanned again. :c:func:`!select` is *O*\ (*highest file descriptor*), while
 :c:func:`!poll` is *O*\ (*number of file descriptors*).
 
+.. method:: poll.register(fd[, eventmask])
+
+   Register a file descriptor with the polling object.  Future calls to the
+   :meth:`poll` method will then check whether the file descriptor has any
+   pending I/O events.  *fd* can be either an integer, or an object with a
+   :meth:`~io.IOBase.fileno` method that returns an integer.  File objects
+   implement :meth:`!fileno`, so they can also be used as the argument.
+
+   Registering a file descriptor that's already registered is not an error, and
+   has the same effect as registering the descriptor exactly once.
+
+   *eventmask* is an optional bitmask describing the type of events you want to
+   check for, and can be a combination of the constants :const:`POLLIN`,
+   :const:`POLLPRI`, and :const:`POLLOUT`, described in the table below.  If not
+   specified, the default value used will check for all 3 types of events.
+
 The event masks that can be used with polling objects are combinations of the
 following constants:
 
@@ -438,23 +454,6 @@ following constants:
    +--------------------+-------------------------------------------+
    | .. data:: POLLNVAL | Invalid request: descriptor not open.     |
    +--------------------+-------------------------------------------+
-
-
-.. method:: poll.register(fd[, eventmask])
-
-   Register a file descriptor with the polling object.  Future calls to the
-   :meth:`poll` method will then check whether the file descriptor has any
-   pending I/O events.  *fd* can be either an integer, or an object with a
-   :meth:`~io.IOBase.fileno` method that returns an integer.  File objects
-   implement :meth:`!fileno`, so they can also be used as the argument.
-
-   *eventmask* is an optional bitmask describing the type of events you want to
-   check for, and can be a combination of the constants :const:`POLLIN`,
-   :const:`POLLPRI`, and :const:`POLLOUT`, described in the table above.  If not
-   specified, the default value used will check for all 3 types of events.
-
-   Registering a file descriptor that's already registered is not an error, and has
-   the same effect as registering the descriptor exactly once.
 
 
 .. method:: poll.modify(fd, eventmask)
@@ -563,8 +562,6 @@ https://man.freebsd.org/cgi/man.cgi?query=kqueue&sektion=2
 
    Name of the kernel filter.
 
-.. currentmodule:: select
-
 The following constants can be used with :attr:`kevent.filter`:
 
    +---------------------------+---------------------------------------------+
@@ -596,8 +593,6 @@ The following constants can be used with :attr:`kevent.filter`:
 
    Filter action.
 
-.. currentmodule:: select
-
 The following constants can be used with :attr:`kevent.flags`:
 
    +---------------------------+----------------------------------------------+
@@ -628,8 +623,6 @@ The following constants can be used with :attr:`kevent.flags`:
 .. attribute:: kevent.fflags
 
    Filter-specific flags.
-
-.. currentmodule:: select
 
 The following flags can be used with :attr:`kevent.fflags`, depending on the
 filter type.
