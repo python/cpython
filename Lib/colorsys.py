@@ -37,13 +37,26 @@ TWO_THIRD = 2.0/3.0
 # There are a great many versions of the constants used in these formulae.
 # The ones in this library uses constants from the FCC version of NTSC.
 
-def rgb_to_yiq(r, g, b):
+def rgb_to_yiq(r, g, b, clip=False):
     y = 0.30*r + 0.59*g + 0.11*b
     i = 0.74*(r-y) - 0.27*(b-y)
     q = 0.48*(r-y) + 0.41*(b-y)
+
+    if clip and y < 0.0:
+        y = 0.0
+    if clip and i < -1.0:
+        i = -1.0
+    if clip and q < -1.0:
+        q = -1.0
+    if clip and y > 1.0:
+        y = 1.0
+    if clip and i > 1.0:
+        i = 1.0
+    if clip and q > 1.0:
+        q = 1.0
     return (y, i, q)
 
-def yiq_to_rgb(y, i, q):
+def yiq_to_rgb(y, i, q, clip=False):
     # r = y + (0.27*q + 0.41*i) / (0.74*0.41 + 0.27*0.48)
     # b = y + (0.74*q - 0.48*i) / (0.74*0.41 + 0.27*0.48)
     # g = y - (0.30*(r-y) + 0.11*(b-y)) / 0.59
@@ -52,17 +65,17 @@ def yiq_to_rgb(y, i, q):
     g = y - 0.27478764629897834*i - 0.6356910791873801*q
     b = y - 1.1085450346420322*i + 1.7090069284064666*q
 
-    if r < 0.0:
+    if clip and r < 0.0:
         r = 0.0
-    if g < 0.0:
+    if clip and g < 0.0:
         g = 0.0
-    if b < 0.0:
+    if clip and b < 0.0:
         b = 0.0
-    if r > 1.0:
+    if clip and r > 1.0:
         r = 1.0
-    if g > 1.0:
+    if clip and g > 1.0:
         g = 1.0
-    if b > 1.0:
+    if clip and b > 1.0:
         b = 1.0
     return (r, g, b)
 
@@ -72,7 +85,7 @@ def yiq_to_rgb(y, i, q):
 # L: color lightness
 # S: color saturation
 
-def rgb_to_hls(r, g, b):
+def rgb_to_hls(r, g, b, clip=False):
     maxc = max(r, g, b)
     minc = min(r, g, b)
     sumc = (maxc+minc)
@@ -94,9 +107,22 @@ def rgb_to_hls(r, g, b):
     else:
         h = 4.0+gc-rc
     h = (h/6.0) % 1.0
+
+    if clip and h < 0.0:
+        h = 0.0
+    if clip and l < 0.0:
+        l = 0.0
+    if clip and s < 0.0:
+        s = 0.0
+    if clip and h > 1.0:
+        h = 1.0
+    if clip and l > 1.0:
+        l = 1.0
+    if clip and s > 1.0:
+        s = 1.0
     return h, l, s
 
-def hls_to_rgb(h, l, s):
+def hls_to_rgb(h, l, s, clip=False):
     if s == 0.0:
         return l, l, l
     if l <= 0.5:
@@ -104,7 +130,24 @@ def hls_to_rgb(h, l, s):
     else:
         m2 = l+s-(l*s)
     m1 = 2.0*l - m2
-    return (_v(m1, m2, h+ONE_THIRD), _v(m1, m2, h), _v(m1, m2, h-ONE_THIRD))
+
+    r = _v(m1, m2, h+ONE_THIRD)
+    g = _v(m1, m2, h)
+    b = _v(m1, m2, h-ONE_THIRD)
+
+    if clip and r < 0.0:
+        r = 0.0
+    if clip and g < 0.0:
+        g = 0.0
+    if clip and b < 0.0:
+        b = 0.0
+    if clip and r > 1.0:
+        r = 1.0
+    if clip and g > 1.0:
+        g = 1.0
+    if clip and b > 1.0:
+        b = 1.0
+    return (r, g, b)
 
 def _v(m1, m2, hue):
     hue = hue % 1.0
@@ -122,7 +165,7 @@ def _v(m1, m2, hue):
 # S: color saturation ("purity")
 # V: color brightness
 
-def rgb_to_hsv(r, g, b):
+def rgb_to_hsv(r, g, b, clip=False):
     maxc = max(r, g, b)
     minc = min(r, g, b)
     rangec = (maxc-minc)
@@ -140,17 +183,53 @@ def rgb_to_hsv(r, g, b):
     else:
         h = 4.0+gc-rc
     h = (h/6.0) % 1.0
+
+    if clip and h < 0.0:
+        h = 0.0
+    if clip and v < 0.0:
+        v = 0.0
+    if clip and s < 0.0:
+        s = 0.0
+    if clip and h > 1.0:
+        h = 1.0
+    if clip and v > 1.0:
+        v = 1.0
+    if clip and s > 1.0:
+        s = 1.0
     return h, s, v
 
-def hsv_to_rgb(h, s, v):
+def hsv_to_rgb(h, s, v, clip=False):
     if s == 0.0:
+        if clip and v < 0.0:
+            v = 0.0
+        if clip and v > 1.0:
+            v = 1.0
         return v, v, v
+    
     i = int(h*6.0) # XXX assume int() truncates!
     f = (h*6.0) - i
     p = v*(1.0 - s)
     q = v*(1.0 - s*f)
     t = v*(1.0 - s*(1.0-f))
     i = i%6
+
+    if clip and v < 0.0:
+        v = 0.0
+    if clip and t < 0.0:
+        t = 0.0
+    if clip and p < 0.0:
+        p = 0.0
+    if clip and q < 0.0:
+        q = 0.0
+    if clip and v > 1.0:
+        v = 1.0 
+    if clip and t > 1.0:
+        t = 1.0
+    if clip and p > 1.0:
+        p = 1.0
+    if clip and q > 1.0:
+        q = 1.0
+
     if i == 0:
         return v, t, p
     if i == 1:
