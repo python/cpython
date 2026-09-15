@@ -354,6 +354,7 @@ class TimeRE(dict):
         mapping = {
             # The " [1-9]" part of the regex is to make %c from ANSI C work
             'd': r"(?P<d>3[0-1]|[1-2]\d|0[1-9]|[1-9]| [1-9])",
+            # This is for "%f". "%Nf" format for 1 <= N <= 6 added in a loop below
             'f': r"(?P<f>[0-9]{1,6})",
             'H': r"(?P<H>2[0-3]|[0-1]\d|\d| \d)",
             'k': r"(?P<H>2[0-3]|[0-1]\d|\d| \d)",
@@ -386,6 +387,9 @@ class TimeRE(dict):
             't': r'\s*',
             '%': '%',
         }
+        for n in range(1, 7):
+            mapping[f"{n}f"] = rf"(?P<f>[0-9]{{{n}}})"
+
         if self.locale_time.LC_alt_digits is None:
             for d in 'dmyCHIMS':
                 mapping['O' + d] = r'(?P<%s>\d\d|\d| \d)' % d

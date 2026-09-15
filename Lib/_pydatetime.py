@@ -216,7 +216,7 @@ def _need_normalize_century():
 # Correctly substitute for %z and %Z escapes in strftime formats.
 def _wrap_strftime(object, format, timetuple):
     # Don't call utcoffset() or tzname() unless actually needed.
-    freplace = None  # the string to use for %f
+    freplace = {}  # the strings to use for %f and %Nf 1 <= N <= 6
     zreplace = None  # the string to use for %z
     colonzreplace = None  # the string to use for %:z
     Zreplace = None  # the string to use for %Z
@@ -232,11 +232,28 @@ def _wrap_strftime(object, format, timetuple):
             if i < n:
                 ch = format[i]
                 i += 1
-                if ch == 'f':
-                    if freplace is None:
-                        freplace = '%06d' % getattr(object,
-                                                    'microsecond', 0)
-                    newformat.append(freplace)
+
+                # Handle "%f" and "%Nf" where 1 <= N <= 6
+                if ch == "f" or (
+                    "0" <= ch <= "9" and i < n and format[i] == "f"
+                ):
+                    if ch == "f":
+                        frepl_len = 6
+                    else:
+                        frepl_len = int(ch)
+
+                        if frepl_len == 0 or frepl_len > 6:
+                            raise ValueError(f"%Nf format code requires 1 <= N <= 6, got {frepl_len}")
+
+                        i += 1
+
+                    microseconds = freplace.get(frepl_len)
+                    if microseconds is None:
+                        microseconds = '%06d' % getattr(object, 'microsecond', 0)
+                        microseconds = microseconds[:frepl_len]
+                        freplace[frepl_len] = microseconds
+
+                    newformat.append(microseconds)
                 elif ch == 'z':
                     if zreplace is None:
                         if hasattr(object, "utcoffset"):
