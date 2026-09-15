@@ -41,6 +41,7 @@ isearch_keymap: tuple[tuple[KeySpec, CommandName], ...] = tuple(
         (r"\C-c", "isearch-cancel"),
         (r"\C-g", "isearch-cancel"),
         (r"\<backspace>", "isearch-backspace"),
+        (r"\<bracketed paste>", "isearch-bracketed-paste"),
     ]
 )
 
@@ -207,6 +208,22 @@ class isearch_end(commands.Command):
         r.invalidate_prompt()
 
 
+class isearch_bracketed_paste(commands.Command):
+    def do(self) -> None:
+        r = self.reader
+        b = r.buffer
+        done = "\x1b[201~"
+        data = ""
+        while done not in data:
+            ev = r.console.getpending()
+            data += ev.data
+        paste_content = data.replace(done, "")
+        r.isearch_term += paste_content
+        r.invalidate_prompt()
+        if "".join(b[r.pos:r.pos+len(r.isearch_term)]) != r.isearch_term:
+            r.isearch_next()
+
+
 @dataclass
 class HistoricalReader(Reader):
     """Adds history support (with incremental history searching) to the
@@ -241,6 +258,7 @@ class HistoricalReader(Reader):
             isearch_backspace,
             isearch_forwards,
             isearch_backwards,
+            isearch_bracketed_paste,
             operate_and_get_next,
             history_search_backward,
             history_search_forward,
