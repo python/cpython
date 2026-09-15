@@ -1,0 +1,7 @@
+Add support for structured arguments in :mod:`imaplib` command methods.  A
+*message_set* and lists of flags or other atoms can now be passed as
+sequences instead of preformatted strings, and the
+:meth:`~imaplib.IMAP4.search`, :meth:`~imaplib.IMAP4.fetch`,
+:meth:`~imaplib.IMAP4.sort`, :meth:`~imaplib.IMAP4.thread` and
+:meth:`~imaplib.IMAP4.uid` methods accept a *params* keyword argument that
+substitutes and quotes ``?`` placeholders.

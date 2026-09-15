@@ -861,7 +861,11 @@ class Random(_random.Random):
             u = random()
             u -= 0.5
             us = 0.5 - _fabs(u)
-            k = _floor((2.0 * a / us + b) * u + c)
+            try:
+                k = _floor((2.0 * a / us + b) * u + c)
+            except ZeroDivisionError:
+                # Reject case where random() returned 0.0
+                continue
             if k < 0 or k > n:
                 continue
             v = random()

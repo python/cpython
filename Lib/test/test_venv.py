@@ -133,6 +133,31 @@ class BasicTest(BaseTest):
         self.run_with_capture(venv.create, FakePath(self.env_dir))
         self._check_output_of_default_create()
 
+    def test_envbuilder_symlinks(self):
+        for kwargs, expected in (
+            ({}, os.name != 'nt'),
+            ({'symlinks': None}, os.name != 'nt'),
+            ({'symlinks': True}, True),
+            ({'symlinks': False}, False),
+        ):
+            with self.subTest(kwargs=kwargs):
+                builder = venv.EnvBuilder(**kwargs)
+                self.assertIs(builder.symlinks, expected)
+
+    def test_create_symlinks(self):
+        for kwargs, expected in (
+            ({}, os.name != 'nt'),
+            ({'symlinks': None}, os.name != 'nt'),
+            ({'symlinks': True}, True),
+            ({'symlinks': False}, False),
+        ):
+            with self.subTest(kwargs=kwargs):
+                with patch.object(venv.EnvBuilder, 'create', autospec=True) as create:
+                    venv.create(self.env_dir, **kwargs)
+                builder, env_dir = create.call_args.args
+                self.assertIs(builder.symlinks, expected)
+                self.assertEqual(env_dir, self.env_dir)
+
     def _check_output_of_default_create(self):
         self.isdir(self.bindir)
         self.isdir(self.include)
@@ -146,8 +171,7 @@ class BasicTest(BaseTest):
         self.assertIn('home = %s' % path, data)
         self.assertIn('executable = %s' %
                       os.path.realpath(sys.executable), data)
-        copies = '' if os.name=='nt' else ' --copies'
-        cmd = (f'command = {sys.executable} -m venv{copies} --without-pip '
+        cmd = (f'command = {sys.executable} -m venv --without-pip '
                f'--without-scm-ignore-files {self.env_dir}')
         self.assertIn(cmd, data)
         fn = self.get_env_file(self.bindir, self.exe)
@@ -156,6 +180,7 @@ class BasicTest(BaseTest):
             print('Contents of %r:' % bd)
             print('    %r' % os.listdir(bd))
         self.assertTrue(os.path.exists(fn), 'File %r should exist.' % fn)
+        self.assertEqual(os.path.islink(fn), os.name != 'nt' and can_symlink())
 
     def test_config_file_command_key(self):
         options = [
@@ -783,8 +808,16 @@ class BasicTest(BaseTest):
         shadows one of those builtins (a common pattern for `.`-style directory
         navigators) must not hijack the prompt or break status restoration.
         """
-        fish = shutil.which('fish')
-        if fish is None:
+        # Some systems have an unrelated "fish" game (see fish(6)), which
+        # can precede the fish shell in PATH.
+        for dirname in None, *os.get_exec_path():
+            fish = shutil.which('fish', path=dirname)
+            if fish is not None and subprocess.run(
+                    [fish, '-c', 'echo $FISH_VERSION'],
+                    stdin=subprocess.DEVNULL,
+                    capture_output=True).stdout.strip():
+                break
+        else:
             self.skipTest('fish required for this test')
         rmtree(self.env_dir)
         builder = venv.EnvBuilder(clear=True)
@@ -912,6 +945,33 @@ class BasicTest(BaseTest):
             _, err = self.run_with_capture(builder.create, env_dir)
             filepath_regex = r"'[A-Z]:\\\\(?:[^\\\\]+\\\\)*[^\\\\]+'"
             self.assertRegex(err, rf"Unable to symlink {filepath_regex} to {filepath_regex}")
+
+    @requireVenvCreate
+    @unittest.skipIf(os.name == 'nt', 'not relevant on Windows')
+    @unittest.skipUnless(can_symlink(), 'Needs symlinks')
+    def test_broken_symlink_in_existing_venv(self):
+        """
+        Test creating a venv when a stale venv with broken symlinks exists.
+        """
+        bindir = os.path.join(self.env_dir, self.bindir)
+        os.makedirs(bindir)
+        python = os.path.join(bindir, 'python3')
+        os.symlink('/path/to/deleted/env/bin/python3', python)
+        self.assertTrue(os.path.islink(python))
+        self.assertFalse(os.path.exists(python))
+
+        builder = venv.EnvBuilder(with_pip=False, symlinks=True)
+        self.run_with_capture(builder.create, self.env_dir)
+        self.assertTrue(os.path.islink(python))
+        self.assertTrue(os.path.exists(python))
+
+        rmtree(self.env_dir)
+        os.makedirs(bindir)
+        os.symlink('/path/to/deleted/env/bin/python3', python)
+        builder = venv.EnvBuilder(with_pip=False, symlinks=False)
+        self.run_with_capture(builder.create, self.env_dir)
+        self.assertFalse(os.path.islink(python))
+        self.assertTrue(os.path.exists(python))
 
     @requireVenvCreate
     def test_multiprocessing(self):

@@ -1,0 +1,4 @@
+Fix :func:`asyncio.start_server` when a plain-function *client_connected_cb*
+raises: the error is now reported like the coroutine case and the transport
+is closed, instead of leaving the connection open forever (which also made
+:meth:`asyncio.Server.wait_closed` hang).

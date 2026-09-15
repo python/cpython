@@ -1,0 +1,3 @@
+Fixed a race condition in :mod:`logging`:
+if a handler was removed while a record was being emitted,
+the following handlers of the same logger could be skipped.

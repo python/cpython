@@ -135,12 +135,22 @@ Console I/O
 
 .. function:: putch(char)
 
-   Print the byte string *char* to the console without buffering.
+   Print the byte string *char* to the console without buffering.  Raises
+   :exc:`OSError` on failure, for example when the process has no console
+   attached.
+
+   .. versionchanged:: next
+      Failures are now reported by raising :exc:`OSError` instead of being
+      silently ignored.
 
 
 .. function:: putwch(unicode_char)
 
    Wide char variant of :func:`putch`, accepting a Unicode value.
+
+   .. versionchanged:: next
+      Failures are now reported by raising :exc:`OSError` instead of being
+      silently ignored.
 
 
 .. function:: ungetch(char)

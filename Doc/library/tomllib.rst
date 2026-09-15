@@ -157,3 +157,48 @@ Conversion Table
 +------------------+--------------------------------------------------------------------------------------+
 | array of tables  | list of dicts                                                                        |
 +------------------+--------------------------------------------------------------------------------------+
+
+Limits and interoperability considerations
+------------------------------------------
+
+:mod:`!tomllib` places some limits on the documents it can handle,
+and it preserves details that other TOML parsers are allowed to ignore.
+When writing portable TOML files, only use features that are
+guaranteed or recommended by the standard.
+
+The implementation details listed here may change in future versions of Python.
+
+Tables/dicts
+   The TOML spec does not guarantee key/value pairs in TOML documents and
+   tables to be in any specific order.
+
+   .. impl-detail::
+      :mod:`!tomllib` loads dictionary entries in the order they appear in
+      the source.
+
+Integers
+   TOML recommends supporting integers in ``range(−2**63, 2**63)``.
+
+   .. impl-detail::
+      :mod:`!tomllib` uses :ref:`Python's limit on integer string conversion
+      <int_max_str_digits>` (4300 digits by default).
+
+Floats
+   TOML recommends supporting at least IEEE 754 binary64 values,
+   which means that numbers with more than 15 significant decimal digits
+   are likely to be rounded.
+
+   .. impl-detail::
+      :mod:`!tomllib` uses Python :class:`float` by default;
+      on many common platforms this is the recommended binary64.
+      See :data:`sys.float_info` for details.
+
+Nesting limit
+   TOML 1.1.0 does not recommend a limit on how deeply arrays and tables
+   may be nested inside one another.
+   (A limit of 100 has been proposed for a future version of TOML.)
+
+   .. impl-detail::
+      In :mod:`!tomllib`, the nesting level is mainly limited by Python's
+      :func:`recursion limit <sys.getrecursionlimit>`.
+      Note that code that calls :mod:`!tomllib` may contribute to the limit.
