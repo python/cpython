@@ -116,6 +116,13 @@ asyncio
   socket file created for *path*.
   (Contributed by Sam Bull in :gh:`94984`.)
 
+bz2
+---
+
+* Added constants :const:`~bz2.bzlib_version` and
+  :const:`~bz2.bzlib_version_info` which provide information about
+  the version of the bzip2 compression library in use.
+  (Contributed by Serhiy Storchaka in :gh:`117404`.)
 
 codecs
 ------
@@ -127,6 +134,14 @@ codecs
   even when a built-in codec of the same name exists.
   (Contributed by Serhiy Storchaka in :gh:`152997`.)
 
+compression.zstd
+----------------
+
+* Added constants :const:`~compression.zstd.ZSTD_VERSION` and
+  :const:`~compression.zstd.ZSTD_VERSION_INFO` which provide information
+  about the version of the zstd library that was used for building the module.
+  :const:`~compression.zstd.zstd_version_info` is now a named tuple.
+  (Contributed by Serhiy Storchaka in :gh:`117404`.)
 
 concurrent.futures
 ------------------
@@ -439,6 +454,11 @@ lzma
   requires ``lzma`` 5.4.0 or newer while RISC-V requires 5.6.0 or newer.
   (Contributed by Chien Wong in :gh:`115988`.)
 
+* Added constants :const:`~lzma.LZMA_VERSION`, :const:`~lzma.lzma_version`,
+  :const:`~lzma.LZMA_VERSION_INFO`, and :const:`~lzma.lzma_version_info`,
+  which provide information about the version of the lzma library in use.
+  (Contributed by Serhiy Storchaka in :gh:`117404`.)
+
 
 math
 ----
@@ -702,6 +722,15 @@ xml
   and :meth:`!Document.createEntityReference`.
   (Contributed by Jason Orendorff and Serhiy Storchaka in :gh:`44871`.)
 
+* :mod:`xml.dom.minidom` now validates namespaces in the factory methods
+  :meth:`~xml.dom.Document.createElementNS`,
+  :meth:`~xml.dom.Document.createAttributeNS`
+  and :meth:`~xml.dom.Element.setAttributeNS`.
+  :exc:`~xml.dom.NamespaceErr` is now raised for a malformed qualified name,
+  for a prefix with an empty namespace, and for illegal use
+  of the ``xml`` and ``xmlns`` prefixes.
+  (Contributed by Serhiy Storchaka in :gh:`156665`.)
+
 * :meth:`~xml.dom.minidom.Node.toprettyxml` in :mod:`xml.dom.minidom`
   and :func:`~xml.etree.ElementTree.indent` in :mod:`xml.etree.ElementTree`
   no longer add whitespace inside an element
@@ -715,6 +744,12 @@ xml
   It tells how many of the reported attributes were given in the start tag
   rather than defaulted from the DTD.
   (Contributed by Jason Orendorff and Serhiy Storchaka in :gh:`44871`.)
+
+* The :meth:`~xml.dom.minidom.Node.writexml`,
+  :meth:`~xml.dom.minidom.Node.toxml` and
+  :meth:`~xml.dom.minidom.Node.toprettyxml` methods
+  now work for :class:`!DocumentFragment` nodes in :mod:`xml.dom.minidom`.
+  (Contributed by Serhiy Storchaka in :gh:`54092`.)
 
 * :class:`~xml.etree.ElementTree.XMLPullParser` and
   :func:`~xml.etree.ElementTree.iterparse` now support the *target* parameter.
@@ -731,6 +766,17 @@ zipfile
   :meth:`ZipFile.repack() <zipfile.ZipFile.repack>` to reclaim the space used
   by the local file entries of removed members.
   (Contributed by Danny Lin in :gh:`51067`.)
+
+zlib
+----
+
+* Added constants :const:`~zlib.ZLIB_VERSION_INFO`,
+  :const:`~zlib.zlib_version_info`, and :const:`~zlib.ZLIBNG_VERSION_INFO`,
+  which provide information about the version of the zlib and the zlib-ng
+  libraries in use.
+  Added :const:`~zlib.zlib_version` as an alias of
+  :const:`~zlib.ZLIB_RUNTIME_VERSION`.
+  (Contributed by Serhiy Storchaka in :gh:`117404`.)
 
 .. Add improved modules above alphabetically, not here at the end.
 
@@ -954,6 +1000,12 @@ that may require changes to your code.
   :exc:`~xml.dom.NotFoundErr` if there is no matching attribute.
   Attributes defaulted in the DTD are no longer omitted when parsing.
   (Contributed by Jason Orendorff and Serhiy Storchaka in :gh:`44871`.)
+
+* :mod:`xml.dom.minidom` now raises :exc:`~xml.dom.NamespaceErr`
+  for a malformed qualified name, for a prefix with an empty namespace,
+  and for illegal use of the ``xml`` and ``xmlns`` prefixes.
+  Such operations formerly succeeded and produced an invalid document.
+  (Contributed by Serhiy Storchaka in :gh:`156665`.)
 
 * :meth:`~xml.dom.minidom.Node.toprettyxml` in :mod:`xml.dom.minidom`
   and :func:`~xml.etree.ElementTree.indent` in :mod:`xml.etree.ElementTree`

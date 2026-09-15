@@ -365,7 +365,7 @@ class MinidomTest(unittest.TestCase):
         dom = Document()
         child = dom.appendChild(
                 dom.createElementNS("http://www.python.org", "python:abc"))
-        child.setAttributeNS("http://www.w3.org", "xmlns:python",
+        child.setAttributeNS(xml.dom.XMLNS_NAMESPACE, "xmlns:python",
                                                 "http://www.python.org")
         child.setAttributeNS("http://www.python.org", "python:abcattr", "foo")
         # removing an absent attribute has no effect
@@ -472,11 +472,13 @@ class MinidomTest(unittest.TestCase):
         dom = Document()
         child = dom.appendChild(
                 dom.createElementNS("http://www.python.org", "python:abc"))
-        child.setAttributeNS("http://www.w3.org", "xmlns:python",
+        child.setAttributeNS(xml.dom.XMLNS_NAMESPACE, "xmlns:python",
                                                 "http://www.python.org")
-        self.assertEqual(child.getAttributeNS("http://www.w3.org", "python"),
+        self.assertEqual(
+            child.getAttributeNS(xml.dom.XMLNS_NAMESPACE, "python"),
             'http://www.python.org')
-        self.assertEqual(child.getAttributeNS("http://www.w3.org", "other"),
+        self.assertEqual(
+            child.getAttributeNS(xml.dom.XMLNS_NAMESPACE, "other"),
             '')
         child2 = child.appendChild(dom.createElement('abc'))
         self.assertEqual(child2.getAttributeNS("http://www.python.org", "missing"),
@@ -568,6 +570,145 @@ class MinidomTest(unittest.TestCase):
         domstr = dom.toxml()
         dom.unlink()
         self.assertEqual(str, domstr)
+
+    def testWriteXMLDocumentFragment(self):
+        dom = parseString('<doc><a b="c"/>text<!--comment--></doc>')
+        frag = dom.createDocumentFragment()
+        for node in list(dom.documentElement.childNodes):
+            frag.appendChild(node)
+        self.assertEqual(frag.toxml(), '<a b="c"/>text<!--comment-->')
+        self.assertEqual(frag.toprettyxml(),
+                         '<a b="c"/>\ntext\n<!--comment-->\n')
+        # the fragment itself does not add a level of indentation
+        writer = io.StringIO()
+        frag.writexml(writer, "  ", "  ", "\n")
+        self.assertEqual(writer.getvalue(),
+                         '  <a b="c"/>\n  text\n  <!--comment-->\n')
+        self.assertEqual(dom.createDocumentFragment().toxml(), '')
+
+    def testWriteXMLNamespaceDeclarations(self):
+        dom = Document()
+        root = dom.appendChild(
+            dom.createElementNS("http://xml.python.org/ns", "p:root"))
+        child = root.appendChild(
+            dom.createElementNS("http://xml.python.org/ns", "p:child"))
+        child.setAttributeNS("http://xml.python.org/ns2", "q:attr", "value")
+        self.assertEqual(dom.documentElement.toxml(),
+                '<p:root xmlns:p="http://xml.python.org/ns">'
+                '<p:child xmlns:q="http://xml.python.org/ns2" '
+                'q:attr="value"/></p:root>')
+        dom.unlink()
+
+    def testWriteXMLDefaultNamespace(self):
+        dom = Document()
+        root = dom.appendChild(
+            dom.createElementNS("http://xml.python.org/ns", "root"))
+        root.appendChild(
+            dom.createElementNS("http://xml.python.org/ns", "child"))
+        # An element in no namespace undeclares the default namespace.
+        root.appendChild(dom.createElement("nons"))
+        self.assertEqual(dom.documentElement.toxml(),
+                '<root xmlns="http://xml.python.org/ns">'
+                '<child/><nons xmlns=""/></root>')
+        dom.unlink()
+
+    def testWriteXMLAttributeNamespacePrefix(self):
+        dom = Document()
+        root = dom.appendChild(dom.createElement("root"))
+        # Attributes cannot use the default namespace, a prefix is invented.
+        root.setAttributeNS("http://xml.python.org/ns", "attr", "value")
+        root.setAttributeNS("http://xml.python.org/ns2", "attr2", "value2")
+        self.assertEqual(dom.documentElement.toxml(),
+                '<root xmlns:ns0="http://xml.python.org/ns" '
+                'xmlns:ns1="http://xml.python.org/ns2" '
+                'ns0:attr="value" ns1:attr2="value2"/>')
+        # The same namespace gets the same prefix.
+        root.setAttributeNS("http://xml.python.org/ns", "attr3", "value3")
+        self.assertEqual(dom.documentElement.toxml(),
+                '<root xmlns:ns0="http://xml.python.org/ns" '
+                'xmlns:ns1="http://xml.python.org/ns2" '
+                'ns0:attr="value" ns1:attr2="value2" ns0:attr3="value3"/>')
+        dom.unlink()
+
+    def testWriteXMLAttributeNamespacePrefixReused(self):
+        # A prefix already bound to the namespace of the attribute is used.
+        dom = Document()
+        root = dom.appendChild(
+            dom.createElementNS("http://xml.python.org/ns", "p:root"))
+        root.setAttributeNS("http://xml.python.org/ns", "attr", "value")
+        self.assertEqual(dom.documentElement.toxml(),
+                '<p:root xmlns:p="http://xml.python.org/ns" p:attr="value"/>')
+        # The prefix can be bound for an ancestor.
+        child = root.appendChild(dom.createElement("child"))
+        child.setAttributeNS("http://xml.python.org/ns", "attr", "value")
+        self.assertEqual(child.toxml(), '<child p:attr="value"/>')
+        # The prefix bound for a preceding attribute is reused.
+        root.setAttributeNS("http://xml.python.org/ns3", "q:attr3", "value3")
+        root.setAttributeNS("http://xml.python.org/ns3", "attr4", "value4")
+        self.assertEqual(dom.documentElement.toxml(),
+                '<p:root xmlns:p="http://xml.python.org/ns" '
+                'xmlns:q="http://xml.python.org/ns3" '
+                'p:attr="value" q:attr3="value3" q:attr4="value4">'
+                '<child p:attr="value"/></p:root>')
+        root.removeAttributeNS("http://xml.python.org/ns3", "attr3")
+        root.removeAttributeNS("http://xml.python.org/ns3", "attr4")
+        # The prefix must not be taken by an explicit declaration.
+        root.setAttributeNS(xml.dom.XMLNS_NAMESPACE, "xmlns:ns0", "other")
+        root.setAttributeNS("http://xml.python.org/ns2", "attr2", "value2")
+        self.assertEqual(dom.documentElement.toxml(),
+                '<p:root xmlns:p="http://xml.python.org/ns" '
+                'xmlns:ns1="http://xml.python.org/ns2" '
+                'p:attr="value" xmlns:ns0="other" ns1:attr2="value2">'
+                '<child p:attr="value"/></p:root>')
+        dom.unlink()
+
+    def testWriteXMLXMLPrefix(self):
+        dom = Document()
+        root = dom.appendChild(dom.createElement("root"))
+        # The "xml" prefix is bound by definition and is never declared.
+        root.setAttributeNS(xml.dom.XML_NAMESPACE, "xml:lang", "en")
+        self.assertEqual(dom.documentElement.toxml(), '<root xml:lang="en"/>')
+        dom.unlink()
+
+    def testWriteXMLExistingNamespaceDeclarations(self):
+        for str in [
+            '<p:root xmlns:p="http://xml.python.org/ns"><p:child/></p:root>',
+            '<root xmlns="http://xml.python.org/ns"><child xmlns=""/></root>',
+            '<p:root xmlns:p="http://xml.python.org/ns">'
+                '<p:child xmlns:p="http://xml.python.org/ns2"/></p:root>',
+            '<root xmlns:p="http://xml.python.org/ns" p:attr="value"/>',
+        ]:
+            with self.subTest(str=str):
+                dom = parseString(str)
+                self.assertEqual(dom.documentElement.toxml(), str)
+                dom.unlink()
+
+    def testWriteXMLNotANamespaceDeclaration(self):
+        # an attribute whose name only starts with "xmlns" is not one
+        dom = parseString('<root xmlns="http://xml.python.org/ns">'
+                          '<child xmlnsabc="v"><g/></child></root>')
+        self.assertEqual(dom.documentElement.toxml(),
+                '<root xmlns="http://xml.python.org/ns">'
+                '<child xmlnsabc="v"><g/></child></root>')
+        dom.unlink()
+
+        dom = Document()
+        root = dom.appendChild(
+            dom.createElementNS("http://xml.python.org/ns", "root"))
+        child = root.appendChild(dom.createElement("child"))
+        child.setAttribute("xmlnsabc", "v")
+        self.assertEqual(dom.documentElement.toxml(),
+                '<root xmlns="http://xml.python.org/ns">'
+                '<child xmlns="" xmlnsabc="v"/></root>')
+        dom.unlink()
+
+    def testWriteXMLDoesNotModifyDocument(self):
+        dom = Document()
+        root = dom.appendChild(
+            dom.createElementNS("http://xml.python.org/ns", "p:root"))
+        root.toxml()
+        self.assertEqual(root.attributes.length, 0)
+        dom.unlink()
 
     def test_toxml_quote_text(self):
         dom = Document()
@@ -2120,6 +2261,69 @@ class MinidomTest(unittest.TestCase):
         self.checkWholeText(dom1.getElementsByTagName('node')[0].firstChild, '</data>')
         dom2 = parseString(dom1.toprettyxml())
         self.checkWholeText(dom2.getElementsByTagName('node')[0].firstChild, '</data>')
+
+    def testNamespaceErr(self):
+        doc = parseString("<doc/>")
+        elem = doc.documentElement
+        XML_NS = xml.dom.XML_NAMESPACE
+        XMLNS_NS = xml.dom.XMLNS_NAMESPACE
+        for namespaceURI, qname in [
+            (None, "p:e"),                  # a prefix without a namespace
+            ("", "p:e"),
+            ("http://xml.python.org/ns", "p:p:e"),   # malformed
+            ("http://xml.python.org/ns", "p:"),
+            ("http://xml.python.org/ns", "p:1e"),
+            ("http://xml.python.org/ns", "xml:e"),   # the xml prefix
+        ]:
+            with self.subTest(namespaceURI=namespaceURI, qname=qname):
+                self.assertRaises(xml.dom.NamespaceErr,
+                                  doc.createElementNS, namespaceURI, qname)
+                self.assertRaises(xml.dom.NamespaceErr,
+                                  doc.createAttributeNS, namespaceURI, qname)
+                self.assertRaises(xml.dom.NamespaceErr,
+                                  elem.setAttributeNS, namespaceURI, qname, "v")
+
+        # the xmlns name and prefix are only allowed in the XMLNS namespace
+        for namespaceURI, qname in [
+            ("http://xml.python.org/ns", "xmlns"),
+            ("http://xml.python.org/ns", "xmlns:p"),
+            (None, "xmlns:p"),
+            (XMLNS_NS, "p:a"),              # and it allows nothing else
+            (XMLNS_NS, "a"),
+        ]:
+            with self.subTest(namespaceURI=namespaceURI, qname=qname):
+                self.assertRaises(xml.dom.NamespaceErr,
+                                  doc.createAttributeNS, namespaceURI, qname)
+                self.assertRaises(xml.dom.NamespaceErr,
+                                  elem.setAttributeNS, namespaceURI, qname, "v")
+
+        # valid combinations
+        doc.createElementNS(None, "e")
+        doc.createElementNS("http://xml.python.org/ns", "p:e")
+        doc.createElementNS(XML_NS, "xml:e")
+        doc.createAttributeNS(None, "a")
+        doc.createAttributeNS(XML_NS, "xml:lang")
+        doc.createAttributeNS(XMLNS_NS, "xmlns")
+        doc.createAttributeNS(XMLNS_NS, "xmlns:p")
+        elem.setAttributeNS("http://xml.python.org/ns", "p:a", "v")
+        doc.unlink()
+
+    def testAttrPrefix(self):
+        doc = parseString("<doc/>")
+        attr = doc.createAttributeNS("http://xml.python.org/ns", "p:a")
+        self.assertRaises(xml.dom.InvalidCharacterErr,
+                          setattr, attr, "prefix", "q:r")
+        self.assertRaises(xml.dom.InvalidCharacterErr,
+                          setattr, attr, "prefix", "1q")
+        self.assertRaises(xml.dom.NamespaceErr,
+                          setattr, attr, "prefix", "xml")
+        self.assertRaises(xml.dom.NamespaceErr,
+                          setattr, attr, "prefix", "xmlns")
+        attr.prefix = "q"
+        self.assertEqual(attr.name, "q:a")
+        attr.prefix = None
+        self.assertEqual(attr.name, "a")
+        doc.unlink()
 
     def testInvalidCharacterErr(self):
         doc = parseString("<doc/>")
