@@ -1826,6 +1826,29 @@ test_string_from_format(PyObject *self, PyObject *Py_UNUSED(ignored))
     CHECK_FORMAT_2("%1.5V",  "None",    NULL,    "None");
     CHECK_FORMAT_2("%1.5lV", "None",    NULL,   L"None");
 
+    // Strings: escaping mode ('#' and '+' flags)
+    CHECK_FORMAT_1("%#c",      "c",       'c');
+    CHECK_FORMAT_1("%#c",    "\\n",      '\n');
+    CHECK_FORMAT_1("%+#c",   "\\n",      '\n');
+    CHECK_FORMAT_1("%#s",  "a\\tb",   "a\tb");
+    CHECK_FORMAT_1("%+#s", "a\\tb",   "a\tb");
+    CHECK_FORMAT_1("%#ls", "a\\tb",  L"a\tb");
+    CHECK_FORMAT_1("%#S",   "None",   Py_None);
+    CHECK_FORMAT_1("%+#S",  "None",   Py_None);
+    CHECK_FORMAT_1("%#U",   "None",   unicode);
+    CHECK_FORMAT_2("%#V",   "None",   unicode, "ignored");
+    CHECK_FORMAT_2("%#V",  "a\\tb",      NULL,   "a\tb");
+    CHECK_FORMAT_2("%#lV", "a\\tb",      NULL,  L"a\tb");
+    CHECK_FORMAT_1("%#6.3s", "  ab\\n", "ab\ncd");
+
+    // The '+' flag requires the '#' flag and is only supported for
+    // the 'c', 's', 'S', 'U' and 'V' conversions
+    CHECK_FORMAT_1("%+c",  NULL, 'c');
+    CHECK_FORMAT_1("%+s",  NULL, "abc");
+    CHECK_FORMAT_1("%+d",  NULL, 1);
+    CHECK_FORMAT_1("%+#d", NULL, 1);
+    CHECK_FORMAT_1("%+#R", NULL, Py_None);
+
     Py_XDECREF(unicode);
     Py_RETURN_NONE;
 
