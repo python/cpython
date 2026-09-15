@@ -128,7 +128,7 @@ time_time_ns(PyObject *self, PyObject *unused)
     if (PyTime_Time(&t) < 0) {
         return NULL;
     }
-    return _PyTime_AsLong(t);
+    return PyLong_FromInt64(t);
 }
 
 PyDoc_STRVAR(time_ns_doc,
@@ -187,7 +187,7 @@ time_clockid_converter(PyObject *obj, clockid_t *p)
 {
 #ifdef _AIX
     long long clk_id = PyLong_AsLongLong(obj);
-#elif defined(__DragonFly__)
+#elif defined(__DragonFly__) || defined(__CYGWIN__)
     long clk_id = PyLong_AsLong(obj);
 #else
     int clk_id = PyLong_AsInt(obj);
@@ -261,7 +261,7 @@ time_clock_gettime_ns_impl(PyObject *module, clockid_t clk_id)
     if (_PyTime_FromTimespec(&t, &ts) < 0) {
         return NULL;
     }
-    return _PyTime_AsLong(t);
+    return PyLong_FromInt64(t);
 }
 #endif   /* HAVE_CLOCK_GETTIME */
 
@@ -310,7 +310,7 @@ time_clock_settime_ns(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    if (_PyTime_FromLong(&t, obj) < 0) {
+    if (PyLong_AsInt64(obj, &t) < 0) {
         return NULL;
     }
     if (_PyTime_AsTimespec(t, &ts) == -1) {
@@ -763,6 +763,13 @@ Other codes may be available on your platform.  See documentation for\n\
 the C library strftime function.\n"
 
 #ifdef HAVE_STRFTIME
+// gh-154460: OpenBSD's wcsftime() computes %V incorrectly: it returns 53
+// whenever the ISO 8601 week belongs to a different year than tm_year.
+// strftime() is not affected.
+#ifdef __OpenBSD__
+#  undef HAVE_WCSFTIME
+#endif
+
 #ifdef HAVE_WCSFTIME
 #define time_char wchar_t
 #define format_time wcsftime
@@ -820,12 +827,15 @@ time_strftime1(time_char **outbuf, size_t *bufsize,
             PyErr_NoMemory();
             return NULL;
         }
-        *outbuf = (time_char *)PyMem_Realloc(*outbuf,
-                                             *bufsize*sizeof(time_char));
-        if (*outbuf == NULL) {
+        time_char *tmp = (time_char *)PyMem_Realloc(*outbuf,
+                                                    *bufsize*sizeof(time_char));
+        if (tmp == NULL) {
+            PyMem_Free(*outbuf);
+            *outbuf = NULL;
             PyErr_NoMemory();
             return NULL;
         }
+        *outbuf = tmp;
 #if defined _MSC_VER && _MSC_VER >= 1400 && defined(__STDC_SECURE_LIB__)
         errno = 0;
 #endif
@@ -968,7 +978,7 @@ error:
 #undef time_char
 #undef format_time
 PyDoc_STRVAR(strftime_doc,
-"strftime(format[, tuple]) -> string\n\
+"strftime(format[, time_tuple]) -> string\n\
 \n\
 Convert a time tuple to a string according to a format specification.\n\
 See the library reference manual for formatting codes. When the time tuple\n\
@@ -993,7 +1003,7 @@ time_strptime(PyObject *self, PyObject *args)
 
 
 PyDoc_STRVAR(strptime_doc,
-"strptime(string, format) -> struct_time\n\
+"strptime(string[, format]) -> struct_time\n\
 \n\
 Parse a string to a time tuple according to a format specification.\n\
 See the library reference manual for formatting codes (same as\n\
@@ -1046,7 +1056,7 @@ time_asctime(PyObject *module, PyObject *args)
 }
 
 PyDoc_STRVAR(asctime_doc,
-"asctime([tuple]) -> string\n\
+"asctime([time_tuple]) -> string\n\
 \n\
 Convert a time tuple to a string, e.g. 'Sat Jun 06 16:26:11 1998'.\n\
 When the time tuple is not present, current time as returned by localtime()\n\
@@ -1065,11 +1075,11 @@ time_ctime(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(ctime_doc,
-"ctime(seconds) -> string\n\
+"ctime([seconds]) -> string\n\
 \n\
 Convert a time in seconds since the Epoch to a string in local time.\n\
-This is equivalent to asctime(localtime(seconds)). When the time tuple is\n\
-not present, current time as returned by localtime() is used.");
+This is equivalent to asctime(localtime(seconds)). When 'seconds' is not\n\
+passed in, convert the current time instead.");
 
 #ifdef HAVE_MKTIME
 static PyObject *
@@ -1143,7 +1153,7 @@ time_mktime(PyObject *module, PyObject *tm_tuple)
 }
 
 PyDoc_STRVAR(mktime_doc,
-"mktime(tuple) -> floating-point number\n\
+"mktime(time_tuple) -> floating-point number\n\
 \n\
 Convert a time tuple in local time to seconds since the Epoch.\n\
 Note that mktime(gmtime(0)) will not generally return zero for most\n\
@@ -1170,7 +1180,8 @@ time_tzset(PyObject *self, PyObject *unused)
 
     /* Reset timezone, altzone, daylight and tzname */
     if (init_timezone(m) < 0) {
-         return NULL;
+        Py_DECREF(m);
+        return NULL;
     }
     Py_DECREF(m);
     if (PyErr_Occurred())
@@ -1216,7 +1227,7 @@ time_monotonic_ns(PyObject *self, PyObject *unused)
     if (PyTime_Monotonic(&t) < 0) {
         return NULL;
     }
-    return _PyTime_AsLong(t);
+    return PyLong_FromInt64(t);
 }
 
 PyDoc_STRVAR(monotonic_ns_doc,
@@ -1248,7 +1259,7 @@ time_perf_counter_ns(PyObject *self, PyObject *unused)
     if (PyTime_PerfCounter(&t) < 0) {
         return NULL;
     }
-    return _PyTime_AsLong(t);
+    return PyLong_FromInt64(t);
 }
 
 PyDoc_STRVAR(perf_counter_ns_doc,
@@ -1437,7 +1448,7 @@ time_process_time_ns(PyObject *module, PyObject *unused)
     if (py_process_time(state, &t, NULL) < 0) {
         return NULL;
     }
-    return _PyTime_AsLong(t);
+    return PyLong_FromInt64(t);
 }
 
 PyDoc_STRVAR(process_time_ns_doc,
@@ -1610,7 +1621,7 @@ time_thread_time_ns(PyObject *self, PyObject *unused)
     if (_PyTime_GetThreadTimeWithInfo(&t, NULL) < 0) {
         return NULL;
     }
-    return _PyTime_AsLong(t);
+    return PyLong_FromInt64(t);
 }
 
 PyDoc_STRVAR(thread_time_ns_doc,
@@ -2184,6 +2195,7 @@ time_module_free(void *module)
 
 
 static struct PyModuleDef_Slot time_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, time_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

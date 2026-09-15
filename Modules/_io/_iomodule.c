@@ -85,112 +85,113 @@ Open file and return a stream.  Raise OSError upon failure.
 file is either a text or byte string giving the name (and the path
 if the file isn't in the current working directory) of the file to
 be opened or an integer file descriptor of the file to be
-wrapped. (If a file descriptor is given, it is closed when the
+wrapped.  (If a file descriptor is given, it is closed when the
 returned I/O object is closed, unless closefd is set to False.)
 
 mode is an optional string that specifies the mode in which the file
-is opened. It defaults to 'r' which means open for reading in text
+is opened.  It defaults to 'r' which means open for reading in text
 mode.  Other common values are 'w' for writing (truncating the file if
 it already exists), 'x' for creating and writing to a new file, and
 'a' for appending (which on some Unix systems, means that all writes
 append to the end of the file regardless of the current seek position).
 In text mode, if encoding is not specified the encoding used is platform
-dependent: locale.getencoding() is called to get the current locale encoding.
-(For reading and writing raw bytes use binary mode and leave encoding
-unspecified.) The available modes are:
+dependent: locale.getencoding() is called to get the current locale
+encoding.  (For reading and writing raw bytes use binary mode and leave
+encoding unspecified.)  The available modes are:
 
-========= ===============================================================
+========= ==========================================================
 Character Meaning
---------- ---------------------------------------------------------------
+--------- ----------------------------------------------------------
 'r'       open for reading (default)
 'w'       open for writing, truncating the file first
 'x'       create a new file and open it for writing
-'a'       open for writing, appending to the end of the file if it exists
+'a'       open for writing, appending to the end of the file if it
+          exists
 'b'       binary mode
 't'       text mode (default)
 '+'       open a disk file for updating (reading and writing)
-========= ===============================================================
+========= ==========================================================
 
-The default mode is 'rt' (open for reading text). For binary random
+The default mode is 'rt' (open for reading text).  For binary random
 access, the mode 'w+b' opens and truncates the file to 0 bytes, while
-'r+b' opens the file without truncation. The 'x' mode implies 'w' and
+'r+b' opens the file without truncation.  The 'x' mode implies 'w' and
 raises an `FileExistsError` if the file already exists.
 
 Python distinguishes between files opened in binary and text modes,
-even when the underlying operating system doesn't. Files opened in
+even when the underlying operating system doesn't.  Files opened in
 binary mode (appending 'b' to the mode argument) return contents as
-bytes objects without any decoding. In text mode (the default, or when
+bytes objects without any decoding.  In text mode (the default, or when
 't' is appended to the mode argument), the contents of the file are
 returned as strings, the bytes having been first decoded using a
 platform-dependent encoding or using the specified encoding if given.
 
 buffering is an optional integer used to set the buffering policy.
-Pass 0 to switch buffering off (only allowed in binary mode), 1 to select
-line buffering (only usable in text mode), and an integer > 1 to indicate
-the size of a fixed-size chunk buffer.  When no buffering argument is
-given, the default buffering policy works as follows:
+Pass 0 to switch buffering off (only allowed in binary mode), 1 to
+select line buffering (only usable in text mode), and an integer > 1 to
+indicate the size of a fixed-size chunk buffer.   When no buffering
+argument is given, the default buffering policy works as follows:
 
 * Binary files are buffered in fixed-size chunks; the size of the buffer
- is max(min(blocksize, 8 MiB), DEFAULT_BUFFER_SIZE)
- when the device block size is available.
- On most systems, the buffer will typically be 128 kilobytes long.
+  is max(min(blocksize, 8 MiB), DEFAULT_BUFFER_SIZE) when the device
+  block size is available.
+  On most systems, the buffer will typically be 128 kilobytes long.
 
 * "Interactive" text files (files for which isatty() returns True)
   use line buffering.  Other text files use the policy described above
   for binary files.
 
 encoding is the name of the encoding used to decode or encode the
-file. This should only be used in text mode. The default encoding is
+file.  This should only be used in text mode.  The default encoding is
 platform dependent, but any encoding supported by Python can be
 passed.  See the codecs module for the list of supported encodings.
 
 errors is an optional string that specifies how encoding errors are to
-be handled---this argument should not be used in binary mode. Pass
+be handled---this argument should not be used in binary mode.  Pass
 'strict' to raise a ValueError exception if there is an encoding error
 (the default of None has the same effect), or pass 'ignore' to ignore
-errors. (Note that ignoring encoding errors can lead to data loss.)
+errors.  (Note that ignoring encoding errors can lead to data loss.)
 See the documentation for codecs.register or run 'help(codecs.Codec)'
 for a list of the permitted encoding error strings.
 
 newline controls how universal newlines works (it only applies to text
-mode). It can be None, '', '\n', '\r', and '\r\n'.  It works as
+mode).  It can be None, '', '\n', '\r', and '\r\n'.  It works as
 follows:
 
-* On input, if newline is None, universal newlines mode is
-  enabled. Lines in the input can end in '\n', '\r', or '\r\n', and
-  these are translated into '\n' before being returned to the
-  caller. If it is '', universal newline mode is enabled, but line
-  endings are returned to the caller untranslated. If it has any of
-  the other legal values, input lines are only terminated by the given
-  string, and the line ending is returned to the caller untranslated.
+* On input, if newline is None, universal newlines mode is enabled.
+  Lines in the input can end in '\n', '\r', or '\r\n', and these are
+  translated into '\n' before being returned to the caller.  If it is
+  '', universal newline mode is enabled, but line endings are returned
+  to the caller untranslated.  If it has any of the other legal values,
+  input lines are only terminated by the given string, and the line
+  ending is returned to the caller untranslated.
 
 * On output, if newline is None, any '\n' characters written are
-  translated to the system default line separator, os.linesep. If
-  newline is '' or '\n', no translation takes place. If newline is any
+  translated to the system default line separator, os.linesep.  If
+  newline is '' or '\n', no translation takes place.  If newline is any
   of the other legal values, any '\n' characters written are translated
   to the given string.
 
 If closefd is False, the underlying file descriptor will be kept open
-when the file is closed. This does not work when a file name is given
+when the file is closed.  This does not work when a file name is given
 and must be True in that case.
 
-A custom opener can be used by passing a callable as *opener*. The
+A custom opener can be used by passing a callable as *opener*.  The
 underlying file descriptor for the file object is then obtained by
-calling *opener* with (*file*, *flags*). *opener* must return an open
+calling *opener* with (*file*, *flags*).  *opener* must return an open
 file descriptor (passing os.open as *opener* results in functionality
 similar to passing None).
 
 open() returns a file object whose type depends on the mode, and
 through which the standard file operations such as reading and writing
-are performed. When open() is used to open a file in a text mode ('w',
-'r', 'wt', 'rt', etc.), it returns a TextIOWrapper. When used to open
+are performed.  When open() is used to open a file in a text mode ('w',
+'r', 'wt', 'rt', etc.), it returns a TextIOWrapper.  When used to open
 a file in a binary mode, the returned class varies: in read binary
 mode, it returns a BufferedReader; in write binary and append binary
 modes, it returns a BufferedWriter, and in read/write mode, it returns
 a BufferedRandom.
 
 It is also possible to use a string or bytearray as a file for both
-reading and writing. For strings StringIO can be used like a file
+reading and writing.  For strings StringIO can be used like a file
 opened in a text mode, and for bytes a BytesIO can be used like a file
 opened in a binary mode.
 [clinic start generated code]*/
@@ -199,7 +200,7 @@ static PyObject *
 _io_open_impl(PyObject *module, PyObject *file, const char *mode,
               int buffering, const char *encoding, const char *errors,
               const char *newline, int closefd, PyObject *opener)
-/*[clinic end generated code: output=aefafc4ce2b46dc0 input=28027fdaabb8d744]*/
+/*[clinic end generated code: output=aefafc4ce2b46dc0 input=b3cefa70bef404b3]*/
 {
     size_t i;
 
@@ -504,14 +505,14 @@ _io.open_code
 
 Opens the provided file with the intent to import the contents.
 
-This may perform extra validation beyond open(), but is otherwise interchangeable
-with calling open(path, 'rb').
+This may perform extra validation beyond open(), but is otherwise
+interchangeable with calling open(path, 'rb').
 
 [clinic start generated code]*/
 
 static PyObject *
 _io_open_code_impl(PyObject *module, PyObject *path)
-/*[clinic end generated code: output=2fe4ecbd6f3d6844 input=f5c18e23f4b2ed9f]*/
+/*[clinic end generated code: output=2fe4ecbd6f3d6844 input=2803c35aeb63c719]*/
 {
     return PyFile_OpenCodeObject(path);
 }
@@ -661,6 +662,11 @@ iomodule_exec(PyObject *m)
         "UnsupportedOperation", PyExc_OSError, PyExc_ValueError);
     if (state->unsupported_operation == NULL)
         return -1;
+    if (PyObject_SetAttrString(state->unsupported_operation,
+                               "__module__", &_Py_ID(io)) < 0)
+    {
+        return -1;
+    }
     if (PyModule_AddObjectRef(m, "UnsupportedOperation",
                               state->unsupported_operation) < 0)
     {
@@ -674,40 +680,40 @@ iomodule_exec(PyObject *m)
     }
 
     // Base classes
-    ADD_TYPE(m, state->PyIncrementalNewlineDecoder_Type, &nldecoder_spec, NULL);
-    ADD_TYPE(m, state->PyBytesIOBuffer_Type, &bytesiobuf_spec, NULL);
-    ADD_TYPE(m, state->PyIOBase_Type, &iobase_spec, NULL);
+    ADD_TYPE(m, state->PyIncrementalNewlineDecoder_Type, &_Py_nldecoder_spec, NULL);
+    ADD_TYPE(m, state->PyBytesIOBuffer_Type, &_Py_bytesiobuf_spec, NULL);
+    ADD_TYPE(m, state->PyIOBase_Type, &_Py_iobase_spec, NULL);
 
     // PyIOBase_Type subclasses
-    ADD_TYPE(m, state->PyTextIOBase_Type, &textiobase_spec,
+    ADD_TYPE(m, state->PyTextIOBase_Type, &_Py_textiobase_spec,
              state->PyIOBase_Type);
-    ADD_TYPE(m, state->PyBufferedIOBase_Type, &bufferediobase_spec,
+    ADD_TYPE(m, state->PyBufferedIOBase_Type, &_Py_bufferediobase_spec,
              state->PyIOBase_Type);
-    ADD_TYPE(m, state->PyRawIOBase_Type, &rawiobase_spec,
+    ADD_TYPE(m, state->PyRawIOBase_Type, &_Py_rawiobase_spec,
              state->PyIOBase_Type);
 
     // PyBufferedIOBase_Type(PyIOBase_Type) subclasses
-    ADD_TYPE(m, state->PyBytesIO_Type, &bytesio_spec, state->PyBufferedIOBase_Type);
-    ADD_TYPE(m, state->PyBufferedWriter_Type, &bufferedwriter_spec,
+    ADD_TYPE(m, state->PyBytesIO_Type, &_Py_bytesio_spec, state->PyBufferedIOBase_Type);
+    ADD_TYPE(m, state->PyBufferedWriter_Type, &_Py_bufferedwriter_spec,
              state->PyBufferedIOBase_Type);
-    ADD_TYPE(m, state->PyBufferedReader_Type, &bufferedreader_spec,
+    ADD_TYPE(m, state->PyBufferedReader_Type, &_Py_bufferedreader_spec,
              state->PyBufferedIOBase_Type);
-    ADD_TYPE(m, state->PyBufferedRWPair_Type, &bufferedrwpair_spec,
+    ADD_TYPE(m, state->PyBufferedRWPair_Type, &_Py_bufferedrwpair_spec,
              state->PyBufferedIOBase_Type);
-    ADD_TYPE(m, state->PyBufferedRandom_Type, &bufferedrandom_spec,
+    ADD_TYPE(m, state->PyBufferedRandom_Type, &_Py_bufferedrandom_spec,
              state->PyBufferedIOBase_Type);
 
     // PyRawIOBase_Type(PyIOBase_Type) subclasses
-    ADD_TYPE(m, state->PyFileIO_Type, &fileio_spec, state->PyRawIOBase_Type);
+    ADD_TYPE(m, state->PyFileIO_Type, &_Py_fileio_spec, state->PyRawIOBase_Type);
 
 #ifdef HAVE_WINDOWS_CONSOLE_IO
-    ADD_TYPE(m, state->PyWindowsConsoleIO_Type, &winconsoleio_spec,
+    ADD_TYPE(m, state->PyWindowsConsoleIO_Type, &_Py_winconsoleio_spec,
              state->PyRawIOBase_Type);
 #endif
 
     // PyTextIOBase_Type(PyIOBase_Type) subclasses
-    ADD_TYPE(m, state->PyStringIO_Type, &stringio_spec, state->PyTextIOBase_Type);
-    ADD_TYPE(m, state->PyTextIOWrapper_Type, &textiowrapper_spec,
+    ADD_TYPE(m, state->PyStringIO_Type, &_Py_stringio_spec, state->PyTextIOBase_Type);
+    ADD_TYPE(m, state->PyTextIOWrapper_Type, &_Py_textiowrapper_spec,
              state->PyTextIOBase_Type);
 
 #undef ADD_TYPE
@@ -715,6 +721,7 @@ iomodule_exec(PyObject *m)
 }
 
 static struct PyModuleDef_Slot iomodule_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, iomodule_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

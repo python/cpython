@@ -1,0 +1,3 @@
+Fix ``python-gdb.py`` raising :exc:`UnicodeEncodeError` when pretty-printing a
+non-ASCII :class:`str` in a locale whose host charset cannot encode it, such as
+any non-ASCII string in the C locale.

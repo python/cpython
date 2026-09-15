@@ -19,10 +19,12 @@ for typ in [c_short, c_int, c_long, c_longlong,
             c_ushort, c_uint, c_ulong, c_ulonglong]:
     class X(Structure):
         _pack_ = 1
+        _layout_ = 'ms'
         _fields_ = [("pad", c_byte),
                     ("value", typ)]
     class Y(SwappedStructure):
         _pack_ = 1
+        _layout_ = 'ms'
         _fields_ = [("pad", c_byte),
                     ("value", typ)]
     structures.append(X)

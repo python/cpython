@@ -16,8 +16,8 @@ PyDoc_STRVAR(_bisect_bisect_right__doc__,
 "Return the index where to insert item x in list a, assuming a is sorted.\n"
 "\n"
 "The return value i is such that all e in a[:i] have e <= x, and all e in\n"
-"a[i:] have e > x.  So if x already appears in the list, a.insert(i, x) will\n"
-"insert just after the rightmost x already there.\n"
+"a[i:] have e > x.  So if x already appears in the list, a.insert(i, x)\n"
+"will insert just after the rightmost x already there.\n"
 "\n"
 "Optional args lo (default 0) and hi (default len(a)) bound the\n"
 "slice of a to be searched.\n"
@@ -93,6 +93,11 @@ _bisect_bisect_right(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
                 goto exit;
             }
             lo = ival;
+            if (lo < 0) {
+                PyErr_SetString(PyExc_ValueError,
+                                "lo cannot be negative");
+                goto exit;
+            }
         }
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -203,6 +208,11 @@ _bisect_insort_right(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
                 goto exit;
             }
             lo = ival;
+            if (lo < 0) {
+                PyErr_SetString(PyExc_ValueError,
+                                "lo cannot be negative");
+                goto exit;
+            }
         }
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -235,8 +245,8 @@ PyDoc_STRVAR(_bisect_bisect_left__doc__,
 "Return the index where to insert item x in list a, assuming a is sorted.\n"
 "\n"
 "The return value i is such that all e in a[:i] have e < x, and all e in\n"
-"a[i:] have e >= x.  So if x already appears in the list, a.insert(i, x) will\n"
-"insert just before the leftmost x already there.\n"
+"a[i:] have e >= x.  So if x already appears in the list, a.insert(i, x)\n"
+"will insert just before the leftmost x already there.\n"
 "\n"
 "Optional args lo (default 0) and hi (default len(a)) bound the\n"
 "slice of a to be searched.\n"
@@ -312,6 +322,11 @@ _bisect_bisect_left(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
                 goto exit;
             }
             lo = ival;
+            if (lo < 0) {
+                PyErr_SetString(PyExc_ValueError,
+                                "lo cannot be negative");
+                goto exit;
+            }
         }
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -422,6 +437,11 @@ _bisect_insort_left(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
                 goto exit;
             }
             lo = ival;
+            if (lo < 0) {
+                PyErr_SetString(PyExc_ValueError,
+                                "lo cannot be negative");
+                goto exit;
+            }
         }
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -446,4 +466,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=729385c6a23828ab input=a9049054013a1b77]*/
+/*[clinic end generated code: output=62345f14c5c01639 input=a9049054013a1b77]*/

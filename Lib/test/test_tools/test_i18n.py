@@ -162,6 +162,14 @@ class Test_pygettext(unittest.TestCase):
             # This will raise if the date format does not exactly match.
             datetime.strptime(creationDate, '%Y-%m-%d %H:%M%z')
 
+    def test_output_option(self):
+        for opt in ('-o', '--output='):
+            with temp_cwd():
+                assert_python_ok(self.script, f'{opt}test')
+                self.assertTrue(os.path.exists('test'))
+                res = assert_python_ok(self.script, f'{opt}-')
+                self.assertIn(b'Project-Id-Version: PACKAGE VERSION', res.out)
+
     def test_funcdocstring(self):
         for doc in ('"""doc"""', "r'''doc'''", "R'doc'", 'u"doc"'):
             with self.subTest(doc):
@@ -419,6 +427,11 @@ class Test_pygettext(unittest.TestCase):
         self.assertEqual(res.out, b'')
         self.assertIn(b'pygettext -- Python equivalent of xgettext(1)', res.err)
 
+    def test_version_text(self):
+        """Test that the version text is displayed."""
+        res = assert_python_ok(self.script, '--version')
+        self.assertIn(b'pygettext.py (xgettext for Python) 1.5', res.out)
+
     def test_error_messages(self):
         """Test that pygettext outputs error messages to stderr."""
         stderr = self.get_stderr(dedent('''\
@@ -593,6 +606,7 @@ def extract_from_snapshots():
         'custom_keywords.py': ('--keyword=foo', '--keyword=nfoo:1,2',
                                '--keyword=pfoo:1c,2',
                                '--keyword=npfoo:1c,2,3', '--keyword=_:1,2'),
+        'noheader.py': ('--omit-header',),
         'multiple_keywords.py': ('--keyword=foo:1c,2,3', '--keyword=foo:1c,2',
                                  '--keyword=foo:1,2',
                                  # repeat a keyword to make sure it is extracted only once

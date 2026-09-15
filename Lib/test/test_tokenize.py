@@ -1,6 +1,9 @@
 import contextlib
+import _tokenize
+import itertools
 import os
 import re
+import string
 import tempfile
 import token
 import tokenize
@@ -1214,6 +1217,23 @@ f'''
     FSTRING_END "\'\'\'"         (3, 1) (3, 4)
     """)
 
+        # gh-139516, the '\n' is explicit to ensure no trailing whitespace which would invalidate the test
+        self.check_tokenize('''f"{f(a=lambda: 'à'\n)}"''', """\
+    FSTRING_START \'f"\'          (1, 0) (1, 2)
+    OP         '{'           (1, 2) (1, 3)
+    NAME       'f'           (1, 3) (1, 4)
+    OP         '('           (1, 4) (1, 5)
+    NAME       'a'           (1, 5) (1, 6)
+    OP         '='           (1, 6) (1, 7)
+    NAME       'lambda'      (1, 7) (1, 13)
+    OP         ':'           (1, 13) (1, 14)
+    STRING     "\'à\'"         (1, 15) (1, 18)
+    NL         '\\n'          (1, 18) (1, 19)
+    OP         ')'           (2, 0) (2, 1)
+    OP         '}'           (2, 1) (2, 2)
+    FSTRING_END \'"\'           (2, 2) (2, 3)
+    """)
+
 class GenerateTokensTest(TokenizeTest):
     def check_tokenize(self, s, expected):
         # Format the tokens in s in a table format.
@@ -1344,7 +1364,8 @@ class TestDetectEncoding(TestCase):
 
     def test_no_bom_no_encoding_cookie(self):
         lines = (
-            b'# something\n',
+            b'#!/home/\xc3\xa4/bin/python\n',
+            b'# something \xe2\x82\xac\n',
             b'print(something)\n',
             b'do_something(else)\n'
         )
@@ -1352,16 +1373,54 @@ class TestDetectEncoding(TestCase):
         self.assertEqual(encoding, 'utf-8')
         self.assertEqual(consumed_lines, list(lines[:2]))
 
+    def test_no_bom_no_encoding_cookie_first_line_error(self):
+        lines = (
+            b'#!/home/\xa4/bin/python\n\n',
+            b'print(something)\n',
+            b'do_something(else)\n'
+        )
+        with self.assertRaises(SyntaxError):
+            tokenize.detect_encoding(self.get_readline(lines))
+
+    def test_no_bom_no_encoding_cookie_second_line_error(self):
+        lines = (
+            b'#!/usr/bin/python\n',
+            b'# something \xe2\n',
+            b'print(something)\n',
+            b'do_something(else)\n'
+        )
+        with self.assertRaises(SyntaxError):
+            tokenize.detect_encoding(self.get_readline(lines))
+
     def test_bom_no_cookie(self):
         lines = (
-            b'\xef\xbb\xbf# something\n',
+            b'\xef\xbb\xbf#!/home/\xc3\xa4/bin/python\n',
             b'print(something)\n',
             b'do_something(else)\n'
         )
         encoding, consumed_lines = tokenize.detect_encoding(self.get_readline(lines))
         self.assertEqual(encoding, 'utf-8-sig')
         self.assertEqual(consumed_lines,
-                         [b'# something\n', b'print(something)\n'])
+                         [b'#!/home/\xc3\xa4/bin/python\n', b'print(something)\n'])
+
+    def test_bom_no_cookie_first_line_error(self):
+        lines = (
+            b'\xef\xbb\xbf#!/home/\xa4/bin/python\n',
+            b'print(something)\n',
+            b'do_something(else)\n'
+        )
+        with self.assertRaises(SyntaxError):
+            tokenize.detect_encoding(self.get_readline(lines))
+
+    def test_bom_no_cookie_second_line_error(self):
+        lines = (
+            b'\xef\xbb\xbf#!/usr/bin/python\n',
+            b'# something \xe2\n',
+            b'print(something)\n',
+            b'do_something(else)\n'
+        )
+        with self.assertRaises(SyntaxError):
+            tokenize.detect_encoding(self.get_readline(lines))
 
     def test_cookie_first_line_no_bom(self):
         lines = (
@@ -1437,16 +1496,60 @@ class TestDetectEncoding(TestCase):
         expected = [b"print('\xc2\xa3')\n"]
         self.assertEqual(consumed_lines, expected)
 
-    def test_cookie_second_line_commented_first_line(self):
+    def test_first_non_utf8_coding_line(self):
         lines = (
-            b"#print('\xc2\xa3')\n",
-            b'# vim: set fileencoding=iso8859-15 :\n',
-            b"print('\xe2\x82\xac')\n"
+            b'#coding:iso-8859-15 \xa4\n',
+            b'print(something)\n'
         )
         encoding, consumed_lines = tokenize.detect_encoding(self.get_readline(lines))
-        self.assertEqual(encoding, 'iso8859-15')
-        expected = [b"#print('\xc2\xa3')\n", b'# vim: set fileencoding=iso8859-15 :\n']
-        self.assertEqual(consumed_lines, expected)
+        self.assertEqual(encoding, 'iso-8859-15')
+        self.assertEqual(consumed_lines, list(lines[:1]))
+
+    def test_first_utf8_coding_line_error(self):
+        lines = (
+            b'#coding:ascii \xc3\xa4\n',
+            b'print(something)\n'
+        )
+        with self.assertRaises(SyntaxError):
+            tokenize.detect_encoding(self.get_readline(lines))
+
+    def test_second_non_utf8_coding_line(self):
+        lines = (
+            b'#!/usr/bin/python\n',
+            b'#coding:iso-8859-15 \xa4\n',
+            b'print(something)\n'
+        )
+        encoding, consumed_lines = tokenize.detect_encoding(self.get_readline(lines))
+        self.assertEqual(encoding, 'iso-8859-15')
+        self.assertEqual(consumed_lines, list(lines[:2]))
+
+    def test_second_utf8_coding_line_error(self):
+        lines = (
+            b'#!/usr/bin/python\n',
+            b'#coding:ascii \xc3\xa4\n',
+            b'print(something)\n'
+        )
+        with self.assertRaises(SyntaxError):
+            tokenize.detect_encoding(self.get_readline(lines))
+
+    def test_non_utf8_shebang(self):
+        lines = (
+            b'#!/home/\xa4/bin/python\n',
+            b'#coding:iso-8859-15\n',
+            b'print(something)\n'
+        )
+        encoding, consumed_lines = tokenize.detect_encoding(self.get_readline(lines))
+        self.assertEqual(encoding, 'iso-8859-15')
+        self.assertEqual(consumed_lines, list(lines[:2]))
+
+    def test_utf8_shebang_error(self):
+        lines = (
+            b'#!/home/\xc3\xa4/bin/python\n',
+            b'#coding:ascii\n',
+            b'print(something)\n'
+        )
+        with self.assertRaises(SyntaxError):
+            tokenize.detect_encoding(self.get_readline(lines))
 
     def test_cookie_second_line_empty_first_line(self):
         lines = (
@@ -1458,6 +1561,70 @@ class TestDetectEncoding(TestCase):
         self.assertEqual(encoding, 'iso8859-15')
         expected = [b'\n', b'# vim: set fileencoding=iso8859-15 :\n']
         self.assertEqual(consumed_lines, expected)
+
+    def test_cookie_third_line(self):
+        lines = (
+            b'#!/home/\xc3\xa4/bin/python\n',
+            b'# something\n',
+            b'# vim: set fileencoding=ascii :\n',
+            b'print(something)\n',
+            b'do_something(else)\n'
+        )
+        encoding, consumed_lines = tokenize.detect_encoding(self.get_readline(lines))
+        self.assertEqual(encoding, 'utf-8')
+        self.assertEqual(consumed_lines, list(lines[:2]))
+
+    def test_double_coding_line(self):
+        # If the first line matches the second line is ignored.
+        lines = (
+            b'#coding:iso8859-15\n',
+            b'#coding:latin1\n',
+            b'print(something)\n'
+        )
+        encoding, consumed_lines = tokenize.detect_encoding(self.get_readline(lines))
+        self.assertEqual(encoding, 'iso8859-15')
+        self.assertEqual(consumed_lines, list(lines[:1]))
+
+    def test_double_coding_same_line(self):
+        lines = (
+            b'#coding:iso8859-15 coding:latin1\n',
+            b'print(something)\n'
+        )
+        encoding, consumed_lines = tokenize.detect_encoding(self.get_readline(lines))
+        self.assertEqual(encoding, 'iso8859-15')
+        self.assertEqual(consumed_lines, list(lines[:1]))
+
+    def test_double_coding_utf8(self):
+        lines = (
+            b'#coding:utf-8\n',
+            b'#coding:latin1\n',
+            b'print(something)\n'
+        )
+        encoding, consumed_lines = tokenize.detect_encoding(self.get_readline(lines))
+        self.assertEqual(encoding, 'utf-8')
+        self.assertEqual(consumed_lines, list(lines[:1]))
+
+    def test_nul_in_first_coding_line(self):
+        lines = (
+            b'#coding:iso8859-15\x00\n',
+            b'\n',
+            b'\n',
+            b'print(something)\n'
+        )
+        with self.assertRaisesRegex(SyntaxError,
+                "source code cannot contain null bytes"):
+            tokenize.detect_encoding(self.get_readline(lines))
+
+    def test_nul_in_second_coding_line(self):
+        lines = (
+            b'#!/usr/bin/python\n',
+            b'#coding:iso8859-15\x00\n',
+            b'\n',
+            b'print(something)\n'
+        )
+        with self.assertRaisesRegex(SyntaxError,
+                "source code cannot contain null bytes"):
+            tokenize.detect_encoding(self.get_readline(lines))
 
     def test_latin1_normalization(self):
         # See get_normal_name() in Parser/tokenizer/helpers.c.
@@ -1482,7 +1649,6 @@ class TestDetectEncoding(TestCase):
             )
         readline = self.get_readline(lines)
         self.assertRaises(SyntaxError, tokenize.detect_encoding, readline)
-
 
     def test_utf8_normalization(self):
         # See get_normal_name() in Parser/tokenizer/helpers.c.
@@ -1975,6 +2141,10 @@ if 1:
         for case in cases:
             self.check_roundtrip(case)
 
+        self.check_roundtrip(r"t'{ {}}'")
+        self.check_roundtrip(r"t'{f'{ {}}'}{ {}}'")
+        self.check_roundtrip(r"f'{t'{ {}}'}{ {}}'")
+
 
     def test_continuation(self):
         # Balancing continuation
@@ -2067,6 +2237,13 @@ class InvalidPythonTests(TestCase):
         self.assertEqual(tokens, expected_tokens)
 
 class CTokenizeTest(TestCase):
+    @staticmethod
+    def _get_tokens(source, *, extra_tokens=False):
+        return list(tokenize._generate_tokens_from_c_tokenizer(
+            StringIO(source).readline,
+            extra_tokens=extra_tokens,
+        ))
+
     def check_tokenize(self, s, expected):
         # Format the tokens in s in a table format.
         # The ENDMARKER and final NEWLINE are omitted.
@@ -2096,6 +2273,370 @@ class CTokenizeTest(TestCase):
                     encoding=encoding,
                 ))
                 self.assertEqual(tokens, expected)
+
+    def test_stateful_decoder_spans_readline_calls(self):
+        encoded_name = "変数".encode("iso2022_jp")
+        payload = encoded_name[3:-3]
+        lines = iter([
+            b"# \x1b$B" + payload + b"\n",
+            payload + b"\x1b(B\n",
+            b"",
+        ])
+        tokens = list(tokenize._generate_tokens_from_c_tokenizer(
+            lines.__next__,
+            extra_tokens=True,
+            encoding="iso2022_jp",
+        ))
+        self.assertEqual(tokens, [
+            tokenize.TokenInfo(
+                token.COMMENT, "# 変数", (1, 0), (1, 4), "# 変数\n"
+            ),
+            tokenize.TokenInfo(token.NL, "\n", (1, 4), (1, 5), "# 変数\n"),
+            tokenize.TokenInfo(token.NAME, "変数", (2, 0), (2, 2), "変数\n"),
+            tokenize.TokenInfo(token.NEWLINE, "\n", (2, 2), (2, 3), "変数\n"),
+            tokenize.TokenInfo(token.ENDMARKER, "", (3, 0), (3, 0), ""),
+        ])
+
+    def test_utf16_bom_in_each_readline_chunk(self):
+        lines = iter([
+            "x\n".encode("utf-16"),
+            "y\n".encode("utf-16"),
+            b"",
+        ])
+        tokens = _tokenize.TokenizerIter(
+            lines.__next__, encoding="utf-16", extra_tokens=True
+        )
+        self.assertEqual(list(tokens), [
+            (token.NAME, "x", (1, 0), (1, 1), "x\n"),
+            (token.NEWLINE, "\n", (1, 1), (1, 2), "x\n"),
+            (token.NAME, "y", (2, 0), (2, 1), "y\n"),
+            (token.NEWLINE, "\n", (2, 1), (2, 2), "y\n"),
+            (token.ENDMARKER, "", (3, 0), (3, 0), ""),
+        ])
+
+    def test_utf8_decoder_spans_readline_calls(self):
+        lines = iter([b"x\xc3", b"\xa9\n", b""])
+        tokens = list(tokenize._generate_tokens_from_c_tokenizer(
+            lines.__next__,
+            extra_tokens=True,
+            encoding="utf-8",
+        ))
+        self.assertEqual(tokens, [
+            tokenize.TokenInfo(token.NAME, "xé", (1, 0), (1, 2), "xé\n"),
+            tokenize.TokenInfo(token.NEWLINE, "\n", (1, 2), (1, 3), "xé\n"),
+            tokenize.TokenInfo(token.ENDMARKER, "", (2, 0), (2, 0), ""),
+        ])
+
+    def test_utf8_decoder_replaces_incomplete_input_at_eof(self):
+        expected = [
+            tokenize.TokenInfo(token.NAME, "x�", (1, 0), (1, 2), "x�"),
+            tokenize.TokenInfo(token.NEWLINE, "", (1, 2), (1, 3), "x�"),
+            tokenize.TokenInfo(token.ENDMARKER, "", (2, 0), (2, 0), ""),
+        ]
+        for chunks in ([b"x\xe9", b""], [b"x\xe9"]):
+            with self.subTest(chunks=chunks):
+                lines = iter(chunks)
+                tokens = list(tokenize._generate_tokens_from_c_tokenizer(
+                    lines.__next__,
+                    extra_tokens=True,
+                    encoding="utf-8",
+                ))
+                self.assertEqual(tokens, expected)
+
+    def test_multiline_readline_chunk(self):
+        expected = [
+            tokenize.TokenInfo(token.NAME, "x", (1, 0), (1, 1), "x=1\n"),
+            tokenize.TokenInfo(token.OP, "=", (1, 1), (1, 2), "x=1\n"),
+            tokenize.TokenInfo(token.NUMBER, "1", (1, 2), (1, 3), "x=1\n"),
+            tokenize.TokenInfo(token.NEWLINE, "\n", (1, 3), (1, 4), "x=1\n"),
+            tokenize.TokenInfo(token.NAME, "y", (2, 0), (2, 1), "y=2\n"),
+            tokenize.TokenInfo(token.OP, "=", (2, 1), (2, 2), "y=2\n"),
+            tokenize.TokenInfo(token.NUMBER, "2", (2, 2), (2, 3), "y=2\n"),
+            tokenize.TokenInfo(token.NEWLINE, "\n", (2, 3), (2, 4), "y=2\n"),
+            tokenize.TokenInfo(token.ENDMARKER, "", (3, 0), (3, 0), ""),
+        ]
+        lines = iter([b"x=1\ny=2\n", b""])
+        tokens = list(tokenize._generate_tokens_from_c_tokenizer(
+            lines.__next__,
+            extra_tokens=True,
+            encoding="utf-8",
+        ))
+        self.assertEqual(tokens, expected)
+
+    def test_multiline_readline_chunk_with_unterminated_tail(self):
+        readline = mock.Mock(side_effect=["x\nz", ""])
+        iterator = _tokenize.TokenizerIter(readline, extra_tokens=True)
+        expected = [
+            (token.NAME, "x", (1, 0), (1, 1), "x\n"),
+            (token.NEWLINE, "\n", (1, 1), (1, 2), "x\n"),
+            (token.NAME, "z", (2, 0), (2, 1), "z"),
+            (token.NEWLINE, "", (2, 1), (2, 2), "z"),
+        ]
+        self.assertEqual(readline.call_count, 0)
+        for token_info in expected:
+            self.assertEqual(next(iterator), token_info)
+            self.assertEqual(readline.call_count, 1)
+        self.assertEqual(
+            next(iterator),
+            (token.ENDMARKER, "", (3, 0), (3, 0), ""),
+        )
+        self.assertEqual(readline.call_count, 2)
+
+    def test_readline_callback_is_not_read_ahead(self):
+        readline = mock.Mock(side_effect=["x\n", "y\n", ""])
+        iterator = _tokenize.TokenizerIter(readline, extra_tokens=True)
+        expected = [
+            ((token.NAME, "x", (1, 0), (1, 1), "x\n"), 1),
+            ((token.NEWLINE, "\n", (1, 1), (1, 2), "x\n"), 1),
+            ((token.NAME, "y", (2, 0), (2, 1), "y\n"), 2),
+        ]
+        self.assertEqual(readline.call_count, 0)
+        for token_info, calls in expected:
+            self.assertEqual(next(iterator), token_info)
+            self.assertEqual(readline.call_count, calls)
+
+    def test_encoded_readline_replaces_invalid_bytes(self):
+        lines = iter([b"\xff\n", b""])
+        tokens = list(tokenize._generate_tokens_from_c_tokenizer(
+            lines.__next__,
+            extra_tokens=True,
+            encoding="utf-8",
+        ))
+        self.assertEqual(tokens, [
+            tokenize.TokenInfo(token.NAME, "�", (1, 0), (1, 1), "�\n"),
+            tokenize.TokenInfo(token.NEWLINE, "\n", (1, 1), (1, 2), "�\n"),
+            tokenize.TokenInfo(token.ENDMARKER, "", (2, 0), (2, 0), ""),
+        ])
+
+    def test_stop_iteration_skips_encoded_readline_codec_lookup(self):
+        iterator = _tokenize.TokenizerIter(
+            lambda: b"",
+            extra_tokens=True,
+            encoding="missing-tokenizer-codec",
+        )
+        with self.assertRaises(LookupError):
+            next(iterator)
+
+        iterator = _tokenize.TokenizerIter(
+            iter(()).__next__,
+            extra_tokens=True,
+            encoding="missing-tokenizer-codec",
+        )
+        self.assertEqual(
+            next(iterator),
+            (token.ENDMARKER, "", (1, 0), (1, 0), ""),
+        )
+
+    def test_fstring_offsets_survive_buffer_reallocation(self):
+        for prefix in ("f", "t"):
+            for extra_tokens in (False, True):
+                with self.subTest(prefix=prefix, extra_tokens=extra_tokens):
+                    physical_lines = [
+                        prefix + '"""\n',
+                        "{(\n",
+                        " " * 9000 + "1\n",
+                        ")=:>{2}}\n",
+                        '"""\n',
+                    ]
+                    source = "".join(physical_lines)
+                    chunks = iter([
+                        "".join(physical_lines[:2]),
+                        "".join(physical_lines[2:4]),
+                        physical_lines[4],
+                        "",
+                    ])
+                    expected = self._get_tokens(
+                        source, extra_tokens=extra_tokens)
+                    tokens = list(tokenize._generate_tokens_from_c_tokenizer(
+                        chunks.__next__, extra_tokens=extra_tokens))
+                    self.assertEqual(tokens, expected)
+
+    def test_extra_tokens_relaxes_lexer_errors(self):
+        cases = [
+            (
+                "2sin(x)",
+                ("invalid decimal literal", (1, 1)),
+                [
+                    (token.NUMBER, "2", (1, 0), (1, 1)),
+                    (token.NAME, "sin", (1, 1), (1, 4)),
+                    (token.OP, "(", (1, 4), (1, 5)),
+                    (token.NAME, "x", (1, 5), (1, 6)),
+                    (token.OP, ")", (1, 6), (1, 7)),
+                ],
+            ),
+            (
+                "01234",
+                (
+                    "leading zeros in decimal integer literals are not permitted; "
+                    "use an 0o prefix for octal integers",
+                    (1, 1),
+                ),
+                [(token.NUMBER, "01234", (1, 0), (1, 5))],
+            ),
+            (
+                ")",
+                ("unmatched ')'", (1, 1)),
+                [(token.OP, ")", (1, 0), (1, 1))],
+            ),
+            (
+                "(]",
+                (
+                    "closing parenthesis ']' does not match opening parenthesis '('",
+                    (1, 2),
+                ),
+                [
+                    (token.OP, "(", (1, 0), (1, 1)),
+                    (token.OP, "]", (1, 1), (1, 2)),
+                ],
+            ),
+            (
+                "a☃b",
+                ("invalid character '☃' (U+2603)", (1, 2)),
+                [(token.NAME, "a☃b", (1, 0), (1, 3))],
+            ),
+        ]
+
+        for source, error, expected in cases:
+            with self.subTest(source=source):
+                with self.assertRaises(tokenize.TokenError) as caught:
+                    self._get_tokens(source)
+                self.assertEqual(caught.exception.args, error)
+
+                tokens = self._get_tokens(source, extra_tokens=True)
+                self.assertEqual(
+                    [(tok.type, tok.string, tok.start, tok.end)
+                     for tok in tokens[:-2]],
+                    expected,
+                )
+
+    def test_extra_tokens_emits_comments_and_real_indent_locations(self):
+        source = "if x:\n  # c\n  y\nz\n"
+        kinds = {token.COMMENT, token.NL, token.INDENT, token.DEDENT}
+
+        parser_tokens = self._get_tokens(source)
+        self.assertEqual(
+            [(tok.type, tok.string, tok.start, tok.end)
+             for tok in parser_tokens if tok.type in kinds],
+            [
+                (token.INDENT, "", (3, -1), (3, -1)),
+                (token.DEDENT, "", (4, -1), (4, -1)),
+            ],
+        )
+
+        tolerant_tokens = self._get_tokens(source, extra_tokens=True)
+        self.assertEqual(
+            [(tok.type, tok.string, tok.start, tok.end)
+             for tok in tolerant_tokens if tok.type in kinds],
+            [
+                (token.COMMENT, "# c", (2, 2), (2, 5)),
+                (token.NL, "\n", (2, 5), (2, 6)),
+                (token.INDENT, "  ", (3, 0), (3, 2)),
+                (token.DEDENT, "", (4, 0), (4, 0)),
+            ],
+        )
+
+    def test_printable_invalid_operator_streams_in_both_modes(self):
+        for extra_tokens in (False, True):
+            with self.subTest(extra_tokens=extra_tokens):
+                first = self._get_tokens(
+                    "1 $ 2",
+                    extra_tokens=extra_tokens,
+                )[1]
+                self.assertEqual(
+                    (first.type, first.string, first.start, first.end),
+                    (token.OP, "$", (1, 2), (1, 3)),
+                )
+
+    def test_degraded_fstring_format_spec(self):
+        tokens = self._get_tokens('f"{1:{2}{{3}}}"')
+        self.assertEqual(
+            [(tok.string, tok.start, tok.end)
+             for tok in tokens if tok.type == token.FSTRING_MIDDLE],
+            [
+                ("{", (1, 8), (1, 9)),
+                ("3", (1, 10), (1, 11)),
+                ("}", (1, 12), (1, 13)),
+            ],
+        )
+
+        tokens = self._get_tokens('f"{x:{y}}"')
+        self.assertEqual(
+            [(tok.string, tok.start, tok.end)
+             for tok in tokens if tok.type == token.FSTRING_MIDDLE],
+            [("", (1, 8), (1, 8))],
+        )
+
+        with self.assertRaises(tokenize.TokenError) as caught:
+            self._get_tokens('f"{1:{2}x}}y"')
+        self.assertEqual(
+            caught.exception.args,
+            ("f-string: single '}' is not allowed", (1, 11)),
+        )
+
+    def test_carriage_return_after_debug_comment(self):
+        for prefix in ("f", "t"):
+            with self.subTest(prefix=prefix):
+                tokens = self._get_tokens(f"{prefix}'''{{x=# comment\r}}'''")
+                self.assertEqual(tokens[4].string, "# comment\r}")
+
+    def test_incomplete_formatted_string_comment_after_carriage_return(self):
+        for prefix in ("f", "t"):
+            with self.subTest(prefix=prefix):
+                for extra_tokens in (False, True):
+                    with self.assertRaises(tokenize.TokenError) as caught:
+                        self._get_tokens(
+                            f"{prefix}'{{#\r!", extra_tokens=extra_tokens
+                        )
+                    self.assertEqual(
+                        caught.exception.args,
+                        ("unexpected EOF in multi-line statement", (1, 7)),
+                    )
+
+    def test_formatted_string_nesting_limit(self):
+        def nested_string(depth, prefix):
+            source = "'x'"
+            for _ in range(depth):
+                source = f'{prefix}"{{{source}}}"'
+            return source
+
+        for prefix in ("f", "t"):
+            with self.subTest(prefix=prefix):
+                self._get_tokens(nested_string(149, prefix))
+                with self.assertRaisesRegex(
+                        tokenize.TokenError,
+                        "too many nested f-strings or t-strings"):
+                    self._get_tokens(nested_string(150, prefix))
+
+    def test_escaped_fstring_brace_has_a_position_gap(self):
+        tokens = self._get_tokens('f"a{{"', extra_tokens=True)
+        self.assertEqual(
+            [(tok.type, tok.string, tok.start, tok.end)
+             for tok in tokens
+             if tok.type in {token.FSTRING_MIDDLE, token.FSTRING_END}],
+            [
+                (token.FSTRING_MIDDLE, "a{", (1, 2), (1, 4)),
+                (token.FSTRING_END, '"', (1, 5), (1, 6)),
+            ],
+        )
+
+    def test_tolerant_incompatible_prefix_position_after_non_ascii(self):
+        with self.assertRaises(tokenize.TokenError) as caught:
+            self._get_tokens('bé )tf"2 ', extra_tokens=True)
+        self.assertEqual(
+            caught.exception.args,
+            ("'f' and 't' prefixes are incompatible", (1, 5)),
+        )
+
+    def test_tolerant_fstring_closer_at_expression_entry_depth(self):
+        source = "f'1:{]]{}}r}''"
+        for extra_tokens, position in ((False, (1, 6)), (True, (1, 7))):
+            with self.subTest(extra_tokens=extra_tokens):
+                with self.assertRaises(tokenize.TokenError) as caught:
+                    self._get_tokens(source, extra_tokens=extra_tokens)
+                self.assertEqual(
+                    caught.exception.args,
+                    ("f-string: unmatched ']'", position),
+                )
 
     def test_int(self):
 
@@ -3014,6 +3555,7 @@ async def f():
             f'__{
                 x:d
             }__'""",
+            " a\n\x00",
         ]:
             with self.subTest(case=case):
                 self.assertRaises(tokenize.TokenError, get_tokens, case)
@@ -3156,6 +3698,7 @@ class CTokenizerBufferTests(unittest.TestCase):
             run_test_script(file_name)
 
 
+@support.force_not_colorized_test_class
 class CommandLineTest(unittest.TestCase):
     def setUp(self):
         self.filename = tempfile.mktemp()
@@ -3232,6 +3775,78 @@ class CommandLineTest(unittest.TestCase):
         '''
         for flag in ['-e', '--exact']:
             self.check_output(source, expect, flag)
+
+
+class StringPrefixTest(unittest.TestCase):
+    @staticmethod
+    def determine_valid_prefixes():
+        # Try all lengths until we find a length that has zero valid
+        # prefixes.  This will miss the case where for example there
+        # are no valid 3 character prefixes, but there are valid 4
+        # character prefixes.  That seems unlikely.
+
+        single_char_valid_prefixes = set()
+
+        # Find all of the single character string prefixes. Just get
+        # the lowercase version, we'll deal with combinations of upper
+        # and lower case later.  I'm using this logic just in case
+        # some uppercase-only prefix is added.
+        for letter in itertools.chain(string.ascii_lowercase, string.ascii_uppercase):
+            try:
+                eval(f'{letter}""')
+                single_char_valid_prefixes.add(letter.lower())
+            except SyntaxError:
+                pass
+
+        # This logic assumes that all combinations of valid prefixes only use
+        # the characters that are valid single character prefixes.  That seems
+        # like a valid assumption, but if it ever changes this will need
+        # adjusting.
+        valid_prefixes = set()
+        for length in itertools.count():
+            num_at_this_length = 0
+            for prefix in (
+                "".join(l)
+                for l in itertools.combinations(single_char_valid_prefixes, length)
+            ):
+                for t in itertools.permutations(prefix):
+                    for u in itertools.product(*[(c, c.upper()) for c in t]):
+                        p = "".join(u)
+                        if p == "not":
+                            # 'not' can never be a string prefix,
+                            # because it's a valid expression: not ""
+                            continue
+                        try:
+                            eval(f'{p}""')
+
+                            # No syntax error, so p is a valid string
+                            # prefix.
+
+                            valid_prefixes.add(p)
+                            num_at_this_length += 1
+                        except SyntaxError:
+                            pass
+            if num_at_this_length == 0:
+                return valid_prefixes
+
+
+    def test_prefixes(self):
+        # Get the list of defined string prefixes.  I don't see an
+        # obvious documented way of doing this, but probably the best
+        # thing is to split apart tokenize.StringPrefix.
+
+        # Make sure StringPrefix begins and ends in parens.  We're
+        # assuming it's of the form "(a|b|ab)", if a, b, and cd are
+        # valid string prefixes.
+        self.assertEqual(tokenize.StringPrefix[0], '(')
+        self.assertEqual(tokenize.StringPrefix[-1], ')')
+
+        # Then split apart everything else by '|'.
+        defined_prefixes = set(tokenize.StringPrefix[1:-1].split('|'))
+
+        # Now compute the actual allowed string prefixes and compare
+        # to what is defined in the tokenize module.
+        self.assertEqual(defined_prefixes, self.determine_valid_prefixes())
 
 
 if __name__ == "__main__":

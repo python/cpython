@@ -311,7 +311,7 @@ Pure paths provide the following methods and properties:
 .. attribute:: PurePath.parser
 
    The implementation of the :mod:`os.path` module used for low-level path
-   parsing and joining: either :mod:`posixpath` or :mod:`ntpath`.
+   parsing and joining: either :mod:`!posixpath` or :mod:`!ntpath`.
 
    .. versionadded:: 3.13
 
@@ -486,6 +486,10 @@ Pure paths provide the following methods and properties:
       >>> PurePosixPath('my/library').stem
       'library'
 
+   .. versionchanged:: 3.14
+
+      A single dot ("``.``") is considered a valid suffix.
+
 
 .. method:: PurePath.as_posix()
 
@@ -541,20 +545,6 @@ Pure paths provide the following methods and properties:
 
       Passing additional arguments is deprecated; if supplied, they are joined
       with *other*.
-
-.. method:: PurePath.is_reserved()
-
-   With :class:`PureWindowsPath`, return ``True`` if the path is considered
-   reserved under Windows, ``False`` otherwise.  With :class:`PurePosixPath`,
-   ``False`` is always returned.
-
-   .. versionchanged:: 3.13
-      Windows path names that contain a colon, or end with a dot or a space,
-      are considered reserved. UNC paths may be reserved.
-
-   .. deprecated-removed:: 3.13 3.15
-      This method is deprecated; use :func:`os.path.isreserved` to detect
-      reserved paths on Windows.
 
 .. method:: PurePath.joinpath(*pathsegments)
 
@@ -871,11 +861,11 @@ conforming to :rfc:`8089`.
 
    .. versionadded:: 3.13
 
-   .. versionchanged:: next
-      If a URL authority (e.g. a hostname) is present and resolves to a local
-      address, it is discarded. If an authority is present and *doesn't*
-      resolve to a local address, then on Windows a UNC path is returned (as
-      before), and on other platforms a :exc:`ValueError` is raised.
+   .. versionchanged:: 3.14
+      The URL authority is discarded if it matches the local hostname.
+      Otherwise, if the authority isn't empty or ``localhost``, then on
+      Windows a UNC path is returned (as before), and on other platforms a
+      :exc:`ValueError` is raised.
 
 
 .. method:: Path.as_uri()
@@ -1276,6 +1266,8 @@ Reading and writing files
       >>> p.read_text()
       'Text file contents'
 
+   Return the number of characters written.
+
    An existing file of the same name is overwritten. The optional parameters
    have the same meaning as in :func:`open`.
 
@@ -1295,6 +1287,8 @@ Reading and writing files
       20
       >>> p.read_bytes()
       b'Binary file contents'
+
+   Return the number of bytes written.
 
    An existing file of the same name is overwritten.
 
@@ -1345,6 +1339,10 @@ Reading directories
        PosixPath('setup.py'),
        PosixPath('test_pathlib.py')]
 
+   .. note::
+      The paths are returned in no particular order.
+      If you need a specific order, sort the results.
+
    .. seealso::
       :ref:`pathlib-pattern-language` documentation.
 
@@ -1356,6 +1354,11 @@ Reading directories
    By default, or when the *recurse_symlinks* keyword-only argument is set to
    ``False``, this method follows symlinks except when expanding "``**``"
    wildcards. Set *recurse_symlinks* to ``True`` to always follow symlinks.
+
+   .. note::
+      Any :exc:`OSError` exceptions raised from scanning the filesystem are
+      suppressed. This includes :exc:`PermissionError` when accessing
+      directories without read permission.
 
    .. audit-event:: pathlib.Path.glob self,pattern pathlib.Path.glob
 
@@ -1378,6 +1381,15 @@ Reading directories
 
    Glob the given relative *pattern* recursively.  This is like calling
    :func:`Path.glob` with "``**/``" added in front of the *pattern*.
+
+   .. note::
+      The paths are returned in no particular order.
+      If you need a specific order, sort the results.
+
+   .. note::
+      Any :exc:`OSError` exceptions raised from scanning the filesystem are
+      suppressed. This includes :exc:`PermissionError` when accessing
+      directories without read permission.
 
    .. seealso::
       :ref:`pathlib-pattern-language` and :meth:`Path.glob` documentation.
@@ -1506,7 +1518,8 @@ Creating files and directories
       :meth:`~Path.write_bytes` methods are often used to create files.
 
 
-.. method:: Path.mkdir(mode=0o777, parents=False, exist_ok=False)
+.. method:: Path.mkdir(mode=0o777, parents=False, exist_ok=False, *, \
+                       parent_mode=None)
 
    Create a new directory at this given path.  If *mode* is given, it is
    combined with the process's ``umask`` value to determine the file mode
@@ -1516,6 +1529,12 @@ Creating files and directories
    If *parents* is true, any missing parents of this path are created
    as needed; they are created with the default permissions without taking
    *mode* into account (mimicking the POSIX ``mkdir -p`` command).
+
+   If *parent_mode* is not ``None``, it is used as the mode for any
+   newly-created, intermediate-level directories when *parents* is true.
+   Like *mode*, it is combined with the process's ``umask`` value.
+   Otherwise, intermediate directories are created with the default
+   permissions (also subject to the umask).
 
    If *parents* is false (the default), a missing parent raises
    :exc:`FileNotFoundError`.
@@ -1529,6 +1548,9 @@ Creating files and directories
 
    .. versionchanged:: 3.5
       The *exist_ok* parameter was added.
+
+   .. versionadded:: 3.15
+      The *parent_mode* parameter.
 
 
 .. method:: Path.symlink_to(target, target_is_directory=False)
@@ -1781,9 +1803,12 @@ The following wildcards are supported in patterns for
 ``?``
   Matches one non-separator character.
 ``[seq]``
-  Matches one character in *seq*.
+  Matches one character in *seq*, where *seq* is a sequence of characters.
+  Range expressions are supported; for example, ``[a-z]`` matches any lowercase ASCII letter.
+  Multiple ranges can be combined: ``[a-zA-Z0-9_]`` matches any ASCII letter, digit, or underscore.
+
 ``[!seq]``
-  Matches one character not in *seq*.
+  Matches one character not in *seq*, where *seq* follows the same rules as above.
 
 For a literal match, wrap the meta-characters in brackets.
 For example, ``"[?]"`` matches the character ``"?"``.
@@ -1886,7 +1911,7 @@ Below is a table mapping various :mod:`os` functions to their corresponding
 :class:`PurePath`/:class:`Path` equivalent.
 
 =====================================   ==============================================
-:mod:`os` and :mod:`os.path`            :mod:`pathlib`
+:mod:`os` and :mod:`os.path`            :mod:`!pathlib`
 =====================================   ==============================================
 :func:`os.path.dirname`                 :attr:`PurePath.parent`
 :func:`os.path.basename`                :attr:`PurePath.name`
@@ -1945,7 +1970,7 @@ Protocols
    :synopsis: pathlib types for static type checking
 
 
-The :mod:`pathlib.types` module provides types for static type checking.
+The :mod:`!pathlib.types` module provides types for static type checking.
 
 .. versionadded:: 3.14
 
@@ -1982,7 +2007,7 @@ The :mod:`pathlib.types` module provides types for static type checking.
 
       If *follow_symlinks* is ``False``, return ``True`` only if the path
       is a file (without following symlinks); return ``False`` if the path
-      is a directory or other other non-file, or if it doesn't exist.
+      is a directory or other non-file, or if it doesn't exist.
 
    .. method:: is_symlink()
 

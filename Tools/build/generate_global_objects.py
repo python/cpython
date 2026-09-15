@@ -3,6 +3,8 @@ import io
 import os.path
 import re
 
+import consts_getter
+
 SCRIPT_NAME = 'Tools/build/generate_global_objects.py'
 __file__ = os.path.abspath(__file__)
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
@@ -274,20 +276,7 @@ def generate_global_strings(identifiers, strings):
 
 
 def generate_runtime_init(identifiers, strings):
-    # First get some info from the declarations.
-    nsmallposints = None
-    nsmallnegints = None
-    with open(os.path.join(INTERNAL, 'pycore_runtime_structs.h')) as infile:
-        for line in infile:
-            if line.startswith('#define _PY_NSMALLPOSINTS'):
-                nsmallposints = int(line.split()[-1])
-            elif line.startswith('#define _PY_NSMALLNEGINTS'):
-                nsmallnegints = int(line.split()[-1])
-                break
-        else:
-            raise NotImplementedError
-    assert nsmallposints
-    assert nsmallnegints
+    nsmallnegints, nsmallposints = consts_getter.get_nsmallnegints_and_nsmallposints()
 
     # Then target the runtime initializer.
     filename = os.path.join(INTERNAL, 'pycore_runtime_init_generated.h')

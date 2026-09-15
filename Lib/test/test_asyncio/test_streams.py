@@ -18,7 +18,7 @@ from test.support import socket_helper
 
 
 def tearDownModule():
-    asyncio._set_event_loop_policy(None)
+    asyncio.set_event_loop(None)
 
 
 class StreamTests(test_utils.TestCase):
@@ -819,6 +819,76 @@ class StreamTests(test_utils.TestCase):
         self.assertEqual(msg1, b"hello world 1!\n")
         self.assertEqual(msg2, b"hello world 2!\n")
 
+    @unittest.skipIf(ssl is None, 'No ssl module')
+    def test_start_tls_buffered_data(self):
+        # gh-142352: test start_tls() with buffered data
+
+        async def server_handler(client_reader, client_writer):
+            # Wait for TLS ClientHello to be buffered before start_tls().
+            await client_reader._wait_for_data('test_start_tls_buffered_data'),
+            self.assertTrue(client_reader._buffer)
+            await client_writer.start_tls(test_utils.simple_server_sslcontext())
+
+            line = await client_reader.readline()
+            self.assertEqual(line, b"ping\n")
+            client_writer.write(b"pong\n")
+            await client_writer.drain()
+            client_writer.close()
+            await client_writer.wait_closed()
+
+        async def client(addr):
+            reader, writer = await asyncio.open_connection(*addr)
+            await writer.start_tls(test_utils.simple_client_sslcontext())
+
+            writer.write(b"ping\n")
+            await writer.drain()
+            line = await reader.readline()
+            self.assertEqual(line, b"pong\n")
+            writer.close()
+            await writer.wait_closed()
+
+        async def run_test():
+            server = await asyncio.start_server(
+                server_handler, socket_helper.HOSTv4, 0)
+            server_addr = server.sockets[0].getsockname()
+
+            await client(server_addr)
+            server.close()
+            await server.wait_closed()
+
+        messages = []
+        self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
+        self.loop.run_until_complete(run_test())
+        self.assertEqual(messages, [])
+
+    def test_streamwriter_start_tls_updates_reader_transport(self):
+        reader = asyncio.StreamReader(loop=self.loop)
+        protocol = asyncio.StreamReaderProtocol(reader, loop=self.loop)
+        old_transport = mock.Mock()
+        old_transport.get_extra_info.return_value = None
+        old_transport.is_closing.return_value = False
+        protocol.connection_made(old_transport)
+
+        writer = asyncio.StreamWriter(old_transport, protocol, reader, self.loop)
+
+        ssl_context = mock.sentinel.ssl_context
+        new_transport = mock.Mock()
+        new_transport.get_extra_info.return_value = ssl_context
+        self.loop.start_tls = mock.AsyncMock(return_value=new_transport)
+
+        self.loop.run_until_complete(writer.start_tls(ssl_context))
+
+        self.loop.start_tls.assert_awaited_once_with(
+            old_transport, protocol, ssl_context,
+            server_side=False, server_hostname=None,
+            ssl_handshake_timeout=None,
+            ssl_shutdown_timeout=None,
+        )
+        self.assertIs(writer.transport, new_transport)
+        self.assertIs(protocol._transport, new_transport)
+        self.assertIs(reader._transport, new_transport)
+        self.assertTrue(protocol._over_ssl)
+
     def test_streamreader_constructor_without_loop(self):
         with self.assertRaisesRegex(RuntimeError, 'no current event loop'):
             asyncio.StreamReader()
@@ -1196,6 +1266,38 @@ class StreamTests(test_utils.TestCase):
             asyncio.current_task().cancel()
         messages = self._basetest_unhandled_exceptions(handle_echo)
         self.assertEqual(messages, [])
+
+    def test_unhandled_exception_sync_callback(self):
+        # An exception raised by a plain-function client_connected_cb is
+        # reported like the coroutine case and the transport is closed.
+        port = socket_helper.find_unused_port()
+
+        messages = []
+        self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
+
+        async def client():
+            rd, wr = await asyncio.open_connection('localhost', port)
+            async with asyncio.timeout(60):
+                data = await rd.read()
+            self.assertEqual(data, b'')  # the server closed the connection
+            wr.close()
+            await wr.wait_closed()
+
+        async def main():
+            def handle_echo(reader, writer):
+                raise Exception('test')
+
+            server = await asyncio.start_server(
+                handle_echo, 'localhost', port)
+            await server.start_serving()
+            await client()
+            server.close()
+            await server.wait_closed()
+
+        self.loop.run_until_complete(main())
+
+        self.assertEqual(messages[0]['message'],
+                    'Unhandled exception in client_connected_cb')
 
     def test_open_connection_happy_eyeball_refcycles(self):
         port = socket_helper.find_unused_port()

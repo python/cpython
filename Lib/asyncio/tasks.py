@@ -268,7 +268,9 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
             raise exceptions.InvalidStateError(
                 f'__step(): already done: {self!r}, {exc!r}')
         if self._must_cancel:
-            if not isinstance(exc, exceptions.CancelledError):
+            # gh-108549: do not swallow SystemExit and KeyboardInterrupt.
+            if not isinstance(exc, (exceptions.CancelledError,
+                                    SystemExit, KeyboardInterrupt)):
                 exc = self._make_cancelled_error()
             self._must_cancel = False
         self._fut_waiter = None
@@ -386,19 +388,13 @@ else:
     Task = _CTask = _asyncio.Task
 
 
-def create_task(coro, *, name=None, context=None):
+def create_task(coro, **kwargs):
     """Schedule the execution of a coroutine object in a spawn task.
 
     Return a Task object.
     """
     loop = events.get_running_loop()
-    if context is None:
-        # Use legacy API if context is not needed
-        task = loop.create_task(coro, name=name)
-    else:
-        task = loop.create_task(coro, name=name, context=context)
-
-    return task
+    return loop.create_task(coro, **kwargs)
 
 
 # wait() and as_completed() similar to those in PEP 3148.
@@ -446,15 +442,13 @@ def _release_waiter(waiter, *args):
 async def wait_for(fut, timeout):
     """Wait for the single Future or coroutine to complete, with timeout.
 
-    Coroutine will be wrapped in Task.
-
     Returns result of the Future or coroutine.  When a timeout occurs,
-    it cancels the task and raises TimeoutError.  To avoid the task
-    cancellation, wrap it in shield().
+    it cancels fut and raises TimeoutError.  To prevent fut from being
+    cancelled, wrap it in shield().
 
-    If the wait is cancelled, the task is also cancelled.
+    If the wait is cancelled, fut is also cancelled.
 
-    If the task suppresses the cancellation and returns a value instead,
+    If fut suppresses the cancellation and returns a value instead,
     that value is returned.
 
     This function is a coroutine.
@@ -530,6 +524,7 @@ async def _wait(fs, timeout, return_when, loop):
             timeout_handle.cancel()
         for f in fs:
             f.remove_done_callback(_on_completion)
+            futures.future_discard_from_awaited_by(f, cur_task)
 
     done, pending = set(), set()
     for f in fs:
@@ -548,6 +543,10 @@ async def _cancel_and_wait(fut):
     cb = functools.partial(_release_waiter, waiter)
     fut.add_done_callback(cb)
 
+    # gh-157058: awaiting the waiter leaves no edge on fut, add it here
+    cur_task = current_task()
+    futures.future_add_to_awaited_by(fut, cur_task)
+
     try:
         fut.cancel()
         # We cannot wait on *fut* directly to make
@@ -555,6 +554,7 @@ async def _cancel_and_wait(fut):
         await waiter
     finally:
         fut.remove_done_callback(cb)
+        futures.future_discard_from_awaited_by(fut, cur_task)
 
 
 class _AsCompletedIterator:
@@ -569,9 +569,11 @@ class _AsCompletedIterator:
         self._timeout_handle = None
 
         loop = events.get_event_loop()
+        self._cur_task = current_task()
         todo = {ensure_future(aw, loop=loop) for aw in set(aws)}
         for f in todo:
             f.add_done_callback(self._handle_completion)
+            futures.future_add_to_awaited_by(f, self._cur_task)
         if todo and timeout is not None:
             self._timeout_handle = (
                 loop.call_later(timeout, self._handle_timeout)
@@ -602,6 +604,7 @@ class _AsCompletedIterator:
     def _handle_timeout(self):
         for f in self._todo:
             f.remove_done_callback(self._handle_completion)
+            futures.future_discard_from_awaited_by(f, self._cur_task)
             self._done.put_nowait(None)  # Sentinel for _wait_for_one().
         self._todo.clear()  # Can't do todo.remove(f) in the loop.
 
@@ -609,6 +612,7 @@ class _AsCompletedIterator:
         if not self._todo:
             return  # _handle_timeout() was here first.
         self._todo.remove(f)
+        futures.future_discard_from_awaited_by(f, self._cur_task)
         self._done.put_nowait(f)
         if not self._todo and self._timeout_handle is not None:
             self._timeout_handle.cancel()
@@ -630,10 +634,11 @@ def as_completed(fs, *, timeout=None):
     Run the supplied awaitables concurrently. The returned object can be
     iterated to obtain the results of the awaitables as they finish.
 
-    The object returned can be iterated as an asynchronous iterator or a plain
-    iterator. When asynchronous iteration is used, the originally-supplied
-    awaitables are yielded if they are tasks or futures. This makes it easy to
-    correlate previously-scheduled tasks with their results:
+    The object returned can be iterated as an asynchronous iterator or
+    a plain iterator.  When asynchronous iteration is used, the
+    originally-supplied awaitables are yielded if they are tasks or
+    futures.  This makes it easy to correlate previously-scheduled tasks
+    with their results:
 
         ipv4_connect = create_task(open_connection("127.0.0.1", 80))
         ipv6_connect = create_task(open_connection("::1", 80))
@@ -649,26 +654,27 @@ def as_completed(fs, *, timeout=None):
             else:
                 print("IPv4 connection established.")
 
-    During asynchronous iteration, implicitly-created tasks will be yielded for
-    supplied awaitables that aren't tasks or futures.
+    During asynchronous iteration, implicitly-created tasks will be
+    yielded for supplied awaitables that aren't tasks or futures.
 
-    When used as a plain iterator, each iteration yields a new coroutine that
-    returns the result or raises the exception of the next completed awaitable.
-    This pattern is compatible with Python versions older than 3.13:
+    When used as a plain iterator, each iteration yields a new coroutine
+    that returns the result or raises the exception of the next completed
+    awaitable.  This pattern is compatible with Python versions older than
+    3.13:
 
         ipv4_connect = create_task(open_connection("127.0.0.1", 80))
         ipv6_connect = create_task(open_connection("::1", 80))
         tasks = [ipv4_connect, ipv6_connect]
 
         for next_connect in as_completed(tasks):
-            # next_connect is not one of the original task objects. It must be
-            # awaited to obtain the result value or raise the exception of the
-            # awaitable that finishes next.
+            # next_connect is not one of the original task objects. It must
+            # be awaited to obtain the result value or raise the exception
+            # of the awaitable that finishes next.
             reader, writer = await next_connect
 
-    A TimeoutError is raised if the timeout occurs before all awaitables are
-    done. This is raised by the async for loop during asynchronous iteration or
-    by the coroutines yielded during plain iteration.
+    A TimeoutError is raised if the timeout occurs before all awaitables
+    are done.  This is raised by the async for loop during asynchronous
+    iteration or by the coroutines yielded during plain iteration.
     """
     if inspect.isawaitable(fs):
         raise TypeError(
@@ -769,6 +775,11 @@ class _GatheringFuture(futures.Future):
             # *return_exceptions* argument.  See issue 32684.
             self._cancel_requested = True
         return ret
+
+
+def _discard_awaited_by(children, waiter, outer):
+    for fut in children:
+        futures.future_discard_from_awaited_by(fut, waiter)
 
 
 def gather(*coros_or_futures, return_exceptions=False):
@@ -904,6 +915,10 @@ def gather(*coros_or_futures, return_exceptions=False):
         children.append(fut)
 
     outer = _GatheringFuture(children, loop=loop)
+    if cur_task is not None:
+        # gh-157213: a child outliving gather() must lose the awaited-by edge
+        outer.add_done_callback(
+            functools.partial(_discard_awaited_by, children, cur_task))
     # Run done callbacks after GatheringFuture created so any post-processing
     # can be performed at this point
     # optimization: in the special case that *all* futures finished eagerly,
@@ -912,6 +927,25 @@ def gather(*coros_or_futures, return_exceptions=False):
     for fut in done_futs:
         _done_callback(fut)
     return outer
+
+
+def _log_on_exception(fut):
+    if fut.cancelled():
+        return
+
+    exc = fut.exception()
+    if exc is None:
+        return
+
+    context = {
+        'message':
+        f'{exc.__class__.__name__} exception in shielded future',
+        'exception': exc,
+        'future': fut,
+    }
+    if fut._source_traceback:
+        context['source_traceback'] = fut._source_traceback
+    fut._loop.call_exception_handler(context)
 
 
 def shield(arg):
@@ -959,14 +993,11 @@ def shield(arg):
     else:
         cur_task = None
 
-    def _inner_done_callback(inner, cur_task=cur_task):
-        if cur_task is not None:
-            futures.future_discard_from_awaited_by(inner, cur_task)
+    def _clear_awaited_by_callback(inner):
+        futures.future_discard_from_awaited_by(inner, cur_task)
 
+    def _inner_done_callback(inner):
         if outer.cancelled():
-            if not inner.cancelled():
-                # Mark inner's result as retrieved.
-                inner.exception()
             return
 
         if inner.cancelled():
@@ -978,10 +1009,19 @@ def shield(arg):
             else:
                 outer.set_result(inner.result())
 
-
     def _outer_done_callback(outer):
         if not inner.done():
             inner.remove_done_callback(_inner_done_callback)
+            # Keep only one callback to log on cancel
+            inner.remove_done_callback(_log_on_exception)
+            inner.add_done_callback(_log_on_exception)
+            if cur_task is not None:
+                inner.remove_done_callback(_clear_awaited_by_callback)
+                futures.future_discard_from_awaited_by(inner, cur_task)
+
+    if cur_task is not None:
+        inner.add_done_callback(_clear_awaited_by_callback)
+
 
     inner.add_done_callback(_inner_done_callback)
     outer.add_done_callback(_outer_done_callback)
@@ -1014,25 +1054,26 @@ def run_coroutine_threadsafe(coro, loop):
 def create_eager_task_factory(custom_task_constructor):
     """Create a function suitable for use as a task factory on an event-loop.
 
-        Example usage:
+    Example usage:
 
-            loop.set_task_factory(
-                asyncio.create_eager_task_factory(my_task_constructor))
+        loop.set_task_factory(
+            asyncio.create_eager_task_factory(my_task_constructor))
 
-        Now, tasks created will be started immediately (rather than being first
-        scheduled to an event loop). The constructor argument can be any callable
-        that returns a Task-compatible object and has a signature compatible
-        with `Task.__init__`; it must have the `eager_start` keyword argument.
+    Now, tasks created will be started immediately (rather than being first
+    scheduled to an event loop).  The constructor argument can be any
+    callable that returns a Task-compatible object and has a signature
+    compatible with `Task.__init__`; it must have the `eager_start`
+    keyword argument.
 
-        Most applications will use `Task` for `custom_task_constructor` and in
-        this case there's no need to call `create_eager_task_factory()`
-        directly. Instead the  global `eager_task_factory` instance can be
-        used. E.g. `loop.set_task_factory(asyncio.eager_task_factory)`.
-        """
+    Most applications will use `Task` for `custom_task_constructor` and in
+    this case there's no need to call `create_eager_task_factory()`
+    directly. Instead the  global `eager_task_factory` instance can be
+    used. E.g. `loop.set_task_factory(asyncio.eager_task_factory)`.
+    """
 
-    def factory(loop, coro, *, name=None, context=None):
+    def factory(loop, coro, *, eager_start=True, **kwargs):
         return custom_task_constructor(
-            coro, loop=loop, name=name, context=context, eager_start=True)
+            coro, loop=loop, eager_start=eager_start, **kwargs)
 
     return factory
 

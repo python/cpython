@@ -145,12 +145,12 @@ class Reader:
     def r_float_bin(self) -> float:
         buf = self.r_string(8)
         import struct  # Lazy import to avoid breaking UNIX build
-        return struct.unpack("d", buf)[0]
+        return struct.unpack("d", buf)[0]  # type: ignore[no-any-return]
 
     def r_float_str(self) -> float:
         n = self.r_byte()
         buf = self.r_string(n)
-        return ast.literal_eval(buf.decode("ascii"))
+        return ast.literal_eval(buf.decode("ascii"))  # type: ignore[no-any-return]
 
     def r_ref_reserve(self, flag: int) -> int:
         if flag:
@@ -306,7 +306,7 @@ def loads(data: bytes) -> Any:
     return r.r_object()
 
 
-def main():
+def main() -> None:
     # Test
     import marshal
     import pprint
@@ -314,8 +314,9 @@ def main():
     data = marshal.dumps(sample)
     retval = loads(data)
     assert retval == sample, retval
-    sample = main.__code__
-    data = marshal.dumps(sample)
+
+    sample2 = main.__code__
+    data = marshal.dumps(sample2)
     retval = loads(data)
     assert isinstance(retval, Code), retval
     pprint.pprint(retval.__dict__)

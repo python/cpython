@@ -1,15 +1,14 @@
 """
 Very minimal unittests for parts of the readline module.
 """
+import codecs
 import locale
 import os
 import sys
+import sysconfig
 import tempfile
 import textwrap
-import threading
 import unittest
-from test import support
-from test.support import threading_helper
 from test.support import verbose
 from test.support.import_helper import import_module
 from test.support.os_helper import unlink, temp_dir, TESTFN
@@ -170,6 +169,44 @@ class TestHistoryManipulation (unittest.TestCase):
         # Readline seems to report an additional history element.
         self.assertIn(readline.get_current_history_length(), (2, 3))
 
+    def test_write_read_zero_length_history(self):
+        previous_length = readline.get_history_length()
+        self.addCleanup(readline.set_history_length, previous_length)
+
+        readline.clear_history()
+        readline.add_history("first line")
+        readline.set_history_length(0)
+        readline.write_history_file(TESTFN)
+        self.addCleanup(os.remove, TESTFN)
+
+        readline.clear_history()
+        # libedit cannot read an empty history file, only one that still
+        # has its header line.  How many items remain is not checked:
+        # libedit's own history_truncate_file() ignores a length of 0.
+        readline.read_history_file(TESTFN)
+
+    @unittest.skipUnless(hasattr(readline, "append_history_file"),
+                         "append_history not available")
+    def test_append_limited_history(self):
+        previous_length = readline.get_history_length()
+        self.addCleanup(readline.set_history_length, previous_length)
+
+        readline.clear_history()
+        readline.add_history("first line")
+        readline.add_history("second line")
+        readline.write_history_file(TESTFN)
+        self.addCleanup(os.remove, TESTFN)
+
+        readline.add_history("third line")
+        readline.set_history_length(2)
+        readline.append_history_file(1, TESTFN)
+
+        readline.clear_history()
+        readline.read_history_file(TESTFN)
+        self.assertEqual(readline.get_history_item(1), "second line")
+        self.assertEqual(readline.get_history_item(2), "third line")
+        self.assertEqual(readline.get_history_item(3), None)
+
 
 class TestReadline(unittest.TestCase):
 
@@ -231,6 +268,13 @@ print("History length:", readline.get_current_history_length())
             # writing and reading non-ASCII bytes into/from a TTY works, but
             # readline or ncurses ignores non-ASCII bytes on read.
             self.skipTest(f"the LC_CTYPE locale is {loc!r}")
+        if sys.flags.utf8_mode:
+            encoding = locale.getencoding()
+            encoding = codecs.lookup(encoding).name  # normalize the name
+            if encoding != "utf-8":
+                # gh-133711: The Python UTF-8 Mode ignores the LC_CTYPE locale
+                # and always use the UTF-8 encoding.
+                self.skipTest(f"the LC_CTYPE encoding is {encoding!r}")
 
         try:
             readline.add_history("\xEB\xEF")
@@ -405,26 +449,35 @@ readline.write_history_file(history_file)
         # So, we've only tested that the read did not fail.
         # See TestHistoryManipulation for the full test.
 
+    @unittest.skipUnless(sysconfig.get_config_var("HAVE_RL_CHANGE_ENVIRONMENT"),
+                         "readline can modify the environment")
+    def test_environment_is_not_modified(self):
+        # os.environ contains environment at the time "os" module was loaded, so
+        # before the "readline" module is loaded.
+        original_env = dict(os.environ)
 
-@unittest.skipUnless(support.Py_GIL_DISABLED, 'these tests can only possibly fail with GIL disabled')
-class FreeThreadingTest(unittest.TestCase):
-    @threading_helper.reap_threads
-    @threading_helper.requires_working_threading()
-    def test_free_threading(self):
-        def completer_delims(b):
-            b.wait()
-            for _ in range(100):
-                readline.get_completer_delims()
-                readline.set_completer_delims(' \t\n`@#%^&*()=+[{]}\\|;:\'",<>?')
-                readline.set_completer_delims(' \t\n`@#%^&*()=+[{]}\\|;:\'",<>?')
-                readline.get_completer_delims()
+        # Force refresh of os.environ and make sure it is the same as before the
+        # refresh.
+        os.reload_environ()
+        self.assertEqual(dict(os.environ), original_env)
 
-        count   = 40
-        barrier = threading.Barrier(count)
-        threads = [threading.Thread(target=completer_delims, args=(barrier,)) for _ in range(count)]
+    @unittest.skipUnless(hasattr(readline, "get_pre_input_hook"),
+                         "get_pre_input_hook not available")
+    def test_get_pre_input_hook(self):
+        # Save and restore the original hook to avoid side effects
+        original_hook = readline.get_pre_input_hook()
+        self.addCleanup(readline.set_pre_input_hook, original_hook)
 
-        with threading_helper.start_threads(threads):
+        # Test that get_pre_input_hook returns None when no hook is set
+        readline.set_pre_input_hook(None)
+        self.assertIsNone(readline.get_pre_input_hook())
+
+        # Set a hook and verify we can retrieve it
+        def my_hook():
             pass
+
+        readline.set_pre_input_hook(my_hook)
+        self.assertIs(readline.get_pre_input_hook(), my_hook)
 
 
 if __name__ == "__main__":

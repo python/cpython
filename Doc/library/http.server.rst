@@ -19,7 +19,7 @@ This module defines classes for implementing HTTP servers.
 
 .. warning::
 
-    :mod:`http.server` is not recommended for production. It only implements
+    :mod:`!http.server` is not recommended for production. It only implements
     :ref:`basic security checks <http.server-security>`.
 
 .. include:: ../includes/wasm-notavail.rst
@@ -39,7 +39,17 @@ handler.  Code to create and run the server looks like this::
    This class builds on the :class:`~socketserver.TCPServer` class by storing
    the server address as instance variables named :attr:`server_name` and
    :attr:`server_port`. The server is accessible by the handler, typically
-   through the handler's :attr:`server` instance variable.
+   through the handler's :attr:`~socketserver.BaseRequestHandler.server`
+   instance variable.
+
+   .. attribute:: server_name
+
+      The HTTP server's fully qualified domain name.
+
+   .. attribute:: server_port
+
+      The HTTP server's port number obtained from *server_address*.
+
 
 .. class:: ThreadingHTTPServer(server_address, RequestHandlerClass)
 
@@ -60,7 +70,7 @@ handler.  Code to create and run the server looks like this::
    object fails with a :exc:`RuntimeError`.
 
    The *certfile* argument is the path to the SSL certificate chain file,
-   and the *keyfile* is the path to file containing the private key.
+   and the *keyfile* is the path to the file containing the private key.
 
    A *password* can be specified for files protected and wrapped with PKCS#8,
    but beware that this could possibly expose hardcoded passwords in clear.
@@ -99,7 +109,7 @@ instantiation, of which this module provides three different variants:
 
    This class is used to handle the HTTP requests that arrive at the server.  By
    itself, it cannot respond to any actual HTTP requests; it must be subclassed
-   to handle each request method (e.g. GET or POST).
+   to handle each request method (for example, ``'GET'`` or ``'POST'``).
    :class:`BaseHTTPRequestHandler` provides a number of class and instance
    variables, and methods for use by subclasses.
 
@@ -140,7 +150,7 @@ instantiation, of which this module provides three different variants:
 
    .. attribute:: path
 
-      Contains the request path. If query component of the URL is present,
+      Contains the request path. If the query component of the URL is present,
       then ``path`` includes the query. Using the terminology of :rfc:`3986`,
       ``path`` here includes ``hier-part`` and the ``query``.
 
@@ -154,7 +164,7 @@ instantiation, of which this module provides three different variants:
       variable. This instance parses and manages the headers in the HTTP
       request. The :func:`~http.client.parse_headers` function from
       :mod:`http.client` is used to parse the headers and it requires that the
-      HTTP request provide a valid :rfc:`2822` style header.
+      HTTP request provide a valid :rfc:`5322` style header.
 
    .. attribute:: rfile
 
@@ -190,7 +200,7 @@ instantiation, of which this module provides three different variants:
       Specifies a format string that should be used by :meth:`send_error` method
       for building an error response to the client. The string is filled by
       default with variables from :attr:`responses` based on the status code
-      that passed to :meth:`send_error`.
+      passed to :meth:`send_error`.
 
    .. attribute:: error_content_type
 
@@ -238,10 +248,10 @@ instantiation, of which this module provides three different variants:
    .. method:: handle_expect_100()
 
       When an HTTP/1.1 conformant server receives an ``Expect: 100-continue``
-      request header it responds back with a ``100 Continue`` followed by ``200
-      OK`` headers.
+      request header it responds with a ``100 Continue`` followed by ``200 OK``
+      headers.
       This method can be overridden to raise an error if the server does not
-      want the client to continue.  For e.g. server can choose to send ``417
+      want the client to continue.  For example, the server can choose to send ``417
       Expectation Failed`` as a response header and ``return False``.
 
       .. versionadded:: 3.2
@@ -287,15 +297,19 @@ instantiation, of which this module provides three different variants:
       specifying its value. Note that, after the send_header calls are done,
       :meth:`end_headers` MUST BE called in order to complete the operation.
 
+      This method does not reject input containing CRLF sequences.
+
       .. versionchanged:: 3.2
          Headers are stored in an internal buffer.
 
    .. method:: send_response_only(code, message=None)
 
       Sends the response header only, used for the purposes when ``100
-      Continue`` response is sent by the server to the client. The headers not
-      buffered and sent directly the output stream.If the *message* is not
+      Continue`` response is sent by the server to the client. The headers are
+      not buffered and sent directly the output stream. If the *message* is not
       specified, the HTTP message corresponding the response *code*  is sent.
+
+      This method does not reject *message* containing CRLF sequences.
 
       .. versionadded:: 3.2
 
@@ -334,7 +348,7 @@ instantiation, of which this module provides three different variants:
       to create custom error logging mechanisms. The *format* argument is a
       standard printf-style format string, where the additional arguments to
       :meth:`log_message` are applied as inputs to the formatting. The client
-      ip address and current date and time are prefixed to every message logged.
+      IP address and current date and time are prefixed to every message logged.
 
    .. method:: version_string()
 
@@ -362,7 +376,8 @@ instantiation, of which this module provides three different variants:
          delays, it now always returns the IP address.
 
 
-.. class:: SimpleHTTPRequestHandler(request, client_address, server, directory=None)
+.. class:: SimpleHTTPRequestHandler(request, client_address, server, \
+                                    *, directory=None, extra_response_headers=None)
 
    This class serves files from the directory *directory* and below,
    or the current directory if *directory* is not provided, directly
@@ -373,6 +388,9 @@ instantiation, of which this module provides three different variants:
 
    .. versionchanged:: 3.9
       The *directory* parameter accepts a :term:`path-like object`.
+
+   .. versionchanged:: 3.15
+      Added *extra_response_headers* parameter.
 
    A lot of the work, such as parsing the request, is done by the base class
    :class:`BaseHTTPRequestHandler`.  This class implements the :func:`do_GET`
@@ -386,6 +404,22 @@ instantiation, of which this module provides three different variants:
       This will be ``"SimpleHTTP/" + __version__``, where ``__version__`` is
       defined at the module level.
 
+   .. attribute:: default_content_type
+
+      Specifies the Content-Type header value sent when the MIME type
+      cannot be guessed from the file extension of the requested URL.
+      By default, it is set to ``'application/octet-stream'``.
+
+      .. versionadded:: 3.15
+
+   .. attribute:: index_pages
+
+      Specifies the filenames that are treated as directory index pages.
+
+      Defaults to ``("index.html", "index.htm")``.
+
+      .. versionadded:: 3.12
+
    .. attribute:: extensions_map
 
       A dictionary mapping suffixes into MIME types, contains custom overrides
@@ -395,6 +429,15 @@ instantiation, of which this module provides three different variants:
       .. versionchanged:: 3.9
          This dictionary is no longer filled with the default system mappings,
          but only contains overrides.
+
+   .. attribute:: extra_response_headers
+
+      A sequence of ``(name, value)`` pairs containing user-defined extra HTTP
+      response headers to add to each successful HTTP status 200 response. These
+      headers are not included in other status code responses.
+
+      Headers that the server sends automatically such as ``Content-Type``
+      will not be overwritten by :attr:`!extra_response_headers`.
 
    The :class:`SimpleHTTPRequestHandler` class defines the following methods:
 
@@ -409,8 +452,8 @@ instantiation, of which this module provides three different variants:
       The request is mapped to a local file by interpreting the request as a
       path relative to the current working directory.
 
-      If the request was mapped to a directory, the directory is checked for a
-      file named ``index.html`` or ``index.htm`` (in that order). If found, the
+      If the request was mapped to a directory, the directory is checked for
+      an index page as specified by :attr:`index_pages`. If found, the
       file's contents are returned; otherwise a directory listing is generated
       by calling the :meth:`list_directory` method. This method uses
       :func:`os.listdir` to scan the directory, and returns a ``404`` error
@@ -428,9 +471,11 @@ instantiation, of which this module provides three different variants:
       followed by a ``'Content-Length:'`` header with the file's size and a
       ``'Last-Modified:'`` header with the file's modification time.
 
+      The instance attribute :attr:`extra_response_headers` is a sequence of
+      ``(name, value)`` pairs containing user-defined extra response headers.
+
       Then follows a blank line signifying the end of the headers, and then the
-      contents of the file are output. If the file's MIME type starts with
-      ``text/`` the file is opened in text mode; otherwise binary mode is used.
+      contents of the file are output.
 
       For example usage, see the implementation of the ``test`` function
       in :source:`Lib/http/server.py`.
@@ -438,9 +483,32 @@ instantiation, of which this module provides three different variants:
       .. versionchanged:: 3.7
          Support of the ``'If-Modified-Since'`` header.
 
-The :class:`SimpleHTTPRequestHandler` class can be used in the following
-manner in order to create a very basic webserver serving files relative to
-the current directory::
+   .. method:: list_directory(path)
+
+      Helper to list the contents of *path* when no index page is present.
+
+      This returns either a :term:`file-like object` (which must be closed
+      by the caller) or ``None`` to indicate an error, in which case the
+      caller has nothing further to do. In either case, the headers are sent.
+
+   .. method:: guess_type(path)
+
+      Guess the type of the file at the given *path*.
+
+      This returns a string of the form ``type/subtype``, usable for
+      a MIME Content-type header.
+
+      The default implementation looks the file's extension up in
+      :attr:`extensions_map`, falling back to
+      :func:`mimetypes.guess_file_type` and then to
+      :attr:`default_content_type`.
+
+      .. versionchanged:: 3.13
+         Add :func:`mimetypes.guess_file_type` as a fallback.
+
+
+The :class:`SimpleHTTPRequestHandler` class can be used to create a very basic
+webserver serving files relative to the current directory as follows::
 
    import http.server
    import socketserver
@@ -456,56 +524,7 @@ the current directory::
 
 :class:`SimpleHTTPRequestHandler` can also be subclassed to enhance behavior,
 such as using different index file names by overriding the class attribute
-:attr:`index_pages`.
-
-
-.. class:: CGIHTTPRequestHandler(request, client_address, server)
-
-   This class is used to serve either files or output of CGI scripts from the
-   current directory and below. Note that mapping HTTP hierarchic structure to
-   local directory structure is exactly as in :class:`SimpleHTTPRequestHandler`.
-
-   .. note::
-
-      CGI scripts run by the :class:`CGIHTTPRequestHandler` class cannot execute
-      redirects (HTTP code 302), because code 200 (script output follows) is
-      sent prior to execution of the CGI script.  This pre-empts the status
-      code.
-
-   The class will however, run the CGI script, instead of serving it as a file,
-   if it guesses it to be a CGI script.  Only directory-based CGI are used ---
-   the other common server configuration is to treat special extensions as
-   denoting CGI scripts.
-
-   The :func:`do_GET` and :func:`do_HEAD` functions are modified to run CGI scripts
-   and serve the output, instead of serving files, if the request leads to
-   somewhere below the ``cgi_directories`` path.
-
-   The :class:`CGIHTTPRequestHandler` defines the following data member:
-
-   .. attribute:: cgi_directories
-
-      This defaults to ``['/cgi-bin', '/htbin']`` and describes directories to
-      treat as containing CGI scripts.
-
-   The :class:`CGIHTTPRequestHandler` defines the following method:
-
-   .. method:: do_POST()
-
-      This method serves the ``'POST'`` request type, only allowed for CGI
-      scripts.  Error 501, "Can only POST to CGI scripts", is output when trying
-      to POST to a non-CGI url.
-
-   Note that CGI scripts will be run with UID of user nobody, for security
-   reasons.  Problems with the CGI script will be translated to error 403.
-
-   .. deprecated-removed:: 3.13 3.15
-
-      :class:`CGIHTTPRequestHandler` is being removed in 3.15.  CGI has not
-      been considered a good way to do things for well over a decade. This code
-      has been unmaintained for a while now and sees very little practical use.
-      Retaining it could lead to further :ref:`security considerations
-      <http.server-security>`.
+:attr:`~SimpleHTTPRequestHandler.index_pages`.
 
 
 .. _http-server-cli:
@@ -513,9 +532,11 @@ such as using different index file names by overriding the class attribute
 Command-line interface
 ----------------------
 
-:mod:`http.server` can also be invoked directly using the :option:`-m`
+:mod:`!http.server` can also be invoked directly using the :option:`-m`
 switch of the interpreter.  The following example illustrates how to serve
-files relative to the current directory::
+files relative to the current directory:
+
+.. code-block:: bash
 
    python -m http.server [OPTIONS] [port]
 
@@ -526,7 +547,9 @@ The following options are accepted:
 .. option:: port
 
    The server listens to port 8000 by default. The default can be overridden
-   by passing the desired port number as an argument::
+   by passing the desired port number as an argument:
+
+   .. code-block:: bash
 
       python -m http.server 9000
 
@@ -535,7 +558,9 @@ The following options are accepted:
    Specifies a specific address to which it should bind. Both IPv4 and IPv6
    addresses are supported. By default, the server binds itself to all
    interfaces. For example, the following command causes the server to bind
-   to localhost only::
+   to localhost only:
+
+   .. code-block:: bash
 
       python -m http.server --bind 127.0.0.1
 
@@ -548,7 +573,9 @@ The following options are accepted:
 
    Specifies a directory to which it should serve the files. By default,
    the server uses the current directory. For example, the following command
-   uses a specific directory::
+   uses a specific directory:
+
+   .. code-block:: bash
 
       python -m http.server --directory /tmp/
 
@@ -558,33 +585,31 @@ The following options are accepted:
 
    Specifies the HTTP version to which the server is conformant. By default,
    the server is conformant to HTTP/1.0. For example, the following command
-   runs an HTTP/1.1 conformant server::
+   runs an HTTP/1.1 conformant server:
+
+   .. code-block:: bash
 
       python -m http.server --protocol HTTP/1.1
 
    .. versionadded:: 3.11
 
-.. option:: --cgi
+.. option:: --content-type <content_type>
 
-   :class:`CGIHTTPRequestHandler` can be enabled in the command line by passing
-   the ``--cgi`` option::
+   Specifies the default Content-Type HTTP header used when the MIME type
+   cannot be guessed from the URL's file extension. By default, the server
+   uses ``'application/octet-stream'``:
 
-      python -m http.server --cgi
+   .. code-block:: bash
 
-   .. deprecated-removed:: 3.13 3.15
+      python -m http.server --content-type text/html
 
-      :mod:`http.server` command line ``--cgi`` support is being removed
-      because :class:`CGIHTTPRequestHandler` is being removed.
-
-.. warning::
-
-   :class:`CGIHTTPRequestHandler` and the ``--cgi`` command-line option
-   are not intended for use by untrusted clients and may be vulnerable
-   to exploitation. Always use within a secure environment.
+   .. versionadded:: 3.15
 
 .. option:: --tls-cert
 
-   Specifies a TLS certificate chain for HTTPS connections::
+   Specifies a TLS certificate chain for HTTPS connections:
+
+   .. code-block:: bash
 
       python -m http.server --tls-cert fullchain.pem
 
@@ -600,16 +625,27 @@ The following options are accepted:
 
 .. option:: --tls-password-file
 
-   Specifies the password file for password-protected private keys::
+   Specifies the password file for password-protected private keys:
+
+   .. code-block:: bash
 
       python -m http.server \
              --tls-cert cert.pem \
              --tls-key key.pem \
              --tls-password-file password.txt
 
-   This option requires `--tls-cert`` to be specified.
+   This option requires ``--tls-cert`` to be specified.
 
    .. versionadded:: 3.14
+
+.. option:: -H, --header <header> <value>
+
+   Specify an additional HTTP Response Header to send on successful HTTP 200
+   responses. Can be used multiple times to send additional custom response
+   headers. Headers that are sent automatically by the server (for instance
+   Content-Type) will not be overwritten by the server.
+
+   .. versionadded:: 3.15
 
 
 .. _http.server-security:
@@ -620,8 +656,13 @@ Security considerations
 .. index:: pair: http.server; security
 
 :class:`SimpleHTTPRequestHandler` will follow symbolic links when handling
-requests, this makes it possible for files outside of the specified directory
+requests which makes it possible for files outside of the specified directory
 to be served.
+
+Methods :meth:`BaseHTTPRequestHandler.send_header` and
+:meth:`BaseHTTPRequestHandler.send_response_only` assume sanitized input
+and do not perform input validation such as checking for the presence of CRLF
+sequences. Untrusted input may result in HTTP header injection attacks.
 
 Earlier versions of Python did not scrub control characters from the
 log messages emitted to stderr from ``python -m http.server`` or the

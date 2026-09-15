@@ -1,6 +1,6 @@
 """Debug user code with a GUI interface to a subclass of bdb.Bdb.
 
-The Idb idb and Debugger gui instances each need a reference to each
+The Idb instance 'idb' and Debugger instance 'gui' need references to each
 other or to an rpc proxy for each other.
 
 If IDLE is started with '-n', so that user code and idb both run in the

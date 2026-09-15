@@ -201,7 +201,7 @@ decoding_table = (
     '\u02dc'   #  0x98 -> SMALL TILDE
     '\u2122'   #  0x99 -> TRADE MARK SIGN
     '\u0161'   #  0x9A -> LATIN SMALL LETTER S WITH CARON
-    '\x9b'     #  0x9B -> <control>
+    '\u203a'   #  0x9B -> SINGLE RIGHT-POINTING ANGLE QUOTATION MARK
     '\u0153'   #  0x9C -> LATIN SMALL LIGATURE OE
     '\x9d'     #  0x9D -> <control>
     '\x9e'     #  0x9E -> <control>

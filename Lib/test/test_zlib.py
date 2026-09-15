@@ -19,18 +19,15 @@ requires_Decompress_copy = unittest.skipUnless(
         'requires Decompress.copy()')
 
 
-def _zlib_runtime_version_tuple(zlib_version=zlib.ZLIB_RUNTIME_VERSION):
+def _parse_version(version):
     # Register "1.2.3" as "1.2.3.0"
     # or "1.2.0-linux","1.2.0.f","1.2.0.f-linux"
-    v = zlib_version.split('-', 1)[0].split('.')
-    if len(v) < 4:
+    v = version.split('-', 1)[0].split('.')
+    if not v[-1].isnumeric():
+        v.pop()
+    while len(v) < 4:
         v.append('0')
-    elif not v[-1].isnumeric():
-        v[-1] = '0'
     return tuple(map(int, v))
-
-
-ZLIB_RUNTIME_VERSION_TUPLE = _zlib_runtime_version_tuple()
 
 
 # bpo-46623: When a hardware accelerator is used (currently only on s390x),
@@ -71,7 +68,70 @@ class VersionTestCase(unittest.TestCase):
         # the minor versions will match (even on the machine on which the module
         # was compiled), and the API is stable between minor versions, so
         # testing only the major versions avoids spurious failures.
-        self.assertEqual(zlib.ZLIB_RUNTIME_VERSION[0], zlib.ZLIB_VERSION[0])
+        self.assertEqual(zlib.zlib_version.split('.')[0],
+                         zlib.ZLIB_VERSION.split('.')[0])
+        self.assertEqual(zlib.zlib_version_info[0],
+                         zlib.ZLIB_VERSION_INFO[0])
+
+    def _test_zlib_version(self, v):
+        self.assertIsInstance(v[:], tuple)
+        self.assertEqual(len(v), 4)
+        self.assertIsInstance(v[0], int)
+        self.assertIsInstance(v[1], int)
+        self.assertIsInstance(v[2], int)
+        self.assertIsInstance(v[3], int)
+        self.assertIsInstance(v.major, int)
+        self.assertIsInstance(v.minor, int)
+        self.assertIsInstance(v.revision, int)
+        self.assertIsInstance(v.subversion, int)
+        self.assertEqual(v[0], v.major)
+        self.assertEqual(v[1], v.minor)
+        self.assertEqual(v[2], v.revision)
+        self.assertEqual(v[3], v.subversion)
+        self.assertGreaterEqual(v.major, 0)
+        self.assertGreaterEqual(v.minor, 0)
+        self.assertGreaterEqual(v.revision, 0)
+        self.assertGreaterEqual(v.subversion, 0)
+
+    def test_zlib_version(self):
+        if support.verbose:
+            print(f'ZLIB_VERSION = {zlib.ZLIB_VERSION}', flush=True)
+            print(f'zlib_version = {zlib.zlib_version}', flush=True)
+            print(f'ZLIB_VERSION_INFO = {zlib.ZLIB_VERSION_INFO}', flush=True)
+            print(f'zlib_version_info = {zlib.zlib_version_info}', flush=True)
+        self._test_zlib_version(zlib.ZLIB_VERSION_INFO)
+        self.assertEqual(zlib.ZLIB_VERSION_INFO,
+                         _parse_version(zlib.ZLIB_VERSION))
+        self._test_zlib_version(zlib.zlib_version_info)
+        self.assertEqual(zlib.zlib_version_info,
+                         _parse_version(zlib.zlib_version))
+        self.assertEqual(zlib.ZLIB_RUNTIME_VERSION, zlib.zlib_version)
+
+    def _test_zlibng_version(self, v):
+        self.assertIsInstance(v[:], tuple)
+        self.assertEqual(len(v), 3)
+        self.assertIsInstance(v[0], int)
+        self.assertIsInstance(v[1], int)
+        self.assertIsInstance(v[2], int)
+        self.assertIsInstance(v.major, int)
+        self.assertIsInstance(v.minor, int)
+        self.assertIsInstance(v.revision, int)
+        self.assertEqual(v[0], v.major)
+        self.assertEqual(v[1], v.minor)
+        self.assertEqual(v[2], v.revision)
+        self.assertGreaterEqual(v.major, 0)
+        self.assertGreaterEqual(v.minor, 0)
+        self.assertGreaterEqual(v.revision, 0)
+
+    @unittest.skipUnless(hasattr(zlib, 'ZLIBNG_VERSION'), 'requires zlib-ng')
+    def test_zlibng_version(self):
+        if support.verbose:
+            print(f'ZLIBNG_VERSION = {zlib.ZLIBNG_VERSION}', flush=True)
+            print(f'ZLIBNG_VERSION_INFO = {zlib.ZLIBNG_VERSION_INFO}',
+                  flush=True)
+        self._test_zlibng_version(zlib.ZLIBNG_VERSION_INFO)
+        self.assertEqual(zlib.ZLIBNG_VERSION,
+                         '%d.%d.%d' % zlib.ZLIBNG_VERSION_INFO)
 
 
 class ChecksumTestCase(unittest.TestCase):
@@ -117,6 +177,117 @@ class ChecksumTestCase(unittest.TestCase):
         self.assertEqual(binascii.crc32(foo), crc)
         self.assertEqual(zlib.crc32(foo), crc)
         self.assertEqual(binascii.crc32(b'spam'), zlib.crc32(b'spam'))
+
+
+class ChecksumCombineMixin:
+    """Mixin class for testing checksum combination."""
+
+    N = 1000
+    default_iv: int
+
+    def parse_iv(self, iv):
+        """Parse an IV value.
+
+        - The default IV is returned if *iv* is None.
+        - A random IV is returned if *iv* is -1.
+        - Otherwise, *iv* is returned as is.
+        """
+        if iv is None:
+            return self.default_iv
+        if iv == -1:
+            return random.randint(1, 0x80000000)
+        return iv
+
+    def checksum(self, data, init=None):
+        """Compute the checksum of data with a given initial value.
+
+        The *init* value is parsed by ``parse_iv``.
+        """
+        iv = self.parse_iv(init)
+        return self._checksum(data, iv)
+
+    def _checksum(self, data, init):
+        raise NotImplementedError
+
+    def combine(self, a, b, blen):
+        """Combine two checksums together."""
+        raise NotImplementedError
+
+    def get_random_data(self, data_len, *, iv=None):
+        """Get a triplet (data, iv, checksum)."""
+        data = random.randbytes(data_len)
+        init = self.parse_iv(iv)
+        checksum = self.checksum(data, init)
+        return data, init, checksum
+
+    def test_combine_empty(self):
+        for _ in range(self.N):
+            a, iv, checksum = self.get_random_data(32, iv=-1)
+            res = self.combine(iv, self.checksum(a), len(a))
+            self.assertEqual(res, checksum)
+
+    def test_combine_no_iv(self):
+        for _ in range(self.N):
+            a, _, chk_a = self.get_random_data(32)
+            b, _, chk_b = self.get_random_data(64)
+            res = self.combine(chk_a, chk_b, len(b))
+            self.assertEqual(res, self.checksum(a + b))
+
+    def test_combine_no_iv_invalid_length(self):
+        a, _, chk_a = self.get_random_data(32)
+        b, _, chk_b = self.get_random_data(64)
+        checksum = self.checksum(a + b)
+        for invalid_len in [1, len(a), 48, len(b) + 1, 191]:
+            invalid_res = self.combine(chk_a, chk_b, invalid_len)
+            self.assertNotEqual(invalid_res, checksum)
+
+        self.assertRaises(TypeError, self.combine, 0, 0, "len")
+        self.assertRaises(ValueError, self.combine, 0, 0, -1)
+        self.assertRaises(OverflowError, self.combine, 0, 0, 2**1000)
+        self.assertRaises(OverflowError, self.combine, 0, 0, -2**1000)
+
+    def test_combine_with_iv(self):
+        for _ in range(self.N):
+            a, iv_a, chk_a_with_iv = self.get_random_data(32, iv=-1)
+            chk_a_no_iv = self.checksum(a)
+            b, iv_b, chk_b_with_iv = self.get_random_data(64, iv=-1)
+            chk_b_no_iv = self.checksum(b)
+
+            # We can represent c = COMBINE(CHK(a, iv_a), CHK(b, iv_b)) as:
+            #
+            #   c = CHK(CHK(b'', iv_a) + CHK(a) + CHK(b'', iv_b) + CHK(b))
+            #     = COMBINE(
+            #           COMBINE(CHK(b'', iv_a), CHK(a)),
+            #           COMBINE(CHK(b'', iv_b), CHK(b)),
+            #       )
+            #     = COMBINE(COMBINE(iv_a, CHK(a)), COMBINE(iv_b, CHK(b)))
+            tmp0 = self.combine(iv_a, chk_a_no_iv, len(a))
+            tmp1 = self.combine(iv_b, chk_b_no_iv, len(b))
+            expected = self.combine(tmp0, tmp1, len(b))
+            checksum = self.combine(chk_a_with_iv, chk_b_with_iv, len(b))
+            self.assertEqual(checksum, expected)
+
+
+class CRC32CombineTestCase(ChecksumCombineMixin, unittest.TestCase):
+
+    default_iv = 0
+
+    def _checksum(self, data, init):
+        return zlib.crc32(data, init)
+
+    def combine(self, a, b, blen):
+        return zlib.crc32_combine(a, b, blen)
+
+
+class Adler32CombineTestCase(ChecksumCombineMixin, unittest.TestCase):
+
+    default_iv = 1
+
+    def _checksum(self, data, init):
+        return zlib.adler32(data, init)
+
+    def combine(self, a, b, blen):
+        return zlib.adler32_combine(a, b, blen)
 
 
 # Issue #10276 - check that inputs >=4 GiB are handled correctly.
@@ -496,7 +667,7 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
                     'Z_PARTIAL_FLUSH']
 
         # Z_BLOCK has a known failure prior to 1.2.5.3
-        if ZLIB_RUNTIME_VERSION_TUPLE >= (1, 2, 5, 3):
+        if zlib.zlib_version_info >= (1, 2, 5, 3):
             sync_opt.append('Z_BLOCK')
 
         sync_opt = [getattr(zlib, opt) for opt in sync_opt
@@ -610,6 +781,20 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
         self.assertFalse(dco.eof)
         dco.flush()
         self.assertFalse(dco.eof)
+
+    def test_decompress_flush_corrupt_stream(self):
+        x = b'x\x9cK\xcb\xcf\x07\x00\x02\x82\x01E'  # 'foo'
+        corrupt = x[:-1] + b'\x00'
+        dco = zlib.decompressobj()
+        self.assertEqual(dco.decompress(corrupt, 1), b'f')
+        self.assertRaises(zlib.error, dco.flush)
+
+    def test_decompress_flush_twice(self):
+        x = b'x\x9cK\xcb\xcf\x07\x00\x02\x82\x01E'  # 'foo'
+        dco = zlib.decompressobj()
+        self.assertEqual(dco.decompress(x), b'foo')
+        self.assertEqual(dco.flush(), b'')
+        self.assertEqual(dco.flush(), b'')
 
     def test_decompress_unused_data(self):
         # Repeated calls to decompress() after EOF should accumulate data in
@@ -810,7 +995,7 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
 
     def test_wbits(self):
         # wbits=0 only supported since zlib v1.2.3.5
-        supports_wbits_0 = ZLIB_RUNTIME_VERSION_TUPLE >= (1, 2, 3, 5)
+        supports_wbits_0 = zlib.zlib_version_info >= (1, 2, 3, 5)
 
         co = zlib.compressobj(level=1, wbits=15)
         zlib15 = co.compress(HAMLET_SCENE) + co.flush()
@@ -982,7 +1167,7 @@ class ZlibDecompressorTest(unittest.TestCase):
         self.assertRaises(EOFError, zlibd.decompress, b"")
 
     @support.skip_if_pgo_task
-    @bigmemtest(size=_4G + 100, memuse=3.3)
+    @bigmemtest(size=_4G + 100, memuse=4.5)
     def testDecompress4G(self, size):
         # "Test zlib._ZlibDecompressor.decompress() with >4GiB input"
         blocksize = min(10 * 1024 * 1024, size)
@@ -1112,6 +1297,16 @@ class ZlibDecompressorTest(unittest.TestCase):
 class CustomInt:
     def __index__(self):
         return 100
+
+
+class TestModule(unittest.TestCase):
+    def test_deprecated__version__(self):
+        with self.assertWarnsRegex(
+                DeprecationWarning,
+                "'__version__' is deprecated and slated for removal in Python 3.20",
+        ) as cm:
+            getattr(zlib, "__version__")
+        self.assertEqual(cm.filename, __file__)
 
 
 if __name__ == "__main__":

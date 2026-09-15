@@ -1,0 +1,3 @@
+Fix a pidfd leak in ``_PidfdChildWatcher`` on Linux: the watcher no
+longer leaks the process file descriptor when ``waitpid()`` fails with an
+error other than :exc:`ChildProcessError`.

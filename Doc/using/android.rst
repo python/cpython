@@ -30,20 +30,27 @@ Adding Python to an Android app
 Most app developers should use one of the following tools, which will provide a
 much easier experience:
 
-* `Briefcase <https://briefcase.readthedocs.io>`__, from the BeeWare project
+* `Briefcase <https://briefcase.beeware.org>`__, from the BeeWare project
 * `Buildozer <https://buildozer.readthedocs.io>`__, from the Kivy project
 * `Chaquopy <https://chaquo.com/chaquopy>`__
 * `pyqtdeploy <https://www.riverbankcomputing.com/static/Docs/pyqtdeploy/>`__
 * `Termux <https://termux.dev/en/>`__
 
 If you're sure you want to do all of this manually, read on. You can use the
-:source:`testbed app <Android/testbed>` as a guide; each step below contains a
+:source:`testbed app <Platforms/Android/testbed>` as a guide; each step below contains a
 link to the relevant file.
 
-* Build Python by following the instructions in :source:`Android/README.md`.
-  This will create the directory ``cross-build/HOST/prefix``.
+* First, acquire a build of Python for Android:
 
-* Add code to your :source:`build.gradle <Android/testbed/app/build.gradle.kts>`
+  * The easiest way is to download an Android release from `python.org
+    <https://www.python.org/downloads/android/>`__. The ``prefix`` directory
+    mentioned below is at the top level of the package.
+
+  * Or if you want to build it yourself, follow the instructions in
+    :source:`Platforms/Android/README.md`. The ``prefix`` directory will be created under
+    :samp:`cross-build/{HOST}`.
+
+* Add code to your :source:`build.gradle <Platforms/Android/testbed/app/build.gradle.kts>`
   file to copy the following items into your project. All except your own Python
   code can be copied from ``prefix/lib``:
 
@@ -58,8 +65,17 @@ link to the relevant file.
     * ``python*.*/site-packages`` (your own Python code)
 
 * Add code to your app to :source:`extract the assets to the filesystem
-  <Android/testbed/app/src/main/java/org/python/testbed/MainActivity.kt>`.
+  <Platforms/Android/testbed/app/src/main/java/org/python/testbed/MainActivity.kt>`.
 
 * Add code to your app to :source:`start Python in embedded mode
-  <Android/testbed/app/src/main/c/main_activity.c>`. This will need to be C code
+  <Platforms/Android/testbed/app/src/main/c/main_activity.c>`. This will need to be C code
   called via JNI.
+
+Building a Python package for Android
+-------------------------------------
+
+Python packages can be built for Android as wheels and released on PyPI. The
+recommended tool for doing this is `cibuildwheel
+<https://cibuildwheel.pypa.io/en/stable/platforms/#android>`__, which automates
+all the details of setting up a cross-compilation environment, building the
+wheel, and testing it on an emulator.

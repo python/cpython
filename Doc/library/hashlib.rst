@@ -4,9 +4,6 @@
 .. module:: hashlib
    :synopsis: Secure hash and message digest algorithms.
 
-.. moduleauthor:: Gregory P. Smith <greg@krypto.org>
-.. sectionauthor:: Gregory P. Smith <greg@krypto.org>
-
 **Source code:** :source:`Lib/hashlib.py`
 
 .. index::
@@ -53,15 +50,18 @@ hash supplied more than 2047 bytes of data at once in its constructor or
 .. index:: single: OpenSSL; (use in module hashlib)
 
 Constructors for hash algorithms that are always present in this module are
-:func:`sha1`, :func:`sha224`, :func:`sha256`, :func:`sha384`, :func:`sha512`,
-:func:`sha3_224`, :func:`sha3_256`, :func:`sha3_384`, :func:`sha3_512`,
-:func:`shake_128`, :func:`shake_256`, :func:`blake2b`, and :func:`blake2s`.
-:func:`md5` is normally available as well, though it may be missing or blocked
-if you are using a rare "FIPS compliant" build of Python.
-These correspond to :data:`algorithms_guaranteed`.
+:func:`md5`, :func:`sha1`, :func:`sha224`, :func:`sha256`, :func:`sha384`,
+:func:`sha512`, :func:`sha3_224`, :func:`sha3_256`, :func:`sha3_384`,
+:func:`sha3_512`, :func:`shake_128`, :func:`shake_256`, :func:`blake2b`, and
+:func:`blake2s`.  These correspond to :data:`algorithms_guaranteed`.
+
+Any of these may nonetheless be missing or blocked in unusual environments,
+such as a rare "FIPS compliant" build of Python or when OpenSSL's "FIPS mode"
+is configured to exclude some algorithms from its default provider.  Calling
+the constructor of an algorithm that is unavailable raises :exc:`ValueError`.
 
 Additional algorithms may also be available if your Python distribution's
-:mod:`hashlib` was linked against a build of OpenSSL that provides others.
+:mod:`!hashlib` was linked against a build of OpenSSL that provides others.
 Others *are not guaranteed available* on all installations and will only be
 accessible by name via :func:`new`.  See :data:`algorithms_available`.
 
@@ -93,6 +93,13 @@ accessible by name via :func:`new`.  See :data:`algorithms_available`.
    For any of the MD5, SHA1, SHA2, or SHA3 algorithms that the linked
    OpenSSL does not provide we fall back to a verified implementation from
    the `HACL\* project`_.
+
+.. deprecated-removed:: 3.15 3.19
+   The undocumented ``string`` keyword parameter in :func:`!_hashlib.new`
+   and hash-named constructors such as :func:`!_md5.md5` is deprecated.
+   Prefer passing the initial data as a positional argument for maximum
+   backwards compatibility.
+
 
 Usage
 -----
@@ -284,7 +291,7 @@ a file or file-like object.
    Example:
 
       >>> import io, hashlib, hmac
-      >>> with open(hashlib.__file__, "rb") as f:
+      >>> with open("library/hashlib.rst", "rb") as f:
       ...     digest = hashlib.file_digest(f, "sha256")
       ...
       >>> digest.hexdigest()  # doctest: +ELLIPSIS
@@ -302,8 +309,8 @@ a file or file-like object.
 
    .. versionadded:: 3.11
 
-   .. versionchanged:: next
-      Now raises a :exc:`BlockingIOError` if the file is opened in blocking
+   .. versionchanged:: 3.14
+      Now raises a :exc:`BlockingIOError` if the file is opened in non-blocking
       mode. Previously, spurious null bytes were added to the digest.
 
 
@@ -372,8 +379,6 @@ include a `salt <https://en.wikipedia.org/wiki/Salt_%28cryptography%29>`_.
 BLAKE2
 ------
 
-.. sectionauthor:: Dmitry Chestnykh
-
 .. index::
    single: blake2b, blake2s
 
@@ -390,7 +395,7 @@ BLAKE2 supports **keyed mode** (a faster and simpler replacement for HMAC_),
 **salted hashing**, **personalization**, and **tree hashing**.
 
 Hash objects from this module follow the API of standard library's
-:mod:`hashlib` objects.
+:mod:`!hashlib` objects.
 
 
 Creating hash objects

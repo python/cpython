@@ -24,7 +24,13 @@ def given(*_args, **_kwargs):
             @functools.wraps(f)
             def test_function(self):
                 for example_args, example_kwargs in examples:
-                    with self.subTest(*example_args, **example_kwargs):
+                    if len(example_args) < 2:
+                        subtest_args = example_args
+                    else:
+                        # subTest takes up to one positional argument.
+                        # When there are more, display them as a tuple
+                        subtest_args = [example_args]
+                    with self.subTest(*subtest_args, **example_kwargs):
                         f(self, *example_args, **example_kwargs)
 
         else:

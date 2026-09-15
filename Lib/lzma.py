@@ -13,20 +13,22 @@ __all__ = [
     "CHECK_ID_MAX", "CHECK_UNKNOWN",
     "FILTER_LZMA1", "FILTER_LZMA2", "FILTER_DELTA", "FILTER_X86", "FILTER_IA64",
     "FILTER_ARM", "FILTER_ARMTHUMB", "FILTER_POWERPC", "FILTER_SPARC",
+    "FILTER_ARM64", "FILTER_RISCV",
     "FORMAT_AUTO", "FORMAT_XZ", "FORMAT_ALONE", "FORMAT_RAW",
     "MF_HC3", "MF_HC4", "MF_BT2", "MF_BT3", "MF_BT4",
     "MODE_FAST", "MODE_NORMAL", "PRESET_DEFAULT", "PRESET_EXTREME",
 
     "LZMACompressor", "LZMADecompressor", "LZMAFile", "LZMAError",
     "open", "compress", "decompress", "is_check_supported",
+    "lzma_version", "lzma_version_info", "LZMA_VERSION", "LZMA_VERSION_INFO",
 ]
 
 import builtins
 import io
 import os
+from compression._common import _streams
 from _lzma import *
 from _lzma import _encode_filter_properties, _decode_filter_properties  # noqa: F401
-import _compression
 
 
 # Value 0 no longer used
@@ -35,7 +37,7 @@ _MODE_READ     = 1
 _MODE_WRITE    = 3
 
 
-class LZMAFile(_compression.BaseStream):
+class LZMAFile(_streams.BaseStream):
 
     """A file object providing transparent LZMA (de)compression.
 
@@ -127,7 +129,7 @@ class LZMAFile(_compression.BaseStream):
             raise TypeError("filename must be a str, bytes, file or PathLike object")
 
         if self._mode == _MODE_READ:
-            raw = _compression.DecompressReader(self._fp, LZMADecompressor,
+            raw = _streams.DecompressReader(self._fp, LZMADecompressor,
                 trailing_error=LZMAError, format=format, filters=filters)
             self._buffer = io.BufferedReader(raw)
 

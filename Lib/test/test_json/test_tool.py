@@ -1,4 +1,5 @@
 import errno
+import pathlib
 import os
 import sys
 import textwrap
@@ -6,11 +7,14 @@ import unittest
 import subprocess
 
 from test import support
-from test.support import force_not_colorized, os_helper
+from test.support import force_colorized, force_not_colorized, os_helper
 from test.support.script_helper import assert_python_ok
+
+from _colorize import get_theme
 
 
 @support.requires_subprocess()
+@support.skip_if_pgo_task
 class TestMain(unittest.TestCase):
     data = """
 
@@ -154,11 +158,19 @@ class TestMain(unittest.TestCase):
         self.assertEqual(process.stdout, self.jsonlines_expect)
         self.assertEqual(process.stderr, '')
 
+    @force_not_colorized
+    def test_jsonlines_from_file(self):
+        jsonl = pathlib.Path(__file__).parent / 'json_lines.jsonl'
+        args = sys.executable, '-m', self.module, '--json-lines', jsonl
+        process = subprocess.run(args, capture_output=True, text=True, check=True)
+        self.assertEqual(process.stdout, self.jsonlines_expect)
+        self.assertEqual(process.stderr, '')
+
     def test_help_flag(self):
         rc, out, err = assert_python_ok('-m', self.module, '-h',
                                         PYTHON_COLORS='0')
         self.assertEqual(rc, 0)
-        self.assertTrue(out.startswith(b'usage: '))
+        self.assertStartsWith(out, b'usage: ')
         self.assertEqual(err, b'')
 
     def test_sort_keys_flag(self):
@@ -246,34 +258,39 @@ class TestMain(unittest.TestCase):
         proc.communicate(b'"{}"')
         self.assertEqual(proc.returncode, errno.EPIPE)
 
+    @force_colorized
     def test_colors(self):
         infile = os_helper.TESTFN
         self.addCleanup(os.remove, infile)
 
+        t = get_theme().syntax
+        ob = "{"
+        cb = "}"
+
         cases = (
-            ('{}', b'{}'),
-            ('[]', b'[]'),
-            ('null', b'\x1b[1;36mnull\x1b[0m'),
-            ('true', b'\x1b[1;36mtrue\x1b[0m'),
-            ('false', b'\x1b[1;36mfalse\x1b[0m'),
-            ('NaN', b'NaN'),
-            ('Infinity', b'Infinity'),
-            ('-Infinity', b'-Infinity'),
-            ('"foo"', b'\x1b[1;32m"foo"\x1b[0m'),
-            (r'" \"foo\" "', b'\x1b[1;32m" \\"foo\\" "\x1b[0m'),
-            ('"α"', b'\x1b[1;32m"\\u03b1"\x1b[0m'),
-            ('123', b'123'),
-            ('-1.2345e+23', b'-1.2345e+23'),
+            ('{}', '{}'),
+            ('[]', '[]'),
+            ('null', f'{t.keyword}null{t.reset}'),
+            ('true', f'{t.keyword}true{t.reset}'),
+            ('false', f'{t.keyword}false{t.reset}'),
+            ('NaN', f'{t.number}NaN{t.reset}'),
+            ('Infinity', f'{t.number}Infinity{t.reset}'),
+            ('-Infinity', f'{t.number}-Infinity{t.reset}'),
+            ('"foo"', f'{t.string}"foo"{t.reset}'),
+            (r'" \"foo\" "', f'{t.string}" \\"foo\\" "{t.reset}'),
+            ('"α"', f'{t.string}"\\u03b1"{t.reset}'),
+            ('123', f'{t.number}123{t.reset}'),
+            ('-1.25e+23', f'{t.number}-1.25e+23{t.reset}'),
             (r'{"\\": ""}',
-             b'''\
-{
-    \x1b[94m"\\\\"\x1b[0m: \x1b[1;32m""\x1b[0m
-}'''),
+             f'''\
+{ob}
+    {t.definition}"\\\\"{t.reset}: {t.string}""{t.reset}
+{cb}'''),
             (r'{"\\\\": ""}',
-             b'''\
-{
-    \x1b[94m"\\\\\\\\"\x1b[0m: \x1b[1;32m""\x1b[0m
-}'''),
+             f'''\
+{ob}
+    {t.definition}"\\\\\\\\"{t.reset}: {t.string}""{t.reset}
+{cb}'''),
             ('''\
 {
     "foo": "bar",
@@ -281,35 +298,38 @@ class TestMain(unittest.TestCase):
     "qux": [true, false, null],
     "xyz": [NaN, -Infinity, Infinity]
 }''',
-             b'''\
-{
-    \x1b[94m"foo"\x1b[0m: \x1b[1;32m"bar"\x1b[0m,
-    \x1b[94m"baz"\x1b[0m: 1234,
-    \x1b[94m"qux"\x1b[0m: [
-        \x1b[1;36mtrue\x1b[0m,
-        \x1b[1;36mfalse\x1b[0m,
-        \x1b[1;36mnull\x1b[0m
+             f'''\
+{ob}
+    {t.definition}"foo"{t.reset}: {t.string}"bar"{t.reset},
+    {t.definition}"baz"{t.reset}: {t.number}1234{t.reset},
+    {t.definition}"qux"{t.reset}: [
+        {t.keyword}true{t.reset},
+        {t.keyword}false{t.reset},
+        {t.keyword}null{t.reset}
     ],
-    \x1b[94m"xyz"\x1b[0m: [
-        NaN,
-        -Infinity,
-        Infinity
+    {t.definition}"xyz"{t.reset}: [
+        {t.number}NaN{t.reset},
+        {t.number}-Infinity{t.reset},
+        {t.number}Infinity{t.reset}
     ]
-}'''),
+{cb}'''),
         )
 
         for input_, expected in cases:
             with self.subTest(input=input_):
                 with open(infile, "w", encoding="utf-8") as fp:
                     fp.write(input_)
-                _, stdout, _ = assert_python_ok('-m', self.module, infile,
-                                                PYTHON_COLORS='1')
-                stdout = stdout.replace(b'\r\n', b'\n')  # normalize line endings
+                _, stdout_b, _ = assert_python_ok(
+                    '-m', self.module, infile, FORCE_COLOR='1', __isolated='1'
+                )
+                stdout = stdout_b.decode()
+                stdout = stdout.replace('\r\n', '\n')  # normalize line endings
                 stdout = stdout.strip()
                 self.assertEqual(stdout, expected)
 
 
 @support.requires_subprocess()
+@support.skip_if_pgo_task
 class TestTool(TestMain):
     module = 'json.tool'
 

@@ -10,7 +10,7 @@
 
 Iterating over a message object tree is fairly easy with the
 :meth:`Message.walk <email.message.Message.walk>` method.  The
-:mod:`email.iterators` module provides some useful higher level iterations over
+:mod:`!email.iterators` module provides some useful higher level iterations over
 message object trees.
 
 

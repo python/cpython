@@ -5,7 +5,7 @@
 #       Doc/library/token-list.inc
 #       Doc/library/token.rst  (checked, not generated)
 #   make_h:
-#       Include/token.h
+#       Include/internal/pycore_token.h
 #   make_c:
 #       Parser/token.c
 #   make_py:
@@ -87,7 +87,8 @@ extern "C" {
                                  (x) == INDENT    || \\
                                  (x) == DEDENT)
 #define ISSTRINGLIT(x)          ((x) == STRING           || \\
-                                 (x) == FSTRING_MIDDLE)
+                                 (x) == FSTRING_MIDDLE   || \\
+                                 (x) == TSTRING_MIDDLE)
 
 
 // Export these 4 symbols for 'test_peg_generator'
@@ -277,13 +278,13 @@ EXACT_TOKEN_TYPES = {
 %s
 }
 
-def ISTERMINAL(x):
+def ISTERMINAL(x: int) -> bool:
     return x < NT_OFFSET
 
-def ISNONTERMINAL(x):
+def ISNONTERMINAL(x: int) -> bool:
     return x >= NT_OFFSET
 
-def ISEOF(x):
+def ISEOF(x: int) -> bool:
     return x == ENDMARKER
 '''
 

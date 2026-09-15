@@ -1,0 +1,4 @@
+Add the :meth:`!tkinter.Misc.tk_appname`,
+:meth:`!tkinter.Misc.tk_useinputmethods` and :meth:`!tkinter.Misc.tk_caret`
+methods, wrapping the ``tk appname``, ``tk useinputmethods`` and ``tk caret``
+Tk commands.

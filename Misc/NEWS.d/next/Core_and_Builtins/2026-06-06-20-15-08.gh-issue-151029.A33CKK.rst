@@ -1,0 +1,2 @@
+On Linux, fix :func:`sys.remote_exec` unable to find remote writable memory
+when ``libpython`` replaced on disk.

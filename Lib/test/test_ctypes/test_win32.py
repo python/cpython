@@ -5,7 +5,6 @@ import errno
 import sys
 import unittest
 from ctypes import (CDLL, Structure, POINTER, pointer, sizeof, byref,
-                    _pointer_type_cache,
                     c_void_p, c_char, c_int, c_long)
 from test import support
 from test.support import import_helper
@@ -145,8 +144,8 @@ class Structures(unittest.TestCase):
             self.assertEqual(ret.top, top.value)
             self.assertEqual(ret.bottom, bottom.value)
 
-        # to not leak references, we must clean _pointer_type_cache
-        del _pointer_type_cache[RECT]
+        self.assertIs(PointInRect.argtypes[0], ReturnRect.argtypes[2])
+        self.assertIs(PointInRect.argtypes[0], ReturnRect.argtypes[5])
 
 
 if __name__ == '__main__':

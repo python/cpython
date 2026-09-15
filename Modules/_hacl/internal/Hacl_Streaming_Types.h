@@ -23,8 +23,8 @@
  */
 
 
-#ifndef __internal_Hacl_Streaming_Types_H
-#define __internal_Hacl_Streaming_Types_H
+#ifndef internal_Hacl_Streaming_Types_H
+#define internal_Hacl_Streaming_Types_H
 
 #if defined(__cplusplus)
 extern "C" {
@@ -83,5 +83,5 @@ Hacl_Streaming_MD_state_64;
 }
 #endif
 
-#define __internal_Hacl_Streaming_Types_H_DEFINED
-#endif
+#define internal_Hacl_Streaming_Types_H_DEFINED
+#endif /* internal_Hacl_Streaming_Types_H */

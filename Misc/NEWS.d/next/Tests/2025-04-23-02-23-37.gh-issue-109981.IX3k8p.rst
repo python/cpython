@@ -1,3 +1,0 @@
-The test helper that counts the list of open file descriptors now uses the
-optimised ``/dev/fd`` approach on all Apple platforms, not just macOS.
-This avoids crashes caused by guarded file descriptors.

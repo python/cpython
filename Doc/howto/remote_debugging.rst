@@ -3,6 +3,88 @@
 Remote debugging attachment protocol
 ====================================
 
+This protocol enables external tools to attach to a running CPython process and
+execute Python code remotely.
+
+Most platforms require elevated privileges to attach to another Python process.
+
+Disabling remote debugging
+--------------------------
+
+To disable remote debugging support, use any of the following:
+
+* Set the :envvar:`PYTHON_DISABLE_REMOTE_DEBUG` environment variable to ``1`` before
+  starting the interpreter.
+* Use the :option:`-X disable_remote_debug` command-line option.
+* Compile Python with the :option:`--without-remote-debug` build flag.
+
+.. _permission-requirements:
+
+Permission requirements
+=======================
+
+Attaching to a running Python process for remote debugging requires elevated
+privileges on most platforms. The specific requirements and troubleshooting
+steps depend on your operating system:
+
+.. rubric:: Linux
+
+The tracer process must have the ``CAP_SYS_PTRACE`` capability or equivalent
+privileges. You can only trace processes you own and can signal. Tracing may
+fail if the process is already being traced, or if it is running with
+set-user-ID or set-group-ID. Security modules like Yama may further restrict
+tracing.
+
+To temporarily relax ptrace restrictions (until reboot), run:
+
+  ``echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope``
+
+.. note::
+
+   Disabling ``ptrace_scope`` reduces system hardening and should only be done
+   in trusted environments.
+
+If running inside a container, use ``--cap-add=SYS_PTRACE`` or
+``--privileged``, and run as root if needed.
+
+Try re-running the command with elevated privileges:
+
+  ``sudo -E !!``
+
+
+.. rubric:: macOS
+
+To attach to another process, you typically need to run your debugging tool
+with elevated privileges. This can be done by using ``sudo`` or running as
+root.
+
+Even when attaching to processes you own, macOS may block debugging unless
+the debugger is run with root privileges due to system security restrictions.
+
+
+.. rubric:: Windows
+
+To attach to another process, you usually need to run your debugging tool
+with administrative privileges. Start the command prompt or terminal as
+Administrator.
+
+Some processes may still be inaccessible even with Administrator rights,
+unless you have the ``SeDebugPrivilege`` privilege enabled.
+
+To resolve file or folder access issues, adjust the security permissions:
+
+  1. Right-click the file or folder and select **Properties**.
+  2. Go to the **Security** tab to view users and groups with access.
+  3. Click **Edit** to modify permissions.
+  4. Select your user account.
+  5. In **Permissions**, check **Read** or **Full control** as needed.
+  6. Click **Apply**, then **OK** to confirm.
+
+
+.. note::
+
+   Ensure you've satisfied all :ref:`permission-requirements` before proceeding.
+
 This section describes the low-level protocol that enables external tools to
 inject and execute a Python script within a running CPython process.
 
@@ -110,7 +192,7 @@ file format structures from the binary file on disk. The ELF header contains a
 pointer to the section header table. Each section header contains metadata about
 a section including its name (stored in a separate string table), offset, and
 size. To find a specific section like .PyRuntime, you need to walk through these
-headers and match the section name. The section header then provdes the offset
+headers and match the section name. The section header then provides the offset
 where that section exists in the file, which can be used to calculate its
 runtime address when the binary is loaded into memory.
 
@@ -374,13 +456,13 @@ To locate a thread:
    reliable thread to target.
 
 3. Optionally, use the offset ``interpreter_state.threads_head`` to iterate
-through the linked list of all thread states. Each ``PyThreadState`` structure
-contains a ``native_thread_id`` field, which may be compared to a target thread
-ID to find a specific thread.
+   through the linked list of all thread states. Each ``PyThreadState``
+   structure contains a ``native_thread_id`` field, which may be compared to
+   a target thread ID to find a specific thread.
 
-1. Once a valid ``PyThreadState`` has been found, its address can be used in
-later steps of the protocol, such as writing debugger control fields and
-scheduling execution.
+4. Once a valid ``PyThreadState`` has been found, its address can be used in
+   later steps of the protocol, such as writing debugger control fields and
+   scheduling execution.
 
 The following is an example implementation that locates the main thread state::
 
@@ -454,15 +536,15 @@ its fields are defined by the ``_Py_DebugOffsets`` structure and include the
 following:
 
 - ``debugger_script_path``: A fixed-size buffer that holds the full path to a
-   Python source file (``.py``).  This file must be accessible and readable by
-   the target process when execution is triggered.
+  Python source file (``.py``).  This file must be accessible and readable by
+  the target process when execution is triggered.
 
 - ``debugger_pending_call``: An integer flag. Setting this to ``1`` tells the
-   interpreter that a script is ready to be executed.
+  interpreter that a script is ready to be executed.
 
 - ``eval_breaker``: A field checked by the interpreter during execution.
-   Setting bit 5 (``_PY_EVAL_PLEASE_STOP_BIT``, value ``1U << 5``) in this
-   field causes the interpreter to pause and check for debugger activity.
+  Setting bit 5 (``_PY_EVAL_PLEASE_STOP_BIT``, value ``1U << 5``) in this
+  field causes the interpreter to pause and check for debugger activity.
 
 To complete the injection, the debugger must perform the following steps:
 
@@ -543,3 +625,57 @@ To inject and execute a Python script in a remote process:
 7. Resume the process (if suspended). The script will execute at the next safe
    evaluation point.
 
+.. _remote-debugging-threat-model:
+
+Security and threat model
+=========================
+
+The remote debugging protocol relies on the same operating system primitives
+used by native debuggers such as GDB and LLDB.  Attaching to a process
+requires the **same privileges** that those debuggers require, for example
+``ptrace`` / Yama LSM on Linux, ``task_for_pid`` on macOS, and
+``SeDebugPrivilege`` on Windows.  Python does not introduce any new privilege
+escalation path; if an attacker already possesses the permissions needed to
+attach to a process, they could equally use GDB to read memory or inject
+code.
+
+The following principles define what is, and is not, considered a security
+vulnerability in this feature:
+
+Attaching requires OS-level privileges
+   On every supported platform the operating system gates cross-process
+   memory access behind privilege checks (``CAP_SYS_PTRACE``, root, or
+   administrator rights).  A report that demonstrates an issue only after
+   these privileges have already been obtained is **not** a vulnerability in
+   CPython, since the OS security boundary was already crossed.
+
+Crashes or memory errors when reading a compromised process are not vulnerabilities
+   A tool that reads internal interpreter state from a target process must
+   trust that memory to be well-formed.  If the target process has been
+   corrupted or is controlled by an attacker, the debugger or profiler may
+   crash, produce garbage output, or behave unpredictably.  This is the same
+   risk accepted by every ``ptrace``-based debugger.  Bugs in this category
+   (buffer overflows, segmentation faults, or undefined behaviour triggered
+   by reading corrupted state) are **not** treated as security issues, though
+   fixes that improve robustness are welcome.
+
+Vulnerabilities in the target process are not in scope
+   If the Python process being debugged has already been compromised, the
+   attacker already controls execution in that process.  Demonstrating further
+   impact from that starting point does not constitute a vulnerability in the
+   remote debugging protocol.
+
+When to use ``PYTHON_DISABLE_REMOTE_DEBUG``
+-------------------------------------------
+
+The environment variable :envvar:`PYTHON_DISABLE_REMOTE_DEBUG` (and the
+equivalent :option:`-X disable_remote_debug` flag) allows operators to disable
+the in-process side of the protocol as a **defence-in-depth** measure.  This
+may be useful in hardened or sandboxed deployment environments where no
+debugging or profiling of the process is expected and reducing attack surface
+is a priority, even though the OS-level privilege checks already prevent
+unprivileged access.
+
+Setting this variable does **not** affect other OS-level debugging interfaces
+(``ptrace``, ``/proc``, ``task_for_pid``, etc.), which remain available
+according to their own permission models.

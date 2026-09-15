@@ -1,2 +1,0 @@
-Rename the ``threading.Thread._handle`` field to avoid shadowing methods
-defined on subclasses of ``threading.Thread``.
