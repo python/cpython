@@ -1,0 +1,1 @@
+Fix :func:`zipfile.ZipFile.writestr` ignoring ``strict_timestamps=False`` when ``SOURCE_DATE_EPOCH`` is set to a date before 1980 or after 2107.
