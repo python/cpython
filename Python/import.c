@@ -2507,6 +2507,19 @@ create_builtin(
     if (_Py_ext_module_loader_info_init_for_builtin(&info, name) < 0) {
         return NULL;
     }
+    if (initfunc != NULL) {
+        /* An explicitly provided init function (see
+         * PyImport_CreateModuleFromInitfunc()) may belong to a submodule
+         * whose single-phase init creates the module using only the last
+         * component of the name (as e.g. pybind11 does).  Set the package
+         * context so that PyModule_Create() resolves the full name, the
+         * same as for dynamically loaded extensions. */
+        info.newcontext = PyUnicode_AsUTF8(info.name);
+        if (info.newcontext == NULL) {
+            _Py_ext_module_loader_info_clear(&info);
+            return NULL;
+        }
+    }
 
     struct extensions_cache_value *cached = NULL;
     PyObject *mod = import_find_extension(tstate, &info, &cached);
