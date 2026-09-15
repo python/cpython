@@ -1026,6 +1026,62 @@ class DeflateCompressedZipImportTestCase(UncompressedZipImportTestCase):
 class ZStdCompressedZipImportTestCase(UncompressedZipImportTestCase):
     compression = ZIP_ZSTANDARD
 
+    def test_concatenated_frames(self):
+        from compression import zstd
+        import zipfile
+
+        class ConcatenatedFrameCompressor:
+            def compress(self, data):
+                return b"".join(zstd.compress(bytes([byte])) for byte in data)
+
+            def flush(self):
+                return b""
+
+        with unittest.mock.patch.object(
+            zipfile,
+            "_get_compressor",
+            return_value=ConcatenatedFrameCompressor(),
+        ):
+            self.doTest(".py", {TESTMOD + ".py": test_src}, TESTMOD)
+
+    def test_concatenated_frames_linear_input(self):
+        from compression import zstd
+
+        frame_count = 100
+        frame = zstd.compress(b"x")
+        compressed = frame * frame_count
+        input_sizes = []
+        decompressor_class = zipimport._get_zstd_decompressor_class()
+
+        class RecordingDecompressor:
+            def __init__(self):
+                self._decompressor = decompressor_class()
+
+            def __getattr__(self, name):
+                return getattr(self._decompressor, name)
+
+            def decompress(self, data, max_length=-1):
+                input_sizes.append(memoryview(data).nbytes)
+                return self._decompressor.decompress(data, max_length)
+
+        with unittest.mock.patch.object(
+            zipimport, "_zstd_decompressor_class", RecordingDecompressor
+        ):
+            self.assertEqual(
+                zipimport._zstd_decompress(compressed), b"x" * frame_count
+            )
+
+        self.assertEqual(sum(input_sizes), len(compressed))
+
+    def test_truncated_frame(self):
+        from compression import zstd
+
+        compressed = zstd.compress(b"x")
+        for data in (b"", compressed[:-1]):
+            with self.subTest(data=data):
+                with self.assertRaises(zipimport.ZipImportError):
+                    zipimport._zstd_decompress(data)
+
 
 class BadFileZipImportTestCase(unittest.TestCase):
     def assertZipFailure(self, filename):
