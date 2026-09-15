@@ -26,7 +26,7 @@ from idlelib import pyparse
 from idlelib import query
 from idlelib import replace
 from idlelib import search
-from idlelib.util import bind_wheel, py_extensions, wheel_event
+from idlelib.util import bind_wheel, py_extensions, wheel_event, win_workarea
 from idlelib import window
 from idlelib.help import _get_dochome
 
@@ -310,6 +310,44 @@ class EditorWindow:
 
         self.mtime = self.last_mtime()
         text_frame.bind('<FocusIn>', self.focus_in_event)
+        if sys.platform == 'win32':
+            self._map_funcid = top.bind('<Map>', self.map_event, add=True)
+
+    def map_event(self, event):
+        "Fit the window to the screen once it is placed by the window manager."
+        if event.widget is self.top:
+            self.top.unbind('<Map>', self._map_funcid)
+            self.top.after_idle(self.fit_to_screen)
+
+    def fit_to_screen(self, workarea=None):
+        """Keep the window above the taskbar (gh-57471).
+
+        The configured height in lines may not fit on the screen.  Move
+        the window up as far as the work area allows, then shorten the
+        text if it still does not fit.  The work area is (top, bottom)
+        in screen coordinates, by default that of the window's monitor.
+        """
+        top = self.top
+        if workarea is None:
+            workarea = win_workarea(top)
+        if workarea is None:
+            return
+        work_top, work_bottom = workarea
+        width, height, x, y = self.get_geometry()
+        title = top.winfo_rooty() - y  # Height of the title bar and border.
+        # The requested height is what the widgets need; the actual one
+        # may already be limited by the screen.
+        height = top.winfo_reqheight()
+        new_y = max(work_top, min(y, work_bottom - title - height))
+        if new_y != y:
+            top.wm_geometry(f'+{x}+{new_y}')
+        if new_y + title + height > work_bottom:
+            text = self.text
+            linespace = Font(text, text["font"]).metrics("linespace")
+            # Everything but the text lines: status bar, padding, borders...
+            other = height - int(text['height']) * linespace
+            lines = (work_bottom - new_y - title - other) // linespace
+            text['height'] = max(lines, 4)
 
     def handle_winconfig(self, event=None):
         self.set_width()
