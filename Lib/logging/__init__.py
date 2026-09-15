@@ -29,6 +29,8 @@ from types import GenericAlias
 from string import Template
 from string import Formatter as StrFormatter
 
+lazy import pickle
+
 
 __all__ = ['BASIC_FORMAT', 'BufferingFormatter', 'CRITICAL', 'DEBUG', 'ERROR',
            'FATAL', 'FileHandler', 'Filter', 'Formatter', 'Handler', 'INFO',
@@ -1841,7 +1843,6 @@ class Logger(Filterer):
 
     def __reduce__(self):
         if getLogger(self.name) is not self:
-            import pickle
             raise pickle.PicklingError('logger cannot be pickled')
         return getLogger, (self.name,)
 
@@ -2365,9 +2366,7 @@ def captureWarnings(capture):
 
 def __getattr__(name):
     if name in ("__version__", "__date__"):
-        from warnings import _deprecated
-
-        _deprecated(name, remove=(3, 20))
+        warnings._deprecated(name, remove=(3, 20))
         return {  # Do not change
             "__version__": "0.5.1.2",
             "__date__": "07 February 2010",

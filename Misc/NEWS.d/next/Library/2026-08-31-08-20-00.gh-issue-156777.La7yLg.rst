@@ -1,0 +1,2 @@
+Optimize import time for :mod:`logging.handlers` and :mod:`logging.config` with
+lazy imports.
