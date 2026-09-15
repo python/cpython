@@ -1,0 +1,4 @@
+Fix :class:`asyncio.StreamReader` raising :exc:`BufferError` when a
+:class:`memoryview` is held on the internal buffer. The ``read``,
+``readline``, ``readuntil``, and ``readexactly`` methods now fall back
+to non-mutating buffer replacement when in-place resize is not possible.
