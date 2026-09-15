@@ -8,12 +8,13 @@ import _pyio as pyio # Python implementation of io
 
 
 try:
-    import ctypes
+    import ctypes.util
 except ImportError:
     def byteslike(*pos, **kw):
         return array.array("b", bytes(*pos, **kw))
 else:
-    class EmptyStruct(ctypes.Structure):
+    @ctypes.util.struct
+    class EmptyStruct:
         pass
 
     def byteslike(*pos, **kw):

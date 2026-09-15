@@ -585,6 +585,12 @@ _asyncio_Future__asyncio_future_blocking_set(PyObject *self, PyObject *value, vo
 {
     int return_value;
 
+    if (value == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                     "attribute '_asyncio_future_blocking' of '%.100s' objects cannot be deleted",
+                     Py_TYPE(self)->tp_name);
+        return -1;
+    }
     Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _asyncio_Future__asyncio_future_blocking_set_impl((FutureObj *)self, value);
     Py_END_CRITICAL_SECTION();
@@ -635,6 +641,12 @@ _asyncio_Future__log_traceback_set(PyObject *self, PyObject *value, void *Py_UNU
 {
     int return_value;
 
+    if (value == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                     "attribute '_log_traceback' of '%.100s' objects cannot be deleted",
+                     Py_TYPE(self)->tp_name);
+        return -1;
+    }
     Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _asyncio_Future__log_traceback_set_impl((FutureObj *)self, value);
     Py_END_CRITICAL_SECTION();
@@ -810,6 +822,12 @@ _asyncio_Future__cancel_message_set(PyObject *self, PyObject *value, void *Py_UN
 {
     int return_value;
 
+    if (value == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                     "attribute '_cancel_message' of '%.100s' objects cannot be deleted",
+                     Py_TYPE(self)->tp_name);
+        return -1;
+    }
     Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _asyncio_Future__cancel_message_set_impl((FutureObj *)self, value);
     Py_END_CRITICAL_SECTION();
@@ -1002,6 +1020,12 @@ _asyncio_Task__log_destroy_pending_set(PyObject *self, PyObject *value, void *Py
 {
     int return_value;
 
+    if (value == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                     "attribute '_log_destroy_pending' of '%.100s' objects cannot be deleted",
+                     Py_TYPE(self)->tp_name);
+        return -1;
+    }
     Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _asyncio_Task__log_destroy_pending_set_impl((TaskObj *)self, value);
     Py_END_CRITICAL_SECTION();
@@ -2234,4 +2258,4 @@ _asyncio_future_discard_from_awaited_by(PyObject *module, PyObject *const *args,
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=22e74568ff49f81f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=46d50c477614b57e input=a9049054013a1b77]*/

@@ -55,6 +55,13 @@ MSG = 'Michael Gilfix was here\u1234\r\n'.encode('utf-8')
 VSOCKPORT = 1234
 AIX = platform.system() == "AIX"
 SOLARIS = sys.platform.startswith("sunos")
+# NetBSD, OpenBSD and DragonFly deliver the file descriptors from only one
+# SCM_RIGHTS control message when several are sent in a single sendmsg().
+BSD_COMBINES_SCM_RIGHTS = sys.platform.startswith(
+    ("netbsd", "openbsd", "dragonfly"))
+# OpenBSD and DragonFly fail recvmsg() with EMSGSIZE, instead of setting
+# MSG_CTRUNC, when the ancillary data buffer is too small for a cmsghdr.
+CMSG_TRUNC_RAISES_EMSGSIZE = sys.platform.startswith(("openbsd", "dragonfly"))
 WSL = "microsoft-standard-WSL" in platform.release()
 
 try:
@@ -1295,7 +1302,8 @@ class GeneralModuleTests(unittest.TestCase):
         # protocol, at least for modern Linuxes.
         if (
             sys.platform.startswith(
-                ('linux', 'android', 'freebsd', 'netbsd', 'gnukfreebsd'))
+                ('linux', 'android', 'freebsd', 'dragonfly', 'netbsd',
+                 'gnukfreebsd'))
             or is_apple
         ):
             # avoid the 'echo' service on this platform, as there is an
@@ -1779,6 +1787,23 @@ class GeneralModuleTests(unittest.TestCase):
             except socket.gaierror:
                 pass
 
+    @unittest.skipUnless(hasattr(socket, 'AI_NUMERICSERV'),
+                         'needs socket.AI_NUMERICSERV')
+    @support.thread_unsafe('setlocale is not thread-safe')
+    @support.run_with_locales('LC_ALL',
+        'uk_UA.KOI8-U', 'uk_UA', 'ja_JP.eucJP', 'ja_JP.SJIS', 'ja_JP',
+        'ko_KR.eucKR', 'zh_CN.GB18030', 'el_GR.ISO8859-7',
+        'de_DE.ISO8859-1', 'ja_JP.UTF-8',
+        '')
+    def test_getaddrinfo_localized_error(self):
+        # gh-93251: the localized gai_strerror() message could fail to be
+        # decoded as UTF-8, so UnicodeDecodeError was raised
+        # instead of gaierror.
+        with self.assertRaises(socket.gaierror) as cm:
+            socket.getaddrinfo("localhost", "http",
+                               flags=socket.AI_NUMERICSERV)
+        str(cm.exception)
+
     @unittest.skipIf(_testcapi is None, "requires _testcapi")
     def test_getaddrinfo_int_port_overflow(self):
         # gh-74895: Test that getaddrinfo does not raise OverflowError on port.
@@ -1943,6 +1968,25 @@ class GeneralModuleTests(unittest.TestCase):
                     encoding = None if "b" in mode else "utf-8"
                     with sock.makefile(mode, encoding=encoding) as fp:
                         self.assertEqual(fp.mode, mode)
+
+    def test_makefile_line_buffering(self):
+        with socket.socket() as sock:
+            for mode in 'r', 'w':
+                with self.subTest(mode=mode):
+                    with sock.makefile(mode, buffering=1,
+                                       encoding="utf-8") as fp:
+                        self.assertTrue(fp.line_buffering)
+
+    def test_makefile_line_buffering_binary(self):
+        # Line buffering is not supported in binary mode, as in open().
+        with socket.socket() as sock:
+            for mode in 'rb', 'wb':
+                with self.subTest(mode=mode):
+                    with self.assertWarnsRegex(
+                            RuntimeWarning,
+                            "line buffering .* isn't supported in binary "
+                            "mode"):
+                        sock.makefile(mode, buffering=1).close()
 
     def test_makefile_invalid_mode(self):
         for mode in 'rt', 'x', '+', 'a':
@@ -4178,6 +4222,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
     @unittest.skipIf(is_apple, "skipping, see issue #12958")
     @unittest.skipIf(SOLARIS, "skipping, see gh-91214")
     @unittest.skipIf(AIX, "skipping, see issue #22397")
+    @unittest.skipIf(BSD_COMBINES_SCM_RIGHTS, "skipping, see gh-125860")
     @requireAttrs(socket, "CMSG_SPACE")
     def testFDPassSeparate(self):
         # Pass two FDs in two separate arrays.  Arrays may be combined
@@ -4190,6 +4235,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
     @unittest.skipIf(is_apple, "skipping, see issue #12958")
     @unittest.skipIf(SOLARIS, "skipping, see gh-91214")
     @unittest.skipIf(AIX, "skipping, see issue #22397")
+    @unittest.skipIf(BSD_COMBINES_SCM_RIGHTS, "skipping, see gh-125860")
     def _testFDPassSeparate(self):
         fd0, fd1 = self.newFDs(2)
         self.assertEqual(
@@ -4204,6 +4250,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
     @unittest.skipIf(is_apple, "skipping, see issue #12958")
     @unittest.skipIf(SOLARIS, "skipping, see gh-91214")
     @unittest.skipIf(AIX, "skipping, see issue #22397")
+    @unittest.skipIf(BSD_COMBINES_SCM_RIGHTS, "skipping, see gh-125860")
     @requireAttrs(socket, "CMSG_SPACE")
     def testFDPassSeparateMinSpace(self):
         # Pass two FDs in two separate arrays, receiving them into the
@@ -4219,6 +4266,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
     @unittest.skipIf(is_apple, "skipping, see issue #12958")
     @unittest.skipIf(SOLARIS, "skipping, see gh-91214")
     @unittest.skipIf(AIX, "skipping, see issue #22397")
+    @unittest.skipIf(BSD_COMBINES_SCM_RIGHTS, "skipping, see gh-125860")
     def _testFDPassSeparateMinSpace(self):
         fd0, fd1 = self.newFDs(2)
         self.assertEqual(
@@ -4343,6 +4391,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
     # (but still too small) buffer sizes.
 
     @skipForRefleakHuntinIf(sys.platform == "darwin", "#80931")
+    @unittest.skipIf(CMSG_TRUNC_RAISES_EMSGSIZE, "skipping, see gh-154240")
     def testCmsgTrunc1(self):
         self.checkTruncatedHeader(self.doRecvmsg(self.serv_sock, len(MSG), 1))
 
@@ -4351,6 +4400,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
         self.createAndSendFDs(1)
 
     @skipForRefleakHuntinIf(sys.platform == "darwin", "#80931")
+    @unittest.skipIf(CMSG_TRUNC_RAISES_EMSGSIZE, "skipping, see gh-154240")
     def testCmsgTrunc2Int(self):
         # The cmsghdr structure has at least three members, two of
         # which are ints, so we still shouldn't see any ancillary
@@ -4363,6 +4413,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
         self.createAndSendFDs(1)
 
     @skipForRefleakHuntinIf(sys.platform == "darwin", "#80931")
+    @unittest.skipIf(CMSG_TRUNC_RAISES_EMSGSIZE, "skipping, see gh-154240")
     def testCmsgTruncLen0Minus1(self):
         self.checkTruncatedHeader(self.doRecvmsg(self.serv_sock, len(MSG),
                                                  socket.CMSG_LEN(0) - 1))
@@ -4400,6 +4451,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
         self.checkFDs(fds)
 
     @skipForRefleakHuntinIf(sys.platform == "darwin", "#80931")
+    @unittest.skipIf(CMSG_TRUNC_RAISES_EMSGSIZE, "skipping, see gh-154240")
     def testCmsgTruncLen0(self):
         self.checkTruncatedArray(ancbuf=socket.CMSG_LEN(0), maxdata=0)
 
@@ -4408,6 +4460,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
         self.createAndSendFDs(1)
 
     @skipForRefleakHuntinIf(sys.platform == "darwin", "#80931")
+    @unittest.skipIf(CMSG_TRUNC_RAISES_EMSGSIZE, "skipping, see gh-154240")
     def testCmsgTruncLen0Plus1(self):
         self.checkTruncatedArray(ancbuf=socket.CMSG_LEN(0) + 1, maxdata=1)
 
@@ -4416,6 +4469,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
         self.createAndSendFDs(2)
 
     @skipForRefleakHuntinIf(sys.platform == "darwin", "#80931")
+    @unittest.skipIf(CMSG_TRUNC_RAISES_EMSGSIZE, "skipping, see gh-154240")
     def testCmsgTruncLen1(self):
         self.checkTruncatedArray(ancbuf=socket.CMSG_LEN(SIZEOF_INT),
                                  maxdata=SIZEOF_INT)
@@ -4426,6 +4480,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
 
 
     @skipForRefleakHuntinIf(sys.platform == "darwin", "#80931")
+    @unittest.skipIf(CMSG_TRUNC_RAISES_EMSGSIZE, "skipping, see gh-154240")
     def testCmsgTruncLen2Minus1(self):
         self.checkTruncatedArray(ancbuf=socket.CMSG_LEN(2 * SIZEOF_INT) - 1,
                                  maxdata=(2 * SIZEOF_INT) - 1)
@@ -4698,6 +4753,7 @@ class RFC3542AncillaryTest(SendrecvmsgServerTimeoutBase):
     # (but still too small) buffer sizes.
 
     @requireAttrs(socket, "IPV6_RECVHOPLIMIT", "IPV6_HOPLIMIT")
+    @unittest.skipIf(CMSG_TRUNC_RAISES_EMSGSIZE, "skipping, see gh-154240")
     def testSingleCmsgTrunc1(self):
         self.checkHopLimitTruncatedHeader(ancbufsize=1)
 
@@ -4707,6 +4763,7 @@ class RFC3542AncillaryTest(SendrecvmsgServerTimeoutBase):
         self.sendToServer(MSG)
 
     @requireAttrs(socket, "IPV6_RECVHOPLIMIT", "IPV6_HOPLIMIT")
+    @unittest.skipIf(CMSG_TRUNC_RAISES_EMSGSIZE, "skipping, see gh-154240")
     def testSingleCmsgTrunc2Int(self):
         self.checkHopLimitTruncatedHeader(ancbufsize=2 * SIZEOF_INT)
 
@@ -4716,6 +4773,7 @@ class RFC3542AncillaryTest(SendrecvmsgServerTimeoutBase):
         self.sendToServer(MSG)
 
     @requireAttrs(socket, "IPV6_RECVHOPLIMIT", "IPV6_HOPLIMIT")
+    @unittest.skipIf(CMSG_TRUNC_RAISES_EMSGSIZE, "skipping, see gh-154240")
     def testSingleCmsgTruncLen0Minus1(self):
         self.checkHopLimitTruncatedHeader(ancbufsize=socket.CMSG_LEN(0) - 1)
 
@@ -4725,6 +4783,7 @@ class RFC3542AncillaryTest(SendrecvmsgServerTimeoutBase):
         self.sendToServer(MSG)
 
     @requireAttrs(socket, "IPV6_RECVHOPLIMIT", "IPV6_HOPLIMIT")
+    @unittest.skipIf(CMSG_TRUNC_RAISES_EMSGSIZE, "skipping, see gh-154240")
     def testSingleCmsgTruncInData(self):
         # Test truncation of a control message inside its associated
         # data.  The message may be returned with its data truncated,
@@ -4797,6 +4856,7 @@ class RFC3542AncillaryTest(SendrecvmsgServerTimeoutBase):
 
     @requireAttrs(socket, "CMSG_SPACE", "IPV6_RECVHOPLIMIT", "IPV6_HOPLIMIT",
                   "IPV6_RECVTCLASS", "IPV6_TCLASS")
+    @unittest.skipIf(CMSG_TRUNC_RAISES_EMSGSIZE, "skipping, see gh-154240")
     def testSecondCmsgTrunc1(self):
         self.checkTruncatedSecondHeader(socket.CMSG_SPACE(SIZEOF_INT) + 1)
 
@@ -4807,6 +4867,7 @@ class RFC3542AncillaryTest(SendrecvmsgServerTimeoutBase):
 
     @requireAttrs(socket, "CMSG_SPACE", "IPV6_RECVHOPLIMIT", "IPV6_HOPLIMIT",
                   "IPV6_RECVTCLASS", "IPV6_TCLASS")
+    @unittest.skipIf(CMSG_TRUNC_RAISES_EMSGSIZE, "skipping, see gh-154240")
     def testSecondCmsgTrunc2Int(self):
         self.checkTruncatedSecondHeader(socket.CMSG_SPACE(SIZEOF_INT) +
                                         2 * SIZEOF_INT)
@@ -4818,6 +4879,7 @@ class RFC3542AncillaryTest(SendrecvmsgServerTimeoutBase):
 
     @requireAttrs(socket, "CMSG_SPACE", "IPV6_RECVHOPLIMIT", "IPV6_HOPLIMIT",
                   "IPV6_RECVTCLASS", "IPV6_TCLASS")
+    @unittest.skipIf(CMSG_TRUNC_RAISES_EMSGSIZE, "skipping, see gh-154240")
     def testSecondCmsgTruncLen0Minus1(self):
         self.checkTruncatedSecondHeader(socket.CMSG_SPACE(SIZEOF_INT) +
                                         socket.CMSG_LEN(0) - 1)
@@ -4829,6 +4891,7 @@ class RFC3542AncillaryTest(SendrecvmsgServerTimeoutBase):
 
     @requireAttrs(socket, "CMSG_SPACE", "IPV6_RECVHOPLIMIT", "IPV6_HOPLIMIT",
                   "IPV6_RECVTCLASS", "IPV6_TCLASS")
+    @unittest.skipIf(CMSG_TRUNC_RAISES_EMSGSIZE, "skipping, see gh-154240")
     def testSecondCmsgTruncInData(self):
         # Test truncation of the second of two control messages inside
         # its associated data.
@@ -5717,10 +5780,20 @@ class FileObjectClassTestCase(SocketConnectedTest):
         # Performing file readline test
         line = self.read_file.readline()
         self.assertEqual(line, self.read_msg)
+        # Readline mode
+        if self.bufsize == 1 and self.read_mode == "r":
+            self.assertTrue(self.read_file.line_buffering)
 
     def _testReadline(self):
         self.write_file.write(self.write_msg)
-        self.write_file.flush()
+        # Readline mode: no need to flush
+        if self.bufsize == 1 and self.write_mode == "w":
+            self.assertTrue(self.write_file.line_buffering)
+        else:
+            self.write_file.flush()
+        # Prevent garbage collection from flushing
+        # until the server has finished
+        self.assertTrue(self.serv_finished.wait(5.0))
 
     def testCloseAfterMakefile(self):
         # The file returned by makefile should keep the socket open.
@@ -5878,11 +5951,6 @@ class UnbufferedFileObjectClassTestCase(FileObjectClassTestCase):
             self.serv_skipped = "failed to saturate the socket buffer"
 
 
-class LineBufferedFileObjectClassTestCase(FileObjectClassTestCase):
-
-    bufsize = 1 # Default-buffered for reading; line-buffered for writing
-
-
 class SmallBufferedFileObjectClassTestCase(FileObjectClassTestCase):
 
     bufsize = 2 # Exercise the buffering code
@@ -5911,6 +5979,16 @@ class UnicodeWriteFileObjectClassTestCase(FileObjectClassTestCase):
 class UnicodeReadWriteFileObjectClassTestCase(FileObjectClassTestCase):
     """Tests for socket.makefile() in text mode (rather than binary)"""
 
+    read_mode = 'r'
+    read_msg = MSG.decode('utf-8')
+    write_mode = 'w'
+    write_msg = MSG.decode('utf-8')
+    newline = ''
+
+
+class UnicodeLineBufferedFileObjectClassTestCase(FileObjectClassTestCase):
+
+    bufsize = 1  # Default-buffered for reading; line-buffered for writing
     read_mode = 'r'
     read_msg = MSG.decode('utf-8')
     write_mode = 'w'

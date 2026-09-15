@@ -8,7 +8,7 @@
 # fredrik@pythonware.com
 # http://www.pythonware.com
 #
-"""This modules handles dialog boxes.
+"""This module handles dialog boxes.
 
 It contains the following public symbols:
 

@@ -1,0 +1,2 @@
+Fix a heap-use-after-free in the C implementation of :mod:`decimal`
+when calling :func:`repr` after deleting the :class:`~decimal.Context`.

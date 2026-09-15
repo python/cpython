@@ -246,6 +246,8 @@ struct _typeobject {
       * This function must escape to any code that can result in
       * the GC being run, such as Py_DECREF.  */
     _Py_iteritemfunc _tp_iteritem;
+
+    void *_tp_cache;
 };
 
 #define _Py_ATTR_CACHE_UNUSED (30000)  // (see tp_versions_used)
@@ -350,7 +352,7 @@ PyAPI_FUNC(PyObject *) _PyObject_FunctionStr(PyObject *);
 #ifdef _Py_TYPEOF
 #define Py_SETREF(dst, src) \
     do { \
-        _Py_TYPEOF(dst)* _tmp_dst_ptr = &(dst); \
+        _Py_TYPEOF(&(dst)) _tmp_dst_ptr = &(dst); \
         _Py_TYPEOF(dst) _tmp_old_dst = (*_tmp_dst_ptr); \
         *_tmp_dst_ptr = (src); \
         Py_DECREF(_tmp_old_dst); \
@@ -372,7 +374,7 @@ PyAPI_FUNC(PyObject *) _PyObject_FunctionStr(PyObject *);
 #ifdef _Py_TYPEOF
 #define Py_XSETREF(dst, src) \
     do { \
-        _Py_TYPEOF(dst)* _tmp_dst_ptr = &(dst); \
+        _Py_TYPEOF(&(dst)) _tmp_dst_ptr = &(dst); \
         _Py_TYPEOF(dst) _tmp_old_dst = (*_tmp_dst_ptr); \
         *_tmp_dst_ptr = (src); \
         Py_XDECREF(_tmp_old_dst); \

@@ -148,6 +148,7 @@ class TestExports(BaseTestCase):
             "template" : 1,
             "SpooledTemporaryFile" : 1,
             "TemporaryDirectory" : 1,
+            "TemporaryFileWrapper" : 1,
         }
 
         unexp = []
@@ -980,11 +981,22 @@ class TestNamedTemporaryFile(BaseTestCase):
 
     def test_basic(self):
         # NamedTemporaryFile can create files
-        self.do_create()
+        f = self.do_create()
+        self.assertIsInstance(f, tempfile.TemporaryFileWrapper)
         self.do_create(pre="a")
         self.do_create(suf="b")
         self.do_create(pre="a", suf="b")
         self.do_create(pre="aa", suf=".txt")
+
+    def test_in_all(self):
+        self.assertIn("TemporaryFileWrapper", tempfile.__all__)
+
+    def test_deprecated_TemporaryFileWrapper_alias(self):
+        # gh-152586: _TemporaryFileWrapper is a deprecated alias
+        # for the public TemporaryFileWrapper class.
+        with self.assertWarns(DeprecationWarning):
+            obj = tempfile._TemporaryFileWrapper
+        self.assertIs(obj, tempfile.TemporaryFileWrapper)
 
     def test_method_lookup(self):
         # Issue #18879: Looking up a temporary file method should keep it
@@ -1141,7 +1153,7 @@ class TestNamedTemporaryFile(BaseTestCase):
         try:
             with self.assertWarnsRegex(
                 expected_warning=ResourceWarning,
-                expected_regex=r"Implicitly cleaning up <_TemporaryFileWrapper file=.*>",
+                expected_regex=r"Implicitly cleaning up <TemporaryFileWrapper file=.*>",
             ):
                 tmp_name = my_func(dir)
                 support.gc_collect()
@@ -1185,7 +1197,7 @@ class TestNamedTemporaryFile(BaseTestCase):
     def test_unexpected_error(self):
         dir = tempfile.mkdtemp()
         self.addCleanup(os_helper.rmtree, dir)
-        with mock.patch('tempfile._TemporaryFileWrapper') as mock_ntf, \
+        with mock.patch('tempfile.TemporaryFileWrapper') as mock_ntf, \
              mock.patch('io.open', mock.mock_open()) as mock_open:
             mock_ntf.side_effect = KeyboardInterrupt()
             with self.assertRaises(KeyboardInterrupt):

@@ -600,6 +600,10 @@ aliases = {
     'utf7'               : 'utf_7',
     'unicode_1_1_utf_7'  : 'utf_7',
 
+    # utf_7_imap codec
+    'csutf7imap'         : 'utf_7_imap',
+    'mutf_7'             : 'utf_7_imap',
+
     # utf_8 codec
     'csutf8'             : 'utf_8',
     'u8'                 : 'utf_8',

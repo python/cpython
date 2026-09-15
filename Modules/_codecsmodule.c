@@ -642,6 +642,31 @@ _codecs_code_page_decode_impl(PyObject *module, int codepage,
 
 #endif /* MS_WINDOWS */
 
+#ifdef HAVE_ICONV
+
+/*[clinic input]
+_codecs.iconv_decode
+    encoding: str
+    data: Py_buffer
+    errors: str(accept={str, NoneType}) = None
+    final: bool = False
+    /
+[clinic start generated code]*/
+
+static PyObject *
+_codecs_iconv_decode_impl(PyObject *module, const char *encoding,
+                          Py_buffer *data, const char *errors, int final)
+/*[clinic end generated code: output=6c6145a9decc2ba8 input=d15a04d7d3a3e0cd]*/
+{
+    Py_ssize_t consumed = data->len;
+    PyObject *decoded = _PyUnicode_DecodeIconv(encoding, data->buf, data->len,
+                                               errors,
+                                               final ? NULL : &consumed);
+    return codec_tuple(decoded, consumed);
+}
+
+#endif /* HAVE_ICONV */
+
 /* --- Encoder ------------------------------------------------------------ */
 
 /*[clinic input]
@@ -952,6 +977,27 @@ _codecs_code_page_encode_impl(PyObject *module, int code_page, PyObject *str,
 
 #endif /* MS_WINDOWS */
 
+#ifdef HAVE_ICONV
+
+/*[clinic input]
+_codecs.iconv_encode
+    encoding: str
+    str: unicode
+    errors: str(accept={str, NoneType}) = None
+    /
+[clinic start generated code]*/
+
+static PyObject *
+_codecs_iconv_encode_impl(PyObject *module, const char *encoding,
+                          PyObject *str, const char *errors)
+/*[clinic end generated code: output=bda0c5acd9be0f17 input=53a1e2028c9e2b43]*/
+{
+    return codec_tuple(_PyUnicode_EncodeIconv(encoding, str, errors),
+                       PyUnicode_GET_LENGTH(str));
+}
+
+#endif /* HAVE_ICONV */
+
 /* --- Error handler registry --------------------------------------------- */
 
 /*[clinic input]
@@ -1107,6 +1153,8 @@ static PyMethodDef _codecs_functions[] = {
     _CODECS_OEM_DECODE_METHODDEF
     _CODECS_CODE_PAGE_ENCODE_METHODDEF
     _CODECS_CODE_PAGE_DECODE_METHODDEF
+    _CODECS_ICONV_ENCODE_METHODDEF
+    _CODECS_ICONV_DECODE_METHODDEF
     _CODECS_REGISTER_ERROR_METHODDEF
     _CODECS__UNREGISTER_ERROR_METHODDEF
     _CODECS_LOOKUP_ERROR_METHODDEF

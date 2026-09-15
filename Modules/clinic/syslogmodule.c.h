@@ -105,35 +105,43 @@ PyDoc_STRVAR(syslog_syslog__doc__,
 "Send the string message to the system logger.");
 
 #define SYSLOG_SYSLOG_METHODDEF    \
-    {"syslog", (PyCFunction)syslog_syslog, METH_VARARGS, syslog_syslog__doc__},
+    {"syslog", _PyCFunction_CAST(syslog_syslog), METH_FASTCALL, syslog_syslog__doc__},
 
 static PyObject *
 syslog_syslog_impl(PyObject *module, int group_left_1, int priority,
                    const char *message);
 
 static PyObject *
-syslog_syslog(PyObject *module, PyObject *args)
+syslog_syslog(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int group_left_1 = 0;
     int priority = LOG_INFO;
     const char *message;
 
-    switch (PyTuple_GET_SIZE(args)) {
-        case 1:
-            if (!PyArg_ParseTuple(args, "s:syslog", &message)) {
-                goto exit;
-            }
-            break;
-        case 2:
-            if (!PyArg_ParseTuple(args, "is:syslog", &priority, &message)) {
-                goto exit;
-            }
-            group_left_1 = 1;
-            break;
-        default:
-            PyErr_SetString(PyExc_TypeError, "syslog.syslog requires 1 to 2 arguments");
+    if (nargs < 1 || nargs > 2) {
+        PyErr_SetString(PyExc_TypeError, "syslog.syslog requires 1 to 2 arguments");
+        goto exit;
+    }
+    if (nargs >= 2) {
+        priority = PyLong_AsInt(args[0]);
+        if (priority == -1 && PyErr_Occurred()) {
             goto exit;
+        }
+        group_left_1 = 1;
+    }
+    if (!PyUnicode_Check(args[nargs - 1])) {
+        _PyArg_BadArgument("syslog", "argument", "str", args[nargs - 1]);
+        goto exit;
+    }
+    Py_ssize_t message_length;
+    message = PyUnicode_AsUTF8AndSize(args[nargs - 1], &message_length);
+    if (message == NULL) {
+        goto exit;
+    }
+    if (strlen(message) != (size_t)message_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
     }
     Py_BEGIN_CRITICAL_SECTION(module);
     return_value = syslog_syslog_impl(module, group_left_1, priority, message);
@@ -265,4 +273,4 @@ syslog_LOG_UPTO(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f92ac9948fa6131e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ab818466dcdbbe59 input=a9049054013a1b77]*/

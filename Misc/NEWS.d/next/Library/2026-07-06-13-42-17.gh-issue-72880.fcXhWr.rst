@@ -1,0 +1,3 @@
+Added the :mod:`tkinter.fontchooser` module which provides the
+:class:`~tkinter.fontchooser.FontChooser` class as an interface to the
+native font selection dialog.

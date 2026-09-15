@@ -47,14 +47,17 @@ class CRenderData:
         # The arguments to the impl function at the time it's called.
         self.impl_arguments: list[str] = []
 
+        # The name of the variable which is returned by the parser.
+        self.parser_retval = "return_value"
+
         # For return converters: the name of the variable that
         # should receive the value returned by the impl.
         self.return_value = "return_value"
 
         # For return converters: the code to convert the return
         # value from the parse function.  This is also where
-        # you should check the _return_value for errors, and
-        # "goto exit" if there are any.
+        # you should check the value returned by the impl for errors,
+        # and "goto exit" if there are any.
         self.return_conversion: list[str] = []
         self.converter_retval = "_return_value"
 

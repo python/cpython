@@ -6,6 +6,11 @@
 
 **Source code:** :source:`Lib/xml/dom/pulldom.py`
 
+.. The module was written by Paul Prescod and added in Python 2.0.
+   It is not based on any specification: the implementation is the only
+   reference.  The Java Streaming API for XML (StAX, JSR 173) is based on
+   it, among other pull parsers.
+
 --------------
 
 The :mod:`!xml.dom.pulldom` module provides a "pull parser" which can also be
@@ -48,19 +53,49 @@ Example::
                doc.expandNode(node)
                print(node.toxml())
 
-``event`` is a constant and can be one of:
+``event`` is one of the following constants,
+and ``node`` is the node which the event is about.
+The nodes implement the :mod:`xml.dom` interfaces;
+they are created by the DOM implementation given to :class:`PullDOM`,
+which is :mod:`xml.dom.minidom` by default.
 
-* :data:`START_ELEMENT`
-* :data:`END_ELEMENT`
-* :data:`COMMENT`
-* :data:`START_DOCUMENT`
-* :data:`END_DOCUMENT`
-* :data:`CHARACTERS`
-* :data:`PROCESSING_INSTRUCTION`
-* :data:`IGNORABLE_WHITESPACE`
 
-``node`` is an object of type :class:`xml.dom.minidom.Document`,
-:class:`xml.dom.minidom.Element` or :class:`xml.dom.minidom.Text`.
+.. data:: START_DOCUMENT
+          END_DOCUMENT
+
+   The start and the end of the document.
+   *node* is the :class:`~xml.dom.Document`.
+
+
+.. data:: START_ELEMENT
+          END_ELEMENT
+
+   The start tag and the end tag of an element.
+   *node* is the :class:`~xml.dom.Element`.
+
+
+.. data:: CHARACTERS
+
+   Character data.
+   *node* is the :class:`~xml.dom.Text` node.
+
+
+.. data:: IGNORABLE_WHITESPACE
+
+   White space in element content, as declared in the DTD.
+   *node* is the :class:`~xml.dom.Text` node.
+
+
+.. data:: COMMENT
+
+   A comment.
+   *node* is the :class:`~xml.dom.Comment` node.
+
+
+.. data:: PROCESSING_INSTRUCTION
+
+   A processing instruction.
+   *node* is the :class:`~xml.dom.ProcessingInstruction` node.
 
 Since the document is treated as a "flat" stream of events, the document "tree"
 is implicitly traversed and the desired elements are found regardless of their
@@ -74,12 +109,19 @@ and switch to DOM-related processing.
 
 .. class:: PullDOM(documentFactory=None)
 
-   Subclass of :class:`xml.sax.handler.ContentHandler`.
+   Subclass of :class:`xml.sax.handler.ContentHandler` which turns SAX events
+   into the events of the pull parser.
+   The nodes are created, but they are not added to the tree,
+   unless :meth:`~DOMEventStream.expandNode` is called.
+   *documentFactory*, if given, is a DOM implementation used to create
+   the document; by default the implementation of :mod:`xml.dom.minidom`
+   is used.
 
 
 .. class:: SAX2DOM(documentFactory=None)
 
-   Subclass of :class:`xml.sax.handler.ContentHandler`.
+   Subclass of :class:`PullDOM` which also adds every created node
+   to the tree, so that the complete document is built.
 
 
 .. function:: parse(stream_or_string, parser=None, bufsize=None)
@@ -95,7 +137,9 @@ If you have XML in a string, you can use the :func:`parseString` function instea
 
 .. function:: parseString(string, parser=None)
 
-   Return a :class:`DOMEventStream` that represents the (Unicode) *string*.
+   Return a :class:`DOMEventStream` that represents the *string*.
+   *string* must be a :class:`str` instance;
+   to parse bytes, pass a binary file object to :func:`parse`.
 
 .. data:: default_bufsize
 
@@ -111,18 +155,21 @@ DOMEventStream Objects
 
 .. class:: DOMEventStream(stream, parser, bufsize)
 
+   Produce the events for the data read from the file object *stream*
+   by the :class:`~xml.sax.xmlreader.XMLReader` *parser*.
+   The data is read by *bufsize* bytes, or characters for a text stream,
+   at a time.
+
    .. versionchanged:: 3.11
       Support for :meth:`~object.__getitem__` method has been removed.
 
    .. method:: getEvent()
 
-      Return a tuple containing *event* and the current *node* as
-      :class:`xml.dom.minidom.Document` if event equals :data:`START_DOCUMENT`,
-      :class:`xml.dom.minidom.Element` if event equals :data:`START_ELEMENT` or
-      :data:`END_ELEMENT` or :class:`xml.dom.minidom.Text` if event equals
-      :data:`CHARACTERS`.
+      Return the next ``(event, node)`` tuple,
+      or ``None`` at the end of the document.
+      See above for the events and the corresponding nodes.
       The current node does not contain information about its children, unless
-      :func:`expandNode` is called.
+      :meth:`expandNode` is called.
 
    .. method:: expandNode(node)
 
@@ -140,4 +187,13 @@ DOMEventStream Objects
                   # Following statement prints node with all its children '<p>Some text <div>and more</div></p>'
                   print(node.toxml())
 
-   .. method:: DOMEventStream.reset()
+   .. method:: reset()
+
+      Discard the events which are not read yet
+      and prepare the object for parsing a new document.
+
+
+   .. method:: clear()
+
+      Release the parser and the document.
+      The stream is not closed, and the object can no longer be used.
