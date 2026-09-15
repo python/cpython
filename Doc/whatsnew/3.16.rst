@@ -340,6 +340,15 @@ concurrent.futures
   (Contributed by xzmeng and Serhiy Storchaka in :gh:`108518`.)
 
 
+dbm.gnu
+-------
+
+* Added constants :const:`~dbm.gnu.GDBM_VERSION_INFO`,
+  :const:`~dbm.gnu.gdbm_version_info` and :const:`~dbm.gnu.gdbm_version`,
+  which provide information about the version of the GDBM library in use.
+  (Contributed by Serhiy Storchaka in :gh:`157478`.)
+
+
 difflib
 -------
 
