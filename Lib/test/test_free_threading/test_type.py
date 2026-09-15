@@ -5,7 +5,7 @@ from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier, Thread
 from unittest import TestCase
 import sys
-from test.support import import_helper, threading_helper
+from test.support import import_helper, threading_helper, Py_GIL_DISABLED
 
 _testinternalcapi = import_helper.import_module("_testinternalcapi")
 
@@ -400,6 +400,46 @@ class TestType(TestCase):
         threads = [Thread(target=target) for target in targets]
         with threading_helper.start_threads(threads):
             pass
+
+    @unittest.skipUnless(Py_GIL_DISABLED,
+                         "race only occurs on the free-threaded build")
+    def test_dir_racing_class_dict_insert(self):
+        # gh-157217: dir() iterated a mappingproxy of the class dict without
+        # holding that dict's critical section. A concurrent insert into the
+        # class dict (for example a lazy __annotations_cache__) then raised
+        # RuntimeError: dictionary changed size during iteration.
+        errors = []
+
+        class C:
+            x: int
+
+        for i in range(200):
+            setattr(C, f'attr_{i}', i)
+
+        def reader():
+            barrier.wait()
+            for _ in range(400):
+                try:
+                    dir(C)
+                    dict(vars(C))
+                    {**vars(C)}
+                except RuntimeError as exc:
+                    errors.append(exc)
+
+        def writer():
+            barrier.wait()
+            # First access stores __annotations_cache__ on the class.
+            C.__annotations__
+            for i in range(200):
+                setattr(C, f'extra_{i}', i)
+
+        n_readers = 4
+        barrier = threading.Barrier(n_readers + 1)
+        threads = [Thread(target=reader) for _ in range(n_readers)]
+        threads.append(Thread(target=writer))
+        with threading_helper.start_threads(threads):
+            pass
+        self.assertEqual(errors, [])
 
 
 if __name__ == "__main__":
