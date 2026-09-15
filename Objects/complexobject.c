@@ -589,6 +589,7 @@ complex_abs(PyComplexObject *v)
 {
     double result;
 
+    errno = 0;
     result = _Py_c_abs(v->cval);
 
     if (errno == ERANGE) {
