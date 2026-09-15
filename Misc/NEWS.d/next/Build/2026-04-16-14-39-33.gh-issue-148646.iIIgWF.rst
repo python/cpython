@@ -1,0 +1,7 @@
+Add a new ``--enable-prebuilt-jit-stencils`` configure flag that forces the
+build to use the existing provided JIT stencil headers even when the digest
+at the beginning of the file does not match expectations. The JIT shim
+object and unwind info are still rebuilt normally. That allows redistributors
+who prebuilt the JIT stencil headers on a system with a different autoconf
+version to still use them even when ``pyconfig.h`` is slightly different.
+It also allow them to build the JIT shim with different LLVM toolchain.
