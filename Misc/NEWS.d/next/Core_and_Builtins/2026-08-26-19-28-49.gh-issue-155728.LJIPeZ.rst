@@ -1,0 +1,2 @@
+The flowgraph optimizer now untracks tuples from the GC when possible. Patch
+by Sergey Miryanov.
