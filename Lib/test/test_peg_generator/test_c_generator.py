@@ -113,6 +113,35 @@ class TestCGenerator(unittest.TestCase):
         self.assertEqual(expected.count("_res = name_var_1;"), 2)
         self.assertNotIn("name_var_2", expected)
 
+    def test_prepared_prefixes_preserve_reuse_and_repeatability(self):
+        generator = self.make_generator("""
+            start: prefix ':' NAME | prefix ':' NUMBER | NAME | prefix '=' NAME
+            prefix[expr_ty] (memo): NAME
+        """)
+        parser = generator.prepare("example.gram")
+        start = parser.rules[0]
+        prefix, = start.prefixes
+        self.assertEqual(prefix.type, "expr_ty")
+        for alt in start.alternatives[:2]:
+            self.assertIn("!p->call_invalid_rules", alt.calls[0].expression())
+            self.assertIn(prefix.result, alt.calls[0].expression())
+        self.assertEqual(start.alternatives[3].calls[0].expression(), "prefix_rule(p)")
+        self.assertEqual(generator.prepare("example.gram"), parser)
+        expected = self.emit_parser(parser)
+        generator.rules.clear()
+        generator.all_rules.clear()
+        self.assertEqual(self.emit_parser(parser), expected)
+
+    def test_nullable_prefix_is_not_reused(self):
+        generator = self.make_generator("""
+            start: prefix ':' NAME | prefix ':' NUMBER
+            prefix (memo): NAME?
+        """)
+        start = generator.prepare("example.gram").rules[0]
+        self.assertEqual(start.prefixes, ())
+        for alt in start.alternatives:
+            self.assertEqual(alt.calls[0].expression(), "prefix_rule(p)")
+
     def test_invalid_trailer_fails_before_output(self):
         generator = self.make_generator("""
             @trailer '%(missing)s'

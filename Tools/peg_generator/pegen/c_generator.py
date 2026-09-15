@@ -13,6 +13,9 @@ from pegen.c_generator_calls import (
 from pegen.c_generator_calls import (
     NodeTypes as NodeTypes,
 )
+from pegen.c_generator_calls import (
+    consuming_rules as consuming_rules,
+)
 from pegen.c_generator_file import CParserEmitter
 from pegen.c_generator_model import CParser, CRule, CRuleSignature
 from pegen.parser_generator import ParserGenerator
