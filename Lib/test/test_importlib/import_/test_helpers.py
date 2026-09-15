@@ -19,8 +19,7 @@ class FixUpModuleTests:
         ns = {"__spec__": spec}
         _bootstrap_external._fix_up_module(ns, name, path)
 
-        expected = {"__spec__": spec, "__loader__": loader, "__file__": path,
-                    "__cached__": None}
+        expected = {"__spec__": spec, "__loader__": loader, "__file__": path}
         self.assertEqual(ns, expected)
 
     def test_no_loader_no_spec_but_sourceless(self):
@@ -29,7 +28,7 @@ class FixUpModuleTests:
         ns = {}
         _bootstrap_external._fix_up_module(ns, name, path, path)
 
-        expected = {"__file__": path, "__cached__": path}
+        expected = {"__file__": path}
 
         for key, val in expected.items():
             with self.subTest(f"{key}: {val}"):
@@ -51,7 +50,7 @@ class FixUpModuleTests:
         ns = {}
         _bootstrap_external._fix_up_module(ns, name, path)
 
-        expected = {"__file__": path, "__cached__": None}
+        expected = {"__file__": path}
 
         for key, val in expected.items():
             with self.subTest(f"{key}: {val}"):

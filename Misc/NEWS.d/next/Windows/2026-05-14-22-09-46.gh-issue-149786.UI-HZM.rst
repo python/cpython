@@ -1,0 +1,1 @@
+Fixes virtual environment launchers on Windows free-threaded builds.

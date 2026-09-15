@@ -2,11 +2,7 @@
 ===============================================
 
 .. module:: resource
-   :platform: Unix
    :synopsis: An interface to provide resource usage information on the current process.
-
-.. moduleauthor:: Jeremy Hylton <jeremy@alum.mit.edu>
-.. sectionauthor:: Jeremy Hylton <jeremy@alum.mit.edu>
 
 --------------
 
@@ -141,7 +137,7 @@ platform.
 .. data:: RLIMIT_CPU
 
    The maximum amount of processor time (in seconds) that a process can use. If
-   this limit is exceeded, a :const:`SIGXCPU` signal is sent to the process. (See
+   this limit is exceeded, a :const:`~signal.SIGXCPU` signal is sent to the process. (See
    the :mod:`signal` module documentation for information about how to catch this
    signal and do something useful, e.g. flush open files to disk.)
 
@@ -356,54 +352,54 @@ These functions are used to retrieve resource usage information:
       print(getrusage(RUSAGE_SELF))
 
    The fields of the return value each describe how a particular system resource
-   has been used, e.g. amount of time spent running is user mode or number of times
+   has been used, e.g. amount of time spent running in user mode or number of times
    the process was swapped out of main memory. Some values are dependent on the
-   clock tick internal, e.g. the amount of memory the process is using.
+   clock tick interval, e.g. the amount of memory the process is using.
 
    For backward compatibility, the return value is also accessible as a tuple of 16
    elements.
 
-   The fields :attr:`ru_utime` and :attr:`ru_stime` of the return value are
+   The fields :attr:`!ru_utime` and :attr:`!ru_stime` of the return value are
    floating-point values representing the amount of time spent executing in user
    mode and the amount of time spent executing in system mode, respectively. The
    remaining values are integers. Consult the :manpage:`getrusage(2)` man page for
    detailed information about these values. A brief summary is presented here:
 
-   +--------+---------------------+---------------------------------------+
-   | Index  | Field               | Resource                              |
-   +========+=====================+=======================================+
-   | ``0``  | :attr:`ru_utime`    | time in user mode (float seconds)     |
-   +--------+---------------------+---------------------------------------+
-   | ``1``  | :attr:`ru_stime`    | time in system mode (float seconds)   |
-   +--------+---------------------+---------------------------------------+
-   | ``2``  | :attr:`ru_maxrss`   | maximum resident set size             |
-   +--------+---------------------+---------------------------------------+
-   | ``3``  | :attr:`ru_ixrss`    | shared memory size                    |
-   +--------+---------------------+---------------------------------------+
-   | ``4``  | :attr:`ru_idrss`    | unshared memory size                  |
-   +--------+---------------------+---------------------------------------+
-   | ``5``  | :attr:`ru_isrss`    | unshared stack size                   |
-   +--------+---------------------+---------------------------------------+
-   | ``6``  | :attr:`ru_minflt`   | page faults not requiring I/O         |
-   +--------+---------------------+---------------------------------------+
-   | ``7``  | :attr:`ru_majflt`   | page faults requiring I/O             |
-   +--------+---------------------+---------------------------------------+
-   | ``8``  | :attr:`ru_nswap`    | number of swap outs                   |
-   +--------+---------------------+---------------------------------------+
-   | ``9``  | :attr:`ru_inblock`  | block input operations                |
-   +--------+---------------------+---------------------------------------+
-   | ``10`` | :attr:`ru_oublock`  | block output operations               |
-   +--------+---------------------+---------------------------------------+
-   | ``11`` | :attr:`ru_msgsnd`   | messages sent                         |
-   +--------+---------------------+---------------------------------------+
-   | ``12`` | :attr:`ru_msgrcv`   | messages received                     |
-   +--------+---------------------+---------------------------------------+
-   | ``13`` | :attr:`ru_nsignals` | signals received                      |
-   +--------+---------------------+---------------------------------------+
-   | ``14`` | :attr:`ru_nvcsw`    | voluntary context switches            |
-   +--------+---------------------+---------------------------------------+
-   | ``15`` | :attr:`ru_nivcsw`   | involuntary context switches          |
-   +--------+---------------------+---------------------------------------+
+   +--------+----------------------+---------------------------------------+
+   | Index  | Field                | Resource                              |
+   +========+======================+=======================================+
+   | ``0``  | :attr:`!ru_utime`    | time in user mode (float seconds)     |
+   +--------+----------------------+---------------------------------------+
+   | ``1``  | :attr:`!ru_stime`    | time in system mode (float seconds)   |
+   +--------+----------------------+---------------------------------------+
+   | ``2``  | :attr:`!ru_maxrss`   | maximum resident set size             |
+   +--------+----------------------+---------------------------------------+
+   | ``3``  | :attr:`!ru_ixrss`    | shared memory size                    |
+   +--------+----------------------+---------------------------------------+
+   | ``4``  | :attr:`!ru_idrss`    | unshared memory size                  |
+   +--------+----------------------+---------------------------------------+
+   | ``5``  | :attr:`!ru_isrss`    | unshared stack size                   |
+   +--------+----------------------+---------------------------------------+
+   | ``6``  | :attr:`!ru_minflt`   | page faults not requiring I/O         |
+   +--------+----------------------+---------------------------------------+
+   | ``7``  | :attr:`!ru_majflt`   | page faults requiring I/O             |
+   +--------+----------------------+---------------------------------------+
+   | ``8``  | :attr:`!ru_nswap`    | number of swap outs                   |
+   +--------+----------------------+---------------------------------------+
+   | ``9``  | :attr:`!ru_inblock`  | block input operations                |
+   +--------+----------------------+---------------------------------------+
+   | ``10`` | :attr:`!ru_oublock`  | block output operations               |
+   +--------+----------------------+---------------------------------------+
+   | ``11`` | :attr:`!ru_msgsnd`   | messages sent                         |
+   +--------+----------------------+---------------------------------------+
+   | ``12`` | :attr:`!ru_msgrcv`   | messages received                     |
+   +--------+----------------------+---------------------------------------+
+   | ``13`` | :attr:`!ru_nsignals` | signals received                      |
+   +--------+----------------------+---------------------------------------+
+   | ``14`` | :attr:`!ru_nvcsw`    | voluntary context switches            |
+   +--------+----------------------+---------------------------------------+
+   | ``15`` | :attr:`!ru_nivcsw`   | involuntary context switches          |
+   +--------+----------------------+---------------------------------------+
 
    This function will raise a :exc:`ValueError` if an invalid *who* parameter is
    specified. It may also raise :exc:`error` exception in unusual circumstances.

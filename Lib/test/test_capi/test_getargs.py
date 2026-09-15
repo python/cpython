@@ -13,7 +13,7 @@ from _testcapi import getargs_keywords, getargs_keyword_only
 try:
     import _testinternalcapi
 except ImportError:
-    _testinternalcapi = NULL
+    _testinternalcapi = None
 
 # > How about the following counterproposal. This also changes some of
 # > the other format codes to be a little more regular.

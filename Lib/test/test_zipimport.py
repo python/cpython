@@ -60,7 +60,6 @@ TEMP_DIR = os.path.abspath("junk95142")
 TEMP_ZIP = os.path.abspath("junk95142.zip")
 TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), "zipimport_data")
 
-pyc_file = importlib.util.cache_from_source(TESTMOD + '.py')
 pyc_ext = '.pyc'
 
 

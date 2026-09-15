@@ -4,6 +4,7 @@ from typing import Iterable
 from unittest.mock import MagicMock
 
 from _pyrepl.console import Console, Event
+from _pyrepl.render import RenderLine, RenderedScreen
 from _pyrepl.readline import ReadlineAlikeReader, ReadlineConfig
 from _pyrepl.simple_interact import _strip_final_indent
 from _pyrepl.utils import unbracket, ANSI_ESCAPE_SEQUENCE
@@ -15,7 +16,13 @@ class ScreenEqualMixin:
     ):
         actual = clean_screen(reader) if clean else reader.screen
         expected = expected.split("\n")
-        self.assertListEqual(actual, expected)
+        if clean:
+            self.assertListEqual(actual, expected)
+            return
+
+        actual_lines = [RenderLine.from_rendered_text(line) for line in actual]
+        expected_lines = [RenderLine.from_rendered_text(line) for line in expected]
+        self.assertListEqual(actual_lines, expected_lines)
 
 
 def multiline_input(reader: ReadlineAlikeReader, namespace: dict | None = None):
@@ -88,6 +95,8 @@ def prepare_console(events: Iterable[Event], **kwargs) -> MagicMock | Console:
     console.get_event.side_effect = events
     console.height = 100
     console.width = 80
+    console.getheightwidth = MagicMock(side_effect=lambda: (console.height, console.width))
+
     for key, val in kwargs.items():
         setattr(console, key, val)
     return console
@@ -118,9 +127,11 @@ class FakeConsole(Console):
     def __init__(self, events, encoding="utf-8") -> None:
         self.events = iter(events)
         self.encoding = encoding
-        self.screen = []
+        self._rendered_screen = RenderedScreen.empty()
         self.height = 100
         self.width = 80
+        self.posxy = (0, 0)
+        self._redraw_visual_cycle = 0
 
     def get_event(self, block: bool = True) -> Event | None:
         return next(self.events)
@@ -131,7 +142,7 @@ class FakeConsole(Console):
     def getheightwidth(self) -> tuple[int, int]:
         return self.height, self.width
 
-    def refresh(self, screen: list[str], xy: tuple[int, int]) -> None:
+    def refresh(self, rendered_screen: RenderedScreen) -> None:
         pass
 
     def prepare(self) -> None:

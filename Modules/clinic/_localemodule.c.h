@@ -5,7 +5,7 @@ preserve
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(_locale_setlocale__doc__,
-"setlocale($module, category, locale=<unrepresentable>, /)\n"
+"setlocale($module, category, locale=None, /)\n"
 "--\n"
 "\n"
 "Activates/queries locale processing.");
@@ -595,4 +595,4 @@ _locale_getencoding(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef _LOCALE_BIND_TEXTDOMAIN_CODESET_METHODDEF
     #define _LOCALE_BIND_TEXTDOMAIN_CODESET_METHODDEF
 #endif /* !defined(_LOCALE_BIND_TEXTDOMAIN_CODESET_METHODDEF) */
-/*[clinic end generated code: output=034a3c219466d207 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bb987603f9de8824 input=a9049054013a1b77]*/

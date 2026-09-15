@@ -402,7 +402,7 @@ Tracing events, with the correct line number, are generated for all lines of cod
 The :attr:`~frame.f_lineno` attribute of frame objects will always contain the
 expected line number.
 
-The :attr:`~codeobject.co_lnotab` attribute of
+The :attr:`!codeobject.co_lnotab` attribute of
 :ref:`code objects <code-objects>` is deprecated and
 will be removed in 3.12.
 Code that needs to convert from offset to line number should use the new
@@ -996,7 +996,7 @@ dataclasses
 __slots__
 ~~~~~~~~~
 
-Added ``slots`` parameter in :func:`dataclasses.dataclass` decorator.
+Added ``slots`` parameter in :deco:`dataclasses.dataclass` decorator.
 (Contributed by Yurii Karabas in :issue:`42269`)
 
 Keyword-only fields
@@ -1446,8 +1446,8 @@ as a positional-only argument.
 types
 -----
 
-Reintroduce the :data:`types.EllipsisType`, :data:`types.NoneType`
-and :data:`types.NotImplementedType` classes, providing a new set
+Reintroduce the :class:`types.EllipsisType`, :class:`types.NoneType`
+and :class:`types.NotImplementedType` classes, providing a new set
 of types readily interpretable by type checkers.
 (Contributed by Bas van Beek in :issue:`41810`.)
 
@@ -1485,9 +1485,9 @@ is a :class:`typing.TypedDict`.
 
 Subclasses of ``typing.Protocol`` which only have data variables declared
 will now raise a ``TypeError`` when checked with ``isinstance`` unless they
-are decorated with :func:`~typing.runtime_checkable`.  Previously, these checks
+are decorated with :deco:`~typing.runtime_checkable`.  Previously, these checks
 passed silently.  Users should decorate their
-subclasses with the :func:`!runtime_checkable` decorator
+subclasses with the :deco:`!runtime_checkable` decorator
 if they want runtime protocols.
 (Contributed by Yurii Karabas in :issue:`38908`.)
 
@@ -1622,7 +1622,7 @@ Deprecated
   compatibility. Specifically,
   :meth:`!find_loader`/:meth:`!find_module`
   (superseded by :meth:`~importlib.abc.MetaPathFinder.find_spec`),
-  :meth:`~importlib.abc.Loader.load_module`
+  ``importlib.abc.Loader.load_module``
   (superseded by :meth:`~importlib.abc.Loader.exec_module`),
   :meth:`!module_repr` (which the import system
   takes care of for you), the ``__package__`` attribute
@@ -1652,7 +1652,7 @@ Deprecated
   preference for :meth:`~zipimport.zipimporter.exec_module`.
   (Contributed by Brett Cannon in :issue:`26131`.)
 
-* The use of :meth:`~importlib.abc.Loader.load_module` by the import
+* The use of ``importlib.abc.Loader.load_module`` by the import
   system now triggers an :exc:`ImportWarning` as
   :meth:`~importlib.abc.Loader.exec_module` is preferred.
   (Contributed by Brett Cannon in :issue:`26131`.)
@@ -1928,7 +1928,7 @@ Changes in the Python API
   (Contributed by Yurii Karabas, Andrew Svetlov, Yury Selivanov and Kyle Stanley
   in :issue:`42392`.)
 
-* The :data:`types.FunctionType` constructor now inherits the current builtins
+* The :class:`types.FunctionType` constructor now inherits the current builtins
   if the *globals* dictionary has no ``"__builtins__"`` key, rather than using
   ``{"None": None}`` as builtins: same behavior as :func:`eval` and
   :func:`exec` functions.  Defining a function with ``def function(...): ...``

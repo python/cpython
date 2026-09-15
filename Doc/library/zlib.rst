@@ -8,9 +8,9 @@
 --------------
 
 For applications that require data compression, the functions in this module
-allow compression and decompression, using the zlib library. The zlib library
-has its own home page at https://www.zlib.net.  zlib 1.2.2.1 is the minium
-supported version.
+allow compression and decompression, using the `zlib library <https://www.zlib.net>`_.
+
+.. include:: ../includes/optional-module.rst
 
 zlib's functions have many options and often need to be used in a particular
 order.  This documentation doesn't attempt to cover all of the permutations;
@@ -27,7 +27,7 @@ The available exception and functions in this module are:
    Exception raised on compression and decompression errors.
 
 
-.. function:: adler32(data[, value])
+.. function:: adler32(data, value=1, /)
 
    Computes an Adler-32 checksum of *data*.  (An Adler-32 checksum is almost as
    reliable as a CRC32 but can be computed much more quickly.)  The result
@@ -56,21 +56,20 @@ The available exception and functions in this module are:
 
    .. versionadded:: 3.15
 
-.. function:: compress(data, /, level=-1, wbits=MAX_WBITS)
+.. function:: compress(data, /, level=Z_DEFAULT_COMPRESSION, wbits=MAX_WBITS)
 
    Compresses the bytes in *data*, returning a bytes object containing compressed data.
    *level* is an integer from ``0`` to ``9`` or ``-1`` controlling the level of compression;
-   ``1`` (Z_BEST_SPEED) is fastest and produces the least compression, ``9`` (Z_BEST_COMPRESSION)
-   is slowest and produces the most.  ``0`` (Z_NO_COMPRESSION) is no compression.
-   The default value is ``-1`` (Z_DEFAULT_COMPRESSION).  Z_DEFAULT_COMPRESSION represents a default
-   compromise between speed and compression (currently equivalent to level 6).
+   See :const:`Z_BEST_SPEED` (``1``), :const:`Z_BEST_COMPRESSION` (``9``),
+   :const:`Z_NO_COMPRESSION` (``0``), and the default,
+   :const:`Z_DEFAULT_COMPRESSION` (``-1``) for more information about these values.
 
    .. _compress-wbits:
 
    The *wbits* argument controls the size of the history buffer (or the
    "window size") used when compressing data, and whether a header and
    trailer is included in the output.  It can take several ranges of values,
-   defaulting to ``15`` (MAX_WBITS):
+   defaulting to ``15`` (:const:`MAX_WBITS`):
 
    * +9 to +15: The base-two logarithm of the window size, which
      therefore ranges between 512 and 32768.  Larger values produce
@@ -94,17 +93,15 @@ The available exception and functions in this module are:
       The *wbits* parameter is now available to set window bits and
       compression type.
 
-.. function:: compressobj(level=-1, method=DEFLATED, wbits=MAX_WBITS, memLevel=DEF_MEM_LEVEL, strategy=Z_DEFAULT_STRATEGY[, zdict])
+.. function:: compressobj(level=Z_DEFAULT_COMPRESSION, method=DEFLATED, wbits=MAX_WBITS, memLevel=DEF_MEM_LEVEL, strategy=Z_DEFAULT_STRATEGY[, zdict])
 
    Returns a compression object, to be used for compressing data streams that won't
    fit into memory at once.
 
    *level* is the compression level -- an integer from ``0`` to ``9`` or ``-1``.
-   A value of ``1`` (Z_BEST_SPEED) is fastest and produces the least compression,
-   while a value of ``9`` (Z_BEST_COMPRESSION) is slowest and produces the most.
-   ``0`` (Z_NO_COMPRESSION) is no compression.  The default value is ``-1`` (Z_DEFAULT_COMPRESSION).
-   Z_DEFAULT_COMPRESSION represents a default compromise between speed and compression
-   (currently equivalent to level 6).
+   See :const:`Z_BEST_SPEED` (``1``), :const:`Z_BEST_COMPRESSION` (``9``),
+   :const:`Z_NO_COMPRESSION` (``0``), and the default,
+   :const:`Z_DEFAULT_COMPRESSION` (``-1``) for more information about these values.
 
    *method* is the compression algorithm. Currently, the only supported value is
    :const:`DEFLATED`.
@@ -119,7 +116,7 @@ The available exception and functions in this module are:
 
    *strategy* is used to tune the compression algorithm. Possible values are
    :const:`Z_DEFAULT_STRATEGY`, :const:`Z_FILTERED`, :const:`Z_HUFFMAN_ONLY`,
-   :const:`Z_RLE` (zlib 1.2.0.1) and :const:`Z_FIXED` (zlib 1.2.2.2).
+   :const:`Z_RLE` and :const:`Z_FIXED`.
 
    *zdict* is a predefined compression dictionary. This is a sequence of bytes
    (such as a :class:`bytes` object) containing subsequences that are expected
@@ -130,7 +127,7 @@ The available exception and functions in this module are:
       Added the *zdict* parameter and keyword argument support.
 
 
-.. function:: crc32(data[, value])
+.. function:: crc32(data, value=0, /)
 
    .. index::
       single: Cyclic Redundancy Check
@@ -208,7 +205,7 @@ The available exception and functions in this module are:
    .. versionchanged:: 3.6
       *wbits* and *bufsize* can be used as keyword arguments.
 
-.. function:: decompressobj(wbits=MAX_WBITS[, zdict])
+.. function:: decompressobj(wbits=MAX_WBITS, zdict=b'')
 
    Returns a decompression object, to be used for decompressing data streams that
    won't fit into memory at once.
@@ -234,7 +231,7 @@ The available exception and functions in this module are:
 Compression objects support the following methods:
 
 
-.. method:: Compress.compress(data)
+.. method:: Compress.compress(data, /)
 
    Compress *data*, returning a bytes object containing compressed data for at least
    part of the data in *data*.  This data should be concatenated to the output
@@ -242,12 +239,12 @@ Compression objects support the following methods:
    be kept in internal buffers for later processing.
 
 
-.. method:: Compress.flush([mode])
+.. method:: Compress.flush(mode=Z_FINISH, /)
 
    All pending input is processed, and a bytes object containing the remaining compressed
    output is returned.  *mode* can be selected from the constants
    :const:`Z_NO_FLUSH`, :const:`Z_PARTIAL_FLUSH`, :const:`Z_SYNC_FLUSH`,
-   :const:`Z_FULL_FLUSH`, :const:`Z_BLOCK` (zlib 1.2.3.4), or :const:`Z_FINISH`,
+   :const:`Z_FULL_FLUSH`, :const:`Z_BLOCK`, or :const:`Z_FINISH`,
    defaulting to :const:`Z_FINISH`.  Except :const:`Z_FINISH`, all constants
    allow compressing further bytestrings of data, while :const:`Z_FINISH` finishes the
    compressed stream and prevents compressing any more data.  After calling :meth:`flush`
@@ -297,7 +294,7 @@ Decompression objects support the following methods and attributes:
    .. versionadded:: 3.3
 
 
-.. method:: Decompress.decompress(data, max_length=0)
+.. method:: Decompress.decompress(data, /, max_length=0)
 
    Decompress *data*, returning a bytes object containing the uncompressed data
    corresponding to at least part of the data in *string*.  This data should be
@@ -311,12 +308,17 @@ Decompression objects support the following methods and attributes:
    :attr:`unconsumed_tail`. This bytestring must be passed to a subsequent call to
    :meth:`decompress` if decompression is to continue.  If *max_length* is zero
    then the whole input is decompressed, and :attr:`unconsumed_tail` is empty.
+   For example, the full content could be read like::
+
+     process_output(d.decompress(data, max_length))
+     while chunk := d.decompress(d.unconsumed_tail, max_length):
+         process_output(chunk)
 
    .. versionchanged:: 3.6
       *max_length* can be used as a keyword argument.
 
 
-.. method:: Decompress.flush([length])
+.. method:: Decompress.flush(length=DEF_BUF_SIZE, /)
 
    All pending input is processed, and a bytes object containing the remaining
    uncompressed output is returned.  After calling :meth:`flush`, the
@@ -365,24 +367,25 @@ behavior:
 
 .. data:: Z_NO_COMPRESSION
 
-   Compression level ``0``.
+   Compression level ``0``; no compression.
 
    .. versionadded:: 3.6
 
 
 .. data:: Z_BEST_SPEED
 
-   Compression level ``1``.
+   Compression level ``1``; fastest and produces the least compression.
 
 
 .. data:: Z_BEST_COMPRESSION
 
-   Compression level ``9``.
+   Compression level ``9``; slowest and produces the most compression.
 
 
 .. data:: Z_DEFAULT_COMPRESSION
 
-   Default compression level (``-1``).
+   Default compression level (``-1``); a compromise between speed and
+   compression. Currently equivalent to compression level ``6``.
 
 
 .. data:: Z_DEFAULT_STRATEGY
@@ -476,26 +479,64 @@ the following constants:
 
    The version string of the zlib library that was used for building the module.
    This may be different from the zlib library actually used at runtime, which
-   is available as :const:`ZLIB_RUNTIME_VERSION`.
+   is available as :const:`zlib_version`.
 
 
 .. data:: ZLIB_RUNTIME_VERSION
+          zlib_version
 
    The version string of the zlib library actually loaded by the interpreter.
 
    .. versionadded:: 3.3
+      The :const:`!ZLIB_RUNTIME_VERSION` constant.
+
+   .. versionadded:: next
+      The :const:`!zlib_version` alias.
+
+
+.. data:: ZLIB_VERSION_INFO
+
+   A named tuple containing the four components of the zlib library
+   version that was used for building the module:
+   *major*, *minor*, *revision*, and *subversion*.
+   All values are integers.
+   The components can also be accessed by name, so ``zlib.ZLIB_VERSION_INFO[0]``
+   is equivalent to ``zlib.ZLIB_VERSION_INFO.major`` and so on.
+   This may be different from the zlib library actually used at runtime, which
+   is available as :const:`zlib_version_info`.
+
+   .. versionadded:: next
+
+
+.. data:: zlib_version_info
+
+   A named tuple containing the version of the zlib library
+   actually loaded by the interpreter,
+   with the same fields as :const:`ZLIB_VERSION_INFO`.
+
+   .. versionadded:: next
+
+
+The following constants are only present if zlib-ng was used to build
+the module:
 
 
 .. data:: ZLIBNG_VERSION
 
    The version string of the zlib-ng library that was used for building the
-   module if zlib-ng was used. When present, the :data:`ZLIB_VERSION` and
-   :data:`ZLIB_RUNTIME_VERSION` constants reflect the version of the zlib API
+   module if zlib-ng was used. When present, the :const:`ZLIB_VERSION` and
+   :const:`zlib_version` constants reflect the version of the zlib API
    provided by zlib-ng.
 
-   If zlib-ng was not used to build the module, this constant will be absent.
-
    .. versionadded:: 3.14
+
+.. data:: ZLIBNG_VERSION_INFO
+
+   A named tuple containing the three components of the zlib-ng library
+   version that was used for building the module:
+   *major*, *minor*, and *revision*.  All values are integers.
+
+   .. versionadded:: next
 
 
 .. seealso::

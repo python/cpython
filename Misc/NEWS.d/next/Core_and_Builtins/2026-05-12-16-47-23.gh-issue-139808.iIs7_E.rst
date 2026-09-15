@@ -1,0 +1,2 @@
+Add branch protections for AArch64 (BTI/PAC) in assembly code used by
+:option:`-X perf_jit <-X>` (Linux perf profiler integration).

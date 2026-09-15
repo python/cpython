@@ -1,0 +1,3 @@
+Add :meth:`imaplib.IMAP4.login_plain`, which authenticates using the
+``PLAIN`` SASL mechanism (:rfc:`4616`).  Unlike :meth:`~imaplib.IMAP4.login`,
+it supports non-ASCII user names and passwords.

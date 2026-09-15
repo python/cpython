@@ -1,6 +1,6 @@
 from unittest import mock
 from test import support
-from test.support import socket_helper
+from test.support import force_not_colorized, socket_helper, control_characters_c0
 from test.test_httpservers import NoLogRequestHandler
 from unittest import TestCase
 from wsgiref.util import setup_testing_defaults
@@ -66,6 +66,26 @@ def header_app(environ, start_response):
     ]).encode('iso-8859-1')]
 
 
+def input_app(func_name, *args):
+    def app(e,s):
+        req = getattr(e['wsgi.input'], func_name)(*args)
+        s("200 OK", [("Content-Type", "text/plain; charset=utf-8")])
+        if type(req) is list:
+            resp = b";".join(req)
+        else:
+            resp = req
+        return [resp]
+    return app
+
+
+def errors_app(func_name, *args):
+    def app(e,s):
+        getattr(e['wsgi.errors'], func_name)(*args)
+        s("200 OK", [("Content-Type", "text/plain; charset=utf-8")])
+        return [b"data"]
+    return app
+
+
 def run_amock(app=hello_app, data=b"GET / HTTP/1.0\n\n"):
     server = make_server("", 80, app, MockServer, MockHandler)
     inp = BufferedReader(BytesIO(data))
@@ -109,7 +129,7 @@ class IntegrationTests(TestCase):
                 sys.version.split()[0])
         self.assertEqual(out,
             ("HTTP/1.0 200 OK\r\n"
-            "Server: WSGIServer/0.2 " + pyver +"\r\n"
+            "Server: WSGIServer " + pyver + "\r\n"
             "Content-Type: text/plain\r\n"
             "Date: Mon, 05 Jun 2006 18:49:54 GMT\r\n" +
             (has_length and  "Content-Length: 13\r\n" or "") +
@@ -192,6 +212,96 @@ class IntegrationTests(TestCase):
             err.splitlines()[-2], "AssertionError"
         )
 
+    def test_wsgi_input_read(self):
+        bad_app = input_app("read")
+        good_app = input_app("read", 5)
+
+        out, err = run_amock(validator(bad_app))
+        self.assertEndsWith(out,
+             b"A server error occurred.  Please contact the administrator."
+        )
+
+        self.assertEqual(
+            err.splitlines()[-2], "AssertionError"
+        )
+
+        out, err = run_amock(validator(good_app), b"GET / HTTP/1.0\n\nTest 1\nTest 2\n")
+        self.assertEndsWith(out, b"Test ")
+
+    def test_wsgi_input_readlines(self):
+        bad_app = input_app("readlines", 3, 5)
+        good_app = input_app("readlines", 1)
+
+        out, err = run_amock(validator(bad_app))
+        self.assertEndsWith(out,
+            b"A server error occurred.  Please contact the administrator."
+        )
+        self.assertEqual(
+            err.splitlines()[-2], "AssertionError"
+        )
+        out, err = run_amock(validator(good_app), b"GET / HTTP/1.0\n\nTest Line 1\nTest Line 2\n")
+        self.assertEndsWith(out, b"Test Line 1\n")
+
+    def test_wsgi_input_readline(self):
+        bad_app = input_app("readline", 3, 4)
+        good_app = input_app("readline", 2)
+
+        out, err = run_amock(validator(bad_app))
+        self.assertEndsWith(out,
+            b"A server error occurred.  Please contact the administrator."
+        )
+        self.assertEqual(
+            err.splitlines()[-2], "AssertionError"
+        )
+
+        out, err = run_amock(validator(good_app), b"GET / HTTP/1.0\n\nTest 1\nTest 2\n")
+        self.assertEndsWith(out, b"Te")
+
+    def test_wsgi_input_close(self):
+        app = input_app("close")
+        out, err = run_amock(validator(app), b"GET / HTTP/1.0\n\nTest 1\nTest 2\n")
+        self.assertEqual(err.splitlines()[-2], 'AssertionError: input.close() must not be called')
+        self.assertEndsWith(out, b"A server error occurred.  Please contact the administrator.")
+
+    def test_wsgi_input_iter(self):
+        def app(e,s):
+            req = []
+            for line in e['wsgi.input']:
+                req.append(line)
+            s("200 OK", [('Content-Type', 'text/plain; charser=utf-8')])
+            return [b';'.join(req)]
+
+        out, err = run_amock(validator(app), b"GET / HTTP/1.0\n\nTest 1\nTest 2\n")
+        self.assertEndsWith(out, b"Test 1\n;Test 2\n")
+
+    def test_wsgi_errors_write(self):
+        bad_app = errors_app("write", b"Test")
+        good_app = errors_app("write", "Test")
+
+        out, err = run_amock(validator(bad_app), b"GET / HTTP/1.0\n\n")
+        self.assertEqual(err.splitlines()[-2], 'AssertionError')
+
+        out, err = run_amock(validator(good_app), b"GET / HTTP/1.0\n\n")
+        self.assertStartsWith(err, "Test")
+
+    def test_wsgi_errors_writelines(self):
+        bad_app = errors_app("writelines", [1, "Test"])
+        good_app = errors_app("writelines", ["Test", "Test"])
+
+        out, err = run_amock(validator(bad_app), b"GET / HTTP/1.0\n\n")
+        self.assertEqual(err.splitlines()[-2], 'AssertionError')
+
+        out, err = run_amock(validator(good_app), b"GET / HTTP/1.0\n\n")
+        self.assertStartsWith(err, "TestTest")
+
+    def test_wsgi_errors_close(self):
+        app = errors_app("close")
+
+        out, err = run_amock(validator(app), b"GET / HTTP/1.0\n\n")
+        self.assertEqual(err.splitlines()[-2],
+                         'AssertionError: errors.close() must not be called')
+
+    @force_not_colorized
     def test_bytes_validation(self):
         def app(e, s):
             s("200 OK", [
@@ -206,7 +316,7 @@ class IntegrationTests(TestCase):
         pyver = py + b"/" + ver
         self.assertEqual(
                 b"HTTP/1.0 200 OK\r\n"
-                b"Server: WSGIServer/0.2 "+ pyver + b"\r\n"
+                b"Server: WSGIServer " + pyver + b"\r\n"
                 b"Content-Type: text/plain; charset=utf-8\r\n"
                 b"Date: Wed, 24 Dec 2008 13:29:32 GMT\r\n"
                 b"\r\n"
@@ -502,6 +612,22 @@ class HeaderTests(TestCase):
             'Foo: bar; cheese\r\n'
             '\r\n'
         )
+
+    def testRaisesControlCharacters(self):
+        for c0 in control_characters_c0():
+            with self.subTest(c0):
+                headers = Headers()
+                self.assertRaises(ValueError, headers.__setitem__, f"key{c0}", "val")
+                self.assertRaises(ValueError, headers.add_header, f"key{c0}", "val", param="param")
+                # HTAB (\x09) is allowed in values, not names.
+                if c0 == "\t":
+                    headers["key"] = f"val{c0}"
+                    headers.add_header("key", f"val{c0}")
+                    headers.setdefault(f"key", f"val{c0}")
+                else:
+                    self.assertRaises(ValueError, headers.__setitem__, "key", f"val{c0}")
+                    self.assertRaises(ValueError, headers.add_header, "key", f"val{c0}", param="param")
+                    self.assertRaises(ValueError, headers.add_header, "key", "val", param=f"param{c0}")
 
 class ErrorHandler(BaseCGIHandler):
     """Simple handler subclass for testing BaseHandler"""
@@ -838,6 +964,37 @@ class HandlerTests(TestCase):
         self.assertIsNotNone(h.headers)
         self.assertIsNotNone(h.status)
         self.assertIsNotNone(h.environ)
+
+    def testRaisesControlCharacters(self):
+        for c0 in control_characters_c0():
+            with self.subTest(c0):
+                base = BaseHandler()
+                with self.assertRaises(ValueError):
+                    base.start_response(c0, [('x', 'y')])
+
+                base = BaseHandler()
+                with self.assertRaises(ValueError):
+                    base.start_response('200 OK', [(c0, 'y')])
+
+                # HTAB (\x09) is allowed in header values, but not in names.
+                base = BaseHandler()
+                if c0 != "\t":
+                    with self.assertRaises(ValueError):
+                        base.start_response('200 OK', [('x', c0)])
+                else:
+                    base.start_response('200 OK', [('x', c0)])
+
+
+class TestModule(unittest.TestCase):
+    def test_deprecated__version__(self):
+        from wsgiref import simple_server
+
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "'__version__' is deprecated and slated for removal in Python 3.20",
+        ) as cm:
+            getattr(simple_server, "__version__")
+        self.assertEqual(cm.filename, __file__)
 
 
 if __name__ == "__main__":

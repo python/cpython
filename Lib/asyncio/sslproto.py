@@ -588,6 +588,12 @@ class SSLProtocol(protocols.BufferedProtocol):
                 msg = 'SSL handshake failed on verifying the certificate'
             else:
                 msg = 'SSL handshake failed'
+            # gh-98078: When the handshake fails, OpenSSL leaves the fatal
+            # TLS alert (for example "bad certificate" or "protocol
+            # version") in the outgoing BIO.  Send it to the peer before
+            # closing the transport so that it knows why the handshake
+            # failed.
+            self._process_outgoing()
             self._fatal_error(exc, msg)
             self._wakeup_waiter(exc)
             return
@@ -652,6 +658,10 @@ class SSLProtocol(protocols.BufferedProtocol):
         except SSLAgainErrors:
             self._process_outgoing()
         except ssl.SSLError as exc:
+            # gh-98078: send what OpenSSL left in the outgoing BIO, e.g.
+            # the close_notify alert, to the peer before closing (see
+            # _on_handshake_complete()).
+            self._process_outgoing()
             self._on_shutdown_complete(exc)
         else:
             self._process_outgoing()
@@ -743,6 +753,11 @@ class SSLProtocol(protocols.BufferedProtocol):
                 else:
                     self._process_outgoing()
             self._control_ssl_reading()
+        except ssl.SSLError as ex:
+            # gh-98078: send the fatal TLS alert left in the outgoing
+            # BIO to the peer (see _on_handshake_complete()).
+            self._process_outgoing()
+            self._fatal_error(ex, 'Fatal error on SSL protocol')
         except Exception as ex:
             self._fatal_error(ex, 'Fatal error on SSL protocol')
 

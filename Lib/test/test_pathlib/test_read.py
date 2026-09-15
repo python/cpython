@@ -329,6 +329,11 @@ class ReadTestBase:
         self.assertFalse((p / 'fileA\udfff').info.is_symlink())
         self.assertFalse((p / 'fileA\x00').info.is_symlink())
 
+    def test_invalid_mode(self):
+        p = self.root / 'fileA'
+        with self.assertRaisesRegex(ValueError, 'invalid mode'):
+            vfsopen(p, 'q')
+
 
 class ZipPathReadTest(ReadTestBase, unittest.TestCase):
     ground = ZipPathGround(ReadableZipPath)

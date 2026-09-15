@@ -22,20 +22,28 @@ PyGenObject *_PyGen_GetGeneratorFromFrame(_PyInterpreterFrame *frame)
 }
 
 PyAPI_FUNC(PyObject *)_PyGen_yf(PyGenObject *);
-extern void _PyGen_Finalize(PyObject *self);
+extern int _PyGen_ClearFrame(PyGenObject *self);
 
 // Export for '_asyncio' shared extension
 PyAPI_FUNC(int) _PyGen_SetStopIterationValue(PyObject *);
 
 // Export for '_asyncio' shared extension
 PyAPI_FUNC(int) _PyGen_FetchStopIterationValue(PyObject **);
+// Set the exception passed to throw(typ[, val[, tb]]).
+// Return 0 on success, -1 on failure.
+extern int _PyGen_SetException(PyObject *typ, PyObject *val, PyObject *tb);
 
 PyAPI_FUNC(PyObject *)_PyCoro_GetAwaitableIter(PyObject *o);
 PyAPI_FUNC(PyObject *)_PyAsyncGenValueWrapperNew(PyThreadState *state, PyObject *);
 
+// Exported for external JIT support
+PyAPI_FUNC(PyObject *) _PyCoro_ComputeOrigin(int origin_depth, _PyInterpreterFrame *current_frame);
+
 extern PyTypeObject _PyCoroWrapper_Type;
 extern PyTypeObject _PyAsyncGenWrappedValue_Type;
 extern PyTypeObject _PyAsyncGenAThrow_Type;
+
+PyAPI_FUNC(PySendResult) _PyAsyncGenASend_Send(PyObject *iter, PyObject *arg, PyObject **result);
 
 #ifdef __cplusplus
 }

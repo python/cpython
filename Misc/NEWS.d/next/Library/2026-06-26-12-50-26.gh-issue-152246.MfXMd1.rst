@@ -1,0 +1,2 @@
+Fix the pure-Python :mod:`zoneinfo` parser accepting an invalid POSIX TZ
+transition rule with a non-period separator. Patch by tonghuaroot.
