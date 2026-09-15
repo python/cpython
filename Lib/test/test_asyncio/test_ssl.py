@@ -894,6 +894,46 @@ class TestSSL(test_utils.TestCase):
                 asyncio.wait_for(client(srv.addr),
                                  timeout=self.TIMEOUT))
 
+    def test_buffered_proto_bytearray(self):
+        # gh-156275: decrypt into the caller's buffer, not a copy of a slice
+        CHUNKS = [b'A' * 30, b'B' * 30, b'C' * 30]
+
+        class ClientProto(asyncio.BufferedProtocol):
+            def __init__(self, done):
+                self.done = done
+                self.buf = bytearray(100)
+                self.data = b''
+
+            def get_buffer(self, sizehint):
+                return self.buf
+
+            def buffer_updated(self, nbytes):
+                self.data += self.buf[:nbytes]
+
+            def connection_lost(self, exc):
+                self.done.set_result(self.data)
+
+        async def serve(reader, writer):
+            for chunk in CHUNKS:
+                writer.write(chunk)
+            writer.close()
+
+        async def run():
+            server = await asyncio.start_server(
+                serve, '127.0.0.1', 0, ssl=test_utils.simple_server_sslcontext())
+            try:
+                done = self.loop.create_future()
+                await self.loop.create_connection(
+                    lambda: ClientProto(done),
+                    *server.sockets[0].getsockname()[:2],
+                    ssl=test_utils.simple_client_sslcontext())
+                self.assertEqual(await done, b''.join(CHUNKS))
+            finally:
+                self.loop.call_soon(server.close)
+                await server.wait_closed()
+
+        self.loop.run_until_complete(asyncio.wait_for(run(), timeout=self.TIMEOUT))
+
     def test_start_tls_slow_client_cancel(self):
         HELLO_MSG = b'1' * self.PAYLOAD_SIZE
 
