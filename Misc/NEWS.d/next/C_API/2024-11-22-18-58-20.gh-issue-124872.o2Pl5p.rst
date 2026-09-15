@@ -1,0 +1,3 @@
+Callbacks registered with :c:func:`PyContext_AddWatcher` (type
+:c:type:`PyContext_WatchCallback`) now return ``void`` instead of ``int``, and
+no longer need to back up and restore exception state.
