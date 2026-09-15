@@ -756,6 +756,8 @@ class Unmarshaller:
         # map structs to Python dictionaries
         dict = {}
         items = self._stack[mark:]
+        if len(items) % 2:
+            raise ResponseError()
         for i in range(0, len(items), 2):
             dict[items[i]] = items[i+1]
         self._stack[mark:] = [dict]
