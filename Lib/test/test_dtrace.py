@@ -132,6 +132,7 @@ class TraceBackend:
     EXTENSION = None
     COMMAND = None
     COMMAND_ARGS = []
+    USABILITY_TIMEOUT = 10
 
     def run_case(self, name, optimize_python=None):
         try:
@@ -183,7 +184,7 @@ class TraceBackend:
     def assert_usable(self):
         try:
             output = self.trace(abspath("assert_usable" + self.EXTENSION),
-                                timeout=10)
+                                timeout=self.USABILITY_TIMEOUT)
             output = output.strip()
         except subprocess.TimeoutExpired:
             raise unittest.SkipTest(
@@ -208,6 +209,7 @@ class SystemTapBackend(TraceBackend):
     EXTENSION = ".stp"
     COMMAND = ["stap", "-g"]
     PROBE_PLACEHOLDER = "@PYTHON_SYSTEMTAP_PROBE@"
+    USABILITY_TIMEOUT = 60
 
     @staticmethod
     def quote_systemtap_string(value):
