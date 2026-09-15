@@ -1,0 +1,1 @@
+Deprecate passing a file path to :func:`mimetypes.guess_type`. Use :func:`mimetypes.guess_file_type` instead.
