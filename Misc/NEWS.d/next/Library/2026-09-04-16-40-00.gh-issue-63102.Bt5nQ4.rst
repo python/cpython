@@ -1,0 +1,6 @@
+Add :class:`xml.etree.ElementTree.XMLPullTarget`, a parser target which
+reports elements without building a tree, and
+:meth:`~xml.etree.ElementTree.XMLPullParser.expand`, which builds the subtree
+of a reported element from the events which follow it.  Together they allow
+processing a document of any size with a constant amount of memory, like
+:mod:`xml.dom.pulldom`, but much faster.
