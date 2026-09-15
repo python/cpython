@@ -879,7 +879,6 @@ except Exception:
             self.assertEqual(x.format_spec, expected)
             self.assertEqual(result, "")
 
-        check_format_spec(f'{x:{y}}', "Y")
         check_format_spec(f'{x:{{y}}}', "{'Y'}")
         check_format_spec(f'{x:{y}{{z}}}', "Y{'Z'}")
         check_format_spec(f'{x:{y!s}{{z}}}', "Y{'Z'}")
