@@ -1,0 +1,3 @@
+Fix a regression in ``sys.monitoring`` where the ``LINE`` event did not fire
+for the first line of a code object when the line also contains the ``def``
+or ``lambda`` statement. The event is emitted again as it was in Python 3.12.
