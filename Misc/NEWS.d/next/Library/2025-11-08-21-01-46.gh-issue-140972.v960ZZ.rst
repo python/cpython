@@ -1,0 +1,3 @@
+Now empty docstrings passed to :func:`types.DynamicClassAttribute` are
+preserved when ``fget`` is ``None``; previously ``NoneType.__doc__`` was used
+incorrectly.
