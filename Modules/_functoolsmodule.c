@@ -1335,13 +1335,15 @@ infinite_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwd
         Py_DECREF(key);
         return NULL;
     }
-    if (_PyDict_SetItem_KnownHash(self->cache, key, result, hash) < 0) {
-        Py_DECREF(result);
-        Py_DECREF(key);
+    PyObject *cached_value;
+    res = _PyDict_SetDefaultRef_KnownHash(
+        self->cache, key, result, hash, &cached_value);
+    Py_DECREF(result);
+    Py_DECREF(key);
+    if (res < 0) {
         return NULL;
     }
-    Py_DECREF(key);
-    return result;
+    return cached_value;
 }
 
 static void
