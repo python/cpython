@@ -476,6 +476,7 @@ SYMBOL_NAMES = (
     "PyMemoryView_GetContiguous",
     "PyMemoryView_Type",
     "PyMethodDescr_Type",
+    "PyMethod_New",
     "PyModuleDef_Init",
     "PyModuleDef_Type",
     "PyModule_Add",
