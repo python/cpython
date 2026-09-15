@@ -4508,26 +4508,9 @@ static PyObject *
 _testclinic_TestClass_defclass_varpos(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "defclass_varpos",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
-    PyObject * const *fastargs;
     PyObject *__clinic_args = NULL;
 
-    fastargs = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 0, /*maxpos*/ 0, /*minkw*/ 0, /*varpos*/ 1, argsbuf);
-    if (!fastargs) {
+    if (!_PyArg_NoKwnames("defclass_varpos", kwnames)) {
         goto exit;
     }
     __clinic_args = PyTuple_FromArray(args, nargs);
@@ -4561,32 +4544,18 @@ static PyObject *
 _testclinic_TestClass_defclass_posonly_varpos(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", "", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "defclass_posonly_varpos",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[2];
-    PyObject * const *fastargs;
     PyObject *a;
     PyObject *b;
     PyObject *__clinic_args = NULL;
 
-    fastargs = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 1, argsbuf);
-    if (!fastargs) {
+    if (!_PyArg_NoKwnames("defclass_posonly_varpos", kwnames)) {
         goto exit;
     }
-    a = fastargs[0];
-    b = fastargs[1];
+    if (!_PyArg_CheckPositional("defclass_posonly_varpos", nargs, 2, PY_SSIZE_T_MAX)) {
+        goto exit;
+    }
+    a = args[0];
+    b = args[1];
     __clinic_args = PyTuple_FromArray(args + 2, nargs - 2);
     if (__clinic_args == NULL) {
         goto exit;
@@ -5349,4 +5318,4 @@ vc_kwonly_vectorcall(PyObject *type, PyObject *const *args,
         kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
         NULL, kwnames);
 }
-/*[clinic end generated code: output=8a219f606f1296ac input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5131e55aeb855d6e input=a9049054013a1b77]*/
