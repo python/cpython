@@ -1,4 +1,5 @@
 :func:`compile`, :func:`exec`, :func:`eval` and :func:`ast.parse` now raise
 :exc:`SyntaxError` instead of :exc:`ValueError` if the source string contains
-surrogate characters, and instead of :exc:`MemoryError` or
-:exc:`RecursionError` if the source is too complex to parse or compile.
+surrogate characters, instead of :exc:`MemoryError` or :exc:`RecursionError`
+if the source is too complex to parse or compile, and instead of
+:exc:`OverflowError` if the source is too large.

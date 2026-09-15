@@ -387,8 +387,9 @@ are always available.  They are listed here in alphabetical order.
    This function raises :exc:`SyntaxError` if the compiled source is invalid,
    including a *source* containing a null or surrogate character,
    that cannot be decoded,
-   or that is too complex to parse or compile,
-   for example an expression with many thousands of nested operators;
+   that is too complex to parse or compile,
+   for example an expression with many thousands of nested operators,
+   or that is too large;
    and :exc:`ValueError` if *mode* or *flags* is invalid.
 
    If you want to parse Python code into its AST representation, see
@@ -435,8 +436,9 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: next
       :exc:`SyntaxError` is raised instead of :exc:`ValueError` when surrogate
       characters are encountered in *source*,
-      and instead of :exc:`MemoryError` or :exc:`RecursionError`
-      when *source* is too complex.
+      instead of :exc:`MemoryError` or :exc:`RecursionError`
+      when *source* is too complex,
+      and instead of :exc:`OverflowError` when *source* is too large.
 
 
 .. class:: complex(number=0, /)
