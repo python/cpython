@@ -87,32 +87,23 @@ writer_init(PyObject *self_raw, PyObject *args, PyObject *kwargs)
         return -1;
     }
 
-    Py_ssize_t alloc;
-    char *str;
-    Py_ssize_t str_size;
-    int use_bytearray;
-    if (!PyArg_ParseTuple(args, "ny#i",
-                          &alloc, &str, &str_size, &use_bytearray)) {
+    Py_ssize_t size;
+    int use_bytearray = 0;
+    if (!PyArg_ParseTuple(args, "n|i", &size, &use_bytearray)) {
         return -1;
     }
 
     WriterObject *self = (WriterObject *)self_raw;
-    if (self->writer) {
-        PyBytesWriter_Discard(self->writer);
-    }
+    PyBytesWriter_Discard(self->writer);
+
     if (use_bytearray) {
-        self->writer = _PyBytesWriter_CreateByteArray(alloc);
+        self->writer = _PyBytesWriter_CreateByteArray(size);
     }
     else {
-        self->writer = PyBytesWriter_Create(alloc);
+        self->writer = PyBytesWriter_Create(size);
     }
     if (self->writer == NULL) {
         return -1;
-    }
-
-    if (str_size) {
-        char *buf = PyBytesWriter_GetData(self->writer);
-        memcpy(buf, str, str_size);
     }
 
     return 0;
@@ -144,6 +135,39 @@ writer_check(WriterObject *self)
 
 
 static PyObject*
+writer_write(PyObject *self_raw, PyObject *args, PyObject *kwargs)
+{
+    WriterObject *self = (WriterObject *)self_raw;
+    if (writer_check(self) < 0) {
+        return NULL;
+    }
+
+    static char *kwlist[] = {"pos", "str", "check", NULL};
+    Py_ssize_t pos, size;
+    char *str;
+    int check = 1;
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
+                                     "ny#|i", kwlist,
+                                     &pos, &str, &size, &check)) {
+        return NULL;
+    }
+
+    // Use check=0 to trigger a buffer overflow for example
+    if (check) {
+        if (pos < 0 || (pos + size) > PyBytesWriter_GetSize(self->writer)) {
+            PyErr_SetString(PyExc_ValueError, "invalid position or size");
+            return NULL;
+        }
+    }
+
+    char *data = PyBytesWriter_GetData(self->writer);
+    memcpy(data + pos, str, size);
+
+    Py_RETURN_NONE;
+}
+
+
+static PyObject*
 writer_write_bytes(PyObject *self_raw, PyObject *args)
 {
     WriterObject *self = (WriterObject *)self_raw;
@@ -151,7 +175,7 @@ writer_write_bytes(PyObject *self_raw, PyObject *args)
         return NULL;
     }
 
-    char *bytes;
+    const char *bytes;
     Py_ssize_t unused_size, size;
     if (!PyArg_ParseTuple(args, "y#n", &bytes, &unused_size, &size)) {
         return NULL;
@@ -185,6 +209,7 @@ writer_format_i(PyObject *self_raw, PyObject *args)
 }
 
 
+// PyBytesWriter_Resize
 static PyObject*
 writer_resize(PyObject *self_raw, PyObject *args)
 {
@@ -194,24 +219,53 @@ writer_resize(PyObject *self_raw, PyObject *args)
     }
 
     Py_ssize_t size;
-    char *str;
-    Py_ssize_t str_size;
-    if (!PyArg_ParseTuple(args,
-                          "ny#",
-                          &size, &str, &str_size)) {
+    if (!PyArg_ParseTuple(args, "n", &size)) {
         return NULL;
     }
-    assert(size >= str_size);
 
-    Py_ssize_t pos = PyBytesWriter_GetSize(self->writer);
     if (PyBytesWriter_Resize(self->writer, size) < 0) {
         return NULL;
     }
-
-    char *buf = PyBytesWriter_GetData(self->writer);
-    memcpy(buf + pos, str, str_size);
-
     Py_RETURN_NONE;
+}
+
+
+// Test PyBytesWriter_Grow()
+static PyObject*
+writer_grow(PyObject *self_raw, PyObject *args)
+{
+    WriterObject *self = (WriterObject *)self_raw;
+    if (writer_check(self) < 0) {
+        return NULL;
+    }
+
+    Py_ssize_t size;
+    if (!PyArg_ParseTuple(args, "n", &size)) {
+        return NULL;
+    }
+
+    if (PyBytesWriter_Grow(self->writer, size) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
+static PyObject*
+writer_get_data(PyObject *self_raw, PyObject *args)
+{
+    WriterObject *self = (WriterObject *)self_raw;
+    if (writer_check(self) < 0) {
+        return NULL;
+    }
+
+    Py_ssize_t size = PyBytesWriter_GetSize(self->writer);
+    if (!PyArg_ParseTuple(args, "|n", &size)) {
+        return NULL;
+    }
+
+    const char *data = PyBytesWriter_GetData(self->writer);
+    return PyBytes_FromStringAndSize(data, size);
 }
 
 
@@ -223,8 +277,8 @@ writer_get_size(PyObject *self_raw, PyObject *Py_UNUSED(args))
         return NULL;
     }
 
-    Py_ssize_t alloc = PyBytesWriter_GetSize(self->writer);
-    return PyLong_FromSsize_t(alloc);
+    Py_ssize_t size = PyBytesWriter_GetSize(self->writer);
+    return PyLong_FromSsize_t(size);
 }
 
 
@@ -261,13 +315,31 @@ writer_finish_with_size(PyObject *self_raw, PyObject *args)
 }
 
 
+static PyObject*
+writer_discard(PyObject *self_raw, PyObject *Py_UNUSED(args))
+{
+    WriterObject *self = (WriterObject *)self_raw;
+    if (writer_check(self) < 0) {
+        return NULL;
+    }
+
+    PyBytesWriter_Discard(self->writer);
+    self->writer = NULL;
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef writer_methods[] = {
+    {"write", _PyCFunction_CAST(writer_write), METH_VARARGS | METH_KEYWORDS},
     {"write_bytes", _PyCFunction_CAST(writer_write_bytes), METH_VARARGS},
     {"format_i", _PyCFunction_CAST(writer_format_i), METH_VARARGS},
     {"resize", _PyCFunction_CAST(writer_resize), METH_VARARGS},
+    {"grow", _PyCFunction_CAST(writer_grow), METH_VARARGS},
+    {"get_data", _PyCFunction_CAST(writer_get_data), METH_VARARGS},
     {"get_size", _PyCFunction_CAST(writer_get_size), METH_NOARGS},
     {"finish", _PyCFunction_CAST(writer_finish), METH_NOARGS},
     {"finish_with_size", _PyCFunction_CAST(writer_finish_with_size), METH_VARARGS},
+    {"discard", _PyCFunction_CAST(writer_discard), METH_VARARGS},
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -313,8 +385,9 @@ byteswriter_resize(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     char *buf = PyBytesWriter_GetData(writer);
 
     // Write some bytes
-    memcpy(buf, "Hello ", strlen("Hello "));
-    buf += strlen("Hello ");
+    const char *hello = "Hello ";
+    memcpy(buf, hello, strlen(hello));
+    buf += strlen(hello);
 
     // Allocate 10 more bytes
     buf = PyBytesWriter_GrowAndUpdatePointer(writer, 10, buf);
@@ -324,8 +397,9 @@ byteswriter_resize(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     }
 
     // Write more bytes
-    memcpy(buf, "World", strlen("World"));
-    buf += strlen("World");
+    const char *world = "World";
+    memcpy(buf, world, strlen(world));
+    buf += strlen(world);
 
     // Truncate to the exact size and create a bytes object
     return PyBytesWriter_FinishWithPointer(writer, buf);

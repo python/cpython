@@ -82,3 +82,6 @@ reference/expressions.html: generator.__next__
 reference/expressions.html: generator.close
 reference/expressions.html: generator.send
 reference/expressions.html: generator.throw
+
+# Renamed to library/tkinter.dialogs.html
+library/dialog.html: (page missing)

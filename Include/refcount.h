@@ -482,7 +482,7 @@ static inline Py_ALWAYS_INLINE void Py_DECREF(PyObject *op)
 #ifdef _Py_TYPEOF
 #define Py_CLEAR(op) \
     do { \
-        _Py_TYPEOF(op)* _tmp_op_ptr = &(op); \
+        _Py_TYPEOF(&(op)) _tmp_op_ptr = &(op); \
         _Py_TYPEOF(op) _tmp_old_op = (*_tmp_op_ptr); \
         if (_tmp_old_op != _Py_NULL) { \
             *_tmp_op_ptr = _Py_NULL; \

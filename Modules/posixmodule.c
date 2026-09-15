@@ -161,6 +161,9 @@
 #ifdef HAVE_SYS_SYSCALL_H
 #  include <sys/syscall.h>        // syscall(), __NR_xxx syscall numbers
 #endif
+#if !defined(SYS_getrandom) && defined(__NR_getrandom)
+#  define SYS_getrandom __NR_getrandom
+#endif
 
 #ifdef HAVE_POSIX_SPAWN
 #  include <spawn.h>              // posix_spawn()
