@@ -385,6 +385,10 @@ Configuration Options
      - :c:member:`isolated <PyConfig.isolated>`
      - ``bool``
      - Read-only
+   * - ``"lazy_imports"``
+     - :c:member:`lazy_imports <PyConfig.lazy_imports>`
+     - ``int``
+     - Public
    * - ``"legacy_windows_fs_encoding"``
      - :c:member:`legacy_windows_fs_encoding <PyPreConfig.legacy_windows_fs_encoding>`
      - ``bool``
@@ -1577,6 +1581,21 @@ PyConfig
 
       See also the :ref:`Isolated Configuration <init-isolated-conf>` and
       :c:member:`PyPreConfig.isolated`.
+
+   .. c:member:: int lazy_imports
+
+      Control :ref:`lazy imports <lazy-imports>`.
+
+      A value of ``-1`` keeps the default behaviour, where only imports marked
+      with the ``lazy`` keyword are lazy. A value of ``1`` makes every import
+      lazy. ``0`` is rejected.
+
+      Configured by the :option:`-X lazy_imports <-X>` command line option or
+      the :envvar:`PYTHON_LAZY_IMPORTS` environment variable.
+
+      Default: ``-1``.
+
+      .. versionadded:: 3.15
 
    .. c:member:: int legacy_windows_stdio
 
