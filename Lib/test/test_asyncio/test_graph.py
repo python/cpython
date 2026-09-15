@@ -663,6 +663,24 @@ class CallStackTestBase:
         await main()
         self.assertEqual(stack[:3], ['gen', 'middle', 'main'])
 
+    def set_eager_task_factory(self):
+        loop = asyncio.get_running_loop()
+        loop.set_task_factory(asyncio.create_eager_task_factory(asyncio.Task))
+        self.addCleanup(loop.set_task_factory, None)
+
+    async def test_stack_eager_task(self):
+        # gh-157299
+        self.set_eager_task_factory()
+
+        async def child():
+            nonlocal stack
+            stack = capture_test_stack()
+
+        stack = None
+        await asyncio.gather(child())
+
+        self.assertEqual(stack[0][2], [['T<anon>', ['a test_stack_eager_task'], []]])
+
 
 @unittest.skipIf(
     not hasattr(asyncio.futures, "_c_future_add_to_awaited_by"),

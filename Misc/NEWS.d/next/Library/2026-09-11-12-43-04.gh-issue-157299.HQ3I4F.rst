@@ -1,0 +1,2 @@
+Fix eagerly started :class:`asyncio.Task` objects missing their awaited-by
+edge during the first step.
