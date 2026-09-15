@@ -614,7 +614,7 @@ class StrTest(string_tests.StringLikeTest,
         s2 = "&"
         s3 = "&amp;"
         with self.assertRaises(MemoryError):
-            with support.with_memory_error():
+            with support.memory_error_cm():
                 s1.replace(s2, s3)  # this line used to crash before
 
     def test_repeat_id_preserving(self):

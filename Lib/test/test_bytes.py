@@ -52,7 +52,7 @@ class Indexable:
 @contextlib.contextmanager
 def inject_memory_error(testcase, start=0):
     with testcase.assertRaises(MemoryError):
-        with support.with_memory_error(start):
+        with support.memory_error_cm(start):
             yield
 
 

@@ -1030,7 +1030,7 @@ class TestInlineValues(unittest.TestCase):
             d = a.__dict__
             try:
                 with support.catch_unraisable_exception() as ex:
-                    with support.with_memory_error(n, n + 1):
+                    with support.memory_error_cm(n, n + 1):
                         del a
                     exc_type = ex.unraisable and ex.unraisable.exc_type
             except MemoryError:
