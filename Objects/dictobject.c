@@ -8458,16 +8458,26 @@ frozendict_hash(PyObject *op)
     PyDictObject *mp = _PyAnyDict_CAST(op);
     Py_uhash_t hash = 0;
 
+    /* Hashing a value recurses back into frozendict_hash() when that value
+       is itself a frozendict, so guard the descent to raise RecursionError
+       rather than overflow the C stack on a deeply nested frozendict.  Keys
+       are safe: their hashes are already computed at construction time. */
+    if (_Py_EnterRecursiveCall(" while hashing a frozendict")) {
+        return -1;
+    }
+
     PyObject *value;  // borrowed ref
     Py_ssize_t pos = 0;
     Py_hash_t key_hash;
     while (_PyDict_Next(op, &pos, NULL, &value, &key_hash)) {
         Py_hash_t pair_hash = frozendict_pair_hash(key_hash, value);
         if (pair_hash == -1) {
+            _Py_LeaveRecursiveCall();
             return -1;
         }
         hash ^= _shuffle_bits(pair_hash);
     }
+    _Py_LeaveRecursiveCall();
 
     /* Factor in the number of active entries */
     hash ^= ((Py_uhash_t)mp->ma_used + 1) * 1927868237UL;

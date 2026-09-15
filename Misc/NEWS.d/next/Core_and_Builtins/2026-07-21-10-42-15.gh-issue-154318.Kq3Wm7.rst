@@ -1,0 +1,2 @@
+Fix a crash when hashing a deeply nested :class:`tuple` or :class:`frozendict`.
+A :exc:`RecursionError` is now raised instead of overflowing the C stack.
