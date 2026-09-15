@@ -1,0 +1,2 @@
+Fix a crash during the clean up of managed dict objects under a memory
+pressure in :c:func:`PyObject_ClearManagedDict`.
