@@ -50,6 +50,7 @@ _opcode_stack_effect(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
         .keywords = _keywords,
         .fname = "stack_effect",
         .kwtuple = KWTUPLE,
+        .pos = 2,
     };
     #undef KWTUPLE
     PyObject *argsbuf[3];
@@ -776,4 +777,4 @@ _opcode_get_executor(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a11f02989c3175d7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f9e75db0b569efc0 input=a9049054013a1b77]*/

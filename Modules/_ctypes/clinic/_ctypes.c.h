@@ -103,6 +103,7 @@ CDataType_from_address(PyObject *type, PyTypeObject *cls, PyObject *const *args,
         .keywords = _keywords,
         .fname = "from_address",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -150,6 +151,7 @@ CDataType_from_buffer(PyObject *type, PyTypeObject *cls, PyObject *const *args, 
         .keywords = _keywords,
         .fname = "from_buffer",
         .kwtuple = KWTUPLE,
+        .pos = 2,
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
@@ -219,6 +221,7 @@ CDataType_from_buffer_copy(PyObject *type, PyTypeObject *cls, PyObject *const *a
         .keywords = _keywords,
         .fname = "from_buffer_copy",
         .kwtuple = KWTUPLE,
+        .pos = 2,
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
@@ -295,6 +298,7 @@ CDataType_in_dll(PyObject *type, PyTypeObject *cls, PyObject *const *args, Py_ss
         .keywords = _keywords,
         .fname = "in_dll",
         .kwtuple = KWTUPLE,
+        .pos = 2,
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
@@ -353,6 +357,7 @@ CDataType_from_param(PyObject *type, PyTypeObject *cls, PyObject *const *args, P
         .keywords = _keywords,
         .fname = "from_param",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -397,6 +402,7 @@ PyCPointerType_set_type(PyObject *self, PyTypeObject *cls, PyObject *const *args
         .keywords = _keywords,
         .fname = "set_type",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -442,6 +448,7 @@ PyCPointerType_from_param(PyObject *type, PyTypeObject *cls, PyObject *const *ar
         .keywords = _keywords,
         .fname = "from_param",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -591,6 +598,7 @@ c_wchar_p_from_param(PyObject *type, PyTypeObject *cls, PyObject *const *args, P
         .keywords = _keywords,
         .fname = "from_param",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -634,6 +642,7 @@ c_char_p_from_param(PyObject *type, PyTypeObject *cls, PyObject *const *args, Py
         .keywords = _keywords,
         .fname = "from_param",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -677,6 +686,7 @@ c_void_p_from_param(PyObject *type, PyTypeObject *cls, PyObject *const *args, Py
         .keywords = _keywords,
         .fname = "from_param",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -722,6 +732,7 @@ PyCSimpleType_from_param(PyObject *type, PyTypeObject *cls, PyObject *const *arg
         .keywords = _keywords,
         .fname = "from_param",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -1058,4 +1069,4 @@ Simple_from_outparm(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py
     }
     return Simple_from_outparm_impl(self, cls);
 }
-/*[clinic end generated code: output=b89feb50c654de3f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c105f495ba509d7a input=a9049054013a1b77]*/

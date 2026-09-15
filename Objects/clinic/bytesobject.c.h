@@ -720,6 +720,7 @@ bytes_translate(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObjec
         .keywords = _keywords,
         .fname = "translate",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
@@ -841,6 +842,7 @@ bytes_replace(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject 
         .keywords = _keywords,
         .fname = "replace",
         .kwtuple = KWTUPLE,
+        .pos = 2,
     };
     #undef KWTUPLE
     PyObject *argsbuf[3];
@@ -1455,4 +1457,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c20458db7a2123db input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3eb79a981a8cc2d5 input=a9049054013a1b77]*/

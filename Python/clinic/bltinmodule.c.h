@@ -556,6 +556,7 @@ builtin_eval(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
         .keywords = _keywords,
         .fname = "eval",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[3];
@@ -637,6 +638,7 @@ builtin_exec(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
         .keywords = _keywords,
         .fname = "exec",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[4];
@@ -896,6 +898,7 @@ builtin_iter(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
         .keywords = _keywords,
         .fname = "iter",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[3];
@@ -976,6 +979,7 @@ builtin_aiter(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
         .keywords = _keywords,
         .fname = "aiter",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[3];
@@ -1446,6 +1450,7 @@ builtin_sum(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
         .keywords = _keywords,
         .fname = "sum",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
@@ -1539,4 +1544,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5fb1ac6a4253ee2f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=320188361270a1c0 input=a9049054013a1b77]*/

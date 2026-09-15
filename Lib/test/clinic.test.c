@@ -2735,6 +2735,7 @@ test_posonly_keywords(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
         .keywords = _keywords,
         .fname = "test_posonly_keywords",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
@@ -2756,7 +2757,7 @@ exit:
 
 static PyObject *
 test_posonly_keywords_impl(PyObject *module, PyObject *a, PyObject *b)
-/*[clinic end generated code: output=7ddf55a744ba53dc input=1767b0ebdf06060e]*/
+/*[clinic end generated code: output=61f4b14bbed0d136 input=1767b0ebdf06060e]*/
 
 
 /*[clinic input]
@@ -2809,6 +2810,7 @@ test_posonly_kwonly(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
         .keywords = _keywords,
         .fname = "test_posonly_kwonly",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
@@ -2830,7 +2832,7 @@ exit:
 
 static PyObject *
 test_posonly_kwonly_impl(PyObject *module, PyObject *a, PyObject *c)
-/*[clinic end generated code: output=095a4e17e22609bc input=9042f2818f664839]*/
+/*[clinic end generated code: output=60896e0dcc896acd input=9042f2818f664839]*/
 
 
 /*[clinic input]
@@ -2885,6 +2887,7 @@ test_posonly_keywords_kwonly(PyObject *module, PyObject *const *args, Py_ssize_t
         .keywords = _keywords,
         .fname = "test_posonly_keywords_kwonly",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[3];
@@ -2909,7 +2912,7 @@ exit:
 static PyObject *
 test_posonly_keywords_kwonly_impl(PyObject *module, PyObject *a, PyObject *b,
                                   PyObject *c)
-/*[clinic end generated code: output=2f03aff955026341 input=29546ebdca492fea]*/
+/*[clinic end generated code: output=8bcb5ff251526729 input=29546ebdca492fea]*/
 
 
 /*[clinic input]
@@ -2964,6 +2967,7 @@ test_posonly_keywords_opt(PyObject *module, PyObject *const *args, Py_ssize_t na
         .keywords = _keywords,
         .fname = "test_posonly_keywords_opt",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[4];
@@ -3000,7 +3004,7 @@ exit:
 static PyObject *
 test_posonly_keywords_opt_impl(PyObject *module, PyObject *a, PyObject *b,
                                PyObject *c, PyObject *d)
-/*[clinic end generated code: output=2c8b2ca42f821c66 input=cdf5a9625e554e9b]*/
+/*[clinic end generated code: output=a13bc63386b9ffcd input=cdf5a9625e554e9b]*/
 
 
 /*[clinic input]
@@ -3054,6 +3058,7 @@ test_posonly_keywords_opt2(PyObject *module, PyObject *const *args, Py_ssize_t n
         .keywords = _keywords,
         .fname = "test_posonly_keywords_opt2",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[3];
@@ -3088,7 +3093,7 @@ exit:
 static PyObject *
 test_posonly_keywords_opt2_impl(PyObject *module, PyObject *a, PyObject *b,
                                 PyObject *c)
-/*[clinic end generated code: output=969a3b2b020310f1 input=1581299d21d16f14]*/
+/*[clinic end generated code: output=d6304d39fe7c3ff8 input=1581299d21d16f14]*/
 
 
 /*[clinic input]
@@ -3143,6 +3148,7 @@ test_posonly_opt_keywords_opt(PyObject *module, PyObject *const *args, Py_ssize_
         .keywords = _keywords,
         .fname = "test_posonly_opt_keywords_opt",
         .kwtuple = KWTUPLE,
+        .pos = 2,
     };
     #undef KWTUPLE
     PyObject *argsbuf[4];
@@ -3184,7 +3190,7 @@ exit:
 static PyObject *
 test_posonly_opt_keywords_opt_impl(PyObject *module, PyObject *a,
                                    PyObject *b, PyObject *c, PyObject *d)
-/*[clinic end generated code: output=02bf5e64403946fc input=408798ec3d42949f]*/
+/*[clinic end generated code: output=38194602438ee22d input=408798ec3d42949f]*/
 
 
 /*[clinic input]
@@ -3240,6 +3246,7 @@ test_posonly_kwonly_opt(PyObject *module, PyObject *const *args, Py_ssize_t narg
         .keywords = _keywords,
         .fname = "test_posonly_kwonly_opt",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[4];
@@ -3276,7 +3283,7 @@ exit:
 static PyObject *
 test_posonly_kwonly_opt_impl(PyObject *module, PyObject *a, PyObject *b,
                              PyObject *c, PyObject *d)
-/*[clinic end generated code: output=26510e61948015e8 input=8d8e5643bbbc2309]*/
+/*[clinic end generated code: output=507782e2d8bd338e input=8d8e5643bbbc2309]*/
 
 
 /*[clinic input]
@@ -3331,6 +3338,7 @@ test_posonly_kwonly_opt2(PyObject *module, PyObject *const *args, Py_ssize_t nar
         .keywords = _keywords,
         .fname = "test_posonly_kwonly_opt2",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[3];
@@ -3365,7 +3373,7 @@ exit:
 static PyObject *
 test_posonly_kwonly_opt2_impl(PyObject *module, PyObject *a, PyObject *b,
                               PyObject *c)
-/*[clinic end generated code: output=b31416e16c908756 input=f7e5eed94f75fff0]*/
+/*[clinic end generated code: output=caf15c26a81068dd input=f7e5eed94f75fff0]*/
 
 
 /*[clinic input]
@@ -3421,6 +3429,7 @@ test_posonly_opt_kwonly_opt(PyObject *module, PyObject *const *args, Py_ssize_t 
         .keywords = _keywords,
         .fname = "test_posonly_opt_kwonly_opt",
         .kwtuple = KWTUPLE,
+        .pos = 2,
     };
     #undef KWTUPLE
     PyObject *argsbuf[4];
@@ -3462,7 +3471,7 @@ exit:
 static PyObject *
 test_posonly_opt_kwonly_opt_impl(PyObject *module, PyObject *a, PyObject *b,
                                  PyObject *c, PyObject *d)
-/*[clinic end generated code: output=dc2337647059cb51 input=1e557dc979d120fd]*/
+/*[clinic end generated code: output=9c06b293b12d95af input=1e557dc979d120fd]*/
 
 
 /*[clinic input]
@@ -3520,6 +3529,7 @@ test_posonly_keywords_kwonly_opt(PyObject *module, PyObject *const *args, Py_ssi
         .keywords = _keywords,
         .fname = "test_posonly_keywords_kwonly_opt",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[5];
@@ -3559,7 +3569,7 @@ static PyObject *
 test_posonly_keywords_kwonly_opt_impl(PyObject *module, PyObject *a,
                                       PyObject *b, PyObject *c, PyObject *d,
                                       PyObject *e)
-/*[clinic end generated code: output=b7adeae40c9833a4 input=c3884a4f956fdc89]*/
+/*[clinic end generated code: output=88a550dda2cf8a66 input=c3884a4f956fdc89]*/
 
 
 /*[clinic input]
@@ -3615,6 +3625,7 @@ test_posonly_keywords_kwonly_opt2(PyObject *module, PyObject *const *args, Py_ss
         .keywords = _keywords,
         .fname = "test_posonly_keywords_kwonly_opt2",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[4];
@@ -3651,7 +3662,7 @@ exit:
 static PyObject *
 test_posonly_keywords_kwonly_opt2_impl(PyObject *module, PyObject *a,
                                        PyObject *b, PyObject *c, PyObject *d)
-/*[clinic end generated code: output=827a349e36e89c82 input=68d01d7c0f6dafb0]*/
+/*[clinic end generated code: output=2fbc9149e537389b input=68d01d7c0f6dafb0]*/
 
 
 /*[clinic input]
@@ -3710,6 +3721,7 @@ test_posonly_keywords_opt_kwonly_opt(PyObject *module, PyObject *const *args, Py
         .keywords = _keywords,
         .fname = "test_posonly_keywords_opt_kwonly_opt",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[5];
@@ -3758,7 +3770,7 @@ static PyObject *
 test_posonly_keywords_opt_kwonly_opt_impl(PyObject *module, PyObject *a,
                                           PyObject *b, PyObject *c,
                                           PyObject *d, PyObject *e)
-/*[clinic end generated code: output=bcb0088555123966 input=d0883d45876f186c]*/
+/*[clinic end generated code: output=c679395c7d6eb569 input=d0883d45876f186c]*/
 
 
 /*[clinic input]
@@ -3817,6 +3829,7 @@ test_posonly_keywords_opt2_kwonly_opt(PyObject *module, PyObject *const *args, P
         .keywords = _keywords,
         .fname = "test_posonly_keywords_opt2_kwonly_opt",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[5];
@@ -3870,7 +3883,7 @@ static PyObject *
 test_posonly_keywords_opt2_kwonly_opt_impl(PyObject *module, PyObject *a,
                                            PyObject *b, PyObject *c,
                                            PyObject *d, PyObject *e)
-/*[clinic end generated code: output=a22d1276d4c2c9c7 input=c95e2e1ec93035ad]*/
+/*[clinic end generated code: output=5a7c3b4153e45c61 input=c95e2e1ec93035ad]*/
 
 
 /*[clinic input]
@@ -3931,6 +3944,7 @@ test_posonly_opt_keywords_opt_kwonly_opt(PyObject *module, PyObject *const *args
         .keywords = _keywords,
         .fname = "test_posonly_opt_keywords_opt_kwonly_opt",
         .kwtuple = KWTUPLE,
+        .pos = 2,
     };
     #undef KWTUPLE
     PyObject *argsbuf[6];
@@ -3992,7 +4006,7 @@ test_posonly_opt_keywords_opt_kwonly_opt_impl(PyObject *module, PyObject *a,
                                               PyObject *b, PyObject *c,
                                               PyObject *d, PyObject *e,
                                               PyObject *f)
-/*[clinic end generated code: output=ebdbe695ee85a2ea input=9914857713c5bbf8]*/
+/*[clinic end generated code: output=def7a2f201092227 input=9914857713c5bbf8]*/
 
 /*[clinic input]
 test_keyword_only_parameter

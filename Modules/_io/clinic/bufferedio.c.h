@@ -146,6 +146,7 @@ _io__BufferedIOBase_read(PyObject *self, PyTypeObject *cls, PyObject *const *arg
         .keywords = _keywords,
         .fname = "read",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -201,6 +202,7 @@ _io__BufferedIOBase_read1(PyObject *self, PyTypeObject *cls, PyObject *const *ar
         .keywords = _keywords,
         .fname = "read1",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -259,6 +261,7 @@ _io__BufferedIOBase_write(PyObject *self, PyTypeObject *cls, PyObject *const *ar
         .keywords = _keywords,
         .fname = "write",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -915,6 +918,7 @@ _io__Buffered_truncate(PyObject *self, PyTypeObject *cls, PyObject *const *args,
         .keywords = _keywords,
         .fname = "truncate",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -1265,4 +1269,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=3ee17211d2010462 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=87d06e9d16bb256a input=a9049054013a1b77]*/

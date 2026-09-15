@@ -242,6 +242,7 @@ _io_FileIO_readinto(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py
         .keywords = _keywords,
         .fname = "readinto",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -333,6 +334,7 @@ _io_FileIO_read(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssi
         .keywords = _keywords,
         .fname = "read",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -387,6 +389,7 @@ _io_FileIO_write(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ss
         .keywords = _keywords,
         .fname = "write",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -509,6 +512,7 @@ _io_FileIO_truncate(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py
         .keywords = _keywords,
         .fname = "truncate",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -553,4 +557,4 @@ _io_FileIO_isatty(PyObject *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO_FILEIO_TRUNCATE_METHODDEF
     #define _IO_FILEIO_TRUNCATE_METHODDEF
 #endif /* !defined(_IO_FILEIO_TRUNCATE_METHODDEF) */
-/*[clinic end generated code: output=453d584e2e72f986 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a1690bbd91b5986c input=a9049054013a1b77]*/

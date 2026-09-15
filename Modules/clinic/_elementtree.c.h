@@ -41,6 +41,7 @@ _elementtree_Element_append(PyObject *self, PyTypeObject *cls, PyObject *const *
         .keywords = _keywords,
         .fname = "append",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -203,6 +204,7 @@ _elementtree_Element___setstate__(PyObject *self, PyTypeObject *cls, PyObject *c
         .keywords = _keywords,
         .fname = "__setstate__",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -250,6 +252,7 @@ _elementtree_Element_extend(PyObject *self, PyTypeObject *cls, PyObject *const *
         .keywords = _keywords,
         .fname = "extend",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -859,6 +862,7 @@ _elementtree_Element_makeelement(PyObject *self, PyTypeObject *cls, PyObject *co
         .keywords = _keywords,
         .fname = "makeelement",
         .kwtuple = KWTUPLE,
+        .pos = 2,
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
@@ -1479,4 +1483,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e2e9cf288c4400f6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=61cfcd2e4a4b86f5 input=a9049054013a1b77]*/
