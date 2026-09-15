@@ -787,6 +787,10 @@ Modules/clinic/grpmodule.c.h	grp_getgrgid	_keywords	-
 Modules/clinic/grpmodule.c.h	grp_getgrnam	_keywords	-
 Objects/object.c	-	constants	static PyObject*[]
 Objects/dictobject.c	-	PyFrozenDict_Type	-
+Objects/exceptions.c	-	_Py_num_static_exceptions	-
+Objects/exceptions.c	-	_Py_static_exceptions	-
+Objects/object.c	-	_Py_num_static_types	-
+Objects/object.c	-	_Py_static_types	-
 
 
 ## False positives
