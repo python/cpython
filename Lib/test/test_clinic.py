@@ -9,6 +9,7 @@ from test.support import os_helper
 from test.support.os_helper import TESTFN, unlink, rmtree
 from textwrap import dedent
 from unittest import TestCase
+import difflib
 import inspect
 import os.path
 import re
@@ -3041,6 +3042,148 @@ class ClinicExternalTest(TestCase):
             with open(fn, encoding='utf-8') as f:
                 generated = f.read()
             self.assertEndsWith(generated, checksum)
+
+    DRY_RUN_CODE = dedent("""
+        /*[clinic input]
+        func
+            a: int
+            /
+
+        Docstring.
+        [clinic start generated code]*/
+    """)
+
+    def make_dry_run_file(self, tmp_dir):
+        fn = os.path.join(tmp_dir, "test.c")
+        with open(fn, "w", encoding="utf-8") as f:
+            f.write(self.DRY_RUN_CODE)
+        return fn
+
+    @staticmethod
+    def dest_file(fn):
+        # The default destination for the generated code.  Its path is
+        # built from the "{dirname}/clinic/{basename}.h" template, so it
+        # always uses forward slashes, even on Windows.
+        dirname, basename = os.path.split(fn)
+        return f"{dirname}/clinic/{basename}.h"
+
+    def check_unchanged(self, tmp_dir, fn, pre_mtime):
+        # Neither the source file nor the destination file
+        # nor its directory is created or modified.
+        with open(fn, encoding="utf-8") as f:
+            self.assertEqual(f.read(), self.DRY_RUN_CODE)
+        self.assertEqual(os.stat(fn).st_mtime_ns, pre_mtime)
+        self.assertEqual(os.listdir(tmp_dir), ["test.c"])
+
+    def test_cli_dry_run(self):
+        with os_helper.temp_dir() as tmp_dir:
+            fn = self.make_dry_run_file(tmp_dir)
+            pre_mtime = os.stat(fn).st_mtime_ns
+            out = self.expect_success("--dry-run", fn)
+            self.assertEqual(out.splitlines(), [
+                f"would create {self.dest_file(fn)}",
+                f"would update {fn}",
+            ])
+            self.check_unchanged(tmp_dir, fn, pre_mtime)
+
+    def test_cli_dry_run_no_change(self):
+        with os_helper.temp_dir() as tmp_dir:
+            fn = self.make_dry_run_file(tmp_dir)
+            self.expect_success(fn)
+            self.assertEqual(self.expect_success("--dry-run", fn), "")
+            self.assertEqual(self.expect_success("--diff", fn), "")
+
+    def test_cli_dry_run_no_clinic_block(self):
+        with os_helper.temp_dir() as tmp_dir:
+            fn = os.path.join(tmp_dir, "test.c")
+            with open(fn, "w", encoding="utf-8") as f:
+                f.write("int x;\n")
+            self.assertEqual(self.expect_success("--dry-run", fn), "")
+
+    def test_cli_dry_run_output(self):
+        with os_helper.temp_dir() as tmp_dir:
+            fn = self.make_dry_run_file(tmp_dir)
+            out_fn = os.path.join(tmp_dir, "output.c")
+            out = self.expect_success("--dry-run", "-o", out_fn, fn)
+            self.assertIn(f"would create {out_fn}", out)
+            self.assertNotIn(f"would update {fn}", out)
+            self.assertFalse(os.path.exists(out_fn))
+
+    def test_cli_dry_run_make(self):
+        with os_helper.temp_dir() as tmp_dir:
+            fn = self.make_dry_run_file(tmp_dir)
+            pre_mtime = os.stat(fn).st_mtime_ns
+            out = self.expect_success("--dry-run", "--make", "--srcdir", tmp_dir)
+            self.assertIn(f"would update {fn}", out)
+            self.check_unchanged(tmp_dir, fn, pre_mtime)
+
+    def test_cli_dry_run_verbose(self):
+        with os_helper.temp_dir() as tmp_dir:
+            fn = self.make_dry_run_file(tmp_dir)
+            out, err, code = self.run_clinic("-v", "--dry-run", fn)
+            self.assertEqual(code, 0)
+            # The progress goes to stderr, so that the standard output
+            # contains only the report.
+            self.assertEqual(err.splitlines(), [fn])
+            self.assertEqual(out.splitlines(), [
+                f"would create {self.dest_file(fn)}",
+                f"would update {fn}",
+            ])
+
+    def test_cli_dry_run_checksum_mismatch(self):
+        invalid_input = dedent("""
+            /*[clinic input]
+            output preset block
+            module test
+            test.fn
+                a: int
+            [clinic start generated code]*/
+            /*[clinic end generated code: output=bogus input=bogus]*/
+        """)
+        with os_helper.temp_dir() as tmp_dir:
+            fn = os.path.join(tmp_dir, "test.c")
+            with open(fn, "w", encoding="utf-8") as f:
+                f.write(invalid_input)
+            pre_mtime = os.stat(fn).st_mtime_ns
+            # The dry run does not disable the checksum verification.
+            _, err = self.expect_failure("--dry-run", fn)
+            self.assertIn("Checksum mismatch!", err)
+            # With -f the change is reported, but still not written.
+            out = self.expect_success("--dry-run", "-f", fn)
+            self.assertIn(f"would update {fn}", out)
+            with open(fn, encoding="utf-8") as f:
+                self.assertEqual(f.read(), invalid_input)
+            self.assertEqual(os.stat(fn).st_mtime_ns, pre_mtime)
+
+    def test_cli_diff(self):
+        with os_helper.temp_dir() as tmp_dir:
+            fn = self.make_dry_run_file(tmp_dir)
+            pre_mtime = os.stat(fn).st_mtime_ns
+            out = self.expect_success("--diff", fn)
+            self.check_unchanged(tmp_dir, fn, pre_mtime)
+
+            # A new file is created by the patch.
+            dest_fn = self.dest_file(fn)
+            self.assertStartsWith(out, f"--- /dev/null\n+++ {dest_fn}\n@@ -0,0 +1,")
+            self.assertIn(f"--- {fn}\n+++ {fn}\n", out)
+            self.assertIn("+/*[clinic end generated code:", out)
+
+            # The patch is what clinic would have written.
+            self.expect_success(fn)
+            with open(fn, encoding="utf-8") as f:
+                new_contents = f.read()
+            expected = "".join(difflib.unified_diff(
+                self.DRY_RUN_CODE.splitlines(keepends=True),
+                new_contents.splitlines(keepends=True),
+                fromfile=fn, tofile=fn))
+            self.assertEndsWith(out, expected)
+
+    def test_cli_fail_converters_and_dry_run(self):
+        for opt in "--dry-run", "--diff":
+            with self.subTest(opt=opt):
+                _, err = self.expect_failure("--converters", opt)
+                msg = "can't use --dry-run or --diff with --converters"
+                self.assertIn(msg, err)
 
     def test_cli_make(self):
         c_code = dedent("""
