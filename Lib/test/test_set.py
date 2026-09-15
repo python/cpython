@@ -686,6 +686,25 @@ class TestSet(TestJointOps, unittest.TestCase):
         with self.assertRaises(KeyError):
             myset.discard(elem2)
 
+    def test_unhashable_element_preserves_exception_info(self):
+        """gh-149313: exception notes and cause must survive the improved message."""
+        class Elem:
+            def __hash__(self):
+                try:
+                    hash([])
+                except TypeError as e:
+                    e.add_note("custom note")
+                    raise
+
+        with self.assertRaises(TypeError) as cm:
+            {Elem()}
+
+        exc = cm.exception
+        self.assertIn("cannot use", str(exc))
+        self.assertIsNotNone(exc.__cause__)
+        self.assertIn("unhashable type: 'list'", str(exc.__cause__))
+        self.assertIn("custom note", exc.__cause__.__notes__[0])
+
     def test_hash_collision_remove_add(self):
         self.maxDiff = None
         # There should be enough space, so all elements with unique hash
