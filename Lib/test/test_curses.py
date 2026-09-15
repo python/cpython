@@ -3191,6 +3191,12 @@ class ScreenTests(NewtermTestBase):
     def test_initscr_after_new_prescr_keeps_screen_alive(self):
         # initscr() adopts the SCREEN created by new_prescr().  Dropping the
         # pre-screen wrapper must not delete the live screen.
+        s = self.make_pty()
+        saved = os.dup(1)
+        self.addCleanup(os.close, saved)
+        self.addCleanup(os.dup2, saved, 1)
+        os.dup2(s, 1)
+
         pre = curses.new_prescr()
         stdscr = curses.initscr()
         del pre
