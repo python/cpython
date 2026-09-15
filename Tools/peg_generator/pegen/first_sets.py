@@ -1,20 +1,18 @@
-#!/usr/bin/env python3.8
+#!/usr/bin/env python3
 
 import argparse
 import pprint
 import sys
 
-from pegen.build import build_parser
 from pegen.grammar import (
     Alt,
     Cut,
+    Forced,
     Gather,
-    GrammarVisitor,
     Group,
     Lookahead,
     NamedItem,
     NameLeaf,
-    NegativeLookahead,
     Opt,
     Repeat0,
     Repeat1,
@@ -22,7 +20,6 @@ from pegen.grammar import (
     Rule,
     StringLeaf,
 )
-from pegen.parser_generator import compute_nullables
 
 argparser = argparse.ArgumentParser(
     prog="calculate_first_sets",
@@ -31,107 +28,83 @@ argparser = argparse.ArgumentParser(
 argparser.add_argument("grammar_file", help="The grammar file")
 
 
-class FirstSetCalculator(GrammarVisitor):
+class FirstSetCalculator:
+    """Conservative FIRST sets, including "" for a possibly empty match.
+
+    None means parsing can commit or run an action before consuming a token,
+    so callers must not use that set to skip a parse attempt.
+    """
+
     def __init__(self, rules: dict[str, Rule]) -> None:
         self.rules = rules
-        self.nullables = compute_nullables(rules)
-        self.first_sets: dict[str, set[str]] = dict()
-        self.in_process: set[str] = set()
+        self.first_sets: dict[str, set[str | None]] = {name: set() for name in rules}
 
-    def calculate(self) -> dict[str, set[str]]:
-        for name, rule in self.rules.items():
-            self.visit(rule)
-        return self.first_sets
+    def calculate(self) -> dict[str, set[str | None]]:
+        # Recursive rules can discover terminals through each other. Keep
+        # propagating them until every rule's set has stopped growing.
+        while True:
+            changed = False
+            for name, rule in self.rules.items():
+                terminals = self.visit(rule.rhs)
+                if not terminals <= self.first_sets[name]:
+                    self.first_sets[name].update(terminals)
+                    changed = True
+            if not changed:
+                return self.first_sets
 
-    def visit_Alt(self, item: Alt) -> set[str]:
-        result: set[str] = set()
-        to_remove: set[str] = set()
-        for other in item.items:
-            new_terminals = self.visit(other)
-            if isinstance(other.item, NegativeLookahead):
-                to_remove |= new_terminals
-            result |= new_terminals
-            if to_remove:
-                result -= to_remove
-
-            # If the set of new terminals can start with the empty string,
-            # it means that the item is completely nullable and we should
-            # also considering at least the next item in case the current
-            # one fails to parse.
-
-            if "" in new_terminals:
-                continue
-
-            if not isinstance(other.item, (Opt, NegativeLookahead, Repeat0)):
-                break
-
-        # Do not allow the empty string to propagate.
-        result.discard("")
-
-        return result
-
-    def visit_Cut(self, item: Cut) -> set[str]:
-        return set()
-
-    def visit_Group(self, item: Group) -> set[str]:
-        return self.visit(item.rhs)
-
-    def visit_PositiveLookahead(self, item: Lookahead) -> set[str]:
-        return self.visit(item.node)
-
-    def visit_NegativeLookahead(self, item: NegativeLookahead) -> set[str]:
-        return self.visit(item.node)
-
-    def visit_NamedItem(self, item: NamedItem) -> set[str]:
-        return self.visit(item.item)
-
-    def visit_Opt(self, item: Opt) -> set[str]:
-        return self.visit(item.node)
-
-    def visit_Gather(self, item: Gather) -> set[str]:
-        return self.visit(item.node)
-
-    def visit_Repeat0(self, item: Repeat0) -> set[str]:
-        return self.visit(item.node)
-
-    def visit_Repeat1(self, item: Repeat1) -> set[str]:
-        return self.visit(item.node)
-
-    def visit_NameLeaf(self, item: NameLeaf) -> set[str]:
-        if item.value not in self.rules:
-            return {item.value}
-
-        if item.value not in self.first_sets:
-            self.first_sets[item.value] = self.visit(self.rules[item.value])
-            return self.first_sets[item.value]
-        elif item.value in self.in_process:
-            return set()
-
-        return self.first_sets[item.value]
-
-    def visit_StringLeaf(self, item: StringLeaf) -> set[str]:
-        return {item.value}
-
-    def visit_Rhs(self, item: Rhs) -> set[str]:
-        result: set[str] = set()
-        for alt in item.alts:
-            result |= self.visit(alt)
-        return result
-
-    def visit_Rule(self, item: Rule) -> set[str]:
-        if item.name in self.in_process:
-            return set()
-        elif item.name not in self.first_sets:
-            self.in_process.add(item.name)
-            terminals = self.visit(item.rhs)
-            if item in self.nullables:
-                terminals.add("")
-            self.first_sets[item.name] = terminals
-            self.in_process.remove(item.name)
-        return self.first_sets[item.name]
+    def visit(self, item: object) -> set[str | None]:
+        match item:
+            case Alt(items=items, action=action):
+                result: set[str | None] = set()
+                for other in items:
+                    terminals = self.visit(other)
+                    result.update(terminals - {""})
+                    if "" not in terminals:
+                        break
+                else:
+                    result.add("")
+                    if action:
+                        # An empty action can raise before a later token fails
+                        # to match. Do not bypass it with token dispatch.
+                        result.add(None)
+                return result
+            case Rhs(alts=alts):
+                result = set()
+                for alt in alts:
+                    result.update(self.visit(alt))
+                return result
+            case Rule(name=name):
+                return self.first_sets[name]
+            case NameLeaf(value=name):
+                return self.first_sets[name] if name in self.rules else {name}
+            case StringLeaf(value=value):
+                return {value}
+            case NamedItem(item=node) | Group(rhs=node) | Repeat1(node=node):
+                return self.visit(node)
+            case Opt(node=node) | Repeat0(node=node):
+                return self.visit(node) | {""}
+            case Gather(node=node, separator=separator):
+                terminals = self.visit(node)
+                if "" in terminals:
+                    return terminals | self.visit(separator)
+                return terminals
+            case Cut():
+                return {"", None}
+            case Forced(node=node):
+                # A mismatch raises instead of trying the next alternative.
+                return self.visit(node) | {None}
+            case Lookahead():
+                # Predicates may raise after consuming tokens internally, and
+                # negative predicates cannot safely narrow the next FIRST set.
+                return {"", None}
+            case _:
+                raise TypeError(f"Unexpected grammar node: {type(item).__name__}")
 
 
 def main() -> None:
+    # build imports c_generator, which imports FirstSetCalculator.
+    from pegen.build import build_parser
+
     args = argparser.parse_args()
 
     try:
