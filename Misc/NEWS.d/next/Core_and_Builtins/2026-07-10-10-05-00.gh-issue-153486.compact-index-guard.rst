@@ -1,0 +1,2 @@
+Improve optimized handling of non-negative integer indices for lists,
+tuples, and strings.
