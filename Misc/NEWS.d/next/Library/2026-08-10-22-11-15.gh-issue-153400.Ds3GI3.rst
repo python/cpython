@@ -1,0 +1,4 @@
+:mod:`os` and :mod:`signal`: Use glibc functions instead of ``syscall()``:
+``pidfd_open()``, ``pidfd_getfd()`` and ``pidfd_send_signal()`` (glibc 2.36),
+``gettid()`` and ``getdents64()`` (glibc 2.30), and ``getrandom()`` (glibc
+2.25). Patch by Victor Stinner.

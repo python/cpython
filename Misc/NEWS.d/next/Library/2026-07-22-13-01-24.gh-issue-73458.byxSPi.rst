@@ -1,0 +1,5 @@
+Fix :func:`logging.config.listen`: it left the caller waiting for the
+``ready`` event forever if the server could not be started,
+for example if the port was invalid or already in use.
+It now also binds to an IPv6 address if the host has no IPv4 address,
+for example if ``localhost`` is only aliased to ``::1``.

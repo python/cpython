@@ -4,8 +4,10 @@ import unittest
 from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier, Thread
 from unittest import TestCase
+import sys
+from test.support import import_helper, threading_helper
 
-from test.support import threading_helper
+_testinternalcapi = import_helper.import_module("_testinternalcapi")
 
 
 
@@ -84,6 +86,24 @@ class TestType(TestCase):
 
         self.run_one(writer_func, reader_func)
 
+    def test_attr_cache_mortal(self):
+        class C:
+            x = object()
+
+        class D(C):
+            pass
+
+        def writer_func():
+            for _ in range(3000):
+                C.x = object()
+
+        def reader_func():
+            for _ in range(3000):
+                C.x
+                D.x
+
+        self.run_one(writer_func, reader_func)
+
     def test___class___modification(self):
         loops = 200
 
@@ -159,6 +179,51 @@ class TestType(TestCase):
                 Derived.__base__
 
         self.run_one(writer, reader)
+
+    def test_per_type_cache_concurrent_reads(self):
+        class C:
+            pass
+
+        names = [sys.intern(f"attr_{i}") for i in range(
+            _testinternalcapi._Py_TYPECACHE_MINSIZE * 4)]
+        for name in names:
+            setattr(C, name, name)
+        # Prime the cache.
+        for name in names:
+            getattr(C, name)
+
+        lookup = _testinternalcapi.type_cache_lookup
+
+        def reader():
+            for _ in range(500):
+                for name in names:
+                    hit, value, _ = lookup(C, name)
+                    self.assertEqual(hit, 1, name)
+                    self.assertEqual(value, name)
+
+        threading_helper.run_concurrently(reader, nthreads=NTHREADS)
+
+    def test_per_type_cache_concurrent_invalidate(self):
+        class C:
+            x = "value"
+
+        # Prime the cache.
+        C.x
+        hit, value, version = _testinternalcapi.type_cache_lookup(C, "x")
+        self.assertEqual(hit, 1)
+        self.assertIs(value, "value")
+        self.assertGreater(version, 0)
+
+        def reader():
+            for _ in range(10_000):
+                self.assertIs(C.x, "value")
+
+        def invalidator():
+            for _ in range(10_000):
+                _testinternalcapi.type_cache_invalidate(C)
+
+        workers = [invalidator] + [reader] * (NTHREADS - 1)
+        threading_helper.run_concurrently(workers)
 
     def test_race_type_attr_added(self):
         NROUNDS = 50
@@ -258,6 +323,84 @@ class TestType(TestCase):
         writer.join()
         for reader in readers:
             reader.join()
+
+    def test_setattr_many_subclasses(self):
+        # gh-155978: Updating a special method queues a slot update for every
+        # affected subclass.  Keep enough subclasses alive to require
+        # heap-allocated queue chunks in addition to the stack chunk.
+        class Base:
+            pass
+
+        subclasses = [type(f"Sub{i}", (Base,), {}) for i in range(100)]
+
+        def custom_repr(self):
+            return "custom repr"
+
+        Base.__repr__ = custom_repr
+        self.assertTrue(all(repr(cls()) == "custom repr"
+                            for cls in subclasses))
+
+        del Base.__repr__
+        self.assertTrue(all(repr(cls()) != "custom repr"
+                            for cls in subclasses))
+
+    def test_concurrent_setattr_deadlock(self):
+        # gh-155400: two threads assigning to a special method of the same
+        # class could deadlock.  One thread held the type lock and waited for
+        # the type dict mutex, which its critical section had released when it
+        # blocked on the stop-the-world mutex, while the other held the type
+        # dict mutex and waited for the type lock.
+        # This is fairly difficult to trigger the race but this N seems to do
+        # it at least sometimes.
+        N = 200
+        done = False
+
+        class Base:
+            pass
+
+        def setter():
+            func = lambda self: "x"
+            barrier.wait()
+            while not done:
+                Base.__repr__ = func
+                try:
+                    del Base.__repr__
+                except AttributeError:
+                    pass
+
+        def subclasser():
+            barrier.wait()
+            while not done:
+                type('Sub', (Base,), {})()
+
+        def lister():
+            barrier.wait()
+            while not done:
+                Base.__subclasses__()
+
+        def basesetter():
+            nonlocal done
+            barrier.wait()
+            for _ in range(N):
+                class A:
+                    pass
+                class C:
+                    pass
+                class B(A):
+                    pass
+                B.__bases__ = (C,)
+            done = True
+
+        # The setter threads are the ones that deadlock.  The others are there
+        # to keep the type lock and the stop-the-world mutex contended, which
+        # is what gets the setters into the window where it happens.
+        targets = (setter, setter, subclasser, subclasser,
+                   lister, lister, basesetter)
+        barrier = threading.Barrier(len(targets))
+        threads = [Thread(target=target) for target in targets]
+        with threading_helper.start_threads(threads):
+            pass
+
 
 if __name__ == "__main__":
     unittest.main()

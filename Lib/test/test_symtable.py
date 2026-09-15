@@ -2,6 +2,7 @@
 Test the API of the symtable module.
 """
 
+import ast
 import symtable
 import warnings
 import unittest
@@ -552,6 +553,77 @@ class ComprehensionTests(unittest.TestCase):
                 ids = []
                 self.get_identifiers_recursive(st, ids)
                 self.assertEqual(len([x for x in ids if x == 'x']), 1)
+
+
+class ASTInputTests(unittest.TestCase):
+    maxDiff = None
+
+    def dump(self, table):
+        return (table.get_name(), table.get_type(), table.get_lineno(),
+                [repr(symbol) for symbol in table.get_symbols()],
+                [self.dump(child) for child in table.get_children()])
+
+    def test_exec(self):
+        top = symtable.symtable(ast.parse(TEST_CODE), "?", "exec")
+        self.assertIsNotNone(find_block(top, "Mine"))
+
+    def test_eval(self):
+        table = symtable.symtable(ast.parse("a + b", mode="eval"), "?", "eval")
+        self.assertEqual(sorted(table.get_identifiers()), ["a", "b"])
+
+    def test_single(self):
+        table = symtable.symtable(ast.parse("x = 1", mode="single"),
+                                  "?", "single")
+        self.assertIn("x", table.get_identifiers())
+
+    def test_same_result_as_string(self):
+        cases = [
+            (TEST_CODE, "exec"),
+            ("from __future__ import annotations\n"
+             "def f(x: int) -> int: return x\n", "exec"),
+            ("[x*y for x in a]", "eval"),
+            ("def f(): pass\n", "single"),
+        ]
+        for source, mode in cases:
+            with self.subTest(source=source, mode=mode):
+                from_str = symtable.symtable(source, "?", mode)
+                from_ast = symtable.symtable(ast.parse(source, mode=mode),
+                                             "?", mode)
+                self.assertEqual(self.dump(from_ast), self.dump(from_str))
+
+    def test_synthesized_ast(self):
+        # An AST created programmatically, without any source.
+        node = ast.Module(body=[
+            ast.FunctionDef(
+                name="f",
+                args=ast.arguments(args=[ast.arg(arg="x")]),
+                body=[ast.Return(ast.Name("x", ast.Load()))])])
+        ast.fix_missing_locations(node)
+        top = symtable.symtable(node, "?", "exec")
+        f = find_block(top, "f")
+        self.assertTrue(f.lookup("x").is_parameter())
+
+    def test_mode_mismatch(self):
+        tree = ast.parse("x = 1")
+        for mode in ("eval", "single"):
+            with self.subTest(mode=mode):
+                with self.assertRaises(TypeError):
+                    symtable.symtable(tree, "?", mode)
+        with self.assertRaises(TypeError):
+            symtable.symtable(ast.parse("x", mode="eval"), "?", "exec")
+
+    def test_invalid_ast(self):
+        node = ast.Expression(ast.Name("x", ast.Store()))
+        ast.fix_missing_locations(node)
+        with self.assertRaises(ValueError):
+            symtable.symtable(node, "?", "eval")
+
+    def test_misplaced_future_import(self):
+        # The parser does not enforce the placement of future imports in
+        # an existing AST; the symbol table construction does.
+        tree = ast.parse("x = 1\nfrom __future__ import annotations\n")
+        with self.assertRaises(SyntaxError):
+            symtable.symtable(tree, "?", "exec")
 
 
 class CommandLineTest(unittest.TestCase):

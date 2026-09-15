@@ -4,6 +4,7 @@
 #include "pycore_capsule.h"       // export _PyCapsule_SetTraverse()
 #include "pycore_gc.h"            // _PyObject_GC_IS_TRACKED()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
+#include "pycore_pymem.h"         // _PyMem_Strdup()
 
 
 /* Internal structure of PyCapsule */
@@ -227,58 +228,58 @@ _PyCapsule_SetTraverse(PyObject *op, traverseproc traverse_func, inquiry clear_f
 
 
 void *
-PyCapsule_Import(const char *name, int no_block)
+PyCapsule_Import(const char *name, int Py_UNUSED(no_block))
 {
     PyObject *object = NULL;
     void *return_value = NULL;
-    char *trace;
-    size_t name_length = (strlen(name) + 1) * sizeof(char);
-    char *name_dup = (char *)PyMem_Malloc(name_length);
+    char *name_dup = _PyMem_Strdup(name);
 
     if (!name_dup) {
         return PyErr_NoMemory();
     }
 
-    memcpy(name_dup, name, name_length);
-
-    trace = name_dup;
-    while (trace) {
+    char *trace = name_dup;
+    while (1) {
         char *dot = strchr(trace, '.');
         if (dot) {
-            *dot++ = '\0';
+            *dot = '\0';
         }
-
-        if (object == NULL) {
-            object = PyImport_ImportModule(trace);
-            if (!object) {
-                PyErr_Format(PyExc_ImportError, "PyCapsule_Import could not import module \"%s\"", trace);
+        if (object) {
+            PyObject *attr;
+            if (PyObject_GetOptionalAttrString(object, trace, &attr) < 0) {
+                Py_CLEAR(object);
+                break;
             }
-        } else {
-            PyObject *object2 = PyObject_GetAttrString(object, trace);
-            Py_SETREF(object, object2);
+            Py_SETREF(object, attr);
         }
-        if (!object) {
-            goto EXIT;
+        if (!dot) {
+            // We are done
+            break;
         }
 
-        trace = dot;
+        if (!object) {
+            object = PyImport_ImportModule(name_dup);
+            if (!object) {
+                break;
+            }
+        }
+        *dot = '.';
+        trace = dot + 1;
     }
 
     /* compare attribute name to module.name by hand */
     if (PyCapsule_IsValid(object, name)) {
         PyCapsule *capsule = (PyCapsule *)object;
         return_value = capsule->pointer;
-    } else {
+    }
+    else if (!PyErr_Occurred()) {
         PyErr_Format(PyExc_AttributeError,
             "PyCapsule_Import \"%s\" is not valid",
             name);
     }
 
-EXIT:
     Py_XDECREF(object);
-    if (name_dup) {
-        PyMem_Free(name_dup);
-    }
+    PyMem_Free(name_dup);
     return return_value;
 }
 

@@ -13,9 +13,7 @@ a variety of convenience methods for commonly used configurations.
 The message boxes are modal: each blocks until the user responds, then returns
 a value that depends on the function.
 The ``show*`` functions and :meth:`Message.show` return the symbolic name of
-the button the user pressed, as a string (such as :data:`OK` or :data:`YES`),
-while the ``ask*`` functions return a :class:`bool` or ``None`` (see each
-function below).
+the button the user pressed, as a string (such as :data:`OK` or :data:`YES`).
 Common message box styles and layouts include but are not limited to:
 
 .. figure:: tk_msg.png

@@ -102,20 +102,28 @@ _PySSLContext_set_msg_callback(PyObject *op, PyObject *arg,
                                void *Py_UNUSED(closure))
 {
     PySSLContext *self = PySSLContext_CAST(op);
-    Py_CLEAR(self->msg_cb);
+    if (arg == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                     "attribute '_msg_callback' of '%.100s' objects "
+                     "cannot be deleted", Py_TYPE(op)->tp_name);
+        return -1;
+    }
+    if (arg != Py_None && !PyCallable_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "not a callable object");
+        return -1;
+    }
+    /* Releasing the old callback can run arbitrary code. */
+    PyObject *old_cb = self->msg_cb;
     if (arg == Py_None) {
+        self->msg_cb = NULL;
         SSL_CTX_set_msg_callback(self->ctx, NULL);
     }
     else {
-        if (!PyCallable_Check(arg)) {
-            SSL_CTX_set_msg_callback(self->ctx, NULL);
-            PyErr_SetString(PyExc_TypeError,
-                            "not a callable object");
-            return -1;
-        }
         self->msg_cb = Py_NewRef(arg);
         SSL_CTX_set_msg_callback(self->ctx, _PySSL_msg_callback);
     }
+    Py_XDECREF(old_cb);
     return 0;
 }
 
@@ -182,6 +190,12 @@ static int
 _PySSLContext_set_keylog_filename(PyObject *op, PyObject *arg,
                                   void *Py_UNUSED(closure))
 {
+    if (arg == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                     "attribute 'keylog_filename' of '%.100s' objects "
+                     "cannot be deleted", Py_TYPE(op)->tp_name);
+        return -1;
+    }
 #if defined(MS_WINDOWS_APP) && !defined(MS_WINDOWS_DESKTOP)
     PyErr_SetString(PyExc_NotImplementedError,
                     "set_keylog_filename: unavailable on UWP build");

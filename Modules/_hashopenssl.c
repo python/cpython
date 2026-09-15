@@ -27,6 +27,7 @@
 #include "pycore_strhex.h"               // _Py_strhex()
 #include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_LOAD_PTR_RELAXED
 #include "hashlib.h"
+#include "_openssl_mem.h"
 
 /* EVP is the preferred interface to hashing in OpenSSL */
 #include <openssl/evp.h>
@@ -2933,5 +2934,6 @@ static struct PyModuleDef _hashlibmodule = {
 PyMODINIT_FUNC
 PyInit__hashlib(void)
 {
+    _PyOpenSSL_SetupMemFunctions();
     return PyModuleDef_Init(&_hashlibmodule);
 }

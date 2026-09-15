@@ -807,6 +807,10 @@ Comprehensions
    comprehensions. ``elt`` (or ``key`` and ``value``) is a single node
    representing the part that will be evaluated for each item.
 
+   For dictionary comprehensions using unpacking, for example
+   ``{**item for item in items}``, the expression to be expanded goes in
+   ``key`` and ``value`` is ``None``.
+
    ``generators`` is a list of :class:`comprehension` nodes.
 
    .. doctest::
@@ -1366,7 +1370,7 @@ Control flow
 
    ``try`` blocks which are followed by ``except*`` clauses. The attributes are the
    same as for :class:`Try` but the :class:`ExceptHandler` nodes in ``handlers``
-   are interpreted as ``except*`` blocks rather then ``except``.
+   are interpreted as ``except*`` blocks rather than ``except``.
 
    .. doctest::
 
@@ -2250,7 +2254,7 @@ and classes for traversing abstract syntax trees:
 
    In addition, if ``mode`` is ``'func_type'``, the input syntax is
    modified to correspond to :pep:`484` "signature type comments",
-   e.g. ``(str, int) -> List[str]``.
+   for example ``(str, int) -> List[str]``.
 
    Setting ``feature_version`` to a tuple ``(major, minor)`` will result in
    a "best-effort" attempt to parse using that Python version's grammar.
