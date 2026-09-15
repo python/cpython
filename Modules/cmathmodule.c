@@ -991,8 +991,8 @@ cmath_polar_impl(PyObject *module, Py_complex z)
 {
     double r, phi;
 
-    errno = 0;
     phi = c_atan2(z); /* should not cause any exception */
+    errno = 0;
     r = _Py_c_abs(z); /* sets errno to ERANGE on overflow */
     if (errno != 0)
         return math_error();
