@@ -1,0 +1,2 @@
+Added a new ``functools.cached_method`` decorator, which uses weakrefs and
+avoids putting ``self`` into the cache.
