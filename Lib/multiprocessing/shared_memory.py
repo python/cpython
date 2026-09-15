@@ -116,7 +116,14 @@ class SharedMemory:
                 size = stats.st_size
                 self._mmap = mmap.mmap(self._fd, size)
             except OSError:
-                self.unlink()
+                self.close()
+                # Only destroy the shared memory block if we created it in
+                # this call.  When attaching to a block created by another
+                # process we must not unlink another owner's memory.  The
+                # block has not been registered with the resource tracker
+                # yet, so unlink it directly to avoid a spurious UNREGISTER.
+                if create:
+                    _posixshmem.shm_unlink(self._name)
                 raise
             if self._track:
                 resource_tracker.register(self._name, "shared_memory")
