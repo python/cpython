@@ -790,15 +790,19 @@ np_float_complex(_structmodulestate *state, char *p, PyObject *v,
                  const formatdef *f)
 {
     Py_complex c = PyComplex_AsCComplex(v);
-    float x[2] = {(float)c.real, (float)c.imag};
 
     if (c.real == -1 && PyErr_Occurred()) {
         PyErr_SetString(state->StructError,
                         "required argument is not a complex");
         return -1;
     }
-    memcpy(p, &x, sizeof(x));
-    return 0;
+
+    int ret = PyFloat_Pack4(c.real, p, PY_LITTLE_ENDIAN);
+
+    if (ret) {
+        return ret;
+    }
+    return PyFloat_Pack4(c.imag, p + sizeof(float), PY_LITTLE_ENDIAN);
 }
 
 static int
