@@ -1,6 +1,6 @@
 '''SMTP/ESMTP client class.
 
-This should follow RFC 821 (SMTP), RFC 1869 (ESMTP), RFC 2554 (SMTP
+This should follow RFC 821 (SMTP), RFC 1869 (ESMTP), RFC 4954 (SMTP
 Authentication) and RFC 2487 (Secure SMTP over TLS).
 
 Notes:
@@ -36,6 +36,8 @@ Example:
 # Better RFC 821 compliance (MAIL and RCPT, and CRLF in data)
 #     by Carey Evans <c.evans@clear.net.nz>, for picky mail servers.
 # RFC 2554 (authentication) support by Gerhard Haering <gerhard@bigfoot.de>.
+# RFC 4954 (authentication, obsoletes 2554) support by Barry Warsaw <barry@python.org> and
+#     Steven Silvester <steve.silvester@mongodb.com>.
 #
 # This was modified from the Python 1.5 library HTTP lib.
 
@@ -51,6 +53,8 @@ import copy
 import datetime
 import sys
 from email.base64mime import body_encode as encode_base64
+from email import saslprep
+
 
 __all__ = ["SMTPException", "SMTPNotSupportedError", "SMTPServerDisconnected", "SMTPResponseException",
            "SMTPSenderRefused", "SMTPRecipientsRefused", "SMTPDataError",
@@ -177,6 +181,15 @@ def _quote_periods(bindata):
 def _fix_eols(data):
     return  re.sub(r'(?:\r\n|\n|\r(?!\n))', CRLF, data)
 
+def _apply_saslprep(value):
+    """Apply SASLprep (RFC 4013) to *value*, with an ASCII fast-path.
+
+    Pure-ASCII input is returned unchanged without calling saslprep().
+    """
+    if value.isascii():
+        return value
+    return saslprep(value, allow_unassigned_code_points=False)
+
 
 try:
     hmac.digest(b'', b'', 'md5')
@@ -256,6 +269,7 @@ class SMTP:
         self.command_encoding = 'ascii'
         self.source_address = source_address
         self._auth_challenge_count = 0
+        self._saslprep = None
 
         if host:
             (code, msg) = self.connect(host, port)
@@ -645,7 +659,7 @@ class SMTP:
         mechanism = mechanism.upper()
         initial_response = (authobject() if initial_response_ok else None)
         if initial_response is not None:
-            response = encode_base64(initial_response.encode('ascii'), eol='')
+            response = encode_base64(initial_response.encode('utf-8'), eol='')
             (code, resp) = self.docmd("AUTH", mechanism + " " + response)
             self._auth_challenge_count = 1
         else:
@@ -656,7 +670,7 @@ class SMTP:
             self._auth_challenge_count += 1
             challenge = base64.decodebytes(resp)
             response = encode_base64(
-                authobject(challenge).encode('ascii'), eol='')
+                authobject(challenge).encode('utf-8'), eol='')
             (code, resp) = self.docmd(response)
             # If server keeps sending challenges, something is wrong.
             if self._auth_challenge_count > _MAXCHALLENGE:
@@ -670,30 +684,53 @@ class SMTP:
 
     def auth_cram_md5(self, challenge=None):
         """ Authobject to use with CRAM-MD5 authentication. Requires self.user
-        and self.password to be set."""
+        and self.password to be set.
+
+        SASLprep is not applied by default: RFC 2195 predates RFC 4013 and has
+        no SASLprep requirement.  Pass ``saslprep=True`` to :meth:`login` to
+        force normalization.
+        """
         # CRAM-MD5 does not support initial-response.
         if challenge is None:
             return None
         if not _have_cram_md5_support:
             raise SMTPException("CRAM-MD5 is not supported")
-        password = self.password.encode('ascii')
+        # saslprep=True → apply; None (auto) or False → skip.
+        apply = (self._saslprep is True)
+        user = _apply_saslprep(self.user) if apply else self.user
+        password = (_apply_saslprep(self.password) if apply else self.password).encode('utf-8')
         authcode = hmac.HMAC(password, challenge, 'md5')
-        return f"{self.user} {authcode.hexdigest()}"
+        return f"{user} {authcode.hexdigest()}"
 
     def auth_plain(self, challenge=None):
         """ Authobject to use with PLAIN authentication. Requires self.user and
-        self.password to be set."""
-        return "\0%s\0%s" % (self.user, self.password)
+        self.password to be set.
+
+        SASLprep (RFC 4013) is applied to credentials by default, as recommended
+        by RFC 4616.  Pass ``saslprep=False`` to :meth:`login` to disable.
+        """
+        # saslprep=None (auto) or True → apply; False → skip.
+        apply = (self._saslprep is not False)
+        user = _apply_saslprep(self.user) if apply else self.user
+        password = _apply_saslprep(self.password) if apply else self.password
+        return "\0%s\0%s" % (user, password)
 
     def auth_login(self, challenge=None):
         """ Authobject to use with LOGIN authentication. Requires self.user and
-        self.password to be set."""
-        if challenge is None or self._auth_challenge_count < 2:
-            return self.user
-        else:
-            return self.password
+        self.password to be set.
 
-    def login(self, user, password, *, initial_response_ok=True):
+        SASLprep is not applied by default: LOGIN is an informal mechanism with
+        no SASLprep requirement.  Pass ``saslprep=True`` to :meth:`login` to
+        force normalization.
+        """
+        # saslprep=True → apply; None (auto) or False → skip.
+        apply = (self._saslprep is True)
+        if challenge is None or self._auth_challenge_count < 2:
+            return _apply_saslprep(self.user) if apply else self.user
+        else:
+            return _apply_saslprep(self.password) if apply else self.password
+
+    def login(self, user, password, *, initial_response_ok=True, saslprep=None):
         """Log in on an SMTP server that requires authentication.
 
         The arguments are:
@@ -703,6 +740,15 @@ class SMTP:
         Keyword arguments:
             - initial_response_ok: Allow sending the RFC 4954 initial-response
               to the AUTH command, if the authentication methods supports it.
+            - saslprep: Controls SASLprep (RFC 4013) normalization of
+              credentials.  ``None`` (default) applies per-mechanism rules:
+              PLAIN normalizes as recommended by RFC 4616; CRAM-MD5 and LOGIN
+              do not (neither RFC recommends it).  ``True`` forces
+              normalization for all mechanisms.  ``False`` disables
+              normalization entirely (useful when a server rejects normalized
+              credentials).  Pure-ASCII credentials are never passed through
+              SASLprep regardless of this setting, since SASLprep is a no-op
+              for ASCII.
 
         If there has been no previous EHLO or HELO command this session, this
         method tries ESMTP EHLO first.
@@ -720,6 +766,10 @@ class SMTP:
          SMTPException            No suitable authentication method was
                                   found.
         """
+        if saslprep is not None and not isinstance(saslprep, bool):
+            raise TypeError(
+                f"saslprep must be True, False, or None, got {saslprep!r}"
+            )
 
         self.ehlo_or_helo_if_needed()
         if not self.has_extn("auth"):
@@ -745,18 +795,22 @@ class SMTP:
         # support, so if authentication fails, we continue until we've tried
         # all methods.
         self.user, self.password = user, password
-        for authmethod in authlist:
-            method_name = 'auth_' + authmethod.lower().replace('-', '_')
-            try:
-                (code, resp) = self.auth(
-                    authmethod, getattr(self, method_name),
-                    initial_response_ok=initial_response_ok)
-                # 235 == 'Authentication successful'
-                # 503 == 'Error: already authenticated'
-                if code in (235, 503):
-                    return (code, resp)
-            except SMTPAuthenticationError as e:
-                last_exception = e
+        self._saslprep = saslprep
+        try:
+            for authmethod in authlist:
+                method_name = 'auth_' + authmethod.lower().replace('-', '_')
+                try:
+                    (code, resp) = self.auth(
+                        authmethod, getattr(self, method_name),
+                        initial_response_ok=initial_response_ok)
+                    # 235 == 'Authentication successful'
+                    # 503 == 'Error: already authenticated'
+                    if code in (235, 503):
+                        return (code, resp)
+                except SMTPAuthenticationError as e:
+                    last_exception = e
+        finally:
+            self._saslprep = None
 
         # We could not login successfully.  Return result of last attempt.
         raise last_exception
