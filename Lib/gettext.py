@@ -119,8 +119,9 @@ _c2py_ops = frozendict({'||': 'or', '&&': 'and', '/': '//'})
 def _parse(tokens, priority=-1):
     result = ''
     nexttok = next(tokens)
+    negations = 0
     while nexttok == '!':
-        result += 'not '
+        negations += 1
         nexttok = next(tokens)
 
     if nexttok == '(':
@@ -136,6 +137,11 @@ def _parse(tokens, priority=-1):
         except ValueError:
             raise _error(nexttok) from None
         result = '%s%d' % (result, value)
+    # In C the unary '!' binds tighter than any binary operator, but Python's
+    # 'not' binds looser, so negate the operand as a parenthesised unit before
+    # the binary-operator loop below ('!n + 1' means '(!n) + 1', not '!(n + 1)').
+    for _ in range(negations):
+        result = '(not %s)' % result
     nexttok = next(tokens)
 
     j = 100
