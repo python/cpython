@@ -91,9 +91,14 @@ _testcext_exec(PyObject *module)
     if (!result) return -1;
     Py_DECREF(result);
 
-    // test Py_BUILD_ASSERT() and Py_BUILD_ASSERT_EXPR()
+    // Test Py_BUILD_ASSERT() and Py_BUILD_ASSERT_EXPR()
     Py_BUILD_ASSERT(sizeof(int) == sizeof(unsigned int));
     assert(Py_BUILD_ASSERT_EXPR(sizeof(int) == sizeof(unsigned int)) == 0);
+
+    // Test Py_MIN(), Py_MAX(), Py_ABS()
+    assert(Py_MIN(5, 11) == 5);
+    assert(Py_MAX(5, 11) == 11);
+    assert(Py_ABS(-5) == 5);
 
     // Test Py_CLEAR(): use typeof()/__typeof__() if available, or memcpy()
     obj = Py_None;

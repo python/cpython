@@ -5883,7 +5883,8 @@ _ssl_MemoryBIO_read_impl(PySSLMemoryBIO *self, int len)
 {
     int avail, nbytes;
 
-    avail = (int)Py_MIN(BIO_ctrl_pending(self->bio), INT_MAX);
+    size_t pending = BIO_ctrl_pending(self->bio);
+    avail = (int)Py_MIN(pending, (size_t)INT_MAX);
     if ((len < 0) || (len > avail))
         len = avail;
 
