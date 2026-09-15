@@ -1,0 +1,8 @@
+:class:`itertools.pairwise` iterators are now safe to share between
+threads in the :term:`free threaded <free threading>` build: concurrent
+calls to ``__next__`` are serialized via a critical section
+(:gh:`123471`). Re-entrant calls (e.g. when the input iterator's
+``__next__`` calls back into the :class:`!pairwise` object) now raise
+:exc:`RuntimeError`, matching the behavior of generators and
+:class:`itertools.tee` and fixing a use-after-free crash
+(:gh:`149557`). Patch by Pieter Eendebak.
