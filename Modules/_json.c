@@ -12,6 +12,7 @@
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "pycore_critical_section.h" // Py_BEGIN_CRITICAL_SECTION_SEQUENCE_FAST()
 #include "pycore_dict.h"          // _PyDict_SetItem_Take2()
+#include "pycore_floatobject.h"   // _PyFloat_FromString()
 #include "pycore_list.h"          // _PyList_AppendTakeRef()
 #include "pycore_global_strings.h" // _Py_ID()
 #include "pycore_pyerrors.h"      // _PyErr_FormatNote
@@ -997,7 +998,6 @@ _match_number_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t start, Py_
     Py_ssize_t idx = start;
     int is_float = 0;
     PyObject *rval;
-    PyObject *numstr = NULL;
     PyObject *custom_func;
 
     str = PyUnicode_DATA(pystr);
@@ -1064,32 +1064,39 @@ _match_number_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t start, Py_
 
     if (custom_func) {
         /* copy the section we determined to be a number */
-        numstr = PyUnicode_FromKindAndData(kind,
-                                           (char*)str + kind * start,
-                                           idx - start);
-        if (numstr == NULL)
+        PyObject *numstr = PyUnicode_FromKindAndData(kind,
+                                                     (char*)str + kind * start,
+                                                     idx - start);
+        if (numstr == NULL) {
             return NULL;
+        }
         rval = PyObject_CallOneArg(custom_func, numstr);
+        Py_DECREF(numstr);
     }
     else {
-        Py_ssize_t i, n;
-        char *buf;
         /* Straight conversion to ASCII, to avoid costly conversion of
            decimal unicode digits (which cannot appear here) */
-        n = idx - start;
-        numstr = PyBytes_FromStringAndSize(NULL, n);
-        if (numstr == NULL)
+        Py_ssize_t n = idx - start;
+        char *buf = PyMem_Malloc(n + 1);
+        if (buf == NULL) {
+            PyErr_NoMemory();
             return NULL;
-        buf = PyBytes_AS_STRING(numstr);
-        for (i = 0; i < n; i++) {
-            buf[i] = (char) PyUnicode_READ(kind, str, i + start);
         }
-        if (is_float)
-            rval = PyFloat_FromString(numstr);
-        else
+
+        for (Py_ssize_t i = 0; i < n; i++) {
+            Py_UCS4 ch = PyUnicode_READ(kind, str, i + start);
+            assert(ch <= 127);
+            buf[i] = (char)ch;
+        }
+        buf[n] = '\0';
+        if (is_float) {
+            rval = _PyFloat_FromString(buf, n);
+        }
+        else {
             rval = PyLong_FromString(buf, NULL, 10);
+        }
+        PyMem_Free(buf);
     }
-    Py_DECREF(numstr);
     *next_idx_ptr = idx;
     return rval;
 }
