@@ -737,18 +737,13 @@ class PrettyPrinter:
 
     def _pprint_template(self, object, stream, indent, allowance, context, level):
         cls_name = object.__class__.__name__
-        if self._expand:
-            indent += self._indent_per_level
-        else:
-            indent += len(cls_name) + 1
 
-        items = (
-            ("strings", object.strings),
-            ("interpolations", object.interpolations),
-        )
+        if not self._expand:
+            indent += len(cls_name)
+
         stream.write(self._format_block_start(cls_name + "(", indent))
-        self._format_namespace_items(
-            items, stream, indent, allowance, context, level
+        self._format_items(
+            object, stream, indent, allowance, context, level
         )
         stream.write(
             self._format_block_end(")", indent - self._indent_per_level)
@@ -758,13 +753,15 @@ class PrettyPrinter:
         cls_name = object.__class__.__name__
         if self._expand:
             indent += self._indent_per_level
+            stream.write(self._format_block_start(cls_name + "(", indent))
             items = (
                 ("value", object.value),
                 ("expression", object.expression),
-                ("conversion", object.conversion),
-                ("format_spec", object.format_spec),
             )
-            stream.write(self._format_block_start(cls_name + "(", indent))
+            if object.conversion is not None or object.format_spec:
+                items += (("conversion", object.conversion),)
+                if object.format_spec:
+                    items += (("format_spec", object.format_spec),)
             self._format_namespace_items(
                 items, stream, indent, allowance, context, level
             )
@@ -773,21 +770,26 @@ class PrettyPrinter:
             )
         else:
             indent += len(cls_name)
+            stream.write(cls_name + "(")
             items = (
                 object.value,
                 object.expression,
-                object.conversion,
-                object.format_spec,
             )
-            stream.write(cls_name + "(")
+            if object.conversion is not None or object.format_spec:
+                items += (object.conversion,)
+                if object.format_spec:
+                    items += (object.format_spec,)
             self._format_items(
                 items, stream, indent, allowance, context, level
             )
             stream.write(")")
 
     t = t"{0}"
-    _dispatch[type(t).__repr__] = _pprint_template
-    _dispatch[type(t.interpolations[0]).__repr__] = _pprint_interpolation
+    _template = type(t)
+    _dispatch[_template.__repr__] = _pprint_template
+
+    _interpolation = type(t.interpolations[0])
+    _dispatch[_interpolation.__repr__] = _pprint_interpolation
     del t
 
     def _safe_repr(self, object, context, maxlevels, level):
@@ -915,6 +917,42 @@ class PrettyPrinter:
                     recursive = True
             del context[objid]
             return typ.__name__ + '([%s])' % ", ".join(components), readable, recursive
+
+        if (issubclass(typ, self._template) and r is self._template.__repr__) or \
+           (issubclass(typ, self._interpolation) and r is self._interpolation.__repr__):
+            # Don't use the repr of templates and interpolations, since the repr
+            # of a template resembles its source code (and includes the id of
+            # the template). Use constructor syntax instead, which is what
+            # _pprint_template and _pprint_interpolation produce as well.
+            objid = id(object)
+            if maxlevels and level >= maxlevels:
+                return f"{typ.__name__}(...)", False, objid in context
+            if objid in context:
+                return _recursion(object), False, True
+            if typ is self._template:
+                items = object
+            else:
+                items = (object.value, object.expression)
+                if object.conversion is not None or object.format_spec:
+                    items += (object.conversion,)
+                    if object.format_spec:
+                        items += (object.format_spec,)
+            context[objid] = 1
+            readable = True
+            recursive = False
+            components = []
+            append = components.append
+            level += 1
+            for item in items:
+                irepr, ireadable, irecur = self.format(
+                    item, context, maxlevels, level)
+                append(irepr)
+                readable = readable and ireadable
+                if irecur:
+                    recursive = True
+            del context[objid]
+            rep = "%s(%s)" % (typ.__name__, ", ".join(components))
+            return rep, readable, recursive
 
         rep = repr(object)
         return rep, (rep and not rep.startswith('<')), False
