@@ -211,6 +211,39 @@ remove_mem_hooks(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
+call_with_nomemory(PyObject *self, PyObject *args)
+{
+    /* Call func(*args) with memory allocation failing as in set_nomemory().
+     * No bytecode is executed between arming the failure and the call. */
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    if (nargs < 3) {
+        PyErr_SetString(PyExc_TypeError,
+                        "call_with_nomemory() requires at least 3 arguments");
+        return NULL;
+    }
+    int start = PyLong_AsInt(PyTuple_GET_ITEM(args, 0));
+    if (start == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    int stop = PyLong_AsInt(PyTuple_GET_ITEM(args, 1));
+    if (stop == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    PyObject *func = PyTuple_GET_ITEM(args, 2);
+    /* PyObject_Call() with a prebuilt tuple does not allocate,
+     * unlike PyObject_Vectorcall() for a callee without vectorcall. */
+    PyObject *callargs = PyTuple_GetSlice(args, 3, nargs);
+    if (callargs == NULL) {
+        return NULL;
+    }
+    fm_set_nomemory(start, stop);
+    PyObject *res = PyObject_Call(func, callargs, NULL);
+    fm_remove_hooks();
+    Py_DECREF(callargs);
+    return res;
+}
+
+static PyObject *
 test_setallocators(PyMemAllocatorDomain domain)
 {
     PyObject *res = NULL;
@@ -964,6 +997,8 @@ static PyMethodDef test_methods[] = {
         PyDoc_STR("Remove memory hooks.")},
     {"set_nomemory",                  set_nomemory,                  METH_VARARGS,
         PyDoc_STR("set_nomemory(start:int, stop:int = 0)")},
+    {"call_with_nomemory",            call_with_nomemory,            METH_VARARGS,
+        PyDoc_STR("call_with_nomemory(start:int, stop:int, func, /, *args)")},
     {"test_pymem_alloc0",             test_pymem_alloc0,             METH_NOARGS},
     {"test_pymem_setallocators",      test_pymem_setallocators,      METH_NOARGS},
     {"test_pymem_setrawallocators",   test_pymem_setrawallocators,   METH_NOARGS},
