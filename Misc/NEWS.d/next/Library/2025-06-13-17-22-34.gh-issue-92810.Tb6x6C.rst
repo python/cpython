@@ -1,0 +1,2 @@
+Reduce memory usage by :meth:`~type.__subclasscheck__`
+for :class:`abc.ABCMeta` and large class trees.
