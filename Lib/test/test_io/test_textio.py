@@ -1633,6 +1633,33 @@ class CTextIOWrapperTest(TextIOWrapperTest, CTestCase):
             wrapper.write('x')
             self.assertRaisesRegex(ValueError, "detached", wrapper.read)
 
+    def test_reentrant_detach_during_read(self):
+        # gh-157363, gh-157364: The buffer must stay alive until its active
+        # read operation returns.
+        wrapper = None
+
+        class DetachOnRead(self.RawIOBase):
+            detached = False
+
+            def readable(self):
+                return True
+
+            def readinto(self, b):
+                if self.detached:
+                    return 0
+                self.detached = True
+                wrapper.detach()
+                b[:3] = b"ab\n"
+                return 3
+
+        for method_name in ("read", "readline"):
+            with self.subTest(method_name):
+                raw = DetachOnRead()
+                wrapper = self.TextIOWrapper(
+                    self.BufferedReader(raw), encoding="utf-8")
+                method = getattr(wrapper, method_name)
+                self.assertEqual(method(), "ab\n")
+
     def test_reentrant_seek_during_tell(self):
         # gh-153539: reading short of _CHUNK_SIZE leaves residual bytes in the
         # snapshot, so tell() re-decodes and calls the decoder's getstate(); a
