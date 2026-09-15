@@ -1142,7 +1142,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
 
     func_builder = _FuncBuilder(globals)
 
-    if init:
+    if init and '__init__' not in cls.__dict__:
         # Does this class have a post-init function?
         has_post_init = hasattr(cls, _POST_INIT_NAME)
 
