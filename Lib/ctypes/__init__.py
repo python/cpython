@@ -555,7 +555,10 @@ elif _sys.platform == "android":
 elif _sys.platform == "cygwin":
     pythonapi = PyDLL(_sysconfig.get_config_var("DLLLIBRARY"))
 else:
-    pythonapi = PyDLL(None)
+    try:
+        pythonapi = PyDLL(None)
+    except OSError:
+        pythonapi = None
 
 
 if _os.name == "nt":
