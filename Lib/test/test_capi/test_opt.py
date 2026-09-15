@@ -4037,11 +4037,11 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertIn("_BINARY_OP_TRUEDIV_FLOAT_INPLACE_RIGHT", uops)
 
-    def test_float_truediv_speculative_guards_from_tracing(self):
-        # a, b are locals with no statically known type. _RECORD_TOS_TYPE /
-        # _RECORD_NOS_TYPE (added to the BINARY_OP macro) capture the observed
-        # operand types during tracing, and the optimizer then speculatively
-        # emits _GUARD_{TOS,NOS}_FLOAT and specializes the division.
+    def test_float_truediv_from_tier1_specialization(self):
+        # a, b are locals with no statically known type. The tier 1
+        # BINARY_OP_EXTEND specialization supplies the exact operand types.
+        # The optimizer lowers its descriptor guard to direct float guards
+        # before specializing the division.
         def testfunc(args):
             a, b, n = args
             total = 0.0
@@ -4056,6 +4056,8 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_GUARD_TOS_FLOAT", uops)
         self.assertIn("_GUARD_NOS_FLOAT", uops)
         self.assertIn("_BINARY_OP_TRUEDIV_FLOAT", uops)
+        self.assertNotIn("_GUARD_BINARY_OP_EXTEND", uops)
+        self.assertNotIn("_BINARY_OP_EXTEND", uops)
 
     def test_float_remainder_speculative_guards_from_tracing(self):
         # a, b are locals with no statically known type. Tracing records
