@@ -4851,6 +4851,27 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertLessEqual(count_ops(ex, "_POP_TOP"), 3)
         self.assertIn("_POP_TOP_NOP", uops)
 
+    def test_to_bool_noncompact_int(self):
+        # gh-155486: non-compact exact integer should remain specialized
+        # as _TO_BOOL_INT in Tier 2.
+        def f(n, value=1 << 100):
+            for _ in range(n):
+                if not value:
+                    return 0
+                # The second check should reuse the exact-int type established by the first guard.
+                if not value:
+                    return 0
+            return 1
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, 1)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_TO_BOOL_INT", uops)
+        self.assertLessEqual(count_ops(ex, "_GUARD_TOS_EXACT_INT"), 1)
+        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 3)
+        self.assertIn("_POP_TOP_NOP", uops)
+
     def test_to_bool_list(self):
         def f(n):
             for i in range(n):
