@@ -386,7 +386,7 @@ class BaseWriterTest:
         writer.write(0, b's' * small)
         self.assertEqual(writer.get_data(), b's' * small)
         writer.resize(large)
-        self.assertEqual(writer.get_data(), b's' * small + CANARY_BYTE + NEW_BYTE * (large - small - 1))
+        self.assertEqual(writer.get_data(), b's' * small + NEW_BYTE * (large - small))
         writer.write(small, b'L' * (large - small))
         self.assertEqual(writer.get_data(), b's' * small + b'L' * (large - small))
 
@@ -475,6 +475,7 @@ class BaseWriterTest:
     @unittest.skipUnless(support.Py_DEBUG, 'need debug build')
     def test_resize_canary(self):
         CANARY_BYTE = self.CANARY_BYTE
+
         for size in (self.SMALL_BUFFER, self.LARGE_BUFFER):
             with self.subTest(size=size):
                 # Truncate the last byte
@@ -490,7 +491,7 @@ class BaseWriterTest:
                 writer = self.create_writer(size)
                 writer.write(0, data)
                 writer.resize(0)
-                self.assertEqual(writer.get_data(), b'')
+                self.assertEqual(get_data_canary(writer), CANARY_BYTE)
                 self.assertEqual(writer.finish(),  b'')
 
     @support.nomemtest
