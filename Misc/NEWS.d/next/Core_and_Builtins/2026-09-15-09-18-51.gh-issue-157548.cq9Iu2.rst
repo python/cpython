@@ -1,0 +1,2 @@
+On Emscripten, a signal written to the signal buffer while the interpreter
+was clearing it is no longer lost.

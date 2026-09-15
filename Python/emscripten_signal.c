@@ -13,9 +13,7 @@ EM_JS(int, _Py_CheckEmscriptenSignals_Helper, (void), {
         return 0;
     }
     try {
-        let result = Module.Py_EmscriptenSignalBuffer[0];
-        Module.Py_EmscriptenSignalBuffer[0] = 0;
-        return result;
+        return Atomics.exchange(Module.Py_EmscriptenSignalBuffer, 0, 0);
     } catch(e) {
 #if !defined(NDEBUG)
         console.warn("Error occurred while trying to read signal buffer:", e);

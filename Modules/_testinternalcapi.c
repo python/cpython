@@ -2945,6 +2945,7 @@ incref_decref_delayed(PyObject *self, PyObject *op)
 
 #ifdef __EMSCRIPTEN__
 #include "emscripten.h"
+#include "pycore_emscripten_signal.h"  // Py_EMSCRIPTEN_SIGNAL_HANDLING
 
 EM_JS(int, emscripten_set_up_async_input_device_js, (void), {
     let idx = 0;
@@ -2971,6 +2972,36 @@ emscripten_set_up_async_input_device(PyObject *self, PyObject *Py_UNUSED(ignored
     } else {
         Py_RETURN_FALSE;
     }
+}
+
+EM_JS(void, emscripten_set_signal_buffer_js, (int signum, int shared), {
+    Module._Py_saved_signal_buffer = Module.Py_EmscriptenSignalBuffer;
+    Module.Py_EmscriptenSignalBuffer = shared
+        ? new Uint8Array(new SharedArrayBuffer(1))
+        : new Uint8Array(1);
+    Module.Py_EmscriptenSignalBuffer[0] = signum;
+});
+
+EM_JS(int, emscripten_restore_signal_buffer_js, (void), {
+    const value = Module.Py_EmscriptenSignalBuffer[0];
+    Module.Py_EmscriptenSignalBuffer = Module._Py_saved_signal_buffer;
+    delete Module._Py_saved_signal_buffer;
+    return value;
+});
+
+static PyObject *
+emscripten_check_signal_buffer(PyObject *self, PyObject *args)
+{
+    int signum, shared;
+    if (!PyArg_ParseTuple(args, "ip", &signum, &shared)) {
+        return NULL;
+    }
+    int handling = Py_EMSCRIPTEN_SIGNAL_HANDLING;
+    emscripten_set_signal_buffer_js(signum, shared);
+    Py_EMSCRIPTEN_SIGNAL_HANDLING = 1;
+    _Py_CheckEmscriptenSignals();
+    Py_EMSCRIPTEN_SIGNAL_HANDLING = handling;
+    return PyLong_FromLong(emscripten_restore_signal_buffer_js());
 }
 #endif
 
@@ -3383,6 +3414,7 @@ static PyMethodDef module_functions[] = {
     GET_NEXT_DICT_KEYS_VERSION_METHODDEF
 #ifdef __EMSCRIPTEN__
     {"emscripten_set_up_async_input_device", emscripten_set_up_async_input_device, METH_NOARGS},
+    {"emscripten_check_signal_buffer", emscripten_check_signal_buffer, METH_VARARGS},
 #endif
     {"simple_pending_call", simple_pending_call, METH_O},
     {"set_vectorcall_nop", set_vectorcall_nop, METH_O},
