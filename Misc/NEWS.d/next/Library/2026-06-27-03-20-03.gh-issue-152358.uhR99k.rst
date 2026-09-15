@@ -1,0 +1,3 @@
+Fix :func:`hash` raising :exc:`TypeError` on an
+:class:`annotationlib.ForwardRef` that holds an unhashable value.
+Patch by tonghuaroot.
