@@ -200,6 +200,26 @@ class TestSFbugs(unittest.TestCase):
             [((1, '\x00-2\x01'), (1, '\x00+3\x01'), True)],
         )
 
+    def test_mdiff_lopsided_replace(self):
+        self.assertEqual(
+            list(difflib._mdiff(["a\n"] * 4, ["b\n"])),
+            [
+                ((1, '\x00-a\n\x01'), (1, '\x00+b\n\x01'), True),
+                ((2, '\x00-a\n\x01'), ('', '\n'), True),
+                ((3, '\x00-a\n\x01'), ('', '\n'), True),
+                ((4, '\x00-a\n\x01'), ('', '\n'), True),
+            ],
+        )
+        self.assertEqual(
+            list(difflib._mdiff(["a\n"], ["b\n"] * 4)),
+            [
+                ((1, '\x00-a\n\x01'), (1, '\x00+b\n\x01'), True),
+                (('', '\n'), (2, '\x00+b\n\x01'), True),
+                (('', '\n'), (3, '\x00+b\n\x01'), True),
+                (('', '\n'), (4, '\x00+b\n\x01'), True),
+            ],
+        )
+
 
 patch914575_from1 = """
    1. Beautiful is beTTer than ugly.

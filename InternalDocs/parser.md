@@ -80,7 +80,7 @@ Key ideas
   using memoization.
 - If parsing fails completely (no rule succeeds in parsing all the input text), the
   PEG parser doesn't have a concept of "where the
-  [`SyntaxError`](https://docs.python.org/3/library/exceptions.html#SyntaxError) is".
+  [`SyntaxError`](https://docs.python.org/3/builtins/exceptions.html#SyntaxError) is".
 
 
 > [!IMPORTANT]
@@ -563,6 +563,23 @@ in the generated C parse code that allows to measure how much each rule uses
 memoization (check the [`Parser/pegen.c`](../Parser/pegen.c)
 file for more information) but it needs to be manually activated.
 
+The C generator also reuses memoized prefixes within consecutive alternatives.
+For example, in `prefix ':' NAME | prefix ':' NUMBER`, failure after the first
+`':'` normally requires another call to `prefix` and another memo lookup. The
+generated code can keep the result and ending position in local variables and
+reuse them when trying the next alternative.
+
+This applies only when the shared first item is a memoized rule, including a
+left-recursion leader, that the generator can prove consumes input on success.
+The locals are reset on each rule-body invocation, including each seed-growing
+iteration. Alternative order, cuts, and suffix backtracking are preserved. When
+`call_invalid_rules` is enabled, the generated code uses the original rule calls.
+
+The consumption analysis follows grammar items; it cannot inspect arbitrary C
+actions. As with memoization, actions must not invalidate cached results. In
+particular, suffix actions must not move the parser before their starting mark,
+rewrite buffered input, or replace memo entries for earlier positions.
+
 Automatic variables
 -------------------
 
@@ -654,7 +671,7 @@ is, and it will unwind the stack and report the exception. This means that if a
 [rule action](#grammar-actions) raises an exception, all parsing will
 stop at that exact point. This is done to allow to correctly propagate any
 exception set by calling Python's C API functions. This also includes
-[`SyntaxError`](https://docs.python.org/3/library/exceptions.html#SyntaxError)
+[`SyntaxError`](https://docs.python.org/3/builtins/exceptions.html#SyntaxError)
 exceptions and it is the main mechanism the parser uses to report custom syntax
 error messages.
 
@@ -715,7 +732,7 @@ acts in two phases:
 > When defining invalid rules:
 >
 > - Make sure all custom invalid rules raise
->   [`SyntaxError`](https://docs.python.org/3/library/exceptions.html#SyntaxError)
+>   [`SyntaxError`](https://docs.python.org/3/builtins/exceptions.html#SyntaxError)
 >   exceptions (or a subclass of it).
 > - Make sure **all** invalid rules start with the `invalid_` prefix to not
 >   impact performance of parsing correct Python code.
@@ -823,7 +840,7 @@ $ python -m pegen python <PATH TO YOUR GRAMMAR FILE>
 > Python's grammar (the `Grammar/python.gram` file) is written for the
 > C backend. To experiment, you will need to write a grammar
 > without C-specific parts like actions and the trailer.
-> See [#133560](https://github.com/python/cpython/issues/133560) 
+> See [#133560](https://github.com/python/cpython/issues/133560)
 > and [#96424](https://github.com/python/cpython/issues/96424) for more information.
 
 This will generate a file called `parse.py` in the same directory that you
