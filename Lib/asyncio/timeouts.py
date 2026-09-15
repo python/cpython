@@ -25,7 +25,8 @@ class _State(enum.Enum):
 class Timeout:
     """Asynchronous context manager for cancelling overdue coroutines.
 
-    Use `timeout()` or `timeout_at()` rather than instantiating this class directly.
+    Use `timeout()` or `timeout_at()` rather than instantiating this class
+    directly.
     """
 
     def __init__(self, when: float | None) -> None:

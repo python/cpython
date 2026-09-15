@@ -4,13 +4,11 @@
 .. module:: colorsys
    :synopsis: Conversion functions between RGB and other color systems.
 
-.. sectionauthor:: David Ascher <da@python.net>
-
 **Source code:** :source:`Lib/colorsys.py`
 
 --------------
 
-The :mod:`colorsys` module defines bidirectional conversions of color values
+The :mod:`!colorsys` module defines bidirectional conversions of color values
 between colors expressed in the RGB (Red Green Blue) color space used in
 computer monitors and three other coordinate systems: YIQ, HLS (Hue Lightness
 Saturation) and HSV (Hue Saturation Value).  Coordinates in all of these color
@@ -21,10 +19,10 @@ spaces, the coordinates are all between 0 and 1.
 .. seealso::
 
    More information about color spaces can be found at
-   https://poynton.ca/ColorFAQ.html and
+   https://www.poynton.ca/pdf/ColourFAQ.pdf and
    https://www.cambridgeincolour.com/tutorials/color-spaces.htm.
 
-The :mod:`colorsys` module defines the following functions:
+The :mod:`!colorsys` module defines the following functions:
 
 
 .. function:: rgb_to_yiq(r, g, b)

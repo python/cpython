@@ -1,4 +1,0 @@
-Restore elapsed time and unreachable object count in GC debug output. These
-were inadvertently removed during a refactor of ``gc.c``. The debug log now
-again reports elapsed collection time and the number of unreachable objects.
-Contributed by Pål Grønås Drange.

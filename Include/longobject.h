@@ -166,6 +166,44 @@ PyAPI_FUNC(PyObject *) PyLong_FromString(const char *, char **, int);
 PyAPI_FUNC(unsigned long) PyOS_strtoul(const char *, char **, int);
 PyAPI_FUNC(long) PyOS_strtol(const char *, char **, int);
 
+/* --- Import/Export API -------------------------------------------------- */
+
+typedef struct PyLongLayout {
+    uint8_t bits_per_digit;
+    uint8_t digit_size;
+    int8_t digits_order;
+    int8_t digit_endianness;
+} PyLongLayout;
+
+PyAPI_FUNC(const PyLongLayout*) PyLong_GetNativeLayout(void);
+
+typedef struct PyLongExport {
+    int64_t value;
+    uint8_t negative;
+    Py_ssize_t ndigits;
+    const void *digits;
+    // Member used internally, must not be used for other purpose.
+    Py_uintptr_t _reserved;
+} PyLongExport;
+
+PyAPI_FUNC(int) PyLong_Export(
+    PyObject *obj,
+    PyLongExport *export_long);
+PyAPI_FUNC(void) PyLong_FreeExport(
+    PyLongExport *export_long);
+
+
+/* --- PyLongWriter API --------------------------------------------------- */
+
+typedef struct PyLongWriter PyLongWriter;
+
+PyAPI_FUNC(PyLongWriter*) PyLongWriter_Create(
+    int negative,
+    Py_ssize_t ndigits,
+    void **digits);
+PyAPI_FUNC(PyObject*) PyLongWriter_Finish(PyLongWriter *writer);
+PyAPI_FUNC(void) PyLongWriter_Discard(PyLongWriter *writer);
+
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_LONGOBJECT_H
 #  include "cpython/longobject.h"

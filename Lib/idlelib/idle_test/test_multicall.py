@@ -19,7 +19,7 @@ class MultiCallTest(unittest.TestCase):
     def tearDownClass(cls):
         del cls.mc
         cls.root.update_idletasks()
-##        for id in cls.root.tk.call('after', 'info'):
+##        for id in cls.root.after_info():
 ##            cls.root.after_cancel(id)  # Need for EditorWindow.
         cls.root.destroy()
         del cls.root
@@ -42,6 +42,22 @@ class MultiCallTest(unittest.TestCase):
         self.assertIs(mc.yview, Text.yview)
         mctext = self.mc(self.root)
         self.assertIs(mctext.yview.__func__, Text.yview)
+
+    def test_event_delete_unbound_sequence(self):
+        # gh-89360: deleting a sequence that was not added to a virtual
+        # event is ignored instead of raising ValueError.
+        mctext = self.mc(self.root)
+        mctext.event_add('<<tester>>', '<Control-Key-a>')
+        info = mctext.event_info('<<tester>>')
+        self.assertEqual(len(info), 1)
+
+        # A different sequence, never added: a no-op, not an error.
+        mctext.event_delete('<<tester>>', '<Control-Key-b>')
+        self.assertEqual(mctext.event_info('<<tester>>'), info)
+
+        # The added sequence can still be deleted normally.
+        mctext.event_delete('<<tester>>', '<Control-Key-a>')
+        self.assertNotIn(info[0], mctext.event_info('<<tester>>'))
 
 
 if __name__ == '__main__':

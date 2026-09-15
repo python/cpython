@@ -541,7 +541,8 @@ PyDoc_STRVAR(_interpreters_run_func__doc__,
 "Execute the body of the provided function in the identified interpreter.\n"
 "\n"
 "Code objects are also supported.  In both cases, closures and args\n"
-"are not supported.  Methods and other callables are not supported either.\n"
+"are not supported.  Methods and other callables are not supported\n"
+"either.\n"
 "\n"
 "(See _interpreters.exec().)");
 
@@ -1139,8 +1140,9 @@ PyDoc_STRVAR(_interpreters_capture_exception__doc__,
 "\n"
 "Return a snapshot of an exception.\n"
 "\n"
-"If \"exc\" is None then the current exception, if any, is used (but not cleared).\n"
-"The returned snapshot is the same as what _interpreters.exec() returns.");
+"If \"exc\" is None then the current exception, if any, is used (but not\n"
+"cleared).  The returned snapshot is the same as what\n"
+"_interpreters.exec() returns.");
 
 #define _INTERPRETERS_CAPTURE_EXCEPTION_METHODDEF    \
     {"capture_exception", _PyCFunction_CAST(_interpreters_capture_exception), METH_FASTCALL|METH_KEYWORDS, _interpreters_capture_exception__doc__},
@@ -1198,4 +1200,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c80f73761f860f6c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8c3ca09c304378ad input=a9049054013a1b77]*/

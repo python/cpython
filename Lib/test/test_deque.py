@@ -287,6 +287,22 @@ class TestBasic(unittest.TestCase):
                     else:
                         self.assertEqual(d.index(element, start, stop), target)
 
+        # Test stop argument
+        for elem in d:
+            index = d.index(elem)
+            self.assertEqual(
+                index,
+                d.index(elem, 0),
+            )
+            self.assertEqual(
+                index,
+                d.index(elem, 0, len(d)),
+            )
+            self.assertEqual(
+                index,
+                d.index(elem, 0, len(d) + 100),
+            )
+
         # Test large start argument
         d = deque(range(0, 10000, 10))
         for step in range(100):

@@ -14,6 +14,7 @@
 #  endif
 #endif
 #include "ctypes.h"
+#include "pycore_mmap.h"          // _PyAnnotateMemoryMap()
 
 /* BLOCKSIZE can be adjusted.  Larger blocksize will take a larger memory
    overhead, but allocate less blocks from the system.  It may be that some
@@ -74,14 +75,16 @@ static void more_core(void)
     if (item == NULL)
         return;
 #else
+    size_t mem_size = count * sizeof(ITEM);
     item = (ITEM *)mmap(NULL,
-                        count * sizeof(ITEM),
+                        mem_size,
                         PROT_READ | PROT_WRITE | PROT_EXEC,
                         MAP_PRIVATE | MAP_ANONYMOUS,
                         -1,
                         0);
     if (item == (void *)MAP_FAILED)
         return;
+    _PyAnnotateMemoryMap(item, mem_size, "cpython:ctypes");
 #endif
 
 #ifdef MALLOC_CLOSURE_DEBUG

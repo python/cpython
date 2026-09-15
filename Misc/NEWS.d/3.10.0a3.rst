@@ -89,7 +89,7 @@ non-buffer object.
 .. bpo: 1635741
 .. date: 2020-11-18-23-46-31
 .. nonce: GVOQ-m
-.. section: Core and Builtins
+.. section: Library
 
 Port the ``_warnings`` extension module to the multi-phase initialization
 API (:pep:`489`). Patch by Victor Stinner.
@@ -204,7 +204,7 @@ Pablo Galindo.
 .. bpo: 40077
 .. date: 2020-11-03-21-58-27
 .. nonce: a9qM1j
-.. section: Core and Builtins
+.. section: Library
 
 Convert :mod:`queue` to use heap types.
 
@@ -223,7 +223,7 @@ objects. See PEP 626 for details.
 .. bpo: 40077
 .. date: 2020-11-02-14-39-48
 .. nonce: grY9TG
-.. section: Core and Builtins
+.. section: Library
 
 Convert :mod:`mmap` to use heap types.
 

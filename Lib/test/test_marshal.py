@@ -43,6 +43,11 @@ class IntTestCase(unittest.TestCase, HelperMixin):
             for expected in (-n, n):
                 self.helper(expected)
             n = n >> 1
+        n = 1 << 100
+        while n:
+            for expected in (-n, -n+1, n-1, n):
+                self.helper(expected)
+            n = n >> 1
 
     def test_int64(self):
         # Simulate int marshaling with TYPE_INT64.
@@ -110,6 +115,14 @@ class StringTestCase(unittest.TestCase, HelperMixin):
     def test_bytes(self):
         for s in [b"", b"Andr\xe8 Previn", b"abc", b" "*10000]:
             self.helper(s)
+
+    @support.cpython_only
+    def test_bytes_singleton(self):
+        for version in range(marshal.version + 1):
+            for sample in [b"", b"x"]:
+                new = marshal.loads(marshal.dumps(sample, version))
+                self.assertIs(new, sample)
+
 
 class ExceptionTestCase(unittest.TestCase):
     def test_exceptions(self):
@@ -312,6 +325,147 @@ class BugsTestCase(unittest.TestCase):
         last.append([0])
         self.assertRaises(ValueError, marshal.dumps, head)
 
+    def test_reference_loop_list(self):
+        a = []
+        a.append(a)
+        for v in range(3):
+            self.assertRaises(ValueError, marshal.dumps, a, v)
+        for v in range(3, marshal.version + 1):
+            d = marshal.dumps(a, v)
+            b = marshal.loads(d)
+            self.assertIsInstance(b, list)
+            self.assertIs(b[0], b)
+
+    def test_reference_loop_dict(self):
+        a = {}
+        a[None] = a
+        for v in range(3):
+            self.assertRaises(ValueError, marshal.dumps, a, v)
+        for v in range(3, marshal.version + 1):
+            d = marshal.dumps(a, v)
+            b = marshal.loads(d)
+            self.assertIsInstance(b, dict)
+            self.assertIs(b[None], b)
+
+    def test_reference_loop_tuple(self):
+        a = ([],)
+        a[0].append(a)
+        for v in range(marshal.version + 1):
+            self.assertRaises(ValueError, marshal.dumps, a, v)
+
+        a = ({},)
+        a[0][None] = a
+        for v in range(marshal.version + 1):
+            self.assertRaises(ValueError, marshal.dumps, a, v)
+
+    def test_shared_reference_tuple(self):
+        # A tuple referenced more than once still round-trips with the
+        # shared identity preserved.
+        a = (1, 2)
+        for v in range(3, marshal.version + 1):
+            b = marshal.loads(marshal.dumps([a, a], v))
+            self.assertEqual(b[0], a)
+            self.assertIs(b[0], b[1])
+        big = tuple(range(300))  # too large for TYPE_SMALL_TUPLE
+        b = marshal.loads(marshal.dumps([big, big]))
+        self.assertEqual(b[0], big)
+        self.assertIs(b[0], b[1])
+
+    def test_reference_loop_code(self):
+        def f():
+            return 1234.5
+        code = f.__code__
+        a = []
+        code = code.replace(co_consts=code.co_consts + (a,))
+        # This test creates a reference loop which leads to reference leaks,
+        # so we need to break the loop manually. See gh-148722.
+        self.addCleanup(a.clear)
+        a.append(code)
+        for v in range(marshal.version + 1):
+            self.assertRaises(ValueError, marshal.dumps, code, v)
+
+    def test_reference_loop_slice(self):
+        a = slice([], None)
+        a.start.append(a)
+        for v in range(marshal.version + 1):
+            self.assertRaises(ValueError, marshal.dumps, a, v)
+
+        a = slice(None, [])
+        a.stop.append(a)
+        for v in range(marshal.version + 1):
+            self.assertRaises(ValueError, marshal.dumps, a, v)
+
+        a = slice(None, None, [])
+        a.step.append(a)
+        for v in range(marshal.version + 1):
+            self.assertRaises(ValueError, marshal.dumps, a, v)
+
+    def test_reference_loop_frozendict(self):
+        a = frozendict({None: []})
+        a[None].append(a)
+        for v in range(marshal.version + 1):
+            self.assertRaises(ValueError, marshal.dumps, a, v)
+
+    def test_shared_reference_frozendict(self):
+        # A frozendict referenced more than once must round-trip with the
+        # shared identity preserved, like frozenset.
+        fd = frozendict({'a': 1, 'b': 2})
+        out = marshal.loads(marshal.dumps([fd, fd]))
+        self.assertEqual(out[0], fd)
+        self.assertIs(out[0], out[1])
+        nested = marshal.loads(marshal.dumps(frozendict({'x': fd, 'y': fd})))
+        self.assertIs(nested['x'], nested['y'])
+
+    def test_loads_reference_loop_list(self):
+        data = b'\xdb\x01\x00\x00\x00r\x00\x00\x00\x00' # [<R>]
+        a = marshal.loads(data)
+        self.assertIsInstance(a, list)
+        self.assertIs(a[0], a)
+
+    def test_loads_reference_loop_dict(self):
+        data = b'\xfbNr\x00\x00\x00\x000' # {None: <R>}
+        a = marshal.loads(data)
+        self.assertIsInstance(a, dict)
+        self.assertIs(a[None], a)
+
+    def test_loads_abnormal_reference_loops(self):
+        # Direct self-references which cannot be created in Python
+        # because of unhashability.
+        data = b'\xfbr\x00\x00\x00\x00N0' # {<R>: None}
+        self.assertRaises(TypeError, marshal.loads, data)
+        data = b'\xbc\x01\x00\x00\x00r\x00\x00\x00\x00' # {<R>}
+        self.assertRaises(TypeError, marshal.loads, data)
+
+        for data in [
+            # Indirect self-references of immutable objects.
+            b'\xa8\x01\x00\x00\x00[\x01\x00\x00\x00r\x00\x00\x00\x00', # ([<R>],)
+            b'\xa8\x01\x00\x00\x00{Nr\x00\x00\x00\x000', # ({None: <R>},)
+            b'\xba[\x01\x00\x00\x00r\x00\x00\x00\x00NN', # slice([<R>], None)
+            b'\xbaN[\x01\x00\x00\x00r\x00\x00\x00\x00N', # slice(None, [<R>])
+            b'\xbaNN[\x01\x00\x00\x00r\x00\x00\x00\x00', # slice(None, None, [<R>])
+            b'\xba{Nr\x00\x00\x00\x000NN', # slice({None: <R>}, None)
+            b'\xbaN{Nr\x00\x00\x00\x000N', # slice(None, {None: <R>})
+            b'\xbaNN{Nr\x00\x00\x00\x000', # slice(None, None, {None: <R>})
+            b'\xfdN[\x01\x00\x00\x00r\x00\x00\x00\x000', # frozendict({None: [<R>]})
+            b'\xfdN{Nr\x00\x00\x00\x0000', # frozendict({None: {None: <R>})
+
+            # Direct self-references which cannot be created in Python.
+            b'\xa8\x01\x00\x00\x00r\x00\x00\x00\x00', # (<R>,)
+            b'\xbe\x01\x00\x00\x00r\x00\x00\x00\x00', # frozenset({<R>})
+            b'\xfdNr\x00\x00\x00\x000', # frozendict({None: <R>})
+            b'\xfdr\x00\x00\x00\x00N0', # frozendict({<R>: None})
+            b'\xbar\x00\x00\x00\x00NN', # slice(<R>, None)
+            b'\xbaNr\x00\x00\x00\x00N', # slice(None, <R>)
+            b'\xbaNNr\x00\x00\x00\x00', # slice(None, None, <R>)
+
+            # Indirect self-references which cannot be created in Python
+            # because of unhashability.
+            b'\xa8\x01\x00\x00\x00{r\x00\x00\x00\x00N0', # ({<R>: None},)
+            b'\xa8\x01\x00\x00\x00<\x01\x00\x00\x00r\x00\x00\x00\x00', # ({<R>},)
+        ]:
+            with self.subTest(data=data):
+                self.assertRaises(ValueError, marshal.loads, data)
+
     def test_exact_type_match(self):
         # Former bug:
         #   >>> class Int(int): pass
@@ -407,6 +561,26 @@ class BugsTestCase(unittest.TestCase):
                     _, dump_0, _ = assert_python_ok(*args, PYTHONHASHSEED="0")
                     _, dump_1, _ = assert_python_ok(*args, PYTHONHASHSEED="1")
                     self.assertEqual(dump_0, dump_1)
+
+    def test_unmarshallable(self):
+        # Check no crash after encountering unmarshallable objects.
+        # See https://github.com/python/cpython/issues/106287.
+        fset = frozenset([int])
+        code = compile("a = 1", "<string>", "exec")
+        code = code.replace(co_consts=(1, fset, None))
+        cases = (('tuple', (fset,)),
+                 ('list', [fset]),
+                 ('set', fset),
+                 ('dict key', {fset: 'x'}),
+                 ('dict value', {'x': fset}),
+                 ('dict key & value', {fset: fset}),
+                 ('slice', slice(fset, fset)),
+                 ('code', code))
+        for name, arg in cases:
+            with self.subTest(name, arg=arg):
+                with self.assertRaisesRegex(ValueError, "unmarshallable object"):
+                    marshal.dumps((arg, memoryview(b'')))
+
 
 LARGE_SIZE = 2**31
 pointer_size = 8 if sys.maxsize > 0xFFFFFFFF else 4
@@ -545,6 +719,15 @@ class InstancingTestCase(unittest.TestCase, HelperMixin):
             self.helper(dictobj)
             self.helper3(dictobj)
 
+    def testFrozenDict(self):
+        for obj in self.keys:
+            dictobj = frozendict({"hello": obj, "goodbye": obj, obj: "hello"})
+            self.helper(dictobj)
+
+            for version in range(6):
+                with self.assertRaises(ValueError):
+                    marshal.dumps(dictobj, version)
+
     def testModule(self):
         with open(__file__, "rb") as f:
             code = f.read()
@@ -610,91 +793,9 @@ class SliceTestCase(unittest.TestCase, HelperMixin):
             with self.subTest(obj=str(obj)):
                 self.helper(obj)
 
-                for version in range(4):
+                for version in range(5):
                     with self.assertRaises(ValueError):
                         marshal.dumps(obj, version)
-
-@support.cpython_only
-@unittest.skipUnless(_testcapi, 'requires _testcapi')
-class CAPI_TestCase(unittest.TestCase, HelperMixin):
-
-    def test_write_long_to_file(self):
-        for v in range(marshal.version + 1):
-            _testcapi.pymarshal_write_long_to_file(0x12345678, os_helper.TESTFN, v)
-            with open(os_helper.TESTFN, 'rb') as f:
-                data = f.read()
-            os_helper.unlink(os_helper.TESTFN)
-            self.assertEqual(data, b'\x78\x56\x34\x12')
-
-    def test_write_object_to_file(self):
-        obj = ('\u20ac', b'abc', 123, 45.6, 7+8j, 'long line '*1000)
-        for v in range(marshal.version + 1):
-            _testcapi.pymarshal_write_object_to_file(obj, os_helper.TESTFN, v)
-            with open(os_helper.TESTFN, 'rb') as f:
-                data = f.read()
-            os_helper.unlink(os_helper.TESTFN)
-            self.assertEqual(marshal.loads(data), obj)
-
-    def test_read_short_from_file(self):
-        with open(os_helper.TESTFN, 'wb') as f:
-            f.write(b'\x34\x12xxxx')
-        r, p = _testcapi.pymarshal_read_short_from_file(os_helper.TESTFN)
-        os_helper.unlink(os_helper.TESTFN)
-        self.assertEqual(r, 0x1234)
-        self.assertEqual(p, 2)
-
-        with open(os_helper.TESTFN, 'wb') as f:
-            f.write(b'\x12')
-        with self.assertRaises(EOFError):
-            _testcapi.pymarshal_read_short_from_file(os_helper.TESTFN)
-        os_helper.unlink(os_helper.TESTFN)
-
-    def test_read_long_from_file(self):
-        with open(os_helper.TESTFN, 'wb') as f:
-            f.write(b'\x78\x56\x34\x12xxxx')
-        r, p = _testcapi.pymarshal_read_long_from_file(os_helper.TESTFN)
-        os_helper.unlink(os_helper.TESTFN)
-        self.assertEqual(r, 0x12345678)
-        self.assertEqual(p, 4)
-
-        with open(os_helper.TESTFN, 'wb') as f:
-            f.write(b'\x56\x34\x12')
-        with self.assertRaises(EOFError):
-            _testcapi.pymarshal_read_long_from_file(os_helper.TESTFN)
-        os_helper.unlink(os_helper.TESTFN)
-
-    def test_read_last_object_from_file(self):
-        obj = ('\u20ac', b'abc', 123, 45.6, 7+8j)
-        for v in range(marshal.version + 1):
-            data = marshal.dumps(obj, v)
-            with open(os_helper.TESTFN, 'wb') as f:
-                f.write(data + b'xxxx')
-            r, p = _testcapi.pymarshal_read_last_object_from_file(os_helper.TESTFN)
-            os_helper.unlink(os_helper.TESTFN)
-            self.assertEqual(r, obj)
-
-            with open(os_helper.TESTFN, 'wb') as f:
-                f.write(omit_last_byte(data))
-            with self.assertRaises(EOFError):
-                _testcapi.pymarshal_read_last_object_from_file(os_helper.TESTFN)
-            os_helper.unlink(os_helper.TESTFN)
-
-    def test_read_object_from_file(self):
-        obj = ('\u20ac', b'abc', 123, 45.6, 7+8j)
-        for v in range(marshal.version + 1):
-            data = marshal.dumps(obj, v)
-            with open(os_helper.TESTFN, 'wb') as f:
-                f.write(data + b'xxxx')
-            r, p = _testcapi.pymarshal_read_object_from_file(os_helper.TESTFN)
-            os_helper.unlink(os_helper.TESTFN)
-            self.assertEqual(r, obj)
-            self.assertEqual(p, len(data))
-
-            with open(os_helper.TESTFN, 'wb') as f:
-                f.write(omit_last_byte(data))
-            with self.assertRaises(EOFError):
-                _testcapi.pymarshal_read_object_from_file(os_helper.TESTFN)
-            os_helper.unlink(os_helper.TESTFN)
 
 
 if __name__ == "__main__":

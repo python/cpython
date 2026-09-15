@@ -73,6 +73,7 @@ int _PyInstructionSequence_SetAnnotationsCode(_PyInstructionSequence *seq,
                                               _PyInstructionSequence *annotations);
 int _PyInstructionSequence_AddNested(_PyInstructionSequence *seq, _PyInstructionSequence *nested);
 void PyInstructionSequence_Fini(_PyInstructionSequence *seq);
+_PyInstruction _PyInstructionSequence_GetInstruction(_PyInstructionSequence *seq, int pos);
 
 extern PyTypeObject _PyInstructionSequence_Type;
 #define _PyInstructionSequence_Check(v) Py_IS_TYPE((v), &_PyInstructionSequence_Type)

@@ -2135,6 +2135,19 @@ class TestCounter(unittest.TestCase):
         self.assertEqual(c.setdefault('e', 5), 5)
         self.assertEqual(c['e'], 5)
 
+    def test_update_reentrant_add_clears_counter(self):
+        c = Counter()
+        key = object()
+
+        class Evil(int):
+            def __add__(self, other):
+                c.clear()
+                return NotImplemented
+
+        c[key] = Evil()
+        c.update([key])
+        self.assertEqual(c[key], 1)
+
     def test_init(self):
         self.assertEqual(list(Counter(self=42).items()), [('self', 42)])
         self.assertEqual(list(Counter(iterable=42).items()), [('iterable', 42)])
@@ -2410,6 +2423,8 @@ class TestCounter(unittest.TestCase):
 
     def test_le(self):
         self.assertTrue(Counter(a=3, b=2, c=0) <= Counter('ababa'))
+        self.assertTrue(Counter() <= Counter(c=1))
+        self.assertFalse(Counter() <= Counter(c=-1))
         self.assertFalse(Counter(a=3, b=2) <= Counter('babab'))
 
     def test_lt(self):
@@ -2418,6 +2433,8 @@ class TestCounter(unittest.TestCase):
 
     def test_ge(self):
         self.assertTrue(Counter(a=2, b=1, c=0) >= Counter('aab'))
+        self.assertTrue(Counter() >= Counter(c=-1))
+        self.assertFalse(Counter() >= Counter(c=1))
         self.assertFalse(Counter(a=3, b=2, c=0) >= Counter('aabd'))
 
     def test_gt(self):

@@ -127,6 +127,9 @@ def main() -> NoReturn:
     worker_json = sys.argv[1]
 
     tmp_dir = get_temp_dir()
+    # get_temp_dir() can be different in the worker and the parent process.
+    # For example, if --tempdir option is used.
+    os.makedirs(tmp_dir, exist_ok=True)
     work_dir = get_work_dir(tmp_dir, worker=True)
 
     with exit_timeout():

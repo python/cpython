@@ -1,0 +1,3 @@
+The "In files:" field of IDLE's Find in Files dialog now always contains a
+full directory path, even for an unsaved editor or the Shell.  This shows
+in the grep output which directory was searched.
