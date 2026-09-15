@@ -349,6 +349,17 @@ _io_StringIO_read_impl(stringio *self, Py_ssize_t size)
     }
 
     ENSURE_REALIZED(self);
+
+    /* In case of overseek, return the empty string, as _stringio_readline()
+       does. `size` is already clamped to 0 here, so nothing would be read
+       through the pointer -- but forming `self->buf + self->pos` when
+       `self->pos` is past the end of the buffer is undefined behaviour on
+       its own, and for a large enough `self->pos` the multiplication by
+       sizeof(Py_UCS4) wraps and yields a pointer below `self->buf`. */
+    if (self->pos >= self->string_size) {
+        return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
+    }
+
     output = self->buf + self->pos;
     self->pos += size;
     return PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, output, size);
