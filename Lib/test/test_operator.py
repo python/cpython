@@ -512,6 +512,11 @@ class OperatorTestCase:
         f = operator.methodcaller('return_arguments', *many_positional_arguments, **many_kw_arguments)
         self.assertEqual(f(a), (many_positional_arguments, many_kw_arguments))
 
+    def test_non_string_keywords(self):
+        operator = self.module
+        with self.assertRaisesRegex(TypeError, "keywords must be strings"):
+            operator.methodcaller('x', **{1: 'x'})
+
     def test_methodcaller_cyclic_gc(self):
         # gh-156762: Check for undefined behavior on calling methodcaller_clear()
         operator = self.module
