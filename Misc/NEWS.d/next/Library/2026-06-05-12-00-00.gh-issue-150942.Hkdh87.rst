@@ -1,0 +1,1 @@
+Speed up :func:`csv.reader`. Patch by Omkar Kabde.
