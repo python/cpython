@@ -1,0 +1,1 @@
+Fix memory leak in ipaddress properties by switching from :func:`functools.lru_cache` to :func:`functools.cached_property`.
