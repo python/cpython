@@ -1,0 +1,3 @@
+The :mod:`curses` and :mod:`curses.panel` modules can now be built on Windows
+against a user-supplied `PDCurses <https://pdcurses.org/>`_ library by pointing
+the ``PDCURSES_DIR`` environment variable at its source tree.
