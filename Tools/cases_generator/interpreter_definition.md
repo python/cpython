@@ -112,7 +112,7 @@ and a piece of C code describing its semantics:
     NAME ["*"]
 
   stream:
-    NAME "/" size
+    NAME "/" size ["^"]
 
   size:
     INTEGER
@@ -161,6 +161,10 @@ The number in a `stream` define how many codeunits are consumed from the
 instruction stream. It returns a 16, 32 or 64 bit value.
 If the name is `unused` the size can be any value and that many codeunits
 will be skipped in the instruction stream.
+
+A `/4` slot trailed by `^` is read as raw `uintptr_t` instead of `PyObject *`,
+indicating its bits are already tagged as a borrowed `_PyStackRef`. Only
+allowed on `/4` and not on `unused`.
 
 By convention cache effects (`stream`) must precede the input effects.
 
@@ -312,6 +316,15 @@ This might become (if it was an instruction):
         DISPATCH();
     }
 ```
+
+### Pre-tagged cache effect
+```C
+    op ( LOAD_CONST_INLINE_BORROW, (ptr/4^ -- value) ) {
+        value = PyStackRef_FromPreTagged(ptr);
+    }
+```
+The `^` marks `ptr` as a pre-tagged borrowed `_PyStackRef`; it is declared
+`uintptr_t` and read with `read_u64` rather than `read_obj`.
 
 ### More examples
 
