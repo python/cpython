@@ -1015,6 +1015,16 @@ Debug options
 
    .. versionadded:: 3.6
 
+.. option:: --with-hwaddress-sanitizer
+
+   Enable HWAddressSanitizer memory error detector, ``hwasan`` (default is no).
+   Note that on x86-64 this uses `page aliasing
+   <https://clang.llvm.org/docs/HardwareAssistedAddressSanitizerDesign.html#supported-architectures>`_,
+   which only tags heap allocations and is unsafe for programs that ``fork()``,
+   including much of the test suite.
+
+   .. versionadded:: 3.16
+
 .. option:: --with-memory-sanitizer
 
    Enable MemorySanitizer allocation error detector, ``msan`` (default is no).
