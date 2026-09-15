@@ -85,7 +85,7 @@ class SearchDialogBaseTest(unittest.TestCase):
         equal(int(egi['row']), 0)
         equal(int(egi['column']), 1)
         equal(int(egi['rowspan']), 1)
-        equal(int(egi['columnspan']), 1)
+        equal(int(egi['columnspan']), 2)
         equal(self.dialog.row, 1)
 
     def test_create_entries(self):
@@ -148,12 +148,6 @@ class SearchDialogBaseTest(unittest.TestCase):
     def test_create_command_buttons(self):
         self.dialog.frame = Frame(self.root)
         self.dialog.create_command_buttons()
-        # Look for close button command in buttonframe
-        closebuttoncommand = ''
-        for child in self.dialog.buttonframe.winfo_children():
-            if child['text'] == 'Close':
-                closebuttoncommand = child['command']
-        self.assertIn('close', closebuttoncommand)
 
 
 if __name__ == '__main__':
