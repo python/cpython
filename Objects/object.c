@@ -2529,7 +2529,9 @@ extern PyTypeObject _PyMemoryIter_Type;
 extern PyTypeObject _PyPositionsIterator;
 extern PyTypeObject _Py_GenericAliasIterType;
 
-static PyTypeObject* static_types[_Py_NUM_MANAGED_PREINITIALIZED_TYPES] = {
+// _Py_NUM_MANAGED_PREINITIALIZED_TYPES must be updated if this array
+// is modified
+static PyTypeObject* static_types[] = {
     // The two most important base types: must be initialized first and
     // deallocated last.
     &PyBaseObject_Type,
@@ -2669,10 +2671,20 @@ static PyTypeObject* static_types[_Py_NUM_MANAGED_PREINITIALIZED_TYPES] = {
     &PyODict_Type,        // base=&PyDict_Type
 };
 
+#ifdef Py_DEBUG
+// Export for count_static_types()
+size_t _Py_num_static_types = Py_ARRAY_LENGTH(static_types);
+PyTypeObject **_Py_static_types = static_types;
+#endif
+
 
 PyStatus
 _PyTypes_InitTypes(PyInterpreterState *interp)
 {
+    // If this assertion fails, _Py_NUM_MANAGED_PREINITIALIZED_TYPES must
+    // be updated
+    assert(_Py_NUM_MANAGED_PREINITIALIZED_TYPES == Py_ARRAY_LENGTH(static_types));
+
     // All other static types (unless initialized elsewhere)
     for (size_t i=0; i < Py_ARRAY_LENGTH(static_types); i++) {
         PyTypeObject *type = static_types[i];

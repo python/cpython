@@ -4452,11 +4452,7 @@ SimpleExtendsException(PyExc_Warning, ResourceWarning,
 #endif
 #endif /* MS_WINDOWS */
 
-struct static_exception {
-    PyTypeObject *exc;
-    const char *name;
-};
-
+// _Py_NUM_STATIC_EXCEPTIONS must be updated if this array is modified
 static struct static_exception static_exceptions[] = {
 #define ITEM(NAME) {&_PyExc_##NAME, #NAME}
     // Level 1
@@ -4551,10 +4547,19 @@ static struct static_exception static_exceptions[] = {
 #undef ITEM
 };
 
+#ifdef Py_DEBUG
+// Export for count_static_types()
+size_t _Py_num_static_exceptions = Py_ARRAY_LENGTH(static_exceptions);
+struct static_exception *_Py_static_exceptions = static_exceptions;
+#endif
+
 
 int
 _PyExc_InitTypes(PyInterpreterState *interp)
 {
+    // If this assertion fails, _Py_NUM_STATIC_EXCEPTIONS must be updated
+    assert(_Py_NUM_STATIC_EXCEPTIONS == Py_ARRAY_LENGTH(static_exceptions));
+
     for (size_t i=0; i < Py_ARRAY_LENGTH(static_exceptions); i++) {
         PyTypeObject *exc = static_exceptions[i].exc;
         if (_PyStaticType_InitBuiltin(interp, exc) < 0) {
