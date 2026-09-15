@@ -283,11 +283,16 @@ The :mod:`!binascii` module defines the following functions:
 
    .. versionadded:: 3.15
 
-.. function:: a2b_qp(data, header=False)
+.. function:: a2b_qp(data, header=False, strip_ws=False)
 
    Convert a block of quoted-printable data back to binary and return the binary
    data. More than one line may be passed at a time. If the optional argument
    *header* is present and true, underscores will be decoded as spaces.
+   If the optional argument *strip_ws* is true,
+   trailing whitespace is stripped from each line, as required by :rfc:`2045`.
+
+   .. versionchanged:: next
+      Added the *strip_ws* parameter.
 
 
 .. function:: b2a_qp(data, quotetabs=False, istext=True, header=False)
