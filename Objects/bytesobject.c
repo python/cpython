@@ -3700,10 +3700,6 @@ byteswriter_write_canary_byte(PyBytesWriter *writer)
 static void
 byteswriter_reset_trailing_byte(PyBytesWriter *writer)
 {
-    if (writer->obj == NULL) {
-        return;
-    }
-
     // PyBytesWriter writes non-zero canary byte as the last byte.
     // bytes/bytearray expects the last byte to be a null byte.
     // Reset the last byte to null for bytes/bytearray.
@@ -3860,7 +3856,9 @@ PyBytesWriter_Discard(PyBytesWriter *writer)
 
 #ifdef Py_DEBUG
     byteswriter_check_canary_byte(writer);
-    byteswriter_reset_trailing_byte(writer);
+    if (writer->obj != NULL) {
+        byteswriter_reset_trailing_byte(writer);
+    }
 #endif
 
     Py_XDECREF(writer->obj);
@@ -3886,7 +3884,6 @@ PyBytesWriter_FinishWithSize(PyBytesWriter *writer, Py_ssize_t size)
 
 #ifdef Py_DEBUG
     byteswriter_check_canary_byte(writer);
-    byteswriter_reset_trailing_byte(writer);
 #endif
 
     PyObject *result;
@@ -3894,6 +3891,10 @@ PyBytesWriter_FinishWithSize(PyBytesWriter *writer, Py_ssize_t size)
         result = bytes_get_empty();
     }
     else if (writer->obj != NULL) {
+#ifdef Py_DEBUG
+        byteswriter_reset_trailing_byte(writer);
+#endif
+
         if (writer->use_bytearray) {
             if (size != PyByteArray_GET_SIZE(writer->obj)) {
                 if (PyByteArray_Resize(writer->obj, size)) {
@@ -3920,12 +3921,15 @@ PyBytesWriter_FinishWithSize(PyBytesWriter *writer, Py_ssize_t size)
             Py_SETREF(result, op);
         }
     }
-    else if (writer->use_bytearray) {
-        result = PyByteArray_FromStringAndSize(writer->small_buffer, size);
-    }
     else {
-        // The function returns single byte singleton if size equals 1
-        result = PyBytes_FromStringAndSize(writer->small_buffer, size);
+        // Create an object from the small buffer
+        if (writer->use_bytearray) {
+            result = PyByteArray_FromStringAndSize(writer->small_buffer, size);
+        }
+        else {
+            // The function returns single byte singleton if size equals 1
+            result = PyBytes_FromStringAndSize(writer->small_buffer, size);
+        }
     }
 
 #ifdef Py_DEBUG
