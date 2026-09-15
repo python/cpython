@@ -956,7 +956,8 @@ class MmapTests(unittest.TestCase):
     @unittest.skipUnless(hasattr(mmap.mmap, 'resize'), 'requires mmap.resize')
     def test_setitem_resize_reentrancy(self):
         """Resizing the mmap from inside __index__ while assigning to a
-        single item must not access memory past the new bounds (gh-157335)."""
+        single item must not access memory past the new bounds (gh-157335).
+        """
         size = 2 * PAGESIZE
         new_size = PAGESIZE
 
