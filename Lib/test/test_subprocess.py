@@ -4011,6 +4011,76 @@ class Win32ProcessTestCase(BaseTestCase):
     def test_terminate_dead(self):
         self._kill_dead_process('terminate')
 
+    # gh-87512: the pipes can be inherited by a process which outlives the
+    # child process, e.g. with shell=True.  Reading them should not wait for
+    # that process, neither in communicate() nor when closing them.
+
+    def _inherited_pipe_cmd(self, sentinel):
+        # Run the code in a grandchild process which lives while the
+        # sentinel file exists, but not longer than SHORT_TIMEOUT.
+        code = ("import os, sys, time; "
+                "print('spam'); sys.stdout.flush(); "
+                "print('eggs', file=sys.stderr); sys.stderr.flush(); "
+                "[time.sleep(0.05) for _ in range(%s) "
+                "if os.path.exists(%a)]"
+                % (int(support.SHORT_TIMEOUT / 0.05), sentinel))
+        cmd = '"%s" -c "%s"' % (sys.executable, code)
+        return cmd
+
+    def test_run_timeout_inherited_pipe(self):
+        with os_helper.temp_dir() as dirname:
+            sentinel = os.path.join(dirname, 'sentinel')
+            open(sentinel, 'wb').close()
+            cmd = self._inherited_pipe_cmd(sentinel)
+            try:
+                start = time.monotonic()
+                with self.assertRaises(subprocess.TimeoutExpired) as cm:
+                    subprocess.run(cmd, shell=True, capture_output=True,
+                                   timeout=0.5)
+                self.assertLess(time.monotonic() - start, support.LOOPBACK_TIMEOUT)
+                # The output written before the timeout is preserved.
+                self.assertEqual(cm.exception.stdout, b'spam\r\n')
+                self.assertEqual(cm.exception.stderr, b'eggs\r\n')
+            finally:
+                os.unlink(sentinel)
+
+    def test_run_timeout_inherited_pipe_text(self):
+        with os_helper.temp_dir() as dirname:
+            sentinel = os.path.join(dirname, 'sentinel')
+            open(sentinel, 'wb').close()
+            cmd = self._inherited_pipe_cmd(sentinel)
+            try:
+                start = time.monotonic()
+                with self.assertRaises(subprocess.TimeoutExpired) as cm:
+                    subprocess.run(cmd, shell=True, capture_output=True,
+                                   text=True, timeout=0.5)
+                self.assertLess(time.monotonic() - start,
+                                support.LOOPBACK_TIMEOUT)
+                self.assertEqual(cm.exception.stdout, 'spam\n')
+                self.assertEqual(cm.exception.stderr, 'eggs\n')
+            finally:
+                os.unlink(sentinel)
+
+    def test_exit_inherited_pipe(self):
+        # Closing the pipes should not block on a pending read.
+        with os_helper.temp_dir() as dirname:
+            sentinel = os.path.join(dirname, 'sentinel')
+            open(sentinel, 'wb').close()
+            cmd = self._inherited_pipe_cmd(sentinel)
+            try:
+                proc = subprocess.Popen(cmd, shell=True,
+                                        stdout=subprocess.PIPE)
+                with self.assertRaises(subprocess.TimeoutExpired):
+                    proc.communicate(timeout=0.5)
+                proc.kill()   # kills the shell, not the grandchild
+                start = time.monotonic()
+                with proc:
+                    pass
+                self.assertLess(time.monotonic() - start, support.LOOPBACK_TIMEOUT)
+            finally:
+                os.unlink(sentinel)
+
+
 class MiscTests(unittest.TestCase):
 
     class RecordingPopen(subprocess.Popen):

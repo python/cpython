@@ -1,0 +1,5 @@
+Fix :func:`subprocess.run` on Windows: the *timeout* was ignored if the pipes
+were inherited by a process which outlives the child process (for example
+with ``shell=True``).  The output read before the timeout is now set on the
+:exc:`~subprocess.TimeoutExpired` exception, as on other platforms.  Closing
+:class:`subprocess.Popen` no longer blocks in such case either.
