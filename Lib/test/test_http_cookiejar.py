@@ -459,6 +459,31 @@ class FileCookieJarTests(unittest.TestCase):
         finally:
             os_helper.unlink(filename)
 
+    def test_magic_ignores_case(self):
+        filename = os_helper.TESTFN
+        self.addCleanup(os_helper.unlink, filename)
+        for magic in ("# Netscape HTTP Cookie File",
+                      "# netscape http cookie file",
+                      "# HTTP Cookie File",
+                      "# http cookie file"):
+            with self.subTest(magic=magic):
+                with open(filename, "w") as f:
+                    f.write(magic + "\n")
+                MozillaCookieJar().load(filename)
+
+    def test_magic_is_not_unicode(self):
+        # Unicode case folding must not be used: 'ſ' (U+017F) and 'K'
+        # (U+212A) are case-insensitively equal to 's' and 'k' in Unicode.
+        filename = os_helper.TESTFN
+        self.addCleanup(os_helper.unlink, filename)
+        for magic in ("# Netſcape HTTP Cookie File",
+                      "# Netscape HTTP CooKie File"):
+            with self.subTest(magic=magic):
+                with open(filename, "w", encoding="utf-8") as f:
+                    f.write(magic + "\n")
+                self.assertRaises(LoadError, MozillaCookieJar().load, filename)
+
+
 class CookieTests(unittest.TestCase):
     # XXX
     # Get rid of string comparisons where not actually testing str / repr.
