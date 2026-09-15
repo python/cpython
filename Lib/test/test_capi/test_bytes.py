@@ -320,15 +320,17 @@ class CAPITest(unittest.TestCase):
     @unittest.skipUnless(support.Py_DEBUG, 'need debug build (Py_DEBUG)')
     def test_detect_overflow(self):
         # Test detection of buffer overflow
-        size = 123
+        size = 123    # bytes
+        overflow = 1  # bytes
         code = textwrap.dedent(f'''
             from test.support import SuppressCrashReport
             import _testcapi
 
             size = {size}
+            overflow = {overflow}
             with SuppressCrashReport():
                 # Trigger a buffer overflow in a new bytes
-                ba = _testcapi.bytes_overflow(size)
+                ba = _testcapi.bytes_overflow(size, overflow)
                 ba = None
         ''')
         proc = assert_python_failure('-c', code)
