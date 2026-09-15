@@ -454,7 +454,8 @@ class RecursionLimitTest(unittest.TestCase):
 
     def test_fixdoc(self):
         # Put here until better place for miscellaneous test.
-        def func(): "docstring"
+        def func(): pass
+        func.__doc__ = "docstring"
         run.fixdoc(func, "more")
         self.assertEqual(func.__doc__, "docstring\n\nmore")
         func.__doc__ = None
