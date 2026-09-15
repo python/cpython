@@ -164,11 +164,10 @@ def _escape(text):
     if m is not None:
         raise ValueError("strings can't contain control characters; "
                          "use bytes instead")
-    text = text.replace("\r\n", "\n")       # convert DOS line endings
-    text = text.replace("\r", "\n")         # convert Mac line endings
     text = text.replace("&", "&amp;")       # escape '&'
     text = text.replace("<", "&lt;")        # escape '<'
     text = text.replace(">", "&gt;")        # escape '>'
+    text = text.replace("\r", "&#13;")      # preserve CR via character reference
     return text
 
 class _PlistParser:
