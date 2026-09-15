@@ -102,7 +102,8 @@ def whichdb(filename):
 
     - None if the database file can't be read;
     - empty string if the file can be read but can't be recognized
-    - the name of the dbm submodule (e.g. "ndbm" or "gnu") if recognized.
+    - the name of the dbm submodule (for example "dbm.ndbm" or "dbm.gnu")
+      if recognized.
 
     Importing the given module may still fail, and opening the
     database using that module may still fail.
