@@ -368,6 +368,11 @@ class TestTNavigator(VectorComparisonMixin, unittest.TestCase):
         self.nav.degrees()
         self.assertAlmostEqual(self.nav.heading(), 90)
 
+    def test_degrees_zero(self):
+        # degrees(0) used to raise ZeroDivisionError from 360/fullcircle.
+        with self.assertRaises(ValueError):
+            self.nav.degrees(0)
+
     def test_towards(self):
 
         coordinates = [
