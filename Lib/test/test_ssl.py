@@ -5490,6 +5490,24 @@ class TestPostHandshakeAuth(unittest.TestCase):
                 self.assertEqual(ee, uvc[0])
                 self.assertNotEqual(ee, ca)
 
+    def test_chain_methods_after_unwrap(self):
+        # The chain methods must not crash once the TLS layer is torn down;
+        # like the other query methods they return an empty list when
+        # _sslobj is gone.
+        client_context, server_context, hostname = testing_context()
+        server = ThreadedEchoServer(context=server_context, chatty=False)
+        with server:
+            with client_context.wrap_socket(
+                socket.socket(),
+                server_hostname=hostname
+            ) as s:
+                s.connect((HOST, server.port))
+                self.assertGreater(len(s.get_verified_chain()), 0)
+                s.unwrap()
+                self.assertIsNone(s._sslobj)
+                self.assertEqual(s.get_verified_chain(), [])
+                self.assertEqual(s.get_unverified_chain(), [])
+
     def test_internal_chain_server(self):
         client_context, server_context, hostname = testing_context()
         client_context.load_cert_chain(SIGNED_CERTFILE)
