@@ -745,6 +745,17 @@ class ModifiedInterpreter(InteractiveInterpreter):
         tkconsole.colorize_syntax_error(text, pos)
         tkconsole.resetoutput()
         self.write("SyntaxError: %s\n" % msg)
+        # The standard interpreter sets sys.last_* for an unhandled
+        # SyntaxError, but IDLE catches it here in the GUI process, so set
+        # them in the user process instead (gh-89723).
+        if self.rpcclt:
+            self.rpcclt.remotequeue("exec", "setup_last_exception",
+                                    (value,), {})
+        else:
+            value = value.with_traceback(None)
+            sys.last_exc = sys.last_value = value
+            sys.last_type = type
+            sys.last_traceback = None
         tkconsole.showprompt()
 
     def showtraceback(self):
