@@ -22,9 +22,17 @@ from pegen.grammar import (
 )
 from pegen.grammar_analysis import (
     InitialNamesVisitor as InitialNamesVisitor,
+)
+from pegen.grammar_analysis import (
     NullableVisitor as NullableVisitor,
+)
+from pegen.grammar_analysis import (
     compute_left_recursives as compute_left_recursives,
+)
+from pegen.grammar_analysis import (
     compute_nullables as compute_nullables,
+)
+from pegen.grammar_analysis import (
     make_first_graph as make_first_graph,
 )
 

@@ -15,7 +15,11 @@ from pegen.c_generator_model import (
     CRule,
     CRuleSignature,
     CVariable,
+)
+from pegen.c_generator_model import (
     FunctionCall as FunctionCall,
+)
+from pegen.c_generator_model import (
     NodeTypes as NodeTypes,
 )
 from pegen.grammar import (
@@ -40,7 +44,6 @@ from pegen.grammar import (
     RuleKind,
     StringLeaf,
 )
-
 
 if TYPE_CHECKING:
     from pegen.parser_generator import ParserGenerator
