@@ -7930,7 +7930,11 @@ update_lines_cols(PyObject *private_module)
         goto error;
     }
 
-    o = PyLong_FromLong(LINES);
+    int lines = LINES;
+    if (stdscr != NULL) {
+        lines = getmaxy(stdscr);
+    }
+    o = PyLong_FromLong(lines);
     if (o == NULL) {
         goto error;
     }
@@ -7942,7 +7946,11 @@ update_lines_cols(PyObject *private_module)
     }
     Py_DECREF(o);
 
-    o = PyLong_FromLong(COLS);
+    int cols = COLS;
+    if (stdscr != NULL) {
+        cols = getmaxx(stdscr);
+    }
+    o = PyLong_FromLong(cols);
     if (o == NULL) {
         goto error;
     }
