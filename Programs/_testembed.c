@@ -1872,6 +1872,8 @@ static int test_initconfig_get_api(void)
     char **items;
     assert(PyInitConfig_GetStrList(config, "xoptions", &length, &items) == 0);
     assert(length == 0);
+    assert(items == NULL);
+    PyInitConfig_FreeStrList(length, items);
 
     char* xoptions[] = {"faulthandler"};
     assert(PyInitConfig_SetStrList(config, "xoptions",
@@ -1880,6 +1882,14 @@ static int test_initconfig_get_api(void)
     assert(PyInitConfig_GetStrList(config, "xoptions", &length, &items) == 0);
     assert(length == 1);
     assert(strcmp(items[0], "faulthandler") == 0);
+    PyInitConfig_FreeStrList(length, items);
+
+    // Setting an empty list must succeed even on platforms where malloc(0)
+    // returns NULL, and must round-trip through GetStrList().
+    assert(PyInitConfig_SetStrList(config, "xoptions", 0, NULL) == 0);
+    assert(PyInitConfig_GetStrList(config, "xoptions", &length, &items) == 0);
+    assert(length == 0);
+    assert(items == NULL);
     PyInitConfig_FreeStrList(length, items);
 
     // Setting hash_seed sets use_hash_seed
