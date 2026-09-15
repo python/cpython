@@ -1,0 +1,4 @@
+Fix importing an extension module whose path contains characters unencodable
+in UTF-8, e.g. undecodable bytes of a file name.  Previously it failed with
+:exc:`UnicodeEncodeError`, which made it impossible to build or run Python in
+a directory with such name.
