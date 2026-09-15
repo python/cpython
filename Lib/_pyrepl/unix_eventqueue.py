@@ -69,9 +69,10 @@ def get_terminal_keycodes(ti: TermInfo) -> dict[bytes, str]:
 
 
 class EventQueue(BaseEventQueue):
-    def __init__(self, fd: int, encoding: str, ti: TermInfo) -> None:
+    def __init__(self, fd: int, encoding: str, ti: TermInfo,
+                 esc_timeout: float | None = None) -> None:
         keycodes = get_terminal_keycodes(ti)
         if os.isatty(fd):
             backspace = tcgetattr(fd)[6][VERASE]
             keycodes[backspace] = "backspace"
-        BaseEventQueue.__init__(self, encoding, keycodes)
+        BaseEventQueue.__init__(self, encoding, keycodes, esc_timeout)
