@@ -14,6 +14,8 @@ TODO:
 """
 import sys
 
+from idlelib.multicall import MC_SHIFT
+
 # .pyw is for Windows; .pyi is for typing stub files.
 # The extension order is needed for iomenu open/save dialogs.
 py_extensions = ('.py', '.pyw', '.pyi')
@@ -101,8 +103,8 @@ def wheel_event(event, widget=None):
     A <Button-4> or <Button-5> event (see x11_buttons) says up or down
     by its number, and has no delta; a wheel event has no number.
 
-    If the Shift modifier (the first bit of event.state) is set, as
-    for horizontal scrolling with a touchpad, scroll horizontally.
+    If the Shift modifier is set in event.state, as for horizontal
+    scrolling with a touchpad, scroll horizontally.
 
     The widget parameter is needed so tree label bindings can pass the
     underlying canvas.  If tree is replaced by ttk.Treeview, it can go.
@@ -113,7 +115,7 @@ def wheel_event(event, widget=None):
     up = event.num == 4 if event.num in (4, 5) else event.delta > 0
     lines = -5 if up else 5
     widget = event.widget if widget is None else widget
-    if event.state & 1:
+    if event.state & MC_SHIFT:
         widget.xview('scroll', lines, 'units')
     else:
         widget.yview('scroll', lines, 'units')

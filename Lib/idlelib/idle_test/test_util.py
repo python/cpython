@@ -8,6 +8,7 @@ from test.support.isolation import runInSubprocess
 import tkinter
 from tkinter import EventType
 from idlelib import util
+from idlelib.multicall import MC_SHIFT, MC_CONTROL
 from idlelib.idle_test.mock_tk import Event
 
 
@@ -110,23 +111,23 @@ class WheelEventTest(unittest.TestCase):
                          ('scroll', 5, 'units'))
 
     def test_horizontal(self):
-        # The Shift modifier, the first bit of state, means horizontal.
+        # The Shift modifier means horizontal.
         for delta in 120, 1, 1200:
             self.assertEqual(self.hscroll(self.event(EventType.MouseWheel,
-                                                     delta, state=1)),
+                                                     delta, state=MC_SHIFT)),
                              ('scroll', -5, 'units'))
             self.assertEqual(self.hscroll(self.event(EventType.MouseWheel,
-                                                     -delta, state=1)),
+                                                     -delta, state=MC_SHIFT)),
                              ('scroll', 5, 'units'))
         self.assertEqual(self.hscroll(self.event(EventType.ButtonPress,
-                                                 num=4, state=1)),
+                                                 num=4, state=MC_SHIFT)),
                          ('scroll', -5, 'units'))
         self.assertEqual(self.hscroll(self.event(EventType.ButtonPress,
-                                                 num=5, state=1)),
+                                                 num=5, state=MC_SHIFT)),
                          ('scroll', 5, 'units'))
         # Other modifiers alone do not.
         self.assertEqual(self.scroll(self.event(EventType.MouseWheel,
-                                                120, state=4)),
+                                                120, state=MC_CONTROL)),
                          ('scroll', -5, 'units'))
 
     def test_widget_argument(self):
