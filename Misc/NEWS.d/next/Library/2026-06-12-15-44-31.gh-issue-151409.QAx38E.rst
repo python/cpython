@@ -1,0 +1,1 @@
+Fix :class:`itertools.islice` to be thread-safe when shared across threads.
