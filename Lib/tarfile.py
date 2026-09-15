@@ -1360,6 +1360,7 @@ class TarInfo(object):
         obj.gname = nts(buf[297:329], encoding, errors)
         obj.devmajor = nti(buf[329:337])
         obj.devminor = nti(buf[337:345])
+        magic = buf[257:265]
         prefix = nts(buf[345:500], encoding, errors)
 
         # Old V7 tar format represents a directory as a regular
@@ -1389,8 +1390,12 @@ class TarInfo(object):
         if obj.isdir():
             obj.name = obj.name.rstrip("/")
 
-        # Reconstruct a ustar longname.
-        if prefix and obj.type not in GNU_TYPES:
+        # Reconstruct a ustar longname. The prefix field is only defined
+        # by the ustar format; in the GNU and star formats this byte range
+        # is used for other data (e.g. atime and ctime), so it must not be
+        # interpreted as a path prefix unless the header magic identifies
+        # a ustar header.
+        if prefix and magic == POSIX_MAGIC and obj.type not in GNU_TYPES:
             obj.name = prefix + "/" + obj.name
         return obj
 
