@@ -832,6 +832,21 @@ typedef struct {
 static int
 curses_setcchar(cchar_t *wcval, const wchar_t *wstr, attr_t attrs, int pair)
 {
+#if !_NCURSES_EXTENDED_COLOR_FUNCS
+    if (pair > SHRT_MAX) {
+        PyErr_Format(PyExc_OverflowError,
+                     "color pair %d does not fit in a short", pair);
+        return ERR;
+    }
+#endif
+#ifdef PDCURSES
+    /* PDCursesMod's setcchar() does not handle an empty string
+       (PDCursesMod issue #388). */
+    if (wstr[0] == L'\0') {
+        *wcval = (cchar_t)attrs | COLOR_PAIR(pair);
+        return OK;
+    }
+#endif
 #if _NCURSES_EXTENDED_COLOR_FUNCS
     /* The pair passed through the opts slot is authoritative and may exceed
        a short; ncurses then ignores the short argument, but clamp it into
@@ -839,11 +854,6 @@ curses_setcchar(cchar_t *wcval, const wchar_t *wstr, attr_t attrs, int pair)
     short spair = pair <= SHRT_MAX ? (short)pair : SHRT_MAX;
     return setcchar(wcval, wstr, attrs, spair, &pair);
 #else
-    if (pair > SHRT_MAX) {
-        PyErr_Format(PyExc_OverflowError,
-                     "color pair %d does not fit in a short", pair);
-        return ERR;
-    }
     return setcchar(wcval, wstr, attrs, (short)pair, NULL);
 #endif
 }

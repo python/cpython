@@ -1176,7 +1176,11 @@ class TestCurses(unittest.TestCase):
         # A cell holding a NUL reads back as the cell that writes it.
         win = curses.newwin(3, 8, 0, 0)
         win.insch(0, 0, '\0')
-        self.assertEqual(win.in_wch(0, 0), cell)
+        if is_pdcurses:
+            # PDCurses writes a NUL as "^@".
+            self.assertEqual(str(win.in_wch(0, 0)), '^')
+        else:
+            self.assertEqual(win.in_wch(0, 0), cell)
         # A string of cells cannot hold a NUL: it would end a batch write.
         self.assertRaises(ValueError, curses.complexstr, 'a\0b')
         self.assertRaises(ValueError, curses.complexstr, '\0')
@@ -1293,7 +1297,9 @@ class TestCurses(unittest.TestCase):
             with self.subTest(ch=ch):
                 line = ch * (width - 1) + ' '   # the last cell is left blank
                 pad.addstr(0, 0, line[:-1])
-                self.assertEqual(pad.instr(0, 0), line.encode(pad.encoding))
+                if not is_pdcurses:
+                    # PDCurses reads at most 512 bytes.
+                    self.assertEqual(pad.instr(0, 0), line.encode(pad.encoding))
                 self.assertEqual(pad.in_wstr(0, 0), line)
                 self.assertEqual(str(pad.in_wchstr(0, 0)), line)
 
