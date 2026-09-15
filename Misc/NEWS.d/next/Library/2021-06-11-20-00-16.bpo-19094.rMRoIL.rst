@@ -1,0 +1,4 @@
+Providing values other than other than strings, bytes, or ``None`` to
+:mod:`urllib.parse` functions expecting strings or bytes now raises
+:exc:`TypeError` if true or :exc:`DeprecationWarning` if false (to be
+changed to :exc:`TypeError` in future versions of Python).
