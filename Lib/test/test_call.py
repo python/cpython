@@ -1152,6 +1152,26 @@ class TestRecursion(unittest.TestCase):
         with self.assertRaises(RecursionError):
             recurse_kw()
 
+    def test_recursion_with_star_args(self):
+        # GH-155151: CALL_EX_PY forgot to check the recursion limit.
+        def recurse_star_args(depth):
+            if depth:
+                recurse_star_args(*(depth - 1,))
+        with set_recursion_limit(50):
+            with self.assertRaises(RecursionError):
+                recurse_star_args(100)
+
+    def test_recursion_with_bound_method_kwargs(self):
+        # GH-155151: CALL_KW_BOUND_METHOD forgot to check the recursion limit.
+        class Recurse:
+            def recurse(self, depth):
+                if depth:
+                    recurse_bound_method(depth=depth - 1)
+        recurse_bound_method = Recurse().recurse
+        with set_recursion_limit(50):
+            with self.assertRaises(RecursionError):
+                recurse_bound_method(100)
+
 
 class TestFunctionWithManyArgs(unittest.TestCase):
     def test_function_with_many_args(self):
