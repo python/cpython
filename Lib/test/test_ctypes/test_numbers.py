@@ -231,6 +231,8 @@ class NumberTestCase(unittest.TestCase, ComplexesAreIdenticalMixin):
         # probably be changed:
         self.assertRaises(TypeError, c_int, c_long(42))
 
+    @unittest.skipUnless(hasattr(ctypes, "c_double_complex"),
+                         "requires C11 complex type")
     def test_float_overflow(self):
         big_int = int(sys.float_info.max) * 2
         for t in float_types + [c_longdouble]:
@@ -239,6 +241,21 @@ class NumberTestCase(unittest.TestCase, ComplexesAreIdenticalMixin):
                 self.assertRaises(OverflowError, t.__ctype_be__, big_int)
             if (hasattr(t, "__ctype_le__")):
                 self.assertRaises(OverflowError, t.__ctype_le__, big_int)
+
+        # gh-156865: be silent in overflows of C types
+        self.assertEqual(ctypes.c_float(3e300).value, float('inf'))
+        self.assertEqual(ctypes.c_float.__ctype_le__(3e300).value, float('inf'))
+        self.assertEqual(ctypes.c_float.__ctype_be__(3e300).value, float('inf'))
+        self.assertEqual(ctypes.c_float_complex(3e300).value, complex('inf'))
+        self.assertEqual(ctypes.c_float_complex.__ctype_le__(3e300).value,
+                         complex('inf'))
+        self.assertEqual(ctypes.c_float_complex.__ctype_be__(3e300).value,
+                         complex('inf'))
+        self.assertEqual(ctypes.c_float_complex(3e300j).value, complex('infj'))
+        self.assertEqual(ctypes.c_float_complex.__ctype_le__(3e300j).value,
+                         complex('infj'))
+        self.assertEqual(ctypes.c_float_complex.__ctype_be__(3e300j).value,
+                         complex('infj'))
 
 
 if __name__ == '__main__':
