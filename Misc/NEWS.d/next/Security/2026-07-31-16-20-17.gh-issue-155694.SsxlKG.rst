@@ -1,0 +1,4 @@
+Fix :cve:`2026-15806` by scoping :class:`~urllib.request.HTTPPasswordMgr`
+credentials to the URL scheme, preventing credentials stored for an HTTPS
+URL from being used for a matching HTTP URL, while URIs without a scheme
+continue to match any scheme.

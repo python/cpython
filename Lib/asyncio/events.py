@@ -451,7 +451,7 @@ class AbstractEventLoop:
             sock=None, backlog=100, ssl=None,
             ssl_handshake_timeout=None,
             ssl_shutdown_timeout=None,
-            start_serving=True):
+            start_serving=True, mode=None):
         """A coroutine which creates a UNIX Domain Socket server.
 
         The return value is a Server object, which can be used to stop
@@ -480,6 +480,10 @@ class AbstractEventLoop:
         the user should await Server.start_serving() or
         Server.serve_forever() to make the server to start accepting
         connections.
+
+        mode, if not None, is applied to the socket file created for
+        path with os.chmod() after binding and before the server
+        starts accepting connections.
         """
         raise NotImplementedError
 

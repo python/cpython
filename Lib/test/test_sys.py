@@ -425,6 +425,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(v[2], v.build)
         self.assertEqual(v[3], v.platform)
         self.assertEqual(v[4], v.service_pack)
+        support.check_immutable_type(self, type(v))
 
         # This is how platform.py calls it. Make sure tuple
         #  still has 5 elements
@@ -690,6 +691,7 @@ class SysModuleTest(unittest.TestCase):
             self.assertEqual(algo, 0)
         self.assertGreaterEqual(sys.hash_info.cutoff, 0)
         self.assertLess(sys.hash_info.cutoff, 8)
+        support.check_immutable_type(self, type(sys.hash_info))
 
         self.assertIsInstance(sys.maxsize, int)
         self.assertIsInstance(sys.maxunicode, int)
@@ -893,11 +895,13 @@ class SysModuleTest(unittest.TestCase):
         # sys.flags, sys.version_info, and sys.getwindowsversion.
         support.check_disallow_instantiation(self, type(sys_attr), sys_attr)
 
-    def test_sys_flags_no_instantiation(self):
+    def test_sys_flags_type(self):
         self.assert_raise_on_new_sys_type(sys.flags)
+        support.check_immutable_type(self, type(sys.flags))
 
-    def test_sys_version_info_no_instantiation(self):
+    def test_sys_version_info_type(self):
         self.assert_raise_on_new_sys_type(sys.version_info)
+        support.check_immutable_type(self, type(sys.version_info))
 
     def test_sys_getwindowsversion_no_instantiation(self):
         # Skip if not being run on Windows.
@@ -1370,6 +1374,37 @@ class SysModuleTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             sys.set_int_max_str_digits(2_048.0)
 
+    @test.support.cpython_only
+    def test_is_immortal(self):
+        is_immortal = sys._is_immortal
+
+        # Singletons
+        self.assertTrue(is_immortal(None))
+        self.assertTrue(is_immortal(False))
+        self.assertTrue(is_immortal(True))
+        self.assertTrue(is_immortal(0))
+        self.assertTrue(is_immortal(b''))
+        self.assertTrue(is_immortal(''))
+        self.assertTrue(is_immortal(b'x'))
+        self.assertTrue(is_immortal('x'))
+        self.assertTrue(is_immortal(()))
+
+        # Static types
+        self.assertTrue(is_immortal(int))
+        self.assertTrue(is_immortal(dict))
+
+        # Test some mortal objects
+        class PythonType:
+            pass
+        self.assertFalse(is_immortal([1, 2, 3]))
+        self.assertFalse(is_immortal({'key': 5}))
+        self.assertFalse(is_immortal(object()))
+        self.assertFalse(is_immortal(PythonType))
+        self.assertFalse(is_immortal(2 ** 100))
+        # Use encode/decode to get a fresh object
+        self.assertFalse(is_immortal(b'abc'.decode()))
+        self.assertFalse(is_immortal('abc'.encode()))
+
 
 @test.support.cpython_only
 @test.support.force_not_colorized_test_class
@@ -1722,7 +1757,7 @@ class SizeofTest(unittest.TestCase):
         check(iter('abc'), size('lP'))
         # callable-iterator
         import re
-        check(re.finditer('',''), size('2P'))
+        check(re.finditer('',''), size('3P'))
         # list
         check(list([]), vsize('Pn'))
         check(list([1]), vsize('Pn') + 2*self.P)
@@ -1954,6 +1989,7 @@ class SizeofTest(unittest.TestCase):
         cur = sys.get_asyncgen_hooks()
         self.assertIsNone(cur.firstiter)
         self.assertIsNone(cur.finalizer)
+        support.check_immutable_type(self, type(cur))
 
         # gh-118473
         with self.assertRaises(TypeError):
@@ -1996,6 +2032,7 @@ class SizeofTest(unittest.TestCase):
         rc, out, err = assert_python_failure('-c', code)
         self.assertEqual(out, b"")
         self.assertEqual(err, b"")
+
 
 @test.support.support_remote_exec_only
 @test.support.cpython_only

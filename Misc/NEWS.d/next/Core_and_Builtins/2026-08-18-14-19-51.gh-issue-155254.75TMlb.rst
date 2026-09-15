@@ -1,0 +1,1 @@
+Avoid warning about missing standard library when using :ref:`sys-path-init-_pth-files`.

@@ -386,9 +386,9 @@ The :mod:`!functools` module defines the following functions:
    only one positional argument is provided, but there are two placeholders
    that must be filled in.
 
-   If :func:`!partial` is applied to an existing :func:`!partial` object,
-   :data:`!Placeholder` sentinels of the input object are filled in with
-   new positional arguments.
+   If :func:`!partial` is applied to an existing
+   :ref:`partial object <partial-objects>`, :data:`!Placeholder` sentinels of the
+   input object are filled in with new positional arguments.
    A placeholder can be retained by inserting a new
    :data:`!Placeholder` sentinel to the place held by a previous :data:`!Placeholder`:
 
