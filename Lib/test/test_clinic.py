@@ -330,6 +330,24 @@ class ClinicWholeFileTest(TestCase):
         """
         self.expect_failure(block, err, lineno=8)
 
+    def test_ambiguous_group_and_optional_parameters(self):
+        err = ("Function 'my_test_func' has an ambiguous group configuration: "
+               "a call with 2 argument(s) can be parsed in more than one way.")
+        block = """
+            /*[clinic input]
+            my_test_func
+
+                [
+                a: object
+                b: object
+                ]
+                c: object = None
+                d: object = None
+                /
+            [clinic start generated code]*/
+        """
+        self.expect_failure(block, err)
+
     def test_star_after_vararg(self):
         err = "'my_test_func' uses '*' more than once."
         block = """
@@ -3864,6 +3882,27 @@ class ClinicFunctionalTest(unittest.TestCase):
         self.assertEqual(fn(1, a=2), ((1,), 2, False, False))
         self.assertEqual(fn(1, a=2, b=3), ((1,), 2, 3, False))
         self.assertEqual(fn(1, a=2, b=3, c=4), ((1,), 2, 3, 4))
+
+    def test_group_and_opt(self):
+        # fn([a, b,] c=None)
+        fn = ac_tester.group_and_opt
+        self.assertEqual(fn(), (False, None, None, None))
+        self.assertEqual(fn(1), (False, None, None, 1))
+        self.assertEqual(fn(1, 2), (True, 1, 2, None))
+        self.assertEqual(fn(1, 2, 3), (True, 1, 2, 3))
+        self.assertRaises(TypeError, fn, 1, 2, 3, 4)
+        self.assertRaises(TypeError, fn, c=1)
+
+    def test_group_and_two_opt(self):
+        # fn([a, b, c,] d=None, e=None)
+        fn = ac_tester.group_and_two_opt
+        self.assertEqual(fn(), (False, None, None, None, None, None))
+        self.assertEqual(fn(1), (False, None, None, None, 1, None))
+        self.assertEqual(fn(1, 2), (False, None, None, None, 1, 2))
+        self.assertEqual(fn(1, 2, 3), (True, 1, 2, 3, None, None))
+        self.assertEqual(fn(1, 2, 3, 4), (True, 1, 2, 3, 4, None))
+        self.assertEqual(fn(1, 2, 3, 4, 5), (True, 1, 2, 3, 4, 5))
+        self.assertRaises(TypeError, fn, 1, 2, 3, 4, 5, 6)
 
     def test_gh_32092_oob(self):
         ac_tester.gh_32092_oob(1, 2, 3, 4, kw1=5, kw2=6)
