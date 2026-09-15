@@ -1,0 +1,3 @@
+Validate :func:`xmlrpc.client.dumps` arguments with explicit runtime checks
+so invalid arguments are rejected consistently when Python runs with
+optimization enabled.
