@@ -51,9 +51,6 @@ class Indexable:
 
 @contextlib.contextmanager
 def inject_memory_error(testcase, start=0):
-    # Raise SkipTest if _testcapi extension module is missing
-    _testcapi = import_helper.import_module('_testcapi')
-
     with testcase.assertRaises(MemoryError):
         with support.with_memory_error(start):
             yield
