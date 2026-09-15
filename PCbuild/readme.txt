@@ -105,6 +105,25 @@ the 32-bit Win32 platform.  It accepts several arguments to change
 this behavior, try `build.bat -h` to learn more.
 
 
+Custom Output Directory
+-----------------------
+
+If you want to move the build outputs to a different directory, use the
+`Py_OutDir` property either as a standard MSBuild `/p:Py_OutDir=` argument
+(for example, `build.bat "/p:Py_OutDir=C:\MyOutput"`) or an environment
+variable. Using the standard MSBuild `/p:OutDir=` property will more
+directly override the output location, which may result in a broken build.
+
+However, be aware that the compiled binaries probably won't run directly from
+that location. If you want to make an install-shaped layout without creating the
+installer, build CPython normally first, and then use the `PC/layout` script
+with the runtime you just built, or using the `--build` and `--source` options
+to specify the directories:
+    python.bat PC/layout --<options>
+Use `-h` with that command to see all available options for customizing the
+layout.
+
+
 C Runtime
 ---------
 
