@@ -1,0 +1,3 @@
+Fix :mod:`array` unpickling of an odd-length ``'w'`` array pickled on a
+machine of the opposite endianness; a wrong item size for the UTF-16 and
+UTF-32 machine formats made it raise :exc:`ValueError`.

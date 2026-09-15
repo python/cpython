@@ -2050,10 +2050,10 @@ static const struct mformatdescr {
     {4, 0, 1},                  /* 15: IEEE_754_FLOAT_BE */
     {8, 0, 0},                  /* 16: IEEE_754_DOUBLE_LE */
     {8, 0, 1},                  /* 17: IEEE_754_DOUBLE_BE */
-    {4, 0, 0},                  /* 18: UTF16_LE */
-    {4, 0, 1},                  /* 19: UTF16_BE */
-    {8, 0, 0},                  /* 20: UTF32_LE */
-    {8, 0, 1},                  /* 21: UTF32_BE */
+    {2, 0, 0},                  /* 18: UTF16_LE */
+    {2, 0, 1},                  /* 19: UTF16_BE */
+    {4, 0, 0},                  /* 20: UTF32_LE */
+    {4, 0, 1},                  /* 21: UTF32_BE */
     {8, 0, 0},                  /* 22: IEEE_754_FLOAT_COMPLEX_LE */
     {8, 0, 1},                  /* 23: IEEE_754_FLOAT_COMPLEX_BE */
     {16, 0, 0},                 /* 24: IEEE_754_DOUBLE_COMPLEX_LE */
