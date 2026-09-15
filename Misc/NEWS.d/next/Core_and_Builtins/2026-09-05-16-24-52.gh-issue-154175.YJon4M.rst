@@ -1,0 +1,4 @@
+Move GIL drop request bit fetching to live under the :term:`GIL` so the
+:c:type:`PyThreadState` it accesses is guaranteed not to be deallocated.
+Deallocation could occur when a daemon thread was shutting down after the
+main thread.
