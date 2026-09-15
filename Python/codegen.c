@@ -691,13 +691,13 @@ codegen_enter_scope(compiler *c, identifier name, int scope_type,
          * of 0. This is because RETURN_GENERATOR pushes the generator
          before returning. */
         location loc = LOCATION(lineno, lineno, -1, -1);
-        ADDOP(c, loc, RETURN_GENERATOR);
-        ADDOP(c, loc, POP_TOP);
+        ADDOP_IN_SCOPE(c, loc, RETURN_GENERATOR);
+        ADDOP_IN_SCOPE(c, loc, POP_TOP);
     }
 
-    ADDOP_I(c, loc, RESUME, RESUME_AT_FUNC_START);
+    ADDOP_I_IN_SCOPE(c, loc, RESUME, RESUME_AT_FUNC_START);
     if (scope_type == COMPILE_SCOPE_MODULE) {
-        ADDOP(c, loc, ANNOTATIONS_PLACEHOLDER);
+        ADDOP_IN_SCOPE(c, loc, ANNOTATIONS_PLACEHOLDER);
     }
     return SUCCESS;
 }
