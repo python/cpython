@@ -1,0 +1,3 @@
+:meth:`pathlib.Path.copy` now resolves paths when checking whether the
+destination is inside the source directory, preventing bypasses via
+relative/absolute path aliases and symlinks.
