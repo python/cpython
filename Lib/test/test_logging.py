@@ -6752,6 +6752,7 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
             fh.emit(record)
             fh.close()
 
+        start = datetime.datetime.now()
         add_record('testing - initial')
         self.assertLogFile(self.fn)
         # Sleep a little over the half of rollover time - and this value
@@ -6764,18 +6765,24 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
 
         # At this point, the log file should be rotated if the rotation
         # is based on creation time but should be not if it's based on
-        # modification time.
-        found = False
+        # modification time.  The rotated file is named after the creation
+        # time of the log file, so search back over the whole time the test
+        # took rather than over a fixed number of seconds.
         now = datetime.datetime.now()
-        GO_BACK = 5 # seconds
-        for secs in range(GO_BACK + 1):
+        test_duration = int((now - start).total_seconds())
+        # Two seconds of margin on top of that: the log file is created in
+        # setUp(), a moment before the test starts, and the name has a
+        # resolution of one second.
+        oldest = test_duration + 2
+        found = False
+        for secs in range(oldest + 1):   # inclusive of oldest
             prev = now - datetime.timedelta(seconds=secs)
             fn = self.fn + prev.strftime(".%Y-%m-%d_%H-%M-%S")
             found = os.path.exists(fn)
             if found:
                 self.rmfiles.append(fn)
                 break
-        msg = 'No rotated files found, went back %d seconds' % GO_BACK
+        msg = 'No rotated files found, went back %d seconds' % oldest
         if not found:
             # print additional diagnostics
             dn, fn = os.path.split(self.fn)
