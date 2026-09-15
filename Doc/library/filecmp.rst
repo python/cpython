@@ -34,9 +34,9 @@ The :mod:`!filecmp` module defines the following functions:
    file changes.  The entire cache may be cleared using :func:`clear_cache`.
 
 
-.. function:: cmpfiles(dir1, dir2, common, shallow=True)
+.. function:: cmpfiles(a, b, common, shallow=True)
 
-   Compare the files in the two directories *dir1* and *dir2* whose names are
+   Compare the files in the two directories *a* and *b* whose names are
    given by *common*.
 
    Returns three lists of file names: *match*, *mismatch*,

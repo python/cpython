@@ -41,6 +41,7 @@
 #endif
 
 #include "_ssl.h"
+#include "_openssl_mem.h"
 
 /* Redefined below for Windows debug builds after important #includes */
 #define _PySSL_FIX_ERRNO
@@ -79,34 +80,6 @@
 #  error "OPENSSL_THREADS is not defined, Python requires thread-safe OpenSSL"
 #endif
 
-
-#ifdef BIO_get_ktls_send
-#  ifdef MS_WINDOWS
-typedef long long Py_off_t;
-#  else
-typedef off_t Py_off_t;
-#  endif
-
-static int
-Py_off_t_converter(PyObject *arg, void *addr)
-{
-#ifdef HAVE_LARGEFILE_SUPPORT
-    *((Py_off_t *)addr) = PyLong_AsLongLong(arg);
-#else
-    *((Py_off_t *)addr) = PyLong_AsLong(arg);
-#endif
-    return PyErr_Occurred() ? 0 : 1;
-}
-
-/*[python input]
-
-class Py_off_t_converter(CConverter):
-    type = 'Py_off_t'
-    converter = 'Py_off_t_converter'
-
-[python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=3fd9ca8ca6f0cbb8]*/
-#endif /* BIO_get_ktls_send */
 
 struct py_ssl_error_code {
     const char *mnemonic;
@@ -3863,6 +3836,10 @@ _ssl__SSLContext_set_client_sigalgs_impl(PySSLContext *self,
 #ifdef OPENSSL_IS_AWSLC
     _setSSLError(get_state_ctx(self), "can't set client sigalgs on AWS-LC", 0, __FILE__, __LINE__);
     return NULL;
+#elif defined(LIBRESSL_VERSION_NUMBER)
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "setting client sigalgs is not supported by LibreSSL");
+    return NULL;
 #else
     if (!SSL_CTX_set1_client_sigalgs_list(self->ctx, sigalgslist)) {
         _setSSLError(get_state_ctx(self), "unrecognized signature algorithm", 0, __FILE__, __LINE__);
@@ -3884,11 +3861,17 @@ _ssl__SSLContext_set_server_sigalgs_impl(PySSLContext *self,
                                          const char *sigalgslist)
 /*[clinic end generated code: output=31ecb1d310285644 input=653b752e4f8d801b]*/
 {
+#ifdef LIBRESSL_VERSION_NUMBER
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "setting server sigalgs is not supported by LibreSSL");
+    return NULL;
+#else
     if (!SSL_CTX_set1_sigalgs_list(self->ctx, sigalgslist)) {
         _setSSLError(get_state_ctx(self), "unrecognized signature algorithm", 0, __FILE__, __LINE__);
         return NULL;
     }
     Py_RETURN_NONE;
+#endif
 }
 
 static int
@@ -7465,5 +7448,6 @@ static struct PyModuleDef _sslmodule_def = {
 PyMODINIT_FUNC
 PyInit__ssl(void)
 {
+    _PyOpenSSL_SetupMemFunctions();
     return PyModuleDef_Init(&_sslmodule_def);
 }

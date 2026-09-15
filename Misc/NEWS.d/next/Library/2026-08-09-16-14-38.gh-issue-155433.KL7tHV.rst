@@ -1,0 +1,2 @@
+Fix :class:`asyncio.TaskGroup` losing outside cancellation after
+``cancel()``.

@@ -1,0 +1,4 @@
+:class:`urllib.robotparser.RobotFileParser` now silently ignores a
+``Crawl-delay`` or ``Request-rate`` value written with non-decimal digits
+(such as ``U+00B2 SUPERSCRIPT TWO``) instead of raising :exc:`ValueError`
+and aborting the parse of the whole ``robots.txt`` file.

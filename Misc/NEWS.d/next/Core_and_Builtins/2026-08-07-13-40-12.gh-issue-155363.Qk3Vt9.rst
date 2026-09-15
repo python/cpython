@@ -1,0 +1,4 @@
+Fix a leak in the :term:`free-threaded build` when creating a thread state
+fails after an internal QSBR slot has been reserved for it.  The slot could
+never be reclaimed, so the QSBR array grew without bound across repeated
+failures.

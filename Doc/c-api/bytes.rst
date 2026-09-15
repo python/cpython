@@ -8,6 +8,13 @@ Bytes Objects
 These functions raise :exc:`TypeError` when expecting a bytes parameter and
 called with a non-bytes parameter.
 
+.. impl-detail::
+
+   The internal buffer of :c:type:`PyBytesObject` always includes an extra
+   trailing null byte for compatibility with null terminated C strings.
+   This extra byte is not counted in :c:func:`PyBytes_Size` nor in the
+   various *length* and *size* arguments of the functions below.
+
 .. index:: pair: object; bytes
 
 
@@ -231,6 +238,7 @@ called with a non-bytes parameter.
    Resize a bytes object. *newsize* will be the new length of the bytes object.
    You can think of it as creating a new bytes object and destroying the old
    one, only more efficiently.
+
    Pass the address of an
    existing bytes object as an lvalue (it may be written into), and the new size
    desired.  On success, *\*bytes* holds the resized bytes object and ``0`` is
@@ -238,6 +246,11 @@ called with a non-bytes parameter.
    reallocation fails, the original bytes object at *\*bytes* is deallocated,
    *\*bytes* is set to ``NULL``, :exc:`MemoryError` is set, and ``-1`` is
    returned.
+
+   While bytes objects are usually immutable in Python, this special C API
+   allows mutating a bytes object in-place. The returned bytes object can still
+   be mutated using :c:func:`PyBytesWriter_GetData`; except if *newsize* is
+   zero in which case it returns the immutable empty bytes string.
 
    .. soft-deprecated:: 3.15
       Use the :c:type:`PyBytesWriter` API instead.
@@ -290,10 +303,10 @@ object.
 
 .. c:type:: PyBytesWriter
 
-   A bytes writer instance.
+   A bytes writer object.
 
-   The API is **not thread safe**: a writer should only be used by a single
-   thread at the same time.
+   The API is **not thread safe**. A :c:type:`PyBytesWriter` object must only
+   be used by a single thread, it must not be shared between threads.
 
    The instance must be destroyed by :c:func:`PyBytesWriter_Finish` on
    success, or :c:func:`PyBytesWriter_Discard` on error.
@@ -429,7 +442,7 @@ Low-level API
    On success, return ``0``.
    On error, set an exception and return ``-1``.
 
-   *size* can be negative to shrink the writer.
+   *grow* can be negative to shrink the writer.
 
 .. c:function:: void* PyBytesWriter_GrowAndUpdatePointer(PyBytesWriter *writer, Py_ssize_t size, void *buf)
 

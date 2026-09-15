@@ -505,7 +505,7 @@ added matters.  To illustrate::
       Otherwise the *name*, and the *value* with any CR or LF characters
       removed, are passed to the ``header_factory``, and the resulting
       header object is returned.  Any surrogateescaped bytes get turned into
-      the unicode unknown-character glyph.
+      the Unicode unknown-character glyph.
 
 
    .. method:: fold(name, value)
@@ -600,10 +600,10 @@ the email package is changed from the Python 3.2 API in the following ways:
 
 From the application view, this means that any header obtained through the
 :class:`~email.message.EmailMessage` is a header object with extra
-attributes, whose string value is the fully decoded unicode value of the
+attributes, whose string value is the fully decoded value of the
 header.  Likewise, a header may be assigned a new value, or a new header
-created, using a unicode string, and the policy will take care of converting
-the unicode string into the correct RFC encoded form.
+created, using a string, and the policy will take care of converting
+the string into the correct RFC encoded form.
 
 The header objects and their attributes are described in
 :mod:`~email.headerregistry`.

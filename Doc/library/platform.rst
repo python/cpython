@@ -141,6 +141,8 @@ Cross platform
    Returns the system's release, e.g. ``'2.2.0'`` or ``'NT'``. An empty string is
    returned if the value cannot be determined.
 
+   On iOS and Android, this is the user-facing OS release. To obtain the
+   Darwin or Linux kernel release, use :func:`os.uname`.
 
 .. function:: system()
 
@@ -162,9 +164,6 @@ Cross platform
 
    Returns the system's release version, e.g. ``'#3 on degas'``. An empty string is
    returned if the value cannot be determined.
-
-   On iOS and Android, this is the user-facing OS version. To obtain the
-   Darwin or Linux kernel version, use :func:`os.uname`.
 
 .. function:: uname()
 

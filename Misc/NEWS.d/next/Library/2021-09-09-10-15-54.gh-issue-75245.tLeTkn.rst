@@ -1,0 +1,5 @@
+:meth:`socket.socket.makefile` now supports line buffering (``buffering=1``)
+in text mode, as :func:`open` does and as it worked in Python 2.  Previously
+it silently used block buffering.  In binary mode it now emits
+a :exc:`RuntimeWarning` and uses the default buffer size, also as :func:`open`
+does.
