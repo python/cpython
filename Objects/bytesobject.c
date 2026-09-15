@@ -3891,6 +3891,7 @@ PyBytesWriter_FinishWithSize(PyBytesWriter *writer, Py_ssize_t size)
         result = bytes_get_empty();
     }
     else if (writer->obj != NULL) {
+        // Truncate the bytes/bytearray object if needed
 #ifdef Py_DEBUG
         byteswriter_reset_trailing_byte(writer);
 #endif
@@ -3908,18 +3909,18 @@ PyBytesWriter_FinishWithSize(PyBytesWriter *writer, Py_ssize_t size)
                     goto error;
                 }
             }
+
+            if (size == 1) {
+                // Get the single byte singleton
+                unsigned char ch = PyBytes_AS_STRING(writer->obj)[0];
+                PyObject *op = (PyObject*)CHARACTER(ch);
+                assert(_Py_IsImmortal(op));
+                Py_SETREF(writer->obj, op);
+            }
         }
 
         result = writer->obj;
         writer->obj = NULL;
-
-        if (size == 1 && !writer->use_bytearray) {
-            // Get the single byte singleton
-            unsigned char ch = PyBytes_AS_STRING(result)[0];
-            PyObject *op = (PyObject*)CHARACTER(ch);
-            assert(_Py_IsImmortal(op));
-            Py_SETREF(result, op);
-        }
     }
     else {
         // Create an object from the small buffer
