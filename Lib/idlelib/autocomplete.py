@@ -180,15 +180,18 @@ class AutoComplete:
         else:
             if mode == ATTRS:
                 if what == "":  # Main module names.
-                    namespace = {**__main__.__builtins__.__dict__,
-                                 **__main__.__dict__}
-                    bigl = eval("dir()", namespace)
-                    bigl.extend(completion_kwds)
-                    bigl.sort()
-                    if "__all__" in bigl:
-                        smalll = sorted(eval("__all__", namespace))
-                    else:
-                        smalll = [s for s in bigl if s[:1] != '_']
+                    try:
+                        namespace = {**__main__.__builtins__.__dict__,
+                                     **__main__.__dict__}
+                        bigl = eval("dir()", namespace)
+                        bigl.extend(completion_kwds)
+                        bigl.sort()
+                        if "__all__" in bigl:
+                            smalll = sorted(eval("__all__", namespace))
+                        else:
+                            smalll = [s for s in bigl if s[:1] != '_']
+                    except Exception:  # a broken __all__ must not abort completion
+                        return [], []
                 else:
                     try:
                         entity = self.get_entity(what)
