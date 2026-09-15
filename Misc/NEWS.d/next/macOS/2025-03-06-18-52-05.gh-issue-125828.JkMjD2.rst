@@ -1,0 +1,1 @@
+Fix the not implemented ``get_value`` for :class:`multiprocessing.Semaphore` on MacOSX by adding a dedicated workaround  in ``_multiprocessing.SemLock`` object.

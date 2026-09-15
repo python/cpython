@@ -201,6 +201,12 @@ def get_preparation_data(name):
                 main_path = os.path.join(process.ORIGINAL_DIR, main_path)
             d['init_main_from_path'] = os.path.normpath(main_path)
 
+    # see gh-125828: workaround on MacOS to emulate `get_value` on Semaphore.
+    if sys.platform == 'darwin':
+        import _multiprocessing
+        d['_macosx_sharedmem_name'] = _multiprocessing._MACOSX_SHAREDMEM_NAME
+        d['_macosx_shmlock_name']     = _multiprocessing._MACOSX_SHMLOCK_NAME
+
     return d
 
 #
@@ -244,6 +250,18 @@ def prepare(data):
         _fixup_main_from_name(data['init_main_from_name'])
     elif 'init_main_from_path' in data:
         _fixup_main_from_path(data['init_main_from_path'])
+
+    # see gh-125828: workaround on MacOS to emulate `get_value` on Semaphore.
+    if sys.platform == 'darwin' and '_macosx_sharedmem_name' in data:
+        import _multiprocessing
+        _multiprocessing._set_shm_names(
+            data['_macosx_sharedmem_name'],
+            data['_macosx_shmlock_name']
+        )
+        # Update module attributes so grandchild processes also get
+        # the correct names when get_preparation_data() is called.
+        _multiprocessing._MACOSX_SHAREDMEM_NAME = data['_macosx_sharedmem_name']
+        _multiprocessing._MACOSX_SHMLOCK_NAME     = data['_macosx_shmlock_name']
 
 # Multiprocessing module helpers to fix up the main module in
 # spawned subprocesses
