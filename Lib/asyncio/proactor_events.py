@@ -534,6 +534,18 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport,
                                                               addr=addr)
         except OSError as exc:
             self._protocol.error_received(exc)
+            if self._buffer:
+                # Re-arm the write loop so buffered data isn't stranded and
+                # a paused protocol is eventually resumed (gh-156698).
+                def resume_writing():
+                    # a sendto() may have armed a write in the meantime;
+                    # its own callback will drain the rest of the buffer.
+                    if self._write_fut is None:
+                        self._loop_writing()
+
+                self._loop.call_soon(resume_writing)
+            else:
+                self._maybe_resume_protocol()
         except Exception as exc:
             self._fatal_error(exc, 'Fatal write error on datagram transport')
         else:
@@ -582,6 +594,13 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport,
                 self._loop.call_soon(self._loop_reading)
         except OSError as exc:
             self._protocol.error_received(exc)
+            if not self._closing and not self._conn_lost:
+                # Some errors are transient and recoverable, e.g. a
+                # ConnectionResetError raised synchronously by WSARecvFrom()
+                # from a stale ICMP port-unreachable notification on a UDP
+                # socket. Re-arm the read loop instead of leaving it dead
+                # (gh-127057).
+                self._loop.call_soon(self._loop_reading)
         except exceptions.CancelledError:
             if not self._closing:
                 raise
