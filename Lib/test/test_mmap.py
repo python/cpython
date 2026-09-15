@@ -953,6 +953,7 @@ class MmapTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     m.resize(start_size)
 
+    @unittest.skipUnless(hasattr(mmap.mmap, 'resize'), 'requires mmap.resize')
     def test_setitem_resize_reentrancy(self):
         """Resizing the mmap from inside __index__ while assigning to a
         single item must not access memory past the new bounds (gh-157335)."""
@@ -971,6 +972,7 @@ class MmapTests(unittest.TestCase):
                 m[size - 1] = ResizeOnIndex(m)
             self.assertEqual(len(m), new_size)
 
+    @unittest.skipUnless(hasattr(mmap.mmap, 'resize'), 'requires mmap.resize')
     def test_setitem_slice_resize_reentrancy(self):
         """Resizing the mmap from inside a value's buffer-protocol
         callback while assigning to a slice must not access memory past
