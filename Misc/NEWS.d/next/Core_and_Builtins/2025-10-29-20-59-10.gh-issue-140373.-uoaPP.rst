@@ -1,2 +1,0 @@
-Correctly emit ``PY_UNWIND`` event when generator object is closed. Patch by
-Mikhail Efimov.

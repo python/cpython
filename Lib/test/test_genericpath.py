@@ -34,6 +34,10 @@ class GenericTest:
                                 .format(self.pathmodule.__name__, attr))
 
     def test_commonprefix(self):
+        with warnings_helper.check_warnings((".*commonpath().*", DeprecationWarning)):
+            self.do_test_commonprefix()
+
+    def do_test_commonprefix(self):
         commonprefix = self.pathmodule.commonprefix
         self.assertEqual(
             commonprefix([]),
@@ -606,8 +610,9 @@ class PathLikeTests(unittest.TestCase):
         self.assertPathEqual(os.path.isdir)
 
     def test_path_commonprefix(self):
-        self.assertEqual(os.path.commonprefix([self.file_path, self.file_name]),
-                         self.file_name)
+        with warnings_helper.check_warnings((".*commonpath().*", DeprecationWarning)):
+            self.assertEqual(os.path.commonprefix([self.file_path, self.file_name]),
+                             self.file_name)
 
     def test_path_getsize(self):
         self.assertPathEqual(os.path.getsize)

@@ -29,7 +29,7 @@ not by actually invoking a subshell.
    The pathnames are returned in no particular order.  If you need a specific
    order, sort the results.
 
-Files beginning with a dot (``.``) can only be matched by
+By default, files beginning with a dot (``.``) can only be matched by
 patterns that also start with a dot,
 unlike :func:`fnmatch.fnmatch` or :func:`pathlib.Path.glob`.
 For tilde and shell variable expansion, use :func:`os.path.expanduser` and
@@ -70,7 +70,8 @@ The :mod:`!glob` module defines the following functions:
    pattern is followed by an :data:`os.sep` or :data:`os.altsep` then files will not
    match.
 
-   If *include_hidden* is true, "``**``" pattern will match hidden directories.
+   If *include_hidden* is true, wildcards can match path segments that
+   begin with a dot (``.``).
 
    .. audit-event:: glob.glob pathname,recursive glob.glob
    .. audit-event:: glob.glob/2 pathname,recursive,root_dir,dir_fd glob.glob
@@ -82,6 +83,11 @@ The :mod:`!glob` module defines the following functions:
    .. note::
       This function may return duplicate path names if *pathname*
       contains multiple "``**``" patterns and *recursive* is true.
+
+   .. note::
+      Any :exc:`OSError` exceptions raised from scanning the filesystem are
+      suppressed. This includes :exc:`PermissionError` when accessing
+      directories without read permission.
 
    .. versionchanged:: 3.5
       Support for recursive globs using "``**``".
@@ -106,6 +112,11 @@ The :mod:`!glob` module defines the following functions:
       This function may return duplicate path names if *pathname*
       contains multiple "``**``" patterns and *recursive* is true.
 
+   .. note::
+      Any :exc:`OSError` exceptions raised from scanning the filesystem are
+      suppressed. This includes :exc:`PermissionError` when accessing
+      directories without read permission.
+
    .. versionchanged:: 3.5
       Support for recursive globs using "``**``".
 
@@ -121,7 +132,7 @@ The :mod:`!glob` module defines the following functions:
    Escape all special characters (``'?'``, ``'*'`` and ``'['``).
    This is useful if you want to match an arbitrary literal string that may
    have special characters in it.  Special characters in drive/UNC
-   sharepoints are not escaped, e.g. on Windows
+   sharepoints are not escaped, for example on Windows
    ``escape('//?/c:/Quo vadis?.txt')`` returns ``'//?/c:/Quo vadis[?].txt'``.
 
    .. versionadded:: 3.4
@@ -130,7 +141,8 @@ The :mod:`!glob` module defines the following functions:
 .. function:: translate(pathname, *, recursive=False, include_hidden=False, seps=None)
 
    Convert the given path specification to a regular expression for use with
-   :func:`re.match`. The path specification can contain shell-style wildcards.
+   :func:`re.prefixmatch`. The path specification can contain shell-style
+   wildcards.
 
    For example:
 
@@ -140,7 +152,7 @@ The :mod:`!glob` module defines the following functions:
       >>> regex
       '(?s:(?:.+/)?[^/]*\\.txt)\\z'
       >>> reobj = re.compile(regex)
-      >>> reobj.match('foo/bar/baz.txt')
+      >>> reobj.prefixmatch('foo/bar/baz.txt')
       <re.Match object; span=(0, 15), match='foo/bar/baz.txt'>
 
    Path separators and segments are meaningful to this function, unlike

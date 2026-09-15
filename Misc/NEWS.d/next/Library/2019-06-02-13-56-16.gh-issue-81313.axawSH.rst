@@ -1,1 +1,0 @@
-Add the :mod:`math.integer` module (:pep:`791`).

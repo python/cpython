@@ -1,0 +1,1 @@
+Add :func:`curses.nofilter`, which undoes the effect of :func:`curses.filter`.

@@ -1,3 +1,5 @@
+"""Interface to the native Tk color selection dialog."""
+
 # tk common color chooser dialogue
 #
 # this module provides an interface to the native color dialogue

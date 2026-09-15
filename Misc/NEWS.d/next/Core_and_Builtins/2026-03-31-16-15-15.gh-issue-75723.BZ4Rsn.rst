@@ -1,0 +1,1 @@
+Avoid re-executing ``.pth`` files when :func:`site.addsitedir` is called for a known directory.

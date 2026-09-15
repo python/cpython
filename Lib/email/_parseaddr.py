@@ -59,7 +59,7 @@ def _parsedate_tz(data):
 
     The last (additional) element is the time zone offset in seconds, except if
     the timezone was specified as -0000.  In that case the last element is
-    None.  This indicates a UTC timestamp that explicitly declaims knowledge of
+    None.  This indicates a UTC timestamp that explicitly disclaims knowledge of
     the source timezone, as opposed to a +0000 timestamp that indicates the
     source timezone really was UTC.
 

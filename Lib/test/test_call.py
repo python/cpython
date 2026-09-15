@@ -3,7 +3,7 @@ from test.support import (cpython_only, is_wasi, requires_limited_api, Py_DEBUG,
                           set_recursion_limit, skip_on_s390x,
                           skip_emscripten_stack_overflow,
                           skip_wasi_stack_overflow, skip_if_sanitizer,
-                          import_helper)
+                          skip_if_huge_c_stack, import_helper)
 try:
     import _testcapi
 except ImportError:
@@ -46,6 +46,54 @@ class FunctionCalls(unittest.TestCase):
         res = fn(**od)
         self.assertIsInstance(res, dict)
         self.assertEqual(list(res.items()), expected)
+
+    def test_kwargs_order_preserved(self):
+        # PEP 468: Preserving Keyword Argument Order
+        def fn(**kw):
+            return list(kw)
+
+        self.assertEqual(fn(b=1, a=2, c=3), ['b', 'a', 'c'])
+        self.assertEqual(fn(c=3, a=2, b=1), ['c', 'a', 'b'])
+        # Unpacked mappings are merged in place, keeping their own order.
+        self.assertEqual(fn(z=0, **{'x': 1, 'a': 2}, y=3),
+                         ['z', 'x', 'a', 'y'])
+        self.assertEqual(fn(**{'b': 1}, **{'a': 2}), ['b', 'a'])
+        # Named parameters are removed from **kwargs without reordering
+        # the rest.
+        def fn2(a, c=None, **kw):
+            return list(kw)
+
+        self.assertEqual(fn2(d=1, a=2, b=3, c=4, e=5), ['d', 'b', 'e'])
+
+    def test_kwargs_order_preserved_in_methods(self):
+        # PEP 468: Preserving Keyword Argument Order
+        class C:
+            def __init__(self, **kw):
+                self.init_kw = list(kw)
+
+            def meth(self, **kw):
+                return list(kw)
+
+            @classmethod
+            def cmeth(cls, **kw):
+                return list(kw)
+
+            @staticmethod
+            def smeth(**kw):
+                return list(kw)
+
+        c = C(b=1, a=2, c=3)
+        self.assertEqual(c.init_kw, ['b', 'a', 'c'])
+        self.assertEqual(c.meth(b=1, a=2, c=3), ['b', 'a', 'c'])
+        self.assertEqual(C.cmeth(b=1, a=2, c=3), ['b', 'a', 'c'])
+        self.assertEqual(C.smeth(b=1, a=2, c=3), ['b', 'a', 'c'])
+
+    def test_kwargs_order_preserved_in_c_functions(self):
+        # PEP 468: Preserving Keyword Argument Order
+        self.assertEqual(list(dict(b=1, a=2, c=3)), ['b', 'a', 'c'])
+        self.assertEqual(list(dict(**{'b': 1}, a=2)), ['b', 'a'])
+        self.assertEqual(list(collections.OrderedDict(b=1, a=2, c=3)),
+                         ['b', 'a', 'c'])
 
     def test_frames_are_popped_after_failed_calls(self):
         # GH-93252: stuff blows up if we don't pop the new frame after
@@ -1048,15 +1096,21 @@ class TestRecursion(unittest.TestCase):
 
         this_sp = _testinternalcapi.get_stack_pointer()
         lower_sp = _testcapi.pyobject_vectorcall(get_sp, (), ())
-        self.assertLess(lower_sp, this_sp)
+        if _testcapi._Py_STACK_GROWS_DOWN:
+            self.assertLess(lower_sp, this_sp)
+            safe_margin = this_sp - lower_sp
+        else:
+            self.assertGreater(lower_sp, this_sp)
+            safe_margin = lower_sp - this_sp
         # Add an (arbitrary) extra 25% for safety
-        safe_margin = (this_sp - lower_sp) * 5 / 4
+        safe_margin = safe_margin * 5 / 4
         self.assertLess(safe_margin, _testinternalcapi.get_stack_margin())
 
     @skip_on_s390x
     @unittest.skipIf(is_wasi and Py_DEBUG, "requires deep stack")
     @skip_if_sanitizer("requires deep stack", thread=True)
     @unittest.skipIf(_testcapi is None, "requires _testcapi")
+    @skip_if_huge_c_stack(90_000)
     @skip_emscripten_stack_overflow()
     @skip_wasi_stack_overflow()
     def test_super_deep(self):

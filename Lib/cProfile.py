@@ -9,6 +9,5 @@ from profiling.tracing import run, runctx, Profile
 __all__ = ["run", "runctx", "Profile"]
 
 if __name__ == "__main__":
-    import sys
     from profiling.tracing.__main__ import main
     main()

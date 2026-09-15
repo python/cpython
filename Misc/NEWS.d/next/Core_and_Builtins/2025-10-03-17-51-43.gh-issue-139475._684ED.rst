@@ -1,2 +1,0 @@
-Changes in stackref debugging mode when ``Py_STACKREF_DEBUG`` is set. We use
-the same pattern of refcounting for stackrefs as in production build.

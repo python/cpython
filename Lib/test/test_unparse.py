@@ -216,6 +216,15 @@ class UnparseTestCase(ASTTestCase):
         self.check_ast_roundtrip('t""')
         self.check_ast_roundtrip("t'{(lambda x: x)}'")
         self.check_ast_roundtrip("t'{t'{x}'}'")
+        self.check_ast_roundtrip(
+            r"""t'''{(
+                1,  # Force lexer metadata reconstruction.
+                "\"#")}'''"""
+        )
+        self.check_ast_roundtrip(
+            r'''t"""Value: {value =\
+}"""'''
+        )
 
     def test_tstring_with_nonsensical_str_field(self):
         # `value` suggests that the original code is `t'{test1}`, but `str` suggests otherwise
@@ -402,6 +411,11 @@ class UnparseTestCase(ASTTestCase):
 
     def test_dict_comprehension(self):
         self.check_ast_roundtrip("{x: x*x for x in range(10)}")
+
+    def test_dict_comprehension_unpacking(self):
+        self.check_ast_roundtrip("{**x for x in ()}")
+        self.check_ast_roundtrip("{**x for x in range(10)}")
+        self.check_ast_roundtrip("[*x for x in ()]")
 
     def test_class_decorators(self):
         self.check_ast_roundtrip(class_decorator)

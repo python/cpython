@@ -16,6 +16,12 @@ through multiple files (grep)</p></li>
 of global and local namespaces</p></li>
 <li><p>configuration, browsers, and other dialogs</p></li>
 </ul>
+<p>The IDLE application is implemented in the <a class="reference internal" href="#module-idlelib" title="idlelib: Implementation package for the IDLE shell/editor."><code class="xref py py-mod docutils literal notranslate"><span class="pre">idlelib</span></code></a> package.</p>
+<p>This is an <a class="reference internal" href="../glossary.html#term-optional-module"><span class="xref std std-term">optional module</span></a>.
+If it is missing from your copy of CPython,
+look for documentation from your distributor (that is,
+whoever provided Python to you).
+If you are the distributor, see <a class="reference internal" href="../using/configure.html#optional-module-requirements"><span class="std std-ref">Requirements for optional modules</span></a>.</p>
 <section id="menus">
 <h2>Menus<a class="headerlink" href="#menus" title="Link to this heading">¶</a></h2>
 <p>IDLE has two main window types, the Shell window and the Editor window.  It is
@@ -105,14 +111,14 @@ line visible.  A request past the end of the file goes to the end.
 Clear any selection and update the line and column status.</p>
 </dd>
 <dt>Show Completions</dt><dd><p>Open a scrollable list allowing selection of existing names. See
-<a class="reference internal" href="#completions"><span class="std std-ref">Completions</span></a> in the Editing and navigation section below.</p>
+<a class="reference internal" href="#completions"><span class="std std-ref">Completions</span></a> in the Editing and Navigation section below.</p>
 </dd>
 <dt>Expand Word</dt><dd><p>Expand a prefix you have typed to match a full word in the same window;
 repeat to get a different expansion.</p>
 </dd>
 <dt>Show Call Tip</dt><dd><p>After an unclosed parenthesis for a function, open a small window with
 function parameter hints.  See <a class="reference internal" href="#calltips"><span class="std std-ref">Calltips</span></a> in the
-Editing and navigation section below.</p>
+Editing and Navigation section below.</p>
 </dd>
 <dt>Show Surrounding Parens</dt><dd><p>Highlight the surrounding parenthesis.</p>
 </dd>
@@ -121,9 +127,9 @@ Editing and navigation section below.</p>
 <section id="format-menu-editor-window-only">
 <span id="format-menu"></span><h3>Format menu (Editor window only)<a class="headerlink" href="#format-menu-editor-window-only" title="Link to this heading">¶</a></h3>
 <dl class="simple">
-<dt>Format Paragraph</dt><dd><p>Reformat the current blank-line-delimited paragraph in comment block or
-multiline string or selected line in a string.  All lines in the
-paragraph will be formatted to less than N columns, where N defaults to 72.</p>
+<dt>Format Paragraph</dt><dd><p>Rewrap the text block containing the text insert cursor.
+Avoid code lines.  See <a class="reference internal" href="#format-block"><span class="std std-ref">Format block</span></a> in the
+Editing and Navigation section below.</p>
 </dd>
 <dt>Indent Region</dt><dd><p>Shift selected lines right by the indent width (default 4 spaces).</p>
 </dd>
@@ -437,8 +443,19 @@ will display a calltip.</p>
 One might want to run a file after writing import statements, after
 adding function definitions, or after opening an existing file.</p>
 </section>
+<section id="format-block">
+<span id="id4"></span><h3>Format block<a class="headerlink" href="#format-block" title="Link to this heading">¶</a></h3>
+<p>Reformat Paragraph rewraps a block (‘paragraph’) of contiguous equally
+indented non-blank comments, a similar block of text within a multiline
+string, or a selected subset of either.
+If needed, add a blank line to separate string from code.
+Partial lines in a selection expand to complete lines.
+The resulting lines have the same indent as before
+but have maximum total length of N columns (characters).
+Change the default N of 72 on the Window tab of IDLE Settings.</p>
+</section>
 <section id="code-context">
-<span id="id4"></span><h3>Code Context<a class="headerlink" href="#code-context" title="Link to this heading">¶</a></h3>
+<span id="id5"></span><h3>Code Context<a class="headerlink" href="#code-context" title="Link to this heading">¶</a></h3>
 <p>Within an editor window containing Python code, code context can be toggled
 in order to show or hide a pane at the top of the window.  When shown, this
 pane freezes the opening lines for block code, such as those beginning with
@@ -516,7 +533,7 @@ looked for in the user’s home directory.  Statements in this file will be
 executed in the Tk namespace, so this file is not useful for importing
 functions to be used from IDLE’s Python shell.</p>
 <section id="command-line-usage">
-<h3>Command line usage<a class="headerlink" href="#command-line-usage" title="Link to this heading">¶</a></h3>
+<span id="idlelib-cli"></span><h3>Command-line usage<a class="headerlink" href="#command-line-usage" title="Link to this heading">¶</a></h3>
 <p>IDLE can be invoked from the command line with various options. The general syntax is:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>idlelib<span class="w"> </span><span class="o">[</span>options<span class="o">]</span><span class="w"> </span><span class="o">[</span>file<span class="w"> </span>...<span class="o">]</span>
 </pre></div>
@@ -785,7 +802,7 @@ with the default subprocess if at all possible.</p>
 <section id="help-and-preferences">
 <h2>Help and Preferences<a class="headerlink" href="#help-and-preferences" title="Link to this heading">¶</a></h2>
 <section id="help-sources">
-<span id="id5"></span><h3>Help sources<a class="headerlink" href="#help-sources" title="Link to this heading">¶</a></h3>
+<span id="id6"></span><h3>Help sources<a class="headerlink" href="#help-sources" title="Link to this heading">¶</a></h3>
 <p>Help menu entry “IDLE Help” displays a formatted html version of the
 IDLE chapter of the Library Reference.  The result, in a read-only
 tkinter text window, is close to what one sees in a web browser.

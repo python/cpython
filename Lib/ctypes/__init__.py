@@ -2,24 +2,19 @@
 
 import os as _os
 import sys as _sys
-import sysconfig as _sysconfig
 import types as _types
 
-__version__ = "1.1.0"
+lazy import sysconfig as _sysconfig
 
 from _ctypes import Union, Structure, Array
 from _ctypes import _Pointer
 from _ctypes import CFuncPtr as _CFuncPtr
-from _ctypes import __version__ as _ctypes_version
 from _ctypes import RTLD_LOCAL, RTLD_GLOBAL
 from _ctypes import ArgumentError
 from _ctypes import SIZEOF_TIME_T
 from _ctypes import CField
 
 from struct import calcsize as _calcsize
-
-if __version__ != _ctypes_version:
-    raise Exception("Version number mismatch", __version__, _ctypes_version)
 
 if _os.name == "nt":
     from _ctypes import COMError, CopyComPointer, FormatError
@@ -211,13 +206,13 @@ if sizeof(c_longdouble) == sizeof(c_double):
 
 try:
     class c_double_complex(_SimpleCData):
-        _type_ = "D"
+        _type_ = "Zd"
     _check_size(c_double_complex)
     class c_float_complex(_SimpleCData):
-        _type_ = "F"
+        _type_ = "Zf"
     _check_size(c_float_complex)
     class c_longdouble_complex(_SimpleCData):
-        _type_ = "G"
+        _type_ = "Zg"
 except AttributeError:
     pass
 
@@ -464,6 +459,8 @@ class CDLL(object):
                 if name and name.endswith(")") and ".a(" in name:
                     mode |= _os.RTLD_MEMBER | _os.RTLD_NOW
             self._name = name
+            if handle is not None:
+                return handle
             return _dlopen(name, mode)
 
     def __repr__(self):
@@ -552,9 +549,11 @@ pydll = LibraryLoader(PyDLL)
 
 if _os.name == "nt":
     pythonapi = PyDLL("python dll", None, _sys.dllhandle)
-elif _sys.platform in ["android", "cygwin"]:
+elif _sys.platform == "android":
     # These are Unix-like platforms which use a dynamically-linked libpython.
     pythonapi = PyDLL(_sysconfig.get_config_var("LDLIBRARY"))
+elif _sys.platform == "cygwin":
+    pythonapi = PyDLL(_sysconfig.get_config_var("DLLLIBRARY"))
 else:
     pythonapi = PyDLL(None)
 
@@ -673,3 +672,12 @@ else:
     raise SystemError(f"Unexpected sizeof(time_t): {SIZEOF_TIME_T=}")
 
 _reset_cache()
+
+
+def __getattr__(name):
+    if name == "__version__":
+        from warnings import _deprecated
+
+        _deprecated("__version__", remove=(3, 20))
+        return "1.1.0"  # Do not change
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

@@ -14,21 +14,6 @@ extern "C" {
 #include "pycore_pyarena.h"         // PyArena
 
 _Py_DECLARE_STR(empty, "")
-#if defined(Py_DEBUG) && defined(Py_GIL_DISABLED)
-#define _parser_runtime_state_INIT \
-    { \
-        .mutex = {0}, \
-        .dummy_name = { \
-            .kind = Name_kind, \
-            .v.Name.id = &_Py_STR(empty), \
-            .v.Name.ctx = Load, \
-            .lineno = 1, \
-            .col_offset = 0, \
-            .end_lineno = 1, \
-            .end_col_offset = 0, \
-        }, \
-    }
-#else
 #define _parser_runtime_state_INIT \
     { \
         .dummy_name = { \
@@ -41,14 +26,14 @@ _Py_DECLARE_STR(empty, "")
             .end_col_offset = 0, \
         }, \
     }
-#endif
 
 extern struct _mod* _PyParser_ASTFromString(
     const char *str,
     PyObject* filename,
     int mode,
     PyCompilerFlags *flags,
-    PyArena *arena);
+    PyArena *arena,
+    PyObject *module);
 
 extern struct _mod* _PyParser_ASTFromFile(
     FILE *fp,

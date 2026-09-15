@@ -1,3 +1,0 @@
-:mod:`unicodedata`: Add :func:`~unicodedata.isxidstart` and
-:func:`~unicodedata.isxidcontinue` functions to check whether a character can
-start or continue a `Unicode Standard Annex #31 <https://www.unicode.org/reports/tr31/>`_ identifier.

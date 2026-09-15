@@ -1,9 +1,11 @@
 import unittest
 from test import audiotests
 from test import support
+from test.support.os_helper import FakePath, unlink
 import io
 import os
 import struct
+import tempfile
 import sys
 import wave
 
@@ -20,6 +22,7 @@ class WavePCM8Test(WaveTest, unittest.TestCase):
     sampwidth = 1
     framerate = 11025
     nframes = 48
+    format = wave.WAVE_FORMAT_PCM
     comptype = 'NONE'
     compname = 'not compressed'
     frames = bytes.fromhex("""\
@@ -37,6 +40,7 @@ class WavePCM16Test(WaveTest, unittest.TestCase):
     sampwidth = 2
     framerate = 11025
     nframes = 48
+    format = wave.WAVE_FORMAT_PCM
     comptype = 'NONE'
     compname = 'not compressed'
     frames = bytes.fromhex("""\
@@ -58,6 +62,7 @@ class WavePCM24Test(WaveTest, unittest.TestCase):
     sampwidth = 3
     framerate = 11025
     nframes = 48
+    format = wave.WAVE_FORMAT_PCM
     comptype = 'NONE'
     compname = 'not compressed'
     frames = bytes.fromhex("""\
@@ -85,6 +90,8 @@ class WavePCM24ExtTest(WaveTest, unittest.TestCase):
     sampwidth = 3
     framerate = 11025
     nframes = 48
+    format = wave.WAVE_FORMAT_EXTENSIBLE
+    readonly = True  # Writing EXTENSIBLE wave format is not supported.
     comptype = 'NONE'
     compname = 'not compressed'
     frames = bytes.fromhex("""\
@@ -112,6 +119,7 @@ class WavePCM32Test(WaveTest, unittest.TestCase):
     sampwidth = 4
     framerate = 11025
     nframes = 48
+    format = wave.WAVE_FORMAT_PCM
     comptype = 'NONE'
     compname = 'not compressed'
     frames = bytes.fromhex("""\
@@ -132,13 +140,154 @@ class WavePCM32Test(WaveTest, unittest.TestCase):
         frames = wave._byteswap(frames, 4)
 
 
+class WaveIeeeFloatingPointTest(WaveTest, unittest.TestCase):
+    sndfilename = 'pluck-float32.wav'
+    sndfilenframes = 3307
+    nchannels = 2
+    sampwidth = 4
+    framerate = 11025
+    nframes = 48
+    format = wave.WAVE_FORMAT_IEEE_FLOAT
+    comptype = 'NONE'
+    compname = 'not compressed'
+    frames = bytes.fromhex("""\
+      3C8B5960BA231400 3F16B41F3BFA5480 3EC44F0E3D1DC580 BF7E46533D843040 \
+      BED084FC3D564C30 3F1153303CFCBE40 BF002FB73C583EC0 3CDAFEE0BC425180 \
+      BF0F5154BD3826E0 BF169F56BDCAFD40 3EA660C0BE21A4EC 3E52E53CBE49332C \
+      BE102E0CBE5B7214 BEE76852BE6C3BDC 3DE05A98BE7A4980 BE06B6B4BE7EB6EC \
+      3F2EB1B0BE6C7CC8 BD195500BE3E0F4C 3E1BBDF8BE03DFEC BE9F4E92BD8D8D58 \
+      BF50E1D4BD111750 BDA079B0BCFBFB20 3D866358BD0C7640 BE833C0EBD17E240 \
+      3E0BFF04BD3978F0 3EFB9AE2BD14A780 BF0710B9BCD342E0 3F4DADB5BBA0CD80 \
+      BEC3B11A3D024EB0 3F063AD33D97A8C0 BEF912803DEC74E0 3F2241733E1515D4 \
+      BE0904D83E3AA604 BF7BF2003E3325BC 3F8000003E2229FC BF8000003E14A738 \
+      3F1338363DEB3B28 3F256E7C3DDBCA00 BE026A683DF5FD88 BEC70C923DFBE128 \
+      BE5A5B183DCEA2D8 3F4689513DA5A7C8 3D8C8FE83DA1FFF0 3EAEE61C3DB0A0E0 \
+      3F2290DF3DE44E18 BF6867373E09D82C BF1216283DEEB360 3F08262F3DA5B488 \
+      """)
+    if sys.byteorder != 'big':
+        frames = wave._byteswap(frames, 4)
+
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
-        not_exported = {'WAVE_FORMAT_PCM', 'WAVE_FORMAT_EXTENSIBLE', 'KSDATAFORMAT_SUBTYPE_PCM'}
+        not_exported = {'KSDATAFORMAT_SUBTYPE_PCM'}
         support.check__all__(self, wave, not_exported=not_exported)
+
+    def test_getfp(self):
+        fp = io.BytesIO()
+        with wave.open(fp, 'wb') as w:
+            w.setnchannels(1)
+            w.setsampwidth(1)
+            w.setframerate(11025)
+        fp.seek(0)
+        with wave.open(fp) as r:
+            chunk = r.getfp()
+            self.assertIsNotNone(chunk)
+            self.assertIs(chunk.file, fp)
+            self.assertEqual(chunk.chunkname, b'RIFF')
 
 
 class WaveLowLevelTest(unittest.TestCase):
+
+    def test_setparams_6_tuple_defaults_to_pcm(self):
+        with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
+            filename = fp.name
+        self.addCleanup(unlink, filename)
+
+        with wave.open(filename, 'wb') as w:
+            w.setformat(wave.WAVE_FORMAT_IEEE_FLOAT)
+            w.setparams((1, 2, 22050, 0, 'NONE', 'not compressed'))
+            self.assertEqual(w.getformat(), wave.WAVE_FORMAT_PCM)
+
+    def test_setparams_7_tuple_uses_format(self):
+        with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
+            filename = fp.name
+        self.addCleanup(unlink, filename)
+
+        with wave.open(filename, 'wb') as w:
+            w.setparams((1, 4, 22050, 0, 'NONE', 'not compressed',
+                         wave.WAVE_FORMAT_IEEE_FLOAT))
+            self.assertEqual(w.getformat(), wave.WAVE_FORMAT_IEEE_FLOAT)
+
+    def test_setparams_7_tuple_ieee_64bit_sampwidth(self):
+        with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
+            filename = fp.name
+        self.addCleanup(unlink, filename)
+
+        with wave.open(filename, 'wb') as w:
+            w.setparams((1, 8, 22050, 0, 'NONE', 'not compressed',
+                         wave.WAVE_FORMAT_IEEE_FLOAT))
+            self.assertEqual(w.getformat(), wave.WAVE_FORMAT_IEEE_FLOAT)
+            self.assertEqual(w.getsampwidth(), 8)
+
+    def test_getparams_backward_compatible_shape(self):
+        with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
+            filename = fp.name
+        self.addCleanup(unlink, filename)
+
+        with wave.open(filename, 'wb') as w:
+            w.setparams((1, 4, 22050, 0, 'NONE', 'not compressed',
+                         wave.WAVE_FORMAT_IEEE_FLOAT))
+            params = w.getparams()
+            self.assertEqual(params, (1, 4, 22050, 0, 'NONE', 'not compressed'))
+
+    def test_getformat_setformat(self):
+        with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
+            filename = fp.name
+        self.addCleanup(unlink, filename)
+
+        with wave.open(filename, 'wb') as w:
+            w.setnchannels(1)
+            w.setsampwidth(4)
+            w.setframerate(22050)
+            self.assertEqual(w.getformat(), wave.WAVE_FORMAT_PCM)
+            w.setformat(wave.WAVE_FORMAT_IEEE_FLOAT)
+            self.assertEqual(w.getformat(), wave.WAVE_FORMAT_IEEE_FLOAT)
+
+    def test_setformat_ieee_requires_32_or_64_bit_sampwidth(self):
+        with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
+            filename = fp.name
+        self.addCleanup(unlink, filename)
+
+        with wave.open(filename, 'wb') as w:
+            w.setnchannels(1)
+            w.setsampwidth(2)
+            w.setframerate(22050)
+            with self.assertRaisesRegex(wave.Error,
+                                        'unsupported sample width for IEEE float format'):
+                w.setformat(wave.WAVE_FORMAT_IEEE_FLOAT)
+
+    def test_setsampwidth_ieee_requires_32_or_64_bit(self):
+        with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
+            filename = fp.name
+        self.addCleanup(unlink, filename)
+
+        with wave.open(filename, 'wb') as w:
+            w.setnchannels(1)
+            w.setframerate(22050)
+            w.setformat(wave.WAVE_FORMAT_IEEE_FLOAT)
+            with self.assertRaisesRegex(wave.Error,
+                                        'unsupported sample width for IEEE float format'):
+                w.setsampwidth(2)
+            w.setsampwidth(4)
+
+    def test_setsampwidth_ieee_accepts_64_bit(self):
+        with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
+            filename = fp.name
+        self.addCleanup(unlink, filename)
+
+        with wave.open(filename, 'wb') as w:
+            w.setnchannels(1)
+            w.setframerate(22050)
+            w.setformat(wave.WAVE_FORMAT_IEEE_FLOAT)
+            w.setsampwidth(8)
+            self.assertEqual(w.getsampwidth(), 8)
+
+    def test_read_getformat(self):
+        b = b'RIFF' + struct.pack('<L', 36) + b'WAVE'
+        b += b'fmt ' + struct.pack('<LHHLLHH', 16, 1, 1, 11025, 11025, 1, 8)
+        b += b'data' + struct.pack('<L', 0)
+        with wave.open(io.BytesIO(b), 'rb') as r:
+            self.assertEqual(r.getformat(), wave.WAVE_FORMAT_PCM)
 
     def test_read_no_chunks(self):
         b = b'SPAM'
@@ -205,6 +354,317 @@ class WaveLowLevelTest(unittest.TestCase):
             support.gc_collect()
             self.assertIsNone(cm.unraisable)
 
+    def test_ieee_float_has_fact_chunk(self):
+        nframes = 100
+        with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
+            filename = fp.name
+        self.addCleanup(unlink, filename)
+
+        with wave.open(filename, 'wb') as w:
+            w.setnchannels(1)
+            w.setsampwidth(4)
+            w.setframerate(22050)
+            w.setformat(wave.WAVE_FORMAT_IEEE_FLOAT)
+            w.writeframes(b'\x00\x00\x00\x00' * nframes)
+
+        with open(filename, 'rb') as f:
+            f.read(12)
+            fact_found = False
+            fact_samples = None
+            while True:
+                chunk_id = f.read(4)
+                if len(chunk_id) < 4:
+                    break
+                chunk_size = struct.unpack('<L', f.read(4))[0]
+                if chunk_id == b'fact':
+                    fact_found = True
+                    fact_samples = struct.unpack('<L', f.read(4))[0]
+                    break
+                f.seek(chunk_size + (chunk_size & 1), 1)
+
+        self.assertTrue(fact_found)
+        self.assertEqual(fact_samples, nframes)
+
+    def test_pcm_has_no_fact_chunk(self):
+        with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
+            filename = fp.name
+        self.addCleanup(unlink, filename)
+
+        with wave.open(filename, 'wb') as w:
+            w.setnchannels(1)
+            w.setsampwidth(2)
+            w.setframerate(22050)
+            w.writeframes(b'\x00\x00' * 100)
+
+        with open(filename, 'rb') as f:
+            f.read(12)
+            while True:
+                chunk_id = f.read(4)
+                if len(chunk_id) < 4:
+                    break
+                chunk_size = struct.unpack('<L', f.read(4))[0]
+                self.assertNotEqual(chunk_id, b'fact')
+                f.seek(chunk_size + (chunk_size & 1), 1)
+
+    @support.subTests('arg', (
+        # rounds to 0, should raise:
+        0.5,
+        0.4,
+        # Negative values should still raise:
+        -1,
+        -0.5,
+        -0.4,
+        # 0 should raise:
+        0,
+    ))
+    def test_setframerate_validates_rounded_values(self, arg):
+        """Test that setframerate that round to 0 or negative are rejected"""
+        with wave.open(io.BytesIO(), 'wb') as f:
+            f.setnchannels(1)
+            f.setsampwidth(2)
+            with self.assertRaises(wave.Error):
+                f.setframerate(arg)
+            with self.assertRaises(wave.Error):
+                f.close()
+
+    @support.subTests(('arg', 'expected'), (
+        (1.4, 1),
+        (1.5, 2),
+        (1.6, 2),
+        (44100.4, 44100),
+        (44100.5, 44100),
+        (44100.6, 44101),
+    ))
+    def test_setframerate_rounds(self, arg, expected):
+        """Test that setframerate is rounded"""
+        with wave.open(io.BytesIO(), 'wb') as f:
+            f.setnchannels(1)
+            f.setsampwidth(2)
+            f.setframerate(arg)
+            self.assertEqual(f.getframerate(), expected)
+
+    def test_write_odd_data_chunk_pads_and_updates_riff_size(self):
+        # gh-117716: odd-sized data chunks must be padded with one zero byte.
+        with io.BytesIO() as output:
+            with wave.open(output, mode='wb') as w:
+                w.setnchannels(1)
+                w.setsampwidth(1)
+                w.setframerate(48000)
+                w.writeframes(b'\x80')
+
+            value = output.getvalue()
+
+        self.assertEqual(value[-1], 0)
+        self.assertEqual(
+            int.from_bytes(value[4:8], byteorder='little'),
+            38,
+        )
+
+        with wave.open(io.BytesIO(value), mode='rb') as r:
+            self.assertEqual(r.getnchannels(), 1)
+            self.assertEqual(r.getsampwidth(), 1)
+            self.assertEqual(r.getframerate(), 48000)
+            self.assertEqual(r.getnframes(), 1)
+            self.assertEqual(r.readframes(-1), b'\x80')
+
+
+class WaveOpen(unittest.TestCase):
+    def test_open_pathlike(self):
+        """It is possible to use `wave.read` and `wave.write` with a path-like object"""
+        with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
+            cases = (
+                FakePath(fp.name),
+                FakePath(os.fsencode(fp.name)),
+                os.fsencode(fp.name),
+                )
+            for fake_path in cases:
+                with self.subTest(fake_path):
+                    with wave.open(fake_path, 'wb') as f:
+                        f.setnchannels(1)
+                        f.setsampwidth(2)
+                        f.setframerate(44100)
+
+                    with wave.open(fake_path, 'rb') as f:
+                        pass
+
+    def test_open_invalid_mode(self):
+        with self.assertRaisesRegex(wave.Error, "mode must be"):
+            wave.open(io.BytesIO(), 'xb')
+
+
+class WaveReadErrorTest(unittest.TestCase):
+    """Cover error and edge paths of Wave_read, and wave.open()."""
+
+    FMT_PCM = struct.pack('<HHLLHH', wave.WAVE_FORMAT_PCM, 1, 11025, 11025, 1, 8)
+
+    @staticmethod
+    def _wave_file(*chunks):
+        """Build in-memory WAVE bytes from (name, payload) chunks.
+
+        Each chunk stores its real payload length and is padded to an even
+        number of bytes, and the RIFF size is computed to match.
+        """
+        body = b'WAVE'
+        for name, payload in chunks:
+            body += name + struct.pack('<L', len(payload)) + payload
+            if len(payload) & 1:
+                body += b'\x00'
+        return b'RIFF' + struct.pack('<L', len(body)) + body
+
+    def test_read_unknown_extensible_subformat(self):
+        # A WAVE_FORMAT_EXTENSIBLE fmt chunk whose SubFormat GUID is not
+        # KSDATAFORMAT_SUBTYPE_PCM must be rejected.
+        fmt = struct.pack('<HHLLH', wave.WAVE_FORMAT_EXTENSIBLE, 2, 11025,
+                          11025 * 2 * 3, 6)
+        fmt += struct.pack('<H', 24)            # bits per sample
+        fmt += struct.pack('<HHL', 22, 24, 3)   # cbSize, valid bits, channel mask
+        fmt += b'\xff' * 16                      # bogus SubFormat GUID
+        b = self._wave_file((b'fmt ', fmt), (b'data', b''))
+        with self.assertRaisesRegex(wave.Error, 'unknown extended format'):
+            wave.open(io.BytesIO(b))
+
+    def test_read_truncated_fmt_chunk_header(self):
+        # fmt chunk too short for the fixed 14-byte header.
+        fmt = struct.pack('<H', wave.WAVE_FORMAT_PCM) + b'\x00' * 8
+        b = self._wave_file((b'fmt ', fmt))
+        with self.assertRaises(EOFError):
+            wave.open(io.BytesIO(b))
+
+    def test_read_truncated_fmt_chunk_sampwidth(self):
+        # fmt chunk holds the 14-byte header but is missing the sample width.
+        fmt = struct.pack('<HHLLH', wave.WAVE_FORMAT_PCM, 1, 11025, 11025, 1)
+        b = self._wave_file((b'fmt ', fmt))
+        with self.assertRaises(EOFError):
+            wave.open(io.BytesIO(b))
+
+    def test_read_skips_unknown_chunk(self):
+        # An unknown, odd-sized chunk between fmt and data must be skipped
+        # (including its pad byte) so the data chunk is still found.
+        data = b'\x01\x02\x03\x04'
+        b = self._wave_file((b'fmt ', self.FMT_PCM),
+                            (b'LIST', b'abc'),   # odd size, forces alignment
+                            (b'data', data))
+        with wave.open(io.BytesIO(b)) as r:
+            self.assertEqual(r.getnframes(), 4)
+            self.assertEqual(r.readframes(4), data)
+
+
+class WaveWriteValidationTest(unittest.TestCase):
+    """Cover parameter-validation paths of Wave_write."""
+
+    @staticmethod
+    def _close(w):
+        try:
+            # Make sure that all parameters are set
+            w.setnchannels(1)
+            w.setsampwidth(2)
+            w.setframerate(44100)
+        except wave.Error:
+            # Ignore "cannot change parameters after starting to write" error
+            pass
+
+        w.close()
+
+    def open_writer(self):
+        w = wave.open(io.BytesIO(), 'wb')
+        self.addCleanup(self._close, w)
+        return w
+
+    def test_get(self):
+        w = self.open_writer()
+        self.assertEqual(w.getformat(), wave.WAVE_FORMAT_PCM)
+        self.assertEqual(w.getnframes(), 0)
+        # getcomptype() and getcompname() raise AttributeError
+        # until setcomptype() is called
+
+        with self.assertRaisesRegex(wave.Error, 'number of channels not set'):
+            w.getnchannels()
+        with self.assertRaisesRegex(wave.Error, 'sample width not set'):
+            w.getsampwidth()
+        with self.assertRaisesRegex(wave.Error, 'frame rate not set'):
+            w.getframerate()
+        with self.assertRaisesRegex(wave.Error, 'not all parameters set'):
+            w.getparams()
+
+    def test_set(self):
+        w = self.open_writer()
+
+        w.setnchannels(1)
+        self.assertEqual(w.getnchannels(), 1)
+        with self.assertRaisesRegex(wave.Error, 'bad # of channels'):
+            w.setnchannels(0)
+
+        w.setsampwidth(2)
+        self.assertEqual(w.getsampwidth(), 2)
+        for width in (0, 5):
+            with self.subTest(width=width):
+                with self.assertRaisesRegex(wave.Error, 'bad sample width'):
+                    w.setsampwidth(width)
+
+        w.setframerate(44100)
+        self.assertEqual(w.getframerate(), 44100)
+        with self.assertRaisesRegex(wave.Error, 'bad frame rate'):
+            w.setframerate(0)
+
+        w.setnframes(10)
+        self.assertEqual(w.getnframes(), 0)
+
+        w.setcomptype('NONE', 'not compressed')
+        self.assertEqual(w.getcomptype(), 'NONE')
+        self.assertEqual(w.getcompname(), 'not compressed')
+        with self.assertRaisesRegex(wave.Error, 'unsupported compression type'):
+            w.setcomptype('ADPCM', 'unsupported')
+
+        w.setformat(wave.WAVE_FORMAT_PCM)
+        self.assertEqual(w.getformat(), wave.WAVE_FORMAT_PCM)
+        with self.assertRaisesRegex(wave.Error, 'unsupported wave format'):
+            w.setformat(0x1234)
+
+        w.setparams((1, 2, 44100, 0, 'NONE', 'not compressed'))
+        self.assertEqual(w.getparams(),
+                         (1, 2, 44100, 0, 'NONE', 'not compressed'))
+        with self.assertRaisesRegex(wave.Error, 'bad # of channels'):
+            w.setparams((0, 2, 44100, 0, 'NONE', 'not compressed'))
+
+    def test_tell(self):
+        def check_nframes(nframes):
+            self.assertEqual(w.tell(), nframes)
+            self.assertEqual(w.getnframes(), nframes)
+
+        w = self.open_writer()
+        w.setnchannels(1)
+        w.setsampwidth(2)
+        w.setframerate(44100)
+        check_nframes(0)
+
+        frame = b'\x00\x00'
+        w.writeframes(frame * 5)
+        check_nframes(5)
+
+        w.writeframes(frame * 3)
+        check_nframes(8)
+
+    def test_cannot_change_params_after_write(self):
+        w = self.open_writer()
+        w.setnchannels(1)
+        w.setsampwidth(2)
+        w.setframerate(44100)
+        w.writeframes(b'\x00\x00')
+
+        setters = (
+            ('setnchannels', (1,)),
+            ('setsampwidth', (2,)),
+            ('setframerate', (44100,)),
+            ('setnframes', (10,)),
+            ('setcomptype', ('NONE', 'not compressed')),
+            ('setformat', (wave.WAVE_FORMAT_PCM,)),
+            ('setparams', ((1, 2, 44100, 0, 'NONE', 'not compressed'),)),
+        )
+        for name, args in setters:
+            with self.subTest(setter=name):
+                with self.assertRaisesRegex(wave.Error,
+                                            'cannot change parameters'):
+                    getattr(w, name)(*args)
 
 if __name__ == '__main__':
     unittest.main()

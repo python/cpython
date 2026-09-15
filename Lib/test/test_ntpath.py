@@ -10,6 +10,7 @@ import warnings
 from ntpath import ALL_BUT_LAST, ALLOW_MISSING
 from test import support
 from test.support import os_helper
+from test.support import warnings_helper
 from test.support.os_helper import FakePath
 from test import test_genericpath
 from tempfile import TemporaryFile
@@ -30,19 +31,29 @@ else:
     HAVE_GETFINALPATHNAME = True
 
 try:
-    import ctypes
+    import ctypes.util
+    import ctypes.wintypes
 except ImportError:
     HAVE_GETSHORTPATHNAME = False
 else:
     HAVE_GETSHORTPATHNAME = True
     def _getshortpathname(path):
-        GSPN = ctypes.WinDLL("kernel32", use_last_error=True).GetShortPathNameW
-        GSPN.argtypes = [ctypes.c_wchar_p, ctypes.c_wchar_p, ctypes.c_uint32]
-        GSPN.restype = ctypes.c_uint32
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+
+        @ctypes.util.wrap_dll_function(kernel32)
+        def GetShortPathNameW(
+            lpszLongPath: ctypes.c_wchar_p,
+            lpszShortPath: ctypes.c_wchar_p,
+            cchBuffer: ctypes.wintypes.DWORD,
+        ) -> ctypes.wintypes.DWORD:
+            pass
+        GSPN = GetShortPathNameW
+
         result_len = GSPN(path, None, 0)
         if not result_len:
             raise OSError("failed to get short path name 0x{:08X}"
                           .format(ctypes.get_last_error()))
+
         result = ctypes.create_unicode_buffer(result_len)
         result_len = GSPN(path, result, result_len)
         return result[:result_len]
@@ -298,6 +309,10 @@ class TestNtpath(NtpathTestCase):
         tester('ntpath.isabs("\\\\.\\C:")', 1)
 
     def test_commonprefix(self):
+        with warnings_helper.check_warnings((".*commonpath().*", DeprecationWarning)):
+            self.do_test_commonprefix()
+
+    def do_test_commonprefix(self):
         tester('ntpath.commonprefix(["/home/swenson/spam", "/home/swen/spam"])',
                "/home/swen")
         tester('ntpath.commonprefix(["\\home\\swen\\spam", "\\home\\swen\\eggs"])',
@@ -1519,6 +1534,62 @@ class TestNtpath(NtpathTestCase):
                 self.assertTrue(ntpath.isjunction('testjunc'))
                 self.assertFalse(ntpath.isjunction('tmpdir'))
                 self.assertPathEqual(ntpath.realpath('testjunc'), ntpath.realpath('tmpdir'))
+
+    @unittest.skipIf(sys.platform != 'win32', "Can only test on win32.")
+    def test_realpath_drive_like_names(self):
+        # gh-102475: the unresolved tail is appended, not joined, so a name
+        # which looks like a drive does not reset the path.
+        drive = ntpath.splitroot(os.getcwd())[0]
+        for path, expected in [
+            ('C:/spam:eggs', 'C:\\spam:eggs'),
+            ('C:/nonexistent/spam:eggs', 'C:\\nonexistent\\spam:eggs'),
+            ('C:/spam:eggs/ham', 'C:\\spam:eggs\\ham'),
+            ('C:/nonexistent/spam:eggs/ham', 'C:\\nonexistent\\spam:eggs\\ham'),
+        ]:
+            with self.subTest(path=path):
+                self.assertEqual(ntpath.realpath(path), expected)
+                self.assertEqual(ntpath.realpath(os.fsencode(path)),
+                                 os.fsencode(expected))
+
+    @unittest.skipIf(sys.platform != 'win32', "Can only test on win32.")
+    def test_realpath_drive_relative(self):
+        # gh-102475: the working directory of a drive which does not exist
+        # is its root directory.
+        for drive in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ':
+            if not ntpath.exists(drive + ':'):
+                break
+        else:
+            raise unittest.SkipTest('all drives exist')
+        self.assertEqual(ntpath.realpath(drive + ':spam'),
+                         drive + ':\\spam')
+        self.assertEqual(ntpath.realpath(drive + ':'), drive + ':\\')
+
+    @unittest.skipIf(sys.platform != 'win32', "Can only test junctions with creation on win32.")
+    def test_realpath_volume_guid_path(self):
+        # gh-89760: the \\?\ prefix cannot be stripped from a volume GUID path.
+        # Find a volume which is not mounted as a drive.
+        for volume in os.listvolumes():
+            if not os.listmounts(volume):
+                break
+        else:
+            raise unittest.SkipTest('no volume without a mount point')
+
+        with os_helper.temp_dir() as d:
+            with os_helper.change_cwd(d):
+                # _winapi.CreateJunction() adds the \\??\\ prefix to a path
+                # which already has a prefix.
+                try:
+                    subprocess.run(['cmd', '/c', 'mklink', '/j',
+                                    'testjunc', volume],
+                                   check=True, capture_output=True)
+                except (OSError, subprocess.CalledProcessError):
+                    raise unittest.SkipTest('creating the test junction failed')
+
+                for path in 'testjunc', 'testjunc/spam', 'testjunc/spam/eggs':
+                    with self.subTest(path=path):
+                        realpath = ntpath.realpath(path)
+                        self.assertStartsWith(realpath, '\\\\?\\Volume{')
+                        self.assertTrue(ntpath.isabs(realpath), realpath)
 
     def test_isfile_invalid_paths(self):
         isfile = ntpath.isfile

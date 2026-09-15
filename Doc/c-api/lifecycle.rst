@@ -19,7 +19,7 @@ object's life.  An arrow from *A* to *B* indicates that event *B* can occur
 after event *A* has occurred, with the arrow's label indicating the condition
 that must be true for *B* to occur after *A*.
 
-.. only:: html and not epub
+.. only:: builder_html
 
    .. raw:: html
 
@@ -50,16 +50,9 @@ that must be true for *B* to occur after *A*.
           })();
       </script>
 
-.. only:: epub or not (html or latex)
+.. only:: not builder_html
 
    .. image:: lifecycle.dot.svg
-      :align: center
-      :class: invert-in-dark-mode
-      :alt: Diagram showing events in an object's life.  Explained in detail below.
-
-.. only:: latex
-
-   .. image:: lifecycle.dot.pdf
       :align: center
       :class: invert-in-dark-mode
       :alt: Diagram showing events in an object's life.  Explained in detail below.
@@ -256,6 +249,8 @@ To allocate and free memory, see :ref:`allocating-objects`.
    collection (i.e., the :c:macro:`Py_TPFLAGS_HAVE_GC` flag is set); this may
    change in the future.
 
+   .. versionadded:: 3.4
+
 
 .. c:function:: int PyObject_CallFinalizerFromDealloc(PyObject *op)
 
@@ -265,6 +260,8 @@ To allocate and free memory, see :ref:`allocating-objects`.
    resurrects the object, this function returns -1; no further destruction
    should happen.  Otherwise, this function returns 0 and destruction can
    continue normally.
+
+   .. versionadded:: 3.4
 
    .. seealso::
 

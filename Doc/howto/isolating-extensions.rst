@@ -353,7 +353,7 @@ garbage collection protocol.
 That is, heap types should:
 
 - Have the :c:macro:`Py_TPFLAGS_HAVE_GC` flag.
-- Define a traverse function using ``Py_tp_traverse``, which
+- Define a traverse function using :c:data:`Py_tp_traverse`, which
   visits the type (e.g. using ``Py_VISIT(Py_TYPE(self))``).
 
 Please refer to the documentation of

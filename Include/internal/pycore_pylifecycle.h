@@ -18,9 +18,6 @@ extern int _Py_SetFileSystemEncoding(
     const char *errors);
 extern void _Py_ClearFileSystemEncoding(void);
 extern PyStatus _PyUnicode_InitEncodings(PyThreadState *tstate);
-#ifdef MS_WINDOWS
-extern int _PyUnicode_EnableLegacyWindowsFSEncoding(void);
-#endif
 
 extern int _Py_IsLocaleCoercionTarget(const char *ctype_loc);
 
@@ -110,9 +107,6 @@ extern int _Py_LegacyLocaleDetected(int warn);
 
 // Export for 'readline' shared extension
 PyAPI_FUNC(char*) _Py_SetLocaleFromEnv(int category);
-
-// Export for special main.c string compiling with source tracebacks
-int _PyRun_SimpleStringFlagsWithName(const char *command, const char* name, PyCompilerFlags *flags);
 
 
 /* interpreter config */

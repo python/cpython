@@ -1,0 +1,2 @@
+Add the :mod:`curses` window method :meth:`~curses.window.dupwin`, which
+returns a new window that is an independent duplicate of an existing one.

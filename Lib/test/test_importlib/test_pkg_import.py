@@ -39,9 +39,12 @@ class TestImport(unittest.TestCase):
         self.remove_modules()
 
     def rewrite_file(self, contents):
-        compiled_path = cache_from_source(self.module_path)
-        if os.path.exists(compiled_path):
-            os.remove(compiled_path)
+        try:
+            compiled_path = cache_from_source(self.module_path)
+            if os.path.exists(compiled_path):
+                os.remove(compiled_path)
+        except NotImplementedError:
+            pass
         with open(self.module_path, 'w', encoding='utf-8') as f:
             f.write(contents)
 

@@ -1,0 +1,3 @@
+:mod:`multiprocessing`'s default start method on systems with non-writeable
+tempfile filesystem is now :ref:`"spawn" <multiprocessing-start-methods>`
+instead of ``"forkserver"``. Patch by Bénédikt Tran.
