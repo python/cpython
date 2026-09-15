@@ -314,6 +314,19 @@ class AddressTestCase_v6(BaseTestCase, CommonTestMixin_v6):
         # A trailing IPv4 address is two parts
         assertBadSplit("10:9:8:7:6:5:4:3:42.42.42.42")
 
+    def test_bad_address_split_v6_too_long(self):
+        def assertBadSplit(addr):
+            msg = r"At most 45 characters expected in '.*?'"
+            with self.assertAddressError(msg):
+                ipaddress.IPv6Address(addr)
+
+        # Long IPv6 address
+        long_addr = ("0:" * 10000) + "0"
+        assertBadSplit(long_addr)
+        assertBadSplit(long_addr + "%zoneid")
+        assertBadSplit(long_addr + ":255.255.255.255")
+        assertBadSplit(long_addr + ":ffff:255.255.255.255")
+
     def test_bad_address_split_v6_too_many_parts(self):
         def assertBadSplit(addr):
             msg = r"Exactly \d+ parts expected without '::' in '.*?'"
@@ -1767,6 +1780,16 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(ipaddress.ip_address('FFFF::192.0.2.1'),
                          ipaddress.ip_address('FFFF::c000:201'))
 
+        self.assertEqual(ipaddress.ip_address('0000:0000:0000:0000:0000:FFFF:192.168.255.255'),
+                         ipaddress.ip_address('::ffff:c0a8:ffff'))
+        self.assertEqual(ipaddress.ip_address('FFFF:0000:0000:0000:0000:0000:192.168.255.255'),
+                         ipaddress.ip_address('ffff::c0a8:ffff'))
+
+        self.assertEqual(ipaddress.ip_address('0000:0000:0000:0000:0000:FFFF:192.168.255.255%scope'),
+                         ipaddress.ip_address('::ffff:c0a8:ffff%scope'))
+        self.assertEqual(ipaddress.ip_address('FFFF:0000:0000:0000:0000:0000:192.168.255.255%scope'),
+                         ipaddress.ip_address('ffff::c0a8:ffff%scope'))
+
     def testIPVersion(self):
         self.assertEqual(self.ipv4_address.version, 4)
         self.assertEqual(self.ipv6_address.version, 6)
@@ -2060,6 +2083,10 @@ class IpaddrUnitTest(unittest.TestCase):
             '::7:6:5:4:3:2:0': '0:7:6:5:4:3:2:0/128',
             '7:6:5:4:3:2:1::': '7:6:5:4:3:2:1:0/128',
             '0:6:5:4:3:2:1::': '0:6:5:4:3:2:1:0/128',
+            '0000:0000:0000:0000:0000:0000:255.255.255.255': '::ffff:ffff/128',
+            '0000:0000:0000:0000:0000:ffff:255.255.255.255': '::ffff:ffff:ffff/128',
+            'ffff:ffff:ffff:ffff:ffff:ffff:255.255.255.255':
+            'ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff/128',
         }
         for uncompressed, compressed in list(test_addresses.items()):
             self.assertEqual(compressed, str(ipaddress.IPv6Interface(

@@ -1169,6 +1169,13 @@ class _BaseV4:
         if not ip_str:
             raise AddressValueError('Address cannot be empty')
 
+        if len(ip_str) > 45:
+            shorten = ip_str
+            if len(shorten) > 100:
+                shorten = f'{ip_str[:45]}({len(ip_str)-90} chars elided){ip_str[-45:]}'
+            raise AddressValueError(f"At most 45 characters expected in "
+                                    f"{shorten!r}")
+
         octets = ip_str.split('.')
         if len(octets) != 4:
             raise AddressValueError("Expected 4 octets in %r" % ip_str)
@@ -1588,6 +1595,8 @@ class _BaseV6:
     _HEXTET_COUNT = 8
     _HEX_DIGITS = frozenset('0123456789ABCDEFabcdef')
     _max_prefixlen = IPV6LENGTH
+    # The longest valid IPv6 string is 39 chars, so 45 provides buffer.
+    _MAX_STR_LEN = 45
 
     # There are only a bunch of valid v6 netmasks, so we cache them all
     # when constructed (see _make_netmask()).
@@ -1629,6 +1638,16 @@ class _BaseV6:
         """
         if not ip_str:
             raise AddressValueError('Address cannot be empty')
+
+        # Add this general string length check at the beginning for consistency with IPv4
+        # and to catch extremely long invalid inputs before more complex parsing.
+        if len(ip_str) > cls._MAX_STR_LEN:
+            shorten = ip_str
+            # If the string is exceedingly long, elide characters for readability in the error message.
+            if len(shorten) > 100: # Arbitrary threshold for shortening
+                shorten = f'{ip_str[:45]}({len(ip_str)-90} chars elided){ip_str[-45:]}'
+            raise AddressValueError(f"At most {cls._MAX_STR_LEN} characters expected in "
+                                    f"{shorten!r}")
 
         parts = ip_str.split(':')
 
