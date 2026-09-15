@@ -2843,10 +2843,23 @@ _PyXI_Exit(_PyXI_session *session, _PyXI_failure *override,
             PyErr_FormatUnraisable(
                 "Exception ignored while capturing preserved objects");
         }
+        else if (_PyErr_Occurred(tstate)) {
+            // Restoring the preserved namespace (e.g. unpickling a result)
+            // raised an exception, which we propagate as the failure.
+            _PyXI_failure _override = XI_FAILURE_INIT;
+            _override.code = _PyXI_ERR_PRESERVE_FAILURE;
+            _propagate_not_shareable_error(tstate, &_override);
+            PyObject *exc = xi_error_resolve_current_exc(tstate, &_override);
+            assert(exc != NULL);
+            failure = xi_error_set_exc(tstate, &err, exc);
+            Py_DECREF(exc);
+            if (failure == NULL && _override.code == _PyXI_ERR_NOT_SHAREABLE) {
+                xi_error_set_override(tstate, &err, &_override);
+            }
+        }
         else {
             xi_error_set_override_code(
                             tstate, &err, _PyXI_ERR_PRESERVE_FAILURE);
-            _propagate_not_shareable_error(tstate, err.override);
         }
     }
     if (result != NULL) {
