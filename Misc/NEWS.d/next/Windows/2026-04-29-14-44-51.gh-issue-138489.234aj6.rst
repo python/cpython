@@ -1,0 +1,4 @@
+Windows distributions now include a :file:`build-details.json` file (see
+:pep:`739`). The legacy installer does not install it, but all other
+distributions from python.org and all preset configurations in the
+``PC\layout`` script will include one.

@@ -1,2 +1,0 @@
-Attribute ``__qualname__`` is added to :class:`typing.TypeAliasType`.
-Patch by Mikhail Efimov.

@@ -1,0 +1,2 @@
+Add the :meth:`!tkinter.PhotoImage.redither` method, wrapping the photo image
+``redither`` Tk command.

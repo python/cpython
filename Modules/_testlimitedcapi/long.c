@@ -1,5 +1,7 @@
 #include "pyconfig.h"   // Py_GIL_DISABLED
-#ifndef Py_GIL_DISABLED
+#ifdef Py_GIL_DISABLED
+#  define Py_TARGET_ABI3T 0x030f0000
+#else
    // Need limited C API 3.14 to test PyLong_AsInt64()
 #  define Py_LIMITED_API 0x030e0000
 #endif
@@ -451,13 +453,13 @@ _testlimitedcapi.test_long_as_size_t
 
 Test the PyLong_As{Size,Ssize}_t API.
 
-At present this just tests that non-integer arguments are handled correctly.
-It should be extended to test overflow handling.
+At present this just tests that non-integer arguments are handled
+correctly.  It should be extended to test overflow handling.
 [clinic start generated code]*/
 
 static PyObject *
 _testlimitedcapi_test_long_as_size_t_impl(PyObject *module)
-/*[clinic end generated code: output=297a9f14a42f55af input=8923d8f2038c46f4]*/
+/*[clinic end generated code: output=297a9f14a42f55af input=692e73744b35bf6e]*/
 {
     size_t out_u;
     Py_ssize_t out_s;
@@ -762,8 +764,9 @@ static PyObject *
 pylong_asint32(PyObject *module, PyObject *arg)
 {
     NULLABLE(arg);
-    int32_t value;
+    int32_t value = UNINITIALIZED_INT;
     if (PyLong_AsInt32(arg, &value) < 0) {
+        assert(value == UNINITIALIZED_INT);
         return NULL;
     }
     return PyLong_FromInt32(value);
@@ -773,8 +776,9 @@ static PyObject *
 pylong_asuint32(PyObject *module, PyObject *arg)
 {
     NULLABLE(arg);
-    uint32_t value;
+    uint32_t value = UNINITIALIZED_INT;
     if (PyLong_AsUInt32(arg, &value) < 0) {
+        assert(value == UNINITIALIZED_INT);
         return NULL;
     }
     return PyLong_FromUInt32(value);
@@ -785,8 +789,9 @@ static PyObject *
 pylong_asint64(PyObject *module, PyObject *arg)
 {
     NULLABLE(arg);
-    int64_t value;
+    int64_t value = UNINITIALIZED_INT;
     if (PyLong_AsInt64(arg, &value) < 0) {
+        assert(value == UNINITIALIZED_INT);
         return NULL;
     }
     return PyLong_FromInt64(value);
@@ -796,8 +801,9 @@ static PyObject *
 pylong_asuint64(PyObject *module, PyObject *arg)
 {
     NULLABLE(arg);
-    uint64_t value;
+    uint64_t value = UNINITIALIZED_INT;
     if (PyLong_AsUInt64(arg, &value) < 0) {
+        assert(value == UNINITIALIZED_INT);
         return NULL;
     }
     return PyLong_FromUInt64(value);

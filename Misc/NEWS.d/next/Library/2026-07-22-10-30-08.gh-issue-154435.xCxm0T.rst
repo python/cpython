@@ -1,0 +1,3 @@
+Fix :func:`os.posix_fadvise` and :func:`os.posix_fallocate` on DragonFly BSD:
+they raised :exc:`OSError` with a meaningless error code,
+because these functions return -1 and set ``errno`` there.

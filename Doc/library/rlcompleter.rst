@@ -4,8 +4,6 @@
 .. module:: rlcompleter
    :synopsis: Python identifier completion, suitable for the GNU readline library.
 
-.. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
-
 **Source code:** :source:`Lib/rlcompleter.py`
 
 --------------
