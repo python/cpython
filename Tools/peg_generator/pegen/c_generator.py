@@ -375,6 +375,35 @@ class CCallMakerVisitor(GrammarVisitor):
         return super().visit(node)
 
 
+def consuming_rules(rules: dict[str, Rule]) -> set[str]:
+    """Conservatively prove which rules consume a token whenever they succeed."""
+    consuming: set[str] = set()
+
+    def consumes(node: Any) -> bool:
+        if isinstance(node, NamedItem):
+            return consumes(node.item)
+        if isinstance(node, NameLeaf):
+            return node.value not in rules or node.value in consuming
+        if isinstance(node, StringLeaf):
+            return True
+        if isinstance(node, Group):
+            return consumes(node.rhs)
+        if isinstance(node, Rhs):
+            return bool(node.alts) and all(any(consumes(i) for i in alt.items) for alt in node.alts)
+        if isinstance(node, (Forced, Repeat1, Gather)):
+            return consumes(node.node)
+        # Predicates, cuts, optional items, and zero-or-more items can succeed
+        # without consuming. Actions are assumed not to rewrite parser marks.
+        return False
+
+    while True:
+        added = {name for name, rule in rules.items()
+                 if name not in consuming and consumes(rule.rhs)}
+        if not added:
+            return consuming
+        consuming.update(added)
+
+
 class CParserGenerator(ParserGenerator, GrammarVisitor):
     def __init__(
         self,
@@ -394,9 +423,11 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         self.debug = debug
         self.skip_actions = skip_actions
         self.cleanup_statements: list[str] = []
+        self.consuming = consuming_rules(self.rules)
+        self.prefix_calls: dict[int, tuple[str, str, str]] = {}
 
     def add_level(self) -> None:
-        self.print("if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {")
+        self.print("if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {")
         with self.indent():
             self.print("_Pypegen_stack_overflow(p);")
         self.print("}")
@@ -572,11 +603,15 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
             self.print("}")
             self.print("int _mark = p->mark;")
             self.print("int _resmark = p->mark;")
+            self.print(f"Memo *_memo = _PyPegen_insert_memo_direct(p, _mark, {node.name}_type);")
+            self.print("if (_memo == NULL) {")
+            with self.indent():
+                self.add_return("NULL")
+            self.print("}")
             self.print("while (1) {")
             with self.indent():
-                self.call_with_errorcheck_return(
-                    f"_PyPegen_update_memo(p, _mark, {node.name}_type, _res)", "_res"
-                )
+                self.print("_memo->node = _res;")
+                self.print("_memo->mark = p->mark;")
                 self.print("p->mark = _mark;")
                 self.print(f"void *_raw = {node.name}_raw(p);")
                 self.print("if (p->error_indicator) {")
@@ -611,6 +646,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
                     self.add_return("_res")
                 self.print("}")
             self.print("int _mark = p->mark;")
+            self.prepare_prefix_calls(rhs)
             if any(alt.action and "EXTRA" in alt.action for alt in rhs.alts):
                 self._set_up_token_start_metadata_extraction()
             self.visit(
@@ -670,7 +706,37 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
                 self.print(f"_PyPegen_insert_memo(p, _start_mark, {node.name}_type, _seq);")
             self.add_return("_seq")
 
+    def prepare_prefix_calls(self, rhs: Rhs) -> None:
+        # Reuse a memoized, consuming prefix only within a consecutive group.
+        # Suffix parsing starts after the prefix and cannot revisit its start
+        # through ordinary grammar backtracking. Diagnostic calls are unchanged.
+        def candidate(alt: Alt) -> Rule | None:
+            if not alt.items or not isinstance(alt.items[0].item, NameLeaf):
+                return None
+            rule = self.rules.get(alt.items[0].item.value)
+            if rule is None or rule.name not in self.consuming:
+                return None
+            if self._should_memoize(rule) or (rule.left_recursive and rule.leader):
+                return rule
+            return None
+
+        i = 0
+        while i < len(rhs.alts):
+            rule = candidate(rhs.alts[i])
+            j = i + 1
+            while rule is not None and j < len(rhs.alts) and candidate(rhs.alts[j]) is rule:
+                j += 1
+            if rule is not None and j - i > 1:
+                name = self.unique_varname("_prefix")
+                result, end, valid = name + "_result", name + "_end", name + "_valid"
+                self.print(f"{rule.type or 'void *'} {result} = NULL;")
+                self.print(f"int {end} = 0, {valid} = 0;")
+                for alt in rhs.alts[i:j]:
+                    self.prefix_calls[id(alt.items[0])] = result, end, valid
+            i = j
+
     def visit_Rule(self, node: Rule) -> None:
+        self.prefix_calls = {}
         is_loop = node.is_loop()
         is_gather = node.is_gather()
         rhs = node.flatten()
@@ -712,6 +778,15 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
 
     def visit_NamedItem(self, node: NamedItem) -> None:
         call = self.callmakervisitor.generate_call(node)
+        if id(node) in self.prefix_calls:
+            result, end, valid = self.prefix_calls[id(node)]
+            original = f"{call.function}({', '.join(map(str, call.arguments))})"
+            call.function = (
+                f"((!p->call_invalid_rules && {valid}) ? "
+                f"(p->mark = {end}, {result}) : "
+                f"({result} = {original}, {end} = p->mark, {valid} = 1, {result}))"
+            )
+            call.arguments = []
         if call.assigned_variable:
             call.assigned_variable = self.dedupe(call.assigned_variable)
         self.print(call)

@@ -102,6 +102,17 @@ _PyPegen_insert_memo(Parser *p, int mark, int type, void *node)
     return 0;
 }
 
+// Like _PyPegen_insert_memo(), but returns the inserted Memo so callers
+// can update it in place without re-walking the token's memo list.
+Memo *
+_PyPegen_insert_memo_direct(Parser *p, int mark, int type)
+{
+    if (_PyPegen_insert_memo(p, mark, type, NULL) < 0) {
+        return NULL;
+    }
+    return p->tokens[mark]->memo;
+}
+
 // Like _PyPegen_insert_memo(), but updates an existing node if found.
 int
 _PyPegen_update_memo(Parser *p, int mark, int type, void *node)
@@ -186,6 +197,32 @@ _get_keyword_or_name_type(Parser *p, const char *text, Py_ssize_t length)
     return NAME;
 }
 
+// Token types whose text is consumed by grammar actions or helpers, other
+// than NAME-derived tokens (identifiers and keywords), which always keep
+// their text: error actions may print keyword text (e.g. invalid_kwarg's
+// "cannot assign to True"). For every other type the token text is never
+// read again, so materializing a PyBytes for it is wasted work.
+static inline int
+token_needs_text(int type)
+{
+    switch (type) {
+        case NAME:
+        case NUMBER:
+        case STRING:
+        case FSTRING_START:
+        case FSTRING_MIDDLE:
+        case FSTRING_END:
+        case TSTRING_START:
+        case TSTRING_MIDDLE:
+        case TSTRING_END:
+        case TYPE_COMMENT:
+        case NOTEQUAL:  // _PyPegen_check_barry_as_flufl() reads its text
+            return 1;
+        default:
+            return 0;
+    }
+}
+
 static int
 initialize_token(Parser *p, Token *parser_token, struct token *new_token, int token_type) {
     assert(parser_token != NULL);
@@ -194,13 +231,18 @@ initialize_token(Parser *p, Token *parser_token, struct token *new_token, int to
     const char *text = _PyToken_TextView(p->tok, new_token, &length);
     parser_token->type = token_type == NAME
         ? _get_keyword_or_name_type(p, text, length) : token_type;
-    parser_token->bytes = PyBytes_FromStringAndSize(text, length);
-    if (parser_token->bytes == NULL) {
-        return -1;
+    if (token_type == NAME || token_needs_text(parser_token->type)) {
+        parser_token->bytes = PyBytes_FromStringAndSize(text, length);
+        if (parser_token->bytes == NULL) {
+            return -1;
+        }
+        if (_PyArena_AddPyObject(p->arena, parser_token->bytes) < 0) {
+            Py_DECREF(parser_token->bytes);
+            return -1;
+        }
     }
-    if (_PyArena_AddPyObject(p->arena, parser_token->bytes) < 0) {
-        Py_DECREF(parser_token->bytes);
-        return -1;
+    else {
+        parser_token->bytes = NULL;
     }
 
     parser_token->metadata = NULL;
@@ -880,6 +922,15 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int flags,
         PyMem_Free(p);
         return (Parser *) PyErr_NoMemory();
     }
+    p->tstate = PyThreadState_Get();
+    // Stack limits are initialized when the thread state is attached.
+    assert(((_PyThreadStateImpl *)p->tstate)->c_stack_hard_limit != 0);
+    p->stack_soft_limit = ((_PyThreadStateImpl *)p->tstate)->c_stack_soft_limit;
+#if _Py_STACK_GROWS_DOWN
+    p->stack_soft_limit += _PyOS_STACK_MARGIN_BYTES;
+#else
+    p->stack_soft_limit -= _PyOS_STACK_MARGIN_BYTES;
+#endif
     p->level = 0;
     p->call_invalid_rules = 0;
     p->last_stmt_location.lineno = 0;
