@@ -61,8 +61,8 @@ class PwdTest(unittest.TestCase):
         self.assertRaises(TypeError, pwd.getpwuid, 0.0)
         self.assertRaises(TypeError, pwd.getpwuid, 0, 0)
         # should be out of uid_t range
-        self.assertRaises(KeyError, pwd.getpwuid, 2**128)
-        self.assertRaises(KeyError, pwd.getpwuid, -2**128)
+        self.assertRaises(OverflowError, pwd.getpwuid, 2**128)
+        self.assertRaises(OverflowError, pwd.getpwuid, -2**128)
         self.assertRaises(TypeError, pwd.getpwnam)
         self.assertRaises(TypeError, pwd.getpwnam, 42)
         self.assertRaises(TypeError, pwd.getpwnam, b'root')
