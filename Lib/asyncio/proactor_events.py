@@ -792,10 +792,30 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         self._csock.setblocking(False)
         self._internal_fds += 1
 
+    def _rebuild_self_pipe(self):
+        # gh-156333: the self-pipe socketpair reached EOF -- the OS tore the
+        # loopback connection down (e.g. across a power/session state change).
+        # Re-arming a read on the dead socket would busy-loop the CPU, so
+        # rebuild the pair instead. Build the replacement before touching the
+        # old sockets so a failure leaves the previous state intact, and
+        # re-register the wakeup fd before closing the old sockets, mirroring
+        # close().
+        ssock, csock = socket.socketpair()
+        ssock.setblocking(False)
+        csock.setblocking(False)
+        if threading.current_thread() is threading.main_thread():
+            # The wakeup fd was registered with the old socket.
+            signal.set_wakeup_fd(csock.fileno())
+        self._ssock.close()
+        self._csock.close()
+        self._ssock, self._csock = ssock, csock
+
     def _loop_self_reading(self, f=None):
         try:
-            if f is not None:
-                f.result()  # may raise
+            if f is None:
+                data = None
+            else:
+                data = f.result()  # may raise
             if self._self_reading_future is not f:
                 # When we scheduled this Future, we assigned it to
                 # _self_reading_future. If it's not there now, something has
@@ -804,6 +824,8 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
                 # that case stop here instead of continuing to schedule a new
                 # iteration.
                 return
+            if f is not None and not data:
+                self._rebuild_self_pipe()
             f = self._proactor.recv(self._ssock, 4096)
         except exceptions.CancelledError:
             # _close_self_pipe() has been called, stop waiting for data
