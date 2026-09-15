@@ -1649,7 +1649,6 @@ static int
 mmap_ass_subscript_lock_held(PyObject *op, PyObject *item, PyObject *value)
 {
     mmap_object *self = mmap_object_CAST(op);
-    CHECK_VALID(-1);
 
     if (!is_writable(self))
         return -1;
