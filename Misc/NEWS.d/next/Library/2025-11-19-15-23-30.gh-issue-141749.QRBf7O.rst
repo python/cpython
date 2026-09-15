@@ -1,0 +1,3 @@
+:mod:`pickle`: align exceptions raised by the pure Python implementation of :func:`pickle.load`
+with the C implementation. Previous cases raising :exc:`KeyError` or :exc:`IndexError`
+now raise :exc:`~pickle.UnpicklingError`. Patch by Djoume Salvetti.
