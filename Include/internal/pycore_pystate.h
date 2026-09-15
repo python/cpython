@@ -339,8 +339,17 @@ _Py_RecursionLimit_GetMargin(PyThreadState *tstate)
     assert(_tstate->c_stack_hard_limit != 0);
     intptr_t here_addr = _Py_get_machine_stack_pointer();
 #if _Py_STACK_GROWS_DOWN
+    if (here_addr < (intptr_t)(_tstate->c_stack_hard_limit - _PyOS_STACK_MARGIN_BYTES)) {
+        // Far out of bounds -> assume stack switching has occurred.
+        // Report plenty of margin so that _Py_Dealloc() does not defer
+        // objects to a chain that would never be destroyed.
+        return _PyOS_STACK_MARGIN;
+    }
     return Py_ARITHMETIC_RIGHT_SHIFT(intptr_t, here_addr - (intptr_t)_tstate->c_stack_soft_limit, _PyOS_STACK_MARGIN_SHIFT);
 #else
+    if (here_addr > (intptr_t)(_tstate->c_stack_hard_limit + _PyOS_STACK_MARGIN_BYTES)) {
+        return _PyOS_STACK_MARGIN;
+    }
     return Py_ARITHMETIC_RIGHT_SHIFT(intptr_t, (intptr_t)_tstate->c_stack_soft_limit - here_addr, _PyOS_STACK_MARGIN_SHIFT);
 #endif
 }
