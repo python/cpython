@@ -1,0 +1,4 @@
+:func:`urllib.parse.urlsplit` and :func:`urllib.parse.urlparse` now raise
+:exc:`ValueError` for URLs with an invalid port, instead of failing only when
+the ``port`` attribute of the result is read.  This also rejects URLs with an
+unbracketed IPv6 address, like ``"http://::1/"``.
