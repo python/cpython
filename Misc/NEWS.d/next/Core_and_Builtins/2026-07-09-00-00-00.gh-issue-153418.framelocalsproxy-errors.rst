@@ -1,0 +1,3 @@
+Fix ``frame.f_locals |= ...`` mishandling exceptions raised by the right-hand
+mapping, and fix ``frame.f_locals.update()`` unconditionally replacing any
+exception with :exc:`TypeError`.
