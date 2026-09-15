@@ -302,7 +302,9 @@ static void check_stdio_details(const wchar_t *encoding, const wchar_t *errors)
     _PyConfig_InitCompatConfig(&config);
     /* Force the given IO encoding */
     if (encoding) {
-        config_set_string(&config, &config.stdio_encoding, encoding);
+        config_set_string(&config, &config.stdin_encoding, encoding);
+        config_set_string(&config, &config.stdout_encoding, encoding);
+        config_set_string(&config, &config.stderr_encoding, encoding);
     }
     if (errors) {
         config_set_string(&config, &config.stdio_errors, errors);
@@ -770,7 +772,9 @@ static int test_init_from_config(void)
     config.buffered_stdio = 0;
 
     putenv("PYTHONIOENCODING=cp424");
-    config_set_string(&config, &config.stdio_encoding, L"iso8859-1");
+    config_set_string(&config, &config.stdin_encoding, L"iso8859-1");
+    config_set_string(&config, &config.stdout_encoding, L"iso8859-1");
+    config_set_string(&config, &config.stderr_encoding, L"iso8859-1");
     config_set_string(&config, &config.stdio_errors, L"replace");
 
     putenv("PYTHONNOUSERSITE=");

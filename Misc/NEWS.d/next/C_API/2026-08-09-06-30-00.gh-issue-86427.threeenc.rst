@@ -1,0 +1,5 @@
+Replace :c:member:`!PyConfig.stdio_encoding` with three separate members:
+:c:member:`PyConfig.stdin_encoding`, :c:member:`PyConfig.stdout_encoding` and
+:c:member:`PyConfig.stderr_encoding`.  In the legacy Windows stdio mode they
+are initialized with the encoding of the device the corresponding stream is
+connected to.

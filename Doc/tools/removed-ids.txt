@@ -31,6 +31,7 @@ c-api/frame.html: c.PyUnstable_ExecutableKinds.PyUnstable_EXECUTABLE_KIND_BUILTI
 c-api/frame.html: c.PyUnstable_ExecutableKinds.PyUnstable_EXECUTABLE_KIND_METHOD_DESCRIPTOR
 c-api/frame.html: c.PyUnstable_ExecutableKinds.PyUnstable_EXECUTABLE_KIND_PY_FUNCTION
 c-api/frame.html: c.PyUnstable_ExecutableKinds.PyUnstable_EXECUTABLE_KIND_SKIP
+c-api/init_config.html: c.PyConfig.stdio_encoding
 
 
 ## Old names for grammar tokens
