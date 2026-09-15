@@ -28,7 +28,7 @@ _Py_GetMainfile(char *buffer, size_t maxlen)
         Py_XDECREF(module);
         return -1;
     }
-    Py_ssize_t size = _PyModule_GetFilenameUTF8(module, buffer, maxlen);
+    Py_ssize_t size = _PyModule_GetFilename(module, buffer, maxlen);
     Py_DECREF(module);
     return size;
 }

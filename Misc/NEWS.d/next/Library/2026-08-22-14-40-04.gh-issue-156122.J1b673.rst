@@ -1,0 +1,2 @@
+Fix a crash in :meth:`concurrent.interpreters.Interpreter.call` when
+``__main__.__file__`` contains lone surrogates.
