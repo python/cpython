@@ -59,6 +59,10 @@ jobs:
 
     - uses: actions/checkout@v4
 
+    - name: Trust the checked-out workspace
+      # checkout configures a temporary HOME, not the HOME used by shell steps.
+      run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
     - name: Install All Dependencies
       run: sh -x ./.github/posix-deps-zypp.sh
 
@@ -93,12 +97,8 @@ jobs:
     - name: Check for changes in generated files
       if: matrix.task == 'generated-files'
       run: |
-        if ! git diff --quiet; then
-          echo "Generated files are not up to date. Please run 'make regen-all' and commit the changes."
-          git status
-          git diff
-          exit 1
-        fi
+        git status --short
+        git diff --exit-code
 
     - name: Check exported libpython symbols
       if: matrix.task == 'generated-files'
