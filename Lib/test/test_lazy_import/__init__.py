@@ -53,7 +53,8 @@ class LazyImportTests(LazyImportTestCase):
             self.fail('lazy import failed')
 
         self.assertFalse("test.test_lazy_import.data.basic2" in sys.modules)
-        self.assertIn("test.test_lazy_import.data", sys.lazy_modules)
+        # The package is already loaded, so it is not a pending import.
+        self.assertNotIn("test.test_lazy_import.data", sys.lazy_modules)
         self.assertIn("test.test_lazy_import.data.basic2", sys.lazy_modules)
         test.test_lazy_import.data.basic_from_unused.basic2
         self.assertNotIn("test.test_import.data", sys.lazy_modules)
@@ -1249,6 +1250,103 @@ class SysLazyModulesTrackingTests(LazyImportTestCase):
                 f"expected 'json' in sys.lazy_modules, got {set(sys.lazy_modules)}"
             )
             print("OK")
+        """)
+        assert_python_ok("-c", code)
+
+    def test_already_loaded_module_is_not_tracked(self):
+        """A lazy import of an already loaded module should not be tracked."""
+        code = textwrap.dedent("""
+            import sys
+
+            # Loaded by a regular import.
+            import json
+            lazy import json as lazy_json
+            assert "json" not in sys.lazy_modules, (
+                f"expected 'json' not in sys.lazy_modules, got {sys.lazy_modules}"
+            )
+
+            # Loaded by reifying an earlier lazy import.
+            lazy import base64
+            _ = base64.b64encode
+            lazy import base64 as lazy_base64
+            assert "base64" not in sys.lazy_modules, (
+                f"expected 'base64' not in sys.lazy_modules, got {sys.lazy_modules}"
+            )
+        """)
+        assert_python_ok("-c", code)
+
+    def test_already_loaded_submodule_is_not_tracked(self):
+        """`lazy from` a loaded submodule should not be tracked either."""
+        code = textwrap.dedent("""
+            import sys
+            import test.test_lazy_import.data.pkg.b
+            lazy from test.test_lazy_import.data.pkg import b
+            assert "test.test_lazy_import.data.pkg.b" not in sys.lazy_modules, (
+                f"expected 'pkg.b' untracked, got {sys.lazy_modules}"
+            )
+        """)
+        assert_python_ok("-c", code)
+
+    def test_attribute_entry_removed_on_reification(self):
+        """`lazy from x import attr` should untrack "x.attr" once resolved."""
+        code = textwrap.dedent("""
+            import sys
+            lazy from test.test_lazy_import.data.basic2 import x
+            assert "test.test_lazy_import.data.basic2.x" in sys.lazy_modules, (
+                f"expected 'basic2.x' tracked, got {sys.lazy_modules}"
+            )
+            _ = x
+            assert "test.test_lazy_import.data.basic2.x" not in sys.lazy_modules, (
+                f"expected 'basic2.x' untracked, got {sys.lazy_modules}"
+            )
+        """)
+        assert_python_ok("-c", code)
+
+    def test_failed_reification_stays_tracked(self):
+        """A lazy import that fails to resolve must stay tracked."""
+        code = textwrap.dedent("""
+            import sys
+            lazy import test.test_lazy_import.data.broken_module
+            try:
+                _ = test.test_lazy_import.data.broken_module
+            except ValueError:
+                pass
+            else:
+                raise AssertionError("ValueError was not raised")
+            assert "test.test_lazy_import.data.broken_module" in sys.lazy_modules, (
+                f"failed reification must stay tracked, got {sys.lazy_modules}"
+            )
+        """)
+        assert_python_ok("-c", code)
+
+    def test_blocked_module_is_still_tracked(self):
+        """A ``None`` entry in sys.modules must not count as loaded."""
+        code = textwrap.dedent("""
+            import sys
+            sys.modules['test.test_lazy_import.data.basic2'] = None
+            lazy import test.test_lazy_import.data.basic2
+            assert "test.test_lazy_import.data.basic2" in sys.lazy_modules, (
+                f"blocked module must stay tracked, got {sys.lazy_modules}"
+            )
+        """)
+        assert_python_ok("-c", code)
+
+    def test_pending_submodule_is_still_tracked(self):
+        """`lazy from` a submodule that is not loaded must stay tracked."""
+        code = textwrap.dedent("""
+            import sys
+            lazy from test.test_lazy_import.data.pkg import b
+            assert "test.test_lazy_import.data.pkg.b" in sys.lazy_modules, (
+                f"expected 'pkg.b' tracked, got {sys.lazy_modules}"
+            )
+            import test.test_lazy_import.data.pkg
+            assert "test.test_lazy_import.data.pkg.b" not in sys.modules, (
+                "loading the package must not load the submodule"
+            )
+            assert "test.test_lazy_import.data.pkg.b" in sys.lazy_modules, (
+                f"loading the package must not untrack the submodule, "
+                f"got {sys.lazy_modules}"
+            )
         """)
         assert_python_ok("-c", code)
 
