@@ -100,9 +100,11 @@ class TestLiterals(unittest.TestCase):
             '\U00100000\U0010ffff\U0010fffd',
             'ä',
             '\\ä',
+            "\\П",
+            "áàäéèęöő.\\n",
         ):
             with self.subTest(s=s):
-                self.assertEqual(eval(f""" '{s}' """), s)
+                self.assertEqual(eval(f"{s!r}"), s)
 
     def test_eval_str_incomplete(self):
         self.assertRaises(SyntaxError, eval, r""" '\x' """)
