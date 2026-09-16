@@ -302,6 +302,11 @@ _testcppext_exec(PyObject *module)
     Py_BUILD_ASSERT(sizeof(int) == sizeof(unsigned int));
     assert(Py_BUILD_ASSERT_EXPR(sizeof(int) == sizeof(unsigned int)) == 0);
 
+    // Test Py_MIN(), Py_MAX(), Py_ABS()
+    assert(Py_MIN(5, 11) == 5);
+    assert(Py_MAX(5, 11) == 11);
+    assert(Py_ABS(-5) == 5);
+
     // Test Py_CLEAR(): use typeof()/__typeof__() if available, or memcpy()
     PyObject *obj = Py_None;
     Py_CLEAR(obj);
