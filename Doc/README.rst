@@ -87,6 +87,8 @@ Available make targets are:
 * "linkcheck", which checks all external references to see whether they are
   broken, redirected or malformed, and outputs this information to stdout as
   well as a plain-text (.txt) file.
+* "linklint", which removes needless links from the documentation during the
+  Sphinx build.
 
 * "changes", which builds an overview over all versionadded/versionchanged/
   deprecated items in the current version. This is meant as a help for the
