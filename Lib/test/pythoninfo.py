@@ -1341,7 +1341,6 @@ def collect_info(info):
         # Other functions may block on os.urandom() indirectly and so change
         # its state.
         collect_urandom,
-        collect_builtins,
         collect_bz2,
         collect_cc,
         collect_curses,
