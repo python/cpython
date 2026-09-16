@@ -3,8 +3,11 @@
 
 from idlelib import pyshell
 import os
+import sys
 import unittest
-from test.support import requires
+from unittest import mock
+from test.support import os_helper, requires
+from test.support.script_helper import assert_python_ok
 from tkinter import Tk
 
 
@@ -36,6 +39,21 @@ class FunctionTest(unittest.TestCase):
         eq(pyshell.fix_user_path(['', '/a', idlelib_dir, '/b']), ['', '/a', '/b'])
         eq(pyshell.fix_user_path(['/a', '/b']), ['/a', '/b'])
         eq(pyshell.fix_user_path([idlelib_dir]), [])
+
+    def test_shadowed_stdlib(self):
+        # gh-70331: user files in the current directory must not shadow
+        # the stdlib modules imported by IDLE.
+        with os_helper.temp_dir() as cwd:
+            for name in ('random', 'tkinter'):
+                os_helper.create_empty_file(os.path.join(cwd, f'{name}.py'))
+            assert_python_ok('-m', 'idlelib', '-h', __isolated=False, __cwd=cwd)
+
+    def test_build_subprocess_arglist(self):
+        interp = mock.Mock(port=1234)
+        args = pyshell.ModifiedInterpreter.build_subprocess_arglist(interp)
+        # gh-70331: -P keeps the current directory out of sys.path.
+        self.assertEqual(args[:2], [sys.executable, '-P'])
+        self.assertEqual(args[-1], '1234')
 
 
 class PyShellFileListTest(unittest.TestCase):
