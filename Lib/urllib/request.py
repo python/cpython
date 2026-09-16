@@ -84,6 +84,7 @@ f = urllib.request.urlopen('https://www.python.org/')
 import base64
 import bisect
 import contextlib
+import copy
 import email
 import hashlib
 import http.client
@@ -113,6 +114,11 @@ except ImportError:
 else:
     _have_ssl = True
 
+try:
+    import zlib
+except ImportError:
+    zlib = None
+
 __all__ = [
     # Classes
     'Request', 'OpenerDirector', 'BaseHandler', 'HTTPDefaultErrorHandler',
@@ -122,7 +128,7 @@ __all__ = [
     'HTTPBasicAuthHandler', 'ProxyBasicAuthHandler', 'AbstractDigestAuthHandler',
     'HTTPDigestAuthHandler', 'ProxyDigestAuthHandler', 'HTTPHandler',
     'FileHandler', 'FTPHandler', 'CacheFTPHandler', 'DataHandler',
-    'UnknownHandler', 'HTTPErrorProcessor',
+    'UnknownHandler', 'HTTPErrorProcessor', 'HTTPGzipHandler',
     # Functions
     'urlopen', 'install_opener', 'build_opener',
     'pathname2url', 'url2pathname', 'getproxies',
@@ -1404,6 +1410,107 @@ class HTTPCookieProcessor(BaseHandler):
 
     https_request = http_request
     https_response = http_response
+
+
+class _GzipReader(io.BufferedIOBase):
+    """Incrementally decode a gzip Content-Encoding response body."""
+
+    def __init__(self, fp):
+        self._fp = fp
+        self._decompressor = zlib.decompressobj(16 + zlib.MAX_WBITS)
+        self._buffer = b''
+        self._leftover = b''
+        self._got_data = False
+        self._eof = False
+
+    def readable(self):
+        return True
+
+    def _refill(self):
+        while True:
+            raw = self._leftover or self._fp.read(io.DEFAULT_BUFFER_SIZE)
+            self._leftover = b''
+            if not raw:
+                self._eof = True
+                data = self._decompressor.flush()
+                if self._got_data and not self._decompressor.eof:
+                    raise EOFError('compressed response ended before the '
+                                   'end-of-stream marker was reached')
+                return data
+            self._got_data = True
+            if self._decompressor.eof:
+                # The previous member ended; the remaining bytes start the
+                # next concatenated member.  Decode it with a fresh
+                # decompressor, and tolerate trailing bytes that are not
+                # another member, as the reader did before.
+                self._decompressor = zlib.decompressobj(16 + zlib.MAX_WBITS)
+                try:
+                    data = self._decompressor.decompress(raw)
+                except zlib.error:
+                    self._eof = True
+                    return b''
+            else:
+                data = self._decompressor.decompress(raw)
+            self._leftover = self._decompressor.unused_data
+            if data:
+                return data
+
+    def read(self, size=-1):
+        if size is None:
+            size = -1
+        while not self._eof and (size < 0 or len(self._buffer) < size):
+            self._buffer += self._refill()
+        if size < 0:
+            data, self._buffer = self._buffer, b''
+        else:
+            data, self._buffer = self._buffer[:size], self._buffer[size:]
+        return data
+
+    def close(self):
+        try:
+            fp = self._fp
+            if fp is not None:
+                self._fp = None
+                fp.close()
+        finally:
+            super().close()
+
+
+class HTTPGzipHandler(BaseHandler):
+    """Request and transparently decode gzip Content-Encoding responses.
+
+    This handler is not installed by build_opener() by default; add it
+    explicitly to opt in.  It sends Accept-Encoding: gzip unless the request
+    already carries an Accept-Encoding header, and decodes the response only
+    when it added that header, so a caller supplying its own Accept-Encoding
+    still receives the raw response.
+    """
+
+    def __init__(self):
+        if zlib is None:
+            raise ImportError('the zlib module is required for gzip decoding')
+
+    def http_request(self, request):
+        if not request.has_header('Accept-encoding'):
+            request.add_unredirected_header('Accept-encoding', 'gzip')
+            request._gzip_injected = True
+        return request
+
+    def http_response(self, request, response):
+        if (getattr(request, '_gzip_injected', False) and
+                response.headers.get('Content-Encoding', '').lower() == 'gzip'):
+            headers = copy.copy(response.headers)
+            del headers['Content-Encoding']
+            del headers['Content-Length']
+            result = addinfourl(_GzipReader(response), headers,
+                                response.url, response.code)
+            result.msg = response.msg
+            return result
+        return response
+
+    https_request = http_request
+    https_response = http_response
+
 
 class UnknownHandler(BaseHandler):
     def unknown_open(self, req):
