@@ -19,6 +19,16 @@ class FontTest(AbstractTkTest, unittest.TestCase):
         except tkinter.TclError:
             cls.font = font.Font(root=cls.root, name=fontname, exists=False)
 
+    def tcl_font_object(self, desc):
+        # Return a font name or description as a Tcl object representing a
+        # font, as Tk returns for example from ttk.Style().lookup().
+        tk = self.root.tk
+        tk.call('set', '_font', desc)
+        tk.eval('font measure $_font x')  # convert the Tcl object to a font
+        obj = tk.call('set', '_font')
+        tk.call('unset', '_font')
+        return obj
+
     def test_configure(self):
         self.assertEqual(self.font.config, self.font.configure)
         options = self.font.configure()
@@ -71,6 +81,27 @@ class FontTest(AbstractTkTest, unittest.TestCase):
             with self.subTest(font=desc):
                 f = font.Font(root=self.root, font=desc)
                 self.assertGreater(int(f.cget('size')), 0)  # pixels -> points
+
+    def test_tcl_object(self):
+        # Tk can return a font as a Tcl object (gh-156961).
+        if not self.wantobjects:
+            self.skipTest('Tcl objects are converted to strings')
+        obj = self.tcl_font_object(fontname)
+        self.assertEqual(obj.typename, 'font')
+
+        # It can be used as the name of an existing named font.
+        for f in (font.Font(root=self.root, name=obj, exists=True),
+                  font.nametofont(obj, root=self.root)):
+            # The Tcl object is kept as is, so that it is passed back to Tk.
+            self.assertIs(f.name, obj)
+            self.assertEqual(str(f), fontname)
+            self.assertEqual(f.actual(), self.font.actual())
+            self.assertEqual(f, self.font)
+            self.assertEqual(self.font, f)
+        # Referring to a non-existent named font still fails.
+        self.assertRaisesRegex(tkinter.TclError, 'named font nosuchfont',
+                               font.Font, root=self.root, exists=True,
+                               name=self.tcl_font_object('nosuchfont'))
 
     def test_copy(self):
         # size=-20 (pixels): copy() copies the configured options, so the

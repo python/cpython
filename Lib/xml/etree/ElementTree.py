@@ -104,6 +104,9 @@ import weakref
 from . import ElementPath
 
 
+# The white space characters of the XML specification (see XML 1.0, 2.3).
+_XML_WHITESPACE = " \t\r\n"
+
 class ParseError(SyntaxError):
     """An error when parsing an XML document.
 
@@ -131,9 +134,6 @@ class Element:
     An element's length is its number of subelements.  That means if you
     want to check if an element is truly empty, you should check BOTH
     its length AND its text attribute.
-
-    The element tag, attribute names, and attribute values can be either
-    bytes or strings.
 
     *tag* is the element name.  *attrib* is an optional dictionary containing
     element attributes. *extra* are additional element attributes given as
@@ -355,21 +355,17 @@ class Element:
         self.attrib[key] = value
 
     def keys(self):
-        """Get list of attribute names.
+        """Get attribute names.
 
-        Names are returned in an arbitrary order, just like an ordinary
-        Python dict.  Equivalent to attrib.keys()
+        Equivalent to attrib.keys()
 
         """
         return self.attrib.keys()
 
     def items(self):
-        """Get element attributes as a sequence.
+        """Get element attributes as (name, value) pairs.
 
-        The attributes are returned in arbitrary order.  Equivalent to
-        attrib.items().
-
-        Return a list of (name, value) tuples.
+        Equivalent to attrib.items().
 
         """
         return self.attrib.items()
@@ -1190,17 +1186,17 @@ def indent(tree, space="  ", level=0):
             child_indentation = indentations[level] + space
             indentations.append(child_indentation)
 
-        if not elem.text or not elem.text.strip():
+        if not elem.text or not elem.text.strip(_XML_WHITESPACE):
             elem.text = child_indentation
 
         for child in elem:
             if len(child):
                 _indent_children(child, child_level)
-            if not child.tail or not child.tail.strip():
+            if not child.tail or not child.tail.strip(_XML_WHITESPACE):
                 child.tail = child_indentation
 
         # Dedent after the last child by overwriting the previous indentation.
-        if not child.tail.strip():
+        if not child.tail.strip(_XML_WHITESPACE):
             child.tail = indentations[level]
 
     _indent_children(tree, 0)
@@ -1572,10 +1568,10 @@ class XMLParser:
             parser.CommentHandler = target.comment
         if hasattr(target, 'pi'):
             parser.ProcessingInstructionHandler = target.pi
+        parser.StartDoctypeDeclHandler = self._start_doctype
         # Configure pyexpat: buffering, new-style attribute handling.
         parser.buffer_text = 1
         parser.ordered_attributes = 1
-        self._doctype = None
         self.entity = {}
         try:
             self.version = "Expat %d.%d.%d" % expat.version_info
@@ -1694,38 +1690,15 @@ class XMLParser:
                 err.lineno = self.parser.ErrorLineNumber
                 err.offset = self.parser.ErrorColumnNumber
                 raise err
-        elif prefix == "<" and text[:9] == "<!DOCTYPE":
-            self._doctype = [] # inside a doctype declaration
-        elif self._doctype is not None:
-            # parse doctype contents
-            if prefix == ">":
-                self._doctype = None
-                return
-            text = text.strip()
-            if not text:
-                return
-            self._doctype.append(text)
-            n = len(self._doctype)
-            if n > 2:
-                type = self._doctype[1]
-                if type == "PUBLIC" and n == 4:
-                    name, type, pubid, system = self._doctype
-                    if pubid:
-                        pubid = pubid[1:-1]
-                elif type == "SYSTEM" and n == 3:
-                    name, type, system = self._doctype
-                    pubid = None
-                else:
-                    return
-                if hasattr(self.target, "doctype"):
-                    self.target.doctype(name, pubid, system[1:-1])
-                elif hasattr(self, "doctype"):
-                    warnings.warn(
-                        "The doctype() method of XMLParser is ignored.  "
-                        "Define doctype() method on the TreeBuilder target.",
-                        RuntimeWarning)
 
-                self._doctype = None
+    def _start_doctype(self, name, system, pubid, has_internal_subset):
+        if hasattr(self.target, "doctype"):
+            self.target.doctype(name, pubid, system)
+        elif hasattr(self, "doctype"):
+            warnings.warn(
+                "The doctype() method of XMLParser is ignored.  "
+                "Define doctype() method on the TreeBuilder target.",
+                RuntimeWarning)
 
     def feed(self, data):
         """Feed encoded data to parser."""
@@ -1917,7 +1890,7 @@ class C14NWriterTarget:
         data = _join_text(self._data)
         del self._data[:]
         if self._strip_text and not self._preserve_space[-1]:
-            data = data.strip()
+            data = data.strip(_XML_WHITESPACE)
         if self._pending_start is not None:
             args, self._pending_start = self._pending_start, None
             qname_text = data if data and _looks_like_prefix_name(data) else None

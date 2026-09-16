@@ -34,14 +34,6 @@ The Document Object Model is being defined by the W3C in stages, or "levels" in
 their terminology.  The Python mapping of the API is substantially based on the
 DOM Level 2 recommendation.
 
-.. What if your needs are somewhere between SAX and the DOM?  Perhaps
-   you cannot afford to load the entire tree in memory but you find the
-   SAX model somewhat cumbersome and low-level.  There is also a module
-   called xml.dom.pulldom that allows you to build trees of only the
-   parts of a document that you need structured access to.  It also has
-   features that allow you to find your way around the DOM.
-   See http://www.prescod.net/python/pulldom
-
 DOM applications typically start by parsing some XML into a DOM.  How this is
 accomplished is not covered at all by DOM Level 1, and Level 2 provides only
 limited improvements: There is a :class:`DOMImplementation` object class which

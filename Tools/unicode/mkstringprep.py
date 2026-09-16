@@ -1,15 +1,20 @@
 import re
-from unicodedata import ucd_3_2_0 as unicodedata
+import os
+import unicodedata as unicodedata_current
+from unicodedata import ucd_3_2_0 as unicodedata_320
+
+FILENAME = "Tools/unicode/data/rfc3454.txt"
+URL = "https://www.rfc-editor.org/rfc/rfc3454.txt"
 
 def gen_category(cats):
     for i in range(0, 0x110000):
-        if unicodedata.category(chr(i)) in cats:
-            yield(i)
+        if unicodedata_320.category(chr(i)) in cats:
+            yield i
 
 def gen_bidirectional(cats):
     for i in range(0, 0x110000):
-        if unicodedata.bidirectional(chr(i)) in cats:
-            yield(i)
+        if unicodedata_320.bidirectional(chr(i)) in cats:
+            yield i
 
 def compact_set(l):
     single = []
@@ -47,8 +52,16 @@ def compact_set(l):
 
 ############## Read the tables in the RFC #######################
 
-with open("rfc3454.txt") as f:
-    data = f.readlines()
+try:
+    data_file = open(FILENAME, encoding='utf-8')
+except FileNotFoundError:
+    import urllib.request
+    os.makedirs(os.path.dirname(FILENAME), exist_ok=True)
+    urllib.request.urlretrieve(URL, filename=FILENAME)
+    data_file = open(FILENAME, encoding='utf-8')
+
+with data_file:
+    data = data_file.readlines()
 
 tables = []
 curname = None
@@ -116,10 +129,18 @@ There are two kinds of tables: sets, for which a member test is provided,
 and mappings, for which a mapping function is provided.
 \"\"\"
 
-from unicodedata import ucd_3_2_0 as unicodedata
+# This check asserts that mkstringprep.py has been run
+# when unicodedata is modified to ensure conformant behavior.
+import unicodedata
 """)
 
-print("assert unicodedata.unidata_version == %r" % (unicodedata.unidata_version,))
+print("assert unicodedata.unidata_version == %r" % (unicodedata_current.unidata_version,))
+
+print("""
+from unicodedata import ucd_3_2_0 as unicodedata_320
+""")
+
+print("assert unicodedata_320.unidata_version == %r" % (unicodedata_320.unidata_version,))
 
 # A.1 is the table of unassigned characters
 # XXX Plane 15 PUA is listed as unassigned in Python.
@@ -139,7 +160,7 @@ Cn -= set(range(0xFFFF, 0x110000, 0x10000))
 
 print("""
 def in_table_a1(code):
-    if unicodedata.category(code) != 'Cn': return False
+    if unicodedata_320.category(code) != 'Cn': return False
     c = ord(code)
     if 0xFDD0 <= c < 0xFDF0: return False
     return (c & 0xFFFF) not in (0xFFFE, 0xFFFF)
@@ -172,21 +193,33 @@ assert name == "B.3"
 
 # B.3 is mostly Python's .lower, except for a number
 # of special cases, e.g. considering canonical forms.
+# To enforce Unicode 3.2.0 behavior of .lower instead of
+# whatever Unicode version is included with Python we
+# add unassigned or newly case-folding codepoints to
+# the exception map, too.
 
 b3_exceptions = {}
 
 for k,v in table_b2.items():
     if list(map(ord, chr(k).lower())) != v:
         b3_exceptions[k] = "".join(map(chr,v))
+for cp in range(0x110000):
+    ch = chr(cp)
+    # Assigned in current Unicode version
+    # and supports case folding, but not
+    # explicitly in B.2 or B.3 tables.
+    if (unicodedata_current.category(ch) != "Cn"
+            and ch.lower() != ch
+            and cp not in table_b2
+            and cp not in table_b3):
+        b3_exceptions[cp] = ch  # Identity.
 
 b3 = sorted(b3_exceptions.items())
 
 print("""
 b3_exceptions = {""")
 for i, kv in enumerate(b3):
-    print("0x%x:%a," % kv, end=' ')
-    if i % 4 == 3:
-        print()
+    print("0x%x:%a," % kv, end='\n' if i % 4 == 3 else ' ')
 print("}")
 
 print("""
@@ -207,9 +240,9 @@ def map_table_b3(code):
 
 def map_table_b2(a):
     al = map_table_b3(a)
-    b = unicodedata.normalize("NFKC", al)
+    b = unicodedata_320.normalize("NFKC", al)
     bl = "".join([map_table_b3(ch) for ch in b])
-    c = unicodedata.normalize("NFKC", bl)
+    c = unicodedata_320.normalize("NFKC", bl)
     if b != c:
         return c
     else:
@@ -226,9 +259,9 @@ assert specials == {}
 print("""
 def map_table_b2(a):
     al = map_table_b3(a)
-    b = unicodedata.normalize("NFKC", al)
+    b = unicodedata_320.normalize("NFKC", al)
     bl = "".join([map_table_b3(ch) for ch in b])
-    c = unicodedata.normalize("NFKC", bl)
+    c = unicodedata_320.normalize("NFKC", bl)
     if b != c:
         return c
     else:
@@ -251,16 +284,16 @@ name, table = tables[0]
 del tables[0]
 assert name == "C.1.2"
 
-# table = set(table.keys())
-# Zs = set(gen_category(["Zs"])) - {0x20}
-# assert Zs == table
+table = set(table.keys())
+Zs = set(gen_category(["Zs"])) - {0x20}
+assert Zs == table
 
 print("""
 def in_table_c12(code):
-    return unicodedata.category(code) == "Zs" and code != " "
+    return unicodedata_320.category(code) == "Zs" and code != " "
 
 def in_table_c11_c12(code):
-    return unicodedata.category(code) == "Zs"
+    return unicodedata_320.category(code) == "Zs"
 """)
 
 # C.2.1 ASCII control characters
@@ -275,7 +308,7 @@ assert Cc_ascii == table_c21
 
 print("""
 def in_table_c21(code):
-    return ord(code) < 128 and unicodedata.category(code) == "Cc"
+    return ord(code) < 128 and unicodedata_320.category(code) == "Cc"
 """)
 
 # C.2.2 Non-ASCII control characters. It also includes
@@ -295,11 +328,11 @@ print("""c22_specials = """ + compact_set(specials) + """
 def in_table_c22(code):
     c = ord(code)
     if c < 128: return False
-    if unicodedata.category(code) == "Cc": return True
+    if unicodedata_320.category(code) == "Cc": return True
     return c in c22_specials
 
 def in_table_c21_c22(code):
-    return unicodedata.category(code) == "Cc" or \\
+    return unicodedata_320.category(code) == "Cc" or \\
            ord(code) in c22_specials
 """)
 
@@ -313,7 +346,7 @@ assert set(table.keys()) == Co
 
 print("""
 def in_table_c3(code):
-    return unicodedata.category(code) == "Co"
+    return unicodedata_320.category(code) == "Co"
 """)
 
 # C.4 Non-character code points, xFFFE, xFFFF
@@ -346,7 +379,7 @@ assert set(table.keys()) == Cs
 
 print("""
 def in_table_c5(code):
-    return unicodedata.category(code) == "Cs"
+    return unicodedata_320.category(code) == "Cs"
 """)
 
 # C.6 Inappropriate for plain text
@@ -411,7 +444,7 @@ assert set(table.keys()) == RandAL
 
 print("""
 def in_table_d1(code):
-    return unicodedata.bidirectional(code) in ("R","AL")
+    return unicodedata_320.bidirectional(code) in ("R","AL")
 """)
 
 # D.2 Characters with bidirectional property "L"
@@ -424,5 +457,5 @@ assert set(table.keys()) == L
 
 print("""
 def in_table_d2(code):
-    return unicodedata.bidirectional(code) == "L"
-""")
+    return unicodedata_320.bidirectional(code) == "L"
+""", end="")
