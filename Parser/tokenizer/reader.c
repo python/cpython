@@ -37,13 +37,16 @@ _PyTok_ReaderFree(struct tok_state *tok)
     tok->reader = NULL;
 }
 
-static int
-reserve_buffer(char **buffer, Py_ssize_t *capacity, Py_ssize_t needed)
+int
+_PyTok_ReserveBuffer(char **buffer, Py_ssize_t *capacity, Py_ssize_t needed,
+                     Py_ssize_t initial_capacity)
 {
+    assert(initial_capacity > 0);
     if (needed <= *capacity) {
         return 0;
     }
-    Py_ssize_t cap = *capacity > 0 ? *capacity : BUFSIZ;
+    // Grow geometrically to avoid reallocating for every longer line.
+    Py_ssize_t cap = *capacity > 0 ? *capacity : initial_capacity;
     while (cap < needed) {
         if (cap > PY_SSIZE_T_MAX / 2) {
             cap = needed;
@@ -72,8 +75,8 @@ append_decoded(_PyTok_Reader *reader, const char *data, Py_ssize_t len)
         reader->decoded_len = remaining;
     }
     if (len < 0 || reader->decoded_len > PY_SSIZE_T_MAX - len - 1 ||
-            reserve_buffer(&reader->decoded, &reader->decoded_cap,
-                           reader->decoded_len + len + 1) < 0) {
+            _PyTok_ReserveBuffer(&reader->decoded, &reader->decoded_cap,
+                                reader->decoded_len + len + 1, BUFSIZ) < 0) {
         PyErr_NoMemory();
         return -1;
     }
@@ -160,8 +163,8 @@ read_file_line(struct tok_state *tok, _PyTok_Chunk *chunk)
     Py_ssize_t len = 0;
     for (;;) {
         if (len > PY_SSIZE_T_MAX - BUFSIZ ||
-                reserve_buffer(&reader->file_buffer, &reader->file_buffer_cap,
-                               len + BUFSIZ) < 0) {
+                _PyTok_ReserveBuffer(&reader->file_buffer, &reader->file_buffer_cap,
+                                    len + BUFSIZ, BUFSIZ) < 0) {
             return _PYTOK_READ_ERROR;
         }
         int available = (int)Py_MIN(reader->file_buffer_cap - len, INT_MAX);
