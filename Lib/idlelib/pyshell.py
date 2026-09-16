@@ -408,6 +408,26 @@ def restart_line(width, filename):  # See bpo-38141.
         return tag[:-2]  # Remove ' ='.
 
 
+def check_theme_colors(root):
+    """Warn about invalid colors in user themes and remove them.
+
+    The default colors are then used instead (gh-85604).  The user
+    files are not changed until the settings are saved.
+    """
+    cfg = idleConf.userCfg['highlight']
+    for theme in cfg.sections():
+        for element in cfg.options(theme):
+            color = cfg.Get(theme, element)
+            try:
+                root.winfo_rgb(color)
+            except TclError as err:
+                print(f'Warning: ignoring invalid color {color!r} '
+                      f'for {element!r} in theme {theme!r}: {err}. '
+                      f'Please reconfigure it in the IDLE Settings dialog.',
+                      file=sys.stderr)
+                cfg.RemoveOption(theme, element)
+
+
 def fix_user_path(path):
     """Return path without the idlelib directory (gh-134300).
 
@@ -1617,6 +1637,7 @@ def main():
     if config_error:
         messagebox.showwarning('IDLE Configuration Warning', config_error,
                                parent=root)
+    check_theme_colors(root)
 
     # set application icon
     icondir = os.path.join(os.path.dirname(__file__), 'Icons')

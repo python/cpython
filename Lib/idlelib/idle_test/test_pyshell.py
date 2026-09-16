@@ -4,8 +4,10 @@
 from idlelib import pyshell
 import os
 import unittest
-from test.support import requires
+from unittest import mock
+from test.support import requires, captured_stderr
 from tkinter import Tk
+from idlelib import config
 
 
 class FunctionTest(unittest.TestCase):
@@ -36,6 +38,47 @@ class FunctionTest(unittest.TestCase):
         eq(pyshell.fix_user_path(['', '/a', idlelib_dir, '/b']), ['', '/a', '/b'])
         eq(pyshell.fix_user_path(['/a', '/b']), ['/a', '/b'])
         eq(pyshell.fix_user_path([idlelib_dir]), [])
+
+
+class CheckThemeColorsTest(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        requires('gui')
+        cls.root = Tk()
+        cls.root.withdraw()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.root.update_idletasks()
+        cls.root.destroy()
+        del cls.root
+
+    def test_check_theme_colors(self):
+        # gh-85604: invalid colors are reported and removed.
+        cfg = config.IdleUserConfParser('')
+        cfg.SetOption('Good', 'keyword-foreground', '#ff7700')
+        cfg.SetOption('Bad', 'keyword-foreground', 'bpo-00224')
+        cfg.SetOption('Bad', 'keyword-background', 'white')
+        cfg.SetOption('Bad', 'comment-background', '#12345')
+        with (mock.patch.dict(pyshell.idleConf.userCfg, {'highlight': cfg}),
+              captured_stderr() as stderr):
+            pyshell.check_theme_colors(self.root)
+        msg = stderr.getvalue()
+        self.assertIn("invalid color 'bpo-00224' for 'keyword-foreground' "
+                      "in theme 'Bad'", msg)
+        self.assertIn("invalid color '#12345'", msg)
+        self.assertNotIn('Good', msg)
+        self.assertNotIn('white', msg)
+        self.assertFalse(cfg.has_option('Bad', 'keyword-foreground'))
+        self.assertFalse(cfg.has_option('Bad', 'comment-background'))
+        self.assertTrue(cfg.has_option('Bad', 'keyword-background'))
+        self.assertTrue(cfg.has_option('Good', 'keyword-foreground'))
+        # Nothing left to report.
+        with (mock.patch.dict(pyshell.idleConf.userCfg, {'highlight': cfg}),
+              captured_stderr() as stderr):
+            pyshell.check_theme_colors(self.root)
+        self.assertEqual(stderr.getvalue(), '')
 
 
 class PyShellFileListTest(unittest.TestCase):
