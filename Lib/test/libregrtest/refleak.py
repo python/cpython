@@ -209,7 +209,7 @@ def runtest_refleak(test_name, test_func,
     for raw_deltas, item_name in [
         (rc_deltas, 'references'),
         (alloc_deltas, 'memory blocks'),
-        (fd_deltas, 'file descriptors')
+        (fd_deltas, 'file descriptors'),
         (handle_deltas, 'handles'),
     ]:
         # Ignore warmup runs; convert to a list for reporting
