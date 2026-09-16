@@ -218,6 +218,15 @@ def runtest_refleak(test_name, test_func,
     def check_fd_deltas(deltas):
         return any(deltas)
 
+    if ('multiprocessing' in test_name
+        or 'concurrent_futures' in test_name):
+        # gh-154208: Disable check for Windows handle leaks when
+        # multiprocessing is used. There is a known race condition in
+        # multiprocessing causing handle leak. Disable the multiprocessing
+        # tests to be able to check for leaks for all other tests.
+        for i in range(len(handle_deltas)):
+            handle_deltas[i] = 0
+
     failed = False
     for deltas, item_name, checker in [
         (rc_deltas, 'references', check_rc_deltas),
