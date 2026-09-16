@@ -148,6 +148,46 @@ class CallStackTestBase:
             'async generator CallStackTestBase.test_stack_async_gen.<locals>.gen()',
             stack_for_gen_nested_call[1])
 
+    async def test_stack_anext_default(self):
+        # anext() with a default wraps the awaitable in a coroutine, so the
+        # call graph of a suspended task sees through it into __anext__().
+
+        loop = asyncio.get_running_loop()
+        blocker = loop.create_future()
+
+        async def inner():
+            await blocker
+
+        class AIter:
+            def __aiter__(self):
+                return self
+
+            async def __anext__(self):
+                await inner()
+                return 1
+
+        async def main():
+            await anext(AIter(), None)
+
+        task = asyncio.create_task(main(), name='anext task')
+        await asyncio.sleep(0)
+        try:
+            stack = capture_test_stack(fut=task)
+        finally:
+            blocker.set_result(None)
+            await task
+
+        self.assertEqual(stack[0], [
+            'T<anext task>',
+            [
+                'a inner',
+                'a __anext__',
+                'a _anext_with_default',
+                'a main',
+            ],
+            []
+        ])
+
     def test_ag_frame_used_for_async_generator(self):
         # Regression test for gh-148736: the ag_await branch of
         # _build_graph_for_future must read ag_frame, not cr_frame.
