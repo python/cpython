@@ -11,9 +11,10 @@ import sys
 import time
 import unittest
 import warnings
-import _winapi
 
 from test import support
+if support.MS_WINDOWS:
+    import _winapi
 
 
 # Filename used for testing
