@@ -595,7 +595,7 @@ class NonCallableMock(Base):
 
     __return_value_doc = "The value to be returned when the mock is called."
     return_value = property(__get_return_value, __set_return_value,
-                            __return_value_doc)
+                            doc=__return_value_doc)
 
 
     @property
@@ -798,7 +798,7 @@ class NonCallableMock(Base):
         from_type = [e for e in from_type if not e.startswith('_')]
         from_dict = [e for e in from_dict if not e.startswith('_') or
                      _is_magic(e)]
-        return sorted(set(extras + from_type + from_dict + from_child_mocks))
+        return sorted({*extras, *from_type, *from_dict, *from_child_mocks})
 
 
     def __setattr__(self, name, value):

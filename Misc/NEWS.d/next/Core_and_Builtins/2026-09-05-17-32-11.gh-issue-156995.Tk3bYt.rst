@@ -1,0 +1,5 @@
+Fix :class:`bytearray` sharing its buffer with the single-byte :class:`bytes`
+object of the same value, so that writing to the bytearray modified that
+:class:`bytes` object. This happened with :meth:`bytearray.take_bytes` when
+exactly one byte remained, and on the free-threaded build when a bytearray was
+shrunk to one byte from another thread.

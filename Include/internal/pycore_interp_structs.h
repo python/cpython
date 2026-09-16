@@ -538,7 +538,7 @@ struct _py_func_state {
    If you add a new static type to the standard library, you may have to
    update one of these numbers.
    */
-#define _Py_NUM_MANAGED_PREINITIALIZED_TYPES 120
+#define _Py_NUM_MANAGED_PREINITIALIZED_TYPES 122
 #define _Py_MAX_MANAGED_STATIC_BUILTIN_TYPES \
     (_Py_NUM_MANAGED_PREINITIALIZED_TYPES + 83)
 #define _Py_MAX_MANAGED_STATIC_EXT_TYPES 10
@@ -977,7 +977,6 @@ struct _is {
     struct _obmalloc_state *obmalloc;
 
     PyObject *audit_hooks;
-    PyMutex audit_hooks_mutex;
     PyType_WatchCallback type_watchers[TYPE_MAX_WATCHERS];
     PyCode_WatchCallback code_watchers[CODE_MAX_WATCHERS];
     PyContext_WatchCallback context_watchers[CONTEXT_MAX_WATCHERS];

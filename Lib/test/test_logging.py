@@ -814,6 +814,23 @@ class HandlerTest(BaseTest):
 
             support.wait_process(pid, exitcode=0)
 
+    def test_remove_handler_while_emitting(self):
+        # Removing a handler while callHandlers() iterates over the handlers
+        # should not cause the following handlers to be skipped (gh-79366).
+        logger = logging.Logger('test_remove_handler_while_emitting')
+        calls = []
+        class RemovingHandler(logging.Handler):
+            def emit(self, record):
+                calls.append('removing')
+                logger.removeHandler(self)
+        class CountingHandler(logging.Handler):
+            def emit(self, record):
+                calls.append('counting')
+        logger.addHandler(RemovingHandler())
+        logger.addHandler(CountingHandler())
+        logger.error('spam')
+        self.assertEqual(calls, ['removing', 'counting'])
+
 
 class BadStream(object):
     def write(self, data):
@@ -2138,6 +2155,45 @@ class UnixSysLogHandlerTest(SysLogHandlerTest):
         self.addCleanup(os_helper.unlink, self.address)
         SysLogHandlerTest.setUp(self)
 
+    def test_bytes_address(self):
+        # The Unix socket address can also be specified as bytes.
+        if self.server_exception:
+            self.skipTest(self.server_exception)
+        hdlr = logging.handlers.SysLogHandler(os.fsencode(self.address))
+        self.addCleanup(hdlr.close)
+        self.assertTrue(hdlr.unixsocket)
+        logger = logging.getLogger("slh-bytes")
+        logger.addHandler(hdlr)
+        self.addCleanup(logger.removeHandler, hdlr)
+        logger.error("sp\xe4m")
+        self.handled.wait(support.LONG_TIMEOUT)
+        self.assertEqual(self.log_output, b'<11>sp\xc3\xa4m\x00')
+
+@unittest.skipUnless(sys.platform in ('linux', 'android'),
+                     'Linux specific test')
+class AbstractNamespaceSysLogHandlerTest(BaseTest):
+
+    """Test for SysLogHandler with a socket in the abstract namespace."""
+
+    def check(self, address):
+        sock = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
+        self.addCleanup(sock.close)
+        sock.bind(address)
+        sock.settimeout(support.LONG_TIMEOUT)
+        hdlr = logging.handlers.SysLogHandler(address)
+        self.addCleanup(hdlr.close)
+        self.assertTrue(hdlr.unixsocket)
+        hdlr.emit(logging.makeLogRecord({'msg': 'sp\xe4m'}))
+        self.assertEqual(sock.recv(1024), b'<12>sp\xc3\xa4m\x00')
+
+    def test_str_address(self):
+        # A str address is encoded with the filesystem encoding.
+        self.check('\0' + os_helper.TESTFN)
+
+    def test_bytes_address(self):
+        # The name is an arbitrary byte sequence, it need not be decodable.
+        self.check(b'\0test_logging_%d_\xff\xfe' % os.getpid())
+
 @unittest.skipUnless(socket_helper.IPV6_ENABLED,
                      'IPv6 support required for this test.')
 class IPv6SysLogHandlerTest(SysLogHandlerTest):
@@ -2154,6 +2210,24 @@ class IPv6SysLogHandlerTest(SysLogHandlerTest):
     def tearDown(self):
         self.server_class.address_family = socket.AF_INET
         super(IPv6SysLogHandlerTest, self).tearDown()
+
+@support.requires_working_socket()
+class UnresolvableSysLogAddressTest(BaseTest):
+
+    """Test for SysLogHandler with a temporarily unresolvable address."""
+
+    @patch('socket.getaddrinfo')
+    def test_unresolvable_address(self, mock_getaddrinfo):
+        # The address can be unresolvable when the handler is created.
+        mock_getaddrinfo.side_effect = socket.gaierror
+        hdlr = logging.handlers.SysLogHandler(('localhost', 514))
+        self.addCleanup(hdlr.close)
+        self.assertIsNone(hdlr.socket)
+        # It is resolved again when a record is emitted.
+        calls = mock_getaddrinfo.call_count
+        with support.captured_stderr():
+            hdlr.emit(logging.makeLogRecord({'msg': 'sp\xe4m'}))
+        self.assertGreater(mock_getaddrinfo.call_count, calls)
 
 @support.requires_working_socket()
 @threading_helper.requires_working_threading()
@@ -3643,14 +3717,14 @@ class ConfigDictTest(BaseTest):
         # Ask for a randomly assigned port (by using port 0)
         t = logging.config.listen(0, verify)
         t.start()
-        t.ready.wait()
+        self.assertTrue(t.ready.wait(support.LONG_TIMEOUT),
+                        msg='the listener did not start')
         # Now get the port allocated
         port = t.port
         t.ready.clear()
         try:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(2.0)
-            sock.connect(('localhost', port))
+            # The server can listen on IPv6, so do not force a family.
+            sock = socket.create_connection(('localhost', port), timeout=2.0)
 
             slen = struct.pack('>L', len(text))
             s = slen + text
@@ -3764,6 +3838,18 @@ class ConfigDictTest(BaseTest):
             ('INFO', '1'),
             ('ERROR', '2'),
         ], pat=r"^[\w.]+ -> (\w+): (\d+)$")
+
+    @support.requires_working_socket()
+    def test_listen_server_error(self):
+        # The "ready" event should be set even if the server fails to start.
+        t = logging.config.listen(-1)
+        t.daemon = True
+        with threading_helper.catch_threading_exception() as cm:
+            t.start()
+            self.assertTrue(t.ready.wait(support.SHORT_TIMEOUT),
+                            msg='the listener did not report the failure')
+            threading_helper.join_thread(t)
+            self.assertIs(cm.exc_type, OverflowError)
 
     def test_bad_format(self):
         self.assertRaises(ValueError, self.apply_config, self.bad_format)
@@ -6378,11 +6464,12 @@ class BaseFileTest(BaseTest):
         self.rmfiles = []
 
     def tearDown(self):
-        for fn in self.rmfiles:
-            os.unlink(fn)
-        if os.path.exists(self.fn):
-            os.unlink(self.fn)
-        BaseTest.tearDown(self)
+        try:
+            for fn in self.rmfiles:
+                os_helper.unlink(fn)
+            os_helper.unlink(self.fn)
+        finally:
+            BaseTest.tearDown(self)
 
     def assertLogFile(self, filename):
         "Assert a log file is there and register it for deletion"

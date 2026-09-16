@@ -796,6 +796,8 @@ backslashreplace(PyBytesWriter *writer, char *str,
         }
         size += incr;
     }
+    /* subtract preallocated bytes */
+    size -= (collend - collstart);
 
     str = PyBytesWriter_GrowAndUpdatePointer(writer, size, str);
     if (str == NULL) {
@@ -871,6 +873,8 @@ xmlcharrefreplace(PyBytesWriter *writer, char *str,
         }
         size += incr;
     }
+    /* subtract preallocated bytes */
+    size -= (collend - collstart);
 
     str = PyBytesWriter_GrowAndUpdatePointer(writer, size, str);
     if (str == NULL) {
@@ -879,10 +883,16 @@ xmlcharrefreplace(PyBytesWriter *writer, char *str,
 
     /* generate replacement */
     for (i = collstart; i < collend; ++i) {
-        size = sprintf(str, "&#%d;", PyUnicode_READ(kind, data, i));
-        if (size < 0) {
-            return NULL;
-        }
+        // Use snprintf() with a temporary buffer to not write the trailing
+        // NUL byte in the writer buffer.
+        Py_BUILD_ASSERT(_Py_MAX_UNICODE <= 0x10ffff);
+        // len('&#1114111;\0') is 11 bytes.
+        char buffer[11];
+        Py_UCS4 ch = PyUnicode_READ(kind, data, i);
+        size = snprintf(buffer, sizeof(buffer), "&#%d;", ch);
+        assert(4 <= size && (size_t)size <= (sizeof(buffer) - 1));
+
+        memcpy(str, buffer, size);
         str += size;
     }
     return str;
@@ -7256,8 +7266,6 @@ unicode_encode_ucs1(PyObject *unicode,
                 break;
 
             case _Py_ERROR_BACKSLASHREPLACE:
-                /* subtract preallocated bytes */
-                writer->size -= (collend - collstart);
                 str = backslashreplace(writer, str,
                                        unicode, collstart, collend);
                 if (str == NULL)
@@ -7266,8 +7274,6 @@ unicode_encode_ucs1(PyObject *unicode,
                 break;
 
             case _Py_ERROR_XMLCHARREFREPLACE:
-                /* subtract preallocated bytes */
-                writer->size -= (collend - collstart);
                 str = xmlcharrefreplace(writer, str,
                                         unicode, collstart, collend);
                 if (str == NULL)
@@ -7308,13 +7314,16 @@ unicode_encode_ucs1(PyObject *unicode,
                     }
                 }
                 else {
-                    /* subtract preallocated bytes */
-                    writer->size -= newpos - collstart;
                     /* Only overallocate the buffer if it's not the last write */
                     writer->overallocate = (newpos < size);
+
+                    /* subtract preallocated bytes */
+                    if (PyBytesWriter_Grow(writer, -(newpos - collstart)) < 0) {
+                        goto onError;
+                    }
                 }
 
-                char *rep_str;
+                const char *rep_str;
                 Py_ssize_t rep_len;
                 if (PyBytes_Check(rep)) {
                     /* Directly copy bytes result to output. */
@@ -8462,6 +8471,9 @@ _PyUnicode_EncodeIconv(const char *encoding, PyObject *unicode,
         }
 
         if (ret != (size_t)-1) {
+            if (flushing) {
+                break;
+            }
             /* A positive result counts nonreversible conversions: iconv()
                substituted an unencodable character instead of failing with
                EILSEQ (musl and *BSD citrus do this).  Treat it as unencodable
@@ -8478,9 +8490,6 @@ _PyUnicode_EncodeIconv(const char *encoding, PyObject *unicode,
                 /* This code point was substituted; drop it and report it. */
                 out = out_before;
                 up -= unit;
-            }
-            else if (flushing) {
-                break;
             }
             else if (careful && up < uend) {
                 continue;
@@ -8520,11 +8529,19 @@ _PyUnicode_EncodeIconv(const char *encoding, PyObject *unicode,
             replen = PyBytes_GET_SIZE(rep);
         }
         else {
-            /* A str replacement is encoded through the same codec. */
+            /* A str replacement is encoded through the same codec, but
+               strictly: handling its errors in turn could never terminate. */
             assert(PyUnicode_Check(rep));
-            repbytes = _PyUnicode_EncodeIconv(encoding, rep, errors);
+            repbytes = _PyUnicode_EncodeIconv(encoding, rep, NULL);
             Py_DECREF(rep);
             if (repbytes == NULL) {
+                if (PyErr_ExceptionMatches(PyExc_UnicodeEncodeError)) {
+                    /* Report the input the caller knows about, not the
+                       replacement. */
+                    PyErr_Clear();
+                    raise_encode_exception(&exc, encoding, unicode, pos, pos + 1,
+                            "unable to encode error handler result");
+                }
                 goto done;
             }
             repdata = PyBytes_AS_STRING(repbytes);
@@ -14726,6 +14743,15 @@ intern_common(PyInterpreterState *interp, PyObject *s /* stolen */,
     }
 #endif
 
+    // Why _Py_LOCK_DONT_DETACH is used here: waiting for the interned mutex
+    // must not detach the thread state. Extension code is expected to
+    // detach before blocking on opaque external synchronization. However,
+    // the lock used for C++ static initialization is hidden, making
+    // that difficult, and it is common for C++ extensions to call
+    // PyUnicode_InternFromString() from static initializers. Detaching here
+    // can therefore deadlock: a stop-the-world pause may prevent the lock
+    // owner from reattaching while the pause waits for another attached
+    // thread blocked on the hidden lock.
     FT_MUTEX_LOCK_FLAGS(INTERN_MUTEX, _Py_LOCK_DONT_DETACH);
     PyObject *t;
     {

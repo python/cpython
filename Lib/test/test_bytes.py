@@ -5,6 +5,7 @@ the latter should be modernized).
 """
 
 import array
+import contextlib
 import operator
 import os
 import re
@@ -46,6 +47,13 @@ class Indexable:
         self.value = value
     def __index__(self):
         return self.value
+
+
+@contextlib.contextmanager
+def inject_memory_error(testcase, start=0):
+    with testcase.assertRaises(MemoryError):
+        with support.memory_error_cm(start):
+            yield
 
 
 class BaseBytesTest:
@@ -1116,13 +1124,14 @@ class BaseBytesTest:
         self.assertRaises(ValueError, b.translate, bytes(range(255)))
 
         c = b.translate(rosetta, b'hello')
-        self.assertEqual(b, b'hello')
-        self.assertIsInstance(c, self.type2test)
+        self.assertEqual(c, b'')
+        self.assertEqual(type(c), self.type2test)
 
         c = b.translate(rosetta)
         d = b.translate(rosetta, b'')
-        self.assertEqual(c, d)
         self.assertEqual(c, b'helle')
+        self.assertEqual(type(c), self.type2test)
+        self.assertEqual(d, b'helle')
 
         c = b.translate(rosetta, b'l')
         self.assertEqual(c, b'hee')
@@ -1555,6 +1564,36 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         self.assertRaises(MemoryError, bytearray().resize, sys.maxsize)
         self.assertRaises(MemoryError, bytearray(1000).resize, sys.maxsize)
 
+    @support.nomemtest
+    def test_resize_error(self):
+        # gh-157242: If bytearray.resize() fails (MemoryError),
+        # the bytearray must be left unchanged.
+
+        offset = 3
+        for logical_offset in (False, True):
+            with self.subTest(logical_offset=logical_offset):
+                # grow bytearray
+                ba = bytearray(b'0123456789')
+                if logical_offset:
+                    expected = ba[offset:]
+                    del ba[:offset]
+                else:
+                    expected = ba.copy()
+                with inject_memory_error(self):
+                    ba.resize(1024)
+                self.assertEqual(ba, expected)
+
+                # shrink bytearray
+                ba = bytearray(b'0123456789')
+                if logical_offset:
+                    expected = ba[offset:]
+                    del ba[:offset]
+                else:
+                    expected = ba.copy()
+                with inject_memory_error(self):
+                    ba.resize(1)
+                self.assertEqual(ba, expected)
+
     def test_take_bytes(self):
         ba = bytearray(b'ab')
         self.assertEqual(ba.take_bytes(), b'ab')
@@ -1611,6 +1650,36 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
             self.assertRaises(BufferError, ba.take_bytes)
         self.assertEqual(ba.take_bytes(), b'abc')
 
+        # Leaving one byte must not adopt the shared single-byte bytes object
+        # as the buffer.
+        ba = bytearray(b'abc')
+        self.assertEqual(ba.take_bytes(2), b'ab')
+        ba[0] = ord('A')
+        self.assertEqual(ba, bytearray(b'A'))
+        self.assertEqual(ord(b'c'), ord('c'))
+
+    @support.nomemtest
+    def test_take_bytes_error(self):
+        # gh-157242: If bytearray.take_bytes() fails (MemoryError),
+        # the bytearray must be left unchanged.
+
+        for logical_offset, to_take, start_list in (
+            (True, 5, (0, 1)),
+            (False, 5, (0, 1)),
+            (True, None, (0,)),
+        ):
+            for start in start_list:
+                with self.subTest(logical_offset=logical_offset, start=start):
+                    ba = bytearray(b'0123456789')
+                    if logical_offset:
+                        expected = ba[3:]
+                        del ba[:3]
+                    else:
+                        expected = ba.copy()
+                    with inject_memory_error(self, start):
+                        ba.take_bytes(to_take)
+                    self.assertEqual(ba, expected)
+
     @support.cpython_only  # tests an implementation detail
     def test_take_bytes_optimization(self):
         # Validate optimization around taking lots of little chunks out of a
@@ -1636,6 +1705,35 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         self.assertEqual(len(ba), 499)
         bytes_header_size = sys.getsizeof(b'')
         self.assertEqual(ba.__alloc__(), 499 + bytes_header_size)
+
+    def test_take_bytes_reentrant_resize(self):
+        # gh-153570: n.__index__() can resize the bytearray, so take_bytes()
+        # must re-read the size afterwards.  It cached the size before the
+        # call and used it for the bounds check and the buffer reads, so a
+        # reentrant clear() returned freed memory (a use-after-free read).
+        def take(target, resize, n):
+            class Evil:
+                def __index__(self):
+                    resize(target)
+                    return n
+            return target.take_bytes(Evil())
+
+        # clear() during __index__: nothing is left to take.
+        ba = bytearray(b'abcdefgh')
+        with self.assertRaises(IndexError):
+            take(ba, lambda b: b.clear(), 8)
+        self.assertEqual(ba, b'')
+
+        # shrink during __index__: n past the new size is out of range.
+        ba = bytearray(b'abcdefgh')
+        with self.assertRaises(IndexError):
+            take(ba, lambda b: b.__delitem__(slice(4, None)), 8)
+        self.assertEqual(ba, b'abcd')
+
+        # grow during __index__: the take runs against the new, larger size.
+        ba = bytearray(b'abcd')
+        self.assertEqual(take(ba, lambda b: b.extend(b'efgh'), 8), b'abcdefgh')
+        self.assertEqual(ba, b'')
 
     def test_setitem(self):
         def setitem_as_mapping(b, i, val):
@@ -1798,6 +1896,30 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         b = bytearray(range(256))
         b[8:] = b
         self.assertEqual(b, bytearray(list(range(8)) + list(range(256))))
+
+    def test_setslice_reentrant_resize(self):
+        # gh-153578: a buffer argument whose __buffer__ resizes the bytearray
+        # while the buffer is being acquired must not leave the slice bounds
+        # with lo > hi, which drove a negative-size memmove (an out-of-bounds
+        # write) in the setslice path reached through extend().
+        class Evil:
+            def __init__(self, resize):
+                self.resize = resize
+            def __buffer__(self, flags):
+                self.resize()
+                return memoryview(b'ABCDEFGH')
+        # clear() during __buffer__: extend appends to the emptied bytearray.
+        b = bytearray(b'x' * 100)
+        b.extend(Evil(b.clear))
+        self.assertEqual(b, b'ABCDEFGH')
+        # partial shrink during __buffer__.
+        b = bytearray(b'x' * 100)
+        b.extend(Evil(lambda: b.__delitem__(slice(30, None))))
+        self.assertEqual(b, b'x' * 30 + b'ABCDEFGH')
+        # grow during __buffer__: the data lands at the original end.
+        b = bytearray(b'x' * 10)
+        b.extend(Evil(lambda: b.extend(b'y' * 100)))
+        self.assertEqual(b, b'x' * 10 + b'ABCDEFGH' + b'y' * 100)
 
     def test_iconcat(self):
         b = bytearray(b"abc")
@@ -2196,6 +2318,46 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
                 return 1
 
         self.assertRaises(BufferError, ba.hex, S(b':'))
+
+    def test_no_init_called(self):
+        # A bytearray created without calling bytearray.__init__
+        # should not crash the interpreter (see gh-153419).
+        def bytearray_new():
+            return bytearray.__new__(bytearray)
+
+        bytearray_new().insert(0, 1)
+        bytearray_new().extend(b"x")
+        bytearray_new().extend([1, 2, 3])
+        bytearray_new().resize(4)
+        bytearray_new().__init__(5)
+        bytearray_new().__init__(b"xyz")
+        bytearray_new().take_bytes()
+        bytearray_new().take_bytes(0)
+
+        a = bytearray_new()
+        a.append(1)
+
+        a = bytearray_new()
+        a += b"x"
+
+        a = bytearray_new()
+        a[:] = b"xyz"
+
+    def test_reinit_length(self):
+        # There is a shortcut taken when resizing, where alloc/2 < newsize.
+        # In this case, the existing buffer is reused, rather than reset.
+        # If this happens when newsize == 0 and alloc == 1, then various
+        # code assumptions can be violated.  This test should catch those
+        # in debug builds. (see gh-153419)
+        a = bytearray(1)
+        a.__init__()
+        self.assertEqual(a, b"")
+
+    def test_reinit_with_view(self):
+        a = bytearray()
+        with memoryview(a):
+            self.assertRaises(BufferError, a.__init__, "x", "ascii")
+        self.assertEqual(a, b"")
 
 
 class AssortedBytesTest(unittest.TestCase):
@@ -2961,6 +3123,19 @@ class FreeThreadingTest(unittest.TestCase):
         threads = [threading.Thread(target=resize_stress, args=(ba,)) for _ in range(4)]
         with threading_helper.start_threads(threads):
             pass
+
+    @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
+    def test_free_threading_bytearray_resize_other_thread(self):
+        # Shrinking a bytearray whose buffer another thread owns must not
+        # adopt the immortal single-byte bytes object a the buffer.
+        ba = bytearray(b'abc')
+        thread = threading.Thread(target=ba.resize, args=(1,))
+        with threading_helper.start_threads([thread]):
+            pass
+        ba[0] = ord('X')
+        self.assertEqual(ba, bytearray(b'X'))
+        self.assertEqual(ord(b'a'), ord('a'))
 
 if __name__ == "__main__":
     unittest.main()

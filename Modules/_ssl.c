@@ -41,6 +41,7 @@
 #endif
 
 #include "_ssl.h"
+#include "_openssl_mem.h"
 
 /* Redefined below for Windows debug builds after important #includes */
 #define _PySSL_FIX_ERRNO
@@ -79,34 +80,6 @@
 #  error "OPENSSL_THREADS is not defined, Python requires thread-safe OpenSSL"
 #endif
 
-
-#ifdef BIO_get_ktls_send
-#  ifdef MS_WINDOWS
-typedef long long Py_off_t;
-#  else
-typedef off_t Py_off_t;
-#  endif
-
-static int
-Py_off_t_converter(PyObject *arg, void *addr)
-{
-#ifdef HAVE_LARGEFILE_SUPPORT
-    *((Py_off_t *)addr) = PyLong_AsLongLong(arg);
-#else
-    *((Py_off_t *)addr) = PyLong_AsLong(arg);
-#endif
-    return PyErr_Occurred() ? 0 : 1;
-}
-
-/*[python input]
-
-class Py_off_t_converter(CConverter):
-    type = 'Py_off_t'
-    converter = 'Py_off_t_converter'
-
-[python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=3fd9ca8ca6f0cbb8]*/
-#endif /* BIO_get_ktls_send */
 
 struct py_ssl_error_code {
     const char *mnemonic;
@@ -5910,7 +5883,8 @@ _ssl_MemoryBIO_read_impl(PySSLMemoryBIO *self, int len)
 {
     int avail, nbytes;
 
-    avail = (int)Py_MIN(BIO_ctrl_pending(self->bio), INT_MAX);
+    size_t pending = BIO_ctrl_pending(self->bio);
+    avail = (int)Py_MIN(pending, (size_t)INT_MAX);
     if ((len < 0) || (len > avail))
         len = avail;
 
@@ -7475,5 +7449,6 @@ static struct PyModuleDef _sslmodule_def = {
 PyMODINIT_FUNC
 PyInit__ssl(void)
 {
+    _PyOpenSSL_SetupMemFunctions();
     return PyModuleDef_Init(&_sslmodule_def);
 }

@@ -1,0 +1,6 @@
+The :class:`xml.etree.ElementTree.Element` methods
+:meth:`~xml.etree.ElementTree.Element.findall`,
+:meth:`~xml.etree.ElementTree.Element.iterfind` and
+:meth:`~xml.etree.ElementTree.Element.find` avoid quadratic behavior when
+using XPath index predicates (``[1]``, ``[last()]``, ``[last()-N]``) on XML
+documents with many same-tag siblings.

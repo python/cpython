@@ -1709,7 +1709,11 @@ class Logger(Filterer):
         """
         with _lock:
             if hdlr in self.handlers:
-                self.handlers.remove(hdlr)
+                # Replace the list instead of mutating it in place, so that
+                # callHandlers() can iterate it without a lock (gh-79366).
+                handlers = self.handlers.copy()
+                handlers.remove(hdlr)
+                self.handlers = handlers
 
     def hasHandlers(self):
         """
