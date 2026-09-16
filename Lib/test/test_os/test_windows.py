@@ -457,7 +457,6 @@ class Win32JunctionTests(unittest.TestCase):
 class Win32NtTests(unittest.TestCase):
     def test_getfinalpathname_handles(self):
         nt = import_helper.import_module('nt')
-
         before_count = os_helper.handle_count()
 
         # The first two test the error path, __file__ tests the success path
@@ -481,7 +480,6 @@ class Win32NtTests(unittest.TestCase):
                     pass
 
         handle_delta = os_helper.handle_count() - before_count
-
         self.assertEqual(0, handle_delta)
 
     @support.requires_subprocess()
