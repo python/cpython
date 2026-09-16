@@ -1,4 +1,5 @@
 import inspect
+import traceback
 import types
 import unittest
 import contextlib
@@ -1043,6 +1044,39 @@ class AsyncGenAsyncioTest(unittest.TestCase):
             with self.assertRaises(ZeroDivisionError):
                 await awaitable
             return "completed"
+        result = self.loop.run_until_complete(do_test())
+        self.assertEqual(result, "completed")
+
+    def test_anext_traceback_filename(self):
+        # anext() is implemented in Python in the frozen _pybuiltins module,
+        # but its frames name builtins rather than that private module.
+        def filenames(exc):
+            return [frame.filename
+                    for frame in traceback.extract_tb(exc.__traceback__)]
+
+        class AIter:
+            def __aiter__(self):
+                return self
+            async def __anext__(self):
+                raise ZeroDivisionError
+
+        # assertRaises() drops the traceback, so catch the exceptions here.
+        async def do_test():
+            try:
+                anext(42, "default")
+            except TypeError as exc:
+                self.assertIn("<builtins>", filenames(exc))
+            else:
+                self.fail("TypeError was not raised")
+
+            try:
+                await anext(AIter(), "default")
+            except ZeroDivisionError as exc:
+                self.assertIn("<builtins>", filenames(exc))
+            else:
+                self.fail("ZeroDivisionError was not raised")
+            return "completed"
+
         result = self.loop.run_until_complete(do_test())
         self.assertEqual(result, "completed")
 
