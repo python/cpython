@@ -33,6 +33,22 @@ except ModuleNotFoundError:
     _interpreters = None
 
 
+class ImportImportlibTests(unittest.TestCase):
+
+    def test_restores_missing_import_metadata(self):
+        # importlib._bootstrap._setup() installs the loader classes of the
+        # source copy on any module that has no __spec__ of its own.
+        for name in ('builtins', 'sys'):
+            module = sys.modules[name]
+            with self.subTest(module=name):
+                with (support.swap_attr(module, '__spec__', None),
+                      support.swap_attr(module, '__loader__', None)):
+                    util.import_importlib('importlib')
+
+                    self.assertIsNone(module.__spec__)
+                    self.assertIsNone(module.__loader__)
+
+
 class DecodeSourceBytesTests:
 
     source = "string ='ü'"
