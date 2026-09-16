@@ -55,24 +55,31 @@ _PyStaticObject_CheckBytesSingleton(PyObject *obj,
     _PyObject_ASSERT(obj, PyBytes_GET_SIZE(obj) == size);
     const unsigned char *str = (const unsigned char *)PyBytes_AS_STRING(obj);
     _PyObject_ASSERT(obj, str[0] == ch);
+    // For the empty bytes string, _PyBytes_CheckOverflow() checks also
+    // "str[0] == ch" which is redundant.
     if (size > 0) {
         _PyBytes_CheckOverflow(obj, obj, "bytes singleton");
     }
 }
 
 static void
-_PyStaticObject_CheckUnicodeCharSingleton(PyObject *obj,
-                                          Py_ssize_t length, Py_UCS4 ch)
+_PyStaticObject_CheckUnicode(PyObject *obj, Py_ssize_t length)
 {
     _PyStaticObject_CheckSingleton(obj, &PyUnicode_Type);
     _PyObject_ASSERT(obj, _PyUnicode_CheckConsistency(obj, 1));
     _PyObject_ASSERT(obj, PyUnicode_GET_LENGTH(obj) == length);
+}
+
+
+static void
+_PyStaticObject_CheckUnicodeCharSingleton(PyObject *obj, Py_UCS4 ch)
+{
+    _PyStaticObject_CheckUnicode(obj, 1);
+    _PyObject_ASSERT(obj, PyUnicode_IS_ASCII(obj) == (ch <= 127));
     _PyObject_ASSERT(obj, PyUnicode_KIND(obj) == PyUnicode_1BYTE_KIND);
     const Py_UCS1 *data = PyUnicode_1BYTE_DATA(obj);
     _PyObject_ASSERT(obj, data[0] == ch);
-    if (length > 0) {
-        _PyObject_ASSERT(obj, data[1] == 0);
-    }
+    _PyObject_ASSERT(obj, data[1] == 0);
 }
 
 
@@ -80,9 +87,7 @@ static void
 _PyStaticObject_CheckUnicodeSingleton(PyObject *obj,
                                       const char *str, Py_ssize_t length)
 {
-    _PyStaticObject_CheckSingleton(obj, &PyUnicode_Type);
-    _PyObject_ASSERT(obj, _PyUnicode_CheckConsistency(obj, 1));
-    _PyObject_ASSERT(obj, PyUnicode_GET_LENGTH(obj) == length);
+    _PyStaticObject_CheckUnicode(obj, length);
     _PyObject_ASSERT(obj, PyUnicode_IS_ASCII(obj));
     const Py_UCS1 *data = PyUnicode_1BYTE_DATA(obj);
     _PyObject_ASSERT(obj, memcmp(data, str, length) == 0);
@@ -986,10 +991,10 @@ _PyStaticObjects_CheckAll(PyInterpreterState *interp) {
         _PyStaticObject_CheckBytesSingleton((PyObject *)&_Py_SINGLETON(bytes_characters)[i], 1, i);
     }
     for (int i=0; i <= 127; i++) {
-        _PyStaticObject_CheckUnicodeCharSingleton((PyObject *)&_Py_SINGLETON(strings).ascii[i], 1, i);
+        _PyStaticObject_CheckUnicodeCharSingleton((PyObject *)&_Py_SINGLETON(strings).ascii[i], i);
     }
     for (int i=128; i <= 255; i++) {
-        _PyStaticObject_CheckUnicodeCharSingleton((PyObject *)&_Py_SINGLETON(strings).latin1[i - 128], 1, i);
+        _PyStaticObject_CheckUnicodeCharSingleton((PyObject *)&_Py_SINGLETON(strings).latin1[i - 128], i);
     }
     /* non-generated */
     _PyStaticObject_CheckBytesSingleton((PyObject *)&_Py_SINGLETON(bytes_empty), 0, 0);

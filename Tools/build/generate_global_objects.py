@@ -457,11 +457,11 @@ def generate_global_object_finalizers(generated_immortal_objects):
 
             with printer.block(f'for (int i=0; i <= 127; i++)'):
                 obj = '(PyObject *)&_Py_SINGLETON(strings).ascii[i]'
-                printer.write(f'_PyStaticObject_CheckUnicodeCharSingleton({obj}, 1, i);')
+                printer.write(f'_PyStaticObject_CheckUnicodeCharSingleton({obj}, i);')
 
             with printer.block(f'for (int i=128; i <= 255; i++)'):
                 obj = '(PyObject *)&_Py_SINGLETON(strings).latin1[i - 128]'
-                printer.write(f'_PyStaticObject_CheckUnicodeCharSingleton({obj}, 1, i);')
+                printer.write(f'_PyStaticObject_CheckUnicodeCharSingleton({obj}, i);')
 
             printer.write('/* non-generated */')
             for fmt, ref in NON_GENERATED_IMMORTAL_OBJECTS:
