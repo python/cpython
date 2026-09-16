@@ -5,6 +5,7 @@ the latter should be modernized).
 """
 
 import array
+import contextlib
 import operator
 import os
 import re
@@ -46,6 +47,13 @@ class Indexable:
         self.value = value
     def __index__(self):
         return self.value
+
+
+@contextlib.contextmanager
+def inject_memory_error(testcase, start=0):
+    with testcase.assertRaises(MemoryError):
+        with support.memory_error_cm(start):
+            yield
 
 
 class BaseBytesTest:
@@ -1116,13 +1124,14 @@ class BaseBytesTest:
         self.assertRaises(ValueError, b.translate, bytes(range(255)))
 
         c = b.translate(rosetta, b'hello')
-        self.assertEqual(b, b'hello')
-        self.assertIsInstance(c, self.type2test)
+        self.assertEqual(c, b'')
+        self.assertEqual(type(c), self.type2test)
 
         c = b.translate(rosetta)
         d = b.translate(rosetta, b'')
-        self.assertEqual(c, d)
         self.assertEqual(c, b'helle')
+        self.assertEqual(type(c), self.type2test)
+        self.assertEqual(d, b'helle')
 
         c = b.translate(rosetta, b'l')
         self.assertEqual(c, b'hee')
@@ -1555,6 +1564,36 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         self.assertRaises(MemoryError, bytearray().resize, sys.maxsize)
         self.assertRaises(MemoryError, bytearray(1000).resize, sys.maxsize)
 
+    @support.nomemtest
+    def test_resize_error(self):
+        # gh-157242: If bytearray.resize() fails (MemoryError),
+        # the bytearray must be left unchanged.
+
+        offset = 3
+        for logical_offset in (False, True):
+            with self.subTest(logical_offset=logical_offset):
+                # grow bytearray
+                ba = bytearray(b'0123456789')
+                if logical_offset:
+                    expected = ba[offset:]
+                    del ba[:offset]
+                else:
+                    expected = ba.copy()
+                with inject_memory_error(self):
+                    ba.resize(1024)
+                self.assertEqual(ba, expected)
+
+                # shrink bytearray
+                ba = bytearray(b'0123456789')
+                if logical_offset:
+                    expected = ba[offset:]
+                    del ba[:offset]
+                else:
+                    expected = ba.copy()
+                with inject_memory_error(self):
+                    ba.resize(1)
+                self.assertEqual(ba, expected)
+
     def test_take_bytes(self):
         ba = bytearray(b'ab')
         self.assertEqual(ba.take_bytes(), b'ab')
@@ -1618,6 +1657,28 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         ba[0] = ord('A')
         self.assertEqual(ba, bytearray(b'A'))
         self.assertEqual(ord(b'c'), ord('c'))
+
+    @support.nomemtest
+    def test_take_bytes_error(self):
+        # gh-157242: If bytearray.take_bytes() fails (MemoryError),
+        # the bytearray must be left unchanged.
+
+        for logical_offset, to_take, start_list in (
+            (True, 5, (0, 1)),
+            (False, 5, (0, 1)),
+            (True, None, (0,)),
+        ):
+            for start in start_list:
+                with self.subTest(logical_offset=logical_offset, start=start):
+                    ba = bytearray(b'0123456789')
+                    if logical_offset:
+                        expected = ba[3:]
+                        del ba[:3]
+                    else:
+                        expected = ba.copy()
+                    with inject_memory_error(self, start):
+                        ba.take_bytes(to_take)
+                    self.assertEqual(ba, expected)
 
     @support.cpython_only  # tests an implementation detail
     def test_take_bytes_optimization(self):

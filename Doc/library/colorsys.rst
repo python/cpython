@@ -19,7 +19,7 @@ spaces, the coordinates are all between 0 and 1.
 .. seealso::
 
    More information about color spaces can be found at
-   https://poynton.ca/ColorFAQ.html and
+   https://www.poynton.ca/pdf/ColourFAQ.pdf and
    https://www.cambridgeincolour.com/tutorials/color-spaces.htm.
 
 The :mod:`!colorsys` module defines the following functions:

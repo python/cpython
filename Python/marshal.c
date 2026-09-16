@@ -1388,16 +1388,12 @@ r_object(RFILE *p)
                 }
                 break;
             }
-            v = PyBytes_FromStringAndSize((char *)NULL, n);
-            if (v == NULL)
-                break;
             ptr = r_string(n, p);
             if (ptr == NULL) {
-                Py_DECREF(v);
                 break;
             }
-            memcpy(PyBytes_AS_STRING(v), ptr, n);
-            retval = v;
+            // Get a singleton for 1-byte string
+            retval = PyBytes_FromStringAndSize(ptr, n);  // can be NULL
             R_REF(retval);
             break;
         }
