@@ -743,13 +743,12 @@ class ModifiedInterpreter(InteractiveInterpreter):
         if offset == 0:
             lineno += 1 #mark end of offending line
         if lineno == 1:
-            pos = "iomark + %d chars" % (offset-1)
+            pos = f"iomark + {offset-1} chars"
         else:
-            pos = "iomark linestart + %d lines + %d chars" % \
-                  (lineno-1, offset-1)
+            pos = f"iomark linestart + {lineno-1} lines + {offset-1} chars"
         tkconsole.colorize_syntax_error(text, pos)
         tkconsole.resetoutput()
-        self.write("%s: %s\n" % (type.__name__, msg))
+        self.write(f"{type.__name__}: {msg}\n")
         tkconsole.showprompt()
 
     def showtraceback(self):
