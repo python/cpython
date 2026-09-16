@@ -607,6 +607,7 @@ _multibytecodec_MultibyteStreamWriter_write(PyObject *self, PyTypeObject *cls, P
         .keywords = _keywords,
         .fname = "write",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -652,6 +653,7 @@ _multibytecodec_MultibyteStreamWriter_writelines(PyObject *self, PyTypeObject *c
         .keywords = _keywords,
         .fname = "writelines",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -698,4 +700,4 @@ PyDoc_STRVAR(_multibytecodec___create_codec__doc__,
 
 #define _MULTIBYTECODEC___CREATE_CODEC_METHODDEF    \
     {"__create_codec", (PyCFunction)_multibytecodec___create_codec, METH_O, _multibytecodec___create_codec__doc__},
-/*[clinic end generated code: output=a84b1544d7d01abb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c56e4fe60b1cefc6 input=a9049054013a1b77]*/

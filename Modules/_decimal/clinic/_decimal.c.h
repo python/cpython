@@ -745,6 +745,7 @@ _decimal_Decimal_from_float(PyObject *type, PyTypeObject *cls, PyObject *const *
         .keywords = _keywords,
         .fname = "from_float",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -797,6 +798,7 @@ _decimal_Decimal_from_number(PyObject *type, PyTypeObject *cls, PyObject *const 
         .keywords = _keywords,
         .fname = "from_number",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -846,6 +848,7 @@ _decimal_Context_create_decimal_from_float(PyObject *context, PyTypeObject *cls,
         .keywords = _keywords,
         .fname = "create_decimal_from_float",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -1000,6 +1003,7 @@ _decimal_Decimal___format__(PyObject *dec, PyTypeObject *cls, PyObject *const *a
         .keywords = _keywords,
         .fname = "__format__",
         .kwtuple = KWTUPLE,
+        .pos = 2,
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
@@ -1307,6 +1311,7 @@ _decimal_Decimal___round__(PyObject *self, PyTypeObject *cls, PyObject *const *a
         .keywords = _keywords,
         .fname = "__round__",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -4139,6 +4144,7 @@ _decimal_Context_abs(PyObject *context, PyTypeObject *cls, PyObject *const *args
         .keywords = _keywords,
         .fname = "abs",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -4183,6 +4189,7 @@ _decimal_Context_exp(PyObject *context, PyTypeObject *cls, PyObject *const *args
         .keywords = _keywords,
         .fname = "exp",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -4227,6 +4234,7 @@ _decimal_Context_ln(PyObject *context, PyTypeObject *cls, PyObject *const *args,
         .keywords = _keywords,
         .fname = "ln",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -4272,6 +4280,7 @@ _decimal_Context_log10(PyObject *context, PyTypeObject *cls, PyObject *const *ar
         .keywords = _keywords,
         .fname = "log10",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -4319,6 +4328,7 @@ _decimal_Context_minus(PyObject *context, PyTypeObject *cls, PyObject *const *ar
         .keywords = _keywords,
         .fname = "minus",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -4364,6 +4374,7 @@ _decimal_Context_next_minus(PyObject *context, PyTypeObject *cls, PyObject *cons
         .keywords = _keywords,
         .fname = "next_minus",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -4409,6 +4420,7 @@ _decimal_Context_next_plus(PyObject *context, PyTypeObject *cls, PyObject *const
         .keywords = _keywords,
         .fname = "next_plus",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -4454,6 +4466,7 @@ _decimal_Context_normalize(PyObject *context, PyTypeObject *cls, PyObject *const
         .keywords = _keywords,
         .fname = "normalize",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -4500,6 +4513,7 @@ _decimal_Context_plus(PyObject *context, PyTypeObject *cls, PyObject *const *arg
         .keywords = _keywords,
         .fname = "plus",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -4545,6 +4559,7 @@ _decimal_Context_to_integral_value(PyObject *context, PyTypeObject *cls, PyObjec
         .keywords = _keywords,
         .fname = "to_integral_value",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -4590,6 +4605,7 @@ _decimal_Context_to_integral_exact(PyObject *context, PyTypeObject *cls, PyObjec
         .keywords = _keywords,
         .fname = "to_integral_exact",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -4635,6 +4651,7 @@ _decimal_Context_to_integral(PyObject *context, PyTypeObject *cls, PyObject *con
         .keywords = _keywords,
         .fname = "to_integral",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -4679,6 +4696,7 @@ _decimal_Context_sqrt(PyObject *context, PyTypeObject *cls, PyObject *const *arg
         .keywords = _keywords,
         .fname = "sqrt",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -4724,6 +4742,7 @@ _decimal_Context_add(PyObject *context, PyTypeObject *cls, PyObject *const *args
         .keywords = _keywords,
         .fname = "add",
         .kwtuple = KWTUPLE,
+        .pos = 2,
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
@@ -4771,6 +4790,7 @@ _decimal_Context_compare(PyObject *context, PyTypeObject *cls, PyObject *const *
         .keywords = _keywords,
         .fname = "compare",
         .kwtuple = KWTUPLE,
+        .pos = 2,
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
@@ -4818,6 +4838,7 @@ _decimal_Context_compare_signal(PyObject *context, PyTypeObject *cls, PyObject *
         .keywords = _keywords,
         .fname = "compare_signal",
         .kwtuple = KWTUPLE,
+        .pos = 2,
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
@@ -4865,6 +4886,7 @@ _decimal_Context_divide(PyObject *context, PyTypeObject *cls, PyObject *const *a
         .keywords = _keywords,
         .fname = "divide",
         .kwtuple = KWTUPLE,
+        .pos = 2,
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
@@ -4912,6 +4934,7 @@ _decimal_Context_divide_int(PyObject *context, PyTypeObject *cls, PyObject *cons
         .keywords = _keywords,
         .fname = "divide_int",
         .kwtuple = KWTUPLE,
+        .pos = 2,
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
@@ -4959,6 +4982,7 @@ _decimal_Context_max(PyObject *context, PyTypeObject *cls, PyObject *const *args
         .keywords = _keywords,
         .fname = "max",
         .kwtuple = KWTUPLE,
+        .pos = 2,
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
@@ -5006,6 +5030,7 @@ _decimal_Context_max_mag(PyObject *context, PyTypeObject *cls, PyObject *const *
         .keywords = _keywords,
         .fname = "max_mag",
         .kwtuple = KWTUPLE,
+        .pos = 2,
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
@@ -5053,6 +5078,7 @@ _decimal_Context_min(PyObject *context, PyTypeObject *cls, PyObject *const *args
         .keywords = _keywords,
         .fname = "min",
         .kwtuple = KWTUPLE,
+        .pos = 2,
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
@@ -5100,6 +5126,7 @@ _decimal_Context_min_mag(PyObject *context, PyTypeObject *cls, PyObject *const *
         .keywords = _keywords,
         .fname = "min_mag",
         .kwtuple = KWTUPLE,
+        .pos = 2,
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
@@ -5147,6 +5174,7 @@ _decimal_Context_multiply(PyObject *context, PyTypeObject *cls, PyObject *const 
         .keywords = _keywords,
         .fname = "multiply",
         .kwtuple = KWTUPLE,
+        .pos = 2,
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
@@ -5194,6 +5222,7 @@ _decimal_Context_next_toward(PyObject *context, PyTypeObject *cls, PyObject *con
         .keywords = _keywords,
         .fname = "next_toward",
         .kwtuple = KWTUPLE,
+        .pos = 2,
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
@@ -5241,6 +5270,7 @@ _decimal_Context_quantize(PyObject *context, PyTypeObject *cls, PyObject *const 
         .keywords = _keywords,
         .fname = "quantize",
         .kwtuple = KWTUPLE,
+        .pos = 2,
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
@@ -5291,6 +5321,7 @@ _decimal_Context_remainder(PyObject *context, PyTypeObject *cls, PyObject *const
         .keywords = _keywords,
         .fname = "remainder",
         .kwtuple = KWTUPLE,
+        .pos = 2,
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
@@ -5341,6 +5372,7 @@ _decimal_Context_remainder_near(PyObject *context, PyTypeObject *cls, PyObject *
         .keywords = _keywords,
         .fname = "remainder_near",
         .kwtuple = KWTUPLE,
+        .pos = 2,
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
@@ -5388,6 +5420,7 @@ _decimal_Context_subtract(PyObject *context, PyTypeObject *cls, PyObject *const 
         .keywords = _keywords,
         .fname = "subtract",
         .kwtuple = KWTUPLE,
+        .pos = 2,
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
@@ -5548,6 +5581,7 @@ _decimal_Context_fma(PyObject *context, PyTypeObject *cls, PyObject *const *args
         .keywords = _keywords,
         .fname = "fma",
         .kwtuple = KWTUPLE,
+        .pos = 3,
     };
     #undef KWTUPLE
     PyObject *argsbuf[3];
@@ -5619,6 +5653,7 @@ _decimal_Context_is_normal(PyObject *context, PyTypeObject *cls, PyObject *const
         .keywords = _keywords,
         .fname = "is_normal",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -5664,6 +5699,7 @@ _decimal_Context_is_subnormal(PyObject *context, PyTypeObject *cls, PyObject *co
         .keywords = _keywords,
         .fname = "is_subnormal",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -5709,6 +5745,7 @@ _decimal_Context_is_finite(PyObject *context, PyTypeObject *cls, PyObject *const
         .keywords = _keywords,
         .fname = "is_finite",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -5754,6 +5791,7 @@ _decimal_Context_is_infinite(PyObject *context, PyTypeObject *cls, PyObject *con
         .keywords = _keywords,
         .fname = "is_infinite",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -5799,6 +5837,7 @@ _decimal_Context_is_nan(PyObject *context, PyTypeObject *cls, PyObject *const *a
         .keywords = _keywords,
         .fname = "is_nan",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -5844,6 +5883,7 @@ _decimal_Context_is_qnan(PyObject *context, PyTypeObject *cls, PyObject *const *
         .keywords = _keywords,
         .fname = "is_qnan",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -5889,6 +5929,7 @@ _decimal_Context_is_snan(PyObject *context, PyTypeObject *cls, PyObject *const *
         .keywords = _keywords,
         .fname = "is_snan",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -5934,6 +5975,7 @@ _decimal_Context_is_signed(PyObject *context, PyTypeObject *cls, PyObject *const
         .keywords = _keywords,
         .fname = "is_signed",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -5979,6 +6021,7 @@ _decimal_Context_is_zero(PyObject *context, PyTypeObject *cls, PyObject *const *
         .keywords = _keywords,
         .fname = "is_zero",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -6024,6 +6067,7 @@ _decimal_Context_is_canonical(PyObject *context, PyTypeObject *cls, PyObject *co
         .keywords = _keywords,
         .fname = "is_canonical",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -6069,6 +6113,7 @@ _decimal_Context__apply(PyObject *context, PyTypeObject *cls, PyObject *const *a
         .keywords = _keywords,
         .fname = "_apply",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -6116,6 +6161,7 @@ _decimal_Context_apply(PyObject *context, PyTypeObject *cls, PyObject *const *ar
         .keywords = _keywords,
         .fname = "apply",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -6163,6 +6209,7 @@ _decimal_Context_canonical(PyObject *context, PyTypeObject *cls, PyObject *const
         .keywords = _keywords,
         .fname = "canonical",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -6208,6 +6255,7 @@ _decimal_Context_copy_abs(PyObject *context, PyTypeObject *cls, PyObject *const 
         .keywords = _keywords,
         .fname = "copy_abs",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -6253,6 +6301,7 @@ _decimal_Context_copy_decimal(PyObject *context, PyTypeObject *cls, PyObject *co
         .keywords = _keywords,
         .fname = "copy_decimal",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -6298,6 +6347,7 @@ _decimal_Context_copy_negate(PyObject *context, PyTypeObject *cls, PyObject *con
         .keywords = _keywords,
         .fname = "copy_negate",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -6342,6 +6392,7 @@ _decimal_Context_logb(PyObject *context, PyTypeObject *cls, PyObject *const *arg
         .keywords = _keywords,
         .fname = "logb",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -6400,6 +6451,7 @@ _decimal_Context_logical_invert(PyObject *context, PyTypeObject *cls, PyObject *
         .keywords = _keywords,
         .fname = "logical_invert",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -6445,6 +6497,7 @@ _decimal_Context_number_class(PyObject *context, PyTypeObject *cls, PyObject *co
         .keywords = _keywords,
         .fname = "number_class",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -6490,6 +6543,7 @@ _decimal_Context_to_sci_string(PyObject *context, PyTypeObject *cls, PyObject *c
         .keywords = _keywords,
         .fname = "to_sci_string",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -6535,6 +6589,7 @@ _decimal_Context_to_eng_string(PyObject *context, PyTypeObject *cls, PyObject *c
         .keywords = _keywords,
         .fname = "to_eng_string",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -6580,6 +6635,7 @@ _decimal_Context_compare_total(PyObject *context, PyTypeObject *cls, PyObject *c
         .keywords = _keywords,
         .fname = "compare_total",
         .kwtuple = KWTUPLE,
+        .pos = 2,
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
@@ -6627,6 +6683,7 @@ _decimal_Context_compare_total_mag(PyObject *context, PyTypeObject *cls, PyObjec
         .keywords = _keywords,
         .fname = "compare_total_mag",
         .kwtuple = KWTUPLE,
+        .pos = 2,
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
@@ -6674,6 +6731,7 @@ _decimal_Context_copy_sign(PyObject *context, PyTypeObject *cls, PyObject *const
         .keywords = _keywords,
         .fname = "copy_sign",
         .kwtuple = KWTUPLE,
+        .pos = 2,
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
@@ -6742,6 +6800,7 @@ _decimal_Context_logical_and(PyObject *context, PyTypeObject *cls, PyObject *con
         .keywords = _keywords,
         .fname = "logical_and",
         .kwtuple = KWTUPLE,
+        .pos = 2,
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
@@ -6810,6 +6869,7 @@ _decimal_Context_logical_or(PyObject *context, PyTypeObject *cls, PyObject *cons
         .keywords = _keywords,
         .fname = "logical_or",
         .kwtuple = KWTUPLE,
+        .pos = 2,
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
@@ -6878,6 +6938,7 @@ _decimal_Context_logical_xor(PyObject *context, PyTypeObject *cls, PyObject *con
         .keywords = _keywords,
         .fname = "logical_xor",
         .kwtuple = KWTUPLE,
+        .pos = 2,
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
@@ -6925,6 +6986,7 @@ _decimal_Context_rotate(PyObject *context, PyTypeObject *cls, PyObject *const *a
         .keywords = _keywords,
         .fname = "rotate",
         .kwtuple = KWTUPLE,
+        .pos = 2,
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
@@ -6972,6 +7034,7 @@ _decimal_Context_scaleb(PyObject *context, PyTypeObject *cls, PyObject *const *a
         .keywords = _keywords,
         .fname = "scaleb",
         .kwtuple = KWTUPLE,
+        .pos = 2,
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
@@ -7019,6 +7082,7 @@ _decimal_Context_shift(PyObject *context, PyTypeObject *cls, PyObject *const *ar
         .keywords = _keywords,
         .fname = "shift",
         .kwtuple = KWTUPLE,
+        .pos = 2,
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
@@ -7066,6 +7130,7 @@ _decimal_Context_same_quantum(PyObject *context, PyTypeObject *cls, PyObject *co
         .keywords = _keywords,
         .fname = "same_quantum",
         .kwtuple = KWTUPLE,
+        .pos = 2,
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
@@ -7100,4 +7165,4 @@ exit:
 #ifndef _DECIMAL_CONTEXT_APPLY_METHODDEF
     #define _DECIMAL_CONTEXT_APPLY_METHODDEF
 #endif /* !defined(_DECIMAL_CONTEXT_APPLY_METHODDEF) */
-/*[clinic end generated code: output=718b1f6c20412350 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=11788cec50690fee input=a9049054013a1b77]*/

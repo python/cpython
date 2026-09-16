@@ -60,6 +60,7 @@ complexchar_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         .keywords = _keywords,
         .fname = "complexchar",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[3];
@@ -156,6 +157,7 @@ complexstr_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         .keywords = _keywords,
         .fname = "complexstr",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[3];
@@ -6749,4 +6751,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
     #define _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_ASSUME_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=bbaebaa6961d42d3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=473787dcc9b976cc input=a9049054013a1b77]*/

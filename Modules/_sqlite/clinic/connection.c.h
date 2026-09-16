@@ -261,6 +261,7 @@ blobopen(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwna
         .keywords = _keywords,
         .fname = "blobopen",
         .kwtuple = KWTUPLE,
+        .pos = 3,
     };
     #undef KWTUPLE
     PyObject *argsbuf[5];
@@ -441,6 +442,7 @@ pysqlite_connection_create_function(PyObject *self, PyTypeObject *cls, PyObject 
         .keywords = _keywords,
         .fname = "create_function",
         .kwtuple = KWTUPLE,
+        .pos = 3,
     };
     #undef KWTUPLE
     PyObject *argsbuf[4];
@@ -527,6 +529,7 @@ create_window_function(PyObject *self, PyTypeObject *cls, PyObject *const *args,
         .keywords = _keywords,
         .fname = "create_window_function",
         .kwtuple = KWTUPLE,
+        .pos = 3,
     };
     #undef KWTUPLE
     PyObject *argsbuf[3];
@@ -595,6 +598,7 @@ pysqlite_connection_create_aggregate(PyObject *self, PyTypeObject *cls, PyObject
         .keywords = _keywords,
         .fname = "create_aggregate",
         .kwtuple = KWTUPLE,
+        .pos = 3,
     };
     #undef KWTUPLE
     PyObject *argsbuf[3];
@@ -660,6 +664,7 @@ pysqlite_connection_set_authorizer(PyObject *self, PyTypeObject *cls, PyObject *
         .keywords = _keywords,
         .fname = "set_authorizer",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -731,6 +736,7 @@ pysqlite_connection_set_progress_handler(PyObject *self, PyTypeObject *cls, PyOb
         .keywords = _keywords,
         .fname = "set_progress_handler",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
@@ -782,6 +788,7 @@ pysqlite_connection_set_trace_callback(PyObject *self, PyTypeObject *cls, PyObje
         .keywords = _keywords,
         .fname = "set_trace_callback",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -877,6 +884,7 @@ pysqlite_connection_load_extension(PyObject *self, PyObject *const *args, Py_ssi
         .keywords = _keywords,
         .fname = "load_extension",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
@@ -1262,6 +1270,7 @@ pysqlite_connection_create_collation(PyObject *self, PyTypeObject *cls, PyObject
         .keywords = _keywords,
         .fname = "create_collation",
         .kwtuple = KWTUPLE,
+        .pos = 2,
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
@@ -1437,6 +1446,7 @@ deserialize(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *k
         .keywords = _keywords,
         .fname = "deserialize",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
@@ -1725,4 +1735,4 @@ exit:
 #ifndef DESERIALIZE_METHODDEF
     #define DESERIALIZE_METHODDEF
 #endif /* !defined(DESERIALIZE_METHODDEF) */
-/*[clinic end generated code: output=11ccc746e9223121 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f5c69c86571ea102 input=a9049054013a1b77]*/

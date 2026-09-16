@@ -52,6 +52,7 @@ _io__IOBase_seek(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ss
         .keywords = _keywords,
         .fname = "seek",
         .kwtuple = KWTUPLE,
+        .pos = 2,
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
@@ -130,6 +131,7 @@ _io__IOBase_truncate(PyObject *self, PyTypeObject *cls, PyObject *const *args, P
         .keywords = _keywords,
         .fname = "truncate",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -445,4 +447,4 @@ _io__RawIOBase_readall(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _io__RawIOBase_readall_impl(self);
 }
-/*[clinic end generated code: output=28c06bb6db32c096 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=917e13a4812e04cd input=a9049054013a1b77]*/
