@@ -1668,6 +1668,10 @@ def main():
         if filename and os.path.isfile(filename):
             shell.interp.execfile(filename)
     if cmd or script:
+        # Let the startup file finish first: the command or script
+        # is to run after it, in its namespace (gh-68453).
+        while shell.executing:
+            root.update()
         shell.interp.runcommand("""if 1:
             import sys as _sys
             _sys.argv = {!r}
