@@ -571,13 +571,23 @@ following attributes:
 .. attribute:: DocumentType.publicId
 
    The public identifier for the external subset of the document type definition,
-   or ``None`` if the ``DOCTYPE`` declaration does not specify it.
+   or ``None`` if the ``DOCTYPE`` declaration does not specify it. A ``PUBLIC``
+   ``DOCTYPE`` declaration always has both a public and a system identifier.
 
 
 .. attribute:: DocumentType.systemId
 
    The system identifier, a URI, for the external subset of the document type
    definition, or ``None`` if the ``DOCTYPE`` declaration does not specify it.
+   A ``SYSTEM`` ``DOCTYPE`` declaration has a system identifier but no public
+   identifier.
+
+   For a parsed XML document, ``publicId`` and ``systemId`` correspond to the
+   external identifier in the ``DOCTYPE`` declaration: both are non-``None`` for
+   a ``PUBLIC`` declaration, only ``systemId`` is non-``None`` for a ``SYSTEM``
+   declaration, and both are ``None`` when there is no external identifier.
+   :meth:`DOMImplementation.createDocumentType` does not validate the identifiers,
+   so programmatically created objects may have other combinations.
 
 
 .. attribute:: DocumentType.internalSubset
