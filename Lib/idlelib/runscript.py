@@ -101,11 +101,11 @@ class ScriptBinding:
                 lineno += 1  #mark end of offending line
             pos = "0.0 + %d lines + %d chars" % (lineno-1, offset-1)
             editwin.colorize_syntax_error(text, pos)
-            self.errorbox(type(value).__name__, "%-20s" % msg)
+            self.errorbox(type(value).__name__, msg)
             return False
         except Exception as value:
             msg = str(value) or "<no detail available>"
-            self.errorbox(type(value).__name__, "%-20s" % msg)
+            self.errorbox(type(value).__name__, msg)
             return False
         finally:
             shell.set_warning_stream(saved_stream)
