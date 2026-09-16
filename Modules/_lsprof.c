@@ -363,6 +363,11 @@ ptrace_enter_call(PyObject *self, void *key, PyObject *userObj)
     ProfilerEntry *profEntry;
     ProfilerContext *pContext;
 
+    /* Events raised by the external timer must be ignored: it can run
+       arbitrary code while a context is still being unwound. */
+    if (pObj->flags & POF_EXT_TIMER)
+        return;
+
     /* In the case of entering a generator expression frame via a
      * throw (gen_send_ex(.., 1)), we may already have an
      * Exception set here. We must not mess around with this
@@ -404,6 +409,9 @@ ptrace_leave_call(PyObject *self, void *key)
     ProfilerObject *pObj = (ProfilerObject*)self;
     ProfilerEntry *profEntry;
     ProfilerContext *pContext;
+
+    if (pObj->flags & POF_EXT_TIMER)
+        return;
 
     pContext = pObj->currentProfilerContext;
     if (pContext == NULL)
