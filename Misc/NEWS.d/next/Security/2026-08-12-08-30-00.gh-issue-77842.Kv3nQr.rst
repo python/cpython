@@ -1,0 +1,4 @@
+:class:`urllib.request.HTTPRedirectHandler` no longer sends the
+``Authorization`` and ``Cookie`` headers when it is redirected to other
+origin.  The origin includes the scheme, so they are no longer sent if the
+connection is downgraded from HTTPS to HTTP either.
