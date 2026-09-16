@@ -144,7 +144,8 @@ class AbstractWidgetTest(AbstractTkTest):
         self.assertTrue(widget[name])
         self.checkParams(widget, name, '')
 
-    def checkEnumParam(self, widget, name, *values, errmsg=None, **kwargs):
+    def checkEnumParam(self, widget, name, *values, errmsg=None,
+                       allow_empty=False, **kwargs):
         self.checkParams(widget, name, *values, **kwargs)
         if errmsg is None:
             errmsg2 = ' %s "{}": must be %s%s or %s' % (
@@ -152,10 +153,13 @@ class AbstractWidgetTest(AbstractTkTest):
                     ', '.join(values[:-1]),
                     ',' if len(values) > 2 else '',
                     values[-1])
-            self.checkInvalidParam(widget, name, '',
-                                   errmsg='ambiguous' + errmsg2)
+            if not allow_empty:
+                self.checkInvalidParam(widget, name, '',
+                                       errmsg='ambiguous' + errmsg2)
             errmsg = 'bad' + errmsg2
         self.checkInvalidParam(widget, name, 'spam', errmsg=errmsg)
+        if allow_empty:
+            self.checkParam(widget, name, '', **kwargs)
 
     def checkPixelsParam(self, widget, name, *values,
                          conv=None, keep_orig=True, **kwargs):

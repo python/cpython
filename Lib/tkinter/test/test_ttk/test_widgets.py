@@ -171,9 +171,11 @@ class AbstractLabelTest(AbstractWidgetTest):
 
     def test_compound(self):
         widget = self.create()
+        # bpo-45436: Tk 8.6.11 accepts an empty compound option.
         self.checkEnumParam(widget, 'compound',
                 'none', 'text', 'image', 'center',
-                'top', 'bottom', 'left', 'right')
+                'top', 'bottom', 'left', 'right',
+                allow_empty=get_tk_patchlevel() >= (8, 6, 11))
 
     def test_state(self):
         widget = self.create()

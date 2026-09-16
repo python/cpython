@@ -864,7 +864,9 @@ class ScaleTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_from(self):
         widget = self.create()
-        self.checkFloatParam(widget, 'from', 100, 14.9, 15.1, conv=float_round)
+        # bpo-41306: Tk 8.6.10 no longer rounds the 'from' option.
+        conv = float if get_tk_patchlevel() >= (8, 6, 10) else float_round
+        self.checkFloatParam(widget, 'from', 100, 14.9, 15.1, conv=conv)
 
     def test_label(self):
         widget = self.create()
@@ -1165,8 +1167,10 @@ class MenuTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_type(self):
         widget = self.create()
+        # bpo-45436: Tk 8.6.11 accepts an empty menu type.
         self.checkEnumParam(widget, 'type',
-                'normal', 'tearoff', 'menubar')
+                'normal', 'tearoff', 'menubar',
+                allow_empty=get_tk_patchlevel() >= (8, 6, 11))
 
     def test_entryconfigure(self):
         m1 = self.create()
