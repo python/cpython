@@ -3939,8 +3939,8 @@ x_mul(PyLongObject *a, PyLongObject *b)
     if (z == NULL)
         return NULL;
 
-    memset(z->long_value.ob_digit, 0, _PyLong_DigitCount(z) * sizeof(digit));
     if (a == b) {
+        memset(z->long_value.ob_digit, 0, _PyLong_DigitCount(z) * sizeof(digit));
         /* Efficient squaring per HAC, Algorithm 14.16:
          * https://cacr.uwaterloo.ca/hac/about/chap14.pdf
          * Gives slightly less than a 2x speedup when a == b,
@@ -3999,7 +3999,29 @@ x_mul(PyLongObject *a, PyLongObject *b)
         }
     }
     else {      /* a is not the same as b -- gradeschool int mult */
-        for (i = 0; i < size_a; ++i) {
+        /* The i == 0 pass stores z[0:size_b+1] outright, and pass i only ever
+         * reads digits that pass i-1 has already written, so only the top
+         * size_a digits -- the carry positions -- need to start out zeroed.
+         */
+        assert(size_a >= 1);
+        memset(z->long_value.ob_digit + size_b, 0, size_a * sizeof(digit));
+        {
+            twodigits carry = 0;
+            twodigits f = a->long_value.ob_digit[0];
+            digit *pz = z->long_value.ob_digit;
+            digit *pb = b->long_value.ob_digit;
+            digit *pbend = b->long_value.ob_digit + size_b;
+
+            while (pb < pbend) {
+                carry += *pb++ * f;
+                *pz++ = (digit)(carry & PyLong_MASK);
+                carry >>= PyLong_SHIFT;
+                assert(carry <= PyLong_MASK);
+            }
+            assert(*pz == 0);
+            *pz = (digit)carry;
+        }
+        for (i = 1; i < size_a; ++i) {
             twodigits carry = 0;
             twodigits f = a->long_value.ob_digit[i];
             digit *pz = z->long_value.ob_digit + i;
