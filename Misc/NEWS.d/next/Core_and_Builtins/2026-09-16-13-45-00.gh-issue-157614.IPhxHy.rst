@@ -1,0 +1,2 @@
+Fix lazy import of a dotted module name binding an attribute of the module
+instead of the module itself when the module was already imported.

@@ -1740,6 +1740,23 @@ class MixedLazyEagerImportTests(LazyImportTestCase):
         self.assertIn("OK", result.stdout)
 
 
+    def test_eager_dotted_import_before_lazy_resolves_to_same_module(self):
+        """Eager 'import a.b as c' before 'lazy import a.b as d' should bind the module."""
+        # gh-157614: with a.b already imported, the lazy statement bound the
+        # attribute a.b.b instead of the module a.b.
+        files = {
+            "a/__init__.py": "",
+            "a/b.py": "b = 'attribute a.b.b, not the module a.b'\n",
+        }
+        code = textwrap.dedent("""
+            import a.b as c
+            lazy import a.b as lazy_c
+
+            assert lazy_c is c, lazy_c
+        """)
+        self._assert_subprocess_ok(code, files)
+
+
 class RelativeImportTests(LazyImportTestCase):
     """Tests for relative imports with lazy keyword."""
 
