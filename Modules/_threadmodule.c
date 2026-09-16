@@ -571,7 +571,8 @@ ThreadHandle_join(ThreadHandle *self, PyTime_t timeout_ns)
         if (deadline) {
             // _PyDeadline_Get will return a negative value if the deadline has
             // been exceeded.
-            timeout_ns = Py_MAX(_PyDeadline_Get(deadline), 0);
+            timeout_ns = _PyDeadline_Get(deadline);
+            timeout_ns = Py_MAX(timeout_ns, 0);
         }
 
         if (timeout_ns) {
