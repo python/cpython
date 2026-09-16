@@ -14,6 +14,7 @@ from test.support import (requires, verbose, SaveSignals, cpython_only,
                           check_disallow_instantiation, MISSING_C_DOCSTRINGS,
                           gc_collect, SHORT_TIMEOUT)
 from test.support.import_helper import import_module
+from test.support import os_helper
 
 # Optionally test curses module.  This currently requires that the
 # 'curses' resource be given on the regrtest command line using the -u
@@ -3325,28 +3326,31 @@ class ScreenTests(NewtermTestBase):
         self.assertIs(curses.set_term(b), a)
 
     def test_set_term_refreshes_lines_cols_colors(self):
-        from test.support import os_helper
         s1 = self.make_pty()
         s2 = self.make_pty()
-        
+
         with os_helper.EnvironmentVarGuard() as env:
             env['LINES'] = '25'
             env['COLUMNS'] = '80'
-            a = curses.newterm('xterm', s1, s1)
-            if hasattr(curses, 'start_color'):
-                try:
-                    curses.start_color()
-                except curses.error:
-                    pass
-            
+            try:
+                a = curses.newterm('xterm', s1, s1)
+            except curses.error:
+                self.skipTest('no xterm terminfo entry')
+            try:
+                curses.start_color()
+            except curses.error:
+                pass
+
             env['LINES'] = '30'
             env['COLUMNS'] = '100'
-            b = curses.newterm('xterm-256color', s2, s2)
-            if hasattr(curses, 'start_color'):
-                try:
-                    curses.start_color()
-                except curses.error:
-                    pass
+            try:
+                b = curses.newterm('xterm-256color', s2, s2)
+            except curses.error:
+                self.skipTest('no xterm-256color terminfo entry')
+            try:
+                curses.start_color()
+            except curses.error:
+                pass
 
         curses.set_term(a)
         self.assertEqual((curses.LINES, curses.COLS), a.stdscr.getmaxyx())
