@@ -323,7 +323,7 @@ def generate_runtime_init(identifiers, strings):
             for i in range(-nsmallnegints, nsmallposints):
                 printer.write(f'_PyLong_DIGIT_INIT({i}),')
                 immortal_objects.append((
-                    f'_PyStaticObject_CheckLongSingleton({{}}, {i}, 0);',
+                    None,
                     f'(PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + {i}]',
                 ))
         printer.write('')
@@ -331,7 +331,7 @@ def generate_runtime_init(identifiers, strings):
             for i in range(256):
                 printer.write(f'_PyBytes_CHAR_INIT({i}),')
                 immortal_objects.append((
-                    f'_PyStaticObject_CheckBytesSingleton({{}}, 1, {i});',
+                    None,
                     f'(PyObject *)&_Py_SINGLETON(bytes_characters)[{i}]',
                 ))
         printer.write('')
@@ -358,7 +358,7 @@ def generate_runtime_init(identifiers, strings):
             for i in range(128):
                 printer.write(f'_PyASCIIObject_INIT("\\x{i:02x}"),')
                 immortal_objects.append((
-                    f'_PyStaticObject_CheckUnicodeCharSingleton({{}}, 1, {i});',
+                    None,
                     f'(PyObject *)&_Py_SINGLETON(strings).ascii[{i}]',
                 ))
         printer.write('')
@@ -370,7 +370,7 @@ def generate_runtime_init(identifiers, strings):
                 utf8.append('"')
                 printer.write(f'_PyUnicode_LATIN1_INIT("\\x{i:02x}", {"".join(utf8)}),')
                 immortal_objects.append((
-                    f'_PyStaticObject_CheckUnicodeCharSingleton({{}}, 1, {i});',
+                    None,
                     f'(PyObject *)&_Py_SINGLETON(strings).latin1[{i} - 128]',
                 ))
         printer.write(END)
@@ -416,6 +416,8 @@ def generate_static_strings_initializer(identifiers, strings):
 
 
 def generate_global_object_finalizers(generated_immortal_objects):
+    nsmallnegints, nsmallposints = consts_getter.get_nsmallnegints_and_nsmallposints()
+
     # Target the runtime initializer.
     filename = os.path.join(INTERNAL, 'pycore_global_objects_fini_generated.h')
 
@@ -442,7 +444,25 @@ def generate_global_object_finalizers(generated_immortal_objects):
             printer.write('/* generated runtime-global */')
             printer.write('// (see pycore_runtime_init_generated.h)')
             for fmt, ref in generated_immortal_objects:
-                printer.write(fmt.format(ref))
+                if fmt is not None:
+                    printer.write(fmt.format(ref))
+
+            with printer.block(f'for (int i={-nsmallnegints}; i < {nsmallposints}; i++)'):
+                obj = '(PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + i]'
+                printer.write(f'_PyStaticObject_CheckLongSingleton({obj}, i, 0);')
+
+            with printer.block(f'for (int i=0; i <= 255; i++)'):
+                obj = '(PyObject *)&_Py_SINGLETON(bytes_characters)[i]'
+                printer.write(f'_PyStaticObject_CheckBytesSingleton({obj}, 1, i);')
+
+            with printer.block(f'for (int i=0; i <= 127; i++)'):
+                obj = '(PyObject *)&_Py_SINGLETON(strings).ascii[i]'
+                printer.write(f'_PyStaticObject_CheckUnicodeCharSingleton({obj}, 1, i);')
+
+            with printer.block(f'for (int i=128; i <= 255; i++)'):
+                obj = '(PyObject *)&_Py_SINGLETON(strings).latin1[i - 128]'
+                printer.write(f'_PyStaticObject_CheckUnicodeCharSingleton({obj}, 1, i);')
+
             printer.write('/* non-generated */')
             for fmt, ref in NON_GENERATED_IMMORTAL_OBJECTS:
                 printer.write(fmt.format(ref))
