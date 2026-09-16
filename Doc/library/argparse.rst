@@ -835,7 +835,9 @@ how the command-line arguments should be handled. The supplied actions are:
     >>> parser.parse_args(['-vvv'])
     Namespace(verbose=3)
 
-  Note, the *default* will be ``None`` unless explicitly set to *0*.
+  Unless explicitly set, the *default* will be ``None``. If the default
+  value is a non-zero number, the count starts from that number rather
+  than from zero.
 
 * ``'help'`` - This prints a complete help message for all the options in the
   current parser and then exits. By default a help action is automatically
@@ -1564,12 +1566,12 @@ it exits and prints the error along with a usage message::
    >>> # invalid option
    >>> parser.parse_args(['--bar'])
    usage: PROG [-h] [--foo FOO] [bar]
-   PROG: error: no such option: --bar
+   PROG: error: unrecognized arguments: --bar
 
    >>> # wrong number of arguments
    >>> parser.parse_args(['spam', 'badger'])
    usage: PROG [-h] [--foo FOO] [bar]
-   PROG: error: extra arguments found: badger
+   PROG: error: unrecognized arguments: badger
 
 
 Arguments containing ``-``
@@ -1606,7 +1608,7 @@ there are no options in the parser that look like negative numbers::
    >>> # negative number options present, so -2 is an option
    >>> parser.parse_args(['-2'])
    usage: PROG [-h] [-1 ONE] [foo]
-   PROG: error: no such option: -2
+   PROG: error: unrecognized arguments: -2
 
    >>> # negative number options present, so both -1s are options
    >>> parser.parse_args(['-1', '-1'])
@@ -1623,6 +1625,11 @@ argument::
 
 See also :ref:`the argparse howto on ambiguous arguments <specifying-ambiguous-arguments>`
 for more details.
+
+.. versionchanged:: 3.14
+   Negative-number matching was expanded to include numbers in scientific
+   notation (``-2.5e-6``), numbers containing underscores (``-1_234.5``),
+   and complex numbers (``-1.2e-3j``).
 
 .. _prefix-matching:
 
@@ -1678,6 +1685,12 @@ The Namespace object
 
    Simple class used by default by :meth:`~ArgumentParser.parse_args` to create
    an object holding attributes and return it.
+
+   :class:`!Namespace` objects support :func:`copy.replace`,
+   which returns a copy of the object with the specified attributes replaced.
+
+   .. versionchanged:: next
+      Added support for :func:`copy.replace`.
 
    This class is deliberately simple, just an :class:`object` subclass with a
    readable string representation. If you prefer to have dict-like view of the

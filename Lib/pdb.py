@@ -84,7 +84,6 @@ import pprint
 import signal
 import socket
 import typing
-import asyncio
 import inspect
 import weakref
 import builtins
@@ -101,6 +100,8 @@ import _colorize
 from contextlib import ExitStack, closing, contextmanager
 from types import CodeType
 from warnings import deprecated
+
+lazy import asyncio
 
 try:
     import _pyrepl.utils
@@ -902,6 +903,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self._chained_exception_index = 0
 
     def _get_asyncio_task(self):
+        # If asyncio has never been imported there cannot be a running task,
+        # so skip the import rather than pay for it on every interaction.
+        if 'asyncio' not in sys.modules:
+            return None
         try:
             task = asyncio.current_task()
         except RuntimeError:
@@ -2435,9 +2440,13 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 s += '->'
             elif lineno == exc_lineno:
                 s += '>>'
+            # Strip the trailing newline before colorizing: the colorizer
+            # renders control characters (like '\n') in caret notation, so a
+            # later rstrip() could not remove the resulting '^J'.
+            line = line.rstrip()
             if self.colorize:
                 line = self._colorize_code(line)
-            self.message(s + '\t' + line.rstrip())
+            self.message(s + '\t' + line)
 
     def do_whatis(self, arg):
         """whatis expression

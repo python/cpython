@@ -29,6 +29,9 @@ PyAPI_FUNC(int) _PyGen_SetStopIterationValue(PyObject *);
 
 // Export for '_asyncio' shared extension
 PyAPI_FUNC(int) _PyGen_FetchStopIterationValue(PyObject **);
+// Set the exception passed to throw(typ[, val[, tb]]).
+// Return 0 on success, -1 on failure.
+extern int _PyGen_SetException(PyObject *typ, PyObject *val, PyObject *tb);
 
 PyAPI_FUNC(PyObject *)_PyCoro_GetAwaitableIter(PyObject *o);
 PyAPI_FUNC(PyObject *)_PyAsyncGenValueWrapperNew(PyThreadState *state, PyObject *);

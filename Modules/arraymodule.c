@@ -1617,7 +1617,7 @@ array_array_byteswap_impl(arrayobject *self)
         break;
     case 16:
         assert(strcmp(self->ob_descr->typecode, "Zd") == 0);
-        for (p = self->ob_item, i = Py_SIZE(self); --i >= 0; p += 8) {
+        for (p = self->ob_item, i = Py_SIZE(self); --i >= 0; p += 16) {
             char t0 = p[0];
             char t1 = p[1];
             char t2 = p[2];
@@ -2281,7 +2281,7 @@ array__array_reconstructor_impl(PyObject *module, PyTypeObject *arraytype,
     case IEEE_754_FLOAT16_LE:
     case IEEE_754_FLOAT16_BE: {
         Py_ssize_t i;
-        int le = (mformat_code == IEEE_754_FLOAT_LE) ? 1 : 0;
+        int le = (mformat_code == IEEE_754_FLOAT16_LE) ? 1 : 0;
         Py_ssize_t itemcount = Py_SIZE(items) / 2;
         const char *memstr = PyBytes_AS_STRING(items);
 

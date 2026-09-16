@@ -128,7 +128,8 @@ def printlist(x, width=70, indent=4, file=None):
     blanks = ' ' * indent
     # Print the sorted list: 'x' may be a '--random' list or a set()
     print(textwrap.fill(' '.join(str(elt) for elt in sorted(x)), width,
-                        initial_indent=blanks, subsequent_indent=blanks),
+                        initial_indent=blanks, subsequent_indent=blanks,
+                        break_long_words=False, break_on_hyphens=False),
           file=file)
 
 
@@ -141,7 +142,8 @@ orig_unraisablehook: Callable[..., None] | None = None
 
 def regrtest_unraisable_hook(unraisable) -> None:
     global orig_unraisablehook
-    support.environment_altered = True
+    support.set_environment_altered(
+        f"unraisable exception ({unraisable.exc_type.__name__})")
     support.print_warning("Unraisable exception")
     old_stderr = sys.stderr
     try:
@@ -165,7 +167,8 @@ orig_threading_excepthook: Callable[..., object] | None = None
 
 def regrtest_threading_excepthook(args) -> None:
     global orig_threading_excepthook
-    support.environment_altered = True
+    support.set_environment_altered(
+        f"uncaught thread exception ({args.exc_type.__name__})")
     support.print_warning(f"Uncaught thread exception: {args.exc_type.__name__}")
     old_stderr = sys.stderr
     try:
@@ -327,9 +330,6 @@ def get_build_info():
     # Get most important configure and build options as a list of strings.
     # Example: ['debug', 'ASAN+MSAN'] or ['release', 'LTO+PGO'].
 
-    config_args = sysconfig.get_config_var('CONFIG_ARGS') or ''
-    cflags = sysconfig.get_config_var('PY_CFLAGS') or ''
-    cflags += ' ' + (sysconfig.get_config_var('PY_CFLAGS_NODIST') or '')
     ldflags_nodist = sysconfig.get_config_var('PY_LDFLAGS_NODIST') or ''
 
     build = []
@@ -348,18 +348,16 @@ def get_build_info():
             free_threading = f"{free_threading} GIL={int(PYTHON_GIL)}"
         build.append(free_threading)
 
-    if hasattr(sys, 'gettotalrefcount'):
+    if support.Py_DEBUG:
         # --with-pydebug
         build.append('debug')
 
-        if '-DNDEBUG' in cflags:
+        if not support.built_with_c_assertions():
             build.append('without_assert')
     else:
         build.append('release')
 
-        if '--with-assertions' in config_args:
-            build.append('with_assert')
-        elif '-DNDEBUG' not in cflags:
+        if support.built_with_c_assertions():
             build.append('with_assert')
 
     # --enable-experimental-jit
@@ -524,7 +522,7 @@ def remove_testfn(test_name: TestName, verbose: int) -> None:
 
     if verbose:
         print_warning(f"{test_name} left behind {kind} {name!r}")
-        support.environment_altered = True
+        support.set_environment_altered(f"left behind {kind} {name!r}")
 
     try:
         import stat

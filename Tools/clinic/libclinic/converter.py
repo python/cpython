@@ -44,7 +44,10 @@ def add_default_legacy_c_converter(cls: CConverterClassT) -> CConverterClassT:
     # automatically add converter for default format unit
     # (but without stomping on the existing one if it's already
     # set, in case you subclass)
+    # A format unit which contains a quote is a C expression, not a legacy
+    # format unit which can be used as an annotation.
     if ((cls.format_unit not in ('O&', '')) and
+        ('"' not in cls.format_unit) and
         (cls.format_unit not in legacy_converters)):
         legacy_converters[cls.format_unit] = cls
     return cls
@@ -278,11 +281,18 @@ class CConverter(metaclass=CConverterAutoRegister):
     def c_default_init(self) -> None:
         return
 
+    # An alternative name of a preceding parameter: they share
+    # the same C variable.
+    alias_of: Parameter | None = None
+
     def is_optional(self) -> bool:
         return (self.default is not unspecified)
 
     def _render_self(self, parameter: Parameter, data: CRenderData) -> None:
         self.parameter = parameter
+        if self.alias_of is not None:
+            # Everything is rendered for the aliased parameter.
+            return
         name = self.parser_name
 
         # impl_arguments
@@ -303,6 +313,13 @@ class CConverter(metaclass=CConverterAutoRegister):
     ) -> None:
         self.parameter = parameter
         name = self.name
+
+        if self.alias_of is not None:
+            # Only the keyword is new, the rest is rendered for the
+            # aliased parameter.
+            data.keywords.append(parameter.name)
+            data.format_units.append(self.format_unit)
+            return
 
         # declarations
         d = self.declaration(in_parser=True)

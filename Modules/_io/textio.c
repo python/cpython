@@ -1671,17 +1671,17 @@ _textiowrapper_writeflush(textio *self)
     }
     else {
         assert(PyList_Check(pending));
-        b = PyBytes_FromStringAndSize(NULL, self->pending_bytes_count);
-        if (b == NULL) {
+        PyBytesWriter *writer = PyBytesWriter_Create(self->pending_bytes_count);
+        if (writer == NULL) {
             return -1;
         }
 
-        char *buf = PyBytes_AsString(b);
+        char *buf = PyBytesWriter_GetData(writer);
         Py_ssize_t pos = 0;
 
         for (Py_ssize_t i = 0; i < PyList_GET_SIZE(pending); i++) {
             PyObject *obj = PyList_GET_ITEM(pending, i);
-            char *src;
+            const char *src;
             Py_ssize_t len;
             if (PyUnicode_Check(obj)) {
                 assert(PyUnicode_IS_ASCII(obj));
@@ -1690,15 +1690,18 @@ _textiowrapper_writeflush(textio *self)
             }
             else {
                 assert(PyBytes_Check(obj));
-                if (PyBytes_AsStringAndSize(obj, &src, &len) < 0) {
-                    Py_DECREF(b);
-                    return -1;
-                }
+                src = PyBytes_AS_STRING(obj);
+                len = PyBytes_GET_SIZE(obj);
             }
             memcpy(buf + pos, src, len);
             pos += len;
         }
         assert(pos == self->pending_bytes_count);
+
+        b = PyBytesWriter_Finish(writer);
+        if (b == NULL) {
+            return -1;
+        }
     }
 
     self->pending_bytes_count = 0;
@@ -2823,7 +2826,7 @@ _io_TextIOWrapper_tell_impl(textio *self)
     PyObject *res;
     PyObject *posobj = NULL;
     cookie_type cookie = {0,0,0,0,0};
-    PyObject *next_input;
+    PyObject *next_input = NULL;
     Py_ssize_t chars_to_skip, chars_decoded;
     Py_ssize_t skip_bytes, skip_back;
     PyObject *saved_state = NULL;
@@ -2875,11 +2878,15 @@ _io_TextIOWrapper_tell_impl(textio *self)
 
     assert (PyBytes_Check(next_input));
 
+    /* Own next_input: a reentrant or concurrent seek can drop the snapshot. */
+    Py_INCREF(next_input);
+
     cookie.start_pos -= PyBytes_GET_SIZE(next_input);
 
     /* How many decoded characters have been used up since the snapshot? */
     if (self->decoded_chars_used == 0)  {
         /* We haven't moved from the snapshot point. */
+        Py_DECREF(next_input);
         return textiowrapper_build_cookie(&cookie);
     }
 
@@ -3020,6 +3027,7 @@ _io_TextIOWrapper_tell_impl(textio *self)
     }
 
 finally:
+    Py_XDECREF(next_input);
     res = PyObject_CallMethodOneArg(
             self->decoder, &_Py_ID(setstate), saved_state);
     Py_DECREF(saved_state);
@@ -3032,6 +3040,7 @@ finally:
     return textiowrapper_build_cookie(&cookie);
 
 fail:
+    Py_XDECREF(next_input);
     if (saved_state) {
         PyObject *exc = PyErr_GetRaisedException();
         res = PyObject_CallMethodOneArg(
@@ -3408,10 +3417,6 @@ _io_TextIOWrapper__CHUNK_SIZE_set_impl(textio *self, PyObject *value)
 {
     Py_ssize_t n;
     CHECK_ATTACHED_INT(self);
-    if (value == NULL) {
-        PyErr_SetString(PyExc_AttributeError, "cannot delete attribute");
-        return -1;
-    }
     n = PyNumber_AsSsize_t(value, PyExc_ValueError);
     if (n == -1 && PyErr_Occurred())
         return -1;
@@ -3422,6 +3427,19 @@ _io_TextIOWrapper__CHUNK_SIZE_set_impl(textio *self, PyObject *value)
     }
     self->chunk_size = n;
     return 0;
+}
+
+/*[clinic input]
+@critical_section
+@getter
+_io.TextIOWrapper.buffer
+[clinic start generated code]*/
+
+static PyObject *
+_io_TextIOWrapper_buffer_get_impl(textio *self)
+/*[clinic end generated code: output=d265a34555aa5d4b input=5951cfa148f7350a]*/
+{
+    return Py_XNewRef(buffer_access_safe(self));
 }
 
 static PyMethodDef incrementalnewlinedecoder_methods[] = {
@@ -3482,7 +3500,6 @@ static PyMethodDef textiowrapper_methods[] = {
 
 static PyMemberDef textiowrapper_members[] = {
     {"encoding", _Py_T_OBJECT, offsetof(textio, encoding), Py_READONLY},
-    {"buffer", _Py_T_OBJECT, offsetof(textio, buffer), Py_READONLY},
     {"line_buffering", Py_T_BOOL, offsetof(textio, line_buffering), Py_READONLY},
     {"write_through", Py_T_BOOL, offsetof(textio, write_through), Py_READONLY},
     {"_finalizing", Py_T_BOOL, offsetof(textio, finalizing), 0},
@@ -3497,6 +3514,7 @@ static PyGetSetDef textiowrapper_getset[] = {
     _IO_TEXTIOWRAPPER_NEWLINES_GETSETDEF
     _IO_TEXTIOWRAPPER_ERRORS_GETSETDEF
     _IO_TEXTIOWRAPPER__CHUNK_SIZE_GETSETDEF
+    _IO_TEXTIOWRAPPER_BUFFER_GETSETDEF
     {NULL}
 };
 
