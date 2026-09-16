@@ -111,7 +111,10 @@ jobs:
 
     - name: Configure CPython
       if: matrix.task == 'build-and-test'
-      run: ./configure --with-pydebug --with-openssl=$PWD/multissl/openssl/$OPENSSL_VER
+      run: |
+        autoconf -Wall
+        autoheader -Wall
+        ./configure --with-pydebug --with-openssl=$PWD/multissl/openssl/$OPENSSL_VER
 
     - name: Build CPython
       if: matrix.task == 'build-and-test'

@@ -1772,21 +1772,31 @@ class MiscTests(unittest.TestCase):
         self.opener_has_handler(o, MyHTTPHandler)
         self.opener_has_handler(o, MyOtherHTTPHandler)
 
-    @unittest.skipUnless(support.is_resource_enabled('network'),
-                         'test requires network access')
     def test_issue16464(self):
-        with support.transient_internet("http://www.example.com/"):
-            opener = urllib.request.build_opener()
-            request = urllib.request.Request("http://www.example.com/")
-            self.assertEqual(None, request.data)
+        # Reusing a Request must update its body and Content-Length. Keep the
+        # real opener and request processing, but replace the HTTP transport.
+        connection = MockHTTPClass()
 
-            opener.open(request, "1".encode("us-ascii"))
-            self.assertEqual(b"1", request.data)
-            self.assertEqual("1", request.get_header("Content-length"))
+        class TestHTTPHandler(urllib.request.HTTPHandler):
+            def http_open(self, request):
+                return self.do_open(connection, request)
 
-            opener.open(request, "1234567890".encode("us-ascii"))
-            self.assertEqual(b"1234567890", request.data)
-            self.assertEqual("10", request.get_header("Content-length"))
+        opener = urllib.request.build_opener(urllib.request.ProxyHandler({}),
+                                             TestHTTPHandler())
+        request = urllib.request.Request("http://www.example.com/")
+        self.assertIsNone(request.data)
+        for data in (b"1", b"1234567890"):
+            with self.subTest(data=data):
+                connection.req_headers = []
+                with opener.open(request, data) as response:
+                    self.assertEqual(response.code, 200)
+                self.assertEqual(request.data, data)
+                self.assertEqual(request.get_header("Content-length"),
+                                 str(len(data)))
+                self.assertEqual(connection.method, "POST")
+                self.assertEqual(connection.data, data)
+                self.assertEqual(dict(connection.req_headers)["Content-Length"],
+                                 str(len(data)))
 
     def test_HTTPError_interface(self):
         """

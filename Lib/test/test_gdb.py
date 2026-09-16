@@ -12,6 +12,7 @@ import sys
 import sysconfig
 import textwrap
 import unittest
+from unittest import mock
 
 # Is this Python configured to support threads?
 try:
@@ -85,7 +86,8 @@ CET_PROTECTION = cet_protection()
 def run_gdb(*args, **env_vars):
     """Runs gdb in --batch mode with the additional arguments given by *args.
 
-    Returns its (stdout, stderr) decoded from utf-8 using the replace handler.
+    Returns a CompletedProcess with stdout and stderr decoded from utf-8
+    using the replace handler.
     """
     if env_vars:
         env = os.environ.copy()
@@ -97,7 +99,8 @@ def run_gdb(*args, **env_vars):
     base_cmd = ('gdb', '--batch', '-nx')
     if (gdb_major_version, gdb_minor_version) >= (7, 4):
         base_cmd += ('-iex', 'add-auto-load-safe-path ' + checkout_hook_path)
-    proc = subprocess.Popen(base_cmd + args,
+    command = base_cmd + args
+    proc = subprocess.Popen(command,
                             # Redirect stdin to prevent GDB from messing with
                             # the terminal settings
                             stdin=subprocess.PIPE,
@@ -106,23 +109,25 @@ def run_gdb(*args, **env_vars):
                             env=env)
     with proc:
         out, err = proc.communicate()
-    return out.decode('utf-8', 'replace'), err.decode('utf-8', 'replace')
+    return subprocess.CompletedProcess(command, proc.returncode,
+                                       out.decode('utf-8', 'replace'),
+                                       err.decode('utf-8', 'replace'))
 
 # Verify that "gdb" was built with the embedded python support enabled:
-gdbpy_version, _ = run_gdb("--eval-command=python import sys; print(sys.version_info)")
+gdbpy_version = run_gdb("--eval-command=python import sys; print(sys.version_info)").stdout
 if not gdbpy_version:
     raise unittest.SkipTest("gdb not built with embedded python support")
 
 # Verify that "gdb" can load our custom hooks, as OS security settings may
 # disallow this without a customized .gdbinit.
-_, gdbpy_errors = run_gdb('--args', sys.executable)
+gdbpy_errors = run_gdb('--args', sys.executable).stderr
 if "auto-loading has been declined" in gdbpy_errors:
     msg = "gdb security settings prevent use of custom hooks: "
     raise unittest.SkipTest(msg + gdbpy_errors.rstrip())
 
 def gdb_has_frame_select():
     # Does this build of gdb have gdb.Frame.select ?
-    stdout, _ = run_gdb("--eval-command=python print(dir(gdb.Frame))")
+    stdout = run_gdb("--eval-command=python print(dir(gdb.Frame))").stdout
     m = re.match(r'.*\[(.*)\].*', stdout)
     if not m:
         raise unittest.SkipTest("Unable to parse output from gdb.Frame.select test")
@@ -221,7 +226,8 @@ class DebuggerTests(unittest.TestCase):
         # print (' '.join(args))
 
         # Use "args" to invoke gdb, capturing stdout, stderr:
-        out, err = run_gdb(*args, PYTHONHASHSEED=PYTHONHASHSEED)
+        result = run_gdb(*args, PYTHONHASHSEED=PYTHONHASHSEED)
+        out, err = result.stdout, result.stderr
 
         errlines = err.splitlines()
         unexpected_errlines = []
@@ -252,8 +258,11 @@ class DebuggerTests(unittest.TestCase):
             if not line.startswith(ignore_patterns):
                 unexpected_errlines.append(line)
 
-        # Ensure no unexpected error messages:
-        self.assertEqual(unexpected_errlines, [])
+        # Keep the full diagnostic, including warning lines filtered above.
+        diagnostic = ('GDB command: {!r}\nGDB exit status: {}\n'
+                      'GDB stdout:\n{}\nGDB stderr:\n{}').format(
+                          result.args, result.returncode, out, err)
+        self.assertEqual(unexpected_errlines, [], diagnostic)
         return out
 
     def get_gdb_repr(self, source,
@@ -964,12 +973,43 @@ class PyLocalsTests(DebuggerTests):
         self.assertMultilineMatches(bt,
                                     r".*\na = 1\nb = 2\nc = 3\n.*")
 
+class GdbInvocationTests(unittest.TestCase):
+    def test_run_gdb_preserves_process_details(self):
+        with mock.patch.object(subprocess, 'Popen') as popen:
+            proc = popen.return_value
+            proc.communicate.return_value = (b'output\xff', b'warning: detail\xfe')
+            proc.returncode = 7
+            result = run_gdb('--eval-command=quit')
+        self.assertEqual(result.args, popen.call_args[0][0])
+        self.assertIn('--eval-command=quit', result.args)
+        self.assertEqual(result.returncode, 7)
+        self.assertEqual(result.stdout, 'output\ufffd')
+        self.assertEqual(result.stderr, 'warning: detail\ufffd')
+
+    def test_failure_includes_unfiltered_output(self):
+        stderr = ('warning: original diagnostic\n'
+                  'This normally should not happen, please file a bug report.\n')
+        for returncode in (0, 7):
+            with self.subTest(returncode=returncode):
+                result = subprocess.CompletedProcess(
+                    ('gdb', '--batch'), returncode, 'raw backtrace\n', stderr)
+                with mock.patch(__name__ + '.run_gdb', return_value=result):
+                    with self.assertRaises(AssertionError) as cm:
+                        DebuggerTests().get_stack_trace(source='id(42)')
+                message = str(cm.exception)
+                self.assertIn('GDB command: {!r}'.format(result.args), message)
+                self.assertIn('GDB exit status: {}'.format(returncode), message)
+                self.assertIn('GDB stdout:\n' + result.stdout, message)
+                self.assertIn('GDB stderr:\n' + stderr, message)
+
+
 def test_main():
     if support.verbose:
         print("GDB version %s.%s:" % (gdb_major_version, gdb_minor_version))
         for line in gdb_version.splitlines():
             print(" " * 4 + line)
-    run_unittest(PrettyPrintTests,
+    run_unittest(GdbInvocationTests,
+                 PrettyPrintTests,
                  PyListTests,
                  StackNavigationTests,
                  PyBtTests,
