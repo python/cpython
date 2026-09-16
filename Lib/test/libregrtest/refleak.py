@@ -194,7 +194,7 @@ def runtest_refleak(test_name, test_func,
         (alloc_deltas, 'memory blocks'),
         (fd_deltas, 'file descriptors')
     ]:
-        # ignore warmup runs; convert to a list for reporting
+        # Ignore warmup runs; convert to a list for reporting
         deltas = list(raw_deltas[warmups:])
 
         # Only consider that a test leaks if all deltas are greater than or
