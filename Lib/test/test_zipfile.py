@@ -2258,7 +2258,7 @@ class MonkeypatchedDecompressorTests(unittest.TestCase):
         def decompress(self, data):
             return data.swapcase()
 
-    def setUp(self):
+    def test_roundtrip_monkeypatched_decompressor(self):
         orig_check_compression = zipfile._check_compression
         orig_get_compressor = zipfile._get_compressor
         orig_get_decompressor = zipfile._get_decompressor
@@ -2277,29 +2277,26 @@ class MonkeypatchedDecompressorTests(unittest.TestCase):
                 return self.Decompressor()
             return orig_get_decompressor(compress_type)
 
-        self.enterContext(mock.patch.object(
-            zipfile, '_check_compression', check_compression))
-        self.enterContext(mock.patch.object(
-            zipfile, '_get_compressor', get_compressor))
-        self.enterContext(mock.patch.object(
-            zipfile, '_get_decompressor', get_decompressor))
-
-    def test_roundtrip_monkeypatched_decompressor(self):
-        data = bytes(range(256)) * 8
-        buf = io.BytesIO()
-        with zipfile.ZipFile(buf, "w", compression=self.COMPRESSION) as zf:
-            zf.writestr("member", data)
-        self.assertIn(data.swapcase(), buf.getvalue())
-        with zipfile.ZipFile(io.BytesIO(buf.getvalue())) as zf:
-            self.assertEqual(zf.read("member"), data)
-            with zf.open("member") as f:
-                self.assertEqual(f.read(100), data[:100])
-                self.assertEqual(f.read1(100), data[100:200])
-                f.seek(-100, os.SEEK_END)
-                self.assertEqual(f.read(), data[-100:])
-                # Rewinding past the read buffer re-creates the decompressor.
-                f.seek(0)
-                self.assertEqual(f.read(), data)
+        with (
+            mock.patch.object(zipfile, '_check_compression', check_compression),
+            mock.patch.object(zipfile, '_get_compressor', get_compressor),
+            mock.patch.object(zipfile, '_get_decompressor', get_decompressor),
+        ):
+            data = bytes(range(256)) * 8
+            buf = io.BytesIO()
+            with zipfile.ZipFile(buf, "w", compression=self.COMPRESSION) as zf:
+                zf.writestr("member", data)
+            self.assertIn(data.swapcase(), buf.getvalue())
+            with zipfile.ZipFile(io.BytesIO(buf.getvalue())) as zf:
+                self.assertEqual(zf.read("member"), data)
+                with zf.open("member") as f:
+                    self.assertEqual(f.read(100), data[:100])
+                    self.assertEqual(f.read1(100), data[100:200])
+                    f.seek(-100, os.SEEK_END)
+                    self.assertEqual(f.read(), data[-100:])
+                    # Rewinding past the read buffer re-creates the decompressor.
+                    f.seek(0)
+                    self.assertEqual(f.read(), data)
 
 
 class AbstractBadCrcTests:
