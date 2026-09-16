@@ -55,11 +55,7 @@ _PyStaticObject_CheckBytesSingleton(PyObject *obj,
     _PyObject_ASSERT(obj, PyBytes_GET_SIZE(obj) == size);
     const unsigned char *str = (const unsigned char *)PyBytes_AS_STRING(obj);
     _PyObject_ASSERT(obj, str[0] == ch);
-    // For the empty bytes string, _PyBytes_CheckOverflow() checks also
-    // "str[0] == ch" which is redundant.
-    if (size > 0) {
-        _PyBytes_CheckOverflow(obj, obj, "bytes singleton");
-    }
+    _PyBytes_CheckOverflow(obj, obj, "bytes singleton");
 }
 
 static void
