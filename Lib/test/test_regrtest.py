@@ -1445,13 +1445,13 @@ class ArgsTestCase(BaseTestCase):
                     global RUN, FD
                     RUN += 1
                     if RUN == 4:
-                        # Leak (delta=1)
+                        # Create a fd without closing it: leak! (delta=1)
                         FD = os.open(__file__, os.O_RDONLY)
                     elif RUN == 5:
                         # Close fd created in previous run (delta=-1)
                         os.close(FD)
                     else:
-                        # do nothing in the warmup (steps 1-3) and step 6 (delta=0)
+                        # Do nothing at the warmup (steps 1-3) and step 6 (delta=0)
                         pass
         """)
         self.check_leak(code, 'file descriptors',
