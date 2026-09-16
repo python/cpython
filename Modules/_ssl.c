@@ -41,6 +41,7 @@
 #endif
 
 #include "_ssl.h"
+#include "_openssl_mem.h"
 
 /* Redefined below for Windows debug builds after important #includes */
 #define _PySSL_FIX_ERRNO
@@ -5882,7 +5883,8 @@ _ssl_MemoryBIO_read_impl(PySSLMemoryBIO *self, int len)
 {
     int avail, nbytes;
 
-    avail = (int)Py_MIN(BIO_ctrl_pending(self->bio), INT_MAX);
+    size_t pending = BIO_ctrl_pending(self->bio);
+    avail = (int)Py_MIN(pending, (size_t)INT_MAX);
     if ((len < 0) || (len > avail))
         len = avail;
 
@@ -7447,5 +7449,6 @@ static struct PyModuleDef _sslmodule_def = {
 PyMODINIT_FUNC
 PyInit__ssl(void)
 {
+    _PyOpenSSL_SetupMemFunctions();
     return PyModuleDef_Init(&_sslmodule_def);
 }

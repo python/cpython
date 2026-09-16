@@ -3255,10 +3255,10 @@ _PyMem_DebugRawRealloc(void *ctx, void *p, size_t nbytes)
     }
     else {
         size_t i = original_nbytes - ERASED_SIZE;
-        memcpy(data, save, Py_MIN(nbytes, ERASED_SIZE));
+        memcpy(data, save, Py_MIN(nbytes, (size_t)ERASED_SIZE));
         if (nbytes > i) {
             memcpy(data + i, &save[ERASED_SIZE],
-                   Py_MIN(nbytes - i, ERASED_SIZE));
+                   Py_MIN(nbytes - i, (size_t)ERASED_SIZE));
         }
     }
 #endif
