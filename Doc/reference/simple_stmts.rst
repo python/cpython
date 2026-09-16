@@ -20,7 +20,6 @@ simple statements is:
               : | `pass_stmt`
               : | `del_stmt`
               : | `return_stmt`
-              : | `yield_stmt`
               : | `raise_stmt`
               : | `break_stmt`
               : | `continue_stmt`
@@ -32,6 +31,7 @@ simple statements is:
 
 
 .. _exprstmts:
+.. _yield statements:
 
 Expression statements
 =====================
@@ -44,12 +44,7 @@ Expression statements
 Expression statements are used (mostly interactively) to compute and write a
 value, or (usually) to call a procedure (a function that returns no meaningful
 result; in Python, procedures return the value ``None``).  Other uses of
-expression statements are allowed and occasionally useful.  The syntax for an
-expression statement is:
-
-.. productionlist:: python-grammar
-   expression_stmt: `starred_expression`
-
+expression statements are allowed and occasionally useful.
 An expression statement evaluates the expression list (which may be a single
 expression).
 
@@ -66,6 +61,24 @@ In interactive mode, if the value is not ``None``, it is converted to a string
 using the built-in :func:`repr` function and the resulting string is written to
 standard output on a line by itself (except if the result is ``None``, so that
 procedure calls do not cause any output.)
+
+The formal grammar for an expression statement is:
+
+.. index:: pair: statement; yield
+
+.. grammar-snippet::
+   :group: python-grammar
+
+   expression_stmt: `starred_expression` | `yield_expression`
+
+.. note::
+
+   The formal grammar includes as special case for a single :keyword:`!yield`
+   expression, without parentheses around it.
+   This is sometimes called a :dfn:`yield statement`.
+   For complete documentation of :keyword:`!yield` semantics, see
+   the :ref:`yieldexpr` section.
+
 
 .. _assignment:
 
@@ -511,42 +524,6 @@ In an asynchronous generator function, an empty :keyword:`return` statement
 indicates that the asynchronous generator is done and will cause
 :exc:`StopAsyncIteration` to be raised.  A non-empty :keyword:`!return`
 statement is a syntax error in an asynchronous generator function.
-
-.. _yield:
-
-The :keyword:`!yield` statement
-===============================
-
-.. index::
-   pair: statement; yield
-   single: generator; function
-   single: generator; iterator
-   single: function; generator
-   pair: exception; StopIteration
-
-.. productionlist:: python-grammar
-   yield_stmt: `yield_expression`
-
-A :keyword:`yield` statement is semantically equivalent to a :ref:`yield
-expression <yieldexpr>`. The ``yield`` statement can be used to omit the
-parentheses that would otherwise be required in the equivalent yield expression
-statement. For example, the yield statements ::
-
-  yield <expr>
-  yield from <expr>
-
-are equivalent to the yield expression statements ::
-
-  (yield <expr>)
-  (yield from <expr>)
-
-Yield expressions and statements are only used when defining a :term:`generator`
-function, and are only used in the body of the generator function.  Using :keyword:`yield`
-in a function definition is sufficient to cause that definition to create a
-generator function instead of a normal function.
-
-For full details of :keyword:`yield` semantics, refer to the
-:ref:`yieldexpr` section.
 
 .. _raise:
 

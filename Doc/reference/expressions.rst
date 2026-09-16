@@ -1072,19 +1072,27 @@ The formal grammar for generator expressions is:
    pair: yield; expression
    pair: generator; function
 
+.. _yield:
 .. _yieldexpr:
 
-Yield expressions
------------------
+.. index::
+   single: generator; function
+   single: generator; iterator
+   single: function; generator
+   pair: exception; StopIteration
 
-The yield expression may only occur syntactically nested in a function
-definition, not within a nested class definition.
+:keyword:`!yield` expressions
+-----------------------------
+
+The :keyword:`!yield` expression may only occur syntactically nested in
+a function definition, not within a nested class definition.
 See :ref:`yield-expression-placement` for details.
 
 A function that contains one or more :ref:`yield expressions <yieldexpr>`
 is a :term:`generator function`.
-At runtime, calling the function returns a :term:`generator iterator`,
-which produces values after the :keyword:`yield` keyword in turn.
+At runtime, calling the function returns a :term:`generator iterator`
+which, when iterated, runs the underlying function and produces values
+after the :keyword:`!yield` keywords.
 For example::
 
    >>> def count_to_three():
@@ -1100,7 +1108,7 @@ For example::
    2
    3
 
-See :ref:`generator-types` for details on runtime behavior, and other
+See :ref:`generator-types` for details on runtime behavior and
 ways to control control flow through the function.
 
 If the enclosing function is defined using ``async def``, it becomes an
@@ -1176,28 +1184,44 @@ generator function::
       usable as simple coroutines.
 
 
+.. _yield-parentheses:
+
 Parentheses around :keyword:`yield` expressions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Yield expressions must be enclosed in parentheses except in the following
 common situations (which are used in the examples above):
 
-- the :ref:`yield statement <yield>`'s only expression, or
+- an :ref:`expression statement <exprstmts>`'s only expression, or
 - the only expression on the right-hand side of an
   :ref:`assignment statement <assignment>`.
 
 For example::
 
-   def gen():
-      yield 123  # yield statement: parentheses not required
+   def yields_in_expression_statements():
 
-      print("first value:", (yield 456))  # parentheses are required
+      # single yield expression: parentheses NOT required
+      yield 123
 
-      value = yield 789  # assignment statement: parentheses not required
-      print("second value:", value)
+      # two yield expressions: parentheses required
+      (yield 456, yield 789)
 
-      value = (yield 147) + 258  # part of larger expression: parens required
-      print("third value:", value)
+      # part of larger expression: parentheses required
+      print("value:", (yield 147))
+
+   def yields_in_assignment_statements():
+
+      # single yield expression: parentheses NOT required
+      value = yield 258
+      print("value:", value)
+
+      # two yield expressions: parentheses required
+      values = (yield 456, yield 789)
+      print("values:", value)
+
+      # part of larger expression: parentheses required
+      value = (yield 369) + 159
+      print("value:", value)
 
 
 :keyword:`yield` expressions and :keyword:`try`
