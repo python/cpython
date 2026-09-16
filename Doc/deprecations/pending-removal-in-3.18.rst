@@ -11,6 +11,13 @@ Pending removal in Python 3.18
     C implementation, has been deprecated since Python 3.13.
     (Contributed by Serhiy Storchaka in :gh:`89902`.)
 
+* :mod:`winreg`:
+
+  * The *reserved* parameter of :func:`winreg.OpenKey` and
+    :func:`winreg.OpenKeyEx` has been deprecated since Python 3.16.
+    Use the *options* parameter of :func:`~winreg.OpenKeyEx` instead.
+    (Contributed by An Long in :gh:`95461`.)
+
 * Deprecations defined by :pep:`829`:
 
   * ``import`` lines in :file:`{name}.pth` files are silently ignored.
