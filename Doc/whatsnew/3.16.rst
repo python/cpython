@@ -71,7 +71,7 @@ New features
 ============
 
 Pasting interactive sessions
----------------------------
+----------------------------
 
 The :ref:`interactive shell <tut-interac>` now recognizes pasted Python
 sessions starting with ``>>>``.  When the input buffer is empty, it removes
