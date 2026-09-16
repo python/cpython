@@ -1,4 +1,4 @@
-Fix :func:`gettext.c2py` mistranslating the unary ``!`` operator when it is
+Fix ``gettext.c2py`` mistranslating the unary ``!`` operator when it is
 followed by a binary operator (for example ``!n + 1``). ``!`` binds tighter
 than any binary operator in C, so the operand is now negated as a
 self-contained unit, matching the C semantics used by ``Plural-Forms`` rules.
