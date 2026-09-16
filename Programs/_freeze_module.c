@@ -119,31 +119,14 @@ read_text(const char *inpath)
     return (const char *)text;
 }
 
-/* The filename of the code of a frozen module, as shown in tracebacks.  The
-   names defined in _pybuiltins are copied into the builtins module, so its
-   frames name builtins rather than the module they are frozen from. */
-static char *
-get_filename(const char *name)
-{
-    const char *fmt = "<frozen %s>";
-    if (strcmp(name, "_pybuiltins") == 0) {
-        fmt = "<%s>";
-        name = "builtins";
-    }
-    char *filename = (char *) malloc(strlen(fmt) + strlen(name) + 1);
-    if (filename != NULL) {
-        sprintf(filename, fmt, name);
-    }
-    return filename;
-}
-
 static PyObject *
 compile_and_marshal(const char *name, const char *text)
 {
-    char *filename = get_filename(name);
+    char *filename = (char *) malloc(strlen(name) + 10);
     if (filename == NULL) {
         return PyErr_NoMemory();
     }
+    sprintf(filename, "<frozen %s>", name);
     PyObject *code = Py_CompileStringExFlags(text, filename,
                                              Py_file_input, NULL, 0);
     free(filename);

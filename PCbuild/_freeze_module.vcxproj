@@ -307,9 +307,9 @@
       <OutFile>$(GeneratedFrozenModulesDir)Python\frozen_modules\zipimport.h</OutFile>
     </None>
     <None Include="..\Lib\_pybuiltins.py">
-      <ModName>_pybuiltins</ModName>
-      <IntFile>$(IntDir)_pybuiltins.g.h</IntFile>
-      <OutFile>$(GeneratedFrozenModulesDir)Python\frozen_modules\_pybuiltins.h</OutFile>
+      <ModName>builtins</ModName>
+      <IntFile>$(IntDir)builtins.g.h</IntFile>
+      <OutFile>$(GeneratedFrozenModulesDir)Python\frozen_modules\builtins.h</OutFile>
     </None>
     <None Include="..\Lib\abc.py">
       <ModName>abc</ModName>
