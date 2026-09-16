@@ -336,25 +336,33 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
     && defined(_MSC_VER) && defined(Py_ENABLE_SHARED) \
     && !defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_BUILTIN)
         /* not building the core - must be an ext */
-#       if defined(Py_GIL_DISABLED) || defined(Py_TARGET_ABI3T)
-#           if defined(Py_DEBUG)
-#               pragma comment(lib,"python316t_d.lib")
-#           elif defined(Py_LIMITED_API) || defined(Py_TARGET_ABI3T)
-#               pragma comment(lib,"python3t.lib")
-#           else
-#               pragma comment(lib,"python316t.lib")
-#           endif /* Py_DEBUG */
-#       else
-#           if defined(Py_DEBUG)
+#       if defined(Py_TARGET_ABI3T) \
+           || (defined(Py_GIL_DISABLED) && defined(Py_LIMITED_API))
+                /* free-threaded Stable ABI */
+#               if defined(Py_DEBUG)
+#                       pragma comment(lib,"python3t_d.lib")
+#               else
+#                       pragma comment(lib,"python3t.lib")
+#               endif /* Py_DEBUG */
+#       elif defined(Py_LIMITED_API)
+                /* Stable ABI */
+#               if defined(Py_DEBUG)
+#                       pragma comment(lib,"python3_d.lib")
+#               else
+#                       pragma comment(lib,"python3.lib")
+#               endif /* Py_DEBUG */
+#       elif defined(Py_GIL_DISABLED)
+                /* free-threaded version-specific ABI */
+#               if defined(Py_DEBUG)
+#                       pragma comment(lib,"python316t_d.lib")
+#               else
+#                       pragma comment(lib,"python316t.lib")
+#               endif /* Py_DEBUG */
+#       elif defined(Py_DEBUG)
 #               pragma comment(lib,"python316_d.lib")
-#           elif defined(Py_TARGET_ABI3T)
-#               pragma comment(lib,"python3t.lib")
-#           elif defined(Py_LIMITED_API)
-#               pragma comment(lib,"python3.lib")
-#           else
+#       else
 #               pragma comment(lib,"python316.lib")
-#           endif /* Py_DEBUG */
-#       endif /* Py_GIL_DISABLED */
+#       endif /* ABI selection */
 #endif
 
 #ifdef MS_WIN64
