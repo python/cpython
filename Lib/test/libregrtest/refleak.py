@@ -192,34 +192,31 @@ def runtest_refleak(test_name, test_func,
     if not quiet:
         print(file=sys.stderr)
 
-    # These checkers return False on success, True on failure
-    def check_rc_deltas(deltas):
-        # Checker for reference counters and memory blocks.
-        #
-        # bpo-30776: Try to ignore false positives:
-        #
-        #   [3, 0, 0]
-        #   [0, 1, 0]
-        #   [8, -8, 1]
-        #
-        # Expected leaks:
-        #
-        #   [5, 5, 6]
-        #   [10, 1, 1]
-        return all(delta >= 1 for delta in deltas)
-
-    def check_fd_deltas(deltas):
-        return any(deltas)
-
     failed = False
-    for deltas, item_name, checker in [
-        (rc_deltas, 'references', check_rc_deltas),
-        (alloc_deltas, 'memory blocks', check_rc_deltas),
-        (fd_deltas, 'file descriptors', check_fd_deltas)
+    for raw_deltas, item_name in [
+        (rc_deltas, 'references'),
+        (alloc_deltas, 'memory blocks'),
+        (fd_deltas, 'file descriptors')
     ]:
-        # ignore warmup runs
-        deltas = deltas[warmups:]
-        failing = checker(deltas)
+        # Ignore warmup runs; convert to a list for reporting
+        deltas = list(raw_deltas[warmups:])
+
+        # Only consider that a test leaks if all deltas are greater than or
+        # equal to 1. Otherwise, ignore deltas.
+        #
+        # For example, ignore deltas:
+        #
+        #   [3, 0, 0] references, sum=3
+        #   [0, 1, 0] references, sum=1
+        #   [8, -8, 1] references, sum=1
+        #   [0, 1, -1] file descriptors, sum=0
+        #
+        # Examples of deltas treated as leaks:
+        #
+        #   [5, 5, 6] references, sum=16
+        #   [10, 1, 1] references, sum=12
+        failing = all(delta >= 1 for delta in deltas)
+
         suspicious = any(deltas)
         if failing or suspicious:
             msg = '%s leaked %s %s, sum=%s' % (
