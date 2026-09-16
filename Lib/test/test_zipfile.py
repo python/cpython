@@ -2198,6 +2198,107 @@ class OtherTests(unittest.TestCase):
         unlink(TESTFN2)
 
 
+class AbstractBoundedDecompressTests:
+    # ZipExtFile._read1() bounds the output of each decompress() call so that a
+    # small member declaring a large uncompressed size cannot expand into one
+    # unbounded read.
+    def test_read1_output_is_bounded(self):
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w", compression=self.compression) as zf:
+            zf.writestr("big", b"\0" * (4 * 1024 * 1024))
+        with zipfile.ZipFile(io.BytesIO(buf.getvalue())) as zf:
+            with zf.open("big") as f:
+                self.assertLessEqual(len(f._read1(100)), f.MIN_READ_SIZE)
+
+
+class StoredBoundedDecompressTests(AbstractBoundedDecompressTests,
+                                   unittest.TestCase):
+    compression = zipfile.ZIP_STORED
+
+
+@requires_zlib()
+class DeflateBoundedDecompressTests(AbstractBoundedDecompressTests,
+                                    unittest.TestCase):
+    compression = zipfile.ZIP_DEFLATED
+
+
+@requires_bz2()
+class Bzip2BoundedDecompressTests(AbstractBoundedDecompressTests,
+                                  unittest.TestCase):
+    compression = zipfile.ZIP_BZIP2
+
+
+@requires_lzma()
+class LzmaBoundedDecompressTests(AbstractBoundedDecompressTests,
+                                 unittest.TestCase):
+    compression = zipfile.ZIP_LZMA
+
+
+
+class MonkeypatchedDecompressorTests(unittest.TestCase):
+    # Some third-party projects monkey-patch _get_decompressor() to add
+    # additional compression schemes. This can break at any time as the
+    # internal compressor objects change.
+    # To protect users, we try to keep this case working.
+    # See also: GH-156002 and GH-113767.
+    COMPRESSION = 99
+
+    class Compressor:
+        """Compressor with only the original BZ2Compressor API"""
+        def compress(self, data):
+            return data.swapcase()
+
+        def flush(self):
+            return b''
+
+    class Decompressor:
+        """Decompressor with only the 3.3+ BZ2Decompressor API"""
+        eof = False
+
+        def decompress(self, data):
+            return data.swapcase()
+
+    def test_roundtrip_monkeypatched_decompressor(self):
+        orig_check_compression = zipfile._check_compression
+        orig_get_compressor = zipfile._get_compressor
+        orig_get_decompressor = zipfile._get_decompressor
+
+        def check_compression(compression):
+            if compression != self.COMPRESSION:
+                orig_check_compression(compression)
+
+        def get_compressor(compress_type, compresslevel=None):
+            if compress_type == self.COMPRESSION:
+                return self.Compressor()
+            return orig_get_compressor(compress_type, compresslevel)
+
+        def get_decompressor(compress_type):
+            if compress_type == self.COMPRESSION:
+                return self.Decompressor()
+            return orig_get_decompressor(compress_type)
+
+        with (
+            mock.patch.object(zipfile, '_check_compression', check_compression),
+            mock.patch.object(zipfile, '_get_compressor', get_compressor),
+            mock.patch.object(zipfile, '_get_decompressor', get_decompressor),
+        ):
+            data = bytes(range(256)) * 8
+            buf = io.BytesIO()
+            with zipfile.ZipFile(buf, "w", compression=self.COMPRESSION) as zf:
+                zf.writestr("member", data)
+            self.assertIn(data.swapcase(), buf.getvalue())
+            with zipfile.ZipFile(io.BytesIO(buf.getvalue())) as zf:
+                self.assertEqual(zf.read("member"), data)
+                with zf.open("member") as f:
+                    self.assertEqual(f.read(100), data[:100])
+                    self.assertEqual(f.read1(100), data[100:200])
+                    f.seek(-100, os.SEEK_END)
+                    self.assertEqual(f.read(), data[-100:])
+                    # Rewinding past the read buffer re-creates the decompressor.
+                    f.seek(0)
+                    self.assertEqual(f.read(), data)
+
+
 class AbstractBadCrcTests:
     def test_testzip_with_bad_crc(self):
         """Tests that files with bad CRCs return their name from testzip."""
