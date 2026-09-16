@@ -70,6 +70,16 @@ Summary --- release highlights
 New features
 ============
 
+Pasting interactive sessions
+---------------------------
+
+The :ref:`interactive shell <tut-interac>` now recognizes pasted Python
+sessions starting with ``>>>``.  When the input buffer is empty, it removes
+the ``>>>`` and ``...`` prompts and omits output lines, preserving indentation.
+The resulting code remains editable until you submit it.  This requires a
+terminal that supports bracketed paste; pasting into existing input or an
+:func:`input` prompt leaves the text unchanged.
+(Contributed by Bartosz Sławecki in :gh:`157612`.)
 
 
 Other language changes
