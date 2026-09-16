@@ -609,7 +609,7 @@ static PyObject *
 _codecs_unicode_escape_decode(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
-    Py_buffer data = {0};
+    Py_buffer data = {NULL, NULL};
     const char *errors = NULL;
     int final = 1;
 
@@ -644,7 +644,7 @@ static PyObject *
 _codecs_raw_unicode_escape_decode(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
-    Py_buffer data = {0};
+    Py_buffer data = {NULL, NULL};
     const char *errors = NULL;
     int final = 1;
 
@@ -1538,4 +1538,4 @@ exit:
 #ifndef _CODECS_CODE_PAGE_ENCODE_METHODDEF
     #define _CODECS_CODE_PAGE_ENCODE_METHODDEF
 #endif /* !defined(_CODECS_CODE_PAGE_ENCODE_METHODDEF) */
-/*[clinic end generated code: output=304d4afdb776a218 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e06004ab9b26bedb input=a9049054013a1b77]*/
