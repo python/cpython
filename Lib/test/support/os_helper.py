@@ -909,10 +909,6 @@ else:
 
 
     @ctypes.util.wrap_dll_function(kernel32)
-    def GetCurrentProcess() -> ctypes.wintypes.HANDLE:
-        pass
-
-    @ctypes.util.wrap_dll_function(kernel32)
     def GetProcessHandleCount(khProcess: ctypes.wintypes.HANDLE,
                               pdwHandleCount: ctypes.wintypes.LPDWORD) -> ctypes.wintypes.BOOL:
         pass
@@ -921,7 +917,7 @@ else:
 
     def handle_count():
         # Pseudo-handle that doesn't need to be closed
-        hproc = GetCurrentProcess()
+        hproc = _winapi.GetCurrentProcess()
 
         handle_count = ctypes.wintypes.DWORD()
         if not GetProcessHandleCount(hproc, ctypes.byref(handle_count)):
