@@ -908,7 +908,6 @@ else:
             if not DefineDosDeviceW(flags, drive, path):
                 raise ctypes.WinError(ctypes.get_last_error())
 
-
     @ctypes.util.wrap_dll_function(kernel32)
     def GetCurrentProcess() -> ctypes.wintypes.HANDLE:
         pass
