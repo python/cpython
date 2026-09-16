@@ -1,0 +1,2 @@
+The Debugger item of the IDLE Debug menu is now disabled while user code
+runs, like Stack Viewer.
