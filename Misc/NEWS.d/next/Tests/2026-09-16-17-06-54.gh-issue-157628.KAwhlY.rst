@@ -1,0 +1,3 @@
+In regrtest, only consider that a test leaks if all test runs leak at least
+one file descriptor. For example, ignore "[0, 1, -1] file descriptors,
+sum=0" deltas, instead of reporting a leak. Patch by Victor Stinner.
