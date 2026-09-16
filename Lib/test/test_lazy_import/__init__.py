@@ -36,6 +36,35 @@ class LazyImportTestCase(unittest.TestCase):
         sys.set_lazy_imports(self.lazy_imports)
         sys.lazy_modules.clear()
 
+    def _run_subprocess_with_modules(self, code, files):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            for relpath, contents in files.items():
+                path = os.path.join(tmpdir, relpath)
+                os.makedirs(os.path.dirname(path), exist_ok=True)
+                with open(path, "w", encoding="utf-8") as file:
+                    file.write(textwrap.dedent(contents))
+
+            env = os.environ.copy()
+            env["PYTHONPATH"] = os.pathsep.join(
+                entry for entry in (tmpdir, env.get("PYTHONPATH")) if entry
+            )
+            env["PYTHON_LAZY_IMPORTS"] = "normal"
+
+            result = subprocess.run(
+                [sys.executable, "-c", textwrap.dedent(code)],
+                capture_output=True,
+                cwd=tmpdir,
+                env=env,
+                text=True,
+            )
+        return result
+
+    def _assert_subprocess_ok(self, code, files):
+        result = self._run_subprocess_with_modules(code, files)
+        self.assertEqual(
+            result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}"
+        )
+        return result
 
 class LazyImportTests(LazyImportTestCase):
     """Tests for basic lazy import functionality."""
@@ -1406,36 +1435,6 @@ class FilterFunctionSignatureTests(LazyImportTestCase):
 
     PEP 810: func(importer: str, name: str, fromlist: tuple[str, ...] | None) -> bool
     """
-
-    def _run_subprocess_with_modules(self, code, files):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            for relpath, contents in files.items():
-                path = os.path.join(tmpdir, relpath)
-                os.makedirs(os.path.dirname(path), exist_ok=True)
-                with open(path, "w", encoding="utf-8") as file:
-                    file.write(textwrap.dedent(contents))
-
-            env = os.environ.copy()
-            env["PYTHONPATH"] = os.pathsep.join(
-                entry for entry in (tmpdir, env.get("PYTHONPATH")) if entry
-            )
-            env["PYTHON_LAZY_IMPORTS"] = "normal"
-
-            result = subprocess.run(
-                [sys.executable, "-c", textwrap.dedent(code)],
-                capture_output=True,
-                cwd=tmpdir,
-                env=env,
-                text=True,
-            )
-        return result
-
-    def _assert_subprocess_ok(self, code, files):
-        result = self._run_subprocess_with_modules(code, files)
-        self.assertEqual(
-            result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}"
-        )
-        return result
 
     def test_filter_receives_correct_arguments_for_import(self):
         """Filter should receive (importer, name, fromlist=None) for 'import x'."""
