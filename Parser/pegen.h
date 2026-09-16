@@ -38,6 +38,7 @@ typedef struct _memo {
 
 typedef struct {
     int type;
+    // Text required by grammar actions or helpers; otherwise NULL.
     PyObject *bytes;
     int level;
     int is_raw;
