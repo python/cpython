@@ -235,11 +235,25 @@ class IdleConfTest(unittest.TestCase):
                     self.assertEqual(conf.GetUserCfgDir(),
                                      '/home/foo/cpython/.idlerc')
 
-        # Check user dir not exists and created failed should raise SystemExit
+        # gh-58781: no directory and a warning if it cannot be created.
         with mock.patch('os.path.join', return_value='/path/not/exists'):
-            with self.assertRaises(SystemExit):
-                with self.assertRaises(FileNotFoundError):
-                    conf.GetUserCfgDir()
+            self.assertEqual(conf.GetUserCfgDir(), '')
+        self.assertEqual(len(conf.userdir_warnings), 1)
+        self.assertIn('/path/not/exists could not be created',
+                      conf.userdir_warnings[0])
+        self.assertIn('FileNotFoundError', conf.userdir_warnings[0])
+
+        # A nonexistent home directory is reported; cwd is used instead.
+        conf.userdir_warnings.clear()
+        with (mock.patch('os.path.expanduser', return_value='/home/none'),
+              mock.patch('os.getcwd', return_value='/home/foo/cpython'),
+              mock.patch('os.mkdir')):
+            self.assertEqual(conf.GetUserCfgDir(), '/home/foo/cpython/.idlerc')
+        self.assertEqual(conf.userdir_warnings,
+                         ['The home directory /home/none does not exist.'])
+        conf.userdir_warnings.clear()
+        conf.userCfg['highlight'] = config.IdleUserConfParser('')
+        self.assertIsNone(conf.config_error_message(mock.Mock()))
 
     @unittest.skipIf(not sys.platform.startswith('win'), 'this is test for Windows system')
     def test_get_user_cfg_dir_windows(self):
@@ -258,11 +272,12 @@ class IdleConfTest(unittest.TestCase):
                     self.assertEqual(conf.GetUserCfgDir(),
                                      'C:\\foo\\cpython\\.idlerc')
 
-        # Check user dir not exists and created failed should raise SystemExit
+        # gh-58781: no directory and a warning if it cannot be created.
         with mock.patch('os.path.join', return_value='/path/not/exists'):
-            with self.assertRaises(SystemExit):
-                with self.assertRaises(FileNotFoundError):
-                    conf.GetUserCfgDir()
+            self.assertEqual(conf.GetUserCfgDir(), '')
+        self.assertEqual(len(conf.userdir_warnings), 1)
+        self.assertIn('/path/not/exists could not be created',
+                      conf.userdir_warnings[0])
 
     def test_create_config_handlers(self):
         conf = self.new_config(_utest=True)

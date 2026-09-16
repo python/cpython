@@ -132,7 +132,7 @@ class PyShellEditorWindow(EditorWindow):
         self.text.bind("<<open-python-shell>>", self.flist.open_shell)
 
         #TODO: don't read/write this from/to .idlerc when testing
-        self.breakpointPath = os.path.join(
+        self.breakpointPath = idleConf.userdir and os.path.join(
                 idleConf.userdir, 'breakpoints.lst')
         # whenever a file is changed, restore breakpoints
         def filename_changed_hook(old_hook=self.io.filename_change_hook,
@@ -240,6 +240,8 @@ class PyShellEditorWindow(EditorWindow):
         #     debugger is loaded) is updated during the save, the visible
         #     breaks stay synched with the subprocess even if one of these
         #     unexpected breakpoint deletions occurs.
+        if not self.breakpointPath:
+            return
         breaks = self.breakpoints
         filename = self.io.filename
         try:

@@ -160,6 +160,7 @@ class IdleConf:
         self.defaultCfg = {}
         self.userCfg = {}
         self.cfg = {}  # TODO use to select userCfg vs defaultCfg
+        self.userdir_warnings = []  # About the user config directory.
         self.file_load_errors = []  # (file, error) for unparsable cfg files.
         self.highlight_errors = []  # (theme, element, color, error).
 
@@ -183,19 +184,17 @@ class IdleConf:
     def GetUserCfgDir(self):
         """Return a filesystem directory for storing user config files.
 
-        Creates it if required.
+        Create it if required.  Return '' if it cannot be created, so
+        that IDLE runs without saving settings (gh-58781).  Problems
+        are saved in self.userdir_warnings to be reported when Tk is
+        available.
         """
         cfgDir = '.idlerc'
         userDir = os.path.expanduser('~')
         if userDir != '~': # expanduser() found user home dir
             if not os.path.exists(userDir):
-                if not idlelib.testing:
-                    warn = ('\n Warning: os.path.expanduser("~") points to\n ' +
-                            userDir + ',\n but the path does not exist.')
-                    try:
-                        print(warn, file=sys.stderr)
-                    except OSError:
-                        pass
+                self.userdir_warnings.append(
+                    f'The home directory {userDir} does not exist.')
                 userDir = '~'
         if userDir == "~": # still no path to home!
             # traditionally IDLE has defaulted to os.getcwd(), is this adequate?
@@ -204,16 +203,12 @@ class IdleConf:
         if not os.path.exists(userDir):
             try:
                 os.mkdir(userDir)
-            except OSError:
-                if not idlelib.testing:
-                    warn = ('\n Warning: unable to create user config directory\n' +
-                            userDir + '\n Check path and permissions.\n Exiting!\n')
-                    try:
-                        print(warn, file=sys.stderr)
-                    except OSError:
-                        pass
-                raise SystemExit
-        # TODO continue without userDIr instead of exit
+            except OSError as err:
+                self.userdir_warnings.append(
+                    f'The user configuration directory {userDir} could not '
+                    f'be created:\n    {type(err).__name__}: {err}\n'
+                    'Settings will not be saved.')
+                return ''
         return userDir
 
     def GetOption(self, configType, section, option, default=None, type=None,
@@ -832,7 +827,7 @@ class IdleConf:
     def config_error_message(self, root):
         "Check the config with Tk and return a warning, or None."
         self.check_highlight(root)
-        parts = []
+        parts = list(self.userdir_warnings)
         if self.file_load_errors:
             files = '\n'.join(
                 f'  {file}:\n    {type(err).__name__}: {str(err).splitlines()[0]}'
