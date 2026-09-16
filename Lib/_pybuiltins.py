@@ -22,7 +22,7 @@ def anext(async_iterator, default=_NOT_GIVEN, /):
         anext_method = cls.__anext__
     except AttributeError:
         raise TypeError(
-            f"'{cls.__name__}' object is not an async iterator"
+            f"{cls.__name__!r} object is not an async iterator"
         ) from None
     awaitable = anext_method(async_iterator)
     if default is _NOT_GIVEN:
