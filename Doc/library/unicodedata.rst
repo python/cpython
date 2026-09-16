@@ -31,6 +31,7 @@ Standard Annex #44, `"Unicode Character Database"
 -------------------------------------------------------------------------------------------------------------------------
 :func:`lookup(name) <lookup>`                                 Look up character by name
 :func:`name(chr) <name>`                                      Return the name assigned to a character
+:func:`aliases(chr) <aliases>`                                Return info about a character's name aliases
 
 **Numeric values**
 -------------------------------------------------------------------------------------------------------------------------
@@ -80,7 +81,7 @@ Standard Annex #44, `"Unicode Character Database"
       True
 
    .. versionchanged:: 3.3
-      Support for name aliases [#]_ and named sequences [#]_ has been added.
+      Support for name aliases [1]_ and named sequences [2]_ has been added.
 
 
 .. function:: name(chr, default=None, /)
@@ -93,6 +94,45 @@ Standard Annex #44, `"Unicode Character Database"
       'VULGAR FRACTION ONE HALF'
       >>> unicodedata.name('\uFFFF', 'fallback')
       'fallback'
+
+.. function:: aliases(chr, /)
+
+   Returns a :class:`frozendict` that contains character name aliases [1]_ for
+   *chr*. Each of the frozen dictionary's keys will be a string that represents
+   a type of alias (for example, ``"correction"`` or ``"abbreviation"``). If the
+   character has no aliases of a particular type, then the key for that type
+   will be omitted. The value for each key will be a :class:`tuple` that
+   contains one string for each alias of the given type. If *chr* has no
+   character name aliases, then an empty frozen dictionary will be returned. For
+   example::
+
+      >>> # Some characters have a name and one or more aliases:
+      >>> unicodedata.name(" ")
+      'SPACE'
+      >>> unicodedata.aliases(" ")
+      frozendict({'abbreviation': ('SP',)})
+      >>> # Some characters have a name but have no aliases:
+      >>> unicodedata.name("a")
+      'LATIN SMALL LETTER A'
+      >>> unicodedata.aliases("a")
+      frozendict()
+      >>> # The unicodedata.aliases() function is especially useful for
+      >>> # characters have don’t have a name but do have aliases:
+      >>> unicodedata.name("\n")
+      Traceback (most recent call last):
+        File "<python-input-21>", line 1, in <module>
+          unicodedata.name("\n")
+          ~~~~~~~~~~~~~~~~^^^^^^
+      ValueError: no such name
+      >>> unicodedata.aliases("\n")
+      frozendict({'abbreviation': ('EOL', 'LF', 'NL'), 'control': ('END OF LINE', 'LINE FEED', 'NEW LINE')})
+
+   .. note::
+
+      This function is not available in :attr:`ucd_3_2_0` because
+      character name aliases did not exist in Unicode version 3.2.
+
+   .. versionadded:: 3.16
 
 
 .. function:: decimal(chr, default=None, /)
@@ -326,6 +366,6 @@ In addition, the module exposes the following constants:
 
 .. rubric:: Footnotes
 
-.. [#] https://www.unicode.org/Public/17.0.0/ucd/NameAliases.txt
+.. [1] https://www.unicode.org/Public/17.0.0/ucd/NameAliases.txt
 
-.. [#] https://www.unicode.org/Public/17.0.0/ucd/NamedSequences.txt
+.. [2] https://www.unicode.org/Public/17.0.0/ucd/NamedSequences.txt
