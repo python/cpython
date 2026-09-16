@@ -3096,7 +3096,7 @@ class TestCEval(unittest.TestCase):
 
 @unittest.skipUnless(support.Py_DEBUG, 'need Py_DEBUG')
 class TestCheckSingleton(unittest.TestCase):
-    # Test that _PyStaticObjects_CheckAll() detect memory corruptions in
+    # Test that _PyStaticObjects_CheckAll() detects memory corruptions in
     # singleton objects at Python exit.
 
     def check(self, code):
