@@ -1231,6 +1231,25 @@ class BaseTaskTests:
 
         self.loop.run_until_complete(self.new_task(self.loop, coro()))
 
+    def test_gather_discards_awaited_by_for_pending(self):
+        # gh-157213: a child outliving gather() must lose the awaited-by edge
+        async def fail():
+            raise ValueError
+
+        async def survivor():
+            await asyncio.Future()
+
+        async def coro():
+            t = self.new_task(self.loop, survivor())
+            with self.assertRaises(ValueError):
+                await asyncio.gather(t, fail())
+            self.assertFalse(t._asyncio_awaited_by)
+            t.cancel()
+            with self.assertRaises(asyncio.CancelledError):
+                await t
+
+        self.loop.run_until_complete(self.new_task(self.loop, coro()))
+
     def test_wait_really_done(self):
         # there is possibility that some tasks in the pending list
         # became done but their callbacks haven't all been called yet
@@ -1890,6 +1909,30 @@ class BaseTaskTests:
         self.assertEqual(
             self.loop.run_until_complete(task),
             'ko')
+
+    def test_step_dont_swallow_systemexit_or_keyboardinterrupt(self):
+        # see gh-108549: do not swallow SystemExit and KeyboardInterrupt
+        # in Task.__step when the current task must be cancelled.
+        async def sub_task(exc):
+            raise exc
+
+        async def current_task(exc):
+            try:
+                await asyncio.create_task(sub_task(exc))
+            except exc:
+                pass
+            except BaseException as e:
+                self.fail(f'{exc} is expected, instead of {type(e)}')
+            return "ok"
+
+        for exc in (SystemExit, KeyboardInterrupt):
+            with self.subTest(exc):
+                t = self.new_task(self.loop, current_task(exc))
+                self.assertRaises(exc, self.loop.run_until_complete, t)
+                t.cancel()
+                test_utils.run_briefly(self.loop)
+                self.assertTrue(not t.cancelled())
+                self.assertEqual(t.result(), "ok")
 
     def test_step_result_future(self):
         # If coroutine returns future, task waits on this future.
