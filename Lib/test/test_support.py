@@ -630,23 +630,16 @@ class TestSupport(unittest.TestCase):
 
     @unittest.skipUnless(support.MS_WINDOWS, "test specific to Windows")
     def test_handle_count(self):
+        start = os_helper.handle_count()
         handle = _winapi.CreateFile(
                         __file__, _winapi.GENERIC_READ,
                         0, _winapi.NULL,
                         _winapi.OPEN_EXISTING,
                         0, _winapi.NULL)
-        self.addCleanup(_winapi.CloseHandle, handle)
-
-        start = os_helper.handle_count()
-        hproc = _winapi.GetCurrentProcess()
-        copy = _winapi.DuplicateHandle(
-                    hproc, handle,
-                    hproc, 0, False,
-                    _winapi.DUPLICATE_SAME_ACCESS)
         try:
             more = os_helper.handle_count()
         finally:
-            _winapi.CloseHandle(copy)
+            _winapi.CloseHandle(handle)
         self.assertEqual(more - start, 1)
 
     def check_print_warning(self, msg, expected):

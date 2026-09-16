@@ -13,6 +13,8 @@ import unittest
 import warnings
 
 from test import support
+if support.MS_WINDOWS:
+    import _winapi
 
 
 # Filename used for testing
@@ -870,7 +872,6 @@ else:
     DDD_EXACT_MATCH_ON_REMOVE = 4
     DDD_NO_BROADCAST_SYSTEM = 8
 
-
     @ctypes.util.wrap_dll_function(kernel32)
     def DefineDosDeviceW(
         dwFlags: ctypes.wintypes.DWORD,
@@ -909,10 +910,6 @@ else:
                 raise ctypes.WinError(ctypes.get_last_error())
 
     @ctypes.util.wrap_dll_function(kernel32)
-    def GetCurrentProcess() -> ctypes.wintypes.HANDLE:
-        pass
-
-    @ctypes.util.wrap_dll_function(kernel32)
     def GetProcessHandleCount(khProcess: ctypes.wintypes.HANDLE,
                               pdwHandleCount: ctypes.wintypes.LPDWORD) -> ctypes.wintypes.BOOL:
         pass
@@ -921,7 +918,7 @@ else:
 
     def handle_count():
         # Pseudo-handle that doesn't need to be closed
-        hproc = GetCurrentProcess()
+        hproc = _winapi.GetCurrentProcess()
 
         handle_count = ctypes.wintypes.DWORD()
         if not GetProcessHandleCount(hproc, ctypes.byref(handle_count)):
