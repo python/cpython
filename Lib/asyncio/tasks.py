@@ -114,7 +114,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         if eager_start and self._loop.is_running():
             try:
                 self.__eager_start()
-            except BaseException:
+            except:
                 self._log_destroy_pending = False
                 raise
         else:
