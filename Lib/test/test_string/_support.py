@@ -48,6 +48,8 @@ def convert(value, conversion):
         return ascii(value)
     elif conversion == "r":
         return repr(value)
+    elif conversion == "R":
+        return repr(value, alt=True)
     elif conversion == "s":
         return str(value)
     return value

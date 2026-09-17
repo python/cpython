@@ -310,6 +310,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(all_threads)
         STRUCT_FOR_ID(allow_code)
         STRUCT_FOR_ID(alphabet)
+        STRUCT_FOR_ID(alt)
         STRUCT_FOR_ID(any)
         STRUCT_FOR_ID(append)
         STRUCT_FOR_ID(arg)

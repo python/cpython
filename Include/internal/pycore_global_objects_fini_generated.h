@@ -298,6 +298,7 @@ _PyStaticObjects_CheckAll(PyInterpreterState *interp) {
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(all_threads), "all_threads", 11);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(allow_code), "allow_code", 10);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(alphabet), "alphabet", 8);
+    _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(alt), "alt", 3);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(any), "any", 3);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(append), "append", 6);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(arg), "arg", 3);

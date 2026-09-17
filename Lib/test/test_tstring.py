@@ -107,9 +107,13 @@ class TestTString(unittest.TestCase, TStringBaseCase):
         self.assertEqual(fstring(t), f"ASCII: {ascii(text)}")
 
         # Test !R conversion (repr)
+        class StrSubclass(str):
+            def __repr__(self):
+                return '<custom repr>'
+        obj = StrSubclass('abc')
         t = t"Data: {obj!R}"
         self.assertTStringEqual(t, ("Data: ", ""), [(obj, "obj", "R")])
-        self.assertEqual(fstring(t), f"Data: {repr(obj)}")
+        self.assertEqual(fstring(t), f"Data: 'abc'")
 
         # Test !z conversion (error)
         num = 1
