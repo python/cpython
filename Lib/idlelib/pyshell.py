@@ -1432,13 +1432,23 @@ class PyShell(OutputWindow):
         self.ctip.remove_calltip_window()
 
     def write(self, s, tags=()):
+        text = self.text
+        # Move the prompt (the "console" tag on the preceding newline)
+        # after output which comes while it is shown (gh-75512).
+        at_prompt = (s and tags in ("stdout", "stderr")
+                     and not self.executing and not self.reading)
+        if at_prompt:
+            text.tag_remove("console", "iomark-1c")
+            text.tag_remove("stdin", "iomark-1c")
         try:
-            self.text.mark_gravity("iomark", "right")
+            text.mark_gravity("iomark", "right")
             count = OutputWindow.write(self, s, tags, "iomark")
-            self.text.mark_gravity("iomark", "left")
+            text.mark_gravity("iomark", "left")
         except:
             raise ###pass  # ### 11Aug07 KBK if we are expecting exceptions
                            # let's find out what they are and be specific.
+        if at_prompt and s.endswith('\n'):
+            text.tag_add("console", "iomark-1c")
         if self.canceled:
             self.canceled = False
             if not use_subprocess:
