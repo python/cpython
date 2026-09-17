@@ -65,6 +65,8 @@ Examining Symbol Tables
       table of this type represents a sub-scope of the enclosing code unit's
       scope, and it does not correspond to a separate compilation unit.
 
+      .. versionadded:: next
+
    The following members refer to different flavors of
    :ref:`annotation scopes <annotation-scopes>`.
 
