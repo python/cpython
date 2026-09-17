@@ -96,9 +96,8 @@ def runtest_refleak(test_name, test_func,
 
     # `ByteString` is not included in `collections.abc.__all__`
     with warnings.catch_warnings(action='ignore', category=DeprecationWarning):
-        ByteString = collections.abc.ByteString
-    # Mypy doesn't even think `ByteString` is a class, hence the `type: ignore`
-    for obj in ByteString.__subclasses__() + [ByteString]:  # type: ignore[attr-defined]
+        ByteString = collections.abc.ByteString  # type: ignore[attr-defined]
+    for obj in ByteString.__subclasses__() + [ByteString]:
         abcs[obj] = _get_dump(obj)[0]
 
     warmups = hunt_refleak.warmups
@@ -151,9 +150,7 @@ def runtest_refleak(test_name, test_func,
         # Also, readjust the reference counts and alloc blocks by ignoring
         # any strings that might have been interned during test_func. These
         # strings will be deallocated at runtime shutdown
-        interned_immortal_after = getunicodeinternedsize(
-            # Use an internal-only keyword argument that mypy doesn't know yet
-            _only_immortal=True)  # type: ignore[call-arg]
+        interned_immortal_after = getunicodeinternedsize(_only_immortal=True)
         alloc_after = getallocatedblocks() - interned_immortal_after
         rc_after = gettotalrefcount()
         fd_after = fd_count()
