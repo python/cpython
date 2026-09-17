@@ -572,6 +572,11 @@ APIs:
         - :c:expr:`PyObject*`
         - The result of calling :c:func:`PyObject_Repr`.
 
+      * - ``#R``
+        - :c:expr:`PyObject*`
+        - Similar to ``R`` format, but don't call :meth:`~object.__str__`
+          method on :class:`str` subclasses.
+
       * - ``T``
         - :c:expr:`PyObject*`
         - Get the fully qualified name of an object type;
@@ -629,6 +634,9 @@ APIs:
 
    .. versionchanged:: 3.13
       Support for ``%T``, ``%#T``, ``%N`` and ``%#N`` formats added.
+
+   .. versionchanged:: next
+      Support for ``%#R`` format added.
 
 
 .. c:function:: PyObject* PyUnicode_FromFormatV(const char *format, va_list vargs)

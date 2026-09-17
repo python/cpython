@@ -1077,7 +1077,11 @@ C API changes
 New features
 ------------
 
-* TODO
+* Add ``%#R`` format to :c:func:`PyUnicode_FromFormat`: similar to ``%R``
+  format, but don't call :meth:`~object.__str__` method on :class:`str`
+  subclasses.
+  (Contributed by Serhiy Storchaka in :gh:`154610`.)
+
 
 Porting to Python 3.16
 ----------------------

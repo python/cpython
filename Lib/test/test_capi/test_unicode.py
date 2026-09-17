@@ -442,6 +442,7 @@ class CAPITest(unittest.TestCase):
         check_format('    abc[\ufffd]',
                      b'%10.7s', b'abc[\xe2\x82]')
 
+        # Test %A and %R
         check_format("'\\u20acABC'",
                      b'%A', '\u20acABC')
         check_format("'\\u20",
@@ -454,6 +455,16 @@ class CAPITest(unittest.TestCase):
                      b'%.3S', '\u20acABCDEF')
         check_format('\u20acAB',
                      b'%.3U', '\u20acABCDEF')
+
+        # Test %#R: do not call __str__() of str subclasses
+        check_format("'abc'",
+                     b'%#R', 'abc')
+        class StrSubclass(str):
+            def __str__(self):
+                return 'StrSubclass'
+        check_format("'abc'",
+                     b'%#R', StrSubclass('abc'))
+        self.assertEqual(str(StrSubclass()), 'StrSubclass')
 
         check_format('\u20acAB',
                      b'%.3V', '\u20acABCDEF', None)
