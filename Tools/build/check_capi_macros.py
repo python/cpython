@@ -30,8 +30,7 @@ def parse_file(filename, names, ignored):
 
             match = DEFINE_NAME_REGEX.search(macro)
             if not match:
-                print(repr(macro))
-                print(f"{filename}: Unable to parse {line!r}")
+                print(f"ERROR: {filename}: Unable to parse {line!r}")
                 sys.exit(1)
             name = match.group(1)
             if name in ignored:
