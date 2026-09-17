@@ -165,6 +165,30 @@ class ListComprehensionTest(unittest.TestCase):
         """
         self._check_in_scopes(code, outputs={"res": [super]})
 
+    def test_zero_arg_super_in_inlined_comprehension(self):
+        class A:
+            def f(self):
+                return 42
+
+        class B(A):
+            def f(self):
+                return [super().f() for _ in (0,)]
+
+            def nested(self):
+                return [[super().f() for _ in (0,)] for _ in (0,)]
+
+            def setcomp(self):
+                return [{super().f() for _ in (0,)}]
+
+            def dictcomp(self):
+                return {0: {1: super().f() for _ in (0,)} for _ in (0,)}
+
+        b = B()
+        self.assertEqual(b.f(), [42])
+        self.assertEqual(b.nested(), [[42]])
+        self.assertEqual(b.setcomp(), [{42}])
+        self.assertEqual(b.dictcomp(), {0: {1: 42}})
+
     def test_references___class__(self):
         code = """
             res = [__class__ for x in [1]]

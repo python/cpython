@@ -980,15 +980,21 @@ finally:
 }
 
 /* Inlined comprehensions are compiled in the enclosing unit. If a name is
- * FREE in the comprehension, resolve it in enclosing tables until it is no
- * longer FREE. Stop if the next table is a class: nested scopes (including
- * inlined comprehensions) do not see class locals, so the name stays FREE.
- * __class__ and friends are not allowed to be free through a class; treat
- * those loads as implicit globals. */
+ * FREE in the comprehension, or is absent from its table (scope 0), resolve
+ * it in enclosing tables until it is bound. Stop if the next table is a class:
+ * nested scopes (including inlined comprehensions) do not see class locals, so
+ * the name stays FREE. __class__ and friends are not allowed to be free
+ * through a class; treat those loads as implicit globals.
+ *
+ * Names with no entry (scope 0) include loads synthesized by codegen, such as
+ * the implicit receiver for zero-arg super(). */
 static int
-compiler_resolve_inlined_free(PySTEntryObject **ste, int scope, PyObject *name)
+compiler_resolve_inlined_free(PySTEntryObject **ste, PyObject *name)
 {
-    while (scope == FREE && (*ste)->ste_type == InlinedComprehensionBlock) {
+    int scope = _PyST_GetScope(*ste, name);
+    RETURN_IF_ERROR(scope);
+    while ((*ste)->ste_type == InlinedComprehensionBlock &&
+           (scope == FREE || scope == 0)) {
         PySTEntryObject *parent = (*ste)->ste_parent;
         assert(parent != NULL);
         if (parent->ste_type == ClassBlock) {
@@ -1011,9 +1017,7 @@ _PyCompile_GetRefType(compiler *c, PyObject *name)
         return CELL;
     }
     PySTEntryObject *ste = c->u->u_ste;
-    int scope = _PyST_GetScope(ste, name);
-    RETURN_IF_ERROR(scope);
-    scope = compiler_resolve_inlined_free(&ste, scope, name);
+    int scope = compiler_resolve_inlined_free(&ste, name);
     RETURN_IF_ERROR(scope);
     if (scope == 0) {
         PyErr_Format(PyExc_SystemError,
@@ -1104,7 +1108,7 @@ _PyCompile_StaticAttributesAsTuple(compiler *c)
 }
 
 int
-_PyCompile_ResolveNameop(compiler *c, PyObject *mangled, int scope,
+_PyCompile_ResolveNameop(compiler *c, PyObject *mangled,
                           _PyCompile_optype *optype, Py_ssize_t *arg)
 {
     PyObject *dict = c->u->u_metadata.u_names;
@@ -1113,8 +1117,7 @@ _PyCompile_ResolveNameop(compiler *c, PyObject *mangled, int scope,
     PySTEntryObject *ste = c->u->u_ste;
     assert(ste != NULL);
 
-    assert(scope >= 0);
-    scope = compiler_resolve_inlined_free(&ste, scope, mangled);
+    int scope = compiler_resolve_inlined_free(&ste, mangled);
     RETURN_IF_ERROR(scope);
 
     switch (scope) {
@@ -1152,11 +1155,13 @@ _PyCompile_ResolveNameop(compiler *c, PyObject *mangled, int scope,
         /* scope can be 0 */
         break;
     }
+    /* XXX Handle __doc__ and the like better */
+    assert(scope || PyUnicode_READ_CHAR(mangled, 0) == '_');
     if (*optype != COMPILE_OP_FAST) {
         *arg = _PyCompile_DictAddObj(dict, mangled);
         RETURN_IF_ERROR(*arg);
     }
-    return SUCCESS;
+    return scope;
 }
 
 int

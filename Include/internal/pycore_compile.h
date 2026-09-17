@@ -151,7 +151,7 @@ PyObject *_PyCompile_MaybeMangle(struct _PyCompiler *c, PyObject *name);
 int _PyCompile_MaybeAddStaticAttributeToClass(struct _PyCompiler *c, expr_ty e);
 int _PyCompile_GetRefType(struct _PyCompiler *c, PyObject *name);
 int _PyCompile_LookupCellvar(struct _PyCompiler *c, PyObject *name);
-int _PyCompile_ResolveNameop(struct _PyCompiler *c, PyObject *mangled, int scope,
+int _PyCompile_ResolveNameop(struct _PyCompiler *c, PyObject *mangled,
                              _PyCompile_optype *optype, Py_ssize_t *arg);
 
 int _PyCompile_IsInteractiveTopLevel(struct _PyCompiler *c);

@@ -3326,20 +3326,13 @@ codegen_nameop(compiler *c, location loc,
         return ERROR;
     }
 
-    int scope = _PyST_GetScope(SYMTABLE_ENTRY(c), mangled);
-    if (scope == -1) {
-        goto error;
-    }
-
     _PyCompile_optype optype;
     Py_ssize_t arg = 0;
-    if (_PyCompile_ResolveNameop(c, mangled, scope, &optype, &arg) < 0) {
+    int scope = _PyCompile_ResolveNameop(c, mangled, &optype, &arg);
+    if (scope < 0) {
         Py_DECREF(mangled);
         return ERROR;
     }
-
-    /* XXX Leave assert here, but handle __doc__ and the like better */
-    assert(scope || PyUnicode_READ_CHAR(name, 0) == '_');
 
     int op = 0;
     switch (optype) {
