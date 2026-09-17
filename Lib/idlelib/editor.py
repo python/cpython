@@ -34,6 +34,10 @@ from idlelib.help import _get_dochome
 TK_TABWIDTH_DEFAULT = 8
 darwin = sys.platform == 'darwin'
 
+# A letter keysym in a key sequence, such as "s" in "<Control-Key-s>".
+_letter_key_re = re.compile(r'(?<=-Key-)[a-zA-Z](?=>)')
+
+
 class EditorWindow:
     is_shell = False  # PyShell overrides.
     from idlelib.percolator import Percolator
@@ -1186,6 +1190,12 @@ class EditorWindow:
         for event, keylist in keydefs.items():
             if keylist:
                 text.event_add(event, *keylist)
+                # Caps Lock changes the case of letter keysyms, so bind
+                # the sequences with the other case too (gh-56596).
+                for keys in keylist:
+                    other = _letter_key_re.sub(lambda m: m[0].swapcase(), keys)
+                    if other != keys:
+                        text.event_add(event, other)
 
     def fill_menus(self, menudefs=None, keydefs=None):
         """Fill in dropdown menus used by this window.
