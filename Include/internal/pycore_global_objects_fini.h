@@ -11,7 +11,6 @@ extern "C" {
 #ifdef Py_DEBUG
 
 #include "pycore_bytesobject.h"   // _PyBytes_CheckOverflow()
-#include "pycore_hamt.h"          // _PyHamt_BitmapNode_Type
 #include "pycore_long.h"          // TAG_FROM_SIGN_AND_SIZE()
 
 static inline void

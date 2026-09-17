@@ -441,6 +441,7 @@ extern "C" {
 #endif
 
 #include "pycore_global_objects_fini.h"  // _PyStaticObject_CheckSingleton()
+#include "pycore_hamt.h"          // _PyHamt_BitmapNode_Type
 
 #ifdef Py_DEBUG
         """.strip() % SCRIPT_NAME)
