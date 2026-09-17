@@ -5204,7 +5204,7 @@ codegen_comprehension(compiler *c, expr_ty e, int type,
 error_in_scope:
     if (is_inlined) {
         if (inline_state.saved_ste != NULL) {
-            pop_inlined_comprehension_state(c, loc, &inline_state);
+            _PyCompile_ExitInlinedComprehensionScope(c, &inline_state);
         }
     }
     else {
