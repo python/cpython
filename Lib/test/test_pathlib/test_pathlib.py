@@ -2626,6 +2626,22 @@ class PathTest(PurePathTest):
         self.assertTrue(link.is_dir())
         self.assertTrue(list(link.iterdir()))
 
+    @needs_symlinks
+    def test_symlink_to_overwrite(self):
+        P = self.cls(self.base)
+        file1 = P / 'fileA'
+        file2 = P / 'dirB' / 'fileB'
+        file3 = P / 'dirC' / 'fileC'
+        link = P / 'dirA' / 'linkAA'
+        link.symlink_to(file1)
+        # If overwrite is True, overwrite existing symlink.
+        link.symlink_to(file2, overwrite=True)
+        self.assertEqual(link.stat(), file2.stat())
+        # If overwrite is False, raise FileExistsError and do not overwrite.
+        with self.assertRaises(FileExistsError):
+            link.symlink_to(file3, overwrite=False)
+        self.assertEqual(link.stat(), file2.stat())
+
     @unittest.skipIf(hasattr(os, "symlink"), "os.symlink() is present")
     def test_symlink_to_unsupported(self):
         P = self.cls(self.base)

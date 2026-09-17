@@ -1553,9 +1553,11 @@ Creating files and directories
       The *parent_mode* parameter.
 
 
-.. method:: Path.symlink_to(target, target_is_directory=False)
+.. method:: Path.symlink_to(target, target_is_directory=False, overwrite=False)
 
    Make this path a symbolic link pointing to *target*.
+
+   If *overwrite* is false (the default) and this path already exists, :exc:`FileExistsError` is raised. If *overwrite* is true, the existing path (if any) is removed before creating the symlink.
 
    On Windows, a symlink represents either a file or a directory, and does not
    morph to the target dynamically.  If the target is present, the type of the
@@ -1581,6 +1583,9 @@ Creating files and directories
    .. versionchanged:: 3.13
       Raises :exc:`UnsupportedOperation` if :func:`os.symlink` is not
       available. In previous versions, :exc:`NotImplementedError` was raised.
+
+   .. versionchanged:: 3.16
+      The *overwrite* parameter was added.
 
 
 .. method:: Path.hardlink_to(target)
