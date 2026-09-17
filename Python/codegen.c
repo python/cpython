@@ -4338,6 +4338,7 @@ codegen_interpolation(compiler *c, expr_ty e)
         switch (conversion) {
         case 's': oparg |= FVC_STR << 2;   break;
         case 'r': oparg |= FVC_REPR << 2;  break;
+        case 'R': oparg |= FVC_ALT_REPR << 2;  break;
         case 'a': oparg |= FVC_ASCII << 2; break;
         default:
             PyErr_Format(PyExc_SystemError,
@@ -4365,6 +4366,7 @@ codegen_formatted_value(compiler *c, expr_ty e)
         switch (conversion) {
         case 's': oparg = FVC_STR;   break;
         case 'r': oparg = FVC_REPR;  break;
+        case 'R': oparg = FVC_ALT_REPR;  break;
         case 'a': oparg = FVC_ASCII; break;
         default:
             PyErr_Format(PyExc_SystemError,

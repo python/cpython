@@ -798,6 +798,19 @@ PyObject_Repr(PyObject *v)
 }
 
 PyObject *
+_PyObject_AltRepr(PyObject *v)
+{
+    if (v != NULL && PyUnicode_Check(v)) {
+        if (PyErr_CheckSignals()) {
+            return NULL;
+        }
+        reprfunc repr_func = PyUnicode_Type.tp_repr;
+        return repr_func(v);
+    }
+    return PyObject_Repr(v);
+}
+
+PyObject *
 PyObject_Str(PyObject *v)
 {
     PyObject *res;

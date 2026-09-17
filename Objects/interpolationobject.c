@@ -209,6 +209,9 @@ _PyInterpolation_Build(PyObject *value, PyObject *str, int conversion, PyObject 
             case FVC_REPR:
                 interpolation->conversion = _Py_LATIN1_CHR('r');
                 break;
+            case FVC_ALT_REPR:
+                interpolation->conversion = _Py_LATIN1_CHR('R');
+                break;
             case FVC_STR:
                 interpolation->conversion = _Py_LATIN1_CHR('s');
                 break;

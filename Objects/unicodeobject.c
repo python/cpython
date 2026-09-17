@@ -2974,8 +2974,7 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
         assert(obj);
         PyObject *repr;
         if (flags & F_ALT) {
-            reprfunc repr_func = PyUnicode_Type.tp_repr;
-            repr = repr_func(obj);
+            repr = _PyObject_AltRepr(obj);
         }
         else {
             repr = PyObject_Repr(obj);

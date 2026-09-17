@@ -20638,7 +20638,7 @@
             oparg = CURRENT_OPARG();
             value = _stack_item_0;
             conversion_func conv_fn;
-            assert(oparg >= FVC_STR && oparg <= FVC_ASCII);
+            assert(oparg >= FVC_STR && oparg <= FVC_ALT_REPR);
             conv_fn = _PyEval_ConversionFuncs[oparg];
             stack_pointer[0] = value;
             stack_pointer += 1;
