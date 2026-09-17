@@ -114,12 +114,15 @@ def runtest_refleak(test_name, test_func,
     rc_deltas = array('q', [0]) * repcount
     alloc_deltas = array('q', [0]) * repcount
     fd_deltas = array('q', [0]) * repcount
+    handle_deltas = array('q', [0]) * repcount
     getallocatedblocks = sys.getallocatedblocks
     gettotalrefcount = sys.gettotalrefcount
     getunicodeinternedsize = sys.getunicodeinternedsize
     fd_count = os_helper.fd_count
+    handle_count = os_helper.handle_count
     # initialize variables to make pyflakes quiet
     rc_before = alloc_before = fd_before = interned_immortal_before = 0
+    handle_before = 0
 
     if not quiet:
         print("beginning", repcount, "repetitions. Showing number of leaks "
@@ -154,13 +157,17 @@ def runtest_refleak(test_name, test_func,
         alloc_after = getallocatedblocks() - interned_immortal_after
         rc_after = gettotalrefcount()
         fd_after = fd_count()
+        handle_after = handle_count()
 
         rc_deltas[i] = rc_after - rc_before
         alloc_deltas[i] = alloc_after - alloc_before
         fd_deltas[i] = fd_after - fd_before
+        handle_deltas[i] = handle_after - handle_before
 
         if not quiet:
-            total_leaks = max(rc_deltas[i], alloc_deltas[i], fd_deltas[i])
+            # use max, not sum, so total_leaks is one of the pooled ints
+            total_leaks = max(rc_deltas[i], alloc_deltas[i],
+                              fd_deltas[i], handle_deltas[i])
             if total_leaks <= 0:
                 symbol = '.'
             elif total_leaks < 10:
@@ -178,6 +185,7 @@ def runtest_refleak(test_name, test_func,
         alloc_before = alloc_after
         rc_before = rc_after
         fd_before = fd_after
+        handle_before = handle_after
         interned_immortal_before = interned_immortal_after
 
         restore_support_xml(xml_filename)
@@ -185,11 +193,21 @@ def runtest_refleak(test_name, test_func,
     if not quiet:
         print(file=sys.stderr)
 
+    if ('multiprocessing' in test_name
+        or 'concurrent_futures' in test_name):
+        # gh-154208: Disable check for Windows handle leaks when
+        # multiprocessing is used. There is a known race condition in
+        # multiprocessing causing handle leak. Disable the multiprocessing
+        # tests to be able to check for leaks for all other tests.
+        for i in range(len(handle_deltas)):
+            handle_deltas[i] = 0
+
     failed = False
     for raw_deltas, item_name in [
         (rc_deltas, 'references'),
         (alloc_deltas, 'memory blocks'),
-        (fd_deltas, 'file descriptors')
+        (fd_deltas, 'file descriptors'),
+        (handle_deltas, 'handles'),
     ]:
         # Ignore warmup runs; convert to a list for reporting
         deltas = list(raw_deltas[warmups:])
