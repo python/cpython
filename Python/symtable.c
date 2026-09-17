@@ -805,6 +805,14 @@ is_free_in_any_child(PySTEntryObject *entry, PyObject *key)
     for (Py_ssize_t i = 0; i < PyList_GET_SIZE(entry->ste_children); i++) {
         PySTEntryObject *child_ste = (PySTEntryObject *)PyList_GET_ITEM(
             entry->ste_children, i);
+        if (child_ste->ste_type == InlinedComprehensionBlock) {
+            /* this is the same scope, so we check its children */
+            int nested = is_free_in_any_child(child_ste, key);
+            if (nested != 0) {
+                return nested;
+            }
+            continue;
+        }
         long scope = _PyST_GetScope(child_ste, key);
         if (scope < 0) {
             return -1;

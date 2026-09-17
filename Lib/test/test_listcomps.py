@@ -512,6 +512,44 @@ class ListComprehensionTest(unittest.TestCase):
         """
         self._check_in_scopes(code, outputs={"res": [[super]]})
 
+    def test_nested_inlined_super_does_not_require_class_cell(self):
+        # Nested inlined comps compile super/__class__ as global lookups.
+        # They must not inject __classcell__ the way a nested function would.
+        class Meta(type):
+            def __new__(mcls, name, bases, ns):
+                ns.pop('__classcell__', None)
+                return type.__new__(mcls, name, bases, ns)
+
+        cases = [
+            ("[[super for _ in (0,)] for _ in (0,)]", [[super]]),
+            ("[{super for _ in (0,)} for _ in (0,)]", [{super}]),
+            ("{0: {1: super for _ in (0,)} for _ in (0,)}", {0: {1: super}}),
+        ]
+        for expr, expected in cases:
+            with self.subTest(expr=expr):
+                ns = {"Meta": Meta}
+                exec(f"class C(metaclass=Meta):\n    result = {expr}", ns)
+                self.assertEqual(ns["C"].result, expected)
+
+    def test_nested_inlined_lambda_class_ref_requires_class_cell(self):
+        class Meta(type):
+            def __new__(mcls, name, bases, ns):
+                ns.pop('__classcell__', None)
+                return type.__new__(mcls, name, bases, ns)
+
+        exprs = [
+            "[[lambda: __class__ for _ in (0,)] for _ in (0,)]",
+            "[{lambda: __class__ for _ in (0,)} for _ in (0,)]",
+            "{0: {1: (lambda: __class__) for _ in (0,)} for _ in (0,)}",
+        ]
+        for expr in exprs:
+            with self.subTest(expr=expr):
+                with self.assertRaisesRegex(
+                        RuntimeError,
+                        r"__class__ not set.*__classcell__ propagated"):
+                    exec(f"class C(metaclass=Meta):\n    result = {expr}",
+                         {"Meta": Meta})
+
     def test_nested_2(self):
         code = """
             l = [1, 2, 3]
