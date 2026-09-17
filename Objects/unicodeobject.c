@@ -2971,9 +2971,15 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
     case 'R':
     {
         PyObject *obj = va_arg(*vargs, PyObject *);
-        PyObject *repr;
         assert(obj);
-        repr = PyObject_Repr(obj);
+        PyObject *repr;
+        if (flags & F_ALT) {
+            reprfunc repr_func = PyUnicode_Type.tp_repr;
+            repr = repr_func(obj);
+        }
+        else {
+            repr = PyObject_Repr(obj);
+        }
         if (!repr)
             return NULL;
         if (unicode_fromformat_write_str(writer, repr, width, precision, flags) == -1) {
