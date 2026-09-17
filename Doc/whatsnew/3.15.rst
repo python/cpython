@@ -254,9 +254,9 @@ as lazy, with the same semantics as the ``lazy`` keyword::
    import json     # lazy
    import os       # still eager
 
-.. seealso:: :pep:`810` for the full specification and rationale.
-
 (Contributed by Pablo Galindo Salgado and Dino Viehland in :gh:`142349`.)
+
+.. seealso:: :pep:`810` for the full specification and rationale.
 
 
 .. _whatsnew315-frozendict:
@@ -300,9 +300,9 @@ updated to ``isinstance(arg, (dict, frozendict))`` to accept also the
 :class:`!frozendict` type, or to ``isinstance(arg, collections.abc.Mapping)``
 to accept also other mapping types such as :class:`~types.MappingProxyType`.
 
-.. seealso:: :pep:`814` for the full specification and rationale.
-
 (Contributed by Victor Stinner and Donghee Na in :gh:`141510`.)
+
+.. seealso:: :pep:`814` for the full specification and rationale.
 
 
 .. _whatsnew315-sentinel:
@@ -316,7 +316,7 @@ objects preserve identity when copied, support use in type expressions with
 the ``|`` operator, and can be pickled when they are importable by module and
 name.
 
-(PEP by Tal Einat; contributed by Jelle Zijlstra in :gh:`148829`.)
+(Contributed by Jelle Zijlstra in :gh:`148829`; PEP 661 written by Tal Einat.)
 
 .. seealso:: :pep:`661` for further details.
 
@@ -336,9 +336,9 @@ profiling tools under a single, coherent namespace. This module contains:
 The ``cProfile`` module remains as an alias for backwards compatibility.
 The :mod:`profile` module is deprecated and will be removed in Python 3.17.
 
-.. seealso:: :pep:`799` for further details.
-
 (Contributed by Pablo Galindo and László Kiss Kollár in :gh:`138122`.)
+
+.. seealso:: :pep:`799` for further details.
 
 
 .. _whatsnew315-sampling-profiler:
@@ -501,9 +501,10 @@ This change also extends to asynchronous generator expressions, such that, for
 example, ``(*a async for a in agen())`` is equivalent to ``(x async for a in
 agen() for x in a)``.
 
+(Contributed by Adam Hartz in :gh:`143055`.)
+
 .. seealso:: :pep:`798` for further details.
 
-(Contributed by Adam Hartz in :gh:`143055`.)
 
 .. _whatsnew315-startup-files:
 
@@ -611,9 +612,9 @@ In addition, APIs in the ``PyGILState`` family (most notably
 code will continue to work, but there will be no new ``PyGILState`` APIs
 in future versions of Python.
 
-.. seealso:: :pep:`788` for further details.
-
 (Contributed by Peter Bierma in :gh:`149101`.)
+
+.. seealso:: :pep:`788` for further details.
 
 
 .. _whatsnew315-improved-error-messages:
@@ -746,12 +747,12 @@ Other language changes
   the :envvar:`PYTHONUTF8=0 <PYTHONUTF8>` environment variable or the
   :option:`-X utf8=0 <-X>` command-line option.
 
+  (Contributed by Adam Turner in :gh:`133711`; PEP 686 written by Inada Naoki.)
+
   .. seealso:: :pep:`686` for further details.
 
   .. _UTF-8: https://en.wikipedia.org/wiki/UTF-8
   .. _Unicode: https://home.unicode.org/
-
-  (Contributed by Adam Turner in :gh:`133711`; PEP 686 written by Inada Naoki.)
 
   .. _whatsnew315-color-interpreter-help:
 
@@ -936,7 +937,7 @@ Other language changes
   3.13, is no longer set or taken into consideration by the import system or
   standard library.
   Use :attr:`__spec__.cached <importlib.machinery.ModuleSpec.cached>` instead.
-  (Contributed by Brett Cannon in :gh:`97879`)
+  (Contributed by Brett Cannon in :gh:`97879`.)
 
   Note that the :attr:`~module.__loader__` and :attr:`~module.__package__`
   attributes are also deprecated and scheduled for removal.
@@ -1299,7 +1300,7 @@ http.server
   HTTP responses.
   (Contributed by Anton I. Sipos in :gh:`135057`.)
 
-* Add a ``-H/--header`` option to the :program:`python -m http.server`
+* Add a :option:`-H/--header <http.server --header>` option to the :program:`python -m http.server`
   command-line interface to support custom headers in HTTP responses.
   (Contributed by Anton I. Sipos in :gh:`135057`.)
 
@@ -1332,7 +1333,7 @@ json
   :func:`~json.loads` functions:
   allow a callback for JSON literal array types to customize Python lists in
   the resulting decoded object. Passing combined :class:`frozendict` to
-  *object_pairs_hook* param and :class:`tuple` to ``array_hook`` will yield a
+  *object_pairs_hook* parameter and :class:`tuple` to *array_hook* will yield a
   deeply nested immutable Python structure representing the JSON data.
   (Contributed by Joao S. O. Bueno in :gh:`146440`.)
 
@@ -1367,8 +1368,10 @@ mimetypes
   John Franey
   in :gh:`144217`, :gh:`145720`, :gh:`140937`, :gh:`139959`, :gh:`145698`,
   :gh:`145718`, :gh:`145918`, and :gh:`144213`.)
+
 * Rename ``application/x-texinfo`` to ``application/texinfo``.
   (Contributed by Charlie Lin in :gh:`140165`.)
+
 * Changed the MIME type for ``.ai`` files to ``application/pdf``.
   (Contributed by Stan Ulbrych in :gh:`141239`.)
 
@@ -1488,6 +1491,7 @@ shelve
 * Added new :meth:`!reorganize` method to :mod:`shelve` used to recover unused free
   space previously occupied by deleted entries.
   (Contributed by Andrea Oliveri in :gh:`134004`.)
+
 * Add support for custom serialization and deserialization functions
   in the :mod:`shelve` module.
   (Contributed by Furkan Onder in :gh:`99631`.)
@@ -1513,7 +1517,7 @@ sqlite3
 
 * The :ref:`command-line interface <sqlite3-cli>` has several new features:
 
-  * SQL keyword completion on <tab>.
+  * SQL keyword completion on :kbd:`Tab`.
     (Contributed by Long Tan in :gh:`133393`.)
 
   .. _whatsnew315-color-sqlite3:
@@ -1523,7 +1527,7 @@ sqlite3
     details.
     (Contributed by Stan Ulbrych and Łukasz Langa in :gh:`133461`.)
 
-  * Table, index, trigger, view, column, function, and schema completion on <tab>.
+  * Table, index, trigger, view, column, function, and schema completion on :kbd:`Tab`.
     (Contributed by Long Tan in :gh:`136101`.)
 
 
@@ -1626,27 +1630,32 @@ tarfile
 * :func:`~tarfile.data_filter` now normalizes symbolic link targets in order to
   avoid path traversal attacks.
   (Contributed by Petr Viktorin in :gh:`127987` and :cve:`2025-4138`.)
+
 * :func:`~tarfile.TarFile.extractall` now skips fixing up directory attributes
   when a directory was removed or replaced by another kind of file.
   (Contributed by Petr Viktorin in :gh:`127987` and :cve:`2024-12718`.)
+
 * :func:`~tarfile.TarFile.extract` and :func:`~tarfile.TarFile.extractall`
   now (re-)apply the extraction filter when substituting a link (hard or
   symbolic) with a copy of another archive member, and when fixing up
   directory attributes.
   The former raises a new exception, :exc:`~tarfile.LinkFallbackError`.
   (Contributed by Petr Viktorin for :cve:`2025-4330` and :cve:`2024-12718`.)
+
 * :func:`~tarfile.TarFile.extract` and :func:`~tarfile.TarFile.extractall`
   no longer extract rejected members when
   :func:`~tarfile.TarFile.errorlevel` is zero.
   (Contributed by Matt Prodani and Petr Viktorin in :gh:`112887`
   and :cve:`2025-4435`.)
+
 * :func:`~tarfile.TarFile.extract` and :func:`~tarfile.TarFile.extractall`
   now replace slashes with backslashes in symlink targets on Windows to prevent
   creation of corrupted links.
   (Contributed by Christoph Walcher in :gh:`57911`.)
+
 * :func:`~tarfile.TarFile.gettarinfo` now replaces backslashes with slashes in
-  symlink targets on Windows to conform to the tar format standard. (Contributed
-  by Daniele Nicolodi in :gh:`151669`.)
+  symlink targets on Windows to conform to the tar format standard.
+  (Contributed by Daniele Nicolodi in :gh:`151669`.)
 
 
 threading
@@ -2610,7 +2619,6 @@ New features
   * :c:func:`PyModule_FromDefAndSpec`
   * :c:func:`PyModule_FromDefAndSpec2`
   * :c:func:`PyModule_ExecDef`
-
 
   The slots :c:macro:`Py_tp_bases` and :c:macro:`Py_tp_base` are now
   equivalent: they can be set either to a single type or a tuple of types.
