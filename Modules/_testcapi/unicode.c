@@ -276,6 +276,25 @@ _Py_COMP_DIAG_POP
 }
 
 
+// Write into an immutable str object to test _PyStaticObjects_CheckAll()
+static PyObject *
+corrupt_unicode(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    PyObject *obj, *override;
+    if (!PyArg_ParseTuple(args, "OO", &obj, &override)) {
+        return NULL;
+    }
+    assert(PyUnicode_KIND(obj) == PyUnicode_1BYTE_KIND);
+    assert(PyUnicode_KIND(override) == PyUnicode_1BYTE_KIND);
+
+    Py_UCS1 *dst = PyUnicode_1BYTE_DATA(obj);
+    Py_UCS1 *src = PyUnicode_1BYTE_DATA(override);
+    Py_ssize_t size = PyUnicode_GET_LENGTH(override);
+    memcpy(dst, src, size);
+    Py_RETURN_NONE;
+}
+
+
 // --- PyUnicodeWriter type -------------------------------------------------
 
 typedef struct {
@@ -622,6 +641,7 @@ static PyMethodDef TestMethods[] = {
     {"unicode_copycharacters",   unicode_copycharacters,         METH_VARARGS},
     {"unicode_GET_CACHED_HASH",  unicode_GET_CACHED_HASH,        METH_O},
     {"test_py_identifier",       test_py_identifier,             METH_NOARGS},
+    {"corrupt_unicode",          corrupt_unicode,                METH_VARARGS},
     {NULL},
 };
 
