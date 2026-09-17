@@ -177,7 +177,7 @@ decode_unicode_with_escapes(Parser *parser, const char *s, size_t len, Token *t)
             data = PyUnicode_DATA(w);
             w_len = PyUnicode_GET_LENGTH(w);
             for (i = 0; i < w_len; i++) {
-                // sprintf() alsowrites a null byte: the buffer is large enough
+                // sprintf() writes a null byte: the buffer is large enough
                 // for that thanks to the overallocation.
                 assert((p + 11 - buf) <= alloc);
                 Py_UCS4 chr = PyUnicode_READ(kind, data, i);
