@@ -136,9 +136,7 @@ def _parse(tokens, priority=-1):
         except ValueError:
             raise _error(nexttok) from None
         result = '%s%d' % (result, value)
-    # In C the unary '!' binds tighter than any binary operator, but Python's
-    # 'not' binds looser, so parenthesise the negated operand before the
-    # binary-operator loop below ('!n + 1' means '(!n) + 1', not '!(n + 1)').
+    # Unary '!' binds tighter than binary operators in C, unlike 'not'.
     if result.startswith('not '):
         result = '(%s)' % result
     nexttok = next(tokens)
