@@ -1,0 +1,2 @@
+Fix a crash when a weak-reference callback is attached to a
+:class:`typing.ParamSpecArgs` or :class:`typing.ParamSpecKwargs` instance.
