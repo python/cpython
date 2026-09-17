@@ -2610,7 +2610,7 @@ New features
   ``PyModExport`` :ref:`module export hook <extension-export-hook>` also
   use the new :c:type:`!PySlot` struct.
 
-  These following functions are :term:`soft deprecated`:
+  The following functions are :term:`soft deprecated`:
 
   * :c:func:`PyType_FromSpec`
   * :c:func:`PyType_FromSpecWithBases`
@@ -2752,8 +2752,8 @@ Deprecated C APIs
   (Contributed by Victor Stinner in :gh:`129813`.)
 
 * :c:func:`!_PyObject_CallMethodId`, :c:func:`!_PyObject_GetAttrId` and
-  :c:func:`!_PyUnicode_FromId` are deprecated since 3.15 and will be removed in
-  3.20. Instead, use :c:func:`PyUnicode_InternFromString()` and cache the result in
+  :c:func:`!_PyUnicode_FromId` are deprecated since Python 3.15 and will be removed in
+  Python 3.20. Instead, use :c:func:`PyUnicode_InternFromString()` and cache the result in
   the module state, then call :c:func:`PyObject_CallMethod` or
   :c:func:`PyObject_GetAttr`.
   (Contributed by Victor Stinner in :gh:`141049`.)
@@ -2771,7 +2771,7 @@ Deprecated C APIs
   (Contributed by Sergey B Kirpichev in :gh:`128813`.)
 
 * :c:member:`~PyConfig.bytes_warning` is deprecated
-  since 3.15 and will be removed in 3.17.
+  since Python 3.15 and will be removed in Python 3.17.
   (Contributed by Nikita Sobolev in :gh:`136355`.)
 
 * :c:macro:`!Py_INFINITY` macro is :term:`soft deprecated`,
@@ -2797,7 +2797,7 @@ Deprecated C APIs
   (Contributed by Petr Viktorin in :gh:`146175`.)
 
 * :c:macro:`!Py_MATH_El` and :c:macro:`!Py_MATH_PIl` are deprecated
-  since 3.15 and will be removed in 3.20.
+  since Python 3.15 and will be removed in Python 3.20.
   (Contributed by Sergey B Kirpichev in :gh:`141004`.)
 
 
