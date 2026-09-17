@@ -630,6 +630,9 @@ Improved error messages
 
   .. code-block:: python
 
+     from dataclasses import dataclass
+     from math import pi
+
      @dataclass
      class Circle:
         radius: float
@@ -651,7 +654,7 @@ Improved error messages
   .. code-block:: pytb
 
      Traceback (most recent call last):
-       File "/home/pablogsal/github/python/main/lel.py", line 42, in <module>
+       File "example.py", line 18, in <module>
          print(container.area)
                ^^^^^^^^^^^^^^
      AttributeError: 'Container' object has no attribute 'area'. Did you mean '.inner.area' instead of '.area'?
