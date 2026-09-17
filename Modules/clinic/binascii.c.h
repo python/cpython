@@ -1513,16 +1513,20 @@ exit:
 }
 
 PyDoc_STRVAR(binascii_a2b_qp__doc__,
-"a2b_qp($module, /, data, header=False)\n"
+"a2b_qp($module, /, data, header=False, strip_ws=False)\n"
 "--\n"
 "\n"
-"Decode a string of qp-encoded data.");
+"Decode a string of qp-encoded data.\n"
+"\n"
+"If strip_ws is true, whitespace at the end of a line is stripped, as\n"
+"required by RFC 2045 when decoding a quoted-printable body.");
 
 #define BINASCII_A2B_QP_METHODDEF    \
     {"a2b_qp", _PyCFunction_CAST(binascii_a2b_qp), METH_FASTCALL|METH_KEYWORDS, binascii_a2b_qp__doc__},
 
 static PyObject *
-binascii_a2b_qp_impl(PyObject *module, Py_buffer *data, int header);
+binascii_a2b_qp_impl(PyObject *module, Py_buffer *data, int header,
+                     int strip_ws);
 
 static PyObject *
 binascii_a2b_qp(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -1530,7 +1534,7 @@ binascii_a2b_qp(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 2
+    #define NUM_KEYWORDS 3
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -1539,7 +1543,7 @@ binascii_a2b_qp(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(data), &_Py_ID(header), },
+        .ob_item = { &_Py_ID(data), &_Py_ID(header), &_Py_ID(strip_ws), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -1548,20 +1552,21 @@ binascii_a2b_qp(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"data", "header", NULL};
+    static const char * const _keywords[] = {"data", "header", "strip_ws", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "a2b_qp",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     Py_buffer data = {NULL, NULL};
     int header = 0;
+    int strip_ws = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+            /*minpos*/ 1, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -1571,12 +1576,21 @@ binascii_a2b_qp(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    header = PyObject_IsTrue(args[1]);
-    if (header < 0) {
+    if (args[1]) {
+        header = PyObject_IsTrue(args[1]);
+        if (header < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    strip_ws = PyObject_IsTrue(args[2]);
+    if (strip_ws < 0) {
         goto exit;
     }
 skip_optional_pos:
-    return_value = binascii_a2b_qp_impl(module, &data, header);
+    return_value = binascii_a2b_qp_impl(module, &data, header, strip_ws);
 
 exit:
     /* Cleanup for data */
@@ -1685,4 +1699,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=42dd48f323cbb118 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=202204ced5906f7a input=a9049054013a1b77]*/
