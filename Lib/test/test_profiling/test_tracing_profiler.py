@@ -86,15 +86,12 @@ class CProfileTest(ProfileTest):
             self.assertEqual(cm.unraisable.exc_type, RuntimeError)
 
     def test_enable_in_external_timer(self):
-        # gh-157639
-        # Enabling the profiler from an external timer should not crash
+        # gh-157639: Enabling the profiler from an external timer should not crash
         import _lsprof
 
         # the timer re-arms monitoring from inside disable(), so the tool
         # id stays claimed once the profiler is torn down
         self.addCleanup(sys.monitoring.free_tool_id, sys.monitoring.PROFILER_ID)
-
-        profiler = _lsprof.Profiler()
 
         def timer():
             try:
@@ -103,7 +100,7 @@ class CProfileTest(ProfileTest):
                 pass
             return 0
 
-        profiler.__init__(timer=timer)
+        profiler = _lsprof.Profiler(timer=timer)
         profiler.enable()
         (lambda: None)()
         profiler.disable()
