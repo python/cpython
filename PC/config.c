@@ -19,7 +19,6 @@ extern PyObject* PyInit_nt(void);
 extern PyObject* PyInit__operator(void);
 extern PyObject* PyInit__signal(void);
 extern PyObject* PyInit__statistics(void);
-extern PyObject* PyInit__strptime_impl(void);
 extern PyObject* PyInit__sysconfig(void);
 extern PyObject* PyInit__types(void);
 extern PyObject* PyInit__typing(void);
@@ -114,7 +113,6 @@ struct _inittab _PyImport_Inittab[] = {
     {"_types", PyInit__types},
     {"_typing", PyInit__typing},
     {"_statistics", PyInit__statistics},
-    {"_strptime_impl", PyInit__strptime_impl},
 
     /* cryptographic hash functions */
     {"_blake2", PyInit__blake2},

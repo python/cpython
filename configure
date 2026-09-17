@@ -799,8 +799,6 @@ MODULE_SELECT_FALSE
 MODULE_SELECT_TRUE
 MODULE__REMOTE_DEBUGGING_FALSE
 MODULE__REMOTE_DEBUGGING_TRUE
-MODULE__STRPTIME_IMPL_FALSE
-MODULE__STRPTIME_IMPL_TRUE
 MODULE__RANDOM_FALSE
 MODULE__RANDOM_TRUE
 MODULE__QUEUE_FALSE
@@ -35782,28 +35780,6 @@ then :
 fi
 
 
-        if test "$py_cv_module__strptime_impl" != "n/a"
-then :
-  py_cv_module__strptime_impl=yes
-fi
-   if test "$py_cv_module__strptime_impl" = yes; then
-  MODULE__STRPTIME_IMPL_TRUE=
-  MODULE__STRPTIME_IMPL_FALSE='#'
-else
-  MODULE__STRPTIME_IMPL_TRUE='#'
-  MODULE__STRPTIME_IMPL_FALSE=
-fi
-
-  as_fn_append MODULE_BLOCK "MODULE__STRPTIME_IMPL_STATE=$py_cv_module__strptime_impl$as_nl"
-  if test "x$py_cv_module__strptime_impl" = xyes
-then :
-
-
-
-
-fi
-
-
         if test "$py_cv_module__struct" != "n/a"
 then :
   py_cv_module__struct=yes
@@ -38754,10 +38730,6 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__RANDOM_TRUE}" && test -z "${MODULE__RANDOM_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__RANDOM\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${MODULE__STRPTIME_IMPL_TRUE}" && test -z "${MODULE__STRPTIME_IMPL_FALSE}"; then
-  as_fn_error $? "conditional \"MODULE__STRPTIME_IMPL\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__REMOTE_DEBUGGING_TRUE}" && test -z "${MODULE__REMOTE_DEBUGGING_FALSE}"; then
