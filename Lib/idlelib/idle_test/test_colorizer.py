@@ -438,7 +438,7 @@ class ColorDelegatorTest(unittest.TestCase):
         eq(text.tag_nextrange('STRING', '8.12'), ('8.14', '8.17'))
         eq(text.tag_nextrange('STRING', '8.17'), ('8.19', '8.26'))
         eq(text.tag_nextrange('SYNC', '8.0'), ('8.26', '9.0'))
-        eq(text.tag_nextrange('SYNC', '31.0'), ('31.10', '33.0'))
+        eq(text.tag_nextrange('SYNC', '31.0'), ('31.10', '32.0'))
 
     def _assert_highlighting(self, source, tag_ranges):
         """Check highlighting of a given piece of code.
