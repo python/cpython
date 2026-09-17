@@ -157,7 +157,7 @@ assignment[stmt_ty]:
             _PyAST_AnnAssign(CHECK(expr_ty, _PyPegen_set_expr_context(p, a, Store)), b, c, 1, EXTRA)
         ) }
     | a=('(' b=single_target ')' { b }
-         | single_subscript_attribute_target) ':' b=expression c=['=' d=annotated_rhs { d }] {
+         | attribute_or_subscript_target) ':' b=expression c=['=' d=annotated_rhs { d }] {
         CHECK_VERSION(stmt_ty, 6, "Variable annotations syntax is", _PyAST_AnnAssign(a, b, c, 0, EXTRA)) }
     | a[asdl_expr_seq*]=(z=star_targets '=' { z })+ b=annotated_rhs !'=' tc=[TYPE_COMMENT] {
          _PyAST_Assign(a, b, NEW_TYPE_COMMENT(p, tc), EXTRA) }
@@ -229,8 +229,9 @@ import_name[stmt_ty]:
 
 # note below: the ('.' | '...') is necessary because '...' is tokenized as ELLIPSIS
 import_from[stmt_ty]:
+    | invalid_import_from
     | lazy="lazy"? 'from' a=('.' | '...')* b=dotted_name 'import' c=import_from_targets {
-        _PyPegen_checked_future_import(p, b->v.Name.id, c, _PyPegen_seq_count_dots(a), lazy, EXTRA) }
+        _PyPegen_checked_from_import(p, a, b, c, lazy, EXTRA) }
     | lazy="lazy"? 'from' a=('.' | '...')+ 'import' b=import_from_targets {
         _PyAST_ImportFrom(NULL, b, _PyPegen_seq_count_dots(a), lazy ? 1 : 0, EXTRA) }
 import_from_targets[asdl_alias_seq*]:
@@ -567,7 +568,6 @@ real_number[expr_ty]:
 
 imaginary_number[expr_ty]:
     | imag=NUMBER { _PyPegen_ensure_imaginary(p, imag) }
-    | '+' imag=NUMBER { _PyPegen_ensure_imaginary(p, imag) }
 
 capture_pattern[pattern_ty]:
     | target=pattern_capture_target { _PyAST_MatchAs(NULL, target->v.Name.id, EXTRA) }
@@ -740,15 +740,9 @@ star_expression[expr_ty] (memo):
 
 star_named_expressions[asdl_expr_seq*]: a[asdl_expr_seq*]=','.star_named_expression+ [','] { a }
 
-star_named_expressions_sequence[asdl_expr_seq*]: a[asdl_expr_seq*]=','.star_named_expression_sequence+ [','] { a }
-
 star_named_expression[expr_ty]:
     | '*' a=bitwise_or { _PyAST_Starred(a, Load, EXTRA) }
     | named_expression
-
-star_named_expression_sequence[expr_ty]:
-    | invalid_starred_expression_unpacking_sequence
-    | star_named_expression
 
 assignment_expression[expr_ty]:
     | a=NAME ':=' ~ b=expression {
@@ -791,34 +785,24 @@ comparison[expr_ty]:
     | bitwise_or
 
 compare_op_bitwise_or_pair[CmpopExprPair*]:
-    | eq_bitwise_or
-    | noteq_bitwise_or
-    | lte_bitwise_or
-    | lt_bitwise_or
-    | gte_bitwise_or
-    | gt_bitwise_or
-    | notin_bitwise_or
-    | in_bitwise_or
-    | isnot_bitwise_or
-    | is_bitwise_or
-
-eq_bitwise_or[CmpopExprPair*]: '==' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, Eq, a) }
-noteq_bitwise_or[CmpopExprPair*]:
-    | (tok='!=' { _PyPegen_check_barry_as_flufl(p, tok) ? NULL : tok}) a=bitwise_or {_PyPegen_cmpop_expr_pair(p, NotEq, a) }
-lte_bitwise_or[CmpopExprPair*]: '<=' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, LtE, a) }
-lt_bitwise_or[CmpopExprPair*]: '<' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, Lt, a) }
-gte_bitwise_or[CmpopExprPair*]: '>=' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, GtE, a) }
-gt_bitwise_or[CmpopExprPair*]: '>' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, Gt, a) }
-notin_bitwise_or[CmpopExprPair*]: 'not' 'in' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, NotIn, a) }
-in_bitwise_or[CmpopExprPair*]: 'in' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, In, a) }
-isnot_bitwise_or[CmpopExprPair*]: 'is' 'not' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, IsNot, a) }
-is_bitwise_or[CmpopExprPair*]: 'is' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, Is, a) }
+    | '==' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, Eq, a) }
+    | (tok='!=' { _PyPegen_check_barry_as_flufl(p, tok) ? NULL : tok }) a=bitwise_or {
+        _PyPegen_cmpop_expr_pair(p, NotEq, a) }
+    | '<=' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, LtE, a) }
+    | '<' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, Lt, a) }
+    | '>=' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, GtE, a) }
+    | '>' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, Gt, a) }
+    | 'not' 'in' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, NotIn, a) }
+    | 'in' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, In, a) }
+    | 'is' 'not' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, IsNot, a) }
+    | 'is' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, Is, a) }
 
 # Bitwise operators
 # -----------------
 
 bitwise_or[expr_ty]:
     | a=bitwise_or '|' b=bitwise_xor { _PyAST_BinOp(a, BitOr, b, EXTRA) }
+    | invalid_bitwise_or
     | bitwise_xor
 
 bitwise_xor[expr_ty]:
@@ -827,12 +811,12 @@ bitwise_xor[expr_ty]:
 
 bitwise_and[expr_ty]:
     | a=bitwise_and '&' b=shift_expr { _PyAST_BinOp(a, BitAnd, b, EXTRA) }
+    | invalid_bitwise_and
     | shift_expr
 
 shift_expr[expr_ty]:
     | a=shift_expr '<<' b=sum { _PyAST_BinOp(a, LShift, b, EXTRA) }
     | a=shift_expr '>>' b=sum { _PyAST_BinOp(a, RShift, b, EXTRA) }
-    | invalid_arithmetic
     | sum
 
 # Arithmetic operators
@@ -841,6 +825,7 @@ shift_expr[expr_ty]:
 sum[expr_ty]:
     | a=sum '+' b=term { _PyAST_BinOp(a, Add, b, EXTRA) }
     | a=sum '-' b=term { _PyAST_BinOp(a, Sub, b, EXTRA) }
+    | invalid_arithmetic
     | term
 
 term[expr_ty]:
@@ -849,7 +834,6 @@ term[expr_ty]:
     | a=term '//' b=factor { _PyAST_BinOp(a, FloorDiv, b, EXTRA) }
     | a=term '%' b=factor { _PyAST_BinOp(a, Mod, b, EXTRA) }
     | a=term '@' b=factor { CHECK_VERSION(expr_ty, 5, "The '@' operator is", _PyAST_BinOp(a, MatMult, b, EXTRA)) }
-    | invalid_factor
     | factor
 
 factor[expr_ty] (memo):
@@ -857,6 +841,7 @@ factor[expr_ty] (memo):
     | '-' a=factor { _PyAST_UnaryOp(USub, a, EXTRA) }
     | '~' a=factor { _PyAST_UnaryOp(Invert, a, EXTRA) }
     | power
+    | invalid_factor
 
 power[expr_ty]:
     | a=await_primary '**' b=factor { _PyAST_BinOp(a, Pow, b, EXTRA) }
@@ -1012,14 +997,20 @@ strings[expr_ty] (memo):
     | a[asdl_expr_seq*]=(fstring|string)+ { _PyPegen_concatenate_strings(p, a, EXTRA) }
     | a[asdl_expr_seq*]=tstring+ { _PyPegen_concatenate_tstrings(p, a, EXTRA) }
 
+display_items[asdl_expr_seq*]: a[asdl_expr_seq*]=','.display_item+ [','] { a }
+
+display_item[expr_ty]:
+    | invalid_starred_expression_unpacking_sequence
+    | star_named_expression
+
 list[expr_ty]:
-    | '[' a=[star_named_expressions_sequence] ']' { _PyAST_List(a, Load, EXTRA) }
+    | '[' a=[display_items] ']' { _PyAST_List(a, Load, EXTRA) }
 
 tuple[expr_ty]:
-    | '(' a=[y=star_named_expression_sequence ',' z=[star_named_expressions_sequence] { _PyPegen_seq_insert_in_front(p, y, z) } ] ')' {
+    | '(' a=[y=display_item ',' z=[display_items] { _PyPegen_seq_insert_in_front(p, y, z) } ] ')' {
         _PyAST_Tuple(a, Load, EXTRA) }
 
-set[expr_ty]: '{' a=star_named_expressions_sequence '}' { _PyAST_Set(a, EXTRA) }
+set[expr_ty]: '{' a=display_items '}' { _PyAST_Set(a, EXTRA) }
 
 # Dicts
 # -----
@@ -1086,8 +1077,8 @@ args[expr_ty]:
                           EXTRA) }
 
 kwargs[asdl_seq*]:
-    | a=','.kwarg_or_starred+ ',' b=','.kwarg_or_double_starred+ { _PyPegen_join_sequences(p, a, b) }
-    | ','.kwarg_or_starred+
+    | a=','.kwarg_or_starred+ b=[',' c=','.kwarg_or_double_starred+ { c }] {
+        b ? _PyPegen_join_sequences(p, a, b) : a }
     | ','.kwarg_or_double_starred+
 
 starred_expression[expr_ty]:
@@ -1113,56 +1104,27 @@ kwarg_or_double_starred[KeywordOrStarred*]:
 # Generic targets
 # ---------------
 
-# NOTE: star_targets may contain *bitwise_or, targets may not.
+# Targets reuse primary. Copying the context leaves its cached values in Load.
 star_targets[expr_ty]:
     | a=star_target !',' { a }
     | a=star_target b=(',' c=star_target { c })* [','] {
         _PyAST_Tuple(CHECK(asdl_expr_seq*, _PyPegen_seq_insert_in_front(p, a, b)), Store, EXTRA) }
 
-star_targets_list_seq[asdl_expr_seq*]: a[asdl_expr_seq*]=','.star_target+ [','] { a }
-
-star_targets_tuple_seq[asdl_expr_seq*]:
-    | a=star_target b=(',' c=star_target { c })+ [','] { (asdl_expr_seq*) _PyPegen_seq_insert_in_front(p, a, b) }
-    | a=star_target ',' { (asdl_expr_seq*) _PyPegen_singleton_seq(p, a) }
-
 star_target[expr_ty] (memo):
-    | '*' a=(!'*' star_target) {
-        _PyAST_Starred(CHECK(expr_ty, _PyPegen_set_expr_context(p, a, Store)), Store, EXTRA) }
-    | target_with_star_atom
+    | '*' a=(!'*' star_target) { _PyAST_Starred(a, Store, EXTRA) }
+    | target
 
-target_with_star_atom[expr_ty] (memo):
-    | a=t_primary '.' b=NAME !t_lookahead { _PyAST_Attribute(a, b->v.Name.id, Store, EXTRA) }
-    | a=t_primary '[' b=slices ']' !t_lookahead { _PyAST_Subscript(a, b, Store, EXTRA) }
-    | star_atom
-
-star_atom[expr_ty]:
-    | a=NAME { _PyPegen_set_expr_context(p, a, Store) }
-    | '(' a=target_with_star_atom ')' { _PyPegen_set_expr_context(p, a, Store) }
-    | '(' a=[star_targets_tuple_seq] ')' { _PyAST_Tuple(a, Store, EXTRA) }
-    | '[' a=[star_targets_list_seq] ']' { _PyAST_List(a, Store, EXTRA) }
+target[expr_ty] (memo):
+    | a=target_value { _PyPegen_make_target(p, a, STAR_TARGETS) }
 
 single_target[expr_ty]:
-    | single_subscript_attribute_target
-    | a=NAME { _PyPegen_set_expr_context(p, a, Store) }
-    | '(' a=single_target ')' { a }
+    | a=target_value { _PyPegen_make_target(p, a, SINGLE_TARGETS) }
 
-single_subscript_attribute_target[expr_ty]:
-    | a=t_primary '.' b=NAME !t_lookahead { _PyAST_Attribute(a, b->v.Name.id, Store, EXTRA) }
-    | a=t_primary '[' b=slices ']' !t_lookahead { _PyAST_Subscript(a, b, Store, EXTRA) }
+attribute_or_subscript_target[expr_ty]:
+    | a=target_value { _PyPegen_make_target(p, a, ATTRIBUTE_OR_SUBSCRIPT_TARGETS) }
 
-t_primary[expr_ty]:
-    | a=t_primary '.' b=NAME &t_lookahead { _PyAST_Attribute(a, b->v.Name.id, Load, EXTRA) }
-    | a=t_primary '[' b=slices ']' &t_lookahead { _PyAST_Subscript(a, b, Load, EXTRA) }
-    | a=t_primary b=genexp &t_lookahead {
-        _PyAST_Call(a, CHECK(asdl_expr_seq*, (asdl_expr_seq*)_PyPegen_singleton_seq(p, b)), NULL, EXTRA) }
-    | a=t_primary '(' b=[arguments] ')' &t_lookahead {
-        _PyAST_Call(a,
-                 (b) ? ((expr_ty) b)->v.Call.args : NULL,
-                 (b) ? ((expr_ty) b)->v.Call.keywords : NULL,
-                 EXTRA) }
-    | a=atom &t_lookahead { a }
-
-t_lookahead: '(' | '[' | '.'
+target_value[expr_ty]:
+    | a=primary !('(' | '[' | '.') { a }
 
 # Targets for del statements
 # --------------------------
@@ -1170,15 +1132,7 @@ t_lookahead: '(' | '[' | '.'
 del_targets[asdl_expr_seq*]: a[asdl_expr_seq*]=','.del_target+ [','] { a }
 
 del_target[expr_ty] (memo):
-    | a=t_primary '.' b=NAME !t_lookahead { _PyAST_Attribute(a, b->v.Name.id, Del, EXTRA) }
-    | a=t_primary '[' b=slices ']' !t_lookahead { _PyAST_Subscript(a, b, Del, EXTRA) }
-    | del_t_atom
-
-del_t_atom[expr_ty]:
-    | a=NAME { _PyPegen_set_expr_context(p, a, Del) }
-    | '(' a=del_target ')' { _PyPegen_set_expr_context(p, a, Del) }
-    | '(' a=[del_targets] ')' { _PyAST_Tuple(a, Del, EXTRA) }
-    | '[' a=[del_targets] ']' { _PyAST_List(a, Del, EXTRA) }
+    | a=target_value { _PyPegen_make_target(p, a, DEL_TARGETS) }
 
 # TYPING ELEMENTS
 # ---------------
@@ -1227,8 +1181,12 @@ invalid_arguments:
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, _PyPegen_get_last_comprehension_item(PyPegen_last_item(b, comprehension_ty)), "Generator expression must be parenthesized") }
     | a=args ',' args { _PyPegen_arguments_parsing_error(p, a) }
 invalid_kwarg:
-    | a[Token*]=('True'|'False'|'None') b='=' {
-        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "cannot assign to %s", PyBytes_AS_STRING(a->bytes)) }
+    | a='True' b='=' {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "cannot assign to True") }
+    | a='False' b='=' {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "cannot assign to False") }
+    | a='None' b='=' {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "cannot assign to None") }
     | a=NAME b='=' expression for_if_clauses {
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax. Maybe you meant '==' or ':=' instead of '='?")}
     | !(NAME '=') a=expression b='=' {
@@ -1443,6 +1401,11 @@ invalid_import_from_as_name:
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a,
             "cannot use %s as import target", _PyPegen_get_expr_name(a)) }
 
+invalid_import_from:
+    | 'from' ('.' | '...')* dotted_name a="lazy" 'import' import_from_targets {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a,
+            "use 'lazy from ... ' instead of 'from ... lazy import'") }
+
 invalid_import_from_targets:
     | import_from_as_names ',' NEWLINE {
         RAISE_SYNTAX_ERROR("trailing comma not allowed without surrounding parentheses") }
@@ -1638,3 +1601,17 @@ invalid_type_params:
         RAISE_SYNTAX_ERROR_STARTING_FROM(
             token,
             "Type parameter list cannot be empty")}
+
+invalid_bitwise_and:
+    | a=bitwise_and b='&' c='&' {
+        _PyPegen_tokens_are_adjacent(b, c)
+        ? RAISE_SYNTAX_ERROR_KNOWN_RANGE(b, c, "invalid syntax.  Maybe you meant 'and' or '&' instead of '&&'?")
+        : NULL
+    }
+
+invalid_bitwise_or:
+    | a=bitwise_or b='|' c='|' {
+        _PyPegen_tokens_are_adjacent(b, c)
+        ? RAISE_SYNTAX_ERROR_KNOWN_RANGE(b, c, "invalid syntax.  Maybe you meant 'or' or '|' instead of '||'?")
+        : NULL
+    }

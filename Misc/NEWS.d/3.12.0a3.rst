@@ -454,8 +454,8 @@ event loop but the current event loop was set.
 .. nonce: humlhz
 .. section: Library
 
-On ``uname_result``, restored expectation that ``_fields`` and ``_asdict``
-would include all six properties including ``processor``.
+On :class:`os.uname_result`, restored expectation that ``_fields`` and
+``_asdict`` would include all six properties including ``processor``.
 
 ..
 

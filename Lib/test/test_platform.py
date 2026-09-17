@@ -534,7 +534,20 @@ class PlatformTest(unittest.TestCase):
 
     def test_libc_ver(self):
         if support.is_emscripten:
-            assert platform.libc_ver() == ("emscripten", "4.0.19")
+            import tomllib
+            from pathlib import Path
+
+            # Get expected emscripten version from emscripten config
+            config_path = (
+                Path(__file__).parents[2] / "Platforms/emscripten/config.toml"
+            )
+            with open(config_path, "rb") as fp:
+                emscripten_version = tomllib.load(fp)["emscripten-version"]
+
+            self.assertEqual(
+                platform.libc_ver(), ("emscripten", emscripten_version)
+            )
+
             return
         # check that libc_ver(executable) doesn't raise an exception
         if os.path.isdir(sys.executable) and \

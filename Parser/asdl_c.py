@@ -554,8 +554,8 @@ class Obj2ModVisitor(PickleVisitor):
         self.emit("return 1;", 2)
         self.emit("}", 1)
         self.emit("if (!isinstance && field != NULL) {", 1)
-        error = "field '%%s' was expecting node of type '%s', got '%%s'" % name
-        self.emit("PyErr_Format(PyExc_TypeError, \"%s\", field, _PyType_Name(Py_TYPE(obj)));" % error, 2, reflow=False)
+        error = "field '%%s' was expecting node of type '%s', got '%%T'" % name
+        self.emit("PyErr_Format(PyExc_TypeError, \"%s\", field, obj);" % error, 2, reflow=False)
         self.emit("return 1;", 2)
         self.emit("}", 1)
 
@@ -692,7 +692,7 @@ class Obj2ModVisitor(PickleVisitor):
             self.emit("Py_ssize_t i;", depth+1)
             self.emit("if (!PyList_Check(tmp)) {", depth+1)
             self.emit("PyErr_Format(PyExc_TypeError, \"%s field \\\"%s\\\" must "
-                      "be a list, not a %%.200s\", _PyType_Name(Py_TYPE(tmp)));" %
+                      "be a list, not a %%T\", tmp);" %
                       (name, field.name),
                       depth+2, reflow=False)
             self.emit("goto failed;", depth+2)
@@ -991,10 +991,9 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
 
     res = 0; /* if no error occurs, this stays 0 to the end */
     if (numfields < PyTuple_GET_SIZE(args)) {
-        PyErr_Format(PyExc_TypeError, "%.400s constructor takes at most "
+        PyErr_Format(PyExc_TypeError, "%T constructor takes at most "
                      "%zd positional argument%s",
-                     _PyType_Name(Py_TYPE(self)),
-                     numfields, numfields == 1 ? "" : "s");
+                     self, numfields, numfields == 1 ? "" : "s");
         res = -1;
         goto cleanup;
     }
@@ -1481,35 +1480,34 @@ ast_repr_max_depth(AST_object *self, int depth)
         return NULL;
     }
 
-    if (depth <= 0) {
-        return PyUnicode_FromFormat("%s(...)", Py_TYPE(self)->tp_name);
-    }
-
-    int status = Py_ReprEnter((PyObject *)self);
-    if (status != 0) {
-        if (status < 0) {
-            return NULL;
-        }
-        return PyUnicode_FromFormat("%s(...)", Py_TYPE(self)->tp_name);
-    }
-
-    PyObject *fields;
-    if (PyObject_GetOptionalAttr((PyObject *)Py_TYPE(self), state->_fields, &fields) < 0) {
-        Py_ReprLeave((PyObject *)self);
+    PyObject *fields = PyObject_GetAttr((PyObject *)Py_TYPE(self), state->_fields);
+    if (!fields) {
         return NULL;
     }
 
     Py_ssize_t numfields = PySequence_Size(fields);
     if (numfields < 0) {
-        Py_ReprLeave((PyObject *)self);
         Py_DECREF(fields);
         return NULL;
     }
 
     if (numfields == 0) {
-        Py_ReprLeave((PyObject *)self);
         Py_DECREF(fields);
         return PyUnicode_FromFormat("%s()", Py_TYPE(self)->tp_name);
+    }
+
+    if (depth <= 0) {
+        Py_DECREF(fields);
+        return PyUnicode_FromFormat("%s(...)", Py_TYPE(self)->tp_name);
+    }
+
+    int status = Py_ReprEnter((PyObject *)self);
+    if (status != 0) {
+        Py_DECREF(fields);
+        if (status < 0) {
+            return NULL;
+        }
+        return PyUnicode_FromFormat("%s(...)", Py_TYPE(self)->tp_name);
     }
 
     const char* tp_name = Py_TYPE(self)->tp_name;
@@ -1748,7 +1746,7 @@ static int obj2ast_constant(struct ast_state *Py_UNUSED(state), PyObject* obj,
 static int obj2ast_identifier(struct ast_state *state, PyObject* obj, PyObject** out, const char* field, PyArena* arena)
 {
     if (!PyUnicode_CheckExact(obj) && obj != Py_None) {
-        PyErr_Format(PyExc_TypeError, "field '%s' was expecting a string object", field);
+        PyErr_Format(PyExc_TypeError, "field '%s' was expecting a string object, got %T", field, obj);
         return -1;
     }
     return obj2ast_object(state, obj, out, field, arena);
@@ -1757,7 +1755,7 @@ static int obj2ast_identifier(struct ast_state *state, PyObject* obj, PyObject**
 static int obj2ast_string(struct ast_state *state, PyObject* obj, PyObject** out, const char* field, PyArena* arena)
 {
     if (!PyUnicode_CheckExact(obj) && !PyBytes_CheckExact(obj)) {
-        PyErr_Format(PyExc_TypeError, "field '%s' was expecting a string or bytes object", field);
+        PyErr_Format(PyExc_TypeError, "field '%s' was expecting a string or bytes object, got %T", field, obj);
         return -1;
     }
     return obj2ast_object(state, obj, out, field, arena);
@@ -2123,29 +2121,32 @@ PyObject* PyAST_mod2obj(mod_ty t)
     return result;
 }
 
-/* mode is 0 for "exec", 1 for "eval" and 2 for "single" input */
+/* mode is 0 for "exec", 1 for "eval", 2 for "single" and 3 for "func_type"
+   input */
 int PyAst_CheckMode(PyObject *ast, int mode)
 {
-    const char * const req_name[] = {"Module", "Expression", "Interactive"};
+    const char * const req_name[] = {"Module", "Expression", "Interactive",
+                                     "FunctionType"};
 
     struct ast_state *state = get_ast_state();
     if (state == NULL) {
         return -1;
     }
 
-    PyObject *req_type[3];
+    PyObject *req_type[4];
     req_type[0] = state->Module_type;
     req_type[1] = state->Expression_type;
     req_type[2] = state->Interactive_type;
+    req_type[3] = state->FunctionType_type;
 
-    assert(0 <= mode && mode <= 2);
+    assert(0 <= mode && mode <= 3);
     int isinstance = PyObject_IsInstance(ast, req_type[mode]);
     if (isinstance == -1) {
         return -1;
     }
     if (!isinstance) {
-        PyErr_Format(PyExc_TypeError, "expected %s node, got %.400s",
-                     req_name[mode], _PyType_Name(Py_TYPE(ast)));
+        PyErr_Format(PyExc_TypeError, "expected %s node, got %T",
+                     req_name[mode], ast);
         return -1;
     }
     return 0;

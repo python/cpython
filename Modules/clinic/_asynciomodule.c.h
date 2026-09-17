@@ -585,6 +585,12 @@ _asyncio_Future__asyncio_future_blocking_set(PyObject *self, PyObject *value, vo
 {
     int return_value;
 
+    if (value == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                     "attribute '_asyncio_future_blocking' of '%.100s' objects cannot be deleted",
+                     Py_TYPE(self)->tp_name);
+        return -1;
+    }
     Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _asyncio_Future__asyncio_future_blocking_set_impl((FutureObj *)self, value);
     Py_END_CRITICAL_SECTION();
@@ -635,6 +641,12 @@ _asyncio_Future__log_traceback_set(PyObject *self, PyObject *value, void *Py_UNU
 {
     int return_value;
 
+    if (value == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                     "attribute '_log_traceback' of '%.100s' objects cannot be deleted",
+                     Py_TYPE(self)->tp_name);
+        return -1;
+    }
     Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _asyncio_Future__log_traceback_set_impl((FutureObj *)self, value);
     Py_END_CRITICAL_SECTION();
@@ -810,6 +822,12 @@ _asyncio_Future__cancel_message_set(PyObject *self, PyObject *value, void *Py_UN
 {
     int return_value;
 
+    if (value == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                     "attribute '_cancel_message' of '%.100s' objects cannot be deleted",
+                     Py_TYPE(self)->tp_name);
+        return -1;
+    }
     Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _asyncio_Future__cancel_message_set_impl((FutureObj *)self, value);
     Py_END_CRITICAL_SECTION();
@@ -1002,6 +1020,12 @@ _asyncio_Task__log_destroy_pending_set(PyObject *self, PyObject *value, void *Py
 {
     int return_value;
 
+    if (value == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                     "attribute '_log_destroy_pending' of '%.100s' objects cannot be deleted",
+                     Py_TYPE(self)->tp_name);
+        return -1;
+    }
     Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _asyncio_Task__log_destroy_pending_set_impl((TaskObj *)self, value);
     Py_END_CRITICAL_SECTION();
@@ -1582,7 +1606,8 @@ PyDoc_STRVAR(_asyncio_get_event_loop__doc__,
 "running event loop.\n"
 "\n"
 "If there is no running event loop set, the function will return\n"
-"the result of `get_event_loop_policy().get_event_loop()` call.");
+"the loop set by `set_event_loop()`, or raise a RuntimeError if\n"
+"no loop has been set.");
 
 #define _ASYNCIO_GET_EVENT_LOOP_METHODDEF    \
     {"get_event_loop", (PyCFunction)_asyncio_get_event_loop, METH_NOARGS, _asyncio_get_event_loop__doc__},
@@ -2233,4 +2258,4 @@ _asyncio_future_discard_from_awaited_by(PyObject *module, PyObject *const *args,
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=32996fb47c48245b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=46d50c477614b57e input=a9049054013a1b77]*/

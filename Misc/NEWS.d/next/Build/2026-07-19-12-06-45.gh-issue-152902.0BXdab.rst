@@ -1,0 +1,2 @@
+Added Intel ``icx`` compiler support to ``configure.ac``. Contributed by
+High Performance Kernels LLC.

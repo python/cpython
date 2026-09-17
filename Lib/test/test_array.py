@@ -5,7 +5,7 @@
 import collections.abc
 import unittest
 from test import support
-from test.support import import_helper
+from test.support import import_helper, script_helper
 from test.support import os_helper
 from test.support import _2G
 from test.support import subTests
@@ -31,6 +31,11 @@ typecodes = array.typecodes
 
 class MiscTest(unittest.TestCase):
 
+    def test_array_type_importable(self):
+        from array import ArrayType
+
+        self.assertIs(array.array, ArrayType)
+
     def test_array_is_sequence(self):
         self.assertIsInstance(array.array("B"), collections.abc.MutableSequence)
         self.assertIsInstance(array.array("B"), collections.abc.Reversible)
@@ -41,6 +46,23 @@ class MiscTest(unittest.TestCase):
         self.assertRaises(ValueError, array.array, 'xx')
         self.assertRaises(ValueError, array.array, 'x')
         self.assertRaises(ValueError, array.array, 'Z')
+
+    @support.cpython_only
+    def test_does_not_crash_on_broken_imports(self):
+        # gh-153210
+        code = """if 1:
+            import collections.abc
+
+            del collections.abc.MutableSequence
+
+            try:
+                import array  # it used to crash before
+            except AttributeError:
+                pass
+            else:
+                raise AssertionError('AttributeError was not raised')
+        """
+        script_helper.assert_python_ok('-c', code)
 
     @support.cpython_only
     def test_disallow_instantiation(self):
@@ -187,6 +209,10 @@ class ArrayReconstructorTest(unittest.TestCase):
              [-1<<63, (1<<63)-1, 0]),
             (['l'], SIGNED_INT64_BE, '>qqq',
              [-1<<63, (1<<63)-1, 0]),
+            (['e'], IEEE_754_FLOAT16_LE, '<eeee',
+             [1.0, float('inf'), float('-inf'), -0.0]),
+            (['e'], IEEE_754_FLOAT16_BE, '>eeee',
+             [1.0, float('inf'), float('-inf'), -0.0]),
             (['f'], IEEE_754_FLOAT_LE, '<ffff',
              [16711938.0, float('inf'), float('-inf'), -0.0]),
             (['f'], IEEE_754_FLOAT_BE, '>ffff',
@@ -216,6 +242,16 @@ class ArrayReconstructorTest(unittest.TestCase):
                     array.array, typecode, mformat_code, arraystr)
                 self.assertEqual(a, b,
                     msg="{0!r} != {1!r}; testcase={2!r}".format(a, b, testcase))
+
+    def test_float16_endianness(self):
+        # gh-154568: array_reconstructor() slow-path decoder for
+        # IEEE_754_FLOAT16_LE ignored the encoding.
+        le_bytes = struct.pack('<e', 1.5)
+        be_bytes = struct.pack('>e', 1.5)
+        b_le = array_reconstructor(array.array, 'd', IEEE_754_FLOAT16_LE, le_bytes)
+        b_be = array_reconstructor(array.array, 'd', IEEE_754_FLOAT16_BE, be_bytes)
+        self.assertEqual(b_le.tolist(), [1.5])
+        self.assertEqual(b_be.tolist(), [1.5])
 
     def test_unicode(self):
         teststr = "Bonne Journ\xe9e \U0002030a\U00020347"
@@ -1546,6 +1582,22 @@ class CFPTest(NumberTest):
                 self.assertNotEqual(a.tobytes(), b.tobytes())
             b.byteswap()
             self.assertEqual(a, b)
+
+    def test_byteswap_single_call_result(self):
+        # A single byteswap() must swap each item's two halves (real,
+        # imag) independently. test_byteswap above only checks that
+        # byteswap() twice round-trips to the original, which passes
+        # even if a single call scrambles multi-item arrays.
+        a = array.array(self.typecode, self.example)
+        original = a.tobytes()
+        a.byteswap()
+        itemsize = a.itemsize
+        half = itemsize // 2
+        expected = bytearray()
+        for i in range(0, len(original), itemsize):
+            item = original[i:i + itemsize]
+            expected += item[half - 1::-1] + item[itemsize - 1:half - 1:-1]
+        self.assertEqual(a.tobytes(), bytes(expected))
 
 
 class HalfFloatTest(FPTest, unittest.TestCase):

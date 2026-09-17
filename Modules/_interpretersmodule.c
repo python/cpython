@@ -144,7 +144,7 @@ xibufferview_from_buffer(PyTypeObject *cls, Py_buffer *view, int64_t interpid)
 
     Py_buffer *copied = PyMem_RawMalloc(sizeof(Py_buffer));
     if (copied == NULL) {
-        return NULL;
+        return PyErr_NoMemory();
     }
     /* This steals the view->obj reference  */
     *copied = *view;
@@ -152,7 +152,7 @@ xibufferview_from_buffer(PyTypeObject *cls, Py_buffer *view, int64_t interpid)
     xibufferview *self = PyObject_Malloc(sizeof(xibufferview));
     if (self == NULL) {
         PyMem_RawFree(copied);
-        return NULL;
+        return PyErr_NoMemory();
     }
     PyObject_Init(&self->base, cls);
     *self = (xibufferview){
@@ -277,6 +277,7 @@ _pybuffer_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
 {
     struct xibuffer *view = PyMem_RawMalloc(sizeof(struct xibuffer));
     if (view == NULL) {
+        PyErr_NoMemory();
         return -1;
     }
     view->used = 0;
@@ -1541,7 +1542,9 @@ _interpreters_capture_exception_impl(PyObject *module, PyObject *exc_arg)
     }
 
 finally:
-    _PyXI_FreeExcInfo(info);
+    if (info != NULL) {
+        _PyXI_FreeExcInfo(info);
+    }
     if (exc != exc_arg) {
         if (PyErr_Occurred()) {
             PyErr_SetRaisedException(exc);

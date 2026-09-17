@@ -17,7 +17,7 @@ import linecache
 import zipapp
 import zipfile
 
-from asyncio.events import _set_event_loop_policy
+from asyncio import set_event_loop
 from contextlib import ExitStack, redirect_stdout
 from io import StringIO
 from test import support
@@ -4996,6 +4996,16 @@ class PdbTestColorize(unittest.TestCase):
         p.set_trace(commands=['ll', 'c'])
         self.assertNotIn("\x1b", output.getvalue())
 
+    def test_list_does_not_colorize_trailing_newlines(self):
+        # Keep the marker split so it is not present in the listed source.
+        caret_newline = "^" + "J"
+        output = io.StringIO()
+        p = pdb.Pdb(stdout=output, colorize=True)
+        p.set_trace(commands=['list', 'continue'])
+        result = output.getvalue()
+        self.assertIn("\x1b", result)
+        self.assertNotIn(caret_newline, result)
+
     def test_stack_entry(self):
         output = io.StringIO()
         p = pdb.Pdb(stdout=output, colorize=True)
@@ -5167,8 +5177,9 @@ class PdbTestReadline(unittest.TestCase):
 
         self.assertIn('I love Python', output)
 
-    @unittest.skipIf(sys.platform.startswith('freebsd'),
-                     '\\x08 is not interpreted as backspace on FreeBSD')
+    @unittest.skipIf(sys.platform.startswith(('freebsd', 'dragonfly', 'sunos')),
+                     '\\x08 does not remove the auto-indentation with '
+                     'GNU readline on this platform')
     def test_multiline_auto_indent(self):
         script = textwrap.dedent("""
             import pdb; pdb.Pdb().set_trace()
@@ -5207,8 +5218,9 @@ class PdbTestReadline(unittest.TestCase):
 
         self.assertIn('42', output)
 
-    @unittest.skipIf(sys.platform.startswith('freebsd'),
-                     '\\x08 is not interpreted as backspace on FreeBSD')
+    @unittest.skipIf(sys.platform.startswith(('freebsd', 'dragonfly', 'sunos')),
+                     '\\x08 does not remove the auto-indentation with '
+                     'GNU readline on this platform')
     def test_multiline_indent_completion(self):
         script = textwrap.dedent("""
             import pdb; pdb.Pdb().set_trace()
@@ -5312,7 +5324,7 @@ def load_tests(loader, tests, pattern):
         # Ensure that asyncio state has been cleared at the end of the test.
         # This prevents a "test altered the execution environment" warning if
         # asyncio features are used.
-        _set_event_loop_policy(None)
+        set_event_loop(None)
 
         # A doctest of pdb could have residues. For example, pdb could still
         # be running, or breakpoints might be left uncleared. These residues

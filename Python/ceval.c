@@ -131,7 +131,9 @@ hardware_stack_limits(uintptr_t *base, uintptr_t *top, uintptr_t sp)
     GetCurrentThreadStackLimits(&low, &high);
     *top = (uintptr_t)high;
     ULONG guarantee = 0;
+#ifdef MS_WINDOWS_DESKTOP
     SetThreadStackGuarantee(&guarantee);
+#endif
     *base = (uintptr_t)low + guarantee;
 #elif defined(__APPLE__)
     pthread_t this_thread = pthread_self();
@@ -1056,6 +1058,7 @@ _PyObjectArray_FromStackRefArray(_PyStackRef *input, Py_ssize_t nargs, PyObject 
         // +1 in case PY_VECTORCALL_ARGUMENTS_OFFSET is set.
         result = PyMem_Malloc((nargs + 1) * sizeof(PyObject *));
         if (result == NULL) {
+            PyErr_NoMemory();
             return NULL;
         }
     }
@@ -1145,6 +1148,36 @@ _PyEval_GetIter(_PyStackRef iterable, _PyStackRef *index_or_null, int yield_from
         return PyStackRef_ERROR;
     }
     return PyStackRef_FromPyObjectSteal(iter_o);
+}
+
+int _PyEval_StoreName(PyThreadState *tstate, _PyStackRef v, PyObject *name, PyObject* ns)
+{
+    int deletion = PyStackRef_IsNull(v);
+
+    if (ns == NULL) {
+        const char *msg = deletion
+            ? "no locals found when deleting %R"
+            : "no locals found when storing %R";
+        _PyErr_Format(tstate, PyExc_SystemError, msg, name);
+        return 1;
+    }
+
+    if (deletion) {
+        int error = PyObject_DelItem(ns, name);
+        if (error) {
+            _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
+                                    NAME_ERROR_MSG,
+                                    name);
+        }
+        return error;
+    }
+
+    PyObject *v_o = PyStackRef_AsPyObjectBorrow(v);
+    if (PyDict_CheckExact(ns)) {
+        return PyDict_SetItem(ns, name, v_o);
+    }
+
+    return PyObject_SetItem(ns, name, v_o);
 }
 
 #if (defined(__GNUC__) && __GNUC__ >= 10 && !defined(__clang__)) && defined(__x86_64__)
@@ -1250,6 +1283,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     entry.frame.return_offset = 0;
 #ifdef Py_DEBUG
     entry.frame.lltrace = 0;
+    entry.frame.stackpointer_valid = 1;
 #endif
     /* Push frame */
     entry.frame.previous = tstate->current_frame;
@@ -1258,6 +1292,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     entry.frame.localsplus[0] = PyStackRef_NULL;
 #ifdef _Py_TIER2
     if (tstate->current_executor != NULL) {
+        assert(Py_TYPE(tstate->current_executor) == &_PyUOpExecutor_Type);
         entry.frame.localsplus[0] = PyStackRef_FromPyObjectNew(tstate->current_executor);
         tstate->current_executor = NULL;
     }
@@ -1286,6 +1321,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
         next_instr = frame->instr_ptr;
         monitor_throw(tstate, frame, next_instr);
         stack_pointer = _PyFrame_GetStackPointer(frame);
+        _PyFrame_StackPointerInvalidate(frame);
 #if _Py_TAIL_CALL_INTERP
 #   if Py_STATS
         return _TAIL_CALL_error(frame, stack_pointer, tstate, next_instr, instruction_funcptr_handler_table, 0, lastopcode);
@@ -1962,9 +1998,11 @@ clear_gen_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
     assert(tstate->exc_info == &gen->gi_exc_state);
     tstate->exc_info = gen->gi_exc_state.previous_item;
     gen->gi_exc_state.previous_item = NULL;
-    assert(frame->frame_obj == NULL || frame->frame_obj->f_frame == frame);
     frame->previous = NULL;
+    Py_BEGIN_CRITICAL_SECTION(gen);
+    assert(frame->frame_obj == NULL || frame->frame_obj->f_frame == frame);
     _PyFrame_ClearExceptCode(frame);
+    Py_END_CRITICAL_SECTION();
     _PyErr_ClearExcState(&gen->gi_exc_state);
     // gh-143939: There must not be any escaping calls between setting
     // the generator return kind and returning from _PyEval_EvalFrame.

@@ -1087,6 +1087,18 @@ On Windows, ``cpXXX`` codecs are available for all code pages.
 But only codecs listed in the following table are guaranteed to exist on
 other platforms.
 
+On platforms that provide the C library's :manpage:`iconv(3)` function
+(such as those using the GNU C Library),
+every encoding known to ``iconv`` for which Python has no built-in codec
+is available as well.
+Such an encoding is looked up by its ``iconv`` name (for example ``cp1133``).
+Prefixing the name with ``iconv:`` forces the use of the ``iconv``-based codec
+even when a built-in codec of the same name exists (for example ``iconv:latin1``),
+which is mostly useful for testing.
+
+.. versionchanged:: next
+   Added support for encodings provided by the C library's ``iconv``.
+
 .. impl-detail::
 
    Some common encodings can bypass the codecs lookup machinery to
@@ -1383,6 +1395,15 @@ encodings.
 |                    |         | :mod:`encodings.idna`.    |
 |                    |         | Only ``errors='strict'``  |
 |                    |         | is supported.             |
+|                    |         |                           |
+|                    |         | .. warning::              |
+|                    |         |                           |
+|                    |         |    This codec builds on   |
+|                    |         |    ``punycode``, whose    |
+|                    |         |    algorithms scale       |
+|                    |         |    poorly, so limit the   |
+|                    |         |    length of untrusted    |
+|                    |         |    input.                 |
 +--------------------+---------+---------------------------+
 | mbcs               | ansi,   | Windows only: Encode the  |
 |                    | dbcs    | operand according to the  |
@@ -1399,6 +1420,14 @@ encodings.
 | punycode           |         | Implement :rfc:`3492`.    |
 |                    |         | Stateful codecs are not   |
 |                    |         | supported.                |
+|                    |         |                           |
+|                    |         | .. warning::              |
+|                    |         |                           |
+|                    |         |    The decoding and       |
+|                    |         |    encoding algorithms    |
+|                    |         |    scale poorly, so       |
+|                    |         |    limit the length of    |
+|                    |         |    untrusted input.       |
 +--------------------+---------+---------------------------+
 | raw_unicode_escape |         | Latin-1 encoding with     |
 |                    |         | :samp:`\\u{XXXX}` and     |
@@ -1429,6 +1458,14 @@ encodings.
 |                    |         | Beware that Python source |
 |                    |         | code actually uses UTF-8  |
 |                    |         | by default.               |
++--------------------+---------+---------------------------+
+| utf-7-imap         | mUTF-7  | Modified UTF-7 encoding   |
+|                    |         | of :rfc:`3501` for IMAP4  |
+|                    |         | mailbox names.  Only      |
+|                    |         | ``errors='strict'`` is    |
+|                    |         | supported.                |
+|                    |         |                           |
+|                    |         | .. versionadded:: next    |
 +--------------------+---------+---------------------------+
 
 .. versionchanged:: 3.8
@@ -1617,6 +1654,11 @@ This module implements :rfc:`3490` (Internationalized Domain Names in
 Applications) and :rfc:`3492` (Nameprep: A Stringprep Profile for
 Internationalized Domain Names (IDN)). It builds upon the ``punycode`` encoding
 and :mod:`stringprep`.
+
+.. warning::
+
+   This module builds on ``punycode``, whose algorithms scale poorly, so limit
+   the length of untrusted input.
 
 If you need the IDNA 2008 standard from :rfc:`5891` and :rfc:`5895`, use the
 third-party :pypi:`idna` module.

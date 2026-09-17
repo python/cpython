@@ -1,0 +1,3 @@
+Fix ::class:`asyncio.TaskGroup` to not wrap a :exc:`GeneratorExit` into a
+:exc:`BaseExceptionGroup` if it was raised by the body of the task group and
+none of the tasks in the group raised exceptions.

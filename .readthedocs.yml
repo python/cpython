@@ -11,19 +11,21 @@ build:
   os: ubuntu-24.04
   tools:
     python: "3"
+  apt_packages:
+    - jq
 
   jobs:
-    post_checkout:
+    post_system_dependencies:
       # https://docs.readthedocs.com/platform/stable/guides/build/skip-build.html#skip-builds-based-on-conditions
       #
-      # Cancel building pull requests when there aren't changes in the Doc
+      # Cancel building pull requests when there are no changes in the Doc
       # directory or RTD configuration, or if we can't cleanly merge the base
       # branch.
       - |
         set -eEux;
         if [ "$READTHEDOCS_VERSION_TYPE" = "external" ];
         then
-          base_branch=main;
+          base_branch=$(wget -qO- "https://api.github.com/repos/python/cpython/pulls/$READTHEDOCS_VERSION" | jq -er ".base.ref");
           git fetch --depth=50 origin $base_branch:origin-$base_branch;
           for attempt in $(seq 10);
           do

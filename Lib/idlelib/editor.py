@@ -26,8 +26,7 @@ from idlelib import pyparse
 from idlelib import query
 from idlelib import replace
 from idlelib import search
-from idlelib.tree import wheel_event
-from idlelib.util import py_extensions
+from idlelib.util import bind_wheel, py_extensions, wheel_event
 from idlelib import window
 from idlelib.help import _get_dochome
 
@@ -36,6 +35,7 @@ TK_TABWIDTH_DEFAULT = 8
 darwin = sys.platform == 'darwin'
 
 class EditorWindow:
+    is_shell = False  # PyShell overrides.
     from idlelib.percolator import Percolator
     from idlelib.colorizer import ColorDelegator, color_config
     from idlelib.undo import UndoDelegator
@@ -81,7 +81,6 @@ class EditorWindow:
         self.recent_files_path = idleConf.userdir and os.path.join(
                 idleConf.userdir, 'recent-files.lst')
 
-        self.prompt_last_line = ''  # Override in PyShell
         self.text_frame = text_frame = Frame(top)
         self.vbar = vbar = Scrollbar(text_frame, name='vbar')
         width = idleConf.GetOption('main', 'EditorWindow', 'width', type='int')
@@ -115,10 +114,7 @@ class EditorWindow:
             # Elsewhere, use right-click for popup menus.
             text.bind("<3>",self.right_menu_event)
 
-        text.bind('<MouseWheel>', wheel_event)
-        if text._windowingsystem == 'x11':
-            text.bind('<Button-4>', wheel_event)
-            text.bind('<Button-5>', wheel_event)
+        bind_wheel(text, wheel_event)
         text.bind('<Configure>', self.handle_winconfig)
         text.bind("<<cut>>", self.cut)
         text.bind("<<copy>>", self.copy)
@@ -329,7 +325,9 @@ class EditorWindow:
         # http://www.tcl.tk/man/tcl8.6/TkCmd/text.htm#M21
         zero_char_width = \
             Font(text, font=text.cget('font')).measure('0')
-        self.width = pixel_width // zero_char_width
+        # Some fonts report a zero width for '0' (gh-90304).
+        self.width = (pixel_width // zero_char_width if zero_char_width
+                      else text.tk.getint(text.cget('width')))
 
     def new_callback(self, event):
         dirname, basename = self.io.defaultfilename()
@@ -1175,12 +1173,7 @@ class EditorWindow:
         if keydefs:
             self.apply_bindings(keydefs)
             for vevent in keydefs:
-                methodname = vevent.replace("-", "_")
-                while methodname[:1] == '<':
-                    methodname = methodname[1:]
-                while methodname[-1:] == '>':
-                    methodname = methodname[:-1]
-                methodname = methodname + "_event"
+                methodname = vevent.strip("<>").replace("-", "_") + "_event"
                 if hasattr(ins, methodname):
                     self.text.bind(vevent, getattr(ins, methodname))
 
@@ -1441,7 +1434,7 @@ class EditorWindow:
             # First need to find the last statement.
             lno = index2line(text.index('insert'))
             y = pyparse.Parser(self.indentwidth, self.tabwidth)
-            if not self.prompt_last_line:
+            if not self.is_shell:
                 for context in self.num_context_lines:
                     startat = max(lno - context, 1)
                     startatindex = repr(startat) + ".0"
@@ -1704,19 +1697,10 @@ def get_accelerator(keydefs, eventname):
     return s
 
 
-def fixwordbreaks(root):
-    # On Windows, tcl/tk breaks 'words' only on spaces, as in Command Prompt.
-    # We want Motif style everywhere. See #21474, msg218992 and followup.
-    tk = root.tk
-    tk.call('tcl_wordBreakAfter', 'a b', 0) # make sure word.tcl is loaded
-    tk.call('set', 'tcl_wordchars', r'\w')
-    tk.call('set', 'tcl_nonwordchars', r'\W')
-
-
-def _editor_window(parent):  # htest #
-    # error if close master window first - timer event, after script
-    root = parent
-    fixwordbreaks(root)
+def _editor_window(root):  # htest #
+    # Error if close master window first - timer event, after script
+    from util import fix_word_breaks
+    fix_word_breaks(root)
     if sys.argv[1:]:
         filename = sys.argv[1]
     else:

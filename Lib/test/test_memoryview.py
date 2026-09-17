@@ -689,6 +689,54 @@ class ArrayMemorySliceSliceTest(unittest.TestCase,
 
 
 class OtherTest(unittest.TestCase):
+    def test_cast_order(self):
+        # gh-78959: cast(order=...) selects the result memory layout.
+        b = bytearray(range(6))
+        mv = memoryview(b)
+
+        c = mv.cast('B', shape=(3, 2))                # default: C-contiguous
+        self.assertTrue(c.c_contiguous)
+        self.assertFalse(c.f_contiguous)
+        self.assertEqual(c.strides, (2, 1))
+        self.assertEqual(c.tolist(), [[0, 1], [2, 3], [4, 5]])
+
+        f = mv.cast('B', shape=(3, 2), order='F')     # Fortran-contiguous
+        self.assertTrue(f.f_contiguous)
+        self.assertFalse(f.c_contiguous)
+        self.assertEqual(f.strides, (1, 3))
+        self.assertEqual(f.tolist(), [[0, 3], [1, 4], [2, 5]])
+        # zero-copy view: the flat physical bytes are unchanged
+        self.assertEqual(f.tobytes('A'), bytes(range(6)))
+
+        # explicit 'C' is the default
+        self.assertTrue(mv.cast('B', shape=(3, 2), order='C').c_contiguous)
+
+        # a wider format works too (strides scale by itemsize)
+        m = memoryview(struct.pack('6i', *range(6))).cast('i', shape=(3, 2),
+                                                          order='F')
+        self.assertTrue(m.f_contiguous)
+        self.assertEqual(m.strides, (4, 12))
+        self.assertEqual(m.tolist(), [[0, 3], [1, 4], [2, 5]])
+
+        # more than two dimensions
+        m3 = memoryview(bytearray(range(24))).cast('B', shape=(2, 3, 4),
+                                                   order='F')
+        self.assertTrue(m3.f_contiguous)
+        self.assertEqual(m3.strides, (1, 2, 6))
+
+        # order is keyword-only and only the strings 'C'/'F' are accepted
+        self.assertRaises(TypeError, mv.cast, 'B', (3, 2), 'F')
+        self.assertRaises(TypeError, mv.cast, 'B', shape=(3, 2), order=None)
+        self.assertRaises(ValueError, mv.cast, 'B', shape=(3, 2), order='X')
+        self.assertRaises(ValueError, mv.cast, 'B', shape=(3, 2), order='A')
+
+    def test_cast_order_writable(self):
+        # An F-contiguous cast shares memory with the original buffer.
+        b = bytearray(6)
+        f = memoryview(b).cast('B', shape=(3, 2), order='F')
+        f[0, 1] = 9                    # column-major: physical offset 3
+        self.assertEqual(b[3], 9)
+
     def test_ctypes_cast(self):
         # Issue 15944: Allow all source formats when casting to bytes.
         ctypes = import_helper.import_module("ctypes")
@@ -717,8 +765,8 @@ class OtherTest(unittest.TestCase):
         self.assertListEqual(half_view.tolist(), float_view.tolist())
 
     def test_complex_types(self):
-        float_complex_data = struct.pack('FFF', 0.0, -1.5j, 1+2j)
-        double_complex_data = struct.pack('DDD', 0.0, -1.5j, 1+2j)
+        float_complex_data = struct.pack('ZfZfZf', 0.0, -1.5j, 1+2j)
+        double_complex_data = struct.pack('ZdZdZd', 0.0, -1.5j, 1+2j)
         float_complex_view = memoryview(float_complex_data).cast('Zf')
         double_complex_view = memoryview(double_complex_data).cast('Zd')
         self.assertEqual(float_complex_view.nbytes * 2, double_complex_view.nbytes)

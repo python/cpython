@@ -1,0 +1,2 @@
+:func:`symtable.symtable` now accepts an AST object,
+like the builtin :func:`compile`.

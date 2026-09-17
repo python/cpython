@@ -74,7 +74,7 @@ get_thread_state_by_cls(PyTypeObject *cls)
 
 
 #ifdef MS_WINDOWS
-typedef HRESULT (WINAPI *PF_GET_THREAD_DESCRIPTION)(HANDLE, PCWSTR*);
+typedef HRESULT (WINAPI *PF_GET_THREAD_DESCRIPTION)(HANDLE, PWSTR*);
 typedef HRESULT (WINAPI *PF_SET_THREAD_DESCRIPTION)(HANDLE, PCWSTR);
 static PF_GET_THREAD_DESCRIPTION pGetThreadDescription = NULL;
 static PF_SET_THREAD_DESCRIPTION pSetThreadDescription = NULL;
@@ -571,7 +571,8 @@ ThreadHandle_join(ThreadHandle *self, PyTime_t timeout_ns)
         if (deadline) {
             // _PyDeadline_Get will return a negative value if the deadline has
             // been exceeded.
-            timeout_ns = Py_MAX(_PyDeadline_Get(deadline), 0);
+            timeout_ns = _PyDeadline_Get(deadline);
+            timeout_ns = Py_MAX(timeout_ns, 0);
         }
 
         if (timeout_ns) {
@@ -1288,7 +1289,7 @@ static PyObject *
 rlock_repr(PyObject *op)
 {
     rlockobject *self = rlockobject_CAST(op);
-    PyThread_ident_t owner = self->lock.thread;
+    PyThread_ident_t owner = FT_ATOMIC_LOAD_ULLONG_RELAXED(self->lock.thread);
     int locked = rlock_locked_impl(self);
     size_t count;
     if (locked) {
@@ -2413,7 +2414,7 @@ thread_shutdown(PyObject *self, PyObject *args)
         struct llist_node *node;
         llist_for_each_safe(node, &state->shutdown_handles) {
             ThreadHandle *cur = llist_data(node, ThreadHandle, shutdown_node);
-            if (cur->ident != ident) {
+            if (ThreadHandle_ident(cur) != ident) {
                 ThreadHandle_incref(cur);
                 handle = cur;
                 break;

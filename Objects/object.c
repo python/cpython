@@ -198,10 +198,11 @@ refchain_init(PyInterpreterState *interp)
         return 0;
     }
     _Py_hashtable_allocator_t alloc = {
-        // Don't use default PyMem_Malloc() and PyMem_Free() which
-        // require the caller to hold the GIL.
-        .malloc = PyMem_RawMalloc,
-        .free = PyMem_RawFree,
+        // Use directly malloc() and free() of the C library. Using
+        // PyMem_RawMalloc() and PyMem_RawFree() prevents testing
+        // _testcapi.set_nomemory().
+        .malloc = malloc,
+        .free = free,
     };
     REFCHAIN(interp) = _Py_hashtable_new_full(
         _Py_hashtable_hash_ptr, _Py_hashtable_compare_direct,
@@ -2519,7 +2520,8 @@ _PyObject_FiniState(PyInterpreterState *interp)
 }
 
 
-extern PyTypeObject _PyAnextAwaitable_Type;
+extern PyTypeObject _PyACallIter_Type;
+extern PyTypeObject _PyACallIterAwaitable_Type;
 extern PyTypeObject _PyLegacyEventHandler_Type;
 extern PyTypeObject _PyLineIterator;
 extern PyTypeObject _PyMemoryIter_Type;
@@ -2612,7 +2614,8 @@ static PyTypeObject* static_types[_Py_NUM_MANAGED_PREINITIALIZED_TYPES] = {
     &PyWrapperDescr_Type,
     &PyZip_Type,
     &Py_GenericAliasType,
-    &_PyAnextAwaitable_Type,
+    &_PyACallIter_Type,
+    &_PyACallIterAwaitable_Type,
     &_PyAsyncGenASend_Type,
     &_PyAsyncGenAThrow_Type,
     &_PyAsyncGenWrappedValue_Type,
@@ -3224,6 +3227,10 @@ _PyTrash_thread_destroy_chain(PyThreadState *tstate)
          * up distorting allocation statistics.
          */
         _PyObject_ASSERT(op, Py_REFCNT(op) == 0);
+#ifdef Py_TRACE_REFS
+        _Py_ForgetReference(op);
+#endif
+        _PyReftracerTrack(op, PyRefTracer_DESTROY);
         (*dealloc)(op);
     }
 }
@@ -3292,13 +3299,20 @@ _Py_Dealloc(PyObject *op)
     PyTypeObject *type = Py_TYPE(op);
     unsigned long gc_flag = type->tp_flags & Py_TPFLAGS_HAVE_GC;
     destructor dealloc = type->tp_dealloc;
-    PyThreadState *tstate = _PyThreadState_GET();
-    intptr_t margin = _Py_RecursionLimit_GetMargin(tstate);
-    if (margin < 2 && gc_flag) {
-        _PyTrash_thread_deposit_object(tstate, (PyObject *)op);
-        return;
+    PyThreadState *tstate = NULL;
+    intptr_t margin = 0;
+    if (gc_flag) {
+        tstate = _PyThreadState_GET();
+        margin = _Py_RecursionLimit_GetMargin(tstate);
+        if (margin < 2) {
+            _PyTrash_thread_deposit_object(tstate, (PyObject *)op);
+            return;
+        }
     }
 #ifdef Py_DEBUG
+    if (tstate == NULL) {
+        tstate = _PyThreadState_GET();
+    }
 #if !defined(Py_GIL_DISABLED) && !defined(Py_STACKREF_DEBUG)
     /* This assertion doesn't hold for the free-threading build, as
      * PyStackRef_CLOSE_SPECIALIZED is not implemented */
@@ -3340,7 +3354,7 @@ _Py_Dealloc(PyObject *op)
     Py_XDECREF(old_exc);
     Py_DECREF(type);
 #endif
-    if (tstate->delete_later && margin >= 4 && gc_flag) {
+    if (gc_flag && tstate->delete_later && margin >= 4) {
         _PyTrash_thread_destroy_chain(tstate);
     }
 }

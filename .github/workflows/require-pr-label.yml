@@ -11,7 +11,7 @@ jobs:
   label-dnm:
     name: DO-NOT-MERGE
     if: github.repository_owner == 'python'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     permissions:
       pull-requests: read
     timeout-minutes: 10
@@ -28,7 +28,7 @@ jobs:
   label-reviews:
     name: Unresolved review
     if: github.repository_owner == 'python'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     permissions:
       pull-requests: read
     timeout-minutes: 10

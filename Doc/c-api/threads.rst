@@ -242,6 +242,61 @@ a thread state that was previously attached for the current thread.
 .. seealso::
    :pep:`788`
 
+.. _c-api-reuse-thread-state:
+
+Reusing a thread state across repeated calls
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Creating and destroying a :c:type:`PyThreadState` is not free, and is more
+expensive on a :term:`free-threaded build`.  A foreign thread that calls into
+the interpreter many times -- for example, a worker thread in a native thread
+pool -- should avoid creating a fresh thread state on every entry and
+destroying it on every exit.  Instead, set up one thread state when the thread
+starts (or lazily on its first call into Python), attach and detach it around
+each call, and tear it down once when the thread exits.
+
+Manage the thread state explicitly with :c:func:`PyThreadState_New`, attaching
+and detaching it with :c:func:`PyEval_RestoreThread` and
+:c:func:`PyEval_SaveThread`.  This happens in three distinct phases, at
+different points in the thread's life.
+
+When the thread starts, create one thread state for it.  ``interp`` is the
+target interpreter, captured by the code that created this thread while it held
+an attached thread state (for example via :c:func:`PyInterpreterState_Get`)::
+
+   PyThreadState *tstate = PyThreadState_New(interp);
+
+Then, on each call into Python -- which may happen many times over the thread's
+life -- attach the thread state, make the Python C API calls that require it,
+and detach again so the thread does not hold the GIL while off doing non-Python
+work::
+
+   PyEval_RestoreThread(tstate);
+   result = CallSomeFunction();  /* your Python C API calls go here */
+   PyEval_SaveThread();
+
+When the thread is finished calling into Python, destroy the thread state once::
+
+   PyEval_RestoreThread(tstate);
+   PyThreadState_Clear(tstate);
+   PyThreadState_DeleteCurrent();
+
+The general-purpose entry points for calling in from a foreign thread --
+:c:func:`PyThreadState_Ensure` and the older :c:func:`PyGILState_Ensure` -- do
+*not* guarantee a persistent thread state: their thread-state lifetime is
+deliberately implementation-defined, so a matched acquire/release pair may
+create and destroy a thread state each time.  Use :c:func:`PyThreadState_New`,
+as shown here, whenever you specifically want to reuse one thread state across
+calls.
+
+The code that created the foreign thread must arrange for the shutdown sequence
+to run before the thread exits, and before :c:func:`Py_FinalizeEx` is called.
+If interpreter finalization begins first, the shutdown
+:c:func:`PyEval_RestoreThread` call will hang the thread rather than return (see
+:ref:`cautions-regarding-runtime-finalization`).  If the thread exits without
+running the shutdown sequence, the thread state is leaked for the remainder of
+the process.
+
 .. _c-api-attach-detach:
 
 Attaching/detaching thread states
@@ -869,7 +924,7 @@ pointer and a void pointer argument.
 
    To prevent naive misuse, you must write your own C extension to call this.
    This function must be called with an :term:`attached thread state`.
-   This function does not steal any references to *exc*.
+   This function does not :term:`steal` any references to *exc*.
    This function does not necessarily interrupt system calls such as
    :py:func:`~time.sleep`.
 

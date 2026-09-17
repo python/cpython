@@ -503,7 +503,8 @@ class Emitter:
         next(tkn_iter)
         next(tkn_iter)
         next(tkn_iter)
-        self.emit_reload(storage)
+        storage.flush(self.out)
+        storage.full_reload(self.out)
         return True
 
     def instruction_size(self,
@@ -709,7 +710,11 @@ class Emitter:
         self.out.emit(stmt.for_)
         for tkn in stmt.header:
             self.out.emit(tkn)
-        return self._emit_stmt(stmt.body, uop, storage, inst)
+        reachable, brace, body_storage = self._emit_stmt(stmt.body, uop, storage.copy(), inst)
+        body_storage.merge(storage, self.out)
+        if brace is not None:
+            self.out.emit(brace)
+        return reachable, None, storage
 
     def emit_WhileStmt(
         self,

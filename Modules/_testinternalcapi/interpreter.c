@@ -18,8 +18,13 @@ int Test_EvalFrame_Resumes, Test_EvalFrame_Loads;
 static int
 stop_tracing_and_jit(PyThreadState *tstate, _PyInterpreterFrame *frame)
 {
-    (void)(tstate);
     (void)(frame);
+    // Don't actually JIT-compile in this test eval-frame, but we still must
+    // finalize the tracer so the thread-global is_tracing flag is reset.
+    // Otherwise a trace started inside this duplicated interpreter loop
+    // (reachable under low JIT thresholds, e.g. PYTHON_JIT_STRESS=1) would
+    // leave is_tracing stuck true and permanently disable the JIT.
+    _PyJit_FinalizeTracing(tstate, 0);
     return 0;
 }
 #endif
@@ -87,6 +92,7 @@ Test_EvalFrame(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
     entry.frame.return_offset = 0;
 #ifdef Py_DEBUG
     entry.frame.lltrace = 0;
+    entry.frame.stackpointer_valid = 1;
 #endif
     /* Push frame */
     entry.frame.previous = tstate->current_frame;
@@ -117,6 +123,7 @@ Test_EvalFrame(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
         next_instr = frame->instr_ptr;
         monitor_throw(tstate, frame, next_instr);
         stack_pointer = _PyFrame_GetStackPointer(frame);
+        _PyFrame_StackPointerInvalidate(frame);
 #if _Py_TAIL_CALL_INTERP
 #   if Py_STATS
         return _TAIL_CALL_error(frame, stack_pointer, tstate, next_instr, instruction_funcptr_handler_table, 0, lastopcode);

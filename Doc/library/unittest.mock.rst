@@ -231,15 +231,19 @@ the *new_callable* argument to :func:`patch`.
     Create a new :class:`Mock` object. :class:`Mock` takes several optional arguments
     that specify the behaviour of the Mock object:
 
-    * *spec*: This can be either a list of strings or an existing object (a
-      class or instance) that acts as the specification for the mock object. If
-      you pass in an object then a list of strings is formed by calling dir on
+    * *spec*: This can be either a list or tuple of strings,
+      or an existing object (a class or instance)
+      that acts as the specification for the mock object.
+      If you pass in an object then a list of strings is formed by calling dir on
       the object (excluding unsupported magic attributes and methods).
       Accessing any attribute not in this list will raise an :exc:`AttributeError`.
 
       If *spec* is an object (rather than a list of strings) then
       :attr:`~object.__class__` returns the class of the spec object. This
       allows mocks to pass :func:`isinstance` tests.
+
+      .. versionchanged:: next
+         :func:`dir` now works for a mock created with a tuple *spec*.
 
     * *spec_set*: A stricter variant of *spec*. If used, attempting to *set*
       or get an attribute on the mock that isn't on the object passed as
@@ -345,7 +349,7 @@ the *new_callable* argument to :func:`patch`.
 
     .. method:: assert_any_call(*args, **kwargs)
 
-        assert the mock has been called with the specified arguments.
+        Assert the mock has been called with the specified arguments.
 
         The assert passes if the mock has *ever* been called, unlike
         :meth:`assert_called_with` and :meth:`assert_called_once_with` that
@@ -360,7 +364,7 @@ the *new_callable* argument to :func:`patch`.
 
     .. method:: assert_has_calls(calls, any_order=False)
 
-        assert the mock has been called with the specified calls.
+        Assert the mock has been called with the specified calls.
         The :attr:`mock_calls` list is checked for the calls.
 
         If *any_order* is false then the calls must be
@@ -448,9 +452,9 @@ the *new_callable* argument to :func:`patch`.
 
     .. method:: mock_add_spec(spec, spec_set=False)
 
-        Add a spec to a mock. *spec* can either be an object or a
-        list of strings. Only attributes on the *spec* can be fetched as
-        attributes from the mock.
+        Add a spec to a mock.
+        *spec* can either be an object or a list or tuple of strings.
+        Only attributes on the *spec* can be fetched as attributes from the mock.
 
         If *spec_set* is true then only attributes on the spec can be set.
 
@@ -918,7 +922,7 @@ object::
     exception,
   - if ``side_effect`` is an iterable, the async function will return the
     next value of the iterable, however, if the sequence of result is
-    exhausted, ``StopAsyncIteration`` is raised immediately,
+    :term:`exhausted`, ``StopAsyncIteration`` is raised immediately,
   - if ``side_effect`` is not defined, the async function will return the
     value defined by ``return_value``, hence, by default, the async function
     returns a new :class:`AsyncMock` object.
@@ -1268,7 +1272,7 @@ To remove a :attr:`~Mock.side_effect`, and return to the default behaviour, set 
         6
 
 The :attr:`~Mock.side_effect` can also be any iterable object. Repeated calls to the mock
-will return values from the iterable (until the iterable is exhausted and
+will return values from the iterable (until the iterable is :term:`exhausted` and
 a :exc:`StopIteration` is raised):
 
         >>> m = MagicMock(side_effect=[1, 2, 3])
@@ -2945,7 +2949,7 @@ precedence remains the same:
     >>> order_mock.get_value()
     'third'
 
-If :attr:`~Mock.side_effect` is exhausted, the order of precedence will not
+If :attr:`~Mock.side_effect` is :term:`exhausted`, the order of precedence will not
 cause a value to be obtained from the successors. Instead, ``StopIteration``
 exception is raised.
 

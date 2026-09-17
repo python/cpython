@@ -6,6 +6,7 @@ if sys.platform != "win32":
 
 
 import itertools
+from _colorize import ANSIColors
 from functools import partial
 from test.support import force_not_colorized_test_class
 from typing import Iterable
@@ -379,6 +380,28 @@ class WindowsConsoleTests(TestCase):
         reader, con = self.handle_events_narrow(events)
         self.assertEqual(reader.cxy, (2, 3))
         con.restore()
+
+    def test_reset_on_finish(self):
+        # gh-152068: finish() must emit the ANSI reset sequence so any
+        # active color does not leak past the prompt.
+        code = "1"
+        events = code_to_events(code)
+        _, con = self.handle_events(events)
+        con.finish()
+        con.out.write.assert_any_call(ANSIColors.RESET.encode(con.encoding))
+        con.restore()
+
+    def test_reset_on_restore(self):
+        # gh-152068: restore() must emit the ANSI reset sequence when VT
+        # support is enabled.
+        code = "1"
+        events = code_to_events(code)
+        _, con = self.handle_events(events)
+        con._WindowsConsole__vt_support = True
+        con._WindowsConsole__original_input_mode = 0
+        with patch.object(wc, "SetConsoleMode", return_value=1):
+            con.restore()
+        con.out.write.assert_any_call(ANSIColors.RESET.encode(con.encoding))
 
 
 @patch.object(WindowsConsole, '__init__', _mock_console_init)
