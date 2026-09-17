@@ -587,10 +587,34 @@ class TestEmptyPythonStackSampling(RemoteInspectionTestBase):
                 # Windows official builds have no CC config var.
                 print("NO-COMPILER: sysconfig CC is not set")
                 sys.exit(42)
-            includes = sorted(
-                {sysconfig.get_path("include"),
-                 sysconfig.get_path("platinclude")}
-            )
+            # sysconfig's install-style include paths do not necessarily
+            # exist for build-tree interpreters (out-of-tree builds keep
+            # the headers in the source and build directories instead),
+            # so gather candidate directories and keep the ones that
+            # actually contain the headers.
+            candidates = [
+                sysconfig.get_config_var("INCLUDEPY"),
+                sysconfig.get_path("include"),
+                sysconfig.get_path("platinclude"),
+                os.path.dirname(sys.executable),
+            ]
+            srcdir = sysconfig.get_config_var("srcdir")
+            if srcdir:
+                candidates.append(srcdir)
+                candidates.append(os.path.join(srcdir, "Include"))
+            python_h_dirs = set()
+            pyconfig_h_dirs = set()
+            for path in candidates:
+                if path and os.path.isdir(path):
+                    if os.path.isfile(os.path.join(path, "Python.h")):
+                        python_h_dirs.add(path)
+                    if os.path.isfile(os.path.join(path, "pyconfig.h")):
+                        pyconfig_h_dirs.add(path)
+            if not python_h_dirs or not pyconfig_h_dirs:
+                print("NO-COMPILER: no include directory with "
+                      "Python.h and pyconfig.h was found")
+                sys.exit(42)
+            includes = sorted(python_h_dirs | pyconfig_h_dirs)
             extra = []
             if sys.platform == "darwin":
                 # Delay Python symbol resolution until the .so is loaded
