@@ -227,6 +227,55 @@ unicode_GET_CACHED_HASH(PyObject *self, PyObject *arg)
 }
 
 
+// Test the deprecated _Py_Identifier C API:
+// - _Py_IDENTIFIER()
+// - _Py_static_string()
+// - _Py_static_string_init()
+// - _PyObject_CallMethodId()
+// - _PyObject_GetAttrId()
+// - _PyUnicode_FromId()
+//
+// _testembed also has tests on _PyUnicode_FromId().
+static PyObject*
+test_py_identifier(PyObject *self, PyObject *Py_UNUSED(args))
+{
+// Ignore deprecation warnings
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
+
+    _Py_IDENTIFIER(hello);
+    PyObject *str = _PyUnicode_FromId(&PyId_hello);  // borrowed ref
+    if (str == NULL) {
+        return NULL;
+    }
+    assert(PyUnicode_EqualToUTF8(str, "hello") == 1);
+
+    // Calling twice return the same object
+    PyObject *str2 = _PyUnicode_FromId(&PyId_hello);  // borrowed ref
+    assert(str2 == str);
+
+    PyObject *number = Py_GetConstant(Py_CONSTANT_ONE);  // immortal
+    _Py_static_string(to_bytes_id, "to_bytes");
+    PyObject *res = _PyObject_CallMethodId(number, &to_bytes_id, NULL);
+    if (res == NULL) {
+        return NULL;
+    }
+    Py_DECREF(res);
+
+    static _Py_Identifier real_id = _Py_static_string_init("real");
+    res = _PyObject_GetAttrId(number, &real_id);
+    if (res == NULL) {
+        return NULL;
+    }
+    assert(res == number);
+    Py_DECREF(res);
+
+    Py_RETURN_NONE;
+
+_Py_COMP_DIAG_POP
+}
+
+
 // --- PyUnicodeWriter type -------------------------------------------------
 
 typedef struct {
@@ -572,6 +621,7 @@ static PyMethodDef TestMethods[] = {
     {"unicode_asutf8",           unicode_asutf8,                 METH_VARARGS},
     {"unicode_copycharacters",   unicode_copycharacters,         METH_VARARGS},
     {"unicode_GET_CACHED_HASH",  unicode_GET_CACHED_HASH,        METH_O},
+    {"test_py_identifier",       test_py_identifier,             METH_NOARGS},
     {NULL},
 };
 
