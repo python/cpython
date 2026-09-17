@@ -69,6 +69,37 @@ class PyShellFileListTest(unittest.TestCase):
 ##        self.assertIsInstance(ps, pyshell.PyShell)
 
 
+class PyShellTest(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        requires('gui')
+        cls.root = Tk()
+        cls.root.withdraw()
+        cls.shell = pyshell.PyShell(pyshell.PyShellFileList(cls.root))
+        cls.shell.text.mark_set('iomark', 'insert')  # As begin() does.
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.shell.close()
+        del cls.shell
+        cls.root.destroy()
+        del cls.root
+
+    def test_write_not_undoable(self):
+        # gh-67804: neither the output nor the input before it can be undone.
+        shell = self.shell
+        text = shell.text
+        text.insert('iomark', 'stmt')
+        shell.resetoutput()
+        self.assertEqual(shell.write('out\n', 'stdout'), 4)
+        shell.undo.undo_event(None)
+        self.assertEqual(text.get('1.0', 'end-1c'), 'stmt\nout\n')
+        text.insert('end-1c', 'abc')
+        shell.undo.undo_event(None)
+        self.assertEqual(text.get('1.0', 'end-1c'), 'stmt\nout\n')
+
+
 class PyShellRemoveLastNewlineAndSurroundingWhitespaceTest(unittest.TestCase):
     regexp = pyshell.PyShell._last_newline_re
 

@@ -1432,18 +1432,21 @@ class PyShell(OutputWindow):
         self.ctip.remove_calltip_window()
 
     def write(self, s, tags=()):
-        try:
-            self.text.mark_gravity("iomark", "right")
-            count = OutputWindow.write(self, s, tags, "iomark")
-            self.text.mark_gravity("iomark", "left")
-        except:
-            raise ###pass  # ### 11Aug07 KBK if we are expecting exceptions
-                           # let's find out what they are and be specific.
+        # Output is not undoable: insert it below the undo delegator and
+        # reset the undo stack, which refers to positions after it (gh-67804).
+        if not self.undo.undoblock:
+            self.undo.reset_undo()
+        text = self.text
+        text.mark_gravity("iomark", "right")
+        self.undo.delegate.insert("iomark", s, tags)
+        text.mark_gravity("iomark", "left")
+        text.see("iomark")
+        text.update()
         if self.canceled:
             self.canceled = False
             if not use_subprocess:
                 raise KeyboardInterrupt
-        return count
+        return len(s)
 
     def rmenu_check_cut(self):
         try:
