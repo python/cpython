@@ -202,7 +202,7 @@ decode_unicode_with_escapes(Parser *parser, const char *s, size_t len, Token *t)
     // when we are decoding the string but we preserve the line numbers.
     if (v != NULL && first_invalid_escape_ptr != NULL && t != NULL) {
         if (warn_invalid_escape_sequence(parser, buf, first_invalid_escape_ptr, t) < 0) {
-            /* We have not discarded the buffer before because
+            /* We have not deallocated the buffer before because
              * first_invalid_escape_ptr points inside buf. */
             PyMem_Free(buf);
             Py_DECREF(v);
