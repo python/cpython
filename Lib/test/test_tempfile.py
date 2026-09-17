@@ -1890,6 +1890,7 @@ class TestTemporaryDirectory(BaseTestCase):
                     return unlink(path, dir_fd=dir_fd)
                 except PermissionError:
                     if not os.path.islink(dir1):
+                        os.chmod(dir1, 0o700)
                         os.rename(dir1, dir1 + '_moved')
                         os.symlink(target, dir1)
                     raise
