@@ -1646,6 +1646,14 @@ class NameprepTest(unittest.TestCase):
                 except Exception as e:
                     raise support.TestFailed("Test 3.%d: %s" % (pos+1, str(e)))
 
+    def test_long_input(self):
+        from encodings.idna import nameprep
+        self.assertEqual(nameprep("x" + "\N{ZWJ}" * 10_000 + "y"), 'xy')
+        self.assertEqual(nameprep("x" + "\N{ZWJ}" * 10_000 + "y", limit=2),
+                         'xy')
+        with self.assertRaises(UnicodeEncodeError):
+            nameprep("x" + "\N{SNAKE}" * 10_000 + "y", limit=10)
+
 
 class IDNACodecTest(unittest.TestCase):
 
@@ -1720,6 +1728,28 @@ class IDNACodecTest(unittest.TestCase):
             (b"xn--016c"+b"a"*1100).decode("idna")
         with self.assertRaisesRegex(UnicodeDecodeError, "too long"):
             (b"xn--016c"+b"a"*70).decode("idna")
+
+    def test_builtin_encode_length_limit(self):
+        with self.assertRaisesRegex(UnicodeEncodeError, "too long"):
+            ("x" * 64).encode("idna")
+        with self.assertRaisesRegex(UnicodeEncodeError, "too long"):
+            ("short." + "x" * 64).encode("idna")
+
+        # Test at both sides of the limit (<64 bytes)
+        self.assertEqual(len(("\N{SNAKE}" * 56).encode("idna")), 63)
+        with self.assertRaisesRegex(UnicodeEncodeError, "too long"):
+            ("\N{SNAKE}" * 57).encode("idna")
+        with self.assertRaisesRegex(UnicodeEncodeError, "too long"):
+            ("short." + "\N{SNAKE}" * 57).encode("idna")
+
+        # Very long names are handled
+        with self.assertRaisesRegex(UnicodeEncodeError, "way too long"):
+            ("\N{SNAKE}"*50_000).encode("idna")
+
+        # The limit doesn't apply to ignored characters
+        self.assertEqual(('a' + "\N{ZWSP}"*50_000 + 'b').encode('idna'), b'ab')
+        self.assertEqual(('a' + "\N{ZWSP}"*50_000 + '\N{SNAKE}').encode('idna'),
+                         b'xn--a-012s')
 
     def test_stream(self):
         r = codecs.getreader("idna")(io.BytesIO(b"abc"))

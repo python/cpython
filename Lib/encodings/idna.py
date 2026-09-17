@@ -1,5 +1,6 @@
 # This module implements the RFCs 3490 (IDNA) and 3491 (Nameprep)
 
+import sys
 import stringprep, re, codecs
 from unicodedata import ucd_3_2_0 as unicodedata
 
@@ -11,7 +12,24 @@ ace_prefix = b"xn--"
 sace_prefix = "xn--"
 
 # This assumes query strings, so AllowUnassigned is true
-def nameprep(label):  # type: (str) -> str
+def nameprep(label, *, limit=None):  # type: (str) -> str
+    if limit is None:
+        limit = sys.maxsize
+    else:
+        # Protection from gh-98433 and gh-157675 (passing unbounded input to
+        # the quadratic-complexity punycode algorithm).
+        # While the "map" step can remove characters, later steps (in ToASCII
+        # and FromASCII) will not shorten the result *drastically*.
+        # (NFKC normalization can compress e.g. '\u03c9\u0314\u0300\u0345'
+        # to '\u1fa3' -- a 4-fold reduction. Non-ASCII labels then get
+        # longer via prefixing & punycode).
+        # We bail if the number of non-ignored input characters exceeds 8 times
+        # the limit, which gives ample room for future Unicode versions to
+        # include long normalizations, while still preventing us from wasting
+        # time decoding a big thing  that'll just hit the actual <= 63 limit in
+        # ToASCII.
+        limit *= 8
+
     # Map
     newlabel = []
     for c in label:
@@ -19,6 +37,11 @@ def nameprep(label):  # type: (str) -> str
             # Map to nothing
             continue
         newlabel.append(stringprep.map_table_b2(c))
+
+        if len(newlabel) > limit:
+            raise UnicodeEncodeError("idna", label, 0, len(label),
+                                     "label way too long")
+
     label = "".join(newlabel)
 
     # Normalize
@@ -80,7 +103,7 @@ def ToASCII(label):  # type: (str) -> bytes
             raise UnicodeEncodeError("idna", label, 0, len(label), "label too long")
 
     # Step 2: nameprep
-    label = nameprep(label)
+    label = nameprep(label, limit=63)
 
     # Step 3: UseSTD3ASCIIRules is false
     # Step 4: try ASCII
@@ -115,18 +138,6 @@ def ToASCII(label):  # type: (str) -> bytes
     raise UnicodeEncodeError("idna", label, 0, len(label), "label too long")
 
 def ToUnicode(label):
-    if len(label) > 1024:
-        # Protection from https://github.com/python/cpython/issues/98433.
-        # https://datatracker.ietf.org/doc/html/rfc5894#section-6
-        # doesn't specify a label size limit prior to NAMEPREP. But having
-        # one makes practical sense.
-        # This leaves ample room for nameprep() to remove Nothing characters
-        # per https://www.rfc-editor.org/rfc/rfc3454#section-3.1 while still
-        # preventing us from wasting time decoding a big thing that'll just
-        # hit the actual <= 63 length limit in Step 6.
-        if isinstance(label, str):
-            label = label.encode("utf-8", errors="backslashreplace")
-        raise UnicodeDecodeError("idna", label, 0, len(label), "label way too long")
     # Step 1: Check for ASCII
     if isinstance(label, bytes):
         pure_ascii = True
@@ -139,7 +150,7 @@ def ToUnicode(label):
     if not pure_ascii:
         assert isinstance(label, str)
         # Step 2: Perform nameprep
-        label = nameprep(label)
+        label = nameprep(label, limit=63)
         # It doesn't say this, but apparently, it should be ASCII now
         try:
             label = label.encode("ascii")
