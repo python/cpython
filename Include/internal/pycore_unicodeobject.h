@@ -16,7 +16,9 @@ extern "C" {
 #define _Py_MAX_UNICODE 0x10ffff
 
 
-extern int _PyUnicode_IsModifiable(PyObject *unicode);
+// Export for '_multibytecodec' shared extension. _PyUnicodeWriter_CanWrite()
+// calls this function when assertions are enabled.
+PyAPI_FUNC(int) _PyUnicode_IsModifiable(PyObject *unicode);
 extern void _PyUnicodeWriter_InitWithBuffer(
     _PyUnicodeWriter *writer,
     PyObject *buffer);
@@ -105,12 +107,25 @@ _PyUnicode_EnsureUnicode(PyObject *obj)
     return 0;
 }
 
+#ifndef NDEBUG
+static inline int
+_PyUnicodeWriter_CanWrite(_PyUnicodeWriter *writer)
+{
+    assert(!writer->readonly);
+    assert(writer->buffer != NULL);
+    // On Free Threading, the test fails if called from a thread other
+    // than the one which created the writer.
+    return _PyUnicode_IsModifiable(writer->buffer);
+}
+#endif
+
 static inline int
 _PyUnicodeWriter_WriteCharInline(_PyUnicodeWriter *writer, Py_UCS4 ch)
 {
     assert(ch <= _Py_MAX_UNICODE);
     if (_PyUnicodeWriter_Prepare(writer, 1, ch) < 0)
         return -1;
+    assert(_PyUnicodeWriter_CanWrite(writer));
     PyUnicode_WRITE(writer->kind, writer->data, writer->pos, ch);
     writer->pos++;
     return 0;
