@@ -1082,6 +1082,8 @@ codegen_addop_j(instr_sequence *seq, location loc,
     return _PyInstructionSequence_Addop(seq, opcode, target.id, loc);
 }
 
+static void compiler_exit_scope(struct compiler *c);
+
 #define RETURN_IF_ERROR_IN_SCOPE(C, CALL) { \
     if ((CALL) < 0) { \
         compiler_exit_scope((C)); \
@@ -1177,6 +1179,23 @@ codegen_addop_j(instr_sequence *seq, location loc,
     } \
 }
 
+
+static int
+codegen_init_new_scope(struct compiler *c, location loc)
+{
+    if (c->u->u_scope_type == COMPILER_SCOPE_MODULE) {
+        loc.lineno = 0;
+    }
+    else {
+        RETURN_IF_ERROR(compiler_set_qualname(c));
+    }
+    ADDOP_I(c, loc, RESUME, RESUME_AT_FUNC_START);
+
+    if (c->u->u_scope_type == COMPILER_SCOPE_MODULE) {
+        loc.lineno = -1;
+    }
+    return SUCCESS;
+}
 
 static int
 compiler_enter_scope(struct compiler *c, identifier name,
@@ -1288,17 +1307,7 @@ compiler_enter_scope(struct compiler *c, identifier name,
 
     c->c_nestlevel++;
 
-    if (u->u_scope_type == COMPILER_SCOPE_MODULE) {
-        loc.lineno = 0;
-    }
-    else {
-        RETURN_IF_ERROR(compiler_set_qualname(c));
-    }
-    ADDOP_I(c, loc, RESUME, RESUME_AT_FUNC_START);
-
-    if (u->u_scope_type == COMPILER_SCOPE_MODULE) {
-        loc.lineno = -1;
-    }
+    RETURN_IF_ERROR_IN_SCOPE(c, codegen_init_new_scope(c, loc));
     return SUCCESS;
 }
 
