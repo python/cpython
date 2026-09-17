@@ -234,6 +234,7 @@ class Debugger:
         self.error = Label(top, anchor="w")
         self.error.pack(anchor="w", fill="x")
         self.errorbg = self.error.cget("background")
+        self.errorfg = self.error.cget("foreground")
 
         self.fstack = Frame(top, height=1)
         self.fstack.pack(expand=1, fill="both")
@@ -265,12 +266,12 @@ class Debugger:
                     m1 = f"{m1}: {value}"
                 except:
                     pass
-            bg = "yellow"
+            fg, bg = "black", "yellow"
         else:
             m1 = ""
             tb = None
-            bg = self.errorbg
-        self.error.configure(text=m1, background=bg)
+            fg, bg = self.errorfg, self.errorbg
+        self.error.configure(text=m1, foreground=fg, background=bg)
 
         sv = self.stackviewer
         if sv:
@@ -296,7 +297,8 @@ class Debugger:
         for b in self.buttons:
             b.configure(state="disabled")
         self.status.configure(text="")
-        self.error.configure(text="", background=self.errorbg)
+        self.error.configure(text="", foreground=self.errorfg,
+                             background=self.errorbg)
         self.frame = None
 
     def sync_source_line(self):
