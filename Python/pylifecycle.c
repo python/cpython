@@ -11,7 +11,7 @@
 #include "pycore_fileutils.h"     // _Py_ResetForceASCII()
 #include "pycore_floatobject.h"   // _PyFloat_InitTypes()
 #include "pycore_freelist.h"      // _PyObject_ClearFreeLists()
-#include "pycore_global_objects_fini_generated.h"  // _PyStaticObjects_CheckRefcnt()
+#include "pycore_global_objects_fini_generated.h"  // _PyStaticObjects_CheckAll()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interpolation.h" // _PyInterpolation_InitTypes()
 #include "pycore_long.h"          // _PyLong_InitTypes()
@@ -2114,7 +2114,7 @@ finalize_interp_types(PyInterpreterState *interp)
 #endif
 
 #ifdef Py_DEBUG
-    _PyStaticObjects_CheckRefcnt(interp);
+    _PyStaticObjects_CheckAll(interp);
 #endif
 }
 
