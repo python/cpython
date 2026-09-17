@@ -1,1 +1,1 @@
-Color ``type`` correctly if it is the keyword.
+Colorize the soft keyword ``type`` in IDLE.
