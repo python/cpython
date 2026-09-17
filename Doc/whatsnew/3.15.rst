@@ -349,6 +349,7 @@ Tachyon: High frequency statistical sampling profiler
 .. image:: ../../Lib/profiling/sampling/_assets/tachyon-logo.png
    :alt: Tachyon profiler logo
    :align: center
+   :class: no-scaled-link
    :width: 200px
 
 A new statistical sampling profiler (Tachyon) has been added as
