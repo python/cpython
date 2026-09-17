@@ -541,7 +541,7 @@ or creating these objects.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. class:: Process(group=None, target=None, name=None, args=(), kwargs={}, \
-                   *, daemon=None)
+                   *, daemon=None, env=None)
 
    Process objects represent activity that is run in a separate process. The
    :class:`Process` class has equivalents of all the methods of
@@ -557,6 +557,26 @@ or creating these objects.
    the keyword-only *daemon* argument sets the process :attr:`daemon` flag
    to ``True`` or ``False``.  If ``None`` (the default), this flag will be
    inherited from the creating process.
+
+   *env* defaults to ``None``, which inherits the parent's environment.
+   Otherwise, it is a mapping of strings to strings or bytes to bytes
+   that replaces the environment used to start the child interpreter.
+   The mapping is copied during construction; do not modify it concurrently
+   with construction.  A non-``None`` value requires POSIX ``spawn``;
+   other platforms and start methods raise :exc:`ValueError` at :meth:`start`.
+   It does not override the inherited :data:`sys.path` or interpreter flags.
+
+   On POSIX, a resource tracker launched by this :meth:`start` call also
+   uses an explicit *env*.  A running tracker is reused without changing
+   its environment.  If no explicit environment is supplied for a tracker
+   launch or relaunch, it uses the launching process's own explicit
+   environment snapshot, if any; otherwise, it inherits that process's
+   current environment.  It does not retain an environment from an earlier
+   tracker launch.  Processes created with ``env=None`` have no explicit
+   snapshot.
+
+   .. versionchanged:: next
+      Added the *env* parameter.
 
    By default, no arguments are passed to *target*. The *args* argument,
    which defaults to ``()``, can be used to specify a list or tuple of the arguments
