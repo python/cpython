@@ -538,7 +538,7 @@ struct _py_func_state {
    If you add a new static type or exception to the standard library, you must
    update one of these numbers.
    */
-#define _Py_NUM_MANAGED_PREINITIALIZED_TYPES 122
+#define _Py_NUM_MANAGED_PREINITIALIZED_TYPES 121
 #define _Py_NUM_MANAGED_STATIC_EXTRA_TYPES 14
 #define _Py_NUM_STATIC_EXCEPTIONS 69
 #define _Py_MAX_MANAGED_STATIC_BUILTIN_TYPES \
