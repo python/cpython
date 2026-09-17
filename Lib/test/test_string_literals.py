@@ -92,6 +92,8 @@ class TestLiterals(unittest.TestCase):
         self.assertEqual(eval(""" '\u1881' """), chr(0x1881))
         self.assertEqual(eval(r""" '\U0001d120' """), chr(0x1d120))
         self.assertEqual(eval(""" '\U0001d120' """), chr(0x1d120))
+        # lone "\ character at the end
+        self.assertEqual(eval(r"'abc\\'"), 'abc\\')
 
     def test_eval_str_unicode(self):
         for s in (

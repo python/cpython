@@ -143,9 +143,8 @@ decode_unicode_with_escapes(Parser *parser, const char *s, size_t len, Token *t)
         return NULL;
     }
     /* "ä" (2 bytes) may become "\U000000E4" (10 bytes), or 1:5.
-     * "\ä" (3 bytes) may become "\u005c\U000000E4" (16 bytes), or ~1:6.
-     * Add +1 to allow writing a trailing null byte (for strcpy/sprintf). */
-    Py_ssize_t alloc = (Py_ssize_t)len * 6 + 1;
+     * "\ä" (3 bytes) may become "\u005c\U000000E4" (16 bytes), or ~1:6. */
+    Py_ssize_t alloc = (Py_ssize_t)len * 6;
     char *buf = PyMem_Malloc(alloc);
     if (buf == NULL) {
         return NULL;
@@ -156,7 +155,7 @@ decode_unicode_with_escapes(Parser *parser, const char *s, size_t len, Token *t)
         if (*s == '\\') {
             *p++ = *s++;
             if (s >= end || *s & 0x80) {
-                strcpy(p, "u005c");
+                memcpy(p, "u005c", 5);
                 p += 5;
                 if (s >= end) {
                     break;
@@ -178,12 +177,13 @@ decode_unicode_with_escapes(Parser *parser, const char *s, size_t len, Token *t)
             data = PyUnicode_DATA(w);
             w_len = PyUnicode_GET_LENGTH(w);
             for (i = 0; i < w_len; i++) {
+                // sprintf() alsowrites a null byte: the buffer is large enough
+                // for that thanks to the overallocation.
+                assert((p + 11 - buf) <= alloc);
                 Py_UCS4 chr = PyUnicode_READ(kind, data, i);
                 sprintf(p, "\\U%08x", chr);
                 p += 10;
             }
-            /* Should be impossible to overflow */
-            assert((p - buf) <= alloc);
             Py_DECREF(w);
         }
         else {
