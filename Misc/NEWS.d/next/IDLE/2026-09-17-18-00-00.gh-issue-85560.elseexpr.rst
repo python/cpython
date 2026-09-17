@@ -1,0 +1,2 @@
+Fix IDLE failing to find the opening parenthesis when a continuation line
+inside the parentheses starts with ``else`` of a conditional expression.

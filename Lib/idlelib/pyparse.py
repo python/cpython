@@ -22,7 +22,7 @@ _synchre = re.compile(r"""
     ^
     [ \t]*
     (?: while
-    |   else
+    |   else (?= [ \t]* : )   # not "else" of a conditional expression
     |   def
     |   return
     |   assert

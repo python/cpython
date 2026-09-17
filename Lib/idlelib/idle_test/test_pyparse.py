@@ -118,6 +118,23 @@ class PyParseTest(unittest.TestCase):
         # split line test.
         eq(start(is_char_in_string=lambda index: index < pos), pos)
 
+        # gh-85560: 'else' of a conditional expression at the start of
+        # a continuation line does not start a statement.
+        setcode('def f():\n'
+                '    return (1 if x\n'
+                '            else 0)\n')
+        eq(start(char_in_string_false), 9)  # Start of 'return' line.
+        setcode('if x:\n'
+                '    pass\n'
+                'else:\n'
+                '    pass\n')
+        eq(start(char_in_string_false), 15)
+        setcode('if x:\n'
+                '    pass\n'
+                'else :  # comment\n'
+                '    pass\n')
+        eq(start(char_in_string_false), 15)
+
     def test_set_lo(self):
         code = (
                 '"""This is a module docstring"""\n'
