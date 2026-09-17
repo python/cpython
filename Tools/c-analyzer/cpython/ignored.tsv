@@ -787,7 +787,9 @@ Modules/clinic/grpmodule.c.h	grp_getgrgid	_keywords	-
 Modules/clinic/grpmodule.c.h	grp_getgrnam	_keywords	-
 Objects/object.c	-	constants	static PyObject*[]
 Objects/dictobject.c	-	PyFrozenDict_Type	-
-
+Modules/_testcapi/unicode.c	test_py_identifier	PyId_hello	-
+Modules/_testcapi/unicode.c	test_py_identifier	to_bytes_id	-
+Modules/_testcapi/unicode.c	test_py_identifier	real_id	-
 
 ## False positives
 Python/specialize.c	-	_Py_InitCleanup	-
