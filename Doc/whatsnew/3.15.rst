@@ -62,6 +62,38 @@ Summary -- Release highlights
 .. This section singles out the most important changes in Python 3.15.
    Brevity is key.
 
+Python 3.15 will be the latest stable release of the Python programming
+language, with a mix of changes to the language, the implementation,
+and the standard library.
+The biggest changes include
+:ref:`lazy imports <whatsnew315-lazy-imports>`,
+:ref:`frozendict <whatsnew315-frozendict>` and
+:ref:`sentinel <whatsnew315-sentinel>` builtins,
+:ref:`UTF-8 as the default encoding <whatsnew315-utf8-default>`,
+:ref:`unpacking in comprehensions <whatsnew315-unpacking-in-comprehensions>`,
+and a :ref:`stable ABI for free-threaded builds <whatsnew315-abi3t>`.
+
+The library changes include a new
+:ref:`profiling package <whatsnew315-profiling-package>` with
+:ref:`Tachyon <whatsnew315-sampling-profiler>`,
+a high frequency statistical sampling profiler,
+:ref:`more color <whatsnew315-more-color>` in command-line output,
+as well as the usual deprecations and removals,
+and improvements in user-friendliness and correctness.
+
+This article doesn't attempt to provide a complete specification
+of all new features, but instead gives a convenient overview.
+For full details refer to the documentation,
+such as the :ref:`Library Reference <library-index>`
+and :ref:`Language Reference <reference-index>`.
+To understand the complete implementation and design rationale for a change,
+refer to the PEP for a particular new feature;
+but note that PEPs usually are not kept up-to-date
+once a feature has been fully implemented.
+See `Porting to Python 3.15`_ for guidance on upgrading from
+earlier versions of Python.
+
+--------------
 
 .. PEP-sized items next.
 
