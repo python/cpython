@@ -34,7 +34,6 @@ _synchre = re.compile(r"""
     |   except
     |   raise
     |   import
-    |   yield
     )
     \b
 """, re.VERBOSE | re.MULTILINE).search

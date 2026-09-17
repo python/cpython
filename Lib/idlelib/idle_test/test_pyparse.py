@@ -134,6 +134,11 @@ class PyParseTest(unittest.TestCase):
                 'else :  # comment\n'
                 '    pass\n')
         eq(start(char_in_string_false), 15)
+        # A yield expression can start a continuation line too.
+        setcode('def f():\n'
+                '    x = (\n'
+                '        yield y)\n')
+        eq(start(char_in_string_false), 0)
 
     def test_set_lo(self):
         code = (
