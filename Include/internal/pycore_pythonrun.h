@@ -62,7 +62,12 @@ extern PyObject* _PyRun_SimpleString(
 #  define _PyOS_STACK_MARGIN_SHIFT (_PyOS_LOG2_STACK_MARGIN + 2)
 #endif
 
-#ifdef _Py_THREAD_SANITIZER
+#if defined(_Py_THREAD_SANITIZER) || defined(_Py_ADDRESS_SANITIZER)
+/* Sanitizer builds need more than the default 3 margins:
+ * - TSan: tstate_set_stack() only uses half the stack.
+ * - ASan (gh-141044): instrumentation consumes extra C stack, so 3
+ *   margins leave threading.Thread bootstrap with no working space
+ *   above the soft recursion limit and leak thread objects. */
 #  define _PyOS_MIN_STACK_SIZE (_PyOS_STACK_MARGIN_BYTES * 6)
 #else
 #  define _PyOS_MIN_STACK_SIZE (_PyOS_STACK_MARGIN_BYTES * 3)

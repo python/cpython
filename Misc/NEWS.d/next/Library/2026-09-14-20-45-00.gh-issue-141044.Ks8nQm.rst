@@ -1,0 +1,7 @@
+Fix a reference leak when creating a :class:`threading.Thread` after
+setting a small custom stack size with :func:`threading.stack_size` in
+AddressSanitizer builds. ASan instrumentation needs extra C stack, so
+:func:`_thread.stack_size` now requires the same 6 stack margins used
+with ThreadSanitizer. Sizes that previously appeared to work under ASan
+(for example 127 KiB) now raise :exc:`ValueError`. Non-ASan builds are
+unchanged. Patch by Kailash Nelson.
