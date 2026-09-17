@@ -5713,11 +5713,6 @@ Pointer_set_contents_lock_held(PyObject *op, PyObject *value, void *closure)
     PyObject *keep;
     CDataObject *self = _CDataObject_CAST(op);
 
-    if (value == NULL) {
-        PyErr_SetString(PyExc_TypeError,
-                        "Pointer does not support item deletion");
-        return -1;
-    }
     ctypes_state *st = get_module_state_by_def(Py_TYPE(Py_TYPE(self)));
     StgInfo *stginfo;
     if (PyStgInfo_FromObject(st, op, &stginfo) < 0) {
@@ -5761,6 +5756,11 @@ Pointer_set_contents_lock_held(PyObject *op, PyObject *value, void *closure)
 static int
 Pointer_set_contents(PyObject *op, PyObject *value, void *closure)
 {
+    if (value == NULL) {
+        PyErr_SetString(PyExc_TypeError,
+                        "Pointer does not support item deletion");
+        return -1;
+    }
     int res;
     Py_BEGIN_CRITICAL_SECTION2(op, value);
     res = Pointer_set_contents_lock_held(op, value, closure);

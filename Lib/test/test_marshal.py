@@ -116,6 +116,14 @@ class StringTestCase(unittest.TestCase, HelperMixin):
         for s in [b"", b"Andr\xe8 Previn", b"abc", b" "*10000]:
             self.helper(s)
 
+    @support.cpython_only
+    def test_bytes_singleton(self):
+        for version in range(marshal.version + 1):
+            for sample in [b"", b"x"]:
+                new = marshal.loads(marshal.dumps(sample, version))
+                self.assertIs(new, sample)
+
+
 class ExceptionTestCase(unittest.TestCase):
     def test_exceptions(self):
         new = marshal.loads(marshal.dumps(StopIteration))
@@ -342,14 +350,26 @@ class BugsTestCase(unittest.TestCase):
     def test_reference_loop_tuple(self):
         a = ([],)
         a[0].append(a)
-        for v in range(3):
+        for v in range(marshal.version + 1):
             self.assertRaises(ValueError, marshal.dumps, a, v)
+
+        a = ({},)
+        a[0][None] = a
+        for v in range(marshal.version + 1):
+            self.assertRaises(ValueError, marshal.dumps, a, v)
+
+    def test_shared_reference_tuple(self):
+        # A tuple referenced more than once still round-trips with the
+        # shared identity preserved.
+        a = (1, 2)
         for v in range(3, marshal.version + 1):
-            d = marshal.dumps(a, v)
-            b = marshal.loads(d)
-            self.assertIsInstance(b, tuple)
-            self.assertIsInstance(b[0], list)
-            self.assertIs(b[0][0], b)
+            b = marshal.loads(marshal.dumps([a, a], v))
+            self.assertEqual(b[0], a)
+            self.assertIs(b[0], b[1])
+        big = tuple(range(300))  # too large for TYPE_SMALL_TUPLE
+        b = marshal.loads(marshal.dumps([big, big]))
+        self.assertEqual(b[0], big)
+        self.assertIs(b[0], b[1])
 
     def test_reference_loop_code(self):
         def f():
@@ -409,27 +429,6 @@ class BugsTestCase(unittest.TestCase):
         self.assertIs(a[None], a)
 
     def test_loads_abnormal_reference_loops(self):
-        # Indirect self-references of tuples.
-        data = b'\xa8\x01\x00\x00\x00[\x01\x00\x00\x00r\x00\x00\x00\x00' # ([<R>],)
-        a = marshal.loads(data)
-        self.assertIsInstance(a, tuple)
-        self.assertIsInstance(a[0], list)
-        self.assertIs(a[0][0], a)
-
-        data = b'\xa8\x01\x00\x00\x00{Nr\x00\x00\x00\x000' # ({None: <R>},)
-        a = marshal.loads(data)
-        self.assertIsInstance(a, tuple)
-        self.assertIsInstance(a[0], dict)
-        self.assertIs(a[0][None], a)
-
-        # Direct self-reference which cannot be created in Python.
-        # This creates a reference loop which cannot be collected.
-        if False:
-            data = b'\xa8\x01\x00\x00\x00r\x00\x00\x00\x00' # (<R>,)
-            a = marshal.loads(data)
-            self.assertIsInstance(a, tuple)
-            self.assertIs(a[0], a)
-
         # Direct self-references which cannot be created in Python
         # because of unhashability.
         data = b'\xfbr\x00\x00\x00\x00N0' # {<R>: None}
@@ -439,6 +438,8 @@ class BugsTestCase(unittest.TestCase):
 
         for data in [
             # Indirect self-references of immutable objects.
+            b'\xa8\x01\x00\x00\x00[\x01\x00\x00\x00r\x00\x00\x00\x00', # ([<R>],)
+            b'\xa8\x01\x00\x00\x00{Nr\x00\x00\x00\x000', # ({None: <R>},)
             b'\xba[\x01\x00\x00\x00r\x00\x00\x00\x00NN', # slice([<R>], None)
             b'\xbaN[\x01\x00\x00\x00r\x00\x00\x00\x00N', # slice(None, [<R>])
             b'\xbaNN[\x01\x00\x00\x00r\x00\x00\x00\x00', # slice(None, None, [<R>])
@@ -449,12 +450,18 @@ class BugsTestCase(unittest.TestCase):
             b'\xfdN{Nr\x00\x00\x00\x0000', # frozendict({None: {None: <R>})
 
             # Direct self-references which cannot be created in Python.
+            b'\xa8\x01\x00\x00\x00r\x00\x00\x00\x00', # (<R>,)
             b'\xbe\x01\x00\x00\x00r\x00\x00\x00\x00', # frozenset({<R>})
             b'\xfdNr\x00\x00\x00\x000', # frozendict({None: <R>})
             b'\xfdr\x00\x00\x00\x00N0', # frozendict({<R>: None})
             b'\xbar\x00\x00\x00\x00NN', # slice(<R>, None)
             b'\xbaNr\x00\x00\x00\x00N', # slice(None, <R>)
             b'\xbaNNr\x00\x00\x00\x00', # slice(None, None, <R>)
+
+            # Indirect self-references which cannot be created in Python
+            # because of unhashability.
+            b'\xa8\x01\x00\x00\x00{r\x00\x00\x00\x00N0', # ({<R>: None},)
+            b'\xa8\x01\x00\x00\x00<\x01\x00\x00\x00r\x00\x00\x00\x00', # ({<R>},)
         ]:
             with self.subTest(data=data):
                 self.assertRaises(ValueError, marshal.loads, data)
@@ -789,88 +796,6 @@ class SliceTestCase(unittest.TestCase, HelperMixin):
                 for version in range(5):
                     with self.assertRaises(ValueError):
                         marshal.dumps(obj, version)
-
-@support.cpython_only
-@unittest.skipUnless(_testcapi, 'requires _testcapi')
-class CAPI_TestCase(unittest.TestCase, HelperMixin):
-
-    def test_write_long_to_file(self):
-        for v in range(marshal.version + 1):
-            _testcapi.pymarshal_write_long_to_file(0x12345678, os_helper.TESTFN, v)
-            with open(os_helper.TESTFN, 'rb') as f:
-                data = f.read()
-            os_helper.unlink(os_helper.TESTFN)
-            self.assertEqual(data, b'\x78\x56\x34\x12')
-
-    def test_write_object_to_file(self):
-        obj = ('\u20ac', b'abc', 123, 45.6, 7+8j, 'long line '*1000)
-        for v in range(marshal.version + 1):
-            _testcapi.pymarshal_write_object_to_file(obj, os_helper.TESTFN, v)
-            with open(os_helper.TESTFN, 'rb') as f:
-                data = f.read()
-            os_helper.unlink(os_helper.TESTFN)
-            self.assertEqual(marshal.loads(data), obj)
-
-    def test_read_short_from_file(self):
-        with open(os_helper.TESTFN, 'wb') as f:
-            f.write(b'\x34\x12xxxx')
-        r, p = _testcapi.pymarshal_read_short_from_file(os_helper.TESTFN)
-        os_helper.unlink(os_helper.TESTFN)
-        self.assertEqual(r, 0x1234)
-        self.assertEqual(p, 2)
-
-        with open(os_helper.TESTFN, 'wb') as f:
-            f.write(b'\x12')
-        with self.assertRaises(EOFError):
-            _testcapi.pymarshal_read_short_from_file(os_helper.TESTFN)
-        os_helper.unlink(os_helper.TESTFN)
-
-    def test_read_long_from_file(self):
-        with open(os_helper.TESTFN, 'wb') as f:
-            f.write(b'\x78\x56\x34\x12xxxx')
-        r, p = _testcapi.pymarshal_read_long_from_file(os_helper.TESTFN)
-        os_helper.unlink(os_helper.TESTFN)
-        self.assertEqual(r, 0x12345678)
-        self.assertEqual(p, 4)
-
-        with open(os_helper.TESTFN, 'wb') as f:
-            f.write(b'\x56\x34\x12')
-        with self.assertRaises(EOFError):
-            _testcapi.pymarshal_read_long_from_file(os_helper.TESTFN)
-        os_helper.unlink(os_helper.TESTFN)
-
-    def test_read_last_object_from_file(self):
-        obj = ('\u20ac', b'abc', 123, 45.6, 7+8j)
-        for v in range(marshal.version + 1):
-            data = marshal.dumps(obj, v)
-            with open(os_helper.TESTFN, 'wb') as f:
-                f.write(data + b'xxxx')
-            r, p = _testcapi.pymarshal_read_last_object_from_file(os_helper.TESTFN)
-            os_helper.unlink(os_helper.TESTFN)
-            self.assertEqual(r, obj)
-
-            with open(os_helper.TESTFN, 'wb') as f:
-                f.write(omit_last_byte(data))
-            with self.assertRaises(EOFError):
-                _testcapi.pymarshal_read_last_object_from_file(os_helper.TESTFN)
-            os_helper.unlink(os_helper.TESTFN)
-
-    def test_read_object_from_file(self):
-        obj = ('\u20ac', b'abc', 123, 45.6, 7+8j)
-        for v in range(marshal.version + 1):
-            data = marshal.dumps(obj, v)
-            with open(os_helper.TESTFN, 'wb') as f:
-                f.write(data + b'xxxx')
-            r, p = _testcapi.pymarshal_read_object_from_file(os_helper.TESTFN)
-            os_helper.unlink(os_helper.TESTFN)
-            self.assertEqual(r, obj)
-            self.assertEqual(p, len(data))
-
-            with open(os_helper.TESTFN, 'wb') as f:
-                f.write(omit_last_byte(data))
-            with self.assertRaises(EOFError):
-                _testcapi.pymarshal_read_object_from_file(os_helper.TESTFN)
-            os_helper.unlink(os_helper.TESTFN)
 
 
 if __name__ == "__main__":

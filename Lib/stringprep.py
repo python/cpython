@@ -9,7 +9,7 @@ and mappings, for which a mapping function is provided.
 # when unicodedata is modified to ensure conformant behavior.
 import unicodedata
 
-assert unicodedata.unidata_version == '17.0.0'
+assert unicodedata.unidata_version == '18.0.0'
 
 from unicodedata import ucd_3_2_0 as unicodedata_320
 
@@ -192,7 +192,8 @@ b3_exceptions = {
 0xa7c5:'\ua7c5', 0xa7c6:'\ua7c6', 0xa7c7:'\ua7c7', 0xa7c9:'\ua7c9',
 0xa7cb:'\ua7cb', 0xa7cc:'\ua7cc', 0xa7ce:'\ua7ce', 0xa7d0:'\ua7d0',
 0xa7d2:'\ua7d2', 0xa7d4:'\ua7d4', 0xa7d6:'\ua7d6', 0xa7d8:'\ua7d8',
-0xa7da:'\ua7da', 0xa7dc:'\ua7dc', 0xa7f5:'\ua7f5', 0xfb00:'ff',
+0xa7da:'\ua7da', 0xa7dc:'\ua7dc', 0xa7dd:'\ua7dd', 0xa7e2:'\ua7e2',
+0xa7f5:'\ua7f5', 0xab6c:'\uab6c', 0xab6d:'\uab6d', 0xfb00:'ff',
 0xfb01:'fi', 0xfb02:'fl', 0xfb03:'ffi', 0xfb04:'ffl',
 0xfb05:'st', 0xfb06:'st', 0xfb13:'\u0574\u0576', 0xfb14:'\u0574\u0565',
 0xfb15:'\u0574\u056b', 0xfb16:'\u057e\u0576', 0xfb17:'\u0574\u056d', 0x10426:'\U00010426',
@@ -366,7 +367,11 @@ b3_exceptions = {
 0x1d79c:'\u03bd', 0x1d79d:'\u03be', 0x1d79e:'\u03bf', 0x1d79f:'\u03c0',
 0x1d7a0:'\u03c1', 0x1d7a1:'\u03b8', 0x1d7a2:'\u03c3', 0x1d7a3:'\u03c4',
 0x1d7a4:'\u03c5', 0x1d7a5:'\u03c6', 0x1d7a6:'\u03c7', 0x1d7a7:'\u03c8',
-0x1d7a8:'\u03c9', 0x1d7bb:'\u03c3', 0x1e900:'\U0001e900', 0x1e901:'\U0001e901',
+0x1d7a8:'\u03c9', 0x1d7bb:'\u03c3', 0x1df40:'\U0001df40', 0x1df48:'\U0001df48',
+0x1df4a:'\U0001df4a', 0x1df4d:'\U0001df4d', 0x1df51:'\U0001df51', 0x1df68:'\U0001df68',
+0x1df6a:'\U0001df6a', 0x1df6c:'\U0001df6c', 0x1df6e:'\U0001df6e', 0x1df72:'\U0001df72',
+0x1df74:'\U0001df74', 0x1df76:'\U0001df76', 0x1df78:'\U0001df78', 0x1df7a:'\U0001df7a',
+0x1df7c:'\U0001df7c', 0x1df7e:'\U0001df7e', 0x1e900:'\U0001e900', 0x1e901:'\U0001e901',
 0x1e902:'\U0001e902', 0x1e903:'\U0001e903', 0x1e904:'\U0001e904', 0x1e905:'\U0001e905',
 0x1e906:'\U0001e906', 0x1e907:'\U0001e907', 0x1e908:'\U0001e908', 0x1e909:'\U0001e909',
 0x1e90a:'\U0001e90a', 0x1e90b:'\U0001e90b', 0x1e90c:'\U0001e90c', 0x1e90d:'\U0001e90d',
