@@ -40,14 +40,22 @@ def parse_file(filename, names, ignored):
             names.append((name, filename))
 
 
-def main():
+def get_ignored_names():
     filename = os.path.join(TOOLS_BUILD_DIR, 'check_capi_macros_ignored.txt')
     ignored = set()
     with open(filename, encoding='utf8') as fp:
         for line in fp:
             name = line.strip()
+            if name.startswith('#'):
+                # Ignore comment
+                continue
             if name:
                 ignored.add(name)
+    return ignored
+
+
+def main():
+    ignored = get_ignored_names()
 
     include_dir = os.path.join(SRC_DIR, 'Include')
     files = glob.glob(os.path.join(include_dir, '*.h'))
@@ -64,6 +72,7 @@ def main():
 
     print('ERROR: the Python C API defines the following macros '
           'with a name not starting with "Py":')
+    print()
     for name, filename in names:
         print(f"- {name} defined by {filename}")
     print()

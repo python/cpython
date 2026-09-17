@@ -1,3 +1,10 @@
+# Old C API macros with a name which doesn't start with "Py". If a macro
+# is removed from the C API, it should be removed from this list as well.
+#
+# Adding a new macro to this ignore list requires the approval of the C API
+# Working Group. Open an issue at:
+# https://github.com/capi-workgroup/decisions/issues/
+
 ALIGNOF_MAX_ALIGN_T
 ALIGNOF_MAX_ALIGN_T
 ALIGNOF_MAX_ALIGN_T
