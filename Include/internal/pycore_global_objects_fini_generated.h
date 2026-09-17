@@ -59,23 +59,23 @@ _PyStaticObject_CheckBytesSingleton(PyObject *obj,
 }
 
 static void
-_PyStaticObject_CheckUnicode(PyObject *obj, Py_ssize_t length)
+_PyStaticObject_CheckUnicode(PyObject *obj, const char *str, Py_ssize_t length)
 {
     _PyStaticObject_CheckSingleton(obj, &PyUnicode_Type);
     _PyObject_ASSERT(obj, _PyUnicode_CheckConsistency(obj, 1));
     _PyObject_ASSERT(obj, PyUnicode_GET_LENGTH(obj) == length);
+    _PyObject_ASSERT(obj, PyUnicode_KIND(obj) == PyUnicode_1BYTE_KIND);
+    const Py_UCS1 *data = PyUnicode_1BYTE_DATA(obj);
+    _PyObject_ASSERT(obj, memcmp(data, str, length) == 0);
+    _PyObject_ASSERT(obj, data[length] == 0);
 }
 
 
 static void
-_PyStaticObject_CheckUnicodeCharSingleton(PyObject *obj, Py_UCS4 ch)
+_PyStaticObject_CheckUnicodeCharSingleton(PyObject *obj, unsigned char ch)
 {
-    _PyStaticObject_CheckUnicode(obj, 1);
+    _PyStaticObject_CheckUnicode(obj, (char *)&ch, 1);
     _PyObject_ASSERT(obj, PyUnicode_IS_ASCII(obj) == (ch <= 127));
-    _PyObject_ASSERT(obj, PyUnicode_KIND(obj) == PyUnicode_1BYTE_KIND);
-    const Py_UCS1 *data = PyUnicode_1BYTE_DATA(obj);
-    _PyObject_ASSERT(obj, data[0] == ch);
-    _PyObject_ASSERT(obj, data[1] == 0);
 }
 
 
@@ -83,11 +83,8 @@ static void
 _PyStaticObject_CheckUnicodeSingleton(PyObject *obj,
                                       const char *str, Py_ssize_t length)
 {
-    _PyStaticObject_CheckUnicode(obj, length);
+    _PyStaticObject_CheckUnicode(obj, str, length);
     _PyObject_ASSERT(obj, PyUnicode_IS_ASCII(obj));
-    const Py_UCS1 *data = PyUnicode_1BYTE_DATA(obj);
-    _PyObject_ASSERT(obj, memcmp(data, str, length) == 0);
-    _PyObject_ASSERT(obj, data[length] == 0);
 }
 #endif
 
