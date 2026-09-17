@@ -574,7 +574,7 @@ APIs:
 
       * - ``#R``
         - :c:expr:`PyObject*`
-        - Similar to ``R`` format, but don't call :meth:`~object.__str__`
+        - Similar to ``R`` format, but don't call :meth:`~object.__repr__`
           method on :class:`str` subclasses.
 
       * - ``T``

@@ -460,11 +460,11 @@ class CAPITest(unittest.TestCase):
         check_format("'abc'",
                      b'%#R', 'abc')
         class StrSubclass(str):
-            def __str__(self):
+            def __repr__(self):
                 return 'StrSubclass'
         check_format("'abc'",
                      b'%#R', StrSubclass('abc'))
-        self.assertEqual(str(StrSubclass()), 'StrSubclass')
+        self.assertEqual(repr(StrSubclass()), 'StrSubclass')
 
         check_format('\u20acAB',
                      b'%.3V', '\u20acABCDEF', None)
