@@ -625,6 +625,10 @@ class PluralFormsInternalTestCase(unittest.TestCase):
         # Double negation still normalises to 0/1 (C semantics).
         self.assertEqual(gettext.c2py('!!n')(5), 1)
         self.assertEqual(gettext.c2py('!!n')(0), 0)
+        # '!' as a right operand also binds tighter than the binary operator,
+        # so '2 * !n + 1' is '2 * (!n) + 1' rather than a SyntaxError.
+        self.assertEqual(gettext.c2py('2 * !n + 1')(0), 3)
+        self.assertEqual(gettext.c2py('2 * !n + 1')(1), 1)
 
     def test_nested_condition_operator(self):
         self.assertEqual(gettext.c2py('n?1?2:3:4')(0), 4)
