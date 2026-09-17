@@ -1,0 +1,2 @@
+On Windows, :exc:`OSError` from :mod:`subprocess` now includes the attempted
+executable or working directory in ``filename``.
