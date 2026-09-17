@@ -111,11 +111,19 @@ _PyUnicode_EnsureUnicode(PyObject *obj)
 static inline int
 _PyUnicodeWriter_CanWrite(_PyUnicodeWriter *writer)
 {
+    // Code adapted from _PyUnicode_IsModifiable()
     assert(!writer->readonly);
-    assert(writer->buffer != NULL);
-    // On Free Threading, the test fails if called from a thread other
-    // than the one which created the writer.
-    return _PyUnicode_IsModifiable(writer->buffer);
+    PyObject *buffer = writer->buffer;
+    assert(buffer != NULL);
+    // Do not use _PyObject_IsUniquelyReferenced(): the caller can have its own
+    // lock to prevent a writer being used by two theads at the same time.
+    assert(Py_REFCNT(buffer) == 1);
+    assert(PyUnstable_Unicode_GET_CACHED_HASH(buffer) == -1);
+    assert(!PyUnicode_CHECK_INTERNED(buffer));
+    assert(!_Py_IsImmortal(buffer));
+    return 1;
+
+
 }
 #endif
 

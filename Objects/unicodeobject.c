@@ -1743,10 +1743,13 @@ unicode_is_singleton(PyObject *unicode)
 }
 #endif
 
+// If this function is updated, update also _PyUnicodeWriter_CanWrite().
 int
 _PyUnicode_IsModifiable(PyObject *unicode)
 {
     assert(_PyUnicode_CHECK(unicode));
+    if (!PyUnicode_CheckExact(unicode))
+        return 0;
     // On Free Threading, this test fails if called from a thread other
     // than the one which created the str object.
     if (!_PyObject_IsUniquelyReferenced(unicode))
@@ -1754,8 +1757,6 @@ _PyUnicode_IsModifiable(PyObject *unicode)
     if (PyUnicode_HASH(unicode) != -1)
         return 0;
     if (PyUnicode_CHECK_INTERNED(unicode))
-        return 0;
-    if (!PyUnicode_CheckExact(unicode))
         return 0;
 #ifdef Py_DEBUG
     /* singleton refcount is greater than 1 */
