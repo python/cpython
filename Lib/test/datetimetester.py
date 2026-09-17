@@ -1178,39 +1178,6 @@ class TestDateOnly(unittest.TestCase):
                 self.assertEqual(expected, got)
                 self.assertIs(type(got), date)
 
-    def test_strptime_numeric_fallback(self):
-        cases = (
-            ('2024\0-02-29', '%Y\0-%m-%d', (2024, 2, 29)),
-            ('٢٠٢٤-02-29', '%Y-%m-%d', (2024, 2, 29)),
-            ('2024\u200302\u200329', '%Y %m %d', (2024, 2, 29)),
-            ('2024t02t29', '%YT%mt%d', (2024, 2, 29)),
-            ('2024111', '%Y%m%d', (2024, 11, 1)),
-            ('2024131', '%Y%m%d', (2024, 1, 31)),
-            ('24 2025-02-01', '%y %Y-%m-%d', (2025, 2, 1)),
-            ('2025 24-02-01', '%Y %y-%m-%d', (2024, 2, 1)),
-        )
-        for text, fmt, expected in cases:
-            with self.subTest(text=text, fmt=fmt):
-                self.assertEqual(date.strptime(text, fmt),
-                                 date(*expected))
-
-    def test_strptime_numeric_invalid(self):
-        cases = (
-            ('2024\0ignored', '%Y'),
-            ('2024', '%Y\0ignored'),
-            ('2024', '%4Y'),
-            ('2024-02-30', '%Y-%m-%d'),
-            ('1900-02-29', '%Y-%m-%d'),
-            ('0000-01-01', '%Y-%m-%d'),
-            ('2024-01- 12', '%Y-%m-%d'),
-        )
-        for text, fmt in cases:
-            with self.subTest(text=text, fmt=fmt):
-                with self.assertRaises(ValueError):
-                    date.strptime(text, fmt)
-        with self.assertRaises(re.PatternError):
-            date.strptime('2024 2025', '%Y %Y')
-
     def test_strptime_single_digit(self):
         # bpo-34903: Check that single digit dates are allowed.
         strptime = date.strptime
@@ -3120,6 +3087,51 @@ class TestDateTime(TestDate):
         with self.assertRaises(ValueError): strptime("-2400", "%z")
         with self.assertRaises(ValueError): strptime("-000", "%z")
         with self.assertRaises(ValueError): strptime("z", "%z")
+
+    def test_strptime_numeric_fallback(self):
+        cases = (
+            ('2024\0-02-29', '%Y\0-%m-%d', (2024, 2, 29)),
+            ('٢٠٢٤-02-29', '%Y-%m-%d', (2024, 2, 29)),
+            ('2024\u200302\u200329', '%Y %m %d', (2024, 2, 29)),
+            ('2024t02t29', '%YT%mt%d', (2024, 2, 29)),
+            ('2024111', '%Y%m%d', (2024, 11, 1)),
+            ('2024131', '%Y%m%d', (2024, 1, 31)),
+            ('24 2025-02-01', '%y %Y-%m-%d', (2025, 2, 1)),
+            ('2025 24-02-01', '%Y %y-%m-%d', (2024, 2, 1)),
+        )
+        for text, fmt, expected in cases:
+            with self.subTest(text=text, fmt=fmt):
+                self.assertEqual(self.theclass.strptime(text, fmt),
+                                 self.theclass(*expected))
+
+    def test_strptime_numeric_invalid(self):
+        cases = (
+            ('2024\0ignored', '%Y'),
+            ('2024', '%Y\0ignored'),
+            ('2024', '%4Y'),
+            ('2024-02-30', '%Y-%m-%d'),
+            ('1900-02-29', '%Y-%m-%d'),
+            ('0000-01-01', '%Y-%m-%d'),
+            ('2024-01- 12', '%Y-%m-%d'),
+        )
+        for text, fmt in cases:
+            with self.subTest(text=text, fmt=fmt):
+                with self.assertRaises(ValueError):
+                    self.theclass.strptime(text, fmt)
+        with self.assertRaises(re.PatternError):
+            self.theclass.strptime('2024 2025', '%Y %Y')
+
+    def test_strptime_subclass_constructor(self):
+        class Capture(self.theclass):
+            def __new__(cls, *args, **kwargs):
+                return args, kwargs
+
+        args = (2024, 2, 29, 12, 34, 56, 123000)
+        fmt = '%Y-%m-%d %H:%M:%S.%f'
+        text = '2024-02-29 12:34:56.123'
+        self.assertEqual(Capture.strptime(text, fmt), (args, {}))
+        self.assertEqual(Capture.strptime(text + '+0530', fmt + '%z'),
+                         (args + (timezone(timedelta(hours=5, minutes=30)),), {}))
 
     def test_strptime_ampm(self):
         dt = datetime(1999, 3, 17, 0, 44, 55, 2)
