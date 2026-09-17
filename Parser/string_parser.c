@@ -135,7 +135,6 @@ static PyObject *
 decode_unicode_with_escapes(Parser *parser, const char *s, size_t len, Token *t)
 {
     PyObject *v;
-    char *buf;
     char *p;
     const char *end;
 
@@ -146,14 +145,12 @@ decode_unicode_with_escapes(Parser *parser, const char *s, size_t len, Token *t)
     /* "ä" (2 bytes) may become "\U000000E4" (10 bytes), or 1:5.
      * "\ä" (3 bytes) may become "\u005c\U000000E4" (16 bytes), or ~1:6.
      * Add +1 to allow writing a trailing null byte (for strcpy/sprintf). */
-    PyBytesWriter *writer = PyBytesWriter_Create((Py_ssize_t)len * 6 + 1);
-    if (writer == NULL) {
+    Py_ssize_t alloc = (Py_ssize_t)len * 6 + 1;
+    char *buf = PyMem_Malloc(alloc);
+    if (buf == NULL) {
         return NULL;
     }
-    p = buf = PyBytesWriter_GetData(writer);
-    if (p == NULL) {
-        return NULL;
-    }
+    p = buf;
     end = s + len;
     while (s < end) {
         if (*s == '\\') {
@@ -174,7 +171,7 @@ decode_unicode_with_escapes(Parser *parser, const char *s, size_t len, Token *t)
             Py_ssize_t i;
             w = decode_utf8(&s, end);
             if (w == NULL) {
-                PyBytesWriter_Discard(writer);
+                PyMem_Free(buf);
                 return NULL;
             }
             kind = PyUnicode_KIND(w);
@@ -186,7 +183,7 @@ decode_unicode_with_escapes(Parser *parser, const char *s, size_t len, Token *t)
                 p += 10;
             }
             /* Should be impossible to overflow */
-            assert(p - buf <= PyBytesWriter_GetSize(writer));
+            assert((p - buf) <= alloc);
             Py_DECREF(w);
         }
         else {
@@ -194,26 +191,25 @@ decode_unicode_with_escapes(Parser *parser, const char *s, size_t len, Token *t)
         }
     }
     len = (size_t)(p - buf);
-    s = buf;
 
     int first_invalid_escape_char;
     const char *first_invalid_escape_ptr;
-    v = _PyUnicode_DecodeUnicodeEscapeInternal2(s, (Py_ssize_t)len, NULL, NULL,
+    v = _PyUnicode_DecodeUnicodeEscapeInternal2(buf, (Py_ssize_t)len, NULL, NULL,
                                                 &first_invalid_escape_char,
                                                 &first_invalid_escape_ptr);
 
     // HACK: later we can simply pass the line no, since we don't preserve the tokens
     // when we are decoding the string but we preserve the line numbers.
     if (v != NULL && first_invalid_escape_ptr != NULL && t != NULL) {
-        if (warn_invalid_escape_sequence(parser, s, first_invalid_escape_ptr, t) < 0) {
-            /* We have not discarded the writer before because
-             * first_invalid_escape_ptr points inside the writer buffer. */
-            PyBytesWriter_Discard(writer);
+        if (warn_invalid_escape_sequence(parser, buf, first_invalid_escape_ptr, t) < 0) {
+            /* We have not discarded the buffer before because
+             * first_invalid_escape_ptr points inside buf. */
+            PyMem_Free(buf);
             Py_DECREF(v);
             return NULL;
         }
     }
-    PyBytesWriter_Discard(writer);
+    PyMem_Free(buf);
     return v;
 }
 
