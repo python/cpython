@@ -1364,21 +1364,20 @@ def bigmemtest(size, memuse, dry_run=True):
         return wrapper
     return decorator
 
-def nomemtest(f):
+def nomemtest(test):
     """Check that we can use this test with `_testcapi.set_nomemory`."""
     from .import_helper import import_module
 
-    @functools.wraps(f)
+    @functools.wraps(test)
     def internal(*args, **kwargs):
         import_module('_testcapi')
-        return f(*args, **kwargs)
+        return test(*args, **kwargs)
 
-    return unittest.skipIf(
-        # Python built with Py_TRACE_REFS fail with a fatal error in
-        # _PyRefchain_Trace() on memory allocation error.
-        Py_TRACE_REFS,
-        'cannot test Py_TRACE_REFS build',
-    )(cpython_only(internal))
+    use_tsan = check_sanitizer(thread=True)
+    reason ='not working with thread sanitizer (gh-157415)'
+    skip_if_tsan = unittest.skipIf(use_tsan, reason)
+
+    return cpython_only(skip_if_tsan(internal))
 
 def bigaddrspacetest(f):
     """Decorator for tests that fill the address space."""
@@ -3541,3 +3540,38 @@ def built_with_c_assertions():
         return False
 
     return True
+
+
+def inject_memory_error(start=0, stop=0):
+    """
+    Memory allocation fails after 'start' allocation requests, and until 'stop'
+    allocation requests except when 'stop' is negative or equal to 0 (default)
+    in which case allocation failures never stop.
+
+    Raise SkipTest if the _testcapi extension module is missing
+    """
+    try:
+        import _testcapi
+    except ImportError:
+        raise unittest.SkipTest("_testcapi required")
+
+    _testcapi.set_nomemory(start, stop)
+
+
+@contextlib.contextmanager
+def memory_error_cm(start=0, stop=0):
+    """
+    Similar to inject_memory_error() but can be used as a context manager.
+
+    Raise SkipTest if the _testcapi extension module is missing
+    """
+    try:
+        import _testcapi
+    except ImportError:
+        raise unittest.SkipTest("_testcapi required")
+
+    try:
+        _testcapi.set_nomemory(start, stop)
+        yield
+    finally:
+        _testcapi.remove_mem_hooks()

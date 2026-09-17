@@ -330,9 +330,6 @@
     <ClInclude Include="..\Parser\lexer\lexer_internal.h">
       <Filter>Parser</Filter>
     </ClInclude>
-    <ClInclude Include="..\Parser\lexer\buffer.h">
-      <Filter>Parser</Filter>
-    </ClInclude>
     <ClInclude Include="..\Parser\tokenizer\cursor.h">
       <Filter>Parser</Filter>
     </ClInclude>
@@ -340,6 +337,9 @@
       <Filter>Parser</Filter>
     </ClInclude>
     <ClInclude Include="..\Parser\tokenizer\reader_internal.h">
+      <Filter>Parser</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Parser\tokenizer\types.h">
       <Filter>Parser</Filter>
     </ClInclude>
     <ClInclude Include="..\Parser\tokenizer\source.h">
@@ -1361,9 +1361,6 @@
     <ClCompile Include="..\Parser\lexer\state.c">
       <Filter>Parser</Filter>
     </ClCompile>
-    <ClCompile Include="..\Parser\lexer\buffer.c">
-      <Filter>Parser</Filter>
-    </ClCompile>
     <ClCompile Include="..\Parser\tokenizer\cursor.c">
       <Filter>Parser</Filter>
     </ClCompile>
@@ -1371,6 +1368,9 @@
       <Filter>Parser</Filter>
     </ClCompile>
     <ClCompile Include="..\Parser\tokenizer\decoder.c">
+      <Filter>Parser</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Parser\tokenizer\api.c">
       <Filter>Parser</Filter>
     </ClCompile>
     <ClCompile Include="..\Parser\tokenizer\reader.c">
