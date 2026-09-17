@@ -16,16 +16,15 @@
     <meta name="theme-color" content="#3776ab">
     <style>
       .contentstable {
-        display: flex;
-        flex-flow: row wrap;
-        gap: 0 2em;
+        column-count: 2;
+        column-gap: 2em;
         list-style: none;
         margin: 0 auto;
         max-width: 90%;
         padding: 0;
       }
       .contentstable > li {
-        flex: 0 0 calc(50% - 1em);
+        break-inside: avoid;
       }
       .contentstable a {
         text-decoration: none;
@@ -38,8 +37,8 @@
         margin-bottom: 1em;
       }
       @media (max-width: 600px) {
-        .contentstable > li {
-          flex-basis: 100%;
+        .contentstable {
+          column-count: 1;
         }
       }
     </style>
@@ -61,10 +60,10 @@
        <span class="linkdescr">{% trans %}Standard library modules{% endtrans %}</span></li>
     <li class="biglink"><a class="biglink" href="{{ pathto("reference/index") }}">{% trans %}Language reference{% endtrans %}</a><br>
        <span class="linkdescr">{% trans %}Syntax and language elements{% endtrans %}</span></li>
-    <li class="biglink"><a class="biglink" href="{{ pathto("howto/index") }}">{% trans %}Python HOWTOs{% endtrans %}</a><br>
-       <span class="linkdescr">{% trans %}In-depth topic manuals{% endtrans %}</span></li>
     <li class="biglink"><a class="biglink" href="{{ pathto("using/index") }}">{% trans %}Python setup and usage{% endtrans %}</a><br>
        <span class="linkdescr">{% trans %}How to install, configure, and use Python{% endtrans %}</span></li>
+    <li class="biglink"><a class="biglink" href="{{ pathto("howto/index") }}">{% trans %}Python HOWTOs{% endtrans %}</a><br>
+       <span class="linkdescr">{% trans %}In-depth topic manuals{% endtrans %}</span></li>
     <li class="biglink"><a class="biglink" href="{{ pathto("installing/index") }}">{% trans %}Installing Python modules{% endtrans %}</a><br>
        <span class="linkdescr">{% trans %}Third-party modules and PyPI.org{% endtrans %}</span></li>
     <li class="biglink"><a class="biglink" href="{{ pathto("extending/index") }}">{% trans %}Extending and embedding{% endtrans %}</a><br>

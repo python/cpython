@@ -9,8 +9,8 @@
    builtins/index.rst
    library/index.rst
    reference/index.rst
-   howto/index.rst
    using/index.rst
+   howto/index.rst
    installing/index.rst
    extending/index.rst
    c-api/index.rst
