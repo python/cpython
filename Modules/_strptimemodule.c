@@ -280,163 +280,33 @@ parse_tz_offset(const char *s, Py_ssize_t len, Py_ssize_t *ppos,
                 ParsedTime *pt, int colon_z)
 {
     Py_ssize_t pos = *ppos;
-    Py_ssize_t tz_start = pos;  /* remember start for error messages */
-
-    /* Check for 'Z' */
-    if (pos < len && s[pos] == 'Z') {
+    Py_ssize_t remaining = len - pos;
+    if (remaining == 0) {
+        return 1;
+    }
+    if (remaining == 1 && s[pos] == 'Z') {
         pt->gmtoff = 0;
-        pt->gmtoff_fraction = 0;
-        *ppos = pos + 1;
+        *ppos = len;
         return 1;
     }
-
-    /* %z is optional - no sign means no tz offset */
-    if (pos >= len) {
-        return 1;
+    /* More involved offsets use the Python parser, including its errors. */
+    if ((remaining != 5 && remaining != 6) ||
+        (s[pos] != '+' && s[pos] != '-')) {
+        return -1;
     }
-
-    int sign;
-    if (s[pos] == '+') {
-        sign = 1;
-    } else if (s[pos] == '-') {
-        sign = -1;
-    } else {
-        return 1;
+    int hours, minutes;
+    int colon = remaining == 6;
+    if ((colon && s[pos + 3] != ':') || (colon_z && !colon) ||
+        parse_digits(s, len, pos + 1, 2, 2, &hours) != 2 ||
+        parse_digits(s, len, pos + 3 + colon, 2, 2, &minutes) != 2 ||
+        hours > 23 || minutes > 59) {
+        return -1;
     }
-    pos++;
-
-    int hours, minutes = 0, seconds = 0;
-    int n;
-
-    /* Hours: exactly 2 digits */
-    n = parse_digits(s, len, pos, 2, 2, &hours);
-    if (n != 2) {
-        PyErr_SetString(PyExc_ValueError,
-                        "time data does not match format");
-        return 0;
-    }
-    pos += 2;
-
-    /* Check for colon after hours */
-    int has_colon = 0;
-    if (pos < len && s[pos] == ':') {
-        has_colon = 1;
-        pos++;
-    }
-    else if (colon_z) {
-        /* %:z requires colons; without one, just match +HH */
-        goto done;
-    }
-
-    /* Minutes: exactly 2 digits */
-    n = parse_digits(s, len, pos, 2, 2, &minutes);
-    if (n != 2) {
-        /* No minutes - just hours matched */
-        goto done;
-    }
-    if (minutes > 59) {
-        PyErr_SetString(PyExc_ValueError,
-                        "time data does not match format");
-        return 0;
-    }
-    pos += 2;
-
-    /* Seconds: check for separator */
-    if (pos < len) {
-        int sec_sep_colon = (s[pos] == ':');
-
-        if (sec_sep_colon) {
-            /* Colon before seconds */
-            if (!has_colon) {
-                /* No colon after hours, but colon before seconds = inconsistent.
-                   E.g. -0130:30 */
-                Py_ssize_t tz_end = pos;
-                while (tz_end < len && !is_ascii_space(s[tz_end])) {
-                    tz_end++;
-                }
-                PyErr_Format(PyExc_ValueError,
-                             "Inconsistent use of : in %.*s",
-                             (int)(tz_end - tz_start),
-                             s + tz_start);
-                return 0;
-            }
-            pos++; /* consume colon */
-        }
-        else if (has_colon) {
-            /* Colon after hours but no colon before seconds.
-               For %:z, just stop — don't consume what follows.
-               For %z, if there are digits, it's an inconsistency. */
-            if (!colon_z && pos < len && s[pos] >= '0' && s[pos] <= '5') {
-                /* Check if this really looks like seconds (2 digits) */
-                int tmp;
-                int tmp_n = parse_digits(s, len, pos, 2, 2, &tmp);
-                if (tmp_n == 2) {
-                    /* Has colon after hours, no colon before seconds = inconsistent.
-                       E.g. -01:3030 */
-                    Py_ssize_t tz_end = pos + tmp_n;
-                    /* Include any trailing fraction */
-                    while (tz_end < len && !is_ascii_space(s[tz_end])) {
-                        tz_end++;
-                    }
-                    PyErr_Format(PyExc_ValueError,
-                                 "Inconsistent use of : in %.*s",
-                                 (int)(tz_end - tz_start),
-                                 s + tz_start);
-                    return 0;
-                }
-            }
-            goto done;
-        }
-        else {
-            /* No colons anywhere - check for seconds without separator */
-            /* Only proceed if it looks like 2 digits for seconds */
-        }
-
-        /* Try to parse seconds digits */
-        int sec_n = parse_digits(s, len, pos, 2, 2, &seconds);
-        if (sec_n == 2 && seconds <= 59) {
-            pos += 2;
-
-            /* Fractional seconds */
-            if (pos < len && s[pos] == '.') {
-                int frac;
-                int frac_n = parse_digits(s, len, pos + 1, 1, 6, &frac);
-                if (frac_n == 0) {
-                    /* Decimal point not followed by digits */
-                    PyErr_SetString(PyExc_ValueError,
-                                    "time data does not match format");
-                    return 0;
-                }
-                /* Check for too many digits */
-                if (pos + 1 + frac_n < len &&
-                    s[pos + 1 + frac_n] >= '0' &&
-                    s[pos + 1 + frac_n] <= '9') {
-                    PyErr_SetString(PyExc_ValueError,
-                                    "time data does not match format");
-                    return 0;
-                }
-                pos += 1 + frac_n;
-                for (int i = frac_n; i < 6; i++) {
-                    frac *= 10;
-                }
-                pt->gmtoff_fraction = sign * frac;
-            }
-            /* Check for colon used as decimal separator */
-            else if (pos < len && s[pos] == ':' &&
-                     pos + 1 < len &&
-                     s[pos + 1] >= '0' && s[pos + 1] <= '9') {
-                PyErr_SetString(PyExc_ValueError,
-                                "time data does not match format");
-                return 0;
-            }
-        }
-    }
-
-done:
-    pt->gmtoff = sign * (hours * 3600 + minutes * 60 + seconds);
-    *ppos = pos;
+    pt->gmtoff = (hours * 3600 + minutes * 60) * (s[pos] == '-' ? -1 : 1);
+    *ppos = len;
     return 1;
 }
+
 
 /* Parse a single directive.
    Returns 1 on success (consumed chars stored in *consumed_out),
@@ -525,7 +395,7 @@ parse_directive(const char *data, Py_ssize_t data_len, Py_ssize_t data_pos,
             data_pos++;
             consumed = 1;
         }
-        n = parse_digits(data, data_len, data_pos, 1, 2, &val);
+        n = parse_digits(data, data_len, data_pos, 1, consumed ? 1 : 2, &val);
         if (n == 0 || val < 1 || val > 31) {
             goto match_fail;
         }
@@ -539,7 +409,7 @@ parse_directive(const char *data, Py_ssize_t data_len, Py_ssize_t data_pos,
             data_pos++;
             consumed = 1;
         }
-        n = parse_digits(data, data_len, data_pos, 1, 2, &val);
+        n = parse_digits(data, data_len, data_pos, 1, consumed ? 1 : 2, &val);
         if (n == 0 || val > 23) {
             goto match_fail;
         }
@@ -1068,21 +938,46 @@ _strptime_impl__strptime_parse_impl(PyObject *module, PyObject *data_string,
                                     PyObject *format)
 /*[clinic end generated code: output=c3c1f836ef1972ae input=9a670dbb56f2ad26]*/
 {
+    /* Avoid encoding allocations and preserve string subclass behavior. */
+    if (!PyUnicode_CheckExact(data_string) || !PyUnicode_CheckExact(format) ||
+        !PyUnicode_IS_ASCII(data_string) || !PyUnicode_IS_ASCII(format)) {
+        Py_RETURN_NONE;
+    }
     const char *data_str = PyUnicode_AsUTF8(data_string);
-    if (data_str == NULL) {
-        /* Strings with surrogates can't be encoded to UTF-8.
-           Fall back to the Python path which handles them. */
-        PyErr_Clear();
-        Py_RETURN_NONE;
-    }
     const char *fmt_str = PyUnicode_AsUTF8(format);
-    if (fmt_str == NULL) {
-        PyErr_Clear();
+    Py_ssize_t data_len = PyUnicode_GET_LENGTH(data_string);
+    Py_ssize_t fmt_len = PyUnicode_GET_LENGTH(format);
+
+    /* Only accelerate independent numeric fields. Python handles aliases,
+       duplicate groups, locale directives, and day-without-year diagnostics. */
+    unsigned int seen = 0;
+    const char *directives = "YymdHMSfz";
+    for (Py_ssize_t i = 0; i < fmt_len; i++) {
+        if (fmt_str[i] != '%') {
+            continue;
+        }
+        if (++i == fmt_len) {
+            Py_RETURN_NONE;
+        }
+        if (fmt_str[i] == '%') {
+            continue;
+        }
+        const char *directive = strchr(directives, fmt_str[i]);
+        if (directive == NULL || *directive == '\0') {
+            Py_RETURN_NONE;
+        }
+        unsigned int bit = 1U << (directive - directives);
+        if (seen & bit) {
+            Py_RETURN_NONE;
+        }
+        seen |= bit;
+        if (fmt_str[i] == 'z' && i != fmt_len - 1) {
+            Py_RETURN_NONE;
+        }
+    }
+    if ((seen & 3) == 3 || ((seen & (1U << 3)) && !(seen & 3))) {
         Py_RETURN_NONE;
     }
-
-    Py_ssize_t data_len = (Py_ssize_t)strlen(data_str);
-    Py_ssize_t fmt_len = (Py_ssize_t)strlen(fmt_str);
 
     ParsedTime pt;
     parsed_time_init(&pt);
@@ -1094,21 +989,21 @@ _strptime_impl__strptime_parse_impl(PyObject *module, PyObject *data_string,
         Py_RETURN_NONE;
     }
     if (rc == 0) {
-        /* Error already set */
-        return NULL;
-    }
-
-    /* DeprecationWarning for %d without year */
-    if (pt.day_of_month_in_format && !pt.year_in_format) {
-        if (PyErr_WarnEx(PyExc_DeprecationWarning,
-            "Parsing dates involving a day of month without a year specified "
-            "is ambiguous and fails to parse leap day. The default behavior "
-            "will change in Python 3.15 to either always raise an exception "
-            "or to use a different default year (TBD). To avoid trouble, add "
-            "a specific year to the input & format. "
-            "See https://github.com/python/cpython/issues/70647.", 2) < 0) {
+        /* Mismatches may need regex backtracking. Preserve allocation errors. */
+        if (!PyErr_ExceptionMatches(PyExc_ValueError)) {
             return NULL;
         }
+        PyErr_Clear();
+        Py_RETURN_NONE;
+    }
+    int year = pt.year < 0 ? 1900 : pt.year;
+    if (pt.has_short_year) {
+        year += year <= 68 ? 2000 : 1900;
+    }
+    static const int month_days[] = {31,28,31,30,31,30,31,31,30,31,30,31};
+    if (year < 1 || pt.day > month_days[pt.month - 1] +
+        (pt.month == 2 && is_leap_year(year))) {
+        Py_RETURN_NONE;
     }
 
     /* Post-processing */
