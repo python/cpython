@@ -1,0 +1,5 @@
+:mod:`xml.etree.ElementTree` no longer refuses to serialize attributes
+without a namespace when the *default_namespace* option is used.
+The default namespace declaration does not apply to attribute names,
+so an unqualified attribute name is written as is,
+and a qualified attribute name is always written with a prefix.
