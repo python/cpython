@@ -5453,6 +5453,19 @@ class TestZeroArgumentSuperWithSlots(unittest.TestCase):
 
         A().foo()
 
+    def test_zero_argument_super_with_frozen(self):
+        @dataclass(frozen=True, slots=True)
+        class F:
+            x: int
+            def m(self):
+                return super().__repr__()
+
+        f = F(1)
+        with self.assertRaises(FrozenInstanceError):
+            f.y = 2
+        self.assertEqual(repr(f), f"{F.__qualname__}(x=1)")
+        f.m()
+
     def test_dunder_class_with_old_property(self):
         @dataclass(slots=True)
         class A:

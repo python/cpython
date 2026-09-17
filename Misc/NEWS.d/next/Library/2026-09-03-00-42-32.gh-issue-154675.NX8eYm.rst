@@ -1,3 +1,4 @@
 Creating a :func:`~dataclasses.dataclass` with ``slots=True`` no longer
 imports the :mod:`inspect` module, unless a user-defined method is wrapped
-by a decorator.
+by a decorator. Also fix setting attributes on frozen slotted dataclasses
+that use zero-argument :func:`super`.
