@@ -3119,8 +3119,8 @@ class TestCheckSingleton(unittest.TestCase):
     def test_corrupt_unicode(self):
         stderr = self.check("_testcapi.corrupt_unicode('a', '#')")
 
-        self.assertIn((b'_PyStaticObject_CheckUnicodeCharSingleton: '
-                       b'Assertion "data[0] == ch" failed'), stderr)
+        self.assertIn((b'_PyStaticObject_CheckUnicode: '
+                       b'Assertion "memcmp(data, str, length) == 0" failed'), stderr)
         self.assertIn(b"object repr     : '#'", stderr)
 
     def test_corrupt_bool(self):
