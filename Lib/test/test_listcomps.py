@@ -811,19 +811,35 @@ class ListComprehensionTest(unittest.TestCase):
     def test_frame_locals_comp_cell_and_enclosing_free(self):
         # The inlined listcomp cell and the enclosing free share a name.
         # f_locals keys must still be unique so dict(**f_locals) works.
+        # keys(), values(), items(), and len() must agree (first slot wins).
         code = """
             def outer(x):
                 def inner():
-                    return [(lambda: x, dict(**sys._getframe().f_locals))
+                    return [(lambda: x,
+                             dict(**sys._getframe().f_locals),
+                             len(sys._getframe().f_locals),
+                             list(sys._getframe().f_locals.keys()),
+                             list(sys._getframe().f_locals.values()),
+                             list(sys._getframe().f_locals.items()),
+                             dict(sys._getframe().f_locals.items()))
                             for x in x]
                 return inner()
             result = outer([1, 2])
-            snaps = [d['x'] for _, d in result]
-            vals = [fn() for fn, _ in result]
+            snaps = [d['x'] for _, d, *_ in result]
+            vals = [fn() for fn, *_ in result]
+            consistent = []
+            for _, d, n, ks, vs, it, d_items in result:
+                consistent.append(
+                    n == len(ks) == len(vs) == len(it)
+                    and ks.count('x') == 1
+                    and d == d_items == dict(zip(ks, vs))
+                )
         """
         import sys
-        self._check_in_scopes(code, {"snaps": [1, 2], "vals": [2, 2]},
-                              ns={"sys": sys}, scopes=["module", "function"])
+        self._check_in_scopes(
+            code,
+            {"snaps": [1, 2], "vals": [2, 2], "consistent": [True, True]},
+            ns={"sys": sys}, scopes=["module", "function"])
 
     def _recursive_replace(self, maybe_code):
         if not isinstance(maybe_code, types.CodeType):
