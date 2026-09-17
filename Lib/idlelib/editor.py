@@ -1153,11 +1153,12 @@ class EditorWindow:
         choice = dialog.go()
         if choice == 0:
             self.close()
-        elif choice == 1:
-            self.io.save_as(event)
         else:
+            # Forget the old mtime so a cancelled Save As does not reprompt;
+            # a successful Save As restores it via set_saved(True).
             self.mtime = None
-            self.set_saved(False)
+            if choice == 1:
+                self.io.save_as(event)
 
     def load_extensions(self):
         self.extensions = {}

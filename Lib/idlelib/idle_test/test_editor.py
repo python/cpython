@@ -365,13 +365,17 @@ class DeletedFileEventTest(unittest.TestCase):
     def test_close_choice_closes_window(self):
         self.assertTrue(self._run_choice(0).close.called)
 
-    def test_save_as_choice_saves(self):
-        self._run_choice(1).io.save_as.assert_called_once_with('event')
+    def test_save_as_choice_clears_mtime_and_saves(self):
+        stub = self._run_choice(1)
+        stub.io.save_as.assert_called_once_with('event')
+        # A cancelled Save As leaves mtime None so it does not reprompt.
+        self.assertIsNone(stub.mtime)
 
-    def test_ignore_choice_marks_unsaved(self):
+    def test_ignore_choice_clears_mtime(self):
         stub = self._run_choice(2)
         self.assertIsNone(stub.mtime)
-        stub.set_saved.assert_called_once_with(False)
+        stub.io.save_as.assert_not_called()
+        stub.set_saved.assert_not_called()
 
 
 if __name__ == '__main__':
