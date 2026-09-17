@@ -45,7 +45,7 @@ def make_pat():
     type_softkw = (
         r"^[ \t]*" +  # at beginning of line + possible indentation
         r"(?P<TYPE_SOFTKW>type)" +
-        r"(?=[ \t]+[A-Za-z_])"
+        r"(?=[ \t]+[^\W\d])"
     )
     lazy_softkw = (  # lazy new in 3.15 (+ 2 lines below).
         r"^[ \t]*" +  # at beginning of line + possible indentation
