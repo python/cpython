@@ -8,12 +8,12 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#ifdef Py_DEBUG
+
 #include "pycore_bytesobject.h"   // _PyBytes_CheckOverflow()
 #include "pycore_hamt.h"          // _PyHamt_BitmapNode_Type
 #include "pycore_long.h"          // TAG_FROM_SIGN_AND_SIZE()
 
-
-#ifdef Py_DEBUG
 static inline void
 _PyStaticObject_CheckSingleton(PyObject *obj, PyTypeObject *type)
 {
@@ -86,8 +86,8 @@ _PyStaticObject_CheckUnicodeSingleton(PyObject *obj,
     _PyStaticObject_CheckUnicode(obj, str, length);
     _PyObject_ASSERT(obj, PyUnicode_IS_ASCII(obj));
 }
-#endif
 
+#endif  // Py_DEBUG
 
 #ifdef __cplusplus
 }
