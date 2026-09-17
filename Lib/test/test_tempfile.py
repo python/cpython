@@ -1901,8 +1901,7 @@ class TestTemporaryDirectory(BaseTestCase):
                 if os.path.islink(dir1):
                     os.unlink(dir1)
                     os.rename(dir1 + '_moved', dir1)
-                if os.path.exists(dir1):
-                    os.chmod(dir1, 0o700)
+                os.chmod(dir1, 0o700)
                 d1.cleanup()
 
             self.assertTrue(os.path.exists(target_file))
