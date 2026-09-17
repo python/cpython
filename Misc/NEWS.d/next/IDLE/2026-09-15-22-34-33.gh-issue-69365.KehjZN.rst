@@ -1,0 +1,2 @@
+The IDLE search dialogs now show a regular expression error below the entry
+instead of in a message box.
