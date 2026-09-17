@@ -139,7 +139,7 @@ decode_unicode_with_escapes(Parser *parser, const char *s, size_t len, Token *t)
     const char *end;
 
     /* check for integer overflow */
-    if (len > ((size_t)PY_SSIZE_T_MAX - 1) / 6) {
+    if (len > (size_t)PY_SSIZE_T_MAX / 6) {
         return NULL;
     }
     /* "ä" (2 bytes) may become "\U000000E4" (10 bytes), or 1:5.
