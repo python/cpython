@@ -824,32 +824,6 @@ is_free_in_any_child(PySTEntryObject *entry, PyObject *key)
     return 0;
 }
 
-static PyObject *
-get_freevar_names(PySTEntryObject *ste)
-{
-    PyObject *free = PySet_New(NULL);
-    if (free == NULL) {
-        return NULL;
-    }
-    PyObject *k, *v;
-    Py_ssize_t pos = 0;
-    while (PyDict_Next(ste->ste_symbols, &pos, &k, &v)) {
-        long flags = PyLong_AsLong(v);
-        if (flags == -1 && PyErr_Occurred()) {
-            Py_DECREF(free);
-            return NULL;
-        }
-        if (SYMBOL_TO_SCOPE(flags) == FREE) {
-            if (PySet_Add(free, k) < 0) {
-                Py_DECREF(free);
-                return NULL;
-            }
-        }
-    }
-    return free;
-}
-
-
 static int
 finalize_inlined_comprehension(PySTEntryObject *ste, PySTEntryObject *comp,
                                 PyObject *comp_free, PyObject *outer_newfree,
@@ -921,24 +895,6 @@ finalize_inlined_comprehension(PySTEntryObject *ste, PySTEntryObject *comp,
         }
         else {
             assert(scope != FREE || PySet_Contains(comp_free, k) == 1);
-        }
-    }
-    /* Finalize nested inlined comprehensions against this comprehension,
-     * not the original enclosing scope. */
-    for (Py_ssize_t i = 0; i < PyList_GET_SIZE(comp->ste_children); i++) {
-        PySTEntryObject *child = (PySTEntryObject *)PyList_GET_ITEM(comp->ste_children, i);
-        if (child->ste_type != InlinedComprehensionBlock) {
-            continue;
-        }
-        PyObject *child_free = get_freevar_names(child);
-        if (child_free == NULL) {
-            return 0;
-        }
-        int ok = finalize_inlined_comprehension(comp, child, child_free,
-                                                outer_newfree, inlined_cells);
-        Py_DECREF(child_free);
-        if (!ok) {
-            return 0;
         }
     }
     return 1;
@@ -1293,15 +1249,14 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
             }
         }
 
-        // Finalize inlined comprehensions against the nearest non-inlined
-        // enclosing scope. Nested ones are finalized recursively against
-        // their immediate parent.
+        // Finalize inlined children before analyze_cells so their uses of
+        // this block's locals do not force a cell.
         if (!analyze_child_block(entry, newbound, newfree, newglobal,
                                  type_params, new_class_entry, &child_free))
         {
             goto error;
         }
-        if (entry->ste_type == InlinedComprehensionBlock && ste->ste_type != InlinedComprehensionBlock) {
+        if (entry->ste_type == InlinedComprehensionBlock) {
             if (!finalize_inlined_comprehension(ste, entry, child_free, newfree,
                                                 inlined_cells)) {
                 Py_DECREF(child_free);

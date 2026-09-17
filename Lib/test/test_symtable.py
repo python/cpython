@@ -616,11 +616,47 @@ class SymtableTest(unittest.TestCase):
         self.assertTrue(C.lookup("x").is_local())
         self.assertFalse(C.lookup("x").is_comp_cell())
         self.assertFalse(children[0].lookup("x").is_free())
-        self.assertTrue(children[0].lookup("x").is_cell())
-        self.assertTrue(children[0].lookup("x").is_comp_cell())
+        self.assertTrue(children[0].lookup("x").is_local())
+        self.assertFalse(children[0].lookup("x").is_cell())
+        self.assertFalse(children[0].lookup("x").is_comp_cell())
         self.assertFalse(inner.lookup("_").is_free())
         self.assertTrue(inner.lookup("x").is_free())
         self.assertTrue(inner.lookup("x").is_referenced())
+
+    def test_inlined_nested_comprehension_iter_var_is_fast_local(self):
+        st = symtable.symtable(
+            "def f():\n"
+            "    return [[x for _ in (0,)] for x in (42,)]",
+            "?", "exec")
+        f = find_block(st, "f")
+        with self.assertRaises(KeyError):
+            f.lookup("x")
+        outer, = f.get_children()
+        inner = self.check_nested_inlined_listcomp(
+            outer, ["x"], ["_", "x"], nested=True)
+        self.assertTrue(outer.lookup("x").is_local())
+        self.assertFalse(outer.lookup("x").is_cell())
+        self.assertFalse(outer.lookup("x").is_comp_cell())
+        self.assertTrue(inner.lookup("x").is_free())
+        self.assertTrue(inner.lookup("x").is_referenced())
+
+    def test_inlined_nested_comprehension_captured_iter_is_cell(self):
+        st = symtable.symtable(
+            "def f():\n"
+            "    return [[(lambda: x) for _ in (0,)] for x in (1, 2)]",
+            "?", "exec")
+        f = find_block(st, "f")
+        with self.assertRaises(KeyError):
+            f.lookup("x")
+        outer, = (c for c in f.get_children()
+                  if c.get_type() is symtable.SymbolTableType.INLINED_COMPREHENSION)
+        inner, = (c for c in outer.get_children()
+                  if c.get_type() is symtable.SymbolTableType.INLINED_COMPREHENSION)
+        self.assertTrue(outer.lookup("x").is_cell())
+        self.assertTrue(outer.lookup("x").is_comp_cell())
+        self.assertTrue(inner.lookup("x").is_free())
+        lam, = inner.get_children()
+        self.assertTrue(lam.lookup("x").is_free())
 
     def test_inlined_sibling_nested_comprehensions(self):
         st = symtable.symtable(

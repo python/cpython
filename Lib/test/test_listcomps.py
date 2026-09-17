@@ -519,6 +519,17 @@ class ListComprehensionTest(unittest.TestCase):
         outputs = {"z": 42}
         self._check_in_scopes(code, outputs)
 
+    def test_nested_inlined_comp_iter_var_is_fast_local(self):
+        def f(n):
+            return [[x for _ in range(2)] for x in range(n)]
+        self.assertEqual(f.__code__.co_cellvars, ())
+        self.assertEqual(f(2), [[0, 0], [1, 1]])
+
+        def g(n):
+            return [[(lambda: x) for _ in range(2)] for x in range(n)]
+        self.assertEqual(g.__code__.co_cellvars, ("x",))
+        self.assertEqual([fn() for fn in g(2)[1]], [1, 1])
+
     def test_nested_references___class__(self):
         code = """
             res = [[__class__ for _ in (0,)] for _ in (1,)]
