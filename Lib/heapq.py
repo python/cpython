@@ -477,7 +477,7 @@ def merge(*iterables, key=None, reverse=False):
 def nsmallest(n, iterable, key=None):
     """Find the n smallest elements in a dataset.
 
-    Equivalent to:  sorted(iterable, key=key)[:n]
+    Equivalent to:  sorted(iterable, key=key)[:max(n, 0)]
     """
 
     # Short-cut for n==1 is to use min()
@@ -537,7 +537,7 @@ def nsmallest(n, iterable, key=None):
 def nlargest(n, iterable, key=None):
     """Find the n largest elements in a dataset.
 
-    Equivalent to:  sorted(iterable, key=key, reverse=True)[:n]
+    Equivalent to:  sorted(iterable, key=key, reverse=True)[:max(n, 0)]
     """
 
     # Short-cut for n==1 is to use max()
