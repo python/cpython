@@ -106,6 +106,11 @@ class TestTString(unittest.TestCase, TStringBaseCase):
         self.assertTStringEqual(t, ("ASCII: ", ""), [(text, "text", "a")])
         self.assertEqual(fstring(t), f"ASCII: {ascii(text)}")
 
+        # Test !R conversion (repr)
+        t = t"Data: {obj!R}"
+        self.assertTStringEqual(t, ("Data: ", ""), [(obj, "obj", "R")])
+        self.assertEqual(fstring(t), f"Data: {repr(obj)}")
+
         # Test !z conversion (error)
         num = 1
         with self.assertRaises(SyntaxError):
@@ -305,11 +310,11 @@ class TestTString(unittest.TestCase, TStringBaseCase):
             ("t'{x!}'", "t-string: missing conversion character"),
             ("t'{x=!}'", "t-string: missing conversion character"),
             ("t'{x!z}'", "t-string: invalid conversion character 'z': "
-                         "expected 's', 'r', or 'a'"),
+                         "expected 's', 'r', 'R', or 'a'"),
             ("f\"{t'{x!z}'}\"", "t-string: invalid conversion character 'z': "
-                                "expected 's', 'r', or 'a'"),
+                                "expected 's', 'r', 'R', or 'a'"),
             ("t'{f\"{x!z}\"}'", "f-string: invalid conversion character 'z': "
-                                "expected 's', 'r', or 'a'"),
+                                "expected 's', 'r', 'R', or 'a'"),
             ("t'{lambda:1}'", "t-string: lambda expressions are not allowed "
                               "without parentheses"),
             ("t'{x:{;}}'", "t-string: expecting a valid expression after '{'"),
