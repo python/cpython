@@ -122,8 +122,6 @@ _PyUnicodeWriter_CanWrite(_PyUnicodeWriter *writer)
     assert(!PyUnicode_CHECK_INTERNED(buffer));
     assert(!_Py_IsImmortal(buffer));
     return 1;
-
-
 }
 #endif
 
