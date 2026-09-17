@@ -3412,9 +3412,8 @@ dict_dict_fromkeys(PyDictObject *mp, PyObject *iterable, PyObject *value)
     PyObject *key;
     Py_hash_t hash;
     int unicode = DK_IS_UNICODE(((PyDictObject*)iterable)->ma_keys);
-    uint8_t new_size = Py_MAX(
-        estimate_log2_keysize(PyDict_GET_SIZE(iterable)),
-        DK_LOG_SIZE(mp->ma_keys));
+    uint8_t log2_keysize = estimate_log2_keysize(PyDict_GET_SIZE(iterable));
+    uint8_t new_size = Py_MAX(log2_keysize, DK_LOG_SIZE(mp->ma_keys));
     if (dictresize(mp, new_size, unicode)) {
         Py_DECREF(mp);
         return NULL;
@@ -3437,9 +3436,8 @@ dict_set_fromkeys(PyDictObject *mp, PyObject *iterable, PyObject *value)
     Py_ssize_t pos = 0;
     PyObject *key;
     Py_hash_t hash;
-    uint8_t new_size = Py_MAX(
-        estimate_log2_keysize(PySet_GET_SIZE(iterable)),
-        DK_LOG_SIZE(mp->ma_keys));
+    uint8_t log2_keysize = estimate_log2_keysize(PySet_GET_SIZE(iterable));
+    uint8_t new_size = Py_MAX(log2_keysize, DK_LOG_SIZE(mp->ma_keys));
     if (dictresize(mp, new_size, 0)) {
         Py_DECREF(mp);
         return NULL;

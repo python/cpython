@@ -852,6 +852,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
 
 
 class PyShell(OutputWindow):
+    is_shell = True
     from idlelib.squeezer import Squeezer
 
     shell_title = "IDLE Shell"
@@ -909,7 +910,6 @@ class PyShell(OutputWindow):
         self.indentwidth = 4
 
         self.sys_ps1 = sys.ps1 if hasattr(sys, 'ps1') else '>>>\n'
-        self.prompt_last_line = self.sys_ps1.split('\n')[-1]
         self.prompt = self.sys_ps1  # Changes when debug active
 
         text = self.text
@@ -1675,6 +1675,10 @@ def main():
         if filename and os.path.isfile(filename):
             shell.interp.execfile(filename)
     if cmd or script:
+        # Let the startup file finish first: the command or script
+        # is to run after it, in its namespace (gh-68453).
+        while shell.executing:
+            root.update()
         shell.interp.runcommand("""if 1:
             import sys as _sys
             _sys.argv = {!r}
