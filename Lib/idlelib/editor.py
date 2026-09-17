@@ -1117,23 +1117,47 @@ class EditorWindow:
     def last_mtime(self):
         file = self.io.filename
         if not file:
-            return 0
+            return None
         try:
             return os.path.getmtime(file)
         except OSError:
-            # File gone or inaccessible: keep the last known mtime.
-            return self.mtime
+            # File is gone or cannot be stat'ed.
+            return None
 
     def focus_in_event(self, event):
         mtime = self.last_mtime()
-        if self.mtime != mtime:
+        if mtime == self.mtime:
+            return
+        if self.mtime is not None and mtime is None:
+            # The file was there and is now gone; reloading cannot work.
+            self.deleted_file_event(event)
+        else:
             self.mtime = mtime
-            if self. askyesno(
+            if self.askyesno(
               'Reload', '"%s"\n\nThis script has been modified by another program.'
               '\nDo you want to reload it?' % self.io.filename, parent=self.text):
                 self.io.loadfile(self.io.filename)
             else:
                 self.set_saved(False)
+
+    def deleted_file_event(self, event):
+        # The file was deleted or renamed while open; ask what to do with the
+        # buffer instead of offering a reload that could only fail.
+        dialog = simpledialog.SimpleDialog(
+            self.text,
+            title='File Deleted',
+            text='"%s"\n\nThis file no longer exists.' % self.io.filename,
+            buttons=('Close', 'Save As', 'Ignore'),
+            default=1,
+            cancel=2)
+        choice = dialog.go()
+        if choice == 0:
+            self.close()
+        elif choice == 1:
+            self.io.save_as(event)
+        else:
+            self.mtime = None
+            self.set_saved(False)
 
     def load_extensions(self):
         self.extensions = {}
@@ -1728,3 +1752,4 @@ if __name__ == '__main__':
 
     from idlelib.idle_test.htest import run
     run(_editor_window)
+

@@ -5,6 +5,7 @@ import os
 import tempfile
 import types
 import unittest
+from pathlib import Path
 from collections import namedtuple
 from unittest import mock
 from test.support import requires
@@ -307,22 +308,72 @@ class RMenuTest(unittest.TestCase):
 class LastMtimeTest(unittest.TestCase):
     # Exercise last_mtime as an unbound method on a stub; no GUI needed.
 
-    def test_deleted_file_does_not_raise(self):
+    def test_existing_file_returns_mtime(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = os.path.join(d, 'f.py')
+            Path(p).touch()
+            stub = types.SimpleNamespace(io=types.SimpleNamespace(filename=p))
+            self.assertEqual(Editor.last_mtime(stub), os.path.getmtime(p))
+
+    def test_deleted_file_returns_none(self):
         with tempfile.TemporaryDirectory() as d:
             p = os.path.join(d, 'gone.py')
-            open(p, 'w').close()
-            mtime = os.path.getmtime(p)
+            Path(p).touch()
             os.remove(p)
-            stub = types.SimpleNamespace(
-                io=types.SimpleNamespace(filename=p), mtime=mtime)
-            # Must not raise; returns the last known mtime.
-            self.assertEqual(Editor.last_mtime(stub), mtime)
+            stub = types.SimpleNamespace(io=types.SimpleNamespace(filename=p))
+            self.assertIsNone(Editor.last_mtime(stub))
 
-    def test_no_filename_returns_zero(self):
+    def test_not_yet_created_filename(self):
+        # __init__ calls last_mtime() before self.mtime is set, so last_mtime()
+        # must not read self.mtime (the stub has no mtime attribute).
         stub = types.SimpleNamespace(
-            io=types.SimpleNamespace(filename=None), mtime=123)
-        self.assertEqual(Editor.last_mtime(stub), 0)
+            io=types.SimpleNamespace(filename='/no/such/file.py'))
+        self.assertIsNone(Editor.last_mtime(stub))
+
+    def test_no_filename_returns_none(self):
+        stub = types.SimpleNamespace(io=types.SimpleNamespace(filename=None))
+        self.assertIsNone(Editor.last_mtime(stub))
+
+
+class DeletedFileEventTest(unittest.TestCase):
+    # Exercise the deleted-file handling as unbound methods; dialog is mocked.
+
+    def make_stub(self):
+        return types.SimpleNamespace(
+            mtime=1.0,
+            text=None,
+            io=types.SimpleNamespace(filename='/gone.py', save_as=mock.Mock()),
+            close=mock.Mock(),
+            set_saved=mock.Mock(),
+            deleted_file_event=mock.Mock(),
+            askyesno=mock.Mock(),
+            last_mtime=lambda: None)
+
+    def test_focus_in_routes_deleted_to_dialog(self):
+        stub = self.make_stub()
+        Editor.focus_in_event(stub, 'event')
+        stub.deleted_file_event.assert_called_once_with('event')
+        stub.askyesno.assert_not_called()
+
+    def _run_choice(self, choice):
+        stub = self.make_stub()
+        with mock.patch.object(editor.simpledialog, 'SimpleDialog') as SD:
+            SD.return_value.go.return_value = choice
+            Editor.deleted_file_event(stub, 'event')
+        return stub
+
+    def test_close_choice_closes_window(self):
+        self.assertTrue(self._run_choice(0).close.called)
+
+    def test_save_as_choice_saves(self):
+        self._run_choice(1).io.save_as.assert_called_once_with('event')
+
+    def test_ignore_choice_marks_unsaved(self):
+        stub = self._run_choice(2)
+        self.assertIsNone(stub.mtime)
+        stub.set_saved.assert_called_once_with(False)
 
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
+

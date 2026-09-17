@@ -1,0 +1,4 @@
+IDLE no longer fails with a traceback when a file open in the editor is
+deleted or renamed by another program; refocusing the window now offers to
+close it, save the buffer as a new file, or keep editing.  Opening a
+not-yet-created file no longer prevents IDLE from starting.
