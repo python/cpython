@@ -1642,6 +1642,7 @@ class Popen:
                 orig_filename = os.fsdecode(args)
                 args = list2cmdline([args])
             else:
+                args = list(args)
                 orig_filename = os.fsdecode(args[0]) if args else None
                 args = list2cmdline(args)
             if executable is not None:

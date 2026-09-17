@@ -1804,6 +1804,20 @@ class ProcessTestCase(BaseTestCase):
             subprocess.call([missing, 'with', 'some', 'args'])
         self.assertEqual(c.exception.filename, missing)
 
+    def test_args_filter_iterable(self):
+        # gh-119646: Windows used to index args[0] before list2cmdline.
+        # test_faulthandler.test_sys_xoptions passes a filter() object.
+        args = filter(None, (sys.executable, "-c", "import sys; sys.exit(17)"))
+        self.assertEqual(subprocess.call(args), 17)
+
+    def test_file_not_found_includes_filename_from_iterable(self):
+        missing = (r'C:\opt\nonexistent_binary' if mswindows
+                   else '/opt/nonexistent_binary')
+        args = filter(None, (missing, "with", "some", "args"))
+        with self.assertRaises(FileNotFoundError) as c:
+            subprocess.call(args)
+        self.assertEqual(c.exception.filename, missing)
+
     @unittest.skipIf(mswindows, "Windows reports NotADirectoryError (WinError 267)")
     def test_file_not_found_with_bad_cwd(self):
         with self.assertRaises(FileNotFoundError) as c:
