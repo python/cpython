@@ -1,3 +1,0 @@
-Add ``make check-capi-macros`` which fails if a new macro is added to the C
-API with a name which doesn't start with "Py". Existing macros which don't
-respect this convention are ignored. Patch by Victor Stinner.
