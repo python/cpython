@@ -602,6 +602,20 @@ _PyUnicodeWriter_Finish(_PyUnicodeWriter *writer)
 {
     PyObject *str;
 
+#ifdef Py_DEBUG
+    // Check for buffer overflow
+    if (writer->buffer != NULL) {
+        Py_ssize_t pos = PyUnicode_GET_LENGTH(writer->buffer);
+        Py_UCS4 ch = PyUnicode_READ_CHAR(writer->buffer, pos);
+        if (ch != 0) {
+            _Py_FatalErrorFormat(__func__,
+                                 "Buffer overflow detected in "
+                                 "PyUnicodeWriter %p at position %zd",
+                                 writer, pos);
+        }
+    }
+#endif
+
     if (writer->pos == 0) {
         Py_CLEAR(writer->buffer);
         return _PyUnicode_GetEmpty();
@@ -612,6 +626,7 @@ _PyUnicodeWriter_Finish(_PyUnicodeWriter *writer)
 
     if (writer->readonly) {
         assert(PyUnicode_GET_LENGTH(str) == writer->pos);
+        assert(_PyUnicode_CheckConsistency(str, 1));
         return str;
     }
 
