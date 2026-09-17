@@ -159,6 +159,8 @@ typedef struct {
     PyTypeObject *complexstr_type;  // _curses.complexstr
     PyObject *topscreen;            // owned ref to the current screen object,
                                     // or NULL for the initscr() screen
+    PyObject *prescreen;            // owned ref to the pending new_prescr() screen,
+                                    // or NULL if there is no pending pre-screen
 } cursesmodule_state;
 
 static inline cursesmodule_state *
@@ -1590,7 +1592,10 @@ complexstr_concat(PyObject *a, PyObject *b)
 {
     cursesmodule_state *state = get_cursesmodule_state_by_cls(Py_TYPE(a));
     if (!Py_IS_TYPE(b, state->complexstr_type)) {
-        Py_RETURN_NOTIMPLEMENTED;
+        PyErr_Format(PyExc_TypeError,
+                     "can only concatenate complexstr to complexstr, not %T",
+                     b);
+        return NULL;
     }
     PyCursesComplexStrObject *sa = _PyCursesComplexStrObject_CAST(a);
     PyCursesComplexStrObject *sb = _PyCursesComplexStrObject_CAST(b);
@@ -4361,6 +4366,7 @@ _curses_window_insnstr_impl(PyCursesWindowObject *self, int group_left_1,
             curses_wattrset(self, attr, "insnstr") < 0)
         {
             curses_release_wstr(strtype, wstr);
+            Py_XDECREF(bytesobj);
             return NULL;
         }
     }
@@ -6657,11 +6663,10 @@ curses_init_dict(PyObject *module)
     }
     /* This was moved from initcurses() because it core dumped on SGI,
        where they're not defined until you've called initscr() */
-    /* Use long long, not long: a chtype constant (the A_* attributes, ACS_*
-       and key codes) can set bits beyond a 32-bit long, which is what long is
-       on LLP64 platforms such as Windows -- A_DIM (0x80000000) would otherwise
-       be sign-extended to a negative number.  long long is at least 64 bits
-       everywhere and still represents the negative ERR (-1). */
+    /* Use unsigned long long, not long: a chtype constant (the A_* attributes,
+       ACS_* and key codes) can set bits beyond a 32-bit long, which is what
+       long is on LLP64 platforms such as Windows -- A_DIM (0x80000000) would
+       otherwise be sign-extended to a negative number. */
 #define SetDictInt(NAME, VALUE)                                     \
     do {                                                            \
         PyObject *value = PyLong_FromUnsignedLongLong((unsigned long long)(VALUE));  \
@@ -6976,13 +6981,21 @@ _curses_initscr_impl(PyObject *module)
         return NULL;
     }
 
+    cursesmodule_state *state = get_cursesmodule_state(module);
+    if (state->prescreen != NULL) {
+        PyCursesScreenObject *prescreen =
+            _PyCursesScreenObject_CAST(state->prescreen);
+        assert(prescreen->screen != NULL);
+        prescreen->screen = NULL;
+        Py_CLEAR(state->prescreen);
+    }
+
     curses_initscr_called = curses_setupterm_called = TRUE;
 
     if (curses_init_dict(module) < 0) {
         return NULL;
     }
 
-    cursesmodule_state *state = get_cursesmodule_state(module);
     PyObject *winobj = PyCursesWindow_New(state, win, NULL, NULL, NULL);
     if (winobj == NULL) {
         return NULL;
@@ -7158,6 +7171,13 @@ _curses_newterm_impl(PyObject *module, const char *type, PyObject *fd,
     cursesmodule_state *state = get_cursesmodule_state(module);
     /* The screen object owns the SCREEN and the streams; deleting it (when it
        is no longer referenced) calls delscreen() and closes the streams. */
+    if (state->prescreen != NULL) {
+        PyCursesScreenObject *prescreen =
+            _PyCursesScreenObject_CAST(state->prescreen);
+        assert(prescreen->screen == screen);
+        prescreen->screen = NULL;
+        Py_CLEAR(state->prescreen);
+    }
     PyObject *screenobj = PyCursesScreen_New(state, screen, outfp, infp, NULL);
     if (screenobj == NULL) {
         delscreen(screen);
@@ -7249,13 +7269,25 @@ static PyObject *
 _curses_new_prescr_impl(PyObject *module)
 /*[clinic end generated code: output=e7de5031da7511e2 input=1a3a89d630b641c3]*/
 {
+    cursesmodule_state *state = get_cursesmodule_state(module);
+    if (state->prescreen != NULL) {
+        return Py_NewRef(state->prescreen);
+    }
+
     SCREEN *screen = new_prescr();
     if (screen == NULL) {
         curses_set_null_error(module, "new_prescr", NULL);
         return NULL;
     }
-    cursesmodule_state *state = get_cursesmodule_state(module);
-    return PyCursesScreen_New(state, screen, NULL, NULL, NULL);
+
+    PyObject *screenobj = PyCursesScreen_New(state, screen, NULL, NULL, NULL);
+    if (screenobj == NULL) {
+        delscreen(screen);
+        return NULL;
+    }
+
+    state->prescreen = Py_NewRef(screenobj);
+    return screenobj;
 }
 #endif /* HAVE_CURSES_NEW_PRESCR */
 
@@ -8864,7 +8896,13 @@ _curses_slk_color_impl(PyObject *module, int pair)
 /*[clinic end generated code: output=ffe4de805f9c65f5 input=b1e691a9cc6177ee]*/
 {
     PyCursesStatefulInitialised(module);
-    return curses_check_err(module, slk_color((short)pair), "slk_color", NULL);
+    int rtn;
+#if _NCURSES_EXTENDED_COLOR_FUNCS
+    rtn = extended_slk_color(pair);
+#else
+    rtn = slk_color((short)pair);
+#endif
+    return curses_check_err(module, rtn, "slk_color", NULL);
 }
 #endif /* HAVE_CURSES_SLK_COLOR */
 
@@ -9253,6 +9291,7 @@ cursesmodule_traverse(PyObject *mod, visitproc visit, void *arg)
     Py_VISIT(state->complexchar_type);
     Py_VISIT(state->complexstr_type);
     Py_VISIT(state->topscreen);
+    Py_VISIT(state->prescreen);
     return 0;
 }
 
@@ -9266,6 +9305,7 @@ cursesmodule_clear(PyObject *mod)
     Py_CLEAR(state->complexchar_type);
     Py_CLEAR(state->complexstr_type);
     Py_CLEAR(state->topscreen);
+    Py_CLEAR(state->prescreen);
     return 0;
 }
 
@@ -9419,8 +9459,24 @@ cursesmodule_exec(PyObject *module)
         }                                                           \
     } while (0)
 
-    SetDictInt("ERR", ERR);
-    SetDictInt("OK", OK);
+    /* ERR is -1, so it needs a signed conversion, unlike the chtype
+       constants below. */
+#define SetDictSignedInt(NAME, VALUE)                               \
+    do {                                                            \
+        PyObject *value = PyLong_FromLongLong((long long)(VALUE));  \
+        if (value == NULL) {                                        \
+            return -1;                                              \
+        }                                                           \
+        int rc = PyDict_SetItemString(module_dict, (NAME), value);  \
+        Py_DECREF(value);                                           \
+        if (rc < 0) {                                               \
+            return -1;                                              \
+        }                                                           \
+    } while (0)
+
+    SetDictSignedInt("ERR", ERR);
+    SetDictSignedInt("OK", OK);
+#undef SetDictSignedInt
 
     /* Here are some attributes you can add to chars to print */
 
