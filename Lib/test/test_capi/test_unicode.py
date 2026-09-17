@@ -1995,7 +1995,9 @@ class PyUnicodeWriterTest(unittest.TestCase):
         ''')
         proc = assert_python_failure('-c', code)
         self.assertIn(b'Buffer overflow detected in PyUnicodeWriter', proc.err)
-        self.assertIn(f'at position 6'.encode(), proc.err)
+        # Do not test the position value since it depends on the overallocation
+        # strategy which depends on the operating system
+        self.assertIn(f'at position '.encode(), proc.err)
 
 
 @unittest.skipIf(ctypes is None, 'need ctypes')
