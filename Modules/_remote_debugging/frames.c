@@ -359,9 +359,16 @@ parsed_frame:
         }
 
         if (frame == NULL && PyList_GET_SIZE(ctx->frame_info) == 0) {
-            const char *e = "Failed to parse initial frame in chain";
-            PyErr_SetString(PyExc_RuntimeError, e);
-            return -1;
+            if (frame_addr != ctx->base_frame_addr) {
+                const char *e = "Failed to parse initial frame in chain";
+                PyErr_SetString(PyExc_RuntimeError, e);
+                return -1;
+            }
+            // A native thread that released the GIL with PyEval_SaveThread()
+            // keeps a thread state whose frame chain holds only the
+            // base_frame sentinel.  This is a valid empty Python stack:
+            // accept it and let other threads report their stacks.
+            break;
         }
         PyObject *extra_frame = NULL;
         if (unwinder->gc && frame_addr == ctx->gc_frame) {

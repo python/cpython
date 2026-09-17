@@ -1,0 +1,5 @@
+Fix a bug that caused :mod:`!_remote_debugging` sampling to fail entirely
+with ``RuntimeError: Failed to parse initial frame in chain`` when a native
+thread retained a Python thread state with an empty Python frame stack. The
+base_frame sentinel is now accepted as a valid empty stack, and valid stacks
+from other threads are reported instead of being lost.

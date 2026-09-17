@@ -13,6 +13,7 @@ from unittest.mock import ANY
 from test.support import (
     os_helper,
     SHORT_TIMEOUT,
+    LONG_TIMEOUT,
     busy_retry,
     requires_gil_enabled,
     requires_remote_subprocess_debugging,
@@ -63,6 +64,74 @@ except ImportError:
 # ============================================================================
 # Module-level helper functions
 # ============================================================================
+
+
+# C source used by test_sampling_thread_with_empty_python_stack to spawn a
+# native thread that keeps a Python thread state alive while no Python code
+# runs on it: the frame chain of that thread state holds only the base_frame
+# sentinel (gh-157605).
+_NATIVE_EMPTY_STACK_HELPER_SOURCE = r"""
+#include <Python.h>
+#include <pthread.h>
+
+static pthread_t helper_thread;
+static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
+static int ready = 0;
+static int stopping = 0;
+static int retain_state = 0;
+
+static void *
+run(void *arg)
+{
+    PyGILState_STATE gstate;
+    PyThreadState *saved = NULL;
+    if (retain_state) {
+        gstate = PyGILState_Ensure();
+        saved = PyEval_SaveThread();
+    }
+    pthread_mutex_lock(&lock);
+    ready = 1;
+    pthread_cond_signal(&cond);
+    while (!stopping) {
+        pthread_cond_wait(&cond, &lock);
+    }
+    pthread_mutex_unlock(&lock);
+    if (retain_state) {
+        PyEval_RestoreThread(saved);
+        PyGILState_Release(gstate);
+    }
+    return NULL;
+}
+
+/* Called through ctypes, which releases the calling thread's GIL. */
+int
+start_native_thread(int retain)
+{
+    retain_state = retain;
+    ready = 0;
+    stopping = 0;
+    if (pthread_create(&helper_thread, NULL, run, NULL) != 0) {
+        return 1;
+    }
+    pthread_mutex_lock(&lock);
+    while (!ready) {
+        pthread_cond_wait(&cond, &lock);
+    }
+    pthread_mutex_unlock(&lock);
+    return 0;
+}
+
+void
+stop_native_thread(void)
+{
+    pthread_mutex_lock(&lock);
+    stopping = 1;
+    pthread_cond_signal(&cond);
+    pthread_mutex_unlock(&lock);
+    pthread_join(helper_thread, NULL);
+}
+"""
 
 
 def _make_test_script(script_dir, script_basename, source):
@@ -482,6 +551,138 @@ class TestSelfStackTrace(RemoteInspectionTestBase):
             text=True,
             timeout=SHORT_TIMEOUT,
         )
+        self.assertEqual(
+            result.returncode, 0,
+            f"stdout: {result.stdout}\nstderr: {result.stderr}"
+        )
+
+
+class TestEmptyPythonStackSampling(RemoteInspectionTestBase):
+    @skip_if_not_supported
+    def test_sampling_thread_with_empty_python_stack(self):
+        # gh-157605: a native thread can keep a Python thread state alive
+        # while waiting in C code with no Python frames on it: its frame
+        # chain holds only the base_frame sentinel.  Sampling such a process
+        # must accept the empty stack and still report the other threads.
+        script = textwrap.dedent(
+            """\
+            import collections
+            import ctypes
+            import os
+            import subprocess
+            import sys
+            import sysconfig
+            import threading
+            import time
+            import _remote_debugging
+
+            helper_dir = sys.argv[1]
+            source_path = os.path.join(helper_dir, "native_helper.c")
+            lib_path = os.path.join(helper_dir, "native_helper.so")
+            with open(source_path, "w") as f:
+                f.write(sys.argv[2])
+
+            cc = sysconfig.get_config_var("CC") or ""
+            if not cc:
+                # Windows official builds have no CC config var.
+                print("NO-COMPILER: sysconfig CC is not set")
+                sys.exit(42)
+            includes = sorted(
+                {sysconfig.get_path("include"),
+                 sysconfig.get_path("platinclude")}
+            )
+            extra = []
+            if sys.platform == "darwin":
+                # Delay Python symbol resolution until the .so is loaded
+                # into a running interpreter.
+                extra = ["-undefined", "dynamic_lookup"]
+            cmd = cc.split() + [
+                "-shared", "-fPIC", "-pthread",
+                *[f"-I{path}" for path in includes],
+                *extra,
+                source_path, "-o", lib_path,
+            ]
+            try:
+                subprocess.run(cmd, check=True, capture_output=True, text=True)
+            except FileNotFoundError:
+                print("NO-COMPILER: compiler executable not found")
+                sys.exit(42)
+            except subprocess.CalledProcessError as exc:
+                # A real compile failure means the helper rotted: fail loud
+                # instead of silently skipping.
+                print(f"HELPER-COMPILE-FAILED: {exc.stderr}")
+                sys.exit(43)
+
+            lib = ctypes.CDLL(lib_path)
+            lib.start_native_thread.argtypes = [ctypes.c_int]
+            lib.start_native_thread.restype = ctypes.c_int
+            lib.stop_native_thread.argtypes = []
+            lib.stop_native_thread.restype = None
+
+            started = threading.Event()
+
+            def target():
+                started.set()
+                time.sleep(10_000)
+
+            def sample(pin, cache_frames):
+                if lib.start_native_thread(pin) != 0:
+                    raise RuntimeError("failed to start native thread")
+                try:
+                    unwinder = _remote_debugging.RemoteUnwinder(
+                        os.getpid(), all_threads=True,
+                        cache_frames=cache_frames,
+                    )
+                    counts = collections.Counter()
+                    for _ in range(5):
+                        try:
+                            trace = unwinder.get_stack_trace()
+                        except RuntimeError:
+                            counts["failure"] += 1
+                        else:
+                            counts["success"] += 1
+                            frames = [
+                                frame
+                                for interp in trace
+                                for thread in interp.threads
+                                for frame in thread.frame_info
+                            ]
+                            counts["target visible"] += any(
+                                frame.funcname == "target"
+                                for frame in frames
+                            )
+                    return dict(counts)
+                finally:
+                    lib.stop_native_thread()
+
+            target_thread = threading.Thread(target=target, daemon=True)
+            target_thread.start()
+            assert started.wait(5.0), "target thread did not start"
+            for pin in (0, 1):
+                for cache_frames in (False, True):
+                    counts = sample(pin, cache_frames)
+                    print(f"pin={pin} cache={cache_frames} {counts}",
+                          flush=True)
+                    assert counts.get("success") == 5, counts
+                    assert counts.get("target visible") == 5, counts
+            """
+        )
+
+        with os_helper.temp_dir() as work_dir:
+            result = subprocess.run(
+                [sys.executable, "-c", script, work_dir,
+                 _NATIVE_EMPTY_STACK_HELPER_SOURCE],
+                capture_output=True,
+                text=True,
+                timeout=LONG_TIMEOUT,
+            )
+        if result.returncode == 42:
+            self.skipTest(f"C compiler not available: {result.stdout}")
+        if result.returncode == 43:
+            self.fail(
+                "native helper failed to compile: "
+                f"{result.stdout}\n{result.stderr}"
+            )
         self.assertEqual(
             result.returncode, 0,
             f"stdout: {result.stdout}\nstderr: {result.stderr}"
