@@ -990,10 +990,13 @@ profiler_dealloc(PyObject *op)
         }
     }
 
+    /* Drop the external timer before flushing: it is Python code, and the
+       profiler can be deallocated by the garbage collector. */
+    Py_CLEAR(self->externalTimer);
+
     flush_unmatched(self);
     clearEntries(self);
     Py_XDECREF(self->missing);
-    Py_XDECREF(self->externalTimer);
     PyTypeObject *tp = Py_TYPE(self);
     tp->tp_free(self);
     Py_DECREF(tp);
