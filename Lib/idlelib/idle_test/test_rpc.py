@@ -1,8 +1,25 @@
 "Test rpc, coverage 20%."
 
 from idlelib import rpc
+import threading
 import unittest
+from unittest import mock
 
+
+class SocketIOTest(unittest.TestCase):
+
+    def test_getresponse_interrupted(self):
+        # gh-74112: an interrupted wait must release the lock and forget
+        # the sequence number, so that a late response is discarded.
+        sockio = rpc.SocketIO(mock.Mock(), debugging=False)
+        sockio.sockthread = None  # Not the current thread.
+        cvar = sockio.cvars[7] = threading.Condition()
+        with mock.patch.object(cvar, 'wait', side_effect=KeyboardInterrupt):
+            with self.assertRaises(KeyboardInterrupt):
+                sockio._getresponse(7, 0.05)
+        self.assertNotIn(7, sockio.cvars)
+        self.assertTrue(cvar.acquire(blocking=False))
+        cvar.release()
 
 
 class CodePicklerTest(unittest.TestCase):
