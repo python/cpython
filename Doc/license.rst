@@ -964,7 +964,7 @@ uses the libmpdec library if made available by the operating system.
 Additionally, the Windows and macOS installers for Python include a copy
 of the libmpdec library, so we include a copy of the libmpdec license here::
 
-   Copyright (c) 2008-2020 Stefan Krah. All rights reserved.
+   Copyright (c) 2008-2024 Stefan Krah. All rights reserved.
 
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions
