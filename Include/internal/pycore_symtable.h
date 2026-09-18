@@ -33,9 +33,9 @@ typedef enum _block_type {
     // i.e., a TypeVar, a TypeVarTuple or a ParamSpec object (the latter two
     // do not support a bound or a constraint tuple).
     TypeVariableBlock,
-    // Comprehension which is inlined into the enclosing code unit (see PEP 709).
-    // Represents a sub-scope of the enclosing code unit's scope rather than a
-    // separate scope.
+    // List/set/dict comprehension inlined into the enclosing compilation unit
+    // (PEP 709). Lexical child of that unit, not a separate code object.
+    // See InternalDocs/inlined_comprehensions.md.
     InlinedComprehensionBlock,
 } _Py_block_ty;
 
