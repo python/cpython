@@ -1,0 +1,2 @@
+``ctypes.util.test()`` now calls ``cdll.LoadLibrary()`` on Windows instead of
+the nonexistent ``cdll.load()``.

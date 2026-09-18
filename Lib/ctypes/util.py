@@ -532,7 +532,7 @@ def test():
     from ctypes import cdll
     if os.name == "nt":
         print(cdll.msvcrt)
-        print(cdll.load("msvcrt"))
+        print(cdll.LoadLibrary("msvcrt"))
         print(find_library("msvcrt"))
 
     if os.name == "posix":
