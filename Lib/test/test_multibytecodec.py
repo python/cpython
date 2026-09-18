@@ -265,6 +265,15 @@ class Test_IncrementalDecoder(unittest.TestCase):
         self.assertRaises(UnicodeDecodeError, decoder.decode, b'', True)
         self.assertEqual(decoder.decode(b'B@$'), '\u4e16')
 
+    def test_hz_keep_buffer(self):
+        # A trailing '~' shouldn't read past the end of the input.
+        decoder = codecs.getincrementaldecoder('hz')()
+        self.assertEqual(decoder.decode(b'~'), '')
+        self.assertRaises(UnicodeDecodeError, decoder.decode, b'', True)
+        self.assertEqual(decoder.decode(b'~'), '~')
+        self.assertEqual(decoder.decode(b'~'), '')
+        self.assertEqual(decoder.decode(b'\n', True), '')
+
     def test_decode_unicode(self):
         # Trying to decode a unicode string should raise a TypeError
         for enc in ALL_CJKENCODINGS:
