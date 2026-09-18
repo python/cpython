@@ -74,6 +74,7 @@ struct _Py_ext_module_loader_info {
     PyObject *path;
     _Py_ext_module_origin origin;
     const struct hook_prefixes *hook_prefixes;
+    const char *newcontext;
 };
 extern void _Py_ext_module_loader_info_clear(
     struct _Py_ext_module_loader_info *info);

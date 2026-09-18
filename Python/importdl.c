@@ -134,7 +134,12 @@ _Py_ext_module_loader_info_init(struct _Py_ext_module_loader_info *p_info,
 
     info.name_encoded = get_encoded_name(info.name, &info.hook_prefixes);
     if (info.name_encoded == NULL) {
-            goto error;
+        goto error;
+    }
+
+    info.newcontext = PyUnicode_AsUTF8(info.name);
+    if (info.newcontext == NULL) {
+        goto error;
     }
 
     if (origin == _Py_ext_module_origin_DYNAMIC) {
@@ -393,21 +398,9 @@ _PyImport_RunModInitFunc(PyModInitFunction p0,
     /* Call the module init function. */
 
     /* Package context is needed for single-phase init */
-    PyObject *m;
-    if (info->origin == _Py_ext_module_origin_CORE) {
-        m = p0();
-    }
-    else {
-        const char *newcontext = PyUnicode_AsUTF8(info->name);
-        if (newcontext == NULL) {
-            _Py_ext_module_loader_result_set_error(
-                        &res, _Py_ext_module_loader_result_EXCEPTION);
-            goto error;
-        }
-        const char *oldcontext = _PyImport_SwapPackageContext(newcontext);
-        m = p0();
-        _PyImport_SwapPackageContext(oldcontext);
-    }
+    const char *oldcontext = _PyImport_SwapPackageContext(info->newcontext);
+    PyObject *m = p0();
+    _PyImport_SwapPackageContext(oldcontext);
 
     /* Validate the result (and populate "res". */
 
