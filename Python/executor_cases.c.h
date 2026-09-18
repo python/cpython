@@ -18365,7 +18365,9 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
             }
-            if (PyCFunction_GET_FLAGS(callable_o) != METH_O) {
+            int flags = PyCFunction_GET_FLAGS(callable_o);
+            flags &= ~(METH_CLASS | METH_STATIC | METH_COEXIST);
+            if (flags != METH_O) {
                 UOP_STAT_INC(uopcode, miss);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
@@ -18439,7 +18441,9 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
             }
-            if (PyCFunction_GET_FLAGS(callable_o) != METH_FASTCALL) {
+            int flags = PyCFunction_GET_FLAGS(callable_o);
+            flags &= ~(METH_CLASS | METH_STATIC | METH_COEXIST);
+            if (flags != METH_FASTCALL) {
                 UOP_STAT_INC(uopcode, miss);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
@@ -18505,7 +18509,9 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
             }
-            if (PyCFunction_GET_FLAGS(callable_o) != (METH_FASTCALL | METH_KEYWORDS)) {
+            int flags = PyCFunction_GET_FLAGS(callable_o);
+            flags &= ~(METH_CLASS | METH_STATIC | METH_COEXIST);
+            if (flags != (METH_FASTCALL | METH_KEYWORDS)) {
                 UOP_STAT_INC(uopcode, miss);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
@@ -19152,7 +19158,9 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
             }
-            if (method->d_method->ml_flags != METH_O) {
+            int flags = method->d_method->ml_flags;
+            flags &= ~(METH_CLASS | METH_STATIC | METH_COEXIST);
+            if (flags != METH_O) {
                 UOP_STAT_INC(uopcode, miss);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
@@ -19357,7 +19365,9 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
             }
-            if (method->d_method->ml_flags != (METH_FASTCALL|METH_KEYWORDS)) {
+            int flags = method->d_method->ml_flags;
+            flags &= ~(METH_CLASS | METH_STATIC | METH_COEXIST);
+            if (flags != (METH_FASTCALL|METH_KEYWORDS)) {
                 UOP_STAT_INC(uopcode, miss);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
@@ -19379,6 +19389,9 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
             }
+            _tos_cache0 = PyStackRef_ZERO_BITS;
+            _tos_cache1 = PyStackRef_ZERO_BITS;
+            _tos_cache2 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE(__FILE__, __LINE__);
             break;
@@ -19501,7 +19514,9 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
             }
-            if (method->d_method->ml_flags != METH_NOARGS) {
+            int flags = method->d_method->ml_flags;
+            flags &= ~(METH_CLASS | METH_STATIC | METH_COEXIST);
+            if (flags != METH_NOARGS) {
                 UOP_STAT_INC(uopcode, miss);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
@@ -19630,7 +19645,9 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
             }
-            if (method->d_method->ml_flags != METH_FASTCALL) {
+            int flags = method->d_method->ml_flags;
+            flags &= ~(METH_CLASS | METH_STATIC | METH_COEXIST);
+            if (flags != METH_FASTCALL) {
                 UOP_STAT_INC(uopcode, miss);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();

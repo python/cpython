@@ -3360,6 +3360,11 @@ static PyMethodDef meth_instance_methods[] = {
     {"meth_noargs", meth_noargs, METH_NOARGS},
     {"meth_fastcall", _PyCFunction_CAST(meth_fastcall), METH_FASTCALL},
     {"meth_fastcall_keywords", _PyCFunction_CAST(meth_fastcall_keywords), METH_FASTCALL|METH_KEYWORDS},
+    {"meth_fastcall_coexist", _PyCFunction_CAST(meth_fastcall),
+     METH_FASTCALL|METH_COEXIST},
+    {"meth_fastcall_keywords_coexist",
+     _PyCFunction_CAST(meth_fastcall_keywords),
+     METH_FASTCALL|METH_KEYWORDS|METH_COEXIST},
     {NULL, NULL} /* sentinel */
 };
 
