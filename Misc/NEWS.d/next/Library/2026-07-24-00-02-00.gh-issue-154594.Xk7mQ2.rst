@@ -1,0 +1,2 @@
+Fix :func:`copy.deepcopy` so that an object whose deep copy is ``None`` is
+still memoized. Patch by tonghuaroot.
