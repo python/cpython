@@ -21,6 +21,12 @@ custom_converter(PyObject *obj, custom_t *val)
 }
 
 
+/* Forward declarations for vectorcall types, needed because
+ * clinic/_testclinic.c.h is included before the type definitions. */
+static PyTypeObject VcNew_Type;
+static PyTypeObject VcInit_Type;
+static PyTypeObject VcNewBase_Type;
+static PyTypeObject VcKwOnly_Type;
 #include "clinic/_testclinic.c.h"
 
 
@@ -1518,6 +1524,40 @@ clone_with_conv_f2_impl(PyObject *module, custom_t path)
 
 
 /*[clinic input]
+alias_pos
+
+    a: object = None
+    *
+    b as a: object = None
+
+[clinic start generated code]*/
+
+static PyObject *
+alias_pos_impl(PyObject *module, PyObject *a)
+/*[clinic end generated code: output=f6cd3c7f098a894d input=8018ee6c26e3f435]*/
+{
+    return Py_NewRef(a);
+}
+
+
+/*[clinic input]
+alias_kwonly
+
+    *
+    a: object = None
+    b as a: object = None
+
+[clinic start generated code]*/
+
+static PyObject *
+alias_kwonly_impl(PyObject *module, PyObject *a)
+/*[clinic end generated code: output=9a6d4202ba972f46 input=8ad2d6c0f326571d]*/
+{
+    return Py_NewRef(a);
+}
+
+
+/*[clinic input]
 class _testclinic.TestClass "PyObject *" "&PyBaseObject_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=c991635bb3c91f1a]*/
@@ -2394,6 +2434,40 @@ depr_kwd_multi_impl(PyObject *module, PyObject *a, PyObject *b, PyObject *c,
 
 
 /*[clinic input]
+depr_alias
+    a: object = None
+    *
+    [until 3.14] b as a: object = None
+[clinic start generated code]*/
+
+static PyObject *
+depr_alias_impl(PyObject *module, PyObject *a)
+/*[clinic end generated code: output=85e89838716d9423 input=92efd3f244c2ec3f]*/
+{
+    return Py_NewRef(a);
+}
+
+
+/*[clinic input]
+depr_param
+    a: object = None
+    [until 3.14] b: object = None
+    [until 3.14] c: object = None
+    /
+    *
+    [until 3.14] d: object = None
+[clinic start generated code]*/
+
+static PyObject *
+depr_param_impl(PyObject *module, PyObject *a, PyObject *b, PyObject *c,
+                PyObject *d)
+/*[clinic end generated code: output=5a42b461851c467b input=f689a85166408359]*/
+{
+    return pack_arguments_newref(4, a, b, c, d);
+}
+
+
+/*[clinic input]
 depr_multi
     a: object
     /
@@ -2429,6 +2503,131 @@ depr_multi_impl(PyObject *module, PyObject *a, PyObject *b, PyObject *c,
 output pop
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=e7c7c42daced52b0]*/
+
+
+/* @vectorcall test types. Multiple types as tp_vectorcall is a single slot. */
+
+/* VcNew: __new__ with one optional positional-or-keyword arg */
+
+/*[clinic input]
+class _testclinic.VcNew "PyObject *" "&VcNew_Type"
+@classmethod
+@vectorcall
+_testclinic.VcNew.__new__ as vc_plain_new
+    a: object = None
+[clinic start generated code]*/
+
+static PyObject *
+vc_plain_new_impl(PyTypeObject *type, PyObject *a)
+/*[clinic end generated code: output=55b273e9797a3013 input=e15d88606280badc]*/
+{
+    return type->tp_alloc(type, 0);
+}
+
+static PyTypeObject VcNew_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "_testclinic.VcNew",
+    .tp_basicsize = sizeof(PyObject),
+    .tp_flags = Py_TPFLAGS_DEFAULT,
+    .tp_new = vc_plain_new,
+    .tp_vectorcall = vc_plain_vectorcall,
+};
+
+
+/* VcInit: __init__ with one required positional-only and one optional keyword
+ * arg.  Uses @critical_section to exercise the {lock}/impl/{unlock} placement
+ * in both the helper body and the vectorcall fast-path inner block. */
+
+/*[clinic input]
+class _testclinic.VcInit "PyObject *" "&VcInit_Type"
+@vectorcall
+@critical_section
+_testclinic.VcInit.__init__ as vc_posorkw_init
+    a: object
+    /
+    b: object = None
+[clinic start generated code]*/
+
+static int
+vc_posorkw_init_impl(PyObject *self, PyObject *a, PyObject *b)
+/*[clinic end generated code: output=6018424ba9fb0744 input=7a4513f78dd42b57]*/
+{
+    return 0;
+}
+
+static PyTypeObject VcInit_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "_testclinic.VcInit",
+    .tp_basicsize = sizeof(PyObject),
+    .tp_flags = Py_TPFLAGS_DEFAULT,
+    .tp_new = PyType_GenericNew,
+    .tp_init = vc_posorkw_init,
+    .tp_vectorcall = vc_posorkw_vectorcall,
+};
+
+
+/* VcNewBase: __new__ with a required positional-only argument, and the one
+ * subclassable vectorcall type.  tp_vectorcall is not inherited, so a subclass
+ * is constructed through tp_new, never reaching vc_base_vectorcall. */
+
+/*[clinic input]
+class _testclinic.VcNewBase "PyObject *" "&VcNewBase_Type"
+@classmethod
+@vectorcall
+_testclinic.VcNewBase.__new__ as vc_base_new
+    a: object
+    /
+    b: object = None
+[clinic start generated code]*/
+
+static PyObject *
+vc_base_new_impl(PyTypeObject *type, PyObject *a, PyObject *b)
+/*[clinic end generated code: output=e4ca5a11e7fb1148 input=c204ca773dc608bf]*/
+{
+    return type->tp_alloc(type, 0);
+}
+
+static PyTypeObject VcNewBase_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "_testclinic.VcNewBase",
+    .tp_basicsize = sizeof(PyObject),
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .tp_new = vc_base_new,
+    .tp_vectorcall = vc_base_vectorcall,
+};
+
+
+/* VcKwOnly: @vectorcall + keyword-only arg.
+ * Exercises the no-kwnames==NULL-fast-path branch of the vectorcall codegen:
+ * the vectorcall function delegates unconditionally to the helper because the
+ * keyword-only parameter rules out the positional-only fast path. */
+
+/*[clinic input]
+class _testclinic.VcKwOnly "PyObject *" "&VcKwOnly_Type"
+@classmethod
+@vectorcall
+_testclinic.VcKwOnly.__new__ as vc_kwonly_new
+    a: object
+    *
+    b: object = None
+[clinic start generated code]*/
+
+static PyObject *
+vc_kwonly_new_impl(PyTypeObject *type, PyObject *a, PyObject *b)
+/*[clinic end generated code: output=00417079caa234dc input=68c863b55575a9e1]*/
+{
+    return type->tp_alloc(type, 0);
+}
+
+static PyTypeObject VcKwOnly_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "_testclinic.VcKwOnly",
+    .tp_basicsize = sizeof(PyObject),
+    .tp_flags = Py_TPFLAGS_DEFAULT,
+    .tp_new = vc_kwonly_new,
+    .tp_vectorcall = vc_kwonly_vectorcall,
+};
+
 
 
 /*[clinic input]
@@ -2469,6 +2668,23 @@ static PyObject *
 kwds_with_pos_only_impl(PyObject *module, PyObject *a, PyObject *b,
                         PyObject *kwds)
 /*[clinic end generated code: output=573096d3a7efcce5 input=da081a5d9ae8878a]*/
+{
+    return pack_arguments_newref(3, a, b, kwds);
+}
+
+
+/*[clinic input]
+kwds_with_optional_pos_only
+    a: object
+    b: object = None
+    /
+    **kwds: dict
+[clinic start generated code]*/
+
+static PyObject *
+kwds_with_optional_pos_only_impl(PyObject *module, PyObject *a, PyObject *b,
+                                 PyObject *kwds)
+/*[clinic end generated code: output=25a8458f5acc1a07 input=0b18b9e1670904ec]*/
 {
     return pack_arguments_newref(3, a, b, kwds);
 }
@@ -2588,6 +2804,9 @@ static PyMethodDef tester_methods[] = {
     CLONE_WITH_CONV_F1_METHODDEF
     CLONE_WITH_CONV_F2_METHODDEF
 
+    ALIAS_POS_METHODDEF
+    ALIAS_KWONLY_METHODDEF
+
     DEPR_STAR_POS0_LEN1_METHODDEF
     DEPR_STAR_POS0_LEN2_METHODDEF
     DEPR_STAR_POS0_LEN3_WITH_KWD_METHODDEF
@@ -2608,9 +2827,12 @@ static PyMethodDef tester_methods[] = {
     DEPR_KWD_NOINLINE_METHODDEF
     DEPR_KWD_MULTI_METHODDEF
     DEPR_MULTI_METHODDEF
+    DEPR_ALIAS_METHODDEF
+    DEPR_PARAM_METHODDEF
 
     LONE_KWDS_METHODDEF
     KWDS_WITH_POS_ONLY_METHODDEF
+    KWDS_WITH_OPTIONAL_POS_ONLY_METHODDEF
     KWDS_WITH_STARARG_METHODDEF
     KWDS_WITH_POS_ONLY_AND_STARARG_METHODDEF
 
@@ -2653,6 +2875,18 @@ PyInit__testclinic(void)
         goto error;
     }
     if (PyModule_AddType(m, &DeprKwdInitNoInline) < 0) {
+        goto error;
+    }
+    if (PyModule_AddType(m, &VcNew_Type) < 0) {
+        goto error;
+    }
+    if (PyModule_AddType(m, &VcInit_Type) < 0) {
+        goto error;
+    }
+    if (PyModule_AddType(m, &VcNewBase_Type) < 0) {
+        goto error;
+    }
+    if (PyModule_AddType(m, &VcKwOnly_Type) < 0) {
         goto error;
     }
     return m;

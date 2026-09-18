@@ -4745,17 +4745,9 @@ save(PickleState *st, PicklerObject *self, PyObject *obj, int pers_save)
      * __reduce_ex__ method, or the object's __reduce__ method.
      */
     if (self->dispatch_table == NULL) {
-        reduce_func = PyDict_GetItemWithError(st->dispatch_table,
-                                              (PyObject *)type);
-        if (reduce_func == NULL) {
-            if (PyErr_Occurred()) {
-                goto error;
-            }
-        } else {
-            /* PyDict_GetItemWithError() returns a borrowed reference.
-               Increase the reference count to be consistent with
-               PyObject_GetItem and _PyObject_GetAttrId used below. */
-            Py_INCREF(reduce_func);
+        if (PyDict_GetItemRef(st->dispatch_table, (PyObject *)type,
+                              &reduce_func) < 0) {
+            goto error;
         }
     }
     else if (PyMapping_GetOptionalItem(self->dispatch_table, (PyObject *)type,

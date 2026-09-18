@@ -41,9 +41,10 @@ extensions = [
 
 # Skip if downstream redistributors haven't installed them
 _OPTIONAL_EXTENSIONS = (
-    'linklint.ext',
+    'sphinx_linklint.ext',
     'notfound.extension',
     'sphinxext.opengraph',
+    'sphinxext.rediraffe',
     'sphinxcontrib.rsvgconverter',
 )
 for optional_ext in _OPTIONAL_EXTENSIONS:
@@ -77,6 +78,8 @@ _doc_authors = 'Python documentation authors'
 # and replace the values accordingly.
 # See Doc/tools/extensions/patchlevel.py
 version, release = get_version_info()
+v = get_header_version_info()
+branch = "main" if v.releaselevel == "alpha" else f"{v.major}.{v.minor}"
 
 rst_epilog = f"""
 .. |python_version_literal| replace:: ``Python {version}``
@@ -297,6 +300,7 @@ html_context = {
     "repository_url": repository_url or None,
     "pr_id": os.getenv("READTHEDOCS_VERSION"),
     "enable_analytics": os.getenv("PYTHON_DOCS_ENABLE_ANALYTICS"),
+    "source_branch": branch,
 }
 
 # This 'Last updated on:' timestamp is inserted at the bottom of every page.
@@ -305,6 +309,9 @@ html_last_updated_use_utc = True
 
 # Path to find HTML templates to override theme
 templates_path = ['tools/templates']
+
+# We link to sources on GitHub, so don't copy them into the HTML output.
+html_copy_source = False
 
 # Custom sidebar templates, filenames relative to this file.
 html_sidebars = {
@@ -359,7 +366,13 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, document class [howto/manual]).
 latex_documents = [
-    ('c-api/index', 'c-api.tex', 'The Python/C API', _doc_authors, 'manual'),
+    (
+        'c-api/index',
+        'c-api.tex',
+        'The Python/C API',
+        _doc_authors,
+        'manual',
+    ),
     (
         'extending/index',
         'extending.tex',
@@ -371,6 +384,13 @@ latex_documents = [
         'installing/index',
         'installing.tex',
         'Installing Python Modules',
+        _doc_authors,
+        'manual',
+    ),
+    (
+        'builtins/index',
+        'builtins.tex',
+        'Python Built-ins Reference',
         _doc_authors,
         'manual',
     ),
@@ -557,9 +577,6 @@ linkcheck_ignore = [
 # Options for sphinx.ext.extlinks
 # -------------------------------
 
-v = get_header_version_info()
-branch = "main" if v.releaselevel == "alpha" else f"{v.major}.{v.minor}"
-
 # This config is a dictionary of external sites,
 # mapping unique short aliases to a base URL and a prefix.
 # https://www.sphinx-doc.org/en/master/usage/extensions/extlinks.html
@@ -607,9 +624,21 @@ if 'create-social-cards' not in tags:  # noqa: F821
         '<meta property="og:image:height" content="200">',
     )
 
+# Options for sphinxext-rediraffe
+# -------------------------------
+
+rediraffe_redirects = {
+    # Splitting builtins from library
+    "library/functions.rst": "builtins/functions.rst",
+    "library/stdtypes.rst": "builtins/stdtypes.rst",
+    "library/constants.rst": "builtins/constants.rst",
+    "library/exceptions.rst": "builtins/exceptions.rst",
+    "library/threadsafety.rst": "builtins/threadsafety.rst",
+    "library/time-complexity.rst": "builtins/time-complexity.rst",
+}
+
 # Refuse to run the doctest builder under a mismatched Python
 # -----------------------------------------------------------
-
 
 def _check_doctest_interpreter(app):
     # The doctests are executed by the interpreter running Sphinx,

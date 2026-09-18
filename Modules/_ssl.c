@@ -41,6 +41,7 @@
 #endif
 
 #include "_ssl.h"
+#include "_openssl_mem.h"
 
 /* Redefined below for Windows debug builds after important #includes */
 #define _PySSL_FIX_ERRNO
@@ -79,34 +80,6 @@
 #  error "OPENSSL_THREADS is not defined, Python requires thread-safe OpenSSL"
 #endif
 
-
-#ifdef BIO_get_ktls_send
-#  ifdef MS_WINDOWS
-typedef long long Py_off_t;
-#  else
-typedef off_t Py_off_t;
-#  endif
-
-static int
-Py_off_t_converter(PyObject *arg, void *addr)
-{
-#ifdef HAVE_LARGEFILE_SUPPORT
-    *((Py_off_t *)addr) = PyLong_AsLongLong(arg);
-#else
-    *((Py_off_t *)addr) = PyLong_AsLong(arg);
-#endif
-    return PyErr_Occurred() ? 0 : 1;
-}
-
-/*[python input]
-
-class Py_off_t_converter(CConverter):
-    type = 'Py_off_t'
-    converter = 'Py_off_t_converter'
-
-[python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=3fd9ca8ca6f0cbb8]*/
-#endif /* BIO_get_ktls_send */
 
 struct py_ssl_error_code {
     const char *mnemonic;
@@ -5910,7 +5883,8 @@ _ssl_MemoryBIO_read_impl(PySSLMemoryBIO *self, int len)
 {
     int avail, nbytes;
 
-    avail = (int)Py_MIN(BIO_ctrl_pending(self->bio), INT_MAX);
+    size_t pending = BIO_ctrl_pending(self->bio);
+    avail = (int)Py_MIN(pending, (size_t)INT_MAX);
     if ((len < 0) || (len > avail))
         len = avail;
 
@@ -6269,10 +6243,9 @@ _ssl_RAND_add_impl(PyObject *module, Py_buffer *view, double entropy)
 }
 
 static PyObject *
-PySSL_RAND(PyObject *module, int len, int pseudo)
+PySSL_RAND(PyObject *module, int len)
 {
     int ok;
-    PyObject *bytes;
     unsigned long err;
     const char *errstr;
     PyObject *v;
@@ -6282,20 +6255,16 @@ PySSL_RAND(PyObject *module, int len, int pseudo)
         return NULL;
     }
 
-    bytes = PyBytes_FromStringAndSize(NULL, len);
-    if (bytes == NULL)
+    PyBytesWriter *writer = PyBytesWriter_Create(len);
+    if (writer == NULL) {
         return NULL;
-    if (pseudo) {
-        ok = RAND_bytes((unsigned char*)PyBytes_AS_STRING(bytes), len);
-        if (ok == 0 || ok == 1)
-            return Py_BuildValue("NO", bytes, ok == 1 ? Py_True : Py_False);
     }
-    else {
-        ok = RAND_bytes((unsigned char*)PyBytes_AS_STRING(bytes), len);
-        if (ok == 1)
-            return bytes;
+
+    ok = RAND_bytes(PyBytesWriter_GetData(writer), len);
+    if (ok == 1) {
+        return PyBytesWriter_Finish(writer);
     }
-    Py_DECREF(bytes);
+    PyBytesWriter_Discard(writer);
 
     err = ERR_get_error();
     errstr = ERR_reason_error_string(err);
@@ -6320,7 +6289,7 @@ static PyObject *
 _ssl_RAND_bytes_impl(PyObject *module, int n)
 /*[clinic end generated code: output=977da635e4838bc7 input=2e78ce1e86336776]*/
 {
-    return PySSL_RAND(module, n, 0);
+    return PySSL_RAND(module, n);
 }
 
 
@@ -7475,5 +7444,6 @@ static struct PyModuleDef _sslmodule_def = {
 PyMODINIT_FUNC
 PyInit__ssl(void)
 {
+    _PyOpenSSL_SetupMemFunctions();
     return PyModuleDef_Init(&_sslmodule_def);
 }
