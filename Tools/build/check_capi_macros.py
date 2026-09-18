@@ -18,10 +18,10 @@ import sys
 TOOLS_BUILD_DIR = os.path.abspath(os.path.dirname(__file__))
 SRC_DIR = os.path.dirname(os.path.dirname(TOOLS_BUILD_DIR))
 
-DEFINE_REGEX = re.compile(r'^\s*# *define\s+(.*)')
-PYTHON_PREFIX = re.compile(r'^(Py|PY|_Py|_PY)')
-DEFINE_NAME_REGEX = re.compile(r'^([A-Za-z_][A-Za-z0-9_]*)\b')
-UNDEF_REGEX = re.compile(r'#undef (.*)$')
+DEFINE_REGEX = re.compile(r'\s*# *define\s+(.*)')
+PYTHON_PREFIX = re.compile(r'(Py|PY|_Py|_PY)')
+DEFINE_NAME_REGEX = re.compile(r'([A-Za-z_][A-Za-z0-9_]*)\b')
+UNDEF_REGEX = re.compile(r'#undef (.*)')
 
 
 def parse_file(filename, names, ignored):
@@ -35,7 +35,7 @@ def parse_file(filename, names, ignored):
             if PYTHON_PREFIX.match(macro):
                 continue
 
-            match = DEFINE_NAME_REGEX.search(macro)
+            match = DEFINE_NAME_REGEX.match(macro)
             if not match:
                 print(f"ERROR: {filename}: Unable to parse {line!r}")
                 sys.exit(1)
@@ -49,7 +49,7 @@ def parse_file(filename, names, ignored):
 def parse_pyconfig_in(filename, names, ignored):
     with open(filename, encoding='utf8') as fp:
         for line in fp:
-            match = UNDEF_REGEX.match(line)
+            match = UNDEF_REGEX.fullmatch(line)
             if not match:
                 continue
             name = match.group(1)
