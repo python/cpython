@@ -1,6 +1,7 @@
 #ifndef Py_INTERNAL_IMPORTDL_H
 #define Py_INTERNAL_IMPORTDL_H
 
+#include <stdbool.h>              // bool
 #include "patchlevel.h"           // PY_MAJOR_VERSION
 
 #ifdef __cplusplus
@@ -74,7 +75,10 @@ struct _Py_ext_module_loader_info {
     PyObject *path;
     _Py_ext_module_origin origin;
     const struct hook_prefixes *hook_prefixes;
-    const char *newcontext;
+    /* for single-phase-init modules: true if we need to call
+     * _PyImport_SwapPackageContext, false for core modules
+     */
+    bool needs_swapcontext;
 };
 extern void _Py_ext_module_loader_info_clear(
     struct _Py_ext_module_loader_info *info);

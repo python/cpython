@@ -2509,16 +2509,9 @@ create_builtin(
     }
     if (initfunc != NULL) {
         /* An explicitly provided init function (see
-         * PyImport_CreateModuleFromInitfunc()) may belong to a submodule
-         * whose single-phase init creates the module using only the last
-         * component of the name (as e.g. pybind11 does).  Set the package
-         * context so that PyModule_Create() resolves the full name, the
-         * same as for dynamically loaded extensions. */
-        info.newcontext = PyUnicode_AsUTF8(info.name);
-        if (info.newcontext == NULL) {
-            _Py_ext_module_loader_info_clear(&info);
-            return NULL;
-        }
+         * PyImport_CreateModuleFromInitfunc()) needs a context swap
+         * as if it was an extension module. */
+        info.needs_swapcontext = true;
     }
 
     struct extensions_cache_value *cached = NULL;

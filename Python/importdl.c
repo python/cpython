@@ -117,11 +117,7 @@ _Py_ext_module_loader_info_init(struct _Py_ext_module_loader_info *p_info,
         return -1;
     }
 
-    info.newcontext = PyUnicode_AsUTF8(info.name);
-    if (info.newcontext == NULL) {
-        _Py_ext_module_loader_info_clear(&info);
-        return -1;
-    }
+    info.needs_swapcontext = true;
 
     if (filename != NULL) {
         if (!PyUnicode_Check(filename)) {
@@ -183,7 +179,7 @@ _Py_ext_module_loader_info_init_for_builtin(
         .path=name,
         .origin=_Py_ext_module_origin_BUILTIN,
         .hook_prefixes=hook_prefixes,
-        .newcontext=NULL,
+        .needs_swapcontext=false,
     };
     return 0;
 }
@@ -433,9 +429,21 @@ _PyImport_RunModInitFunc(PyModInitFunction p0,
     /* Call the module init function. */
 
     /* Package context is needed for single-phase init */
-    const char *oldcontext = _PyImport_SwapPackageContext(info->newcontext);
-    PyObject *m = p0();
-    _PyImport_SwapPackageContext(oldcontext);
+    PyObject *m;
+    if (info->needs_swapcontext) {
+        const char *newcontext = PyUnicode_AsUTF8(info->name);
+        if (newcontext == NULL) {
+            _Py_ext_module_loader_result_set_error(
+                        &res, _Py_ext_module_loader_result_EXCEPTION);
+            goto error;
+        }
+        const char *oldcontext = _PyImport_SwapPackageContext(newcontext);
+        m = p0();
+        _PyImport_SwapPackageContext(oldcontext);
+    }
+    else {
+        m = p0();
+    }
 
     /* Validate the result (and populate "res". */
 
