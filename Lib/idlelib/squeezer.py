@@ -105,7 +105,8 @@ class ExpandingButton(tk.Button):
         line_plurality = "lines" if numoflines != 1 else "line"
         button_text = f"Squeezed text ({numoflines} {line_plurality})."
         tk.Button.__init__(self, text, text=button_text,
-                           background="#FFFFC0", activebackground="#FFFFE0")
+                           foreground="black", background="#FFFFC0",
+                           activeforeground="black", activebackground="#FFFFE0")
 
         button_tooltip_text = (
             "Double-click to expand, right-click for more options."
