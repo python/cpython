@@ -100,13 +100,9 @@ module marshal
 #define FLAG_REF                '\x80' /* with a type, add obj to index */
 
 
-// Error codes:
-#define WFERR_OK 0
-#define WFERR_EXCEPTION_SET 1  /* An exception has been raised. */
-
 typedef struct {
     FILE *fp;
-    int error;  /* see WFERR_* values */
+    bool error;  /* An exception has been raised. */
     int depth;
     PyObject *str;
     char *ptr;
@@ -128,10 +124,10 @@ static void
 w_file_error(WFILE *p)
 {
     int saved_errno = errno;
-    if (p->error != WFERR_OK) {
+    if (p->error) {
         return;
     }
-    p->error = WFERR_EXCEPTION_SET;
+    p->error = true;
     if (PyErr_CheckSignals()) {
         /* The signal handler has raised an exception. */
         return;
@@ -171,13 +167,13 @@ w_reserve(WFILE *p, Py_ssize_t needed)
     delta = Py_MAX(delta, needed);
     if (delta > PY_SSIZE_T_MAX - size) {
         PyErr_NoMemory();
-        p->error = WFERR_EXCEPTION_SET;
+        p->error = true;
         return 0;
     }
     size += delta;
     if (_PyBytes_Resize(&p->str, size) != 0) {
         p->end = p->ptr = p->buf = NULL;
-        p->error = WFERR_EXCEPTION_SET;
+        p->error = true;
         return 0;
     }
     else {
@@ -239,7 +235,7 @@ w_long(long x, WFILE *p)
             (p)->depth--;                                   \
             PyErr_SetString(PyExc_ValueError,               \
                             "object too large to marshal"); \
-            (p)->error = WFERR_EXCEPTION_SET;               \
+            (p)->error = true;                              \
             return;                                         \
         }                                                   \
         w_long((long)(n), p);                               \
@@ -296,7 +292,7 @@ _r_digits##bitsize(const uint ## bitsize ## _t *digits, Py_ssize_t n,     \
     if (l > SIZE32_MAX) {                                                 \
         p->depth--;                                                       \
         PyErr_SetString(PyExc_ValueError, "int too large to marshal");    \
-        p->error = WFERR_EXCEPTION_SET;                                   \
+        p->error = true;                                                  \
         return;                                                           \
     }                                                                     \
     w_long((long)(negative ? -l : l), p);                                 \
@@ -332,7 +328,7 @@ w_PyLong(const PyLongObject *ob, char flag, WFILE *p)
 
     if (PyLong_Export((PyObject *)ob, &long_export) < 0) {
         p->depth--;
-        p->error = WFERR_EXCEPTION_SET;
+        p->error = true;
         return;
     }
     if (!long_export.digits) {
@@ -385,7 +381,7 @@ w_float_bin(double v, WFILE *p)
 {
     char buf[8];
     if (PyFloat_Pack8(v, buf, 1) < 0) {
-        p->error = WFERR_EXCEPTION_SET;
+        p->error = true;
         return;
     }
     w_string(buf, 8, p);
@@ -396,7 +392,7 @@ w_float_str(double v, WFILE *p)
 {
     char *buf = PyOS_double_to_string(v, 'g', 17, 0, NULL);
     if (!buf) {
-        p->error = WFERR_EXCEPTION_SET;
+        p->error = true;
         return;
     }
     w_short_pstring(buf, strlen(buf), p);
@@ -457,7 +453,7 @@ w_ref(PyObject *v, char *flag, WFILE *p)
         return 0;
     }
 err:
-    p->error = WFERR_EXCEPTION_SET;
+    p->error = true;
     return 1;
 }
 
@@ -490,7 +486,7 @@ w_object(PyObject *v, WFILE *p)
 {
     char flag = '\0';
 
-    if (p->error != WFERR_OK) {
+    if (p->error) {
         return;
     }
 
@@ -499,7 +495,7 @@ w_object(PyObject *v, WFILE *p)
     if (p->depth > MAX_MARSHAL_STACK_DEPTH) {
         PyErr_SetString(PyExc_ValueError,
                         "object too deeply nested to marshal");
-        p->error = WFERR_EXCEPTION_SET;
+        p->error = true;
     }
     else if (v == NULL) {
         w_byte(TYPE_NULL, p);
@@ -602,7 +598,7 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
             utf8 = PyUnicode_AsEncodedString(v, "utf8", "surrogatepass");
             if (utf8 == NULL) {
                 p->depth--;
-                p->error = WFERR_EXCEPTION_SET;
+                p->error = true;
                 return;
             }
             if (p->version >= 3 &&  PyUnicode_CHECK_INTERNED(v))
@@ -645,7 +641,7 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
                 PyErr_Format(PyExc_ValueError,
                              "marshalling %T objects requires version 6 "
                              "or higher", v);
-                p->error = WFERR_EXCEPTION_SET;
+                p->error = true;
                 return;
             }
 
@@ -682,7 +678,7 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         // use an order equivalent to sorted(v, key=marshal.dumps):
         PyObject *pairs = PyList_New(n);
         if (pairs == NULL) {
-            p->error = WFERR_EXCEPTION_SET;
+            p->error = true;
             return;
         }
         Py_ssize_t i = 0;
@@ -691,25 +687,25 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
             PyObject *dump = _PyMarshal_WriteObjectToString(value,
                                     p->version, p->allow_code);
             if (dump == NULL) {
-                p->error = WFERR_EXCEPTION_SET;
+                p->error = true;
                 Py_DECREF(value);
                 break;
             }
             PyObject *pair = _PyTuple_FromPairSteal(dump, value);
             if (pair == NULL) {
-                p->error = WFERR_EXCEPTION_SET;
+                p->error = true;
                 break;
             }
             PyList_SET_ITEM(pairs, i++, pair);
         }
         Py_END_CRITICAL_SECTION();
-        if (p->error != WFERR_OK) {
+        if (p->error) {
             Py_DECREF(pairs);
             return;
         }
         assert(i == n);
         if (PyList_Sort(pairs)) {
-            p->error = WFERR_EXCEPTION_SET;
+            p->error = true;
             Py_DECREF(pairs);
             return;
         }
@@ -724,13 +720,13 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         if (!p->allow_code) {
             PyErr_SetString(PyExc_ValueError,
                             "marshalling code objects is disallowed");
-            p->error = WFERR_EXCEPTION_SET;
+            p->error = true;
             return;
         }
         PyCodeObject *co = (PyCodeObject *)v;
         PyObject *co_code = _PyCode_GetCode(co);
         if (co_code == NULL) {
-            p->error = WFERR_EXCEPTION_SET;
+            p->error = true;
             return;
         }
         W_TYPE(TYPE_CODE, p);
@@ -759,7 +755,7 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         if (PyObject_GetBuffer(v, &view, PyBUF_SIMPLE) != 0) {
             w_byte(TYPE_UNKNOWN, p);
             p->depth--;
-            p->error = WFERR_EXCEPTION_SET;
+            p->error = true;
             return;
         }
         W_TYPE(TYPE_STRING, p);
@@ -772,7 +768,7 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
             PyErr_Format(PyExc_ValueError,
                          "marshalling %T objects requires version 5 "
                          "or higher", v);
-            p->error = WFERR_EXCEPTION_SET;
+            p->error = true;
             return;
         }
         PySliceObject *slice = (PySliceObject *)v;
@@ -785,7 +781,7 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
     else {
         W_TYPE(TYPE_UNKNOWN, p);
         PyErr_Format(PyExc_ValueError, "cannot marshal %T objects", v);
-        p->error = WFERR_EXCEPTION_SET;
+        p->error = true;
     }
 }
 
@@ -829,11 +825,11 @@ PyMarshal_WriteLongToFile(long x, FILE *fp, int version)
     wf.fp = fp;
     wf.ptr = wf.buf = buf;
     wf.end = wf.ptr + sizeof(buf);
-    wf.error = WFERR_OK;
+    wf.error = false;
     wf.version = version;
     w_long(x, &wf);
     w_flush(&wf);
-    assert(wf.error == WFERR_OK || PyErr_Occurred());
+    assert(!wf.error || PyErr_Occurred());
 }
 
 void
@@ -848,7 +844,7 @@ PyMarshal_WriteObjectToFile(PyObject *x, FILE *fp, int version)
     wf.fp = fp;
     wf.ptr = wf.buf = buf;
     wf.end = wf.ptr + sizeof(buf);
-    wf.error = WFERR_OK;
+    wf.error = false;
     wf.version = version;
     wf.allow_code = 1;
     if (w_init_refs(&wf, version)) {
@@ -857,7 +853,7 @@ PyMarshal_WriteObjectToFile(PyObject *x, FILE *fp, int version)
     w_object(x, &wf);
     w_clear_refs(&wf);
     w_flush(&wf);
-    assert(wf.error == WFERR_OK || PyErr_Occurred());
+    assert(!wf.error || PyErr_Occurred());
 }
 
 typedef struct {
@@ -1985,7 +1981,7 @@ _PyMarshal_WriteObjectToString(PyObject *x, int version, int allow_code)
         return NULL;
     wf.ptr = wf.buf = PyBytes_AS_STRING(wf.str);
     wf.end = wf.ptr + PyBytes_GET_SIZE(wf.str);
-    wf.error = WFERR_OK;
+    wf.error = false;
     wf.version = version;
     wf.allow_code = allow_code;
     if (w_init_refs(&wf, version)) {
@@ -1999,7 +1995,7 @@ _PyMarshal_WriteObjectToString(PyObject *x, int version, int allow_code)
         if (_PyBytes_Resize(&wf.str, (Py_ssize_t)(wf.ptr - base)) < 0)
             return NULL;
     }
-    if (wf.error != WFERR_OK) {
+    if (wf.error) {
         assert(PyErr_Occurred());
         Py_XDECREF(wf.str);
         return NULL;
