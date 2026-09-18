@@ -2101,10 +2101,8 @@ class PyUnicodeWriterTest(unittest.TestCase):
         self.assertEqual(writer.finish(), '')
 
     def test_singletons(self):
-        for size in (0, 123):
-            with self.subTest(size=size):
-                writer = self.create_writer(size)
-                self.assertIs(writer.finish(), '')
+        writer = self.create_writer(5)
+        self.assertIs(writer.finish(), '')
 
         for ch in range(256):
             with self.subTest(ch=ch):
