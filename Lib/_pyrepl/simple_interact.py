@@ -30,9 +30,23 @@ import sys
 import code
 import warnings
 
-import _pyrepl
-
 from .readline import _get_reader, multiline_input, append_history_file
+
+
+# Called after the user submits a Python statement, but before it is executed.
+# The hook is not called for PyREPL commands such as ``clear``. Exceptions raised
+# by the hook and its return value are ignored. External tools such as IDEs can
+# install a hook to augment the behavior of the REPL.
+#
+# For example, VS Code can mark the start of command execution:
+#
+#     from _pyrepl import simple_interact
+#
+#     def vscode_statement_submitted(statement: str) -> None:
+#         print("\x1b]633;C\x07", end="")
+#
+#     simple_interact.statement_submitted_hook = vscode_statement_submitted
+statement_submitted_hook = None
 
 
 _error: tuple[type[Exception], ...] | type[Exception]
@@ -147,10 +161,9 @@ def run_multiline_interactive_console(
             if maybe_run_command(statement):
                 continue
 
-            pre_execution_hook = getattr(_pyrepl, "pre_execution_hook", None)
-            if callable(pre_execution_hook):
+            if statement_submitted_hook is not None:
                 try:
-                    pre_execution_hook(statement)
+                    statement_submitted_hook(statement)
                 except Exception:
                     pass
 
