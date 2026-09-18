@@ -11,7 +11,7 @@
 #include "pycore_fileutils.h"     // _Py_ResetForceASCII()
 #include "pycore_floatobject.h"   // _PyFloat_InitTypes()
 #include "pycore_freelist.h"      // _PyObject_ClearFreeLists()
-#include "pycore_global_objects_fini_generated.h"  // _PyStaticObjects_CheckRefcnt()
+#include "pycore_global_objects_fini_generated.h"  // _PyStaticObjects_CheckAll()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interpolation.h" // _PyInterpolation_InitTypes()
 #include "pycore_long.h"          // _PyLong_InitTypes()
@@ -922,6 +922,16 @@ pycore_init_builtins(PyThreadState *tstate)
 
     if (_PyBuiltins_AddExceptions(bimod) < 0) {
         return _PyStatus_ERR("failed to add exceptions to builtins");
+    }
+
+    /* The Python-implemented builtins live in the frozen _pybuiltins module.
+       Programs/_freeze_module has no frozen modules (it's what creates
+       them) and opts out via _install_importlib, like the import system. */
+    const PyConfig *config = _PyInterpreterState_GetConfig(interp);
+    if (config->_install_importlib) {
+        if (_PyBuiltin_InitPythonFunctions(builtins_dict) < 0) {
+            return _PyStatus_ERR("failed to add Python-implemented builtins");
+        }
     }
 
     interp->builtins_copy = PyDict_Copy(interp->builtins);
@@ -2104,7 +2114,7 @@ finalize_interp_types(PyInterpreterState *interp)
 #endif
 
 #ifdef Py_DEBUG
-    _PyStaticObjects_CheckRefcnt(interp);
+    _PyStaticObjects_CheckAll(interp);
 #endif
 }
 
@@ -3827,8 +3837,8 @@ handle_thread_shutdown_exception(PyThreadState *tstate)
     assert(tstate != NULL);
     assert(_PyErr_Occurred(tstate));
     PyInterpreterState *interp = tstate->interp;
-    assert(interp->threads.head != NULL);
     _PyEval_StopTheWorld(interp);
+    assert(interp->threads.head != NULL);
 
     // We don't have to worry about locking this because the
     // world is stopped.

@@ -904,7 +904,7 @@ class ElementDeclHandlerTest(unittest.TestCase):
         parser.ElementDeclHandler = lambda _1, _2: None
         self.assertRaises(TypeError, parser.Parse, data, True)
 
-    @support.skip_if_unlimited_stack_size
+    @support.run_with_limited_c_stack(800_000)
     @support.skip_emscripten_stack_overflow()
     @support.skip_wasi_stack_overflow()
     def test_deeply_nested_content_model(self):
@@ -1045,6 +1045,16 @@ class ParentParserLifetimeTest(unittest.TestCase):
         del parser
         del subparser
 
+    # gh-155485: GetReparseDeferralEnabled always returns False with Expat <2.6.0.
+    @unittest.skipIf(not expat.ParserCreate().GetReparseDeferralEnabled(),
+                     "requires Python compiled with Expat >= 2.6.0")
+    def test_subparser_inherits_reparse_deferral(self):
+        for enabled in (True, False):
+            parser = expat.ParserCreate()
+            parser.SetReparseDeferralEnabled(enabled)
+            subparser = parser.ExternalEntityParserCreate(None)
+            self.assertEqual(subparser.GetReparseDeferralEnabled(), enabled)
+
 
 class ExternalEntityParserCreateErrorTest(unittest.TestCase):
     """ExternalEntityParserCreate error paths should not crash or leak
@@ -1067,18 +1077,9 @@ class ExternalEntityParserCreateErrorTest(unittest.TestCase):
         parser.buffer_text = True
         rc_before = sys.getrefcount(parser)
 
-        # We avoid self.assertRaises(MemoryError) here because the
-        # context manager itself needs memory allocations that fail
-        # while the nomemory hook is active.
-        self.testcapi.set_nomemory(1, 10)
-        raised = False
-        try:
-            parser.ExternalEntityParserCreate(None)
-        except MemoryError:
-            raised = True
-        finally:
-            self.testcapi.remove_mem_hooks()
-        self.assertTrue(raised, "MemoryError not raised")
+        with self.assertRaises(MemoryError):
+            with support.memory_error_cm(1, 10):
+                parser.ExternalEntityParserCreate(None)
 
         rc_after = sys.getrefcount(parser)
         self.assertEqual(rc_after, rc_before)

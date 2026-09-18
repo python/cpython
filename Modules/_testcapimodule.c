@@ -13,7 +13,10 @@
 #include "_testcapi/parts.h"
 
 #include "frameobject.h"          // PyFrame_New()
-#include "marshal.h"              // PyMarshal_WriteLongToFile()
+
+#ifdef bool
+#  error "The public headers should not include <stdbool.h>, see gh-90904"
+#endif
 
 #include <float.h>                // FLT_MAX
 #include <signal.h>
@@ -26,10 +29,6 @@
 #  include <sys/sysctl.h>         // sysctlbyname()
 #endif
 
-#ifdef bool
-#  error "The public headers should not include <stdbool.h>, see gh-48924"
-#endif
-
 #include "_testcapi/util.h"
 
 
@@ -39,6 +38,7 @@ static struct PyModuleDef _testcapimodule;
 // Module state
 typedef struct {
     PyObject *error; // _testcapi.error object
+    Py_ssize_t list_destroys;
 } testcapistate_t;
 
 static testcapistate_t*
@@ -1415,155 +1415,6 @@ join_temporary_c_thread(PyObject *self, PyObject *Py_UNUSED(ignored))
     Py_RETURN_NONE;
 }
 
-/* marshal */
-
-static PyObject*
-pymarshal_write_long_to_file(PyObject* self, PyObject *args)
-{
-    long value;
-    PyObject *filename;
-    int version;
-    FILE *fp;
-
-    if (!PyArg_ParseTuple(args, "lOi:pymarshal_write_long_to_file",
-                          &value, &filename, &version))
-        return NULL;
-
-    fp = Py_fopen(filename, "wb");
-    if (fp == NULL) {
-        PyErr_SetFromErrno(PyExc_OSError);
-        return NULL;
-    }
-
-    PyMarshal_WriteLongToFile(value, fp, version);
-    assert(!PyErr_Occurred());
-
-    fclose(fp);
-    Py_RETURN_NONE;
-}
-
-static PyObject*
-pymarshal_write_object_to_file(PyObject* self, PyObject *args)
-{
-    PyObject *obj;
-    PyObject *filename;
-    int version;
-    FILE *fp;
-
-    if (!PyArg_ParseTuple(args, "OOi:pymarshal_write_object_to_file",
-                          &obj, &filename, &version))
-        return NULL;
-
-    fp = Py_fopen(filename, "wb");
-    if (fp == NULL) {
-        PyErr_SetFromErrno(PyExc_OSError);
-        return NULL;
-    }
-
-    PyMarshal_WriteObjectToFile(obj, fp, version);
-    assert(!PyErr_Occurred());
-
-    fclose(fp);
-    Py_RETURN_NONE;
-}
-
-static PyObject*
-pymarshal_read_short_from_file(PyObject* self, PyObject *args)
-{
-    int value;
-    long pos;
-    PyObject *filename;
-    FILE *fp;
-
-    if (!PyArg_ParseTuple(args, "O:pymarshal_read_short_from_file", &filename))
-        return NULL;
-
-    fp = Py_fopen(filename, "rb");
-    if (fp == NULL) {
-        PyErr_SetFromErrno(PyExc_OSError);
-        return NULL;
-    }
-
-    value = PyMarshal_ReadShortFromFile(fp);
-    pos = ftell(fp);
-
-    fclose(fp);
-    if (PyErr_Occurred())
-        return NULL;
-    return Py_BuildValue("il", value, pos);
-}
-
-static PyObject*
-pymarshal_read_long_from_file(PyObject* self, PyObject *args)
-{
-    long value, pos;
-    PyObject *filename;
-    FILE *fp;
-
-    if (!PyArg_ParseTuple(args, "O:pymarshal_read_long_from_file", &filename))
-        return NULL;
-
-    fp = Py_fopen(filename, "rb");
-    if (fp == NULL) {
-        PyErr_SetFromErrno(PyExc_OSError);
-        return NULL;
-    }
-
-    value = PyMarshal_ReadLongFromFile(fp);
-    pos = ftell(fp);
-
-    fclose(fp);
-    if (PyErr_Occurred())
-        return NULL;
-    return Py_BuildValue("ll", value, pos);
-}
-
-static PyObject*
-pymarshal_read_last_object_from_file(PyObject* self, PyObject *args)
-{
-    PyObject *filename;
-    if (!PyArg_ParseTuple(args, "O:pymarshal_read_last_object_from_file", &filename))
-        return NULL;
-
-    FILE *fp = Py_fopen(filename, "rb");
-    if (fp == NULL) {
-        PyErr_SetFromErrno(PyExc_OSError);
-        return NULL;
-    }
-
-    PyObject *obj = PyMarshal_ReadLastObjectFromFile(fp);
-    long pos = ftell(fp);
-
-    fclose(fp);
-    if (obj == NULL) {
-        return NULL;
-    }
-    return Py_BuildValue("Nl", obj, pos);
-}
-
-static PyObject*
-pymarshal_read_object_from_file(PyObject* self, PyObject *args)
-{
-    PyObject *filename;
-    if (!PyArg_ParseTuple(args, "O:pymarshal_read_object_from_file", &filename))
-        return NULL;
-
-    FILE *fp = Py_fopen(filename, "rb");
-    if (fp == NULL) {
-        PyErr_SetFromErrno(PyExc_OSError);
-        return NULL;
-    }
-
-    PyObject *obj = PyMarshal_ReadObjectFromFile(fp);
-    long pos = ftell(fp);
-
-    fclose(fp);
-    if (obj == NULL) {
-        return NULL;
-    }
-    return Py_BuildValue("Nl", obj, pos);
-}
-
 static PyObject*
 return_null_without_error(PyObject *self, PyObject *args)
 {
@@ -2194,11 +2045,21 @@ test_macros(PyObject *self, PyObject *Py_UNUSED(args))
     static_assert(1 == 1, "bug");
     Py_BUILD_ASSERT(1 == 1);
 
-
     // Py_MIN(), Py_MAX(), Py_ABS()
     assert(Py_MIN(5, 11) == 5);
     assert(Py_MAX(5, 11) == 11);
     assert(Py_ABS(-5) == 5);
+
+#if ((defined(__GNUC__) || defined(__clang__)) \
+     && defined(_Py_TYPEOF) && !defined(__cplusplus))
+    // When _Py_TYPEOF() is available, arguments are only evaluated once
+    int x = 5, y = 11;
+    assert(Py_MIN(++x, ++y) == 6);
+    x = 5; y = 11;
+    assert(Py_MAX(++x, ++y) == 12);
+    x = -5;
+    assert(Py_ABS(--x) == 6);
+#endif
 
     // Py_STRINGIFY()
     assert(strcmp(Py_STRINGIFY(123), "123") == 0);
@@ -2416,6 +2277,36 @@ test_reftracer(PyObject *ob, PyObject *Py_UNUSED(ignored))
 failed:
     PyRefTracer_SetTracer(current_tracer, current_data);
     return NULL;
+}
+
+static int
+_listdestroytracer(PyObject *obj, PyRefTracerEvent event, void *data)
+{
+    if (event == PyRefTracer_DESTROY && PyList_CheckExact(obj)) {
+        _Py_atomic_add_ssize((Py_ssize_t *)data, 1);
+    }
+    return 0;
+}
+
+static PyObject *
+start_counting_list_destroys(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    testcapistate_t *state = get_testcapi_state(self);
+    _Py_atomic_store_ssize(&state->list_destroys, 0);
+    if (PyRefTracer_SetTracer(_listdestroytracer, &state->list_destroys) != 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+stop_counting_list_destroys(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    if (PyRefTracer_SetTracer(NULL, NULL) != 0) {
+        return NULL;
+    }
+    return PyLong_FromSsize_t(
+        _Py_atomic_load_ssize(&get_testcapi_state(self)->list_destroys));
 }
 
 static PyObject *
@@ -3022,6 +2913,8 @@ static PyMethodDef TestMethods[] = {
     {"test_buildvalue_N",        test_buildvalue_N,              METH_NOARGS},
     {"test_buildvalue_p",       test_buildvalue_p,               METH_NOARGS},
     {"test_reftracer",          test_reftracer,                  METH_NOARGS},
+    {"start_counting_list_destroys", start_counting_list_destroys, METH_NOARGS},
+    {"stop_counting_list_destroys", stop_counting_list_destroys, METH_NOARGS},
     {"_test_thread_state",      test_thread_state,               METH_VARARGS},
     {"gilstate_ensure_release", gilstate_ensure_release,         METH_NOARGS},
 #ifndef MS_WINDOWS
@@ -3046,18 +2939,6 @@ static PyMethodDef TestMethods[] = {
     {"call_in_temporary_c_thread", call_in_temporary_c_thread, METH_VARARGS,
      PyDoc_STR("set_error_class(error_class) -> None")},
     {"join_temporary_c_thread", join_temporary_c_thread, METH_NOARGS},
-    {"pymarshal_write_long_to_file",
-        pymarshal_write_long_to_file, METH_VARARGS},
-    {"pymarshal_write_object_to_file",
-        pymarshal_write_object_to_file, METH_VARARGS},
-    {"pymarshal_read_short_from_file",
-        pymarshal_read_short_from_file, METH_VARARGS},
-    {"pymarshal_read_long_from_file",
-        pymarshal_read_long_from_file, METH_VARARGS},
-    {"pymarshal_read_last_object_from_file",
-        pymarshal_read_last_object_from_file, METH_VARARGS},
-    {"pymarshal_read_object_from_file",
-        pymarshal_read_object_from_file, METH_VARARGS},
     {"return_null_without_error", return_null_without_error, METH_NOARGS},
     {"return_result_with_error", return_result_with_error, METH_NOARGS},
     {"getitem_with_error", getitem_with_error, METH_VARARGS},
@@ -3943,7 +3824,9 @@ _testcapi_exec(PyObject *m)
     if (_PyTestCapi_Init_Weakref(m) < 0) {
         return -1;
     }
-
+    if (_PyTestCapi_Init_Marshal(m) < 0) {
+        return -1;
+    }
     return 0;
 }
 

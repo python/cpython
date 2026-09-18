@@ -1325,10 +1325,41 @@ _io_TextIOWrapper__CHUNK_SIZE_set(PyObject *self, PyObject *value, void *Py_UNUS
 {
     int return_value;
 
+    if (value == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                     "attribute '_CHUNK_SIZE' of '%.100s' objects cannot be deleted",
+                     Py_TYPE(self)->tp_name);
+        return -1;
+    }
     Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _io_TextIOWrapper__CHUNK_SIZE_set_impl((textio *)self, value);
     Py_END_CRITICAL_SECTION();
 
     return return_value;
 }
-/*[clinic end generated code: output=8c571c9dba87d2b1 input=a9049054013a1b77]*/
+
+#if !defined(_io_TextIOWrapper_buffer_DOCSTR)
+#  define _io_TextIOWrapper_buffer_DOCSTR NULL
+#endif
+#if defined(_IO_TEXTIOWRAPPER_BUFFER_GETSETDEF)
+#  undef _IO_TEXTIOWRAPPER_BUFFER_GETSETDEF
+#  define _IO_TEXTIOWRAPPER_BUFFER_GETSETDEF {"buffer", (getter)_io_TextIOWrapper_buffer_get, (setter)_io_TextIOWrapper_buffer_set, _io_TextIOWrapper_buffer_DOCSTR},
+#else
+#  define _IO_TEXTIOWRAPPER_BUFFER_GETSETDEF {"buffer", (getter)_io_TextIOWrapper_buffer_get, NULL, _io_TextIOWrapper_buffer_DOCSTR},
+#endif
+
+static PyObject *
+_io_TextIOWrapper_buffer_get_impl(textio *self);
+
+static PyObject *
+_io_TextIOWrapper_buffer_get(PyObject *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _io_TextIOWrapper_buffer_get_impl((textio *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+/*[clinic end generated code: output=e93032a0691ff0e4 input=a9049054013a1b77]*/

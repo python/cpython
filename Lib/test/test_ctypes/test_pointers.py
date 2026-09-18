@@ -11,6 +11,7 @@ from ctypes import (CDLL, CFUNCTYPE, Structure,
                     c_long, c_ulong, c_longlong, c_ulonglong,
                     c_float, c_double)
 from ctypes import _pointer_type_cache, _pointer_type_cache_fallback
+from test import support
 from test.support import import_helper
 from weakref import WeakSet
 _ctypes_test = import_helper.import_module("_ctypes_test")
@@ -409,10 +410,9 @@ class PointersTestCase(unittest.TestCase):
             pass
 
         func = ctypes.pythonapi.Py_GetVersion
-        func.argtypes = (BadType,)
-
-        with self.assertRaises(ctypes.ArgumentError):
-            func(object())
+        with support.swap_attr(func, 'argtypes', (BadType,)):
+            with self.assertRaises(ctypes.ArgumentError):
+                func(object())
 
 class PointerTypeCacheTestCase(unittest.TestCase):
     # dummy tests to check warnings and base behavior

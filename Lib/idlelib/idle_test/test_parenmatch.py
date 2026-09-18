@@ -17,7 +17,7 @@ class DummyEditwin:
         self.text = text
         self.indentwidth = 8
         self.tabwidth = 8
-        self.prompt_last_line = '>>>' # Currently not used by parenmatch.
+        self.is_shell = True
 
 
 class ParenMatchTest(unittest.TestCase):

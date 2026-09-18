@@ -1,0 +1,3 @@
+Fix ``SyntaxError.offset`` and ``SyntaxError.end_offset`` for the
+"Non-UTF-8 code starting with ..." error when a non-ASCII character precedes
+the invalid byte on the same line. Patch by Shamil Abdulaev.

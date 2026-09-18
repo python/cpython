@@ -1,0 +1,3 @@
+The test runner (regrtest) now restores the default SIGINT handler if it
+was inherited as ignored, so the test suite no longer hangs when run as
+a shell background job.
