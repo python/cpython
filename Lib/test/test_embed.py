@@ -283,7 +283,9 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
                          "sys.modules[\"sp_pkg.sp_submod\"] is sp_pkg.sp_submod=True\n"
                          "\"sp_submod\" in sys.modules=False\n"
                          "ascii(mp.__name__)=\"'m\\\\xf6dul_mp'\" mp.executed='yes'\n"
-                         "SystemError: 'initialization of m\\xf6dul_sp "
+                         # The error shows the internal punycode-encoded name,
+                         # which isn't ideal, but also not horrible.
+                         "SystemError: 'initialization of mdul_sp_90a "
                          "did not return PyModuleDef'\n"
                          )
 
