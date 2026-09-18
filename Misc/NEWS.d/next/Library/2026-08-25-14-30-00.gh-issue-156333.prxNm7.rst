@@ -1,0 +1,7 @@
+Fix :class:`asyncio.ProactorEventLoop` spinning at 100% CPU forever when the
+event loop's self-pipe socketpair reaches EOF.  The loopback connection can
+be torn down underneath the running process by a system power or session
+state change and by other unlogged events, and nothing on the sockets
+themselves reports the teardown.  The loop now detects the EOF, rebuilds the
+self-pipe, and re-arms the read on the new socket instead of re-arming a
+read that completes immediately.
