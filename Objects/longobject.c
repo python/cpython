@@ -113,9 +113,10 @@ maybe_small_long(PyLongObject *v)
  */
 #define HUGE_EXP_CUTOFF 60
 
-#define SIGCHECK(PyTryBlock)                    \
-    do {                                        \
-        if (PyErr_CheckSignals()) PyTryBlock    \
+/* Check for signals on every 64th iteration `i` of a loop. */
+#define SIGCHECK(i, PyTryBlock)                                     \
+    do {                                                            \
+        if ((((i) & 63) == 63) && PyErr_CheckSignals()) PyTryBlock  \
     } while(0)
 
 /* Normalize (remove leading zeros from) an int object.
@@ -2186,7 +2187,7 @@ long_to_decimal_string_internal(PyObject *aa,
             hi /= _PyLong_DECIMAL_BASE;
         }
         /* check for keyboard interrupt */
-        SIGCHECK({
+        SIGCHECK(i, {
                 Py_DECREF(scratch);
                 return -1;
             });
@@ -3381,7 +3382,7 @@ x_divrem(PyLongObject *v1, PyLongObject *w1, PyLongObject **prem)
         /* inner loop: divide vk[0:size_w+1] by w0[0:size_w], giving
            single-digit quotient q, remainder in vk[0:size_w]. */
 
-        SIGCHECK({
+        SIGCHECK(vk - v0, {
                 Py_DECREF(a);
                 Py_DECREF(w);
                 Py_DECREF(v);
@@ -3954,7 +3955,7 @@ x_mul(PyLongObject *a, PyLongObject *b)
             digit *pz = z->long_value.ob_digit + (i << 1);
             digit *pa = a->long_value.ob_digit + i + 1;
 
-            SIGCHECK({
+            SIGCHECK(i, {
                     Py_DECREF(z);
                     return NULL;
                 });
@@ -4006,7 +4007,7 @@ x_mul(PyLongObject *a, PyLongObject *b)
             digit *pb = b->long_value.ob_digit;
             digit *pbend = b->long_value.ob_digit + size_b;
 
-            SIGCHECK({
+            SIGCHECK(i, {
                     Py_DECREF(z);
                     return NULL;
                 });
