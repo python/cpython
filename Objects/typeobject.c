@@ -2931,17 +2931,22 @@ _PyObject_LookupSpecial(PyObject *self, PyObject *attr)
     return res;
 }
 
-// Lookup the method name `attr` on `self`. On entry, `method_and_self[0]`
-// is null and `method_and_self[1]` is `self`. On exit, `method_and_self[0]`
-// is the method object and `method_and_self[1]` is `self` if the method is
-// not bound.
+// Lookup the method name `attr` on `*self`. On entry, `*method` is null.
+// On exit, `*method` is the method object and `*self` is cleared if the
+// method is bound.
 // Return 1 on success, -1 on error, and 0 if the method is missing.
+//
+// `method` must point to a location that the garbage collector can see,
+// such as the `ref` field of a `_PyCStackRef` or a slot on the interpreter
+// stack. A descriptor may be invoked while `*method` holds the only
+// reference to the method object, and that can trigger a collection.
 int
-_PyObject_LookupSpecialMethod(PyObject *attr, _PyStackRef *method_and_self)
+_PyObject_LookupSpecialMethod(PyObject *attr, _PyStackRef *method,
+                              _PyStackRef *self)
 {
-    PyObject *self = PyStackRef_AsPyObjectBorrow(method_and_self[1]);
-    _PyType_LookupStackRefAndVersion(Py_TYPE(self), attr, &method_and_self[0]);
-    PyObject *method_o = PyStackRef_AsPyObjectBorrow(method_and_self[0]);
+    PyObject *self_o = PyStackRef_AsPyObjectBorrow(*self);
+    _PyType_LookupStackRefAndVersion(Py_TYPE(self_o), attr, method);
+    PyObject *method_o = PyStackRef_AsPyObjectBorrow(*method);
     if (method_o == NULL) {
         return 0;
     }
@@ -2953,14 +2958,14 @@ _PyObject_LookupSpecialMethod(PyObject *attr, _PyStackRef *method_and_self)
 
     descrgetfunc f = Py_TYPE(method_o)->tp_descr_get;
     if (f != NULL) {
-        PyObject *func = f(method_o, self, (PyObject *)(Py_TYPE(self)));
+        PyObject *func = f(method_o, self_o, (PyObject *)(Py_TYPE(self_o)));
         if (func == NULL) {
             return -1;
         }
-        PyStackRef_CLEAR(method_and_self[0]); // clear method
-        method_and_self[0] = PyStackRef_FromPyObjectSteal(func);
+        PyStackRef_CLEAR(*method); // clear method
+        *method = PyStackRef_FromPyObjectSteal(func);
     }
-    PyStackRef_CLEAR(method_and_self[1]); // clear self
+    PyStackRef_CLEAR(*self); // clear self
     return 1;
 }
 

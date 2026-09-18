@@ -4141,7 +4141,8 @@ dummy_func(
 
         op(_LOAD_SPECIAL, (method_and_self[2] -- method_and_self[2])) {
             PyObject *name = _Py_SpecialMethods[oparg].name;
-            int err = _PyObject_LookupSpecialMethod(name, method_and_self);
+            int err = _PyObject_LookupSpecialMethod(name, &method_and_self[0],
+                                                    &method_and_self[1]);
             if (err <= 0) {
                 if (err == 0) {
                     PyObject *owner = PyStackRef_AsPyObjectBorrow(method_and_self[1]);

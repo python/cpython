@@ -2642,16 +2642,13 @@ call_special_method(PyThreadState *tstate, PyObject *cls, PyObject *name,
 {
     _PyCStackRef cref;
     _PyThreadState_PushCStackRef(tstate, &cref);
-    _PyStackRef method_and_self[2] = {
-        PyStackRef_NULL, PyStackRef_FromPyObjectBorrow(cls)
-    };
-    int found = _PyObject_LookupSpecialMethod(name, method_and_self);
-    cref.ref = method_and_self[0];
+    _PyStackRef self = PyStackRef_FromPyObjectBorrow(cls);
+    int found = _PyObject_LookupSpecialMethod(name, &cref.ref, &self);
     if (found > 0) {
         *res = NULL;
         if (!_Py_EnterRecursiveCallTstate(tstate, where)) {
             PyObject *method = PyStackRef_AsPyObjectBorrow(cref.ref);
-            PyObject *args[2] = {PyStackRef_AsPyObjectBorrow(method_and_self[1]), arg};
+            PyObject *args[2] = {PyStackRef_AsPyObjectBorrow(self), arg};
             if (args[0] != NULL) {
                 /* Unbound method: prepend self. */
                 *res = PyObject_Vectorcall(method, args, 2, NULL);
@@ -2665,7 +2662,7 @@ call_special_method(PyThreadState *tstate, PyObject *cls, PyObject *name,
             found = -1;
         }
     }
-    PyStackRef_XCLOSE(method_and_self[1]);
+    PyStackRef_XCLOSE(self);
     _PyThreadState_PopCStackRef(tstate, &cref);
     return found;
 }
