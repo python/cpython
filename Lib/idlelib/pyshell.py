@@ -1613,8 +1613,8 @@ def main():
     root.withdraw()
     fix_scaling(root)
 
-    # Warn about configuration files that could not be parsed (gh-66172).
-    config_error = idleConf.file_load_error_message()
+    # Warn about configuration errors (gh-66172, gh-85604).
+    config_error = idleConf.config_error_message(root)
     if config_error:
         messagebox.showwarning('IDLE Configuration Warning', config_error,
                                parent=root)
