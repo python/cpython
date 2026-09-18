@@ -1,1 +1,2 @@
-IDLE keyboard shortcuts with letters now work when Caps Lock is on.
+Make IDLE keyboard shortcuts with ascii letters work when Caps Lock is on even when only one
+of the upper and lowercase versions are defined. 
