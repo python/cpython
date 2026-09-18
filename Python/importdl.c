@@ -103,6 +103,7 @@ _Py_ext_module_loader_info_init(struct _Py_ext_module_loader_info *p_info,
     };
 
     if (name == NULL) {
+        assert(spec != NULL);
         info.name = PyObject_GetAttrString(spec, "name");
         if (info.name == NULL) {
             goto error;
@@ -132,6 +133,7 @@ _Py_ext_module_loader_info_init(struct _Py_ext_module_loader_info *p_info,
     }
 
     if (origin != _Py_ext_module_origin_BUILTIN) {
+        assert(spec != NULL);
         info.filename = PyObject_GetAttrString(spec, "origin");
         if (info.filename == NULL) {
             Py_DECREF(name);
