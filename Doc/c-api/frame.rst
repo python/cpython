@@ -256,4 +256,4 @@ Unless using :pep:`523`, you will not need this.
    :exc:`IndexError` set if it is out of range, or ``NULL`` without an exception
    set if the slot is unset or hidden.
 
-   .. versionadded:: 3.16
+   .. versionadded:: next
