@@ -540,13 +540,28 @@ def _flush_std_streams():
 # Start a program with only specified fds kept open
 #
 
-def spawnv_passfds(path, args, passfds):
+def _encode_spawn_env(env):
+    """Copy a mapping to immutable exec environment entries.
+
+    The caller must not mutate the mapping while this copy is made.
+    """
+    entries = []
+    for key, value in env.items():
+        key = os.fsencode(key)
+        value = os.fsencode(value)
+        if not key or b'=' in key or b'\0' in key or b'\0' in value:
+            raise ValueError('illegal environment variable name or value')
+        entries.append(key + b'=' + value)
+    return tuple(entries)
+
+
+def spawnv_passfds(path, args, passfds, env=None):
     import _posixsubprocess
     passfds = tuple(sorted(map(int, passfds)))
     errpipe_read, errpipe_write = os.pipe()
     try:
         return _posixsubprocess.fork_exec(
-            args, [path], True, passfds, None, None,
+            args, [path], True, passfds, None, env,
             -1, -1, -1, -1, -1, -1, errpipe_read, errpipe_write,
             False, False, -1, None, None, None, -1, None)
     finally:

@@ -213,6 +213,11 @@ def prepare(data):
     '''
     Try to get current process ready to unpickle process object
     '''
+    if 'process_env' in data:
+        # Resource tracking can start while importing the main module or
+        # unpickling the process, before _bootstrap installs current_process.
+        process.current_process()._env = data['process_env']
+
     if 'name' in data:
         process.current_process().name = data['name']
 
