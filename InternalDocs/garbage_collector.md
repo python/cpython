@@ -448,7 +448,7 @@ collections (that is, collections of the young and middle generations) will alwa
 examine roughly the same number of objects (determined by the aforementioned
 thresholds) the cost of a full collection is proportional to the total
 number of long-lived objects, which is virtually unbounded.  Indeed, it has
-been remarked that doing a full collection every <constant number> of object
+been remarked that doing a full collection after a fixed number of object
 creations entails a dramatic performance degradation in workloads which consist
 of creating and storing lots of long-lived objects (for example, building a large list
 of GC-tracked objects would show quadratic performance, instead of linear as
@@ -533,7 +533,7 @@ into the cache.  This is the mechanism that provides the window.
 
 When performing the transitive closure of "alive" status, the set of objects
 yet to visit are stored in one of two places.  First, they can be stored in the
-prefech buffer. Second, there is a LIFO stack, of unlimited size.  When object
+prefetch buffer. Second, there is a LIFO stack, of unlimited size.  When object
 references are found using `tp_traverse`, they are enqueued in the buffer if
 it is not full, otherwise they are pushed to the stack.
 
@@ -616,7 +616,7 @@ This optimization, as of March 2025, was tuned on the following hardware
 platforms:
 
 - Apple M3 Pro, 32 GB RAM, 192+128 KB L1, 16 MB L2, compiled with Clang 19
-- AMD Ryzen 5 7600X, 64 GB RAM, 384 KB L1, 6 GB L2, 32 MB L3, compiled with GCC 12.2.0
+- AMD Ryzen 5 7600X, 64 GB RAM, 384 KB L1, 6 MB L2, 32 MB L3, compiled with GCC 12.2.0
 
 Benchmarking the effectiveness of this optimization is particularly difficult.
 It depends both on hardware details, like CPU cache sizes and memory latencies,
