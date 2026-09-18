@@ -2522,7 +2522,6 @@ _PyObject_FiniState(PyInterpreterState *interp)
 
 extern PyTypeObject _PyACallIter_Type;
 extern PyTypeObject _PyACallIterAwaitable_Type;
-extern PyTypeObject _PyAnextAwaitable_Type;
 extern PyTypeObject _PyLegacyEventHandler_Type;
 extern PyTypeObject _PyLineIterator;
 extern PyTypeObject _PyMemoryIter_Type;
@@ -2617,7 +2616,6 @@ static PyTypeObject* static_types[_Py_NUM_MANAGED_PREINITIALIZED_TYPES] = {
     &Py_GenericAliasType,
     &_PyACallIter_Type,
     &_PyACallIterAwaitable_Type,
-    &_PyAnextAwaitable_Type,
     &_PyAsyncGenASend_Type,
     &_PyAsyncGenAThrow_Type,
     &_PyAsyncGenWrappedValue_Type,

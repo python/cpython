@@ -1797,6 +1797,9 @@ object.
    The instance must be destroyed by :c:func:`PyUnicodeWriter_Finish` on
    success, or :c:func:`PyUnicodeWriter_Discard` on error.
 
+   The API is **not thread safe**. To share a writer with multiple threads, a
+   critical section or a lock is needed.
+
 .. c:function:: PyUnicodeWriter* PyUnicodeWriter_Create(Py_ssize_t length)
 
    Create a Unicode writer instance.
