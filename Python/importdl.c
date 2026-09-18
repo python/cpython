@@ -121,13 +121,6 @@ _Py_ext_module_loader_info_init(struct _Py_ext_module_loader_info *p_info,
         goto error;
     }
 
-    if (PyUnicode_IS_ASCII(info.name)) {
-        info.hook_prefixes = &ascii_only_prefixes;
-    }
-    else {
-        info.hook_prefixes = &nonascii_prefixes;
-    }
-
     info.name_encoded = get_encoded_name(info.name, &info.hook_prefixes);
     if (info.name_encoded == NULL) {
         goto error;
