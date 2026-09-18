@@ -1983,6 +1983,17 @@ class PyUnicodeWriterTest(unittest.TestCase):
         writer.write_substring("abc", 1, 1)
         self.assertEqual(writer.finish(), '')
 
+    def test_singletons(self):
+        writer = self.create_writer(5)
+        self.assertIs(writer.finish(), '')
+
+        for ch in range(256):
+            with self.subTest(ch=ch):
+                ch = chr(ch)
+                writer = self.create_writer(0)
+                writer.write_substring(ch + 'xxx', 0, 1)
+                self.assertIs(writer.finish(), ch)
+
     @unittest.skipUnless(support.Py_DEBUG, 'need debug build (Py_DEBUG)')
     def test_detect_overflow(self):
         # Test detection of buffer overflow
