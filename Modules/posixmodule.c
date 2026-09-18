@@ -13894,7 +13894,7 @@ os_unsetenv_impl(PyObject *module, PyObject *name)
 #endif /* !MS_WINDOWS */
 
 static char *empty_environ[] = { NULL };
-/*NR8889*/
+
 #ifdef HAVE_CLEARENV
 /*[clinic input]
 os._clearenv
