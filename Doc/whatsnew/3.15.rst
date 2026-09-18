@@ -110,7 +110,7 @@ Interpreter improvements:
 * :pep:`814`: :ref:`Add frozendict built-in type
   <whatsnew315-frozendict>`
 * :pep:`829`: :ref:`Package startup configuration files <whatsnew315-startup-files>`
-* :ref:`The JIT compiler has been significantly upgraded <whatsnew315-jit>`
+* :ref:`The experimental JIT compiler has been significantly upgraded <whatsnew315-jit>`
 * :ref:`Improved error messages <whatsnew315-improved-error-messages>`
 
 Significant improvements in the standard library:
@@ -2025,8 +2025,8 @@ csv
 
 .. _whatsnew315-jit:
 
-Upgraded JIT compiler
----------------------
+Upgraded experimental JIT compiler
+----------------------------------
 
 Results from the `pyperformance <https://github.com/python/pyperformance>`__
 benchmark suite report
