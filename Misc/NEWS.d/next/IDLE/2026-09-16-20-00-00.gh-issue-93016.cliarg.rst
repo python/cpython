@@ -1,0 +1,3 @@
+Fix parsing of command line arguments in the IDLE "Run... Customized" dialog
+on Windows: backslashes are no longer treated as escape characters. Fix also
+display of the previous arguments in the dialog.
