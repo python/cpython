@@ -88,7 +88,7 @@ def main():
     names.sort()
 
     if not names:
-        print("OK: the Python C API only defines macros with name "
+        print("OK: the Python C API only defines macros with names "
               f"starting with Py (ignoring {len(ignored)} macros)")
         sys.exit(0)
 
