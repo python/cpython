@@ -5599,6 +5599,20 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_FOR_ITER_GEN_FRAME", uops)
         self.assertIn("_SEND_VIRTUAL_TIER_TWO", uops)
 
+    def test_send_virtual_exhausted(self):
+        # gh-155823: warm up on a non-empty list, then take the exhausted exit.
+        def gen(x):
+            yield from x
+        def testfunc(n, x):
+            total = 0
+            for _ in range(n):
+                for v in gen(x):
+                    total += v
+            return total
+
+        testfunc(TIER2_THRESHOLD * 10, [1])
+        self.assertEqual(testfunc(1000, []), 0)
+
     def test_binary_op_subscr_init_frame(self):
         class B:
             def __getitem__(self, other):
