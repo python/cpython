@@ -3045,6 +3045,94 @@ sock.connect(('localhost', {port}))
         return frames
 
     @skip_if_not_supported
+    @unittest.skipIf(sys._is_gil_enabled(), "Requires free-threading")
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Requires process_vm_readv",
+    )
+    def test_tlbc_cache_refresh_after_growth(self):
+        # All threads must exist before the first sample: allocating a new
+        # thread index would invalidate the cache and hide the growth bug.
+        script_body = """\
+            import threading
+            import sys
+
+            if sys._is_gil_enabled() or sys._xoptions.get("tlbc") == "0":
+                sock.sendall(b"skip-ready")
+                sys.exit()
+
+            stop = threading.Event()
+            gates = [threading.Event() for _ in range(18)]
+            ready = [threading.Event() for _ in range(18)]
+
+            def leaf():
+                sock.sendall(b"leaf")
+                stop.wait()
+
+            def worker(index):
+                ready[index].set()
+                gates[index].wait()
+                leaf()
+
+            for index in range(18):
+                threading.Thread(target=worker, args=(index,), daemon=True).start()
+                ready[index].wait()
+            sock.sendall(f"{leaf.__code__.co_firstlineno + 2}:ready".encode())
+            sock.recv(1)
+            gates[0].set()
+            sock.recv(1)
+            gates[-1].set()
+            sock.recv(1)
+            """
+
+        for cache_frames in (False, True):
+            with self.subTest(cache_frames=cache_frames):
+                with self._target_process(script_body) as (
+                    process, client_socket, make_unwinder
+                ):
+                    signal = _wait_for_signal(client_socket, b"ready")
+                    if b"skip" in signal:
+                        self.skipTest("Target requires free-threading and TLBC")
+                    expected_lineno = int(signal.split(b":", 1)[0])
+                    unwinder = make_unwinder(cache_frames=cache_frames)
+                    client_socket.sendall(b"1")
+                    _wait_for_signal(client_socket, b"leaf")
+                    # The signal can arrive before leaf reaches stop.wait().
+                    # Wait for that known line in both sampling phases.
+                    initial_leaf = None
+                    for _ in range(MAX_TRIES):
+                        frames = self._get_frames_with_retry(unwinder, {"leaf"})
+                        if frames:
+                            initial_leaf = next(f for f in frames if f.funcname == "leaf")
+                            if initial_leaf.location.lineno == expected_lineno:
+                                break
+                        time.sleep(RETRY_DELAY)
+                    self.assertIsNotNone(initial_leaf, "Failed to cache initial TLBC array")
+                    self.assertEqual(initial_leaf.location.lineno, expected_lineno)
+
+                    client_socket.sendall(b"2")
+                    _wait_for_signal(client_socket, b"leaf")
+                    leaves = []
+                    for _ in range(MAX_TRIES):
+                        with contextlib.suppress(*TRANSIENT_ERRORS):
+                            traces = unwinder.get_stack_trace()
+                            leaves = [
+                                frame
+                                for interp in traces
+                                for thread in interp.threads
+                                for frame in thread.frame_info
+                                if frame.funcname == "leaf"
+                            ]
+                            if (len(leaves) == 2 and
+                                all(f.location.lineno == expected_lineno for f in leaves)):
+                                break
+                        time.sleep(RETRY_DELAY)
+                    self.assertEqual(len(leaves), 2,
+                                     "Original unwinder must sample both workers after growth")
+                    self.assertEqual([f.location.lineno for f in leaves],
+                                     [expected_lineno] * 2)
+
+    @skip_if_not_supported
     @unittest.skipIf(
         sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
         "Test only runs on Linux with process_vm_readv support",
