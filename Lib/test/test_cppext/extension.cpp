@@ -256,6 +256,85 @@ test_datetime(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     Py_RETURN_NONE;
 }
 
+// gh-157649: Refcount temporaries must copy the old pointer, not bind to
+// an array item or reference that the macro is about to overwrite.
+static int
+test_refcount_lvalues(void)
+{
+    PyObject *old_obj = PyList_New(0);
+    if (old_obj == _Py_NULL) {
+        return -1;
+    }
+    PyObject *new_obj = PyList_New(0);
+    if (new_obj == _Py_NULL) {
+        Py_DECREF(old_obj);
+        return -1;
+    }
+    PyObject *slots[2] = {Py_NewRef(old_obj), _Py_NULL};
+
+#ifndef Py_LIMITED_API
+    Py_SETREF(slots[0], Py_NewRef(new_obj));
+    assert(slots[0] == new_obj);
+    assert(Py_REFCNT(old_obj) == 1);
+    assert(Py_REFCNT(new_obj) == 2);
+
+    Py_XSETREF(slots[0], Py_NewRef(old_obj));
+    assert(slots[0] == old_obj);
+    assert(Py_REFCNT(old_obj) == 2);
+    assert(Py_REFCNT(new_obj) == 1);
+#endif
+
+    int index = 0;
+    Py_CLEAR(slots[index++]);
+    assert(index == 1);
+    assert(slots[0] == _Py_NULL);
+    assert(Py_REFCNT(old_obj) == 1);
+    Py_CLEAR(slots[0]);
+
+    slots[0] = Py_NewRef(old_obj);
+    PyObject *&slot = slots[0];
+    Py_CLEAR(slot);
+    assert(slots[0] == _Py_NULL);
+    assert(Py_REFCNT(old_obj) == 1);
+
+#ifndef Py_LIMITED_API
+    slot = Py_NewRef(old_obj);
+    Py_SETREF(slot, Py_NewRef(new_obj));
+    assert(slots[0] == new_obj);
+    assert(Py_REFCNT(old_obj) == 1);
+    assert(Py_REFCNT(new_obj) == 2);
+
+    Py_XSETREF((slot), Py_NewRef(old_obj));
+    assert(slots[0] == old_obj);
+    assert(Py_REFCNT(old_obj) == 2);
+    assert(Py_REFCNT(new_obj) == 1);
+    Py_CLEAR(slot);
+
+    // Both arguments must be evaluated once, including a NULL destination.
+    index = 0;
+    Py_XSETREF(slots[index++], Py_NewRef(new_obj));
+    assert(index == 1);
+    assert(slots[0] == new_obj);
+    assert(Py_REFCNT(new_obj) == 2);
+    Py_CLEAR(slots[0]);
+
+    // Preserve support for pointers to concrete object types.
+    PyListObject *lists[1] = {(PyListObject *)Py_NewRef(old_obj)};
+    Py_SETREF(lists[0], (PyListObject *)Py_NewRef(new_obj));
+    assert((PyObject *)lists[0] == new_obj);
+    assert(Py_REFCNT(old_obj) == 1);
+    assert(Py_REFCNT(new_obj) == 2);
+    Py_CLEAR(lists[0]);
+    assert(lists[0] == _Py_NULL);
+#endif
+
+    assert(Py_REFCNT(old_obj) == 1);
+    assert(Py_REFCNT(new_obj) == 1);
+    Py_DECREF(old_obj);
+    Py_DECREF(new_obj);
+    return 0;
+}
+
 static PyMethodDef _testcppext_methods[] = {
     {"add", _testcppext_add, METH_VARARGS, _testcppext_add_doc},
     {"test_api_casts", test_api_casts, METH_NOARGS, _Py_NULL},
@@ -297,6 +376,10 @@ _testcppext_exec(PyObject *module)
     result = PyObject_CallMethod(module, "test_datetime", "");
     if (!result) return -1;
     Py_DECREF(result);
+
+    if (test_refcount_lvalues() < 0) {
+        return -1;
+    }
 
     // test Py_BUILD_ASSERT() and Py_BUILD_ASSERT_EXPR()
     Py_BUILD_ASSERT(sizeof(int) == sizeof(unsigned int));
