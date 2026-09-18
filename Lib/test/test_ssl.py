@@ -469,6 +469,8 @@ class BasicSocketTests(unittest.TestCase):
         if v:
             data = ssl.RAND_bytes(16)
             self.assertEqual(len(data), 16)
+
+            self.assertEqual(ssl.RAND_bytes(0), b'')
         else:
             self.assertRaises(ssl.SSLError, ssl.RAND_bytes, 16)
 
