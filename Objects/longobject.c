@@ -4018,7 +4018,9 @@ x_mul(PyLongObject *a, PyLongObject *b)
                 carry >>= PyLong_SHIFT;
                 assert(carry <= PyLong_MASK);
             }
+            /* The final carry fits in a digit, so no masking is needed. */
             *pz = (digit)carry;
+            assert((carry >> PyLong_SHIFT) == 0);
         }
         for (i = 1; i < size_a; ++i) {
             twodigits carry = 0;
@@ -4038,6 +4040,7 @@ x_mul(PyLongObject *a, PyLongObject *b)
                 carry >>= PyLong_SHIFT;
                 assert(carry <= PyLong_MASK);
             }
+            /* The final carry fits in a digit, so no masking is needed. */
             *pz = (digit)carry;
             assert((carry >> PyLong_SHIFT) == 0);
         }
