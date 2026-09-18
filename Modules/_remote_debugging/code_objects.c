@@ -453,23 +453,20 @@ parse_code_object(RemoteUnwinderObject *unwinder,
         tlbc_entry = get_tlbc_cache_entry(unwinder, real_address, unwinder->tlbc_generation);
     }
 
+    if (tlbc_entry && ctx->tlbc_index >= tlbc_entry->tlbc_array_size) {
+        TLBCCacheEntry *old = _Py_hashtable_steal(unwinder->tlbc_cache, (void *)real_address);
+        if (old != NULL) {
+            tlbc_cache_entry_destroy(old);
+        }
+        if (!cache_tlbc_array(unwinder, real_address, real_address + unwinder->debug_offsets.code_object.co_tlbc,
+                                unwinder->tlbc_generation, true)) {
+            goto error;
+        }
+        tlbc_entry = get_tlbc_cache_entry(unwinder, real_address, unwinder->tlbc_generation);
+    }
+
     // Validate tlbc_index and check TLBC cache
     if (tlbc_entry) {
-        if (ctx->tlbc_index >= tlbc_entry->tlbc_array_size) {
-            TLBCCacheEntry *old = _Py_hashtable_steal(unwinder->tlbc_cache, (void *)real_address);
-            if (old != NULL) {
-                tlbc_cache_entry_destroy(old);
-            }
-            if (!cache_tlbc_array(unwinder, real_address, real_address + unwinder->debug_offsets.code_object.co_tlbc,
-                                  unwinder->tlbc_generation, true)) {
-                goto error;
-            }
-            tlbc_entry = get_tlbc_cache_entry(unwinder, real_address, unwinder->tlbc_generation);
-            if (tlbc_entry == NULL) {
-                PyErr_SetString(PyExc_RuntimeError, "TLBC cache entry is missing after refresh");
-                goto error;
-            }
-        }
         // Validate index bounds (also catches negative values since tlbc_index is signed)
         if (ctx->tlbc_index < 0 || ctx->tlbc_index >= tlbc_entry->tlbc_array_size) {
             PyErr_Format(PyExc_RuntimeError,
