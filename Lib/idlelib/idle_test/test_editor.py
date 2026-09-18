@@ -37,10 +37,14 @@ class EditorWindowTest(unittest.TestCase):
         e = Editor(root=self.root)
         try:
             e.apply_bindings({'<<spam>>': ('<Control-Key-s>', '<Key-F1>'),
-                              '<<eggs>>': ('<Control-Key-x><Alt-Shift-Key-S>',)})
+                              '<<eggs>>': ('<Control-Key-x><Alt-Shift-Key-S>',),
+                              '<<ham>>': ('<Control-Key-h>', '<Control-Key-H>')})
             self.assertEqual(set(e.text.event_info('<<spam>>')),
                              {'<Control-KeyPress-s>', '<Control-KeyPress-S>',
                               '<KeyPress-F1>'})
+            # Existing variants are not added again.
+            self.assertEqual(e.text.event_info('<<ham>>'),
+                             ('<Control-KeyPress-h>', '<Control-KeyPress-H>'))
             self.assertEqual(set(e.text.event_info('<<eggs>>')),
                              {'<Control-Key-x><Shift-Alt-Key-S>',
                               '<Control-Key-X><Shift-Alt-Key-s>'})
