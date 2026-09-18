@@ -371,10 +371,22 @@ CThunkObject *_ctypes_alloc_callback(ctypes_state *st,
             goto error;
         }
 
-        if (info == NULL || info->setfunc == NULL) {
-          PyErr_SetString(PyExc_TypeError,
-                          "invalid result type for callback function");
-          goto error;
+        if (info == NULL) {
+            PyErr_SetString(PyExc_TypeError,
+                            "invalid result type for callback function");
+            goto error;
+        }
+        /* gh-49960: structs and unions have no setfunc (that is reserved for
+           "simple" types), but can still be returned by value. Leaving
+           p->setfunc as NULL signals the struct-return path in
+           _CallPythonObject. */
+        if (info->setfunc == NULL
+            && !PyCStructTypeObject_Check(st, restype)
+            && !PyObject_TypeCheck(restype, st->UnionType_Type))
+        {
+            PyErr_SetString(PyExc_TypeError,
+                            "invalid result type for callback function");
+            goto error;
         }
         p->setfunc = info->setfunc;
         p->ffi_restype = &info->ffi_type_pointer;
