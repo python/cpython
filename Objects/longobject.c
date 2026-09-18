@@ -5359,6 +5359,12 @@ long_rshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
     if (z == NULL) {
         return NULL;
     }
+    if (!a_negative) {
+        /* A plain shift; only negative values need the rounding below. */
+        v_rshift(z->long_value.ob_digit, a->long_value.ob_digit + wordshift,
+                 newsize, remshift);
+        return (PyObject *)maybe_small_long(long_normalize(z));
+    }
     hishift = PyLong_SHIFT - remshift;
 
     accum = a->long_value.ob_digit[wordshift];
@@ -5456,8 +5462,8 @@ static PyObject *
 long_lshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
 {
     PyLongObject *z = NULL;
-    Py_ssize_t oldsize, newsize, i, j;
-    twodigits accum;
+    Py_ssize_t oldsize, newsize, i;
+    digit carry;
 
     if (wordshift == 0 && _PyLong_IsCompact(a)) {
         stwodigits m = medium_value(a);
@@ -5479,16 +5485,12 @@ long_lshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
     }
     for (i = 0; i < wordshift; i++)
         z->long_value.ob_digit[i] = 0;
-    accum = 0;
-    for (j = 0; j < oldsize; i++, j++) {
-        accum |= (twodigits)a->long_value.ob_digit[j] << remshift;
-        z->long_value.ob_digit[i] = (digit)(accum & PyLong_MASK);
-        accum >>= PyLong_SHIFT;
-    }
+    carry = v_lshift(z->long_value.ob_digit + wordshift,
+                     a->long_value.ob_digit, oldsize, remshift);
     if (remshift)
-        z->long_value.ob_digit[newsize-1] = (digit)accum;
+        z->long_value.ob_digit[newsize-1] = carry;
     else
-        assert(!accum);
+        assert(!carry);
     z = long_normalize(z);
     return (PyObject *) maybe_small_long(z);
 }
