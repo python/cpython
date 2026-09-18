@@ -2220,6 +2220,7 @@ long_to_decimal_string_internal(PyObject *aa,
             Py_DECREF(scratch);
             return -1;
         }
+        assert(_PyUnicodeWriter_CanWrite(writer));
     }
     else if (bytes_writer) {
         *bytes_str = PyBytesWriter_GrowAndUpdatePointer(bytes_writer, strlen,
@@ -2390,8 +2391,10 @@ long_format_binary(PyObject *aa, int base, int alternate,
     }
 
     if (writer) {
-        if (_PyUnicodeWriter_Prepare(writer, sz, 'x') == -1)
+        if (_PyUnicodeWriter_Prepare(writer, sz, 'x') == -1) {
             return -1;
+        }
+        assert(_PyUnicodeWriter_CanWrite(writer));
     }
     else if (bytes_writer) {
         *bytes_str = PyBytesWriter_GrowAndUpdatePointer(bytes_writer, sz,
