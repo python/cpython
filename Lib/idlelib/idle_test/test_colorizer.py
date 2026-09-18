@@ -52,6 +52,8 @@ source = textwrap.dedent("""\
     '''
     case _:'''
     "match x:"
+    type Point = tuple[float, float]
+    type = type(1)
     """)
 
 
@@ -404,6 +406,8 @@ class ColorDelegatorTest(unittest.TestCase):
                     ('28.25', ('STRING',)), ('28.38', ('STRING',)),
                     ('30.0', ('STRING',)),
                     ('31.1', ('STRING',)),
+                    ('55.0', ('KEYWORD',)), ('55.4', ()), ('55.13', ('BUILTIN',)), ('55.19', ('BUILTIN',)),
+                    ('56.0', ('BUILTIN',)), ('56.7', ('BUILTIN',)),
                     # SYNC at the end of every line.
                     ('1.55', ('SYNC',)), ('2.50', ('SYNC',)), ('3.34', ('SYNC',)),
                    )
