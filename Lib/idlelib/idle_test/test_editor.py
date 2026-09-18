@@ -36,8 +36,8 @@ class EditorWindowTest(unittest.TestCase):
         # sequences are bound with both cases.
         e = Editor(root=self.root)
         try:
-            e.apply_bindings({'<<spam>>': ['<Control-Key-s>', '<Key-F1>'],
-                              '<<eggs>>': ['<Control-Key-x><Alt-Shift-Key-S>']})
+            e.apply_bindings({'<<spam>>': ('<Control-Key-s>', '<Key-F1>'),
+                              '<<eggs>>': ('<Control-Key-x><Alt-Shift-Key-S>',)})
             self.assertEqual(set(e.text.event_info('<<spam>>')),
                              {'<Control-KeyPress-s>', '<Control-KeyPress-S>',
                               '<KeyPress-F1>'})

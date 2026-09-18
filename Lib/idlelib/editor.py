@@ -1194,7 +1194,7 @@ class EditorWindow:
                 # the sequences with the other case too (gh-56596).
                 for keys in keylist:
                     other = _letter_key_re.sub(lambda m: m[0].swapcase(), keys)
-                    if other != keys:
+                    if other not in keylist:
                         text.event_add(event, other)
 
     def fill_menus(self, menudefs=None, keydefs=None):
