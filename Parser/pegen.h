@@ -4,6 +4,9 @@
 #include <Python.h>
 #include <pycore_ast.h>
 #include <pycore_token.h>
+#include <pycore_ceval.h>     // _Py_ReachedRecursionLimitWithMargin()
+#include <pycore_pystate.h>   // _Py_get_machine_stack_pointer()
+#include <pycore_pythonrun.h> // _PyOS_STACK_MARGIN_BYTES
 
 #include "tokenizer/tokenizer.h"
 
@@ -35,6 +38,7 @@ typedef struct _memo {
 
 typedef struct {
     int type;
+    // Text required by grammar actions or helpers; otherwise NULL.
     PyObject *bytes;
     int level;
     int is_raw;
@@ -96,7 +100,28 @@ typedef struct {
     int debug;
     location last_stmt_location;
     IdentifierCacheEntry *identifier_cache;
+    PyThreadState *tstate;
+    // Cached copy of tstate->c_stack_soft_limit offset by one margin toward
+    // the stack top, so the per-rule stack check is a single inline comparison.
+    uintptr_t stack_soft_limit;
 } Parser;
+
+// C-stack exhaustion check run on every rule entry. The fast path compares
+// the machine stack pointer against the soft limit cached in the Parser;
+// only when the stack is nearly exhausted is the full check called.
+static inline int
+_PyPegen_stack_exhausted(Parser *p)
+{
+#if _Py_STACK_GROWS_DOWN
+    if (_Py_get_machine_stack_pointer() > p->stack_soft_limit) {
+#else
+    if (_Py_get_machine_stack_pointer() <= p->stack_soft_limit) {
+#endif
+        assert(!_Py_ReachedRecursionLimitWithMargin(p->tstate, 1));
+        return 0;
+    }
+    return _Py_ReachedRecursionLimitWithMargin(p->tstate, 1);
+}
 
 typedef struct {
     cmpop_ty cmpop;
@@ -148,6 +173,7 @@ PyObject *_PyPegen_get_memo_statistics(void);
 
 int _PyPegen_insert_memo(Parser *p, int mark, int type, void *node);
 int _PyPegen_update_memo(Parser *p, int mark, int type, void *node);
+Memo *_PyPegen_insert_memo_direct(Parser *p, int mark, int type);
 int _PyPegen_is_memoized(Parser *p, int type, void *pres);
 
 int _PyPegen_lookahead(int, void *(func)(Parser *), Parser *);
@@ -171,13 +197,15 @@ Py_ssize_t _PyPegen_byte_offset_to_character_offset_line(PyObject *line, Py_ssiz
 Py_ssize_t _PyPegen_byte_offset_to_character_offset(PyObject *line, Py_ssize_t col_offset);
 Py_ssize_t _PyPegen_byte_offset_to_character_offset_raw(const char*, Py_ssize_t col_offset);
 
-// Error handling functions and APIs
 typedef enum {
     STAR_TARGETS,
     DEL_TARGETS,
-    FOR_TARGETS
+    FOR_TARGETS,
+    SINGLE_TARGETS,
+    ATTRIBUTE_OR_SUBSCRIPT_TARGETS
 } TARGETS_TYPE;
 
+// Error handling functions and APIs
 int _Pypegen_raise_decode_error(Parser *p);
 int _Pypegen_tokenizer_error(Parser *p);
 void *_PyPegen_raise_error(Parser *p, PyObject *errtype, int use_mark, const char *errmsg, ...);
@@ -330,6 +358,7 @@ CmpopExprPair *_PyPegen_cmpop_expr_pair(Parser *, cmpop_ty, expr_ty);
 asdl_int_seq *_PyPegen_get_cmpops(Parser *p, asdl_seq *);
 asdl_expr_seq *_PyPegen_get_exprs(Parser *, asdl_seq *);
 expr_ty _PyPegen_set_expr_context(Parser *, expr_ty, expr_context_ty);
+expr_ty _PyPegen_make_target(Parser *, expr_ty, TARGETS_TYPE);
 KeyValuePair *_PyPegen_key_value_pair(Parser *, expr_ty, expr_ty);
 asdl_expr_seq *_PyPegen_get_keys(Parser *, asdl_seq *);
 asdl_expr_seq *_PyPegen_get_values(Parser *, asdl_seq *);

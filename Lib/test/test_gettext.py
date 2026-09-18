@@ -613,6 +613,23 @@ class PluralFormsInternalTestCase(unittest.TestCase):
         self.assertEqual(f(1), 0)
         self.assertEqual(f(2), 0)
 
+    def test_negation_precedence(self):
+        # gh-157451: in C the unary '!' binds tighter than any binary
+        # operator, so '!n + 1' is '(!n) + 1', not '!(n + 1)'.
+        f = gettext.c2py('!n + 1')
+        self.assertEqual(f(0), 2)
+        self.assertEqual(f(1), 1)
+        self.assertEqual(gettext.c2py('!n < 3')(0), 1)
+        self.assertEqual(gettext.c2py('!n * 2')(0), 2)
+        self.assertEqual(gettext.c2py('!n * 2')(1), 0)
+        # Double negation still normalises to 0/1 (C semantics).
+        self.assertEqual(gettext.c2py('!!n')(5), 1)
+        self.assertEqual(gettext.c2py('!!n')(0), 0)
+        # '!' as a right operand also binds tighter than the binary operator,
+        # so '2 * !n + 1' is '2 * (!n) + 1' rather than a SyntaxError.
+        self.assertEqual(gettext.c2py('2 * !n + 1')(0), 3)
+        self.assertEqual(gettext.c2py('2 * !n + 1')(1), 1)
+
     def test_nested_condition_operator(self):
         self.assertEqual(gettext.c2py('n?1?2:3:4')(0), 4)
         self.assertEqual(gettext.c2py('n?1?2:3:4')(1), 2)
