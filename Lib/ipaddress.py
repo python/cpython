@@ -1575,8 +1575,8 @@ class IPv4Network(_BaseV4, _BaseNetwork):
               representing the prefix mask (e.g. '255.255.255.0').
 
             strict: A boolean. If true, ensure that we have been passed
-              a true network address, eg, 192.0.2.0/24 and not an
-              IP address on a network, eg, 192.0.2.1/24.
+              a true network address, for example, 192.0.2.0/24 and not an
+              IP address on a network, for example, 192.0.2.1/24.
 
         Raises:
             AddressValueError: If ipaddress isn't a valid IPv4 address.
