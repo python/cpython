@@ -5,13 +5,18 @@
 #include "helpers.h"
 #include "reader.h"
 #include "reader_internal.h"
-#include "../lexer/buffer.h"
 #include "../lexer/lexer.h"
 #include "../lexer/state.h"
 
 #ifdef HAVE_UNISTD_H
 #  include <unistd.h>
 #endif
+
+static inline int
+reader_is_streaming(_PyTok_ReaderKind kind)
+{
+    return kind == _PYTOK_READER_FILE || kind == _PYTOK_READER_READLINE;
+}
 
 void
 _PyTok_ReaderFree(struct tok_state *tok)
@@ -28,21 +33,20 @@ _PyTok_ReaderFree(struct tok_state *tok)
     }
     PyMem_Free(reader->file_buffer);
     PyMem_Free(reader->decoded);
-    if (reader->kind != _PYTOK_READER_PREPARED) {
-        PyMem_Free(tok->buf);
-        tok->buf = NULL;
-    }
     PyMem_Free(reader);
     tok->reader = NULL;
 }
 
-static int
-reserve_buffer(char **buffer, Py_ssize_t *capacity, Py_ssize_t needed)
+int
+_PyTok_ReserveBuffer(char **buffer, Py_ssize_t *capacity, Py_ssize_t needed,
+                     Py_ssize_t initial_capacity)
 {
+    assert(initial_capacity > 0);
     if (needed <= *capacity) {
         return 0;
     }
-    Py_ssize_t cap = *capacity > 0 ? *capacity : BUFSIZ;
+    // Grow geometrically to avoid reallocating for every longer line.
+    Py_ssize_t cap = *capacity > 0 ? *capacity : initial_capacity;
     while (cap < needed) {
         if (cap > PY_SSIZE_T_MAX / 2) {
             cap = needed;
@@ -71,8 +75,8 @@ append_decoded(_PyTok_Reader *reader, const char *data, Py_ssize_t len)
         reader->decoded_len = remaining;
     }
     if (len < 0 || reader->decoded_len > PY_SSIZE_T_MAX - len - 1 ||
-            reserve_buffer(&reader->decoded, &reader->decoded_cap,
-                           reader->decoded_len + len + 1) < 0) {
+            _PyTok_ReserveBuffer(&reader->decoded, &reader->decoded_cap,
+                                reader->decoded_len + len + 1, BUFSIZ) < 0) {
         PyErr_NoMemory();
         return -1;
     }
@@ -99,6 +103,7 @@ append_implicit_newline(_PyTok_Reader *reader)
 static int
 pop_decoded_line(_PyTok_Reader *reader, _PyTok_Chunk *chunk)
 {
+    assert(reader->decoded_pos >= 0 && reader->decoded_pos <= reader->decoded_len);
     if (reader->decoded_pos == reader->decoded_len) {
         return 0;
     }
@@ -138,7 +143,7 @@ next_prepared(struct tok_state *tok, _PyTok_Chunk *chunk)
     if (lineno > tok->source.nlines) {
         return _PYTOK_READ_EOF;
     }
-    const char *start = tok->inp;
+    const char *start = _PyLexer_BufferPointer(tok, tok->inp);
     const char *newline = memchr(
         start, '\n', tok->source.bytes + tok->source.len - start);
     _PyTok_Off end = newline != NULL
@@ -158,8 +163,8 @@ read_file_line(struct tok_state *tok, _PyTok_Chunk *chunk)
     Py_ssize_t len = 0;
     for (;;) {
         if (len > PY_SSIZE_T_MAX - BUFSIZ ||
-                reserve_buffer(&reader->file_buffer, &reader->file_buffer_cap,
-                               len + BUFSIZ) < 0) {
+                _PyTok_ReserveBuffer(&reader->file_buffer, &reader->file_buffer_cap,
+                                    len + BUFSIZ, BUFSIZ) < 0) {
             return _PYTOK_READ_ERROR;
         }
         int available = (int)Py_MIN(reader->file_buffer_cap - len, INT_MAX);
@@ -529,19 +534,32 @@ reader_next(struct tok_state *tok, _PyTok_Chunk *chunk)
     Py_UNREACHABLE();
 }
 
+static void
+reset_streaming_buffer(struct tok_state *tok)
+{
+    assert(tok->cur >= tok->buf_offset && tok->cur <= tok->inp);
+    _PyTok_SourceDiscard(&tok->source);
+    tok->buf_offset = tok->source.base_offset;
+    tok->cur = tok->inp = tok->source.base_offset;
+    tok->line_start = tok->buf_offset;
+}
+
 int
 _PyTok_ReaderUnderflow(struct tok_state *tok)
 {
-    int prepared = tok->reader->kind == _PYTOK_READER_PREPARED;
-    int reset_buffer = !prepared && tok->start == NULL && !INSIDE_FSTRING(tok);
-
-    if (reset_buffer && tok->reader->kind != _PYTOK_READER_INTERACTIVE) {
-        tok->cur = tok->inp = tok->buf;
-    }
+    assert(tok->cur >= tok->buf_offset && tok->cur <= tok->inp);
+    _PyTok_ReaderKind kind = tok->reader->kind;
+    int prepared = kind == _PYTOK_READER_PREPARED;
+    int streaming = reader_is_streaming(kind);
+    int reset_buffer = !prepared && tok->start < 0 &&
+        _PyLexer_CurrentFTString(tok) == NULL;
 
     _PyTok_Chunk chunk;
     _PyTok_ReadResult result = reader_next(tok, &chunk);
     if (result != _PYTOK_READ_LINE) {
+        if (reset_buffer && streaming) {
+            reset_streaming_buffer(tok);
+        }
         if (result == _PYTOK_READ_EOF) {
             tok->done = E_EOF;
         }
@@ -552,70 +570,62 @@ _PyTok_ReaderUnderflow(struct tok_state *tok)
             tok->done = E_INTR;
         }
         else {
-            tok->input_error = 1;
             if (tok->done == E_OK) {
                 tok->done = PyErr_ExceptionMatches(PyExc_MemoryError)
                     ? E_NOMEM : E_ERROR;
             }
         }
-        if (tok->reader->kind == _PYTOK_READER_INTERACTIVE &&
+        if (kind == _PYTOK_READER_INTERACTIVE &&
                 result != _PYTOK_READ_STOPPED) {
             PySys_WriteStderr("\n");
         }
         return 0;
     }
 
-    Py_ssize_t copy_len = chunk.len;
-    if (tok->reader->kind == _PYTOK_READER_INTERACTIVE &&
+    Py_ssize_t scan_len = chunk.len;
+    if (kind == _PYTOK_READER_INTERACTIVE &&
             chunk.implicit_newline) {
-        copy_len--;
+        scan_len--;
     }
-    if (reset_buffer && tok->reader->kind == _PYTOK_READER_INTERACTIVE) {
-        tok->cur = tok->inp = tok->buf;
-    }
-    if (!prepared && !_PyLexer_tok_reserve_buf(tok, copy_len + 1)) {
-        _PyTok_ChunkClear(&chunk);
-        tok->input_error = 1;
-        return 0;
-    }
-    if (tok->reader->kind == _PYTOK_READER_INTERACTIVE &&
-            _PyTok_SourceAppendLine(&tok->source, chunk.data, chunk.len,
-                                    chunk.implicit_newline) < 0) {
-        _PyTok_ChunkClear(&chunk);
-        tok->done = PyErr_ExceptionMatches(PyExc_MemoryError)
-            ? E_NOMEM : E_ERROR;
-        tok->input_error = 1;
-        return 0;
+    if (!prepared) {
+        if (streaming && reset_buffer) {
+            reset_streaming_buffer(tok);
+        }
+        _PyTok_Off source_start = _PyTok_SourceAppendLine(
+            &tok->source, chunk.data, chunk.len,
+            chunk.implicit_newline);
+        if (source_start < 0) {
+            _PyTok_ChunkClear(&chunk);
+            tok->done = PyErr_ExceptionMatches(PyExc_MemoryError)
+                ? E_NOMEM : E_ERROR;
+            return 0;
+        }
+        if (reset_buffer) {
+            tok->cur = source_start;
+            tok->buf_offset = source_start;
+            tok->line_start = tok->buf_offset;
+            tok->start = -1;
+        }
+        tok->inp = source_start + scan_len;
     }
     if (tok->fp_interactive) {
         tok->interactive_src_start = tok->source.bytes;
         tok->interactive_src_end = tok->source.bytes + tok->source.len;
     }
     if (prepared) {
-        if (tok->start == NULL) {
-            tok->buf = tok->cur;
+        if (tok->start < 0 && _PyLexer_CurrentFTString(tok) == NULL) {
+            tok->buf_offset = tok->source.base_offset +
+                (chunk.data - tok->source.bytes);
         }
-        tok->inp = chunk.data + chunk.len;
-    }
-    else {
-        memcpy(tok->inp, chunk.data, (size_t)copy_len);
-        tok->inp += copy_len;
-        *tok->inp = '\0';
+        tok->inp = _PyLexer_BufferOffset(tok, chunk.data) + chunk.len;
     }
     tok->implicit_newline = chunk.implicit_newline;
 
-    if (!prepared && tok->tok_mode_stack_index &&
-            !_PyLexer_update_ftstring_expr(tok, 0)) {
-        _PyTok_ChunkClear(&chunk);
-        tok->input_error = 1;
-        return 0;
-    }
-    ADVANCE_LINENO();
-    if (tok->reader->kind == _PYTOK_READER_FILE &&
+    tok->lineno++;
+    if (kind == _PYTOK_READER_FILE &&
             (tok->encoding == NULL || strcmp(tok->encoding, "utf-8") == 0) &&
-            !_PyTokenizer_ensure_utf8(tok->cur, tok, tok->lineno)) {
+            !_PyTokenizer_ensure_utf8(_PyLexer_BufferPointer(tok, tok->cur), tok, tok->lineno)) {
         _PyTok_ChunkClear(&chunk);
-        tok->input_error = 1;
         return 0;
     }
     _PyTok_ChunkClear(&chunk);
@@ -639,14 +649,10 @@ tokenizer_new_with_reader(_PyTok_ReaderKind kind)
     if (kind == _PYTOK_READER_PREPARED) {
         return tok;
     }
-    tok->buf = PyMem_Malloc(BUFSIZ);
-    if (tok->buf == NULL) {
-        PyErr_NoMemory();
-        _PyTokenizer_Free(tok);
-        return NULL;
+    if (reader_is_streaming(kind)) {
+        tok->cur = tok->inp = tok->source.base_offset;
+        tok->line_start = tok->buf_offset;
     }
-    tok->cur = tok->inp = tok->buf;
-    tok->end = tok->buf + BUFSIZ;
     return tok;
 }
 
@@ -663,8 +669,8 @@ tokenizer_from_string(const char *input, int utf8_only, int exec_input,
         _PyTokenizer_Free(tok);
         return NULL;
     }
-    tok->buf = tok->cur = tok->inp = tok->str;
-    tok->end = tok->buf;
+    tok->cur = tok->inp = tok->source.base_offset;
+    tok->line_start = tok->source.base_offset;
     return tok;
 }
 
