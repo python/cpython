@@ -78,7 +78,7 @@ class PyParseTest(unittest.TestCase):
                 '                 b=True):\n'
                 '        pass\n'
                 )
-        pos0, pos = 33, 42  # Start of 'class...', '    def' lines.
+        pos0, pos, pos1 = 33, 42, 94  # Start of 'class', 'def', 'pass' lines.
 
         # Passing no value or non-callable should fail (issue 32989).
         with self.assertRaises(TypeError):
@@ -91,8 +91,8 @@ class PyParseTest(unittest.TestCase):
         self.assertIsNone(start(is_char_in_string=lambda index: True))
 
         # Make all text look like it's not in a string.  This means that it
-        # found a good start position.
-        eq(start(char_in_string_false), pos)
+        # found a good start position: the last statement.
+        eq(start(char_in_string_false), pos1)
 
         # If the beginning of the def line is not in a string, then it
         # returns that as the index.
@@ -100,9 +100,9 @@ class PyParseTest(unittest.TestCase):
         # If the beginning of the def line is in a string, then it
         # looks for a previous index.
         eq(start(is_char_in_string=lambda index: index >= pos), pos0)
-        # If everything before the 'def' is in a string, then returns None.
-        # The non-continuation def line returns 44 (see below).
-        eq(start(is_char_in_string=lambda index: index < pos), None)
+        # If everything before the 'def' is in a string, then returns
+        # the start of the 'pass' line.
+        eq(start(is_char_in_string=lambda index: index < pos), pos1)
 
         # Code without extra line break in def line - mostly returns the same
         # values.
@@ -111,12 +111,41 @@ class PyParseTest(unittest.TestCase):
                 '    def __init__(self, a, b=True):\n'
                 '        pass\n'
                 )  # Does not affect class, def positions.
-        eq(start(char_in_string_false), pos)
+        pos1 = 77  # Start of 'pass' line.
+        eq(start(char_in_string_false), pos1)
         eq(start(is_char_in_string=lambda index: index > pos), pos)
         eq(start(is_char_in_string=lambda index: index >= pos), pos0)
         # When the def line isn't split, this returns which doesn't match the
         # split line test.
-        eq(start(is_char_in_string=lambda index: index < pos), pos)
+        eq(start(is_char_in_string=lambda index: index < pos), pos1)
+
+        # gh-85560: 'else' of a conditional expression at the start of
+        # a continuation line does not start a statement.
+        setcode('def f():\n'
+                '    return (1 if x\n'
+                '            else 0)\n')
+        eq(start(char_in_string_false), 9)  # Start of 'return' line.
+        setcode('if x:\n'
+                '    pass\n'
+                'else:\n'
+                '    x = 1\n')
+        eq(start(char_in_string_false), 15)
+        setcode('if x:\n'
+                '    pass\n'
+                'else :  # comment\n'
+                '    x = 1\n')
+        eq(start(char_in_string_false), 15)
+        # A yield expression can start a continuation line too.
+        setcode('def f():\n'
+                '    x = (\n'
+                '        yield y)\n')
+        eq(start(char_in_string_false), 0)
+        # Other statements which cannot start a continuation line.
+        for stmt in ('with x:', 'del x', 'global x', 'nonlocal x', 'pass',
+                     'finally:'):
+            with self.subTest(stmt=stmt):
+                setcode(f'if x:\n    pass\n{stmt}\n')
+                eq(start(char_in_string_false), 15)
 
     def test_set_lo(self):
         code = (
