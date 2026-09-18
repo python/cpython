@@ -3999,12 +3999,12 @@ x_mul(PyLongObject *a, PyLongObject *b)
         }
     }
     else {      /* a is not the same as b -- gradeschool int mult */
-        /* The i == 0 pass stores z[0:size_b+1] outright, and pass i only ever
-         * reads digits that pass i-1 has already written, so only the top
-         * size_a digits -- the carry positions -- need to start out zeroed.
+        /* No digit of z needs to start out zeroed: the i == 0 pass stores
+         * z[0:size_b+1] outright, pass i only reads z[i:i+size_b], which
+         * earlier passes have already written, and each pass stores its final
+         * carry into z[i+size_b], which no earlier pass has touched.
          */
         assert(size_a >= 1);
-        memset(z->long_value.ob_digit + size_b, 0, size_a * sizeof(digit));
         {
             twodigits carry = 0;
             twodigits f = a->long_value.ob_digit[0];
@@ -4018,7 +4018,6 @@ x_mul(PyLongObject *a, PyLongObject *b)
                 carry >>= PyLong_SHIFT;
                 assert(carry <= PyLong_MASK);
             }
-            assert(*pz == 0);
             *pz = (digit)carry;
         }
         for (i = 1; i < size_a; ++i) {
@@ -4039,8 +4038,7 @@ x_mul(PyLongObject *a, PyLongObject *b)
                 carry >>= PyLong_SHIFT;
                 assert(carry <= PyLong_MASK);
             }
-            if (carry)
-                *pz += (digit)(carry & PyLong_MASK);
+            *pz = (digit)carry;
             assert((carry >> PyLong_SHIFT) == 0);
         }
     }
