@@ -722,12 +722,13 @@ def askstring(title, prompt, **kw):
 
 @contextlib.contextmanager
 def _temp_grab_focus(grab, focus=None, destroy=True):
-    old_focus = grab.focus_get()
-    old_grab = grab.grab_current()
-    if old_grab is not None and old_grab.winfo_exists():
-        old_status = old_grab.grab_status()
-    else:
-        old_status = None
+    # Use Tcl window names rather than widgets, because the focus and the
+    # grab can be in a window which was not created by tkinter, such as
+    # a native message box.
+    tk = grab.tk
+    old_focus = tk.call('focus')
+    old_grab = tk.call('grab', 'current', grab._w)
+    old_status = tk.call('grab', 'status', old_grab) if old_grab else None
     # The "grab" command will fail if another application
     # already holds the grab.  So catch it.
     try:
@@ -741,9 +742,9 @@ def _temp_grab_focus(grab, focus=None, destroy=True):
         yield
 
     finally:
-        if old_focus is not None:
+        if old_focus and grab.getboolean(tk.call('winfo', 'exists', old_focus)):
             try:
-                old_focus.focus_set()
+                tk.call('focus', old_focus)
             except TclError:
                 pass
         try:
@@ -755,15 +756,15 @@ def _temp_grab_focus(grab, focus=None, destroy=True):
                 grab.destroy()
             except TclError:
                 pass
-        if (old_grab is not None and old_grab.winfo_exists()
-                and old_grab.winfo_ismapped()):
+        if (old_grab and grab.getboolean(tk.call('winfo', 'exists', old_grab))
+                and grab.getboolean(tk.call('winfo', 'ismapped', old_grab))):
             # The "grab" command will fail if another application
             # already holds the grab.  So catch it.
             try:
                 if old_status == 'global':
-                    old_grab.grab_set_global()
+                    tk.call('grab', 'set', '-global', old_grab)
                 else:
-                    old_grab.grab_set()
+                    tk.call('grab', 'set', old_grab)
             except TclError:
                 pass
 
