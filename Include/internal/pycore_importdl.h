@@ -83,9 +83,6 @@ extern int _Py_ext_module_loader_info_init(
     PyObject *name,
     PyObject *filename,
     _Py_ext_module_origin origin);
-extern int _Py_ext_module_loader_info_init_for_core(
-    struct _Py_ext_module_loader_info *p_info,
-    PyObject *name);
 extern int _Py_ext_module_loader_info_init_for_builtin(
     struct _Py_ext_module_loader_info *p_info,
     PyObject *name);

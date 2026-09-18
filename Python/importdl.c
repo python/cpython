@@ -188,18 +188,6 @@ _Py_ext_module_loader_info_init_for_builtin(
     return 0;
 }
 
-int
-_Py_ext_module_loader_info_init_for_core(
-                            struct _Py_ext_module_loader_info *info,
-                            PyObject *name)
-{
-    if (_Py_ext_module_loader_info_init_for_builtin(info, name) < 0) {
-        return -1;
-    }
-    info->origin = _Py_ext_module_origin_CORE;
-    return 0;
-}
-
 #ifdef HAVE_DYNAMIC_LOADING
 int
 _Py_ext_module_loader_info_init_from_spec(
