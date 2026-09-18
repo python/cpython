@@ -21,37 +21,34 @@ IGNORED_FILENAME = os.path.join(TOOLS_BUILD_DIR, 'check_capi_macros_ignored.txt'
 
 DEFINE_REGEX = re.compile(r'\s*# *define\s+(.*)')
 PYTHON_PREFIX = re.compile(r'(Py|PY|_Py|_PY)')
-DEFINE_NAME_REGEX = re.compile(r'([A-Za-z_][A-Za-z0-9_]*)\b')
+NAME_REGEX = re.compile(r'([A-Za-z_][A-Za-z0-9_]*)\b')
 UNDEF_REGEX = re.compile(r'#undef (.*)')
 
 
 def parse_file(filename, names):
     with open(filename, encoding='utf8') as fp:
         for line in fp:
+            # Check for '#define MACRO'
             match = DEFINE_REGEX.match(line)
-            if not match:
-                continue
+            if match:
+                undef = False
+            else:
+                # Check for '#undef MACRO'
+                match = UNDEF_REGEX.match(line)
+                if not match:
+                    continue
+                undef = True
             macro = match.group(1)
 
             if PYTHON_PREFIX.match(macro):
                 continue
 
-            match = DEFINE_NAME_REGEX.match(macro)
+            match = NAME_REGEX.match(macro)
             if not match:
                 print(f"ERROR: {filename}: Unable to parse {line!r}")
                 sys.exit(1)
             name = match.group(1)
-            names.append((name, filename))
-
-
-def parse_pyconfig_in(filename, names):
-    with open(filename, encoding='utf8') as fp:
-        for line in fp:
-            match = UNDEF_REGEX.match(line)
-            if not match:
-                continue
-            name = match.group(1)
-            names.append((name, filename))
+            names.append((name, filename, undef))
 
 
 def get_ignored_names():
@@ -73,21 +70,33 @@ def main():
     include_dir = os.path.join(SRC_DIR, 'Include')
     files = glob.glob(os.path.join(include_dir, '*.h'))
     files.extend(glob.glob(os.path.join(include_dir, 'cpython', '*.h')))
-    names = []  # list of (name: str, filename: str)
+    files.append(os.path.join(SRC_DIR, 'pyconfig.h.in'))
+    names = []  # list of (name: str, filename: str, undef: bool)
     for filename in files:
         parse_file(filename, names)
 
-    filename = os.path.join(SRC_DIR, 'pyconfig.h.in')
-    parse_file(filename, names)
-    parse_pyconfig_in(filename, names)
-    names.sort()
-
-    names_set = {name for name, filename in names}
+    names_set = {name for name, filename, undef in names}
     ignored = get_ignored_names()
+
+    new_macros = names_set - ignored
+    if new_macros:
+        print('ERROR: the Python C API defines the following new macros:')
+        print()
+        count = 0
+        for name, filename, undef in sorted(names):
+            if name in ignored:
+                continue
+            define = "undefined" if undef else "defined"
+            print(f"- {name} {define} by {filename}")
+            count += 1
+        print()
+        print(f"Total: {count} macros")
+        failure = True
+
     outdated = ignored - names_set
     if outdated:
         print(f"ERROR: {IGNORED_FILENAME} is outdated, "
-              "the macros can be removed:")
+              "the following macros can be removed:")
         print()
         for name in sorted(outdated):
             print(f" - {name}")
@@ -96,23 +105,10 @@ def main():
         print()
         failure = True
 
-    new_macros = names_set - ignored
-    if new_macros:
-        print('ERROR: the Python C API defines the following macros '
-              'with a name not starting with "Py":')
-        print()
-        count = 0
-        for name, filename in names:
-            if name in ignored:
-                continue
-            print(f"- {name} defined by {filename}")
-            count += 1
-        print()
-        print(f"Total: {count} macros")
-
     if not failure:
         print("OK: the Python C API only defines macros with names "
               f"starting with Py (ignoring {len(ignored)} macros)")
+        print("OK: the ignore list is up to date")
         sys.exit(0)
 
     sys.exit(1)
