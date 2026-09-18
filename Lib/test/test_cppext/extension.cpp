@@ -256,8 +256,8 @@ test_datetime(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     Py_RETURN_NONE;
 }
 
-// gh-157649: Refcount temporaries must copy the old pointer, not bind to
-// an array item or reference that the macro is about to overwrite.
+// gh-157649: Py_SETREF(), Py_XSETREF(), and Py_CLEAR() must copy the old
+// pointer, not bind to an array item or reference the macro overwrites.
 static int
 test_refcount_lvalues(void)
 {
