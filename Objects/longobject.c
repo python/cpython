@@ -1905,15 +1905,17 @@ static digit
 v_lshift(digit *z, digit *a, Py_ssize_t m, int d)
 {
     Py_ssize_t i;
-    digit carry = 0;
+    int e = PyLong_SHIFT - d;
 
     assert(0 <= d && d < PyLong_SHIFT);
-    for (i=0; i < m; i++) {
-        twodigits acc = (twodigits)a[i] << d | carry;
-        z[i] = (digit)acc & PyLong_MASK;
-        carry = (digit)(acc >> PyLong_SHIFT);
+    assert(m > 0);
+    /* Build each digit from two digits of a, rather than passing a carry
+       from one iteration to the next, so that the loop can be vectorized. */
+    z[0] = (a[0] << d) & PyLong_MASK;
+    for (i=1; i < m; i++) {
+        z[i] = ((a[i] << d) | (a[i-1] >> e)) & PyLong_MASK;
     }
-    return carry;
+    return a[m-1] >> e;
 }
 
 /* Shift digit vector a[0:m] d bits right, with 0 <= d < PyLong_SHIFT.  Put
@@ -1923,16 +1925,17 @@ static digit
 v_rshift(digit *z, digit *a, Py_ssize_t m, int d)
 {
     Py_ssize_t i;
-    digit carry = 0;
+    int e = PyLong_SHIFT - d;
     digit mask = ((digit)1 << d) - 1U;
 
     assert(0 <= d && d < PyLong_SHIFT);
-    for (i=m; i-- > 0;) {
-        twodigits acc = (twodigits)carry << PyLong_SHIFT | a[i];
-        carry = (digit)acc & mask;
-        z[i] = (digit)(acc >> d);
+    assert(m > 0);
+    /* As in v_lshift(), no carry is passed between iterations. */
+    for (i=0; i < m-1; i++) {
+        z[i] = (a[i] >> d) | ((a[i+1] << e) & PyLong_MASK);
     }
-    return carry;
+    z[m-1] = a[m-1] >> d;
+    return a[0] & mask;
 }
 
 /* Divide long pin, w/ size digits, by non-zero digit n, storing quotient
