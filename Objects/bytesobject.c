@@ -3325,36 +3325,27 @@ PyBytes_ConcatAndDel(PyObject **pv, PyObject *w)
 
 
 #ifndef NDEBUG
-static int
-bytes_is_singleton(PyObject *v)
-{
-    Py_ssize_t size = PyBytes_GET_SIZE(v);
-    if (size == 0) {
-        return (v == bytes_get_empty());
-    }
-    else if (size == 1) {
-        unsigned char ch = PyBytes_AS_STRING(v)[0];
-        return (v == (PyObject*)CHARACTER(ch));
-    }
-    else {
-        return 0;
-    }
-}
-#endif
-
-#ifndef NDEBUG
 // Make sure that a bytes object can still be mutated.
-//
-// If this function is modified, update also byteswriter_check_consistency().
 //
 // Usage: assert(_PyBytes_IsMutable(obj)).
 int
-_PyBytes_IsMutable(PyObject *v)
+_PyBytes_IsMutable(PyObject *self)
 {
-    assert(PyBytes_Check(v));
-    assert(_PyObject_IsUniquelyReferenced(v));
-    assert(!_Py_IsImmortal(v));
-    assert(!bytes_is_singleton(v));
+    assert(PyBytes_Check(self));
+    // Do not use _PyObject_IsUniquelyReferenced(): this function is called
+    // by bytearray and PyBytesWriter which can be used by multiple threads.
+    assert(Py_REFCNT(self) == 1);
+    assert(!_Py_IsImmortal(self));
+
+    // Check that the object is not a singleton
+    Py_ssize_t size = PyBytes_GET_SIZE(self);
+    if (size == 0) {
+        assert(self != bytes_get_empty());
+    }
+    else if (size == 1) {
+        unsigned char ch = PyBytes_AS_STRING(self)[0];
+        assert(self != (PyObject*)CHARACTER(ch));
+    }
     return 1;
 }
 #endif
@@ -3728,14 +3719,9 @@ byteswriter_check_consistency(PyBytesWriter *writer)
 
         // Code adapted from _PyBytes_IsMutable()
         assert(PyBytes_CheckExact(obj));
-        // Do not use _PyObject_IsUniquelyReferenced(): the caller can have its
-        // own lock to prevent a writer from being used by two threads at the
-        // same time.
-        assert(Py_REFCNT(obj) == 1);
+        assert(_PyBytes_IsMutable(obj));
         // -1 since the last small buffer byte is used as the canary byte
         assert((size_t)PyBytes_GET_SIZE(obj) > (sizeof(writer->small_buffer) - 1));
-        assert(!_Py_IsImmortal(obj));
-        assert(!bytes_is_singleton(obj));
     }
 
 #ifdef Py_DEBUG
@@ -3786,6 +3772,7 @@ byteswriter_resize(PyBytesWriter *writer, Py_ssize_t new_size, int resize)
                 // bytearray can override the canary byte on error
                 byteswriter_write_canary_byte(writer);
 #endif
+                assert(byteswriter_check_consistency(writer));
                 return -1;
             }
         }
@@ -3793,6 +3780,7 @@ byteswriter_resize(PyBytesWriter *writer, Py_ssize_t new_size, int resize)
             // Can raise MemoryError or OverflowError
             if (_PyBytes_ResizeKeepOnError(&writer->obj, alloc)) {
                 assert(writer->obj != NULL);
+                assert(byteswriter_check_consistency(writer));
                 return -1;
             }
             assert(_PyBytes_IsMutable(writer->obj));
@@ -4048,6 +4036,7 @@ PyBytesWriter_Resize(PyBytesWriter *writer, Py_ssize_t new_size)
 #ifdef Py_DEBUG
     byteswriter_write_canary_byte(writer);
 #endif
+    assert(byteswriter_check_consistency(writer));
     return 0;
 }
 
@@ -4098,6 +4087,7 @@ PyBytesWriter_Grow(PyBytesWriter *writer, Py_ssize_t grow)
 #ifdef Py_DEBUG
     byteswriter_write_canary_byte(writer);
 #endif
+    assert(byteswriter_check_consistency(writer));
     return 0;
 }
 
@@ -4131,10 +4121,10 @@ PyBytesWriter_WriteBytes(PyBytesWriter *writer,
     if (PyBytesWriter_Grow(writer, size) < 0) {
         return -1;
     }
-    assert(byteswriter_check_consistency(writer));
-
     char *buf = byteswriter_data(writer);
     memcpy(buf + pos, bytes, size);
+
+    assert(byteswriter_check_consistency(writer));
     return 0;
 }
 
@@ -4146,7 +4136,6 @@ PyBytesWriter_Format(PyBytesWriter *writer, const char *format, ...)
     if (PyBytesWriter_Grow(writer, strlen(format)) < 0) {
         return -1;
     }
-    assert(byteswriter_check_consistency(writer));
 
     va_list vargs;
     va_start(vargs, format);
@@ -4164,12 +4153,12 @@ PyBytesWriter_Format(PyBytesWriter *writer, const char *format, ...)
 static Py_ssize_t
 _PyBytesWriter_ResizeToAllocated(PyBytesWriter *writer)
 {
-    assert(byteswriter_check_consistency(writer));
-
     Py_ssize_t allocated = byteswriter_allocated(writer);
     writer->size = allocated;
 #ifdef Py_DEBUG
     byteswriter_write_canary_byte(writer);
 #endif
+
+    assert(byteswriter_check_consistency(writer));
     return allocated;
 }

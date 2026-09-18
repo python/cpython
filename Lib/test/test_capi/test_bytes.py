@@ -4,8 +4,8 @@ import threading
 import unittest
 from test import support
 from test.support import import_helper
+from test.support import threading_helper
 from test.support.script_helper import assert_python_failure
-from test.support.threading_helper import join_thread
 
 _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
 _testcapi = import_helper.import_module('_testcapi')
@@ -675,6 +675,7 @@ class BaseWriterTest:
         self.assertEqual(get_data_canary(writer),
                          b'abc123' + CANARY_BYTE)
 
+    @threading_helper.requires_working_threading()
     def test_thread(self):
         # PyBytesWriter can be used by multiple threads: it's up to the caller
         # to implement a lock to prevent concurrent accesses.
@@ -698,7 +699,7 @@ class BaseWriterTest:
         thread = threading.Thread(target=thread_func,
                                   args=(writer, self.LARGE_BUFFER))
         thread.start()
-        join_thread(thread)
+        threading_helper.join_thread(thread)
 
         self.assertEqual(size, 10)
         self.assertEqual(data, b'x' * 10)
