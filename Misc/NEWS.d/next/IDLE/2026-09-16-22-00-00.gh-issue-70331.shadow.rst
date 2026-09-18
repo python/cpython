@@ -1,0 +1,3 @@
+IDLE no longer fails to start when the current directory contains user files
+with the same names as standard library modules that IDLE imports, such as
+``random.py`` or ``tkinter.py``.
