@@ -1,0 +1,1 @@
+Fix crash in third-party C libraries (such as Tcl/Tk) after :func:`os.environ.clear` by ensuring the C ``environ`` pointer is not left as ``NULL``.

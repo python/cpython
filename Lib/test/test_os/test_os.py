@@ -1693,6 +1693,18 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
 
         self.assertRaises(TypeError, os.environ.clear, None)
 
+    def test_clearenv_environ_not_null(self):
+        import ctypes
+        os.environ.clear()
+        try:
+            c_environ = ctypes.c_void_p.in_dll(ctypes.CDLL(None), "environ")
+            self.assertIsNotNone(
+                c_environ.value,
+                "os.environ.clear() set the C 'environ' pointer to NULL"
+            )
+        except AttributeError:
+            pass    
+
 
 class WalkTests(unittest.TestCase):
     """Tests for os.walk()."""
