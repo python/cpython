@@ -1,0 +1,229 @@
+Intro
+=====
+
+**************************************************************************
+Note: this document was written long ago, before PEP 442 (safe object
+finalization) was implemented.  While that has changed some things, this
+document is still mostly accurate. Just note that the rules being discussed
+here apply to the unreachable set of objects *after* non-legacy finalizers
+have been called.  Also, the clearing of weakrefs has been changed to happen
+later in the collection (after running finalizers but before tp_clear is
+called).
+**************************************************************************
+
+The basic rule for dealing with weakref callbacks (and __del__ methods too,
+for that matter) during cyclic gc:
+
+    Once gc has computed the set of unreachable objects, no Python-level
+    code can be allowed to access an unreachable object.
+
+If that can happen, then the Python code can resurrect unreachable objects
+too, and gc can't detect that without starting over.  Since gc eventually
+runs tp_clear on all unreachable objects, if an unreachable object is
+resurrected then tp_clear will eventually be called on it (or may already
+have been called before resurrection).  At best (and this has been an
+historically common bug), tp_clear empties an instance's __dict__, and
+"impossible" AttributeErrors result.  At worst, tp_clear leaves behind an
+insane object at the C level, and segfaults result (historically, most
+often by setting a class's mro pointer to NULL, after which attribute
+lookups performed by the class can segfault).
+
+OTOH, it's OK to run Python-level code that can't access unreachable
+objects, and sometimes that's necessary.  The chief example is the callback
+attached to a reachable weakref W to an unreachable object O.  Since O is
+going away, and W is still alive, the callback must be invoked.  Because W
+is still alive, everything reachable from its callback is also reachable,
+so it's also safe to invoke the callback (although that's trickier than it
+sounds, since other reachable weakrefs to other unreachable objects may
+still exist, and be accessible to the callback -- there are lots of painful
+details like this covered in the rest of this file).
+
+Python 2.4/2.3.5
+================
+
+The "Before 2.3.3" section below turned out to be wrong in some ways, but
+I'm leaving it as-is because it's more right than wrong, and serves as a
+wonderful example of how painful analysis can miss not only the forest for
+the trees, but also miss the trees for the aphids sucking the trees
+dry <wink>.
+
+The primary thing it missed is that when a weakref to a piece of cyclic
+trash (CT) exists, then any call to any Python code whatsoever can end up
+materializing a strong reference to that weakref's CT referent, and so
+possibly resurrect an insane object (one for which cyclic gc has called-- or
+will call before it's done --tp_clear()).  It's not even necessarily that a
+weakref callback or __del__ method does something nasty on purpose:  as
+soon as we execute Python code, threads other than the gc thread can run
+too, and they can do ordinary things with weakrefs that end up resurrecting
+CT while gc is running.
+
+    https://bugs.python.org/issue1055820
+
+shows how innocent it can be, and also how nasty.  Variants of the three
+focused test cases attached to that bug report are now part of Python's
+standard Lib/test/test_gc.py.
+
+Jim Fulton gave the best nutshell summary of the new (in 2.4 and 2.3.5)
+approach:
+
+    Clearing cyclic trash can call Python code.  If there are weakrefs to
+    any of the cyclic trash, then those weakrefs can be used to resurrect
+    the objects.  Therefore, *before* clearing cyclic trash, we need to
+    remove any weakrefs.  If any of the weakrefs being removed have
+    callbacks, then we need to save the callbacks and call them *after* all
+    of the weakrefs have been cleared.
+
+Alas, doing just that much doesn't work, because it overlooks what turned
+out to be the much subtler problems that were fixed earlier, and described
+below.  We do clear all weakrefs to CT now before breaking cycles, but not
+all callbacks encountered can be run later.  That's explained in horrid
+detail below.
+
+Older text follows, with a some later comments in [] brackets:
+
+Before 2.3.3
+============
+
+Before 2.3.3, Python's cyclic gc didn't pay any attention to weakrefs.
+Segfaults in Zope3 resulted.
+
+weakrefs in Python are designed to, at worst, let *other* objects learn
+that a given object has died, via a callback function.  The weakly
+referenced object itself is not passed to the callback, and the presumption
+is that the weakly referenced object is unreachable trash at the time the
+callback is invoked.
+
+That's usually true, but not always.  Suppose a weakly referenced object
+becomes part of a clump of cyclic trash.  When enough cycles are broken by
+cyclic gc that the object is reclaimed, the callback is invoked.  If it's
+possible for the callback to get at objects in the cycle(s), then it may be
+possible for those objects to access (via strong references in the cycle)
+the weakly referenced object being torn down, or other objects in the cycle
+that have already suffered a tp_clear() call.  There's no guarantee that an
+object is in a sane state after tp_clear().  Bad things (including
+segfaults) can happen right then, during the callback's execution, or can
+happen at any later time if the callback manages to resurrect an insane
+object.
+
+[That missed that, in addition, a weakref to CT can exist outside CT, and
+ any callback into Python can use such a non-CT weakref to resurrect its CT
+ referent.  The same bad kinds of things can happen then.]
+
+Note that if it's possible for the callback to get at objects in the trash
+cycles, it must also be the case that the callback itself is part of the
+trash cycles.  Else the callback would have acted as an external root to
+the current collection, and nothing reachable from it would be in cyclic
+trash either.
+
+[Except that a non-CT callback can also use a non-CT weakref to get at
+ CT objects.]
+
+More, if the callback itself is in cyclic trash, then the weakref to which
+the callback is attached must also be trash, and for the same kind of
+reason:  if the weakref acted as an external root, then the callback could
+not have been cyclic trash.
+
+So a problem here requires that a weakref, that weakref's callback, and the
+weakly referenced object, all be in cyclic trash at the same time.  This
+isn't easy to stumble into by accident while Python is running, and, indeed,
+it took quite a while to dream up failing test cases.  Zope3 saw segfaults
+during shutdown, during the second call of gc in Py_Finalize, after most
+modules had been torn down.  That creates many trash cycles (esp. those
+involving classes), making the problem much more likely.  Once you
+know what's required to provoke the problem, though, it's easy to create
+tests that segfault before shutdown.
+
+In 2.3.3, before breaking cycles, we first clear all the weakrefs with
+callbacks in cyclic trash.  Since the weakrefs *are* trash, and there's no
+defined-- or even predictable --order in which tp_clear() gets called on
+cyclic trash, it's defensible to first clear weakrefs with callbacks.  It's
+a feature of Python's weakrefs too that when a weakref goes away, the
+callback (if any) associated with it is thrown away too, unexecuted.
+
+[In 2.4/2.3.5, we first clear all weakrefs to CT objects, whether or not
+ those weakrefs are themselves CT, and whether or not they have callbacks.
+ The callbacks (if any) on non-CT weakrefs (if any) are invoked later,
+ after all weakrefs-to-CT have been cleared.  The callbacks (if any) on CT
+ weakrefs (if any) are never invoked, for the excruciating reasons
+ explained here.]
+
+Just that much is almost enough to prevent problems, by throwing away
+*almost* all the weakref callbacks that could get triggered by gc.  The
+problem remaining is that clearing a weakref with a callback decrefs the
+callback object, and the callback object may *itself* be weakly referenced,
+via another weakref with another callback.  So the process of clearing
+weakrefs can trigger callbacks attached to other weakrefs, and those
+latter weakrefs may or may not be part of cyclic trash.
+
+So, to prevent any Python code from running while gc is invoking tp_clear()
+on all the objects in cyclic trash,
+
+[That was always wrong:  we can't stop Python code from running when gc
+ is breaking cycles.  If an object with a __del__ method is not itself in
+ a cycle, but is reachable only from CT, then breaking cycles will, as a
+ matter of course, drop the refcount on that object to 0, and its __del__
+ will run right then.  What we can and must stop is running any Python
+ code that could access CT.]
+                                     it's not quite enough just to invoke
+tp_clear() on weakrefs with callbacks first.  Instead the weakref module
+grew a new private function (_PyWeakref_ClearRef) that does only part of
+tp_clear():  it removes the weakref from the weakly-referenced object's list
+of weakrefs, but does not decref the callback object.  So calling
+_PyWeakref_ClearRef(wr) ensures that wr's callback object will never
+trigger, and (unlike weakref's tp_clear()) also prevents any callback
+associated *with* wr's callback object from triggering.
+
+[Although we may trigger such callbacks later, as explained below.]
+
+Then we can call tp_clear on all the cyclic objects and never trigger
+Python code.
+
+[As above, not so:  it means never trigger Python code that can access CT.]
+
+After we do that, the callback objects still need to be decref'ed.  Callbacks
+(if any) *on* the callback objects that were also part of cyclic trash won't
+get invoked, because we cleared all trash weakrefs with callbacks at the
+start.  Callbacks on the callback objects that were not part of cyclic trash
+acted as external roots to everything reachable from them, so nothing
+reachable from them was part of cyclic trash, so gc didn't do any damage to
+objects reachable from them, and it's safe to call them at the end of gc.
+
+[That's so.  In addition, now we also invoke (if any) the callbacks on
+ non-CT weakrefs to CT objects, during the same pass that decrefs the
+ callback objects.]
+
+An alternative would have been to treat objects with callbacks like objects
+with __del__ methods, refusing to collect them, appending them to gc.garbage
+instead.  That would have been much easier.  Jim Fulton gave a strong
+argument against that (on Python-Dev):
+
+    There's a big difference between __del__ and weakref callbacks.
+    The __del__ method is "internal" to a design.  When you design a
+    class with a del method, you know you have to avoid including the
+    class in cycles.
+
+    Now, suppose you have a design that makes has no __del__ methods but
+    that does use cyclic data structures.  You reason about the design,
+    run tests, and convince yourself you don't have a leak.
+
+    Now, suppose some external code creates a weakref to one of your
+    objects.  All of a sudden, you start leaking.  You can look at your
+    code all you want and you won't find a reason for the leak.
+
+IOW, a class designer can out-think __del__ problems, but has no control
+over who creates weakrefs to his classes or class instances.  The class
+user has little chance either of predicting when the weakrefs he creates
+may end up in cycles.
+
+Callbacks on weakref callbacks are executed in an arbitrary order, and
+that's not good (a primary reason not to collect cycles with objects with
+__del__ methods is to avoid running finalizers in an arbitrary order).
+However, a weakref callback on a weakref callback has got to be rare.
+It's possible to do such a thing, so gc has to be robust against it, but
+I doubt anyone has done it outside the test case I wrote for it.
+
+[The callbacks (if any) on non-CT weakrefs to CT objects are also executed
+ in an arbitrary order now.  But they were before too, depending on the
+ vagaries of when tp_clear() happened to break enough cycles to trigger
+ them.  People simply shouldn't try to use __del__ or weakref callbacks to
+ do fancy stuff.]

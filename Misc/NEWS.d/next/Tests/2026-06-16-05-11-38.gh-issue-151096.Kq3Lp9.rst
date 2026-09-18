@@ -1,0 +1,2 @@
+Fix ``test_embed`` failing when CPython is configured with a split exec prefix
+(``--exec-prefix`` differing from ``--prefix``).

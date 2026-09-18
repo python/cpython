@@ -1,0 +1,4 @@
+{% extends "!opensearch.xml" %}
+{% block extra -%}
+<Image height="16" width="16" type="image/x-icon">https://www.python.org/images/favicon16x16.ico</Image>
+{%- endblock %}

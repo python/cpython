@@ -1,0 +1,176 @@
+------------------------------------------------------------------------
+-- invert.decTest -- digitwise logical INVERT                         --
+-- Copyright (c) IBM Corporation, 1981, 2008.  All rights reserved.   --
+------------------------------------------------------------------------
+-- Please see the document "General Decimal Arithmetic Testcases"     --
+-- at http://www2.hursley.ibm.com/decimal for the description of      --
+-- these testcases.                                                   --
+--                                                                    --
+-- These testcases are experimental ('beta' versions), and they       --
+-- may contain errors.  They are offered on an as-is basis.  In       --
+-- particular, achieving the same results as the tests here is not    --
+-- a guarantee that an implementation complies with any Standard      --
+-- or specification.  The tests are not exhaustive.                   --
+--                                                                    --
+-- Please send comments, suggestions, and corrections to the author:  --
+--   Mike Cowlishaw, IBM Fellow                                       --
+--   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
+--   mfc@uk.ibm.com                                                   --
+------------------------------------------------------------------------
+version: 2.59
+
+extended:    1
+precision:   9
+rounding:    half_up
+maxExponent: 999
+minExponent: -999
+
+-- Sanity check (truth table), and examples from decArith
+invx001 invert             0 -> 111111111
+invx002 invert             1 -> 111111110
+invx003 invert            10 -> 111111101
+invx004 invert     111111111 ->         0
+invx005 invert     000000000 -> 111111111
+invx006 invert     101010101 -> '10101010'
+-- and at msd and msd-1
+invx007 invert 000000000 ->   111111111
+invx009 invert 100000000 ->    11111111
+invx011 invert 000000000 ->   111111111
+invx013 invert 010000000 ->   101111111
+
+-- Various lengths
+--             123456789         123456789
+invx021 invert 111111111     ->  0
+invx022 invert 111111111111  ->  0
+invx023 invert  11111111     ->  100000000
+invx025 invert   1111111     ->  110000000
+invx026 invert    111111     ->  111000000
+invx027 invert     11111     ->  111100000
+invx028 invert      1111     ->  111110000
+invx029 invert       111     ->  111111000
+invx031 invert        11     ->  111111100
+invx032 invert         1     ->  111111110
+invx033 invert 111111111111  ->  0
+invx034 invert 11111111111   ->  0
+invx035 invert 1111111111    ->  0
+invx036 invert 111111111     ->  0
+
+invx080 invert 011111111   ->  100000000
+invx081 invert 101111111   ->   10000000
+invx082 invert 110111111   ->    1000000
+invx083 invert 111011111   ->     100000
+invx084 invert 111101111   ->      10000
+invx085 invert 111110111   ->       1000
+invx086 invert 111111011   ->        100
+invx087 invert 111111101   ->         10
+invx088 invert 111111110   ->          1
+invx089 invert 011111011   ->  100000100
+invx090 invert 101111101   ->   10000010
+invx091 invert 110111110   ->    1000001
+invx092 invert 111011101   ->     100010
+invx093 invert 111101011   ->      10100
+invx094 invert 111110111   ->       1000
+invx095 invert 111101011   ->      10100
+invx096 invert 111011101   ->     100010
+invx097 invert 110111110   ->    1000001
+invx098 invert 101111101   ->   10000010
+invx099 invert 011111011   ->  100000100
+
+-- non-0/1 should not be accepted, nor should signs
+invx220 invert 111111112   ->  NaN Invalid_operation
+invx221 invert 333333333   ->  NaN Invalid_operation
+invx222 invert 555555555   ->  NaN Invalid_operation
+invx223 invert 777777777   ->  NaN Invalid_operation
+invx224 invert 999999999   ->  NaN Invalid_operation
+invx225 invert 222222222   ->  NaN Invalid_operation
+invx226 invert 444444444   ->  NaN Invalid_operation
+invx227 invert 666666666   ->  NaN Invalid_operation
+invx228 invert 888888888   ->  NaN Invalid_operation
+invx229 invert 999999999   ->  NaN Invalid_operation
+invx230 invert 999999999   ->  NaN Invalid_operation
+invx231 invert 999999999   ->  NaN Invalid_operation
+invx232 invert 999999999   ->  NaN Invalid_operation
+-- a few randoms
+invx240 invert  567468689  ->  NaN Invalid_operation
+invx241 invert  567367689  ->  NaN Invalid_operation
+invx242 invert -631917772  ->  NaN Invalid_operation
+invx243 invert -756253257  ->  NaN Invalid_operation
+invx244 invert  835590149  ->  NaN Invalid_operation
+-- test MSD
+invx250 invert  200000000  ->  NaN Invalid_operation
+invx251 invert  300000000  ->  NaN Invalid_operation
+invx252 invert  400000000  ->  NaN Invalid_operation
+invx253 invert  500000000  ->  NaN Invalid_operation
+invx254 invert  600000000  ->  NaN Invalid_operation
+invx255 invert  700000000  ->  NaN Invalid_operation
+invx256 invert  800000000  ->  NaN Invalid_operation
+invx257 invert  900000000  ->  NaN Invalid_operation
+-- test MSD-1
+invx270 invert  021000000  ->  NaN Invalid_operation
+invx271 invert  030100000  ->  NaN Invalid_operation
+invx272 invert  040010000  ->  NaN Invalid_operation
+invx273 invert  050001000  ->  NaN Invalid_operation
+invx274 invert  160000100  ->  NaN Invalid_operation
+invx275 invert  170000010  ->  NaN Invalid_operation
+invx276 invert  180000000  ->  NaN Invalid_operation
+invx277 invert  190000000  ->  NaN Invalid_operation
+-- test LSD
+invx280 invert  000000002  ->  NaN Invalid_operation
+invx281 invert  000000003  ->  NaN Invalid_operation
+invx282 invert  000000004  ->  NaN Invalid_operation
+invx283 invert  000000005  ->  NaN Invalid_operation
+invx284 invert  101000006  ->  NaN Invalid_operation
+invx285 invert  100100007  ->  NaN Invalid_operation
+invx286 invert  100010008  ->  NaN Invalid_operation
+invx287 invert  100001009  ->  NaN Invalid_operation
+-- test Middie
+invx288 invert  000020000  ->  NaN Invalid_operation
+invx289 invert  000030001  ->  NaN Invalid_operation
+invx290 invert  000040000  ->  NaN Invalid_operation
+invx291 invert  000050000  ->  NaN Invalid_operation
+invx292 invert  101060000  ->  NaN Invalid_operation
+invx293 invert  100170010  ->  NaN Invalid_operation
+invx294 invert  100080100  ->  NaN Invalid_operation
+invx295 invert  100091000  ->  NaN Invalid_operation
+-- signs
+invx296 invert -100001000  ->  NaN Invalid_operation
+invx299 invert  100001000  ->  11110111
+
+-- Nmax, Nmin, Ntiny
+invx341 invert  9.99999999E+999   -> NaN Invalid_operation
+invx342 invert  1E-999            -> NaN Invalid_operation
+invx343 invert  1.00000000E-999   -> NaN Invalid_operation
+invx344 invert  1E-1007           -> NaN Invalid_operation
+invx345 invert  -1E-1007          -> NaN Invalid_operation
+invx346 invert  -1.00000000E-999  -> NaN Invalid_operation
+invx347 invert  -1E-999           -> NaN Invalid_operation
+invx348 invert  -9.99999999E+999  -> NaN Invalid_operation
+
+-- A few other non-integers
+invx361 invert  1.0               -> NaN Invalid_operation
+invx362 invert  1E+1              -> NaN Invalid_operation
+invx363 invert  0.0               -> NaN Invalid_operation
+invx364 invert  0E+1              -> NaN Invalid_operation
+invx365 invert  9.9               -> NaN Invalid_operation
+invx366 invert  9E+1              -> NaN Invalid_operation
+
+-- All Specials are in error
+invx788 invert -Inf     -> NaN  Invalid_operation
+invx794 invert  Inf     -> NaN  Invalid_operation
+invx821 invert  NaN     -> NaN  Invalid_operation
+invx841 invert  sNaN    -> NaN  Invalid_operation
+-- propagating NaNs
+invx861 invert  NaN1    -> NaN Invalid_operation
+invx862 invert +NaN2    -> NaN Invalid_operation
+invx863 invert  NaN3    -> NaN Invalid_operation
+invx864 invert  NaN4    -> NaN Invalid_operation
+invx865 invert  NaN5    -> NaN Invalid_operation
+invx871 invert  sNaN11  -> NaN Invalid_operation
+invx872 invert  sNaN12  -> NaN Invalid_operation
+invx873 invert  sNaN13  -> NaN Invalid_operation
+invx874 invert  sNaN14  -> NaN Invalid_operation
+invx875 invert  sNaN15  -> NaN Invalid_operation
+invx876 invert  NaN16   -> NaN Invalid_operation
+invx881 invert +NaN25   -> NaN Invalid_operation
+invx882 invert -NaN26   -> NaN Invalid_operation
+invx883 invert -sNaN27  -> NaN Invalid_operation

@@ -1,0 +1,1 @@
+Avoid possible memory leak in ``tkinter.c`` on Windows.

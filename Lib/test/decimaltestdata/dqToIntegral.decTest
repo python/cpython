@@ -1,0 +1,257 @@
+------------------------------------------------------------------------
+-- dqToIntegral.decTest -- round Quad to integral value               --
+-- Copyright (c) IBM Corporation, 2001, 2008.  All rights reserved.   --
+------------------------------------------------------------------------
+-- Please see the document "General Decimal Arithmetic Testcases"     --
+-- at http://www2.hursley.ibm.com/decimal for the description of      --
+-- these testcases.                                                   --
+--                                                                    --
+-- These testcases are experimental ('beta' versions), and they       --
+-- may contain errors.  They are offered on an as-is basis.  In       --
+-- particular, achieving the same results as the tests here is not    --
+-- a guarantee that an implementation complies with any Standard      --
+-- or specification.  The tests are not exhaustive.                   --
+--                                                                    --
+-- Please send comments, suggestions, and corrections to the author:  --
+--   Mike Cowlishaw, IBM Fellow                                       --
+--   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
+--   mfc@uk.ibm.com                                                   --
+------------------------------------------------------------------------
+version: 2.59
+
+-- This set of tests tests the extended specification 'round-to-integral
+-- value-exact' operations (from IEEE 854, later modified in 754r).
+-- All non-zero results are defined as being those from either copy or
+-- quantize, so those are assumed to have been tested extensively
+-- elsewhere; the tests here are for integrity, rounding mode, etc.
+-- Also, it is assumed the test harness will use these tests for both
+-- ToIntegralExact (which does set Inexact) and the fixed-name
+-- functions (which do not set Inexact).
+
+-- Note that decNumber implements an earlier definition of toIntegral
+-- which never sets Inexact; the decTest operator for that is called
+-- 'tointegral' instead of 'tointegralx'.
+
+extended:    1
+clamp:       1
+precision:   34
+maxExponent: 6144
+minExponent: -6143
+rounding:    half_even
+
+dqintx001 tointegralx      0     ->  0
+dqintx002 tointegralx      0.0   ->  0
+dqintx003 tointegralx      0.1   ->  0  Inexact Rounded
+dqintx004 tointegralx      0.2   ->  0  Inexact Rounded
+dqintx005 tointegralx      0.3   ->  0  Inexact Rounded
+dqintx006 tointegralx      0.4   ->  0  Inexact Rounded
+dqintx007 tointegralx      0.5   ->  0  Inexact Rounded
+dqintx008 tointegralx      0.6   ->  1  Inexact Rounded
+dqintx009 tointegralx      0.7   ->  1  Inexact Rounded
+dqintx010 tointegralx      0.8   ->  1  Inexact Rounded
+dqintx011 tointegralx      0.9   ->  1  Inexact Rounded
+dqintx012 tointegralx      1     ->  1
+dqintx013 tointegralx      1.0   ->  1  Rounded
+dqintx014 tointegralx      1.1   ->  1  Inexact Rounded
+dqintx015 tointegralx      1.2   ->  1  Inexact Rounded
+dqintx016 tointegralx      1.3   ->  1  Inexact Rounded
+dqintx017 tointegralx      1.4   ->  1  Inexact Rounded
+dqintx018 tointegralx      1.5   ->  2  Inexact Rounded
+dqintx019 tointegralx      1.6   ->  2  Inexact Rounded
+dqintx020 tointegralx      1.7   ->  2  Inexact Rounded
+dqintx021 tointegralx      1.8   ->  2  Inexact Rounded
+dqintx022 tointegralx      1.9   ->  2  Inexact Rounded
+-- negatives
+dqintx031 tointegralx     -0     -> -0
+dqintx032 tointegralx     -0.0   -> -0
+dqintx033 tointegralx     -0.1   -> -0  Inexact Rounded
+dqintx034 tointegralx     -0.2   -> -0  Inexact Rounded
+dqintx035 tointegralx     -0.3   -> -0  Inexact Rounded
+dqintx036 tointegralx     -0.4   -> -0  Inexact Rounded
+dqintx037 tointegralx     -0.5   -> -0  Inexact Rounded
+dqintx038 tointegralx     -0.6   -> -1  Inexact Rounded
+dqintx039 tointegralx     -0.7   -> -1  Inexact Rounded
+dqintx040 tointegralx     -0.8   -> -1  Inexact Rounded
+dqintx041 tointegralx     -0.9   -> -1  Inexact Rounded
+dqintx042 tointegralx     -1     -> -1
+dqintx043 tointegralx     -1.0   -> -1  Rounded
+dqintx044 tointegralx     -1.1   -> -1  Inexact Rounded
+dqintx045 tointegralx     -1.2   -> -1  Inexact Rounded
+dqintx046 tointegralx     -1.3   -> -1  Inexact Rounded
+dqintx047 tointegralx     -1.4   -> -1  Inexact Rounded
+dqintx048 tointegralx     -1.5   -> -2  Inexact Rounded
+dqintx049 tointegralx     -1.6   -> -2  Inexact Rounded
+dqintx050 tointegralx     -1.7   -> -2  Inexact Rounded
+dqintx051 tointegralx     -1.8   -> -2  Inexact Rounded
+dqintx052 tointegralx     -1.9   -> -2  Inexact Rounded
+-- next two would be NaN using quantize(x, 0)
+dqintx053 tointegralx    10E+60  -> 1.0E+61
+dqintx054 tointegralx   -10E+60  -> -1.0E+61
+
+-- numbers around precision
+dqintx060 tointegralx '56267E-17'   -> '0'      Inexact Rounded
+dqintx061 tointegralx '56267E-5'    -> '1'      Inexact Rounded
+dqintx062 tointegralx '56267E-2'    -> '563'    Inexact Rounded
+dqintx063 tointegralx '56267E-1'    -> '5627'   Inexact Rounded
+dqintx065 tointegralx '56267E-0'    -> '56267'
+dqintx066 tointegralx '56267E+0'    -> '56267'
+dqintx067 tointegralx '56267E+1'    -> '5.6267E+5'
+dqintx068 tointegralx '56267E+9'    -> '5.6267E+13'
+dqintx069 tointegralx '56267E+10'   -> '5.6267E+14'
+dqintx070 tointegralx '56267E+11'   -> '5.6267E+15'
+dqintx071 tointegralx '56267E+12'   -> '5.6267E+16'
+dqintx072 tointegralx '56267E+13'   -> '5.6267E+17'
+dqintx073 tointegralx '1.23E+96'    -> '1.23E+96'
+dqintx074 tointegralx '1.23E+6144'  -> #47ffd300000000000000000000000000 Clamped
+
+dqintx080 tointegralx '-56267E-10'  -> '-0'      Inexact Rounded
+dqintx081 tointegralx '-56267E-5'   -> '-1'      Inexact Rounded
+dqintx082 tointegralx '-56267E-2'   -> '-563'    Inexact Rounded
+dqintx083 tointegralx '-56267E-1'   -> '-5627'   Inexact Rounded
+dqintx085 tointegralx '-56267E-0'   -> '-56267'
+dqintx086 tointegralx '-56267E+0'   -> '-56267'
+dqintx087 tointegralx '-56267E+1'   -> '-5.6267E+5'
+dqintx088 tointegralx '-56267E+9'   -> '-5.6267E+13'
+dqintx089 tointegralx '-56267E+10'  -> '-5.6267E+14'
+dqintx090 tointegralx '-56267E+11'  -> '-5.6267E+15'
+dqintx091 tointegralx '-56267E+12'  -> '-5.6267E+16'
+dqintx092 tointegralx '-56267E+13'  -> '-5.6267E+17'
+dqintx093 tointegralx '-1.23E+96'   -> '-1.23E+96'
+dqintx094 tointegralx '-1.23E+6144' -> #c7ffd300000000000000000000000000 Clamped
+
+-- subnormal inputs
+dqintx100 tointegralx        1E-299 -> 0  Inexact Rounded
+dqintx101 tointegralx      0.1E-299 -> 0  Inexact Rounded
+dqintx102 tointegralx     0.01E-299 -> 0  Inexact Rounded
+dqintx103 tointegralx        0E-299 -> 0
+
+-- specials and zeros
+dqintx120 tointegralx 'Inf'       ->  Infinity
+dqintx121 tointegralx '-Inf'      -> -Infinity
+dqintx122 tointegralx   NaN       ->  NaN
+dqintx123 tointegralx  sNaN       ->  NaN  Invalid_operation
+dqintx124 tointegralx     0       ->  0
+dqintx125 tointegralx    -0       -> -0
+dqintx126 tointegralx     0.000   ->  0
+dqintx127 tointegralx     0.00    ->  0
+dqintx128 tointegralx     0.0     ->  0
+dqintx129 tointegralx     0       ->  0
+dqintx130 tointegralx     0E-3    ->  0
+dqintx131 tointegralx     0E-2    ->  0
+dqintx132 tointegralx     0E-1    ->  0
+dqintx133 tointegralx     0E-0    ->  0
+dqintx134 tointegralx     0E+1    ->  0E+1
+dqintx135 tointegralx     0E+2    ->  0E+2
+dqintx136 tointegralx     0E+3    ->  0E+3
+dqintx137 tointegralx     0E+4    ->  0E+4
+dqintx138 tointegralx     0E+5    ->  0E+5
+dqintx139 tointegralx    -0.000   -> -0
+dqintx140 tointegralx    -0.00    -> -0
+dqintx141 tointegralx    -0.0     -> -0
+dqintx142 tointegralx    -0       -> -0
+dqintx143 tointegralx    -0E-3    -> -0
+dqintx144 tointegralx    -0E-2    -> -0
+dqintx145 tointegralx    -0E-1    -> -0
+dqintx146 tointegralx    -0E-0    -> -0
+dqintx147 tointegralx    -0E+1    -> -0E+1
+dqintx148 tointegralx    -0E+2    -> -0E+2
+dqintx149 tointegralx    -0E+3    -> -0E+3
+dqintx150 tointegralx    -0E+4    -> -0E+4
+dqintx151 tointegralx    -0E+5    -> -0E+5
+-- propagating NaNs
+dqintx152 tointegralx   NaN808    ->  NaN808
+dqintx153 tointegralx  sNaN080    ->  NaN80  Invalid_operation
+dqintx154 tointegralx  -NaN808    -> -NaN808
+dqintx155 tointegralx -sNaN080    -> -NaN80  Invalid_operation
+dqintx156 tointegralx  -NaN       -> -NaN
+dqintx157 tointegralx -sNaN       -> -NaN    Invalid_operation
+
+-- examples
+rounding:    half_up
+dqintx200 tointegralx     2.1    -> 2            Inexact Rounded
+dqintx201 tointegralx   100      -> 100
+dqintx202 tointegralx   100.0    -> 100          Rounded
+dqintx203 tointegralx   101.5    -> 102          Inexact Rounded
+dqintx204 tointegralx  -101.5    -> -102         Inexact Rounded
+dqintx205 tointegralx   10E+5    -> 1.0E+6
+dqintx206 tointegralx  7.89E+77  -> 7.89E+77
+dqintx207 tointegralx   -Inf     -> -Infinity
+
+
+-- all rounding modes
+rounding:    half_even
+dqintx210 tointegralx     55.5   ->  56  Inexact Rounded
+dqintx211 tointegralx     56.5   ->  56  Inexact Rounded
+dqintx212 tointegralx     57.5   ->  58  Inexact Rounded
+dqintx213 tointegralx    -55.5   -> -56  Inexact Rounded
+dqintx214 tointegralx    -56.5   -> -56  Inexact Rounded
+dqintx215 tointegralx    -57.5   -> -58  Inexact Rounded
+
+rounding:    half_up
+
+dqintx220 tointegralx     55.5   ->  56  Inexact Rounded
+dqintx221 tointegralx     56.5   ->  57  Inexact Rounded
+dqintx222 tointegralx     57.5   ->  58  Inexact Rounded
+dqintx223 tointegralx    -55.5   -> -56  Inexact Rounded
+dqintx224 tointegralx    -56.5   -> -57  Inexact Rounded
+dqintx225 tointegralx    -57.5   -> -58  Inexact Rounded
+
+rounding:    half_down
+
+dqintx230 tointegralx     55.5   ->  55  Inexact Rounded
+dqintx231 tointegralx     56.5   ->  56  Inexact Rounded
+dqintx232 tointegralx     57.5   ->  57  Inexact Rounded
+dqintx233 tointegralx    -55.5   -> -55  Inexact Rounded
+dqintx234 tointegralx    -56.5   -> -56  Inexact Rounded
+dqintx235 tointegralx    -57.5   -> -57  Inexact Rounded
+
+rounding:    up
+
+dqintx240 tointegralx     55.3   ->  56  Inexact Rounded
+dqintx241 tointegralx     56.3   ->  57  Inexact Rounded
+dqintx242 tointegralx     57.3   ->  58  Inexact Rounded
+dqintx243 tointegralx    -55.3   -> -56  Inexact Rounded
+dqintx244 tointegralx    -56.3   -> -57  Inexact Rounded
+dqintx245 tointegralx    -57.3   -> -58  Inexact Rounded
+
+rounding:    down
+
+dqintx250 tointegralx     55.7   ->  55  Inexact Rounded
+dqintx251 tointegralx     56.7   ->  56  Inexact Rounded
+dqintx252 tointegralx     57.7   ->  57  Inexact Rounded
+dqintx253 tointegralx    -55.7   -> -55  Inexact Rounded
+dqintx254 tointegralx    -56.7   -> -56  Inexact Rounded
+dqintx255 tointegralx    -57.7   -> -57  Inexact Rounded
+
+rounding:    ceiling
+
+dqintx260 tointegralx     55.3   ->  56  Inexact Rounded
+dqintx261 tointegralx     56.3   ->  57  Inexact Rounded
+dqintx262 tointegralx     57.3   ->  58  Inexact Rounded
+dqintx263 tointegralx    -55.3   -> -55  Inexact Rounded
+dqintx264 tointegralx    -56.3   -> -56  Inexact Rounded
+dqintx265 tointegralx    -57.3   -> -57  Inexact Rounded
+
+rounding:    floor
+
+dqintx270 tointegralx     55.7   ->  55  Inexact Rounded
+dqintx271 tointegralx     56.7   ->  56  Inexact Rounded
+dqintx272 tointegralx     57.7   ->  57  Inexact Rounded
+dqintx273 tointegralx    -55.7   -> -56  Inexact Rounded
+dqintx274 tointegralx    -56.7   -> -57  Inexact Rounded
+dqintx275 tointegralx    -57.7   -> -58  Inexact Rounded
+
+-- Int and uInt32 edge values for testing conversions
+dqintx300 tointegralx -2147483646  -> -2147483646
+dqintx301 tointegralx -2147483647  -> -2147483647
+dqintx302 tointegralx -2147483648  -> -2147483648
+dqintx303 tointegralx -2147483649  -> -2147483649
+dqintx304 tointegralx  2147483646  ->  2147483646
+dqintx305 tointegralx  2147483647  ->  2147483647
+dqintx306 tointegralx  2147483648  ->  2147483648
+dqintx307 tointegralx  2147483649  ->  2147483649
+dqintx308 tointegralx  4294967294  ->  4294967294
+dqintx309 tointegralx  4294967295  ->  4294967295
+dqintx310 tointegralx  4294967296  ->  4294967296
+dqintx311 tointegralx  4294967297  ->  4294967297
+

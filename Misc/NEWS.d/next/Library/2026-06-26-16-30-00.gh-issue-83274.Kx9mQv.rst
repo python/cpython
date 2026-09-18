@@ -1,0 +1,3 @@
+Deallocating a :mod:`tkinter` application from a thread other than the one it
+was created in no longer crashes the interpreter.  The underlying Tcl
+interpreter is leaked instead, and a :exc:`RuntimeWarning` is reported.

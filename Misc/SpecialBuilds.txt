@@ -1,0 +1,93 @@
+This file describes some special Python build types enabled via compile-time
+preprocessor directives.
+
+IMPORTANT: if you want to build a debug-enabled Python, it is recommended that
+you use ``./configure --with-pydebug``, rather than the options listed here.
+
+However, if you wish to define some of these options individually, it is best
+to define them in the EXTRA_CFLAGS make variable;
+``make EXTRA_CFLAGS="-DPy_REF_DEBUG"``.
+
+
+Py_REF_DEBUG
+------------
+
+Turn on aggregate reference counting.  This arranges that extern _Py_RefTotal
+hold a count of all references, the sum of ob_refcnt across all objects.
+Passing ``-X showrefcount`` on the command line causes the interactive
+interpreter to print the reference count total as well the number of memory
+blocks allocated after each statement:
+
+    >>> 23
+    23
+    [8288 refs, 14332 blocks]
+    >>>
+
+Note that if this count increases when you're not storing away new objects,
+there's probably a leak.  Remember, though, that in interactive mode the special
+name "_" holds a reference to the last result displayed!
+
+Py_REF_DEBUG also checks after every decref to verify that the refcount hasn't
+gone negative, and causes an immediate fatal error if it has.
+
+Py_DEBUG implies Py_REF_DEBUG.
+
+Special gimmicks:
+
+sys.gettotalrefcount()
+    Return current total of all refcounts.
+
+
+Py_TRACE_REFS
+-------------
+
+Build option: ``./configure --with-trace-refs``.
+
+Turn on heavy reference debugging.  This is major surgery.  All live
+heap-allocated objects are traced in a hash table.  Most built-in type objects
+are not in this list, as they're statically allocated.
+
+Special gimmicks:
+
+sys.getobjects(max[, type])
+    Return list of the (no more than) max most-recently allocated objects, most
+    recently allocated first in the list, least-recently allocated last in the
+    list.  max=0 means no limit on list length.  If an optional type object is
+    passed, the list is also restricted to objects of that type.  The return
+    list itself, and some temp objects created just to call sys.getobjects(),
+    are excluded from the return list.  Note that the list returned is just
+    another object, though, so may appear in the return list the next time you
+    call getobjects(); note that every object in the list is kept alive too,
+    simply by virtue of being in the list.
+
+envvar PYTHONDUMPREFS
+    If this envvar exists, Py_FinalizeEx() arranges to print a list of all
+    still-live heap objects.  This is printed twice, in different formats,
+    before and after Py_FinalizeEx has cleaned up everything it can clean up.  The
+    first output block produces the repr() of each object so is more
+    informative; however, a lot of stuff destined to die is still alive then.
+    The second output block is much harder to work with (repr() can't be invoked
+    anymore -- the interpreter has been torn down too far), but doesn't list any
+    objects that will die.  The tool script combinerefs.py can be run over this
+    to combine the info from both output blocks.  The second output block, and
+    combinerefs.py, were new in Python 2.3b1.
+
+
+Py_DEBUG
+--------
+
+This is what is generally meant by "a debug build" of Python.
+
+Py_DEBUG implies Py_REF_DEBUG. In addition, C assert()s are enabled
+(via the C way: by not defining NDEBUG), and some routines do additional sanity
+checks inside "#ifdef Py_DEBUG" blocks.
+
+Also, compile in support for "lltrace" (Low Level TRACE-ing) of the main
+interpreter loop. Before _PyEval_EvalFrameDefault executes a frame's code, it
+checks the frame's global namespace for a variable "__lltrace__" (as well as for
+the environment variable PYTHON_LLTRACE"). If such a variable is found, mounds
+of information about what the interpreter is doing are sprayed to stdout, such
+as every opcode and opcode argument and values pushed onto and popped off the
+value stack. Higher integer values for the environment variable result in more
+and more detail being printed (the global __lltrace__ always enables the maximum
+output). Not useful very often, but *very* useful when needed.

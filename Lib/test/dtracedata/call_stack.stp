@@ -1,0 +1,42 @@
+global tracing
+
+function basename:string(path:string)
+{
+    last_token = token = tokenize(path, "/");
+    while (token != "") {
+        last_token = token;
+        token = tokenize("", "/");
+    }
+    return last_token;
+}
+
+probe @PYTHON_SYSTEMTAP_PROBE@("function__entry")
+{
+    funcname = user_string($arg2);
+
+    if (funcname == "start") {
+        tracing = 1;
+    }
+}
+
+probe @PYTHON_SYSTEMTAP_PROBE@("function__entry"),
+      @PYTHON_SYSTEMTAP_PROBE@("function__return")
+{
+    filename = user_string($arg1);
+    funcname = user_string($arg2);
+    lineno = $arg3;
+
+    if (tracing) {
+        printf("%d\t%s:%s:%s:%d\n", gettimeofday_us(), $$name,
+               basename(filename), funcname, lineno);
+    }
+}
+
+probe @PYTHON_SYSTEMTAP_PROBE@("function__return")
+{
+    funcname = user_string($arg2);
+
+    if (funcname == "start") {
+        tracing = 0;
+    }
+}

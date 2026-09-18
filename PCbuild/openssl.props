@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(opensslIncludeDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(opensslOutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>ws2_32.lib;libcrypto.lib;libssl.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <PropertyGroup>
+    <_DLLSuffix>-3</_DLLSuffix>
+    <_DLLSuffix Condition="$(Platform) == 'ARM'">$(_DLLSuffix)-arm</_DLLSuffix>
+    <_DLLSuffix Condition="$(Platform) == 'ARM64'">$(_DLLSuffix)-arm64</_DLLSuffix>
+    <OpenSSLDLLSuffix Condition="$(OpenSSLDLLSuffix) == ''">$(_DLLSuffix)</OpenSSLDLLSuffix>
+  </PropertyGroup>
+  <ItemGroup>
+    <_SSLDLL Include="$(opensslOutDir)\libcrypto$(_DLLSuffix).dll" />
+    <_SSLDLL Include="$(opensslOutDir)\libcrypto$(_DLLSuffix).pdb" />
+    <_SSLDLL Include="$(opensslOutDir)\libssl$(_DLLSuffix).dll" />
+    <_SSLDLL Include="$(opensslOutDir)\libssl$(_DLLSuffix).pdb" />
+  </ItemGroup>
+  <Target Name="_CopySSLDLL"
+          Inputs="@(_SSLDLL)"
+          Outputs="@(_SSLDLL->'$(OutDir)%(Filename)%(Extension)')"
+          Condition="$(SkipCopySSLDLL) == ''"
+          AfterTargets="Build">
+    <Copy SourceFiles="@(_SSLDLL)" DestinationFolder="$(OutDir)" />
+  </Target>
+  <Target Name="_CleanSSLDLL" Condition="$(SkipCopySSLDLL) == ''" BeforeTargets="Clean">
+    <Delete Files="@(_SSLDLL->'$(OutDir)%(Filename)%(Extension)')" TreatErrorsAsWarnings="true" />
+  </Target>
+</Project>

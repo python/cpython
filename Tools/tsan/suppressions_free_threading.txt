@@ -1,0 +1,12 @@
+# This file contains suppressions for the free-threaded build. It includes the
+# default build suppressions plus any additional suppressions needed only in
+# the free-threaded build.
+#
+# Reference: https://github.com/google/sanitizers/wiki/ThreadSanitizerSuppressions
+#
+# When adding a suppression, include a comment referencing a GitHub issue
+# that describes how to reproduce the race and includes the relevant TSan
+# output.
+
+# There are currently no active suppressions. This file is kept so tooling
+# that expects it can still find it.

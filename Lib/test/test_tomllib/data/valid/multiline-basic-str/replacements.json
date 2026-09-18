@@ -1,0 +1,6 @@
+{
+  "escape": {"type":"string","value":"\u001B"},
+  "tab": {"type":"string","value":"\t"},
+  "upper-j": {"type":"string","value":"J"},
+  "upper-j-2": {"type":"string","value":"J"}
+}

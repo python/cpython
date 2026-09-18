@@ -1,0 +1,27 @@
+global tracing
+
+probe @PYTHON_SYSTEMTAP_PROBE@("function__entry")
+{
+    funcname = user_string($arg2);
+
+    if (funcname == "start") {
+        tracing = 1;
+    }
+}
+
+probe @PYTHON_SYSTEMTAP_PROBE@("gc__start"),
+      @PYTHON_SYSTEMTAP_PROBE@("gc__done")
+{
+    if (tracing) {
+        printf("%d\t%s:%ld\n", gettimeofday_us(), $$name, $arg1);
+    }
+}
+
+probe @PYTHON_SYSTEMTAP_PROBE@("function__return")
+{
+    funcname = user_string($arg2);
+
+    if (funcname == "start") {
+        tracing = 0;
+    }
+}

@@ -1,0 +1,13 @@
+﻿# -*- coding: latin1 -*-
+# IMPORTANT: this file has the utf-8 BOM signature '\xef\xbb\xbf'
+# at the start of it.  Make sure this is preserved if any changes
+# are made!  Also note that the coding cookie above conflicts with
+# the presence of a utf-8 BOM signature -- this is intended.
+
+# Arbitrary encoded utf-8 text (stolen from test_doctest2.py).
+x = 'ЉЊЈЁЂ'
+def y():
+    """
+    And again in a comment.  ЉЊЈЁЂ
+    """
+    pass

@@ -1,0 +1,54 @@
+// Resource script for Sqlite DLL.
+
+#include <winver.h>
+
+#ifndef RT_MANIFEST
+// bpo-45220: Cannot reliably #include RT_MANIFEST from
+// anywhere, so we hardcode it
+#define RT_MANIFEST 24
+#endif
+
+// Include the manifest file that indicates we support all
+// current versions of Windows.
+2 RT_MANIFEST "python.manifest"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+#define _S(x) #x
+#define S(x) _S(x)
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION SQLITE_MAJOR_VERSION, SQLITE_MINOR_VERSION, SQLITE_MICRO_VERSION, SQLITE_PATCH_VERSION
+ PRODUCTVERSION SQLITE_MAJOR_VERSION, SQLITE_MINOR_VERSION, SQLITE_MICRO_VERSION, SQLITE_PATCH_VERSION
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS VS_FF_DEBUG
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS VOS__WINDOWS32
+ FILETYPE VFT_DLL
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "000004b0"
+        BEGIN
+            VALUE "CompanyName", "SQLite3\0"
+            VALUE "FileDescription", "SQLite3\0"
+            VALUE "FileVersion", S(SQLITE_VERSION) "\0"
+            VALUE "InternalName", "SQLite3 DLL\0"
+            VALUE "LegalCopyright", "Unspecified\0"
+            VALUE "OriginalFilename", "sqlite3.dll\0"
+            VALUE "ProductName", "SQLite3\0"
+            VALUE "ProductVersion", S(SQLITE_VERSION) "\0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x0, 1200
+    END
+END

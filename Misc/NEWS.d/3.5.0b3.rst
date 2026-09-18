@@ -1,0 +1,273 @@
+.. bpo: 24467
+.. date: 9236
+.. nonce: BAJ80-
+.. release date: 2015-07-05
+.. section: Core and Builtins
+
+Fixed possible buffer over-read in bytearray. The bytearray object now
+always allocates place for trailing null byte and it's buffer now is always
+null-terminated.
+
+..
+
+.. bpo: 0
+.. date: 9235
+.. nonce: 944IUY
+.. section: Core and Builtins
+
+Upgrade to Unicode 8.0.0.
+
+..
+
+.. bpo: 24345
+.. date: 9234
+.. nonce: fVcTaB
+.. section: Core and Builtins
+
+Add Py_tp_finalize slot for the stable ABI.
+
+..
+
+.. bpo: 24400
+.. date: 9233
+.. nonce: 2mNeD8
+.. section: Core and Builtins
+
+Introduce a distinct type for :pep:`492` coroutines; add types.CoroutineType,
+inspect.getcoroutinestate, inspect.getcoroutinelocals; coroutines no longer
+use CO_GENERATOR flag; sys.set_coroutine_wrapper works only for 'async def'
+coroutines; inspect.iscoroutine no longer uses collections.abc.Coroutine,
+it's intended to test for pure 'async def' coroutines only; add new opcode:
+GET_YIELD_FROM_ITER; fix generators wrapper used in types.coroutine to be
+instance of collections.abc.Generator; collections.abc.Awaitable and
+collections.abc.Coroutine can no longer be used to detect generator-based
+coroutines--use inspect.isawaitable instead.
+
+..
+
+.. bpo: 24450
+.. date: 9232
+.. nonce: lF0S5c
+.. section: Core and Builtins
+
+Add gi_yieldfrom to generators and cr_await to coroutines. Contributed by
+Benno Leslie and Yury Selivanov.
+
+..
+
+.. bpo: 19235
+.. date: 9231
+.. nonce: 0kW4n5
+.. section: Core and Builtins
+
+Add new RecursionError exception. Patch by Georg Brandl.
+
+..
+
+.. bpo: 21750
+.. date: 9230
+.. nonce: _Ycvgi
+.. section: Library
+
+mock_open.read_data can now be read from each instance, as it could in
+Python 3.3.
+
+..
+
+.. bpo: 24552
+.. date: 9229
+.. nonce: VTO6sf
+.. section: Library
+
+Fix use after free in an error case of the _pickle module.
+
+..
+
+.. bpo: 24514
+.. date: 9228
+.. nonce: _xRb2r
+.. section: Library
+
+tarfile now tolerates number fields consisting of only whitespace.
+
+..
+
+.. bpo: 19176
+.. date: 9227
+.. nonce: 8V6nOK
+.. section: Library
+
+Fixed doctype() related bugs in C implementation of ElementTree. A
+deprecation warning no longer issued by XMLParser subclass with default
+doctype() method.  Direct call of doctype() now issues a warning.  Parser's
+doctype() now is not called if target's doctype() is called.  Based on patch
+by Martin Panter.
+
+..
+
+.. bpo: 20387
+.. date: 9226
+.. nonce: aAbWbQ
+.. section: Library
+
+Restore semantic round-trip correctness in tokenize/untokenize for
+tab-indented blocks.
+
+..
+
+.. bpo: 24456
+.. date: 9225
+.. nonce: yYSd2u
+.. section: Library
+
+Fixed possible buffer over-read in adpcm2lin() and lin2adpcm() functions of
+the audioop module.
+
+..
+
+.. bpo: 24336
+.. date: 9224
+.. nonce: 4a5y1m
+.. section: Library
+
+The contextmanager decorator now works with functions with keyword arguments
+called "func" and "self".  Patch by Martin Panter.
+
+..
+
+.. bpo: 24522
+.. date: 9223
+.. nonce: PkcqCA
+.. section: Library
+
+Fix possible integer overflow in json accelerator module.
+
+..
+
+.. bpo: 24489
+.. date: 9222
+.. nonce: GJnMcW
+.. section: Library
+
+ensure a previously set C errno doesn't disturb cmath.polar().
+
+..
+
+.. bpo: 24408
+.. date: 9221
+.. nonce: vPb5UK
+.. section: Library
+
+Fixed AttributeError in measure() and metrics() methods of tkinter.Font.
+
+..
+
+.. bpo: 14373
+.. date: 9220
+.. nonce: CTYZ4J
+.. section: Library
+
+C implementation of functools.lru_cache() now can be used with methods.
+
+..
+
+.. bpo: 24347
+.. date: 9219
+.. nonce: CPPDb8
+.. section: Library
+
+Set KeyError if PyDict_GetItemWithError returns NULL.
+
+..
+
+.. bpo: 24348
+.. date: 9218
+.. nonce: U11rhr
+.. section: Library
+
+Drop superfluous incref/decref.
+
+..
+
+.. bpo: 24359
+.. date: 9217
+.. nonce: -IRNG9
+.. section: Library
+
+Check for changed OrderedDict size during iteration.
+
+..
+
+.. bpo: 24368
+.. date: 9216
+.. nonce: 550kDT
+.. section: Library
+
+Support keyword arguments in OrderedDict methods.
+
+..
+
+.. bpo: 24362
+.. date: 9215
+.. nonce: cHYce5
+.. section: Library
+
+Simplify the C OrderedDict fast nodes resize logic.
+
+..
+
+.. bpo: 24377
+.. date: 9214
+.. nonce: Gp1Bqr
+.. section: Library
+
+Fix a ref leak in OrderedDict.__repr__.
+
+..
+
+.. bpo: 24369
+.. date: 9213
+.. nonce: qFl7lZ
+.. section: Library
+
+Defend against key-changes during iteration.
+
+..
+
+.. bpo: 24373
+.. date: 9212
+.. nonce: 6TL2XG
+.. section: Tests
+
+_testmultiphase and xxlimited now use tp_traverse and tp_finalize to avoid
+reference leaks encountered when combining tp_dealloc with PyType_FromSpec
+(see issue #16690 for details)
+
+..
+
+.. bpo: 24458
+.. date: 9211
+.. nonce: 1egApX
+.. section: Documentation
+
+Update documentation to cover multi-phase initialization for extension
+modules (PEP 489). Patch by Petr Viktorin.
+
+..
+
+.. bpo: 24351
+.. date: 9210
+.. nonce: XeSVl5
+.. section: Documentation
+
+Clarify what is meant by "identifier" in the context of string.Template
+instances.
+
+..
+
+.. bpo: 24432
+.. date: 9209
+.. nonce: IvUSiN
+.. section: Build
+
+Update Windows builds and OS X 10.5 installer to use OpenSSL 1.0.2c.

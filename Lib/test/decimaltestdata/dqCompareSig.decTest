@@ -1,0 +1,647 @@
+------------------------------------------------------------------------
+-- dqCompareSig.decTest -- decQuad comparison; all NaNs signal        --
+-- Copyright (c) IBM Corporation, 1981, 2008.  All rights reserved.   --
+------------------------------------------------------------------------
+-- Please see the document "General Decimal Arithmetic Testcases"     --
+-- at http://www2.hursley.ibm.com/decimal for the description of      --
+-- these testcases.                                                   --
+--                                                                    --
+-- These testcases are experimental ('beta' versions), and they       --
+-- may contain errors.  They are offered on an as-is basis.  In       --
+-- particular, achieving the same results as the tests here is not    --
+-- a guarantee that an implementation complies with any Standard      --
+-- or specification.  The tests are not exhaustive.                   --
+--                                                                    --
+-- Please send comments, suggestions, and corrections to the author:  --
+--   Mike Cowlishaw, IBM Fellow                                       --
+--   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
+--   mfc@uk.ibm.com                                                   --
+------------------------------------------------------------------------
+version: 2.59
+
+-- Note that we cannot assume add/subtract tests cover paths adequately,
+-- here, because the code might be quite different (comparison cannot
+-- overflow or underflow, so actual subtractions are not necessary).
+
+-- All operands and results are decQuads.
+extended:    1
+clamp:       1
+precision:   34
+maxExponent: 6144
+minExponent: -6143
+rounding:    half_even
+
+-- sanity checks
+dqcms001 comparesig  -2  -2  -> 0
+dqcms002 comparesig  -2  -1  -> -1
+dqcms003 comparesig  -2   0  -> -1
+dqcms004 comparesig  -2   1  -> -1
+dqcms005 comparesig  -2   2  -> -1
+dqcms006 comparesig  -1  -2  -> 1
+dqcms007 comparesig  -1  -1  -> 0
+dqcms008 comparesig  -1   0  -> -1
+dqcms009 comparesig  -1   1  -> -1
+dqcms010 comparesig  -1   2  -> -1
+dqcms011 comparesig   0  -2  -> 1
+dqcms012 comparesig   0  -1  -> 1
+dqcms013 comparesig   0   0  -> 0
+dqcms014 comparesig   0   1  -> -1
+dqcms015 comparesig   0   2  -> -1
+dqcms016 comparesig   1  -2  -> 1
+dqcms017 comparesig   1  -1  -> 1
+dqcms018 comparesig   1   0  -> 1
+dqcms019 comparesig   1   1  -> 0
+dqcms020 comparesig   1   2  -> -1
+dqcms021 comparesig   2  -2  -> 1
+dqcms022 comparesig   2  -1  -> 1
+dqcms023 comparesig   2   0  -> 1
+dqcms025 comparesig   2   1  -> 1
+dqcms026 comparesig   2   2  -> 0
+
+dqcms031 comparesig  -20  -20  -> 0
+dqcms032 comparesig  -20  -10  -> -1
+dqcms033 comparesig  -20   00  -> -1
+dqcms034 comparesig  -20   10  -> -1
+dqcms035 comparesig  -20   20  -> -1
+dqcms036 comparesig  -10  -20  -> 1
+dqcms037 comparesig  -10  -10  -> 0
+dqcms038 comparesig  -10   00  -> -1
+dqcms039 comparesig  -10   10  -> -1
+dqcms040 comparesig  -10   20  -> -1
+dqcms041 comparesig   00  -20  -> 1
+dqcms042 comparesig   00  -10  -> 1
+dqcms043 comparesig   00   00  -> 0
+dqcms044 comparesig   00   10  -> -1
+dqcms045 comparesig   00   20  -> -1
+dqcms046 comparesig   10  -20  -> 1
+dqcms047 comparesig   10  -10  -> 1
+dqcms048 comparesig   10   00  -> 1
+dqcms049 comparesig   10   10  -> 0
+dqcms050 comparesig   10   20  -> -1
+dqcms051 comparesig   20  -20  -> 1
+dqcms052 comparesig   20  -10  -> 1
+dqcms053 comparesig   20   00  -> 1
+dqcms055 comparesig   20   10  -> 1
+dqcms056 comparesig   20   20  -> 0
+
+dqcms061 comparesig  -2.0  -2.0  -> 0
+dqcms062 comparesig  -2.0  -1.0  -> -1
+dqcms063 comparesig  -2.0   0.0  -> -1
+dqcms064 comparesig  -2.0   1.0  -> -1
+dqcms065 comparesig  -2.0   2.0  -> -1
+dqcms066 comparesig  -1.0  -2.0  -> 1
+dqcms067 comparesig  -1.0  -1.0  -> 0
+dqcms068 comparesig  -1.0   0.0  -> -1
+dqcms069 comparesig  -1.0   1.0  -> -1
+dqcms070 comparesig  -1.0   2.0  -> -1
+dqcms071 comparesig   0.0  -2.0  -> 1
+dqcms072 comparesig   0.0  -1.0  -> 1
+dqcms073 comparesig   0.0   0.0  -> 0
+dqcms074 comparesig   0.0   1.0  -> -1
+dqcms075 comparesig   0.0   2.0  -> -1
+dqcms076 comparesig   1.0  -2.0  -> 1
+dqcms077 comparesig   1.0  -1.0  -> 1
+dqcms078 comparesig   1.0   0.0  -> 1
+dqcms079 comparesig   1.0   1.0  -> 0
+dqcms080 comparesig   1.0   2.0  -> -1
+dqcms081 comparesig   2.0  -2.0  -> 1
+dqcms082 comparesig   2.0  -1.0  -> 1
+dqcms083 comparesig   2.0   0.0  -> 1
+dqcms085 comparesig   2.0   1.0  -> 1
+dqcms086 comparesig   2.0   2.0  -> 0
+
+-- now some cases which might overflow if subtract were used
+dqcms090 comparesig  9.999999999999999999999999999999999E+6144 9.999999999999999999999999999999999E+6144  -> 0
+dqcms091 comparesig -9.999999999999999999999999999999999E+6144 9.999999999999999999999999999999999E+6144  -> -1
+dqcms092 comparesig  9.999999999999999999999999999999999E+6144 -9.999999999999999999999999999999999E+6144 -> 1
+dqcms093 comparesig -9.999999999999999999999999999999999E+6144 -9.999999999999999999999999999999999E+6144 -> 0
+
+-- some differing length/exponent cases
+dqcms100 comparesig   7.0    7.0    -> 0
+dqcms101 comparesig   7.0    7      -> 0
+dqcms102 comparesig   7      7.0    -> 0
+dqcms103 comparesig   7E+0   7.0    -> 0
+dqcms104 comparesig   70E-1  7.0    -> 0
+dqcms105 comparesig   0.7E+1 7      -> 0
+dqcms106 comparesig   70E-1  7      -> 0
+dqcms107 comparesig   7.0    7E+0   -> 0
+dqcms108 comparesig   7.0    70E-1  -> 0
+dqcms109 comparesig   7      0.7E+1 -> 0
+dqcms110 comparesig   7      70E-1  -> 0
+
+dqcms120 comparesig   8.0    7.0    -> 1
+dqcms121 comparesig   8.0    7      -> 1
+dqcms122 comparesig   8      7.0    -> 1
+dqcms123 comparesig   8E+0   7.0    -> 1
+dqcms124 comparesig   80E-1  7.0    -> 1
+dqcms125 comparesig   0.8E+1 7      -> 1
+dqcms126 comparesig   80E-1  7      -> 1
+dqcms127 comparesig   8.0    7E+0   -> 1
+dqcms128 comparesig   8.0    70E-1  -> 1
+dqcms129 comparesig   8      0.7E+1  -> 1
+dqcms130 comparesig   8      70E-1  -> 1
+
+dqcms140 comparesig   8.0    9.0    -> -1
+dqcms141 comparesig   8.0    9      -> -1
+dqcms142 comparesig   8      9.0    -> -1
+dqcms143 comparesig   8E+0   9.0    -> -1
+dqcms144 comparesig   80E-1  9.0    -> -1
+dqcms145 comparesig   0.8E+1 9      -> -1
+dqcms146 comparesig   80E-1  9      -> -1
+dqcms147 comparesig   8.0    9E+0   -> -1
+dqcms148 comparesig   8.0    90E-1  -> -1
+dqcms149 comparesig   8      0.9E+1 -> -1
+dqcms150 comparesig   8      90E-1  -> -1
+
+-- and again, with sign changes -+ ..
+dqcms200 comparesig  -7.0    7.0    -> -1
+dqcms201 comparesig  -7.0    7      -> -1
+dqcms202 comparesig  -7      7.0    -> -1
+dqcms203 comparesig  -7E+0   7.0    -> -1
+dqcms204 comparesig  -70E-1  7.0    -> -1
+dqcms205 comparesig  -0.7E+1 7      -> -1
+dqcms206 comparesig  -70E-1  7      -> -1
+dqcms207 comparesig  -7.0    7E+0   -> -1
+dqcms208 comparesig  -7.0    70E-1  -> -1
+dqcms209 comparesig  -7      0.7E+1 -> -1
+dqcms210 comparesig  -7      70E-1  -> -1
+
+dqcms220 comparesig  -8.0    7.0    -> -1
+dqcms221 comparesig  -8.0    7      -> -1
+dqcms222 comparesig  -8      7.0    -> -1
+dqcms223 comparesig  -8E+0   7.0    -> -1
+dqcms224 comparesig  -80E-1  7.0    -> -1
+dqcms225 comparesig  -0.8E+1 7      -> -1
+dqcms226 comparesig  -80E-1  7      -> -1
+dqcms227 comparesig  -8.0    7E+0   -> -1
+dqcms228 comparesig  -8.0    70E-1  -> -1
+dqcms229 comparesig  -8      0.7E+1 -> -1
+dqcms230 comparesig  -8      70E-1  -> -1
+
+dqcms240 comparesig  -8.0    9.0    -> -1
+dqcms241 comparesig  -8.0    9      -> -1
+dqcms242 comparesig  -8      9.0    -> -1
+dqcms243 comparesig  -8E+0   9.0    -> -1
+dqcms244 comparesig  -80E-1  9.0    -> -1
+dqcms245 comparesig  -0.8E+1 9      -> -1
+dqcms246 comparesig  -80E-1  9      -> -1
+dqcms247 comparesig  -8.0    9E+0   -> -1
+dqcms248 comparesig  -8.0    90E-1  -> -1
+dqcms249 comparesig  -8      0.9E+1 -> -1
+dqcms250 comparesig  -8      90E-1  -> -1
+
+-- and again, with sign changes +- ..
+dqcms300 comparesig   7.0    -7.0    -> 1
+dqcms301 comparesig   7.0    -7      -> 1
+dqcms302 comparesig   7      -7.0    -> 1
+dqcms303 comparesig   7E+0   -7.0    -> 1
+dqcms304 comparesig   70E-1  -7.0    -> 1
+dqcms305 comparesig   .7E+1  -7      -> 1
+dqcms306 comparesig   70E-1  -7      -> 1
+dqcms307 comparesig   7.0    -7E+0   -> 1
+dqcms308 comparesig   7.0    -70E-1  -> 1
+dqcms309 comparesig   7      -.7E+1  -> 1
+dqcms310 comparesig   7      -70E-1  -> 1
+
+dqcms320 comparesig   8.0    -7.0    -> 1
+dqcms321 comparesig   8.0    -7      -> 1
+dqcms322 comparesig   8      -7.0    -> 1
+dqcms323 comparesig   8E+0   -7.0    -> 1
+dqcms324 comparesig   80E-1  -7.0    -> 1
+dqcms325 comparesig   .8E+1  -7      -> 1
+dqcms326 comparesig   80E-1  -7      -> 1
+dqcms327 comparesig   8.0    -7E+0   -> 1
+dqcms328 comparesig   8.0    -70E-1  -> 1
+dqcms329 comparesig   8      -.7E+1  -> 1
+dqcms330 comparesig   8      -70E-1  -> 1
+
+dqcms340 comparesig   8.0    -9.0    -> 1
+dqcms341 comparesig   8.0    -9      -> 1
+dqcms342 comparesig   8      -9.0    -> 1
+dqcms343 comparesig   8E+0   -9.0    -> 1
+dqcms344 comparesig   80E-1  -9.0    -> 1
+dqcms345 comparesig   .8E+1  -9      -> 1
+dqcms346 comparesig   80E-1  -9      -> 1
+dqcms347 comparesig   8.0    -9E+0   -> 1
+dqcms348 comparesig   8.0    -90E-1  -> 1
+dqcms349 comparesig   8      -.9E+1  -> 1
+dqcms350 comparesig   8      -90E-1  -> 1
+
+-- and again, with sign changes -- ..
+dqcms400 comparesig   -7.0    -7.0    -> 0
+dqcms401 comparesig   -7.0    -7      -> 0
+dqcms402 comparesig   -7      -7.0    -> 0
+dqcms403 comparesig   -7E+0   -7.0    -> 0
+dqcms404 comparesig   -70E-1  -7.0    -> 0
+dqcms405 comparesig   -.7E+1  -7      -> 0
+dqcms406 comparesig   -70E-1  -7      -> 0
+dqcms407 comparesig   -7.0    -7E+0   -> 0
+dqcms408 comparesig   -7.0    -70E-1  -> 0
+dqcms409 comparesig   -7      -.7E+1  -> 0
+dqcms410 comparesig   -7      -70E-1  -> 0
+
+dqcms420 comparesig   -8.0    -7.0    -> -1
+dqcms421 comparesig   -8.0    -7      -> -1
+dqcms422 comparesig   -8      -7.0    -> -1
+dqcms423 comparesig   -8E+0   -7.0    -> -1
+dqcms424 comparesig   -80E-1  -7.0    -> -1
+dqcms425 comparesig   -.8E+1  -7      -> -1
+dqcms426 comparesig   -80E-1  -7      -> -1
+dqcms427 comparesig   -8.0    -7E+0   -> -1
+dqcms428 comparesig   -8.0    -70E-1  -> -1
+dqcms429 comparesig   -8      -.7E+1  -> -1
+dqcms430 comparesig   -8      -70E-1  -> -1
+
+dqcms440 comparesig   -8.0    -9.0    -> 1
+dqcms441 comparesig   -8.0    -9      -> 1
+dqcms442 comparesig   -8      -9.0    -> 1
+dqcms443 comparesig   -8E+0   -9.0    -> 1
+dqcms444 comparesig   -80E-1  -9.0    -> 1
+dqcms445 comparesig   -.8E+1  -9      -> 1
+dqcms446 comparesig   -80E-1  -9      -> 1
+dqcms447 comparesig   -8.0    -9E+0   -> 1
+dqcms448 comparesig   -8.0    -90E-1  -> 1
+dqcms449 comparesig   -8      -.9E+1  -> 1
+dqcms450 comparesig   -8      -90E-1  -> 1
+
+
+-- testcases that subtract to lots of zeros at boundaries [pgr]
+dqcms473 comparesig 123.9999999999999999994560000000000E-89 123.999999999999999999456E-89 -> 0
+dqcms474 comparesig 123.999999999999999999456000000000E+89 123.999999999999999999456E+89 -> 0
+dqcms475 comparesig 123.99999999999999999945600000000E-89 123.999999999999999999456E-89 -> 0
+dqcms476 comparesig 123.9999999999999999994560000000E+89 123.999999999999999999456E+89 -> 0
+dqcms477 comparesig 123.999999999999999999456000000E-89 123.999999999999999999456E-89 -> 0
+dqcms478 comparesig 123.99999999999999999945600000E+89 123.999999999999999999456E+89 -> 0
+dqcms479 comparesig 123.9999999999999999994560000E-89 123.999999999999999999456E-89 -> 0
+dqcms480 comparesig 123.999999999999999999456000E+89 123.999999999999999999456E+89 -> 0
+dqcms481 comparesig 123.99999999999999999945600E-89 123.999999999999999999456E-89 -> 0
+dqcms482 comparesig 123.9999999999999999994560E+89 123.999999999999999999456E+89 -> 0
+dqcms483 comparesig 123.999999999999999999456E-89 123.999999999999999999456E-89 -> 0
+dqcms487 comparesig 123.999999999999999999456E+89 123.9999999999999999994560000000000E+89 -> 0
+dqcms488 comparesig 123.999999999999999999456E-89 123.999999999999999999456000000000E-89 -> 0
+dqcms489 comparesig 123.999999999999999999456E+89 123.99999999999999999945600000000E+89 -> 0
+dqcms490 comparesig 123.999999999999999999456E-89 123.9999999999999999994560000000E-89 -> 0
+dqcms491 comparesig 123.999999999999999999456E+89 123.999999999999999999456000000E+89 -> 0
+dqcms492 comparesig 123.999999999999999999456E-89 123.99999999999999999945600000E-89 -> 0
+dqcms493 comparesig 123.999999999999999999456E+89 123.9999999999999999994560000E+89 -> 0
+dqcms494 comparesig 123.999999999999999999456E-89 123.999999999999999999456000E-89 -> 0
+dqcms495 comparesig 123.999999999999999999456E+89 123.99999999999999999945600E+89 -> 0
+dqcms496 comparesig 123.999999999999999999456E-89 123.9999999999999999994560E-89 -> 0
+dqcms497 comparesig 123.999999999999999999456E+89 123.999999999999999999456E+89 -> 0
+
+-- wide-ranging, around precision; signs equal
+dqcms500 comparesig    1     1E-15    -> 1
+dqcms501 comparesig    1     1E-14    -> 1
+dqcms502 comparesig    1     1E-13    -> 1
+dqcms503 comparesig    1     1E-12    -> 1
+dqcms504 comparesig    1     1E-11    -> 1
+dqcms505 comparesig    1     1E-10    -> 1
+dqcms506 comparesig    1     1E-9     -> 1
+dqcms507 comparesig    1     1E-8     -> 1
+dqcms508 comparesig    1     1E-7     -> 1
+dqcms509 comparesig    1     1E-6     -> 1
+dqcms510 comparesig    1     1E-5     -> 1
+dqcms511 comparesig    1     1E-4     -> 1
+dqcms512 comparesig    1     1E-3     -> 1
+dqcms513 comparesig    1     1E-2     -> 1
+dqcms514 comparesig    1     1E-1     -> 1
+dqcms515 comparesig    1     1E-0     -> 0
+dqcms516 comparesig    1     1E+1     -> -1
+dqcms517 comparesig    1     1E+2     -> -1
+dqcms518 comparesig    1     1E+3     -> -1
+dqcms519 comparesig    1     1E+4     -> -1
+dqcms521 comparesig    1     1E+5     -> -1
+dqcms522 comparesig    1     1E+6     -> -1
+dqcms523 comparesig    1     1E+7     -> -1
+dqcms524 comparesig    1     1E+8     -> -1
+dqcms525 comparesig    1     1E+9     -> -1
+dqcms526 comparesig    1     1E+10    -> -1
+dqcms527 comparesig    1     1E+11    -> -1
+dqcms528 comparesig    1     1E+12    -> -1
+dqcms529 comparesig    1     1E+13    -> -1
+dqcms530 comparesig    1     1E+14    -> -1
+dqcms531 comparesig    1     1E+15    -> -1
+-- LR swap
+dqcms540 comparesig    1E-15  1       -> -1
+dqcms541 comparesig    1E-14  1       -> -1
+dqcms542 comparesig    1E-13  1       -> -1
+dqcms543 comparesig    1E-12  1       -> -1
+dqcms544 comparesig    1E-11  1       -> -1
+dqcms545 comparesig    1E-10  1       -> -1
+dqcms546 comparesig    1E-9   1       -> -1
+dqcms547 comparesig    1E-8   1       -> -1
+dqcms548 comparesig    1E-7   1       -> -1
+dqcms549 comparesig    1E-6   1       -> -1
+dqcms550 comparesig    1E-5   1       -> -1
+dqcms551 comparesig    1E-4   1       -> -1
+dqcms552 comparesig    1E-3   1       -> -1
+dqcms553 comparesig    1E-2   1       -> -1
+dqcms554 comparesig    1E-1   1       -> -1
+dqcms555 comparesig    1E-0   1       ->  0
+dqcms556 comparesig    1E+1   1       ->  1
+dqcms557 comparesig    1E+2   1       ->  1
+dqcms558 comparesig    1E+3   1       ->  1
+dqcms559 comparesig    1E+4   1       ->  1
+dqcms561 comparesig    1E+5   1       ->  1
+dqcms562 comparesig    1E+6   1       ->  1
+dqcms563 comparesig    1E+7   1       ->  1
+dqcms564 comparesig    1E+8   1       ->  1
+dqcms565 comparesig    1E+9   1       ->  1
+dqcms566 comparesig    1E+10  1       ->  1
+dqcms567 comparesig    1E+11  1       ->  1
+dqcms568 comparesig    1E+12  1       ->  1
+dqcms569 comparesig    1E+13  1       ->  1
+dqcms570 comparesig    1E+14  1       ->  1
+dqcms571 comparesig    1E+15  1       ->  1
+-- similar with a useful coefficient, one side only
+dqcms580 comparesig  0.000000987654321     1E-15    -> 1
+dqcms581 comparesig  0.000000987654321     1E-14    -> 1
+dqcms582 comparesig  0.000000987654321     1E-13    -> 1
+dqcms583 comparesig  0.000000987654321     1E-12    -> 1
+dqcms584 comparesig  0.000000987654321     1E-11    -> 1
+dqcms585 comparesig  0.000000987654321     1E-10    -> 1
+dqcms586 comparesig  0.000000987654321     1E-9     -> 1
+dqcms587 comparesig  0.000000987654321     1E-8     -> 1
+dqcms588 comparesig  0.000000987654321     1E-7     -> 1
+dqcms589 comparesig  0.000000987654321     1E-6     -> -1
+dqcms590 comparesig  0.000000987654321     1E-5     -> -1
+dqcms591 comparesig  0.000000987654321     1E-4     -> -1
+dqcms592 comparesig  0.000000987654321     1E-3     -> -1
+dqcms593 comparesig  0.000000987654321     1E-2     -> -1
+dqcms594 comparesig  0.000000987654321     1E-1     -> -1
+dqcms595 comparesig  0.000000987654321     1E-0     -> -1
+dqcms596 comparesig  0.000000987654321     1E+1     -> -1
+dqcms597 comparesig  0.000000987654321     1E+2     -> -1
+dqcms598 comparesig  0.000000987654321     1E+3     -> -1
+dqcms599 comparesig  0.000000987654321     1E+4     -> -1
+
+-- check some unit-y traps
+dqcms600 comparesig   12            12.2345 -> -1
+dqcms601 comparesig   12.0          12.2345 -> -1
+dqcms602 comparesig   12.00         12.2345 -> -1
+dqcms603 comparesig   12.000        12.2345 -> -1
+dqcms604 comparesig   12.0000       12.2345 -> -1
+dqcms605 comparesig   12.00000      12.2345 -> -1
+dqcms606 comparesig   12.000000     12.2345 -> -1
+dqcms607 comparesig   12.0000000    12.2345 -> -1
+dqcms608 comparesig   12.00000000   12.2345 -> -1
+dqcms609 comparesig   12.000000000  12.2345 -> -1
+dqcms610 comparesig   12.1234 12            ->  1
+dqcms611 comparesig   12.1234 12.0          ->  1
+dqcms612 comparesig   12.1234 12.00         ->  1
+dqcms613 comparesig   12.1234 12.000        ->  1
+dqcms614 comparesig   12.1234 12.0000       ->  1
+dqcms615 comparesig   12.1234 12.00000      ->  1
+dqcms616 comparesig   12.1234 12.000000     ->  1
+dqcms617 comparesig   12.1234 12.0000000    ->  1
+dqcms618 comparesig   12.1234 12.00000000   ->  1
+dqcms619 comparesig   12.1234 12.000000000  ->  1
+dqcms620 comparesig  -12           -12.2345 ->  1
+dqcms621 comparesig  -12.0         -12.2345 ->  1
+dqcms622 comparesig  -12.00        -12.2345 ->  1
+dqcms623 comparesig  -12.000       -12.2345 ->  1
+dqcms624 comparesig  -12.0000      -12.2345 ->  1
+dqcms625 comparesig  -12.00000     -12.2345 ->  1
+dqcms626 comparesig  -12.000000    -12.2345 ->  1
+dqcms627 comparesig  -12.0000000   -12.2345 ->  1
+dqcms628 comparesig  -12.00000000  -12.2345 ->  1
+dqcms629 comparesig  -12.000000000 -12.2345 ->  1
+dqcms630 comparesig  -12.1234 -12           -> -1
+dqcms631 comparesig  -12.1234 -12.0         -> -1
+dqcms632 comparesig  -12.1234 -12.00        -> -1
+dqcms633 comparesig  -12.1234 -12.000       -> -1
+dqcms634 comparesig  -12.1234 -12.0000      -> -1
+dqcms635 comparesig  -12.1234 -12.00000     -> -1
+dqcms636 comparesig  -12.1234 -12.000000    -> -1
+dqcms637 comparesig  -12.1234 -12.0000000   -> -1
+dqcms638 comparesig  -12.1234 -12.00000000  -> -1
+dqcms639 comparesig  -12.1234 -12.000000000 -> -1
+
+-- extended zeros
+dqcms640 comparesig   0     0   -> 0
+dqcms641 comparesig   0    -0   -> 0
+dqcms642 comparesig   0    -0.0 -> 0
+dqcms643 comparesig   0     0.0 -> 0
+dqcms644 comparesig  -0     0   -> 0
+dqcms645 comparesig  -0    -0   -> 0
+dqcms646 comparesig  -0    -0.0 -> 0
+dqcms647 comparesig  -0     0.0 -> 0
+dqcms648 comparesig   0.0   0   -> 0
+dqcms649 comparesig   0.0  -0   -> 0
+dqcms650 comparesig   0.0  -0.0 -> 0
+dqcms651 comparesig   0.0   0.0 -> 0
+dqcms652 comparesig  -0.0   0   -> 0
+dqcms653 comparesig  -0.0  -0   -> 0
+dqcms654 comparesig  -0.0  -0.0 -> 0
+dqcms655 comparesig  -0.0   0.0 -> 0
+
+dqcms656 comparesig  -0E1   0.0 -> 0
+dqcms657 comparesig  -0E2   0.0 -> 0
+dqcms658 comparesig   0E1   0.0 -> 0
+dqcms659 comparesig   0E2   0.0 -> 0
+dqcms660 comparesig  -0E1   0   -> 0
+dqcms661 comparesig  -0E2   0   -> 0
+dqcms662 comparesig   0E1   0   -> 0
+dqcms663 comparesig   0E2   0   -> 0
+dqcms664 comparesig  -0E1  -0E1 -> 0
+dqcms665 comparesig  -0E2  -0E1 -> 0
+dqcms666 comparesig   0E1  -0E1 -> 0
+dqcms667 comparesig   0E2  -0E1 -> 0
+dqcms668 comparesig  -0E1  -0E2 -> 0
+dqcms669 comparesig  -0E2  -0E2 -> 0
+dqcms670 comparesig   0E1  -0E2 -> 0
+dqcms671 comparesig   0E2  -0E2 -> 0
+dqcms672 comparesig  -0E1   0E1 -> 0
+dqcms673 comparesig  -0E2   0E1 -> 0
+dqcms674 comparesig   0E1   0E1 -> 0
+dqcms675 comparesig   0E2   0E1 -> 0
+dqcms676 comparesig  -0E1   0E2 -> 0
+dqcms677 comparesig  -0E2   0E2 -> 0
+dqcms678 comparesig   0E1   0E2 -> 0
+dqcms679 comparesig   0E2   0E2 -> 0
+
+-- trailing zeros; unit-y
+dqcms680 comparesig   12    12           -> 0
+dqcms681 comparesig   12    12.0         -> 0
+dqcms682 comparesig   12    12.00        -> 0
+dqcms683 comparesig   12    12.000       -> 0
+dqcms684 comparesig   12    12.0000      -> 0
+dqcms685 comparesig   12    12.00000     -> 0
+dqcms686 comparesig   12    12.000000    -> 0
+dqcms687 comparesig   12    12.0000000   -> 0
+dqcms688 comparesig   12    12.00000000  -> 0
+dqcms689 comparesig   12    12.000000000 -> 0
+dqcms690 comparesig   12              12 -> 0
+dqcms691 comparesig   12.0            12 -> 0
+dqcms692 comparesig   12.00           12 -> 0
+dqcms693 comparesig   12.000          12 -> 0
+dqcms694 comparesig   12.0000         12 -> 0
+dqcms695 comparesig   12.00000        12 -> 0
+dqcms696 comparesig   12.000000       12 -> 0
+dqcms697 comparesig   12.0000000      12 -> 0
+dqcms698 comparesig   12.00000000     12 -> 0
+dqcms699 comparesig   12.000000000    12 -> 0
+
+-- first, second, & last digit
+dqcms700 comparesig   1234567899999999999999999990123456 1234567899999999999999999990123455 -> 1
+dqcms701 comparesig   1234567899999999999999999990123456 1234567899999999999999999990123456 -> 0
+dqcms702 comparesig   1234567899999999999999999990123456 1234567899999999999999999990123457 -> -1
+dqcms703 comparesig   1234567899999999999999999990123456 0234567899999999999999999990123456 -> 1
+dqcms704 comparesig   1234567899999999999999999990123456 1234567899999999999999999990123456 -> 0
+dqcms705 comparesig   1234567899999999999999999990123456 2234567899999999999999999990123456 -> -1
+dqcms706 comparesig   1134567899999999999999999990123456 1034567899999999999999999990123456 -> 1
+dqcms707 comparesig   1134567899999999999999999990123456 1134567899999999999999999990123456 -> 0
+dqcms708 comparesig   1134567899999999999999999990123456 1234567899999999999999999990123456 -> -1
+
+-- miscellaneous
+dqcms721 comparesig 12345678000 1 -> 1
+dqcms722 comparesig 1 12345678000 -> -1
+dqcms723 comparesig 1234567800  1 -> 1
+dqcms724 comparesig 1 1234567800  -> -1
+dqcms725 comparesig 1234567890  1 -> 1
+dqcms726 comparesig 1 1234567890  -> -1
+dqcms727 comparesig 1234567891  1 -> 1
+dqcms728 comparesig 1 1234567891  -> -1
+dqcms729 comparesig 12345678901 1 -> 1
+dqcms730 comparesig 1 12345678901 -> -1
+dqcms731 comparesig 1234567896  1 -> 1
+dqcms732 comparesig 1 1234567896  -> -1
+
+-- residue cases at lower precision
+dqcms740 comparesig  1  0.9999999  -> 1
+dqcms741 comparesig  1  0.999999   -> 1
+dqcms742 comparesig  1  0.99999    -> 1
+dqcms743 comparesig  1  1.0000     -> 0
+dqcms744 comparesig  1  1.00001    -> -1
+dqcms745 comparesig  1  1.000001   -> -1
+dqcms746 comparesig  1  1.0000001  -> -1
+dqcms750 comparesig  0.9999999  1  -> -1
+dqcms751 comparesig  0.999999   1  -> -1
+dqcms752 comparesig  0.99999    1  -> -1
+dqcms753 comparesig  1.0000     1  -> 0
+dqcms754 comparesig  1.00001    1  -> 1
+dqcms755 comparesig  1.000001   1  -> 1
+dqcms756 comparesig  1.0000001  1  -> 1
+
+-- Specials
+dqcms780 comparesig  Inf  -Inf   ->  1
+dqcms781 comparesig  Inf  -1000  ->  1
+dqcms782 comparesig  Inf  -1     ->  1
+dqcms783 comparesig  Inf  -0     ->  1
+dqcms784 comparesig  Inf   0     ->  1
+dqcms785 comparesig  Inf   1     ->  1
+dqcms786 comparesig  Inf   1000  ->  1
+dqcms787 comparesig  Inf   Inf   ->  0
+dqcms788 comparesig -1000  Inf   -> -1
+dqcms789 comparesig -Inf   Inf   -> -1
+dqcms790 comparesig -1     Inf   -> -1
+dqcms791 comparesig -0     Inf   -> -1
+dqcms792 comparesig  0     Inf   -> -1
+dqcms793 comparesig  1     Inf   -> -1
+dqcms794 comparesig  1000  Inf   -> -1
+dqcms795 comparesig  Inf   Inf   ->  0
+
+dqcms800 comparesig -Inf  -Inf   ->  0
+dqcms801 comparesig -Inf  -1000  -> -1
+dqcms802 comparesig -Inf  -1     -> -1
+dqcms803 comparesig -Inf  -0     -> -1
+dqcms804 comparesig -Inf   0     -> -1
+dqcms805 comparesig -Inf   1     -> -1
+dqcms806 comparesig -Inf   1000  -> -1
+dqcms807 comparesig -Inf   Inf   -> -1
+dqcms808 comparesig -Inf  -Inf   ->  0
+dqcms809 comparesig -1000 -Inf   ->  1
+dqcms810 comparesig -1    -Inf   ->  1
+dqcms811 comparesig -0    -Inf   ->  1
+dqcms812 comparesig  0    -Inf   ->  1
+dqcms813 comparesig  1    -Inf   ->  1
+dqcms814 comparesig  1000 -Inf   ->  1
+dqcms815 comparesig  Inf  -Inf   ->  1
+
+dqcms821 comparesig  NaN -Inf    ->  NaN  Invalid_operation
+dqcms822 comparesig  NaN -1000   ->  NaN  Invalid_operation
+dqcms823 comparesig  NaN -1      ->  NaN  Invalid_operation
+dqcms824 comparesig  NaN -0      ->  NaN  Invalid_operation
+dqcms825 comparesig  NaN  0      ->  NaN  Invalid_operation
+dqcms826 comparesig  NaN  1      ->  NaN  Invalid_operation
+dqcms827 comparesig  NaN  1000   ->  NaN  Invalid_operation
+dqcms828 comparesig  NaN  Inf    ->  NaN  Invalid_operation
+dqcms829 comparesig  NaN  NaN    ->  NaN  Invalid_operation
+dqcms830 comparesig -Inf  NaN    ->  NaN  Invalid_operation
+dqcms831 comparesig -1000 NaN    ->  NaN  Invalid_operation
+dqcms832 comparesig -1    NaN    ->  NaN  Invalid_operation
+dqcms833 comparesig -0    NaN    ->  NaN  Invalid_operation
+dqcms834 comparesig  0    NaN    ->  NaN  Invalid_operation
+dqcms835 comparesig  1    NaN    ->  NaN  Invalid_operation
+dqcms836 comparesig  1000 NaN    ->  NaN  Invalid_operation
+dqcms837 comparesig  Inf  NaN    ->  NaN  Invalid_operation
+dqcms838 comparesig -NaN -NaN    -> -NaN  Invalid_operation
+dqcms839 comparesig +NaN -NaN    ->  NaN  Invalid_operation
+dqcms840 comparesig -NaN +NaN    -> -NaN  Invalid_operation
+
+dqcms841 comparesig  sNaN -Inf   ->  NaN  Invalid_operation
+dqcms842 comparesig  sNaN -1000  ->  NaN  Invalid_operation
+dqcms843 comparesig  sNaN -1     ->  NaN  Invalid_operation
+dqcms844 comparesig  sNaN -0     ->  NaN  Invalid_operation
+dqcms845 comparesig  sNaN  0     ->  NaN  Invalid_operation
+dqcms846 comparesig  sNaN  1     ->  NaN  Invalid_operation
+dqcms847 comparesig  sNaN  1000  ->  NaN  Invalid_operation
+dqcms848 comparesig  sNaN  NaN   ->  NaN  Invalid_operation
+dqcms849 comparesig  sNaN sNaN   ->  NaN  Invalid_operation
+dqcms850 comparesig  NaN  sNaN   ->  NaN  Invalid_operation
+dqcms851 comparesig -Inf  sNaN   ->  NaN  Invalid_operation
+dqcms852 comparesig -1000 sNaN   ->  NaN  Invalid_operation
+dqcms853 comparesig -1    sNaN   ->  NaN  Invalid_operation
+dqcms854 comparesig -0    sNaN   ->  NaN  Invalid_operation
+dqcms855 comparesig  0    sNaN   ->  NaN  Invalid_operation
+dqcms856 comparesig  1    sNaN   ->  NaN  Invalid_operation
+dqcms857 comparesig  1000 sNaN   ->  NaN  Invalid_operation
+dqcms858 comparesig  Inf  sNaN   ->  NaN  Invalid_operation
+dqcms859 comparesig  NaN  sNaN   ->  NaN  Invalid_operation
+
+-- propagating NaNs
+dqcms860 comparesig  NaN9 -Inf   ->  NaN9    Invalid_operation
+dqcms861 comparesig  NaN8  999   ->  NaN8    Invalid_operation
+dqcms862 comparesig  NaN77 Inf   ->  NaN77   Invalid_operation
+dqcms863 comparesig -NaN67 NaN5  -> -NaN67   Invalid_operation
+dqcms864 comparesig -Inf  -NaN4  -> -NaN4    Invalid_operation
+dqcms865 comparesig -999  -NaN33 -> -NaN33   Invalid_operation
+dqcms866 comparesig  Inf   NaN2  ->  NaN2    Invalid_operation
+dqcms867 comparesig -NaN41 -NaN42 -> -NaN41  Invalid_operation
+dqcms868 comparesig +NaN41 -NaN42 ->  NaN41  Invalid_operation
+dqcms869 comparesig -NaN41 +NaN42 -> -NaN41  Invalid_operation
+dqcms870 comparesig +NaN41 +NaN42 ->  NaN41  Invalid_operation
+
+dqcms871 comparesig -sNaN99 -Inf    -> -NaN99 Invalid_operation
+dqcms872 comparesig  sNaN98 -11     ->  NaN98 Invalid_operation
+dqcms873 comparesig  sNaN97  NaN    ->  NaN97 Invalid_operation
+dqcms874 comparesig  sNaN16 sNaN94  ->  NaN16 Invalid_operation
+dqcms875 comparesig  NaN85  sNaN83  ->  NaN83 Invalid_operation
+dqcms876 comparesig -Inf    sNaN92  ->  NaN92 Invalid_operation
+dqcms877 comparesig  088    sNaN81  ->  NaN81 Invalid_operation
+dqcms878 comparesig  Inf    sNaN90  ->  NaN90 Invalid_operation
+dqcms879 comparesig  NaN   -sNaN89  -> -NaN89 Invalid_operation
+
+-- wide range
+dqcms880 comparesig +1.23456789012345E-0 9E+6144 -> -1
+dqcms881 comparesig 9E+6144 +1.23456789012345E-0 ->  1
+dqcms882 comparesig +0.100 9E-6143               ->  1
+dqcms883 comparesig 9E-6143 +0.100               -> -1
+dqcms885 comparesig -1.23456789012345E-0 9E+6144 -> -1
+dqcms886 comparesig 9E+6144 -1.23456789012345E-0 ->  1
+dqcms887 comparesig -0.100 9E-6143               -> -1
+dqcms888 comparesig 9E-6143 -0.100               ->  1
+
+-- signs
+dqcms901 comparesig  1e+77  1e+11 ->  1
+dqcms902 comparesig  1e+77 -1e+11 ->  1
+dqcms903 comparesig -1e+77  1e+11 -> -1
+dqcms904 comparesig -1e+77 -1e+11 -> -1
+dqcms905 comparesig  1e-77  1e-11 -> -1
+dqcms906 comparesig  1e-77 -1e-11 ->  1
+dqcms907 comparesig -1e-77  1e-11 -> -1
+dqcms908 comparesig -1e-77 -1e-11 ->  1
+
+-- Null tests
+dqcms990 comparesig 10  # -> NaN Invalid_operation
+dqcms991 comparesig  # 10 -> NaN Invalid_operation

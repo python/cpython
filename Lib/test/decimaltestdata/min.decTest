@@ -1,0 +1,407 @@
+------------------------------------------------------------------------
+-- min.decTest -- decimal minimum                                     --
+-- Copyright (c) IBM Corporation, 1981, 2008.  All rights reserved.   --
+------------------------------------------------------------------------
+-- Please see the document "General Decimal Arithmetic Testcases"     --
+-- at http://www2.hursley.ibm.com/decimal for the description of      --
+-- these testcases.                                                   --
+--                                                                    --
+-- These testcases are experimental ('beta' versions), and they       --
+-- may contain errors.  They are offered on an as-is basis.  In       --
+-- particular, achieving the same results as the tests here is not    --
+-- a guarantee that an implementation complies with any Standard      --
+-- or specification.  The tests are not exhaustive.                   --
+--                                                                    --
+-- Please send comments, suggestions, and corrections to the author:  --
+--   Mike Cowlishaw, IBM Fellow                                       --
+--   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
+--   mfc@uk.ibm.com                                                   --
+------------------------------------------------------------------------
+version: 2.59
+
+-- we assume that base comparison is tested in compare.decTest, so
+-- these mainly cover special cases and rounding
+
+extended:    1
+precision:   9
+rounding:    half_up
+maxExponent: 384
+minexponent: -383
+
+-- sanity checks
+mnmx001 min  -2  -2  -> -2
+mnmx002 min  -2  -1  -> -2
+mnmx003 min  -2   0  -> -2
+mnmx004 min  -2   1  -> -2
+mnmx005 min  -2   2  -> -2
+mnmx006 min  -1  -2  -> -2
+mnmx007 min  -1  -1  -> -1
+mnmx008 min  -1   0  -> -1
+mnmx009 min  -1   1  -> -1
+mnmx010 min  -1   2  -> -1
+mnmx011 min   0  -2  -> -2
+mnmx012 min   0  -1  -> -1
+mnmx013 min   0   0  ->  0
+mnmx014 min   0   1  ->  0
+mnmx015 min   0   2  ->  0
+mnmx016 min   1  -2  -> -2
+mnmx017 min   1  -1  -> -1
+mnmx018 min   1   0  ->  0
+mnmx019 min   1   1  ->  1
+mnmx020 min   1   2  ->  1
+mnmx021 min   2  -2  -> -2
+mnmx022 min   2  -1  -> -1
+mnmx023 min   2   0  ->  0
+mnmx025 min   2   1  ->  1
+mnmx026 min   2   2  ->  2
+
+-- extended zeros
+mnmx030 min   0     0   ->  0
+mnmx031 min   0    -0   -> -0
+mnmx032 min   0    -0.0 -> -0.0
+mnmx033 min   0     0.0 ->  0.0
+mnmx034 min  -0     0   -> -0
+mnmx035 min  -0    -0   -> -0
+mnmx036 min  -0    -0.0 -> -0
+mnmx037 min  -0     0.0 -> -0
+mnmx038 min   0.0   0   ->  0.0
+mnmx039 min   0.0  -0   -> -0
+mnmx040 min   0.0  -0.0 -> -0.0
+mnmx041 min   0.0   0.0 ->  0.0
+mnmx042 min  -0.0   0   -> -0.0
+mnmx043 min  -0.0  -0   -> -0
+mnmx044 min  -0.0  -0.0 -> -0.0
+mnmx045 min  -0.0   0.0 -> -0.0
+
+mnmx046 min   0E1  -0E1 -> -0E+1
+mnmx047 min  -0E1   0E2 -> -0E+1
+mnmx048 min   0E2   0E1 ->  0E+1
+mnmx049 min   0E1   0E2 ->  0E+1
+mnmx050 min  -0E3  -0E2 -> -0E+3
+mnmx051 min  -0E2  -0E3 -> -0E+3
+
+-- Specials
+precision: 9
+mnmx090 min  Inf  -Inf   -> -Infinity
+mnmx091 min  Inf  -1000  -> -1000
+mnmx092 min  Inf  -1     -> -1
+mnmx093 min  Inf  -0     -> -0
+mnmx094 min  Inf   0     ->  0
+mnmx095 min  Inf   1     ->  1
+mnmx096 min  Inf   1000  ->  1000
+mnmx097 min  Inf   Inf   ->  Infinity
+mnmx098 min -1000  Inf   -> -1000
+mnmx099 min -Inf   Inf   -> -Infinity
+mnmx100 min -1     Inf   -> -1
+mnmx101 min -0     Inf   -> -0
+mnmx102 min  0     Inf   ->  0
+mnmx103 min  1     Inf   ->  1
+mnmx104 min  1000  Inf   ->  1000
+mnmx105 min  Inf   Inf   ->  Infinity
+
+mnmx120 min -Inf  -Inf   -> -Infinity
+mnmx121 min -Inf  -1000  -> -Infinity
+mnmx122 min -Inf  -1     -> -Infinity
+mnmx123 min -Inf  -0     -> -Infinity
+mnmx124 min -Inf   0     -> -Infinity
+mnmx125 min -Inf   1     -> -Infinity
+mnmx126 min -Inf   1000  -> -Infinity
+mnmx127 min -Inf   Inf   -> -Infinity
+mnmx128 min -Inf  -Inf   -> -Infinity
+mnmx129 min -1000 -Inf   -> -Infinity
+mnmx130 min -1    -Inf   -> -Infinity
+mnmx131 min -0    -Inf   -> -Infinity
+mnmx132 min  0    -Inf   -> -Infinity
+mnmx133 min  1    -Inf   -> -Infinity
+mnmx134 min  1000 -Inf   -> -Infinity
+mnmx135 min  Inf  -Inf   -> -Infinity
+
+-- 2004.08.02 754r chooses number over NaN in mixed cases
+mnmx141 min  NaN -Inf    ->  -Infinity
+mnmx142 min  NaN -1000   ->  -1000
+mnmx143 min  NaN -1      ->  -1
+mnmx144 min  NaN -0      ->  -0
+mnmx145 min  NaN  0      ->  0
+mnmx146 min  NaN  1      ->  1
+mnmx147 min  NaN  1000   ->  1000
+mnmx148 min  NaN  Inf    ->  Infinity
+mnmx149 min  NaN  NaN    ->  NaN
+mnmx150 min -Inf  NaN    -> -Infinity
+mnmx151 min -1000 NaN    -> -1000
+mnmx152 min -1   -NaN    -> -1
+mnmx153 min -0    NaN    -> -0
+mnmx154 min  0   -NaN    ->  0
+mnmx155 min  1    NaN    ->  1
+mnmx156 min  1000 NaN    ->  1000
+mnmx157 min  Inf  NaN    ->  Infinity
+
+mnmx161 min  sNaN -Inf   ->  NaN  Invalid_operation
+mnmx162 min  sNaN -1000  ->  NaN  Invalid_operation
+mnmx163 min  sNaN -1     ->  NaN  Invalid_operation
+mnmx164 min  sNaN -0     ->  NaN  Invalid_operation
+mnmx165 min -sNaN  0     -> -NaN  Invalid_operation
+mnmx166 min -sNaN  1     -> -NaN  Invalid_operation
+mnmx167 min  sNaN  1000  ->  NaN  Invalid_operation
+mnmx168 min  sNaN  NaN   ->  NaN  Invalid_operation
+mnmx169 min  sNaN sNaN   ->  NaN  Invalid_operation
+mnmx170 min  NaN  sNaN   ->  NaN  Invalid_operation
+mnmx171 min -Inf  sNaN   ->  NaN  Invalid_operation
+mnmx172 min -1000 sNaN   ->  NaN  Invalid_operation
+mnmx173 min -1    sNaN   ->  NaN  Invalid_operation
+mnmx174 min -0    sNaN   ->  NaN  Invalid_operation
+mnmx175 min  0    sNaN   ->  NaN  Invalid_operation
+mnmx176 min  1    sNaN   ->  NaN  Invalid_operation
+mnmx177 min  1000 sNaN   ->  NaN  Invalid_operation
+mnmx178 min  Inf  sNaN   ->  NaN  Invalid_operation
+mnmx179 min  NaN  sNaN   ->  NaN  Invalid_operation
+
+-- propagating NaNs
+mnmx181 min  NaN9   -Inf   -> -Infinity
+mnmx182 min -NaN8    9990  ->  9990
+mnmx183 min  NaN71   Inf   ->  Infinity
+
+mnmx184 min  NaN1    NaN54 ->  NaN1
+mnmx185 min  NaN22  -NaN53 ->  NaN22
+mnmx186 min -NaN3    NaN6  -> -NaN3
+mnmx187 min -NaN44   NaN7  -> -NaN44
+
+mnmx188 min -Inf     NaN41 -> -Infinity
+mnmx189 min -9999   -NaN33 -> -9999
+mnmx190 min  Inf     NaN2  ->  Infinity
+
+mnmx191 min  sNaN99 -Inf    ->  NaN99 Invalid_operation
+mnmx192 min  sNaN98 -11     ->  NaN98 Invalid_operation
+mnmx193 min -sNaN97  NaN8   -> -NaN97 Invalid_operation
+mnmx194 min  sNaN69 sNaN94  ->  NaN69 Invalid_operation
+mnmx195 min  NaN95  sNaN93  ->  NaN93 Invalid_operation
+mnmx196 min -Inf    sNaN92  ->  NaN92 Invalid_operation
+mnmx197 min  088    sNaN91  ->  NaN91 Invalid_operation
+mnmx198 min  Inf   -sNaN90  -> -NaN90 Invalid_operation
+mnmx199 min  NaN    sNaN86  ->  NaN86 Invalid_operation
+
+-- rounding checks -- chosen is rounded, or not
+maxExponent: 999
+minexponent: -999
+precision: 9
+mnmx201 min -12345678000 1  -> -1.23456780E+10 Rounded
+mnmx202 min 1 -12345678000  -> -1.23456780E+10 Rounded
+mnmx203 min -1234567800  1  -> -1.23456780E+9 Rounded
+mnmx204 min 1 -1234567800   -> -1.23456780E+9 Rounded
+mnmx205 min -1234567890  1  -> -1.23456789E+9 Rounded
+mnmx206 min 1 -1234567890   -> -1.23456789E+9 Rounded
+mnmx207 min -1234567891  1  -> -1.23456789E+9 Inexact Rounded
+mnmx208 min 1 -1234567891   -> -1.23456789E+9 Inexact Rounded
+mnmx209 min -12345678901 1  -> -1.23456789E+10 Inexact Rounded
+mnmx210 min 1 -12345678901  -> -1.23456789E+10 Inexact Rounded
+mnmx211 min -1234567896  1  -> -1.23456790E+9 Inexact Rounded
+mnmx212 min 1 -1234567896   -> -1.23456790E+9 Inexact Rounded
+mnmx213 min 1234567891  1   -> 1
+mnmx214 min 1 1234567891    -> 1
+mnmx215 min 12345678901 1   -> 1
+mnmx216 min 1 12345678901   -> 1
+mnmx217 min 1234567896  1   -> 1
+mnmx218 min 1 1234567896    -> 1
+
+precision: 15
+mnmx221 min -12345678000 1  -> -12345678000
+mnmx222 min 1 -12345678000  -> -12345678000
+mnmx223 min -1234567800  1  -> -1234567800
+mnmx224 min 1 -1234567800   -> -1234567800
+mnmx225 min -1234567890  1  -> -1234567890
+mnmx226 min 1 -1234567890   -> -1234567890
+mnmx227 min -1234567891  1  -> -1234567891
+mnmx228 min 1 -1234567891   -> -1234567891
+mnmx229 min -12345678901 1  -> -12345678901
+mnmx230 min 1 -12345678901  -> -12345678901
+mnmx231 min -1234567896  1  -> -1234567896
+mnmx232 min 1 -1234567896   -> -1234567896
+mnmx233 min 1234567891  1   -> 1
+mnmx234 min 1 1234567891    -> 1
+mnmx235 min 12345678901 1   -> 1
+mnmx236 min 1 12345678901   -> 1
+mnmx237 min 1234567896  1   -> 1
+mnmx238 min 1 1234567896    -> 1
+
+-- from examples
+mnmx280 min '3'   '2'  ->  '2'
+mnmx281 min '-10' '3'  ->  '-10'
+mnmx282 min '1.0' '1'  ->  '1.0'
+mnmx283 min '1' '1.0'  ->  '1.0'
+mnmx284 min '7' 'NaN'  ->  '7'
+
+-- overflow and underflow tests .. subnormal results [inputs] now allowed
+maxExponent: 999999999
+minexponent: -999999999
+mnmx330 min -1.23456789012345E-0 -9E+999999999 -> -9E+999999999
+mnmx331 min -9E+999999999 -1.23456789012345E-0 -> -9E+999999999
+mnmx332 min -0.100 -9E-999999999               -> -0.100
+mnmx333 min -9E-999999999 -0.100               -> -0.100
+mnmx335 min +1.23456789012345E-0 -9E+999999999 -> -9E+999999999
+mnmx336 min -9E+999999999 1.23456789012345E-0  -> -9E+999999999
+mnmx337 min +0.100 -9E-999999999               -> -9E-999999999
+mnmx338 min -9E-999999999 0.100                -> -9E-999999999
+
+mnmx339 min -1e-599999999 -1e-400000001   ->  -1E-400000001
+mnmx340 min -1e-599999999 -1e-400000000   ->  -1E-400000000
+mnmx341 min -1e-600000000 -1e-400000000   ->  -1E-400000000
+mnmx342 min -9e-999999998 -0.01           ->  -0.01
+mnmx343 min -9e-999999998 -0.1            ->  -0.1
+mnmx344 min -0.01         -9e-999999998   ->  -0.01
+mnmx345 min -1e599999999  -1e400000001    ->  -1E+599999999
+mnmx346 min -1e599999999  -1e400000000    ->  -1E+599999999
+mnmx347 min -1e600000000  -1e400000000    ->  -1E+600000000
+mnmx348 min -9e999999998  -100            ->  -9E+999999998
+mnmx349 min -9e999999998  -10             ->  -9E+999999998
+mnmx350 min -100          -9e999999998    ->  -9E+999999998
+-- signs
+mnmx351 min -1e+777777777 -1e+411111111 -> -1E+777777777
+mnmx352 min -1e+777777777 +1e+411111111 -> -1E+777777777
+mnmx353 min +1e+777777777 -1e+411111111 -> -1E+411111111
+mnmx354 min +1e+777777777 +1e+411111111 ->  1E+411111111
+mnmx355 min -1e-777777777 -1e-411111111 -> -1E-411111111
+mnmx356 min -1e-777777777 +1e-411111111 -> -1E-777777777
+mnmx357 min +1e-777777777 -1e-411111111 -> -1E-411111111
+mnmx358 min +1e-777777777 +1e-411111111 ->  1E-777777777
+
+-- expanded list from min/max 754r purple prose
+-- [explicit tests for exponent ordering]
+mnmx401 min  Inf    1.1     ->  1.1
+mnmx402 min  1.1    1       ->  1
+mnmx403 min  1      1.0     ->  1.0
+mnmx404 min  1.0    0.1     ->  0.1
+mnmx405 min  0.1    0.10    ->  0.10
+mnmx406 min  0.10   0.100   ->  0.100
+mnmx407 min  0.10   0       ->  0
+mnmx408 min  0      0.0     ->  0.0
+mnmx409 min  0.0   -0       -> -0
+mnmx410 min  0.0   -0.0     -> -0.0
+mnmx411 min  0.00  -0.0     -> -0.0
+mnmx412 min  0.0   -0.00    -> -0.00
+mnmx413 min  0     -0.0     -> -0.0
+mnmx414 min  0     -0       -> -0
+mnmx415 min -0.0   -0       -> -0
+mnmx416 min -0     -0.100   -> -0.100
+mnmx417 min -0.100 -0.10    -> -0.10
+mnmx418 min -0.10  -0.1     -> -0.1
+mnmx419 min -0.1   -1.0     -> -1.0
+mnmx420 min -1.0   -1       -> -1
+mnmx421 min -1     -1.1     -> -1.1
+mnmx423 min -1.1   -Inf     -> -Infinity
+-- same with operands reversed
+mnmx431 min  1.1    Inf     ->  1.1
+mnmx432 min  1      1.1     ->  1
+mnmx433 min  1.0    1       ->  1.0
+mnmx434 min  0.1    1.0     ->  0.1
+mnmx435 min  0.10   0.1     ->  0.10
+mnmx436 min  0.100  0.10    ->  0.100
+mnmx437 min  0      0.10    ->  0
+mnmx438 min  0.0    0       ->  0.0
+mnmx439 min -0      0.0     -> -0
+mnmx440 min -0.0    0.0     -> -0.0
+mnmx441 min -0.0    0.00    -> -0.0
+mnmx442 min -0.00   0.0     -> -0.00
+mnmx443 min -0.0    0       -> -0.0
+mnmx444 min -0      0       -> -0
+mnmx445 min -0     -0.0     -> -0
+mnmx446 min -0.100 -0       -> -0.100
+mnmx447 min -0.10  -0.100   -> -0.10
+mnmx448 min -0.1   -0.10    -> -0.1
+mnmx449 min -1.0   -0.1     -> -1.0
+mnmx450 min -1     -1.0     -> -1
+mnmx451 min -1.1   -1       -> -1.1
+mnmx453 min -Inf   -1.1     -> -Infinity
+-- largies
+mnmx460 min  1000   1E+3    ->  1000
+mnmx461 min  1E+3   1000    ->  1000
+mnmx462 min  1000  -1E+3    -> -1E+3
+mnmx463 min  1E+3  -1000    -> -1000
+mnmx464 min -1000   1E+3    -> -1000
+mnmx465 min -1E+3   1000    -> -1E+3
+mnmx466 min -1000  -1E+3    -> -1E+3
+mnmx467 min -1E+3  -1000    -> -1E+3
+
+-- rounding (results treated as though plus)
+maxexponent: 999999999
+minexponent: -999999999
+precision: 3
+
+mnmx470 min  1      5      ->  1
+mnmx471 min  10     50     ->  10
+mnmx472 min  100    500    ->  100
+mnmx473 min  1000   5000   ->  1.00E+3 Rounded
+mnmx474 min  10000  50000  ->  1.00E+4 Rounded
+mnmx475 min  6      50     ->  6
+mnmx476 min  66     500    ->  66
+mnmx477 min  666    5000   ->  666
+mnmx478 min  6666   50000  ->  6.67E+3 Rounded Inexact
+mnmx479 min  66666  500000 ->  6.67E+4 Rounded Inexact
+mnmx480 min  33333  500000 ->  3.33E+4 Rounded Inexact
+mnmx481 min  75401  1      ->  1
+mnmx482 min  75402  10     ->  10
+mnmx483 min  75403  100    ->  100
+mnmx484 min  75404  1000   ->  1.00E+3 Rounded
+mnmx485 min  75405  10000  ->  1.00E+4 Rounded
+mnmx486 min  75406  6      ->  6
+mnmx487 min  75407  66     ->  66
+mnmx488 min  75408  666    ->  666
+mnmx489 min  75409  6666   ->  6.67E+3 Rounded Inexact
+mnmx490 min  75410  66666  ->  6.67E+4 Rounded Inexact
+mnmx491 min  75411  33333  ->  3.33E+4 Rounded Inexact
+
+
+-- overflow tests
+maxexponent: 999999999
+minexponent: -999999999
+precision: 3
+mnmx500 min 9.999E+999999999  0 ->  0
+mnmx501 min -9.999E+999999999 0 -> -Infinity Inexact Overflow Rounded
+
+-- subnormals and underflow
+precision: 3
+maxexponent: 999
+minexponent: -999
+mnmx510 min  1.00E-999       0  ->   0
+mnmx511 min  0.1E-999        0  ->   0
+mnmx512 min  0.10E-999       0  ->   0
+mnmx513 min  0.100E-999      0  ->   0
+mnmx514 min  0.01E-999       0  ->   0
+mnmx515 min  0.999E-999      0  ->   0
+mnmx516 min  0.099E-999      0  ->   0
+mnmx517 min  0.009E-999      0  ->   0
+mnmx518 min  0.001E-999      0  ->   0
+mnmx519 min  0.0009E-999     0  ->   0
+mnmx520 min  0.0001E-999     0  ->   0
+
+mnmx530 min -1.00E-999       0  ->  -1.00E-999
+mnmx531 min -0.1E-999        0  ->  -1E-1000   Subnormal
+mnmx532 min -0.10E-999       0  ->  -1.0E-1000 Subnormal
+mnmx533 min -0.100E-999      0  ->  -1.0E-1000 Subnormal Rounded
+mnmx534 min -0.01E-999       0  ->  -1E-1001   Subnormal
+-- next is rounded to Nmin
+mnmx535 min -0.999E-999      0  ->  -1.00E-999 Inexact Rounded Subnormal Underflow
+mnmx536 min -0.099E-999      0  ->  -1.0E-1000 Inexact Rounded Subnormal Underflow
+mnmx537 min -0.009E-999      0  ->  -1E-1001   Inexact Rounded Subnormal Underflow
+mnmx538 min -0.001E-999      0  ->  -0E-1001   Inexact Rounded Subnormal Underflow Clamped
+mnmx539 min -0.0009E-999     0  ->  -0E-1001   Inexact Rounded Subnormal Underflow Clamped
+mnmx540 min -0.0001E-999     0  ->  -0E-1001   Inexact Rounded Subnormal Underflow Clamped
+
+-- misalignment traps for little-endian
+precision: 9
+mnmx551 min      1.0       0.1  -> 0.1
+mnmx552 min      0.1       1.0  -> 0.1
+mnmx553 min     10.0       0.1  -> 0.1
+mnmx554 min      0.1      10.0  -> 0.1
+mnmx555 min      100       1.0  -> 1.0
+mnmx556 min      1.0       100  -> 1.0
+mnmx557 min     1000      10.0  -> 10.0
+mnmx558 min     10.0      1000  -> 10.0
+mnmx559 min    10000     100.0  -> 100.0
+mnmx560 min    100.0     10000  -> 100.0
+mnmx561 min   100000    1000.0  -> 1000.0
+mnmx562 min   1000.0    100000  -> 1000.0
+mnmx563 min  1000000   10000.0  -> 10000.0
+mnmx564 min  10000.0   1000000  -> 10000.0
+
+-- Null tests
+mnm900 min 10  # -> NaN Invalid_operation
+mnm901 min  # 10 -> NaN Invalid_operation

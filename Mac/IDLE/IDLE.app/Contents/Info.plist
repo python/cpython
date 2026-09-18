@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleName</key>
+	<string>IDLE</string>
+	<key>CFBundleIdentifier</key>
+	<string>org.python.IDLE</string>
+	<key>CFBundleVersion</key>
+	<string>%version%</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>CFBundleExecutable</key>
+	<string>IDLE</string>
+	<key>CFBundleIconFile</key>
+	<string>IDLE.icns</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleDocumentTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>py</string>
+				<string>pyi</string>
+				<string>pyw</string>
+			</array>
+			<key>CFBundleTypeIconFile</key>
+			<string>PythonSource.icns</string>
+			<key>CFBundleTypeName</key>
+			<string>Python Script</string>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+		</dict>
+		<dict>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>pyc</string>
+				<string>pyo</string>
+			</array>
+			<key>CFBundleTypeIconFile</key>
+			<string>PythonCompiled.icns</string>
+			<key>CFBundleTypeName</key>
+			<string>Python Bytecode Document</string>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+		</dict>
+	</array>
+	<key>CFBundleShortVersionString</key>
+	<string>%version%</string>
+	<key>CFBundleSupportedPlatforms</key>
+	<array>
+		<string>MacOSX</string>
+	</array>
+	<key>NSHumanReadableCopyright</key>
+	<string>Copyright © 2001 Python Software Foundation. All rights reserved.</string>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>English</string>
+	<key>NSHighResolutionCapable</key>
+	<true/>
+	<key>CFBundleAllowMixedLocalizations</key>
+	<true/>
+</dict>
+</plist>

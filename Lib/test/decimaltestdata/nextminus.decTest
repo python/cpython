@@ -1,0 +1,148 @@
+------------------------------------------------------------------------
+-- nextminus.decTest -- decimal next that is less [754r nextdown]     --
+-- Copyright (c) IBM Corporation, 1981, 2008.  All rights reserved.   --
+------------------------------------------------------------------------
+-- Please see the document "General Decimal Arithmetic Testcases"     --
+-- at http://www2.hursley.ibm.com/decimal for the description of      --
+-- these testcases.                                                   --
+--                                                                    --
+-- These testcases are experimental ('beta' versions), and they       --
+-- may contain errors.  They are offered on an as-is basis.  In       --
+-- particular, achieving the same results as the tests here is not    --
+-- a guarantee that an implementation complies with any Standard      --
+-- or specification.  The tests are not exhaustive.                   --
+--                                                                    --
+-- Please send comments, suggestions, and corrections to the author:  --
+--   Mike Cowlishaw, IBM Fellow                                       --
+--   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
+--   mfc@uk.ibm.com                                                   --
+------------------------------------------------------------------------
+version: 2.59
+
+extended:    1
+precision:   9
+rounding:    half_up
+maxExponent: 384
+minexponent: -383
+
+nextm001 nextminus  0.999999995 ->   0.999999994
+nextm002 nextminus  0.999999996 ->   0.999999995
+nextm003 nextminus  0.999999997 ->   0.999999996
+nextm004 nextminus  0.999999998 ->   0.999999997
+nextm005 nextminus  0.999999999 ->   0.999999998
+nextm006 nextminus  1.00000000  ->   0.999999999
+nextm007 nextminus  1.0         ->   0.999999999
+nextm008 nextminus  1           ->   0.999999999
+nextm009 nextminus  1.00000001  ->   1.00000000
+nextm010 nextminus  1.00000002  ->   1.00000001
+nextm011 nextminus  1.00000003  ->   1.00000002
+nextm012 nextminus  1.00000004  ->   1.00000003
+nextm013 nextminus  1.00000005  ->   1.00000004
+nextm014 nextminus  1.00000006  ->   1.00000005
+nextm015 nextminus  1.00000007  ->   1.00000006
+nextm016 nextminus  1.00000008  ->   1.00000007
+nextm017 nextminus  1.00000009  ->   1.00000008
+nextm018 nextminus  1.00000010  ->   1.00000009
+nextm019 nextminus  1.00000011  ->   1.00000010
+nextm020 nextminus  1.00000012  ->   1.00000011
+
+nextm021 nextminus -0.999999995 ->  -0.999999996
+nextm022 nextminus -0.999999996 ->  -0.999999997
+nextm023 nextminus -0.999999997 ->  -0.999999998
+nextm024 nextminus -0.999999998 ->  -0.999999999
+nextm025 nextminus -0.999999999 ->  -1.00000000
+nextm026 nextminus -1.00000000  ->  -1.00000001
+nextm027 nextminus -1.0         ->  -1.00000001
+nextm028 nextminus -1           ->  -1.00000001
+nextm029 nextminus -1.00000001  ->  -1.00000002
+nextm030 nextminus -1.00000002  ->  -1.00000003
+nextm031 nextminus -1.00000003  ->  -1.00000004
+nextm032 nextminus -1.00000004  ->  -1.00000005
+nextm033 nextminus -1.00000005  ->  -1.00000006
+nextm034 nextminus -1.00000006  ->  -1.00000007
+nextm035 nextminus -1.00000007  ->  -1.00000008
+nextm036 nextminus -1.00000008  ->  -1.00000009
+nextm037 nextminus -1.00000009  ->  -1.00000010
+nextm038 nextminus -1.00000010  ->  -1.00000011
+nextm039 nextminus -1.00000011  ->  -1.00000012
+
+-- input operand is >precision
+nextm041 nextminus  1.00000010998  ->   1.00000010
+nextm042 nextminus  1.00000010999  ->   1.00000010
+nextm043 nextminus  1.00000011000  ->   1.00000010
+nextm044 nextminus  1.00000011001  ->   1.00000011
+nextm045 nextminus  1.00000011002  ->   1.00000011
+nextm046 nextminus  1.00000011002  ->   1.00000011
+nextm047 nextminus  1.00000011052  ->   1.00000011
+nextm048 nextminus  1.00000011552  ->   1.00000011
+nextm049 nextminus -1.00000010998  ->  -1.00000011
+nextm050 nextminus -1.00000010999  ->  -1.00000011
+nextm051 nextminus -1.00000011000  ->  -1.00000012
+nextm052 nextminus -1.00000011001  ->  -1.00000012
+nextm053 nextminus -1.00000011002  ->  -1.00000012
+nextm054 nextminus -1.00000011002  ->  -1.00000012
+nextm055 nextminus -1.00000011052  ->  -1.00000012
+nextm056 nextminus -1.00000011552  ->  -1.00000012
+-- ultra-tiny inputs
+nextm060 nextminus  1E-99999       ->   0E-391
+nextm061 nextminus  1E-999999999   ->   0E-391
+nextm062 nextminus  1E-391         ->   0E-391
+nextm063 nextminus -1E-99999       ->  -1E-391
+nextm064 nextminus -1E-999999999   ->  -1E-391
+nextm065 nextminus -1E-391         ->  -2E-391
+
+-- Zeros
+nextm100 nextminus -0           -> -1E-391
+nextm101 nextminus  0           -> -1E-391
+nextm102 nextminus  0.00        -> -1E-391
+nextm103 nextminus -0.00        -> -1E-391
+nextm104 nextminus  0E-300      -> -1E-391
+nextm105 nextminus  0E+300      -> -1E-391
+nextm106 nextminus  0E+30000    -> -1E-391
+nextm107 nextminus -0E+30000    -> -1E-391
+
+precision: 9
+maxExponent: 999
+minexponent: -999
+-- specials
+nextm150 nextminus   Inf    ->  9.99999999E+999
+nextm151 nextminus  -Inf    -> -Infinity
+nextm152 nextminus   NaN    ->  NaN
+nextm153 nextminus  sNaN    ->  NaN   Invalid_operation
+nextm154 nextminus   NaN77  ->  NaN77
+nextm155 nextminus  sNaN88  ->  NaN88 Invalid_operation
+nextm156 nextminus  -NaN    -> -NaN
+nextm157 nextminus -sNaN    -> -NaN   Invalid_operation
+nextm158 nextminus  -NaN77  -> -NaN77
+nextm159 nextminus -sNaN88  -> -NaN88 Invalid_operation
+
+-- Nmax, Nmin, Ntiny, subnormals
+nextm170 nextminus  9.99999999E+999   -> 9.99999998E+999
+nextm171 nextminus  9.99999998E+999   -> 9.99999997E+999
+nextm172 nextminus  1E-999            -> 9.9999999E-1000
+nextm173 nextminus  1.00000000E-999   -> 9.9999999E-1000
+nextm174 nextminus  9E-1007           -> 8E-1007
+nextm175 nextminus  9.9E-1006         -> 9.8E-1006
+nextm176 nextminus  9.9999E-1003      -> 9.9998E-1003
+nextm177 nextminus  9.9999999E-1000   -> 9.9999998E-1000
+nextm178 nextminus  9.9999998E-1000   -> 9.9999997E-1000
+nextm179 nextminus  9.9999997E-1000   -> 9.9999996E-1000
+nextm180 nextminus  0E-1007           -> -1E-1007
+nextm181 nextminus  1E-1007           -> 0E-1007
+nextm182 nextminus  2E-1007           -> 1E-1007
+
+nextm183 nextminus  -0E-1007          -> -1E-1007
+nextm184 nextminus  -1E-1007          -> -2E-1007
+nextm185 nextminus  -2E-1007          -> -3E-1007
+nextm186 nextminus  -10E-1007         -> -1.1E-1006
+nextm187 nextminus  -100E-1007        -> -1.01E-1005
+nextm188 nextminus  -100000E-1007     -> -1.00001E-1002
+nextm189 nextminus  -1.0000E-999      -> -1.00000001E-999
+nextm190 nextminus  -1.00000000E-999  -> -1.00000001E-999
+nextm191 nextminus  -1E-999           -> -1.00000001E-999
+nextm192 nextminus  -9.99999998E+999  -> -9.99999999E+999
+nextm193 nextminus  -9.99999999E+999  -> -Infinity
+
+-- Null tests
+nextm900 nextminus  # -> NaN Invalid_operation
+

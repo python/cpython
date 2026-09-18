@@ -1,0 +1,2 @@
+Fix interpreter crash while deallocating objects of :class:`asyncio.Task` on
+free-threaded builds. Contributed by Sergey Miryanov.
