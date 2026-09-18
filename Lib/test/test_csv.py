@@ -1543,6 +1543,17 @@ ghi\0jkl
         self.assertEqual(dialect.quotechar, "'")
         self.assertIs(dialect.skipinitialspace, False)
 
+    def test_sniff_field_larger_than_field_size_limit(self):
+        sniffer = csv.Sniffer()
+        sample = 'a,"' + 'x' * 200000 + '",b\n' + 'c,d,e\n' * 50
+        limit = csv.field_size_limit(100)
+        try:
+            dialect = sniffer.sniff(sample)
+            self.assertEqual(dialect.delimiter, ',')
+            self.assertEqual(csv.field_size_limit(), 100)
+        finally:
+            csv.field_size_limit(limit)
+
     def test_delimiters(self):
         sniffer = csv.Sniffer()
         dialect = sniffer.sniff(self.sample3)

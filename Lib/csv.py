@@ -260,6 +260,18 @@ class Sniffer:
 
 
     def sniff(self, sample, delimiters=None):
+        """Analyze the sample and return a dialect reflecting its format."""
+        limit = field_size_limit()
+        try:
+            # Sniffer only needs to count fields, so it should not reject a
+            # sample merely because a field exceeds the reader's limit.
+            field_size_limit(max(limit, len(sample)))
+            return self._sniff(sample, delimiters)
+        finally:
+            field_size_limit(limit)
+
+
+    def _sniff(self, sample, delimiters=None):
         """
         Analyze the sample and return a Dialect subclass reflecting the
         parameters found.  If the optional delimiters parameter is
