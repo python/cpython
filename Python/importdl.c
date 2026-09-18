@@ -66,6 +66,7 @@ get_encoded_name(PyObject *name, const struct hook_prefixes **hook_prefixes) {
         if (modname == NULL) {
             goto error;
         }
+        Py_CLEAR(encoded);
     }
 
     Py_DECREF(name);
