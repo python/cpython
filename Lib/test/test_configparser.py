@@ -9,6 +9,65 @@ from test import support
 from test.support import os_helper
 
 
+class WriteWhitespaceKeysTestCase(unittest.TestCase):
+
+    def test_write_rejects_whitespace_keys(self):
+        keys = (' key', 'key ', '\tkey', 'key\t', '\u00a0key',
+                'key\u00a0', ' \t')
+        for parser_type in (configparser.ConfigParser,
+                            configparser.RawConfigParser):
+            for key in keys:
+                for section in ('section', configparser.DEFAULTSECT,
+                                configparser.UNNAMED_SECTION):
+                    for value in ('value', None):
+                        for spaced in (True, False):
+                            with self.subTest(parser=parser_type, key=key,
+                                              section=section,
+                                              value=value, spaced=spaced):
+                                parser = parser_type(
+                                    allow_no_value=True,
+                                    allow_unnamed_section=True)
+                                if section != configparser.DEFAULTSECT:
+                                    parser.add_section(section)
+                                parser.set(section, 'first', 'keep')
+                                parser.set(section, key, value)
+                                with self.assertRaisesRegex(
+                                        configparser.InvalidWriteError,
+                                        'leading or trailing whitespace'):
+                                    parser.write(io.StringIO(),
+                                                 space_around_delimiters=spaced)
+                                self.assertEqual(parser.get(section, key),
+                                                 value)
+                                self.assertEqual(parser.get(section, 'first'),
+                                                 'keep')
+
+    def test_write_preserves_internal_whitespace(self):
+        for key in ('two words', 'two\twords', 'two\u00a0words'):
+            for spaced in (True, False):
+                with self.subTest(key=key, spaced=spaced):
+                    parser = configparser.ConfigParser(delimiters=('->',))
+                    parser['section'] = {key: 'value'}
+                    output = io.StringIO()
+                    parser.write(output, space_around_delimiters=spaced)
+                    restored = configparser.ConfigParser(delimiters=('->',))
+                    restored.read_string(output.getvalue())
+                    self.assertEqual(dict(restored['section']),
+                                     dict(parser['section']))
+
+    def test_optionxform_can_strip_whitespace(self):
+        class StrippingParser(configparser.ConfigParser):
+            def optionxform(self, option):
+                return super().optionxform(option).strip()
+
+        parser = StrippingParser()
+        parser['section'] = {' key ': 'value'}
+        output = io.StringIO()
+        parser.write(output)
+        restored = StrippingParser()
+        restored.read_string(output.getvalue())
+        self.assertEqual(dict(restored['section']), {'key': 'value'})
+
+
 class SortedDict(collections.UserDict):
 
     def items(self):

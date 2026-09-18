@@ -1,0 +1,4 @@
+:mod:`configparser` now raises :exc:`~configparser.InvalidWriteError`
+when writing an option name with leading or trailing whitespace,
+which would otherwise be read back as a different option or as a
+continuation of the previous value. In-memory option names are unchanged.
