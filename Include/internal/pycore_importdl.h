@@ -1,7 +1,6 @@
 #ifndef Py_INTERNAL_IMPORTDL_H
 #define Py_INTERNAL_IMPORTDL_H
 
-#include <stdbool.h>              // bool
 #include "patchlevel.h"           // PY_MAJOR_VERSION
 
 #ifdef __cplusplus
@@ -52,9 +51,9 @@ typedef enum ext_module_kind {
 } _Py_ext_module_kind;
 
 typedef enum ext_module_origin {
-    _Py_ext_module_origin_CORE = 1,
-    _Py_ext_module_origin_BUILTIN = 2,
-    _Py_ext_module_origin_DYNAMIC = 3,
+    _Py_ext_module_origin_CORE = 1,  // 'sys' & 'builtins'
+    _Py_ext_module_origin_BUILTIN = 2,  // inittab or PyImport_CreateModuleFromInitfunc
+    _Py_ext_module_origin_DYNAMIC = 3,  // loaded dynamically
 } _Py_ext_module_origin;
 
 struct hook_prefixes {
@@ -75,11 +74,6 @@ struct _Py_ext_module_loader_info {
     PyObject *path;
     _Py_ext_module_origin origin;
     const struct hook_prefixes *hook_prefixes;
-    /* for single-phase-init modules: true if we need to call
-     * _PyImport_SwapPackageContext. False for core modules;
-     * ignored for multi-phase.
-     */
-    bool needs_swapcontext;
 };
 extern void _Py_ext_module_loader_info_clear(
     struct _Py_ext_module_loader_info *info);

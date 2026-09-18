@@ -2508,10 +2508,6 @@ create_builtin(
     if (_Py_ext_module_loader_info_init(&info, name, spec, origin) < 0) {
         return NULL;
     }
-    if (initfunc == NULL) {
-        /* A core module never needs a context swap. */
-        info.needs_swapcontext = true;
-    }
 
     struct extensions_cache_value *cached = NULL;
     PyObject *mod = import_find_extension(tstate, &info, &cached);

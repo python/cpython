@@ -131,8 +131,6 @@ _Py_ext_module_loader_info_init(struct _Py_ext_module_loader_info *p_info,
             goto error;
     }
 
-    p_info->needs_swapcontext = true;
-
     if (origin != _Py_ext_module_origin_BUILTIN) {
         info.filename = PyObject_GetAttrString(spec, "origin");
         if (info.filename == NULL) {
@@ -389,7 +387,10 @@ _PyImport_RunModInitFunc(PyModInitFunction p0,
 
     /* Package context is needed for single-phase init */
     PyObject *m;
-    if (info->needs_swapcontext) {
+    if (info->origin == _Py_ext_module_origin_CORE) {
+        m = p0();
+    }
+    else {
         const char *newcontext = PyUnicode_AsUTF8(info->name);
         if (newcontext == NULL) {
             _Py_ext_module_loader_result_set_error(
@@ -399,9 +400,6 @@ _PyImport_RunModInitFunc(PyModInitFunction p0,
         const char *oldcontext = _PyImport_SwapPackageContext(newcontext);
         m = p0();
         _PyImport_SwapPackageContext(oldcontext);
-    }
-    else {
-        m = p0();
     }
 
     /* Validate the result (and populate "res". */
