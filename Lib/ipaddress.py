@@ -2376,8 +2376,8 @@ class IPv6Network(_BaseV6, _BaseNetwork):
               the prefix length.
 
             strict: A boolean. If true, ensure that we have been passed
-              a true network address, eg, 2001:db8::1000/124 and not an
-              IP address on a network, eg, 2001:db8::1/124.
+              a true network address, for example, 2001:db8::1000/124 and not an
+              IP address on a network, for example, 2001:db8::1/124.
 
         Raises:
             AddressValueError: If address isn't a valid IPv6 address.
