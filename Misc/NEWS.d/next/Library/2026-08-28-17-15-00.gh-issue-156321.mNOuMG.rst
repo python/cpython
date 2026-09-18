@@ -1,0 +1,2 @@
+Fix :func:`asyncio.shield` reporting an exception that was already
+retrieved.
