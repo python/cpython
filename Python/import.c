@@ -2499,7 +2499,8 @@ lookup_inittab_entry(const struct _Py_ext_module_loader_info* info)
 
 static PyObject*
 create_builtin(
-    PyThreadState *tstate, PyObject *name,
+    PyThreadState *tstate,
+    PyObject *name, /* if NULL, get from spec */
     PyObject *spec,
     PyModInitFunction initfunc)
 {
@@ -2538,7 +2539,7 @@ create_builtin(
         struct _inittab *entry = lookup_inittab_entry(&info);
         if (entry == NULL) {
             mod = NULL;
-            _PyErr_SetModuleNotFoundError(name);
+            _PyErr_SetModuleNotFoundError(info.name);
             goto finally;
         }
 
@@ -2590,20 +2591,7 @@ PyImport_CreateModuleFromInitfunc(
 
     PyThreadState *tstate = _PyThreadState_GET();
 
-    PyObject *name = PyObject_GetAttr(spec, &_Py_ID(name));
-    if (name == NULL) {
-        return NULL;
-    }
-
-    if (!PyUnicode_Check(name)) {
-        PyErr_Format(PyExc_TypeError,
-                     "spec name must be string, not %T", name);
-        Py_DECREF(name);
-        return NULL;
-    }
-
-    PyObject *mod = create_builtin(tstate, name, spec, initfunc);
-    Py_DECREF(name);
+    PyObject *mod = create_builtin(tstate, NULL, spec, initfunc);
     return mod;
 }
 
@@ -5138,27 +5126,7 @@ _imp_create_builtin(PyObject *module, PyObject *spec)
 {
     PyThreadState *tstate = _PyThreadState_GET();
 
-    PyObject *name = PyObject_GetAttrString(spec, "name");
-    if (name == NULL) {
-        return NULL;
-    }
-
-    if (!PyUnicode_Check(name)) {
-        PyErr_Format(PyExc_TypeError,
-                     "name must be string, not %.200s",
-                     Py_TYPE(name)->tp_name);
-        Py_DECREF(name);
-        return NULL;
-    }
-
-    if (PyUnicode_GetLength(name) == 0) {
-        PyErr_Format(PyExc_ValueError, "name must not be empty");
-        Py_DECREF(name);
-        return NULL;
-    }
-
-    PyObject *mod = create_builtin(tstate, name, spec, NULL);
-    Py_DECREF(name);
+    PyObject *mod = create_builtin(tstate, NULL, spec, NULL);
     return mod;
 }
 
