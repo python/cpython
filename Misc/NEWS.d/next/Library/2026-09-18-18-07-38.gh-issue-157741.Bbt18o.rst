@@ -1,0 +1,2 @@
+Fix crash in C libraries after os.environ.clear() by ensuring environ
+pointer is not left as NULL.
