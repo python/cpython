@@ -1331,6 +1331,24 @@ class SysLazyModulesTrackingTests(LazyImportTestCase):
         """)
         assert_python_ok("-c", code)
 
+    def test_initializing_module_is_still_tracked(self):
+        """A module that is still executing must not count as loaded."""
+        code = textwrap.dedent("""
+            import sys
+            name = "test.test_lazy_import.data.init_fails"
+            try:
+                import test.test_lazy_import.data.init_fails
+            except ValueError:
+                pass
+            else:
+                raise AssertionError("ValueError was not raised")
+            assert name not in sys.modules, "failed import left a module behind"
+            assert name in sys.lazy_modules, (
+                f"expected {name!r} tracked, got {sys.lazy_modules}"
+            )
+        """)
+        assert_python_ok("-c", code)
+
     def test_pending_submodule_is_still_tracked(self):
         """`lazy from` a submodule that is not loaded must stay tracked."""
         code = textwrap.dedent("""
