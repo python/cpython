@@ -3031,6 +3031,38 @@ class TestParser(TestParserMixin, TestEmailBase):
 
 
 
+class Test_get_parameter(TestParserMixin, TestEmailBase):
+
+    def test_rfc2231_charset_is_retyped_as_attrtext(self):
+        # gh-150474: the charset of an initial extended parameter is moved
+        # out of the value and into the parameter itself, and while doing so
+        # its text is retyped as an attrtext token.
+        param = self._test_get_x(parser.get_parameter,
+            "title*=us-ascii'en'This%20is%20a%20test",
+            "title*=us-ascii'en'This%20is%20a%20test",
+            "title*=us-ascii'en'This%20is%20a%20test",
+            [],
+            '')
+        self.assertEqual(param.token_type, 'parameter')
+        self.assertEqual(param[3].token_type, 'attribute')
+        self.assertEqual(param[3][0].token_type, 'attrtext')
+        self.assertEqual(param.charset, 'us-ascii')
+
+    def test_rfc2231_charset_strips_cfws(self):
+        # gh-150474: CFWS around the charset is part of the parse tree, but
+        # must not end up in the charset itself.
+        param = self._test_get_x(parser.get_parameter,
+            "title*=us-ascii 'en'This%20is%20a%20test",
+            "title*=us-ascii 'en'This%20is%20a%20test",
+            "title*=us-ascii 'en'This%20is%20a%20test",
+            [],
+            '')
+        self.assertEqual(param[3].token_type, 'attribute')
+        self.assertEqual(param[3][0].token_type, 'attrtext')
+        self.assertEqual(param[3][1].token_type, 'cfws')
+        self.assertEqual(param.charset, 'us-ascii')
+
+
 @parameterize
 class Test_parse_mime_parameters(TestParserMixin, TestEmailBase):
 
