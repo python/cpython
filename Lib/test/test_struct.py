@@ -426,12 +426,19 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
 
     def test_float_complex_overflow(self):
         for value in (
-            1e300,   # big real
-            1e300j,  # big imag
+            1e300 + 0.5j,  # big real
+            1.5 + 1e300j,  # big imag
         ):
             for format in (">Zf", "<Zf", "Zf"):
                 with self.subTest(value=value, format=format):
                     self.assertRaises(OverflowError, struct.pack, format, value)
+
+                ba = bytearray(8)
+                try:
+                    struct.Struct(format).pack_into(ba, 0, value)
+                    assert False
+                except OverflowError:
+                    self.assertEqual(ba, bytearray(8))
 
     def test_1530559(self):
         for code, byteorder in iter_integer_formats():

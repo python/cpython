@@ -797,12 +797,18 @@ np_float_complex(_structmodulestate *state, char *p, PyObject *v,
         return -1;
     }
 
-    int ret = PyFloat_Pack4(c.real, p, PY_LITTLE_ENDIAN);
+    char tmp[8];
+    int ret = PyFloat_Pack4(c.real, tmp, PY_LITTLE_ENDIAN);
 
     if (ret) {
         return ret;
     }
-    return PyFloat_Pack4(c.imag, p + sizeof(float), PY_LITTLE_ENDIAN);
+    ret = PyFloat_Pack4(c.imag, tmp + 4, PY_LITTLE_ENDIAN);
+    if (ret) {
+        return ret;
+    }
+    memcpy(p, tmp, 8);
+    return ret;
 }
 
 static int
