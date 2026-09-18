@@ -137,7 +137,7 @@ _Py_ext_module_loader_info_init(struct _Py_ext_module_loader_info *p_info,
             goto error;
     }
 
-    if (origin != _Py_ext_module_origin_BUILTIN) {
+    if (origin == _Py_ext_module_origin_DYNAMIC) {
         assert(spec != NULL);
         info.filename = PyObject_GetAttr(spec, &_Py_ID(origin));
         if (info.filename == NULL) {
