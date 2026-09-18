@@ -1,0 +1,2 @@
+Fix ``_remote_debugging`` reporting errors or incorrect line numbers in free-threaded
+builds when a thread-local bytecode array grows or gains entries after being cached.
