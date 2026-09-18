@@ -601,7 +601,6 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
 # define CHECK_IF_FT(expr) (void)(expr)
 #endif
 
-
     assert(op != NULL);
     CHECK(PyUnicode_Check(op));
 
@@ -647,13 +646,12 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
     }
 
     /* check that the best kind is used: O(n) operation */
+    const void *data = PyUnicode_DATA(ascii);
     if (check_content) {
         Py_ssize_t i;
         Py_UCS4 maxchar = 0;
-        const void *data;
         Py_UCS4 ch;
 
-        data = PyUnicode_DATA(ascii);
         for (i=0; i < ascii->length; i++)
         {
             ch = PyUnicode_READ(kind, data, i);
@@ -676,8 +674,11 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
             CHECK(maxchar >= 0x10000);
             CHECK(maxchar <= MAX_UNICODE);
         }
-        CHECK(PyUnicode_READ(kind, data, ascii->length) == 0);
     }
+
+    // Detect buffer overflow: check if the trailing null character
+    // has been overridden
+    CHECK(PyUnicode_READ(kind, data, ascii->length) == 0);
 
     /* Check interning state */
 #ifdef Py_DEBUG
