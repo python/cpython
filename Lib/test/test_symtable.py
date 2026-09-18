@@ -545,6 +545,7 @@ class SymtableTest(unittest.TestCase):
             children[0], ["x"], ["y"], nested=False)
 
     def test_inlined_comprehension_use_of_enclosing_free_in_function(self):
+        # x is used only in the inlined listcomp; inner still reports USE.
         st = symtable.symtable(
             "def outer(x):\n"
             "    def inner():\n"
@@ -552,9 +553,27 @@ class SymtableTest(unittest.TestCase):
             "?", "exec")
         inner = find_block(find_block(st, "outer"), "inner")
         self.assertTrue(inner.lookup("x").is_free())
+        self.assertTrue(inner.lookup("x").is_referenced())
         comp, = inner.get_children()
         self.assertTrue(comp.lookup("x").is_free())
         self.assertTrue(comp.lookup("x").is_referenced())
+
+    def test_inlined_comprehension_nested_function_use_not_on_enclosing(self):
+        # The load of x is in the lambda's code object, not inner's.
+        st = symtable.symtable(
+            "def outer(x):\n"
+            "    def inner():\n"
+            "        return [(lambda: x) for y in ()]",
+            "?", "exec")
+        inner = find_block(find_block(st, "outer"), "inner")
+        self.assertTrue(inner.lookup("x").is_free())
+        self.assertFalse(inner.lookup("x").is_referenced())
+        comp, = inner.get_children()
+        self.assertTrue(comp.lookup("x").is_free())
+        self.assertFalse(comp.lookup("x").is_referenced())
+        lam, = comp.get_children()
+        self.assertTrue(lam.lookup("x").is_free())
+        self.assertTrue(lam.lookup("x").is_referenced())
 
     def test_inlined_comprehension_comp_cell_not_on_enclosing(self):
         st = symtable.symtable(
@@ -619,6 +638,7 @@ class SymtableTest(unittest.TestCase):
         self.assertTrue(children[0].lookup("x").is_local())
         self.assertFalse(children[0].lookup("x").is_cell())
         self.assertFalse(children[0].lookup("x").is_comp_cell())
+        self.assertTrue(children[0].lookup("x").is_referenced())
         self.assertFalse(inner.lookup("_").is_free())
         self.assertTrue(inner.lookup("x").is_free())
         self.assertTrue(inner.lookup("x").is_referenced())
@@ -637,6 +657,7 @@ class SymtableTest(unittest.TestCase):
         self.assertTrue(outer.lookup("x").is_local())
         self.assertFalse(outer.lookup("x").is_cell())
         self.assertFalse(outer.lookup("x").is_comp_cell())
+        self.assertTrue(outer.lookup("x").is_referenced())
         self.assertTrue(inner.lookup("x").is_free())
         self.assertTrue(inner.lookup("x").is_referenced())
 

@@ -799,6 +799,8 @@ analyze_name(PySTEntryObject *ste, PyObject *scopes, PyObject *name, long flags,
     return 1;
 }
 
+/* See InternalDocs/inlined_comprehensions.md. */
+
 static int
 is_free_in_any_child(PySTEntryObject *entry, PyObject *key)
 {
@@ -822,6 +824,33 @@ is_free_in_any_child(PySTEntryObject *entry, PyObject *key)
         }
     }
     return 0;
+}
+
+static int
+symtable_add_flag(PyObject *dict, PyObject *name, int flag)
+{
+    PyObject *o = PyDict_GetItemWithError(dict, name);
+    long val;
+    if (o != NULL) {
+        val = PyLong_AsLong(o);
+        if (val == -1 && PyErr_Occurred()) {
+            return 0;
+        }
+        val |= flag;
+    }
+    else if (PyErr_Occurred()) {
+        return 0;
+    }
+    else {
+        val = flag;
+    }
+    o = PyLong_FromLong(val);
+    if (o == NULL) {
+        return 0;
+    }
+    int rc = PyDict_SetItem(dict, name, o);
+    Py_DECREF(o);
+    return rc >= 0;
 }
 
 static int
@@ -865,6 +894,11 @@ finalize_inlined_comprehension(PySTEntryObject *ste, PySTEntryObject *comp,
                 }
             }
             continue;
+        }
+        // Loads here are in the enclosing compilation unit.
+        if (scope == FREE && (comp_flags & USE) &&
+                !symtable_add_flag(ste->ste_symbols, k, USE)) {
+            goto error;
         }
         if (existing) {
             long flags = PyLong_AsLong(existing);
@@ -1146,7 +1180,7 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
        ClassBlocks, the bound and global names are initialized
        before analyzing names, because class bindings aren't
        visible in methods.  For other blocks, they are initialized
-       after names are analyzed.
+       after this block's declarations are recorded.
      */
 
     /* TODO(jhylton): Package these dicts in a struct so that we
@@ -1184,10 +1218,16 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
         }
     }
 
+    /* Record bindings and global/nonlocal declarations first so child
+       blocks see this scope's locals. Uses are classified after children
+       so inlined comprehensions can add USE flags to this table. */
     while (PyDict_Next(ste->ste_symbols, &pos, &name, &v)) {
         long flags = PyLong_AsLong(v);
         if (flags == -1 && PyErr_Occurred()) {
             goto error;
+        }
+        if (!(flags & (DEF_GLOBAL | DEF_NONLOCAL | DEF_BOUND))) {
+            continue;
         }
         if (!analyze_name(ste, scopes, name, flags,
                           bound, local, free, global, type_params, class_entry))
@@ -1249,8 +1289,9 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
             }
         }
 
-        // Finalize inlined children before analyze_cells so their uses of
-        // this block's locals do not force a cell.
+        // Finalize inlined children before classifying this block's uses
+        // and analyze_cells, so their loads are USE here and do not force
+        // a cell unless a real nested unit needs one.
         if (!analyze_child_block(entry, newbound, newfree, newglobal,
                                  type_params, new_class_entry, &child_free))
         {
@@ -1268,6 +1309,25 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
         if (!temp)
             goto error;
         Py_DECREF(temp);
+    }
+
+    /* Complete the classification. */
+    pos = 0;
+    while (PyDict_Next(ste->ste_symbols, &pos, &name, &v)) {
+        long flags = PyLong_AsLong(v);
+        if (flags == -1 && PyErr_Occurred()) {
+            goto error;
+        }
+        int contains = PyDict_Contains(scopes, name);
+        if (contains < 0) {
+            goto error;
+        }
+        if (contains) {
+            continue;
+        }
+        if (!analyze_name(ste, scopes, name, flags,
+                          bound, local, free, global, type_params, class_entry))
+            goto error;
     }
 
     /* Check if any local variables must be converted to cell variables */
@@ -1484,14 +1544,12 @@ symtable_add_def_helper(struct symtable *st, PyObject *name, int flag, struct _s
                         _Py_SourceLocation loc)
 {
     PyObject *o;
-    PyObject *dict;
-    long val;
+    long val = 0;
     PyObject *mangled = _Py_MaybeMangle(st->st_private, st->st_cur, name);
 
     if (!mangled)
         return 0;
-    dict = ste->ste_symbols;
-    if ((o = PyDict_GetItemWithError(dict, mangled))) {
+    if ((o = PyDict_GetItemWithError(ste->ste_symbols, mangled))) {
         val = PyLong_AsLong(o);
         if (val == -1 && PyErr_Occurred()) {
             goto error;
@@ -1507,62 +1565,40 @@ symtable_add_def_helper(struct symtable *st, PyObject *name, int flag, struct _s
             SET_ERROR_LOCATION(st->st_filename, loc);
             goto error;
         }
-        val |= flag;
     }
     else if (PyErr_Occurred()) {
         goto error;
     }
-    else {
-        val = flag;
-    }
+
+    int to_add = flag;
     if (ste->ste_comp_iter_target) {
         /* This name is an iteration variable in a comprehension,
          * so check for a binding conflict with any named expressions.
          * Otherwise, mark it as an iteration variable so subsequent
          * named expressions can check for conflicts.
          */
-        if (val & (DEF_GLOBAL | DEF_NONLOCAL)) {
+        if ((val | flag) & (DEF_GLOBAL | DEF_NONLOCAL)) {
             PyErr_Format(PyExc_SyntaxError,
                 NAMED_EXPR_COMP_INNER_LOOP_CONFLICT, name);
             SET_ERROR_LOCATION(st->st_filename, loc);
             goto error;
         }
-        val |= DEF_COMP_ITER;
+        to_add |= DEF_COMP_ITER;
     }
-    o = PyLong_FromLong(val);
-    if (o == NULL)
-        goto error;
-    if (PyDict_SetItem(dict, mangled, o) < 0) {
-        Py_DECREF(o);
+    if (!symtable_add_flag(ste->ste_symbols, mangled, to_add)) {
         goto error;
     }
-    Py_DECREF(o);
 
     if (flag & DEF_PARAM) {
         if (PyList_Append(ste->ste_varnames, mangled) < 0)
             goto error;
-    } else if (flag & DEF_GLOBAL) {
+    }
+    else if (flag & DEF_GLOBAL) {
         /* XXX need to update DEF_GLOBAL for other flags too;
            perhaps only DEF_FREE_GLOBAL */
-        val = 0;
-        if ((o = PyDict_GetItemWithError(st->st_global, mangled))) {
-            val = PyLong_AsLong(o);
-            if (val == -1 && PyErr_Occurred()) {
-                goto error;
-            }
-        }
-        else if (PyErr_Occurred()) {
+        if (!symtable_add_flag(st->st_global, mangled, flag)) {
             goto error;
         }
-        val |= flag;
-        o = PyLong_FromLong(val);
-        if (o == NULL)
-            goto error;
-        if (PyDict_SetItem(st->st_global, mangled, o) < 0) {
-            Py_DECREF(o);
-            goto error;
-        }
-        Py_DECREF(o);
     }
     Py_DECREF(mangled);
     return 1;

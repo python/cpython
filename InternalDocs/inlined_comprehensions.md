@@ -44,9 +44,11 @@ inlined child's lookup are `FREE|USE`.
 
 ### Analysis
 
-`analyze_block()` treats an inlined child like any nested block, then
-calls `finalize_inlined_comprehension()` against the immediate parent
-before that parent's `analyze_cells()`.
+`analyze_block()` records this block's declarations, analyzes children,
+then classifies uses. `finalize_inlined_comprehension()` copies
+`USE` from an inlined child onto the parent before that second pass, and
+drops inlined-only frees so `analyze_cells()` does not promote those
+names to cells.
 
 A name that is `FREE` in the comprehension and bound in the parent is
 dropped from the parent's free set unless:
