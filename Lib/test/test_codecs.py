@@ -1724,7 +1724,7 @@ class IDNACodecTest(unittest.TestCase):
                 self.assertEqual(exc.end, expected.end)
 
     def test_builtin_decode_length_limit(self):
-        with self.assertRaisesRegex(UnicodeDecodeError, "way too long"):
+        with self.assertRaisesRegex(UnicodeDecodeError, "too long"):
             (b"xn--016c"+b"a"*1100).decode("idna")
         with self.assertRaisesRegex(UnicodeDecodeError, "too long"):
             (b"xn--016c"+b"a"*70).decode("idna")

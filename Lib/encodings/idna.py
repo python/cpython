@@ -162,6 +162,11 @@ def ToUnicode(label):
     if not label.lower().startswith(ace_prefix):
         return str(label, "ascii")
 
+    # Below in steps 6-7, `label` must match the result of `ToASCII`, so it's
+    # limited to 63 chars. Check before the expensive punycode decode.
+    if len(label) >= 64:
+        raise UnicodeDecodeError("idna", label, 0, len(label), "label too long")
+
     # Step 4: Remove ACE prefix
     label1 = label[len(ace_prefix):]
 
