@@ -8,6 +8,7 @@
 #include "pycore_moduleobject.h"  // _PyModule_GetDefOrNull()
 #include "pycore_pyerrors.h"      // _PyErr_FormatFromCause()
 #include "pycore_runtime.h"       // _Py_ID()
+#include "pycore_global_objects.h"  // _Py_SINGLETON()
 
 
 /***********************************/
@@ -28,7 +29,6 @@ static const struct hook_prefixes nonascii_prefixes = {
 static PyObject *
 get_encoded_name(PyObject *name, const struct hook_prefixes **hook_prefixes) {
     PyObject *tmp;
-    PyObject *encoded = NULL;
     PyObject *modname = NULL;
     Py_ssize_t name_len, lastdot;
 
@@ -56,24 +56,32 @@ get_encoded_name(PyObject *name, const struct hook_prefixes **hook_prefixes) {
         modname = PyUnicode_AsASCIIString(name);
     } else {
         *hook_prefixes = &nonascii_prefixes;
-        encoded = PyUnicode_AsEncodedString(name, "punycode", NULL);
+        PyObject *encoded = PyUnicode_AsEncodedString(name, "punycode", NULL);
         if (encoded == NULL) {
             goto error;
         }
 
-        /* Replace '-' by '_' */
-        modname = _PyObject_CallMethod(encoded, &_Py_ID(replace), "cc", '-', '_');
+        /* Call encoded.replace('-', '_') */
+        modname = PyObject_VectorcallMethod(
+            &_Py_ID(replace),
+            (PyObject*[3]) {
+                encoded,
+                (PyObject *)&_Py_SINGLETON(bytes_characters)['-'],
+                (PyObject *)&_Py_SINGLETON(bytes_characters)['_'],
+            },
+            3 | PY_VECTORCALL_ARGUMENTS_OFFSET,
+            NULL);
+        Py_CLEAR(encoded);
+
         if (modname == NULL) {
             goto error;
         }
-        Py_CLEAR(encoded);
     }
 
     Py_DECREF(name);
     return modname;
 error:
     Py_DECREF(name);
-    Py_XDECREF(encoded);
     return NULL;
 }
 
