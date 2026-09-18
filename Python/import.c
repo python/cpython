@@ -2803,8 +2803,8 @@ PyImport_ExecCodeModuleWithPathnames(const char *name, PyObject *co,
             Py_FatalError("no current interpreter");
         }
 
-        external= PyObject_GetAttrString(IMPORTLIB(interp),
-                                         "_bootstrap_external");
+        external= PyObject_GetAttr(IMPORTLIB(interp),
+                                   &_Py_ID(_bootstrap_external));
         if (external != NULL) {
             pathobj = PyObject_CallMethodOneArg(
                 external, &_Py_ID(_get_sourcefile), cpathobj);
@@ -2888,8 +2888,8 @@ PyImport_ExecCodeModuleObject(PyObject *name, PyObject *co, PyObject *pathname,
     if (pathname == NULL) {
         pathname = ((PyCodeObject *)co)->co_filename;
     }
-    external = PyObject_GetAttrString(IMPORTLIB(tstate->interp),
-                                      "_bootstrap_external");
+    external = PyObject_GetAttr(IMPORTLIB(tstate->interp),
+                                &_Py_ID(_bootstrap_external));
     if (external == NULL) {
         Py_DECREF(d);
         return NULL;
@@ -3467,8 +3467,8 @@ PyObject *
 _PyImport_GetImportlibExternalLoader(PyInterpreterState *interp,
                                      const char *loader_name)
 {
-    PyObject *bootstrap = PyObject_GetAttrString(IMPORTLIB(interp),
-                                                 "_bootstrap_external");
+    PyObject *bootstrap = PyObject_GetAttr(IMPORTLIB(interp),
+                                           &_Py_ID(_bootstrap_external));
     if (bootstrap == NULL) {
         return NULL;
     }
@@ -3481,8 +3481,8 @@ _PyImport_GetImportlibExternalLoader(PyInterpreterState *interp,
 PyObject *
 _PyImport_BlessMyLoader(PyInterpreterState *interp, PyObject *module_globals)
 {
-    PyObject *external = PyObject_GetAttrString(IMPORTLIB(interp),
-                                                "_bootstrap_external");
+    PyObject *external = PyObject_GetAttr(IMPORTLIB(interp),
+                                          &_Py_ID(_bootstrap_external));
     if (external == NULL) {
         return NULL;
     }

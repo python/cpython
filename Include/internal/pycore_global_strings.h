@@ -259,6 +259,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(_asyncio_future_blocking)
         STRUCT_FOR_ID(_blksize)
         STRUCT_FOR_ID(_bootstrap)
+        STRUCT_FOR_ID(_bootstrap_external)
         STRUCT_FOR_ID(_check_retval_)
         STRUCT_FOR_ID(_dealloc_warn)
         STRUCT_FOR_ID(_feature_version)
