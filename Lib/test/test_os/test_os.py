@@ -1693,6 +1693,7 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
 
         self.assertRaises(TypeError, os.environ.clear, None)
 
+    @requires_os_func('_clearenv')
     def test_clearenv_environ_not_null(self):
         from test.support import import_helper
         ctypes = import_helper.import_module('ctypes')
