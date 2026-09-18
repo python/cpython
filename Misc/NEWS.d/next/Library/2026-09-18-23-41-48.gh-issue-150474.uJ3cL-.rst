@@ -1,3 +1,2 @@
-Fixed an issue in :mod:`email` where an incorrect comparison in the header
-value parser :func:`get_parameter` could lead to improper parameter
-handling.
+Fix parsing of extended email parameters when CFWS follows the charset,
+preventing the charset value from incorrectly including the trailing CFWS.
