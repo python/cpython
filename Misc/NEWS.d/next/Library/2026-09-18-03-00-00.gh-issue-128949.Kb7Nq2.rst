@@ -1,0 +1,4 @@
+Preserve line endings in :meth:`email.parser.BytesParser.parse` and
+:meth:`~email.parser.BytesHeaderParser.parse`. This prevents corruption of
+unencoded binary payloads and makes parsing a binary file consistent with
+parsing the same content using ``parsebytes()``.
