@@ -4523,8 +4523,10 @@ class TestBufferProtocol(unittest.TestCase):
         # aligned to at least the alignment of the element type.
         for fmt in ARRAY:
             with self.subTest(fmt=fmt):
-                # A zero repeat count pads to the alignment of the type, so
-                # this is the native alignment of `fmt`.
+                # Alignment can differ from size, for example 'Zd' on x86-64
+                # has size 16 and alignment 8. Have calcsize add a single byte
+                # then pad until the alignment of the type but include zero
+                # instances. B = 1 byte, 0{fmt} = zero instances of fmt.
                 align = struct.calcsize(f"B0{fmt}")
                 for case in (array.array(fmt), array.array(fmt, [0])):
                     ptr = _testcapi.buffer_pointer_as_int(case)
