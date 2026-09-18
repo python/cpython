@@ -1,0 +1,4 @@
+Fix :func:`plistlib.dumps` and :func:`plistlib.dump` so that ``skipkeys=True``
+together with ``sort_keys=True`` correctly drops non-string keys when the
+dictionary contains a mix of string and non-string keys.  Previously the sort
+ran before the filter and raised :exc:`TypeError`.
