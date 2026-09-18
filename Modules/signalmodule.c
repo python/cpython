@@ -1796,25 +1796,18 @@ PyErr_CheckSignals(void)
     _PyRunRemoteDebugger(tstate);
 #endif
 
-    if (_Py_ThreadCanHandleSignals(tstate->interp)) {
-        if (_PyErr_CheckSignalsTstate(tstate) < 0) {
-            return -1;
-        }
+    if (_PyErr_CheckSignalsTstate(tstate) < 0) {
+        return -1;
     }
 
     return 0;
 }
 
 
-/* Declared in cpython/pyerrors.h */
-int
-_PyErr_CheckSignalsTstate(PyThreadState *tstate)
+// Out of line, to keep the common case of _PyErr_CheckSignalsTstate() cheap.
+Py_NO_INLINE static int
+run_tripped_handlers(PyThreadState *tstate)
 {
-    _Py_CHECK_EMSCRIPTEN_SIGNALS();
-    if (!_Py_atomic_load_int(&is_tripped)) {
-        return 0;
-    }
-
     /*
      * The is_tripped variable is meant to speed up the calls to
      * PyErr_CheckSignals (both directly or via pending calls) when no
@@ -1894,6 +1887,20 @@ _PyErr_CheckSignalsTstate(PyThreadState *tstate)
     return 0;
 }
 
+
+/* Declared in cpython/pyerrors.h */
+int
+_PyErr_CheckSignalsTstate(PyThreadState *tstate)
+{
+    _Py_CHECK_EMSCRIPTEN_SIGNALS();
+    if (!_Py_atomic_load_int(&is_tripped)) {
+        return 0;
+    }
+    if (!_Py_ThreadCanHandleSignals(tstate->interp)) {
+        return 0;
+    }
+    return run_tripped_handlers(tstate);
+}
 
 
 int

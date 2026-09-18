@@ -829,9 +829,6 @@ handle_signals(PyThreadState *tstate)
 {
     assert(_PyThreadState_CheckConsistency(tstate));
     _Py_unset_eval_breaker_bit(tstate, _PY_SIGNALS_PENDING_BIT);
-    if (!_Py_ThreadCanHandleSignals(tstate->interp)) {
-        return 0;
-    }
     if (_PyErr_CheckSignalsTstate(tstate) < 0) {
         /* On failure, re-schedule a call to handle_signals(). */
         _Py_set_eval_breaker_bit(tstate, _PY_SIGNALS_PENDING_BIT);
@@ -1257,10 +1254,11 @@ static inline void run_remote_debugger_script(PyObject *path)
 
 int _PyRunRemoteDebugger(PyThreadState *tstate)
 {
+    if (tstate->remote_debugger_support.debugger_pending_call != 1) {
+        return 0;
+    }
     const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
-    if (config->remote_debug == 1
-         && tstate->remote_debugger_support.debugger_pending_call == 1)
-    {
+    if (config->remote_debug == 1) {
         tstate->remote_debugger_support.debugger_pending_call = 0;
 
         // Immediately make a copy in case of a race with another debugger
