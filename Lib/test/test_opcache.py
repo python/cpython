@@ -2094,6 +2094,18 @@ class TestSpecializer(TestBase):
         self.assert_specialized(for_iter_tuple, "FOR_ITER_TUPLE")
         self.assert_no_opcode(for_iter_tuple, "FOR_ITER")
 
+        b = b"\x00\x7f\x80\xff" * 3
+        result = []
+        def for_iter_bytes():
+            result.clear()
+            for i in b:
+                result.append(i)
+
+        for_iter_bytes()
+        self.assertEqual(result, list(b))
+        self.assert_specialized(for_iter_bytes, "FOR_ITER_VIRTUAL")
+        self.assert_no_opcode(for_iter_bytes, "FOR_ITER")
+
         s = "abcdefghij"
         def for_iter_str():
             for i in s:

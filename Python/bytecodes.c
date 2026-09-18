@@ -3883,7 +3883,27 @@ dummy_func(
         replaced op(_FOR_ITER_VIRTUAL, (iter, null_or_index -- iter, null_or_index, next)) {
             PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
             Py_ssize_t index = PyStackRef_UntagInt(null_or_index);
-            _PyObjectIndexPair next_index = Py_TYPE(iter_o)->_tp_iteritem(iter_o, index);
+            _PyObjectIndexPair next_index;
+            if (PyBytes_CheckExact(iter_o)) {
+                if ((size_t)index >= (size_t)PyBytes_GET_SIZE(iter_o)) {
+                    next_index = (_PyObjectIndexPair) {
+                        .object = NULL,
+                        .index = index,
+                    };
+                }
+                else {
+                    unsigned char value = (unsigned char)
+                        ((PyBytesObject *)iter_o)->ob_sval[index];
+                    next_index = (_PyObjectIndexPair) {
+                        .object = (PyObject *)&_PyLong_SMALL_INTS[
+                            _PY_NSMALLNEGINTS + value],
+                        .index = index + 1,
+                    };
+                }
+            }
+            else {
+                next_index = Py_TYPE(iter_o)->_tp_iteritem(iter_o, index);
+            }
             PyObject *next_o = next_index.object;
             index = next_index.index;
             if (next_o == NULL) {
