@@ -3371,6 +3371,31 @@ class TestSingleDispatch(unittest.TestCase):
             'int | typing.Iterable[str] not all arguments are classes.'
         )
 
+    def test_return_annotation_deprecated(self):
+        msg = "Using the return annotation to infer the dispatch type"
+
+        @functools.singledispatch
+        def func(arg):
+            return "base"
+        def impl(arg) -> int:
+            return "int"
+        with self.assertWarnsRegex(DeprecationWarning, msg) as cm:
+            func.register(impl)
+        self.assertEqual(cm.filename, __file__)
+        self.assertIs(func.registry[int], impl)
+
+        class C:
+            @functools.singledispatchmethod
+            def method(self, arg):
+                return "base"
+        def method_impl(self) -> str:
+            return "str"
+        with self.assertWarnsRegex(DeprecationWarning, msg) as cm:
+            C.method.register(method_impl)
+        self.assertEqual(cm.filename, __file__)
+        dispatcher = C.__dict__['method'].dispatcher
+        self.assertIs(dispatcher.registry[str], method_impl)
+
     def test_invalid_positional_argument(self):
         @functools.singledispatch
         def f(*args, **kwargs):
