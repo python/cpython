@@ -359,16 +359,25 @@ parsed_frame:
         }
 
         if (frame == NULL && PyList_GET_SIZE(ctx->frame_info) == 0) {
-            if (frame_addr != ctx->base_frame_addr) {
+            if (frame_addr == ctx->base_frame_addr) {
+                // A native thread that released the GIL with
+                // PyEval_SaveThread() keeps a thread state whose frame
+                // chain holds only the base_frame sentinel.  This is a
+                // valid empty Python stack: accept it and let other
+                // threads report their stacks.
+                break;
+            }
+            if (next_frame_addr == 0) {
+                // A dangling undecodable first frame with no continuation
+                // cannot be represented in the result.
                 const char *e = "Failed to parse initial frame in chain";
                 PyErr_SetString(PyExc_RuntimeError, e);
                 return -1;
             }
-            // A native thread that released the GIL with PyEval_SaveThread()
-            // keeps a thread state whose frame chain holds only the
-            // base_frame sentinel.  This is a valid empty Python stack:
-            // accept it and let other threads report their stacks.
-            break;
+            // A first frame without Python code but with a valid
+            // continuation (for example a thread sitting in a C call
+            // between Python frames) is handled exactly like a mid-chain
+            // native frame below.
         }
         PyObject *extra_frame = NULL;
         if (unwinder->gc && frame_addr == ctx->gc_frame) {
