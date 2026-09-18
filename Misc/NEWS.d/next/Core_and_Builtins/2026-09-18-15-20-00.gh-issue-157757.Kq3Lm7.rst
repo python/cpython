@@ -1,0 +1,3 @@
+Fix a lazy ``import a.b as c`` reading ``b`` off ``a`` instead of importing
+the module ``a.b``.  It now binds the submodule, and raises
+:exc:`ModuleNotFoundError` when no module backs the name.

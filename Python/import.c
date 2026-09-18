@@ -3898,6 +3898,27 @@ _PyImport_ResolveName(PyThreadState *tstate, PyObject *name,
   return resolve_name(tstate, name, globals, level);
 }
 
+// Repeat IMPORT_FROM over the components of `name` after the first, taking
+// `a.b.c` off the `a` that importing "a.b.c" returns.
+static PyObject *
+import_from_dotted_name(PyThreadState *tstate, PyObject *mod, PyObject *name)
+{
+    PyObject *parts = PyUnicode_Split(name, _Py_LATIN1_CHR('.'), -1);
+    if (parts == NULL) {
+        return NULL;
+    }
+    PyObject *obj = Py_NewRef(mod);
+    for (Py_ssize_t i = 1; i < PyList_GET_SIZE(parts); i++) {
+        Py_SETREF(obj, _PyEval_ImportFrom(tstate, obj,
+                                          PyList_GET_ITEM(parts, i)));
+        if (obj == NULL) {
+            break;
+        }
+    }
+    Py_DECREF(parts);
+    return obj;
+}
+
 PyObject *
 _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
 {
@@ -3989,7 +4010,15 @@ _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
         goto error;
     }
 
-    if (lz->lz_attr != NULL && PyUnicode_Check(lz->lz_attr)) {
+    if (lz->lz_submodule) {
+        PyObject *top = obj;
+        obj = import_from_dotted_name(tstate, top, lz->lz_from);
+        Py_DECREF(top);
+        if (obj == NULL) {
+            goto error;
+        }
+    }
+    else if (lz->lz_attr != NULL && PyUnicode_Check(lz->lz_attr)) {
         PyObject *from = obj;
         obj = _PyEval_ImportFrom(tstate, from, lz->lz_attr);
         Py_DECREF(from);
@@ -4600,7 +4629,7 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
     else {
         Py_XINCREF(fromlist);
     }
-    PyObject *res = _PyLazyImport_New(frame, builtins, abs_name, fromlist);
+    PyObject *res = _PyLazyImport_New(frame, builtins, abs_name, fromlist, 0);
     if (res == NULL) {
         Py_XDECREF(fromlist);
         Py_DECREF(abs_name);

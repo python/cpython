@@ -3333,6 +3333,15 @@ _PyEval_LazyImportFrom(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObje
     assert(PyUnicode_Check(name));
     PyObject *ret;
     PyLazyImportObject *d = (PyLazyImportObject *)v;
+
+    if (d->lz_attr == NULL) {
+        // `import a.b as x` binds `a.b`, not an attribute of `a` (gh-157757).
+        if (d->lz_submodule) {
+            return Py_NewRef(v);  // a later component of the same name
+        }
+        return _PyLazyImport_New(frame, d->lz_builtins, d->lz_from, NULL, 1);
+    }
+
     PyObject *mod = PyImport_GetModule(d->lz_from);
     if (mod != NULL) {
         // Check if the module already has the attribute, if so, resolve it
@@ -3353,34 +3362,8 @@ _PyEval_LazyImportFrom(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObje
         Py_DECREF(mod);
     }
 
-    if (d->lz_attr != NULL) {
-        if (PyUnicode_Check(d->lz_attr)) {
-            PyObject *from = PyUnicode_FromFormat(
-                "%U.%U", d->lz_from, d->lz_attr);
-            if (from == NULL) {
-                return NULL;
-            }
-            ret = _PyLazyImport_New(frame, d->lz_builtins, from, name);
-            Py_DECREF(from);
-            return ret;
-        }
-    }
-    else {
-        Py_ssize_t dot = PyUnicode_FindChar(
-            d->lz_from, '.', 0, PyUnicode_GET_LENGTH(d->lz_from), 1
-        );
-        if (dot >= 0) {
-            PyObject *from = PyUnicode_Substring(d->lz_from, 0, dot);
-            if (from == NULL) {
-                return NULL;
-            }
-            ret = _PyLazyImport_New(frame, d->lz_builtins, from, name);
-            Py_DECREF(from);
-            return ret;
-        }
-    }
-    ret = _PyLazyImport_New(frame, d->lz_builtins, d->lz_from, name);
-    return ret;
+    assert(!PyUnicode_Check(d->lz_attr));  // a fromlist, not a taken name
+    return _PyLazyImport_New(frame, d->lz_builtins, d->lz_from, name, 0);
 }
 
 #define CANNOT_CATCH_MSG "catching classes that do not inherit from "\

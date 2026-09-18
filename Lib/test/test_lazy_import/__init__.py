@@ -724,10 +724,18 @@ class ErrorHandlingTests(LazyImportTestCase):
         assert_python_ok("-c", code)
 
     def test_non_package_lazily_imported_as(self):
-        """Doing a dotted lazy import as still works"""
+        """A dotted lazy import as raises when the name is not a module."""
+        # gh-157757: the eager statement raises ModuleNotFoundError, so the
+        # lazy one raises it at first use rather than binding math.pi.
         code = textwrap.dedent("""
             lazy import math.pi as pi
-            pi
+
+            try:
+                pi
+            except ModuleNotFoundError:
+                pass
+            else:
+                raise AssertionError("ModuleNotFoundError was not raised")
         """)
         assert_python_ok("-c", code)
 
@@ -2208,6 +2216,25 @@ class ModuleVariableNameCollisionTests(unittest.TestCase):
             "test.test_lazy_import.data.module_same_name_var_order2.bar"
         ]
         self.assertIs(module_same_name_var_order2.bar, bar_mod)
+
+    def test_lazy_import_as_wins_over_variable(self):
+        """A dotted lazy import as imports the submodule the variable hides."""
+        # gh-157757: the eager statement imports pkg.b, which rebinds pkg.b to
+        # the module, so the lazy one must import it too rather than read the
+        # variable off pkg.
+        code = textwrap.dedent("""
+            import sys
+            import test.test_lazy_import.data.pkg as pkg
+            pkg.b = "hides the b submodule"
+
+            lazy import test.test_lazy_import.data.pkg.b as b
+            lazy import test.test_lazy_import.data.metasyntactic.foo.bar as bar
+
+            assert b is sys.modules["test.test_lazy_import.data.pkg.b"], b
+            assert bar is sys.modules[
+                "test.test_lazy_import.data.metasyntactic.foo.bar"], bar
+        """)
+        assert_python_ok("-c", code)
 
 
 class DeletedModuleReimportTests(unittest.TestCase):

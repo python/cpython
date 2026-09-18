@@ -11,7 +11,8 @@
 #define PyLazyImportObject_CAST(op) ((PyLazyImportObject *)(op))
 
 PyObject *
-_PyLazyImport_New(_PyInterpreterFrame *frame, PyObject *builtins, PyObject *name, PyObject *fromlist)
+_PyLazyImport_New(_PyInterpreterFrame *frame, PyObject *builtins,
+                  PyObject *name, PyObject *fromlist, int submodule)
 {
     PyLazyImportObject *m;
     if (!name || !PyUnicode_Check(name)) {
@@ -33,6 +34,7 @@ _PyLazyImport_New(_PyInterpreterFrame *frame, PyObject *builtins, PyObject *name
     m->lz_builtins = Py_XNewRef(builtins);
     m->lz_from = Py_NewRef(name);
     m->lz_attr = Py_XNewRef(fromlist);
+    m->lz_submodule = submodule;
 
     // Capture frame information for the original import location.
     m->lz_code = NULL;
