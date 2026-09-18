@@ -23,6 +23,7 @@ from test.support import (
     force_not_colorized,
     make_clean_env,
     Py_DEBUG,
+    subTests,
 )
 from test.support import has_subprocess_support, SHORT_TIMEOUT, STDLIB_DIR
 from test.support.import_helper import import_module
@@ -1986,8 +1987,9 @@ class TestPasteEvent(TestCase):
         output = multiline_input(reader)
         self.assertEqual(output, input_code)
 
-    def test_bracketed_paste_repl_session(self):
-        cases = [
+    @subTests(
+        ("source", "expected"),
+        [
             (">>> 1 + 1", "1 + 1"),
             (
                 """\
@@ -2060,33 +2062,35 @@ class TestPasteEvent(TestCase):
                 'text = "\v\f\x85\u2028\u2029"\n',
             ),
             (">>>", ""),
-        ]
-        for source, expected in cases:
-            source = textwrap.dedent(source)
-            expected = textwrap.dedent(expected)
-            for newline in ("\n", "\r\n", "\r"):
-                with self.subTest(source=source, newline=newline):
-                    events = code_to_events(
-                        "\x1b[200~" + source.replace("\n", newline)
-                        + "\x1b[201~"
-                    )
-                    reader, _ = handle_all_events(
-                        events,
-                        prepare_console=FakeConsole,
-                        prepare_reader=partial(
-                            ReadlineAlikeReader,
-                            config=ReadlineConfig(readline_completer=None),
-                            more_lines=more_lines,
-                        ),
-                    )
-                    self.assertEqual(
-                        reader.get_unicode(), expected.replace("\n", newline)
-                    )
-                    self.assertEqual(reader.pos, len(reader.buffer))
-                    self.assertFalse(reader.finished)
+        ],
+    )
+    def test_bracketed_paste_repl_session(self, source, expected):
+        source = textwrap.dedent(source)
+        expected = textwrap.dedent(expected)
+        for name, newline in (("LF", "\n"), ("CRLF", "\r\n"), ("CR", "\r")):
+            with self.subTest(newline=name):
+                events = code_to_events(
+                    "\x1b[200~" + source.replace("\n", newline)
+                    + "\x1b[201~"
+                )
+                reader, _ = handle_all_events(
+                    events,
+                    prepare_console=FakeConsole,
+                    prepare_reader=partial(
+                        ReadlineAlikeReader,
+                        config=ReadlineConfig(readline_completer=None),
+                        more_lines=more_lines,
+                    ),
+                )
+                self.assertEqual(
+                    reader.get_unicode(), expected.replace("\n", newline)
+                )
+                self.assertEqual(reader.pos, len(reader.buffer))
+                self.assertFalse(reader.finished)
 
-    def test_bracketed_paste_preserves_non_session(self):
-        for source in (
+    @subTests(
+        "source",
+        (
             "print('hello')\n",
             "...",
             "... value\n",
@@ -2098,45 +2102,48 @@ class TestPasteEvent(TestCase):
                 ... example
                 """
                 '''),
-        ):
-            with self.subTest(source=source):
-                events = code_to_events(
-                    "\x1b[200~" + source + "\x1b[201~"
-                )
-                reader, _ = handle_all_events(
-                    events, prepare_console=FakeConsole
-                )
-                self.assertEqual(reader.get_unicode(), source)
+        ),
+    )
+    def test_bracketed_paste_preserves_non_session(self, source):
+        events = code_to_events("\x1b[200~" + source + "\x1b[201~")
+        reader, _ = handle_all_events(events, prepare_console=FakeConsole)
+        self.assertEqual(reader.get_unicode(), source)
 
-    def test_bracketed_paste_preserves_session_in_nonempty_buffer(self):
+    @subTests(
+        ("initial", "pos"),
+        (
+            (initial, pos)
+            for initial in (" ", "value = ", 'text = """\n')
+            for pos in (0, len(initial))
+        ),
+    )
+    def test_bracketed_paste_preserves_session_in_nonempty_buffer(
+        self, initial, pos
+    ):
         source = textwrap.dedent("""\
             >>> print('hello')
             hello
             """)
-        for initial in (" ", "value = ", 'text = """\n'):
-            for pos in (0, len(initial)):
-                with self.subTest(initial=initial, pos=pos):
-                    def prepare_reader(console):
-                        reader = ReadlineAlikeReader(
-                            console,
-                            config=ReadlineConfig(readline_completer=None),
-                            more_lines=more_lines,
-                        )
-                        reader.insert(initial)
-                        reader.pos = pos
-                        return reader
 
-                    events = code_to_events(
-                        "\x1b[200~" + source + "\x1b[201~"
-                    )
-                    reader, _ = handle_all_events(
-                        events,
-                        prepare_console=FakeConsole,
-                        prepare_reader=prepare_reader,
-                    )
-                    self.assertEqual(
-                        reader.get_unicode(), initial[:pos] + source + initial[pos:]
-                    )
+        def prepare_reader(console):
+            reader = ReadlineAlikeReader(
+                console,
+                config=ReadlineConfig(readline_completer=None),
+                more_lines=more_lines,
+            )
+            reader.insert(initial)
+            reader.pos = pos
+            return reader
+
+        events = code_to_events("\x1b[200~" + source + "\x1b[201~")
+        reader, _ = handle_all_events(
+            events,
+            prepare_console=FakeConsole,
+            prepare_reader=prepare_reader,
+        )
+        self.assertEqual(
+            reader.get_unicode(), initial[:pos] + source + initial[pos:]
+        )
 
     def test_bracketed_paste_preserves_prompts_in_input(self):
         source = ">>> not a REPL session"
