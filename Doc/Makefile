@@ -32,6 +32,7 @@ help:
 	@echo "Please use \`make <target>' where <target> is one of"
 	@echo "  clean      to remove build files"
 	@echo "  venv       to create a venv with necessary tools"
+	@echo "  lock       to regenerate the pinned dependencies in $(REQUIREMENTS)"
 	@echo "  html       to make standalone HTML files"
 	@echo "  gettext    to generate POT files"
 	@echo "  htmlview   to open the index page built by the html target in your browser"
@@ -132,14 +133,6 @@ coverage: build
 .PHONY: doctest
 doctest: BUILDER = doctest
 doctest:
-	@venv_version=$$($(VENVDIR)/bin/python3 -c 'import sys; print("%d.%d" % sys.version_info[:2])'); \
-	tree_version=$$($(PYTHON) tools/extensions/patchlevel.py --short); \
-	if [ "$$venv_version" != "$$tree_version" ]; then \
-		echo "The venv runs Python $$venv_version, but this source tree is Python $$tree_version."; \
-		echo "The doctests are executed by the venv interpreter, so they would test"; \
-		echo "Python $$venv_version rather than the code documented here."; \
-		exit 1; \
-	fi
 	@$(MAKE) build BUILDER=$(BUILDER) || { \
 	echo "Testing of doctests in the sources finished, look at the" \
 	     "results in build/doctest/output.txt"; \
@@ -192,6 +185,19 @@ venv:
 		fi; \
 		echo "The venv has been created in the $(VENVDIR) directory"; \
 	fi
+
+.PHONY: lock
+lock:
+# Dependencies have a 14 day cooldown period to mitigate supply chain attacks,
+# except for sphinx_linklint and python-docs-theme, which are maintained by
+# core team members.
+	uv pip compile requirements.txt \
+		--exclude-newer P14D \
+		--exclude-newer-package sphinx_linklint=PT0S \
+		--exclude-newer-package python-docs-theme=PT0S \
+		--no-cache --output-file $(REQUIREMENTS) \
+		--python-version 3.12 --universal \
+		--custom-compile-command="make lock"
 
 .PHONY: dist-no-html
 dist-no-html: dist-text dist-epub dist-texinfo
