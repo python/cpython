@@ -3464,7 +3464,7 @@ _Py_GetConstant_Init(void)
     constants[Py_CONSTANT_ZERO] = _PyLong_GetZero();
     constants[Py_CONSTANT_ONE] = _PyLong_GetOne();
     constants[Py_CONSTANT_EMPTY_STR] = PyUnicode_New(0, 0);
-    constants[Py_CONSTANT_EMPTY_BYTES] = PyBytes_FromStringAndSize(NULL, 0);
+    constants[Py_CONSTANT_EMPTY_BYTES] = PyBytes_FromStringAndSize("", 0);
     constants[Py_CONSTANT_EMPTY_TUPLE] = PyTuple_New(0);
 #ifndef NDEBUG
     for (size_t i=0; i < Py_ARRAY_LENGTH(constants); i++) {
