@@ -133,6 +133,78 @@ stop_native_thread(void)
 }
 """
 
+# C source used by test_sampling_native_first_frame to install a synthetic
+# undecodable first frame on a detached thread state: the chain starts at a
+# frame that parses to no Python code, followed either by the base_frame
+# sentinel or by nothing at all (the dangling case).
+_NATIVE_FIRST_FRAME_HELPER_SOURCE = r"""
+#include <Python.h>
+#include <pthread.h>
+#define Py_BUILD_CORE 1
+#include "internal/pycore_interpframe_structs.h"
+
+static pthread_t helper_thread;
+static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
+static int ready = 0;
+static int stopping = 0;
+static int dangling = 0;
+static _PyInterpreterFrame fake_frame;
+
+static void *
+run(void *arg)
+{
+    PyGILState_STATE gstate = PyGILState_Ensure();
+    PyThreadState *ts = PyEval_SaveThread();
+    struct _PyInterpreterFrame *saved = ts->current_frame;
+    memset(&fake_frame, 0, sizeof(fake_frame));
+    fake_frame.owner = FRAME_OWNED_BY_INTERPRETER;
+    fake_frame.previous = dangling ? NULL : ts->base_frame;
+    ts->current_frame = &fake_frame;
+
+    pthread_mutex_lock(&lock);
+    ready = 1;
+    pthread_cond_signal(&cond);
+    while (!stopping) {
+        pthread_cond_wait(&cond, &lock);
+    }
+    pthread_mutex_unlock(&lock);
+
+    ts->current_frame = saved;
+    PyEval_RestoreThread(ts);
+    PyGILState_Release(gstate);
+    return NULL;
+}
+
+/* Called through ctypes, which releases the calling thread's GIL. */
+int
+start_fake_frame_thread(int is_dangling)
+{
+    dangling = is_dangling;
+    ready = 0;
+    stopping = 0;
+    if (pthread_create(&helper_thread, NULL, run, NULL) != 0) {
+        return 1;
+    }
+    pthread_mutex_lock(&lock);
+    while (!ready) {
+        pthread_cond_wait(&cond, &lock);
+    }
+    pthread_mutex_unlock(&lock);
+    return 0;
+}
+
+void
+stop_fake_frame_thread(void)
+{
+    pthread_mutex_lock(&lock);
+    stopping = 1;
+    pthread_cond_signal(&cond);
+    pthread_mutex_unlock(&lock);
+    pthread_join(helper_thread, NULL);
+}
+"""
+
 
 def _make_test_script(script_dir, script_basename, source):
     to_return = make_script(script_dir, script_basename, source)
@@ -594,6 +666,7 @@ class TestEmptyPythonStackSampling(RemoteInspectionTestBase):
             # actually contain the headers.
             candidates = [
                 sysconfig.get_config_var("INCLUDEPY"),
+                sysconfig.get_config_var("CONFINCLUDEPY"),
                 sysconfig.get_path("include"),
                 sysconfig.get_path("platinclude"),
                 os.path.dirname(sys.executable),
@@ -696,6 +769,182 @@ class TestEmptyPythonStackSampling(RemoteInspectionTestBase):
             result = subprocess.run(
                 [sys.executable, "-c", script, work_dir,
                  _NATIVE_EMPTY_STACK_HELPER_SOURCE],
+                capture_output=True,
+                text=True,
+                timeout=LONG_TIMEOUT,
+            )
+        if result.returncode == 42:
+            self.skipTest(f"C compiler not available: {result.stdout}")
+        if result.returncode == 43:
+            self.fail(
+                "native helper failed to compile: "
+                f"{result.stdout}\n{result.stderr}"
+            )
+        self.assertEqual(
+            result.returncode, 0,
+            f"stdout: {result.stdout}\nstderr: {result.stderr}"
+        )
+
+    @skip_if_not_supported
+    def test_sampling_native_first_frame(self):
+        # The first frame of a chain may parse to no Python code while a
+        # valid continuation follows: a thread sitting in a C call that
+        # owns no Python frame object.  Sampling must treat it exactly
+        # like a mid-chain native frame, and must keep failing loudly on
+        # a dangling first frame that has no continuation.
+        script = textwrap.dedent(
+            """\
+            import ctypes
+            import os
+            import subprocess
+            import sys
+            import sysconfig
+            import _remote_debugging
+
+            helper_dir = sys.argv[1]
+            source_path = os.path.join(helper_dir, "native_helper.c")
+            lib_path = os.path.join(helper_dir, "native_helper.so")
+            with open(source_path, "w") as f:
+                f.write(sys.argv[2])
+
+            cc = sysconfig.get_config_var("CC") or ""
+            if not cc:
+                # Windows official builds have no CC config var.
+                print("NO-COMPILER: sysconfig CC is not set")
+                sys.exit(42)
+            # sysconfig's install-style include paths do not necessarily
+            # exist for build-tree interpreters (out-of-tree builds keep
+            # the headers in the source and build directories instead),
+            # so gather candidate directories and keep the ones that
+            # actually contain the headers.
+            candidates = [
+                sysconfig.get_config_var("INCLUDEPY"),
+                sysconfig.get_config_var("CONFINCLUDEPY"),
+                sysconfig.get_path("include"),
+                sysconfig.get_path("platinclude"),
+                os.path.dirname(sys.executable),
+            ]
+            srcdir = sysconfig.get_config_var("srcdir")
+            if srcdir:
+                candidates.append(srcdir)
+                candidates.append(os.path.join(srcdir, "Include"))
+            python_h_dirs = set()
+            pyconfig_h_dirs = set()
+            for path in candidates:
+                if path and os.path.isdir(path):
+                    if os.path.isfile(os.path.join(path, "Python.h")):
+                        python_h_dirs.add(path)
+                    if os.path.isfile(os.path.join(path, "pyconfig.h")):
+                        pyconfig_h_dirs.add(path)
+            if not python_h_dirs or not pyconfig_h_dirs:
+                print("NO-COMPILER: no include directory with "
+                      "Python.h and pyconfig.h was found")
+                sys.exit(42)
+            includes = sorted(python_h_dirs | pyconfig_h_dirs)
+            internal_header_found = any(
+                os.path.isfile(os.path.join(
+                    path, "internal", "pycore_interpframe_structs.h"))
+                for path in includes
+            )
+            if not internal_header_found:
+                # The synthetic-frame helper needs the internal frame
+                # layout header, which only build and full installations
+                # provide.
+                print("NO-COMPILER: internal/pycore_interpframe_structs.h "
+                      "was not found")
+                sys.exit(42)
+            extra = []
+            if sys.platform == "darwin":
+                # Delay Python symbol resolution until the .so is loaded
+                # into a running interpreter.
+                extra = ["-undefined", "dynamic_lookup"]
+            cmd = cc.split() + [
+                "-shared", "-fPIC", "-pthread",
+                *[f"-I{path}" for path in includes],
+                *extra,
+                source_path, "-o", lib_path,
+            ]
+            try:
+                subprocess.run(cmd, check=True, capture_output=True, text=True)
+            except FileNotFoundError:
+                print("NO-COMPILER: compiler executable not found")
+                sys.exit(42)
+            except subprocess.CalledProcessError as exc:
+                # A real compile failure means the helper rotted: fail loud
+                # instead of silently skipping.
+                print(f"HELPER-COMPILE-FAILED: {exc.stderr}")
+                sys.exit(43)
+
+            lib = ctypes.CDLL(lib_path)
+            lib.start_fake_frame_thread.argtypes = [ctypes.c_int]
+            lib.start_fake_frame_thread.restype = ctypes.c_int
+            lib.stop_fake_frame_thread.argtypes = []
+            lib.stop_fake_frame_thread.restype = None
+
+            def first_frame_lists(native, cache_frames):
+                unwinder = _remote_debugging.RemoteUnwinder(
+                    os.getpid(), all_threads=True, native=native,
+                    cache_frames=cache_frames,
+                )
+
+                def sample_once():
+                    trace = unwinder.get_stack_trace()
+                    return [
+                        [frame.funcname for frame in thread.frame_info]
+                        for interp in trace
+                        for thread in interp.threads
+                    ]
+
+                # One initial sample stores the (degenerate) stack in the
+                # frame cache; later samples exercise the cache-hit path.
+                sample_once()
+                return [sample_once() for _ in range(3)]
+
+            # The sampled thread list includes the sampling thread itself,
+            # whose stack is non-empty; the fake-frame thread shows up as
+            # an empty stack (native=False) or as a lone "<native>" frame
+            # (native=True) in every sample.
+            def fake_frame_visible(samples, native):
+                expected = ["<native>"] if native else []
+                return all(expected in names for names in samples)
+
+            # A first frame without Python code followed by the sentinel
+            # is a native-like frame: skipped by default, reported as
+            # "<native>" when native frames are enabled.
+            for native in (False, True):
+                for cache_frames in (False, True):
+                    if lib.start_fake_frame_thread(0) != 0:
+                        raise RuntimeError("failed to start fake-frame thread")
+                    try:
+                        for _ in range(3):
+                            samples = first_frame_lists(native, cache_frames)
+                            assert fake_frame_visible(samples, native), samples
+                    finally:
+                        lib.stop_fake_frame_thread()
+            # A dangling first frame with no continuation cannot be
+            # represented in the result: sampling must keep failing loudly.
+            for cache_frames in (False, True):
+                if lib.start_fake_frame_thread(1) != 0:
+                    raise RuntimeError("failed to start fake-frame thread")
+                try:
+                    for _ in range(3):
+                        try:
+                            first_frame_lists(False, cache_frames)
+                        except RuntimeError as exc:
+                            assert "Failed to parse initial frame in chain" \
+                                in str(exc), exc
+                        else:
+                            raise AssertionError(
+                                "dangling first frame was accepted")
+                finally:
+                    lib.stop_fake_frame_thread()
+            """
+        )
+
+        with os_helper.temp_dir() as work_dir:
+            result = subprocess.run(
+                [sys.executable, "-c", script, work_dir,
+                 _NATIVE_FIRST_FRAME_HELPER_SOURCE],
                 capture_output=True,
                 text=True,
                 timeout=LONG_TIMEOUT,
