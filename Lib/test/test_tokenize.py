@@ -2573,6 +2573,40 @@ class CTokenizeTest(TestCase):
             ("f-string: single '}' is not allowed", (1, 11)),
         )
 
+    def test_carriage_return_after_debug_comment(self):
+        for prefix in ("f", "t"):
+            with self.subTest(prefix=prefix):
+                tokens = self._get_tokens(f"{prefix}'''{{x=# comment\r}}'''")
+                self.assertEqual(tokens[4].string, "# comment\r}")
+
+    def test_incomplete_formatted_string_comment_after_carriage_return(self):
+        for prefix in ("f", "t"):
+            with self.subTest(prefix=prefix):
+                for extra_tokens in (False, True):
+                    with self.assertRaises(tokenize.TokenError) as caught:
+                        self._get_tokens(
+                            f"{prefix}'{{#\r!", extra_tokens=extra_tokens
+                        )
+                    self.assertEqual(
+                        caught.exception.args,
+                        ("unexpected EOF in multi-line statement", (1, 7)),
+                    )
+
+    def test_formatted_string_nesting_limit(self):
+        def nested_string(depth, prefix):
+            source = "'x'"
+            for _ in range(depth):
+                source = f'{prefix}"{{{source}}}"'
+            return source
+
+        for prefix in ("f", "t"):
+            with self.subTest(prefix=prefix):
+                self._get_tokens(nested_string(149, prefix))
+                with self.assertRaisesRegex(
+                        tokenize.TokenError,
+                        "too many nested f-strings or t-strings"):
+                    self._get_tokens(nested_string(150, prefix))
+
     def test_escaped_fstring_brace_has_a_position_gap(self):
         tokens = self._get_tokens('f"a{{"', extra_tokens=True)
         self.assertEqual(
