@@ -4,12 +4,20 @@ echo "PYTHON_VARIANT: ${PYTHON_VARIANT}"
 
 if [[ "${PYTHON_VARIANT}" == "freethreading" ]]; then
     CONFIGURE_EXTRA="--disable-gil"
-elif [[ "${PYTHON_VARIANT}" == "asan" ]]; then
-    CONFIGURE_EXTRA="--with-address-sanitizer"
-    export ASAN_OPTIONS="strict_init_order=true"
-elif [[ "${PYTHON_VARIANT}" == "tsan_freethreading" ]]; then
-    CONFIGURE_EXTRA="--disable-gil --with-thread-sanitizer"
-    export TSAN_OPTIONS="suppressions=${SRC_DIR}/Tools/tsan/suppressions_free_threading.txt"
+elif [[ "${PYTHON_VARIANT}" == *san* ]]; then
+    if [[ "${PYTHON_VARIANT}" == "asan" ]]; then
+        CONFIGURE_EXTRA="--with-address-sanitizer"
+        export ASAN_OPTIONS="strict_init_order=true"
+    elif [[ "${PYTHON_VARIANT}" == "tsan_freethreading" ]]; then
+        CONFIGURE_EXTRA="--disable-gil --with-thread-sanitizer"
+        export TSAN_OPTIONS="suppressions=${SRC_DIR}/Tools/tsan/suppressions_free_threading.txt"
+    else
+        echo "Unknown PYTHON_VARIANT: ${PYTHON_VARIANT}"
+        exit 1
+    fi
+    if [[ "$target_platform" == linux-* && "$c_compiler" == "clang" ]]; then
+        export LDFLAGS="-shared-libsan $LDFLAGS"
+    fi
 elif [[ "${PYTHON_VARIANT}" == "default" ]]; then
     CONFIGURE_EXTRA=""
 else
