@@ -323,6 +323,11 @@ in the following ways:
   again.
   Instead, it creates a new module object with a new ``__dict__``, and copies
   the saved contents to it.
+  Modules are matched to the saved contents by the module's full dotted
+  name; the initialization function used is not taken into account.
+
+  As part of the first initialization, Python also adds the module to
+  :data:`sys.modules` under its name.
   For example, given a single-phase module ``_testsinglephase``
   [#testsinglephase]_ that defines a function ``sum`` and an exception class
   ``error``:
