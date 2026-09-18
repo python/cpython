@@ -1594,6 +1594,24 @@ class TestMessage(TestBase, unittest.TestCase):
             self._post_initialize_hook(msg)
             self._check_sample(msg)
 
+    def test_initialize_with_binary_file_normalizes_newlines(self):
+        for newline in (b'\n', b'\r\n', b'\r'):
+            with self.subTest(newline=newline):
+                source = newline.join(
+                    (b'Subject: test', b'', b'a', b'\x80', b''))
+                with io.BytesIO(source) as fp:
+                    msg = self._factory(fp)
+                    self.assertEqual(msg.get_payload(decode=True), b'a\n\x80\n')
+                    self.assertFalse(fp.closed)
+
+    def test_initialize_with_bytes_preserves_newlines(self):
+        for newline in (b'\n', b'\r\n', b'\r'):
+            with self.subTest(newline=newline):
+                payload = newline.join((b'a', b'\x80', b''))
+                source = b'Subject: test' + newline * 2 + payload
+                msg = self._factory(source)
+                self.assertEqual(msg.get_payload(decode=True), payload)
+
     def test_initialize_with_nothing(self):
         # Initialize without arguments
         msg = self._factory()
