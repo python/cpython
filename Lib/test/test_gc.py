@@ -1289,6 +1289,24 @@ class GCTests(unittest.TestCase):
         del l
         self.assertEqual(count, _testinternalcapi.get_tracked_heap_size())
 
+    @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
+    def test_clear_frame_on_early_return(self):
+        # __del__ methods can trigger collection, make this to happen
+        thresholds = gc.get_threshold()
+        gc.enable()
+        gc.set_threshold(1)
+
+        class A:
+            def __del__(self):
+                dir(self)
+
+        x = [A() for _ in range(10)]
+        del x
+        self.assertTrue(_testinternalcapi.is_gc_frame_clear())
+
+        gc.disable()
+        gc.set_threshold(*thresholds)
+
 
 class GCCallbackTests(unittest.TestCase):
     def setUp(self):
