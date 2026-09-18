@@ -2301,13 +2301,27 @@
             }
             else if (interp->rare_events.builtin_dict >= _Py_MAX_ALLOWED_BUILTINS_MODIFICATIONS) {
             }
+            else if (ctx->frame->func == NULL ||
+                 ctx->frame->func->func_builtins != builtins) {
+            }
             else {
                 if (!ctx->builtins_watched) {
                     PyDict_Watch(BUILTINS_WATCHER_ID, builtins);
                     ctx->builtins_watched = true;
                 }
                 if (ctx->frame->globals_checked_version != 0 && ctx->frame->globals_watched) {
-                    cnst = convert_global_to_const(this_instr, builtins);
+                    cnst = lookup_global_const(this_instr, builtins);
+                    if (cnst != NULL) {
+                        if (uop_buffer_remaining_space(&ctx->out_buffer) < 2) {
+                            cnst = NULL;
+                        }
+                        else {
+                            ADD_OP(_GUARD_BUILTINS_IS_CANONICAL, 0, 0);
+                            ADD_OP(_Py_IsImmortal(cnst) ? _LOAD_CONST_INLINE_BORROW
+                            : _LOAD_CONST_INLINE,
+                                0, (uintptr_t)cnst);
+                        }
+                    }
                 }
             }
             if (cnst == NULL) {
@@ -2325,6 +2339,10 @@
             stack_pointer[0] = res;
             stack_pointer += 1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _GUARD_BUILTINS_IS_CANONICAL: {
             break;
         }
 
