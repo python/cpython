@@ -69,6 +69,41 @@ class PyShellFileListTest(unittest.TestCase):
 ##        self.assertIsInstance(ps, pyshell.PyShell)
 
 
+class PyShellTest(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        requires('gui')
+        cls.root = Tk()
+        cls.root.withdraw()
+        cls.shell = pyshell.PyShell(pyshell.PyShellFileList(cls.root))
+        # As after begin().
+        cls.shell.text.mark_set('iomark', 'insert')
+        cls.shell.text.mark_gravity('iomark', 'left')
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.shell.close()
+        del cls.shell
+        cls.root.destroy()
+        del cls.root
+
+    def test_input_not_colorized(self):
+        # gh-64007: input for input() is not colorized, unlike code.
+        shell = self.shell
+        text = shell.text
+        color = shell.color
+        shell.resetoutput()
+        color.reading = True
+        text.insert('end-1c', 'for x in y')
+        color.recolorize_main()
+        self.assertEqual(text.tag_ranges('KEYWORD'), ())
+        color.reading = False
+        color.notify_range('iomark', 'end')
+        color.recolorize_main()
+        self.assertEqual(len(text.tag_ranges('KEYWORD')), 4)
+
+
 class PyShellRemoveLastNewlineAndSurroundingWhitespaceTest(unittest.TestCase):
     regexp = pyshell.PyShell._last_newline_re
 
