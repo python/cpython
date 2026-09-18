@@ -2024,7 +2024,7 @@ reload_singlephase_extension(PyThreadState *tstate,
 
     Py_ssize_t index = _get_cached_module_index(cached);
     if (_modules_by_index_set(tstate->interp, index, mod) < 0) {
-        PyMapping_DelItem(modules, info->name);
+        remove_module(tstate, info->name);
         Py_DECREF(mod);
         return NULL;
     }
