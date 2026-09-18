@@ -997,6 +997,13 @@ class RawConfigParser(MutableMapping):
                 # Convert all possible line-endings into '\n\t'
                 value = (delimiter + str(value).replace('\r\n', '\n')
                          .replace('\r', '\n').replace('\n', '\n\t'))
+                if value == delimiter and not self._delimiters[0][-1:].isspace():
+                    # The value is empty, so the space that
+                    # `space_around_delimiters` appends would be left
+                    # dangling at the end of the line.  Keep it only when
+                    # the delimiter itself ends in whitespace, where it is
+                    # needed to read the option back.
+                    value = value.rstrip(' ')
             else:
                 value = ""
             fp.write("{}{}\n".format(key, value))
