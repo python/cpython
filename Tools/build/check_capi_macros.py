@@ -10,6 +10,7 @@ Python C API:
 * pyconfig.h.in
 """
 
+import difflib
 import glob
 import os.path
 import re
@@ -52,7 +53,7 @@ def parse_file(filename, names):
 
 
 def get_ignored_names():
-    ignored = set()
+    ignored = []
     with open(IGNORED_FILENAME, encoding='utf8') as fp:
         for line in fp:
             name = line.strip()
@@ -60,13 +61,14 @@ def get_ignored_names():
                 # Ignore comment
                 continue
             if name:
-                ignored.add(name)
+                ignored.append(name)
     return ignored
 
 
 def main():
     failure = False
 
+    # Parse header files
     include_dir = os.path.join(SRC_DIR, 'Include')
     files = glob.glob(os.path.join(include_dir, '*.h'))
     files.extend(glob.glob(os.path.join(include_dir, 'cpython', '*.h')))
@@ -75,9 +77,39 @@ def main():
     for filename in files:
         parse_file(filename, names)
 
-    names_set = {name for name, filename, undef in names}
+    # Parse ignore list
     ignored = get_ignored_names()
 
+    # Check if the sorted list is sorted
+    ignored_sorted = sorted(ignored)
+    if ignored_sorted != ignored:
+        print(f"ERROR: {IGNORED_FILENAME} list is not sorted")
+        print()
+        diff = difflib.unified_diff(ignored, ignored_sorted,
+                                    fromfile=IGNORED_FILENAME,
+                                    tofile=IGNORED_FILENAME,
+                                    lineterm='')
+        for line in diff:
+            print(line)
+        print()
+        failure = True
+
+    # Check for outdated ignore list
+    names_set = {name for name, filename, undef in names}
+    ignored = set(ignored)
+    outdated = ignored - names_set
+    if outdated:
+        print(f"ERROR: {IGNORED_FILENAME} is outdated, "
+              "the following macros can be removed:")
+        print()
+        for name in sorted(outdated):
+            print(f" - {name}")
+        print()
+        print(f"Total: {len(outdated)} macros")
+        print()
+        failure = True
+
+    # Check for new macros
     new_macros = names_set - ignored
     if new_macros:
         print('ERROR: the Python C API defines the following new macros:')
@@ -93,22 +125,10 @@ def main():
         print(f"Total: {count} macros")
         failure = True
 
-    outdated = ignored - names_set
-    if outdated:
-        print(f"ERROR: {IGNORED_FILENAME} is outdated, "
-              "the following macros can be removed:")
-        print()
-        for name in sorted(outdated):
-            print(f" - {name}")
-        print()
-        print(f"Total: {len(outdated)} macros")
-        print()
-        failure = True
-
     if not failure:
+        print("OK: the ignore list is up to date and sorted")
         print("OK: the Python C API only defines macros with names "
               f"starting with Py (ignoring {len(ignored)} macros)")
-        print("OK: the ignore list is up to date")
         sys.exit(0)
 
     sys.exit(1)
