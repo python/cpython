@@ -104,10 +104,11 @@ class TestInteractiveInterpreter(unittest.TestCase):
         # no memory. Check also that the fix does not break the interactive
         # loop when an exception is raised.
         user_input = """
-            import sys, _testcapi
+            import sys
+            from test import support
             1/0
             print('After the exception.')
-            _testcapi.set_nomemory(0)
+            support.inject_memory_error()
             sys.exit(0)
         """
         user_input = dedent(user_input)
@@ -197,6 +198,22 @@ class TestInteractiveInterpreter(unittest.TestCase):
         output = kill_python(p)
         self.assertEqual(p.returncode, 0)
         self.assertIn(long_value, output)
+
+    @cpython_only
+    def test_multiline_fstring_source_reallocation(self):
+        long_line = " " * 9000 + "+ 2"
+        user_input = (
+            'value = f"""{(\n'
+            '1\n'
+            f'{long_line}\n'
+            ')}"""\n'
+            'print(value)\n'
+        )
+        p = spawn_repl()
+        p.stdin.write(user_input)
+        output = kill_python(p)
+        self.assertEqual(p.returncode, 0)
+        self.assertIn(">>> 3\n>>> ", output)
 
     def test_close_stdin(self):
         user_input = dedent('''
