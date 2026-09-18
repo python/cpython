@@ -751,6 +751,30 @@ class TestRmTree(BaseTest, unittest.TestCase):
 
 class TestCopyTree(BaseTest, unittest.TestCase):
 
+    @unittest.skipUnless(_winapi, 'requires Windows junctions')
+    def test_copytree_same_file_through_junctions(self):
+        root = self.mkdtemp()
+        source = os.path.join(root, 'source')
+        first = os.path.join(root, 'first')
+        second = os.path.join(root, 'second')
+        os.mkdir(source)
+        os.mkdir(first)
+        os.mkdir(second)
+        source_file = os.path.join(source, 'file')
+        for parent in (first, second):
+            junction = os.path.join(parent, 'junction')
+            _winapi.CreateJunction(source, junction)
+        for copy_function in (shutil.copy, shutil.copy2):
+            with self.subTest(copy_function=copy_function):
+                with open(source_file, 'w') as fp:
+                    fp.write('original contents')
+                try:
+                    self.assertRaises(shutil.Error, shutil.copytree,
+                                      first, second, dirs_exist_ok=True,
+                                      copy_function=copy_function)
+                finally:
+                    self.assertEqual(read_file(source_file), 'original contents')
+
     def test_copytree_simple(self):
         src_dir = self.mkdtemp()
         dst_dir = os.path.join(self.mkdtemp(), 'destination')
@@ -1647,6 +1671,30 @@ class TestCopy(BaseTest, unittest.TestCase):
         rv = shutil.copyfile(src_file, dst_file)
         self.assertTrue(os.path.exists(rv))
         self.assertEqual(read_file(src_file), read_file(dst_file))
+
+    def test_copyfile_same_file_direntry(self):
+        src_dir = self.mkdtemp()
+        src_file = os.path.join(src_dir, 'file')
+        create_file(src_file, 'original contents')
+        with os.scandir(src_dir) as entries:
+            entry = next(entries)
+        try:
+            self.assertRaises(SameFileError, shutil.copyfile, entry, src_file)
+        finally:
+            self.assertEqual(read_file(src_file), 'original contents')
+
+    def test_copyfile_distinct_file_direntry(self):
+        src_dir = self.mkdtemp()
+        dst_dir = self.mkdtemp()
+        src_file = os.path.join(src_dir, 'file')
+        dst_file = os.path.join(dst_dir, 'file')
+        create_file(src_file, 'original contents')
+        create_file(dst_file, 'old destination')
+        with os.scandir(src_dir) as entries:
+            entry = next(entries)
+        shutil.copyfile(entry, dst_file)
+        self.assertEqual(read_file(src_file), 'original contents')
+        self.assertEqual(read_file(dst_file), 'original contents')
 
     def test_copyfile_same_file(self):
         # copyfile() should raise SameFileError if the source and destination
