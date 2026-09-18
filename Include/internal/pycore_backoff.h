@@ -108,6 +108,12 @@ backoff_counter_triggers(_Py_BackoffCounter counter)
     return counter.value_and_backoff < UNREACHABLE_BACKOFF;
 }
 
+static inline bool
+backoff_counter_is_unreachable(_Py_BackoffCounter counter)
+{
+    return (counter.value_and_backoff & BACKOFF_MASK) == UNREACHABLE_BACKOFF;
+}
+
 static inline _Py_BackoffCounter
 trigger_backoff_counter(void)
 {

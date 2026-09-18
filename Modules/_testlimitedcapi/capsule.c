@@ -1,5 +1,8 @@
 #include "parts.h"
 
+#include <stdlib.h>               // free()
+
+
 static void
 capsule_destructor(PyObject *op)
 {
