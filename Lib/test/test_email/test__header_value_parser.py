@@ -3029,8 +3029,6 @@ class TestParser(TestParserMixin, TestEmailBase):
             )
         self.assertEqual(message_ids.token_type, 'message-id-list')
 
-
-
 class Test_get_parameter(TestParserMixin, TestEmailBase):
 
     def test_rfc2231_charset_is_retyped_as_attrtext(self):
@@ -3061,7 +3059,6 @@ class Test_get_parameter(TestParserMixin, TestEmailBase):
         self.assertEqual(param[3][0].token_type, 'attrtext')
         self.assertEqual(param[3][1].token_type, 'cfws')
         self.assertEqual(param.charset, 'us-ascii')
-
 
 @parameterize
 class Test_parse_mime_parameters(TestParserMixin, TestEmailBase):
