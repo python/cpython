@@ -51,29 +51,24 @@ get_encoded_name(PyObject *name, const struct hook_prefixes **hook_prefixes) {
     }
 
     /* Encode to ASCII or Punycode, as needed */
-    encoded = PyUnicode_AsEncodedString(name, "ascii", NULL);
-    if (encoded != NULL) {
+    if (PyUnicode_IS_ASCII(name)) {
         *hook_prefixes = &ascii_only_prefixes;
+        modname = PyUnicode_AsASCIIString(name);
     } else {
-        if (PyErr_ExceptionMatches(PyExc_UnicodeEncodeError)) {
-            PyErr_Clear();
-            encoded = PyUnicode_AsEncodedString(name, "punycode", NULL);
-            if (encoded == NULL) {
-                goto error;
-            }
-            *hook_prefixes = &nonascii_prefixes;
-        } else {
+        *hook_prefixes = &nonascii_prefixes;
+        encoded = PyUnicode_AsEncodedString(name, "punycode", NULL);
+        if (encoded == NULL) {
+            goto error;
+        }
+
+        /* Replace '-' by '_' */
+        modname = _PyObject_CallMethod(encoded, &_Py_ID(replace), "cc", '-', '_');
+        if (modname == NULL) {
             goto error;
         }
     }
 
-    /* Replace '-' by '_' */
-    modname = _PyObject_CallMethod(encoded, &_Py_ID(replace), "cc", '-', '_');
-    if (modname == NULL)
-        goto error;
-
     Py_DECREF(name);
-    Py_DECREF(encoded);
     return modname;
 error:
     Py_DECREF(name);
