@@ -2,6 +2,12 @@
 Check that all macros defined by the Python C API have a name starting with
 "Py". Ignore names listed by check_capi_macros_ignored.txt: macros with an
 invalid name, added before this script was created.
+
+Python C API:
+
+* Include/*.h
+* Include/cpython/*.h
+* pyconfig.h.in
 """
 
 import glob
@@ -15,6 +21,7 @@ SRC_DIR = os.path.dirname(os.path.dirname(TOOLS_BUILD_DIR))
 DEFINE_REGEX = re.compile(r'^\s*# *define\s+(.*)')
 PYTHON_PREFIX = re.compile(r'^(Py|PY|_Py|_PY)')
 DEFINE_NAME_REGEX = re.compile(r'^([A-Za-z_][A-Za-z0-9_]*)\b')
+UNDEF_REGEX = re.compile(r'#undef (.*)$')
 
 
 def parse_file(filename, names, ignored):
@@ -36,6 +43,18 @@ def parse_file(filename, names, ignored):
             if name in ignored:
                 continue
 
+            names.append((name, filename))
+
+
+def parse_pyconfig_in(filename, names, ignored):
+    with open(filename, encoding='utf8') as fp:
+        for line in fp:
+            match = UNDEF_REGEX.match(line)
+            if not match:
+                continue
+            name = match.group(1)
+            if name in ignored:
+                continue
             names.append((name, filename))
 
 
@@ -62,6 +81,10 @@ def main():
     names = []
     for filename in files:
         parse_file(filename, names, ignored)
+
+    filename = os.path.join(SRC_DIR, 'pyconfig.h.in')
+    parse_file(filename, names, ignored)
+    parse_pyconfig_in(filename, names, ignored)
     names.sort()
 
     if not names:
