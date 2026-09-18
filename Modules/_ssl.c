@@ -5883,7 +5883,8 @@ _ssl_MemoryBIO_read_impl(PySSLMemoryBIO *self, int len)
 {
     int avail, nbytes;
 
-    avail = (int)Py_MIN(BIO_ctrl_pending(self->bio), INT_MAX);
+    size_t pending = BIO_ctrl_pending(self->bio);
+    avail = (int)Py_MIN(pending, (size_t)INT_MAX);
     if ((len < 0) || (len > avail))
         len = avail;
 
@@ -6242,10 +6243,9 @@ _ssl_RAND_add_impl(PyObject *module, Py_buffer *view, double entropy)
 }
 
 static PyObject *
-PySSL_RAND(PyObject *module, int len, int pseudo)
+PySSL_RAND(PyObject *module, int len)
 {
     int ok;
-    PyObject *bytes;
     unsigned long err;
     const char *errstr;
     PyObject *v;
@@ -6255,20 +6255,16 @@ PySSL_RAND(PyObject *module, int len, int pseudo)
         return NULL;
     }
 
-    bytes = PyBytes_FromStringAndSize(NULL, len);
-    if (bytes == NULL)
+    PyBytesWriter *writer = PyBytesWriter_Create(len);
+    if (writer == NULL) {
         return NULL;
-    if (pseudo) {
-        ok = RAND_bytes((unsigned char*)PyBytes_AS_STRING(bytes), len);
-        if (ok == 0 || ok == 1)
-            return Py_BuildValue("NO", bytes, ok == 1 ? Py_True : Py_False);
     }
-    else {
-        ok = RAND_bytes((unsigned char*)PyBytes_AS_STRING(bytes), len);
-        if (ok == 1)
-            return bytes;
+
+    ok = RAND_bytes(PyBytesWriter_GetData(writer), len);
+    if (ok == 1) {
+        return PyBytesWriter_Finish(writer);
     }
-    Py_DECREF(bytes);
+    PyBytesWriter_Discard(writer);
 
     err = ERR_get_error();
     errstr = ERR_reason_error_string(err);
@@ -6293,7 +6289,7 @@ static PyObject *
 _ssl_RAND_bytes_impl(PyObject *module, int n)
 /*[clinic end generated code: output=977da635e4838bc7 input=2e78ce1e86336776]*/
 {
-    return PySSL_RAND(module, n, 0);
+    return PySSL_RAND(module, n);
 }
 
 

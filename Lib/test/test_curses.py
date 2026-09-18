@@ -2431,6 +2431,22 @@ class TestCurses(unittest.TestCase):
         panel.set_userptr(A())
         panel.set_userptr(None)
 
+    @requires_curses_func('panel')
+    def test_userptr_dealloc_segfault(self):
+        w = curses.newwin(10, 10)
+        panel = curses.panel.new_panel(w)
+        seen = []
+        class A:
+            def __del__(self):
+                # The panel is being deallocated, so it must already be off
+                # the stack: handing it back here would resurrect an object
+                # whose refcount is zero -- segfaults.
+                seen.append(curses.panel.top_panel() is None)
+        panel.set_userptr(A())
+        del panel
+        gc_collect()
+        self.assertEqual(seen, [True])
+
     @cpython_only
     @requires_curses_func('panel')
     def test_disallow_instantiation(self):
@@ -3464,6 +3480,44 @@ class ScreenTests(NewtermTestBase):
         prescr.use(lambda scr: curses.use_env(False))
         # The current screen is unchanged.
         screen.stdscr.refresh()
+
+    @unittest.skipUnless(hasattr(curses, 'new_prescr'),
+                         'requires curses.new_prescr()')
+    def test_new_prescr_returns_existing_screen(self):
+        pre1 = curses.new_prescr()
+        pre2 = curses.new_prescr()
+        self.assertIs(pre1, pre2)
+
+    @unittest.skipUnless(hasattr(curses, 'new_prescr'),
+                         'requires curses.new_prescr()')
+    def test_newterm_after_new_prescr_keeps_screen_alive(self):
+        # newterm() adopts the SCREEN created by new_prescr().  Dropping the
+        # pre-screen wrapper must not delete the live screen.
+        s = self.make_pty()
+        pre = curses.new_prescr()
+        screen = curses.newterm('xterm', s, s)
+        del pre
+        gc_collect()
+        screen.stdscr.addstr(0, 0, 'x')
+        screen.stdscr.refresh()
+
+    @unittest.skipUnless(hasattr(curses, 'new_prescr'),
+                         'requires curses.new_prescr()')
+    def test_initscr_after_new_prescr_keeps_screen_alive(self):
+        # initscr() adopts the SCREEN created by new_prescr().  Dropping the
+        # pre-screen wrapper must not delete the live screen.
+        s = self.make_pty()
+        saved = os.dup(1)
+        self.addCleanup(os.close, saved)
+        self.addCleanup(os.dup2, saved, 1)
+        os.dup2(s, 1)
+
+        pre = curses.new_prescr()
+        stdscr = curses.initscr()
+        del pre
+        gc_collect()
+        stdscr.addstr(0, 0, 'x')
+        stdscr.refresh()
 
     def test_initscr_after_newterm_keeps_screen_alive(self):
         # initscr() called while a newterm() screen is current returns that

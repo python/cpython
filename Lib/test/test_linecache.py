@@ -1,13 +1,18 @@
 """ Tests for the linecache module """
 
+import importlib
 import linecache
 import unittest
 import os.path
+import sys
 import tempfile
 import threading
 import tokenize
+import zipfile
+import zipimport
 from importlib.machinery import ModuleSpec
 from test import support
+from test.support import import_helper
 from test.support import os_helper
 from test.support import threading_helper
 from test.support.script_helper import assert_python_ok
@@ -356,6 +361,17 @@ class LineCacheTests(unittest.TestCase):
         self.assertEqual(stdout, b'')
         self.assertEqual(stderr, b'')
 
+    def test_path_importer_cache_None(self):
+        # sys.path_importer_cache is set to None while the interpreter is
+        # shutting down, before objects with a __del__ that may end up here
+        # are released.
+        filename = os.path.abspath(os_helper.TESTFN + '.py')
+        with support.swap_attr(sys, 'path_importer_cache', None):
+            self.assertEqual(linecache.getlines(filename), [])
+            self.assertEqual(linecache.getline(filename, 1), '')
+        self.assertNotIn(filename, linecache.cache)
+
+
 class LineCacheInvalidationTests(unittest.TestCase):
     def setUp(self):
         super().setUp()
@@ -396,6 +412,98 @@ class LineCacheInvalidationTests(unittest.TestCase):
         self.assertNotIn(self.deleted_file, linecache.cache)
         self.assertNotIn(self.modified_file, linecache.cache)
         self.assertIn(self.unchanged_file, linecache.cache)
+
+
+class ZipArchiveTests(unittest.TestCase):
+    """Sources of modules imported from a zip archive on sys.path."""
+
+    MODULE_SOURCE = (
+        '"""A module inside a zip archive."""\n'
+        '\n'
+        'def f():\n'
+        '    return "from the zip"\n'
+    )
+    PACKAGE_SOURCE = 'value = 42\n'
+    LATIN1_SOURCE = (
+        '# -*- coding: latin-1 -*-\n'
+        'value = "caf\xe9"\n'
+    )
+
+    def setUp(self):
+        linecache.clearcache()
+        self.addCleanup(linecache.clearcache)
+        tmpdir = self.enterContext(os_helper.temp_dir())
+        self.zip_name = os.path.join(tmpdir, 'sources.zip')
+        with zipfile.ZipFile(self.zip_name, 'w') as zf:
+            zf.writestr('zipmod.py', self.MODULE_SOURCE)
+            zf.writestr('zippkg/__init__.py', self.PACKAGE_SOURCE)
+            zf.writestr('ziplatin1.py', self.LATIN1_SOURCE.encode('latin-1'))
+        self.enterContext(import_helper.DirsOnSysPath(self.zip_name))
+        for name in 'zipmod', 'zippkg', 'ziplatin1':
+            self.addCleanup(import_helper.unload, name)
+        self.addCleanup(sys.path_importer_cache.pop, self.zip_name, None)
+        self.addCleanup(zipimport._zip_directory_cache.pop,
+                        self.zip_name, None)
+        self.zipmod = importlib.import_module('zipmod')
+
+    def test_getlines_without_module_globals(self):
+        filename = self.zipmod.__file__
+        self.assertEqual(filename, os.path.join(self.zip_name, 'zipmod.py'))
+        self.assertFalse(os.path.exists(filename))
+        lines = self.MODULE_SOURCE.splitlines(keepends=True)
+        self.assertEqual(linecache.getlines(filename), lines)
+        self.assertEqual(linecache.getline(filename, 4),
+                         '    return "from the zip"\n')
+        self.assertEqual(linecache.getline(filename, 5), '')
+        code = self.zipmod.f.__code__
+        self.assertEqual(code.co_filename, filename)
+        self.assertEqual(linecache.getline(filename, code.co_firstlineno),
+                         'def f():\n')
+
+    def test_relative_archive_path(self):
+        # A relative sys.path entry gives its modules a relative __file__.
+        tmpdir, zip_base = os.path.split(self.zip_name)
+        self.addCleanup(sys.path_importer_cache.pop, zip_base, None)
+        self.addCleanup(zipimport._zip_directory_cache.pop, zip_base, None)
+        sys.path.insert(0, zip_base)
+        self.addCleanup(sys.path.remove, zip_base)
+        with os_helper.change_cwd(tmpdir):
+            zippkg = importlib.import_module('zippkg')
+            self.assertEqual(zippkg.__file__,
+                             os.path.join(zip_base, 'zippkg', '__init__.py'))
+            self.assertEqual(linecache.getlines(zippkg.__file__),
+                             ['value = 42\n'])
+
+    def test_package(self):
+        zippkg = importlib.import_module('zippkg')
+        self.assertEqual(linecache.getlines(zippkg.__file__),
+                         ['value = 42\n'])
+
+    def test_encoding_declaration(self):
+        ziplatin1 = importlib.import_module('ziplatin1')
+        self.assertEqual(linecache.getlines(ziplatin1.__file__),
+                         self.LATIN1_SOURCE.splitlines(keepends=True))
+
+    def test_missing_file(self):
+        filename = os.path.join(self.zip_name, 'missing.py')
+        self.assertEqual(linecache.getlines(filename), [])
+        self.assertEqual(linecache.getline(filename, 1), '')
+        self.assertNotIn(filename, linecache.cache)
+
+    def test_checkcache_and_clearcache(self):
+        filename = self.zipmod.__file__
+        lines = linecache.getlines(filename)
+        self.assertIn(filename, linecache.cache)
+        # A file inside an archive has no mtime of its own, so checkcache()
+        # keeps the entry, as it does for entries loaded through a loader.
+        self.assertIsNone(linecache.cache[filename][1])
+        linecache.checkcache(filename)
+        linecache.checkcache()
+        self.assertIn(filename, linecache.cache)
+        self.assertEqual(linecache.getlines(filename), lines)
+        linecache.clearcache()
+        self.assertNotIn(filename, linecache.cache)
+        self.assertEqual(linecache.getlines(filename), lines)
 
 
 class MultiThreadingTest(unittest.TestCase):
