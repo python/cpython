@@ -3913,6 +3913,13 @@ _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
     // Acquire the global import lock to serialize reification
     _PyImport_AcquireLock(interp);
 
+    // Reify only once.  lz_resolved is read and written under the import lock.
+    if (lz->lz_resolved != NULL) {
+        PyObject *resolved = Py_NewRef(lz->lz_resolved);
+        _PyImport_ReleaseLock(interp);
+        return resolved;
+    }
+
     // Check if we are already importing this module, if so, then we want to
     // return an error that indicates we've hit a cycle which will indicate
     // the value isn't yet available.
@@ -3999,6 +4006,10 @@ _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
     }
 
     assert(!PyLazyImport_CheckExact(obj));
+
+    // Reentrancy on the same proxy is rejected above as a cycle.
+    assert(lz->lz_resolved == NULL);
+    Py_XSETREF(lz->lz_resolved, Py_NewRef(obj));
 
     goto ok;
 

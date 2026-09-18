@@ -358,6 +358,12 @@ Standard names are defined for the following types:
 
       Reify the lazy import and return the "real" object being imported.
 
+      A lazy import is reified at most once.  Repeated calls, and any later
+      access to a name still bound to the proxy, return the object from the
+      first reification, even if the module has since been removed from
+      :data:`sys.modules`.  A reification that raises is not remembered, so
+      the next access retries the import.
+
 
 .. class:: GetSetDescriptorType
 
