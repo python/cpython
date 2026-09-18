@@ -137,13 +137,23 @@ enum machine_format_code {
 
 #define array_Check(op, state) PyObject_TypeCheck(op, state->ArrayType)
 
+#if defined(Py_GIL_DISABLED)
+#define array_ObExports(obj) _Py_atomic_load_ssize(&(obj)->ob_exports)
+#define array_ObExportsInc(obj) _Py_atomic_add_ssize(&(obj)->ob_exports, 1)
+#define array_ObExportsDec(obj) _Py_atomic_add_ssize(&(obj)->ob_exports, -1)
+#else
+#define array_ObExports(obj) (obj)->ob_exports
+#define array_ObExportsInc(obj) (obj)->ob_exports++
+#define array_ObExportsDec(obj) (obj)->ob_exports--
+#endif
+
 static int
 array_resize(arrayobject *self, Py_ssize_t newsize)
 {
     char *items;
     size_t _new_size;
 
-    if (self->ob_exports > 0 && newsize != Py_SIZE(self)) {
+    if (array_ObExports(self) > 0 && newsize != Py_SIZE(self)) {
         PyErr_SetString(PyExc_BufferError,
             "cannot resize an array that is exporting buffers");
         return -1;
@@ -1145,7 +1155,7 @@ array_del_slice(arrayobject *a, Py_ssize_t ilow, Py_ssize_t ihigh)
     /* Issue #4509: If the array has exported buffers and the slice
        assignment would change the size of the array, fail early to make
        sure we don't modify it. */
-    if (d != 0 && a->ob_exports > 0) {
+    if (d != 0 && array_ObExports(a) > 0) {
         PyErr_SetString(PyExc_BufferError,
             "cannot resize an array that is exporting buffers");
         return -1;
@@ -2796,7 +2806,7 @@ array_ass_subscr(PyObject *op, PyObject *item, PyObject *value)
     /* Issue #4509: If the array has exported buffers and the slice
        assignment would change the size of the array, fail early to make
        sure we don't modify it. */
-    if ((needed == 0 || slicelength != needed) && self->ob_exports > 0) {
+    if ((needed == 0 || slicelength != needed) && array_ObExports(self) > 0) {
         PyErr_SetString(PyExc_BufferError,
             "cannot resize an array that is exporting buffers");
         return -1;
@@ -2910,7 +2920,7 @@ array_buffer_getbuf(PyObject *op, Py_buffer *view, int flags)
         view->format = (char *)self->ob_descr->typecode;
     }
 
-    self->ob_exports++;
+    array_ObExportsInc(self);
     return 0;
 }
 
@@ -2918,7 +2928,7 @@ static void
 array_buffer_relbuf(PyObject *op, Py_buffer *Py_UNUSED(view))
 {
     arrayobject *self = arrayobject_CAST(op);
-    self->ob_exports--;
+    array_ObExportsDec(self);
 }
 
 static PyObject *
