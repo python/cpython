@@ -12,7 +12,7 @@ import sys  # for sys.path
 from idlelib.idle_test.mock_idle import Func
 import idlelib  # for __file__
 from idlelib import browser
-from idlelib.tree import TreeNode
+from idlelib.tree import TreeWidget
 
 
 class PathBrowserTest(unittest.TestCase):
@@ -36,7 +36,7 @@ class PathBrowserTest(unittest.TestCase):
         eq = self.assertEqual
         eq(pb.master, self.root)
         eq(pyclbr._modules, {})
-        self.assertIsInstance(pb.node, TreeNode)
+        self.assertIsInstance(pb.tree, TreeWidget)
         self.assertIsNotNone(browser.file_open)
 
     def test_settitle(self):
@@ -49,17 +49,33 @@ class PathBrowserTest(unittest.TestCase):
         rn = pb.rootnode()
         self.assertIsInstance(rn, pathbrowser.PathBrowserTreeItem)
 
+    def test_root_row(self):
+        pb = self.pb
+        self.assertEqual(pb.tree.tree.item(pb.tree.root, 'text'), 'sys.path')
+
+    def test_icons(self):
+        # Each kind of row that gets an icon has its tag configured.
+        tree = self.pb.tree.tree
+        for tag in pathbrowser.ICONS:
+            with self.subTest(tag=tag):
+                self.assertTrue(tree.tag_configure(tag, 'image'))
+
     def test_close(self):
         pb = self.pb
         pb.top.destroy = Func()
-        pb.node.destroy = Func()
         pb.close()
         self.assertTrue(pb.top.destroy.called)
-        self.assertTrue(pb.node.destroy.called)
-        del pb.top.destroy, pb.node.destroy
+        del pb.top.destroy
 
 
 class DirBrowserTreeItemTest(unittest.TestCase):
+
+    def test_gettags(self):
+        eq = self.assertEqual
+        eq(pathbrowser.DirBrowserTreeItem('/tmp').GetTags(), ('directory',))
+        eq(pathbrowser.DirBrowserTreeItem('/tmp/p', ['p']).GetTags(),
+           ('package',))
+        eq(browser.ModuleBrowserTreeItem('spam.py').GetTags(), ('module',))
 
     def test_DirBrowserTreeItem(self):
         # Issue16226 - make sure that getting a sublist works

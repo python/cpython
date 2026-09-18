@@ -655,14 +655,12 @@ class ModifiedInterpreter(InteractiveInterpreter):
             self.tkconsole.root.bell()
             return
         item = debugobj_r.StubObjectTreeItem(self.rpcclt, oid)
-        from idlelib.tree import ScrolledCanvas, TreeNode
+        from idlelib.tree import TreeWidget
         top = Toplevel(self.tkconsole.root, class_='Idle')
-        theme = idleConf.CurrentTheme()
-        background = idleConf.GetHighlight(theme, 'normal')['background']
-        sc = ScrolledCanvas(top, bg=background, highlightthickness=0)
-        sc.frame.pack(expand=1, fill="both")
-        node = TreeNode(sc.canvas, None, item)
-        node.expand()
+        tree = TreeWidget(top, item, columns=("value",),
+                          headings=("Name", "Value"))
+        tree.pack(expand=True, fill="both")
+        tree.expand()
         # XXX Should GC the remote tree when closing the window
 
     gid = 0

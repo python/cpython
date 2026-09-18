@@ -5,7 +5,7 @@ import unittest
 from test.support import requires
 from tkinter import Tk
 
-from idlelib.tree import TreeNode, ScrolledCanvas
+from idlelib.tree import TreeWidget
 
 
 class StackBrowserTest(unittest.TestCase):
@@ -30,13 +30,17 @@ class StackBrowserTest(unittest.TestCase):
         try:
             abc
         except NameError as exc:
-            sb = stackviewer.StackBrowser(self.root, exc)
+            stackviewer.StackBrowser(self.root, exc)
+        widget = stackviewer.tree
         isi = self.assertIsInstance
-        isi(stackviewer.sc, ScrolledCanvas)
+        isi(widget, TreeWidget)
         isi(stackviewer.item, stackviewer.StackTreeItem)
-        isi(stackviewer.node, TreeNode)
-        top = stackviewer.sc.frame.winfo_toplevel()
+        top = widget.winfo_toplevel()
         self.assertEqual(top.winfo_class(), 'Idle')
+        # The root row is the exception; its children are the frames.
+        self.assertEqual(widget.tree.item(widget.root, 'text'),
+                         "NameError: name 'abc' is not defined")
+        self.assertEqual(len(widget.tree.get_children(widget.root)), 1)
 
 
 if __name__ == '__main__':
