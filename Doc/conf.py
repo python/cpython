@@ -640,6 +640,7 @@ rediraffe_redirects = {
 # Refuse to run the doctest builder under a mismatched Python
 # -----------------------------------------------------------
 
+
 def _check_doctest_interpreter(app):
     # The doctests are executed by the interpreter running Sphinx,
     # so refuse to run them if its version doesn't match the source tree.
