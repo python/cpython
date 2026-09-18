@@ -1628,7 +1628,7 @@ def getframeinfo(frame, context=1):
         raise TypeError('{!r} is not a frame or traceback object'.format(frame))
 
     filename = getsourcefile(frame) or getfile(frame)
-    if context > 0:
+    if context > 0 and lineno is not None:
         start = lineno - 1 - context//2
         try:
             lines, lnum = findsource(frame)
