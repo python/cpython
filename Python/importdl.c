@@ -112,12 +112,17 @@ _Py_ext_module_loader_info_init(struct _Py_ext_module_loader_info *p_info,
     else {
         info.name = Py_NewRef(name);
     }
-    assert(PyUnicode_GetLength(info.name) > 0);
 
     if (!PyUnicode_Check(info.name)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "module name must be a string");
-            goto error;
+        PyErr_Format(PyExc_TypeError,
+                     "module name must be a string, not %T",
+                     info.name);
+        goto error;
+    }
+
+    if (PyUnicode_GetLength(info.name) == 0) {
+        PyErr_Format(PyExc_ValueError, "module name must not be empty");
+        goto error;
     }
 
     if (PyUnicode_IS_ASCII(info.name)) {

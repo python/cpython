@@ -1273,7 +1273,7 @@ os.does_not_exist
         self.assertIs(_imp.create_builtin(spec), sys)
 
         spec.name = None
-        with self.assertRaisesRegex(TypeError, 'name must be string, not NoneType'):
+        with self.assertRaisesRegex(TypeError, 'module name must be a string, not NoneType'):
             _imp.create_builtin(spec)
 
         # gh-142029
@@ -1283,7 +1283,7 @@ os.does_not_exist
 
         # gh-142029
         spec.name = ""
-        with self.assertRaisesRegex(ValueError, 'name must not be empty'):
+        with self.assertRaisesRegex(ValueError, 'module name must not be empty'):
             _imp.create_builtin(spec)
 
     def test_filter_syntax_warnings_by_module(self):
