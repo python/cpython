@@ -1,7 +1,11 @@
 import sys
+import textwrap
+import threading
 import unittest
 from test import support
 from test.support import import_helper
+from test.support import threading_helper
+from test.support.script_helper import assert_python_failure
 
 _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
 _testcapi = import_helper.import_module('_testcapi')
@@ -434,6 +438,14 @@ class BaseWriterTest:
         self.assertEqual(writer.finish(),
                          b's' * small + b'L' * (large - small))
 
+        # Make sure that it's possible to write after a resize to zero
+        # when a bytes/bytearray object is allocated.
+        writer = self.create_writer()
+        writer.resize(self.LARGE_BUFFER)
+        writer.resize(0)
+        writer.write_bytes(b'abc', 3)
+        self.assertEqual(writer.finish(), b'abc')
+
         # invalid size
         for size in (self.SMALL_BUFFER, self.LARGE_BUFFER):
             with self.subTest(size=size):
@@ -550,6 +562,36 @@ class BaseWriterTest:
             finally:
                 _testcapi.remove_mem_hooks()
         writer.write_bytes(b'after', -1)
+
+    @threading_helper.requires_working_threading()
+    def test_thread(self):
+        # PyBytesWriter can be used by multiple threads: it's up to the caller
+        # to implement a lock to prevent concurrent accesses.
+        writer = self.create_writer(0)
+        size = None
+        data = None
+
+        def thread_func(writer, LARGE_BUFFER):
+            nonlocal size, data
+
+            # create a bytes object for the buffer
+            writer.write_bytes(b'x' * LARGE_BUFFER, LARGE_BUFFER)
+
+            # so we can check a write with a bytes object
+            writer.write_bytes(b'yz', 2)
+            writer.format_i(b'i=%i', 5)
+            writer.resize(10)
+            data = writer.get_data()
+            size = writer.get_size()
+
+        thread = threading.Thread(target=thread_func,
+                                  args=(writer, self.LARGE_BUFFER))
+        thread.start()
+        threading_helper.join_thread(thread)
+
+        self.assertEqual(size, 10)
+        self.assertEqual(data, b'x' * 10)
+        self.assertEqual(writer.finish(), b'x' * 10)
 
 
 class BytesWriterTest(BaseWriterTest, unittest.TestCase):
