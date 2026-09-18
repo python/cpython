@@ -629,8 +629,10 @@ For example::
 
 Instead of a key-value pair, a dict item may be an expression prefixed by
 a double asterisk ``**``. This denotes :dfn:`dictionary unpacking`.
-At runtime, the expression must evaluate to a :term:`mapping`;
-each item of the mapping is added to the new dictionary.
+At runtime, the expression must evaluate to an object with a ``keys()`` method,
+such as a :term:`mapping`; :meth:`~object.__getitem__` is called with
+every key returned from the method, and each resulting
+key-value pair is added to the new dictionary.
 As with key-value pairs, later values replace values already set by
 earlier items and unpackings.
 This may be used to override a set of defaults::
@@ -1648,14 +1650,15 @@ used in the same call, so in practice this confusion does not often arise.
    single: **; in function calls
 
 If the syntax ``**expression`` appears in the function call, ``expression`` must
-evaluate to a :term:`mapping`, the contents of which are treated as
-additional keyword arguments. If a parameter matching a key has already been
-given a value (by an explicit keyword argument, or from another unpacking),
+evaluate to an object with a ``keys()`` method, such as a :term:`mapping`;
+:meth:`~object.__getitem__` is called with every key returned from the method,
+and the resulting key-value pairs are treated as additional keyword arguments.
+If a parameter matching a key has already been given a value
+(by an explicit keyword argument, or from another unpacking),
 a :exc:`TypeError` exception is raised.
 
-When ``**expression`` is used, each key in this mapping must be
-a string.
-Each value from the mapping is assigned to the first formal parameter
+When ``**expression`` is used, each key must be a string.
+Each value is assigned to the first formal parameter
 eligible for keyword assignment whose name is equal to the key.
 A key need not be a Python identifier (e.g. ``"max-temp °F"`` is acceptable,
 although it will not match any formal parameter that could be declared).
