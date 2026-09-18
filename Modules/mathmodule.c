@@ -1149,11 +1149,14 @@ FUNC1(atan, atan, 0,
       "atan($module, x, /)\n--\n\n"
       "Return the arc tangent (measured in radians) of x.\n\n"
       "The result is between -pi/2 and pi/2.")
-FUNC2NE(atan2, atan2,  // gh-153144: Ignore atan2() errno on purpose.
+/* gh-153144: Ignore atan2 and atan2pi errno on purpose since it can optionally
+ *            be EDOM, which we should ignore, or ERANGE on underflow, which is
+ *            silent on Python.  Overflow is not possible. */
+FUNC2NE(atan2, atan2,
       "atan2($module, y, x, /)\n--\n\n"
       "Return the arc tangent (measured in radians) of y/x.\n\n"
       "Unlike atan(y/x), the signs of both x and y are considered.")
-FUNC2NE(atan2pi, m_atan2pi,  // gh-153144: Ignore atan2pi() errno on purpose.
+FUNC2NE(atan2pi, m_atan2pi,
       "atan2pi($module, y, x, /)\n--\n\n"
       "Return the arc tangent (measured in half-turns) of y/x.\n\n"
       "Unlike atanpi(y/x), the signs of both x and y are considered.")
