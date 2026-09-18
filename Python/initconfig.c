@@ -2714,7 +2714,8 @@ config_init_stdio_encoding(PyConfig *config,
     /* Choose the default error handler based on the current locale. */
     if (config->stdio_encoding == NULL
 #ifdef MS_WINDOWS
-        /* gh-86427: it is determined for each stream. */
+        /* gh-86427: it is determined for each stream: create_stdio() uses
+           _Py_device_encoding(), falling back to the locale encoding. */
         && !config->legacy_windows_stdio
 #endif
        ) {
