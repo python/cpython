@@ -35,6 +35,7 @@ TK_TABWIDTH_DEFAULT = 8
 darwin = sys.platform == 'darwin'
 
 class EditorWindow:
+    is_shell = False  # PyShell overrides.
     from idlelib.percolator import Percolator
     from idlelib.colorizer import ColorDelegator, color_config
     from idlelib.undo import UndoDelegator
@@ -80,7 +81,6 @@ class EditorWindow:
         self.recent_files_path = idleConf.userdir and os.path.join(
                 idleConf.userdir, 'recent-files.lst')
 
-        self.prompt_last_line = ''  # Override in PyShell
         self.text_frame = text_frame = Frame(top)
         self.vbar = vbar = Scrollbar(text_frame, name='vbar')
         width = idleConf.GetOption('main', 'EditorWindow', 'width', type='int')
@@ -325,7 +325,9 @@ class EditorWindow:
         # http://www.tcl.tk/man/tcl8.6/TkCmd/text.htm#M21
         zero_char_width = \
             Font(text, font=text.cget('font')).measure('0')
-        self.width = pixel_width // zero_char_width
+        # Some fonts report a zero width for '0' (gh-90304).
+        self.width = (pixel_width // zero_char_width if zero_char_width
+                      else text.tk.getint(text.cget('width')))
 
     def new_callback(self, event):
         dirname, basename = self.io.defaultfilename()
@@ -1432,7 +1434,7 @@ class EditorWindow:
             # First need to find the last statement.
             lno = index2line(text.index('insert'))
             y = pyparse.Parser(self.indentwidth, self.tabwidth)
-            if not self.prompt_last_line:
+            if not self.is_shell:
                 for context in self.num_context_lines:
                     startat = max(lno - context, 1)
                     startatindex = repr(startat) + ".0"

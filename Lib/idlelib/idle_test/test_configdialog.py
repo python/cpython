@@ -3,6 +3,7 @@
 Half the class creates dialog, half works with user customizations.
 """
 from idlelib import configdialog
+from idlelib.editor import EditorWindow
 from test.support import requires
 requires('gui')
 import unittest
@@ -50,14 +51,28 @@ def tearDownModule():
     root = dialog = None
 
 
-@unittest.skip('Empty tests')
 class ConfigDialogTest(unittest.TestCase):
+    # The methods tested here are mocked out in the tests below.
+
+    def setUp(self):
+        self.parent = dialog.parent
+        self.instance = mock.create_autospec(EditorWindow, instance=True)
+        dialog.parent = mock.Mock(instance_dict={self.instance: []})
+
+    def tearDown(self):
+        dialog.parent = self.parent
 
     def test_deactivate_current_config(self):
-        pass
+        dialog.deactivate_current_config()
+        self.instance.RemoveKeybindings.assert_called_once_with()
 
-    def activate_config_changes(self):
-        pass
+    def test_activate_config_changes(self):
+        dialog.activate_config_changes()
+        for name in ('ResetColorizer', 'ResetFont', 'set_notabs_indentwidth',
+                     'ApplyKeybindings', 'reset_help_menu_entries',
+                     'update_cursor_blink'):
+            with self.subTest(name=name):
+                getattr(self.instance, name).assert_called_once_with()
 
 
 class ButtonTest(unittest.TestCase):
@@ -1296,13 +1311,123 @@ class ShedPageTest(unittest.TestCase):
         self.assertEqual(extpage, {'CodeContext': {'maxlines': '1'}})
 
 
-#unittest.skip("Nothing here yet TODO")
 class ExtPageTest(unittest.TestCase):
-    """Test that the help source list works correctly."""
+    """Test that the extension page works correctly.
+
+    The page loads the options of each extension from the default and
+    user config files, displays those of the selected extension, and
+    saves the changed ones to the user config file.  ZzDummy is the
+    only extension shipped with IDLE.
+    """
     @classmethod
     def setUpClass(cls):
-        page = dialog.extpage
+        page = cls.page = dialog.extpage
         dialog.note.select(page)
+        page.update()
+
+    def setUp(self):
+        # Restore the option vars changed by the previous test.
+        self.page.load_extensions()
+
+    def tearDown(self):
+        self.page.ext_userCfg.remove_section('ZzDummy')
+
+    def test_load_extensions(self):
+        eq = self.assertEqual
+        extensions = self.page.extensions
+        eq(list(extensions), sorted(idleConf.GetExtensions(active_only=False)))
+        opts = extensions['ZzDummy']
+        # The 'enable' options come first, the others follow, both sorted.
+        eq([opt['name'] for opt in opts],
+           ['enable', 'enable_editor', 'enable_shell', 'z-text'])
+        eq([opt['type'] for opt in opts], ['bool', 'bool', 'bool', None])
+        eq([opt['default'] for opt in opts], ['False', 'True', 'False', 'Z'])
+        eq([opt['value'] for opt in opts], [False, True, False, 'Z'])
+        for opt in opts:
+            with self.subTest(name=opt['name']):
+                eq(opt['var'].get(), str(opt['value']))
+
+    def test_load_extensions_enable_first(self):
+        # The 'enable' options come first even if they sort last.
+        page = self.page
+        page.ext_userCfg.SetOption('ZzDummy', 'a-text', 'A')
+        page.load_extensions()
+        self.assertEqual([opt['name'] for opt in page.extensions['ZzDummy']],
+                         ['enable', 'enable_editor', 'enable_shell',
+                          'a-text', 'z-text'])
+
+    def test_load_extensions_user_value(self):
+        # A user option overrides the default value, but not the default.
+        page = self.page
+        page.ext_userCfg.SetOption('ZzDummy', 'z-text', 'user')
+        page.load_extensions()
+        opt = page.extensions['ZzDummy'][-1]
+        self.assertEqual(opt['name'], 'z-text')
+        self.assertEqual(opt['default'], 'Z')
+        self.assertEqual(opt['value'], 'user')
+        self.assertEqual(opt['var'].get(), 'user')
+
+    def test_extension_selected(self):
+        eq = self.assertEqual
+        page = self.page
+        frame = page.config_frame['ZzDummy']
+        # Deselecting hides the options of the current extension.
+        page.extension_list.selection_clear(0, 'end')
+        page.extension_selected(None)
+        eq(page.current_extension, None)
+        eq(page.details_frame.cget('text'), '')
+        eq(frame.winfo_manager(), '')
+        # Selecting shows the options of the selected extension.
+        page.extension_list.selection_set(0)
+        page.extension_selected(None)
+        eq(page.current_extension, 'ZzDummy')
+        eq(page.details_frame.cget('text'), 'ZzDummy')
+        eq(frame.winfo_manager(), 'grid')
+
+    def test_set_extension_value_changed(self):
+        page = self.page
+        opt = page.extensions['ZzDummy'][-1]  # z-text, default 'Z'.
+        opt['var'].set('user')
+        self.assertTrue(page.set_extension_value('ZzDummy', opt))
+        self.assertEqual(page.ext_userCfg.Get('ZzDummy', 'z-text'), 'user')
+        # Saving the same value again is not a change.
+        self.assertFalse(page.set_extension_value('ZzDummy', opt))
+
+    def test_set_extension_value_default(self):
+        page = self.page
+        opt = page.extensions['ZzDummy'][-1]
+        # The default value is not saved in the user config file.
+        opt['var'].set('Z')
+        self.assertFalse(page.set_extension_value('ZzDummy', opt))
+        self.assertFalse(page.ext_userCfg.has_option('ZzDummy', 'z-text'))
+        # Setting it back to the default removes the user option.
+        page.ext_userCfg.SetOption('ZzDummy', 'z-text', 'user')
+        self.assertTrue(page.set_extension_value('ZzDummy', opt))
+        self.assertFalse(page.ext_userCfg.has_option('ZzDummy', 'z-text'))
+
+    def test_set_extension_value_empty(self):
+        # An empty value is replaced with the default.
+        page = self.page
+        opt = page.extensions['ZzDummy'][-1]
+        opt['var'].set('  ')
+        self.assertFalse(page.set_extension_value('ZzDummy', opt))
+        self.assertEqual(opt['var'].get(), 'Z')
+
+    def test_save_all_changed_extensions(self):
+        page = self.page
+        page.ext_userCfg.Save = Func()
+        try:
+            # Nothing is saved if nothing is changed.
+            page.save_all_changed_extensions()
+            self.assertEqual(page.ext_userCfg.Save.called, 0)
+            page.extensions['ZzDummy'][0]['var'].set('True')
+            page.extensions['ZzDummy'][-1]['var'].set('user')
+            page.save_all_changed_extensions()
+            self.assertEqual(page.ext_userCfg.Save.called, 1)
+            self.assertEqual(page.ext_userCfg.Get('ZzDummy', 'enable'), 'True')
+            self.assertEqual(page.ext_userCfg.Get('ZzDummy', 'z-text'), 'user')
+        finally:
+            del page.ext_userCfg.Save
 
 
 class HelpSourceTest(unittest.TestCase):
