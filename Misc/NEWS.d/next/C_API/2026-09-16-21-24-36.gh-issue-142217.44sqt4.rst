@@ -1,0 +1,2 @@
+Add tests on the undocumented and deprecated ``_Py_Identifier`` C API. Patch
+by Victor Stinner.

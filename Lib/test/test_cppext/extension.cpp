@@ -1,4 +1,4 @@
-// gh-91321: Very basic C++ test extension to check that the Python C API is
+// gh-91321: Basic C++ test extension to check that the Python C API is
 // compatible with C++ and does not emit C++ compiler warnings.
 //
 // The code is only built, not executed.
@@ -159,6 +159,8 @@ test_unicode(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     Py_RETURN_NONE;
 }
 
+// VirtualPyObject is incompatible with opaque PyObject
+#ifndef Py_TARGET_ABI3T
 /* Test a `new`-allocated object with a virtual method.
  * (https://github.com/python/cpython/issues/94731) */
 
@@ -237,6 +239,8 @@ test_virtual_object(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     }
     Py_RETURN_NONE;
 }
+#endif  // Py_TARGET_ABI3T
+
 
 static PyObject *
 test_datetime(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
@@ -256,7 +260,9 @@ static PyMethodDef _testcppext_methods[] = {
     {"add", _testcppext_add, METH_VARARGS, _testcppext_add_doc},
     {"test_api_casts", test_api_casts, METH_NOARGS, _Py_NULL},
     {"test_unicode", test_unicode, METH_NOARGS, _Py_NULL},
+#ifndef Py_TARGET_ABI3T
     {"test_virtual_object", test_virtual_object, METH_NOARGS, _Py_NULL},
+#endif
     {"test_datetime", test_datetime, METH_NOARGS, _Py_NULL},
     // Note: _testcppext_exec currently runs all test functions directly.
     // When adding a new one, add a call there.
@@ -282,9 +288,11 @@ _testcppext_exec(PyObject *module)
     if (!result) return -1;
     Py_DECREF(result);
 
+#ifndef Py_TARGET_ABI3T
     result = PyObject_CallMethod(module, "test_virtual_object", "");
     if (!result) return -1;
     Py_DECREF(result);
+#endif
 
     result = PyObject_CallMethod(module, "test_datetime", "");
     if (!result) return -1;
@@ -293,6 +301,11 @@ _testcppext_exec(PyObject *module)
     // test Py_BUILD_ASSERT() and Py_BUILD_ASSERT_EXPR()
     Py_BUILD_ASSERT(sizeof(int) == sizeof(unsigned int));
     assert(Py_BUILD_ASSERT_EXPR(sizeof(int) == sizeof(unsigned int)) == 0);
+
+    // Test Py_MIN(), Py_MAX(), Py_ABS()
+    assert(Py_MIN(5, 11) == 5);
+    assert(Py_MAX(5, 11) == 11);
+    assert(Py_ABS(-5) == 5);
 
     // Test Py_CLEAR(): use typeof()/__typeof__() if available, or memcpy()
     PyObject *obj = Py_None;
@@ -313,6 +326,10 @@ _testcppext_exec(PyObject *module)
     return 0;
 }
 
+
+PyDoc_STRVAR(_testcppext_doc, "C++ test extension.");
+PyABIInfo_VAR(abi_info);
+
 // Need to ignore "-Wpedantic" warnings; see VirtualPyObject_Slots above
 _Py_COMP_DIAG_PUSH
 #if defined(__GNUC__)
@@ -321,32 +338,38 @@ _Py_COMP_DIAG_PUSH
 #pragma clang diagnostic ignored "-Wpedantic"
 #endif
 
-static PyModuleDef_Slot _testcppext_slots[] = {
-    {Py_mod_exec, reinterpret_cast<void*>(_testcppext_exec)},
-    {0, _Py_NULL}
+static PySlot _testcppext_slots[] = {
+    PySlot_PTR_STATIC(Py_mod_abi, &abi_info),
+    PySlot_PTR_STATIC(Py_mod_name, (void*)STR(MODULE_NAME)),
+    PySlot_PTR_STATIC(Py_mod_doc, (void*)(char*)_testcppext_doc),
+    PySlot_PTR_STATIC(Py_mod_exec, (void*)_testcppext_exec),
+    PySlot_PTR_STATIC(Py_mod_methods, _testcppext_methods),
+    PySlot_PTR_STATIC(Py_mod_gil, Py_MOD_GIL_NOT_USED),
+    PySlot_END,
 };
 
 _Py_COMP_DIAG_POP
 
-PyDoc_STRVAR(_testcppext_doc, "C++ test extension.");
 
-static struct PyModuleDef _testcppext_module = {
-    PyModuleDef_HEAD_INIT,  // m_base
-    STR(MODULE_NAME),  // m_name
-    _testcppext_doc,  // m_doc
-    0,  // m_size
-    _testcppext_methods,  // m_methods
-    _testcppext_slots,  // m_slots
-    _Py_NULL,  // m_traverse
-    _Py_NULL,  // m_clear
-    _Py_NULL,  // m_free
-};
-
-#define _FUNC_NAME(NAME) PyInit_ ## NAME
+#define _FUNC_NAME(NAME) PyModExport_ ## NAME
 #define FUNC_NAME(NAME) _FUNC_NAME(NAME)
 
-PyMODINIT_FUNC
+PyMODEXPORT_FUNC
 FUNC_NAME(MODULE_NAME)(void)
 {
-    return PyModuleDef_Init(&_testcppext_module);
+    return _testcppext_slots;
+}
+
+// Also define the soft-deprecated entrypoint to ensure it isn't called
+
+#define _INITFUNC_NAME(NAME) PyInit_ ## NAME
+#define INITFUNC_NAME(NAME) _INITFUNC_NAME(NAME)
+
+PyMODINIT_FUNC
+INITFUNC_NAME(MODULE_NAME)(void)
+{
+    PyErr_SetString(
+        PyExc_AssertionError,
+        "PyInit_* function called while a PyModExport_* one is available");
+    return NULL;
 }
