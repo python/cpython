@@ -2504,13 +2504,12 @@ create_builtin(
     PyModInitFunction initfunc)
 {
     struct _Py_ext_module_loader_info info;
-    if (_Py_ext_module_loader_info_init_for_builtin(&info, name) < 0) {
+    _Py_ext_module_origin origin = _Py_ext_module_origin_BUILTIN;
+    if (_Py_ext_module_loader_info_init(&info, name, spec, origin) < 0) {
         return NULL;
     }
-    if (initfunc != NULL) {
-        /* An explicitly provided init function (see
-         * PyImport_CreateModuleFromInitfunc()) needs a context swap
-         * as if it was an extension module. */
+    if (initfunc == NULL) {
+        /* A core module never needs a context swap. */
         info.needs_swapcontext = true;
     }
 
@@ -5495,7 +5494,8 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
     PyThreadState *tstate = _PyThreadState_GET();
 
     struct _Py_ext_module_loader_info info;
-    if (_Py_ext_module_loader_info_init_from_spec(&info, spec) < 0) {
+    _Py_ext_module_origin origin = _Py_ext_module_origin_DYNAMIC;
+    if (_Py_ext_module_loader_info_init(&info, NULL, spec, origin) < 0) {
         return NULL;
     }
 

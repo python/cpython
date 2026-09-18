@@ -76,25 +76,18 @@ struct _Py_ext_module_loader_info {
     _Py_ext_module_origin origin;
     const struct hook_prefixes *hook_prefixes;
     /* for single-phase-init modules: true if we need to call
-     * _PyImport_SwapPackageContext, false for core modules
+     * _PyImport_SwapPackageContext. False for core modules;
+     * ignored for multi-phase.
      */
     bool needs_swapcontext;
 };
 extern void _Py_ext_module_loader_info_clear(
     struct _Py_ext_module_loader_info *info);
 extern int _Py_ext_module_loader_info_init(
-    struct _Py_ext_module_loader_info *info,
-    PyObject *name,
-    PyObject *filename,
-    _Py_ext_module_origin origin);
-extern int _Py_ext_module_loader_info_init_for_builtin(
     struct _Py_ext_module_loader_info *p_info,
-    PyObject *name);
-#ifdef HAVE_DYNAMIC_LOADING
-extern int _Py_ext_module_loader_info_init_from_spec(
-    struct _Py_ext_module_loader_info *info,
-    PyObject *spec);
-#endif
+    PyObject *name,
+    PyObject *spec,
+    _Py_ext_module_origin origin);
 
 /* The result from running an extension module's init function.
  * Not used for modules defined via PyModExport (slots array).
