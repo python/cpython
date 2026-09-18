@@ -1,7 +1,7 @@
 "Test undo, coverage 77%."
 # Only test UndoDelegator so far.
 
-from idlelib.undo import UndoDelegator
+from idlelib.undo import InsertCommand, UndoDelegator
 import unittest
 from test.support import requires
 requires('gui')
@@ -129,6 +129,27 @@ class UndoDelegatorTest(unittest.TestCase):
         for i in range(max_undo + 10):
             text.insert('insert', 'foo')
             self.assertLessEqual(len(self.delegator.undolist), max_undo)
+
+
+class InsertCommandTest(unittest.TestCase):
+    "Test how InsertCommand classifies characters for merging insertions."
+
+    def test_classify(self):
+        classify = InsertCommand('1.0', 'x').classify
+        # ASCII identifier characters are alphanumeric.
+        for c in 'aZ5_':
+            with self.subTest(c=c):
+                self.assertEqual(classify(c), 'alphanumeric')
+        # gh-89855: so are non-ASCII identifier characters.
+        for c in 'éñü\N{CYRILLIC SMALL LETTER UKRAINIAN IE}\N{GREEK SMALL LETTER ALPHA}':
+            with self.subTest(c=c):
+                self.assertEqual(classify(c), 'alphanumeric')
+        self.assertEqual(classify('\n'), 'newline')
+        # Everything else, including non-ASCII non-identifier characters,
+        # is punctuation.
+        for c in ' +.²':
+            with self.subTest(c=c):
+                self.assertEqual(classify(c), 'punctuation')
 
 
 if __name__ == '__main__':
