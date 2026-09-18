@@ -140,8 +140,6 @@ jobs:
       - name: Check for unsupported C global variables
         if: github.event_name == 'pull_request'  # $GITHUB_EVENT_NAME
         run: make check-c-globals
-      - name: Check C API macros
-        run: make check-capi-macros
 
   check-c-api-docs:
     name: C API Docs

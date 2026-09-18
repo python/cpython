@@ -3367,11 +3367,6 @@ distclean: clobber docclean
 smelly: all
 	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/build/smelly.py
 
-# Check that macros defined by the Python C API start with "Py"
-.PHONY: check-capi-macros
-check-capi-macros: all
-	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/build/check_capi_macros.py
-
 # Check if any unsupported C global variables have been added.
 .PHONY: check-c-globals
 check-c-globals:

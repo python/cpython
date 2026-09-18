@@ -143,6 +143,15 @@ repos:
         entry: Space found in path, move to Misc/NEWS.d/next/Core_and_Builtins/
         files: Misc/NEWS.d/next/Core and Builtins/20.*.rst
 
+  - repo: local
+    hooks:
+      - id: check-capi-macros
+        name: Check C API macros start with Py
+        language: python
+        entry: python Tools/build/check_capi_macros.py
+        pass_filenames: false
+        files: ^(Include/(cpython/)?[^/]+\.h|pyconfig\.h\.in|Tools/build/check_capi_macros)
+
   - repo: meta
     hooks:
       - id: check-hooks-apply
