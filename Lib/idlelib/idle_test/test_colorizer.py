@@ -569,6 +569,18 @@ class ColorDelegatorTest(unittest.TestCase):
             e"""
             ''')
         self._assert_highlighting(source, {'STRING': [('1.0', '5.4')]})
+        source = '"""a\nb""" + str\n'
+        self._assert_highlighting(source, {'STRING': [('1.0', '2.4')],
+                                           'BUILTIN': [('2.7', '2.10')]})
+
+    def test_long_line(self):
+        # gh-103089: only the first MAX_COLORIZED_LINE characters of a line
+        # are colorized.
+        n = colorizer.MAX_COLORIZED_LINE
+        source = f"pass\n{'x' * (n - 3)}'a', 'b'\n'c'\n"
+        self._assert_highlighting(source, {'KEYWORD': [('1.0', '1.4')],
+                                           'STRING': [(f'2.{n-3}', f'2.{n}'),
+                                                      ('3.0', '3.3')]})
 
     @run_in_tk_mainloop(delay=50)
     def test_incremental_editing(self):
