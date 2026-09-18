@@ -457,28 +457,7 @@ class Win32JunctionTests(unittest.TestCase):
 class Win32NtTests(unittest.TestCase):
     def test_getfinalpathname_handles(self):
         nt = import_helper.import_module('nt')
-        ctypes = import_helper.import_module('ctypes')
-        # Ruff false positive -- it thinks we're redefining `ctypes` here
-        import ctypes.wintypes  # noqa: F811
-
-        kernel = ctypes.WinDLL('Kernel32.dll', use_last_error=True)
-        @ctypes.util.wrap_dll_function(kernel)
-        def GetCurrentProcess() -> ctypes.wintypes.HANDLE:
-            pass
-
-        @ctypes.util.wrap_dll_function(kernel)
-        def GetProcessHandleCount(khProcess: ctypes.wintypes.HANDLE,
-                                  pdwHandleCount: ctypes.wintypes.LPDWORD) -> ctypes.wintypes.BOOL:
-            pass
-
-        # This is a pseudo-handle that doesn't need to be closed
-        hproc = GetCurrentProcess()
-
-        handle_count = ctypes.wintypes.DWORD()
-        ok = GetProcessHandleCount(hproc, ctypes.byref(handle_count))
-        self.assertEqual(1, ok)
-
-        before_count = handle_count.value
+        before_count = os_helper.handle_count()
 
         # The first two test the error path, __file__ tests the success path
         filenames = [
@@ -500,11 +479,7 @@ class Win32NtTests(unittest.TestCase):
                 except Exception:
                     pass
 
-        ok = kernel.GetProcessHandleCount(hproc, ctypes.byref(handle_count))
-        self.assertEqual(1, ok)
-
-        handle_delta = handle_count.value - before_count
-
+        handle_delta = os_helper.handle_count() - before_count
         self.assertEqual(0, handle_delta)
 
     @support.requires_subprocess()
@@ -644,6 +619,44 @@ class Win32DeviceEncodingTests(unittest.TestCase):
                 os.dup2(saved, 1)
                 os.close(saved)
             self.assertIsNone(encoding)
+
+
+class Win32StatExecutableTests(unittest.TestCase):
+    # gh-84419: Windows strips trailing dots and spaces from the last
+    # component of the path, so they should be ignored when guessing
+    # the execute permissions from the file extension.
+
+    SUFFIXES = ['', ' ', '   ', '.', '..', ' . .']
+
+    def check(self, ext, mask):
+        filename = os_helper.TESTFN + ext
+        create_file(filename)
+        try:
+            for suffix in self.SUFFIXES:
+                with self.subTest(suffix=suffix):
+                    mode = os.stat(filename + suffix).st_mode
+                    self.assertEqual(mode & 0o111, mask)
+        finally:
+            os_helper.unlink(filename)
+
+    def test_executable_extension(self):
+        for ext in '.exe', '.bat', '.cmd', '.com', '.EXE', '.Bat':
+            with self.subTest(ext=ext):
+                self.check(ext, 0o111)
+
+    def test_not_executable_extension(self):
+        for ext in '.txt', '.py', '.exe.txt', '':
+            with self.subTest(ext=ext):
+                self.check(ext, 0)
+
+    def test_extended_path(self):
+        # The \\?\ prefix disables normalization: trailing spaces and dots
+        # are part of the file name.
+        filename = os.path.abspath(os_helper.TESTFN + '.exe')
+        create_file(filename)
+        self.addCleanup(os_helper.unlink, filename)
+        self.assertEqual(os.stat('\\\\?\\' + filename).st_mode & 0o111, 0o111)
+        self.assertRaises(OSError, os.stat, '\\\\?\\' + filename + ' ')
 
 
 if __name__ == "__main__":
