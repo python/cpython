@@ -38,5 +38,5 @@ PyAPI_FUNC(int) PyUnstable_InterpreterFrame_GetLine(struct _PyInterpreterFrame *
 
 /* Returns a new (strong) reference to the local variable at `index` in the
  * frame's localsplus array. */
-PyAPI_FUNC(PyObject *) PyUnstable_InterpreterFrame_GetLocal(
-    struct _PyInterpreterFrame *frame, Py_ssize_t index);
+PyAPI_FUNC(int) PyUnstable_InterpreterFrame_GetLocal(
+    struct _PyInterpreterFrame *frame, Py_ssize_t index, PyObject **result);

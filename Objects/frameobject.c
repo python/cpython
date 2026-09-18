@@ -2247,17 +2247,18 @@ frame_get_var(_PyInterpreterFrame *frame, PyCodeObject *co, int i,
 }
 
 
-PyObject *
+int
 PyUnstable_InterpreterFrame_GetLocal(_PyInterpreterFrame *frame,
-                                     Py_ssize_t index)
+                                     Py_ssize_t index, PyObject **result)
 {
     PyCodeObject *co = _PyFrame_GetCode(frame);
+    *result = NULL;
     if (index < 0 || index >= co->co_nlocalsplus) {
         PyErr_Format(
             PyExc_IndexError,
             "PyUnstable_InterpreterFrame_GetLocal: index %zd out of range [0, %d)",
             index, co->co_nlocalsplus);
-        return NULL;
+        return -1;
     }
 
     int offset = PyUnstable_Code_GetFirstFree(co);  // co_nlocalsplus - co_nfreevars
@@ -2265,11 +2266,15 @@ PyUnstable_InterpreterFrame_GetLocal(_PyInterpreterFrame *frame,
         // Local or cell variable. frame_get_var unboxes cells and copes with
         // not-yet-started frames and arguments not yet promoted by MAKE_CELL.
         if (_PyLocals_GetKind(co->co_localspluskinds, (int)index) & CO_FAST_HIDDEN) {
-            return NULL;
+            return 0;
         }
         PyObject *value = NULL;
         frame_get_var(frame, co, (int)index, &value);
-        return value;  // strong reference, or NULL if unset
+        if (value == NULL) {
+            return 0;
+        }
+        *result = value;  // strong reference
+        return 1;
     }
 
     // Free variable: read from the function closure rather than localsplus.
@@ -2278,9 +2283,14 @@ PyUnstable_InterpreterFrame_GetLocal(_PyInterpreterFrame *frame,
     {
         PyFunctionObject *func = _PyFrame_GetFunction(frame);
         PyObject *cell = PyTuple_GET_ITEM(func->func_closure, index - offset);
-        return PyCell_GetRef((PyCellObject *)cell);
+        PyObject *value = PyCell_GetRef((PyCellObject *)cell);
+        if (value == NULL) {
+            return 0;
+        }
+        *result = value;
+        return 1;
     }
-    return NULL;
+    return 0;
 }
 
 
