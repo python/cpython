@@ -125,7 +125,7 @@ class CAPI_TestCase(unittest.TestCase):
             with self.assertRaises(SystemError):
                 write_object_to_file(NULL, filename, version)
 
-            with self.assertRaisesRegex(ValueError, 'unmarshallable object'):
+            with self.assertRaisesRegex(ValueError, 'cannot marshal object objects'):
                 write_object_to_file(UNMARSHALLABLE, filename, version)
 
     def test_read_short_from_file(self):
@@ -225,7 +225,7 @@ class CAPI_TestCase(unittest.TestCase):
                     obj2 = marshal.loads(data)
                     self.check_object(obj2, obj)
 
-            with self.assertRaisesRegex(ValueError, 'unmarshallable object'):
+            with self.assertRaisesRegex(ValueError, 'cannot marshal object objects'):
                 writeobjecttostring(UNMARSHALLABLE, version)
 
             with self.assertRaises(SystemError):
