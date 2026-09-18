@@ -159,6 +159,25 @@ def _date_to_string(d, aware_datetime):
         d.hour, d.minute, d.second
     )
 
+def _dict_items(d, sort_keys, skipkeys):
+    """Return the (key, value) pairs of a dict, sorted if needed.
+
+    Sorting fails for keys of different types, so non-string keys are
+    removed or reported before sorting.
+    """
+    items = d.items()
+    if sort_keys:
+        if skipkeys:
+            items = [item for item in items if isinstance(item[0], str)]
+            items.sort()
+        else:
+            for key in d:
+                if not isinstance(key, str):
+                    raise TypeError("keys must be strings")
+            items = sorted(items)
+    return items
+
+
 def _escape(text):
     m = _controlCharPat.search(text)
     if m is not None:
@@ -388,11 +407,7 @@ class _PlistWriter(_DumbXMLWriter):
     def write_dict(self, d):
         if d:
             self.begin_element("dict")
-            if self._sort_keys:
-                items = sorted(d.items())
-            else:
-                items = d.items()
-
+            items = _dict_items(d, self._sort_keys, self._skipkeys)
             for key, value in items:
                 if not isinstance(key, str):
                     if self._skipkeys:
@@ -718,10 +733,7 @@ class _BinaryPlistWriter (object):
         if isinstance(value, (dict, frozendict)):
             keys = []
             values = []
-            items = value.items()
-            if self._sort_keys:
-                items = sorted(items)
-
+            items = _dict_items(value, self._sort_keys, self._skipkeys)
             for k, v in items:
                 if not isinstance(k, str):
                     if self._skipkeys:
@@ -839,11 +851,7 @@ class _BinaryPlistWriter (object):
         elif isinstance(value, (dict, frozendict)):
             keyRefs, valRefs = [], []
 
-            if self._sort_keys:
-                rootItems = sorted(value.items())
-            else:
-                rootItems = value.items()
-
+            rootItems = _dict_items(value, self._sort_keys, self._skipkeys)
             for k, v in rootItems:
                 if not isinstance(k, str):
                     if self._skipkeys:
