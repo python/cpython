@@ -1,0 +1,4 @@
+Fix :mod:`wsgiref.simple_server` blocking when a WSGI application reads past
+the request body from ``wsgi.input``. Reads are now limited to the number of
+bytes declared by the ``Content-Length`` header and an end-of-file condition
+is simulated once that limit is reached, as required by :pep:`3333`.
