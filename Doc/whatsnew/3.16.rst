@@ -559,6 +559,16 @@ sqlite3
   (Contributed by Jiseok CHOI in :gh:`150449`.)
 
 
+ssl
+---
+
+* :const:`ssl.OPENSSL_VERSION_INFO` is now a named tuple.
+  Added :const:`~ssl.OPENSSL_API_VERSION_INFO` which provides information
+  about the version of the OpenSSL library that was used for building
+  the module.
+  (Contributed by Serhiy Storchaka in :gh:`157513`.)
+
+
 symtable
 --------
 
