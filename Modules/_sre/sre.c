@@ -639,6 +639,7 @@ state_reset(SRE_STATE* state)
     state->lastindex = -1;
 
     state->repeat = NULL;
+    state->save_marks = 0;
 
     data_stack_dealloc(state);
 }
