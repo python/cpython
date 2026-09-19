@@ -1,0 +1,2 @@
+Fix segfault in t-string iterator deallocation when :c:func:`PyObject_GetIter`
+fails during construction, caused by ``Py_CLEAR`` on uninitialized pointers.
