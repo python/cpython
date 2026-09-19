@@ -1,4 +1,6 @@
 # HTML IDs excluded from the check-html-ids.py check.
+# Use "*" instead of an ID to exclude all IDs of a page, and
+# "(page missing)" to allow the page itself to be removed.
 
 # Remove from here in 3.16
 c-api/allocation.html: deprecated-aliases
@@ -84,4 +86,4 @@ reference/expressions.html: generator.send
 reference/expressions.html: generator.throw
 
 # Renamed to library/tkinter.dialogs.html
-library/dialog.html: (page missing)
+library/dialog.html: *
