@@ -355,9 +355,19 @@ _PyLexer_scan_string(struct tok_state *tok, struct token *token, int c)
 
             const ftstring_state *state = _PyLexer_CurrentFTString(tok);
             if (state != NULL) {
-                /* A matching quote belongs to the surrounding formatted
-                 * string, so the expression is missing its closing brace. */
+                /* A matching quote may have been intended to close the
+                 * surrounding formatted string instead of opening a string
+                 * inside a replacement field. */
                 if (state->quote == quote && state->quote_size == quote_size) {
+                    int level = state->paren_level + state->replacement_depth - 1;
+                    assert(level >= 0 && level < tok->level);
+                    assert(tok->parenstack[level] == '{');
+                    int lineno = tok->parenlinenostack[level];
+                    if (lineno != tok->lineno) {
+                        return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok,
+                            "%c-string: expecting '}' to close '{' on line %d",
+                            _PyLexer_StringPrefix(state->kind), lineno));
+                    }
                     return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok,
                         "%c-string: expecting '}'",
                         _PyLexer_StringPrefix(state->kind)));
