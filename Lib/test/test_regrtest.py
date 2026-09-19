@@ -1315,29 +1315,47 @@ class ArgsTestCase(BaseTestCase):
                                   forever=True)
 
     @support.requires_jit_disabled
-    def check_leak(self, code, what, *, run_workers=False):
-        test = self.create_test('huntrleaks', code=code)
+    def check_leak(self, code, what, *, run_workers=False,
+                   name='huntrleaks', deltas=(1, 1, 1)):
+        test = self.create_test(name, code=code)
 
+        leak = all(delta >= 1 for delta in deltas)
         filename = 'reflog.txt'
         self.addCleanup(os_helper.unlink, filename)
         cmd = ['--huntrleaks', '3:3:']
         if run_workers:
             cmd.append('-j1')
         cmd.append(test)
-        output = self.run_tests(*cmd,
-                                exitcode=EXITCODE_BAD_TEST,
-                                stderr=subprocess.STDOUT)
-        self.check_executed_tests(output, [test], failed=test, stats=1)
+        if leak:
+            exitcode = EXITCODE_BAD_TEST
+            kwargs = dict(failed=test)
+        else:
+            exitcode = 0
+            kwargs = {}
 
-        line = r'beginning 6 repetitions. .*\n123:456\n[.0-9X]{3} 111\n'
+        try:
+            os_helper.unlink(filename)
+        except FileNotFoundError:
+            pass
+        output = self.run_tests(*cmd,
+                                exitcode=exitcode,
+                                stderr=subprocess.STDOUT)
+        self.check_executed_tests(output, [test], stats=1, **kwargs)
+
+        digits = ''.join('1' if delta >= 1 else '.' for delta in deltas)
+        line = r'beginning 6 repetitions. .*\n123:456\n[.0-9X]{3} %s\n' % digits
         self.check_line(output, line)
 
-        line2 = '%s leaked [1, 1, 1] %s, sum=3\n' % (test, what)
-        self.assertIn(line2, output)
+        if leak:
+            line2 = f'{test} leaked {repr(list(deltas))} {what}, sum=3\n'
+            self.assertIn(line2, output)
 
-        with open(filename) as fp:
-            reflog = fp.read()
-            self.assertIn(line2, reflog)
+        if leak:
+            with open(filename) as fp:
+                reflog = fp.read()
+                self.assertIn(line2, reflog)
+        else:
+            self.assertFalse(os.path.exists(filename))
 
     @unittest.skipUnless(support.Py_DEBUG, 'need a debug build')
     def check_huntrleaks(self, *, run_workers: bool):
@@ -1413,6 +1431,60 @@ class ArgsTestCase(BaseTestCase):
                     # bug: never close the file descriptor
         """)
         self.check_leak(code, 'file descriptors')
+
+        # Ignore false positive: deltas [1, -1, 0]
+        code = textwrap.dedent("""
+            import os
+            import unittest
+
+            RUN = 0
+            FD = None
+
+            class FDLeakTest(unittest.TestCase):
+                def test_leak(self):
+                    global RUN, FD
+                    RUN += 1
+                    if RUN == 4:
+                        # Create a fd without closing it: leak! (delta=1)
+                        FD = os.open(__file__, os.O_RDONLY)
+                    elif RUN == 5:
+                        # Close fd created in previous run (delta=-1)
+                        os.close(FD)
+                    else:
+                        # Do nothing at the warmup (steps 1-3) and step 6 (delta=0)
+                        pass
+        """)
+        self.check_leak(code, 'file descriptors',
+                        name='no_fd_leak', deltas=(1, -1, 0))
+
+    @unittest.skipUnless(support.Py_DEBUG, 'need a debug build')
+    @unittest.skipUnless(support.MS_WINDOWS, 'test specific to Windows')
+    def test_huntrleaks_handle_leak(self):
+        # test --huntrleaks for Windows handle leak
+        code = textwrap.dedent("""
+            import unittest
+            import _winapi
+
+            handle = None
+
+            class HandleLeakTest(unittest.TestCase):
+                def test_leak(self):
+                    global handle
+                    if handle is None:
+                        handle = _winapi.CreateFile(
+                                        __file__, _winapi.GENERIC_READ,
+                                        0, _winapi.NULL,
+                                        _winapi.OPEN_EXISTING,
+                                        0, _winapi.NULL)
+                    else:
+                        hproc = _winapi.GetCurrentProcess()
+                        copy = _winapi.DuplicateHandle(
+                                    hproc, handle,
+                                    hproc, 0, False,
+                                    _winapi.DUPLICATE_SAME_ACCESS)
+                    # bug! the new handle is never closed
+        """)
+        self.check_leak(code, 'handles')
 
     def test_list_tests(self):
         # test --list-tests
