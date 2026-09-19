@@ -20,6 +20,7 @@ import shutil
 import stat
 import sys
 import subprocess
+import threading
 import time
 import types
 import tempfile
@@ -36,7 +37,7 @@ try:
 except ImportError:
     ThreadPoolExecutor = None
 
-from test.support import cpython_only, import_helper
+from test.support import cpython_only, import_helper, threading_helper
 from test.support import MISSING_C_DOCSTRINGS, ALWAYS_EQ
 from test.support import run_no_yield_async_fn, EqualToForwardRef
 from test.support.import_helper import DirsOnSysPath, ready_to_import
@@ -831,6 +832,576 @@ class TestRetrievingSourceCode(GetSourceBase):
         self.assertEqual(inspect.getmodule(str), sys.modules["builtins"])
         # Check filename override
         self.assertEqual(inspect.getmodule(None, modfile), mod)
+        self.assertEqual(
+            inspect.getmodule(inspect.currentframe(), modfile), mod)
+        # Check code, frame, and traceback objects
+        self.assertIs(inspect.getmodule(mod.eggs.__code__), mod)
+        self.assertIs(inspect.getmodule(inspect.currentframe()),
+                      sys.modules[__name__])
+        try:
+            1 / 0
+        except ZeroDivisionError as error:
+            self.assertIs(inspect.getmodule(error.__traceback__),
+                          sys.modules[__name__])
+
+    def test_getmodule_unregistered_exec_frame(self):
+        def exec_namespace(namespace, filename, expected):
+            exec(compile(textwrap.dedent("""
+                frame = inspect.currentframe()
+                try:
+                    1 / 0
+                except ZeroDivisionError as error:
+                    traceback = error.__traceback__
+            """), filename, "exec"), namespace)
+            self.assertIs(inspect.getmodule(namespace["frame"]), expected)
+            self.assertIs(
+                inspect.getmodule(namespace["frame"].f_code), expected)
+            self.assertIs(inspect.getmodule(namespace["traceback"]), expected)
+
+        with (unittest.mock.patch.object(inspect, "modulesbyfile", {}),
+              unittest.mock.patch.object(inspect, "_filesbymodname", {}),
+              unittest.mock.patch.object(
+                  inspect, "_modulesbyfile_cache", (None, {}, {}, ()))):
+            # Preserve filename-based resolution when the execution namespace
+            # does not identify the module that supplied the source.
+            exec_namespace({"inspect": inspect}, modfile, mod)
+            exec_namespace({"inspect": inspect, "__name__": []},
+                           modfile, mod)
+
+            module_name = f"{__name__}.not_registered"
+            for module in (None, object(), types.ModuleType(module_name)):
+                with self.subTest(module=module):
+                    sys.modules[module_name] = module
+                    try:
+                        exec_namespace({
+                            "inspect": inspect,
+                            "__name__": module_name,
+                        }, modfile, mod)
+                    finally:
+                        del sys.modules[module_name]
+
+            fileless_name = f"{__name__}.fileless"
+            fileless = types.ModuleType(fileless_name)
+            fileless.__file__ = None
+            sys.modules[fileless_name] = fileless
+            try:
+                # Namespace packages and other fileless modules must not
+                # prevent the filename fallback from scanning later entries.
+                exec_namespace({"inspect": inspect}, modfile, mod)
+            finally:
+                del sys.modules[fileless_name]
+
+            # A namespace and filename with no registered module still
+            # resolves to None after the filename fallback.
+            with temp_cwd() as cwd:
+                filename = os.path.join(cwd, "not_registered.py")
+                exec_namespace({"inspect": inspect}, filename, None)
+
+    def test_getmodule_skips_unchanged_module_rescan(self):
+        with temp_cwd() as cwd:
+            filename = os.path.join(cwd, "not_registered.py")
+            namespace = {"inspect": inspect}
+            exec(compile("frame = inspect.currentframe()", filename, "exec"),
+                 namespace)
+            frame = namespace["frame"]
+            module_name = f"{__name__}.late_registered"
+            marker_name = f"{__name__}.scan_marker"
+            marker = types.ModuleType(marker_name)
+            marker.__file__ = os.path.join(cwd, "scan_marker.py")
+            with open(marker.__file__, "w"):
+                pass
+            sys.modules[marker_name] = marker
+
+            original_ismodule = inspect.ismodule
+            scan_count = 0
+
+            def ismodule(object):
+                nonlocal scan_count
+                if object is marker:
+                    scan_count += 1
+                return original_ismodule(object)
+
+            try:
+                with (unittest.mock.patch.object(
+                          inspect, "modulesbyfile", {}),
+                      unittest.mock.patch.object(
+                          inspect, "_filesbymodname", {}),
+                      unittest.mock.patch.object(
+                          inspect, "ismodule", ismodule),
+                      unittest.mock.patch.object(
+                          inspect, "_modulesbyfile_cache", (None, {}, {}, ()))):
+                    self.assertIsNone(inspect.getmodule(frame))
+                    first_scan_count = scan_count
+                    self.assertGreater(first_scan_count, 0)
+                    self.assertIsNone(inspect.getmodule(frame))
+                    self.assertEqual(scan_count, first_scan_count)
+
+                    module = types.ModuleType(module_name)
+                    module.__file__ = filename
+                    sys.modules[module_name] = module
+                    self.assertIs(inspect.getmodule(frame.f_code), module)
+                    self.assertGreater(scan_count, first_scan_count)
+                    second_scan_count = scan_count
+
+                    # Replacement mappings cannot be watched, so every miss
+                    # scans even when the entries are unchanged.
+                    replacement = sys.modules.copy()
+                    unknown = os.path.join(cwd, "unknown.py")
+                    with unittest.mock.patch.object(
+                            sys, "modules", replacement):
+                        self.assertIsNone(
+                            inspect.getmodule(None, unknown))
+                        third_scan_count = scan_count
+                        self.assertGreater(
+                            third_scan_count, second_scan_count)
+                        self.assertIsNone(
+                            inspect.getmodule(None, unknown))
+                        self.assertGreater(scan_count, third_scan_count)
+            finally:
+                sys.modules.pop(module_name, None)
+                sys.modules.pop(marker_name, None)
+
+    def test_getmodule_rescans_replaced_module_with_same_name(self):
+        module_name = f"{__name__}.replaced"
+        with (temp_cwd() as cwd,
+              unittest.mock.patch.object(inspect, "modulesbyfile", {}),
+              unittest.mock.patch.object(inspect, "_filesbymodname", {}),
+              unittest.mock.patch.object(
+                  inspect, "_modulesbyfile_cache", (None, {}, {}, ()))):
+            old_module = types.ModuleType(module_name)
+            old_module.__file__ = os.path.join(cwd, "old.py")
+            new_module = types.ModuleType(module_name)
+            new_module.__file__ = os.path.join(cwd, "new.py")
+            unknown = os.path.join(cwd, "unknown.py")
+            sys.modules[module_name] = old_module
+            try:
+                self.assertIsNone(inspect.getmodule(None, unknown))
+                self.assertIs(
+                    inspect.getmodule(None, old_module.__file__), old_module)
+                del sys.modules[module_name]
+                sys.modules[module_name] = new_module
+                self.assertIsNone(
+                    inspect.getmodule(None, old_module.__file__))
+                self.assertIs(
+                    inspect.getmodule(None, new_module.__file__), new_module)
+            finally:
+                sys.modules.pop(module_name, None)
+
+    def test_getmodule_sys_modules_replaced_during_lookup(self):
+        module_name = f"{__name__}.registry_replaced_during_lookup"
+        with (temp_cwd() as cwd,
+              unittest.mock.patch.object(inspect, "modulesbyfile", {}),
+              unittest.mock.patch.object(inspect, "_filesbymodname", {}),
+              unittest.mock.patch.object(
+                  inspect, "_modulesbyfile_cache", (None, {}, {}, ()))):
+            old_registry = sys.modules
+            old_module = types.ModuleType(module_name)
+            old_module.__file__ = os.path.join(cwd, "old.py")
+            new_module = types.ModuleType(module_name)
+            new_module.__file__ = os.path.join(cwd, "new.py")
+            old_registry[module_name] = old_module
+            replacement = old_registry.copy()
+            replacement[module_name] = new_module
+            original_getabsfile = inspect.getabsfile
+            replace_registry = True
+
+            def getabsfile(object, _filename=None):
+                nonlocal replace_registry
+                if replace_registry:
+                    replace_registry = False
+                    sys.modules = replacement
+                return original_getabsfile(object, _filename)
+
+            try:
+                with unittest.mock.patch.object(
+                        inspect, "getabsfile", getabsfile):
+                    self.assertIs(
+                        inspect.getmodule(None, new_module.__file__),
+                        new_module)
+            finally:
+                sys.modules = old_registry
+                old_registry.pop(module_name, None)
+
+    def test_getmodule_rescans_changed_module_file(self):
+        module_name = f"{__name__}.changed_file"
+        with (temp_cwd() as cwd,
+              unittest.mock.patch.object(inspect, "modulesbyfile", {}),
+              unittest.mock.patch.object(inspect, "_filesbymodname", {}),
+              unittest.mock.patch.object(
+                  inspect, "_modulesbyfile_cache", (None, {}, {}, ()))):
+            module = types.ModuleType(module_name)
+            module.__file__ = os.path.join(cwd, "old.py")
+            new_file = os.path.join(cwd, "new.py")
+            renamed = module_name + ".renamed"
+            unknown = os.path.join(cwd, "unknown.py")
+            sys.modules[module_name] = module
+            try:
+                self.assertIsNone(inspect.getmodule(None, unknown))
+                self.assertIs(
+                    inspect.getmodule(None, module.__file__), module)
+                old_file = module.__file__
+                module.__file__ = new_file
+                self.assertIsNone(inspect.getmodule(None, old_file))
+                self.assertIs(inspect.getmodule(None, new_file), module)
+                module.__name__ = renamed
+                self.assertIsNone(inspect.getmodule(None, new_file))
+                sys.modules[renamed] = module
+                self.assertIs(inspect.getmodule(None, new_file), module)
+            finally:
+                sys.modules.pop(renamed, None)
+                sys.modules.pop(module_name, None)
+
+    def test_getmodule_retries_overlapping_scan(self):
+        marker_name = f"{__name__}.scan_marker"
+        module_name = f"{__name__}.added_during_scan"
+        with (temp_cwd() as cwd,
+              unittest.mock.patch.object(inspect, "modulesbyfile", {}),
+              unittest.mock.patch.object(inspect, "_filesbymodname", {}),
+              unittest.mock.patch.object(
+                  inspect, "_modulesbyfile_cache", (None, {}, {}, ()))):
+            marker = types.ModuleType(marker_name)
+            marker.__file__ = os.path.join(cwd, "marker.py")
+            module = types.ModuleType(module_name)
+            module.__file__ = os.path.join(cwd, "added.py")
+            sys.modules[marker_name] = marker
+            original_ismodule = inspect.ismodule
+            mutate = True
+
+            def ismodule(object):
+                nonlocal mutate
+                if object is marker and mutate:
+                    mutate = False
+                    sys.modules[module_name] = module
+                return original_ismodule(object)
+
+            try:
+                with unittest.mock.patch.object(
+                        inspect, "ismodule", ismodule):
+                    self.assertIs(
+                        inspect.getmodule(None, module.__file__), module)
+                    self.assertIsNotNone(inspect._modulesbyfile_cache[0])
+            finally:
+                sys.modules.pop(module_name, None)
+                sys.modules.pop(marker_name, None)
+
+    @threading_helper.requires_working_threading()
+    def test_getmodule_cache_publish_is_atomic(self):
+        module_name = f"{__name__}.concurrent_publish"
+        with (temp_cwd() as cwd,
+              unittest.mock.patch.object(inspect, "modulesbyfile", {}),
+              unittest.mock.patch.object(inspect, "_filesbymodname", {}),
+              unittest.mock.patch.object(
+                  inspect, "_modulesbyfile_cache", (None, {}, {}, ()))):
+            old_module = types.ModuleType(module_name)
+            old_module.__file__ = os.path.join(cwd, "old.py")
+            new_module = types.ModuleType(module_name)
+            new_module.__file__ = os.path.join(cwd, "new.py")
+            unknown = os.path.join(cwd, "unknown.py")
+            sys.modules[module_name] = old_module
+
+            original_publish = inspect._publish_module_cache
+            publish_ready = threading.Event()
+            release_publish = threading.Event()
+            errors = []
+
+            def publish(version, modules_by_file, files_by_module,
+                        volatile_modules):
+                if threading.current_thread().name == "inspect-old-cache":
+                    publish_ready.set()
+                    release_publish.wait()
+                original_publish(
+                    version, modules_by_file, files_by_module,
+                    volatile_modules)
+
+            def build_old_cache():
+                try:
+                    inspect.getmodule(None, unknown)
+                except BaseException as error:
+                    errors.append(error)
+
+            thread = threading.Thread(
+                target=build_old_cache, name="inspect-old-cache")
+            try:
+                with unittest.mock.patch.object(
+                        inspect, "_publish_module_cache", publish):
+                    thread.start()
+                    self.assertTrue(
+                        publish_ready.wait(support.SHORT_TIMEOUT))
+
+                    # Let a newer cache publish while the old publisher is
+                    # paused after validating its registry version.
+                    sys.modules[module_name] = new_module
+                    self.assertIsNone(inspect.getmodule(None, unknown))
+                    release_publish.set()
+                    thread.join(support.SHORT_TIMEOUT)
+
+                self.assertFalse(thread.is_alive())
+                if errors:
+                    raise errors[0]
+                # The delayed old snapshot may replace the newer one, but its
+                # version must travel with its maps so it is never accepted as
+                # current.
+                self.assertIsNone(
+                    inspect.getmodule(None, old_module.__file__))
+                self.assertIs(
+                    inspect.getmodule(None, new_module.__file__), new_module)
+            finally:
+                release_publish.set()
+                thread.join()
+                sys.modules.pop(module_name, None)
+
+    def test_getmodule_dynamic_module_class(self):
+        class DynamicFileModule(types.ModuleType):
+            @property
+            def __file__(self):
+                return self._origin
+
+            @property
+            def __name__(self):
+                return self._dynamic_name
+
+        module_name = f"{__name__}.dynamic_class"
+        with (temp_cwd() as cwd,
+              unittest.mock.patch.object(inspect, "modulesbyfile", {}),
+              unittest.mock.patch.object(inspect, "_filesbymodname", {}),
+              unittest.mock.patch.object(
+                  inspect, "_modulesbyfile_cache", (None, {}, {}, ()))):
+            module = types.ModuleType(module_name)
+            module.__file__ = os.path.join(cwd, "static.py")
+            module._origin = os.path.join(cwd, "dynamic.py")
+            module._dynamic_name = module_name
+            # Exercise a warmed getfile() call site before changing the
+            # module's class.  getmodule() must canonicalize the dynamic value
+            # it reads rather than re-reading stale module-dict metadata.
+            for _ in range(100):
+                inspect.getfile(module)
+            unknown = os.path.join(cwd, "unknown.py")
+            sys.modules[module_name] = module
+            try:
+                self.assertIsNone(inspect.getmodule(None, unknown))
+                self.assertIsNotNone(inspect._modulesbyfile_cache[0])
+
+                module.__class__ = DynamicFileModule
+                self.assertIs(
+                    inspect.getmodule(None, module._origin), module)
+                self.assertIsNotNone(inspect._modulesbyfile_cache[0])
+                self.assertTrue(inspect._modulesbyfile_cache[3])
+
+                module.inspect = inspect
+                frame_origin = os.path.join(cwd, ".", "dynamic.py")
+                exec(compile("frame = inspect.currentframe()",
+                             frame_origin, "exec"), module.__dict__)
+                self.assertIs(inspect.getmodule(module.frame), module)
+
+                module._origin = os.path.join(cwd, "changed.py")
+                self.assertIs(
+                    inspect.getmodule(None, module._origin), module)
+
+                renamed = module_name + ".renamed"
+                module._dynamic_name = renamed
+                self.assertIsNone(
+                    inspect.getmodule(None, module._origin))
+                sys.modules[renamed] = module
+                self.assertIs(
+                    inspect.getmodule(None, module._origin), module)
+            finally:
+                sys.modules.pop(module_name + ".renamed", None)
+                sys.modules.pop(module_name, None)
+
+    def test_getmodule_dynamic_module_getattr(self):
+        module_name = f"{__name__}.dynamic_getattr"
+        with (temp_cwd() as cwd,
+              unittest.mock.patch.object(inspect, "modulesbyfile", {}),
+              unittest.mock.patch.object(inspect, "_filesbymodname", {}),
+              unittest.mock.patch.object(
+                  inspect, "_modulesbyfile_cache", (None, {}, {}, ()))):
+            module = types.ModuleType(module_name)
+            module._origin = None
+            unknown = os.path.join(cwd, "unknown.py")
+            sys.modules[module_name] = module
+            try:
+                self.assertIsNone(inspect.getmodule(None, unknown))
+                self.assertIsNotNone(inspect._modulesbyfile_cache[0])
+
+                def __getattr__(name):
+                    if name == "__file__" and module._origin is not None:
+                        return module._origin
+                    raise AttributeError(name)
+
+                module.__getattr__ = __getattr__
+                self.assertIsNone(inspect.getmodule(None, unknown))
+                self.assertTrue(inspect._modulesbyfile_cache[3])
+
+                module._origin = os.path.join(cwd, "dynamic.py")
+                self.assertIs(
+                    inspect.getmodule(None, module._origin), module)
+                self.assertIsNotNone(inspect._modulesbyfile_cache[0])
+                self.assertTrue(inspect._modulesbyfile_cache[3])
+
+                module._origin = os.path.join(cwd, "changed.py")
+                self.assertIs(
+                    inspect.getmodule(None, module._origin), module)
+            finally:
+                sys.modules.pop(module_name, None)
+
+    def test_getmodule_dynamic_module_does_not_disable_cache(self):
+        class DynamicFileModule(types.ModuleType):
+            @property
+            def __file__(self):
+                return self._origin
+
+        module_name = f"{__name__}.dynamic_cached"
+        marker_name = f"{__name__}.dynamic_scan_marker"
+        with (temp_cwd() as cwd,
+              unittest.mock.patch.object(inspect, "modulesbyfile", {}),
+              unittest.mock.patch.object(inspect, "_filesbymodname", {}),
+              unittest.mock.patch.object(
+                  inspect, "_modulesbyfile_cache", (None, {}, {}, ()))):
+            module = DynamicFileModule(module_name)
+            module._origin = os.path.join(cwd, "dynamic.py")
+            marker = types.ModuleType(marker_name)
+            marker.__file__ = os.path.join(cwd, "marker.py")
+            unknown = os.path.join(cwd, "unknown.py")
+            original_ismodule = inspect.ismodule
+            scan_count = 0
+
+            def ismodule(object):
+                nonlocal scan_count
+                if object is marker:
+                    scan_count += 1
+                return original_ismodule(object)
+
+            sys.modules[module_name] = module
+            sys.modules[marker_name] = marker
+            try:
+                with unittest.mock.patch.object(
+                        inspect, "ismodule", ismodule):
+                    self.assertIs(
+                        inspect.getmodule(None, module._origin), module)
+                    first_scan_count = scan_count
+                    self.assertGreater(first_scan_count, 0)
+
+                    # Only the dynamic entry is revalidated; the stable
+                    # negative lookup does not rescan the whole registry.
+                    self.assertIsNone(inspect.getmodule(None, unknown))
+                    self.assertEqual(scan_count, first_scan_count)
+
+                    # An unwatchable change to the dynamic metadata is found
+                    # by that targeted validation and rebuilds the cache.
+                    module._origin = os.path.join(cwd, "changed.py")
+                    self.assertIs(
+                        inspect.getmodule(None, module._origin), module)
+                    self.assertGreater(scan_count, first_scan_count)
+            finally:
+                sys.modules.pop(marker_name, None)
+                sys.modules.pop(module_name, None)
+
+    def test_getmodule_preserves_legacy_cache_objects(self):
+        with (temp_cwd() as cwd,
+              unittest.mock.patch.object(inspect, "modulesbyfile", {}),
+              unittest.mock.patch.object(inspect, "_filesbymodname", {}),
+              unittest.mock.patch.object(
+                  inspect, "_modulesbyfile_cache", (None, {}, {}, ()))):
+            modulesbyfile = inspect.modulesbyfile
+            filesbymodname = inspect._filesbymodname
+            unknown = os.path.join(cwd, "unknown.py")
+            self.assertIsNone(inspect.getmodule(None, unknown))
+            self.assertIs(inspect.modulesbyfile, modulesbyfile)
+            self.assertIs(inspect._filesbymodname, filesbymodname)
+            self.assertTrue(all(
+                not isinstance(value, tuple)
+                for value in filesbymodname.values()
+            ))
+
+    def test_getmodule_version_does_not_retain_modules(self):
+        with temp_cwd() as cwd:
+            module_name = f"{__name__}.snapshot_module"
+            module = types.ModuleType(module_name)
+            module.__file__ = os.path.join(cwd, "snapshot_module.py")
+            with open(module.__file__, "w"):
+                pass
+            module_ref = weakref.ref(module)
+            modules = sys.modules.copy()
+            modules[module_name] = module
+
+            with (unittest.mock.patch.object(sys, "modules", modules),
+                  unittest.mock.patch.object(inspect, "modulesbyfile", {}),
+                  unittest.mock.patch.object(inspect, "_filesbymodname", {}),
+                  unittest.mock.patch.object(
+                      inspect, "_modulesbyfile_cache", (None, {}, {}, ()))):
+                self.assertIs(inspect.getmodule(None, module.__file__), module)
+                del modules[module_name]
+                del module
+                support.gc_collect()
+                self.assertIsNone(module_ref())
+
+    def test_getmodule_registered_exec_frame(self):
+        def exec_module(module, filename):
+            module.inspect = inspect
+            exec(compile(textwrap.dedent("""
+                frame = inspect.currentframe()
+                try:
+                    1 / 0
+                except ZeroDivisionError as error:
+                    traceback = error.__traceback__
+            """), filename, "exec"), module.__dict__)
+
+        module_name = f"{__name__}.registered"
+        module = types.ModuleType(module_name)
+        sys.modules[module_name] = module
+        try:
+            with temp_cwd() as cwd:
+                filename = os.path.join(cwd, "registered.py")
+                with open(filename, "w"):
+                    pass
+                module.__file__ = filename
+
+                exec_module(module, filename)
+                self.assertIs(inspect.getmodule(module.frame), module)
+                self.assertIs(inspect.getmodule(module.traceback), module)
+
+                # The execution namespace identifies the owner even if a
+                # later registry entry happens to use the same filename.
+                collision_name = f"{module_name}.collision"
+                collision = types.ModuleType(collision_name)
+                collision.__file__ = filename
+                sys.modules[collision_name] = collision
+                try:
+                    exec_module(module, filename)
+                    self.assertIs(inspect.getmodule(module.frame), module)
+                finally:
+                    del sys.modules[collision_name]
+
+                # Globals identity is insufficient when the code came from a
+                # different origin than the registered module.
+                exec_module(module, filename + ".other")
+                self.assertIsNone(inspect.getmodule(module.frame))
+                self.assertIsNone(inspect.getmodule(module.traceback))
+
+                # If another module supplied the source, fall back to the
+                # filename-based lookup instead of trusting frame globals.
+                source_name = f"{module_name}.source"
+                source_module = types.ModuleType(source_name)
+                source_module.__file__ = filename + ".source"
+                with open(source_module.__file__, "w"):
+                    pass
+                sys.modules[source_name] = source_module
+                try:
+                    exec_module(module, source_module.__file__)
+                    self.assertIs(inspect.getmodule(module.frame),
+                                  source_module)
+                    self.assertIs(inspect.getmodule(module.traceback),
+                                  source_module)
+                finally:
+                    del sys.modules[source_name]
+
+                # Preserve the existing result for fileless modules.
+                del module.__file__
+                exec_module(module, "<fileless>")
+                self.assertIsNone(inspect.getmodule(module.frame))
+                self.assertIsNone(inspect.getmodule(module.traceback))
+        finally:
+            del sys.modules[module_name]
 
     def test_getmodule_file_not_found(self):
         # See bpo-45406
