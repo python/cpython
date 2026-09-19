@@ -4809,7 +4809,7 @@ printf "%s\n" "#define _XOPEN_SOURCE_EXTENDED 1" >>confdefs.h
 
 
 
-printf "%s\n" "#define _POSIX_C_SOURCE 202405L" >>confdefs.h
+printf "%s\n" "#define _PYTHON_POSIX_C_SOURCE 1" >>confdefs.h
 
 
   # Defining _POSIX_C_SOURCE and _XOPEN_SOURCE hides C23 library
