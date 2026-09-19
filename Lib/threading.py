@@ -61,13 +61,11 @@ except AttributeError:
 TIMEOUT_MAX = _thread.TIMEOUT_MAX
 del _thread
 
-# get thread-local implementation, either from the thread
-# module, or from the python fallback
-
-try:
-    from _thread import _local as local
-except ImportError:
-    from _threading_local import local
+# get thread-local implementation from the thread module
+# (fallback to _threading_local is obsolete since Python 3.7 - thread support
+# is always available, and _thread._local always exists; keeping the fallback
+# would reintroduce the circular import with _threading_local)
+from _thread import _local as local
 
 # Support for profile and trace hooks
 
