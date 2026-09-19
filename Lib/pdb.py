@@ -2317,8 +2317,6 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.remove_skip(sys.stdlib_modules)
         self.remove_skip((f"{x}.*" for x in sys.stdlib_modules))
 
-    complete_enable = _complete_bpnumber
-
     def _getval(self, arg):
         try:
             return eval(arg, self.curframe.f_globals, self.curframe.f_locals)
