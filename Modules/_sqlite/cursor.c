@@ -1374,17 +1374,14 @@ _sqlite3_Cursor_arraysize_get_impl(pysqlite_Cursor *self)
 /*[clinic input]
 @setter
 _sqlite3.Cursor.arraysize
+    value: uint32
 [clinic start generated code]*/
 
 static int
-_sqlite3_Cursor_arraysize_set_impl(pysqlite_Cursor *self, PyObject *value)
-/*[clinic end generated code: output=af59a6b09f8cce6e input=ace48cb114e26060]*/
+_sqlite3_Cursor_arraysize_set_impl(pysqlite_Cursor *self, uint32_t value)
+/*[clinic end generated code: output=465c2db6df904802 input=80234ca4ec5cfb7c]*/
 {
-    uint32_t arraysize;
-    if (PyLong_AsUInt32(value, &arraysize) < 0) {
-        return -1;
-    }
-    self->arraysize = arraysize;
+    self->arraysize = value;
     return 0;
 }
 
