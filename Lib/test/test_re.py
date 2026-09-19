@@ -929,6 +929,12 @@ class ReTests(unittest.TestCase):
         self.assertTrue(re.fullmatch(r'\p{General_Category=Lu}+', 'ABC'))
         self.assertTrue(re.fullmatch(r'\p{ lu }+', 'ABC'))
         self.assertTrue(re.fullmatch(r'\p{LU}+', 'ABC'))
+        # All ASCII whitespace is ignored, not just spaces (UAX44-LM3;
+        # gh-156185).
+        for ws in " \t\n\r\f\v":
+            with self.subTest(ws=ws):
+                self.assertTrue(re.fullmatch(r'\p{L%su}+' % ws, 'ABC'))
+                self.assertTrue(re.fullmatch(r'\p{gc%s=L%su}+' % (ws, ws), 'ABC'))
         # An initial "is" prefix is ignored (UAX44-LM3), on the property name
         # and on a gc value; "is" alone is not a prefix (cf. lb=IS).
         self.assertTrue(re.fullmatch(r'\p{isLu}+', 'ABC'))
