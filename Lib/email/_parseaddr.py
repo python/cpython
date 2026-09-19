@@ -146,15 +146,15 @@ def _parsedate_tz(data):
         return None
     # Check for a yy specified in two-digit format, then convert it to the
     # appropriate four-digit format, according to the POSIX standard. RFC 822
-    # calls for a two-digit yy, but RFC 2822 (which obsoletes RFC 822) already
-    # mandated a 4-digit yy, and RFC 5322 (which obsoletes RFC 2822) continues
-    # this requirement. For more information, see the documentation for
-    # the time module.
-    if yy < 100:
-        # The year is between 1969 and 1999 (inclusive).
+    # calls for a two-digit yy, but RFC 2822 (which obsoletes RFC 822)
+    # mandated a 4-digit yyyy, and RFC 5322 (which obsoletes RFC 2822)
+    # continues this requirement.  Two digit years between 69 and 99 inclusive,
+    # and three digit years, are to be interpreted as 1900s dates, while those
+    # between 0 and 68 are to be treated as 2000s dates.
+    # (https://datatracker.ietf.org/doc/html/rfc5322#section-4.3)
+    if yy < 1000:
         if yy > 68:
             yy += 1900
-        # The year is between 2000 and 2068 (inclusive).
         else:
             yy += 2000
     tzoffset = None
