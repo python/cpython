@@ -1749,6 +1749,8 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(unicode_kind('bmp:\u20ac'), PyUnicode_2BYTE_KIND)
         self.assertEqual(unicode_kind('\U0010ffff'), PyUnicode_4BYTE_KIND)
 
+        # CRASHES unicode_kind(NULL)
+
     def test_max_char_value(self):
         """Test PyUnicode_MAX_CHAR_VALUE()"""
         max_char_value = _testcapi.unicode_max_char_value
@@ -1756,6 +1758,8 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(max_char_value('latin1:\xe9'), 0xff)
         self.assertEqual(max_char_value('bmp:\u20ac'), 0xffff)
         self.assertEqual(max_char_value('\U0010ffff'), 0x10_ffff)
+
+        # CRASHES max_char_value(NULL)
 
     def test_check_interned(self):
         """Test PyUnicode_CHECK_INTERNED() macro"""
@@ -1778,11 +1782,14 @@ class CAPITest(unittest.TestCase):
         # 'x' is a singleton: immortal static interned string
         self.assertEqual(check_interned('x'), SSTATE_INTERNED_IMMORTAL_STATIC)
 
+        # CRASHES check_interned(NULL)
+
     def test_is_ascii(self):
         """Test PyUnicode_IS_ASCII() macro"""
         is_ascii = _testcapi.unicode_is_ascii
         self.assertEqual(is_ascii('abc'), 1)
         self.assertEqual(is_ascii('\u20ac'), 0)
+        # CRASHES is_ascii(NULL)
 
     def test_is_compact(self):
         """Test PyUnicode_IS_COMPACT() macro"""
@@ -1795,6 +1802,8 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(is_compact(Str('abc')), 0)
         self.assertEqual(is_compact(Str('\u20ac')), 0)
 
+        # CRASHES is_compact(NULL)
+
     def test_is_compact_ascii(self):
         """Test PyUnicode_IS_COMPACT_ASCII() macro"""
         is_compact_ascii = _testcapi.unicode_is_compact_ascii
@@ -1805,6 +1814,8 @@ class CAPITest(unittest.TestCase):
         # str subclasses are not compact
         self.assertEqual(is_compact_ascii(Str('abc')), 0)
         self.assertEqual(is_compact_ascii(Str('\u20ac')), 0)
+
+        # CRASHES is_compact_ascii(NULL)
 
 
 class PyUnicodeWriterTest(unittest.TestCase):
