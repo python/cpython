@@ -399,6 +399,20 @@ class TestConsole(TestCase):
         thread.start()
         thread.join()  # this should not raise
 
+    def test_escape_timeout(self, _os_write):
+        console = UnixConsole(term="xterm")
+        console.prepare()
+        console.event_queue.push(b"\x1b")
+        self.assertTrue(console.event_queue.pending())
+        # Simulate the read timing out before any follow-up bytes arrive.
+        console.wait = Mock(return_value=False)
+        event = console.get_event()
+        self.assertIsNotNone(event)
+        self.assertEqual(event.evt, "key")
+        self.assertEqual(event.data, "\x1b")
+        self.assertEqual(event.raw, b"\x1b")
+        console.restore()
+
 
 @unittest.skipIf(sys.platform == "win32", "No Unix console on Windows")
 class TestUnixConsoleEIOHandling(TestCase):

@@ -1,3 +1,4 @@
+import os
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -166,6 +167,37 @@ class EventQueueTestBase:
 
         self.assertEqual(eq.get(), _event("key", "b"))
         self.assertEqual(eq.get(), _event("key", "a"))
+
+    def test_pending(self):
+        eq = base_eventqueue.BaseEventQueue("utf-8", {})
+        eq.compiled_keymap = eq.keymap = {b"\x1b": {b"[": "down"}}
+        self.assertFalse(eq.pending())
+        eq.push(b"\x1b")
+        self.assertTrue(eq.pending())
+        eq.push(b"[")
+        self.assertFalse(eq.pending())
+        self.assertEqual(eq.get().data, "down")
+
+    def test_flush(self):
+        eq = base_eventqueue.BaseEventQueue("utf-8", {})
+        eq.compiled_keymap = eq.keymap = {b"\x1b": {b"[": "down"}}
+        eq.push(b"\x1b")
+        self.assertTrue(eq.pending())
+        eq.flush()
+        self.assertFalse(eq.pending())
+        event = eq.get()
+        self.assertIsNotNone(event)
+        self.assertEqual(event.evt, "key")
+        self.assertEqual(event.data, "\x1b")
+        self.assertEqual(event.raw, b"\x1b")
+
+    def test_esc_timeout_override(self):
+        eq = base_eventqueue.BaseEventQueue("utf-8", {}, esc_timeout=0.3)
+        self.assertAlmostEqual(eq.esc_timeout, 0.3)
+
+        with patch.dict(os.environ, {"PYREPL_ESC_TIMEOUT": "0.25"}):
+            eq = base_eventqueue.BaseEventQueue("utf-8", {})
+        self.assertAlmostEqual(eq.esc_timeout, 0.25)
 
 
 class EmptyTermInfo(terminfo.TermInfo):
