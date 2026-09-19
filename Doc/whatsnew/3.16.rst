@@ -966,6 +966,12 @@ New deprecations
     open them one by one instead.
     (Contributed by Serhiy Storchaka in :gh:`152638`.)
 
+* :mod:`zlib`:
+
+  * :const:`zlib.ZLIB_RUNTIME_VERSION` is now :term:`soft deprecated`
+    in favor of :const:`zlib.zlib_version`.
+    (Contributed by Stan Ulbrych in :gh:`117404`.)
+
 .. Add deprecations above alphabetically, not here at the end.
 
 .. include:: ../deprecations/pending-removal-in-3.17.rst
