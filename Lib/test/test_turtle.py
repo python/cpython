@@ -510,7 +510,8 @@ class TestTurtleScreen(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as tmpdir:
             parent = os.path.join(tmpdir, "unknown_parent")
-            msg = f"The directory '{parent}' does not exist. Cannot save to it"
+            msg = ("The directory does not exist. Cannot save to it: "
+                   f"'{parent}'")
 
             with self.assertRaisesRegex(FileNotFoundError, re.escape(msg)):
                 turtle.TurtleScreen.save(screen, os.path.join(parent, "a.ps"))
@@ -524,8 +525,9 @@ class TestTurtleScreen(unittest.TestCase):
                 f.write("some text")
 
             msg = (
-                f"The file '{file_path}' already exists. To overwrite it use"
-                " the 'overwrite=True' argument of the save function."
+                "The file already exists. To overwrite it use"
+                " the 'overwrite=True' argument of the save function: "
+                f"'{file_path}'"
             )
             with self.assertRaisesRegex(FileExistsError, re.escape(msg)):
                 turtle.TurtleScreen.save(screen, file_path)
