@@ -14915,7 +14915,7 @@ fi
 printf "%s\n" "$ac_cv_have_iconv" >&6; }
   if test "$ac_cv_have_iconv" != no; then
 
-printf "%s\n" "#define HAVE_ICONV 1" >>confdefs.h
+printf "%s\n" "#define _Py_HAVE_ICONV 1" >>confdefs.h
 
     if test "$ac_cv_have_iconv" = -liconv; then
       LIBS="-liconv $LIBS"

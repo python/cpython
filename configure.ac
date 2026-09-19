@@ -3989,7 +3989,7 @@ if test "$py_have_iconv" = yes; then
     ])
   ])
   if test "$ac_cv_have_iconv" != no; then
-    AC_DEFINE([HAVE_ICONV], [1],
+    AC_DEFINE([_Py_HAVE_ICONV], [1],
               [Define if you have a working iconv() function.])
     if test "$ac_cv_have_iconv" = -liconv; then
       LIBS="-liconv $LIBS"
