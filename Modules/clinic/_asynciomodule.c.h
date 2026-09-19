@@ -90,7 +90,8 @@ PyDoc_STRVAR(_asyncio_Future_result__doc__,
 "\n"
 "If the future has been cancelled, raises CancelledError.  If the\n"
 "future\'s result isn\'t yet available, raises InvalidStateError.  If\n"
-"the future is done and has an exception set, this exception is raised.");
+"the future is done and has an exception set, this exception is\n"
+"raised.");
 
 #define _ASYNCIO_FUTURE_RESULT_METHODDEF    \
     {"result", (PyCFunction)_asyncio_Future_result, METH_NOARGS, _asyncio_Future_result__doc__},
@@ -250,8 +251,8 @@ PyDoc_STRVAR(_asyncio_Future_add_done_callback__doc__,
 "\n"
 "Add a callback to be run when the future becomes done.\n"
 "\n"
-"The callback is called with a single argument - the future object. If\n"
-"the future is already done when this is called, the callback is\n"
+"The callback is called with a single argument - the future object.\n"
+"If the future is already done when this is called, the callback is\n"
 "scheduled with call_soon.");
 
 #define _ASYNCIO_FUTURE_ADD_DONE_CALLBACK_METHODDEF    \
@@ -371,9 +372,9 @@ PyDoc_STRVAR(_asyncio_Future_cancel__doc__,
 "\n"
 "Cancel the future and schedule callbacks.\n"
 "\n"
-"If the future is already done or cancelled, return False.  Otherwise,\n"
-"change the future\'s state to cancelled, schedule the callbacks and\n"
-"return True.");
+"If the future is already done or cancelled, return False.\n"
+"Otherwise, change the future\'s state to cancelled, schedule the\n"
+"callbacks and return True.");
 
 #define _ASYNCIO_FUTURE_CANCEL_METHODDEF    \
     {"cancel", _PyCFunction_CAST(_asyncio_Future_cancel), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _asyncio_Future_cancel__doc__},
@@ -465,8 +466,8 @@ PyDoc_STRVAR(_asyncio_Future_done__doc__,
 "\n"
 "Return True if the future is done.\n"
 "\n"
-"Done means either that a result / exception are available, or that the\n"
-"future was cancelled.");
+"Done means either that a result / exception are available, or that\n"
+"the future was cancelled.");
 
 #define _ASYNCIO_FUTURE_DONE_METHODDEF    \
     {"done", (PyCFunction)_asyncio_Future_done, METH_NOARGS, _asyncio_Future_done__doc__},
@@ -515,16 +516,6 @@ exit:
     return return_value;
 }
 
-#if !defined(_asyncio_Future__asyncio_awaited_by_DOCSTR)
-#  define _asyncio_Future__asyncio_awaited_by_DOCSTR NULL
-#endif
-#if defined(_ASYNCIO_FUTURE__ASYNCIO_AWAITED_BY_GETSETDEF)
-#  undef _ASYNCIO_FUTURE__ASYNCIO_AWAITED_BY_GETSETDEF
-#  define _ASYNCIO_FUTURE__ASYNCIO_AWAITED_BY_GETSETDEF {"_asyncio_awaited_by", (getter)_asyncio_Future__asyncio_awaited_by_get, (setter)_asyncio_Future__asyncio_awaited_by_set, _asyncio_Future__asyncio_awaited_by_DOCSTR},
-#else
-#  define _ASYNCIO_FUTURE__ASYNCIO_AWAITED_BY_GETSETDEF {"_asyncio_awaited_by", (getter)_asyncio_Future__asyncio_awaited_by_get, NULL, _asyncio_Future__asyncio_awaited_by_DOCSTR},
-#endif
-
 static PyObject *
 _asyncio_Future__asyncio_awaited_by_get_impl(FutureObj *self);
 
@@ -540,116 +531,101 @@ _asyncio_Future__asyncio_awaited_by_get(PyObject *self, void *Py_UNUSED(context)
     return return_value;
 }
 
-#if !defined(_asyncio_Future__asyncio_future_blocking_DOCSTR)
-#  define _asyncio_Future__asyncio_future_blocking_DOCSTR NULL
-#endif
-#if defined(_ASYNCIO_FUTURE__ASYNCIO_FUTURE_BLOCKING_GETSETDEF)
-#  undef _ASYNCIO_FUTURE__ASYNCIO_FUTURE_BLOCKING_GETSETDEF
-#  define _ASYNCIO_FUTURE__ASYNCIO_FUTURE_BLOCKING_GETSETDEF {"_asyncio_future_blocking", (getter)_asyncio_Future__asyncio_future_blocking_get, (setter)_asyncio_Future__asyncio_future_blocking_set, _asyncio_Future__asyncio_future_blocking_DOCSTR},
-#else
-#  define _ASYNCIO_FUTURE__ASYNCIO_FUTURE_BLOCKING_GETSETDEF {"_asyncio_future_blocking", (getter)_asyncio_Future__asyncio_future_blocking_get, NULL, _asyncio_Future__asyncio_future_blocking_DOCSTR},
-#endif
-
-static PyObject *
+static int
 _asyncio_Future__asyncio_future_blocking_get_impl(FutureObj *self);
 
 static PyObject *
 _asyncio_Future__asyncio_future_blocking_get(PyObject *self, void *Py_UNUSED(context))
 {
     PyObject *return_value = NULL;
+    int _return_value;
 
     Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = _asyncio_Future__asyncio_future_blocking_get_impl((FutureObj *)self);
+    _return_value = _asyncio_Future__asyncio_future_blocking_get_impl((FutureObj *)self);
     Py_END_CRITICAL_SECTION();
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
 
+exit:
     return return_value;
 }
 
-#if !defined(_asyncio_Future__asyncio_future_blocking_DOCSTR)
-#  define _asyncio_Future__asyncio_future_blocking_DOCSTR NULL
-#endif
-#if defined(_ASYNCIO_FUTURE__ASYNCIO_FUTURE_BLOCKING_GETSETDEF)
-#  undef _ASYNCIO_FUTURE__ASYNCIO_FUTURE_BLOCKING_GETSETDEF
-#  define _ASYNCIO_FUTURE__ASYNCIO_FUTURE_BLOCKING_GETSETDEF {"_asyncio_future_blocking", (getter)_asyncio_Future__asyncio_future_blocking_get, (setter)_asyncio_Future__asyncio_future_blocking_set, _asyncio_Future__asyncio_future_blocking_DOCSTR},
-#else
-#  define _ASYNCIO_FUTURE__ASYNCIO_FUTURE_BLOCKING_GETSETDEF {"_asyncio_future_blocking", NULL, (setter)_asyncio_Future__asyncio_future_blocking_set, NULL},
-#endif
+static int
+_asyncio_Future__asyncio_future_blocking_set_impl(FutureObj *self, int value);
 
 static int
-_asyncio_Future__asyncio_future_blocking_set_impl(FutureObj *self,
-                                                  PyObject *value);
-
-static int
-_asyncio_Future__asyncio_future_blocking_set(PyObject *self, PyObject *value, void *Py_UNUSED(context))
+_asyncio_Future__asyncio_future_blocking_set(PyObject *self, PyObject *arg, void *Py_UNUSED(context))
 {
-    int return_value;
+    int return_value = -1;
+    int value;
 
+    if (arg == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                     "attribute '_asyncio_future_blocking' of '%.100s' objects cannot be deleted",
+                     Py_TYPE(self)->tp_name);
+        return -1;
+    }
+    value = PyObject_IsTrue(arg);
+    if (value < 0) {
+        goto exit;
+    }
     Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _asyncio_Future__asyncio_future_blocking_set_impl((FutureObj *)self, value);
     Py_END_CRITICAL_SECTION();
 
+exit:
     return return_value;
 }
 
-#if !defined(_asyncio_Future__log_traceback_DOCSTR)
-#  define _asyncio_Future__log_traceback_DOCSTR NULL
-#endif
-#if defined(_ASYNCIO_FUTURE__LOG_TRACEBACK_GETSETDEF)
-#  undef _ASYNCIO_FUTURE__LOG_TRACEBACK_GETSETDEF
-#  define _ASYNCIO_FUTURE__LOG_TRACEBACK_GETSETDEF {"_log_traceback", (getter)_asyncio_Future__log_traceback_get, (setter)_asyncio_Future__log_traceback_set, _asyncio_Future__log_traceback_DOCSTR},
-#else
-#  define _ASYNCIO_FUTURE__LOG_TRACEBACK_GETSETDEF {"_log_traceback", (getter)_asyncio_Future__log_traceback_get, NULL, _asyncio_Future__log_traceback_DOCSTR},
-#endif
-
-static PyObject *
+static int
 _asyncio_Future__log_traceback_get_impl(FutureObj *self);
 
 static PyObject *
 _asyncio_Future__log_traceback_get(PyObject *self, void *Py_UNUSED(context))
 {
     PyObject *return_value = NULL;
+    int _return_value;
 
     Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = _asyncio_Future__log_traceback_get_impl((FutureObj *)self);
+    _return_value = _asyncio_Future__log_traceback_get_impl((FutureObj *)self);
     Py_END_CRITICAL_SECTION();
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
 
+exit:
     return return_value;
 }
 
-#if !defined(_asyncio_Future__log_traceback_DOCSTR)
-#  define _asyncio_Future__log_traceback_DOCSTR NULL
-#endif
-#if defined(_ASYNCIO_FUTURE__LOG_TRACEBACK_GETSETDEF)
-#  undef _ASYNCIO_FUTURE__LOG_TRACEBACK_GETSETDEF
-#  define _ASYNCIO_FUTURE__LOG_TRACEBACK_GETSETDEF {"_log_traceback", (getter)_asyncio_Future__log_traceback_get, (setter)_asyncio_Future__log_traceback_set, _asyncio_Future__log_traceback_DOCSTR},
-#else
-#  define _ASYNCIO_FUTURE__LOG_TRACEBACK_GETSETDEF {"_log_traceback", NULL, (setter)_asyncio_Future__log_traceback_set, NULL},
-#endif
+static int
+_asyncio_Future__log_traceback_set_impl(FutureObj *self, int value);
 
 static int
-_asyncio_Future__log_traceback_set_impl(FutureObj *self, PyObject *value);
-
-static int
-_asyncio_Future__log_traceback_set(PyObject *self, PyObject *value, void *Py_UNUSED(context))
+_asyncio_Future__log_traceback_set(PyObject *self, PyObject *arg, void *Py_UNUSED(context))
 {
-    int return_value;
+    int return_value = -1;
+    int value;
 
+    if (arg == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                     "attribute '_log_traceback' of '%.100s' objects cannot be deleted",
+                     Py_TYPE(self)->tp_name);
+        return -1;
+    }
+    value = PyObject_IsTrue(arg);
+    if (value < 0) {
+        goto exit;
+    }
     Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _asyncio_Future__log_traceback_set_impl((FutureObj *)self, value);
     Py_END_CRITICAL_SECTION();
 
+exit:
     return return_value;
 }
-
-#if !defined(_asyncio_Future__loop_DOCSTR)
-#  define _asyncio_Future__loop_DOCSTR NULL
-#endif
-#if defined(_ASYNCIO_FUTURE__LOOP_GETSETDEF)
-#  undef _ASYNCIO_FUTURE__LOOP_GETSETDEF
-#  define _ASYNCIO_FUTURE__LOOP_GETSETDEF {"_loop", (getter)_asyncio_Future__loop_get, (setter)_asyncio_Future__loop_set, _asyncio_Future__loop_DOCSTR},
-#else
-#  define _ASYNCIO_FUTURE__LOOP_GETSETDEF {"_loop", (getter)_asyncio_Future__loop_get, NULL, _asyncio_Future__loop_DOCSTR},
-#endif
 
 static PyObject *
 _asyncio_Future__loop_get_impl(FutureObj *self);
@@ -666,16 +642,6 @@ _asyncio_Future__loop_get(PyObject *self, void *Py_UNUSED(context))
     return return_value;
 }
 
-#if !defined(_asyncio_Future__callbacks_DOCSTR)
-#  define _asyncio_Future__callbacks_DOCSTR NULL
-#endif
-#if defined(_ASYNCIO_FUTURE__CALLBACKS_GETSETDEF)
-#  undef _ASYNCIO_FUTURE__CALLBACKS_GETSETDEF
-#  define _ASYNCIO_FUTURE__CALLBACKS_GETSETDEF {"_callbacks", (getter)_asyncio_Future__callbacks_get, (setter)_asyncio_Future__callbacks_set, _asyncio_Future__callbacks_DOCSTR},
-#else
-#  define _ASYNCIO_FUTURE__CALLBACKS_GETSETDEF {"_callbacks", (getter)_asyncio_Future__callbacks_get, NULL, _asyncio_Future__callbacks_DOCSTR},
-#endif
-
 static PyObject *
 _asyncio_Future__callbacks_get_impl(FutureObj *self);
 
@@ -690,16 +656,6 @@ _asyncio_Future__callbacks_get(PyObject *self, void *Py_UNUSED(context))
 
     return return_value;
 }
-
-#if !defined(_asyncio_Future__result_DOCSTR)
-#  define _asyncio_Future__result_DOCSTR NULL
-#endif
-#if defined(_ASYNCIO_FUTURE__RESULT_GETSETDEF)
-#  undef _ASYNCIO_FUTURE__RESULT_GETSETDEF
-#  define _ASYNCIO_FUTURE__RESULT_GETSETDEF {"_result", (getter)_asyncio_Future__result_get, (setter)_asyncio_Future__result_set, _asyncio_Future__result_DOCSTR},
-#else
-#  define _ASYNCIO_FUTURE__RESULT_GETSETDEF {"_result", (getter)_asyncio_Future__result_get, NULL, _asyncio_Future__result_DOCSTR},
-#endif
 
 static PyObject *
 _asyncio_Future__result_get_impl(FutureObj *self);
@@ -716,16 +672,6 @@ _asyncio_Future__result_get(PyObject *self, void *Py_UNUSED(context))
     return return_value;
 }
 
-#if !defined(_asyncio_Future__exception_DOCSTR)
-#  define _asyncio_Future__exception_DOCSTR NULL
-#endif
-#if defined(_ASYNCIO_FUTURE__EXCEPTION_GETSETDEF)
-#  undef _ASYNCIO_FUTURE__EXCEPTION_GETSETDEF
-#  define _ASYNCIO_FUTURE__EXCEPTION_GETSETDEF {"_exception", (getter)_asyncio_Future__exception_get, (setter)_asyncio_Future__exception_set, _asyncio_Future__exception_DOCSTR},
-#else
-#  define _ASYNCIO_FUTURE__EXCEPTION_GETSETDEF {"_exception", (getter)_asyncio_Future__exception_get, NULL, _asyncio_Future__exception_DOCSTR},
-#endif
-
 static PyObject *
 _asyncio_Future__exception_get_impl(FutureObj *self);
 
@@ -740,16 +686,6 @@ _asyncio_Future__exception_get(PyObject *self, void *Py_UNUSED(context))
 
     return return_value;
 }
-
-#if !defined(_asyncio_Future__source_traceback_DOCSTR)
-#  define _asyncio_Future__source_traceback_DOCSTR NULL
-#endif
-#if defined(_ASYNCIO_FUTURE__SOURCE_TRACEBACK_GETSETDEF)
-#  undef _ASYNCIO_FUTURE__SOURCE_TRACEBACK_GETSETDEF
-#  define _ASYNCIO_FUTURE__SOURCE_TRACEBACK_GETSETDEF {"_source_traceback", (getter)_asyncio_Future__source_traceback_get, (setter)_asyncio_Future__source_traceback_set, _asyncio_Future__source_traceback_DOCSTR},
-#else
-#  define _ASYNCIO_FUTURE__SOURCE_TRACEBACK_GETSETDEF {"_source_traceback", (getter)_asyncio_Future__source_traceback_get, NULL, _asyncio_Future__source_traceback_DOCSTR},
-#endif
 
 static PyObject *
 _asyncio_Future__source_traceback_get_impl(FutureObj *self);
@@ -766,16 +702,6 @@ _asyncio_Future__source_traceback_get(PyObject *self, void *Py_UNUSED(context))
     return return_value;
 }
 
-#if !defined(_asyncio_Future__cancel_message_DOCSTR)
-#  define _asyncio_Future__cancel_message_DOCSTR NULL
-#endif
-#if defined(_ASYNCIO_FUTURE__CANCEL_MESSAGE_GETSETDEF)
-#  undef _ASYNCIO_FUTURE__CANCEL_MESSAGE_GETSETDEF
-#  define _ASYNCIO_FUTURE__CANCEL_MESSAGE_GETSETDEF {"_cancel_message", (getter)_asyncio_Future__cancel_message_get, (setter)_asyncio_Future__cancel_message_set, _asyncio_Future__cancel_message_DOCSTR},
-#else
-#  define _ASYNCIO_FUTURE__CANCEL_MESSAGE_GETSETDEF {"_cancel_message", (getter)_asyncio_Future__cancel_message_get, NULL, _asyncio_Future__cancel_message_DOCSTR},
-#endif
-
 static PyObject *
 _asyncio_Future__cancel_message_get_impl(FutureObj *self);
 
@@ -791,40 +717,28 @@ _asyncio_Future__cancel_message_get(PyObject *self, void *Py_UNUSED(context))
     return return_value;
 }
 
-#if !defined(_asyncio_Future__cancel_message_DOCSTR)
-#  define _asyncio_Future__cancel_message_DOCSTR NULL
-#endif
-#if defined(_ASYNCIO_FUTURE__CANCEL_MESSAGE_GETSETDEF)
-#  undef _ASYNCIO_FUTURE__CANCEL_MESSAGE_GETSETDEF
-#  define _ASYNCIO_FUTURE__CANCEL_MESSAGE_GETSETDEF {"_cancel_message", (getter)_asyncio_Future__cancel_message_get, (setter)_asyncio_Future__cancel_message_set, _asyncio_Future__cancel_message_DOCSTR},
-#else
-#  define _ASYNCIO_FUTURE__CANCEL_MESSAGE_GETSETDEF {"_cancel_message", NULL, (setter)_asyncio_Future__cancel_message_set, NULL},
-#endif
-
 static int
 _asyncio_Future__cancel_message_set_impl(FutureObj *self, PyObject *value);
 
 static int
-_asyncio_Future__cancel_message_set(PyObject *self, PyObject *value, void *Py_UNUSED(context))
+_asyncio_Future__cancel_message_set(PyObject *self, PyObject *arg, void *Py_UNUSED(context))
 {
-    int return_value;
+    int return_value = -1;
+    PyObject *value;
 
+    if (arg == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                     "attribute '_cancel_message' of '%.100s' objects cannot be deleted",
+                     Py_TYPE(self)->tp_name);
+        return -1;
+    }
+    value = arg;
     Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _asyncio_Future__cancel_message_set_impl((FutureObj *)self, value);
     Py_END_CRITICAL_SECTION();
 
     return return_value;
 }
-
-#if !defined(_asyncio_Future__state_DOCSTR)
-#  define _asyncio_Future__state_DOCSTR NULL
-#endif
-#if defined(_ASYNCIO_FUTURE__STATE_GETSETDEF)
-#  undef _ASYNCIO_FUTURE__STATE_GETSETDEF
-#  define _ASYNCIO_FUTURE__STATE_GETSETDEF {"_state", (getter)_asyncio_Future__state_get, (setter)_asyncio_Future__state_set, _asyncio_Future__state_DOCSTR},
-#else
-#  define _ASYNCIO_FUTURE__STATE_GETSETDEF {"_state", (getter)_asyncio_Future__state_get, NULL, _asyncio_Future__state_DOCSTR},
-#endif
 
 static PyObject *
 _asyncio_Future__state_get_impl(FutureObj *self);
@@ -958,65 +872,53 @@ exit:
     return return_value;
 }
 
-#if !defined(_asyncio_Task__log_destroy_pending_DOCSTR)
-#  define _asyncio_Task__log_destroy_pending_DOCSTR NULL
-#endif
-#if defined(_ASYNCIO_TASK__LOG_DESTROY_PENDING_GETSETDEF)
-#  undef _ASYNCIO_TASK__LOG_DESTROY_PENDING_GETSETDEF
-#  define _ASYNCIO_TASK__LOG_DESTROY_PENDING_GETSETDEF {"_log_destroy_pending", (getter)_asyncio_Task__log_destroy_pending_get, (setter)_asyncio_Task__log_destroy_pending_set, _asyncio_Task__log_destroy_pending_DOCSTR},
-#else
-#  define _ASYNCIO_TASK__LOG_DESTROY_PENDING_GETSETDEF {"_log_destroy_pending", (getter)_asyncio_Task__log_destroy_pending_get, NULL, _asyncio_Task__log_destroy_pending_DOCSTR},
-#endif
-
-static PyObject *
+static int
 _asyncio_Task__log_destroy_pending_get_impl(TaskObj *self);
 
 static PyObject *
 _asyncio_Task__log_destroy_pending_get(PyObject *self, void *Py_UNUSED(context))
 {
     PyObject *return_value = NULL;
+    int _return_value;
 
     Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = _asyncio_Task__log_destroy_pending_get_impl((TaskObj *)self);
+    _return_value = _asyncio_Task__log_destroy_pending_get_impl((TaskObj *)self);
     Py_END_CRITICAL_SECTION();
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
 
+exit:
     return return_value;
 }
 
-#if !defined(_asyncio_Task__log_destroy_pending_DOCSTR)
-#  define _asyncio_Task__log_destroy_pending_DOCSTR NULL
-#endif
-#if defined(_ASYNCIO_TASK__LOG_DESTROY_PENDING_GETSETDEF)
-#  undef _ASYNCIO_TASK__LOG_DESTROY_PENDING_GETSETDEF
-#  define _ASYNCIO_TASK__LOG_DESTROY_PENDING_GETSETDEF {"_log_destroy_pending", (getter)_asyncio_Task__log_destroy_pending_get, (setter)_asyncio_Task__log_destroy_pending_set, _asyncio_Task__log_destroy_pending_DOCSTR},
-#else
-#  define _ASYNCIO_TASK__LOG_DESTROY_PENDING_GETSETDEF {"_log_destroy_pending", NULL, (setter)_asyncio_Task__log_destroy_pending_set, NULL},
-#endif
+static int
+_asyncio_Task__log_destroy_pending_set_impl(TaskObj *self, int value);
 
 static int
-_asyncio_Task__log_destroy_pending_set_impl(TaskObj *self, PyObject *value);
-
-static int
-_asyncio_Task__log_destroy_pending_set(PyObject *self, PyObject *value, void *Py_UNUSED(context))
+_asyncio_Task__log_destroy_pending_set(PyObject *self, PyObject *arg, void *Py_UNUSED(context))
 {
-    int return_value;
+    int return_value = -1;
+    int value;
 
+    if (arg == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                     "attribute '_log_destroy_pending' of '%.100s' objects cannot be deleted",
+                     Py_TYPE(self)->tp_name);
+        return -1;
+    }
+    value = PyObject_IsTrue(arg);
+    if (value < 0) {
+        goto exit;
+    }
     Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _asyncio_Task__log_destroy_pending_set_impl((TaskObj *)self, value);
     Py_END_CRITICAL_SECTION();
 
+exit:
     return return_value;
 }
-
-#if !defined(_asyncio_Task__must_cancel_DOCSTR)
-#  define _asyncio_Task__must_cancel_DOCSTR NULL
-#endif
-#if defined(_ASYNCIO_TASK__MUST_CANCEL_GETSETDEF)
-#  undef _ASYNCIO_TASK__MUST_CANCEL_GETSETDEF
-#  define _ASYNCIO_TASK__MUST_CANCEL_GETSETDEF {"_must_cancel", (getter)_asyncio_Task__must_cancel_get, (setter)_asyncio_Task__must_cancel_set, _asyncio_Task__must_cancel_DOCSTR},
-#else
-#  define _ASYNCIO_TASK__MUST_CANCEL_GETSETDEF {"_must_cancel", (getter)_asyncio_Task__must_cancel_get, NULL, _asyncio_Task__must_cancel_DOCSTR},
-#endif
 
 static PyObject *
 _asyncio_Task__must_cancel_get_impl(TaskObj *self);
@@ -1033,16 +935,6 @@ _asyncio_Task__must_cancel_get(PyObject *self, void *Py_UNUSED(context))
     return return_value;
 }
 
-#if !defined(_asyncio_Task__coro_DOCSTR)
-#  define _asyncio_Task__coro_DOCSTR NULL
-#endif
-#if defined(_ASYNCIO_TASK__CORO_GETSETDEF)
-#  undef _ASYNCIO_TASK__CORO_GETSETDEF
-#  define _ASYNCIO_TASK__CORO_GETSETDEF {"_coro", (getter)_asyncio_Task__coro_get, (setter)_asyncio_Task__coro_set, _asyncio_Task__coro_DOCSTR},
-#else
-#  define _ASYNCIO_TASK__CORO_GETSETDEF {"_coro", (getter)_asyncio_Task__coro_get, NULL, _asyncio_Task__coro_DOCSTR},
-#endif
-
 static PyObject *
 _asyncio_Task__coro_get_impl(TaskObj *self);
 
@@ -1057,16 +949,6 @@ _asyncio_Task__coro_get(PyObject *self, void *Py_UNUSED(context))
 
     return return_value;
 }
-
-#if !defined(_asyncio_Task__fut_waiter_DOCSTR)
-#  define _asyncio_Task__fut_waiter_DOCSTR NULL
-#endif
-#if defined(_ASYNCIO_TASK__FUT_WAITER_GETSETDEF)
-#  undef _ASYNCIO_TASK__FUT_WAITER_GETSETDEF
-#  define _ASYNCIO_TASK__FUT_WAITER_GETSETDEF {"_fut_waiter", (getter)_asyncio_Task__fut_waiter_get, (setter)_asyncio_Task__fut_waiter_set, _asyncio_Task__fut_waiter_DOCSTR},
-#else
-#  define _ASYNCIO_TASK__FUT_WAITER_GETSETDEF {"_fut_waiter", (getter)_asyncio_Task__fut_waiter_get, NULL, _asyncio_Task__fut_waiter_DOCSTR},
-#endif
 
 static PyObject *
 _asyncio_Task__fut_waiter_get_impl(TaskObj *self);
@@ -1581,7 +1463,8 @@ PyDoc_STRVAR(_asyncio_get_event_loop__doc__,
 "running event loop.\n"
 "\n"
 "If there is no running event loop set, the function will return\n"
-"the result of `get_event_loop_policy().get_event_loop()` call.");
+"the loop set by `set_event_loop()`, or raise a RuntimeError if\n"
+"no loop has been set.");
 
 #define _ASYNCIO_GET_EVENT_LOOP_METHODDEF    \
     {"get_event_loop", (PyCFunction)_asyncio_get_event_loop, METH_NOARGS, _asyncio_get_event_loop__doc__},
@@ -2232,4 +2115,32 @@ _asyncio_future_discard_from_awaited_by(PyObject *module, PyObject *const *args,
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b69948ed810591d9 input=a9049054013a1b77]*/
+#define _ASYNCIO_FUTURE__ASYNCIO_AWAITED_BY_GETSETDEF {"_asyncio_awaited_by", (getter)_asyncio_Future__asyncio_awaited_by_get, (setter)NULL, NULL},
+
+#define _ASYNCIO_FUTURE__ASYNCIO_FUTURE_BLOCKING_GETSETDEF {"_asyncio_future_blocking", (getter)_asyncio_Future__asyncio_future_blocking_get, (setter)_asyncio_Future__asyncio_future_blocking_set, NULL},
+
+#define _ASYNCIO_FUTURE__LOG_TRACEBACK_GETSETDEF {"_log_traceback", (getter)_asyncio_Future__log_traceback_get, (setter)_asyncio_Future__log_traceback_set, NULL},
+
+#define _ASYNCIO_FUTURE__LOOP_GETSETDEF {"_loop", (getter)_asyncio_Future__loop_get, (setter)NULL, NULL},
+
+#define _ASYNCIO_FUTURE__CALLBACKS_GETSETDEF {"_callbacks", (getter)_asyncio_Future__callbacks_get, (setter)NULL, NULL},
+
+#define _ASYNCIO_FUTURE__RESULT_GETSETDEF {"_result", (getter)_asyncio_Future__result_get, (setter)NULL, NULL},
+
+#define _ASYNCIO_FUTURE__EXCEPTION_GETSETDEF {"_exception", (getter)_asyncio_Future__exception_get, (setter)NULL, NULL},
+
+#define _ASYNCIO_FUTURE__SOURCE_TRACEBACK_GETSETDEF {"_source_traceback", (getter)_asyncio_Future__source_traceback_get, (setter)NULL, NULL},
+
+#define _ASYNCIO_FUTURE__CANCEL_MESSAGE_GETSETDEF {"_cancel_message", (getter)_asyncio_Future__cancel_message_get, (setter)_asyncio_Future__cancel_message_set, NULL},
+
+#define _ASYNCIO_FUTURE__STATE_GETSETDEF {"_state", (getter)_asyncio_Future__state_get, (setter)NULL, NULL},
+
+#define _ASYNCIO_TASK__LOG_DESTROY_PENDING_GETSETDEF {"_log_destroy_pending", (getter)_asyncio_Task__log_destroy_pending_get, (setter)_asyncio_Task__log_destroy_pending_set, NULL},
+
+#define _ASYNCIO_TASK__MUST_CANCEL_GETSETDEF {"_must_cancel", (getter)_asyncio_Task__must_cancel_get, (setter)NULL, NULL},
+
+#define _ASYNCIO_TASK__CORO_GETSETDEF {"_coro", (getter)_asyncio_Task__coro_get, (setter)NULL, NULL},
+
+#define _ASYNCIO_TASK__FUT_WAITER_GETSETDEF {"_fut_waiter", (getter)_asyncio_Task__fut_waiter_get, (setter)NULL, NULL},
+
+/*[clinic end generated code: output=f56ee5ac44909b27 input=a9049054013a1b77]*/

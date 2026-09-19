@@ -274,7 +274,7 @@ def request_host(request):
 
     """
     url = request.full_url
-    host = urlparse(url)[1]
+    host = urlparse(url).netloc
     if host == "":
         host = request.get_header("Host", "")
 
@@ -415,6 +415,8 @@ class OpenerDirector:
                 continue
 
             i = meth.find("_")
+            if i < 1:
+                continue
             protocol = meth[:i]
             condition = meth[i+1:]
 
@@ -813,16 +815,17 @@ class HTTPPasswordMgr:
             self.passwd[realm] = {}
         for default_port in True, False:
             reduced_uri = tuple(
-                self.reduce_uri(u, default_port) for u in uri)
+                self._reduce_uri_with_scheme(u, default_port) for u in uri)
             self.passwd[realm][reduced_uri] = (user, passwd)
 
     def find_user_password(self, realm, authuri):
         domains = self.passwd.get(realm, {})
         for default_port in True, False:
-            reduced_authuri = self.reduce_uri(authuri, default_port)
+            reduced_authuri = self._reduce_uri_with_scheme(
+                authuri, default_port)
             for uris, authinfo in domains.items():
                 for uri in uris:
-                    if self.is_suburi(uri, reduced_authuri):
+                    if self._is_suburi_with_scheme(uri, reduced_authuri):
                         return authinfo
         return None, None
 
@@ -830,11 +833,11 @@ class HTTPPasswordMgr:
         """Accept authority or URI and extract only the authority and path."""
         # note HTTP URLs do not have a userinfo component
         parts = urlsplit(uri)
-        if parts[1]:
+        if parts.netloc:
             # URI
-            scheme = parts[0]
-            authority = parts[1]
-            path = parts[2] or '/'
+            scheme = parts.scheme
+            authority = parts.netloc
+            path = parts.path or '/'
         else:
             # host or host:port
             scheme = None
@@ -848,6 +851,17 @@ class HTTPPasswordMgr:
             if dport is not None:
                 authority = "%s:%d" % (host, dport)
         return authority, path
+
+    def _reduce_uri_with_scheme(self, uri, default_port=True):
+        parts = urlsplit(uri)
+        scheme = parts[0] if parts[1] else None
+        return (scheme or None, *self.reduce_uri(uri, default_port))
+
+    def _is_suburi_with_scheme(self, base, test):
+        if (base[0] is not None and test[0] is not None and
+                base[0] != test[0]):
+            return False
+        return self.is_suburi(base[1:], test[1:])
 
     def is_suburi(self, base, test):
         """Check if test is below base in a URI tree
@@ -894,14 +908,15 @@ class HTTPPasswordMgrWithPriorAuth(HTTPPasswordMgrWithDefaultRealm):
 
         for default_port in True, False:
             for u in uri:
-                reduced_uri = self.reduce_uri(u, default_port)
+                reduced_uri = self._reduce_uri_with_scheme(u, default_port)
                 self.authenticated[reduced_uri] = is_authenticated
 
     def is_authenticated(self, authuri):
         for default_port in True, False:
-            reduced_authuri = self.reduce_uri(authuri, default_port)
+            reduced_authuri = self._reduce_uri_with_scheme(
+                authuri, default_port)
             for uri in self.authenticated:
-                if self.is_suburi(uri, reduced_authuri):
+                if self._is_suburi_with_scheme(uri, reduced_authuri):
                     return self.authenticated[uri]
 
 
@@ -1207,7 +1222,7 @@ class HTTPDigestAuthHandler(BaseHandler, AbstractDigestAuthHandler):
     handler_order = 490  # before Basic auth
 
     def http_error_401(self, req, fp, code, msg, headers):
-        host = urlparse(req.full_url)[1]
+        host = urlparse(req.full_url).netloc
         retry = self.http_error_auth_reqed('www-authenticate',
                                            host, req, headers)
         self.reset_retry_count()
@@ -1291,8 +1306,7 @@ class AbstractHTTPHandler(BaseHandler):
         h.set_debuglevel(self._debuglevel)
 
         headers = dict(req.unredirected_hdrs)
-        headers.update({k: v for k, v in req.headers.items()
-                        if k not in headers})
+        headers.update(req.headers)
 
         # TODO(jhylton): Should this be redesigned to handle
         # persistent connections?
@@ -1535,6 +1549,7 @@ class FTPHandler(BaseHandler):
         dirs, file = dirs[:-1], dirs[-1]
         if dirs and not dirs[0]:
             dirs = dirs[1:]
+        fw = None
         try:
             fw = self.connect_ftp(user, passwd, host, port, dirs, req.timeout)
             type = file and 'I' or 'D'
@@ -1552,8 +1567,12 @@ class FTPHandler(BaseHandler):
                 headers += "Content-length: %d\n" % retrlen
             headers = email.message_from_string(headers)
             return addinfourl(fp, headers, req.full_url)
-        except ftplib.all_errors as exp:
-            raise URLError(f"ftp error: {exp}") from exp
+        except Exception as exp:
+            if fw is not None and not fw.keepalive:
+                fw.close()
+            if isinstance(exp, ftplib.all_errors):
+                raise URLError(f"ftp error: {exp}") from exp
+            raise
 
     def connect_ftp(self, user, passwd, host, port, dirs, timeout):
         return ftpwrapper(user, passwd, host, port, dirs, timeout,
@@ -1577,14 +1596,15 @@ class CacheFTPHandler(FTPHandler):
 
     def connect_ftp(self, user, passwd, host, port, dirs, timeout):
         key = user, host, port, '/'.join(dirs), timeout
-        if key in self.cache:
-            self.timeout[key] = time.time() + self.delay
-        else:
-            self.cache[key] = ftpwrapper(user, passwd, host, port,
-                                         dirs, timeout)
-            self.timeout[key] = time.time() + self.delay
+        conn = self.cache.get(key)
+        if conn is None or not conn.keepalive:
+            if conn is not None:
+                conn.close()
+            conn = self.cache[key] = ftpwrapper(user, passwd, host, port,
+                                                dirs, timeout)
+        self.timeout[key] = time.time() + self.delay
         self.check_cache()
-        return self.cache[key]
+        return conn
 
     def check_cache(self):
         # first check for old ones
@@ -1627,6 +1647,11 @@ class DataHandler(BaseHandler):
 
         scheme, data = url.split(":",1)
         mediatype, data = data.split(",",1)
+
+        # Disallow control characters within mediatype.
+        if re.search(r"[\x00-\x1F\x7F]", mediatype):
+            raise ValueError(
+                "Control characters not allowed in data: mediatype")
 
         # even base64 encoded data URLs might be quoted so unquote in any case:
         data = unquote_to_bytes(data)

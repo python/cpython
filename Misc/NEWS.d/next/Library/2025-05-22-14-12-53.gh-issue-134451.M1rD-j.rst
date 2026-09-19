@@ -1,1 +1,0 @@
-Converted ``asyncio.tools.CycleFoundException`` from dataclass to a regular exception type.

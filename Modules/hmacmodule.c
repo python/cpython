@@ -271,14 +271,6 @@ get_hmacmodule_state(PyObject *module)
     return (hmacmodule_state *)state;
 }
 
-static inline hmacmodule_state *
-get_hmacmodule_state_by_cls(PyTypeObject *cls)
-{
-    void *state = PyType_GetModuleState(cls);
-    assert(state != NULL);
-    return (hmacmodule_state *)state;
-}
-
 // --- HMAC Object ------------------------------------------------------------
 
 typedef Hacl_Streaming_HMAC_agile_state HACL_HMAC_state;
@@ -677,6 +669,24 @@ has_uint32_t_buffer_length(const Py_buffer *buffer)
 // --- HMAC object ------------------------------------------------------------
 
 /*
+ * Create a zero-initialized untracked HMAC object.
+ *
+ * Return NULL on failure with an exception set.
+ */
+static HMACObject *
+hmac_new_object(PyTypeObject *tp)
+{
+    HMACObject *self = (HMACObject *)tp->tp_alloc(tp, 0);
+    if (self == NULL) {
+        return NULL;
+    }
+    HASHLIB_INIT_MUTEX(self);
+    // tp_alloc initializes the memory to zero but the unknown kind is -1
+    self->kind = Py_hmac_kind_hash_unknown;
+    return self;
+}
+
+/*
  * Use the HMAC information 'info' to populate the corresponding fields.
  *
  * The real 'kind' for BLAKE-2 is obtained once and depends on both static
@@ -687,7 +697,7 @@ hmac_set_hinfo(hmacmodule_state *state,
                HMACObject *self, const py_hmac_hinfo *info)
 {
     assert(info->display_name != NULL);
-    self->name = Py_NewRef(info->display_name);
+    Py_XSETREF(self->name, Py_NewRef(info->display_name));
     assert_is_static_hmac_hash_kind(info->kind);
     self->kind = narrow_hmac_hash_kind(state, info->kind);
     assert(info->block_size <= Py_hmac_hash_max_block_size);
@@ -756,16 +766,15 @@ _hmac_new_impl(PyObject *module, PyObject *keyobj, PyObject *msgobj,
         return NULL;
     }
 
-    HMACObject *self = PyObject_GC_New(HMACObject, state->hmac_type);
+    HMACObject *self = hmac_new_object(state->hmac_type);
     if (self == NULL) {
         return NULL;
     }
-    HASHLIB_INIT_MUTEX(self);
     hmac_set_hinfo(state, self, info);
     int rc;
     // Create the HACL* internal state with the given key.
     Py_buffer key;
-    GET_BUFFER_VIEW_OR_ERROR(keyobj, &key, goto error_on_key);
+    GET_BUFFER_VIEW_OR_ERROR(keyobj, &key, goto error);
     rc = hmac_new_initial_state(self, key.buf, key.len);
     PyBuffer_Release(&key);
     if (rc < 0) {
@@ -791,11 +800,8 @@ _hmac_new_impl(PyObject *module, PyObject *keyobj, PyObject *msgobj,
 #endif
     }
     assert(rc == 0);
-    PyObject_GC_Track(self);
     return (PyObject *)self;
 
-error_on_key:
-    self->state = NULL;
 error:
     Py_DECREF(self);
     return NULL;
@@ -808,7 +814,7 @@ static void
 hmac_copy_hinfo(HMACObject *out, const HMACObject *src)
 {
     assert(src->name != NULL);
-    out->name = Py_NewRef(src->name);
+    Py_XSETREF(out->name, Py_NewRef(src->name));
     assert(src->kind != Py_hmac_kind_hash_unknown);
     out->kind = src->kind;
     assert(src->block_size <= Py_hmac_hash_max_block_size);
@@ -851,8 +857,7 @@ static PyObject *
 _hmac_HMAC_copy_impl(HMACObject *self, PyTypeObject *cls)
 /*[clinic end generated code: output=a955bfa55b65b215 input=17b2c0ad0b147e36]*/
 {
-    hmacmodule_state *state = get_hmacmodule_state_by_cls(cls);
-    HMACObject *copy = PyObject_GC_New(HMACObject, state->hmac_type);
+    HMACObject *copy = hmac_new_object(cls);
     if (copy == NULL) {
         return NULL;
     }
@@ -869,8 +874,6 @@ _hmac_HMAC_copy_impl(HMACObject *self, PyTypeObject *cls)
         return NULL;
     }
 
-    HASHLIB_INIT_MUTEX(copy);
-    PyObject_GC_Track(copy);
     return (PyObject *)copy;
 }
 
@@ -944,20 +947,19 @@ _hmac_HMAC_digest_impl(HMACObject *self)
 
 /*[clinic input]
 @permit_long_summary
-@permit_long_docstring_body
 _hmac.HMAC.hexdigest
 
 Return hexadecimal digest of the bytes passed to the update() method so far.
 
-This may be used to exchange the value safely in email or other non-binary
-environments.
+This may be used to exchange the value safely in email or other
+non-binary environments.
 
 This method may raise a MemoryError.
 [clinic start generated code]*/
 
 static PyObject *
 _hmac_HMAC_hexdigest_impl(HMACObject *self)
-/*[clinic end generated code: output=6659807a09ae14ec input=6e0e796e38d82fc8]*/
+/*[clinic end generated code: output=6659807a09ae14ec input=9097dce732ed808f]*/
 {
     assert(self->digest_size <= Py_hmac_hash_max_digest_size);
     uint8_t digest[Py_hmac_hash_max_digest_size];
@@ -1026,17 +1028,9 @@ static void
 HMACObject_dealloc(PyObject *op)
 {
     PyTypeObject *type = Py_TYPE(op);
-    PyObject_GC_UnTrack(op);
     (void)HMACObject_clear(op);
     type->tp_free(op);
     Py_DECREF(type);
-}
-
-static int
-HMACObject_traverse(PyObject *op, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(op));
-    return 0;
 }
 
 static PyMethodDef HMACObject_methods[] = {
@@ -1058,9 +1052,7 @@ static PyType_Slot HMACObject_Type_slots[] = {
     {Py_tp_repr, HMACObject_repr},
     {Py_tp_methods, HMACObject_methods},
     {Py_tp_getset, HMACObject_getsets},
-    {Py_tp_clear, HMACObject_clear},
     {Py_tp_dealloc, HMACObject_dealloc},
-    {Py_tp_traverse, HMACObject_traverse},
     {0, NULL} /* sentinel */
 };
 
@@ -1070,8 +1062,7 @@ static PyType_Spec HMAC_Type_spec = {
     .flags = Py_TPFLAGS_DEFAULT
              | Py_TPFLAGS_DISALLOW_INSTANTIATION
              | Py_TPFLAGS_HEAPTYPE
-             | Py_TPFLAGS_IMMUTABLETYPE
-             | Py_TPFLAGS_HAVE_GC,
+             | Py_TPFLAGS_IMMUTABLETYPE,
     .slots = HMACObject_Type_slots,
 };
 
@@ -1391,7 +1382,6 @@ static void
 py_hmac_hinfo_ht_free(void *hinfo)
 {
     py_hmac_hinfo *entry = (py_hmac_hinfo *)hinfo;
-    assert(entry->display_name != NULL);
     if (--(entry->refcnt) == 0) {
         Py_CLEAR(entry->display_name);
         PyMem_Free(hinfo);
@@ -1466,16 +1456,19 @@ py_hmac_hinfo_ht_new(void)
         assert(value->display_name == NULL);
         value->refcnt = 0;
 
-#define Py_HMAC_HINFO_LINK(KEY)                                 \
-        do {                                                    \
-            int rc = py_hmac_hinfo_ht_add(table, KEY, value);   \
-            if (rc < 0) {                                       \
-                PyMem_Free(value);                              \
-                goto error;                                     \
-            }                                                   \
-            else if (rc == 1) {                                 \
-                value->refcnt++;                                \
-            }                                                   \
+#define Py_HMAC_HINFO_LINK(KEY)                                     \
+        do {                                                        \
+            int rc = py_hmac_hinfo_ht_add(table, (KEY), value);     \
+            if (rc < 0) {                                           \
+                /* entry may already be in ht, freed upon exit */   \
+                if (value->refcnt == 0) {                           \
+                    PyMem_Free(value);                              \
+                }                                                   \
+                goto error;                                         \
+            }                                                       \
+            else if (rc == 1) {                                     \
+                value->refcnt++;                                    \
+            }                                                       \
         } while (0)
         Py_HMAC_HINFO_LINK(e->name);
         Py_HMAC_HINFO_LINK(e->hashlib_name);
@@ -1487,7 +1480,8 @@ py_hmac_hinfo_ht_new(void)
             e->hashlib_name == NULL ? e->name : e->hashlib_name
         );
         if (value->display_name == NULL) {
-            PyMem_Free(value);
+            /* 'value' is owned by the table (refcnt > 0),
+               so _Py_hashtable_destroy() will free it. */
             goto error;
         }
     }
@@ -1700,6 +1694,7 @@ hmacmodule_free(void *mod)
 }
 
 static struct PyModuleDef_Slot hmacmodule_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, hmacmodule_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

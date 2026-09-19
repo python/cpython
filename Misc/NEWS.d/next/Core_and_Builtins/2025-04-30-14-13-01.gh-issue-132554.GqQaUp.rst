@@ -1,4 +1,0 @@
-Change iteration to use "virtual iterators" for sequences. Instead of
-creating an iterator, a tagged integer representing the next index is pushed
-to the stack above the iterable. For non-sequence iterators, ``NULL`` is
-pushed.

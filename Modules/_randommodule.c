@@ -123,9 +123,9 @@ typedef struct {
 
 /*[clinic input]
 module _random
-class _random.Random "RandomObject *" "_randomstate_type(type)->Random_Type"
+class _random.Random "RandomObject *" "(PyTypeObject *)_randomstate_type(Py_TYPE(self))->Random_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=70a2c99619474983]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=f04bcbfba61a322e]*/
 
 /* Random methods */
 
@@ -522,7 +522,7 @@ _random_Random_getrandbits_impl(RandomObject *self, uint64_t k)
         PyErr_NoMemory();
         return NULL;
     }
-    words = (k - 1u) / 32u + 1u;
+    words = (Py_ssize_t)((k - 1u) / 32u + 1u);
     wordarray = (uint32_t *)PyMem_Malloc(words * 4);
     if (wordarray == NULL) {
         PyErr_NoMemory();
@@ -549,27 +549,20 @@ _random_Random_getrandbits_impl(RandomObject *self, uint64_t k)
     return result;
 }
 
+/*[clinic input]
+@critical_section
+@text_signature "($self, [seed])"
+_random.Random.__init__ as random_init
+
+    seed: object = NULL
+    /
+[clinic start generated code]*/
+
 static int
-random_init(PyObject *self, PyObject *args, PyObject *kwds)
+random_init_impl(RandomObject *self, PyObject *seed)
+/*[clinic end generated code: output=260734a3739c394f input=e516bf32e8a05e28]*/
 {
-    PyObject *arg = NULL;
-    _randomstate *state = _randomstate_type(Py_TYPE(self));
-
-    if ((Py_IS_TYPE(self, (PyTypeObject *)state->Random_Type) ||
-         Py_TYPE(self)->tp_init == ((PyTypeObject*)state->Random_Type)->tp_init) &&
-        !_PyArg_NoKeywords("Random", kwds)) {
-        return -1;
-    }
-
-    if (PyTuple_GET_SIZE(args) > 1) {
-        PyErr_SetString(PyExc_TypeError, "Random() requires 0 or 1 argument");
-        return -1;
-    }
-
-    if (PyTuple_GET_SIZE(args) == 1)
-        arg = PyTuple_GET_ITEM(args, 0);
-
-    return random_seed(RandomObject_CAST(self), arg);
+    return random_seed(self, seed);
 }
 
 
@@ -595,11 +588,14 @@ static PyType_Slot Random_Type_slots[] = {
 };
 
 static PyType_Spec Random_Type_spec = {
-    "_random.Random",
-    sizeof(RandomObject),
-    0,
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
-    Random_Type_slots
+    .name = "_random.Random",
+    .basicsize = sizeof(RandomObject),
+    .flags = (
+        Py_TPFLAGS_DEFAULT
+        | Py_TPFLAGS_BASETYPE
+        | Py_TPFLAGS_IMMUTABLETYPE
+    ),
+    .slots = Random_Type_slots
 };
 
 PyDoc_STRVAR(module_doc,
@@ -640,6 +636,7 @@ _random_exec(PyObject *module)
 }
 
 static PyModuleDef_Slot _random_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, _random_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

@@ -1,0 +1,5 @@
+Fix :func:`site.addsitedir` to allow re-entrant calls from within startup
+files.  Previously, a ``.pth`` file containing an ``import`` line that
+called :func:`site.addsitedir` (or a ``.start`` entry point doing the same)
+could crash with ``RuntimeError: dictionary changed size during iteration``
+during site initialization, breaking tools such as ``uv run --with``.

@@ -22,7 +22,6 @@ import itertools
 import linecache
 import os
 import os.path
-from platform import python_version
 import re
 import socket
 import subprocess
@@ -37,13 +36,14 @@ from idlelib.config import idleConf
 from idlelib.delegator import Delegator
 from idlelib import debugger
 from idlelib import debugger_r
-from idlelib.editor import EditorWindow, fixwordbreaks
+from idlelib.editor import EditorWindow
 from idlelib.filelist import FileList
 from idlelib.outwin import OutputWindow
 from idlelib import replace
 from idlelib import rpc
 from idlelib.run import idle_formatwarning, StdInputFile, StdOutputFile
 from idlelib.undo import UndoDelegator
+from idlelib.util import fix_word_breaks
 
 # Default for testing; defaults to True in main() for running.
 use_subprocess = False
@@ -243,12 +243,13 @@ class PyShellEditorWindow(EditorWindow):
         breaks = self.breakpoints
         filename = self.io.filename
         try:
-            with open(self.breakpointPath) as fp:
+            with open(self.breakpointPath,
+                      encoding='utf-8', errors='replace') as fp:
                 lines = fp.readlines()
         except OSError:
             lines = []
         try:
-            with open(self.breakpointPath, "w") as new_file:
+            with open(self.breakpointPath, "w", encoding='utf-8') as new_file:
                 for line in lines:
                     if not line.startswith(filename + '='):
                         new_file.write(line)
@@ -273,7 +274,8 @@ class PyShellEditorWindow(EditorWindow):
         if filename is None:
             return
         if os.path.isfile(self.breakpointPath):
-            with open(self.breakpointPath) as fp:
+            with open(self.breakpointPath,
+                      encoding='utf-8', errors='replace') as fp:
                 lines = fp.readlines()
             for line in lines:
                 if line.startswith(filename + '='):
@@ -406,6 +408,17 @@ def restart_line(width, filename):  # See bpo-38141.
         return tag[:-2]  # Remove ' ='.
 
 
+def fix_user_path(path):
+    """Return path without the idlelib directory (gh-134300).
+
+    That directory is on sys.path when idle.py is run as a script.
+    Otherwise user code could import idlelib submodules as top-level
+    modules, such as "import help".
+    """
+    idlelib_dir = os.path.dirname(os.path.abspath(__file__))
+    return [p for p in path if p != idlelib_dir]
+
+
 class ModifiedInterpreter(InteractiveInterpreter):
 
     def __init__(self, tkconsole):
@@ -499,7 +512,6 @@ class ModifiedInterpreter(InteractiveInterpreter):
         self.rpcclt.close()
         self.terminate_subprocess()
         console = self.tkconsole
-        was_executing = console.executing
         console.executing = False
         self.spawn_subprocess()
         try:
@@ -567,6 +579,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
             path.extend(sys.path)
         else:
             path = sys.path
+        path = fix_user_path(path)  # gh-134300
 
         self.runcommand("""if 1:
         import sys as _sys
@@ -643,7 +656,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
             return
         item = debugobj_r.StubObjectTreeItem(self.rpcclt, oid)
         from idlelib.tree import ScrolledCanvas, TreeNode
-        top = Toplevel(self.tkconsole.root)
+        top = Toplevel(self.tkconsole.root, class_='Idle')
         theme = idleConf.CurrentTheme()
         background = idleConf.GetHighlight(theme, 'normal')['background']
         sc = ScrolledCanvas(top, bg=background, highlightthickness=0)
@@ -839,9 +852,10 @@ class ModifiedInterpreter(InteractiveInterpreter):
 
 
 class PyShell(OutputWindow):
+    is_shell = True
     from idlelib.squeezer import Squeezer
 
-    shell_title = "IDLE Shell " + python_version()
+    shell_title = "IDLE Shell"
 
     # Override classes
     ColorDelegator = ModifiedColorDelegator
@@ -881,9 +895,9 @@ class PyShell(OutputWindow):
         if ms[2][0] != "shell":
             ms.insert(2, ("shell", "She_ll"))
         self.interp = ModifiedInterpreter(self)
-        if flist is None:
+        if flist is None:  # TODO possible? root and flist in main.
             root = Tk()
-            fixwordbreaks(root)
+            fix_word_breaks(root)
             root.withdraw()
             flist = PyShellFileList(root)
 
@@ -896,7 +910,6 @@ class PyShell(OutputWindow):
         self.indentwidth = 4
 
         self.sys_ps1 = sys.ps1 if hasattr(sys, 'ps1') else '>>>\n'
-        self.prompt_last_line = self.sys_ps1.split('\n')[-1]
         self.prompt = self.sys_ps1  # Changes when debug active
 
         text = self.text
@@ -1086,6 +1099,7 @@ class PyShell(OutputWindow):
 
     def debug_menu_postcommand(self):
         state = 'disabled' if self.executing else 'normal'
+        self.update_menu_state('debug', '*ebugger', state)
         self.update_menu_state('debug', '*tack*iewer', state)
 
     def beginexecuting(self):
@@ -1452,17 +1466,6 @@ class PyShell(OutputWindow):
         self.shell_sidebar.update_sidebar()
 
 
-def fix_x11_paste(root):
-    "Make paste replace selection on x11.  See issue #5124."
-    if root._windowingsystem == 'x11':
-        for cls in 'Text', 'Entry', 'Spinbox':
-            root.bind_class(
-                cls,
-                '<<Paste>>',
-                'catch {%W delete sel.first sel.last}\n' +
-                        root.bind_class(cls, '<<Paste>>'))
-
-
 usage_msg = """\
 
 USAGE: idle  [-deins] [-t title] [file]*
@@ -1522,6 +1525,7 @@ def main():
     from platform import system
     from idlelib import testing  # bool value
     from idlelib import macosx
+    from idlelib.util import fix_scaling, fix_x11_paste
 
     global flist, root, use_subprocess
 
@@ -1607,8 +1611,13 @@ def main():
         NoDefaultRoot()
     root = Tk(className="Idle")
     root.withdraw()
-    from idlelib.run import fix_scaling
     fix_scaling(root)
+
+    # Warn about configuration files that could not be parsed (gh-66172).
+    config_error = idleConf.file_load_error_message()
+    if config_error:
+        messagebox.showwarning('IDLE Configuration Warning', config_error,
+                               parent=root)
 
     # set application icon
     icondir = os.path.join(os.path.dirname(__file__), 'Icons')
@@ -1629,7 +1638,7 @@ def main():
         root.wm_iconphoto(True, *icons)
 
     # start editor and/or shell windows:
-    fixwordbreaks(root)
+    fix_word_breaks(root)
     fix_x11_paste(root)
     flist = PyShellFileList(root)
     macosx.setupApp(root, flist)
@@ -1666,6 +1675,10 @@ def main():
         if filename and os.path.isfile(filename):
             shell.interp.execfile(filename)
     if cmd or script:
+        # Let the startup file finish first: the command or script
+        # is to run after it, in its namespace (gh-68453).
+        while shell.executing:
+            root.update()
         shell.interp.runcommand("""if 1:
             import sys as _sys
             _sys.argv = {!r}

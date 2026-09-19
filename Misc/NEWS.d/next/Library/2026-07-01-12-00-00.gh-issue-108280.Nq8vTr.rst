@@ -1,0 +1,4 @@
+Connecting :mod:`imaplib` to a server that does not send a valid IMAP4
+greeting (for example a POP3 server answering on the IMAP port) now raises
+an error reporting the server's response instead of
+``imaplib.IMAP4.error: None``.

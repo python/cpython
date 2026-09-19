@@ -75,6 +75,14 @@ class Test_TestProgram(unittest.TestCase):
     class Empty(unittest.TestCase):
         pass
 
+    class SetUpClassFailure(unittest.TestCase):
+        @classmethod
+        def setUpClass(cls):
+            super().setUpClass()
+            raise Exception
+        def testPass(self):
+            pass
+
     class TestLoader(unittest.TestLoader):
         """Test loader that returns a suite containing the supplied testcase."""
 
@@ -191,6 +199,18 @@ class Test_TestProgram(unittest.TestCase):
         out = stream.getvalue()
         self.assertIn('\nNO TESTS RAN\n', out)
 
+    def test_ExitSetUpClassFailureSuite(self):
+        stream = BufferedWriter()
+        with self.assertRaises(SystemExit) as cm:
+            unittest.main(
+                argv=["setup_class_failure"],
+                testRunner=unittest.TextTestRunner(stream=stream),
+                testLoader=self.TestLoader(self.SetUpClassFailure))
+        self.assertEqual(cm.exception.code, 1)
+        out = stream.getvalue()
+        self.assertIn("ERROR: setUpClass", out)
+        self.assertIn("SetUpClassFailure", out)
+
 
 class InitialisableProgram(unittest.TestProgram):
     exit = False
@@ -246,6 +266,32 @@ class TestCommandLineArgs(unittest.TestCase):
             program.verbosity = 1
             program.parseArgs([None, opt])
             self.assertEqual(program.verbosity, 2)
+
+        # -v can be repeated to ask for more details.
+        for args, verbosity in (
+            (['-vv'], 3),
+            (['-v', '-v'], 3),
+            (['--verbose', '--verbose'], 3),
+            (['-vvv'], 4),
+            # -q overrides any number of -v.
+            (['-v', '-q'], 0),
+        ):
+            with self.subTest(args=args):
+                program.verbosity = 1
+                program.parseArgs([None, *args])
+                self.assertEqual(program.verbosity, verbosity)
+
+    def testVerbosityCountedOnce(self):
+        # "python -m unittest -v" falls back to test discovery, which parses
+        # arguments again: -v must not be counted twice.
+        program = self.program
+        program.verbosity = 1
+        program.parseArgs([None, '-v'])
+        self.assertEqual(program.verbosity, 2)
+
+        program.verbosity = 1
+        program.parseArgs([None, 'discover', '-vv'])
+        self.assertEqual(program.verbosity, 3)
 
     def testBufferCatchFailfast(self):
         program = self.program

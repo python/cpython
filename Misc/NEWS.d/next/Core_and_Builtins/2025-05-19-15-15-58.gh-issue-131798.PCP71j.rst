@@ -1,1 +1,0 @@
-Split ``CALL_LIST_APPEND`` into several uops. Patch by Diego Russo.

@@ -26,29 +26,20 @@ from idlelib import pyparse
 from idlelib import query
 from idlelib import replace
 from idlelib import search
-from idlelib.tree import wheel_event
-from idlelib.util import py_extensions
+from idlelib.util import bind_wheel, py_extensions, wheel_event
 from idlelib import window
+from idlelib.help import _get_dochome
 
 # The default tab setting for a Text widget, in average-width characters.
 TK_TABWIDTH_DEFAULT = 8
-_py_version = ' (%s)' % platform.python_version()
 darwin = sys.platform == 'darwin'
 
-def _sphinx_version():
-    "Format sys.version_info to produce the Sphinx version string used to install the chm docs"
-    major, minor, micro, level, serial = sys.version_info
-    # TODO remove unneeded function since .chm no longer installed
-    release = f'{major}{minor}'
-    release += f'{micro}'
-    if level == 'candidate':
-        release += f'rc{serial}'
-    elif level != 'final':
-        release += f'{level[0]}{serial}'
-    return release
+# A letter keysym in a key sequence, such as "s" in "<Control-Key-s>".
+_letter_key_re = re.compile(r'(?<=-Key-)[a-zA-Z](?=>)')
 
 
 class EditorWindow:
+    is_shell = False  # PyShell overrides.
     from idlelib.percolator import Percolator
     from idlelib.colorizer import ColorDelegator, color_config
     from idlelib.undo import UndoDelegator
@@ -76,44 +67,7 @@ class EditorWindow:
         from idlelib.runscript import ScriptBinding
 
         if EditorWindow.help_url is None:
-            dochome =  os.path.join(sys.base_prefix, 'Doc', 'index.html')
-            if sys.platform.count('linux'):
-                # look for html docs in a couple of standard places
-                pyver = 'python-docs-' + '%s.%s.%s' % sys.version_info[:3]
-                if os.path.isdir('/var/www/html/python/'):  # "python2" rpm
-                    dochome = '/var/www/html/python/index.html'
-                else:
-                    basepath = '/usr/share/doc/'  # standard location
-                    dochome = os.path.join(basepath, pyver,
-                                           'Doc', 'index.html')
-            elif sys.platform[:3] == 'win':
-                import winreg  # Windows only, block only executed once.
-                docfile = ''
-                KEY = (rf"Software\Python\PythonCore\{sys.winver}"
-                        r"\Help\Main Python Documentation")
-                try:
-                    docfile = winreg.QueryValue(winreg.HKEY_CURRENT_USER, KEY)
-                except FileNotFoundError:
-                    try:
-                        docfile = winreg.QueryValue(winreg.HKEY_LOCAL_MACHINE,
-                                                    KEY)
-                    except FileNotFoundError:
-                        pass
-                if os.path.isfile(docfile):
-                    dochome = docfile
-            elif sys.platform == 'darwin':
-                # documentation may be stored inside a python framework
-                dochome = os.path.join(sys.base_prefix,
-                        'Resources/English.lproj/Documentation/index.html')
-            dochome = os.path.normpath(dochome)
-            if os.path.isfile(dochome):
-                EditorWindow.help_url = dochome
-                if sys.platform == 'darwin':
-                    # Safari requires real file:-URLs
-                    EditorWindow.help_url = 'file://' + EditorWindow.help_url
-            else:
-                EditorWindow.help_url = ("https://docs.python.org/%d.%d/"
-                                         % sys.version_info[:2])
+            EditorWindow.help_url = _get_dochome()
         self.flist = flist
         root = root or flist.root
         self.root = root
@@ -131,7 +85,6 @@ class EditorWindow:
         self.recent_files_path = idleConf.userdir and os.path.join(
                 idleConf.userdir, 'recent-files.lst')
 
-        self.prompt_last_line = ''  # Override in PyShell
         self.text_frame = text_frame = Frame(top)
         self.vbar = vbar = Scrollbar(text_frame, name='vbar')
         width = idleConf.GetOption('main', 'EditorWindow', 'width', type='int')
@@ -165,10 +118,7 @@ class EditorWindow:
             # Elsewhere, use right-click for popup menus.
             text.bind("<3>",self.right_menu_event)
 
-        text.bind('<MouseWheel>', wheel_event)
-        if text._windowingsystem == 'x11':
-            text.bind('<Button-4>', wheel_event)
-            text.bind('<Button-5>', wheel_event)
+        bind_wheel(text, wheel_event)
         text.bind('<Configure>', self.handle_winconfig)
         text.bind("<<cut>>", self.cut)
         text.bind("<<copy>>", self.copy)
@@ -362,6 +312,9 @@ class EditorWindow:
         else:
             self.update_menu_state('options', '*ine*umbers', 'disabled')
 
+        self.mtime = self.last_mtime()
+        text_frame.bind('<FocusIn>', self.focus_in_event)
+
     def handle_winconfig(self, event=None):
         self.set_width()
 
@@ -376,7 +329,9 @@ class EditorWindow:
         # http://www.tcl.tk/man/tcl8.6/TkCmd/text.htm#M21
         zero_char_width = \
             Font(text, font=text.cget('font')).measure('0')
-        self.width = pixel_width // zero_char_width
+        # Some fonts report a zero width for '0' (gh-90304).
+        self.width = (pixel_width // zero_char_width if zero_char_width
+                      else text.tk.getint(text.cget('width')))
 
     def new_callback(self, event):
         dirname, basename = self.io.defaultfilename()
@@ -907,9 +862,8 @@ class EditorWindow:
             self.text.event_delete(event, *keylist)
         for extensionName in self.get_standard_extension_names():
             xkeydefs = idleConf.GetExtensionBindings(extensionName)
-            if xkeydefs:
-                for event, keylist in xkeydefs.items():
-                    self.text.event_delete(event, *keylist)
+            for event, keylist in xkeydefs.items():
+                self.text.event_delete(event, *keylist)
 
     def ApplyKeybindings(self):
         """Apply the virtual, configurable keybindings.
@@ -1044,12 +998,16 @@ class EditorWindow:
     def saved_change_hook(self):
         short = self.short_title()
         long = self.long_title()
+        _py_version = ' (%s)' % platform.python_version()
         if short and long and not macosx.isCocoaTk():
             # Don't use both values on macOS because
             # that doesn't match platform conventions.
             title = short + " - " + long + _py_version
         elif short:
-            title = short
+            if short == "IDLE Shell":
+                title = short + " " +  platform.python_version()
+            else:
+                title = short + _py_version
         elif long:
             title = long
         else:
@@ -1073,6 +1031,8 @@ class EditorWindow:
 
     def set_saved(self, flag):
         self.undo.set_saved(flag)
+        if flag:
+            self.mtime = self.last_mtime()
 
     def reset_undo(self):
         self.undo.reset_undo()
@@ -1158,6 +1118,21 @@ class EditorWindow:
             # unless override: unregister from flist, terminate if last window
             self.close_hook()
 
+    def last_mtime(self):
+        file = self.io.filename
+        return os.path.getmtime(file) if file else 0
+
+    def focus_in_event(self, event):
+        mtime = self.last_mtime()
+        if self.mtime != mtime:
+            self.mtime = mtime
+            if self. askyesno(
+              'Reload', '"%s"\n\nThis script has been modified by another program.'
+              '\nDo you want to reload it?' % self.io.filename, parent=self.text):
+                self.io.loadfile(self.io.filename)
+            else:
+                self.set_saved(False)
+
     def load_extensions(self):
         self.extensions = {}
         self.load_standard_extensions()
@@ -1202,12 +1177,7 @@ class EditorWindow:
         if keydefs:
             self.apply_bindings(keydefs)
             for vevent in keydefs:
-                methodname = vevent.replace("-", "_")
-                while methodname[:1] == '<':
-                    methodname = methodname[1:]
-                while methodname[-1:] == '>':
-                    methodname = methodname[:-1]
-                methodname = methodname + "_event"
+                methodname = vevent.strip("<>").replace("-", "_") + "_event"
                 if hasattr(ins, methodname):
                     self.text.bind(vevent, getattr(ins, methodname))
 
@@ -1220,6 +1190,12 @@ class EditorWindow:
         for event, keylist in keydefs.items():
             if keylist:
                 text.event_add(event, *keylist)
+                # Caps Lock changes the case of letter keysyms, so bind
+                # the sequences with the other case too (gh-56596).
+                for keys in keylist:
+                    other = _letter_key_re.sub(lambda m: m[0].swapcase(), keys)
+                    if other not in keylist:
+                        text.event_add(event, other)
 
     def fill_menus(self, menudefs=None, keydefs=None):
         """Fill in dropdown menus used by this window.
@@ -1468,7 +1444,7 @@ class EditorWindow:
             # First need to find the last statement.
             lno = index2line(text.index('insert'))
             y = pyparse.Parser(self.indentwidth, self.tabwidth)
-            if not self.prompt_last_line:
+            if not self.is_shell:
                 for context in self.num_context_lines:
                     startat = max(lno - context, 1)
                     startatindex = repr(startat) + ".0"
@@ -1731,19 +1707,10 @@ def get_accelerator(keydefs, eventname):
     return s
 
 
-def fixwordbreaks(root):
-    # On Windows, tcl/tk breaks 'words' only on spaces, as in Command Prompt.
-    # We want Motif style everywhere. See #21474, msg218992 and followup.
-    tk = root.tk
-    tk.call('tcl_wordBreakAfter', 'a b', 0) # make sure word.tcl is loaded
-    tk.call('set', 'tcl_wordchars', r'\w')
-    tk.call('set', 'tcl_nonwordchars', r'\W')
-
-
-def _editor_window(parent):  # htest #
-    # error if close master window first - timer event, after script
-    root = parent
-    fixwordbreaks(root)
+def _editor_window(root):  # htest #
+    # Error if close master window first - timer event, after script
+    from util import fix_word_breaks
+    fix_word_breaks(root)
     if sys.argv[1:]:
         filename = sys.argv[1]
     else:

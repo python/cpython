@@ -1,0 +1,3 @@
+Fix a possible crash occurring during :mod:`socket` module initialization
+when the system is out of memory on platforms without a reentrant
+``gethostbyname``.

@@ -110,8 +110,6 @@ __copyright__ = """
 
 """
 
-__version__ = '1.1.0'
-
 import collections
 import os
 import re
@@ -129,7 +127,7 @@ except ImportError:
 # Based on the description of the PHP's version_compare():
 # http://php.net/manual/en/function.version-compare.php
 
-_ver_stages = {
+_ver_stages = frozendict({
     # any string not found in this dict, will get 0 assigned
     'dev': 10,
     'alpha': 20, 'a': 20,
@@ -138,7 +136,7 @@ _ver_stages = {
     'RC': 50, 'rc': 50,
     # number, will get 100 assigned
     'pl': 200, 'p': 200,
-}
+})
 
 
 def _comparable_version(version):
@@ -173,6 +171,11 @@ def libc_ver(executable=None, lib='', version='', chunksize=16384):
 
     """
     if not executable:
+        if sys.platform == "emscripten":
+            # Emscripten's os.confstr reports that it is glibc, so special case
+            # it.
+            ver = ".".join(str(x) for x in sys._emscripten_info.emscripten_version)
+            return ("emscripten", ver)
         try:
             ver = os.confstr('CS_GNU_LIBC_VERSION')
             # parse 'glibc 2.28' as ('glibc', '2.28')
@@ -194,6 +197,7 @@ def libc_ver(executable=None, lib='', version='', chunksize=16384):
         | (GLIBC_([0-9.]+))
         | (libc(_\w+)?\.so(?:\.(\d[0-9.]*))?)
         | (musl-([0-9.]+))
+        | ((?:libc\.|ld-)musl(?:-\w+)?.so(?:\.(\d[0-9.]*))?)
         """,
         re.ASCII | re.VERBOSE)
 
@@ -219,9 +223,10 @@ def libc_ver(executable=None, lib='', version='', chunksize=16384):
                     continue
                 if not m:
                     break
-            libcinit, glibc, glibcversion, so, threads, soversion, musl, muslversion = [
-                s.decode('latin1') if s is not None else s
-                for s in m.groups()]
+            decoded_groups = [s.decode('latin1') if s is not None else s
+                              for s in m.groups()]
+            (libcinit, glibc, glibcversion, so, threads, soversion,
+             musl, muslversion, musl_so, musl_sover) = decoded_groups
             if libcinit and not lib:
                 lib = 'libc'
             elif glibc:
@@ -231,7 +236,7 @@ def libc_ver(executable=None, lib='', version='', chunksize=16384):
                 elif V(glibcversion) > V(ver):
                     ver = glibcversion
             elif so:
-                if lib != 'glibc':
+                if lib not in ('glibc', 'musl'):
                     lib = 'libc'
                     if soversion and (not ver or V(soversion) > V(ver)):
                         ver = soversion
@@ -241,6 +246,10 @@ def libc_ver(executable=None, lib='', version='', chunksize=16384):
                 lib = 'musl'
                 if not ver or V(muslversion) > V(ver):
                     ver = muslversion
+            elif musl_so:
+                lib = 'musl'
+                if musl_sover and (not ver or V(musl_sover) > V(ver)):
+                    ver = musl_sover
             pos = m.end()
     return lib, version if ver is None else ver
 
@@ -296,8 +305,7 @@ def _syscmd_ver(system='', release='', version='',
                                            text=True,
                                            encoding="locale",
                                            shell=True)
-        except (OSError, subprocess.CalledProcessError) as why:
-            #print('Command %s failed: %s' % (cmd, why))
+        except (OSError, subprocess.CalledProcessError):
             continue
         else:
             break
@@ -419,11 +427,16 @@ def _win32_ver(version, csd, ptype):
 
     winver = getwindowsversion()
     is_client = (getattr(winver, 'product_type', 1) == 1)
-    try:
-        version = _syscmd_ver()[2]
-        major, minor, build = map(int, version.split('.'))
-    except ValueError:
-        major, minor, build = winver.platform_version or winver[:3]
+
+    if winver.device_family == "Desktop":
+        try:
+            version = _syscmd_ver()[2]
+            major, minor, build = map(int, version.split('.'))
+        except ValueError:
+            major, minor, build = winver.platform_version or winver[:3]
+            version = '{0}.{1}.{2}'.format(major, minor, build)
+    else:
+        major, minor, build = winver[:3]
         version = '{0}.{1}.{2}'.format(major, minor, build)
 
     # getwindowsversion() reflect the compatibility mode Python is
@@ -535,21 +548,25 @@ def android_ver(release="", api_level=0, manufacturer="", model="", device="",
                 is_emulator=False):
     if sys.platform == "android":
         try:
-            from ctypes import CDLL, c_char_p, create_string_buffer
+            from ctypes import CDLL, c_int, c_char_p, create_string_buffer
+            from ctypes.util import wrap_dll_function
         except ImportError:
             pass
         else:
             # An NDK developer confirmed that this is an officially-supported
             # API (https://stackoverflow.com/a/28416743). Use `getattr` to avoid
             # private name mangling.
-            system_property_get = getattr(CDLL("libc.so"), "__system_property_get")
-            system_property_get.argtypes = (c_char_p, c_char_p)
+            libc = CDLL("libc.so")
+
+            @wrap_dll_function(libc)
+            def __system_property_get(name: c_char_p, value: c_char_p) -> c_int:
+                pass
 
             def getprop(name, default):
                 # https://android.googlesource.com/platform/bionic/+/refs/tags/android-5.0.0_r1/libc/include/sys/system_properties.h#39
                 PROP_VALUE_MAX = 92
                 buffer = create_string_buffer(PROP_VALUE_MAX)
-                length = system_property_get(name.encode("UTF-8"), buffer)
+                length = __system_property_get(name.encode("UTF-8"), buffer)
                 if length == 0:
                     # This API doesn’t distinguish between an empty property and
                     # a missing one.
@@ -697,11 +714,11 @@ def _syscmd_file(target, default=''):
 
 # Default values for architecture; non-empty strings override the
 # defaults given as parameters
-_default_architecture = {
+_default_architecture = frozendict({
     'win32': ('', 'WindowsPE'),
     'win16': ('', 'Windows'),
     'dos': ('', 'MSDOS'),
-}
+})
 
 def architecture(executable=sys.executable, bits='', linkage=''):
 
@@ -1392,7 +1409,7 @@ def invalidate_caches():
 def _parse_args(args: list[str] | None):
     import argparse
 
-    parser = argparse.ArgumentParser(color=True)
+    parser = argparse.ArgumentParser()
     parser.add_argument("args", nargs="*", choices=["nonaliased", "terse"])
     parser.add_argument(
         "--terse",
@@ -1423,6 +1440,15 @@ def _main(args: list[str] | None = None):
     aliased = args.aliased and ('nonaliased' not in args.args)
 
     print(platform(aliased, terse))
+
+
+def __getattr__(name):
+    if name == "__version__":
+        from warnings import _deprecated
+
+        _deprecated("__version__", remove=(3, 20))
+        return "1.1.0"  # Do not change
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 if __name__ == "__main__":

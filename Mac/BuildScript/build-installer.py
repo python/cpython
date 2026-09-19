@@ -246,9 +246,9 @@ def library_recipes():
 
     result.extend([
           dict(
-              name="OpenSSL 3.0.16",
-              url="https://github.com/openssl/openssl/releases/download/openssl-3.0.16/openssl-3.0.16.tar.gz",
-              checksum='57e03c50feab5d31b152af2b764f10379aecd8ee92f16c985983ce4a99f7ef86',
+              name="OpenSSL 3.5.8",
+              url="https://github.com/openssl/openssl/releases/download/openssl-3.5.8/openssl-3.5.8.tar.gz",
+              checksum="a8f84a39918ec6415ce765d9b429d313ba97b8143169c172e734b9514464f5b2",
               buildrecipe=build_universal_openssl,
               configure=None,
               install=None,
@@ -264,10 +264,10 @@ def library_recipes():
             tk_patches = ['backport_gh71383_fix.patch', 'tk868_on_10_8_10_9.patch', 'backport_gh110950_fix.patch']
 
         else:
-            tcl_tk_ver='8.6.16'
-            tcl_checksum='91cb8fa61771c63c262efb553059b7c7ad6757afa5857af6265e4b0bdc2a14a5'
+            tcl_tk_ver='9.0.4'
+            tcl_checksum='d0aed49230bc02a65c1e0229e65f34590a4b037ec40d546f32573b467f7551ea'
 
-            tk_checksum='be9f94d3575d4b3099d84bc3c10de8994df2d7aa405208173c709cc404a7e5fe'
+            tk_checksum='d7a146d2917eb8b5cc95276dbf0e3d03c7464d2b19c1675357857c989301dbb4'
             tk_patches = []
 
 
@@ -359,13 +359,14 @@ def library_recipes():
                   ),
           ),
           dict(
-              name="SQLite 3.50.4",
-              url="https://www.sqlite.org/2025/sqlite-autoconf-3500400.tar.gz",
-              checksum="a3db587a1b92ee5ddac2f66b3edb41b26f9c867275782d46c3a088977d6a5b18",
+              name="SQLite 3.53.4",
+              url="https://www.sqlite.org/2026/sqlite-autoconf-3530400.tar.gz",
+              checksum="0e9483900e92cd5de8fd48d16bf9200145a61f7fd5be542a5ac81d8a9516eb9c",
               extra_cflags=('-Os '
                             '-DSQLITE_ENABLE_FTS5 '
                             '-DSQLITE_ENABLE_FTS4 '
                             '-DSQLITE_ENABLE_FTS3_PARENTHESIS '
+                            '-DSQLITE_ENABLE_PERCENTILE '
                             '-DSQLITE_ENABLE_RTREE '
                             '-DSQLITE_OMIT_AUTOINIT '
                             '-DSQLITE_TCL=0 '
@@ -378,9 +379,9 @@ def library_recipes():
               install=f"make && ranlib libsqlite3.a && make install DESTDIR={shellQuote(os.path.join(WORKDIR, 'libraries'))}",
           ),
           dict(
-              name="libmpdec 4.0.0",
-              url="https://www.bytereef.org/software/mpdecimal/releases/mpdecimal-4.0.0.tar.gz",
-              checksum="942445c3245b22730fd41a67a7c5c231d11cb1b9936b9c0f76334fb7d0b4468c",
+              name="libmpdec 4.0.1",
+              url="https://www.bytereef.org/software/mpdecimal/releases/mpdecimal-4.0.1.tar.gz",
+              checksum="96d33abb4bb0070c7be0fed4246cd38416188325f820468214471938545b1ac8",
               configure_pre=[
                   "--disable-cxx",
                   "MACHINE=universal",
@@ -1158,7 +1159,6 @@ def buildPython():
     print(" NOTE: --with-mimalloc=no pending resolution of weak linking issues")
     runCommand("%s -C --enable-framework --enable-universalsdk=/ "
                "--with-mimalloc=no "
-               "--with-system-libmpdec "
                "--with-universal-archs=%s "
                "%s "
                "%s "

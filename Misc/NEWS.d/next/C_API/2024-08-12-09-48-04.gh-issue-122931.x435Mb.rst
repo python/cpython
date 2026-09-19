@@ -1,0 +1,1 @@
+Allow importing stable ABI C extensions that include a multiarch tuple in their filename, e.g. ``foo.abi3-x86-64-linux-gnu.so``.

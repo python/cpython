@@ -3,8 +3,6 @@
 
 .. module:: uuid
    :synopsis: UUID objects (universally unique identifiers) according to RFC 9562
-.. moduleauthor:: Ka-Ping Yee <ping@zesty.ca>
-.. sectionauthor:: George Yoshida <quiver@users.sourceforge.net>
 
 **Source code:** :source:`Lib/uuid.py`
 
@@ -46,9 +44,10 @@ which relays any information about the UUID's safety, using this enumeration:
 
 .. class:: UUID(hex=None, bytes=None, bytes_le=None, fields=None, int=None, version=None, *, is_safe=SafeUUID.unknown)
 
-   Create a UUID from either a string of 32 hexadecimal digits, a string of 16
-   bytes in big-endian order as the *bytes* argument, a string of 16 bytes in
-   little-endian order as the *bytes_le* argument, a tuple of six integers
+   Create a UUID from either a string of 32 hexadecimal digits, a 16-byte
+   :class:`bytes` object in big-endian order as the *bytes* argument, a
+   16-byte :class:`bytes` object in little-endian order as the *bytes_le*
+   argument, a tuple of six integers
    (32-bit *time_low*, 16-bit *time_mid*, 16-bit *time_hi_version*,
    8-bit *clock_seq_hi_variant*, 8-bit *clock_seq_low*, 48-bit *node*) as the
    *fields* argument, or a single 128-bit integer as the *int* argument.
@@ -82,14 +81,14 @@ which relays any information about the UUID's safety, using this enumeration:
 
 .. attribute:: UUID.bytes
 
-   The UUID as a 16-byte string (containing the six integer fields in big-endian
-   byte order).
+   The UUID as a 16-byte :class:`bytes` object (containing the six integer
+   fields in big-endian byte order).
 
 
 .. attribute:: UUID.bytes_le
 
-   The UUID as a 16-byte string (with *time_low*, *time_mid*, and *time_hi_version*
-   in little-endian byte order).
+   The UUID as a 16-byte :class:`bytes` object (with *time_low*, *time_mid*,
+   and *time_hi_version* in little-endian byte order).
 
 
 .. attribute:: UUID.fields
@@ -168,7 +167,7 @@ which relays any information about the UUID's safety, using this enumeration:
 
    .. versionadded:: 3.7
 
-The :mod:`uuid` module defines the following functions:
+The :mod:`!uuid` module defines the following functions:
 
 
 .. function:: getnode()
@@ -273,7 +272,7 @@ The :mod:`uuid` module defines the following functions:
    .. versionadded:: 3.14
 
 
-The :mod:`uuid` module defines the following namespace identifiers for use with
+The :mod:`!uuid` module defines the following namespace identifiers for use with
 :func:`uuid3` or :func:`uuid5`.
 
 
@@ -298,7 +297,7 @@ The :mod:`uuid` module defines the following namespace identifiers for use with
    When this namespace is specified, the *name* string is an X.500 DN in DER or a
    text output format.
 
-The :mod:`uuid` module defines the following constants for the possible values
+The :mod:`!uuid` module defines the following constants for the possible values
 of the :attr:`~UUID.variant` attribute:
 
 
@@ -324,7 +323,7 @@ of the :attr:`~UUID.variant` attribute:
    Reserved for future definition.
 
 
-The :mod:`uuid` module defines the special Nil and Max UUID values:
+The :mod:`!uuid` module defines the special Nil and Max UUID values:
 
 
 .. data:: NIL
@@ -357,7 +356,7 @@ Command-Line Usage
 
 .. versionadded:: 3.12
 
-The :mod:`uuid` module can be executed as a script from the command line.
+The :mod:`!uuid` module can be executed as a script from the command line.
 
 .. code-block:: sh
 
@@ -406,7 +405,7 @@ The following options are accepted:
 Example
 -------
 
-Here are some examples of typical usage of the :mod:`uuid` module::
+Here are some examples of typical usage of the :mod:`!uuid` module::
 
    >>> import uuid
 
@@ -437,7 +436,7 @@ Here are some examples of typical usage of the :mod:`uuid` module::
    >>> x.bytes
    b'\x00\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\x0c\r\x0e\x0f'
 
-   >>> # make a UUID from a 16-byte string
+   >>> # make a UUID from a 16-byte bytes object
    >>> uuid.UUID(bytes=x.bytes)
    UUID('00010203-0405-0607-0809-0a0b0c0d0e0f')
 
@@ -473,7 +472,7 @@ Here are some examples of typical usage of the :mod:`uuid` module::
 Command-Line Example
 --------------------
 
-Here are some examples of typical usage of the :mod:`uuid` command-line interface:
+Here are some examples of typical usage of the :mod:`!uuid` command-line interface:
 
 .. code-block:: shell
 

@@ -5,9 +5,6 @@
 Unicode Objects and Codecs
 --------------------------
 
-.. sectionauthor:: Marc-André Lemburg <mal@lemburg.com>
-.. sectionauthor:: Georg Brandl <georg@python.org>
-
 Unicode Objects
 ^^^^^^^^^^^^^^^
 
@@ -18,6 +15,13 @@ for strings where all code points are below 128, 256, or 65536; otherwise, code
 points must be below 1114112 (which is the full Unicode range).
 
 UTF-8 representation is created on demand and cached in the Unicode object.
+
+.. impl-detail::
+
+   The internal buffer always includes an extra trailing null character for
+   compatibility with null terminated C strings. This extra character is not
+   counted in :c:func:`PyUnicode_GetLength` nor in the various *size* arguments
+   of the functions below.
 
 .. note::
    The :c:type:`Py_UNICODE` representation has been removed since Python 3.12
@@ -63,6 +67,27 @@ Python:
    that deal with Unicode objects take and return :c:type:`PyObject` pointers.
 
    .. versionadded:: 3.3
+
+
+   The structure of a particular object can be determined using the following
+   macros.
+   The macros cannot fail; their behavior is undefined if their argument
+   is not a Python Unicode object.
+
+   .. c:namespace:: NULL
+
+   .. c:macro:: PyUnicode_IS_COMPACT(o)
+
+      True if *o* uses the :c:struct:`PyCompactUnicodeObject` structure.
+
+      .. versionadded:: 3.3
+
+
+   .. c:macro:: PyUnicode_IS_COMPACT_ASCII(o)
+
+      True if *o* uses the :c:struct:`PyASCIIObject` structure.
+
+      .. versionadded:: 3.3
 
 
 The following APIs are C macros and static inlined functions for fast checks and
@@ -146,11 +171,15 @@ access to internal read-only data of Unicode objects:
    .. versionadded:: 3.3
 
 
-.. c:function:: Py_UCS4 PyUnicode_READ(int kind, void *data, \
-                                       Py_ssize_t index)
+.. c:function:: Py_UCS4 PyUnicode_READ(int kind, void *data, Py_ssize_t index)
 
    Read a code point from a canonical representation *data* (as obtained with
-   :c:func:`PyUnicode_DATA`).  No checks or ready calls are performed.
+   :c:func:`PyUnicode_DATA`).  No checks are performed.
+
+   .. impl-detail::
+
+      Accept reading the trailing null character at index
+      :c:func:`PyUnicode_GetLength`.
 
    .. versionadded:: 3.3
 
@@ -160,6 +189,11 @@ access to internal read-only data of Unicode objects:
    Read a character from a Unicode object *unicode*, which must be in the "canonical"
    representation.  This is less efficient than :c:func:`PyUnicode_READ` if you
    do multiple consecutive reads.
+
+   .. impl-detail::
+
+      Accept reading the trailing null character at index
+      :c:func:`PyUnicode_GetLength`.
 
    .. versionadded:: 3.3
 
@@ -321,12 +355,22 @@ These APIs can be used to work with surrogates:
 
    Check if *ch* is a low surrogate (``0xDC00 <= ch <= 0xDFFF``).
 
+.. c:function:: Py_UCS4 Py_UNICODE_HIGH_SURROGATE(Py_UCS4 ch)
+
+    Return the high UTF-16 surrogate (``0xD800`` to ``0xDBFF``) for a Unicode
+    code point in the range ``[0x10000; 0x10FFFF]``.
+
+.. c:function:: Py_UCS4 Py_UNICODE_LOW_SURROGATE(Py_UCS4 ch)
+
+    Return the low UTF-16 surrogate (``0xDC00`` to ``0xDFFF``) for a Unicode
+    code point in the range ``[0x10000; 0x10FFFF]``.
+
 .. c:function:: Py_UCS4 Py_UNICODE_JOIN_SURROGATES(Py_UCS4 high, Py_UCS4 low)
 
    Join two surrogate code points and return a single :c:type:`Py_UCS4` value.
    *high* and *low* are respectively the leading and trailing surrogates in a
-   surrogate pair. *high* must be in the range [0xD800; 0xDBFF] and *low* must
-   be in the range [0xDC00; 0xDFFF].
+   surrogate pair. *high* must be in the range ``[0xD800; 0xDBFF]`` and *low* must
+   be in the range ``[0xDC00; 0xDFFF]``.
 
 
 Creating and accessing Unicode strings
@@ -648,7 +692,8 @@ APIs:
 
    Append the string *right* to the end of *p_left*.
    *p_left* must point to a :term:`strong reference` to a Unicode object;
-   :c:func:`!PyUnicode_Append` releases ("steals") this reference.
+   :c:func:`!PyUnicode_Append` releases (":term:`steals <steal>`")
+   this reference.
 
    On error, set *\*p_left* to ``NULL`` and set an exception.
 
@@ -686,6 +731,10 @@ APIs:
    Return the length of the Unicode object, in code points.
 
    On error, set an exception and return ``-1``.
+
+   .. impl-detail::
+
+      The length does not count the trailing null character.
 
    .. versionadded:: 3.3
 
@@ -734,7 +783,7 @@ APIs:
    The string must not have been “used” yet.
    See :c:func:`PyUnicode_New` for details.
 
-   Return the number of written character, or return ``-1`` and raise an
+   Return the number of written characters, or return ``-1`` and raise an
    exception on error.
 
    .. versionadded:: 3.3
@@ -747,7 +796,7 @@ APIs:
    Return ``0`` on success, ``-1`` on error with an exception set.
 
    This function checks that *unicode* is a Unicode object, that the index is
-   not out of bounds, and that the object's reference count is one).
+   not out of bounds, and that the object's reference count is one.
    See :c:func:`PyUnicode_WRITE` for a version that skips these checks,
    making them your responsibility.
 
@@ -764,6 +813,11 @@ APIs:
    :c:func:`PyUnicode_READ_CHAR`, which performs no error checking.
 
    Return character on success, ``-1`` on error with an exception set.
+
+   .. impl-detail::
+
+      Do not accept reading the trailing null character at index
+      :c:func:`PyUnicode_GetLength`.
 
    .. versionadded:: 3.3
 
@@ -1146,7 +1200,7 @@ These are the UTF-8 codec APIs:
    .. versionadded:: 3.3
 
    .. versionchanged:: 3.7
-      The return type is now ``const char *`` rather of ``char *``.
+      The return type is now ``const char *`` rather than ``char *``.
 
    .. versionchanged:: 3.10
       This function is a part of the :ref:`limited API <limited-c-api>`.
@@ -1168,7 +1222,7 @@ These are the UTF-8 codec APIs:
    .. versionadded:: 3.3
 
    .. versionchanged:: 3.7
-      The return type is now ``const char *`` rather of ``char *``.
+      The return type is now ``const char *`` rather than ``char *``.
 
 
 UTF-32 Codecs
@@ -1768,6 +1822,9 @@ object.
    The instance must be destroyed by :c:func:`PyUnicodeWriter_Finish` on
    success, or :c:func:`PyUnicodeWriter_Discard` on error.
 
+   The API is **not thread safe**. To share a writer with multiple threads, a
+   critical section or a lock is needed.
+
 .. c:function:: PyUnicodeWriter* PyUnicodeWriter_Create(Py_ssize_t length)
 
    Create a Unicode writer instance.
@@ -1827,8 +1884,6 @@ object.
    On success, return ``0``.
    On error, set an exception, leave the writer unchanged, and return ``-1``.
 
-   .. versionadded:: 3.14
-
 .. c:function:: int PyUnicodeWriter_WriteWideChar(PyUnicodeWriter *writer, const wchar_t *str, Py_ssize_t size)
 
    Write the wide string *str* into *writer*.
@@ -1839,7 +1894,7 @@ object.
    On success, return ``0``.
    On error, set an exception, leave the writer unchanged, and return ``-1``.
 
-.. c:function:: int PyUnicodeWriter_WriteUCS4(PyUnicodeWriter *writer, Py_UCS4 *str, Py_ssize_t size)
+.. c:function:: int PyUnicodeWriter_WriteUCS4(PyUnicodeWriter *writer, const Py_UCS4 *str, Py_ssize_t size)
 
    Writer the UCS4 string *str* into *writer*.
 
@@ -1855,12 +1910,22 @@ object.
    On success, return ``0``.
    On error, set an exception, leave the writer unchanged, and return ``-1``.
 
+   To write a :class:`str` subclass which overrides the :meth:`~object.__str__`
+   method, :c:func:`PyUnicode_FromObject` can be used to get the original
+   string.
+
 .. c:function:: int PyUnicodeWriter_WriteRepr(PyUnicodeWriter *writer, PyObject *obj)
 
    Call :c:func:`PyObject_Repr` on *obj* and write the output into *writer*.
 
+   If *obj* is ``NULL``, write the string ``"<NULL>"`` into *writer*.
+
    On success, return ``0``.
    On error, set an exception, leave the writer unchanged, and return ``-1``.
+
+   .. versionchanged:: 3.14.4
+
+      Added support for ``NULL``.
 
 .. c:function:: int PyUnicodeWriter_WriteSubstring(PyUnicodeWriter *writer, PyObject *str, Py_ssize_t start, Py_ssize_t end)
 
@@ -1917,7 +1982,7 @@ The following API is deprecated.
       whether you selected a "narrow" or "wide" Unicode version of Python at
       build time.
 
-   .. deprecated-removed:: 3.13 3.15
+   .. deprecated-removed:: 3.13 3.16
 
 
 .. c:function:: int PyUnicode_READY(PyObject *unicode)

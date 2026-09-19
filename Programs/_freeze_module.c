@@ -134,7 +134,7 @@ compile_and_marshal(const char *name, const char *text)
         return NULL;
     }
 
-    assert(Py_MARSHAL_VERSION >= 5);
+    assert(Py_MARSHAL_VERSION >= 6);
     PyObject *marshalled = PyMarshal_WriteObjectToString(code, Py_MARSHAL_VERSION);
     Py_CLEAR(code);
     if (marshalled == NULL) {

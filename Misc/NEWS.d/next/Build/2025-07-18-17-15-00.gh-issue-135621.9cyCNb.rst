@@ -1,2 +1,0 @@
-PyREPL no longer depends on the :mod:`curses` standard library. Contributed
-by Łukasz Langa.

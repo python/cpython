@@ -1,6 +1,6 @@
+import importlib.resources as resources
 import unittest
 
-from importlib import resources
 from . import util
 
 
@@ -23,19 +23,19 @@ class OpenTests:
         target = resources.files(self.data) / 'binary.file'
         with target.open('rb') as fp:
             result = fp.read()
-            self.assertEqual(result, bytes(range(4)))
+            assert result == bytes(range(4))
 
     def test_open_text_default_encoding(self):
         target = resources.files(self.data) / 'utf-8.file'
         with target.open(encoding='utf-8') as fp:
             result = fp.read()
-            self.assertEqual(result, 'Hello, UTF-8 world!\n')
+            assert result == 'Hello, UTF-8 world!\n'
 
     def test_open_text_given_encoding(self):
         target = resources.files(self.data) / 'utf-16.file'
         with target.open(encoding='utf-16', errors='strict') as fp:
             result = fp.read()
-        self.assertEqual(result, 'Hello, UTF-16 world!\n')
+        assert result == 'Hello, UTF-16 world!\n'
 
     def test_open_text_with_errors(self):
         """
@@ -46,11 +46,10 @@ class OpenTests:
             self.assertRaises(UnicodeError, fp.read)
         with target.open(encoding='utf-8', errors='ignore') as fp:
             result = fp.read()
-        self.assertEqual(
-            result,
+        assert result == (
             'H\x00e\x00l\x00l\x00o\x00,\x00 '
             '\x00U\x00T\x00F\x00-\x001\x006\x00 '
-            '\x00w\x00o\x00r\x00l\x00d\x00!\x00\n\x00',
+            '\x00w\x00o\x00r\x00l\x00d\x00!\x00\n\x00'
         )
 
     def test_open_binary_FileNotFoundError(self):

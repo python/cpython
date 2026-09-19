@@ -282,20 +282,20 @@ the standard library. It adds :class:`zoneinfo.ZoneInfo`, a concrete
 Example::
 
     >>> from zoneinfo import ZoneInfo
-    >>> from datetime import datetime, timedelta
+    >>> import datetime as dt
 
     >>> # Daylight saving time
-    >>> dt = datetime(2020, 10, 31, 12, tzinfo=ZoneInfo("America/Los_Angeles"))
-    >>> print(dt)
+    >>> when = dt.datetime(2020, 10, 31, 12, tzinfo=ZoneInfo("America/Los_Angeles"))
+    >>> print(when)
     2020-10-31 12:00:00-07:00
-    >>> dt.tzname()
+    >>> when.tzname()
     'PDT'
 
     >>> # Standard time
-    >>> dt += timedelta(days=7)
-    >>> print(dt)
+    >>> when += dt.timedelta(days=7)
+    >>> print(when)
     2020-11-07 12:00:00-08:00
-    >>> print(dt.tzname())
+    >>> print(when.tzname())
     PST
 
 

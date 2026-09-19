@@ -1,0 +1,1 @@
+Fixes possible crash on :class:`types.CodeType` deallocation.

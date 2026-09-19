@@ -1,3 +1,0 @@
-Fixed a bug where f-string debug expressions (using =) would incorrectly
-strip out parts of strings containing escaped quotes and # characters. Patch
-by Pablo Galindo.

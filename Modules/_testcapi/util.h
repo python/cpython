@@ -14,6 +14,16 @@
         return PyLong_FromLong(_ret);       \
     } while (0)
 
+#define RETURN_UINT(value) do {             \
+        unsigned int _ret = (value);        \
+        if (_ret == (unsigned int)-1) {     \
+            assert(PyErr_Occurred());       \
+            return NULL;                    \
+        }                                   \
+        assert(!PyErr_Occurred());          \
+        return PyLong_FromUnsignedLong(_ret); \
+    } while (0)
+
 #define RETURN_SIZE(value) do {             \
         Py_ssize_t _ret = (value);          \
         if (_ret == -1) {                   \

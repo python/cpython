@@ -1,0 +1,4 @@
+Fixed a crash (use-after-free) in :meth:`bytes.join` and
+:meth:`bytearray.join` that could occur if an item's
+:meth:`~object.__buffer__` concurrently mutates the sequence being joined.
+The mutation is now reported as a :exc:`RuntimeError` instead.

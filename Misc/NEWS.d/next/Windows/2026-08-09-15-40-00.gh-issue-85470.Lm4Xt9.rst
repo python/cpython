@@ -1,0 +1,4 @@
+Importing :mod:`ctypes` on Windows no longer loads ``user32.dll``, which
+made the system treat the process as a GUI process and stop sending logoff
+and shutdown console control events to it.  ``ole32.dll``, which pulled
+``user32.dll`` in, is now delay loaded.
