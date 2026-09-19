@@ -1,0 +1,2 @@
+Forbid setting :term:`Data descriptors <descriptor>` in
+:func:`dataclasses.dataclass` with ``slots=True``
