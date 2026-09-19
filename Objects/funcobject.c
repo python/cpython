@@ -975,25 +975,38 @@ function___annotations___get_impl(PyFunctionObject *self)
 /*[clinic input]
 @critical_section
 @setter
-@deleter
 function.__annotations__
 [clinic start generated code]*/
 
 static int
 function___annotations___set_impl(PyFunctionObject *self, PyObject *value)
-/*[clinic end generated code: output=a61795d4a95eede4 input=71f6a58c00ac6745]*/
+/*[clinic end generated code: output=a61795d4a95eede4 input=5302641f686f0463]*/
 {
+    /* Can only set func_annotations to None (which clears it, as deletion
+     * does) or to a dict. */
     if (value == Py_None)
         value = NULL;
-    /* Legal to del f.func_annotations.
-     * Can only set func_annotations to NULL (through C api)
-     * or a dict. */
     if (value != NULL && !PyDict_Check(value)) {
         PyErr_SetString(PyExc_TypeError,
             "__annotations__ must be set to a dict object");
         return -1;
     }
     Py_XSETREF(self->func_annotations, Py_XNewRef(value));
+    Py_CLEAR(self->func_annotate);
+    return 0;
+}
+
+/*[clinic input]
+@critical_section
+@deleter
+function.__annotations__
+[clinic start generated code]*/
+
+static int
+function___annotations___del_impl(PyFunctionObject *self)
+/*[clinic end generated code: output=e68e5ec4145b0768 input=4014003acb737ff7]*/
+{
+    Py_CLEAR(self->func_annotations);
     Py_CLEAR(self->func_annotate);
     return 0;
 }
