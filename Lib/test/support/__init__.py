@@ -463,7 +463,9 @@ def check_sanitizer(*, address=False, memory=False, ub=False, thread=False,
     )
     address_sanitizer = (
         '-fsanitize=address' in cflags or
-        '--with-address-sanitizer' in config_args
+        '-fsanitize=hwaddress' in cflags or
+        '--with-address-sanitizer' in config_args or
+        '--with-hwaddress-sanitizer' in config_args
     )
     ub_sanitizer = (
         '-fsanitize=undefined' in cflags or
