@@ -1061,6 +1061,35 @@ class TestCopyTree(BaseTest, unittest.TestCase):
         self.assertIn('test.txt', os.listdir(dst_dir))
 
     @os_helper.skip_unless_symlink
+    def test_copytree_valid_relative_symlink(self):
+        root_dir = self.mkdtemp()
+        src_dir = os.path.join(root_dir, 'source')
+        os.mkdir(src_dir)
+        create_file(os.path.join(src_dir, 'target'), 'abc')
+        os.symlink('target', os.path.join(src_dir, 'link'))
+
+        dst_dir = os.path.join(root_dir, 'destination')
+        with os_helper.change_cwd(root_dir):
+            shutil.copytree(src_dir, dst_dir, ignore_dangling_symlinks=True)
+        self.assertEqual(['link', 'target'], sorted(os.listdir(dst_dir)))
+        self.assertFalse(os.path.islink(os.path.join(dst_dir, 'link')))
+        self.assertEqual('abc', read_file(os.path.join(dst_dir, 'link')))
+
+    @os_helper.skip_unless_symlink
+    def test_copytree_dangling_relative_symlink(self):
+        root_dir = self.mkdtemp()
+        src_dir = os.path.join(root_dir, 'source')
+        os.mkdir(src_dir)
+        os.symlink('target', os.path.join(src_dir, 'link'))
+        create_file(os.path.join(root_dir, 'target'), 'abc')
+
+        dst_dir = os.path.join(root_dir, 'destination')
+        with os_helper.change_cwd(root_dir):
+            shutil.copytree(src_dir, dst_dir,
+                            ignore_dangling_symlinks=True)
+        self.assertEqual([], os.listdir(dst_dir))
+
+    @os_helper.skip_unless_symlink
     def test_copytree_symlink_dir(self):
         src_dir = self.mkdtemp()
         dst_dir = os.path.join(self.mkdtemp(), 'destination')
