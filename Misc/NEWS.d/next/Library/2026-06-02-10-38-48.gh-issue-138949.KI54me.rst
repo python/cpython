@@ -1,0 +1,2 @@
+Fix :exc:`NameError` in :func:`typing.get_type_hints` on non-generic
+children of generic typed dicts with future annotations flag enabled.

@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Callable
+from typing import Callable, TypedDict
 
 
 class A[T, *Ts, **P]:
@@ -70,3 +70,22 @@ def nested():
         generic_func=generic_function,
         hints_for_generic_func=get_type_hints(generic_function)
     )
+
+# gh-138949
+class TD1[T](TypedDict):
+    a: T
+
+class TD2(TD1):
+    b: int
+
+class TD3[CT](TD2):
+    c: CT
+
+class TD4[T, E](TD3):
+    d: T
+    e: E
+
+class TD1_2(TD1):
+    # This must raise a `NameError`, because `T` is only defined for a parent
+    # keys scope.
+    b: T
