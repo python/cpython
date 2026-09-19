@@ -106,6 +106,7 @@ class PyShellTest(unittest.TestCase):
         self.assertEqual(text.get('iomark-6c', 'end-1c'), 'hello\na = (')
         self.assertIn('console', text.tag_names('iomark-1c'))
         self.assertNotIn('console', text.tag_names('iomark-7c'))
+        self.assertEqual(shell.shell_sidebar.line_prompts, {3: '>>>'})
 
 
 class PyShellRemoveLastNewlineAndSurroundingWhitespaceTest(unittest.TestCase):

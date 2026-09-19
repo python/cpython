@@ -1449,6 +1449,7 @@ class PyShell(OutputWindow):
                            # let's find out what they are and be specific.
         if at_prompt and s.endswith('\n'):
             text.tag_add("console", "iomark-1c")
+            self.shell_sidebar.update_sidebar()
         if self.canceled:
             self.canceled = False
             if not use_subprocess:
