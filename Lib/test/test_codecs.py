@@ -3572,6 +3572,49 @@ class CodePageTest(unittest.TestCase):
             (b'[\xff]', 'strict', '[\xff]'),
         ))
 
+    def test_cp50220(self):
+        # ISO-2022-JP, a code page which only supports conversion with flags=0
+        self.check_encode(50220, (
+            ('abc', 'strict', b'abc'),
+            ('\u3042', 'strict', b'\x1b$B$"\x1b(B'),
+            ('\u3042abc', 'strict', b'\x1b$B$"\x1b(Babc'),
+            # test error handlers
+            ('[\u20ac]', 'strict', None),
+            ('[\u20ac]', 'ignore', b'[]'),
+            ('[\u20ac]', 'replace', b'[?]'),
+            ('[\u20ac]', 'backslashreplace', b'[\\u20ac]'),
+            ('[\u20ac]', 'xmlcharrefreplace', b'[&#8364;]'),
+            ('\u3042[\u20ac]\u3042', 'ignore',
+             b'\x1b$B$"\x1b(B[]\x1b$B$"\x1b(B'),
+            ('[\udc80]', 'strict', None),
+            ('[\udc80]', 'ignore', b'[]'),
+        ))
+        self.check_decode(50220, (
+            (b'abc', 'strict', 'abc'),
+            (b'\x1b$B$"\x1b(B', 'strict', '\u3042'),
+            (b'\x1b$B$"\x1b(Babc', 'strict', '\u3042abc'),
+        ))
+
+    def test_cp54936(self):
+        # GB18030, a code page which only supports conversion with flags=0
+        self.check_encode(54936, (
+            ('abc', 'strict', b'abc'),
+            ('\u4e2d', 'strict', b'\xd6\xd0'),
+            ('\u20ac', 'strict', b'\xa2\xe3'),
+            ('\U00020000', 'strict', b'\x952\x826'),
+            # test error handlers
+            ('[\udc80]', 'strict', None),
+            ('[\udc80]', 'ignore', b'[]'),
+            ('[\udc80]', 'replace', b'[?]'),
+            ('[\udc80]', 'backslashreplace', b'[\\udc80]'),
+            ('[\udc80]', 'surrogateescape', b'[\x80]'),
+        ))
+        self.check_decode(54936, (
+            (b'abc', 'strict', 'abc'),
+            (b'\xd6\xd0', 'strict', '\u4e2d'),
+            (b'\x952\x826', 'strict', '\U00020000'),
+        ))
+
     def test_multibyte_encoding(self):
         self.check_decode(932, (
             (b'\x84\xe9\x80', 'ignore', '\u9a3e'),
