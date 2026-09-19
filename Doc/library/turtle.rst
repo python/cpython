@@ -2574,7 +2574,7 @@ Public classes
 Exceptions
 ==========
 
-The :mod:`!turtle` module defines the following exception class:
+The :mod:`!turtle` module defines the following exception:
 
 .. exception:: TurtleGraphicsError
 
@@ -2588,6 +2588,7 @@ The :mod:`!turtle` module defines the following exception class:
       Traceback (most recent call last):
           ...
       turtle.TurtleGraphicsError: bad color string: blau
+
 
 .. _turtle-explanation:
 
