@@ -519,6 +519,53 @@ class TestFrameLocals(unittest.TestCase):
         lst = [locals() for k in [0]]
         self.assertEqual(lst[0]['k'], 0)
 
+    def test_closure_with_inline_comprehension_proxy(self):
+        def snapshot():
+            proxy = sys._getframe(1).f_locals
+            return (
+                dict(**proxy),
+                proxy.copy(),
+                proxy.keys(),
+                proxy.values(),
+                proxy.items(),
+                len(proxy),
+            )
+
+        x = [1]
+
+        def inner():
+            return [(lambda: x, snapshot()) for x in x]
+
+        func, proxy_views = inner()[0]
+        self.assertEqual(func(), 1)
+        expected = {'x': 1, 'snapshot': snapshot}
+        self.assertEqual(
+            proxy_views,
+            (
+                expected,
+                expected,
+                ['x', 'snapshot'],
+                [1, snapshot],
+                [('x', 1), ('snapshot', snapshot)],
+                2,
+            ),
+        )
+
+    def test_closure_with_inline_comprehension_proxy_write(self):
+        def write_x(value):
+            proxy = sys._getframe(1).f_locals
+            proxy['x'] = value
+            return proxy['x']
+
+        x = 3
+
+        def inner():
+            proxy_saw = write_x(4)
+            funcs = [lambda: x for x in [1]]
+            return proxy_saw, x, funcs[0]()
+
+        self.assertEqual(inner(), (4, 4, 1))
+
     def test_as_dict(self):
         x = 1
         y = 2

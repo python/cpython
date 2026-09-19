@@ -1,0 +1,2 @@
+Fix scope analysis for a name bound in one inlined comprehension and used as
+a free variable by a sibling comprehension or nested function.
