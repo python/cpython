@@ -248,9 +248,12 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         prev_task = _py_swap_current_task(self._loop, self)
         try:
             _py_register_eager_task(self)
+            # gh-157299: the eager step must record the awaited_by edge
+            futures.future_add_to_awaited_by(self, prev_task)
             try:
                 self._context.run(self.__step_run_and_handle_result, None)
             finally:
+                futures.future_discard_from_awaited_by(self, prev_task)
                 _py_unregister_eager_task(self)
         finally:
             try:
