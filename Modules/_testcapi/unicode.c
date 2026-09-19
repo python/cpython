@@ -220,6 +220,8 @@ unicode_copycharacters(PyObject *self, PyObject *args)
     return Py_BuildValue("(Nn)", to_copy, copied);
 }
 
+
+// Test PyUnstable_Unicode_GET_CACHED_HASH()
 static PyObject*
 unicode_GET_CACHED_HASH(PyObject *self, PyObject *arg)
 {
@@ -292,6 +294,148 @@ corrupt_unicode(PyObject *Py_UNUSED(module), PyObject *args)
     Py_ssize_t size = PyUnicode_GET_LENGTH(override);
     memcpy(dst, src, size);
     Py_RETURN_NONE;
+}
+
+
+/* Test PyUnicode_READ_CHAR() */
+static PyObject *
+unicode_read_char(PyObject *self, PyObject *args)
+{
+    PyObject *unicode;
+    Py_ssize_t index;
+    if (!PyArg_ParseTuple(args, "On", &unicode, &index)) {
+        return NULL;
+    }
+    NULLABLE(unicode);
+
+    Py_UCS4 result = PyUnicode_READ_CHAR(unicode, index);
+    return PyLong_FromUnsignedLong(result);
+}
+
+
+/* Test PyUnicode_READ() macro */
+static PyObject *
+unicode_read(PyObject *self, PyObject *args)
+{
+    PyObject *unicode;
+    Py_ssize_t index;
+    if (!PyArg_ParseTuple(args, "On", &unicode, &index)) {
+        return NULL;
+    }
+    NULLABLE(unicode);
+
+    int kind = PyUnicode_KIND(unicode);
+    const void *data = PyUnicode_DATA(unicode);
+    Py_UCS4 result = PyUnicode_READ(kind, data, index);
+    return PyLong_FromUnsignedLong(result);
+}
+
+
+/* Test PyUnicode_WRITE() macro */
+static PyObject *
+unicode_write(PyObject *self, PyObject *args)
+{
+    PyObject *unicode;
+    Py_ssize_t index;
+    unsigned int character;
+    if (!PyArg_ParseTuple(args, "OnI", &unicode, &index, &character)) {
+        return NULL;
+    }
+    NULLABLE(unicode);
+
+    PyObject *copy = unicode_copy(unicode);
+    if (copy == NULL) {
+        return NULL;
+    }
+
+    int kind = PyUnicode_KIND(copy);
+    const void *data = PyUnicode_DATA(copy);
+    PyUnicode_WRITE(kind, data, index, character);
+    // Same return value than _testlimitedcapi unicode_writechar():
+    // always use 0 as the function result
+    return Py_BuildValue("(Ni)", copy, 0);
+}
+
+
+/* Test PyUnicode_KIND() macro */
+static PyObject *
+unicode_kind(PyObject *self, PyObject *unicode)
+{
+    NULLABLE(unicode);
+
+    int kind = PyUnicode_KIND(unicode);
+    return PyLong_FromLong(kind);
+}
+
+
+/* Test PyUnicode_MAX_CHAR_VALUE() macro */
+static PyObject *
+unicode_max_char_value(PyObject *self, PyObject *unicode)
+{
+    NULLABLE(unicode);
+
+    Py_UCS4 maxchar = PyUnicode_MAX_CHAR_VALUE(unicode);
+    return PyLong_FromUnsignedLong(maxchar);
+}
+
+
+/* Test PyUnicode_GET_LENGTH() macro */
+static PyObject *
+unicode_getlength_macro(PyObject *self, PyObject *arg)
+{
+    NULLABLE(arg);
+    return PyLong_FromSsize_t(PyUnicode_GET_LENGTH(arg));
+}
+
+
+/* Test PyUnicode_Equal() macro */
+static PyObject *
+unicode_equal(PyObject *self, PyObject *args)
+{
+    PyObject *str1, *str2;
+    if (!PyArg_ParseTuple(args, "OnI", &str1, &str2)) {
+        return NULL;
+    }
+    NULLABLE(str1);
+    NULLABLE(str2);
+
+    RETURN_INT(PyUnicode_Equal(str1, str2));
+}
+
+
+/* Test PyUnicode_CHECK_INTERNED() macro */
+static PyObject *
+unicode_check_interned(PyObject *self, PyObject *arg)
+{
+    NULLABLE(arg);
+    RETURN_UINT(PyUnicode_CHECK_INTERNED(arg));
+}
+
+
+/* Test PyUnicode_IS_ASCII() macro */
+static PyObject *
+unicode_is_ascii(PyObject *self, PyObject *arg)
+{
+    NULLABLE(arg);
+    RETURN_UINT(PyUnicode_IS_ASCII(arg));
+}
+
+
+/* Test PyUnicode_IS_COMPACT() macro */
+static PyObject *
+unicode_is_compact(PyObject *self, PyObject *arg)
+{
+    NULLABLE(arg);
+    RETURN_UINT(PyUnicode_IS_COMPACT(arg));
+}
+
+
+/* Test PyUnicode_IS_COMPACT_ASCII() macro */
+static PyObject *
+unicode_is_compact_ascii(PyObject *self, PyObject *arg)
+{
+    NULLABLE(arg);
+    RETURN_INT(PyUnicode_IS_COMPACT_ASCII(arg));
 }
 
 
@@ -642,6 +786,17 @@ static PyMethodDef TestMethods[] = {
     {"unicode_GET_CACHED_HASH",  unicode_GET_CACHED_HASH,        METH_O},
     {"test_py_identifier",       test_py_identifier,             METH_NOARGS},
     {"corrupt_unicode",          corrupt_unicode,                METH_VARARGS},
+    {"unicode_read_char",        unicode_read_char,              METH_VARARGS},
+    {"unicode_read",             unicode_read,                   METH_VARARGS},
+    {"unicode_write",            unicode_write,                  METH_VARARGS},
+    {"unicode_kind",             unicode_kind,                   METH_O},
+    {"unicode_max_char_value",   unicode_max_char_value,         METH_O},
+    {"unicode_getlength_macro",  unicode_getlength_macro,        METH_O},
+    {"unicode_equal",            unicode_equal,                  METH_VARARGS},
+    {"unicode_check_interned",   unicode_check_interned,         METH_O},
+    {"unicode_is_ascii",         unicode_is_ascii,               METH_O},
+    {"unicode_is_compact",       unicode_is_compact,             METH_O},
+    {"unicode_is_compact_ascii", unicode_is_compact_ascii,       METH_O},
     {NULL},
 };
 
