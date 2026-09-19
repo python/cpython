@@ -1,0 +1,1 @@
+Fix ``-Wimplicit-int`` compiler warning in :program:`configure` check for ``PTHREAD_SCOPE_SYSTEM``.
