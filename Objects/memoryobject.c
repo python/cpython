@@ -3260,7 +3260,8 @@ memory_richcompare(PyObject *v, PyObject *w, int op)
         }
     }
 
-    if (PyMemoryView_Check(w)) {
+    int w_is_mv = PyMemoryView_Check(w);
+    if (w_is_mv) {
         if (BASE_INACCESSIBLE(w)) {
             equal = (v == w);
             goto result;
@@ -3303,6 +3304,13 @@ memory_richcompare(PyObject *v, PyObject *w, int op)
             goto result;
         }
     }
+    /* Prevent memoryview object from being released and its underlying buffer
+       reshaped during a mixed format comparison loop.
+       See https://github.com/python/cpython/issues/142663. */
+    FT_ATOMIC_ADD_SSIZE(_PyMemoryView_CAST(v)->exports, 1);
+    if (w_is_mv) {
+        FT_ATOMIC_ADD_SSIZE(_PyMemoryView_CAST(w)->exports, 1);
+    }
 
     if (vv->ndim == 0) {
         equal = unpack_cmp(vv->buf, ww->buf,
@@ -3319,6 +3327,11 @@ memory_richcompare(PyObject *v, PyObject *w, int op)
                         vv->strides, vv->suboffsets,
                         ww->strides, ww->suboffsets,
                         vfmt, unpack_v, unpack_w);
+    }
+
+    FT_ATOMIC_ADD_SSIZE(_PyMemoryView_CAST(v)->exports, -1);
+    if (w_is_mv) {
+        FT_ATOMIC_ADD_SSIZE(_PyMemoryView_CAST(w)->exports, -1);
     }
 
 result:
