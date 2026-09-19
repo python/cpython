@@ -1,5 +1,7 @@
 #include "Python.h"
 
+struct _PyExecutorObject;
+
 #ifdef _Py_TIER2
 
 #include "opcode.h"
@@ -53,7 +55,7 @@ has_space_for_executor(PyCodeObject *code, _Py_CODEUNIT *instr)
     if (code->co_executors == NULL) {
         return true;
     }
-    return code->co_executors->size < MAX_EXECUTORS_SIZE;
+    return _PyExecutorArray_SIZE(code->co_executors) < MAX_EXECUTORS_SIZE;
 }
 
 static int32_t
@@ -62,7 +64,7 @@ get_index_for_executor(PyCodeObject *code, _Py_CODEUNIT *instr)
     if (instr->op.code == ENTER_EXECUTOR) {
         return instr->op.arg;
     }
-    _PyExecutorArray *old = code->co_executors;
+    _PyExecutorArrayInternal *old = _PyExecutorArray_CAST(code->co_executors);
     int size = 0;
     int capacity = 0;
     if (old != NULL) {
@@ -74,18 +76,18 @@ get_index_for_executor(PyCodeObject *code, _Py_CODEUNIT *instr)
     if (size == capacity) {
         /* Array is full. Grow array */
         int new_capacity = capacity ? capacity * 2 : 4;
-        _PyExecutorArray *new = PyMem_Realloc(
+        _PyExecutorArrayInternal *new = PyMem_Realloc(
             old,
-            offsetof(_PyExecutorArray, executors) +
+            offsetof(_PyExecutorArrayInternal, executors) +
             new_capacity * sizeof(_PyExecutorObject *));
         if (new == NULL) {
             return -1;
         }
         new->capacity = new_capacity;
         new->size = size;
-        code->co_executors = new;
+        code->co_executors = (_PyExecutorArray *)new;
     }
-    assert(size < code->co_executors->capacity);
+    assert(size < _PyExecutorArray_CAST(code->co_executors)->capacity);
     return size;
 }
 
@@ -95,18 +97,18 @@ insert_executor(PyCodeObject *code, _Py_CODEUNIT *instr, int index, _PyExecutorO
     Py_INCREF(executor);
     if (instr->op.code == ENTER_EXECUTOR) {
         assert(index == instr->op.arg);
-        _Py_ExecutorDetach(code->co_executors->executors[index]);
+        _Py_ExecutorDetach(_PyExecutorArray_EXECUTORS(code->co_executors)[index]);
     }
     else {
-        assert(code->co_executors->size == index);
-        assert(code->co_executors->capacity > index);
-        code->co_executors->size++;
+        assert(_PyExecutorArray_SIZE(code->co_executors) == index);
+        assert(_PyExecutorArray_CAST(code->co_executors)->capacity > index);
+        _PyExecutorArray_CAST(code->co_executors)->size++;
     }
     executor->vm_data.opcode = instr->op.code;
     executor->vm_data.oparg = instr->op.arg;
     executor->vm_data.code = code;
     executor->vm_data.index = (int)(instr - _PyCode_CODE(code));
-    code->co_executors->executors[index] = executor;
+    _PyExecutorArray_EXECUTORS(code->co_executors)[index] = executor;
     assert(index < MAX_EXECUTORS_SIZE);
     instr->op.code = ENTER_EXECUTOR;
     instr->op.arg = index;
@@ -209,7 +211,7 @@ get_executor_lock_held(PyCodeObject *code, int offset)
     for (int i = 0 ; i < code_len;) {
         if (_PyCode_CODE(code)[i].op.code == ENTER_EXECUTOR && i*2 == offset) {
             int oparg = _PyCode_CODE(code)[i].op.arg;
-            _PyExecutorObject *res = code->co_executors->executors[oparg];
+            _PyExecutorObject *res = _PyExecutorArray_EXECUTORS(code->co_executors)[oparg];
             Py_INCREF(res);
             return res;
         }
@@ -706,7 +708,7 @@ _PyJit_translate_single_bytecode_to_trace(
     }
 
     if (opcode == ENTER_EXECUTOR) {
-        _PyExecutorObject *executor = old_code->co_executors->executors[oparg & 255];
+        _PyExecutorObject *executor = _PyExecutorArray_EXECUTORS(old_code->co_executors)[oparg & 255];
         opcode = executor->vm_data.opcode;
         oparg = (oparg & ~255) | executor->vm_data.oparg;
     }
@@ -1865,11 +1867,11 @@ _Py_ExecutorDetach(_PyExecutorObject *executor)
     _Py_CODEUNIT *instruction = &_PyCode_CODE(code)[executor->vm_data.index];
     assert(instruction->op.code == ENTER_EXECUTOR);
     int index = instruction->op.arg;
-    assert(code->co_executors->executors[index] == executor);
+    assert(_PyExecutorArray_EXECUTORS(code->co_executors)[index] == executor);
     instruction->op.code = _PyOpcode_Deopt[executor->vm_data.opcode];
     instruction->op.arg = executor->vm_data.oparg;
     executor->vm_data.code = NULL;
-    code->co_executors->executors[index] = NULL;
+    _PyExecutorArray_EXECUTORS(code->co_executors)[index] = NULL;
     Py_DECREF(executor);
 }
 
@@ -2058,7 +2060,7 @@ find_line_number(PyCodeObject *code, _PyExecutorObject *executor)
         _Py_CODEUNIT *instr = &_PyCode_CODE(code)[i];
         int opcode = instr->op.code;
         if (opcode == ENTER_EXECUTOR) {
-            _PyExecutorObject *exec = code->co_executors->executors[instr->op.arg];
+            _PyExecutorObject *exec = _PyExecutorArray_EXECUTORS(code->co_executors)[instr->op.arg];
             if (exec == executor) {
                 return PyCode_Addr2Line(code, i*2);
             }

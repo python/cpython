@@ -649,6 +649,7 @@ NON_ESCAPING_FUNCTIONS = (
     "Py_UNREACHABLE",
     "Py_Unicode_GET_LENGTH",
     "_PyCode_CODE",
+    "_PyExecutorArray_EXECUTORS",
     "_PyDictValues_AddToInsertionOrder",
     "_PyErr_Occurred",
     "_PyFrame_GetBytecode",
