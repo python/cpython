@@ -416,7 +416,7 @@ elif os.name == "posix":
 # On platforms which provide dl_iterate_phdr(), dllist() is implemented
 # in _ctypes.
 try:
-    from _ctypes import dllist
+    from _ctypes import dllist as dllist
 except ImportError:
     pass
 
@@ -525,55 +525,8 @@ def wrap_dll_function(dll):
 
     return decorator
 
-################################################################
-# test code
-
 def test():
-    from ctypes import cdll
-    if os.name == "nt":
-        print(cdll.msvcrt)
-        print(cdll.load("msvcrt"))
-        print(find_library("msvcrt"))
-
-    if os.name == "posix":
-        # find and load_version
-        print(find_library("m"))
-        print(find_library("c"))
-        print(find_library("bz2"))
-
-        # load
-        if sys.platform == "darwin":
-            print(cdll.LoadLibrary("libm.dylib"))
-            print(cdll.LoadLibrary("libcrypto.dylib"))
-            print(cdll.LoadLibrary("libSystem.dylib"))
-            print(cdll.LoadLibrary("System.framework/System"))
-        # issue-26439 - fix broken test call for AIX
-        elif sys.platform.startswith("aix"):
-            from ctypes import CDLL
-            if sys.maxsize < 2**32:
-                print(f"Using CDLL(name, os.RTLD_MEMBER): {CDLL('libc.a(shr.o)', os.RTLD_MEMBER)}")
-                print(f"Using cdll.LoadLibrary(): {cdll.LoadLibrary('libc.a(shr.o)')}")
-                # librpm.so is only available as 32-bit shared library
-                print(find_library("rpm"))
-                print(cdll.LoadLibrary("librpm.so"))
-            else:
-                print(f"Using CDLL(name, os.RTLD_MEMBER): {CDLL('libc.a(shr_64.o)', os.RTLD_MEMBER)}")
-                print(f"Using cdll.LoadLibrary(): {cdll.LoadLibrary('libc.a(shr_64.o)')}")
-            print(f"crypt\t:: {find_library('crypt')}")
-            print(f"crypt\t:: {cdll.LoadLibrary(find_library('crypt'))}")
-            print(f"crypto\t:: {find_library('crypto')}")
-            print(f"crypto\t:: {cdll.LoadLibrary(find_library('crypto'))}")
-        else:
-            print(cdll.LoadLibrary("libm.so"))
-            print(cdll.LoadLibrary("libcrypt.so"))
-            print(find_library("crypt"))
-
-    try:
-        dllist
-    except NameError:
-        print('dllist() not available')
-    else:
-        print(dllist())
-
-if __name__ == "__main__":
-    test()
+    """
+    This function is a no-op and is soft-deprecated since Python 3.16.
+    Do not use.
+    """
