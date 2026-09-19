@@ -1,0 +1,1 @@
+:class:`collections.deque` no longer suppresses :exc:`MemoryError` in certain cases.
