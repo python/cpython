@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+#include "pycore_time.h"          // _PyTime_ObjectToTime_t()
 
 PyDoc_STRVAR(delta_new__doc__,
 "timedelta(days=0, seconds=0, microseconds=0, milliseconds=0, minutes=0,\n"
@@ -221,15 +222,20 @@ PyDoc_STRVAR(datetime_date_fromtimestamp__doc__,
     {"fromtimestamp", (PyCFunction)datetime_date_fromtimestamp, METH_O|METH_CLASS, datetime_date_fromtimestamp__doc__},
 
 static PyObject *
-datetime_date_fromtimestamp_impl(PyTypeObject *type, PyObject *timestamp);
+datetime_date_fromtimestamp_impl(PyTypeObject *type, time_t timestamp);
 
 static PyObject *
-datetime_date_fromtimestamp(PyObject *type, PyObject *timestamp)
+datetime_date_fromtimestamp(PyObject *type, PyObject *arg)
 {
     PyObject *return_value = NULL;
+    time_t timestamp;
 
+    if (_PyTime_ObjectToTime_t(arg, &timestamp, _PyTime_ROUND_FLOOR) < 0) {
+        goto exit;
+    }
     return_value = datetime_date_fromtimestamp_impl((PyTypeObject *)type, timestamp);
 
+exit:
     return return_value;
 }
 
@@ -2091,4 +2097,4 @@ datetime_datetime___reduce__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return datetime_datetime___reduce___impl((PyDateTime_DateTime *)self);
 }
-/*[clinic end generated code: output=8f63509398651723 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=336fd62531faf9cb input=a9049054013a1b77]*/

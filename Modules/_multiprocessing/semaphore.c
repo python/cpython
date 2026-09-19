@@ -89,38 +89,35 @@ _GetSemaphoreValue(HANDLE handle, int *value)
 _multiprocessing.SemLock.acquire
 
     block as blocking: bool = True
-    timeout as timeout_obj: object = None
+    timeout: duration(accept={float, NoneType}, c_default='PyTime_MIN') = None
 
 Acquire the semaphore/lock.
 [clinic start generated code]*/
 
 static PyObject *
 _multiprocessing_SemLock_acquire_impl(SemLockObject *self, int blocking,
-                                      PyObject *timeout_obj)
-/*[clinic end generated code: output=f9998f0b6b0b0872 input=079ca779975f3ad6]*/
+                                      PyTime_t timeout)
+/*[clinic end generated code: output=38d34f4b0b2f918e input=b76d85c9695dc3a4]*/
 {
-    double timeout;
     DWORD res, full_msecs, nhandles;
     HANDLE handles[2], sigint_event;
 
     /* calculate timeout */
     if (!blocking) {
         full_msecs = 0;
-    } else if (timeout_obj == Py_None) {
+    } else if (timeout == PyTime_MIN) {  /* timeout=None: wait forever */
         full_msecs = INFINITE;
     } else {
-        timeout = PyFloat_AsDouble(timeout_obj);
-        if (PyErr_Occurred())
-            return NULL;
-        timeout *= 1000.0;      /* convert to millisecs */
-        if (timeout < 0.0) {
-            timeout = 0.0;
-        } else if (timeout >= 0.5 * INFINITE) { /* 25 days */
+        if (timeout < 0) {
+            timeout = 0;
+        }
+        PyTime_t msecs = _PyTime_AsMilliseconds(timeout, _PyTime_ROUND_TIMEOUT);
+        if (msecs >= INFINITE / 2) {    /* 25 days */
             PyErr_SetString(PyExc_OverflowError,
                             "timeout is too large");
             return NULL;
         }
-        full_msecs = (DWORD)(timeout + 0.5);
+        full_msecs = (DWORD)msecs;
     }
 
     /* check whether we already own the lock */
@@ -307,15 +304,15 @@ sem_timedwait_save(sem_t *sem, struct timespec *deadline, PyThreadState *_save)
 _multiprocessing.SemLock.acquire
 
     block as blocking: bool = True
-    timeout as timeout_obj: object = None
+    timeout: duration(accept={float, NoneType}, c_default='PyTime_MIN') = None
 
 Acquire the semaphore/lock.
 [clinic start generated code]*/
 
 static PyObject *
 _multiprocessing_SemLock_acquire_impl(SemLockObject *self, int blocking,
-                                      PyObject *timeout_obj)
-/*[clinic end generated code: output=f9998f0b6b0b0872 input=079ca779975f3ad6]*/
+                                      PyTime_t timeout)
+/*[clinic end generated code: output=38d34f4b0b2f918e input=b76d85c9695dc3a4]*/
 {
     int res, err = 0;
     struct timespec deadline = {0};
@@ -325,14 +322,10 @@ _multiprocessing_SemLock_acquire_impl(SemLockObject *self, int blocking,
         Py_RETURN_TRUE;
     }
 
-    int use_deadline = (timeout_obj != Py_None);
+    int use_deadline = (timeout != PyTime_MIN);  /* timeout=None: wait forever */
     if (use_deadline) {
-        double timeout = PyFloat_AsDouble(timeout_obj);
-        if (PyErr_Occurred()) {
-            return NULL;
-        }
-        if (timeout < 0.0) {
-            timeout = 0.0;
+        if (timeout < 0) {
+            timeout = 0;
         }
 
         struct timeval now;
@@ -340,10 +333,8 @@ _multiprocessing_SemLock_acquire_impl(SemLockObject *self, int blocking,
             PyErr_SetFromErrno(PyExc_OSError);
             return NULL;
         }
-        long sec = (long) timeout;
-        long nsec = (long) (1e9 * (timeout - sec) + 0.5);
-        deadline.tv_sec = now.tv_sec + sec;
-        deadline.tv_nsec = now.tv_usec * 1000 + nsec;
+        deadline.tv_sec = now.tv_sec + (time_t)(timeout / 1000000000);
+        deadline.tv_nsec = now.tv_usec * 1000 + (long)(timeout % 1000000000);
         deadline.tv_sec += (deadline.tv_nsec / 1000000000);
         deadline.tv_nsec %= 1000000000;
     }
@@ -697,7 +688,7 @@ static PyObject *
 _multiprocessing_SemLock___enter___impl(SemLockObject *self)
 /*[clinic end generated code: output=beeb2f07c858511f input=d35c9860992ee790]*/
 {
-    return _multiprocessing_SemLock_acquire_impl(self, 1, Py_None);
+    return _multiprocessing_SemLock_acquire_impl(self, 1, PyTime_MIN);
 }
 
 /*[clinic input]

@@ -168,25 +168,6 @@ compare_handler(PyObject *func, PyObject *dfl_ign_handler)
     return PyObject_RichCompareBool(func, dfl_ign_handler, Py_EQ) == 1;
 }
 
-#ifdef HAVE_SETITIMER
-/* auxiliary function for setitimer */
-static int
-timeval_from_double(PyObject *obj, struct timeval *tv)
-{
-    if (obj == NULL) {
-        tv->tv_sec = 0;
-        tv->tv_usec = 0;
-        return 0;
-    }
-
-    PyTime_t t;
-    if (_PyTime_FromSecondsObject(&t, obj, _PyTime_ROUND_CEILING) < 0) {
-        return -1;
-    }
-    return _PyTime_AsTimeval(t, tv, _PyTime_ROUND_CEILING);
-}
-#endif
-
 #if defined(HAVE_SETITIMER) || defined(HAVE_GETITIMER)
 /* auxiliary functions for get/setitimer */
 Py_LOCAL_INLINE(double)
@@ -846,8 +827,8 @@ PySignal_SetWakeupFd(int fd)
 signal.setitimer
 
     which:    int
-    seconds:  object
-    interval: object(c_default="NULL") = 0.0
+    seconds:  duration(type='struct timeval', round='ceiling')
+    interval: duration(type='struct timeval', round='ceiling') = 0.0
     /
 
 Sets given itimer (one of ITIMER_REAL, ITIMER_VIRTUAL or ITIMER_PROF).
@@ -859,19 +840,15 @@ Returns old values as a tuple: (delay, interval).
 [clinic start generated code]*/
 
 static PyObject *
-signal_setitimer_impl(PyObject *module, int which, PyObject *seconds,
-                      PyObject *interval)
-/*[clinic end generated code: output=65f9dcbddc35527b input=bd9f0d2ed8614193]*/
+signal_setitimer_impl(PyObject *module, int which, struct timeval seconds,
+                      struct timeval interval)
+/*[clinic end generated code: output=8506576c0c927686 input=1dd76b9d1b0979bd]*/
 {
     _signal_module_state *modstate = get_signal_state(module);
 
     struct itimerval new;
-    if (timeval_from_double(seconds, &new.it_value) < 0) {
-        return NULL;
-    }
-    if (timeval_from_double(interval, &new.it_interval) < 0) {
-        return NULL;
-    }
+    new.it_value = seconds;
+    new.it_interval = interval;
 
     /* Let OS check "which" value */
     struct itimerval old;
@@ -1198,7 +1175,7 @@ signal_sigwaitinfo_impl(PyObject *module, sigset_t sigset)
 signal.sigtimedwait
 
     sigset: sigset_t
-    timeout as timeout_obj: object
+    timeout: duration(round='ceiling', allow_negative=False)
     /
 
 Like sigwaitinfo(), but with a timeout.
@@ -1207,20 +1184,9 @@ The timeout is specified in seconds, rounded up to nanoseconds.
 [clinic start generated code]*/
 
 static PyObject *
-signal_sigtimedwait_impl(PyObject *module, sigset_t sigset,
-                         PyObject *timeout_obj)
-/*[clinic end generated code: output=59c8971e8ae18a64 input=f89af57d645e48e0]*/
+signal_sigtimedwait_impl(PyObject *module, sigset_t sigset, PyTime_t timeout)
+/*[clinic end generated code: output=35388ab3f20ecef0 input=afd79136ca25e3f0]*/
 {
-    PyTime_t timeout;
-    if (_PyTime_FromSecondsObject(&timeout,
-                                  timeout_obj, _PyTime_ROUND_CEILING) < 0)
-        return NULL;
-
-    if (timeout < 0) {
-        PyErr_SetString(PyExc_ValueError, "timeout must be non-negative");
-        return NULL;
-    }
-
     PyTime_t deadline = _PyDeadline_Init(timeout);
     siginfo_t si;
 
