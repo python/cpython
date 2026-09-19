@@ -657,15 +657,20 @@ class SocketHandler(logging.Handler):
         This function allows for partial sends which can happen when the
         network is busy.
         """
-        if self.sock is None:
-            self.createSocket()
-        #self.sock can be None either because we haven't reached the retry
-        #time yet, or because we have reached the retry time and retried,
-        #but are still unable to connect.
-        if self.sock:
+        # Reopen the socket once if sending fails, e.g. the connection was
+        # closed after a timeout, so the record is not lost (gh-84532).
+        for attempt in range(2):
+            if self.sock is None:
+                self.createSocket()
+                # self.sock can be None either because we haven't reached the
+                # retry time yet, or because we have reached the retry time
+                # and retried, but are still unable to connect.
+                if self.sock is None:
+                    return
             try:
                 self.sock.sendall(s)
-            except OSError: #pragma: no cover
+                return
+            except OSError:
                 self.sock.close()
                 self.sock = None  # so we can call createSocket next time
 
