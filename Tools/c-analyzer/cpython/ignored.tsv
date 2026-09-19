@@ -719,6 +719,7 @@ Modules/_sqlite/module.c	-	pysqlite_BaseTypeAdapted	-
 Modules/_sqlite/module.h	-	pysqlite_global_state	-
 Modules/_testcapimodule.c	-	_PyBytesIOBuffer_Type	-
 Modules/posixmodule.c	-	_Py_open_cloexec_works	-
+Modules/posixmodule.c	-	empty_environ	-
 Modules/posixmodule.c	-	environ	-
 Objects/object.c	-	_Py_GenericAliasIterType	-
 Objects/object.c	-	_PyMemoryIter_Type	-
@@ -794,4 +795,3 @@ Modules/_testcapi/unicode.c	test_py_identifier	real_id	-
 ## False positives
 Python/specialize.c	-	_Py_InitCleanup	-
 Python/pystate.c	-	_no_tstate_sentinel	-
-Modules/posixmodule.c	-	empty_environ	-
