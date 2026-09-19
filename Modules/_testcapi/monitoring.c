@@ -24,6 +24,7 @@ CodeLike_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyMonitoringState *states = (PyMonitoringState *)PyMem_Calloc(
             num_events, sizeof(PyMonitoringState));
     if (states == NULL) {
+        PyErr_NoMemory();
         return NULL;
     }
     PyCodeLikeObject *self = (PyCodeLikeObject *) type->tp_alloc(type, 0);
