@@ -1,9 +1,9 @@
 Fix a bug that caused :mod:`!_remote_debugging` sampling to fail entirely
 with ``RuntimeError: Failed to parse initial frame in chain`` when a native
 thread retained a Python thread state with an empty Python frame stack. The
-base_frame sentinel is now accepted as a valid empty stack, and a frame
-without Python code (a returned-from frame dropped by
-:c:func:`!_PyFrame_ClearExceptCode` or a native boundary) is no longer
-reported as ``<native>`` with its stale chain walked: sampling now stops
-there and reports the frames collected so far. Valid stacks from other
-threads are now reported instead of being lost.
+base_frame sentinel is now accepted as a valid empty stack, and code-less
+frames on the chain (returned-from frames dropped by
+:c:func:`!_PyFrame_ClearExceptCode`) are skipped instead of being reported
+as ``<native>`` with stale caller frames. A dangling code-less first frame
+still fails the sample loudly. Valid stacks from other threads are now
+reported instead of being lost.

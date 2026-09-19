@@ -452,7 +452,6 @@ typedef struct {
     Py_ssize_t max_addrs;           // Capacity of frame_addrs array
     uintptr_t last_frame_visited;   // Last frame address visited
     int stopped_at_cached_frame;    // Walk stopped at a cached frame
-    int stopped_at_policy_frame;    // Walk stopped at a policy-accepted first frame
 } FrameWalkContext;
 
 /*

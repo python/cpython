@@ -317,7 +317,6 @@ process_frame_chain(
     assert(MAX_FRAMES > 0 && MAX_FRAMES < 10000);
 
     ctx->stopped_at_cached_frame = 0;
-    ctx->stopped_at_policy_frame = 0;
     ctx->last_frame_visited = 0;
 
     while ((void*)frame_addr != NULL) {
@@ -368,34 +367,38 @@ parsed_frame:
         }
 
         if (frame == NULL && PyList_GET_SIZE(ctx->frame_info) == 0) {
-            // A first frame without a code object: the base_frame
-            // sentinel of an empty Python stack, a frame dropped by
-            // _PyFrame_ClearExceptCode() (which keeps the owner and the
-            // previous pointer), or a genuine interpreter-owned native
-            // boundary.  Only the owner distinguishes them.
-            if (frame_owner != FRAME_OWNED_BY_INTERPRETER) {
-                // A dropped frame: not a native boundary, and its chain
-                // is stale.  Accept the empty stack and stop instead of
-                // reporting it as <native> and walking dropped frames.
-                ctx->stopped_at_policy_frame = 1;
+            if (frame_addr == ctx->base_frame_addr) {
+                // The base_frame sentinel of an empty Python stack: a
+                // native thread that released the GIL with
+                // PyEval_SaveThread() keeps a thread state whose frame
+                // chain holds only the sentinel.  Accept the empty stack
+                // and let other threads report their stacks.
                 break;
             }
             if (next_frame_addr == 0) {
-                // The base_frame sentinel: a valid empty Python stack.
-                // Accept it and let other threads report their stacks.
-                ctx->stopped_at_policy_frame = 1;
-                break;
+                // A dangling undecodable first frame with no
+                // continuation cannot be represented in the result.
+                // Note: an interpreter-owned frame in this state is
+                // indistinguishable from corruption, so the sample fails
+                // loudly rather than reporting a truncated stack.
+                const char *e = "Failed to parse initial frame in chain";
+                PyErr_SetString(PyExc_RuntimeError, e);
+                return -1;
             }
-            // An interpreter-owned frame with a continuation is a native
-            // boundary; handle it like a mid-chain native frame below.
+            // Any other code-less first frame with a continuation is
+            // handled by the owner check below: an interpreter-owned
+            // frame is a native boundary, a dropped frame (owner
+            // THREAD/GENERATOR) is skipped, and the walk continues.
         }
         PyObject *extra_frame = NULL;
         if (frame == NULL && frame_owner != FRAME_OWNED_BY_INTERPRETER) {
             // A frame dropped by _PyFrame_ClearExceptCode() mid-chain:
-            // its chain is stale, so stop here and report what was
-            // collected so far.
-            ctx->stopped_at_policy_frame = 1;
-            break;
+            // the contents are gone but the previous pointer still leads
+            // to live caller frames, so skip this frame and keep
+            // walking.
+            frame_addr = next_frame_addr;
+            prev_frame_addr = next_frame_addr;
+            continue;
         }
         if (unwinder->gc && frame_addr == ctx->gc_frame) {
             _Py_DECLARE_STR(gc, "<GC>");
@@ -464,12 +467,7 @@ parsed_frame:
         frame_addr = next_frame_addr;
     }
 
-    // A policy stop on a dropped or interpreter-owned first frame ends
-    // the walk before the sentinel: the reported stack is complete as of
-    // the accepted truncation point.
-    if (!ctx->stopped_at_cached_frame && !ctx->stopped_at_policy_frame &&
-        ctx->base_frame_addr != 0 && last_frame_addr != ctx->base_frame_addr)
-    {
+    if (!ctx->stopped_at_cached_frame && ctx->base_frame_addr != 0 && last_frame_addr != ctx->base_frame_addr) {
         PyErr_Format(PyExc_RuntimeError,
             "Incomplete sample: did not reach base frame (expected 0x%lx, got 0x%lx)",
             ctx->base_frame_addr, last_frame_addr);
@@ -705,12 +703,6 @@ collect_frames_with_cache(
         if (ctx->last_profiled.frame == 0) {
             STATS_INC(unwinder, frame_cache_misses);
         }
-    }
-
-    if (ctx->stopped_at_policy_frame) {
-        // No additional handling needed: frame_cache_store() rejects
-        // stacks whose walk did not end at the sentinel, so truncated
-        // chains are never cached.
     }
 
     if (frame_cache_store(unwinder, thread_id, ctx->frame_info, ctx->frame_addrs,

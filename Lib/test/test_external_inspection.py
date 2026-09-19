@@ -918,14 +918,16 @@ class TestEmptyPythonStackSampling(RemoteInspectionTestBase):
 
             # owner=FRAME_OWNED_BY_THREAD with no code object models a
             # frame dropped by _PyFrame_ClearExceptCode(): the contents
-            # are gone but the owner and the previous pointer survive, so
-            # the chain is stale.  The dropped frame must not be reported
-            # as <native> and its stale chain must not be walked: the
-            # thread shows an empty stack in every sample.  (The sampling
-            # thread itself legitimately shows a <native> boundary when
-            # native frames are enabled, so only this thread's entry is
-            # asserted here.)  Before the owner check, this configuration
-            # produced a <native> marker followed by dropped frames.
+            # are gone but the previous pointer still leads to live
+            # caller frames.  The dropped frame itself must not be
+            # reported as <native>, and the walk must continue past it:
+            # the thread shows an empty stack here because its only
+            # other chain entry is the sentinel.  (The sampling thread
+            # itself legitimately shows a <native> boundary when native
+            # frames are enabled, so only this thread's entry is
+            # asserted here.)  Before the owner check, this
+            # configuration produced a <native> marker for the dropped
+            # frame.
             for cache_frames in (False, True):
                 for names in run_case(THREAD_OWNER, True, cache_frames):
                     assert [] in names, names
