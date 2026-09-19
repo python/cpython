@@ -1,2 +1,4 @@
-Fix parsing of extended email parameters when CFWS follows the charset,
-preventing the charset value from incorrectly including the trailing CFWS.
+Fix the parsing of the character set of :rfc:`2231` encoded parameters in the
+:mod:`email` header parser.  The character set is now correctly located in
+the parsed value, so whitespace or a comment following it is no longer
+included in the parameter's character set name.
