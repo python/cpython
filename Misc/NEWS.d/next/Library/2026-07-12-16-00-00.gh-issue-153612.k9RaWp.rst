@@ -1,0 +1,9 @@
+Add :func:`copyreg.copy` and :func:`copyreg.deepcopy` for registering
+shallow and deep copy functions for instances of types
+that cannot be modified.
+:func:`copy.copy` and :func:`copy.deepcopy` use the registered functions
+in preference to the :meth:`~object.__copy__`
+and :meth:`~object.__deepcopy__` special methods
+and the pickle interfaces, without affecting pickling.
+The private ``copy._deepcopy_dispatch`` table is removed:
+use the new public :data:`!copyreg.deepcopy_dispatch_table` instead.

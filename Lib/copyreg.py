@@ -1,10 +1,11 @@
-"""Helper to provide extensibility for pickle.
+"""Helper to provide extensibility for pickle and copy.
 
-This is only useful to add pickle support for extension types defined in
-C, not for instances of user-defined classes.
+This is only useful to add support for types that cannot be modified,
+such as extension types defined in C, not for instances of user-defined
+classes.
 """
 
-__all__ = ["pickle", "constructor",
+__all__ = ["pickle", "constructor", "copy", "deepcopy",
            "add_extension", "remove_extension", "clear_extension_cache"]
 
 dispatch_table = {}
@@ -22,6 +23,22 @@ def pickle(ob_type, pickle_function, constructor_ob=None):
 def constructor(object):
     if not callable(object):
         raise TypeError("constructors must be callable")
+
+# Support for the copy module
+
+copy_dispatch_table = {}
+
+def copy(ob_type, copy_function):
+    if not callable(copy_function):
+        raise TypeError("copy functions must be callable")
+    copy_dispatch_table[ob_type] = copy_function
+
+deepcopy_dispatch_table = {}
+
+def deepcopy(ob_type, deepcopy_function):
+    if not callable(deepcopy_function):
+        raise TypeError("deepcopy functions must be callable")
+    deepcopy_dispatch_table[ob_type] = deepcopy_function
 
 # Example: provide pickling support for complex numbers.
 
