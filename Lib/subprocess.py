@@ -672,11 +672,13 @@ def run(*popenargs,
         except TimeoutExpired as exc:
             process.kill()
             if _mswindows:
-                # Windows accumulates the output in a single blocking
-                # read() call run on child threads, with the timeout
-                # being done in a join() on those threads.  communicate()
-                # _after_ kill() is required to collect that and add it
-                # to the exception.
+                # Windows accumulates the output on child threads, with the
+                # timeout being done in a join() on those threads.
+                # communicate() _after_ kill() is required to collect that
+                # and add it to the exception.  The pipes can be inherited
+                # by other processes, so cancel pending reads to not wait
+                # for them (gh-87512).
+                process._cancel_io()
                 exc.stdout, exc.stderr = process.communicate()
             else:
                 # POSIX _communicate already populated the output so
@@ -1277,6 +1279,8 @@ class Popen:
         return self
 
     def __exit__(self, exc_type, value, traceback):
+        if _mswindows:
+            self._cancel_io()
         if self.stdout:
             self.stdout.close()
         if self.stderr:
@@ -1777,8 +1781,46 @@ class Popen:
             return self.returncode
 
 
+        def _cancel_io(self):
+            # The communication threads can be blocked in a synchronous read
+            # or write on a pipe which is not closed by the child process.
+            # Closing such pipe blocks too, so cancel the I/O first.
+            for name in ('stdout_thread', 'stderr_thread', '_stdin_thread'):
+                thread = getattr(self, name, None)
+                if thread is None or not thread.is_alive():
+                    continue
+                try:
+                    handle = _winapi.OpenThread(_winapi.THREAD_TERMINATE,
+                                                False, thread.ident)
+                except OSError:
+                    continue
+                try:
+                    _winapi.CancelSynchronousIo(handle)
+                except OSError:
+                    # ERROR_NOT_FOUND if there is no pending I/O.
+                    pass
+                finally:
+                    _winapi.CloseHandle(handle)
+
+
         def _readerthread(self, fh, buffer):
-            buffer.append(fh.read())
+            # Read what is available, or block for a single byte, so that
+            # the read can be canceled and does not wait for the pipe to be
+            # closed by all processes which inherited it (gh-87512).
+            handle = msvcrt.get_osfhandle(fh.fileno())
+            while True:
+                try:
+                    size = _winapi.PeekNamedPipe(handle)[0] or 1
+                    data = _winapi.ReadFile(handle, size)[0]
+                except BrokenPipeError:
+                    break
+                except OSError as exc:
+                    if exc.winerror == _winapi.ERROR_OPERATION_ABORTED:
+                        break
+                    raise
+                if not data:
+                    break
+                buffer.append(data)
             fh.close()
 
 
@@ -1846,8 +1888,22 @@ class Popen:
                 self.stderr.close()
 
             # All data exchanged.  Translate lists into strings.
-            stdout = stdout[0] if stdout else None
-            stderr = stderr[0] if stderr else None
+            if stdout is not None:
+                stdout = b''.join(stdout)
+            if stderr is not None:
+                stderr = b''.join(stderr)
+
+            # Translate newlines, if requested.
+            # This also turns bytes into strings.
+            if self.text_mode:
+                if stdout is not None:
+                    stdout = self._translate_newlines(stdout,
+                                                      self.stdout.encoding,
+                                                      self.stdout.errors)
+                if stderr is not None:
+                    stderr = self._translate_newlines(stderr,
+                                                      self.stderr.encoding,
+                                                      self.stderr.errors)
 
             return (stdout, stderr)
 
