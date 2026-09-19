@@ -105,6 +105,20 @@ if sys.platform == 'win32':
         '''Picklable wrapper for a handle.'''
         def __init__(self, handle, access, pid=None):
             if pid is None:
+                popen = context.get_spawning_popen()
+                if popen is not None:
+                    # gh-154208: The child process is already running, so
+                    # duplicate the handle straight into it.  Stealing the
+                    # handle (below) would leak the duplicate held by this
+                    # process if the child died before it could steal it.
+                    # This mirrors the fix made for the pipe used to send
+                    # the child its parameters -- see bpo-33929.
+                    self._handle = _winapi.DuplicateHandle(
+                        _winapi.GetCurrentProcess(),
+                        handle, popen.sentinel, access, False, 0)
+                    self._access = access
+                    self._pid = popen.pid
+                    return
                 # We just duplicate the handle in the current process and
                 # let the receiving process steal the handle.
                 pid = os.getpid()
