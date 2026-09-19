@@ -1365,6 +1365,14 @@ class ConfigParserTestCaseExtendedInterpolation(BasicTestCase, unittest.TestCase
 class ConfigParserTestCaseNoValue(ConfigParserTestCase):
     allow_no_value = True
 
+    def test_getboolean_with_no_value(self):
+        cf = self.fromstring("[section]\noption\n")
+
+        with self.assertRaisesRegex(ValueError, "Not a boolean: None"):
+            cf.getboolean("section", "option")
+        with self.assertRaisesRegex(ValueError, "Not a boolean: None"):
+            cf["section"].getboolean("option")
+
 
 class NoValueAndExtendedInterpolation(CfgParserTestCaseClass):
     interpolation = configparser.ExtendedInterpolation()
