@@ -5,7 +5,6 @@ BytesIO -- for bytes
 
 import unittest
 from test import support
-from test.support import import_helper
 
 import gc
 import io
@@ -654,18 +653,14 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
 
     def test_memory_error(self):
         # gh-157242: io.BytesIO() must not close the file on MemoryError
-        _testcapi = import_helper.import_module('_testcapi')
 
         # write()
         stream = self.ioclass()
         stream.write(self.buftype('abc'))
+        data = self.buftype('def')
         with self.assertRaises(MemoryError):
-            try:
-                data = self.buftype('def')
-                _testcapi.set_nomemory(0)
+            with support.inject_memory_error_cm():
                 stream.write(data)
-            finally:
-                _testcapi.remove_mem_hooks()
         stream.write(self.buftype('123'))
         self.assertEqual(stream.getvalue(), self.buftype('abc123'))
 
@@ -674,11 +669,8 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
         stream = self.ioclass()
         stream.write(data)
         with self.assertRaises(MemoryError):
-            try:
-                _testcapi.set_nomemory(0)
+            with support.inject_memory_error_cm():
                 stream.truncate(5)
-            finally:
-                _testcapi.remove_mem_hooks()
         self.assertEqual(stream.getvalue(), data)
 
 
