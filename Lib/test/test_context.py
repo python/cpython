@@ -1282,6 +1282,31 @@ class HamtTest(unittest.TestCase):
 
         self.assertIsNone(ref())
 
+    def test_hamt_gc_3(self):
+        # gh-154535: the iterators must be tracked by the GC, otherwise a
+        # cycle running through one is never collected and the HAMT it
+        # holds -- and everything in it -- leaks.
+        A = HashKey(100, 'A')
+
+        container = []
+        h = hamt()
+        h = h.set(A, container)
+
+        hi = h.items()
+        self.assertTrue(gc.is_tracked(hi))
+
+        # Close the cycle: hi -> h -> container -> hi.
+        container.append(hi)
+        ref = weakref.ref(h)
+
+        del h, hi, container
+
+        gc.collect()
+        gc.collect()
+        gc.collect()
+
+        self.assertIsNone(ref())
+
     def test_hamt_in_1(self):
         A = HashKey(100, 'A')
         AA = HashKey(100, 'A')

@@ -168,15 +168,16 @@ _Py_strhex_impl(const char* argbuf, Py_ssize_t arglen,
         abs_bytes_per_sep = 0;
     }
 
-    PyObject *retval;
+    PyObject *retval = NULL;
+    PyBytesWriter *bytes_writer = NULL;
     Py_UCS1 *retbuf;
     if (return_bytes) {
         /* If _PyBytes_FromSize() were public we could avoid malloc+copy. */
-        retval = PyBytes_FromStringAndSize(NULL, resultlen);
-        if (!retval) {
+        bytes_writer = PyBytesWriter_Create(resultlen);
+        if (!bytes_writer) {
             return NULL;
         }
-        retbuf = (Py_UCS1 *)PyBytes_AS_STRING(retval);
+        retbuf = PyBytesWriter_GetData(bytes_writer);
     }
     else {
         retval = PyUnicode_New(resultlen, 127);
@@ -244,13 +245,15 @@ _Py_strhex_impl(const char* argbuf, Py_ssize_t arglen,
         }
     }
 
-#ifdef Py_DEBUG
-    if (!return_bytes) {
-        assert(_PyUnicode_CheckConsistency(retval, 1));
+    if (return_bytes) {
+        return PyBytesWriter_Finish(bytes_writer);
     }
+    else {
+#ifdef Py_DEBUG
+        assert(_PyUnicode_CheckConsistency(retval, 1));
 #endif
-
-    return retval;
+        return retval;
+    }
 }
 
 PyObject * _Py_strhex(const char* argbuf, Py_ssize_t arglen)

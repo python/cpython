@@ -1133,8 +1133,7 @@ error:
 }
 
 
-#ifdef MS_WIN32
-
+#ifdef MS_WINDOWS_DESKTOP
 static PyObject *
 GetComError(ctypes_state *st, HRESULT errcode, GUID *riid, IUnknown *pIunk)
 {
@@ -1388,9 +1387,11 @@ PyObject *_ctypes_callproc(ctypes_state *st,
 
 #ifdef MS_WIN32
     if (iid && pIunk) {
+#ifdef MS_WINDOWS_DESKTOP
         if (*(int *)resbuf & 0x80000000)
             retval = GetComError(st, *(HRESULT *)resbuf, iid, pIunk);
         else
+#endif
             retval = PyLong_FromLong(*(int *)resbuf);
     } else if (flags & FUNCFLAG_HRESULT) {
         if (*(int *)resbuf & 0x80000000)

@@ -1467,7 +1467,10 @@ class TestPyReplModuleCompleter(TestCase):
                         reader = self.prepare_reader(events, namespace={})
                         output = reader.readline()
                         self.assertEqual(output, expected)
-                        new_imports = sys.modules.keys() - _imported
+                        # The reader imports its own helpers lazily.
+                        new_imports = {name for name in
+                                       sys.modules.keys() - _imported
+                                       if not name.startswith('_pyrepl.')}
                         self.assertEqual(new_imports, expected_imports)
 
     @patch.dict(sys.modules)

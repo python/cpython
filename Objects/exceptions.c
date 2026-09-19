@@ -354,10 +354,6 @@ BaseException_args_set_impl(PyBaseExceptionObject *self, PyObject *value)
 /*[clinic end generated code: output=331137e11d8f9e80 input=2400047ea5970a84]*/
 {
     PyObject *seq;
-    if (value == NULL) {
-        PyErr_SetString(PyExc_TypeError, "args may not be deleted");
-        return -1;
-    }
     seq = PySequence_Tuple(value);
     if (!seq)
         return -1;
@@ -393,10 +389,6 @@ BaseException___traceback___set_impl(PyBaseExceptionObject *self,
                                      PyObject *value)
 /*[clinic end generated code: output=a82c86d9f29f48f0 input=12676035676badad]*/
 {
-    if (value == NULL) {
-        PyErr_SetString(PyExc_TypeError, "__traceback__ may not be deleted");
-        return -1;
-    }
     if (PyTraceBack_Check(value)) {
         Py_XSETREF(self->traceback, Py_NewRef(value));
     }
@@ -438,10 +430,7 @@ BaseException___context___set_impl(PyBaseExceptionObject *self,
                                    PyObject *value)
 /*[clinic end generated code: output=b4cb52dcca1da3bd input=c0971adf47fa1858]*/
 {
-    if (value == NULL) {
-        PyErr_SetString(PyExc_TypeError, "__context__ may not be deleted");
-        return -1;
-    } else if (value == Py_None) {
+    if (value == Py_None) {
         value = NULL;
     } else if (!PyExceptionInstance_Check(value)) {
         PyErr_SetString(PyExc_TypeError, "exception context must be None "
@@ -481,10 +470,7 @@ BaseException___cause___set_impl(PyBaseExceptionObject *self,
                                  PyObject *value)
 /*[clinic end generated code: output=6161315398aaf541 input=e1b403c0bde3f62a]*/
 {
-    if (value == NULL) {
-        PyErr_SetString(PyExc_TypeError, "__cause__ may not be deleted");
-        return -1;
-    } else if (value == Py_None) {
+    if (value == Py_None) {
         value = NULL;
     } else if (!PyExceptionInstance_Check(value)) {
         PyErr_SetString(PyExc_TypeError, "exception cause must be None "

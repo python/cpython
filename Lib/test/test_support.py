@@ -27,6 +27,10 @@ from test.support import script_helper
 from test.support import socket_helper
 from test.support import warnings_helper
 
+if support.MS_WINDOWS:
+    import _winapi
+
+
 TESTFN = os_helper.TESTFN
 
 
@@ -622,6 +626,20 @@ class TestSupport(unittest.TestCase):
             more = os_helper.fd_count()
         finally:
             os.close(fd)
+        self.assertEqual(more - start, 1)
+
+    @unittest.skipUnless(support.MS_WINDOWS, "test specific to Windows")
+    def test_handle_count(self):
+        start = os_helper.handle_count()
+        handle = _winapi.CreateFile(
+                        __file__, _winapi.GENERIC_READ,
+                        0, _winapi.NULL,
+                        _winapi.OPEN_EXISTING,
+                        0, _winapi.NULL)
+        try:
+            more = os_helper.handle_count()
+        finally:
+            _winapi.CloseHandle(handle)
         self.assertEqual(more - start, 1)
 
     def check_print_warning(self, msg, expected):
@@ -1231,20 +1249,91 @@ class TestIsolated(unittest.TestCase):
         self.assertEqual(len(result.errors), 1)
         self.assertIn(f'within {TIMEOUT} seconds', result.errors[0][1])
 
+    @support.requires_subprocess()
+    def test_bigmemtest_isolates_a_real_run(self):
+        # A dummy run (no -M) stays in this process, a real run does not.
+        for memlimit in (0, support._1G):
+            with self.subTest(real_max_memuse=memlimit):
+                with support.swap_attr(support, 'real_max_memuse', memlimit):
+                    result = self._run('BigmemSample')
+                self.assertEqual(result.testsRun, 1)
+                self.assertEqual(self._names(result.failures), [])
+                self.assertEqual(self._names(result.errors), [])
+
     def test_skipped_without_subprocess_support(self):
         # On a platform without subprocess support the test is skipped in the
         # parent, before any subprocess is spawned.
         calls = []
-        orig = isolation._run_in_subprocess
+        orig = isolation._start_test
         with support.swap_attr(support, 'has_subprocess_support', False):
-            isolation._run_in_subprocess = lambda *a, **k: calls.append(a)
+            isolation._start_test = lambda *a, **k: calls.append(a)
             try:
                 result = self._run('MethodSample.test_pass')
             finally:
-                isolation._run_in_subprocess = orig
+                isolation._start_test = orig
         self.assertEqual(result.testsRun, 1)
         self.assertEqual(len(result.skipped), 1)
         self.assertEqual(calls, [])
+
+
+class TestSubTests(unittest.TestCase):
+
+    def run_test(self, cls):
+        result = unittest.TestResult()
+        cls('test_it').run(result)
+        return result
+
+    def test_sync(self):
+        ran = []
+
+        class Sample(unittest.TestCase):
+            @support.subTests('a', [1, 2, 3])
+            def test_it(self, a):
+                ran.append(a)
+                self.assertNotEqual(a, 2)
+
+        result = self.run_test(Sample)
+        self.assertEqual(ran, [1, 2, 3])
+        self.assertEqual(result.testsRun, 1)
+        self.assertEqual(len(result.failures), 1)
+        self.assertEndsWith(result.failures[0][0].id(), 'test_it (a=2)')
+
+    # Running an asyncio event loop needs a working socket.
+    @support.requires_working_socket()
+    def test_async(self):
+        # An asynchronous test must be awaited: a synchronous wrapper would
+        # make it silently not run at all.
+        ran = []
+
+        class Sample(unittest.IsolatedAsyncioTestCase):
+            @support.subTests('a', [1, 2, 3])
+            async def test_it(self, a):
+                ran.append(a)
+                self.assertNotEqual(a, 2)
+
+        result = self.run_test(Sample)
+        self.assertEqual(ran, [1, 2, 3])
+        self.assertEqual(result.testsRun, 1)
+        self.assertEqual(len(result.failures), 1)
+        self.assertEndsWith(result.failures[0][0].id(), 'test_it (a=2)')
+
+    def test_multiple_parameters(self):
+        ran = []
+
+        class Sample(unittest.TestCase):
+            @support.subTests('a,b', [(1, 'x'), (2, 'y')])
+            def test_it(self, a, b):
+                ran.append((a, b))
+
+        result = self.run_test(Sample)
+        self.assertTrue(result.wasSuccessful(), result.errors)
+        self.assertEqual(ran, [(1, 'x'), (2, 'y')])
+
+    def test_cannot_decorate_class(self):
+        with self.assertRaises(TypeError):
+            @support.subTests('a', [1])
+            class Sample(unittest.TestCase):
+                pass
 
 
 if __name__ == '__main__':

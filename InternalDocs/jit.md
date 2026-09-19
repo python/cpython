@@ -140,7 +140,7 @@ template file [`Tools/jit/template.c`](../Tools/jit/template.c).
 Each of the `.c` files is compiled by LLVM, to produce an object file
 that contains a function that executes the opcode. These compiled
 functions are used to generate the file
-[`jit_stencils.h`](../jit_stencils.h), which contains the functions
+`jit_stencils.h`, which contains the functions
 that the JIT can use to emit code for each of the bytecodes.
 
 For Python maintainers this means that changes to the bytecodes and

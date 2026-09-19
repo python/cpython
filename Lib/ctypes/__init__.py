@@ -12,6 +12,12 @@ from _ctypes import CFuncPtr as _CFuncPtr
 from _ctypes import RTLD_LOCAL, RTLD_GLOBAL
 from _ctypes import ArgumentError
 from _ctypes import SIZEOF_TIME_T
+try:
+    from _ctypes import (LIBFFI_VERSION, libffi_version,
+                         LIBFFI_VERSION_INFO, libffi_version_info)
+except ImportError:
+    # libffi < 3.5 does not provide version information.
+    pass
 from _ctypes import CField
 
 from struct import calcsize as _calcsize
