@@ -125,6 +125,13 @@ def test_pdb_basic_commands():
     ...     'next',       # step to test_function4()
     ...     'step',       # stepping to test_function4()
     ...     'args',       # display function args
+    ...     'skip',
+    ...     'skip asyncio os.*',
+    ...     'skip',
+    ...     'unskip os',
+    ...     'skip',
+    ...     'unskip os.*',
+    ...     'skip',
     ...     'continue',
     ... ]):
     ...    test_function()
@@ -154,7 +161,7 @@ def test_pdb_basic_commands():
     [EOF]
     (Pdb) bt
     ...
-      <doctest test.test_pdb.test_pdb_basic_commands[4]>(26)<module>()
+      <doctest test.test_pdb.test_pdb_basic_commands[4]>(33)<module>()
     -> test_function()
       <doctest test.test_pdb.test_pdb_basic_commands[3]>(3)test_function()
     -> ret = test_function_2('baz')
@@ -224,6 +231,23 @@ def test_pdb_basic_commands():
     a = 1
     b = 2
     c = 3
+    (Pdb) skip
+    Skipped module patterns:
+        (none)
+    (Pdb) skip asyncio os.*
+    (Pdb) skip
+    Skipped module patterns:
+        asyncio
+        os.*
+    (Pdb) unskip os
+    (Pdb) skip
+    Skipped module patterns:
+        asyncio
+        os.*
+    (Pdb) unskip os.*
+    (Pdb) skip
+    Skipped module patterns:
+        asyncio
     (Pdb) continue
     BAZ
     """

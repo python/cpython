@@ -2278,13 +2278,13 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if not arg:
             skipped_modules = [f"\t{x}" for x in sorted(self.skip or ())]
             lines = ["Skipped module patterns:"]
-            lines.extend(skipped_modules or ["\t(none)"]
+            lines.extend(skipped_modules or ["\t(none)"])
             self.message("\n".join(lines))
             return
         args = arg.split()
         self.update_skip(args)
 
-    def do_skip_stdlib(self. arg):
+    def do_skip_stdlib(self, arg):
         """skip_stdlib
 
         Do not step into frames originating in standard-library modules.
