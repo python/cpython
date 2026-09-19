@@ -286,8 +286,8 @@ class ShareableList:
     _alignment = 8
     _back_transforms_mapping = {
         0: lambda value: value,                   # int, float, bool
-        1: lambda value: value.rstrip(b'\x00').decode(_encoding),  # str
-        2: lambda value: value.rstrip(b'\x00'),   # bytes
+        1: lambda value: value.decode(_encoding),  # str
+        2: lambda value: value,                   # bytes
         3: lambda _value: None,                   # None
     }
 
@@ -312,7 +312,7 @@ class ShareableList:
                 self._types_mapping[type(item)]
                     if not isinstance(item, (str, bytes))
                     else self._types_mapping[type(item)] % (
-                        self._alignment * (len(item) // self._alignment + 1),
+                        self._alignment * (len(item.encode('utf-8') if isinstance(item, str) else item) // self._alignment + 1),
                     )
                 for item in sequence
             ]
@@ -355,11 +355,18 @@ class ShareableList:
                 self._offset_data_start,
                 *(v.encode(_enc) if isinstance(v, str) else v for v in sequence)
             )
+            # For bytes and str, store actual byte length so retrieval is exact
+            _stored_formats = [
+                (self._types_mapping[str] % (len(v.encode(_enc)),) if isinstance(v, str)
+                 else self._types_mapping[bytes] % (len(v),) if isinstance(v, bytes)
+                 else f)
+                for v, f in zip(sequence, _formats)
+            ]
             struct.pack_into(
                 self._format_packing_metainfo,
                 self.shm.buf,
                 self._offset_packing_formats,
-                *(v.encode(_enc) for v in _formats)
+                *(v.encode(_enc) for v in _stored_formats)
             )
             struct.pack_into(
                 self._format_back_transform_codes,
@@ -476,7 +483,9 @@ class ShareableList:
 
         self._set_packing_format_and_transform(
             position,
-            new_format,
+            (self._types_mapping[bytes] % (len(encoded_value),) if isinstance(value, bytes)
+             else self._types_mapping[str] % (len(encoded_value),) if isinstance(value, str)
+             else new_format),
             value
         )
         struct.pack_into(new_format, self.shm.buf, offset, encoded_value)
