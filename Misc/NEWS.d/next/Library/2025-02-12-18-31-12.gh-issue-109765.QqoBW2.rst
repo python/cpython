@@ -1,0 +1,2 @@
+Detect TLS handshake attempt in :class:`http.server.BaseHTTPRequestHandler` to
+more clear the output. Patch by Semyon Moroz.
