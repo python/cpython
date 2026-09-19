@@ -502,6 +502,34 @@ class RecursiveUseOfCursors(unittest.TestCase):
             self.assertRaisesRegex(sqlite.ProgrammingError, self.msg,
                                    self.cur.fetchall)
 
+    def test_reentrant_execute_in_text_factory_during_fetch(self):
+        # gh-157564: a rejected nested execute() must not NULL the
+        # statement that fetch is still walking.
+        self.cur.execute("CREATE TABLE t(a TEXT, b TEXT)")
+        self.cur.execute("INSERT INTO t VALUES ('first', 'second')")
+
+        def factory(data):
+            with self.assertRaisesRegex(sqlite.ProgrammingError, self.msg):
+                self.cur.execute("SELECT 1")
+            return bytes(data).decode()
+
+        self.con.text_factory = factory
+        self.cur.execute("SELECT a, b FROM t")
+        self.assertEqual(self.cur.fetchone(), ("first", "second"))
+
+    def test_reentrant_execute_in_converter_during_fetch(self):
+        # gh-157564
+        def conv(data):
+            with self.assertRaisesRegex(sqlite.ProgrammingError, self.msg):
+                self.cur.execute("SELECT 1")
+            return bytes(data).decode()
+
+        with patch.dict(sqlite.converters, {"REENT": conv}):
+            self.cur.execute('SELECT x AS "x [REENT]", x FROM test')
+            row = self.cur.fetchone()
+        self.assertEqual(row[0], "foo")
+        self.assertEqual(row[1], "foo")
+
 
 if __name__ == "__main__":
     unittest.main()
