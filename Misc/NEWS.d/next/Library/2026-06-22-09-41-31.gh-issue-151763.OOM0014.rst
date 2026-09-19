@@ -1,0 +1,3 @@
+Fix a crash in ``_interpchannels._channel_id()`` when memory allocation
+fails while looking up module state. The function now correctly propagates
+``MemoryError``.
