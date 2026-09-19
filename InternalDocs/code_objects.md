@@ -10,7 +10,7 @@ the source code location, which is useful for debuggers and other tools.
 Since 3.11, the final field of the `PyCodeObject` C struct is an array
 of indeterminate length containing the bytecode, `code->co_code_adaptive`.
 (In older versions the code object was a
-[`bytes`](https://docs.python.org/dev/library/stdtypes.html#bytes)
+[`bytes`](https://docs.python.org/dev/builtins/stdtypes.html#bytes)
 object, `code->co_code`; this was changed to save an allocation and to
 allow it to be mutated.)
 

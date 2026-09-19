@@ -154,7 +154,7 @@ class SearchEngineTest(unittest.TestCase):
         engine.setpat('hello')
         Equal(engine.getcookedpat(), 'hello')
         engine.wordvar.set(True)
-        Equal(engine.getcookedpat(), r'\bhello\b')
+        Equal(engine.getcookedpat(), r'\b(?:hello)\b')
         engine.wordvar.set(False)
 
         engine.setpat(r'\s')
@@ -182,6 +182,24 @@ class SearchEngineTest(unittest.TestCase):
         Equal(engine.getprog(), None)
         Equal(Mbox.showerror.message,
               'Error: nothing to repeat\nPattern: +\nOffset: 0')
+        # Errors are reported for the pattern as typed, not as cooked.
+        engine.wordvar.set(True)
+        engine.setpat('a\\')
+        Equal(engine.getprog(), None)
+        Equal(Mbox.showerror.message,
+              'Error: bad escape (end of pattern)\nPattern: a\\\nOffset: 1')
+        engine.setpat('a|b')
+        Equal(engine.getprog().pattern, r'\b(?:a|b)\b')
+        engine.setpat(')(')
+        Equal(engine.getprog(), None)
+        Equal(Mbox.showerror.message,
+              'Error: unbalanced parenthesis\nPattern: )(\nOffset: 0')
+        engine.setpat('(?i)x')
+        Equal(engine.getprog(), None)
+        Equal(Mbox.showerror.message,
+              'Error: global flags like (?i) cannot be used with the '
+              '"Whole word" option\nPattern: (?i)x')
+        engine.wordvar.set(False)
 
     def test_report_error(self):
         showerror = Mbox.showerror
@@ -198,6 +216,17 @@ class SearchEngineTest(unittest.TestCase):
         Equal(showerror.title, 'Regular expression error')
         expected_message += "\nOffset: 5"
         Equal(showerror.message, expected_message)
+
+        # An open dialog shows the message itself (gh-69365).
+        messages = []
+        self.engine.error_handler = lambda msg, pos: messages.append((msg, pos))
+        self.addCleanup(setattr, self.engine, 'error_handler', None)
+        showerror.message = None
+        Equal(self.engine.report_error(pat, msg, 3), None)
+        Equal(messages, [("Error: " + msg + " at position 3", 3)])
+        Equal(showerror.message, None)
+        Equal(self.engine.report_error(pat, "Empty"), None)
+        Equal(messages[-1], ("Error: Empty", None))
 
 
 class SearchTest(unittest.TestCase):

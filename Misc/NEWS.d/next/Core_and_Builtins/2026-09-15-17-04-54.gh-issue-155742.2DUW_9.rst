@@ -1,0 +1,2 @@
+In debug mode at Python exit, check if immutable singleton objects have been
+modified by mistake to detect bugs in C extensions. Patch by Victor Stinner.
