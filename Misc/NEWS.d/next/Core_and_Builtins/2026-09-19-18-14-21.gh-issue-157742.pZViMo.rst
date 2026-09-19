@@ -1,0 +1,1 @@
+Improve performance of multiplication and shifts of :class:`int`.

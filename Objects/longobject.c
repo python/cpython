@@ -1905,15 +1905,17 @@ static digit
 v_lshift(digit *z, digit *a, Py_ssize_t m, int d)
 {
     Py_ssize_t i;
-    digit carry = 0;
+    int e = PyLong_SHIFT - d;
 
     assert(0 <= d && d < PyLong_SHIFT);
-    for (i=0; i < m; i++) {
-        twodigits acc = (twodigits)a[i] << d | carry;
-        z[i] = (digit)acc & PyLong_MASK;
-        carry = (digit)(acc >> PyLong_SHIFT);
+    assert(m > 0);
+    /* Build each digit from two digits of a, rather than passing a carry
+       from one iteration to the next, so that the loop can be vectorized. */
+    z[0] = (a[0] << d) & PyLong_MASK;
+    for (i=1; i < m; i++) {
+        z[i] = ((a[i] << d) | (a[i-1] >> e)) & PyLong_MASK;
     }
-    return carry;
+    return a[m-1] >> e;
 }
 
 /* Shift digit vector a[0:m] d bits right, with 0 <= d < PyLong_SHIFT.  Put
@@ -1923,16 +1925,17 @@ static digit
 v_rshift(digit *z, digit *a, Py_ssize_t m, int d)
 {
     Py_ssize_t i;
-    digit carry = 0;
+    int e = PyLong_SHIFT - d;
     digit mask = ((digit)1 << d) - 1U;
 
     assert(0 <= d && d < PyLong_SHIFT);
-    for (i=m; i-- > 0;) {
-        twodigits acc = (twodigits)carry << PyLong_SHIFT | a[i];
-        carry = (digit)acc & mask;
-        z[i] = (digit)(acc >> d);
+    assert(m > 0);
+    /* As in v_lshift(), no carry is passed between iterations. */
+    for (i=0; i < m-1; i++) {
+        z[i] = (a[i] >> d) | ((a[i+1] << e) & PyLong_MASK);
     }
-    return carry;
+    z[m-1] = a[m-1] >> d;
+    return a[0] & mask;
 }
 
 /* Divide long pin, w/ size digits, by non-zero digit n, storing quotient
@@ -5359,6 +5362,12 @@ long_rshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
     if (z == NULL) {
         return NULL;
     }
+    if (!a_negative) {
+        /* A plain shift; only negative values need the rounding below. */
+        v_rshift(z->long_value.ob_digit, a->long_value.ob_digit + wordshift,
+                 newsize, remshift);
+        return (PyObject *)maybe_small_long(long_normalize(z));
+    }
     hishift = PyLong_SHIFT - remshift;
 
     accum = a->long_value.ob_digit[wordshift];
@@ -5456,8 +5465,8 @@ static PyObject *
 long_lshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
 {
     PyLongObject *z = NULL;
-    Py_ssize_t oldsize, newsize, i, j;
-    twodigits accum;
+    Py_ssize_t oldsize, newsize, i;
+    digit carry;
 
     if (wordshift == 0 && _PyLong_IsCompact(a)) {
         stwodigits m = medium_value(a);
@@ -5479,16 +5488,12 @@ long_lshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
     }
     for (i = 0; i < wordshift; i++)
         z->long_value.ob_digit[i] = 0;
-    accum = 0;
-    for (j = 0; j < oldsize; i++, j++) {
-        accum |= (twodigits)a->long_value.ob_digit[j] << remshift;
-        z->long_value.ob_digit[i] = (digit)(accum & PyLong_MASK);
-        accum >>= PyLong_SHIFT;
-    }
+    carry = v_lshift(z->long_value.ob_digit + wordshift,
+                     a->long_value.ob_digit, oldsize, remshift);
     if (remshift)
-        z->long_value.ob_digit[newsize-1] = (digit)accum;
+        z->long_value.ob_digit[newsize-1] = carry;
     else
-        assert(!accum);
+        assert(!carry);
     z = long_normalize(z);
     return (PyObject *) maybe_small_long(z);
 }
