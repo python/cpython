@@ -177,7 +177,7 @@ The module also offers three general purpose functions based on heaps.
    *iterable*.  *key*, if provided, specifies a function of one argument that is
    used to extract a comparison key from each element in *iterable* (for example,
    ``key=str.lower``).  Equivalent to:  ``sorted(iterable, key=key,
-   reverse=True)[:n]``.
+   reverse=True)[:max(n, 0)]``.
 
 
 .. function:: nsmallest(n, iterable, key=None)
@@ -185,7 +185,8 @@ The module also offers three general purpose functions based on heaps.
    Return a list with the *n* smallest elements from the dataset defined by
    *iterable*.  *key*, if provided, specifies a function of one argument that is
    used to extract a comparison key from each element in *iterable* (for example,
-   ``key=str.lower``).  Equivalent to:  ``sorted(iterable, key=key)[:n]``.
+   ``key=str.lower``).  Equivalent to:  ``sorted(iterable,
+   key=key)[:max(n, 0)]``.
 
 
 The latter two functions perform best for smaller values of *n*.  For larger

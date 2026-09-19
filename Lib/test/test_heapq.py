@@ -365,20 +365,20 @@ class TestHeap:
     def test_nsmallest(self):
         data = [(random.randrange(2000), i) for i in range(1000)]
         for f in (None, lambda x:  x[0] * 547 % 2000):
-            for n in (0, 1, 2, 10, 100, 400, 999, 1000, 1100):
+            for n in (-1100, -2, -1, 0, 1, 2, 10, 100, 400, 999, 1000, 1100):
                 self.assertEqual(list(self.module.nsmallest(n, data)),
-                                 sorted(data)[:n])
+                                 sorted(data)[:max(n, 0)])
                 self.assertEqual(list(self.module.nsmallest(n, data, key=f)),
-                                 sorted(data, key=f)[:n])
+                                 sorted(data, key=f)[:max(n, 0)])
 
     def test_nlargest(self):
         data = [(random.randrange(2000), i) for i in range(1000)]
         for f in (None, lambda x:  x[0] * 547 % 2000):
-            for n in (0, 1, 2, 10, 100, 400, 999, 1000, 1100):
+            for n in (-1100, -2, -1, 0, 1, 2, 10, 100, 400, 999, 1000, 1100):
                 self.assertEqual(list(self.module.nlargest(n, data)),
-                                 sorted(data, reverse=True)[:n])
+                                 sorted(data, reverse=True)[:max(n, 0)])
                 self.assertEqual(list(self.module.nlargest(n, data, key=f)),
-                                 sorted(data, key=f, reverse=True)[:n])
+                                 sorted(data, key=f, reverse=True)[:max(n, 0)])
 
     def test_comparison_operator(self):
         # Issue 3051: Make sure heapq works with both __lt__
