@@ -1,0 +1,3 @@
+Reify a lazy import at most once.  Previously
+:meth:`!types.LazyImportType.resolve` followed by a normal access to the
+still-lazy global imported twice and bound two different objects.
