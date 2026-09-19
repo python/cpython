@@ -1,3 +1,4 @@
+import asyncio
 import unittest
 import os
 import textwrap
@@ -440,6 +441,45 @@ class RemoteInspectionTestBase(unittest.TestCase):
 
 @requires_remote_subprocess_debugging()
 class TestSelfStackTrace(RemoteInspectionTestBase):
+    @skip_if_not_supported
+    def test_long_task_name_is_truncated(self):
+        # gh-157788
+        async def main():
+            asyncio.create_task(asyncio.sleep(10_000), name="x" * 300)
+            await asyncio.sleep(0)
+            return [
+                task.task_name
+                for info in RemoteUnwinder(os.getpid()).get_all_awaited_by()
+                for task in info.awaited_by
+            ]
+
+        names = asyncio.run(main())
+        self.assertIn("Task-1", names)
+        self.assertEqual([len(n) for n in names if n.startswith("x")], [255])
+
+    @skip_if_not_supported
+    def test_negative_string_length_is_rejected(self):
+        # gh-157788
+        import ctypes
+
+        async def main():
+            name = "corrupted" + "x" * 20
+            asyncio.create_task(asyncio.sleep(10_000), name=name)
+            await asyncio.sleep(0)
+
+            length = ctypes.c_ssize_t.from_address(
+                id(name) + object().__sizeof__())
+            real_length = length.value
+            length.value = -1
+            try:
+                with self.assertRaisesRegex(RuntimeError,
+                                            "Invalid string length"):
+                    RemoteUnwinder(os.getpid()).get_all_awaited_by()
+            finally:
+                length.value = real_length
+
+        asyncio.run(main())
+
     @skip_if_not_supported
     @unittest.skipIf(
         sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
