@@ -548,6 +548,14 @@ or subtracting from an empty counter.
 
         .. versionadded:: 3.5
 
+        .. versionchanged:: 3.14.6
+           *start* and *stop* are both interpreted relative to the length of
+           the deque measured after the arguments have been converted to
+           integers.  Previously an omitted *stop* defaulted to the length
+           measured before *start* was converted, so a *start* whose
+           :meth:`~object.__index__` method mutated the deque could leave the
+           two bounds resolved against different lengths.
+
 
     .. method:: insert(index, value, /)
 
