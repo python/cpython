@@ -1,0 +1,3 @@
+Speed up successful matching in :mod:`re` by 15-18 ns: a dead match object
+is kept in the compiled pattern and reused for the next match instead of
+allocating a new one.
