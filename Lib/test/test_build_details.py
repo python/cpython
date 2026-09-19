@@ -2,6 +2,7 @@ import importlib
 import json
 import os
 import os.path
+import shlex
 import sys
 import sysconfig
 import string
@@ -172,6 +173,13 @@ class CPythonBuildDetailsTests(unittest.TestCase, FormatTestsBase):
         self.assertTrue(os.path.exists(os.path.join(value['headers'], 'Python.h')))
         version = sysconfig.get_config_var('VERSION')
         self.assertTrue(os.path.exists(os.path.join(value['pkgconfig_path'], f'python-{version}.pc')))
+
+    def test_extension_compiler_flags(self):
+        value = self.key('arbitrary_data.extension_compiler_flags')
+        expected = shlex.split(
+            sysconfig.get_config_var('FRAME_POINTER_CFLAGS') or ''
+        )
+        self.assertEqual(value, expected)
 
 
 @unittest.skipIf(
