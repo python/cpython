@@ -503,6 +503,44 @@ class TimeTestCase(unittest.TestCase):
                 del environ['TZ']
             time.tzset()
 
+    @unittest.skipUnless(hasattr(time, "tzset"),
+                         "time module has no attribute tzset")
+    def test_tzset_race_with_localtime(self):
+        from os import environ
+        org_TZ = environ.get('TZ', None)
+        errors = []
+        barrier = threading.Barrier(4)
+
+        def setter():
+            barrier.wait()
+            for i in range(200):
+                environ['TZ'] = 'UTC0' if i & 1 else 'EST5EDT'
+                time.tzset()
+
+        def reader():
+            barrier.wait()
+            for _ in range(200):
+                try:
+                    time.localtime()
+                    time.strftime('%Z')
+                except Exception as e:
+                    errors.append(e)
+
+        threads = [threading.Thread(target=setter) for _ in range(2)]
+        threads += [threading.Thread(target=reader) for _ in range(2)]
+        try:
+            for t in threads:
+                t.start()
+            for t in threads:
+                t.join()
+            self.assertEqual(errors, [])
+        finally:
+            if org_TZ is not None:
+                environ['TZ'] = org_TZ
+            elif 'TZ' in environ:
+                del environ['TZ']
+            time.tzset()
+
     def test_insane_timestamps(self):
         # It's possible that some platform maps time_t to double,
         # and that this test will fail there.  This test should
