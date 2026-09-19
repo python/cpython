@@ -515,11 +515,11 @@ class IocpProactor:
         return self._register(ov, conn, partial(self._finish_recvfrom,
                                                 empty_result=b''))
 
-    def recvfrom_into(self, conn, buf, flags=0):
+    def recvfrom_into(self, conn, buf, nbytes=0):
         self._register_with_iocp(conn)
         ov = _overlapped.Overlapped(NULL)
         try:
-            ov.WSARecvFromInto(conn.fileno(), buf, flags)
+            ov.WSARecvFromInto(conn.fileno(), buf, nbytes)
         except BrokenPipeError:
             return self._result((0, None))
 
