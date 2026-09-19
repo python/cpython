@@ -326,6 +326,12 @@ class IOBinding:
         return chars.encode('utf-8-sig')
 
     def print_window(self, event):
+        try:
+            self.text.tk.call('tk', 'print', self.text)
+        except tkinter.TclError:
+            self.old_print(event)
+
+    def old_print(self, event):
         confirm = messagebox.askokcancel(
                   title="Print",
                   message="Print to Default Printer",
