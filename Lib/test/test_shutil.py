@@ -2237,10 +2237,62 @@ class TestArchives(BaseTest, unittest.TestCase):
                        **kwargs)
         self.assertEqual(rlistdir(tmpdir3), expected)
 
-        with self.assertRaises(shutil.ReadError):
+        # gh-98758: a nonexistent file must raise FileNotFoundError, not the
+        # generic ReadError that used to mask it.
+        with self.assertRaises(FileNotFoundError):
             unpack_archive(converter(TESTFN), **kwargs)
         with self.assertRaises(ValueError):
             unpack_archive(converter(TESTFN), format='xxx', **kwargs)
+
+    def test_unpack_archive_unknown_format_existing_file(self):
+        # gh-98758: an accessible file with a genuinely unrecognized
+        # extension must still raise ReadError, unlike a missing file.
+        tmpdir = self.mkdtemp()
+        filename = os.path.join(tmpdir, 'archive.unknownext')
+        os_helper.create_empty_file(filename)
+        with self.assertRaises(shutil.ReadError):
+            unpack_archive(filename)
+
+    def test_unpack_archive_unknown_format_directory(self):
+        # gh-98758: a directory is not a regular file, so the accessibility
+        # probe must not attempt to open() it -- it should still raise
+        # ReadError (not IsADirectoryError), unchanged from before the fix.
+        tmpdir = self.mkdtemp()
+        dirname = os.path.join(tmpdir, 'archive.unknownext')
+        os.mkdir(dirname)
+        with self.assertRaises(shutil.ReadError):
+            unpack_archive(dirname)
+
+    @unittest.skipUnless(hasattr(os, 'mkfifo'), 'requires os.mkfifo')
+    def test_unpack_archive_unknown_format_fifo(self):
+        # gh-98758: a FIFO is not a regular file, so the accessibility probe
+        # must not attempt to open() it -- opening a FIFO for reading blocks
+        # until a writer appears, which would hang unpack_archive() instead
+        # of promptly raising ReadError as before the fix.
+        tmpdir = self.mkdtemp()
+        fifo_path = os.path.join(tmpdir, 'archive.unknownext')
+        os.mkfifo(fifo_path)
+        with self.assertRaises(shutil.ReadError):
+            unpack_archive(fifo_path)
+
+    @unittest.skipIf(sys.platform[:6] == 'cygwin',
+                     "This test can't be run on Cygwin (issue #1071513).")
+    @unittest.skipIf(sys.platform == 'win32',
+                     "os.chmod() cannot make a file unreadable on Windows, "
+                     "only read-only (see the os.chmod() docs)")
+    @os_helper.skip_if_dac_override
+    @os_helper.skip_unless_working_chmod
+    def test_unpack_archive_permission_denied(self):
+        # gh-98758: a file that exists but can't be read must raise
+        # PermissionError, not the generic ReadError.
+        tmpdir = self.mkdtemp()
+        filename = os.path.join(tmpdir, 'archive.unknownext')
+        os_helper.create_empty_file(filename)
+        old_mode = os.stat(filename).st_mode
+        os.chmod(filename, 0)
+        self.addCleanup(os.chmod, filename, old_mode)
+        with self.assertRaises(PermissionError):
+            unpack_archive(filename)
 
     def check_unpack_tarball(self, format):
         self.check_unpack_archive(format, filter='fully_trusted')
