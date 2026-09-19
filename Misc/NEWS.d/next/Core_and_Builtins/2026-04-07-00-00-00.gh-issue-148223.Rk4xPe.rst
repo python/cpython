@@ -1,0 +1,4 @@
+Avoid unnecessary ``NotShareableError`` creation in
+``_PyObject_GetXIData()`` when falling back to pickle for types not in the
+XIData registry.  This speeds up cross-interpreter transfers of mutable
+types such as ``list`` and ``dict``.
