@@ -36,6 +36,7 @@ TK_TABWIDTH_DEFAULT = 8
 darwin = sys.platform == 'darwin'
 
 class EditorWindow:
+    is_shell = False  # PyShell overrides.
     from idlelib.percolator import Percolator
     from idlelib.colorizer import ColorDelegator, color_config
     from idlelib.undo import UndoDelegator
@@ -81,7 +82,6 @@ class EditorWindow:
         self.recent_files_path = idleConf.userdir and os.path.join(
                 idleConf.userdir, 'recent-files.lst')
 
-        self.prompt_last_line = ''  # Override in PyShell
         self.text_frame = text_frame = Frame(top)
         self.vbar = vbar = Scrollbar(text_frame, name='vbar')
         width = idleConf.GetOption('main', 'EditorWindow', 'width', type='int')
@@ -1441,7 +1441,7 @@ class EditorWindow:
             # First need to find the last statement.
             lno = index2line(text.index('insert'))
             y = pyparse.Parser(self.indentwidth, self.tabwidth)
-            if not self.prompt_last_line:
+            if not self.is_shell:
                 for context in self.num_context_lines:
                     startat = max(lno - context, 1)
                     startatindex = repr(startat) + ".0"
