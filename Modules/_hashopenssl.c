@@ -8,7 +8,6 @@
  *
  * Andrew Kuchling (amk@amk.ca)
  * Greg Stein (gstein@lyra.org)
- *
  */
 
 #define PY_SSIZE_T_CLEAN
@@ -17,7 +16,6 @@
 #include "structmember.h"
 #include "hashlib.h"
 #include "pystrhex.h"
-
 
 /* EVP is the preferred interface to hashing in OpenSSL */
 #include <openssl/evp.h>
@@ -48,7 +46,6 @@ module _hashlib
 #define HAS_FAST_PKCS5_PBKDF2_HMAC 1
 #endif
 
-
 typedef struct {
     PyObject_HEAD
     PyObject            *name;  /* name of this hash algorithm */
@@ -58,9 +55,7 @@ typedef struct {
 #endif
 } EVPobject;
 
-
 static PyTypeObject EVPtype;
-
 
 #define DEFINE_CONSTS_FOR_NEW(Name)  \
     static PyObject *CONST_ ## Name ## _name_obj = NULL; \
@@ -72,7 +67,6 @@ DEFINE_CONSTS_FOR_NEW(sha224)
 DEFINE_CONSTS_FOR_NEW(sha256)
 DEFINE_CONSTS_FOR_NEW(sha384)
 DEFINE_CONSTS_FOR_NEW(sha512)
-
 
 /* LCOV_EXCL_START */
 static PyObject *
@@ -89,7 +83,12 @@ _setException(PyObject *exc)
     ERR_clear_error();
 
     lib = ERR_lib_error_string(errcode);
+/* ERR_func_error_string() is deprecated since OpenSSL 3.0. */
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
     func = ERR_func_error_string(errcode);
+#else
+    func = NULL;
+#endif
     reason = ERR_reason_error_string(errcode);
 
     if (lib && func) {
@@ -176,13 +175,12 @@ locked_EVP_MD_CTX_copy(EVP_MD_CTX *new_ctx_p, EVPobject *self)
 
 PyDoc_STRVAR(EVP_copy__doc__, "Return a copy of the hash object.");
 
-
 static PyObject *
 EVP_copy(EVPobject *self, PyObject *unused)
 {
     EVPobject *newobj;
 
-    if ( (newobj = newEVPobject(self->name))==NULL)
+    if ((newobj = newEVPobject(self->name)) == NULL)
         return NULL;
 
     if (!locked_EVP_MD_CTX_copy(newobj->ctx, self)) {
@@ -331,7 +329,6 @@ static PyGetSetDef EVP_getseters[] = {
     {NULL}  /* Sentinel */
 };
 
-
 static PyObject *
 EVP_repr(EVPobject *self)
 {
@@ -395,7 +392,6 @@ EVP_tp_init(EVPobject *self, PyObject *args, PyObject *kwds)
     return 0;
 }
 #endif
-
 
 PyDoc_STRVAR(hashtype_doc,
 "A hash represents the object used to calculate a checksum of a\n\
@@ -495,7 +491,6 @@ EVPnew(PyObject *name_obj,
     return (PyObject *)self;
 }
 
-
 /* The module-level function: new() */
 
 PyDoc_STRVAR(EVP_new__doc__,
@@ -538,23 +533,16 @@ EVP_new(PyObject *self, PyObject *args, PyObject *kwdict)
     return ret_obj;
 }
 
-
-
 #if (OPENSSL_VERSION_NUMBER >= 0x10000000 && !defined(OPENSSL_NO_HMAC) \
      && !defined(OPENSSL_NO_SHA))
 
 #define PY_PBKDF2_HMAC 1
 
 #if !HAS_FAST_PKCS5_PBKDF2_HMAC
-/* Improved implementation of PKCS5_PBKDF2_HMAC()
+/* Improved implementation of PKCS5_PBKDF2_HMAC().
  *
  * PKCS5_PBKDF2_HMAC_fast() hashes the password exactly one time instead of
- * `iter` times. Today (2013) the iteration count is typically 100,000 or
- * more. The improved algorithm is not subject to a Denial-of-Service
- * vulnerability with overly large passwords.
- *
- * Also OpenSSL < 1.0 don't provide PKCS5_PBKDF2_HMAC(), only
- * PKCS5_PBKDF2_SHA1.
+ * `iter` times.
  */
 static int
 PKCS5_PBKDF2_HMAC_fast(const char *pass, int passlen,
@@ -584,9 +572,6 @@ PKCS5_PBKDF2_HMAC_fast(const char *pass, int passlen,
             cplen = mdlen;
         else
             cplen = tkeylen;
-        /* We are unlikely to ever use more than 256 blocks (5120 bits!)
-         * but just in case...
-         */
         itmp[0] = (unsigned char)((i >> 24) & 0xff);
         itmp[1] = (unsigned char)((i >> 16) & 0xff);
         itmp[2] = (unsigned char)((i >> 8) & 0xff);
@@ -620,15 +605,14 @@ PKCS5_PBKDF2_HMAC_fast(const char *pass, int passlen,
                 p[k] ^= digtmp[k];
             }
         }
-        tkeylen-= cplen;
+        tkeylen -= cplen;
         i++;
-        p+= cplen;
+        p += cplen;
     }
     HMAC_CTX_cleanup(&hctx_tpl);
     return 1;
 }
 #endif
-
 
 PyDoc_STRVAR(pbkdf2_hmac__doc__,
 "pbkdf2_hmac(hash_name, password, salt, iterations, dklen=None) -> key\n\
@@ -697,7 +681,6 @@ pbkdf2_hmac(PyObject *self, PyObject *args, PyObject *kwdict)
         goto end;
     }
     if (dklen > INT_MAX) {
-        /* INT_MAX is always smaller than dkLen max (2^32 - 1) * hLen */
         PyErr_SetString(PyExc_OverflowError,
                         "key length is too great.");
         goto end;
@@ -815,8 +798,6 @@ _hashlib_scrypt_impl(PyObject *module, Py_buffer *password, Py_buffer *salt,
     }
 
     if (maxmem < 0 || maxmem > INT_MAX) {
-        /* OpenSSL 1.1.0 restricts maxmem to 32MB. It may change in the
-           future. The maxmem constant is private to OpenSSL. */
         PyErr_Format(PyExc_ValueError,
                      "maxmem must be positive and smaller than %d",
                       INT_MAX);
@@ -833,7 +814,6 @@ _hashlib_scrypt_impl(PyObject *module, Py_buffer *password, Py_buffer *salt,
     /* let OpenSSL validate the rest */
     retval = EVP_PBE_scrypt(NULL, 0, NULL, 0, n, r, p, maxmem, NULL, 0);
     if (!retval) {
-        /* sorry, can't do much better */
         PyErr_SetString(PyExc_ValueError,
                         "Invalid paramemter combination for n, r, p, maxmem.");
         return NULL;
@@ -869,7 +849,6 @@ typedef struct _internal_name_mapper_state {
     int error;
 } _InternalNameMapperState;
 
-
 /* A callback function to pass to OpenSSL's OBJ_NAME_do_all(...) */
 static void
 _openssl_hash_name_mapper(const OBJ_NAME *openssl_obj_name, void *arg)
@@ -880,9 +859,7 @@ _openssl_hash_name_mapper(const OBJ_NAME *openssl_obj_name, void *arg)
     assert(state != NULL);
     if (openssl_obj_name == NULL)
         return;
-    /* Ignore aliased names, they pollute the list and OpenSSL appears to
-     * have its own definition of alias as the resulting list still
-     * contains duplicate and alternate names for several algorithms.     */
+    /* Ignore aliased names */
     if (openssl_obj_name->alias)
         return;
 
@@ -896,7 +873,6 @@ _openssl_hash_name_mapper(const OBJ_NAME *openssl_obj_name, void *arg)
         Py_DECREF(py_name);
     }
 }
-
 
 /* Ask OpenSSL for a list of supported ciphers, filling in a Python set. */
 static PyObject*
@@ -917,15 +893,9 @@ generate_hash_name_list(void)
     return state.set;
 }
 
-
 /*
- *  This macro generates constructor function definitions for specific
- *  hash algorithms.  These constructors are much faster than calling
- *  the generic one passing it a python string and are noticeably
- *  faster than calling a python new() wrapper.  That is important for
- *  code that wants to make hashes of a bunch of small strings.
- *  The first call will lazy-initialize, which reports an exception
- *  if initialization fails.
+ * This macro generates constructor function definitions for specific
+ * hash algorithms.
  */
 #define GEN_CONSTRUCTOR(NAME)  \
     static PyObject * \
@@ -972,8 +942,7 @@ generate_hash_name_list(void)
                   " hash object; optionally initialized with a string") \
     }
 
-/* used in the init function to setup a constructor: initialize OpenSSL
-   constructor constants if they haven't been initialized already.  */
+/* used in the init function to setup a constructor */
 #define INIT_CONSTRUCTOR_CONSTANTS(NAME)  do { \
     if (CONST_ ## NAME ## _name_obj == NULL) { \
         CONST_ ## NAME ## _name_obj = PyUnicode_FromString(#NAME); \
@@ -1005,10 +974,6 @@ static struct PyMethodDef EVP_functions[] = {
     {NULL,      NULL}            /* Sentinel */
 };
 
-
-/* Initialize this module. */
-
-
 static struct PyModuleDef _hashlibmodule = {
     PyModuleDef_HEAD_INIT,
     "_hashlib",
@@ -1031,11 +996,6 @@ PyInit__hashlib(void)
     OPENSSL_add_all_algorithms_noconf();
     ERR_load_crypto_strings();
 #endif
-
-    /* TODO build EVP_functions openssl_* entries dynamically based
-     * on what hashes are supported rather than listing many
-     * but having some be unsupported.  Only init appropriate
-     * constants. */
 
     Py_TYPE(&EVPtype) = &PyType_Type;
     if (PyType_Ready(&EVPtype) < 0)

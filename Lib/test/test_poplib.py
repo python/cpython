@@ -13,6 +13,7 @@ import errno
 from unittest import TestCase, skipUnless
 from test import support as test_support
 from test.support import control_characters_c0
+from test.support import hashlib_helper
 threading = test_support.import_module('threading')
 
 HOST = test_support.HOST
@@ -305,9 +306,11 @@ class TestPOP3Class(TestCase):
     def test_rpop(self):
         self.assertOK(self.client.rpop('foo'))
 
+    @hashlib_helper.requires_hashdigest('md5', openssl=True)
     def test_apop_normal(self):
         self.assertOK(self.client.apop('foo', 'dummypassword'))
 
+    @hashlib_helper.requires_hashdigest('md5', openssl=True)
     def test_apop_REDOS(self):
         # Replace welcome with very long evil welcome.
         # NB The upper bound on welcome length is currently 2048.

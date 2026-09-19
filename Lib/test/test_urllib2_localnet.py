@@ -8,6 +8,7 @@ import unittest
 import hashlib
 
 from test import support
+from test.support import hashlib_helper
 
 threading = support.import_module('threading')
 
@@ -318,6 +319,7 @@ class BasicAuthTests(unittest.TestCase):
 
 
 @unittest.skipUnless(threading, "Threading required for this test.")
+@hashlib_helper.requires_hashdigest("md5", openssl=True)
 class ProxyAuthTests(unittest.TestCase):
     URL = "http://localhost"
 
