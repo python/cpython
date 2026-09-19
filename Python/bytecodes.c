@@ -2357,6 +2357,10 @@ dummy_func(
             STAT_INC(LOAD_GLOBAL, hit);
         }
 
+        tier2 op(_GUARD_BUILTINS_IS_CANONICAL, (--)) {
+            DEOPT_IF(BUILTINS() != tstate->interp->builtins);
+        }
+
         macro(LOAD_GLOBAL_MODULE) =
             unused/1 + // Skip over the counter
             NOP + // For guard insertion in the JIT optimizer

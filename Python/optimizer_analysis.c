@@ -178,8 +178,9 @@ watch_type(PyTypeObject *type, _PyBloomFilter *filter)
     _Py_BloomFilter_Add(filter, type);
 }
 
+/* Look up the value INST would load from OBJ, without modifying INST. */
 static PyObject *
-convert_global_to_const(_PyUOpInstruction *inst, PyObject *obj)
+lookup_global_const(_PyUOpInstruction *inst, PyObject *obj)
 {
     assert(inst->opcode == _LOAD_GLOBAL_MODULE || inst->opcode == _LOAD_GLOBAL_BUILTINS || inst->opcode == _LOAD_ATTR_MODULE);
     assert(PyDict_CheckExact(obj));
@@ -196,6 +197,17 @@ convert_global_to_const(_PyUOpInstruction *inst, PyObject *obj)
         return NULL;
     }
     PyObject *res = entries[index].me_value;
+    if (res == NULL) {
+        return NULL;
+    }
+    return res;
+}
+
+/* Rewrite INST in place into a load of the constant it fetches from OBJ. */
+static PyObject *
+convert_global_to_const(_PyUOpInstruction *inst, PyObject *obj)
+{
+    PyObject *res = lookup_global_const(inst, obj);
     if (res == NULL) {
         return NULL;
     }
