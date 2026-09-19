@@ -1,0 +1,5 @@
+Calling ``throw(StopIteration)`` on a generator, generator expression,
+coroutine, or asynchronous generator that has not started running now raises
+:exc:`RuntimeError`, consistent with :pep:`479` and with throwing into an
+already-started generator. Previously the :exc:`StopIteration` escaped
+unchanged. Patch by Joel Walker.
