@@ -1,0 +1,9 @@
+Add support of labels in tests. The ``@test.support.mark('label')``
+decorator adds a label to method or class. ``test.support.mark('label',
+globals=globals())`` adds a label to the whole module. Many
+:mod:`test.support` decorators like :func:`~test.support.requires_resource`,
+:func:`~test.support.cpython_only` or :func:`~test.support.bigmemtest` add
+labels automatically.  A label can have a value (``True`` by default).  Tests
+which have or have not the specified label can be filtered by options
+``--label`` and ``--no-label``; ``--label name=value`` matches a specific
+value, while ``--label name`` matches any value.
