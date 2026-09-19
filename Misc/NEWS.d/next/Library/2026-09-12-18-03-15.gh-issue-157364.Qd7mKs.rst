@@ -1,0 +1,2 @@
+Fix a use-after-free in :class:`io.TextIOWrapper` when a call to the
+underlying buffer reentrantly detaches it. Patched by Shamil Abdulaev.
