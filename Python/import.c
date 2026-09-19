@@ -3898,6 +3898,20 @@ _PyImport_ResolveName(PyThreadState *tstate, PyObject *name,
   return resolve_name(tstate, name, globals, level);
 }
 
+// The import machinery only discards module names, so this is what removes
+// the "pkg.attr" entry left by `lazy from pkg import attr`, submodule or not.
+static int
+discard_reified_lazy_import(PyInterpreterState *interp, PyObject *lazy_import)
+{
+    PyObject *name = _PyLazyImport_GetName(lazy_import);
+    if (name == NULL) {
+        return -1;
+    }
+    int res = PySet_Discard(LAZY_MODULES(interp), name);
+    Py_DECREF(name);
+    return res < 0 ? -1 : 0;
+}
+
 PyObject *
 _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
 {
@@ -4080,6 +4094,10 @@ error:
     }
 
 ok:
+    if (obj != NULL && discard_reified_lazy_import(interp, lazy_import) < 0) {
+        Py_CLEAR(obj);
+    }
+
     if (PySet_Discard(importing, lazy_import) < 0) {
         Py_CLEAR(obj);
     }
@@ -4338,6 +4356,41 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
     return final_mod;
 }
 
+// Check if a module is already loaded before adding it to sys.lazy_modules
+static int
+lazy_modules_add(PyThreadState *tstate, PyObject *name)
+{
+    PyObject *modules = get_modules_dict(tstate, false);
+    if (modules == NULL) {
+        return -1;
+    }
+    PyObject *existing;
+    if (PyDict_GetItemRef(modules, name, &existing) < 0) {
+        return -1;
+    }
+    // A None entry blocks the import rather than satisfying it.
+    int loaded = (existing != NULL && existing != Py_None);
+    if (loaded) {
+        // Check if the module is still initializing.
+        PyObject *spec;
+        int rc = PyObject_GetOptionalAttr(existing, &_Py_ID(__spec__), &spec);
+        if (rc > 0) {
+            rc = _PyModuleSpec_IsInitializing(spec);
+            Py_DECREF(spec);
+        }
+        if (rc < 0) {
+            Py_DECREF(existing);
+            return -1;
+        }
+        loaded = !rc;
+    }
+    Py_XDECREF(existing);
+    if (loaded) {
+        return 0;
+    }
+    return PySet_Add(LAZY_MODULES(tstate->interp), name);
+}
+
 // ensure we have the set for the parent module name in sys.lazy_modules.
 // Returns a new reference.
 static PyObject *
@@ -4431,9 +4484,7 @@ register_from_lazy_on_parent(PyThreadState *tstate, PyObject *abs_name,
         return -1;
     }
 
-    // Add the module name to sys.lazy_modules set (PEP 810).
-    PyObject *lazy_modules = LAZY_MODULES(tstate->interp);
-    if (PySet_Add(lazy_modules, fromname) < 0) {
+    if (lazy_modules_add(tstate, fromname) < 0) {
         Py_DECREF(fromname);
         return -1;
     }
@@ -4607,9 +4658,7 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
         return NULL;
     }
 
-    // Add the module name to sys.lazy_modules set (PEP 810).
-    PyObject *lazy_modules = LAZY_MODULES(tstate->interp);
-    if (PySet_Add(lazy_modules, abs_name) < 0) {
+    if (lazy_modules_add(tstate, abs_name) < 0) {
         goto error;
     }
 
