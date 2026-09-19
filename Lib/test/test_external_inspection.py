@@ -1671,6 +1671,39 @@ class TestGetStackTrace(RemoteInspectionTestBase):
         sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
         "Test only runs on Linux with process_vm_readv support",
     )
+    def test_empty_native_thread_stack(self):
+        _testcapi = import_module("_testcapi")
+        lock = threading.Lock()
+        lock.acquire()
+        # A built-in callback leaves the C thread's Python stack empty.
+        _testcapi.call_in_temporary_c_thread(lock.acquire, False)
+        try:
+            for cache_frames in (False, True):
+                with self.subTest(cache_frames=cache_frames):
+                    unwinder = RemoteUnwinder(
+                        os.getpid(), all_threads=True, cache_frames=cache_frames,
+                    )
+                    _get_stack_trace_with_retry(
+                        unwinder, condition=lambda trace: len(trace[0].threads) == 2,
+                    )
+                    threads = unwinder.get_stack_trace()[0].threads
+                    native_stack, python_stack = sorted(
+                        (thread.frame_info for thread in threads), key=len,
+                    )
+                    self.assertEqual(native_stack, [])
+                    self.assertEqual(
+                        python_stack[0].funcname,
+                        "TestGetStackTrace.test_empty_native_thread_stack",
+                    )
+        finally:
+            lock.release()
+            _testcapi.join_temporary_c_thread()
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
     @requires_subinterpreters
     def test_subinterpreter_stack_trace(self):
         port = find_unused_port()
