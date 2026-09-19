@@ -340,6 +340,20 @@ concurrent.futures
   (Contributed by xzmeng and Serhiy Storchaka in :gh:`108518`.)
 
 
+dbm.ndbm
+--------
+
+* Added constants which provide information about the version of the
+  underlying library in use: :const:`~dbm.ndbm.GDBM_VERSION_INFO`,
+  :const:`~dbm.ndbm.gdbm_version_info` and :const:`~dbm.ndbm.gdbm_version`
+  if it is GDBM, or :const:`~dbm.ndbm.BDB_VERSION`,
+  :const:`~dbm.ndbm.bdb_version`, :const:`~dbm.ndbm.BDB_VERSION_INFO` and
+  :const:`~dbm.ndbm.bdb_version_info` if it is Berkeley DB.
+  :const:`dbm.ndbm.library` is now ``'ndbm'`` instead of ``'GNU gdbm'``
+  for a classic NDBM library.
+  (Contributed by Serhiy Storchaka in :gh:`157480`.)
+
+
 difflib
 -------
 
