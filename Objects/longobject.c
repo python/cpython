@@ -3942,8 +3942,8 @@ x_mul(PyLongObject *a, PyLongObject *b)
     if (z == NULL)
         return NULL;
 
-    memset(z->long_value.ob_digit, 0, _PyLong_DigitCount(z) * sizeof(digit));
     if (a == b) {
+        memset(z->long_value.ob_digit, 0, _PyLong_DigitCount(z) * sizeof(digit));
         /* Efficient squaring per HAC, Algorithm 14.16:
          * https://cacr.uwaterloo.ca/hac/about/chap14.pdf
          * Gives slightly less than a 2x speedup when a == b,
@@ -4002,7 +4002,30 @@ x_mul(PyLongObject *a, PyLongObject *b)
         }
     }
     else {      /* a is not the same as b -- gradeschool int mult */
-        for (i = 0; i < size_a; ++i) {
+        /* No digit of z needs to start out zeroed: the i == 0 pass stores
+         * z[0:size_b+1] outright, pass i only reads z[i:i+size_b], which
+         * earlier passes have already written, and each pass stores its final
+         * carry into z[i+size_b], which no earlier pass has touched.
+         */
+        assert(size_a >= 1);
+        {
+            twodigits carry = 0;
+            twodigits f = a->long_value.ob_digit[0];
+            digit *pz = z->long_value.ob_digit;
+            digit *pb = b->long_value.ob_digit;
+            digit *pbend = b->long_value.ob_digit + size_b;
+
+            while (pb < pbend) {
+                carry += *pb++ * f;
+                *pz++ = (digit)(carry & PyLong_MASK);
+                carry >>= PyLong_SHIFT;
+                assert(carry <= PyLong_MASK);
+            }
+            /* The final carry fits in a digit, so no masking is needed. */
+            *pz = (digit)carry;
+            assert((carry >> PyLong_SHIFT) == 0);
+        }
+        for (i = 1; i < size_a; ++i) {
             twodigits carry = 0;
             twodigits f = a->long_value.ob_digit[i];
             digit *pz = z->long_value.ob_digit + i;
@@ -4020,8 +4043,8 @@ x_mul(PyLongObject *a, PyLongObject *b)
                 carry >>= PyLong_SHIFT;
                 assert(carry <= PyLong_MASK);
             }
-            if (carry)
-                *pz += (digit)(carry & PyLong_MASK);
+            /* The final carry fits in a digit, so no masking is needed. */
+            *pz = (digit)carry;
             assert((carry >> PyLong_SHIFT) == 0);
         }
     }
