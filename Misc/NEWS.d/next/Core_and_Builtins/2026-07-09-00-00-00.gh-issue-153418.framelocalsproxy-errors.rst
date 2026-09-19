@@ -1,0 +1,4 @@
+Fix error handling in the ``FrameLocalsProxy`` returned by
+:attr:`frame.f_locals`: ``update()`` no longer replaces the exception raised
+by its argument with :exc:`TypeError`, and ``|=`` no longer returns while an
+exception is set, which made debug builds abort with a fatal error.
