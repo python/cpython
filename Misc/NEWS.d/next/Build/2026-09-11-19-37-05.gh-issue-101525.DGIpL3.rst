@@ -1,0 +1,2 @@
+When using :option:`--enable-bolt`, enable safe identical code folding on
+BOLT versions new enough to support it (LLVM 20+).
