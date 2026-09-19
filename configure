@@ -16780,7 +16780,7 @@ printf "%s\n" "$ac_cv_float16_supported" >&6; }
 if test "x$ac_cv_float16_supported" = xyes
 then :
 
-printf "%s\n" "#define HAVE_FLOAT16 1" >>confdefs.h
+printf "%s\n" "#define _Py_HAVE_FLOAT16 1" >>confdefs.h
 
 fi
 

@@ -4486,7 +4486,7 @@ int main(void)
 [ac_cv_float16_supported=no],
 [ac_cv_float16_supported=no])]))
 AS_VAR_IF([ac_cv_float16_supported], [yes],
-          [AC_DEFINE([HAVE_FLOAT16], [1],
+          [AC_DEFINE([_Py_HAVE_FLOAT16], [1],
                      [Defined if _Float16 C type is supported])])
 
 dnl Check for libmpdec >= 2.5.0
