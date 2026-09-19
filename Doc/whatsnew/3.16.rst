@@ -668,9 +668,11 @@ tkinter
 
 * Added the :mod:`tkinter.systray` module which provides the
   :class:`~tkinter.systray.SysTrayIcon` class as an interface to the system
-  tray icon and the :func:`~tkinter.systray.notify` function which sends a
-  desktop notification.  They require Tk 8.7/9.0 or newer.
-  (Contributed by Serhiy Storchaka in :gh:`153259`.)
+  tray icon, the :func:`~tkinter.systray.notify` function which sends a
+  desktop notification, and the :class:`~tkinter.systray.NotificationHandler`
+  logging handler which shows log records as desktop notifications.
+  They require Tk 9.0 or newer.
+  (Contributed by Serhiy Storchaka in :gh:`153259` and :gh:`157749`.)
 
 * :class:`tkinter.scrolledtext.ScrolledText` gained a *use_ttk* parameter to use
   the themed :mod:`tkinter.ttk` frame and scroll bar instead of the classic

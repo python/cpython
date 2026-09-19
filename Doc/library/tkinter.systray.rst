@@ -12,8 +12,10 @@
 
 The :mod:`!tkinter.systray` module provides the :class:`SysTrayIcon` class
 as an interface to the system tray (or taskbar) icon,
-and the :func:`notify` function which sends a desktop notification.
-They require Tk 8.7/9.0 or newer.
+the :func:`notify` function which sends a desktop notification,
+and the :class:`NotificationHandler` class which shows log records
+as desktop notifications.
+They require Tk 9.0 or newer.
 
 Only one system tray icon is supported per Tcl interpreter.
 
@@ -70,3 +72,33 @@ Only one system tray icon is supported per Tcl interpreter.
    On Windows, sending a notification requires an existing system
    tray icon, which is also displayed in the notification;
    use the :meth:`SysTrayIcon.notify` method instead.
+
+
+.. class:: NotificationHandler(title=None, *, master=None)
+
+   A :mod:`logging` handler which shows log records as desktop notifications.
+
+   The title of the notification is *title* if it is not ``None``,
+   otherwise the level name of the record (for example ``'WARNING'``).
+   The message of the notification is the record formatted
+   by the handler's :class:`~logging.Formatter`.
+
+   The notifications are sent with *master* as the Tk window,
+   or with the default root window if *master* is ``None``.
+   The default root window is looked up when a record is emitted,
+   so the handler can be created before the root window.
+   On Windows, sending a notification requires an existing system tray icon.
+
+   Errors in sending a notification are reported
+   by the :meth:`~logging.Handler.handleError` method.
+
+   For example, to show warnings and errors as desktop notifications::
+
+      import logging
+      import tkinter
+      from tkinter.systray import NotificationHandler
+
+      root = tkinter.Tk()
+      handler = NotificationHandler('My application')
+      handler.setLevel(logging.WARNING)
+      logging.getLogger().addHandler(handler)
