@@ -173,7 +173,7 @@ def _filterwarnings(filters, quiet=False):
         registry.clear()
     # Because test_warnings swap the module, we need to look up in the
     # sys.modules dictionary.
-    wmod = sys.modules['warnings']
+    wmod = sys.modules.get('warnings', warnings)
     with wmod.catch_warnings(record=True) as w:
         # Set filter "always" to record all warnings.
         wmod.simplefilter("always")
