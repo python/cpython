@@ -74,7 +74,7 @@ __all__ = [
     "run_no_yield_async_fn", "run_yielding_async_fn", "async_yield",
     "reset_code", "on_github_actions",
     "requires_root_user", "requires_non_root_user",
-    "skip_if_double_rounding",
+    "skip_if_double_rounding", "built_with_c_assertions",
     ]
 
 
@@ -868,7 +868,7 @@ def open_urlresource(url, *args, **kw):
 
     check = kw.pop('check', None)
 
-    filename = urllib.parse.urlparse(url)[2].split('/')[-1] # '/': it's URL!
+    filename = urllib.parse.urlparse(url).path.split('/')[-1] # '/': it's URL!
 
     fn = os.path.join(TEST_DATA_DIR, filename)
 
@@ -1271,15 +1271,20 @@ def set_memlimit(limit: str) -> None:
 
 
 def _memory_watchdog(pid):
-    """Return a function printing the memory usage of process *pid*."""
+    """Return a function printing the memory usage of process *pid*.
+
+    The largest value it saw is kept in its ``peak`` attribute.
+    """
     # Imported here: test.support does not depend on test.libregrtest.
     from test.libregrtest.utils import get_process_memory_usage
 
     def watch():
         mem = get_process_memory_usage(pid)
         if mem is not None:
+            watch.peak = max(watch.peak, mem)
             print(f" ... process data size: {mem / (1024 ** 3):.1f} GiB",
                   flush=True)
+    watch.peak = 0
     return watch
 
 
@@ -1333,7 +1338,23 @@ def bigmemtest(size, memuse, dry_run=True):
                 qualname = f'{cls.__qualname__}.{f.__name__}'
                 proc = isolation._start_test(cls.__module__, qualname)
                 watchdog = _memory_watchdog(proc.pid) if verbose else None
-                isolation._replay_test(self, *proc.wait(tick=watchdog))
+                payload, output, returncode = proc.wait(tick=watchdog)
+                if watchdog:
+                    # The subprocess measures its own peak exactly.  What the
+                    # parent sampled is only a lower bound.
+                    maxrss = payload and payload.get('maxrss')
+                    peak = maxrss or watchdog.peak
+                    if peak:
+                        print(f" ... peak memory use: "
+                              f"{peak / (1024 ** 3):.1f} GiB"
+                              f"{'' if maxrss else ' or more'}", flush=True)
+                    majflt = payload and payload.get('majflt')
+                    if majflt:
+                        # The test did not fit in memory, so its timing means
+                        # little.
+                        print(f" ... {majflt} major page faults: the test "
+                              f"waited for the disk", flush=True)
+                isolation._replay_test(self, payload, output, returncode)
                 return
 
             return f(self, maxsize)
@@ -1343,21 +1364,16 @@ def bigmemtest(size, memuse, dry_run=True):
         return wrapper
     return decorator
 
-def nomemtest(f):
+def nomemtest(test):
     """Check that we can use this test with `_testcapi.set_nomemory`."""
     from .import_helper import import_module
 
-    @functools.wraps(f)
+    @functools.wraps(test)
     def internal(*args, **kwargs):
         import_module('_testcapi')
-        return f(*args, **kwargs)
+        return test(*args, **kwargs)
 
-    return unittest.skipIf(
-        # Python built with Py_TRACE_REFS fail with a fatal error in
-        # _PyRefchain_Trace() on memory allocation error.
-        Py_TRACE_REFS,
-        'cannot test Py_TRACE_REFS build',
-    )(cpython_only(internal))
+    return cpython_only(internal)
 
 def bigaddrspacetest(f):
     """Decorator for tests that fill the address space."""
@@ -3505,3 +3521,53 @@ def check_immutable_type(testcase, type):
     else:
         flags = type_getflags(type)
         testcase.assertTrue(flags & Py_TPFLAGS_IMMUTABLETYPE)
+
+
+def built_with_c_assertions():
+    """Check if Python was built with C assertions (assert())."""
+
+    if MS_WINDOWS:
+        # On Windows, rely on the Py_DEBUG macro to check for assertions
+        return Py_DEBUG
+
+    # Check if the NDEBUG macro is defined in C compiler flags
+    PY_CFLAGS = (sysconfig.get_config_var('PY_CFLAGS') or '')
+    if '-DNDEBUG' in PY_CFLAGS:
+        return False
+
+    return True
+
+
+def inject_memory_error(start=0, stop=0):
+    """
+    Memory allocation fails after 'start' allocation requests, and until 'stop'
+    allocation requests except when 'stop' is negative or equal to 0 (default)
+    in which case allocation failures never stop.
+
+    Raise SkipTest if the _testcapi extension module is missing
+    """
+    try:
+        import _testcapi
+    except ImportError:
+        raise unittest.SkipTest("_testcapi required")
+
+    _testcapi.set_nomemory(start, stop)
+
+
+@contextlib.contextmanager
+def memory_error_cm(start=0, stop=0):
+    """
+    Similar to inject_memory_error() but can be used as a context manager.
+
+    Raise SkipTest if the _testcapi extension module is missing
+    """
+    try:
+        import _testcapi
+    except ImportError:
+        raise unittest.SkipTest("_testcapi required")
+
+    try:
+        _testcapi.set_nomemory(start, stop)
+        yield
+    finally:
+        _testcapi.remove_mem_hooks()

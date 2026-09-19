@@ -356,7 +356,7 @@ and reliable way to wait for all tasks in the group to finish.
       The signature matches that of :func:`asyncio.create_task`.
       If the task group is inactive (e.g. not yet entered,
       already finished, or in the process of shutting down),
-      we will close the given ``coro``.
+      we will close the given ``coro`` and raise :exc:`RuntimeError`.
 
       .. versionchanged:: 3.13
 
@@ -402,69 +402,85 @@ Example::
             task2 = tg.create_task(another_coro(...))
         print(f"Both tasks have completed now: {task1.result()}, {task2.result()}")
 
-The ``async with`` statement will wait for all tasks in the group to finish.
-While waiting, new tasks may still be added to the group
-(for example, by passing ``tg`` into one of the coroutines
-and calling ``tg.create_task()`` in that coroutine).  There is also opportunity to
-request termination of the entire task group with ``tg.cancel()``, based on some condition.
-Once the last task has finished and the ``async with`` block is exited,
-no new tasks may be added to the group.
+A few points to keep in mind when using task groups:
 
-The first time any of the tasks belonging to the group fails
-with an exception other than :exc:`asyncio.CancelledError`,
-the remaining tasks in the group are cancelled.
-No further tasks can then be added to the group.
-At this point, if the body of the ``async with`` statement is still active
-(i.e., :meth:`~object.__aexit__` hasn't been called yet),
-the task directly containing the ``async with`` statement is also cancelled.
-The resulting :exc:`asyncio.CancelledError` will interrupt an ``await``,
-but it will not bubble out of the containing ``async with`` statement.
+* The ``async with`` statement will wait for all tasks in the group
+  to finish.  While waiting, new tasks may still be added to the group
+  (for example, by passing ``tg`` into one of the coroutines and
+  calling ``tg.create_task()`` in that coroutine); once the last task
+  has finished and the ``async with`` block is exited, no new tasks
+  may be added.
 
-Once all tasks have finished, if any tasks have failed
-with an exception other than :exc:`asyncio.CancelledError`,
-those exceptions are combined in an
-:exc:`ExceptionGroup` or :exc:`BaseExceptionGroup`
-(as appropriate; see their documentation)
-which is then raised.
+* Termination of the entire task group may be requested with
+  ``tg.cancel()``, based on some condition.
 
-Two base exceptions are treated specially:
-If any task fails with :exc:`KeyboardInterrupt` or :exc:`SystemExit`,
-the task group still cancels the remaining tasks and waits for them,
-but then the initial :exc:`KeyboardInterrupt` or :exc:`SystemExit`
-is re-raised instead of :exc:`ExceptionGroup` or :exc:`BaseExceptionGroup`.
+* If the group is shut down (e.g. because another task failed) before
+  a newly created task has started running, the task is cancelled
+  without its coroutine executing at all, not even to its first
+  ``await``.  To guarantee that the coroutine starts, create the task
+  eagerly with ``eager_start=True`` or use
+  :func:`asyncio.eager_task_factory`.  For example::
 
-If the body of the ``async with`` statement exits with an exception
-(so :meth:`~object.__aexit__` is called with an exception set),
-this is treated the same as if one of the tasks failed:
-the remaining tasks are cancelled and then waited for,
-and non-cancellation exceptions are grouped into an
-exception group and raised.
-The exception passed into :meth:`~object.__aexit__`,
-unless it is :exc:`asyncio.CancelledError`,
-is also included in the exception group.
-The same special case is made for
-:exc:`KeyboardInterrupt` and :exc:`SystemExit` as in the previous paragraph.
-There is an additional special case made only for the body of the
-``async with``: if it raises :exc:`GeneratorExit` and none of the
-other tasks raise exceptions that would be reported, then the
-:exc:`GeneratorExit` is reraised.
+      async def job():
+          print("job started")  # never printed
+          try:
+              await asyncio.sleep(1)
+          finally:
+              print("job cleaned up")  # never printed
 
-Task groups are careful not to mix up the internal cancellation used to
-"wake up" their :meth:`~object.__aexit__` with cancellation requests
-for the task in which they are running made by other parties.
+      async def main():
+          async with asyncio.TaskGroup() as tg:
+              tg.create_task(job())
+              raise RuntimeError  # shuts down the group before job() runs
+
+  With ``tg.create_task(job(), eager_start=True)``, ``job()`` runs up
+  to the ``await``, is cancelled there, and both messages are printed.
+
+When any of the tasks belonging to the group fails with an exception
+other than :exc:`asyncio.CancelledError` (or the body of the
+``async with`` statement exits with an exception, which is treated
+the same way):
+
+* The first time this happens, the remaining tasks in the group are
+  cancelled and then waited for, and no further tasks can be added to
+  the group.  If the body of the ``async with`` statement is still
+  active (i.e., :meth:`~object.__aexit__` hasn't been called yet),
+  the task directly containing the ``async with`` statement is also
+  cancelled.  The resulting :exc:`asyncio.CancelledError` will
+  interrupt an ``await``, but it will not bubble out of the containing
+  ``async with`` statement.
+
+* Once all tasks have finished, the non-cancellation exceptions --
+  including the exception the body exited with, unless it is
+  :exc:`asyncio.CancelledError` -- are combined in an
+  :exc:`ExceptionGroup` or :exc:`BaseExceptionGroup`
+  (as appropriate; see their documentation), which is then raised.
+
+* Some exceptions are treated specially: if any task fails with
+  :exc:`KeyboardInterrupt` or :exc:`SystemExit`, the task group still
+  cancels the remaining tasks and waits for them, but then the initial
+  :exc:`KeyboardInterrupt` or :exc:`SystemExit` is re-raised instead
+  of :exc:`ExceptionGroup` or :exc:`BaseExceptionGroup`.
+  Additionally, if the body of the ``async with`` statement raises
+  :exc:`GeneratorExit` and none of the other tasks raise exceptions
+  that would be reported, the :exc:`GeneratorExit` is re-raised.
+
+Task groups are careful not to mix up the internal cancellation used
+to "wake up" their :meth:`~object.__aexit__` with cancellation
+requests for the task in which they are running made by other parties.
 In particular, when one task group is syntactically nested in another,
-and both experience an exception in one of their child tasks simultaneously,
-the inner task group will process its exceptions, and then the outer task group
-will receive another cancellation and process its own exceptions.
+and both experience an exception in one of their child tasks
+simultaneously, the inner task group will process its exceptions, and
+then the outer task group will receive another cancellation and
+process its own exceptions.
 
 In the case where a task group is cancelled externally and also must
 raise an :exc:`ExceptionGroup`, it will call the parent task's
-:meth:`~asyncio.Task.cancel` method. This ensures that a
+:meth:`~asyncio.Task.cancel` method.  This ensures that a
 :exc:`asyncio.CancelledError` will be raised at the next
-:keyword:`await`, so the cancellation is not lost.
-
-Task groups preserve the cancellation count
-reported by :meth:`asyncio.Task.cancelling`.
+:keyword:`await`, so the cancellation is not lost.  Task groups also
+preserve the cancellation count reported by
+:meth:`asyncio.Task.cancelling`.
 
 .. versionchanged:: 3.13
 
@@ -843,17 +859,13 @@ Timeouts
    Wait for the *fut* :ref:`awaitable <asyncio-awaitables>`
    to complete with a timeout.
 
-   If *fut* is a coroutine it is automatically scheduled as a Task.
-
    *timeout* can either be ``None`` or a float or int number of seconds
    to wait for.  If *timeout* is ``None``, block until the future
    completes.
 
-   If a timeout occurs, it cancels the task and raises
-   :exc:`TimeoutError`.
+   If a timeout occurs, it cancels *fut* and raises :exc:`TimeoutError`.
 
-   To avoid the task :meth:`cancellation <Task.cancel>`,
-   wrap it in :func:`shield`.
+   To prevent *fut* from being cancelled, wrap it in :func:`shield`.
 
    The function will wait until the future is actually cancelled,
    so the total wait time may exceed the *timeout*. If an exception
@@ -893,6 +905,10 @@ Timeouts
 
    .. versionchanged:: 3.11
       Raises :exc:`TimeoutError` instead of :exc:`asyncio.TimeoutError`.
+
+   .. versionchanged:: 3.12
+      Implemented using :func:`asyncio.timeout`, a coroutine passed as *fut*
+      is no longer wrapped in a :class:`Task` when *timeout* is positive.
 
 
 Waiting primitives

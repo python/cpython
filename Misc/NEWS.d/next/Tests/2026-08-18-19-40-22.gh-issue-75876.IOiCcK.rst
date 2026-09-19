@@ -1,0 +1,3 @@
+In verbose mode, a test decorated with :func:`~test.support.bigmemtest` now
+reports how much memory it really used, and the number of major page faults
+it took, if any.

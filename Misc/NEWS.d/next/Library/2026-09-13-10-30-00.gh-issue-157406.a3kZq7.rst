@@ -1,0 +1,4 @@
+Fix the Python implementation of :class:`xml.etree.ElementTree.XMLParser`:
+the ``doctype()`` method of the target is now called for a document type
+declaration without an external identifier, like ``<!DOCTYPE html>``,
+as in the C implementation.

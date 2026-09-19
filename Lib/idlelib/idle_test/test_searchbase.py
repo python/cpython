@@ -56,6 +56,16 @@ class SearchDialogBaseTest(unittest.TestCase):
 
         self.dialog.open(text, searchphrase="hello")
         self.assertEqual(self.dialog.ent.get(), 'hello')
+
+        # While open, the dialog shows pattern errors (gh-69365).
+        self.assertEqual(self.engine.error_handler, self.dialog.show_error)
+        self.dialog.show_error('Error: spam', 1)
+        self.assertEqual(self.dialog.error_label['text'], 'Error: spam')
+        self.assertEqual(self.dialog.ent.index('insert'), 1)
+        self.engine.patvar.set('eggs')  # Editing the pattern clears it.
+        self.assertEqual(self.dialog.error_label['text'], '')
+        self.dialog.close()
+        self.assertIsNone(self.engine.error_handler)
         toplevel.update_idletasks()
         toplevel.destroy()
 
@@ -157,4 +167,4 @@ class SearchDialogBaseTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main(verbosity=2, exit=2)
+    unittest.main(verbosity=2)
