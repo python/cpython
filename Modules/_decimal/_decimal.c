@@ -7744,6 +7744,104 @@ error:
     return NULL;
 }
 
+PyDoc_STRVAR(libmpdec_version_info__doc__,
+"decimal.libmpdec_version_info\n\
+\n\
+libmpdec version information as a named tuple.");
+
+static PyStructSequence_Field libmpdec_version_info_fields[] = {
+    {"major", "Major release number"},
+    {"minor", "Minor release number"},
+    {"micro", "Micro release number"},
+    {0}
+};
+
+static PyStructSequence_Desc libmpdec_version_info_desc = {
+    "decimal.libmpdec_version_info",    /* name */
+    libmpdec_version_info__doc__,       /* doc */
+    libmpdec_version_info_fields,       /* fields */
+    3
+};
+
+static PyObject *
+make_libmpdec_version_info(PyTypeObject *type, int major, int minor, int micro)
+{
+    PyObject *version;
+    int pos = 0;
+
+    version = PyStructSequence_New(type);
+    if (version == NULL) {
+        return NULL;
+    }
+
+#define SetItem(VALUE) \
+    PyStructSequence_SET_ITEM(version, pos++, VALUE); \
+    if (PyErr_Occurred()) { \
+        Py_DECREF(version); \
+        return NULL; \
+    }
+
+    SetItem(PyLong_FromLong(major))
+    SetItem(PyLong_FromLong(minor))
+    SetItem(PyLong_FromLong(micro))
+#undef SetItem
+
+    return version;
+}
+
+static PyObject *
+parse_libmpdec_version_info(PyTypeObject *type, const char *version)
+{
+    int major, minor, micro;
+    if (sscanf(version, "%d.%d.%d", &major, &minor, &micro) != 3) {
+        PyErr_Format(PyExc_RuntimeError,
+                     "unexpected libmpdec version string %s", version);
+        return NULL;
+    }
+    return make_libmpdec_version_info(type, major, minor, micro);
+}
+
+static int
+add_version_constants(PyObject *m)
+{
+    const char *version = mpd_version();
+    if (PyModule_AddStringConstant(m, "LIBMPDEC_VERSION", MPD_VERSION) < 0) {
+        return -1;
+    }
+    PyObject *obj = PyUnicode_FromString(version);
+    if (obj == NULL) {
+        return -1;
+    }
+    if (PyModule_AddObjectRef(m, "libmpdec_version", obj) < 0 ||
+        PyModule_AddObjectRef(m, "__libmpdec_version__", obj) < 0)
+    {
+        Py_DECREF(obj);
+        return -1;
+    }
+    Py_DECREF(obj);
+    PyTypeObject *version_type;
+    version_type = PyStructSequence_NewType(&libmpdec_version_info_desc);
+    if (version_type == NULL) {
+        return -1;
+    }
+    if (PyModule_Add(m, "LIBMPDEC_VERSION_INFO",
+            make_libmpdec_version_info(version_type, MPD_MAJOR_VERSION,
+                                       MPD_MINOR_VERSION,
+                                       MPD_MICRO_VERSION)) < 0)
+    {
+        Py_DECREF(version_type);
+        return -1;
+    }
+    if (PyModule_Add(m, "libmpdec_version_info",
+            parse_libmpdec_version_info(version_type, version)) < 0)
+    {
+        Py_DECREF(version_type);
+        return -1;
+    }
+    Py_DECREF(version_type);
+    return 0;
+}
+
 static int minalloc_is_set = 0;
 
 static int
@@ -7992,7 +8090,7 @@ _decimal_exec(PyObject *m)
 
     /* Add specification version number */
     CHECK_INT(PyModule_AddStringConstant(m, "SPEC_VERSION", MPD_SPEC_VERSION));
-    CHECK_INT(PyModule_AddStringConstant(m, "__libmpdec_version__", mpd_version()));
+    CHECK_INT(add_version_constants(m));
 
     return 0;
 
