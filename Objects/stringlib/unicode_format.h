@@ -770,6 +770,8 @@ do_conversion(PyObject *obj, Py_UCS4 conversion)
     switch (conversion) {
     case 'r':
         return PyObject_Repr(obj);
+    case 'R':
+        return _PyObject_AltRepr(obj);
     case 's':
         return PyObject_Str(obj);
     case 'a':

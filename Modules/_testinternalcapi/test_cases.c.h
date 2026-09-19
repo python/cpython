@@ -5766,7 +5766,7 @@
             _PyStackRef result;
             value = stack_pointer[-1];
             conversion_func conv_fn;
-            assert(oparg >= FVC_STR && oparg <= FVC_ASCII);
+            assert(oparg >= FVC_STR && oparg <= FVC_ALT_REPR);
             conv_fn = _PyEval_ConversionFuncs[oparg];
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _PyFrame_StackPointerValidate(frame);

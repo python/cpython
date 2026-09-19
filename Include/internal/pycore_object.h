@@ -1037,6 +1037,8 @@ static inline Py_ALWAYS_INLINE void _Py_INCREF_MORTAL(PyObject *op)
  * references. */
 PyAPI_FUNC(int) _PyObject_VisitType(PyObject *op, visitproc visit, void *arg);
 
+extern PyObject* _PyObject_AltRepr(PyObject *);
+
 #ifdef __cplusplus
 }
 #endif
