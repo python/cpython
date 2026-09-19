@@ -1809,6 +1809,7 @@ class CAPITest(unittest.TestCase):
 
 class PyUnicodeWriterTest(unittest.TestCase):
     def create_writer(self, size):
+        # Test PyUnicodeWriter_Create()
         return _testcapi.PyUnicodeWriter(size)
 
     def test_basic(self):
@@ -1831,6 +1832,7 @@ class PyUnicodeWriterTest(unittest.TestCase):
         # test PyUnicodeWriter_WriteRepr()
         writer.write_repr("repr")
 
+        # test PyUnicodeWriter_Finish()
         self.assertEqual(writer.finish(),
                          "var=long value 'repr'")
 
@@ -1867,6 +1869,7 @@ class PyUnicodeWriterTest(unittest.TestCase):
                          "ascii-latin1=\xE9-euro=\u20AC.")
 
     def test_ascii(self):
+        # test PyUnicodeWriter_WriteASCII()
         writer = self.create_writer(0)
         writer.write_ascii(b"Hello ", -1)
         writer.write_ascii(b"", 0)
@@ -1957,6 +1960,7 @@ class PyUnicodeWriterTest(unittest.TestCase):
         self.assertEqual(writer.finish(), "text-\xE9-\u20AC-more-incomplete-default")
 
     def test_widechar(self):
+        # Test PyUnicodeWriter_WriteWideChar()
         if SIZEOF_WCHAR_T == 2:
             encoding = 'utf-16le' if sys.byteorder == 'little' else 'utf-16be'
         elif SIZEOF_WCHAR_T == 4:
@@ -1987,6 +1991,7 @@ class PyUnicodeWriterTest(unittest.TestCase):
                          "latin1=\xE9-euro=\u20AC-max=\U0010ffff-zeroes=\0\0\0.")
 
     def test_ucs4(self):
+        # Test PyUnicodeWriter_WriteUCS4()
         encoding = 'utf-32le' if sys.byteorder == 'little' else 'utf-32be'
 
         writer = self.create_writer(0)
@@ -2060,6 +2065,7 @@ class PyUnicodeWriterTest(unittest.TestCase):
         self.assertIn(f'at position '.encode(), proc.err)
 
 
+# Test PyUnicodeWriter_Format()
 @unittest.skipIf(ctypes is None, 'need ctypes')
 class PyUnicodeWriterFormatTest(unittest.TestCase):
     def create_writer(self, size):
