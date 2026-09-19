@@ -159,6 +159,8 @@ typedef struct {
     PyTypeObject *complexstr_type;  // _curses.complexstr
     PyObject *topscreen;            // owned ref to the current screen object,
                                     // or NULL for the initscr() screen
+    PyObject *prescreen;            // owned ref to the pending new_prescr() screen,
+                                    // or NULL if there is no pending pre-screen
 } cursesmodule_state;
 
 static inline cursesmodule_state *
@@ -1590,7 +1592,10 @@ complexstr_concat(PyObject *a, PyObject *b)
 {
     cursesmodule_state *state = get_cursesmodule_state_by_cls(Py_TYPE(a));
     if (!Py_IS_TYPE(b, state->complexstr_type)) {
-        Py_RETURN_NOTIMPLEMENTED;
+        PyErr_Format(PyExc_TypeError,
+                     "can only concatenate complexstr to complexstr, not %T",
+                     b);
+        return NULL;
     }
     PyCursesComplexStrObject *sa = _PyCursesComplexStrObject_CAST(a);
     PyCursesComplexStrObject *sb = _PyCursesComplexStrObject_CAST(b);
@@ -3535,6 +3540,29 @@ _curses_window_get_wch_impl(PyCursesWindowObject *self, int group_right_1,
 #endif
 }
 
+/* Characters one cell can hold. */
+#ifdef HAVE_NCURSESW
+#define CURSES_CELL_CHARS       CCHARW_MAX
+#else
+#define CURSES_CELL_CHARS       1
+#endif
+
+/* The columns left on the line, in the unit the caller counts. */
+static unsigned int
+curses_window_read_limit(PyCursesWindowObject *self, int use_xy, int x,
+                         unsigned int per_cell)
+{
+    int col = use_xy ? x : getcurx(self->win);
+    int maxx = getmaxx(self->win);
+    if (col < 0) {
+        col = 0;
+    }
+    if (col > maxx) {
+        return 0;
+    }
+    return ((unsigned int)(maxx - col) + 1) * per_cell;
+}
+
 /* Read user input into a new bytes object (empty on ERR), with primitive line
    editing.  Shared by getstr() and, without the wide library, by get_wstr(). */
 static PyObject *
@@ -3828,15 +3856,15 @@ _curses_window_inch_impl(PyCursesWindowObject *self, int group_right_1,
    with attributes and color stripped.  Shared by instr() and, without the wide
    library, by in_wstr(). */
 static PyObject *
-curses_window_instr_bytes(PyCursesWindowObject *self, int use_xy,
+curses_window_instr_bytes(PyCursesWindowObject *self, int use_xy, int use_n,
                           int y, int x, unsigned int n)
 {
     int rtn;
-    unsigned int max_buf_size = 2048;
-
-    n = Py_MIN(n, max_buf_size - 1 - CURSES_STR_EXTRA);
-    n += CURSES_STR_EXTRA;
-    PyBytesWriter *writer = PyBytesWriter_Create(n + 1);
+    unsigned int limit = curses_window_read_limit(self, use_xy, x,
+                                                  CURSES_CELL_CHARS
+                                                  * (unsigned int)MB_CUR_MAX);
+    unsigned int nread = use_n ? Py_MIN(n, limit) : limit;
+    PyBytesWriter *writer = PyBytesWriter_Create(nread + CURSES_STR_EXTRA + 1);
     if (writer == NULL) {
         return NULL;
     }
@@ -3844,14 +3872,14 @@ curses_window_instr_bytes(PyCursesWindowObject *self, int use_xy,
 
     /* Read again if the library stored more than asked: truncating could
        split a multibyte character. */
-    for (unsigned int want = n - CURSES_STR_EXTRA; ; n = want) {
+    for (unsigned int ask = nread + CURSES_STR_EXTRA; ; ask = nread) {
         if (use_xy) {
-            rtn = mvwinnstr(self->win, y, x, buf, n);
+            rtn = mvwinnstr(self->win, y, x, buf, ask);
         }
         else {
-            rtn = winnstr(self->win, buf, n);
+            rtn = winnstr(self->win, buf, ask);
         }
-        if (rtn == ERR || (unsigned int)rtn <= want) {
+        if (rtn == ERR || (unsigned int)rtn <= nread) {
             break;
         }
     }
@@ -3872,24 +3900,27 @@ _curses.window.instr
     x: int
         X-coordinate.
     ]
-    n: unsigned_int = 2047
-        Maximal number of bytes.
+    [
+    n: unsigned_int
+        Maximal number of bytes.  The rest of the line by default.
+    ]
     /
 
 Return the text of the window as a bytes object.
 
 Read from the current cursor position, or from y, x if specified, to
-the end of the line, and return the text in the encoding of the
-current locale, with attributes and color pairs stripped.  At most n
-bytes are read.
+the end of the line or at most n bytes if n is specified, and return
+the text in the encoding of the current locale, with attributes and
+color pairs stripped.
 [clinic start generated code]*/
 
 static PyObject *
-_curses_window_instr_impl(PyCursesWindowObject *self, int group_left_1,
-                          int y, int x, unsigned int n)
-/*[clinic end generated code: output=40081f67070132da input=4ece6af75b09346f]*/
+_curses_window_instr_impl(PyCursesWindowObject *self, int group_right_1,
+                          int y, int x, int group_right_2, unsigned int n)
+/*[clinic end generated code: output=2428948b44ad10c7 input=9307eca4bd576899]*/
 {
-    return curses_window_instr_bytes(self, group_left_1, y, x, n);
+    return curses_window_instr_bytes(self, group_right_1, group_right_2,
+                                     y, x, n);
 }
 
 /*[clinic input]
@@ -3987,44 +4018,45 @@ _curses.window.in_wstr
     x: int
         X-coordinate.
     ]
-    n: unsigned_int = 2047
-        Maximal number of characters.
+    [
+    n: unsigned_int
+        Maximal number of characters.  The rest of the line by default.
+    ]
     /
 
 Return the text of the window as a str.
 
 This is the wide-character variant of instr().  Read from the
 current cursor position, or from y, x if specified, to the end of
-the line, with attributes and color pairs stripped.  At most n
-characters are read.
+the line or at most n characters if n is specified, with attributes
+and color pairs stripped.
 [clinic start generated code]*/
 
 static PyObject *
-_curses_window_in_wstr_impl(PyCursesWindowObject *self, int group_left_1,
-                            int y, int x, unsigned int n)
-/*[clinic end generated code: output=e3db72a1f10b9875 input=436737264c54d8d3]*/
+_curses_window_in_wstr_impl(PyCursesWindowObject *self, int group_right_1,
+                            int y, int x, int group_right_2, unsigned int n)
+/*[clinic end generated code: output=d8c8bcfe8a26f519 input=5ba908338a94bfc8]*/
 {
 #ifdef HAVE_NCURSESW
     int rtn;
-    unsigned int max_buf_size = 2048;
-
-    n = Py_MIN(n, max_buf_size - 1 - CURSES_STR_EXTRA);
-    n += CURSES_STR_EXTRA;
-    wchar_t *buf = PyMem_New(wchar_t, n + 1);
+    unsigned int limit = curses_window_read_limit(self, group_right_1, x,
+                                                  CURSES_CELL_CHARS);
+    unsigned int nread = group_right_2 ? Py_MIN(n, limit) : limit;
+    wchar_t *buf = PyMem_New(wchar_t, nread + CURSES_STR_EXTRA + 1);
     if (buf == NULL) {
         return PyErr_NoMemory();
     }
 
     /* Read again if the library stored more than asked: truncating could
        separate a combining character from its base. */
-    for (unsigned int want = n - CURSES_STR_EXTRA; ; n = want) {
-        if (group_left_1) {
-            rtn = mvwinnwstr(self->win, y, x, buf, n);
+    for (unsigned int ask = nread + CURSES_STR_EXTRA; ; ask = nread) {
+        if (group_right_1) {
+            rtn = mvwinnwstr(self->win, y, x, buf, ask);
         }
         else {
-            rtn = winnwstr(self->win, buf, n);
+            rtn = winnwstr(self->win, buf, ask);
         }
-        if (rtn == ERR || (unsigned int)rtn <= want) {
+        if (rtn == ERR || (unsigned int)rtn <= nread) {
             break;
         }
     }
@@ -4039,7 +4071,8 @@ _curses_window_in_wstr_impl(PyCursesWindowObject *self, int group_left_1,
 #else
     /* Without the wide library, read the bytes as instr() does and decode them
        with the window's encoding. */
-    PyObject *bytes = curses_window_instr_bytes(self, group_left_1, y, x, n);
+    PyObject *bytes = curses_window_instr_bytes(self, group_right_1,
+                                               group_right_2, y, x, n);
     if (bytes == NULL) {
         return NULL;
     }
@@ -4060,43 +4093,46 @@ _curses.window.in_wchstr
     x: int
         X-coordinate.
     ]
-    n: unsigned_int = 2047
-        Maximal number of cells.
+    [
+    n: unsigned_int
+        Maximal number of cells.  The rest of the line by default.
+    ]
     /
 
 Return the styled cells of the window as a complexstr.
 
-Read from the current cursor position, or from y, x if specified, to
-the end of the line.  Unlike instr() and in_wstr(), each cell keeps
-its attributes and color pair, so the result can be written back
-unchanged with addstr().  At most n cells are read.
+Read from the current cursor position, or from y, x if specified,
+to the end of the line or at most n cells if n is specified.
+Unlike instr() and in_wstr(), each cell keeps its attributes and
+color pair, so the result can be written back unchanged with
+addstr().
 [clinic start generated code]*/
 
 static PyObject *
-_curses_window_in_wchstr_impl(PyCursesWindowObject *self, int group_left_1,
-                              int y, int x, unsigned int n)
-/*[clinic end generated code: output=7fb5216f2088835b input=8104e661c3cb7fea]*/
+_curses_window_in_wchstr_impl(PyCursesWindowObject *self, int group_right_1,
+                              int y, int x, int group_right_2,
+                              unsigned int n)
+/*[clinic end generated code: output=3807a62d51efd44f input=50400321de1db1da]*/
 {
     int rtn;
-    unsigned int max_buf_size = 2048;
-
-    n = Py_MIN(n, max_buf_size - 1 - CURSES_STR_EXTRA);
-    n += CURSES_STR_EXTRA;
+    unsigned int limit = curses_window_read_limit(self, group_right_1, x, 1);
+    unsigned int nread = group_right_2 ? Py_MIN(n, limit) : limit;
+    unsigned int ask = nread + CURSES_STR_EXTRA;
     cursesmodule_state *state = get_cursesmodule_state_by_win(self);
     /* Zero the cells: reading a cell back through getcchar() relies on the
        cchar_t text array being NUL-terminated, which some curses libraries
        only guarantee for the characters they actually write. */
-    curses_cell_t *buf = PyMem_Calloc(n + 1, sizeof(curses_cell_t));
+    curses_cell_t *buf = PyMem_Calloc(ask + 1, sizeof(curses_cell_t));
     if (buf == NULL) {
         return PyErr_NoMemory();
     }
 
 #ifdef HAVE_NCURSESW
-    if (group_left_1) {
-        rtn = mvwin_wchnstr(self->win, y, x, buf, n);
+    if (group_right_1) {
+        rtn = mvwin_wchnstr(self->win, y, x, buf, ask);
     }
     else {
-        rtn = win_wchnstr(self->win, buf, n);
+        rtn = win_wchnstr(self->win, buf, ask);
     }
 
     if (rtn == ERR) {
@@ -4104,12 +4140,11 @@ _curses_window_in_wchstr_impl(PyCursesWindowObject *self, int group_left_1,
         return PyCursesComplexStr_New(state, NULL, 0);
     }
 
-    n -= CURSES_STR_EXTRA;
-    /* win_wchnstr() stores at most n cells and zero-terminates the array at
-       the actual count; every real cell holds at least a space, so the first
+    /* win_wchnstr() stores at most nread cells and zero-terminates the array
+       at the actual count; every real cell holds at least a space, so the first
        empty cell marks the end of the run. */
     Py_ssize_t count = 0;
-    while (count < (Py_ssize_t)n) {
+    while (count < (Py_ssize_t)nread) {
         wchar_t wstr[CCHARW_MAX + 1];
         attr_t attrs;
         int pair;
@@ -4124,12 +4159,12 @@ _curses_window_in_wchstr_impl(PyCursesWindowObject *self, int group_left_1,
     /* winchnstr() is not guaranteed (SVr4) to terminate the array, so pre-zero
        it and stop at the first empty cell; a painted cell always holds at least
        a space, never 0. */
-    memset(buf, 0, ((size_t)n + 1) * sizeof(curses_cell_t));
-    if (group_left_1) {
-        rtn = mvwinchnstr(self->win, y, x, buf, n);
+    memset(buf, 0, ((size_t)ask + 1) * sizeof(curses_cell_t));
+    if (group_right_1) {
+        rtn = mvwinchnstr(self->win, y, x, buf, ask);
     }
     else {
-        rtn = winchnstr(self->win, buf, n);
+        rtn = winchnstr(self->win, buf, ask);
     }
 
     if (rtn == ERR) {
@@ -4137,9 +4172,8 @@ _curses_window_in_wchstr_impl(PyCursesWindowObject *self, int group_left_1,
         return PyCursesComplexStr_New(state, NULL, 0);
     }
 
-    n -= CURSES_STR_EXTRA;
     Py_ssize_t count = 0;
-    while (count < (Py_ssize_t)n && buf[count] != 0) {
+    while (count < (Py_ssize_t)nread && buf[count] != 0) {
         count++;
     }
 #endif
@@ -4332,6 +4366,7 @@ _curses_window_insnstr_impl(PyCursesWindowObject *self, int group_left_1,
             curses_wattrset(self, attr, "insnstr") < 0)
         {
             curses_release_wstr(strtype, wstr);
+            Py_XDECREF(bytesobj);
             return NULL;
         }
     }
@@ -5274,7 +5309,8 @@ static PyMethodDef PyCursesWindow_methods[] = {
     {"standout", PyCursesWindow_wstandout, METH_NOARGS,
      "standout($self, /)\n--\n\n"
      "Turn on the A_STANDOUT attribute."},
-    {"subpad",          _curses_window_subwin, METH_VARARGS, _curses_window_subwin__doc__},
+    {"subpad", _PyCFunction_CAST(_curses_window_subwin), METH_FASTCALL,
+     _curses_window_subwin__doc__},
     _CURSES_WINDOW_SUBWIN_METHODDEF
     {"syncdown", PyCursesWindow_wsyncdown, METH_NOARGS,
      "syncdown($self, /)\n--\n\n"
@@ -6627,11 +6663,10 @@ curses_init_dict(PyObject *module)
     }
     /* This was moved from initcurses() because it core dumped on SGI,
        where they're not defined until you've called initscr() */
-    /* Use long long, not long: a chtype constant (the A_* attributes, ACS_*
-       and key codes) can set bits beyond a 32-bit long, which is what long is
-       on LLP64 platforms such as Windows -- A_DIM (0x80000000) would otherwise
-       be sign-extended to a negative number.  long long is at least 64 bits
-       everywhere and still represents the negative ERR (-1). */
+    /* Use unsigned long long, not long: a chtype constant (the A_* attributes,
+       ACS_* and key codes) can set bits beyond a 32-bit long, which is what
+       long is on LLP64 platforms such as Windows -- A_DIM (0x80000000) would
+       otherwise be sign-extended to a negative number. */
 #define SetDictInt(NAME, VALUE)                                     \
     do {                                                            \
         PyObject *value = PyLong_FromUnsignedLongLong((unsigned long long)(VALUE));  \
@@ -6946,13 +6981,21 @@ _curses_initscr_impl(PyObject *module)
         return NULL;
     }
 
+    cursesmodule_state *state = get_cursesmodule_state(module);
+    if (state->prescreen != NULL) {
+        PyCursesScreenObject *prescreen =
+            _PyCursesScreenObject_CAST(state->prescreen);
+        assert(prescreen->screen != NULL);
+        prescreen->screen = NULL;
+        Py_CLEAR(state->prescreen);
+    }
+
     curses_initscr_called = curses_setupterm_called = TRUE;
 
     if (curses_init_dict(module) < 0) {
         return NULL;
     }
 
-    cursesmodule_state *state = get_cursesmodule_state(module);
     PyObject *winobj = PyCursesWindow_New(state, win, NULL, NULL, NULL);
     if (winobj == NULL) {
         return NULL;
@@ -7128,6 +7171,13 @@ _curses_newterm_impl(PyObject *module, const char *type, PyObject *fd,
     cursesmodule_state *state = get_cursesmodule_state(module);
     /* The screen object owns the SCREEN and the streams; deleting it (when it
        is no longer referenced) calls delscreen() and closes the streams. */
+    if (state->prescreen != NULL) {
+        PyCursesScreenObject *prescreen =
+            _PyCursesScreenObject_CAST(state->prescreen);
+        assert(prescreen->screen == screen);
+        prescreen->screen = NULL;
+        Py_CLEAR(state->prescreen);
+    }
     PyObject *screenobj = PyCursesScreen_New(state, screen, outfp, infp, NULL);
     if (screenobj == NULL) {
         delscreen(screen);
@@ -7219,13 +7269,25 @@ static PyObject *
 _curses_new_prescr_impl(PyObject *module)
 /*[clinic end generated code: output=e7de5031da7511e2 input=1a3a89d630b641c3]*/
 {
+    cursesmodule_state *state = get_cursesmodule_state(module);
+    if (state->prescreen != NULL) {
+        return Py_NewRef(state->prescreen);
+    }
+
     SCREEN *screen = new_prescr();
     if (screen == NULL) {
         curses_set_null_error(module, "new_prescr", NULL);
         return NULL;
     }
-    cursesmodule_state *state = get_cursesmodule_state(module);
-    return PyCursesScreen_New(state, screen, NULL, NULL, NULL);
+
+    PyObject *screenobj = PyCursesScreen_New(state, screen, NULL, NULL, NULL);
+    if (screenobj == NULL) {
+        delscreen(screen);
+        return NULL;
+    }
+
+    state->prescreen = Py_NewRef(screenobj);
+    return screenobj;
 }
 #endif /* HAVE_CURSES_NEW_PRESCR */
 
@@ -8834,7 +8896,13 @@ _curses_slk_color_impl(PyObject *module, int pair)
 /*[clinic end generated code: output=ffe4de805f9c65f5 input=b1e691a9cc6177ee]*/
 {
     PyCursesStatefulInitialised(module);
-    return curses_check_err(module, slk_color((short)pair), "slk_color", NULL);
+    int rtn;
+#if _NCURSES_EXTENDED_COLOR_FUNCS
+    rtn = extended_slk_color(pair);
+#else
+    rtn = slk_color((short)pair);
+#endif
+    return curses_check_err(module, rtn, "slk_color", NULL);
 }
 #endif /* HAVE_CURSES_SLK_COLOR */
 
@@ -9223,6 +9291,7 @@ cursesmodule_traverse(PyObject *mod, visitproc visit, void *arg)
     Py_VISIT(state->complexchar_type);
     Py_VISIT(state->complexstr_type);
     Py_VISIT(state->topscreen);
+    Py_VISIT(state->prescreen);
     return 0;
 }
 
@@ -9236,6 +9305,7 @@ cursesmodule_clear(PyObject *mod)
     Py_CLEAR(state->complexchar_type);
     Py_CLEAR(state->complexstr_type);
     Py_CLEAR(state->topscreen);
+    Py_CLEAR(state->prescreen);
     return 0;
 }
 
@@ -9389,8 +9459,24 @@ cursesmodule_exec(PyObject *module)
         }                                                           \
     } while (0)
 
-    SetDictInt("ERR", ERR);
-    SetDictInt("OK", OK);
+    /* ERR is -1, so it needs a signed conversion, unlike the chtype
+       constants below. */
+#define SetDictSignedInt(NAME, VALUE)                               \
+    do {                                                            \
+        PyObject *value = PyLong_FromLongLong((long long)(VALUE));  \
+        if (value == NULL) {                                        \
+            return -1;                                              \
+        }                                                           \
+        int rc = PyDict_SetItemString(module_dict, (NAME), value);  \
+        Py_DECREF(value);                                           \
+        if (rc < 0) {                                               \
+            return -1;                                              \
+        }                                                           \
+    } while (0)
+
+    SetDictSignedInt("ERR", ERR);
+    SetDictSignedInt("OK", OK);
+#undef SetDictSignedInt
 
     /* Here are some attributes you can add to chars to print */
 
