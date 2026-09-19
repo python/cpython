@@ -69,6 +69,16 @@ class CommandLineInterface(unittest.TestCase):
         stderr = self.expect_failure(":memory:", "sel")
         self.assertIn("OperationalError (SQLITE_ERROR)", stderr)
 
+    def test_cli_execute_null_byte(self):
+        stderr = self.expect_failure(":memory:", "SELECT '\0';")
+        self.assertNotIn("Traceback (most recent call last)", stderr)
+        self.assertIn("ValueError: ", stderr)
+
+    def test_cli_execute_lone_surrogate(self):
+        stderr = self.expect_failure(":memory:", "SELECT '\udc80';")
+        self.assertNotIn("Traceback (most recent call last)", stderr)
+        self.assertIn("UnicodeEncodeError: ", stderr)
+
     def test_cli_on_disk_db(self):
         self.addCleanup(unlink, TESTFN)
         out = self.expect_success(TESTFN, "create table t(t)")
@@ -187,6 +197,28 @@ class InteractiveSession(unittest.TestCase):
         self.assertIn("OperationalError (SQLITE_ERROR)", err)
         self.assertEndsWith(out, self.PS1)
         self.assertEqual(out.count(self.PS1), 2)
+        self.assertEqual(out.count(self.PS2), 0)
+
+    def test_interact_null_byte(self):
+        # NUL byte -> ValueError from complete_statement().
+        out, err = self.run_cli(commands=("SELECT '\0';", "SELECT 1;"))
+        self.assertIn(self.MEMORY_DB_MSG, err)
+        self.assertNotIn("Traceback (most recent call last)", err)
+        self.assertIn("ValueError: ", err)
+        self.assertIn("(1,)\n", out)
+        self.assertEndsWith(out, self.PS1)
+        self.assertEqual(out.count(self.PS1), 3)
+        self.assertEqual(out.count(self.PS2), 0)
+
+    def test_interact_lone_surrogate(self):
+        # Lone surrogate -> UnicodeEncodeError from complete_statement().
+        out, err = self.run_cli(commands=("SELECT '\udc80';", "SELECT 1;"))
+        self.assertIn(self.MEMORY_DB_MSG, err)
+        self.assertNotIn("Traceback (most recent call last)", err)
+        self.assertIn("UnicodeEncodeError: ", err)
+        self.assertIn("(1,)\n", out)
+        self.assertEndsWith(out, self.PS1)
+        self.assertEqual(out.count(self.PS1), 3)
         self.assertEqual(out.count(self.PS2), 0)
 
     def test_interact_on_disk_file(self):
