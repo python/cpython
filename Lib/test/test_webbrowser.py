@@ -678,5 +678,19 @@ class CliTest(unittest.TestCase):
                 mock_open.assert_called_once_with(expected_url, expected_new_win)
 
 
+class SplitBrowserVarTest(unittest.TestCase):
+    def test_escaped_pathsep(self):
+        result = webbrowser._split_browser_var(
+            f'firefox ext+container\\{os.pathsep}name=ABC&url=%s'
+            f'{os.pathsep}chromium')
+        self.assertEqual(result,
+                         [f'firefox ext+container{os.pathsep}name=ABC&url=%s',
+                          'chromium'])
+
+    def test_backslash_not_before_pathsep(self):
+        result = webbrowser._split_browser_var('fire\\fox')
+        self.assertEqual(result, ['fire\\fox'])
+
+
 if __name__ == '__main__':
     unittest.main()
