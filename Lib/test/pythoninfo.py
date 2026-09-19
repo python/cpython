@@ -937,11 +937,12 @@ def collect_cc(info_add):
 
 def collect_gdbm(info_add):
     try:
-        from _gdbm import _GDBM_VERSION
+        import _gdbm
     except ImportError:
         return
 
-    info_add('gdbm.GDBM_VERSION', '.'.join(map(str, _GDBM_VERSION)))
+    attributes = ('GDBM_VERSION_INFO', 'gdbm_version')
+    copy_attributes(info_add, _gdbm, 'gdbm.%s', attributes)
 
 
 def collect_get_config(info_add):
