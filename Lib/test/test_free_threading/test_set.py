@@ -148,6 +148,43 @@ class RaceTestBase:
         for t in threads:
             t.join()
 
+    @threading_helper.reap_threads
+    def test_length_hint_with_mutating_set(self):
+        NUM_ITERS = 10
+        NUM_THREADS = 10
+        NUM_LOOPS = 400
+
+        for _ in range(NUM_ITERS):
+            s = set(range(NUM_LOOPS ))
+            it = iter(s)
+
+            def worker():
+                for i in range(NUM_LOOPS):
+                    it.__length_hint__()
+                    s.add(i)
+                    s.discard(i - 1)
+
+            threading_helper.run_concurrently(worker, nthreads=NUM_THREADS)
+
+    @threading_helper.reap_threads
+    def test_length_hint_exhaust_race(self):
+        NUM_ITERS = 10
+        NUM_THREADS = 10
+
+        for _ in range(NUM_ITERS):
+            s = set(range(256))
+            it = iter(s)
+
+            def worker():
+                while True:
+                    it.__length_hint__()
+                    try:
+                        next(it)
+                    except StopIteration:
+                        break
+
+            threading_helper.run_concurrently(worker, nthreads=NUM_THREADS)
+
 
 @threading_helper.requires_working_threading()
 class SmallSetTest(RaceTestBase, unittest.TestCase):

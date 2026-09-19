@@ -1059,8 +1059,13 @@ setiter_len(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
     setiterobject *si = (setiterobject*)op;
     Py_ssize_t len = 0;
-    if (si->si_set != NULL && si->si_used == si->si_set->used)
-        len = si->len;
+    PySetObject *so = si->si_set;
+
+    Py_BEGIN_CRITICAL_SECTION(op);
+    if (si->si_pos >= 0 && si->si_used == FT_ATOMIC_LOAD_SSIZE_RELAXED(so->used)) {
+len = si->len;
+    }
+    Py_END_CRITICAL_SECTION();
     return PyLong_FromSsize_t(len);
 }
 
@@ -1092,7 +1097,8 @@ static PyMethodDef setiter_methods[] = {
     {NULL,              NULL}           /* sentinel */
 };
 
-static PyObject *setiter_iternext(PyObject *self)
+static PyObject *
+setiter_iternext(PyObject *self)
 {
     setiterobject *si = (setiterobject*)self;
     PyObject *key = NULL;
@@ -1100,9 +1106,14 @@ static PyObject *setiter_iternext(PyObject *self)
     setentry *entry;
     PySetObject *so = si->si_set;
 
-    if (so == NULL)
+#ifdef Py_GIL_DISABLED
+    assert(so != NULL);
+#else
+    if (so == NULL) {
         return NULL;
-    assert (PyAnySet_Check(so));
+    }
+#endif
+    assert(PyAnySet_Check(so));
 
     Py_ssize_t so_used = FT_ATOMIC_LOAD_SSIZE_RELAXED(so->used);
     Py_ssize_t si_used = FT_ATOMIC_LOAD_SSIZE_RELAXED(si->si_used);
@@ -1113,9 +1124,16 @@ static PyObject *setiter_iternext(PyObject *self)
         return NULL;
     }
 
-    Py_BEGIN_CRITICAL_SECTION(so);
+    Py_BEGIN_CRITICAL_SECTION2(self, so);
+
     i = si->si_pos;
-    assert(i>=0);
+#ifdef Py_GIL_DISABLED
+    if (i < 0) {
+        /* iterator already exhausted */
+        goto done;
+    }
+#endif
+
     entry = so->table;
     mask = so->mask;
     while (i <= mask && (entry[i].key == NULL || entry[i].key == dummy)) {
@@ -1123,16 +1141,31 @@ static PyObject *setiter_iternext(PyObject *self)
     }
     if (i <= mask) {
         key = Py_NewRef(entry[i].key);
+        si->si_pos = i + 1;
+        si->len--;
     }
-    Py_END_CRITICAL_SECTION();
-    si->si_pos = i+1;
-    if (key == NULL) {
+    else {
+        /* exhausted */
+        si->si_pos = -1;
+#ifndef Py_GIL_DISABLED
         si->si_set = NULL;
+#endif
+    }
+
+#ifdef Py_GIL_DISABLED
+done:
+    Py_END_CRITICAL_SECTION2();
+    return key;
+#else
+    Py_END_CRITICAL_SECTION2();
+
+    if (key == NULL) {
+        /* exhausted */
         Py_DECREF(so);
         return NULL;
     }
-    si->len--;
     return key;
+#endif
 }
 
 PyTypeObject PySetIter_Type = {

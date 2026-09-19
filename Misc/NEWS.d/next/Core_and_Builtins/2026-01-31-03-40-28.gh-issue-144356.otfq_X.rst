@@ -1,0 +1,1 @@
+Fix potential races in set iterators (``__length_hint__`` and iteration) in free-threaded builds.
