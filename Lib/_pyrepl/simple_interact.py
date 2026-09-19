@@ -33,10 +33,11 @@ import warnings
 from .readline import _get_reader, multiline_input, append_history_file
 
 
-# Called after the user submits a Python statement, but before it is executed.
-# The hook is not called for PyREPL commands such as ``clear``. Exceptions raised
-# by the hook and its return value are ignored. External tools such as IDEs can
-# install a hook to augment the behavior of the REPL.
+# Called with the complete statement, which may span multiple lines, after the
+# user submits it but before it is executed. The hook is not called for PyREPL
+# commands such as ``clear``. Exceptions raised by the hook and its return value
+# are ignored. External tools such as IDEs can install a hook to augment the
+# behavior of the REPL.
 #
 # For example, VS Code can mark the start of command execution:
 #

@@ -333,7 +333,7 @@ class TestStatementSubmittedHook(unittest.TestCase):
         return output.getvalue(), console.locals
 
     def test_hook_called_before_statement_execution(self):
-        statement = "print('statement executed')"
+        statement = "if True:\n    print('statement executed')\n"
         escape_sequence = "\x1b]633;C\x07"
         hook = MagicMock(
             side_effect=lambda statement: print(escape_sequence, end="")
