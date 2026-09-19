@@ -328,6 +328,13 @@ class Dialog(Toplevel):
 
         _place_window(self, parent)
 
+        self._show_modal()
+
+    def _show_modal(self):
+        '''Grab the focus and wait until the dialog is destroyed.
+
+        Override to show the dialog without blocking (e.g. for testing).
+        '''
         # wait for window to appear on screen before calling grab_set
         self.wait_visibility()
         # Dialog destroys itself in ok()/cancel(), so let _temp_grab_focus
