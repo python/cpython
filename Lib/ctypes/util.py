@@ -416,7 +416,7 @@ elif os.name == "posix":
 # On platforms which provide dl_iterate_phdr(), dllist() is implemented
 # in _ctypes.
 try:
-    from _ctypes import dllist
+    from _ctypes import dllist as dllist
 except ImportError:
     pass
 
