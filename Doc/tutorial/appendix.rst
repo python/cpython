@@ -24,6 +24,12 @@ details.  Function keys provide some additional functionality.
 makes pasting larger blocks of code easier. Press :kbd:`F3` to return to
 the regular prompt.
 
+In terminals that support bracketed paste, pasting an interactive session
+starting with ``>>>`` into an empty input buffer automatically removes the
+``>>>`` and ``...`` prompts and omits output lines.  The pasted code can be
+edited before running it.  Pasting into a nonempty input buffer leaves the
+text unchanged.
+
 When using the new interactive shell, exit the shell by typing :kbd:`exit`
 or :kbd:`quit`. Adding call parentheses after those commands is not
 required.
