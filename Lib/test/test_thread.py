@@ -326,10 +326,12 @@ class ThreadRunningTests(BasicThreadTest):
         lock = thread.allocate_lock()
         lock.acquire()
 
+        handle = thread._ThreadHandle()
         def func():
+            # Simulate the thread bootstrap process.
+            handle.set_running()
             lock.acquire()
 
-        handle = thread._ThreadHandle()
         with threading_helper.wait_threads_exit():
             thread.start_joinable_thread(func, handle=handle)
             with self.assertRaisesRegex(RuntimeError, "thread already started"):
