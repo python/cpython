@@ -214,6 +214,13 @@ class LabelTest(AbstractLabelTest, unittest.TestCase):
     def create(self, **kwargs):
         return ttk.Label(self.root, **kwargs)
 
+    def test_configure_anchor(self):
+        widget = self.create()
+        values = ('n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw', 'center')
+        if get_tk_patchlevel(self.root) >= (9, 0, 5):
+            values += ('',)
+        self.checkEnumParam(widget, 'anchor', *values)
+
     test_configure_justify = StandardOptionsTests.test_configure_justify
 
 
@@ -347,6 +354,7 @@ class EntryTest(AbstractWidgetTest, unittest.TestCase):
     def setUp(self):
         super().setUp()
         self.entry = self.create()
+        self._allow_empty_justify = get_tk_patchlevel(self.root) >= (9, 0, 5)
 
     def create(self, **kwargs):
         return ttk.Entry(self.root, **kwargs)
