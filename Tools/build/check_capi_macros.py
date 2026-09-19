@@ -80,6 +80,19 @@ def main():
     # Parse ignore list
     ignored = get_ignored_names()
 
+    # Check if the sorted list has duplicated entries
+    if len(set(ignored)) != len(ignored):
+        print(f"ERROR: {IGNORED_FILENAME} list contains duplicated entries:")
+        print()
+        seen = set()
+        for name in ignored:
+            if name not in seen:
+                seen.add(name)
+                continue
+            print(f"- {name}")
+        print()
+        failure = True
+
     # Check if the sorted list is sorted
     ignored_sorted = sorted(ignored)
     if ignored_sorted != ignored:
