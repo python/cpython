@@ -1,0 +1,6 @@
+Speed up :meth:`~datetime.date.timetuple` and :meth:`~datetime.date.strftime`
+by caching the ``time.struct_time`` and ``time.strftime`` lookups, and
+:meth:`~datetime.datetime.today` by reading the clock directly instead of
+calling :func:`time.time`. Patching :mod:`time` after importing
+:mod:`datetime` no longer affects these methods. Patch by Maurycy
+Pawłowski-Wieroński.
