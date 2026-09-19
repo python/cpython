@@ -1,0 +1,2 @@
+Add :c:func:`PyUnstable_InterpreterFrame_GetLocal` to read a local variable of
+an internal interpreter frame by its localsplus index.
