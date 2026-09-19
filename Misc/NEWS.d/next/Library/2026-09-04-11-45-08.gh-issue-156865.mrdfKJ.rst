@@ -1,0 +1,2 @@
+:mod:`ctypes`: Don't raise exceptions on overflows in floating-point types.
+Patch by Sergey B Kirpichev.
