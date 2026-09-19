@@ -3821,11 +3821,71 @@ list_ass_subscript_lock_held(PyObject *_self, PyObject *item, PyObject *value)
             PyObject **garbage, **seqitems, **selfitems;
             Py_ssize_t i;
             size_t cur;
+            bool bounded_iter = false;
 
             /* protect against a[::-1] = a */
             if (self == (PyListObject*)value) {
                 seq = list_slice_lock_held((PyListObject *)value, 0,
                                             Py_SIZE(value));
+            }
+            else if (step != 1 &&
+                     !PyList_CheckExact(value) &&
+                     !PyTuple_CheckExact(value))
+            {
+                /* For extended slices (step != 1) with arbitrary iterables,
+                   use bounded iteration to avoid hanging on infinite
+                   iterators (gh-146268).  We compute a preliminary slice
+                   length to cap the number of items we collect.  The real
+                   slice length is recomputed afterwards because the
+                   iterable's __next__ may mutate the list. */
+                Py_ssize_t tmp_start = start, tmp_stop = stop;
+                Py_ssize_t slicelength_bound = adjust_slice_indexes(
+                    self, &tmp_start, &tmp_stop, step);
+
+                PyObject *it = PyObject_GetIter(value);
+                if (it == NULL) {
+                    if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+                        PyObject *exc = PyErr_GetRaisedException();
+                        PyErr_SetString(PyExc_TypeError,
+                                        "must assign iterable "
+                                        "to extended slice");
+                        _PyErr_ChainExceptions1(exc);
+                    }
+                    return -1;
+                }
+                Py_ssize_t alloc = slicelength_bound + 1;
+                if (alloc <= 0) {
+                    /* Overflow or zero-length slice; still collect at
+                       least 1 item so the size check can detect a
+                       non-empty iterable. */
+                    alloc = 1;
+                }
+                seq = PyList_New(alloc);
+                if (seq == NULL) {
+                    Py_DECREF(it);
+                    return -1;
+                }
+                Py_ssize_t j;
+                for (j = 0; j < alloc; j++) {
+                    PyObject *v = PyIter_Next(it);
+                    if (v == NULL) {
+                        if (PyErr_Occurred()) {
+                            /* Discard unfilled slots before decref */
+                            Py_SET_SIZE(seq, j);
+                            Py_DECREF(seq);
+                            Py_DECREF(it);
+                            return -1;
+                        }
+                        break;
+                    }
+                    PyList_SET_ITEM(seq, j, v);
+                }
+                Py_DECREF(it);
+                /* Shrink to the number of items actually collected */
+                if (j < alloc) {
+                    Py_SET_SIZE(seq, j);
+                }
+                bounded_iter = true;
             }
             else {
                 seq = PySequence_Fast(value,
@@ -3845,12 +3905,22 @@ list_ass_subscript_lock_held(PyObject *_self, PyObject *item, PyObject *value)
             }
 
             if (PySequence_Fast_GET_SIZE(seq) != slicelength) {
-                PyErr_Format(PyExc_ValueError,
-                    "attempt to assign sequence of "
-                    "size %zd to extended slice of "
-                    "size %zd",
-                         PySequence_Fast_GET_SIZE(seq),
-                         slicelength);
+                if (bounded_iter &&
+                    PySequence_Fast_GET_SIZE(seq) > slicelength) {
+                    PyErr_Format(PyExc_ValueError,
+                        "attempt to assign iterable that yielded "
+                        "more items than extended slice of "
+                        "size %zd",
+                             slicelength);
+                }
+                else {
+                    PyErr_Format(PyExc_ValueError,
+                        "attempt to assign sequence of "
+                        "size %zd to extended slice of "
+                        "size %zd",
+                             PySequence_Fast_GET_SIZE(seq),
+                             slicelength);
+                }
                 Py_DECREF(seq);
                 return -1;
             }
