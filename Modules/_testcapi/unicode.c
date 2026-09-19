@@ -351,7 +351,8 @@ unicode_write(PyObject *self, PyObject *args)
     int kind = PyUnicode_KIND(copy);
     const void *data = PyUnicode_DATA(copy);
     PyUnicode_WRITE(kind, data, index, character);
-    // Same return value than unicode_writechar(): always use 0 as the result
+    // Same return value than _testlimitedcapi unicode_writechar():
+    // always use 0 as the function result
     return Py_BuildValue("(Ni)", copy, 0);
 }
 
@@ -406,6 +407,7 @@ unicode_equal(PyObject *self, PyObject *args)
 static PyObject *
 unicode_check_interned(PyObject *self, PyObject *arg)
 {
+    NULLABLE(arg);
     RETURN_UINT(PyUnicode_CHECK_INTERNED(arg));
 }
 
@@ -414,6 +416,7 @@ unicode_check_interned(PyObject *self, PyObject *arg)
 static PyObject *
 unicode_is_ascii(PyObject *self, PyObject *arg)
 {
+    NULLABLE(arg);
     RETURN_UINT(PyUnicode_IS_ASCII(arg));
 }
 
@@ -422,6 +425,7 @@ unicode_is_ascii(PyObject *self, PyObject *arg)
 static PyObject *
 unicode_is_compact(PyObject *self, PyObject *arg)
 {
+    NULLABLE(arg);
     RETURN_UINT(PyUnicode_IS_COMPACT(arg));
 }
 
@@ -430,6 +434,7 @@ unicode_is_compact(PyObject *self, PyObject *arg)
 static PyObject *
 unicode_is_compact_ascii(PyObject *self, PyObject *arg)
 {
+    NULLABLE(arg);
     RETURN_INT(PyUnicode_IS_COMPACT_ASCII(arg));
 }
 

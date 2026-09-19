@@ -371,8 +371,8 @@ class CAPITest(unittest.TestCase):
 
     def test_readchar(self):
         """Test PyUnicode_ReadChar()"""
-        readchar = _testlimitedcapi.unicode_readchar
-        self._test_read_char(readchar, check=True, read_null_char=False)
+        self._test_read_char(_testlimitedcapi.unicode_readchar,
+                             check=True, read_null_char=False)
 
     def test_read_char_macro(self):
         """Test PyUnicode_READ_CHAR() macro"""
@@ -1599,7 +1599,7 @@ class CAPITest(unittest.TestCase):
         strings = ('abc', 'абв', '\U0001f600', 'abc\0')
         for s1 in strings:
             for s2 in strings:
-                self.assertIs(equal(s1, s2), int(s1 == s2))
+                self.assertEqual(equal(s1, s2), int(s1 == s2))
 
         self.assertRaises(TypeError, equal, 'str', b'bytes')
         self.assertRaises(TypeError, equal, b'bytes', 'str')
@@ -1869,7 +1869,7 @@ class PyUnicodeWriterTest(unittest.TestCase):
                          "ascii-latin1=\xE9-euro=\u20AC.")
 
     def test_ascii(self):
-        # test PyUnicodeWriter_WriteASCII()
+        # Test PyUnicodeWriter_WriteASCII()
         writer = self.create_writer(0)
         writer.write_ascii(b"Hello ", -1)
         writer.write_ascii(b"", 0)
