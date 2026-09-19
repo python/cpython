@@ -1,0 +1,5 @@
+:func:`pickletools.dis` and :func:`pickletools.genops` now accept a
+*check_frames* keyword argument.  When true, an argument that straddles a
+frame boundary, or a frame that begins before the previous one ends, raises
+:exc:`ValueError` instead of being read across the boundary (PEP 3154).
+Framing is still ignored by default, as an unpickler is free to do.

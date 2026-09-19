@@ -88,7 +88,8 @@ Programmatic interface
 ----------------------
 
 
-.. function:: dis(pickle, out=None, memo=None, indentlevel=4, annotate=0)
+.. function:: dis(pickle, out=None, memo=None, indentlevel=4, annotate=0, *, \
+                  check_frames=False)
 
    Outputs a symbolic disassembly of the pickle to the file-like
    object *out*, defaulting to ``sys.stdout``.  *pickle* can be a
@@ -101,16 +102,29 @@ Programmatic interface
    a short description.  The value of *annotate* is used as a hint for
    the column where annotation should start.
 
+   Framing (:pep:`3154`) is ignored by default, as an unpickler is free to do.
+   If *check_frames* is true, an argument that straddles a frame boundary, or a
+   frame that begins before the previous one ends, raises a :exc:`ValueError`,
+   as in the standard unpickler.
+
    .. versionchanged:: 3.2
       Added the *annotate* parameter.
 
-.. function:: genops(pickle)
+   .. versionchanged:: next
+      Added the *check_frames* parameter.
+
+.. function:: genops(pickle, *, check_frames=False)
 
    Provides an :term:`iterator` over all of the opcodes in a pickle, returning a
    sequence of ``(opcode, arg, pos)`` triples.  *opcode* is an instance of an
    :class:`OpcodeInfo` class; *arg* is the decoded value, as a Python object, of
    the opcode's argument; *pos* is the position at which this opcode is located.
    *pickle* can be a string or a file-like object.
+
+   The *check_frames* argument has the same meaning as in :func:`dis`.
+
+   .. versionchanged:: next
+      Added the *check_frames* parameter.
 
 .. function:: optimize(picklestring)
 
