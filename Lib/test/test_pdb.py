@@ -4861,12 +4861,12 @@ class SkipCommandsTestCase(unittest.TestCase):
         debugger.onecmd("skip_stdlib")
         self.assertIn("os", debugger.skip)
         self.assertIn("os.*", debugger.skip)
-        self.assertEq(len(debugger.skip), len(sys.stdlib_module_names)*2)
+        self.assertEqual(len(debugger.skip), len(sys.stdlib_module_names)*2)
 
         debugger.onecmd("unskip_stdlib")
         self.assertNotIn("os", debugger.skip)
         self.assertNotIn("os.*", debugger.skip)
-        self.assertEq(len(debugger.skip), 0)
+        self.assertEqual(len(debugger.skip), 0)
 
 @support.requires_subprocess()
 class PdbTestInline(unittest.TestCase):
