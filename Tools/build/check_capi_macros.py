@@ -20,10 +20,10 @@ TOOLS_BUILD_DIR = os.path.abspath(os.path.dirname(__file__))
 SRC_DIR = os.path.dirname(os.path.dirname(TOOLS_BUILD_DIR))
 IGNORED_FILENAME = os.path.join(TOOLS_BUILD_DIR, 'check_capi_macros_ignored.txt')
 
-DEFINE_REGEX = re.compile(r'\s*# *define\s+(.*)')
+DEFINE_REGEX = re.compile(r'\s*#\s*define\s+(.*)')
 PYTHON_PREFIX = re.compile(r'(Py|PY|_Py|_PY)')
 NAME_REGEX = re.compile(r'([A-Za-z_][A-Za-z0-9_]*)\b')
-UNDEF_REGEX = re.compile(r'#undef (.*)')
+UNDEF_REGEX = re.compile(r'\s*#\s*undef\s+(.*)')
 
 
 def parse_file(filename, names):
