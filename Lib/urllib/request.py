@@ -920,6 +920,29 @@ class HTTPPasswordMgrWithPriorAuth(HTTPPasswordMgrWithDefaultRealm):
                     return self.authenticated[uri]
 
 
+class _AuthBodyReiterator:
+    """Re-read a seekable file-like POST body from the start."""
+
+    def __init__(self, fileobj, blocksize=8192):
+        self._fileobj = fileobj
+        self._blocksize = blocksize
+
+    def __iter__(self):
+        self._fileobj.seek(0)
+        while chunk := self._fileobj.read(self._blocksize):
+            yield chunk
+
+
+def _prepare_auth_retry_body(request):
+    """Allow authentication retries to resend a consumed file-like object."""
+    data = request.data
+    if data is None or not hasattr(data, 'read'):
+        return None
+    if not getattr(data, 'seekable', lambda: hasattr(data, 'seek'))():
+        raise ValueError("seekable file-like Request.data is required when "
+        "the request may be retried (such as HTTP authentication retries).")
+    request.data = _AuthBodyReiterator(data)
+
 class AbstractBasicAuthHandler:
 
     # XXX this allows for multiple auth-schemes, but will stupidly pick
@@ -1001,6 +1024,7 @@ class AbstractBasicAuthHandler:
             auth = "Basic " + base64.b64encode(raw.encode()).decode("ascii")
             if req.get_header(self.auth_header, None) == auth:
                 return None
+            _prepare_auth_retry_body(req)
             req.add_unredirected_header(self.auth_header, auth)
             return self.parent.open(req, timeout=req.timeout)
         else:
@@ -1113,6 +1137,8 @@ class AbstractDigestAuthHandler:
             auth_val = 'Digest %s' % auth
             if req.headers.get(self.auth_header, None) == auth_val:
                 return None
+
+            _prepare_auth_retry_body(req)
             req.add_unredirected_header(self.auth_header, auth_val)
             resp = self.parent.open(req, timeout=req.timeout)
             return resp
