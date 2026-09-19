@@ -186,20 +186,16 @@ _io__IOBase_flush_impl(PyObject *self)
 
 /*[clinic input]
 @getter
-_io._IOBase.closed
+_io._IOBase.closed -> bool
 
 True if the file is closed.
 [clinic start generated code]*/
 
-static PyObject *
+static int
 _io__IOBase_closed_get_impl(PyObject *self)
-/*[clinic end generated code: output=cb72a562de7b4082 input=8b68e9a4e2950776]*/
+/*[clinic end generated code: output=561af4ea236d16d9 input=e730fe4ccc4c096c]*/
 {
-    int closed = iobase_is_closed(self);
-    if (closed < 0) {
-        return NULL;
-    }
-    return PyBool_FromLong(closed);
+    return iobase_is_closed(self);
 }
 
 static int

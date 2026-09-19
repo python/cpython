@@ -300,16 +300,16 @@ write_bytes_lock_held(bytesio *self, PyObject *b)
 /*[clinic input]
 @critical_section
 @getter
-_io.BytesIO.closed
+_io.BytesIO.closed -> bool
 
 True if the file is closed.
 [clinic start generated code]*/
 
-static PyObject *
+static int
 _io_BytesIO_closed_get_impl(bytesio *self)
-/*[clinic end generated code: output=3210245d480df846 input=53d116fdfe4e7580]*/
+/*[clinic end generated code: output=7cdc647cc7a71683 input=0687f923344225ee]*/
 {
-    return PyBool_FromLong(self->buf == NULL);
+    return self->buf == NULL;
 }
 
 /*[clinic input]

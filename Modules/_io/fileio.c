@@ -1297,30 +1297,30 @@ static PyMethodDef fileio_methods[] = {
 
 /*[clinic input]
 @getter
-_io.FileIO.closed
+_io.FileIO.closed -> bool
 
 True if the file is closed.
 [clinic start generated code]*/
 
-static PyObject *
+static int
 _io_FileIO_closed_get_impl(fileio *self)
-/*[clinic end generated code: output=6605122cc0377bf6 input=4696b7fb11103a0f]*/
+/*[clinic end generated code: output=5052fd0688b475f2 input=6024cca6d484d9a2]*/
 {
-    return PyBool_FromLong((long)(self->fd < 0));
+    return self->fd < 0;
 }
 
 /*[clinic input]
 @getter
-_io.FileIO.closefd
+_io.FileIO.closefd -> bool
 
 True if the file descriptor will be closed by close().
 [clinic start generated code]*/
 
-static PyObject *
+static int
 _io_FileIO_closefd_get_impl(fileio *self)
-/*[clinic end generated code: output=f9932a0320687395 input=fc4d979307a724b6]*/
+/*[clinic end generated code: output=11963fca763399cc input=ed3d108a6f07ad5c]*/
 {
-    return PyBool_FromLong((long)(self->closefd));
+    return self->closefd;
 }
 
 /*[clinic input]
@@ -1339,21 +1339,21 @@ _io_FileIO_mode_get_impl(fileio *self)
 
 /*[clinic input]
 @getter
-_io.FileIO._blksize
+_io.FileIO._blksize -> long
 
 Stat st_blksize if available.
 [clinic start generated code]*/
 
-static PyObject *
+static long
 _io_FileIO__blksize_get_impl(fileio *self)
-/*[clinic end generated code: output=885b8dcac7f47ab7 input=0020e9e6a591f2a2]*/
+/*[clinic end generated code: output=e47eaf8cd6c0079f input=699d87d750798ccb]*/
 {
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
     if (self->stat_atopen != NULL && self->stat_atopen->st_blksize > 1) {
-        return PyLong_FromLong(self->stat_atopen->st_blksize);
+        return self->stat_atopen->st_blksize;
     }
 #endif /* HAVE_STRUCT_STAT_ST_BLKSIZE */
-    return PyLong_FromLong(DEFAULT_BUFFER_SIZE);
+    return DEFAULT_BUFFER_SIZE;
 }
 
 static PyGetSetDef fileio_getsetlist[] = {

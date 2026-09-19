@@ -13,18 +13,24 @@ preserve
 PyDoc_STRVAR(_io_BytesIO_closed__doc__,
 "True if the file is closed.");
 
-static PyObject *
+static int
 _io_BytesIO_closed_get_impl(bytesio *self);
 
 static PyObject *
 _io_BytesIO_closed_get(PyObject *self, void *Py_UNUSED(context))
 {
     PyObject *return_value = NULL;
+    int _return_value;
 
     Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = _io_BytesIO_closed_get_impl((bytesio *)self);
+    _return_value = _io_BytesIO_closed_get_impl((bytesio *)self);
     Py_END_CRITICAL_SECTION();
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
 
+exit:
     return return_value;
 }
 
@@ -774,4 +780,4 @@ _io_BytesIO___sizeof__(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 #define _IO_BYTESIO_CLOSED_GETSETDEF {"closed", (getter)_io_BytesIO_closed_get, (setter)NULL, _io_BytesIO_closed__doc__},
 
-/*[clinic end generated code: output=a3a3c6bc1d70c595 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a3dc7a416dae6ae9 input=a9049054013a1b77]*/

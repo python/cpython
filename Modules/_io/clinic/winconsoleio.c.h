@@ -439,13 +439,23 @@ PyDoc_STRVAR(_io__WindowsConsoleIO_closed__doc__,
 
 #define _IO__WINDOWSCONSOLEIO_CLOSED_GETTER _io__WindowsConsoleIO_closed_get
 
-static PyObject *
+static int
 _io__WindowsConsoleIO_closed_get_impl(winconsoleio *self);
 
 static PyObject *
 _io__WindowsConsoleIO_closed_get(PyObject *self, void *Py_UNUSED(context))
 {
-    return _io__WindowsConsoleIO_closed_get_impl((winconsoleio *)self);
+    PyObject *return_value = NULL;
+    int _return_value;
+
+    _return_value = _io__WindowsConsoleIO_closed_get_impl((winconsoleio *)self);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
 }
 
 #endif /* defined(HAVE_WINDOWS_CONSOLE_IO) */
@@ -461,13 +471,23 @@ PyDoc_STRVAR(_io__WindowsConsoleIO_closefd__doc__,
 
 #define _IO__WINDOWSCONSOLEIO_CLOSEFD_GETTER _io__WindowsConsoleIO_closefd_get
 
-static PyObject *
+static int
 _io__WindowsConsoleIO_closefd_get_impl(winconsoleio *self);
 
 static PyObject *
 _io__WindowsConsoleIO_closefd_get(PyObject *self, void *Py_UNUSED(context))
 {
-    return _io__WindowsConsoleIO_closefd_get_impl((winconsoleio *)self);
+    PyObject *return_value = NULL;
+    int _return_value;
+
+    _return_value = _io__WindowsConsoleIO_closefd_get_impl((winconsoleio *)self);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
 }
 
 #endif /* defined(HAVE_WINDOWS_CONSOLE_IO) */
@@ -574,4 +594,4 @@ _io__WindowsConsoleIO_mode_get(PyObject *self, void *Py_UNUSED(context))
 #  define _IO__WINDOWSCONSOLEIO_MODE_GETSETDEF
 #endif
 
-/*[clinic end generated code: output=c7c9111953e7f217 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=24fe425795203cee input=a9049054013a1b77]*/

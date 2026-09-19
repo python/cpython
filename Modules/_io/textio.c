@@ -3399,38 +3399,35 @@ _io_TextIOWrapper_errors_get_impl(textio *self)
 /*[clinic input]
 @critical_section
 @getter
-_io.TextIOWrapper._CHUNK_SIZE
+_io.TextIOWrapper._CHUNK_SIZE -> Py_ssize_t
 [clinic start generated code]*/
 
-static PyObject *
+static Py_ssize_t
 _io_TextIOWrapper__CHUNK_SIZE_get_impl(textio *self)
-/*[clinic end generated code: output=039925cd2df375bc input=e9715b0e06ff0fa6]*/
+/*[clinic end generated code: output=3fe34b873b6b2c8c input=cae767b74b6b46bd]*/
 {
-    CHECK_ATTACHED(self);
-    return PyLong_FromSsize_t(self->chunk_size);
+    CHECK_ATTACHED_INT(self);
+    return self->chunk_size;
 }
 
 /*[clinic input]
 @critical_section
 @setter
 _io.TextIOWrapper._CHUNK_SIZE
+    value: Py_ssize_t
 [clinic start generated code]*/
 
 static int
-_io_TextIOWrapper__CHUNK_SIZE_set_impl(textio *self, PyObject *value)
-/*[clinic end generated code: output=edb86d2db660a5ab input=32fc99861db02a0a]*/
+_io_TextIOWrapper__CHUNK_SIZE_set_impl(textio *self, Py_ssize_t value)
+/*[clinic end generated code: output=5170a93dd4d74917 input=ede7bae6145f941b]*/
 {
-    Py_ssize_t n;
     CHECK_ATTACHED_INT(self);
-    n = PyNumber_AsSsize_t(value, PyExc_ValueError);
-    if (n == -1 && PyErr_Occurred())
-        return -1;
-    if (n <= 0) {
+    if (value <= 0) {
         PyErr_SetString(PyExc_ValueError,
                         "a strictly positive integer is required");
         return -1;
     }
-    self->chunk_size = n;
+    self->chunk_size = value;
     return 0;
 }
 

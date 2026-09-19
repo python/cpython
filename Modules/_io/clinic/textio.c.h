@@ -1209,29 +1209,35 @@ _io_TextIOWrapper_errors_get(PyObject *self, void *Py_UNUSED(context))
     return return_value;
 }
 
-static PyObject *
+static Py_ssize_t
 _io_TextIOWrapper__CHUNK_SIZE_get_impl(textio *self);
 
 static PyObject *
 _io_TextIOWrapper__CHUNK_SIZE_get(PyObject *self, void *Py_UNUSED(context))
 {
     PyObject *return_value = NULL;
+    Py_ssize_t _return_value;
 
     Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = _io_TextIOWrapper__CHUNK_SIZE_get_impl((textio *)self);
+    _return_value = _io_TextIOWrapper__CHUNK_SIZE_get_impl((textio *)self);
     Py_END_CRITICAL_SECTION();
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromSsize_t(_return_value);
 
+exit:
     return return_value;
 }
 
 static int
-_io_TextIOWrapper__CHUNK_SIZE_set_impl(textio *self, PyObject *value);
+_io_TextIOWrapper__CHUNK_SIZE_set_impl(textio *self, Py_ssize_t value);
 
 static int
 _io_TextIOWrapper__CHUNK_SIZE_set(PyObject *self, PyObject *arg, void *Py_UNUSED(context))
 {
     int return_value = -1;
-    PyObject *value;
+    Py_ssize_t value;
 
     if (arg == NULL) {
         PyErr_Format(PyExc_AttributeError,
@@ -1239,11 +1245,23 @@ _io_TextIOWrapper__CHUNK_SIZE_set(PyObject *self, PyObject *arg, void *Py_UNUSED
                      Py_TYPE(self)->tp_name);
         return -1;
     }
-    value = arg;
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(arg);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        value = ival;
+    }
     Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _io_TextIOWrapper__CHUNK_SIZE_set_impl((textio *)self, value);
     Py_END_CRITICAL_SECTION();
 
+exit:
     return return_value;
 }
 
@@ -1281,4 +1299,4 @@ _io_TextIOWrapper_buffer_get(PyObject *self, void *Py_UNUSED(context))
 
 #define _IO_TEXTIOWRAPPER_BUFFER_GETSETDEF {"buffer", (getter)_io_TextIOWrapper_buffer_get, (setter)NULL, NULL},
 
-/*[clinic end generated code: output=f92c43d2ab7fd842 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=102ae91df6216de2 input=a9049054013a1b77]*/

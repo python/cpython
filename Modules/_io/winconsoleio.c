@@ -1204,30 +1204,30 @@ static PyMethodDef winconsoleio_methods[] = {
 
 /*[clinic input]
 @getter
-_io._WindowsConsoleIO.closed
+_io._WindowsConsoleIO.closed -> bool
 
 True if the file is closed.
 [clinic start generated code]*/
 
-static PyObject *
+static int
 _io__WindowsConsoleIO_closed_get_impl(winconsoleio *self)
-/*[clinic end generated code: output=5a8df1a0e2bfa766 input=ece879e363f4d6bb]*/
+/*[clinic end generated code: output=a3f8b93c6ddcf660 input=65b6d1bed0aadbb8]*/
 {
-    return PyBool_FromLong((long)(self->fd == -1));
+    return self->fd == -1;
 }
 
 /*[clinic input]
 @getter
-_io._WindowsConsoleIO.closefd
+_io._WindowsConsoleIO.closefd -> bool
 
 True if the file descriptor will be closed by close().
 [clinic start generated code]*/
 
-static PyObject *
+static int
 _io__WindowsConsoleIO_closefd_get_impl(winconsoleio *self)
-/*[clinic end generated code: output=e6a6c7bab25b18c9 input=155722042f7dcf53]*/
+/*[clinic end generated code: output=ec221c2f949530a3 input=5839d3a815edecee]*/
 {
-    return PyBool_FromLong((long)(self->closefd));
+    return self->closefd;
 }
 
 /*[clinic input]

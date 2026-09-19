@@ -174,13 +174,23 @@ _io__IOBase_flush(PyObject *self, PyObject *Py_UNUSED(ignored))
 PyDoc_STRVAR(_io__IOBase_closed__doc__,
 "True if the file is closed.");
 
-static PyObject *
+static int
 _io__IOBase_closed_get_impl(PyObject *self);
 
 static PyObject *
 _io__IOBase_closed_get(PyObject *self, void *Py_UNUSED(context))
 {
-    return _io__IOBase_closed_get_impl(self);
+    PyObject *return_value = NULL;
+    int _return_value;
+
+    _return_value = _io__IOBase_closed_get_impl(self);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
 }
 
 PyDoc_STRVAR(_io__IOBase__checkClosed__doc__,
@@ -592,4 +602,4 @@ PyDoc_STRVAR(_io__RawIOBase_write__doc__,
     {"write", (PyCFunction)_io__RawIOBase_write, METH_O, _io__RawIOBase_write__doc__},
 #define _IO__IOBASE_CLOSED_GETSETDEF {"closed", (getter)_io__IOBase_closed_get, (setter)NULL, _io__IOBase_closed__doc__},
 
-/*[clinic end generated code: output=c214f65585f4a2e7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fe3b46799e3cf0a9 input=a9049054013a1b77]*/
