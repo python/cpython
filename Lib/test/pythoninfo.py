@@ -751,7 +751,7 @@ def collect_expat(info_add):
     except ImportError:
         return
 
-    attributes = ('EXPAT_VERSION',)
+    attributes = ('EXPAT_VERSION', 'VERSION_INFO', 'version_info')
     copy_attributes(info_add, expat, 'expat.%s', attributes)
 
 
