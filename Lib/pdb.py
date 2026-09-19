@@ -2292,8 +2292,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if arg:
             self._print_invalid_arg(arg)
             return
-        self.update_skip(sys.stdlib_modules)
-        self.update_skip((f"{x}.*" for x in sys.stdlib_modules))
+        self.update_skip(sys.stdlib_module_names)
+        self.update_skip((f"{x}.*" for x in sys.stdlib_module_names))
 
     def do_unskip(self, arg):
         """unskip module_pattern [module_pattern ...]
