@@ -1,0 +1,3 @@
+Register :class:`!multiprocessing.managers.SetProxy` as
+:class:`collections.abc.MutableSet` rather than
+:class:`~collections.abc.MutableMapping`.
