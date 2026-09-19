@@ -254,20 +254,24 @@ class ArrayReconstructorTest(unittest.TestCase):
         self.assertEqual(b_be.tolist(), [1.5])
 
     def test_unicode(self):
-        teststr = "Bonne Journ\xe9e \U0002030a\U00020347"
         testcases = (
             (UTF16_LE, "UTF-16-LE"),
             (UTF16_BE, "UTF-16-BE"),
             (UTF32_LE, "UTF-32-LE"),
             (UTF32_BE, "UTF-32-BE")
         )
-        for testcase in testcases:
-            mformat_code, encoding = testcase
-            a = array.array('w', teststr)
-            b = array_reconstructor(
-                array.array, 'w', mformat_code, teststr.encode(encoding))
-            self.assertEqual(a, b,
-                msg="{0!r} != {1!r}; testcase={2!r}".format(a, b, testcase))
+        # An even and an odd length; odd lengths were wrongly rejected.
+        for teststr in ("Bonne Journ\xe9e \U0002030a\U00020347",
+                        "Bonne Journ\xe9e \U0002030a\U00020347!"):
+            for testcase in testcases:
+                mformat_code, encoding = testcase
+                a = array.array('w', teststr)
+                b = array_reconstructor(
+                    array.array, 'w', mformat_code, teststr.encode(encoding))
+                self.assertEqual(
+                    a, b,
+                    msg="{0!r} != {1!r}; testcase={2!r}".format(
+                        a, b, testcase))
 
 
 class BaseTest:
