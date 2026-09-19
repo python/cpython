@@ -354,7 +354,7 @@ parse_coro_chain(
     uintptr_t prev_frame;
     uintptr_t gi_iframe_addr = coro_address + (uintptr_t)unwinder->debug_offsets.gen_object.gi_iframe;
     uintptr_t address_of_code_object = 0;
-    if (parse_frame_object(unwinder, &name, gi_iframe_addr, &address_of_code_object, &prev_frame) < 0) {
+    if (parse_frame_object(unwinder, &name, gi_iframe_addr, &address_of_code_object, &prev_frame, NULL) < 0) {
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to parse frame object in coro chain");
         return -1;
     }
@@ -784,7 +784,8 @@ parse_async_frame_chain(
             &frame_info,
             address_of_current_frame,
             &address_of_code_object,
-            &address_of_current_frame
+            &address_of_current_frame,
+            NULL
         );
 
         if (res < 0) {

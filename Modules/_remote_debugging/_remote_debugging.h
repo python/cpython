@@ -451,7 +451,8 @@ typedef struct {
     Py_ssize_t num_addrs;           // Count of addresses collected
     Py_ssize_t max_addrs;           // Capacity of frame_addrs array
     uintptr_t last_frame_visited;   // Last frame address visited
-    int stopped_at_cached_frame;    // Whether we stopped at cached frame
+    int stopped_at_cached_frame;    // Walk stopped at a cached frame
+    int stopped_at_policy_frame;    // Walk stopped at a policy-accepted first frame
 } FrameWalkContext;
 
 /*
@@ -592,7 +593,8 @@ extern int cache_tlbc_array(RemoteUnwinderObject *unwinder, uintptr_t code_addr,
 extern int is_frame_valid(
     RemoteUnwinderObject *unwinder,
     uintptr_t frame_addr,
-    uintptr_t code_object_addr
+    uintptr_t code_object_addr,
+    char *owner_out
 );
 
 extern int parse_frame_object(
@@ -600,7 +602,8 @@ extern int parse_frame_object(
     PyObject** result,
     uintptr_t address,
     uintptr_t* address_of_code_object,
-    uintptr_t* previous_frame
+    uintptr_t* previous_frame,
+    char *owner_out
 );
 
 extern int parse_frame_from_chunks(
@@ -609,7 +612,8 @@ extern int parse_frame_from_chunks(
     uintptr_t address,
     uintptr_t *previous_frame,
     uintptr_t *stackpointer,
-    StackChunkList *chunks
+    StackChunkList *chunks,
+    char *owner_out
 );
 
 /* Stack chunk management */

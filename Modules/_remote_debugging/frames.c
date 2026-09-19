@@ -167,15 +167,19 @@ int
 is_frame_valid(
     RemoteUnwinderObject *unwinder,
     uintptr_t frame_addr,
-    uintptr_t code_object_addr
+    uintptr_t code_object_addr,
+    char *owner_out
 ) {
+    void* frame = (void*)frame_addr;
+
+    char owner = GET_MEMBER(char, frame, unwinder->debug_offsets.interpreter_frame.owner);
+    if (owner_out != NULL) {
+        *owner_out = owner;
+    }
     if ((void*)code_object_addr == NULL) {
         return 0;
     }
 
-    void* frame = (void*)frame_addr;
-
-    char owner = GET_MEMBER(char, frame, unwinder->debug_offsets.interpreter_frame.owner);
     if (owner == FRAME_OWNED_BY_INTERPRETER) {
         return 0;  // C frame or sentinel base frame
     }
@@ -194,13 +198,14 @@ parse_frame_buffer(
     PyObject** result,
     const char *frame,
     uintptr_t* address_of_code_object,
-    uintptr_t* previous_frame
+    uintptr_t* previous_frame,
+    char *owner_out
 ) {
     *address_of_code_object = 0;
 
     *previous_frame = GET_MEMBER(uintptr_t, frame, unwinder->debug_offsets.interpreter_frame.previous);
     uintptr_t code_object = GET_MEMBER_NO_TAG(uintptr_t, frame, unwinder->debug_offsets.interpreter_frame.executable);
-    int frame_valid = is_frame_valid(unwinder, (uintptr_t)frame, code_object);
+    int frame_valid = is_frame_valid(unwinder, (uintptr_t)frame, code_object, owner_out);
     if (frame_valid != 1) {
         return frame_valid;
     }
@@ -231,7 +236,8 @@ parse_frame_object(
     PyObject** result,
     uintptr_t address,
     uintptr_t* address_of_code_object,
-    uintptr_t* previous_frame
+    uintptr_t* previous_frame,
+    char *owner_out
 ) {
     char frame[SIZEOF_INTERP_FRAME];
     Py_ssize_t bytes_read = _Py_RemoteDebug_ReadRemoteMemory(
@@ -247,7 +253,7 @@ parse_frame_object(
     STATS_INC(unwinder, memory_reads);
     STATS_ADD(unwinder, memory_bytes_read, SIZEOF_INTERP_FRAME);
 
-    return parse_frame_buffer(unwinder, result, frame, address_of_code_object, previous_frame);
+    return parse_frame_buffer(unwinder, result, frame, address_of_code_object, previous_frame, owner_out);
 }
 
 int
@@ -257,7 +263,8 @@ parse_frame_from_chunks(
     uintptr_t address,
     uintptr_t *previous_frame,
     uintptr_t *stackpointer,
-    StackChunkList *chunks
+    StackChunkList *chunks,
+    char *owner_out
 ) {
     void *frame_ptr = find_frame_in_chunks(chunks, address);
     if (!frame_ptr) {
@@ -270,7 +277,7 @@ parse_frame_from_chunks(
     *previous_frame = GET_MEMBER(uintptr_t, frame, unwinder->debug_offsets.interpreter_frame.previous);
     *stackpointer = GET_MEMBER(uintptr_t, frame, unwinder->debug_offsets.interpreter_frame.stackpointer);
     uintptr_t code_object = GET_MEMBER_NO_TAG(uintptr_t, frame_ptr, unwinder->debug_offsets.interpreter_frame.executable);
-    int frame_valid = is_frame_valid(unwinder, (uintptr_t)frame, code_object);
+    int frame_valid = is_frame_valid(unwinder, (uintptr_t)frame, code_object, owner_out);
     if (frame_valid != 1) {
         return frame_valid;
     }
@@ -310,12 +317,14 @@ process_frame_chain(
     assert(MAX_FRAMES > 0 && MAX_FRAMES < 10000);
 
     ctx->stopped_at_cached_frame = 0;
+    ctx->stopped_at_policy_frame = 0;
     ctx->last_frame_visited = 0;
 
     while ((void*)frame_addr != NULL) {
         PyObject *frame = NULL;
         uintptr_t next_frame_addr = 0;
         uintptr_t stackpointer = 0;
+        char frame_owner = -1;
         last_frame_addr = frame_addr;
 
         if (++frame_count > MAX_FRAMES) {
@@ -326,7 +335,7 @@ process_frame_chain(
         assert(frame_count <= MAX_FRAMES);
 
         if (ctx->chunks && ctx->chunks->count > 0) {
-            if (parse_frame_from_chunks(unwinder, &frame, frame_addr, &next_frame_addr, &stackpointer, ctx->chunks) == 0) {
+            if (parse_frame_from_chunks(unwinder, &frame, frame_addr, &next_frame_addr, &stackpointer, ctx->chunks, &frame_owner) == 0) {
                 goto parsed_frame;
             }
             PyErr_Clear();
@@ -337,12 +346,12 @@ process_frame_chain(
             if (ctx->prefetch.frame && ctx->prefetch.frame_addr == frame_addr) {
                 parse_result = parse_frame_buffer(
                     unwinder, &frame, ctx->prefetch.frame,
-                    &address_of_code_object, &next_frame_addr);
+                    &address_of_code_object, &next_frame_addr, &frame_owner);
             }
             else {
                 parse_result = parse_frame_object(
                     unwinder, &frame, frame_addr,
-                    &address_of_code_object, &next_frame_addr);
+                    &address_of_code_object, &next_frame_addr, &frame_owner);
             }
             if (parse_result < 0) {
                 set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to parse frame object in chain");
@@ -359,36 +368,50 @@ parsed_frame:
         }
 
         if (frame == NULL && PyList_GET_SIZE(ctx->frame_info) == 0) {
-            if (frame_addr == ctx->base_frame_addr) {
-                // A native thread that released the GIL with
-                // PyEval_SaveThread() keeps a thread state whose frame
-                // chain holds only the base_frame sentinel.  This is a
-                // valid empty Python stack: accept it and let other
-                // threads report their stacks.
+            // A first frame without a code object: the base_frame
+            // sentinel of an empty Python stack, a frame dropped by
+            // _PyFrame_ClearExceptCode() (which keeps the owner and the
+            // previous pointer), or a genuine interpreter-owned native
+            // boundary.  Only the owner distinguishes them.
+            if (frame_owner != FRAME_OWNED_BY_INTERPRETER) {
+                // A dropped frame: not a native boundary, and its chain
+                // is stale.  Accept the empty stack and stop instead of
+                // reporting it as <native> and walking dropped frames.
+                ctx->stopped_at_policy_frame = 1;
                 break;
             }
             if (next_frame_addr == 0) {
-                // A dangling undecodable first frame with no continuation
-                // cannot be represented in the result.
-                const char *e = "Failed to parse initial frame in chain";
-                PyErr_SetString(PyExc_RuntimeError, e);
-                return -1;
+                // The base_frame sentinel: a valid empty Python stack.
+                // Accept it and let other threads report their stacks.
+                ctx->stopped_at_policy_frame = 1;
+                break;
             }
-            // A first frame without Python code but with a valid
-            // continuation (for example a thread sitting in a C call
-            // between Python frames) is handled exactly like a mid-chain
-            // native frame below.
+            // An interpreter-owned frame with a continuation is a native
+            // boundary; handle it like a mid-chain native frame below.
         }
         PyObject *extra_frame = NULL;
+        if (frame == NULL && frame_owner != FRAME_OWNED_BY_INTERPRETER) {
+            // A frame dropped by _PyFrame_ClearExceptCode() mid-chain:
+            // its chain is stale, so stop here and report what was
+            // collected so far.
+            ctx->stopped_at_policy_frame = 1;
+            break;
+        }
         if (unwinder->gc && frame_addr == ctx->gc_frame) {
             _Py_DECLARE_STR(gc, "<GC>");
             extra_frame = &_Py_STR(gc);
         }
         else if (unwinder->native &&
                  frame == NULL &&
+                 frame_owner == FRAME_OWNED_BY_INTERPRETER &&
                  next_frame_addr &&
                  !(unwinder->gc && next_frame_addr == ctx->gc_frame))
         {
+            // Only an interpreter-owned frame with no code object is a
+            // native boundary.  A frame dropped by
+            // _PyFrame_ClearExceptCode() keeps a THREAD/GENERATOR owner,
+            // so it is never reported as <native> and its stale chain is
+            // not walked.
             _Py_DECLARE_STR(native, "<native>");
             extra_frame = &_Py_STR(native);
         }
@@ -441,7 +464,12 @@ parsed_frame:
         frame_addr = next_frame_addr;
     }
 
-    if (!ctx->stopped_at_cached_frame && ctx->base_frame_addr != 0 && last_frame_addr != ctx->base_frame_addr) {
+    // A policy stop on a dropped or interpreter-owned first frame ends
+    // the walk before the sentinel: the reported stack is complete as of
+    // the accepted truncation point.
+    if (!ctx->stopped_at_cached_frame && !ctx->stopped_at_policy_frame &&
+        ctx->base_frame_addr != 0 && last_frame_addr != ctx->base_frame_addr)
+    {
         PyErr_Format(PyExc_RuntimeError,
             "Incomplete sample: did not reach base frame (expected 0x%lx, got 0x%lx)",
             ctx->base_frame_addr, last_frame_addr);
@@ -563,11 +591,13 @@ try_full_cache_hit(
     if (ctx->prefetch.frame && ctx->prefetch.frame_addr == ctx->frame_addr) {
         parse_result = parse_frame_buffer(unwinder, &current_frame,
                                           ctx->prefetch.frame,
-                                          &code_object_addr, &previous_frame);
+                                          &code_object_addr, &previous_frame,
+                                          NULL);
     }
     else {
         parse_result = parse_frame_object(unwinder, &current_frame, ctx->frame_addr,
-                                          &code_object_addr, &previous_frame);
+                                          &code_object_addr, &previous_frame,
+                                          NULL);
     }
     if (parse_result < 0) {
         return -1;
@@ -675,6 +705,12 @@ collect_frames_with_cache(
         if (ctx->last_profiled.frame == 0) {
             STATS_INC(unwinder, frame_cache_misses);
         }
+    }
+
+    if (ctx->stopped_at_policy_frame) {
+        // No additional handling needed: frame_cache_store() rejects
+        // stacks whose walk did not end at the sentinel, so truncated
+        // chains are never cached.
     }
 
     if (frame_cache_store(unwinder, thread_id, ctx->frame_info, ctx->frame_addrs,

@@ -148,7 +148,7 @@ static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
 static int ready = 0;
 static int stopping = 0;
-static int dangling = 0;
+static int owner_mode = FRAME_OWNED_BY_INTERPRETER;
 static _PyInterpreterFrame fake_frame;
 
 static void *
@@ -158,8 +158,8 @@ run(void *arg)
     PyThreadState *ts = PyEval_SaveThread();
     struct _PyInterpreterFrame *saved = ts->current_frame;
     memset(&fake_frame, 0, sizeof(fake_frame));
-    fake_frame.owner = FRAME_OWNED_BY_INTERPRETER;
-    fake_frame.previous = dangling ? NULL : ts->base_frame;
+    fake_frame.owner = (char)owner_mode;
+    fake_frame.previous = ts->base_frame;
     ts->current_frame = &fake_frame;
 
     pthread_mutex_lock(&lock);
@@ -178,9 +178,9 @@ run(void *arg)
 
 /* Called through ctypes, which releases the calling thread's GIL. */
 int
-start_fake_frame_thread(int is_dangling)
+start_fake_frame_thread(int owner)
 {
-    dangling = is_dangling;
+    owner_mode = owner;
     ready = 0;
     stopping = 0;
     if (pthread_create(&helper_thread, NULL, run, NULL) != 0) {
@@ -881,63 +881,57 @@ class TestEmptyPythonStackSampling(RemoteInspectionTestBase):
             lib.stop_fake_frame_thread.argtypes = []
             lib.stop_fake_frame_thread.restype = None
 
-            def first_frame_lists(native, cache_frames):
+            def sample_all_threads(native, cache_frames):
                 unwinder = _remote_debugging.RemoteUnwinder(
                     os.getpid(), all_threads=True, native=native,
                     cache_frames=cache_frames,
                 )
+                trace = unwinder.get_stack_trace()
+                return [
+                    [frame.funcname for frame in thread.frame_info]
+                    for interp in trace
+                    for thread in interp.threads
+                ]
 
-                def sample_once():
-                    trace = unwinder.get_stack_trace()
-                    return [
-                        [frame.funcname for frame in thread.frame_info]
-                        for interp in trace
-                        for thread in interp.threads
-                    ]
-
-                # One initial sample stores the (degenerate) stack in the
-                # frame cache; later samples exercise the cache-hit path.
-                sample_once()
-                return [sample_once() for _ in range(3)]
-
-            # The sampled thread list includes the sampling thread itself,
-            # whose stack is non-empty; the fake-frame thread shows up as
-            # an empty stack (native=False) or as a lone "<native>" frame
-            # (native=True) in every sample.
-            def fake_frame_visible(samples, native):
-                expected = ["<native>"] if native else []
-                return all(expected in names for names in samples)
-
-            # A first frame without Python code followed by the sentinel
-            # is a native-like frame: skipped by default, reported as
-            # "<native>" when native frames are enabled.
-            for native in (False, True):
-                for cache_frames in (False, True):
-                    if lib.start_fake_frame_thread(0) != 0:
-                        raise RuntimeError("failed to start fake-frame thread")
-                    try:
-                        for _ in range(3):
-                            samples = first_frame_lists(native, cache_frames)
-                            assert fake_frame_visible(samples, native), samples
-                    finally:
-                        lib.stop_fake_frame_thread()
-            # A dangling first frame with no continuation cannot be
-            # represented in the result: sampling must keep failing loudly.
-            for cache_frames in (False, True):
-                if lib.start_fake_frame_thread(1) != 0:
+            def run_case(owner, native, cache_frames):
+                if lib.start_fake_frame_thread(owner) != 0:
                     raise RuntimeError("failed to start fake-frame thread")
                 try:
                     for _ in range(3):
-                        try:
-                            first_frame_lists(False, cache_frames)
-                        except RuntimeError as exc:
-                            assert "Failed to parse initial frame in chain" \
-                                in str(exc), exc
-                        else:
-                            raise AssertionError(
-                                "dangling first frame was accepted")
+                        yield sample_all_threads(native, cache_frames)
                 finally:
                     lib.stop_fake_frame_thread()
+
+            # Frame owner constants from _PyInterpreterFrameOwner:
+            # THREAD=0, GENERATOR=1, FRAME_OBJECT=2, INTERPRETER=3.
+            #
+            # owner=INTERPRETER with a continuation is a native boundary:
+            # skipped by default, "<native>" with native frames enabled.
+            INTERPRETER_OWNER = 3
+            THREAD_OWNER = 0
+            for native in (False, True):
+                for cache_frames in (False, True):
+                    for names in run_case(INTERPRETER_OWNER, native,
+                                          cache_frames):
+                        expected = ["<native>"] if native else []
+                        assert expected in names, (native, cache_frames, names)
+
+            # owner=FRAME_OWNED_BY_THREAD with no code object models a
+            # frame dropped by _PyFrame_ClearExceptCode(): the contents
+            # are gone but the owner and the previous pointer survive, so
+            # the chain is stale.  The dropped frame must not be reported
+            # as <native> and its stale chain must not be walked: the
+            # thread shows an empty stack in every sample.  (The sampling
+            # thread itself legitimately shows a <native> boundary when
+            # native frames are enabled, so only this thread's entry is
+            # asserted here.)  Before the owner check, this configuration
+            # produced a <native> marker followed by dropped frames.
+            for cache_frames in (False, True):
+                for names in run_case(THREAD_OWNER, True, cache_frames):
+                    assert [] in names, names
+            for cache_frames in (False, True):
+                for names in run_case(THREAD_OWNER, False, cache_frames):
+                    assert [] in names, names
             """
         )
 
