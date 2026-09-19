@@ -163,14 +163,19 @@ notify_context_watchers(PyThreadState *ts, PyContextEvent event, PyObject *ctx)
     assert(Py_REFCNT(ctx) > 0);
     PyInterpreterState *interp = ts->interp;
     assert(interp->_initialized);
-    uint8_t bits = interp->active_context_watchers;
+    uint8_t bits = FT_ATOMIC_LOAD_UINT8_RELAXED(interp->active_context_watchers);
     int i = 0;
     while (bits) {
         assert(i < CONTEXT_MAX_WATCHERS);
         if (bits & 1) {
-            PyContext_WatchCallback cb = interp->context_watchers[i];
-            assert(cb != NULL);
-            if (cb(event, ctx) < 0) {
+            // Pairs with the release store in PyContext_AddWatcher(), so that
+            // observing the active bit implies observing the callback pointer
+            // (and whatever the registering thread published before it).
+            PyContext_WatchCallback cb =
+                FT_ATOMIC_LOAD_PTR_ACQUIRE(interp->context_watchers[i]);
+            // PyContext_ClearWatcher() may have cleared this slot after the
+            // bitmask was read, so the callback can legitimately be NULL.
+            if (cb != NULL && cb(event, ctx) < 0) {
                 PyErr_FormatUnraisable(
                     "Exception ignored in %s watcher callback for %R",
                     context_event_name(event), ctx);
@@ -182,6 +187,30 @@ notify_context_watchers(PyThreadState *ts, PyContextEvent event, PyObject *ctx)
 }
 
 
+static inline void
+set_context_watcher_bit(PyInterpreterState *interp, int watcher_id)
+{
+    uint8_t bit = (uint8_t)(1 << watcher_id);
+#ifdef Py_GIL_DISABLED
+    (void)_Py_atomic_or_uint8(&interp->active_context_watchers, bit);
+#else
+    interp->active_context_watchers |= bit;
+#endif
+}
+
+
+static inline void
+clear_context_watcher_bit(PyInterpreterState *interp, int watcher_id)
+{
+    uint8_t bit = (uint8_t)(1 << watcher_id);
+#ifdef Py_GIL_DISABLED
+    (void)_Py_atomic_and_uint8(&interp->active_context_watchers, (uint8_t)~bit);
+#else
+    interp->active_context_watchers &= (uint8_t)~bit;
+#endif
+}
+
+
 int
 PyContext_AddWatcher(PyContext_WatchCallback callback)
 {
@@ -189,9 +218,14 @@ PyContext_AddWatcher(PyContext_WatchCallback callback)
     assert(interp->_initialized);
 
     for (int i = 0; i < CONTEXT_MAX_WATCHERS; i++) {
-        if (!interp->context_watchers[i]) {
-            interp->context_watchers[i] = callback;
-            interp->active_context_watchers |= (1 << i);
+        // Claim the slot with a single atomic step: a plain test-then-store
+        // lets two threads select the same slot and return the same ID.
+        // Losing the race means the slot is taken, so just try the next one.
+        PyContext_WatchCallback expected = NULL;
+        if (_Py_atomic_compare_exchange_ptr(&interp->context_watchers[i],
+                                            &expected, callback)) {
+            // Publish the callback before advertising the slot as active.
+            set_context_watcher_bit(interp, i);
             return i;
         }
     }
@@ -210,12 +244,16 @@ PyContext_ClearWatcher(int watcher_id)
         PyErr_Format(PyExc_ValueError, "Invalid context watcher ID %d", watcher_id);
         return -1;
     }
-    if (!interp->context_watchers[watcher_id]) {
+    if (FT_ATOMIC_LOAD_PTR_RELAXED(interp->context_watchers[watcher_id]) == NULL) {
         PyErr_Format(PyExc_ValueError, "No context watcher set for ID %d", watcher_id);
         return -1;
     }
-    interp->context_watchers[watcher_id] = NULL;
-    interp->active_context_watchers &= ~(1 << watcher_id);
+    // Stop notification selecting this slot before retiring the callback, so
+    // the window in which a notifier sees the bit but loads NULL is as short
+    // as possible.  That window is benign: notify_context_watchers() skips a
+    // NULL callback.
+    clear_context_watcher_bit(interp, watcher_id);
+    FT_ATOMIC_STORE_PTR_RELEASE(interp->context_watchers[watcher_id], NULL);
     return 0;
 }
 
