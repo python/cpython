@@ -1077,18 +1077,9 @@ class ExternalEntityParserCreateErrorTest(unittest.TestCase):
         parser.buffer_text = True
         rc_before = sys.getrefcount(parser)
 
-        # We avoid self.assertRaises(MemoryError) here because the
-        # context manager itself needs memory allocations that fail
-        # while the nomemory hook is active.
-        self.testcapi.set_nomemory(1, 10)
-        raised = False
-        try:
-            parser.ExternalEntityParserCreate(None)
-        except MemoryError:
-            raised = True
-        finally:
-            self.testcapi.remove_mem_hooks()
-        self.assertTrue(raised, "MemoryError not raised")
+        with self.assertRaises(MemoryError):
+            with support.inject_memory_error_cm(1, 10):
+                parser.ExternalEntityParserCreate(None)
 
         rc_after = sys.getrefcount(parser)
         self.assertEqual(rc_after, rc_before)

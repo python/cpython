@@ -8,7 +8,7 @@ import libclinic
 from libclinic import fail
 from libclinic import Sentinels, unspecified, unknown, NULL
 from libclinic.codegen import CRenderData, Include, TemplateDict
-from libclinic.function import Function, Parameter
+from libclinic.function import Function, Parameter, SETTERS
 
 
 CConverterClassT = TypeVar("CConverterClassT", bound=type["CConverter"])
@@ -281,11 +281,18 @@ class CConverter(metaclass=CConverterAutoRegister):
     def c_default_init(self) -> None:
         return
 
+    # An alternative name of a preceding parameter: they share
+    # the same C variable.
+    alias_of: Parameter | None = None
+
     def is_optional(self) -> bool:
         return (self.default is not unspecified)
 
     def _render_self(self, parameter: Parameter, data: CRenderData) -> None:
         self.parameter = parameter
+        if self.alias_of is not None:
+            # Everything is rendered for the aliased parameter.
+            return
         name = self.parser_name
 
         # impl_arguments
@@ -306,6 +313,13 @@ class CConverter(metaclass=CConverterAutoRegister):
     ) -> None:
         self.parameter = parameter
         name = self.name
+
+        if self.alias_of is not None:
+            # Only the keyword is new, the rest is rendered for the
+            # aliased parameter.
+            data.keywords.append(parameter.name)
+            data.format_units.append(self.format_unit)
+            return
 
         # declarations
         d = self.declaration(in_parser=True)
@@ -471,6 +485,16 @@ class CConverter(metaclass=CConverterAutoRegister):
 
     def bad_argument(self, displayname: str, expected: str, *, limited_capi: bool, expected_literal: bool = True) -> str:
         assert '"' not in expected
+        if self.function.kind in SETTERS:
+            # The value of an attribute, not an argument of a function.
+            if expected_literal:
+                return (f'PyErr_Format(PyExc_TypeError, '
+                        f'"attribute \'{{{{name}}}}\' must be {expected}, not %T", '
+                        f'{{argname}});')
+            else:
+                return (f'PyErr_Format(PyExc_TypeError, '
+                        f'"attribute \'{{{{name}}}}\' must be %s, not %T", '
+                        f'"{expected}", {{argname}});')
         if limited_capi:
             if expected_literal:
                 return (f'PyErr_Format(PyExc_TypeError, '

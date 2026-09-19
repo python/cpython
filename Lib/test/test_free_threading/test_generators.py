@@ -155,3 +155,64 @@ class TestFTGenerators(unittest.TestCase):
             done.set()
 
         threading_helper.run_concurrently([reader, closer])
+
+    def test_gi_frame_teardown_race(self):
+        ROUNDS = 20000
+
+        def gen():
+            yield 1
+
+        barrier = Barrier(2)
+        shared = {}
+        captured = []
+
+        def reader():
+            for _ in range(ROUNDS):
+                barrier.wait()
+                frame = shared['gen'].gi_frame
+                if frame is not None:
+                    captured.append(frame)
+                barrier.wait()
+
+        def driver():
+            for _ in range(ROUNDS):
+                g = gen()
+                next(g)
+                shared['gen'] = g
+                barrier.wait()
+                try:
+                    next(g)
+                except StopIteration:
+                    pass
+                barrier.wait()
+
+        threading_helper.run_concurrently([reader, driver])
+        shared.clear()
+        for frame in captured:
+            self.assertIsNotNone(frame.f_lineno)
+
+    def test_concurrent_gi_frame(self):
+        frames = set()
+        def gen():
+            for i in range(10000):
+                yield i
+
+        g = gen()
+        done = threading.Event()
+
+        def runner():
+            for _ in g:
+                pass
+            done.set()
+
+        def reader():
+            while not done.is_set():
+                frame = g.gi_frame
+                if frame:
+                    frame.f_code
+                    frame.f_locals
+                    frames.add(frame)
+            self.assertIsNone(g.gi_frame)
+
+        threading_helper.run_concurrently([runner, reader])
+        self.assertEqual(len(frames), 1)

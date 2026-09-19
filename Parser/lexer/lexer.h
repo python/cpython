@@ -3,6 +3,4 @@
 
 #include "state.h"
 
-int _PyTokenizer_Get(struct tok_state *, struct token *);
-
 #endif

@@ -1,0 +1,2 @@
+:func:`asyncio.wait_for` with a non-positive timeout now records the waiter
+in the call graph.

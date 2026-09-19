@@ -214,6 +214,13 @@ class LabelTest(AbstractLabelTest, unittest.TestCase):
     def create(self, **kwargs):
         return ttk.Label(self.root, **kwargs)
 
+    def test_configure_anchor(self):
+        widget = self.create()
+        values = ('n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw', 'center')
+        if get_tk_patchlevel(self.root) >= (9, 0, 5):
+            values += ('',)
+        self.checkEnumParam(widget, 'anchor', *values)
+
     test_configure_justify = StandardOptionsTests.test_configure_justify
 
 
@@ -347,6 +354,7 @@ class EntryTest(AbstractWidgetTest, unittest.TestCase):
     def setUp(self):
         super().setUp()
         self.entry = self.create()
+        self._allow_empty_justify = get_tk_patchlevel(self.root) >= (9, 0, 5)
 
     def create(self, **kwargs):
         return ttk.Entry(self.root, **kwargs)
@@ -2024,19 +2032,23 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
                      lambda e: selects.append(self.tv.selection()))
         self.tv.bind('<<TreeviewOpen>>', lambda e: opens.append(self.tv.focus()))
         self.tv.bind('<<TreeviewClose>>', lambda e: closes.append(self.tv.focus()))
-        self.tv.focus_force()
         self.tv.focus(parent)
         self.tv.selection_set(parent)
         self.tv.update()
 
+        # Force the focus right before generating the event: the window
+        # manager can take it back.
+        self.tv.focus_force()
         self.tv.event_generate('<Right>')  # Open the focused parent.
         self.tv.update()
         self.assertEqual(opens, [parent])
 
+        self.tv.focus_force()
         self.tv.event_generate('<Left>')  # Close it again.
         self.tv.update()
         self.assertEqual(closes, [parent])
 
+        self.tv.focus_force()
         self.tv.event_generate('<Down>')  # Move the selection.
         self.tv.update()
         self.assertEqual(self.tv.selection(), (item2,))

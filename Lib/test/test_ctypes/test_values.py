@@ -3,12 +3,46 @@ A testcase which accesses *values* in a dll.
 """
 
 import _imp
+import ctypes
 import importlib.util
 import sys
 import unittest
 from ctypes import (Structure, CDLL, POINTER, pythonapi,
                     c_ubyte, c_char_p, c_int)
+from test import support
 from test.support import import_helper, thread_unsafe
+
+
+class LibffiVersionTest(unittest.TestCase):
+
+    def _test_libffi_version(self, v, string):
+        self.assertIsInstance(v[:], tuple)
+        self.assertEqual(len(v), 3)
+        self.assertIsInstance(v[0], int)
+        self.assertIsInstance(v[1], int)
+        self.assertIsInstance(v[2], int)
+        self.assertIsInstance(v.major, int)
+        self.assertIsInstance(v.minor, int)
+        self.assertIsInstance(v.patch, int)
+        self.assertEqual(v[0], v.major)
+        self.assertEqual(v[1], v.minor)
+        self.assertEqual(v[2], v.patch)
+        self.assertGreaterEqual(v.major, 3)
+        self.assertGreaterEqual(v.minor, 0)
+        self.assertGreaterEqual(v.patch, 0)
+        self.assertEqual(string, '%d.%d.%d' % v)
+
+    @unittest.skipUnless(hasattr(ctypes, 'LIBFFI_VERSION_INFO'),
+                         'requires libffi >= 3.5')
+    def test_libffi_version(self):
+        if support.verbose:
+            print(f'LIBFFI_VERSION = {ctypes.LIBFFI_VERSION}', flush=True)
+            print(f'libffi_version = {ctypes.libffi_version}', flush=True)
+            print(f'LIBFFI_VERSION_INFO = {ctypes.LIBFFI_VERSION_INFO}', flush=True)
+            print(f'libffi_version_info = {ctypes.libffi_version_info}', flush=True)
+        self._test_libffi_version(ctypes.LIBFFI_VERSION_INFO, ctypes.LIBFFI_VERSION)
+        self._test_libffi_version(ctypes.libffi_version_info, ctypes.libffi_version)
+        self.assertEqual(ctypes.LIBFFI_VERSION_INFO[0], ctypes.libffi_version_info[0])
 
 
 class ValuesTestCase(unittest.TestCase):

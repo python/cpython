@@ -708,7 +708,7 @@ Specifying function pointers using type annotations
 
       @wrap_dll_function(dll_to_wrap)
       def function_ptr_name(arg_name: ctypes_type, ...) -> ctypes_type:
-         """Optional docstring. There should be no function body."""
+          """Optional docstring. There should be no function body."""
 
    The body of the decorated function is ignored, and any parameters that are
    missing type annotations are skipped. The names of the parameters are ignored
@@ -728,7 +728,7 @@ Specifying function pointers using type annotations
 
       @wrap_dll_function(ctypes.pythonapi)
       def PyObject_GetAttrString(op: ctypes.py_object, attr: ctypes.c_char_p) -> ctypes.py_object:
-         pass
+          pass
 
       PyObject_GetAttrString(42, b"real")
 
@@ -3207,7 +3207,7 @@ fields, or any other data types containing pointer type fields.
       that should be merged into a containing structure or union.
 
 
-.. decorator:: struct(*, align=None, layout, endian='native', pack=None)
+.. decorator:: struct(*, align=None, layout=None, endian='native', pack=None)
    :module: ctypes.util
 
    A :term:`decorator` that allows generating structure types using an
@@ -3244,14 +3244,18 @@ fields, or any other data types containing pointer type fields.
 
    .. code-block:: python
 
+      from typing import Annotated
+      from ctypes import c_ssize_t, c_void_p
+      from ctypes.util import struct, CFieldInfo
+
       @struct
       class PyObject:
-         ob_refcnt: c_ssize_t
-         ob_type: c_void_p
+          ob_refcnt: c_ssize_t
+          ob_type: c_void_p
 
       @struct
       class PyHovercraftObject:
-         ob_base: Annotated[PyObject, CFieldInfo(anonymous=True)]
+          ob_base: Annotated[PyObject, CFieldInfo(anonymous=True)]
 
    .. versionadded:: next
 
@@ -3379,3 +3383,47 @@ Exceptions
    .. availability:: Windows
 
    .. versionadded:: 3.14
+
+
+Library version
+^^^^^^^^^^^^^^^
+
+The following constants are only available if :mod:`!ctypes` was built with
+libffi 3.5 or later, which is the first version providing this information.
+
+.. data:: LIBFFI_VERSION
+
+   The version string of the libffi library that was used for building
+   the module, like ``'3.5.2'``.
+   This may be different from the libffi library actually used at runtime,
+   which is available as :const:`libffi_version`.
+
+   .. versionadded:: next
+
+.. data:: libffi_version
+
+   The version string of the libffi library actually loaded by the interpreter.
+
+   .. versionadded:: next
+
+.. data:: LIBFFI_VERSION_INFO
+
+   A named tuple containing the three components of the libffi library
+   version that was used for building the module:
+   *major*, *minor*, and *patch*.
+   All values are integers.
+   The components can also be accessed by name,
+   so ``ctypes.LIBFFI_VERSION_INFO[0]`` is equivalent to
+   ``ctypes.LIBFFI_VERSION_INFO.major`` and so on.
+   This may be different from the libffi library actually used at runtime,
+   which is available as :const:`libffi_version_info`.
+
+   .. versionadded:: next
+
+.. data:: libffi_version_info
+
+   A named tuple containing the version of the libffi library
+   actually loaded by the interpreter,
+   with the same fields as :const:`LIBFFI_VERSION_INFO`.
+
+   .. versionadded:: next
