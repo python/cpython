@@ -871,6 +871,36 @@ class BasicTest(BaseTest):
         self.assertEndsWith(lines[1], env_name.encode())
 
     @unittest.skipUnless(os.name == 'nt', 'only relevant on Windows')
+    def test_activate_bat_preserves_foreign_path(self):
+        # gh-157692: cmd.exe and POSIX shells must not share saved PATH state.
+        venv.create(self.env_dir)
+        activate = self.get_env_file(self.bindir, 'activate.bat')
+        deactivate = self.get_env_file(self.bindir, 'deactivate.bat')
+        test_batch = self.get_env_file('test_saved_path.bat')
+        with open(test_batch, 'w') as f:
+            f.write('@echo off\n'
+                    'set "_OLD_VIRTUAL_PATH=/posix/saved/path"\n'
+                    'set "_OLD_VIRTUAL_PATH_BAT="\n'
+                    'path\n'
+                    f'call "{activate}"\n'
+                    'path\n'
+                    f'call "{activate}"\n'
+                    'path\n'
+                    f'call "{deactivate}"\n'
+                    'path\n'
+                    'echo FOREIGN:%_OLD_VIRTUAL_PATH%\n')
+        out, err = check_output([test_batch], encoding='oem')
+        paths = [line.partition('=')[2] for line in out.splitlines()
+                 if line.upper().startswith('PATH=')]
+        self.assertEqual(len(paths), 4, out)
+        original, active, repeated, restored = paths
+        self.assertEqual(active,
+                         os.path.join(self.env_dir, self.bindir) + ';' + original)
+        self.assertEqual(repeated, active)
+        self.assertEqual(restored, original)
+        self.assertIn('FOREIGN:/posix/saved/path', out.splitlines())
+
+    @unittest.skipUnless(os.name == 'nt', 'only relevant on Windows')
     def test_unicode_in_batch_file(self):
         """
         Test handling of Unicode paths
