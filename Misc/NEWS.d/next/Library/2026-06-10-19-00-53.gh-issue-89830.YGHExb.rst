@@ -1,0 +1,2 @@
+Fix unhelpful error message when :mod:`venv` fails to install pip via
+:mod:`ensurepip` by displaying the subprocess stderr output.
