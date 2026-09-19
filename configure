@@ -14151,19 +14151,25 @@ printf %s "checking for --with-address-sanitizer... " >&6; }
 if test ${with_address_sanitizer+y}
 then :
   withval=$with_address_sanitizer;
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $withval" >&5
-printf "%s\n" "$withval" >&6; }
+else case e in #(
+  e) with_address_sanitizer=no ;;
+esac
+fi
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_address_sanitizer" >&5
+printf "%s\n" "$with_address_sanitizer" >&6; }
+if test "x$with_address_sanitizer" = xno
+then :
+
+else case e in #(
+  e)
 BASECFLAGS="-fsanitize=address -fno-omit-frame-pointer $BASECFLAGS"
 LDFLAGS="-fsanitize=address $LDFLAGS"
 # ASan works by controlling memory allocation, our own malloc interferes.
 with_pymalloc="no"
-
-else case e in #(
-  e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; } ;;
+ ;;
 esac
 fi
-
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-memory-sanitizer" >&5
 printf %s "checking for --with-memory-sanitizer... " >&6; }
@@ -14172,8 +14178,18 @@ printf %s "checking for --with-memory-sanitizer... " >&6; }
 if test ${with_memory_sanitizer+y}
 then :
   withval=$with_memory_sanitizer;
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $withval" >&5
-printf "%s\n" "$withval" >&6; }
+else case e in #(
+  e) with_memory_sanitizer=no ;;
+esac
+fi
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_memory_sanitizer" >&5
+printf "%s\n" "$with_memory_sanitizer" >&6; }
+if test "x$with_memory_sanitizer" = xno
+then :
+
+else case e in #(
+  e)
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -fsanitize=memory" >&5
 printf %s "checking whether C compiler accepts -fsanitize=memory... " >&6; }
 if test ${ax_cv_check_cflags___fsanitize_memory+y}
@@ -14220,13 +14236,9 @@ fi
 
 # MSan works by controlling memory allocation, our own malloc interferes.
 with_pymalloc="no"
-
-else case e in #(
-  e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; } ;;
+ ;;
 esac
 fi
-
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-undefined-behavior-sanitizer" >&5
 printf %s "checking for --with-undefined-behavior-sanitizer... " >&6; }
@@ -14235,21 +14247,26 @@ printf %s "checking for --with-undefined-behavior-sanitizer... " >&6; }
 if test ${with_undefined_behavior_sanitizer+y}
 then :
   withval=$with_undefined_behavior_sanitizer;
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $withval" >&5
-printf "%s\n" "$withval" >&6; }
-BASECFLAGS="-fsanitize=undefined $BASECFLAGS"
-LDFLAGS="-fsanitize=undefined $LDFLAGS"
-with_ubsan="yes"
-
 else case e in #(
-  e)
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; }
-with_ubsan="no"
- ;;
+  e) with_undefined_behavior_sanitizer=no ;;
 esac
 fi
 
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_undefined_behavior_sanitizer" >&5
+printf "%s\n" "$with_undefined_behavior_sanitizer" >&6; }
+if test "x$with_undefined_behavior_sanitizer" = xno
+then :
+
+with_ubsan="no"
+
+else case e in #(
+  e)
+BASECFLAGS="-fsanitize=undefined $BASECFLAGS"
+LDFLAGS="-fsanitize=undefined $LDFLAGS"
+with_ubsan="yes"
+ ;;
+esac
+fi
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-thread-sanitizer" >&5
 printf %s "checking for --with-thread-sanitizer... " >&6; }
@@ -14258,21 +14275,26 @@ printf %s "checking for --with-thread-sanitizer... " >&6; }
 if test ${with_thread_sanitizer+y}
 then :
   withval=$with_thread_sanitizer;
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $withval" >&5
-printf "%s\n" "$withval" >&6; }
-BASECFLAGS="-fsanitize=thread $BASECFLAGS"
-LDFLAGS="-fsanitize=thread $LDFLAGS"
-with_tsan="yes"
-
 else case e in #(
-  e)
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; }
-with_tsan="no"
- ;;
+  e) with_thread_sanitizer=no ;;
 esac
 fi
 
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_thread_sanitizer" >&5
+printf "%s\n" "$with_thread_sanitizer" >&6; }
+if test "x$with_thread_sanitizer" = xno
+then :
+
+with_tsan="no"
+
+else case e in #(
+  e)
+BASECFLAGS="-fsanitize=thread $BASECFLAGS"
+LDFLAGS="-fsanitize=thread $LDFLAGS"
+with_tsan="yes"
+ ;;
+esac
+fi
 
 # Set info about shared libraries.
 
