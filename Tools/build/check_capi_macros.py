@@ -103,7 +103,7 @@ def main():
               "the following macros can be removed:")
         print()
         for name in sorted(outdated):
-            print(f" - {name}")
+            print(f"- {name}")
         print()
         print(f"Total: {len(outdated)} macros")
         print()
