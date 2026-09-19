@@ -638,3 +638,40 @@ rediraffe_redirects = {
     "library/threadsafety.rst": "builtins/threadsafety.rst",
     "library/time-complexity.rst": "builtins/time-complexity.rst",
 }
+
+# Refuse to run the doctest builder under a mismatched Python
+# -----------------------------------------------------------
+
+
+def _check_doctest_interpreter(app):
+    # The doctests are executed by the interpreter running Sphinx,
+    # so refuse to run them if its version doesn't match the source tree.
+    if app.builder.name != "doctest":
+        return
+
+    running_version = f"{sys.version_info.major}.{sys.version_info.minor}"
+    if running_version != version:
+        from sphinx.util import logging as sphinx_logging
+
+        logger = sphinx_logging.getLogger(__name__)
+        logger.error(
+            "The doctests are executed by the Python running Sphinx, "
+            "which is Python %s, however this source tree is Python %s, "
+            "so they would test Python %s rather than the code "
+            "documented here.\n"
+            "Recreate the venv with a matching interpreter, for example: "
+            "'make clean-venv && make venv PYTHON=../python'.",
+            running_version,
+            version,
+            running_version,
+        )
+        raise SystemExit(1)
+
+
+def setup(app):
+    app.connect("builder-inited", _check_doctest_interpreter)
+    return {
+        "version": "1.0",
+        "parallel_read_safe": True,
+        "parallel_write_safe": True,
+    }
