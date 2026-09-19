@@ -23,6 +23,20 @@ class TestKQueue(unittest.TestCase):
         self.assertTrue(kq.closed)
         self.assertRaises(ValueError, kq.fileno)
 
+    def test_control_overflowing_timeout(self):
+        # gh-154836: out-of-range timeouts must raise OverflowError,
+        # not a (misleading) TypeError, like select(), poll() and
+        # epoll() do.
+        kq = select.kqueue()
+        self.addCleanup(kq.close)
+        for timeout in (1e300, float('inf'), 2**200):
+            with self.subTest(timeout=timeout):
+                with self.assertRaises(OverflowError):
+                    kq.control(None, 0, timeout)
+        # Non-numbers still raise TypeError.
+        with self.assertRaises(TypeError):
+            kq.control(None, 0, "0.1")
+
     def test_create_event(self):
         from operator import lt, le, gt, ge
 
@@ -111,6 +125,31 @@ class TestKQueue(unittest.TestCase):
         self.assertEqual(ev, ev)
         self.assertNotEqual(ev, other)
 
+
+    def test_event_attributes(self):
+        fd = os.open(os.devnull, os.O_WRONLY)
+        self.addCleanup(os.close, fd)
+
+        ev = select.kevent(fd)
+        # All attributes are numeric members: they can be set and cannot be
+        # deleted.
+        for name, value in (('ident', 1), ('filter', select.KQ_FILTER_WRITE),
+                            ('flags', select.KQ_EV_DELETE), ('fflags', 2),
+                            ('data', 3), ('udata', 4)):
+            with self.subTest(name=name):
+                setattr(ev, name, value)
+                self.assertEqual(getattr(ev, name), value)
+                with self.assertRaises(TypeError):
+                    setattr(ev, name, 'not a number')
+                with self.assertRaises(OverflowError):
+                    setattr(ev, name, 2**1000)
+                with self.assertRaises(OverflowError):
+                    setattr(ev, name, -2**1000)
+                with self.assertRaisesRegex(
+                        TypeError, "can't delete numeric/char attribute"):
+                    delattr(ev, name)
+                # a failed assignment does not change the value
+                self.assertEqual(getattr(ev, name), value)
 
     def test_queue_event(self):
         serverSocket = socket.create_server(('127.0.0.1', 0))

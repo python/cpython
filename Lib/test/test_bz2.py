@@ -1032,6 +1032,21 @@ class BZ2DecompressorTest(BaseTest):
         # Previously, a second call could crash due to internal inconsistency
         self.assertRaises(Exception, bzd.decompress, self.BAD_DATA * 30)
 
+    def test_decompress_after_data_error(self):
+        data = bytes.fromhex(
+            "425a6839314159265359000000000000007fffff000000000000000000000000"
+            "00000000000000000000000000000000000000e0370000000000000000000000"
+            "000000000000000000000000000000000000000000000000000083f3"
+        )
+        bzd = BZ2Decompressor()
+        with self.assertRaisesRegex(OSError, "Invalid data stream"):
+            bzd.decompress(data)
+        # Previously, a second call could crash due to internal inconsistency
+        self.assertFalse(bzd.needs_input)
+        self.assertFalse(bzd.eof)
+        with self.assertRaisesRegex(ValueError, "previous error"):
+            bzd.decompress(b'\x00' * 18)
+
     @support.refcount_test
     def test_refleaks_in___init__(self):
         gettotalrefcount = support.get_attribute(sys, 'gettotalrefcount')
@@ -1205,6 +1220,33 @@ class OpenTest(BaseTest):
             f.write(text)
         with self.open(self.filename, "rt", encoding="utf-8", newline="\r") as f:
             self.assertEqual(f.readlines(), [text])
+
+
+class MiscTests(unittest.TestCase):
+
+    def test_bzlib_version(self):
+        if support.verbose:
+            print(f'bzlib_version = {bz2.bzlib_version}', flush=True)
+            print(f'bzlib_version_info = {bz2.bzlib_version_info}', flush=True)
+        v = bz2.bzlib_version_info
+        self.assertIsInstance(v[:], tuple)
+        self.assertEqual(len(v), 3)
+        self.assertIsInstance(v[0], int)
+        self.assertIsInstance(v[1], int)
+        self.assertIsInstance(v[2], int)
+        self.assertIsInstance(v.major, int)
+        self.assertIsInstance(v.minor, int)
+        self.assertIsInstance(v.patch, int)
+        self.assertEqual(v[0], v.major)
+        self.assertEqual(v[1], v.minor)
+        self.assertEqual(v[2], v.patch)
+        self.assertGreaterEqual(v.major, 0)
+        self.assertGreaterEqual(v.minor, 0)
+        self.assertGreaterEqual(v.patch, 0)
+
+        # The version string can have a suffix, e.g. "1.0.8, 13-Jul-2019"
+        # for bzip2 or "1.1.0-libbz2-rs-sys-0.2.5" for libbz2-rs.
+        self.assertStartsWith(bz2.bzlib_version, '%d.%d.%d' % v)
 
 
 def tearDownModule():

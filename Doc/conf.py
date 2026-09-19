@@ -8,15 +8,13 @@
 
 import os
 import sys
-from importlib import import_module
 from importlib.util import find_spec
 
 # Make our custom extensions available to Sphinx
 sys.path.append(os.path.abspath('tools/extensions'))
 sys.path.append(os.path.abspath('includes'))
 
-# Python specific content from Doc/Tools/extensions/pyspecific.py
-from pyspecific import SOURCE_URI
+from patchlevel import get_header_version_info, get_version_info
 
 # General configuration
 # ---------------------
@@ -43,9 +41,10 @@ extensions = [
 
 # Skip if downstream redistributors haven't installed them
 _OPTIONAL_EXTENSIONS = (
-    'linklint.ext',
+    'sphinx_linklint.ext',
     'notfound.extension',
     'sphinxext.opengraph',
+    'sphinxext.rediraffe',
     'sphinxcontrib.rsvgconverter',
 )
 for optional_ext in _OPTIONAL_EXTENSIONS:
@@ -78,7 +77,9 @@ _doc_authors = 'Python documentation authors'
 # We look for the Include/patchlevel.h file in the current Python source tree
 # and replace the values accordingly.
 # See Doc/tools/extensions/patchlevel.py
-version, release = import_module('patchlevel').get_version_info()
+version, release = get_version_info()
+v = get_header_version_info()
+branch = "main" if v.releaselevel == "alpha" else f"{v.major}.{v.minor}"
 
 rst_epilog = f"""
 .. |python_version_literal| replace:: ``Python {version}``
@@ -299,6 +300,7 @@ html_context = {
     "repository_url": repository_url or None,
     "pr_id": os.getenv("READTHEDOCS_VERSION"),
     "enable_analytics": os.getenv("PYTHON_DOCS_ENABLE_ANALYTICS"),
+    "source_branch": branch,
 }
 
 # This 'Last updated on:' timestamp is inserted at the bottom of every page.
@@ -307,6 +309,9 @@ html_last_updated_use_utc = True
 
 # Path to find HTML templates to override theme
 templates_path = ['tools/templates']
+
+# We link to sources on GitHub, so don't copy them into the HTML output.
+html_copy_source = False
 
 # Custom sidebar templates, filenames relative to this file.
 html_sidebars = {
@@ -349,8 +354,6 @@ latex_elements = {
   \sphinxstrong{Python Software Foundation}\\
   Email: \sphinxemail{docs@python.org}
 }
-\let\Verbatim=\OriginalVerbatim
-\let\endVerbatim=\endOriginalVerbatim
 \setcounter{tocdepth}{2}
 ''',
     # The paper size ('letterpaper' or 'a4paper').
@@ -363,7 +366,13 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, document class [howto/manual]).
 latex_documents = [
-    ('c-api/index', 'c-api.tex', 'The Python/C API', _doc_authors, 'manual'),
+    (
+        'c-api/index',
+        'c-api.tex',
+        'The Python/C API',
+        _doc_authors,
+        'manual',
+    ),
     (
         'extending/index',
         'extending.tex',
@@ -375,6 +384,13 @@ latex_documents = [
         'installing/index',
         'installing.tex',
         'Installing Python Modules',
+        _doc_authors,
+        'manual',
+    ),
+    (
+        'builtins/index',
+        'builtins.tex',
+        'Python Built-ins Reference',
         _doc_authors,
         'manual',
     ),
@@ -557,6 +573,7 @@ linkcheck_ignore = [
     r'https://unix.org/version2/whatsnew/lp64_wp.html',
 ]
 
+
 # Options for sphinx.ext.extlinks
 # -------------------------------
 
@@ -566,7 +583,7 @@ linkcheck_ignore = [
 extlinks = {
     "oss-fuzz": ("https://issues.oss-fuzz.com/issues/%s", "#%s"),
     "pypi": ("https://pypi.org/project/%s/", "%s"),
-    "source": (SOURCE_URI, "%s"),
+    "source": (f"https://github.com/python/cpython/tree/{branch}/%s", "%s"),
 }
 extlinks_detect_hardcoded_links = True
 
@@ -606,3 +623,16 @@ if 'create-social-cards' not in tags:  # noqa: F821
         '<meta property="og:image:width" content="200">',
         '<meta property="og:image:height" content="200">',
     )
+
+# Options for sphinxext-rediraffe
+# -------------------------------
+
+rediraffe_redirects = {
+    # Splitting builtins from library
+    "library/functions.rst": "builtins/functions.rst",
+    "library/stdtypes.rst": "builtins/stdtypes.rst",
+    "library/constants.rst": "builtins/constants.rst",
+    "library/exceptions.rst": "builtins/exceptions.rst",
+    "library/threadsafety.rst": "builtins/threadsafety.rst",
+    "library/time-complexity.rst": "builtins/time-complexity.rst",
+}

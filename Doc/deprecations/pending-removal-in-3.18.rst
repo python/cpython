@@ -10,3 +10,9 @@ Pending removal in Python 3.18
     specifier ``'N'``, which is only supported in the :mod:`!decimal` module's
     C implementation, has been deprecated since Python 3.13.
     (Contributed by Serhiy Storchaka in :gh:`89902`.)
+
+* Deprecations defined by :pep:`829`:
+
+  * ``import`` lines in :file:`{name}.pth` files are silently ignored.
+
+  (Contributed by Barry Warsaw in :gh:`148641`.)

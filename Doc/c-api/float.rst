@@ -233,9 +233,6 @@ most likely :exc:`OverflowError`).
 
    Pack a C double as the IEEE 754 binary64 double precision format.
 
-   .. impl-detail::
-      This function always succeeds in CPython.
-
 
 Unpack functions
 ^^^^^^^^^^^^^^^^
@@ -250,9 +247,6 @@ on little endian processor.
 Return value: The unpacked double.  On error, this is ``-1.0`` and
 :c:func:`PyErr_Occurred` is true (and an exception is set, most likely
 :exc:`OverflowError`).
-
-.. impl-detail::
-    These functions always succeed in CPython.
 
 .. c:function:: double PyFloat_Unpack2(const char *p, int le)
 

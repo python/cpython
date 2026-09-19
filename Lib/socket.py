@@ -123,7 +123,7 @@ if sys.platform.lower().startswith("win"):
         10004: "The operation was interrupted.",
         10009: "A bad file handle was passed.",
         10013: "Permission denied.",
-        10014: "A fault occurred on the network??",
+        10014: "An invalid pointer was passed.",
         10022: "An invalid operation was attempted.",
         10024: "Too many open files.",
         10035: "The socket operation would block.",
@@ -181,7 +181,7 @@ if sys.platform.lower().startswith("win"):
         11001: "Host not found.",
         11002: "Nonauthoritative host not found.",
         11003: "This is a nonrecoverable error.",
-        11004: "Valid name, no data record requested type.",
+        11004: "Valid name, no data record of requested type.",
         11005: "QoS receivers.",
         11006: "QoS senders.",
         11007: "No QoS senders.",
@@ -197,7 +197,7 @@ if sys.platform.lower().startswith("win"):
         11017: "QoS flowspec error.",
         11018: "Invalid QoS provider buffer.",
         11019: "Invalid QoS filter style.",
-        11020: "Invalid QoS filter style.",
+        11020: "Invalid QoS filter type.",
         11021: "Incorrect QoS filter count.",
         11022: "Invalid QoS object length.",
         11023: "Incorrect QoS flow count.",
@@ -327,7 +327,17 @@ class socket(_socket.socket):
             rawmode += "w"
         raw = SocketIO(self, rawmode)
         self._io_refs += 1
+        line_buffering = False
         if buffering is None:
+            buffering = -1
+        if buffering == 1:
+            if binary:
+                import warnings
+                warnings.warn("line buffering (buffering=1) isn't supported "
+                              "in binary mode, the default buffer size will "
+                              "be used", RuntimeWarning, 2)
+            else:
+                line_buffering = True
             buffering = -1
         if buffering < 0:
             buffering = io.DEFAULT_BUFFER_SIZE
@@ -345,7 +355,8 @@ class socket(_socket.socket):
         if binary:
             return buffer
         encoding = io.text_encoding(encoding)
-        text = io.TextIOWrapper(buffer, encoding, errors, newline)
+        text = io.TextIOWrapper(
+            buffer, encoding, errors, newline, line_buffering)
         text.mode = mode
         return text
 
@@ -900,7 +911,9 @@ def has_dualstack_ipv6():
     try:
         with socket(AF_INET6, SOCK_STREAM) as sock:
             sock.setsockopt(IPPROTO_IPV6, IPV6_V6ONLY, 0)
-            return True
+            # On some platforms (e.g. DragonFly BSD) setting IPV6_V6ONLY to 0
+            # silently has no effect, so check that it was actually cleared.
+            return sock.getsockopt(IPPROTO_IPV6, IPV6_V6ONLY) == 0
     except error:
         return False
 

@@ -55,14 +55,15 @@ _codecs.register
 
 Register a codec search function.
 
-Search functions are expected to take one argument, the encoding name in
-all lower case letters, and either return None, or a tuple of functions
-(encoder, decoder, stream_reader, stream_writer) (or a CodecInfo object).
+Search functions are expected to take one argument, the encoding
+name in all lower case letters, and either return None, or a tuple
+of functions (encoder, decoder, stream_reader, stream_writer) (or
+a CodecInfo object).
 [clinic start generated code]*/
 
 static PyObject *
 _codecs_register(PyObject *module, PyObject *search_function)
-/*[clinic end generated code: output=d1bf21e99db7d6d3 input=369578467955cae4]*/
+/*[clinic end generated code: output=d1bf21e99db7d6d3 input=2321d8c8c0420dfc]*/
 {
     if (PyCodec_Register(search_function))
         return NULL;
@@ -116,16 +117,16 @@ _codecs.encode
 Encodes obj using the codec registered for encoding.
 
 The default encoding is 'utf-8'.  errors may be given to set a
-different error handling scheme.  Default is 'strict' meaning that encoding
-errors raise a ValueError.  Other possible values are 'ignore', 'replace'
-and 'backslashreplace' as well as any other name registered with
-codecs.register_error that can handle ValueErrors.
+different error handling scheme.  Default is 'strict' meaning that
+encoding errors raise a ValueError.  Other possible values are 'ignore',
+'replace' and 'backslashreplace' as well as any other name registered
+with codecs.register_error that can handle ValueErrors.
 [clinic start generated code]*/
 
 static PyObject *
 _codecs_encode_impl(PyObject *module, PyObject *obj, const char *encoding,
                     const char *errors)
-/*[clinic end generated code: output=385148eb9a067c86 input=cd5b685040ff61f0]*/
+/*[clinic end generated code: output=385148eb9a067c86 input=e5271d443e391d7f]*/
 {
     if (encoding == NULL)
         encoding = PyUnicode_GetDefaultEncoding();
@@ -143,16 +144,16 @@ _codecs.decode
 Decodes obj using the codec registered for encoding.
 
 Default encoding is 'utf-8'.  errors may be given to set a
-different error handling scheme.  Default is 'strict' meaning that encoding
-errors raise a ValueError.  Other possible values are 'ignore', 'replace'
-and 'backslashreplace' as well as any other name registered with
-codecs.register_error that can handle ValueErrors.
+different error handling scheme.  Default is 'strict' meaning that
+encoding errors raise a ValueError.  Other possible values are 'ignore',
+'replace' and 'backslashreplace' as well as any other name registered
+with codecs.register_error that can handle ValueErrors.
 [clinic start generated code]*/
 
 static PyObject *
 _codecs_decode_impl(PyObject *module, PyObject *obj, const char *encoding,
                     const char *errors)
-/*[clinic end generated code: output=679882417dc3a0bd input=7702c0cc2fa1add6]*/
+/*[clinic end generated code: output=679882417dc3a0bd input=3e6254628f9ca538]*/
 {
     if (encoding == NULL)
         encoding = PyUnicode_GetDefaultEncoding();
@@ -641,6 +642,31 @@ _codecs_code_page_decode_impl(PyObject *module, int codepage,
 
 #endif /* MS_WINDOWS */
 
+#ifdef HAVE_ICONV
+
+/*[clinic input]
+_codecs.iconv_decode
+    encoding: str
+    data: Py_buffer
+    errors: str(accept={str, NoneType}) = None
+    final: bool = False
+    /
+[clinic start generated code]*/
+
+static PyObject *
+_codecs_iconv_decode_impl(PyObject *module, const char *encoding,
+                          Py_buffer *data, const char *errors, int final)
+/*[clinic end generated code: output=6c6145a9decc2ba8 input=d15a04d7d3a3e0cd]*/
+{
+    Py_ssize_t consumed = data->len;
+    PyObject *decoded = _PyUnicode_DecodeIconv(encoding, data->buf, data->len,
+                                               errors,
+                                               final ? NULL : &consumed);
+    return codec_tuple(decoded, consumed);
+}
+
+#endif /* HAVE_ICONV */
+
 /* --- Encoder ------------------------------------------------------------ */
 
 /*[clinic input]
@@ -951,6 +977,27 @@ _codecs_code_page_encode_impl(PyObject *module, int code_page, PyObject *str,
 
 #endif /* MS_WINDOWS */
 
+#ifdef HAVE_ICONV
+
+/*[clinic input]
+_codecs.iconv_encode
+    encoding: str
+    str: unicode
+    errors: str(accept={str, NoneType}) = None
+    /
+[clinic start generated code]*/
+
+static PyObject *
+_codecs_iconv_encode_impl(PyObject *module, const char *encoding,
+                          PyObject *str, const char *errors)
+/*[clinic end generated code: output=bda0c5acd9be0f17 input=53a1e2028c9e2b43]*/
+{
+    return codec_tuple(_PyUnicode_EncodeIconv(encoding, str, errors),
+                       PyUnicode_GET_LENGTH(str));
+}
+
+#endif /* HAVE_ICONV */
+
 /* --- Error handler registry --------------------------------------------- */
 
 /*[clinic input]
@@ -962,14 +1009,15 @@ _codecs.register_error
 Register the specified error handler under the name errors.
 
 handler must be a callable object, that will be called with an exception
-instance containing information about the location of the encoding/decoding
-error and must return a (replacement, new position) tuple.
+instance containing information about the location of the
+encoding/decoding error and must return a (replacement, new position)
+tuple.
 [clinic start generated code]*/
 
 static PyObject *
 _codecs_register_error_impl(PyObject *module, const char *errors,
                             PyObject *handler)
-/*[clinic end generated code: output=fa2f7d1879b3067d input=5e6709203c2e33fe]*/
+/*[clinic end generated code: output=fa2f7d1879b3067d input=5bea01dfe835d9d8]*/
 {
     if (PyCodec_RegisterError(errors, handler))
         return NULL;
@@ -1007,13 +1055,13 @@ _codecs.lookup_error
 
 lookup_error(errors) -> handler
 
-Return the error handler for the specified error handling name or raise a
-LookupError, if no handler exists under this name.
+Return the error handler for the specified error handling name or raise
+a LookupError, if no handler exists under this name.
 [clinic start generated code]*/
 
 static PyObject *
 _codecs_lookup_error_impl(PyObject *module, const char *name)
-/*[clinic end generated code: output=087f05dc0c9a98cc input=4775dd65e6235aba]*/
+/*[clinic end generated code: output=087f05dc0c9a98cc input=86cfb6a7a9c67113]*/
 {
     return PyCodec_LookupError(name);
 }
@@ -1105,6 +1153,8 @@ static PyMethodDef _codecs_functions[] = {
     _CODECS_OEM_DECODE_METHODDEF
     _CODECS_CODE_PAGE_ENCODE_METHODDEF
     _CODECS_CODE_PAGE_DECODE_METHODDEF
+    _CODECS_ICONV_ENCODE_METHODDEF
+    _CODECS_ICONV_DECODE_METHODDEF
     _CODECS_REGISTER_ERROR_METHODDEF
     _CODECS__UNREGISTER_ERROR_METHODDEF
     _CODECS_LOOKUP_ERROR_METHODDEF

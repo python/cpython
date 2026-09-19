@@ -363,7 +363,10 @@ _PyObject_MiRealloc(void *ctx, void *ptr, size_t nbytes)
         _mi_memcpy((char*)newp + offset, (char*)ptr + offset, copy_size - offset);
     }
     else {
-        _mi_memcpy(newp, ptr, copy_size);
+        // memcpy(dst, NULL, 0) is undefined behavior. See gh-151297.
+        if mi_likely(ptr) {
+            _mi_memcpy(newp, ptr, copy_size);
+        }
     }
     mi_free(ptr);
     return newp;
@@ -665,6 +668,9 @@ _PyMem_ArenaAlloc(void *Py_UNUSED(ctx), size_t size)
     if (ptr == MAP_FAILED)
         return NULL;
     assert(ptr != NULL);
+#ifdef MADV_HUGEPAGE
+    (void)madvise(ptr, size, MADV_HUGEPAGE);
+#endif
     (void)_PyAnnotateMemoryMap(ptr, size, "cpython:pymalloc");
     return ptr;
 #else
@@ -3249,10 +3255,10 @@ _PyMem_DebugRawRealloc(void *ctx, void *p, size_t nbytes)
     }
     else {
         size_t i = original_nbytes - ERASED_SIZE;
-        memcpy(data, save, Py_MIN(nbytes, ERASED_SIZE));
+        memcpy(data, save, Py_MIN(nbytes, (size_t)ERASED_SIZE));
         if (nbytes > i) {
             memcpy(data + i, &save[ERASED_SIZE],
-                   Py_MIN(nbytes - i, ERASED_SIZE));
+                   Py_MIN(nbytes - i, (size_t)ERASED_SIZE));
         }
     }
 #endif

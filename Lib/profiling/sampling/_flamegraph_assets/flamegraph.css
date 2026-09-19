@@ -315,6 +315,12 @@ body.resizing-sidebar {
 }
 
 /* View Mode Section */
+.view-mode-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .view-mode-section .section-content {
   display: flex;
   flex-direction: column;
@@ -1067,7 +1073,8 @@ body.resizing-sidebar {
    -------------------------------------------------------------------------- */
 
 #toggle-invert .toggle-track.on,
-#toggle-elided .toggle-track.on {
+#toggle-elided .toggle-track.on,
+#toggle-path-display .toggle-track.on {
   background: #8e44ad;
   border-color: #8e44ad;
   box-shadow: 0 0 8px rgba(142, 68, 173, 0.3);

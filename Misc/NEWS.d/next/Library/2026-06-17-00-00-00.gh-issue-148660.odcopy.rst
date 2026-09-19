@@ -1,0 +1,3 @@
+Fix a crash in :meth:`!collections.OrderedDict.copy` when a key's
+``__eq__`` or a subclass method mutates the dict during the copy.  Now
+raises :exc:`RuntimeError` instead, as iteration does.

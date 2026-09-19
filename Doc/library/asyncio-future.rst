@@ -101,6 +101,8 @@ Future Object
    implementations can inject their own optimized implementations
    of a Future object.
 
+   Futures are :ref:`generic <generics>` over the type of their results.
+
    .. versionchanged:: 3.7
       Added support for the :mod:`contextvars` module.
 

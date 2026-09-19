@@ -834,17 +834,22 @@ inline_comprehension(PySTEntryObject *ste, PySTEntryObject *comp,
             return 0;
         }
         // __class__, __classdict__ and __conditional_annotations__ are
-        // never allowed to be free through a class scope (see
-        // drop_class_free)
+        // not allowed to be free through a class scope (see
+        // drop_class_free) unless children scopes need it
         if (scope == FREE && ste->ste_type == ClassBlock &&
                 (_PyUnicode_EqualToASCIIString(k, "__class__") ||
                  _PyUnicode_EqualToASCIIString(k, "__classdict__") ||
                  _PyUnicode_EqualToASCIIString(k, "__conditional_annotations__"))) {
             scope = GLOBAL_IMPLICIT;
-            if (PySet_Discard(comp_free, k) < 0) {
+            int child_needs_free = is_free_in_any_child(comp, k);
+            if (child_needs_free < 0) {
                 return 0;
             }
-
+            if (!child_needs_free) {
+                if (PySet_Discard(comp_free, k) < 0) {
+                    return 0;
+                }
+            }
             if (_PyUnicode_EqualToASCIIString(k, "__class__")) {
                 remove_dunder_class = 1;
             }
@@ -1450,6 +1455,7 @@ symtable_enter_existing_block(struct symtable *st, PySTEntryObject* ste, bool ad
 
     if (add_to_children && prev) {
         if (PyList_Append(prev->ste_children, (PyObject *)ste) < 0) {
+            symtable_exit_block(st);
             return 0;
         }
     }
@@ -1461,21 +1467,27 @@ symtable_enter_block(struct symtable *st, identifier name, _Py_block_ty block,
                      void *ast, _Py_SourceLocation loc)
 {
     PySTEntryObject *ste = ste_new(st, name, block, ast, loc);
-    if (ste == NULL)
+    if (ste == NULL) {
         return 0;
+    }
     int result = symtable_enter_existing_block(st, ste, /* add_to_children */true);
     Py_DECREF(ste);
+    if (result == 0) {
+        return 0;
+    }
     if (block == AnnotationBlock || block == TypeVariableBlock || block == TypeAliasBlock) {
         _Py_DECLARE_STR(format, ".format");
         // We need to insert code that reads this "parameter" to the function.
         if (!symtable_add_def(st, &_Py_STR(format), DEF_PARAM, loc)) {
+            symtable_exit_block(st);
             return 0;
         }
         if (!symtable_add_def(st, &_Py_STR(format), USE, loc)) {
+            symtable_exit_block(st);
             return 0;
         }
     }
-    return result;
+    return 1;
 }
 
 static long
@@ -1671,7 +1683,7 @@ symtable_enter_type_param_block(struct symtable *st, identifier name,
     if (current_type == ClassBlock) {
         st->st_cur->ste_can_see_class_scope = 1;
         if (!symtable_add_def(st, &_Py_ID(__classdict__), USE, loc)) {
-            return 0;
+            goto error;
         }
     }
     if (kind == ClassDef_kind) {
@@ -1679,36 +1691,39 @@ symtable_enter_type_param_block(struct symtable *st, identifier name,
         // It gets "set" when we create the type params tuple and
         // "used" when we build up the bases.
         if (!symtable_add_def(st, &_Py_STR(type_params), DEF_LOCAL, loc)) {
-            return 0;
+            goto error;
         }
         if (!symtable_add_def(st, &_Py_STR(type_params), USE, loc)) {
-            return 0;
+            goto error;
         }
         // This is used for setting the generic base
         _Py_DECLARE_STR(generic_base, ".generic_base");
         if (!symtable_add_def(st, &_Py_STR(generic_base), DEF_LOCAL, loc)) {
-            return 0;
+            goto error;
         }
         if (!symtable_add_def(st, &_Py_STR(generic_base), USE, loc)) {
-            return 0;
+            goto error;
         }
     }
     if (has_defaults) {
         _Py_DECLARE_STR(defaults, ".defaults");
         if (!symtable_add_def(st, &_Py_STR(defaults), DEF_PARAM, loc)) {
-            return 0;
+            goto error;
         }
     }
     if (has_kwdefaults) {
         _Py_DECLARE_STR(kwdefaults, ".kwdefaults");
         if (!symtable_add_def(st, &_Py_STR(kwdefaults), DEF_PARAM, loc)) {
-            return 0;
+            goto error;
         }
     }
     return 1;
+error:
+    symtable_exit_block(st);
+    return 0;
 }
 
-/* VISIT, VISIT_SEQ and VIST_SEQ_TAIL take an ASDL type as their second argument.
+/* VISIT, VISIT_SEQ and VISIT_SEQ_TAIL take an ASDL type as their second argument.
    They use the ASDL name to synthesize the name of the C type and the visit
    function.
 
@@ -2673,6 +2688,9 @@ symtable_visit_type_param_bound_or_default(
 
         PyObject *error_msg = PyUnicode_FromFormat("reserved name '%U' cannot be "
                                                    "used for type parameter", name);
+        if (error_msg == NULL) {
+            return 0;
+        }
         PyErr_SetObject(PyExc_SyntaxError, error_msg);
         Py_DECREF(error_msg);
         SET_ERROR_LOCATION(st->st_filename, LOCATION(tp));
@@ -2870,6 +2888,7 @@ symtable_visit_annotation(struct symtable *st, expr_ty annotation, void *key)
         int future_annotations = st->st_future->ff_features & CO_FUTURE_ANNOTATIONS;
         if (current_type == ClassBlock && !future_annotations) {
             st->st_cur->ste_can_see_class_scope = 1;
+            parent_ste->ste_needs_classdict = 1;
             if (!symtable_add_def(st, &_Py_ID(__classdict__), USE, LOCATION(annotation))) {
                 return 0;
             }

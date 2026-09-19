@@ -414,7 +414,7 @@ In some cases, failure is not distinguishable from a successful ``NULL`` result.
 
    See :ref:`duringgc-functions` for common information.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
    .. seealso::
 
@@ -433,7 +433,7 @@ In some cases, failure is not distinguishable from a successful ``NULL`` result.
    The reference is valid for the duration
    of the :c:member:`!tp_traverse` handler call.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
    .. seealso:: :c:func:`PyType_GetBaseByToken`
 
@@ -445,7 +445,7 @@ In some cases, failure is not distinguishable from a successful ``NULL`` result.
    These functions return a :term:`borrowed reference`, which is
    valid for the duration of the :c:member:`!tp_traverse` handler call.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
    .. seealso::
 

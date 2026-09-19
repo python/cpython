@@ -146,7 +146,7 @@ Importing Modules
       alternatives.
 
    .. versionchanged:: 3.15
-      ``__cached__`` is no longer set.
+      The ``__cached__`` attribute is no longer set.
 
 
 .. c:function:: PyObject* PyImport_ExecCodeModuleEx(const char *name, PyObject *co, const char *pathname)
@@ -170,7 +170,7 @@ Importing Modules
       :class:`~importlib.machinery.ModuleSpec` for alternatives.
 
    .. versionchanged:: 3.15
-      ``__cached__`` no longer set.
+      The ``__cached__`` attribute no longer set.
 
 
 .. c:function:: PyObject* PyImport_ExecCodeModuleWithPathnames(const char *name, PyObject *co, const char *pathname, const char *cpathname)
@@ -304,6 +304,11 @@ Importing Modules
 
       Initialization function for a module built into the interpreter.
 
+      Note that the inittab uses "``PyInit``"
+      :ref:`initialization functions <extension-pyinit>`;
+      there is currently no way to include "``PyModExport_``"
+      :ref:`export hooks <extension-export-hook>`.
+
 
 .. c:function:: int PyImport_ExtendInittab(struct _inittab *newtab)
 
@@ -392,11 +397,6 @@ Importing Modules
    .. c:enumerator:: PyImport_LAZY_ALL
 
       Make all imports lazy by default.
-
-   .. c:enumerator:: PyImport_LAZY_NONE
-
-      Disable lazy imports entirely. Even explicit ``lazy`` statements become
-      eager imports.
 
    .. versionadded:: 3.15
 

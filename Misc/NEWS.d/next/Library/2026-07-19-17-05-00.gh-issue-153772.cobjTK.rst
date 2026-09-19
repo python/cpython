@@ -1,0 +1,5 @@
+:func:`isinstance` checks against :mod:`collections.abc` classes such as
+:class:`~collections.abc.Mapping` no longer raise :exc:`AttributeError`
+when the instance has no ``__class__``.  The abstract base class machinery
+now falls back to the object's type in that case, matching the behaviour of
+the built-in :func:`isinstance`.

@@ -11,7 +11,7 @@
    Copyright (c) 2002      Greg Stein <gstein@users.sourceforge.net>
    Copyright (c) 2002      Fred L. Drake, Jr. <fdrake@users.sourceforge.net>
    Copyright (c) 2002-2006 Karl Waclawek <karl@waclawek.net>
-   Copyright (c) 2017-2026 Sebastian Pipping <sebastian@pipping.org>
+   Copyright (c) 2017-2021 Sebastian Pipping <sebastian@pipping.org>
    Copyright (c) 2025      Alfonso Gregory <gfunni234@gmail.com>
    Licensed under the MIT license:
 
@@ -33,6 +33,8 @@
    DAMAGES OR  OTHER LIABILITY, WHETHER  IN AN  ACTION OF CONTRACT,  TORT OR
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+   SPDX-License-Identifier: MIT
 */
 
 #ifdef XML_TOK_NS_C

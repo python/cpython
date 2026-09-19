@@ -1,0 +1,5 @@
+Add the :mod:`curses` window methods :meth:`~curses.window.attr_get`,
+:meth:`~curses.window.attr_set`, :meth:`~curses.window.attr_on`,
+:meth:`~curses.window.attr_off` and :meth:`~curses.window.color_set`, which use
+a separate color pair argument instead of packing it into the attribute value,
+and the corresponding ``WA_*`` attribute constants.

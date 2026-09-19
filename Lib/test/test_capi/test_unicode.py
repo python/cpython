@@ -1,7 +1,9 @@
-import unittest
 import sys
+import textwrap
+import unittest
 from test import support
 from test.support import threading_helper
+from test.support.script_helper import assert_python_failure
 
 try:
     import _testcapi
@@ -842,15 +844,17 @@ class CAPITest(unittest.TestCase):
         if SIZEOF_WCHAR_T == 2:
             self.assertEqual(fromwidechar('a\U0001f600'.encode(encoding), 2), 'a\ud83d')
 
-        self.assertRaises(MemoryError, fromwidechar, b'', PY_SSIZE_T_MAX)
         self.assertRaises(SystemError, fromwidechar, b'\0'*SIZEOF_WCHAR_T, -2)
-        self.assertRaises(SystemError, fromwidechar, b'\0'*SIZEOF_WCHAR_T, PY_SSIZE_T_MIN)
         self.assertEqual(fromwidechar(NULL, 0), '')
         self.assertRaises(SystemError, fromwidechar, NULL, 1)
         self.assertRaises(SystemError, fromwidechar, NULL, PY_SSIZE_T_MAX)
         self.assertRaises(SystemError, fromwidechar, NULL, -1)
         self.assertRaises(SystemError, fromwidechar, NULL, -2)
         self.assertRaises(SystemError, fromwidechar, NULL, PY_SSIZE_T_MIN)
+
+        # The following tests are skipped since they rely on undefined behavior
+        #self.assertRaises(MemoryError, fromwidechar, b'', PY_SSIZE_T_MAX)
+        #self.assertRaises(SystemError, fromwidechar, b'\0'*SIZEOF_WCHAR_T, PY_SSIZE_T_MIN)
 
     @support.cpython_only
     @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
@@ -1978,6 +1982,33 @@ class PyUnicodeWriterTest(unittest.TestCase):
         writer = self.create_writer(0)
         writer.write_substring("abc", 1, 1)
         self.assertEqual(writer.finish(), '')
+
+    def test_singletons(self):
+        writer = self.create_writer(5)
+        self.assertIs(writer.finish(), '')
+
+        for ch in range(256):
+            with self.subTest(ch=ch):
+                ch = chr(ch)
+                writer = self.create_writer(0)
+                writer.write_substring(ch + 'xxx', 0, 1)
+                self.assertIs(writer.finish(), ch)
+
+    @unittest.skipUnless(support.Py_DEBUG, 'need debug build (Py_DEBUG)')
+    def test_detect_overflow(self):
+        # Test detection of buffer overflow
+        code = textwrap.dedent('''
+            from test.support import SuppressCrashReport
+            import _testinternalcapi
+
+            SuppressCrashReport().__enter__()
+            _testinternalcapi.unicodewriter_overflow()
+        ''')
+        proc = assert_python_failure('-c', code)
+        self.assertIn(b'Buffer overflow detected in PyUnicodeWriter', proc.err)
+        # Do not test the position value since it depends on the overallocation
+        # strategy which depends on the operating system
+        self.assertIn(f'at position '.encode(), proc.err)
 
 
 @unittest.skipIf(ctypes is None, 'need ctypes')

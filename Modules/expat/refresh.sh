@@ -12,9 +12,9 @@ fi
 
 # Update this when updating to a new version after verifying that the changes
 # the update brings in are good. These values are used for verifying the SBOM, too.
-expected_libexpat_tag="R_2_7_5"
-expected_libexpat_version="2.7.5"
-expected_libexpat_sha256="9931f9860d18e6cf72d183eb8f309bfb96196c00e1d40caa978e95bc9aa978b6"
+expected_libexpat_tag="R_2_8_4"
+expected_libexpat_version="2.8.4"
+expected_libexpat_sha256="b8ece2437692dad44d851c4532723390a5a330990007706be9c8d2b90d294f36"
 
 expat_dir="$(realpath "$(dirname -- "${BASH_SOURCE[0]}")")"
 cd ${expat_dir}
@@ -33,13 +33,16 @@ lib_files=(
   asciitab.h
   expat.h
   expat_external.h
+  fallthrough.h
   iasciitab.h
   internal.h
   latin1tab.h
+  memory_sanitizer.h
   nametab.h
   siphash.h
   utf8tab.h
   winconfig.h
+  xcsinc.c
   xmlparse.c
   xmlrole.c
   xmlrole.h
@@ -60,6 +63,18 @@ sed -i 's/#  define Expat_External_INCLUDED 1/&\n\/* Namespace external symbols 
 if ! grep -q '#include "pyexpatns\.h"' expat_external.h; then
   echo "
 Error: namespacing include not found in expat_external.h;
+This may be due to source changes and will require updating this script" >&2
+  exit 1
+fi
+
+# Step 4: Skip the Windows rand_s entropy path in xmlparse.c when
+# XML_POOR_ENTROPY is set.
+sed -z -i 's|#if defined(_WIN32)\n#  include "random_rand_s\.h"\n#endif /\* defined(_WIN32) \*/|#if defined(_WIN32) \&\& ! defined(XML_POOR_ENTROPY)\n#  include "random_rand_s.h"\n#endif /* defined(_WIN32) \&\& ! defined(XML_POOR_ENTROPY) */|' xmlparse.c
+sed -z -i 's|#  ifdef _WIN32\n  if (writeRandomBytes_rand_s|#  if defined(_WIN32) \&\& ! defined(XML_POOR_ENTROPY)\n  if (writeRandomBytes_rand_s|' xmlparse.c
+
+if ! grep -q '#if defined(_WIN32) && ! defined(XML_POOR_ENTROPY)' xmlparse.c; then
+  echo "
+Error: rand_s gate not patched in xmlparse.c;
 This may be due to source changes and will require updating this script" >&2
   exit 1
 fi

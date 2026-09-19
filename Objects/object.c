@@ -198,10 +198,11 @@ refchain_init(PyInterpreterState *interp)
         return 0;
     }
     _Py_hashtable_allocator_t alloc = {
-        // Don't use default PyMem_Malloc() and PyMem_Free() which
-        // require the caller to hold the GIL.
-        .malloc = PyMem_RawMalloc,
-        .free = PyMem_RawFree,
+        // Use directly malloc() and free() of the C library. Using
+        // PyMem_RawMalloc() and PyMem_RawFree() prevents testing
+        // _testcapi.set_nomemory().
+        .malloc = malloc,
+        .free = free,
     };
     REFCHAIN(interp) = _Py_hashtable_new_full(
         _Py_hashtable_hash_ptr, _Py_hashtable_compare_direct,
@@ -2519,14 +2520,15 @@ _PyObject_FiniState(PyInterpreterState *interp)
 }
 
 
-extern PyTypeObject _PyAnextAwaitable_Type;
+extern PyTypeObject _PyACallIter_Type;
+extern PyTypeObject _PyACallIterAwaitable_Type;
 extern PyTypeObject _PyLegacyEventHandler_Type;
 extern PyTypeObject _PyLineIterator;
 extern PyTypeObject _PyMemoryIter_Type;
 extern PyTypeObject _PyPositionsIterator;
 extern PyTypeObject _Py_GenericAliasIterType;
 
-static PyTypeObject* static_types[] = {
+static PyTypeObject* static_types[_Py_NUM_MANAGED_PREINITIALIZED_TYPES] = {
     // The two most important base types: must be initialized first and
     // deallocated last.
     &PyBaseObject_Type,
@@ -2597,6 +2599,7 @@ static PyTypeObject* static_types[] = {
     &PyRange_Type,
     &PyReversed_Type,
     &PySTEntry_Type,
+    &PySentinel_Type,
     &PySeqIter_Type,
     &PySetIter_Type,
     &PySet_Type,
@@ -2611,7 +2614,8 @@ static PyTypeObject* static_types[] = {
     &PyWrapperDescr_Type,
     &PyZip_Type,
     &Py_GenericAliasType,
-    &_PyAnextAwaitable_Type,
+    &_PyACallIter_Type,
+    &_PyACallIterAwaitable_Type,
     &_PyAsyncGenASend_Type,
     &_PyAsyncGenAThrow_Type,
     &_PyAsyncGenWrappedValue_Type,
@@ -2643,6 +2647,9 @@ static PyTypeObject* static_types[] = {
     &_PyUnion_Type,
 #ifdef _Py_TIER2
     &_PyUOpExecutor_Type,
+#else
+    // The array should have the same size on all builds; see gh-149139
+    NULL,
 #endif
     &_PyWeakref_CallableProxyType,
     &_PyWeakref_ProxyType,
@@ -2667,6 +2674,9 @@ _PyTypes_InitTypes(PyInterpreterState *interp)
     // All other static types (unless initialized elsewhere)
     for (size_t i=0; i < Py_ARRAY_LENGTH(static_types); i++) {
         PyTypeObject *type = static_types[i];
+        if (type == NULL) {
+            continue;
+        }
         if (_PyStaticType_InitBuiltin(interp, type) < 0) {
             return _PyStatus_ERR("Can't initialize builtin type");
         }
@@ -2707,6 +2717,9 @@ _PyTypes_FiniTypes(PyInterpreterState *interp)
     // their base classes.
     for (Py_ssize_t i=Py_ARRAY_LENGTH(static_types)-1; i>=0; i--) {
         PyTypeObject *type = static_types[i];
+        if (type == NULL) {
+            continue;
+        }
         _PyStaticType_FiniBuiltin(interp, type);
     }
 }
@@ -2768,9 +2781,9 @@ _Py_SetImmortalUntracked(PyObject *op)
         return;
     }
 #ifdef Py_GIL_DISABLED
-    op->ob_tid = _Py_UNOWNED_TID;
-    op->ob_ref_local = _Py_IMMORTAL_REFCNT_LOCAL;
-    op->ob_ref_shared = 0;
+    _Py_atomic_store_uintptr_relaxed(&op->ob_tid, _Py_UNOWNED_TID);
+    _Py_atomic_store_uint32_relaxed(&op->ob_ref_local, _Py_IMMORTAL_REFCNT_LOCAL);
+    _Py_atomic_store_ssize_relaxed(&op->ob_ref_shared, 0);
     _Py_atomic_or_uint8(&op->ob_gc_bits, _PyGC_BITS_DEFERRED);
 #elif SIZEOF_VOID_P > 4
     op->ob_flags = _Py_IMMORTAL_FLAGS;
@@ -2808,6 +2821,13 @@ PyUnstable_Object_EnableDeferredRefcount(PyObject *op)
     if (!PyType_IS_GC(Py_TYPE(op))) {
         // Deferred reference counting doesn't work
         // on untracked types.
+        return 0;
+    }
+
+    if (!PyObject_GC_IsTracked(op)) {
+        // When deferred refcount is enabled, the object will only be
+        // deallocated by the tracing garbage collector. So it must be tracked
+        // by the garbage collector.
         return 0;
     }
 
@@ -3207,6 +3227,10 @@ _PyTrash_thread_destroy_chain(PyThreadState *tstate)
          * up distorting allocation statistics.
          */
         _PyObject_ASSERT(op, Py_REFCNT(op) == 0);
+#ifdef Py_TRACE_REFS
+        _Py_ForgetReference(op);
+#endif
+        _PyReftracerTrack(op, PyRefTracer_DESTROY);
         (*dealloc)(op);
     }
 }
@@ -3275,13 +3299,20 @@ _Py_Dealloc(PyObject *op)
     PyTypeObject *type = Py_TYPE(op);
     unsigned long gc_flag = type->tp_flags & Py_TPFLAGS_HAVE_GC;
     destructor dealloc = type->tp_dealloc;
-    PyThreadState *tstate = _PyThreadState_GET();
-    intptr_t margin = _Py_RecursionLimit_GetMargin(tstate);
-    if (margin < 2 && gc_flag) {
-        _PyTrash_thread_deposit_object(tstate, (PyObject *)op);
-        return;
+    PyThreadState *tstate = NULL;
+    intptr_t margin = 0;
+    if (gc_flag) {
+        tstate = _PyThreadState_GET();
+        margin = _Py_RecursionLimit_GetMargin(tstate);
+        if (margin < 2) {
+            _PyTrash_thread_deposit_object(tstate, (PyObject *)op);
+            return;
+        }
     }
 #ifdef Py_DEBUG
+    if (tstate == NULL) {
+        tstate = _PyThreadState_GET();
+    }
 #if !defined(Py_GIL_DISABLED) && !defined(Py_STACKREF_DEBUG)
     /* This assertion doesn't hold for the free-threading build, as
      * PyStackRef_CLOSE_SPECIALIZED is not implemented */
@@ -3323,7 +3354,7 @@ _Py_Dealloc(PyObject *op)
     Py_XDECREF(old_exc);
     Py_DECREF(type);
 #endif
-    if (tstate->delete_later && margin >= 4 && gc_flag) {
+    if (gc_flag && tstate->delete_later && margin >= 4) {
         _PyTrash_thread_destroy_chain(tstate);
     }
 }
@@ -3433,7 +3464,7 @@ _Py_GetConstant_Init(void)
     constants[Py_CONSTANT_ZERO] = _PyLong_GetZero();
     constants[Py_CONSTANT_ONE] = _PyLong_GetOne();
     constants[Py_CONSTANT_EMPTY_STR] = PyUnicode_New(0, 0);
-    constants[Py_CONSTANT_EMPTY_BYTES] = PyBytes_FromStringAndSize(NULL, 0);
+    constants[Py_CONSTANT_EMPTY_BYTES] = PyBytes_FromStringAndSize("", 0);
     constants[Py_CONSTANT_EMPTY_TUPLE] = PyTuple_New(0);
 #ifndef NDEBUG
     for (size_t i=0; i < Py_ARRAY_LENGTH(constants); i++) {

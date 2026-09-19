@@ -62,8 +62,10 @@ _PyBytes_ReverseFind(const char *haystack, Py_ssize_t len_haystack,
 //
 // Export for 'array' shared extension.
 PyAPI_FUNC(void)
-_PyBytes_Repeat(char* dest, Py_ssize_t len_dest,
+_PyBytes_RepeatBuffer(char* dest, Py_ssize_t len_dest,
     const char* src, Py_ssize_t len_src);
+
+PyAPI_FUNC(PyObject *) _PyBytes_Repeat(PyObject *self, Py_ssize_t n);
 
 /* _PyBytesObject_SIZE gives the basic size of a bytes object; any memory allocation
    for a bytes object of length n should request PyBytesObject_SIZE + n bytes.
@@ -72,6 +74,19 @@ _PyBytes_Repeat(char* dest, Py_ssize_t len_dest,
    3 or 7 bytes per bytes object allocation on a typical system.
 */
 #define _PyBytesObject_SIZE (offsetof(PyBytesObject, ob_sval) + 1)
+
+extern int _PyBytes_ResizeKeepOnError(PyObject **pv, Py_ssize_t newsize);
+
+#ifndef NDEBUG
+extern int _PyBytes_IsMutable(PyObject *obj);
+#endif
+
+#ifdef Py_DEBUG
+extern void _PyBytes_CheckOverflow(
+    PyObject *op,
+    void *addr,
+    const char *type_name);
+#endif
 
 /* --- PyBytesWriter ------------------------------------------------------ */
 

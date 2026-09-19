@@ -629,10 +629,14 @@ _abc__abc_instancecheck_impl(PyObject *module, PyObject *self,
         return NULL;
     }
 
-    subclass = PyObject_GetAttr(instance, &_Py_ID(__class__));
-    if (subclass == NULL) {
+    if (PyObject_GetOptionalAttr(instance, &_Py_ID(__class__), &subclass) < 0) {
         Py_DECREF(impl);
         return NULL;
+    }
+    if (subclass == NULL) {
+        /* Fall back to the type when the instance has no __class__, matching
+           the behaviour of the built-in isinstance() (gh-153772). */
+        subclass = Py_NewRef((PyObject *)Py_TYPE(instance));
     }
     /* Inline the cache checking. */
     int incache = _in_weak_set(impl, &impl->_abc_cache, subclass);
@@ -915,14 +919,14 @@ _abc.get_cache_token
 
 Returns the current ABC cache token.
 
-The token is an opaque object (supporting equality testing) identifying the
-current version of the ABC cache for virtual subclasses. The token changes
-with every call to register() on any ABC.
+The token is an opaque object (supporting equality testing) identifying
+the current version of the ABC cache for virtual subclasses.  The token
+changes with every call to register() on any ABC.
 [clinic start generated code]*/
 
 static PyObject *
 _abc_get_cache_token_impl(PyObject *module)
-/*[clinic end generated code: output=c7d87841e033dacc input=70413d1c423ad9f9]*/
+/*[clinic end generated code: output=c7d87841e033dacc input=d87acc04492f6bf3]*/
 {
     _abcmodule_state *state = get_abc_state(module);
     return PyLong_FromUnsignedLongLong(get_invalidation_counter(state));

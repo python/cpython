@@ -17,7 +17,7 @@
 
 --------------
 
-.. image:: tachyon-logo.png
+.. image:: ../../Lib/profiling/sampling/_assets/tachyon-logo.png
    :alt: Tachyon logo
    :align: center
    :width: 300px
@@ -153,6 +153,10 @@ Attach to a running process by PID::
 
    python -m profiling.sampling attach 12345
 
+Print a single snapshot of a running process's stack::
+
+   python -m profiling.sampling dump 12345
+
 Use live mode for real-time monitoring (press ``q`` to quit)::
 
    python -m profiling.sampling run --live script.py
@@ -173,8 +177,9 @@ Enable opcode-level profiling to see which bytecode instructions are executing::
 Commands
 ========
 
-Tachyon operates through two subcommands that determine how to obtain the
-target process.
+Tachyon operates through several subcommands. ``run`` and ``attach`` collect
+samples over time; ``dump`` captures a single snapshot; ``replay`` converts
+binary profiles to other formats.
 
 
 The ``run`` command
@@ -215,6 +220,78 @@ duration, then detaches and produces output.
 
 On most systems, attaching to another process requires appropriate permissions.
 See :ref:`profiling-permissions` for platform-specific requirements.
+
+
+.. _dump-command:
+
+The ``dump`` command
+--------------------
+
+The ``dump`` command prints a single snapshot of a running process's Python
+stack and exits, similar to a traceback::
+
+   python -m profiling.sampling dump 12345
+
+Unlike ``attach``, ``dump`` does not run a sampling loop: it reads the
+stack once. This is useful for investigating hung or unresponsive
+processes, or for answering "what is this process doing right now?".
+
+The output mirrors a traceback (most recent call last) and annotates each
+thread with its current state (main thread, has GIL, on CPU, waiting for
+GIL, has exception, or idle):
+
+.. code-block:: text
+
+   Stack dump for PID 12345, thread 140735 (main thread, has GIL, on CPU; most recent call last):
+     File "server.py", line 28, in serve
+       await handle_request(req)
+     File "handler.py", line 91, in handle_request
+       result = expensive_call(req)
+
+When the target's source files are readable, ``dump`` prints the source
+line for each frame and highlights the executing expression.
+
+Like ``attach``, ``dump`` requires permission to read the target process's
+memory. See :ref:`profiling-permissions`.
+
+The ``dump`` command supports the following options:
+
+``-a``, ``--all-threads``
+   Dump every thread in the target process. Without this flag only the main
+   thread is shown.
+
+``--native``
+   Include synthetic ``<native>`` frames marking transitions into C
+   extensions or other non-Python code.
+
+``--no-gc``
+   Hide the synthetic ``<GC>`` frames that mark active garbage collection.
+
+``--opcodes``
+   Annotate each frame with the bytecode opcode the thread is currently
+   executing (for example, ``opcode=CALL_KW``). Useful for
+   instruction-level investigation, including identifying specializations
+   chosen by the adaptive interpreter.
+
+``--async-aware``
+   Reconstruct stacks across ``await`` boundaries. ``dump`` walks the task
+   graph and emits one section per task, with ``<task>`` markers separating
+   coroutines awaiting each other.
+
+``--async-mode {running,all}``
+   Controls which tasks are included when ``--async-aware`` is enabled.
+   ``running`` shows only the task currently executing on each thread;
+   ``all`` (the default for ``dump``) also includes tasks suspended on a
+   wait. ``attach``'s default for this flag is ``running``; ``dump``
+   defaults to ``all`` because a single snapshot is most useful when it
+   shows the full task graph.
+
+``--blocking``
+   Pause every thread in the target while reading its stack and resume
+   them after. Guarantees a fully consistent snapshot at the cost of
+   briefly stopping the target. Without it, ``dump`` reads memory while
+   the target keeps running, which is faster but can occasionally produce
+   a torn stack.
 
 
 .. _replay-command:
@@ -1441,9 +1518,50 @@ Global options
 
    Attach to and profile a running process by PID.
 
+.. option:: dump
+
+   Print a single one-shot snapshot of a running process's Python stack.
+
 .. option:: replay
 
    Convert a binary profile file to another output format.
+
+
+Dump options
+------------
+
+The following options apply to the ``dump`` subcommand:
+
+.. option:: -a, --all-threads
+
+   Dump all threads in the target process instead of just the main thread.
+
+.. option:: --native
+
+   Include ``<native>`` frames for non-Python code.
+
+.. option:: --no-gc
+
+   Exclude ``<GC>`` frames for active garbage collection.
+
+.. option:: --opcodes
+
+   Show bytecode opcode names when available.
+
+.. option:: --async-aware
+
+   Reconstruct the stack across ``await`` boundaries for asyncio
+   applications.
+
+.. option:: --async-mode <mode>
+
+   Async stack mode: ``running`` (only the running task) or ``all``
+   (all tasks including waiting). Defaults to ``all`` for ``dump``.
+   Requires :option:`--async-aware`.
+
+.. option:: --blocking
+
+   Pause all threads in the target process while reading the stack.
 
 
 Sampling options

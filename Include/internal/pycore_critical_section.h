@@ -196,10 +196,9 @@ _PyCriticalSection2_Begin(PyThreadState *tstate, PyCriticalSection2 *c, PyObject
 static inline void
 _PyCriticalSection2_End(PyThreadState *tstate, PyCriticalSection2 *c)
 {
-    // if mutex1 is NULL, we used the fast path in
-    // _PyCriticalSection_BeginSlow for mutexes that are already held,
-    // which should only happen when mutex1 and mutex2 were the same mutex,
-    // and mutex2 should also be NULL.
+    // if mutex1 is NULL, we used the fast path in either
+    // _PyCriticalSection_BeginSlow or _PyCriticalSection2_BeginSlow for mutexes
+    // that are already held, and mutex2 should also be NULL.
     if (c->_cs_base._cs_mutex == NULL) {
         assert(c->_cs_mutex2 == NULL);
         return;

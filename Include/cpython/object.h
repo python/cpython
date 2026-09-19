@@ -241,7 +241,13 @@ struct _typeobject {
      * Otherwise, limited to MAX_VERSIONS_PER_CLASS (defined elsewhere).
      */
     uint16_t tp_versions_used;
-    _Py_iteritemfunc _tp_iteritem; /* Virtual iterator next function */
+
+     /* Virtual iterator next function.
+      * This function must escape to any code that can result in
+      * the GC being run, such as Py_DECREF.  */
+    _Py_iteritemfunc _tp_iteritem;
+
+    void *_tp_cache;
 };
 
 #define _Py_ATTR_CACHE_UNUSED (30000)  // (see tp_versions_used)
@@ -307,7 +313,6 @@ Py_DEPRECATED(3.15) PyAPI_FUNC(PyObject*) _PyObject_GetAttrId(PyObject *, _Py_Id
 
 PyAPI_FUNC(PyObject **) _PyObject_GetDictPtr(PyObject *);
 PyAPI_FUNC(void) PyObject_CallFinalizer(PyObject *);
-PyAPI_FUNC(int) PyObject_CallFinalizerFromDealloc(PyObject *);
 
 PyAPI_FUNC(void) PyUnstable_Object_ClearWeakRefsNoCallbacks(PyObject *);
 
@@ -347,7 +352,7 @@ PyAPI_FUNC(PyObject *) _PyObject_FunctionStr(PyObject *);
 #ifdef _Py_TYPEOF
 #define Py_SETREF(dst, src) \
     do { \
-        _Py_TYPEOF(dst)* _tmp_dst_ptr = &(dst); \
+        _Py_TYPEOF(&(dst)) _tmp_dst_ptr = &(dst); \
         _Py_TYPEOF(dst) _tmp_old_dst = (*_tmp_dst_ptr); \
         *_tmp_dst_ptr = (src); \
         Py_DECREF(_tmp_old_dst); \
@@ -369,7 +374,7 @@ PyAPI_FUNC(PyObject *) _PyObject_FunctionStr(PyObject *);
 #ifdef _Py_TYPEOF
 #define Py_XSETREF(dst, src) \
     do { \
-        _Py_TYPEOF(dst)* _tmp_dst_ptr = &(dst); \
+        _Py_TYPEOF(&(dst)) _tmp_dst_ptr = &(dst); \
         _Py_TYPEOF(dst) _tmp_old_dst = (*_tmp_dst_ptr); \
         *_tmp_dst_ptr = (src); \
         Py_XDECREF(_tmp_old_dst); \

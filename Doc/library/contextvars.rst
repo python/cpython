@@ -42,6 +42,9 @@ Context Variables
    references to context variables which prevents context variables
    from being properly garbage collected.
 
+   :class:`!ContextVar`\s are :ref:`generic <generics>` over the type of
+   their contained value.
+
    .. attribute:: ContextVar.name
 
       The name of the variable.  This is a read-only property.
@@ -129,6 +132,9 @@ Context Variables
 
    Tokens support the :ref:`context manager protocol <context-managers>`
    to automatically reset context variables. See :meth:`ContextVar.set`.
+
+   Tokens are :ref:`generic <generics>` over the same type as the
+   :class:`ContextVar` which created them.
 
    .. versionadded:: 3.14
 

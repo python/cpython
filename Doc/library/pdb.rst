@@ -834,7 +834,7 @@ can be overridden by the local file.
         def inner(x):
             1 / x
 
-         out()
+        out()
 
    calling ``pdb.pm()`` will allow to move between exceptions::
 

@@ -100,14 +100,17 @@ class TestCParser(unittest.TestCase):
 
         with contextlib.ExitStack() as stack:
             python_exe = stack.enter_context(support.setup_venv_with_pip_setuptools("venv"))
-            platlib_path = subprocess.check_output(
-                [python_exe, "-c", "import sysconfig; print(sysconfig.get_path('platlib'))"],
-                text=True,
-            ).strip()
-            purelib_path = subprocess.check_output(
-                [python_exe, "-c", "import sysconfig; print(sysconfig.get_path('purelib'))"],
-                text=True,
-            ).strip()
+
+            def get_sysconfig_path(name):
+                # Force UTF-8 to emit the non-ASCII venv path in any locale.
+                return subprocess.check_output(
+                    [python_exe, "-X", "utf8", "-c",
+                     f"import sysconfig; print(sysconfig.get_path({name!r}))"],
+                    encoding="utf-8",
+                ).strip()
+
+            platlib_path = get_sysconfig_path("platlib")
+            purelib_path = get_sysconfig_path("purelib")
             stack.enter_context(import_helper.DirsOnSysPath(platlib_path, purelib_path))
             cls.addClassCleanup(stack.pop_all().close)
 
@@ -141,6 +144,35 @@ class TestCParser(unittest.TestCase):
             "-c",
             TEST_TEMPLATE.format(extension_path=self.tmp_path, test_source=test_source),
         )
+
+    def test_prefix_reuses_position(self) -> None:
+        grammar_source = """
+        start:
+            | prefix ':' NAME NEWLINE? ENDMARKER
+            | prefix ':' NUMBER NEWLINE? ENDMARKER
+            | prefix '=' NUMBER NEWLINE? ENDMARKER
+        prefix (memo): NAME NAME
+        """
+        self.run_test(grammar_source, """
+        self.check_input_strings_for_grammar(
+            valid_cases=['one two : name', 'one two : 3', 'one two = 3'],
+            invalid_cases=['one = 3', 'one two = name', 'one two :'],
+        )
+        """)
+
+    def test_prefix_respects_cut(self) -> None:
+        grammar_source = """
+        start:
+            | prefix ':' ~ NAME NEWLINE? ENDMARKER
+            | prefix ':' NUMBER NEWLINE? ENDMARKER
+        prefix (memo): NAME NAME
+        """
+        self.run_test(grammar_source, """
+        self.check_input_strings_for_grammar(
+            valid_cases=['one two : name'],
+            invalid_cases=['one two : 3'],
+        )
+        """)
 
     def test_c_parser(self) -> None:
         grammar_source = """

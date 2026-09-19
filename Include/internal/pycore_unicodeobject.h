@@ -16,7 +16,9 @@ extern "C" {
 #define _Py_MAX_UNICODE 0x10ffff
 
 
-extern int _PyUnicode_IsModifiable(PyObject *unicode);
+// Export for '_multibytecodec' shared extension. _PyUnicodeWriter_CanWrite()
+// calls this function when assertions are enabled.
+PyAPI_FUNC(int) _PyUnicode_IsModifiable(PyObject *unicode);
 extern void _PyUnicodeWriter_InitWithBuffer(
     _PyUnicodeWriter *writer,
     PyObject *buffer);
@@ -33,6 +35,7 @@ extern PyObject* _PyUnicode_ResizeCompact(
     Py_ssize_t length);
 extern PyObject* _PyUnicode_GetEmpty(void);
 PyAPI_FUNC(PyObject*) _PyUnicode_BinarySlice(PyObject *, PyObject *, PyObject *);
+PyAPI_FUNC(PyObject *) _PyUnicode_Repeat(PyObject *str, Py_ssize_t len);
 
 
 /* Generic helper macro to convert characters of different types.
@@ -104,12 +107,32 @@ _PyUnicode_EnsureUnicode(PyObject *obj)
     return 0;
 }
 
+#ifndef NDEBUG
+static inline int
+_PyUnicodeWriter_CanWrite(_PyUnicodeWriter *writer)
+{
+    // Code adapted from _PyUnicode_IsModifiable()
+    assert(!writer->readonly);
+    PyObject *buffer = writer->buffer;
+    assert(buffer != NULL);
+    // Do not use _PyObject_IsUniquelyReferenced(): the caller can have its own
+    // lock to prevent a writer from being used by two threads at the same
+    // time.
+    assert(Py_REFCNT(buffer) == 1);
+    assert(PyUnstable_Unicode_GET_CACHED_HASH(buffer) == -1);
+    assert(!PyUnicode_CHECK_INTERNED(buffer));
+    assert(!_Py_IsImmortal(buffer));
+    return 1;
+}
+#endif
+
 static inline int
 _PyUnicodeWriter_WriteCharInline(_PyUnicodeWriter *writer, Py_UCS4 ch)
 {
     assert(ch <= _Py_MAX_UNICODE);
     if (_PyUnicodeWriter_Prepare(writer, 1, ch) < 0)
         return -1;
+    assert(_PyUnicodeWriter_CanWrite(writer));
     PyUnicode_WRITE(writer->kind, writer->data, writer->pos, ch);
     writer->pos++;
     return 0;
@@ -180,6 +203,22 @@ extern int _PyUnicodeWriter_FormatV(
     PyUnicodeWriter *writer,
     const char *format,
     va_list vargs);
+
+/* --- iconv Codec -------------------------------------------------------- */
+
+#ifdef HAVE_ICONV
+extern PyObject* _PyUnicode_DecodeIconv(
+    const char *encoding,       /* iconv encoding name */
+    const char *string,         /* encoded string */
+    Py_ssize_t length,          /* size of string */
+    const char *errors,         /* error handling */
+    Py_ssize_t *consumed);      /* bytes consumed, or NULL for non-stateful */
+
+extern PyObject* _PyUnicode_EncodeIconv(
+    const char *encoding,       /* iconv encoding name */
+    PyObject *unicode,          /* Unicode object */
+    const char *errors);        /* error handling */
+#endif
 
 /* --- UTF-7 Codecs ------------------------------------------------------- */
 
