@@ -1,0 +1,2 @@
+Make :func:`email.utils.formataddr` "quote" the name portion of an email address if
+it contains spaces.
