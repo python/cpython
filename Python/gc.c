@@ -1399,6 +1399,13 @@ gc_get_prev_stats(GCState *gcstate, int gen)
 static void
 add_stats(GCState *gcstate, int gen, struct gc_generation_stats *stats)
 {
+    struct gc_stats *generation_stats = gcstate->generation_stats;
+    uint32_t seq = _Py_atomic_load_uint32_relaxed(&generation_stats->update_seq);
+    assert((seq & 1) == 0);
+    /* Odd seq tells the reader that an update is in progress. */
+    _Py_atomic_store_uint32_relaxed(&generation_stats->update_seq, seq + 1);
+    _Py_atomic_fence_seq_cst();
+
     struct gc_generation_stats *prev_stats = gc_get_prev_stats(gcstate, gen);
     struct gc_generation_stats *cur_stats = gc_get_stats(gcstate, gen);
 
@@ -1412,9 +1419,8 @@ add_stats(GCState *gcstate, int gen, struct gc_generation_stats *stats)
 
     cur_stats->duration += stats->duration;
     cur_stats->heap_size = stats->heap_size;
-    /* Publish ts_stop last so remote readers do not select a partially
-       updated stats record as the latest collection. */
     cur_stats->ts_stop = stats->ts_stop;
+    _Py_atomic_store_uint32_release(&generation_stats->update_seq, seq + 2);
 }
 
 /* This is the main function.  Read this to understand how the
