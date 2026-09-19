@@ -1,0 +1,2 @@
+Fix memory leak in :meth:`sqlite3.Connection.load_extension` when
+:exc:`sqlite3.OperationalError` is raised.
