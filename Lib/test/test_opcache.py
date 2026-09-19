@@ -1448,6 +1448,44 @@ class TestSpecializer(TestBase):
         self.assert_specialized(binary_op_add_extend, "BINARY_OP_EXTEND")
         self.assert_no_opcode(binary_op_add_extend, "BINARY_OP")
 
+        def float_true_divide(a, b):
+            return a / b
+
+        def float_inplace_true_divide(a, b):
+            a /= b
+            return a
+
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+            self.assertEqual(float_true_divide(6.0, 3.0), 2.0)
+            self.assertEqual(float_inplace_true_divide(6.0, 3.0), 2.0)
+
+        self.assert_specialized(float_true_divide, "BINARY_OP_EXTEND")
+        self.assert_specialized(float_inplace_true_divide, "BINARY_OP_EXTEND")
+        with self.assertRaises(ZeroDivisionError) as cm:
+            float_true_divide(1.0, 0.0)
+        self.assertEqual(str(cm.exception), "division by zero")
+        with self.assertRaises(ZeroDivisionError) as cm:
+            float_inplace_true_divide(1.0, -0.0)
+        self.assertEqual(str(cm.exception), "division by zero")
+        nan = float_true_divide(float("nan"), 1.0)
+        self.assertNotEqual(nan, nan)
+
+        class FloatSubclass(float):
+            def __truediv__(self, other):
+                return "subclass truediv"
+
+            def __rtruediv__(self, other):
+                return "subclass reflected truediv"
+
+        self.assertEqual(
+            float_true_divide(FloatSubclass(6.0), 3.0),
+            "subclass truediv",
+        )
+        self.assertEqual(
+            float_true_divide(6.0, FloatSubclass(3.0)),
+            "subclass reflected truediv",
+        )
+
         def binary_op_add_extend_sequences():
             l1 = [1, 2]
             l2 = [None]
