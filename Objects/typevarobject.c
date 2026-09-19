@@ -958,6 +958,7 @@ paramspecattr_dealloc(PyObject *self)
     _PyObject_GC_UNTRACK(self);
 
     Py_XDECREF(psa->__origin__);
+    PyObject_ClearWeakRefs(self);
 
     Py_TYPE(self)->tp_free(self);
     Py_DECREF(tp);
