@@ -1489,7 +1489,6 @@ indirectly) to mutable objects.
    single: co_consts (code object attribute)
    single: co_filename (code object attribute)
    single: co_firstlineno (code object attribute)
-   single: co_linetable (code object attribute)
    single: co_flags (code object attribute)
    single: co_name (code object attribute)
    single: co_names (code object attribute)
@@ -1566,10 +1565,10 @@ Special read-only attributes
    * - .. attribute:: codeobject.co_linetable
      - A :class:`bytes` object containing encoded source location information.
        The exact format is an implementation detail and may change between
-       Python versions. It is made available to support the creation of new
-       code objects; use :meth:`~codeobject.co_lines` and
+       Python versions. Use :meth:`~codeobject.co_lines` and
        :meth:`~codeobject.co_positions` for supported access to line and
-       position information.
+       position information. To create a modified copy of a code object,
+       use :meth:`~codeobject.replace`.
 
        .. versionadded:: 3.10
 
