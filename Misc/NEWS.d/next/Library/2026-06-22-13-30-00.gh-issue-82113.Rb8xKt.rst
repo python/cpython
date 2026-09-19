@@ -1,0 +1,4 @@
+:meth:`configparser.ConfigParser.items` now reports ``None`` rather than an
+empty string for value-less options when ``allow_no_value`` is enabled, making
+it consistent with :meth:`~configparser.ConfigParser.get`, mapping access and
+``dict()`` conversion of a section.
