@@ -277,6 +277,49 @@ class TestTranforms(BytecodeTestCase):
                     self.assertNotInBytecode(code, 'LOAD_SMALL_INT')
                 self.check_lnotab(code)
 
+    def test_constant_folding_fstring(self):
+        # An f-string whose fields are all constants folds to a
+        # single str constant.
+        folded = [
+            ("f'{1}{2}'", '12'),
+            ("f'{1 + 2}'", '3'),
+            ("f'{1.5}'", '1.5'),
+            ("f'{True}'", 'True'),
+            ("f'-{1}-'", '-1-'),
+            ('f\'{"ab"}cd\'', 'abcd'),
+            ('f\'{""}{""}\'', ''),
+        ]
+        for expr, value in folded:
+            with self.subTest(expr=expr):
+                code = compile(expr, '', 'eval')
+                self.assertNotInBytecode(code, 'FORMAT_SIMPLE')
+                self.assertNotInBytecode(code, 'BUILD_STRING')
+                self.assertEqual(eval(code), value)
+                self.check_lnotab(code)
+
+        # Conversions and format specs can reach user code, so those
+        # fields are not folded.
+        for expr, opname, value in [
+            ("f'{1!r}'", 'CONVERT_VALUE', '1'),
+            ("f'{1:>3}'", 'FORMAT_WITH_SPEC', '  1'),
+        ]:
+            with self.subTest(expr=expr):
+                code = compile(expr, '', 'eval')
+                self.assertInBytecode(code, opname)
+                self.assertEqual(eval(code), value)
+                self.check_lnotab(code)
+
+        # Constant fields of a partly-constant f-string still fold.
+        def f(x):
+            return f'{"prefix"}{x}'
+
+        format_count = sum(instr.opname == 'FORMAT_SIMPLE'
+                           for instr in dis.get_instructions(f))
+        self.assertEqual(format_count, 1)
+        self.assertInBytecode(f, 'BUILD_STRING', 2)
+        self.assertEqual(f('!'), 'prefix!')
+        self.check_lnotab(f)
+
     def test_constant_folding_unaryop(self):
         intrinsic_positive = 5
         tests = [
