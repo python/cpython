@@ -13895,7 +13895,7 @@ os_unsetenv_impl(PyObject *module, PyObject *name)
 
 
 #ifdef HAVE_CLEARENV
-static char * const empty_environ[] = { NULL };
+static const char * const empty_environ[] = { NULL };
 
 /*[clinic input]
 os._clearenv
