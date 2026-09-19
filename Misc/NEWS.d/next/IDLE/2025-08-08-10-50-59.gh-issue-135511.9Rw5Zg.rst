@@ -1,0 +1,1 @@
+Fix display of :exc:`NameError` and :exc:`AttributeError` with multi-line message.
