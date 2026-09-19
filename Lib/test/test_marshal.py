@@ -392,8 +392,7 @@ class BugsTestCase(unittest.TestCase):
         code = f.__code__
         a = []
         code = code.replace(co_consts=code.co_consts + (a,))
-        # This test creates a reference loop which leads to reference leaks,
-        # so we need to break the loop manually. See gh-148722.
+        # Break the cycle without relying on cyclic GC after the test.
         self.addCleanup(a.clear)
         a.append(code)
         self.check_reference_loop(code, 'code', 3)
