@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import importlib
 import os
 import pkgutil
@@ -15,12 +13,9 @@ from itertools import chain
 from tokenize import TokenInfo
 from .fancycompleter import safe_getattr
 
-TYPE_CHECKING = False
-
-if TYPE_CHECKING:
-    from types import ModuleType
-    from typing import Any, Iterable, Iterator, Mapping
-    from .types import CompletionAction
+lazy from types import ModuleType
+lazy from typing import Any, Iterable, Iterator, Mapping
+lazy from .types import CompletionAction
 
 
 HARDCODED_SUBMODULES = {

@@ -1455,6 +1455,7 @@ symtable_enter_existing_block(struct symtable *st, PySTEntryObject* ste, bool ad
 
     if (add_to_children && prev) {
         if (PyList_Append(prev->ste_children, (PyObject *)ste) < 0) {
+            symtable_exit_block(st);
             return 0;
         }
     }
@@ -1466,21 +1467,27 @@ symtable_enter_block(struct symtable *st, identifier name, _Py_block_ty block,
                      void *ast, _Py_SourceLocation loc)
 {
     PySTEntryObject *ste = ste_new(st, name, block, ast, loc);
-    if (ste == NULL)
+    if (ste == NULL) {
         return 0;
+    }
     int result = symtable_enter_existing_block(st, ste, /* add_to_children */true);
     Py_DECREF(ste);
+    if (result == 0) {
+        return 0;
+    }
     if (block == AnnotationBlock || block == TypeVariableBlock || block == TypeAliasBlock) {
         _Py_DECLARE_STR(format, ".format");
         // We need to insert code that reads this "parameter" to the function.
         if (!symtable_add_def(st, &_Py_STR(format), DEF_PARAM, loc)) {
+            symtable_exit_block(st);
             return 0;
         }
         if (!symtable_add_def(st, &_Py_STR(format), USE, loc)) {
+            symtable_exit_block(st);
             return 0;
         }
     }
-    return result;
+    return 1;
 }
 
 static long
@@ -1676,7 +1683,7 @@ symtable_enter_type_param_block(struct symtable *st, identifier name,
     if (current_type == ClassBlock) {
         st->st_cur->ste_can_see_class_scope = 1;
         if (!symtable_add_def(st, &_Py_ID(__classdict__), USE, loc)) {
-            return 0;
+            goto error;
         }
     }
     if (kind == ClassDef_kind) {
@@ -1684,33 +1691,36 @@ symtable_enter_type_param_block(struct symtable *st, identifier name,
         // It gets "set" when we create the type params tuple and
         // "used" when we build up the bases.
         if (!symtable_add_def(st, &_Py_STR(type_params), DEF_LOCAL, loc)) {
-            return 0;
+            goto error;
         }
         if (!symtable_add_def(st, &_Py_STR(type_params), USE, loc)) {
-            return 0;
+            goto error;
         }
         // This is used for setting the generic base
         _Py_DECLARE_STR(generic_base, ".generic_base");
         if (!symtable_add_def(st, &_Py_STR(generic_base), DEF_LOCAL, loc)) {
-            return 0;
+            goto error;
         }
         if (!symtable_add_def(st, &_Py_STR(generic_base), USE, loc)) {
-            return 0;
+            goto error;
         }
     }
     if (has_defaults) {
         _Py_DECLARE_STR(defaults, ".defaults");
         if (!symtable_add_def(st, &_Py_STR(defaults), DEF_PARAM, loc)) {
-            return 0;
+            goto error;
         }
     }
     if (has_kwdefaults) {
         _Py_DECLARE_STR(kwdefaults, ".kwdefaults");
         if (!symtable_add_def(st, &_Py_STR(kwdefaults), DEF_PARAM, loc)) {
-            return 0;
+            goto error;
         }
     }
     return 1;
+error:
+    symtable_exit_block(st);
+    return 0;
 }
 
 /* VISIT, VISIT_SEQ and VISIT_SEQ_TAIL take an ASDL type as their second argument.

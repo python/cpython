@@ -177,8 +177,8 @@ def add_codec(charset, codecname):
     """Add a codec that map characters in the given charset to/from Unicode.
 
     charset is the canonical name of a character set.  codecname is the name
-    of a Python codec, as appropriate for the second argument to the unicode()
-    built-in, or to the encode() method of a Unicode string.
+    of a Python codec, as appropriate for the second argument to the str()
+    built-in, or to the encode() method of a string.
     """
     CODEC_MAP[charset] = codecname
 
@@ -238,8 +238,8 @@ class Charset:
     """
     def __init__(self, input_charset=DEFAULT_CHARSET):
         # RFC 2046, $4.1.2 says charsets are not case sensitive.  We coerce to
-        # unicode because its .lower() is locale insensitive.  If the argument
-        # is already a unicode, we leave it at that, but ensure that the
+        # str because its .lower() is locale insensitive.  If the argument
+        # is already a str, we leave it at that, but ensure that the
         # charset is ASCII, as the standard (RFC XXX) requires.
         try:
             if isinstance(input_charset, str):
@@ -365,7 +365,7 @@ class Charset:
         # encoded word must stand on its own.  So the problem is you have to
         # encode to bytes to figure out this word's length, but you must split
         # on characters.  This causes two problems: first, we don't know how
-        # many octets a specific substring of unicode characters will get
+        # many octets a specific substring of characters will get
         # encoded to, and second, we don't know how many ASCII characters
         # those octets will get encoded to.  Unless we try it.  Which seems
         # inefficient.  In the interest of being correct rather than fast (and

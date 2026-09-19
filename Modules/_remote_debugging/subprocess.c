@@ -96,7 +96,7 @@ pid_array_contains(pid_array_t *arr, pid_t pid)
 /* Find child PIDs using BFS traversal of the pid->ppid mapping.
  * all_pids and ppids must have the same count (parallel arrays).
  * Returns 0 on success, -1 on error. */
-static int
+UNUSED static int
 find_children_bfs(pid_t target_pid, int recursive,
                   pid_t *all_pids, pid_t *ppids, size_t pid_count,
                   pid_array_t *result)
@@ -307,6 +307,7 @@ get_child_pids_platform(pid_t target_pid, int recursive, pid_array_t *result)
         PyErr_SetString(PyExc_OSError, "Failed to get process count");
         goto done;
     }
+    n_pids /= sizeof(pid_t);
 
     /* Allocate buffer for PIDs (add some slack for new processes) */
     int buffer_size = n_pids + 64;
@@ -322,6 +323,7 @@ get_child_pids_platform(pid_t target_pid, int recursive, pid_array_t *result)
         PyErr_SetString(PyExc_OSError, "Failed to list PIDs");
         goto done;
     }
+    actual /= sizeof(pid_t);
 
     /* Build pid -> ppid mapping */
     ppids = (pid_t *)PyMem_Malloc(actual * sizeof(pid_t));

@@ -644,8 +644,8 @@ read_console_w(HANDLE handle, DWORD maxlen, DWORD *readlen) {
                 break;
             err = 0;
             HANDLE hInterruptEvent = _PyOS_SigintEvent();
-            if (WaitForSingleObjectEx(hInterruptEvent, 100, FALSE)
-                    == WAIT_OBJECT_0) {
+            DWORD state = WaitForSingleObjectEx(hInterruptEvent, 100, FALSE);
+            if (state == WAIT_OBJECT_0) {
                 ResetEvent(hInterruptEvent);
                 Py_BLOCK_THREADS
                 sig = PyErr_CheckSignals();
@@ -653,6 +653,13 @@ read_console_w(HANDLE handle, DWORD maxlen, DWORD *readlen) {
                 if (sig < 0)
                     break;
             }
+            else if (state != WAIT_TIMEOUT) {
+                err = GetLastError();
+                break;
+            }
+            /* The console cancelled the read and flushed its input buffer,
+               but no exception was raised.  Start the read over. */
+            continue;
         }
         *readlen += n;
 
@@ -935,7 +942,7 @@ _io__WindowsConsoleIO_readall_impl(winconsoleio *self)
     if (len == 0 && _buflen(self) == 0) {
         /* when the result starts with ^Z we return an empty buffer */
         PyMem_Free(buf);
-        return PyBytes_FromStringAndSize(NULL, 0);
+        return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     }
 
     if (len) {
@@ -1002,7 +1009,6 @@ _io__WindowsConsoleIO_read_impl(winconsoleio *self, PyTypeObject *cls,
                                 Py_ssize_t size)
 /*[clinic end generated code: output=7e569a586537c0ae input=a14570a5da273365]*/
 {
-    PyObject *bytes;
     Py_ssize_t bytes_size;
 
     if (self->fd == -1)
@@ -1019,26 +1025,20 @@ _io__WindowsConsoleIO_read_impl(winconsoleio *self, PyTypeObject *cls,
         return NULL;
     }
 
-    bytes = PyBytes_FromStringAndSize(NULL, size);
-    if (bytes == NULL)
+    PyBytesWriter *writer = PyBytesWriter_Create(size);
+    if (writer == NULL) {
         return NULL;
+    }
 
     _PyIO_State *state = get_io_state_by_cls(cls);
-    bytes_size = readinto(state, self, PyBytes_AS_STRING(bytes),
-                          PyBytes_GET_SIZE(bytes));
+    bytes_size = readinto(state, self, PyBytesWriter_GetData(writer),
+                          PyBytesWriter_GetSize(writer));
     if (bytes_size < 0) {
-        Py_CLEAR(bytes);
+        PyBytesWriter_Discard(writer);
         return NULL;
     }
 
-    if (bytes_size < PyBytes_GET_SIZE(bytes)) {
-        if (_PyBytes_Resize(&bytes, bytes_size) < 0) {
-            Py_CLEAR(bytes);
-            return NULL;
-        }
-    }
-
-    return bytes;
+    return PyBytesWriter_FinishWithSize(writer, bytes_size);
 }
 
 /*[clinic input]

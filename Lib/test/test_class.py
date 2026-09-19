@@ -1016,8 +1016,6 @@ class TestInlineValues(unittest.TestCase):
     @support.nomemtest
     @isolation.runInSubprocess()
     def test_detach_materialized_dict_no_memory(self):
-        import _testcapi
-
         class A:
             def __init__(self):
                 self.a = 1
@@ -1032,11 +1030,8 @@ class TestInlineValues(unittest.TestCase):
             d = a.__dict__
             try:
                 with support.catch_unraisable_exception() as ex:
-                    _testcapi.set_nomemory(n, n + 1)
-                    try:
+                    with support.memory_error_cm(n, n + 1):
                         del a
-                    finally:
-                        _testcapi.remove_mem_hooks()
                     exc_type = ex.unraisable and ex.unraisable.exc_type
             except MemoryError:
                 # The failing allocation was not in the deallocation code.
@@ -1051,6 +1046,66 @@ class TestInlineValues(unittest.TestCase):
             if not raised:
                 self.fail("MemoryError was not raised during deallocation")
             self.fail("the dictionary was not cleared")
+
+class DefinitionOrderTests(unittest.TestCase):
+    # PEP 520: Preserving Class Attribute Definition Order
+
+    @staticmethod
+    def defined_names(namespace):
+        # Skip the names added by the compiler, like __firstlineno__.
+        return [name for name in namespace if not name.startswith('__')]
+
+    def test_definition_order(self):
+        class C:
+            b = 1
+            a = 2
+            def m(self): pass
+            @staticmethod
+            def s(): pass
+            z = 3
+
+        self.assertEqual(self.defined_names(C.__dict__),
+                         ['b', 'a', 'm', 's', 'z'])
+
+    def test_definition_order_redefinition(self):
+        class C:
+            b = 1
+            a = 2
+            b = 3
+
+        self.assertEqual(self.defined_names(C.__dict__), ['b', 'a'])
+        self.assertEqual(C.b, 3)
+
+    def test_definition_order_after_deletion(self):
+        class C:
+            a = 1
+            b = 2
+            del a
+            a = 3
+
+        self.assertEqual(self.defined_names(C.__dict__), ['b', 'a'])
+
+    def test_definition_order_in_namespace(self):
+        namespaces = []
+        class Meta(type):
+            def __new__(mcls, name, bases, namespace, **kwds):
+                namespaces.append(list(namespace))
+                return super().__new__(mcls, name, bases, namespace, **kwds)
+
+        class C(metaclass=Meta):
+            b = 1
+            a = 2
+            def m(self): pass
+
+        self.assertEqual(self.defined_names(namespaces[0]), ['b', 'a', 'm'])
+
+    def test_prepare_preserves_order(self):
+        namespace = type.__prepare__('C', ())
+        namespace['b'] = 1
+        namespace['a'] = 2
+        namespace['b'] = 3
+        self.assertEqual(list(namespace), ['b', 'a'])
+
 
 if __name__ == '__main__':
     unittest.main()

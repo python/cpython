@@ -9,16 +9,6 @@ preserve
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
-#if !defined(_thread__ThreadHandle_ident_DOCSTR)
-#  define _thread__ThreadHandle_ident_DOCSTR NULL
-#endif
-#if defined(_THREAD__THREADHANDLE_IDENT_GETSETDEF)
-#  undef _THREAD__THREADHANDLE_IDENT_GETSETDEF
-#  define _THREAD__THREADHANDLE_IDENT_GETSETDEF {"ident", (getter)_thread__ThreadHandle_ident_get, (setter)_thread__ThreadHandle_ident_set, _thread__ThreadHandle_ident_DOCSTR},
-#else
-#  define _THREAD__THREADHANDLE_IDENT_GETSETDEF {"ident", (getter)_thread__ThreadHandle_ident_get, NULL, _thread__ThreadHandle_ident_DOCSTR},
-#endif
-
 static PyObject *
 _thread__ThreadHandle_ident_get_impl(PyObject *self);
 
@@ -1280,4 +1270,6 @@ exit:
 #ifndef _THREAD_SET_NAME_METHODDEF
     #define _THREAD_SET_NAME_METHODDEF
 #endif /* !defined(_THREAD_SET_NAME_METHODDEF) */
-/*[clinic end generated code: output=cd1b9c78d32ab693 input=a9049054013a1b77]*/
+#define _THREAD__THREADHANDLE_IDENT_GETSETDEF {"ident", (getter)_thread__ThreadHandle_ident_get, (setter)NULL, NULL},
+
+/*[clinic end generated code: output=3bfc76a318c6579d input=a9049054013a1b77]*/
