@@ -84,6 +84,8 @@ class _PolicyBase:
             object.__setattr__(newpolicy, attr, value)
         return newpolicy
 
+    __replace__ = clone
+
     def __setattr__(self, name, value):
         if hasattr(self, name):
             msg = "{!r} object attribute {!r} is read-only"
