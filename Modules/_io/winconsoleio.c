@@ -644,8 +644,8 @@ read_console_w(HANDLE handle, DWORD maxlen, DWORD *readlen) {
                 break;
             err = 0;
             HANDLE hInterruptEvent = _PyOS_SigintEvent();
-            if (WaitForSingleObjectEx(hInterruptEvent, 100, FALSE)
-                    == WAIT_OBJECT_0) {
+            DWORD state = WaitForSingleObjectEx(hInterruptEvent, 100, FALSE);
+            if (state == WAIT_OBJECT_0) {
                 ResetEvent(hInterruptEvent);
                 Py_BLOCK_THREADS
                 sig = PyErr_CheckSignals();
@@ -653,6 +653,13 @@ read_console_w(HANDLE handle, DWORD maxlen, DWORD *readlen) {
                 if (sig < 0)
                     break;
             }
+            else if (state != WAIT_TIMEOUT) {
+                err = GetLastError();
+                break;
+            }
+            /* The console cancelled the read and flushed its input buffer,
+               but no exception was raised.  Start the read over. */
+            continue;
         }
         *readlen += n;
 
