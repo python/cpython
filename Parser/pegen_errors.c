@@ -68,9 +68,8 @@ _Pypegen_tokenizer_error(Parser *p)
             break;
         }
         case E_COLUMNOVERFLOW:
-            PyErr_SetString(PyExc_OverflowError,
-                    "Parser column offset overflow - source line is too big");
-            return -1;
+            msg = "source line is too long";
+            break;
         default:
             msg = "unknown parsing error";
     }
@@ -391,6 +390,5 @@ void
 _Pypegen_stack_overflow(Parser *p)
 {
     p->error_indicator = 1;
-    PyErr_SetString(PyExc_MemoryError,
-        "Parser stack overflowed - Python source too complex to parse");
+    RAISE_SYNTAX_ERROR("Python source too complex to parse");
 }
