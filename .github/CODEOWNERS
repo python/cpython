@@ -290,9 +290,10 @@ Tools/jit/                    @brandtbucher @savannahostrowski @diegorusso
 InternalDocs/jit.md           @brandtbucher @savannahostrowski @diegorusso @AA-Turner
 
 # Lazy imports (PEP 810)
-Objects/lazyimportobject.c                  @yhg1s @DinoV @pablogsal
-Include/internal/pycore_lazyimportobject.h  @yhg1s @DinoV @pablogsal
-Lib/test/test_lazy_import                   @yhg1s @DinoV @pablogsal
+.github/workflows/reusable-test-lazy-imports-all.yml    @yhg1s @DinoV @pablogsal
+Objects/lazyimportobject.c                              @yhg1s @DinoV @pablogsal
+Include/internal/pycore_lazyimportobject.h              @yhg1s @DinoV @pablogsal
+Lib/test/test_lazy_import                               @yhg1s @DinoV @pablogsal
 
 # Micro-op / μop / Tier 2 Optimiser
 Python/optimizer.c            @markshannon @Fidget-Spinner
@@ -598,6 +599,12 @@ Doc/library/tomllib.rst       @encukou @hauntsaninja
 Lib/test/test_tomllib/        @encukou @hauntsaninja
 Lib/tomllib/                  @encukou @hauntsaninja
 
+# Turtle
+Doc/library/turtle.rst        @StanFromIreland
+Doc/library/turtle-star.png   @StanFromIreland
+Lib/test/test_turtle.py       @StanFromIreland
+Lib/turtle.py                 @StanFromIreland
+
 # Typing
 Doc/library/typing.rst        @JelleZijlstra @AlexWaygood
 Lib/test/test_typing.py       @JelleZijlstra @AlexWaygood
@@ -624,7 +631,7 @@ Lib/test/test_unittest/testmock/ @cjw296
 Doc/library/zlib.rst          @StanFromIreland
 Lib/compression/zlib.py       @StanFromIreland
 Lib/test/test_zlib.py         @StanFromIreland
-Modules/_zlibmodule.c         @StanFromIreland
+Modules/zlibmodule.c          @StanFromIreland
 
 # Zipfile.Path
 Lib/test/test_zipfile/_path/  @jaraco
@@ -648,6 +655,9 @@ Modules/**/clinic/
 Objects/**/clinic/
 PC/**/clinic/
 Python/**/clinic/
+
+# Exclude Lazy Imports=all CI carve out file
+Lib/test/lazy_imports_all_exclude.txt
 
 # Exclude HTML IDs list
 Doc/tools/removed-ids.txt

@@ -2348,7 +2348,9 @@ sys_activate_stack_trampoline_impl(PyObject *module, const char *backend)
 {
 #ifdef PY_HAVE_PERF_TRAMPOLINE
 #ifdef _Py_JIT
-    if (_PyInterpreterState_GET()->jit) {
+    // Perf state is process-wide, and only the main interpreter can enable
+    // the JIT. Check it even when called from a subinterpreter (gh-157247).
+    if (_PyInterpreterState_Main()->jit) {
         PyErr_SetString(PyExc_ValueError, "Cannot activate the perf trampoline if the JIT is active");
         return NULL;
     }
@@ -3867,6 +3869,8 @@ static PyStructSequence_Desc emscripten_info_desc = {
     emscripten_info_fields,     /* fields */
     4
 };
+
+EM_JS_DEPS(_Py_emscripten_runtime, "$stringToNewUTF8")
 
 EM_JS(char *, _Py_emscripten_runtime, (void), {
     var info;

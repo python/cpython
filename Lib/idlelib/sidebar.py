@@ -453,7 +453,7 @@ class ShellSidebar(BaseSideBar):
         return "break"
 
     def grid(self):
-        self.canvas.grid(row=1, column=0, sticky=tk.NSEW, padx=2, pady=0)
+        self.canvas.grid(row=1, column=0, sticky=tk.NSEW)
 
     def change_callback(self):
         if self.is_shown:

@@ -16,6 +16,13 @@ points must be below 1114112 (which is the full Unicode range).
 
 UTF-8 representation is created on demand and cached in the Unicode object.
 
+.. impl-detail::
+
+   The internal buffer always includes an extra trailing null character for
+   compatibility with null terminated C strings. This extra character is not
+   counted in :c:func:`PyUnicode_GetLength` nor in the various *size* arguments
+   of the functions below.
+
 .. note::
    The :c:type:`Py_UNICODE` representation has been removed since Python 3.12
    with deprecated APIs.
@@ -164,11 +171,15 @@ access to internal read-only data of Unicode objects:
    .. versionadded:: 3.3
 
 
-.. c:function:: Py_UCS4 PyUnicode_READ(int kind, void *data, \
-                                       Py_ssize_t index)
+.. c:function:: Py_UCS4 PyUnicode_READ(int kind, void *data, Py_ssize_t index)
 
    Read a code point from a canonical representation *data* (as obtained with
-   :c:func:`PyUnicode_DATA`).  No checks or ready calls are performed.
+   :c:func:`PyUnicode_DATA`).  No checks are performed.
+
+   .. impl-detail::
+
+      Accept reading the trailing null character at index
+      :c:func:`PyUnicode_GetLength`.
 
    .. versionadded:: 3.3
 
@@ -178,6 +189,11 @@ access to internal read-only data of Unicode objects:
    Read a character from a Unicode object *unicode*, which must be in the "canonical"
    representation.  This is less efficient than :c:func:`PyUnicode_READ` if you
    do multiple consecutive reads.
+
+   .. impl-detail::
+
+      Accept reading the trailing null character at index
+      :c:func:`PyUnicode_GetLength`.
 
    .. versionadded:: 3.3
 
@@ -716,6 +732,10 @@ APIs:
 
    On error, set an exception and return ``-1``.
 
+   .. impl-detail::
+
+      The length does not count the trailing null character.
+
    .. versionadded:: 3.3
 
 
@@ -793,6 +813,11 @@ APIs:
    :c:func:`PyUnicode_READ_CHAR`, which performs no error checking.
 
    Return character on success, ``-1`` on error with an exception set.
+
+   .. impl-detail::
+
+      Do not accept reading the trailing null character at index
+      :c:func:`PyUnicode_GetLength`.
 
    .. versionadded:: 3.3
 
@@ -1796,6 +1821,9 @@ object.
 
    The instance must be destroyed by :c:func:`PyUnicodeWriter_Finish` on
    success, or :c:func:`PyUnicodeWriter_Discard` on error.
+
+   The API is **not thread safe**. To share a writer with multiple threads, a
+   critical section or a lock is needed.
 
 .. c:function:: PyUnicodeWriter* PyUnicodeWriter_Create(Py_ssize_t length)
 
