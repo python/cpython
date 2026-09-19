@@ -34,7 +34,12 @@ from idlelib.help import _get_dochome
 TK_TABWIDTH_DEFAULT = 8
 darwin = sys.platform == 'darwin'
 
+# A letter keysym in a key sequence, such as "s" in "<Control-Key-s>".
+_letter_key_re = re.compile(r'(?<=-Key-)[a-zA-Z](?=>)')
+
+
 class EditorWindow:
+    is_shell = False  # PyShell overrides.
     from idlelib.percolator import Percolator
     from idlelib.colorizer import ColorDelegator, color_config
     from idlelib.undo import UndoDelegator
@@ -80,7 +85,6 @@ class EditorWindow:
         self.recent_files_path = idleConf.userdir and os.path.join(
                 idleConf.userdir, 'recent-files.lst')
 
-        self.prompt_last_line = ''  # Override in PyShell
         self.text_frame = text_frame = Frame(top)
         self.vbar = vbar = Scrollbar(text_frame, name='vbar')
         width = idleConf.GetOption('main', 'EditorWindow', 'width', type='int')
@@ -1186,6 +1190,12 @@ class EditorWindow:
         for event, keylist in keydefs.items():
             if keylist:
                 text.event_add(event, *keylist)
+                # Caps Lock changes the case of letter keysyms, so bind
+                # the sequences with the other case too (gh-56596).
+                for keys in keylist:
+                    other = _letter_key_re.sub(lambda m: m[0].swapcase(), keys)
+                    if other not in keylist:
+                        text.event_add(event, other)
 
     def fill_menus(self, menudefs=None, keydefs=None):
         """Fill in dropdown menus used by this window.
@@ -1434,7 +1444,7 @@ class EditorWindow:
             # First need to find the last statement.
             lno = index2line(text.index('insert'))
             y = pyparse.Parser(self.indentwidth, self.tabwidth)
-            if not self.prompt_last_line:
+            if not self.is_shell:
                 for context in self.num_context_lines:
                     startat = max(lno - context, 1)
                     startatindex = repr(startat) + ".0"
