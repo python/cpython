@@ -175,6 +175,9 @@ other coroutines::
    * a *coroutine object*: an object returned by calling a
      *coroutine function*.
 
+   Generator-based coroutines, created with :func:`types.coroutine`, are
+   covered by neither term and are not supported by asyncio.
+
 
 .. rubric:: Tasks
 
@@ -242,6 +245,8 @@ Creating tasks
 
    Wrap the *coro* :ref:`coroutine <coroutine>` into a :class:`Task`
    and schedule its execution.  Return the Task object.
+   :exc:`TypeError` is raised if *coro* is not a coroutine declared with
+   :keyword:`async def`.
 
    The full function signature is largely the same as that of the
    :class:`Task` constructor (or factory) - all of the keyword arguments to
@@ -1219,6 +1224,10 @@ Introspection
    Return ``True`` if *obj* is a coroutine object.
 
    .. versionadded:: 3.4
+
+   .. versionchanged:: 3.12
+      Generator-based coroutines are no longer supported, and ``False``
+      is returned for them.
 
 .. _asyncio-task-obj:
 
