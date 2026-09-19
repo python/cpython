@@ -1,0 +1,5 @@
+:mod:`ipaddress`: fix comparison operators :class:`~ipaddress.IPv4Address`,
+:class:`~ipaddress.IPv6Address`, :class:`~ipaddress.IPv4Network`,
+:class:`~ipaddress.IPv6Network`, :class:`~ipaddress.IPv4Interface`, and
+:class:`~ipaddress.IPv6Interface` to avoid comparing instances of incorrect
+types. Patch by Bénédikt Tran and yihong0618.
