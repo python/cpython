@@ -358,11 +358,6 @@ parsed_frame:
             continue;
         }
 
-        if (frame == NULL && PyList_GET_SIZE(ctx->frame_info) == 0) {
-            const char *e = "Failed to parse initial frame in chain";
-            PyErr_SetString(PyExc_RuntimeError, e);
-            return -1;
-        }
         PyObject *extra_frame = NULL;
         if (unwinder->gc && frame_addr == ctx->gc_frame) {
             _Py_DECLARE_STR(gc, "<GC>");
