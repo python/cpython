@@ -745,6 +745,16 @@ def collect_zstd(info_add):
     copy_attributes(info_add, _zstd, 'zstd.%s', attributes)
 
 
+def collect_ctypes(info_add):
+    try:
+        import _ctypes
+    except ImportError:
+        return
+
+    attributes = ('LIBFFI_VERSION', 'libffi_version')
+    copy_attributes(info_add, _ctypes, 'ctypes.%s', attributes)
+
+
 def collect_expat(info_add):
     try:
         from xml.parsers import expat
@@ -1353,6 +1363,7 @@ def collect_info(info):
         collect_curses,
         collect_datetime,
         collect_decimal,
+        collect_ctypes,
         collect_expat,
         collect_fips,
         collect_gdb,

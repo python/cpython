@@ -6386,6 +6386,89 @@ _ctypes_add_objects(PyObject *mod)
 }
 
 
+#ifdef FFI_VERSION_NUMBER
+PyDoc_STRVAR(libffi_version_info__doc__,
+"ctypes.libffi_version_info\n\
+\n\
+libffi version information as a named tuple.");
+
+static PyStructSequence_Field libffi_version_info_fields[] = {
+    {"major", "Major release number"},
+    {"minor", "Minor release number"},
+    {"patch", "Patch release number"},
+    {0}
+};
+
+static PyStructSequence_Desc libffi_version_info_desc = {
+    "ctypes.libffi_version_info",   /* name */
+    libffi_version_info__doc__,     /* doc */
+    libffi_version_info_fields,     /* fields */
+    3
+};
+
+static PyObject *
+make_libffi_version_info(PyTypeObject *type, unsigned long number)
+{
+    PyObject *version;
+    int pos = 0;
+    unsigned long major = number / 10000;
+    unsigned long minor = (number % 10000) / 100;
+    unsigned long patch = number % 100;
+
+    version = PyStructSequence_New(type);
+    if (version == NULL) {
+        return NULL;
+    }
+
+#define SetItem(VALUE) \
+    PyStructSequence_SET_ITEM(version, pos++, VALUE); \
+    if (PyErr_Occurred()) { \
+        Py_DECREF(version); \
+        return NULL; \
+    }
+
+    SetItem(PyLong_FromUnsignedLong(major))
+    SetItem(PyLong_FromUnsignedLong(minor))
+    SetItem(PyLong_FromUnsignedLong(patch))
+#undef SetItem
+
+    return version;
+}
+
+static int
+_ctypes_add_version_constants(PyObject *mod)
+{
+    if (PyModule_AddStringConstant(mod, "LIBFFI_VERSION",
+                                   FFI_VERSION_STRING) < 0) {
+        return -1;
+    }
+    if (PyModule_AddStringConstant(mod, "libffi_version",
+                                   ffi_get_version()) < 0) {
+        return -1;
+    }
+    PyTypeObject *version_type;
+    version_type = PyStructSequence_NewType(&libffi_version_info_desc);
+    if (version_type == NULL) {
+        return -1;
+    }
+    if (PyModule_Add(mod, "LIBFFI_VERSION_INFO",
+            make_libffi_version_info(version_type, FFI_VERSION_NUMBER)) < 0)
+    {
+        Py_DECREF(version_type);
+        return -1;
+    }
+    if (PyModule_Add(mod, "libffi_version_info",
+            make_libffi_version_info(version_type,
+                                     ffi_get_version_number())) < 0)
+    {
+        Py_DECREF(version_type);
+        return -1;
+    }
+    Py_DECREF(version_type);
+    return 0;
+}
+#endif
+
 static int
 _ctypes_mod_exec(PyObject *mod)
 {
@@ -6440,6 +6523,11 @@ _ctypes_mod_exec(PyObject *mod)
     if (_ctypes_add_objects(mod) < 0) {
         return -1;
     }
+#ifdef FFI_VERSION_NUMBER
+    if (_ctypes_add_version_constants(mod) < 0) {
+        return -1;
+    }
+#endif
     return 0;
 }
 
