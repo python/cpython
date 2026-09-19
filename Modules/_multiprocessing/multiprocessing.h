@@ -100,5 +100,9 @@ PyObject *_PyMp_SetError(PyObject *Type, int num);
 
 extern PyType_Spec _PyMp_SemLockType_spec;
 extern PyObject *_PyMp_sem_unlink(const char *name);
+#ifdef HAVE_BROKEN_SEM_GETVALUE
+    extern int _PyMp_init_module_constants(PyObject *module);
+    extern PyObject *_multiprocessing_set_shm_names(PyObject *module, PyObject *args);
+#endif
 
 #endif /* MULTIPROCESSING_H */
