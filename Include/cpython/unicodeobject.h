@@ -502,6 +502,9 @@ PyAPI_FUNC(int) PyUnicodeWriter_WriteUCS4(
 PyAPI_FUNC(int) PyUnicodeWriter_WriteStr(
     PyUnicodeWriter *writer,
     PyObject *obj);
+PyAPI_FUNC(int) PyUnicodeWriter_WriteRawStr(
+    PyUnicodeWriter *writer,
+    PyObject *str);
 PyAPI_FUNC(int) PyUnicodeWriter_WriteRepr(
     PyUnicodeWriter *writer,
     PyObject *obj);
