@@ -1,0 +1,2 @@
+Soft deprecate :const:`zlib.ZLIB_RUNTIME_VERSION` in favor of
+:const:`zlib.zlib_version`.
