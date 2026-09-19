@@ -8,7 +8,6 @@ preserve
 #endif
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_NoKeywords()
-#include "pycore_time.h"          // _PyTime_FromSecondsObject()
 
 PyDoc_STRVAR(simplequeue_new__doc__,
 "SimpleQueue()\n"
@@ -204,7 +203,7 @@ PyDoc_STRVAR(_queue_SimpleQueue_get__doc__,
 
 static PyObject *
 _queue_SimpleQueue_get_impl(simplequeueobject *self, PyTypeObject *cls,
-                            int block, PyTime_t timeout);
+                            int block, PyObject *timeout_obj);
 
 static PyObject *
 _queue_SimpleQueue_get(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -240,7 +239,7 @@ _queue_SimpleQueue_get(PyObject *self, PyTypeObject *cls, PyObject *const *args,
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int block = 1;
-    PyTime_t timeout = -1;
+    PyObject *timeout_obj = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -259,19 +258,10 @@ _queue_SimpleQueue_get(PyObject *self, PyTypeObject *cls, PyObject *const *args,
             goto skip_optional_pos;
         }
     }
-    if (args[1] != Py_None) {
-        if (_PyTime_FromSecondsObject(&timeout, args[1], _PyTime_ROUND_CEILING) < 0) {
-            goto exit;
-        }
-        if (timeout < 0) {
-            PyErr_SetString(PyExc_ValueError,
-                            "timeout must be non-negative");
-            goto exit;
-        }
-    }
+    timeout_obj = args[1];
 skip_optional_pos:
     Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = _queue_SimpleQueue_get_impl((simplequeueobject *)self, cls, block, timeout);
+    return_value = _queue_SimpleQueue_get_impl((simplequeueobject *)self, cls, block, timeout_obj);
     Py_END_CRITICAL_SECTION();
 
 exit:
@@ -400,4 +390,4 @@ _queue_SimpleQueue___sizeof__(PyObject *self, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=55d25e55fec8dd55 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8219fe2f2ed5f068 input=a9049054013a1b77]*/
