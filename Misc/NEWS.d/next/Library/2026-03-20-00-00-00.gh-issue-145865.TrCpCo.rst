@@ -1,0 +1,3 @@
+Fix typo in :class:`trace.CoverageResults` where ``self.counter`` was
+assigned instead of ``self.counts``, causing the ``counts`` dict to not
+be copied and ``update()`` to mutate the caller's original dict.
