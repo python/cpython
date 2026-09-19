@@ -1,0 +1,38 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2000-01-01 00:00+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+
+
+#. ascii text
+#: latin2.py:7
+msgid "foo"
+msgstr ""
+
+#. latin-2 text
+#: latin2.py:10
+msgid "\305\230 \305\231"
+msgstr ""
+
+#. non-latin-2 text
+#: latin2.py:13
+msgid "\316\261 \316\262"
+msgstr ""
+
+#. ascii text with non-ascii comment
+#. Ř ř
+#: latin2.py:17
+msgid "bar"
+msgstr ""
+
