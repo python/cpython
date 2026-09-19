@@ -1096,21 +1096,18 @@ _match_number_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t start, Py_
            decimal unicode digits (which cannot appear here) */
         n = idx - start;
         char stackbuf[64];
-        PyObject *numstr = NULL;
-        char *buf;
-        if (n < (Py_ssize_t)sizeof(stackbuf)) {
-            buf = stackbuf;
-            buf[n] = '\0';
-        }
-        else {
-            numstr = PyBytes_FromStringAndSize(NULL, n);
-            if (numstr == NULL)
+        char *buf = stackbuf;
+        if (n >= (Py_ssize_t)sizeof(stackbuf)) {
+            buf = PyMem_Malloc(n + 1);
+            if (buf == NULL) {
+                PyErr_NoMemory();
                 return NULL;
-            buf = PyBytes_AS_STRING(numstr);
+            }
         }
         for (i = 0; i < n; i++) {
             buf[i] = (char) PyUnicode_READ(kind, str, i + start);
         }
+        buf[n] = '\0';
         if (is_float) {
             double d = PyOS_string_to_double(buf, NULL, NULL);
             rval = (d == -1.0 && PyErr_Occurred()) ? NULL : PyFloat_FromDouble(d);
@@ -1118,7 +1115,9 @@ _match_number_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t start, Py_
         else {
             rval = PyLong_FromString(buf, NULL, 10);
         }
-        Py_XDECREF(numstr);
+        if (buf != stackbuf) {
+            PyMem_Free(buf);
+        }
     }
     *next_idx_ptr = idx;
     return rval;
