@@ -3,6 +3,7 @@
 
 #include "Python.h"
 #include "pycore_compile.h"       // _PyCompile_GetUnaryIntrinsicName
+#include "pycore_dict.h"          // _PyDict_Freeze()
 #include "pycore_function.h"      // _Py_set_function_type_params()
 #include "pycore_genobject.h"     // _PyAsyncGenValueWrapperNew
 #include "pycore_interpframe.h"   // _PyFrame_GetLocals()
@@ -216,6 +217,14 @@ make_frozenset(PyThreadState* Py_UNUSED(ignored), PyObject *set)
     return _PySet_Freeze(set);
 }
 
+static PyObject *
+make_frozendict(PyThreadState* Py_UNUSED(ignored), PyObject *dict)
+{
+    assert(PyDict_CheckExact(dict));
+    assert(_PyObject_IsUniquelyReferenced(dict));
+    return _PyDict_Freeze(dict);
+}
+
 
 #define INTRINSIC_FUNC_ENTRY(N, F) \
     [N] = {F, #N},
@@ -235,6 +244,7 @@ _PyIntrinsics_UnaryFunctions[] = {
     INTRINSIC_FUNC_ENTRY(INTRINSIC_SUBSCRIPT_GENERIC, _Py_subscript_generic)
     INTRINSIC_FUNC_ENTRY(INTRINSIC_TYPEALIAS, _Py_make_typealias)
     INTRINSIC_FUNC_ENTRY(INTRINSIC_BUILD_FROZENSET, make_frozenset)
+    INTRINSIC_FUNC_ENTRY(INTRINSIC_BUILD_FROZENDICT, make_frozendict)
 };
 
 
