@@ -81,6 +81,15 @@ or as base classes.
    override specific methods to modify the event stream or the configuration
    requests as they pass through.
 
+   .. method:: getParent()
+
+      Return the parent reader, or ``None`` if it is not set.
+
+
+   .. method:: setParent(parent)
+
+      Set the parent reader, which the events are read from.
+
 
 .. function:: prepare_input_source(source, base='')
 
