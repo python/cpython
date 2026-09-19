@@ -3555,7 +3555,7 @@ def inject_memory_error(start=0, stop=0):
 
 
 @contextlib.contextmanager
-def memory_error_cm(start=0, stop=0):
+def inject_memory_error_cm(start=0, stop=0):
     """
     Similar to inject_memory_error() but can be used as a context manager.
 

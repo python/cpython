@@ -1078,7 +1078,7 @@ class ExternalEntityParserCreateErrorTest(unittest.TestCase):
         rc_before = sys.getrefcount(parser)
 
         with self.assertRaises(MemoryError):
-            with support.memory_error_cm(1, 10):
+            with support.inject_memory_error_cm(1, 10):
                 parser.ExternalEntityParserCreate(None)
 
         rc_after = sys.getrefcount(parser)
