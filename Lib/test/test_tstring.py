@@ -88,6 +88,19 @@ class TestTString(unittest.TestCase, TStringBaseCase):
         )
         self.assertEqual(fstring(t), "Pi: 3.14")
 
+        x = object()
+        y = "Y"
+        z = "Z"
+        for template, expected in (
+            (t"{x:{y}{{z}}}", "Y{'Z'}"),
+            (t"{x:{y!s}{{z}}}", "Y{'Z'}"),
+            (t"{x:{y=}{{z}}}", "y='Y'{'Z'}"),
+            (t'''{x:{y}{{z}}}''', "Y{'Z'}"),
+        ):
+            with self.subTest(template=template):
+                self.assertEqual(template.interpolations[0].format_spec,
+                                 expected)
+
     def test_conversions(self):
         # Test !s conversion (str)
         obj = object()
@@ -313,7 +326,10 @@ class TestTString(unittest.TestCase, TStringBaseCase):
             ("t'{lambda:1}'", "t-string: lambda expressions are not allowed "
                               "without parentheses"),
             ("t'{x:{;}}'", "t-string: expecting a valid expression after '{'"),
-            ("t'{1:d\n}'", "t-string: newlines are not allowed in format specifiers")
+            ("t'{1:d\n}'",
+             "t-string: newlines are not allowed in format specifiers"),
+            ("t'{x:{y}\n}'",
+             "t-string: newlines are not allowed in format specifiers"),
         ):
             with self.subTest(case), self.assertRaisesRegex(SyntaxError, err):
                 eval(case)

@@ -188,7 +188,9 @@ _PyLexer_close_ftstring_expr(struct tok_state *tok, ftstring_state *state,
     }
     if (c == '}' && depth == state->replacement_depth - 1) {
         state->replacement_depth--;
-        state->mode = FTSTRING_MODE_MIDDLE;
+        state->mode = state->replacement_depth
+            ? FTSTRING_MODE_FORMAT_SPEC
+            : FTSTRING_MODE_MIDDLE;
         state->debug_expr = 0;
     }
     return 0;
