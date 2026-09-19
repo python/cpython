@@ -746,6 +746,14 @@ Pure paths provide the following methods and properties:
 
    .. versionadded:: 3.12
 
+   .. versionchanged:: 3.14
+
+      Some methods that accept path objects, such as :meth:`match` and
+      :meth:`~Path.rename`, check for a ``with_segments`` attribute to
+      determine whether the argument is already a path object. If present,
+      the argument is used directly; otherwise, it is converted using
+      ``with_segments()``.
+
 
 .. _concrete-paths:
 
