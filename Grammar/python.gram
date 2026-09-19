@@ -183,7 +183,7 @@ augassign[AugOperator*]:
     | '//=' { _PyPegen_augoperator(p, FloorDiv) }
 
 return_stmt[stmt_ty]:
-    | 'return' a=[star_expressions] { _PyAST_Return(a, EXTRA) }
+    | 'return' a=[star_expressions | invalid_yield_expression] { _PyAST_Return(a, EXTRA) }
 
 raise_stmt[stmt_ty]:
     | 'raise' a=expression 'from' b=expression { _PyAST_Raise(a, b, EXTRA) }
@@ -714,6 +714,7 @@ expressions[expr_ty]:
     | expression
 
 expression[expr_ty] (memo):
+    | invalid_yield_in_operator
     | invalid_if_expression
     | invalid_expression
     | invalid_legacy_expression
@@ -770,6 +771,7 @@ conjunction[expr_ty] (memo):
 
 inversion[expr_ty] (memo):
     | 'not' a=inversion { _PyAST_UnaryOp(Not, a, EXTRA) }
+    | 'not' invalid_yield_expression
     | comparison
 
 # Comparison operators
@@ -854,6 +856,7 @@ power[expr_ty]:
 
 await_primary[expr_ty] (memo):
     | 'await' a=primary { CHECK_VERSION(expr_ty, 5, "Await expressions are", _PyAST_Await(a, EXTRA)) }
+    | 'await' invalid_yield_expression
     | primary
 
 primary[expr_ty]:
@@ -872,8 +875,8 @@ slices[expr_ty]:
     | a[asdl_expr_seq*]=','.(slice | starred_expression)+ [','] { _PyAST_Tuple(a, Load, EXTRA) }
 
 slice[expr_ty]:
-    | a=[expression] ':' b=[expression] c=[':' d=[expression] { d }] { _PyAST_Slice(a, b, c, EXTRA) }
-    | a=named_expression { a }
+    | a=[expression | invalid_yield_expression] ':' b=[expression | invalid_yield_expression] c=[':' d=[expression | invalid_yield_expression] { d }] { _PyAST_Slice(a, b, c, EXTRA) }
+    | a=(named_expression | invalid_yield_expression) { a }
 
 atom[expr_ty]:
     | NAME
@@ -882,6 +885,7 @@ atom[expr_ty]:
     | 'None' { _PyAST_Constant(Py_None, NULL, EXTRA) }
     | &(STRING|FSTRING_START|TSTRING_START) strings
     | NUMBER
+    | invalid_yield_in_display
     | &'(' (genexp | tuple | group)
     | &'[' (listcomp | list)
     | &'{' (dictcomp | setcomp | dict | set)
@@ -895,7 +899,7 @@ group[expr_ty]:
 # ----------------
 
 lambdef[expr_ty]:
-    | 'lambda' a=[lambda_params] ':' b=expression {
+    | 'lambda' a=[lambda_params] ':' b=(expression | invalid_yield_expression) {
         _PyAST_Lambda((a) ? a : CHECK(arguments_ty, _PyPegen_empty_arguments(p)), b, EXTRA) }
 
 lambda_params[arguments_ty]:
@@ -1180,6 +1184,7 @@ invalid_arguments:
     | args ',' a=expression b=for_if_clauses {
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, _PyPegen_get_last_comprehension_item(PyPegen_last_item(b, comprehension_ty)), "Generator expression must be parenthesized") }
     | a=args ',' args { _PyPegen_arguments_parsing_error(p, a) }
+    | (args ',')? invalid_yield_expression
 invalid_kwarg:
     | a='True' b='=' {
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "cannot assign to True") }
@@ -1194,6 +1199,8 @@ invalid_kwarg:
             a, b, "expression cannot contain assignment, perhaps you meant \"==\"?") }
     | a='**' expression '=' b=expression {
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "cannot assign to keyword argument unpacking") }
+    | NAME '=' invalid_yield_expression
+    | '**' invalid_yield_expression
 
 # IMPORTANT: Note that the "_without_invalid" suffix causes the rule to not call invalid rules under it
 expression_without_invalid[expr_ty]:
@@ -1305,6 +1312,7 @@ invalid_assert_stmt:
 invalid_block:
     | NEWLINE !INDENT { RAISE_INDENTATION_ERROR("expected an indented block") }
 invalid_comprehension:
+    | ('[' | '{' | '(') invalid_yield_in_comprehension
     | '[' a='**' b=expression for_if_clauses {
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "cannot use dict unpacking in list comprehension") }
     | '(' a='**' b=expression for_if_clauses {
@@ -1535,6 +1543,7 @@ invalid_starred_expression_unpacking:
     | a='*' b=if_expression {
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid starred expression. Did you forget to wrap the conditional expression in parentheses?") }
     | a='*' expression '=' b=expression { RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "cannot assign to iterable argument unpacking") }
+    | '*' invalid_yield_expression
 invalid_starred_expression_unpacking_sequence:
     | a='**' bitwise_or {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "cannot use dict unpacking here") }
@@ -1595,6 +1604,7 @@ invalid_arithmetic:
     | sum ('+'|'-'|'*'|'/'|'%'|'//'|'@') a='not' b=inversion { RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "'not' after an operator must be parenthesized") }
 invalid_factor:
     | ('+' | '-' | '~') a='not' b=factor { RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "'not' after an operator must be parenthesized") }
+    | ('+' | '-' | '~') invalid_yield_expression
 
 invalid_type_params:
     | '[' token=']' {
@@ -1615,3 +1625,27 @@ invalid_bitwise_or:
         ? RAISE_SYNTAX_ERROR_KNOWN_RANGE(b, c, "invalid syntax.  Maybe you meant 'or' or '|' instead of '||'?")
         : NULL
     }
+
+invalid_yield_expression:
+    | invalid_yield_in_comprehension
+    | 'yield' 'from' !expression {
+        RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("expected expression after 'yield from'") }
+    | a=yield_expr &(',' | ')' | ']' | '}' | ':' | ';' | NEWLINE | ENDMARKER | 'else') {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "yield expression must be parenthesized") }
+    | yield_expr { RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("invalid yield expression") }
+invalid_yield_in_display:
+    | ('[' | '{') (star_named_expression ',')* invalid_yield_expression
+    | '(' (star_named_expression ',')+ invalid_yield_expression
+    | '{' (double_starred_kvpair ',')* expression ':' invalid_yield_in_dict_value
+    | '{' (double_starred_kvpair ',')* ['**'] invalid_yield_expression
+invalid_yield_in_dict_value:
+    # Do not include the next dictionary key in a tuple-valued yield.
+    | a='yield' !'from' b[asdl_expr_seq*]=[','.(!(expression ':') star_expression)+] &(',' | '}') {
+        b ? RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, PyPegen_last_item(b, expr_ty), "yield expression must be parenthesized")
+          : RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "yield expression must be parenthesized") }
+    | invalid_yield_expression
+invalid_yield_in_comprehension:
+    | a=yield_expr [':' expression] for_if_clauses {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "yield expression cannot be used in a comprehension") }
+invalid_yield_in_operator:
+    | disjunction ('+' | '-' | '*' | '/' | '//' | '%' | '@' | '**' | '|' | '^' | '&' | '<<' | '>>' | 'and' | 'or' | '==' | '!=' | '<' | '<=' | '>' | '>=' | 'is' ['not'] | ['not'] 'in' | 'if') invalid_yield_expression

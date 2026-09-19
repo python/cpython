@@ -440,8 +440,8 @@ class TestInteractiveModeSyntaxErrors(unittest.TestCase):
         traceback_lines = output.splitlines()[-4:-1]
         expected_lines = [
             '    return yield 42',
-            '           ^^^^^',
-            'SyntaxError: invalid syntax'
+            '           ^^^^^^^^',
+            'SyntaxError: yield expression must be parenthesized'
         ]
         self.assertEqual(traceback_lines, expected_lines)
 

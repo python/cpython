@@ -1,0 +1,5 @@
+Improve :exc:`SyntaxError` messages and locations for unparenthesized
+:keyword:`yield` expressions in function calls, collection displays, return
+statements, subscripts, lambda bodies, and operator operands. Also provide
+specific errors for malformed yields and yields in comprehension bodies.
+Patch by Bartosz Sławecki.
