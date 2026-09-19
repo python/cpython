@@ -1,0 +1,2 @@
+:mod:`ssl`: prevent a crash in :meth:`~ssl.SSLSocket.group`
+for session-less objects on OpenSSL 3.2 and later. Patch by Bénédikt Tran.
