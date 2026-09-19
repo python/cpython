@@ -12,6 +12,7 @@ from email._policybase import (
     validate_header_name
 )
 from email.utils import _has_surrogates
+from email.header import _HeaderValueWithRaw
 from email.headerregistry import HeaderRegistry as HeaderRegistry
 from email.contentmanager import raw_data_manager
 from email.message import EmailMessage
@@ -131,8 +132,7 @@ class EmailPolicy(Policy):
 
         """
         name, value = sourcelines[0].split(':', 1)
-        value = ''.join((value, *sourcelines[1:])).lstrip(' \t\r\n')
-        return (name, value.rstrip('\r\n'))
+        return (name, _HeaderValueWithRaw(''.join((value, *sourcelines[1:]))))
 
     def header_store_parse(self, name, value):
         """+

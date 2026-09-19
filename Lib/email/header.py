@@ -580,3 +580,12 @@ class _Accumulator(list):
 
     def part_count(self):
         return super().__len__()
+
+class _HeaderValueWithRaw(str):
+    _raw_value: str
+
+    def __new__(cls, value):
+        useful_value = value.lstrip(' \t\r\n').rstrip('\r\n')
+        instance = super().__new__(cls, useful_value)
+        instance._raw_value = value
+        return instance
