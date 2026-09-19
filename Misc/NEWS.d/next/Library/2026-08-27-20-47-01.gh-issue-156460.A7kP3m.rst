@@ -1,0 +1,2 @@
+Correctly handle async callable objects used as the ``side_effect`` of
+:class:`unittest.mock.AsyncMock`.
