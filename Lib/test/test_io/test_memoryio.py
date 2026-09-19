@@ -5,7 +5,6 @@ BytesIO -- for bytes
 
 import unittest
 from test import support
-from test.support import import_helper
 
 import gc
 import io
