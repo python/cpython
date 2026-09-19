@@ -1,0 +1,3 @@
+Use ``sysconf(_SC_PAGESIZE)`` instead of ``getpagesize()`` in
+``remote_debug.h`` so ``_remote_debugging`` builds on Darwin with
+``-Werror=implicit-function-declaration``.
