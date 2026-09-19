@@ -514,6 +514,16 @@ pydoc
   (Contributed by Serhiy Storchaka in :gh:`153906`.)
 
 
+readline
+--------
+
+* Added constants :const:`~readline.READLINE_VERSION_INFO`,
+  :const:`~readline.readline_version_info` and
+  :const:`~readline.readline_version`, which provide information about
+  the version of the Readline library in use.
+  (Contributed by Serhiy Storchaka in :gh:`157485`.)
+
+
 re
 --
 
