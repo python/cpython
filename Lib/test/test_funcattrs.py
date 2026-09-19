@@ -229,7 +229,7 @@ class FunctionPropertiesTest(FuncAttrsTest):
         for func in (not_generic, lambda_):
             with self.subTest(func=func):
                 self.assertEqual(func.__type_params__, ())
-                with self.assertRaises(TypeError):
+                with self.assertRaises(AttributeError):
                     del func.__type_params__
                 with self.assertRaises(TypeError):
                     func.__type_params__ = 42
