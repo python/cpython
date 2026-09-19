@@ -382,6 +382,49 @@ if has_c_implementation:
         truncated_data_error = (pickle.UnpicklingError, 'truncated')
         size_overflow_error = (OverflowError, 'exceeds')
 
+        def test_readinto_does_not_keep_buffer_alive(self):
+            # A readinto() that retains the memoryview it is handed must not be
+            # able to access the buffer after readinto() returns (gh-151046).
+            stashed = []
+
+            class StashingFile:
+                def __init__(self, data):
+                    self._data = memoryview(data)
+                    self._pos = 0
+
+                def read(self, n=-1):
+                    if n is None or n < 0:
+                        chunk = self._data[self._pos:]
+                    else:
+                        chunk = self._data[self._pos:self._pos + n]
+                    self._pos += len(chunk)
+                    return bytes(chunk)
+
+                def readline(self):
+                    return self.read(-1)
+
+                def readinto(self, view):
+                    stashed.append(view)
+                    n = min(len(view), len(self._data) - self._pos)
+                    view[:n] = self._data[self._pos:self._pos + n]
+                    self._pos += n
+                    return n
+
+            # A large bytes object forces the file-read (readinto) path.
+            payload = b'spam' * 100_000
+            data = pickle.dumps(payload, protocol=4)
+            obj = self.unpickler(StashingFile(data)).load()
+            self.assertEqual(obj, payload)
+
+            self.assertTrue(stashed)
+            for view in stashed:
+                with self.assertRaises(ValueError):
+                    view[0]
+                with self.assertRaises(ValueError):
+                    view[0] = 0
+                with self.assertRaises(ValueError):
+                    bytes(view)
+
     class CPicklingErrorTests(PyPicklingErrorTests):
         pickler = _pickle.Pickler
 
