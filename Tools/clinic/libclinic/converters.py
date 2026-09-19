@@ -601,6 +601,16 @@ class fildes_converter(CConverter):
             argname=argname)
 
 
+class gid_t_converter(CConverter):
+    type = 'gid_t'
+    converter = '_Py_Gid_Converter'
+
+
+class uid_t_converter(CConverter):
+    type = 'uid_t'
+    converter = '_Py_Uid_Converter'
+
+
 class pid_t_converter(CConverter):
     type = 'pid_t'
     format_unit = '" _Py_PARSE_PID "'
