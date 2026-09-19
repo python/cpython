@@ -171,18 +171,15 @@ access to internal read-only data of Unicode objects:
    .. versionadded:: 3.3
 
 
-.. c:function:: Py_UCS4 PyUnicode_READ(int kind, void *data, \
-                                       Py_ssize_t index)
+.. c:function:: Py_UCS4 PyUnicode_READ(int kind, void *data, Py_ssize_t index)
 
    Read a code point from a canonical representation *data* (as obtained with
    :c:func:`PyUnicode_DATA`).  No checks are performed.
 
    .. impl-detail::
 
-      Support reading the trailing null character at index
-      :c:func:`PyUnicode_GetLength`. It allows iterating on a string and stop
-      at the first null character, which is only safe if the string does not
-      contain embedded null characters.
+      Accept reading the trailing null character at index
+      :c:func:`PyUnicode_GetLength`.
 
    .. versionadded:: 3.3
 
@@ -195,10 +192,8 @@ access to internal read-only data of Unicode objects:
 
    .. impl-detail::
 
-      Support reading the trailing null character at index
-      :c:func:`PyUnicode_GetLength`. It allows iterating on a string and stop
-      at the first null character, which is only safe if the string does not
-      contain embedded null characters.
+      Accept reading the trailing null character at index
+      :c:func:`PyUnicode_GetLength`.
 
    .. versionadded:: 3.3
 
