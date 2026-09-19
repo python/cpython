@@ -2269,6 +2269,56 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self.error('Not yet returned!')
     do_rv = do_retval
 
+    def do_skip(self, arg):
+        """skip module_pattern [module_pattern ...]
+
+        Add glob-style module-name patterns to the modules that the debugger
+        will not step into. With no arguments, display the current patterns.
+        """
+        if not arg:
+            skipped_modules = [f"\t{x}" for x in sorted(self.skip or ())]
+            lines = ["Skipped module patterns:"]
+            lines.extend(skipped_modules or ["\t(none)"]
+            self.message("\n".join(lines))
+            return
+        args = arg.split()
+        self.update_skip(args)
+
+    def do_skip_stdlib(self. arg):
+        """skip_stdlib
+
+        Do not step into frames originating in standard-library modules.
+        """
+        if arg:
+            self._print_invalid_arg(arg)
+            return
+        self.update_skip(sys.stdlib_modules)
+        self.update_skip((f"{x}.*" for x in sys.stdlib_modules))
+
+    def do_unskip(self, arg):
+        """unskip module_pattern [module_pattern ...]
+
+        Remove glob-style module-name patterns from the skip set.
+        """
+        if not arg:
+            self._print_invalid_arg(arg)
+            return
+        args = arg.split()
+        self.remove_skip(args)
+
+    def do_unskip_stdlib(self, arg):
+        """unskip_stdlib
+
+        Remove standard-library module patterns from the skip set.
+        """
+        if arg:
+            self._print_invalid_arg(arg)
+            return
+        self.remove_skip(sys.stdlib_modules)
+        self.remove_skip((f"{x}.*" for x in sys.stdlib_modules))
+
+    complete_enable = _complete_bpnumber
+
     def _getval(self, arg):
         try:
             return eval(arg, self.curframe.f_globals, self.curframe.f_locals)
