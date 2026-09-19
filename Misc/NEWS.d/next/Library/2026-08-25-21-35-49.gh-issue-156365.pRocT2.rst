@@ -1,0 +1,4 @@
+Fix a socket leak in :mod:`asyncio` when ``protocol_factory()`` or transport
+creation fails for a connection accepted by a proactor-based server (the
+default event loop on Windows). The accepted socket is now closed and the
+error no longer stops the server from accepting new connections.
