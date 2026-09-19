@@ -1,0 +1,3 @@
+Ensure :class:`concurrent.futures.ThreadPoolExecutor` and
+:class:`concurrent.futures.ProcessPoolExecutor` notifies any futures it cancels
+on shutdown.
