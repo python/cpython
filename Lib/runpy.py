@@ -234,22 +234,26 @@ def run_module(mod_name, init_globals=None,
 def _get_main_module_details(error=ImportError):
     # Helper that gives a nicer error message when attempting to
     # execute a zipfile or directory by invoking __main__.py
-    # Also moves the standard __main__ out of the way so that the
-    # preexisting __loader__ entry doesn't cause issues
+    # The module is searched only in sys.path[0] -- the executed directory
+    # or zipfile -- not in the whole sys.path.
     main_name = "__main__"
     kwargs = {"name": main_name} if issubclass(error, ImportError) else {}
-    saved_main = sys.modules[main_name]
-    del sys.modules[main_name]
+    from pkgutil import get_importer
+    path_name = sys.path[0]
+    importer = get_importer(path_name)
+    spec = importer.find_spec(main_name) if importer is not None else None
+    if spec is None or spec.loader is None:
+        raise error("can't find %r module in %r" % (main_name, path_name),
+                    **kwargs)
+    if spec.submodule_search_locations is not None:
+        raise error("Cannot use package as __main__ module", **kwargs)
     try:
-        return _get_module_details(main_name)
+        code = spec.loader.get_code(main_name)
     except ImportError as exc:
-        if main_name in str(exc):
-            raise error("can't find %r module in %r" %
-                              (main_name, sys.path[0]),
-                        **kwargs) from exc
-        raise
-    finally:
-        sys.modules[main_name] = saved_main
+        raise error(format(exc), **kwargs) from exc
+    if code is None:
+        raise error("No code object available for %s" % main_name, **kwargs)
+    return main_name, spec, code
 
 
 def _get_code_from_file(fname, module):
