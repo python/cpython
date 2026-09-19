@@ -39,6 +39,13 @@ The module defines the following functions:
    well as the indexing in the *cc* array must be done using the symbolic
    constants defined in the :mod:`!termios` module.
 
+   .. data:: VMIN
+             VTIME
+
+      Indices into the *cc* array controlling a non-canonical read: the minimum
+      number of characters to read and the timeout in tenths of a second,
+      respectively.
+
 
 .. function:: tcsetattr(fd, when, attributes)
 
@@ -77,12 +84,27 @@ The module defines the following functions:
    which queue: :const:`TCIFLUSH` for the input queue, :const:`TCOFLUSH` for the
    output queue, or :const:`TCIOFLUSH` for both queues.
 
+   .. data:: TCIFLUSH
+             TCOFLUSH
+             TCIOFLUSH
+
+      Values for the *queue* selector: the input queue, the output queue, or
+      both queues, respectively.
+
 
 .. function:: tcflow(fd, action)
 
    Suspend or resume input or output on file descriptor *fd*.  The *action*
    argument can be :const:`TCOOFF` to suspend output, :const:`TCOON` to restart
    output, :const:`TCIOFF` to suspend input, or :const:`TCION` to restart input.
+
+   .. data:: TCOOFF
+             TCOON
+             TCIOFF
+             TCION
+
+      Values for the *action* argument: suspend output, restart output,
+      suspend input, or restart input, respectively.
 
 
 .. function:: tcgetwinsize(fd)
@@ -92,6 +114,12 @@ The module defines the following functions:
    :const:`termios.TIOCGSIZE`.
 
    .. versionadded:: 3.11
+
+   .. data:: TIOCGWINSZ
+             TIOCGSIZE
+
+      ``ioctl()`` requests for querying the tty window size.  Not defined on
+      all platforms; :func:`tcgetwinsize` requires at least one of them.
 
 
 .. function:: tcsetwinsize(fd, winsize)
@@ -103,6 +131,12 @@ The module defines the following functions:
    (:const:`termios.TIOCGSIZE`, :const:`termios.TIOCSSIZE`) to be defined.
 
    .. versionadded:: 3.11
+
+   .. data:: TIOCSWINSZ
+             TIOCSSIZE
+
+      ``ioctl()`` requests for setting the tty window size.  Not defined on all
+      platforms; see :func:`tcsetwinsize` for the required pairs.
 
 
 .. seealso::
