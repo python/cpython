@@ -2314,8 +2314,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if arg:
             self._print_invalid_arg(arg)
             return
-        self.remove_skip(sys.stdlib_modules)
-        self.remove_skip((f"{x}.*" for x in sys.stdlib_modules))
+        self.remove_skip(sys.stdlib_module_names)
+        self.remove_skip((f"{x}.*" for x in sys.stdlib_module_names))
 
     def _getval(self, arg):
         try:
