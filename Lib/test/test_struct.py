@@ -433,12 +433,12 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
                 with self.subTest(value=value, format=format):
                     self.assertRaises(OverflowError, struct.pack, format, value)
 
-                ba = bytearray(8)
-                try:
-                    struct.Struct(format).pack_into(ba, 0, value)
-                    assert False
-                except OverflowError:
-                    self.assertEqual(ba, bytearray(8))
+                    ba = bytearray(8)
+                    try:
+                        struct.Struct(format).pack_into(ba, 0, value)
+                        assert False
+                    except OverflowError:
+                        self.assertEqual(ba, bytearray(8))
 
     def test_1530559(self):
         for code, byteorder in iter_integer_formats():

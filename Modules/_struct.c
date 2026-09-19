@@ -790,25 +790,20 @@ np_float_complex(_structmodulestate *state, char *p, PyObject *v,
                  const formatdef *f)
 {
     Py_complex c = PyComplex_AsCComplex(v);
+    char tmp[8];
 
     if (c.real == -1 && PyErr_Occurred()) {
         PyErr_SetString(state->StructError,
                         "required argument is not a complex");
         return -1;
     }
-
-    char tmp[8];
-    int ret = PyFloat_Pack4(c.real, tmp, PY_LITTLE_ENDIAN);
-
-    if (ret) {
-        return ret;
-    }
-    ret = PyFloat_Pack4(c.imag, tmp + 4, PY_LITTLE_ENDIAN);
-    if (ret) {
-        return ret;
+    if (PyFloat_Pack4(c.real, tmp, PY_LITTLE_ENDIAN)
+        || PyFloat_Pack4(c.imag, tmp + 4, PY_LITTLE_ENDIAN))
+    {
+        return -1;
     }
     memcpy(p, tmp, 8);
-    return ret;
+    return 0;
 }
 
 static int
@@ -1142,15 +1137,20 @@ static int
 bp_float_complex(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 {
     Py_complex x = PyComplex_AsCComplex(v);
+    char tmp[8];
+
     if (x.real == -1 && PyErr_Occurred()) {
         PyErr_SetString(state->StructError,
                         "required argument is not a complex");
         return -1;
     }
-    if (PyFloat_Pack4(x.real, p, 0)) {
+    if (PyFloat_Pack4(x.real, tmp, 0)
+        || PyFloat_Pack4(x.imag, tmp + 4, 0))
+    {
         return -1;
     }
-    return PyFloat_Pack4(x.imag, p + 4, 0);
+    memcpy(p, tmp, 8);
+    return 0;
 }
 
 static int
@@ -1468,16 +1468,20 @@ static int
 lp_float_complex(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 {
     Py_complex x = PyComplex_AsCComplex(v);
+    char tmp[8];
+
     if (x.real == -1 && PyErr_Occurred()) {
         PyErr_SetString(state->StructError,
                         "required argument is not a complex");
         return -1;
     }
-    if (PyFloat_Pack4(x.real, p, 1)) {
+    if (PyFloat_Pack4(x.real, tmp, 1)
+        || PyFloat_Pack4(x.imag, tmp + 4, 1))
+    {
         return -1;
     }
-    return PyFloat_Pack4(x.imag, p + 4, 1);
-
+    memcpy(p, tmp, 8);
+    return 0;
 }
 
 static int
