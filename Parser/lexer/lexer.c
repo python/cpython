@@ -100,6 +100,10 @@ set_fstring_expr(struct tok_state* tok, struct token *token, char c) {
     if (!tok_mode->f_string_debug || token->metadata) {
         return 0;
     }
+    const char *expression = tok_mode->last_expr_start;
+    assert(expression != NULL);
+    assert(expression <= tok->start);
+    Py_ssize_t expression_size = tok->start - expression;
     PyObject *res = NULL;
 
     // Look for a # character outside of string literals
@@ -107,8 +111,8 @@ set_fstring_expr(struct tok_state* tok, struct token *token, char c) {
     int in_string = 0;
     char quote_char = 0;
 
-    for (Py_ssize_t i = 0; i < tok_mode->last_expr_size - tok_mode->last_expr_end; i++) {
-        char ch = tok_mode->last_expr_buffer[i];
+    for (Py_ssize_t i = 0; i < expression_size; i++) {
+        char ch = expression[i];
 
         // Skip escaped characters
         if (ch == '\\') {
@@ -144,7 +148,7 @@ set_fstring_expr(struct tok_state* tok, struct token *token, char c) {
     // If we found a # character in the expression, we need to handle comments
     if (hash_detected) {
         // Allocate buffer for processed result
-        char *result = (char *)PyMem_Malloc((tok_mode->last_expr_size - tok_mode->last_expr_end + 1) * sizeof(char));
+        char *result = (char *)PyMem_Malloc((expression_size + 1) * sizeof(char));
         if (!result) {
             return -1;
         }
@@ -155,8 +159,8 @@ set_fstring_expr(struct tok_state* tok, struct token *token, char c) {
         quote_char = 0;    // Current string quote char
 
         // Process each character
-        while (i < tok_mode->last_expr_size - tok_mode->last_expr_end) {
-            char ch = tok_mode->last_expr_buffer[i];
+        while (i < expression_size) {
+            char ch = expression[i];
 
             // Handle string quotes
             if (ch == '"' || ch == '\'') {
@@ -171,11 +175,11 @@ set_fstring_expr(struct tok_state* tok, struct token *token, char c) {
             }
             // Skip comments
             else if (ch == '#' && !in_string) {
-                while (i < tok_mode->last_expr_size - tok_mode->last_expr_end &&
-                       tok_mode->last_expr_buffer[i] != '\n') {
+                while (i < expression_size &&
+                       expression[i] != '\n') {
                     i++;
                 }
-                if (i < tok_mode->last_expr_size - tok_mode->last_expr_end) {
+                if (i < expression_size) {
                     result[j++] = '\n';
                 }
             }
@@ -191,8 +195,8 @@ set_fstring_expr(struct tok_state* tok, struct token *token, char c) {
         PyMem_Free(result);
     } else {
         res = PyUnicode_DecodeUTF8(
-            tok_mode->last_expr_buffer,
-            tok_mode->last_expr_size - tok_mode->last_expr_end,
+            expression,
+            expression_size,
             NULL
         );
     }
@@ -201,61 +205,6 @@ set_fstring_expr(struct tok_state* tok, struct token *token, char c) {
         return -1;
     }
     token->metadata = res;
-    return 0;
-}
-
-int
-_PyLexer_update_fstring_expr(struct tok_state *tok, char cur)
-{
-    assert(tok->cur != NULL);
-
-    Py_ssize_t size = strlen(tok->cur);
-    tokenizer_mode *tok_mode = TOK_GET_MODE(tok);
-
-    switch (cur) {
-       case 0:
-            if (!tok_mode->last_expr_buffer || tok_mode->last_expr_end >= 0) {
-                return 1;
-            }
-            char *new_buffer = PyMem_Realloc(
-                tok_mode->last_expr_buffer,
-                tok_mode->last_expr_size + size
-            );
-            if (new_buffer == NULL) {
-                PyMem_Free(tok_mode->last_expr_buffer);
-                goto error;
-            }
-            tok_mode->last_expr_buffer = new_buffer;
-            strncpy(tok_mode->last_expr_buffer + tok_mode->last_expr_size, tok->cur, size);
-            tok_mode->last_expr_size += size;
-            break;
-        case '{':
-            if (tok_mode->last_expr_buffer != NULL) {
-                PyMem_Free(tok_mode->last_expr_buffer);
-            }
-            tok_mode->last_expr_buffer = PyMem_Malloc(size);
-            if (tok_mode->last_expr_buffer == NULL) {
-                goto error;
-            }
-            tok_mode->last_expr_size = size;
-            tok_mode->last_expr_end = -1;
-            strncpy(tok_mode->last_expr_buffer, tok->cur, size);
-            break;
-        case '}':
-        case '!':
-            tok_mode->last_expr_end = strlen(tok->start);
-            break;
-        case ':':
-            if (tok_mode->last_expr_end == -1) {
-               tok_mode->last_expr_end = strlen(tok->start);
-            }
-            break;
-        default:
-            Py_UNREACHABLE();
-    }
-    return 1;
-error:
-    tok->done = E_NOMEM;
     return 0;
 }
 
@@ -1023,9 +972,8 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         the_current_tok->f_string_line_start = tok->lineno;
         the_current_tok->f_string_start_offset = -1;
         the_current_tok->f_string_multi_line_start_offset = -1;
-        the_current_tok->last_expr_buffer = NULL;
-        the_current_tok->last_expr_size = 0;
-        the_current_tok->last_expr_end = -1;
+        the_current_tok->last_expr_start = NULL;
+        the_current_tok->last_expr_start_offset = -1;
         the_current_tok->in_format_spec = 0;
         the_current_tok->f_string_debug = 0;
 
@@ -1179,9 +1127,6 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
          int cursor_in_format_with_debug =
              cursor == 1 && (current_tok->f_string_debug || in_format_spec);
          int cursor_valid = cursor == 0 || cursor_in_format_with_debug;
-        if ((cursor_valid) && !_PyLexer_update_fstring_expr(tok, c)) {
-            return MAKE_TOKEN(ENDMARKER);
-        }
         if ((cursor_valid) && c != '{' && set_fstring_expr(tok, token, c)) {
             return MAKE_TOKEN(ERRORTOKEN);
         }
@@ -1322,6 +1267,9 @@ tok_get_fstring_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct 
     if (start_char == '{') {
         int peek1 = tok_nextc(tok);
         tok_backup(tok, peek1);
+        if (peek1 != '{') {
+            current_tok->last_expr_start = tok->cur;
+        }
         tok_backup(tok, start_char);
         if (peek1 != '{') {
             current_tok->curly_bracket_expr_start_depth++;
@@ -1343,13 +1291,6 @@ tok_get_fstring_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct 
             tok_backup(tok, quote);
             goto f_string_middle;
         }
-    }
-
-    if (current_tok->last_expr_buffer != NULL) {
-        PyMem_Free(current_tok->last_expr_buffer);
-        current_tok->last_expr_buffer = NULL;
-        current_tok->last_expr_size = 0;
-        current_tok->last_expr_end = -1;
     }
 
     p_start = tok->start;
@@ -1434,12 +1375,10 @@ f_string_middle:
         }
 
         if (c == '{') {
-            if (!_PyLexer_update_fstring_expr(tok, c)) {
-                return MAKE_TOKEN(ENDMARKER);
-            }
             int peek = tok_nextc(tok);
             if (peek != '{' || in_format_spec) {
                 tok_backup(tok, peek);
+                current_tok->last_expr_start = tok->cur;
                 tok_backup(tok, c);
                 current_tok->curly_bracket_expr_start_depth++;
                 if (current_tok->curly_bracket_expr_start_depth >= MAX_EXPR_NESTING) {
