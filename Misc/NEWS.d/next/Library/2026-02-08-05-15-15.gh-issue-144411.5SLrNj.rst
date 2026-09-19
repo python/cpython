@@ -1,0 +1,2 @@
+Fixed an inconsistency between the pure-Python and C pickle implementations
+when handling invalid slot state during unpickling.
