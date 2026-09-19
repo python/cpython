@@ -19,3 +19,7 @@ There are no plans to remove :term:`soft deprecated` APIs.
 
   (Contributed by Gregory P. Smith in :gh:`86519` and
   Hugo van Kemenade in :gh:`148100`.)
+
+* :const:`zlib.ZLIB_RUNTIME_VERSION` is now :term:`soft deprecated`
+  in favor of :const:`zlib.zlib_version`.
+  (Contributed by Stan Ulbrych in :gh:`117404`.)
