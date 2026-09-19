@@ -1395,15 +1395,6 @@ encodings.
 |                    |         | :mod:`encodings.idna`.    |
 |                    |         | Only ``errors='strict'``  |
 |                    |         | is supported.             |
-|                    |         |                           |
-|                    |         | .. warning::              |
-|                    |         |                           |
-|                    |         |    This codec builds on   |
-|                    |         |    ``punycode``, whose    |
-|                    |         |    algorithms scale       |
-|                    |         |    poorly, so limit the   |
-|                    |         |    length of untrusted    |
-|                    |         |    input.                 |
 +--------------------+---------+---------------------------+
 | mbcs               | ansi,   | Windows only: Encode the  |
 |                    | dbcs    | operand according to the  |
@@ -1655,11 +1646,6 @@ Applications) and :rfc:`3492` (Nameprep: A Stringprep Profile for
 Internationalized Domain Names (IDN)). It builds upon the ``punycode`` encoding
 and :mod:`stringprep`.
 
-.. warning::
-
-   This module builds on ``punycode``, whose algorithms scale poorly, so limit
-   the length of untrusted input.
-
 If you need the IDNA 2008 standard from :rfc:`5891` and :rfc:`5895`, use the
 third-party :pypi:`idna` module.
 
@@ -1697,10 +1683,30 @@ international domain names, and to unify similar characters. The nameprep
 functions can be used directly if desired.
 
 
-.. function:: nameprep(label)
+.. function:: nameprep(label, *, limit=None)
 
    Return the nameprepped version of *label*. The implementation currently assumes
    query strings, so ``AllowUnassigned`` is true.
+
+   Raise :exc:`UnicodeEncodeError` if the nameprep algorithm emits an error.
+
+   If the *limit* argument is given, it should be set to the maximum size
+   of an encoded A-label (that is, 63 for IDNA).
+   :func:`!nameprep` will raise :exc:`UnicodeEncodeError` if the label is
+   **much** larger than *limit*.
+   Note that this is only a rough check meant to skip expensive processing
+   of extremely large input; the caller should check any exact
+   limits separately.
+
+   .. warning::
+
+      For backwards compatibilty, label size is unlimited by default.
+      This may cause issues when processing the result with the
+      ``punycode`` encoding, whose algorithms scale poorly.
+
+   .. versionadded:: next
+
+      Added the *limit* parameter.
 
 
 .. function:: ToASCII(label)

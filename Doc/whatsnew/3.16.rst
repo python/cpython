@@ -357,6 +357,10 @@ encodings
   used for international IMAP4 mailbox names (:rfc:`3501`).
   (Contributed by Serhiy Storchaka in :gh:`66788`.)
 
+* :func:`encodings.idna.nameprep` now takes a *limit* argument that allows
+  rejecting extremely large input early.
+  (Contributed by Petr Viktorin in :gh:`157675`.)
+
 
 gzip
 ----
