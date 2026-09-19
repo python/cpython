@@ -2012,19 +2012,14 @@ class FrozenDictTests(unittest.TestCase):
                 if type(fd) == FrozenDictSlots:
                     fd.slot_attr = 456
                 with self.subTest(fd=fd, proto=proto):
-                    if proto >= 2:
-                        p = pickle.dumps(fd, proto)
-                        fd2 = pickle.loads(p)
-                        self.assertEqual(fd2, fd)
-                        self.assertEqual(type(fd2), type(fd))
-                        if type(fd) == FrozenDict:
-                            self.assertEqual(fd2.attr, 123)
-                        if type(fd) == FrozenDictSlots:
-                            self.assertEqual(fd2.slot_attr, 456)
-                    else:
-                        # protocol 0 and 1 don't support frozendict
-                        with self.assertRaises(TypeError):
-                            pickle.dumps(fd, proto)
+                    p = pickle.dumps(fd, proto)
+                    fd2 = pickle.loads(p)
+                    self.assertEqual(fd2, fd)
+                    self.assertEqual(type(fd2), type(fd))
+                    if type(fd) == FrozenDict:
+                        self.assertEqual(fd2.attr, 123)
+                    if type(fd) == FrozenDictSlots:
+                        self.assertEqual(fd2.slot_attr, 456)
 
     def test_pickle_iter(self):
         fd = frozendict(c=1, b=2, a=3, d=4, e=5, f=6)
