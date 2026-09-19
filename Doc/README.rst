@@ -79,12 +79,16 @@ Available make targets are:
 
 * "text", which builds a plain text file for each source file.
 
+* "texinfo", which builds Texinfo source files.
+
 * "epub", which builds an EPUB document, suitable to be viewed on e-book
   readers.
 
 * "linkcheck", which checks all external references to see whether they are
   broken, redirected or malformed, and outputs this information to stdout as
   well as a plain-text (.txt) file.
+* "linklint", which removes needless links from the documentation during the
+  Sphinx build.
 
 * "changes", which builds an overview over all versionadded/versionchanged/
   deprecated items in the current version. This is meant as a help for the
@@ -96,6 +100,10 @@ Available make targets are:
 * "pydoc-topics", which builds a Python module containing a dictionary with
   plain text documentation for the labels defined in
   ``tools/pyspecific.py`` -- pydoc needs these to show topic and keyword help.
+
+* "doctest", which runs doctests in the documentation.
+
+* "gettext", which generates gettext message catalog templates.
 
 * "check", which checks for frequent markup errors.
 
