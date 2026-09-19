@@ -1,0 +1,3 @@
+:mod:`hashlib`: Fix data races when accessing
+:attr:`~hashlib.hash.digest_size` and :attr:`~hashlib.hash.block_size` on
+SHA-3 objects. Patch by Bénédikt Tran.
