@@ -2,11 +2,12 @@ import contextlib
 import io
 import warnings
 import unittest
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 from textwrap import dedent
 
 from test.support import force_not_colorized
 
+from _pyrepl import simple_interact
 from _pyrepl.console import InteractiveColoredConsole
 from _pyrepl.simple_interact import _more_lines
 
@@ -299,3 +300,51 @@ class TestWarnings(unittest.TestCase):
         count = sum("'return' in a 'finally' block" in str(w.message)
                     for w in caught)
         self.assertEqual(count, 1)
+
+
+class TestStatementSubmittedHook(unittest.TestCase):
+
+    def _run_interactive(self, statements, hook):
+        console = InteractiveColoredConsole()
+        statement_iter = iter(statements)
+
+        def fake_multiline_input(more_lines, ps1, ps2):
+            try:
+                return next(statement_iter)
+            except StopIteration:
+                raise EOFError
+
+        output = io.StringIO()
+        with (
+            patch.object(simple_interact, "statement_submitted_hook", hook),
+            patch.object(
+                simple_interact,
+                "multiline_input",
+                side_effect=fake_multiline_input,
+            ),
+            patch.object(simple_interact, "_get_reader"),
+            patch.object(simple_interact, "append_history_file"),
+            patch("_pyrepl.readline._setup"),
+            contextlib.redirect_stdout(output),
+            contextlib.redirect_stderr(output),
+        ):
+            simple_interact.run_multiline_interactive_console(console)
+
+        return output.getvalue(), console.locals
+
+    def test_hook_called_before_statement_execution(self):
+        statement = "if True:\n    print('statement executed')\n"
+        escape_sequence = "\x1b]633;C\x07"
+        hook = MagicMock(
+            side_effect=lambda statement: print(escape_sequence, end="")
+        )
+        output, _ = self._run_interactive([statement], hook)
+
+        hook.assert_called_once_with(statement)
+        self.assertEqual(output, f"{escape_sequence}statement executed\n")
+
+    def test_hook_not_called_for_repl_commands(self):
+        hook = MagicMock()
+        self._run_interactive(["clear"], hook)
+
+        hook.assert_not_called()
