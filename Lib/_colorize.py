@@ -603,6 +603,8 @@ def can_colorize(*, file: IO[str] | IO[bytes] | None = None) -> bool:
         return os.isatty(file.fileno())
     except OSError:
         return hasattr(file, "isatty") and file.isatty()
+    except Exception:
+        return False
 
 
 default_theme = Theme()

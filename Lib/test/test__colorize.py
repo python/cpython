@@ -2,6 +2,7 @@ import contextlib
 import dataclasses
 import io
 import sys
+import tempfile
 import unittest
 import unittest.mock
 import _colorize
@@ -186,6 +187,11 @@ class TestColorizeFunction(unittest.TestCase):
                 self.assertEqual(_colorize.can_colorize(file=file), True)
                 file.isatty.return_value = False
                 self.assertEqual(_colorize.can_colorize(file=file), False)
+
+            # gh-157581: A closed file raises ValueError from fileno().
+            file = tempfile.TemporaryFile(mode="w")
+            file.close()
+            self.assertEqual(_colorize.can_colorize(file=file), False)
 
 
 if __name__ == "__main__":
