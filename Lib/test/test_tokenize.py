@@ -2455,7 +2455,7 @@ class CTokenizeTest(TestCase):
         cases = [
             (
                 "2sin(x)",
-                ("invalid decimal literal", (1, 1)),
+                ("invalid decimal literal", (1, 2)),
                 [
                     (token.NUMBER, "2", (1, 0), (1, 1)),
                     (token.NAME, "sin", (1, 1), (1, 4)),
