@@ -18,9 +18,6 @@ race:set_allocator_unlocked
 # https://gist.github.com/swtaarrs/8e0e365e1d9cecece3269a2fb2f2b8b8
 race:sock_recv_impl
 
-# gh-124878: race condition when interpreter finalized while daemon thread runs
-race:free_threadstate
-
 
 # These warnings trigger directly in a CPython function.
 
