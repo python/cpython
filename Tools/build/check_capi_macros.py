@@ -16,6 +16,24 @@ import os.path
 import re
 import sys
 
+EXCLUDE_HEADERS = {
+    # Header files not included by Python.h and ignored by this script
+    'dynamic_annotations.h',
+    'errcode.h',
+    'opcode.h',
+    'opcode_ids.h',
+    'osdefs.h',
+    'pyexpat.h',
+    'structmember.h',
+
+    # Header files not included by Python.h but parsed by this script:
+    # - datetime.h
+    # - frameobject.h
+    # - marshal.h
+    # - py_curses.h
+    # - pydtrace.h
+}
+
 TOOLS_BUILD_DIR = os.path.abspath(os.path.dirname(__file__))
 SRC_DIR = os.path.dirname(os.path.dirname(TOOLS_BUILD_DIR))
 IGNORED_FILENAME = os.path.join(TOOLS_BUILD_DIR, 'check_capi_macros_ignored.txt')
@@ -71,6 +89,8 @@ def main():
     # Parse header files
     include_dir = os.path.join(SRC_DIR, 'Include')
     files = glob.glob(os.path.join(include_dir, '*.h'))
+    files = [filename for filename in files
+             if os.path.basename(filename) not in EXCLUDE_HEADERS]
     files.extend(glob.glob(os.path.join(include_dir, 'cpython', '*.h')))
     files.append(os.path.join(SRC_DIR, 'pyconfig.h.in'))
     names = []  # list of (name: str, filename: str, undef: bool)
