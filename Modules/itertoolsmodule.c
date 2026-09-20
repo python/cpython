@@ -3628,15 +3628,14 @@ count_nextlong(countobject *lz)
     }
     assert(lz->cnt == PY_SSIZE_T_MAX && lz->long_cnt != NULL);
 
-    // We hold one reference to "result" (a.k.a. the old value of
-    // lz->long_cnt); we'll either return it or keep it in lz->long_cnt.
-    PyObject *result = lz->long_cnt;
+    PyObject *result = Py_NewRef(lz->long_cnt);
 
     PyObject *stepped_up = PyNumber_Add(result, lz->long_step);
     if (stepped_up == NULL) {
+        Py_DECREF(result);
         return NULL;
     }
-    lz->long_cnt = stepped_up;
+    Py_SETREF(lz->long_cnt, stepped_up);
 
     return result;
 }
