@@ -19,7 +19,7 @@ class DummyEditwin:
         self.text = text
         self.indentwidth = 8
         self.tabwidth = 8
-        self.prompt_last_line = '>>>'  # Currently not used by autocomplete.
+        self.is_shell = True
 
 
 class AutoCompleteTest(unittest.TestCase):
@@ -216,6 +216,12 @@ class AutoCompleteTest(unittest.TestCase):
         # Test files.
         self.text.insert('1.0', '"t')
         self.assertTrue(acp.open_completions(ac.TAB))
+        self.text.delete('1.0', 'end')
+
+        # No file name starts with the text (gh-60402).
+        self.text.insert('1.0', '"hello wor')
+        self.assertIsNone(acp.open_completions(ac.TAB))
+        self.assertTrue(acp.open_completions(ac.FORCE))
         self.text.delete('1.0', 'end')
 
     def test_completion_kwds(self):

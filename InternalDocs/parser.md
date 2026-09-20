@@ -563,6 +563,23 @@ in the generated C parse code that allows to measure how much each rule uses
 memoization (check the [`Parser/pegen.c`](../Parser/pegen.c)
 file for more information) but it needs to be manually activated.
 
+The C generator also reuses memoized prefixes within consecutive alternatives.
+For example, in `prefix ':' NAME | prefix ':' NUMBER`, failure after the first
+`':'` normally requires another call to `prefix` and another memo lookup. The
+generated code can keep the result and ending position in local variables and
+reuse them when trying the next alternative.
+
+This applies only when the shared first item is a memoized rule, including a
+left-recursion leader, that the generator can prove consumes input on success.
+The locals are reset on each rule-body invocation, including each seed-growing
+iteration. Alternative order, cuts, and suffix backtracking are preserved. When
+`call_invalid_rules` is enabled, the generated code uses the original rule calls.
+
+The consumption analysis follows grammar items; it cannot inspect arbitrary C
+actions. As with memoization, actions must not invalidate cached results. In
+particular, suffix actions must not move the parser before their starting mark,
+rewrite buffered input, or replace memo entries for earlier positions.
+
 Automatic variables
 -------------------
 

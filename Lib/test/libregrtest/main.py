@@ -470,8 +470,7 @@ class Regrtest:
                 os.unlink(self.next_single_filename)
 
         if coverage is not None:
-            # uses a new-in-Python 3.13 keyword argument that mypy doesn't know about yet:
-            coverage.write_results(show_missing=True, summary=True,  # type: ignore[call-arg]
+            coverage.write_results(show_missing=True, summary=True,
                                    coverdir=self.coverage_dir,
                                    ignore_missing_files=True)
 
@@ -539,10 +538,7 @@ class Regrtest:
         if self.num_workers < 0:
             # Use all CPUs + 2 extra worker processes for tests
             # that like to sleep
-            #
-            # os.process.cpu_count() is new in Python 3.13;
-            # mypy doesn't know about it yet
-            self.num_workers = (os.process_cpu_count() or 1) + 2  # type: ignore[attr-defined]
+            self.num_workers = (os.process_cpu_count() or 1) + 2
 
         # For a partial run, we do not need to clutter the output.
         if (self.want_header
