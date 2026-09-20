@@ -3938,18 +3938,17 @@ PyBytesWriter_FinishWithSize(PyBytesWriter *writer, Py_ssize_t size)
             }
         }
         else {
-            if (size != PyBytes_GET_SIZE(writer->obj)) {
-                if (_PyBytes_Resize(&writer->obj, size)) {
-                    goto error;
-                }
-            }
-
             if (size == 1) {
                 // Get the single byte singleton
                 unsigned char ch = PyBytes_AS_STRING(writer->obj)[0];
                 PyObject *op = (PyObject*)CHARACTER(ch);
                 assert(_Py_IsImmortal(op));
                 Py_SETREF(writer->obj, op);
+            }
+            else if (size != PyBytes_GET_SIZE(writer->obj)) {
+                if (_PyBytes_Resize(&writer->obj, size)) {
+                    goto error;
+                }
             }
         }
 
