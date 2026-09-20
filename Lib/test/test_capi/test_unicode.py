@@ -2100,8 +2100,9 @@ class PyUnicodeWriterTest(unittest.TestCase):
                 with self.subTest(size=size, ch=ch):
                     ch = chr(ch)
 
-                    # If the first write is a Latin1 character, use the
-                    # singleton as the read-only buffer
+                    # If the first write is a Latin1 character and no buffer
+                    # was allocated yet, use the singleton as the read-only
+                    # buffer
                     writer = self.create_writer(size)
                     writer.write_char(ord(ch))
                     self.assertIs(writer.finish(), ch)
@@ -2165,7 +2166,7 @@ class PyUnicodeWriterTest(unittest.TestCase):
 
     def test_readonly_optim(self):
         # Read-only optimization: if the first and only write is a Python str
-        # object, return the object unchanged
+        # object and no buffer was allocated yet, return the object unchanged
         unique_string = 'unique string'
         writer = self.create_writer(0)
         writer.write_str(unique_string)
@@ -2228,7 +2229,7 @@ class PyUnicodeWriterFormatTest(unittest.TestCase):
 
     def test_readonly_optim(self):
         # Read-only optimization: if the first and only write is a Python str
-        # object, return the object unchanged
+        # object and no buffer was allocated yet, return the object unchanged
         from ctypes import py_object
 
         unique_string = 'unique string'
