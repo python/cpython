@@ -1898,6 +1898,11 @@ class PyUnicodeWriterTest(unittest.TestCase):
         self.assertEqual(writer.finish(),
                          "\0$\u20AC\U0010FFFF")
 
+        writer = self.create_writer(0)
+        for ch in 'hello':
+            writer.write_char(ord(ch))
+        self.assertEqual(writer.finish(), 'hello')
+
     def test_utf8(self):
         writer = self.create_writer(0)
         writer.write_utf8(b"ascii", -1)
@@ -2085,12 +2090,22 @@ class PyUnicodeWriterTest(unittest.TestCase):
                 writer = self.create_writer(size)
                 self.assertIs(writer.finish(), '')
 
-        for ch in range(256):
-            with self.subTest(ch=ch):
-                ch = chr(ch)
-                writer = self.create_writer(0)
-                writer.write_substring(ch + 'xxx', 0, 1)
-                self.assertIs(writer.finish(), ch)
+        for size in (0, 123):
+            for ch in range(256):
+                with self.subTest(size=size, ch=ch):
+                    ch = chr(ch)
+
+                    # If the first write is a Latin1 character, use the
+                    # singleton as the read-only buffer
+                    writer = self.create_writer(size)
+                    writer.write_char(ord(ch))
+                    self.assertIs(writer.finish(), ch)
+
+                    # PyUnicodeWriter_Finish() replaces the buffer
+                    # with the singleton
+                    writer = self.create_writer(size)
+                    writer.write_substring(ch + 'xxx', 0, 1)
+                    self.assertIs(writer.finish(), ch)
 
     @unittest.skipUnless(support.Py_DEBUG, 'need debug build (Py_DEBUG)')
     def test_detect_overflow(self):
