@@ -14475,6 +14475,7 @@ PyTypeObject PyUnicode_Type = {
     0,                            /* tp_alloc */
     unicode_new,                  /* tp_new */
     PyObject_Free,                /* tp_free */
+    .tp_version_tag = _Py_TYPE_VERSION_STR,
     .tp_vectorcall = unicode_vectorcall,
     ._tp_iteritem = unicode_iteritem,
 };
@@ -15229,6 +15230,10 @@ init_stdio_encoding(PyInterpreterState *interp)
 {
     /* Update the stdio encoding to the normalized Python codec name. */
     PyConfig *config = (PyConfig*)_PyInterpreterState_GetConfig(interp);
+    if (config->stdio_encoding == NULL) {
+        /* gh-86427: The encoding is determined for every stream. */
+        return _PyStatus_OK();
+    }
     if (config_get_codec_name(&config->stdio_encoding) < 0) {
         return _PyStatus_ERR("failed to get the Python codec name "
                              "of the stdio encoding");

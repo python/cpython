@@ -2571,6 +2571,25 @@ Public classes
    * ``a.rotate(angle)`` rotation
 
 
+Exceptions
+==========
+
+The :mod:`!turtle` module defines the following exception:
+
+.. exception:: TurtleGraphicsError
+
+   Raised for invalid arguments or operations.
+   For example, a malformed color string:
+
+   .. doctest::
+      :skipif: _tkinter is None
+
+      >>> turtle.color("blau")
+      Traceback (most recent call last):
+          ...
+      turtle.TurtleGraphicsError: bad color string: blau
+
+
 .. _turtle-explanation:
 
 Explanation
