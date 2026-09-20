@@ -245,8 +245,6 @@ Creating tasks
 
    Wrap the *coro* :ref:`coroutine <coroutine>` into a :class:`Task`
    and schedule its execution.  Return the Task object.
-   :exc:`TypeError` is raised if *coro* is not a coroutine declared with
-   :keyword:`async def`.
 
    The full function signature is largely the same as that of the
    :class:`Task` constructor (or factory) - all of the keyword arguments to
