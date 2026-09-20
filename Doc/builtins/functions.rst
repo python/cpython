@@ -1453,6 +1453,10 @@ are always available.  They are listed here in alphabetical order.
    given, it is closed when the returned I/O object is closed unless *closefd*
    is set to ``False``.)
 
+   When *file* is an existing file descriptor, *open* does not change the access
+   mode of the file descriptor.  The caller is responsible for ensuring that
+   the file descriptor is compatible with the requested *mode*.
+
    *mode* is an optional string that specifies the mode in which the file is
    opened.  It defaults to ``'r'`` which means open for reading in text mode.
    Other common values are ``'w'`` for writing (truncating the file if it
