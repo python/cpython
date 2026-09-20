@@ -1,0 +1,1 @@
+Make perf_trampoline thread safe.
