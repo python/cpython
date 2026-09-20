@@ -2230,79 +2230,80 @@ class PyUnicodeWriterFormatTest(unittest.TestCase):
         self.writer_format(writer, b'%R', py_object(MyRepr()))
         self.assertIs(writer.finish(), unique_string)
 
-    # TODO: Add tests to the following codec functions:
-    # - PyUnicode_AsASCIIString
-    # - PyUnicode_AsCharmapString
-    # - PyUnicode_AsEncodedString
-    # - PyUnicode_AsLatin1String
-    # - PyUnicode_AsMBCSString
-    # - PyUnicode_AsRawUnicodeEscapeString
-    # - PyUnicode_AsUTF16String
-    # - PyUnicode_AsUTF32String
-    # - PyUnicode_AsUTF8String
-    # - PyUnicode_AsUnicodeEscapeString
-    # - PyUnicode_BuildEncodingMap
-    # - PyUnicode_Decode
-    # - PyUnicode_DecodeASCII
-    # - PyUnicode_DecodeCharmap
-    # - PyUnicode_DecodeCodePageStateful
-    # - PyUnicode_DecodeFSDefault
-    # - PyUnicode_DecodeFSDefaultAndSize
-    # - PyUnicode_DecodeLatin1
-    # - PyUnicode_DecodeLocale
-    # - PyUnicode_DecodeLocaleAndSize
-    # - PyUnicode_DecodeMBCS
-    # - PyUnicode_DecodeMBCSStateful
-    # - PyUnicode_DecodeRawUnicodeEscape
-    # - PyUnicode_DecodeUTF16
-    # - PyUnicode_DecodeUTF16Stateful
-    # - PyUnicode_DecodeUTF32
-    # - PyUnicode_DecodeUTF32Stateful
-    # - PyUnicode_DecodeUTF7
-    # - PyUnicode_DecodeUTF7Stateful
-    # - PyUnicode_DecodeUTF8
-    # - PyUnicode_DecodeUTF8Stateful
-    # - PyUnicode_DecodeUnicodeEscape
-    # - PyUnicode_EncodeCodePage
-    # - PyUnicode_EncodeFSDefault
-    # - PyUnicode_EncodeLocale
-    # - PyUnicode_FSConverter
-    # - PyUnicode_FSDecoder
-    # - PyUnicode_FromEncodedObject
-    # - PyUnicode_Splitlines
 
-    # TODO: Add tests to the following character functions:
-    # - Py_UNICODE_ISALNUM
-    # - Py_UNICODE_ISALPHA
-    # - Py_UNICODE_ISDECIMAL
-    # - Py_UNICODE_ISDIGIT
-    # - Py_UNICODE_ISLINEBREAK
-    # - Py_UNICODE_ISLOWER
-    # - Py_UNICODE_ISNUMERIC
-    # - Py_UNICODE_ISPRINTABLE
-    # - Py_UNICODE_ISSPACE
-    # - Py_UNICODE_ISTITLE
-    # - Py_UNICODE_ISUPPER
-    # - Py_UNICODE_TODECIMAL
-    # - Py_UNICODE_TODIGIT
-    # - Py_UNICODE_TOLOWER
-    # - Py_UNICODE_TONUMERIC
-    # - Py_UNICODE_TOTITLE
-    # - Py_UNICODE_TOUPPER
+# TODO: Add tests to the following codec functions:
+# - PyUnicode_AsASCIIString
+# - PyUnicode_AsCharmapString
+# - PyUnicode_AsEncodedString
+# - PyUnicode_AsLatin1String
+# - PyUnicode_AsMBCSString
+# - PyUnicode_AsRawUnicodeEscapeString
+# - PyUnicode_AsUTF16String
+# - PyUnicode_AsUTF32String
+# - PyUnicode_AsUTF8String
+# - PyUnicode_AsUnicodeEscapeString
+# - PyUnicode_BuildEncodingMap
+# - PyUnicode_Decode
+# - PyUnicode_DecodeASCII
+# - PyUnicode_DecodeCharmap
+# - PyUnicode_DecodeCodePageStateful
+# - PyUnicode_DecodeFSDefault
+# - PyUnicode_DecodeFSDefaultAndSize
+# - PyUnicode_DecodeLatin1
+# - PyUnicode_DecodeLocale
+# - PyUnicode_DecodeLocaleAndSize
+# - PyUnicode_DecodeMBCS
+# - PyUnicode_DecodeMBCSStateful
+# - PyUnicode_DecodeRawUnicodeEscape
+# - PyUnicode_DecodeUTF16
+# - PyUnicode_DecodeUTF16Stateful
+# - PyUnicode_DecodeUTF32
+# - PyUnicode_DecodeUTF32Stateful
+# - PyUnicode_DecodeUTF7
+# - PyUnicode_DecodeUTF7Stateful
+# - PyUnicode_DecodeUTF8
+# - PyUnicode_DecodeUTF8Stateful
+# - PyUnicode_DecodeUnicodeEscape
+# - PyUnicode_EncodeCodePage
+# - PyUnicode_EncodeFSDefault
+# - PyUnicode_EncodeLocale
+# - PyUnicode_FSConverter
+# - PyUnicode_FSDecoder
+# - PyUnicode_FromEncodedObject
+# - PyUnicode_Splitlines
 
-    # TODO: Maybe add tests to the following less important functions:
-    # - PyUnicode_1BYTE_DATA
-    # - PyUnicode_2BYTE_DATA
-    # - PyUnicode_4BYTE_DATA
-    # - PyUnicode_DATA
-    # - PyUnicode_IS_READY
-    # - PyUnicode_READY
-    # - Py_UNICODE_HIGH_SURROGATE
-    # - Py_UNICODE_IS_HIGH_SURROGATE
-    # - Py_UNICODE_IS_LOW_SURROGATE
-    # - Py_UNICODE_IS_SURROGATE
-    # - Py_UNICODE_JOIN_SURROGATES
-    # - Py_UNICODE_LOW_SURROGATE
+# TODO: Add tests to the following character functions:
+# - Py_UNICODE_ISALNUM
+# - Py_UNICODE_ISALPHA
+# - Py_UNICODE_ISDECIMAL
+# - Py_UNICODE_ISDIGIT
+# - Py_UNICODE_ISLINEBREAK
+# - Py_UNICODE_ISLOWER
+# - Py_UNICODE_ISNUMERIC
+# - Py_UNICODE_ISPRINTABLE
+# - Py_UNICODE_ISSPACE
+# - Py_UNICODE_ISTITLE
+# - Py_UNICODE_ISUPPER
+# - Py_UNICODE_TODECIMAL
+# - Py_UNICODE_TODIGIT
+# - Py_UNICODE_TOLOWER
+# - Py_UNICODE_TONUMERIC
+# - Py_UNICODE_TOTITLE
+# - Py_UNICODE_TOUPPER
+
+# TODO: Maybe add tests to the following less important functions:
+# - PyUnicode_1BYTE_DATA
+# - PyUnicode_2BYTE_DATA
+# - PyUnicode_4BYTE_DATA
+# - PyUnicode_DATA
+# - PyUnicode_IS_READY
+# - PyUnicode_READY
+# - Py_UNICODE_HIGH_SURROGATE
+# - Py_UNICODE_IS_HIGH_SURROGATE
+# - Py_UNICODE_IS_LOW_SURROGATE
+# - Py_UNICODE_IS_SURROGATE
+# - Py_UNICODE_JOIN_SURROGATES
+# - Py_UNICODE_LOW_SURROGATE
 
 
 if __name__ == "__main__":
