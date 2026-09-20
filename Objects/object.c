@@ -1929,8 +1929,8 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
             if (suppress && Py_IS_TYPE(descr, &PyMemberDescr_Type)) {
                 PyMemberDef *member = ((PyMemberDescrObject *)descr)->d_member;
                 if (member->type == Py_T_OBJECT_EX
-                    && !(member->flags & Py_AUDIT_READ) &&
-                    PyObject_TypeCheck(obj, PyDescr_TYPE(descr))) {
+                    && !(member->flags & Py_AUDIT_READ)
+                    && PyObject_TypeCheck(obj, PyDescr_TYPE(descr))) {
                     PyObject **addr = _PyMember_GetOffset(obj, member);
                     if (FT_ATOMIC_LOAD_PTR(*addr) == NULL) {
                         goto done;
