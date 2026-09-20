@@ -24,8 +24,6 @@
 
 --------------
 
-.. _introduction:
-
 .. sidebar:: Turtle star
 
    Turtle can draw intricate shapes using programs that repeat simple
