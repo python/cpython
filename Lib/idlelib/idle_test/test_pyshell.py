@@ -106,6 +106,7 @@ class InputStatementlTest(unittest.TestCase):
         self.assertEqual(len(text.tag_ranges('KEYWORD')), 4)
 
 
+
 class PyShellRemoveLastNewlineAndSurroundingWhitespaceTest(unittest.TestCase):
     regexp = pyshell.PyShell._last_newline_re
 
