@@ -199,10 +199,13 @@ void PyUnicodeWriter_Discard(PyUnicodeWriter *writer)
 void
 _PyUnicodeWriter_InitWithBuffer(_PyUnicodeWriter *writer, PyObject *buffer)
 {
+    assert(PyUnstable_Object_IsUniquelyReferenced(buffer));
+
     memset(writer, 0, sizeof(*writer));
     writer->buffer = buffer;
     _PyUnicodeWriter_Update(writer);
     writer->min_length = writer->size;
+    assert(_PyUnicodeWriter_CanWrite(writer));
 }
 
 
