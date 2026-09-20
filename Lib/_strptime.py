@@ -582,7 +582,7 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
             and rest[0] != ":"
         ):
             raise ValueError(
-                f"Missing colon in %:z before '{rest}', got '{data_string}'"
+                f"Missing colon in %:z before {rest!r}, got {data_string!r}"
             )
         raise ValueError(f"unconverted data remains: {rest!r}")
 
