@@ -18365,9 +18365,8 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
             }
-            int flags = PyCFunction_GET_FLAGS(callable_o);
-            flags &= ~(METH_CLASS | METH_STATIC | METH_COEXIST);
-            if (flags != METH_O) {
+            if ((PyCFunction_GET_FLAGS(callable_o) &
+                     _Py_METH_CALL_FLAGS) != METH_O) {
                 UOP_STAT_INC(uopcode, miss);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
@@ -18441,9 +18440,8 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
             }
-            int flags = PyCFunction_GET_FLAGS(callable_o);
-            flags &= ~(METH_CLASS | METH_STATIC | METH_COEXIST);
-            if (flags != METH_FASTCALL) {
+            if ((PyCFunction_GET_FLAGS(callable_o) &
+                     _Py_METH_CALL_FLAGS) != METH_FASTCALL) {
                 UOP_STAT_INC(uopcode, miss);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
@@ -18509,9 +18507,8 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
             }
-            int flags = PyCFunction_GET_FLAGS(callable_o);
-            flags &= ~(METH_CLASS | METH_STATIC | METH_COEXIST);
-            if (flags != (METH_FASTCALL | METH_KEYWORDS)) {
+            if ((PyCFunction_GET_FLAGS(callable_o) &
+                     _Py_METH_CALL_FLAGS) != (METH_FASTCALL | METH_KEYWORDS)) {
                 UOP_STAT_INC(uopcode, miss);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
@@ -19158,9 +19155,8 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
             }
-            int flags = method->d_method->ml_flags;
-            flags &= ~(METH_CLASS | METH_STATIC | METH_COEXIST);
-            if (flags != METH_O) {
+            if ((method->d_method->ml_flags & _Py_METH_CALL_FLAGS) !=
+                    METH_O) {
                 UOP_STAT_INC(uopcode, miss);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
@@ -19365,9 +19361,8 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
             }
-            int flags = method->d_method->ml_flags;
-            flags &= ~(METH_CLASS | METH_STATIC | METH_COEXIST);
-            if (flags != (METH_FASTCALL|METH_KEYWORDS)) {
+            if ((method->d_method->ml_flags & _Py_METH_CALL_FLAGS) !=
+                    (METH_FASTCALL | METH_KEYWORDS)) {
                 UOP_STAT_INC(uopcode, miss);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
@@ -19389,9 +19384,6 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
             }
-            _tos_cache0 = PyStackRef_ZERO_BITS;
-            _tos_cache1 = PyStackRef_ZERO_BITS;
-            _tos_cache2 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE(__FILE__, __LINE__);
             break;
@@ -19514,9 +19506,8 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
             }
-            int flags = method->d_method->ml_flags;
-            flags &= ~(METH_CLASS | METH_STATIC | METH_COEXIST);
-            if (flags != METH_NOARGS) {
+            if ((method->d_method->ml_flags & _Py_METH_CALL_FLAGS) !=
+                    METH_NOARGS) {
                 UOP_STAT_INC(uopcode, miss);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
@@ -19645,9 +19636,8 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
             }
-            int flags = method->d_method->ml_flags;
-            flags &= ~(METH_CLASS | METH_STATIC | METH_COEXIST);
-            if (flags != METH_FASTCALL) {
+            if ((method->d_method->ml_flags & _Py_METH_CALL_FLAGS) !=
+                    METH_FASTCALL) {
                 UOP_STAT_INC(uopcode, miss);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
