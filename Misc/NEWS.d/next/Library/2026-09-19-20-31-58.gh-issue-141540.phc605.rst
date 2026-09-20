@@ -1,0 +1,3 @@
+Improve the error messages of :func:`time.strptime` and
+:meth:`datetime.datetime.strptime`: unconverted data is now quoted, making
+whitespace such as a trailing newline visible.
