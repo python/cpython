@@ -2088,6 +2088,11 @@ class PyUnicodeWriterTest(unittest.TestCase):
         for size in (0, 123):
             with self.subTest(size=size):
                 writer = self.create_writer(size)
+                writer.write_utf8(b'utf8', 0)
+                writer.write_ascii(b'ascii', 0)
+                writer.write_widechar(b'wstr', 0)
+                writer.write_ucs4(b'ucs4', 0)
+                writer.write_substring('text', 0, 0)
                 self.assertIs(writer.finish(), '')
 
         for size in (0, 123):
@@ -2104,6 +2109,8 @@ class PyUnicodeWriterTest(unittest.TestCase):
                     # PyUnicodeWriter_Finish() replaces the buffer
                     # with the singleton
                     writer = self.create_writer(size)
+                    # Use PyUnicodeWriter_WriteSubstring() to avoid
+                    # the read-only buffer optimization
                     writer.write_substring(ch + 'xxx', 0, 1)
                     self.assertIs(writer.finish(), ch)
 
