@@ -342,12 +342,13 @@ _PyUnicodeWriter_WriteStr(_PyUnicodeWriter *writer, PyObject *str)
         return 0;
     maxchar = PyUnicode_MAX_CHAR_VALUE(str);
     if (maxchar > writer->maxchar || len > writer->size - writer->pos) {
-        if (writer->buffer == NULL && !writer->overallocate) {
+        if (writer->buffer == NULL) {
             assert(_PyUnicode_CheckConsistency(str, 1));
             writer->readonly = 1;
             writer->buffer = Py_NewRef(str);
             _PyUnicodeWriter_Update(writer);
             writer->pos += len;
+            // The next write will create a new buffer and copy the string
             return 0;
         }
         if (_PyUnicodeWriter_PrepareInternal(writer, len, maxchar) == -1)

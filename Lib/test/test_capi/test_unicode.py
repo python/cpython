@@ -1817,6 +1817,39 @@ class CAPITest(unittest.TestCase):
 
         # CRASHES is_compact_ascii(NULL)
 
+    def test_unicode_equal(self):
+        unicode_equal = _testlimitedcapi.unicode_equal
+
+        def copy(text):
+            return text.encode().decode()
+
+        self.assertTrue(unicode_equal("", ""))
+        self.assertTrue(unicode_equal("abc", "abc"))
+        self.assertTrue(unicode_equal("abc", copy("abc")))
+        self.assertTrue(unicode_equal("\u20ac", copy("\u20ac")))
+        self.assertTrue(unicode_equal("\U0010ffff", copy("\U0010ffff")))
+
+        self.assertFalse(unicode_equal("abc", "abcd"))
+        self.assertFalse(unicode_equal("\u20ac", "\u20ad"))
+        self.assertFalse(unicode_equal("\U0010ffff", "\U0010fffe"))
+
+        # str subclass
+        self.assertTrue(unicode_equal("abc", Str("abc")))
+        self.assertTrue(unicode_equal(Str("abc"), "abc"))
+        self.assertFalse(unicode_equal("abc", Str("abcd")))
+        self.assertFalse(unicode_equal(Str("abc"), "abcd"))
+
+        # invalid type
+        for invalid_type in (b'bytes', 123, ("tuple",)):
+            with self.subTest(invalid_type=invalid_type):
+                with self.assertRaises(TypeError):
+                    unicode_equal("abc", invalid_type)
+                with self.assertRaises(TypeError):
+                    unicode_equal(invalid_type, "abc")
+
+        # CRASHES unicode_equal("abc", NULL)
+        # CRASHES unicode_equal(NULL, "abc")
+
 
 class PyUnicodeWriterTest(unittest.TestCase):
     def create_writer(self, size):
@@ -2108,6 +2141,32 @@ class PyUnicodeWriterTest(unittest.TestCase):
         self.assertEqual(writer.finish(),
                          'ascii latin1:\xe9 ucs2:\u20ac ucs4:\U0010ffff')
 
+    def test_readonly_optim(self):
+        # Read-only optimization: if the first and only write is a Python str
+        # object, return the object unchanged
+        unique_string = 'unique string'
+        writer = self.create_writer(0)
+        writer.write_str(unique_string)
+        self.assertIs(writer.finish(), unique_string)
+
+        writer = self.create_writer(0)
+        writer.write_substring(unique_string, 0, len(unique_string))
+        self.assertIs(writer.finish(), unique_string)
+
+        class MyStr:
+            def __str__(self):
+                return unique_string
+        writer = self.create_writer(0)
+        writer.write_str(MyStr())
+        self.assertIs(writer.finish(), unique_string)
+
+        class MyRepr:
+            def __repr__(self):
+                return unique_string
+        writer = self.create_writer(0)
+        writer.write_repr(MyRepr())
+        self.assertIs(writer.finish(), unique_string)
+
 
 # Test PyUnicodeWriter_Format()
 @unittest.skipIf(ctypes is None, 'need ctypes')
@@ -2145,38 +2204,31 @@ class PyUnicodeWriterFormatTest(unittest.TestCase):
 
         self.assertEqual(writer.finish(), 'Hello World.')
 
-    def test_unicode_equal(self):
-        unicode_equal = _testlimitedcapi.unicode_equal
+    def test_readonly_optim(self):
+        # Read-only optimization: if the first and only write is a Python str
+        # object, return the object unchanged
+        from ctypes import py_object
 
-        def copy(text):
-            return text.encode().decode()
+        unique_string = 'unique string'
+        for format in (b'%S', b'%U'):
+            with self.subTest(format=format):
+                writer = self.create_writer(0)
+                self.writer_format(writer, format, py_object(unique_string))
+                self.assertIs(writer.finish(), unique_string)
 
-        self.assertTrue(unicode_equal("", ""))
-        self.assertTrue(unicode_equal("abc", "abc"))
-        self.assertTrue(unicode_equal("abc", copy("abc")))
-        self.assertTrue(unicode_equal("\u20ac", copy("\u20ac")))
-        self.assertTrue(unicode_equal("\U0010ffff", copy("\U0010ffff")))
+        class MyStr:
+            def __str__(self):
+                return unique_string
+        writer = self.create_writer(0)
+        self.writer_format(writer, b'%S', py_object(MyStr()))
+        self.assertIs(writer.finish(), unique_string)
 
-        self.assertFalse(unicode_equal("abc", "abcd"))
-        self.assertFalse(unicode_equal("\u20ac", "\u20ad"))
-        self.assertFalse(unicode_equal("\U0010ffff", "\U0010fffe"))
-
-        # str subclass
-        self.assertTrue(unicode_equal("abc", Str("abc")))
-        self.assertTrue(unicode_equal(Str("abc"), "abc"))
-        self.assertFalse(unicode_equal("abc", Str("abcd")))
-        self.assertFalse(unicode_equal(Str("abc"), "abcd"))
-
-        # invalid type
-        for invalid_type in (b'bytes', 123, ("tuple",)):
-            with self.subTest(invalid_type=invalid_type):
-                with self.assertRaises(TypeError):
-                    unicode_equal("abc", invalid_type)
-                with self.assertRaises(TypeError):
-                    unicode_equal(invalid_type, "abc")
-
-        # CRASHES unicode_equal("abc", NULL)
-        # CRASHES unicode_equal(NULL, "abc")
+        class MyRepr:
+            def __repr__(self):
+                return unique_string
+        writer = self.create_writer(0)
+        self.writer_format(writer, b'%R', py_object(MyRepr()))
+        self.assertIs(writer.finish(), unique_string)
 
     # TODO: Add tests to the following codec functions:
     # - PyUnicode_AsASCIIString
