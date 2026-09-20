@@ -1,13 +1,20 @@
-import unittest
+import codecs
+import contextlib
+import io
+import re
 import sys
+import unittest
+import unittest.mock as mock
+import _testcapi
 from test.support import import_helper
 
 _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
 
 NULL = None
+BAD_ARGUMENT = re.escape('bad argument type for built-in operation')
 
 
-class CAPITest(unittest.TestCase):
+class CAPIUnicodeTest(unittest.TestCase):
     # TODO: Test the following functions:
     #
     #   PyUnicode_BuildEncodingMap
@@ -514,6 +521,357 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, asrawunicodeescapestring, b'abc')
         self.assertRaises(TypeError, asrawunicodeescapestring, [])
         # CRASHES asrawunicodeescapestring(NULL)
+
+
+class CAPICodecs(unittest.TestCase):
+
+    def setUp(self):
+        # Encoding names are normalized internally by converting them
+        # to lowercase and their hyphens are replaced by underscores.
+        self.encoding_name = 'test.test_capi.test_codecs.codec_reversed'
+        # Make sure that our custom codec is not already registered (that
+        # way we know whether we correctly unregistered the custom codec
+        # after a test or not).
+        self.assertRaises(LookupError, codecs.lookup, self.encoding_name)
+        # create the search function without registering yet
+        self._create_custom_codec()
+
+    def _create_custom_codec(self):
+        def codec_encoder(m, errors='strict'):
+            return (type(m)().join(reversed(m)), len(m))
+
+        def codec_decoder(c, errors='strict'):
+            return (type(c)().join(reversed(c)), len(c))
+
+        class IncrementalEncoder(codecs.IncrementalEncoder):
+            def encode(self, input, final=False):
+                return codec_encoder(input)
+
+        class IncrementalDecoder(codecs.IncrementalDecoder):
+            def decode(self, input, final=False):
+                return codec_decoder(input)
+
+        class StreamReader(codecs.StreamReader):
+            def encode(self, input, errors='strict'):
+                return codec_encoder(input, errors=errors)
+
+            def decode(self, input, errors='strict'):
+                return codec_decoder(input, errors=errors)
+
+        class StreamWriter(codecs.StreamWriter):
+            def encode(self, input, errors='strict'):
+                return codec_encoder(input, errors=errors)
+
+            def decode(self, input, errors='strict'):
+                return codec_decoder(input, errors=errors)
+
+        info = codecs.CodecInfo(
+            encode=codec_encoder,
+            decode=codec_decoder,
+            streamreader=StreamReader,
+            streamwriter=StreamWriter,
+            incrementalencoder=IncrementalEncoder,
+            incrementaldecoder=IncrementalDecoder,
+            name=self.encoding_name
+        )
+
+        def search_function(encoding):
+            if encoding == self.encoding_name:
+                return info
+            return None
+
+        self.codec_info = info
+        self.search_function = search_function
+
+    @contextlib.contextmanager
+    def use_custom_encoder(self):
+        self.assertRaises(LookupError, codecs.lookup, self.encoding_name)
+        codecs.register(self.search_function)
+        yield
+        codecs.unregister(self.search_function)
+        self.assertRaises(LookupError, codecs.lookup, self.encoding_name)
+
+    def test_codec_register(self):
+        search_function, encoding = self.search_function, self.encoding_name
+        # register the search function using the C API
+        self.assertIsNone(_testcapi.codec_register(search_function))
+        # in case the test failed before cleaning up
+        self.addCleanup(codecs.unregister, self.search_function)
+        self.assertIs(codecs.lookup(encoding), search_function(encoding))
+        self.assertEqual(codecs.encode('123', encoding=encoding), '321')
+        # unregister the search function using the regular API
+        codecs.unregister(search_function)
+        self.assertRaises(LookupError, codecs.lookup, encoding)
+
+    def test_codec_unregister(self):
+        search_function, encoding = self.search_function, self.encoding_name
+        self.assertRaises(LookupError, codecs.lookup, encoding)
+        # register the search function using the regular API
+        codecs.register(search_function)
+        # in case the test failed before cleaning up
+        self.addCleanup(codecs.unregister, self.search_function)
+        self.assertIsNotNone(codecs.lookup(encoding))
+        # unregister the search function using the C API
+        self.assertIsNone(_testcapi.codec_unregister(search_function))
+        self.assertRaises(LookupError, codecs.lookup, encoding)
+
+    def test_codec_known_encoding(self):
+        self.assertRaises(LookupError, codecs.lookup, 'unknown-codec')
+        self.assertFalse(_testcapi.codec_known_encoding('unknown-codec'))
+        self.assertFalse(_testcapi.codec_known_encoding('unknown_codec'))
+        self.assertFalse(_testcapi.codec_known_encoding('UNKNOWN-codec'))
+
+        encoding_name = self.encoding_name
+        self.assertRaises(LookupError, codecs.lookup, encoding_name)
+
+        codecs.register(self.search_function)
+        self.addCleanup(codecs.unregister, self.search_function)
+
+        for name in [
+            encoding_name,
+            encoding_name.upper(),
+        ]:
+            with self.subTest(name):
+                self.assertTrue(_testcapi.codec_known_encoding(name))
+
+    def test_codec_encode(self):
+        encode = _testcapi.codec_encode
+        self.assertEqual(encode('a', 'utf-8', NULL), b'a')
+        self.assertEqual(encode('a', 'utf-8', 'strict'), b'a')
+        self.assertEqual(encode('[é]', 'ascii', 'ignore'), b'[]')
+
+        self.assertRaises(TypeError, encode, NULL, 'ascii', 'strict')
+        with self.assertRaisesRegex(TypeError, BAD_ARGUMENT):
+            encode('a', NULL, 'strict')
+
+    def test_codec_decode(self):
+        decode = _testcapi.codec_decode
+
+        s = 'a\xa1\u4f60\U0001f600'
+        b = s.encode()
+
+        self.assertEqual(decode(b, 'utf-8', 'strict'), s)
+        self.assertEqual(decode(b, 'utf-8', NULL), s)
+        self.assertEqual(decode(b, 'latin1', 'strict'), b.decode('latin1'))
+        self.assertRaises(UnicodeDecodeError, decode, b, 'ascii', 'strict')
+        self.assertRaises(UnicodeDecodeError, decode, b, 'ascii', NULL)
+        self.assertEqual(decode(b, 'ascii', 'replace'), 'a' + '\ufffd'*9)
+
+        # _codecs.decode() only reports an unknown error handling name when
+        # the corresponding error handling function is used; this difers
+        # from PyUnicode_Decode() which checks that both the encoding and
+        # the error handling name are recognized before even attempting to
+        # call the decoder.
+        self.assertEqual(decode(b'', 'utf-8', 'unknown-error-handler'), '')
+        self.assertEqual(decode(b'a', 'utf-8', 'unknown-error-handler'), 'a')
+
+        self.assertRaises(TypeError, decode, NULL, 'ascii', 'strict')
+        with self.assertRaisesRegex(TypeError, BAD_ARGUMENT):
+            decode(b, NULL, 'strict')
+
+    def test_codec_encoder(self):
+        codec_encoder = _testcapi.codec_encoder
+
+        with self.use_custom_encoder():
+            encoder = codec_encoder(self.encoding_name)
+            self.assertIs(encoder, self.codec_info.encode)
+
+            with self.assertRaisesRegex(TypeError, BAD_ARGUMENT):
+                codec_encoder(NULL)
+
+    def test_codec_decoder(self):
+        codec_decoder = _testcapi.codec_decoder
+
+        with self.use_custom_encoder():
+            decoder = codec_decoder(self.encoding_name)
+            self.assertIs(decoder, self.codec_info.decode)
+
+            with self.assertRaisesRegex(TypeError, BAD_ARGUMENT):
+                codec_decoder(NULL)
+
+    def test_codec_incremental_encoder(self):
+        codec_incremental_encoder = _testcapi.codec_incremental_encoder
+
+        with self.use_custom_encoder():
+            encoding = self.encoding_name
+
+            for errors in ['strict', NULL]:
+                with self.subTest(errors):
+                    encoder = codec_incremental_encoder(encoding, errors)
+                    self.assertIsInstance(encoder, self.codec_info.incrementalencoder)
+
+            with self.assertRaisesRegex(TypeError, BAD_ARGUMENT):
+                codec_incremental_encoder(NULL, 'strict')
+
+    def test_codec_incremental_decoder(self):
+        codec_incremental_decoder = _testcapi.codec_incremental_decoder
+
+        with self.use_custom_encoder():
+            encoding = self.encoding_name
+
+            for errors in ['strict', NULL]:
+                with self.subTest(errors):
+                    decoder = codec_incremental_decoder(encoding, errors)
+                    self.assertIsInstance(decoder, self.codec_info.incrementaldecoder)
+
+            with self.assertRaisesRegex(TypeError, BAD_ARGUMENT):
+                codec_incremental_decoder(NULL, 'strict')
+
+    def test_codec_stream_reader(self):
+        codec_stream_reader = _testcapi.codec_stream_reader
+
+        with self.use_custom_encoder():
+            encoding, stream = self.encoding_name, io.StringIO()
+            for errors in ['strict', NULL]:
+                with self.subTest(errors):
+                    writer = codec_stream_reader(encoding, stream, errors)
+                    self.assertIsInstance(writer, self.codec_info.streamreader)
+
+            with self.assertRaisesRegex(TypeError, BAD_ARGUMENT):
+                codec_stream_reader(NULL, stream, 'strict')
+
+    def test_codec_stream_writer(self):
+        codec_stream_writer = _testcapi.codec_stream_writer
+
+        with self.use_custom_encoder():
+            encoding, stream = self.encoding_name, io.StringIO()
+            for errors in ['strict', NULL]:
+                with self.subTest(errors):
+                    writer = codec_stream_writer(encoding, stream, errors)
+                    self.assertIsInstance(writer, self.codec_info.streamwriter)
+
+            with self.assertRaisesRegex(TypeError, BAD_ARGUMENT):
+                codec_stream_writer(NULL, stream, 'strict')
+
+
+class CAPICodecErrors(unittest.TestCase):
+
+    @classmethod
+    def _generate_exception_args(cls):
+        for objlen in range(5):
+            maxind = 2 * max(2, objlen)
+            for start in range(-maxind, maxind + 1):
+                for end in range(-maxind, maxind + 1):
+                    yield objlen, start, end
+
+    @classmethod
+    def generate_encode_errors(cls):
+        return tuple(
+            UnicodeEncodeError('utf-8', '0' * objlen, start, end, 'why')
+            for objlen, start, end in cls._generate_exception_args()
+        )
+
+    @classmethod
+    def generate_decode_errors(cls):
+        return tuple(
+            UnicodeDecodeError('utf-8', b'0' * objlen, start, end, 'why')
+            for objlen, start, end in cls._generate_exception_args()
+        )
+
+    @classmethod
+    def generate_translate_errors(cls):
+        return tuple(
+            UnicodeTranslateError('0' * objlen, start, end, 'why')
+            for objlen, start, end in cls._generate_exception_args()
+        )
+
+    @classmethod
+    def setUpClass(cls):
+        cls.unicode_encode_errors = cls.generate_encode_errors()
+        cls.unicode_decode_errors = cls.generate_decode_errors()
+        cls.unicode_translate_errors = cls.generate_translate_errors()
+        cls.all_unicode_errors = (
+            cls.unicode_encode_errors
+            + cls.unicode_decode_errors
+            + cls.unicode_translate_errors
+        )
+        cls.bad_unicode_errors = (
+            ValueError(),
+        )
+
+    def test_codec_register_error(self):
+        # for cleaning up between tests
+        from _codecs import _unregister_error as _codecs_unregister_error
+
+        self.assertRaises(LookupError, _testcapi.codec_lookup_error, 'custom')
+
+        def custom_error_handler(exc):
+            raise exc
+
+        error_handler = mock.Mock(wraps=custom_error_handler)
+        _testcapi.codec_register_error('custom', error_handler)
+        self.addCleanup(_codecs_unregister_error, 'custom')
+
+        self.assertRaises(UnicodeEncodeError, codecs.encode,
+                          '\xff', 'ascii', errors='custom')
+        error_handler.assert_called_once()
+        error_handler.reset_mock()
+
+        self.assertRaises(UnicodeDecodeError, codecs.decode,
+                          b'\xff', 'ascii', errors='custom')
+        error_handler.assert_called_once()
+
+    # _codecs._unregister_error directly delegates to the internal C
+    # function so a Python-level function test is sufficient (it is
+    # tested in test_codeccallbacks).
+
+    def test_codec_lookup_error(self):
+        codec_lookup_error = _testcapi.codec_lookup_error
+        self.assertIs(codec_lookup_error(NULL), codecs.strict_errors)
+        self.assertIs(codec_lookup_error('strict'), codecs.strict_errors)
+        self.assertIs(codec_lookup_error('ignore'), codecs.ignore_errors)
+        self.assertIs(codec_lookup_error('replace'), codecs.replace_errors)
+        self.assertIs(codec_lookup_error('xmlcharrefreplace'), codecs.xmlcharrefreplace_errors)
+        self.assertIs(codec_lookup_error('backslashreplace'), codecs.backslashreplace_errors)
+        self.assertIs(codec_lookup_error('namereplace'), codecs.namereplace_errors)
+        self.assertRaises(LookupError, codec_lookup_error, 'unknown')
+
+    def test_codec_strict_errors_handler(self):
+        handler = _testcapi.codec_strict_errors
+        for exc in self.all_unicode_errors + self.bad_unicode_errors:
+            with self.subTest(handler=handler, exc=exc):
+                self.assertRaises(type(exc), handler, exc)
+
+    def test_codec_ignore_errors_handler(self):
+        handler = _testcapi.codec_ignore_errors
+        self.do_test_codec_errors_handler(handler, self.all_unicode_errors)
+
+    def test_codec_replace_errors_handler(self):
+        handler = _testcapi.codec_replace_errors
+        self.do_test_codec_errors_handler(handler, self.all_unicode_errors)
+
+    def test_codec_xmlcharrefreplace_errors_handler(self):
+        handler = _testcapi.codec_xmlcharrefreplace_errors
+        self.do_test_codec_errors_handler(handler, self.unicode_encode_errors)
+
+    def test_codec_backslashreplace_errors_handler(self):
+        handler = _testcapi.codec_backslashreplace_errors
+        self.do_test_codec_errors_handler(handler, self.all_unicode_errors)
+
+    def test_codec_namereplace_errors_handler(self):
+        handler = _testlimitedcapi.codec_namereplace_errors
+        self.do_test_codec_errors_handler(handler, self.unicode_encode_errors)
+
+    def do_test_codec_errors_handler(self, handler, exceptions):
+        self.assertNotEqual(len(exceptions), 0)
+        for exc in exceptions:
+            with self.subTest(handler=handler, exc=exc):
+                # test that the handler does not crash
+                res = handler(exc)
+                self.assertIsInstance(res, tuple)
+                self.assertEqual(len(res), 2)
+                replacement, continue_from = res
+                self.assertIsInstance(replacement, str)
+                self.assertIsInstance(continue_from, int)
+                self.assertGreaterEqual(continue_from, 0)
+                self.assertLessEqual(continue_from, len(exc.object))
+
+        for bad_exc in (
+            self.bad_unicode_errors
+            + tuple(e for e in self.all_unicode_errors if e not in exceptions)
+        ):
+            with self.subTest('bad type', handler=handler, exc=bad_exc):
+                self.assertRaises(TypeError, handler, bad_exc)
 
 
 if __name__ == "__main__":

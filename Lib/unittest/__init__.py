@@ -27,7 +27,7 @@ Further information is available in the bundled documentation, and from
   http://docs.python.org/library/unittest.html
 
 Copyright (c) 1999-2003 Steve Purcell
-Copyright (c) 2003-2010 Python Software Foundation
+Copyright (c) 2003 Python Software Foundation
 This module is free software, and you may redistribute it and/or modify
 it under the same terms as Python itself, so long as this copyright message
 and disclaimer are retained in their original form.

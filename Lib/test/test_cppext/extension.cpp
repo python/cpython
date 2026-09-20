@@ -1,4 +1,4 @@
-// gh-91321: Very basic C++ test extension to check that the Python C API is
+// gh-91321: Basic C++ test extension to check that the Python C API is
 // compatible with C++ and does not emit C++ compiler warnings.
 //
 // The code is only built, not executed.
@@ -6,7 +6,31 @@
 // Always enable assertions
 #undef NDEBUG
 
+#ifdef TEST_INTERNAL_C_API
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
+#include "datetime.h"
+
+#ifdef TEST_INTERNAL_C_API
+   // gh-135906: Check for compiler warnings in the internal C API
+   // - Cython uses pycore_critical_section.h, pycore_frame.h and
+   //   pycore_template.h.
+   // - greenlet uses pycore_frame.h, pycore_interpframe_structs.h and
+   //   pycore_interpframe.h.
+#  include "internal/pycore_frame.h"
+#  include "internal/pycore_interpframe_structs.h"
+#  include "internal/pycore_template.h"
+
+   // mimalloc emits compiler warnings on Windows.
+#  if !defined(MS_WINDOWS)
+#    include "internal/pycore_backoff.h"
+#    include "internal/pycore_cell.h"
+#    include "internal/pycore_critical_section.h"
+#    include "internal/pycore_interpframe.h"
+#  endif
+#endif
 
 #ifndef MODULE_NAME
 #  error "MODULE_NAME macro must be defined"
@@ -62,6 +86,7 @@ test_api_casts(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     Py_ssize_t refcnt = Py_REFCNT(obj);
     assert(refcnt >= 1);
 
+#ifndef Py_LIMITED_API
     // gh-92138: For backward compatibility, functions of Python C API accepts
     // "const PyObject*". Check that using it does not emit C++ compiler
     // warnings.
@@ -74,6 +99,7 @@ test_api_casts(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     assert(PyTuple_GET_SIZE(const_obj) == 2);
     PyObject *one = PyTuple_GET_ITEM(const_obj, 0);
     assert(PyLong_AsLong(one) == 1);
+#endif
 
     // gh-92898: StrongRef doesn't inherit from PyObject but has an operator to
     // cast to PyObject*.
@@ -106,6 +132,12 @@ test_unicode(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     }
 
     assert(PyUnicode_Check(str));
+
+    assert(PyUnicode_GetLength(str) == 3);
+    assert(PyUnicode_ReadChar(str, 0) == 'a');
+    assert(PyUnicode_ReadChar(str, 1) == 'b');
+
+#ifndef Py_LIMITED_API
     assert(PyUnicode_GET_LENGTH(str) == 3);
 
     // gh-92800: test PyUnicode_READ()
@@ -121,11 +153,14 @@ test_unicode(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     assert(PyUnicode_READ(ukind, const_data, 2) == 'c');
 
     assert(PyUnicode_READ_CHAR(str, 1) == 'b');
+#endif
 
     Py_DECREF(str);
     Py_RETURN_NONE;
 }
 
+// VirtualPyObject is incompatible with opaque PyObject
+#ifndef Py_TARGET_ABI3T
 /* Test a `new`-allocated object with a virtual method.
  * (https://github.com/python/cpython/issues/94731) */
 
@@ -152,10 +187,23 @@ private:
 
 int VirtualPyObject::instance_count = 0;
 
+// Converting from function pointer to void* has undefined behavior, but
+// works on all known platforms, and CPython's module and type slots currently
+// need it.
+// (GCC doesn't have a narrower category for this than -Wpedantic.)
+_Py_COMP_DIAG_PUSH
+#if defined(__GNUC__)
+#pragma GCC diagnostic ignored "-Wpedantic"
+#elif defined(__clang__)
+#pragma clang diagnostic ignored "-Wpedantic"
+#endif
+
 PyType_Slot VirtualPyObject_Slots[] = {
     {Py_tp_free, (void*)VirtualPyObject::dealloc},
     {0, _Py_NULL},
 };
+
+_Py_COMP_DIAG_POP
 
 PyType_Spec VirtualPyObject_Spec = {
     /* .name */ STR(MODULE_NAME) ".VirtualPyObject",
@@ -191,12 +239,31 @@ test_virtual_object(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     }
     Py_RETURN_NONE;
 }
+#endif  // Py_TARGET_ABI3T
+
+
+static PyObject *
+test_datetime(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
+{
+    // datetime.h is excluded from the limited C API
+#ifndef Py_LIMITED_API
+    PyDateTime_IMPORT;
+    if (PyErr_Occurred()) {
+        return NULL;
+    }
+#endif
+
+    Py_RETURN_NONE;
+}
 
 static PyMethodDef _testcppext_methods[] = {
     {"add", _testcppext_add, METH_VARARGS, _testcppext_add_doc},
     {"test_api_casts", test_api_casts, METH_NOARGS, _Py_NULL},
     {"test_unicode", test_unicode, METH_NOARGS, _Py_NULL},
+#ifndef Py_TARGET_ABI3T
     {"test_virtual_object", test_virtual_object, METH_NOARGS, _Py_NULL},
+#endif
+    {"test_datetime", test_datetime, METH_NOARGS, _Py_NULL},
     // Note: _testcppext_exec currently runs all test functions directly.
     // When adding a new one, add a call there.
 
@@ -221,7 +288,13 @@ _testcppext_exec(PyObject *module)
     if (!result) return -1;
     Py_DECREF(result);
 
+#ifndef Py_TARGET_ABI3T
     result = PyObject_CallMethod(module, "test_virtual_object", "");
+    if (!result) return -1;
+    Py_DECREF(result);
+#endif
+
+    result = PyObject_CallMethod(module, "test_datetime", "");
     if (!result) return -1;
     Py_DECREF(result);
 
@@ -229,34 +302,74 @@ _testcppext_exec(PyObject *module)
     Py_BUILD_ASSERT(sizeof(int) == sizeof(unsigned int));
     assert(Py_BUILD_ASSERT_EXPR(sizeof(int) == sizeof(unsigned int)) == 0);
 
+    // Test Py_MIN(), Py_MAX(), Py_ABS()
+    assert(Py_MIN(5, 11) == 5);
+    assert(Py_MAX(5, 11) == 11);
+    assert(Py_ABS(-5) == 5);
+
+    // Test Py_CLEAR(): use typeof()/__typeof__() if available, or memcpy()
+    PyObject *obj = Py_None;
+    Py_CLEAR(obj);
+    assert(obj == _Py_NULL);
+
+#ifndef Py_LIMITED_API
+    // Test Py_SETREF(): use typeof()/__typeof__() if available, or memcpy()
+    obj = Py_None;
+    Py_SETREF(obj, _Py_NULL);
+    assert(obj == _Py_NULL);
+#endif
+
+    // Test that Py_BEGIN_CRITICAL_SECTION is available
+    Py_BEGIN_CRITICAL_SECTION(module);
+    Py_END_CRITICAL_SECTION();
+
     return 0;
 }
 
-static PyModuleDef_Slot _testcppext_slots[] = {
-    {Py_mod_exec, reinterpret_cast<void*>(_testcppext_exec)},
-    {0, _Py_NULL}
-};
-
 
 PyDoc_STRVAR(_testcppext_doc, "C++ test extension.");
+PyABIInfo_VAR(abi_info);
 
-static struct PyModuleDef _testcppext_module = {
-    PyModuleDef_HEAD_INIT,  // m_base
-    STR(MODULE_NAME),  // m_name
-    _testcppext_doc,  // m_doc
-    0,  // m_size
-    _testcppext_methods,  // m_methods
-    _testcppext_slots,  // m_slots
-    _Py_NULL,  // m_traverse
-    _Py_NULL,  // m_clear
-    _Py_NULL,  // m_free
+// Need to ignore "-Wpedantic" warnings; see VirtualPyObject_Slots above
+_Py_COMP_DIAG_PUSH
+#if defined(__GNUC__)
+#pragma GCC diagnostic ignored "-Wpedantic"
+#elif defined(__clang__)
+#pragma clang diagnostic ignored "-Wpedantic"
+#endif
+
+static PySlot _testcppext_slots[] = {
+    PySlot_PTR_STATIC(Py_mod_abi, &abi_info),
+    PySlot_PTR_STATIC(Py_mod_name, (void*)STR(MODULE_NAME)),
+    PySlot_PTR_STATIC(Py_mod_doc, (void*)(char*)_testcppext_doc),
+    PySlot_PTR_STATIC(Py_mod_exec, (void*)_testcppext_exec),
+    PySlot_PTR_STATIC(Py_mod_methods, _testcppext_methods),
+    PySlot_PTR_STATIC(Py_mod_gil, Py_MOD_GIL_NOT_USED),
+    PySlot_END,
 };
 
-#define _FUNC_NAME(NAME) PyInit_ ## NAME
+_Py_COMP_DIAG_POP
+
+
+#define _FUNC_NAME(NAME) PyModExport_ ## NAME
 #define FUNC_NAME(NAME) _FUNC_NAME(NAME)
 
-PyMODINIT_FUNC
+PyMODEXPORT_FUNC
 FUNC_NAME(MODULE_NAME)(void)
 {
-    return PyModuleDef_Init(&_testcppext_module);
+    return _testcppext_slots;
+}
+
+// Also define the soft-deprecated entrypoint to ensure it isn't called
+
+#define _INITFUNC_NAME(NAME) PyInit_ ## NAME
+#define INITFUNC_NAME(NAME) _INITFUNC_NAME(NAME)
+
+PyMODINIT_FUNC
+INITFUNC_NAME(MODULE_NAME)(void)
+{
+    PyErr_SetString(
+        PyExc_AssertionError,
+        "PyInit_* function called while a PyModExport_* one is available");
+    return NULL;
 }

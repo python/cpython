@@ -248,3 +248,38 @@ def requires_working_threading(*, module=False):
             raise unittest.SkipTest(msg)
     else:
         return unittest.skipUnless(can_start_thread, msg)
+
+
+def run_concurrently(worker_func, nthreads=None, args=(), kwargs={}):
+    """
+    Run the worker function(s) concurrently in multiple threads.
+
+    If `worker_func` is a single callable, it is used for all threads.
+    If it is a list of callables, each callable is used for one thread.
+    """
+    from collections.abc import Iterable
+
+    if nthreads is None:
+        nthreads = len(worker_func)
+    if not isinstance(worker_func, Iterable):
+        worker_func = [worker_func] * nthreads
+    assert len(worker_func) == nthreads
+
+    barrier = threading.Barrier(nthreads)
+
+    def wrapper_func(func, *args, **kwargs):
+        # Wait for all threads to reach this point before proceeding.
+        barrier.wait()
+        func(*args, **kwargs)
+
+    with catch_threading_exception() as cm:
+        workers = [
+            threading.Thread(target=wrapper_func, args=(func, *args), kwargs=kwargs)
+            for func in worker_func
+        ]
+        with start_threads(workers):
+            pass
+
+        # If a worker thread raises an exception, re-raise it.
+        if cm.exc_value is not None:
+            raise cm.exc_value

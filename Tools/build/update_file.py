@@ -6,14 +6,27 @@ This avoids wholesale rebuilds when a code (re)generation phase does not
 actually change the in-tree generated code.
 """
 
+from __future__ import annotations
+
 import contextlib
 import os
 import os.path
 import sys
 
+TYPE_CHECKING = False
+if TYPE_CHECKING:
+    import typing
+    from collections.abc import Iterator
+    from io import TextIOWrapper
+
+    _Outcome: typing.TypeAlias = typing.Literal['created', 'updated', 'same']
+
 
 @contextlib.contextmanager
-def updating_file_with_tmpfile(filename, tmpfile=None):
+def updating_file_with_tmpfile(
+    filename: str,
+    tmpfile: str | None = None,
+) -> Iterator[tuple[TextIOWrapper, TextIOWrapper]]:
     """A context manager for updating a file via a temp file.
 
     The context manager provides two open files: the source file open
@@ -46,13 +59,18 @@ def updating_file_with_tmpfile(filename, tmpfile=None):
     update_file_with_tmpfile(filename, tmpfile)
 
 
-def update_file_with_tmpfile(filename, tmpfile, *, create=False):
+def update_file_with_tmpfile(
+    filename: str,
+    tmpfile: str,
+    *,
+    create: bool = False,
+) -> _Outcome:
     try:
         targetfile = open(filename, 'rb')
     except FileNotFoundError:
         if not create:
             raise  # re-raise
-        outcome = 'created'
+        outcome: _Outcome = 'created'
         os.replace(tmpfile, filename)
     else:
         with targetfile:

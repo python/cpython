@@ -1,0 +1,1 @@
+Apply an existing optimization of PyCriticalSection (single mutex) to PyCriticalSection2: avoid acquiring the same locks that the current CS has already acquired.

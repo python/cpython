@@ -1,0 +1,4 @@
+Fix a hang in :mod:`tkinter` on interactive Python built without
+:mod:`readline`.  An exception raised in a callback no longer causes the
+event loop to stop and wait for the user to press Enter; pending callbacks
+now keep running until input is actually available on stdin.

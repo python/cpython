@@ -1,0 +1,3 @@
+Fix a crash in free-threaded builds that occurs when pickling by name
+objects without a ``__module__`` attribute while :data:`sys.modules`
+is concurrently being modified.

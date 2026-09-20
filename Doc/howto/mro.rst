@@ -10,7 +10,7 @@ The Python 2.3 Method Resolution Order
    The Method Resolution Order discussed here was *introduced* in Python 2.3,
    but it is still used in later versions -- including Python 3.
 
-By `Michele Simionato <https://www.phyast.pitt.edu/~micheles/>`__.
+By `Michele Simionato <https://github.com/micheles>`__.
 
 :Abstract:
 
@@ -189,7 +189,7 @@ prescription:
   the tail of any of the other lists, then add it to the linearization
   of C and remove it from the lists in the merge, otherwise look at the
   head of the next list and take it, if it is a good head.  Then repeat
-  the operation until all the class are removed or it is impossible to
+  the operation until all the classes are removed or it is impossible to
   find good heads.  In this case, it is impossible to construct the
   merge, Python 2.3 will refuse to create the class C and will raise an
   exception.*
@@ -335,7 +335,7 @@ E is more specialized than C, even if it is in a higher level.
 
 A lazy programmer can obtain the MRO directly from Python 2.2, since in
 this case it coincides with the Python 2.3 linearization.  It is enough
-to invoke the .mro() method of class A:
+to invoke the :meth:`~type.mro` method of class A:
 
   >>> A.mro()  # doctest: +NORMALIZE_WHITESPACE
   [<class 'A'>, <class 'B'>, <class 'E'>,
@@ -398,7 +398,7 @@ with inheritance diagram
 
 We see that class G inherits from F and E, with F *before* E:  therefore
 we would expect the attribute *G.remember2buy* to be inherited by
-*F.rembermer2buy* and not by *E.remember2buy*:  nevertheless Python 2.2
+*F.remember2buy* and not by *E.remember2buy*:  nevertheless Python 2.2
 gives
 
   >>> G.remember2buy  # doctest: +SKIP

@@ -1,0 +1,5 @@
+In :mod:`tkinter`, the *name* parameter of the
+:meth:`~tkinter.Misc.wait_variable`, :meth:`~tkinter.Misc.setvar` and
+:meth:`~tkinter.Misc.getvar` methods and the *value* parameter of
+:meth:`!setvar` are now required.  Their former default values
+(``'PY_VAR'`` and ``'1'``) were not meaningful.

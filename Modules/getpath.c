@@ -17,8 +17,11 @@
 #endif
 
 #ifdef __APPLE__
-#  include <dlfcn.h>
 #  include <mach-o/dyld.h>
+#endif
+
+#ifdef HAVE_DLFCN_H
+#  include <dlfcn.h>
 #endif
 
 /* Reference the precompiled getpath.py */
@@ -108,7 +111,7 @@ getpath_dirname(PyObject *Py_UNUSED(self), PyObject *args)
     Py_ssize_t end = PyUnicode_GET_LENGTH(path);
     Py_ssize_t pos = PyUnicode_FindChar(path, SEP, 0, end, -1);
     if (pos < 0) {
-        return PyUnicode_FromStringAndSize(NULL, 0);
+        return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
     }
     return PyUnicode_Substring(path, 0, pos);
 }
@@ -195,57 +198,67 @@ getpath_isdir(PyObject *Py_UNUSED(self), PyObject *args)
 static PyObject *
 getpath_isfile(PyObject *Py_UNUSED(self), PyObject *args)
 {
-    PyObject *r = NULL;
     PyObject *pathobj;
-    const wchar_t *path;
     if (!PyArg_ParseTuple(args, "U", &pathobj)) {
         return NULL;
     }
-    path = PyUnicode_AsWideCharString(pathobj, NULL);
-    if (path) {
+
+    int isfile;
 #ifdef MS_WINDOWS
-        DWORD attr = GetFileAttributesW(path);
-        r = (attr != INVALID_FILE_ATTRIBUTES) &&
-            !(attr & FILE_ATTRIBUTE_DIRECTORY) ? Py_True : Py_False;
-#else
-        struct stat st;
-        r = (_Py_wstat(path, &st) == 0) && S_ISREG(st.st_mode) ? Py_True : Py_False;
-#endif
-        PyMem_Free((void *)path);
+    wchar_t *path = PyUnicode_AsWideCharString(pathobj, NULL);
+    if (path == NULL) {
+        return NULL;
     }
-    return Py_XNewRef(r);
+
+    DWORD attr = GetFileAttributesW(path);
+    PyMem_Free(path);
+    isfile = ((attr != INVALID_FILE_ATTRIBUTES)
+               && !(attr & FILE_ATTRIBUTE_DIRECTORY));
+#else
+    struct stat st;
+    int res = _Py_stat(pathobj, &st);
+    if (res == -2) {
+        return NULL;
+    }
+    isfile = ((res == 0) && S_ISREG(st.st_mode));
+#endif
+    return PyBool_FromLong(isfile);
 }
 
 
 static PyObject *
 getpath_isxfile(PyObject *Py_UNUSED(self), PyObject *args)
 {
-    PyObject *r = NULL;
     PyObject *pathobj;
-    const wchar_t *path;
-    Py_ssize_t cchPath;
     if (!PyArg_ParseTuple(args, "U", &pathobj)) {
         return NULL;
     }
-    path = PyUnicode_AsWideCharString(pathobj, &cchPath);
-    if (path) {
+
+    int isxfile;
 #ifdef MS_WINDOWS
-        DWORD attr = GetFileAttributesW(path);
-        r = (attr != INVALID_FILE_ATTRIBUTES) &&
-            !(attr & FILE_ATTRIBUTE_DIRECTORY) &&
-            (cchPath >= 4) &&
-            (CompareStringOrdinal(path + cchPath - 4, -1, L".exe", -1, 1 /* ignore case */) == CSTR_EQUAL)
-            ? Py_True : Py_False;
-#else
-        struct stat st;
-        r = (_Py_wstat(path, &st) == 0) &&
-            S_ISREG(st.st_mode) &&
-            (st.st_mode & 0111)
-            ? Py_True : Py_False;
-#endif
-        PyMem_Free((void *)path);
+    Py_ssize_t cchPath;
+    wchar_t *path = PyUnicode_AsWideCharString(pathobj, &cchPath);
+    if (path == NULL) {
+        return NULL;
     }
-    return Py_XNewRef(r);
+
+    DWORD attr = GetFileAttributesW(path);
+    PyMem_Free(path);
+    isxfile = (attr != INVALID_FILE_ATTRIBUTES) &&
+              !(attr & FILE_ATTRIBUTE_DIRECTORY) &&
+              (cchPath >= 4) &&
+              (CompareStringOrdinal(path + cchPath - 4, -1, L".exe", -1, 1 /* ignore case */) == CSTR_EQUAL);
+#else
+    struct stat st;
+    int res = _Py_stat(pathobj, &st);
+    if (res == -2) {
+        return NULL;
+    }
+    isxfile = ((res == 0)
+               && S_ISREG(st.st_mode)
+               && (st.st_mode & 0111));
+#endif
+    return PyBool_FromLong(isxfile);
 }
 
 
@@ -258,7 +271,7 @@ getpath_joinpath(PyObject *Py_UNUSED(self), PyObject *args)
     }
     Py_ssize_t n = PyTuple_GET_SIZE(args);
     if (n == 0) {
-        return PyUnicode_FromStringAndSize(NULL, 0);
+        return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
     }
     /* Convert all parts to wchar and accumulate max final length */
     wchar_t **parts = (wchar_t **)PyMem_Malloc(n * sizeof(wchar_t *));
@@ -302,7 +315,7 @@ getpath_joinpath(PyObject *Py_UNUSED(self), PyObject *args)
             PyErr_NoMemory();
             return NULL;
         }
-        return PyUnicode_FromStringAndSize(NULL, 0);
+        return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
     }
 
     final[0] = '\0';
@@ -337,25 +350,16 @@ getpath_joinpath(PyObject *Py_UNUSED(self), PyObject *args)
 static PyObject *
 getpath_readlines(PyObject *Py_UNUSED(self), PyObject *args)
 {
-    PyObject *r = NULL;
     PyObject *pathobj;
-    const wchar_t *path;
     if (!PyArg_ParseTuple(args, "U", &pathobj)) {
         return NULL;
     }
-    path = PyUnicode_AsWideCharString(pathobj, NULL);
-    if (!path) {
-        return NULL;
-    }
-    FILE *fp = _Py_wfopen(path, L"rb");
+    FILE *fp = Py_fopen(pathobj, "rb");
     if (!fp) {
-        PyErr_SetFromErrno(PyExc_OSError);
-        PyMem_Free((void *)path);
         return NULL;
     }
-    PyMem_Free((void *)path);
 
-    r = PyList_New(0);
+    PyObject *r = PyList_New(0);
     if (!r) {
         fclose(fp);
         return NULL;
@@ -365,6 +369,7 @@ getpath_readlines(PyObject *Py_UNUSED(self), PyObject *args)
     if (!buffer) {
         Py_DECREF(r);
         fclose(fp);
+        PyErr_NoMemory();
         return NULL;
     }
 
@@ -687,7 +692,7 @@ env_to_dict(PyObject *dict, const char *key, int and_clear)
     // Quick convert to wchar_t, since we know key is ASCII
     wchar_t *wp = wkey;
     for (const char *p = &key[4]; *p; ++p) {
-        assert(*p < 128);
+        assert(!(*p & 0x80));
         *wp++ = *p;
     }
     *wp = L'\0';
@@ -803,36 +808,25 @@ progname_to_dict(PyObject *dict, const char *key)
 static int
 library_to_dict(PyObject *dict, const char *key)
 {
+/* macOS framework builds do not link against a libpython dynamic library, but
+   instead link against a macOS Framework. */
+#if defined(Py_ENABLE_SHARED) || defined(WITH_NEXT_FRAMEWORK)
+
 #ifdef MS_WINDOWS
-#ifdef Py_ENABLE_SHARED
     extern HMODULE PyWin_DLLhModule;
     if (PyWin_DLLhModule) {
         return winmodule_to_dict(dict, key, PyWin_DLLhModule);
     }
 #endif
-#elif defined(WITH_NEXT_FRAMEWORK)
-    static char modPath[MAXPATHLEN + 1];
-    static int modPathInitialized = -1;
-    if (modPathInitialized < 0) {
-        modPathInitialized = 0;
 
-        /* On Mac OS X we have a special case if we're running from a framework.
-           This is because the python home should be set relative to the library,
-           which is in the framework, not relative to the executable, which may
-           be outside of the framework. Except when we're in the build
-           directory... */
-        Dl_info pythonInfo;
-        if (dladdr(&Py_Initialize, &pythonInfo)) {
-            if (pythonInfo.dli_fname) {
-                strncpy(modPath, pythonInfo.dli_fname, MAXPATHLEN);
-                modPathInitialized = 1;
-            }
-        }
-    }
-    if (modPathInitialized > 0) {
-        return decode_to_dict(dict, key, modPath);
+#if HAVE_DLADDR
+    Dl_info libpython_info;
+    if (dladdr(&Py_Initialize, &libpython_info) && libpython_info.dli_fname) {
+        return decode_to_dict(dict, key, libpython_info.dli_fname);
     }
 #endif
+#endif
+
     return PyDict_SetItemString(dict, key, Py_None) == 0;
 }
 
@@ -963,7 +957,7 @@ _PyConfig_InitPathConfig(PyConfig *config, int compute_path_config)
     ) {
         Py_DECREF(co);
         Py_DECREF(dict);
-        PyErr_FormatUnraisable("Exception ignored in preparing getpath");
+        PyErr_FormatUnraisable("Exception ignored while preparing getpath");
         return PyStatus_Error("error evaluating initial values");
     }
 
@@ -972,13 +966,13 @@ _PyConfig_InitPathConfig(PyConfig *config, int compute_path_config)
 
     if (!r) {
         Py_DECREF(dict);
-        PyErr_FormatUnraisable("Exception ignored in running getpath");
+        PyErr_FormatUnraisable("Exception ignored while running getpath");
         return PyStatus_Error("error evaluating path");
     }
     Py_DECREF(r);
 
     if (_PyConfig_FromDict(config, configDict) < 0) {
-        PyErr_FormatUnraisable("Exception ignored in reading getpath results");
+        PyErr_FormatUnraisable("Exception ignored while reading getpath results");
         Py_DECREF(dict);
         return PyStatus_Error("error getting getpath results");
     }

@@ -12,7 +12,7 @@ class TestScriptHelper(unittest.TestCase):
 
     def test_assert_python_ok(self):
         t = script_helper.assert_python_ok('-c', 'import sys; sys.exit(0)')
-        self.assertEqual(0, t[0], 'return code was not 0')
+        self.assertEqual(0, t.rc, 'return code was not 0')
 
     def test_assert_python_failure(self):
         # I didn't import the sys module so this child will fail.
@@ -74,8 +74,7 @@ class TestScriptHelperEnvironment(unittest.TestCase):
     """Code coverage for interpreter_requires_environment()."""
 
     def setUp(self):
-        self.assertTrue(
-            hasattr(script_helper, '__cached_interp_requires_environment'))
+        self.assertHasAttr(script_helper, '__cached_interp_requires_environment')
         # Reset the private cached state.
         script_helper.__dict__['__cached_interp_requires_environment'] = None
 

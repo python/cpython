@@ -22,3 +22,9 @@ requires('gui')
 
 def load_tests(*args):
     return load_package_tests(os.path.dirname(__file__), *args)
+
+def setUpModule():
+    wantobjects = support.get_resource_value('wantobjects')
+    if wantobjects is not None:
+        unittest.enterModuleContext(
+            support.swap_attr(tkinter, 'wantobjects', int(wantobjects)))

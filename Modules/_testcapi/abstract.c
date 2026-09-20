@@ -129,6 +129,90 @@ mapping_getoptionalitem(PyObject *self, PyObject *args)
     }
 }
 
+static PyObject *
+pyiter_next(PyObject *self, PyObject *iter)
+{
+    PyObject *item = PyIter_Next(iter);
+    if (item == NULL && !PyErr_Occurred()) {
+        Py_RETURN_NONE;
+    }
+    return item;
+}
+
+static PyObject *
+pyiter_nextitem(PyObject *self, PyObject *iter)
+{
+    PyObject *item;
+    int rc = PyIter_NextItem(iter, &item);
+    if (rc < 0) {
+        assert(PyErr_Occurred());
+        assert(item == NULL);
+        return NULL;
+    }
+    assert(!PyErr_Occurred());
+    if (item == NULL) {
+        Py_RETURN_NONE;
+    }
+    return item;
+}
+
+
+static PyObject *
+sequence_fast_get_size(PyObject *self, PyObject *obj)
+{
+    NULLABLE(obj);
+    return PyLong_FromSsize_t(PySequence_Fast_GET_SIZE(obj));
+}
+
+
+static PyObject *
+sequence_fast_get_item(PyObject *self, PyObject *args)
+{
+    PyObject *obj;
+    Py_ssize_t index;
+    if (!PyArg_ParseTuple(args, "On", &obj, &index)) {
+        return NULL;
+    }
+    NULLABLE(obj);
+    return PySequence_Fast_GET_ITEM(obj, index);
+}
+
+
+static PyObject *
+object_setattr_null_exc(PyObject *self, PyObject *args)
+{
+    PyObject *obj, *name, *exc;
+    if (!PyArg_ParseTuple(args, "OOO", &obj, &name, &exc)) {
+        return NULL;
+    }
+
+    PyErr_SetObject((PyObject*)Py_TYPE(exc), exc);
+    if (PyObject_SetAttr(obj, name, NULL) < 0) {
+        return NULL;
+    }
+    assert(PyErr_Occurred());
+    return NULL;
+}
+
+
+static PyObject *
+object_setattrstring_null_exc(PyObject *self, PyObject *args)
+{
+    PyObject *obj, *exc;
+    const char *name;
+    Py_ssize_t size;
+    if (!PyArg_ParseTuple(args, "Oz#O", &obj, &name, &size, &exc)) {
+        return NULL;
+    }
+
+    PyErr_SetObject((PyObject*)Py_TYPE(exc), exc);
+    if (PyObject_SetAttrString(obj, name, NULL) < 0) {
+        return NULL;
+    }
+    assert(PyErr_Occurred());
+    return NULL;
+}
+
 
 static PyMethodDef test_methods[] = {
     {"object_getoptionalattr", object_getoptionalattr, METH_VARARGS},
@@ -138,6 +222,13 @@ static PyMethodDef test_methods[] = {
     {"mapping_getoptionalitem", mapping_getoptionalitem, METH_VARARGS},
     {"mapping_getoptionalitemstring", mapping_getoptionalitemstring, METH_VARARGS},
 
+    {"PyIter_Next", pyiter_next, METH_O},
+    {"PyIter_NextItem", pyiter_nextitem, METH_O},
+
+    {"sequence_fast_get_size", sequence_fast_get_size, METH_O},
+    {"sequence_fast_get_item", sequence_fast_get_item, METH_VARARGS},
+    {"object_setattr_null_exc", object_setattr_null_exc, METH_VARARGS},
+    {"object_setattrstring_null_exc", object_setattrstring_null_exc, METH_VARARGS},
     {NULL},
 };
 

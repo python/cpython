@@ -1,3 +1,0 @@
-Remove *type*, *choices*, and *metavar* parameters of
-:class:`!argparse.BooleanOptionalAction`.
-They were deprecated since Python 3.12.

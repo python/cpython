@@ -1,7 +1,7 @@
 import contextlib
 from lexer import Token
 from typing import TextIO, Iterator
-
+from io import StringIO
 
 class CWriter:
     "A writer that understands tokens and how to format C code"
@@ -15,11 +15,18 @@ class CWriter:
         self.line_directives = line_directives
         self.last_token = None
         self.newline = True
+        self.pending_spill = False
+        self.pending_reload = False
+
+    @staticmethod
+    def null() -> "CWriter":
+        return CWriter(StringIO(), 0, False)
 
     def set_position(self, tkn: Token) -> None:
         if self.last_token is not None:
-            if self.last_token.line < tkn.line:
+            if self.last_token.end_line < tkn.line:
                 self.out.write("\n")
+            if self.last_token.line < tkn.line:
                 if self.line_directives:
                     self.out.write(f'#line {tkn.line} "{tkn.filename}"\n')
                 self.out.write(" " * self.indents[-1])
@@ -91,6 +98,8 @@ class CWriter:
         self.maybe_dedent(tkn.text)
         self.set_position(tkn)
         self.emit_text(tkn.text)
+        if tkn.kind.startswith("CMACRO"):
+            self.newline = True
         self.maybe_indent(tkn.text)
 
     def emit_str(self, txt: str) -> None:

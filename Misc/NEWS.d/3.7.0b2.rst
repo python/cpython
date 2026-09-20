@@ -274,7 +274,7 @@ collections.ChainMap() preserves the order of the underlying mappings.
 .. nonce: -T77_c
 .. section: Library
 
-:func:`fnmatch.translate()` no longer produces patterns which contain set
+:func:`fnmatch.translate` no longer produces patterns which contain set
 operations. Sets starting with '[' or containing '--', '&&', '~~' or '||'
 will be interpreted differently in regular expressions in future versions.
 Currently they emit warnings. fnmatch.translate() now avoids producing

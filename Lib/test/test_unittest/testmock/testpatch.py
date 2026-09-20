@@ -366,7 +366,7 @@ class PatchTest(unittest.TestCase):
             self.assertEqual(SomeClass.frooble, sentinel.Frooble)
 
         test()
-        self.assertFalse(hasattr(SomeClass, 'frooble'))
+        self.assertNotHasAttr(SomeClass, 'frooble')
 
 
     def test_patch_wont_create_by_default(self):
@@ -383,7 +383,7 @@ class PatchTest(unittest.TestCase):
             @patch.object(SomeClass, 'ord', sentinel.Frooble)
             def test(): pass
             test()
-        self.assertFalse(hasattr(SomeClass, 'ord'))
+        self.assertNotHasAttr(SomeClass, 'ord')
 
 
     def test_patch_builtins_without_create(self):
@@ -745,6 +745,54 @@ class PatchTest(unittest.TestCase):
         self.assertIsNone(patcher.stop())
 
 
+    def test_exit_idempotent(self):
+        patcher = patch(foo_name, 'bar', 3)
+        with patcher:
+            patcher.__exit__(None, None, None)
+
+
+    def test_second_start_failure(self):
+        patcher = patch(foo_name, 'bar', 3)
+        patcher.start()
+        try:
+            self.assertRaises(RuntimeError, patcher.start)
+        finally:
+            patcher.stop()
+
+
+    def test_second_enter_failure(self):
+        patcher = patch(foo_name, 'bar', 3)
+        with patcher:
+            self.assertRaises(RuntimeError, patcher.start)
+
+
+    def test_second_start_after_stop(self):
+        patcher = patch(foo_name, 'bar', 3)
+        patcher.start()
+        patcher.stop()
+        patcher.start()
+        patcher.stop()
+
+
+    def test_property_setters(self):
+        mock_object = Mock()
+        mock_bar = mock_object.bar
+        patcher = patch.object(mock_object, 'bar', 'x')
+        with patcher:
+            self.assertEqual(patcher.is_local, False)
+            self.assertIs(patcher.target, mock_object)
+            self.assertEqual(patcher.temp_original, mock_bar)
+            patcher.is_local = True
+            patcher.target = mock_bar
+            patcher.temp_original = mock_object
+            self.assertEqual(patcher.is_local, True)
+            self.assertIs(patcher.target, mock_bar)
+            self.assertEqual(patcher.temp_original, mock_object)
+        # if changes are left intact, they may lead to disruption as shown below (it might be what someone needs though)
+        self.assertEqual(mock_bar.bar, mock_object)
+        self.assertEqual(mock_object.bar, 'x')
+
+
     def test_patchobject_start_stop(self):
         original = something
         patcher = patch.object(PTModule, 'something', 'foo')
@@ -1098,7 +1146,7 @@ class PatchTest(unittest.TestCase):
 
         self.assertIsNot(m1, m2)
         for mock in m1, m2:
-            self.assertNotCallable(m1)
+            self.assertNotCallable(mock)
 
 
     def test_new_callable_patch_object(self):
@@ -1111,7 +1159,7 @@ class PatchTest(unittest.TestCase):
 
         self.assertIsNot(m1, m2)
         for mock in m1, m2:
-            self.assertNotCallable(m1)
+            self.assertNotCallable(mock)
 
 
     def test_new_callable_keyword_arguments(self):
@@ -1429,7 +1477,7 @@ class PatchTest(unittest.TestCase):
         finally:
             patcher.stop()
 
-        self.assertFalse(hasattr(Foo, 'blam'))
+        self.assertNotHasAttr(Foo, 'blam')
 
 
     def test_patch_multiple_spec_set(self):

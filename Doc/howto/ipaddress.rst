@@ -8,9 +8,6 @@
 An introduction to the ipaddress module
 ***************************************
 
-:author: Peter Moody
-:author: Nick Coghlan
-
 .. topic:: Overview
 
    This document aims to provide a gentle introduction to the

@@ -1,7 +1,0 @@
-# This file contains suppressions for the default (with GIL) build.
-# reference: https://github.com/google/sanitizers/wiki/ThreadSanitizerSuppressions
-race:get_allocator_unlocked
-race:set_allocator_unlocked
-
-# https://gist.github.com/mpage/daaf32b39180c1989572957b943eb665
-thread:pthread_create

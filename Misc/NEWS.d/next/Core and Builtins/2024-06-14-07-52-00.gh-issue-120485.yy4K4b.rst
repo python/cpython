@@ -1,1 +1,0 @@
-Add an override of ``allow_reuse_port`` on classes subclassing ``socketserver.TCPServer`` where ``allow_reuse_address`` is also overridden.

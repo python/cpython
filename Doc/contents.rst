@@ -8,12 +8,14 @@
    tutorial/index.rst
    using/index.rst
    reference/index.rst
+   builtins/index.rst
    library/index.rst
    extending/index.rst
    c-api/index.rst
    installing/index.rst
    howto/index.rst
    faq/index.rst
+   deprecations/index.rst
    glossary.rst
 
    about.rst

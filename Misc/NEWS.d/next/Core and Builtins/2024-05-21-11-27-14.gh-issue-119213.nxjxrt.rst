@@ -1,3 +1,0 @@
-Non-builtin modules built with argument clinic were crashing if used in a
-subinterpreter before the main interpreter.  The objects that were causing
-the problem by leaking between interpreters carelessly have been fixed.

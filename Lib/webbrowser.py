@@ -1,7 +1,8 @@
 """Interfaces for launching and remotely controlling web browsers."""
-# Maintained by Georg Brandl.
 
+import builtins  # because we override open
 import os
+lazy import plistlib
 import shlex
 import shutil
 import sys
@@ -31,7 +32,7 @@ def register(name, klass, instance=None, *, preferred=False):
         # Preferred browsers go to the front of the list.
         # Need to match to the default browser returned by xdg-settings, which
         # may be of the form e.g. "firefox.desktop".
-        if preferred or (_os_preferred_browser and name in _os_preferred_browser):
+        if preferred or (_os_preferred_browser and f'{name}.desktop' == _os_preferred_browser):
             _tryorder.insert(0, name)
         else:
             _tryorder.append(name)
@@ -80,6 +81,9 @@ def open(url, new=0, autoraise=True):
     - 1: a new browser window.
     - 2: a new browser page ("tab").
     If possible, autoraise raises the window (the default) or not.
+
+    If opening the browser succeeds, return True.
+    If there is a problem, return False.
     """
     if _tryorder is None:
         with _lock:
@@ -160,6 +164,12 @@ class BaseBrowser:
     def open_new_tab(self, url):
         return self.open(url, 2)
 
+    @staticmethod
+    def _check_url(url):
+        """Ensures that the URL is safe to pass to subprocesses as a parameter"""
+        if url and url.lstrip().startswith("-"):
+            raise ValueError(f"Invalid URL (leading dash disallowed): {url!r}")
+
 
 class GenericBrowser(BaseBrowser):
     """Class for all browsers started with a command
@@ -177,6 +187,7 @@ class GenericBrowser(BaseBrowser):
 
     def open(self, url, new=0, autoraise=True):
         sys.audit("webbrowser.open", url)
+        self._check_url(url)
         cmdline = [self.name] + [arg.replace("%s", url)
                                  for arg in self.args]
         try:
@@ -197,6 +208,7 @@ class BackgroundBrowser(GenericBrowser):
         cmdline = [self.name] + [arg.replace("%s", url)
                                  for arg in self.args]
         sys.audit("webbrowser.open", url)
+        self._check_url(url)
         try:
             if sys.platform[:3] == 'win':
                 p = subprocess.Popen(cmdline)
@@ -276,7 +288,9 @@ class UnixBrowser(BaseBrowser):
             raise Error("Bad 'new' parameter to open(); "
                         f"expected 0, 1, or 2, got {new}")
 
-        args = [arg.replace("%s", url).replace("%action", action)
+        self._check_url(url.replace("%action", action))
+
+        args = [arg.replace("%action", action).replace("%s", url)
                 for arg in self.remote_args]
         args = [arg for arg in args if arg]
         success = self._invoke(args, True, autoraise, url)
@@ -354,6 +368,7 @@ class Konqueror(BaseBrowser):
 
     def open(self, url, new=0, autoraise=True):
         sys.audit("webbrowser.open", url)
+        self._check_url(url)
         # XXX Currently I know no way to prevent KFM from opening a new win.
         if new == 2:
             action = "newTab"
@@ -478,11 +493,16 @@ def register_standard_browsers():
     _tryorder = []
 
     if sys.platform == 'darwin':
-        register("MacOSX", None, MacOSXOSAScript('default'))
-        register("chrome", None, MacOSXOSAScript('chrome'))
-        register("firefox", None, MacOSXOSAScript('firefox'))
-        register("safari", None, MacOSXOSAScript('safari'))
-        # OS X can use below Unix support (but we prefer using the OS X
+        register("MacOS", None, MacOS('default'))
+        register("MacOSX", None, MacOS('default'))  # backward compat alias
+        register("chrome", None, MacOS('google chrome'))
+        register("chromium", None, MacOS('chromium'))
+        register("firefox", None, MacOS('firefox'))
+        register("safari", None, MacOS('safari'))
+        register("opera", None, MacOS('opera'))
+        register("microsoft-edge", None, MacOS('microsoft edge'))
+        register("brave", None, MacOS('brave browser'))
+        # macOS can use below Unix support (but we prefer using the macOS
         # specific stuff)
 
     if sys.platform == "ios":
@@ -556,6 +576,19 @@ def register_standard_browsers():
         # Treat choices in same way as if passed into get() but do register
         # and prepend to _tryorder
         for cmdline in userchoices:
+            if all(x not in cmdline for x in " \t"):
+                # Assume this is the name of a registered command, use
+                # that unless it is a GenericBrowser.
+                try:
+                    command = _browsers[cmdline.lower()]
+                except KeyError:
+                    pass
+
+                else:
+                    if not isinstance(command[1], GenericBrowser):
+                        _tryorder.insert(0, cmdline.lower())
+                        continue
+
             if cmdline != '':
                 cmd = _synthesize(cmdline, preferred=True)
                 if cmd[1] is None:
@@ -572,6 +605,7 @@ if sys.platform[:3] == "win":
     class WindowsDefault(BaseBrowser):
         def open(self, url, new=0, autoraise=True):
             sys.audit("webbrowser.open", url)
+            self._check_url(url)
             try:
                 os.startfile(url)
             except OSError:
@@ -586,15 +620,113 @@ if sys.platform[:3] == "win":
 #
 
 if sys.platform == 'darwin':
+    def _macos_default_browser_bundle_id():
+        """Return the bundle ID of the default web browser.
+
+        Reads the LaunchServices preferences file that macOS maintains
+        when the user sets a default browser. Returns 'com.apple.Safari'
+        if the file is absent or no https handler is recorded, because on
+        a fresh macOS installation Safari is the default browser and the
+        LaunchServices plist is not written until the user explicitly
+        changes their default browser.
+        """
+        plist = os.path.expanduser(
+            '~/Library/Preferences/com.apple.LaunchServices/'
+            'com.apple.launchservices.secure.plist'
+        )
+        try:
+            with builtins.open(plist, 'rb') as f:
+                data = plistlib.load(f)
+            for handler in data.get('LSHandlers', []):
+                if handler.get('LSHandlerURLScheme') == 'https':
+                    return (handler.get('LSHandlerRoleAll')
+                            or handler.get('LSHandlerRoleViewer'))
+        except (OSError, KeyError, ValueError):
+            pass
+        return 'com.apple.Safari'
+
+    class MacOS(BaseBrowser):
+        """Launcher class for macOS browsers, using /usr/bin/open.
+
+        For http/https URLs with the default browser, /usr/bin/open is called
+        directly; macOS routes these to the registered browser.
+
+        For all other URL schemes (e.g. file://) and for named browsers,
+        /usr/bin/open -b <bundle-id> is used so that the URL is always passed
+        to a browser application rather than dispatched by the OS file handler.
+        This prevents file injection attacks where a file:// URL pointing to an
+        executable bundle could otherwise be launched by the OS.
+
+        Named browsers with known bundle IDs use -b; unknown names fall back
+        to -a.
+        """
+
+        _BUNDLE_IDS = {
+            'google chrome':  'com.google.Chrome',
+            'firefox':        'org.mozilla.firefox',
+            'safari':         'com.apple.Safari',
+            'chromium':       'org.chromium.Chromium',
+            'opera':          'com.operasoftware.Opera',
+            'microsoft edge': 'com.microsoft.edgemac',
+            'brave browser':  'com.brave.Browser',
+        }
+
+        def open(self, url, new=0, autoraise=True):
+            sys.audit("webbrowser.open", url)
+            self._check_url(url)
+            if self.name == 'default':
+                proto, sep, _ = url.partition(':')
+                if sep and proto.lower() in {'http', 'https'}:
+                    cmd = ['/usr/bin/open', url]
+                else:
+                    bundle_id = _macos_default_browser_bundle_id()
+                    cmd = ['/usr/bin/open', '-b', bundle_id, url]
+            else:
+                bundle_id = self._BUNDLE_IDS.get(self.name.lower())
+                if bundle_id:
+                    cmd = ['/usr/bin/open', '-b', bundle_id, url]
+                else:
+                    cmd = ['/usr/bin/open', '-a', self.name, url]
+            proc = subprocess.run(cmd, stderr=subprocess.DEVNULL)
+            return proc.returncode == 0
+
     class MacOSXOSAScript(BaseBrowser):
         def __init__(self, name='default'):
+            import warnings
+            warnings._deprecated("webbrowser.MacOSXOSAScript", remove=(3, 17))
             super().__init__(name)
 
         def open(self, url, new=0, autoraise=True):
             sys.audit("webbrowser.open", url)
+            self._check_url(url)
             url = url.replace('"', '%22')
             if self.name == 'default':
-                script = f'open location "{url}"'  # opens in default browser
+                proto, _sep, _rest = url.partition(":")
+                if _sep and proto.lower() in {"http", "https"}:
+                    # default web URL, don't need to lookup browser
+                    script = f'open location "{url}"'
+                else:
+                    # if not a web URL, need to lookup default browser to ensure a browser is launched
+                    # this should always work, but is overkill to lookup http handler
+                    # before launching http
+                    script = f"""
+                        use framework "AppKit"
+                        use AppleScript version "2.4"
+                        use scripting additions
+
+                        property NSWorkspace : a reference to current application's NSWorkspace
+                        property NSURL : a reference to current application's NSURL
+
+                        set http_url to NSURL's URLWithString:"https://python.org"
+                        set browser_url to (NSWorkspace's sharedWorkspace)'s ¬
+                            URLForApplicationToOpenURL:http_url
+                        set app_path to browser_url's relativePath as text -- NSURL to absolute path '/Applications/Safari.app'
+
+                        tell application app_path
+                            activate
+                            open location "{url}"
+                        end tell
+                    """
             else:
                 script = f'''
                    tell application "{self.name}"
@@ -603,7 +735,7 @@ if sys.platform == 'darwin':
                    end
                    '''
 
-            osapipe = os.popen("osascript", "w")
+            osapipe = os.popen("/usr/bin/osascript", "w")
             if osapipe is None:
                 return False
 
@@ -623,6 +755,7 @@ if sys.platform == "ios":
     class IOSBrowser(BaseBrowser):
         def open(self, url, new=0, autoraise=True):
             sys.audit("webbrowser.open", url)
+            self._check_url(url)
             # If ctypes isn't available, we can't open a browser
             if objc is None:
                 return False
@@ -678,7 +811,9 @@ if sys.platform == "ios":
 
 def parse_args(arg_list: list[str] | None):
     import argparse
-    parser = argparse.ArgumentParser(description="Open URL in a web browser.")
+    parser = argparse.ArgumentParser(
+        description="Open URL in a web browser.",
+    )
     parser.add_argument("url", help="URL to open")
 
     group = parser.add_mutually_exclusive_group()

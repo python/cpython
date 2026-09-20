@@ -9,10 +9,6 @@
 Floating-Point Arithmetic:  Issues and Limitations
 **************************************************
 
-.. sectionauthor:: Tim Peters <tim_one@users.sourceforge.net>
-.. sectionauthor:: Raymond Hettinger <python at rcn dot com>
-
-
 Floating-point numbers are represented in computer hardware as base 2 (binary)
 fractions.  For example, the **decimal** fraction ``0.625``
 has value 6/10 + 2/100 + 5/1000, and in the same way the **binary** fraction ``0.101``
@@ -230,7 +226,7 @@ accumulate to the point where they affect the final total:
    >>> sum([0.1] * 10) == 1.0
    True
 
-The :func:`math.fsum()` goes further and tracks all of the "lost digits"
+The :func:`math.fsum` goes further and tracks all of the "lost digits"
 as values are added onto a running total so that the result has only a
 single rounding.  This is slower than :func:`sum` but will be more
 accurate in uncommon cases where large magnitude inputs mostly cancel

@@ -1,0 +1,3 @@
+Add ``test.support.skip_if_huge_c_stack()`` and use it to skip tests
+that exhaust the C stack if the stack limit is very large
+(e.g. on DragonFly BSD or with ``ulimit -s unlimited``).

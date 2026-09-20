@@ -1,0 +1,2 @@
+Fix reference leaks in error paths of the :mod:`!_interpchannels` and
+:mod:`!_interpqueues` extension modules.

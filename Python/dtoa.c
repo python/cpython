@@ -119,8 +119,10 @@
 
 #include "Python.h"
 #include "pycore_dtoa.h"          // _PY_SHORT_FLOAT_REPR
+#include "pycore_interp_structs.h"// struct Bigint
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include <stdlib.h>               // exit()
+
 
 /* if _PY_SHORT_FLOAT_REPR == 0, then don't even try to compile
    the following code */
@@ -137,8 +139,7 @@
 #ifdef DOUBLE_IS_LITTLE_ENDIAN_IEEE754
 #  define IEEE_8087
 #endif
-#if defined(DOUBLE_IS_BIG_ENDIAN_IEEE754) ||  \
-  defined(DOUBLE_IS_ARM_MIXED_ENDIAN_IEEE754)
+#if defined(DOUBLE_IS_BIG_ENDIAN_IEEE754)
 #  define IEEE_MC68k
 #endif
 #if defined(IEEE_8087) + defined(IEEE_MC68k) != 1
@@ -147,8 +148,7 @@
 
 /* The code below assumes that the endianness of integers matches the
    endianness of the two 32-bit words of a double.  Check this. */
-#if defined(WORDS_BIGENDIAN) && (defined(DOUBLE_IS_LITTLE_ENDIAN_IEEE754) || \
-                                 defined(DOUBLE_IS_ARM_MIXED_ENDIAN_IEEE754))
+#if defined(WORDS_BIGENDIAN) && defined(DOUBLE_IS_LITTLE_ENDIAN_IEEE754)
 #error "doubles and ints have incompatible endianness"
 #endif
 
@@ -157,7 +157,7 @@
 #endif
 
 
-// ULong is defined in pycore_dtoa.h.
+typedef uint32_t ULong;
 typedef int32_t Long;
 typedef uint64_t ULLong;
 

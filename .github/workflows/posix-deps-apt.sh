@@ -1,27 +1,25 @@
 #!/bin/sh
 apt-get update
 
-# autoconf-archive is needed by autoreconf (check_generated_files job)
-apt-get -yq install \
+apt-get -yq --no-install-recommends install \
     build-essential \
     pkg-config \
-    autoconf-archive \
-    ccache \
+    cmake \
+    curl \
     gdb \
     lcov \
     libb2-dev \
     libbz2-dev \
     libffi-dev \
-    libgdbm-dev \
     libgdbm-compat-dev \
+    libgdbm-dev \
     liblzma-dev \
     libmpdec-dev \
     libncurses5-dev \
     libreadline6-dev \
     libsqlite3-dev \
     libssl-dev \
-    lzma \
-    lzma-dev \
+    libzstd-dev \
     strace \
     tk-dev \
     uuid-dev \

@@ -1,0 +1,1 @@
+Fix data race in :class:`BaseException` when an exception is copied while being mutated.

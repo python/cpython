@@ -146,20 +146,22 @@ class ZoneInfoPickleTest(ZoneInfoTestBase):
     @add_key_examples
     def test_pickle_unpickle_cache(self, key):
         zi = self.klass(key)
-        pkl_str = pickle.dumps(zi)
-        zi_rt = pickle.loads(pkl_str)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            pkl_str = pickle.dumps(zi, proto)
+            zi_rt = pickle.loads(pkl_str)
 
-        self.assertIs(zi, zi_rt)
+            self.assertIs(zi, zi_rt)
 
     @hypothesis.given(key=valid_keys())
     @add_key_examples
     def test_pickle_unpickle_no_cache(self, key):
         zi = self.klass.no_cache(key)
-        pkl_str = pickle.dumps(zi)
-        zi_rt = pickle.loads(pkl_str)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            pkl_str = pickle.dumps(zi, proto)
+            zi_rt = pickle.loads(pkl_str)
 
-        self.assertIsNot(zi, zi_rt)
-        self.assertEqual(str(zi), str(zi_rt))
+            self.assertIsNot(zi, zi_rt)
+            self.assertEqual(str(zi), str(zi_rt))
 
     @hypothesis.given(key=valid_keys())
     @add_key_examples

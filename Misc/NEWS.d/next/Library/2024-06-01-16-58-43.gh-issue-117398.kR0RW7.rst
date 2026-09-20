@@ -1,2 +1,0 @@
-The ``_datetime`` module (C implementation for :mod:`datetime`) now supports
-being imported in multiple interpreters.

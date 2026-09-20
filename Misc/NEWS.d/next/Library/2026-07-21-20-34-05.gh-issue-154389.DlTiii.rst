@@ -1,0 +1,3 @@
+Fix :func:`uuid.uuid1` on OpenBSD:
+it returned a version 4 UUID,
+because ``uuid_create()`` generates random UUIDs on this platform.

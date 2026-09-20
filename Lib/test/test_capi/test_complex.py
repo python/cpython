@@ -7,10 +7,12 @@ from test.test_capi.test_getargs import (BadComplex, BadComplex2, Complex,
                                          FloatSubclass, Float, BadFloat,
                                          BadFloat2, ComplexSubclass)
 from test.support import import_helper
+from test.support.testcase import ComplexesAreIdenticalMixin
 
 
 _testcapi = import_helper.import_module('_testcapi')
 _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
+_testinternalcapi = import_helper.import_module('_testinternalcapi')
 
 NULL = None
 INF = float("inf")
@@ -23,7 +25,7 @@ class BadComplex3:
         raise RuntimeError
 
 
-class CAPIComplexTest(unittest.TestCase):
+class CAPIComplexTest(ComplexesAreIdenticalMixin, unittest.TestCase):
     def test_check(self):
         # Test PyComplex_Check()
         check = _testlimitedcapi.complex_check
@@ -171,11 +173,32 @@ class CAPIComplexTest(unittest.TestCase):
 
         self.assertEqual(_py_c_sum(1, 1j), (1+1j, 0))
 
+    def test_py_cr_sum(self):
+        # Test _Py_cr_sum()
+        _py_cr_sum = _testinternalcapi._py_cr_sum
+
+        self.assertComplexesAreIdentical(_py_cr_sum(-0j, -0.0)[0],
+                                         complex(-0.0, -0.0))
+
     def test_py_c_diff(self):
         # Test _Py_c_diff()
         _py_c_diff = _testcapi._py_c_diff
 
         self.assertEqual(_py_c_diff(1, 1j), (1-1j, 0))
+
+    def test_py_cr_diff(self):
+        # Test _Py_cr_diff()
+        _py_cr_diff = _testinternalcapi._py_cr_diff
+
+        self.assertComplexesAreIdentical(_py_cr_diff(-0j, 0.0)[0],
+                                         complex(-0.0, -0.0))
+
+    def test_py_rc_diff(self):
+        # Test _Py_rc_diff()
+        _py_rc_diff = _testinternalcapi._py_rc_diff
+
+        self.assertComplexesAreIdentical(_py_rc_diff(-0.0, 0j)[0],
+                                         complex(-0.0, -0.0))
 
     def test_py_c_neg(self):
         # Test _Py_c_neg()
@@ -188,6 +211,13 @@ class CAPIComplexTest(unittest.TestCase):
         _py_c_prod = _testcapi._py_c_prod
 
         self.assertEqual(_py_c_prod(2, 1j), (2j, 0))
+
+    def test_py_cr_prod(self):
+        # Test _Py_cr_prod()
+        _py_cr_prod = _testinternalcapi._py_cr_prod
+
+        self.assertComplexesAreIdentical(_py_cr_prod(complex('inf+1j'), INF)[0],
+                                                     complex('inf+infj'))
 
     def test_py_c_quot(self):
         # Test _Py_c_quot()
@@ -211,6 +241,20 @@ class CAPIComplexTest(unittest.TestCase):
 
         self.assertEqual(_py_c_quot(1, 0j)[1], errno.EDOM)
 
+    def test_py_cr_quot(self):
+        # Test _Py_cr_quot()
+        _py_cr_quot = _testinternalcapi._py_cr_quot
+
+        self.assertComplexesAreIdentical(_py_cr_quot(complex('inf+1j'), 2**1000)[0],
+                                         INF + 2**-1000*1j)
+
+    def test_py_rc_quot(self):
+        # Test _Py_rc_quot()
+        _py_rc_quot = _testinternalcapi._py_rc_quot
+
+        self.assertComplexesAreIdentical(_py_rc_quot(1.0, complex('nan-infj'))[0],
+                                         0j)
+
     def test_py_c_pow(self):
         # Test _Py_c_pow()
         _py_c_pow = _testcapi._py_c_pow
@@ -226,25 +270,45 @@ class CAPIComplexTest(unittest.TestCase):
 
         self.assertEqual(_py_c_pow(0j, -1)[1], errno.EDOM)
         self.assertEqual(_py_c_pow(0j, 1j)[1], errno.EDOM)
-        self.assertEqual(_py_c_pow(*[DBL_MAX+1j]*2)[0], complex(*[INF]*2))
+        max_num = DBL_MAX+1j
+        self.assertEqual(_py_c_pow(max_num, max_num),
+                         (complex(INF, INF), errno.ERANGE))
+        self.assertEqual(_py_c_pow(max_num, 2),
+                         (complex(INF, INF), errno.ERANGE))
 
 
     def test_py_c_abs(self):
         # Test _Py_c_abs()
         _py_c_abs = _testcapi._py_c_abs
 
-        self.assertEqual(_py_c_abs(-1), (1.0, 0))
-        self.assertEqual(_py_c_abs(1j), (1.0, 0))
+        def c_abs(num):
+            # On success, _Py_c_abs() doesn't use errno and leaves errno
+            # unchanged
+            _testcapi.set_errno(0)
+            result, errno = _py_c_abs(num)
+            self.assertEqual(errno, 0)
+            return result
 
-        self.assertEqual(_py_c_abs(complex('+inf+1j')), (INF, 0))
-        self.assertEqual(_py_c_abs(complex('-inf+1j')), (INF, 0))
-        self.assertEqual(_py_c_abs(complex('1.25+infj')), (INF, 0))
-        self.assertEqual(_py_c_abs(complex('1.25-infj')), (INF, 0))
+        try:
+            self.assertEqual(c_abs(-1), 1.0)
+            self.assertEqual(c_abs(1j), 1.0)
+            self.assertEqual(c_abs(complex('+inf+1j')), INF)
+            self.assertEqual(c_abs(complex('-inf+1j')), INF)
+            self.assertEqual(c_abs(complex('1.25+infj')), INF)
+            self.assertEqual(c_abs(complex('1.25-infj')), INF)
+            self.assertTrue(isnan(c_abs(complex('1.25+nanj'))))
+            self.assertTrue(isnan(c_abs(complex('nan-1j'))))
 
-        self.assertTrue(isnan(_py_c_abs(complex('1.25+nanj'))[0]))
-        self.assertTrue(isnan(_py_c_abs(complex('nan-1j'))[0]))
+            # Set errno to ERANGE on overflow
+            _testcapi.set_errno(0)
+            self.assertEqual(_py_c_abs(complex(*[DBL_MAX]*2)),
+                             (INF, errno.ERANGE))
 
-        self.assertEqual(_py_c_abs(complex(*[DBL_MAX]*2))[1], errno.ERANGE)
+            # Preserve errno on success
+            _testcapi.set_errno(errno.EACCES)
+            self.assertEqual(_py_c_abs(1j), (1.0, errno.EACCES))
+        finally:
+            _testcapi.set_errno(0)
 
 
 if __name__ == "__main__":

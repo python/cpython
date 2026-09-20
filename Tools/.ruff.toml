@@ -1,0 +1,14 @@
+extend = "../.ruff.toml"  # Inherit the project-wide settings
+
+[per-file-target-version]
+"jit/*.py" = "py312"  # Reused-quote f-strings (PEP 701)
+
+[lint]
+select = [
+    "F401",  # Unused import
+]
+
+[lint.per-file-ignores]
+"c-analyzer/c_parser/__init__.py" = ["F401"]  # Re-exports from submodules
+"c-analyzer/c_parser/preprocessor/__init__.py" = ["F401"]  # Re-exports from submodules
+"c-analyzer/c_parser/preprocessor/common.py" = ["F401"]  # Re-exported by preprocessor/__init__.py

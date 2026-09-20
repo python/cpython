@@ -1,0 +1,3 @@
+Fix :exc:`SyntaxError` error message for ``from x lazy import y``.
+Raise :exc:`SyntaxWarning` on ``from . lazy import x``
+(with whitespace between the dots and a module named ``lazy``).

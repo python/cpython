@@ -1,0 +1,4 @@
+:func:`email.utils.formataddr` now raises :exc:`ValueError` when the name or
+address contains a carriage return or line feed, matching
+:class:`email.headerregistry.Address`.  This check can be disabled by passing
+``strict=False``.

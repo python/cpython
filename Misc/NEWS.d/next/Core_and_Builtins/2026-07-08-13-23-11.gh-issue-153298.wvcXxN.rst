@@ -1,0 +1,2 @@
+Fixes a data race in :class:`types.GenericAlias` ``__parameters__``
+initialization on free-threading builds.
