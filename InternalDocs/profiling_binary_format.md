@@ -212,6 +212,7 @@ The status byte is a bitfield encoding thread state at sample time:
 |  2  | THREAD_STATUS_UNKNOWN | Thread state could not be determined       |
 |  3  | THREAD_STATUS_GIL_REQUESTED | Thread is waiting to acquire the GIL  |
 |  4  | THREAD_STATUS_HAS_EXCEPTION | Thread has a pending exception         |
+|  5  | THREAD_STATUS_MAIN_THREAD | Thread is the process's main thread     |
 
 Multiple flags can be set simultaneously (e.g., a thread can hold the GIL
 while also running on CPU). Analysis tools use these to filter samples or
