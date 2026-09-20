@@ -1124,10 +1124,14 @@ class _BaseNetwork(_IPAddressBase):
 
         Args:
             next_prefix: The desired next prefix length, if not specified the
-            same self.prefixlen will be used
+            same self.prefixlen will be used.
 
         Returns:
             An IPv(4|6) Network object of the next closest network.
+
+        Raises:
+            ValueError: If next_prefix is outside the range of valid prefix
+            lengths, or if no further network of that size exists.
 
         """
         if next_prefix is None:
@@ -1150,15 +1154,13 @@ class _BaseNetwork(_IPAddressBase):
             ((new_netmask._ip & self.network_address._ip) >> bit_shift) + 1
         ) << bit_shift
 
-        try:
-            return self.__class__(
-                f"{self._string_from_ip_int(next_ip)}/{next_prefix}"
-            )
-        except OverflowError:
+        if next_ip > self._ALL_ONES:
             raise ValueError(
                 f"out of address space, cannot make another /{next_prefix} "
                 "network"
-            ) from None
+            )
+
+        return self.__class__((next_ip, next_prefix))
 
 
 class _BaseConstants:
@@ -1564,6 +1566,17 @@ class IPv4Network(_BaseV4, _BaseNetwork):
               or, more generally
               IPv4Interface(int(IPv4Interface('192.0.2.1'))) ==
                 IPv4Interface('192.0.2.1')
+
+              The address can also be a two-tuple of an address description
+              and a netmask, where the address description is either a
+              string, a 32-bit integer, a 4-byte packed integer, or an
+              existing IPv4Address object; and the netmask is either an
+              integer representing the prefix length (e.g. 24) or a string
+              representing the prefix mask (e.g. '255.255.255.0').
+
+            strict: A boolean. If true, ensure that we have been passed
+              a true network address, for example, 192.0.2.0/24 and not an
+              IP address on a network, for example, 192.0.2.1/24.
 
         Raises:
             AddressValueError: If ipaddress isn't a valid IPv4 address.
@@ -2356,9 +2369,15 @@ class IPv6Network(_BaseV6, _BaseNetwork):
               IPv6Network(int(IPv6Network('2001:db8::'))) ==
                 IPv6Network('2001:db8::')
 
+              The address can also be a two-tuple of an address description and
+              a netmask, where the address description is either a string, a
+              128-bit integer, a 16-byte packed integer, or an existing
+              IPv6Address object; and the netmask is an integer representing
+              the prefix length.
+
             strict: A boolean. If true, ensure that we have been passed
-              A true network address, eg, 2001:db8::1000/124 and not an
-              IP address on a network, eg, 2001:db8::1/124.
+              a true network address, for example, 2001:db8::1000/124 and not an
+              IP address on a network, for example, 2001:db8::1/124.
 
         Raises:
             AddressValueError: If address isn't a valid IPv6 address.

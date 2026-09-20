@@ -1,0 +1,7 @@
+:c:func:`PyMarshal_ReadObjectFromFile` and other functions reading marshalled
+data from a :c:expr:`FILE*` now raise :exc:`OSError` for I/O errors and
+:exc:`KeyboardInterrupt` for interrupted reading, instead of :exc:`EOFError`.
+:c:func:`PyMarshal_WriteObjectToFile` and :c:func:`PyMarshal_WriteLongToFile`
+now detect I/O errors and interrupted writing instead of ignoring them.
+:c:func:`PyMarshal_WriteObjectToFile` now also sets the error indicator if the
+value cannot be marshalled.

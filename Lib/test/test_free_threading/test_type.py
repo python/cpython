@@ -324,6 +324,26 @@ class TestType(TestCase):
         for reader in readers:
             reader.join()
 
+    def test_setattr_many_subclasses(self):
+        # gh-155978: Updating a special method queues a slot update for every
+        # affected subclass.  Keep enough subclasses alive to require
+        # heap-allocated queue chunks in addition to the stack chunk.
+        class Base:
+            pass
+
+        subclasses = [type(f"Sub{i}", (Base,), {}) for i in range(100)]
+
+        def custom_repr(self):
+            return "custom repr"
+
+        Base.__repr__ = custom_repr
+        self.assertTrue(all(repr(cls()) == "custom repr"
+                            for cls in subclasses))
+
+        del Base.__repr__
+        self.assertTrue(all(repr(cls()) != "custom repr"
+                            for cls in subclasses))
+
     def test_concurrent_setattr_deadlock(self):
         # gh-155400: two threads assigning to a special method of the same
         # class could deadlock.  One thread held the type lock and waited for

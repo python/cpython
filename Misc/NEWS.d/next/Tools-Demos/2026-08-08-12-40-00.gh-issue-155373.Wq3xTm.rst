@@ -1,0 +1,6 @@
+Argument Clinic now generates the inlined code of the converters for functions
+with optional groups, instead of a ``PyArg_ParseTuple()`` call for every number
+of arguments.
+Every argument is now parsed once, most such functions now use the fastcall
+convention, and the errors for a wrong type of an argument are the same as in
+other functions.

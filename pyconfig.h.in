@@ -748,8 +748,14 @@
 /* Define to 1 if you have the <iconv.h> header file. */
 #undef HAVE_ICONV_H
 
+/* Define to 1 if you have the 'if_indextoname' function. */
+#undef HAVE_IF_INDEXTONAME
+
 /* Define to 1 if you have the 'if_nameindex' function. */
 #undef HAVE_IF_NAMEINDEX
+
+/* Define to 1 if you have the 'if_nametoindex' function. */
+#undef HAVE_IF_NAMETOINDEX
 
 /* Define if you have the 'inet_aton' function. */
 #undef HAVE_INET_ATON
@@ -2200,6 +2206,9 @@
 /* Define if compiler supports __builtin_shufflevector with 128-bit vectors
    AND the target architecture has native SIMD (not just API availability) */
 #undef _Py_HAVE_EFFICIENT_BUILTIN_SHUFFLEVECTOR
+
+/* Defined if _Float16 C type is supported */
+#undef _Py_HAVE_FLOAT16
 
 /* Define to 1 if libgcc __register_frame and __deregister_frame are linkable.
    */

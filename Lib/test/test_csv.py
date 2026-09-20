@@ -227,6 +227,18 @@ class Test_Csv(unittest.TestCase):
                          quoting = csv.QUOTE_STRINGS)
         self._write_test(['a','',None,1], '"a","",,"1"',
                          quoting = csv.QUOTE_NOTNULL)
+        # FULLWIDTH QUOTATION MARK
+        self._write_test(['a', 1, 'p,q', 'r＂s', 'x！y'],
+                         'a,1,＂p,q＂,＂r＂＂s＂,x！y',
+                         quotechar='＂')
+
+    def test_write_delimiter(self):
+        self._write_test(['a', 1, 'p,q', 'x;y'], 'a,1,"p,q",x;y')
+        self._write_test(['a', 1, 'p;q', 'x,y'], 'a;1;"p;q";x,y', delimiter=';')
+        self._write_test(['a', 1, 'p\0q', 'x,y'], 'a\x001\0"p\0q"\0x,y',
+                         delimiter='\0')
+        self._write_test(['a', 1, 'p🍌q', 'x🍍y'], 'a🍌1🍌"p🍌q"🍌x🍍y',
+                         delimiter='🍌')
 
     def test_write_escape(self):
         self._write_test(['a',1,'p,q'], 'a,1,"p,q"',
@@ -258,19 +270,26 @@ class Test_Csv(unittest.TestCase):
                          escapechar='\\', quoting=csv.QUOTE_MINIMAL)
         self._write_test(['C\\', '6', '7', 'X"'], 'C\\\\,6,7,"X"""',
                          escapechar='\\', quoting=csv.QUOTE_MINIMAL)
+        # SYMBOL FOR ESCAPE
+        self._write_test(['a', 1, 'p,q', 'r\u241bs', 'x\u241ay'],
+                         'a,1,p\u241b,q,r\u241b\u241bs,x\u241ay',
+                         escapechar='\u241b', quoting=csv.QUOTE_NONE)
 
     def test_write_lineterminator(self):
-        for lineterminator in '\r\n', '\n', '\r', '!@#', '\0':
+        for lineterminator in ('\r\n', '\n', '\r', '!@#', '\0',
+                               '\x85', '\u2028', '\U0001f600'):
             with self.subTest(lineterminator=lineterminator):
                 with StringIO() as sio:
                     writer = csv.writer(sio, lineterminator=lineterminator)
                     writer.writerow(['a', 'b'])
                     writer.writerow([1, 2])
                     writer.writerow(['\r', '\n'])
+                    writer.writerow([f'a{lineterminator[-1]}b', 'c'])
                     self.assertEqual(sio.getvalue(),
                                      f'a,b{lineterminator}'
                                      f'1,2{lineterminator}'
-                                     f'"\r","\n"{lineterminator}')
+                                     f'"\r","\n"{lineterminator}'
+                                     f'"a{lineterminator[-1]}b",c{lineterminator}')
 
     def test_write_iterable(self):
         self._write_test(iter(['a', 1, 'p,q']), 'a,1,"p,q"')
