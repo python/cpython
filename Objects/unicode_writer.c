@@ -350,6 +350,8 @@ _PyUnicodeWriter_WriteStr(_PyUnicodeWriter *writer, PyObject *str)
         if (_PyUnicodeWriter_PrepareInternal(writer, len, maxchar) == -1)
             return -1;
     }
+
+    assert(_PyUnicodeWriter_CanWrite(writer));
     _PyUnicode_FastCopyCharacters(writer->buffer, writer->pos,
                                   str, 0, len);
     writer->pos += len;
@@ -428,6 +430,7 @@ _PyUnicodeWriter_WriteSubstring(_PyUnicodeWriter *writer, PyObject *str,
     if (_PyUnicodeWriter_Prepare(writer, len, maxchar) < 0) {
         return -1;
     }
+    assert(_PyUnicodeWriter_CanWrite(writer));
 
     _PyUnicode_FastCopyCharacters(writer->buffer, writer->pos,
                                   str, start, len);
@@ -485,8 +488,10 @@ _PyUnicodeWriter_WriteASCIIString(_PyUnicodeWriter *writer,
         return 0;
     }
 
-    if (_PyUnicodeWriter_Prepare(writer, len, 127) == -1)
+    if (_PyUnicodeWriter_Prepare(writer, len, 127) == -1) {
         return -1;
+    }
+    assert(_PyUnicodeWriter_CanWrite(writer));
 
     switch (writer->kind)
     {
@@ -591,6 +596,7 @@ _PyUnicodeWriter_WriteLatin1String(_PyUnicodeWriter *writer,
     maxchar = ucs1lib_find_max_char((const Py_UCS1*)str, (const Py_UCS1*)str + len);
     if (_PyUnicodeWriter_Prepare(writer, len, maxchar) == -1)
         return -1;
+    assert(_PyUnicodeWriter_CanWrite(writer));
     unicode_write_cstr(writer->buffer, writer->pos, str, len);
     writer->pos += len;
     return 0;
@@ -602,6 +608,20 @@ _PyUnicodeWriter_Finish(_PyUnicodeWriter *writer)
 {
     PyObject *str;
 
+#ifdef Py_DEBUG
+    // Check for buffer overflow
+    if (writer->buffer != NULL) {
+        Py_ssize_t pos = PyUnicode_GET_LENGTH(writer->buffer);
+        Py_UCS4 ch = PyUnicode_READ_CHAR(writer->buffer, pos);
+        if (ch != 0) {
+            _Py_FatalErrorFormat(__func__,
+                                 "Buffer overflow detected in "
+                                 "PyUnicodeWriter %p at position %zd",
+                                 writer, pos);
+        }
+    }
+#endif
+
     if (writer->pos == 0) {
         Py_CLEAR(writer->buffer);
         return _PyUnicode_GetEmpty();
@@ -612,6 +632,7 @@ _PyUnicodeWriter_Finish(_PyUnicodeWriter *writer)
 
     if (writer->readonly) {
         assert(PyUnicode_GET_LENGTH(str) == writer->pos);
+        assert(_PyUnicode_CheckConsistency(str, 1));
         return str;
     }
 
