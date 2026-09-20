@@ -1720,6 +1720,7 @@ extern "C" {
     INIT_ID(dont_inherit), \
     INIT_ID(dst), \
     INIT_ID(dst_dir_fd), \
+    INIT_ID(duration_sec), \
     INIT_ID(eager_start), \
     INIT_ID(effective_ids), \
     INIT_ID(element_factory), \
@@ -1733,6 +1734,7 @@ extern "C" {
     INIT_ID(endpos), \
     INIT_ID(entrypoint), \
     INIT_ID(env), \
+    INIT_ID(error_rate), \
     INIT_ID(errors), \
     INIT_ID(event), \
     INIT_ID(eventmask), \
@@ -1916,6 +1918,7 @@ extern "C" {
     INIT_ID(milliseconds), \
     INIT_ID(minute), \
     INIT_ID(minutes), \
+    INIT_ID(missed_samples), \
     INIT_ID(mod), \
     INIT_ID(mode), \
     INIT_ID(module), \
@@ -2043,6 +2046,7 @@ extern "C" {
     INIT_ID(rounding), \
     INIT_ID(salt), \
     INIT_ID(sample_interval_us), \
+    INIT_ID(sample_rate), \
     INIT_ID(sched_priority), \
     INIT_ID(scheduler), \
     INIT_ID(script), \

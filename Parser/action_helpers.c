@@ -1540,21 +1540,38 @@ _get_interpolation_conversion(Parser *p, Token *debug, ResultTokenWithMetadata *
 }
 
 static PyObject *
-_strip_interpolation_expr(PyObject *exprstr)
+_strip_interpolation_debug_expr(PyObject *exprstr)
 {
     Py_ssize_t len = PyUnicode_GET_LENGTH(exprstr);
 
-    for (Py_ssize_t i = len - 1; i >= 0; i--) {
-        Py_UCS4 c = PyUnicode_READ_CHAR(exprstr, i);
-        if (_PyUnicode_IsWhitespace(c) || c == '=') {
+    /* Discard whitespace and explicit line continuations after the debug "="
+       but preserve whitespace before it. */
+    while (len > 0) {
+        int has_newline = 0;
+        while (len > 0) {
+            Py_UCS4 c = PyUnicode_READ_CHAR(exprstr, len - 1);
+            if (!_PyUnicode_IsWhitespace(c)) {
+                break;
+            }
+            if (c == '\r' || c == '\n') {
+                has_newline = 1;
+            }
             len--;
         }
-        else {
+        if (!has_newline || len == 0 ||
+            PyUnicode_READ_CHAR(exprstr, len - 1) != '\\')
+        {
             break;
         }
+        len--;
     }
 
-    return PyUnicode_Substring(exprstr, 0, len);
+    /* Preserve unexpected metadata instead of dropping source text. */
+    if (len == 0 || PyUnicode_READ_CHAR(exprstr, len - 1) != '=') {
+        return Py_NewRef(exprstr);
+    }
+
+    return PyUnicode_Substring(exprstr, 0, len - 1);
 }
 
 expr_ty _PyPegen_interpolation(Parser *p, expr_ty expression, Token *debug, ResultTokenWithMetadata *conversion,
@@ -1585,7 +1602,9 @@ expr_ty _PyPegen_interpolation(Parser *p, expr_ty expression, Token *debug, Resu
     }
 
     assert(exprstr != NULL);
-    PyObject *final_exprstr = _strip_interpolation_expr(exprstr);
+    PyObject *final_exprstr = debug
+        ? _strip_interpolation_debug_expr(exprstr)
+        : Py_NewRef(exprstr);
     if (!final_exprstr || _PyArena_AddPyObject(arena, final_exprstr) < 0) {
         Py_XDECREF(final_exprstr);
         return NULL;

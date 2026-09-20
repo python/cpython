@@ -2435,9 +2435,13 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 s += '->'
             elif lineno == exc_lineno:
                 s += '>>'
+            # Strip the trailing newline before colorizing: the colorizer
+            # renders control characters (like '\n') in caret notation, so a
+            # later rstrip() could not remove the resulting '^J'.
+            line = line.rstrip()
             if self.colorize:
                 line = self._colorize_code(line)
-            self.message(s + '\t' + line.rstrip())
+            self.message(s + '\t' + line)
 
     def do_whatis(self, arg):
         """whatis expression
@@ -3157,6 +3161,15 @@ class _PdbServer(Pdb):
         super().postloop()
         if self.quitting:
             self.detach()
+
+    @contextmanager
+    def _maybe_use_pyrepl_as_stdin(self):
+        # The server reads every command from the client over the socket, never
+        # from a local pyrepl. The base implementation swaps in pyrepl as stdin
+        # and blanks `self.prompt` to '' (pyrepl would draw the prompt itself),
+        # which here would transmit an empty prompt to the client whenever the
+        # target process happens to be pyrepl-capable. Keep the real prompt.
+        yield
 
     def detach(self):
         # Detach the debugger and close the socket without raising BdbQuit

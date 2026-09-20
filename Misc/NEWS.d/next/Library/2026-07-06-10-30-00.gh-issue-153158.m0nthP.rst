@@ -1,3 +1,0 @@
-Remove the erroneous *width* argument of
-:meth:`!calendar.HTMLCalendar.formatmonthpage`, which could drop the year from
-the heading.

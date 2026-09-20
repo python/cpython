@@ -1,0 +1,565 @@
+.. date: 2026-08-31-16-47-33
+.. gh-issue: 156723
+.. nonce: KxCF5N
+.. release date: 2026-09-01
+.. section: Security
+
+Update bundled `libexpat <https://libexpat.github.io/>`_ to version 2.8.4.
+
+..
+
+.. date: 2026-08-18-13-54-05
+.. gh-issue: 156002
+.. nonce: CcWXPP
+.. section: Security
+
+Bound the amount of data :mod:`zipfile` decompresses per read for members
+compressed with bzip2, LZMA, or Zstandard, matching the existing limit for
+deflate. A small archive member could previously expand into an unbounded
+allocation even when read in small chunks.
+
+..
+
+.. date: 2026-08-13-13-08-11
+.. gh-issue: 155999
+.. nonce: Xt4rWq
+.. section: Security
+
+Fix the :mod:`tarfile` ``tar`` and ``data`` extraction filters creating
+directories outside the destination for members whose name leaves the
+destination and returns to it, such as ``../evil/../dest/sub/file``. The
+containment check used the resolved path, but intermediate directories were
+created from the name as given.
+
+..
+
+.. date: 2026-08-06-11-43-20
+.. gh-issue: 155292
+.. nonce: j4pHBO
+.. section: Security
+
+Change the :mod:`stringprep` module and :mod:`encodings.idna` codec to not
+consider Unicode codepoint attributes beyond those defined in :rfc:`3454`.
+
+..
+
+.. date: 2026-07-31-16-20-17
+.. gh-issue: 155694
+.. nonce: SsxlKG
+.. section: Security
+
+Fix :cve:`2026-15806` by scoping :class:`~urllib.request.HTTPPasswordMgr`
+credentials to the URL scheme, preventing credentials stored for an HTTPS
+URL from being used for a matching HTTP URL, while URIs without a scheme
+continue to match any scheme.
+
+..
+
+.. date: 2026-08-26-10-00-00
+.. gh-issue: 155725
+.. nonce: tRcMal
+.. section: Core and Builtins
+
+:mod:`tracemalloc` no longer acquires the :term:`GIL` nor creates a
+temporary thread state to trace memory allocations: traceback frames now
+store plain UTF-8 strings instead of Python str objects, and tracebacks are
+captured using the Python thread state already associated with the calling
+thread, even if it is not attached. Threads without a Python thread state
+record the traceback as ``<unknown>``.
+
+..
+
+.. date: 2026-08-21-14-38-06
+.. gh-issue: 148750
+.. nonce: xBijjR
+.. section: Core and Builtins
+
+:mod:`encodings` is no longer frozen, due to issues importing submodules
+when using a zipped standard library.
+
+..
+
+.. date: 2026-08-18-14-19-51
+.. gh-issue: 155254
+.. nonce: 75TMlb
+.. section: Core and Builtins
+
+Avoid warning about missing standard library when using
+:ref:`sys-path-init-_pth-files`.
+
+..
+
+.. date: 2026-08-17-15-13-14
+.. gh-issue: 155978
+.. nonce: 4ztALD
+.. section: Core and Builtins
+
+Fix a memory leak in the free-threaded build when setting or deleting a
+special method (such as ``__repr__``) on a class that has many subclasses.
+
+..
+
+.. date: 2026-08-13-13-50-00
+.. gh-issue: 155752
+.. nonce: Rp7K2x
+.. section: Core and Builtins
+
+Fix a crash when a :class:`types.GenericAlias` argument gains a
+``__typing_subst__`` hook after the alias parameters have been cached.
+
+..
+
+.. date: 2026-08-11-01-45-24
+.. gh-issue: 129752
+.. nonce: Zo3OUx
+.. section: Core and Builtins
+
+Don't update adaptive counters in the free-threaded build when thread-local
+bytecode is disabled (``-X tlbc=0``). Patch by Donghee Na.
+
+..
+
+.. date: 2026-08-10-11-20-00
+.. gh-issue: 155515
+.. nonce: Lp3qWc
+.. section: Core and Builtins
+
+Track the internal HAMT iterators, which back iteration over a
+:class:`contextvars.Context`, with the garbage collector.  A reference cycle
+running through such an iterator was never collected, leaking the whole
+context it iterated over.
+
+..
+
+.. date: 2026-08-07-18-32-15
+.. gh-issue: 155400
+.. nonce: Kq3Vpt
+.. section: Core and Builtins
+
+Fix a deadlock in the free-threaded build between two threads assigning to a
+special method of the same class.  While applying the type slot updates with
+the world stopped, only the type lock was prevented from being released; the
+type dict mutex could still be released and re-acquired, in the wrong order,
+if the thread blocked on the stop-the-world mutex.
+
+..
+
+.. date: 2026-08-07-13-40-12
+.. gh-issue: 155363
+.. nonce: Qk3Vt9
+.. section: Core and Builtins
+
+Fix a leak in the :term:`free-threaded build` when creating a thread state
+fails after an internal QSBR slot has been reserved for it.  The slot could
+never be reclaimed, so the QSBR array grew without bound across repeated
+failures.
+
+..
+
+.. date: 2026-08-07-10-14-56
+.. gh-issue: 154701
+.. nonce: zulh2S
+.. section: Core and Builtins
+
+Fix an infinite loop in JIT when a ``FOR_ITER`` side exit links an executor
+back to itself.
+
+..
+
+.. date: 2026-07-25-12-43-42
+.. gh-issue: 154196
+.. nonce: 0rAdob
+.. section: Core and Builtins
+
+Improve :exc:`AttributeError` messages from unresolved lazy imports. Patch
+by Bartosz Sławecki.
+
+..
+
+.. date: 2026-06-12-17-15-53
+.. gh-issue: 151377
+.. nonce: bQSQUk
+.. section: Core and Builtins
+
+Fix races in free-threaded builds when updating type slots for newly created
+classes and when removing entries from a base type's subclasses dictionary.
+
+..
+
+.. date: 2026-04-26-15-08-53
+.. gh-issue: 148817
+.. nonce: cuN07H
+.. section: Core and Builtins
+
+Fold large constant list and set literals used as the iterable of a
+:keyword:`for` loop or ``in``/``not in`` test into a constant :class:`tuple`
+or :class:`frozenset`, restoring an optimization previously done by the AST
+optimizer that was lost when constant folding moved to the CFG.
+
+..
+
+.. date: 2020-06-23-13-59-37
+.. gh-issue: 85260
+.. nonce: o_LJ76
+.. section: Core and Builtins
+
+:func:`compile` now raises :exc:`ValueError` instead of crashing on a debug
+build if an identifier field of an AST node (such as the name of a function,
+a class, an imported module or a caught exception) is ``"None"``, ``"True"``
+or ``"False"``.
+
+..
+
+.. date: 2026-08-28-18-10-25
+.. gh-issue: 156523
+.. nonce: llJqo9
+.. section: Library
+
+Fix :func:`asyncio.as_completed` not recording the awaiting task in the call
+graph.
+
+..
+
+.. date: 2026-08-26-12-48-10
+.. gh-issue: 156408
+.. nonce: -Yd0k7
+.. section: Library
+
+Fix :func:`asyncio.print_call_graph` raising :exc:`AttributeError` when
+called on a task that has already finished.
+
+..
+
+.. date: 2026-08-26-08-20-07
+.. gh-issue: 156404
+.. nonce: 2gP33I
+.. section: Library
+
+Restore compatibility with :file:`.pth` files generated before Python 3.15
+in the :mod:`site` module. Inject the ``fullname`` variable in the frame
+which executes pth code.
+
+..
+
+.. date: 2026-08-26-02-30-00
+.. gh-issue: 156353
+.. nonce: abcdef
+.. section: Library
+
+Fix :mod:`configparser` parsing when using whitespace in *delimiters*.
+
+..
+
+.. date: 2026-08-20-13-50-49
+.. gh-issue: 156112
+.. nonce: yEcma8
+.. section: Library
+
+:mod:`!_ios_support` no longer fails to import when
+:func:`ctypes.util.find_library` cannot resolve the ObjC runtime through the
+dyld shared cache, as is the case on iOS 13. The runtime is now loaded by
+name, which dyld resolves against the cache directly.
+
+..
+
+.. date: 2026-08-17-22-51-22
+.. gh-issue: 155974
+.. nonce: Qz3Vb7
+.. section: Library
+
+Fix a regression in Python 3.15: :meth:`~curses.window.addstr`,
+:meth:`~curses.window.addnstr`, :meth:`~curses.window.insstr` and
+:meth:`~curses.window.insnstr` again restore the window attributes when the
+write fails, instead of leaving the temporary *attr* applied.
+
+..
+
+.. date: 2026-08-17-12-40-00
+.. gh-issue: 155952
+.. nonce: Vq3Lm8
+.. section: Library
+
+Fix the signatures of :meth:`sqlite3.Connection.execute`,
+:func:`warnings.warn` and :func:`locale.setlocale` which rendered
+``<unrepresentable>`` instead of the correct defaults for parameters.
+
+..
+
+.. date: 2026-08-16-11-38-17
+.. gh-issue: 155888
+.. nonce: pO-nAp
+.. section: Library
+
+Fix :meth:`asyncio.WriteTransport.writelines` hanging the transport when the
+last data chunk is empty.
+
+..
+
+.. date: 2026-08-15-21-55-31
+.. gh-issue: 155869
+.. nonce: yRUnQW
+.. section: Library
+
+Fix :meth:`!reorganize` in :mod:`dbm.dumb` failing to persist updated value
+offsets, which could cause data loss after reopening the database.
+
+..
+
+.. date: 2026-08-14-11-12-18
+.. gh-issue: 155781
+.. nonce: sqlite-converter
+.. section: Library
+
+Fix a possible crash in free-threaded builds when the :mod:`sqlite3`
+converter registry is modified concurrently while a cursor builds its row
+cast map.
+
+..
+
+.. date: 2026-08-13-16-02-13
+.. gh-issue: 155702
+.. nonce: Kb7Qm4
+.. section: Library
+
+Fix :class:`sqlite3.Blob` slice assignment with a step. It patched the bytes
+object read from the blob, which for a single byte is an immortal singleton,
+so that the value of that byte was changed in the whole process.
+
+..
+
+.. date: 2026-08-10-15-24-13
+.. gh-issue: 155468
+.. nonce: W7qL2p
+.. section: Library
+
+Fix :mod:`netrc` to distinguish empty quoted tokens from end-of-file, so
+malformed files no longer cause the remaining content to be silently
+ignored.
+
+..
+
+.. date: 2026-08-10-13-27-36
+.. gh-issue: 155519
+.. nonce: 9M6SFX
+.. section: Library
+
+Avoid a data-race in free-threaded builds when reading and writing context
+variables from different threads.
+
+..
+
+.. date: 2026-08-05-02-36-18
+.. gh-issue: 155009
+.. nonce: YiJAiP
+.. section: Library
+
+Fix :class:`argparse.ArgumentParser` to preserve the program name from
+``sys.argv[0]`` when a named module is executed as the main program without
+replacing ``sys.argv[0]``.
+
+..
+
+.. date: 2026-08-04-19-03-20
+.. gh-issue: 155063
+.. nonce: gN_mCU
+.. section: Library
+
+Bump the version of pip bundled in ensurepip to version 26.2.1
+
+..
+
+.. date: 2026-08-04-14-14-31
+.. gh-issue: 153711
+.. nonce: PBpc1g
+.. section: Library
+
+On macOS, add run-time checks around the syscalls :manpage:`pipe2 (2)` and
+:manpage:`dup3 (2)`, in addition to the existing build-time checks. This
+means that Python built on macOS 27 (where these calls are available) can
+run on macOS 26 (where they aren't).
+
+..
+
+.. date: 2026-07-29-19-48-59
+.. gh-issue: 154871
+.. nonce: tgZILS
+.. section: Library
+
+Fixed a crash in :meth:`asyncio.Task.get_context` when called on an
+uninitialized task.
+
+..
+
+.. date: 2026-07-23-21-00-00
+.. gh-issue: 154568
+.. nonce: float16-reconstructor
+.. section: Library
+
+Fix :mod:`array` unpickling of little-endian float16.
+
+..
+
+.. date: 2026-07-23-20-00-00
+.. gh-issue: 154566
+.. nonce: byteswap-zd
+.. section: Library
+
+Fix :meth:`array.array.byteswap` corrupting data for ``'Zd'`` (complex
+double) arrays with more than one element: the 16-byte item loop advanced
+the buffer pointer by only 8 bytes per iteration, causing items after the
+first to be scrambled.
+
+..
+
+.. date: 2026-07-22-12-59-26
+.. gh-issue: 154467
+.. nonce: AA9w1D
+.. section: Library
+
+Fixed :mod:`pdb` remote attaching (``python -m pdb -p PID``) sending an
+empty prompt to the client instead of ``(Pdb)`` when the target process has
+an interactive terminal.
+
+..
+
+.. date: 2026-07-19-17-05-00
+.. gh-issue: 153772
+.. nonce: cobjTK
+.. section: Library
+
+:func:`isinstance` checks against :mod:`collections.abc` classes such as
+:class:`~collections.abc.Mapping` no longer raise :exc:`AttributeError` when
+the instance has no ``__class__``.  The abstract base class machinery now
+falls back to the object's type in that case, matching the behaviour of the
+built-in :func:`isinstance`.
+
+..
+
+.. date: 2026-07-19-13-00-00
+.. gh-issue: 154086
+.. nonce: MJKrQV
+.. section: Library
+
+Store per-thread sample counts in Tachyon flamegraphs so filtering a thread
+updates frame widths and totals.
+
+..
+
+.. date: 2026-07-19-12-10-00
+.. gh-issue: 154060
+.. nonce: cR6tYn
+.. section: Library
+
+Store measured duration and sampling rate in Tachyon binary profiles so they
+remain available in replayed flamegraphs.
+
+..
+
+.. date: 2026-07-19-12-00-00
+.. gh-issue: 154085
+.. nonce: Qm8fLd
+.. section: Library
+
+Prevent differential flamegraphs from duplicating self time across line
+nodes for the same function.
+
+..
+
+.. date: 2026-07-19-11-30-00
+.. gh-issue: 154088
+.. nonce: pC7nRa
+.. section: Library
+
+Make Tachyon count and render elided stacks consistently in differential
+flamegraphs.
+
+..
+
+.. date: 2026-07-19-11-20-00
+.. gh-issue: 154089
+.. nonce: Vp2qHx
+.. section: Library
+
+Do not show unavailable sampling efficiency statistics in replayed Tachyon
+flamegraphs.
+
+..
+
+.. date: 2026-07-06-10-30-00
+.. gh-issue: 153158
+.. nonce: m0nthP
+.. section: Library
+
+Remove the erroneous *width* argument of
+:meth:`!calendar.HTMLCalendar.formatmonthpage`, which could drop the year
+from the heading.
+
+..
+
+.. date: 2023-12-20-22-05-40
+.. gh-issue: 113329
+.. nonce: 1CJy3o
+.. section: Library
+
+Fix :exc:`OSError` being raised when trying to run doctests on a class
+objects in the REPL. Patch by Sten Wessel.
+
+..
+
+.. date: 2026-08-26-16-10-15
+.. gh-issue: 156369
+.. nonce: 55jGEj
+.. section: Build
+
+Update Android and iOS build scripts to use OpenSSL 3.5.8.
+
+..
+
+.. date: 2026-08-20-14-02-33
+.. gh-issue: 156115
+.. nonce: KXr8wU
+.. section: Build
+
+iOS simulator builds are now configured with ``-mios-simulator-version-min``
+instead of the device's ``-mios-version-min``. The device flag made the
+linker reject libraries resolved from the simulator SDK, so library
+detection silently failed.
+
+..
+
+.. date: 2026-08-28-10-51-35
+.. gh-issue: 156369
+.. nonce: MPcRL5
+.. section: Windows
+
+Updated Windows builds to use OpenSSL 3.5.8.
+
+..
+
+.. date: 2026-08-27-03-19-21
+.. gh-issue: 156369
+.. nonce: FKlSGY
+.. section: macOS
+
+Update macOS installer to use OpenSSL 3.5.8.
+
+..
+
+.. date: 2026-07-19-00-00-00
+.. gh-issue: 154059
+.. nonce: JiBcOM
+.. section: Tools/Demos
+
+Fix the time units in Tachyon flame graph tooltips by accounting for the
+sampling interval when converting samples to milliseconds.
+
+..
+
+.. date: 2026-08-25-12-00-00
+.. gh-issue: 131740
+.. nonce: Ft7Rz2
+.. section: C API
+
+On the free-threaded build, :c:func:`PyUnstable_GC_VisitObjects` now also
+visits frozen objects (objects moved to the permanent generation by
+:func:`gc.freeze`), matching the behavior of the default build.

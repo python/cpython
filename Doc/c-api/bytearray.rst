@@ -12,6 +12,12 @@ Byte Array Objects
 
    This subtype of :c:type:`PyObject` represents a Python bytearray object.
 
+   .. impl-detail::
+
+      The internal buffer of :c:type:`PyByteArrayObject` always includes an
+      extra trailing null byte for compatibility with null terminated C
+      strings.  This extra byte is not counted in :c:func:`PyByteArray_Size`
+      nor in the *len* arguments of the functions below.
 
 .. c:var:: PyTypeObject PyByteArray_Type
 

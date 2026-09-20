@@ -798,12 +798,12 @@ Generator functions
    single: generator; function
    single: generator; iterator
 
-A function or method which uses the :keyword:`yield` statement (see section
-:ref:`yield`) is called a :dfn:`generator function`.  Such a function, when
+A function or method which contains a :keyword:`yield` expression (see section
+:ref:`yieldexpr`) is called a :dfn:`generator function`.  Such a function, when
 called, always returns an :term:`iterator` object which can be used to
 execute the body of the function:  calling the iterator's
 :meth:`iterator.__next__` method will cause the function to execute until
-it provides a value using the :keyword:`!yield` statement.  When the
+it provides a value using the :keyword:`!yield` expression.  When the
 function executes a :keyword:`return` statement or falls off the end, a
 :exc:`StopIteration` exception is raised and the iterator will have
 reached the end of the set of values to be returned.
@@ -830,7 +830,7 @@ Asynchronous generator functions
    single: asynchronous generator; asynchronous iterator
 
 A function or method which is defined using :keyword:`async def` and
-which uses the :keyword:`yield` statement is called a
+which contains a :keyword:`yield` expression is called a
 :dfn:`asynchronous generator function`.  Such a function, when called,
 returns an :term:`asynchronous iterator` object which can be used in an
 :keyword:`async for` statement to execute the body of the function.
@@ -1099,14 +1099,9 @@ this approach.
    :ref:`import system <importsystem>` may opt to leave it unset if it
    has no semantic meaning (for example, a module loaded from a database).
 
-   .. deprecated-removed:: 3.13 3.15
-      Setting ``__cached__`` on a module while failing to set
-      :attr:`!__spec__.cached` is deprecated. In Python 3.15,
-      ``__cached__`` will cease to be set or taken into consideration by
-      the import system or standard library.
-
-   .. versionchanged:: 3.15
-      ``__cached__`` is no longer set.
+.. versionchanged:: 3.15
+   The ``__cached__`` attribute is no longer set on modules or taken into
+   consideration by the import system or standard library.
 
 Other writable attributes on module objects
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

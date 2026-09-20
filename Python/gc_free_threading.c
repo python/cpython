@@ -2854,7 +2854,7 @@ static bool
 custom_visitor_wrapper(const mi_heap_t *heap, const mi_heap_area_t *area,
                        void *block, size_t block_size, void *args)
 {
-    PyObject *op = op_from_block(block, args, false);
+    PyObject *op = op_from_block(block, args, true);
     if (op == NULL) {
         return true;
     }

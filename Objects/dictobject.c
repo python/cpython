@@ -8503,6 +8503,17 @@ frozendict_copy_impl(PyFrozenDictObject *self)
     return copy;
 }
 
+PyDoc_STRVAR(frozendict_doc,
+"frozendict() -> new empty immutable dictionary\n"
+"frozendict(mapping) -> new immutable dictionary initialized from a mapping\n"
+"    object's (key, value) pairs\n"
+"frozendict(iterable) -> new immutable dictionary initialized as if via:\n"
+"    d = {}\n"
+"    for k, v in iterable:\n"
+"        d[k] = v\n"
+"    d = frozendict(d)\n"
+"frozendict(**kwargs) -> new immutable dictionary initialized with the name=value\n"
+"    pairs in the keyword argument list.  For example:  frozendict(one=1, two=2)");
 
 PyTypeObject PyFrozenDict_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
@@ -8518,7 +8529,7 @@ PyTypeObject PyFrozenDict_Type = {
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC
                 | Py_TPFLAGS_BASETYPE
                 | _Py_TPFLAGS_MATCH_SELF | Py_TPFLAGS_MAPPING,
-    .tp_doc = dictionary_doc,
+    .tp_doc = frozendict_doc,
     .tp_traverse = dict_traverse,
     .tp_clear = dict_tp_clear,
     .tp_richcompare = dict_richcompare,

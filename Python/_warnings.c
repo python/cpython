@@ -1155,7 +1155,7 @@ warn as warnings_warn
     source: object = None
       If supplied, the destroyed object which emitted a ResourceWarning
     *
-    skip_file_prefixes: object(type='PyTupleObject *', subclass_of='&PyTuple_Type') = NULL
+    skip_file_prefixes: object(type='PyTupleObject *', subclass_of='&PyTuple_Type', c_default='NULL') = ()
       An optional tuple of module filename prefixes indicating frames to skip
       during stacklevel computations for stack frame attribution.
 
@@ -1166,7 +1166,7 @@ static PyObject *
 warnings_warn_impl(PyObject *module, PyObject *message, PyObject *category,
                    Py_ssize_t stacklevel, PyObject *source,
                    PyTupleObject *skip_file_prefixes)
-/*[clinic end generated code: output=a68e0f6906c65f80 input=eb37c6a18bec4ea1]*/
+/*[clinic end generated code: output=a68e0f6906c65f80 input=2b52e8b20f508f51]*/
 {
     category = get_category(message, category);
     if (category == NULL)

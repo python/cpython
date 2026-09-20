@@ -1,3 +1,4 @@
+import sys
 import unittest
 from test.support import import_helper
 
@@ -231,26 +232,41 @@ class CAPITest(unittest.TestCase):
 
     def test_resize(self):
         """Test _PyBytes_Resize()"""
-        resize = _testcapi.bytes_resize
+        _resize = _testcapi.bytes_resize
+
+        def resize(obj, size, new):
+            result = _resize(obj, size, new)
+            if 1 <= len(result):
+                if new or size != len(obj):
+                    # gh-156995: Make sure that the result is a fresh object.
+                    # Previously, _PyBytes_Resize(&obj, 1) returned a singleton
+                    # if _PyObject_IsUniquelyReferenced() is false.
+                    self.assertEqual(sys.getrefcount(result), 1)
+                    self.assertFalse(sys._is_immortal(result))
+            else:
+                # check that the result is the empty bytes string singleton
+                self.assertTrue(sys._is_immortal(result))
+            return result
 
         for new in True, False:
-            self.assertEqual(resize(b'abc', 0, new), b'')
-            self.assertEqual(resize(b'abc', 1, new), b'a')
-            self.assertEqual(resize(b'abc', 2, new), b'ab')
-            self.assertEqual(resize(b'abc', 3, new), b'abc')
-            b = resize(b'abc', 4, new)
-            self.assertEqual(len(b), 4)
-            self.assertEqual(b[:3], b'abc')
+            with self.subTest(new=new):
+                self.assertEqual(resize(b'abc', 0, new), b'')
+                self.assertEqual(resize(b'abc', 1, new), b'a')
+                self.assertEqual(resize(b'abc', 2, new), b'ab')
+                self.assertEqual(resize(b'abc', 3, new), b'abc')
+                b = resize(b'abc', 4, new)
+                self.assertEqual(len(b), 4)
+                self.assertEqual(b[:3], b'abc')
 
-            self.assertEqual(resize(b'a', 0, new), b'')
-            self.assertEqual(resize(b'a', 1, new), b'a')
-            b = resize(b'a', 2, new)
-            self.assertEqual(len(b), 2)
-            self.assertEqual(b[:1], b'a')
+                self.assertEqual(resize(b'a', 0, new), b'')
+                self.assertEqual(resize(b'a', 1, new), b'a')
+                b = resize(b'a', 2, new)
+                self.assertEqual(len(b), 2)
+                self.assertEqual(b[:1], b'a')
 
-            self.assertEqual(resize(b'', 0, new), b'')
-            self.assertEqual(len(resize(b'', 1, new)), 1)
-            self.assertEqual(len(resize(b'', 2, new)), 2)
+                self.assertEqual(resize(b'', 0, new), b'')
+                self.assertEqual(len(resize(b'', 1, new)), 1)
+                self.assertEqual(len(resize(b'', 2, new)), 2)
 
         self.assertRaises(SystemError, resize, b'abc', -1, False)
         self.assertRaises(SystemError, resize, bytearray(b'abc'), 3, False)

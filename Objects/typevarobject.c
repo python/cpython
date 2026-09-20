@@ -2145,7 +2145,7 @@ typealias.__new__ as typealias_new
     name: object(subclass_of="&PyUnicode_Type")
     value: object
     *
-    type_params: object = NULL
+    type_params: object(c_default="NULL") = ()
     qualname: object(c_default="NULL") = None
 
 Create a TypeAliasType.
@@ -2154,7 +2154,7 @@ Create a TypeAliasType.
 static PyObject *
 typealias_new_impl(PyTypeObject *type, PyObject *name, PyObject *value,
                    PyObject *type_params, PyObject *qualname)
-/*[clinic end generated code: output=b7f6d9f1c577cd9c input=cbec290f8c4886ef]*/
+/*[clinic end generated code: output=b7f6d9f1c577cd9c input=6516623275f87b5e]*/
 {
     if (type_params != NULL && !PyTuple_Check(type_params)) {
         PyErr_SetString(PyExc_TypeError, "type_params must be a tuple");

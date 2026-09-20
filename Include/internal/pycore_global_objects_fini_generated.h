@@ -1722,6 +1722,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(dont_inherit));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(dst));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(dst_dir_fd));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(duration_sec));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(eager_start));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(effective_ids));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(element_factory));
@@ -1735,6 +1736,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(endpos));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(entrypoint));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(env));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(error_rate));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(errors));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(event));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(eventmask));
@@ -1918,6 +1920,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(milliseconds));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(minute));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(minutes));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(missed_samples));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(mod));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(mode));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(module));
@@ -2045,6 +2048,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(rounding));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(salt));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(sample_interval_us));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(sample_rate));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(sched_priority));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(scheduler));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(script));

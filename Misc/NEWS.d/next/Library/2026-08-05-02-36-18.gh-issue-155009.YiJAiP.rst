@@ -1,3 +1,0 @@
-Fix :class:`argparse.ArgumentParser` to preserve the program name from
-``sys.argv[0]`` when a named module is executed as the main program without
-replacing ``sys.argv[0]``.

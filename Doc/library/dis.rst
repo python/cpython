@@ -1424,7 +1424,7 @@ iterations of the loop.
 
    ``STACK[-1]`` is an :term:`iterator`.  Call its :meth:`~iterator.__next__` method.
    If this yields a new value, push it on the stack (leaving the iterator below
-   it).  If the iterator indicates it is exhausted then the byte code counter is
+   it).  If the iterator indicates it is :term:`exhausted` then the byte code counter is
    incremented by *delta*.
 
    .. versionchanged:: 3.12

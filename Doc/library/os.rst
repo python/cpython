@@ -2952,7 +2952,7 @@ features:
 
       Close the iterator and free acquired resources.
 
-      This is called automatically when the iterator is exhausted or garbage
+      This is called automatically when the iterator is :term:`exhausted` or garbage
       collected, or when an error happens during iterating.  However it
       is advisable to call it explicitly or use the :keyword:`with`
       statement.
