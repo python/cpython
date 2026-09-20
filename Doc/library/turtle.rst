@@ -24,6 +24,8 @@
 
 --------------
 
+.. _introduction:
+
 .. sidebar:: Turtle star
 
    Turtle can draw intricate shapes using programs that repeat simple
@@ -64,6 +66,8 @@ This document includes four main sections:
 
 
 .. _turtle-tutorial:
+.. _get-started:
+.. _get-started-as-quickly-as-possible:
 
 Tutorial
 ========
@@ -188,6 +192,8 @@ Finally, complete the filling::
 
 
 .. _turtle-howtos:
+.. _turtle-how-to:
+.. _how-to:
 
 How-to guides
 =============
@@ -299,6 +305,7 @@ The turtle's screen can be customised, for example::
 
 
 .. _turtle-reference:
+.. _turtle-graphics-reference:
 
 Reference
 =========
