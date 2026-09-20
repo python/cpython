@@ -2309,18 +2309,14 @@
                     PyDict_Watch(BUILTINS_WATCHER_ID, builtins);
                     ctx->builtins_watched = true;
                 }
-                if (ctx->frame->globals_checked_version != 0 && ctx->frame->globals_watched) {
-                    cnst = lookup_global_const(this_instr, builtins);
+                if (ctx->frame->globals_checked_version != 0 &&
+                    ctx->frame->globals_watched &&
+                    uop_buffer_remaining_space(&ctx->out_buffer) >= 2)
+                {
+                    cnst = convert_global_to_const(this_instr, builtins);
                     if (cnst != NULL) {
-                        if (uop_buffer_remaining_space(&ctx->out_buffer) < 2) {
-                            cnst = NULL;
-                        }
-                        else {
-                            ADD_OP(_GUARD_BUILTINS_IS_CANONICAL, 0, 0);
-                            ADD_OP(_Py_IsImmortal(cnst) ? _LOAD_CONST_INLINE_BORROW
-                            : _LOAD_CONST_INLINE,
-                                0, (uintptr_t)cnst);
-                        }
+                        ADD_OP(_GUARD_BUILTINS_IS_CANONICAL, 0, 0);
+                        ADD_OP(this_instr->opcode, 0, (uintptr_t)cnst);
                     }
                 }
             }
