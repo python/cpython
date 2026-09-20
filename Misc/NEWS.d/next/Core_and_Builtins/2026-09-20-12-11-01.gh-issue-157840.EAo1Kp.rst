@@ -1,0 +1,2 @@
+Speed up calls to :func:`hasattr` and three-argument :func:`getattr` for
+unassigned attributes in an object's :attr:`~object.__slots__` by roughly 6x.
