@@ -69,7 +69,8 @@ class PyShellFileListTest(unittest.TestCase):
 ##        self.assertIsInstance(ps, pyshell.PyShell)
 
 
-class PyShellTest(unittest.TestCase):
+class InputStatementlTest(unittest.TestCase):
+    # Test handling of response to input statements in user code.
 
     @classmethod
     def setUpClass(cls):
