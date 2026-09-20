@@ -555,7 +555,10 @@
     <ClCompile Include="..\Objects\tupleobject.c" />
     <ClCompile Include="..\Objects\typeobject.c" />
     <ClCompile Include="..\Objects\typevarobject.c" />
-    <ClCompile Include="..\Objects\unicodectype.c" />
+    <ClCompile Include="..\Objects\unicodectype.c">
+      <!-- gh-153668: Temporarily disabled due to a compiler bug -->
+      <Optimization Condition="$(Platform) == 'ARM64' and $(Configuration) == 'Release' and $(MSVCHasBrokenARM64UniDbOpt) == 'true'">Disabled</Optimization>
+    </ClCompile>
     <ClCompile Include="..\Objects\unicodeobject.c" />
     <ClCompile Include="..\Objects\unionobject.c" />
     <ClCompile Include="..\Objects\weakrefobject.c" />
