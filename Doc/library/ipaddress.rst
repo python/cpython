@@ -519,10 +519,10 @@ dictionaries.
       The interpretation is similar to an integer *address*.
 
    4. A two-tuple of an address description and a netmask, where the address
-      description is either a string, a 32-bits integer, a 4-bytes packed
-      integer, or an existing :class:`IPv4Address` object; and the netmask is either
-      an integer representing the prefix length (e.g. ``24``) or a string
-      representing the prefix mask (e.g. ``255.255.255.0``).
+      description is either a string, a 32-bit integer, a 4-byte packed
+      integer, or an existing :class:`IPv4Address` object; and the netmask is
+      either an integer representing the prefix length (e.g. ``24``) or a
+      string representing the prefix mask (e.g. ``255.255.255.0``).
 
    An :exc:`AddressValueError` is raised if *address* is not a valid IPv4
    address.  A :exc:`NetmaskValueError` is raised if the mask is not valid for
@@ -769,9 +769,9 @@ dictionaries.
       The interpretation is similar to an integer *address*.
 
    4. A two-tuple of an address description and a netmask, where the address
-      description is either a string, a 128-bits integer, a 16-bytes packed
-      integer, or an existing :class:`IPv6Address` object; and the netmask is an
-      integer representing the prefix length.
+      description is either a string, a 128-bit integer, a 16-byte packed
+      integer, or an existing :class:`IPv6Address` object; and the netmask is
+      an integer representing the prefix length.
 
    An :exc:`AddressValueError` is raised if *address* is not a valid IPv6
    address.  A :exc:`NetmaskValueError` is raised if the mask is not valid for
