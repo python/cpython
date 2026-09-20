@@ -634,7 +634,8 @@ _PyUnicodeWriter_Finish(_PyUnicodeWriter *writer)
     }
 
     Py_ssize_t length = PyUnicode_GET_LENGTH(str);
-    if (length == 1 && PyUnicode_KIND(str) == PyUnicode_1BYTE_KIND) {
+    if (final_size == 1 && PyUnicode_KIND(str) == PyUnicode_1BYTE_KIND) {
+        assert(length >= 1);
         const Py_UCS1 *data = PyUnicode_1BYTE_DATA(str);
         Py_UCS1 ch = data[0];
         PyObject *latin1_char = _Py_LATIN1_CHR(ch);
