@@ -47,8 +47,8 @@ The file consists of five required sections and one optional extension:
 |   String Table   |  Variable size
 +------------------+  frame_table_offset
 |   Frame Table    |  Variable size
-+------------------+  file_size - 64 (when stats are present)
-| Profile Stats    |  32 bytes (optional)
++------------------+  file_size - 88 (when stats are present)
+| Profile Stats    |  56 bytes (optional)
 +------------------+  file_size - 32
 |     Footer       |  32 bytes (fixed)
 +------------------+  file_size
