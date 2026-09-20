@@ -852,6 +852,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
 
 
 class PyShell(OutputWindow):
+    is_shell = True
     from idlelib.squeezer import Squeezer
 
     shell_title = "IDLE Shell"
@@ -909,7 +910,6 @@ class PyShell(OutputWindow):
         self.indentwidth = 4
 
         self.sys_ps1 = sys.ps1 if hasattr(sys, 'ps1') else '>>>\n'
-        self.prompt_last_line = self.sys_ps1.split('\n')[-1]
         self.prompt = self.sys_ps1  # Changes when debug active
 
         text = self.text
@@ -1099,6 +1099,7 @@ class PyShell(OutputWindow):
 
     def debug_menu_postcommand(self):
         state = 'disabled' if self.executing else 'normal'
+        self.update_menu_state('debug', '*ebugger', state)
         self.update_menu_state('debug', '*tack*iewer', state)
 
     def beginexecuting(self):
@@ -1431,13 +1432,24 @@ class PyShell(OutputWindow):
         self.ctip.remove_calltip_window()
 
     def write(self, s, tags=()):
+        text = self.text
+        # Move the prompt (the "console" tag on the preceding newline)
+        # after output which comes while it is shown (gh-75512).
+        at_prompt = (s and tags in ("stdout", "stderr")
+                     and not self.executing and not self.reading)
+        if at_prompt:
+            text.tag_remove("console", "iomark-1c")
+            text.tag_remove("stdin", "iomark-1c")
         try:
-            self.text.mark_gravity("iomark", "right")
+            text.mark_gravity("iomark", "right")
             count = OutputWindow.write(self, s, tags, "iomark")
-            self.text.mark_gravity("iomark", "left")
+            text.mark_gravity("iomark", "left")
         except:
             raise ###pass  # ### 11Aug07 KBK if we are expecting exceptions
                            # let's find out what they are and be specific.
+        if at_prompt and s.endswith('\n'):
+            text.tag_add("console", "iomark-1c")
+            self.shell_sidebar.update_sidebar()
         if self.canceled:
             self.canceled = False
             if not use_subprocess:
@@ -1612,6 +1624,12 @@ def main():
     root.withdraw()
     fix_scaling(root)
 
+    # Warn about configuration files that could not be parsed (gh-66172).
+    config_error = idleConf.file_load_error_message()
+    if config_error:
+        messagebox.showwarning('IDLE Configuration Warning', config_error,
+                               parent=root)
+
     # set application icon
     icondir = os.path.join(os.path.dirname(__file__), 'Icons')
     if system() == 'Windows':
@@ -1668,6 +1686,10 @@ def main():
         if filename and os.path.isfile(filename):
             shell.interp.execfile(filename)
     if cmd or script:
+        # Let the startup file finish first: the command or script
+        # is to run after it, in its namespace (gh-68453).
+        while shell.executing:
+            root.update()
         shell.interp.runcommand("""if 1:
             import sys as _sys
             _sys.argv = {!r}

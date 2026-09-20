@@ -13,6 +13,7 @@ from typing import overload, get_overloads
 import unittest
 from test import support
 from test.support import import_helper
+from test.support import isolation
 from test.support import os_helper
 from test.support import warnings_helper
 from test.support import force_not_colorized
@@ -1518,49 +1519,74 @@ class PyCatchWarningTests(CatchWarningTests, unittest.TestCase):
     module = py_warnings
 
 
+_NONASCII_WARNOPTION = 'ignore:DeprecationWarning' + os_helper.FS_NONASCII
+
+
+class WarnOptionsTests(unittest.TestCase):
+    """Tests of the -W option and the PYTHONWARNINGS environment variable.
+
+    sys.warnoptions is set by the interpreter, so these tests do not depend
+    on the used implementation of the warnings module.
+    """
+
+    @isolation.runInSubprocess(
+        env={'PYTHONWARNINGS': 'ignore::DeprecationWarning',
+             'PYTHONDEVMODE': ''})
+    def test_single_warning(self):
+        self.assertEqual(sys.warnoptions, ['ignore::DeprecationWarning'])
+
+    @isolation.runInSubprocess(
+        env={'PYTHONWARNINGS': 'ignore::DeprecationWarning,'
+                               'ignore::UnicodeWarning',
+             'PYTHONDEVMODE': ''})
+    def test_comma_separated_warnings(self):
+        self.assertEqual(sys.warnoptions, ['ignore::DeprecationWarning',
+                                           'ignore::UnicodeWarning'])
+
+    @isolation.runInSubprocess(
+        options=['-Wignore::UnicodeWarning'],
+        env={'PYTHONWARNINGS': 'ignore::DeprecationWarning',
+             'PYTHONDEVMODE': ''})
+    def test_envvar_and_command_line(self):
+        self.assertEqual(sys.warnoptions, ['ignore::DeprecationWarning',
+                                           'ignore::UnicodeWarning'])
+
+    @unittest.skipUnless(sys.getfilesystemencoding() != 'ascii',
+                         'requires non-ascii filesystemencoding')
+    @isolation.runInSubprocess(
+        env={'PYTHONWARNINGS': _NONASCII_WARNOPTION,
+             'PYTHONDEVMODE': ''})
+    def test_nonascii(self):
+        self.assertEqual(sys.warnoptions, [_NONASCII_WARNOPTION])
+
+
 class EnvironmentVariableTests(BaseTest):
 
-    def test_single_warning(self):
-        rc, stdout, stderr = assert_python_ok("-c",
-            "import sys; sys.stdout.write(str(sys.warnoptions))",
-            PYTHONWARNINGS="ignore::DeprecationWarning",
-            PYTHONDEVMODE="")
-        self.assertEqual(stdout, b"['ignore::DeprecationWarning']")
-
-    def test_comma_separated_warnings(self):
-        rc, stdout, stderr = assert_python_ok("-c",
-            "import sys; sys.stdout.write(str(sys.warnoptions))",
-            PYTHONWARNINGS="ignore::DeprecationWarning,ignore::UnicodeWarning",
-            PYTHONDEVMODE="")
-        self.assertEqual(stdout,
-            b"['ignore::DeprecationWarning', 'ignore::UnicodeWarning']")
-
-    @force_not_colorized
-    def test_envvar_and_command_line(self):
-        rc, stdout, stderr = assert_python_ok("-Wignore::UnicodeWarning", "-c",
-            "import sys; sys.stdout.write(str(sys.warnoptions))",
-            PYTHONWARNINGS="ignore::DeprecationWarning",
-            PYTHONDEVMODE="")
-        self.assertEqual(stdout,
-            b"['ignore::DeprecationWarning', 'ignore::UnicodeWarning']")
+    def prepare_code(self, code):
+        """Make the subprocess use the tested implementation."""
+        if self.module is py_warnings:
+            # Disable the warnings acceleration module in the subprocess.
+            code = ("import sys; sys.modules.pop('warnings', None); "
+                    "sys.modules['_warnings'] = None; ") + code
+        return code
 
     @force_not_colorized
     def test_conflicting_envvar_and_command_line(self):
-        rc, stdout, stderr = assert_python_failure("-Werror::DeprecationWarning", "-c",
+        code = self.prepare_code(
             "import sys, warnings; sys.stdout.write(str(sys.warnoptions)); "
-            "warnings.warn('Message', DeprecationWarning)",
+            "warnings.warn('Message', DeprecationWarning)")
+        rc, stdout, stderr = assert_python_failure(
+            "-Werror::DeprecationWarning", "-c", code,
             PYTHONWARNINGS="default::DeprecationWarning",
             PYTHONDEVMODE="")
         self.assertEqual(stdout,
             b"['default::DeprecationWarning', 'error::DeprecationWarning']")
-        self.assertEqual(stderr.splitlines(),
-            [b"Traceback (most recent call last):",
-             b"  File \"<string>\", line 1, in <module>",
-             b'    import sys, warnings; sys.stdout.write(str(sys.warnoptions)); warnings.w'
-             b"arn('Message', DeprecationWarning)",
-             b'                                                                  ~~~~~~~~~~'
-             b'~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^',
-             b"DeprecationWarning: Message"])
+        # The traceback of the Python implementation contains additional
+        # frames, so only the ends of the traceback are checked.
+        lines = stderr.splitlines()
+        self.assertEqual(lines[0], b"Traceback (most recent call last):")
+        self.assertEqual(lines[1], b'  File "<string>", line 1, in <module>')
+        self.assertEqual(lines[-1], b"DeprecationWarning: Message")
 
     def test_default_filter_configuration(self):
         pure_python_api = self.module is py_warnings
@@ -1580,29 +1606,14 @@ class EnvironmentVariableTests(BaseTest):
             ]
         expected_output = [str(f).encode() for f in expected_default_filters]
 
-        if pure_python_api:
-            # Disable the warnings acceleration module in the subprocess
-            code = "import sys; sys.modules.pop('warnings', None); sys.modules['_warnings'] = None; "
-        else:
-            code = ""
-        code += "import warnings; [print(f) for f in warnings._get_filters()]"
+        code = self.prepare_code(
+            "import warnings; [print(f) for f in warnings._get_filters()]")
 
         rc, stdout, stderr = assert_python_ok("-c", code, __isolated=True)
         stdout_lines = [line.strip() for line in stdout.splitlines()]
         self.maxDiff = None
         self.assertEqual(stdout_lines, expected_output)
 
-
-    @unittest.skipUnless(sys.getfilesystemencoding() != 'ascii',
-                         'requires non-ascii filesystemencoding')
-    def test_nonascii(self):
-        PYTHONWARNINGS="ignore:DeprecationWarning" + os_helper.FS_NONASCII
-        rc, stdout, stderr = assert_python_ok("-c",
-            "import sys; sys.stdout.write(str(sys.warnoptions))",
-            PYTHONIOENCODING="utf-8",
-            PYTHONWARNINGS=PYTHONWARNINGS,
-            PYTHONDEVMODE="")
-        self.assertEqual(stdout, str([PYTHONWARNINGS]).encode())
 
 class CEnvironmentVariableTests(EnvironmentVariableTests, unittest.TestCase):
     module = c_warnings
@@ -1704,6 +1715,59 @@ class BootstrapTest(unittest.TestCase):
 
             # Use -W to load warnings module at startup
             assert_python_ok('-c', 'pass', '-W', 'always', PYTHONPATH=cwd)
+
+
+class WarnExplicitMainTests(BaseTest):
+    # gh-123011: warn_explicit() with module globals of the __main__ module,
+    # no matter how it is executed.
+    code = ('import warnings\n'
+            'warnings.warn_explicit("eggs", UserWarning, "bar", 1,\n'
+            '                       module_globals=globals())\n')
+
+    def prepare_code(self):
+        """Make the subprocess use the tested implementation."""
+        if self.module is py_warnings:
+            return ("import sys\n"
+                    "sys.modules['_warnings'] = None\n") + self.code
+        return self.code
+
+    def check(self, err):
+        lines = err.decode().splitlines()
+        # Only the Python implementation adds the source line.
+        if len(lines) > 1 and lines[1].startswith('  '):
+            del lines[1]
+        self.assertEqual(lines, ['bar:1: UserWarning: eggs'])
+
+    def make_script(self, dirname):
+        filename = os.path.join(dirname, 'spam.py')
+        with open(filename, 'w', encoding='utf-8') as f:
+            f.write(self.prepare_code())
+        return filename
+
+    def test_script(self):
+        # __main__ has __spec__ set to None.
+        with os_helper.temp_dir() as dirname:
+            filename = self.make_script(dirname)
+            rc, out, err = assert_python_ok(filename)
+            self.check(err)
+
+    def test_module(self):
+        # __main__ has __spec__ of the module executed with -m.
+        with os_helper.temp_dir() as dirname:
+            self.make_script(dirname)
+            rc, out, err = assert_python_ok('-m', 'spam', PYTHONPATH=dirname)
+            self.check(err)
+
+    def test_command(self):
+        # __main__ has the built-in importer as a loader.
+        rc, out, err = assert_python_ok('-c', self.prepare_code())
+        self.check(err)
+
+class CWarnExplicitMainTests(WarnExplicitMainTests, unittest.TestCase):
+    module = c_warnings
+
+class PyWarnExplicitMainTests(WarnExplicitMainTests, unittest.TestCase):
+    module = py_warnings
 
 
 class FinalizationTest(unittest.TestCase):

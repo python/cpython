@@ -198,10 +198,11 @@ refchain_init(PyInterpreterState *interp)
         return 0;
     }
     _Py_hashtable_allocator_t alloc = {
-        // Don't use default PyMem_Malloc() and PyMem_Free() which
-        // require the caller to hold the GIL.
-        .malloc = PyMem_RawMalloc,
-        .free = PyMem_RawFree,
+        // Use directly malloc() and free() of the C library. Using
+        // PyMem_RawMalloc() and PyMem_RawFree() prevents testing
+        // _testcapi.set_nomemory().
+        .malloc = malloc,
+        .free = free,
     };
     REFCHAIN(interp) = _Py_hashtable_new_full(
         _Py_hashtable_hash_ptr, _Py_hashtable_compare_direct,
@@ -2519,7 +2520,8 @@ _PyObject_FiniState(PyInterpreterState *interp)
 }
 
 
-extern PyTypeObject _PyAnextAwaitable_Type;
+extern PyTypeObject _PyACallIter_Type;
+extern PyTypeObject _PyACallIterAwaitable_Type;
 extern PyTypeObject _PyLegacyEventHandler_Type;
 extern PyTypeObject _PyLineIterator;
 extern PyTypeObject _PyMemoryIter_Type;
@@ -2612,7 +2614,8 @@ static PyTypeObject* static_types[_Py_NUM_MANAGED_PREINITIALIZED_TYPES] = {
     &PyWrapperDescr_Type,
     &PyZip_Type,
     &Py_GenericAliasType,
-    &_PyAnextAwaitable_Type,
+    &_PyACallIter_Type,
+    &_PyACallIterAwaitable_Type,
     &_PyAsyncGenASend_Type,
     &_PyAsyncGenAThrow_Type,
     &_PyAsyncGenWrappedValue_Type,
@@ -3224,6 +3227,10 @@ _PyTrash_thread_destroy_chain(PyThreadState *tstate)
          * up distorting allocation statistics.
          */
         _PyObject_ASSERT(op, Py_REFCNT(op) == 0);
+#ifdef Py_TRACE_REFS
+        _Py_ForgetReference(op);
+#endif
+        _PyReftracerTrack(op, PyRefTracer_DESTROY);
         (*dealloc)(op);
     }
 }
@@ -3457,7 +3464,7 @@ _Py_GetConstant_Init(void)
     constants[Py_CONSTANT_ZERO] = _PyLong_GetZero();
     constants[Py_CONSTANT_ONE] = _PyLong_GetOne();
     constants[Py_CONSTANT_EMPTY_STR] = PyUnicode_New(0, 0);
-    constants[Py_CONSTANT_EMPTY_BYTES] = PyBytes_FromStringAndSize(NULL, 0);
+    constants[Py_CONSTANT_EMPTY_BYTES] = PyBytes_FromStringAndSize("", 0);
     constants[Py_CONSTANT_EMPTY_TUPLE] = PyTuple_New(0);
 #ifndef NDEBUG
     for (size_t i=0; i < Py_ARRAY_LENGTH(constants); i++) {

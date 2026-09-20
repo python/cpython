@@ -571,20 +571,19 @@ _io__IOBase_readline_impl(PyObject *self, Py_ssize_t limit)
 {
     /* For backwards compatibility, a (slowish) readline(). */
 
-    PyObject *peek, *buffer, *result;
-    Py_ssize_t old_size = -1;
+    PyObject *peek;
 
     if (PyObject_GetOptionalAttr(self, &_Py_ID(peek), &peek) < 0) {
         return NULL;
     }
 
-    buffer = PyByteArray_FromStringAndSize(NULL, 0);
-    if (buffer == NULL) {
+    PyBytesWriter *writer = PyBytesWriter_Create(0);
+    if (writer == NULL) {
         Py_XDECREF(peek);
         return NULL;
     }
 
-    while (limit < 0 || PyByteArray_GET_SIZE(buffer) < limit) {
+    while (limit < 0 || PyBytesWriter_GetSize(writer) < limit) {
         Py_ssize_t nreadahead = 1;
         PyObject *b;
 
@@ -650,28 +649,25 @@ _io__IOBase_readline_impl(PyObject *self, Py_ssize_t limit)
             break;
         }
 
-        old_size = PyByteArray_GET_SIZE(buffer);
-        if (PyByteArray_Resize(buffer, old_size + PyBytes_GET_SIZE(b)) < 0) {
+        if (PyBytesWriter_WriteBytes(writer,
+                                     PyBytes_AS_STRING(b),
+                                     PyBytes_GET_SIZE(b)) < 0) {
             Py_DECREF(b);
             goto fail;
         }
-        memcpy(PyByteArray_AS_STRING(buffer) + old_size,
-               PyBytes_AS_STRING(b), PyBytes_GET_SIZE(b));
 
         Py_DECREF(b);
 
-        if (PyByteArray_AS_STRING(buffer)[PyByteArray_GET_SIZE(buffer) - 1] == '\n')
+        char *data = PyBytesWriter_GetData(writer);
+        if (data[PyBytesWriter_GetSize(writer) - 1] == '\n')
             break;
     }
 
-    result = PyBytes_FromStringAndSize(PyByteArray_AS_STRING(buffer),
-                                       PyByteArray_GET_SIZE(buffer));
     Py_XDECREF(peek);
-    Py_DECREF(buffer);
-    return result;
+    return PyBytesWriter_Finish(writer);
   fail:
     Py_XDECREF(peek);
-    Py_DECREF(buffer);
+    PyBytesWriter_Discard(writer);
     return NULL;
 }
 
