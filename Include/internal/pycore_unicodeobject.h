@@ -112,10 +112,12 @@ _PyUnicode_EnsureUnicode(PyObject *obj)
 static inline int
 _PyUnicodeWriter_CanWrite(_PyUnicodeWriter *writer)
 {
-    // Code adapted from _PyUnicode_IsModifiable()
     assert(!writer->readonly);
+
     PyObject *buffer = writer->buffer;
     assert(buffer != NULL);
+
+    // Code adapted from _PyUnicode_IsModifiable().
     // Do not use _PyObject_IsUniquelyReferenced(): the caller can have its own
     // lock to prevent a writer from being used by two threads at the same
     // time.
@@ -133,17 +135,12 @@ _PyUnicodeWriter_Update(_PyUnicodeWriter *writer)
     PyObject *buffer = writer->buffer;
     writer->maxchar = PyUnicode_MAX_CHAR_VALUE(buffer);
     writer->data = PyUnicode_DATA(buffer);
+    writer->kind = PyUnicode_KIND(buffer);
 
     if (!writer->readonly) {
-        writer->kind = PyUnicode_KIND(buffer);
         writer->size = PyUnicode_GET_LENGTH(buffer);
     }
     else {
-        /* use a value smaller than PyUnicode_1BYTE_KIND() so
-           _PyUnicodeWriter_PrepareKind() will copy the buffer. */
-        writer->kind = 0;
-        assert(writer->kind < PyUnicode_1BYTE_KIND);
-
         /* Copy-on-write mode: set buffer size to 0 so
          * _PyUnicodeWriter_Prepare() will copy (and enlarge) the buffer on
          * next write. */
