@@ -1,4 +1,4 @@
-"""Tests perf trampoline in a multi-threaded environment to verify thread safety in free-threaded builds."""
+"""Tests for the perf trampoline in multi-threaded environments."""
 
 import gc
 import sys
@@ -15,17 +15,16 @@ class TestPerfTrampolineThreadSafety(unittest.TestCase):
 
     def test_concurrent_code_compilation(self):
         """Stress test simultaneous allocation of code arenas and tracking hooks."""
-        if not hasattr(sys, "_perf_trampoline_init") or not hasattr(sys, "_perf_trampoline_fini"):
+        if not hasattr(sys, "activate_stack_trampoline") or not hasattr(sys, "deactivate_stack_trampoline"):
             self.skipTest("perf trampoline APIs are not supported on this platform")
 
         try:
-            sys._perf_trampoline_init(1)
+            sys.activate_stack_trampoline("perf")
         except ValueError as exc:
             self.skipTest(f"perf trampoline activation failed: {exc}")
-        self.addCleanup(sys._perf_trampoline_fini)
+        self.addCleanup(sys.deactivate_stack_trampoline)
 
         barrier = threading.Barrier(NTHREADS)
-
         def worker():
             barrier.wait()
             for i in range(ITERATIONS_PER_THREAD):
@@ -37,28 +36,26 @@ class TestPerfTrampolineThreadSafety(unittest.TestCase):
                     ns,
                 )
                 self.assertEqual(ns["result"], i)
-                del ns  # Immediate drop to prevent delaying cleanup, no internal gc.collect()
+                del ns
 
         threading_helper.run_concurrently(
             nthreads=NTHREADS, worker_func=worker
         )
-        # Single final sweep to ensure code objects and extra tracking clear cleanly
         gc.collect()
 
     def test_concurrent_shared_code_execution(self):
         """Verify multiple threads safely handle entering evaluation loops for the same code object."""
-        if not hasattr(sys, "_perf_trampoline_init") or not hasattr(sys, "_perf_trampoline_fini"):
+        if not hasattr(sys, "activate_stack_trampoline") or not hasattr(sys, "deactivate_stack_trampoline"):
             self.skipTest("perf trampoline APIs are not supported on this platform")
 
         try:
-            sys._perf_trampoline_init(1)
+            sys.activate_stack_trampoline("perf")
         except ValueError as exc:
             self.skipTest(f"perf trampoline activation failed: {exc}")
-        self.addCleanup(sys._perf_trampoline_fini)
+        self.addCleanup(sys.deactivate_stack_trampoline)
 
         barrier = threading.Barrier(NTHREADS)
 
-        # Pre-compile a single function instance to share across all threads
         shared_ns = {}
         exec("def shared_func(): return 42", shared_ns)
         shared_func = shared_ns["shared_func"]
@@ -74,7 +71,6 @@ class TestPerfTrampolineThreadSafety(unittest.TestCase):
 
         del shared_func
         del shared_ns
-        # Single final sweep to clean up shared resources safely
         gc.collect()
 
 

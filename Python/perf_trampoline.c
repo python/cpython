@@ -125,7 +125,7 @@ needed.
 For the best results, Python should be compiled with
 CFLAGS="-fno-omit-frame-pointer -mno-omit-leaf-frame-pointer" as this allows
 profilers to unwind using only the frame pointer and not on DWARF debug
-information (note that as trampilines are dynamically generated there won't be
+information (note that as trampolines are dynamically generated there won't be
 any DWARF information available for them).
 */
 
@@ -448,125 +448,76 @@ compile_trampoline(void)
     return code_arena_new_code(perf_code_arena);
 }
 
+static py_trampoline
+get_or_compile_trampoline(PyCodeObject *co)
+{
+    Py_ssize_t index = _Py_atomic_load_ssize_relaxed(&extra_code_index);
+    if (ATOMIC_LOAD_STATUS() != PERF_STATUS_OK || index == -1) {
+        return NULL;
+    }
+    py_trampoline f = NULL;
+    if (_PyCode_GetExtra((PyObject *)co, index, (void **)&f) == 0 && f != NULL) {
+        return f;
+    }
+
+    // This is the first time we see this code object so we need
+    // to compile a trampoline for it.
+#ifdef Py_GIL_DISABLED
+    PyMutex_Lock(&perf_trampoline_mutex);
+#endif
+    index = _Py_atomic_load_ssize_relaxed(&extra_code_index);
+    if (ATOMIC_LOAD_STATUS() != PERF_STATUS_OK || index == -1) {
+        goto unlock;
+    }
+    if (_PyCode_GetExtra((PyObject *)co, index, (void **)&f) == 0 && f != NULL) {
+        goto unlock;
+    }
+
+    py_trampoline new_trampoline = compile_trampoline();
+    if (new_trampoline == NULL) {
+        goto unlock;
+    }
+
+    if (_PyCode_SetExtra((PyObject *)co, index, (void *)new_trampoline) != 0) {
+        PyErr_FormatUnraisable("Failed to set extra field for perf trampoline");
+        goto unlock;
+    }
+
+    trampoline_refcount++;
+    trampoline_api.write_state(trampoline_api.state, new_trampoline,
+                               perf_code_arena->code_size, co);
+    f = new_trampoline;
+
+unlock:
+#ifdef Py_GIL_DISABLED
+    PyMutex_Unlock(&perf_trampoline_mutex);
+#endif
+    return f;
+}
+
 static PyObject *
 py_trampoline_evaluator(PyThreadState *ts, _PyInterpreterFrame *frame,
                         int throw)
 {
-    int status = ATOMIC_LOAD_STATUS();
-    if (status == PERF_STATUS_FAILED ||
-        status == PERF_STATUS_NO_INIT) {
-        goto default_eval;
+    py_trampoline f = get_or_compile_trampoline(_PyFrame_GetCode(frame));
+    py_evaluator eval = (py_evaluator)_Py_atomic_load_ptr_relaxed(&prev_eval_frame);
+    if (eval == NULL) {
+        eval = _PyEval_EvalFrameDefault;
     }
-    PyCodeObject *co = _PyFrame_GetCode(frame);
-    py_trampoline f = NULL;
-    py_trampoline new_trampoline = NULL;
-    size_t code_size = 0;
-    int ret;
-    Py_ssize_t index = _Py_atomic_load_ssize_relaxed(&extra_code_index);
-    if (index == -1) {
-        goto default_eval;
+    if (f != NULL) {
+        return f(ts, frame, throw, eval);
     }
-    ret = _PyCode_GetExtra((PyObject *)co, index, (void **)&f);
-    if (ret != 0 || f == NULL) {
-        // This is the first time we see this code object so we need
-        // to compile a trampoline for it.
-#ifdef Py_GIL_DISABLED
-        PyMutex_Lock(&perf_trampoline_mutex);
-#endif
-        if (ATOMIC_LOAD_STATUS() == PERF_STATUS_OK) {
-            ret = _PyCode_GetExtra((PyObject *)co, index, (void **)&f);
-            if (ret != 0 || f == NULL) {
-                new_trampoline = compile_trampoline();
-                if (new_trampoline != NULL) {
-                    _PyCode_SetExtra((PyObject *)co, index,
-                                     (void *)new_trampoline);
-                    trampoline_refcount++;
-                    code_size = perf_code_arena->code_size;
-                }
-            }
-        }
-#ifdef Py_GIL_DISABLED
-        PyMutex_Unlock(&perf_trampoline_mutex);
-#endif
-        if (f == NULL && new_trampoline != NULL) {
-            // Call write_state outside the global lock to avoid holding it
-            // during JIT I/O. The default implementation
-            // (PyUnstable_WritePerfMapEntry) is internally thread-safe.
-            trampoline_api.write_state(trampoline_api.state, new_trampoline,
-                                       code_size, co);
-            f = new_trampoline;
-        }
-        if (f != NULL) {
-            goto execute_trampoline;
-        } else {
-            goto default_eval;
-        }
-    }
-execute_trampoline:
-    assert(f != NULL);
-    return f(
-        ts, frame, throw,
-        prev_eval_frame != NULL ? prev_eval_frame : _PyEval_EvalFrameDefault);
-default_eval:
-    // Something failed, fall back to the default evaluator.
-    if (prev_eval_frame) {
-      return prev_eval_frame(ts, frame, throw);
-    }
-    return _PyEval_EvalFrameDefault(ts, frame, throw);
+    return eval(ts, frame, throw);
 }
 #endif  // PY_HAVE_PERF_TRAMPOLINE
 
 int PyUnstable_PerfTrampoline_CompileCode(PyCodeObject *co)
 {
 #ifdef PY_HAVE_PERF_TRAMPOLINE
-    py_trampoline f = NULL;
-    py_trampoline new_trampoline = NULL;
-    size_t code_size = 0;
-    int ret;
-    int set_extra_ret = 0;
-    Py_ssize_t index = _Py_atomic_load_ssize_relaxed(&extra_code_index);
-    if (index == -1) {
-        return -1;
-    }
-    ret = _PyCode_GetExtra((PyObject *)co, index, (void **)&f);
-    if (ret != 0 || f == NULL) {
-#ifdef Py_GIL_DISABLED
-        PyMutex_Lock(&perf_trampoline_mutex);
-#endif
-        if (ATOMIC_LOAD_STATUS() == PERF_STATUS_OK) {
-            ret = _PyCode_GetExtra((PyObject *)co, index, (void **)&f);
-            if (ret != 0 || f == NULL) {
-                new_trampoline = compile_trampoline();
-                if (new_trampoline != NULL) {
-                    set_extra_ret = _PyCode_SetExtra((PyObject *)co, index,
-                                                     (void *)new_trampoline);
-                    if (set_extra_ret == 0) {
-                        trampoline_refcount++;
-                        code_size = perf_code_arena->code_size;
-                    }
-                }
-            }
-        }
-#ifdef Py_GIL_DISABLED
-        PyMutex_Unlock(&perf_trampoline_mutex);
-#endif
-        if (f != NULL) {
-            return 0; // Already compiled by another thread
-        }
-        if (new_trampoline == NULL) {
-            return 0;
-        }
-        if (set_extra_ret == 0) {
-            // Call write_state outside the global lock to avoid holding it
-            // during JIT I/O. The default implementation
-            // (PyUnstable_WritePerfMapEntry) is internally thread-safe.
-            trampoline_api.write_state(trampoline_api.state, new_trampoline,
-                                       code_size, co);
-        }
-        return set_extra_ret;
-    }
-#endif // PY_HAVE_PERF_TRAMPOLINE
+    return get_or_compile_trampoline(co) != NULL ? 0 : -1;
+#else
     return 0;
+#endif // PY_HAVE_PERF_TRAMPOLINE
 }
 
 int
@@ -661,49 +612,47 @@ _PyPerfTrampoline_Init(int activate)
         return 0;
     }
     PyThreadState *tstate = _PyThreadState_GET();
-    if (code_watcher_id == 0) {
-        // Initialize to -1 since 0 is a valid watcher ID
-        code_watcher_id = -1;
-    }
     if (!activate) {
-      _PyInterpreterState_SetEvalFrameFunc(tstate->interp, prev_eval_frame);
-      ATOMIC_STORE_STATUS(PERF_STATUS_NO_INIT);
+        _PyInterpreterState_SetEvalFrameFunc(tstate->interp, prev_eval_frame);
+        ATOMIC_STORE_STATUS(PERF_STATUS_NO_INIT);
     } else if (tstate->interp->eval_frame != py_trampoline_evaluator) {
-      prev_eval_frame = _PyInterpreterState_GetEvalFrameFunc(tstate->interp);
-      _PyInterpreterState_SetEvalFrameFunc(tstate->interp,
-                                           py_trampoline_evaluator);
-      Py_ssize_t idx = _PyEval_RequestCodeExtraIndex(NULL);
-      _Py_atomic_store_ssize_relaxed(&extra_code_index, idx);
-      if (idx == -1) {
-        _PyInterpreterState_SetEvalFrameFunc(tstate->interp, prev_eval_frame);
+        prev_eval_frame = _PyInterpreterState_GetEvalFrameFunc(tstate->interp);
+        _PyInterpreterState_SetEvalFrameFunc(tstate->interp,
+                                             py_trampoline_evaluator);
+        Py_ssize_t idx = _PyEval_RequestCodeExtraIndex(NULL);
+        _Py_atomic_store_ssize_relaxed(&extra_code_index, idx);
+        if (idx == -1) {
+            _PyInterpreterState_SetEvalFrameFunc(tstate->interp, prev_eval_frame);
 #ifdef Py_GIL_DISABLED
-        PyMutex_Unlock(&perf_trampoline_mutex);
+            PyMutex_Unlock(&perf_trampoline_mutex);
 #endif
-        return -1;
-      }
-      if (trampoline_api.state == NULL && trampoline_api.init_state != NULL) {
-        trampoline_api.state = trampoline_api.init_state();
-      }
-      if (new_code_arena() < 0) {
-        _PyInterpreterState_SetEvalFrameFunc(tstate->interp, prev_eval_frame);
+            return -1;
+        }
+        if (trampoline_api.state == NULL && trampoline_api.init_state != NULL) {
+            trampoline_api.state = trampoline_api.init_state();
+        }
+        if (new_code_arena() < 0) {
+            _PyInterpreterState_SetEvalFrameFunc(tstate->interp, prev_eval_frame);
 #ifdef Py_GIL_DISABLED
-        PyMutex_Unlock(&perf_trampoline_mutex);
+            PyMutex_Unlock(&perf_trampoline_mutex);
 #endif
-        return -1;
-      }
-      code_watcher_id = PyCode_AddWatcher(perf_trampoline_code_watcher);
-      if (code_watcher_id < 0) {
-        PyErr_FormatUnraisable(
-            "Failed to register code watcher for perf trampoline");
-        free_code_arenas();
-        _PyInterpreterState_SetEvalFrameFunc(tstate->interp, prev_eval_frame);
+            return -1;
+        }
+        if (code_watcher_id < 0) {
+            code_watcher_id = PyCode_AddWatcher(perf_trampoline_code_watcher);
+            if (code_watcher_id < 0) {
+                PyErr_FormatUnraisable(
+                    "Failed to register code watcher for perf trampoline");
+                free_code_arenas();
+                _PyInterpreterState_SetEvalFrameFunc(tstate->interp, prev_eval_frame);
 #ifdef Py_GIL_DISABLED
-        PyMutex_Unlock(&perf_trampoline_mutex);
+                PyMutex_Unlock(&perf_trampoline_mutex);
 #endif
-        return -1;
-      }
-      trampoline_refcount = 1;  // Base refcount held by the system
-      ATOMIC_STORE_STATUS(PERF_STATUS_OK);
+                return -1;
+            }
+        }
+        trampoline_refcount = 1;  // Base refcount held by the system
+        ATOMIC_STORE_STATUS(PERF_STATUS_OK);
     }
 #ifdef Py_GIL_DISABLED
     PyMutex_Unlock(&perf_trampoline_mutex);
@@ -765,19 +714,19 @@ _PyPerfTrampoline_AfterFork_Child(void)
         int was_active = _PyIsPerfTrampolineActive();
         _PyPerfTrampoline_Fini();
         if (was_active) {
-          // After fork, Fini may leave the old code watcher registered
-          // if trampolined code objects from the parent still exist
-          // (trampoline_refcount > 0). Clear it unconditionally before
-          // Init registers a new one, but keep the old arenas mapped: the
-          // child may still need to return through trampoline frames that
-          // were on the C stack at fork().
-          perf_trampoline_clear_code_watcher();
-          if (_PyPerfTrampoline_Init(1) < 0) {
-            PyErr_Clear();
-            PySys_WriteStderr("Python warning: Failed to restart perf trampoline after fork. "
-                              "Disabling perf trampoline.\n");
-            ATOMIC_STORE_STATUS(PERF_STATUS_FAILED);
-          }
+            // After fork, Fini may leave the old code watcher registered
+            // if trampolined code objects from the parent still exist
+            // (trampoline_refcount > 0). Clear it unconditionally before
+            // Init registers a new one, but keep the old arenas mapped: the
+            // child may still need to return through trampoline frames that
+            // were on the C stack at fork().
+            perf_trampoline_clear_code_watcher();
+            if (_PyPerfTrampoline_Init(1) < 0) {
+                PyErr_Clear();
+                PySys_WriteStderr("Python warning: Failed to restart perf trampoline after fork. "
+                                  "Disabling perf trampoline.\n");
+                ATOMIC_STORE_STATUS(PERF_STATUS_FAILED);
+            }
         }
     }
 #endif
