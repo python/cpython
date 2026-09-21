@@ -6,7 +6,7 @@ from libclinic import fail, warn, unspecified, Sentinels
 from libclinic.function import (
     Function, Parameter, ParamTuple,
     count_required, group_to_variable_name, permute_optional_groups,
-    GETTER, SETTER, METHOD_INIT,
+    GETTER, SETTER, SETTER_AND_DELETER, METHOD_INIT,
     ACCESSORS, SETTERS)
 from libclinic.converter import CConverter
 from libclinic.converters import (
@@ -140,7 +140,7 @@ PARSER_PROTOTYPE_GETTER: Final[str] = libclinic.normalize_snippet("""
 """)
 PARSER_PROTOTYPE_SETTER: Final[str] = libclinic.normalize_snippet("""
     static int
-    {c_basename}({self_type}{self_name}, PyObject *value, void *Py_UNUSED(context))
+    {c_basename}({self_type}{self_name}, PyObject *arg, void *Py_UNUSED(context))
 """)
 METH_O_PROTOTYPE: Final[str] = libclinic.normalize_snippet("""
     static PyObject *
@@ -153,13 +153,20 @@ DOCSTRING_PROTOTYPE_STRVAR: Final[str] = libclinic.normalize_snippet("""
     PyDoc_STRVAR({c_basename}__doc__,
     {docstring});
 """)
+# The docstring of an attribute is defined by its getter.
 GETSET_DOCSTRING_PROTOTYPE_STRVAR: Final[str] = libclinic.normalize_snippet("""
     PyDoc_STRVAR({getset_basename}__doc__,
     {docstring});
-    #if defined({getset_basename}_DOCSTR)
-    #   undef {getset_basename}_DOCSTR
+""")
+# If the getter is compiled conditionally, the entry refers to the docstring
+# by a macro, because only the preprocessor knows which one is defined.
+GETSET_DOCSTRING_PROTOTYPE_DEFINE: Final[str] = libclinic.normalize_snippet("""
+    PyDoc_STRVAR({getset_basename}__doc__,
+    {docstring});
+    #if defined({getset_name}_DOCSTR)
+    #   undef {getset_name}_DOCSTR
     #endif
-    #define {getset_basename}_DOCSTR {getset_basename}__doc__
+    #define {getset_name}_DOCSTR {getset_basename}__doc__
 """)
 IMPL_DEFINITION_PROTOTYPE: Final[str] = libclinic.normalize_snippet("""
     static {impl_return_type}
@@ -169,48 +176,52 @@ METHODDEF_PROTOTYPE_DEFINE: Final[str] = libclinic.normalize_snippet(r"""
     #define {methoddef_name}    \
         {{"{name}", {methoddef_cast}{c_basename}{methoddef_cast_end}, {methoddef_flags}, {c_basename}__doc__}},
 """)
-GETTERDEF_PROTOTYPE_DEFINE: Final[str] = libclinic.normalize_snippet(r"""
-    #if !defined({getset_basename}_DOCSTR)
-    #  define {getset_basename}_DOCSTR NULL
-    #endif
-    #if defined({getset_name}_GETSETDEF)
-    #  undef {getset_name}_GETSETDEF
-    #  define {getset_name}_GETSETDEF {{"{name}", (getter){getset_basename}_get, (setter){getset_basename}_set, {getset_basename}_DOCSTR}},
-    #else
-    #  define {getset_name}_GETSETDEF {{"{name}", (getter){getset_basename}_get, NULL, {getset_basename}_DOCSTR}},
-    #endif
+# An accessor which is compiled conditionally announces the function which
+# implements it.  Only the preprocessor knows which of them are compiled, so
+# the entry is composed of these announcements
+# (see GETSETDEF_PROTOTYPE_COMBINE).
+GETTERDEF_PROTOTYPE_DEFINE: Final[str] = libclinic.normalize_snippet("""
+    #define {getset_name}_GETTER {c_basename}
 """)
-SETTERDEF_PROTOTYPE_DEFINE: Final[str] = libclinic.normalize_snippet(r"""
-    #if !defined({getset_basename}_DOCSTR)
-    #  define {getset_basename}_DOCSTR NULL
-    #endif
-    #if defined({getset_name}_GETSETDEF)
-    #  undef {getset_name}_GETSETDEF
-    #  define {getset_name}_GETSETDEF {{"{name}", (getter){getset_basename}_get, (setter){getset_basename}_set, {getset_basename}_DOCSTR}},
-    #else
-    #  define {getset_name}_GETSETDEF {{"{name}", NULL, (setter){getset_basename}_set, NULL}},
-    #endif
-""")
-METHODDEF_PROTOTYPE_IFNDEF: Final[str] = libclinic.normalize_snippet("""
-    #ifndef {methoddef_name}
-        #define {methoddef_name}
-    #endif /* !defined({methoddef_name}) */
-""")
-GETSETDEF_PROTOTYPE_IFNDEF: Final[str] = libclinic.normalize_snippet("""
-    #ifndef {getset_name}_GETSETDEF
-        #define {getset_name}_GETSETDEF
-    #endif /* !defined({getset_name}_GETSETDEF) */
-""")
-# The setter is called with NULL to delete the attribute.  Unless @deleter is
-# applied to it, deletion is rejected before the implementation is called.
 SETTER_PREAMBLE: Final[str] = libclinic.normalize_snippet("""
-    if (value == NULL) {{
+    if (arg == NULL) {{
         PyErr_Format(PyExc_AttributeError,
                      "attribute '{name}' of '%.100s' objects cannot be deleted",
                      Py_TYPE({self_name})->tp_name);
         return -1;
     }}
 """, indent=4)
+SETTERDEF_PROTOTYPE_DEFINE: Final[str] = libclinic.normalize_snippet("""
+    #define {getset_name}_SETTER {c_basename}
+""")
+METHODDEF_PROTOTYPE_IFNDEF: Final[str] = libclinic.normalize_snippet("""
+    #ifndef {methoddef_name}
+        #define {methoddef_name}
+    #endif /* !defined({methoddef_name}) */
+""")
+# The entry of an attribute whose accessors are all compiled unconditionally.
+GETSETDEF_PROTOTYPE_DEFINE: Final[str] = libclinic.normalize_snippet("""
+    #define {getset_name}_GETSETDEF {{"{name}", (getter){getter}, (setter){setter}, {docstr}}},
+""")
+# Composes the PyGetSetDef entry of an attribute.  It must be rendered after
+# all accessors of that attribute, so it is written to the same destination as
+# the "ifndef" of a method, which is emptied at the end of the file.
+GETSETDEF_PROTOTYPE_COMBINE: Final[str] = libclinic.normalize_snippet("""
+    #if defined({getset_name}_GETTER) || defined({getset_name}_SETTER)
+    #  if !defined({getset_name}_GETTER)
+    #    define {getset_name}_GETTER NULL
+    #  endif
+    #  if !defined({getset_name}_SETTER)
+    #    define {getset_name}_SETTER NULL
+    #  endif
+    #  if !defined({getset_name}_DOCSTR)
+    #    define {getset_name}_DOCSTR NULL
+    #  endif
+    #  define {getset_name}_GETSETDEF {{"{name}", (getter){getset_name}_GETTER, (setter){getset_name}_SETTER, {getset_name}_DOCSTR}},
+    #else
+    #  define {getset_name}_GETSETDEF
+    #endif
+""")
 # Every parser body ends with this shape; parser_body() and
 # _assemble_vectorcall() fill the assembly-time markers.
 PARSER_FINALE_SKELETON: Final[str] = libclinic.normalize_snippet("""
@@ -351,6 +362,9 @@ class ParseArgsCodeGen:
         self.max_pos = 0
         self.min_kw_only = 0
         for i, p in enumerate(self.parameters, 1):
+            if p.converter.alias_of is not None:
+                # An alias fills the slot of the parameter which it aliases.
+                continue
             if p.is_keyword_only():
                 assert not p.is_positional_only()
                 if not p.is_optional():
@@ -394,15 +408,21 @@ class ParseArgsCodeGen:
         if self.is_new_or_init() and not self.func.docstring:
             pass
         elif self.func.kind is GETTER:
-            self.methoddef_define = GETTERDEF_PROTOTYPE_DEFINE
+            # Only an accessor compiled conditionally announces itself.
+            self.methoddef_define = (GETTERDEF_PROTOTYPE_DEFINE
+                                     if self.func.condition else '')
             if self.func.docstring:
-                self.docstring_definition = GETSET_DOCSTRING_PROTOTYPE_STRVAR
+                self.docstring_definition = (
+                    GETSET_DOCSTRING_PROTOTYPE_DEFINE if self.func.condition
+                    else GETSET_DOCSTRING_PROTOTYPE_STRVAR)
         elif self.func.kind in SETTERS:
             if self.func.docstring:
-                fail("docstrings are only supported for @getter, not @setter",
+                fail("docstrings are only supported for @getter",
                      line_number=self.func.line_number)
-            self.return_value_declaration = "int {parser_retval};"
-            self.methoddef_define = SETTERDEF_PROTOTYPE_DEFINE
+            # The conversion of the value can fail before it is set.
+            self.return_value_declaration = "int {parser_retval} = -1;"
+            self.methoddef_define = (SETTERDEF_PROTOTYPE_DEFINE
+                                     if self.func.condition else '')
         else:
             self.docstring_prototype = DOCSTRING_PROTOTYPE_VAR
             self.docstring_definition = DOCSTRING_PROTOTYPE_STRVAR
@@ -439,19 +459,48 @@ class ParseArgsCodeGen:
             init_result_check="")
         self.parser_definition = code
 
+    def render_setter_value(self) -> str:
+        """Return the code which converts the new value of the attribute."""
+        # The parser guarantees that the value is the only parameter.
+        assert len(self.parameters) == 1
+        p = self.parameters[0]
+        parsearg = p.converter.parse_arg('arg', p.get_displayname(0),
+                                         limited_capi=self.limited_capi)
+        if parsearg is None:
+            p.converter.use_converter()
+            parsearg = """
+                if (!PyArg_Parse(arg, "{format_units}:{name}", {parse_arguments})) {{
+                    goto exit;
+                }}
+                """
+        if self.func.kind is not SETTER_AND_DELETER:
+            return libclinic.normalize_snippet(parsearg, indent=4)
+        # The value is only converted if the attribute is not deleted.
+        return "\n".join([
+            libclinic.normalize_snippet("if (arg != NULL) {{", indent=4),
+            libclinic.normalize_snippet(parsearg, indent=8),
+            libclinic.normalize_snippet("}}", indent=4),
+        ])
+
+    def parse_accessor(self) -> None:
+        """Generate the code of a getter or a setter."""
+        parser_code: list[str] = []
+        if self.func.kind is GETTER:
+            self.parser_prototype = PARSER_PROTOTYPE_GETTER
+        else:
+            self.parser_prototype = PARSER_PROTOTYPE_SETTER
+            # The setter is called with NULL to delete the attribute, which
+            # is checked before parsing, because NULL is not a value.
+            if self.func.kind is SETTER:
+                # The setter which is not the deleter rejects the deletion.
+                parser_code.append(SETTER_PREAMBLE)
+            parser_code.append(self.render_setter_value())
+        self.finish_parser_body(parser_code)
+
     def parse_no_args(self) -> None:
         parser_code: list[str] | None
         simple_return = self.use_simple_return()
-        if self.func.kind is GETTER:
-            self.parser_prototype = PARSER_PROTOTYPE_GETTER
-            parser_code = []
-        elif self.func.kind in SETTERS:
-            self.parser_prototype = PARSER_PROTOTYPE_SETTER
-            if self.func.kind is SETTER:
-                parser_code = [SETTER_PREAMBLE]
-            else:
-                parser_code = []
-        elif not self.requires_defining_class:
+        if not self.requires_defining_class:
             # no self.parameters, METH_NOARGS
             self.flags = "METH_NOARGS"
             self.parser_prototype = PARSER_PROTOTYPE_NOARGS
@@ -470,7 +519,12 @@ class ParseArgsCodeGen:
                 }}
                 """ % return_error, indent=4)]
 
-        if simple_return:
+        self.finish_parser_body(parser_code)
+
+    def finish_parser_body(self, parser_code: list[str]) -> None:
+        """Generate the parsing function from the code which parses
+        the arguments."""
+        if self.use_simple_return():
             self.parser_definition = '\n'.join([
                 self.parser_prototype,
                 '{{',
@@ -891,6 +945,8 @@ class ParseArgsCodeGen:
                         f"Using converter {p.converter} is not supported "
                         f"in function with var-positional parameter")
                 return None
+            if p.deprecated_until is not None:
+                parsearg = self.render_deprecated(p, parsearg)
             if i >= self.min_pos:
                 # p and everything after it is optional.
                 parser_code.append(libclinic.normalize_snippet(f"""
@@ -932,8 +988,7 @@ class ParseArgsCodeGen:
 
         Fall back to the tuple convention if the stack one cannot be used.
         """
-        for p in self.parameters:
-            p.converter.use_converter()
+        self.use_converters()
         if self.limited_capi:
             # _PyArg_ParseStack() is not part of the limited C API.
             self.fastcall = False
@@ -1045,6 +1100,71 @@ class ParseArgsCodeGen:
             parser_code.append(libclinic.normalize_snippet(self._parse_kwarg(), indent=4))
         self.parser_body(*parser_code)
 
+    def use_converters(self) -> None:
+        """Prepare for parsing all arguments by a single call.
+
+        Such call leaves nowhere to put the code checking a particular
+        argument.
+        """
+        for p in self.parameters:
+            if p.converter.alias_of is not None:
+                fail(f"Parameter {p.name!r} cannot be an alias: "
+                     f"the arguments are not parsed one by one.")
+            if p.deprecated_until is not None:
+                fail(f"Parameter {p.name!r} cannot be deprecated: "
+                     f"the arguments are not parsed one by one.")
+            p.converter.use_converter()
+
+    def render_alias(self, p: Parameter, argname_fmt: str,
+                     parsearg: str) -> str:
+        """Prepend the code checking that the alias is not in conflict.
+
+        Only one of the alternative names can be used in a call.
+        """
+        aliased = p.converter.alias_of
+        assert aliased is not None
+        i = self.parameters.index(aliased)
+        other = f"name ('{aliased.name}')"
+        arg = ''
+        if i < self.max_pos:
+            # The other name can be used for a positional argument too.
+            arg = f', {i} < nargs ? "position ({i + 1})" : "{other}"'
+            other = '%s'
+        return '\n'.join([
+            libclinic.normalize_snippet(f"""
+                if ({argname_fmt % i}) {{{{
+                    PyErr_Format(PyExc_TypeError,
+                            "argument for {self.func.name}() given by "
+                            "name ('{p.name}') and {other}"{arg});
+                    goto exit;
+                }}}}
+                """),
+            libclinic.normalize_snippet(parsearg),
+        ])
+
+    def render_deprecated(self, p: Parameter, parsearg: str) -> str:
+        """Prepend the code warning that the parameter is going away."""
+        assert p.deprecated_until is not None
+        major, minor = p.deprecated_until
+        aliased = p.converter.alias_of
+        instead = "" if aliased is None else f"Use {aliased.name!r} instead. "
+        message = (f"Passing the argument {p.name!r} to "
+                   f"{self.func.fulldisplayname}() is deprecated. {instead}"
+                   f"It will be removed in Python {major}.{minor}.")
+        code = [
+            libclinic.normalize_snippet("""
+                if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                        {}, 1))
+                {{{{
+                    goto exit;
+                }}}}
+                """.format(
+                    libclinic.wrapped_c_string_literal(
+                        message, width=64, subsequent_indent=24))),
+            libclinic.normalize_snippet(parsearg),
+        ]
+        return '\n'.join(code)
+
     def parse_general(self, clang: CLanguage) -> None:
         deprecated_positionals: dict[int, Parameter] = {}
         deprecated_keywords: dict[int, Parameter] = {}
@@ -1142,6 +1262,13 @@ class ParseArgsCodeGen:
                                     "parameter (after clang)")
                 displayname = p.get_displayname(i+1)
                 parsearg = p.converter.parse_arg(argname_fmt % i, displayname, limited_capi=self.limited_capi)
+                if parsearg is not None:
+                    # The conflict is reported before warning about the
+                    # deprecated name which caused it.
+                    if p.deprecated_until is not None:
+                        parsearg = self.render_deprecated(p, parsearg)
+                    if p.converter.alias_of is not None:
+                        parsearg = self.render_alias(p, argname_fmt, parsearg)
                 if parsearg is None:
                     parser_code = []
                     use_parser_code = False
@@ -1198,8 +1325,7 @@ class ParseArgsCodeGen:
             if self.varpos:
                 parser_code.append(libclinic.normalize_snippet(self._parse_vararg(), indent=4))
         else:
-            for parameter in self.parameters:
-                parameter.converter.use_converter()
+            self.use_converters()
 
             self.declarations = declare_parser(self.func, codegen=self.codegen,
                                                hasformat=True)
@@ -1347,19 +1473,20 @@ class ParseArgsCodeGen:
         self.methoddef_define = self.methoddef_define.replace('{methoddef_cast}', methoddef_cast)
         self.methoddef_define = self.methoddef_define.replace('{methoddef_cast_end}', methoddef_cast_end)
 
+        # The entry of an attribute is composed when all its accessors are
+        # known (see render_properties).
         self.methoddef_ifndef = ''
-        conditional = clang.cpp.condition()
+        conditional = self.func.condition
         if not conditional:
             self.cpp_if = self.cpp_endif = ''
         else:
             self.cpp_if = "#if " + conditional
             self.cpp_endif = "#endif /* " + conditional + " */"
 
-            if self.methoddef_define and self.codegen.add_ifndef_symbol(self.func.full_name):
-                if self.func.kind in ACCESSORS:
-                    self.methoddef_ifndef = GETSETDEF_PROTOTYPE_IFNDEF
-                else:
-                    self.methoddef_ifndef = METHODDEF_PROTOTYPE_IFNDEF
+            if (self.func.kind not in ACCESSORS
+                    and self.methoddef_define
+                    and self.codegen.add_ifndef_symbol(self.func.full_name)):
+                self.methoddef_ifndef = METHODDEF_PROTOTYPE_IFNDEF
 
     def finalize(self, clang: CLanguage) -> None:
         # add ';' to the end of self.parser_prototype and self.impl_prototype
@@ -1600,7 +1727,9 @@ class ParseArgsCodeGen:
         # previous call to parser_body. this is used for an awful hack.
         self.parser_body_fields: tuple[str, ...] = ()
 
-        if not self.parameters and not self.varpos and not self.var_keyword:
+        if self.func.kind in ACCESSORS:
+            self.parse_accessor()
+        elif not self.parameters and not self.varpos and not self.var_keyword:
             self.parse_no_args()
         elif self.use_meth_o():
             self.parse_one_arg()

@@ -91,9 +91,14 @@ _testcext_exec(PyObject *module)
     if (!result) return -1;
     Py_DECREF(result);
 
-    // test Py_BUILD_ASSERT() and Py_BUILD_ASSERT_EXPR()
+    // Test Py_BUILD_ASSERT() and Py_BUILD_ASSERT_EXPR()
     Py_BUILD_ASSERT(sizeof(int) == sizeof(unsigned int));
     assert(Py_BUILD_ASSERT_EXPR(sizeof(int) == sizeof(unsigned int)) == 0);
+
+    // Test Py_MIN(), Py_MAX(), Py_ABS()
+    assert(Py_MIN(5, 11) == 5);
+    assert(Py_MAX(5, 11) == 11);
+    assert(Py_ABS(-5) == 5);
 
     // Test Py_CLEAR(): use typeof()/__typeof__() if available, or memcpy()
     obj = Py_None;
@@ -139,6 +144,7 @@ static PySlot _testcext_slots[] = {
     PySlot_STATIC_DATA(Py_mod_doc, (void*)(char*)_testcext_doc),
     PySlot_FUNC(Py_mod_exec, (void*)_testcext_exec),
     PySlot_STATIC_DATA(Py_mod_methods, _testcext_methods),
+    PySlot_DATA(Py_mod_gil, Py_MOD_GIL_NOT_USED),
     PySlot_END,
 };
 

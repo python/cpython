@@ -3383,3 +3383,47 @@ Exceptions
    .. availability:: Windows
 
    .. versionadded:: 3.14
+
+
+Library version
+^^^^^^^^^^^^^^^
+
+The following constants are only available if :mod:`!ctypes` was built with
+libffi 3.5 or later, which is the first version providing this information.
+
+.. data:: LIBFFI_VERSION
+
+   The version string of the libffi library that was used for building
+   the module, like ``'3.5.2'``.
+   This may be different from the libffi library actually used at runtime,
+   which is available as :const:`libffi_version`.
+
+   .. versionadded:: next
+
+.. data:: libffi_version
+
+   The version string of the libffi library actually loaded by the interpreter.
+
+   .. versionadded:: next
+
+.. data:: LIBFFI_VERSION_INFO
+
+   A named tuple containing the three components of the libffi library
+   version that was used for building the module:
+   *major*, *minor*, and *patch*.
+   All values are integers.
+   The components can also be accessed by name,
+   so ``ctypes.LIBFFI_VERSION_INFO[0]`` is equivalent to
+   ``ctypes.LIBFFI_VERSION_INFO.major`` and so on.
+   This may be different from the libffi library actually used at runtime,
+   which is available as :const:`libffi_version_info`.
+
+   .. versionadded:: next
+
+.. data:: libffi_version_info
+
+   A named tuple containing the version of the libffi library
+   actually loaded by the interpreter,
+   with the same fields as :const:`LIBFFI_VERSION_INFO`.
+
+   .. versionadded:: next

@@ -47,6 +47,19 @@ typedef PyObject* (*TrampolineFunc)(int* success,
                                     PyObject* args,
                                     PyObject* kw);
 
+// Lets JS reach _PyRuntime without it being in -sEXPORTED_FUNCTIONS.
+EMSCRIPTEN_KEEPALIVE _PyRuntimeState *const _PyEM_runtime = &_PyRuntime;
+
+// Its table slot is taken over by the wasm-gc trampoline, so the table
+// never grows.
+static PyObject*
+trampoline_placeholder(int* success, PyCFunctionWithKeywords func,
+                       PyObject* self, PyObject* args, PyObject* kw)
+{
+    Py_FatalError("Emscripten trampoline slot was not set up");
+}
+EMSCRIPTEN_KEEPALIVE const TrampolineFunc _PyEM_trampoline_slot = trampoline_placeholder;
+
 /**
  * Backwards compatible trampoline works with all JS runtimes
  */
@@ -79,7 +92,9 @@ function getPyEMTrampolinePtr() {
     const trampolineInstance = new WebAssembly.Instance(trampolineModule, {
         env: { __indirect_function_table: wasmTable, memory: wasmMemory },
     });
-    return addFunction(trampolineInstance.exports.trampoline_call);
+    const slot = HEAPU32[__PyEM_trampoline_slot / 4];
+    wasmTable.set(slot, trampolineInstance.exports.trampoline_call);
+    return slot;
 }
 // We have to be careful to work correctly with memory snapshots -- the value of
 // _PyRuntimeState.emscripten_trampoline needs to reflect whether wasm-gc is
@@ -90,12 +105,12 @@ function getPyEMTrampolinePtr() {
 addOnPreRun(function setEmscriptenTrampoline() {
     const ptr = getPyEMTrampolinePtr();
     const offset = HEAP32[__PyEM_EMSCRIPTEN_TRAMPOLINE_OFFSET / 4];
-    HEAP32[(__PyRuntime + offset) / 4] = ptr;
+    HEAP32[(HEAPU32[__PyEM_runtime / 4] + offset) / 4] = ptr;
 });
 );
 
 EM_JS_DEPS(_PyEM_TrampolineCall,
-           "$wasmTable,$wasmMemory,$addFunction,$addOnPreRun");
+           "$wasmTable,$wasmMemory,$addOnPreRun");
 
 PyObject*
 _PyEM_TrampolineCall(PyCFunctionWithKeywords func,
