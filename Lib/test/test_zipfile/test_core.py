@@ -4337,6 +4337,29 @@ class OtherTests(unittest.TestCase):
             f.write('zipfile test data')
         self.assertRaises(ValueError, zipf.write, TESTFN)
 
+    def test_closed_zip_extract_raises_ValueError(self):
+        # gh-NNNNNN: testzip(), extract() and extractall() must reject a
+        # closed ZipFile regardless of the archive contents, and before
+        # touching the filesystem.
+        with zipfile.ZipFile(io.BytesIO(), mode="w") as zipf:
+            pass
+        self.assertRaises(ValueError, zipf.testzip)
+
+        with zipfile.ZipFile(io.BytesIO(), mode="w") as zipf:
+            zipf.writestr("dir/", b"")
+            zipf.writestr("file.txt", b"data")
+        self.assertRaises(ValueError, zipf.testzip)
+
+        with temp_dir() as dest:
+            self.assertRaises(ValueError, zipf.extract, "dir/", dest)
+            self.assertEqual(os.listdir(dest), [])
+            self.assertRaises(ValueError, zipf.extract, "file.txt", dest)
+            self.assertEqual(os.listdir(dest), [])
+            self.assertRaises(ValueError, zipf.extractall, dest)
+            self.assertEqual(os.listdir(dest), [])
+            self.assertRaises(ValueError, zipf.extractall, dest, ["dir/"])
+            self.assertEqual(os.listdir(dest), [])
+
     def test_bad_constructor_mode(self):
         """Check that bad modes passed to ZipFile constructor are caught."""
         self.assertRaises(ValueError, zipfile.ZipFile, TESTFN, "q")
