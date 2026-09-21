@@ -62,41 +62,91 @@ Summary -- Release highlights
 .. This section singles out the most important changes in Python 3.15.
    Brevity is key.
 
+Python 3.15 will be the latest stable release of the Python programming
+language, with a mix of changes to the language, the implementation,
+and the standard library.
+The biggest changes include
+:ref:`lazy imports <whatsnew315-lazy-imports>`,
+:ref:`frozendict <whatsnew315-frozendict>` and
+:ref:`sentinel <whatsnew315-sentinel>` builtins,
+:ref:`UTF-8 as the default encoding <whatsnew315-utf8-default>`,
+:ref:`unpacking in comprehensions <whatsnew315-unpacking-in-comprehensions>`,
+and a :ref:`stable ABI for free-threaded builds <whatsnew315-abi3t>`.
+
+The library changes include a new
+:ref:`profiling package <whatsnew315-profiling-package>` with
+:ref:`Tachyon <whatsnew315-sampling-profiler>`,
+a high-frequency statistical sampling profiler,
+:ref:`more color <whatsnew315-more-color>` in command-line output,
+as well as the usual deprecations and removals,
+and improvements in user-friendliness and correctness.
+
+This article doesn't attempt to provide a complete specification
+of all new features, but instead gives a convenient overview.
+For full details refer to the documentation,
+such as the :ref:`Library Reference <library-index>`
+and :ref:`Language Reference <reference-index>`.
+To understand the complete implementation and design rationale for a change,
+refer to the PEP for a particular new feature;
+but note that PEPs usually are not kept up-to-date
+once a feature has been fully implemented.
+
+See `Porting to Python 3.15`_ for guidance on upgrading from
+earlier versions of Python.
+
+--------------
 
 .. PEP-sized items next.
 
+Interpreter improvements:
+
+* :pep:`661`: :ref:`Add sentinel built-in type
+  <whatsnew315-sentinel>`
+* :pep:`686`: :ref:`Python now uses UTF-8 as the default encoding
+  <whatsnew315-utf8-default>`
+* :pep:`798`: :ref:`Unpacking in comprehensions
+  <whatsnew315-unpacking-in-comprehensions>`
 * :pep:`810`: :ref:`Explicit lazy imports for faster startup times
   <whatsnew315-lazy-imports>`
 * :pep:`814`: :ref:`Add frozendict built-in type
   <whatsnew315-frozendict>`
-* :pep:`661`: :ref:`Add sentinel built-in type
-  <whatsnew315-sentinel>`
+* :pep:`829`: :ref:`Package startup configuration files <whatsnew315-startup-files>`
+* :ref:`The experimental JIT compiler has been significantly upgraded <whatsnew315-jit>`
+* :ref:`Improved error messages <whatsnew315-improved-error-messages>`
+
+Significant improvements in the standard library:
+
 * :pep:`799`: :ref:`A dedicated profiling package for organizing Python
   profiling tools <whatsnew315-profiling-package>`
-* :pep:`799`: :ref:`Tachyon: High frequency statistical sampling profiler
+* :pep:`799`: :ref:`Tachyon: High-frequency statistical sampling profiler
   <whatsnew315-sampling-profiler>`
-* :pep:`831`: :ref:`Frame pointers are enabled by default for improved
-  system-level observability <whatsnew315-frame-pointers>`
-* :pep:`798`: :ref:`Unpacking in comprehensions
-  <whatsnew315-unpacking-in-comprehensions>`
-* :pep:`686`: :ref:`Python now uses UTF-8 as the default encoding
-  <whatsnew315-utf8-default>`
-* :pep:`829`: :ref:`Package startup configuration files <whatsnew315-startup-files>`
+* :ref:`More color <whatsnew315-more-color>`
+
+New typing features:
+
 * :pep:`728`: :ref:`TypedDict with typed extra items <whatsnew315-typeddict>`
 * :pep:`747`: :ref:`Annotating type forms with TypeForm
   <whatsnew315-typeform>`
 * :pep:`800`: :ref:`Disjoint bases in the type system <whatsnew315-disjoint-base>`
+
+C API improvements:
+
 * :pep:`782`: :ref:`A new PyBytesWriter C API to create a Python bytes object
   <whatsnew315-pybyteswriter>`
+* :pep:`788`: :ref:`Protection against finalization in the C API <whatsnew315-c-api-interpreter-finalization>`
 * :pep:`803`, :pep:`820 <820>`, :pep:`793 <793>`:
   :ref:`Stable ABI for free-threaded builds <whatsnew315-abi3t>` and
   related C API
-* :pep:`788`: :ref:`Protection against finalization in the C API <whatsnew315-c-api-interpreter-finalization>`
-* :ref:`The JIT compiler has been significantly upgraded <whatsnew315-jit>`
+
+Build changes:
+
+* :pep:`831`: :ref:`Frame pointers are enabled by default for improved
+  system-level observability <whatsnew315-frame-pointers>`
+
+Release changes:
+
 * :ref:`The official Windows 64-bit binaries now use the tail-calling interpreter
   <whatsnew315-windows-tail-calling-interpreter>`
-* :ref:`Improved error messages <whatsnew315-improved-error-messages>`
-* :ref:`More color <whatsnew315-more-color>`
 
 
 New features
@@ -205,9 +255,9 @@ as lazy, with the same semantics as the ``lazy`` keyword::
    import json     # lazy
    import os       # still eager
 
-.. seealso:: :pep:`810` for the full specification and rationale.
-
 (Contributed by Pablo Galindo Salgado and Dino Viehland in :gh:`142349`.)
+
+.. seealso:: :pep:`810` for the full specification and rationale.
 
 
 .. _whatsnew315-frozendict:
@@ -251,9 +301,9 @@ updated to ``isinstance(arg, (dict, frozendict))`` to accept also the
 :class:`!frozendict` type, or to ``isinstance(arg, collections.abc.Mapping)``
 to accept also other mapping types such as :class:`~types.MappingProxyType`.
 
-.. seealso:: :pep:`814` for the full specification and rationale.
-
 (Contributed by Victor Stinner and Donghee Na in :gh:`141510`.)
+
+.. seealso:: :pep:`814` for the full specification and rationale.
 
 
 .. _whatsnew315-sentinel:
@@ -267,7 +317,7 @@ objects preserve identity when copied, support use in type expressions with
 the ``|`` operator, and can be pickled when they are importable by module and
 name.
 
-(PEP by Tal Einat; contributed by Jelle Zijlstra in :gh:`148829`.)
+(Contributed by Jelle Zijlstra in :gh:`148829`; PEP 661 written by Tal Einat.)
 
 .. seealso:: :pep:`661` for further details.
 
@@ -287,19 +337,20 @@ profiling tools under a single, coherent namespace. This module contains:
 The ``cProfile`` module remains as an alias for backwards compatibility.
 The :mod:`profile` module is deprecated and will be removed in Python 3.17.
 
-.. seealso:: :pep:`799` for further details.
-
 (Contributed by Pablo Galindo and László Kiss Kollár in :gh:`138122`.)
+
+.. seealso:: :pep:`799` for further details.
 
 
 .. _whatsnew315-sampling-profiler:
 
-Tachyon: High frequency statistical sampling profiler
+Tachyon: High-frequency statistical sampling profiler
 -----------------------------------------------------
 
 .. image:: ../../Lib/profiling/sampling/_assets/tachyon-logo.png
    :alt: Tachyon profiler logo
    :align: center
+   :class: no-scaled-link
    :width: 200px
 
 A new statistical sampling profiler (Tachyon) has been added as
@@ -452,9 +503,10 @@ This change also extends to asynchronous generator expressions, such that, for
 example, ``(*a async for a in agen())`` is equivalent to ``(x async for a in
 agen() for x in a)``.
 
+(Contributed by Adam Hartz in :gh:`143055`.)
+
 .. seealso:: :pep:`798` for further details.
 
-(Contributed by Adam Hartz in :gh:`143055`.)
 
 .. _whatsnew315-startup-files:
 
@@ -562,9 +614,9 @@ In addition, APIs in the ``PyGILState`` family (most notably
 code will continue to work, but there will be no new ``PyGILState`` APIs
 in future versions of Python.
 
-.. seealso:: :pep:`788` for further details.
-
 (Contributed by Peter Bierma in :gh:`149101`.)
+
+.. seealso:: :pep:`788` for further details.
 
 
 .. _whatsnew315-improved-error-messages:
@@ -580,6 +632,9 @@ Improved error messages
   name, the error message will suggest accessing it via that inner attribute:
 
   .. code-block:: python
+
+     from dataclasses import dataclass
+     from math import pi
 
      @dataclass
      class Circle:
@@ -602,7 +657,7 @@ Improved error messages
   .. code-block:: pytb
 
      Traceback (most recent call last):
-       File "/home/pablogsal/github/python/main/lel.py", line 42, in <module>
+       File "example.py", line 18, in <module>
          print(container.area)
                ^^^^^^^^^^^^^^
      AttributeError: 'Container' object has no attribute 'area'. Did you mean '.inner.area' instead of '.area'?
@@ -694,12 +749,12 @@ Other language changes
   the :envvar:`PYTHONUTF8=0 <PYTHONUTF8>` environment variable or the
   :option:`-X utf8=0 <-X>` command-line option.
 
+  (Contributed by Adam Turner in :gh:`133711`; PEP 686 written by Inada Naoki.)
+
   .. seealso:: :pep:`686` for further details.
 
   .. _UTF-8: https://en.wikipedia.org/wiki/UTF-8
   .. _Unicode: https://home.unicode.org/
-
-  (Contributed by Adam Turner in :gh:`133711`; PEP 686 written by Inada Naoki.)
 
   .. _whatsnew315-color-interpreter-help:
 
@@ -884,7 +939,7 @@ Other language changes
   3.13, is no longer set or taken into consideration by the import system or
   standard library.
   Use :attr:`__spec__.cached <importlib.machinery.ModuleSpec.cached>` instead.
-  (Contributed by Brett Cannon in :gh:`97879`)
+  (Contributed by Brett Cannon in :gh:`97879`.)
 
   Note that the :attr:`~module.__loader__` and :attr:`~module.__package__`
   attributes are also deprecated and scheduled for removal.
@@ -1133,6 +1188,7 @@ dataclasses
 
 * Annotations for generated ``__init__`` methods no longer include internal
   type names.
+  (Contributed by David Ellis in :gh:`137530`.)
 
 
 dbm
@@ -1199,6 +1255,7 @@ gc
   of significant memory pressure in production environments,
   it has been reverted back to the generational GC from 3.13.
   This is the GC now used in Python 3.14.5 and later and Python 3.15.
+  (Contributed by Sergey Miryanov in :gh:`148726`.)
 
 
 hashlib
@@ -1245,7 +1302,7 @@ http.server
   HTTP responses.
   (Contributed by Anton I. Sipos in :gh:`135057`.)
 
-* Add a ``-H/--header`` option to the :program:`python -m http.server`
+* Add a :option:`-H/--header <http.server --header>` option to the :program:`python -m http.server`
   command-line interface to support custom headers in HTTP responses.
   (Contributed by Anton I. Sipos in :gh:`135057`.)
 
@@ -1278,7 +1335,7 @@ json
   :func:`~json.loads` functions:
   allow a callback for JSON literal array types to customize Python lists in
   the resulting decoded object. Passing combined :class:`frozendict` to
-  *object_pairs_hook* param and :class:`tuple` to ``array_hook`` will yield a
+  *object_pairs_hook* parameter and :class:`tuple` to *array_hook* will yield a
   deeply nested immutable Python structure representing the JSON data.
   (Contributed by Joao S. O. Bueno in :gh:`146440`.)
 
@@ -1313,8 +1370,10 @@ mimetypes
   John Franey
   in :gh:`144217`, :gh:`145720`, :gh:`140937`, :gh:`139959`, :gh:`145698`,
   :gh:`145718`, :gh:`145918`, and :gh:`144213`.)
+
 * Rename ``application/x-texinfo`` to ``application/texinfo``.
   (Contributed by Charlie Lin in :gh:`140165`.)
+
 * Changed the MIME type for ``.ai`` files to ``application/pdf``.
   (Contributed by Stan Ulbrych in :gh:`141239`.)
 
@@ -1434,6 +1493,7 @@ shelve
 * Added new :meth:`!reorganize` method to :mod:`shelve` used to recover unused free
   space previously occupied by deleted entries.
   (Contributed by Andrea Oliveri in :gh:`134004`.)
+
 * Add support for custom serialization and deserialization functions
   in the :mod:`shelve` module.
   (Contributed by Furkan Onder in :gh:`99631`.)
@@ -1459,7 +1519,7 @@ sqlite3
 
 * The :ref:`command-line interface <sqlite3-cli>` has several new features:
 
-  * SQL keyword completion on <tab>.
+  * SQL keyword completion on :kbd:`Tab`.
     (Contributed by Long Tan in :gh:`133393`.)
 
   .. _whatsnew315-color-sqlite3:
@@ -1469,7 +1529,7 @@ sqlite3
     details.
     (Contributed by Stan Ulbrych and Łukasz Langa in :gh:`133461`.)
 
-  * Table, index, trigger, view, column, function, and schema completion on <tab>.
+  * Table, index, trigger, view, column, function, and schema completion on :kbd:`Tab`.
     (Contributed by Long Tan in :gh:`136101`.)
 
 
@@ -1572,27 +1632,32 @@ tarfile
 * :func:`~tarfile.data_filter` now normalizes symbolic link targets in order to
   avoid path traversal attacks.
   (Contributed by Petr Viktorin in :gh:`127987` and :cve:`2025-4138`.)
+
 * :func:`~tarfile.TarFile.extractall` now skips fixing up directory attributes
   when a directory was removed or replaced by another kind of file.
   (Contributed by Petr Viktorin in :gh:`127987` and :cve:`2024-12718`.)
+
 * :func:`~tarfile.TarFile.extract` and :func:`~tarfile.TarFile.extractall`
   now (re-)apply the extraction filter when substituting a link (hard or
   symbolic) with a copy of another archive member, and when fixing up
   directory attributes.
   The former raises a new exception, :exc:`~tarfile.LinkFallbackError`.
   (Contributed by Petr Viktorin for :cve:`2025-4330` and :cve:`2024-12718`.)
+
 * :func:`~tarfile.TarFile.extract` and :func:`~tarfile.TarFile.extractall`
   no longer extract rejected members when
   :func:`~tarfile.TarFile.errorlevel` is zero.
   (Contributed by Matt Prodani and Petr Viktorin in :gh:`112887`
   and :cve:`2025-4435`.)
+
 * :func:`~tarfile.TarFile.extract` and :func:`~tarfile.TarFile.extractall`
   now replace slashes with backslashes in symlink targets on Windows to prevent
   creation of corrupted links.
   (Contributed by Christoph Walcher in :gh:`57911`.)
+
 * :func:`~tarfile.TarFile.gettarinfo` now replaces backslashes with slashes in
-  symlink targets on Windows to conform to the tar format standard. (Contributed
-  by Daniele Nicolodi in :gh:`151669`.)
+  symlink targets on Windows to conform to the tar format standard.
+  (Contributed by Daniele Nicolodi in :gh:`151669`.)
 
 
 threading
@@ -1715,6 +1780,7 @@ types
   as :class:`types.FrameLocalsProxyType`.
   This represents the type of the :attr:`frame.f_locals` attribute,
   as described in :pep:`667`.
+  (Contributed by Peter Bierma in :gh:`136492`.)
 
 
 typing
@@ -1778,6 +1844,7 @@ unicodedata
 -----------
 
 * The Unicode database has been updated to Unicode 17.0.0.
+  (Contributed by Benjamin Peterson in :gh:`138706`.)
 
 * Add :func:`unicodedata.isxidstart` and :func:`unicodedata.isxidcontinue`
   functions to check whether a character can start or continue a
@@ -1959,8 +2026,8 @@ csv
 
 .. _whatsnew315-jit:
 
-Upgraded JIT compiler
----------------------
+Upgraded experimental JIT compiler
+----------------------------------
 
 Results from the `pyperformance <https://github.com/python/pyperformance>`__
 benchmark suite report
@@ -2084,6 +2151,7 @@ collections.abc
 * :class:`collections.abc.ByteString` has been removed from
   ``collections.abc.__all__``. :class:`!collections.abc.ByteString` has been
   deprecated since Python 3.12, and is scheduled for removal in Python 3.17.
+  (Contributed by Alex Waygood in :gh:`118803`.)
 
 
 ctypes
@@ -2193,6 +2261,7 @@ typing
 * :class:`typing.ByteString` has been removed from ``typing.__all__``.
   :class:`!typing.ByteString` has been deprecated since Python 3.9, and is
   scheduled for removal in Python 3.17.
+  (Contributed by Alex Waygood in :gh:`118803`.)
 
 * The undocumented keyword argument syntax for creating
   :class:`~typing.NamedTuple` classes (for example,
@@ -2233,7 +2302,7 @@ Deprecated
 New deprecations
 ----------------
 
-* :mod:`ast`
+* :mod:`ast`:
 
   * Creating instances of abstract AST nodes (such as :class:`ast.AST`
     or :class:`!ast.expr`) is deprecated and will raise an error in Python 3.20.
@@ -2259,7 +2328,7 @@ New deprecations
 
     (Contributed by Nikita Sobolev in :gh:`136355`.)
 
-* :mod:`collections.abc`
+* :mod:`collections.abc`:
 
   * The following statements now cause ``DeprecationWarning``\ s to be emitted
     at runtime:
@@ -2272,6 +2341,7 @@ New deprecations
     argument to :func:`isinstance` or :func:`issubclass`, but warnings were not
     previously emitted if it was merely imported or accessed from the
     :mod:`!collections.abc` module.
+    (Contributed by Alex Waygood in :gh:`118803`.)
 
 
 * :mod:`hashlib`:
@@ -2304,6 +2374,7 @@ New deprecations
   * Altering :attr:`IMAP4.file <imaplib.IMAP4.file>` is now deprecated
     and slated for removal in Python 3.19. This property is now unused
     and changing its value does *not* explicitly close the current file.
+    (Contributed by Bénédikt Tran in :gh:`142307`.)
 
 
 * :mod:`profile`:
@@ -2360,6 +2431,7 @@ New deprecations
     was subclassed or used as the second argument to :func:`isinstance` or
     :func:`issubclass`, but warnings were not previously emitted if it was
     merely imported or accessed from the :mod:`!typing` module.
+    (Contributed by Alex Waygood in :gh:`118803`.)
 
   * It is deprecated to call :func:`isinstance` and :func:`issubclass` checks on
     protocol classes that were not explicitly decorated with :func:`!runtime_checkable`
@@ -2375,7 +2447,7 @@ New deprecations
     :class:`!webbrowser.MacOS` and scheduled for removal in Python 3.17.
     (Contributed by Jeff Lyon in :gh:`137586`.)
 
-* ``__version__``
+* ``__version__``:
 
   * The ``__version__``, ``version`` and ``VERSION`` attributes have been
     deprecated in these standard library modules and will be removed in
@@ -2488,8 +2560,7 @@ New features
 
 * :c:type:`PyCriticalSection` and related functions are added to the Stable
   ABI.
-
-  (Contributed in :gh:`149227`.)
+  (Contributed by Petr Viktorin in :gh:`149225`.)
 
 * Add a new :c:func:`PyImport_CreateModuleFromInitfunc` C API for creating
   a module from a *spec* and *initfunc*.
@@ -2541,7 +2612,7 @@ New features
   ``PyModExport`` :ref:`module export hook <extension-export-hook>` also
   use the new :c:type:`!PySlot` struct.
 
-  These following functions are :term:`soft deprecated`:
+  The following functions are :term:`soft deprecated`:
 
   * :c:func:`PyType_FromSpec`
   * :c:func:`PyType_FromSpecWithBases`
@@ -2550,7 +2621,6 @@ New features
   * :c:func:`PyModule_FromDefAndSpec`
   * :c:func:`PyModule_FromDefAndSpec2`
   * :c:func:`PyModule_ExecDef`
-
 
   The slots :c:macro:`Py_tp_bases` and :c:macro:`Py_tp_base` are now
   equivalent: they can be set either to a single type or a tuple of types.
@@ -2684,8 +2754,8 @@ Deprecated C APIs
   (Contributed by Victor Stinner in :gh:`129813`.)
 
 * :c:func:`!_PyObject_CallMethodId`, :c:func:`!_PyObject_GetAttrId` and
-  :c:func:`!_PyUnicode_FromId` are deprecated since 3.15 and will be removed in
-  3.20. Instead, use :c:func:`PyUnicode_InternFromString()` and cache the result in
+  :c:func:`!_PyUnicode_FromId` are deprecated since Python 3.15 and will be removed in
+  Python 3.20. Instead, use :c:func:`PyUnicode_InternFromString()` and cache the result in
   the module state, then call :c:func:`PyObject_CallMethod` or
   :c:func:`PyObject_GetAttr`.
   (Contributed by Victor Stinner in :gh:`141049`.)
@@ -2703,7 +2773,7 @@ Deprecated C APIs
   (Contributed by Sergey B Kirpichev in :gh:`128813`.)
 
 * :c:member:`~PyConfig.bytes_warning` is deprecated
-  since 3.15 and will be removed in 3.17.
+  since Python 3.15 and will be removed in Python 3.17.
   (Contributed by Nikita Sobolev in :gh:`136355`.)
 
 * :c:macro:`!Py_INFINITY` macro is :term:`soft deprecated`,
@@ -2729,7 +2799,7 @@ Deprecated C APIs
   (Contributed by Petr Viktorin in :gh:`146175`.)
 
 * :c:macro:`!Py_MATH_El` and :c:macro:`!Py_MATH_PIl` are deprecated
-  since 3.15 and will be removed in 3.20.
+  since Python 3.15 and will be removed in Python 3.20.
   (Contributed by Sergey B Kirpichev in :gh:`141004`.)
 
 
@@ -2757,6 +2827,7 @@ Build changes
   On Windows, use ``build.bat --pymalloc-hugepages``.
   At runtime, huge pages must be explicitly enabled by setting the
   :envvar:`PYTHON_PYMALLOC_HUGEPAGES` environment variable to ``1``.
+  (Contributed by Pablo Galindo Salgado in :gh:`144319`.)
 
 * Annotating anonymous mmap usage is now supported if the Linux kernel supports
   :manpage:`PR_SET_VMA_ANON_NAME <PR_SET_VMA(2const)>` (Linux 5.17 or newer).
@@ -2819,6 +2890,7 @@ that may require changes to your code.
 
 * :meth:`mmap.mmap.resize` has been removed on platforms that don't support the
   underlying syscall, instead of raising a :exc:`SystemError`.
+  (Contributed by An Long in :gh:`138205`.)
 
 * A resource warning is now emitted for an unclosed
   :func:`xml.etree.ElementTree.iterparse` iterator if it opened a file.
