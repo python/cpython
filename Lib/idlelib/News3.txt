@@ -1,6 +1,7 @@
 What's New in IDLE 3.15.0
 (since 3.14.0)
 Released on 2026-10-01
+=========================
 
 gh-94521: If no selection is made during copy/cut, the current line
 will copy/cut automatically.
@@ -59,6 +60,7 @@ as done for f-string prefixes.  Patch by Anuradha Agrawal.
 What's New in IDLE 3.14.0
 (since 3.13.0)
 Released on 2025-10-07
+=========================
 
 gh-129873: Simplify displaying the IDLE doc by only copying the text
 section of idle.html to idlelib/help.html. Patch by Stan Ulbrych.
