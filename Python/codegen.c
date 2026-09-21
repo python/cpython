@@ -3413,14 +3413,18 @@ codegen_boolop(compiler *c, expr_ty e)
 }
 
 static bool
-is_empty_starred_tuple(expr_ty elt)
+is_empty_starred_literal(expr_ty elt)
 {
     if (elt->kind != Starred_kind) {
         return false;
     }
     expr_ty value = elt->v.Starred.value;
-    return value->kind == Tuple_kind &&
-           asdl_seq_LEN(value->v.Tuple.elts) == 0;
+    return (value->kind == Tuple_kind &&
+            asdl_seq_LEN(value->v.Tuple.elts) == 0) ||
+           (value->kind == List_kind &&
+            asdl_seq_LEN(value->v.List.elts) == 0) ||
+           (value->kind == Dict_kind &&
+            asdl_seq_LEN(value->v.Dict.keys) == 0);
 }
 
 static int
@@ -3434,7 +3438,7 @@ starunpack_helper_impl(compiler *c, location loc,
     for (Py_ssize_t i = 0; i < end; i++) {
         expr_ty elt = asdl_seq_GET(elts, i);
         if (elt->kind == Starred_kind) {
-            if (is_empty_starred_tuple(elt)) {
+            if (is_empty_starred_literal(elt)) {
                 continue;
             }
             seen_star = 1;
@@ -3445,7 +3449,7 @@ starunpack_helper_impl(compiler *c, location loc,
     if (!seen_star && !big) {
         for (Py_ssize_t i = 0; i < end; i++) {
             expr_ty elt = asdl_seq_GET(elts, i);
-            if (is_empty_starred_tuple(elt)) {
+            if (is_empty_starred_literal(elt)) {
                 continue;
             }
             VISIT(c, expr, elt);
@@ -3469,9 +3473,9 @@ starunpack_helper_impl(compiler *c, location loc,
     }
     for (Py_ssize_t i = 0; i < end; i++) {
         expr_ty elt = asdl_seq_GET(elts, i);
-        
+
         if (elt->kind == Starred_kind) {
-            if (is_empty_starred_tuple(elt)) {
+            if (is_empty_starred_literal(elt)) {
                 continue;
             }
             if (sequence_built == 0) {
