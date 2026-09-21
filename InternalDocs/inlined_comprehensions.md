@@ -9,7 +9,8 @@ inlined; they still become their own code object.
 The resulting bytecode lives in the enclosing unit, but the comprehension
 still has its own locals: iteration variables must not leak into, or
 overwrite, names in the enclosing scope. The symbol table models that as a
-nested lexical scope; codegen then emits the comprehension in place.
+nested lexical scope; codegen then emits the comprehension inlined into its
+containing compilation unit.
 
 Which comprehensions are inlined
 --------------------------------
