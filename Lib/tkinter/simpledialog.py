@@ -742,7 +742,9 @@ def _temp_grab_focus(grab, focus=None, destroy=True):
         yield
 
     finally:
-        if old_focus and grab.getboolean(tk.call('winfo', 'exists', old_focus)):
+        # The old windows and even the whole application can be destroyed
+        # by now, so catch errors.
+        if old_focus:
             try:
                 tk.call('focus', old_focus)
             except TclError:
@@ -756,15 +758,17 @@ def _temp_grab_focus(grab, focus=None, destroy=True):
                 grab.destroy()
             except TclError:
                 pass
-        if (old_grab and grab.getboolean(tk.call('winfo', 'exists', old_grab))
-                and grab.getboolean(tk.call('winfo', 'ismapped', old_grab))):
-            # The "grab" command will fail if another application
-            # already holds the grab.  So catch it.
+        if old_grab:
+            # Do not restore the grab if the window is no longer mapped:
+            # a local grab on an unmapped window would block the application.
+            # The "grab" command will fail if another application already
+            # holds the grab on a window with the same name.  So catch it.
             try:
-                if old_status == 'global':
-                    tk.call('grab', 'set', '-global', old_grab)
-                else:
-                    tk.call('grab', 'set', old_grab)
+                if grab.getboolean(tk.call('winfo', 'ismapped', old_grab)):
+                    if old_status == 'global':
+                        tk.call('grab', 'set', '-global', old_grab)
+                    else:
+                        tk.call('grab', 'set', old_grab)
             except TclError:
                 pass
 
