@@ -12,6 +12,7 @@ terms of the MIT license. A copy of the license can be found in the file
 #include "mimalloc/atomic.h"
 #include "mimalloc/prim.h"
 #include <stdio.h>   // fputs, stderr
+#include <bcrypt.h>  // NTSTATUS
 
 
 //---------------------------------------------
@@ -377,6 +378,7 @@ size_t _mi_prim_numa_node(void) {
 }
 
 size_t _mi_prim_numa_node_count(void) {
+#ifdef MS_WINDOWS_DESKTOP
   ULONG numa_max = 0;
   GetNumaHighestNodeNumber(&numa_max);
   // find the highest node number that has actual processors assigned to it. Issue #282
@@ -399,6 +401,9 @@ size_t _mi_prim_numa_node_count(void) {
     numa_max--;
   }
   return ((size_t)numa_max + 1);
+#else
+  return ((size_t)1);
+#endif
 }
 
 

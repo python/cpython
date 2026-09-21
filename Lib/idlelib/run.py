@@ -1,6 +1,6 @@
 """ idlelib.run
 
-Simplified, pyshell.ModifiedInterpreter spawns a subprocess with
+Simplified: pyshell.ModifiedInterpreter spawns a subprocess with
 f'''{sys.executable} -c "__import__('idlelib.run').run.main()"'''
 '.run' is needed because __import__ returns idlelib, not idlelib.run.
 """
@@ -26,11 +26,12 @@ from idlelib import iomenu  # encoding
 from idlelib import rpc  # multiple objects
 from idlelib import stackviewer  # StackTreeItem
 from idlelib import util  # fix_scaling
-import __main__
+import __main__  # self.locals in Executive.__init__.
 
 import tkinter  # Use tcl and, if startup fails, messagebox.
-if not hasattr(sys.modules['idlelib.run'], 'firstrun'):
-    # Undo modifications of tkinter by idlelib imports; see bpo-25507.
+
+def scrub_tkinter_submodules():  # Call in main when starting user process.
+    # Undo modifications of tkinter by idlelib imports; see gh-69693.
     # Which of these submodules got imported (and thus added as a tkinter
     # attribute) depends on what idlelib pulled in, so tolerate missing
     # ones rather than assuming a fixed set; see gh-59396.
@@ -42,8 +43,6 @@ if not hasattr(sys.modules['idlelib.run'], 'firstrun'):
             del sys.modules['tkinter.' + mod]
         except (AttributeError, KeyError):
             pass
-    # Avoid AttributeError if run again; see bpo-37038.
-    sys.modules['idlelib.run'].firstrun = False
 
 LOCALHOST = '127.0.0.1'
 
@@ -139,6 +138,9 @@ def main(del_exitfunc=False):
     register and unregister themselves.
 
     """
+
+    scrub_tkinter_submodules()
+
     global exit_now
     global quitting
     global no_exitfunc
@@ -705,8 +707,7 @@ class Executive:
         item = stackviewer.StackTreeItem(exc, flist)
         return debugobj_r.remote_object_tree_item(item)
 
-
-if __name__ == '__main__':
+if __name__ == '__main__':  # __name__ is 'idlelib.run' in user subprocess.
     from unittest import main
     main('idlelib.idle_test.test_run', verbosity=2)
 

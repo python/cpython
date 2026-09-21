@@ -15,12 +15,14 @@ import os.path
 import re
 import sys
 import unittest
+import warnings
 
 test_tools.skip_if_missing('clinic')
 with test_tools.imports_under_tool('clinic'):
     import libclinic
     from libclinic import ClinicError, unspecified, NULL, fail
-    from libclinic.converters import int_converter, str_converter, self_converter
+    from libclinic.converters import (
+        int_converter, object_converter, str_converter, self_converter)
     from libclinic.function import (
         Module, Class, Function, FunctionKind, Parameter,
         permute_optional_groups, permute_right_option_groups,
@@ -347,7 +349,7 @@ class ClinicWholeFileTest(TestCase):
                 /
             [clinic start generated code]*/
         """
-        self.expect_failure(block, err)
+        self.expect_failure(block, err, lineno=2)
 
     def test_star_after_vararg(self):
         err = "'my_test_func' uses '*' more than once."
@@ -644,7 +646,9 @@ class ClinicWholeFileTest(TestCase):
              - 'methoddef_define'
              - 'impl_prototype'
              - 'parser_prototype'
+             - 'parser_helper'
              - 'parser_definition'
+             - 'vectorcall_definition'
              - 'cpp_endif'
              - 'methoddef_ifndef'
              - 'impl_definition'
@@ -804,6 +808,222 @@ class ClinicWholeFileTest(TestCase):
             [clinic start generated code]*/
         """
         self.expect_failure(block, err, lineno=4)
+
+    def test_getset_in_ifdef(self):
+        block = """
+            /*[clinic input]
+            output everything block
+            output methoddef_ifndef buffer
+            class Foo "FooObject *" "&Foo_Type"
+            [clinic start generated code]*/
+            #ifdef CONDITION
+            /*[clinic input]
+            @getter
+            Foo.property
+            [clinic start generated code]*/
+            /*[clinic input]
+            @setter
+            Foo.property
+                value: object
+            [clinic start generated code]*/
+            #endif
+            /*[clinic input]
+            dump buffer
+            [clinic start generated code]*/
+        """
+        generated = self.clinic.parse(dedent(block))
+        self.assertIn("#if defined(CONDITION)", generated)
+        # The getset is undefined if the condition is false.
+        self.assertIn("#else\n"
+                      "#  define FOO_PROPERTY_GETSETDEF\n"
+                      "#endif",
+                      generated)
+
+    def test_getset_partially_in_ifdef(self):
+        block = """
+            /*[clinic input]
+            output everything block
+            output methoddef_ifndef buffer
+            class Foo "FooObject *" "&Foo_Type"
+            [clinic start generated code]*/
+            #ifdef CONDITION
+            /*[clinic input]
+            @getter
+            Foo.property
+            [clinic start generated code]*/
+            #endif
+            /*[clinic input]
+            @setter
+            Foo.property
+                value: object
+            [clinic start generated code]*/
+            /*[clinic input]
+            dump buffer
+            [clinic start generated code]*/
+        """
+        generated = self.clinic.parse(dedent(block))
+        # Only the conditional getter announces itself.
+        self.assertIn("#if defined(CONDITION)\n"
+                      "\n"
+                      "#define FOO_PROPERTY_GETTER Foo_property_get\n",
+                      generated)
+        self.assertIn("#define FOO_PROPERTY_SETTER Foo_property_set\n"
+                      "#if defined(FOO_PROPERTY_GETTER) "
+                      "|| defined(FOO_PROPERTY_SETTER)",
+                      generated)
+        self.assertIn('#  define FOO_PROPERTY_GETSETDEF {"property", '
+                      '(getter)FOO_PROPERTY_GETTER, '
+                      '(setter)FOO_PROPERTY_SETTER, FOO_PROPERTY_DOCSTR},',
+                      generated)
+
+    def test_getset_several_implementations(self):
+        block = """
+            /*[clinic input]
+            output everything block
+            output methoddef_ifndef buffer
+            class Foo "FooObject *" "&Foo_Type"
+            [clinic start generated code]*/
+            #ifdef CONDITION
+            /*[clinic input]
+            @getter
+            Foo.property as foo_property_special
+            [clinic start generated code]*/
+            #else
+            /*[clinic input]
+            @getter
+            Foo.property as foo_property_generic
+            [clinic start generated code]*/
+            #endif
+            /*[clinic input]
+            dump buffer
+            [clinic start generated code]*/
+        """
+        # Implementations guarded by preprocessor conditions can share the
+        # entry; which of them is compiled is only known to the preprocessor.
+        generated = self.clinic.parse(dedent(block))
+        self.assertIn("#if defined(CONDITION)\n"
+                      "\n"
+                      "#define FOO_PROPERTY_GETTER "
+                      "foo_property_special_get\n",
+                      generated)
+        self.assertIn("#if !defined(CONDITION)\n"
+                      "\n"
+                      "#define FOO_PROPERTY_GETTER "
+                      "foo_property_generic_get\n",
+                      generated)
+
+    def test_getset_after_dump(self):
+        block = """
+            /*[clinic input]
+            output everything block
+            output methoddef_ifndef buffer
+            class Foo "FooObject *" "&Foo_Type"
+            [clinic start generated code]*/
+            /*[clinic input]
+            @getter
+            Foo.property
+            [clinic start generated code]*/
+            /*[clinic input]
+            dump buffer
+            [clinic start generated code]*/
+            /*[clinic input]
+            @setter
+            Foo.property
+                value: object
+            [clinic start generated code]*/
+        """
+        err = ("All accessors of 'Foo.property' must be defined before "
+               "its PyGetSetDef entry is dumped")
+        self.expect_failure(block, err, lineno=15)
+
+    def test_setter_deletion_check(self):
+        block = """
+            /*[clinic input]
+            output everything block
+            class Foo "FooObject *" "&Foo_Type"
+            [clinic start generated code]*/
+            /*[clinic input]
+            @setter
+            Foo.property
+                value: object
+            [clinic start generated code]*/
+        """
+        generated = self.clinic.parse(dedent(block))
+        self.assertIn("if (arg == NULL) {", generated)
+        self.assertIn("\"attribute 'property' of '%.100s' objects "
+                      "cannot be deleted\"", generated)
+
+    def test_deleter(self):
+        # @deleter means that the setter is called with NULL to delete
+        # the attribute, so it checks the value itself.
+        block = """
+            /*[clinic input]
+            output everything block
+            class Foo "FooObject *" "&Foo_Type"
+            [clinic start generated code]*/
+            /*[clinic input]
+            @setter
+            @deleter
+            Foo.property
+                value: object = NULL
+            [clinic start generated code]*/
+        """
+        generated = self.clinic.parse(dedent(block))
+        self.assertNotIn("if (arg == NULL) {", generated)
+
+    def test_getset_duplicate(self):
+        # Only a setter defines the new value.
+        for annotation, parameter, err in (
+            ("@getter", "", "Cannot apply @getter to 'Foo.property' twice"),
+            ("@setter", "value: object",
+             "The setter of 'Foo.property' is already defined"),
+        ):
+            with self.subTest(annotation=annotation):
+                self.clinic = _make_clinic(filename="test.c")
+                block = f"""
+                    /*[clinic input]
+                    class Foo "FooObject *" "&Foo_Type"
+                    [clinic start generated code]*/
+                    /*[clinic input]
+                    {annotation}
+                    Foo.property
+                        {parameter}
+                    [clinic start generated code]*/
+                    /*[clinic input]
+                    {annotation}
+                    Foo.property
+                        {parameter}
+                    [clinic start generated code]*/
+                """
+                self.expect_failure(block, err, lineno=11)
+
+    def test_getset_different_c_basename(self):
+        block = """
+            /*[clinic input]
+            output everything block
+            output methoddef_ifndef buffer
+            class Foo "FooObject *" "&Foo_Type"
+            [clinic start generated code]*/
+            /*[clinic input]
+            @getter
+            Foo.property as foo_get
+            [clinic start generated code]*/
+            /*[clinic input]
+            @setter
+            Foo.property as foo_set
+                value: object
+            [clinic start generated code]*/
+            /*[clinic input]
+            dump buffer
+            [clinic start generated code]*/
+        """
+        # The accessors are identified by the Python name, not by the
+        # C basename.
+        generated = self.clinic.parse(dedent(block))
+        self.assertIn('#define FOO_PROPERTY_GETSETDEF {"property", '
+                      '(getter)foo_get_get, (setter)foo_set_set, NULL},',
+                      generated)
+
 
 class ParseFileUnitTest(TestCase):
     def expect_parsing_failure(
@@ -2207,6 +2427,128 @@ class ClinicParserTest(TestCase):
         err = "Function 'bar': '/ [from 3.14]' must precede '/ [from 3.15]'"
         self.expect_failure(block, err, lineno=5)
 
+    def test_alias(self):
+        function = self.parse_function("""
+            module foo
+            foo.bar
+                a: int
+                *
+                b as a: int = 0
+            Docstring.
+        """)
+        _, a, b = function.parameters.values()
+        self.assertIsNone(a.converter.alias_of)
+        self.assertIs(b.converter.alias_of, a)
+        self.assertEqual(function.docstring.splitlines()[0],
+                         "bar($module, /, a)")
+
+    def test_alias_must_be_keyword_only(self):
+        block = """
+            module foo
+            foo.bar
+                a: int
+                b as a: int = 0
+            Docstring.
+        """
+        err = "Alias 'b' of the parameter 'a' must be keyword-only."
+        self.expect_failure(block, err, lineno=3)
+
+    def test_alias_must_have_default(self):
+        block = """
+            module foo
+            foo.bar
+                a: int
+                *
+                b as a: int
+            Docstring.
+        """
+        err = "Alias 'b' of the parameter 'a' must have a default value."
+        self.expect_failure(block, err, lineno=4)
+
+    def test_alias_deprecated(self):
+        function = self.parse_function("""
+            module foo
+            foo.bar
+                a: int
+                *
+                [until 3.14] b as a: int = 0
+            Docstring.
+        """)
+        _, a, b = function.parameters.values()
+        self.assertIsNone(a.deprecated_until)
+        self.assertEqual(b.deprecated_until, (3, 14))
+
+    def test_deprecated_last_positional_only_parameters(self):
+        function = self.parse_function("""
+            module foo
+            foo.bar
+                a: int = 0
+                [until 3.14] b: int = 0
+                [until 3.14] c: int = 0
+                /
+                d: int = 0
+            Docstring.
+        """)
+        _, a, b, c, d = function.parameters.values()
+        self.assertIsNone(a.deprecated_until)
+        self.assertEqual(b.deprecated_until, (3, 14))
+        self.assertEqual(c.deprecated_until, (3, 14))
+        self.assertIsNone(d.deprecated_until)
+
+    def test_deprecated_non_last_positional_only_parameter(self):
+        block = """
+            module foo
+            foo.bar
+                [until 3.14] a: int = 0
+                b: int = 0
+                /
+            Docstring.
+        """
+        err = ("Parameter 'b' cannot follow the deprecated parameter 'a': "
+               "only the last positional-only parameters can be deprecated.")
+        self.expect_failure(block, err, lineno=4)
+
+    def test_deprecated_non_positional_only_parameters(self):
+        # The following parameters can still be passed by keyword.
+        function = self.parse_function("""
+            module foo
+            foo.bar
+                [until 3.14] a: int = 0
+                b: int = 0
+                *
+                [until 3.14] c: int = 0
+                d: int = 0
+            Docstring.
+        """)
+        _, a, b, c, d = function.parameters.values()
+        self.assertEqual(a.deprecated_until, (3, 14))
+        self.assertIsNone(b.deprecated_until)
+        self.assertEqual(c.deprecated_until, (3, 14))
+        self.assertIsNone(d.deprecated_until)
+
+    def test_deprecated_parameter_without_default(self):
+        block = """
+            module foo
+            foo.bar
+                [until 3.14] a: int
+            Docstring.
+        """
+        err = "Deprecated parameter 'a' must have a default value."
+        self.expect_failure(block, err, lineno=2)
+
+    def test_deprecated_invalid_format(self):
+        block = """
+            module foo
+            foo.bar
+                [until 3] a: int = 0
+            Docstring.
+        """
+        err = (
+            "Function 'bar': expected format '[until major.minor]' "
+            "where 'major' and 'minor' are integers; got '3'"
+        )
+        self.expect_failure(block, err, lineno=2)
+
     def test_single_slash(self):
         block = """
             module foo
@@ -2662,28 +3004,131 @@ class ClinicParserTest(TestCase):
         self.expect_failure(block, expected_error, lineno=1)
 
     def test_invalid_getset(self):
-        annotations = ["@getter", "@setter"]
-        for annotation in annotations:
-            with self.subTest(annotation=annotation):
-                block = f"""
-                    module foo
-                    class Foo "" ""
-                    {annotation}
-                    Foo.property -> int
-                """
-                expected_error = f"{annotation} method cannot define a return type"
-                self.expect_failure(block, expected_error, lineno=3)
+        block = """
+            module foo
+            class Foo "" ""
+            @setter
+            Foo.property -> int
+        """
+        expected_error = "@setter methods cannot define a return type"
+        self.expect_failure(block, expected_error, lineno=3)
 
+        block = """
+           module foo
+           class Foo "" ""
+           @getter
+           Foo.property
+               obj: int
+               /
+        """
+        expected_error = "@getter methods cannot define parameters"
+        self.expect_failure(block, expected_error)
+
+        block = """
+           module foo
+           class Foo "" ""
+           @setter
+           Foo.property
+               obj: int
+               value: int
+               /
+        """
+        expected_error = "@setter methods must define exactly one parameter"
+        self.expect_failure(block, expected_error)
+
+    def test_setter_value_default(self):
+        block = """
+            module m
+            class Foo "" ""
+            @setter
+            Foo.property
+                value: object = None
+        """
+        expected_error = "the value of @setter cannot have a default value"
+        self.expect_failure(block, expected_error)
+
+        block = """
+            module m
+            class Foo "" ""
+            @setter
+            @deleter
+            Foo.property
+                value: object
+        """
+        expected_error = ("the value of @setter with @deleter must have "
+                          "a default value, used to delete the attribute")
+        self.expect_failure(block, expected_error)
+
+        block = """
+            module m
+            class Foo "" ""
+            @setter
+            @deleter
+            Foo.property
+                value: object = None
+        """
+        expected_error = ("the value of @setter with @deleter can only have "
+                          "NULL as a default value")
+        self.expect_failure(block, expected_error)
+
+    def test_setter_value_kind(self):
+        expected_error = "the value of @setter must be a positional parameter"
+        block = """
+            module m
+            class Foo "" ""
+            @setter
+            Foo.property
+
+                *
+                value: object
+        """
+        self.expect_failure(block, expected_error)
+
+        for parameter in "*args: tuple", "**kwargs: dict":
+            with self.subTest(parameter=parameter):
                 block = f"""
-                   module foo
-                   class Foo "" ""
-                   {annotation}
-                   Foo.property
-                       obj: int
-                       /
+                    module m
+                    class Foo "" ""
+                    @setter
+                    Foo.property
+
+                        {parameter}
                 """
-                expected_error = f"{annotation} methods cannot define parameters"
                 self.expect_failure(block, expected_error)
+
+    def test_setter_implicit_parameter(self):
+        function = self.parse_function("""
+            module foo
+            class Foo "" ""
+            @setter
+            Foo.property
+        """, signatures_in_block=3, function_index=2)
+        self.assertEqual(function.kind, FunctionKind.SETTER)
+        value = function.parameters['value']
+        self.assertIsInstance(value.converter, object_converter)
+        self.assertIs(value.default, unspecified)
+
+    def test_setter_and_deleter_implicit_parameter(self):
+        function = self.parse_function("""
+            module foo
+            class Foo "" ""
+            @setter
+            @deleter
+            Foo.property
+        """, signatures_in_block=3, function_index=2)
+        self.assertEqual(function.kind, FunctionKind.SETTER_AND_DELETER)
+        value = function.parameters['value']
+        self.assertIsInstance(value.converter, object_converter)
+        self.assertIs(value.default, NULL)
+
+    def test_getter_return_converter(self):
+        function = self.parse_function("""
+            module foo
+            class Foo "" ""
+            @getter
+            Foo.property -> int
+        """, signatures_in_block=3, function_index=2)
+        self.assertEqual(function.return_converter.type, "int")
 
     def test_setter_docstring(self):
         block = """
@@ -2697,7 +3142,7 @@ class ClinicParserTest(TestCase):
             bar
             [clinic start generated code]*/
         """
-        expected_error = "docstrings are only supported for @getter, not @setter"
+        expected_error = "docstrings are only supported for @getter"
         self.expect_failure(block, expected_error)
 
     def test_duplicate_getset(self):
@@ -2725,8 +3170,40 @@ class ClinicParserTest(TestCase):
                     {dup[1]}
                     Foo.property -> int
                 """
-                expected_error = "Cannot apply both @getter and @setter to the same function!"
+                expected_error = (f"Can't set {dup[1]}, function is not "
+                                  f"a normal callable")
                 self.expect_failure(block, expected_error, lineno=3)
+
+    def test_deleter_without_setter(self):
+        block = """
+            module foo
+            class Foo "" ""
+            @deleter
+            Foo.property
+        """
+        expected_error = "Can't set @deleter, @setter is not applied"
+        self.expect_failure(block, expected_error, lineno=2)
+
+        block = """
+            module foo
+            class Foo "" ""
+            @deleter
+            @setter
+            Foo.property
+        """
+        self.expect_failure(block, expected_error, lineno=2)
+
+    def test_deleter_twice(self):
+        block = """
+            module foo
+            class Foo "" ""
+            @setter
+            @deleter
+            @deleter
+            Foo.property
+        """
+        expected_error = "Cannot apply @deleter twice to the same function!"
+        self.expect_failure(block, expected_error, lineno=4)
 
     def test_getset_no_class(self):
         for annotation in "@getter", "@setter":
@@ -2748,6 +3225,112 @@ class ClinicParserTest(TestCase):
             m.fn
         """
         self.expect_failure(block, err, lineno=2)
+
+    def test_duplicate_vectorcall(self):
+        err = "Called @vectorcall twice"
+        block = """
+            module m
+            class Foo "FooObject *" ""
+            @vectorcall
+            @vectorcall
+            Foo.__init__
+        """
+        self.expect_failure(block, err, lineno=3)
+
+    def test_vectorcall_on_regular_method(self):
+        err = "@vectorcall can only be used with __init__ and __new__ methods"
+        block = """
+            module m
+            class Foo "FooObject *" ""
+            @vectorcall
+            Foo.some_method
+        """
+        self.expect_failure(block, err, lineno=3)
+
+    def test_vectorcall_on_module_function(self):
+        err = "@vectorcall can only be used with __init__ and __new__ methods"
+        block = """
+            module m
+            @vectorcall
+            m.fn
+        """
+        self.expect_failure(block, err, lineno=2)
+
+    def test_vectorcall_on_init(self):
+        block = """
+            module m
+            class Foo "FooObject *" "Foo_Type"
+            @vectorcall
+            Foo.__init__
+                iterable: object = NULL
+                /
+        """
+        func = self.parse_function(block, signatures_in_block=3,
+                                   function_index=2)
+        self.assertTrue(func.vectorcall)
+
+    def test_vectorcall_on_new(self):
+        block = """
+            module m
+            class Foo "FooObject *" "Foo_Type"
+            @classmethod
+            @vectorcall
+            Foo.__new__
+                x: object = NULL
+                /
+        """
+        func = self.parse_function(block, signatures_in_block=3,
+                                   function_index=2)
+        self.assertTrue(func.vectorcall)
+
+    def test_vectorcall_takes_no_arguments(self):
+        err = "at_vectorcall() takes 1 positional argument but 2 were given"
+        block = """
+            module m
+            class Foo "FooObject *" "Foo_Type"
+            @vectorcall bogus=True
+            Foo.__init__
+        """
+        self.expect_failure(block, err, lineno=2)
+
+    def test_vectorcall_without_type_object(self):
+        err = "@vectorcall requires the type object of 'Foo'"
+        block = """
+            module m
+            class Foo "FooObject *" ""
+            @vectorcall
+            Foo.__init__
+        """
+        self.expect_failure(block, err, lineno=3)
+
+    def test_vectorcall_unsupported_converter(self):
+        # str(encoding=...) has no parse_arg() implementation.
+        err = ("@vectorcall requires all converters to support "
+               "parse_arg(); parameter 's' does not")
+        block = """
+            module m
+            class Foo "FooObject *" "Foo_Type"
+            @classmethod
+            @vectorcall
+            Foo.__new__
+                s: str(encoding="utf-8")
+                /
+        """
+        self.expect_failure(block, err, lineno=6)
+
+    def test_vectorcall_with_option_groups(self):
+        err = "@vectorcall does not support optional groups"
+        block = """
+            module m
+            class Foo "FooObject *" "Foo_Type"
+            @vectorcall
+            Foo.__init__
+                [
+                a: object
+                ]
+                /
+        """
+        self.expect_failure(block, err, lineno=7)
 
     def test_unused_param(self):
         block = self.parse("""
@@ -2925,8 +3508,21 @@ class ClinicParserTest(TestCase):
             m.func
             docstring1
             docstring2
+            docstring3
         """
+        # The line which should have been left blank.
         self.expect_failure(block, err, lineno=3)
+
+    def test_state_func_docstring_long_summary(self):
+        err = "Summary line for 'm.func' is too long!"
+        block = f"""
+            module m
+            m.func
+            {'x' * 100}
+
+            Body.
+        """
+        self.expect_failure(block, err, lineno=2)
 
     def test_state_func_docstring_only_one_param_template(self):
         err = "You may not specify {parameters} more than once in a docstring!"
@@ -2939,6 +3535,7 @@ class ClinicParserTest(TestCase):
                 {parameters}
             these are the params again:
                 {parameters}
+            and this is the end of the docstring
         """
         self.expect_failure(block, err, lineno=7)
 
@@ -3075,6 +3672,64 @@ class ClinicExternalTest(TestCase):
         # Don't change the file modification time
         # if the content does not change
         self.assertEqual(pre_mtime, post_mtime)
+
+    TOUCH_CODE = dedent("""
+        /*[clinic input]
+        module m
+        [clinic start generated code]*/
+
+        /*[clinic input]
+        output everything file
+        m.func
+            a: int
+            /
+
+        Docstring.
+        [clinic start generated code]*/
+    """)
+
+    def test_touch_source(self):
+        # gh-64595: The build system does not know that the source file
+        # depends on the file generated from it, so the modification
+        # times are updated to force the recompilation.
+        def mtimes():
+            return os.stat(fn).st_mtime_ns, os.stat(dest).st_mtime_ns
+
+        def set_mtimes(source, generated):
+            os.utime(fn, ns=(source, source))
+            os.utime(dest, ns=(generated, generated))
+
+        with os_helper.temp_dir() as tmp_dir:
+            fn = os.path.join(tmp_dir, "test.c")
+            with open(fn, "w", encoding="utf-8") as f:
+                f.write(self.TOUCH_CODE)
+            dest = self.dest_file(fn)
+            self.expect_success(fn)
+            source_mtime, generated_mtime = mtimes()
+            self.assertGreaterEqual(generated_mtime, source_mtime)
+
+            # The generated file is changed, so both files are touched.
+            os.unlink(dest)
+            old = source_mtime - 10**10
+            os.utime(fn, ns=(old, old))
+            self.expect_success(fn)
+            source_mtime, generated_mtime = mtimes()
+            self.assertGreater(source_mtime, old)
+            self.assertGreaterEqual(generated_mtime, source_mtime)
+
+            # Nothing is changed, but the source file is newer, so only
+            # the generated file is touched.
+            set_mtimes(source_mtime - 10**10, source_mtime - 2 * 10**10)
+            old_source_mtime = os.stat(fn).st_mtime_ns
+            self.expect_success(fn)
+            source_mtime, generated_mtime = mtimes()
+            self.assertEqual(source_mtime, old_source_mtime)
+            self.assertGreaterEqual(generated_mtime, source_mtime)
+
+            # Nothing is changed and the generated file is newer,
+            # so no file is touched.
+            self.expect_success(fn)
+            self.assertEqual(mtimes(), (source_mtime, generated_mtime))
 
     def test_cli_force(self):
         invalid_input = dedent("""
@@ -3351,18 +4006,23 @@ class ClinicExternalTest(TestCase):
         """)
         expected_converters = (
             "bool",
+            "BOOL",
             "byte",
             "char",
             "defining_class",
             "double",
+            "DWORD",
             "fildes",
             "float",
+            "HANDLE",
             "int",
             "long",
             "long_long",
             "object",
+            "pid_t",
             "Py_buffer",
             "Py_complex",
+            "Py_off_t",
             "Py_ssize_t",
             "Py_UNICODE",
             "PyByteArrayObject",
@@ -3470,6 +4130,163 @@ class ClinicExternalTest(TestCase):
             with open(fn, "w", encoding="utf-8") as f:
                 f.write("/*[clinic input]\n[clinic start generated code]*/\n")
             self.assertEqual(self.expect_success("--converters", fn), "")
+
+    LIST_CODE = dedent("""
+        /*[clinic input]
+        func
+            a: int
+            /
+
+        Docstring.
+        [clinic start generated code]*/
+
+        /*[clinic input]
+        cloned = func
+        [clinic start generated code]*/
+
+        /*[clinic input]
+        module m
+        class m.C "void *" ""
+        class m.C.D "void *" ""
+        [clinic start generated code]*/
+
+        /*[clinic input]
+        m.C.meth
+            self: self(type="void *")
+            a: object
+            [
+            b: object
+            ]
+            /
+
+        Docstring.
+        [clinic start generated code]*/
+
+        /*[clinic input]
+        @classmethod
+        m.C.__new__
+            a: object
+
+        Docstring.
+        [clinic start generated code]*/
+
+        /*[clinic input]
+        @getter
+        m.C.prop
+        [clinic start generated code]*/
+
+        /*[clinic input]
+        @setter
+        m.C.prop
+        [clinic start generated code]*/
+
+        /*[clinic input]
+        m.C.D.meth
+            self: self(type="void *")
+
+        Docstring.
+        [clinic start generated code]*/
+    """)
+
+    def make_list_file(self, tmp_dir):
+        fn = os.path.join(tmp_dir, "test.c")
+        with open(fn, "w", encoding="utf-8") as f:
+            f.write(self.LIST_CODE)
+        return fn
+
+    LIST_OUTPUT = [
+        "  func($module, a, /)",
+        "  cloned($module, a, /)",
+        "  module m",
+        "    class m.C",
+        # A signature with an option group is only for the docstring.
+        "      m.C.meth(a, [b])",
+        "      m.C(a)",
+        "      getter m.C.prop",
+        "      setter m.C.prop",
+        "      class m.C.D",
+        "        m.C.D.meth($self, /)",
+    ]
+
+    def test_cli_list(self):
+        with os_helper.temp_dir() as tmp_dir:
+            fn = self.make_list_file(tmp_dir)
+            pre_mtime = os.stat(fn).st_mtime_ns
+            out = self.expect_success("--list", fn)
+            self.assertEqual(out.splitlines(), [fn] + self.LIST_OUTPUT)
+            # Nothing is written.
+            with open(fn, encoding="utf-8") as f:
+                self.assertEqual(f.read(), self.LIST_CODE)
+            self.assertEqual(os.stat(fn).st_mtime_ns, pre_mtime)
+            self.assertEqual(os.listdir(tmp_dir), ["test.c"])
+
+    def test_cli_list_no_clinic_block(self):
+        with os_helper.temp_dir() as tmp_dir:
+            fn = os.path.join(tmp_dir, "test.c")
+            with open(fn, "w", encoding="utf-8") as f:
+                f.write("int x;\n")
+            self.assertEqual(self.expect_success("--list", fn), "")
+
+    def test_cli_list_no_definitions(self):
+        with os_helper.temp_dir() as tmp_dir:
+            fn = os.path.join(tmp_dir, "test.c")
+            with open(fn, "w", encoding="utf-8") as f:
+                f.write("/*[clinic input]\n[clinic start generated code]*/\n")
+            self.assertEqual(self.expect_success("--list", fn), "")
+
+    def test_cli_list_make(self):
+        with os_helper.temp_dir() as tmp_dir:
+            fn = self.make_list_file(tmp_dir)
+            out = self.expect_success("--list", "--make", "--srcdir", tmp_dir)
+            self.assertEqual(out.splitlines(), [fn] + self.LIST_OUTPUT)
+            self.assertEqual(os.listdir(tmp_dir), ["test.c"])
+
+    def test_cli_list_verbose(self):
+        with os_helper.temp_dir() as tmp_dir:
+            fn = self.make_list_file(tmp_dir)
+            # The progress does not mix with the report.
+            out, err, code = self.run_clinic("-v", "--list", fn)
+            self.assertEqual(code, 0)
+            self.assertEqual(err.splitlines(), [fn])
+            self.assertEqual(out.splitlines(), [fn] + self.LIST_OUTPUT)
+
+    def test_cli_list_checksum_mismatch(self):
+        with os_helper.temp_dir() as tmp_dir:
+            fn = self.make_list_file(tmp_dir)
+            with open(fn, "a", encoding="utf-8") as f:
+                f.write("/*[clinic end generated code: "
+                        "output=0123456789abcdef input=fedcba9876543210]*/\n")
+            _, err = self.expect_failure("--list", fn)
+            self.assertIn("Checksum mismatch!", err)
+            # The check is skipped with --force.
+            out = self.expect_success("-f", "--list", fn)
+            self.assertEqual(out.splitlines(), [fn] + self.LIST_OUTPUT)
+            self.assertEqual(os.listdir(tmp_dir), ["test.c"])
+
+    def test_cli_list_external(self):
+        # A file which uses getters, setters and nested classes.
+        source = support.findfile('clinic.test.c')
+        out = self.expect_success("--list", source)
+        lines = out.splitlines()
+        self.assertEqual(lines[0], source)
+        for line in ("  class Test",
+                     "    getter Test.property",
+                     "    setter Test.property",
+                     "    Test.class_method($type, /)",
+                     "  module m",
+                     "    class m.T"):
+            with self.subTest(line=line):
+                self.assertIn(line, lines)
+
+    def test_cli_fail_list_and_dry_run(self):
+        for opt in "--dry-run", "--diff":
+            with self.subTest(opt=opt):
+                _, err = self.expect_failure("--list", opt, "test.c")
+                self.assertIn("can't use --dry-run or --diff with --list", err)
+
+    def test_cli_fail_list_and_converters(self):
+        _, err = self.expect_failure("--list", "--converters", "test.c")
+        self.assertIn("can't use --converters with --list", err)
 
     def test_cli_fail_directory(self):
         with os_helper.temp_dir() as tmp_dir:
@@ -4592,6 +5409,58 @@ class ClinicFunctionalTest(unittest.TestCase):
         check("a", b="b", c="c", d="d", e="e", f="f", g="g")
         self.assertRaises(TypeError, fn, a="a", b="b", c="c", d="d", e="e", f="f", g="g")
 
+    def test_alias_pos(self):
+        fn = ac_tester.alias_pos
+        self.assertIsNone(fn())
+        self.assertEqual(fn(1), 1)
+        self.assertEqual(fn(a=1), 1)
+        self.assertEqual(fn(b=1), 1)
+        self.assertEqual(fn.__text_signature__, "($module, /, a=None)")
+        errmsg = re.escape(
+            "argument for alias_pos() given by name ('b') and position (1)")
+        self.assertRaisesRegex(TypeError, errmsg, fn, 1, b=2)
+        errmsg = re.escape(
+            "argument for alias_pos() given by name ('b') and name ('a')")
+        self.assertRaisesRegex(TypeError, errmsg, fn, a=1, b=2)
+
+    def test_alias_kwonly(self):
+        fn = ac_tester.alias_kwonly
+        self.assertIsNone(fn())
+        self.assertEqual(fn(a=1), 1)
+        self.assertEqual(fn(b=1), 1)
+        self.assertEqual(fn.__text_signature__, "($module, /, *, a=None)")
+        self.assertRaises(TypeError, fn, 1)
+        errmsg = re.escape(
+            "argument for alias_kwonly() given by name ('b') and name ('a')")
+        self.assertRaisesRegex(TypeError, errmsg, fn, a=1, b=2)
+
+    def test_depr_alias(self):
+        fn = ac_tester.depr_alias
+        self.assertEqual(fn(1), 1)
+        self.assertEqual(fn(a=1), 1)
+        errmsg = ("Passing the argument 'b' to depr_alias() is deprecated. "
+                  "Use 'a' instead. It will be removed in Python 3.14.")
+        self.check_depr(re.escape(errmsg), fn, b=1)
+
+    def test_depr_param(self):
+        fn = ac_tester.depr_param
+        self.assertEqual(fn(), (None, None, None, None))
+        self.assertEqual(fn(1), (1, None, None, None))
+        def errmsg(name):
+            return re.escape(f"Passing the argument {name!r} to depr_param() "
+                             f"is deprecated. "
+                             f"It will be removed in Python 3.14.")
+        self.check_depr(errmsg('b'), fn, 1, 2)
+        self.check_depr(errmsg('d'), fn, 1, d=4)
+        # Each deprecated parameter is reported on its own.
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            self.assertEqual(fn(1, 2, 3), (1, 2, 3, None))
+        self.assertEqual(len(caught), 2)
+        for warning, name in zip(caught, 'bc'):
+            self.assertIs(warning.category, DeprecationWarning)
+            self.assertRegex(str(warning.message), errmsg(name))
+
     def test_lone_kwds(self):
         with self.assertRaises(TypeError):
             ac_tester.lone_kwds(1, 2)
@@ -4614,6 +5483,18 @@ class ClinicFunctionalTest(unittest.TestCase):
         self.assertEqual(ac_tester.kwds_with_pos_only(1, 2, y='y', z='z'), (1, 2, kwds))
         self.assertEqual(ac_tester.kwds_with_pos_only(1, 2, **kwds), (1, 2, kwds))
 
+    def test_kwds_with_optional_pos_only(self):
+        with self.assertRaises(TypeError):
+            ac_tester.kwds_with_optional_pos_only()
+        with self.assertRaises(TypeError):
+            ac_tester.kwds_with_optional_pos_only(y='y')
+        self.assertEqual(ac_tester.kwds_with_optional_pos_only(1), (1, None, {}))
+        self.assertEqual(ac_tester.kwds_with_optional_pos_only(1, 2), (1, 2, {}))
+        self.assertEqual(ac_tester.kwds_with_optional_pos_only(1, y='y'),
+                         (1, None, {'y': 'y'}))
+        self.assertEqual(ac_tester.kwds_with_optional_pos_only(1, 2, y='y'),
+                         (1, 2, {'y': 'y'}))
+
     def test_kwds_with_stararg(self):
         self.assertEqual(ac_tester.kwds_with_stararg(), ((), {}))
         self.assertEqual(ac_tester.kwds_with_stararg(1, 2), ((1, 2), {}))
@@ -4634,6 +5515,105 @@ class ClinicFunctionalTest(unittest.TestCase):
         kwds = {'y': 'y', 'z': 'z'}
         self.assertEqual(ac_tester.kwds_with_pos_only_and_stararg(1, 2, 'lobster', 'thermidor', y='y', z='z'), (1, 2, args, kwds))
         self.assertEqual(ac_tester.kwds_with_pos_only_and_stararg(1, 2, *args, **kwds), (1, 2, args, kwds))
+
+
+@unittest.skipIf(ac_tester is None, "_testclinic is missing")
+class VectorcallFunctionalTest(unittest.TestCase):
+    """Runtime tests for @vectorcall exemplar types."""
+
+    def test_vc_new(self):
+        self.assertIsInstance(ac_tester.VcNew(), ac_tester.VcNew)
+        self.assertIsInstance(ac_tester.VcNew(1), ac_tester.VcNew)
+        self.assertIsInstance(ac_tester.VcNew(a=1), ac_tester.VcNew)
+
+    def test_vc_new_rejects_extra_args(self):
+        with self.assertRaises(TypeError):
+            ac_tester.VcNew(1, 2)
+
+    def test_vc_init(self):
+        self.assertIsInstance(ac_tester.VcInit(1), ac_tester.VcInit)
+        self.assertIsInstance(ac_tester.VcInit(1, 2), ac_tester.VcInit)
+        self.assertIsInstance(ac_tester.VcInit(1, b=2), ac_tester.VcInit)
+
+    def test_vc_init_missing_required(self):
+        with self.assertRaises(TypeError):
+            ac_tester.VcInit()
+
+    def test_vc_init_rejects_a_as_keyword(self):
+        # 'a' is positional-only
+        with self.assertRaises(TypeError):
+            ac_tester.VcInit(a=1)
+
+    def test_vc_new_base(self):
+        self.assertIsInstance(ac_tester.VcNewBase(1), ac_tester.VcNewBase)
+        self.assertIsInstance(ac_tester.VcNewBase(1, 2), ac_tester.VcNewBase)
+        self.assertIsInstance(ac_tester.VcNewBase(1, b=2), ac_tester.VcNewBase)
+
+    def test_vc_new_base_missing_required(self):
+        with self.assertRaises(TypeError):
+            ac_tester.VcNewBase()
+
+    def test_vc_new_base_subclass(self):
+        # tp_vectorcall is not inherited, so the subclass is constructed
+        # through tp_new.  The generated vectorcall asserts on that, so a
+        # debug build aborts here if that ever stops holding.
+        Sub = type('Sub', (ac_tester.VcNewBase,), {})
+        obj = Sub(1)
+        self.assertIsInstance(obj, Sub)
+        self.assertIsInstance(obj, ac_tester.VcNewBase)
+
+    def test_vc_kwonly(self):
+        # keyword-only 'b': vectorcall has no kwnames==NULL fast path,
+        # so every call goes through the helper.
+        self.assertIsInstance(ac_tester.VcKwOnly(1), ac_tester.VcKwOnly)
+        self.assertIsInstance(ac_tester.VcKwOnly(1, b=2), ac_tester.VcKwOnly)
+        self.assertIsInstance(ac_tester.VcKwOnly(a=1, b=2), ac_tester.VcKwOnly)
+
+    def test_vc_kwonly_b_as_positional(self):
+        with self.assertRaises(TypeError):
+            ac_tester.VcKwOnly(1, 2)
+
+    def test_vc_kwonly_missing_required(self):
+        with self.assertRaises(TypeError):
+            ac_tester.VcKwOnly()
+
+    def test_parse_errors_match_slot(self):
+        # tp_vectorcall and tp_new/tp_init slot should match in argument parsing
+        # error messages. Explicit calls to __new__ and __init__, as well as
+        # subtype calls, will not hit the vectorcall slot. Test errors match.
+        def error(func, args, kwargs):
+            try:
+                func(*args, **kwargs)
+            except TypeError as exc:
+                return str(exc)
+            return None
+
+        def through_new(cls):
+            return cls, partial(cls.__new__, cls)
+
+        def through_init(cls):
+            # Not subclassable, and tp_new is PyType_GenericNew, so reach
+            # tp_init through the __init__ slot wrapper on an instance.
+            return cls, partial(cls.__init__, cls(1))
+
+        entry_points = [
+            through_new(enumerate),   # the only non-test @vectorcall function
+            through_new(ac_tester.VcNew),
+            through_new(ac_tester.VcNewBase),
+            through_new(ac_tester.VcKwOnly),
+            through_init(ac_tester.VcInit),
+        ]
+        invalid_calls = [
+            ((), {}),           # too few positional arguments
+            ((1, 2, 3), {}),    # too many positional arguments
+            ((), {'zz': 1}),    # unknown keyword argument
+        ]
+
+        for direct, slot in entry_points:
+            for args, kwargs in invalid_calls:
+                with self.subTest(cls=direct, args=args, kwargs=kwargs):
+                    self.assertEqual(error(direct, args, kwargs),
+                                     error(slot, args, kwargs))
 
 
 class LimitedCAPIOutputTests(unittest.TestCase):
@@ -4674,6 +5654,26 @@ class LimitedCAPIOutputTests(unittest.TestCase):
         self.assertNotIn("PyFloat_AS_DOUBLE", generated)
         self.assertIn("double f;", generated)
         self.assertIn("f = PyFloat_AsDouble", generated)
+
+    def test_limited_capi_alias(self):
+        block = self.wrap_clinic_input("""
+            func
+                a: object = None
+                *
+                b as a: object = None
+        """)
+        err = ("Parameter 'b' cannot be an alias: "
+               "the arguments are not parsed one by one.")
+        _expect_failure(self, self.clinic.parse, block, err)
+
+    def test_limited_capi_deprecated(self):
+        block = self.wrap_clinic_input("""
+            func
+                [until 3.14] a: object = None
+        """)
+        err = ("Parameter 'a' cannot be deprecated: "
+               "the arguments are not parsed one by one.")
+        _expect_failure(self, self.clinic.parse, block, err)
 
 
 try:
