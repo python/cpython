@@ -7,6 +7,7 @@ import unittest
 import gc
 import os
 import types
+import weakref
 
 import _opcode
 
@@ -623,6 +624,25 @@ class TestUops(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertIn("_FOR_ITER_TIER_TWO", uops)
         self.assertNotIn("_ITER_NEXT_INLINE", uops)
+
+    def test_trace_rewind_decref(self):
+        # gh-157875: trace rewind should not leak reference
+        def run():
+            class C:
+                def __iter__(self):
+                    return self
+                def __next__(self):
+                    raise StopIteration
+
+            obj = C()
+            for _ in range(TIER2_THRESHOLD):
+                for _ in obj:
+                    pass
+            return weakref.ref(C)
+
+        ref = run()
+        gc.collect()
+        self.assertIsNone(ref())
 
 
 @requires_specialization
