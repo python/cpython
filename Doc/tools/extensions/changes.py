@@ -6,6 +6,7 @@ import re
 
 from docutils import nodes
 from sphinx import addnodes
+from sphinx.builders.changes import ChangesBuilder
 from sphinx.domains.changeset import (
     VersionChange,
     versionlabel_classes,
@@ -158,6 +159,9 @@ def setup(app: Sphinx) -> ExtensionMetadata:
 
     # Register the ``.. soft-deprecated::`` directive
     app.add_directive("soft-deprecated", SoftDeprecated)
+    ChangesBuilder.typemap["soft-deprecated"] = "soft deprecated"
+    # deprecated-removed is recorded under a version tuple; map it too
+    ChangesBuilder.typemap["deprecated-removed"] = "deprecated-removed"
 
     return {
         "version": "1.0",
