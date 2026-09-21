@@ -137,8 +137,6 @@ we also call *flavours*:
       >>> PurePath(), PurePath('')
       (PurePosixPath('.'), PurePosixPath('.'))
 
-   The boolean value of either expression is True.
-
    If a segment is an absolute path, all previous segments are ignored
    (like :func:`os.path.join`)::
 
