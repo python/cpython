@@ -424,6 +424,12 @@ static const int _days_before_month[] = {
     0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334
 };
 
+/* This additional array stores the number of odd days before each month in the year. */
+static const int _odd_days_before_month[] = {
+    0, /* unused; this vector uses 1-based indexing */
+    0, 3, 3, 6, 1, 4, 6, 2, 5, 0, 3, 5
+};
+
 /* year -> 1 if leap year, else 0. */
 static int
 is_leap(int year)
@@ -476,6 +482,21 @@ days_before_year(int year)
      */
     assert (year >= 1);
     return y*365 + y/4 - y/100 + y/400;
+}
+
+/*This additional function here computes the number of odd days before the start of the given year.*/
+static int
+odd_days_before_year(int year)
+{
+    int y = year - 1;
+    /* This is incorrect if year <= 0; we really want the floor
+     * here.  But so long as MINYEAR is 1, the smallest year this
+     * can see is 1.
+     */
+    assert (year >= 1);
+    int temp = (y%400);
+    int mod100 = (y%100);
+    return temp/300+(temp%300)/200*3+((temp%300)%200)/100*5 + (mod100/4)*2 + (mod100-mod100/4);
 }
 
 /* Number of days in 4, 100, and 400 year cycles.  That these have
@@ -576,11 +597,19 @@ ymd_to_ord(int year, int month, int day)
     return days_before_year(year) + days_before_month(year, month) + day;
 }
 
+/* This additional function computes the number of odd days before the start of the given year way more reduced here than just multplying years with 365 & 366 and month values. */
+/* year, month, day -> ordinal, considering 01-Jan-0001 as day 1. */
+static int
+odd_ymd_to_ord(int year, int month, int day)
+{
+    return (is_leap(year) && month > 2) ? (odd_days_before_year(year) + _odd_days_before_month[month - 1] + day+1) : (odd_days_before_year(year) + _odd_days_before_month[month - 1] + day);
+}
+
 /* Day of week, where Monday==0, ..., Sunday==6.  1/1/1 was a Monday. */
 static int
 weekday(int year, int month, int day)
 {
-    return (ymd_to_ord(year, month, day) + 6) % 7;
+    return (odd_ymd_to_ord(year, month, day)) % 7;
 }
 
 /* Ordinal of the Monday starting week 1 of the ISO year.  Week 1 is the

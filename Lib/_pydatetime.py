@@ -38,6 +38,10 @@ _MAXORDINAL = 3652059  # date.max.toordinal()
 _DAYS_IN_MONTH = [-1, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 
 _DAYS_BEFORE_MONTH = [-1]  # -1 is a placeholder for indexing purposes.
+
+# This additional list stores the number of odd days before each month in the year.
+_ODD_DAYS_BEFORE_MONTH = [-1, 0, 3, 3, 6, 1, 4, 6, 2, 5, 0, 3, 5]  #-1 is a placeholder for indexing purposes.
+
 dbm = 0
 for dim in _DAYS_IN_MONTH[1:]:
     _DAYS_BEFORE_MONTH.append(dbm)
@@ -52,6 +56,13 @@ def _days_before_year(year):
     "year -> number of days before January 1st of year."
     y = year - 1
     return y*365 + y//4 - y//100 + y//400
+
+def _odd_days_before_year(year):
+    "year -> number of odd days before January 1st of year."
+    y = year - 1
+    r = y%400
+    m100 = y%100
+    return r//300 + (r%300)//200*3 + ((r%300)%200)//100*5 + (m100//4)*2 + (m100 - m100//4)
 
 def _days_in_month(year, month):
     "year, month -> number of days in that month in that year."
@@ -73,6 +84,17 @@ def _ymd2ord(year, month, day):
     return (_days_before_year(year) +
             _days_before_month(year, month) +
             day)
+
+# This additional function computes the number of odd days before the start of the given year way more reduced here than just multplying years with 365 & 366 and month values.
+def _odd_ymd2ord(year, month, day):
+    "year, month, day -> ordinal, considering 01-Jan-0001 as day 1."
+    assert 1 <= month <= 12, f"month must be in 1..12, not {month}"
+    dim = _days_in_month(year, month)
+    assert 1 <= day <= dim, f"day must be in 1..{dim}, not {day}"
+    # return (_days_before_year(year) +
+    #         _days_before_month(year, month) +
+    #         day)
+    return (_odd_days_before_year(year) + _ODD_DAYS_BEFORE_MONTH[month - 1] + day + 1) if(_is_leap(year) and month > 2) else (_odd_days_before_year(year) + _ODD_DAYS_BEFORE_MONTH[month - 1] + day)
 
 _DI400Y = _days_before_year(401)    # number of days in 400 years
 _DI100Y = _days_before_year(101)    #    "    "   "   " 100   "
@@ -1181,6 +1203,14 @@ class date:
         """
         return _ymd2ord(self._year, self._month, self._day)
 
+    def to_odd_ordinal(self):
+            """Return reduced number of proleptic Gregorian ordinal for the year, month and day.
+    
+            January 1 of year 1 is day 1.  Only the year, month and day values
+            contribute to the result.
+            """
+            return _odd_ymd2ord(self._year, self._month, self._day)
+
     def replace(self, year=None, month=None, day=None):
         """Return a new date with new values for the specified fields."""
         if year is None:
@@ -1258,7 +1288,7 @@ class date:
 
     def weekday(self):
         "Return day of the week, where Monday == 0 ... Sunday == 6."
-        return (self.toordinal() + 6) % 7
+        return (self.to_odd_ordinal()) % 7
 
     # Day-of-the-week and week-of-the-year, according to ISO
 
