@@ -135,6 +135,53 @@ class GeneralTest(unittest.TestCase):
         finally:
             atexit.unregister(func)
 
+    def test_eq_unregister_clear(self):
+        # Issue #112127: callback's __eq__ may call unregister or _clear
+        class Evil:
+            def __eq__(self, other):
+                action(other)
+                return NotImplemented
+
+        for action in atexit.unregister, lambda o: atexit._clear():
+            with self.subTest(action=action):
+                atexit.register(lambda: None)
+                atexit.unregister(Evil())
+                atexit._clear()
+
+    def test_eq_unregister(self):
+        # Issue #112127: callback's __eq__ may call unregister
+        def f1():
+            log.append(1)
+        def f2():
+            log.append(2)
+        def f3():
+            log.append(3)
+
+        class Pred:
+            def __eq__(self, other):
+                nonlocal cnt
+                cnt += 1
+                if cnt == when:
+                    atexit.unregister(what)
+                if other is f2:
+                    return True
+                return False
+
+        for what, expected in (
+                (f1, [3]),
+                (f2, [3, 1]),
+                (f3, [1]),
+            ):
+            for when in range(1, 4):
+                with self.subTest(what=what.__name__, when=when):
+                    cnt = 0
+                    log = []
+                    for f in (f1, f2, f3):
+                        atexit.register(f)
+                    atexit.unregister(Pred())
+                    atexit._run_exitfuncs()
+                    self.assertEqual(log, expected)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,0 +1,5 @@
+Fix :exc:`struct.error` exception when creating a file with
+:class:`gzip.GzipFile` or compressing data with :func:`gzip.compress`
+if the system time is outside the range 00:00:00 UTC, January 1, 1970
+through 06:28:15 UTC, February 7, 2106, or explicitly passed *mtime*
+argument is outside the range ``0`` to ``2**32-1``.

@@ -1,0 +1,1 @@
+Updated Windows builds to include SQLite version 3.53.2.

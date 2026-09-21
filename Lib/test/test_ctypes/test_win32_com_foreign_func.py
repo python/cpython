@@ -1,4 +1,4 @@
-import ctypes
+import ctypes.util
 import gc
 import sys
 import unittest
@@ -20,14 +20,13 @@ TRUE = 1
 E_NOINTERFACE = -2147467262
 
 
-class GUID(ctypes.Structure):
+@ctypes.util.struct
+class GUID:
     # https://learn.microsoft.com/en-us/windows/win32/api/guiddef/ns-guiddef-guid
-    _fields_ = [
-        ("Data1", DWORD),
-        ("Data2", WORD),
-        ("Data3", WORD),
-        ("Data4", BYTE * 8),
-    ]
+    Data1: DWORD
+    Data2: WORD
+    Data3: WORD
+    Data4: BYTE * 8
 
 
 def create_proto_com_method(name, index, restype, *argtypes):

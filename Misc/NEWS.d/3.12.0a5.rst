@@ -181,7 +181,7 @@ regen-all``.
 .. bpo: 32780
 .. date: 2018-02-05-21-54-46
 .. nonce: Dtiz8z
-.. section: Core and Builtins
+.. section: Library
 
 Inter-field padding is now inserted into the PEP3118 format strings obtained
 from :class:`ctypes.Structure` objects, reflecting their true representation

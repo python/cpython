@@ -17,6 +17,7 @@ import re
 import time
 import types
 
+import consts_getter
 import umarshal
 
 TYPE_CHECKING = False
@@ -362,7 +363,9 @@ class Printer:
                 self.write(f".ob_digit = {{ {ds} }},")
 
     def generate_int(self, name: str, i: int) -> str:
-        if -5 <= i <= 256:
+        nsmallnegints, nsmallposints = consts_getter.get_nsmallnegints_and_nsmallposints()
+
+        if -nsmallnegints <= i <= nsmallposints:
             return f"(PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS + {i}]"
         if i >= 0:
             name = f"const_int_{i}"

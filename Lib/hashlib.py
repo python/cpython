@@ -36,21 +36,21 @@ Hash objects have these methods:
                  efficiently compute the digests of data that share a common
                  initial substring.
 
-Assuming that Python has been built with MD5 support, the following computes
-the MD5 digest of the byte string b'Nobody inspects the spammish repetition':
+Assuming that Python has been built with SHA-2 support, the SHA-256 digest
+of the byte string b'Nobody inspects the spammish repetition' is computed
+as follows:
 
     >>> import hashlib
-    >>> m = hashlib.md5()
+    >>> m = hashlib.sha256()
     >>> m.update(b"Nobody inspects")
     >>> m.update(b" the spammish repetition")
-    >>> m.digest()
-    b'\xbbd\x9c\x83\xdd\x1e\xa5\xc9\xd9\xde\xc9\xa1\x8d\xf0\xff\xe9'
+    >>> m.digest()  # doctest: +ELLIPSIS
+    b'\x03\x1e\xdd}Ae\x15\x93\xc5\xfe\\\x00o\xa5u+7...'
 
 More condensed:
 
-    >>> hashlib.md5(b"Nobody inspects the spammish repetition").hexdigest()
-    'bb649c83dd1ea5c9d9dec9a18df0ffe9'
-
+    >>> hashlib.sha256(b"Nobody inspects the spammish repetition").hexdigest()
+    '031edd7d41651593c5fe5c006fa5752b37fddff7bc4e843aa6af0c950f4b9406'
 """
 
 # This tuple and __get_builtin_constructor() must be modified if a new
@@ -267,9 +267,30 @@ for __func_name in __always_supported:
     try:
         globals()[__func_name] = __get_hash(__func_name)
     except ValueError:
-        import logging
-        logging.exception('code for hash %s was not found.', __func_name)
-
+        # Don't log here: logging at import time has global side effects and
+        # would tell the wrong audience; code that uses a missing algorithm
+        # gets a ValueError from the stub installed below.
+        # The following code can be simplified in Python 3.19
+        # once "string" is removed from the signature.
+        __code = f'''\
+def {__func_name}(data=__UNSET, *, usedforsecurity=True, string=__UNSET):
+    if data is __UNSET and string is not __UNSET:
+        import warnings
+        warnings.warn(
+            "the 'string' keyword parameter is deprecated since "
+            "Python 3.15 and slated for removal in Python 3.19; "
+            "use the 'data' keyword parameter or pass the data "
+            "to hash as a positional argument instead",
+            DeprecationWarning, stacklevel=2)
+    if data is not __UNSET and string is not __UNSET:
+        raise TypeError("'data' and 'string' are mutually exclusive "
+                        "and support for 'string' keyword parameter "
+                        "is slated for removal in a future version.")
+    raise ValueError("unsupported hash algorithm {__func_name}")
+'''
+        exec(__code, {"__UNSET": object()}, __locals := {})
+        globals()[__func_name] = __locals[__func_name]
+        del __code, __locals
 
 # Cleanup locals()
 del __always_supported, __func_name, __get_hash

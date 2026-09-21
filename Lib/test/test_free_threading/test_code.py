@@ -1,9 +1,44 @@
 import unittest
 
+try:
+    import ctypes
+except ImportError:
+    ctypes = None
+
 from threading import Thread
 from unittest import TestCase
 
 from test.support import threading_helper
+from test.support.threading_helper import run_concurrently
+
+if ctypes is not None:
+    import ctypes.util
+
+    freefunc = ctypes.CFUNCTYPE(None, ctypes.c_voidp)
+
+    @ctypes.util.wrap_dll_function(ctypes.pythonapi)
+    def PyUnstable_Eval_RequestCodeExtraIndex(free: freefunc) -> ctypes.c_ssize_t:
+        pass
+    RequestCodeExtraIndex = PyUnstable_Eval_RequestCodeExtraIndex
+
+    @ctypes.util.wrap_dll_function(ctypes.pythonapi)
+    def PyUnstable_Code_SetExtra(code: ctypes.py_object,
+                                 index: ctypes.c_ssize_t,
+                                 extra: ctypes.c_voidp) -> ctypes.c_int:
+        pass
+    SetExtra = PyUnstable_Code_SetExtra
+
+    @ctypes.util.wrap_dll_function(ctypes.pythonapi)
+    def PyUnstable_Code_GetExtra(code: ctypes.py_object,
+                                 index: ctypes.c_ssize_t,
+                                 extra: ctypes.POINTER(ctypes.c_voidp)) -> ctypes.c_int:
+        pass
+    GetExtra = PyUnstable_Code_GetExtra
+
+# Note: each call to RequestCodeExtraIndex permanently allocates a slot
+# (the counter is monotonically increasing), up to MAX_CO_EXTRA_USERS (255).
+NTHREADS = 20
+
 
 @threading_helper.requires_working_threading()
 class TestCode(TestCase):
@@ -24,6 +59,83 @@ class TestCode(TestCase):
             thread.start()
         for thread in threads:
             thread.join()
+
+    @unittest.skipUnless(ctypes, "ctypes is required")
+    def test_request_code_extra_index_concurrent(self):
+        """Test concurrent calls to RequestCodeExtraIndex"""
+        results = []
+
+        def worker():
+            idx = RequestCodeExtraIndex(freefunc(0))
+            self.assertGreaterEqual(idx, 0)
+            results.append(idx)
+
+        run_concurrently(worker_func=worker, nthreads=NTHREADS)
+
+        # Every thread must get a unique index.
+        self.assertEqual(len(results), NTHREADS)
+        self.assertEqual(len(set(results)), NTHREADS)
+
+    @unittest.skipUnless(ctypes, "ctypes is required")
+    def test_code_extra_all_ops_concurrent(self):
+        """Test concurrent RequestCodeExtraIndex + SetExtra + GetExtra"""
+        LOOP = 100
+
+        def f():
+            pass
+
+        code = f.__code__
+
+        def worker():
+            idx = RequestCodeExtraIndex(freefunc(0))
+            self.assertGreaterEqual(idx, 0)
+
+            for i in range(LOOP):
+                ret = SetExtra(code, idx, ctypes.c_voidp(i + 1))
+                self.assertEqual(ret, 0)
+
+            for _ in range(LOOP):
+                extra = ctypes.c_voidp()
+                ret = GetExtra(code, idx, extra)
+                self.assertEqual(ret, 0)
+                # The slot was set by this thread, so the value must
+                # be the last one written.
+                self.assertEqual(extra.value, LOOP)
+
+        run_concurrently(worker_func=worker, nthreads=NTHREADS)
+
+    @unittest.skipUnless(ctypes, "ctypes is required")
+    def test_code_extra_set_get_concurrent(self):
+        """Test concurrent SetExtra + GetExtra on a shared index"""
+        LOOP = 100
+
+        def f():
+            pass
+
+        code = f.__code__
+
+        idx = RequestCodeExtraIndex(freefunc(0))
+        self.assertGreaterEqual(idx, 0)
+
+        def worker():
+            for i in range(LOOP):
+                ret = SetExtra(code, idx, ctypes.c_voidp(i + 1))
+                self.assertEqual(ret, 0)
+
+            for _ in range(LOOP):
+                extra = ctypes.c_voidp()
+                ret = GetExtra(code, idx, extra)
+                self.assertEqual(ret, 0)
+                # Value is set by any writer thread.
+                self.assertTrue(1 <= extra.value <= LOOP)
+
+        run_concurrently(worker_func=worker, nthreads=NTHREADS)
+
+        # Every thread's last write is LOOP, so the final value must be LOOP.
+        extra = ctypes.c_voidp()
+        ret = GetExtra(code, idx, extra)
+        self.assertEqual(ret, 0)
+        self.assertEqual(extra.value, LOOP)
 
 
 if __name__ == "__main__":

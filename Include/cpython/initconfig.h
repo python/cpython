@@ -149,6 +149,7 @@ typedef struct PyConfig {
     int dump_refs;
     wchar_t *dump_refs_file;
     int malloc_stats;
+    int pymalloc_hugepages;
     wchar_t *filesystem_encoding;
     wchar_t *filesystem_errors;
     wchar_t *pycache_prefix;
@@ -190,6 +191,7 @@ typedef struct PyConfig {
     int enable_gil;
     int tlbc_enabled;
 #endif
+    int lazy_imports;
 
     /* --- Path configuration inputs ------------ */
     int pathconfig_warnings;

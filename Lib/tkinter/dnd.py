@@ -120,6 +120,10 @@ class DndHandler:
 
     root = None
 
+    # The drag cursor is shown only once the pointer has moved this many
+    # pixels from the initial press, so that a plain click does not flash it.
+    threshold = 3
+
     def __init__(self, source, event):
         if event.num > 5:
             return
@@ -134,11 +138,12 @@ class DndHandler:
         self.target = None
         self.initial_button = button = event.num
         self.initial_widget = widget = event.widget
+        self.dragging = False
+        self.x_origin, self.y_origin = event.x_root, event.y_root
         self.release_pattern = "<B%d-ButtonRelease-%d>" % (button, button)
         self.save_cursor = widget['cursor'] or ""
         widget.bind(self.release_pattern, self.on_release)
         widget.bind("<Motion>", self.on_motion)
-        widget['cursor'] = "hand2"
 
     def __del__(self):
         root = self.root
@@ -175,6 +180,17 @@ class DndHandler:
             if new_target is not None:
                 new_target.dnd_enter(source, event)
                 self.target = new_target
+        self.update_cursor(x, y)
+
+    def update_cursor(self, x, y):
+        # Show the drag cursor only once the pointer has actually started
+        # moving past the threshold, so that a plain click does not flash it.
+        if not self.dragging:
+            if (abs(x - self.x_origin) <= self.threshold and
+                    abs(y - self.y_origin) <= self.threshold):
+                return
+            self.dragging = True
+            self.initial_widget['cursor'] = "hand2"
 
     def on_release(self, event):
         self.finish(event, 1)

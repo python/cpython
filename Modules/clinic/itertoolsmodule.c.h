@@ -345,6 +345,11 @@ itertools_tee(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
             goto exit;
         }
         n = ival;
+        if (n < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "n cannot be negative");
+            goto exit;
+        }
     }
 skip_optional:
     return_value = itertools_tee_impl(module, iterable, n);
@@ -569,6 +574,11 @@ itertools_combinations(PyTypeObject *type, PyObject *args, PyObject *kwargs)
             goto exit;
         }
         r = ival;
+        if (r < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "r cannot be negative");
+            goto exit;
+        }
     }
     return_value = itertools_combinations_impl(type, iterable, r);
 
@@ -643,6 +653,11 @@ itertools_combinations_with_replacement(PyTypeObject *type, PyObject *args, PyOb
             goto exit;
         }
         r = ival;
+        if (r < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "r cannot be negative");
+            goto exit;
+        }
     }
     return_value = itertools_combinations_with_replacement_impl(type, iterable, r);
 
@@ -799,8 +814,8 @@ PyDoc_STRVAR(itertools_compress__doc__,
 "\n"
 "Return data elements corresponding to true selector elements.\n"
 "\n"
-"Forms a shorter iterator from selected data elements using the selectors to\n"
-"choose the data elements.");
+"Forms a shorter iterator from selected data elements using the selectors\n"
+"to choose the data elements.");
 
 static PyObject *
 itertools_compress_impl(PyTypeObject *type, PyObject *seq1, PyObject *seq2);
@@ -965,4 +980,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=999758202a532e0a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a34a31f60100e0ff input=a9049054013a1b77]*/

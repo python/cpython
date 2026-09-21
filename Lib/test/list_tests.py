@@ -6,7 +6,7 @@ import sys
 from functools import cmp_to_key
 
 from test import seq_tests
-from test.support import ALWAYS_EQ, NEVER_EQ
+from test.support import ALWAYS_EQ, NEVER_EQ, run_with_limited_c_stack
 from test.support import skip_emscripten_stack_overflow, skip_wasi_stack_overflow
 
 
@@ -32,13 +32,13 @@ class CommonTest(seq_tests.CommonTest):
         self.assertEqual(a, b)
 
     def test_getitem_error(self):
-        a = []
+        a = self.type2test([])
         msg = "list indices must be integers or slices"
         with self.assertRaisesRegex(TypeError, msg):
             a['a']
 
     def test_setitem_error(self):
-        a = []
+        a = self.type2test([])
         msg = "list indices must be integers or slices"
         with self.assertRaisesRegex(TypeError, msg):
             a['a'] = "python"
@@ -60,6 +60,7 @@ class CommonTest(seq_tests.CommonTest):
         self.assertEqual(str(a2), "[0, 1, 2, [...], 3]")
         self.assertEqual(repr(a2), "[0, 1, 2, [...], 3]")
 
+    @run_with_limited_c_stack(200_000)
     @skip_wasi_stack_overflow()
     @skip_emscripten_stack_overflow()
     def test_repr_deep(self):
@@ -561,7 +562,7 @@ class CommonTest(seq_tests.CommonTest):
         class F(object):
             def __iter__(self):
                 raise KeyboardInterrupt
-        self.assertRaises(KeyboardInterrupt, list, F())
+        self.assertRaises(KeyboardInterrupt, self.type2test, F())
 
     def test_exhausted_iterator(self):
         a = self.type2test([1, 2, 3])

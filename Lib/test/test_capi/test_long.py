@@ -803,6 +803,26 @@ class LongTests(unittest.TestCase):
                 self.assertEqual(pylongwriter_create(negative, digits), num,
                                  (negative, digits))
 
+    @unittest.skipUnless(support.Py_DEBUG, "need a debug build (Py_DEBUG)")
+    def test_longwriter_finish(self):
+        # Test PyLongWriter_Create(0, 3, &digits) with PyLongWriter_Finish()
+        # where the last digit is left uninitialized
+        pylongwriter_finish_bug = _testcapi.pylongwriter_finish_bug
+        with self.assertRaises(SystemError) as cm:
+            pylongwriter_finish_bug()
+        self.assertEqual(str(cm.exception),
+                         'PyLongWriter_Finish: digit 2 is uninitialized')
+
+    def test_bug_143050(self):
+        with support.adjust_int_max_str_digits(0):
+            # Bug coming from using _pylong.int_from_string(), that
+            # currently requires > 6000 decimal digits.
+            int('-' + '0' * 7000, 10)
+            _testcapi.test_immortal_small_ints()
+            # Test also nonzero small int
+            int('-' + '0' * 7000 + '123', 10)
+            _testcapi.test_immortal_small_ints()
+
 
 if __name__ == "__main__":
     unittest.main()

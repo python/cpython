@@ -126,8 +126,9 @@ Believe me, real good tape sorts were quite spectacular to watch!
 From all times, sorting has always been a Great Art! :-)
 """
 
-__all__ = ['heappush', 'heappop', 'heapify', 'heapreplace', 'merge',
-           'nlargest', 'nsmallest', 'heappushpop']
+__all__ = ['heappush', 'heappop', 'heapify', 'heapreplace', 'heappushpop',
+           'heappush_max', 'heappop_max', 'heapify_max', 'heapreplace_max',
+           'heappushpop_max', 'nlargest', 'nsmallest', 'merge']
 
 def heappush(heap, item):
     """Push item onto heap, maintaining the heap invariant."""
@@ -493,7 +494,7 @@ def nsmallest(n, iterable, key=None):
         pass
     else:
         if n >= size:
-            return sorted(iterable, key=key)[:n]
+            return sorted(iterable, key=key)
 
     # When key is none, use simpler decoration
     if key is None:
@@ -510,7 +511,7 @@ def nsmallest(n, iterable, key=None):
         for elem in it:
             if elem < top:
                 _heapreplace(result, (elem, order))
-                top, _order = result[0]
+                top = result[0][0]
                 order += 1
         result.sort()
         return [elem for (elem, order) in result]
@@ -528,7 +529,7 @@ def nsmallest(n, iterable, key=None):
         k = key(elem)
         if k < top:
             _heapreplace(result, (k, order, elem))
-            top, _order, _elem = result[0]
+            top = result[0][0]
             order += 1
     result.sort()
     return [elem for (k, order, elem) in result]
@@ -553,7 +554,7 @@ def nlargest(n, iterable, key=None):
         pass
     else:
         if n >= size:
-            return sorted(iterable, key=key, reverse=True)[:n]
+            return sorted(iterable, key=key, reverse=True)
 
     # When key is none, use simpler decoration
     if key is None:
@@ -568,7 +569,7 @@ def nlargest(n, iterable, key=None):
         for elem in it:
             if top < elem:
                 _heapreplace(result, (elem, order))
-                top, _order = result[0]
+                top = result[0][0]
                 order -= 1
         result.sort(reverse=True)
         return [elem for (elem, order) in result]
@@ -586,7 +587,7 @@ def nlargest(n, iterable, key=None):
         k = key(elem)
         if top < k:
             _heapreplace(result, (k, order, elem))
-            top, _order, _elem = result[0]
+            top = result[0][0]
             order -= 1
     result.sort(reverse=True)
     return [elem for (k, order, elem) in result]

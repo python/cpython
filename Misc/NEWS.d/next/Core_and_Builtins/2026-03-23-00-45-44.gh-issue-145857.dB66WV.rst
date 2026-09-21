@@ -1,0 +1,1 @@
+The ``DELETE_GLOBAL`` opcode is now replaced with ``PUSH_NULL; STORE_GLOBAL``.

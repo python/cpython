@@ -1,0 +1,1 @@
+:mod:`lzma` adds constants to support the newer BCJ filters for ARM64 and RISC-V.

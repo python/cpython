@@ -2,6 +2,28 @@
 
 #include <stddef.h>
 
+#if defined(__APPLE__)
+#  include <TargetConditionals.h>
+   // Older macOS SDKs do not define TARGET_OS_OSX
+#  if !defined(TARGET_OS_OSX)
+#    define TARGET_OS_OSX 1
+#  endif
+#  if TARGET_OS_OSX
+#    include <errno.h>              // errno, ESRCH
+#    include <libproc.h>            // proc_pidinfo(), PROC_PIDTASKINFO
+#    include <sys/proc_info.h>      // struct proc_taskinfo
+#  endif
+#endif
+
+#ifdef __FreeBSD__
+#  include <fcntl.h>              // O_RDONLY
+#  include <kvm.h>                // kvm_openfiles()
+#  include <limits.h>             // _POSIX2_LINE_MAX
+#  include <sys/sysctl.h>         // KERN_PROC_PID
+#  include <sys/user.h>           // kinfo_proc definition
+#  include <unistd.h>             // sysconf()
+#endif
+
 
 typedef struct {
     PyMemAllocatorEx alloc;
@@ -155,18 +177,29 @@ fm_remove_hooks(void)
     }
 }
 
+static void
+fm_set_nomemory(int start, int stop)
+{
+    /* Memory allocation fails after 'start' allocation requests, and until
+     * 'stop' allocation requests except when 'stop' is negative or equal
+     * to 0 (default) in which case allocation failures never stop. */
+    FmData.start = start;
+    FmData.stop = stop;
+    FmData.count = 0;
+    fm_setup_hooks();
+}
+
 static PyObject *
 set_nomemory(PyObject *self, PyObject *args)
 {
     /* Memory allocation fails after 'start' allocation requests, and until
      * 'stop' allocation requests except when 'stop' is negative or equal
      * to 0 (default) in which case allocation failures never stop. */
-    FmData.count = 0;
-    FmData.stop = 0;
-    if (!PyArg_ParseTuple(args, "i|i", &FmData.start, &FmData.stop)) {
+    int start, stop = 0;
+    if (!PyArg_ParseTuple(args, "i|i", &start, &stop)) {
         return NULL;
     }
-    fm_setup_hooks();
+    fm_set_nomemory(start, stop);
     Py_RETURN_NONE;
 }
 
@@ -323,6 +356,53 @@ test_setallocators(PyMemAllocatorDomain domain)
         goto fail;
     }
 
+    /* realloc(NULL, size) should behave like malloc(size) */
+    size_t size3 = 100;
+    void *ptr3;
+    switch(domain) {
+        case PYMEM_DOMAIN_RAW:
+            ptr3 = PyMem_RawRealloc(NULL, size3);
+            break;
+        case PYMEM_DOMAIN_MEM:
+            ptr3 = PyMem_Realloc(NULL, size3);
+            break;
+        case PYMEM_DOMAIN_OBJ:
+            ptr3 = PyObject_Realloc(NULL, size3);
+            break;
+        default:
+            ptr3 = NULL;
+            break;
+    }
+
+    CHECK_CTX("realloc(NULL, size)");
+    if (ptr3 == NULL) {
+        error_msg = "realloc(NULL, size) failed";
+        goto fail;
+    }
+    if (hook.realloc_ptr != NULL || hook.realloc_new_size != size3) {
+        error_msg = "realloc(NULL, size) invalid parameters";
+        goto fail;
+    }
+
+    hook.free_ptr = NULL;
+    switch(domain) {
+        case PYMEM_DOMAIN_RAW:
+            PyMem_RawFree(ptr3);
+            break;
+        case PYMEM_DOMAIN_MEM:
+            PyMem_Free(ptr3);
+            break;
+        case PYMEM_DOMAIN_OBJ:
+            PyObject_Free(ptr3);
+            break;
+    }
+
+    CHECK_CTX("realloc(NULL, size) free");
+    if (hook.free_ptr != ptr3) {
+        error_msg = "unexpected pointer passed to free";
+        goto fail;
+    }
+
     res = Py_NewRef(Py_None);
     goto finally;
 
@@ -368,6 +448,7 @@ test_pyobject_new(PyObject *self, PyObject *Py_UNUSED(ignored))
     if (obj == NULL) {
         goto alloc_failed;
     }
+    memset(PyBytes_AS_STRING(obj), 0, 3 + 1);  // +1 for the null byte
     Py_DECREF(obj);
 
     // PyObject_NEW_VAR()
@@ -375,6 +456,7 @@ test_pyobject_new(PyObject *self, PyObject *Py_UNUSED(ignored))
     if (obj == NULL) {
         goto alloc_failed;
     }
+    memset(PyBytes_AS_STRING(obj), 0, 3 + 1);  // +1 for the null byte
     Py_DECREF(obj);
 
     Py_RETURN_NONE;
@@ -684,6 +766,197 @@ error:
 }
 
 
+#if TARGET_OS_OSX || defined(__FreeBSD__)
+// Return RSS only. Per-process swap usage isn't readily available
+static PyObject*
+get_process_memory_usage(PyObject *self, PyObject *args)
+{
+    int pid;
+    if (!PyArg_ParseTuple(args, "i", &pid)) {
+        return NULL;
+    }
+
+#if TARGET_OS_OSX
+    // macOS: proc_pidinfo(PROC_PIDTASKINFO).pti_resident_size
+    struct proc_taskinfo pti;
+    int ret = proc_pidinfo(pid, PROC_PIDTASKINFO, 0, &pti, sizeof(pti));
+    if (ret <= 0) {
+        if (errno == 0) {
+            // proc_pidinfo() can return 0 without setting errno when the
+            // process does not exist.
+            errno = ESRCH;
+        }
+        return PyErr_SetFromErrno(PyExc_OSError);
+    }
+
+    return PyLong_FromUnsignedLongLong(pti.pti_resident_size);
+#else
+    // FreeBSD: kvm_getprocs(KERN_PROC_PID) and ki_rssize * page_size
+    long page_size = sysconf(_SC_PAGESIZE);
+    if (page_size <= 0) {
+        return PyErr_SetFromErrno(PyExc_OSError);
+    }
+
+    // Using /dev/null for vmcore avoids needing dump file.
+    // NULL for kernel file uses running kernel.
+    char errbuf[_POSIX2_LINE_MAX];
+    kvm_t *kd = kvm_openfiles(NULL, "/dev/null", NULL, O_RDONLY, errbuf);
+    if (kd == NULL) {
+        return PyErr_SetFromErrno(PyExc_OSError);
+    }
+
+    // KERN_PROC_PID filters for the specific process ID.
+    int n_procs;
+    struct kinfo_proc *kp = kvm_getprocs(kd, KERN_PROC_PID, pid, &n_procs);
+    if (kp == NULL) {
+        PyErr_SetFromErrno(PyExc_OSError);
+        goto error;
+    }
+    if (n_procs <= 0) {
+        // Process with PID not found
+        errno = ESRCH;
+        PyErr_SetFromErrno(PyExc_OSError);
+        goto error;
+    }
+    assert(n_procs == 1);
+
+    // ki_rssize is in pages. Convert to bytes.
+    size_t rss = (size_t)kp[0].ki_rssize * page_size;
+    kvm_close(kd);
+
+    return PyLong_FromSize_t(rss);
+
+error:
+    kvm_close(kd);
+    return NULL;
+#endif
+}
+#endif
+
+
+struct bytes_resize_tracer {
+    PyObject *create;
+    PyObject *destroy;
+};
+
+
+static int
+bytes_resize_tracer(PyObject *obj, PyRefTracerEvent event, void* data)
+{
+    if (event != PyRefTracer_CREATE && event != PyRefTracer_DESTROY) {
+        return 0;
+    }
+
+    struct bytes_resize_tracer *tracer = (struct bytes_resize_tracer*)data;
+    if (!PyBytes_Check(obj)) {
+        return 0;
+    }
+
+    switch (event) {
+        case PyRefTracer_CREATE:
+            tracer->create = obj;
+            break;
+        case PyRefTracer_DESTROY:
+            tracer->destroy = obj;
+            break;
+        default:
+            break;
+    }
+    return 0;
+}
+
+
+// When _PyBytes_Resize() resizes a bytes object in-place, check that
+// PyRefTracer_DESTROY and PyRefTracer_CREATE events are emitted.
+// If no_memory is non-zero, inject MemoryError.
+static int
+check_bytes_resize_tracer(int no_memory)
+{
+    PyObject *bytes = NULL;
+    PyRefTracer old_tracer = NULL;
+    void *old_tracer_data = NULL;
+    int restore_tracer = 0;
+
+    bytes = PyBytes_FromString("hello");
+    if (bytes == NULL) {
+        goto error;
+    }
+    assert(PyUnstable_Object_IsUniquelyReferenced(bytes));
+
+    old_tracer = PyRefTracer_GetTracer(&old_tracer_data);
+    restore_tracer = 1;
+
+    struct bytes_resize_tracer tracer = {0};
+    if (PyRefTracer_SetTracer(bytes_resize_tracer, &tracer) != 0) {
+        goto error;
+    }
+
+    PyObject *old_bytes = bytes;  // borrowed reference
+    if (no_memory) {
+        fm_set_nomemory(0, 0);
+        int res = _PyBytes_Resize(&bytes, 100);
+        assert(res < 0);
+        assert(bytes == NULL);
+        fm_remove_hooks();
+
+        assert(PyErr_ExceptionMatches(PyExc_MemoryError));
+        PyErr_Clear();
+    }
+    else {
+        if (_PyBytes_Resize(&bytes, 100) < 0) {
+            assert(bytes == NULL);
+            goto error;
+        }
+    }
+
+    if (tracer.destroy != old_bytes) {
+        PyErr_SetString(PyExc_AssertionError, "PyRefTracer_DESTROY not seen");
+        goto error;
+    }
+
+    int seen_create;
+    if (no_memory) {
+        seen_create = (tracer.create == old_bytes);
+    }
+    else {
+        seen_create = (tracer.create == bytes);
+    }
+    if (!seen_create) {
+        PyErr_SetString(PyExc_AssertionError, "PyRefTracer_CREATE not seen");
+        goto error;
+    }
+
+    Py_CLEAR(bytes);
+    if (PyRefTracer_SetTracer(old_tracer, old_tracer_data) != 0) {
+        restore_tracer = 0;
+        goto error;
+    }
+    return 0;
+
+error:
+    Py_XDECREF(bytes);
+    if (restore_tracer) {
+        if (PyRefTracer_SetTracer(old_tracer, old_tracer_data) != 0) {
+            return -1;
+        }
+    }
+    return -1;
+}
+
+
+static PyObject*
+test_bytes_resize_tracer(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    if (check_bytes_resize_tracer(0) < 0) {
+        return NULL;
+    }
+    if (check_bytes_resize_tracer(1) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef test_methods[] = {
     {"pymem_api_misuse",              pymem_api_misuse,              METH_NOARGS},
     {"pymem_buffer_overflow",         pymem_buffer_overflow,         METH_NOARGS},
@@ -698,6 +971,10 @@ static PyMethodDef test_methods[] = {
     {"test_pymem_setrawallocators",   test_pymem_setrawallocators,   METH_NOARGS},
     {"test_pyobject_new",             test_pyobject_new,             METH_NOARGS},
     {"test_pyobject_setallocators",   test_pyobject_setallocators,   METH_NOARGS},
+#if TARGET_OS_OSX || defined(__FreeBSD__)
+    {"get_process_memory_usage",      get_process_memory_usage,      METH_VARARGS},
+#endif
+    {"test_bytes_resize_tracer",      test_bytes_resize_tracer,      METH_NOARGS},
 
     // Tracemalloc tests
     {"tracemalloc_track",             tracemalloc_track,             METH_VARARGS},

@@ -1,0 +1,2 @@
+Remove the :func:`!sys._enablelegacywindowsfsencoding` function which has
+been deprecated since Python 3.13.

@@ -8,7 +8,7 @@ _build_return_object(mod_ty module, int mode, PyObject *filename_ob, PyArena *ar
     PyObject *result = NULL;
 
     if (mode == 2) {
-        result = (PyObject *)_PyAST_Compile(module, filename_ob, NULL, -1, arena);
+        result = (PyObject *)_PyAST_Compile(module, filename_ob, NULL, -1, arena, NULL);
     } else if (mode == 1) {
         result = PyAST_mod2obj(module);
     } else {
@@ -93,7 +93,7 @@ parse_string(PyObject *self, PyObject *args, PyObject *kwds)
 
     PyCompilerFlags flags = _PyCompilerFlags_INIT;
     mod_ty res = _PyPegen_run_parser_from_string(the_string, Py_file_input, filename_ob,
-                                        &flags, arena);
+                                        &flags, arena, NULL);
     if (res == NULL) {
         goto error;
     }

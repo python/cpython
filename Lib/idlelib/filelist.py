@@ -112,12 +112,12 @@ class FileList:
 
 
 def _test():  # TODO check and convert to htest
+    # Maybe redundant with test_filelist.FileListTest.test_new_empty.
     from tkinter import Tk
-    from idlelib.editor import fixwordbreaks
-    from idlelib.run import fix_scaling
+    from idlelib.util import fix_scaling, fix_word_breaks
     root = Tk()
     fix_scaling(root)
-    fixwordbreaks(root)
+    fix_word_breaks(root)
     root.withdraw()
     flist = FileList(root)
     flist.new()

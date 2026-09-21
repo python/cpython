@@ -200,11 +200,11 @@ PyDoc_STRVAR(list_sort__doc__,
 "\n"
 "Sort the list in ascending order and return None.\n"
 "\n"
-"The sort is in-place (i.e. the list itself is modified) and stable (i.e. the\n"
-"order of two equal elements is maintained).\n"
+"The sort is in-place (i.e. the list itself is modified) and stable\n"
+"(i.e. the order of two equal elements is maintained).\n"
 "\n"
-"If a key function is given, apply it once to each list item and sort them,\n"
-"ascending or descending, according to their function values.\n"
+"If a key function is given, apply it once to each list item and sort\n"
+"them, ascending or descending, according to their function values.\n"
 "\n"
 "The reverse flag can be set to sort in descending order.");
 
@@ -468,4 +468,4 @@ list___reversed__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return list___reversed___impl((PyListObject *)self);
 }
-/*[clinic end generated code: output=ae13fc2b56dc27c2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=06c21b0bffbe8d84 input=a9049054013a1b77]*/

@@ -1,0 +1,2 @@
+Removed bundled copy of the libmpdec, use system library if it's available.
+Patch by Sergey B Kirpichev.

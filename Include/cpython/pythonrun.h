@@ -40,6 +40,11 @@ PyAPI_FUNC(PyObject *) PyRun_FileExFlags(
     PyCompilerFlags *flags);
 
 
+PyAPI_FUNC(PyObject *) Py_CompileStringFlags(
+    const char *str,
+    const char *filename,
+    int start,
+    PyCompilerFlags *flags);
 PyAPI_FUNC(PyObject *) Py_CompileStringExFlags(
     const char *str,
     const char *filename,       /* decoded from the filesystem encoding */

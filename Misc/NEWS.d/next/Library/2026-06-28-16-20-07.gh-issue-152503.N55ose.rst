@@ -1,0 +1,4 @@
+Fix :meth:`curses.window.in_wch`, :meth:`curses.window.in_wchstr` and
+:meth:`curses.window.getbkgrnd` returning garbage text when :mod:`curses` is
+built against a curses library that does not NUL-terminate the ``cchar_t``
+text array (such as NetBSD curses).

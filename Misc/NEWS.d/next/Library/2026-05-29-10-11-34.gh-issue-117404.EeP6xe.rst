@@ -1,0 +1,5 @@
+Add a number of constants in modules :mod:`zlib`, :mod:`bz2`, :mod:`lzma`,
+and :mod:`compression.zstd`, which provide information about the version of
+libraries that were used for building the module and that are actually
+loaded.
+Make :const:`compression.zstd.zstd_version_info` a named tuple.

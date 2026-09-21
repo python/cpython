@@ -406,6 +406,8 @@ class CMathTests(ComplexesAreIdenticalMixin, unittest.TestCase):
                 _testcapi.set_errno(0)
         self.check_polar(polar_with_errno_set)
 
+    @unittest.skipIf(sys.platform.startswith("sunos"),
+                     "skipping, see gh-138573")
     def test_phase(self):
         self.assertAlmostEqual(phase(0), 0.)
         self.assertAlmostEqual(phase(1.), 0.)
@@ -514,6 +516,7 @@ class CMathTests(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertFalse(cmath.isinf(1j))
         self.assertFalse(cmath.isinf(NAN))
         self.assertTrue(cmath.isinf(INF))
+        self.assertTrue(cmath.isinf(-INF))
         self.assertTrue(cmath.isinf(complex(INF, 0)))
         self.assertTrue(cmath.isinf(complex(0, INF)))
         self.assertTrue(cmath.isinf(complex(INF, INF)))

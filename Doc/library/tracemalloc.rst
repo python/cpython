@@ -307,7 +307,7 @@ Functions
 .. function:: get_object_traceback(obj)
 
    Get the traceback where the Python object *obj* was allocated.
-   Return a :class:`Traceback` instance, or ``None`` if the :mod:`tracemalloc`
+   Return a :class:`Traceback` instance, or ``None`` if the :mod:`!tracemalloc`
    module is not tracing memory allocations or did not trace the allocation of
    the object.
 
@@ -318,7 +318,7 @@ Functions
 
    Get the maximum number of frames stored in the traceback of a trace.
 
-   The :mod:`tracemalloc` module must be tracing memory allocations to
+   The :mod:`!tracemalloc` module must be tracing memory allocations to
    get the limit, otherwise an exception is raised.
 
    The limit is set by the :func:`start` function.
@@ -327,15 +327,15 @@ Functions
 .. function:: get_traced_memory()
 
    Get the current size and peak size of memory blocks traced by the
-   :mod:`tracemalloc` module as a tuple: ``(current: int, peak: int)``.
+   :mod:`!tracemalloc` module as a tuple: ``(current: int, peak: int)``.
 
 
 .. function:: reset_peak()
 
-   Set the peak size of memory blocks traced by the :mod:`tracemalloc` module
+   Set the peak size of memory blocks traced by the :mod:`!tracemalloc` module
    to the current size.
 
-   Do nothing if the :mod:`tracemalloc` module is not tracing memory
+   Do nothing if the :mod:`!tracemalloc` module is not tracing memory
    allocations.
 
    This function only modifies the recorded peak size, and does not modify or
@@ -350,14 +350,14 @@ Functions
 
 .. function:: get_tracemalloc_memory()
 
-   Get the memory usage in bytes of the :mod:`tracemalloc` module used to store
+   Get the memory usage in bytes of the :mod:`!tracemalloc` module used to store
    traces of memory blocks.
    Return an :class:`int`.
 
 
 .. function:: is_tracing()
 
-    ``True`` if the :mod:`tracemalloc` module is tracing Python memory
+    ``True`` if the :mod:`!tracemalloc` module is tracing Python memory
     allocations, ``False`` otherwise.
 
     See also :func:`start` and :func:`stop` functions.
@@ -378,8 +378,8 @@ Functions
    :meth:`Snapshot.compare_to` and :meth:`Snapshot.statistics` methods.
 
    Storing more frames increases the memory and CPU overhead of the
-   :mod:`tracemalloc` module. Use the :func:`get_tracemalloc_memory` function
-   to measure how much memory is used by the :mod:`tracemalloc` module.
+   :mod:`!tracemalloc` module. Use the :func:`get_tracemalloc_memory` function
+   to measure how much memory is used by the :mod:`!tracemalloc` module.
 
    The :envvar:`PYTHONTRACEMALLOC` environment variable
    (``PYTHONTRACEMALLOC=NFRAME``) and the :option:`-X` ``tracemalloc=NFRAME``
@@ -408,12 +408,12 @@ Functions
    :class:`Snapshot` instance.
 
    The snapshot does not include memory blocks allocated before the
-   :mod:`tracemalloc` module started to trace memory allocations.
+   :mod:`!tracemalloc` module started to trace memory allocations.
 
    Tracebacks of traces are limited to :func:`get_traceback_limit` frames. Use
    the *nframe* parameter of the :func:`start` function to store more frames.
 
-   The :mod:`tracemalloc` module must be tracing memory allocations to take a
+   The :mod:`!tracemalloc` module must be tracing memory allocations to take a
    snapshot, see the :func:`start` function.
 
    See also the :func:`get_object_traceback` function.
@@ -457,7 +457,7 @@ Filter
    * ``Filter(True, subprocess.__file__)`` only includes traces of the
      :mod:`subprocess` module
    * ``Filter(False, tracemalloc.__file__)`` excludes traces of the
-     :mod:`tracemalloc` module
+     :mod:`!tracemalloc` module
    * ``Filter(False, "<unknown>")`` excludes empty tracebacks
 
 
@@ -589,7 +589,7 @@ Snapshot
 
       If *cumulative* is ``True``, cumulate size and count of memory blocks of
       all frames of the traceback of a trace, not only the most recent frame.
-      The cumulative mode can only be used with *key_type* equals to
+      The cumulative mode can only be used with *key_type* equal to
       ``'filename'`` and ``'lineno'``.
 
       The result is sorted from the biggest to the smallest by:
@@ -720,11 +720,10 @@ Traceback
    When a snapshot is taken, tracebacks of traces are limited to
    :func:`get_traceback_limit` frames. See the :func:`take_snapshot` function.
    The original number of frames of the traceback is stored in the
-   :attr:`Traceback.total_nframe` attribute. That allows to know if a traceback
+   :attr:`Traceback.total_nframe` attribute. That allows one to know if a traceback
    has been truncated by the traceback limit.
 
-   The :attr:`Trace.traceback` attribute is an instance of :class:`Traceback`
-   instance.
+   The :attr:`Trace.traceback` attribute is a :class:`Traceback` instance.
 
    .. versionchanged:: 3.7
       Frames are now sorted from the oldest to the most recent, instead of most recent to oldest.

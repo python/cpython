@@ -1,0 +1,2 @@
+Slightly speed up deallocation of objects that are not tracked by the garbage
+collector, such as :class:`int`, :class:`float` and :class:`str`.

@@ -33,7 +33,7 @@ extern "C" {
 static inline void _Py_ADJUST_ERANGE1(double x)
 {
     if (errno == 0) {
-        if (x == Py_INFINITY || x == -Py_INFINITY) {
+        if (x == INFINITY || x == -INFINITY) {
             errno = ERANGE;
         }
     }
@@ -44,8 +44,8 @@ static inline void _Py_ADJUST_ERANGE1(double x)
 
 static inline void _Py_ADJUST_ERANGE2(double x, double y)
 {
-    if (x == Py_INFINITY || x == -Py_INFINITY ||
-        y == Py_INFINITY || y == -Py_INFINITY)
+    if (x == INFINITY || x == -INFINITY ||
+        y == INFINITY || y == -INFINITY)
     {
         if (errno == 0) {
             errno = ERANGE;
@@ -146,17 +146,17 @@ extern void _Py_set_387controlword(unsigned short);
     unsigned int old_fpcr, new_fpcr
 #define _Py_SET_53BIT_PRECISION_START                                   \
     do {                                                                \
-        __asm__ ("fmove.l %%fpcr,%0" : "=g" (old_fpcr));                \
+        __asm__ ("fmove.l %%fpcr,%0" : "=dm" (old_fpcr));               \
         /* Set double precision / round to nearest.  */                 \
         new_fpcr = (old_fpcr & ~0xf0) | 0x80;                           \
         if (new_fpcr != old_fpcr) {                                     \
-              __asm__ volatile ("fmove.l %0,%%fpcr" : : "g" (new_fpcr));\
+            __asm__ volatile ("fmove.l %0,%%fpcr" : : "dm" (new_fpcr)); \
         }                                                               \
     } while (0)
 #define _Py_SET_53BIT_PRECISION_END                                     \
     do {                                                                \
         if (new_fpcr != old_fpcr) {                                     \
-            __asm__ volatile ("fmove.l %0,%%fpcr" : : "g" (old_fpcr));  \
+            __asm__ volatile ("fmove.l %0,%%fpcr" : : "dm" (old_fpcr)); \
         }                                                               \
     } while (0)
 #endif
@@ -182,8 +182,7 @@ extern void _Py_set_387controlword(unsigned short);
 //     (extended precision), and we don't know how to change
 //     the rounding precision.
 #if !defined(DOUBLE_IS_LITTLE_ENDIAN_IEEE754) && \
-    !defined(DOUBLE_IS_BIG_ENDIAN_IEEE754) && \
-    !defined(DOUBLE_IS_ARM_MIXED_ENDIAN_IEEE754)
+    !defined(DOUBLE_IS_BIG_ENDIAN_IEEE754)
 #  define _PY_SHORT_FLOAT_REPR 0
 #endif
 

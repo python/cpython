@@ -1,1 +1,0 @@
-JIT: replace ``_LOAD_SMALL_INT`` with ``_LOAD_CONST_INLINE_BORROW``

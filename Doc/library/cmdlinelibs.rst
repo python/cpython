@@ -1,7 +1,7 @@
 .. _cmdlinelibs:
 
 ********************************
-Command Line Interface Libraries
+Command-line interface libraries
 ********************************
 
 The modules described in this chapter assist with implementing
@@ -19,3 +19,4 @@ Here's an overview:
    curses.rst
    curses.ascii.rst
    curses.panel.rst
+   cmd.rst

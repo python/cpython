@@ -4,8 +4,6 @@
 .. module:: modulefinder
    :synopsis: Find modules used by a script.
 
-.. sectionauthor:: A.M. Kuchling <amk@amk.ca>
-
 **Source code:** :source:`Lib/modulefinder.py`
 
 --------------
