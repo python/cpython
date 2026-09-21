@@ -335,9 +335,13 @@ class PyShellFileList(FileList):
 
 class ModifiedColorDelegator(ColorDelegator):
     "Extend base class: colorizer for the shell window itself"
+    reading = False  # True while the user enters input for input().
+
     def recolorize_main(self):
-        self.tag_remove("TODO", "1.0", "iomark")
-        self.tag_add("SYNC", "1.0", "iomark")
+        # Do not colorize output, nor input for input() (gh-64007).
+        end = "end" if self.reading else "iomark"
+        self.tag_remove("TODO", "1.0", end)
+        self.tag_add("SYNC", "1.0", end)
         ColorDelegator.recolorize_main(self)
 
     def removecolors(self):
@@ -1189,9 +1193,13 @@ class PyShell(OutputWindow):
         save = self.reading
         try:
             self.reading = True
+            # Input is not Python code (gh-64007).
+            self.color.reading = True
+            self.color.removecolors()
             self.top.mainloop()  # nested mainloop()
         finally:
             self.reading = save
+            self.color.reading = save
         if self._stop_readline_flag:
             self._stop_readline_flag = False
             return ""
