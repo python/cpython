@@ -115,30 +115,6 @@ unicode_write_cstr(PyObject *unicode, Py_ssize_t index,
 }
 
 
-static inline void
-_PyUnicodeWriter_Update(_PyUnicodeWriter *writer)
-{
-    writer->maxchar = PyUnicode_MAX_CHAR_VALUE(writer->buffer);
-    writer->data = PyUnicode_DATA(writer->buffer);
-
-    if (!writer->readonly) {
-        writer->kind = PyUnicode_KIND(writer->buffer);
-        writer->size = PyUnicode_GET_LENGTH(writer->buffer);
-    }
-    else {
-        /* use a value smaller than PyUnicode_1BYTE_KIND() so
-           _PyUnicodeWriter_PrepareKind() will copy the buffer. */
-        writer->kind = 0;
-        assert(writer->kind <= PyUnicode_1BYTE_KIND);
-
-        /* Copy-on-write mode: set buffer size to 0 so
-         * _PyUnicodeWriter_Prepare() will copy (and enlarge) the buffer on
-         * next write. */
-        writer->size = 0;
-    }
-}
-
-
 void
 _PyUnicodeWriter_Init(_PyUnicodeWriter *writer)
 {
@@ -342,12 +318,13 @@ _PyUnicodeWriter_WriteStr(_PyUnicodeWriter *writer, PyObject *str)
         return 0;
     maxchar = PyUnicode_MAX_CHAR_VALUE(str);
     if (maxchar > writer->maxchar || len > writer->size - writer->pos) {
-        if (writer->buffer == NULL && !writer->overallocate) {
+        if (writer->buffer == NULL) {
             assert(_PyUnicode_CheckConsistency(str, 1));
             writer->readonly = 1;
             writer->buffer = Py_NewRef(str);
             _PyUnicodeWriter_Update(writer);
             writer->pos += len;
+            // The next write will create a new buffer and copy the string
             return 0;
         }
         if (_PyUnicodeWriter_PrepareInternal(writer, len, maxchar) == -1)
