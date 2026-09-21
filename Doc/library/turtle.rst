@@ -56,11 +56,11 @@ This document includes four main sections:
 .. note::
 
    Turtle graphics requires the :mod:`tkinter` :term:`optional module`.
-   Installing it is not always straightforward, so check this in advance if
-   you're planning to use turtle graphics with a learner.
-   If it is missing from your copy of CPython,
-   look for documentation from your distributor (that is,
-   whoever provided Python to you).
+   The python.org installers for Windows and macOS include it, but some
+   Linux distributions and other platforms may package it separately. If
+   ``import turtle`` fails with an error mentioning ``_tkinter``, look for
+   documentation from your distributor (that is, whoever provided Python to you).
+   Check this in advance if you're planning to use turtle graphics with a learner.
 
 
 .. _turtle-tutorial:
