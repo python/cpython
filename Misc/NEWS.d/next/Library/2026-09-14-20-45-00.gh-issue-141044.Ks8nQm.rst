@@ -1,7 +1,7 @@
 Fix a reference leak when creating a :class:`threading.Thread` after
 setting a small custom stack size with :func:`threading.stack_size` in
 debug and sanitizer builds. Those builds need extra C stack, so
-:func:`_thread.stack_size` now requires 6 stack margins (as ThreadSanitizer
+:func:`!_thread.stack_size` now requires 6 stack margins (as ThreadSanitizer
 already did). Sizes that previously appeared to work (for example 127 KiB
 on 64-bit debug/ASan builds) now raise :exc:`ValueError`. Release builds
 are unchanged. Patch by Kailash Nelson.
