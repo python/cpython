@@ -1,0 +1,7 @@
+Fix a data race in :class:`functools.partial` in free-threaded builds.
+Mutating a partial shared between threads with ``__setstate__()``, as
+:func:`copy.copy` and :mod:`pickle` do, could crash the interpreter when
+another thread read it at the same time, and a reader could combine the
+arguments of one state with the keywords of another.  Readers of
+``repr()``, ``partial()``, ``__reduce__()`` and calls now take all four
+mutable fields as one snapshot under the object's critical section.

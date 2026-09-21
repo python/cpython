@@ -163,6 +163,7 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     PyObject *func, *pto_args, *new_args, *pto_kw, *phold;
     partialobject *pto;
     Py_ssize_t pto_phcount = 0;
+    Py_ssize_t phcount = 0;
     Py_ssize_t new_nargs = PyTuple_GET_SIZE(args) - 1;
 
     if (new_nargs < 0) {
@@ -204,6 +205,7 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     }
 
     /* check wrapped function / object */
+    PyObject *inner_func = NULL;
     pto_args = pto_kw = NULL;
     int res = PyObject_TypeCheck(func, state->partial_type);
     if (res == -1) {
@@ -212,20 +214,28 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     if (res == 1) {
         // We can use its underlying function directly and merge the arguments.
         partialobject *part = (partialobject *)func;
+        /* Take owned references under the inner partial's lock.  Its fields
+         * are mutable through __setstate__(), which can otherwise drop the
+         * last reference to args or kw while we are still reading them. */
+        Py_BEGIN_CRITICAL_SECTION(part);
         if (part->dict == NULL) {
-            pto_args = part->args;
-            pto_kw = part->kw;
-            func = part->fn;
+            pto_args = Py_NewRef(part->args);
+            pto_kw = Py_NewRef(part->kw);
+            inner_func = Py_NewRef(part->fn);
             pto_phcount = part->phcount;
             assert(PyTuple_Check(pto_args));
             assert(PyDict_Check(pto_kw));
+        }
+        Py_END_CRITICAL_SECTION();
+        if (inner_func != NULL) {
+            func = inner_func;
         }
     }
 
     /* create partialobject structure */
     pto = (partialobject *)type->tp_alloc(type, 0);
     if (pto == NULL)
-        return NULL;
+        goto error;
 
     pto->fn = Py_NewRef(func);
     pto->placeholder = phold;
@@ -233,11 +243,10 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     new_args = PyTuple_GetSlice(args, 1, new_nargs + 1);
     if (new_args == NULL) {
         Py_DECREF(pto);
-        return NULL;
+        goto error;
     }
 
     /* Count placeholders */
-    Py_ssize_t phcount = 0;
     for (Py_ssize_t i = 0; i < new_nargs - 1; i++) {
         if (PyTuple_GET_ITEM(new_args, i) == phold) {
             phcount++;
@@ -255,7 +264,7 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         if (tot_args == NULL) {
             Py_DECREF(new_args);
             Py_DECREF(pto);
-            return NULL;
+            goto error;
         }
         for (Py_ssize_t i = 0, j = 0; i < tot_nargs; i++) {
             if (i < npargs) {
@@ -287,7 +296,7 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         Py_DECREF(new_args);
         if (pto->args == NULL) {
             Py_DECREF(pto);
-            return NULL;
+            goto error;
         }
         assert(PyTuple_Check(pto->args));
     }
@@ -308,17 +317,26 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         if (kw != NULL && pto->kw != NULL) {
             if (PyDict_Merge(pto->kw, kw, 1) != 0) {
                 Py_DECREF(pto);
-                return NULL;
+                goto error;
             }
         }
     }
     if (pto->kw == NULL) {
         Py_DECREF(pto);
-        return NULL;
+        goto error;
     }
 
     partial_setvectorcall(pto);
+    Py_XDECREF(pto_args);
+    Py_XDECREF(pto_kw);
+    Py_XDECREF(inner_func);
     return (PyObject *)pto;
+
+error:
+    Py_XDECREF(pto_args);
+    Py_XDECREF(pto_kw);
+    Py_XDECREF(inner_func);
+    return NULL;
 }
 
 static int
@@ -373,19 +391,29 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
     PyThreadState *tstate = _PyThreadState_GET();
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
 
+    PyObject *result = NULL;
+    PyObject *partial_function, *partial_args, *partial_keywords;
+    Py_ssize_t pto_phcount;
+
+    /* One coherent snapshot: phcount must not be sampled apart from args,
+     * because tot_nargs below combines them. */
+    Py_BEGIN_CRITICAL_SECTION(pto);
+    partial_function = Py_NewRef(pto->fn);
+    partial_args = Py_NewRef(pto->args);
+    partial_keywords = Py_NewRef(pto->kw);
+    pto_phcount = pto->phcount;
+    Py_END_CRITICAL_SECTION();
+
     /* Placeholder check */
-    Py_ssize_t pto_phcount = pto->phcount;
     if (nargs < pto_phcount) {
         PyErr_Format(PyExc_TypeError,
                      "missing positional arguments in 'partial' call; "
                      "expected at least %zd, got %zd", pto_phcount, nargs);
+        Py_DECREF(partial_function);
+        Py_DECREF(partial_args);
+        Py_DECREF(partial_keywords);
         return NULL;
     }
-
-    PyObject *result = NULL;
-    PyObject *partial_function = Py_NewRef(pto->fn);
-    PyObject *partial_args = Py_NewRef(pto->args);
-    PyObject *partial_keywords = Py_NewRef(pto->kw);
 
     PyObject **pto_args = _PyTuple_ITEMS(partial_args);
     Py_ssize_t pto_nargs = PyTuple_GET_SIZE(partial_args);
@@ -592,22 +620,32 @@ static PyObject *
 partial_call(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     partialobject *pto = partialobject_CAST(self);
-    assert(PyCallable_Check(pto->fn));
-    assert(PyTuple_Check(pto->args));
-    assert(PyDict_Check(pto->kw));
+    PyObject *pto_fn, *pto_args, *pto_kw;
+    PyObject *tot_kw = NULL, *tot_args = NULL;
+    PyObject *res = NULL;
+    Py_ssize_t pto_phcount;
+
+    Py_BEGIN_CRITICAL_SECTION(pto);
+    pto_fn = Py_NewRef(pto->fn);
+    pto_args = Py_NewRef(pto->args);
+    pto_kw = Py_NewRef(pto->kw);
+    pto_phcount = pto->phcount;
+    Py_END_CRITICAL_SECTION();
+
+    assert(PyCallable_Check(pto_fn));
+    assert(PyTuple_Check(pto_args));
+    assert(PyDict_Check(pto_kw));
 
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-    Py_ssize_t pto_phcount = pto->phcount;
     if (nargs < pto_phcount) {
         PyErr_Format(PyExc_TypeError,
                      "missing positional arguments in 'partial' call; "
                      "expected at least %zd, got %zd", pto_phcount, nargs);
-        return NULL;
+        goto done;
     }
 
     /* Merge keywords */
-    PyObject *tot_kw;
-    if (PyDict_GET_SIZE(pto->kw) == 0) {
+    if (PyDict_GET_SIZE(pto_kw) == 0) {
         /* kwargs can be NULL */
         tot_kw = Py_XNewRef(kwargs);
     }
@@ -615,31 +653,27 @@ partial_call(PyObject *self, PyObject *args, PyObject *kwargs)
         /* bpo-27840, bpo-29318: dictionary of keyword parameters must be
            copied, because a function using "**kwargs" can modify the
            dictionary. */
-        tot_kw = PyDict_Copy(pto->kw);
+        tot_kw = PyDict_Copy(pto_kw);
         if (tot_kw == NULL) {
-            return NULL;
+            goto done;
         }
 
         if (kwargs != NULL) {
             if (PyDict_Merge(tot_kw, kwargs, 1) != 0) {
-                Py_DECREF(tot_kw);
-                return NULL;
+                goto done;
             }
         }
     }
 
     /* Merge positional arguments */
-    PyObject *tot_args;
     if (pto_phcount) {
-        Py_ssize_t pto_nargs = PyTuple_GET_SIZE(pto->args);
+        Py_ssize_t pto_nargs = PyTuple_GET_SIZE(pto_args);
         Py_ssize_t tot_nargs = pto_nargs + nargs - pto_phcount;
         assert(tot_nargs >= 0);
         tot_args = PyTuple_New(tot_nargs);
         if (tot_args == NULL) {
-            Py_XDECREF(tot_kw);
-            return NULL;
+            goto done;
         }
-        PyObject *pto_args = pto->args;
         PyObject *item;
         Py_ssize_t j = 0;   // New args index
         for (Py_ssize_t i = 0; i < pto_nargs; i++) {
@@ -661,16 +695,20 @@ partial_call(PyObject *self, PyObject *args, PyObject *kwargs)
     }
     else {
         /* Note: tupleconcat() is optimized for empty tuples */
-        tot_args = PySequence_Concat(pto->args, args);
+        tot_args = PySequence_Concat(pto_args, args);
         if (tot_args == NULL) {
-            Py_XDECREF(tot_kw);
-            return NULL;
+            goto done;
         }
     }
 
-    PyObject *res = PyObject_Call(pto->fn, tot_args, tot_kw);
-    Py_DECREF(tot_args);
+    res = PyObject_Call(pto_fn, tot_args, tot_kw);
+
+done:
+    Py_XDECREF(tot_args);
     Py_XDECREF(tot_kw);
+    Py_DECREF(pto_fn);
+    Py_DECREF(pto_args);
+    Py_DECREF(pto_kw);
     return res;
 }
 
@@ -720,10 +758,14 @@ partial_repr(PyObject *self)
         }
         return PyUnicode_FromString("...");
     }
-    /* Reference arguments in case they change */
-    PyObject *fn = Py_NewRef(pto->fn);
-    PyObject *args = Py_NewRef(pto->args);
-    PyObject *kw = Py_NewRef(pto->kw);
+    /* Hold the per-object lock while taking these: a concurrent
+     * __setstate__() may otherwise drop the last reference mid-acquisition. */
+    PyObject *fn, *args, *kw;
+    Py_BEGIN_CRITICAL_SECTION(pto);
+    fn = Py_NewRef(pto->fn);
+    args = Py_NewRef(pto->args);
+    kw = Py_NewRef(pto->kw);
+    Py_END_CRITICAL_SECTION();
     assert(PyTuple_Check(args));
     assert(PyDict_Check(kw));
 
@@ -792,9 +834,23 @@ static PyObject *
 partial_reduce(PyObject *self, PyObject *Py_UNUSED(args))
 {
     partialobject *pto = partialobject_CAST(self);
-    return Py_BuildValue("O(O)(OOOO)", Py_TYPE(pto), pto->fn, pto->fn,
-                         pto->args, pto->kw,
-                         pto->dict ? pto->dict : Py_None);
+    PyObject *fn, *args, *kw, *dict;
+    PyObject *result;
+
+    Py_BEGIN_CRITICAL_SECTION(pto);
+    fn = Py_NewRef(pto->fn);
+    args = Py_NewRef(pto->args);
+    kw = Py_NewRef(pto->kw);
+    dict = Py_XNewRef(pto->dict);
+    Py_END_CRITICAL_SECTION();
+
+    result = Py_BuildValue("O(O)(OOOO)", Py_TYPE(pto), fn, fn,
+                           args, kw, dict ? dict : Py_None);
+    Py_DECREF(fn);
+    Py_DECREF(args);
+    Py_DECREF(kw);
+    Py_XDECREF(dict);
+    return result;
 }
 
 static PyObject *
@@ -853,12 +909,27 @@ partial_setstate(PyObject *self, PyObject *state)
         dict = NULL;
     else
         Py_INCREF(dict);
-    Py_SETREF(pto->fn, Py_NewRef(fn));
-    Py_SETREF(pto->args, fnargs);
-    Py_SETREF(pto->kw, kw);
+
+    PyObject *old_fn, *old_args, *old_kw, *old_dict;
+    Py_BEGIN_CRITICAL_SECTION(pto);
+    old_fn = pto->fn;
+    old_args = pto->args;
+    old_kw = pto->kw;
+    old_dict = pto->dict;
+    pto->fn = Py_NewRef(fn);
+    pto->args = fnargs;
+    pto->kw = kw;
     pto->phcount = phcount;
-    Py_XSETREF(pto->dict, dict);
+    pto->dict = dict;
     partial_setvectorcall(pto);
+    Py_END_CRITICAL_SECTION();
+
+    // The old values may have arbitrary finalizers, so they must be dropped
+    // after the critical section is released.
+    Py_XDECREF(old_fn);
+    Py_XDECREF(old_args);
+    Py_XDECREF(old_kw);
+    Py_XDECREF(old_dict);
     Py_RETURN_NONE;
 }
 
