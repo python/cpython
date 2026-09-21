@@ -139,7 +139,11 @@ class SearchDialogBase:
         self.error_label = Label(self.frame, text=' ', foreground='red')
         self.error_label.grid(row=self.row, column=1, sticky="nw")
         self.row = self.row + 1
-        self.engine.patvar.trace_add('write', lambda *args: self.show_error(''))
+        patvar = self.engine.patvar
+        trace = patvar.trace_add('write', lambda *args: self.show_error(''))
+        # The trace holds the dialog, remove it with the label.
+        self.error_label.bind('<Destroy>',
+                              lambda e: patvar.trace_remove('write', trace))
 
     def make_frame(self,labeltext=None):
         '''Return (frame, label).

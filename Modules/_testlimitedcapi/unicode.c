@@ -1855,6 +1855,23 @@ unicode_equal(PyObject *module, PyObject *args)
 }
 
 
+/* Test PyUnicode_Check() */
+static PyObject *
+unicode_check(PyObject *module, PyObject *obj)
+{
+    NULLABLE(obj);
+    return PyLong_FromLong(PyUnicode_Check(obj));
+}
+
+
+/* Test PyUnicode_CheckExact() */
+static PyObject *
+unicode_checkexact(PyObject *module, PyObject *obj)
+{
+    NULLABLE(obj);
+    return PyLong_FromLong(PyUnicode_CheckExact(obj));
+}
+
 
 static PyMethodDef TestMethods[] = {
     {"codec_incrementalencoder", codec_incrementalencoder,       METH_VARARGS},
@@ -1944,6 +1961,8 @@ static PyMethodDef TestMethods[] = {
     {"unicode_contains",         unicode_contains,               METH_VARARGS},
     {"unicode_isidentifier",     unicode_isidentifier,           METH_O},
     {"unicode_equal",            unicode_equal,                  METH_VARARGS},
+    {"unicode_check",            unicode_check,                  METH_O},
+    {"unicode_checkexact",       unicode_checkexact,             METH_O},
     {NULL},
 };
 
