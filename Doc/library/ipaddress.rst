@@ -261,7 +261,7 @@ write code that handles both IP versions correctly.  Address objects are
 
    .. attribute:: ipv6_mapped
 
-      :class:`IPv4Address` object representing the IPv4-mapped IPv6 address. See :RFC:`4291`.
+      :class:`IPv6Address` object representing the IPv4-mapped IPv6 address. See :RFC:`4291`.
 
       .. versionadded:: 3.13
 
