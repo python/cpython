@@ -2,5 +2,5 @@
 # This allows for blanket copying of the WASI build code between supported
 # Python versions.
 [targets]
-wasi-sdk = 33
+wasi-sdk = 34
 host-triple = "wasm32-wasip1"
