@@ -1451,14 +1451,6 @@ imaplib
   (Contributed by Forest in :gh:`55454`.)
 
 
-idlelib and IDLE
-----------------
-
-* If no selection is made during copy/cut, the current line will
-  copy/cut automatically.
-  (Contributed by Jiahao Li in :gh:`94521`.)
-
-
 inspect
 -------
 
