@@ -102,12 +102,22 @@ class ThreadRunningTests(BasicThreadTest):
                           "size")
 
         fail_msg = "stack_size(%d) failed - should succeed"
+        # 256 KiB may be below the sanitizer minimum (gh-141044 / TSan).
+        tested = []
         for tss in (262144, 0x100000, 0):
-            thread.stack_size(tss)
+            try:
+                thread.stack_size(tss)
+            except ValueError:
+                verbose_print("skipping stack_size(%d); below platform minimum"
+                              % tss)
+                continue
             self.assertEqual(thread.stack_size(), tss, fail_msg % tss)
             verbose_print("successfully set stack_size(%d)" % tss)
+            tested.append(tss)
 
         for tss in (262144, 0x100000):
+            if tss not in tested:
+                continue
             verbose_print("trying stack_size = (%d)" % tss)
             self.next_ident = 0
             self.created = 0
