@@ -1,0 +1,3 @@
+The :option:`--with-address-sanitizer` and :option:`--with-memory-sanitizer`
+configure options no longer override an explicit :option:`--with-pymalloc`.
+pymalloc is still disabled by default in sanitizer builds.

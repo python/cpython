@@ -3524,7 +3524,10 @@ AC_MSG_RESULT([$withval])
 BASECFLAGS="-fsanitize=address -fno-omit-frame-pointer $BASECFLAGS"
 LDFLAGS="-fsanitize=address $LDFLAGS"
 # ASan works by controlling memory allocation, our own malloc interferes.
-with_pymalloc="no"
+# Disable pymalloc by default, but allow --with-pymalloc to override.
+if test -z "$with_pymalloc"; then
+  with_pymalloc="no"
+fi
 ],
 [AC_MSG_RESULT([no])])
 
@@ -3542,7 +3545,10 @@ BASECFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 -fno-omit-frame-
 LDFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 $LDFLAGS"
 ],[AC_MSG_ERROR([The selected compiler doesn't support memory sanitizer])])
 # MSan works by controlling memory allocation, our own malloc interferes.
-with_pymalloc="no"
+# Disable pymalloc by default, but allow --with-pymalloc to override.
+if test -z "$with_pymalloc"; then
+  with_pymalloc="no"
+fi
 ],
 [AC_MSG_RESULT([no])])
 
