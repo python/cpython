@@ -38,26 +38,26 @@ TOOLS_BUILD_DIR = os.path.abspath(os.path.dirname(__file__))
 SRC_DIR = os.path.dirname(os.path.dirname(TOOLS_BUILD_DIR))
 IGNORED_FILENAME = os.path.join(TOOLS_BUILD_DIR, 'check_capi_macros_ignored.txt')
 
-DEFINE_REGEX = re.compile(r'\s*#\s*define\s+(.*)')
+DEFINE_REGEX = re.compile(r'\s*#\s*(?P<directive>define|undef)\s+(?P<macro>.*)')
 PYTHON_PREFIX = re.compile(r'(Py|PY|_Py|_PY)')
 NAME_REGEX = re.compile(r'([A-Za-z_][A-Za-z0-9_]*)\b')
-UNDEF_REGEX = re.compile(r'\s*#\s*undef\s+(.*)')
+
+CAUSES_BY_DIRECTIVE = {
+    "define": "defined",
+    "undef": "undefined",
+}
 
 
 def parse_file(filename, names):
     with open(filename, encoding='utf8') as fp:
-        for line in fp:
+        for lineno, line in enumerate(fp, start=1):
             # Check for '#define MACRO'
             match = DEFINE_REGEX.match(line)
-            if match:
-                undef = False
-            else:
-                # Check for '#undef MACRO'
-                match = UNDEF_REGEX.match(line)
-                if not match:
-                    continue
-                undef = True
-            macro = match.group(1)
+            if not match:
+                continue
+            macro = match['macro']
+            directive = match['directive']
+            cause = CAUSES_BY_DIRECTIVE.get(directive, directive)
 
             if PYTHON_PREFIX.match(macro):
                 continue
@@ -66,8 +66,8 @@ def parse_file(filename, names):
             if not match:
                 print(f"ERROR: {filename}: Unable to parse {line!r}")
                 sys.exit(1)
-            name = match.group(1)
-            names.append((name, filename, undef))
+            name = match[1]
+            names.append((name, filename, lineno, cause))
 
 
 def get_ignored_names():
@@ -93,7 +93,7 @@ def main():
              if os.path.basename(filename) not in EXCLUDE_HEADERS]
     files.extend(glob.glob(os.path.join(include_dir, 'cpython', '*.h')))
     files.append(os.path.join(SRC_DIR, 'pyconfig.h.in'))
-    names = []  # list of (name: str, filename: str, undef: bool)
+    names = []  # list of (name: str, filename: str, lineno: int, cause: str)
     for filename in files:
         parse_file(filename, names)
 
@@ -128,7 +128,7 @@ def main():
         failure = True
 
     # Check for outdated ignore list
-    names_set = {name for name, filename, undef in names}
+    names_set = {name for name, filename, lineno, cause in names}
     ignored = set(ignored)
     outdated = ignored - names_set
     if outdated:
@@ -148,11 +148,10 @@ def main():
         print('ERROR: the Python C API defines the following new macros:')
         print()
         count = 0
-        for name, filename, undef in sorted(names):
+        for name, filename, lineno, cause in sorted(names):
             if name in ignored:
                 continue
-            define = "undefined" if undef else "defined"
-            print(f"- {name} {define} by {filename}")
+            print(f"- {name} {cause} at {filename}:{lineno}")
             count += 1
         print()
         print(f"Total: {count} macros")
