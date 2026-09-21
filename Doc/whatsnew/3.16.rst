@@ -116,6 +116,13 @@ asyncio
   socket file created for *path*.
   (Contributed by Sam Bull in :gh:`94984`.)
 
+bz2
+---
+
+* Added constants :const:`~bz2.bzlib_version` and
+  :const:`~bz2.bzlib_version_info` which provide information about
+  the version of the bzip2 compression library in use.
+  (Contributed by Serhiy Storchaka in :gh:`117404`.)
 
 codecs
 ------
@@ -127,6 +134,14 @@ codecs
   even when a built-in codec of the same name exists.
   (Contributed by Serhiy Storchaka in :gh:`152997`.)
 
+compression.zstd
+----------------
+
+* Added constants :const:`~compression.zstd.ZSTD_VERSION` and
+  :const:`~compression.zstd.ZSTD_VERSION_INFO` which provide information
+  about the version of the zstd library that was used for building the module.
+  :const:`~compression.zstd.zstd_version_info` is now a named tuple.
+  (Contributed by Serhiy Storchaka in :gh:`117404`.)
 
 concurrent.futures
 ------------------
@@ -168,6 +183,13 @@ ctypes
 * Add :func:`ctypes.util.wrap_dll_function` for generating function pointers
   through a function signature.
   (Contributed by Peter Bierma in :gh:`153903`.)
+
+* Added constants :const:`~ctypes.LIBFFI_VERSION`,
+  :const:`~ctypes.libffi_version`, :const:`~ctypes.LIBFFI_VERSION_INFO`
+  and :const:`~ctypes.libffi_version_info`, which provide information
+  about the version of the libffi library in use.
+  They are only available with libffi 3.5 or later.
+  (Contributed by Serhiy Storchaka in :gh:`157487`.)
 
 
 curses
@@ -439,6 +461,11 @@ lzma
   requires ``lzma`` 5.4.0 or newer while RISC-V requires 5.6.0 or newer.
   (Contributed by Chien Wong in :gh:`115988`.)
 
+* Added constants :const:`~lzma.LZMA_VERSION`, :const:`~lzma.lzma_version`,
+  :const:`~lzma.LZMA_VERSION_INFO`, and :const:`~lzma.lzma_version_info`,
+  which provide information about the version of the lzma library in use.
+  (Contributed by Serhiy Storchaka in :gh:`117404`.)
+
 
 math
 ----
@@ -675,6 +702,11 @@ tkinter
   with no unit suffix to :class:`int` or :class:`float`.
   (Contributed by Serhiy Storchaka in :gh:`153513`.)
 
+unicodedata
+-----------
+
+* The Unicode database has been updated to Unicode 18.0.0.
+
 xml
 ---
 
@@ -725,6 +757,12 @@ xml
   rather than defaulted from the DTD.
   (Contributed by Jason Orendorff and Serhiy Storchaka in :gh:`44871`.)
 
+* The :meth:`~xml.dom.minidom.Node.writexml`,
+  :meth:`~xml.dom.minidom.Node.toxml` and
+  :meth:`~xml.dom.minidom.Node.toprettyxml` methods
+  now work for :class:`!DocumentFragment` nodes in :mod:`xml.dom.minidom`.
+  (Contributed by Serhiy Storchaka in :gh:`54092`.)
+
 * :class:`~xml.etree.ElementTree.XMLPullParser` and
   :func:`~xml.etree.ElementTree.iterparse` now support the *target* parameter.
   The reported object is the value returned by the corresponding method of
@@ -740,6 +778,17 @@ zipfile
   :meth:`ZipFile.repack() <zipfile.ZipFile.repack>` to reclaim the space used
   by the local file entries of removed members.
   (Contributed by Danny Lin in :gh:`51067`.)
+
+zlib
+----
+
+* Added constants :const:`~zlib.ZLIB_VERSION_INFO`,
+  :const:`~zlib.zlib_version_info`, and :const:`~zlib.ZLIBNG_VERSION_INFO`,
+  which provide information about the version of the zlib and the zlib-ng
+  libraries in use.
+  Added :const:`~zlib.zlib_version` as an alias of
+  :const:`~zlib.ZLIB_RUNTIME_VERSION`.
+  (Contributed by Serhiy Storchaka in :gh:`117404`.)
 
 .. Add improved modules above alphabetically, not here at the end.
 

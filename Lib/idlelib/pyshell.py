@@ -335,9 +335,13 @@ class PyShellFileList(FileList):
 
 class ModifiedColorDelegator(ColorDelegator):
     "Extend base class: colorizer for the shell window itself"
+    reading = False  # True while the user enters input for input().
+
     def recolorize_main(self):
-        self.tag_remove("TODO", "1.0", "iomark")
-        self.tag_add("SYNC", "1.0", "iomark")
+        # Do not colorize output, nor input for input() (gh-64007).
+        end = "end" if self.reading else "iomark"
+        self.tag_remove("TODO", "1.0", end)
+        self.tag_add("SYNC", "1.0", end)
         ColorDelegator.recolorize_main(self)
 
     def removecolors(self):
@@ -852,6 +856,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
 
 
 class PyShell(OutputWindow):
+    is_shell = True
     from idlelib.squeezer import Squeezer
 
     shell_title = "IDLE Shell"
@@ -909,7 +914,6 @@ class PyShell(OutputWindow):
         self.indentwidth = 4
 
         self.sys_ps1 = sys.ps1 if hasattr(sys, 'ps1') else '>>>\n'
-        self.prompt_last_line = self.sys_ps1.split('\n')[-1]
         self.prompt = self.sys_ps1  # Changes when debug active
 
         text = self.text
@@ -1099,6 +1103,7 @@ class PyShell(OutputWindow):
 
     def debug_menu_postcommand(self):
         state = 'disabled' if self.executing else 'normal'
+        self.update_menu_state('debug', '*ebugger', state)
         self.update_menu_state('debug', '*tack*iewer', state)
 
     def beginexecuting(self):
@@ -1188,9 +1193,13 @@ class PyShell(OutputWindow):
         save = self.reading
         try:
             self.reading = True
+            # Input is not Python code (gh-64007).
+            self.color.reading = True
+            self.color.removecolors()
             self.top.mainloop()  # nested mainloop()
         finally:
             self.reading = save
+            self.color.reading = save
         if self._stop_readline_flag:
             self._stop_readline_flag = False
             return ""
@@ -1431,13 +1440,24 @@ class PyShell(OutputWindow):
         self.ctip.remove_calltip_window()
 
     def write(self, s, tags=()):
+        text = self.text
+        # Move the prompt (the "console" tag on the preceding newline)
+        # after output which comes while it is shown (gh-75512).
+        at_prompt = (s and tags in ("stdout", "stderr")
+                     and not self.executing and not self.reading)
+        if at_prompt:
+            text.tag_remove("console", "iomark-1c")
+            text.tag_remove("stdin", "iomark-1c")
         try:
-            self.text.mark_gravity("iomark", "right")
+            text.mark_gravity("iomark", "right")
             count = OutputWindow.write(self, s, tags, "iomark")
-            self.text.mark_gravity("iomark", "left")
+            text.mark_gravity("iomark", "left")
         except:
             raise ###pass  # ### 11Aug07 KBK if we are expecting exceptions
                            # let's find out what they are and be specific.
+        if at_prompt and s.endswith('\n'):
+            text.tag_add("console", "iomark-1c")
+            self.shell_sidebar.update_sidebar()
         if self.canceled:
             self.canceled = False
             if not use_subprocess:
@@ -1612,6 +1632,12 @@ def main():
     root.withdraw()
     fix_scaling(root)
 
+    # Warn about configuration files that could not be parsed (gh-66172).
+    config_error = idleConf.file_load_error_message()
+    if config_error:
+        messagebox.showwarning('IDLE Configuration Warning', config_error,
+                               parent=root)
+
     # set application icon
     icondir = os.path.join(os.path.dirname(__file__), 'Icons')
     if system() == 'Windows':
@@ -1668,6 +1694,10 @@ def main():
         if filename and os.path.isfile(filename):
             shell.interp.execfile(filename)
     if cmd or script:
+        # Let the startup file finish first: the command or script
+        # is to run after it, in its namespace (gh-68453).
+        while shell.executing:
+            root.update()
         shell.interp.runcommand("""if 1:
             import sys as _sys
             _sys.argv = {!r}

@@ -1272,6 +1272,12 @@ static void
 bytearray_dealloc(PyObject *op)
 {
     PyByteArrayObject *self = _PyByteArray_CAST(op);
+#ifdef Py_DEBUG
+    if (self->ob_bytes_object != NULL) {
+        _PyBytes_CheckOverflow(self->ob_bytes_object, op, "bytearray");
+    }
+#endif
+
     if (self->ob_exports > 0) {
         PyErr_SetString(PyExc_SystemError,
                         "deallocated bytearray object has exported buffers");
