@@ -1,4 +1,5 @@
 import unittest
+import asyncio
 import os
 import textwrap
 import importlib
@@ -65,6 +66,22 @@ def get_all_awaited_by(pid):
 
 class TestGetStackTrace(unittest.TestCase):
     maxDiff = None
+
+    @skip_if_not_supported
+    def test_long_task_name_is_truncated(self):
+        # gh-157788
+        async def main():
+            asyncio.create_task(asyncio.sleep(10_000), name="x" * 300)
+            await asyncio.sleep(0)
+            return [
+                task.task_name
+                for info in RemoteUnwinder(os.getpid()).get_all_awaited_by()
+                for task in info.awaited_by
+            ]
+
+        names = asyncio.run(main())
+        self.assertIn("Task-1", names)
+        self.assertEqual([len(n) for n in names if n.startswith("x")], [255])
 
     @skip_if_not_supported
     @unittest.skipIf(
