@@ -625,8 +625,7 @@ class TestUops(unittest.TestCase):
         self.assertIn("_FOR_ITER_TIER_TWO", uops)
         self.assertNotIn("_ITER_NEXT_INLINE", uops)
 
-    def test_trace_rewind_decref(self):
-        # gh-157875: trace rewind should not leak reference
+    def test_157875_trace_rewind_ref_leak(self):
         def run():
             class C:
                 def __iter__(self):
