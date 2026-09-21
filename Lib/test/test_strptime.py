@@ -457,7 +457,8 @@ class StrptimeTests(unittest.TestCase):
 
         with self.assertRaises(ValueError) as err:
             _strptime._strptime("-01:3030", "%z")
-        self.assertEqual("Inconsistent use of : in -01:3030", str(err.exception))
+        self.assertEqual("Inconsistent use of : in '-01:3030'",
+                         str(err.exception))
         with self.assertRaises(ValueError) as err:
             _strptime._strptime("-01:3030", "%:z")
         self.assertEqual("Missing colon in %:z before '30', got '-01:3030'",

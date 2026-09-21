@@ -700,7 +700,7 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
                         z = z[:3] + z[4:]
                         if len(z) > 5:
                             if z[5] != ':':
-                                msg = f"Inconsistent use of : in {found_dict[group_key]}"
+                                msg = f"Inconsistent use of : in {found_dict[group_key]!r}"
                                 raise ValueError(msg)
                             z = z[:5] + z[6:]
                     hours = int(z[1:3])
