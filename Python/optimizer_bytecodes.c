@@ -1,3 +1,5 @@
+#include <stdint.h>
+
 #include "Python.h"
 #include "pycore_long.h"
 #include "pycore_opcode_utils.h"
@@ -2532,9 +2534,8 @@ dummy_func(void) {
                 uop_buffer_remaining_space(&ctx->out_buffer) >= 2)
             {
                 cnst = convert_global_to_const(this_instr, builtins);
-                if (cnst != NULL) {
-                    /* convert_global_to_const already chose the right
-                     * _LOAD_CONST_INLINE[_BORROW] opcode; reuse it. */
+                if (cnst != NULL && !ctx->frame->builtins_checked) {
+                    ctx->frame->builtins_checked = true;
                     ADD_OP(_GUARD_BUILTINS_IS_CANONICAL, 0, 0);
                     ADD_OP(this_instr->opcode, 0, (uintptr_t)cnst);
                 }

@@ -5106,6 +5106,35 @@ class TestUopsOptimization(unittest.TestCase):
         # A different function enters the same executor with other builtins.
         self.assertEqual(f_copied(8), [42] * 8)
 
+    def test_builtins_guard_emitted_once_per_frame(self):
+        # A frame's builtins cannot change once the frame is pushed, so
+        # repeated builtin loads in one frame share a single guard, just as
+        # they already share a single _GUARD_GLOBALS_VERSION.
+
+        def warmup(n):
+            x = 0
+            for _ in range(n):
+                x += len("ab")
+            return x
+
+        def one_frame(n):
+            x = 0
+            for _ in range(n):
+                x += len("ab") + abs(-1) + ord("c")
+            return x
+
+        # The optimizer context is reused for every compilation, so compile an
+        # unrelated trace first: state that is not reset per frame leaks here.
+        warmup(TIER2_THRESHOLD)
+        self.assertIsNotNone(get_first_executor(warmup))
+
+        _, ex = self._run_with_optimizer(one_frame, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uop_names = get_opnames(ex)
+        self.assertNotIn("_LOAD_GLOBAL_BUILTINS", uop_names)  # all folded
+        self.assertEqual(uop_names.count("_GUARD_BUILTINS_IS_CANONICAL"), 1)
+        self.assertEqual(uop_names.count("_GUARD_GLOBALS_VERSION"), 1)
+
     def test_reference_tracking_across_call_doesnt_crash(self):
 
         def f1():

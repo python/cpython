@@ -2314,7 +2314,8 @@
                     uop_buffer_remaining_space(&ctx->out_buffer) >= 2)
                 {
                     cnst = convert_global_to_const(this_instr, builtins);
-                    if (cnst != NULL) {
+                    if (cnst != NULL && !ctx->frame->builtins_checked) {
+                        ctx->frame->builtins_checked = true;
                         ADD_OP(_GUARD_BUILTINS_IS_CANONICAL, 0, 0);
                         ADD_OP(this_instr->opcode, 0, (uintptr_t)cnst);
                     }
