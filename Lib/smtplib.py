@@ -951,7 +951,7 @@ class SMTP:
             raise ValueError("message has more than one 'Resent-' header block")
 
         # RFC 5322 section 3.6, 4th Paragraph
-        if msg.get('Date', None) is None:
+        if 'Date' not in msg:
             # localtime: RFC 5322 section 3.3, 4th Paragraph
             msg['Date'] = email.utils.formatdate(localtime=True)
         if from_addr is None:

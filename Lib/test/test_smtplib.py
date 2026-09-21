@@ -1529,17 +1529,17 @@ class SMTPUTF8SimTests(unittest.TestCase):
             "UTC+02:00"
         )
 
-        expected = textwrap.dedent("""\
+        expected = textwrap.dedent(f"""\
             From: Páolo <főo@bar.com>
             To: Dinsdale
             Subject: Nudge nudge, wink, wink \u1F609
             Content-Type: text/plain; charset="utf-8"
             Content-Transfer-Encoding: 8bit
             MIME-Version: 1.0
-            Date: {}
+            Date: {date}
 
             oh là là, know what I mean, know what I mean?
-            """.format(date))
+            """)
 
         self.assertEqual(self.serv.last_mailfrom, 'főo@bar.com')
         self.assertEqual(self.serv.last_rcpttos, ['Dinsdale'])
