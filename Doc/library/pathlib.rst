@@ -1041,8 +1041,8 @@ Querying file type and status
 
 .. method:: Path.exists(*, follow_symlinks=True)
 
-   Return ``True`` if the path points to an existing file or directory.
-   ``False`` will be returned if the path is invalid, inaccessible or missing.
+   Return ``True`` if the path points to an existing file or directory and
+   ``False`` if the path is invalid, inaccessible or missing.
    Use :meth:`Path.stat` to distinguish between these cases.
 
    This method normally follows symlinks; to check if a symlink exists, add
@@ -1050,6 +1050,8 @@ Querying file type and status
 
    ::
 
+      >>> Path('').exists()  # The current directory.
+      True
       >>> Path('.').exists()
       True
       >>> Path('setup.py').exists()
