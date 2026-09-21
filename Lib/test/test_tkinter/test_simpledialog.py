@@ -1,3 +1,4 @@
+import sys
 import unittest
 import tkinter
 from tkinter import messagebox, ttk
@@ -256,11 +257,15 @@ class SimpleDialogTest(AbstractDialogTest, unittest.TestCase):
         tk.call('update')
         tk.call('grab', 'set', '.foreign')
         tk.call('focus', '-force', '.foreign')
+        # On Windows the application may not get the focus, and then "focus"
+        # returns an empty string.
+        has_focus = tk.call('focus') == '.foreign'
         d = self.create()
         d.root.after(1, lambda: d._buttons[0].invoke())
         self.assertEqual(d.go(), 0)
         self.assertEqual(tk.call('grab', 'current', self.root._w), '.foreign')
-        self.assertEqual(tk.call('focus'), '.foreign')
+        if sys.platform != 'win32' or has_focus:
+            self.assertEqual(tk.call('focus'), '.foreign')
 
 
 class DialogTest(AbstractDialogTest, unittest.TestCase):
