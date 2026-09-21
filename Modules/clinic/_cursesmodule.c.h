@@ -2679,7 +2679,7 @@ PyDoc_STRVAR(_curses_initscr__doc__,
 "\n"
 "Initialize the library.\n"
 "\n"
-"Return a WindowObject which represents the whole screen.");
+"Return a window object which represents the whole screen.");
 
 #define _CURSES_INITSCR_METHODDEF    \
     {"initscr", (PyCFunction)_curses_initscr, METH_NOARGS, _curses_initscr__doc__},
@@ -4421,4 +4421,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_USE_DEFAULT_COLORS_METHODDEF
     #define _CURSES_USE_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_USE_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=a449af71cde3da29 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c7585659f9ac83e3 input=a9049054013a1b77]*/

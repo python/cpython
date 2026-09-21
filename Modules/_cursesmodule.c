@@ -3514,12 +3514,12 @@ _curses.initscr
 
 Initialize the library.
 
-Return a WindowObject which represents the whole screen.
+Return a window object which represents the whole screen.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_initscr_impl(PyObject *module)
-/*[clinic end generated code: output=619fb68443810b7b input=514f4bce1821f6b5]*/
+/*[clinic end generated code: output=619fb68443810b7b input=e2bf3a061b7d948a]*/
 {
     WINDOW *win;
 
