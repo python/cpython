@@ -1,0 +1,2 @@
+Fix editing help sources and key bindings in the IDLE Settings dialog after
+selecting them with the keyboard.
