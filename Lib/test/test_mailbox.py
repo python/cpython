@@ -1521,6 +1521,19 @@ class TestBabyl(_TestSingleFile, unittest.TestCase):
         self._box.remove(key1)
         self.assertEqual(set(self._box.get_labels()), set(['blah']))
 
+    def test_visible(self):
+        # gh-157880: visible headers are written to the file and read back
+        msg = mailbox.BabylMessage(self._template % 0)
+        msg.update_visible()
+        key = self._box.add(msg)
+        for retrieved in (self._box.get_message(key), self._box[key]):
+            self.assertEqual(retrieved['from'], 'foo')
+            self.assertEqual(retrieved.get_payload(), '0\n')
+            self.assertEqual(retrieved.get_visible().keys(), ['From'])
+            self.assertEqual(retrieved.get_visible()['from'], 'foo')
+        self.assertEqual(self._box.get_bytes(key),
+                         (self._template % 0).encode('ascii'))
+
 
 class FakeFileLikeObject:
 
