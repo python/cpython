@@ -6016,6 +6016,28 @@ class TestUopsOptimization(unittest.TestCase):
         """), PYTHON_JIT="1")
         self.assertEqual(result[0].rc, 0, result)
 
+    def test_157875_rewound_trace_reference_leak(self):
+        # https://github.com/python/cpython/issues/157875
+        import weakref
+
+        def run():
+            class C:
+                def __iter__(self):
+                    return self
+
+                def __next__(self):
+                    raise StopIteration
+
+            obj = C()
+            for _ in range(10_000):
+                for _ in obj:
+                    pass
+            return weakref.ref(C)
+
+        ref = run()
+        gc.collect()
+        self.assertIsNone(ref())
+
     def test_144068_daemon_thread_jit_cleanup(self):
         result = script_helper.run_python_until_end('-c', textwrap.dedent("""
         import threading
