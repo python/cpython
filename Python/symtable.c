@@ -895,39 +895,41 @@ finalize_inlined_comprehension(PySTEntryObject *ste, PySTEntryObject *comp,
             }
             continue;
         }
-        // Loads here are in the enclosing compilation unit.
-        if (scope == FREE && (comp_flags & USE) &&
-                !symtable_add_flag(ste->ste_symbols, k, USE)) {
-            goto error;
-        }
+        int is_def_bound = 0;
         if (existing) {
             long flags = PyLong_AsLong(existing);
             if (flags == -1 && PyErr_Occurred()) {
                 goto error;
             }
-            if ((flags & DEF_BOUND) && ste->ste_type != ClassBlock) {
-                // free vars in comprehension that are locals in outer scope can
-                // now simply be locals, unless they are free in comp children,
-                // needed as cells by sibling nested scopes, or if the outer
-                // scope is a class block
-                int ok = is_free_in_any_child(comp, k);
-                if (ok < 0) {
+            is_def_bound = flags & DEF_BOUND;
+        }
+        // Loads here are in the enclosing compilation unit.
+        if (scope == FREE && (comp_flags & USE) &&
+                !symtable_add_flag(ste->ste_symbols, k, USE)) {
+            goto error;
+        }
+        if (is_def_bound && ste->ste_type != ClassBlock) {
+            // free vars in comprehension that are locals in outer scope can
+            // now simply be locals, unless they are free in comp children,
+            // needed as cells by sibling nested scopes, or if the outer
+            // scope is a class block
+            int ok = is_free_in_any_child(comp, k);
+            if (ok < 0) {
+                goto error;
+            }
+            if (!ok) {
+                int in_newfree = PySet_Contains(outer_newfree, k);
+                if (in_newfree < 0) {
                     goto error;
                 }
-                if (!ok) {
-                    int in_newfree = PySet_Contains(outer_newfree, k);
-                    if (in_newfree < 0) {
+                if (!in_newfree) {
+                    if (PySet_Discard(comp_free, k) < 0) {
                         goto error;
-                    }
-                    if (!in_newfree) {
-                        if (PySet_Discard(comp_free, k) < 0) {
-                            goto error;
-                        }
                     }
                 }
             }
         }
-        else {
+        else if (!existing) {
             assert(scope != FREE || PySet_Contains(comp_free, k) == 1);
         }
     }
