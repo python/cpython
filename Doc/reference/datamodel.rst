@@ -1557,6 +1557,16 @@ Special read-only attributes
    * - .. attribute:: codeobject.co_firstlineno
      - The line number of the first line of the function
 
+   * - .. attribute:: codeobject.co_linetable
+     - A :class:`bytes` object containing encoded source location information.
+       The exact format is an implementation detail and may change between
+       Python versions. Use :meth:`~codeobject.co_lines` and
+       :meth:`~codeobject.co_positions` for supported access to line and
+       position information. To create a modified copy of a code object,
+       use :meth:`~codeobject.replace`.
+
+       .. versionadded:: 3.10
+
    * - .. attribute:: codeobject.co_stacksize
      - The required stack size of the code object
 
