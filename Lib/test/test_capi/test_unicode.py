@@ -1817,6 +1817,39 @@ class CAPITest(unittest.TestCase):
 
         # CRASHES is_compact_ascii(NULL)
 
+    def test_unicode_equal(self):
+        unicode_equal = _testlimitedcapi.unicode_equal
+
+        def copy(text):
+            return text.encode().decode()
+
+        self.assertTrue(unicode_equal("", ""))
+        self.assertTrue(unicode_equal("abc", "abc"))
+        self.assertTrue(unicode_equal("abc", copy("abc")))
+        self.assertTrue(unicode_equal("\u20ac", copy("\u20ac")))
+        self.assertTrue(unicode_equal("\U0010ffff", copy("\U0010ffff")))
+
+        self.assertFalse(unicode_equal("abc", "abcd"))
+        self.assertFalse(unicode_equal("\u20ac", "\u20ad"))
+        self.assertFalse(unicode_equal("\U0010ffff", "\U0010fffe"))
+
+        # str subclass
+        self.assertTrue(unicode_equal("abc", Str("abc")))
+        self.assertTrue(unicode_equal(Str("abc"), "abc"))
+        self.assertFalse(unicode_equal("abc", Str("abcd")))
+        self.assertFalse(unicode_equal(Str("abc"), "abcd"))
+
+        # invalid type
+        for invalid_type in (b'bytes', 123, ("tuple",)):
+            with self.subTest(invalid_type=invalid_type):
+                with self.assertRaises(TypeError):
+                    unicode_equal("abc", invalid_type)
+                with self.assertRaises(TypeError):
+                    unicode_equal(invalid_type, "abc")
+
+        # CRASHES unicode_equal("abc", NULL)
+        # CRASHES unicode_equal(NULL, "abc")
+
 
 class PyUnicodeWriterTest(unittest.TestCase):
     def create_writer(self, size):
@@ -1864,6 +1897,11 @@ class PyUnicodeWriterTest(unittest.TestCase):
         self.assertRaises(ValueError, writer.write_char, 0xFFFF_FFFF)
         self.assertEqual(writer.finish(),
                          "\0$\u20AC\U0010FFFF")
+
+        writer = self.create_writer(0)
+        for ch in 'hello':
+            writer.write_char(ord(ch))
+        self.assertEqual(writer.finish(), 'hello')
 
     def test_utf8(self):
         writer = self.create_writer(0)
@@ -2057,14 +2095,25 @@ class PyUnicodeWriterTest(unittest.TestCase):
                 writer.write_substring('text', 0, 0)
                 self.assertIs(writer.finish(), '')
 
-        for ch in range(256):
-            with self.subTest(ch=ch):
-                ch = chr(ch)
-                writer = self.create_writer(0)
-                # Use PyUnicodeWriter_WriteSubstring() to avoid the read-only
-                # buffer optimization
-                writer.write_substring(ch + 'xxx', 0, 1)
-                self.assertIs(writer.finish(), ch)
+        for size in (0, 123):
+            for ch in range(256):
+                with self.subTest(size=size, ch=ch):
+                    ch = chr(ch)
+
+                    # If the first write is a Latin1 character and no buffer
+                    # was allocated yet, use the singleton as the read-only
+                    # buffer
+                    writer = self.create_writer(size)
+                    writer.write_char(ord(ch))
+                    self.assertIs(writer.finish(), ch)
+
+                    # PyUnicodeWriter_Finish() replaces the buffer
+                    # with the singleton
+                    writer = self.create_writer(size)
+                    # Use PyUnicodeWriter_WriteSubstring() to avoid
+                    # the read-only buffer optimization
+                    writer.write_substring(ch + 'xxx', 0, 1)
+                    self.assertIs(writer.finish(), ch)
 
     @unittest.skipUnless(support.Py_DEBUG, 'need debug build (Py_DEBUG)')
     def test_detect_overflow(self):
@@ -2115,6 +2164,32 @@ class PyUnicodeWriterTest(unittest.TestCase):
         self.assertEqual(writer.finish(),
                          'ascii latin1:\xe9 ucs2:\u20ac ucs4:\U0010ffff')
 
+    def test_readonly_optim(self):
+        # Read-only optimization: if the first and only write is a Python str
+        # object and no buffer was allocated yet, return the object unchanged
+        unique_string = 'unique string'
+        writer = self.create_writer(0)
+        writer.write_str(unique_string)
+        self.assertIs(writer.finish(), unique_string)
+
+        writer = self.create_writer(0)
+        writer.write_substring(unique_string, 0, len(unique_string))
+        self.assertIs(writer.finish(), unique_string)
+
+        class MyStr:
+            def __str__(self):
+                return unique_string
+        writer = self.create_writer(0)
+        writer.write_str(MyStr())
+        self.assertIs(writer.finish(), unique_string)
+
+        class MyRepr:
+            def __repr__(self):
+                return unique_string
+        writer = self.create_writer(0)
+        writer.write_repr(MyRepr())
+        self.assertIs(writer.finish(), unique_string)
+
 
 # Test PyUnicodeWriter_Format()
 @unittest.skipIf(ctypes is None, 'need ctypes')
@@ -2152,112 +2227,106 @@ class PyUnicodeWriterFormatTest(unittest.TestCase):
 
         self.assertEqual(writer.finish(), 'Hello World.')
 
-    def test_unicode_equal(self):
-        unicode_equal = _testlimitedcapi.unicode_equal
+    def test_readonly_optim(self):
+        # Read-only optimization: if the first and only write is a Python str
+        # object and no buffer was allocated yet, return the object unchanged
+        from ctypes import py_object
 
-        def copy(text):
-            return text.encode().decode()
+        unique_string = 'unique string'
+        for format in (b'%S', b'%U'):
+            with self.subTest(format=format):
+                writer = self.create_writer(0)
+                self.writer_format(writer, format, py_object(unique_string))
+                self.assertIs(writer.finish(), unique_string)
 
-        self.assertTrue(unicode_equal("", ""))
-        self.assertTrue(unicode_equal("abc", "abc"))
-        self.assertTrue(unicode_equal("abc", copy("abc")))
-        self.assertTrue(unicode_equal("\u20ac", copy("\u20ac")))
-        self.assertTrue(unicode_equal("\U0010ffff", copy("\U0010ffff")))
+        class MyStr:
+            def __str__(self):
+                return unique_string
+        writer = self.create_writer(0)
+        self.writer_format(writer, b'%S', py_object(MyStr()))
+        self.assertIs(writer.finish(), unique_string)
 
-        self.assertFalse(unicode_equal("abc", "abcd"))
-        self.assertFalse(unicode_equal("\u20ac", "\u20ad"))
-        self.assertFalse(unicode_equal("\U0010ffff", "\U0010fffe"))
+        class MyRepr:
+            def __repr__(self):
+                return unique_string
+        writer = self.create_writer(0)
+        self.writer_format(writer, b'%R', py_object(MyRepr()))
+        self.assertIs(writer.finish(), unique_string)
 
-        # str subclass
-        self.assertTrue(unicode_equal("abc", Str("abc")))
-        self.assertTrue(unicode_equal(Str("abc"), "abc"))
-        self.assertFalse(unicode_equal("abc", Str("abcd")))
-        self.assertFalse(unicode_equal(Str("abc"), "abcd"))
 
-        # invalid type
-        for invalid_type in (b'bytes', 123, ("tuple",)):
-            with self.subTest(invalid_type=invalid_type):
-                with self.assertRaises(TypeError):
-                    unicode_equal("abc", invalid_type)
-                with self.assertRaises(TypeError):
-                    unicode_equal(invalid_type, "abc")
+# TODO: Add tests to the following codec functions:
+# - PyUnicode_AsASCIIString
+# - PyUnicode_AsCharmapString
+# - PyUnicode_AsEncodedString
+# - PyUnicode_AsLatin1String
+# - PyUnicode_AsMBCSString
+# - PyUnicode_AsRawUnicodeEscapeString
+# - PyUnicode_AsUTF16String
+# - PyUnicode_AsUTF32String
+# - PyUnicode_AsUTF8String
+# - PyUnicode_AsUnicodeEscapeString
+# - PyUnicode_BuildEncodingMap
+# - PyUnicode_Decode
+# - PyUnicode_DecodeASCII
+# - PyUnicode_DecodeCharmap
+# - PyUnicode_DecodeCodePageStateful
+# - PyUnicode_DecodeFSDefault
+# - PyUnicode_DecodeFSDefaultAndSize
+# - PyUnicode_DecodeLatin1
+# - PyUnicode_DecodeLocale
+# - PyUnicode_DecodeLocaleAndSize
+# - PyUnicode_DecodeMBCS
+# - PyUnicode_DecodeMBCSStateful
+# - PyUnicode_DecodeRawUnicodeEscape
+# - PyUnicode_DecodeUTF16
+# - PyUnicode_DecodeUTF16Stateful
+# - PyUnicode_DecodeUTF32
+# - PyUnicode_DecodeUTF32Stateful
+# - PyUnicode_DecodeUTF7
+# - PyUnicode_DecodeUTF7Stateful
+# - PyUnicode_DecodeUTF8
+# - PyUnicode_DecodeUTF8Stateful
+# - PyUnicode_DecodeUnicodeEscape
+# - PyUnicode_EncodeCodePage
+# - PyUnicode_EncodeFSDefault
+# - PyUnicode_EncodeLocale
+# - PyUnicode_FSConverter
+# - PyUnicode_FSDecoder
+# - PyUnicode_FromEncodedObject
+# - PyUnicode_Splitlines
 
-        # CRASHES unicode_equal("abc", NULL)
-        # CRASHES unicode_equal(NULL, "abc")
+# TODO: Add tests to the following character functions:
+# - Py_UNICODE_ISALNUM
+# - Py_UNICODE_ISALPHA
+# - Py_UNICODE_ISDECIMAL
+# - Py_UNICODE_ISDIGIT
+# - Py_UNICODE_ISLINEBREAK
+# - Py_UNICODE_ISLOWER
+# - Py_UNICODE_ISNUMERIC
+# - Py_UNICODE_ISPRINTABLE
+# - Py_UNICODE_ISSPACE
+# - Py_UNICODE_ISTITLE
+# - Py_UNICODE_ISUPPER
+# - Py_UNICODE_TODECIMAL
+# - Py_UNICODE_TODIGIT
+# - Py_UNICODE_TOLOWER
+# - Py_UNICODE_TONUMERIC
+# - Py_UNICODE_TOTITLE
+# - Py_UNICODE_TOUPPER
 
-    # TODO: Add tests to the following codec functions:
-    # - PyUnicode_AsASCIIString
-    # - PyUnicode_AsCharmapString
-    # - PyUnicode_AsEncodedString
-    # - PyUnicode_AsLatin1String
-    # - PyUnicode_AsMBCSString
-    # - PyUnicode_AsRawUnicodeEscapeString
-    # - PyUnicode_AsUTF16String
-    # - PyUnicode_AsUTF32String
-    # - PyUnicode_AsUTF8String
-    # - PyUnicode_AsUnicodeEscapeString
-    # - PyUnicode_BuildEncodingMap
-    # - PyUnicode_Decode
-    # - PyUnicode_DecodeASCII
-    # - PyUnicode_DecodeCharmap
-    # - PyUnicode_DecodeCodePageStateful
-    # - PyUnicode_DecodeFSDefault
-    # - PyUnicode_DecodeFSDefaultAndSize
-    # - PyUnicode_DecodeLatin1
-    # - PyUnicode_DecodeLocale
-    # - PyUnicode_DecodeLocaleAndSize
-    # - PyUnicode_DecodeMBCS
-    # - PyUnicode_DecodeMBCSStateful
-    # - PyUnicode_DecodeRawUnicodeEscape
-    # - PyUnicode_DecodeUTF16
-    # - PyUnicode_DecodeUTF16Stateful
-    # - PyUnicode_DecodeUTF32
-    # - PyUnicode_DecodeUTF32Stateful
-    # - PyUnicode_DecodeUTF7
-    # - PyUnicode_DecodeUTF7Stateful
-    # - PyUnicode_DecodeUTF8
-    # - PyUnicode_DecodeUTF8Stateful
-    # - PyUnicode_DecodeUnicodeEscape
-    # - PyUnicode_EncodeCodePage
-    # - PyUnicode_EncodeFSDefault
-    # - PyUnicode_EncodeLocale
-    # - PyUnicode_FSConverter
-    # - PyUnicode_FSDecoder
-    # - PyUnicode_FromEncodedObject
-    # - PyUnicode_Splitlines
-
-    # TODO: Add tests to the following character functions:
-    # - Py_UNICODE_ISALNUM
-    # - Py_UNICODE_ISALPHA
-    # - Py_UNICODE_ISDECIMAL
-    # - Py_UNICODE_ISDIGIT
-    # - Py_UNICODE_ISLINEBREAK
-    # - Py_UNICODE_ISLOWER
-    # - Py_UNICODE_ISNUMERIC
-    # - Py_UNICODE_ISPRINTABLE
-    # - Py_UNICODE_ISSPACE
-    # - Py_UNICODE_ISTITLE
-    # - Py_UNICODE_ISUPPER
-    # - Py_UNICODE_TODECIMAL
-    # - Py_UNICODE_TODIGIT
-    # - Py_UNICODE_TOLOWER
-    # - Py_UNICODE_TONUMERIC
-    # - Py_UNICODE_TOTITLE
-    # - Py_UNICODE_TOUPPER
-
-    # TODO: Maybe add tests to the following less important functions:
-    # - PyUnicode_1BYTE_DATA
-    # - PyUnicode_2BYTE_DATA
-    # - PyUnicode_4BYTE_DATA
-    # - PyUnicode_DATA
-    # - PyUnicode_IS_READY
-    # - PyUnicode_READY
-    # - Py_UNICODE_HIGH_SURROGATE
-    # - Py_UNICODE_IS_HIGH_SURROGATE
-    # - Py_UNICODE_IS_LOW_SURROGATE
-    # - Py_UNICODE_IS_SURROGATE
-    # - Py_UNICODE_JOIN_SURROGATES
-    # - Py_UNICODE_LOW_SURROGATE
+# TODO: Maybe add tests to the following less important functions:
+# - PyUnicode_1BYTE_DATA
+# - PyUnicode_2BYTE_DATA
+# - PyUnicode_4BYTE_DATA
+# - PyUnicode_DATA
+# - PyUnicode_IS_READY
+# - PyUnicode_READY
+# - Py_UNICODE_HIGH_SURROGATE
+# - Py_UNICODE_IS_HIGH_SURROGATE
+# - Py_UNICODE_IS_LOW_SURROGATE
+# - Py_UNICODE_IS_SURROGATE
+# - Py_UNICODE_JOIN_SURROGATES
+# - Py_UNICODE_LOW_SURROGATE
 
 
 if __name__ == "__main__":
