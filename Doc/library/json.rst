@@ -238,11 +238,10 @@ Basic Usage
 
       Keys in key/value pairs of JSON are always of the type :class:`str`. When
       a dictionary is converted into JSON, all the keys of the dictionary are
-      coerced to strings. As a result of this, if a dictionary is converted
+      converted to strings. As a result of this, if a dictionary is converted
       into JSON and then back into a dictionary, the dictionary may not equal
       the original one. That is, ``loads(dumps(x)) != x`` if x has non-string
-      keys.
-      *sort_keys* sorts the keys before they are coerced to strings,
+      keys. *sort_keys* sorts the keys before they are converted to strings,
       so numeric keys are sorted by value, not by their string representation.
 
    .. versionchanged:: 3.2
