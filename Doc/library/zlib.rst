@@ -482,21 +482,16 @@ the following constants:
    is available as :const:`zlib_version`.
 
 
-.. data:: zlib_version
+.. data:: ZLIB_RUNTIME_VERSION
+          zlib_version
 
    The version string of the zlib library actually loaded by the interpreter.
 
-   .. versionadded:: next
-
-
-.. data:: ZLIB_RUNTIME_VERSION
-
-   An alias of :const:`zlib_version`.
-
    .. versionadded:: 3.3
+      The :const:`!ZLIB_RUNTIME_VERSION` constant.
 
-   .. soft-deprecated:: next
-      Use :const:`zlib_version` instead.
+   .. versionadded:: next
+      The :const:`!zlib_version` alias.
 
 
 .. data:: ZLIB_VERSION_INFO
