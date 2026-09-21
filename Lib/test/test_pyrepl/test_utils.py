@@ -47,6 +47,9 @@ class TestUtils(TestCase):
         self.assertEqual(wlen('e\N{COMBINING ACUTE ACCENT}'), 1)
         self.assertEqual(wlen('a\N{ZERO WIDTH JOINER}b'), 2)
 
+    def test_wlen_with_osc_sequence(self):
+        self.assertEqual(wlen("\x1b]633;A\x07>>> "), 4)
+
     def test_prev_next_window(self):
         def gen_normal():
             yield 1
