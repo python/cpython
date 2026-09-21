@@ -576,7 +576,7 @@ static_assert(BUFFER_HI < BUFFER_SIZE &&
     #define prefetch(ptr)
 #endif
 
-// a contigous sequence of PyObject pointers, can contain NULLs
+// a contiguous sequence of PyObject pointers, can contain NULLs
 typedef struct {
     PyObject **start;
     PyObject **end;
@@ -746,7 +746,7 @@ gc_mark_enqueue(PyObject *op, gc_mark_args_t *args)
     }
 }
 
-// Called when we have a contigous sequence of PyObject pointers, either
+// Called when we have a contiguous sequence of PyObject pointers, either
 // a tuple or list object.  This will add the items to the buffer if there
 // is space for them all otherwise push a new "span" on the span stack.  Using
 // spans has the advantage of not creating a deep _PyObjectStack stack when

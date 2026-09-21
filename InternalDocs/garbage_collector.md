@@ -282,9 +282,8 @@ state in the previous image and after examining the objects referred to by `link
 the GC knows that `link_3` is reachable after all, so it is moved back to the
 original list and its `gc_ref` field is set to 1 so that if the GC visits it again,
 it will know that it's reachable. To avoid visiting an object twice, the GC marks all
-objects that have already been visited once (by unsetting the `PREV_MASK_COLLECTING`
-flag) so that if an object that has already been processed is referenced by some other
-object, the GC does not process it twice.
+objects that have already been visited once (by unsetting a flag, e.g. in the non-free-threaded build, the `PREV_MASK_COLLECTING` flag) so that if an object that has already been processed 
+is referenced by some other object, the GC does not process it twice.
 
 ![gc-image5](images/python-cyclic-gc-5-new-page.png)
 
@@ -294,12 +293,6 @@ as now all the references that the object has need to be processed as well. This
 process is really a breadth first search over the object graph. Once all the objects
 are scanned, the GC knows that all container objects in the tentatively unreachable
 list are really unreachable and can thus be garbage collected.
-
-Pragmatically, it's important to note that no recursion is required by any of this,
-and neither does it in any other way require additional memory proportional to the
-number of objects, number of pointers, or the lengths of pointer chains.  Apart from
-`O(1)` storage for internal C needs, the objects themselves contain all the storage
-the GC algorithms require.
 
 Why moving unreachable objects is better
 ----------------------------------------
@@ -448,7 +441,7 @@ collections (that is, collections of the young and middle generations) will alwa
 examine roughly the same number of objects (determined by the aforementioned
 thresholds) the cost of a full collection is proportional to the total
 number of long-lived objects, which is virtually unbounded.  Indeed, it has
-been remarked that doing a full collection every <constant number> of object
+been remarked that doing a full collection every constant number of object
 creations entails a dramatic performance degradation in workloads which consist
 of creating and storing lots of long-lived objects (for example, building a large list
 of GC-tracked objects would show quadratic performance, instead of linear as
@@ -533,8 +526,8 @@ into the cache.  This is the mechanism that provides the window.
 
 When performing the transitive closure of "alive" status, the set of objects
 yet to visit are stored in one of two places.  First, they can be stored in the
-prefech buffer. Second, there is a LIFO stack, of unlimited size.  When object
-references are found using `tp_traverse`, they are enqueued in the buffer if
+prefetch buffer. Second, there is a LIFO stack, limited only by available memory.
+When object references are found using `tp_traverse`, they are enqueued in the buffer if
 it is not full, otherwise they are pushed to the stack.
 
 We must take special care not to access the memory referred to by an object
@@ -616,7 +609,7 @@ This optimization, as of March 2025, was tuned on the following hardware
 platforms:
 
 - Apple M3 Pro, 32 GB RAM, 192+128 KB L1, 16 MB L2, compiled with Clang 19
-- AMD Ryzen 5 7600X, 64 GB RAM, 384 KB L1, 6 GB L2, 32 MB L3, compiled with GCC 12.2.0
+- AMD Ryzen 5 7600X, 64 GB RAM, 384 KB L1, 6 MB L2, 32 MB L3, compiled with GCC 12.2.0
 
 Benchmarking the effectiveness of this optimization is particularly difficult.
 It depends both on hardware details, like CPU cache sizes and memory latencies,
@@ -631,7 +624,7 @@ range of 20% to 40% faster for the entire full GC collection.
 Optimization: reusing fields to save memory
 ===========================================
 
-In order to save memory, the two linked list pointers in every object with GC
+In order to save memory, in the non-free-threaded build the two linked list pointers in every object with GC
 support are reused for several purposes. This is a common optimization known
 as "fat pointers" or "tagged pointers": pointers that carry additional data,
 "folded" into the pointer, meaning stored inline in the data representing the
