@@ -257,14 +257,13 @@ class SimpleDialogTest(AbstractDialogTest, unittest.TestCase):
         tk.call('update')
         tk.call('grab', 'set', '.foreign')
         tk.call('focus', '-force', '.foreign')
-        # On Windows the application may not get the focus, and then "focus"
-        # returns an empty string.
-        has_focus = tk.call('focus') == '.foreign'
         d = self.create()
         d.root.after(1, lambda: d._buttons[0].invoke())
         self.assertEqual(d.go(), 0)
         self.assertEqual(tk.call('grab', 'current', self.root._w), '.foreign')
-        if sys.platform != 'win32' or has_focus:
+        # On Windows the application can lose the focus when the dialog is
+        # destroyed, and then "focus" returns an empty string.
+        if sys.platform != 'win32':
             self.assertEqual(tk.call('focus'), '.foreign')
 
 
