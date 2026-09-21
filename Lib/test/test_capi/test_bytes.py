@@ -511,12 +511,9 @@ class BaseWriterTest:
         writer = self.create_writer(len(init))
         writer.write(0, init)
         size = len(init) + 100
-        try:
-            with self.assertRaises(MemoryError):
-                _testcapi.set_nomemory(0)
+        with self.assertRaises(MemoryError):
+            with support.inject_memory_error_cm():
                 writer.resize(size)
-        finally:
-            _testcapi.remove_mem_hooks()
         suffix = b'still working'
         writer.write_bytes(suffix, -1)
         self.assertEqual(writer.finish(), init + suffix)
@@ -590,12 +587,9 @@ class BaseWriterTest:
         init = b'x' * self.LARGE_BUFFER
         writer = self.create_writer(len(init))
         writer.write(0, init)
-        try:
-            with self.assertRaises(MemoryError):
-                _testcapi.set_nomemory(0)
+        with self.assertRaises(MemoryError):
+            with support.inject_memory_error_cm():
                 writer.grow(100)
-        finally:
-            _testcapi.remove_mem_hooks()
         suffix = b'still working'
         writer.write_bytes(suffix, -1)
         self.assertEqual(writer.finish(), init + suffix)
