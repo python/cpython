@@ -1042,7 +1042,6 @@ Querying file type and status
 .. method:: Path.exists(*, follow_symlinks=True)
 
    Return ``True`` if the path points to an existing file or directory.
-   This includes empty paths, which Path interprets as the current directory.
    ``False`` will be returned if the path is invalid, inaccessible or missing.
    Use :meth:`Path.stat` to distinguish between these cases.
 
