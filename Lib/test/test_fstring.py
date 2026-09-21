@@ -1045,6 +1045,12 @@ except Exception:
                              r"f'\N{'",
                              r"f'\N{GREEK CAPITAL LETTER DELTA'",
 
+                             # Malformed Unicode escapes in format specifiers
+                             #  are decoded through a separate parser path.
+                             r"f'{x:\N}'",
+                             r"f'{x:\N{'",
+                             r"f'{x:{y}\N{'",
+
                              # Here are the non-f-string versions,
                              #  which should give the same errors.
                              r"'\N'",
