@@ -76,7 +76,7 @@ and a :ref:`stable ABI for free-threaded builds <whatsnew315-abi3t>`.
 The library changes include a new
 :ref:`profiling package <whatsnew315-profiling-package>` with
 :ref:`Tachyon <whatsnew315-sampling-profiler>`,
-a high frequency statistical sampling profiler,
+a high-frequency statistical sampling profiler,
 :ref:`more color <whatsnew315-more-color>` in command-line output,
 as well as the usual deprecations and removals,
 and improvements in user-friendliness and correctness.
@@ -90,6 +90,7 @@ To understand the complete implementation and design rationale for a change,
 refer to the PEP for a particular new feature;
 but note that PEPs usually are not kept up-to-date
 once a feature has been fully implemented.
+
 See `Porting to Python 3.15`_ for guidance on upgrading from
 earlier versions of Python.
 
@@ -117,7 +118,7 @@ Significant improvements in the standard library:
 
 * :pep:`799`: :ref:`A dedicated profiling package for organizing Python
   profiling tools <whatsnew315-profiling-package>`
-* :pep:`799`: :ref:`Tachyon: High frequency statistical sampling profiler
+* :pep:`799`: :ref:`Tachyon: High-frequency statistical sampling profiler
   <whatsnew315-sampling-profiler>`
 * :ref:`More color <whatsnew315-more-color>`
 
@@ -2889,7 +2890,7 @@ that may require changes to your code.
 
 * :meth:`mmap.mmap.resize` has been removed on platforms that don't support the
   underlying syscall, instead of raising a :exc:`SystemError`.
-  (Contributed by AN Long in :gh:`138205`.)
+  (Contributed by An Long in :gh:`138205`.)
 
 * A resource warning is now emitted for an unclosed
   :func:`xml.etree.ElementTree.iterparse` iterator if it opened a file.
