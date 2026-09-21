@@ -1,0 +1,2 @@
+Fix a crash when getting deeply nested ``__parameters__`` from a
+:class:`types.GenericAlias` objects.

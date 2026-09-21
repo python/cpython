@@ -33,6 +33,11 @@ PyAPI_FUNC(int) _PySet_Contains(PySetObject *so, PyObject *key);
 // Clears the set without acquiring locks. Used by _PyCode_Fini.
 extern void _PySet_ClearInternal(PySetObject *so);
 
+PyAPI_FUNC(int) _PySet_AddTakeRef(PySetObject *so, PyObject *key);
+
+PyObject *
+_PySet_Freeze(PyObject *set);
+
 #ifdef __cplusplus
 }
 #endif

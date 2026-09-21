@@ -1,0 +1,3 @@
+Fix :func:`socket.has_dualstack_ipv6` to return ``False`` on platforms such as
+DragonFly BSD where setting ``IPV6_V6ONLY`` to 0 silently has no
+effect.

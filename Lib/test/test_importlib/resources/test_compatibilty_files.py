@@ -1,8 +1,6 @@
+import importlib.resources as resources
 import io
 import unittest
-
-from importlib import resources
-
 from importlib.resources._adapters import (
     CompatibilityFiles,
     wrap_spec,
@@ -26,51 +24,46 @@ class CompatibilityFilesTests(unittest.TestCase):
         return resources.files(self.package)
 
     def test_spec_path_iter(self):
-        self.assertEqual(
-            sorted(path.name for path in self.files.iterdir()),
-            ['a', 'b', 'c'],
-        )
+        assert sorted(path.name for path in self.files.iterdir()) == ['a', 'b', 'c']
 
     def test_child_path_iter(self):
-        self.assertEqual(list((self.files / 'a').iterdir()), [])
+        assert list((self.files / 'a').iterdir()) == []
 
     def test_orphan_path_iter(self):
-        self.assertEqual(list((self.files / 'a' / 'a').iterdir()), [])
-        self.assertEqual(list((self.files / 'a' / 'a' / 'a').iterdir()), [])
+        assert list((self.files / 'a' / 'a').iterdir()) == []
+        assert list((self.files / 'a' / 'a' / 'a').iterdir()) == []
 
     def test_spec_path_is(self):
-        self.assertFalse(self.files.is_file())
-        self.assertFalse(self.files.is_dir())
+        assert not self.files.is_file()
+        assert not self.files.is_dir()
 
     def test_child_path_is(self):
-        self.assertTrue((self.files / 'a').is_file())
-        self.assertFalse((self.files / 'a').is_dir())
+        assert (self.files / 'a').is_file()
+        assert not (self.files / 'a').is_dir()
 
     def test_orphan_path_is(self):
-        self.assertFalse((self.files / 'a' / 'a').is_file())
-        self.assertFalse((self.files / 'a' / 'a').is_dir())
-        self.assertFalse((self.files / 'a' / 'a' / 'a').is_file())
-        self.assertFalse((self.files / 'a' / 'a' / 'a').is_dir())
+        assert not (self.files / 'a' / 'a').is_file()
+        assert not (self.files / 'a' / 'a').is_dir()
+        assert not (self.files / 'a' / 'a' / 'a').is_file()
+        assert not (self.files / 'a' / 'a' / 'a').is_dir()
 
     def test_spec_path_name(self):
-        self.assertEqual(self.files.name, 'testingpackage')
+        assert self.files.name == 'testingpackage'
 
     def test_child_path_name(self):
-        self.assertEqual((self.files / 'a').name, 'a')
+        assert (self.files / 'a').name == 'a'
 
     def test_orphan_path_name(self):
-        self.assertEqual((self.files / 'a' / 'b').name, 'b')
-        self.assertEqual((self.files / 'a' / 'b' / 'c').name, 'c')
+        assert (self.files / 'a' / 'b').name == 'b'
+        assert (self.files / 'a' / 'b' / 'c').name == 'c'
 
     def test_spec_path_open(self):
-        self.assertEqual(self.files.read_bytes(), b'Hello, world!')
-        self.assertEqual(self.files.read_text(encoding='utf-8'), 'Hello, world!')
+        assert self.files.read_bytes() == b'Hello, world!'
+        assert self.files.read_text(encoding='utf-8') == 'Hello, world!'
 
     def test_child_path_open(self):
-        self.assertEqual((self.files / 'a').read_bytes(), b'Hello, world!')
-        self.assertEqual(
-            (self.files / 'a').read_text(encoding='utf-8'), 'Hello, world!'
-        )
+        assert (self.files / 'a').read_bytes() == b'Hello, world!'
+        assert (self.files / 'a').read_text(encoding='utf-8') == 'Hello, world!'
 
     def test_orphan_path_open(self):
         with self.assertRaises(FileNotFoundError):
@@ -88,7 +81,7 @@ class CompatibilityFilesTests(unittest.TestCase):
 
     def test_wrap_spec(self):
         spec = wrap_spec(self.package)
-        self.assertIsInstance(spec.loader.get_resource_reader(None), CompatibilityFiles)
+        assert isinstance(spec.loader.get_resource_reader(None), CompatibilityFiles)
 
 
 class CompatibilityFilesNoReaderTests(unittest.TestCase):
@@ -101,4 +94,4 @@ class CompatibilityFilesNoReaderTests(unittest.TestCase):
         return resources.files(self.package)
 
     def test_spec_path_joinpath(self):
-        self.assertIsInstance(self.files / 'a', CompatibilityFiles.OrphanPath)
+        assert isinstance(self.files / 'a', CompatibilityFiles.OrphanPath)

@@ -1,4 +1,0 @@
-Improve the error message when a script shadowing a module from the standard
-library causes :exc:`ImportError` to be raised during a "from" import.
-Similarly, improve the error message when a script shadowing a third party module
-attempts to "from" import an attribute from that third party module while still initialising.

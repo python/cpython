@@ -5,3 +5,6 @@ contact_links:
   - name: "Proposing new features"
     about: "Submit major feature proposal (e.g. syntax changes) to an ideas forum first."
     url: "https://discuss.python.org/c/ideas/6"
+  - name: "Python Install Manager issues"
+    about: "Report issues with the Python Install Manager (for Windows)"
+    url: "https://github.com/python/pymanager/issues"

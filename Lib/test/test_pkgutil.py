@@ -1,6 +1,8 @@
+import logging
+import logging.handlers
 from pathlib import Path
-from test.support.import_helper import unload, CleanImport
-from test.support.warnings_helper import check_warnings, ignore_warnings
+from test.support.import_helper import unload
+from test.support.warnings_helper import check_warnings
 import unittest
 import sys
 import importlib
@@ -232,9 +234,6 @@ class PkgutilTests(unittest.TestCase):
             list(pkgutil.walk_packages(bytes_input))
 
     def test_name_resolution(self):
-        import logging
-        import logging.handlers
-
         success_cases = (
             ('os', os),
             ('os.path', os.path),
@@ -321,6 +320,53 @@ class PkgutilTests(unittest.TestCase):
             with self.subTest(s=s):
                 with self.assertRaises(exc):
                     pkgutil.resolve_name(s)
+
+    def test_name_resolution_strict(self):
+        # PEP 829: strict=True accepts only the pkg.mod:callable form
+        # (W(.W)*:W(.W)*) -- both the colon and the callable are required.
+        success_cases = (
+            ('os.path:pathsep', os.path.pathsep),
+            ('logging.handlers:SysLogHandler',
+                logging.handlers.SysLogHandler),
+            ('logging.handlers:SysLogHandler.LOG_ALERT',
+                logging.handlers.SysLogHandler.LOG_ALERT),
+            ('builtins:int', int),
+            ('builtins:int.from_bytes', int.from_bytes),
+            ('os:path', os.path),
+        )
+
+        # All of these are accepted under strict=False but must be
+        # rejected under strict=True.
+        failure_cases = (
+            'os',                       # no colon (non-strict form)
+            'os.path',                  # no colon
+            'logging:',                 # colon, empty callable
+            'os.foo:',                  # colon, empty callable
+            ':int',                     # empty package
+            'os.path:join:extra',       # extra colon
+            'os.path.9abc:join',        # invalid identifier in package
+            'os.path:9abc',             # invalid identifier in callable
+            '',                         # empty
+            '?abc:foo',                 # invalid character
+        )
+
+        for s, expected in success_cases:
+            with self.subTest(s=s):
+                self.assertEqual(
+                    pkgutil.resolve_name(s, strict=True), expected)
+
+        for s in failure_cases:
+            with self.subTest(s=s):
+                with self.assertRaises(ValueError):
+                    pkgutil.resolve_name(s, strict=True)
+
+        # Cache independence: a strict=True call must not poison
+        # strict=False (and vice versa).  Exercise both orderings.
+        self.assertEqual(
+            pkgutil.resolve_name('os:path', strict=True), os.path)
+        self.assertEqual(pkgutil.resolve_name('os.path'), os.path)
+        self.assertEqual(
+            pkgutil.resolve_name('os:path', strict=True), os.path)
 
     def test_name_resolution_import_rebinding(self):
         # The same data is also used for testing import in test_import and
@@ -606,73 +652,6 @@ class ImportlibMigrationTests(unittest.TestCase):
     # With full PEP 302 support in the standard import machinery, the
     # PEP 302 emulation in this module is in the process of being
     # deprecated in favour of importlib proper
-
-    @unittest.skipIf(__name__ == '__main__', 'not compatible with __main__')
-    @ignore_warnings(category=DeprecationWarning)
-    def test_get_loader_handles_missing_loader_attribute(self):
-        global __loader__
-        this_loader = __loader__
-        del __loader__
-        try:
-            self.assertIsNotNone(pkgutil.get_loader(__name__))
-        finally:
-            __loader__ = this_loader
-
-    @ignore_warnings(category=DeprecationWarning)
-    def test_get_loader_handles_missing_spec_attribute(self):
-        name = 'spam'
-        mod = type(sys)(name)
-        del mod.__spec__
-        with CleanImport(name):
-            try:
-                sys.modules[name] = mod
-                loader = pkgutil.get_loader(name)
-            finally:
-                sys.modules.pop(name, None)
-        self.assertIsNone(loader)
-
-    @ignore_warnings(category=DeprecationWarning)
-    def test_get_loader_handles_spec_attribute_none(self):
-        name = 'spam'
-        mod = type(sys)(name)
-        mod.__spec__ = None
-        with CleanImport(name):
-            try:
-                sys.modules[name] = mod
-                loader = pkgutil.get_loader(name)
-            finally:
-                sys.modules.pop(name, None)
-        self.assertIsNone(loader)
-
-    @ignore_warnings(category=DeprecationWarning)
-    def test_get_loader_None_in_sys_modules(self):
-        name = 'totally bogus'
-        sys.modules[name] = None
-        try:
-            loader = pkgutil.get_loader(name)
-        finally:
-            del sys.modules[name]
-        self.assertIsNone(loader)
-
-    def test_get_loader_is_deprecated(self):
-        with check_warnings(
-            (r".*\bpkgutil.get_loader\b.*", DeprecationWarning),
-        ):
-            res = pkgutil.get_loader("sys")
-        self.assertIsNotNone(res)
-
-    def test_find_loader_is_deprecated(self):
-        with check_warnings(
-            (r".*\bpkgutil.find_loader\b.*", DeprecationWarning),
-        ):
-            res = pkgutil.find_loader("sys")
-        self.assertIsNotNone(res)
-
-    @ignore_warnings(category=DeprecationWarning)
-    def test_find_loader_missing_module(self):
-        name = 'totally bogus'
-        loader = pkgutil.find_loader(name)
-        self.assertIsNone(loader)
 
     def test_get_importer_avoids_emulation(self):
         # We use an illegal path so *none* of the path hooks should fire

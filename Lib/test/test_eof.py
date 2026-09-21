@@ -2,7 +2,7 @@
 
 import sys
 from codecs import BOM_UTF8
-from test import support
+from test.support import force_not_colorized
 from test.support import os_helper
 from test.support import script_helper
 from test.support import warnings_helper
@@ -44,6 +44,7 @@ class EOFTestCase(unittest.TestCase):
         self.assertEqual(cm.exception.text, "ä = '''thîs is ")
         self.assertEqual(cm.exception.offset, 5)
 
+    @force_not_colorized
     def test_EOFS_with_file(self):
         expect = ("(<string>, line 1)")
         with os_helper.temp_dir() as temp_dir:
@@ -123,6 +124,7 @@ class EOFTestCase(unittest.TestCase):
         self.assertEqual(str(cm.exception), expect)
 
     @unittest.skipIf(not sys.executable, "sys.executable required")
+    @force_not_colorized
     def test_line_continuation_EOF_from_file_bpo2180(self):
         """Ensure tok_nextc() does not add too many ending newlines."""
         with os_helper.temp_dir() as temp_dir:

@@ -1,1 +1,0 @@
-Allow ``FrameLocalsProxy`` to delete and pop if the key is not a fast variable.

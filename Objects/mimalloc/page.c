@@ -213,6 +213,13 @@ static void _mi_page_thread_free_collect(mi_page_t* page)
 
   // update counts now
   page->used -= count;
+
+  if (page->used == 0) {
+    // The page may have had a QSBR goal set from a previous point when it
+    // was all-free. That goal is no longer valid because the page was
+    // allocated from and then freed again by other threads.
+    _PyMem_mi_page_clear_qsbr(page);
+  }
 }
 
 void _mi_page_free_collect(mi_page_t* page, bool force) {
@@ -225,9 +232,6 @@ void _mi_page_free_collect(mi_page_t* page, bool force) {
 
   // and the local free list
   if (page->local_free != NULL) {
-    // any previous QSBR goals are no longer valid because we reused the page
-    _PyMem_mi_page_clear_qsbr(page);
-
     if mi_likely(page->free == NULL) {
       // usual case
       page->free = page->local_free;

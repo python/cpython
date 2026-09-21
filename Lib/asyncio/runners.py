@@ -35,7 +35,8 @@ class Runner:
     with asyncio.Runner(debug=True) as runner:
         runner.run(main())
 
-    The run() method can be called multiple times within the runner's context.
+    The run() method can be called multiple times within the runner's
+    context.
 
     This can be useful for interactive console (e.g. IPython),
     unittest runners, console tools, -- everywhere when async code
@@ -177,6 +178,7 @@ def run(main, *, debug=None, loop_factory=None):
     running in the same thread.
 
     If debug is True, the event loop will be run in debug mode.
+    If loop_factory is passed, it is used for new event loop creation.
 
     This function always creates a new event loop and closes it at the end.
     It should be used as a main entry point for asyncio programs, and should

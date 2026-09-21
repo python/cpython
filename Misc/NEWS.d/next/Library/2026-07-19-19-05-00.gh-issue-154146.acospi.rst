@@ -1,0 +1,2 @@
+Fix accuracy of :func:`math.acospi` for arguments close to 1
+on platforms that do not provide ``acospi()`` in libm.

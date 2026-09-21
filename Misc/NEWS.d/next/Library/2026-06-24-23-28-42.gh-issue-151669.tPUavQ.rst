@@ -1,0 +1,3 @@
+On Windows, when populating tar archives from filesystem content, to
+conform to the tar format standard, backslashes in symlink targets are
+be replaced by slashes.

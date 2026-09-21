@@ -1,0 +1,5 @@
+Fold large constant list and set literals used as the iterable of a
+:keyword:`for` loop or ``in``/``not in`` test into a constant
+:class:`tuple` or :class:`frozenset`, restoring an optimization
+previously done by the AST optimizer that was lost when constant
+folding moved to the CFG.

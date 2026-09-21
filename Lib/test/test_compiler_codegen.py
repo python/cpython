@@ -26,16 +26,17 @@ class IsolatedCodeGenTests(CodegenTestCase):
         false_lbl = self.Label()
         expected = [
             ('RESUME', 0, 0),
+            ('ANNOTATIONS_PLACEHOLDER', None),
             ('LOAD_CONST', 0, 1),
             ('TO_BOOL', 0, 1),
             ('POP_JUMP_IF_FALSE', false_lbl := self.Label(), 1),
-            ('LOAD_CONST', 1, 1),
+            ('LOAD_CONST', 1, 1),  # 42
             ('JUMP_NO_INTERRUPT', exit_lbl := self.Label()),
             false_lbl,
-            ('LOAD_CONST', 2, 1),
+            ('LOAD_CONST', 2, 1),  # 24
             exit_lbl,
             ('POP_TOP', None),
-            ('LOAD_CONST', 3),
+            ('LOAD_CONST', 1),
             ('RETURN_VALUE', None),
         ]
         self.codegen_test(snippet, expected)
@@ -45,6 +46,7 @@ class IsolatedCodeGenTests(CodegenTestCase):
         false_lbl = self.Label()
         expected = [
             ('RESUME', 0, 0),
+            ('ANNOTATIONS_PLACEHOLDER', None),
             ('LOAD_NAME', 0, 1),
             ('GET_ITER', None, 1),
             loop_lbl := self.Label(),
@@ -59,7 +61,7 @@ class IsolatedCodeGenTests(CodegenTestCase):
             ('JUMP', loop_lbl),
             exit_lbl,
             ('END_FOR', None),
-            ('POP_TOP', None),
+            ('POP_ITER', None),
             ('LOAD_CONST', 0),
             ('RETURN_VALUE', None),
         ]
@@ -73,6 +75,7 @@ class IsolatedCodeGenTests(CodegenTestCase):
         expected = [
             # Function definition
             ('RESUME', 0),
+            ('ANNOTATIONS_PLACEHOLDER', None),
             ('LOAD_CONST', 0),
             ('MAKE_FUNCTION', None),
             ('STORE_NAME', 0),
@@ -82,7 +85,7 @@ class IsolatedCodeGenTests(CodegenTestCase):
                 # Function body
                 ('RESUME', 0),
                 ('LOAD_FAST', 0),
-                ('LOAD_CONST', 1),
+                ('LOAD_CONST', 42),
                 ('BINARY_OP', 0),
                 ('RETURN_VALUE', None),
                 ('LOAD_CONST', 0),
@@ -106,6 +109,7 @@ class IsolatedCodeGenTests(CodegenTestCase):
         expected = [
             # Function definition
             ('RESUME', 0),
+            ('ANNOTATIONS_PLACEHOLDER', None),
             ('LOAD_CONST', 0),
             ('MAKE_FUNCTION', None),
             ('STORE_NAME', 0),
@@ -125,9 +129,9 @@ class IsolatedCodeGenTests(CodegenTestCase):
                 [
                     ('RESUME', 0),
                     ('NOP', None),
-                    ('LOAD_CONST', 1),
+                    ('LOAD_CONST', 12),
                     ('RETURN_VALUE', None),
-                    ('LOAD_CONST', 0),
+                    ('LOAD_CONST', 1),
                     ('RETURN_VALUE', None),
                 ],
                 [
@@ -141,12 +145,24 @@ class IsolatedCodeGenTests(CodegenTestCase):
                     ('LOAD_CONST', 4),
                     ('STORE_FAST', 3),
                     ('NOP', None),
-                    ('LOAD_CONST', 5),
+                    ('LOAD_CONST', 42),
                     ('RETURN_VALUE', None),
                     ('LOAD_CONST', 0),
                     ('RETURN_VALUE', None),
                 ],
             ],
+        ]
+        self.codegen_test(snippet, expected)
+
+    def test_del_for_store_global(self):
+        snippet = "global x\ndel x"
+        expected = [
+            ('RESUME', 0),
+            ('ANNOTATIONS_PLACEHOLDER', None),
+            ('PUSH_NULL', None),
+            ('STORE_GLOBAL', 0),
+            ('LOAD_CONST', 0),
+            ('RETURN_VALUE', None),
         ]
         self.codegen_test(snippet, expected)
 
@@ -157,3 +173,82 @@ class IsolatedCodeGenTests(CodegenTestCase):
         self.assertIsNone(cm.exception.text)
         self.assertEqual(cm.exception.offset, 1)
         self.assertEqual(cm.exception.end_offset, 10)
+
+    def test_del_for_store_name(self):
+        snippet = "del x"
+        expected = [
+            ('RESUME', 0),
+            ('ANNOTATIONS_PLACEHOLDER', None),
+            ('PUSH_NULL', None),
+            ('STORE_NAME', 0),
+            ('LOAD_CONST', 0),
+            ('RETURN_VALUE', None),
+        ]
+        self.codegen_test(snippet, expected)
+
+    def test_frozenset_optimization(self):
+        l1 = self.Label()
+        snippet = "frozenset({1, 2, 3})"
+        expected = [
+            ('RESUME', 0),
+            ('ANNOTATIONS_PLACEHOLDER', None),
+            ('LOAD_NAME', 0),
+            ('COPY', 1),
+            ('LOAD_COMMON_CONSTANT', 12),
+            ('IS_OP', 0),
+            ('POP_JUMP_IF_FALSE', l1),
+            ('POP_TOP', None),
+            ('LOAD_CONST', 1),
+            ('LOAD_CONST', 2),
+            ('LOAD_CONST', 3),
+            ('BUILD_SET', 3),
+            ('CALL_INTRINSIC_1', 12),
+            ('JUMP', 0),
+            l1,
+            ('PUSH_NULL', None),
+            ('LOAD_CONST', 1),
+            ('LOAD_CONST', 2),
+            ('LOAD_CONST', 3),
+            ('BUILD_SET', 3),
+            ('CALL', 1),
+            ('POP_TOP', None),
+            ('LOAD_CONST', 0),
+            ('RETURN_VALUE', None)
+        ]
+        self.codegen_test(snippet, expected)
+
+    def test_comp_without_target_optimization(self):
+        snippet = "[i for i in range(10)]"
+        expected = [
+            ('RESUME', 0),
+            ('ANNOTATIONS_PLACEHOLDER', None),
+            ('LOAD_NAME', 0),
+            ('PUSH_NULL', None),
+            ('LOAD_CONST', 0),
+            ('CALL', 1),
+            ('LOAD_FAST_AND_CLEAR', 0),
+            ('SWAP', 2),
+            ('SETUP_FINALLY', 20),
+            ('COPY', 1),
+            ('GET_ITER', 0),
+            ('FOR_ITER', 16),
+            ('STORE_FAST', 0),
+            ('LOAD_FAST', 0),
+            ('POP_TOP', None),
+            ('JUMP', 11),
+            ('END_FOR', None),
+            ('POP_ITER', None),
+            ('POP_BLOCK', None),
+            ('JUMP_NO_INTERRUPT', 25),
+            ('SWAP', 2),
+            ('POP_TOP', None),
+            ('SWAP', 2),
+            ('STORE_FAST_MAYBE_NULL', 0),
+            ('RERAISE', 0),
+            ('SWAP', 2),
+            ('STORE_FAST_MAYBE_NULL', 0),
+            ('POP_TOP', None),
+            ('LOAD_CONST', 1),
+            ('RETURN_VALUE', None),
+        ]
+        self.codegen_test(snippet, expected)

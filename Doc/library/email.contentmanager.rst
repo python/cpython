@@ -4,9 +4,6 @@
 .. module:: email.contentmanager
    :synopsis: Storing and Retrieving Content from MIME Parts
 
-.. moduleauthor:: R. David Murray <rdmurray@bitdance.com>
-.. sectionauthor:: R. David Murray <rdmurray@bitdance.com>
-
 **Source code:** :source:`Lib/email/contentmanager.py`
 
 ------------
@@ -99,9 +96,9 @@ Currently the email package provides only one concrete content manager,
 
    This content manager provides only a minimum interface beyond that provided
    by :class:`~email.message.Message` itself:  it deals only with text, raw
-   byte strings, and :class:`~email.message.Message` objects.  Nevertheless, it
+   bytes, and :class:`~email.message.Message` objects.  Nevertheless, it
    provides significant advantages compared to the base API: ``get_content`` on
-   a text part will return a unicode string without the application needing to
+   a text part will return a string without the application needing to
    manually decode it, ``set_content`` provides a rich set of options for
    controlling the headers added to a part and controlling the content transfer
    encoding, and it enables the use of the various ``add_`` methods, thereby
@@ -114,7 +111,7 @@ Currently the email package provides only one concrete content manager,
       parts), or a ``bytes`` object (for all other non-multipart types).  Raise
       a :exc:`KeyError` if called on a ``multipart``.  If the part is a
       ``text`` part and *errors* is specified, use it as the error handler when
-      decoding the payload to unicode.  The default error handler is
+      decoding the payload to a string.  The default error handler is
       ``replace``.
 
    .. method:: set_content(msg, <'str'>, subtype="plain", charset='utf-8', \
@@ -157,7 +154,13 @@ Currently the email package provides only one concrete content manager,
        :exc:`ValueError`.
 
        * For ``str`` objects, if *cte* is not set use heuristics to
-         determine the most compact encoding.
+         determine the most compact encoding.  Prior to encoding,
+         :meth:`str.splitlines` is used to normalize all line boundaries,
+         ensuring that each line of the payload is terminated by the
+         current policy's :data:`~email.policy.Policy.linesep` property
+         (even if the original string did not end with one).
+       * For ``bytes`` objects, *cte* is taken to be base64 if not set,
+         and the aforementioned newline translation is not performed.
        * For :class:`~email.message.EmailMessage`, per :rfc:`2046`, raise
          an error if a *cte* of ``quoted-printable`` or ``base64`` is
          requested for *subtype* ``rfc822``, and for any *cte* other than

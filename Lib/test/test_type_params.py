@@ -1,11 +1,11 @@
 import annotationlib
-import asyncio
+import inspect
 import textwrap
 import types
 import unittest
 import pickle
 import weakref
-from test.support import requires_working_socket, check_syntax_error, run_code
+from test.support import check_syntax_error, run_code, run_no_yield_async_fn
 
 from typing import Generic, NoDefault, Sequence, TypeAliasType, TypeVar, TypeVarTuple, ParamSpec, get_args
 
@@ -152,6 +152,13 @@ class TypeParamsInvalidTest(unittest.TestCase):
     def test_incorrect_mro_explicit_object(self):
         with self.assertRaisesRegex(TypeError, r"\(MRO\) for bases object, Generic"):
             class My[X](object): ...
+
+    def test_compile_error_in_type_param_bound(self):
+        # This should not crash, see gh-145187
+        check_syntax_error(
+            self,
+            "if True:\n class h[l:{7for*()in 0}]:2"
+        )
 
 
 class TypeParamsNonlocalTest(unittest.TestCase):
@@ -1051,7 +1058,6 @@ class TypeParamsTypeVarTest(unittest.TestCase):
         self.assertIsInstance(c, TypeVar)
         self.assertEqual(c.__name__, "C")
 
-    @requires_working_socket()
     def test_typevar_coroutine(self):
         def get_coroutine[A]():
             async def coroutine[B]():
@@ -1060,8 +1066,7 @@ class TypeParamsTypeVarTest(unittest.TestCase):
 
         co = get_coroutine()
 
-        self.addCleanup(asyncio.set_event_loop_policy, None)
-        a, b = asyncio.run(co())
+        a, b = run_no_yield_async_fn(co)
 
         self.assertIsInstance(a, TypeVar)
         self.assertEqual(a.__name__, "A")
@@ -1441,6 +1446,30 @@ class TestEvaluateFunctions(unittest.TestCase):
                 self.assertIs(annotationlib.call_evaluate_function(case, annotationlib.Format.VALUE), int)
                 self.assertIs(annotationlib.call_evaluate_function(case, annotationlib.Format.FORWARDREF), int)
                 self.assertEqual(annotationlib.call_evaluate_function(case, annotationlib.Format.STRING), 'int')
+
+    def test_signature(self):
+        # gh-151665: the ".format" parameter of compiler-generated evaluators
+        # used to break inspect.signature(). It should show up as "format".
+        type Alias = int
+        def f[T: int = int, **P = int, *Ts = int](): pass
+        T, P, Ts = f.__type_params__
+        def g[U: (int, str)](): pass
+        U, = g.__type_params__
+        cases = [
+            Alias.evaluate_value,
+            T.evaluate_bound,
+            T.evaluate_default,
+            P.evaluate_default,
+            Ts.evaluate_default,
+            U.evaluate_constraints,
+        ]
+        for case in cases:
+            with self.subTest(case=case):
+                sig = inspect.signature(case)
+                self.assertEqual(str(sig), '(format=1, /)')
+                param, = sig.parameters.values()
+                self.assertEqual(param.name, 'format')
+                self.assertIs(param.kind, inspect.Parameter.POSITIONAL_ONLY)
 
     def test_constraints(self):
         def f[T: (int, str)](): pass

@@ -1,0 +1,3 @@
+The pure Python implementation of :meth:`queue.SimpleQueue.get` now ignores
+*timeout* when *block* is false, matching the documented behavior and
+the C implementation. It previously raised :exc:`ValueError`.

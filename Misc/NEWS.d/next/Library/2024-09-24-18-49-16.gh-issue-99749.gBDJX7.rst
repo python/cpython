@@ -1,1 +1,0 @@
-Adds a feature to optionally enable suggestions for argument choices and subparser names if mistyped by the user.

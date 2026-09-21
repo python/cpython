@@ -11,9 +11,11 @@
 This module provides a simple interface to compress and decompress files just
 like the GNU programs :program:`gzip` and :program:`gunzip` would.
 
+.. include:: ../includes/optional-module.rst
+
 The data compression is provided by the :mod:`zlib` module.
 
-The :mod:`gzip` module provides the :class:`GzipFile` class, as well as the
+The :mod:`!gzip` module provides the :class:`GzipFile` class, as well as the
 :func:`.open`, :func:`compress` and :func:`decompress` convenience functions.
 The :class:`GzipFile` class reads and writes :program:`gzip`\ -format files,
 automatically compressing or decompressing the data so that it looks like an
@@ -26,7 +28,7 @@ Note that additional file formats which can be decompressed by the
 The module defines the following items:
 
 
-.. function:: open(filename, mode='rb', compresslevel=9, encoding=None, errors=None, newline=None)
+.. function:: open(filename, mode='rb', compresslevel=6, encoding=None, errors=None, newline=None, *, mtime=None)
 
    Open a gzip-compressed file in binary or text mode, returning a :term:`file
    object`.
@@ -41,9 +43,12 @@ The module defines the following items:
    The *compresslevel* argument is an integer from 0 to 9, as for the
    :class:`GzipFile` constructor.
 
+   The keyword-only argument *mtime* represents a Unix timestamp.
+
    For binary mode, this function is equivalent to the :class:`GzipFile`
-   constructor: ``GzipFile(filename, mode, compresslevel)``. In this case, the
-   *encoding*, *errors* and *newline* arguments must not be provided.
+   constructor: ``GzipFile(filename, mode, compresslevel, mtime=mtime)``.
+   In this case, the *encoding*, *errors* and *newline* arguments must not
+   be provided.
 
    For text mode, a :class:`GzipFile` object is created, and wrapped in an
    :class:`io.TextIOWrapper` instance with the specified encoding, error
@@ -59,6 +64,15 @@ The module defines the following items:
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
+   .. versionchanged:: 3.15
+      The default compression level was reduced to 6 (down from 9).
+      It is the default level used by most compression tools and a better
+      tradeoff between speed and performance.
+
+   .. versionchanged:: next
+      Added keyword-only argument *mtime* which is passed to the class
+      constructor of :class:`~gzip.GzipFile`.
+
 .. exception:: BadGzipFile
 
    An exception raised for invalid gzip files.  It inherits from :exc:`OSError`.
@@ -67,7 +81,7 @@ The module defines the following items:
 
    .. versionadded:: 3.8
 
-.. class:: GzipFile(filename=None, mode=None, compresslevel=9, fileobj=None, mtime=None)
+.. class:: GzipFile(filename=None, mode=None, compresslevel=6, fileobj=None, mtime=None)
 
    Constructor for the :class:`GzipFile` class, which simulates most of the
    methods of a :term:`file object`, with the exception of the :meth:`~io.IOBase.truncate`
@@ -101,9 +115,13 @@ The module defines the following items:
    is no compression. The default is ``9``.
 
    The optional *mtime* argument is the timestamp requested by gzip. The time
-   is in Unix format, i.e., seconds since 00:00:00 UTC, January 1, 1970.
-   If *mtime* is omitted or ``None``, the current time is used. Use *mtime* = 0
-   to generate a compressed stream that does not depend on creation time.
+   is in Unix format, i.e., seconds since 00:00:00 UTC, January 1, 1970. Set
+   *mtime* to ``0`` to generate a compressed stream that does not depend on
+   creation time. If *mtime* is omitted or ``None``, the current time is used;
+   however, if the current time is outside the range 00:00:00 UTC, January 1,
+   1970 through 06:28:15 UTC, February 7, 2106, or explicitly passed *mtime*
+   argument is outside the range ``0`` to ``2**32-1``, then the value ``0``
+   is used instead.
 
    See below for the :attr:`mtime` attribute that is set when decompressing.
 
@@ -122,9 +140,7 @@ The module defines the following items:
    .. method:: peek(n)
 
       Read *n* uncompressed bytes without advancing the file position.
-      At most one single read on the compressed stream is done to satisfy
-      the call.  The number of bytes returned may be more or less than
-      requested.
+      The number of bytes returned may be more or less than requested.
 
       .. note:: While calling :meth:`peek` does not change the file position of
          the :class:`GzipFile`, it may change the position of the underlying
@@ -183,8 +199,13 @@ The module defines the following items:
       Remove the ``filename`` attribute, use the :attr:`~GzipFile.name`
       attribute instead.
 
+   .. versionchanged:: 3.15
+      The default compression level was reduced to 6 (down from 9).
+      It is the default level used by most compression tools and a better
+      tradeoff between speed and performance.
 
-.. function:: compress(data, compresslevel=9, *, mtime=0)
+
+.. function:: compress(data, compresslevel=6, *, mtime=0)
 
    Compress the *data*, returning a :class:`bytes` object containing
    the compressed data.  *compresslevel* and *mtime* have the same meaning as in
@@ -208,6 +229,10 @@ The module defines the following items:
       The *mtime* parameter now defaults to 0 for reproducible output.
       For the previous behaviour of using the current time,
       pass ``None`` to *mtime*.
+   .. versionchanged:: 3.15
+      The default compression level was reduced to 6 (down from 9).
+      It is the default level used by most compression tools and a better
+      tradeoff between speed and performance.
 
 .. function:: decompress(data)
 
@@ -260,25 +285,29 @@ Example of how to GZIP compress a binary string::
       The basic data compression module needed to support the :program:`gzip` file
       format.
 
+   In case gzip (de)compression is a bottleneck, the `python-isal`_
+   package speeds up (de)compression with a mostly compatible API.
+
+   .. _python-isal: https://github.com/pycompression/python-isal
 
 .. program:: gzip
 
 .. _gzip-cli:
 
-Command Line Interface
+Command-line interface
 ----------------------
 
-The :mod:`gzip` module provides a simple command line interface to compress or
+The :mod:`!gzip` module provides a simple command line interface to compress or
 decompress files.
 
-Once executed the :mod:`gzip` module keeps the input file(s).
+Once executed the :mod:`!gzip` module keeps the input file(s).
 
 .. versionchanged:: 3.8
 
    Add a new command line interface with a usage.
    By default, when you will execute the CLI, the default compression level is 6.
 
-Command line options
+Command-line options
 ^^^^^^^^^^^^^^^^^^^^
 
 .. option:: file

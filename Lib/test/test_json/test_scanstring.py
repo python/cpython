@@ -137,6 +137,9 @@ class TestScanstring:
             '"\\ud834\\u-123"',
             '"\\ud834\\u+123"',
             '"\\ud834\\u1_23"',
+            # Truncated or non-hex \uXXXX escape at end of input.
+            '"\\u004',
+            '"\\uXYZW',
         ]
         for s in bad_escapes:
             with self.assertRaises(self.JSONDecodeError, msg=s):
@@ -144,7 +147,7 @@ class TestScanstring:
 
     def test_overflow(self):
         with self.assertRaises(OverflowError):
-            self.json.decoder.scanstring(b"xxx", sys.maxsize+1)
+            self.json.decoder.scanstring("xxx", sys.maxsize+1)
 
 
 class TestPyScanstring(TestScanstring, PyTest): pass

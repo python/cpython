@@ -77,7 +77,7 @@ class BaseProcess(object):
     def _Popen(self):
         raise NotImplementedError
 
-    def __init__(self, group=None, target=None, name=None, args=(), kwargs={},
+    def __init__(self, group=None, target=None, name=None, args=(), kwargs=None,
                  *, daemon=None):
         assert group is None, 'group argument must be None for now'
         count = next(_process_counter)
@@ -89,7 +89,7 @@ class BaseProcess(object):
         self._closed = False
         self._target = target
         self._args = tuple(args)
-        self._kwargs = dict(kwargs)
+        self._kwargs = dict(kwargs) if kwargs else {}
         self._name = name or type(self).__name__ + '-' + \
                      ':'.join(str(i) for i in self._identity)
         if daemon is not None:
@@ -124,6 +124,13 @@ class BaseProcess(object):
         # reference to the process object (see bpo-30775)
         del self._target, self._args, self._kwargs
         _children.add(self)
+
+    def interrupt(self):
+        '''
+        Terminate process; sends SIGINT signal
+        '''
+        self._check_closed()
+        self._popen.interrupt()
 
     def terminate(self):
         '''

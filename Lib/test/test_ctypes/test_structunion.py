@@ -1,14 +1,18 @@
 """Common tests for ctypes.Structure and ctypes.Union"""
 
 import unittest
+import sys
 from ctypes import (Structure, Union, POINTER, sizeof, alignment,
                     c_char, c_byte, c_ubyte,
                     c_short, c_ushort, c_int, c_uint,
-                    c_long, c_ulong, c_longlong, c_ulonglong, c_float, c_double)
+                    c_long, c_ulong, c_longlong, c_ulonglong, c_float, c_double,
+                    c_int8, c_int16, c_int32)
 from ._support import (_CData, PyCStructType, UnionType,
                        Py_TPFLAGS_DISALLOW_INSTANTIATION,
                        Py_TPFLAGS_IMMUTABLETYPE)
 from struct import calcsize
+import contextlib
+from test.support import MS_WINDOWS
 
 
 class StructUnionTestBase:
@@ -175,6 +179,102 @@ class StructUnionTestBase:
         # XXX Should we check nested data types also?
         # offset is always relative to the class...
 
+    def test_field_descriptor_attributes(self):
+        """Test information provided by the descriptors"""
+        class Inner(Structure):
+            _fields_ = [
+                ("a", c_int16),
+                ("b", c_int8, 1),
+                ("c", c_int8, 2),
+            ]
+        class X(self.cls):
+            _fields_ = [
+                ("x", c_int32),
+                ("y", c_int16, 1),
+                ("_", Inner),
+            ]
+            _anonymous_ = ["_"]
+
+        field_names = "xy_abc"
+
+        # name
+
+        for name in field_names:
+            with self.subTest(name=name):
+                self.assertEqual(getattr(X, name).name, name)
+
+        # type
+
+        expected_types = dict(
+            x=c_int32,
+            y=c_int16,
+            _=Inner,
+            a=c_int16,
+            b=c_int8,
+            c=c_int8,
+        )
+        assert set(expected_types) == set(field_names)
+        for name, tp in expected_types.items():
+            with self.subTest(name=name):
+                self.assertEqual(getattr(X, name).type, tp)
+                self.assertEqual(getattr(X, name).byte_size, sizeof(tp))
+
+        # offset, byte_offset
+
+        expected_offsets = dict(
+            x=(0, 0),
+            y=(0, 4),
+            _=(0, 6),
+            a=(0, 6),
+            b=(2, 8),
+            c=(2, 8),
+        )
+        assert set(expected_offsets) == set(field_names)
+        for name, (union_offset, struct_offset) in expected_offsets.items():
+            with self.subTest(name=name):
+                self.assertEqual(getattr(X, name).offset,
+                                 getattr(X, name).byte_offset)
+                if self.cls == Structure:
+                    self.assertEqual(getattr(X, name).offset, struct_offset)
+                else:
+                    self.assertEqual(getattr(X, name).offset, union_offset)
+
+        # is_bitfield, bit_size, bit_offset
+        # size
+
+        little_endian = (sys.byteorder == 'little')
+        expected_bitfield_info = dict(
+            # (bit_size, bit_offset)
+            b=(1, 0 if little_endian else 7),
+            c=(2, 1 if little_endian else 5),
+            y=(1, 0 if little_endian else 15),
+        )
+        for name in field_names:
+            with self.subTest(name=name):
+                if info := expected_bitfield_info.get(name):
+                    self.assertEqual(getattr(X, name).is_bitfield, True)
+                    expected_bit_size, expected_bit_offset = info
+                    self.assertEqual(getattr(X, name).bit_size,
+                                     expected_bit_size)
+                    self.assertEqual(getattr(X, name).bit_offset,
+                                     expected_bit_offset)
+                    self.assertEqual(getattr(X, name).size,
+                                     (expected_bit_size << 16)
+                                     | expected_bit_offset)
+                else:
+                    self.assertEqual(getattr(X, name).is_bitfield, False)
+                    type_size = sizeof(expected_types[name])
+                    self.assertEqual(getattr(X, name).bit_size, type_size * 8)
+                    self.assertEqual(getattr(X, name).bit_offset, 0)
+                    self.assertEqual(getattr(X, name).size, type_size)
+
+        # is_anonymous
+
+        for name in field_names:
+            with self.subTest(name=name):
+                self.assertEqual(getattr(X, name).is_anonymous, (name == '_'))
+
+
     def test_invalid_field_types(self):
         class POINT(self.cls):
             pass
@@ -182,11 +282,19 @@ class StructUnionTestBase:
 
     def test_invalid_name(self):
         # field name must be string
-        def declare_with_name(name):
-            class S(self.cls):
-                _fields_ = [(name, c_int)]
+        for name in b"x", 3, None:
+            with self.subTest(name=name):
+                with self.assertRaises(TypeError):
+                    class S(self.cls):
+                        _fields_ = [(name, c_int)]
 
-        self.assertRaises(TypeError, declare_with_name, b"x")
+    def test_str_name(self):
+        class WeirdString(str):
+            def __str__(self):
+                return "unwanted value"
+        class S(self.cls):
+            _fields_ = [(WeirdString("f"), c_int)]
+        self.assertEqual(S.f.name, "f")
 
     def test_intarray_fields(self):
         class SomeInts(self.cls):
@@ -228,6 +336,22 @@ class StructUnionTestBase:
         self.assertIn("in_dll", dir(type(self.cls)))
         self.assertIn("from_address", dir(type(self.cls)))
         self.assertIn("in_dll", dir(type(self.cls)))
+
+    def test_pack_layout_switch(self):
+        # Setting _pack_ implicitly sets default layout to MSVC;
+        # this is deprecated on non-Windows platforms.
+        if MS_WINDOWS:
+            warn_context = contextlib.nullcontext()
+        else:
+            warn_context = self.assertWarns(DeprecationWarning)
+        with warn_context:
+            class X(self.cls):
+                _pack_ = 1
+                # _layout_ missing
+                _fields_ = [('a', c_int8, 1), ('b', c_int16, 2)]
+
+        # Check MSVC layout (bitfields of different types aren't combined)
+        self.check_sizeof(X, struct_size=3, union_size=2)
 
 
 class StructureTestCase(unittest.TestCase, StructUnionTestBase):

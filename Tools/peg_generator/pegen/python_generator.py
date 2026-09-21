@@ -1,6 +1,7 @@
 import os.path
 import token
-from typing import IO, Any, Callable, Dict, Optional, Sequence, Set, Text, Tuple
+from collections.abc import Callable, Sequence
+from typing import IO, Any
 
 from pegen import grammar
 from pegen.grammar import (
@@ -74,10 +75,10 @@ class InvalidNodeVisitor(GrammarVisitor):
     def visit_Opt(self, node: Opt) -> bool:
         return self.visit(node.node)
 
-    def visit_Repeat(self, node: Repeat0) -> Tuple[str, str]:
+    def visit_Repeat(self, node: Repeat0) -> tuple[str, str]:
         return self.visit(node.node)
 
-    def visit_Gather(self, node: Gather) -> Tuple[str, str]:
+    def visit_Gather(self, node: Gather) -> tuple[str, str]:
         return self.visit(node.node)
 
     def visit_Group(self, node: Group) -> bool:
@@ -93,13 +94,14 @@ class InvalidNodeVisitor(GrammarVisitor):
 class PythonCallMakerVisitor(GrammarVisitor):
     def __init__(self, parser_generator: ParserGenerator):
         self.gen = parser_generator
-        self.cache: Dict[str, Tuple[str, str]] = {}
+        self.cache: dict[str, tuple[str, str]] = {}
 
-    def visit_NameLeaf(self, node: NameLeaf) -> Tuple[Optional[str], str]:
+    def visit_NameLeaf(self, node: NameLeaf) -> tuple[str | None, str]:
         name = node.value
         if name == "SOFT_KEYWORD":
             return "soft_keyword", "self.soft_keyword()"
-        if name in ("NAME", "NUMBER", "STRING", "OP", "TYPE_COMMENT"):
+        if name in ("NAME", "NUMBER", "STRING", "OP", "TYPE_COMMENT",
+            "FSTRING_END", "FSTRING_MIDDLE", "FSTRING_START"):
             name = name.lower()
             return name, f"self.{name}()"
         if name in ("NEWLINE", "DEDENT", "INDENT", "ENDMARKER"):
@@ -107,31 +109,31 @@ class PythonCallMakerVisitor(GrammarVisitor):
             return "_" + name.lower(), f"self.expect({name!r})"
         return name, f"self.{name}()"
 
-    def visit_StringLeaf(self, node: StringLeaf) -> Tuple[str, str]:
+    def visit_StringLeaf(self, node: StringLeaf) -> tuple[str, str]:
         return "literal", f"self.expect({node.value})"
 
-    def visit_NamedItem(self, node: NamedItem) -> Tuple[Optional[str], str]:
+    def visit_NamedItem(self, node: NamedItem) -> tuple[str | None, str]:
         name, call = self.visit(node.item)
         if node.name:
             name = node.name
         return name, call
 
-    def lookahead_call_helper(self, node: Lookahead) -> Tuple[str, str]:
+    def lookahead_call_helper(self, node: Lookahead) -> tuple[str, str]:
         name, call = self.visit(node.node)
         head, tail = call.split("(", 1)
         assert tail[-1] == ")"
         tail = tail[:-1]
         return head, tail
 
-    def visit_PositiveLookahead(self, node: PositiveLookahead) -> Tuple[None, str]:
+    def visit_PositiveLookahead(self, node: PositiveLookahead) -> tuple[None, str]:
         head, tail = self.lookahead_call_helper(node)
         return None, f"self.positive_lookahead({head}, {tail})"
 
-    def visit_NegativeLookahead(self, node: NegativeLookahead) -> Tuple[None, str]:
+    def visit_NegativeLookahead(self, node: NegativeLookahead) -> tuple[None, str]:
         head, tail = self.lookahead_call_helper(node)
         return None, f"self.negative_lookahead({head}, {tail})"
 
-    def visit_Opt(self, node: Opt) -> Tuple[str, str]:
+    def visit_Opt(self, node: Opt) -> tuple[str, str]:
         name, call = self.visit(node.node)
         # Note trailing comma (the call may already have one comma
         # at the end, for example when rules have both repeat0 and optional
@@ -147,7 +149,7 @@ class PythonCallMakerVisitor(GrammarVisitor):
         prefix: str,
         call_by_name_func: Callable[[str], str],
         rule_generation_func: Callable[[], str],
-    ) -> Tuple[str, str]:
+    ) -> tuple[str, str]:
         node_str = f"{node}"
         key = f"{prefix}_{node_str}"
         if key in self.cache:
@@ -158,7 +160,7 @@ class PythonCallMakerVisitor(GrammarVisitor):
         self.cache[key] = name, call
         return self.cache[key]
 
-    def visit_Rhs(self, node: Rhs) -> Tuple[str, str]:
+    def visit_Rhs(self, node: Rhs) -> tuple[str, str]:
         if len(node.alts) == 1 and len(node.alts[0].items) == 1:
             return self.visit(node.alts[0].items[0])
 
@@ -169,7 +171,7 @@ class PythonCallMakerVisitor(GrammarVisitor):
             lambda: self.gen.artificial_rule_from_rhs(node),
         )
 
-    def visit_Repeat0(self, node: Repeat0) -> Tuple[str, str]:
+    def visit_Repeat0(self, node: Repeat0) -> tuple[str, str]:
         return self._generate_artificial_rule_call(
             node,
             "repeat0",
@@ -177,7 +179,7 @@ class PythonCallMakerVisitor(GrammarVisitor):
             lambda: self.gen.artificial_rule_from_repeat(node.node, is_repeat1=False),
         )
 
-    def visit_Repeat1(self, node: Repeat1) -> Tuple[str, str]:
+    def visit_Repeat1(self, node: Repeat1) -> tuple[str, str]:
         return self._generate_artificial_rule_call(
             node,
             "repeat1",
@@ -185,7 +187,7 @@ class PythonCallMakerVisitor(GrammarVisitor):
             lambda: self.gen.artificial_rule_from_repeat(node.node, is_repeat1=True),
         )
 
-    def visit_Gather(self, node: Gather) -> Tuple[str, str]:
+    def visit_Gather(self, node: Gather) -> tuple[str, str]:
         return self._generate_artificial_rule_call(
             node,
             "gather",
@@ -193,13 +195,13 @@ class PythonCallMakerVisitor(GrammarVisitor):
             lambda: self.gen.artificial_rule_from_gather(node),
         )
 
-    def visit_Group(self, node: Group) -> Tuple[Optional[str], str]:
+    def visit_Group(self, node: Group) -> tuple[str | None, str]:
         return self.visit(node.rhs)
 
-    def visit_Cut(self, node: Cut) -> Tuple[str, str]:
+    def visit_Cut(self, node: Cut) -> tuple[str, str]:
         return "cut", "True"
 
-    def visit_Forced(self, node: Forced) -> Tuple[str, str]:
+    def visit_Forced(self, node: Forced) -> tuple[str, str]:
         if isinstance(node.node, Group):
             _, val = self.visit(node.node.rhs)
             return "forced", f"self.expect_forced({val}, '''({node.node.rhs!s})''')"
@@ -214,10 +216,10 @@ class PythonParserGenerator(ParserGenerator, GrammarVisitor):
     def __init__(
         self,
         grammar: grammar.Grammar,
-        file: Optional[IO[Text]],
-        tokens: Set[str] = set(token.tok_name.values()),
-        location_formatting: Optional[str] = None,
-        unreachable_formatting: Optional[str] = None,
+        file: IO[str] | None,
+        tokens: set[str] = set(token.tok_name.values()),
+        location_formatting: str | None = None,
+        unreachable_formatting: str | None = None,
     ):
         tokens.add("SOFT_KEYWORD")
         super().__init__(grammar, tokens, file)
@@ -354,7 +356,7 @@ class PythonParserGenerator(ParserGenerator, GrammarVisitor):
 
                 if is_loop:
                     self.print(f"children.append({action})")
-                    self.print(f"mark = self._mark()")
+                    self.print("mark = self._mark()")
                 else:
                     if "UNREACHABLE" in action:
                         action = action.replace("UNREACHABLE", self.unreachable_formatting)

@@ -1,0 +1,2 @@
+Fix lazy ``from`` imports of module attributes provided by module-level
+``__getattr__``.

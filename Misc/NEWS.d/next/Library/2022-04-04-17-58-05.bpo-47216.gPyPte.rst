@@ -1,0 +1,2 @@
+Added *mtime* option to :func:`gzip.open`, which will be passed
+to the constructor of :class:`~gzip.GzipFile`.

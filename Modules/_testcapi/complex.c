@@ -46,14 +46,14 @@ _py_c_neg(PyObject *Py_UNUSED(module), PyObject *num)
     static PyObject *                                            \
     _py_c_##suffix(PyObject *Py_UNUSED(module), PyObject *args)  \
     {                                                            \
-        Py_complex num, exp, res;                                \
+        Py_complex a, b, res;                                    \
                                                                  \
-        if (!PyArg_ParseTuple(args, "DD", &num, &exp)) {         \
+        if (!PyArg_ParseTuple(args, "DD", &a, &b)) {             \
             return NULL;                                         \
         }                                                        \
                                                                  \
         errno = 0;                                               \
-        res = _Py_c_##suffix(num, exp);                          \
+        res = _Py_c_##suffix(a, b);                              \
         return Py_BuildValue("Di", &res, errno);                 \
     };
 
@@ -76,7 +76,6 @@ _py_c_abs(PyObject *Py_UNUSED(module), PyObject* obj)
         return NULL;
     }
 
-    errno = 0;
     res = _Py_c_abs(complex);
     return Py_BuildValue("di", res, errno);
 }

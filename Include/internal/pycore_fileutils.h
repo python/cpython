@@ -9,6 +9,7 @@ extern "C" {
 #endif
 
 #include <locale.h>               // struct lconv
+#include "pycore_interp_structs.h" // _Py_error_handler
 
 
 /* A routine to check if a file descriptor can be select()-ed. */
@@ -18,22 +19,6 @@ extern "C" {
 #else
     #define _PyIsSelectable_fd(FD) ((unsigned int)(FD) < (unsigned int)FD_SETSIZE)
 #endif
-
-struct _fileutils_state {
-    int force_ascii;
-};
-
-typedef enum {
-    _Py_ERROR_UNKNOWN=0,
-    _Py_ERROR_STRICT,
-    _Py_ERROR_SURROGATEESCAPE,
-    _Py_ERROR_REPLACE,
-    _Py_ERROR_IGNORE,
-    _Py_ERROR_BACKSLASHREPLACE,
-    _Py_ERROR_SURROGATEPASS,
-    _Py_ERROR_XMLCHARREFREPLACE,
-    _Py_ERROR_OTHER
-} _Py_error_handler;
 
 // Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(_Py_error_handler) _Py_GetErrorHandler(const char *errors);
@@ -316,6 +301,16 @@ extern void _Py_skiproot(const wchar_t *path, Py_ssize_t size, Py_ssize_t *drvsi
 
 // Export for 'select' shared extension (Argument Clinic code)
 PyAPI_FUNC(int) _PyLong_FileDescriptor_Converter(PyObject *, void *);
+
+#ifdef MS_WINDOWS
+/* Windows uses long long for offsets */
+typedef long long Py_off_t;
+#else
+typedef off_t Py_off_t;
+#endif
+
+// Export for '_ssl' and 'zlib' shared extensions (Argument Clinic code)
+PyAPI_FUNC(int) _Py_Off_t_Converter(PyObject *, void *);
 
 // Export for test_peg_generator
 PyAPI_FUNC(char*) _Py_UniversalNewlineFgetsWithSize(char *, int, FILE*, PyObject *, size_t*);

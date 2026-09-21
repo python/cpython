@@ -223,7 +223,7 @@ find_home_value(const char *buffer, DWORD maxlen, const char **start, DWORD *len
         return 0;
     }
     for (const char *s = strstr(buffer, "home");
-         s && ((ptrdiff_t)s - (ptrdiff_t)buffer) < maxlen;
+         s && (size_t)((ptrdiff_t)s - (ptrdiff_t)buffer) < maxlen;
          s = strstr(s + 1, "\nhome")
     ) {
         if (*s == '\n') {

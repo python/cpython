@@ -1,0 +1,1 @@
+Do not support ``none`` as a lazy imports mode.

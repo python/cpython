@@ -1,0 +1,3 @@
+Argument Clinic now supports several optional groups on the same nesting
+level, like in ``[y, x,] [n,] attr``.
+Such groups can be omitted independently of each other.

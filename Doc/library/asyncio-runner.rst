@@ -43,9 +43,7 @@ Running an asyncio Program
    otherwise :func:`asyncio.new_event_loop` is used. The loop is closed at the end.
    This function should be used as a main entry point for asyncio programs,
    and should ideally only be called once. It is recommended to use
-   *loop_factory* to configure the event loop instead of policies.
-   Passing :class:`asyncio.EventLoop` allows running asyncio without the
-   policy system.
+   *loop_factory* to configure the event loop.
 
    The executor is given a timeout duration of 5 minutes to shutdown.
    If the executor hasn't finished within that duration, a warning is

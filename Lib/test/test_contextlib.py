@@ -48,23 +48,23 @@ class TestAbstractContextManager(unittest.TestCase):
             def __exit__(self, exc_type, exc_value, traceback):
                 return None
 
-        self.assertTrue(issubclass(ManagerFromScratch, AbstractContextManager))
+        self.assertIsSubclass(ManagerFromScratch, AbstractContextManager)
 
         class DefaultEnter(AbstractContextManager):
             def __exit__(self, *args):
                 super().__exit__(*args)
 
-        self.assertTrue(issubclass(DefaultEnter, AbstractContextManager))
+        self.assertIsSubclass(DefaultEnter, AbstractContextManager)
 
         class NoEnter(ManagerFromScratch):
             __enter__ = None
 
-        self.assertFalse(issubclass(NoEnter, AbstractContextManager))
+        self.assertNotIsSubclass(NoEnter, AbstractContextManager)
 
         class NoExit(ManagerFromScratch):
             __exit__ = None
 
-        self.assertFalse(issubclass(NoExit, AbstractContextManager))
+        self.assertNotIsSubclass(NoExit, AbstractContextManager)
 
 
 class ContextManagerTestCase(unittest.TestCase):
@@ -680,6 +680,154 @@ class TestContextDecorator(unittest.TestCase):
         self.assertEqual(state, [1, 'something else', 999])
 
 
+    def test_contextmanager_decorate_generator_function(self):
+        @contextmanager
+        def woohoo(y):
+            state.append(y)
+            yield
+            state.append(999)
+
+        state = []
+        @woohoo(1)
+        def test(x):
+            self.assertEqual(state, [1])
+            state.append(x)
+            yield
+            state.append("second item")
+            return "result"
+
+        gen = test("something")
+        for _ in gen:
+            self.assertEqual(state, [1, "something"])
+        self.assertEqual(state, [1, "something", "second item", 999])
+
+        # The wrapped generator's return value is preserved.
+        state = []
+        gen = test("something")
+        with self.assertRaises(StopIteration) as cm:
+            while True:
+                next(gen)
+        self.assertEqual(cm.exception.value, "result")
+
+
+    def test_contextmanager_decorate_generator_function_exception(self):
+        @contextmanager
+        def woohoo():
+            state.append("enter")
+            try:
+                yield
+            finally:
+                state.append("exit")
+
+        state = []
+        @woohoo()
+        def test():
+            state.append("body")
+            yield
+            raise ZeroDivisionError
+
+        with self.assertRaises(ZeroDivisionError):
+            for _ in test():
+                pass
+        self.assertEqual(state, ["enter", "body", "exit"])
+
+
+    def test_contextmanager_decorate_generator_function_early_stop(self):
+        @contextmanager
+        def woohoo():
+            state.append("enter")
+            try:
+                yield
+            finally:
+                state.append("exit")
+
+        state = []
+        @woohoo()
+        def test():
+            try:
+                yield 1
+                yield 2
+            finally:
+                state.append("inner closed")
+
+        gen = test()
+        self.assertEqual(next(gen), 1)
+        gen.close()
+        # The inner generator is closed before the context manager exits.
+        self.assertEqual(state, ["enter", "inner closed", "exit"])
+
+
+    def test_contextmanager_decorate_generator_function_send_throw(self):
+        @contextmanager
+        def woohoo():
+            yield
+
+        @woohoo()
+        def test():
+            received = yield "first"
+            state.append(("received", received))
+            try:
+                yield "second"
+            except ValueError as exc:
+                state.append(("caught", type(exc)))
+                yield "after throw"
+
+        # .send() and .throw() are forwarded to the wrapped generator.
+        state = []
+        gen = test()
+        self.assertEqual(next(gen), "first")
+        self.assertEqual(gen.send("VALUE"), "second")
+        self.assertEqual(gen.throw(ValueError), "after throw")
+        gen.close()
+        self.assertEqual(
+            state, [("received", "VALUE"), ("caught", ValueError)]
+        )
+
+
+    def test_contextmanager_decorate_coroutine_function(self):
+        @contextmanager
+        def woohoo(y):
+            state.append(y)
+            yield
+            state.append(999)
+
+        state = []
+        @woohoo(1)
+        async def test(x):
+            self.assertEqual(state, [1])
+            state.append(x)
+
+        coro = test("something")
+        with self.assertRaises(StopIteration):
+            coro.send(None)
+
+        self.assertEqual(state, [1, "something", 999])
+
+
+    def test_contextmanager_decorate_asyncgen_function(self):
+        @contextmanager
+        def woohoo(y):
+            state.append(y)
+            yield
+            state.append(999)
+
+        state = []
+        @woohoo(1)
+        async def test(x):
+            self.assertEqual(state, [1])
+            state.append(x)
+            yield
+            state.append("second item")
+
+        agen = test("something")
+        with self.assertRaises(StopIteration):
+            agen.asend(None).send(None)
+        with self.assertRaises(StopAsyncIteration):
+            agen.asend(None).send(None)
+
+        self.assertEqual(state, [1, "something", "second item", 999])
+
+
 class TestBaseExitStack:
     exit_stack = None
 
@@ -787,6 +935,75 @@ class TestBaseExitStack:
             self.assertIs(stack._exit_callbacks[-1][1].__self__, cm)
             result.append(2)
         self.assertEqual(result, [1, 2, 3, 4])
+
+    def test_enter_context_classmethod(self):
+        class TestCM:
+            @classmethod
+            def __enter__(cls):
+                result.append(('enter', cls))
+            @classmethod
+            def __exit__(cls, *exc_details):
+                result.append(('exit', cls, *exc_details))
+
+        cm = TestCM()
+        result = []
+        with self.exit_stack() as stack:
+            stack.enter_context(cm)
+            self.assertEqual(result, [('enter', TestCM)])
+        self.assertEqual(result, [('enter', TestCM),
+                                  ('exit', TestCM, None, None, None)])
+
+        result = []
+        with self.exit_stack() as stack:
+            stack.push(cm)
+            self.assertEqual(result, [])
+        self.assertEqual(result, [('exit', TestCM, None, None, None)])
+
+    def test_enter_context_staticmethod(self):
+        class TestCM:
+            @staticmethod
+            def __enter__():
+                result.append('enter')
+            @staticmethod
+            def __exit__(*exc_details):
+                result.append(('exit', *exc_details))
+
+        cm = TestCM()
+        result = []
+        with self.exit_stack() as stack:
+            stack.enter_context(cm)
+            self.assertEqual(result, ['enter'])
+        self.assertEqual(result, ['enter', ('exit', None, None, None)])
+
+        result = []
+        with self.exit_stack() as stack:
+            stack.push(cm)
+            self.assertEqual(result, [])
+        self.assertEqual(result, [('exit', None, None, None)])
+
+    def test_enter_context_slots(self):
+        class TestCM:
+            __slots__ = ('__enter__', '__exit__')
+            def __init__(self):
+                def enter():
+                    result.append('enter')
+                def exit(*exc_details):
+                    result.append(('exit', *exc_details))
+                self.__enter__ = enter
+                self.__exit__ = exit
+
+        cm = TestCM()
+        result = []
+        with self.exit_stack() as stack:
+            stack.enter_context(cm)
+            self.assertEqual(result, ['enter'])
+        self.assertEqual(result, ['enter', ('exit', None, None, None)])
+
+        result = []
+        with self.exit_stack() as stack:
+            stack.push(cm)
+            self.assertEqual(result, [])
+        self.assertEqual(result, [('exit', None, None, None)])
 
     def test_enter_context_errors(self):
         class LacksEnterAndExit:

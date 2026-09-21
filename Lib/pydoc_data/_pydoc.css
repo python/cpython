@@ -3,110 +3,253 @@
 
     Contents of this file are subject to change without notice.
 
+    The colors and fonts follow the python-docs-theme used by
+    docs.python.org.
 */
 
+:root {
+    color-scheme: light dark;
+    --text-color: #333;
+    --background-color: #fff;
+    --link-color: #0072aa;
+    --link-visited-color: #6363bb;
+    --link-hover-color: #00b0e4;
+    --muted-color: #707070;
+    --code-background-color: #eee;
+    --border-color: #ccc;
+    --target-background-color: #fbe54e;
+    --block-background-color: #eeffcc;
+    --block-border-color: #ac9;
+    --error-color: #ba2121;
+    --repr-color: #c040c0;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --text-color: rgba(255, 255, 255, 0.87);
+        --background-color: #222;
+        --link-color: #77aaff;
+        --link-visited-color: #0099ee;
+        --link-hover-color: #00b0e4;
+        --muted-color: #999;
+        --code-background-color: #424242;
+        --border-color: #616161;
+        --target-background-color: #616161;
+        --block-background-color: #333;
+        --block-border-color: #616161;
+        --error-color: #f44c4e;
+        --repr-color: #d080d0;
+    }
+}
+
 body {
-    background-color: #f0f0f8;
+    font-family: -apple-system, BlinkMacSystemFont, avenir next, avenir,
+        segoe ui, helvetica neue, helvetica, Cantarell, Ubuntu, roboto,
+        noto, arial, sans-serif;
+    color: var(--text-color);
+    background-color: var(--background-color);
+    line-height: 1.4;
+    margin: 0;
+    padding: 0 1em 1em;
 }
 
-table.heading tr {
-    background-color: #7799ee;
+code, pre, .docstring, dl.doc > dt {
+    font-family: Menlo, Consolas, Monaco, Liberation Mono, Lucida Console,
+        monospace;
+    font-size: 96.5%;
 }
 
-.decor {
-    color: #ffffff;
+a:link {
+    color: var(--link-color);
 }
 
-.title-decor {
-    background-color: #ffc8d8;
-    color: #000000;
+a:visited {
+    color: var(--link-visited-color);
 }
 
-.pkg-content-decor {
-    background-color: #aa55cc;
+a:hover {
+    color: var(--link-hover-color);
 }
 
-.index-decor {
-    background-color: #ee77aa;
+/* Page heading */
+
+header.heading {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-end;
+    column-gap: 1em;
+    padding: 0.5em 0;
+    border-bottom: 1px solid var(--border-color);
 }
 
-.functions-decor {
-    background-color: #eeaa77;
+header.heading h1 {
+    margin: 0;
+    font-size: 1.8em;
 }
 
-.data-decor {
-    background-color: #55aa55;
+header.heading .extra {
+    text-align: right;
+    overflow-wrap: anywhere;
 }
 
-.author-decor {
-    background-color: #7799ee;
+/* Sections */
+
+h2, h3, h4 {
+    margin: 0.6em 0 0.4em;
 }
 
-.credits-decor {
-    background-color: #7799ee;
+section > h2 {
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0.2em;
+    font-size: 1.4em;
 }
 
-.error-decor {
-    background-color: #bb0000;
+section > h3 {
+    font-size: 1.1em;
+}
+
+section.error > h2 {
+    color: var(--error-color);
+}
+
+section section {
+    border: 1px solid var(--border-color);
+    border-radius: 3px;
+    padding: 0 0.8em 0.5em;
+    margin: 0.8em 0;
+}
+
+/* Docstrings and other preformatted text */
+
+.docstring {
+    white-space: pre-wrap;
+    margin: 0.3em 0;
+}
+
+pre.topic, pre.keyword {
+    background-color: var(--block-background-color);
+    border: 1px solid var(--block-border-color);
+    border-radius: 3px;
+    padding: 0.5em 0.8em;
+    overflow-x: auto;
+}
+
+/* Documented names (functions, methods, data) */
+
+dl.doc {
+    margin: 0.5em 0;
+}
+
+dl.doc > dt {
+    overflow-wrap: anywhere;
+}
+
+a:target {
+    background-color: var(--target-background-color);
+}
+
+dl.doc > dd {
+    margin: 0.2em 0 0.8em 2em;
+}
+
+.note {
+    font-family: -apple-system, BlinkMacSystemFont, avenir next, avenir,
+        segoe ui, helvetica neue, helvetica, Cantarell, Ubuntu, roboto,
+        noto, arial, sans-serif;
+    color: var(--muted-color);
 }
 
 .grey {
-    color: #909090;
-}
-
-.white {
-    color: #ffffff;
+    color: var(--muted-color);
 }
 
 .repr {
-    color: #c040c0;
+    color: var(--repr-color);
 }
 
-table.heading tr td.title {
-    vertical-align: bottom;
-}
-
-table.heading tr td.extra {
-    vertical-align: bottom;
-    text-align: right;
-}
-
-.heading-text {
-    font-family: helvetica, arial;
-}
-
-.bigsection {
-    font-size: larger;
-}
-
-.title {
-    font-size: x-large;
-}
-
-.code {
-    font-family: monospace;
-}
-
-table {
-    width: 100%;
-    border-spacing : 0;
-    border-collapse : collapse;
+hr {
     border: 0;
+    border-top: 1px solid var(--border-color);
+    margin: 0.8em 0;
 }
 
-td {
-    padding: 2;
+/* Inherited class members are collapsed by default. */
+
+details.inherited > summary {
+    cursor: pointer;
+    margin: 0.6em 0 0.4em;
 }
 
-td.section-title {
-    vertical-align: bottom;
+/* Multi-column lists of modules, topics and keywords */
+
+ul.multicolumn {
+    list-style-type: none;
+    column-width: 14em;
+    column-gap: 1em;
+    margin: 0.5em 0;
+    padding: 0;
 }
 
-td.multicolumn {
-    width: 25%;
-    vertical-align: bottom;
+ul.multicolumn > li {
+    overflow-wrap: anywhere;
 }
 
-td.singlecolumn {
-    width: 100%;
+/* Class hierarchy trees */
+
+dl.tree, dl.tree dl {
+    margin: 0;
+}
+
+dl.tree dd {
+    margin: 0 0 0 2em;
+}
+
+/* Navigation bar of the pydoc server */
+
+nav.navbar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    column-gap: 1em;
+    row-gap: 0.3em;
+    padding: 0.5em 0;
+    border-bottom: 1px solid var(--border-color);
+    font-size: smaller;
+}
+
+nav.navbar .navbar-version {
+    color: var(--muted-color);
+}
+
+nav.navbar ul {
+    display: flex;
+    flex-wrap: wrap;
+    column-gap: 1em;
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+
+nav.navbar form {
+    display: inline-block;
+}
+
+nav.navbar input {
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+    background-color: var(--background-color);
+    border: 1px solid #999;
+    border-radius: 3px;
+}
+
+footer {
+    margin-top: 1em;
+    padding-top: 0.3em;
+    border-top: 1px solid var(--border-color);
+    color: var(--muted-color);
+    font-size: smaller;
+    text-align: right;
 }
