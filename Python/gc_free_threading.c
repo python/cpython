@@ -524,7 +524,7 @@ static_assert(BUFFER_HI < BUFFER_SIZE &&
               BUFFER_LO > 0,
               "Invalid prefetch buffer level settings.");
 
-// Prefetch intructions will fetch the line of data from memory that
+// Prefetch instructions will fetch the line of data from memory that
 // contains the byte specified with the source operand to a location in
 // the cache hierarchy specified by a locality hint.  The instruction
 // is only a hint and the CPU is free to ignore it.  Instructions and
