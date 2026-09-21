@@ -5073,7 +5073,7 @@ class TestUopsOptimization(unittest.TestCase):
         ex = get_first_executor(f)
         self.assertIsNotNone(ex)
         # Not folded: the load must still consult the frame's builtins.
-        self.assertIn("_LOAD_GLOBAL_BUILTINS", set(iter_opnames(ex)))
+        self.assertIn("_LOAD_GLOBAL_BUILTINS", get_opnames(ex))
 
         # Replacing an existing value does not change the keys version.
         copied_builtins["len"] = lambda s: 42
@@ -5096,7 +5096,9 @@ class TestUopsOptimization(unittest.TestCase):
 
 
         f_canonical(TIER2_THRESHOLD)
-        self.assertIsNotNone(get_first_executor(f_canonical))
+        ex = get_first_executor(f_canonical)
+        self.assertIsNotNone(ex)
+        self.assertIn("_GUARD_BUILTINS_IS_CANONICAL", get_opnames(ex))
 
         copied_builtins["len"] = lambda s: 42
         # The executor's owner still sees the canonical len.
