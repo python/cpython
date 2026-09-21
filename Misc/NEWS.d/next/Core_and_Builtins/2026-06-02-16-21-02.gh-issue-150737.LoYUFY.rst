@@ -1,2 +1,1 @@
-Optimize bytecode for literal null unpack idiom cases such as the ``ast.unparse``
-empty set representation.
+Optimize bytecode for empty unpack cases such as ``{*()}``.
