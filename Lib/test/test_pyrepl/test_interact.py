@@ -343,6 +343,15 @@ class TestStatementSubmittedHook(unittest.TestCase):
         hook.assert_called_once_with(statement)
         self.assertEqual(output, f"{escape_sequence}statement executed\n")
 
+    @force_not_colorized
+    def test_hook_exception_is_displayed(self):
+        hook = MagicMock(side_effect=RuntimeError("hook error"))
+
+        output, namespace = self._run_interactive(["x = 1"], hook)
+
+        self.assertIn("RuntimeError: hook error", output)
+        self.assertEqual(namespace["x"], 1)
+
     def test_hook_not_called_for_repl_commands(self):
         hook = MagicMock()
         self._run_interactive(["clear"], hook)
