@@ -1,0 +1,2 @@
+Fix :class:`mailbox.Babyl` to write the visible headers of a
+:class:`mailbox.BabylMessage` to the mailbox file.
