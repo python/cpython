@@ -1427,7 +1427,7 @@ iterations of the loop.
 
    ``STACK[-1]`` is an :term:`iterator`.  Call its :meth:`~iterator.__next__` method.
    If this yields a new value, push it on the stack (leaving the iterator below
-   it).  If the iterator indicates it is exhausted then the byte code counter is
+   it).  If the iterator indicates it is :term:`exhausted` then the byte code counter is
    incremented by *delta*.
 
    .. versionchanged:: 3.12
@@ -1899,25 +1899,29 @@ iterations of the loop.
 
    The operand determines which intrinsic function is called:
 
-   +----------------------------------------+-----------------------------------+
-   | Operand                                | Description                       |
-   +========================================+===================================+
-   | ``INTRINSIC_2_INVALID``                | Not valid                         |
-   +----------------------------------------+-----------------------------------+
-   | ``INTRINSIC_PREP_RERAISE_STAR``        | Calculates the                    |
-   |                                        | :exc:`ExceptionGroup` to raise    |
-   |                                        | from a ``try-except*``.           |
-   +----------------------------------------+-----------------------------------+
-   | ``INTRINSIC_TYPEVAR_WITH_BOUND``       | Creates a :class:`typing.TypeVar` |
-   |                                        | with a bound.                     |
-   +----------------------------------------+-----------------------------------+
-   | ``INTRINSIC_TYPEVAR_WITH_CONSTRAINTS`` | Creates a                         |
-   |                                        | :class:`typing.TypeVar` with      |
-   |                                        | constraints.                      |
-   +----------------------------------------+-----------------------------------+
-   | ``INTRINSIC_SET_FUNCTION_TYPE_PARAMS`` | Sets the ``__type_params__``      |
-   |                                        | attribute of a function.          |
-   +----------------------------------------+-----------------------------------+
+   +------------------------------------------+-----------------------------------+
+   | Operand                                  | Description                       |
+   +==========================================+===================================+
+   | ``INTRINSIC_2_INVALID``                  | Not valid                         |
+   +------------------------------------------+-----------------------------------+
+   | ``INTRINSIC_PREP_RERAISE_STAR``          | Calculates the                    |
+   |                                          | :exc:`ExceptionGroup` to raise    |
+   |                                          | from a ``try-except*``.           |
+   +------------------------------------------+-----------------------------------+
+   | ``INTRINSIC_TYPEVAR_WITH_BOUND``         | Creates a :class:`typing.TypeVar` |
+   |                                          | with a bound.                     |
+   +------------------------------------------+-----------------------------------+
+   | ``INTRINSIC_TYPEVAR_WITH_CONSTRAINTS``   | Creates a                         |
+   |                                          | :class:`typing.TypeVar` with      |
+   |                                          | constraints.                      |
+   +------------------------------------------+-----------------------------------+
+   | ``INTRINSIC_SET_FUNCTION_TYPE_PARAMS``   | Sets the ``__type_params__``      |
+   |                                          | attribute of a function.          |
+   +------------------------------------------+-----------------------------------+
+   | ``INTRINSIC_ADD_CONDITIONAL_ANNOTATION`` | Adds an annotation index to the   |
+   |                                          | ``__conditional_annotations__``   |
+   |                                          | set.                              |
+   +------------------------------------------+-----------------------------------+
 
    .. versionadded:: 3.12
 

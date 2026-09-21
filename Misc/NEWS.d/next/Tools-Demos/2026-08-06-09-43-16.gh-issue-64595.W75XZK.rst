@@ -1,0 +1,5 @@
+Argument Clinic now touches the source file if a file generated from it was
+changed, and keeps the generated files newer than the source file.
+The build system does not know that the source file depends on the files
+generated from it, so it did not recompile the source file if only the
+generated file was changed.

@@ -1,4 +1,3 @@
-from __future__ import annotations
 import builtins
 import functools
 import keyword
@@ -9,10 +8,12 @@ import unicodedata
 import _colorize
 
 from collections import deque
+from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
 from io import StringIO
+from re import Match
 from tokenize import TokenInfo as TI
-from typing import Iterable, Iterator, Match, NamedTuple, Self
+from typing import NamedTuple, Self
 
 from .types import CharBuffer, CharWidths
 from .trace import trace

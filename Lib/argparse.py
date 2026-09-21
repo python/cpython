@@ -1545,6 +1545,12 @@ class Namespace(_AttributeHolder):
     def __contains__(self, key):
         return key in self.__dict__
 
+    def __replace__(self, /, **changes):
+        new = self.__class__()
+        new.__dict__.update(self.__dict__)
+        new.__dict__.update(changes)
+        return new
+
 
 class _ActionsContainer(object):
 
@@ -2911,11 +2917,14 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         self._print_message(help_text, file)
 
     def _print_message(self, message, file=None):
-        if message:
-            file = file or _sys.stderr
+        if not message:
+            return
+        if file is None:
+            file = _sys.stderr
+        if file is not None:
             try:
                 file.write(message)
-            except (AttributeError, OSError):
+            except OSError:
                 pass
 
     def _get_theme(self, file=None):

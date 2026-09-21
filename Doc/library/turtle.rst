@@ -8,11 +8,13 @@
 **Source code:** :source:`Lib/turtle.py`
 
 .. testsetup:: default
+   :skipif: _tkinter is None
 
    from turtle import *
    turtle = Turtle()
 
 .. testcleanup::
+   :skipif: _tkinter is None
 
    import os
    os.remove("my_drawing.ps")
@@ -79,8 +81,8 @@ In a Python shell, import all the objects of the ``turtle`` module::
 
     from turtle import *
 
-If you run into a ``No module named '_tkinter'`` error, you'll have to
-install the :mod:`Tk interface package <tkinter>` on your system.
+If you run into a ``Standard library module '_tkinter' was not found`` error,
+you'll have to install the :mod:`Tk interface package <tkinter>` on your system.
 
 
 Basic drawing
@@ -167,14 +169,16 @@ filling can be turned on and off::
 
 Next we'll create a loop::
 
+    start = pos()
+
     while True:
         forward(200)
         left(170)
-        if abs(pos()) < 1:
+        if distance(start) < 1:
             break
 
-``abs(pos()) < 1`` is a good way to know when the turtle is back at its
-home position.
+``distance(start) < 1`` is a good way to know when the turtle is back at its
+start position.
 
 Finally, complete the filling::
 
@@ -508,6 +512,7 @@ Turtle motion
    turtle is headed.  Do not change the turtle's heading.
 
    .. doctest::
+      :skipif: _tkinter is None
       :hide:
 
       >>> turtle.goto(0, 0)
@@ -850,6 +855,7 @@ Turtle motion
    last *n* stamps.
 
    .. doctest::
+      :skipif: _tkinter is None
 
       >>> for i in range(8):
       ...     unused_stamp_id = turtle.stamp()
@@ -1407,8 +1413,11 @@ More drawing control
    font.  If *move* is true, the pen is moved to the bottom-right corner of the
    text.  By default, *move* is ``False``.
 
-   >>> turtle.write("Home = ", True, align="center")
-   >>> turtle.write((0,0), True)
+   .. doctest::
+      :skipif: _tkinter is None
+
+      >>> turtle.write("Home = ", True, align="center")
+      >>> turtle.write((0,0), True)
 
 
 Turtle state
@@ -1445,12 +1454,15 @@ Visibility
 
    Return ``True`` if the Turtle is shown, ``False`` if it's hidden.
 
-   >>> turtle.hideturtle()
-   >>> turtle.isvisible()
-   False
-   >>> turtle.showturtle()
-   >>> turtle.isvisible()
-   True
+   .. doctest::
+      :skipif: _tkinter is None
+
+      >>> turtle.hideturtle()
+      >>> turtle.isvisible()
+      False
+      >>> turtle.showturtle()
+      >>> turtle.isvisible()
+      True
 
 
 Appearance
@@ -1980,6 +1992,9 @@ Window control
    window.  To observe hidden parts of the canvas, use the scrollbars. With this
    method, one can make visible those parts of a drawing which were outside the
    canvas before.
+
+   .. doctest::
+      :skipif: _tkinter is None
 
       >>> screen.screensize()
       (400, 300)
@@ -2556,6 +2571,25 @@ Public classes
    * ``a.rotate(angle)`` rotation
 
 
+Exceptions
+==========
+
+The :mod:`!turtle` module defines the following exception:
+
+.. exception:: TurtleGraphicsError
+
+   Raised for invalid arguments or operations.
+   For example, a malformed color string:
+
+   .. doctest::
+      :skipif: _tkinter is None
+
+      >>> turtle.color("blau")
+      Traceback (most recent call last):
+          ...
+      turtle.TurtleGraphicsError: bad color string: blau
+
+
 .. _turtle-explanation:
 
 Explanation
@@ -2866,49 +2900,6 @@ The demo scripts are:
 +------------------------+------------------------------+--------------------------------------+
 
 Have fun!
-
-
-Changes since Python 2.6
-========================
-
-- The methods :func:`Turtle.tracer <tracer>`, :func:`Turtle.window_width <window_width>` and
-  :func:`Turtle.window_height <window_height>` have been eliminated.
-  Methods with these names and functionality are now available only
-  as methods of :class:`Screen`. The functions derived from these remain
-  available. (In fact already in Python 2.6 these methods were merely
-  duplications of the corresponding
-  :class:`TurtleScreen`/:class:`Screen` methods.)
-
-- The method :func:`!Turtle.fill` has been eliminated.
-  The behaviour of :func:`begin_fill` and :func:`end_fill`
-  have changed slightly: now every filling process must be completed with an
-  ``end_fill()`` call.
-
-- A method :func:`Turtle.filling <filling>` has been added. It returns a boolean
-  value: ``True`` if a filling process is under way, ``False`` otherwise.
-  This behaviour corresponds to a ``fill()`` call without arguments in
-  Python 2.6.
-
-Changes since Python 3.0
-========================
-
-- The :class:`Turtle` methods :func:`shearfactor`, :func:`shapetransform` and
-  :func:`get_shapepoly` have been added. Thus the full range of
-  regular linear transforms is now available for transforming turtle shapes.
-  :func:`tiltangle` has been enhanced in functionality: it now can
-  be used to get or set the tilt angle.
-
-- The :class:`Screen` method :func:`onkeypress` has been added as a complement to
-  :func:`onkey`. As the latter binds actions to the key release event,
-  an alias: :func:`onkeyrelease` was also added for it.
-
-- The method :func:`Screen.mainloop <mainloop>` has been added,
-  so there is no longer a need to use the standalone :func:`mainloop` function
-  when working with :class:`Screen` and :class:`Turtle` objects.
-
-- Two input methods have been added: :func:`Screen.textinput <textinput>` and
-  :func:`Screen.numinput <numinput>`. These pop up input dialogs and return
-  strings and numbers respectively.
 
 
 .. doctest::

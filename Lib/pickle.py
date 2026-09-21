@@ -1623,11 +1623,7 @@ class _Unpickler:
     def _instantiate(self, klass, args):
         if (args or not isinstance(klass, type) or
             hasattr(klass, "__getinitargs__")):
-            try:
-                value = klass(*args)
-            except TypeError as err:
-                raise TypeError("in constructor for %s: %s" %
-                                (klass.__name__, str(err)), err.__traceback__)
+            value = klass(*args)
         else:
             value = klass.__new__(klass)
         self.append(value)

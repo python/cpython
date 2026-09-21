@@ -48,13 +48,16 @@ instr_size(instruction *instr)
 }
 
 struct assembler {
-    PyObject *a_bytecode;  /* bytes containing bytecode */
+    PyBytesWriter *a_bytecode_writer; /* writer containing bytecode */
+    PyObject *a_bytecode;      /* bytes containing bytecode */
     int a_offset;              /* offset into bytecode */
+    PyBytesWriter *a_except_table_writer; /* writer containing exception table */
     PyObject *a_except_table;  /* bytes containing exception table */
     int a_except_table_off;    /* offset into exception table */
     /* Location Info */
     int a_lineno;          /* lineno of last emitted instruction */
-    PyObject* a_linetable; /* bytes containing location info */
+    PyBytesWriter *a_linetable_writer; /* writer containing location info */
+    PyObject *a_linetable; /* bytes object containing location info */
     int a_location_off;    /* offset of last written location info frame */
 };
 
@@ -63,32 +66,32 @@ assemble_init(struct assembler *a, int firstlineno)
 {
     memset(a, 0, sizeof(struct assembler));
     a->a_lineno = firstlineno;
-    a->a_linetable = NULL;
-    a->a_location_off = 0;
-    a->a_except_table = NULL;
-    a->a_bytecode = PyBytes_FromStringAndSize(NULL, DEFAULT_CODE_SIZE);
-    if (a->a_bytecode == NULL) {
+    a->a_bytecode_writer = PyBytesWriter_Create(DEFAULT_CODE_SIZE);
+    if (a->a_bytecode_writer == NULL) {
         goto error;
     }
-    a->a_linetable = PyBytes_FromStringAndSize(NULL, DEFAULT_CNOTAB_SIZE);
-    if (a->a_linetable == NULL) {
+    a->a_linetable_writer = PyBytesWriter_Create(DEFAULT_CNOTAB_SIZE);
+    if (a->a_linetable_writer == NULL) {
         goto error;
     }
-    a->a_except_table = PyBytes_FromStringAndSize(NULL, DEFAULT_LNOTAB_SIZE);
-    if (a->a_except_table == NULL) {
+    a->a_except_table_writer = PyBytesWriter_Create(DEFAULT_LNOTAB_SIZE);
+    if (a->a_except_table_writer == NULL) {
         goto error;
     }
     return SUCCESS;
 error:
-    Py_CLEAR(a->a_bytecode);
-    Py_CLEAR(a->a_linetable);
-    Py_CLEAR(a->a_except_table);
+    PyBytesWriter_Discard(a->a_bytecode_writer);
+    PyBytesWriter_Discard(a->a_linetable_writer);
+    PyBytesWriter_Discard(a->a_except_table_writer);
     return ERROR;
 }
 
 static void
 assemble_free(struct assembler *a)
 {
+    PyBytesWriter_Discard(a->a_bytecode_writer);
+    PyBytesWriter_Discard(a->a_linetable_writer);
+    PyBytesWriter_Discard(a->a_except_table_writer);
     Py_XDECREF(a->a_bytecode);
     Py_XDECREF(a->a_linetable);
     Py_XDECREF(a->a_except_table);
@@ -96,7 +99,7 @@ assemble_free(struct assembler *a)
 
 static inline void
 write_except_byte(struct assembler *a, int byte) {
-    unsigned char *p = (unsigned char *) PyBytes_AS_STRING(a->a_except_table);
+    unsigned char *p = (unsigned char *) PyBytesWriter_GetData(a->a_except_table_writer);
     p[a->a_except_table_off++] = byte;
 }
 
@@ -134,9 +137,9 @@ assemble_emit_exception_table_entry(struct assembler *a, int start, int end,
                                     int handler_offset,
                                     _PyExceptHandlerInfo *handler)
 {
-    Py_ssize_t len = PyBytes_GET_SIZE(a->a_except_table);
+    Py_ssize_t len = PyBytesWriter_GetSize(a->a_except_table_writer);
     if (a->a_except_table_off + MAX_SIZE_OF_ENTRY >= len) {
-        RETURN_IF_ERROR(_PyBytes_Resize(&a->a_except_table, len * 2));
+        RETURN_IF_ERROR(PyBytesWriter_Resize(a->a_except_table_writer, len * 2));
     }
     int size = end-start;
     assert(end > start);
@@ -195,7 +198,8 @@ assemble_exception_table(struct assembler *a, instr_sequence *instrs)
 static void
 write_location_byte(struct assembler* a, int val)
 {
-    PyBytes_AS_STRING(a->a_linetable)[a->a_location_off] = val&255;
+    uint8_t *linetable = PyBytesWriter_GetData(a->a_linetable_writer);
+    linetable[a->a_location_off] = val & 255;
     a->a_location_off++;
 }
 
@@ -203,8 +207,8 @@ write_location_byte(struct assembler* a, int val)
 static uint8_t *
 location_pointer(struct assembler* a)
 {
-    return (uint8_t *)PyBytes_AS_STRING(a->a_linetable) +
-        a->a_location_off;
+    uint8_t *linetable = PyBytesWriter_GetData(a->a_linetable_writer);
+    return linetable + a->a_location_off;
 }
 
 static void
@@ -285,10 +289,10 @@ write_location_info_no_column(struct assembler* a, int length, int line_delta)
 static int
 write_location_info_entry(struct assembler* a, location loc, int isize)
 {
-    Py_ssize_t len = PyBytes_GET_SIZE(a->a_linetable);
+    Py_ssize_t len = PyBytesWriter_GetSize(a->a_linetable_writer);
     if (a->a_location_off + THEORETICAL_MAX_ENTRY_SIZE >= len) {
         assert(len > THEORETICAL_MAX_ENTRY_SIZE);
-        RETURN_IF_ERROR(_PyBytes_Resize(&a->a_linetable, len*2));
+        RETURN_IF_ERROR(PyBytesWriter_Resize(a->a_linetable_writer, len * 2));
     }
     if (loc.lineno == NO_LOCATION.lineno) {
         write_location_info_none(a, isize);
@@ -412,7 +416,7 @@ write_instr(_Py_CODEUNIT *codestr, instruction *instr, int ilen)
 static int
 assemble_emit_instr(struct assembler *a, instruction *instr)
 {
-    Py_ssize_t len = PyBytes_GET_SIZE(a->a_bytecode);
+    Py_ssize_t len = PyBytesWriter_GetSize(a->a_bytecode_writer);
     _Py_CODEUNIT *code;
 
     int size = instr_size(instr);
@@ -421,9 +425,9 @@ assemble_emit_instr(struct assembler *a, instruction *instr)
             PyErr_NoMemory();
             return ERROR;
         }
-        RETURN_IF_ERROR(_PyBytes_Resize(&a->a_bytecode, len * 2));
+        RETURN_IF_ERROR(PyBytesWriter_Resize(a->a_bytecode_writer, len * 2));
     }
-    code = (_Py_CODEUNIT *)PyBytes_AS_STRING(a->a_bytecode) + a->a_offset;
+    code = (_Py_CODEUNIT *)PyBytesWriter_GetData(a->a_bytecode_writer) + a->a_offset;
     a->a_offset += size;
     write_instr(code, instr, size);
     return SUCCESS;
@@ -444,13 +448,28 @@ assemble_emit(struct assembler *a, instr_sequence *instrs,
 
     RETURN_IF_ERROR(assemble_exception_table(a, instrs));
 
-    RETURN_IF_ERROR(_PyBytes_Resize(&a->a_except_table, a->a_except_table_off));
+    a->a_except_table = PyBytesWriter_FinishWithSize(a->a_except_table_writer,
+                                                     a->a_except_table_off);
+    a->a_except_table_writer = NULL;
+    if (a->a_except_table == NULL) {
+        return ERROR;
+    }
     RETURN_IF_ERROR(_PyCompile_ConstCacheMergeOne(const_cache, &a->a_except_table));
 
-    RETURN_IF_ERROR(_PyBytes_Resize(&a->a_linetable, a->a_location_off));
+    a->a_linetable = PyBytesWriter_FinishWithSize(a->a_linetable_writer,
+                                                  a->a_location_off);
+    a->a_linetable_writer = NULL;
+    if (a->a_linetable == NULL) {
+        return ERROR;
+    }
     RETURN_IF_ERROR(_PyCompile_ConstCacheMergeOne(const_cache, &a->a_linetable));
 
-    RETURN_IF_ERROR(_PyBytes_Resize(&a->a_bytecode, a->a_offset * sizeof(_Py_CODEUNIT)));
+    a->a_bytecode = PyBytesWriter_FinishWithSize(a->a_bytecode_writer,
+                                                 a->a_offset * sizeof(_Py_CODEUNIT));
+    a->a_bytecode_writer = NULL;
+    if (a->a_bytecode == NULL) {
+        return ERROR;
+    }
     RETURN_IF_ERROR(_PyCompile_ConstCacheMergeOne(const_cache, &a->a_bytecode));
     return SUCCESS;
 }

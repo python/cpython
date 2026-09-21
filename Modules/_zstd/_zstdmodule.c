@@ -274,7 +274,7 @@ _zstd_train_dict_impl(PyObject *module, PyBytesObject *samples_bytes,
                       PyObject *samples_sizes, Py_ssize_t dict_size)
 /*[clinic end generated code: output=8e87fe43935e8f77 input=d20dedb21c72cb62]*/
 {
-    PyObject *dst_dict_bytes = NULL;
+    PyBytesWriter *dst_dict_bytes = NULL;
     size_t *chunk_sizes = NULL;
     Py_ssize_t chunks_number;
     size_t zstd_ret;
@@ -294,13 +294,13 @@ _zstd_train_dict_impl(PyObject *module, PyBytesObject *samples_bytes,
     }
 
     /* Allocate dict buffer */
-    dst_dict_bytes = PyBytes_FromStringAndSize(NULL, dict_size);
+    dst_dict_bytes = PyBytesWriter_Create(dict_size);
     if (dst_dict_bytes == NULL) {
         goto error;
     }
 
     /* Train the dictionary */
-    char *dst_dict_buffer = PyBytes_AS_STRING(dst_dict_bytes);
+    char *dst_dict_buffer = PyBytesWriter_GetData(dst_dict_bytes);
     const char *samples_buffer = PyBytes_AS_STRING(samples_bytes);
     Py_BEGIN_ALLOW_THREADS
     zstd_ret = ZDICT_trainFromBuffer(dst_dict_buffer, dict_size,
@@ -315,19 +315,15 @@ _zstd_train_dict_impl(PyObject *module, PyBytesObject *samples_bytes,
         goto error;
     }
 
-    /* Resize dict_buffer */
-    if (_PyBytes_Resize(&dst_dict_bytes, zstd_ret) < 0) {
-        goto error;
-    }
+    PyMem_Free(chunk_sizes);
 
-    goto success;
+    /* Resize dict_buffer */
+    return PyBytesWriter_FinishWithSize(dst_dict_bytes, zstd_ret);
 
 error:
-    Py_CLEAR(dst_dict_bytes);
-
-success:
+    PyBytesWriter_Discard(dst_dict_bytes);
     PyMem_Free(chunk_sizes);
-    return dst_dict_bytes;
+    return NULL;
 }
 
 /*[clinic input]
@@ -357,7 +353,8 @@ _zstd_finalize_dict_impl(PyObject *module, PyBytesObject *custom_dict_bytes,
 {
     Py_ssize_t chunks_number;
     size_t *chunk_sizes = NULL;
-    PyObject *dst_dict_bytes = NULL;
+    PyBytesWriter *dst_dict_bytes = NULL;
+    PyObject *result = NULL;
     size_t zstd_ret;
     ZDICT_params_t params;
 
@@ -376,7 +373,7 @@ _zstd_finalize_dict_impl(PyObject *module, PyBytesObject *custom_dict_bytes,
     }
 
     /* Allocate dict buffer */
-    dst_dict_bytes = PyBytes_FromStringAndSize(NULL, dict_size);
+    dst_dict_bytes = PyBytesWriter_Create(dict_size);
     if (dst_dict_bytes == NULL) {
         goto error;
     }
@@ -393,7 +390,8 @@ _zstd_finalize_dict_impl(PyObject *module, PyBytesObject *custom_dict_bytes,
     /* Finalize the dictionary */
     Py_BEGIN_ALLOW_THREADS
     zstd_ret = ZDICT_finalizeDictionary(
-                        PyBytes_AS_STRING(dst_dict_bytes), dict_size,
+                        PyBytesWriter_GetData(dst_dict_bytes),
+                        PyBytesWriter_GetSize(dst_dict_bytes),
                         PyBytes_AS_STRING(custom_dict_bytes),
                         Py_SIZE(custom_dict_bytes),
                         PyBytes_AS_STRING(samples_bytes), chunk_sizes,
@@ -408,18 +406,15 @@ _zstd_finalize_dict_impl(PyObject *module, PyBytesObject *custom_dict_bytes,
     }
 
     /* Resize dict_buffer */
-    if (_PyBytes_Resize(&dst_dict_bytes, zstd_ret) < 0) {
-        goto error;
-    }
-
-    goto success;
+    result = PyBytesWriter_FinishWithSize(dst_dict_bytes, zstd_ret);
+    goto done;
 
 error:
-    Py_CLEAR(dst_dict_bytes);
+    PyBytesWriter_Discard(dst_dict_bytes);
 
-success:
+done:
     PyMem_Free(chunk_sizes);
-    return dst_dict_bytes;
+    return result;
 }
 
 
@@ -571,6 +566,55 @@ static PyMethodDef _zstd_methods[] = {
     {NULL, NULL}
 };
 
+PyDoc_STRVAR(zstd_version_info__doc__,
+"_zstd.zstd_version_info\n\
+\n\
+Zstd version information as a named tuple.");
+
+static PyStructSequence_Field zstd_version_info_fields[] = {
+    {"major", "Major release number"},
+    {"minor", "Minor release number"},
+    {"patch", "Patch release number"},
+    {0}
+};
+
+static PyStructSequence_Desc zstd_version_info_desc = {
+    "_zstd.zstd_version_info",        /* name */
+    zstd_version_info__doc__,         /* doc */
+    zstd_version_info_fields,         /* fields */
+    3
+};
+
+static PyObject *
+make_zstd_version_info(PyTypeObject *type, unsigned int number)
+{
+    PyObject *version;
+    int pos = 0;
+    unsigned int major = number / 10000u;
+    unsigned int minor = (number % 10000u) / 100u;
+    unsigned int patch = number % 100u;
+
+    version = PyStructSequence_New(type);
+    if (version == NULL) {
+        return NULL;
+    }
+
+#define SetIntItem(VALUE) \
+    PyStructSequence_SET_ITEM(version, pos++, PyLong_FromUnsignedLong(VALUE)); \
+    if (PyErr_Occurred()) { \
+        Py_DECREF(version); \
+        return NULL; \
+    }
+
+    SetIntItem(major)
+    SetIntItem(minor)
+    SetIntItem(patch)
+#undef SetIntItem
+
+    return version;
+}
+
+
 static int
 _zstd_exec(PyObject *m)
 {
@@ -623,15 +667,32 @@ do {                                                                         \
     }
 
     /* Add constants */
-    if (PyModule_AddIntConstant(m, "zstd_version_number",
-                                ZSTD_versionNumber()) < 0) {
+    if (PyModule_AddStringConstant(m, "ZSTD_VERSION",
+                                   ZSTD_VERSION_STRING) < 0) {
         return -1;
     }
-
     if (PyModule_AddStringConstant(m, "zstd_version",
                                    ZSTD_versionString()) < 0) {
         return -1;
     }
+    PyTypeObject *version_type;
+    version_type = PyStructSequence_NewType(&zstd_version_info_desc);
+    if (version_type == NULL) {
+        return -1;
+    }
+    if (PyModule_Add(m, "ZSTD_VERSION_INFO",
+        make_zstd_version_info(version_type, ZSTD_VERSION_NUMBER)) < 0)
+    {
+        Py_DECREF(version_type);
+        return -1;
+    }
+    if (PyModule_Add(m, "zstd_version_info",
+        make_zstd_version_info(version_type, ZSTD_versionNumber())) < 0)
+    {
+        Py_DECREF(version_type);
+        return -1;
+    }
+    Py_DECREF(version_type);
 
 #if ZSTD_VERSION_NUMBER >= 10500
     if (PyModule_AddIntConstant(m, "ZSTD_CLEVEL_DEFAULT",

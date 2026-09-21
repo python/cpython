@@ -37,7 +37,7 @@ much easier experience:
 * `Termux <https://termux.dev/en/>`__
 
 If you're sure you want to do all of this manually, read on. You can use the
-:source:`testbed app <Android/testbed>` as a guide; each step below contains a
+:source:`testbed app <Platforms/Android/testbed>` as a guide; each step below contains a
 link to the relevant file.
 
 * First, acquire a build of Python for Android:
@@ -47,10 +47,10 @@ link to the relevant file.
     mentioned below is at the top level of the package.
 
   * Or if you want to build it yourself, follow the instructions in
-    :source:`Android/README.md`. The ``prefix`` directory will be created under
+    :source:`Platforms/Android/README.md`. The ``prefix`` directory will be created under
     :samp:`cross-build/{HOST}`.
 
-* Add code to your :source:`build.gradle <Android/testbed/app/build.gradle.kts>`
+* Add code to your :source:`build.gradle <Platforms/Android/testbed/app/build.gradle.kts>`
   file to copy the following items into your project. All except your own Python
   code can be copied from ``prefix/lib``:
 
@@ -65,10 +65,10 @@ link to the relevant file.
     * ``python*.*/site-packages`` (your own Python code)
 
 * Add code to your app to :source:`extract the assets to the filesystem
-  <Android/testbed/app/src/main/java/org/python/testbed/MainActivity.kt>`.
+  <Platforms/Android/testbed/app/src/main/java/org/python/testbed/MainActivity.kt>`.
 
 * Add code to your app to :source:`start Python in embedded mode
-  <Android/testbed/app/src/main/c/main_activity.c>`. This will need to be C code
+  <Platforms/Android/testbed/app/src/main/c/main_activity.c>`. This will need to be C code
   called via JNI.
 
 Building a Python package for Android

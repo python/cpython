@@ -1651,10 +1651,6 @@ frame_lineno_set_impl(PyFrameObject *self, PyObject *value)
 /*[clinic end generated code: output=e64c86ff6be64292 input=36ed3c896b27fb91]*/
 {
     PyCodeObject *code = _PyFrame_GetCode(self->f_frame);
-    if (value == NULL) {
-        PyErr_SetString(PyExc_AttributeError, "cannot delete attribute");
-        return -1;
-    }
     /* f_lineno must be an integer. */
     if (!PyLong_CheckExact(value)) {
         PyErr_SetString(PyExc_ValueError,
@@ -1868,12 +1864,13 @@ frame_trace_get_impl(PyFrameObject *self)
 @permit_long_summary
 @critical_section
 @setter
+@deleter
 frame.f_trace as frame_trace
 [clinic start generated code]*/
 
 static int
 frame_trace_set_impl(PyFrameObject *self, PyObject *value)
-/*[clinic end generated code: output=d6fe08335cf76ae4 input=e57380734815dac5]*/
+/*[clinic end generated code: output=d6fe08335cf76ae4 input=9fb7a5805196eae2]*/
 {
     if (value == Py_None) {
         value = NULL;
@@ -1909,16 +1906,16 @@ frame_generator_get_impl(PyFrameObject *self)
 
 
 static PyGetSetDef frame_getsetlist[] = {
-    FRAME_BACK_GETSETDEF
-    FRAME_LOCALS_GETSETDEF
-    FRAME_LINENO_GETSETDEF
-    FRAME_TRACE_GETSETDEF
-    FRAME_LASTI_GETSETDEF
-    FRAME_GLOBALS_GETSETDEF
-    FRAME_BUILTINS_GETSETDEF
-    FRAME_CODE_GETSETDEF
-    FRAME_TRACE_OPCODES_GETSETDEF
-    FRAME_GENERATOR_GETSETDEF
+    FRAME_F_BACK_GETSETDEF
+    FRAME_F_LOCALS_GETSETDEF
+    FRAME_F_LINENO_GETSETDEF
+    FRAME_F_TRACE_GETSETDEF
+    FRAME_F_LASTI_GETSETDEF
+    FRAME_F_GLOBALS_GETSETDEF
+    FRAME_F_BUILTINS_GETSETDEF
+    FRAME_F_CODE_GETSETDEF
+    FRAME_F_TRACE_OPCODES_GETSETDEF
+    FRAME_F_GENERATOR_GETSETDEF
     {0}
 };
 

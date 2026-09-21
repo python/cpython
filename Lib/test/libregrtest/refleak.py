@@ -1,6 +1,7 @@
 import os
 import sys
 import warnings
+from array import array
 from inspect import isabstract
 from typing import Any
 import linecache
@@ -95,35 +96,33 @@ def runtest_refleak(test_name, test_func,
 
     # `ByteString` is not included in `collections.abc.__all__`
     with warnings.catch_warnings(action='ignore', category=DeprecationWarning):
-        ByteString = collections.abc.ByteString
-    # Mypy doesn't even think `ByteString` is a class, hence the `type: ignore`
-    for obj in ByteString.__subclasses__() + [ByteString]:  # type: ignore[attr-defined]
+        ByteString = collections.abc.ByteString  # type: ignore[attr-defined]
+    for obj in ByteString.__subclasses__() + [ByteString]:
         abcs[obj] = _get_dump(obj)[0]
-
-    # bpo-31217: Integer pool to get a single integer object for the same
-    # value. The pool is used to prevent false alarm when checking for memory
-    # block leaks. Fill the pool with values in -1000..1000 which are the most
-    # common (reference, memory block, file descriptor) differences.
-    int_pool = {value: value for value in range(-1000, 1000)}
-    def get_pooled_int(value):
-        return int_pool.setdefault(value, value)
 
     warmups = hunt_refleak.warmups
     runs = hunt_refleak.runs
     filename = hunt_refleak.filename
     repcount = warmups + runs
 
-    # Pre-allocate to ensure that the loop doesn't allocate anything new
+    # Pre-allocate to ensure that the loop doesn't allocate anything new.
+    # Store the deltas as raw values in arrays rather than as int objects in
+    # lists: each unique delta stored as an object would live until the end of
+    # the loop and show up in the following repetition's reference and memory
+    # block deltas (gh-75400, gh-155981).
     rep_range = list(range(repcount))
-    rc_deltas = [0] * repcount
-    alloc_deltas = [0] * repcount
-    fd_deltas = [0] * repcount
+    rc_deltas = array('q', [0]) * repcount
+    alloc_deltas = array('q', [0]) * repcount
+    fd_deltas = array('q', [0]) * repcount
+    handle_deltas = array('q', [0]) * repcount
     getallocatedblocks = sys.getallocatedblocks
     gettotalrefcount = sys.gettotalrefcount
     getunicodeinternedsize = sys.getunicodeinternedsize
     fd_count = os_helper.fd_count
+    handle_count = os_helper.handle_count
     # initialize variables to make pyflakes quiet
     rc_before = alloc_before = fd_before = interned_immortal_before = 0
+    handle_before = 0
 
     if not quiet:
         print("beginning", repcount, "repetitions. Showing number of leaks "
@@ -154,20 +153,21 @@ def runtest_refleak(test_name, test_func,
         # Also, readjust the reference counts and alloc blocks by ignoring
         # any strings that might have been interned during test_func. These
         # strings will be deallocated at runtime shutdown
-        interned_immortal_after = getunicodeinternedsize(
-            # Use an internal-only keyword argument that mypy doesn't know yet
-            _only_immortal=True)  # type: ignore[call-arg]
+        interned_immortal_after = getunicodeinternedsize(_only_immortal=True)
         alloc_after = getallocatedblocks() - interned_immortal_after
         rc_after = gettotalrefcount()
         fd_after = fd_count()
+        handle_after = handle_count()
 
-        rc_deltas[i] = get_pooled_int(rc_after - rc_before)
-        alloc_deltas[i] = get_pooled_int(alloc_after - alloc_before)
-        fd_deltas[i] = get_pooled_int(fd_after - fd_before)
+        rc_deltas[i] = rc_after - rc_before
+        alloc_deltas[i] = alloc_after - alloc_before
+        fd_deltas[i] = fd_after - fd_before
+        handle_deltas[i] = handle_after - handle_before
 
         if not quiet:
             # use max, not sum, so total_leaks is one of the pooled ints
-            total_leaks = max(rc_deltas[i], alloc_deltas[i], fd_deltas[i])
+            total_leaks = max(rc_deltas[i], alloc_deltas[i],
+                              fd_deltas[i], handle_deltas[i])
             if total_leaks <= 0:
                 symbol = '.'
             elif total_leaks < 10:
@@ -185,6 +185,7 @@ def runtest_refleak(test_name, test_func,
         alloc_before = alloc_after
         rc_before = rc_after
         fd_before = fd_after
+        handle_before = handle_after
         interned_immortal_before = interned_immortal_after
 
         restore_support_xml(xml_filename)
@@ -192,34 +193,41 @@ def runtest_refleak(test_name, test_func,
     if not quiet:
         print(file=sys.stderr)
 
-    # These checkers return False on success, True on failure
-    def check_rc_deltas(deltas):
-        # Checker for reference counters and memory blocks.
-        #
-        # bpo-30776: Try to ignore false positives:
-        #
-        #   [3, 0, 0]
-        #   [0, 1, 0]
-        #   [8, -8, 1]
-        #
-        # Expected leaks:
-        #
-        #   [5, 5, 6]
-        #   [10, 1, 1]
-        return all(delta >= 1 for delta in deltas)
-
-    def check_fd_deltas(deltas):
-        return any(deltas)
+    if ('multiprocessing' in test_name
+        or 'concurrent_futures' in test_name):
+        # gh-154208: Disable check for Windows handle leaks when
+        # multiprocessing is used. There is a known race condition in
+        # multiprocessing causing handle leak. Disable the multiprocessing
+        # tests to be able to check for leaks for all other tests.
+        for i in range(len(handle_deltas)):
+            handle_deltas[i] = 0
 
     failed = False
-    for deltas, item_name, checker in [
-        (rc_deltas, 'references', check_rc_deltas),
-        (alloc_deltas, 'memory blocks', check_rc_deltas),
-        (fd_deltas, 'file descriptors', check_fd_deltas)
+    for raw_deltas, item_name in [
+        (rc_deltas, 'references'),
+        (alloc_deltas, 'memory blocks'),
+        (fd_deltas, 'file descriptors'),
+        (handle_deltas, 'handles'),
     ]:
-        # ignore warmup runs
-        deltas = deltas[warmups:]
-        failing = checker(deltas)
+        # Ignore warmup runs; convert to a list for reporting
+        deltas = list(raw_deltas[warmups:])
+
+        # Only consider that a test leaks if all deltas are greater than or
+        # equal to 1. Otherwise, ignore deltas.
+        #
+        # For example, ignore deltas:
+        #
+        #   [3, 0, 0] references, sum=3
+        #   [0, 1, 0] references, sum=1
+        #   [8, -8, 1] references, sum=1
+        #   [0, 1, -1] file descriptors, sum=0
+        #
+        # Examples of deltas treated as leaks:
+        #
+        #   [5, 5, 6] references, sum=16
+        #   [10, 1, 1] references, sum=12
+        failing = all(delta >= 1 for delta in deltas)
+
         suspicious = any(deltas)
         if failing or suspicious:
             msg = '%s leaked %s %s, sum=%s' % (

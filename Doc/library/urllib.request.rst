@@ -987,8 +987,14 @@ These methods are available on :class:`HTTPPasswordMgr` and
 
    *uri* can be either a single URI, or a sequence of URIs. *realm*, *user* and
    *passwd* must be strings. This causes ``(user, passwd)`` to be used as
-   authentication tokens when authentication for *realm* and a super-URI of any of
-   the given URIs is given.
+   authentication tokens when authentication for *realm* and a super-URI of any
+   of the given URIs is given. If a URI includes a scheme, its credentials only
+   match authentication URIs with the same scheme or no scheme. A URI without a
+   scheme matches authentication URIs with any scheme.
+
+   .. versionchanged:: next
+      Authentication credentials for URIs with a scheme are now scoped by
+      that scheme.
 
 
 .. method:: HTTPPasswordMgr.find_user_password(realm, authuri)
@@ -1050,6 +1056,10 @@ AbstractBasicAuthHandler Objects
    authenticate for, *req* should be the (failed) :class:`Request` object, and
    *headers* should be the error headers.
 
+   *headers* must be a mapping-like object with case-insensitive lookup
+   that implements the ``get_all()`` method,
+   such as :class:`email.message.Message` or :class:`wsgiref.headers.Headers`.
+
    *host* is either an authority (e.g. ``"python.org"``) or a URL containing an
    authority component (e.g. ``"https://python.org/"``). In either case, the
    authority must not contain a userinfo component (so, ``"python.org"`` and
@@ -1090,6 +1100,9 @@ AbstractDigestAuthHandler Objects
    is included in the request, *host* should be the host to authenticate to, *req*
    should be the (failed) :class:`Request` object, and *headers* should be the
    error headers.
+
+   *headers* must be a mapping-like object with case-insensitive lookup,
+   such as :class:`email.message.Message` or :class:`wsgiref.headers.Headers`.
 
 
 .. _http-digest-auth-handler:

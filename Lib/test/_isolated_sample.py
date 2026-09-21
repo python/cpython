@@ -7,8 +7,10 @@ a subprocess.  Several of these tests fail, error or are skipped on purpose.
 
 import atexit
 import os
+import sys
 import time
 import unittest
+from test import support
 from test.support import isolation
 
 # DurationSample sleeps this long in the subprocess; a parent-reported duration
@@ -141,3 +143,48 @@ class ClassExitSample(unittest.TestCase):
 
     def test_dies(self):
         _die_at_exit()
+
+
+@isolation.runInSubprocess(options=['-X', 'dev', '-W', 'error::BytesWarning'])
+class OptionsSample(unittest.TestCase):
+
+    def test_options_applied(self):
+        self.assertTrue(sys.flags.dev_mode)
+        self.assertIn('error::BytesWarning', sys.warnoptions)
+
+
+class EnvSample(unittest.TestCase):
+
+    @isolation.runInSubprocess(env={'_PYTHON_ISOLATION_PROBE': 'set-by-test'})
+    def test_env_set(self):
+        self.assertEqual(os.environ.get('_PYTHON_ISOLATION_PROBE'), 'set-by-test')
+
+    @isolation.runInSubprocess(env={'_PYTHON_ISOLATION_PROBE': None})
+    def test_env_unset(self):
+        self.assertNotIn('_PYTHON_ISOLATION_PROBE', os.environ)
+
+    @isolation.runInSubprocess()
+    def test_env_inherited(self):
+        # Without env= the subprocess inherits the parent environment as it is.
+        self.assertEqual(os.environ.get('_PYTHON_ISOLATION_PROBE'), 'set-by-parent')
+
+
+# TimeoutSample hangs this long, so that the timeout always fires first.
+TIMEOUT_HANG = 60.0
+TIMEOUT = 0.5
+
+
+class TimeoutSample(unittest.TestCase):
+
+    @isolation.runInSubprocess(timeout=TIMEOUT)
+    def test_hang(self):
+        time.sleep(TIMEOUT_HANG)
+
+
+class BigmemSample(unittest.TestCase):
+
+    @support.bigmemtest(size=1024, memuse=1)
+    def test_where_it_runs(self, size):
+        # A real run is isolated by bigmemtest() itself, a dummy run is not.
+        self.assertEqual(isolation.runningInSubprocess,
+                         bool(support.real_max_memuse))
