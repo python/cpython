@@ -131,14 +131,13 @@ we also call *flavours*:
       >>> PurePath(Path('foo'), Path('bar'))
       PurePosixPath('foo/bar')
 
-   When *pathsegments* is empty or a single empty string,
+   When *pathsegments* is empty or consists only of empty strings,
    the current directory is assumed::
 
       >>> PurePath(), PurePath('')
       (PurePosixPath('.'), PurePosixPath('.'))
 
    The boolean value of either expression is True.
-   This differs from ``os.path.exists("")``, which returns ``False``.
 
    If a segment is an absolute path, all previous segments are ignored
    (like :func:`os.path.join`)::
@@ -1045,6 +1044,7 @@ Querying file type and status
 .. method:: Path.exists(*, follow_symlinks=True)
 
    Return ``True`` if the path points to an existing file or directory.
+   This includes empty paths, which Path interprets as the current directory.
    ``False`` will be returned if the path is invalid, inaccessible or missing.
    Use :meth:`Path.stat` to distinguish between these cases.
 
