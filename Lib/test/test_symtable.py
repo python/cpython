@@ -558,6 +558,36 @@ class SymtableTest(unittest.TestCase):
         self.assertTrue(comp.lookup("x").is_free())
         self.assertTrue(comp.lookup("x").is_referenced())
 
+    def test_inlined_comprehension_use_of_nonlocal_in_function(self):
+        st = symtable.symtable(
+            "def outer():\n"
+            "    x = 1\n"
+            "    def inner():\n"
+            "        nonlocal x\n"
+            "        return [x for _ in ()]",
+            "?", "exec")
+        inner = find_block(find_block(st, "outer"), "inner")
+        self.assertTrue(inner.lookup("x").is_nonlocal())
+        self.assertTrue(inner.lookup("x").is_free())
+        self.assertTrue(inner.lookup("x").is_referenced())
+        comp, = inner.get_children()
+        self.assertTrue(comp.lookup("x").is_free())
+        self.assertTrue(comp.lookup("x").is_referenced())
+
+    def test_inlined_comprehension_use_of_explicit_global_in_function(self):
+        st = symtable.symtable(
+            "def f():\n"
+            "    global g\n"
+            "    return [g for _ in ()]",
+            "?", "exec")
+        f = find_block(st, "f")
+        self.assertTrue(f.lookup("g").is_global())
+        self.assertTrue(f.lookup("g").is_declared_global())
+        self.assertFalse(f.lookup("g").is_referenced())
+        comp, = f.get_children()
+        self.assertTrue(comp.lookup("g").is_global())
+        self.assertTrue(comp.lookup("g").is_referenced())
+
     def test_inlined_comprehension_nested_function_use_not_on_enclosing(self):
         # The load of x is in the lambda's code object, not inner's.
         st = symtable.symtable(
@@ -658,6 +688,21 @@ class SymtableTest(unittest.TestCase):
         self.assertFalse(outer.lookup("x").is_cell())
         self.assertFalse(outer.lookup("x").is_comp_cell())
         self.assertTrue(outer.lookup("x").is_referenced())
+        self.assertTrue(inner.lookup("x").is_free())
+        self.assertTrue(inner.lookup("x").is_referenced())
+
+    def test_inlined_nested_mixed_comprehension_iter_var_is_referenced(self):
+        st = symtable.symtable(
+            "def f():\n"
+            "    return [{x for _ in (0,)} for x in (42,)]",
+            "?", "exec")
+        f = find_block(st, "f")
+        with self.assertRaises(KeyError):
+            f.lookup("x")
+        outer, = f.get_children()
+        self.assertTrue(outer.lookup("x").is_local())
+        self.assertTrue(outer.lookup("x").is_referenced())
+        inner, = outer.get_children()
         self.assertTrue(inner.lookup("x").is_free())
         self.assertTrue(inner.lookup("x").is_referenced())
 

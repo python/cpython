@@ -530,6 +530,34 @@ class ListComprehensionTest(unittest.TestCase):
         self.assertEqual(g.__code__.co_cellvars, ("x",))
         self.assertEqual([fn() for fn in g(2)[1]], [1, 1])
 
+    def test_nested_inlined_async_comp_iter_var_is_fast_local(self):
+        import asyncio
+
+        async def agen(n):
+            for i in range(n):
+                yield i
+
+        async def f(n):
+            return [[x async for _ in agen(2)] async for x in agen(n)]
+
+        self.assertEqual(f.__code__.co_cellvars, ())
+        self.assertEqual(asyncio.run(f(2)), [[0, 0], [1, 1]])
+
+        async def g(n):
+            return [[(lambda: x) async for _ in agen(2)] async for x in agen(n)]
+
+        self.assertEqual(g.__code__.co_cellvars, ("x",))
+        out = asyncio.run(g(2))
+        self.assertEqual([fn() for fn in out[1]], [1, 1])
+
+    def test_inlined_comprehension_name_mangling_in_method_scope(self):
+        class C:
+            def f(self):
+                __x = 42
+                return [__x for _ in (0,)]
+
+        self.assertEqual(C().f(), [42])
+
     def test_nested_references___class__(self):
         code = """
             res = [[__class__ for _ in (0,)] for _ in (1,)]
@@ -912,6 +940,46 @@ class ListComprehensionTest(unittest.TestCase):
         self._check_in_scopes(
             code,
             {"snaps": [1, 2], "vals": [2, 2], "consistent": [True, True]},
+            ns={"sys": sys}, scopes=["module", "function"])
+
+    def test_frame_locals_nested_comp_cell_and_enclosing_free(self):
+        # Stress a nested inlined shape where a comp cell and enclosing free
+        # share a name; all f_locals views must stay consistent.
+        code = """
+            def outer(x):
+                def inner():
+                    return [(
+                             lambda: x,
+                             [[x for _ in (0,)] for _ in (0,)][0][0],
+                             dict(**sys._getframe().f_locals),
+                             len(sys._getframe().f_locals),
+                             list(sys._getframe().f_locals.keys()),
+                             list(sys._getframe().f_locals.values()),
+                             list(sys._getframe().f_locals.items()),
+                             dict(sys._getframe().f_locals.items()))
+                            for x in x]
+                return inner()
+            result = outer([1, 2])
+            snaps = [d['x'] for _, _, d, *_ in result]
+            vals = [fn() for fn, *_ in result]
+            nested_vals = [nested for _, nested, *_ in result]
+            consistent = []
+            for _, _, d, n, ks, vs, it, d_items in result:
+                consistent.append(
+                    n == len(ks) == len(vs) == len(it)
+                    and ks.count('x') == 1
+                    and d == d_items == dict(zip(ks, vs))
+                )
+        """
+        import sys
+        self._check_in_scopes(
+            code,
+            {
+                "snaps": [1, 2],
+                "vals": [2, 2],
+                "nested_vals": [1, 2],
+                "consistent": [True, True],
+            },
             ns={"sys": sys}, scopes=["module", "function"])
 
     def _recursive_replace(self, maybe_code):
