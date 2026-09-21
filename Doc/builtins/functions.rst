@@ -834,10 +834,10 @@ are always available.  They are listed here in alphabetical order.
       1000000.0
       >>> float('-Infinity')
       -inf
+      >>> float(b'12.67')
+      12.67
       >>> float(bytearray(b'-2.5'))
       -2.5
-      >>> float(array.array('b', [49, 50, 46, 54, 55]))
-      12.67
 
    If the argument is a string, it should contain a decimal number, optionally
    preceded by a sign, and optionally embedded in whitespace.  The optional
