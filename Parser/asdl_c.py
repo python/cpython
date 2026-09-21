@@ -803,15 +803,15 @@ class AnnotationsVisitor(PickleVisitor):
         '''))
         for c_type in builtins:
             self.emit(f"&{c_type},", 2)
-        self.file.write(textwrap.dedent('''
-                };
-                // Offsets refer to this interpreter's AST state, not global types.
-                static const struct {
-                    size_t name_offset;
-                    size_t type_offset;  // An index into builtin_types for builtins.
-                    unsigned int flags;
-                } fields[] = {
-        '''))
+        self.file.write(textwrap.dedent('''\
+            };
+            // Offsets refer to this interpreter's AST state, not global types.
+            static const struct {
+                uint16_t name_offset;
+                uint16_t type_offset;  // An index into builtin_types for builtins.
+                unsigned int flags;
+            } fields[] = {
+        #''').removesuffix('#'))  # Use d-string if it accepted.
         for name, fields in self.nodes:
             for field in fields:
                 flags = []
@@ -828,20 +828,20 @@ class AnnotationsVisitor(PickleVisitor):
                 flags = " | ".join(flags) or "0"
                 self.emit(f"{{offsetof(struct ast_state, {field.name}),", 2)
                 self.emit(f" {type_offset}, {flags}}},", 2)
-        self.file.write(textwrap.dedent('''
-                };
-                static const struct {
-                    size_t type_offset;
-                    size_t first_field;
-                    size_t nfields;
-                } nodes[] = {
-        '''))
+        self.file.write(textwrap.dedent('''\
+            };
+            static const struct {
+                uint16_t type_offset;
+                uint16_t first_field;
+                uint16_t nfields;
+            } nodes[] = {
+        #''').removesuffix('#'))
         start = 0
         for name, fields in self.nodes:
             self.emit(f"{{offsetof(struct ast_state, {name}_type), "
                       f"{start}, {len(fields)}}},", 2)
             start += len(fields)
-        self.file.write(textwrap.dedent('''
+        self.file.write(textwrap.dedent('''\
                 };
                 char *base = (char *)state;
                 PyObject *annotations = NULL;
