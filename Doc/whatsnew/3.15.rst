@@ -344,7 +344,7 @@ The :mod:`profile` module is deprecated and will be removed in Python 3.17.
 
 .. _whatsnew315-sampling-profiler:
 
-Tachyon: High frequency statistical sampling profiler
+Tachyon: High-frequency statistical sampling profiler
 -----------------------------------------------------
 
 .. image:: ../../Lib/profiling/sampling/_assets/tachyon-logo.png
