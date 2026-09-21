@@ -1475,9 +1475,8 @@ class KeysPage(Frame):
 
         An action/key binding can be selected to change the key binding.
         """
-        reselect = False
+        list_index = 0
         if self.bindingslist.curselection():
-            reselect = True
             list_index = self.bindingslist.index(ANCHOR)
         keyset = idleConf.GetKeySet(keyset_name)
         # 'set' is dict mapping virtual event to list of key events.
@@ -1492,10 +1491,11 @@ class KeysPage(Frame):
                 if bind_name in changes['keys'][keyset_name]:
                     key = changes['keys'][keyset_name][bind_name]
             self.bindingslist.insert(END, bind_name+' - '+key)
-        if reselect:
-            self.bindingslist.see(list_index)
-            self.bindingslist.select_set(list_index)
-            self.bindingslist.select_anchor(list_index)
+        self.bindingslist.see(list_index)
+        self.bindingslist.select_set(list_index)
+        self.bindingslist.select_anchor(list_index)
+        self.bindingslist.activate(list_index)
+        self.button_new_keys.state(('!disabled',))
 
     @staticmethod
     def save_new_key_set(keyset_name, keyset):

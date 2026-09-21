@@ -1120,11 +1120,14 @@ class KeysPageTest(unittest.TestCase):
                     'force-open-completions - <Control-Key-space>',
                     'spam - <Shift-Key-a>')
 
-        # No current selection.
+        # No current selection: select the first item.
+        d.button_new_keys.state(('disabled',))
         d.load_keys_list('my keys')
         eq(b.get(0, 'end'), expected)
-        eq(b.get('anchor'), '')
-        eq(b.curselection(), ())
+        eq(b.get('anchor'), 'copy - <Control-Key-c> <Control-Key-C>')
+        eq(b.curselection(), (0, ))
+        eq(b.index('active'), 0)
+        self.assertNotIn('disabled', d.button_new_keys.state())
 
         # Check selection.
         b.selection_set(1)
