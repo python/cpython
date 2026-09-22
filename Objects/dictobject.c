@@ -99,7 +99,7 @@ dk_nentries to achieve amortized O(1).  Since there are DKIX_DUMMY remains in
 dk_indices, we can't increment dk_usable even though dk_nentries is
 decremented.
 
-To preserve the order in a split table, a bit vector is used  to record the
+To preserve the order in a split table, a bit vector is used to record the
 insertion order. When a key is inserted the bit vector is shifted up by 4 bits
 and the index of the key is stored in the low 4 bits.
 As a consequence of this, split keys have a maximum size of 16.
@@ -3412,9 +3412,8 @@ dict_dict_fromkeys(PyDictObject *mp, PyObject *iterable, PyObject *value)
     PyObject *key;
     Py_hash_t hash;
     int unicode = DK_IS_UNICODE(((PyDictObject*)iterable)->ma_keys);
-    uint8_t new_size = Py_MAX(
-        estimate_log2_keysize(PyDict_GET_SIZE(iterable)),
-        DK_LOG_SIZE(mp->ma_keys));
+    uint8_t log2_keysize = estimate_log2_keysize(PyDict_GET_SIZE(iterable));
+    uint8_t new_size = Py_MAX(log2_keysize, DK_LOG_SIZE(mp->ma_keys));
     if (dictresize(mp, new_size, unicode)) {
         Py_DECREF(mp);
         return NULL;
@@ -3437,9 +3436,8 @@ dict_set_fromkeys(PyDictObject *mp, PyObject *iterable, PyObject *value)
     Py_ssize_t pos = 0;
     PyObject *key;
     Py_hash_t hash;
-    uint8_t new_size = Py_MAX(
-        estimate_log2_keysize(PySet_GET_SIZE(iterable)),
-        DK_LOG_SIZE(mp->ma_keys));
+    uint8_t log2_keysize = estimate_log2_keysize(PySet_GET_SIZE(iterable));
+    uint8_t new_size = Py_MAX(log2_keysize, DK_LOG_SIZE(mp->ma_keys));
     if (dictresize(mp, new_size, 0)) {
         Py_DECREF(mp);
         return NULL;

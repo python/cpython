@@ -7,12 +7,12 @@ Glossary:
 from unittest import TestCase, main, mock
 import errno
 import os
+import sys
 import tabnanny
 import tokenize
 import tempfile
 import textwrap
-from test.support import (captured_stderr, captured_stdout, script_helper,
-                          findfile)
+from test.support import captured_stderr, captured_stdout, script_helper
 from test.support.os_helper import unlink
 
 
@@ -328,8 +328,7 @@ class TestCommandLine(TestCase):
 
     def test_command_usage(self):
         """Should display usage on no arguments."""
-        path = findfile('tabnanny.py')
-        stderr = f"Usage: {path} [-v] file_or_directory ..."
+        stderr = f"Usage: {sys.executable} -m tabnanny [-v] file_or_directory ..."
         self.validate_cmd(stderr=stderr, expect_failure=True)
 
     def test_quiet_flag(self):

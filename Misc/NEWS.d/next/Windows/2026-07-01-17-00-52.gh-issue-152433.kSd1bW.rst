@@ -1,0 +1,1 @@
+Allow build :mod:`!_ctypes` for Universal Windows Platform.
