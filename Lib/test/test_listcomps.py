@@ -4,6 +4,7 @@ import traceback
 import types
 import unittest
 
+from test import support
 from test.support import BrokenIter
 
 
@@ -530,6 +531,7 @@ class ListComprehensionTest(unittest.TestCase):
         self.assertEqual(g.__code__.co_cellvars, ("x",))
         self.assertEqual([fn() for fn in g(2)[1]], [1, 1])
 
+    @support.requires_working_socket()
     def test_nested_inlined_async_comp_iter_var_is_fast_local(self):
         import asyncio
 
