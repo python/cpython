@@ -2639,6 +2639,8 @@ repr as builtin_repr
 
     obj: object
     /
+    *
+    alt: bool = False
 
 Return the canonical string representation of the object.
 
@@ -2646,10 +2648,15 @@ For many object types, including most builtins, eval(repr(obj)) == obj.
 [clinic start generated code]*/
 
 static PyObject *
-builtin_repr(PyObject *module, PyObject *obj)
-/*[clinic end generated code: output=7ed3778c44fd0194 input=1c9e6d66d3e3be04]*/
+builtin_repr_impl(PyObject *module, PyObject *obj, int alt)
+/*[clinic end generated code: output=fc5168bb1b4c8846 input=0b1b2969c594dc9a]*/
 {
-    return PyObject_Repr(obj);
+    if (!alt) {
+        return PyObject_Repr(obj);
+    }
+    else {
+        return _PyObject_AltRepr(obj);
+    }
 }
 
 

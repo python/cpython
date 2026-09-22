@@ -1279,6 +1279,14 @@ class StrTest(string_tests.StringLikeTest,
         self.assertEqual('{0!a}'.format(F('Hello')), 'F(Hello)')
         self.assertEqual('{0!a}'.format(F('\u0374')), 'F(\\u0374)')
 
+        # !R conversion
+        class OverrideRepr(str):
+            def __repr__(self):
+                return 'CUSTOM REPR'
+        abc = OverrideRepr('abc')
+        self.assertEqual('{0!r}'.format(abc), 'CUSTOM REPR')
+        self.assertEqual('{0!R}'.format(abc), "'abc'")
+
         # test fallback to object.__format__
         self.assertEqual('{0}'.format({}), '{}')
         self.assertEqual('{0}'.format([]), '[]')

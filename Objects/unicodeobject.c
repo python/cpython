@@ -2981,9 +2981,14 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
     case 'R':
     {
         PyObject *obj = va_arg(*vargs, PyObject *);
-        PyObject *repr;
         assert(obj);
-        repr = PyObject_Repr(obj);
+        PyObject *repr;
+        if (flags & F_ALT) {
+            repr = _PyObject_AltRepr(obj);
+        }
+        else {
+            repr = PyObject_Repr(obj);
+        }
         if (!repr)
             return NULL;
         if (unicode_fromformat_write_str(writer, repr, width, precision, flags) == -1) {

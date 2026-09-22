@@ -1284,7 +1284,7 @@ exit:
 }
 
 PyDoc_STRVAR(builtin_repr__doc__,
-"repr($module, obj, /)\n"
+"repr($module, obj, /, *, alt=False)\n"
 "--\n"
 "\n"
 "Return the canonical string representation of the object.\n"
@@ -1292,7 +1292,66 @@ PyDoc_STRVAR(builtin_repr__doc__,
 "For many object types, including most builtins, eval(repr(obj)) == obj.");
 
 #define BUILTIN_REPR_METHODDEF    \
-    {"repr", (PyCFunction)builtin_repr, METH_O, builtin_repr__doc__},
+    {"repr", _PyCFunction_CAST(builtin_repr), METH_FASTCALL|METH_KEYWORDS, builtin_repr__doc__},
+
+static PyObject *
+builtin_repr_impl(PyObject *module, PyObject *obj, int alt);
+
+static PyObject *
+builtin_repr(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(alt), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"", "alt", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "repr",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    PyObject *obj;
+    int alt = 0;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    obj = args[0];
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    alt = PyObject_IsTrue(args[1]);
+    if (alt < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = builtin_repr_impl(module, obj, alt);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(builtin_round__doc__,
 "round($module, /, number, ndigits=None)\n"
@@ -1501,4 +1560,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b56739f2e13f616a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d3c8cf28704c898b input=a9049054013a1b77]*/

@@ -1380,6 +1380,14 @@ except Exception:
         self.assertEqual(f'{"a"!r}', "'a'")
         self.assertEqual(f'{"a"!a}', "'a'")
 
+        # Test !R conversion
+        class OverrideRepr(str):
+            def __repr__(self):
+                return 'CUSTOM REPR'
+        abc = OverrideRepr('abc')
+        self.assertEqual(f'{abc!r}', 'CUSTOM REPR')
+        self.assertEqual(f'{abc!R}', "'abc'")
+
         # Conversions can have trailing whitespace after them since it
         # does not provide any significance
         self.assertEqual(f"{3!s  }", "3")
@@ -1405,7 +1413,7 @@ except Exception:
         for conv_identifier in 'g', 'A', 'G', 'ä', 'ɐ':
             self.assertAllRaise(SyntaxError,
                                 "f-string: invalid conversion character %r: "
-                                "expected 's', 'r', or 'a'" % conv_identifier,
+                                "expected 's', 'r', 'R', or 'a'" % conv_identifier,
                                 ["f'{3!" + conv_identifier + "}'"])
 
         for conv_non_identifier in '3', '!':
@@ -1421,7 +1429,7 @@ except Exception:
 
         self.assertAllRaise(SyntaxError,
                             "f-string: invalid conversion character 'ss': "
-                            "expected 's', 'r', or 'a'",
+                            "expected 's', 'r', 'R', or 'a'",
                             ["f'{3!ss}'",
                              "f'{3!ss:}'",
                              "f'{3!ss:s}'",
