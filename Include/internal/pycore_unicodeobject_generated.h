@@ -12,7 +12,7 @@ extern "C" {
 static inline void
 _PyUnicode_InitStaticStrings(PyInterpreterState *interp) {
     // Offsets avoid a pointer relocation for each string.
-    static const size_t offsets[] = {
+    static const uint32_t offsets[] = {
         offsetof(struct _Py_global_strings, identifiers._py_AGEN_CLOSED._ascii.ob_base),
         offsetof(struct _Py_global_strings, identifiers._py_AGEN_CREATED._ascii.ob_base),
         offsetof(struct _Py_global_strings, identifiers._py_AGEN_RUNNING._ascii.ob_base),
