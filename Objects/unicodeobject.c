@@ -67,7 +67,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <windows.h>
 #endif
 
-#ifdef HAVE_ICONV
+#ifdef _Py_HAVE_ICONV
 #include <iconv.h>                 // iconv_open()
 #endif
 
@@ -8220,7 +8220,7 @@ PyUnicode_AsMBCSString(PyObject *unicode)
 
 /* --- iconv Codec -------------------------------------------------------- */
 
-#ifdef HAVE_ICONV
+#ifdef _Py_HAVE_ICONV
 
 /* iconv pivot: native-endian UTF-32, a raw array of Py_UCS4.  One input unit is
    one code point, so error handlers get the exact position.  A platform whose
@@ -8602,7 +8602,7 @@ done:
     return result;
 }
 
-#endif /* HAVE_ICONV */
+#endif /* _Py_HAVE_ICONV */
 
 /* --- Character Mapping Codec -------------------------------------------- */
 
