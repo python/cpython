@@ -1865,6 +1865,8 @@ class TestTemporaryDirectory(BaseTestCase):
     @os_helper.skip_unless_symlink
     @os_helper.skip_unless_working_chmod
     @support.requires_non_root_user
+    @unittest.SkipIf(support.is_emscripten, 'Fails due to Emscripten bug:'
+                                            'emscripten-core/emscripten#27761')
     @unittest.skipUnless(shutil.rmtree.avoids_symlink_attacks,
                          'requires the fd based implementation of rmtree()')
     def test_cleanup_with_symlink_race(self):
