@@ -10863,7 +10863,7 @@ os_wait_impl(PyObject *module)
 
 
 // This system call always crashes on older Android versions.
-#if defined(HAVE_PIDFD_OPEN) \
+#if defined(_Py_HAVE_PIDFD_OPEN) \
     || (defined(__linux__) && defined(__NR_pidfd_open) \
         && !(defined(__ANDROID__) && __ANDROID_API__ < 31))
 /*[clinic input]
@@ -10881,7 +10881,7 @@ static PyObject *
 os_pidfd_open_impl(PyObject *module, pid_t pid, unsigned int flags)
 /*[clinic end generated code: output=5c7252698947dc41 input=03058b32c389f874]*/
 {
-#ifdef HAVE_PIDFD_OPEN
+#ifdef _Py_HAVE_PIDFD_OPEN
     int fd = pidfd_open(pid, flags);
 #else
     int fd = syscall(__NR_pidfd_open, pid, flags);
@@ -10894,7 +10894,7 @@ os_pidfd_open_impl(PyObject *module, pid_t pid, unsigned int flags)
 #endif
 
 
-#if defined(HAVE_PIDFD_GETFD) \
+#if defined(_Py_HAVE_PIDFD_GETFD) \
     || (defined(__linux__) && defined(__NR_pidfd_getfd) \
         && !(defined(__ANDROID__) && __ANDROID_API__ < 31))
 /*[clinic input]
@@ -10915,7 +10915,7 @@ os_pidfd_getfd_impl(PyObject *module, int pidfd, int targetfd,
                     unsigned int flags)
 /*[clinic end generated code: output=e1a1415a13c7137f input=ef6417fb10deb1cc]*/
 {
-#ifdef HAVE_PIDFD_GETFD
+#ifdef _Py_HAVE_PIDFD_GETFD
     int fd = pidfd_getfd(pidfd, targetfd, flags);
 #else
     int fd = syscall(__NR_pidfd_getfd, pidfd, targetfd, flags);
