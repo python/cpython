@@ -607,6 +607,27 @@ class CBufferedReaderTest(BufferedReaderTest, SizeofTest, CTestCase):
         with self.assertRaisesRegex(TypeError, "BufferedReader"):
             self.tp(self.BytesIO(), 1024, 1024, 1024)
 
+    def test_readinto_buffer_keeps_reader_alive(self):
+        # gh-157364: raw.readinto() may store the memoryview it is given, so
+        # the memoryview must keep the BufferedReader owning its memory alive.
+        stored = []
+
+        class StoringRawIO(self.MockRawIO):
+            def readinto(self, b):
+                stored.append(b)
+                return super().readinto(b)
+
+        bufio = self.tp(StoringRawIO([b"abc"]))
+        self.assertEqual(bufio.read(3), b"abc")
+        self.assertIs(stored[0].obj, bufio)
+        wr = weakref.ref(bufio)
+        del bufio
+        support.gc_collect()
+        self.assertIsNotNone(wr())
+        stored.clear()
+        support.gc_collect()
+        self.assertIsNone(wr())
+
     def test_bad_readinto_value(self):
         rawio = self.tp(self.BytesIO(b"12"))
         rawio.readinto = lambda buf: -1

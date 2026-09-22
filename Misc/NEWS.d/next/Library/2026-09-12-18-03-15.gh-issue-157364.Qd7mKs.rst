@@ -1,2 +1,4 @@
 Fix a use-after-free in :class:`io.TextIOWrapper` when a call to the
-underlying buffer reentrantly detaches it. Patched by Shamil Abdulaev.
+underlying buffer reentrantly detaches it. The :class:`memoryview` that
+:class:`io.BufferedReader` passes to the raw stream's ``readinto()`` now keeps
+the reader alive. Patched by Shamil Abdulaev.
