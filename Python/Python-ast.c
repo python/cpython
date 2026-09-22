@@ -836,14 +836,15 @@ add_ast_annotations(struct ast_state *state)
         &PyUnicode_Type,
         &PyLong_Type,
         &PyBaseObject_Type,
-
-};
-// Offsets refer to this interpreter's AST state, not global types.
-static const struct {
-    size_t name_offset;
-    size_t type_offset;  // An index into builtin_types for builtins.
-    unsigned int flags;
-} fields[] = {
+    };
+    // Offsets refer to this interpreter's AST state, not global types.
+    static_assert(sizeof(struct ast_state) <= UINT16_MAX,
+                  "ast_state offsets must fit in uint16_t");
+    static const struct {
+        uint16_t name_offset;
+        uint16_t type_offset;  // An index into builtin_types for builtins.
+        uint8_t flags;
+    } fields[] = {
         {offsetof(struct ast_state, body),
          offsetof(struct ast_state, stmt_type), FIELD_SEQUENCE},
         {offsetof(struct ast_state, type_ignores),
@@ -1240,13 +1241,12 @@ static const struct {
          0, FIELD_BUILTIN},
         {offsetof(struct ast_state, default_value),
          offsetof(struct ast_state, expr_type), FIELD_OPTIONAL},
-
-};
-static const struct {
-    size_t type_offset;
-    size_t first_field;
-    size_t nfields;
-} nodes[] = {
+    };
+    static const struct {
+        uint16_t type_offset;
+        uint16_t first_field;
+        uint16_t nfields;
+    } nodes[] = {
         {offsetof(struct ast_state, Module_type), 0, 2},
         {offsetof(struct ast_state, Interactive_type), 2, 1},
         {offsetof(struct ast_state, Expression_type), 3, 1},
@@ -1360,7 +1360,6 @@ static const struct {
         {offsetof(struct ast_state, TypeVar_type), 191, 3},
         {offsetof(struct ast_state, ParamSpec_type), 194, 2},
         {offsetof(struct ast_state, TypeVarTuple_type), 196, 2},
-
     };
     char *base = (char *)state;
     PyObject *annotations = NULL;

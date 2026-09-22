@@ -811,7 +811,7 @@ class AnnotationsVisitor(PickleVisitor):
             static const struct {
                 uint16_t name_offset;
                 uint16_t type_offset;  // An index into builtin_types for builtins.
-                uint8_5 flags;
+                uint8_t flags;
             } fields[] = {
         #''').removesuffix('#'))  # Use d-string if it accepted.
         for name, fields in self.nodes:
