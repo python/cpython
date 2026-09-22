@@ -261,9 +261,9 @@ is reachable from the outside. To obtain the set of objects that are really
 unreachable, the garbage collector re-scans the container objects using the
 `tp_traverse` slot; this time with a different traverse function that marks objects with
 `gc_ref == 0` as "tentatively unreachable" and then moves them to the
-tentatively unreachable list. The following image depicts the state of the lists in a
-moment when the GC processed the `link_3` and `link_4` objects but has not
-processed `link_1` and `link_2` yet.
+tentatively unreachable list (or in the free-threaded build, sets the _PyGC_BITS_UNREACHABLE ob_gc_bits bit).
+The following image depicts the state of the lists in a moment when the GC processed
+the `link_3` and `link_4` objects but has not processed `link_1` and `link_2` yet.
 
 ![gc-image3](images/python-cyclic-gc-3-new-page.png)
 
@@ -282,20 +282,21 @@ state in the previous image and after examining the objects referred to by `link
 the GC knows that `link_3` is reachable after all, so it is moved back to the
 original list and its `gc_ref` field is set to 1 so that if the GC visits it again,
 it will know that it's reachable. To avoid visiting an object twice, the GC marks all
-objects that have already been visited once (by unsetting a flag, e.g. in the non-free-threaded build, the `PREV_MASK_COLLECTING` flag) so that if an object that has already been processed 
+objects that have already been visited once (by unsetting a flag, e.g. in the non-free-threaded build,
+the `PREV_MASK_COLLECTING` flag) so that if an object that has already been processed
 is referenced by some other object, the GC does not process it twice.
 
 ![gc-image5](images/python-cyclic-gc-5-new-page.png)
 
 Notice that an object that was marked as "tentatively unreachable" and was later
-moved back to the reachable list will be visited again by the garbage collector
-as now all the references that the object has need to be processed as well. This
-process is really a breadth first search over the object graph. Once all the objects
+moved back to the reachable list (or on the free-threaded build, have the _PyGC_BITS_UNREACHABLE ob_gc_bits flag cleared)
+will be visited again by the garbage collector as now all the references
+that the object has need to be processed as well. Once all the objects
 are scanned, the GC knows that all container objects in the tentatively unreachable
 list are really unreachable and can thus be garbage collected.
 
-Why moving unreachable objects is better
-----------------------------------------
+Why moving unreachable objects is better (non-free-threaded build only)
+-----------------------------------------------------------------------
 
 It sounds logical to move the unreachable objects under the premise that most objects
 are usually reachable, until you think about it: the reason it pays isn't actually
