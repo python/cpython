@@ -18,6 +18,8 @@ effort, just like Python itself.  If you want to contribute, please take a
 look at the :ref:`reporting-bugs` page for information on how to do so.  New
 volunteers are always welcome!
 
+Contributors can help improve the documentation by fixing errors and suggesting improvements.
+
 Many thanks go to:
 
 * Fred L. Drake, Jr., the creator of the original Python documentation toolset
