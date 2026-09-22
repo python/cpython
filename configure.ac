@@ -3544,7 +3544,8 @@ AC_ARG_WITH(
 AC_MSG_RESULT([$withval])
 hwasan_flags="-fsanitize=hwaddress"
 # x86-64 lacks address tagging, so HWASan needs the page aliasing mode there.
-# See https://clang.llvm.org/docs/HardwareAssistedAddressSanitizerDesign.html#supported-architectures
+# See gh-156049 and
+# https://clang.llvm.org/docs/HardwareAssistedAddressSanitizerDesign.html#supported-architectures
 AS_CASE([$host_cpu],
   [x86_64|amd64], [hwasan_flags="$hwasan_flags -fsanitize-hwaddress-experimental-aliasing"]
 )

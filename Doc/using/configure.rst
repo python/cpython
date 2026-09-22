@@ -1022,8 +1022,11 @@ Debug options
    <https://clang.llvm.org/docs/HardwareAssistedAddressSanitizerDesign.html#supported-architectures>`_,
    which only tags heap allocations and is unsafe for programs that ``fork()``,
    including much of the test suite.
+   See the `LLVM HWASan design documentation
+   <https://clang.llvm.org/docs/HardwareAssistedAddressSanitizerDesign.html>`_
+   for more information.
 
-   .. versionadded:: 3.16
+   .. versionadded:: next
 
 .. option:: --with-memory-sanitizer
 
