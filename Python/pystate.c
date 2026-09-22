@@ -1939,8 +1939,9 @@ tstate_delete_common(PyThreadState *tstate, int release_gil)
     if (tstate->next) {
         tstate->next->prev = tstate->prev;
     }
-    if (tstate->state != _Py_THREAD_SUSPENDED &&
-        tstate->state != _Py_THREAD_SUSPENDED_DETACHED)
+    int state = _Py_atomic_load_int_relaxed(&tstate->state);
+    if (state != _Py_THREAD_SUSPENDED &&
+        state != _Py_THREAD_SUSPENDED_WAITING)
     {
         // Any ongoing stop-the-world request should not wait for us because
         // our thread is getting deleted.
@@ -2239,23 +2240,20 @@ tstate_set_detached(PyThreadState *tstate, int detached_state)
 static void
 tstate_wait_attach(PyThreadState *tstate)
 {
-#ifdef Py_GIL_DISABLED
-    _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
-    int stw_attach_waiting = 0;
-#endif
-    do {
+    for (;;) {
         int state = _Py_atomic_load_int_relaxed(&tstate->state);
-        if (state == _Py_THREAD_SUSPENDED ||
-            state == _Py_THREAD_SUSPENDED_DETACHED)
-        {
-#ifdef Py_GIL_DISABLED
-            if (state == _Py_THREAD_SUSPENDED_DETACHED) {
-                stw_attach_waiting = 1;
-                _Py_atomic_store_int_relaxed(
-                    &tstate_impl->stw_attach_waiting, 1);
+        if (state == _Py_THREAD_SUSPENDED) {
+            // Register an active attach waiter. The next stop-the-world
+            // request must let this thread attach before suspending it again.
+            if (!_Py_atomic_compare_exchange_int(
+                    &tstate->state, &state, _Py_THREAD_SUSPENDED_WAITING))
+            {
+                continue;
             }
-#endif
-            // Wait until we're switched out of SUSPENDED to DETACHED.
+            state = _Py_THREAD_SUSPENDED_WAITING;
+        }
+        if (state == _Py_THREAD_SUSPENDED_WAITING) {
+            // Wait until the stop-the-world thread lets us attach.
             _PyParkingLot_Park(&tstate->state, &state, sizeof(tstate->state),
                                /*timeout=*/-1, NULL, /*detach=*/0);
         }
@@ -2264,15 +2262,15 @@ tstate_wait_attach(PyThreadState *tstate)
             _PyThreadState_HangThread(tstate);
         }
         else {
-            assert(state == _Py_THREAD_DETACHED);
+            assert(state == _Py_THREAD_DETACHED ||
+                   state == _Py_THREAD_DETACHED_WAITING);
+            if (_Py_atomic_compare_exchange_int(
+                    &tstate->state, &state, _Py_THREAD_ATTACHED))
+            {
+                return;
+            }
         }
-        // Once we're back in DETACHED we can re-attach
-    } while (!tstate_try_attach(tstate));
-#ifdef Py_GIL_DISABLED
-    if (stw_attach_waiting) {
-        _Py_atomic_store_int_relaxed(&tstate_impl->stw_attach_waiting, 0);
     }
-#endif
 }
 
 void
@@ -2462,17 +2460,12 @@ park_detached_threads(struct _stoptheworld_state *stw)
     _Py_FOR_EACH_STW_INTERP(stw, i) {
         _Py_FOR_EACH_TSTATE_UNLOCKED(i, t) {
             int state = _Py_atomic_load_int_relaxed(&t->state);
+            // DETACHED_WAITING threads remain counted until they attach and
+            // stop, so repeated pauses cannot prevent them from attaching.
             if (state == _Py_THREAD_DETACHED) {
-                _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)t;
-                if (_Py_atomic_load_int_relaxed(
-                        &tstate_impl->stw_attach_waiting))
-                {
-                    continue;
-                }
                 // Atomically transition to "suspended" if in "detached" state.
                 if (_Py_atomic_compare_exchange_int(
-                                &t->state, &state,
-                                _Py_THREAD_SUSPENDED_DETACHED)) {
+                                &t->state, &state, _Py_THREAD_SUSPENDED)) {
                     num_parked++;
                 }
             }
@@ -2557,12 +2550,17 @@ start_the_world(struct _stoptheworld_state *stw)
     _Py_FOR_EACH_STW_INTERP(stw, i) {
         _Py_FOR_EACH_TSTATE_UNLOCKED(i, t) {
             if (t != stw->requester) {
-#ifndef NDEBUG
                 int state = _Py_atomic_load_int_relaxed(&t->state);
-                assert(state == _Py_THREAD_SUSPENDED ||
-                       state == _Py_THREAD_SUSPENDED_DETACHED);
-#endif
-                _Py_atomic_store_int(&t->state, _Py_THREAD_DETACHED);
+                int next_state;
+                do {
+                    assert(state == _Py_THREAD_SUSPENDED ||
+                           state == _Py_THREAD_SUSPENDED_WAITING);
+                    next_state = (state == _Py_THREAD_SUSPENDED_WAITING
+                                  ? _Py_THREAD_DETACHED_WAITING
+                                  : _Py_THREAD_DETACHED);
+                    // Retry if an attach waiter registered concurrently.
+                } while (!_Py_atomic_compare_exchange_int(
+                            &t->state, &state, next_state));
                 _PyParkingLot_UnparkAll(&t->state);
             }
         }
