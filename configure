@@ -9968,8 +9968,6 @@ fi
 
         as_fn_append LINKFORSHARED " -sALLOW_MEMORY_GROWTH -sINITIAL_MEMORY=20971520"
 
-        as_fn_append LDFLAGS_NODIST " -sWASM_BIGINT"
-
         as_fn_append LINKFORSHARED " -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"
     as_fn_append LINKFORSHARED " -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV,HEAPU32,TTY,ERRNO_CODES"
     as_fn_append LINKFORSHARED " -sEXPORTED_FUNCTIONS=_main,_Py_Version,_PyGILState_GetThisThreadState,__PyEM_EMSCRIPTEN_TRAMPOLINE_OFFSET"
@@ -14909,7 +14907,7 @@ fi
 printf "%s\n" "$ac_cv_have_iconv" >&6; }
   if test "$ac_cv_have_iconv" != no; then
 
-printf "%s\n" "#define HAVE_ICONV 1" >>confdefs.h
+printf "%s\n" "#define _Py_HAVE_ICONV 1" >>confdefs.h
 
     if test "$ac_cv_have_iconv" = -liconv; then
       LIBS="-liconv $LIBS"

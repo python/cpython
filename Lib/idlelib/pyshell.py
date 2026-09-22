@@ -335,9 +335,13 @@ class PyShellFileList(FileList):
 
 class ModifiedColorDelegator(ColorDelegator):
     "Extend base class: colorizer for the shell window itself"
+    reading = False  # True while the user enters input for input().
+
     def recolorize_main(self):
-        self.tag_remove("TODO", "1.0", "iomark")
-        self.tag_add("SYNC", "1.0", "iomark")
+        # Do not colorize output, nor input for input() (gh-64007).
+        end = "end" if self.reading else "iomark"
+        self.tag_remove("TODO", "1.0", end)
+        self.tag_add("SYNC", "1.0", end)
         ColorDelegator.recolorize_main(self)
 
     def removecolors(self):
@@ -1189,9 +1193,13 @@ class PyShell(OutputWindow):
         save = self.reading
         try:
             self.reading = True
+            # Input is not Python code (gh-64007).
+            self.color.reading = True
+            self.color.removecolors()
             self.top.mainloop()  # nested mainloop()
         finally:
             self.reading = save
+            self.color.reading = save
         if self._stop_readline_flag:
             self._stop_readline_flag = False
             return ""
@@ -1432,13 +1440,24 @@ class PyShell(OutputWindow):
         self.ctip.remove_calltip_window()
 
     def write(self, s, tags=()):
+        text = self.text
+        # Move the prompt (the "console" tag on the preceding newline)
+        # after output which comes while it is shown (gh-75512).
+        at_prompt = (s and tags in ("stdout", "stderr")
+                     and not self.executing and not self.reading)
+        if at_prompt:
+            text.tag_remove("console", "iomark-1c")
+            text.tag_remove("stdin", "iomark-1c")
         try:
-            self.text.mark_gravity("iomark", "right")
+            text.mark_gravity("iomark", "right")
             count = OutputWindow.write(self, s, tags, "iomark")
-            self.text.mark_gravity("iomark", "left")
+            text.mark_gravity("iomark", "left")
         except:
             raise ###pass  # ### 11Aug07 KBK if we are expecting exceptions
                            # let's find out what they are and be specific.
+        if at_prompt and s.endswith('\n'):
+            text.tag_add("console", "iomark-1c")
+            self.shell_sidebar.update_sidebar()
         if self.canceled:
             self.canceled = False
             if not use_subprocess:
