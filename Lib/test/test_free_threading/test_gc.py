@@ -1,7 +1,5 @@
 import unittest
 
-import subprocess
-import sys
 import textwrap
 import threading
 from threading import Thread
@@ -11,7 +9,7 @@ import gc
 import weakref
 
 from test import support
-from test.support import threading_helper
+from test.support import script_helper, threading_helper
 
 
 class MyObj:
@@ -214,20 +212,32 @@ class TestGC(TestCase):
 
     @support.requires_subprocess()
     def test_tight_gc_loop_does_not_starve_attach(self):
-        script = textwrap.dedent("""
+        script = textwrap.dedent(f"""
+            import faulthandler
+
+            faulthandler.dump_traceback_later({support.SHORT_TIMEOUT}, exit=True)
+
             import gc
-            import importlib
             import threading
             import time
 
-            modules = (
-                "abc", "argparse", "collections", "contextlib",
-                "decimal", "enum", "functools", "heapq",
-                "importlib", "inspect", "itertools", "json",
-                "math", "operator", "random", "re",
-            )
-            for name in modules:
-                importlib.import_module(name)
+            # Add GC-tracked objects to lengthen the stop-the-world pauses.
+            import abc
+            import argparse
+            import collections
+            import contextlib
+            import decimal
+            import enum
+            import functools
+            import heapq
+            import importlib
+            import inspect
+            import itertools
+            import json
+            import math
+            import operator
+            import random
+            import re
 
             started = threading.Event()
             stop = threading.Event()
@@ -238,7 +248,7 @@ class TestGC(TestCase):
                 while not stop.is_set():
                     gc.collect()
 
-            thread = threading.Thread(target=collect, daemon=True)
+            thread = threading.Thread(target=collect)
             thread.start()
             started.wait()
             # Each reattachment must make progress between consecutive pauses.
@@ -246,20 +256,9 @@ class TestGC(TestCase):
                 time.sleep(0.02)
             stop.set()
             thread.join()
+            faulthandler.cancel_dump_traceback_later()
         """)
-        proc = subprocess.run(
-            [sys.executable, "-I", "-X", "gil=0", "-X", "faulthandler",
-             "-c", script],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            timeout=support.SHORT_TIMEOUT,
-        )
-        self.assertEqual(
-            proc.returncode,
-            0,
-            f"stdout:\n{proc.stdout}\nstderr:\n{proc.stderr}",
-        )
+        script_helper.assert_python_ok("-X", "gil=0", "-c", script)
 
 
 if __name__ == "__main__":
