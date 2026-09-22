@@ -27593,7 +27593,7 @@ then :
 else case e in #(
   e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-
+#include <math.h>
 int
 main (void)
 {
@@ -27635,7 +27635,7 @@ then :
 else case e in #(
   e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-
+#include <math.h>
 int
 main (void)
 {
@@ -27677,7 +27677,7 @@ then :
 else case e in #(
   e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-
+#include <math.h>
 int
 main (void)
 {
@@ -27719,7 +27719,7 @@ then :
 else case e in #(
   e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-
+#include <math.h>
 int
 main (void)
 {
@@ -27761,7 +27761,7 @@ then :
 else case e in #(
   e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-
+#include <math.h>
 int
 main (void)
 {
@@ -27803,7 +27803,7 @@ then :
 else case e in #(
   e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-
+#include <math.h>
 int
 main (void)
 {
@@ -27845,7 +27845,7 @@ then :
 else case e in #(
   e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-
+#include <math.h>
 int
 main (void)
 {
