@@ -3454,24 +3454,46 @@ codegen_boolop(compiler *c, expr_ty e)
     return SUCCESS;
 }
 
+static bool
+is_empty_starred_literal(expr_ty elt)
+{
+    if (elt->kind != Starred_kind) {
+        return false;
+    }
+    expr_ty value = elt->v.Starred.value;
+    return (value->kind == Tuple_kind &&
+            asdl_seq_LEN(value->v.Tuple.elts) == 0) ||
+           (value->kind == List_kind &&
+            asdl_seq_LEN(value->v.List.elts) == 0) ||
+           (value->kind == Dict_kind &&
+            asdl_seq_LEN(value->v.Dict.keys) == 0);
+}
+
 static int
 starunpack_helper_impl(compiler *c, location loc,
                        asdl_expr_seq *elts, PyObject *injected_arg, int pushed,
                        int build, int add, int extend, int tuple)
 {
-    Py_ssize_t n = asdl_seq_LEN(elts);
-    int big = n + pushed + (injected_arg ? 1 : 0) > _PY_STACK_USE_GUIDELINE;
+    Py_ssize_t end = asdl_seq_LEN(elts);
+    Py_ssize_t n = 0;
     int seen_star = 0;
-    for (Py_ssize_t i = 0; i < n; i++) {
+    for (Py_ssize_t i = 0; i < end; i++) {
         expr_ty elt = asdl_seq_GET(elts, i);
         if (elt->kind == Starred_kind) {
+            if (is_empty_starred_literal(elt)) {
+                continue;
+            }
             seen_star = 1;
-            break;
         }
+        n++;
     }
+    int big = n + pushed + (injected_arg ? 1 : 0) > _PY_STACK_USE_GUIDELINE;
     if (!seen_star && !big) {
-        for (Py_ssize_t i = 0; i < n; i++) {
+        for (Py_ssize_t i = 0; i < end; i++) {
             expr_ty elt = asdl_seq_GET(elts, i);
+            if (is_empty_starred_literal(elt)) {
+                continue;
+            }
             VISIT(c, expr, elt);
         }
         if (injected_arg) {
@@ -3486,15 +3508,20 @@ starunpack_helper_impl(compiler *c, location loc,
         return SUCCESS;
     }
     int sequence_built = 0;
+    Py_ssize_t nitems = 0;
     if (big) {
         ADDOP_I(c, loc, build, pushed);
         sequence_built = 1;
     }
-    for (Py_ssize_t i = 0; i < n; i++) {
+    for (Py_ssize_t i = 0; i < end; i++) {
         expr_ty elt = asdl_seq_GET(elts, i);
+
         if (elt->kind == Starred_kind) {
+            if (is_empty_starred_literal(elt)) {
+                continue;
+            }
             if (sequence_built == 0) {
-                ADDOP_I(c, loc, build, i+pushed);
+                ADDOP_I(c, loc, build, nitems+pushed);
                 sequence_built = 1;
             }
             VISIT(c, expr, elt->v.Starred.value);
@@ -3506,6 +3533,7 @@ starunpack_helper_impl(compiler *c, location loc,
                 ADDOP_I(c, loc, add, 1);
             }
         }
+        nitems++;
     }
     assert(sequence_built);
     if (injected_arg) {

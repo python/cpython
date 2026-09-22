@@ -2434,9 +2434,6 @@ AS_CASE([$ac_sys_system],
     dnl Start with 20 MB and allow to grow
     AS_VAR_APPEND([LINKFORSHARED], [" -sALLOW_MEMORY_GROWTH -sINITIAL_MEMORY=20971520"])
 
-    dnl map int64_t and uint64_t to JS bigint
-    AS_VAR_APPEND([LDFLAGS_NODIST], [" -sWASM_BIGINT"])
-
     dnl Include file system support
     AS_VAR_APPEND([LINKFORSHARED], [" -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"])
     AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV,HEAPU32,TTY,ERRNO_CODES"])
@@ -4486,7 +4483,7 @@ int main(void)
 [ac_cv_float16_supported=no],
 [ac_cv_float16_supported=no])]))
 AS_VAR_IF([ac_cv_float16_supported], [yes],
-          [AC_DEFINE([HAVE_FLOAT16], [1],
+          [AC_DEFINE([_Py_HAVE_FLOAT16], [1],
                      [Defined if _Float16 C type is supported])])
 
 dnl Check for libmpdec >= 2.5.0
