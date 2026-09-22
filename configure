@@ -14227,8 +14227,11 @@ else case e in #(
 esac
 fi
 
-# HWASan works by controlling memory allocation, our own malloc interferes.
-with_pymalloc="no"
+# HWASan works by controlling memory allocation, our own malloc interferes,
+# so disable it by default, but allow --with-pymalloc to override.
+if test -z "$with_pymalloc"; then
+  with_pymalloc="no"
+fi
 
 else case e in #(
   e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
