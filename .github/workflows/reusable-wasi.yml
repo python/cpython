@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-26.04-arm
     timeout-minutes: 60
     env:
-      WASMTIME_VERSION: 38.0.3
+      WASMTIME_VERSION: 48.0.2
       CROSS_BUILD_WASI: cross-build/wasm32-wasip1
     steps:
     - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0

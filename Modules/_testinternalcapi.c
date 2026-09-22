@@ -3219,6 +3219,28 @@ is_gc_frame_clear(PyObject *self, PyObject *unused)
     Py_RETURN_FALSE;
 }
 
+static PyObject *
+unicodewriter_overflow(PyObject *self, PyObject *unused)
+{
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
+    if (writer == NULL) {
+        return NULL;
+    }
+    if (PyUnicodeWriter_WriteASCII(writer, "hello", -1) < 0) {
+        PyUnicodeWriter_Discard(writer);
+        return NULL;
+    }
+
+    _PyUnicodeWriter *impl = (_PyUnicodeWriter*)writer;
+    PyObject *buffer = impl->buffer;
+    Py_ssize_t index = PyUnicode_GET_LENGTH(buffer);
+    PyUnicode_WRITE(impl->kind, impl->data, index, '#');  // overflow!
+
+    // Spoiler: the function doesn't return if an overflow is detected
+    // in debug mode
+    return PyUnicodeWriter_Finish(writer);
+}
+
 /* Self interrupting context manager */
 
 typedef struct {
@@ -3407,6 +3429,7 @@ static PyMethodDef module_functions[] = {
     {"test_interp_view_countdown", test_interp_view_countdown, METH_NOARGS},
     {"test_thread_state_ensure_from_view_interp_switch", test_thread_state_ensure_from_view_interp_switch, METH_NOARGS},
     {"is_gc_frame_clear", is_gc_frame_clear, METH_NOARGS},
+    {"unicodewriter_overflow", unicodewriter_overflow, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 

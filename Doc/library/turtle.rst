@@ -2571,6 +2571,25 @@ Public classes
    * ``a.rotate(angle)`` rotation
 
 
+Exceptions
+==========
+
+The :mod:`!turtle` module defines the following exception:
+
+.. exception:: TurtleGraphicsError
+
+   Raised for invalid arguments or operations.
+   For example, a malformed color string:
+
+   .. doctest::
+      :skipif: _tkinter is None
+
+      >>> turtle.color("blau")
+      Traceback (most recent call last):
+          ...
+      turtle.TurtleGraphicsError: bad color string: blau
+
+
 .. _turtle-explanation:
 
 Explanation
@@ -2881,49 +2900,6 @@ The demo scripts are:
 +------------------------+------------------------------+--------------------------------------+
 
 Have fun!
-
-
-Changes since Python 2.6
-========================
-
-- The methods :func:`Turtle.tracer <tracer>`, :func:`Turtle.window_width <window_width>` and
-  :func:`Turtle.window_height <window_height>` have been eliminated.
-  Methods with these names and functionality are now available only
-  as methods of :class:`Screen`. The functions derived from these remain
-  available. (In fact already in Python 2.6 these methods were merely
-  duplications of the corresponding
-  :class:`TurtleScreen`/:class:`Screen` methods.)
-
-- The method :func:`!Turtle.fill` has been eliminated.
-  The behaviour of :func:`begin_fill` and :func:`end_fill`
-  have changed slightly: now every filling process must be completed with an
-  ``end_fill()`` call.
-
-- A method :func:`Turtle.filling <filling>` has been added. It returns a boolean
-  value: ``True`` if a filling process is under way, ``False`` otherwise.
-  This behaviour corresponds to a ``fill()`` call without arguments in
-  Python 2.6.
-
-Changes since Python 3.0
-========================
-
-- The :class:`Turtle` methods :func:`shearfactor`, :func:`shapetransform` and
-  :func:`get_shapepoly` have been added. Thus the full range of
-  regular linear transforms is now available for transforming turtle shapes.
-  :func:`tiltangle` has been enhanced in functionality: it now can
-  be used to get or set the tilt angle.
-
-- The :class:`Screen` method :func:`onkeypress` has been added as a complement to
-  :func:`onkey`. As the latter binds actions to the key release event,
-  an alias: :func:`onkeyrelease` was also added for it.
-
-- The method :func:`Screen.mainloop <mainloop>` has been added,
-  so there is no longer a need to use the standalone :func:`mainloop` function
-  when working with :class:`Screen` and :class:`Turtle` objects.
-
-- Two input methods have been added: :func:`Screen.textinput <textinput>` and
-  :func:`Screen.numinput <numinput>`. These pop up input dialogs and return
-  strings and numbers respectively.
 
 
 .. doctest::

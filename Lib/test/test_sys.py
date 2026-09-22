@@ -1374,6 +1374,37 @@ class SysModuleTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             sys.set_int_max_str_digits(2_048.0)
 
+    @test.support.cpython_only
+    def test_is_immortal(self):
+        is_immortal = sys._is_immortal
+
+        # Singletons
+        self.assertTrue(is_immortal(None))
+        self.assertTrue(is_immortal(False))
+        self.assertTrue(is_immortal(True))
+        self.assertTrue(is_immortal(0))
+        self.assertTrue(is_immortal(b''))
+        self.assertTrue(is_immortal(''))
+        self.assertTrue(is_immortal(b'x'))
+        self.assertTrue(is_immortal('x'))
+        self.assertTrue(is_immortal(()))
+
+        # Static types
+        self.assertTrue(is_immortal(int))
+        self.assertTrue(is_immortal(dict))
+
+        # Test some mortal objects
+        class PythonType:
+            pass
+        self.assertFalse(is_immortal([1, 2, 3]))
+        self.assertFalse(is_immortal({'key': 5}))
+        self.assertFalse(is_immortal(object()))
+        self.assertFalse(is_immortal(PythonType))
+        self.assertFalse(is_immortal(2 ** 100))
+        # Use encode/decode to get a fresh object
+        self.assertFalse(is_immortal(b'abc'.decode()))
+        self.assertFalse(is_immortal('abc'.encode()))
+
 
 @test.support.cpython_only
 @test.support.force_not_colorized_test_class
