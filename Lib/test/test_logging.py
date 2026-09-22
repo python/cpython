@@ -6503,6 +6503,46 @@ class FileHandlerTest(BaseFileTest):
         with open(self.fn) as fp:
             self.assertEqual(fp.read().strip(), '1')
 
+    def _check_open_error(self, h):
+        # gh-135683: an error while opening the file in emit() respects
+        # raiseExceptions, like an error during the actual write.
+        r = logging.makeLogRecord({})
+        old_raise = logging.raiseExceptions
+        self.addCleanup(setattr, logging, 'raiseExceptions', old_raise)
+
+        logging.raiseExceptions = True
+        with support.captured_stderr() as stderr:
+            h.handle(r)
+        self.assertIn('\nFileNotFoundError:', stderr.getvalue())
+
+        logging.raiseExceptions = False
+        with support.captured_stderr() as stderr:
+            h.handle(r)
+        self.assertEqual('', stderr.getvalue())
+
+    def test_emit_open_error(self):
+        # FileHandler with delay: the failing open happens in emit().
+        d = tempfile.mkdtemp()
+        self.addCleanup(os_helper.rmtree, d)
+        h = logging.FileHandler(os.path.join(d, 'missing', 'a.log'),
+                                encoding='utf-8', delay=True)
+        self.addCleanup(h.close)
+        self._check_open_error(h)
+
+    @unittest.skipIf(os.name == 'nt',
+                     'WatchedFileHandler not appropriate for Windows.')
+    def test_emit_reopen_error(self):
+        # WatchedFileHandler: reopenIfNeeded() fails after the dir is removed.
+        d = tempfile.mkdtemp()
+        self.addCleanup(os_helper.rmtree, d)
+        subdir = os.path.join(d, 'sub')
+        os.mkdir(subdir)
+        h = logging.handlers.WatchedFileHandler(
+            os.path.join(subdir, 'b.log'), encoding='utf-8')
+        self.addCleanup(h.close)
+        os_helper.rmtree(subdir)
+        self._check_open_error(h)
+
 class RotatingFileHandlerTest(BaseFileTest):
     def test_should_not_rollover(self):
         # If file is empty rollover never occurs

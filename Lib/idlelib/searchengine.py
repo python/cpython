@@ -31,6 +31,7 @@ class SearchEngine:
         self.wordvar = BooleanVar(root, False)   # match whole word?
         self.wrapvar = BooleanVar(root, True)   # wrap around buffer?
         self.backvar = BooleanVar(root, False)   # search backwards?
+        self.error_handler = None  # Set by an open dialog, see report_error.
 
     # Access methods
 
@@ -69,7 +70,7 @@ class SearchEngine:
         if not self.isre():  # if True, see setcookedpat
             pat = re.escape(pat)
         if self.isword():
-            pat = r"\b%s\b" % pat
+            pat = r"\b(?:%s)\b" % pat
         return pat
 
     def getprog(self):
@@ -78,19 +79,34 @@ class SearchEngine:
         if not pat:
             self.report_error(pat, "Empty regular expression")
             return None
-        pat = self.getcookedpat()
         flags = 0
         if not self.iscase():
             flags = flags | re.IGNORECASE
+        if self.isre():
+            # Check the pattern as typed, so that an error is reported
+            # at the right position.
+            try:
+                re.compile(pat, flags)
+            except re.PatternError as e:
+                self.report_error(pat, e.msg, e.pos)
+                return None
         try:
-            prog = re.compile(pat, flags)
+            return re.compile(self.getcookedpat(), flags)
         except re.PatternError as e:
-            self.report_error(pat, e.msg, e.pos)
+            msg = e.msg
+            if msg.startswith('global flags not at the start'):
+                msg = ('global flags like (?i) cannot be used '
+                       'with the "Whole word" option')
+            self.report_error(pat, msg)
             return None
-        return prog
 
     def report_error(self, pat, msg, col=None):
-        # Derived class could override this with something fancier
+        "Show msg in the open dialog, if any, else in a message box."
+        if self.error_handler is not None:
+            if col is not None:
+                msg = f"{msg} at position {col}"
+            self.error_handler("Error: " + str(msg), col)
+            return
         msg = "Error: " + str(msg)
         if pat:
             msg = msg + "\nPattern: " + str(pat)
