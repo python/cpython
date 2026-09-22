@@ -90,10 +90,13 @@ jobs:
         --openssl="${OPENSSL_VER}"
         --system=Linux
         --tsan
+    # -O0 instead of the pydebug default -Og to avoid a clang 21 compile-time
+    # blowup on some interpreter files (https://github.com/llvm/llvm-project/issues/179695)
     - name: Configure CPython
       run: >-
         ./configure
         --config-cache
+        OPT="-O0 -g"
         ${{
           inputs.sanitizer == 'TSan'
           && '--with-thread-sanitizer'
