@@ -356,7 +356,7 @@ def generate_static_strings_initializer(identifiers, strings):
         printer.write("static inline void")
         with printer.block("_PyUnicode_InitStaticStrings(PyInterpreterState *interp)"):
             printer.write('// Offsets avoid a pointer relocation for each string.')
-            with printer.block('static const size_t offsets[] =', ';'):
+            with printer.block('static const uint32_t offsets[] =', ';'):
                 for i in sorted(identifiers):
                     printer.write('offsetof(struct _Py_global_strings, '
                                   f'identifiers._py_{i}._ascii.ob_base),')

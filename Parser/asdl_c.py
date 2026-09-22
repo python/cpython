@@ -806,10 +806,12 @@ class AnnotationsVisitor(PickleVisitor):
         self.file.write(textwrap.dedent('''\
             };
             // Offsets refer to this interpreter's AST state, not global types.
+            static_assert(sizeof(struct ast_state) <= UINT16_MAX,
+                          "ast_state offsets must fit in uint16_t");
             static const struct {
                 uint16_t name_offset;
                 uint16_t type_offset;  // An index into builtin_types for builtins.
-                unsigned int flags;
+                uint8_5 flags;
             } fields[] = {
         #''').removesuffix('#'))  # Use d-string if it accepted.
         for name, fields in self.nodes:
