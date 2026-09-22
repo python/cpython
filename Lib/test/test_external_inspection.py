@@ -447,14 +447,15 @@ class TestSelfStackTrace(RemoteInspectionTestBase):
         async def main():
             asyncio.create_task(asyncio.sleep(10_000), name="x" * 300)
             await asyncio.sleep(0)
-            return [
+            names = [
                 task.task_name
                 for info in RemoteUnwinder(os.getpid()).get_all_awaited_by()
                 for task in info.awaited_by
             ]
+            return asyncio.current_task().get_name(), names
 
-        names = asyncio.run(main())
-        self.assertIn("Task-1", names)
+        main_name, names = asyncio.run(main())
+        self.assertIn(main_name, names)
         self.assertEqual([len(n) for n in names if n.startswith("x")], [255])
 
     @skip_if_not_supported
