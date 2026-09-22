@@ -305,17 +305,6 @@ Base32 converters in :mod:`base64`. Patch by James Seo.
 
 ..
 
-.. date: 2026-03-19-16-16-40
-.. gh-issue: 135871
-.. nonce: jSExZ3
-.. section: Core and Builtins
-
-Improve multithreaded scaling of PyMutex in low-contention scenarios by
-reloading the lock's internal state, without slowing down high-contention
-scenarios.
-
-..
-
 .. date: 2026-03-19-01-19-34
 .. gh-issue: 146096
 .. nonce: R9tkJX
