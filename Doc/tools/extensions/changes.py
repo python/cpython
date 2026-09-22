@@ -18,6 +18,7 @@ TYPE_CHECKING = False
 if TYPE_CHECKING:
     from docutils.nodes import Node
     from sphinx.application import Sphinx
+    from sphinx.environment import BuildEnvironment
     from sphinx.util.typing import ExtensionMetadata
 
 
@@ -147,6 +148,32 @@ class SoftDeprecated(PyVersionChange):
             break
 
 
+def _fixup_changesets(app: Sphinx, env: BuildEnvironment) -> None:
+    changesets = env.get_domain("changeset").changesets
+
+    # The changeset domain records each entry's plain text before SoftDeprecated
+    # replaces the :term:, so strip the markup before the changes builder renders it.
+    for entries in changesets.values():
+        for i, entry in enumerate(entries):
+            if entry.type == "soft-deprecated":
+                entries[i] = entry._replace(
+                    content=SoftDeprecated._TERM_RE.sub(r"\1", entry.content)
+                )
+
+    # DeprecatedRemoved entries are recorded under their (deprecated,
+    # removed) version tuple, which the changes builder ignores.
+    # Re-file them under both versions.
+    for versions in [v for v in changesets if isinstance(v, tuple)]:
+        deprecated, removed = versions
+        for entry in changesets.pop(versions):
+            changesets.setdefault(deprecated, []).append(
+                entry._replace(type="deprecated")
+            )
+            changesets.setdefault(removed, []).append(
+                entry._replace(type="versionremoved")
+            )
+
+
 def setup(app: Sphinx) -> ExtensionMetadata:
     # Override Sphinx's directives with support for 'next'
     app.add_directive("versionadded", PyVersionChange, override=True)
@@ -156,12 +183,15 @@ def setup(app: Sphinx) -> ExtensionMetadata:
 
     # Register the ``.. deprecated-removed::`` directive
     app.add_directive("deprecated-removed", DeprecatedRemoved)
+    # _fixup_changesets() changes these entries to 'deprecated'/'versionremoved'
+    ChangesBuilder.typemap["deprecated-removed"] = "deprecated-removed"
 
     # Register the ``.. soft-deprecated::`` directive
     app.add_directive("soft-deprecated", SoftDeprecated)
     ChangesBuilder.typemap["soft-deprecated"] = "soft deprecated"
-    # deprecated-removed is recorded under a version tuple; map it too
-    ChangesBuilder.typemap["deprecated-removed"] = "deprecated-removed"
+
+    # Repair the recorded changesets for the couple of custom directives above
+    app.connect("env-updated", _fixup_changesets)
 
     return {
         "version": "1.0",

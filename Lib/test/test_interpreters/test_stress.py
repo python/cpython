@@ -78,15 +78,9 @@ class StressTests(TestBase):
 
     @support.nomemtest
     def test_create_interpreter_no_memory(self):
-        import _testcapi
-
-        assertion = self.assertRaises(InterpreterError)
-        try:
-            _testcapi.set_nomemory(0, 1)
-            with assertion:
+        with self.assertRaises(InterpreterError):
+            with support.inject_memory_error_cm(0, 1):
                 _interpreters.create()
-        finally:
-            _testcapi.remove_mem_hooks()
 
 
 if __name__ == '__main__':
