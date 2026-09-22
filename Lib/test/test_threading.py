@@ -245,17 +245,19 @@ class ThreadTests(BaseTestCase):
             done.wait()
             self.assertEqual(ident[0], tid)
 
-    # run with a small(ish) thread stack size (256 KiB)
+    # run with a small(ish) thread stack size (512 KiB)
     def test_various_ops_small_stack(self):
         if verbose:
-            print('with 256 KiB thread stack size...')
+            print('with 512 KiB thread stack size...')
         try:
-            threading.stack_size(262144)
-        except _thread.error:
+            threading.stack_size(512 * 1024)
+        except (ValueError, _thread.error):
             raise unittest.SkipTest(
-                'platform does not support changing thread stack size')
-        self.test_various_ops()
-        threading.stack_size(0)
+                'platform does not support a 512 KiB thread stack')
+        try:
+            self.test_various_ops()
+        finally:
+            threading.stack_size(0)
 
     # run with a large thread stack size (1 MiB)
     def test_various_ops_large_stack(self):
@@ -275,10 +277,10 @@ class ThreadTests(BaseTestCase):
         # threading.Thread bootstrap under AddressSanitizer.  The reported
         # repro used 127 KiB and did not join the thread.
         try:
-            threading.stack_size(262144)
-        except _thread.error:
+            threading.stack_size(0x100000)
+        except (ValueError, _thread.error):
             self.skipTest(
-                'platform does not support changing thread stack size')
+                'platform does not support a 1 MiB thread stack')
         threading.stack_size(0)
 
         def run_script(script):
