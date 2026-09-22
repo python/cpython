@@ -2386,9 +2386,6 @@ _PyThreadState_TrySuspendDetached(PyThreadState *tstate)
 {
     assert(tstate != _PyThreadState_GET());
     int expected = _Py_THREAD_DETACHED;
-    if (_Py_atomic_load_int_relaxed(&tstate->state) != expected) {
-        return 0;
-    }
     return _Py_atomic_compare_exchange_int(&tstate->state, &expected,
                                            _Py_THREAD_SUSPENDED);
 }

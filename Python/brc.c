@@ -48,44 +48,25 @@ find_thread_state(struct _brc_bucket *bucket, uintptr_t thread_id)
     return NULL;
 }
 
-// Merge the refcounts of all objects in `to_merge` without deallocating.
-// Objects whose merged refcount is zero are moved to `to_dealloc`, which
-// borrows the chunks of `to_merge` so that this never allocates.
+// Merge the refcounts of all objects in `stack`, keeping the queue's reference.
 static void
-merge_queued_refcounts(_PyObjectStack *to_merge, _PyObjectStack *to_dealloc)
+merge_queued_refcounts(_PyObjectStack *stack)
 {
-    assert(to_dealloc->head == NULL);
-    _PyObjectStackChunk *buf = to_merge->head;
-    to_merge->head = NULL;
-    while (buf != NULL) {
-        Py_ssize_t n = 0;
+    for (_PyObjectStackChunk *buf = stack->head; buf != NULL; buf = buf->prev) {
         for (Py_ssize_t i = 0; i < buf->n; i++) {
-            PyObject *ob = buf->objs[i];
-            // Subtract one when merging because the queue had a reference.
-            if (_Py_ExplicitMergeRefcount(ob, -1) == 0) {
-                buf->objs[n++] = ob;
-            }
+            _Py_ExplicitMergeRefcount(buf->objs[i], 0);
         }
-        _PyObjectStackChunk *prev = buf->prev;
-        if (n == 0) {
-            buf->n = 0;
-            _PyObjectStackChunk_Free(buf);
-        }
-        else {
-            buf->n = n;
-            buf->prev = to_dealloc->head;
-            to_dealloc->head = buf;
-        }
-        buf = prev;
     }
 }
 
+// Release the queue's reference to each merged object. This may run
+// destructors, so the bucket mutex must not be held.
 static void
-dealloc_merged_objects(_PyObjectStack *to_dealloc)
+decref_merged_objects(_PyObjectStack *stack)
 {
     PyObject *ob;
-    while ((ob = _PyObjectStack_Pop(to_dealloc)) != NULL) {
-        _Py_Dealloc(ob);
+    while ((ob = _PyObjectStack_Pop(stack)) != NULL) {
+        Py_DECREF(ob);
     }
 }
 
@@ -140,18 +121,13 @@ _Py_brc_queue_object(PyObject *ob)
         // so merge its queue on its behalf instead of waiting for it. While
         // it is held in the "suspended" state it cannot attach and therefore
         // cannot touch ob_ref_local or ob_tid.
-        //
-        // Only the merges happen while the thread is suspended: they are
-        // plain field updates. Deallocations run arbitrary code (and may
-        // stop the world, which would deadlock on the suspended thread), so
-        // they are deferred until after the thread is resumed and the
-        // bucket mutex is released.
-        _PyObjectStack to_dealloc = {0};
-        merge_queued_refcounts(&tstate->brc.objects_to_merge, &to_dealloc);
+        _PyObjectStack merged = {0};
+        _PyObjectStack_Merge(&merged, &tstate->brc.objects_to_merge);
+        merge_queued_refcounts(&merged);
         _PyThreadState_ResumeDetached(&tstate->base);
         PyMutex_Unlock(&bucket->mutex);
 
-        dealloc_merged_objects(&to_dealloc);
+        decref_merged_objects(&merged);
         return;
     }
 
