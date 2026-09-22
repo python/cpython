@@ -244,7 +244,7 @@ extern int _PyUnicodeWriter_FormatV(
 
 /* --- iconv Codec -------------------------------------------------------- */
 
-#ifdef HAVE_ICONV
+#ifdef _Py_HAVE_ICONV
 extern PyObject* _PyUnicode_DecodeIconv(
     const char *encoding,       /* iconv encoding name */
     const char *string,         /* encoded string */
