@@ -1711,6 +1711,10 @@ class VarTraceTest(unittest.TestCase):
         sv.set('5')
         cb()
         self.assertEqual(changes['main']['section']['option'], '5')
+        # gh-75487: blanking the entry forgets the value recorded before.
+        sv.set('')
+        cb()
+        self.assertNotIn('option', changes['main']['section'])
         changes.clear()
 
     def test_attach_detach(self):
