@@ -5981,7 +5981,7 @@ class TestUopsOptimization(unittest.TestCase):
     def test_149335_trace_buffer_guard(self):
         # https://github.com/python/cpython/issues/149335
 
-        result = script_helper.run_python_until_end('-c', textwrap.dedent(f"""
+        result = script_helper.run_python_until_end('-c', textwrap.dedent("""
         import sys
 
         def f1():
@@ -6011,7 +6011,7 @@ class TestUopsOptimization(unittest.TestCase):
             mv1 = mv_12 = mv3 = mv_14 = mv45 = sys.float_info.epsilon
             mv46 = sys.float_info.epsilon
 
-        for i in range({TIER2_THRESHOLD}):
+        for i in range(15000):
             f1()
         """), PYTHON_JIT="1")
         self.assertEqual(result[0].rc, 0, result)
