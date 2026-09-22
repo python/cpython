@@ -4338,9 +4338,6 @@ class OtherTests(unittest.TestCase):
         self.assertRaises(ValueError, zipf.write, TESTFN)
 
     def test_closed_zip_extract_raises_ValueError(self):
-        # gh-NNNNNN: testzip(), extract() and extractall() must reject a
-        # closed ZipFile regardless of the archive contents, and before
-        # touching the filesystem.
         with zipfile.ZipFile(io.BytesIO(), mode="w") as zipf:
             pass
         self.assertRaises(ValueError, zipf.testzip)
