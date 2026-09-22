@@ -1629,7 +1629,14 @@ class Popen:
             assert not pass_fds, "pass_fds not supported on Windows."
 
             if isinstance(args, str):
-                orig_filename = args
+                # Filename is the program only. Later arguments can
+                # hold secrets. A leading quote ends at the next quote.
+                # Otherwise stop at the first space.
+                if args[:1] == '"':
+                    end = args.find('"', 1)
+                    orig_filename = args[1:end] if end != -1 else args
+                else:
+                    orig_filename = args.split(' ', 1)[0]
             elif isinstance(args, bytes):
                 if shell:
                     raise TypeError('bytes args is not allowed on Windows')

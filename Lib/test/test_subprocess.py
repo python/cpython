@@ -3741,6 +3741,26 @@ class Win32ProcessTestCase(BaseTestCase):
         self.assertEqual(c.exception.filename, missing_cwd)
         self.assertEqual(c.exception.winerror, 267)
 
+    def test_command_string_filename_omits_later_args(self):
+        # gh-119646: a command-line string must not put later arguments
+        # on OSError.filename. Those arguments can hold secrets.
+        missing = r'C:\opt\nonexistent_binary'
+        secret = 'NOT-A-REAL-SECRET'
+        quoted = r'C:\Program Files\nonexistent_binary'
+        cases = [
+            (missing, missing),
+            (f'{missing} --token {secret}', missing),
+            (f'"{missing}" --token {secret}', missing),
+            (f'"{quoted}" --token {secret}', quoted),
+        ]
+        for command, expected in cases:
+            with self.subTest(command=command):
+                with self.assertRaises(FileNotFoundError) as c:
+                    subprocess.call(command)
+                self.assertEqual(c.exception.filename, expected)
+                self.assertNotIn(secret, c.exception.filename or '')
+                self.assertNotIn(secret, str(c.exception))
+
     def test_startupinfo(self):
         # startupinfo argument
         # We uses hardcoded constants, because we do not want to
