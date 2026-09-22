@@ -84,13 +84,14 @@ def normalize_trace_output(output):
 
 
 USE_PROCESS_GROUP = (hasattr(os, "setsid") and hasattr(os, "killpg"))
+TERMINATE_TIMEOUT = 10
 
 def create_process_group(*args, **kwargs):
     if USE_PROCESS_GROUP:
         kwargs['start_new_session'] = True
     return subprocess.Popen(*args, **kwargs)
 
-def terminate_process_group(proc, timeout=10):
+def terminate_process_group(proc):
     if USE_PROCESS_GROUP:
         try:
             os.killpg(proc.pid, signal.SIGTERM)
@@ -100,7 +101,7 @@ def terminate_process_group(proc, timeout=10):
         proc.terminate()
 
     try:
-        proc.communicate(timeout=timeout)
+        proc.communicate(timeout=TERMINATE_TIMEOUT)
     except subprocess.TimeoutExpired:
         if USE_PROCESS_GROUP:
             try:
@@ -109,16 +110,7 @@ def terminate_process_group(proc, timeout=10):
                 pass
         else:
             proc.kill()
-        try:
-            proc.communicate(timeout=timeout)  # Clean up
-        except subprocess.TimeoutExpired:
-            for pipe in (proc.stdin, proc.stdout, proc.stderr):
-                if pipe is not None:
-                    pipe.close()
-            try:
-                proc.wait(timeout=timeout)
-            except subprocess.TimeoutExpired:
-                pass
+        proc.communicate(timeout=TERMINATE_TIMEOUT)  # Clean up
 
 
 def run_readelf(cmd):
