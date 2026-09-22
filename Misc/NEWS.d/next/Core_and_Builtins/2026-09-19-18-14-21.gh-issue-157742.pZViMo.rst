@@ -1,1 +1,1 @@
-Improve performance of multiplication and shifts of :class:`int`.
+Improve performance of division and shifts of :class:`int`.
