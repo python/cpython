@@ -1,0 +1,8 @@
+:mod:`xml.dom.minidom` now validates namespaces in
+:meth:`~xml.dom.Document.createElementNS`,
+:meth:`~xml.dom.Document.createAttributeNS` and
+:meth:`~xml.dom.Element.setAttributeNS`, and when setting
+:attr:`~xml.dom.Node.prefix` of an attribute.
+:exc:`~xml.dom.NamespaceErr` is now raised for a malformed qualified name, for
+a prefix with an empty namespace, and for illegal use of the ``xml`` and
+``xmlns`` prefixes.

@@ -5792,35 +5792,34 @@ ast_repr_max_depth(AST_object *self, int depth)
         return NULL;
     }
 
-    if (depth <= 0) {
-        return PyUnicode_FromFormat("%s(...)", Py_TYPE(self)->tp_name);
-    }
-
-    int status = Py_ReprEnter((PyObject *)self);
-    if (status != 0) {
-        if (status < 0) {
-            return NULL;
-        }
-        return PyUnicode_FromFormat("%s(...)", Py_TYPE(self)->tp_name);
-    }
-
-    PyObject *fields;
-    if (PyObject_GetOptionalAttr((PyObject *)Py_TYPE(self), state->_fields, &fields) < 0) {
-        Py_ReprLeave((PyObject *)self);
+    PyObject *fields = PyObject_GetAttr((PyObject *)Py_TYPE(self), state->_fields);
+    if (!fields) {
         return NULL;
     }
 
     Py_ssize_t numfields = PySequence_Size(fields);
     if (numfields < 0) {
-        Py_ReprLeave((PyObject *)self);
         Py_DECREF(fields);
         return NULL;
     }
 
     if (numfields == 0) {
-        Py_ReprLeave((PyObject *)self);
         Py_DECREF(fields);
         return PyUnicode_FromFormat("%s()", Py_TYPE(self)->tp_name);
+    }
+
+    if (depth <= 0) {
+        Py_DECREF(fields);
+        return PyUnicode_FromFormat("%s(...)", Py_TYPE(self)->tp_name);
+    }
+
+    int status = Py_ReprEnter((PyObject *)self);
+    if (status != 0) {
+        Py_DECREF(fields);
+        if (status < 0) {
+            return NULL;
+        }
+        return PyUnicode_FromFormat("%s(...)", Py_TYPE(self)->tp_name);
     }
 
     const char* tp_name = Py_TYPE(self)->tp_name;
@@ -18549,22 +18548,25 @@ PyObject* PyAST_mod2obj(mod_ty t)
     return result;
 }
 
-/* mode is 0 for "exec", 1 for "eval" and 2 for "single" input */
+/* mode is 0 for "exec", 1 for "eval", 2 for "single" and 3 for "func_type"
+   input */
 int PyAst_CheckMode(PyObject *ast, int mode)
 {
-    const char * const req_name[] = {"Module", "Expression", "Interactive"};
+    const char * const req_name[] = {"Module", "Expression", "Interactive",
+                                     "FunctionType"};
 
     struct ast_state *state = get_ast_state();
     if (state == NULL) {
         return -1;
     }
 
-    PyObject *req_type[3];
+    PyObject *req_type[4];
     req_type[0] = state->Module_type;
     req_type[1] = state->Expression_type;
     req_type[2] = state->Interactive_type;
+    req_type[3] = state->FunctionType_type;
 
-    assert(0 <= mode && mode <= 2);
+    assert(0 <= mode && mode <= 3);
     int isinstance = PyObject_IsInstance(ast, req_type[mode]);
     if (isinstance == -1) {
         return -1;

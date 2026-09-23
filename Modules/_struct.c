@@ -2424,7 +2424,9 @@ s_pack_internal(PyStructObject *soself, PyObject *const *args,
                     memcpy(res + 1, p, n);
                 if (n > 255)
                     n = 255;
-                *res = Py_SAFE_DOWNCAST(n, Py_ssize_t, unsigned char);
+                if (n > 0) {
+                    *res = Py_SAFE_DOWNCAST(n, Py_ssize_t, unsigned char);
+                }
             } else {
                 if (e->pack(state, res, v, e) < 0) {
                     if (PyLong_Check(v) && PyErr_ExceptionMatches(PyExc_OverflowError))
