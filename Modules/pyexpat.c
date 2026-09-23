@@ -2432,7 +2432,10 @@ pyexpat_exec(PyObject *mod)
     capi->SetEncoding = XML_SetEncoding;
     capi->DefaultUnknownEncodingHandler = PyUnknownEncodingHandler;
 #if XML_COMBINED_VERSION >= 20100
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     capi->SetHashSalt = XML_SetHashSalt;
+_Py_COMP_DIAG_POP
 #else
     capi->SetHashSalt = NULL;
 #endif

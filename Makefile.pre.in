@@ -661,6 +661,7 @@ LIBEXPAT_HEADERS= \
 		Modules/expat/expat_config.h \
 		Modules/expat/expat_external.h \
 		Modules/expat/fallthrough.h \
+		Modules/expat/hash_table.h \
 		Modules/expat/iasciitab.h \
 		Modules/expat/internal.h \
 		Modules/expat/latin1tab.h \
