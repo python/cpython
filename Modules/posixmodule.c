@@ -11032,7 +11032,7 @@ os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
     int readlinkat_unavailable = 0;
 #endif
 #ifdef HAVE_FREADLINK
-    int use_freadlink = 0;
+    int freadlink_unavailable = 0;
 #endif
 
     if (path_and_dir_fd_invalid("readlink", path, dir_fd)) {
@@ -11041,21 +11041,14 @@ os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
 
     if (path->is_fd) {
 #if defined(__APPLE__) && defined(HAVE_FREADLINK)
-        if (HAVE_FREADLINK_RUNTIME) {
-            use_freadlink = 1;
-        } else {
-            PyErr_Format(PyExc_NotImplementedError,
-                "readlink cannot read file descriptors on this platform, "
-                "freadlink() is unavailable");
-            return NULL;
-        }
+        /* nop, freadlink is called below */
 #elif defined(__linux__) && defined(HAVE_READLINKAT)
         // Linux: readlinkat(dir_fd, "", ...) reads the symbolic link
         // pointed to by dir_fd
         dir_fd = path->fd;
         path->narrow = "";
 #else
-        PyErr_Format(PyExc_NotImplementedError,
+        PyErr_SetString(PyExc_NotImplementedError,
             "readlink cannot read file descriptors on this platform");
         return NULL;
 #endif
@@ -11063,8 +11056,12 @@ os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
 
     Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_FREADLINK
-    if (use_freadlink) {
-        length = freadlink(path->fd, buffer, MAXPATHLEN);
+    if (path->is_fd) {
+        if (HAVE_FREADLINK_RUNTIME) {
+            length = freadlink(path->fd, buffer, MAXPATHLEN);
+        } else {
+            freadlink_unavailable = 1;
+        }
     } else
 #endif
 #ifdef HAVE_READLINKAT
@@ -11078,6 +11075,16 @@ os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
 #endif
         length = readlink(path->narrow, buffer, MAXPATHLEN);
     Py_END_ALLOW_THREADS
+
+
+#ifdef HAVE_FREADLINK
+    if (freadlink_unavailable) {
+        PyErr_Format(PyExc_NotImplementedError,
+            "readlink cannot read file descriptors on this platform, "
+            "freadlink() is unavailable");
+        return NULL;
+    }
+#endif
 
 #ifdef HAVE_READLINKAT
     if (readlinkat_unavailable) {
