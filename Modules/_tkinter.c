@@ -34,6 +34,8 @@ Copyright (C) 1994 Steen Lumholt.
 #include "pycore_sysmodule.h"     // _PySys_GetOptionalAttrString()
 #include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8String
 
+#include <signal.h>               // SIGINT
+
 #ifdef MS_WINDOWS
 #  include <windows.h>
 #endif
@@ -251,7 +253,25 @@ Tkinter_TkInit(Tcl_Interp *interp)
        does not search. Mount the DLL using Zipfs if possible.  */
     mount_tk_dll_zip();
 #endif
-    return Tk_Init(interp);
+#ifdef __APPLE__
+    /* Tk on macOS replaces the handlers of these signals with its own,
+       which exits the process.  Keep the handlers installed by Python
+       (gh-157672). */
+    static const int signals[] = {SIGINT, SIGHUP, SIGTERM};
+    PyOS_sighandler_t handlers[Py_ARRAY_LENGTH(signals)];
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(signals); i++) {
+        handlers[i] = PyOS_getsig(signals[i]);
+    }
+#endif
+    int result = Tk_Init(interp);
+#ifdef __APPLE__
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(signals); i++) {
+        if (handlers[i] != SIG_DFL) {
+            PyOS_setsig(signals[i], handlers[i]);
+        }
+    }
+#endif
+    return result;
 }
 
 /* The threading situation is complicated.  Tcl is not thread-safe, except
