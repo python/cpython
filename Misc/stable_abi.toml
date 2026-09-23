@@ -95,6 +95,8 @@
     windows = 'maybe'
 
 
+### Python 3.2 (initial version) ############################################
+
 # Mentioned in PEP 384:
 
 [struct.PyObject]
@@ -627,8 +629,6 @@
     added = '3.2'
 [function.PyErr_Display]
     added = '3.2'
-[function.PyErr_DisplayException]
-    added = '3.12'
 [function.PyErr_ExceptionMatches]
     added = '3.2'
 [function.PyErr_Fetch]
@@ -735,8 +735,6 @@
     added = '3.2'
 [data.PyExc_BaseException]
     added = '3.2'
-[data.PyExc_BaseExceptionGroup]
-    added = '3.11'
 [data.PyExc_BufferError]
     added = '3.2'
 [data.PyExc_BytesWarning]
@@ -1867,6 +1865,9 @@
 [function.PyThread_start_new_thread]
     added = '3.2'
 
+
+### Python 3.3 ##############################################################
+
 # The following were added in PC/python3.def in Python 3.3:
 # 7800f75827b1be557be16f3b18f5170fbf9fae08
 # 9c56409d3353b8cd4cfc19e0467bbe23fd34fc92
@@ -1896,6 +1897,9 @@
 [function.PyThread_GetInfo]
     added = '3.3'
 
+
+### Python 3.4 ##############################################################
+
 # The following were added in PC/python3.def in Python 3.4:
 # 3ba3a3ee56c142e93d6bbe20ff6bf939212a30f0
 
@@ -1903,6 +1907,9 @@
     added = '3.4'
 [function.PyType_GetSlot]
     added = '3.4'
+
+
+### Python 3.5 ##############################################################
 
 # The following were added in PC/python3.def in Python 3.5:
 # 11d7b1423fc44d764eba7065ea5eba58ed748b21
@@ -1942,7 +1949,8 @@
 [const.Py_tp_finalize]
     added = '3.5'
 
-# The following were added in PC/python3.def in Python 3.6:
+
+### Python 3.6 ##############################################################
 
 [function.Py_FinalizeEx]
     added = '3.6'
@@ -1955,6 +1963,9 @@
     added = '3.6'
 [data.PyExc_ModuleNotFoundError]
     added = '3.6'
+
+
+### Python 3.7 ##############################################################
 
 # The following were added in PC/python3.def in Python 3.6.1 and 3.5.3/3.5.4:
 
@@ -2151,7 +2162,8 @@
 [const.METH_METHOD]
     added = '3.7'
 
-# The following were added in PC/python3.def in Python 3.8:
+
+### Python 3.8 ##############################################################
 
 [function.PyImport_GetModule]
     added = '3.8'
@@ -2174,12 +2186,13 @@
 [function.Py_BytesMain]
     added = '3.8'
 
-# New type flag (PEP 590):
+# New type Python 3.8 flag (PEP 590):
 
 [const.Py_TPFLAGS_METHOD_DESCRIPTOR]
     added = '3.8'
 
-# The following were added in PC/python3.def in Python 3.9:
+
+### Python 3.9 ##############################################################
 
 [function.Py_EnterRecursiveCall]
     added = '3.9'
@@ -2198,7 +2211,8 @@
 [function.PyObject_GC_IsTracked]
     added = '3.9'
 
-# The following were added in PC/python3.def in Python 3.10:
+
+### Python 3.10 #############################################################
 
 [function.Py_GetArgcArgv]
     added = '3.10'
@@ -2261,8 +2275,11 @@
     added = '3.10'
 [data.PyExc_EncodingWarning]
     added = '3.10'
+# Added in 3.7 but in the Stable ABI from 3.10
+[const.METH_FASTCALL]
+    added = '3.10'
 
-# Support for Stable ABI in debug builds
+# Support for Stable ABI in Python 3.10 debug builds
 
 [data._Py_RefTotal]
     added = '3.10'
@@ -2273,13 +2290,13 @@
     ifdef = 'Py_REF_DEBUG'
     abi_only = true
 
-# New slots in 3.10:
+# New slots in Python 3.10:
 
 [const.Py_am_send]
     added = '3.10'
 
 
-# New GC control functions in Py3.10 (https://bugs.python.org/issue28254)
+# New GC control functions in Python 3.10 (https://bugs.python.org/issue28254)
 
 [function.PyGC_Disable]
     added = '3.10'
@@ -2288,18 +2305,17 @@
 [function.PyGC_IsEnabled]
     added = '3.10'
 
-# Add new C API in Python 3.11
 
+### Python 3.11 #############################################################
+
+[data.PyExc_BaseExceptionGroup]
+    added = '3.11'
 [function.PyType_GetName]
     added = '3.11'
 [function.PyType_GetQualName]
     added = '3.11'
 [data.PyStructSequence_UnnamedField]
     added = '3.11'
-
-# Added in 3.7 but in the Stable ABI from 3.10
-[const.METH_FASTCALL]
-    added = '3.10'
 
 # Add stable Py_buffer API in Python 3.11 (https://bugs.python.org/issue45459)
 [struct.Py_buffer]
@@ -2379,7 +2395,6 @@
 [const.PyBUF_WRITE]
     added = '3.11'
 
-
 # (Detailed comments aren't really needed for further entries: from here on
 #  we can use version control logs.)
 
@@ -2390,6 +2405,11 @@
 [function.PyErr_SetHandledException]
     added = '3.11'
 
+
+### Python 3.12 #############################################################
+
+[function.PyErr_DisplayException]
+    added = '3.12'
 [function.PyType_FromMetaclass]
     added = '3.12'
 [const.Py_TPFLAGS_HAVE_VECTORCALL]
@@ -2473,6 +2493,9 @@
     # Note: value changed in 3.15 (old value is still accepted)
     added = '3.12'
 
+
+### Python 3.13 #############################################################
+
 [function.PyImport_AddModuleRef]
     added = '3.13'
 [function.PyWeakref_GetRef]
@@ -2555,6 +2578,9 @@
     # Note: value changed in 3.15 (old value is still accepted)
     added = '3.13'
 
+
+### Python 3.14 #############################################################
+
 [function.Py_TYPE]
     # Before 3.14, this was a macro that accessed the PyObject member
     added = '3.14'
@@ -2615,6 +2641,9 @@
     added = '3.14'
 [function.Py_PACK_VERSION]
     added = '3.14'
+
+
+### Python 3.15 #############################################################
 
 [function.PySys_GetAttr]
     added = '3.15'
@@ -2773,10 +2802,10 @@
     added = '3.15'
 [const.Py_tp_module]
     added = '3.15'
-[function.Py_HashBuffer]
-    added = '3.16'
+[function.PyObject_CallFinalizerFromDealloc]
+    added = '3.15'
 
-# PEP 757 import/export API.
+# Python 3.15 PEP 757 import/export API.
 
 [function.PyLong_GetNativeLayout]
     added = '3.15'
@@ -2802,7 +2831,7 @@
     # (The definition of 'full-abi' was clarified when this entry was added.)
     struct_abi_kind = 'full-abi'
 
-# PEP 788 finalization protection
+# Python 3.15 PEP 788 finalization protection
 
 [struct.PyInterpreterGuard]
     added = '3.15'
@@ -2832,5 +2861,8 @@
     added = '3.15'
     struct_abi_kind = 'opaque'
 
-[function.PyObject_CallFinalizerFromDealloc]
-    added = '3.15'
+
+### Python 3.16 #############################################################
+
+[function.Py_HashBuffer]
+    added = '3.16'
