@@ -28,13 +28,13 @@ import errno
 import functools
 import io
 import logging
-import logging.handlers
 import os
 import re
 import threading
 import traceback
 lazy import configparser
 lazy import json
+lazy import logging.handlers
 lazy import queue
 lazy import select
 lazy import socket
