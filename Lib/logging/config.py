@@ -40,7 +40,6 @@ lazy import socket
 lazy import struct
 lazy from bisect import bisect_left
 lazy from logging import handlers as logging_handlers
-lazy from multiprocessing.queues import Queue as MPQueue
 lazy from socketserver import StreamRequestHandler, ThreadingTCPServer
 
 
@@ -82,6 +81,9 @@ def fileConfig(fname, defaults=None, disable_existing_loggers=True, encoding=Non
                 cp.read(fname, encoding=encoding)
         except configparser.ParsingError as e:
             raise RuntimeError(f'{fname} is invalid: {e}')
+
+    # the eval()s below resolve "handlers.X" names against vars(logging)
+    _ = logging_handlers
 
     formatters = _create_formatters(cp)
 
@@ -511,6 +513,9 @@ def _is_queue_like_object(obj):
     """Check that *obj* implements the Queue API."""
     if isinstance(obj, (queue.Queue, queue.SimpleQueue)):
         return True
+    # defer importing multiprocessing as much as possible; a lazy import at
+    # module level would still be resolved by getmembers() and pydoc
+    from multiprocessing.queues import Queue as MPQueue
     if isinstance(obj, MPQueue):
         return True
     # Depending on the multiprocessing start context, we cannot create

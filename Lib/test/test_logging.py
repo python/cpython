@@ -1865,6 +1865,45 @@ class ConfigFileTest(BaseTest):
         finally:
             os.unlink(fn)
 
+    def test_names_from_handlers_module(self):
+        # gh-156777: "handlers.X" in a class or defaults entry is evaluated
+        # against vars(logging), so logging.handlers must be imported first.
+        # Run it in a subprocess, since importing this module already
+        # imports logging.handlers.
+        ini = textwrap.dedent("""
+            [loggers]
+            keys=root
+
+            [handlers]
+            keys=hand1
+
+            [formatters]
+            keys=form1
+
+            [logger_root]
+            handlers=hand1
+
+            [handler_hand1]
+            class=handlers.MemoryHandler
+            formatter=form1
+            args=(10,)
+
+            [formatter_form1]
+            format=%(levelname)s ++ %(message)s ++ %(port)s
+            defaults={'port': handlers.DEFAULT_TCP_LOGGING_PORT}
+            """).strip()
+        fd, fn = tempfile.mkstemp(prefix='test_logging_', suffix='.ini')
+        self.addCleanup(os.unlink, fn)
+        os.write(fd, ini.encode('ascii'))
+        os.close(fd)
+        code = textwrap.dedent(f"""
+            import logging, logging.config
+            logging.config.fileConfig({fn!r}, encoding="utf-8")
+            h = logging.getLogger().handlers[0]
+            assert isinstance(h, logging.handlers.MemoryHandler), h
+        """)
+        assert_python_ok("-c", code)
+
 
 @support.requires_working_socket()
 @threading_helper.requires_working_threading()
@@ -5437,6 +5476,35 @@ class ModuleLevelMiscTest(BaseTest):
         with open(filename, encoding="utf-8") as fp:
             self.assertEqual(fp.read().rstrip(), "ERROR:root:log in __del__")
 
+    def test_socket_handler_at_shutdown(self):
+        # gh-156777: SocketHandler pickles the record before sending it, and
+        # that must keep working when importing no longer can.
+        code = textwrap.dedent("""
+            import logging
+            import logging.handlers
+            import os
+
+            class Handler(logging.handlers.SocketHandler):
+                # report what emit() did instead of doing network I/O
+                def send(self, s):
+                    os.write(1, b"sent %d bytes" % len(s))
+
+                def handleError(self, record):
+                    os.write(1, b"record dropped")
+
+            h = Handler('localhost', logging.handlers.DEFAULT_TCP_LOGGING_PORT)
+            r = logging.LogRecord('n', logging.INFO, 'p', 1, 'msg', None, None)
+
+            class A:
+                # the module globals are already cleared when __del__ runs
+                def __del__(self, h=h, r=r):
+                    h.emit(r)
+
+            a = A()
+        """)
+        rc, out, err = assert_python_ok("-c", code)
+        self.assertStartsWith(out.decode(), "sent ")
+
     def test_recursion_error(self):
         # Issue 36272
         code = textwrap.dedent("""
@@ -7534,6 +7602,38 @@ class NTEventLogHandlerTest(BaseTest):
 
         r = logging.makeLogRecord({'msg': 'Hello!'})
         h.emit(r)
+
+
+class LazyImportTest(unittest.TestCase):
+
+    """Tests for the module level lazy imports of the logging package."""
+
+    def test_lazy_imports_config(self):
+        import_helper.ensure_lazy_imports(
+            "logging.config",
+            {"configparser", "json", "logging.handlers", "multiprocessing",
+             "select", "socket", "socketserver", "struct"},
+            additional_code="logging.config.dictConfig({'version': 1})\n",
+        )
+
+    def test_lazy_imports_handlers(self):
+        import_helper.ensure_lazy_imports(
+            "logging.handlers",
+            {"base64", "copy", "email", "http", "queue", "smtplib", "ssl",
+             "urllib"},
+        )
+
+    def test_getmembers_without_ssl(self):
+        # gh-156777: getmembers() and pydoc resolve lazy imports, so a module
+        # level "lazy import ssl" would break them on a build without _ssl.
+        code = textwrap.dedent("""
+            import sys
+            sys.modules['_ssl'] = None
+            import inspect
+            import logging.handlers
+            inspect.getmembers(logging.handlers)
+        """)
+        assert_python_ok("-c", code)
 
 
 class MiscTestCase(unittest.TestCase):

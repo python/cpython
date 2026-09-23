@@ -26,19 +26,18 @@ To use, simply 'import logging.handlers' and log away!
 import io  # must stay eager to support finalization
 import logging
 import os
+import pickle
 import re
+import socket
+import struct
 import threading
 import time
 lazy import base64
 lazy import copy
 lazy import email.utils
 lazy import http.client
-lazy import pickle
 lazy import queue
 lazy import smtplib
-lazy import socket
-lazy import ssl
-lazy import struct
 lazy import urllib.parse
 lazy from email.message import EmailMessage
 
@@ -1132,6 +1131,8 @@ class SMTPHandler(logging.Handler):
             msg.set_content(self.format(record))
             if self.username:
                 if self.secure is not None:
+                    import ssl  # not lazy: breaks getmembers() without _ssl
+
                     try:
                         keyfile = self.secure[0]
                     except IndexError:
