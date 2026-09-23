@@ -1,5 +1,6 @@
 import functools
 import platform
+import signal
 import sys
 import textwrap
 import unittest
@@ -9,6 +10,7 @@ from tkinter import TclError
 import enum
 from test import support
 from test.support import os_helper
+from test.support.isolation import runInSubprocess
 from test.support.script_helper import assert_python_ok
 from test.test_tkinter.support import setUpModule  # noqa: F401
 from test.test_tkinter.support import (AbstractTkTest, AbstractDefaultRootTest,
@@ -1911,6 +1913,18 @@ class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
 
 def _info_commands(widget, pattern=None):
     return widget.tk.splitlist(widget.tk.call('info', 'commands', pattern))
+
+
+class SignalTest(unittest.TestCase):
+
+    @runInSubprocess()
+    def test_sigint_handler(self):
+        # gh-157672: Tk on macOS replaced the SIGINT handler with its own,
+        # which exits the process.
+        root = tkinter.Tk()
+        self.addCleanup(root.destroy)
+        with self.assertRaises(KeyboardInterrupt):
+            signal.raise_signal(signal.SIGINT)
 
 
 if __name__ == "__main__":
