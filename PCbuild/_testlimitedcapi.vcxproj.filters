@@ -37,6 +37,7 @@
     <ClCompile Include="..\Modules\_testlimitedcapi\weakref.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\run.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\type.c" />
+    <ClCompile Include="..\Modules\_testlimitedcapi\hash.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi.c" />
   </ItemGroup>
   <ItemGroup>
