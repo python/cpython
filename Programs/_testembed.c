@@ -2410,6 +2410,77 @@ static int test_repeated_init_and_inittab(void)
     return 0;
 }
 
+// A single-phase init submodule that only knows its short name,
+// like pybind11's PYBIND11_MODULE(sp_submod, m) would.
+static PyModuleDef cmfi_sp_submod_def = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "sp_submod",
+    .m_size = -1,
+};
+
+static PyObject*
+PyInit_cmfi_sp_submod(void)
+{
+    return PyModule_Create(&cmfi_sp_submod_def);
+}
+
+// A multi-phase init package for the submodule above.
+static PyModuleDef_Slot cmfi_sp_pkg_slots[] = {
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+    {0, NULL},
+};
+
+static PyModuleDef cmfi_sp_pkg_def = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "sp_pkg",
+    .m_size = 0,
+    .m_slots = cmfi_sp_pkg_slots,
+};
+
+static PyObject*
+PyInit_cmfi_sp_pkg(void)
+{
+    return PyModuleDef_Init(&cmfi_sp_pkg_def);
+}
+
+// Modules with non-ASCII names: multi-phase init is supported,
+// single-phase init is not.
+static PyModuleDef_Slot cmfi_nonascii_mp_slots[] = {
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+    {0, NULL},
+};
+
+static PyModuleDef cmfi_nonascii_mp_def = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "nonascii_mp",
+    .m_size = 0,
+    .m_slots = cmfi_nonascii_mp_slots,
+};
+
+static PyObject*
+PyInit_cmfi_nonascii_mp(void)
+{
+    return PyModuleDef_Init(&cmfi_nonascii_mp_def);
+}
+
+static PyModuleDef cmfi_nonascii_sp_def = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "nonascii_sp",
+    .m_size = -1,
+};
+
+static PyObject*
+PyInit_cmfi_nonascii_sp(void)
+{
+    return PyModule_Create(&cmfi_nonascii_sp_def);
+}
+
+// "m\xf6dul_mp" and "m\xf6dul_sp" as UTF-8
+#define CMFI_NONASCII_MP_NAME "m\xc3\xb6" "dul_mp"
+#define CMFI_NONASCII_SP_NAME "m\xc3\xb6" "dul_sp"
+
 static PyObject*
 create_module(PyObject* self, PyObject* spec)
 {
@@ -2424,6 +2495,22 @@ create_module(PyObject* self, PyObject* spec)
     if (PyUnicode_EqualToUTF8(name, "embedded_ext")) {
         Py_DECREF(name);
         return PyImport_CreateModuleFromInitfunc(spec, PyInit_embedded_ext);
+    }
+    if (PyUnicode_EqualToUTF8(name, "sp_pkg")) {
+        Py_DECREF(name);
+        return PyImport_CreateModuleFromInitfunc(spec, PyInit_cmfi_sp_pkg);
+    }
+    if (PyUnicode_EqualToUTF8(name, "sp_pkg.sp_submod")) {
+        Py_DECREF(name);
+        return PyImport_CreateModuleFromInitfunc(spec, PyInit_cmfi_sp_submod);
+    }
+    if (PyUnicode_EqualToUTF8(name, CMFI_NONASCII_MP_NAME)) {
+        Py_DECREF(name);
+        return PyImport_CreateModuleFromInitfunc(spec, PyInit_cmfi_nonascii_mp);
+    }
+    if (PyUnicode_EqualToUTF8(name, CMFI_NONASCII_SP_NAME)) {
+        Py_DECREF(name);
+        return PyImport_CreateModuleFromInitfunc(spec, PyInit_cmfi_nonascii_sp);
     }
     PyErr_Format(PyExc_LookupError, "static module %R not found", name);
     Py_DECREF(name);
@@ -2472,6 +2559,17 @@ test_create_module_from_initfunc(void)
         L"import embedded_ext;"
         L"print(embedded_ext);"
         L"print(f'{embedded_ext.executed=}');"
+        // Single-phase submodule whose init only knows its short name
+        L"import sp_pkg.sp_submod;"
+        L"print(sp_pkg.sp_submod);"
+        L"print(f'{sp_pkg.sp_submod.__name__=}');"
+        L"print(f'{sys.modules[\"sp_pkg.sp_submod\"] is sp_pkg.sp_submod=}');"
+        L"print(f'{\"sp_submod\" in sys.modules=}');"
+        // Non-ASCII names: multi-phase init works, single-phase init doesn't
+        L"import importlib;"
+        L"mp = importlib.import_module('m\\xf6dul_mp');"
+        L"print(f'{ascii(mp.__name__)=} {mp.executed=}');"
+        L"try_import('m\\xf6dul_sp');"
     };
     PyConfig config;
     if (PyImport_AppendInittab("create_static_module",
@@ -2491,8 +2589,12 @@ test_create_module_from_initfunc(void)
         "   _ORIGIN = \"static-extension\"\n"
         "   @classmethod\n"
         "   def find_spec(cls, fullname, path, target=None):\n"
-        "       if fullname in {'my_test_extension', 'embedded_ext'}:\n"
-        "           return spec_from_loader(fullname, cls, origin=cls._ORIGIN)\n"
+        "       if fullname in {'my_test_extension', 'embedded_ext',\n"
+        "                       'sp_pkg', 'sp_pkg.sp_submod',\n"
+        "                       'm\\xf6dul_mp', 'm\\xf6dul_sp',\n"
+        "       }:\n"
+        "           return spec_from_loader(fullname, cls, origin=cls._ORIGIN,\n"
+        "                                   is_package=(fullname == 'sp_pkg'))\n"
         "       return None\n"
         "   @staticmethod\n"
         "   def create_module(spec):\n"
@@ -2502,6 +2604,13 @@ test_create_module_from_initfunc(void)
         "       create_static_module.exec_module(module)\n"
         "       module.executed = 'yes'\n"
         "sys.meta_path.append(StaticExtensionImporter)\n"
+        "def try_import(name):\n"
+        "   try:\n"
+        "       importlib.import_module(name)\n"
+        "   except SystemError as exc:\n"
+        "       print(f'SystemError: {ascii(str(exc))}')\n"
+        "   else:\n"
+        "       print(f'no SystemError for {ascii(name)}!')\n"
     );
     if (result < 0) {
         fprintf(stderr, "PyRun_SimpleString() failed\n");

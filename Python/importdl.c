@@ -51,29 +51,25 @@ get_encoded_name(PyObject *name, const struct hook_prefixes **hook_prefixes) {
     }
 
     /* Encode to ASCII or Punycode, as needed */
-    encoded = PyUnicode_AsEncodedString(name, "ascii", NULL);
-    if (encoded != NULL) {
+    if (PyUnicode_IS_ASCII(name)) {
         *hook_prefixes = &ascii_only_prefixes;
+        modname = PyUnicode_AsASCIIString(name);
     } else {
-        if (PyErr_ExceptionMatches(PyExc_UnicodeEncodeError)) {
-            PyErr_Clear();
-            encoded = PyUnicode_AsEncodedString(name, "punycode", NULL);
-            if (encoded == NULL) {
-                goto error;
-            }
-            *hook_prefixes = &nonascii_prefixes;
-        } else {
+        *hook_prefixes = &nonascii_prefixes;
+        encoded = PyUnicode_AsEncodedString(name, "punycode", NULL);
+        if (encoded == NULL) {
             goto error;
         }
+
+        /* Replace '-' by '_' */
+        modname = _PyObject_CallMethod(encoded, &_Py_ID(replace), "cc", '-', '_');
+        if (modname == NULL) {
+            goto error;
+        }
+        Py_CLEAR(encoded);
     }
 
-    /* Replace '-' by '_' */
-    modname = _PyObject_CallMethod(encoded, &_Py_ID(replace), "cc", '-', '_');
-    if (modname == NULL)
-        goto error;
-
     Py_DECREF(name);
-    Py_DECREF(encoded);
     return modname;
 error:
     Py_DECREF(name);
@@ -94,49 +90,65 @@ _Py_ext_module_loader_info_clear(struct _Py_ext_module_loader_info *info)
 
 int
 _Py_ext_module_loader_info_init(struct _Py_ext_module_loader_info *p_info,
-                                PyObject *name, PyObject *filename,
+                                PyObject *name,
+                                PyObject *spec,
                                 _Py_ext_module_origin origin)
 {
     struct _Py_ext_module_loader_info info = {
         .origin=origin,
     };
 
-    assert(name != NULL);
-    if (!PyUnicode_Check(name)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "module name must be a string");
-        _Py_ext_module_loader_info_clear(&info);
-        return -1;
+    if (name == NULL) {
+        assert(spec != NULL);
+        info.name = PyObject_GetAttr(spec, &_Py_ID(name));
+        if (info.name == NULL) {
+            goto error;
+        }
     }
-    assert(PyUnicode_GetLength(name) > 0);
-    info.name = Py_NewRef(name);
+    else {
+        info.name = Py_NewRef(name);
+    }
+
+    if (!PyUnicode_Check(info.name)) {
+        PyErr_Format(PyExc_TypeError,
+                     "module name must be a string, not %T",
+                     info.name);
+        goto error;
+    }
+
+    if (PyUnicode_GetLength(info.name) == 0) {
+        PyErr_Format(PyExc_ValueError, "module name must not be empty");
+        goto error;
+    }
 
     info.name_encoded = get_encoded_name(info.name, &info.hook_prefixes);
     if (info.name_encoded == NULL) {
-        _Py_ext_module_loader_info_clear(&info);
-        return -1;
+        goto error;
     }
 
     info.newcontext = PyUnicode_AsUTF8(info.name);
     if (info.newcontext == NULL) {
-        _Py_ext_module_loader_info_clear(&info);
-        return -1;
+        goto error;
     }
 
-    if (filename != NULL) {
-        if (!PyUnicode_Check(filename)) {
-            PyErr_SetString(PyExc_TypeError,
-                            "module filename must be a string");
-            _Py_ext_module_loader_info_clear(&info);
+    if (origin == _Py_ext_module_origin_DYNAMIC) {
+        assert(spec != NULL);
+        info.filename = PyObject_GetAttr(spec, &_Py_ID(origin));
+        if (info.filename == NULL) {
+            Py_DECREF(name);
             return -1;
         }
-        info.filename = Py_NewRef(filename);
+
+        if (!PyUnicode_Check(info.filename)) {
+            PyErr_SetString(PyExc_TypeError,
+                            "module filename must be a string");
+            goto error;
+        }
 
 #ifndef MS_WINDOWS
         info.filename_encoded = PyUnicode_EncodeFSDefault(info.filename);
         if (info.filename_encoded == NULL) {
-            _Py_ext_module_loader_info_clear(&info);
-            return -1;
+            goto error;
         }
 #endif
 
@@ -148,68 +160,11 @@ _Py_ext_module_loader_info_init(struct _Py_ext_module_loader_info *p_info,
 
     *p_info = info;
     return 0;
+
+error:
+    _Py_ext_module_loader_info_clear(&info);
+    return -1;
 }
-
-int
-_Py_ext_module_loader_info_init_for_builtin(
-                            struct _Py_ext_module_loader_info *info,
-                            PyObject *name)
-{
-    assert(PyUnicode_Check(name));
-    assert(PyUnicode_GetLength(name) > 0);
-
-    PyObject *name_encoded = PyUnicode_AsEncodedString(name, "ascii", NULL);
-    if (name_encoded == NULL) {
-        return -1;
-    }
-
-    *info = (struct _Py_ext_module_loader_info){
-        .name=Py_NewRef(name),
-        .name_encoded=name_encoded,
-        /* We won't need filename. */
-        .path=name,
-        .origin=_Py_ext_module_origin_BUILTIN,
-        .hook_prefixes=&ascii_only_prefixes,
-        .newcontext=NULL,
-    };
-    return 0;
-}
-
-int
-_Py_ext_module_loader_info_init_for_core(
-                            struct _Py_ext_module_loader_info *info,
-                            PyObject *name)
-{
-    if (_Py_ext_module_loader_info_init_for_builtin(info, name) < 0) {
-        return -1;
-    }
-    info->origin = _Py_ext_module_origin_CORE;
-    return 0;
-}
-
-#ifdef HAVE_DYNAMIC_LOADING
-int
-_Py_ext_module_loader_info_init_from_spec(
-                            struct _Py_ext_module_loader_info *p_info,
-                            PyObject *spec)
-{
-    PyObject *name = PyObject_GetAttrString(spec, "name");
-    if (name == NULL) {
-        return -1;
-    }
-    PyObject *filename = PyObject_GetAttrString(spec, "origin");
-    if (filename == NULL) {
-        Py_DECREF(name);
-        return -1;
-    }
-    /* We could also accommodate builtin modules here without much trouble. */
-    _Py_ext_module_origin origin = _Py_ext_module_origin_DYNAMIC;
-    int err = _Py_ext_module_loader_info_init(p_info, name, filename, origin);
-    Py_DECREF(name);
-    Py_DECREF(filename);
-    return err;
-}
-#endif /* HAVE_DYNAMIC_LOADING */
 
 
 /********************************/
