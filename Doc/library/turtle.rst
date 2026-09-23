@@ -2711,22 +2711,18 @@ English docstrings are kept.
 .. envvar:: PYTHON_TURTLE_LANG
 
    The name of the language to read the docstring dictionary for.
-   Ignored when the :option:`-E` or :option:`-I` command line options are used.
 
    .. versionadded:: 3.16
 
 A docstring dictionary is a module defining a dictionary named ``docsdict``,
 the keys of which are method names such as ``Turtle.forward`` and the values of
-which are the translated docstrings. It is looked up on :data:`sys.path`, first
-as the submodule of that name of a package named :mod:`!turtle_translations`,
-then as a top-level module named :samp:`turtle_docstringdict_{language}.py`,
-and is read in at import time. Entries naming a method which does not exist in
-the running version are ignored.
+which are the translated docstrings. It is looked up on :data:`sys.path` as a
+top-level module named :samp:`turtle_docstringdict_{language}.py` and is read
+in at import time. Entries naming a method which does not exist in the running
+version are ignored.
 
 .. versionchanged:: 3.16
-   The docstring dictionary may also be provided as a submodule of a
-   :mod:`!turtle_translations` package, and entries naming an unknown method
-   are ignored instead of reported.
+   Entries naming an unknown method are ignored instead of reported.
 
 To translate the docstrings into a language which is not available yet, write
 out a template with :func:`write_docstringdict` and translate its values.

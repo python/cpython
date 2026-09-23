@@ -7,7 +7,7 @@ import unittest.mock
 from test import support
 from test.support import import_helper
 from test.support import os_helper
-from test.support.script_helper import assert_python_ok
+from test.support.script_helper import (assert_python_ok)
 
 
 turtle = import_helper.import_module('turtle')
@@ -720,28 +720,13 @@ class TurtleDocstringTranslationTest(unittest.TestCase):
         with open(os.path.join(dirname, filename), 'w') as f:
             f.write('docsdict = {"Turtle.forward": %r}\n' % docstring)
 
-    def _make_package(self, dirname):
-        pkgdir = os.path.join(dirname, 'turtle_translations')
-        os.mkdir(pkgdir)
-        with open(os.path.join(pkgdir, '__init__.py'), 'w'):
-            pass
-        return pkgdir
-
     def _get_forward_docstring(self, dirname, lang):
         rc, out, err = assert_python_ok(
             '-c', 'import turtle; print(turtle.forward.__doc__)',
             PYTHONPATH=dirname, PYTHON_TURTLE_LANG=lang)
         return out.decode()
 
-    def test_translation_from_package(self):
-        with os_helper.temp_dir() as dirname:
-            pkgdir = self._make_package(dirname)
-            self._make_translation(pkgdir, 'ga.py', 'chun tosaigh')
-
-            out = self._get_forward_docstring(dirname, 'ga')
-            self.assertIn('chun tosaigh', out)
-
-    def test_translation_from_top_level_dict(self):
+    def test_translation(self):
         with os_helper.temp_dir() as dirname:
             self._make_translation(dirname, 'turtle_docstringdict_ga.py',
                                   'chun tosaigh')

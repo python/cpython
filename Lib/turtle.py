@@ -4019,19 +4019,10 @@ def read_docstrings(lang):
     to the methods of classes Screen and Turtle and - in revised form -
     to the corresponding functions.
 
-    The dictionary is looked up as the submodule lang of the package
-    turtle_translations, then as the top-level module
-    turtle_docstringdict_lang.
-
     Entries naming a method which does not exist in this version are
     ignored.
     """
-    import importlib
-    lang = lang.lower()
-    try:
-        module = importlib.import_module("turtle_translations.%s" % lang)
-    except ModuleNotFoundError:
-        module = importlib.import_module("turtle_docstringdict_%s" % lang)
+    module = __import__(f"turtle_docstringdict_{lang.lower()}")
     docsdict = module.docsdict
     for key in docsdict:
         try:
