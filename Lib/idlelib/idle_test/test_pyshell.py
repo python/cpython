@@ -44,9 +44,12 @@ class FunctionTest(unittest.TestCase):
         # gh-70331: user files in the current directory must not shadow
         # the stdlib modules imported by IDLE.
         with os_helper.temp_dir() as cwd:
-            for name in ('random', 'tkinter'):
+            for name in ('os', 'random', 'tkinter'):
                 os_helper.create_empty_file(os.path.join(cwd, f'{name}.py'))
-            assert_python_ok('-m', 'idlelib', '-h', __isolated=False, __cwd=cwd)
+            for module in 'idlelib', 'idlelib.idle':
+                with self.subTest(module=module):
+                    assert_python_ok('-m', module, '-h',
+                                     __isolated=False, __cwd=cwd)
 
     def test_build_subprocess_arglist(self):
         interp = mock.Mock(port=1234)
