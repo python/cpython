@@ -1,0 +1,4 @@
+Fix out-of-bounds write in ``mmap.mmap.__setitem__`` that could occur
+when converting the index or the assigned value (via :meth:`~object.__index__`
+for a single item, or via the buffer protocol for a slice) resized or closed the mmap
+object during the assignment.
