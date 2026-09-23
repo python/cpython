@@ -2381,7 +2381,9 @@ elementiter_next(PyObject *op)
         if (it->sought_tag == Py_None)
             return (PyObject *)elem;
 
-        rc = PyObject_RichCompareBool(elem->tag, it->sought_tag, Py_EQ);
+        PyObject *tag = Py_NewRef(elem->tag);
+        rc = PyObject_RichCompareBool(tag, it->sought_tag, Py_EQ);
+        Py_DECREF(tag);
         if (rc > 0)
             return (PyObject *)elem;
 
