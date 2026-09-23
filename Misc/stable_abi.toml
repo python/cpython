@@ -2190,7 +2190,7 @@
 [function.Py_BytesMain]
     added = '3.8'
 
-# New type Python 3.8 flag (PEP 590):
+# New type flag in Python 3.8 (PEP 590):
 
 [const.Py_TPFLAGS_METHOD_DESCRIPTOR]
     added = '3.8'
@@ -2283,11 +2283,12 @@
     added = '3.10'
 [data.PyExc_EncodingWarning]
     added = '3.10'
+
 # Added in 3.7 but in the Stable ABI from 3.10
 [const.METH_FASTCALL]
     added = '3.10'
 
-# Support for Stable ABI in Python 3.10 debug builds
+# Support for Stable ABI in debug builds (Python 3.10)
 
 [data._Py_RefTotal]
     added = '3.10'
