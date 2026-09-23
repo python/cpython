@@ -1640,6 +1640,7 @@
     added = '3.2'
 [data.Py_FileSystemDefaultEncoding]
     added = '3.2'
+    abi_only = true
 [function.Py_Finalize]
     added = '3.2'
 [function.Py_GetBuildInfo]
@@ -1674,6 +1675,7 @@
     added = '3.2'
 [data.Py_HasFileSystemDefaultEncoding]
     added = '3.2'
+    abi_only = true
 [function.Py_IncRef]
     added = '3.2'
 [function.Py_Initialize]
@@ -2173,6 +2175,7 @@
     added = '3.8'
 [data.Py_UTF8Mode]
     added = '3.8'
+    abi_only = true
 [function.PyExceptionClass_Name]
     added = '3.8'
 [function.PyIndex_Check]
@@ -2259,6 +2262,7 @@
     added = '3.10'
 [data.Py_FileSystemDefaultEncodeErrors]
     added = '3.10'
+    abi_only = true
 [function.PyCodec_Unregister]
     added = '3.10'
 [function.PyErr_SetInterruptEx]
