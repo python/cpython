@@ -133,19 +133,19 @@ by the collector, ensure that finalizers are called only once per object,
 and, during garbage collection, differentiate reachable vs. unreachable objects.
 
 ```
-    object -----> +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+ \
-                  |                     ob_tid                    | |
-                  +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+ |
-                  | pad | ob_mutex | ob_gc_bits |  ob_ref_local   | |
-                  +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+ | PyObject_HEAD
-                  |                  ob_ref_shared                | |
-                  +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+ |
-                  |                    *ob_type                   | |
-                  +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+ /
-                  |                      ...                      |
+    object -----> +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+ \
+                  |                     ob_tid                       | |
+                  +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+ |
+                  | ob_flags | ob_mutex | ob_gc_bits |  ob_ref_local | |
+                  +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+ | PyObject_HEAD
+                  |                  ob_ref_shared                   | |
+                  +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+ |
+                  |                    *ob_type                      | |
+                  +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+ /
+                  |                      ...                         |
 ```
 
-Note that not all fields are to scale. `pad` is two bytes, `ob_mutex` and
+Note that not all fields are to scale. `ob_flags` is two bytes, `ob_mutex` and
 `ob_gc_bits` are each one byte, and `ob_ref_local` is four bytes. The
 other fields, `ob_tid`, `ob_ref_shared`, and `ob_type`, are all
 pointer-sized (that is, eight bytes on a 64-bit platform).
@@ -261,7 +261,7 @@ is reachable from the outside. To obtain the set of objects that are really
 unreachable, the garbage collector re-scans the container objects using the
 `tp_traverse` slot; this time with a different traverse function that marks objects with
 `gc_ref == 0` as "tentatively unreachable" and then moves them to the
-tentatively unreachable list (or in the free-threaded build, sets the _PyGC_BITS_UNREACHABLE ob_gc_bits bit).
+tentatively unreachable list (or in the free-threaded build, sets the `_PyGC_BITS_UNREACHABLE` `ob_gc_bits` bit).
 The following image depicts the state of the lists in a moment when the GC processed
 the `link_3` and `link_4` objects but has not processed `link_1` and `link_2` yet.
 
@@ -289,7 +289,7 @@ is referenced by some other object, the GC does not process it twice.
 ![gc-image5](images/python-cyclic-gc-5-new-page.png)
 
 Notice that an object that was marked as "tentatively unreachable" and was later
-moved back to the reachable list (or on the free-threaded build, have the _PyGC_BITS_UNREACHABLE ob_gc_bits flag cleared)
+moved back to the reachable list (or on the free-threaded build, have the `_PyGC_BITS_UNREACHABLE` `ob_gc_bits` flag cleared)
 will be visited again by the garbage collector as now all the references
 that the object has need to be processed as well. Once all the objects
 are scanned, the GC knows that all container objects in the tentatively unreachable
