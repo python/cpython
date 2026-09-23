@@ -27,6 +27,9 @@ extern void Py_SetPath(const wchar_t *path);
 // for the stable ABI. We want to test them in this program.
 extern void PySys_ResetWarnOptions(void);
 
+// Variable removed from Python 3.16 limited C API, but kept in the stable ABI
+extern int Py_UTF8Mode;
+
 
 int main_argc;
 char **main_argv;
