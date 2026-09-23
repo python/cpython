@@ -21655,6 +21655,12 @@ then :
   printf "%s\n" "#define HAVE_DUP3 1" >>confdefs.h
 
 fi
+ac_fn_c_check_func "$LINENO" "freadlink" "ac_cv_func_freadlink"
+if test "x$ac_cv_func_freadlink" = xyes
+then :
+  printf "%s\n" "#define HAVE_FREADLINK 1" >>confdefs.h
+
+fi
 ac_fn_c_check_func "$LINENO" "getentropy" "ac_cv_func_getentropy"
 if test "x$ac_cv_func_getentropy" = xyes
 then :

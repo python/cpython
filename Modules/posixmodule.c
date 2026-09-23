@@ -505,6 +505,7 @@ static const unsigned int _Py_STATX_KNOWN = (STATX_BASIC_STATS | STATX_BTIME
 #  define HAVE_UNLINKAT_RUNTIME __builtin_available(macOS 10.10, iOS 8.0, *)
 #  define HAVE_OPENAT_RUNTIME __builtin_available(macOS 10.10, iOS 8.0, *)
 #  define HAVE_READLINKAT_RUNTIME __builtin_available(macOS 10.10, iOS 8.0, *)
+#  define HAVE_FREADLINK_RUNTIME __builtin_available(macOS 13.0, *)
 #  define HAVE_SYMLINKAT_RUNTIME __builtin_available(macOS 10.10, iOS 8.0, *)
 #  define HAVE_FUTIMENS_RUNTIME __builtin_available(macOS 10.13, iOS 11.0, tvOS 11.0, watchOS 4.0, *)
 #  define HAVE_UTIMENSAT_RUNTIME __builtin_available(macOS 10.13, iOS 11.0, tvOS 11.0, watchOS 4.0, *)
@@ -569,6 +570,10 @@ static const unsigned int _Py_STATX_KNOWN = (STATX_BASIC_STATS | STATX_BTIME
 
 #  ifdef HAVE_READLINKAT
 #    define HAVE_READLINKAT_RUNTIME (readlinkat != NULL)
+#  endif
+
+#  ifdef HAVE_FREADLINK
+#    define HAVE_FREADLINK_RUNTIME (freadlink != NULL)
 #  endif
 
 #  ifdef HAVE_SYMLINKAT
@@ -10990,7 +10995,7 @@ os_unshare_impl(PyObject *module, int flags)
 /*[clinic input]
 os.readlink
 
-    path: path_t
+    path: path_t(allow_fd=True)
     *
     dir_fd: dir_fd(requires='readlinkat') = None
 
@@ -11002,11 +11007,23 @@ that directory.
 
 dir_fd may not be implemented on your platform.  If it is unavailable,
 using it will raise a NotImplementedError.
+
+On Linux, Android and MacOS, path may be a file descriptor referring to
+a symlink. If it is, dir_fd must be None, and the return value will be a
+bytes object. (File descriptors for symlinks can be obtained with
+
+    os.open(..., os.O_RDONLY | os.O_PATH | os.O_NOFOLLOW)
+
+on Linux and Android, and
+
+    os.open(..., os.O_RDONLY | os.O_SYMLINK)
+
+on MacOS.)
 [clinic start generated code]*/
 
 static PyObject *
 os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
-/*[clinic end generated code: output=d21b732a2e814030 input=03d10130870dbca8]*/
+/*[clinic end generated code: output=d21b732a2e814030 input=30272a2c5fba427c]*/
 {
 #if defined(HAVE_READLINK)
     char buffer[MAXPATHLEN+1];
@@ -11014,10 +11031,44 @@ os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
 #ifdef HAVE_READLINKAT
     int readlinkat_unavailable = 0;
 #endif
+#ifdef HAVE_FREADLINK
+    int use_freadlink = 0;
+#endif
+
+    if (path_and_dir_fd_invalid("readlink", path, dir_fd)) {
+        return NULL;
+    }
+
+    if (path->is_fd) {
+#if defined(__APPLE__) && defined(HAVE_FREADLINK)
+        if (HAVE_FREADLINK_RUNTIME) {
+            use_freadlink = 1;
+        } else {
+            PyErr_Format(PyExc_NotImplementedError,
+                "readlink cannot read file descriptors on this platform, "
+                "freadlink() is unavailable");
+            return NULL;
+        }
+#elif defined(__linux__) && defined(HAVE_READLINKAT)
+        // Linux: readlinkat(dir_fd, "", ...) reads the symbolic link
+        // pointed to by dir_fd
+        dir_fd = path->fd;
+        path->narrow = "";
+#else
+        PyErr_Format(PyExc_NotImplementedError,
+            "readlink cannot read file descriptors on this platform");
+        return NULL;
+#endif
+    }
 
     Py_BEGIN_ALLOW_THREADS
+#ifdef HAVE_FREADLINK
+    if (use_freadlink) {
+        length = freadlink(path->fd, buffer, MAXPATHLEN);
+    } else
+#endif
 #ifdef HAVE_READLINKAT
-    if (dir_fd != DEFAULT_DIR_FD) {
+    if (dir_fd != DEFAULT_DIR_FD || path->is_fd) {
         if (HAVE_READLINKAT_RUNTIME) {
             length = readlinkat(dir_fd, path->narrow, buffer, MAXPATHLEN);
         } else {
@@ -11051,6 +11102,12 @@ os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
     char target_buffer[_Py_MAXIMUM_REPARSE_DATA_BUFFER_SIZE];
     _Py_REPARSE_DATA_BUFFER *rdb = (_Py_REPARSE_DATA_BUFFER *)target_buffer;
     PyObject *result = NULL;
+
+    if (path->is_fd) {
+        PyErr_SetString(PyExc_NotImplementedError,
+            "readlink cannot read file descriptors on this platform");
+        return NULL;
+    }
 
     /* First get a handle to the reparse point */
     Py_BEGIN_ALLOW_THREADS
@@ -18881,6 +18938,10 @@ PROBE(probe_openat, HAVE_OPENAT_RUNTIME)
 PROBE(probe_readlinkat, HAVE_READLINKAT_RUNTIME)
 #endif
 
+#ifdef HAVE_FREADLINK
+PROBE(probe_freadlink, HAVE_FREADLINK_RUNTIME)
+#endif
+
 #ifdef HAVE_SYMLINKAT
 PROBE(probe_symlinkat, HAVE_SYMLINKAT_RUNTIME)
 #endif
@@ -18946,6 +19007,10 @@ static const struct have_function {
 
 #ifdef HAVE_FPATHCONF
     { "HAVE_FPATHCONF", NULL },
+#endif
+
+#ifdef HAVE_FREADLINK
+    { "HAVE_FREADLINK", probe_freadlink },
 #endif
 
 #ifdef HAVE_FSTATAT

@@ -1881,6 +1881,67 @@ class TestPosixDirFd(unittest.TestCase):
             self.addCleanup(posix.unlink, fullname)
             self.assertEqual(posix.readlink(name, dir_fd=dir_fd), 'symlink')
 
+
+    _support_readlink_with_fd = hasattr(os, 'readlink') and (
+        "HAVE_FREADLINK" in posix._have_functions  # MacOS
+        or (
+            os.readlink in os.supports_dir_fd
+            and sys.platform in ["linux", "android"]
+        )
+    )
+
+    def _open_symlink_as_fd(self, path):
+        open_flags = os.O_RDONLY
+        if hasattr(os, "O_SYMLINK"):  # MacOS
+            open_flags |= os.O_SYMLINK
+        elif hasattr(os, "O_NOFOLLOW") and hasattr(os, "O_PATH"):  # Linux
+            open_flags |= os.O_NOFOLLOW | os.O_PATH
+        else:
+            self.fail("lacking open flags for this test")
+        return os.open(path, open_flags)
+
+    @unittest.skipUnless(_support_readlink_with_fd,
+                         "feature not supported on this platform")
+    def test_readlink_with_fd(self):
+        with self.prepare() as (dir_fd, name, fullname):
+            os.symlink("symlink", fullname)
+            self.addCleanup(posix.unlink, fullname)
+            fd = self._open_symlink_as_fd(fullname)
+            self.addCleanup(os.close, fd)
+            self.assertEqual(os.readlink(fd), b"symlink")
+
+    @unittest.skipUnless(_support_readlink_with_fd,
+                         "feature not supported on this platform")
+    def test_readlink_with_fd_not_referring_to_symlink_throws(self):
+        with self.prepare_file() as (dir_fd, name, fullname):
+            fd = os.open(fullname, os.O_RDONLY)
+            self.addCleanup(os.close, fd)
+            with self.assertRaises(OSError):
+                os.readlink(fd)
+
+    @unittest.skipUnless(_support_readlink_with_fd,
+                         "feature not supported on this platform")
+    def test_readlink_with_fd_throws_if_both_fd_and_dir_fd_are_given(self):
+        with self.prepare() as (dir_fd, name, fullname):
+            os.symlink("symlink", fullname)
+            self.addCleanup(posix.unlink, fullname)
+            fd = self._open_symlink_as_fd(fullname)
+            self.addCleanup(os.close, fd)
+            with self.assertRaises(ValueError):
+                os.readlink(fd, dir_fd=dir_fd)
+
+    @unittest.skipIf(_support_readlink_with_fd,
+                     "feature is supported on this platform")
+    def test_readlink_with_fd_throws_not_implemented_error(self):
+        # on unsupported platforms, we may not even be able to get a
+        # file descriptor for a symlink, so use a fd for an ordinary file
+        os_helper.create_empty_file(os_helper.TESTFN)
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+        fd = os.open(os_helper.TESTFN, os.O_RDONLY)
+        self.addCleanup(os.close, fd)
+        with self.assertRaises(NotImplementedError):
+            os.readlink(fd)
+
     @unittest.skipUnless(os.rename in os.supports_dir_fd, "test needs dir_fd support in os.rename()")
     def test_rename_dir_fd(self):
         with self.prepare_file() as (dir_fd, name, fullname), \
@@ -2619,6 +2680,17 @@ class TestPosixWeaklinking(unittest.TestCase):
 
             with self.assertRaisesRegex(NotImplementedError, "dir_fd unavailable"):
                 os.readlink("path",  dir_fd=0)
+
+    def test_freadlink(self):
+        self._verify_available("HAVE_FREADLINK")
+        if self.mac_ver >= (13, 0):
+            self.assertIn("HAVE_FREADLINK", posix._have_functions)
+
+        else:
+            self.assertNotIn("HAVE_FREADLINK", posix._have_functions)
+
+            with self.assertRaisesRegex(NotImplementedError, "readlink cannot read file descriptors on this platform"):
+                os.readlink(0)
 
     def test_symlink(self):
         self._verify_available("HAVE_SYMLINKAT")

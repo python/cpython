@@ -497,6 +497,9 @@
 /* Define to 1 if you have the 'fpathconf' function. */
 #undef HAVE_FPATHCONF
 
+/* Define to 1 if you have the 'freadlink' function. */
+#undef HAVE_FREADLINK
+
 /* Define to 1 if you have the 'fseek64' function. */
 #undef HAVE_FSEEK64
 

@@ -509,6 +509,10 @@ os
   now raises :exc:`PermissionError` instead of the functions being unavailable.
   (Contributed by Md Arif in :gh:`152936`.)
 
+* :func:`os.readlink` now accepts a file descriptor referring to a symlink on
+  Linux, Android and MacOS.
+  (Contributed by OOTS in :gh:`157899`.)
+
 
 pydoc
 -----
