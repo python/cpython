@@ -2298,7 +2298,7 @@
     added = '3.10'
 
 
-# New GC control functions in Python 3.10 (https://bugs.python.org/issue28254)
+# New GC control functions in Python 3.10 (https://github.com/python/cpython/issues/72441)
 
 [function.PyGC_Disable]
     added = '3.10'
