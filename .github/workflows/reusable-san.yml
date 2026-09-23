@@ -96,7 +96,7 @@ jobs:
       run: >-
         ./configure
         --config-cache
-        OPT="-O0 -g"
+        OPT="-O2 -g"
         ${{
           inputs.sanitizer == 'TSan'
           && '--with-thread-sanitizer'
