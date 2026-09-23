@@ -346,16 +346,6 @@ _io__Buffered_simple_flush(PyObject *self, PyObject *Py_UNUSED(ignored))
     return return_value;
 }
 
-#if !defined(_io__Buffered_closed_DOCSTR)
-#  define _io__Buffered_closed_DOCSTR NULL
-#endif
-#if defined(_IO__BUFFERED_CLOSED_GETSETDEF)
-#  undef _IO__BUFFERED_CLOSED_GETSETDEF
-#  define _IO__BUFFERED_CLOSED_GETSETDEF {"closed", (getter)_io__Buffered_closed_get, (setter)_io__Buffered_closed_set, _io__Buffered_closed_DOCSTR},
-#else
-#  define _IO__BUFFERED_CLOSED_GETSETDEF {"closed", (getter)_io__Buffered_closed_get, NULL, _io__Buffered_closed_DOCSTR},
-#endif
-
 static PyObject *
 _io__Buffered_closed_get_impl(buffered *self);
 
@@ -486,16 +476,6 @@ _io__Buffered_writable(PyObject *self, PyObject *Py_UNUSED(ignored))
     return return_value;
 }
 
-#if !defined(_io__Buffered_name_DOCSTR)
-#  define _io__Buffered_name_DOCSTR NULL
-#endif
-#if defined(_IO__BUFFERED_NAME_GETSETDEF)
-#  undef _IO__BUFFERED_NAME_GETSETDEF
-#  define _IO__BUFFERED_NAME_GETSETDEF {"name", (getter)_io__Buffered_name_get, (setter)_io__Buffered_name_set, _io__Buffered_name_DOCSTR},
-#else
-#  define _IO__BUFFERED_NAME_GETSETDEF {"name", (getter)_io__Buffered_name_get, NULL, _io__Buffered_name_DOCSTR},
-#endif
-
 static PyObject *
 _io__Buffered_name_get_impl(buffered *self);
 
@@ -510,16 +490,6 @@ _io__Buffered_name_get(PyObject *self, void *Py_UNUSED(context))
 
     return return_value;
 }
-
-#if !defined(_io__Buffered_mode_DOCSTR)
-#  define _io__Buffered_mode_DOCSTR NULL
-#endif
-#if defined(_IO__BUFFERED_MODE_GETSETDEF)
-#  undef _IO__BUFFERED_MODE_GETSETDEF
-#  define _IO__BUFFERED_MODE_GETSETDEF {"mode", (getter)_io__Buffered_mode_get, (setter)_io__Buffered_mode_set, _io__Buffered_mode_DOCSTR},
-#else
-#  define _IO__BUFFERED_MODE_GETSETDEF {"mode", (getter)_io__Buffered_mode_get, NULL, _io__Buffered_mode_DOCSTR},
-#endif
 
 static PyObject *
 _io__Buffered_mode_get_impl(buffered *self);
@@ -1269,4 +1239,10 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=87d06e9d16bb256a input=a9049054013a1b77]*/
+#define _IO__BUFFERED_CLOSED_GETSETDEF {"closed", (getter)_io__Buffered_closed_get, (setter)NULL, NULL},
+
+#define _IO__BUFFERED_NAME_GETSETDEF {"name", (getter)_io__Buffered_name_get, (setter)NULL, NULL},
+
+#define _IO__BUFFERED_MODE_GETSETDEF {"mode", (getter)_io__Buffered_mode_get, (setter)NULL, NULL},
+
+/*[clinic end generated code: output=17ae87bdf995c560 input=a9049054013a1b77]*/

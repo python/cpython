@@ -486,7 +486,7 @@ peek_bytes_lock_held(bytesio *self, Py_ssize_t size)
        is beyond the size of self->buf. Assert above validates size is always in
        bounds. When self->pos is out of bounds calling code sets size to 0. */
     if (size == 0) {
-        return PyBytes_FromStringAndSize(NULL, 0);
+        return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     }
 
     output = PyBytes_AS_STRING(self->buf) + self->pos;
@@ -1109,7 +1109,7 @@ bytesio_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     /* tp_alloc initializes all the fields to zero. So we don't have to
        initialize them here. */
 
-    self->buf = PyBytes_FromStringAndSize(NULL, 0);
+    self->buf = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     if (self->buf == NULL) {
         Py_DECREF(self);
         return PyErr_NoMemory();

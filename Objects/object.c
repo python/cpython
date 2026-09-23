@@ -1924,6 +1924,19 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
     if (descr != NULL) {
         f = Py_TYPE(descr)->tp_descr_get;
         if (f != NULL && PyDescr_IsData(descr)) {
+            // gh-157840: We special-case member descriptors here to avoid
+            // allocating an extra AttributeError
+            if (suppress && Py_IS_TYPE(descr, &PyMemberDescr_Type)) {
+                PyMemberDef *member = ((PyMemberDescrObject *)descr)->d_member;
+                if (member->type == Py_T_OBJECT_EX
+                    && !(member->flags & Py_AUDIT_READ)
+                    && PyObject_TypeCheck(obj, PyDescr_TYPE(descr))) {
+                    PyObject **addr = _PyMember_GetOffset(obj, member);
+                    if (FT_ATOMIC_LOAD_PTR(*addr) == NULL) {
+                        goto done;
+                    }
+                }
+            }
             res = f(descr, obj, (PyObject *)Py_TYPE(obj));
             if (res == NULL && suppress &&
                     PyErr_ExceptionMatches(PyExc_AttributeError)) {
@@ -2522,7 +2535,6 @@ _PyObject_FiniState(PyInterpreterState *interp)
 
 extern PyTypeObject _PyACallIter_Type;
 extern PyTypeObject _PyACallIterAwaitable_Type;
-extern PyTypeObject _PyAnextAwaitable_Type;
 extern PyTypeObject _PyLegacyEventHandler_Type;
 extern PyTypeObject _PyLineIterator;
 extern PyTypeObject _PyMemoryIter_Type;
@@ -2617,7 +2629,6 @@ static PyTypeObject* static_types[_Py_NUM_MANAGED_PREINITIALIZED_TYPES] = {
     &Py_GenericAliasType,
     &_PyACallIter_Type,
     &_PyACallIterAwaitable_Type,
-    &_PyAnextAwaitable_Type,
     &_PyAsyncGenASend_Type,
     &_PyAsyncGenAThrow_Type,
     &_PyAsyncGenWrappedValue_Type,
@@ -3466,7 +3477,7 @@ _Py_GetConstant_Init(void)
     constants[Py_CONSTANT_ZERO] = _PyLong_GetZero();
     constants[Py_CONSTANT_ONE] = _PyLong_GetOne();
     constants[Py_CONSTANT_EMPTY_STR] = PyUnicode_New(0, 0);
-    constants[Py_CONSTANT_EMPTY_BYTES] = PyBytes_FromStringAndSize(NULL, 0);
+    constants[Py_CONSTANT_EMPTY_BYTES] = PyBytes_FromStringAndSize("", 0);
     constants[Py_CONSTANT_EMPTY_TUPLE] = PyTuple_New(0);
 #ifndef NDEBUG
     for (size_t i=0; i < Py_ARRAY_LENGTH(constants); i++) {

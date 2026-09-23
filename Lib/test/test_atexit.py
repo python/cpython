@@ -197,14 +197,14 @@ class SubinterpreterTest(unittest.TestCase):
         # callback doesn't cause an infinite loop during finalization.
         code = textwrap.dedent("""
             import atexit
-            import _testcapi
+            from test.support import inject_memory_error
 
             def callback():
                 print("hello")
 
             atexit.register(callback)
             # Simulate low memory condition
-            _testcapi.set_nomemory(0)
+            inject_memory_error()
         """)
 
         with os_helper.temp_dir() as temp_dir:
