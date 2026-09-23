@@ -1,0 +1,5 @@
+Fix use-after-free in exception "Did you mean" suggestions: the C
+implementation held borrowed references to :exc:`AttributeError`,
+:exc:`NameError` and :exc:`ImportError` fields across calls that can
+invoke arbitrary Python code (``__dir__``, attribute lookups, module
+imports) which may rebind or clear those fields.
