@@ -46,7 +46,7 @@ class FunctionTest(unittest.TestCase):
         with os_helper.temp_dir() as cwd:
             for name in ('os', 'random', 'tkinter'):
                 os_helper.create_empty_file(os.path.join(cwd, f'{name}.py'))
-            for module in 'idlelib', 'idlelib.idle':
+            for module in 'idlelib', 'idlelib.idle', 'idlelib.pyshell':
                 with self.subTest(module=module):
                     assert_python_ok('-m', module, '-h',
                                      __isolated=False, __cwd=cwd)

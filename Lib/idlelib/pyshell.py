@@ -3,6 +3,10 @@
 import sys
 if __name__ == "__main__":
     sys.modules['idlelib.pyshell'] = sys.modules['__main__']
+    if __spec__ is not None and not sys.flags.safe_path:
+        # Remove the current directory, prepended by "python -m", so that
+        # user files do not shadow IDLE's imports (gh-70331).
+        del sys.path[0]
 
 try:
     from tkinter import *
