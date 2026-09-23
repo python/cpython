@@ -1222,59 +1222,6 @@ expression is:
   :ref:`assignment statement <assignment>`.
 
 
-:keyword:`yield` expressions and :keyword:`try`
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Yield expressions are allowed anywhere in a :keyword:`try` construct.
-
-If the generator iterator is not resumed before it is destroyed
-(garbage collected), its :meth:`~generator.close` method will be called,
-raising a :exc:`GeneratorExit` at the :keyword:`!yield` point where the
-function is suspended.
-This allows any pending :keyword:`finally` clauses to execute.
-
-.. impl-detail::
-
-   In the following example, ``iterator`` is garbage collected immediately
-   after the ``del iterator`` statement, triggering the ``finally`` block::
-
-      >>> def gen():
-      ...     try:
-      ...         yield 123
-      ...     finally:
-      ...         print('shutting down')
-      ...
-      >>> iterator = gen()
-      >>> next(iterator)
-      123
-      >>> del iterator
-      shutting down
-
-   On non-CPython implementations, or future versions of CPython,
-   garbage collection (and thus printing the message) may happen at any
-   later point, or even not at all.
-
-Note that yielding a value after :meth:`~generator.close` raises
-:exc:`!GeneratorExit` is an error::
-
-   >>> def gen():
-   ...     try:
-   ...         yield 123
-   ...     except GeneratorExit:
-   ...         pass  # ignore the exception
-   ...     yield 456
-   ...
-   >>> iterator = gen()
-   >>> next(iterator)
-   123
-   >>> iterator.close()
-   Traceback (most recent call last):
-   File "<python-input-4>", line 1, in <module>
-      iterator.close()
-      ~~~~~~~~^^
-   RuntimeError: generator ignored GeneratorExit
-
-
 .. index::
    single: from; yield from expression
 
