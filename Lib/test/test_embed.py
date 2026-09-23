@@ -2114,6 +2114,10 @@ class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):
     def test_concurrent_finalization_stress(self):
         self.run_embedded_interpreter("test_concurrent_finalization_stress")
 
+    def test_py_getenv(self):
+        # Test Py_GETENV() before init, when initialized, and after finalize
+        self.run_embedded_interpreter("test_py_getenv")
+
 
 class MiscTests(EmbeddingTestsMixin, unittest.TestCase):
     def test_unicode_id_init(self):
