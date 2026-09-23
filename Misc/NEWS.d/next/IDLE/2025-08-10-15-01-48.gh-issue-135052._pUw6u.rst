@@ -1,0 +1,2 @@
+Fix a bug that XID_Continue Unicode characters in function/class names
+highlighted incorrectly.
