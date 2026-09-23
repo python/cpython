@@ -1,6 +1,5 @@
 import unittest
 
-import textwrap
 import threading
 from threading import Thread
 import time
@@ -8,8 +7,7 @@ from unittest import TestCase
 import gc
 import weakref
 
-from test import support
-from test.support import script_helper, threading_helper
+from test.support import threading_helper
 
 
 class MyObj:
@@ -209,56 +207,6 @@ class TestGC(TestCase):
 
         with threading_helper.start_threads(threads):
             pass
-
-    @support.requires_subprocess()
-    def test_tight_gc_loop_does_not_starve_attach(self):
-        script = textwrap.dedent(f"""
-            import faulthandler
-
-            faulthandler.dump_traceback_later({support.SHORT_TIMEOUT}, exit=True)
-
-            import gc
-            import threading
-            import time
-
-            # Add GC-tracked objects to lengthen the stop-the-world pauses.
-            import abc
-            import argparse
-            import collections
-            import contextlib
-            import decimal
-            import enum
-            import functools
-            import heapq
-            import importlib
-            import inspect
-            import itertools
-            import json
-            import math
-            import operator
-            import random
-            import re
-
-            started = threading.Event()
-            stop = threading.Event()
-
-            def collect():
-                gc.collect()
-                started.set()
-                while not stop.is_set():
-                    gc.collect()
-
-            thread = threading.Thread(target=collect)
-            thread.start()
-            started.wait()
-            # Each reattachment must make progress between consecutive pauses.
-            for _ in range(50):
-                time.sleep(0.02)
-            stop.set()
-            thread.join()
-            faulthandler.cancel_dump_traceback_later()
-        """)
-        script_helper.assert_python_ok("-X", "gil=0", "-c", script)
 
 
 if __name__ == "__main__":

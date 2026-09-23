@@ -2226,6 +2226,22 @@ tstate_try_attach(PyThreadState *tstate)
 #endif
 }
 
+static int
+tstate_try_attach_detached(PyThreadState *tstate, int *state)
+{
+#ifdef Py_GIL_DISABLED
+    assert(*state == _Py_THREAD_DETACHED ||
+           *state == _Py_THREAD_DETACHED_WAITING);
+    return _Py_atomic_compare_exchange_int(&tstate->state,
+                                           state,
+                                           _Py_THREAD_ATTACHED);
+#else
+    assert(tstate->state == _Py_THREAD_DETACHED);
+    tstate->state = _Py_THREAD_ATTACHED;
+    return 1;
+#endif
+}
+
 static void
 tstate_set_detached(PyThreadState *tstate, int detached_state)
 {
@@ -2264,9 +2280,7 @@ tstate_wait_attach(PyThreadState *tstate)
         else {
             assert(state == _Py_THREAD_DETACHED ||
                    state == _Py_THREAD_DETACHED_WAITING);
-            if (_Py_atomic_compare_exchange_int(
-                    &tstate->state, &state, _Py_THREAD_ATTACHED))
-            {
+            if (tstate_try_attach_detached(tstate, &state)) {
                 return;
             }
         }
@@ -2555,9 +2569,12 @@ start_the_world(struct _stoptheworld_state *stw)
                 do {
                     assert(state == _Py_THREAD_SUSPENDED ||
                            state == _Py_THREAD_SUSPENDED_WAITING);
-                    next_state = (state == _Py_THREAD_SUSPENDED_WAITING
-                                  ? _Py_THREAD_DETACHED_WAITING
-                                  : _Py_THREAD_DETACHED);
+                    if (state == _Py_THREAD_SUSPENDED_WAITING) {
+                        next_state = _Py_THREAD_DETACHED_WAITING;
+                    }
+                    else {
+                        next_state = _Py_THREAD_DETACHED;
+                    }
                     // Retry if an attach waiter registered concurrently.
                 } while (!_Py_atomic_compare_exchange_int(
                             &t->state, &state, next_state));

@@ -208,6 +208,15 @@ get_stack_margin(PyObject *self, PyObject *Py_UNUSED(args))
     return PyLong_FromSize_t(_PyOS_STACK_MARGIN_BYTES);
 }
 
+static PyObject *
+test_stop_the_world(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyEval_StopTheWorld(interp);
+    _PyEval_StartTheWorld(interp);
+    Py_RETURN_NONE;
+}
+
 #ifdef MS_WINDOWS
 static const char *
 classify_address(uintptr_t addr, int jit_enabled, PyInterpreterState *interp)
@@ -3298,6 +3307,7 @@ static PyMethodDef module_functions[] = {
     {"get_c_recursion_remaining", get_c_recursion_remaining, METH_NOARGS},
     {"get_stack_pointer", get_stack_pointer, METH_NOARGS},
     {"get_stack_margin", get_stack_margin, METH_NOARGS},
+    {"test_stop_the_world", test_stop_the_world, METH_NOARGS},
     {"classify_stack_addresses", classify_stack_addresses, METH_VARARGS},
     {"get_jit_code_ranges", get_jit_code_ranges, METH_NOARGS},
     {"get_jit_backend", get_jit_backend, METH_NOARGS},
