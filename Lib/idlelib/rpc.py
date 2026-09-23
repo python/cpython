@@ -140,6 +140,11 @@ class SocketIO:
         self.responses = {}
         self.cvars = {}
         self.sendlock = threading.Lock()
+        # Receive buffer state.  A new connection must not inherit a
+        # partially received packet from the old one (gh-89544).
+        self.buff = b''
+        self.bufneed = 4
+        self.bufstate = 0 # meaning: 0 => reading count; 1 => reading data
 
     def close(self):
         sock = self.sock
@@ -351,10 +356,6 @@ class SocketIO:
                 except (AttributeError, TypeError):
                     raise OSError("socket no longer exists")
                 s = s[n:]
-
-    buff = b''
-    bufneed = 4
-    bufstate = 0 # meaning: 0 => reading count; 1 => reading data
 
     def pollpacket(self, wait):
         self._stage0()

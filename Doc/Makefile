@@ -191,8 +191,8 @@ lock:
 # Dependencies have a 14 day cooldown period to mitigate supply chain attacks,
 # except for sphinx_linklint and python-docs-theme, which are maintained by
 # core team members.
-	uv pip compile requirements.txt \
-		--exclude-newer P14D \
+	$(UV) pip compile requirements.txt \
+		--upgrade --exclude-newer P14D \
 		--exclude-newer-package sphinx_linklint=PT0S \
 		--exclude-newer-package python-docs-theme=PT0S \
 		--no-cache --output-file $(REQUIREMENTS) \
