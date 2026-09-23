@@ -1952,6 +1952,8 @@
 
 ### Python 3.6 ##############################################################
 
+# Added in PC/python3.def:
+
 [function.Py_FinalizeEx]
     added = '3.6'
 
