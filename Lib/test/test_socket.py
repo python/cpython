@@ -945,6 +945,18 @@ def requireSocket(*args):
 
 class GeneralModuleTests(unittest.TestCase):
 
+    def test_socket_name_errors(self):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.bind((socket_helper.HOSTv4, 0))
+            self.assertGreater(sock.getsockname()[1], 0)
+            with self.assertRaises(OSError):
+                sock.getpeername()
+
+        with self.assertRaises(OSError):
+            sock.getsockname()
+        with self.assertRaises(OSError):
+            sock.getpeername()
+
     @unittest.skipUnless(_socket is not None, 'need _socket module')
     def test_socket_type(self):
         self.assertTrue(gc.is_tracked(_socket.socket))

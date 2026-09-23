@@ -1521,9 +1521,8 @@ pyepoll_internal_ctl(int epfd, int op, int fd, unsigned int events)
         /* In kernel versions before 2.6.9, the EPOLL_CTL_DEL
          * operation required a non-NULL pointer in event, even
          * though this argument is ignored. */
-        Py_BEGIN_ALLOW_THREADS
+        /* Removing a watch is normally quick, so keep the GIL. */
         result = epoll_ctl(epfd, op, fd, &ev);
-        Py_END_ALLOW_THREADS
         break;
     default:
         result = -1;

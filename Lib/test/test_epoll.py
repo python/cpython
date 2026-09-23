@@ -238,6 +238,16 @@ class TestEPoll(unittest.TestCase):
             ep.unregister(fd)
         self.assertEqual(cm.exception.errno, errno.EBADF)
 
+    def test_unregister_twice(self):
+        with select.epoll() as ep:
+            ep.register(self.serverSocket)
+            ep.unregister(self.serverSocket)
+            with self.assertRaises(OSError) as cm:
+                ep.unregister(self.serverSocket)
+            self.assertEqual(cm.exception.errno, errno.ENOENT)
+            ep.register(self.serverSocket)
+            ep.unregister(self.serverSocket)
+
     def test_close(self):
         open_file = open(__file__, "rb")
         self.addCleanup(open_file.close)

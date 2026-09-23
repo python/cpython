@@ -1,0 +1,3 @@
+Avoid releasing the GIL for :meth:`socket.socket.setblocking`,
+:meth:`socket.socket.getsockname`, :meth:`socket.socket.getpeername`,
+:func:`socket.gethostname`, and :meth:`select.epoll.unregister`.
