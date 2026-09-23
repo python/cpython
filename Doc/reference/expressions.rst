@@ -1093,14 +1093,14 @@ The :keyword:`!yield` keyword introduces a :dfn:`yield expression`.
 :keyword:`!yield` expressions may only occur inside function definitions;
 see :ref:`yield-expression-placement` for details.
 
-When a function definition contains one or more
-yield expressions, it defines a :term:`generator function`.
+A function that contains one or more yield expressions
+is a :term:`generator function`.
 At runtime, calling such a function does not run its code directly, but instead
 returns a :term:`generator iterator` which controls execution of the underlying
 function.
 
-In :keyword:`!yield` expressions, the :keyword:`!yield` keyword is usually
-followed by an expression.
+The :keyword:`!yield` keyword is usually followed by
+an :ref:`expression <expressions>`.
 At runtime, each time the generator iterator is asked to produce the next
 value, execution proceeds to the next :keyword:`!yield` keyword, its expression
 is evaluated, and the result is used as the iterator's next value.
@@ -1108,10 +1108,11 @@ is evaluated, and the result is used as the iterator's next value.
 For example::
 
    >>> def count_to_three():
+   ...     """A generator that produces the numbers 0 to 3"""
    ...     yield 0
    ...     yield 1
    ...     yield 2
-   ...     yield 3
+   ...     yield 1 + 2
 
    >>> for number in count_to_three():
    ...     print(number)
@@ -1128,7 +1129,8 @@ If the underlying function is defined using ``async def``, it becomes an
 :term:`asynchronous generator function` instead.
 For example::
 
-   async def agen(): # defines an asynchronous generator function
+   async def agen():
+      """An asynchronous generator that produces a single value"""
       yield 123
 
 Asynchronous generator functions are described separately
