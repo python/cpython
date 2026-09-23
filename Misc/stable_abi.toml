@@ -2167,6 +2167,8 @@
 
 ### Python 3.8 ##############################################################
 
+# The following were added in PC/python3.def in Python 3.8:
+
 [function.PyImport_GetModule]
     added = '3.8'
 [data.Py_UTF8Mode]
@@ -2196,6 +2198,8 @@
 
 ### Python 3.9 ##############################################################
 
+# The following were added in PC/python3.def in Python 3.9:
+
 [function.Py_EnterRecursiveCall]
     added = '3.9'
 [function.Py_LeaveRecursiveCall]
@@ -2215,6 +2219,8 @@
 
 
 ### Python 3.10 #############################################################
+
+# The following were added in PC/python3.def in Python 3.10:
 
 [function.Py_GetArgcArgv]
     added = '3.10'
