@@ -1142,7 +1142,11 @@ class EditorWindow:
 
     def deleted_file_event(self, event):
         # The file was deleted or renamed while open; ask what to do with the
-        # buffer instead of offering a reload that could only fail.
+        # buffer instead of offering a reload that could only fail.  Forget the
+        # old mtime before showing the dialog so a FocusIn delivered while this
+        # dialog (or a Close/Save As sub-dialog) is open does not reopen it; a
+        # successful Save As restores it via set_saved(True).
+        self.mtime = None
         dialog = simpledialog.SimpleDialog(
             self.text,
             title='File Deleted',
@@ -1153,12 +1157,8 @@ class EditorWindow:
         choice = dialog.go()
         if choice == 0:
             self.close()
-        else:
-            # Forget the old mtime so a cancelled Save As does not reprompt;
-            # a successful Save As restores it via set_saved(True).
-            self.mtime = None
-            if choice == 1:
-                self.io.save_as(event)
+        elif choice == 1:
+            self.io.save_as(event)
 
     def load_extensions(self):
         self.extensions = {}

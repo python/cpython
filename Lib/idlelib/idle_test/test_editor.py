@@ -363,7 +363,10 @@ class DeletedFileEventTest(unittest.TestCase):
         return stub
 
     def test_close_choice_closes_window(self):
-        self.assertTrue(self._run_choice(0).close.called)
+        stub = self._run_choice(0)
+        self.assertTrue(stub.close.called)
+        # mtime is cleared before Close so the queued FocusIn does not reprompt.
+        self.assertIsNone(stub.mtime)
 
     def test_save_as_choice_clears_mtime_and_saves(self):
         stub = self._run_choice(1)
