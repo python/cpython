@@ -2028,9 +2028,12 @@ class TNavigator(object):
         of the turtle; extent - an angle - determines which part of the
         circle is drawn. If extent is not given, draw the entire circle.
         If extent is not a full circle, one endpoint of the arc is the
-        current pen position. Draw the arc in counterclockwise direction
-        if radius is positive, otherwise in clockwise direction. Finally
-        the direction of the turtle is changed by the amount of extent.
+        current pen position. If radius is negative, the center is to the
+        right of the turtle instead. The turtle moves forward along the
+        arc if extent is positive and backward if it is negative, so the
+        arc is drawn counterclockwise if radius and extent have the same
+        sign, otherwise clockwise. Finally the turtle turns left by extent
+        if radius is positive, otherwise right by extent.
 
         As the circle is approximated by an inscribed regular polygon,
         steps determines the number of steps to use. If not given,
