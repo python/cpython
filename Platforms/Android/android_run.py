@@ -342,7 +342,7 @@ async def gradle_task(context, app_id):
         + (".bat" if os.name == "nt" else "")
     )
     args = [
-        gradlew, "--console", "plain", f"{task_prefix}DebugAndroidTest"
+        gradlew, "--console", "plain", f"{task_prefix}DebugAndroidTest", "--rerun"
     ]
     for prop in context.gradle_properties:
         args += ["-P", prop]
