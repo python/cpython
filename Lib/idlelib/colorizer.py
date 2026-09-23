@@ -42,6 +42,11 @@ def make_pat():
         ]) +
         r"))"
     )
+    type_softkw = (
+        r"^[ \t]*" +  # at beginning of line + possible indentation
+        r"(?P<TYPE_SOFTKW>type)" +
+        r"(?=[ \t]+(?!(?:" + "|".join(keyword.kwlist) + r")\b)[^\W\d])"
+    )
     builtinlist = [str(name) for name in dir(builtins)
                    if not name.startswith('_') and
                    name not in keyword.kwlist]
@@ -54,7 +59,7 @@ def make_pat():
     dq3string = stringprefix + r'"""[^"\\]*((\\.|"(?!""))[^"\\]*)*(""")?'
     string = any("STRING", [sq3string, dq3string, sqstring, dqstring])
     prog = re.compile("|".join([
-                                builtin, comment, string, kw,
+                                type_softkw, builtin, comment, string, kw,
                                 match_softkw, case_default,
                                 case_softkw_and_pattern,
                                 any("SYNC", [r"\n"]),
@@ -70,6 +75,7 @@ prog_group_name_to_tag = {
     "CASE_SOFTKW": "KEYWORD",
     "CASE_DEFAULT_UNDERSCORE": "KEYWORD",
     "CASE_SOFTKW2": "KEYWORD",
+    "TYPE_SOFTKW": "KEYWORD",
 }
 
 
