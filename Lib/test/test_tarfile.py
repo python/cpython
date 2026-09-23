@@ -4621,9 +4621,15 @@ class TestExtractionFilters(unittest.TestCase):
         for filter in 'tar', 'fully_trusted':
             with self.subTest(filter), self.check_context(arc.open(), filter):
                 if not os_helper.can_symlink():
-                    self.expect_file("a/t/dummy")
-                    self.expect_file("b/")
-                    self.expect_file("c/")
+                    if filter == 'fully_trusted' or sys.platform == "win32":
+                        self.expect_file("a/t/dummy")
+                        self.expect_file("b/")
+                        self.expect_file("c/")
+                    else:
+                        self.expect_exception(
+                            tarfile.LinkFallbackError,
+                            "link 'boom' would be extracted as a copy of "
+                            + "'c/escape', which was rejected")
                 else:
                     self.expect_file("a/t/dummy")
                     self.expect_file("b/")
@@ -4654,6 +4660,24 @@ class TestExtractionFilters(unittest.TestCase):
                 else:
                     self.expect_file("a/b/s", symlink_to=os.path.join('..', 'escape'))
                     self.expect_file("s", symlink_to=os.path.join('..', 'escape'))
+
+    @symlink_test
+    @os_helper.skip_unless_hardlink
+    def test_sneaky_hardlink_relocation(self):
+        with ArchiveMaker() as arc:
+            arc.add("a/escape", content="decoy")
+            arc.add("a/b/s", symlink_to=os.path.join("..", "escape"))
+            arc.add("s", hardlink_to=os.path.join("a", "b", "s"))
+
+        for filter in 'data', 'tar':
+            with self.subTest(filter), self.check_context(arc.open(), filter):
+                self.expect_file("a/escape", content="decoy")
+                if os_helper.can_symlink():
+                    self.expect_file("a/b/s", symlink_to=os.path.join('..', 'escape'))
+                else:
+                    self.expect_file("a/b/s", content="decoy")
+                self.expect_file("s", content="decoy")
+                self.assertFalse((self.destdir / "s").is_symlink())
 
     @symlink_test
     def test_exfiltration_via_symlink(self):
@@ -4801,6 +4825,25 @@ class TestExtractionFilters(unittest.TestCase):
             path = tempdir / 'link'
             if os_helper.can_chmod():
                 self.assertFalse(path.stat().st_mode & stat.S_IWUSR)
+
+    @symlink_test
+    def test_extract_filters_target_none(self):
+        # Test that when extract() falls back to extracting (rather than
+        # linking) a hardlink target, the member is skipped if the filter
+        # returns None.
+        with ArchiveMaker() as arc:
+            arc.add('a/b/s', symlink_to='../escape')
+            arc.add('q', hardlink_to='a/b/s')
+        def filter_unsafe_members(member, path):
+            try:
+                return tarfile.data_filter(member, path)
+            except tarfile.FilterError as error:
+                return None
+        with self.check_context(arc.open(), filter_unsafe_members):
+            if os_helper.can_symlink():
+                self.expect_file('a/b/s', symlink_to='../escape')
+            else:
+                self.expect_file('a/b/')  # symlink is not extracted
 
     def test_link_fallback_normalizes(self):
         # Make sure hardlink fallbacks work for non-normalized paths for all

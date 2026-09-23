@@ -2159,7 +2159,7 @@ PyDoc_STRVAR(_socket_setdefaulttimeout__doc__,
 #define _SOCKET_SETDEFAULTTIMEOUT_METHODDEF    \
     {"setdefaulttimeout", (PyCFunction)_socket_setdefaulttimeout, METH_O, _socket_setdefaulttimeout__doc__},
 
-#if (defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS))
+#if (defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS_DESKTOP))
 
 PyDoc_STRVAR(_socket_if_nameindex__doc__,
 "if_nameindex($module, /)\n"
@@ -2179,9 +2179,9 @@ _socket_if_nameindex(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _socket_if_nameindex_impl(module);
 }
 
-#endif /* (defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS)) */
+#endif /* (defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS_DESKTOP)) */
 
-#if (defined(HAVE_IF_NAMETOINDEX) || defined(MS_WINDOWS))
+#if (defined(HAVE_IF_NAMETOINDEX) || defined(MS_WINDOWS_DESKTOP))
 
 PyDoc_STRVAR(_socket_if_nametoindex__doc__,
 "if_nametoindex($module, oname, /)\n"
@@ -2213,9 +2213,9 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(HAVE_IF_NAMETOINDEX) || defined(MS_WINDOWS)) */
+#endif /* (defined(HAVE_IF_NAMETOINDEX) || defined(MS_WINDOWS_DESKTOP)) */
 
-#if (defined(HAVE_IF_INDEXTONAME) || defined(MS_WINDOWS))
+#if (defined(HAVE_IF_INDEXTONAME) || defined(MS_WINDOWS_DESKTOP))
 
 PyDoc_STRVAR(_socket_if_indextoname__doc__,
 "if_indextoname($module, if_index, /)\n"
@@ -2244,7 +2244,7 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(HAVE_IF_INDEXTONAME) || defined(MS_WINDOWS)) */
+#endif /* (defined(HAVE_IF_INDEXTONAME) || defined(MS_WINDOWS_DESKTOP)) */
 
 #if defined(CMSG_LEN)
 
@@ -2478,4 +2478,4 @@ exit:
 #ifndef _SOCKET_CMSG_SPACE_METHODDEF
     #define _SOCKET_CMSG_SPACE_METHODDEF
 #endif /* !defined(_SOCKET_CMSG_SPACE_METHODDEF) */
-/*[clinic end generated code: output=aa9082b592c39fa5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=dfe0ca7c716c1183 input=a9049054013a1b77]*/

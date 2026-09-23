@@ -3393,10 +3393,14 @@ def func2():
         self._check_error('\nfgdfgf\n1,\\#\n2\n',
                           "unexpected character after line continuation character",
                           lineno=3, offset=4)
+        for prefix in ("f", "t"):
+            self._check_error(f'{prefix}"""{{\n\\ x}}"""',
+                              "unexpected character after line continuation character",
+                              lineno=2, offset=2)
 
     def test_invalid_line_continuation_left_recursive(self):
         # Check bpo-42218: SyntaxErrors following left-recursive rules
-        # (t_primary_raw in this case) need to be tested explicitly
+        # (primary_raw in this case) need to be tested explicitly
         self._check_error("A.\u018a\\ ",
                           "unexpected character after line continuation character")
         self._check_error("A.\u03bc\\\n",

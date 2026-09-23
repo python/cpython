@@ -73,6 +73,12 @@ AC_DEFUN([PY_CHECK_FUNC],
   AS_VAR_POPDEF([py_define])
 ])
 
+dnl PY_CHECK_FUNC_PRIVATE(FUNCTION, [INCLUDES], [AC_DEFINE-VAR])
+dnl Similar to PY_CHECK_FUNC but define macro _Py_HAVE_xxx instead of HAVE_xxx
+AC_DEFUN([PY_CHECK_FUNC_PRIVATE],
+[ PY_CHECK_FUNC([$1], [$2], m4_ifblank([$3], [[_Py_HAVE_]m4_toupper($1)], [$3]))
+])
+
 dnl PY_CHECK_LIB(LIBRARY, FUNCTION, [ACTION-IF-FOUND], [ACTION-IF-NOT-FOUND], [OTHER-LIBRARIES])
 dnl Like AC_CHECK_LIB() but does not modify LIBS
 AC_DEFUN([PY_CHECK_LIB],
@@ -1247,19 +1253,19 @@ dnl
 AC_MSG_CHECKING([for PEP 11 support tier])
 AS_CASE([$host/$ac_cv_cc_name],
   [x86_64-*-linux-gnu/gcc],              [PY_SUPPORT_TIER=1], dnl Linux on AMD64, any vendor, glibc, gcc
-  [x86_64-apple-darwin*/clang],          [PY_SUPPORT_TIER=1], dnl macOS on Intel, any version
   [aarch64-apple-darwin*/clang],         [PY_SUPPORT_TIER=1], dnl macOS on M1, any version
+  [aarch64-*-linux-gnu/gcc],             [PY_SUPPORT_TIER=1], dnl Linux ARM64, glibc, gcc
   [i686-pc-windows-msvc/msvc],           [PY_SUPPORT_TIER=1], dnl 32bit Windows on Intel, MSVC
   [x86_64-pc-windows-msvc/msvc],         [PY_SUPPORT_TIER=1], dnl 64bit Windows on AMD64, MSVC
 
-  [aarch64-*-linux-gnu/gcc],             [PY_SUPPORT_TIER=2], dnl Linux ARM64, glibc, gcc+clang
-  [aarch64-*-linux-gnu/clang],           [PY_SUPPORT_TIER=2],
-  [powerpc64le-*-linux-gnu/gcc],         [PY_SUPPORT_TIER=2], dnl Linux on PPC64 little endian, glibc, gcc
+  [aarch64-*-linux-gnu/clang],           [PY_SUPPORT_TIER=2], dnl Linux ARM64, glibc, clang
+  [aarch64-pc-windows-msvc/msvc],        [PY_SUPPORT_TIER=2], dnl Windows ARM64, MSVC
   [wasm32-unknown-wasip1/clang],         [PY_SUPPORT_TIER=2], dnl WebAssembly System Interface preview1, clang
+  [x86_64-apple-darwin*/clang],          [PY_SUPPORT_TIER=2], dnl macOS on Intel, any version
   [x86_64-*-linux-gnu/clang],            [PY_SUPPORT_TIER=2], dnl Linux on AMD64, any vendor, glibc, clang
 
-  [aarch64-pc-windows-msvc/msvc],        [PY_SUPPORT_TIER=3], dnl Windows ARM64, MSVC
   [armv7l-*-linux-gnueabihf/gcc],        [PY_SUPPORT_TIER=3], dnl ARMv7 LE with hardware floats, any vendor, glibc, gcc
+  [powerpc64le-*-linux-gnu/gcc],         [PY_SUPPORT_TIER=3], dnl Linux on PPC64 little endian, glibc, gcc
   [powerpc64le-*-linux-gnu/clang],       [PY_SUPPORT_TIER=3], dnl Linux on PPC64 little endian, glibc, clang
   [riscv64-*-linux-gnu/gcc],             [PY_SUPPORT_TIER=3], dnl Linux on RISC-V 64bit, glibc, gcc+clang
   [riscv64-*-linux-gnu/clang],           [PY_SUPPORT_TIER=3],
@@ -2434,13 +2440,10 @@ AS_CASE([$ac_sys_system],
     dnl Start with 20 MB and allow to grow
     AS_VAR_APPEND([LINKFORSHARED], [" -sALLOW_MEMORY_GROWTH -sINITIAL_MEMORY=20971520"])
 
-    dnl map int64_t and uint64_t to JS bigint
-    AS_VAR_APPEND([LDFLAGS_NODIST], [" -sWASM_BIGINT"])
-
     dnl Include file system support
     AS_VAR_APPEND([LINKFORSHARED], [" -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"])
     AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV,HEAPU32,TTY,ERRNO_CODES"])
-    AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_FUNCTIONS=_main,_Py_Version,__PyRuntime,_PyGILState_GetThisThreadState,__PyEM_EMSCRIPTEN_TRAMPOLINE_OFFSET"])
+    AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_FUNCTIONS=_main,_Py_Version,_PyGILState_GetThisThreadState,__PyEM_EMSCRIPTEN_TRAMPOLINE_OFFSET"])
     AS_VAR_APPEND([LINKFORSHARED], [" -sSTACK_SIZE=5MB"])
     dnl Avoid bugs in JS fallback string decoding path
     AS_VAR_APPEND([LINKFORSHARED], [" -sTEXTDECODER=2"])
@@ -3989,7 +3992,7 @@ if test "$py_have_iconv" = yes; then
     ])
   ])
   if test "$ac_cv_have_iconv" != no; then
-    AC_DEFINE([HAVE_ICONV], [1],
+    AC_DEFINE([_Py_HAVE_ICONV], [1],
               [Define if you have a working iconv() function.])
     if test "$ac_cv_have_iconv" = -liconv; then
       LIBS="-liconv $LIBS"
@@ -4486,7 +4489,7 @@ int main(void)
 [ac_cv_float16_supported=no],
 [ac_cv_float16_supported=no])]))
 AS_VAR_IF([ac_cv_float16_supported], [yes],
-          [AC_DEFINE([HAVE_FLOAT16], [1],
+          [AC_DEFINE([_Py_HAVE_FLOAT16], [1],
                      [Defined if _Float16 C type is supported])])
 
 dnl Check for libmpdec >= 2.5.0
@@ -6552,7 +6555,13 @@ AC_CHECK_FUNCS(
   [AC_MSG_ERROR([Python requires C99 compatible libm])]
 )
 
-AC_CHECK_FUNCS_ONCE(acospi asinpi atanpi atan2pi cospi sinpi tanpi)
+PY_CHECK_FUNC_PRIVATE([acospi], [@%:@include <math.h>])
+PY_CHECK_FUNC_PRIVATE([asinpi], [@%:@include <math.h>])
+PY_CHECK_FUNC_PRIVATE([atanpi], [@%:@include <math.h>])
+PY_CHECK_FUNC_PRIVATE([atan2pi], [@%:@include <math.h>])
+PY_CHECK_FUNC_PRIVATE([cospi], [@%:@include <math.h>])
+PY_CHECK_FUNC_PRIVATE([sinpi], [@%:@include <math.h>])
+PY_CHECK_FUNC_PRIVATE([tanpi], [@%:@include <math.h>])
 LIBS=$LIBS_SAVE
 
 dnl For multiprocessing module, check that sem_open
@@ -7895,7 +7904,11 @@ AC_LINK_IFELSE(
     #include <stddef.h>
     #include <unistd.h>
     #include <sys/syscall.h>
-    #include <linux/random.h>
+    #include <linux/random.h>  // GRND_NONBLOCK
+
+    #if !defined(SYS_getrandom) && defined(__NR_getrandom)
+    #  define SYS_getrandom __NR_getrandom
+    #endif
 
     int main(void) {
         char buffer[1];

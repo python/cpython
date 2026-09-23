@@ -753,6 +753,29 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
         self.assertEqual(memio.getvalue(), b"01AAA56789")
         self.assertEqual(memio.tell(), 5)
 
+    @support.nomemtest
+    def test_memory_error(self):
+        # gh-157242: io.BytesIO() must not close the file on MemoryError
+
+        # write()
+        stream = self.ioclass()
+        stream.write(self.buftype('abc'))
+        data = self.buftype('def')
+        with self.assertRaises(MemoryError):
+            with support.inject_memory_error_cm():
+                stream.write(data)
+        stream.write(self.buftype('123'))
+        self.assertEqual(stream.getvalue(), self.buftype('abc123'))
+
+        # truncate()
+        data = self.buftype('x' * 100)
+        stream = self.ioclass()
+        stream.write(data)
+        with self.assertRaises(MemoryError):
+            with support.inject_memory_error_cm():
+                stream.truncate(5)
+        self.assertEqual(stream.getvalue(), data)
+
 
 class TextIOTestMixin:
 
