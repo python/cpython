@@ -956,6 +956,11 @@ class BaseSimpleQueueTest:
         with self.assertRaises(ValueError):
             q.get(timeout=-1)
 
+    def test_nonblocking_ignores_timeout(self):
+        q = self.q
+        with self.assertRaises(self.queue.Empty):
+            q.get(block=False, timeout=-1)
+
     def test_order(self):
         # Test a pair of concurrent put() and get()
         q = self.q

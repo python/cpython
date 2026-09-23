@@ -601,6 +601,50 @@ class fildes_converter(CConverter):
             argname=argname)
 
 
+class pid_t_converter(CConverter):
+    type = 'pid_t'
+    format_unit = '" _Py_PARSE_PID "'
+
+    def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
+        return self.format_code("""
+            {paramname} = PyLong_AsPid({argname});
+            if ({paramname} == (pid_t)(-1) && PyErr_Occurred()) {{{{
+                goto exit;
+            }}}}
+            """,
+            argname=argname)
+
+
+class Py_off_t_converter(CConverter):
+    type = 'Py_off_t'
+    converter = '_Py_Off_t_Converter'
+
+    def use_converter(self) -> None:
+        self.add_include('pycore_fileutils.h', '_Py_Off_t_Converter()')
+
+
+class BOOL_converter(int_converter):
+    type = 'BOOL'
+
+
+class DWORD_converter(unsigned_long_converter):
+    type = 'DWORD'
+
+
+class HANDLE_converter(CConverter):
+    type = 'HANDLE'
+    format_unit = '"_Py_PARSE_UINTPTR"'
+
+    def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
+        return self.format_code("""
+            {paramname} = PyLong_AsVoidPtr({argname});
+            if (!{paramname} && PyErr_Occurred()) {{{{
+                goto exit;
+            }}}}
+            """,
+            argname=argname)
+
+
 class float_converter(CConverter):
     type = 'float'
     default_type = float

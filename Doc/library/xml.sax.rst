@@ -28,10 +28,10 @@ the SAX API.
    :meth:`~xml.sax.xmlreader.XMLReader.setFeature` on the parser object
    and argument :data:`~xml.sax.handler.feature_external_ges`.
 
-The convenience functions are:
+The convenience functions and data are:
 
 
-.. function:: make_parser(parser_list=[])
+.. function:: make_parser(parser_list=())
 
    Create and return a SAX :class:`~xml.sax.xmlreader.XMLReader` object.  The
    first parser found will
@@ -43,18 +43,23 @@ The convenience functions are:
       The *parser_list* argument can be any iterable, not just a list.
 
 
-.. function:: parse(filename_or_stream, handler, error_handler=handler.ErrorHandler())
+.. function:: parse(filename_or_stream, handler, errorHandler=handler.ErrorHandler())
 
    Create a SAX parser and use it to parse a document.  The document, passed in as
-   *filename_or_stream*, can be a filename or a file object.  The *handler*
+   *filename_or_stream*, can be a system identifier (a string identifying the
+   input source -- typically a file name or a URL),
+   a :term:`path-like <path-like object>` object, or a file object.
+   A system identifier which does not refer to an existing file
+   is opened with :func:`urllib.request.urlopen`.
+   The *handler*
    parameter needs to be a SAX :class:`~handler.ContentHandler` instance.  If
-   *error_handler* is given, it must be a SAX :class:`~handler.ErrorHandler`
+   *errorHandler* is given, it must be a SAX :class:`~handler.ErrorHandler`
    instance; if
    omitted,  :exc:`SAXParseException` will be raised on all errors.  There is no
    return value; all work must be done by the *handler* passed in.
 
 
-.. function:: parseString(string, handler, error_handler=handler.ErrorHandler())
+.. function:: parseString(string, handler, errorHandler=handler.ErrorHandler())
 
    Similar to :func:`parse`, but parses from a buffer *string* received as a
    parameter.  *string* must be a :class:`str` instance or a
@@ -62,6 +67,15 @@ The convenience functions are:
 
    .. versionchanged:: 3.5
       Added support of :class:`str` instances.
+
+
+.. data:: default_parser_list
+
+   The list of the names of modules which are tried by :func:`make_parser`
+   after the modules named in its *parser_list* argument.
+   It contains ``'xml.sax.expatreader'``, or, if the
+   :envvar:`!PY_SAX_PARSER` environment variable is set and the environment
+   is not ignored, the comma-separated list of module names taken from it.
 
 A typical SAX application uses three kinds of objects: readers, handlers and
 input sources.  "Reader" in this context is another term for parser, i.e. some
@@ -133,6 +147,14 @@ classes.
    enable a feature that is not supported, or to set a property to a value that the
    implementation does not support.  SAX applications and extensions may use this
    class for similar purposes.
+
+
+.. exception:: SAXReaderNotAvailable(msg, exception=None)
+
+   Subclass of :exc:`SAXNotSupportedException` raised when no parser is
+   available.  A parser module raises it when it is imported or during
+   parsing if the parser it provides cannot be used, and :func:`make_parser`
+   raises it if no module from the tried ones provides a usable parser.
 
 
 .. seealso::

@@ -104,10 +104,11 @@ class TestInteractiveInterpreter(unittest.TestCase):
         # no memory. Check also that the fix does not break the interactive
         # loop when an exception is raised.
         user_input = """
-            import sys, _testcapi
+            import sys
+            from test import support
             1/0
             print('After the exception.')
-            _testcapi.set_nomemory(0)
+            support.inject_memory_error()
             sys.exit(0)
         """
         user_input = dedent(user_input)
@@ -152,6 +153,36 @@ class TestInteractiveInterpreter(unittest.TestCase):
         output = kill_python(p)
         self.assertEqual(p.returncode, 0)
 
+    @unittest.skipIf(sys.platform == "win32", "select() cannot wait for pipes")
+    def test_secondary_prompt_is_not_read_ahead(self):
+        process = spawn_repl()
+        output = ""
+
+        def read_until(marker, start=0):
+            nonlocal output
+            while marker not in output[start:]:
+                ready, _, _ = select.select(
+                    [process.stdout], [], [], SHORT_TIMEOUT
+                )
+                self.assertTrue(ready, output)
+                data = os.read(process.stdout.fileno(), 4096)
+                self.assertTrue(data, output)
+                output += data.decode()
+
+        try:
+            read_until(">>> ")
+            process.stdin.write("(\n")
+            process.stdin.flush()
+            read_until("... ")
+            after_secondary_prompt = len(output)
+
+            process.stdin.write("1)\n")
+            process.stdin.flush()
+            read_until(">>> ", after_secondary_prompt)
+            self.assertEqual(output[after_secondary_prompt:], "1\n>>> ")
+        finally:
+            kill_python(process)
+
     @cpython_only
     def test_lexer_buffer_realloc_with_null_start(self):
         # gh-144759: NULL pointer arithmetic in the lexer when start and
@@ -167,6 +198,22 @@ class TestInteractiveInterpreter(unittest.TestCase):
         output = kill_python(p)
         self.assertEqual(p.returncode, 0)
         self.assertIn(long_value, output)
+
+    @cpython_only
+    def test_multiline_fstring_source_reallocation(self):
+        long_line = " " * 9000 + "+ 2"
+        user_input = (
+            'value = f"""{(\n'
+            '1\n'
+            f'{long_line}\n'
+            ')}"""\n'
+            'print(value)\n'
+        )
+        p = spawn_repl()
+        p.stdin.write(user_input)
+        output = kill_python(p)
+        self.assertEqual(p.returncode, 0)
+        self.assertIn(">>> 3\n>>> ", output)
 
     def test_close_stdin(self):
         user_input = dedent('''
