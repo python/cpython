@@ -1,0 +1,1 @@
+Merge biased reference counts on behalf of threads that are detached instead of waiting for them to attach again, in the free-threaded build.
