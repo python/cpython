@@ -1866,10 +1866,8 @@ class ConfigFileTest(BaseTest):
             os.unlink(fn)
 
     def test_names_from_handlers_module(self):
-        # gh-156777: "handlers.X" in a class or defaults entry is evaluated
-        # against vars(logging), so logging.handlers must be imported first.
-        # Run it in a subprocess, since importing this module already
-        # imports logging.handlers.
+        # gh-156777: "handlers.X" is evaluated against vars(logging). Use a
+        # subprocess: importing this module already imports logging.handlers.
         ini = textwrap.dedent("""
             [loggers]
             keys=root
@@ -7619,9 +7617,21 @@ class LazyImportTest(unittest.TestCase):
     def test_lazy_imports_handlers(self):
         import_helper.ensure_lazy_imports(
             "logging.handlers",
-            {"base64", "copy", "email", "http", "queue", "smtplib", "ssl",
-             "urllib"},
+            {"base64", "copy", "email", "http", "pickle", "queue", "smtplib",
+             "socket", "ssl", "struct", "urllib"},
         )
+
+    def test_socket_handler_resolves_imports_when_created(self):
+        # gh-156777: emit() may run during finalization, when importing no
+        # longer works, so the handler resolves what it needs up front.
+        code = textwrap.dedent("""
+            import sys
+            import logging.handlers
+            logging.handlers.SocketHandler('localhost', 9020)
+            missing = {'pickle', 'socket', 'struct'} - sys.modules.keys()
+            assert not missing, missing
+        """)
+        assert_python_ok("-S", "-c", code)
 
     def test_getmembers_without_ssl(self):
         # gh-156777: getmembers() and pydoc resolve lazy imports, so a module

@@ -513,8 +513,7 @@ def _is_queue_like_object(obj):
     """Check that *obj* implements the Queue API."""
     if isinstance(obj, (queue.Queue, queue.SimpleQueue)):
         return True
-    # defer importing multiprocessing as much as possible; a lazy import at
-    # module level would still be resolved by getmembers() and pydoc
+    # defer importing multiprocessing as much as possible
     from multiprocessing.queues import Queue as MPQueue
     if isinstance(obj, MPQueue):
         return True

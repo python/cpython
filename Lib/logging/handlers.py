@@ -26,18 +26,18 @@ To use, simply 'import logging.handlers' and log away!
 import io  # must stay eager to support finalization
 import logging
 import os
-import pickle
 import re
-import socket
-import struct
 import threading
 import time
 lazy import base64
 lazy import copy
 lazy import email.utils
 lazy import http.client
+lazy import pickle
 lazy import queue
 lazy import smtplib
+lazy import socket
+lazy import struct
 lazy import urllib.parse
 lazy from email.message import EmailMessage
 
@@ -610,6 +610,8 @@ class SocketHandler(logging.Handler):
         self.retryStart = 1.0
         self.retryMax = 30.0
         self.retryFactor = 2.0
+        # resolve what emit() needs now: it may run during finalization
+        _ = pickle, socket, struct
 
     def makeSocket(self, timeout=1):
         """
