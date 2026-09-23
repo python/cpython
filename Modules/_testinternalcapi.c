@@ -3207,11 +3207,57 @@ test_thread_state_ensure_from_view_interp_switch(PyObject *self, PyObject *unuse
 }
 
 static PyObject *
-is_gc_frame_clear(PyObject *self, PyObject *unused)
+test_gc_frame_cleared(PyObject *self, PyObject *arg)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyThreadState *tstate = PyThreadState_GET();
     assert(interp != NULL);
+    assert(tstate != NULL);
 
+    int32_t n = 0;
+    if (0 > PyLong_AsInt32(arg, &n)) {
+        return NULL;
+    }
+
+    PyObject *a = PyLong_GetInfo();
+    if (a == NULL) {
+        return NULL;
+    }
+    PyObject *list = PyList_New(0);
+    if (list == NULL) {
+        Py_DECREF(a);
+        return NULL;
+    }
+
+    // We create n+1 objects, which should schedule a GC run.
+    // However, since we are inside a C call, garbage collection will
+    // not run immediately.
+    for (int i = 0; i < n; i++) {
+        PyObject *b = PyLong_GetInfo();
+        if (b == NULL) {
+            Py_DECREF(a);
+            Py_DECREF(list);
+            return NULL;
+        }
+        if (0 > PyList_Append(list, b)) {
+            Py_DECREF(a);
+            Py_DECREF(list);
+            Py_DECREF(b);
+            return NULL;
+        }
+        Py_DECREF(b);
+    }
+
+    // We then clear n objects, which decrements the young generation counter.
+    assert(0 == PyList_Clear(list));
+    Py_DECREF(list);
+
+    // We trigger pending garbage collection.
+    // However, the GC start conditions are not satisfied (young.threshold > young.count),
+    // so gc_select_generation() cannot select a generation and returns early.
+    assert(0 == _Py_HandlePending(tstate));
+
+    Py_DECREF(a);
     if (!interp->gc.frame) {
         Py_RETURN_TRUE;
     }
@@ -3428,7 +3474,7 @@ static PyMethodDef module_functions[] = {
     {"test_interp_guard_countdown", test_interp_guard_countdown, METH_NOARGS},
     {"test_interp_view_countdown", test_interp_view_countdown, METH_NOARGS},
     {"test_thread_state_ensure_from_view_interp_switch", test_thread_state_ensure_from_view_interp_switch, METH_NOARGS},
-    {"is_gc_frame_clear", is_gc_frame_clear, METH_NOARGS},
+    {"test_gc_frame_cleared", test_gc_frame_cleared, METH_O},
     {"unicodewriter_overflow", unicodewriter_overflow, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
