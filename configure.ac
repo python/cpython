@@ -6555,13 +6555,13 @@ AC_CHECK_FUNCS(
   [AC_MSG_ERROR([Python requires C99 compatible libm])]
 )
 
-PY_CHECK_FUNC_PRIVATE([acospi])
-PY_CHECK_FUNC_PRIVATE([asinpi])
-PY_CHECK_FUNC_PRIVATE([atanpi])
-PY_CHECK_FUNC_PRIVATE([atan2pi])
-PY_CHECK_FUNC_PRIVATE([cospi])
-PY_CHECK_FUNC_PRIVATE([sinpi])
-PY_CHECK_FUNC_PRIVATE([tanpi])
+PY_CHECK_FUNC_PRIVATE([acospi], [@%:@include <math.h>])
+PY_CHECK_FUNC_PRIVATE([asinpi], [@%:@include <math.h>])
+PY_CHECK_FUNC_PRIVATE([atanpi], [@%:@include <math.h>])
+PY_CHECK_FUNC_PRIVATE([atan2pi], [@%:@include <math.h>])
+PY_CHECK_FUNC_PRIVATE([cospi], [@%:@include <math.h>])
+PY_CHECK_FUNC_PRIVATE([sinpi], [@%:@include <math.h>])
+PY_CHECK_FUNC_PRIVATE([tanpi], [@%:@include <math.h>])
 LIBS=$LIBS_SAVE
 
 dnl For multiprocessing module, check that sem_open
