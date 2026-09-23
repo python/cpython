@@ -995,9 +995,14 @@ def findsource(object):
     """Return the entire source file and starting line number for an object.
 
     The argument may be a module, class, method, function, traceback, frame,
-    or code object.  The source code is returned as a list of all the lines
-    in the file and the line number indexes a line in that list.  An OSError
-    is raised if the source code cannot be retrieved."""
+    code object, or type alias.  The source code is returned as a list of all
+    the lines in the file and the line number indexes a line in that list.
+    An OSError is raised if the source code cannot be retrieved."""
+
+    if isinstance(object, TypeAliasType):
+        evaluator = object.evaluate_value
+        if isfunction(evaluator):
+            object = evaluator
 
     file = getsourcefile(object)
     if file:
@@ -1033,8 +1038,6 @@ def findsource(object):
             raise OSError('lineno is out of bounds')
         return lines, lnum
 
-    if isinstance(object, TypeAliasType):
-        object = object.evaluate_value
     if ismethod(object):
         object = object.__func__
     if isfunction(object):
@@ -1181,7 +1184,7 @@ def getsourcelines(object):
     """Return a list of source lines and starting line number for an object.
 
     The argument may be a module, class, method, function, traceback, frame,
-    or code object.  The source code is returned as a list of the lines
+    code object, or type alias.  The source code is returned as a list of the lines
     corresponding to the object and the line number indicates where in the
     original source file the first line of code was found.  An OSError is
     raised if the source code cannot be retrieved."""
@@ -1202,7 +1205,7 @@ def getsource(object):
     """Return the text of the source code for an object.
 
     The argument may be a module, class, method, function, traceback, frame,
-    or code object.  The source code is returned as a single string.  An
+    code object, or type alias.  The source code is returned as a single string.  An
     OSError is raised if the source code cannot be retrieved."""
     lines, lnum = getsourcelines(object)
     return ''.join(lines)

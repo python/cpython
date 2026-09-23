@@ -12,6 +12,3 @@ A.__module__ = 'testModule.typing'
 A.__qualname__ = 'A'
 
 ann1 = Union[List[A], int]
-
-type T = int
-class C: pass
