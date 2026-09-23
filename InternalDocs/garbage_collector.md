@@ -146,9 +146,8 @@ and, during garbage collection, differentiate reachable vs. unreachable objects.
 ```
 
 Note that not all fields are to scale. `ob_flags` is two bytes, `ob_mutex` and
-`ob_gc_bits` are each one byte, and `ob_ref_local` is four bytes. The
-other fields, `ob_tid`, `ob_ref_shared`, and `ob_type`, are all
-pointer-sized (that is, eight bytes on a 64-bit platform).
+`ob_gc_bits` are each one byte, and `ob_ref_local` is four bytes. As for the
+other fields, `ob_tid`, `ob_type`, are pointer-sized (that is, eight bytes on a 64-bit platform), and `ob_ref_shared` is [size_t-sized](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t).
 
 
 The garbage collector also temporarily repurposes the `ob_tid` (thread ID)
