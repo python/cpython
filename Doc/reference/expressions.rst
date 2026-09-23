@@ -1084,15 +1084,27 @@ The formal grammar for generator expressions is:
 :keyword:`!yield` expressions
 -----------------------------
 
-The :keyword:`!yield` expression may only occur syntactically nested in
-a function definition, not within a nested class definition.
-See :ref:`yield-expression-placement` for details.
+.. This is a high-level conceptual overview.
+   The linked ":ref:`generator-types`" section (in the Builtins chapter)
+   has the details on runtime behaviour;
+   further sections *here* give details on the syntax.
 
-A function that contains one or more :ref:`yield expressions <yieldexpr>`
-is a :term:`generator function`.
-At runtime, calling the function returns a :term:`generator iterator`
-which, when iterated, runs the underlying function and produces values
-after the :keyword:`!yield` keywords.
+The :keyword:`!yield` keyword introduces a :dfn:`yield expression`.
+:keyword:`!yield` expressions may only occur inside function definitions;
+see :ref:`yield-expression-placement` for details.
+
+When a function definition contains one or more
+yield expressions, it defines a :term:`generator function`.
+At runtime, calling such a function does not run its code directly, but instead
+returns a :term:`generator iterator` which controls execution of the underlying
+function.
+
+In :keyword:`!yield` expressions, the :keyword:`!yield` keyword is usually
+followed by an expression.
+At runtime, each time the generator iterator is asked to produce the next
+value, execution proceeds to the next :keyword:`!yield` keyword, its expression
+is evaluated, and the result is used as the iterator's next value.
+
 For example::
 
    >>> def count_to_three():
@@ -1108,10 +1120,11 @@ For example::
    2
    3
 
-See :ref:`generator-types` for details on runtime behavior and
-ways to control control flow through the function.
 
-If the enclosing function is defined using ``async def``, it becomes an
+See :ref:`generator-types` for details on runtime behavior and
+ways to control execution of the underlying function.
+
+If the underlying function is defined using ``async def``, it becomes an
 :term:`asynchronous generator function` instead.
 For example::
 
