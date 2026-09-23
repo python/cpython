@@ -2426,8 +2426,20 @@ void
 _PyThreadState_ResumeDetached(PyThreadState *tstate)
 {
     assert(tstate != _PyThreadState_GET());
-    assert(_Py_atomic_load_int_relaxed(&tstate->state) == _Py_THREAD_SUSPENDED);
-    _Py_atomic_store_int(&tstate->state, _Py_THREAD_DETACHED);
+    int state = _Py_atomic_load_int_relaxed(&tstate->state);
+    int next_state;
+    do {
+        assert(state == _Py_THREAD_SUSPENDED ||
+               state == _Py_THREAD_SUSPENDED_WAITING);
+        if (state == _Py_THREAD_SUSPENDED_WAITING) {
+            next_state = _Py_THREAD_DETACHED_WAITING;
+        }
+        else {
+            next_state = _Py_THREAD_DETACHED;
+        }
+        // Retry if an attach waiter registered concurrently.
+    } while (!_Py_atomic_compare_exchange_int(
+                &tstate->state, &state, next_state));
     // Wake the thread if it is parked in tstate_wait_attach().
     _PyParkingLot_UnparkAll(&tstate->state);
 }
@@ -2564,21 +2576,7 @@ start_the_world(struct _stoptheworld_state *stw)
     _Py_FOR_EACH_STW_INTERP(stw, i) {
         _Py_FOR_EACH_TSTATE_UNLOCKED(i, t) {
             if (t != stw->requester) {
-                int state = _Py_atomic_load_int_relaxed(&t->state);
-                int next_state;
-                do {
-                    assert(state == _Py_THREAD_SUSPENDED ||
-                           state == _Py_THREAD_SUSPENDED_WAITING);
-                    if (state == _Py_THREAD_SUSPENDED_WAITING) {
-                        next_state = _Py_THREAD_DETACHED_WAITING;
-                    }
-                    else {
-                        next_state = _Py_THREAD_DETACHED;
-                    }
-                    // Retry if an attach waiter registered concurrently.
-                } while (!_Py_atomic_compare_exchange_int(
-                            &t->state, &state, next_state));
-                _PyParkingLot_UnparkAll(&t->state);
+                _PyThreadState_ResumeDetached(t);
             }
         }
     }

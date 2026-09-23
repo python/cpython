@@ -7,6 +7,7 @@ from unittest import TestCase
 import gc
 import weakref
 
+from test import support
 from test.support import threading_helper
 
 
