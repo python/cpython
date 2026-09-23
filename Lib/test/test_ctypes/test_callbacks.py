@@ -296,15 +296,13 @@ class SampleCallbacksTestCase(unittest.TestCase):
 
     # gh-49960: callbacks may return structures and unions by value.
 
-    def _dll(self):
-        return CDLL(_ctypes_test.__file__)
-
     def test_callback_return_small_struct(self):
         class SmallRet(Structure):
             _fields_ = [("a", c_int), ("b", c_int)]
 
         CALLBACK = CFUNCTYPE(SmallRet)
-        func = self._dll()._testfunc_cbk_ret_small_struct
+        dll = CDLL(_ctypes_test.__file__)
+        func = dll._testfunc_cbk_ret_small_struct
         func.argtypes = (CALLBACK,)
         func.restype = SmallRet
 
@@ -318,7 +316,8 @@ class SampleCallbacksTestCase(unittest.TestCase):
             _fields_ = [("a", c_int), ("b", c_int)]
 
         CALLBACK = CFUNCTYPE(SmallRet)
-        func = self._dll()._testfunc_cbk_ret_small_struct_sum
+        dll = CDLL(_ctypes_test.__file__)
+        func = dll._testfunc_cbk_ret_small_struct_sum
         func.argtypes = (CALLBACK,)
         func.restype = c_long
 
@@ -333,7 +332,8 @@ class SampleCallbacksTestCase(unittest.TestCase):
                         ("third", c_ulong)]
 
         CALLBACK = CFUNCTYPE(X)
-        func = self._dll()._testfunc_cbk_ret_large_struct
+        dll = CDLL(_ctypes_test.__file__)
+        func = dll._testfunc_cbk_ret_large_struct
         func.argtypes = (CALLBACK,)
         func.restype = X
 
@@ -348,7 +348,8 @@ class SampleCallbacksTestCase(unittest.TestCase):
             _fields_ = [("x", c_double), ("y", c_double)]
 
         CALLBACK = CFUNCTYPE(FloatRet)
-        func = self._dll()._testfunc_cbk_ret_float_struct
+        dll = CDLL(_ctypes_test.__file__)
+        func = dll._testfunc_cbk_ret_float_struct
         func.argtypes = (CALLBACK,)
         func.restype = FloatRet
 
@@ -360,7 +361,8 @@ class SampleCallbacksTestCase(unittest.TestCase):
             _fields_ = [("i", c_int), ("f", c_float)]
 
         CALLBACK = CFUNCTYPE(UnionRet)
-        func = self._dll()._testfunc_cbk_ret_union
+        dll = CDLL(_ctypes_test.__file__)
+        func = dll._testfunc_cbk_ret_union
         func.argtypes = (CALLBACK,)
         func.restype = UnionRet
 
@@ -374,7 +376,8 @@ class SampleCallbacksTestCase(unittest.TestCase):
             _fields_ = [("a", c_int), ("b", c_int)]
 
         CALLBACK = CFUNCTYPE(SmallRet)
-        func = self._dll()._testfunc_cbk_ret_small_struct_sum
+        dll = CDLL(_ctypes_test.__file__)
+        func = dll._testfunc_cbk_ret_small_struct_sum
         func.argtypes = (CALLBACK,)
         func.restype = c_long
 
@@ -393,7 +396,8 @@ class SampleCallbacksTestCase(unittest.TestCase):
             pass
 
         CALLBACK = CFUNCTYPE(SmallRet)
-        func = self._dll()._testfunc_cbk_ret_small_struct_sum
+        dll = CDLL(_ctypes_test.__file__)
+        func = dll._testfunc_cbk_ret_small_struct_sum
         func.argtypes = (CALLBACK,)
         func.restype = c_long
 
@@ -407,7 +411,8 @@ class SampleCallbacksTestCase(unittest.TestCase):
             _fields_ = [("q", c_int)]
 
         CALLBACK = CFUNCTYPE(SmallRet)
-        func = self._dll()._testfunc_cbk_ret_small_struct_sum
+        dll = CDLL(_ctypes_test.__file__)
+        func = dll._testfunc_cbk_ret_small_struct_sum
         func.argtypes = (CALLBACK,)
         func.restype = c_long
 
@@ -434,7 +439,8 @@ class SampleCallbacksTestCase(unittest.TestCase):
         keepalive = b"hello"
 
         CALLBACK = CFUNCTYPE(WithPtr)
-        func = self._dll()._testfunc_cbk_ret_ptr_struct
+        dll = CDLL(_ctypes_test.__file__)
+        func = dll._testfunc_cbk_ret_ptr_struct
         func.argtypes = (CALLBACK,)
         func.restype = WithPtr
 
