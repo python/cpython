@@ -190,12 +190,19 @@ get_suggestions_for_attribute_error(PyAttributeErrorObject *exc)
         return NULL;
     }
 
+    // PyObject_Dir() can invoke arbitrary code which may mutate or clear
+    // exc->name/exc->obj, so keep our own references alive across the call.
+    Py_INCREF(name);
+    Py_INCREF(obj);
     PyObject *dir = PyObject_Dir(obj);
+    Py_DECREF(obj);
     if (dir == NULL) {
+        Py_DECREF(name);
         return NULL;
     }
 
     PyObject *suggestions = calculate_suggestions(dir, name);
+    Py_DECREF(name);
     Py_DECREF(dir);
     return suggestions;
 }
@@ -329,8 +336,15 @@ offer_suggestions_for_name_error(PyNameErrorObject *exc)
     PyFrameObject *frame = traceback->tb_frame;
     assert(frame != NULL);
 
+    // get_suggestions_for_name_error() can invoke arbitrary code which may
+    // mutate or clear exc->name/exc->traceback, so keep our own references
+    // alive across the call.
+    Py_INCREF(name);
+    Py_INCREF(frame);
     PyObject* suggestion = get_suggestions_for_name_error(name, frame);
+    Py_DECREF(frame);
     if (suggestion == NULL && PyErr_Occurred()) {
+        Py_DECREF(name);
         return NULL;
     }
 
@@ -338,6 +352,7 @@ offer_suggestions_for_name_error(PyNameErrorObject *exc)
     PyObject* result = NULL;
     if (!is_name_stdlib_module(name)) {
         if (suggestion == NULL) {
+            Py_DECREF(name);
             return NULL;
         }
         result = PyUnicode_FromFormat(". Did you mean: %R?", suggestion);
@@ -346,6 +361,7 @@ offer_suggestions_for_name_error(PyNameErrorObject *exc)
     } else {
         result = PyUnicode_FromFormat(". Did you mean: %R? Or did you forget to import %R?", suggestion, name);
     }
+    Py_DECREF(name);
     Py_XDECREF(suggestion);
     return result;
 }
@@ -360,18 +376,27 @@ offer_suggestions_for_import_error(PyImportErrorObject *exc)
         return NULL;
     }
 
+    // PyImport_GetModule() and PyObject_Dir() can invoke arbitrary code which
+    // may mutate or clear exc->name/exc->name_from, so keep our own references
+    // alive across the calls.
+    Py_INCREF(name);
+    Py_INCREF(mod_name);
     PyObject* mod = PyImport_GetModule(mod_name);
+    Py_DECREF(mod_name);
     if (mod == NULL) {
+        Py_DECREF(name);
         return NULL;
     }
 
     PyObject *dir = PyObject_Dir(mod);
     Py_DECREF(mod);
     if (dir == NULL) {
+        Py_DECREF(name);
         return NULL;
     }
 
     PyObject *suggestion = calculate_suggestions(dir, name);
+    Py_DECREF(name);
     Py_DECREF(dir);
     if (!suggestion) {
         return NULL;

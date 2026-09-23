@@ -3220,6 +3220,27 @@ class SuggestionFormattingTestBase:
         actual = self.get_suggestion(A(), 'blech')
         self.assertNotIn("Did you mean", actual)
 
+    def test_attribute_error_name_cleared_in_dir(self):
+        # gh-157947: PyObject_Dir() can run code that mutates exc.name/exc.obj
+        # while suggestion computation still holds borrowed references to them.
+        class Evil:
+            def __dir__(self):
+                exc = sys.exc_info()[1]
+                if isinstance(exc, AttributeError):
+                    exc.name = "replaced"
+                    exc.obj = None
+                return ["x"]
+
+        def callable():
+            raise AttributeError("boom",
+                                 name="X" * (4 * 1024 * 1024) + "!",
+                                 obj=Evil())
+
+        result_lines = self.get_exception(
+            callable, slice_start=-1, slice_end=None
+        )
+        self.assertIn("AttributeError", result_lines[-1])
+
     def test_attribute_error_with_failing_dict(self):
         class T:
             bluch = 1
