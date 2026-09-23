@@ -1294,6 +1294,7 @@ class GCTests(unittest.TestCase):
         thresholds = gc.get_threshold()
         gc.enable()
         try:
+            gc.collect(2)
             self.assertTrue(_testinternalcapi.test_gc_frame_cleared(thresholds[0]))
         finally:
             gc.disable()
