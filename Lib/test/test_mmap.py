@@ -72,7 +72,7 @@ class MmapTests(unittest.TestCase):
 
         # Shouldn't crash on boundary (Issue #5292)
         self.assertRaises(IndexError, m.__getitem__, len(m))
-        self.assertRaises(IndexError, m.__setitem__, len(m), b'\0')
+        self.assertRaises(IndexError, m.__setitem__, len(m), 0)
 
         # Modify the file's content
         m[0] = b'3'[0]
@@ -973,6 +973,55 @@ class MmapTests(unittest.TestCase):
                     # Can't expand to its original size.
                     with self.assertRaises(ValueError):
                         m.resize(start_size)
+
+    @unittest.skipUnless(hasattr(mmap.mmap, 'resize'), 'requires mmap.resize')
+    def test_setitem_resize_reentrancy(self):
+        """Resizing the mmap from inside __index__ while assigning to a
+        single item must not access memory past the new bounds (gh-157335).
+        """
+        size = 2 * PAGESIZE
+        new_size = PAGESIZE
+
+        class ResizeOnIndex:
+            def __init__(self, m):
+                self.m = m
+            def __index__(self):
+                self.m.resize(new_size)
+                return 0
+
+        with mmap.mmap(-1, size) as m:
+            try:
+                with self.assertRaises(IndexError):
+                    m[size - 1] = ResizeOnIndex(m)
+            except SystemError as exc:
+                self.skipTest(f"resize() is not available: {exc!r}")
+            self.assertEqual(len(m), new_size)
+
+    @unittest.skipUnless(hasattr(mmap.mmap, 'resize'), 'requires mmap.resize')
+    def test_setitem_slice_resize_reentrancy(self):
+        """Resizing the mmap from inside a value's buffer-protocol
+        callback while assigning to a slice must not access memory past
+        the new bounds (gh-157335).
+        """
+        size = 2 * PAGESIZE
+        new_size = PAGESIZE
+
+        class ResizeOnBuffer:
+            def __init__(self, m, data):
+                self.m = m
+                self.data = data
+            def __buffer__(self, flags):
+                self.m.resize(new_size)
+                return memoryview(self.data)
+
+        with mmap.mmap(-1, size) as m:
+            value = ResizeOnBuffer(m, bytes(size))
+            try:
+                with self.assertRaises(IndexError):
+                    m[0:size] = value
+            except SystemError as exc:
+                self.skipTest(f"resize() is not available: {exc!r}")
+            self.assertEqual(len(m), new_size)
 
     @unittest.skipUnless(os.name == 'nt', 'requires Windows')
     def test_resize_fails_if_mapping_held_elsewhere(self):
