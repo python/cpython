@@ -90,9 +90,11 @@ Node classes
                   end_lineno
                   end_col_offset
 
-      Instances of :class:`ast.expr` and :class:`ast.stmt` subclasses have
+      Instances of most classes in the :mod:`!ast` module have the
       :attr:`lineno`, :attr:`col_offset`, :attr:`end_lineno`, and
-      :attr:`end_col_offset` attributes.  The :attr:`lineno` and :attr:`end_lineno`
+      :attr:`end_col_offset` attributes, including all subclasses of
+      :class:`ast.expr`, :class:`ast.stmt` and others (see the abstract grammar
+      :ref:`above <abstract-grammar>`).  The :attr:`lineno` and :attr:`end_lineno`
       are the first and last line numbers of source text span (1-indexed so the
       first line is line 1) and the :attr:`col_offset` and :attr:`end_col_offset`
       are the corresponding UTF-8 byte offsets of the first and last tokens that
@@ -100,7 +102,9 @@ Node classes
       UTF-8 internally.
 
       Note that the end positions are not required by the compiler and are
-      therefore optional. The end offset is *after* the last symbol, for example
+      therefore optional, except for :class:`ast.pattern` and
+      :class:`ast.type_param` nodes, for which the compiler requires them.
+      The end offset is *after* the last symbol, for example
       one can get the source segment of a one-line expression node using
       ``source_line[node.col_offset : node.end_col_offset]``.
 
