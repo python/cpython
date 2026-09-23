@@ -463,36 +463,19 @@ _PyPreConfig_GetConfig(PyPreConfig *preconfig, const PyConfig *config)
 
 
 static void
-preconfig_get_global_vars(PyPreConfig *config)
+preconfig_get_global_var(PyPreConfig *config)
 {
     if (config->_config_init != _PyConfig_INIT_COMPAT) {
         /* Python and Isolated configuration ignore global variables */
         return;
     }
 
-#define COPY_FLAG(ATTR, VALUE) \
-    if (config->ATTR < 0) { \
-        config->ATTR = VALUE; \
-    }
-#define COPY_NOT_FLAG(ATTR, VALUE) \
-    if (config->ATTR < 0) { \
-        config->ATTR = !(VALUE); \
-    }
-
 _Py_COMP_DIAG_PUSH
 _Py_COMP_DIAG_IGNORE_DEPR_DECLS
-    COPY_FLAG(isolated, Py_IsolatedFlag);
-    COPY_NOT_FLAG(use_environment, Py_IgnoreEnvironmentFlag);
     if (Py_UTF8Mode > 0) {
         config->utf8_mode = Py_UTF8Mode;
     }
-#ifdef MS_WINDOWS
-    COPY_FLAG(legacy_windows_fs_encoding, Py_LegacyWindowsFSEncodingFlag);
-#endif
 _Py_COMP_DIAG_POP
-
-#undef COPY_FLAG
-#undef COPY_NOT_FLAG
 }
 
 
@@ -776,7 +759,7 @@ preconfig_read(PyPreConfig *config, _PyPreCmdline *cmdline)
 
    - command line arguments
    - environment variables
-   - Py_xxx global configuration variables
+   - Py_UTF8Mode global configuration variable
    - the LC_CTYPE locale */
 PyStatus
 _PyPreConfig_Read(PyPreConfig *config, const _PyArgv *args)
@@ -788,7 +771,18 @@ _PyPreConfig_Read(PyPreConfig *config, const _PyArgv *args)
         return status;
     }
 
-    preconfig_get_global_vars(config);
+    preconfig_get_global_var(config);
+    if (config->use_environment < 0) {
+        config->use_environment = 1;
+    }
+    if (config->isolated < 0) {
+        config->isolated = 0;
+    }
+#ifdef MS_WINDOWS
+    if (config->legacy_windows_fs_encoding < 0) {
+        config->legacy_windows_fs_encoding = 0;
+    }
+#endif
 
     /* Copy LC_CTYPE locale, since it's modified later */
     const char *loc = setlocale(LC_CTYPE, NULL);
