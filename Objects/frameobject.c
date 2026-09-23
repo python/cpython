@@ -593,12 +593,10 @@ framelocalsproxy_values(PyObject *self, PyObject *Py_UNUSED(ignored))
     for (int i = 0; i < co->co_nlocalsplus; i++) {
         PyObject *value = framelocalsproxy_getval(frame->f_frame, co, i);
         if (value) {
-            if (PyList_Append(values, value) < 0) {
+            if (_PyList_AppendTakeRef((PyListObject *)values, value) < 0) {
                 Py_DECREF(values);
-                Py_DECREF(value);
                 return NULL;
             }
-            Py_DECREF(value);
         }
     }
 
