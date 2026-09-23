@@ -1009,12 +1009,16 @@ Debug options
 .. option:: --with-address-sanitizer
 
    Enable AddressSanitizer memory error detector, ``asan`` (default is no).
+   This disables pymalloc by default, use
+   :option:`--with-pymalloc <--without-pymalloc>` to enable it.
 
    .. versionadded:: 3.6
 
 .. option:: --with-memory-sanitizer
 
    Enable MemorySanitizer allocation error detector, ``msan`` (default is no).
+   This disables pymalloc by default, use
+   :option:`--with-pymalloc <--without-pymalloc>` to enable it.
 
    .. versionadded:: 3.6
 

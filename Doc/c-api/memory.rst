@@ -705,9 +705,11 @@ This allocator is disabled if Python is configured with the
 :option:`--without-pymalloc` option. It can also be disabled at runtime using
 the :envvar:`PYTHONMALLOC` environment variable (ex: ``PYTHONMALLOC=malloc``).
 
-Typically, it makes sense to disable the pymalloc allocator when building
-Python with AddressSanitizer (:option:`--with-address-sanitizer`) which helps
-uncover low level bugs within the C code.
+The pymalloc allocator is disabled by default when Python is built with
+AddressSanitizer (:option:`--with-address-sanitizer`) or MemorySanitizer
+(:option:`--with-memory-sanitizer`), since these sanitizers do not track
+allocations made by pymalloc. Pass
+:option:`--with-pymalloc <--without-pymalloc>` to enable it anyway.
 
 Customize pymalloc Arena Allocator
 ----------------------------------
