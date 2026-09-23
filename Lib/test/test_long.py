@@ -233,18 +233,19 @@ class LongTest(unittest.TestCase):
         # We test them with other functions that use them.
 
         # Full limb values.
-        one = (1 << SHIFT) - 1
         two = (1 << (2 * SHIFT)) - 1
         three = (1 << (3 * SHIFT)) - 1
         four = (1 << (4 * SHIFT)) - 1
         # Powers of 10.
         ten_to_40 = 10**40
         ten_to_20 = 10**20
+        # Two limbs (not compact) but bit_length() <= 55.
+        bits50 = (1 << 50) - 1
 
         # Test with "_PyLong_Frexp" (n -> float):
         # - n.bit_length() <= 55  => v_lshift,
         # - n.bit_length() > 55   => v_rshift.
-        self.check_float_conversion(one)
+        self.check_float_conversion(bits50)
         self.check_float_conversion(two)
         self.check_float_conversion(ten_to_40)
 
