@@ -303,7 +303,6 @@ class TestWarnings(unittest.TestCase):
 
 
 class TestStatementSubmittedHook(unittest.TestCase):
-
     def _run_interactive(self, statements, hook):
         console = InteractiveColoredConsole()
         statement_iter = iter(statements)
@@ -352,8 +351,27 @@ class TestStatementSubmittedHook(unittest.TestCase):
         self.assertIn("RuntimeError: hook error", output)
         self.assertEqual(namespace["x"], 1)
 
+    def test_hook_return_value_is_ignored(self):
+        hook = MagicMock(return_value=True)
+
+        _, namespace = self._run_interactive(["x = 1"], hook)
+
+        self.assertEqual(namespace["x"], 1)
+
     def test_hook_not_called_for_repl_commands(self):
         hook = MagicMock()
         self._run_interactive(["clear"], hook)
 
         hook.assert_not_called()
+
+    @force_not_colorized
+    def test_hook_called_before_execution_exception(self):
+        statement = "1 / 0"
+        marker = "hook ran first"
+        hook = MagicMock(side_effect=lambda statement: print(marker))
+        output, _ = self._run_interactive([statement], hook)
+
+        hook.assert_called_once_with(statement)
+        marker_index = output.index(marker)
+        traceback_index = output.index("ZeroDivisionError")
+        self.assertLess(marker_index, traceback_index)
