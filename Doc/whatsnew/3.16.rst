@@ -1084,7 +1084,8 @@ C API changes
 New features
 ------------
 
-* TODO
+* Add :c:func:`Py_HashBuffer` to the limited C API.
+  (Contributed by Victor Stinner in :gh:`148233`.)
 
 Porting to Python 3.16
 ----------------------
