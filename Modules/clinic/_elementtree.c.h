@@ -12,7 +12,12 @@ preserve
 PyDoc_STRVAR(_elementtree_Element_append__doc__,
 "append($self, subelement, /)\n"
 "--\n"
-"\n");
+"\n"
+"Add *subelement* to the end of this element.\n"
+"\n"
+"The new element will appear in document order after the last\n"
+"existing subelement (or directly after the text, if it\'s the first\n"
+"subelement), but before the end tag for this element.");
 
 #define _ELEMENTTREE_ELEMENT_APPEND_METHODDEF    \
     {"append", _PyCFunction_CAST(_elementtree_Element_append), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _elementtree_Element_append__doc__},
@@ -60,7 +65,11 @@ exit:
 PyDoc_STRVAR(_elementtree_Element_clear__doc__,
 "clear($self, /)\n"
 "--\n"
-"\n");
+"\n"
+"Reset element.\n"
+"\n"
+"This function removes all subelements, clears all attributes, and\n"
+"sets the text and tail attributes to None.");
 
 #define _ELEMENTTREE_ELEMENT_CLEAR_METHODDEF    \
     {"clear", (PyCFunction)_elementtree_Element_clear, METH_NOARGS, _elementtree_Element_clear__doc__},
@@ -214,7 +223,10 @@ exit:
 PyDoc_STRVAR(_elementtree_Element_extend__doc__,
 "extend($self, elements, /)\n"
 "--\n"
-"\n");
+"\n"
+"Append subelements from a sequence.\n"
+"\n"
+"*elements* is a sequence with zero or more elements.");
 
 #define _ELEMENTTREE_ELEMENT_EXTEND_METHODDEF    \
     {"extend", _PyCFunction_CAST(_elementtree_Element_extend), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _elementtree_Element_extend__doc__},
@@ -258,7 +270,14 @@ exit:
 PyDoc_STRVAR(_elementtree_Element_find__doc__,
 "find($self, /, path, namespaces=None)\n"
 "--\n"
-"\n");
+"\n"
+"Find first matching element by tag name or path.\n"
+"\n"
+"*path* is a string having either an element tag or an XPath,\n"
+"*namespaces* is an optional mapping from namespace prefix to full\n"
+"name.\n"
+"\n"
+"Return the first matching element, or None if no element was found.");
 
 #define _ELEMENTTREE_ELEMENT_FIND_METHODDEF    \
     {"find", _PyCFunction_CAST(_elementtree_Element_find), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _elementtree_Element_find__doc__},
@@ -323,7 +342,17 @@ exit:
 PyDoc_STRVAR(_elementtree_Element_findtext__doc__,
 "findtext($self, /, path, default=None, namespaces=None)\n"
 "--\n"
-"\n");
+"\n"
+"Find text for first matching element by tag name or path.\n"
+"\n"
+"*path* is a string having either an element tag or an XPath,\n"
+"*default* is the value to return if the element was not found,\n"
+"*namespaces* is an optional mapping from namespace prefix to full\n"
+"name.\n"
+"\n"
+"Return text content of first matching element, or default value if\n"
+"none was found. Note that if an element is found having no text\n"
+"content, the empty string is returned.");
 
 #define _ELEMENTTREE_ELEMENT_FINDTEXT_METHODDEF    \
     {"findtext", _PyCFunction_CAST(_elementtree_Element_findtext), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _elementtree_Element_findtext__doc__},
@@ -396,7 +425,14 @@ exit:
 PyDoc_STRVAR(_elementtree_Element_findall__doc__,
 "findall($self, /, path, namespaces=None)\n"
 "--\n"
-"\n");
+"\n"
+"Find all matching subelements by tag name or path.\n"
+"\n"
+"*path* is a string having either an element tag or an XPath,\n"
+"*namespaces* is an optional mapping from namespace prefix to full\n"
+"name.\n"
+"\n"
+"Returns list containing all matching elements in document order.");
 
 #define _ELEMENTTREE_ELEMENT_FINDALL_METHODDEF    \
     {"findall", _PyCFunction_CAST(_elementtree_Element_findall), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _elementtree_Element_findall__doc__},
@@ -461,7 +497,14 @@ exit:
 PyDoc_STRVAR(_elementtree_Element_iterfind__doc__,
 "iterfind($self, /, path, namespaces=None)\n"
 "--\n"
-"\n");
+"\n"
+"Find all matching subelements by tag name or path.\n"
+"\n"
+"*path* is a string having either an element tag or an XPath,\n"
+"*namespaces* is an optional mapping from namespace prefix to full\n"
+"name.\n"
+"\n"
+"Return an iterable yielding all matching elements in document order.");
 
 #define _ELEMENTTREE_ELEMENT_ITERFIND_METHODDEF    \
     {"iterfind", _PyCFunction_CAST(_elementtree_Element_iterfind), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _elementtree_Element_iterfind__doc__},
@@ -526,7 +569,15 @@ exit:
 PyDoc_STRVAR(_elementtree_Element_get__doc__,
 "get($self, /, key, default=None)\n"
 "--\n"
-"\n");
+"\n"
+"Get element attribute.\n"
+"\n"
+"Equivalent to attrib.get, but some implementations may handle this a\n"
+"bit more efficiently. *key* is what attribute to look for, and\n"
+"*default* is what to return if the attribute was not found.\n"
+"\n"
+"Returns a string containing the attribute value, or the default if\n"
+"attribute was not found.");
 
 #define _ELEMENTTREE_ELEMENT_GET_METHODDEF    \
     {"get", _PyCFunction_CAST(_elementtree_Element_get), METH_FASTCALL|METH_KEYWORDS, _elementtree_Element_get__doc__},
@@ -591,7 +642,19 @@ exit:
 PyDoc_STRVAR(_elementtree_Element_iter__doc__,
 "iter($self, /, tag=None)\n"
 "--\n"
-"\n");
+"\n"
+"Create tree iterator.\n"
+"\n"
+"The iterator loops over the element and all subelements in document\n"
+"order, returning all elements with a matching tag.\n"
+"\n"
+"If the tree structure is modified during iteration, new or removed\n"
+"elements may or may not be included. To get a stable set, use the\n"
+"list() function on the iterator, and loop over the resulting list.\n"
+"\n"
+"*tag* is what tags to look for (default is to return all elements)\n"
+"\n"
+"Return an iterator containing all the matching elements.");
 
 #define _ELEMENTTREE_ELEMENT_ITER_METHODDEF    \
     {"iter", _PyCFunction_CAST(_elementtree_Element_iter), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _elementtree_Element_iter__doc__},
@@ -654,7 +717,11 @@ exit:
 PyDoc_STRVAR(_elementtree_Element_itertext__doc__,
 "itertext($self, /)\n"
 "--\n"
-"\n");
+"\n"
+"Create text iterator.\n"
+"\n"
+"The iterator loops over the element and all subelements in document\n"
+"order, returning all inner text.");
 
 #define _ELEMENTTREE_ELEMENT_ITERTEXT_METHODDEF    \
     {"itertext", _PyCFunction_CAST(_elementtree_Element_itertext), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _elementtree_Element_itertext__doc__},
@@ -675,7 +742,8 @@ _elementtree_Element_itertext(PyObject *self, PyTypeObject *cls, PyObject *const
 PyDoc_STRVAR(_elementtree_Element_insert__doc__,
 "insert($self, index, subelement, /)\n"
 "--\n"
-"\n");
+"\n"
+"Insert *subelement* at position *index*.");
 
 #define _ELEMENTTREE_ELEMENT_INSERT_METHODDEF    \
     {"insert", _PyCFunction_CAST(_elementtree_Element_insert), METH_FASTCALL, _elementtree_Element_insert__doc__},
@@ -720,7 +788,10 @@ exit:
 PyDoc_STRVAR(_elementtree_Element_items__doc__,
 "items($self, /)\n"
 "--\n"
-"\n");
+"\n"
+"Get element attributes as (name, value) pairs.\n"
+"\n"
+"Equivalent to attrib.items().");
 
 #define _ELEMENTTREE_ELEMENT_ITEMS_METHODDEF    \
     {"items", (PyCFunction)_elementtree_Element_items, METH_NOARGS, _elementtree_Element_items__doc__},
@@ -737,7 +808,10 @@ _elementtree_Element_items(PyObject *self, PyObject *Py_UNUSED(ignored))
 PyDoc_STRVAR(_elementtree_Element_keys__doc__,
 "keys($self, /)\n"
 "--\n"
-"\n");
+"\n"
+"Get attribute names.\n"
+"\n"
+"Equivalent to attrib.keys()");
 
 #define _ELEMENTTREE_ELEMENT_KEYS_METHODDEF    \
     {"keys", (PyCFunction)_elementtree_Element_keys, METH_NOARGS, _elementtree_Element_keys__doc__},
@@ -754,7 +828,14 @@ _elementtree_Element_keys(PyObject *self, PyObject *Py_UNUSED(ignored))
 PyDoc_STRVAR(_elementtree_Element_makeelement__doc__,
 "makeelement($self, tag, attrib, /)\n"
 "--\n"
-"\n");
+"\n"
+"Create a new element with the same type.\n"
+"\n"
+"*tag* is a string containing the element name. *attrib* is a\n"
+"dictionary containing the element attributes.\n"
+"\n"
+"Do not call this method, use the SubElement factory function\n"
+"instead.");
 
 #define _ELEMENTTREE_ELEMENT_MAKEELEMENT_METHODDEF    \
     {"makeelement", _PyCFunction_CAST(_elementtree_Element_makeelement), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _elementtree_Element_makeelement__doc__},
@@ -804,7 +885,16 @@ exit:
 PyDoc_STRVAR(_elementtree_Element_remove__doc__,
 "remove($self, subelement, /)\n"
 "--\n"
-"\n");
+"\n"
+"Remove matching subelement.\n"
+"\n"
+"Unlike the find methods, this method compares elements based on\n"
+"identity, NOT ON tag value or contents. To remove subelements by\n"
+"other means, the easiest way is to use a list comprehension to\n"
+"select what elements to keep, and then use slice assignment to\n"
+"update the parent element.\n"
+"\n"
+"ValueError is raised if a matching element could not be found.");
 
 #define _ELEMENTTREE_ELEMENT_REMOVE_METHODDEF    \
     {"remove", (PyCFunction)_elementtree_Element_remove, METH_O, _elementtree_Element_remove__doc__},
@@ -832,7 +922,12 @@ exit:
 PyDoc_STRVAR(_elementtree_Element_set__doc__,
 "set($self, key, value, /)\n"
 "--\n"
-"\n");
+"\n"
+"Set element attribute.\n"
+"\n"
+"Equivalent to attrib[key] = value, but some implementations may\n"
+"handle this a bit more efficiently. *key* is what attribute to set,\n"
+"and *value* is the attribute value to set it to.");
 
 #define _ELEMENTTREE_ELEMENT_SET_METHODDEF    \
     {"set", _PyCFunction_CAST(_elementtree_Element_set), METH_FASTCALL, _elementtree_Element_set__doc__},
@@ -858,6 +953,30 @@ _elementtree_Element_set(PyObject *self, PyObject *const *args, Py_ssize_t nargs
 exit:
     return return_value;
 }
+
+PyDoc_STRVAR(_elementtree_TreeBuilder___init____doc__,
+"TreeBuilder(element_factory=None, *, comment_factory=None,\n"
+"            pi_factory=None, insert_comments=False, insert_pis=False)\n"
+"--\n"
+"\n"
+"Generic element structure builder.\n"
+"\n"
+"This builder converts a sequence of start, data, and end method\n"
+"calls to a well-formed element structure.\n"
+"\n"
+"You can use this class to build an element structure using a custom\n"
+"XML parser, or a parser for some other XML-like format.\n"
+"\n"
+"*element_factory* is an optional element factory which is called\n"
+"to create new Element instances, as necessary.\n"
+"\n"
+"*comment_factory* is a factory to create comments to be used instead\n"
+"of the standard factory.  If *insert_comments* is false (the\n"
+"default), comments will not be inserted into the tree.\n"
+"\n"
+"*pi_factory* is a factory to create processing instructions to be\n"
+"used instead of the standard factory.  If *insert_pis* is false (the\n"
+"default), processing instructions will not be inserted into the tree.");
 
 static int
 _elementtree_TreeBuilder___init___impl(TreeBuilderObject *self,
@@ -993,7 +1112,8 @@ exit:
 PyDoc_STRVAR(_elementtree_TreeBuilder_data__doc__,
 "data($self, data, /)\n"
 "--\n"
-"\n");
+"\n"
+"Add text to current element.");
 
 #define _ELEMENTTREE_TREEBUILDER_DATA_METHODDEF    \
     {"data", (PyCFunction)_elementtree_TreeBuilder_data, METH_O, _elementtree_TreeBuilder_data__doc__},
@@ -1014,7 +1134,10 @@ _elementtree_TreeBuilder_data(PyObject *self, PyObject *data)
 PyDoc_STRVAR(_elementtree_TreeBuilder_end__doc__,
 "end($self, tag, /)\n"
 "--\n"
-"\n");
+"\n"
+"Close and return current Element.\n"
+"\n"
+"*tag* is the element name.");
 
 #define _ELEMENTTREE_TREEBUILDER_END_METHODDEF    \
     {"end", (PyCFunction)_elementtree_TreeBuilder_end, METH_O, _elementtree_TreeBuilder_end__doc__},
@@ -1035,7 +1158,10 @@ _elementtree_TreeBuilder_end(PyObject *self, PyObject *tag)
 PyDoc_STRVAR(_elementtree_TreeBuilder_comment__doc__,
 "comment($self, text, /)\n"
 "--\n"
-"\n");
+"\n"
+"Create a comment using the comment_factory.\n"
+"\n"
+"*text* is the text of the comment.");
 
 #define _ELEMENTTREE_TREEBUILDER_COMMENT_METHODDEF    \
     {"comment", (PyCFunction)_elementtree_TreeBuilder_comment, METH_O, _elementtree_TreeBuilder_comment__doc__},
@@ -1057,7 +1183,11 @@ _elementtree_TreeBuilder_comment(PyObject *self, PyObject *text)
 PyDoc_STRVAR(_elementtree_TreeBuilder_pi__doc__,
 "pi($self, target, text=None, /)\n"
 "--\n"
-"\n");
+"\n"
+"Create a processing instruction using the pi_factory.\n"
+"\n"
+"*target* is the target name of the processing instruction. *text* is\n"
+"the data of the processing instruction, or \'\'.");
 
 #define _ELEMENTTREE_TREEBUILDER_PI_METHODDEF    \
     {"pi", _PyCFunction_CAST(_elementtree_TreeBuilder_pi), METH_FASTCALL, _elementtree_TreeBuilder_pi__doc__},
@@ -1091,7 +1221,8 @@ exit:
 PyDoc_STRVAR(_elementtree_TreeBuilder_close__doc__,
 "close($self, /)\n"
 "--\n"
-"\n");
+"\n"
+"Flush builder buffers and return toplevel document Element.");
 
 #define _ELEMENTTREE_TREEBUILDER_CLOSE_METHODDEF    \
     {"close", (PyCFunction)_elementtree_TreeBuilder_close, METH_NOARGS, _elementtree_TreeBuilder_close__doc__},
@@ -1108,7 +1239,11 @@ _elementtree_TreeBuilder_close(PyObject *self, PyObject *Py_UNUSED(ignored))
 PyDoc_STRVAR(_elementtree_TreeBuilder_start__doc__,
 "start($self, tag, attrs, /)\n"
 "--\n"
-"\n");
+"\n"
+"Open new element and return it.\n"
+"\n"
+"*tag* is the element name, *attrs* is a dict containing element\n"
+"attributes.");
 
 #define _ELEMENTTREE_TREEBUILDER_START_METHODDEF    \
     {"start", _PyCFunction_CAST(_elementtree_TreeBuilder_start), METH_FASTCALL, _elementtree_TreeBuilder_start__doc__},
@@ -1138,6 +1273,17 @@ _elementtree_TreeBuilder_start(PyObject *self, PyObject *const *args, Py_ssize_t
 exit:
     return return_value;
 }
+
+PyDoc_STRVAR(_elementtree_XMLParser___init____doc__,
+"XMLParser(*, target=None, encoding=None)\n"
+"--\n"
+"\n"
+"Element structure builder for XML source data based on the expat parser.\n"
+"\n"
+"*target* is an optional target object which defaults to an instance\n"
+"of the standard TreeBuilder class, *encoding* is an optional encoding\n"
+"string which if given, overrides the encoding specified in the XML\n"
+"file: http://www.iana.org/assignments/character-sets");
 
 static int
 _elementtree_XMLParser___init___impl(XMLParserObject *self, PyObject *target,
@@ -1223,7 +1369,8 @@ exit:
 PyDoc_STRVAR(_elementtree_XMLParser_close__doc__,
 "close($self, /)\n"
 "--\n"
-"\n");
+"\n"
+"Finish feeding data to parser and return element structure.");
 
 #define _ELEMENTTREE_XMLPARSER_CLOSE_METHODDEF    \
     {"close", (PyCFunction)_elementtree_XMLParser_close, METH_NOARGS, _elementtree_XMLParser_close__doc__},
@@ -1257,7 +1404,8 @@ _elementtree_XMLParser_flush(PyObject *self, PyObject *Py_UNUSED(ignored))
 PyDoc_STRVAR(_elementtree_XMLParser_feed__doc__,
 "feed($self, data, /)\n"
 "--\n"
-"\n");
+"\n"
+"Feed encoded data to parser.");
 
 #define _ELEMENTTREE_XMLPARSER_FEED_METHODDEF    \
     {"feed", (PyCFunction)_elementtree_XMLParser_feed, METH_O, _elementtree_XMLParser_feed__doc__},
@@ -1331,4 +1479,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c863ce16d8566291 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e2e9cf288c4400f6 input=a9049054013a1b77]*/

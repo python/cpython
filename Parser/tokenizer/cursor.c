@@ -23,7 +23,7 @@ _PyTok_CursorSetLine(_PyTok_Cursor *cursor, int lineno)
     if (lineno > 0 && cursor->lineno == lineno - 1 &&
             lineno <= source->nlines) {
         _PyTok_Off start = cursor->line_end;
-        _PyTok_Off end = source->len;
+        _PyTok_Off end = source->base_offset + source->len;
         if (lineno < source->nlines) {
             end = _PyTok_SourceFindLineEnd(source, start);
             if (end < 0) {
@@ -53,8 +53,9 @@ _PyTok_CursorSetOffset(_PyTok_Cursor *cursor, _PyTok_Off offset)
     int stays_on_line = cursor->lineno > 0 &&
         offset >= cursor->line_start && offset < cursor->line_end;
     if (!stays_on_line && cursor->lineno > 0 &&
-            offset == cursor->line_end && offset == source->len &&
-            (offset == 0 || source->bytes[offset - 1] != '\n')) {
+            offset == cursor->line_end &&
+            offset - source->base_offset == source->len &&
+            (source->len == 0 || source->bytes[source->len - 1] != '\n')) {
         stays_on_line = 1;
     }
     if (stays_on_line) {
@@ -68,7 +69,7 @@ _PyTok_CursorSetOffset(_PyTok_Cursor *cursor, _PyTok_Off offset)
         return -1;
     }
     _PyTok_Off start = offset - loc.byte_col;
-    _PyTok_Off end = source->len;
+    _PyTok_Off end = source->base_offset + source->len;
     if (loc.lineno < source->nlines) {
         end = _PyTok_SourceFindLineEnd(source, start);
         if (end < 0) {

@@ -1,0 +1,2 @@
+Changed :mod:`!winreg` to conditional import for Universal Windows Platform
+compatibility.
