@@ -1818,31 +1818,19 @@ config_get_env_dup(PyConfig *config,
 
 
 static void
-config_get_global_vars(PyConfig *config)
+config_read_preconfig(PyConfig *config)
 {
-    if (config->_config_init != _PyConfig_INIT_COMPAT) {
-        /* Python and Isolated configuration ignore global variables */
-        return;
-    }
+#define COPY_FLAG(ATTR) \
+        if (config->ATTR == -1) { \
+            config->ATTR = preconfig->ATTR; \
+        }
 
-    const PyConfigSpec *spec = PYCONFIG_SPEC;
-    for (; spec->name != NULL; spec++) {
-        if (spec->global_var.ptr == NULL) {
-            continue;
-        }
-        assert(spec->type == PyConfig_MEMBER_INT
-               || spec->type == PyConfig_MEMBER_UINT
-               || spec->type == PyConfig_MEMBER_BOOL);
-        int *member = config_get_spec_member(config, spec);
-        if (*member != -1) {
-            continue;
-        }
-        int value = *spec->global_var.ptr;
-        if (spec->global_var.not) {
-            value = !value;
-        }
-        *member = value;
-    }
+    const PyPreConfig *preconfig = &_PyRuntime.preconfig;
+    COPY_FLAG(isolated);
+    COPY_FLAG(use_environment);
+    COPY_FLAG(dev_mode);
+
+#undef COPY_FLAG
 }
 
 
@@ -3748,7 +3736,56 @@ _PyConfig_Read(PyConfig *config, int compute_path_config)
         return status;
     }
 
-    config_get_global_vars(config);
+    config_read_preconfig(config);
+
+    // Set default values
+    if (config->bytes_warning < 0) {
+        config->bytes_warning = 0;
+    }
+    if (config->inspect < 0) {
+        config->inspect = 0;
+    }
+    if (config->interactive < 0) {
+        config->interactive = 0;
+    }
+    if (config->optimization_level < 0) {
+        config->optimization_level = 0;
+    }
+    if (config->parser_debug < 0) {
+        config->parser_debug = 0;
+    }
+    if (config->quiet < 0) {
+        config->quiet = 0;
+    }
+    if (config->use_environment < 0) {
+        config->use_environment = 0;
+    }
+    if (config->verbose < 0) {
+        config->verbose = 0;
+    }
+    if (config->write_bytecode < 0) {
+        config->write_bytecode = 1;
+    }
+    if (config->buffered_stdio < 0) {
+        config->buffered_stdio = 1;
+    }
+    if (config->isolated < 0) {
+        config->isolated = 0;
+    }
+#ifdef MS_WINDOWS
+    if (config->legacy_windows_stdio < 0) {
+        config->legacy_windows_stdio = 0;
+    }
+#endif
+    if (config->pathconfig_warnings < 0) {
+        config->pathconfig_warnings = 1;
+    }
+    if (config->site_import < 0) {
+        config->site_import = 1;
+    }
+    if (config->user_site_directory < 0) {
+        config->user_site_directory = 1;
+    }
 
 #ifdef __CYGWIN__
     status = config_argv0_add_exe(config);
