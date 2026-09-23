@@ -1596,9 +1596,15 @@ class IpaddrUnitTest(unittest.TestCase):
 
     def testNextNetworkOutOfAddressSpace(self):
         ipv4 = ipaddress.IPv4Network('255.255.255.0/24')
-        self.assertRaises(ValueError, ipv4.next_network)
+        self.assertRaisesRegex(
+            ValueError,
+            'out of address space, cannot make another /24 network',
+            ipv4.next_network)
         ipv6 = ipaddress.IPv6Network('ffff:ffff:ffff:ffff:ffff:ffff:ffff:0/112')
-        self.assertRaises(ValueError, ipv6.next_network)
+        self.assertRaisesRegex(
+            ValueError,
+            'out of address space, cannot make another /112 network',
+            ipv6.next_network)
 
     def testFancySubnetting(self):
         self.assertEqual(sorted(self.ipv4_network.subnets(prefixlen_diff=3)),
@@ -2529,6 +2535,10 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertFalse(ipaddress.ip_address('2001::').is_global)
         self.assertTrue(ipaddress.ip_address('2001:1::1').is_global)
         self.assertTrue(ipaddress.ip_address('2001:1::2').is_global)
+        # gh-151049: RFC 9665 anycast address (IANA 2024-04 registration)
+        self.assertTrue(ipaddress.ip_address('2001:1::3').is_global)
+        self.assertFalse(ipaddress.ip_address('2001:1::3').is_private)
+        self.assertFalse(ipaddress.ip_address('2001:1::4').is_global)
         self.assertFalse(ipaddress.ip_address('2001:2::').is_global)
         self.assertTrue(ipaddress.ip_address('2001:3::').is_global)
         self.assertFalse(ipaddress.ip_address('2001:4::').is_global)

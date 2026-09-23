@@ -229,6 +229,17 @@ class SystemTapBackend(TraceBackend):
 
         return script.replace(self.PROBE_PLACEHOLDER, self.python_probe())
 
+    def generate_trace_command(self, script_file, subcommand=None):
+        probe_binary = get_probe_binary()
+        if subcommand and probe_binary != sys.executable:
+            library_path = os.path.dirname(probe_binary)
+            if existing_path := os.environ.get("LD_LIBRARY_PATH"):
+                library_path = os.pathsep.join((library_path, existing_path))
+            env = shlex.join(["env", f"LD_LIBRARY_PATH={library_path}"])
+            subcommand = f"{env} {subcommand}"
+
+        return super().generate_trace_command(script_file, subcommand)
+
     def trace(self, script_file, subcommand=None, *, timeout=None,
               check_returncode=False):
         with tempfile.NamedTemporaryFile(

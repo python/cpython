@@ -1,0 +1,2 @@
+When Python is built in debug mode, :c:type:`PyBytesWriter` now detects
+buffer overflow.  Patch by Victor Stinner.
