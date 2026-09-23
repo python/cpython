@@ -572,7 +572,7 @@ static const unsigned int _Py_STATX_KNOWN = (STATX_BASIC_STATS | STATX_BTIME
 #    define HAVE_READLINKAT_RUNTIME (readlinkat != NULL)
 #  endif
 
-#  ifdef HAVE_FREADLINK
+#  ifdef _Py_HAVE_FREADLINK
 #    define HAVE_FREADLINK_RUNTIME (freadlink != NULL)
 #  endif
 
@@ -11031,7 +11031,7 @@ os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
 #ifdef HAVE_READLINKAT
     int readlinkat_unavailable = 0;
 #endif
-#ifdef HAVE_FREADLINK
+#ifdef _Py_HAVE_FREADLINK
     int freadlink_unavailable = 0;
 #endif
 
@@ -11040,7 +11040,7 @@ os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
     }
 
     if (path->is_fd) {
-#if defined(__APPLE__) && defined(HAVE_FREADLINK)
+#if defined(__APPLE__) && defined(_Py_HAVE_FREADLINK)
         /* nop, freadlink is called below */
 #elif defined(__linux__) && defined(HAVE_READLINKAT)
         // Linux: readlinkat(dir_fd, "", ...) reads the symbolic link
@@ -11055,7 +11055,7 @@ os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
     }
 
     Py_BEGIN_ALLOW_THREADS
-#ifdef HAVE_FREADLINK
+#ifdef _Py_HAVE_FREADLINK
     if (path->is_fd) {
         if (HAVE_FREADLINK_RUNTIME) {
             length = freadlink(path->fd, buffer, MAXPATHLEN);
@@ -11077,7 +11077,7 @@ os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
     Py_END_ALLOW_THREADS
 
 
-#ifdef HAVE_FREADLINK
+#ifdef _Py_HAVE_FREADLINK
     if (freadlink_unavailable) {
         PyErr_Format(PyExc_NotImplementedError,
             "readlink cannot read file descriptors on this platform, "
@@ -18945,7 +18945,7 @@ PROBE(probe_openat, HAVE_OPENAT_RUNTIME)
 PROBE(probe_readlinkat, HAVE_READLINKAT_RUNTIME)
 #endif
 
-#ifdef HAVE_FREADLINK
+#ifdef _Py_HAVE_FREADLINK
 PROBE(probe_freadlink, HAVE_FREADLINK_RUNTIME)
 #endif
 
@@ -19016,7 +19016,7 @@ static const struct have_function {
     { "HAVE_FPATHCONF", NULL },
 #endif
 
-#ifdef HAVE_FREADLINK
+#ifdef _Py_HAVE_FREADLINK
     { "HAVE_FREADLINK", probe_freadlink },
 #endif
 
