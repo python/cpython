@@ -1131,8 +1131,8 @@ Deprecated C APIs
 Removed C APIs
 --------------
 
-* Remove :c:func:`Py_SetProgramName`, :c:func:`Py_SetPythonHome`,
-  :c:func:`PySys_SetArgv` and :c:func:`!PySys_SetArgvEx` functions,
+* Remove :c:func:`!Py_SetProgramName`, :c:func:`!Py_SetPythonHome`,
+  :c:func:`!PySys_SetArgv` and :c:func:`!PySys_SetArgvEx` functions,
   deprecated since Python 3.11.
   (Contributed by Victor Stinner in :gh:`158001`.)
 
