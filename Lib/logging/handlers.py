@@ -23,7 +23,7 @@ Copyright (C) 2001-2021 Vinay Sajip. All Rights Reserved.
 To use, simply 'import logging.handlers' and log away!
 """
 
-import io  # must stay eager to support finalization
+import io
 import logging
 import os
 import re
@@ -1133,7 +1133,7 @@ class SMTPHandler(logging.Handler):
             msg.set_content(self.format(record))
             if self.username:
                 if self.secure is not None:
-                    import ssl  # not lazy: breaks getmembers() without _ssl
+                    import ssl
 
                     try:
                         keyfile = self.secure[0]

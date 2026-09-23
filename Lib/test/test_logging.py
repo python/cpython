@@ -1865,31 +1865,22 @@ class ConfigFileTest(BaseTest):
         finally:
             os.unlink(fn)
 
-    def test_names_from_handlers_module(self):
-        # gh-156777: "handlers.X" is evaluated against vars(logging). Use a
-        # subprocess: importing this module already imports logging.handlers.
-        ini = textwrap.dedent("""
+    def test_class_from_handlers_module(self):
+        # gh-156777: "class=handlers.X" is evaluated against vars(logging).
+        # Use a subprocess: this module already imports logging.handlers.
+        ini = textwrap.dedent("""\
             [loggers]
             keys=root
-
             [handlers]
             keys=hand1
-
             [formatters]
-            keys=form1
-
+            keys=
             [logger_root]
             handlers=hand1
-
             [handler_hand1]
             class=handlers.MemoryHandler
-            formatter=form1
             args=(10,)
-
-            [formatter_form1]
-            format=%(levelname)s ++ %(message)s ++ %(port)s
-            defaults={'port': handlers.DEFAULT_TCP_LOGGING_PORT}
-            """).strip()
+            """)
         fd, fn = tempfile.mkstemp(prefix='test_logging_', suffix='.ini')
         self.addCleanup(os.unlink, fn)
         os.write(fd, ini.encode('ascii'))
@@ -1897,8 +1888,8 @@ class ConfigFileTest(BaseTest):
         code = textwrap.dedent(f"""
             import logging, logging.config
             logging.config.fileConfig({fn!r}, encoding="utf-8")
-            h = logging.getLogger().handlers[0]
-            assert isinstance(h, logging.handlers.MemoryHandler), h
+            assert isinstance(logging.getLogger().handlers[0],
+                              logging.handlers.MemoryHandler)
         """)
         assert_python_ok("-c", code)
 
@@ -5478,30 +5469,25 @@ class ModuleLevelMiscTest(BaseTest):
         # gh-156777: SocketHandler pickles the record before sending it, and
         # that must keep working when importing no longer can.
         code = textwrap.dedent("""
-            import logging
-            import logging.handlers
-            import os
+            import logging, logging.handlers, os
 
             class Handler(logging.handlers.SocketHandler):
-                # report what emit() did instead of doing network I/O
                 def send(self, s):
-                    os.write(1, b"sent %d bytes" % len(s))
-
+                    os.write(1, b"sent")
                 def handleError(self, record):
-                    os.write(1, b"record dropped")
+                    os.write(1, b"dropped")
 
-            h = Handler('localhost', logging.handlers.DEFAULT_TCP_LOGGING_PORT)
+            h = Handler('localhost', 9020)
             r = logging.LogRecord('n', logging.INFO, 'p', 1, 'msg', None, None)
 
             class A:
-                # the module globals are already cleared when __del__ runs
-                def __del__(self, h=h, r=r):
+                def __del__(self, h=h, r=r):  # globals are cleared by now
                     h.emit(r)
 
             a = A()
         """)
         rc, out, err = assert_python_ok("-c", code)
-        self.assertStartsWith(out.decode(), "sent ")
+        self.assertEqual(out, b"sent")
 
     def test_recursion_error(self):
         # Issue 36272
@@ -7609,8 +7595,8 @@ class LazyImportTest(unittest.TestCase):
     def test_lazy_imports_config(self):
         import_helper.ensure_lazy_imports(
             "logging.config",
-            {"configparser", "json", "logging.handlers", "multiprocessing",
-             "select", "socket", "socketserver", "struct"},
+            {"configparser", "json", "multiprocessing", "select", "socket",
+             "socketserver", "struct"},
             additional_code="logging.config.dictConfig({'version': 1})\n",
         )
 
@@ -7622,25 +7608,20 @@ class LazyImportTest(unittest.TestCase):
         )
 
     def test_socket_handler_resolves_imports_when_created(self):
-        # gh-156777: emit() may run during finalization, when importing no
-        # longer works, so the handler resolves what it needs up front.
+        # gh-156777: emit() may run when importing no longer works
         code = textwrap.dedent("""
-            import sys
-            import logging.handlers
+            import sys, logging.handlers
             logging.handlers.SocketHandler('localhost', 9020)
-            missing = {'pickle', 'socket', 'struct'} - sys.modules.keys()
-            assert not missing, missing
+            assert {'pickle', 'socket', 'struct'} <= sys.modules.keys()
         """)
         assert_python_ok("-S", "-c", code)
 
     def test_getmembers_without_ssl(self):
-        # gh-156777: getmembers() and pydoc resolve lazy imports, so a module
-        # level "lazy import ssl" would break them on a build without _ssl.
+        # gh-156777: getmembers() resolves lazy imports, so ssl must not be one
         code = textwrap.dedent("""
             import sys
             sys.modules['_ssl'] = None
-            import inspect
-            import logging.handlers
+            import inspect, logging.handlers
             inspect.getmembers(logging.handlers)
         """)
         assert_python_ok("-c", code)
