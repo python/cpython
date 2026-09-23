@@ -19,6 +19,22 @@ _PyTok_SourceClear(_PyTok_SourceText *source)
     _PyTok_SourceInit(source);
 }
 
+void
+_PyTok_SourceDiscard(_PyTok_SourceText *source)
+{
+    assert(source->base_offset <= PY_SSIZE_T_MAX - source->len);
+    source->base_offset += source->len;
+    source->len = 0;
+    if (source->bytes != NULL) {
+        source->bytes[0] = '\0';
+    }
+    if (source->implicit_lines != NULL) {
+        Py_ssize_t used = source->nlines / 8 + (source->nlines % 8 != 0);
+        memset(source->implicit_lines, 0, Py_MIN(used, source->implicit_cap));
+    }
+    source->nlines = 0;
+}
+
 static int
 reserve_bytes(_PyTok_SourceText *source, Py_ssize_t needed)
 {
@@ -89,7 +105,7 @@ reserve_checkpoints(_PyTok_SourceText *source, int needed)
 static int
 reserve_implicit_lines(_PyTok_SourceText *source, int nlines)
 {
-    Py_ssize_t needed = ((Py_ssize_t)nlines + 7) / 8;
+    Py_ssize_t needed = nlines / 8 + (nlines % 8 != 0);
     if (needed <= source->implicit_cap) {
         return 0;
     }
@@ -143,7 +159,8 @@ _PyTok_SourceAppendLine(_PyTok_SourceText *source, const char *bytes,
     if (validate_line(source, bytes, len, implicit_newline) < 0) {
         return -1;
     }
-    if (source->len > PY_SSIZE_T_MAX - len - 1) {
+    if (source->len > PY_SSIZE_T_MAX - len - 1 ||
+            source->base_offset > PY_SSIZE_T_MAX - source->len - len) {
         PyErr_NoMemory();
         return -1;
     }
@@ -162,26 +179,28 @@ _PyTok_SourceAppendLine(_PyTok_SourceText *source, const char *bytes,
     source->len += len;
     source->bytes[source->len] = '\0';
     if (checkpoint) {
-        source->line_checkpoints[checkpoint_count - 1] = start;
+        source->line_checkpoints[checkpoint_count - 1] =
+            source->base_offset + start;
     }
     if (implicit_newline) {
         source->implicit_lines[(nlines - 1) / 8] |=
             (unsigned char)(1U << ((nlines - 1) & 7));
     }
     source->nlines = nlines;
-    return start;
+    return source->base_offset + start;
 }
 
 const char *
 _PyTok_SourceSpanView(const _PyTok_SourceText *source, _PyTok_Span span,
                       Py_ssize_t *len)
 {
-    if (!_PyTok_SpanIsValid(span) || span.end > source->len || len == NULL) {
+    if (!_PyTok_SpanIsValid(span) || span.start < source->base_offset ||
+            span.end - source->base_offset > source->len || len == NULL) {
         PyErr_SetString(PyExc_SystemError, "invalid tokenizer source span");
         return NULL;
     }
     *len = span.end - span.start;
-    return source->bytes == NULL ? "" : source->bytes + span.start;
+    return _PyTok_SourceData(source) + (span.start - source->base_offset);
 }
 
 int
@@ -220,8 +239,8 @@ _PyTok_SourceLine(const _PyTok_SourceText *source, int lineno,
     }
     if (lineno > source->nlines) {
         *line = (_PyTok_Line){
-            .start = source->len,
-            .end = source->len,
+            .start = source->base_offset + source->len,
+            .end = source->base_offset + source->len,
         };
         return 0;
     }
@@ -236,7 +255,7 @@ _PyTok_SourceLine(const _PyTok_SourceText *source, int lineno,
         }
         current++;
     }
-    _PyTok_Off end = source->len;
+    _PyTok_Off end = source->base_offset + source->len;
     if (lineno < source->nlines) {
         end = _PyTok_SourceFindLineEnd(source, start);
         if (end < 0) {
@@ -248,7 +267,8 @@ _PyTok_SourceLine(const _PyTok_SourceText *source, int lineno,
         .end = end,
         .implicit_newline = _PyTok_SourceLineIsImplicit(source, lineno),
         .contains_nul = memchr(
-            source->bytes + start, 0, end - start) != NULL,
+            source->bytes + (start - source->base_offset),
+            0, end - start) != NULL,
     };
     return 0;
 }
@@ -257,21 +277,23 @@ int
 _PyTok_SourceLocation(const _PyTok_SourceText *source, _PyTok_Off offset,
                       _PyTok_Affinity affinity, _PyTok_Loc *loc)
 {
-    if (offset < 0 || offset > source->len || loc == NULL ||
+    if (offset < source->base_offset ||
+            offset - source->base_offset > source->len || loc == NULL ||
             (affinity != _PYTOK_AFFINITY_LEFT &&
              affinity != _PYTOK_AFFINITY_RIGHT)) {
         PyErr_SetString(PyExc_SystemError, "invalid tokenizer source offset");
         return -1;
     }
     if (source->nlines == 0 ||
-            (offset == source->len && source_ends_in_newline(source) &&
+            (offset - source->base_offset == source->len &&
+             source_ends_in_newline(source) &&
              affinity == _PYTOK_AFFINITY_RIGHT)) {
         *loc = (_PyTok_Loc){eof_lineno(source), 0};
         return 0;
     }
 
     _PyTok_Off key = offset;
-    if (affinity == _PYTOK_AFFINITY_LEFT && key > 0) {
+    if (affinity == _PYTOK_AFFINITY_LEFT && key > source->base_offset) {
         key--;
     }
     int low = 0;

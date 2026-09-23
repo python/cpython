@@ -64,11 +64,15 @@ read_py_str(
     }
 
     Py_ssize_t len = GET_MEMBER(Py_ssize_t, unicode_obj, unwinder->debug_offsets.unicode_object.length);
-    if (len < 0 || len > max_len) {
+    if (len < 0) {
         PyErr_Format(PyExc_RuntimeError,
                      "Invalid string length (%zd) at 0x%lx", len, address);
         set_exception_cause(unwinder, PyExc_RuntimeError, "Invalid string length in remote Unicode object");
         return NULL;
+    }
+    if (len > max_len) {
+        // gh-157788: a long name must not fail the whole read
+        len = max_len;
     }
 
     // Inspect state to pick the right data offset and character width.

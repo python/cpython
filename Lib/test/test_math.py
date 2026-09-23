@@ -2144,7 +2144,12 @@ class MathTests(unittest.TestCase):
         fail_fmt = "{}: {}{!r}: {}"
 
         failures = []
+        ids = set()
         for id, fn, args, expected, flags in parse_mtestfile(math_testcases):
+            if id in ids:
+                failures.append(f"Duplicate test id {id}")
+            ids.add(id)
+
             func = getattr(math, fn)
 
             if 'invalid' in flags or 'divide-by-zero' in flags:
