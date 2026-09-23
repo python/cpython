@@ -990,8 +990,11 @@ class MmapTests(unittest.TestCase):
                 return 0
 
         with mmap.mmap(-1, size) as m:
-            with self.assertRaises(IndexError):
-                m[size - 1] = ResizeOnIndex(m)
+            try:
+                with self.assertRaises(IndexError):
+                    m[size - 1] = ResizeOnIndex(m)
+            except SystemError as exc:
+                self.skipTest(f"resize() is not available: {exc!r}")
             self.assertEqual(len(m), new_size)
 
     @unittest.skipUnless(hasattr(mmap.mmap, 'resize'), 'requires mmap.resize')
@@ -1013,8 +1016,11 @@ class MmapTests(unittest.TestCase):
 
         with mmap.mmap(-1, size) as m:
             value = ResizeOnBuffer(m, bytes(size))
-            with self.assertRaises(IndexError):
-                m[0:size] = value
+            try:
+                with self.assertRaises(IndexError):
+                    m[0:size] = value
+            except SystemError as exc:
+                self.skipTest(f"resize() is not available: {exc!r}")
             self.assertEqual(len(m), new_size)
 
     @unittest.skipUnless(os.name == 'nt', 'requires Windows')
