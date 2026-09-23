@@ -78,21 +78,33 @@ def normalize_trace_output(output):
 
 
 USE_PROCESS_GROUP = (hasattr(os, "setsid") and hasattr(os, "killpg"))
+TERMINATE_TIMEOUT = 10
 
 def create_process_group(*args, **kwargs):
     if USE_PROCESS_GROUP:
         kwargs['start_new_session'] = True
     return subprocess.Popen(*args, **kwargs)
 
-def kill_process_group(proc):
+def terminate_process_group(proc):
     if USE_PROCESS_GROUP:
         try:
-            os.killpg(proc.pid, signal.SIGKILL)
+            os.killpg(proc.pid, signal.SIGTERM)
         except ProcessLookupError:
             pass
     else:
-        proc.kill()
-    proc.communicate()  # Clean up
+        proc.terminate()
+
+    try:
+        proc.communicate(timeout=TERMINATE_TIMEOUT)
+    except subprocess.TimeoutExpired:
+        if USE_PROCESS_GROUP:
+            try:
+                os.killpg(proc.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+        else:
+            proc.kill()
+        proc.communicate(timeout=TERMINATE_TIMEOUT)  # Clean up
 
 
 def run_readelf(cmd):
@@ -157,7 +169,7 @@ class TraceBackend:
         try:
             stdout, _ = proc.communicate(timeout=timeout)
         except subprocess.TimeoutExpired:
-            kill_process_group(proc)
+            terminate_process_group(proc)
             raise
         if check_returncode and proc.returncode:
             raise AssertionError(
