@@ -1519,6 +1519,55 @@ class ThreadTests(BaseTestCase):
         self.assertEqual(err, b"")
         self.assertEqual(out.strip(), b"Exiting...")
 
+    def test_start_thread_dies_in_bootstrap(self):
+        # gh-140746: if the newly spawned thread dies before signalling
+        # that it has started (e.g. a MemoryError while calling _bootstrap),
+        # Thread.start() must raise instead of hanging forever.
+        class BrokenBootstrapThread(threading.Thread):
+            def _bootstrap(self):
+                # Simulates a failure before self._started.set(): the
+                # C-level thread_run() catches the exception and the
+                # thread exits without ever signalling startup.
+                raise MemoryError('out of memory during bootstrap')
+
+        t = BrokenBootstrapThread(target=lambda: None)
+        with support.catch_unraisable_exception():
+            with self.assertRaisesRegex(RuntimeError,
+                                        "thread failed to start"):
+                t.start()
+        self.assertFalse(t.is_alive())
+        self.assertNotIn(t, threading._limbo)
+        self.assertNotIn(t, threading.enumerate())
+
+    def test_start_thread_dies_in_bootstrap_inner(self):
+        # gh-140746: same as above with the failure inside
+        # _bootstrap_inner(), before self._started.set().
+        t = threading.Thread(target=lambda: None)
+        with (support.catch_unraisable_exception(),
+              mock.patch.object(t, '_set_ident',
+                                side_effect=MemoryError('no memory'))):
+            with self.assertRaisesRegex(RuntimeError,
+                                        "thread failed to start"):
+                t.start()
+        self.assertFalse(t.is_alive())
+        self.assertNotIn(t, threading._limbo)
+        self.assertNotIn(t, threading.enumerate())
+
+    def test_start_thread_exits_in_bootstrap(self):
+        # gh-140746: SystemExit is silently ignored by the C-level
+        # thread_run(); it must not make Thread.start() hang either.
+        class ExitingBootstrapThread(threading.Thread):
+            def _bootstrap(self):
+                raise SystemExit
+
+        t = ExitingBootstrapThread(target=lambda: None)
+        with self.assertRaisesRegex(RuntimeError, "thread failed to start"):
+            t.start()
+        self.assertFalse(t.is_alive())
+        self.assertNotIn(t, threading._limbo)
+        self.assertNotIn(t, threading.enumerate())
+
+
 class ThreadJoinOnShutdown(BaseTestCase):
 
     def _run_and_join(self, script):
