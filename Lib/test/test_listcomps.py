@@ -757,6 +757,89 @@ class ListComprehensionTest(unittest.TestCase):
         self._check_in_scopes(code, {"x": 2, "y": [3]}, ns={"x": 3}, scopes=["class"])
         self._check_in_scopes(code, {"x": 2, "y": [2]}, ns={"x": 3}, scopes=["function", "module"])
 
+    def test_comprehension_name_reuse_with_free_variable(self):
+        x = 3
+
+        def sibling_comprehension():
+            [x for x in [1]]
+            return [x for _ in [1]]
+
+        self.assertEqual(sibling_comprehension(), [3])
+
+        def nested_function():
+            [x for x in [1]]
+
+            def inner():
+                return x
+
+            return inner()
+
+        self.assertEqual(nested_function(), 3)
+
+    def test_comprehension_cell_and_free_variable(self):
+        x = 3
+
+        def captured_then_sibling():
+            funcs = [lambda: x for x in [1]]
+            return funcs[0](), [x for _ in [1]]
+
+        self.assertEqual(captured_then_sibling(), (1, [3]))
+
+        def captured_then_nested_function():
+            funcs = [lambda: x for x in [1]]
+
+            def inner():
+                return x
+
+            return funcs[0](), inner()
+
+        self.assertEqual(captured_then_nested_function(), (1, 3))
+
+        def captured_then_generator_expression():
+            funcs = [lambda: x for x in [1]]
+            return funcs[0](), list(x for _ in [1])
+
+        self.assertEqual(captured_then_generator_expression(), (1, [3]))
+
+    def test_nested_comprehension_cell_and_free_variable(self):
+        def local_cell(x):
+            result = [
+                ([lambda: x for x in [1]], lambda: x, [x for _ in [0]])
+                for _ in [0]
+            ]
+            captured, sibling, sibling_comprehension = result[0]
+            return captured[0](), sibling(), sibling_comprehension
+
+        self.assertEqual(local_cell(7), (1, 7, [7]))
+
+        x = 7
+
+        def free_variable():
+            result = [
+                ([lambda: x for x in [1]], lambda: x, [x for _ in [0]])
+                for _ in [0]
+            ]
+            captured, sibling, sibling_comprehension = result[0]
+            return captured[0](), sibling(), sibling_comprehension
+
+        self.assertEqual(free_variable(), (1, 7, [7]))
+
+    def test_comprehension_cell_exception_cleanup(self):
+        x = 3
+
+        def raises_after_one():
+            yield 1
+            raise RuntimeError
+
+        def captured_then_exception():
+            funcs = []
+            try:
+                [funcs.append(lambda: x) for x in raises_after_one()]
+            except RuntimeError:
+                return funcs[0](), [x for _ in [1]]
+
+        self.assertEqual(captured_then_exception(), (1, [3]))
+
     def test_exception_locations(self):
         # The location of an exception raised from __init__ or
         # __next__ should be the iterator expression
