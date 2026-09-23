@@ -16,4 +16,6 @@
                         (TK_RELEASE_LEVEL << 8) | \
                         (TK_RELEASE_SERIAL << 0))
 
+int Tkinter_TkInit(Tcl_Interp *interp);
+
 #endif /* !TKINTER_H */
