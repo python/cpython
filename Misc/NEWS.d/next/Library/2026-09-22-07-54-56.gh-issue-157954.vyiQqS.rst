@@ -1,2 +1,2 @@
-:func:`inspect.formatannotation` now uses fully qualified names for type
+``inspect.formatannotation`` now uses fully qualified names for type
 aliases.
