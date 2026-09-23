@@ -91,8 +91,12 @@ class FindLibraryLinux(unittest.TestCase):
         else:
             if p.stdout.startswith('mold '):
                 # The mold linker is known to be incompatible with
-                # the soft-deprecated ctypes.util.find_library
-                # (which uses `ld -t`).
+                # ctypes.util.find_library. The function is
+                # documented as "Try to find a library..."
+                # and formally soft-deprecated in 3.15+. We
+                # we skip the test rather than try to fix it
+                # (which would risk breaking other unsupported
+                # platforms).
                 raise unittest.SkipTest('Fails when ld is mold')
 
     @thread_unsafe('uses setenv')
