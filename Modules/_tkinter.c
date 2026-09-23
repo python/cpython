@@ -540,7 +540,7 @@ class _tkinter.tktimertoken "TkttObject *" "&Tktt_Type_spec"
 int Tcl_AppInit(Tcl_Interp *);
 #endif
 
-static int
+int
 Tkinter_TkInit(Tcl_Interp *interp)
 {
 #ifdef __APPLE__
