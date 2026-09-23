@@ -163,6 +163,7 @@ import builtins
 from keyword import iskeyword
 from operator import attrgetter
 from collections import namedtuple, OrderedDict
+from _typing import TypeAliasType
 from _weakref import ref as make_weakref
 
 # Create constants for the compiler flags in Include/cpython/code.h
@@ -872,8 +873,18 @@ def getfile(object):
         object = object.f_code
     if iscode(object):
         return object.co_filename
-    raise TypeError('module, class, method, function, traceback, frame, or '
-                    'code object was expected, got {}'.format(
+    if isinstance(object, TypeAliasType):
+        evaluator = object.evaluate_value
+        if isfunction(evaluator):
+            return getfile(evaluator)
+        module = sys.modules.get(object.__module__)
+        if getattr(module, '__file__', None):
+            return module.__file__
+        if object.__module__ == '__main__':
+            raise OSError('source code not available')
+        raise TypeError(f'module not available for {object!r}')
+    raise TypeError('module, class, method, function, traceback, frame, '
+                    'code object, or type alias was expected, got {}'.format(
                     type(object).__name__))
 
 def getmodulename(path):
@@ -1022,6 +1033,8 @@ def findsource(object):
             raise OSError('lineno is out of bounds')
         return lines, lnum
 
+    if isinstance(object, TypeAliasType):
+        object = object.evaluate_value
     if ismethod(object):
         object = object.__func__
     if isfunction(object):

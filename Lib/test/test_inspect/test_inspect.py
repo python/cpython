@@ -22,6 +22,7 @@ import sys
 import subprocess
 import time
 import types
+import typing
 import tempfile
 import textwrap
 import unicodedata
@@ -812,6 +813,7 @@ class TestRetrievingSourceCode(GetSourceBase):
         self.assertEqual(inspect.getcomments(mod), '# line 1\n')
         self.assertEqual(inspect.getcomments(mod.StupidGit), '# line 20\n')
         self.assertEqual(inspect.getcomments(mod2.cls160), '# line 159\n')
+        self.assertEqual(inspect.getcomments(mod.Sparrow), '# What is their airspeed?\n')
         # If the object source file is not available, return None.
         co = compile('x=1', '_non_existing_filename.py', 'exec')
         self.assertIsNone(inspect.getcomments(co))
@@ -851,6 +853,7 @@ class TestRetrievingSourceCode(GetSourceBase):
         self.assertSourceEqual(mod.StupidGit, 21, 51)
         self.assertSourceEqual(mod.lobbest, 75, 76)
         self.assertSourceEqual(mod.after_closing, 120, 120)
+        self.assertSourceEqual(mod.Sparrow, 123, 123)
 
     def test_getsourcefile(self):
         self.assertEqual(normcase(inspect.getsourcefile(mod.spam)), modfile)
@@ -863,6 +866,23 @@ class TestRetrievingSourceCode(GetSourceBase):
             self.assertEqual(normcase(inspect.getsourcefile(co)), fn)
         finally:
             del linecache.cache[co.co_filename]
+
+    def test_getsourcefile_type_alias(self):
+        self.assertEqual(normcase(inspect.getsourcefile(mod.Sparrow)),
+                         normcase(mod.__file__))
+        self.assertEqual(normcase(inspect.getfile(mod.Sparrow)),
+                         normcase(mod.__file__))
+
+        WrongModule = typing.TypeAliasType("WrongModule", int)
+        WrongModule.__module__ = "types"
+        self.assertEqual(normcase(inspect.getsourcefile(WrongModule)), normcase(types.__file__))
+        self.assertEqual(normcase(inspect.getfile(WrongModule)), normcase(types.__file__))
+
+        WrongModule.__module__ = "non-existing module"
+        with self.assertRaises(TypeError):
+            inspect.getsourcefile(WrongModule)
+        with self.assertRaises(TypeError):
+            inspect.getfile(WrongModule)
 
     def test_getsource_empty_file(self):
         with temp_cwd() as cwd:
