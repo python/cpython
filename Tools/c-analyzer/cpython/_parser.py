@@ -335,6 +335,8 @@ MAX_SIZES = {
     _abs('Include/internal/pycore_opcode.h'): (10_000, 1000),
     _abs('Include/internal/pycore_global_strings.h'): (5_000, 1000),
     _abs('Include/internal/pycore_runtime_init_generated.h'): (5_000, 1000),
+    _abs('Include/internal/pycore_unicodeobject_generated.h'): (100_000, 1500),
+    _abs('Python/Python-ast.c'): (20_000, 500),
     _abs('Python/deepfreeze/*.c'): (20_000, 500),
     _abs('Python/frozen_modules/*.h'): (20_000, 500),
     _abs('Python/opcode_targets.h'): (10_000, 500),
