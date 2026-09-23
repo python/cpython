@@ -151,7 +151,7 @@ def find_function(funcname, filename):
             if funcdef:
                 try:
                     code = compile(funcdef, filename, 'exec')
-                except SyntaxError:
+                except Exception:
                     continue
                 # We should always be able to find the code object here
                 funccode = next(c for c in code.co_consts if
@@ -2572,7 +2572,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         """Return the error message as string if compiling `expr` fails."""
         try:
             compile(expr, "<stdin>", "eval")
-        except SyntaxError as exc:
+        except Exception as exc:
             return _rstr(self._format_exc(exc))
         return ""
 
