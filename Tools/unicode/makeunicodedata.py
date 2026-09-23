@@ -46,13 +46,13 @@ DATA_DIR = os.path.join('Tools', 'unicode', 'data')
 # The Unicode Database
 # --------------------
 # When changing UCD version please update
-#   * Doc/library/stdtypes.rst (four occurrences)
+#   * Doc/builtins/stdtypes.rst (four occurrences)
 #   * Doc/library/unicodedata.rst
 #   * Doc/library/re.rst
 #   * Doc/reference/lexical_analysis.rst (three occurrences)
 # and optionally (comments)
 #   * Lib/re/_properties.py (three occurrences)
-UNIDATA_VERSION = "17.0.0"
+UNIDATA_VERSION = "18.0.0"
 UNICODE_DATA = "UnicodeData%s.txt"
 COMPOSITION_EXCLUSIONS = "CompositionExclusions%s.txt"
 EASTASIAN_WIDTH = "EastAsianWidth%s.txt"
@@ -153,6 +153,8 @@ derived_name_range_names = [
     ("Hangul Syllable", "HANGUL SYLLABLE "),
     ("CJK Ideograph", "CJK UNIFIED IDEOGRAPH-"),
     ("Tangut Ideograph", "TANGUT IDEOGRAPH-"),
+    ("Jurchen Character", "JURCHEN CHARACTER-"),
+    ("Seal Character", "SMALL SEAL CHARACTER-"),
 ]
 
 

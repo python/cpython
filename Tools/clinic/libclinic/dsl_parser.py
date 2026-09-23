@@ -15,14 +15,15 @@ from libclinic import (
     ClinicError, VersionTuple,
     fail, warn, unspecified, unknown, NULL)
 from libclinic.function import (
-    Module, Class, Function, Parameter,
+    Module, Class, Property, Function, Parameter,
     FunctionKind,
     CALLABLE, STATIC_METHOD, CLASS_METHOD, METHOD_INIT, METHOD_NEW,
+    GETTER, SETTER, SETTER_AND_DELETER,
     ACCESSORS, SETTERS)
 from libclinic.converter import (
     converters, legacy_converters)
 from libclinic.converters import (
-    self_converter, defining_class_converter,
+    self_converter, defining_class_converter, object_converter,
     correct_name_for_self)
 from libclinic.return_converters import (
     CReturnConverter, return_converters,
@@ -251,6 +252,7 @@ class DSLParser:
     positional_only: bool
     deprecated_positional: VersionTuple | None
     deprecated_keyword: VersionTuple | None
+    deprecated_until: VersionTuple | None
     group_stack: list[int]
     group_count: int
     parameter_state: ParamState
@@ -266,6 +268,7 @@ class DSLParser:
     # Line of the file which is being parsed.
     line_number: int | None
     from_version_re = re.compile(r'([*/]) +\[from +(.+)\]')
+    until_version_re = re.compile(r'\[until +(.+?)\] +(.+)')
     permit_long_summary = False
     permit_long_docstring_body = False
 
@@ -295,6 +298,7 @@ class DSLParser:
         self.positional_only = False
         self.deprecated_positional = None
         self.deprecated_keyword = None
+        self.deprecated_until = None
         self.group_stack = []
         self.group_count = 0
         self.parameter_state: ParamState = ParamState.START
@@ -415,6 +419,8 @@ class DSLParser:
         fd[command_or_name] = d
 
     def directive_dump(self, name: str) -> None:
+        # The entries of attributes are composed before they are dumped.
+        self.clinic.language.render_properties(self.clinic)
         self.block.output.append(self.clinic.get_destination(name).dump())
 
     def directive_printout(self, *args: str) -> None:
@@ -643,8 +649,8 @@ class DSLParser:
         self, full_name: str, forced_converter: str
     ) -> CReturnConverter:
         if forced_converter:
-            if self.kind in ACCESSORS:
-                fail("@getter and @setter methods cannot define a return type")
+            if self.kind in SETTERS:
+                fail("@setter methods cannot define a return type")
             if self.kind is METHOD_INIT:
                 fail("__init__ methods cannot define a return type")
             ast_input = f"def x() -> {forced_converter}: pass"
@@ -708,6 +714,9 @@ class DSLParser:
                 fail("'kind' of function and cloned function don't match! "
                      "(@classmethod/@staticmethod/@coexist)")
         function = existing_function.copy(**overrides)
+        function.condition = self.clinic.language.cpp.condition()
+        if function.kind in ACCESSORS:
+            self.add_accessor(function)
         self.function = function
         self.block.signatures.append(function)
         (cls or module).functions.append(function)
@@ -774,21 +783,9 @@ class DSLParser:
         self.next(self.state_parameters_start)
 
     def add_function(self, func: Function) -> None:
+        func.condition = self.clinic.language.cpp.condition()
         if func.kind in ACCESSORS:
-            # The accessors of the same attribute are rendered into a single
-            # PyGetSetDef entry, which is identified by the C basename, so
-            # they must share it.
-            for other in (func.cls or func.module).functions:
-                if (other.kind in ACCESSORS
-                        and other.full_name == func.full_name):
-                    if (other.kind is func.kind
-                            or {other.kind, func.kind} <= SETTERS):
-                        kind = 'setter' if func.kind in SETTERS else 'getter'
-                        fail(f"Cannot apply @{kind} to "
-                             f"{func.full_name!r} twice")
-                    if other.c_basename != func.c_basename:
-                        fail(f"The accessors of {func.full_name!r} "
-                             f"must have the same C basename")
+            self.add_accessor(func)
 
         # Insert a self converter automatically.
         tp, name = correct_name_for_self(func)
@@ -807,6 +804,28 @@ class DSLParser:
         self.block.signatures.append(func)
         self.function = func
         (func.cls or func.module).functions.append(func)
+
+    def add_accessor(self, func: Function) -> None:
+        """Add an accessor to the attribute which it implements."""
+        assert func.cls is not None
+        prop = func.cls.properties.get(func.name)
+        if prop is not None and prop.rendered:
+            fail(f"All accessors of {func.full_name!r} must be defined "
+                 f"before its PyGetSetDef entry is dumped")
+        if prop is None:
+            prop = Property(func.name, func.full_name, func.cls)
+            func.cls.properties[func.name] = prop
+            self.clinic.properties.append(prop)
+        func.property = prop
+        slot = prop.getter if func.kind is GETTER else prop.setter
+        # Several implementations of the same accessor can share the slot if
+        # each of them is compiled under its own preprocessor condition.
+        if slot and (not func.condition
+                     or any(not other.condition for other in slot)):
+            if func.kind is GETTER:
+                fail(f"Cannot apply @getter to {func.full_name!r} twice")
+            fail(f"The setter of {func.full_name!r} is already defined")
+        slot.append(func)
 
     # Now entering the parameters section.  The rules, formally stated:
     #
@@ -872,8 +891,8 @@ class DSLParser:
             return self.next(self.state_function_docstring, line)
 
         assert self.function is not None
-        if self.function.kind in ACCESSORS:
-            fail("@getter and @setter methods cannot define parameters")
+        if self.function.kind is GETTER:
+            fail("@getter methods cannot define parameters")
 
         self.parameter_continuation = ''
         return self.next(self.state_parameter, line)
@@ -895,6 +914,10 @@ class DSLParser:
 
         if not self.valid_line(line):
             return
+
+        if self.function.kind in SETTERS and len(self.function.parameters) > 1:
+            # The only parameter of a setter is the new value.
+            fail("@setter methods must define exactly one parameter")
 
         if self.parameter_continuation:
             line = self.parameter_continuation + ' ' + line.lstrip()
@@ -921,6 +944,12 @@ class DSLParser:
         if match:
             line = match[1]
             version = self.parse_version(match[2])
+
+        self.deprecated_until = None
+        match = self.until_version_re.fullmatch(line)
+        if match:
+            self.deprecated_until = self.parse_version(match[1], 'until')
+            line = match[2]
 
         func = self.function
         match line:
@@ -1171,6 +1200,7 @@ class DSLParser:
 
         p = Parameter(parameter_name, kind, function=self.function,
                       converter=converter, default=value,
+                      deprecated_until=self.deprecated_until,
                       group=self.group_stack[-1] if self.group_stack else 0,
                       group_depth=len(self.group_stack),
                       deprecated_positional=self.deprecated_positional,
@@ -1181,6 +1211,26 @@ class DSLParser:
             fail(f"You can't have two parameters named {parameter_name!r}!")
         elif names and parameter_name == names[0] and c_name is None:
             fail(f"Parameter {parameter_name!r} requires a custom C name")
+
+        # A parameter which shares the C variable of a preceding parameter
+        # is an alternative name (an alias) of it.
+        for existing in self.function.parameters.values():
+            if existing.converter.name == converter.name:
+                if not self.keyword_only:
+                    fail(f"Alias {parameter_name!r} of the parameter "
+                         f"{existing.name!r} must be keyword-only.")
+                if value is unspecified:
+                    fail(f"Alias {parameter_name!r} of the parameter "
+                         f"{existing.name!r} must have a default value.")
+                converter.alias_of = existing
+                break
+
+        # A deprecated parameter is going away, so calls which do not pass
+        # it must already be valid.
+        if self.deprecated_until is not None and value is unspecified:
+            fail(f"Deprecated parameter {parameter_name!r} "
+                 f"must have a default value.")
+
 
         key = f"{parameter_name}_as_{c_name}" if c_name else parameter_name
         self.function.parameters[key] = p
@@ -1211,17 +1261,18 @@ class DSLParser:
                     "Annotations must be either a name, a function call, or a string."
                 )
 
-    def parse_version(self, thenceforth: str) -> VersionTuple:
-        """Parse Python version in `[from ...]` marker."""
+    def parse_version(self, version: str, marker: str = 'from') -> VersionTuple:
+        """Parse Python version in `[from ...]` or `[until ...]` marker."""
         assert isinstance(self.function, Function)
 
         try:
-            major, minor = thenceforth.split(".")
+            major, minor = version.split(".")
             return int(major), int(minor)
         except ValueError:
             fail(
-                f"Function {self.function.name!r}: expected format '[from major.minor]' "
-                f"where 'major' and 'minor' are integers; got {thenceforth!r}"
+                f"Function {self.function.name!r}: expected format "
+                f"'[{marker} major.minor]' where 'major' and 'minor' are "
+                f"integers; got {version!r}"
             )
 
     def parse_star(self, function: Function, version: VersionTuple | None) -> None:
@@ -1343,12 +1394,23 @@ class DSLParser:
             fail(f"Function {function.name!r} has an unsupported group configuration. "
                  f"(Unexpected state {self.parameter_state}.d)")
         # fixup preceding parameters
+        deprecated = None
         for p in function.parameters.values():
             if p.kind is inspect.Parameter.POSITIONAL_OR_KEYWORD:
                 if version is None:
                     p.kind = inspect.Parameter.POSITIONAL_ONLY
                 elif p.deprecated_keyword is None:
                     p.deprecated_keyword = version
+            if p.kind is inspect.Parameter.POSITIONAL_ONLY:
+                # A positional-only argument can only be passed after all
+                # preceding ones, so removing a parameter would leave no
+                # way to pass those which follow it.
+                if p.deprecated_until is not None:
+                    deprecated = p
+                elif deprecated is not None:
+                    fail(f"Parameter {p.name!r} cannot follow the deprecated "
+                         f"parameter {deprecated.name!r}: only the last "
+                         f"positional-only parameters can be deprecated.")
 
     def state_parameter_docstring_start(self, line: str) -> None:
         assert self.indent.margin is not None, "self.margin.infer() has not yet been called to set the margin"
@@ -1503,7 +1565,10 @@ class DSLParser:
         lines.insert(0, '{signature}')
 
         # finalize docstring
-        params = f.render_parameters
+        # An alias is not shown in the signature: only one of the
+        # alternative names can be used in a call.
+        params = [p for p in f.render_parameters
+                  if p.converter.alias_of is None]
         parameters = self.format_docstring_parameters(params)
         signature = self.format_docstring_signature(f, params)
         docstring = "\n".join(lines)
@@ -1572,6 +1637,34 @@ class DSLParser:
         if not self.function:
             return
 
+        func = self.function
+        if func.kind in (SETTER, SETTER_AND_DELETER):
+            # The new value is the only parameter of a setter.  The setter
+            # of a deletable attribute is also called with NULL to delete it,
+            # hence the default value.
+            optional = func.kind is SETTER_AND_DELETER
+            if len(func.parameters) == 1:
+                # It is optional to declare the value, which is usually
+                # a plain object.
+                default = NULL if optional else unspecified
+                converter = object_converter('value', 'value', func, default)
+                func.parameters['value'] = Parameter(
+                    'value', inspect.Parameter.POSITIONAL_ONLY,
+                    function=func, converter=converter, default=default)
+            else:
+                p = list(func.parameters.values())[1]
+                if p.is_keyword_only() or p.is_variable_length():
+                    fail("the value of @setter must be a positional parameter")
+                if p.is_optional() != optional:
+                    if optional:
+                        fail("the value of @setter with @deleter must have "
+                             "a default value, used to delete the attribute")
+                    else:
+                        fail("the value of @setter cannot have a default value")
+                if optional and p.default is not NULL:
+                    fail("the value of @setter with @deleter can only have "
+                         "NULL as a default value")
+
         self.check_remaining_star(lineno)
         self.check_vectorcall_parameters(lineno)
         try:
@@ -1600,7 +1693,7 @@ def render_text_signature(
     if f.forced_text_signature:
         lines.append(f.forced_text_signature)
     elif f.kind in ACCESSORS:
-        # @getter and @setter do not need signatures like a method or a function.
+        # Accessors do not need signatures like a method or a function.
         return ''
     else:
         lines.append('(')

@@ -1,25 +1,22 @@
-import unittest
 import sys
+import textwrap
+import unittest
 from test import support
+from test.support import import_helper
 from test.support import threading_helper
+from test.support.script_helper import assert_python_failure
+from threading import Thread
 
-try:
-    import _testcapi
-    from _testcapi import PY_SSIZE_T_MIN, PY_SSIZE_T_MAX
-except ImportError:
-    _testcapi = None
-try:
-    import _testlimitedcapi
-except ImportError:
-    _testlimitedcapi = None
-try:
-    import _testinternalcapi
-except ImportError:
-    _testinternalcapi = None
 try:
     import ctypes
 except ImportError:
     ctypes = None
+
+# Skip the test if one these modules is not available
+_testcapi = import_helper.import_module('_testcapi')
+_testlimitedcapi = import_helper.import_module('_testlimitedcapi')
+_testinternalcapi = import_helper.import_module('_testinternalcapi')
+from _testcapi import PY_SSIZE_T_MIN, PY_SSIZE_T_MAX, SIZEOF_WCHAR_T
 
 
 NULL = None
@@ -27,14 +24,50 @@ NULL = None
 class Str(str):
     pass
 
+class StrLike:
+    def __init__(self, value):
+        self.value = value
+    def __str__(self):
+        return self.value
+
+
+PyUnicode_1BYTE_KIND = 1
+PyUnicode_2BYTE_KIND = 2
+PyUnicode_4BYTE_KIND = 4
+
+SSTATE_NOT_INTERNED = 0
+SSTATE_INTERNED_MORTAL = 1
+SSTATE_INTERNED_IMMORTAL = 2
+SSTATE_INTERNED_IMMORTAL_STATIC = 3
+
 
 class CAPITest(unittest.TestCase):
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
+    def _test_check(self, check, *, exact):
+        # Test PyUnicode_Check()
+        self.assertTrue(check(''))
+        self.assertTrue(check('abc'))
+        self.assertEqual(check(Str('abc')), 0 if exact else 1)
+        self.assertFalse(check(StrLike('abc')))
+
+        self.assertFalse(check(b'abc'))
+        self.assertFalse(check(3))
+        self.assertFalse(check([]))
+        self.assertFalse(check(object()))
+
+        # CRASHES check(NULL)
+
+    def test_check(self):
+        # Test PyUnicode_Check()
+        self._test_check(_testlimitedcapi.unicode_check, exact=False)
+
+    def test_checkexact(self):
+        # Test PyUnicode_CheckExact()
+        self._test_check(_testlimitedcapi.unicode_checkexact, exact=True)
+
     def test_new(self):
         """Test PyUnicode_New()"""
-        from _testcapi import unicode_new as new
+        new = _testcapi.unicode_new
 
         for maxchar in 0, 0x61, 0xa1, 0x4f60, 0x1f600, 0x10ffff:
             self.assertEqual(new(0, maxchar), '')
@@ -51,11 +84,9 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(SystemError, new, -1, 0)
         self.assertRaises(SystemError, new, PY_SSIZE_T_MIN, 0)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_fill(self):
         """Test PyUnicode_Fill()"""
-        from _testcapi import unicode_fill as fill
+        fill = _testcapi.unicode_fill
 
         strings = [
             # all strings have exactly 5 characters
@@ -91,12 +122,7 @@ class CAPITest(unittest.TestCase):
         # CRASHES fill(NULL, 0, 0, 0x78)
         # TODO: Test PyUnicode_Fill() with non-modifiable unicode.
 
-    @support.cpython_only
-    @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
-    def test_writechar(self):
-        """Test PyUnicode_WriteChar()"""
-        from _testlimitedcapi import unicode_writechar as writechar
-
+    def _test_writechar(self, writechar, *, check):
         strings = [
             # one string for every kind
             'abc', '\xa1\xa2\xa3', '\u4f60\u597d\u4e16',
@@ -109,24 +135,31 @@ class CAPITest(unittest.TestCase):
                 if j <= i:
                     self.assertEqual(writechar(s, 1, c),
                                      (s[:1] + chr(c) + s[2:], 0))
-                else:
+                elif check:
                     self.assertRaises(ValueError, writechar, s, 1, c)
 
-        self.assertRaises(IndexError, writechar, 'abc', 3, 0x78)
-        self.assertRaises(IndexError, writechar, 'abc', -1, 0x78)
-        self.assertRaises(IndexError, writechar, 'abc', PY_SSIZE_T_MAX, 0x78)
-        self.assertRaises(IndexError, writechar, 'abc', PY_SSIZE_T_MIN, 0x78)
-        self.assertRaises(TypeError, writechar, b'abc', 0, 0x78)
-        self.assertRaises(TypeError, writechar, [], 0, 0x78)
-        # CRASHES writechar(NULL, 0, 0x78)
-        # TODO: Test PyUnicode_WriteChar() with non-modifiable and legacy
-        # unicode.
+        if check:
+            self.assertRaises(IndexError, writechar, 'abc', 3, 0x78)
+            self.assertRaises(IndexError, writechar, 'abc', -1, 0x78)
+            self.assertRaises(IndexError, writechar, 'abc', PY_SSIZE_T_MAX, 0x78)
+            self.assertRaises(IndexError, writechar, 'abc', PY_SSIZE_T_MIN, 0x78)
+            self.assertRaises(TypeError, writechar, b'abc', 0, 0x78)
+            self.assertRaises(TypeError, writechar, [], 0, 0x78)
+            # CRASHES writechar(NULL, 0, 0x78)
+            # TODO: Test PyUnicode_WriteChar() with non-modifiable and legacy
+            # unicode.
 
-    @support.cpython_only
-    @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
+    def test_writechar(self):
+        """Test PyUnicode_WriteChar()"""
+        self._test_writechar(_testlimitedcapi.unicode_writechar, check=True)
+
+    def test_write_macro(self):
+        """Test PyUnicode_WRITE()"""
+        self._test_writechar(_testcapi.unicode_write, check=False)
+
     def test_resize(self):
         """Test PyUnicode_Resize()"""
-        from _testlimitedcapi import unicode_resize as resize
+        resize = _testlimitedcapi.unicode_resize
 
         strings = [
             # all strings have exactly 3 characters
@@ -148,11 +181,9 @@ class CAPITest(unittest.TestCase):
         # TODO: Test PyUnicode_Resize() with non-modifiable and legacy unicode
         # and with NULL as the address.
 
-    @support.cpython_only
-    @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
     def test_append(self):
         """Test PyUnicode_Append()"""
-        from _testlimitedcapi import unicode_append as append
+        append = _testlimitedcapi.unicode_append
 
         strings = [
             'abc', '\xa1\xa2\xa3', '\u4f60\u597d\u4e16',
@@ -176,11 +207,9 @@ class CAPITest(unittest.TestCase):
         # and with NULL as the address.
         # TODO: Check reference counts.
 
-    @support.cpython_only
-    @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
     def test_appendanddel(self):
         """Test PyUnicode_AppendAndDel()"""
-        from _testlimitedcapi import unicode_appendanddel as appendanddel
+        appendanddel = _testlimitedcapi.unicode_appendanddel
 
         strings = [
             'abc', '\xa1\xa2\xa3', '\u4f60\u597d\u4e16',
@@ -203,11 +232,9 @@ class CAPITest(unittest.TestCase):
         # and with NULL as the address.
         # TODO: Check reference counts.
 
-    @support.cpython_only
-    @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
     def test_fromstringandsize(self):
         """Test PyUnicode_FromStringAndSize()"""
-        from _testlimitedcapi import unicode_fromstringandsize as fromstringandsize
+        fromstringandsize = _testlimitedcapi.unicode_fromstringandsize
 
         self.assertEqual(fromstringandsize(b'abc'), 'abc')
         self.assertEqual(fromstringandsize(b'abc', 2), 'ab')
@@ -228,11 +255,9 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(SystemError, fromstringandsize, NULL, 3)
         self.assertRaises(SystemError, fromstringandsize, NULL, PY_SSIZE_T_MAX)
 
-    @support.cpython_only
-    @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
     def test_fromstring(self):
         """Test PyUnicode_FromString()"""
-        from _testlimitedcapi import unicode_fromstring as fromstring
+        fromstring = _testlimitedcapi.unicode_fromstring
 
         self.assertEqual(fromstring(b'abc'), 'abc')
         self.assertEqual(fromstring(b'\xc2\xa1\xc2\xa2'), '\xa1\xa2')
@@ -244,11 +269,9 @@ class CAPITest(unittest.TestCase):
 
         # CRASHES fromstring(NULL)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_fromkindanddata(self):
         """Test PyUnicode_FromKindAndData()"""
-        from _testcapi import unicode_fromkindanddata as fromkindanddata
+        fromkindanddata = _testcapi.unicode_fromkindanddata
 
         strings = [
             'abcde', '\xa1\xa2\xa3\xa4\xa5',
@@ -280,11 +303,9 @@ class CAPITest(unittest.TestCase):
         # CRASHES fromkindanddata(1, NULL, 1)
         # CRASHES fromkindanddata(4, b'\xff\xff\xff\xff')
 
-    @support.cpython_only
-    @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
     def test_substring(self):
         """Test PyUnicode_Substring()"""
-        from _testlimitedcapi import unicode_substring as substring
+        substring = _testlimitedcapi.unicode_substring
 
         strings = [
             'ab', 'ab\xa1\xa2',
@@ -304,44 +325,68 @@ class CAPITest(unittest.TestCase):
         # CRASHES substring([], 0, 0)
         # CRASHES substring(NULL, 0, 0)
 
-    @support.cpython_only
-    @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
-    def test_getlength(self):
-        """Test PyUnicode_GetLength()"""
-        from _testlimitedcapi import unicode_getlength as getlength
-
-        for s in ['abc', '\xa1\xa2', '\u4f60\u597d', 'a\U0001f600',
+    def _test_getlength(self, getlength, *, check):
+        for s in ['', 'abc', '\xa1\xa2', '\u4f60\u597d', 'a\U0001f600',
                   'a\ud800b\udfffc', '\ud834\udd1e']:
             self.assertEqual(getlength(s), len(s))
 
-        self.assertRaises(TypeError, getlength, b'abc')
-        self.assertRaises(TypeError, getlength, [])
+        if check:
+            self.assertRaises(TypeError, getlength, b'abc')
+            self.assertRaises(TypeError, getlength, [])
         # CRASHES getlength(NULL)
 
-    @support.cpython_only
-    @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
-    def test_readchar(self):
-        """Test PyUnicode_ReadChar()"""
-        from _testlimitedcapi import unicode_readchar as readchar
+    def test_getlength(self):
+        """Test PyUnicode_GetLength()"""
+        self._test_getlength(_testlimitedcapi.unicode_getlength, check=True)
 
+    def test_getlength_macro(self):
+        """Test PyUnicode_GET_LENGTH() macro"""
+        self._test_getlength(_testcapi.unicode_getlength_macro, check=False)
+
+    def _test_read_char(self, readchar, *, check, read_null_char):
         for s in ['abc', '\xa1\xa2', '\u4f60\u597d', 'a\U0001f600',
                   'a\ud800b\udfffc', '\ud834\udd1e']:
             for i, c in enumerate(s):
                 self.assertEqual(readchar(s, i), ord(c))
-            self.assertRaises(IndexError, readchar, s, len(s))
-            self.assertRaises(IndexError, readchar, s, PY_SSIZE_T_MAX)
-            self.assertRaises(IndexError, readchar, s, -1)
-            self.assertRaises(IndexError, readchar, s, PY_SSIZE_T_MIN)
+            if read_null_char:
+                self.assertEqual(readchar(s, len(s)), 0)
+            elif check:
+                self.assertRaises(IndexError, readchar, s, len(s))
+            if check:
+                self.assertRaises(IndexError, readchar, s, PY_SSIZE_T_MAX)
+                self.assertRaises(IndexError, readchar, s, -1)
+                self.assertRaises(IndexError, readchar, s, PY_SSIZE_T_MIN)
+            else:
+                # CRASHES on above test
+                pass
 
-        self.assertRaises(TypeError, readchar, b'abc', 0)
-        self.assertRaises(TypeError, readchar, [], 0)
-        # CRASHES readchar(NULL, 0)
+        if check:
+            # invalid type
+            self.assertRaises(TypeError, readchar, b'abc', 0)
+            self.assertRaises(TypeError, readchar, [], 0)
+            # CRASHES readchar(NULL, 0)
+        else:
+            # CRASHES on above test
+            pass
 
-    @support.cpython_only
-    @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
+    def test_readchar(self):
+        """Test PyUnicode_ReadChar()"""
+        self._test_read_char(_testlimitedcapi.unicode_readchar,
+                             check=True, read_null_char=False)
+
+    def test_read_char_macro(self):
+        """Test PyUnicode_READ_CHAR() macro"""
+        self._test_read_char(_testcapi.unicode_read_char,
+                             check=False, read_null_char=True)
+
+    def test_read_macro(self):
+        """Test PyUnicode_READ() macro"""
+        self._test_read_char(_testcapi.unicode_read,
+                             check=False, read_null_char=True)
+
     def test_fromobject(self):
         """Test PyUnicode_FromObject()"""
-        from _testlimitedcapi import unicode_fromobject as fromobject
+        fromobject = _testlimitedcapi.unicode_fromobject
 
         for s in ['abc', '\xa1\xa2', '\u4f60\u597d', 'a\U0001f600',
                   'a\ud800b\udfffc', '\ud834\udd1e']:
@@ -790,11 +835,9 @@ class CAPITest(unittest.TestCase):
         self.assertRaisesRegex(SystemError, 'invalid format string',
             PyUnicode_FromFormat, b'%+i', c_int(10))
 
-    @support.cpython_only
-    @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
     def test_interninplace(self):
         """Test PyUnicode_InternInPlace()"""
-        from _testlimitedcapi import unicode_interninplace as interninplace
+        interninplace = _testlimitedcapi.unicode_interninplace
 
         s = b'abc'.decode()
         r = interninplace(s)
@@ -803,11 +846,9 @@ class CAPITest(unittest.TestCase):
         # CRASHES interninplace(b'abc')
         # CRASHES interninplace(NULL)
 
-    @support.cpython_only
-    @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
     def test_internfromstring(self):
         """Test PyUnicode_InternFromString()"""
-        from _testlimitedcapi import unicode_internfromstring as internfromstring
+        internfromstring = _testlimitedcapi.unicode_internfromstring
 
         self.assertEqual(internfromstring(b'abc'), 'abc')
         self.assertEqual(internfromstring(b'\xf0\x9f\x98\x80'), '\U0001f600')
@@ -817,12 +858,9 @@ class CAPITest(unittest.TestCase):
 
         # CRASHES internfromstring(NULL)
 
-    @support.cpython_only
-    @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
     def test_fromwidechar(self):
         """Test PyUnicode_FromWideChar()"""
-        from _testlimitedcapi import unicode_fromwidechar as fromwidechar
-        from _testcapi import SIZEOF_WCHAR_T
+        fromwidechar = _testlimitedcapi.unicode_fromwidechar
 
         if SIZEOF_WCHAR_T == 2:
             encoding = 'utf-16le' if sys.byteorder == 'little' else 'utf-16be'
@@ -854,13 +892,10 @@ class CAPITest(unittest.TestCase):
         #self.assertRaises(MemoryError, fromwidechar, b'', PY_SSIZE_T_MAX)
         #self.assertRaises(SystemError, fromwidechar, b'\0'*SIZEOF_WCHAR_T, PY_SSIZE_T_MIN)
 
-    @support.cpython_only
-    @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
     def test_aswidechar(self):
         """Test PyUnicode_AsWideChar()"""
-        from _testlimitedcapi import unicode_aswidechar
-        from _testlimitedcapi import unicode_aswidechar_null
-        from _testcapi import SIZEOF_WCHAR_T
+        unicode_aswidechar = _testlimitedcapi.unicode_aswidechar
+        unicode_aswidechar_null = _testlimitedcapi.unicode_aswidechar_null
 
         wchar, size = unicode_aswidechar('abcdef', 2)
         self.assertEqual(size, 2)
@@ -902,13 +937,10 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, unicode_aswidechar_null, [], 10)
         self.assertRaises(SystemError, unicode_aswidechar_null, NULL, 10)
 
-    @support.cpython_only
-    @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
     def test_aswidecharstring(self):
         """Test PyUnicode_AsWideCharString()"""
-        from _testlimitedcapi import unicode_aswidecharstring
-        from _testlimitedcapi import unicode_aswidecharstring_null
-        from _testcapi import SIZEOF_WCHAR_T
+        unicode_aswidecharstring = _testlimitedcapi.unicode_aswidecharstring
+        unicode_aswidecharstring_null = _testlimitedcapi.unicode_aswidecharstring_null
 
         wchar, size = unicode_aswidecharstring('abc')
         self.assertEqual(size, 3)
@@ -937,11 +969,9 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, unicode_aswidecharstring_null, [])
         self.assertRaises(SystemError, unicode_aswidecharstring_null, NULL)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_asucs4(self):
         """Test PyUnicode_AsUCS4()"""
-        from _testcapi import unicode_asucs4
+        unicode_asucs4 = _testcapi.unicode_asucs4
 
         for s in ['abc', '\xa1\xa2', '\u4f60\u597d', 'a\U0001f600',
                   'a\ud800b\udfffc', '\ud834\udd1e']:
@@ -962,11 +992,9 @@ class CAPITest(unittest.TestCase):
         # CRASHES unicode_asucs4(NULL, 1, 0)
         # CRASHES unicode_asucs4(NULL, 1, 1)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_asucs4copy(self):
         """Test PyUnicode_AsUCS4Copy()"""
-        from _testcapi import unicode_asucs4copy as asucs4copy
+        asucs4copy = _testcapi.unicode_asucs4copy
 
         for s in ['abc', '\xa1\xa2', '\u4f60\u597d', 'a\U0001f600',
                   'a\ud800b\udfffc', '\ud834\udd1e']:
@@ -978,12 +1006,11 @@ class CAPITest(unittest.TestCase):
         # CRASHES asucs4copy([])
         # CRASHES asucs4copy(NULL)
 
-    @support.cpython_only
-    @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
     def test_fromordinal(self):
         """Test PyUnicode_FromOrdinal()"""
-        from _testlimitedcapi import unicode_fromordinal as fromordinal
+        fromordinal = _testlimitedcapi.unicode_fromordinal
 
+        self.assertEqual(fromordinal(0), '\x00')
         self.assertEqual(fromordinal(0x61), 'a')
         self.assertEqual(fromordinal(0x20ac), '\u20ac')
         self.assertEqual(fromordinal(0x1f600), '\U0001f600')
@@ -991,11 +1018,9 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(ValueError, fromordinal, 0x110000)
         self.assertRaises(ValueError, fromordinal, -1)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_asutf8(self):
         """Test PyUnicode_AsUTF8()"""
-        from _testcapi import unicode_asutf8
+        unicode_asutf8 = _testcapi.unicode_asutf8
 
         self.assertEqual(unicode_asutf8('abc', 4), b'abc\0')
         self.assertEqual(unicode_asutf8('абв', 7), b'\xd0\xb0\xd0\xb1\xd0\xb2\0')
@@ -1007,12 +1032,10 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, unicode_asutf8, [], 0)
         # CRASHES unicode_asutf8(NULL, 0)
 
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     @threading_helper.requires_working_threading()
     def test_asutf8_race(self):
         """Test that there's no race condition in PyUnicode_AsUTF8()"""
         unicode_asutf8 = _testcapi.unicode_asutf8
-        from threading import Thread
 
         data = "😊"
 
@@ -1025,12 +1048,10 @@ class CAPITest(unittest.TestCase):
             pass
 
 
-    @support.cpython_only
-    @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
     def test_asutf8andsize(self):
         """Test PyUnicode_AsUTF8AndSize()"""
-        from _testlimitedcapi import unicode_asutf8andsize
-        from _testlimitedcapi import unicode_asutf8andsize_null
+        unicode_asutf8andsize = _testlimitedcapi.unicode_asutf8andsize
+        unicode_asutf8andsize_null = _testlimitedcapi.unicode_asutf8andsize_null
 
         self.assertEqual(unicode_asutf8andsize('abc', 4), (b'abc\0', 3))
         self.assertEqual(unicode_asutf8andsize('абв', 7), (b'\xd0\xb0\xd0\xb1\xd0\xb2\0', 6))
@@ -1048,19 +1069,15 @@ class CAPITest(unittest.TestCase):
         # CRASHES unicode_asutf8andsize(NULL, 0)
         # CRASHES unicode_asutf8andsize_null(NULL, 0)
 
-    @support.cpython_only
-    @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
     def test_getdefaultencoding(self):
         """Test PyUnicode_GetDefaultEncoding()"""
-        from _testlimitedcapi import unicode_getdefaultencoding as getdefaultencoding
+        getdefaultencoding = _testlimitedcapi.unicode_getdefaultencoding
 
         self.assertEqual(getdefaultencoding(), b'utf-8')
 
-    @support.cpython_only
-    @unittest.skipIf(_testinternalcapi is None, 'need _testinternalcapi module')
     def test_transform_decimal_and_space(self):
         """Test _PyUnicode_TransformDecimalAndSpaceToASCII()"""
-        from _testinternalcapi import _PyUnicode_TransformDecimalAndSpaceToASCII as transform_decimal
+        transform_decimal = _testinternalcapi._PyUnicode_TransformDecimalAndSpaceToASCII
 
         self.assertEqual(transform_decimal('123'),
                          '123')
@@ -1076,11 +1093,9 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(SystemError, transform_decimal, [])
         # CRASHES transform_decimal(NULL)
 
-    @support.cpython_only
-    @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
     def test_concat(self):
         """Test PyUnicode_Concat()"""
-        from _testlimitedcapi import unicode_concat as concat
+        concat = _testlimitedcapi.unicode_concat
 
         self.assertEqual(concat('abc', 'def'), 'abcdef')
         self.assertEqual(concat('abc', 'где'), 'abcгде')
@@ -1097,11 +1112,9 @@ class CAPITest(unittest.TestCase):
         # CRASHES concat(NULL, 'def')
         # CRASHES concat('abc', NULL)
 
-    @support.cpython_only
-    @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
     def test_split(self):
         """Test PyUnicode_Split()"""
-        from _testlimitedcapi import unicode_split as split
+        split = _testlimitedcapi.unicode_split
 
         self.assertEqual(split('a|b|c|d', '|'), ['a', 'b', 'c', 'd'])
         self.assertEqual(split('a|b|c|d', '|', 2), ['a', 'b', 'c|d'])
@@ -1125,11 +1138,9 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, split, [], '|')
         # CRASHES split(NULL, '|')
 
-    @support.cpython_only
-    @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
     def test_rsplit(self):
         """Test PyUnicode_RSplit()"""
-        from _testlimitedcapi import unicode_rsplit as rsplit
+        rsplit = _testlimitedcapi.unicode_rsplit
 
         self.assertEqual(rsplit('a|b|c|d', '|'), ['a', 'b', 'c', 'd'])
         self.assertEqual(rsplit('a|b|c|d', '|', 2), ['a|b', 'c', 'd'])
@@ -1154,11 +1165,9 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, rsplit, [], '|')
         # CRASHES rsplit(NULL, '|')
 
-    @support.cpython_only
-    @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
     def test_partition(self):
         """Test PyUnicode_Partition()"""
-        from _testlimitedcapi import unicode_partition as partition
+        partition = _testlimitedcapi.unicode_partition
 
         self.assertEqual(partition('a|b|c', '|'), ('a', '|', 'b|c'))
         self.assertEqual(partition('a||b||c', '||'), ('a', '||', 'b||c'))
@@ -1174,11 +1183,9 @@ class CAPITest(unittest.TestCase):
         # CRASHES partition(NULL, '|')
         # CRASHES partition('a|b|c', NULL)
 
-    @support.cpython_only
-    @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
     def test_rpartition(self):
         """Test PyUnicode_RPartition()"""
-        from _testlimitedcapi import unicode_rpartition as rpartition
+        rpartition = _testlimitedcapi.unicode_rpartition
 
         self.assertEqual(rpartition('a|b|c', '|'), ('a|b', '|', 'c'))
         self.assertEqual(rpartition('a||b||c', '||'), ('a||b', '||', 'c'))
@@ -1194,11 +1201,9 @@ class CAPITest(unittest.TestCase):
         # CRASHES rpartition(NULL, '|')
         # CRASHES rpartition('a|b|c', NULL)
 
-    @support.cpython_only
-    @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
     def test_splitlines(self):
         """Test PyUnicode_SplitLines()"""
-        from _testlimitedcapi import unicode_splitlines as splitlines
+        splitlines = _testlimitedcapi.unicode_splitlines
 
         self.assertEqual(splitlines('a\nb\rc\r\nd'), ['a', 'b', 'c', 'd'])
         self.assertEqual(splitlines('a\nb\rc\r\nd', True),
@@ -1212,11 +1217,9 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, splitlines, b'a\nb\rc\r\nd')
         # CRASHES splitlines(NULL)
 
-    @support.cpython_only
-    @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
     def test_translate(self):
         """Test PyUnicode_Translate()"""
-        from _testlimitedcapi import unicode_translate as translate
+        translate = _testlimitedcapi.unicode_translate
 
         self.assertEqual(translate('abcd', {ord('a'): 'A', ord('b'): ord('B'), ord('c'): '<>'}), 'AB<>d')
         self.assertEqual(translate('абвг', {ord('а'): 'А', ord('б'): ord('Б'), ord('в'): '<>'}), 'АБ<>г')
@@ -1237,11 +1240,9 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(LookupError, translate, 'abc', {ord('b'): None}, 'foo')
         # CRASHES translate(NULL, [])
 
-    @support.cpython_only
-    @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
     def test_join(self):
         """Test PyUnicode_Join()"""
-        from _testlimitedcapi import unicode_join as join
+        join = _testlimitedcapi.unicode_join
         self.assertEqual(join('|', ['a', 'b', 'c']), 'a|b|c')
         self.assertEqual(join('|', ['a', '', 'c']), 'a||c')
         self.assertEqual(join('', ['a', 'b', 'c']), 'abc')
@@ -1255,11 +1256,9 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, join, '|', 123)
         self.assertRaises(SystemError, join, '|', NULL)
 
-    @support.cpython_only
-    @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
     def test_count(self):
         """Test PyUnicode_Count()"""
-        from _testlimitedcapi import unicode_count
+        unicode_count = _testlimitedcapi.unicode_count
 
         for str in "\xa1", "\u8000\u8080", "\ud800\udc02", "\U0001f100\U0001f1f1":
             for i, ch in enumerate(str):
@@ -1286,11 +1285,9 @@ class CAPITest(unittest.TestCase):
         # CRASHES unicode_count(NULL, '!', 0, len(str))
         # CRASHES unicode_count(str, NULL, 0, len(str))
 
-    @support.cpython_only
-    @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
     def test_tailmatch(self):
         """Test PyUnicode_Tailmatch()"""
-        from _testlimitedcapi import unicode_tailmatch as tailmatch
+        tailmatch = _testlimitedcapi.unicode_tailmatch
 
         str = 'ababahalamaha'
         self.assertEqual(tailmatch(str, 'aba', 0, len(str), -1), 1)
@@ -1321,11 +1318,9 @@ class CAPITest(unittest.TestCase):
         # CRASHES tailmatch(NULL, 'aba', 0, len(str), -1)
         # CRASHES tailmatch(str, NULL, 0, len(str), -1)
 
-    @support.cpython_only
-    @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
     def test_find(self):
         """Test PyUnicode_Find()"""
-        from _testlimitedcapi import unicode_find as find
+        find = _testlimitedcapi.unicode_find
 
         for str in "\xa1", "\u8000\u8080", "\ud800\udc02", "\U0001f100\U0001f1f1":
             for i, ch in enumerate(str):
@@ -1362,11 +1357,9 @@ class CAPITest(unittest.TestCase):
         # CRASHES find(NULL, '!', 0, len(str), 1)
         # CRASHES find(str, NULL, 0, len(str), 1)
 
-    @support.cpython_only
-    @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
     def test_findchar(self):
         """Test PyUnicode_FindChar()"""
-        from _testlimitedcapi import unicode_findchar
+        unicode_findchar = _testlimitedcapi.unicode_findchar
 
         for str in "\xa1", "\u8000\u8080", "\ud800\udc02", "\U0001f100\U0001f1f1":
             for i, ch in enumerate(str):
@@ -1398,11 +1391,9 @@ class CAPITest(unittest.TestCase):
         # CRASHES unicode_findchar([], ord('!'), 0, len(str), 1)
         # CRASHES unicode_findchar(NULL, ord('!'), 0, len(str), 1), 1)
 
-    @support.cpython_only
-    @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
     def test_replace(self):
         """Test PyUnicode_Replace()"""
-        from _testlimitedcapi import unicode_replace as replace
+        replace = _testlimitedcapi.unicode_replace
 
         str = 'abracadabra'
         self.assertEqual(replace(str, 'a', '='), '=br=c=d=br=')
@@ -1429,11 +1420,9 @@ class CAPITest(unittest.TestCase):
         # CRASHES replace('a', NULL, '=')
         # CRASHES replace(NULL, 'a', '=')
 
-    @support.cpython_only
-    @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
     def test_compare(self):
         """Test PyUnicode_Compare()"""
-        from _testlimitedcapi import unicode_compare as compare
+        compare = _testlimitedcapi.unicode_compare
 
         self.assertEqual(compare('abc', 'abc'), 0)
         self.assertEqual(compare('abc', 'def'), -1)
@@ -1451,11 +1440,9 @@ class CAPITest(unittest.TestCase):
         # CRASHES compare(NULL, 'abc')
         # CRASHES compare('abc', NULL)
 
-    @support.cpython_only
-    @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
     def test_comparewithasciistring(self):
         """Test PyUnicode_CompareWithASCIIString()"""
-        from _testlimitedcapi import unicode_comparewithasciistring as comparewithasciistring
+        comparewithasciistring = _testlimitedcapi.unicode_comparewithasciistring
 
         self.assertEqual(comparewithasciistring('abc', b'abc'), 0)
         self.assertEqual(comparewithasciistring('abc', b'def'), -1)
@@ -1468,12 +1455,10 @@ class CAPITest(unittest.TestCase):
         # CRASHES comparewithasciistring([], b'abc')
         # CRASHES comparewithasciistring(NULL, b'abc')
 
-    @support.cpython_only
-    @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
     def test_equaltoutf8(self):
         # Test PyUnicode_EqualToUTF8()
-        from _testlimitedcapi import unicode_equaltoutf8 as equaltoutf8
-        from _testlimitedcapi import unicode_asutf8andsize as asutf8andsize
+        equaltoutf8 = _testlimitedcapi.unicode_equaltoutf8
+        asutf8andsize = _testlimitedcapi.unicode_asutf8andsize
 
         strings = [
             'abc', '\xa1\xa2\xa3', '\u4f60\u597d\u4e16',
@@ -1514,12 +1499,10 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(equaltoutf8('\ud801',
                             '\ud801'.encode("utf8", "surrogatepass")), 0)
 
-    @support.cpython_only
-    @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
     def test_equaltoutf8andsize(self):
         # Test PyUnicode_EqualToUTF8AndSize()
-        from _testlimitedcapi import unicode_equaltoutf8andsize as equaltoutf8andsize
-        from _testlimitedcapi import unicode_asutf8andsize as asutf8andsize
+        equaltoutf8andsize = _testlimitedcapi.unicode_equaltoutf8andsize
+        asutf8andsize = _testlimitedcapi.unicode_asutf8andsize
 
         strings = [
             'abc', '\xa1\xa2\xa3', '\u4f60\u597d\u4e16',
@@ -1583,11 +1566,9 @@ class CAPITest(unittest.TestCase):
         # CRASHES equaltoutf8andsize(NULL, b'abc')
         # CRASHES equaltoutf8andsize('abc', NULL)
 
-    @support.cpython_only
-    @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
     def test_richcompare(self):
         """Test PyUnicode_RichCompare()"""
-        from _testlimitedcapi import unicode_richcompare as richcompare
+        richcompare = _testlimitedcapi.unicode_richcompare
 
         LT, LE, EQ, NE, GT, GE = range(6)
         strings = ('abc', 'абв', '\U0001f600', 'abc\0')
@@ -1611,11 +1592,25 @@ class CAPITest(unittest.TestCase):
             # CRASHES richcompare(NULL, 'abc', op)
             # CRASHES richcompare('abc', NULL, op)
 
-    @support.cpython_only
-    @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
+    def test_equal(self):
+        """Test PyUnicode_Equal()"""
+        equal = _testlimitedcapi.unicode_equal
+
+        strings = ('abc', 'абв', '\U0001f600', 'abc\0')
+        for s1 in strings:
+            for s2 in strings:
+                self.assertEqual(equal(s1, s2), int(s1 == s2))
+
+        self.assertRaises(TypeError, equal, 'str', b'bytes')
+        self.assertRaises(TypeError, equal, b'bytes', 'str')
+        self.assertRaises(TypeError, equal, 12, 34)
+
+        # CRASHES equal(NULL, 'abc')
+        # CRASHES equal('abc', NULL)
+
     def test_format(self):
         """Test PyUnicode_Format()"""
-        from _testlimitedcapi import unicode_format as format
+        format = _testlimitedcapi.unicode_format
 
         self.assertEqual(format('x=%d!', 42), 'x=42!')
         self.assertEqual(format('x=%d!', (42,)), 'x=42!')
@@ -1624,11 +1619,9 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(SystemError, format, 'x=%d!', NULL)
         self.assertRaises(SystemError, format, NULL, 42)
 
-    @support.cpython_only
-    @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
     def test_contains(self):
         """Test PyUnicode_Contains()"""
-        from _testlimitedcapi import unicode_contains as contains
+        contains = _testlimitedcapi.unicode_contains
 
         self.assertEqual(contains('abcd', ''), 1)
         self.assertEqual(contains('abcd', 'b'), 1)
@@ -1646,11 +1639,9 @@ class CAPITest(unittest.TestCase):
         # CRASHES contains(NULL, 'b')
         # CRASHES contains('abcd', NULL)
 
-    @support.cpython_only
-    @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
     def test_isidentifier(self):
         """Test PyUnicode_IsIdentifier()"""
-        from _testlimitedcapi import unicode_isidentifier as isidentifier
+        isidentifier = _testlimitedcapi.unicode_isidentifier
 
         self.assertEqual(isidentifier("a"), 1)
         self.assertEqual(isidentifier("b0"), 1)
@@ -1668,11 +1659,9 @@ class CAPITest(unittest.TestCase):
         # CRASHES isidentifier([])
         # CRASHES isidentifier(NULL)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_copycharacters(self):
         """Test PyUnicode_CopyCharacters()"""
-        from _testcapi import unicode_copycharacters
+        unicode_copycharacters = _testcapi.unicode_copycharacters
 
         strings = [
             # all strings have exactly 5 characters
@@ -1723,11 +1712,9 @@ class CAPITest(unittest.TestCase):
         # TODO: Test PyUnicode_CopyCharacters() with non-unicode and
         # non-modifiable unicode as "to".
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_pep393_utf8_caching_bug(self):
         # Issue #25709: Problem with string concatenation and utf-8 cache
-        from _testcapi import getargs_s_hash
+        getargs_s_hash = _testcapi.getargs_s_hash
         for k in 0x24, 0xa4, 0x20ac, 0x1f40d:
             s = ''
             for i in range(5):
@@ -1741,10 +1728,9 @@ class CAPITest(unittest.TestCase):
                 # Check that the second call returns the same result
                 self.assertEqual(getargs_s_hash(s), chr(k).encode() * (i + 1))
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_GET_CACHED_HASH(self):
-        from _testcapi import unicode_GET_CACHED_HASH
+        """Test PyUnstable_Unicode_GET_CACHED_HASH()"""
+        unicode_GET_CACHED_HASH = _testcapi.unicode_GET_CACHED_HASH
         content_bytes = b'some new string'
         # avoid parser interning & constant folding
         obj = str(content_bytes, 'ascii')
@@ -1755,9 +1741,119 @@ class CAPITest(unittest.TestCase):
         # impl detail: ASCII string hashes are equal to bytes ones
         self.assertEqual(unicode_GET_CACHED_HASH(obj), hash(content_bytes))
 
+    def test_kind(self):
+        """Test PyUnicode_KIND()"""
+        unicode_kind = _testcapi.unicode_kind
+        self.assertEqual(unicode_kind('ascii'), PyUnicode_1BYTE_KIND)
+        self.assertEqual(unicode_kind('latin1:\xe9'), PyUnicode_1BYTE_KIND)
+        self.assertEqual(unicode_kind('bmp:\u20ac'), PyUnicode_2BYTE_KIND)
+        self.assertEqual(unicode_kind('\U0010ffff'), PyUnicode_4BYTE_KIND)
+
+        # CRASHES unicode_kind(NULL)
+
+    def test_max_char_value(self):
+        """Test PyUnicode_MAX_CHAR_VALUE()"""
+        max_char_value = _testcapi.unicode_max_char_value
+        self.assertEqual(max_char_value('ascii'), 0x7f)
+        self.assertEqual(max_char_value('latin1:\xe9'), 0xff)
+        self.assertEqual(max_char_value('bmp:\u20ac'), 0xffff)
+        self.assertEqual(max_char_value('\U0010ffff'), 0x10_ffff)
+
+        # CRASHES max_char_value(NULL)
+
+    def test_check_interned(self):
+        """Test PyUnicode_CHECK_INTERNED() macro"""
+        check_interned = _testcapi.unicode_check_interned
+
+        def fresh_string(text):
+            # Create a new string object by decoding a bytes string.
+            return text.encode().decode()
+
+        s = fresh_string('hello')
+        self.assertEqual(check_interned(s), SSTATE_NOT_INTERNED)
+
+        s = fresh_string('long string unlikely to be used by Python')
+        s = sys.intern(s)
+        if support.Py_GIL_DISABLED:
+            self.assertEqual(check_interned(s), SSTATE_INTERNED_IMMORTAL)
+        else:
+            self.assertEqual(check_interned(s), SSTATE_INTERNED_MORTAL)
+
+        # 'x' is a singleton: immortal static interned string
+        self.assertEqual(check_interned('x'), SSTATE_INTERNED_IMMORTAL_STATIC)
+
+        # CRASHES check_interned(NULL)
+
+    def test_is_ascii(self):
+        """Test PyUnicode_IS_ASCII() macro"""
+        is_ascii = _testcapi.unicode_is_ascii
+        self.assertEqual(is_ascii('abc'), 1)
+        self.assertEqual(is_ascii('\u20ac'), 0)
+        # CRASHES is_ascii(NULL)
+
+    def test_is_compact(self):
+        """Test PyUnicode_IS_COMPACT() macro"""
+        is_compact = _testcapi.unicode_is_compact
+        self.assertEqual(is_compact('ascii'), 1)
+        self.assertEqual(is_compact('latin1:\xe9'), 1)
+        self.assertEqual(is_compact('bmp:\u20ac'), 1)
+        self.assertEqual(is_compact('\U0010ffff'), 1)
+        # str subclasses are not compact
+        self.assertEqual(is_compact(Str('abc')), 0)
+        self.assertEqual(is_compact(Str('\u20ac')), 0)
+
+        # CRASHES is_compact(NULL)
+
+    def test_is_compact_ascii(self):
+        """Test PyUnicode_IS_COMPACT_ASCII() macro"""
+        is_compact_ascii = _testcapi.unicode_is_compact_ascii
+        self.assertEqual(is_compact_ascii('ascii'), 1)
+        self.assertEqual(is_compact_ascii('latin1:\xe9'), 0)
+        self.assertEqual(is_compact_ascii('bmp:\u20ac'), 0)
+        self.assertEqual(is_compact_ascii('\U0010ffff'), 0)
+        # str subclasses are not compact
+        self.assertEqual(is_compact_ascii(Str('abc')), 0)
+        self.assertEqual(is_compact_ascii(Str('\u20ac')), 0)
+
+        # CRASHES is_compact_ascii(NULL)
+
+    def test_unicode_equal(self):
+        unicode_equal = _testlimitedcapi.unicode_equal
+
+        def copy(text):
+            return text.encode().decode()
+
+        self.assertTrue(unicode_equal("", ""))
+        self.assertTrue(unicode_equal("abc", "abc"))
+        self.assertTrue(unicode_equal("abc", copy("abc")))
+        self.assertTrue(unicode_equal("\u20ac", copy("\u20ac")))
+        self.assertTrue(unicode_equal("\U0010ffff", copy("\U0010ffff")))
+
+        self.assertFalse(unicode_equal("abc", "abcd"))
+        self.assertFalse(unicode_equal("\u20ac", "\u20ad"))
+        self.assertFalse(unicode_equal("\U0010ffff", "\U0010fffe"))
+
+        # str subclass
+        self.assertTrue(unicode_equal("abc", Str("abc")))
+        self.assertTrue(unicode_equal(Str("abc"), "abc"))
+        self.assertFalse(unicode_equal("abc", Str("abcd")))
+        self.assertFalse(unicode_equal(Str("abc"), "abcd"))
+
+        # invalid type
+        for invalid_type in (b'bytes', 123, ("tuple",)):
+            with self.subTest(invalid_type=invalid_type):
+                with self.assertRaises(TypeError):
+                    unicode_equal("abc", invalid_type)
+                with self.assertRaises(TypeError):
+                    unicode_equal(invalid_type, "abc")
+
+        # CRASHES unicode_equal("abc", NULL)
+        # CRASHES unicode_equal(NULL, "abc")
+
 
 class PyUnicodeWriterTest(unittest.TestCase):
     def create_writer(self, size):
+        # Test PyUnicodeWriter_Create()
         return _testcapi.PyUnicodeWriter(size)
 
     def test_basic(self):
@@ -1780,6 +1876,7 @@ class PyUnicodeWriterTest(unittest.TestCase):
         # test PyUnicodeWriter_WriteRepr()
         writer.write_repr("repr")
 
+        # test PyUnicodeWriter_Finish()
         self.assertEqual(writer.finish(),
                          "var=long value 'repr'")
 
@@ -1801,6 +1898,11 @@ class PyUnicodeWriterTest(unittest.TestCase):
         self.assertEqual(writer.finish(),
                          "\0$\u20AC\U0010FFFF")
 
+        writer = self.create_writer(0)
+        for ch in 'hello':
+            writer.write_char(ord(ch))
+        self.assertEqual(writer.finish(), 'hello')
+
     def test_utf8(self):
         writer = self.create_writer(0)
         writer.write_utf8(b"ascii", -1)
@@ -1816,6 +1918,7 @@ class PyUnicodeWriterTest(unittest.TestCase):
                          "ascii-latin1=\xE9-euro=\u20AC.")
 
     def test_ascii(self):
+        # Test PyUnicodeWriter_WriteASCII()
         writer = self.create_writer(0)
         writer.write_ascii(b"Hello ", -1)
         writer.write_ascii(b"", 0)
@@ -1906,8 +2009,7 @@ class PyUnicodeWriterTest(unittest.TestCase):
         self.assertEqual(writer.finish(), "text-\xE9-\u20AC-more-incomplete-default")
 
     def test_widechar(self):
-        from _testcapi import SIZEOF_WCHAR_T
-
+        # Test PyUnicodeWriter_WriteWideChar()
         if SIZEOF_WCHAR_T == 2:
             encoding = 'utf-16le' if sys.byteorder == 'little' else 'utf-16be'
         elif SIZEOF_WCHAR_T == 4:
@@ -1938,6 +2040,7 @@ class PyUnicodeWriterTest(unittest.TestCase):
                          "latin1=\xE9-euro=\u20AC-max=\U0010ffff-zeroes=\0\0\0.")
 
     def test_ucs4(self):
+        # Test PyUnicodeWriter_WriteUCS4()
         encoding = 'utf-32le' if sys.byteorder == 'little' else 'utf-32be'
 
         writer = self.create_writer(0)
@@ -1981,7 +2084,114 @@ class PyUnicodeWriterTest(unittest.TestCase):
         writer.write_substring("abc", 1, 1)
         self.assertEqual(writer.finish(), '')
 
+    def test_singletons(self):
+        for size in (0, 123):
+            with self.subTest(size=size):
+                writer = self.create_writer(size)
+                writer.write_utf8(b'utf8', 0)
+                writer.write_ascii(b'ascii', 0)
+                writer.write_widechar(b'wstr', 0)
+                writer.write_ucs4(b'ucs4', 0)
+                writer.write_substring('text', 0, 0)
+                self.assertIs(writer.finish(), '')
 
+        for size in (0, 123):
+            for ch in range(256):
+                with self.subTest(size=size, ch=ch):
+                    ch = chr(ch)
+
+                    # If the first write is a Latin1 character and no buffer
+                    # was allocated yet, use the singleton as the read-only
+                    # buffer
+                    writer = self.create_writer(size)
+                    writer.write_char(ord(ch))
+                    self.assertIs(writer.finish(), ch)
+
+                    # PyUnicodeWriter_Finish() replaces the buffer
+                    # with the singleton
+                    writer = self.create_writer(size)
+                    # Use PyUnicodeWriter_WriteSubstring() to avoid
+                    # the read-only buffer optimization
+                    writer.write_substring(ch + 'xxx', 0, 1)
+                    self.assertIs(writer.finish(), ch)
+
+    @unittest.skipUnless(support.Py_DEBUG, 'need debug build (Py_DEBUG)')
+    def test_detect_overflow(self):
+        # Test detection of buffer overflow
+        code = textwrap.dedent('''
+            from test.support import SuppressCrashReport
+            import _testinternalcapi
+
+            SuppressCrashReport().__enter__()
+            _testinternalcapi.unicodewriter_overflow()
+        ''')
+        proc = assert_python_failure('-c', code)
+        self.assertIn(b'Buffer overflow detected in PyUnicodeWriter', proc.err)
+        # Do not test the position value since it depends on the overallocation
+        # strategy which depends on the operating system
+        self.assertIn(f'at position '.encode(), proc.err)
+
+    @support.nomemtest
+    def test_memory_error(self):
+        # Inject MemoryError in PyUnicodeWriter_WriteStr()
+        writer = self.create_writer(0)
+        writer.write_str("start")
+        with self.assertRaises(MemoryError):
+            with support.inject_memory_error_cm():
+                # Resize the internal str object
+                writer.write_str("s" * 1024)
+        writer.write_str(" end")
+        self.assertEqual(writer.finish(), "start end")
+
+        # Inject MemoryError in PyUnicodeWriter_Finish()
+        writer = self.create_writer(1024)
+        writer.write_str("abc")
+        with self.assertRaises(MemoryError):
+            with support.inject_memory_error_cm():
+                # Need to truncate the internal str object
+                writer.finish()
+
+    def test_change_kind(self):
+        writer = self.create_writer(0)
+        # Create an ASCII buffer
+        writer.write_str('ascii ')
+        # Change the buffer to UCS1
+        writer.write_str('latin1:\xe9 ')
+        # Change the buffer to UCS2
+        writer.write_str('ucs2:\u20ac ')
+        # Change the buffer to UCS4
+        writer.write_str('ucs4:\U0010ffff')
+        self.assertEqual(writer.finish(),
+                         'ascii latin1:\xe9 ucs2:\u20ac ucs4:\U0010ffff')
+
+    def test_readonly_optim(self):
+        # Read-only optimization: if the first and only write is a Python str
+        # object and no buffer was allocated yet, return the object unchanged
+        unique_string = 'unique string'
+        writer = self.create_writer(0)
+        writer.write_str(unique_string)
+        self.assertIs(writer.finish(), unique_string)
+
+        writer = self.create_writer(0)
+        writer.write_substring(unique_string, 0, len(unique_string))
+        self.assertIs(writer.finish(), unique_string)
+
+        class MyStr:
+            def __str__(self):
+                return unique_string
+        writer = self.create_writer(0)
+        writer.write_str(MyStr())
+        self.assertIs(writer.finish(), unique_string)
+
+        class MyRepr:
+            def __repr__(self):
+                return unique_string
+        writer = self.create_writer(0)
+        writer.write_repr(MyRepr())
+        self.assertIs(writer.finish(), unique_string)
+
+
+# Test PyUnicodeWriter_Format()
 @unittest.skipIf(ctypes is None, 'need ctypes')
 class PyUnicodeWriterFormatTest(unittest.TestCase):
     def create_writer(self, size):
@@ -2017,38 +2227,106 @@ class PyUnicodeWriterFormatTest(unittest.TestCase):
 
         self.assertEqual(writer.finish(), 'Hello World.')
 
-    def test_unicode_equal(self):
-        unicode_equal = _testlimitedcapi.unicode_equal
+    def test_readonly_optim(self):
+        # Read-only optimization: if the first and only write is a Python str
+        # object and no buffer was allocated yet, return the object unchanged
+        from ctypes import py_object
 
-        def copy(text):
-            return text.encode().decode()
+        unique_string = 'unique string'
+        for format in (b'%S', b'%U'):
+            with self.subTest(format=format):
+                writer = self.create_writer(0)
+                self.writer_format(writer, format, py_object(unique_string))
+                self.assertIs(writer.finish(), unique_string)
 
-        self.assertTrue(unicode_equal("", ""))
-        self.assertTrue(unicode_equal("abc", "abc"))
-        self.assertTrue(unicode_equal("abc", copy("abc")))
-        self.assertTrue(unicode_equal("\u20ac", copy("\u20ac")))
-        self.assertTrue(unicode_equal("\U0010ffff", copy("\U0010ffff")))
+        class MyStr:
+            def __str__(self):
+                return unique_string
+        writer = self.create_writer(0)
+        self.writer_format(writer, b'%S', py_object(MyStr()))
+        self.assertIs(writer.finish(), unique_string)
 
-        self.assertFalse(unicode_equal("abc", "abcd"))
-        self.assertFalse(unicode_equal("\u20ac", "\u20ad"))
-        self.assertFalse(unicode_equal("\U0010ffff", "\U0010fffe"))
+        class MyRepr:
+            def __repr__(self):
+                return unique_string
+        writer = self.create_writer(0)
+        self.writer_format(writer, b'%R', py_object(MyRepr()))
+        self.assertIs(writer.finish(), unique_string)
 
-        # str subclass
-        self.assertTrue(unicode_equal("abc", Str("abc")))
-        self.assertTrue(unicode_equal(Str("abc"), "abc"))
-        self.assertFalse(unicode_equal("abc", Str("abcd")))
-        self.assertFalse(unicode_equal(Str("abc"), "abcd"))
 
-        # invalid type
-        for invalid_type in (b'bytes', 123, ("tuple",)):
-            with self.subTest(invalid_type=invalid_type):
-                with self.assertRaises(TypeError):
-                    unicode_equal("abc", invalid_type)
-                with self.assertRaises(TypeError):
-                    unicode_equal(invalid_type, "abc")
+# TODO: Add tests to the following codec functions:
+# - PyUnicode_AsASCIIString
+# - PyUnicode_AsCharmapString
+# - PyUnicode_AsEncodedString
+# - PyUnicode_AsLatin1String
+# - PyUnicode_AsMBCSString
+# - PyUnicode_AsRawUnicodeEscapeString
+# - PyUnicode_AsUTF16String
+# - PyUnicode_AsUTF32String
+# - PyUnicode_AsUTF8String
+# - PyUnicode_AsUnicodeEscapeString
+# - PyUnicode_BuildEncodingMap
+# - PyUnicode_Decode
+# - PyUnicode_DecodeASCII
+# - PyUnicode_DecodeCharmap
+# - PyUnicode_DecodeCodePageStateful
+# - PyUnicode_DecodeFSDefault
+# - PyUnicode_DecodeFSDefaultAndSize
+# - PyUnicode_DecodeLatin1
+# - PyUnicode_DecodeLocale
+# - PyUnicode_DecodeLocaleAndSize
+# - PyUnicode_DecodeMBCS
+# - PyUnicode_DecodeMBCSStateful
+# - PyUnicode_DecodeRawUnicodeEscape
+# - PyUnicode_DecodeUTF16
+# - PyUnicode_DecodeUTF16Stateful
+# - PyUnicode_DecodeUTF32
+# - PyUnicode_DecodeUTF32Stateful
+# - PyUnicode_DecodeUTF7
+# - PyUnicode_DecodeUTF7Stateful
+# - PyUnicode_DecodeUTF8
+# - PyUnicode_DecodeUTF8Stateful
+# - PyUnicode_DecodeUnicodeEscape
+# - PyUnicode_EncodeCodePage
+# - PyUnicode_EncodeFSDefault
+# - PyUnicode_EncodeLocale
+# - PyUnicode_FSConverter
+# - PyUnicode_FSDecoder
+# - PyUnicode_FromEncodedObject
+# - PyUnicode_Splitlines
 
-        # CRASHES unicode_equal("abc", NULL)
-        # CRASHES unicode_equal(NULL, "abc")
+# TODO: Add tests to the following character functions:
+# - Py_UNICODE_ISALNUM
+# - Py_UNICODE_ISALPHA
+# - Py_UNICODE_ISDECIMAL
+# - Py_UNICODE_ISDIGIT
+# - Py_UNICODE_ISLINEBREAK
+# - Py_UNICODE_ISLOWER
+# - Py_UNICODE_ISNUMERIC
+# - Py_UNICODE_ISPRINTABLE
+# - Py_UNICODE_ISSPACE
+# - Py_UNICODE_ISTITLE
+# - Py_UNICODE_ISUPPER
+# - Py_UNICODE_TODECIMAL
+# - Py_UNICODE_TODIGIT
+# - Py_UNICODE_TOLOWER
+# - Py_UNICODE_TONUMERIC
+# - Py_UNICODE_TOTITLE
+# - Py_UNICODE_TOUPPER
+
+# TODO: Maybe add tests to the following less important functions:
+# - PyUnicode_1BYTE_DATA
+# - PyUnicode_2BYTE_DATA
+# - PyUnicode_4BYTE_DATA
+# - PyUnicode_DATA
+# - PyUnicode_IS_READY
+# - PyUnicode_READY
+# - Py_UNICODE_HIGH_SURROGATE
+# - Py_UNICODE_IS_HIGH_SURROGATE
+# - Py_UNICODE_IS_LOW_SURROGATE
+# - Py_UNICODE_IS_SURROGATE
+# - Py_UNICODE_JOIN_SURROGATES
+# - Py_UNICODE_LOW_SURROGATE
 
 
 if __name__ == "__main__":

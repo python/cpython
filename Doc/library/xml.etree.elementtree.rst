@@ -160,8 +160,37 @@ some storage device.  In such cases, blocking reads are unacceptable.
 Because it's so flexible, :class:`XMLPullParser` can be inconvenient to use for
 simpler use-cases.  If you don't mind your application blocking on reading XML
 data but would still like to have incremental parsing capabilities, take a look
-at :func:`iterparse`.  It can be useful when you're reading a large XML document
-and don't want to hold it wholly in memory.
+at :func:`iterparse`.
+
+Note that both parsers build the tree incrementally: it is not freed
+incrementally, so every parsed element is kept until the whole document is
+read.  To keep the memory usage low, get rid of the data which is not needed
+any more.
+
+If the processed elements are large, it is enough to clear them.
+This works wherever they are in the tree,
+but the emptied elements are left in it::
+
+   for event, elem in ET.iterparse(source):
+       if elem.tag == 'record':
+           process(elem)
+           elem.clear()
+
+If an element has a large number of children,
+remove the processed children from it::
+
+   for event, elem in ET.iterparse(source, events=('start', 'end')):
+       if event == 'start' and elem.tag == 'parent':
+           parent = elem
+       elif event == 'end' and elem.tag == 'child':
+           process(elem)
+           parent.remove(elem)
+
+These examples are not universal,
+they only give an idea for two common cases.
+If you do not need a tree at all,
+parse with :class:`XMLParser` and a custom target instead;
+it is not built then, and nothing has to be removed.
 
 Where *immediate* feedback through events is wanted, calling method
 :meth:`XMLPullParser.flush` can help reduce delay;
@@ -602,7 +631,15 @@ Functions
    characters by default.  For indenting partial subtrees inside of an
    already indented tree, pass the initial indentation level as *level*.
 
+   No whitespace is added inside an element
+   which is marked with ``xml:space="preserve"``
+   or which contains text, because this would change its content.
+
    .. versionadded:: 3.9
+
+   .. versionchanged:: next
+      Whitespace is no longer added inside an element with mixed content
+      or marked with ``xml:space="preserve"``.
 
 
 .. function:: iselement(element)
@@ -611,10 +648,11 @@ Functions
    element instance.  Return ``True`` if this is an element object.
 
 
-.. function:: iterparse(source, events=None, parser=None)
+.. function:: iterparse(source, events=None, parser=None, *, target=None)
 
-   Parses an XML section into an element tree incrementally, and reports what's
-   going on to the user.  *source* is a filename or :term:`file object`
+   Parses an XML section incrementally, and reports what's going on to the
+   user.  Unless a custom target is used, an element tree is built.
+   *source* is a filename or :term:`file object`
    containing XML data.  *events* is a sequence of events to report back.  The
    supported events are the strings ``"start"``, ``"end"``, ``"comment"``,
    ``"pi"``, ``"start-ns"`` and ``"end-ns"``
@@ -622,11 +660,18 @@ Functions
    information).  If *events* is omitted, only ``"end"`` events are reported.
    *parser* is an optional parser instance.
    If not given, the standard :class:`XMLParser` parser is used.
-   *parser* must be an instance of :class:`XMLParser` or its subclass
-   and can only use the default :class:`TreeBuilder` as a target.
-   Returns an :term:`iterator` providing ``(event, elem)`` pairs;
+   *parser* must be an instance of :class:`XMLParser` or its subclass.
+   *target* is the target of the standard parser,
+   as for :class:`XMLPullParser`;
+   it cannot be used together with *parser*.
+   Returns an :term:`iterator` providing ``(event, obj)`` pairs,
+   as described for :meth:`XMLPullParser.read_events`;
    it has a ``root`` attribute that references the root element of the
-   resulting XML tree once *source* is fully read.
+   resulting XML tree, or the value returned by the ``close()`` method
+   of a custom target, once *source* is fully read.
+   If a custom target is used, it is set to the value returned
+   by the :meth:`!close` method of the target.
+
    The iterator has the :meth:`!close` method that closes the internal
    file object if *source* is a filename.
 
@@ -634,6 +679,10 @@ Functions
    blocking reads on *source* (or the file it names).  As such, it's unsuitable
    for applications where blocking reads can't be made.  For fully non-blocking
    parsing, see :class:`XMLPullParser`.
+
+   The tree is only built incrementally, it is not freed incrementally:
+   every parsed element is kept until the whole document is read.
+   See :ref:`elementtree-pull-parsing` for how to keep the memory usage low.
 
    .. note::
 
@@ -657,6 +706,9 @@ Functions
    .. versionchanged:: 3.15
       A :exc:`ResourceWarning` is now emitted if the iterator opened a file
       and is not explicitly closed.
+
+   .. versionchanged:: next
+      Added the *target* parameter.
 
 
 .. function:: parse(source, parser=None)
@@ -1491,7 +1543,7 @@ XMLParser Objects
 XMLPullParser Objects
 ^^^^^^^^^^^^^^^^^^^^^
 
-.. class:: XMLPullParser(events=None)
+.. class:: XMLPullParser(events=None, *, target=None)
 
    A pull parser suitable for non-blocking applications.  Its input-side API is
    similar to that of :class:`XMLParser`, but instead of pushing calls to a
@@ -1501,6 +1553,20 @@ XMLPullParser Objects
    ``"comment"``, ``"pi"``, ``"start-ns"`` and ``"end-ns"`` (the "ns" events
    are used to get detailed namespace information).  If *events* is omitted,
    only ``"end"`` events are reported.
+
+   *target* is the target object of the underlying :class:`XMLParser`.
+   If omitted, the standard :class:`TreeBuilder` is used,
+   and the reported objects are :class:`Element` instances.
+   With other targets the reported object is the value returned
+   by the corresponding method of the target,
+   so no tree is built if the target does not build one.
+   The target must implement the methods for all requested events,
+   except :meth:`!start_ns` and :meth:`!end_ns`:
+   if they are not implemented, a ``(prefix, uri)`` tuple and ``None``
+   are reported for the ``"start-ns"`` and ``"end-ns"`` events.
+
+   .. versionchanged:: next
+      Added the *target* parameter.
 
    .. method:: feed(data)
 
@@ -1534,9 +1600,10 @@ XMLPullParser Objects
 
       Return an iterator over the events which have been encountered in the
       data fed to the
-      parser.  The iterator yields ``(event, elem)`` pairs, where *event* is a
-      string representing the type of event (e.g. ``"end"``) and *elem* is the
-      encountered :class:`Element` object, or other context value as follows.
+      parser.  The iterator yields ``(event, obj)`` pairs, where *event* is a
+      string representing the type of event (e.g. ``"end"``) and *obj* is the
+      object returned by the corresponding method of the target.
+      With the standard :class:`TreeBuilder` it is as follows.
 
       * ``start``, ``end``: the current Element.
       * ``comment``, ``pi``: the current comment / processing instruction

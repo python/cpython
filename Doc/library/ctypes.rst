@@ -997,6 +997,15 @@ Generally you only use this feature if you receive a pointer from a C function,
 and you *know* that the pointer actually points to an array instead of a single
 item.
 
+.. warning::
+
+   Because pointer objects support subscription, they implicitly support
+   :term:`iteration <iterator>`. Unless doing this in a controlled manner,
+   such as by manually calling :func:`next` on a :func:`pointer` iterator, this
+   will typically lead to infinite loops or crashes, because ctypes has no way
+   of knowing when to stop iteration. In other words, a ``pointer`` iterator
+   will infinitely yield arbitrary memory.
+
 Behind the scenes, the :func:`pointer` function does more than simply create
 pointer instances, it has to create pointer *types* first. This is done with the
 :func:`POINTER` function, which accepts any :mod:`!ctypes` type, and returns a
@@ -3383,3 +3392,47 @@ Exceptions
    .. availability:: Windows
 
    .. versionadded:: 3.14
+
+
+Library version
+^^^^^^^^^^^^^^^
+
+The following constants are only available if :mod:`!ctypes` was built with
+libffi 3.5 or later, which is the first version providing this information.
+
+.. data:: LIBFFI_VERSION
+
+   The version string of the libffi library that was used for building
+   the module, like ``'3.5.2'``.
+   This may be different from the libffi library actually used at runtime,
+   which is available as :const:`libffi_version`.
+
+   .. versionadded:: next
+
+.. data:: libffi_version
+
+   The version string of the libffi library actually loaded by the interpreter.
+
+   .. versionadded:: next
+
+.. data:: LIBFFI_VERSION_INFO
+
+   A named tuple containing the three components of the libffi library
+   version that was used for building the module:
+   *major*, *minor*, and *patch*.
+   All values are integers.
+   The components can also be accessed by name,
+   so ``ctypes.LIBFFI_VERSION_INFO[0]`` is equivalent to
+   ``ctypes.LIBFFI_VERSION_INFO.major`` and so on.
+   This may be different from the libffi library actually used at runtime,
+   which is available as :const:`libffi_version_info`.
+
+   .. versionadded:: next
+
+.. data:: libffi_version_info
+
+   A named tuple containing the version of the libffi library
+   actually loaded by the interpreter,
+   with the same fields as :const:`LIBFFI_VERSION_INFO`.
+
+   .. versionadded:: next
