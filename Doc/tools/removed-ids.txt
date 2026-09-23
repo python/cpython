@@ -83,9 +83,6 @@ reference/expressions.html: generator.close
 reference/expressions.html: generator.send
 reference/expressions.html: generator.throw
 
-# Renamed to library/tkinter.dialogs.html
-library/dialog.html: (page missing)
-
 # Obsolete sections in 'turtle' docs
 library/turtle.html: changes-since-python-2-6
 library/turtle.html: changes-since-python-3-0

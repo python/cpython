@@ -635,6 +635,8 @@ rediraffe_redirects = {
     "library/exceptions.rst": "builtins/exceptions.rst",
     "library/threadsafety.rst": "builtins/threadsafety.rst",
     "library/time-complexity.rst": "builtins/time-complexity.rst",
+    # Renamed to tkinter.dialogs.rst in GH-151656
+    "library/dialog.rst": "library/tkinter.dialogs.rst",
 }
 
 # Refuse to run the doctest builder under a mismatched Python
