@@ -595,7 +595,7 @@ class NonCallableMock(Base):
 
     __return_value_doc = "The value to be returned when the mock is called."
     return_value = property(__get_return_value, __set_return_value,
-                            __return_value_doc)
+                            doc=__return_value_doc)
 
 
     @property
