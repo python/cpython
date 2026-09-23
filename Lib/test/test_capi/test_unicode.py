@@ -1880,6 +1880,36 @@ class PyUnicodeWriterTest(unittest.TestCase):
         self.assertEqual(writer.finish(),
                          "var=long value 'repr'")
 
+    def test_create(self):
+        # Test PyUnicodeWriter_Create() with non-zero size
+        s = 'Monty Python'
+
+        # Preallocate the exact length. Use 2 writes to force the creation
+        # of a buffer:
+        #   1. Use the read-only optimization.
+        #   2. Allocate a buffer of length character.
+        # No resize needed in finish().
+        writer = self.create_writer(len(s))
+        writer.write_str(s[:5])
+        self.assertEqual(writer.get_buffer(), (5, 127, True))
+        writer.write_str(s[5:])
+        self.assertEqual(writer.get_buffer(), (len(s), 127, False))
+        self.assertEqual(writer.finish(), s)
+
+        # Preallocate len(s)-1 characters. Use 3 writes:
+        #   1. Use read-only optimization.
+        #   2. Allocate a buffer of len-1 characters.
+        #   3. Resize the buffer with overallocation.
+        # finish() has to truncate the buffer.
+        writer = self.create_writer(len(s) - 1)
+        writer.write_str(s[:2])
+        self.assertEqual(writer.get_buffer(), (2, 127, True))
+        writer.write_str(s[2:5])
+        self.assertEqual(writer.get_buffer(), (len(s) - 1, 127, False))
+        writer.write_str(s[5:])
+        self.assertGreater(writer.get_buffer()[0], len(s))
+        self.assertEqual(writer.finish(), s)
+
     def test_repr_null(self):
         writer = self.create_writer(0)
         writer.write_utf8(b'var=', -1)
@@ -2087,32 +2117,39 @@ class PyUnicodeWriterTest(unittest.TestCase):
     def test_singletons(self):
         for size in (0, 123):
             with self.subTest(size=size):
+                # PyUnicodeWriter_Finish() returns the empty string singleton
+                # if no character has been written.
                 writer = self.create_writer(size)
                 writer.write_utf8(b'utf8', 0)
                 writer.write_ascii(b'ascii', 0)
                 writer.write_widechar(b'wstr', 0)
                 writer.write_ucs4(b'ucs4', 0)
-                writer.write_substring('text', 0, 0)
+                writer.write_substring('text', 2, 2)
+                self.assertEqual(writer.get_buffer(), (None, 127, False))
                 self.assertIs(writer.finish(), '')
 
         for size in (0, 123):
             for ch in range(256):
                 with self.subTest(size=size, ch=ch):
                     ch = chr(ch)
+                    maxchar = (255 if ord(ch) >= 128 else 127)
 
-                    # If the first write is a Latin1 character and no buffer
-                    # was allocated yet, use the singleton as the read-only
-                    # buffer
+                    # PyUnicodeWriter_WriteChar(ch) uses the read-only
+                    # optimization with the character singleton if ch is a
+                    # Latin1 character and no buffer was allocated yet.
                     writer = self.create_writer(size)
                     writer.write_char(ord(ch))
+                    self.assertEqual(writer.get_buffer(),
+                                     (1, maxchar, True))
                     self.assertIs(writer.finish(), ch)
 
-                    # PyUnicodeWriter_Finish() replaces the buffer
-                    # with the singleton
+                    # PyUnicodeWriter_Finish() replaces the buffer with the
+                    # singleton. Use PyUnicodeWriter_WriteSubstring() to avoid
+                    # the read-only buffer optimization.
                     writer = self.create_writer(size)
-                    # Use PyUnicodeWriter_WriteSubstring() to avoid
-                    # the read-only buffer optimization
-                    writer.write_substring(ch + 'xxx', 0, 1)
+                    writer.write_substring('xxx' + ch + 'y', 3, 4)
+                    self.assertEqual(writer.get_buffer(),
+                                     (size or 1, maxchar, False))
                     self.assertIs(writer.finish(), ch)
 
     @unittest.skipUnless(support.Py_DEBUG, 'need debug build (Py_DEBUG)')
@@ -2135,7 +2172,8 @@ class PyUnicodeWriterTest(unittest.TestCase):
     def test_memory_error(self):
         # Inject MemoryError in PyUnicodeWriter_WriteStr()
         writer = self.create_writer(0)
-        writer.write_str("start")
+        writer.write_utf8(b"start", -1)
+        self.assertEqual(writer.get_buffer(), (5, 127, False))
         with self.assertRaises(MemoryError):
             with support.inject_memory_error_cm():
                 # Resize the internal str object
@@ -2143,24 +2181,35 @@ class PyUnicodeWriterTest(unittest.TestCase):
         writer.write_str(" end")
         self.assertEqual(writer.finish(), "start end")
 
-        # Inject MemoryError in PyUnicodeWriter_Finish()
+        # Inject MemoryError in PyUnicodeWriter_Finish(). Use write_utf8() to
+        # allocate a buffer of 1024 character. finish() needs to truncate the
+        # buffer to 3 characters.
         writer = self.create_writer(1024)
-        writer.write_str("abc")
+        writer.write_utf8(b"abc", -1)
+        self.assertEqual(writer.get_buffer(), (1024, 127, False))
         with self.assertRaises(MemoryError):
             with support.inject_memory_error_cm():
-                # Need to truncate the internal str object
                 writer.finish()
 
     def test_change_kind(self):
         writer = self.create_writer(0)
+
         # Create an ASCII buffer
         writer.write_str('ascii ')
+        self.assertEqual(writer.get_buffer()[1], 127)
+
         # Change the buffer to UCS1
         writer.write_str('latin1:\xe9 ')
+        self.assertEqual(writer.get_buffer()[1], 255)
+
         # Change the buffer to UCS2
         writer.write_str('ucs2:\u20ac ')
+        self.assertEqual(writer.get_buffer()[1], 0xffff)
+
         # Change the buffer to UCS4
         writer.write_str('ucs4:\U0010ffff')
+        self.assertEqual(writer.get_buffer()[1], 0x10_ffff)
+
         self.assertEqual(writer.finish(),
                          'ascii latin1:\xe9 ucs2:\u20ac ucs4:\U0010ffff')
 
@@ -2168,27 +2217,38 @@ class PyUnicodeWriterTest(unittest.TestCase):
         # Read-only optimization: if the first and only write is a Python str
         # object and no buffer was allocated yet, return the object unchanged
         unique_string = 'unique string'
-        writer = self.create_writer(0)
-        writer.write_str(unique_string)
-        self.assertIs(writer.finish(), unique_string)
+        expected = (len(unique_string), 127, True)
+        for size in (0, 123):
+            with self.subTest(size=size):
+                # PyUnicodeWriter_WriteStr() optimization
+                writer = self.create_writer(size)
+                writer.write_str(unique_string)
+                self.assertEqual(writer.get_buffer(), expected)
+                self.assertIs(writer.finish(), unique_string)
 
-        writer = self.create_writer(0)
-        writer.write_substring(unique_string, 0, len(unique_string))
-        self.assertIs(writer.finish(), unique_string)
+                # PyUnicodeWriter_WriteSubstring() optimization
+                writer = self.create_writer(size)
+                writer.write_substring(unique_string, 0, len(unique_string))
+                self.assertEqual(writer.get_buffer(), expected)
+                self.assertIs(writer.finish(), unique_string)
 
-        class MyStr:
-            def __str__(self):
-                return unique_string
-        writer = self.create_writer(0)
-        writer.write_str(MyStr())
-        self.assertIs(writer.finish(), unique_string)
+                # PyUnicodeWriter_WriteStr() optimization
+                class MyStr:
+                    def __str__(self):
+                        return unique_string
+                writer = self.create_writer(size)
+                writer.write_str(MyStr())
+                self.assertEqual(writer.get_buffer(), expected)
+                self.assertIs(writer.finish(), unique_string)
 
-        class MyRepr:
-            def __repr__(self):
-                return unique_string
-        writer = self.create_writer(0)
-        writer.write_repr(MyRepr())
-        self.assertIs(writer.finish(), unique_string)
+                # PyUnicodeWriter_WriteRepr() optimization
+                class MyRepr:
+                    def __repr__(self):
+                        return unique_string
+                writer = self.create_writer(size)
+                writer.write_repr(MyRepr())
+                self.assertEqual(writer.get_buffer(), expected)
+                self.assertIs(writer.finish(), unique_string)
 
 
 # Test PyUnicodeWriter_Format()
