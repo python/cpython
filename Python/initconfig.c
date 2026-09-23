@@ -712,13 +712,17 @@ _Py_COMP_DIAG_POP
 char*
 Py_GETENV(const char *name)
 {
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
-    if (Py_IgnoreEnvironmentFlag) {
+    int use_environment = 1;
+    PyThreadState *tstate = PyThreadState_GetUnchecked();
+    if (tstate != NULL) {
+        const PyConfig *config = &tstate->interp->config;
+        use_environment = config->use_environment;
+    }
+
+    if (!use_environment) {
         return NULL;
     }
     return getenv(name);
-_Py_COMP_DIAG_POP
 }
 
 /* --- PyStatus ----------------------------------------------- */

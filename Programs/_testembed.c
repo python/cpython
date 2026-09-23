@@ -2357,6 +2357,43 @@ static int test_isinitialized_false_during_site_import(void)
 }
 
 
+static int test_py_getenv(void)
+{
+    const char *name = "PYTHON_TESTEMBED_VARIABLE";
+    const char *expected = "expected_value";
+    putenv("PYTHON_TESTEMBED_VARIABLE=expected_value");
+
+    const char *var = Py_GETENV(name);
+    if (var == NULL || strcmp(var, expected) != 0) {
+        error_fmt("%s is not set before Python initialization", name);
+        return 1;
+    }
+
+    // Initialize Python with use_environment=0
+    PyConfig config;
+    _PyConfig_InitCompatConfig(&config);
+    config_set_program_name(&config);
+    config.use_environment = 0;
+    init_from_config_clear(&config);
+
+    var = Py_GETENV(name);
+    if (var != NULL) {
+        error_fmt("Py_GETENV() doesn't ignore %s after Python init", name);
+        return 1;
+    }
+
+    Py_Finalize();
+    var = Py_GETENV(name);
+    if (var == NULL || strcmp(var, expected) != 0) {
+        error_fmt("%s is not set after Python finalization", name);
+        return 1;
+    }
+
+    printf("OK\n");
+    return 0;
+}
+
+
 #ifndef MS_WINDOWS
 #include "test_frozenmain.h"      // M_test_frozenmain
 
@@ -3059,6 +3096,7 @@ static struct TestCase TestCases[] = {
     {"test_init_main_interpreter_settings", test_init_main_interpreter_settings},
     {"test_init_in_background_thread", test_init_in_background_thread},
     {"test_isinitialized_false_during_site_import", test_isinitialized_false_during_site_import},
+    {"test_py_getenv", test_py_getenv},
 
     // Audit
     {"test_open_code_hook", test_open_code_hook},
