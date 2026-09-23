@@ -1181,6 +1181,12 @@ Calling any of the generator methods (:meth:`~generator.__next__`,
 while one of these methods is already executing
 raises a :exc:`ValueError` exception.
 
+.. seealso::
+
+   :pep:`342` - Coroutines via Enhanced Generators
+      The proposal to add :meth:`!send`, :meth:`!throw` and :meth:`!close`,
+      making generators usable as simple coroutines.
+
 
 .. index:: pair: object; asynchronous-generator
 .. _asynchronous-generator-methods:

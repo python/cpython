@@ -1115,12 +1115,11 @@ For example::
    ...     yield 1 + 2
 
    >>> for number in count_to_three():
-   ...     print(number)
-   0
-   1
-   2
-   3
-
+   ...     print("got:", number)
+   got: 0
+   got: 1
+   got: 2
+   got: 3
 
 See :ref:`generator-types` for details on runtime behavior and
 ways to control execution of the underlying function.
@@ -1140,24 +1139,24 @@ Asynchronous generator functions are described separately
 :keyword:`yield` without a value
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If the value after a :keyword:`yield` keyword is omitted, the generator
+If the expression after a :keyword:`yield` keyword is omitted, the generator
 iterator produces ``None``::
 
-   >>> def generator_function():
+   >>> def generator():
    ...     yield 123
    ...     yield
 
-   >>> for value in generator_function():
-   ...     print("value from generator:", value)
-   value from generator: 123
-   value from generator: None
+   >>> for value in generator():
+   ...     print("got:", value)
+   got: 123
+   got: None
 
 
-Value of the :keyword:`yield` expression
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Value of the :keyword:`!yield` expression
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-``yield`` can be used as an expression, for example as the value of
-an assignment::
+Like other expressions, :keyword:`!yield` expressions
+can be used in assignments::
 
    >>> def generator_function():
    ...     value = yield 123
@@ -1171,32 +1170,23 @@ At runtime, when using the basic iteration protocol (:keyword:`for` or
    value of yield is: None
 
 A different value can be given by using the generator iterator's
-:meth:`~generator.send` method instead of :keyword:`for` or :func:`!next`::
+:meth:`~generator.send` method instead of :keyword:`!for` or :func:`!next`::
 
    >>> generator_iterator = generator_function()
    >>> next(generator_iterator)
    123
+   >>> # The generator is now suspended at the "yield 123" expression.
+   >>> # Provide a value for it:
    >>> generator_iterator.send("different")
    value of yield is: different
 
-Note that :meth:`~generator.send` with a non-``None`` argument can only
-be used when the generator is suspended at a :keyword:`yield` expression,
-not with a just-started iterator that is suspended at the beginning of the
-generator function::
-
-   >>> generator_iterator = generator_function()
-   >>> generator_iterator.send("different")
-   Traceback (most recent call last):
-     ...
-      generator_iterator.send("different")
-      ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
-   TypeError: can't send non-None value to a just-started generator
-
 .. seealso::
 
-   :pep:`342` - Coroutines via Enhanced Generators
-      The proposal to enhance the API and syntax of generators, making them
-      usable as simple coroutines.
+   This feature was originally added in :pep:`342` as a way to implement
+   coroutines.
+   While it still works, :term:`coroutine functions <coroutine function>`
+   (using :keyword:`async` and :keyword:`await`) offer a better way to
+   do this.
 
 
 .. _yield-parentheses:
@@ -1204,8 +1194,15 @@ generator function::
 Parentheses around :keyword:`yield` expressions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Yield expressions must be enclosed in parentheses except in the following
-common situations (which are used in the examples above):
+When a :keyword:`!yield` expressions appears as part of a larger expression,
+it must be enclosed in parentheses.
+For example::
+
+   def adding_generator():
+      (yield 123) + (yield 456)
+
+More precisely, parentheses can be only omitted when the :keyword:`yield`
+expression is:
 
 - an :ref:`expression statement <exprstmts>`'s only expression, or
 - the only expression on the right-hand side of an
