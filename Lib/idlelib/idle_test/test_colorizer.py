@@ -480,6 +480,21 @@ class ColorDelegatorTest(unittest.TestCase):
         # def followed by non-keyword
         self._assert_highlighting('def ++', {'KEYWORD': [('1.0', '1.3')]})
 
+    def test_type_soft_keyword(self):
+        # type as a soft keyword
+        self._assert_highlighting('type X = int',
+                                  {'KEYWORD': [('1.0', '1.4')],
+                                   'BUILTIN': [('1.9', '1.12')]})
+        # type as a name
+        self._assert_highlighting('type = type(1)',
+                                  {'BUILTIN': [('1.0', '1.4'), ('1.7', '1.11')]})
+        self._assert_highlighting('type(x)',
+                                  {'BUILTIN': [('1.0', '1.4')]})
+        self._assert_highlighting('type in (int, str)',
+                                  {'KEYWORD': [('1.5', '1.7')],
+                                   'BUILTIN': [('1.0', '1.4'), ('1.9', '1.12'),
+                                               ('1.14', '1.17')]})
+
     def test_match_soft_keyword(self):
         # empty match
         self._assert_highlighting('match', {'KEYWORD': [('1.0', '1.5')]})
