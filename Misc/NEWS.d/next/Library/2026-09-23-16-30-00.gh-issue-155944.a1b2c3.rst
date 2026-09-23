@@ -1,0 +1,4 @@
+:func:`xml.dom.getDOMImplementation` no longer silently skips a candidate
+DOM implementation whose factory raises an unexpected exception. Only
+:exc:`ImportError` (missing module) and :exc:`AttributeError` (missing
+factory) are treated as "not available" during fallback discovery.

@@ -72,7 +72,11 @@ def getDOMImplementation(name=None, features=()):
     for creator in well_known_implementations.keys():
         try:
             dom = getDOMImplementation(name = creator)
-        except Exception: # typically ImportError, or AttributeError
+        except (ImportError, AttributeError):
+            # Missing module or missing getDOMImplementation factory:
+            # this implementation is not available, try the next one.
+            # Any other exception is a genuine bug in the candidate and
+            # must propagate instead of being silently skipped.
             continue
         if _good_enough(dom, features):
             return dom
