@@ -1,3 +1,4 @@
-The :option:`--with-address-sanitizer` and :option:`--with-memory-sanitizer`
-configure options no longer override an explicit :option:`--with-pymalloc <--without-pymalloc>`.
-pymalloc is still disabled by default in sanitizer builds.
+Python built with :option:`--with-address-sanitizer` or
+:option:`--with-memory-sanitizer` now includes pymalloc, but uses ``malloc``
+as the default memory allocator. Set
+:envvar:`PYTHONMALLOC=pymalloc <PYTHONMALLOC>` to use pymalloc.
