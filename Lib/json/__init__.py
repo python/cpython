@@ -106,16 +106,6 @@ from .decoder import JSONDecoder, JSONDecodeError
 from .encoder import JSONEncoder, _iterencode_oneshot
 import codecs
 
-_default_encoder = JSONEncoder(
-    skipkeys=False,
-    ensure_ascii=True,
-    check_circular=True,
-    allow_nan=True,
-    indent=None,
-    separators=None,
-    default=None,
-)
-
 def dump(obj, fp, *, skipkeys=False, ensure_ascii=True, check_circular=True,
         allow_nan=True, cls=None, indent=None, separators=None,
         default=None, sort_keys=False, **kw):
@@ -162,13 +152,7 @@ def dump(obj, fp, *, skipkeys=False, ensure_ascii=True, check_circular=True,
     the ``cls`` kwarg; otherwise ``JSONEncoder`` is used.
 
     """
-    # cached encoder
-    if (not skipkeys and ensure_ascii and
-        check_circular and allow_nan and
-        cls is None and indent is None and separators is None and
-        default is None and not sort_keys and not kw):
-        iterable = _default_encoder.iterencode(obj)
-    elif cls is None and not kw:
+    if cls is None and not kw:
         iterable = _iterencode_oneshot(
             obj, skipkeys=skipkeys, ensure_ascii=ensure_ascii,
             check_circular=check_circular, allow_nan=allow_nan,
@@ -232,12 +216,6 @@ def dumps(obj, *, skipkeys=False, ensure_ascii=True, check_circular=True,
     the ``cls`` kwarg; otherwise ``JSONEncoder`` is used.
 
     """
-    # cached encoder
-    if (not skipkeys and ensure_ascii and
-        check_circular and allow_nan and
-        cls is None and indent is None and separators is None and
-        default is None and not sort_keys and not kw):
-        return _default_encoder.encode(obj)
     if cls is None:
         if not kw:
             it = _iterencode_oneshot(
