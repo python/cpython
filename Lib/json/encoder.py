@@ -456,3 +456,39 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
             del _iterencode, _iterencode_dict, _iterencode_list
 
     return _iterencode_once
+
+
+# Same error as JSONEncoder.default(), without creating an encoder instance.
+def _default(o):
+    raise TypeError(f'Object of type {o.__class__.__name__} '
+                    f'is not JSON serializable')
+
+
+# Shortcut for JSONEncoder().iterencode(o, _one_shot=True).
+def _iterencode_oneshot(obj, *, skipkeys=False, ensure_ascii=True,
+                        check_circular=True, allow_nan=True, indent=None,
+                        separators=None, default=None, sort_keys=False):
+    if c_make_encoder is None:
+        return JSONEncoder(
+                skipkeys=skipkeys, ensure_ascii=ensure_ascii,
+                check_circular=check_circular, allow_nan=allow_nan,
+                sort_keys=sort_keys, indent=indent, separators=separators,
+                default=default).iterencode(obj, _one_shot=True)
+
+    item_separator = ', '
+    key_separator = ': '
+    if separators is not None:
+        item_separator, key_separator = separators
+    elif indent is not None:
+        item_separator = ','
+
+    if indent is not None and not isinstance(indent, str):
+        indent = ' ' * indent
+
+    _iterencode = c_make_encoder(
+            {} if check_circular else None,
+            _default if default is None else default,
+            encode_basestring_ascii if ensure_ascii else encode_basestring,
+            indent, key_separator, item_separator,
+            sort_keys, skipkeys, allow_nan)
+    return _iterencode(obj, 0)

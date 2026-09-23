@@ -9,6 +9,21 @@ class TestDump:
         self.json.dump({}, sio)
         self.assertEqual(sio.getvalue(), '{}')
 
+    def test_dump_options(self):
+        class Default:
+            def __bool__(self):
+                return False
+
+            def __call__(self, obj):
+                return 'custom'
+
+        sio = StringIO()
+        self.json.dump({'é': object(), 'a': [1, 2]}, sio,
+                       ensure_ascii=False, indent=2, sort_keys=True,
+                       default=Default())
+        self.assertEqual(sio.getvalue(),
+                         '{\n  "a": [\n    1,\n    2\n  ],\n  "é": "custom"\n}')
+
     def test_dumps(self):
         self.assertEqual(self.dumps({}), '{}')
 

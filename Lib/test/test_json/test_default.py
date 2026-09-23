@@ -8,6 +8,17 @@ class TestDefault:
             self.dumps(type, default=repr),
             self.dumps(repr(type)))
 
+    def test_falsey_callable_default(self):
+        class Default:
+            def __bool__(self):
+                return False
+
+            def __call__(self, obj):
+                return str(obj)
+
+        self.assertEqual(self.dumps(type, default=Default()),
+                         self.dumps(str(type)))
+
     def test_bad_default(self):
         def default(obj):
             if obj is NotImplemented:
