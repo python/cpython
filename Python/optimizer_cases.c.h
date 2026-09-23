@@ -2310,8 +2310,7 @@
                     ctx->builtins_watched = true;
                 }
                 if (ctx->frame->globals_checked_version != 0 &&
-                    ctx->frame->globals_watched &&
-                    uop_buffer_remaining_space(&ctx->out_buffer) >= 2)
+                    ctx->frame->globals_watched)
                 {
                     cnst = convert_global_to_const(this_instr, builtins);
                     if (cnst != NULL && !ctx->frame->builtins_checked) {
