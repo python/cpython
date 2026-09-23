@@ -1152,8 +1152,21 @@ iterator produces ``None``::
    got: None
 
 
-Value of the :keyword:`!yield` expression
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Using :keyword:`!yield` as an expression
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Usually, :keyword:`!yield` expressions are used alone on a line,
+as in the examples above.
+However, like other expressions, they can also be used in assignments and
+more complex expressions.
+
+.. seealso::
+
+   This feature was originally added in :pep:`342` as a way to implement
+   coroutines.
+   While it still works, :term:`coroutine functions <coroutine function>`
+   (using :keyword:`async` and :keyword:`await`) offer a better way to
+   do this.
 
 Like other expressions, :keyword:`!yield` expressions
 can be used in assignments::
@@ -1180,26 +1193,26 @@ A different value can be given by using the generator iterator's
    >>> generator_iterator.send("different")
    value of yield is: different
 
-.. seealso::
+   Traceback (most recent call last):
+   StopIteration
 
-   This feature was originally added in :pep:`342` as a way to implement
-   coroutines.
-   While it still works, :term:`coroutine functions <coroutine function>`
-   (using :keyword:`async` and :keyword:`await`) offer a better way to
-   do this.
-
-
-.. _yield-parentheses:
-
-Parentheses around :keyword:`yield` expressions
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-When a :keyword:`!yield` expressions appears as part of a larger expression,
-it must be enclosed in parentheses.
+A :keyword:`!yield` expression can also appear as part of a larger expression.
+In this case, it must be enclosed in parentheses.
 For example::
 
-   def adding_generator():
-      (yield 123) + (yield 456)
+   >>> def adding_generator():
+   ...    sum_of_yields = (yield "first number") + (yield "second number")
+   ...    print("The sum is:", sum_of_yields)
+   >>> iterator = adding_generator()
+   >>> next(iterator)
+   "first number"
+   >>> iterator.send(1)
+   "second number"
+   >>> iterator.send(2)
+   The sum is: 3
+
+   Traceback (most recent call last):
+   StopIteration
 
 More precisely, parentheses can be only omitted when the :keyword:`yield`
 expression is:
@@ -1207,33 +1220,6 @@ expression is:
 - an :ref:`expression statement <exprstmts>`'s only expression, or
 - the only expression on the right-hand side of an
   :ref:`assignment statement <assignment>`.
-
-For example::
-
-   def yields_in_expression_statements():
-
-      # single yield expression: parentheses NOT required
-      yield 123
-
-      # two yield expressions: parentheses required
-      (yield 456, yield 789)
-
-      # part of larger expression: parentheses required
-      print("value:", (yield 147))
-
-   def yields_in_assignment_statements():
-
-      # single yield expression: parentheses NOT required
-      value = yield 258
-      print("value:", value)
-
-      # two yield expressions: parentheses required
-      values = (yield 456, yield 789)
-      print("values:", value)
-
-      # part of larger expression: parentheses required
-      value = (yield 369) + 159
-      print("value:", value)
 
 
 :keyword:`yield` expressions and :keyword:`try`
