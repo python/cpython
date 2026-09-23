@@ -601,7 +601,11 @@ class _AsCompletedIterator:
             raise StopAsyncIteration
         assert self._todo_left > 0
         self._todo_left -= 1
-        return await self._wait_for_one()
+        try:
+            return await self._wait_for_one()
+        except exceptions.CancelledError:
+            self._todo_left += 1
+            raise
 
     def __next__(self):
         if not self._todo_left:
