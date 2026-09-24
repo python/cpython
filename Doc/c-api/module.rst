@@ -128,9 +128,8 @@ Module Objects
    The returned buffer is only valid until the module's :py:attr:`~module.__file__` attribute
    is reassigned or the module is destroyed.
 
-   .. deprecated:: 3.2
-      :c:func:`PyModule_GetFilename` raises :exc:`UnicodeEncodeError` on
-      unencodable filenames, use :c:func:`PyModule_GetFilenameObject` instead.
+   :c:func:`PyModule_GetFilename` raises :exc:`UnicodeEncodeError` on
+   unencodable filenames, use :c:func:`PyModule_GetFilenameObject` instead.
 
 
 .. _c_module_slots:
