@@ -12,6 +12,7 @@
 
 #define IDENTIFIER_CACHE_SIZE 2048  // Must be a power of two.
 #define IDENTIFIER_CACHE_MAX_PROBES 8
+#define TYPE_IGNORE_INITIAL_CAPACITY 10
 
 struct _identifier_cache_entry {
     const char *key;   // Borrowed from arena-owned token bytes.
@@ -147,10 +148,18 @@ init_normalization(Parser *p)
 }
 
 static int
-growable_comment_array_add(growable_comment_array *arr, int lineno, char *comment) {
+growable_comment_array_add(growable_comment_array *arr, int lineno, char *comment)
+{
     if (arr->num_items >= arr->size) {
-        size_t new_size = arr->size ? arr->size * 2 : 10;
-        void *new_items_array = PyMem_Realloc(arr->items, new_size * sizeof(*arr->items));
+        if (arr->size > (size_t)PY_SSIZE_T_MAX /
+                (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*arr->items))) {
+            return 0;
+        }
+        size_t new_size = arr->size == 0
+            ? TYPE_IGNORE_INITIAL_CAPACITY
+            : arr->size * PEGEN_ARRAY_GROWTH_FACTOR;
+        void *new_items_array = PyMem_Realloc(
+            arr->items, new_size * sizeof(*arr->items));
         if (!new_items_array) {
             return 0;
         }
@@ -165,8 +174,9 @@ growable_comment_array_add(growable_comment_array *arr, int lineno, char *commen
 }
 
 static void
-growable_comment_array_deallocate(growable_comment_array *arr) {
-    for (unsigned i = 0; i < arr->num_items; i++) {
+growable_comment_array_deallocate(growable_comment_array *arr)
+{
+    for (size_t i = 0; i < arr->num_items; i++) {
         PyMem_Free(arr->items[i].comment);
     }
     PyMem_Free(arr->items);
@@ -266,12 +276,13 @@ initialize_token(Parser *p, Token *parser_token, struct token *new_token, int to
 
 static int
 _resize_tokens_array(Parser *p) {
-    if (p->size > INT_MAX / 2 ||
-        (size_t)p->size > PY_SSIZE_T_MAX / (2 * sizeof(*p->tokens))) {
+    if (p->size > INT_MAX / PEGEN_ARRAY_GROWTH_FACTOR ||
+            (size_t)p->size > PY_SSIZE_T_MAX /
+                (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*p->tokens))) {
         PyErr_NoMemory();
         return -1;
     }
-    int newsize = p->size * 2;
+    int newsize = p->size * PEGEN_ARRAY_GROWTH_FACTOR;
     Token **new_tokens = PyMem_Realloc(p->tokens, (size_t)newsize * sizeof(Token *));
     if (new_tokens == NULL) {
         PyErr_NoMemory();
@@ -984,7 +995,7 @@ _PyPegen_Parser_Free(Parser *p)
     Py_XDECREF(p->normalize);
     // Resizes allocate blocks starting at indices 1, 2, 4, and so on.
     PyMem_Free(p->tokens[0]);
-    for (int i = 1; i < p->size; i *= 2) {
+    for (int i = 1; i < p->size; i *= PEGEN_ARRAY_GROWTH_FACTOR) {
         PyMem_Free(p->tokens[i]);
     }
     PyMem_Free(p->tokens);
