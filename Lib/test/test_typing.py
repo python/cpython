@@ -9660,6 +9660,21 @@ class IOTests(BaseTestCase):
         a = stuff.__annotations__['a']
         self.assertEqual(a.__parameters__, ())
 
+    def test_write_annotations(self):
+        # These are evaluated lazily, so a wrong name in any of them would
+        # stay invisible until something introspects the stub.  Compare the
+        # whole mapping so that a dropped or stray annotation shows up too.
+        self.assertEqual(
+            IO.writelines.__annotations__,
+            {'lines': collections.abc.Iterable[AnyStr], 'return': None})
+        self.assertEqual(
+            BinaryIO.write.__annotations__,
+            {'s': collections.abc.Buffer, 'return': int})
+        self.assertEqual(
+            BinaryIO.writelines.__annotations__,
+            {'lines': collections.abc.Iterable[collections.abc.Buffer],
+             'return': None})
+
 
 class RETests(BaseTestCase):
     # Much of this is really testing _TypeAlias.
