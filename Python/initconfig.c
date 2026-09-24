@@ -3292,7 +3292,7 @@ int
 _PyConfig_ProcessDeferredCmdlineOption(PyConfig *config)
 {
     int c = config->_deferred_cmdline_option;
-    config->_deferred_cmdline_option = -1;
+    config->_deferred_cmdline_option = 0;
     if (c == 0) {
         // There is no deferred option
         return -1;
