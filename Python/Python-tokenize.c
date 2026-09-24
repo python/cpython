@@ -56,21 +56,18 @@ tokenizeriter_new_impl(PyTypeObject *type, PyObject *readline,
                        int extra_tokens, const char *encoding)
 /*[clinic end generated code: output=7501a1211683ce16 input=f7dddf8a613ae8bd]*/
 {
+    struct tok_state *tok = _PyTokenizer_FromReadline(readline, encoding);
+    if (tok == NULL) {
+        return NULL;
+    }
+    _Py_DECLARE_STR(anon_string, "<string>");
+    _PyTokenizer_SetContext(tok, &_Py_STR(anon_string), NULL);
     tokenizeriterobject *self = (tokenizeriterobject *)type->tp_alloc(type, 0);
     if (self == NULL) {
+        _PyTokenizer_Free(tok);
         return NULL;
     }
-    PyObject *filename = PyUnicode_FromString("<string>");
-    if (filename == NULL) {
-        return NULL;
-    }
-    self->tok = _PyTokenizer_FromReadline(readline, encoding);
-    if (self->tok == NULL) {
-        Py_DECREF(filename);
-        return NULL;
-    }
-    _PyTokenizer_SetContext(self->tok, filename, NULL);
-    Py_DECREF(filename);
+    self->tok = tok;
     _PyTokenizer_SetOptions(self->tok, extra_tokens, 0);
     self->extra_tokens = extra_tokens;
     self->done = 0;
