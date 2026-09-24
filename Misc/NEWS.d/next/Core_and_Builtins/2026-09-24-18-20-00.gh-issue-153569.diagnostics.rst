@@ -1,2 +1,3 @@
 Correct missing-brace error messages for multiline f-strings and t-strings.
 Improve tokenization of UTF-8 input split across many readline calls.
+Preserve source order when reading files with stateful encodings.

@@ -136,6 +136,11 @@ class MiscSourceEncodingTest(unittest.TestCase):
         self._assert_python_file_ok(source)
 
     @support.requires_subprocess()
+    def test_stateful_file_decoder_preserves_buffered_text(self):
+        source = b"# coding: hz\nx~\ny = 1\nassert xy == 1\n"
+        self._assert_python_file_ok(source)
+
+    @support.requires_subprocess()
     def test_stateful_file_decoder_finalizes_before_implicit_newline(self):
         source = b"# coding: hz\n# ~{1dA?"
         self._assert_python_file_ok(source)
