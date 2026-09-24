@@ -146,13 +146,15 @@ class TestInteractiveConsole(unittest.TestCase, MockSys):
 
     def test_compile_error(self):
         # Any error raised by compile() must be reported (gh-69919).
-        self.infunc.side_effect = ['-' * 100_000 + '1', EOFError('Finished')]
-        self.console.interact()
+        self.infunc.side_effect = ['1', EOFError('Finished')]
+        with mock.patch.object(self.console, 'compile',
+                               side_effect=MemoryError('spam')):
+            self.console.interact()
         output = ''.join(''.join(call[1]) for call in self.stderr.method_calls)
         output = output[output.index('(InteractiveConsole)'):]
         output = output[output.index('\n') + 1:]
-        self.assertRegex(output, r'^(MemoryError|RecursionError): ')
-        self.assertIn(self.sysmod.last_type, (MemoryError, RecursionError))
+        self.assertRegex(output, r'^MemoryError: spam\n')
+        self.assertIs(self.sysmod.last_type, MemoryError)
         self.assertIs(self.sysmod.last_exc, self.sysmod.last_value)
 
     def test_sysexcepthook(self):

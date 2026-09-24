@@ -390,6 +390,7 @@ are always available.  They are listed here in alphabetical order.
    that is too complex to parse or compile,
    for example an expression with many thousands of nested operators,
    or that is too large;
+   :exc:`RecursionError` if an AST object *source* is too deeply nested;
    and :exc:`ValueError` if *mode* or *flags* is invalid.
 
    If you want to parse Python code into its AST representation, see
