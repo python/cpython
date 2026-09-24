@@ -31,6 +31,9 @@ extern void Py_SetPythonHome(const wchar_t *);
 // for the stable ABI. We want to test them in this program.
 extern void PySys_ResetWarnOptions(void);
 
+// Variable removed from Python 3.16 limited C API, but kept in the stable ABI
+PyAPI_DATA(int) Py_UTF8Mode;
+
 
 int main_argc;
 char **main_argv;
