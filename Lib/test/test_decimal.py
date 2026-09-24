@@ -4026,6 +4026,9 @@ class ContextFlags:
         self.assertNotEqual(d, c.flags)
         self.assertNotEqual(c.flags, d)
 
+        self.assertNotEqual(None, c.flags)
+        self.assertNotEqual(c.flags, None)
+
     @requires_IEEE_754
     def test_float_operation(self):
         Decimal = self.decimal.Decimal
