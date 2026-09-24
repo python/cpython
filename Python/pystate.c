@@ -2269,7 +2269,7 @@ tstate_wait_attach(PyThreadState *tstate)
             state = _Py_THREAD_SUSPENDED_WAITING;
         }
         if (state == _Py_THREAD_SUSPENDED_WAITING) {
-            // Wait until the stop-the-world thread lets us attach.
+            // Park rechecks the state before sleeping, in case we were resumed.
             _PyParkingLot_Park(&tstate->state, &state, sizeof(tstate->state),
                                /*timeout=*/-1, NULL, /*detach=*/0);
         }

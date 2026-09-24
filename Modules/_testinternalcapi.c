@@ -30,6 +30,7 @@
 #include "pycore_instruction_sequence.h"  // _PyInstructionSequence_New()
 #include "pycore_interpframe.h"   // _PyFrame_GetFunction()
 #include "pycore_jit.h"           // _PyJIT_AddressInJitCode()
+#include "pycore_lock.h"          // PyEvent_WaitTimed()
 #include "pycore_object.h"        // _PyObject_IsFreed()
 #include "pycore_optimizer.h"     // _Py_Executor_DependsOn
 #include "pycore_pathconfig.h"    // _PyPathConfig_ClearGlobal()
@@ -212,8 +213,14 @@ static PyObject *
 test_stop_the_world(PyObject *self, PyObject *Py_UNUSED(args))
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    _PyEval_StopTheWorld(interp);
-    _PyEval_StartTheWorld(interp);
+    // Request consecutive pauses without running Python code between them.
+    for (int i = 0; i < 100; i++) {
+        _PyEval_StopTheWorld(interp);
+        // Give detached threads time to try to reattach during the pause.
+        PyEvent event = {0};
+        PyEvent_WaitTimed(&event, 10 * 1000 * 1000, /*detach=*/0);
+        _PyEval_StartTheWorld(interp);
+    }
     Py_RETURN_NONE;
 }
 
