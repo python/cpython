@@ -354,6 +354,7 @@ _PyStaticObjects_CheckAll(PyInterpreterState *interp) {
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(canonical), "canonical", 9);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(capath), "capath", 6);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(capitals), "capitals", 8);
+    _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(capture_features), "capture_features", 16);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(category), "category", 8);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(cb_type), "cb_type", 7);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(certfile), "certfile", 8);
