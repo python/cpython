@@ -50,6 +50,7 @@ typedef struct _PyTok_Reader {
 
     char *decoded;
     Py_ssize_t decoded_pos;
+    Py_ssize_t decoded_scan;
     Py_ssize_t decoded_len;
     Py_ssize_t decoded_cap;
     _PyTok_ReaderKind kind;
