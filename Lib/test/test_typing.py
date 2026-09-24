@@ -9675,6 +9675,14 @@ class IOTests(BaseTestCase):
             {'lines': collections.abc.Iterable[collections.abc.Buffer],
              'return': None})
 
+    def test_binaryio_readinto(self):
+        # Every class typeshed marks as a BinaryIO has readinto(), so the
+        # runtime stub declares it as well.
+        self.assertTrue(BinaryIO.readinto.__isabstractmethod__)
+        self.assertEqual(
+            BinaryIO.readinto.__annotations__,
+            {'buffer': collections.abc.Buffer, 'return': int})
+
 
 class RETests(BaseTestCase):
     # Much of this is really testing _TypeAlias.

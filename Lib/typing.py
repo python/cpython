@@ -3654,6 +3654,10 @@ class BinaryIO(IO[bytes]):
     __slots__ = ()
 
     @abstractmethod
+    def readinto(self, buffer: collections.abc.Buffer, /) -> int:
+        pass
+
+    @abstractmethod
     def write(self, s: collections.abc.Buffer, /) -> int:
         pass
 
