@@ -1700,11 +1700,11 @@ functions can be used directly if desired.
 
    .. warning::
 
-      For backwards compatibilty, label size is unlimited by default.
+      For backwards compatibility, label size is unlimited by default.
       This may cause issues when processing the result with the
       ``punycode`` encoding, whose algorithms scale poorly.
 
-   .. versionadded:: next
+   .. versionchanged:: next
 
       Added the *limit* parameter.
 
