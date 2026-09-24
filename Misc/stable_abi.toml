@@ -1314,6 +1314,7 @@
     added = '3.2'
 [function.PySlice_GetIndicesEx]
     added = '3.2'
+    abi_only = true
 [function.PySlice_New]
     added = '3.2'
 [data.PySlice_Type]

@@ -1128,6 +1128,11 @@ Deprecated C APIs
   and :c:func:`PyAsyncGen_New` are deprecated.
   They are scheduled for removal in 3.18.
 
+* Remove :c:func:`PySlice_GetIndicesEx` function, deprecated since Python 3.7.
+  Only remove the function implementation: :c:func:`PySlice_GetIndicesEx`
+  remains available as a static inline function, so the API does not change.
+  (Contributed by Victor Stinner in :gh:`158077`.)
+
 .. Add C API deprecations above alphabetically, not here at the end.
 
 .. include:: ../deprecations/c-api-pending-removal-in-3.18.rst

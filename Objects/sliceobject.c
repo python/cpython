@@ -297,13 +297,17 @@ PySlice_AdjustIndices(Py_ssize_t length,
 
 #undef PySlice_GetIndicesEx
 
-int
+// Function removed from Python 3.16 C API, but kept in the stable ABI
+PyAPI_FUNC(int)
 PySlice_GetIndicesEx(PyObject *_r, Py_ssize_t length,
                      Py_ssize_t *start, Py_ssize_t *stop, Py_ssize_t *step,
                      Py_ssize_t *slicelength)
 {
-    if (PySlice_Unpack(_r, start, stop, step) < 0)
+    if (PySlice_Unpack(_r, start, stop, step) < 0) {
+        *slicelength = 0;
         return -1;
+    }
+
     *slicelength = PySlice_AdjustIndices(length, start, stop, *step);
     return 0;
 }
