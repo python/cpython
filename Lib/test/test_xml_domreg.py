@@ -34,6 +34,23 @@ class GetDOMImplementationTest(unittest.TestCase):
         with self.assertRaises(ImportError):
             domreg.getDOMImplementation()
 
+    def test_buggy_candidate_does_not_block_a_later_one(self):
+        mod = types.ModuleType("fake_broken_dom_then_good")
+
+        def getDOMImplementation():
+            raise RuntimeError("boom")
+
+        mod.getDOMImplementation = getDOMImplementation
+        sys.modules["fake_broken_dom_then_good"] = mod
+        self.addCleanup(sys.modules.pop, "fake_broken_dom_then_good", None)
+        domreg.well_known_implementations = {
+            "broken": "fake_broken_dom_then_good",
+            "minidom": "xml.dom.minidom",
+        }
+        domreg.registered = {}
+        dom = domreg.getDOMImplementation()
+        self.assertTrue(domreg._good_enough(dom, ()))
+
     def test_genuine_factory_bug_propagates(self):
         mod = types.ModuleType("fake_broken_dom")
 

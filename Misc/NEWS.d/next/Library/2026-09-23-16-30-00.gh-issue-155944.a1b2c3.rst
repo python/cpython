@@ -1,4 +1,5 @@
-:func:`xml.dom.getDOMImplementation` no longer silently skips a candidate
-DOM implementation whose factory raises an unexpected exception. Only
-:exc:`ImportError` (missing module) and :exc:`AttributeError` (missing
-factory) are treated as "not available" during fallback discovery.
+:func:`xml.dom.getDOMImplementation` skips a well-known candidate whose
+factory fails, so a later candidate can still be chosen. A missing module
+or a missing factory is still treated as unavailable. If every candidate
+fails and one of them raised from its factory, that exception is
+re-raised instead of a generic :exc:`ImportError`.

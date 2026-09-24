@@ -69,18 +69,25 @@ def getDOMImplementation(name=None, features=()):
         if _good_enough(dom, features):
             return dom
 
+    # A missing module or a missing factory is "not installed". A factory
+    # that raises is not a good enough implementation either, so it must
+    # not hide a later candidate. If nothing usable remains, re-raise the
+    # first factory failure instead of reporting a generic ImportError.
+    factory_failure = None
     for creator in well_known_implementations.keys():
         try:
             dom = getDOMImplementation(name = creator)
         except (ImportError, AttributeError):
-            # Missing module or missing getDOMImplementation factory:
-            # this implementation is not available, try the next one.
-            # Any other exception is a genuine bug in the candidate and
-            # must propagate instead of being silently skipped.
+            continue
+        except Exception as exc:
+            if factory_failure is None:
+                factory_failure = exc
             continue
         if _good_enough(dom, features):
             return dom
 
+    if factory_failure is not None:
+        raise factory_failure
     raise ImportError("no suitable DOM implementation found")
 
 def _parse_feature_string(s):
