@@ -179,17 +179,14 @@ find_cookie(const char *line, Py_ssize_t len, char **encoding, int *scan_next)
         if (cursor == start) {
             continue;
         }
-        char *found = _PyTok_CopyBytes(start, cursor - start);
-        if (found == NULL) {
-            return -1;
-        }
+        Py_ssize_t encoding_len = cursor - start;
         char normalized[13];
         int n;
-        for (n = 0; n < 12 && found[n] != '\0'; n++) {
-            normalized[n] = found[n] == '_' ? '-' : Py_TOLOWER(found[n]);
+        for (n = 0; n < 12 && n < encoding_len; n++) {
+            normalized[n] = start[n] == '_' ? '-' : Py_TOLOWER(start[n]);
         }
         normalized[n] = '\0';
-        const char *canonical = found;
+        const char *canonical = start;
         if (strcmp(normalized, "utf-8") == 0 ||
                 strncmp(normalized, "utf-8-", 6) == 0) {
             canonical = "utf-8";
@@ -202,14 +199,13 @@ find_cookie(const char *line, Py_ssize_t len, char **encoding, int *scan_next)
                  strncmp(normalized, "iso-latin-1-", 12) == 0) {
             canonical = "iso-8859-1";
         }
-        if (canonical != found) {
-            PyMem_Free(found);
-            found = _PyTok_CopyBytes(canonical, strlen(canonical));
-            if (found == NULL) {
-                return -1;
-            }
+        if (canonical != start) {
+            encoding_len = strlen(canonical);
         }
-        *encoding = found;
+        *encoding = _PyTok_CopyBytes(canonical, encoding_len);
+        if (*encoding == NULL) {
+            return -1;
+        }
         *scan_next = 0;
         return 0;
     }
@@ -269,11 +265,8 @@ _PyTok_DetectEncoding(struct tok_state *tok, const _PyTok_Chunk *first,
         PyMem_Free(cookie);
         return _PYTOK_ENCODING_ERROR;
     }
-    if (!bom && _PyTok_SetEncoding(tok, cookie) < 0) {
-        PyMem_Free(cookie);
-        return _PYTOK_ENCODING_ERROR;
-    }
-    PyMem_Free(cookie);
+    PyMem_Free(tok->encoding);
+    tok->encoding = cookie;
     return _PYTOK_ENCODING_DONE;
 }
 
