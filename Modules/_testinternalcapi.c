@@ -3206,8 +3206,8 @@ test_thread_state_ensure_from_view_interp_switch(PyObject *self, PyObject *unuse
     Py_RETURN_NONE;
 }
 
-# gh-156425: Make sure that a garbage collection always clears 
-# PyInterpreterState.gc.frame when it's done.
+// gh-156425: Make sure that a garbage collection always clears
+// PyInterpreterState.gc.frame when it's done.
 static PyObject *
 is_gc_frame_cleared(PyObject *self, PyObject *arg)
 {
@@ -3221,28 +3221,21 @@ is_gc_frame_cleared(PyObject *self, PyObject *arg)
         return NULL;
     }
 
-    PyObject *a = PyLong_GetInfo();
-    if (a == NULL) {
-        return NULL;
-    }
     PyObject *list = PyList_New(0);
     if (list == NULL) {
-        Py_DECREF(a);
         return NULL;
     }
 
-    // We create n+1 objects, which should schedule a GC run.
+    // We create n objects, which should schedule a GC run.
     // However, since we are inside a C call, garbage collection will
     // not run immediately.
-    for (int i = 0; i < n; i++) {
+    for (int32_t i = 0; i < n; i++) {
         PyObject *b = PyLong_GetInfo();
         if (b == NULL) {
-            Py_DECREF(a);
             Py_DECREF(list);
             return NULL;
         }
         if (0 > PyList_Append(list, b)) {
-            Py_DECREF(a);
             Py_DECREF(list);
             Py_DECREF(b);
             return NULL;
@@ -3250,7 +3243,7 @@ is_gc_frame_cleared(PyObject *self, PyObject *arg)
         Py_DECREF(b);
     }
 
-    // We then clear n objects, which decrements the young generation counter.
+    // Then we clear n objects, which decrements the young generation counter.
     assert(0 == PyList_Clear(list));
     Py_DECREF(list);
 
@@ -3259,7 +3252,6 @@ is_gc_frame_cleared(PyObject *self, PyObject *arg)
     // so gc_select_generation() cannot select a generation and returns early.
     assert(0 == _Py_HandlePending(tstate));
 
-    Py_DECREF(a);
     if (!interp->gc.frame) {
         Py_RETURN_TRUE;
     }
