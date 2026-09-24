@@ -1128,6 +1128,10 @@ Deprecated C APIs
   and :c:func:`PyAsyncGen_New` are deprecated.
   They are scheduled for removal in 3.18.
 
+* :c:func:`PyModule_GetFilename` is no longer deprecated, but using
+  :c:func:`PyModule_GetFilenameObject` instead is still recommended.
+  (Contributed by Victor Stinner in :gh:`154757`.)
+
 .. Add C API deprecations above alphabetically, not here at the end.
 
 .. include:: ../deprecations/c-api-pending-removal-in-3.18.rst
