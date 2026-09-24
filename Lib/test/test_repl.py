@@ -219,10 +219,12 @@ class TestInteractiveInterpreter(unittest.TestCase):
         for newline in ("\n", "\r\n"):
             with self.subTest(newline=newline):
                 p = spawn_repl(encoding="utf-8")
-                p.stdin.write(
+                # Send the requested line ending without Windows text-mode
+                # translation turning CRLF into CRCRLF.
+                p.stdin.buffer.write((
                     f"value = {value!r}{newline}"
                     f"print(len(value), value[:2]){newline}"
-                )
+                ).encode("utf-8"))
                 output = kill_python(p)
                 self.assertEqual(p.returncode, 0)
                 self.assertIn(">>> 10000 é漢\n>>> ", output)
