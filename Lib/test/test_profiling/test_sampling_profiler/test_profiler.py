@@ -17,7 +17,7 @@ except ImportError:
         "Test only runs when _remote_debugging is available"
     )
 
-from test.support import force_not_colorized_test_class
+from test.support import force_colorized, force_not_colorized_test_class
 
 
 def print_sampled_stats(stats, sort=-1, limit=None, show_summary=True, sample_interval_usec=100):
@@ -484,6 +484,15 @@ class TestPrintSampledStats(unittest.TestCase):
         self.assertIn("func1", result)
         self.assertIn("func2", result)
         self.assertIn("func3", result)
+        self.assertNotIn("\x1b[", result)
+
+    @force_colorized
+    def test_print_sampled_stats_colorized(self):
+        with io.StringIO() as output, mock.patch("sys.stdout", output):
+            print_sampled_stats(self.mock_stats)
+            result = output.getvalue()
+
+        self.assertIn("\x1b[1;34mProfile Stats:", result)
 
     def test_print_sampled_stats_sorting(self):
         """Test different sorting options."""

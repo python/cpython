@@ -10,6 +10,7 @@ lazy from _colorize import get_colors
 
 from .binary_collector import BinaryCollector
 
+
 @contextlib.contextmanager
 def _pause_threads(unwinder, blocking):
     """Context manager to pause/resume threads around sampling if blocking is True."""

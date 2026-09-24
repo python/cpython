@@ -1,1 +1,3 @@
-Allow disabling terminal coloring for Tachyon's pstats collector.
+The :mod:`profiling.sampling` profiler now respects ``NO_COLOR``,
+``FORCE_COLOR``, and ``PYTHON_COLORS`` and avoids colored output when
+not writing to a terminal.

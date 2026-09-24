@@ -6,6 +6,7 @@ lazy from _colorize import get_colors
 from .collector import Collector, extract_lineno
 from .constants import MICROSECONDS_PER_SECOND, PROFILING_MODE_CPU
 
+
 class PstatsCollector(Collector):
     aggregating = True
 
