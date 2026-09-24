@@ -217,6 +217,7 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
     SPEC(module_search_paths_set, BOOL, INIT_ONLY, NO_SYS, NO_GLOBAL),
     SPEC(pythonpath_env, WSTR_OPT, INIT_ONLY, NO_SYS, NO_GLOBAL),
     SPEC(sys_path_0, WSTR_OPT, INIT_ONLY, NO_SYS, NO_GLOBAL),
+    SPEC(_deferred_cmdline_option, INT, INIT_ONLY, NO_SYS, NO_GLOBAL),
 
     // Array terminator
     {NULL, 0, 0, 0, NO_SYS},
@@ -3085,13 +3086,17 @@ static PyStatus
 config_parse_cmdline(PyConfig *config, PyWideStringList *warnoptions,
                      Py_ssize_t *opt_index)
 {
+    // DEFER_OPTION() only stores the first parsed deferred option
+#define DEFER_OPTION(OPTION) \
+        do { \
+            if (config->_deferred_cmdline_option == 0) { \
+                config->_deferred_cmdline_option = (OPTION); \
+            } \
+        } while (0)
+
     PyStatus status;
     const PyWideStringList *argv = &config->argv;
     int print_version = 0;
-    const wchar_t* program = config->program_name;
-    if (!program && argv->length >= 1) {
-        program = argv->items[0];
-    }
 
     _PyOS_ResetGetOpt();
     do {
@@ -3134,7 +3139,7 @@ config_parse_cmdline(PyConfig *config, PyWideStringList *warnoptions,
 
         switch (c) {
         // Integers represent long options, see Python/getopt.c
-        case 0:
+        case 1:
             // check-hash-based-pycs
             if (wcscmp(_PyOS_optarg, L"always") == 0
                 || wcscmp(_PyOS_optarg, L"never") == 0
@@ -3146,27 +3151,24 @@ config_parse_cmdline(PyConfig *config, PyWideStringList *warnoptions,
                     return status;
                 }
             } else {
-                fprintf(stderr, "--check-hash-based-pycs must be one of "
-                        "'default', 'always', or 'never'\n");
-                config_usage(1, program);
-                return _PyStatus_EXIT(2);
+                DEFER_OPTION(c);
             }
             break;
 
-        case 1:
-            // help-all
-            config_complete_usage(program);
-            return _PyStatus_EXIT(0);
-
         case 2:
-            // help-env
-            config_envvars_usage();
-            return _PyStatus_EXIT(0);
+            // help-all
+            DEFER_OPTION(c);
+            break;
 
         case 3:
+            // help-env
+            DEFER_OPTION(c);
+            break;
+
+        case 4:
             // help-xoptions
-            config_xoptions_usage();
-            return _PyStatus_EXIT(0);
+            DEFER_OPTION(c);
+            break;
 
         case 'b':
             config->bytes_warning++;
@@ -3225,11 +3227,17 @@ config_parse_cmdline(PyConfig *config, PyWideStringList *warnoptions,
 
         case 'h':
         case '?':
-            config_usage(0, program);
-            return _PyStatus_EXIT(0);
+            DEFER_OPTION(c);
+            break;
 
         case 'V':
             print_version++;
+            if (print_version >= 2) {
+                DEFER_OPTION('W');
+            }
+            else {
+                DEFER_OPTION(c);
+            }
             break;
 
         case 'W':
@@ -3251,16 +3259,10 @@ config_parse_cmdline(PyConfig *config, PyWideStringList *warnoptions,
 
         default:
             /* unknown argument: parsing failed */
-            config_usage(1, program);
-            return _PyStatus_EXIT(2);
+            DEFER_OPTION(c);
+            break;
         }
-    } while (1);
-
-    if (print_version) {
-        printf("Python %s\n",
-                (print_version >= 2) ? Py_GetVersion() : PY_VERSION);
-        return _PyStatus_EXIT(0);
-    }
+    } while (config->_deferred_cmdline_option == 0);
 
     if (config->run_command == NULL && config->run_module == NULL
         && _PyOS_optind < argv->length
@@ -3281,6 +3283,72 @@ config_parse_cmdline(PyConfig *config, PyWideStringList *warnoptions,
     *opt_index = _PyOS_optind;
 
     return _PyStatus_OK();
+
+#undef DEFER_OPTION
+}
+
+
+int
+_PyConfig_ProcessDeferredCmdlineOption(PyConfig *config)
+{
+    int c = config->_deferred_cmdline_option;
+    config->_deferred_cmdline_option = -1;
+    if (c == 0) {
+        // There is no deferred option
+        return -1;
+    }
+
+    // Select the program name
+    const PyWideStringList *argv = &config->argv;
+    const wchar_t* program = config->program_name;
+    if (!program && argv->length >= 1) {
+        program = argv->items[0];
+    }
+    if (!program) {
+        program = L"python";
+    }
+
+    switch (c) {
+    case 'h':
+    case '?':
+        config_usage(0, program);
+        return 0;
+
+    case 'V':
+        printf("Python %s\n", PY_VERSION);
+        return 0;
+
+    case 'W':  // -VV or more -V options
+        printf("Python %s\n", Py_GetVersion());
+        return 0;
+
+    // Integers represent long options, see Python/getopt.c
+    case 1:
+        // check-hash-based-pycs
+        fprintf(stderr, "--check-hash-based-pycs must be one of "
+                "'default', 'always', or 'never'\n");
+        config_usage(1, program);
+        return 2;
+
+    case 2:
+        // help-all
+        config_complete_usage(program);
+        return 0;
+
+    case 3:
+        // help-env
+        config_envvars_usage();
+        return 0;
+
+    case 4:
+        // help-xoptions
+        config_xoptions_usage();
+        return 0;
+
+    default:
+        config_usage(1, program);
+        return 2;
+    }
 }
 
 
@@ -4055,22 +4123,7 @@ PyInitConfig_Free(PyInitConfig *config)
 int
 PyInitConfig_GetError(PyInitConfig* config, const char **perr_msg)
 {
-    if (_PyStatus_IS_EXIT(config->status)) {
-        char buffer[22];  // len("exit code -2147483648\0")
-        PyOS_snprintf(buffer, sizeof(buffer),
-                      "exit code %i",
-                      config->status.exitcode);
-
-        if (config->err_msg != NULL) {
-            free(config->err_msg);
-        }
-        config->err_msg = strdup(buffer);
-        if (config->err_msg != NULL) {
-            *perr_msg = config->err_msg;
-            return 1;
-        }
-        config->status = _PyStatus_NO_MEMORY();
-    }
+    assert(!_PyStatus_IS_EXIT(config->status));
 
     if (_PyStatus_IS_ERROR(config->status) && config->status.err_msg != NULL) {
         *perr_msg = config->status.err_msg;
@@ -4086,13 +4139,8 @@ PyInitConfig_GetError(PyInitConfig* config, const char **perr_msg)
 int
 PyInitConfig_GetExitCode(PyInitConfig* config, int *exitcode)
 {
-    if (_PyStatus_IS_EXIT(config->status)) {
-        *exitcode = config->status.exitcode;
-        return 1;
-    }
-    else {
-        return 0;
-    }
+    assert(!_PyStatus_IS_EXIT(config->status));
+    return 0;
 }
 
 

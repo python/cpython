@@ -1128,6 +1128,14 @@ Deprecated C APIs
   and :c:func:`PyAsyncGen_New` are deprecated.
   They are scheduled for removal in 3.18.
 
+* Deprecate :c:func:`PyInitConfig_GetExitCode`, :c:func:`PyStatus_Exit`,
+  and :c:func:`PyStatus_IsExit` functions, and :c:member:`PyStatus.exitcode`
+  member. :c:func:`Py_InitializeFromInitConfig` and
+  :c:func:`Py_InitializeFromConfig` can no longer return an exit code.
+  Instead, if a command line option wants to exit Python, the option is
+  processed in :c:func:`Py_RunMain`.
+  (Contributed by Victor Stinner in :gh:`158080`.)
+
 .. Add C API deprecations above alphabetically, not here at the end.
 
 .. include:: ../deprecations/c-api-pending-removal-in-3.18.rst
