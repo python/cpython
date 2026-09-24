@@ -17,8 +17,9 @@ class IsolatedAssembleTests(AssemblerTestCase):
             metadata.setdefault(key, key)
         for key in ['consts']:
             metadata.setdefault(key, [])
-        for key in ['names', 'varnames', 'cellvars', 'freevars', 'fasthidden']:
+        for key in ['names', 'varnames', 'cellvars', 'freevars']:
             metadata.setdefault(key, {})
+        metadata.setdefault('fasthidden', None)
         for key in ['argcount', 'posonlyargcount', 'kwonlyargcount']:
             metadata.setdefault(key, 0)
         metadata.setdefault('firstlineno', 1)
