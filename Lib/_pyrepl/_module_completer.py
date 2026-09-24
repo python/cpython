@@ -221,8 +221,8 @@ class ModuleCompleter:
         if not imported_module:
             return [], None, self._get_import_completion_action(path)
         try:
-            if hasattr(imported_module, '__all__'): # Use __all__ if available, otherwise use dir()
-                module_attributes = imported_module.__all__
+            if hasattr(imported_module, '__all__'): # Return __all__ directly
+                return imported_module.__all__, imported_module, None
             else:
                 module_attributes = dir(imported_module)
         except Exception:
