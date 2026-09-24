@@ -125,6 +125,7 @@ def compile_c_extension(
         str(MOD_DIR.parent.parent.parent / "Python" / "Python-ast.c"),
         str(MOD_DIR.parent.parent.parent / "Python" / "asdl.c"),
         str(MOD_DIR.parent.parent.parent / "Parser" / "lexer" / "lexer.c"),
+        str(MOD_DIR.parent.parent.parent / "Parser" / "lexer" / "layout.c"),
         str(MOD_DIR.parent.parent.parent / "Parser" / "lexer" / "number.c"),
         str(MOD_DIR.parent.parent.parent / "Parser" / "lexer" / "state.c"),
         str(MOD_DIR.parent.parent.parent / "Parser" / "lexer" / "string.c"),

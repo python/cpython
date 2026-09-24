@@ -463,6 +463,9 @@
     <ClCompile Include="..\Parser\lexer\lexer.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Parser\lexer\layout.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Parser\lexer\number.c">
       <Filter>Source Files</Filter>
     </ClCompile>

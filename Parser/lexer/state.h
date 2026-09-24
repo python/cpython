@@ -10,15 +10,6 @@
 #define MAXFTSTRINGLEVEL 150
 #define FTSTRING_STACK_INLINE_CAPACITY 1
 
-enum interactive_underflow_t {
-    /* Normal mode of operation: return a new token when asked in interactive mode */
-    IUNDERFLOW_NORMAL,
-    /* Forcefully return ENDMARKER when asked for a new token in interactive mode. This
-     * can be used to prevent the tokenizer to prompt the user for new tokens */
-    IUNDERFLOW_STOP,
-};
-
-
 typedef enum {
     FTSTRING_MODE_MIDDLE,
     FTSTRING_MODE_EXPRESSION,
@@ -66,6 +57,19 @@ _PyLexer_IsRawString(ftstring_kind kind)
     return kind == RAW_FSTRING || kind == RAW_TSTRING;
 }
 
+typedef struct {
+    int column;
+    int alternate_column;
+} indentation_level;
+
+typedef struct {
+    int depth;
+    int pending;
+    int at_bol;
+    int comment_newline;
+    indentation_level stack[MAXINDENT];
+} lexer_layout_state;
+
 /* Tokenizer state */
 struct tok_state {
     _PyTok_Off buf_offset;
@@ -74,19 +78,13 @@ struct tok_state {
     _PyTok_Off start;
     _PyTok_Off line_start;
     _PyTok_SourceText source;
-    int fp_interactive; /* If the file descriptor is interactive */
-    char *interactive_src_start; /* The start of the source parsed so far in interactive mode */
-    char *interactive_src_end; /* The end of the source parsed so far in interactive mode */
     int done;           /* E_OK normally, E_EOF at EOF, otherwise error code */
     /* NB If done != E_OK, cur must be == inp!!! */
     FILE *fp;           /* Rest of input; NULL if tokenizing a string */
-    int indent;         /* Current indentation index */
-    int indstack[MAXINDENT];            /* Stack of indents */
-    int atbol;          /* Nonzero if at begin of new line */
-    int pendin;         /* Pending indents (if > 0) or dedents (if < 0) */
-    const char *prompt;          /* For interactive prompting */
+    lexer_layout_state layout;
     int lineno;         /* Current line number */
     _PyTok_Loc start_loc;
+    _PyTokenizer_Diagnostic diagnostic;
     int level;          /* () [] {} Parentheses nesting level */
             /* Used to allow free continuations inside them */
     char parenstack[MAXLEVEL];
@@ -94,25 +92,18 @@ struct tok_state {
     int parencolstack[MAXLEVEL];
     PyObject *filename;
     PyObject *module;
-    /* Stuff for checking on different tab sizes */
-    int altindstack[MAXINDENT];         /* Stack of alternate indents */
     /* Stuff for PEP 0263 */
     char *encoding;         /* Source encoding. */
-    char* str;          /* Source string being tokenized (if tokenizing from a string)*/
 
     struct _PyTok_Reader *reader;
 
     int type_comments;      /* Whether to look for type comments */
 
-    /* How to proceed when asked for a new token in interactive mode */
-    enum interactive_underflow_t interactive_underflow;
-    int report_warnings;
     ftstring_state *ftstring_stack;
     ftstring_state ftstring_stack_inline[FTSTRING_STACK_INLINE_CAPACITY];
     int ftstring_depth;
     int ftstring_capacity;
     int tok_extra_tokens;
-    int comment_newline;
     int implicit_newline;
 #ifdef Py_DEBUG
     int debug;
@@ -182,7 +173,8 @@ _PyLexer_ByteColumn(const struct tok_state *tok)
 
 int _PyLexer_token_setup(struct tok_state *tok, struct token *token, int type, _PyTok_Off start, _PyTok_Off end);
 
-struct tok_state *_PyTokenizer_tok_new(void);
+void _PyLexer_ImplyDedents(struct tok_state *);
+
 void _PyTokenizer_Free(struct tok_state *);
 ftstring_state *_PyLexer_PushFTString(struct tok_state *);
 void _PyLexer_PopFTString(struct tok_state *);
