@@ -1128,6 +1128,10 @@ Deprecated C APIs
   and :c:func:`PyAsyncGen_New` are deprecated.
   They are scheduled for removal in 3.18.
 
+* :c:func:`PyModule_GetFilename` is no longer deprecated, but using
+  :c:func:`PyModule_GetFilenameObject` instead is still recommended.
+  (Contributed by Victor Stinner in :gh:`154757`.)
+
 .. Add C API deprecations above alphabetically, not here at the end.
 
 .. include:: ../deprecations/c-api-pending-removal-in-3.18.rst
@@ -1140,6 +1144,37 @@ Deprecated C APIs
 
 Removed C APIs
 --------------
+
+* Remove 21 global configuration variables, deprecated in Python 3.12.
+  To initialize Python, the :ref:`PyInitConfig C API <pyinitconfig_api>` can be
+  used instead.
+  To read these variables at runtime, :c:func:`PyConfig_Get` can be used
+  instead.
+  Removed variables with their :ref:`PyInitConfig C API <pyinitconfig_api>` and
+  :c:func:`PyConfig_Get` replacement:
+
+  * :c:var:`!Py_DebugFlag`: Use ``"parser_debug"`` instead.
+  * :c:var:`!Py_VerboseFlag`: Use ``"verbose"`` instead.
+  * :c:var:`!Py_QuietFlag`: Use ``"quiet"`` instead.
+  * :c:var:`!Py_InteractiveFlag`: Use ``"interactive"`` instead.
+  * :c:var:`!Py_InspectFlag`: Use ``"inspect"`` instead.
+  * :c:var:`!Py_OptimizeFlag`: Use ``"optimization_level"`` instead.
+  * :c:var:`!Py_NoSiteFlag`: Use ``"site_import"`` instead (opposite value).
+  * :c:var:`!Py_BytesWarningFlag`: Use ``"bytes_warning"`` instead.
+  * :c:var:`!Py_FrozenFlag`: Use ``"pathconfig_warnings"`` instead (opposite value).
+  * :c:var:`!Py_IgnoreEnvironmentFlag`: Use ``"use_environment"`` instead (opposite value).
+  * :c:var:`!Py_DontWriteBytecodeFlag`: Use ``"write_bytecode"`` instead (opposite value).
+  * :c:var:`!Py_NoUserSiteDirectory`: Use ``"user_site_directory"`` instead (opposite value).
+  * :c:var:`!Py_UnbufferedStdioFlag`: Use ``"buffered_stdio"`` instead (opposite value).
+  * :c:var:`!Py_HashRandomizationFlag`: Use ``"hash_seed"`` instead.
+  * :c:var:`!Py_IsolatedFlag`: Use ``"isolated"`` instead.
+  * :c:var:`!Py_LegacyWindowsFSEncodingFlag`: Use ``"legacy_windows_fs_encoding"`` instead.
+  * :c:var:`!Py_LegacyWindowsStdioFlag`: Use ``"legacy_windows_stdio"`` instead.
+  * :c:var:`!Py_FileSystemDefaultEncoding`, :c:var:`!Py_HasFileSystemDefaultEncoding`: Use ``"filesystem_encoding"`` instead.
+  * :c:var:`!Py_FileSystemDefaultEncodeErrors`: Use ``"filesystem_errors"`` instead.
+  * :c:var:`!Py_UTF8Mode`: Use ``"utf8_mode"`` instead.
+
+  (Contributed by Victor Stinner in :gh:`158001`.)
 
 * Remove :c:func:`!PyEval_InitThreads` function which did nothing since Python
   3.7 and was deprecated since Python 3.9.
