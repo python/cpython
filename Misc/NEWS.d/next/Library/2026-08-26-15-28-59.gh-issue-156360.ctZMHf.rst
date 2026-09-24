@@ -1,3 +1,3 @@
 Add the :envvar:`PYTHON_TURTLE_LANG` environment variable to select the
 language of :mod:`turtle` docstrings. Docstring dictionary entries naming a
-method which does not exist in the running version are now ignored.
+method which does not exist in the running version are no longer reported.
