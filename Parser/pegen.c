@@ -147,19 +147,9 @@ init_normalization(Parser *p)
 }
 
 static int
-growable_comment_array_init(growable_comment_array *arr, size_t initial_size) {
-    assert(initial_size > 0);
-    arr->items = PyMem_Malloc(initial_size * sizeof(*arr->items));
-    arr->size = initial_size;
-    arr->num_items = 0;
-
-    return arr->items != NULL;
-}
-
-static int
 growable_comment_array_add(growable_comment_array *arr, int lineno, char *comment) {
     if (arr->num_items >= arr->size) {
-        size_t new_size = arr->size * 2;
+        size_t new_size = arr->size ? arr->size * 2 : 10;
         void *new_items_array = PyMem_Realloc(arr->items, new_size * sizeof(*arr->items));
         if (!new_items_array) {
             return 0;
@@ -323,6 +313,7 @@ _PyPegen_fill_token(Parser *p)
         tag[len] = '\0';
         // Ownership of tag passes to the growable array
         if (!growable_comment_array_add(&p->type_ignore_comments, new_token.end_loc.lineno, tag)) {
+            PyMem_Free(tag);
             PyErr_NoMemory();
             goto error;
         }
@@ -946,12 +937,7 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int flags,
         PyMem_Free(p);
         return (Parser *) PyErr_NoMemory();
     }
-    if (!growable_comment_array_init(&p->type_ignore_comments, 10)) {
-        PyMem_Free(p->tokens[0]);
-        PyMem_Free(p->tokens);
-        PyMem_Free(p);
-        return (Parser *) PyErr_NoMemory();
-    }
+    p->type_ignore_comments = (growable_comment_array){0};
 
     p->mark = 0;
     p->fill = 0;
