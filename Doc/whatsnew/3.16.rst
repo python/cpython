@@ -573,6 +573,16 @@ symtable
   like the builtin :func:`compile`.
   (Contributed by Serhiy Storchaka in :gh:`153844`.)
 
+* Inlined list, set and dict comprehensions (:pep:`709`) are now represented
+  as their own symbol table entries, of type
+  :attr:`~symtable.SymbolTableType.INLINED_COMPREHENSION`. Each such entry is
+  a lexical child of the enclosing scope and records the comprehension's own
+  locals, cells, and free names. It does not correspond to a separate
+  compilation unit. For names loaded only inside an inlined list, set, or
+  dict comprehension, :meth:`symtable.Symbol.is_referenced` can now return
+  ``True`` on the enclosing function.
+  (Contributed by Irit Katriel in :gh:`124697`.)
+
 
 tkinter
 -------
@@ -1130,6 +1140,10 @@ Deprecated C APIs
 
 Removed C APIs
 --------------
+
+* Remove :c:func:`!PyEval_InitThreads` function which did nothing since Python
+  3.7 and was deprecated since Python 3.9.
+  (Contributed by Victor Stinner in :gh:`154757`.)
 
 * Remove :c:func:`!Py_SetProgramName` and :c:func:`!Py_SetPythonHome`
   functions, deprecated since Python 3.11. Instead, use :ref:`PyInitConfig C
