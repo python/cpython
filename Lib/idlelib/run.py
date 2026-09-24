@@ -9,6 +9,7 @@ import functools
 import io
 import linecache
 import queue
+import signal
 import sys
 import textwrap
 import time
@@ -678,7 +679,19 @@ class Executive:
 
     def interrupt_the_server(self):
         if interruptible:
-            thread.interrupt_main()
+            handler = signal.getsignal(signal.SIGINT)
+            if handler not in (signal.SIG_DFL, signal.SIG_IGN, None):
+                # A real signal interrupts blocking calls such as
+                # time.sleep() (gh-74112).  The lock prevents interrupting
+                # the main thread in the middle of sending a message.
+                with self.rpchandler.sendlock:
+                    if hasattr(signal, 'pthread_kill'):
+                        signal.pthread_kill(threading.main_thread().ident,
+                                            signal.SIGINT)
+                    else:
+                        signal.raise_signal(signal.SIGINT)
+            else:
+                thread.interrupt_main()
 
     def start_the_debugger(self, gui_adap_oid):
         return debugger_r.start_debugger(self.rpchandler, gui_adap_oid)

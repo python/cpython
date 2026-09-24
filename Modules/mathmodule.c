@@ -212,7 +212,7 @@ static const double logpi = 1.144729885849400174143427351353058711647;
         }                                                  \
     }
 
-#ifndef HAVE_ACOSPI
+#ifndef _Py_HAVE_ACOSPI
 /*
    acos(x)/pi.  It conforms to C23 Annex 'F'.
 */
@@ -236,7 +236,7 @@ m_acospi(double x)
 #define m_acospi acospi
 #endif
 
-#ifndef HAVE_ASINPI
+#ifndef _Py_HAVE_ASINPI
 /*
    asin(x)/pi.  It conforms to C23 Annex 'F'.
 */
@@ -254,7 +254,7 @@ m_asinpi(double x)
 #define m_asinpi asinpi
 #endif
 
-#ifndef HAVE_ATANPI
+#ifndef _Py_HAVE_ATANPI
 /*
    atan(x)/pi.  It conforms to C23 Annex 'F'.
 */
@@ -272,7 +272,7 @@ m_atanpi(double x)
 #define m_atanpi atanpi
 #endif
 
-#ifndef HAVE_ATAN2PI
+#ifndef _Py_HAVE_ATAN2PI
 /*
    atan2(y, x)/pi.  It conforms to C23 Annex 'F'.
 */
@@ -290,7 +290,7 @@ m_atan2pi(double y, double x)
 #define m_atan2pi atan2pi
 #endif
 
-#ifndef HAVE_COSPI
+#ifndef _Py_HAVE_COSPI
 /*
    cos(pi*x), giving accurate results for all finite x (especially x
    integral or close to an integer).  It conforms to C23 Annex 'F'.
@@ -318,7 +318,7 @@ m_cospi(double x)
 #define m_cospi cospi
 #endif
 
-#ifndef HAVE_SINPI
+#ifndef _Py_HAVE_SINPI
 /*
    sin(pi*x), giving accurate results for all finite x (especially x
    integral or close to an integer).  It conforms to C23 Annex 'F'.
@@ -362,7 +362,7 @@ m_sinpi(double x)
 #define m_sinpi sinpi
 #endif
 
-#ifndef HAVE_TANPI
+#ifndef _Py_HAVE_TANPI
 /*
    tan(pi*x), giving accurate results for all finite x (especially x
    integral or close to an integer).  It conforms to C23 Annex 'F'.
