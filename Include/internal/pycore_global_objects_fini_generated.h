@@ -404,6 +404,7 @@ _PyStaticObjects_CheckAll(PyInterpreterState *interp) {
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(ctx), "ctx", 3);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(cwd), "cwd", 3);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(d_parameter_type), "d_parameter_type", 16);
+    _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(daemon), "daemon", 6);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(data), "data", 4);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(database), "database", 8);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(date), "date", 4);
@@ -504,6 +505,7 @@ _PyStaticObjects_CheckAll(PyInterpreterState *interp) {
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(fset), "fset", 4);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(fullerror), "fullerror", 9);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(func), "func", 4);
+    _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(function), "function", 8);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(future), "future", 6);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(gc), "gc", 2);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(generation), "generation", 10);
