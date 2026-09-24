@@ -228,7 +228,8 @@ _get_col_offsets(tokenizeriterobject *it, const struct token *token,
             it->byte_col_offset_diff += token_end - token_start - token_col_offset;
         }
         else {
-            *end_col_offset = _PyPegen_byte_offset_to_character_offset_raw(end_line_start, end_byte_offset);
+            *end_col_offset = _PyPegen_byte_offset_to_character_offset_line(
+                line, end_line_start - line_start, token_end - line_start);
             if (*end_col_offset < 0) {
                 return -1;
             }
