@@ -1,0 +1,3 @@
+Document that the *prefix* argument of :func:`pkgutil.walk_packages` affects
+the imports made during the recursive descent, not just the names that are
+returned.
