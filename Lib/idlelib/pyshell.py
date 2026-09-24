@@ -693,7 +693,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
                               + source + "\ndel __file__")
         try:
             code = compile(source, filename, "exec")
-        except (OverflowError, SyntaxError):
+        except Exception:
             self.tkconsole.resetoutput()
             print('*** Error in script or command!\n'
                  'Traceback (most recent call last):',
@@ -743,19 +743,23 @@ class ModifiedInterpreter(InteractiveInterpreter):
         text = tkconsole.text
         text.tag_remove("ERROR", "1.0", "end")
         type, value, tb = sys.exc_info()
-        msg = getattr(value, 'msg', '') or value or "<no detail available>"
-        lineno = getattr(value, 'lineno', '') or 1
-        offset = getattr(value, 'offset', '') or 0
+        if not issubclass(type, SyntaxError):
+            tkconsole.resetoutput()
+            InteractiveInterpreter.showsyntaxerror(self, filename, **kwargs)
+            tkconsole.showprompt()
+            return
+        msg = value.msg or "<no detail available>"
+        lineno = value.lineno or 1
+        offset = value.offset or 0
         if offset == 0:
             lineno += 1 #mark end of offending line
         if lineno == 1:
-            pos = "iomark + %d chars" % (offset-1)
+            pos = f"iomark + {offset-1} chars"
         else:
-            pos = "iomark linestart + %d lines + %d chars" % \
-                  (lineno-1, offset-1)
+            pos = f"iomark linestart + {lineno-1} lines + {offset-1} chars"
         tkconsole.colorize_syntax_error(text, pos)
         tkconsole.resetoutput()
-        self.write("SyntaxError: %s\n" % msg)
+        self.write(f"{type.__name__}: {msg}\n")
         tkconsole.showprompt()
 
     def showtraceback(self):
