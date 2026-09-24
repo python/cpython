@@ -29,6 +29,8 @@
 
 #define CURRENT_POS (-5)
 
+#define PEGEN_ARRAY_GROWTH_FACTOR 2
+
 typedef struct _memo {
     int type;
     void *node;
