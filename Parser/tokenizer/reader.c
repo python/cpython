@@ -142,7 +142,6 @@ next_prepared(struct tok_state *tok, _PyTok_Chunk *chunk)
     if (tok->lineno >= tok->source.nlines) {
         return _PYTOK_READ_EOF;
     }
-    int lineno = tok->lineno + 1;
     const char *start = _PyLexer_BufferPointer(tok, tok->inp);
     const char *newline = memchr(
         start, '\n', tok->source.bytes + tok->source.len - start);
@@ -151,8 +150,8 @@ next_prepared(struct tok_state *tok, _PyTok_Chunk *chunk)
     chunk->data = (char *)start;
     chunk->len = tok->source.bytes + end - start;
     chunk->ownership = _PYTOK_CHUNK_BORROWED;
-    chunk->implicit_newline = _PyTok_SourceLineIsImplicit(
-        &tok->source, lineno);
+    chunk->implicit_newline = end == tok->source.len &&
+        tok->reader->prepared_final_newline_is_implicit;
     return _PYTOK_READ_LINE;
 }
 
@@ -618,8 +617,7 @@ _PyTok_ReaderUnderflow(struct tok_state *tok)
             reset_streaming_buffer(tok);
         }
         _PyTok_Off source_start = _PyTok_SourceAppendLine(
-            &tok->source, chunk.data, chunk.len,
-            chunk.implicit_newline);
+            &tok->source, chunk.data, chunk.len);
         if (source_start < 0) {
             _PyTok_ChunkClear(&chunk);
             tok->done = PyErr_ExceptionMatches(PyExc_MemoryError)

@@ -46,23 +46,17 @@ test_tokenizer_source(PyObject *Py_UNUSED(module),
     }
 
     if (check_system_error(
-            _PyTok_SourceAppendLine(&source, "", 0, 0) < 0,
+            _PyTok_SourceAppendLine(&source, "", 0) < 0,
             "accepted empty source line") < 0 ||
             check_system_error(
-                _PyTok_SourceAppendLine(&source, "a\nb\n", 4, 0) < 0,
+                _PyTok_SourceAppendLine(&source, "a\nb\n", 4) < 0,
                 "accepted multiple source lines") < 0 ||
-            check_system_error(
-                _PyTok_SourceAppendLine(&source, "a", 1, 1) < 0,
-                "accepted missing implicit newline") < 0 ||
             check(_PyTok_SourceAppendLine(
-                      &source, "alpha\n", 6, 0) == 0,
+                      &source, "alpha\n", 6) == 0,
                   "wrong first source offset") < 0 ||
             check(_PyTok_SourceAppendLine(
-                      &source, "\xce\xb2\n", 3, 1) == 6,
-                  "wrong second source offset") < 0 ||
-            check(!_PyTok_SourceLineIsImplicit(&source, 1) &&
-                      _PyTok_SourceLineIsImplicit(&source, 2),
-                  "wrong implicit newline flags") < 0) {
+                      &source, "\xce\xb2\n", 3) == 6,
+                  "wrong second source offset") < 0) {
         goto error;
     }
 
@@ -81,9 +75,9 @@ test_tokenizer_source(PyObject *Py_UNUSED(module),
     }
 
     _PyTok_SourceClear(&source);
-    if (_PyTok_SourceAppendLine(&source, "tail", 4, 0) < 0 ||
+    if (_PyTok_SourceAppendLine(&source, "tail", 4) < 0 ||
             check_system_error(
-                _PyTok_SourceAppendLine(&source, "x\n", 2, 0) < 0,
+                _PyTok_SourceAppendLine(&source, "x\n", 2) < 0,
                 "appended after unterminated source line") < 0) {
         goto error;
     }
@@ -107,7 +101,7 @@ test_tokenizer_source_discard(PyObject *Py_UNUSED(module),
     _PyTok_SourceText source;
     _PyTok_SourceInit(&source);
     for (int i = 0; i < 260; i++) {
-        if (_PyTok_SourceAppendLine(&source, "x\n", 2, 1) < 0) {
+        if (_PyTok_SourceAppendLine(&source, "x\n", 2) < 0) {
             goto error;
         }
     }
@@ -121,10 +115,8 @@ test_tokenizer_source_discard(PyObject *Py_UNUSED(module),
         goto error;
     }
     for (int i = 0; i < 260; i++) {
-        if (check(_PyTok_SourceAppendLine(&source, "y\n", 2, 0) == 520 + 2 * i,
-                  "wrong source offset after discard") < 0 ||
-                check(!_PyTok_SourceLineIsImplicit(&source, i + 1),
-                      "discard preserved implicit newline flag") < 0) {
+        if (check(_PyTok_SourceAppendLine(&source, "y\n", 2) == 520 + 2 * i,
+                  "wrong source offset after discard") < 0) {
             goto error;
         }
     }
@@ -133,18 +125,18 @@ test_tokenizer_source_discard(PyObject *Py_UNUSED(module),
         goto error;
     }
     _PyTok_SourceDiscard(&source);
-    if (check(_PyTok_SourceAppendLine(&source, "tail", 4, 0) == 1040,
+    if (check(_PyTok_SourceAppendLine(&source, "tail", 4) == 1040,
               "wrong source offset after repeated discard") < 0) {
         goto error;
     }
     _PyTok_SourceDiscard(&source);
-    if (check(_PyTok_SourceAppendLine(&source, "z\n", 2, 0) == 1044,
+    if (check(_PyTok_SourceAppendLine(&source, "z\n", 2) == 1044,
               "cannot append after discarding unterminated line") < 0) {
         goto error;
     }
     _PyTok_SourceDiscard(&source);
     source.base_offset = PY_SSIZE_T_MAX - 1;
-    if (check(_PyTok_SourceAppendLine(&source, "z\n", 2, 0) < 0 &&
+    if (check(_PyTok_SourceAppendLine(&source, "z\n", 2) < 0 &&
                   PyErr_ExceptionMatches(PyExc_MemoryError),
               "accepted overflowing logical source offset") < 0) {
         goto error;

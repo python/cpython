@@ -354,12 +354,13 @@ store_prepared_source(struct tok_state *tok, const char *data, Py_ssize_t len,
             line = normalized;
         }
         _PyTok_Off appended = _PyTok_SourceAppendLine(
-            &tok->source, line, line_len, implicit);
+            &tok->source, line, line_len);
         if (appended < 0) {
             tok->done = PyErr_ExceptionMatches(PyExc_MemoryError)
                 ? E_NOMEM : E_ERROR;
             goto error;
         }
+        tok->reader->prepared_final_newline_is_implicit = implicit;
         pos += raw_line_len;
     }
     PyMem_Free(normalized);
