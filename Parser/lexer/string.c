@@ -254,7 +254,8 @@ _PyLexer_check_string_prefixes(struct tok_state *tok,
 }
 
 int
-_PyLexer_scan_fstring_start(struct tok_state *tok, struct token *token, int c)
+_PyLexer_scan_fstring_start(struct tok_state *tok, struct token *token,
+                            int c, ftstring_kind kind)
 {
     _PyTok_Off p_start = -1;
     _PyTok_Off p_end = -1;
@@ -293,30 +294,9 @@ _PyLexer_scan_fstring_start(struct tok_state *tok, struct token *token, int c)
     state->start_loc = tok->start_loc;
     state->expr_span = (_PyTok_Span){-1, -1};
 
-    int raw = 0;
-    int tstring = 0;
-    switch (*_PyLexer_BufferPointer(tok, tok->start)) {
-        case 'T':
-        case 't':
-            raw = Py_TOLOWER(_PyLexer_BufferPointer(tok, tok->start)[1]) == 'r';
-            tstring = 1;
-            break;
-        case 'F':
-        case 'f':
-            raw = Py_TOLOWER(_PyLexer_BufferPointer(tok, tok->start)[1]) == 'r';
-            break;
-        case 'R':
-        case 'r':
-            raw = 1;
-            tstring = Py_TOLOWER(_PyLexer_BufferPointer(tok, tok->start)[1]) == 't';
-            break;
-        default:
-            Py_UNREACHABLE();
-    }
-    state->kind = tstring
-        ? (raw ? RAW_TSTRING : TSTRING)
-        : (raw ? RAW_FSTRING : FSTRING);
-    return tstring ? MAKE_TOKEN(TSTRING_START) : MAKE_TOKEN(FSTRING_START);
+    state->kind = kind;
+    return _PyLexer_IsTString(kind)
+        ? MAKE_TOKEN(TSTRING_START) : MAKE_TOKEN(FSTRING_START);
 }
 
 int
