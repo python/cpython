@@ -786,7 +786,16 @@ static FILE *
 fdopen_borrow(int fd)
 {
     int copy = _Py_dup(fd);
-    return copy < 0 ? NULL : fdopen(copy, "r");
+    if (copy < 0) {
+        return NULL;
+    }
+    FILE *fp = fdopen(copy, "r");
+    if (fp == NULL) {
+        int saved_errno = errno;
+        close(copy);
+        errno = saved_errno;
+    }
+    return fp;
 }
 #endif
 
