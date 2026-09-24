@@ -212,6 +212,7 @@ get_stack_margin(PyObject *self, PyObject *Py_UNUSED(args))
 static PyObject *
 test_stop_the_world(PyObject *self, PyObject *Py_UNUSED(args))
 {
+#ifdef Py_GIL_DISABLED
     PyInterpreterState *interp = _PyInterpreterState_GET();
     // Request consecutive pauses without running Python code between them.
     for (int i = 0; i < 100; i++) {
@@ -221,6 +222,7 @@ test_stop_the_world(PyObject *self, PyObject *Py_UNUSED(args))
         PyEvent_WaitTimed(&event, 10 * 1000 * 1000, /*detach=*/0);
         _PyEval_StartTheWorld(interp);
     }
+#endif
     Py_RETURN_NONE;
 }
 
