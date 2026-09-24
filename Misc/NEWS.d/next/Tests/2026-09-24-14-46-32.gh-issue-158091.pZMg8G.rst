@@ -1,0 +1,2 @@
+Fix ``test_import.test_dll_dependency_import`` picking the debug SQLite DLL
+when a parent directory of the extension module contains ``_d`` in its name.
