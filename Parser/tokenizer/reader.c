@@ -39,6 +39,24 @@ _PyTok_ReaderFree(struct tok_state *tok)
 }
 
 int
+_PyTokenizer_Traverse(struct tok_state *tok, visitproc visit, void *arg)
+{
+    Py_VISIT(tok->filename);
+    Py_VISIT(tok->module);
+    _PyTok_Reader *reader = tok->reader;
+    Py_VISIT(reader->readline);
+    Py_VISIT(reader->decoder);
+    for (int i = 0;
+         i < (int)Py_ARRAY_LENGTH(reader->prefetched_lines); i++) {
+        _PyTok_Chunk *chunk = &reader->prefetched_lines[i];
+        if (chunk->ownership == _PYTOK_CHUNK_PYOBJECT) {
+            Py_VISIT(chunk->owner);
+        }
+    }
+    return 0;
+}
+
+int
 _PyTok_ReserveBuffer(char **buffer, Py_ssize_t *capacity, Py_ssize_t needed,
                      Py_ssize_t initial_capacity)
 {

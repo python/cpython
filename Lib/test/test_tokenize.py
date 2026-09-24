@@ -8,6 +8,7 @@ import tempfile
 import token
 import tokenize
 import unittest
+import weakref
 from io import BytesIO, StringIO
 from textwrap import dedent
 from unittest import TestCase, mock
@@ -2253,6 +2254,18 @@ class CTokenizeTest(TestCase):
                 tokenize._generate_tokens_from_c_tokenizer(f.readline), s
             )
             self.assertEqual(result, expected.rstrip().splitlines())
+
+    def test_readline_reference_cycle(self):
+        class Readline:
+            def __call__(self):
+                return ""
+
+        readline = Readline()
+        readline.iterator = _tokenize.TokenizerIter(readline, extra_tokens=True)
+        ref = weakref.ref(readline)
+        del readline
+        support.gc_collect()
+        self.assertIsNone(ref())
 
     def test_encoding(self):
         def readline(encoding):
