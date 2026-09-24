@@ -1,7 +1,7 @@
 import contextlib
 import io
-import unittest
 import warnings
+import unittest
 from unittest.mock import patch
 from textwrap import dedent
 
@@ -131,6 +131,17 @@ SyntaxError: duplicate parameter 'x' in function definition"""
             console.runsource(source)
             mock_showsyntaxerror.assert_called_once()
 
+    @force_not_colorized
+    def test_runsource_compile_error(self):
+        # Any error raised by compile() is reported (gh-69919).
+        console = InteractiveColoredConsole()
+        source = '-' * 100_000 + '1'
+        f = io.StringIO()
+        with contextlib.redirect_stderr(f):
+            result = console.runsource(source)
+        self.assertFalse(result)
+        self.assertRegex(f.getvalue(), r'^(MemoryError|RecursionError): ')
+
     def test_runsource_survives_null_bytes(self):
         console = InteractiveColoredConsole()
         source = "\x00\n"
@@ -179,6 +190,12 @@ class TestMoreLines(unittest.TestCase):
     def test_invalid_syntax_single_line(self):
         namespace = {}
         code = "if foo"
+        console = InteractiveColoredConsole(namespace, filename="<stdin>")
+        self.assertFalse(_more_lines(console, code))
+
+    def test_compile_error_single_line(self):
+        namespace = {}
+        code = '-' * 100_000 + '1'  # MemoryError or RecursionError
         console = InteractiveColoredConsole(namespace, filename="<stdin>")
         self.assertFalse(_more_lines(console, code))
 
@@ -293,7 +310,7 @@ class TestWarnings(unittest.TestCase):
         """)
 
         with warnings.catch_warnings(record=True) as caught:
-            warnings.simplefilter("default")
+            warnings.simplefilter("always")
             console.runsource(code)
 
         count = sum("'return' in a 'finally' block" in str(w.message)

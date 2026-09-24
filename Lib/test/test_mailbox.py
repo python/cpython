@@ -11,6 +11,7 @@ from test import support
 from test.support import import_helper, warnings_helper
 from test.support import os_helper
 from test.support import refleak_helper
+from test.support import requires_root_user
 from test.support import socket_helper
 import unittest
 import textwrap
@@ -541,6 +542,11 @@ class TestMailbox(TestBase):
         for key in keys:
             self.assertIn(self._box.get_string(key), contents)
         oldbox.close()
+
+    def test_use_context_manager(self):
+        # Mailboxes are usable as a context manager
+        with self._box as box:
+            self.assertIs(self._box, box)
 
     def test_dump_message(self):
         # Write message representations to disk
@@ -1081,6 +1087,7 @@ class _TestSingleFile(TestMailbox):
 
         self.assertEqual(os.stat(self._path).st_mode, mode)
 
+    @requires_root_user
     @unittest.skipUnless(hasattr(os, 'chown'), 'requires os.chown')
     def test_ownership_after_flush(self):
         # See issue gh-117467
@@ -1103,10 +1110,7 @@ class _TestSingleFile(TestMailbox):
         else:
             self.skipTest("test needs more than one group")
 
-        try:
-            os.chown(self._path, other_uid, other_gid)
-        except OSError:
-            self.skipTest('test needs root privilege')
+        os.chown(self._path, other_uid, other_gid)
         # Change permissions as in test_permissions_after_flush.
         mode = st.st_mode | 0o666
         os.chmod(self._path, mode)
@@ -1122,6 +1126,16 @@ class _TestSingleFile(TestMailbox):
         self.assertEqual(st.st_gid, other_gid)
         self.assertEqual(st.st_mode, mode)
 
+    def test_context_manager_locks_and_closes(self):
+        # Context manager locks/unlocks and closes.
+        # (This test uses an implementation detail to get the state.)
+        self.assertFalse(self._box._locked)
+        with self._box as context_object:
+            self.assertIs(self._box, context_object)
+            self.assertTrue(self._box._locked)
+            self.assertFalse(self._box._file.closed)
+        self.assertFalse(self._box._locked)
+        self.assertTrue(self._box._file.closed)
 
 class _TestMboxMMDF(_TestSingleFile):
 

@@ -1,0 +1,1 @@
+Fix :mod:`array` unpickling of little-endian float16.

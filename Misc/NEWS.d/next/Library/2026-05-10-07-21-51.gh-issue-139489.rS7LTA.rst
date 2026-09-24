@@ -1,0 +1,1 @@
+Add :func:`xml.is_valid_text` to ``xml.__all__``.

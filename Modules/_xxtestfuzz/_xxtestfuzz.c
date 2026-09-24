@@ -28,7 +28,10 @@ static PyMethodDef module_methods[] = {
     {NULL},
 };
 
+PyABIInfo_VAR(abi_info);
+
 static PyModuleDef_Slot module_slots[] = {
+    {Py_mod_abi, &abi_info},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL},
 };

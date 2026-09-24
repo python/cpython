@@ -1,1 +1,0 @@
-Remove deprecated :c:func:`!PySys_ResetWarnOptions` C-API function.

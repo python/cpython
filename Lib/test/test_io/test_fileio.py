@@ -83,6 +83,12 @@ class AutoFileTests:
             fst = os.fstat(self.f.fileno())
             blksize = getattr(fst, 'st_blksize', blksize)
         self.assertEqual(self.f._blksize, blksize)
+        # it is read-only
+        with self.assertRaises(AttributeError):
+            self.f._blksize = blksize
+        with self.assertRaises(AttributeError):
+            del self.f._blksize
+
 
     # verify readinto
     def testReadintoByteArray(self):
@@ -503,6 +509,21 @@ class CAutoFileTests(AutoFileTests, unittest.TestCase):
     FileIO = _io.FileIO
     modulename = '_io'
 
+    def testFinalizing(self):
+        # test the private _finalizing attribute
+        self.assertIs(self.f._finalizing, False)
+        self.f._finalizing = True
+        self.assertIs(self.f._finalizing, True)
+        with self.assertRaisesRegex(TypeError,
+                                    'attribute value type must be bool'):
+            self.f._finalizing = 1
+        with self.assertRaisesRegex(TypeError,
+                                    "can't delete numeric/char attribute"):
+            del self.f._finalizing
+        # closing a file which is being finalized emits a ResourceWarning
+        self.f._finalizing = False
+
+
 class PyAutoFileTests(AutoFileTests, unittest.TestCase):
     FileIO = _pyio.FileIO
     modulename = '_pyio'
@@ -567,8 +588,8 @@ class OtherFileTests:
         # test that the mode attribute is correct for various mode strings
         # given as init args
         try:
-            for modes in [('w', 'wb'), ('wb', 'wb'), ('wb+', 'rb+'),
-                          ('w+b', 'rb+'), ('a', 'ab'), ('ab', 'ab'),
+            for modes in [('w', 'wb'), ('wb', 'wb'), ('wb+', 'wb+'),
+                          ('w+b', 'wb+'), ('a', 'ab'), ('ab', 'ab'),
                           ('ab+', 'ab+'), ('a+b', 'ab+'), ('r', 'rb'),
                           ('rb', 'rb'), ('rb+', 'rb+'), ('r+b', 'rb+')]:
                 # read modes are last so that TESTFN will exist first

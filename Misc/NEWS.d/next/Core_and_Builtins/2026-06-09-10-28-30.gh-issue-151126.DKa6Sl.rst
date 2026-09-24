@@ -1,0 +1,5 @@
+Fix a crash, when there's no memory left on a device,
+which happened in: code compilation, :mod:`!_interpchannels` module,
+:func:`!_winapi.CreateProcess` function.
+
+Now these places raise proper :exc:`MemoryError` errors.

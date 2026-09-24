@@ -23,8 +23,8 @@
  */
 
 
-#ifndef __Hacl_Hash_SHA2_H
-#define __Hacl_Hash_SHA2_H
+#ifndef Hacl_Hash_SHA2_H
+#define Hacl_Hash_SHA2_H
 
 #if defined(__cplusplus)
 extern "C" {
@@ -199,5 +199,5 @@ void Hacl_Hash_SHA2_hash_384(uint8_t *output, uint8_t *input, uint32_t input_len
 }
 #endif
 
-#define __Hacl_Hash_SHA2_H_DEFINED
-#endif
+#define Hacl_Hash_SHA2_H_DEFINED
+#endif /* Hacl_Hash_SHA2_H */

@@ -23,15 +23,12 @@ the CPython prompt as closely as possible, with the exception of
 allowing multiline input and multiline history entries.
 """
 
-from __future__ import annotations
-
 import _sitebuiltins
 import functools
 import os
 import sys
 import code
 import warnings
-import errno
 
 from .readline import _get_reader, multiline_input, append_history_file
 
@@ -69,6 +66,7 @@ def _clear_screen():
     reader.scheduled_commands.append("clear_screen")
 
 
+# Keep this in sync with _pyrepl.utils.COMMANDS
 REPL_COMMANDS = {
     "exit": _sitebuiltins.Quitter('exit', ''),
     "quit": _sitebuiltins.Quitter('quit' ,''),
@@ -84,7 +82,7 @@ def _more_lines(console: code.InteractiveConsole, unicodetext: str) -> bool:
     src = _strip_final_indent(unicodetext)
     try:
         code = console.compile(src, "<stdin>", "single")
-    except (OverflowError, SyntaxError, ValueError):
+    except Exception:
         lines = src.splitlines(keepends=True)
         if len(lines) == 1:
             return False
@@ -125,7 +123,7 @@ def run_multiline_interactive_console(
         command = REPL_COMMANDS[statement]
         if callable(command):
             # Make sure that history does not change because of commands
-            with reader.suspend_history():
+            with reader.suspend_history(), reader.suspend_colorization():
                 command()
             return True
         return False
@@ -162,7 +160,7 @@ def run_multiline_interactive_console(
             if r.input_trans is r.isearch_trans:
                 r.do_cmd(("isearch-end", [""]))
             r.pos = len(r.get_unicode())
-            r.dirty = True
+            r.invalidate_full()
             r.refresh()
             console.write("\nKeyboardInterrupt\n")
             console.resetbuffer()

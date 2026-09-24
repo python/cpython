@@ -27,9 +27,6 @@
 
 #if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
 
-void
-_Py_EmscriptenTrampoline_Init(_PyRuntimeState *runtime);
-
 PyObject*
 _PyEM_TrampolineCall(PyCFunctionWithKeywords func,
                      PyObject* self,

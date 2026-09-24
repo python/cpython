@@ -1,0 +1,4 @@
+Fix Argument Clinic for a function whose only parameter is in an optional
+group.
+It generated ``METH_O``, which made the argument mandatory and did not pass
+the flag of the group.

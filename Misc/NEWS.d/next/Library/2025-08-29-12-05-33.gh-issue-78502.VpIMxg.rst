@@ -1,2 +1,0 @@
-:class:`mmap.mmap` now has a *trackfd* parameter on Windows; if it is
-``False``, the file handle corresponding to *fileno* will not be duplicated.

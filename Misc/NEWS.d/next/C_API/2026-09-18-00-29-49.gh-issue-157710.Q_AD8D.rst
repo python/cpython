@@ -1,0 +1,3 @@
+When Python is built in debug mode, :c:func:`PyUnicodeWriter_Finish` now
+checks if the trailing null byte has been overridden to detect buffer
+overflow. Patch by Victor Stinner.

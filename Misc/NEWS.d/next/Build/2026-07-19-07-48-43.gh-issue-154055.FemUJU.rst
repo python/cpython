@@ -1,0 +1,4 @@
+The :mod:`curses` and :mod:`curses.panel` modules can now be built against a
+curses library that lacks the X/Open ``attr_t`` and soft-label attribute
+functions, ``scr_set()`` or ``resizeterm()`` -- such as the native SVr4 curses
+of illumos and Solaris.  These functions are probed and used only when present.

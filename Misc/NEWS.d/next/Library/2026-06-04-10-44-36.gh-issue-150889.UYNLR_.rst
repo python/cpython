@@ -1,0 +1,1 @@
+Speed up :func:`unicodedata.normalize` for the NFC and NFKC forms of non-ASCII text up to a factor 2.

@@ -1,3 +1,0 @@
-Use the same quoting algorithm for the repr of bytearrays as for bytes
-objects and strings -- use double quotes for quoting if the bytearray
-contains single quotes and does not contain double quotes.

@@ -4,8 +4,6 @@
 .. module:: token
    :synopsis: Constants representing terminal nodes of the parse tree.
 
-.. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
-
 **Source code:** :source:`Lib/token.py`
 
 --------------
@@ -50,8 +48,7 @@ The token constants are:
 
 .. data:: NAME
 
-   Token value that indicates an :ref:`identifier <identifiers>`.
-   Note that keywords are also initially tokenized as ``NAME`` tokens.
+   Token value that indicates an :ref:`identifier or keyword <identifiers>`.
 
 .. data:: NUMBER
 

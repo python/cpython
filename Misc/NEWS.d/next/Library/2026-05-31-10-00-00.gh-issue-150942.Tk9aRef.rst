@@ -1,0 +1,3 @@
+Speed up :func:`json.loads` decoding of arrays and objects by storing
+parsed values into the result list/dict without an extra reference-count
+round-trip (using the internal reference-stealing append/insert helpers).

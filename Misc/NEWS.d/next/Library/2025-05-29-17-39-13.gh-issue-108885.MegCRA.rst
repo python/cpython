@@ -1,3 +1,0 @@
-Run each example as a subtest in unit tests synthesized by
-:func:`doctest.DocFileSuite` and :func:`doctest.DocTestSuite`.
-Add the :meth:`doctest.DocTestRunner.report_skip` method.

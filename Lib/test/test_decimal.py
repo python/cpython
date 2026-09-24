@@ -32,6 +32,7 @@ import pickle, copy
 import unittest
 import numbers
 import locale
+from test import support
 from test.support import (is_resource_enabled,
                           requires_IEEE_754, requires_docstrings,
                           check_disallow_instantiation)
@@ -3070,6 +3071,41 @@ class ContextAPItests:
         self.assertEqual(k1, k2)
         self.assertEqual(c.flags, d.flags)
 
+    def test_replace(self):
+        Context = self.decimal.Context
+        Inexact = self.decimal.Inexact
+        Overflow = self.decimal.Overflow
+        ROUND_UP = self.decimal.ROUND_UP
+
+        c = Context(prec=10, Emin=-99, capitals=0)
+        c.flags[Inexact] = True
+        d = copy.replace(c, prec=20, rounding=ROUND_UP)
+        self.assertEqual(d.prec, 20)
+        self.assertEqual(d.rounding, ROUND_UP)
+        # Not replaced attributes are inherited from the original context.
+        self.assertEqual(d.Emin, -99)
+        self.assertEqual(d.capitals, 0)
+        self.assertEqual(d.Emax, c.Emax)
+        self.assertEqual(d.clamp, c.clamp)
+        self.assertTrue(d.flags[Inexact])
+        self.assertEqual(d.traps, c.traps)
+        # The copy is deep and the original context is left unchanged.
+        self.assertIsNot(d.flags, c.flags)
+        self.assertIsNot(d.traps, c.traps)
+        self.assertEqual(c.prec, 10)
+        self.assertEqual(c.rounding, Context().rounding)
+
+        # As in the constructor, flags and traps can be given as a list.
+        d = copy.replace(c, flags=[Overflow])
+        self.assertTrue(d.flags[Overflow])
+        self.assertFalse(d.flags[Inexact])
+
+        self.assertRaises(TypeError, copy.replace, c, prek=1)
+        self.assertRaises(TypeError, copy.replace, c, prec='spam')
+        # Unlike in the constructor, None is not a valid value.
+        self.assertRaises(TypeError, copy.replace, c, prec=None)
+        self.assertRaises(TypeError, copy.replace, c, flags=None)
+
     def test__clamp(self):
         # In Python 3.2, the private attribute `_clamp` was made
         # public (issue 8540), with the old `_clamp` becoming a
@@ -3763,6 +3799,13 @@ class ContextWithStatement:
         self.assertRaises(TypeError, self.decimal.localcontext, Emin="")
         self.assertRaises(TypeError, self.decimal.localcontext, Emax="")
 
+        # None is not a valid value for any of these attributes.
+        for name in ('prec', 'rounding', 'Emin', 'Emax', 'capitals', 'clamp',
+                     'flags', 'traps'):
+            with self.subTest(name=name):
+                self.assertRaises(TypeError, self.decimal.localcontext,
+                                  **{name: None})
+
     def test_local_context_kwargs_does_not_overwrite_existing_argument(self):
         ctx = self.decimal.getcontext()
         orig_prec = ctx.prec
@@ -3963,15 +4006,21 @@ class ContextFlags:
         d.update(c.flags)
         self.assertEqual(d, c.flags)
         self.assertEqual(c.flags, d)
+        self.assertEqual(frozendict(d), c.flags)
+        self.assertEqual(c.flags, frozendict(d))
 
         d[Inexact] = True
         self.assertNotEqual(d, c.flags)
         self.assertNotEqual(c.flags, d)
+        self.assertNotEqual(frozendict(d), c.flags)
+        self.assertNotEqual(c.flags, frozendict(d))
 
         # Invalid SignalDict
         d = {Inexact:False}
         self.assertNotEqual(d, c.flags)
         self.assertNotEqual(c.flags, d)
+        self.assertNotEqual(frozendict(d), c.flags)
+        self.assertNotEqual(c.flags, frozendict(d))
 
         d = ["xyz"]
         self.assertNotEqual(d, c.flags)
@@ -4141,6 +4190,15 @@ class ContextFlags:
 @requires_cdecimal
 class CContextFlags(ContextFlags, unittest.TestCase):
     decimal = C
+
+    def test_signaldict_repr(self):
+        Context = self.decimal.Context
+        ctx = Context(prec=7)
+        mapping = ctx.flags
+        del ctx
+        with self.assertRaisesRegex(ValueError, 'invalid signal dict'):
+            repr(mapping)
+
 class PyContextFlags(ContextFlags, unittest.TestCase):
     decimal = P
 
@@ -4273,7 +4331,7 @@ class ContextInputValidation:
 
         # Attributes cannot be deleted
         for attr in ['prec', 'Emax', 'Emin', 'rounding', 'capitals', 'clamp',
-                     'flags', 'traps']:
+                     'flags', 'traps', '_allcr', '_flags', '_traps']:
             self.assertRaises(AttributeError, c.__delattr__, attr)
 
         # Invalid attributes
@@ -4474,7 +4532,7 @@ class CheckAttributes(unittest.TestCase):
         self.assertTrue(C.HAVE_THREADS is True or C.HAVE_THREADS is False)
         self.assertTrue(P.HAVE_THREADS is True or P.HAVE_THREADS is False)
 
-        self.assertEqual(C.__version__, P.__version__)
+        self.assertEqual(C.SPEC_VERSION, P.SPEC_VERSION)
 
         self.assertLessEqual(set(dir(C)), set(dir(P)))
         self.assertEqual([n for n in dir(C) if n[:2] != '__'], sorted(P.__all__))
@@ -4960,6 +5018,14 @@ class CFunctionality(unittest.TestCase):
         c = Context(flags=C.DecClamped, traps=C.DecRounded)
         self.assertEqual(c._flags, C.DecClamped)
         self.assertEqual(c._traps, C.DecRounded)
+
+    @requires_extra_functionality
+    def test_c_context_apply(self):
+        c = C.Context(prec=3)
+        self.assertEqual(c.apply(C.Decimal('1.23456')), C.Decimal('1.23'))
+        # A higher precision won't see them as equal.
+        c = C.Context(prec=5)
+        self.assertNotEqual(c.apply(C.Decimal('1.23456')), C.Decimal('1.23'))
 
     @requires_extra_functionality
     def test_constants(self):
@@ -5741,8 +5807,7 @@ class CWhitebox(unittest.TestCase):
         )
         for tp in types:
             with self.subTest(tp=tp):
-                with self.assertRaisesRegex(TypeError, "immutable"):
-                    tp.foo = 1
+                support.check_immutable_type(self, tp)
 
     def test_c_disallow_instantiation(self):
         ContextManager = type(C.localcontext())
@@ -5927,6 +5992,23 @@ class SignatureTest(unittest.TestCase):
 
         doit('Decimal')
         doit('Context')
+
+
+class TestModule:
+    def test_deprecated__version__(self):
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "'__version__' is deprecated and slated for removal in Python 3.20",
+        ) as cm:
+            getattr(self.decimal, "__version__")
+        self.assertEqual(cm.filename, __file__)
+
+
+@requires_cdecimal
+class CTestModule(TestModule, unittest.TestCase):
+    decimal = C
+class PyTestModule(TestModule, unittest.TestCase):
+    decimal = P
 
 
 def load_tests(loader, tests, pattern):

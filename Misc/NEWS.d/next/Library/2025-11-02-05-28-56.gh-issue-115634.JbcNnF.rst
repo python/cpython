@@ -1,0 +1,5 @@
+Fix a deadlock in :class:`concurrent.futures.ProcessPoolExecutor` when
+using ``max_tasks_per_child``, present since the feature was introduced in
+Python 3.11. The executor stopped scheduling queued tasks after a worker
+process exited upon reaching its task limit. Based on a fix proposed by
+Tabrez Mohammed.

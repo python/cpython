@@ -1,0 +1,3 @@
+Fix a potential deadlock in :c:func:`PyUnicode_InternFromString` and other
+interning functions in the :term:`free-threaded build` when called from C++
+static local initializers.

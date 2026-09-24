@@ -1,0 +1,3 @@
+Reject a POSIX TZ transition rule with non-digit characters in the
+day-of-year field in the pure-Python :mod:`zoneinfo` parser. Patch by
+tonghuaroot.

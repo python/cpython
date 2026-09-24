@@ -1,1 +1,0 @@
-Fix coloring of double braces in f-strings and t-strings in the :term:`REPL`.

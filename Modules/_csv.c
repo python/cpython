@@ -117,7 +117,12 @@ typedef struct {
     Py_UCS4 quotechar;          /* quote character */
     Py_UCS4 escapechar;         /* escape character */
     PyObject *lineterminator;   /* string to write between records */
-
+    /* Cache for the writer: bit c is set if the ASCII character c needs
+       quoting or escaping (delimiter, quotechar, escapechar, '\r', '\n'
+       and the characters of lineterminator). */
+    uint64_t special_chars[2];
+    /* Whether any of the special characters is non-ASCII. */
+    bool nonascii_special;
 } DialectObj;
 
 typedef struct {
@@ -315,8 +320,12 @@ _set_char(const char *name, Py_UCS4 *target, PyObject *src, Py_UCS4 dflt)
 static int
 _set_str(const char *name, PyObject **target, PyObject *src, const char *dflt)
 {
-    if (src == NULL)
+    if (src == NULL) {
         *target = PyUnicode_DecodeASCII(dflt, strlen(dflt), NULL);
+        if (*target == NULL) {
+            return -1;
+        }
+    }
     else {
         if (!PyUnicode_Check(src)) {
             PyErr_Format(PyExc_TypeError,
@@ -326,6 +335,54 @@ _set_str(const char *name, PyObject **target, PyObject *src, const char *dflt)
         Py_XSETREF(*target, Py_NewRef(src));
     }
     return 0;
+}
+
+static void
+dialect_add_special_char(DialectObj *self, Py_UCS4 c)
+{
+    if (c == NOT_SET) {
+        return;
+    }
+    if (c < 128) {
+        self->special_chars[c / 64] |= (uint64_t)1 << (c % 64);
+    }
+    else {
+        self->nonascii_special = true;
+    }
+}
+
+static void
+dialect_init_special_chars_cache(DialectObj *self)
+{
+    self->special_chars[0] = self->special_chars[1] = 0;
+    self->nonascii_special = false;
+    dialect_add_special_char(self, self->delimiter);
+    dialect_add_special_char(self, self->quotechar);
+    dialect_add_special_char(self, self->escapechar);
+    dialect_add_special_char(self, '\r');
+    dialect_add_special_char(self, '\n');
+    PyObject *lt = self->lineterminator;
+    for (Py_ssize_t i = 0; i < PyUnicode_GET_LENGTH(lt); i++) {
+        dialect_add_special_char(self, PyUnicode_READ_CHAR(lt, i));
+    }
+}
+
+/* Whether the character needs quoting or escaping by the writer. */
+static inline bool
+dialect_is_special_char(DialectObj *self, Py_UCS4 c)
+{
+    if (c < 128) {
+        return (self->special_chars[c / 64] >> (c % 64)) & 1;
+    }
+    if (!self->nonascii_special) {
+        return false;
+    }
+    return (c == self->delimiter ||
+            c == self->quotechar ||
+            c == self->escapechar ||
+            PyUnicode_FindChar(self->lineterminator, c, 0,
+                               PyUnicode_GET_LENGTH(self->lineterminator),
+                               1) >= 0);
 }
 
 static int
@@ -497,13 +554,13 @@ dialect_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     Py_XINCREF(skipinitialspace);
     Py_XINCREF(strict);
     if (dialect != NULL) {
-#define DIALECT_GETATTR(v, n)                            \
-        do {                                             \
-            if (v == NULL) {                             \
-                v = PyObject_GetAttrString(dialect, n);  \
-                if (v == NULL)                           \
-                    PyErr_Clear();                       \
-            }                                            \
+#define DIALECT_GETATTR(v, n)                                               \
+        do {                                                                \
+            if (v == NULL) {                                                \
+                if (PyObject_GetOptionalAttrString(dialect, n, &v) < 0) {   \
+                    goto err;                                               \
+                }                                                           \
+            }                                                               \
         } while (0)
         DIALECT_GETATTR(delimiter, "delimiter");
         DIALECT_GETATTR(doublequote, "doublequote");
@@ -554,6 +611,7 @@ dialect_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     {
         goto err;
     }
+    dialect_init_special_chars_cache(self);
 
     ret = Py_NewRef(self);
 err:
@@ -582,9 +640,34 @@ Dialect_reduce(PyObject *self, PyObject *args) {
     return NULL;
 }
 
+PyDoc_STRVAR(dialect_replace_doc,
+"__replace__($self, /, **changes)\n"
+"--\n"
+"\n"
+"Return a copy of the dialect with the specified options replaced.");
+
+static PyObject *
+Dialect_replace(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    if (PyTuple_GET_SIZE(args) != 0) {
+        PyErr_SetString(PyExc_TypeError,
+                        "__replace__() takes no positional arguments");
+        return NULL;
+    }
+    PyObject *newargs = PyTuple_Pack(1, self);
+    if (newargs == NULL) {
+        return NULL;
+    }
+    PyObject *result = dialect_new(Py_TYPE(self), newargs, kwargs);
+    Py_DECREF(newargs);
+    return result;
+}
+
 static struct PyMethodDef dialect_methods[] = {
     {"__reduce__", Dialect_reduce, METH_VARARGS, dialect_reduce_doc},
     {"__reduce_ex__", Dialect_reduce, METH_VARARGS, dialect_reduce_doc},
+    {"__replace__", _PyCFunction_CAST(Dialect_replace),
+     METH_VARARGS | METH_KEYWORDS, dialect_replace_doc},
     {NULL, NULL}
 };
 
@@ -918,7 +1001,7 @@ parse_reset(ReaderObj *self)
 }
 
 static PyObject *
-Reader_iternext(PyObject *op)
+Reader_iternext_lock_held(PyObject *op)
 {
     ReaderObj *self = _ReaderObj_CAST(op);
 
@@ -961,6 +1044,12 @@ Reader_iternext(PyObject *op)
             Py_DECREF(lineobj);
             return NULL;
         }
+        if (self->fields == NULL) {
+            PyErr_SetString(module_state->error_obj,
+                            "iterator has already advanced the reader");
+            Py_DECREF(lineobj);
+            return NULL;
+        }
         ++self->line_num;
         kind = PyUnicode_KIND(lineobj);
         data = PyUnicode_DATA(lineobj);
@@ -983,6 +1072,16 @@ Reader_iternext(PyObject *op)
     self->fields = NULL;
 err:
     return fields;
+}
+
+static PyObject *
+Reader_iternext(PyObject *op)
+{
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = Reader_iternext_lock_held(op);
+    Py_END_CRITICAL_SECTION();
+    return result;
 }
 
 static void
@@ -1163,14 +1262,7 @@ join_append_data(WriterObj *self, int field_kind, const void *field_data,
         Py_UCS4 c = PyUnicode_READ(field_kind, field_data, i);
         int want_escape = 0;
 
-        if (c == dialect->delimiter ||
-            c == dialect->escapechar ||
-            c == dialect->quotechar  ||
-            c == '\n'  ||
-            c == '\r'  ||
-            PyUnicode_FindChar(
-                dialect->lineterminator, c, 0,
-                PyUnicode_GET_LENGTH(dialect->lineterminator), 1) >= 0) {
+        if (dialect_is_special_char(dialect, c)) {
             if (dialect->quoting == QUOTE_NONE)
                 want_escape = 1;
             else {
@@ -1303,15 +1395,8 @@ join_append_lineterminator(WriterObj *self)
     return 1;
 }
 
-PyDoc_STRVAR(csv_writerow_doc,
-"writerow($self, row, /)\n"
-"--\n\n"
-"Construct and write a CSV record from an iterable of fields.\n"
-"\n"
-"Non-string elements will be converted to string.");
-
 static PyObject *
-csv_writerow(PyObject *op, PyObject *seq)
+csv_writerow_lock_held(PyObject *op, PyObject *seq)
 {
     WriterObj *self = _WriterObj_CAST(op);
     DialectObj *dialect = self->dialect;
@@ -1411,6 +1496,23 @@ csv_writerow(PyObject *op, PyObject *seq)
     }
     result = PyObject_CallOneArg(self->write, line);
     Py_DECREF(line);
+    return result;
+}
+
+PyDoc_STRVAR(csv_writerow_doc,
+"writerow($self, row, /)\n"
+"--\n\n"
+"Construct and write a CSV record from an iterable of fields.\n"
+"\n"
+"Non-string elements will be converted to string.");
+
+static PyObject *
+csv_writerow(PyObject *op, PyObject *seq)
+{
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = csv_writerow_lock_held(op, seq);
+    Py_END_CRITICAL_SECTION();
     return result;
 }
 
@@ -1809,6 +1911,7 @@ csv_exec(PyObject *module) {
 }
 
 static PyModuleDef_Slot csv_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, csv_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

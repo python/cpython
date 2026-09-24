@@ -1,0 +1,4 @@
+The ``--converters`` option of Argument Clinic now accepts file names and
+can be used with ``--make``.
+It prints the converters and return converters which the specified files
+define, instead of the built-in ones.

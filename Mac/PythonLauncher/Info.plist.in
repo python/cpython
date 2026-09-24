@@ -2,8 +2,22 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>CFBundleDevelopmentRegion</key>
-	<string>en</string>
+	<key>CFBundleName</key>
+	<string>Python Launcher</string>
+	<key>CFBundleIdentifier</key>
+	<string>org.python.PythonLauncher</string>
+	<key>CFBundleVersion</key>
+	<string>%VERSION%</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleSignature</key>
+	<string>PytL</string>
+	<key>CFBundleExecutable</key>
+	<string>Python Launcher</string>
+	<key>CFBundleIconFile</key>
+	<string>PythonLauncher.icns</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
 	<key>CFBundleDocumentTypes</key>
 	<array>
 		<dict>
@@ -37,28 +51,16 @@
 			<string>MyDocument</string>
 		</dict>
 	</array>
-	<key>CFBundleExecutable</key>
-	<string>Python Launcher</string>
-	<key>NSHumanReadableCopyright</key>
-	<string>Copyright © 2001 Python Software Foundation</string>
-	<key>CFBundleGetInfoString</key>
-	<string>%VERSION%, © 2001 Python Software Foundation</string>
-	<key>CFBundleIconFile</key>
-	<string>PythonLauncher.icns</string>
-	<key>CFBundleIdentifier</key>
-	<string>org.python.PythonLauncher</string>
-	<key>CFBundleInfoDictionaryVersion</key>
-	<string>6.0</string>
-	<key>CFBundleName</key>
-	<string>Python Launcher</string>
-	<key>CFBundlePackageType</key>
-	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
 	<string>%VERSION%</string>
-	<key>CFBundleSignature</key>
-	<string>PytL</string>
-	<key>CFBundleVersion</key>
-	<string>%VERSION%</string>
+	<key>CFBundleSupportedPlatforms</key>
+	<array>
+		<string>MacOSX</string>
+	</array>
+	<key>NSHumanReadableCopyright</key>
+	<string>Copyright © 2001 Python Software Foundation. All rights reserved.</string>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>English</string>
 	<key>NSMainNibFile</key>
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>

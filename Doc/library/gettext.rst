@@ -4,14 +4,11 @@
 .. module:: gettext
    :synopsis: Multilingual internationalization services.
 
-.. moduleauthor:: Barry A. Warsaw <barry@python.org>
-.. sectionauthor:: Barry A. Warsaw <barry@python.org>
-
 **Source code:** :source:`Lib/gettext.py`
 
 --------------
 
-The :mod:`gettext` module provides internationalization (I18N) and localization
+The :mod:`!gettext` module provides internationalization (I18N) and localization
 (L10N) services for your Python modules and applications. It supports both the
 GNU :program:`gettext` message catalog API and a higher level, class-based API that may
 be more appropriate for Python files.  The interface described below allows you
@@ -25,7 +22,7 @@ Some hints on localizing your Python modules and applications are also given.
 GNU :program:`gettext` API
 --------------------------
 
-The :mod:`gettext` module defines the following API, which is very similar to
+The :mod:`!gettext` module defines the following API, which is very similar to
 the GNU :program:`gettext` API.  If you use this API you will affect the
 translation of your entire application globally.  Often this is what you want if
 your application is monolingual, with the choice of language dependent on the
@@ -37,7 +34,7 @@ class-based API instead.
 .. function:: bindtextdomain(domain, localedir=None)
 
    Bind the *domain* to the locale directory *localedir*.  More concretely,
-   :mod:`gettext` will look for binary :file:`.mo` files for the given domain using
+   :mod:`!gettext` will look for binary :file:`.mo` files for the given domain using
    the path (on Unix): :file:`{localedir}/{language}/LC_MESSAGES/{domain}.mo`, where
    *language* is searched for in the environment variables :envvar:`LANGUAGE`,
    :envvar:`LC_ALL`, :envvar:`LC_MESSAGES`, and :envvar:`LANG` respectively.
@@ -54,19 +51,19 @@ class-based API instead.
 
 
 .. index:: single: _ (underscore); gettext
-.. function:: gettext(message)
+.. function:: gettext(message, /)
 
    Return the localized translation of *message*, based on the current global
    domain, language, and locale directory.  This function is usually aliased as
    :func:`!_` in the local namespace (see examples below).
 
 
-.. function:: dgettext(domain, message)
+.. function:: dgettext(domain, message, /)
 
    Like :func:`.gettext`, but look the message up in the specified *domain*.
 
 
-.. function:: ngettext(singular, plural, n)
+.. function:: ngettext(singular, plural, n, /)
 
    Like :func:`.gettext`, but consider plural forms. If a translation is found,
    apply the plural formula to *n*, and return the resulting message (some
@@ -81,15 +78,15 @@ class-based API instead.
    formulas for a variety of languages.
 
 
-.. function:: dngettext(domain, singular, plural, n)
+.. function:: dngettext(domain, singular, plural, n, /)
 
    Like :func:`ngettext`, but look the message up in the specified *domain*.
 
 
-.. function:: pgettext(context, message)
-.. function:: dpgettext(domain, context, message)
-.. function:: npgettext(context, singular, plural, n)
-.. function:: dnpgettext(domain, context, singular, plural, n)
+.. function:: pgettext(context, message, /)
+.. function:: dpgettext(domain, context, message, /)
+.. function:: npgettext(context, singular, plural, n, /)
+.. function:: dnpgettext(domain, context, singular, plural, n, /)
 
    Similar to the corresponding functions without the ``p`` in the prefix (that
    is, :func:`gettext`, :func:`dgettext`, :func:`ngettext`, :func:`dngettext`),
@@ -114,7 +111,7 @@ Here's an example of typical usage for this API::
 Class-based API
 ---------------
 
-The class-based API of the :mod:`gettext` module gives you more flexibility and
+The class-based API of the :mod:`!gettext` module gives you more flexibility and
 greater convenience than the GNU :program:`gettext` API.  It is the recommended
 way of localizing your Python applications and modules.  :mod:`!gettext` defines
 a :class:`GNUTranslations` class which implements the parsing of GNU :file:`.mo` format
@@ -226,20 +223,20 @@ are the methods of :class:`!NullTranslations`:
       translation for a given message.
 
 
-   .. method:: gettext(message)
+   .. method:: gettext(message, /)
 
       If a fallback has been set, forward :meth:`!gettext` to the fallback.
       Otherwise, return *message*.  Overridden in derived classes.
 
 
-   .. method:: ngettext(singular, plural, n)
+   .. method:: ngettext(singular, plural, n, /)
 
       If a fallback has been set, forward :meth:`!ngettext` to the fallback.
       Otherwise, return *singular* if *n* is 1; return *plural* otherwise.
       Overridden in derived classes.
 
 
-   .. method:: pgettext(context, message)
+   .. method:: pgettext(context, message, /)
 
       If a fallback has been set, forward :meth:`pgettext` to the fallback.
       Otherwise, return the translated message.  Overridden in derived classes.
@@ -247,7 +244,7 @@ are the methods of :class:`!NullTranslations`:
       .. versionadded:: 3.8
 
 
-   .. method:: npgettext(context, singular, plural, n)
+   .. method:: npgettext(context, singular, plural, n, /)
 
       If a fallback has been set, forward :meth:`npgettext` to the fallback.
       Otherwise, return the translated message.  Overridden in derived classes.
@@ -325,7 +322,7 @@ unexpected, or if other problems occur while reading the file, instantiating a
 
    The following methods are overridden from the base class implementation:
 
-   .. method:: gettext(message)
+   .. method:: gettext(message, /)
 
       Look up the *message* id in the catalog and return the corresponding message
       string, as a Unicode string.  If there is no entry in the catalog for the
@@ -334,7 +331,7 @@ unexpected, or if other problems occur while reading the file, instantiating a
       *message* id is returned.
 
 
-   .. method:: ngettext(singular, plural, n)
+   .. method:: ngettext(singular, plural, n, /)
 
       Do a plural-forms lookup of a message id.  *singular* is used as the message id
       for purposes of lookup in the catalog, while *n* is used to determine which
@@ -355,7 +352,7 @@ unexpected, or if other problems occur while reading the file, instantiating a
              n) % {'num': n}
 
 
-   .. method:: pgettext(context, message)
+   .. method:: pgettext(context, message, /)
 
       Look up the *context* and *message* id in the catalog and return the
       corresponding message string, as a Unicode string.  If there is no
@@ -366,7 +363,7 @@ unexpected, or if other problems occur while reading the file, instantiating a
       .. versionadded:: 3.8
 
 
-   .. method:: npgettext(context, singular, plural, n)
+   .. method:: npgettext(context, singular, plural, n, /)
 
       Do a plural-forms lookup of a message id.  *singular* is used as the
       message id for purposes of lookup in the catalog, while *n* is used to
@@ -393,7 +390,7 @@ The Catalog constructor
 
 .. index:: single: GNOME
 
-GNOME uses a version of the :mod:`gettext` module by James Henstridge, but this
+GNOME uses a version of the :mod:`!gettext` module by James Henstridge, but this
 version has a slightly different API.  Its documented usage was::
 
    import gettext
@@ -425,7 +422,7 @@ take the following steps:
 
 #. create language-specific translations of the message catalogs
 
-#. use the :mod:`gettext` module so that message strings are properly translated
+#. use the :mod:`!gettext` module so that message strings are properly translated
 
 In order to prepare your code for I18N, you need to look at all the strings in
 your files.  Any string that needs to be translated should be marked by wrapping
@@ -473,10 +470,10 @@ supported natural language.  They send back the completed
 language-specific versions as a :file:`<language-name>.po` file that's
 compiled into a machine-readable :file:`.mo` binary catalog file using
 the :program:`msgfmt` program.  The :file:`.mo` files are used by the
-:mod:`gettext` module for the actual translation processing at
+:mod:`!gettext` module for the actual translation processing at
 run-time.
 
-How you use the :mod:`gettext` module in your code depends on whether you are
+How you use the :mod:`!gettext` module in your code depends on whether you are
 internationalizing a single module or your entire application. The next two
 sections will discuss each case.
 

@@ -47,6 +47,13 @@ asyncio provides a set of **high-level** APIs to:
 
 * :ref:`synchronize <asyncio-sync>` concurrent code;
 
+For **introspection**, asyncio provides APIs and tools for:
+
+* inspecting the :ref:`async call graph <asyncio-graph>` of tasks and futures;
+
+* inspecting tasks in another running Python process with
+  :ref:`command-line tools <asyncio-introspection-tools>`;
+
 Additionally, there are **low-level** APIs for
 *library and framework developers* to:
 
@@ -79,6 +86,10 @@ You can experiment with an ``asyncio`` concurrent context in the :term:`REPL`:
    >>> await asyncio.sleep(10, result='hello')
    'hello'
 
+This REPL provides limited compatibility with :envvar:`PYTHON_BASIC_REPL`.
+It is recommended that the default REPL is used
+for full functionality and the latest features.
+
 .. audit-event:: cpython.run_stdin "" ""
 
 .. versionchanged:: 3.12.5 (also 3.11.10, 3.10.15, 3.9.20, and 3.8.20)
@@ -104,7 +115,13 @@ You can experiment with an ``asyncio`` concurrent context in the :term:`REPL`:
    asyncio-subprocess.rst
    asyncio-queue.rst
    asyncio-exceptions.rst
+
+.. toctree::
+   :caption: Introspection APIs
+   :maxdepth: 1
+
    asyncio-graph.rst
+   asyncio-tools.rst
 
 .. toctree::
    :caption: Low-level APIs
@@ -113,7 +130,6 @@ You can experiment with an ``asyncio`` concurrent context in the :term:`REPL`:
    asyncio-eventloop.rst
    asyncio-future.rst
    asyncio-protocol.rst
-   asyncio-policy.rst
    asyncio-platforms.rst
    asyncio-extending.rst
 
@@ -124,6 +140,7 @@ You can experiment with an ``asyncio`` concurrent context in the :term:`REPL`:
    asyncio-api-index.rst
    asyncio-llapi-index.rst
    asyncio-dev.rst
+   asyncio-threading.rst
 
 .. note::
    The source code for asyncio can be found in :source:`Lib/asyncio/`.

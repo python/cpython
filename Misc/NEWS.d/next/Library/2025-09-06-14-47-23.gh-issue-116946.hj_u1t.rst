@@ -1,5 +1,0 @@
-:mod:`tkinter`: the types :class:`!_tkinter.Tcl_Obj` (wrapper for Tcl objects),
-:class:`!_tkinter.tktimertoken` (obtained by calling ``createtimerhandler()``
-on a :attr:`Tk <tkinter.Tk.tk>` application) and :class:`!_tkinter.tkapp`
-(the runtime type of Tk applications) are now immutable.
-Patch by Bénédikt Tran.

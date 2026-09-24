@@ -1,0 +1,2 @@
+Fix ``asyncio.StreamWriter.start_tls()`` to keep the linked
+``StreamReader`` transport in sync with the upgraded transport.

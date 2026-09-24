@@ -1,3 +1,4 @@
+import abc
 import functools
 import sys
 import types
@@ -97,6 +98,22 @@ class Test_TestLoader(unittest.TestCase):
         suite = loader.loadTestsFromTestCase(unittest.FunctionTestCase)
         self.assertIsInstance(suite, loader.suiteClass)
         self.assertEqual(list(suite), [])
+
+    # "Do not load any tests from a TestCase-derived class that is an abstract
+    # base class."
+    def test_loadTestsFromTestCase__from_abc_TestCase(self):
+        class FooBase(unittest.TestCase, metaclass=abc.ABCMeta):
+            @abc.abstractmethod
+            def test(self): ...
+        class Foo(FooBase):
+            def test(self): pass
+
+        empty_suite = unittest.TestSuite()
+
+        loader = unittest.TestLoader()
+        suite = loader.loadTestsFromTestCase(Foo)
+        self.assertEqual(loader.loadTestsFromTestCase(FooBase), empty_suite)
+        self.assertEqual(list(suite), [Foo('test')])
 
     ################################################################
     ### /Tests for TestLoader.loadTestsFromTestCase
@@ -251,6 +268,24 @@ class Test_TestLoader(unittest.TestCase):
         test = list(suite)[0]
 
         self.assertRaisesRegex(TypeError, "some failure", test.m)
+
+    # Check that loadTestsFromModule skips abstract base classes derived from
+    # TestCase, which can't be instantiated.
+    def test_loadTestsFromModule__skip_abc_TestCase(self):
+        m = types.ModuleType('m')
+        class MyTestCaseBase(unittest.TestCase, metaclass=abc.ABCMeta):
+            @abc.abstractmethod
+            def test(self):
+                ...
+        class MyTestCase(MyTestCaseBase):
+            def test(self):
+                pass
+        m.testcase_1 = MyTestCaseBase
+        m.testcase_2 = MyTestCase
+        loader = unittest.TestLoader()
+        suite = loader.loadTestsFromModule(m)
+        expected = [loader.suiteClass([MyTestCase('test')])]
+        self.assertEqual(list(suite), expected)
 
     ################################################################
     ### /Tests for TestLoader.loadTestsFromModule()
@@ -1051,6 +1086,22 @@ class Test_TestLoader(unittest.TestCase):
         finally:
             if module_name in sys.modules:
                 del sys.modules[module_name]
+
+    # "The specifier should not refer to a test method in a TestCase-derived
+    # subclass that is an abstract base class"
+    def test_loadTestsFromNames__testmethod_in_abc_TestCase(self):
+        m = types.ModuleType('m')
+        class Foo(unittest.TestCase, metaclass=abc.ABCMeta):
+            @abc.abstractmethod
+            def test_1(self): ...
+            def test_2(self): pass
+        m.Foo = Foo
+
+        loader = unittest.TestLoader()
+        for name in 'Foo.test_1', 'Foo.test_2':
+            with self.subTest(name=name), self.assertRaisesRegex(TypeError,
+                    "Cannot instantiate abstract test case Foo"):
+                loader.loadTestsFromNames([name], m)
 
     ################################################################
     ### /Tests for TestLoader.loadTestsFromNames()

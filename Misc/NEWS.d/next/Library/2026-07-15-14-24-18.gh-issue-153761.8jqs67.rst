@@ -1,0 +1,1 @@
+Fix cancelling :meth:`asyncio.loop.sock_accept` dropping a pending connection.

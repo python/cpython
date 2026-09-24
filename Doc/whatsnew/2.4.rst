@@ -35,7 +35,7 @@ implementation and design rationale.
 PEP 218: Built-In Set Objects
 =============================
 
-Python 2.3 introduced the :mod:`sets` module.  C implementations of set data
+Python 2.3 introduced the :mod:`!sets` module.  C implementations of set data
 types have now been added to the Python core as two new built-in types,
 ``set(iterable)`` and ``frozenset(iterable)``.  They provide high speed
 operations for membership testing, for eliminating duplicates from sequences,
@@ -72,8 +72,8 @@ The :func:`frozenset` type is an immutable version of :func:`set`. Since it is
 immutable and hashable, it may be used as a dictionary key or as a member of
 another set.
 
-The :mod:`sets` module remains in the standard library, and may be useful if you
-wish to subclass the :class:`Set` or :class:`ImmutableSet` classes.  There are
+The :mod:`!sets` module remains in the standard library, and may be useful if you
+wish to subclass the :class:`!Set` or :class:`!ImmutableSet` classes.  There are
 currently no plans to deprecate the module.
 
 
@@ -189,7 +189,7 @@ aren't aware of the Python language.  The format string's syntax is complicated
 to explain to such users, and if they make a mistake, it's difficult to provide
 helpful feedback to them.
 
-PEP 292 adds a :class:`Template` class to the :mod:`string` module that uses
+PEP 292 adds a :class:`~string.Template` class to the :mod:`string` module that uses
 ``$`` to indicate a substitution::
 
    >>> import string
@@ -197,9 +197,9 @@ PEP 292 adds a :class:`Template` class to the :mod:`string` module that uses
    >>> t.substitute({'page':2, 'title': 'The Best of Times'})
    '2: The Best of Times'
 
-If a key is missing from the dictionary, the :meth:`substitute` method will
-raise a :exc:`KeyError`.  There's also a :meth:`safe_substitute` method that
-ignores missing keys::
+If a key is missing from the dictionary, the :meth:`~string.Template.substitute`
+method will raise a :exc:`KeyError`.  There's also a
+:meth:`~string.Template.safe_substitute` method that ignores missing keys::
 
    >>> t = string.Template('$page: $title')
    >>> t.safe_substitute({'page':3})
@@ -430,14 +430,14 @@ The constructor has a number of handy options:
 * *universal_newlines* opens the child's input and output using Python's
   :term:`universal newlines` feature.
 
-Once you've created the :class:`Popen` instance,  you can call its :meth:`wait`
-method to pause until the subprocess has exited, :meth:`poll` to check if it's
+Once you've created the :class:`~subprocess.Popen` instance, you can call its :meth:`~subprocess.Popen.wait`
+method to pause until the subprocess has exited, :meth:`~subprocess.Popen.poll` to check if it's
 exited without pausing,  or ``communicate(data)`` to send the string *data*
 to the subprocess's standard input.   ``communicate(data)``  then reads any
 data that the subprocess has sent to its standard output  or standard error,
 returning a tuple ``(stdout_data, stderr_data)``.
 
-:func:`call` is a shortcut that passes its arguments along to the :class:`Popen`
+:func:`~subprocess.call` is a shortcut that passes its arguments along to the :class:`~subprocess.Popen`
 constructor, waits for the command to complete, and returns the status code of
 the subprocess.  It can serve as a safer analog to :func:`os.system`::
 
@@ -476,7 +476,7 @@ Python has always supported floating-point (FP) numbers, based on the underlying
 C :c:expr:`double` type, as a data type.  However, while most programming
 languages provide a floating-point type, many people (even programmers) are
 unaware that floating-point numbers don't represent certain decimal fractions
-accurately.  The new :class:`Decimal` type can represent these fractions
+accurately.  The new :class:`~decimal.Decimal` type can represent these fractions
 accurately, up to a user-specified precision limit.
 
 
@@ -531,20 +531,20 @@ decimal places, the error is never apparent.  However, for applications where it
 does matter,  it's a lot of work to implement your own custom arithmetic
 routines.
 
-Hence, the :class:`Decimal` type was created.
+Hence, the :class:`~decimal.Decimal` type was created.
 
 
-The :class:`Decimal` type
--------------------------
+The :class:`~decimal.Decimal` type
+----------------------------------
 
 A new module, :mod:`decimal`, was added to Python's standard library.  It
-contains two classes, :class:`Decimal` and :class:`Context`.  :class:`Decimal`
-instances represent numbers, and :class:`Context` instances are used to wrap up
+contains two classes, :class:`~decimal.Decimal` and :class:`~decimal.Context`.  :class:`~decimal.Decimal`
+instances represent numbers, and :class:`~decimal.Context` instances are used to wrap up
 various settings such as the precision and default rounding mode.
 
-:class:`Decimal` instances are immutable, like regular Python integers and FP
+:class:`~decimal.Decimal` instances are immutable, like regular Python integers and FP
 numbers; once it's been created, you can't change the value an instance
-represents.  :class:`Decimal` instances can be created from integers or
+represents.  :class:`~decimal.Decimal` instances can be created from integers or
 strings::
 
    >>> import decimal
@@ -567,7 +567,7 @@ number representing 1.1 turn into the decimal number for exactly 1.1, or for 1.1
 plus whatever inaccuracies are introduced? The decision was to dodge the issue
 and leave such a conversion out of the API.  Instead, you should convert the
 floating-point number into a string using the desired precision and pass the
-string to the :class:`Decimal` constructor::
+string to the :class:`~decimal.Decimal` constructor::
 
    >>> f = 1.1
    >>> decimal.Decimal(str(f))
@@ -575,7 +575,7 @@ string to the :class:`Decimal` constructor::
    >>> decimal.Decimal('%.12f' % f)
    Decimal("1.100000000000")
 
-Once you have :class:`Decimal` instances, you can perform the usual mathematical
+Once you have :class:`~decimal.Decimal` instances, you can perform the usual mathematical
 operations on them.  One limitation: exponentiation requires an integer
 exponent::
 
@@ -596,7 +596,7 @@ exponent::
      ...
    decimal.InvalidOperation: x ** (non-integer)
 
-You can combine :class:`Decimal` instances with integers, but not with
+You can combine :class:`~decimal.Decimal` instances with integers, but not with
 floating-point numbers::
 
    >>> a + 4
@@ -607,11 +607,11 @@ floating-point numbers::
    TypeError: You can interact Decimal only with int, long or Decimal data types.
    >>>
 
-:class:`Decimal` numbers can be used with the :mod:`math` and :mod:`cmath`
+:class:`~decimal.Decimal` numbers can be used with the :mod:`math` and :mod:`cmath`
 modules, but note that they'll be immediately converted to  floating-point
 numbers before the operation is performed, resulting in a possible loss of
 precision and accuracy.  You'll also get back a regular floating-point number
-and not a :class:`Decimal`.   ::
+and not a :class:`~decimal.Decimal`. ::
 
    >>> import math, cmath
    >>> d = decimal.Decimal('123456789012.345')
@@ -620,32 +620,33 @@ and not a :class:`Decimal`.   ::
    >>> cmath.sqrt(-d)
    351364.18288201344j
 
-:class:`Decimal` instances have a :meth:`sqrt` method that returns a
-:class:`Decimal`, but if you need other things such as trigonometric functions
+:class:`~decimal.Decimal` instances have a :meth:`~decimal.Decimal.sqrt` method that returns a
+:class:`~decimal.Decimal`, but if you need other things such as trigonometric functions
 you'll have to implement them. ::
 
    >>> d.sqrt()
    Decimal("351364.1828820134592177245001")
 
 
-The :class:`Context` type
--------------------------
+The :class:`~decimal.Context` type
+----------------------------------
 
-Instances of the :class:`Context` class encapsulate several settings for
+Instances of the :class:`~decimal.Context` class encapsulate several settings for
 decimal operations:
 
-* :attr:`prec` is the precision, the number of decimal places.
+* :attr:`~decimal.Context.prec` is the precision, the number of decimal places.
 
-* :attr:`rounding` specifies the rounding mode.  The :mod:`decimal` module has
-  constants for the various possibilities: :const:`ROUND_DOWN`,
-  :const:`ROUND_CEILING`,  :const:`ROUND_HALF_EVEN`, and various others.
+* :attr:`~decimal.Context.rounding` specifies the rounding mode.  The
+  :mod:`decimal` module has constants for the various possibilities:
+  :const:`~decimal.ROUND_DOWN`, :const:`~decimal.ROUND_CEILING`,
+  :const:`~decimal.ROUND_HALF_EVEN`, and various others.
 
-* :attr:`traps` is a dictionary specifying what happens on encountering certain
+* :attr:`~decimal.Context.traps` is a dictionary specifying what happens on encountering certain
   error conditions: either  an exception is raised or  a value is returned.  Some
   examples of error conditions are division by zero, loss of precision, and
   overflow.
 
-There's a thread-local default context available by calling :func:`getcontext`;
+There's a thread-local default context available by calling :func:`~decimal.getcontext`;
 you can change the properties of this context to alter the default precision,
 rounding, or trap handling.  The following example shows the effect of changing
 the precision of the default context::
@@ -671,8 +672,8 @@ raised::
    Decimal("Infinity")
    >>>
 
-The :class:`Context` instance also has various methods for formatting  numbers
-such as :meth:`to_eng_string` and :meth:`to_sci_string`.
+The :class:`~decimal.Context` instance also has various methods for formatting numbers
+such as :meth:`~decimal.Context.to_eng_string` and :meth:`~decimal.Context.to_sci_string`.
 
 For more information, see the documentation for the :mod:`decimal` module, which
 includes a quick-start tutorial and a reference.
@@ -740,7 +741,7 @@ display conventions that are localized to a particular country or language.
 However, the module was careful to not change the numeric locale because various
 functions in Python's implementation required that the numeric locale remain set
 to the ``'C'`` locale.  Often this was because the code was using the C
-library's :c:func:`atof` function.
+library's :c:func:`!atof` function.
 
 Not setting the numeric locale caused trouble for extensions that used third-party
 C libraries, however, because they wouldn't have the correct locale set.
@@ -793,11 +794,11 @@ Here are all of the changes that Python 2.4 makes to the core Python language.
   :class:`dict` constructor.  This includes any mapping, any iterable of key/value
   pairs, and keyword arguments. (Contributed by Raymond Hettinger.)
 
-* The string methods :meth:`ljust`, :meth:`rjust`, and :meth:`center` now take
+* The string methods :meth:`~str.ljust`, :meth:`~str.rjust`, and :meth:`~str.center` now take
   an optional argument for specifying a fill character other than a space.
   (Contributed by Raymond Hettinger.)
 
-* Strings also gained an :meth:`rsplit` method that works like the :meth:`split`
+* Strings also gained an :meth:`~str.rsplit` method that works like the :meth:`~str.split`
   method but splits from the end of the string.   (Contributed by Sean
   Reifschneider.) ::
 
@@ -807,13 +808,13 @@ Here are all of the changes that Python 2.4 makes to the core Python language.
      ['www.python', 'org']
 
 * Three keyword parameters, *cmp*, *key*, and *reverse*, were added to the
-  :meth:`sort` method of lists. These parameters make some common usages of
-  :meth:`sort` simpler. All of these parameters are optional.
+  :meth:`~list.sort` method of lists. These parameters make some common usages of
+  :meth:`~list.sort` simpler. All of these parameters are optional.
 
   For the *cmp* parameter, the value should be a comparison function that takes
   two parameters and returns -1, 0, or +1 depending on how the parameters compare.
   This function will then be used to sort the list.  Previously this was the only
-  parameter that could be provided to :meth:`sort`.
+  parameter that could be provided to :meth:`~list.sort`.
 
   *key* should be a single-parameter function that takes a list element and
   returns a comparison key for the element.  The list is then sorted using the
@@ -834,9 +835,9 @@ Here are all of the changes that Python 2.4 makes to the core Python language.
 
   The last example, which uses the *cmp* parameter, is the old way to perform a
   case-insensitive sort.  It works but is slower than using a *key* parameter.
-  Using *key* calls :meth:`lower` method once for each element in the list while
+  Using *key* calls :meth:`~str.lower` method once for each element in the list while
   using *cmp* will call it twice for each comparison, so using *key* saves on
-  invocations of the :meth:`lower` method.
+  invocations of the :meth:`~str.lower` method.
 
   For simple key functions and comparison functions, it is often possible to avoid
   a :keyword:`lambda` expression by using an unbound method instead.  For example,
@@ -856,7 +857,7 @@ Here are all of the changes that Python 2.4 makes to the core Python language.
   age, resulting in a list sorted by age where people with the same age are in
   name-sorted order.
 
-  (All changes to :meth:`sort` contributed by Raymond Hettinger.)
+  (All changes to :meth:`~list.sort` contributed by Raymond Hettinger.)
 
 * There is a new built-in function ``sorted(iterable)`` that works like the
   in-place :meth:`list.sort` method but can be used in expressions.  The
@@ -891,8 +892,8 @@ Here are all of the changes that Python 2.4 makes to the core Python language.
 
   (Contributed by Raymond Hettinger.)
 
-* Integer operations will no longer trigger an :exc:`OverflowWarning`. The
-  :exc:`OverflowWarning` warning will disappear in Python 2.5.
+* Integer operations will no longer trigger an :exc:`!OverflowWarning`. The
+  :exc:`!OverflowWarning` warning will disappear in Python 2.5.
 
 * The interpreter gained a new switch, :option:`-m`, that takes a name, searches
   for the corresponding  module on ``sys.path``, and runs the module as a script.
@@ -904,7 +905,7 @@ Here are all of the changes that Python 2.4 makes to the core Python language.
   for the *locals* parameter.  Previously this had to be a regular Python
   dictionary.  (Contributed by Raymond Hettinger.)
 
-* The :func:`zip` built-in function and :func:`itertools.izip` now return an
+* The :func:`zip` built-in function and :func:`!itertools.izip` now return an
   empty list if called with no arguments. Previously they raised a
   :exc:`TypeError` exception.  This makes them more suitable for use with variable
   length argument lists::
@@ -935,8 +936,8 @@ Optimizations
 
 * The inner loops for list and tuple slicing were optimized and now run about
   one-third faster.  The inner loops for dictionaries were also optimized,
-  resulting in performance boosts for :meth:`keys`, :meth:`values`, :meth:`items`,
-  :meth:`iterkeys`, :meth:`itervalues`, and :meth:`iteritems`. (Contributed by
+  resulting in performance boosts for :meth:`~dict.keys`, :meth:`~dict.values`, :meth:`~dict.items`,
+  :meth:`!iterkeys`, :meth:`!itervalues`, and :meth:`!iteritems`. (Contributed by
   Raymond Hettinger.)
 
 * The machinery for growing and shrinking lists was optimized for speed and for
@@ -948,11 +949,11 @@ Optimizations
 
 * :func:`list`, :func:`tuple`, :func:`map`, :func:`filter`, and :func:`zip` now
   run several times faster with non-sequence arguments that supply a
-  :meth:`__len__` method.  (Contributed by Raymond Hettinger.)
+  :meth:`~object.__len__` method.  (Contributed by Raymond Hettinger.)
 
-* The methods :meth:`list.__getitem__`, :meth:`dict.__getitem__`, and
-  :meth:`dict.__contains__` are now implemented as :class:`method_descriptor`
-  objects rather than :class:`wrapper_descriptor` objects.  This form of  access
+* The methods :meth:`!list.__getitem__`, :meth:`!dict.__getitem__`, and
+  :meth:`!dict.__contains__` are now implemented as :class:`!method_descriptor`
+  objects rather than :class:`!wrapper_descriptor` objects.  This form of access
   doubles their performance and makes them more suitable for use as arguments to
   functionals: ``map(mydict.__getitem__, keylist)``. (Contributed by Raymond
   Hettinger.)
@@ -968,7 +969,7 @@ Optimizations
 * String concatenations in statements of the form ``s = s + "abc"`` and ``s +=
   "abc"`` are now performed more efficiently in certain circumstances.  This
   optimization won't be present in other Python implementations such as Jython, so
-  you shouldn't rely on it; using the :meth:`join` method of strings is still
+  you shouldn't rely on it; using the :meth:`~str.join` method of strings is still
   recommended when you want to efficiently glue a large number of strings
   together. (Contributed by Armin Rigo.)
 
@@ -1023,13 +1024,13 @@ complete list of changes, or look through the CVS logs for all the details.
   PCTP-154, and TIS-620.
 
 * The UTF-8 and UTF-16 codecs now cope better with receiving partial input.
-  Previously the :class:`StreamReader` class would try to read more data, making
-  it impossible to resume decoding from the stream.  The :meth:`read` method will
+  Previously the :class:`~codecs.StreamReader` class would try to read more data, making
+  it impossible to resume decoding from the stream.  The :meth:`~codecs.StreamReader.read` method will
   now return as much data as it can and future calls will resume decoding where
   previous ones left off.  (Implemented by Walter Dörwald.)
 
 * There is a new :mod:`collections` module for  various specialized collection
-  datatypes.  Currently it contains just one type, :class:`deque`, a double-ended
+  datatypes.  Currently it contains just one type, :class:`~collections.deque`, a double-ended
   queue that supports efficiently adding and removing elements from either
   end::
 
@@ -1048,7 +1049,7 @@ complete list of changes, or look through the CVS logs for all the details.
      >>> 'h' in d                # search the deque
      True
 
-  Several modules, such as the :mod:`Queue` and :mod:`threading` modules, now take
+  Several modules, such as the :mod:`queue` and :mod:`threading` modules, now take
   advantage of :class:`collections.deque` for improved performance.  (Contributed
   by Raymond Hettinger.)
 
@@ -1058,49 +1059,49 @@ complete list of changes, or look through the CVS logs for all the details.
   isn't a string.   (Contributed by John Belmonte and David Goodger.)
 
 * The :mod:`curses` module now supports the ncurses extension
-  :func:`use_default_colors`.  On platforms where the terminal supports
+  :func:`~curses.use_default_colors`.  On platforms where the terminal supports
   transparency, this makes it possible to use a transparent background.
   (Contributed by Jörg Lehmann.)
 
-* The :mod:`difflib` module now includes an :class:`HtmlDiff` class that creates
+* The :mod:`difflib` module now includes an :class:`~difflib.HtmlDiff` class that creates
   an HTML table showing a side by side comparison of two versions of a text.
   (Contributed by Dan Gass.)
 
 * The :mod:`email` package was updated to version 3.0,  which dropped various
   deprecated APIs and removes support for Python versions earlier than 2.3.  The
   3.0 version of the package uses a new incremental parser for MIME messages,
-  available in the :mod:`email.FeedParser` module.  The new parser doesn't require
+  available in the :mod:`!email.FeedParser` module.  The new parser doesn't require
   reading the entire message into memory, and doesn't raise exceptions if a
-  message is malformed; instead it records any problems in the  :attr:`defect`
+  message is malformed; instead it records any problems in the :attr:`!defect`
   attribute of the message.  (Developed by Anthony Baxter, Barry Warsaw, Thomas
   Wouters, and others.)
 
 * The :mod:`heapq` module has been converted to C.  The resulting tenfold
   improvement in speed makes the module suitable for handling high volumes of
-  data.  In addition, the module has two new functions :func:`nlargest` and
-  :func:`nsmallest` that use heaps to find the N largest or smallest values in a
+  data.  In addition, the module has two new functions :func:`~heapq.nlargest` and
+  :func:`~heapq.nsmallest` that use heaps to find the N largest or smallest values in a
   dataset without the expense of a full sort.  (Contributed by Raymond Hettinger.)
 
 * The :mod:`httplib <http>` module now contains constants for HTTP status codes defined
   in various HTTP-related RFC documents.  Constants have names such as
-  :const:`OK`, :const:`CREATED`, :const:`CONTINUE`, and
-  :const:`MOVED_PERMANENTLY`; use pydoc to get a full list.  (Contributed by
+  :const:`!OK`, :const:`!CREATED`, :const:`!CONTINUE`, and
+  :const:`!MOVED_PERMANENTLY`; use pydoc to get a full list.  (Contributed by
   Andrew Eland.)
 
 * The :mod:`imaplib` module now supports IMAP's THREAD command (contributed by
-  Yves Dionne) and new :meth:`deleteacl` and :meth:`myrights` methods (contributed
-  by Arnaud Mazin).
+  Yves Dionne) and new :meth:`~imaplib.IMAP4.deleteacl` and
+  :meth:`~imaplib.IMAP4.myrights` methods (contributed by Arnaud Mazin).
 
 * The :mod:`itertools` module gained a ``groupby(iterable[, *func*])``
   function. *iterable* is something that can be iterated over to return a stream
   of elements, and the optional *func* parameter is a function that takes an
   element and returns a key value; if omitted, the key is simply the element
-  itself.  :func:`groupby` then groups the elements into subsequences which have
+  itself.  :func:`~itertools.groupby` then groups the elements into subsequences which have
   matching values of the key, and returns a series of 2-tuples containing the key
   value and an iterator over the subsequence.
 
   Here's an example to make this clearer.  The *key* function simply returns
-  whether a number is even or odd, so the result of :func:`groupby` is to return
+  whether a number is even or odd, so the result of :func:`~itertools.groupby` is to return
   consecutive runs of odd or even numbers. ::
 
      >>> import itertools
@@ -1115,8 +1116,8 @@ complete list of changes, or look through the CVS logs for all the details.
      0 [12, 14]
      >>>
 
-  :func:`groupby` is typically used with sorted input.  The logic for
-  :func:`groupby` is similar to the Unix ``uniq`` filter which makes it handy for
+  :func:`~itertools.groupby` is typically used with sorted input.  The logic for
+  :func:`~itertools.groupby` is similar to the Unix ``uniq`` filter which makes it handy for
   eliminating, counting, or identifying duplicate elements::
 
      >>> word = 'abracadabra'
@@ -1153,22 +1154,22 @@ complete list of changes, or look through the CVS logs for all the details.
      >>> list(i2)               # Run the second iterator to exhaustion
      [1, 2, 3]
 
-  Note that :func:`tee` has to keep copies of the values returned  by the
+  Note that :func:`~itertools.tee` has to keep copies of the values returned by the
   iterator; in the worst case, it may need to keep all of them.   This should
   therefore be used carefully if the leading iterator can run far ahead of the
   trailing iterator in a long stream of inputs. If the separation is large, then
   you might as well use  :func:`list` instead.  When the iterators track closely
-  with one another, :func:`tee` is ideal.  Possible applications include
+  with one another, :func:`~itertools.tee` is ideal.  Possible applications include
   bookmarking, windowing, or lookahead iterators. (Contributed by Raymond
   Hettinger.)
 
 * A number of functions were added to the :mod:`locale`  module, such as
-  :func:`bind_textdomain_codeset` to specify a particular encoding and a family of
+  :func:`~locale.bind_textdomain_codeset` to specify a particular encoding and a family of
   :func:`!l\*gettext` functions that return messages in the chosen encoding.
   (Contributed by Gustavo Niemeyer.)
 
 * Some keyword arguments were added to the :mod:`logging` package's
-  :func:`basicConfig` function to simplify log configuration.  The default
+  :func:`~logging.basicConfig` function to simplify log configuration.  The default
   behavior is to log messages to standard error, but various keyword arguments can
   be specified to log to a particular file, change the logging format, or set the
   logging level. For example::
@@ -1179,10 +1180,10 @@ complete list of changes, or look through the CVS logs for all the details.
          format='%(levelname):%(process):%(thread):%(message)')
 
   Other additions to the :mod:`logging` package include a ``log(level, msg)``
-  convenience method, as well as a :class:`TimedRotatingFileHandler` class that
+  convenience method, as well as a :class:`~logging.handlers.TimedRotatingFileHandler` class that
   rotates its log files at a timed interval.  The module already had
-  :class:`RotatingFileHandler`, which rotated logs once the file exceeded a
-  certain size.  Both classes derive from a new :class:`BaseRotatingHandler` class
+  :class:`~logging.handlers.RotatingFileHandler`, which rotated logs once the file exceeded a
+  certain size.  Both classes derive from a new :class:`~logging.handlers.BaseRotatingHandler` class
   that can be used to implement other rotating handlers.
 
   (Changes implemented by Vinay Sajip.)
@@ -1192,8 +1193,8 @@ complete list of changes, or look through the CVS logs for all the details.
   effect is to make :file:`.pyc` files significantly smaller. (Contributed by
   Martin von Löwis.)
 
-* The :mod:`!nntplib` module's :class:`NNTP` class gained :meth:`description` and
-  :meth:`descriptions` methods to retrieve  newsgroup descriptions for a single
+* The :mod:`!nntplib` module's :class:`!NNTP` class gained :meth:`!description` and
+  :meth:`!descriptions` methods to retrieve newsgroup descriptions for a single
   group or for a range of groups. (Contributed by Jürgen A. Erhard.)
 
 * Two new functions were added to the :mod:`operator` module,
@@ -1235,7 +1236,7 @@ complete list of changes, or look through the CVS logs for all the details.
   *path* is a symlink that points to a destination that doesn't exist.
   (Contributed by Beni Cherniavsky.)
 
-* A new :func:`getsid` function was added to the :mod:`posix` module that
+* A new :func:`~os.getsid` function was added to the :mod:`posix` module that
   underlies the :mod:`os` module. (Contributed by J. Raynor.)
 
 * The :mod:`poplib` module now supports POP over SSL.  (Contributed by Hector
@@ -1245,8 +1246,8 @@ complete list of changes, or look through the CVS logs for all the details.
   by Nick Bastin.)
 
 * The :mod:`random` module has a new method called ``getrandbits(N)`` that
-  returns a long integer *N* bits in length.  The existing :meth:`randrange`
-  method now uses :meth:`getrandbits` where appropriate, making generation of
+  returns a long integer *N* bits in length.  The existing :meth:`~random.randrange`
+  method now uses :meth:`~random.getrandbits` where appropriate, making generation of
   arbitrarily large random numbers more efficient.  (Contributed by Raymond
   Hettinger.)
 
@@ -1269,24 +1270,24 @@ complete list of changes, or look through the CVS logs for all the details.
 
 * The :mod:`signal` module now performs tighter error-checking on the parameters
   to the :func:`signal.signal` function.  For example, you can't set a handler on
-  the :const:`SIGKILL` signal; previous versions of Python would quietly accept
+  the :const:`~signal.SIGKILL` signal; previous versions of Python would quietly accept
   this, but 2.4 will raise a :exc:`RuntimeError` exception.
 
-* Two new functions were added to the :mod:`socket` module. :func:`socketpair`
+* Two new functions were added to the :mod:`socket` module. :func:`~socket.socketpair`
   returns a pair of connected sockets and ``getservbyport(port)`` looks up the
   service name for a given port number. (Contributed by Dave Cole and Barry
   Warsaw.)
 
-* The :func:`sys.exitfunc` function has been deprecated.  Code should be using
+* The :func:`!sys.exitfunc` function has been deprecated.  Code should be using
   the existing :mod:`atexit` module, which correctly handles calling multiple exit
-  functions.  Eventually :func:`sys.exitfunc` will become a purely internal
+  functions.  Eventually :func:`!sys.exitfunc` will become a purely internal
   interface, accessed only by :mod:`atexit`.
 
 * The :mod:`tarfile` module now generates GNU-format tar files by default.
   (Contributed by Lars Gustäbel.)
 
 * The :mod:`threading` module now has an elegantly simple way to support
-  thread-local data.  The module contains a :class:`local` class whose attribute
+  thread-local data.  The module contains a :class:`~threading.local` class whose attribute
   values are local to different threads. ::
 
      import threading
@@ -1295,8 +1296,8 @@ complete list of changes, or look through the CVS logs for all the details.
      data.number = 42
      data.url = ('www.python.org', 80)
 
-  Other threads can assign and retrieve their own values for the :attr:`number`
-  and :attr:`url` attributes.  You can subclass :class:`local` to initialize
+  Other threads can assign and retrieve their own values for the :attr:`!number`
+  and :attr:`!url` attributes.  You can subclass :class:`~threading.local` to initialize
   attributes or to add methods. (Contributed by Jim Fulton.)
 
 * The :mod:`timeit` module now automatically disables periodic garbage
@@ -1312,7 +1313,7 @@ complete list of changes, or look through the CVS logs for all the details.
   transmitting multiple XML-RPC calls in a single HTTP operation. (Contributed by
   Brian Quinlan.)
 
-* The :mod:`mpz`, :mod:`rotor`, and :mod:`xreadlines` modules have  been
+* The :mod:`!mpz`, :mod:`!rotor`, and :mod:`!xreadlines` modules have been
   removed.
 
 .. ======================================================================
@@ -1336,7 +1337,7 @@ use the Mozilla or Lynx cookie files, and one that stores cookies in the same
 format as the Perl libwww library.
 
 :mod:`urllib2 <urllib.request>` has been changed to interact with :mod:`cookielib <http.cookiejar>`:
-:class:`HTTPCookieProcessor` manages a cookie jar that is used when accessing
+:class:`~urllib.request.HTTPCookieProcessor` manages a cookie jar that is used when accessing
 URLs.
 
 This module was contributed by John J. Lee.
@@ -1352,7 +1353,7 @@ Loper and Tim Peters.  Testing can still be as simple as running
 :func:`doctest.testmod`, but the refactorings allow customizing the module's
 operation in various ways
 
-The new :class:`DocTestFinder` class extracts the tests from a given  object's
+The new :class:`~doctest.DocTestFinder` class extracts the tests from a given object's
 docstrings::
 
    def f (x, y):
@@ -1368,7 +1369,7 @@ docstrings::
    # Get list of DocTest instances
    tests = finder.find(f)
 
-The new :class:`DocTestRunner` class then runs individual tests and can produce
+The new :class:`~doctest.DocTestRunner` class then runs individual tests and can produce
 a summary of the results::
 
    runner = doctest.DocTestRunner()
@@ -1385,10 +1386,10 @@ The above example produces the following output::
    2 passed and 0 failed.
    Test passed.
 
-:class:`DocTestRunner` uses an instance of the :class:`OutputChecker` class to
+:class:`~doctest.DocTestRunner` uses an instance of the :class:`~doctest.OutputChecker` class to
 compare the expected output with the actual output.  This class takes a number
 of different flags that customize its behaviour; ambitious users can also write
-a completely new subclass of :class:`OutputChecker`.
+a completely new subclass of :class:`~doctest.OutputChecker`.
 
 The default output checker provides a number of handy features. For example,
 with the :const:`doctest.ELLIPSIS` option flag, an ellipsis (``...``) in the
@@ -1465,7 +1466,7 @@ Some of the changes to Python's build process and to the C API are:
   lookups without masking exceptions raised during the look-up process.
   (Contributed by Raymond Hettinger.)
 
-* The :c:expr:`Py_IS_NAN(X)` macro returns 1 if  its float or double argument
+* The :c:macro:`Py_IS_NAN` macro returns 1 if its float or double argument
   *X* is a NaN.   (Contributed by Tim Peters.)
 
 * C code can avoid unnecessary locking by using the new
@@ -1479,7 +1480,7 @@ Some of the changes to Python's build process and to the C API are:
 
 * A new method flag, :c:macro:`METH_COEXIST`, allows a function defined in slots
   to co-exist with a :c:type:`PyCFunction` having the same name.  This can halve
-  the access time for a method such as :meth:`set.__contains__`.  (Contributed by
+  the access time for a method such as :meth:`!set.__contains__`.  (Contributed by
   Raymond Hettinger.)
 
 * Python can now be built with additional profiling for the interpreter itself,
@@ -1493,7 +1494,7 @@ Some of the changes to Python's build process and to the C API are:
   register".  (Contributed by Jeremy Hylton.)
 
 * The :c:type:`!tracebackobject` type has been renamed to
-  :c:type:`PyTracebackObject`.
+  :c:type:`!PyTracebackObject`.
 
 .. ======================================================================
 
@@ -1517,14 +1518,14 @@ code:
   trigger a :exc:`FutureWarning` and return  a value limited to 32 or 64 bits;
   instead they return a long integer.
 
-* Integer operations will no longer trigger an :exc:`OverflowWarning`. The
-  :exc:`OverflowWarning` warning will disappear in Python 2.5.
+* Integer operations will no longer trigger an :exc:`!OverflowWarning`. The
+  :exc:`!OverflowWarning` warning will disappear in Python 2.5.
 
-* The :func:`zip` built-in function and :func:`itertools.izip` now return  an
+* The :func:`zip` built-in function and :func:`!itertools.izip` now return an
   empty list instead of raising a :exc:`TypeError` exception if called with no
   arguments.
 
-* You can no longer compare the :class:`date` and :class:`~datetime.datetime` instances
+* You can no longer compare the :class:`~datetime.date` and :class:`~datetime.datetime` instances
   provided by the :mod:`datetime` module.  Two  instances of different classes
   will now always be unequal, and  relative comparisons (``<``, ``>``) will raise
   a :exc:`TypeError`.
@@ -1532,7 +1533,8 @@ code:
 * :func:`!dircache.listdir` now passes exceptions to the caller instead of
   returning empty lists.
 
-* :func:`LexicalHandler.startDTD` used to receive the public and system IDs in
+* :meth:`LexicalHandler.startDTD <xml.sax.handler.LexicalHandler.startDTD>`
+  used to receive the public and system IDs in
   the wrong order.  This has been corrected; applications relying on the wrong
   order need to be fixed.
 
@@ -1547,9 +1549,9 @@ code:
 * :const:`None` is now a constant; code that binds a new value to  the name
   ``None`` is now a syntax error.
 
-* The :func:`signals.signal` function now raises a :exc:`RuntimeError` exception
+* The :func:`signal.signal` function now raises a :exc:`RuntimeError` exception
   for certain illegal values; previously these errors would pass silently.  For
-  example, you can no longer set a handler on the :const:`SIGKILL` signal.
+  example, you can no longer set a handler on the :const:`~signal.SIGKILL` signal.
 
 .. ======================================================================
 

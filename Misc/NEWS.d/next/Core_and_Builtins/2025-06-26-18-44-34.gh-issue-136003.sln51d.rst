@@ -1,3 +1,0 @@
-Fix :class:`threading.Thread` objects becoming incorrectly daemon when
-created from an :mod:`atexit` callback or a pending call
-(:c:func:`Py_AddPendingCall`).

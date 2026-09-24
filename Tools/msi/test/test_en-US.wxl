@@ -1,7 +1,0 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<WixLocalization Culture="en-us" xmlns="http://schemas.microsoft.com/wix/2006/localization">
-    <String Id="Descriptor">Test Suite</String>
-    <String Id="ShortDescriptor">test</String>
-    <String Id="NativeModulesTitle">!(loc.FullProductName) native libtest</String>
-    <String Id="NativeModulesDescription">!(loc.ProductName) Native Test Modules</String>
-</WixLocalization>

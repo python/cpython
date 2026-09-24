@@ -1,5 +1,0 @@
-When a new tracing function is registered with
-:c:func:`PyRefTracer_SetTracer`,  replacing the current a call to the trace
-function will be made with the object set to **NULL** and **event** set to
-:c:data:`PyRefTracer_TRACKER_REMOVED`. This will happen just before the new
-function is registered. Patch by Pablo Galindo

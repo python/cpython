@@ -1,0 +1,2 @@
+Fix data races when setting attributes of function objects
+on the :term:`free threaded <free threading>` build.

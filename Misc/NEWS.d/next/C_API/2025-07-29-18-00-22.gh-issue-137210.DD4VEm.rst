@@ -1,3 +1,0 @@
-Add API for checking an extension module's ABI compatibility:
-:c:data:`Py_mod_abi`, :c:func:`PyABIInfo_Check`, :c:macro:`PyABIInfo_VAR`
-and :c:data:`Py_mod_abi`.

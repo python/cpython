@@ -1,8 +1,6 @@
 #include "parts.h"
 #include "util.h"
 
-#include "monitoring.h"
-
 #define Py_BUILD_CORE
 #include "internal/pycore_instruments.h"
 

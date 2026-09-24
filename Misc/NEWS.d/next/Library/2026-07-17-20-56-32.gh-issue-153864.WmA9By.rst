@@ -1,0 +1,3 @@
+On a wide :mod:`curses` build, :meth:`curses.window.insch` now inserts a
+non-ASCII byte as the character it encodes in the window's encoding,
+consistently with :meth:`~curses.window.addch`, instead of its code point.

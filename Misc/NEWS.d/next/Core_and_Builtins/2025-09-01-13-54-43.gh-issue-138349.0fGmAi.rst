@@ -1,2 +1,0 @@
-Fix crash in certain cases where a module contains both a module-level
-annotation and a comprehension.

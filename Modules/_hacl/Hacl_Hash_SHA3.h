@@ -23,8 +23,8 @@
  */
 
 
-#ifndef __Hacl_Hash_SHA3_H
-#define __Hacl_Hash_SHA3_H
+#ifndef Hacl_Hash_SHA3_H
+#define Hacl_Hash_SHA3_H
 
 #if defined(__cplusplus)
 extern "C" {
@@ -155,5 +155,5 @@ Hacl_Hash_SHA3_shake128_squeeze_nblocks(
 }
 #endif
 
-#define __Hacl_Hash_SHA3_H_DEFINED
-#endif
+#define Hacl_Hash_SHA3_H_DEFINED
+#endif /* Hacl_Hash_SHA3_H */

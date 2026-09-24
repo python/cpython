@@ -44,8 +44,8 @@ class InteractiveInterpreter:
         One of several things can happen:
 
         1) The input is incorrect; compile_command() raised an
-        exception (SyntaxError or OverflowError).  A syntax traceback
-        will be printed by calling the showsyntaxerror() method.
+        exception (usually SyntaxError).  A syntax traceback will be
+        printed by calling the showsyntaxerror() method.
 
         2) The input is incomplete, and more input is required;
         compile_command() returned None.  Nothing happens.
@@ -62,7 +62,7 @@ class InteractiveInterpreter:
         """
         try:
             code = self.compile(source, filename, symbol)
-        except (OverflowError, SyntaxError, ValueError):
+        except Exception:
             # Case 1
             self.showsyntaxerror(filename, source=source)
             return False
@@ -385,7 +385,7 @@ def interact(banner=None, readfunc=None, local=None, exitmsg=None, local_exit=Fa
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(color=True)
+    parser = argparse.ArgumentParser()
     parser.add_argument('-q', action='store_true',
                        help="don't print version and copyright messages")
     args = parser.parse_args()
