@@ -104,10 +104,12 @@ Node classes
       generated the node. The UTF-8 offset is recorded because the parser uses
       UTF-8 internally.
 
-      The abstract grammar also says which of the four may be omitted: the end
-      positions are declared ``int?`` for the classes that predate them, and
-      ``int`` for :class:`ast.pattern` and :class:`ast.type_param`, which were
-      added afterwards.  The end offset is *after* the last symbol, for example
+      The end positions are optional on the classes that already existed when
+      they were added in Python 3.8, so that code written before then can still
+      build those nodes; a class added afterwards requires them.  The abstract
+      grammar spells this out, declaring the two fields ``int?`` in the first
+      case and ``int`` in the second.  The end offset is *after* the last
+      symbol, for example
       one can get the source segment of a one-line expression node using
       ``source_line[node.col_offset : node.end_col_offset]``.
 
