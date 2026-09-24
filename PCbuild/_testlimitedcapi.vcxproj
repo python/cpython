@@ -121,6 +121,7 @@
     <ClCompile Include="..\Modules\_testlimitedcapi\weakref.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\run.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\type.c" />
+    <ClCompile Include="..\Modules\_testlimitedcapi\hash.c" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\PC\python_nt.rc" />

@@ -26,6 +26,7 @@ extern int _Py_IsLocaleCoercionTarget(const char *ctype_loc);
 extern void _Py_InitVersion(void);
 extern PyStatus _PyFaulthandler_Init(int enable);
 extern PyObject * _PyBuiltin_Init(PyInterpreterState *interp);
+extern int _PyBuiltin_InitPythonFunctions(PyObject *dict);
 extern PyStatus _PySys_Create(
     PyThreadState *tstate,
     PyObject **sysmod_p);

@@ -184,6 +184,13 @@ ctypes
   through a function signature.
   (Contributed by Peter Bierma in :gh:`153903`.)
 
+* Added constants :const:`~ctypes.LIBFFI_VERSION`,
+  :const:`~ctypes.libffi_version`, :const:`~ctypes.LIBFFI_VERSION_INFO`
+  and :const:`~ctypes.libffi_version_info`, which provide information
+  about the version of the libffi library in use.
+  They are only available with libffi 3.5 or later.
+  (Contributed by Serhiy Storchaka in :gh:`157487`.)
+
 
 curses
 ------
@@ -566,6 +573,16 @@ symtable
   like the builtin :func:`compile`.
   (Contributed by Serhiy Storchaka in :gh:`153844`.)
 
+* Inlined list, set and dict comprehensions (:pep:`709`) are now represented
+  as their own symbol table entries, of type
+  :attr:`~symtable.SymbolTableType.INLINED_COMPREHENSION`. Each such entry is
+  a lexical child of the enclosing scope and records the comprehension's own
+  locals, cells, and free names. It does not correspond to a separate
+  compilation unit. For names loaded only inside an inlined list, set, or
+  dict comprehension, :meth:`symtable.Symbol.is_referenced` can now return
+  ``True`` on the enclosing function.
+  (Contributed by Irit Katriel in :gh:`124697`.)
+
 
 tkinter
 -------
@@ -694,6 +711,11 @@ tkinter
   ``parsedVarName`` objects to :class:`str`, and ``pixel`` screen distances
   with no unit suffix to :class:`int` or :class:`float`.
   (Contributed by Serhiy Storchaka in :gh:`153513`.)
+
+unicodedata
+-----------
+
+* The Unicode database has been updated to Unicode 18.0.0.
 
 xml
 ---
@@ -1072,7 +1094,8 @@ C API changes
 New features
 ------------
 
-* TODO
+* Add :c:func:`Py_HashBuffer` to the limited C API.
+  (Contributed by Victor Stinner in :gh:`148233`.)
 
 Porting to Python 3.16
 ----------------------
@@ -1117,6 +1140,10 @@ Deprecated C APIs
 
 Removed C APIs
 --------------
+
+* Remove :c:func:`!PyEval_InitThreads` function which did nothing since Python
+  3.7 and was deprecated since Python 3.9.
+  (Contributed by Victor Stinner in :gh:`154757`.)
 
 * The :c:var:`!PyUnstable_ExecutableKinds` array, as well as the macros
   :c:macro:`!PyUnstable_EXECUTABLE_KIND_SKIP`,

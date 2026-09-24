@@ -1095,24 +1095,11 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         self.check_all_configs("test_init_compat_config", api=API_COMPAT)
 
     def test_init_global_config(self):
+        # Test Py_UTF8Mode global configuration variable
         preconfig = {
             'utf8_mode': True,
         }
-        config = {
-            'site_import': False,
-            'bytes_warning': True,
-            'warnoptions': ['default::BytesWarning'],
-            'inspect': True,
-            'interactive': True,
-            'optimization_level': 2,
-            'write_bytecode': False,
-            'verbose': True,
-            'quiet': True,
-            'buffered_stdio': False,
-            'remote_debug': True,
-            'user_site_directory': False,
-            'pathconfig_warnings': False,
-        }
+        config = {}
         self.check_all_configs("test_init_global_config", config, preconfig,
                                api=API_COMPAT)
 
@@ -2113,6 +2100,10 @@ class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):
 
     def test_concurrent_finalization_stress(self):
         self.run_embedded_interpreter("test_concurrent_finalization_stress")
+
+    def test_py_getenv(self):
+        # Test Py_GETENV() before init, when initialized, and after finalize
+        self.run_embedded_interpreter("test_py_getenv")
 
 
 class MiscTests(EmbeddingTestsMixin, unittest.TestCase):

@@ -63,6 +63,8 @@ typedef struct _PyTok_Reader {
 
 struct tok_state;
 
+// On failure, the buffer and capacity are unchanged.
+int _PyTok_ReserveBuffer(char **, Py_ssize_t *, Py_ssize_t, Py_ssize_t);
 char *_PyTok_CopyBytes(const char *, Py_ssize_t);
 int _PyTok_DecodeOnce(
     struct tok_state *, _PyTok_Chunk *, const char *, const char *);

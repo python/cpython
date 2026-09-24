@@ -249,7 +249,7 @@ called with a non-bytes parameter.
 
    While bytes objects are usually immutable in Python, this special C API
    allows mutating a bytes object in-place. The returned bytes object can still
-   be mutated using :c:func:`PyBytesWriter_GetData`; except if *newsize* is
+   be mutated using :c:func:`PyBytes_AsString`; except if *newsize* is
    zero in which case it returns the immutable empty bytes string.
 
    .. soft-deprecated:: 3.15
@@ -305,8 +305,8 @@ object.
 
    A bytes writer object.
 
-   The API is **not thread safe**. A :c:type:`PyBytesWriter` object must only
-   be used by a single thread, it must not be shared between threads.
+   The API is **not thread safe**. To share a writer with multiple threads, a
+   critical section or a lock is needed.
 
    The instance must be destroyed by :c:func:`PyBytesWriter_Finish` on
    success, or :c:func:`PyBytesWriter_Discard` on error.

@@ -74,7 +74,9 @@ build applications which provide an interactive interpreter prompt.
 
    Returns a code object (the same as ``compile(source, filename, symbol)``) if the
    command is complete and valid; ``None`` if the command is incomplete; raises
-   :exc:`SyntaxError` if the command is complete and invalid.
+   :exc:`SyntaxError` if the command is complete and contains a syntax error, or
+   raises :exc:`OverflowError` or :exc:`ValueError` if the command contains an
+   invalid literal.
 
 
 .. _interpreter-objects:
@@ -89,8 +91,8 @@ Interactive Interpreter Objects
    :func:`compile_command`; the default for *filename* is ``'<input>'``, and for
    *symbol* is ``'single'``.  One of several things can happen:
 
-   * The input is incorrect; :func:`compile_command` raised
-     :exc:`SyntaxError`.  A syntax traceback will be
+   * The input is incorrect; :func:`compile_command` raised an exception
+     (usually :exc:`SyntaxError`).  A syntax traceback will be
      printed by calling the :meth:`showsyntaxerror` method.  :meth:`runsource`
      returns ``False``.
 
