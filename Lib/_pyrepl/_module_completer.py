@@ -224,7 +224,7 @@ class ModuleCompleter:
             if hasattr(imported_module, '__all__'): # Return __all__ directly
                 names = [
                     attr_name for attr_name in imported_module.__all__
-                    if attr_name.isidentifier()
+                    if attr_name.startswith(prefix) and attr_name.isidentifier()
                 ]
                 return names, imported_module, None
             else:
