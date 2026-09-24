@@ -1,0 +1,4 @@
+Fix a crash in debug builds, and a spurious :exc:`SystemError` or
+:exc:`UnicodeEncodeError` in release builds, when a DTrace or SystemTap
+probe fires for a module, function or file name that cannot be encoded to
+UTF-8.
