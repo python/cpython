@@ -6,7 +6,71 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
-#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+
+PyDoc_STRVAR(_interpreters_new_config__doc__,
+"new_config($module, name=\'isolated\', /, **overrides)\n"
+"--\n"
+"\n"
+"Return a representation of a new PyInterpreterConfig.\n"
+"\n"
+"The name determines the initial values of the config.  Supported named\n"
+"configs are: default, isolated, legacy, and empty.\n"
+"\n"
+"Any keyword arguments are set on the corresponding config fields,\n"
+"overriding the initial values.");
+
+#define _INTERPRETERS_NEW_CONFIG_METHODDEF    \
+    {"new_config", _PyCFunction_CAST(_interpreters_new_config), METH_VARARGS|METH_KEYWORDS, _interpreters_new_config__doc__},
+
+static PyObject *
+_interpreters_new_config_impl(PyObject *module, const char *name,
+                              PyObject *overrides);
+
+static PyObject *
+_interpreters_new_config(PyObject *module, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    const char *name = NULL;
+    PyObject *overrides = NULL;
+
+    if (!_PyArg_CheckPositional("new_config", PyTuple_GET_SIZE(args), 0, 1)) {
+        goto exit;
+    }
+    if (PyTuple_GET_SIZE(args) < 1) {
+        goto skip_optional;
+    }
+    if (!PyUnicode_Check(PyTuple_GET_ITEM(args, 0))) {
+        _PyArg_BadArgument("new_config", "argument 1", "str", PyTuple_GET_ITEM(args, 0));
+        goto exit;
+    }
+    Py_ssize_t name_length;
+    name = PyUnicode_AsUTF8AndSize(PyTuple_GET_ITEM(args, 0), &name_length);
+    if (name == NULL) {
+        goto exit;
+    }
+    if (strlen(name) != (size_t)name_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+skip_optional:
+    if (kwargs == NULL) {
+        overrides = PyDict_New();
+        if (overrides == NULL) {
+            goto exit;
+        }
+    }
+    else {
+        overrides = Py_NewRef(kwargs);
+    }
+    return_value = _interpreters_new_config_impl(module, name, overrides);
+
+exit:
+    /* Cleanup for overrides */
+    Py_XDECREF(overrides);
+
+    return return_value;
+}
 
 PyDoc_STRVAR(_interpreters_create__doc__,
 "create($module, /, config=\'isolated\', *, reqrefs=False)\n"
@@ -1200,4 +1264,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=8c3ca09c304378ad input=a9049054013a1b77]*/
+/*[clinic end generated code: output=38892db3b955efbb input=a9049054013a1b77]*/

@@ -57,7 +57,6 @@
   #define _PY_DEC_ROUND_GUARD (MPD_ROUND_GUARD-1)
 #endif
 
-#include "clinic/_decimal.c.h"
 
 #define MPD_SPEC_VERSION "1.70"  // Highest version of the spec this complies with
                                  // See https://speleotrove.com/decimal/decarith.html
@@ -66,8 +65,9 @@
 module _decimal
 class _decimal.Decimal "PyObject *" "&dec_spec"
 class _decimal.Context "PyObject *" "&context_spec"
+class _decimal.ContextManager "PyDecContextManagerObject *" "&ctxmanager_spec"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=a6a6c0bdf4e576ef]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=52b8c97cabc5bf05]*/
 
 struct PyDecContextObject;
 struct DecCondMap;
@@ -233,6 +233,8 @@ typedef struct {
     PyObject *local;
     PyObject *global;
 } PyDecContextManagerObject;
+
+#include "clinic/_decimal.c.h"
 
 #define _PyDecContextManagerObject_CAST(op) ((PyDecContextManagerObject *)(op))
 
@@ -2209,11 +2211,21 @@ ctxmanager_set_local(PyObject *op, PyObject *Py_UNUSED(dummy))
     return Py_NewRef(self->local);
 }
 
+/*[clinic input]
+_decimal.ContextManager.__exit__
+
+    *exc_info: array
+
+Restore the global context.
+[clinic start generated code]*/
+
 static PyObject *
-ctxmanager_restore_global(PyObject *op, PyObject *Py_UNUSED(args))
+_decimal_ContextManager___exit___impl(PyDecContextManagerObject *self,
+                                      PyObject * const *exc_info,
+                                      Py_ssize_t exc_info_length)
+/*[clinic end generated code: output=744a645b0145842d input=a86ec9080e28dff3]*/
 {
     PyObject *ret;
-    PyDecContextManagerObject *self = _PyDecContextManagerObject_CAST(op);
     ret = PyDec_SetCurrentContext(PyType_GetModule(Py_TYPE(self)), self->global);
     if (ret == NULL) {
         return NULL;
@@ -2226,7 +2238,7 @@ ctxmanager_restore_global(PyObject *op, PyObject *Py_UNUSED(args))
 
 static PyMethodDef ctxmanager_methods[] = {
   {"__enter__", ctxmanager_set_local, METH_NOARGS, NULL},
-  {"__exit__", ctxmanager_restore_global, METH_VARARGS, NULL},
+  _DECIMAL_CONTEXTMANAGER___EXIT___METHODDEF
   {NULL, NULL}
 };
 

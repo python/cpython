@@ -19,6 +19,8 @@ class property "propertyobject *" "&PyProperty_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=556352653fd4c02e]*/
 
+#include "clinic/descrobject.c.h"
+
 static void
 descr_dealloc(PyObject *self)
 {
@@ -1618,26 +1620,22 @@ property_deleter(PyObject *self, PyObject *deleter)
 }
 
 
-PyDoc_STRVAR(set_name_doc,
-             "__set_name__($self, owner, name, /)\n"
-             "--\n"
-             "\n"
-             "Method to set name of a property.");
+/*[clinic input]
+property.__set_name__
+
+    owner: object
+    name: object
+    /
+
+Method to set name of a property.
+[clinic start generated code]*/
 
 static PyObject *
-property_set_name(PyObject *self, PyObject *args) {
-    if (PyTuple_GET_SIZE(args) != 2) {
-        PyErr_Format(
-                PyExc_TypeError,
-                "__set_name__() takes 2 positional arguments but %zd were given",
-                PyTuple_GET_SIZE(args));
-        return NULL;
-    }
-
-    propertyobject *prop = (propertyobject *)self;
-    PyObject *name = PyTuple_GET_ITEM(args, 1);
-
-    Py_XSETREF(prop->prop_name, Py_XNewRef(name));
+property___set_name___impl(propertyobject *self, PyObject *owner,
+                           PyObject *name)
+/*[clinic end generated code: output=959e301a91f7fb85 input=0211b5b7ace099c5]*/
+{
+    Py_XSETREF(self->prop_name, Py_XNewRef(name));
 
     Py_RETURN_NONE;
 }
@@ -1646,7 +1644,7 @@ static PyMethodDef property_methods[] = {
     {"getter", property_getter, METH_O, getter_doc},
     {"setter", property_setter, METH_O, setter_doc},
     {"deleter", property_deleter, METH_O, deleter_doc},
-    {"__set_name__", property_set_name, METH_VARARGS, set_name_doc},
+    PROPERTY___SET_NAME___METHODDEF
     {0}
 };
 
@@ -2014,7 +2012,6 @@ property_clear(PyObject *self)
     return 0;
 }
 
-#include "clinic/descrobject.c.h"
 
 PyTypeObject PyDictProxy_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
