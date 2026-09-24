@@ -1629,11 +1629,9 @@ class GeneralModuleTests(unittest.TestCase):
     @unittest.skipUnless(hasattr(socket, 'IP_MULTICAST_TTL')
                          and hasattr(socket, 'IP_MULTICAST_LOOP'),
                          'requires IP_MULTICAST_TTL and IP_MULTICAST_LOOP')
-    @unittest.skipIf(sys.platform.startswith('sunos'),
-                     'Solaris requires an unsigned char (gh-127344)')
     def test_setsockopt_multicast_int(self):
-        # gh-127344: OpenBSD requires an unsigned char for these options,
-        # but an int value should still be accepted.
+        # gh-127344: Some platforms require an unsigned char for these
+        # options, but an int value should be accepted everywhere.
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.addCleanup(sock.close)
 
