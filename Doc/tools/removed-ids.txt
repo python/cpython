@@ -3,6 +3,11 @@
 # Remove from here in 3.16
 c-api/allocation.html: deprecated-aliases
 c-api/file.html: deprecated-api
+c-api/interp-lifecycle.html: c.PySys_SetArgv
+c-api/interp-lifecycle.html: c.PySys_SetArgvEx
+c-api/interp-lifecycle.html: c.Py_SetProgramName
+c-api/interp-lifecycle.html: c.Py_SetPythonHome
+c-api/threads.html: c.PyEval_InitThreads
 
 # Removed sections
 library/asyncio-task.html: terminating-a-task-group
@@ -68,3 +73,21 @@ using/windows.html: return-codes
 using/windows.html: the-full-installer-deprecated
 using/windows.html: virtual-environments
 using/windows.html: windows-full
+
+# Moved to library/stdtypes:
+reference/expressions.html: agen.__anext__
+reference/expressions.html: agen.aclose
+reference/expressions.html: agen.asend
+reference/expressions.html: agen.athrow
+reference/expressions.html: asynchronous-generator-iterator-methods
+reference/expressions.html: asynchronous-generator-methods
+reference/expressions.html: generator-iterator-methods
+reference/expressions.html: generator-methods
+reference/expressions.html: generator.__next__
+reference/expressions.html: generator.close
+reference/expressions.html: generator.send
+reference/expressions.html: generator.throw
+
+# Obsolete sections in 'turtle' docs
+library/turtle.html: changes-since-python-2-6
+library/turtle.html: changes-since-python-3-0

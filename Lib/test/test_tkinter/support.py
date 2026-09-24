@@ -61,6 +61,16 @@ class AbstractTkTest:
                           f'(timed out after {timeout:g}s)')
 
 
+class AbstractDialogTest(AbstractTkTest):
+    # Tk delivers generated keyboard events to the focused window.  Hide the
+    # root window, otherwise the window manager can take the focus back from
+    # the dialog (gh-154357).
+
+    def setUp(self):
+        super().setUp()
+        self.root.withdraw()
+
+
 class AbstractDefaultRootTest:
 
     def setUp(self):
@@ -112,6 +122,7 @@ def wait_until_mapped(widget, timeout=None, *, full_size=False):
         timeout = support.LOOPBACK_TIMEOUT
     deadline = time.monotonic() + timeout
     widget.update_idletasks()
+    reset = False
     while True:
         widget.update()  # drain pending Map/Configure events
         if widget.winfo_ismapped():
@@ -123,6 +134,11 @@ def wait_until_mapped(widget, timeout=None, *, full_size=False):
                 h_ok = widget.winfo_height() > 1
             if w_ok and h_ok:
                 return True
+            if full_size and not reset:
+                # Tk no longer resizes the toplevel to fit its content if
+                # the window manager has resized it.  Undo this.
+                widget.winfo_toplevel().wm_geometry('')
+                reset = True
         if time.monotonic() >= deadline:
             return False
         time.sleep(0.01)
