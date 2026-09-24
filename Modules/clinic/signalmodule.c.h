@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_time.h"          // _PyTime_Duration_TimevalCeil_Converter()
 
 PyDoc_STRVAR(signal_default_int_handler__doc__,
 "default_int_handler($module, signalnum, frame, /)\n"
@@ -372,16 +373,16 @@ PyDoc_STRVAR(signal_setitimer__doc__,
     {"setitimer", _PyCFunction_CAST(signal_setitimer), METH_FASTCALL, signal_setitimer__doc__},
 
 static PyObject *
-signal_setitimer_impl(PyObject *module, int which, PyObject *seconds,
-                      PyObject *interval);
+signal_setitimer_impl(PyObject *module, int which, struct timeval seconds,
+                      struct timeval interval);
 
 static PyObject *
 signal_setitimer(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int which;
-    PyObject *seconds;
-    PyObject *interval = NULL;
+    struct timeval seconds = {0, 0};
+    struct timeval interval = {0, 0};
 
     if (!_PyArg_CheckPositional("setitimer", nargs, 2, 3)) {
         goto exit;
@@ -390,11 +391,15 @@ signal_setitimer(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (which == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    seconds = args[1];
+    if (!_PyTime_Duration_TimevalCeil_Converter(args[1], &seconds)) {
+        goto exit;
+    }
     if (nargs < 3) {
         goto skip_optional;
     }
-    interval = args[2];
+    if (!_PyTime_Duration_TimevalCeil_Converter(args[2], &interval)) {
+        goto exit;
+    }
 skip_optional:
     return_value = signal_setitimer_impl(module, which, seconds, interval);
 
@@ -607,15 +612,14 @@ PyDoc_STRVAR(signal_sigtimedwait__doc__,
     {"sigtimedwait", _PyCFunction_CAST(signal_sigtimedwait), METH_FASTCALL, signal_sigtimedwait__doc__},
 
 static PyObject *
-signal_sigtimedwait_impl(PyObject *module, sigset_t sigset,
-                         PyObject *timeout_obj);
+signal_sigtimedwait_impl(PyObject *module, sigset_t sigset, PyTime_t timeout);
 
 static PyObject *
 signal_sigtimedwait(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     sigset_t sigset;
-    PyObject *timeout_obj;
+    PyTime_t timeout = -1;
 
     if (!_PyArg_CheckPositional("sigtimedwait", nargs, 2, 2)) {
         goto exit;
@@ -623,8 +627,15 @@ signal_sigtimedwait(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_Py_Sigset_Converter(args[0], &sigset)) {
         goto exit;
     }
-    timeout_obj = args[1];
-    return_value = signal_sigtimedwait_impl(module, sigset, timeout_obj);
+    if (_PyTime_FromSecondsObject(&timeout, args[1], _PyTime_ROUND_CEILING) < 0) {
+        goto exit;
+    }
+    if (timeout < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "timeout must be non-negative");
+        goto exit;
+    }
+    return_value = signal_sigtimedwait_impl(module, sigset, timeout);
 
 exit:
     return return_value;
@@ -807,4 +818,4 @@ exit:
 #ifndef SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF
     #define SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF
 #endif /* !defined(SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF) */
-/*[clinic end generated code: output=2a04ec31f49b1c93 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ca257fd2153935b7 input=a9049054013a1b77]*/

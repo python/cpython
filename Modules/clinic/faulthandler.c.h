@@ -9,6 +9,7 @@ preserve
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_long.h"          // _PyLong_UnsignedInt_Converter()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+#include "pycore_time.h"          // _PyTime_FromSecondsObject()
 
 PyDoc_STRVAR(faulthandler_dump_traceback_py__doc__,
 "dump_traceback($module, /, file=sys.stderr, all_threads=True, *,\n"
@@ -342,9 +343,8 @@ PyDoc_STRVAR(faulthandler_dump_traceback_later__doc__,
     {"dump_traceback_later", _PyCFunction_CAST(faulthandler_dump_traceback_later), METH_FASTCALL|METH_KEYWORDS, faulthandler_dump_traceback_later__doc__},
 
 static PyObject *
-faulthandler_dump_traceback_later_impl(PyObject *module,
-                                       PyObject *timeout_obj, int repeat,
-                                       PyObject *file, int exit,
+faulthandler_dump_traceback_later_impl(PyObject *module, PyTime_t timeout,
+                                       int repeat, PyObject *file, int exit,
                                        Py_ssize_t max_threads);
 
 static PyObject *
@@ -380,7 +380,7 @@ faulthandler_dump_traceback_later(PyObject *module, PyObject *const *args, Py_ss
     #undef KWTUPLE
     PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
-    PyObject *timeout_obj;
+    PyTime_t timeout = -1;
     int repeat = 0;
     PyObject *file = NULL;
     int exit = 0;
@@ -391,7 +391,9 @@ faulthandler_dump_traceback_later(PyObject *module, PyObject *const *args, Py_ss
     if (!args) {
         goto exit;
     }
-    timeout_obj = args[0];
+    if (_PyTime_FromSecondsObject(&timeout, args[0], _PyTime_ROUND_TIMEOUT) < 0) {
+        goto exit;
+    }
     if (!noptargs) {
         goto skip_optional_pos;
     }
@@ -436,7 +438,7 @@ skip_optional_pos:
         max_threads = ival;
     }
 skip_optional_kwonly:
-    return_value = faulthandler_dump_traceback_later_impl(module, timeout_obj, repeat, file, exit, max_threads);
+    return_value = faulthandler_dump_traceback_later_impl(module, timeout, repeat, file, exit, max_threads);
 
 exit:
     return return_value;
@@ -782,4 +784,4 @@ exit:
 #ifndef FAULTHANDLER__RAISE_EXCEPTION_METHODDEF
     #define FAULTHANDLER__RAISE_EXCEPTION_METHODDEF
 #endif /* !defined(FAULTHANDLER__RAISE_EXCEPTION_METHODDEF) */
-/*[clinic end generated code: output=14815a5f8afe813f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1e27da7f1be13de1 input=a9049054013a1b77]*/

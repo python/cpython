@@ -6,7 +6,44 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
-#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_time.h"          // _PyTime_FromSecondsObject()
+
+PyDoc_STRVAR(_thread__ThreadHandle_join__doc__,
+"join($self, timeout=None, /)\n"
+"--\n"
+"\n"
+"Wait until the thread finishes or the timeout expires.");
+
+#define _THREAD__THREADHANDLE_JOIN_METHODDEF    \
+    {"join", _PyCFunction_CAST(_thread__ThreadHandle_join), METH_FASTCALL, _thread__ThreadHandle_join__doc__},
+
+static PyObject *
+_thread__ThreadHandle_join_impl(PyThreadHandleObject *self, PyTime_t timeout);
+
+static PyObject *
+_thread__ThreadHandle_join(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyTime_t timeout = -1;
+
+    if (!_PyArg_CheckPositional("join", nargs, 0, 1)) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    if (args[0] != Py_None) {
+        if (_PyTime_FromSecondsObject(&timeout, args[0], _PyTime_ROUND_TIMEOUT) < 0) {
+            goto exit;
+        }
+    }
+skip_optional:
+    return_value = _thread__ThreadHandle_join_impl((PyThreadHandleObject *)self, timeout);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(_thread_lock_acquire__doc__,
 "acquire($self, /, blocking=True, timeout=-1)\n"
@@ -25,8 +62,7 @@ PyDoc_STRVAR(_thread_lock_acquire__doc__,
     {"acquire", _PyCFunction_CAST(_thread_lock_acquire), METH_FASTCALL|METH_KEYWORDS, _thread_lock_acquire__doc__},
 
 static PyObject *
-_thread_lock_acquire_impl(lockobject *self, int blocking,
-                          PyObject *timeoutobj);
+_thread_lock_acquire_impl(lockobject *self, int blocking, PyTime_t timeout);
 
 static PyObject *
 _thread_lock_acquire(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -62,7 +98,7 @@ _thread_lock_acquire(PyObject *self, PyObject *const *args, Py_ssize_t nargs, Py
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int blocking = 1;
-    PyObject *timeoutobj = NULL;
+    PyTime_t timeout = _PyTime_FromSeconds(-1);
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -81,9 +117,11 @@ _thread_lock_acquire(PyObject *self, PyObject *const *args, Py_ssize_t nargs, Py
             goto skip_optional_pos;
         }
     }
-    timeoutobj = args[1];
+    if (_PyTime_FromSecondsObject(&timeout, args[1], _PyTime_ROUND_TIMEOUT) < 0) {
+        goto exit;
+    }
 skip_optional_pos:
-    return_value = _thread_lock_acquire_impl((lockobject *)self, blocking, timeoutobj);
+    return_value = _thread_lock_acquire_impl((lockobject *)self, blocking, timeout);
 
 exit:
     return return_value;
@@ -100,7 +138,7 @@ PyDoc_STRVAR(_thread_lock_acquire_lock__doc__,
 
 static PyObject *
 _thread_lock_acquire_lock_impl(lockobject *self, int blocking,
-                               PyObject *timeoutobj);
+                               PyTime_t timeout);
 
 static PyObject *
 _thread_lock_acquire_lock(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -136,7 +174,7 @@ _thread_lock_acquire_lock(PyObject *self, PyObject *const *args, Py_ssize_t narg
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int blocking = 1;
-    PyObject *timeoutobj = NULL;
+    PyTime_t timeout = _PyTime_FromSeconds(-1);
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -155,9 +193,11 @@ _thread_lock_acquire_lock(PyObject *self, PyObject *const *args, Py_ssize_t narg
             goto skip_optional_pos;
         }
     }
-    timeoutobj = args[1];
+    if (_PyTime_FromSecondsObject(&timeout, args[1], _PyTime_ROUND_TIMEOUT) < 0) {
+        goto exit;
+    }
 skip_optional_pos:
-    return_value = _thread_lock_acquire_lock_impl((lockobject *)self, blocking, timeoutobj);
+    return_value = _thread_lock_acquire_lock_impl((lockobject *)self, blocking, timeout);
 
 exit:
     return return_value;
@@ -357,8 +397,7 @@ PyDoc_STRVAR(_thread_RLock_acquire__doc__,
     {"acquire", _PyCFunction_CAST(_thread_RLock_acquire), METH_FASTCALL|METH_KEYWORDS, _thread_RLock_acquire__doc__},
 
 static PyObject *
-_thread_RLock_acquire_impl(rlockobject *self, int blocking,
-                           PyObject *timeoutobj);
+_thread_RLock_acquire_impl(rlockobject *self, int blocking, PyTime_t timeout);
 
 static PyObject *
 _thread_RLock_acquire(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -394,7 +433,7 @@ _thread_RLock_acquire(PyObject *self, PyObject *const *args, Py_ssize_t nargs, P
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int blocking = 1;
-    PyObject *timeoutobj = NULL;
+    PyTime_t timeout = _PyTime_FromSeconds(-1);
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -413,9 +452,11 @@ _thread_RLock_acquire(PyObject *self, PyObject *const *args, Py_ssize_t nargs, P
             goto skip_optional_pos;
         }
     }
-    timeoutobj = args[1];
+    if (_PyTime_FromSecondsObject(&timeout, args[1], _PyTime_ROUND_TIMEOUT) < 0) {
+        goto exit;
+    }
 skip_optional_pos:
-    return_value = _thread_RLock_acquire_impl((rlockobject *)self, blocking, timeoutobj);
+    return_value = _thread_RLock_acquire_impl((rlockobject *)self, blocking, timeout);
 
 exit:
     return return_value;
@@ -740,4 +781,4 @@ exit:
 #ifndef _THREAD_SET_NAME_METHODDEF
     #define _THREAD_SET_NAME_METHODDEF
 #endif /* !defined(_THREAD_SET_NAME_METHODDEF) */
-/*[clinic end generated code: output=0f1707cbafc0e8f2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e0d24c7cec77c83c input=a9049054013a1b77]*/

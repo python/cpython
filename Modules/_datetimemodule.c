@@ -3276,13 +3276,9 @@ datetime_date_impl(PyTypeObject *type, int year, int month, int day)
 }
 
 static PyObject *
-date_fromtimestamp(PyTypeObject *cls, PyObject *obj)
+date_fromtimet(PyTypeObject *cls, time_t t)
 {
     struct tm tm;
-    time_t t;
-
-    if (_PyTime_ObjectToTime_t(obj, &t, _PyTime_ROUND_FLOOR) == -1)
-        return NULL;
 
     if (_PyTime_localtime(t, &tm) != 0)
         return NULL;
@@ -3348,7 +3344,7 @@ datetime_date_today_impl(PyTypeObject *type)
 @classmethod
 datetime.date.fromtimestamp
 
-    timestamp: object
+    timestamp: timestamp
     /
 
 Create a date from a POSIX timestamp.
@@ -3358,10 +3354,10 @@ interpreted as local time.
 [clinic start generated code]*/
 
 static PyObject *
-datetime_date_fromtimestamp_impl(PyTypeObject *type, PyObject *timestamp)
-/*[clinic end generated code: output=59def4e32c028fb6 input=15720eef43b169a1]*/
+datetime_date_fromtimestamp_impl(PyTypeObject *type, time_t timestamp)
+/*[clinic end generated code: output=a4240b6ce153c150 input=74a7bdf0575c89a8]*/
 {
-    return date_fromtimestamp(type, timestamp);
+    return date_fromtimet(type, timestamp);
 }
 
 /* bpo-36025: This is a wrapper for API compatibility with the public C API,
@@ -3375,7 +3371,11 @@ datetime_date_fromtimestamp_capi(PyObject *cls, PyObject *args)
     PyObject *result = NULL;
 
     if (PyArg_UnpackTuple(args, "fromtimestamp", 1, 1, &timestamp)) {
-        result = date_fromtimestamp((PyTypeObject *)cls, timestamp);
+        time_t t;
+        if (_PyTime_ObjectToTime_t(timestamp, &t, _PyTime_ROUND_FLOOR) == -1) {
+            return NULL;
+        }
+        result = date_fromtimet((PyTypeObject *)cls, t);
     }
 
     return result;
