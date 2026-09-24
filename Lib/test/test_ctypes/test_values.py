@@ -75,7 +75,7 @@ class PythonValuesTestCase(unittest.TestCase):
 
     def test_version_var(self):
         # This test accesses the Py_Version integer, which is
-        # exported by the Python dll and should match the sys.flags value
+        # exported by the Python dll and should match the sys.hexversion value
 
         version = c_int.in_dll(pythonapi, "Py_Version").value
         self.assertEqual(version, sys.hexversion)
