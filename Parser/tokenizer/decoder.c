@@ -322,12 +322,14 @@ store_prepared_source(struct tok_state *tok, const char *data, Py_ssize_t len,
               data[pos + raw_line_len - 1] == '\r';
         int add_newline = add_final_newline &&
             pos + raw_line_len == len && !terminated;
-        int normalize = add_newline ||
-            (!preserve_crlf &&
-             memchr(data + pos, '\r', raw_line_len) != NULL);
-
         const char *line = data + pos;
         Py_ssize_t line_len = raw_line_len;
+        // raw_line_length stops at the first CR or LF, so any CR is in
+        // the line terminator.
+        int normalize = add_newline ||
+            (!preserve_crlf &&
+             (line[line_len - 1] == '\r' ||
+              (line_len > 1 && line[line_len - 2] == '\r')));
         int implicit = 0;
         if (normalize) {
             if (line_len > PY_SSIZE_T_MAX - 2) {
