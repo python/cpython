@@ -1,0 +1,2 @@
+Fix the IDLE File Open dialog listing text files before Python files when
+opened from the Shell or an Output window.
