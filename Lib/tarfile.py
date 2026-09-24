@@ -456,8 +456,12 @@ class _Stream:
             mtime = int(time.time())
         timestamp = struct.pack("<L", mtime)
         self.__write(b"\037\213\010\010" + timestamp + b"\002\377")
-        if self.name.endswith(".gz"):
+        # Like gunzip, match the suffix ignoring case, and turn ".tgz"
+        # and ".taz" into ".tar" instead of just stripping them.
+        if self.name[-3:].lower() == ".gz":
             self.name = self.name[:-3]
+        elif self.name[-4:].lower() in (".tgz", ".taz"):
+            self.name = self.name[:-4] + ".tar"
         # Honor "directory components removed" from RFC1952
         self.name = os.path.basename(self.name)
         # RFC1952 says we must use ISO-8859-1 for the FNAME field.

@@ -437,6 +437,40 @@ class TestGzip(BaseTest):
         self.filename = os_helper.TESTFN_ASCII
         self.test_metadata()
 
+    def test_metadata_name_suffix(self):
+        # gh-88661: the FNAME field holds the name that the file is expected
+        # to have after decompression.  Like gunzip, the suffix is matched
+        # ignoring case, and ".tgz" and ".taz" are turned into ".tar".
+        base = os_helper.TESTFN_ASCII
+        # Only the suffix is matched ignoring case; the rest of the name
+        # keeps the case it was given, the way make_ofname() does in gunzip.
+        upper = base.upper()
+        for filename, expected in ((base, base),
+                                   (base + '.gz', base),
+                                   (base + '.GZ', base),
+                                   (base + '.gZ', base),
+                                   (base + '.tgz', base + '.tar'),
+                                   (base + '.TGZ', base + '.tar'),
+                                   (base + '.tGz', base + '.tar'),
+                                   (base + '.taz', base + '.tar'),
+                                   (base + '.TAZ', base + '.tar'),
+                                   (base + '.tar', base + '.tar'),
+                                   (base + '.tgz.gz', base + '.tgz'),
+                                   (upper + '.GZ', upper),
+                                   (upper + '.TGZ', upper + '.tar'),
+                                   (upper + '.TAZ', upper + '.tar')):
+            with self.subTest(filename=filename):
+                try:
+                    with gzip.GzipFile(filename, 'w') as f:
+                        f.write(data1)
+                    with open(filename, 'rb') as f:
+                        header = f.read(1024)
+                    self.assertEqual(header[3], 8)  # only the FNAME flag
+                    fname = header[10:header.index(b'\0', 10)]
+                    self.assertEqual(fname.decode('latin-1'), expected)
+                finally:
+                    os_helper.unlink(filename)
+
     def test_compresslevel_metadata(self):
         # see RFC 1952: http://www.faqs.org/rfcs/rfc1952.html
         # specifically, discussion of XFL in section 2.3.1

@@ -1,0 +1,6 @@
+When writing a gzip header, :mod:`gzip` and :mod:`tarfile` now derive the
+``FNAME`` field from the file name like :program:`gunzip` does for the
+``.gz``, ``.tgz`` and ``.taz`` suffixes: the suffix is matched ignoring
+case, and ``.tgz`` and ``.taz`` are replaced with ``.tar`` instead of being
+left in place.  Previously an archive created as :file:`spam.tgz` recorded
+``spam.tgz`` as the name to decompress to.

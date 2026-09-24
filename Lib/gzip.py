@@ -288,8 +288,12 @@ class GzipFile(_streams.BaseStream):
             fname = os.path.basename(self.name)
             if not isinstance(fname, bytes):
                 fname = fname.encode('latin-1')
-            if fname.endswith(b'.gz'):
+            # Like gunzip, match the suffix ignoring case, and turn ".tgz"
+            # and ".taz" into ".tar" instead of just stripping them.
+            if fname[-3:].lower() == b'.gz':
                 fname = fname[:-3]
+            elif fname[-4:].lower() in (b'.tgz', b'.taz'):
+                fname = fname[:-4] + b'.tar'
         except UnicodeEncodeError:
             fname = b''
         flags = 0

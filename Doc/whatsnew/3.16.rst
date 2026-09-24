@@ -1045,6 +1045,16 @@ that may require changes to your code.
   raises :exc:`io.UnsupportedOperation` unless buffering is disabled.
   (Contributed by An Long in :gh:`86768`.)
 
+* :mod:`gzip` and :mod:`tarfile` now derive the ``FNAME`` field of the gzip
+  header from the file name like :program:`gunzip` does for the ``.gz``,
+  ``.tgz`` and ``.taz`` suffixes: the suffix is matched ignoring case, and
+  ``.tgz`` and ``.taz`` are replaced with ``.tar`` instead of being left in
+  place.  For example, an archive created as :file:`spam.tgz` now records
+  ``spam.tar`` rather than ``spam.tgz``, and :file:`spam.GZ` records
+  ``spam`` rather than ``spam.GZ``.  Code comparing generated files byte for
+  byte may need to be updated.
+  (Contributed by Dmitry Voropaev in :gh:`88661`.)
+
 
 Build changes
 =============
