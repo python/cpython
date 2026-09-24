@@ -70,7 +70,6 @@ _testcapi_err_givenexceptionmatches_impl(PyObject *module, PyObject *err,
 {
     assert(!PyErr_Occurred());
     int res = PyErr_GivenExceptionMatches(err, exc);
-    /* The function has no failure return, but it can set RecursionError. */
     if (res == 0 && PyErr_Occurred()) {
         return NULL;
     }
