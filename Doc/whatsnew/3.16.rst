@@ -1141,6 +1141,10 @@ Deprecated C APIs
 Removed C APIs
 --------------
 
+* Remove :c:func:`!PyEval_InitThreads` function which did nothing since Python
+  3.7 and was deprecated since Python 3.9.
+  (Contributed by Victor Stinner in :gh:`154757`.)
+
 * The :c:var:`!PyUnstable_ExecutableKinds` array, as well as the macros
   :c:macro:`!PyUnstable_EXECUTABLE_KIND_SKIP`,
   :c:macro:`!PyUnstable_EXECUTABLE_KIND_PY_FUNCTION`,
