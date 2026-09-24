@@ -30,6 +30,7 @@
    moves.
 
    .. image:: turtle-star.png
+      :alt: A yellow starburst of thin spikes with a red outline, drawn by turtle.
       :align: center
 
 Imagine a robotic turtle starting at (0, 0) in the x-y plane.
@@ -39,7 +40,7 @@ it moves. Give it the command ``turtle.right(25)``, and it rotates in-place 25
 degrees clockwise.
 
 Turtle graphics is an implementation of `the drawing tools introduced in Logo
-<https://en.wikipedia.org/wiki/Turtle_(robot)>`_ in 1967. It was created as an
+<https://en.wikipedia.org/wiki/Turtle_(robot)>`__ in 1967. It was created as an
 educational tool, and its instant, visible feedback makes it an effective way
 for learners to encounter programming concepts. It is also a convenient way to
 produce simple graphical output without bringing in external libraries.
@@ -49,7 +50,7 @@ This document includes four main sections:
 * :ref:`turtle-tutorial` teaches the basics of turtle drawing.
 * :ref:`turtle-reference` describes the functions, methods and classes this
   module defines.
-* :ref:`turtle-howtos` details how to handle specific tasks.
+* :ref:`turtle-howtos` detail how to handle specific tasks.
 * :ref:`turtle-explanation` provides background on the object-oriented
   interface.
 
@@ -108,7 +109,7 @@ Notice how the turtle, represented by an arrow, points in different
 directions as you steer it.
 
 Experiment with those commands, and also with ``backward()`` and
-``right()``. Many commands also have terser aliases, such as ``fd()`` for
+``right()``. Many commands also have shorter aliases, such as ``fd()`` for
 :func:`forward`.
 
 
