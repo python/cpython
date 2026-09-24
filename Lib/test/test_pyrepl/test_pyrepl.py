@@ -14,6 +14,7 @@ import sys
 import tempfile
 from functools import partial
 from pkgutil import ModuleInfo
+from types import ModuleType
 from unittest import TestCase, skipUnless, SkipTest
 from unittest.mock import Mock, patch
 import warnings
@@ -1780,6 +1781,26 @@ class TestPyReplModuleCompleter(TestCase):
         self.assertNotIn('__all__', attrs)
         # Verify we got the actual module object
         self.assertIs(module, sys.modules.get('json'))
+
+    def test_find_attributes_uses_all_with_private_names(self):
+        module = ModuleType("module_with_private_all")
+        module.__all__ = ["public", "_private", "not-valid"]
+
+        completer = ModuleCompleter()
+        with patch.dict(sys.modules, {module.__name__: module}):
+            cases = (
+                ("", ["public", "_private"]),
+                ("pub", ["public"]),
+                ("_", ["_private"]),
+            )
+            for prefix, expected in cases:
+                with self.subTest(prefix=prefix):
+                    attrs, actual_module, action = completer._find_attributes(
+                        module.__name__, prefix
+                    )
+                    self.assertEqual(attrs, expected)
+                    self.assertIs(actual_module, module)
+                    self.assertIsNone(action)
 
 
 # Audit hook used to check for stdlib modules import side-effects
