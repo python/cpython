@@ -68,9 +68,11 @@ Slice Objects
       is replaced by ::
 
          if (PySlice_Unpack(slice, &start, &stop, &step) < 0) {
-             // return error
+            slicelength = 0;
+            return -1;
          }
          slicelength = PySlice_AdjustIndices(length, &start, &stop, step);
+         return 0;
 
    .. versionchanged:: 3.2
       The parameter type for the *slice* parameter was ``PySliceObject*``
@@ -83,10 +85,9 @@ Slice Objects
       :c:func:`!PySlice_Unpack` and :c:func:`!PySlice_AdjustIndices`.
       Arguments *start*, *stop* and *step* are evaluated more than once.
 
-   .. deprecated:: 3.6.1
-      If ``Py_LIMITED_API`` is set to the value less than ``0x03050400`` or
-      between ``0x03060000`` and ``0x03060100`` (not including)
-      :c:func:`!PySlice_GetIndicesEx` is a deprecated function.
+   .. versionchanged:: next
+      :c:func:`!PySlice_GetIndicesEx` is now implemented as a static inline
+      function. Arguments are only evaluated once.
 
 
 .. c:function:: int PySlice_Unpack(PyObject *slice, Py_ssize_t *start, Py_ssize_t *stop, Py_ssize_t *step)

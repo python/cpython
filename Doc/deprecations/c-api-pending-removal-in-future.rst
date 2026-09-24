@@ -16,8 +16,6 @@ although there is currently no date scheduled for their removal.
   Use :c:func:`PyModule_GetFilenameObject` instead.
 * :c:func:`PyOS_AfterFork`:
   Use :c:func:`PyOS_AfterFork_Child` instead.
-* :c:func:`PySlice_GetIndicesEx`:
-  Use :c:func:`PySlice_Unpack` and :c:func:`PySlice_AdjustIndices` instead.
 * :c:func:`PyUnicode_READY`:
   Unneeded since Python 3.12
 * :c:func:`!PyErr_Display`:
