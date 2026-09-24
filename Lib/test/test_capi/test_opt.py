@@ -1812,6 +1812,20 @@ class TestUopsOptimization(unittest.TestCase):
         # __init__ resolution allows promotion of range to constant
         self.assertNotIn("_LOAD_GLOBAL_BUILTINS", uops)
 
+    # See https://github.com/python/cpython/issues/158072
+    def test_init_with_default_argument(self):
+        script_helper.assert_python_ok("-c", textwrap.dedent(f"""\
+            sentinel = object()
+
+            class WithDefault:
+                def __init__(self, value=sentinel):
+                    if value is not sentinel:
+                        pass
+
+            for _ in range({TIER2_THRESHOLD * 3}):
+                WithDefault()
+            """), PYTHON_JIT="1")
+
     def test_init_guards_removed(self):
         class MyPoint:
             def __init__(self, x, y):
