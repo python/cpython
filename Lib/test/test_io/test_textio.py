@@ -1458,13 +1458,13 @@ class CTextIOWrapperTest(TextIOWrapperTest, CTestCase):
             t._CHUNK_SIZE = 0
         with self.assertRaises(TypeError):
             t._CHUNK_SIZE = 'x'
-        with self.assertRaises(ValueError):
+        with self.assertRaises(OverflowError):
             t._CHUNK_SIZE = sys.maxsize + 1
-        with self.assertRaises(ValueError):
+        with self.assertRaises(OverflowError):
             t._CHUNK_SIZE = -sys.maxsize - 2
-        with self.assertRaises(ValueError):
+        with self.assertRaises(OverflowError):
             t._CHUNK_SIZE = 2**1000
-        with self.assertRaises(ValueError):
+        with self.assertRaises(OverflowError):
             t._CHUNK_SIZE = -2**1000
         with self.assertRaisesRegex(AttributeError, 'cannot be deleted'):
             del t._CHUNK_SIZE

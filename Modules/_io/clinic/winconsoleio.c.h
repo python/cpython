@@ -428,6 +428,92 @@ _io__WindowsConsoleIO_isatty(PyObject *self, PyObject *Py_UNUSED(ignored))
 
 #endif /* defined(HAVE_WINDOWS_CONSOLE_IO) */
 
+#if defined(HAVE_WINDOWS_CONSOLE_IO)
+
+PyDoc_STRVAR(_io__WindowsConsoleIO_closed__doc__,
+"True if the file is closed.");
+#if defined(_IO__WINDOWSCONSOLEIO_CLOSED_DOCSTR)
+#   undef _IO__WINDOWSCONSOLEIO_CLOSED_DOCSTR
+#endif
+#define _IO__WINDOWSCONSOLEIO_CLOSED_DOCSTR _io__WindowsConsoleIO_closed__doc__
+
+#define _IO__WINDOWSCONSOLEIO_CLOSED_GETTER _io__WindowsConsoleIO_closed_get
+
+static int
+_io__WindowsConsoleIO_closed_get_impl(winconsoleio *self);
+
+static PyObject *
+_io__WindowsConsoleIO_closed_get(PyObject *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+    int _return_value;
+
+    _return_value = _io__WindowsConsoleIO_closed_get_impl((winconsoleio *)self);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_WINDOWS_CONSOLE_IO) */
+
+#if defined(HAVE_WINDOWS_CONSOLE_IO)
+
+PyDoc_STRVAR(_io__WindowsConsoleIO_closefd__doc__,
+"True if the file descriptor will be closed by close().");
+#if defined(_IO__WINDOWSCONSOLEIO_CLOSEFD_DOCSTR)
+#   undef _IO__WINDOWSCONSOLEIO_CLOSEFD_DOCSTR
+#endif
+#define _IO__WINDOWSCONSOLEIO_CLOSEFD_DOCSTR _io__WindowsConsoleIO_closefd__doc__
+
+#define _IO__WINDOWSCONSOLEIO_CLOSEFD_GETTER _io__WindowsConsoleIO_closefd_get
+
+static int
+_io__WindowsConsoleIO_closefd_get_impl(winconsoleio *self);
+
+static PyObject *
+_io__WindowsConsoleIO_closefd_get(PyObject *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+    int _return_value;
+
+    _return_value = _io__WindowsConsoleIO_closefd_get_impl((winconsoleio *)self);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_WINDOWS_CONSOLE_IO) */
+
+#if defined(HAVE_WINDOWS_CONSOLE_IO)
+
+PyDoc_STRVAR(_io__WindowsConsoleIO_mode__doc__,
+"String giving the file mode.");
+#if defined(_IO__WINDOWSCONSOLEIO_MODE_DOCSTR)
+#   undef _IO__WINDOWSCONSOLEIO_MODE_DOCSTR
+#endif
+#define _IO__WINDOWSCONSOLEIO_MODE_DOCSTR _io__WindowsConsoleIO_mode__doc__
+
+#define _IO__WINDOWSCONSOLEIO_MODE_GETTER _io__WindowsConsoleIO_mode_get
+
+static PyObject *
+_io__WindowsConsoleIO_mode_get_impl(winconsoleio *self);
+
+static PyObject *
+_io__WindowsConsoleIO_mode_get(PyObject *self, void *Py_UNUSED(context))
+{
+    return _io__WindowsConsoleIO_mode_get_impl((winconsoleio *)self);
+}
+
+#endif /* defined(HAVE_WINDOWS_CONSOLE_IO) */
+
 #ifndef _IO__WINDOWSCONSOLEIO_CLOSE_METHODDEF
     #define _IO__WINDOWSCONSOLEIO_CLOSE_METHODDEF
 #endif /* !defined(_IO__WINDOWSCONSOLEIO_CLOSE_METHODDEF) */
@@ -463,4 +549,49 @@ _io__WindowsConsoleIO_isatty(PyObject *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF
     #define _IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF
 #endif /* !defined(_IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF) */
-/*[clinic end generated code: output=dfe49dd71f4f4b1d input=a9049054013a1b77]*/
+#if defined(_IO__WINDOWSCONSOLEIO_CLOSED_GETTER) || defined(_IO__WINDOWSCONSOLEIO_CLOSED_SETTER)
+#  if !defined(_IO__WINDOWSCONSOLEIO_CLOSED_GETTER)
+#    define _IO__WINDOWSCONSOLEIO_CLOSED_GETTER NULL
+#  endif
+#  if !defined(_IO__WINDOWSCONSOLEIO_CLOSED_SETTER)
+#    define _IO__WINDOWSCONSOLEIO_CLOSED_SETTER NULL
+#  endif
+#  if !defined(_IO__WINDOWSCONSOLEIO_CLOSED_DOCSTR)
+#    define _IO__WINDOWSCONSOLEIO_CLOSED_DOCSTR NULL
+#  endif
+#  define _IO__WINDOWSCONSOLEIO_CLOSED_GETSETDEF {"closed", (getter)_IO__WINDOWSCONSOLEIO_CLOSED_GETTER, (setter)_IO__WINDOWSCONSOLEIO_CLOSED_SETTER, _IO__WINDOWSCONSOLEIO_CLOSED_DOCSTR},
+#else
+#  define _IO__WINDOWSCONSOLEIO_CLOSED_GETSETDEF
+#endif
+
+#if defined(_IO__WINDOWSCONSOLEIO_CLOSEFD_GETTER) || defined(_IO__WINDOWSCONSOLEIO_CLOSEFD_SETTER)
+#  if !defined(_IO__WINDOWSCONSOLEIO_CLOSEFD_GETTER)
+#    define _IO__WINDOWSCONSOLEIO_CLOSEFD_GETTER NULL
+#  endif
+#  if !defined(_IO__WINDOWSCONSOLEIO_CLOSEFD_SETTER)
+#    define _IO__WINDOWSCONSOLEIO_CLOSEFD_SETTER NULL
+#  endif
+#  if !defined(_IO__WINDOWSCONSOLEIO_CLOSEFD_DOCSTR)
+#    define _IO__WINDOWSCONSOLEIO_CLOSEFD_DOCSTR NULL
+#  endif
+#  define _IO__WINDOWSCONSOLEIO_CLOSEFD_GETSETDEF {"closefd", (getter)_IO__WINDOWSCONSOLEIO_CLOSEFD_GETTER, (setter)_IO__WINDOWSCONSOLEIO_CLOSEFD_SETTER, _IO__WINDOWSCONSOLEIO_CLOSEFD_DOCSTR},
+#else
+#  define _IO__WINDOWSCONSOLEIO_CLOSEFD_GETSETDEF
+#endif
+
+#if defined(_IO__WINDOWSCONSOLEIO_MODE_GETTER) || defined(_IO__WINDOWSCONSOLEIO_MODE_SETTER)
+#  if !defined(_IO__WINDOWSCONSOLEIO_MODE_GETTER)
+#    define _IO__WINDOWSCONSOLEIO_MODE_GETTER NULL
+#  endif
+#  if !defined(_IO__WINDOWSCONSOLEIO_MODE_SETTER)
+#    define _IO__WINDOWSCONSOLEIO_MODE_SETTER NULL
+#  endif
+#  if !defined(_IO__WINDOWSCONSOLEIO_MODE_DOCSTR)
+#    define _IO__WINDOWSCONSOLEIO_MODE_DOCSTR NULL
+#  endif
+#  define _IO__WINDOWSCONSOLEIO_MODE_GETSETDEF {"mode", (getter)_IO__WINDOWSCONSOLEIO_MODE_GETTER, (setter)_IO__WINDOWSCONSOLEIO_MODE_SETTER, _IO__WINDOWSCONSOLEIO_MODE_DOCSTR},
+#else
+#  define _IO__WINDOWSCONSOLEIO_MODE_GETSETDEF
+#endif
+
+/*[clinic end generated code: output=24fe425795203cee input=a9049054013a1b77]*/
