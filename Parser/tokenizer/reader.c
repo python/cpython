@@ -192,9 +192,12 @@ read_file_line(struct tok_state *tok, _PyTok_Chunk *chunk)
     _PyTok_Reader *reader = tok->reader;
     Py_ssize_t len = 0;
     for (;;) {
-        if (len > PY_SSIZE_T_MAX - BUFSIZ ||
-                _PyTok_ReserveBuffer(&reader->file_buffer, &reader->file_buffer_cap,
-                                    len + BUFSIZ, BUFSIZ) < 0) {
+        if (len > PY_SSIZE_T_MAX - BUFSIZ) {
+            PyErr_NoMemory();
+            return _PYTOK_READ_ERROR;
+        }
+        if (_PyTok_ReserveBuffer(&reader->file_buffer, &reader->file_buffer_cap,
+                                len + BUFSIZ, BUFSIZ) < 0) {
             return _PYTOK_READ_ERROR;
         }
         int available = (int)Py_MIN(reader->file_buffer_cap - len, INT_MAX);
