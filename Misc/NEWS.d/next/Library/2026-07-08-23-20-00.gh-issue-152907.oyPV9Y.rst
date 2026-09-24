@@ -1,0 +1,4 @@
+Restore cooked-mode terminal output flags around :c:data:`PyOS_InputHook`
+callbacks in the new :term:`REPL` (:mod:`!_pyrepl`), so that output written
+by an input hook (for example a GUI toolkit event loop) is no longer emitted
+with ``OPOST`` disabled and keeps its carriage returns.
