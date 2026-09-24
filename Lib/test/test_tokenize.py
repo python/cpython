@@ -2327,6 +2327,20 @@ class CTokenizeTest(TestCase):
             tokenize.TokenInfo(token.ENDMARKER, "", (2, 0), (2, 0), ""),
         ])
 
+    def test_utf8_decoder_spans_many_readline_calls(self):
+        for prefix in (b"", b"previous\n"):
+            with self.subTest(prefix=prefix):
+                chunks = ([prefix + b"x\xc3"] + [b"\xa9\xc3"] * 100
+                          + [b"\xa9\n", b"z\xc3", b"\xa9\n", b""])
+                source = b"".join(chunks)
+                expected = list(_tokenize.TokenizerIter(
+                    BytesIO(source).readline, encoding="utf-8", extra_tokens=True
+                ))
+                tokens = list(_tokenize.TokenizerIter(
+                    iter(chunks).__next__, encoding="utf-8", extra_tokens=True
+                ))
+                self.assertEqual(tokens, expected)
+
     def test_utf8_decoder_replaces_incomplete_input_at_eof(self):
         expected = [
             tokenize.TokenInfo(token.NAME, "x�", (1, 0), (1, 2), "x�"),

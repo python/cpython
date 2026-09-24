@@ -72,6 +72,7 @@ append_decoded(_PyTok_Reader *reader, const char *data, Py_ssize_t len)
         Py_ssize_t remaining = reader->decoded_len - reader->decoded_pos;
         memmove(reader->decoded, reader->decoded + reader->decoded_pos,
                 (size_t)remaining);
+        reader->decoded_scan -= reader->decoded_pos;
         reader->decoded_pos = 0;
         reader->decoded_len = remaining;
     }
@@ -105,13 +106,17 @@ static int
 pop_decoded_line(_PyTok_Reader *reader, _PyTok_Chunk *chunk)
 {
     assert(reader->decoded_pos >= 0 && reader->decoded_pos <= reader->decoded_len);
+    assert(reader->decoded_scan >= reader->decoded_pos &&
+           reader->decoded_scan <= reader->decoded_len);
     if (reader->decoded_pos == reader->decoded_len) {
         return 0;
     }
     char *start = reader->decoded + reader->decoded_pos;
-    char *newline = memchr(start, '\n',
-                           reader->decoded_len - reader->decoded_pos);
+    // Previously scanned bytes cannot contain a newline.
+    char *newline = memchr(reader->decoded + reader->decoded_scan, '\n',
+                           reader->decoded_len - reader->decoded_scan);
     if (newline == NULL) {
+        reader->decoded_scan = reader->decoded_len;
         return 0;
     }
     Py_ssize_t len = newline - start + 1;
@@ -119,10 +124,12 @@ pop_decoded_line(_PyTok_Reader *reader, _PyTok_Chunk *chunk)
     chunk->len = len;
     chunk->ownership = _PYTOK_CHUNK_BORROWED;
     reader->decoded_pos += len;
+    reader->decoded_scan = reader->decoded_pos;
     chunk->implicit_newline = reader->decoded_pos == reader->decoded_len &&
         reader->decoded_tail_is_implicit;
     if (reader->decoded_pos == reader->decoded_len) {
         reader->decoded_pos = reader->decoded_len = 0;
+        reader->decoded_scan = 0;
         reader->decoded_tail_is_implicit = 0;
     }
     return 1;
