@@ -185,6 +185,7 @@ Python/frozen_modules/MANIFEST
 /.claude/sandbox/
 AGENTS.local.md
 CLAUDE.local.md
+/docs/superpowers
 
 #### main branch only stuff below this line, things to backport go above. ####
 # main branch only: ABI files are not checked/maintained.
