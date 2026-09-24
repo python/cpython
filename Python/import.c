@@ -3898,23 +3898,28 @@ _PyImport_ResolveName(PyThreadState *tstate, PyObject *name,
   return resolve_name(tstate, name, globals, level);
 }
 
-// Take `a.b.c` off the `a` that importing "a.b.c" returns, as IMPORT_FROM does.
+// Look up, in order, the attributes recorded from the root placeholder to lz
+// on the module the root's import returned.
 static PyObject *
-import_from_dotted_name(PyThreadState *tstate, PyObject *mod, PyObject *name)
+lazy_import_replay_from(PyThreadState *tstate, PyObject *mod,
+                        PyLazyImportObject *lz)
 {
-    PyObject *parts = PyUnicode_Split(name, _Py_LATIN1_CHR('.'), -1);
-    if (parts == NULL) {
-        return NULL;
-    }
-    PyObject *obj = Py_NewRef(mod);
-    for (Py_ssize_t i = 1; i < PyList_GET_SIZE(parts); i++) {
-        Py_SETREF(obj, _PyEval_ImportFrom(tstate, obj,
-                                          PyList_GET_ITEM(parts, i)));
-        if (obj == NULL) {
-            break;
+    PyObject *from;
+    if (PyLazyImport_CheckExact(lz->lz_from)) {
+        from = lazy_import_replay_from(
+            tstate, mod, (PyLazyImportObject *)lz->lz_from);
+        if (from == NULL) {
+            return NULL;
         }
     }
-    Py_DECREF(parts);
+    else if (lz->lz_attr != NULL && PyUnicode_Check(lz->lz_attr)) {
+        from = Py_NewRef(mod);
+    }
+    else {
+        return Py_NewRef(mod);
+    }
+    PyObject *obj = _PyEval_ImportFrom(tstate, from, lz->lz_attr);
+    Py_DECREF(from);
     return obj;
 }
 
@@ -3929,6 +3934,12 @@ _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
 
     PyLazyImportObject *lz = (PyLazyImportObject *)lazy_import;
     PyInterpreterState *interp = tstate->interp;
+
+    // Walk back to the placeholder IMPORT_NAME left.
+    PyLazyImportObject *root = lz;
+    while (PyLazyImport_CheckExact(root->lz_from)) {
+        root = (PyLazyImportObject *)root->lz_from;
+    }
 
     // Acquire the global import lock to serialize reification
     _PyImport_AcquireLock(interp);
@@ -3966,7 +3977,7 @@ _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
             return NULL;
         }
         PyErr_SetImportErrorSubclass(PyExc_ImportCycleError, errmsg,
-                                     lz->lz_from, NULL);
+                                     root->lz_from, NULL);
         Py_DECREF(errmsg);
         Py_DECREF(name);
         _PyImport_ReleaseLock(interp);
@@ -3976,24 +3987,24 @@ _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
         goto error;
     }
 
-    if (lz->lz_attr != NULL) {
-        if (PyUnicode_Check(lz->lz_attr)) {
+    if (root->lz_attr != NULL) {
+        if (PyUnicode_Check(root->lz_attr)) {
             fromlist = PyTuple_New(1);
             if (fromlist == NULL) {
                 goto error;
             }
-            Py_INCREF(lz->lz_attr);
-            PyTuple_SET_ITEM(fromlist, 0, lz->lz_attr);
+            Py_INCREF(root->lz_attr);
+            PyTuple_SET_ITEM(fromlist, 0, root->lz_attr);
         }
         else {
-            Py_INCREF(lz->lz_attr);
-            fromlist = lz->lz_attr;
+            Py_INCREF(root->lz_attr);
+            fromlist = root->lz_attr;
         }
     }
 
     PyObject *globals = PyEval_GetGlobals();
 
-    if (PyMapping_GetOptionalItem(lz->lz_builtins, &_Py_ID(__import__),
+    if (PyMapping_GetOptionalItem(root->lz_builtins, &_Py_ID(__import__),
                                   &import_func) < 0) {
         goto error;
     }
@@ -4003,27 +4014,17 @@ _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
     }
     obj = _PyEval_ImportNameWithImport(
         tstate, import_func, globals, globals,
-        lz->lz_from, fromlist, _PyLong_GetZero()
+        root->lz_from, fromlist, _PyLong_GetZero()
     );
     if (obj == NULL) {
         goto error;
     }
 
-    if (lz->lz_dotted_as) {
-        PyObject *top = obj;
-        obj = import_from_dotted_name(tstate, top, lz->lz_from);
-        Py_DECREF(top);
-        if (obj == NULL) {
-            goto error;
-        }
-    }
-    else if (lz->lz_attr != NULL && PyUnicode_Check(lz->lz_attr)) {
-        PyObject *from = obj;
-        obj = _PyEval_ImportFrom(tstate, from, lz->lz_attr);
-        Py_DECREF(from);
-        if (obj == NULL) {
-            goto error;
-        }
+    PyObject *from = obj;
+    obj = lazy_import_replay_from(tstate, from, lz);
+    Py_DECREF(from);
+    if (obj == NULL) {
+        goto error;
     }
 
     assert(!PyLazyImport_CheckExact(obj));
@@ -4628,7 +4629,7 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
     else {
         Py_XINCREF(fromlist);
     }
-    PyObject *res = _PyLazyImport_New(frame, builtins, abs_name, fromlist, 0);
+    PyObject *res = _PyLazyImport_New(frame, builtins, abs_name, fromlist);
     if (res == NULL) {
         Py_XDECREF(fromlist);
         Py_DECREF(abs_name);

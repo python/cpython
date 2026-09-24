@@ -3334,12 +3334,10 @@ _PyEval_LazyImportFrom(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObje
     PyObject *ret;
     PyLazyImportObject *d = (PyLazyImportObject *)v;
 
-    if (d->lz_attr == NULL) {
-        // `import a.b as x` binds the module `a.b`, not an attribute of `a`.
-        if (d->lz_dotted_as) {
-            return Py_NewRef(v);
-        }
-        return _PyLazyImport_New(frame, d->lz_builtins, d->lz_from, NULL, 1);
+    if (d->lz_attr == NULL || PyUnicode_Check(d->lz_attr)) {
+        // `import a.b.c as d`: record the lookup, to replay once the
+        // import has run.
+        return _PyLazyImport_New(frame, d->lz_builtins, v, name);
     }
 
     PyObject *mod = PyImport_GetModule(d->lz_from);
@@ -3362,8 +3360,7 @@ _PyEval_LazyImportFrom(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObje
         Py_DECREF(mod);
     }
 
-    assert(!PyUnicode_Check(d->lz_attr));  // a fromlist
-    return _PyLazyImport_New(frame, d->lz_builtins, d->lz_from, name, 0);
+    return _PyLazyImport_New(frame, d->lz_builtins, d->lz_from, name);
 }
 
 #define CANNOT_CATCH_MSG "catching classes that do not inherit from "\

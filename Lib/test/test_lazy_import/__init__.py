@@ -2234,6 +2234,36 @@ class ModuleVariableNameCollisionTests(unittest.TestCase):
         """)
         assert_python_ok("-c", code)
 
+    def test_dotted_as_of_loaded_module(self):
+        """A dotted lazy import as binds the module, not a same-named attribute."""
+        # importlib.metadata is already loaded and has a `metadata` attribute.
+        code = textwrap.dedent("""
+            import importlib.metadata
+            import importlib.metadata as eager
+
+            lazy import importlib.metadata as lazily
+
+            assert lazily is eager, lazily
+        """)
+        assert_python_ok("-c", code)
+
+    def test_dotted_as_replays_lookups_on_custom_placeholder(self):
+        """A dotted lazy import as looks up its names on what the hook returned."""
+        code = textwrap.dedent("""
+            import builtins
+            import xml.dom
+
+            # In a list, so the hook reading it does not resolve it.
+            placeholder = [__lazy_import__("xml")]
+            default = builtins.__lazy_import__
+            builtins.__lazy_import__ = lambda *args: placeholder[0]
+            lazy import fake.dom as dom
+            builtins.__lazy_import__ = default
+
+            assert dom is xml.dom, dom
+        """)
+        assert_python_ok("-c", code)
+
 
 class DeletedModuleReimportTests(unittest.TestCase):
     """Tests for reimporting after module deletion from sys.modules."""
