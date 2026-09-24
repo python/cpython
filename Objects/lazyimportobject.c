@@ -104,8 +104,6 @@ lazy_import_getattro(PyObject *op, PyObject *name)
     return value;
 }
 
-static PyObject *lazy_import_name(PyLazyImportObject *m);
-
 // The dotted name of the object that resolving the placeholder returns.
 static PyObject *
 lazy_import_path(PyLazyImportObject *m)
@@ -120,7 +118,7 @@ lazy_import_path(PyLazyImportObject *m)
         return res;
     }
     if (m->lz_attr != NULL) {
-        return lazy_import_name(m);
+        return Py_NewRef(m->lz_from);
     }
     // __import__("a.b") returns the top-level package `a`.
     Py_ssize_t dot = PyUnicode_FindChar(
@@ -142,12 +140,7 @@ lazy_import_name(PyLazyImportObject *m)
         return lazy_import_path(m);
     }
     if (m->lz_attr != NULL) {
-        if (PyUnicode_Check(m->lz_attr)) {
-            return PyUnicode_FromFormat("%U.%U", m->lz_from, m->lz_attr);
-        }
-        else {
-            return PyUnicode_FromFormat("%U...", m->lz_from);
-        }
+        return PyUnicode_FromFormat("%U...", m->lz_from);
     }
     return Py_NewRef(m->lz_from);
 }

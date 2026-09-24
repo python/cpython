@@ -1177,6 +1177,22 @@ class MultipleNameFromImportTests(LazyImportTestCase):
         self.assertEqual(result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}")
         self.assertIn("OK", result.stdout)
 
+    def test_accessing_one_name_imports_only_its_submodule(self):
+        """Accessing one name should not import the other names' submodules."""
+        code = textwrap.dedent("""
+            import sys
+
+            lazy from test.test_lazy_import.data.pkg import b, bar, broken
+
+            # Importing bar prints, and importing broken raises.
+            b.foo()
+
+            assert "test.test_lazy_import.data.pkg.bar" not in sys.modules
+            assert "test.test_lazy_import.data.pkg.broken" not in sys.modules
+        """)
+        rc, out, err = assert_python_ok("-c", code)
+        self.assertEqual(out, b"")
+
     def test_all_names_reified_after_all_accessed(self):
         """All names should be reified after each is accessed."""
         code = textwrap.dedent("""

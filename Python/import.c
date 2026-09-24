@@ -3904,19 +3904,13 @@ static PyObject *
 lazy_import_replay_from(PyThreadState *tstate, PyObject *mod,
                         PyLazyImportObject *lz)
 {
-    PyObject *from;
-    if (PyLazyImport_CheckExact(lz->lz_from)) {
-        from = lazy_import_replay_from(
-            tstate, mod, (PyLazyImportObject *)lz->lz_from);
-        if (from == NULL) {
-            return NULL;
-        }
-    }
-    else if (lz->lz_attr != NULL && PyUnicode_Check(lz->lz_attr)) {
-        from = Py_NewRef(mod);
-    }
-    else {
+    if (!PyLazyImport_CheckExact(lz->lz_from)) {
         return Py_NewRef(mod);
+    }
+    PyObject *from = lazy_import_replay_from(
+        tstate, mod, (PyLazyImportObject *)lz->lz_from);
+    if (from == NULL) {
+        return NULL;
     }
     PyObject *obj = _PyEval_ImportFrom(tstate, from, lz->lz_attr);
     Py_DECREF(from);
@@ -3935,9 +3929,10 @@ _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
     PyLazyImportObject *lz = (PyLazyImportObject *)lazy_import;
     PyInterpreterState *interp = tstate->interp;
 
-    // Walk back to the placeholder IMPORT_NAME left.
-    PyLazyImportObject *root = lz;
+    // Walk back to the placeholder IMPORT_NAME left, and the first lookup on it.
+    PyLazyImportObject *root = lz, *first = NULL;
     while (PyLazyImport_CheckExact(root->lz_from)) {
+        first = root;
         root = (PyLazyImportObject *)root->lz_from;
     }
 
@@ -3988,17 +3983,11 @@ _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
     }
 
     if (root->lz_attr != NULL) {
-        if (PyUnicode_Check(root->lz_attr)) {
-            fromlist = PyTuple_New(1);
-            if (fromlist == NULL) {
-                goto error;
-            }
-            Py_INCREF(root->lz_attr);
-            PyTuple_SET_ITEM(fromlist, 0, root->lz_attr);
-        }
-        else {
-            Py_INCREF(root->lz_attr);
-            fromlist = root->lz_attr;
+        // `from a import b, c`: import only the name being resolved.
+        fromlist = first ? PyTuple_Pack(1, first->lz_attr)
+                         : Py_NewRef(root->lz_attr);
+        if (fromlist == NULL) {
+            goto error;
         }
     }
 
