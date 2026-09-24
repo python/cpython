@@ -309,8 +309,8 @@ tokenizeriter_next(PyObject *op)
             type = OP;
         }
         else if (type == NEWLINE) {
-            Py_DECREF(str);
             if (!view.implicit_newline) {
+                Py_DECREF(str);
                 assert(token_start != NULL);
                 if (token_start[0] == '\r') {
                     str = PyUnicode_FromString("\r\n");
@@ -328,7 +328,6 @@ tokenizeriter_next(PyObject *op)
         }
 
         if (str == NULL) {
-            Py_DECREF(line);
             goto exit;
         }
     }
