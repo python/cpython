@@ -38,6 +38,12 @@ static PyObject *
 test_tokenizer_source(PyObject *Py_UNUSED(module),
                       PyObject *Py_UNUSED(args))
 {
+    const char multiple_lines[] = "a\nb\n";
+    const char first_line[] = "alpha\n";
+    const char second_line[] = "\xce\xb2\n";
+    const char expected[] = "alpha\n\xce\xb2\n";
+    const char tail[] = "tail";
+    const char terminated_line[] = "x\n";
     _PyTok_SourceText source;
     _PyTok_SourceInit(&source);
 
@@ -49,13 +55,15 @@ test_tokenizer_source(PyObject *Py_UNUSED(module),
             _PyTok_SourceAppendLine(&source, "", 0) < 0,
             "accepted empty source line") < 0 ||
             check_system_error(
-                _PyTok_SourceAppendLine(&source, "a\nb\n", 4) < 0,
+                _PyTok_SourceAppendLine(
+                    &source, multiple_lines, sizeof(multiple_lines) - 1) < 0,
                 "accepted multiple source lines") < 0 ||
             check(_PyTok_SourceAppendLine(
-                      &source, "alpha\n", 6) == 0,
+                      &source, first_line, sizeof(first_line) - 1) == 0,
                   "wrong first source offset") < 0 ||
             check(_PyTok_SourceAppendLine(
-                      &source, "\xce\xb2\n", 3) == 6,
+                      &source, second_line, sizeof(second_line) - 1) ==
+                      (Py_ssize_t)sizeof(first_line) - 1,
                   "wrong second source offset") < 0) {
         goto error;
     }
@@ -68,16 +76,17 @@ test_tokenizer_source(PyObject *Py_UNUSED(module),
         goto error;
     }
 
-    if (check(source.len == 9 &&
-                  memcmp(source.bytes, "alpha\n\xce\xb2\n", 10) == 0,
+    if (check(source.len == (Py_ssize_t)sizeof(expected) - 1 &&
+                  memcmp(source.bytes, expected, sizeof(expected)) == 0,
               "wrong source contents") < 0) {
         goto error;
     }
 
     _PyTok_SourceClear(&source);
-    if (_PyTok_SourceAppendLine(&source, "tail", 4) < 0 ||
+    if (_PyTok_SourceAppendLine(&source, tail, sizeof(tail) - 1) < 0 ||
             check_system_error(
-                _PyTok_SourceAppendLine(&source, "x\n", 2) < 0,
+                _PyTok_SourceAppendLine(
+                    &source, terminated_line, sizeof(terminated_line) - 1) < 0,
                 "appended after unterminated source line") < 0) {
         goto error;
     }
@@ -98,24 +107,34 @@ static PyObject *
 test_tokenizer_source_discard(PyObject *Py_UNUSED(module),
                              PyObject *Py_UNUSED(args))
 {
+    enum { LINE_COUNT = 260 };
+    const char first_line[] = "x\n";
+    const char second_line[] = "y\n";
+    const char tail[] = "tail";
+    const char final_line[] = "z\n";
+    const _PyTok_Off first_batch_len = LINE_COUNT * (sizeof(first_line) - 1);
+    const _PyTok_Off second_batch_len = LINE_COUNT * (sizeof(second_line) - 1);
+    const _PyTok_Off discarded_len = first_batch_len + second_batch_len;
     _PyTok_SourceText source;
     _PyTok_SourceInit(&source);
-    for (int i = 0; i < 260; i++) {
-        if (_PyTok_SourceAppendLine(&source, "x\n", 2) < 0) {
+    for (int i = 0; i < LINE_COUNT; i++) {
+        if (_PyTok_SourceAppendLine(&source, first_line, sizeof(first_line) - 1) < 0) {
             goto error;
         }
     }
     char *bytes = source.bytes;
     _PyTok_Off capacity = source.cap;
     _PyTok_SourceDiscard(&source);
-    if (check(source.base_offset == 520 && source.len == 0 &&
+    if (check(source.base_offset == first_batch_len && source.len == 0 &&
                   source.nlines == 0 && source.bytes == bytes &&
                   source.cap == capacity && source.bytes[0] == '\0',
               "discard did not preserve source allocation") < 0) {
         goto error;
     }
-    for (int i = 0; i < 260; i++) {
-        if (check(_PyTok_SourceAppendLine(&source, "y\n", 2) == 520 + 2 * i,
+    for (int i = 0; i < LINE_COUNT; i++) {
+        if (check(_PyTok_SourceAppendLine(
+                      &source, second_line, sizeof(second_line) - 1) ==
+                      first_batch_len + ((Py_ssize_t)sizeof(second_line) - 1) * i,
                   "wrong source offset after discard") < 0) {
             goto error;
         }
@@ -125,18 +144,22 @@ test_tokenizer_source_discard(PyObject *Py_UNUSED(module),
         goto error;
     }
     _PyTok_SourceDiscard(&source);
-    if (check(_PyTok_SourceAppendLine(&source, "tail", 4) == 1040,
+    if (check(_PyTok_SourceAppendLine(
+                  &source, tail, sizeof(tail) - 1) == discarded_len,
               "wrong source offset after repeated discard") < 0) {
         goto error;
     }
     _PyTok_SourceDiscard(&source);
-    if (check(_PyTok_SourceAppendLine(&source, "z\n", 2) == 1044,
+    if (check(_PyTok_SourceAppendLine(
+                  &source, final_line, sizeof(final_line) - 1) ==
+                  discarded_len + (Py_ssize_t)sizeof(tail) - 1,
               "cannot append after discarding unterminated line") < 0) {
         goto error;
     }
     _PyTok_SourceDiscard(&source);
     source.base_offset = PY_SSIZE_T_MAX - 1;
-    if (check(_PyTok_SourceAppendLine(&source, "z\n", 2) < 0 &&
+    if (check(_PyTok_SourceAppendLine(
+                  &source, final_line, sizeof(final_line) - 1) < 0 &&
                   PyErr_ExceptionMatches(PyExc_MemoryError),
               "accepted overflowing logical source offset") < 0) {
         goto error;
