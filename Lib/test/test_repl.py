@@ -214,6 +214,19 @@ class TestInteractiveInterpreter(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         self.assertIn(">>> 3\n>>> ", output)
 
+    def test_long_non_ascii_input(self):
+        value = "é漢" * 5000
+        for newline in ("\n", "\r\n"):
+            with self.subTest(newline=newline):
+                p = spawn_repl(encoding="utf-8")
+                p.stdin.write(
+                    f"value = {value!r}{newline}"
+                    f"print(len(value), value[:2]){newline}"
+                )
+                output = kill_python(p)
+                self.assertEqual(p.returncode, 0)
+                self.assertIn(">>> 10000 é漢\n>>> ", output)
+
     def test_close_stdin(self):
         user_input = dedent('''
             import os
