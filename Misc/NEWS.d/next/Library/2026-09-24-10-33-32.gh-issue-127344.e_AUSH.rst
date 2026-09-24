@@ -1,0 +1,3 @@
+:meth:`socket.socket.setsockopt` now accepts an integer value for
+:const:`!IP_MULTICAST_TTL` and :const:`!IP_MULTICAST_LOOP` on OpenBSD, which
+requires an :c:expr:`unsigned char` instead of an :c:expr:`int`.

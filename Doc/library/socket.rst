@@ -2126,6 +2126,11 @@ Socket Objects
       .. versionchanged:: 3.6
          setsockopt(level, optname, None, optlen: int) form added.
 
+      .. versionchanged:: next
+         On OpenBSD, an integer *value* for :const:`!IP_MULTICAST_TTL` and
+         :const:`!IP_MULTICAST_LOOP` is now passed as an :c:expr:`unsigned char`,
+         as the platform requires.
+
       .. availability:: not WASI.
 
 

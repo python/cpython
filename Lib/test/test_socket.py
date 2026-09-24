@@ -1626,6 +1626,28 @@ class GeneralModuleTests(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, "takes at most 4 arguments"):
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1, 2, 3)
 
+    @unittest.skipUnless(hasattr(socket, 'IP_MULTICAST_TTL')
+                         and hasattr(socket, 'IP_MULTICAST_LOOP'),
+                         'requires IP_MULTICAST_TTL and IP_MULTICAST_LOOP')
+    @unittest.skipIf(sys.platform.startswith('sunos'),
+                     'Solaris requires an unsigned char (gh-127344)')
+    def test_setsockopt_multicast_int(self):
+        # gh-127344: OpenBSD requires an unsigned char for these options,
+        # but an int value should still be accepted.
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.addCleanup(sock.close)
+
+        def getsockopt(optname):
+            # The option is either an int or an unsigned char.
+            value = sock.getsockopt(socket.IPPROTO_IP, optname, 4)
+            return int.from_bytes(value, sys.byteorder)
+
+        sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 5)
+        self.assertEqual(getsockopt(socket.IP_MULTICAST_TTL), 5)
+        for loop in (0, 1):
+            sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_LOOP, loop)
+            self.assertEqual(getsockopt(socket.IP_MULTICAST_LOOP), loop)
+
     def testSendAfterClose(self):
         # testing send() after close() with timeout
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:

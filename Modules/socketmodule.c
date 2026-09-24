@@ -3449,6 +3449,19 @@ sock_setsockopt(PyObject *self, PyObject *args)
             goto done;
         }
 #endif
+#ifdef __OpenBSD__
+        /* OpenBSD rejects an int for the multicast TTL and loop options
+           and requires an unsigned char instead (gh-127344). */
+        if (level == IPPROTO_IP
+            && (optname == IP_MULTICAST_TTL || optname == IP_MULTICAST_LOOP)
+            && 0 <= flag && flag <= UCHAR_MAX)
+        {
+            unsigned char cflag = (unsigned char)flag;
+            res = setsockopt(get_sock_fd(s), level, optname,
+                             (char*)&cflag, sizeof cflag);
+            goto done;
+        }
+#endif
         res = setsockopt(get_sock_fd(s), level, optname,
                          (char*)&flag, sizeof flag);
         goto done;
