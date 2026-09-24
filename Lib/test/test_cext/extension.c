@@ -80,6 +80,7 @@ static int
 _testcext_exec(PyObject *module)
 {
     PyObject *result, *obj;
+    PyObject *slots[1];
 
 #ifdef __STDC_VERSION__
     if (PyModule_AddIntMacro(module, __STDC_VERSION__) < 0) {
@@ -105,11 +106,21 @@ _testcext_exec(PyObject *module)
     Py_CLEAR(obj);
     assert(obj == NULL);
 
+    // gh-157649: Test Py_CLEAR() on an array
+    slots[0] = Py_None;
+    Py_CLEAR(slots[0]);
+    assert(slots[0] == _Py_NULL);
+
 #ifndef Py_LIMITED_API
     // Test Py_SETREF(): use typeof()/__typeof__() if available, or memcpy()
     obj = Py_None;
     Py_SETREF(obj, NULL);
     assert(obj == NULL);
+
+    // gh-157649: Test Py_SETREF() on an array
+    slots[0] = Py_None;
+    Py_SETREF(slots[0], _Py_NULL);
+    assert(slots[0] == _Py_NULL);
 #endif
 
     // Test that Py_BEGIN_CRITICAL_SECTION is available
