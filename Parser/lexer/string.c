@@ -370,7 +370,7 @@ _PyLexer_scan_string(struct tok_state *tok, struct token *token, int c)
                     assert(level >= 0 && level < tok->level);
                     assert(tok->parenstack[level] == '{');
                     int lineno = tok->parenlinenostack[level];
-                    if (lineno != tok->lineno) {
+                    if (lineno != location.lineno) {
                         _PyTokenizer_syntaxerror_at(
                             tok, line, cursor_offset, location.lineno, -1, -1,
                             "%c-string: expecting '}' to close '{' on line %d",
