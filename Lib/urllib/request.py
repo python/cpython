@@ -95,7 +95,7 @@ import string
 import sys
 import time
 import tempfile
-from _collections_abc import Mapping
+from collections.abc import Mapping
 
 from urllib.error import URLError, HTTPError, ContentTooShortError
 from urllib.parse import (
@@ -1259,7 +1259,7 @@ class AbstractHTTPHandler(BaseHandler):
         if not host:
             raise URLError('no host given')
 
-        if request.data is not None:
+        if request.data is not None:  # POST
             data = request.data
             if isinstance(data, (str, Mapping)):
                 msg = "POST data should be bytes, an iterable of bytes, " \

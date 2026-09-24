@@ -246,6 +246,8 @@ The following classes are provided:
    server, or ``None`` if no such data is needed.  Currently HTTP
    requests are the only ones that use *data*.  The supported object
    types include bytes, file-like objects, and iterables of bytes-like objects.
+   Mappings, such as :class:`dict`, are not accepted and raise
+   :exc:`TypeError`.
    If no ``Content-Length`` nor ``Transfer-Encoding`` header field
    has been provided, :class:`HTTPHandler` will set these headers according
    to the type of *data*.  ``Content-Length`` will be used to send
@@ -317,6 +319,9 @@ The following classes are provided:
       Do not raise an error if the ``Content-Length`` has not been
       provided and *data* is neither ``None`` nor a bytes object.
       Fall back to use chunked transfer encoding instead.
+
+   .. versionchanged:: next
+      Raise :exc:`TypeError` if *data* is a mapping.
 
 .. class:: OpenerDirector()
 
