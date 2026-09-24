@@ -222,7 +222,11 @@ class ModuleCompleter:
             return [], None, self._get_import_completion_action(path)
         try:
             if hasattr(imported_module, '__all__'): # Return __all__ directly
-                return imported_module.__all__, imported_module, None
+                names = [
+                    attr_name for attr_name in imported_module.__all__
+                    if attr_name.isidentifier()
+                ]
+                return names, imported_module, None
             else:
                 module_attributes = dir(imported_module)
         except Exception:
