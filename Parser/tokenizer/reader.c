@@ -350,7 +350,8 @@ next_file(struct tok_state *tok, _PyTok_Chunk *chunk)
                 return _PYTOK_READ_LINE;
             }
             int decoded = _PyTok_DecodeChunk(tok, &input, 0);
-            if (decoded == 0 && chunk_is_line(&input)) {
+            if (decoded == 0 && reader->decoded_pos == reader->decoded_len &&
+                    chunk_is_line(&input)) {
                 *chunk = input;
                 return _PYTOK_READ_LINE;
             }
