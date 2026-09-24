@@ -1291,7 +1291,7 @@ class GCTests(unittest.TestCase):
 
     @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
     def test_clear_frame_on_early_return(self):
-        # gh-156425: Make sure that a garbage collection always clears 
+        # gh-156425: Make sure that a garbage collection always clears
         # PyInterpreterState.gc.frame when it's done.
         thresholds = gc.get_threshold()
         gc.enable()
