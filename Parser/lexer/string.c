@@ -13,7 +13,7 @@ string_error_token(struct tok_state *tok, struct token *token,
 {
     tok->diagnostic = (_PyTokenizer_Diagnostic){
         .location = {location.lineno, location.byte_col + 1},
-        .text_span = _PyTok_SpanFromBounds(start - location.byte_col, tok->inp),
+        .text_span = {start - location.byte_col, tok->inp},
     };
     int type = _PyLexer_token_setup(tok, token, ERRORTOKEN, -1, -1);
     token->start_loc = location;

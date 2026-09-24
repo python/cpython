@@ -37,7 +37,6 @@ typedef struct
     /* Needed to cache line for performance */
     PyObject *last_line;
     Py_ssize_t last_lineno;
-    Py_ssize_t last_end_lineno;
     Py_ssize_t byte_col_offset_diff;
 } tokenizeriterobject;
 
@@ -79,18 +78,15 @@ tokenizeriter_new_impl(PyTypeObject *type, PyObject *readline,
     self->last_line = NULL;
     self->byte_col_offset_diff = 0;
     self->last_lineno = 0;
-    self->last_end_lineno = 0;
 
     return (PyObject *)self;
 }
 
-static int
+static void
 _tokenizer_error(tokenizeriterobject *it)
 {
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(it);
-    if (PyErr_Occurred()) {
-        return -1;
-    }
+    assert(!PyErr_Occurred());
 
     const char *msg = NULL;
     PyObject* errtype = PyExc_SyntaxError;
@@ -105,19 +101,17 @@ _tokenizer_error(tokenizeriterobject *it)
             PyErr_SyntaxLocationObject(
                 info.filename, info.location.lineno,
                 (int)Py_MAX(0, info.input_span.end - info.input_span.start));
-            return -1;
+            return;
         case E_DEDENT:
             msg = "unindent does not match any outer indentation level";
             errtype = PyExc_IndentationError;
             break;
         case E_INTR:
-            if (!PyErr_Occurred()) {
-                PyErr_SetNone(PyExc_KeyboardInterrupt);
-            }
-            return -1;
+            PyErr_SetNone(PyExc_KeyboardInterrupt);
+            return;
         case E_NOMEM:
             PyErr_NoMemory();
-            return -1;
+            return;
         case E_TABSPACE:
             errtype = PyExc_TabError;
             msg = "inconsistent use of tabs and spaces in indentation";
@@ -138,7 +132,6 @@ _tokenizer_error(tokenizeriterobject *it)
     PyObject* error_line = NULL;
     PyObject* tmp = NULL;
     PyObject* value = NULL;
-    int result = 0;
 
     Py_ssize_t input_size;
     const char *input = _PyTokenizer_SpanView(
@@ -148,30 +141,25 @@ _tokenizer_error(tokenizeriterobject *it)
     size -= 1; // Remove the newline character from the end of the line
     error_line = PyUnicode_DecodeUTF8(input, size, "replace");
     if (!error_line) {
-        result = -1;
         goto exit;
     }
 
     Py_ssize_t offset = _PyPegen_byte_offset_to_character_offset(error_line, input_size);
     if (offset == -1) {
-        result = -1;
         goto exit;
     }
     tmp = Py_BuildValue("(OnnOOO)", info.filename, info.location.lineno, offset, error_line, Py_None, Py_None);
     if (!tmp) {
-        result = -1;
         goto exit;
     }
 
     errstr = PyUnicode_FromString(msg);
     if (!errstr) {
-        result = -1;
         goto exit;
     }
 
     value = _PyTuple_FromPair(errstr, tmp);
     if (!value) {
-        result = -1;
         goto exit;
     }
 
@@ -182,7 +170,6 @@ exit:
     Py_XDECREF(error_line);
     Py_XDECREF(tmp);
     Py_XDECREF(value);
-    return result;
 }
 
 static PyObject *
@@ -243,7 +230,6 @@ _get_col_offsets(tokenizeriterobject *it, const struct token *token,
         }
     }
     it->last_lineno = lineno;
-    it->last_end_lineno = end_lineno;
 }
 
 static PyObject *
@@ -266,9 +252,8 @@ tokenizeriter_next(PyObject *op)
         }
         goto exit;
     }
-    if (it->done || type == ERRORTOKEN) {
+    if (it->done) {
         PyErr_SetString(PyExc_StopIteration, "EOF");
-        it->done = 1;
         goto exit;
     }
     _PyToken_View view;

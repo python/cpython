@@ -182,7 +182,7 @@ read_file_line(struct tok_state *tok, _PyTok_Chunk *chunk)
             break;
         }
     }
-    int implicit = len == 0 || reader->file_buffer[len - 1] != '\n';
+    int implicit = reader->file_buffer[len - 1] != '\n';
     chunk->data = reader->file_buffer;
     chunk->len = len;
     chunk->implicit_newline = implicit;
@@ -465,9 +465,6 @@ next_readline(struct tok_state *tok, _PyTok_Chunk *chunk)
                 tok->done = E_NOMEM;
                 return _PYTOK_READ_ERROR;
             }
-        }
-        if (pop_decoded_line(reader, chunk)) {
-            return _PYTOK_READ_LINE;
         }
     }
 }
