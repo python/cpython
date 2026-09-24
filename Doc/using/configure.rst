@@ -1009,7 +1009,8 @@ Debug options
 .. option:: --with-address-sanitizer
 
    Enable AddressSanitizer memory error detector, ``asan`` (default is no).
-   Python uses ``malloc`` instead of :ref:`pymalloc <pymalloc>` by default.
+
+   When built with ``asan``, Python uses ``malloc`` instead of :ref:`pymalloc <pymalloc>` by default.
    Set :envvar:`PYTHONMALLOC=pymalloc <PYTHONMALLOC>` to use pymalloc.
 
    .. versionadded:: 3.6
@@ -1017,7 +1018,8 @@ Debug options
 .. option:: --with-memory-sanitizer
 
    Enable MemorySanitizer allocation error detector, ``msan`` (default is no).
-   Python uses ``malloc`` instead of :ref:`pymalloc <pymalloc>` by default.
+
+   When built with ``msan``, Python uses ``malloc`` instead of :ref:`pymalloc <pymalloc>` by default.
    Set :envvar:`PYTHONMALLOC=pymalloc <PYTHONMALLOC>` to use pymalloc.
 
    .. versionadded:: 3.6
