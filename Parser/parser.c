@@ -27298,17 +27298,7 @@ _loop0_1_rule(Parser *p)
         {
             _res = newline_var;
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -27317,7 +27307,6 @@ _loop0_1_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -27369,17 +27358,7 @@ _loop1_2_rule(Parser *p)
         {
             _res = statement_var;
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -27388,7 +27367,6 @@ _loop1_2_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -27454,17 +27432,7 @@ _loop0_3_rule(Parser *p)
                 return NULL;
             }
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -27473,7 +27441,6 @@ _loop0_3_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -28003,17 +27970,7 @@ _loop1_12_rule(Parser *p)
         {
             _res = _tmp_157_var;
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -28022,7 +27979,6 @@ _loop1_12_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -28088,17 +28044,7 @@ _loop0_13_rule(Parser *p)
                 return NULL;
             }
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -28107,7 +28053,6 @@ _loop0_13_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -28303,17 +28248,7 @@ _loop0_17_rule(Parser *p)
         {
             _res = _tmp_158_var;
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -28322,7 +28257,6 @@ _loop0_17_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -28374,17 +28308,7 @@ _loop1_18_rule(Parser *p)
         {
             _res = _tmp_158_var;
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -28393,7 +28317,6 @@ _loop1_18_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -28459,17 +28382,7 @@ _loop0_19_rule(Parser *p)
                 return NULL;
             }
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -28478,7 +28391,6 @@ _loop0_19_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -28626,17 +28538,7 @@ _loop0_22_rule(Parser *p)
                 return NULL;
             }
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -28645,7 +28547,6 @@ _loop0_22_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -28738,17 +28639,7 @@ _loop1_24_rule(Parser *p)
         {
             _res = _tmp_159_var;
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -28757,7 +28648,6 @@ _loop1_24_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -28909,17 +28799,7 @@ _loop0_27_rule(Parser *p)
         {
             _res = param_no_default_var;
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -28928,7 +28808,6 @@ _loop0_27_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -28980,17 +28859,7 @@ _loop0_28_rule(Parser *p)
         {
             _res = param_with_default_var;
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -28999,7 +28868,6 @@ _loop0_28_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -29051,17 +28919,7 @@ _loop1_29_rule(Parser *p)
         {
             _res = param_no_default_var;
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -29070,7 +28928,6 @@ _loop1_29_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -29127,17 +28984,7 @@ _loop1_30_rule(Parser *p)
         {
             _res = param_with_default_var;
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -29146,7 +28993,6 @@ _loop1_30_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -29203,17 +29049,7 @@ _loop0_31_rule(Parser *p)
         {
             _res = param_maybe_default_var;
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -29222,7 +29058,6 @@ _loop0_31_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -29274,17 +29109,7 @@ _loop1_32_rule(Parser *p)
         {
             _res = param_maybe_default_var;
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -29293,7 +29118,6 @@ _loop1_32_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -29359,17 +29183,7 @@ _loop0_33_rule(Parser *p)
                 return NULL;
             }
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -29378,7 +29192,6 @@ _loop0_33_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -29547,17 +29360,7 @@ _loop1_36_rule(Parser *p)
         {
             _res = except_block_var;
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -29566,7 +29369,6 @@ _loop1_36_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -29623,17 +29425,7 @@ _loop1_37_rule(Parser *p)
         {
             _res = except_star_block_var;
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -29642,7 +29434,6 @@ _loop1_37_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -29699,17 +29490,7 @@ _loop1_38_rule(Parser *p)
         {
             _res = case_block_var;
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -29718,7 +29499,6 @@ _loop1_38_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -29784,17 +29564,7 @@ _loop0_39_rule(Parser *p)
                 return NULL;
             }
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -29803,7 +29573,6 @@ _loop0_39_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -30114,17 +29883,7 @@ _loop0_44_rule(Parser *p)
                 return NULL;
             }
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -30133,7 +29892,6 @@ _loop0_44_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -30235,17 +29993,7 @@ _loop0_46_rule(Parser *p)
                 return NULL;
             }
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -30254,7 +30002,6 @@ _loop0_46_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -30413,17 +30160,7 @@ _loop0_49_rule(Parser *p)
                 return NULL;
             }
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -30432,7 +30169,6 @@ _loop0_49_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -30534,17 +30270,7 @@ _loop0_51_rule(Parser *p)
                 return NULL;
             }
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -30553,7 +30279,6 @@ _loop0_51_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -30655,17 +30380,7 @@ _loop0_53_rule(Parser *p)
                 return NULL;
             }
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -30674,7 +30389,6 @@ _loop0_53_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -30767,17 +30481,7 @@ _loop1_55_rule(Parser *p)
         {
             _res = _tmp_16_var;
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -30786,7 +30490,6 @@ _loop1_55_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -30843,17 +30546,7 @@ _loop1_56_rule(Parser *p)
         {
             _res = _tmp_160_var;
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -30862,7 +30555,6 @@ _loop1_56_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -30928,17 +30620,7 @@ _loop0_57_rule(Parser *p)
                 return NULL;
             }
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -30947,7 +30629,6 @@ _loop0_57_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -31040,17 +30721,7 @@ _loop1_59_rule(Parser *p)
         {
             _res = _tmp_161_var;
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -31059,7 +30730,6 @@ _loop1_59_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -31116,17 +30786,7 @@ _loop1_60_rule(Parser *p)
         {
             _res = _tmp_162_var;
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -31135,7 +30795,6 @@ _loop1_60_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -31192,17 +30851,7 @@ _loop1_61_rule(Parser *p)
         {
             _res = compare_op_bitwise_or_pair_var;
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -31211,7 +30860,6 @@ _loop1_61_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -31320,17 +30968,7 @@ _loop0_63_rule(Parser *p)
                 return NULL;
             }
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -31339,7 +30977,6 @@ _loop0_63_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -31763,17 +31400,7 @@ _loop0_70_rule(Parser *p)
         {
             _res = lambda_param_no_default_var;
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -31782,7 +31409,6 @@ _loop0_70_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -31834,17 +31460,7 @@ _loop0_71_rule(Parser *p)
         {
             _res = lambda_param_with_default_var;
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -31853,7 +31469,6 @@ _loop0_71_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -31905,17 +31520,7 @@ _loop1_72_rule(Parser *p)
         {
             _res = lambda_param_no_default_var;
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -31924,7 +31529,6 @@ _loop1_72_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -31981,17 +31585,7 @@ _loop1_73_rule(Parser *p)
         {
             _res = lambda_param_with_default_var;
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -32000,7 +31594,6 @@ _loop1_73_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -32057,17 +31650,7 @@ _loop0_74_rule(Parser *p)
         {
             _res = lambda_param_maybe_default_var;
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -32076,7 +31659,6 @@ _loop0_74_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -32128,17 +31710,7 @@ _loop1_75_rule(Parser *p)
         {
             _res = lambda_param_maybe_default_var;
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -32147,7 +31719,6 @@ _loop1_75_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -32204,17 +31775,7 @@ _loop0_76_rule(Parser *p)
         {
             _res = fstring_format_spec_var;
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -32223,7 +31784,6 @@ _loop0_76_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -32275,17 +31835,7 @@ _loop0_77_rule(Parser *p)
         {
             _res = fstring_middle_var;
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -32294,7 +31844,6 @@ _loop0_77_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -32346,17 +31895,7 @@ _loop0_78_rule(Parser *p)
         {
             _res = tstring_format_spec_var;
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -32365,7 +31904,6 @@ _loop0_78_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -32417,17 +31955,7 @@ _loop0_79_rule(Parser *p)
         {
             _res = tstring_middle_var;
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -32436,7 +31964,6 @@ _loop0_79_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -32488,17 +32015,7 @@ _loop1_80_rule(Parser *p)
         {
             _res = _tmp_154_var;
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -32507,7 +32024,6 @@ _loop1_80_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -32564,17 +32080,7 @@ _loop1_81_rule(Parser *p)
         {
             _res = tstring_var;
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -32583,7 +32089,6 @@ _loop1_81_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -32649,17 +32154,7 @@ _loop0_82_rule(Parser *p)
                 return NULL;
             }
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -32668,7 +32163,6 @@ _loop0_82_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -32819,17 +32313,7 @@ _loop0_85_rule(Parser *p)
                 return NULL;
             }
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -32838,7 +32322,6 @@ _loop0_85_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -32931,17 +32414,7 @@ _loop1_87_rule(Parser *p)
         {
             _res = for_if_clause_var;
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -32950,7 +32423,6 @@ _loop1_87_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -33007,17 +32479,7 @@ _loop0_88_rule(Parser *p)
         {
             _res = _tmp_164_var;
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -33026,7 +32488,6 @@ _loop0_88_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -33165,17 +32626,7 @@ _loop0_90_rule(Parser *p)
                 return NULL;
             }
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -33184,7 +32635,6 @@ _loop0_90_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -33333,17 +32783,7 @@ _loop0_93_rule(Parser *p)
                 return NULL;
             }
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -33352,7 +32792,6 @@ _loop0_93_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -33500,17 +32939,7 @@ _loop0_96_rule(Parser *p)
                 return NULL;
             }
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -33519,7 +32948,6 @@ _loop0_96_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -33612,17 +33040,7 @@ _loop0_98_rule(Parser *p)
         {
             _res = _tmp_166_var;
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -33631,7 +33049,6 @@ _loop0_98_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -33808,17 +33225,7 @@ _loop0_101_rule(Parser *p)
                 return NULL;
             }
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -33827,7 +33234,6 @@ _loop0_101_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -33929,17 +33335,7 @@ _loop0_103_rule(Parser *p)
                 return NULL;
             }
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -33948,7 +33344,6 @@ _loop0_103_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -34150,17 +33545,7 @@ _loop0_107_rule(Parser *p)
                 return NULL;
             }
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -34169,7 +33554,6 @@ _loop0_107_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -34461,17 +33845,7 @@ _loop1_113_rule(Parser *p)
         {
             _res = _tmp_169_var;
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -34480,7 +33854,6 @@ _loop1_113_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -34920,17 +34293,7 @@ _loop0_119_rule(Parser *p)
         {
             _res = star_named_expressions_var;
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -34939,7 +34302,6 @@ _loop0_119_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -34991,17 +34353,7 @@ _loop0_120_rule(Parser *p)
         {
             _res = _tmp_157_var;
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -35010,7 +34362,6 @@ _loop0_120_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -35549,17 +34900,7 @@ _loop0_129_rule(Parser *p)
                 return NULL;
             }
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -35568,7 +34909,6 @@ _loop0_129_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -35889,17 +35229,7 @@ _loop0_135_rule(Parser *p)
                 return NULL;
             }
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -35908,7 +35238,6 @@ _loop0_135_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -36051,17 +35380,7 @@ _loop0_138_rule(Parser *p)
                 return NULL;
             }
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -36070,7 +35389,6 @@ _loop0_138_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -36172,17 +35490,7 @@ _loop0_140_rule(Parser *p)
                 return NULL;
             }
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -36191,7 +35499,6 @@ _loop0_140_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -36341,17 +35648,7 @@ _loop0_143_rule(Parser *p)
         {
             _res = block_var;
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -36360,7 +35657,6 @@ _loop0_143_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -37998,17 +37294,7 @@ _loop0_172_rule(Parser *p)
         {
             _res = _tmp_177_var;
             if (_n == _children_capacity) {
-                if ((size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))) {
-                    PyMem_Free(_children);
-                    p->error_indicator = 1;
-                    PyErr_NoMemory();
-                    p->level--;
-                    return NULL;
-                }
-                Py_ssize_t _new_capacity = _children_capacity == 0
-                    ? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-                void **_new_children = PyMem_Realloc(
-                    _children, _new_capacity * sizeof(*_children));
+                void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);
                 if (!_new_children) {
                     PyMem_Free(_children);
                     p->error_indicator = 1;
@@ -38017,7 +37303,6 @@ _loop0_172_rule(Parser *p)
                     return NULL;
                 }
                 _children = _new_children;
-                _children_capacity = _new_capacity;
             }
             _children[_n++] = _res;
             _mark = p->mark;

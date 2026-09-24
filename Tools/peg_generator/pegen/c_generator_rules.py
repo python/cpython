@@ -56,19 +56,11 @@ class _LoopBuffer:
     def append(self, value: str) -> None:
         self._print("if (_n == _children_capacity) {")
         with self._indent():
-            self._check_memory(
-                "(size_t)_children_capacity > (size_t)PY_SSIZE_T_MAX / "
-                "(PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*_children))"
+            self._print(
+                "void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);"
             )
-            self._print("Py_ssize_t _new_capacity = _children_capacity == 0")
-            with self._indent():
-                self._print("? 1 : _children_capacity * PEGEN_ARRAY_GROWTH_FACTOR;")
-            self._print("void **_new_children = PyMem_Realloc(")
-            with self._indent():
-                self._print("_children, _new_capacity * sizeof(*_children));")
             self._check_memory("!_new_children")
             self._print("_children = _new_children;")
-            self._print("_children_capacity = _new_capacity;")
         self._print("}")
         self._print(f"_children[_n++] = {value};")
 
