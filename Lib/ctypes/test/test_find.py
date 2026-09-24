@@ -1,6 +1,7 @@
 import unittest
 import unittest.mock
 import os.path
+import subprocess
 import sys
 import test.support
 from test.support import os_helper
@@ -75,8 +76,27 @@ class Test_OpenGL_libs(unittest.TestCase):
 @unittest.skipUnless(sys.platform.startswith('linux'),
                      'Test only valid for Linux')
 class FindLibraryLinux(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        try:
+            p = subprocess.run(['ld', '--version'],
+                               stdout=subprocess.PIPE,
+                               stderr=subprocess.DEVNULL,
+                               text=True)
+        except OSError:
+            pass
+        else:
+            if p.stdout.startswith('mold '):
+                # The mold linker is known to be incompatible with
+                # ctypes.util.find_library. The function is
+                # documented as "Try to find a library..."
+                # and formally soft-deprecated in 3.15+. We
+                # we skip the test rather than try to fix it
+                # (which would risk breaking other unsupported
+                # platforms).
+                raise unittest.SkipTest('Fails when ld is mold')
+
     def test_find_on_libpath(self):
-        import subprocess
         import tempfile
 
         try:
