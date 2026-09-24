@@ -8,6 +8,7 @@ import string
 import sys
 import unittest
 import warnings
+import weakref
 from re import Scanner
 from weakref import proxy
 
@@ -1938,6 +1939,27 @@ class ReTests(unittest.TestCase):
         iter = pat.finditer("a:b::c:::d", pos=3, endpos=8)
         self.assertEqual([item.group(0) for item in iter],
                          ["::", "::"])
+
+    def test_finditer_gc(self):
+        class Text(str):
+            pass
+
+        class Buffer(bytearray):
+            pass
+
+        text = Text('a')
+        text.iterator = re.finditer('a', text)
+        ref = weakref.ref(text)
+        del text
+        gc_collect()
+        self.assertIsNone(ref())
+
+        buffer = Buffer(b'a')
+        buffer.iterator = re.finditer(b'a', buffer)
+        ref = weakref.ref(buffer)
+        del buffer
+        gc_collect()
+        self.assertIsNone(ref())
 
     def test_bug_926075(self):
         self.assertIsNot(re.compile('bug_926075'),

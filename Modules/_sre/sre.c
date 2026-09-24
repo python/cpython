@@ -3017,6 +3017,8 @@ scanner_traverse(PyObject *op, visitproc visit, void *arg)
     ScannerObject *self = _ScannerObject_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->pattern);
+    Py_VISIT(self->state.string);
+    Py_VISIT(self->state.buffer.obj);
     return 0;
 }
 
