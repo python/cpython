@@ -74,8 +74,7 @@ The following functions can be safely called before Python is initialized:
 
    Despite their apparent similarity to some of the functions listed above,
    the following functions **should not be called** before the interpreter has
-   been initialized: :c:func:`Py_EncodeLocale`, :c:func:`PyEval_InitThreads`, and
-   :c:func:`Py_RunMain`.
+   been initialized: :c:func:`Py_EncodeLocale`, and :c:func:`Py_RunMain`.
 
 
 .. _global-conf-vars:
@@ -355,7 +354,6 @@ Initializing and finalizing the interpreter
 .. c:function:: void Py_Initialize()
 
    .. index::
-      single: PyEval_InitThreads()
       single: modules (in module sys)
       single: path (in module sys)
       pair: module; builtins

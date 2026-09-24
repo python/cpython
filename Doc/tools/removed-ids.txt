@@ -3,6 +3,7 @@
 # Remove from here in 3.16
 c-api/allocation.html: deprecated-aliases
 c-api/file.html: deprecated-api
+c-api/threads.html: c.PyEval_InitThreads
 
 # Removed sections
 library/asyncio-task.html: terminating-a-task-group
