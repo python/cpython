@@ -9,6 +9,8 @@
 #include "reader_internal.h"
 #include "../lexer/state.h"
 
+#define READER_BUFFER_GROWTH_FACTOR 2
+
 #ifdef HAVE_UNISTD_H
 #  include <unistd.h>
 #endif
@@ -67,11 +69,11 @@ _PyTok_ReserveBuffer(char **buffer, Py_ssize_t *capacity, Py_ssize_t needed,
     // Grow geometrically to avoid reallocating for every longer line.
     Py_ssize_t cap = *capacity > 0 ? *capacity : initial_capacity;
     while (cap < needed) {
-        if (cap > PY_SSIZE_T_MAX / 2) {
+        if (cap > PY_SSIZE_T_MAX / READER_BUFFER_GROWTH_FACTOR) {
             cap = needed;
             break;
         }
-        cap *= 2;
+        cap *= READER_BUFFER_GROWTH_FACTOR;
     }
     char *resized = PyMem_Realloc(*buffer, cap);
     if (resized == NULL) {

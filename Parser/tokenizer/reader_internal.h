@@ -3,6 +3,8 @@
 
 #include "Python.h"
 
+#define _PYTOK_ENCODING_COOKIE_MAX_LINES 2
+
 typedef enum {
     _PYTOK_READER_PREPARED,
     _PYTOK_READER_FILE,
@@ -46,11 +48,11 @@ typedef struct _PyTok_Reader {
 
     char *file_buffer;
     Py_ssize_t file_buffer_cap;
-    _PyTok_Chunk prefetched_lines[2];
+    _PyTok_Chunk prefetched_lines[_PYTOK_ENCODING_COOKIE_MAX_LINES];
 
     char *decoded;
     Py_ssize_t decoded_pos;
-    Py_ssize_t decoded_scan;
+    Py_ssize_t decoded_scan;  // First byte not yet scanned for a newline.
     Py_ssize_t decoded_len;
     Py_ssize_t decoded_cap;
     _PyTok_ReaderKind kind;

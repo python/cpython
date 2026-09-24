@@ -1,6 +1,9 @@
 #include "Python.h"
+#include "pycore_pymem.h"  // PYMEM_DEADBYTE
 
 #include "source.h"
+
+#define SOURCE_BUFFER_GROWTH_FACTOR 2
 
 void
 _PyTok_SourceInit(_PyTok_SourceText *source)
@@ -35,11 +38,11 @@ reserve_bytes(_PyTok_SourceText *source, Py_ssize_t needed)
     }
     Py_ssize_t cap = source->cap > 0 ? source->cap : BUFSIZ;
     while (cap < needed) {
-        if (cap > PY_SSIZE_T_MAX / 2) {
+        if (cap > PY_SSIZE_T_MAX / SOURCE_BUFFER_GROWTH_FACTOR) {
             cap = needed;
             break;
         }
-        cap *= 2;
+        cap *= SOURCE_BUFFER_GROWTH_FACTOR;
     }
     char *bytes;
 #ifdef Py_DEBUG
@@ -57,7 +60,7 @@ reserve_bytes(_PyTok_SourceText *source, Py_ssize_t needed)
     }
 #ifdef Py_DEBUG
     if (source->bytes != NULL) {
-        memset(source->bytes, 0xDD, source->cap);
+        memset(source->bytes, PYMEM_DEADBYTE, source->cap);
         PyMem_Free(source->bytes);
     }
 #endif
