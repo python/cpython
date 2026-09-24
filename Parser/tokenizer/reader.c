@@ -86,6 +86,9 @@ _PyTok_ReserveBuffer(char **buffer, Py_ssize_t *capacity, Py_ssize_t needed,
 static int
 append_decoded(_PyTok_Reader *reader, const char *data, Py_ssize_t len)
 {
+    if (len == 0) {
+        return 0;
+    }
     if (reader->decoded_pos > 0) {
         Py_ssize_t remaining = reader->decoded_len - reader->decoded_pos;
         memmove(reader->decoded, reader->decoded + reader->decoded_pos,
