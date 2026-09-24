@@ -1,0 +1,1 @@
+The iOS testbed has been updated for compatibilty with Xcode 27.
