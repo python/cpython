@@ -705,6 +705,8 @@ class ModifiedInterpreter(InteractiveInterpreter):
 
     def runsource(self, source):
         "Extend base class method: Stuff the source in the line cache first"
+        # Remove the highlighting of a previous syntax error (gh-93966).
+        self.tkconsole.text.tag_remove("ERROR", "1.0", "end")
         filename = self.stuffsource(source)
         # at the moment, InteractiveInterpreter expects str
         assert isinstance(source, str)
@@ -741,7 +743,6 @@ class ModifiedInterpreter(InteractiveInterpreter):
         """
         tkconsole = self.tkconsole
         text = tkconsole.text
-        text.tag_remove("ERROR", "1.0", "end")
         type, value, tb = sys.exc_info()
         if not issubclass(type, SyntaxError):
             tkconsole.resetoutput()
