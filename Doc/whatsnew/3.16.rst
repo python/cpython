@@ -573,6 +573,16 @@ symtable
   like the builtin :func:`compile`.
   (Contributed by Serhiy Storchaka in :gh:`153844`.)
 
+* Inlined list, set and dict comprehensions (:pep:`709`) are now represented
+  as their own symbol table entries, of type
+  :attr:`~symtable.SymbolTableType.INLINED_COMPREHENSION`. Each such entry is
+  a lexical child of the enclosing scope and records the comprehension's own
+  locals, cells, and free names. It does not correspond to a separate
+  compilation unit. For names loaded only inside an inlined list, set, or
+  dict comprehension, :meth:`symtable.Symbol.is_referenced` can now return
+  ``True`` on the enclosing function.
+  (Contributed by Irit Katriel in :gh:`124697`.)
+
 
 tkinter
 -------
@@ -1199,6 +1209,21 @@ Removed C APIs
   The :c:func:`Py_InitializeFromConfig` API should be used with
   :c:type:`PyConfig` to set these options. Or :c:func:`PyConfig_Get` can be
   used to get these options at runtime.
+  (Contributed by Victor Stinner in :gh:`158001`.)
+
+* Remove :c:func:`!PyEval_InitThreads` function which did nothing since Python
+  3.7 and was deprecated since Python 3.9.
+  (Contributed by Victor Stinner in :gh:`154757`.)
+
+* Remove :c:func:`!Py_SetProgramName` and :c:func:`!Py_SetPythonHome`
+  functions, deprecated since Python 3.11. Instead, use :ref:`PyInitConfig C
+  API <pyinitconfig_api>` to set respectively ``"program_name"`` and
+  ``"home"``.
+  (Contributed by Victor Stinner in :gh:`158001`.)
+
+* Remove :c:func:`!PySys_SetArgv` and :c:func:`!PySys_SetArgvEx` functions,
+  deprecated since Python 3.11. Instead, set directly :data:`sys.argv`, and
+  maybe also :data:`sys.path`.
   (Contributed by Victor Stinner in :gh:`158001`.)
 
 * The :c:var:`!PyUnstable_ExecutableKinds` array, as well as the macros

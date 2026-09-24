@@ -3,7 +3,7 @@
 import sys
 import unittest
 from unittest import mock
-from test.support import requires
+from test.support import requires, subTests
 from test.support.isolation import runInSubprocess
 import tkinter
 from tkinter import EventType
@@ -160,6 +160,39 @@ class FixTest(unittest.TestCase):
                         'catch {%W delete sel.first sel.last}\n' + before[cls])
                 else:
                     self.assertEqual(after, before[cls])
+
+
+class CLIargsTest(unittest.TestCase):
+    "Test the command line splitting and joining functions (gh-93016)."
+
+    # Expected results were verified against sys.argv of python.exe.
+    @subTests('cli_string,args', [
+        (r'c:\Users', [r'c:\Users']),
+        (r'\\server\share', [r'\\server\share']),
+        (r'"c:\Program Files\x" 1 2', [r'c:\Program Files\x', '1', '2']),
+        (r'  x  y ', ['x', 'y']),
+        ('a\tb', ['a', 'b']),
+        (r'"a b"c', ['a bc']),
+        (r'a"b c"d', ['ab cd']),
+        (r'"a""b"', ['a"b']),
+        (r'a\"b', ['a"b']),
+        (r'a\\"b c" d', ['a\\b c', 'd']),
+        (r'a\\\"b', ['a\\"b']),
+        (r'"x\\"', ['x\\']),
+        ('"c:\\Users\\"', ['c:\\Users"']),
+        ('x\\', ['x\\']),
+        (r'""', ['']),
+        (r'"" a', ['', 'a']),
+        (r'"', ['']),
+        ('', []),
+    ])
+    def test_split_windows(self, cli_string, args):
+        self.assertEqual(util._split_windows(cli_string), args)
+
+    @subTests('args', [['a'], ['a b'], [r'c:\x'], ['q"q'], ["s's"], [''],
+                       ['\\'], ['\\"'], ['a b', r'c:\x', '', 'q"q']])
+    def test_split_join(self, args):
+        self.assertEqual(util.split_cli_args(util.join_cli_args(args)), args)
 
 
 if __name__ == '__main__':

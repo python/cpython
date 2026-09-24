@@ -3,6 +3,8 @@
 # Remove from here in 3.16
 c-api/allocation.html: deprecated-aliases
 c-api/file.html: deprecated-api
+c-api/interp-lifecycle.html: c.PySys_SetArgv
+c-api/interp-lifecycle.html: c.PySys_SetArgvEx
 c-api/interp-lifecycle.html: c.Py_BytesWarningFlag
 c-api/interp-lifecycle.html: c.Py_DebugFlag
 c-api/interp-lifecycle.html: c.Py_DontWriteBytecodeFlag
@@ -18,10 +20,13 @@ c-api/interp-lifecycle.html: c.Py_NoSiteFlag
 c-api/interp-lifecycle.html: c.Py_NoUserSiteDirectory
 c-api/interp-lifecycle.html: c.Py_OptimizeFlag
 c-api/interp-lifecycle.html: c.Py_QuietFlag
+c-api/interp-lifecycle.html: c.Py_SetProgramName
+c-api/interp-lifecycle.html: c.Py_SetPythonHome
 c-api/interp-lifecycle.html: c.Py_UnbufferedStdioFlag
 c-api/interp-lifecycle.html: c.Py_VerboseFlag
 c-api/interp-lifecycle.html: global-conf-vars
 c-api/interp-lifecycle.html: global-configuration-variables
+c-api/threads.html: c.PyEval_InitThreads
 
 # Removed sections
 library/asyncio-task.html: terminating-a-task-group
