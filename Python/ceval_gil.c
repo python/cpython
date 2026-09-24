@@ -343,7 +343,6 @@ take_gil(PyThreadState *tstate)
             PyThreadState *holder_tstate =
                 (PyThreadState*)_Py_atomic_load_ptr_relaxed(&gil->last_holder);
             if (_PyThreadState_MustExit(tstate)) {
-                MUTEX_UNLOCK(gil->mutex);
                 // gh-96387: If the loop requested a drop request in a previous
                 // iteration, reset the request. Otherwise, drop_gil() can
                 // block forever waiting for the thread which exited. Drop
@@ -353,6 +352,7 @@ take_gil(PyThreadState *tstate)
                 if (drop_requested) {
                     _Py_unset_eval_breaker_bit(holder_tstate, _PY_GIL_DROP_REQUEST_BIT);
                 }
+                MUTEX_UNLOCK(gil->mutex);
                 // gh-87135: hang the thread as *thread_exit() is not a safe
                 // API. It lacks stack unwind and local variable destruction.
                 _PyThreadState_HangThread(tstate);
