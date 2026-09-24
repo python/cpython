@@ -698,6 +698,14 @@ For example, the wheel filename may look like this:
 
 If the filename or tags are incorrect, fix them.
 
+On Windows, the extension must also export :samp:`PyModExport_{<modname>}`
+rather than :samp:`PyInit_{<modname>}`.
+Build tools without ``abi3t`` support may still pass
+:samp:`/EXPORT:PyInit_{<modname>}` to the linker, which then fails with
+an "unresolved external symbol" error (``LNK2001``).
+With setuptools, you can override the ``get_export_symbols()`` method
+of the ``build_ext`` command to export the ``PyModExport_`` function instead.
+
 
 Testing
 =======
