@@ -3206,6 +3206,8 @@ test_thread_state_ensure_from_view_interp_switch(PyObject *self, PyObject *unuse
     Py_RETURN_NONE;
 }
 
+# gh-156425: Make sure that a garbage collection always clears 
+# PyInterpreterState.gc.frame when it's done.
 static PyObject *
 is_gc_frame_cleared(PyObject *self, PyObject *arg)
 {
