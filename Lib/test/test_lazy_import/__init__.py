@@ -725,8 +725,7 @@ class ErrorHandlingTests(LazyImportTestCase):
 
     def test_non_package_lazily_imported_as(self):
         """A dotted lazy import as raises when the name is not a module."""
-        # gh-157757: the eager statement raises ModuleNotFoundError, so the
-        # lazy one raises it at first use rather than binding math.pi.
+        # gh-157757: the eager statement raises, so the lazy one raises too.
         code = textwrap.dedent("""
             lazy import math.pi as pi
 
@@ -2219,9 +2218,8 @@ class ModuleVariableNameCollisionTests(unittest.TestCase):
 
     def test_lazy_import_as_wins_over_variable(self):
         """A dotted lazy import as imports the submodule the variable hides."""
-        # gh-157757: the eager statement imports pkg.b, which rebinds pkg.b to
-        # the module, so the lazy one must import it too rather than read the
-        # variable off pkg.
+        # gh-157757: importing pkg.b rebinds pkg.b from the variable to the
+        # module, eagerly and lazily alike.
         code = textwrap.dedent("""
             import sys
             import test.test_lazy_import.data.pkg as pkg

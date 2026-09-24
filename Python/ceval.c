@@ -3335,9 +3335,9 @@ _PyEval_LazyImportFrom(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObje
     PyLazyImportObject *d = (PyLazyImportObject *)v;
 
     if (d->lz_attr == NULL) {
-        // `import a.b as x` binds `a.b`, not an attribute of `a` (gh-157757).
-        if (d->lz_submodule) {
-            return Py_NewRef(v);  // a later component of the same name
+        // `import a.b as x` binds the module `a.b`, not an attribute of `a`.
+        if (d->lz_dotted_as) {
+            return Py_NewRef(v);
         }
         return _PyLazyImport_New(frame, d->lz_builtins, d->lz_from, NULL, 1);
     }
@@ -3362,7 +3362,7 @@ _PyEval_LazyImportFrom(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObje
         Py_DECREF(mod);
     }
 
-    assert(!PyUnicode_Check(d->lz_attr));  // a fromlist, not a taken name
+    assert(!PyUnicode_Check(d->lz_attr));  // a fromlist
     return _PyLazyImport_New(frame, d->lz_builtins, d->lz_from, name, 0);
 }
 

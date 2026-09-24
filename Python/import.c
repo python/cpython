@@ -3898,8 +3898,7 @@ _PyImport_ResolveName(PyThreadState *tstate, PyObject *name,
   return resolve_name(tstate, name, globals, level);
 }
 
-// Repeat IMPORT_FROM over the components of `name` after the first, taking
-// `a.b.c` off the `a` that importing "a.b.c" returns.
+// Take `a.b.c` off the `a` that importing "a.b.c" returns, as IMPORT_FROM does.
 static PyObject *
 import_from_dotted_name(PyThreadState *tstate, PyObject *mod, PyObject *name)
 {
@@ -4010,7 +4009,7 @@ _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
         goto error;
     }
 
-    if (lz->lz_submodule) {
+    if (lz->lz_dotted_as) {
         PyObject *top = obj;
         obj = import_from_dotted_name(tstate, top, lz->lz_from);
         Py_DECREF(top);

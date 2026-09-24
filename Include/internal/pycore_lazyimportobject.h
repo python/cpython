@@ -22,15 +22,14 @@ typedef struct {
     // Frame information for the original import location.
     PyCodeObject *lz_code;     // Code object where the lazy import was created.
     int lz_instr_offset;       // Instruction offset where the lazy import was created.
-    int lz_submodule;          // True for `import a.b as c`, which binds `a.b`
-                               // where `import a.b` binds `a`.
+    int lz_dotted_as;          // `import a.b as c`, which binds `a.b` not `a`.
 } PyLazyImportObject;
 
 
 PyAPI_FUNC(PyObject *) _PyLazyImport_GetName(PyObject *lazy_import);
 PyAPI_FUNC(PyObject *) _PyLazyImport_New(
     struct _PyInterpreterFrame *frame, PyObject *import_func, PyObject *from,
-    PyObject *attr, int submodule);
+    PyObject *attr, int dotted_as);
 
 #ifdef __cplusplus
 }
