@@ -48,6 +48,26 @@ def requires_curses_window_meth(name):
 
 WIDE_BUILD = import_module('_curses')._wide_character_support
 
+def encodable(s, encoding):
+    # Wide characters are only supported in a locale that can encode them.
+    try:
+        s.encode(encoding)
+    except UnicodeEncodeError:
+        return False
+    return True
+
+def storable(s, encoding):
+    # Text the current build can place in character cells.  A wide build
+    # stores any locale-encodable text (combining sequences and multibyte
+    # characters included).  A narrow build has no wide-character cells, so
+    # each character must occupy a single cell -- that is, encode to exactly
+    # one byte.
+    if not encodable(s, encoding):
+        return False
+    if WIDE_BUILD:
+        return True
+    return len(s.encode(encoding)) == len(s)
+
 def requires_wide_build(test):
     @functools.wraps(test)
     def wrapped(self, *args, **kwargs):
@@ -387,24 +407,10 @@ class TestCurses(unittest.TestCase):
     # combining sequence or a multibyte character are guarded with _storable().
 
     def _encodable(self, s):
-        # Wide characters are only supported in a locale that can encode them.
-        try:
-            s.encode(self.stdscr.encoding)
-        except UnicodeEncodeError:
-            return False
-        return True
+        return encodable(s, self.stdscr.encoding)
 
     def _storable(self, s):
-        # Text the current build can place in character cells.  A wide build
-        # stores any locale-encodable text (combining sequences and multibyte
-        # characters included).  A narrow build has no wide-character cells, so
-        # each character must occupy a single cell -- that is, encode to exactly
-        # one byte.
-        if not self._encodable(s):
-            return False
-        if WIDE_BUILD:
-            return True
-        return len(s.encode(self.stdscr.encoding)) == len(s)
+        return storable(s, self.stdscr.encoding)
 
     def _char_code(self, ch):
         # The integer the int-input API (addch(int), do_command()) uses for a
@@ -1124,7 +1130,11 @@ class TestCurses(unittest.TestCase):
         # A cell holding a NUL reads back as the cell that writes it.
         win = curses.newwin(3, 8, 0, 0)
         win.insch(0, 0, '\0')
-        self.assertEqual(win.in_wch(0, 0), cell)
+        if WIDE_BUILD:
+            self.assertEqual(win.in_wch(0, 0), cell)
+        else:
+            # A narrow build inserts a NUL as "^@".
+            self.assertEqual(str(win.in_wch(0, 0)), '^')
         # A string of cells cannot hold a NUL: it would end a batch write.
         self.assertRaises(ValueError, curses.complexstr, 'a\0b')
         self.assertRaises(ValueError, curses.complexstr, '\0')
@@ -3593,10 +3603,8 @@ class SLKTests(NewtermTestBase):
     def test_set_wide(self):
         screen = self.make_slk_screen()
         label = 'Ångström'
-        try:
-            label.encode(screen.stdscr.encoding)
-        except UnicodeEncodeError:
-            self.skipTest('the locale cannot encode %r' % label)
+        if not storable(label, screen.stdscr.encoding):
+            self.skipTest('cannot store %r in this locale' % label)
         curses.slk_set(1, label, 0)
         # The label can be truncated to fit the soft label width, e.g. in the
         # EUC-JP locale, where "Å" and "ö" are double-width JIS X 0212

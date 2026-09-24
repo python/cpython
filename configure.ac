@@ -7426,16 +7426,18 @@ then
 fi
 
 dnl PY_CHECK_CURSES_FUNC(FUNCTION)
+dnl Link, not just compile: a header can declare a function that the library
+dnl lacks, for example term_attrs() in the narrow ncurses library.
 AC_DEFUN([PY_CHECK_CURSES_FUNC],
 [ AS_VAR_PUSHDEF([py_var], [ac_cv_lib_curses_$1])
   AS_VAR_PUSHDEF([py_define], [HAVE_CURSES_]m4_toupper($1))
   AC_CACHE_CHECK(
     [for curses function $1],
     [py_var],
-    [AC_COMPILE_IFELSE(
+    [AC_LINK_IFELSE(
       [AC_LANG_PROGRAM(_CURSES_INCLUDES, [
         #ifndef $1
-        void *x=$1
+        void * volatile x = (void *)$1; (void)x;
         #endif
       ])],
       [AS_VAR_SET([py_var], [yes])],
