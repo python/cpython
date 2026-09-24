@@ -106,8 +106,6 @@ class FutureTest(unittest.TestCase):
         ("barry_as_bdfl", "barry_as_FLUFL"),
         ("generatorstop", "generator_stop"),
         ("anotations", "annotations"),
-        ("brces", "braces"),
-        ("brace", "braces"),
     ])
     def test_typos_in_future_imports(self, typo, origin):
         self.assertSyntaxError(
@@ -120,11 +118,12 @@ class FutureTest(unittest.TestCase):
             offset=24,
         )
 
-    def test_no_suggestion_on_missing_name(self):
+    @subTests("name", ["missing_name", "brces", "brace"])
+    def test_no_suggestion_on_missing_name(self, name):
         self.assertSyntaxError(
-            "from __future__ import missing_name",
+            f"from __future__ import {name}",
             lineno=1,
-            message="future feature 'missing_name' is not defined",
+            message=f"future feature '{name}' is not defined",
             offset=24,
         )
 

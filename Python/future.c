@@ -39,7 +39,7 @@ future_check_features(_PyFutureFeatures *ff, stmt_ty s, PyObject *filename)
             continue;
         } else if (strcmp(feature, FUTURE_ANNOTATIONS) == 0) {
             ff->ff_features |= CO_FUTURE_ANNOTATIONS;
-        } else if (strcmp(feature, FUTURE_BRACES) == 0) {
+        } else if (strcmp(feature, "braces") == 0) {
             PyErr_SetString(PyExc_SyntaxError,
                             "not a chance");
             PyErr_RangedSyntaxLocationObject(filename,
@@ -49,8 +49,8 @@ future_check_features(_PyFutureFeatures *ff, stmt_ty s, PyObject *filename)
                                              name->end_col_offset + 1);
             return 0;
         } else {
-            PyObject *suggestion;
-            PyObject *future_features = Py_BuildValue("[sssssssssss]",
+            // Keep this list in sync with the feature checks above.
+            PyObject *future_features = Py_BuildValue("[ssssssssss]",
                                                       FUTURE_NESTED_SCOPES,
                                                       FUTURE_GENERATORS,
                                                       FUTURE_DIVISION,
@@ -60,12 +60,13 @@ future_check_features(_PyFutureFeatures *ff, stmt_ty s, PyObject *filename)
                                                       FUTURE_UNICODE_LITERALS,
                                                       FUTURE_BARRY_AS_BDFL,
                                                       FUTURE_GENERATOR_STOP,
-                                                      FUTURE_ANNOTATIONS,
-                                                      FUTURE_BRACES);
-            if (
-                future_features != NULL &&
-                (suggestion = _Py_CalculateSuggestions(future_features, name->name)) != NULL
-            ) {
+                                                      FUTURE_ANNOTATIONS);
+            PyObject *suggestion = NULL;
+            if (future_features != NULL) {
+                suggestion = _Py_CalculateSuggestions(future_features,
+                                                      name->name);
+            }
+            if (suggestion != NULL) {
                 PyErr_Format(PyExc_SyntaxError,
                              UNDEFINED_FUTURE_FEATURE ". Did you mean: %R?",
                              feature, suggestion);
