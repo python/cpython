@@ -7426,16 +7426,19 @@ then
 fi
 
 dnl PY_CHECK_CURSES_FUNC(FUNCTION)
+dnl Link rather than just compile: the header may declare a function that the
+dnl linked library lacks, e.g. term_attrs(), which is only in libncursesw.
+dnl The volatile keeps the reference from being optimized away.
 AC_DEFUN([PY_CHECK_CURSES_FUNC],
 [ AS_VAR_PUSHDEF([py_var], [ac_cv_lib_curses_$1])
   AS_VAR_PUSHDEF([py_define], [HAVE_CURSES_]m4_toupper($1))
   AC_CACHE_CHECK(
     [for curses function $1],
     [py_var],
-    [AC_COMPILE_IFELSE(
+    [AC_LINK_IFELSE(
       [AC_LANG_PROGRAM(_CURSES_INCLUDES, [
         #ifndef $1
-        void *x=$1
+        void * volatile x=$1
         #endif
       ])],
       [AS_VAR_SET([py_var], [yes])],
