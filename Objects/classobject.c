@@ -310,6 +310,16 @@ method_descr_get(PyObject *meth, PyObject *obj, PyObject *cls)
     return meth;
 }
 
+static PyObject *
+method_getitem(PyObject *self, PyObject *item)
+{
+    return Py_GenericAlias(self, item);
+}
+
+static PyMappingMethods method_as_mapping = {
+    .mp_subscript = method_getitem,
+};
+
 PyTypeObject PyMethod_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "method",
@@ -317,6 +327,7 @@ PyTypeObject PyMethod_Type = {
     .tp_dealloc = method_dealloc,
     .tp_vectorcall_offset = offsetof(PyMethodObject, vectorcall),
     .tp_repr = method_repr,
+    .tp_as_mapping = &method_as_mapping,
     .tp_hash = method_hash,
     .tp_call = PyVectorcall_Call,
     .tp_getattro = method_getattro,
