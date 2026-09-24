@@ -190,7 +190,7 @@ _get_current_line(tokenizeriterobject *it, int current_lineno,
     return line;
 }
 
-static void
+static int
 _get_col_offsets(tokenizeriterobject *it, const struct token *token,
                  const char *token_start, const char *line_start,
                  const char *end_line_start, PyObject *line, int line_changed,
@@ -206,6 +206,9 @@ _get_col_offsets(tokenizeriterobject *it, const struct token *token,
         byte_offset = token_start - line_start;
         if (line_changed) {
             *col_offset = _PyPegen_byte_offset_to_character_offset_line(line, 0, byte_offset);
+            if (*col_offset < 0) {
+                return -1;
+            }
             it->byte_col_offset_diff = byte_offset - *col_offset;
         }
         else {
@@ -218,15 +221,22 @@ _get_col_offsets(tokenizeriterobject *it, const struct token *token,
         if (lineno == end_lineno) {
             // Avoid rescanning the prefix of a very long line.
             Py_ssize_t token_col_offset = _PyPegen_byte_offset_to_character_offset_line(line, byte_offset, end_byte_offset);
+            if (token_col_offset < 0) {
+                return -1;
+            }
             *end_col_offset = *col_offset + token_col_offset;
             it->byte_col_offset_diff += token_end - token_start - token_col_offset;
         }
         else {
             *end_col_offset = _PyPegen_byte_offset_to_character_offset_raw(end_line_start, end_byte_offset);
+            if (*end_col_offset < 0) {
+                return -1;
+            }
             it->byte_col_offset_diff += end_byte_offset - *end_col_offset;
         }
     }
     it->last_lineno = lineno;
+    return 0;
 }
 
 static PyObject *
@@ -295,8 +305,11 @@ tokenizeriter_next(PyObject *op)
     Py_ssize_t end_lineno = token.end_loc.lineno;
     Py_ssize_t col_offset = -1;
     Py_ssize_t end_col_offset = -1;
-    _get_col_offsets(it, &token, token_start, view.line, view.end_line, line,
-                     line_changed, &col_offset, &end_col_offset);
+    if (_get_col_offsets(it, &token, token_start, view.line, view.end_line, line,
+                         line_changed, &col_offset, &end_col_offset) < 0) {
+        Py_DECREF(str);
+        goto exit;
+    }
 
     if (it->extra_tokens) {
         if (is_trailing_token) {
