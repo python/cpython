@@ -1693,6 +1693,34 @@ class TestDetectEncoding(TestCase):
         self.assertEqual(encoding, 'utf-8')
         self.assertEqual(consumed_lines, [b'print("#coding=fake")'])
 
+    def test_readline_returning_str(self):
+        # gh-67486: readline must return bytes here, and saying so is more
+        # helpful than whatever the first operation on the line happens to
+        # complain about.
+        expected = 'readline callable returning bytes, but it returned str'
+
+        readline = self.get_readline(('print(something)\n',))
+        with self.assertRaisesRegex(TypeError, expected):
+            tokenize.detect_encoding(readline)
+
+        # The second line is read only when the first one is blank.
+        readline = self.get_readline((b'\n', 'print(something)\n'))
+        with self.assertRaisesRegex(TypeError, expected):
+            tokenize.detect_encoding(readline)
+
+        # The reported case went through tokenize(), which calls
+        # detect_encoding() itself.
+        with self.assertRaisesRegex(TypeError, expected):
+            list(tokenize.tokenize(StringIO('print(something)\n').readline))
+
+        # Only str is rejected. bytearray is not a documented input, but it
+        # has always worked, so a check for bytes exactly would break it.
+        line = bytearray(b'print(something)\n')
+        readline = self.get_readline((line,))
+        encoding, consumed_lines = tokenize.detect_encoding(readline)
+        self.assertEqual(encoding, 'utf-8')
+        self.assertEqual(consumed_lines, [line])
+
     @support.thread_unsafe
     def test_open(self):
         filename = os_helper.TESTFN + '.py'
