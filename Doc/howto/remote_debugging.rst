@@ -6,7 +6,8 @@ Remote debugging attachment protocol
 This protocol enables external tools to attach to a running CPython process and
 execute Python code remotely.
 
-Most platforms require elevated privileges to attach to another Python process.
+Attaching to another Python process may require additional permissions or
+configuration, depending on the platform.
 
 .. _permission-requirements:
 
@@ -46,7 +47,8 @@ or newer (released 2022) will automatically allow usage of the ``ptrace``
 system call inside containers, when running on Linux kernel 4.8 or higher. If
 you cannot upgrade to these versions, you can create your container with an
 option like ``--security-opt seccomp=unconfined`` to disable the system call
-security filter for that container.
+security filter for that container. This weakens the container's isolation and
+should only be done in low-security environments.
 
 If you need to trace a process that you *do not* own, you will need superuser
 access or equivalent. This also applies to processes that have changed their
@@ -62,8 +64,8 @@ is unusual for Python). Try running the debugging command with ``sudo -E``.
     ``sudo``, but this gives the debugging process much more access than it
     needs and should only be done in low-security environments.
 
-Finally, note that a process can only have one tracer at a time. If you are
-have already attached to Python process under ``strace``, ``gdb``, etc., you
+Finally, note that a process can only have one tracer at a time. If you have
+already attached to a Python process under ``strace``, ``gdb``, etc., you
 won't be able to simultaneously use remote debugging. (Superuser access cannot
 get around this restriction.)
 
