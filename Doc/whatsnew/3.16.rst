@@ -1145,6 +1145,17 @@ Removed C APIs
   3.7 and was deprecated since Python 3.9.
   (Contributed by Victor Stinner in :gh:`154757`.)
 
+* Remove :c:func:`!Py_SetProgramName` and :c:func:`!Py_SetPythonHome`
+  functions, deprecated since Python 3.11. Instead, use :ref:`PyInitConfig C
+  API <pyinitconfig_api>` to set respectively ``"program_name"`` and
+  ``"home"``.
+  (Contributed by Victor Stinner in :gh:`158001`.)
+
+* Remove :c:func:`!PySys_SetArgv` and :c:func:`!PySys_SetArgvEx` functions,
+  deprecated since Python 3.11. Instead, set directly :data:`sys.argv`, and
+  maybe also :data:`sys.path`.
+  (Contributed by Victor Stinner in :gh:`158001`.)
+
 * The :c:var:`!PyUnstable_ExecutableKinds` array, as well as the macros
   :c:macro:`!PyUnstable_EXECUTABLE_KIND_SKIP`,
   :c:macro:`!PyUnstable_EXECUTABLE_KIND_PY_FUNCTION`,
