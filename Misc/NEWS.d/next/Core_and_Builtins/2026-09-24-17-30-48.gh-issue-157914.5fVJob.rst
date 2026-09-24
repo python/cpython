@@ -1,0 +1,3 @@
+Revert commit ``daa159f98b3689ae6a587bfb978b931762f9dbc9`` from PR
+https://github.com/python/cpython/pull/146064. The linked PyMutex change was
+causing a significant performance regression in some cases.
