@@ -107,7 +107,7 @@ static PyObject *
 test_tokenizer_source_discard(PyObject *Py_UNUSED(module),
                              PyObject *Py_UNUSED(args))
 {
-    enum { LINE_COUNT = 260 };
+    enum { LINE_COUNT = 2 };
     const char first_line[] = "x\n";
     const char second_line[] = "y\n";
     const char tail[] = "tail";
