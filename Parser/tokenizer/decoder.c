@@ -77,7 +77,7 @@ chunk_set_unicode(struct tok_state *tok, _PyTok_Chunk *chunk,
 static void
 normalize_newlines_into(char *result, const char *data, Py_ssize_t len,
                         int preserve_crlf, int add_final_newline,
-                        Py_ssize_t *out_len, int *implicit_newline)
+                        Py_ssize_t *out_len)
 {
     Py_ssize_t write = 0;
     if (preserve_crlf || memchr(data, '\r', len) == NULL) {
@@ -97,21 +97,16 @@ normalize_newlines_into(char *result, const char *data, Py_ssize_t len,
             result[write++] = c;
         }
     }
-    int implicit = add_final_newline && write > 0 && result[write - 1] != '\n';
-    if (implicit) {
+    if (add_final_newline && write > 0 && result[write - 1] != '\n') {
         result[write++] = '\n';
     }
     result[write] = '\0';
     *out_len = write;
-    if (implicit_newline != NULL) {
-        *implicit_newline = implicit;
-    }
 }
 
 char *
-_PyTok_NormalizeNewlines(const char *data, Py_ssize_t len, int preserve_crlf,
-                         int add_final_newline, Py_ssize_t *out_len,
-                         int *implicit_newline)
+_PyTok_NormalizeNewlines(const char *data, Py_ssize_t len,
+                         Py_ssize_t *out_len)
 {
     if (len > PY_SSIZE_T_MAX - 2) {
         PyErr_NoMemory();
@@ -122,8 +117,7 @@ _PyTok_NormalizeNewlines(const char *data, Py_ssize_t len, int preserve_crlf,
         PyErr_NoMemory();
         return NULL;
     }
-    normalize_newlines_into(result, data, len, preserve_crlf,
-                            add_final_newline, out_len, implicit_newline);
+    normalize_newlines_into(result, data, len, 0, 0, out_len);
     return result;
 }
 
@@ -330,7 +324,6 @@ store_prepared_source(struct tok_state *tok, const char *data, Py_ssize_t len,
             (!preserve_crlf &&
              (line[line_len - 1] == '\r' ||
               (line_len > 1 && line[line_len - 2] == '\r')));
-        int implicit = 0;
         if (normalize) {
             if (line_len > PY_SSIZE_T_MAX - 2) {
                 PyErr_NoMemory();
@@ -345,7 +338,7 @@ store_prepared_source(struct tok_state *tok, const char *data, Py_ssize_t len,
             }
             normalize_newlines_into(normalized, line, line_len,
                                     preserve_crlf, add_newline,
-                                    &line_len, &implicit);
+                                    &line_len);
             line = normalized;
         }
         _PyTok_Off appended = _PyTok_SourceAppendLine(
@@ -355,7 +348,7 @@ store_prepared_source(struct tok_state *tok, const char *data, Py_ssize_t len,
                 ? E_NOMEM : E_ERROR;
             goto error;
         }
-        tok->reader->prepared_final_newline_is_implicit = implicit;
+        tok->reader->prepared_final_newline_is_implicit = add_newline;
         pos += raw_line_len;
     }
     PyMem_Free(normalized);

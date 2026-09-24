@@ -512,8 +512,7 @@ next_interactive(struct tok_state *tok, _PyTok_Chunk *chunk)
         return _PYTOK_READ_LINE;
     }
     chunk->data = _PyTok_NormalizeNewlines(
-        decoded.data, decoded.len, 0, 0,
-        &chunk->len, NULL);
+        decoded.data, decoded.len, &chunk->len);
     _PyTok_ChunkClear(&decoded);
     if (chunk->data == NULL) {
         PyErr_NoMemory();
