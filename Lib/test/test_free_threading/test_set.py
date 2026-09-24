@@ -148,6 +148,36 @@ class RaceTestBase:
         for t in threads:
             t.join()
 
+    def test_pop_concurrent(self):
+        """Test set.pop() from several threads."""
+        NUM_THREADS = 4
+        NUM_ITERS = 20
+
+        for _ in range(NUM_ITERS):
+            items = set(range(self.SET_SIZE))
+            s = set(items)
+            barrier = Barrier(NUM_THREADS, timeout=2)
+            popped = [[] for _ in range(NUM_THREADS)]
+
+            def pop_set(out):
+                barrier.wait()
+                while True:
+                    try:
+                        out.append(s.pop())
+                    except KeyError:
+                        break
+
+            threads = [Thread(target=pop_set, args=(out,)) for out in popped]
+            for t in threads:
+                t.start()
+            for t in threads:
+                t.join()
+
+            all_popped = [item for out in popped for item in out]
+            self.assertEqual(len(all_popped), len(items))
+            self.assertEqual(set(all_popped), items)
+            self.assertEqual(len(s), 0)
+
 
 @threading_helper.requires_working_threading()
 class SmallSetTest(RaceTestBase, unittest.TestCase):
