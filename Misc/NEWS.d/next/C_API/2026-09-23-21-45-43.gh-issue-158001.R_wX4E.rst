@@ -1,0 +1,3 @@
+Remove :c:func:`!Py_SetProgramName`, :c:func:`!Py_SetPythonHome`,
+:c:func:`!PySys_SetArgv` and :c:func:`!PySys_SetArgvEx` functions, deprecated
+since Python 3.11. Patch by Victor Stinner.

@@ -3,6 +3,10 @@
 # Remove from here in 3.16
 c-api/allocation.html: deprecated-aliases
 c-api/file.html: deprecated-api
+c-api/interp-lifecycle.html: c.PySys_SetArgv
+c-api/interp-lifecycle.html: c.PySys_SetArgvEx
+c-api/interp-lifecycle.html: c.Py_SetProgramName
+c-api/interp-lifecycle.html: c.Py_SetPythonHome
 c-api/threads.html: c.PyEval_InitThreads
 
 # Removed sections

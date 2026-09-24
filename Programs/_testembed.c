@@ -23,6 +23,10 @@ extern void PySys_AddWarnOption(const wchar_t *s);
 extern void PySys_AddXOption(const wchar_t *s);
 extern void Py_SetPath(const wchar_t *path);
 
+// Functions removed from Python 3.16 API but still exported for the stable
+// ABI.
+extern void Py_SetPythonHome(const wchar_t *);
+
 // These functions were removed from Python 3.15 API but are still exported
 // for the stable ABI. We want to test them in this program.
 extern void PySys_ResetWarnOptions(void);

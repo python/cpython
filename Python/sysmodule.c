@@ -4490,7 +4490,8 @@ make_sys_argv(int argc, wchar_t * const * argv)
     return list;
 }
 
-void
+// Function removed from Python 3.16 limited C API, but kept in the stable ABI
+PyAPI_FUNC(void)
 PySys_SetArgvEx(int argc, wchar_t **argv, int updatepath)
 {
     wchar_t* empty_argv[1] = {L""};
@@ -4537,7 +4538,8 @@ PySys_SetArgvEx(int argc, wchar_t **argv, int updatepath)
     }
 }
 
-void
+// Function removed from Python 3.16 limited C API, but kept in the stable ABI
+PyAPI_FUNC(void)
 PySys_SetArgv(int argc, wchar_t **argv)
 {
     int isolated = 0;
@@ -4547,10 +4549,7 @@ PySys_SetArgv(int argc, wchar_t **argv)
         isolated = config->isolated;
     }
 
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     PySys_SetArgvEx(argc, argv, isolated == 0);
-_Py_COMP_DIAG_POP
 }
 
 /* Reimplementation of PyFile_WriteString() no calling indirectly
