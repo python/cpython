@@ -1,6 +1,7 @@
 #include "Python.h"
 #include "pycore_fileutils.h"
 #include "pycore_pystate.h"
+#include "pycore_runtime.h"
 
 #include "errcode.h"
 #include "helpers.h"
@@ -794,21 +795,16 @@ _PyTokenizer_FindEncodingFilename(int fd, PyObject *filename)
         fclose(fp);
         return NULL;
     }
-    tok->filename = filename != NULL
-        ? Py_NewRef(filename) : PyUnicode_FromString("<string>");
-    if (tok->filename == NULL) {
-        fclose(fp);
-        _PyTokenizer_Free(tok);
-        return NULL;
-    }
+    _Py_DECLARE_STR(anon_string, "<string>");
+    tok->filename = Py_NewRef(filename != NULL ? filename : &_Py_STR(anon_string));
     if (initialize_file(tok) < 0) {
         fclose(fp);
         _PyTokenizer_Free(tok);
         return NULL;
     }
     fclose(fp);
-    char *encoding = tok->encoding == NULL
-        ? NULL : _PyTok_CopyBytes(tok->encoding, strlen(tok->encoding));
+    char *encoding = tok->encoding;
+    tok->encoding = NULL;
     _PyTokenizer_Free(tok);
     return encoding;
 }
