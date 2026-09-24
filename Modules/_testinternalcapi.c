@@ -3207,7 +3207,7 @@ test_thread_state_ensure_from_view_interp_switch(PyObject *self, PyObject *unuse
 }
 
 static PyObject *
-test_gc_frame_cleared(PyObject *self, PyObject *arg)
+is_gc_frame_cleared(PyObject *self, PyObject *arg)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     PyThreadState *tstate = PyThreadState_GET();
@@ -3474,7 +3474,7 @@ static PyMethodDef module_functions[] = {
     {"test_interp_guard_countdown", test_interp_guard_countdown, METH_NOARGS},
     {"test_interp_view_countdown", test_interp_view_countdown, METH_NOARGS},
     {"test_thread_state_ensure_from_view_interp_switch", test_thread_state_ensure_from_view_interp_switch, METH_NOARGS},
-    {"test_gc_frame_cleared", test_gc_frame_cleared, METH_O},
+    {"is_gc_frame_cleared", is_gc_frame_cleared, METH_O},
     {"unicodewriter_overflow", unicodewriter_overflow, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
