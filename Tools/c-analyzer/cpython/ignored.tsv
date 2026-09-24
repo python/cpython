@@ -778,6 +778,7 @@ Modules/expat/xmlrole.c	-	condSect1	-
 Modules/expat/xmlrole.c	-	condSect2	-
 Modules/expat/xmlrole.c	-	declClose	-
 Modules/expat/xmlrole.c	-	error	-
+Python/preconfig.c	-	Py_UTF8Mode	-
 
 ## other
 Modules/_io/_iomodule.c	-	_PyIO_Module	-

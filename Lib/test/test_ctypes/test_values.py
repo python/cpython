@@ -73,12 +73,12 @@ class ValuesTestCase(unittest.TestCase):
 class PythonValuesTestCase(unittest.TestCase):
     """This test only works when python itself is a dll/shared library"""
 
-    def test_optimizeflag(self):
-        # This test accesses the Py_OptimizeFlag integer, which is
-        # exported by the Python dll and should match the sys.flags value
+    def test_version_var(self):
+        # This test accesses the Py_Version integer, which is
+        # exported by the Python dll and should match the sys.hexversion value
 
-        opt = c_int.in_dll(pythonapi, "Py_OptimizeFlag").value
-        self.assertEqual(opt, sys.flags.optimize)
+        version = c_int.in_dll(pythonapi, "Py_Version").value
+        self.assertEqual(version, sys.hexversion)
 
     @thread_unsafe('overrides frozen modules')
     def test_frozentable(self):
