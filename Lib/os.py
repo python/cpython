@@ -720,6 +720,11 @@ def get_exec_path(env=None):
 # Change environ to automatically call putenv() and unsetenv()
 from _collections_abc import MutableMapping, Mapping
 
+# Sentinel used for seeing if a value is found within the internal _Environ
+# dictionary.
+_MISSING = sentinel("MISSING")
+
+
 class _Environ(MutableMapping):
     def __init__(self, data, encodekey, decodekey, encodevalue, decodevalue):
         self.encodekey = encodekey
@@ -727,6 +732,9 @@ class _Environ(MutableMapping):
         self.encodevalue = encodevalue
         self.decodevalue = decodevalue
         self._data = data
+
+    def __contains__(self, key):
+        return self.encodekey(key) in self._data
 
     def __getitem__(self, key):
         try:
@@ -769,6 +777,10 @@ class _Environ(MutableMapping):
 
     def copy(self):
         return dict(self)
+
+    def get(self, key, default=None):
+        val = self._data.get(self.encodekey(key), _MISSING)
+        return default if val is _MISSING else self.decodevalue(val)
 
     def setdefault(self, key, value):
         if key not in self:
