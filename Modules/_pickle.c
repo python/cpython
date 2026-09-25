@@ -4839,6 +4839,25 @@ persistent_id(PyObject *self, PyObject *obj)
     Py_RETURN_NONE;
 }
 
+static PyObject *Pickler_getattr(PyObject *self, PyObject *name);
+
+/* Like PyObject_GetOptionalAttr(), but avoids creating an AttributeError
+   for a missing attribute.  Must not be used for "persistent_id". */
+static int
+pickler_get_optional_attr(PicklerObject *self, PyObject *name,
+                          PyObject **result)
+{
+    if (Py_TYPE(self)->tp_getattro == Pickler_getattr) {
+        *result = _PyObject_GenericGetAttrWithDict((PyObject *)self, name,
+                                                   NULL, 1);
+        if (*result != NULL) {
+            return 1;
+        }
+        return PyErr_Occurred() ? -1 : 0;
+    }
+    return PyObject_GetOptionalAttr((PyObject *)self, name, result);
+}
+
 static int
 dump(PickleState *state, PicklerObject *self, PyObject *obj)
 {
@@ -4860,8 +4879,8 @@ dump(PickleState *state, PicklerObject *self, PyObject *obj)
     Py_XSETREF(self->persistent_id, tmp);
 
     /* Cache the reducer_override method, if it exists. */
-    if (PyObject_GetOptionalAttr((PyObject *)self, &_Py_ID(reducer_override),
-                             &tmp) < 0) {
+    if (pickler_get_optional_attr(self, &_Py_ID(reducer_override),
+                                  &tmp) < 0) {
         goto error;
     }
     Py_XSETREF(self->reducer_override, tmp);
@@ -5141,8 +5160,8 @@ _pickle_Pickler___init___impl(PicklerObject *self, PyObject *file,
     self->fast_memo = NULL;
 
     if (self->dispatch_table == NULL) {
-        if (PyObject_GetOptionalAttr((PyObject *)self, &_Py_ID(dispatch_table),
-                                &self->dispatch_table) < 0) {
+        if (pickler_get_optional_attr(self, &_Py_ID(dispatch_table),
+                                      &self->dispatch_table) < 0) {
             goto error;
         }
     }
