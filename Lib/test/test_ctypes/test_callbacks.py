@@ -328,7 +328,7 @@ class SampleCallbacksTestCase(unittest.TestCase):
                              f"of ctypes callback function {func!r}")
             self.assertIsNone(cm.unraisable.object)
 
-    @unittest.skipUnless(sys.maxsize > 2**32, 'requires 64bit platform')
+    @unittest.skipUnless(support.is_s390x, 's390x only test')
     def test_narrow_int_return_widened(self):
         @CFUNCTYPE(c_int)
         def cb():
