@@ -2441,7 +2441,9 @@ _PyThreadState_ResumeDetached(PyThreadState *tstate)
     } while (!_Py_atomic_compare_exchange_int(
                 &tstate->state, &state, next_state));
     // Wake the thread if it is parked in tstate_wait_attach().
-    _PyParkingLot_UnparkAll(&tstate->state);
+    if (state == _Py_THREAD_SUSPENDED_WAITING) {
+        _PyParkingLot_UnparkAll(&tstate->state);
+    }
 }
 #endif
 
