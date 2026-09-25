@@ -3026,7 +3026,10 @@ static int
 scanner_clear(PyObject *op)
 {
     ScannerObject *self = _ScannerObject_CAST(op);
+    self->state.start = NULL;
     Py_CLEAR(self->pattern);
+    Py_CLEAR(self->state.string);
+    PyBuffer_Release(&self->state.buffer);
     return 0;
 }
 
@@ -3036,8 +3039,8 @@ scanner_dealloc(PyObject *self)
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
     ScannerObject *scanner = _ScannerObject_CAST(self);
-    state_fini(&scanner->state);
     (void)scanner_clear(self);
+    state_fini(&scanner->state);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
