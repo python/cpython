@@ -307,16 +307,26 @@ _testcppext_exec(PyObject *module)
     assert(Py_MAX(5, 11) == 11);
     assert(Py_ABS(-5) == 5);
 
-    // Test Py_CLEAR(): use typeof()/__typeof__() if available, or memcpy()
+    // Test Py_CLEAR(): use auto on C++11, or memcpy()
     PyObject *obj = Py_None;
     Py_CLEAR(obj);
     assert(obj == _Py_NULL);
 
+    // gh-157649: Test Py_CLEAR() on an array
+    PyObject *slots[1] = {Py_None};
+    Py_CLEAR(slots[0]);
+    assert(slots[0] == _Py_NULL);
+
 #ifndef Py_LIMITED_API
-    // Test Py_SETREF(): use typeof()/__typeof__() if available, or memcpy()
+    // Test Py_SETREF(): use auto on C++11, or memcpy()
     obj = Py_None;
     Py_SETREF(obj, _Py_NULL);
     assert(obj == _Py_NULL);
+
+    // gh-157649: Test Py_SETREF() on an array
+    slots[0] = Py_None;
+    Py_SETREF(slots[0], _Py_NULL);
+    assert(slots[0] == _Py_NULL);
 #endif
 
     // Test that Py_BEGIN_CRITICAL_SECTION is available

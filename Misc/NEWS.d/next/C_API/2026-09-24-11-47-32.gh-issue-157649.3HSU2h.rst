@@ -1,0 +1,4 @@
+Fix :c:macro:`Py_CLEAR` and :c:macro:`Py_SETREF` macros on C++: implement
+them using ``auto`` instead of ``decltype()``. Using  ``decltype()``
+produced invalid code when clearing/setting an array item. Patch by Victor
+Stinner.
