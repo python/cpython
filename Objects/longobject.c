@@ -113,10 +113,10 @@ maybe_small_long(PyLongObject *v)
  */
 #define HUGE_EXP_CUTOFF 60
 
-/* Check for signals on every 64th iteration `i` of a loop. */
+/* Check for signals on every 32nd iteration `i` of a loop. */
 #define SIGCHECK(i, PyTryBlock)                                     \
     do {                                                            \
-        if ((((i) & 63) == 63) && PyErr_CheckSignals()) PyTryBlock  \
+        if ((((i) & 31) == 31) && PyErr_CheckSignals()) PyTryBlock  \
     } while(0)
 
 /* Normalize (remove leading zeros from) an int object.
@@ -4109,6 +4109,13 @@ k_mul(PyLongObject *a, PyLongObject *b)
             return (PyLongObject *)PyLong_FromLong(0);
         else
             return x_mul(a, b);
+    }
+
+    /* x_mul() only checks for signals every 32nd row and the base cases of
+       the recursion below can have fewer rows than that, so check here,
+       once per Karatsuba step. */
+    if (PyErr_CheckSignals()) {
+        return NULL;
     }
 
     /* If a is small compared to b, splitting on b gives a degenerate
