@@ -827,6 +827,11 @@ how the command-line arguments should be handled. The supplied actions are:
     >>> parser.add_argument("--foo", action="extend", nargs="+", type=str)
     >>> parser.parse_args(["--foo", "f1", "--foo", "f2", "f3", "f4"])
     Namespace(foo=['f1', 'f2', 'f3', 'f4'])
+    >>> parser = argparse.ArgumentParser()
+    >>> parser.add_argument("--foo", action="extend", nargs="+", type=str,
+    ...                     default=["d1"])
+    >>> parser.parse_args(["--foo", "f1", "f2"])
+    Namespace(foo=['d1', 'f1', 'f2'])
 
   .. versionadded:: 3.8
 

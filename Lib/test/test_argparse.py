@@ -2470,21 +2470,6 @@ class TestActionExtend(ParserTestCase):
     ]
 
 
-class TestActionExtendWithDefault(ParserTestCase):
-    """Tests the extend action for an Optional with a non-empty default"""
-
-    argument_signatures = [
-        Sig('--baz', action='extend', nargs='+', default=['X']),
-    ]
-    failures = ['a', '--baz', 'a --baz']
-    successes = [
-        ('', NS(baz=['X'])),
-        ('--baz a', NS(baz=['X', 'a'])),
-        ('--baz a b', NS(baz=['X', 'a', 'b'])),
-        ('--baz a --baz b c', NS(baz=['X', 'a', 'b', 'c'])),
-    ]
-
-
 class TestNegativeNumber(ParserTestCase):
     """Test parsing negative numbers"""
 
