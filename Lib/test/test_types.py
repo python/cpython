@@ -5,6 +5,8 @@ from test.support import (
     MISSING_C_DOCSTRINGS,
 )
 from test.test_import import no_rerun
+from test.support.script_helper import assert_python_ok
+
 import collections.abc
 from collections import namedtuple
 import copy
@@ -642,6 +644,24 @@ class TypesTests(unittest.TestCase):
             exc = e
         self.assertIsInstance(exc.__traceback__, types.TracebackType)
         self.assertIsInstance(exc.__traceback__.tb_frame, types.FrameType)
+
+    def test_call_unbound_crash(self):
+        # GH-131998: The specialized instruction would get tricked into dereferencing
+        # a bound "self" that didn't exist if subsequently called unbound.
+        code = """if True:
+
+        def call(part):
+            [] + ([] + [])
+            part.pop()
+
+        for _ in range(3):
+            call(['a'])
+        try:
+            call(list)
+        except TypeError:
+            pass
+        """
+        assert_python_ok("-c", code)
 
 
 class UnionTests(unittest.TestCase):
