@@ -818,6 +818,9 @@ how the command-line arguments should be handled. The supplied actions are:
   value ``'+'`` or ``'*'``.
   Note that when nargs_ is ``None`` (the default) or ``'?'``, each
   character of the argument string will be appended to the list.
+  If the default value is a non-empty list, the parsed value for the option
+  will start with the default list's elements and any values from the
+  command line will be appended after those default values.
   Example usage::
 
     >>> parser = argparse.ArgumentParser()
