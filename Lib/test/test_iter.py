@@ -507,6 +507,24 @@ class TestCase(unittest.TestCase):
         it.__setstate__(((10,), StopIteration))
         self.assertEqual(list(it), list(range(10)))
 
+    def test_calliter_sentinel_reentrant_setstate(self):
+        # gh-158031: a sentinel __eq__ that mutates the iterator
+        # re-entrantly must not leave the comparison using a freed
+        # sentinel.
+        class Sentinel:
+            def __eq__(self, other):
+                it.__setstate__(((), StopIteration))
+                return NotImplemented
+
+        class Result:
+            def __eq__(self, other):
+                return NotImplemented
+
+        it = iter(lambda: Result(), Sentinel())
+        self.assertIsInstance(next(it), Result)
+        # __setstate__ cleared the sentinel; iteration still works.
+        self.assertIsInstance(next(it), Result)
+
     def test_iter_function_concealing_reentrant_exhaustion(self):
         # gh-101892: Test two-argument iter() with a function that
         # exhausts its associated iterator but forgets to either return

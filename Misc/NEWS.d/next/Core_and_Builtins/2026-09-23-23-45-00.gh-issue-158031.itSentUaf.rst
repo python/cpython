@@ -1,0 +1,5 @@
+Fix use-after-free in :func:`iter` and :func:`aiter` callables with a
+sentinel: the sentinel comparison could run code that replaced or released
+the sentinel (for example via ``__setstate__`` or a re-entrant
+``__anext__``), leaving the comparison using freed memory.  A strong
+reference is now held for the duration of the comparison.

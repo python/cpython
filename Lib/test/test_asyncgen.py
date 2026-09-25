@@ -905,6 +905,37 @@ class AsyncGenAsyncioTest(unittest.TestCase):
         with self.assertRaises(StopAsyncIteration):
             self.loop.run_until_complete(anext(it))
 
+    def test_aiter_callable_sentinel_reentrant_exhaustion(self):
+        # gh-158033: a sentinel __eq__ that exhausts the iterator
+        # re-entrantly must not leave the comparison using a freed
+        # sentinel.
+        state = {'stop': False}
+
+        async def produce():
+            return Result()
+
+        def spam():
+            if state['stop']:
+                raise StopAsyncIteration
+            return produce()
+
+        class Sentinel:
+            def __eq__(self, other):
+                state['stop'] = True
+                try:
+                    ait.__anext__().__await__().send(None)
+                except StopAsyncIteration:
+                    pass
+                return NotImplemented
+
+        class Result:
+            def __eq__(self, other):
+                return NotImplemented
+
+        ait = aiter(spam, Sentinel())
+        with self.assertRaises(StopIteration):
+            ait.__anext__().__await__().send(None)
+
     def test_aiter_callable_lazy(self):
         # The callable is only called when the awaitable is awaited
         calls = []

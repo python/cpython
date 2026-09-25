@@ -282,7 +282,12 @@ calliter_iternext(PyObject *op)
         if (it->it_sentinel == NULL) {
             return result; /* Common case, fast path */
         }
-        int ok = PyObject_RichCompareBool(it->it_sentinel, result, Py_EQ);
+        /* The comparison can run code that mutates the iterator
+           (e.g. __setstate__), so hold a strong reference to the
+           sentinel while it is in use. */
+        PyObject *sentinel = Py_NewRef(it->it_sentinel);
+        int ok = PyObject_RichCompareBool(sentinel, result, Py_EQ);
+        Py_DECREF(sentinel);
         if (ok == 0) {
             return result; /* Common case, fast path */
         }
@@ -641,7 +646,12 @@ acallawaitable_handle_error(acallawaitableobject *aw)
         }
         int ok = 0;
         if (it->it_sentinel != NULL) {
-            ok = PyObject_RichCompareBool(it->it_sentinel, value, Py_EQ);
+            /* The comparison can run code that exhausts the iterator
+               re-entrantly, so hold a strong reference to the sentinel
+               while it is in use. */
+            PyObject *sentinel = Py_NewRef(it->it_sentinel);
+            ok = PyObject_RichCompareBool(sentinel, value, Py_EQ);
+            Py_DECREF(sentinel);
         }
         if (ok == 0) {
             (void)_PyGen_SetStopIterationValue(value);
