@@ -3405,7 +3405,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         from _io import FileIO
         def check(descr, what):
             self.assertEqual(descr.__doc__, what)
-        check(FileIO.closed, "True if the file is closed") # getset descriptor
+        check(FileIO.closed, "True if the file is closed.") # getset descriptor
         check(complex.real, "the real part of a complex number") # member descriptor
 
     def test_doc_descriptor(self):

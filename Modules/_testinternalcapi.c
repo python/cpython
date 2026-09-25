@@ -1357,13 +1357,16 @@ _testinternalcapi_assemble_code_object_impl(PyObject *module,
     umd.u_cellvars = PyDict_GetItemString(metadata, "cellvars");
     umd.u_freevars = PyDict_GetItemString(metadata, "freevars");
     umd.u_fasthidden = PyDict_GetItemString(metadata, "fasthidden");
+    if (umd.u_fasthidden == Py_None) {
+        umd.u_fasthidden = NULL;
+    }
 
     assert(PyDict_Check(umd.u_consts));
     assert(PyDict_Check(umd.u_names));
     assert(PyDict_Check(umd.u_varnames));
     assert(PyDict_Check(umd.u_cellvars));
     assert(PyDict_Check(umd.u_freevars));
-    assert(PyDict_Check(umd.u_fasthidden));
+    assert(umd.u_fasthidden == NULL || PySet_Check(umd.u_fasthidden));
 
     umd.u_argcount = get_nonnegative_int_from_dict(metadata, "argcount");
     umd.u_posonlyargcount = get_nonnegative_int_from_dict(metadata, "posonlyargcount");
@@ -3206,6 +3209,28 @@ test_thread_state_ensure_from_view_interp_switch(PyObject *self, PyObject *unuse
     Py_RETURN_NONE;
 }
 
+static PyObject *
+unicodewriter_overflow(PyObject *self, PyObject *unused)
+{
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
+    if (writer == NULL) {
+        return NULL;
+    }
+    if (PyUnicodeWriter_WriteASCII(writer, "hello", -1) < 0) {
+        PyUnicodeWriter_Discard(writer);
+        return NULL;
+    }
+
+    _PyUnicodeWriter *impl = (_PyUnicodeWriter*)writer;
+    PyObject *buffer = impl->buffer;
+    Py_ssize_t index = PyUnicode_GET_LENGTH(buffer);
+    PyUnicode_WRITE(impl->kind, impl->data, index, '#');  // overflow!
+
+    // Spoiler: the function doesn't return if an overflow is detected
+    // in debug mode
+    return PyUnicodeWriter_Finish(writer);
+}
+
 /* Self interrupting context manager */
 
 typedef struct {
@@ -3393,6 +3418,7 @@ static PyMethodDef module_functions[] = {
     {"test_interp_guard_countdown", test_interp_guard_countdown, METH_NOARGS},
     {"test_interp_view_countdown", test_interp_view_countdown, METH_NOARGS},
     {"test_thread_state_ensure_from_view_interp_switch", test_thread_state_ensure_from_view_interp_switch, METH_NOARGS},
+    {"unicodewriter_overflow", unicodewriter_overflow, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 

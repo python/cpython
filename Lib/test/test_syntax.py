@@ -3393,10 +3393,14 @@ def func2():
         self._check_error('\nfgdfgf\n1,\\#\n2\n',
                           "unexpected character after line continuation character",
                           lineno=3, offset=4)
+        for prefix in ("f", "t"):
+            self._check_error(f'{prefix}"""{{\n\\ x}}"""',
+                              "unexpected character after line continuation character",
+                              lineno=2, offset=2)
 
     def test_invalid_line_continuation_left_recursive(self):
         # Check bpo-42218: SyntaxErrors following left-recursive rules
-        # (t_primary_raw in this case) need to be tested explicitly
+        # (primary_raw in this case) need to be tested explicitly
         self._check_error("A.\u018a\\ ",
                           "unexpected character after line continuation character")
         self._check_error("A.\u03bc\\\n",
@@ -3533,6 +3537,23 @@ while 1:
         compile(src(CO_MAXBLOCKS), "<testcase>", "exec")
         self._check_error(src(CO_MAXBLOCKS + 1),
                           "too many statically nested blocks")
+
+    def test_invalid_starred_for_target_in_async_comprehension(self):
+        sources = [
+            "async def f():\n    {a async for b in d for *(b,) in e}",
+            "async def f():\n    [a async for b in d for *(b,) in e]",
+            "async def f():\n    {a: a async for b in d for *(b,) in e}",
+        ]
+        for src in sources:
+            with self.subTest(src=src):
+                self._check_error(
+                    src, "starred assignment target must be in a list or tuple")
+
+    def test_syntax_error_in_nested_inlined_async_comprehension(self):
+        self._check_error(
+            "async def f(it):\n"
+            "    return [[f(a=1, a=2) for y in z] async for x in it]\n",
+            "keyword argument repeated")
 
     @support.cpython_only
     def test_error_on_parser_stack_overflow(self):

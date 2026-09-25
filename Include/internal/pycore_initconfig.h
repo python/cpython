@@ -182,6 +182,8 @@ extern PyObject* _PyConfig_CreateXOptionsDict(const PyConfig *config);
 
 extern void _Py_DumpPathConfig(PyThreadState *tstate);
 
+extern int _PyConfig_ProcessDeferredCmdlineOption(PyConfig *config);
+
 
 /* --- Function used for testing ---------------------------------- */
 

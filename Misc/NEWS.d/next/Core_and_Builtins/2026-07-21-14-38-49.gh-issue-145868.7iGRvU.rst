@@ -1,0 +1,2 @@
+Suggest the closest valid feature name in the :exc:`SyntaxError` message
+when an unknown name is imported from :mod:`__future__`.
