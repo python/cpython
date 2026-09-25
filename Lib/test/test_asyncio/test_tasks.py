@@ -414,6 +414,9 @@ class BaseTaskTests:
         self.assertEqual(t.get_name(), '123456789')
         self.loop.run_until_complete(t)
 
+    # The free-threaded GC publishes allocation counts in batches, so the
+    # collection cannot be scheduled to run inside get_name().
+    @support.requires_gil_enabled("needs precise GC scheduling")
     def test_task_get_name_reentered_during_formatting(self):
         # gh-158159: formatting the lazy default name can run the GC, and a
         # finalizer may call get_name() on the same task, replacing the name
