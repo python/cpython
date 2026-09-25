@@ -1,0 +1,2 @@
+Fix :func:`time.strftime` and :meth:`datetime.datetime.strftime` returning a
+wrong ISO 8601 week number (``%V``) on OpenBSD.

@@ -1,0 +1,4 @@
+:meth:`~xml.dom.minidom.Node.writexml` in :mod:`xml.dom.minidom` now writes
+the namespace declarations needed to serialize the namespaces of the element
+and its attributes, if they are not already declared for an ancestor.  The
+document is not modified.

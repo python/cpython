@@ -99,7 +99,7 @@ dk_nentries to achieve amortized O(1).  Since there are DKIX_DUMMY remains in
 dk_indices, we can't increment dk_usable even though dk_nentries is
 decremented.
 
-To preserve the order in a split table, a bit vector is used  to record the
+To preserve the order in a split table, a bit vector is used to record the
 insertion order. When a key is inserted the bit vector is shifted up by 4 bits
 and the index of the key is stored in the low 4 bits.
 As a consequence of this, split keys have a maximum size of 16.
@@ -3412,9 +3412,8 @@ dict_dict_fromkeys(PyDictObject *mp, PyObject *iterable, PyObject *value)
     PyObject *key;
     Py_hash_t hash;
     int unicode = DK_IS_UNICODE(((PyDictObject*)iterable)->ma_keys);
-    uint8_t new_size = Py_MAX(
-        estimate_log2_keysize(PyDict_GET_SIZE(iterable)),
-        DK_LOG_SIZE(mp->ma_keys));
+    uint8_t log2_keysize = estimate_log2_keysize(PyDict_GET_SIZE(iterable));
+    uint8_t new_size = Py_MAX(log2_keysize, DK_LOG_SIZE(mp->ma_keys));
     if (dictresize(mp, new_size, unicode)) {
         Py_DECREF(mp);
         return NULL;
@@ -3437,9 +3436,8 @@ dict_set_fromkeys(PyDictObject *mp, PyObject *iterable, PyObject *value)
     Py_ssize_t pos = 0;
     PyObject *key;
     Py_hash_t hash;
-    uint8_t new_size = Py_MAX(
-        estimate_log2_keysize(PySet_GET_SIZE(iterable)),
-        DK_LOG_SIZE(mp->ma_keys));
+    uint8_t log2_keysize = estimate_log2_keysize(PySet_GET_SIZE(iterable));
+    uint8_t new_size = Py_MAX(log2_keysize, DK_LOG_SIZE(mp->ma_keys));
     if (dictresize(mp, new_size, 0)) {
         Py_DECREF(mp);
         return NULL;
@@ -6276,9 +6274,12 @@ dictreviter_iter_lock_held(PyDictObject *d, PyObject *self)
         int index = get_index_from_order(d, i);
         key = LOAD_SHARED_KEY(DK_UNICODE_ENTRIES(k)[index].me_key);
         value = d->ma_values->values[index];
-        assert (value != NULL);
+        assert(value != NULL);
     }
     else {
+        if (i >= k->dk_nentries) {
+            goto fail;
+        }
         if (DK_IS_UNICODE(k)) {
             PyDictUnicodeEntry *entry_ptr = &DK_UNICODE_ENTRIES(k)[i];
             while (entry_ptr->me_value == NULL) {
@@ -7722,7 +7723,7 @@ _PyObject_IsInstanceDictEmpty(PyObject *obj)
         PyDictValues *values = _PyObject_InlineValues(obj);
         if (FT_ATOMIC_LOAD_UINT8(values->valid)) {
             PyDictKeysObject *keys = CACHED_KEYS(tp);
-            for (Py_ssize_t i = 0; i < keys->dk_nentries; i++) {
+            for (Py_ssize_t i = 0; i < LOAD_KEYS_NENTRIES(keys); i++) {
                 if (FT_ATOMIC_LOAD_PTR_RELAXED(values->values[i]) != NULL) {
                     return 0;
                 }
@@ -8568,6 +8569,17 @@ frozendict_copy_impl(PyFrozenDictObject *self)
     return copy;
 }
 
+PyDoc_STRVAR(frozendict_doc,
+"frozendict() -> new empty immutable dictionary\n"
+"frozendict(mapping) -> new immutable dictionary initialized from a mapping\n"
+"    object's (key, value) pairs\n"
+"frozendict(iterable) -> new immutable dictionary initialized as if via:\n"
+"    d = {}\n"
+"    for k, v in iterable:\n"
+"        d[k] = v\n"
+"    d = frozendict(d)\n"
+"frozendict(**kwargs) -> new immutable dictionary initialized with the name=value\n"
+"    pairs in the keyword argument list.  For example:  frozendict(one=1, two=2)");
 
 PyTypeObject PyFrozenDict_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
@@ -8583,7 +8595,7 @@ PyTypeObject PyFrozenDict_Type = {
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC
                 | Py_TPFLAGS_BASETYPE
                 | _Py_TPFLAGS_MATCH_SELF | Py_TPFLAGS_MAPPING,
-    .tp_doc = dictionary_doc,
+    .tp_doc = frozendict_doc,
     .tp_traverse = dict_traverse,
     .tp_clear = dict_tp_clear,
     .tp_richcompare = dict_richcompare,

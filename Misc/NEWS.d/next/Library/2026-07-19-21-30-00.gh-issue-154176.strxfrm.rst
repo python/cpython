@@ -1,0 +1,2 @@
+Fix a crash in :func:`locale.strxfrm` on DragonFly BSD,
+whose ``wcsxfrm()`` does not support the zero size.

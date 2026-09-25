@@ -1,4 +1,5 @@
 import contextlib
+import _tokenize
 import itertools
 import os
 import re
@@ -2273,6 +2274,183 @@ class CTokenizeTest(TestCase):
                 ))
                 self.assertEqual(tokens, expected)
 
+    def test_stateful_decoder_spans_readline_calls(self):
+        encoded_name = "変数".encode("iso2022_jp")
+        payload = encoded_name[3:-3]
+        lines = iter([
+            b"# \x1b$B" + payload + b"\n",
+            payload + b"\x1b(B\n",
+            b"",
+        ])
+        tokens = list(tokenize._generate_tokens_from_c_tokenizer(
+            lines.__next__,
+            extra_tokens=True,
+            encoding="iso2022_jp",
+        ))
+        self.assertEqual(tokens, [
+            tokenize.TokenInfo(
+                token.COMMENT, "# 変数", (1, 0), (1, 4), "# 変数\n"
+            ),
+            tokenize.TokenInfo(token.NL, "\n", (1, 4), (1, 5), "# 変数\n"),
+            tokenize.TokenInfo(token.NAME, "変数", (2, 0), (2, 2), "変数\n"),
+            tokenize.TokenInfo(token.NEWLINE, "\n", (2, 2), (2, 3), "変数\n"),
+            tokenize.TokenInfo(token.ENDMARKER, "", (3, 0), (3, 0), ""),
+        ])
+
+    def test_utf16_bom_in_each_readline_chunk(self):
+        lines = iter([
+            "x\n".encode("utf-16"),
+            "y\n".encode("utf-16"),
+            b"",
+        ])
+        tokens = _tokenize.TokenizerIter(
+            lines.__next__, encoding="utf-16", extra_tokens=True
+        )
+        self.assertEqual(list(tokens), [
+            (token.NAME, "x", (1, 0), (1, 1), "x\n"),
+            (token.NEWLINE, "\n", (1, 1), (1, 2), "x\n"),
+            (token.NAME, "y", (2, 0), (2, 1), "y\n"),
+            (token.NEWLINE, "\n", (2, 1), (2, 2), "y\n"),
+            (token.ENDMARKER, "", (3, 0), (3, 0), ""),
+        ])
+
+    def test_utf8_decoder_spans_readline_calls(self):
+        lines = iter([b"x\xc3", b"\xa9\n", b""])
+        tokens = list(tokenize._generate_tokens_from_c_tokenizer(
+            lines.__next__,
+            extra_tokens=True,
+            encoding="utf-8",
+        ))
+        self.assertEqual(tokens, [
+            tokenize.TokenInfo(token.NAME, "xé", (1, 0), (1, 2), "xé\n"),
+            tokenize.TokenInfo(token.NEWLINE, "\n", (1, 2), (1, 3), "xé\n"),
+            tokenize.TokenInfo(token.ENDMARKER, "", (2, 0), (2, 0), ""),
+        ])
+
+    def test_utf8_decoder_replaces_incomplete_input_at_eof(self):
+        expected = [
+            tokenize.TokenInfo(token.NAME, "x�", (1, 0), (1, 2), "x�"),
+            tokenize.TokenInfo(token.NEWLINE, "", (1, 2), (1, 3), "x�"),
+            tokenize.TokenInfo(token.ENDMARKER, "", (2, 0), (2, 0), ""),
+        ]
+        for chunks in ([b"x\xe9", b""], [b"x\xe9"]):
+            with self.subTest(chunks=chunks):
+                lines = iter(chunks)
+                tokens = list(tokenize._generate_tokens_from_c_tokenizer(
+                    lines.__next__,
+                    extra_tokens=True,
+                    encoding="utf-8",
+                ))
+                self.assertEqual(tokens, expected)
+
+    def test_multiline_readline_chunk(self):
+        expected = [
+            tokenize.TokenInfo(token.NAME, "x", (1, 0), (1, 1), "x=1\n"),
+            tokenize.TokenInfo(token.OP, "=", (1, 1), (1, 2), "x=1\n"),
+            tokenize.TokenInfo(token.NUMBER, "1", (1, 2), (1, 3), "x=1\n"),
+            tokenize.TokenInfo(token.NEWLINE, "\n", (1, 3), (1, 4), "x=1\n"),
+            tokenize.TokenInfo(token.NAME, "y", (2, 0), (2, 1), "y=2\n"),
+            tokenize.TokenInfo(token.OP, "=", (2, 1), (2, 2), "y=2\n"),
+            tokenize.TokenInfo(token.NUMBER, "2", (2, 2), (2, 3), "y=2\n"),
+            tokenize.TokenInfo(token.NEWLINE, "\n", (2, 3), (2, 4), "y=2\n"),
+            tokenize.TokenInfo(token.ENDMARKER, "", (3, 0), (3, 0), ""),
+        ]
+        lines = iter([b"x=1\ny=2\n", b""])
+        tokens = list(tokenize._generate_tokens_from_c_tokenizer(
+            lines.__next__,
+            extra_tokens=True,
+            encoding="utf-8",
+        ))
+        self.assertEqual(tokens, expected)
+
+    def test_multiline_readline_chunk_with_unterminated_tail(self):
+        readline = mock.Mock(side_effect=["x\nz", ""])
+        iterator = _tokenize.TokenizerIter(readline, extra_tokens=True)
+        expected = [
+            (token.NAME, "x", (1, 0), (1, 1), "x\n"),
+            (token.NEWLINE, "\n", (1, 1), (1, 2), "x\n"),
+            (token.NAME, "z", (2, 0), (2, 1), "z"),
+            (token.NEWLINE, "", (2, 1), (2, 2), "z"),
+        ]
+        self.assertEqual(readline.call_count, 0)
+        for token_info in expected:
+            self.assertEqual(next(iterator), token_info)
+            self.assertEqual(readline.call_count, 1)
+        self.assertEqual(
+            next(iterator),
+            (token.ENDMARKER, "", (3, 0), (3, 0), ""),
+        )
+        self.assertEqual(readline.call_count, 2)
+
+    def test_readline_callback_is_not_read_ahead(self):
+        readline = mock.Mock(side_effect=["x\n", "y\n", ""])
+        iterator = _tokenize.TokenizerIter(readline, extra_tokens=True)
+        expected = [
+            ((token.NAME, "x", (1, 0), (1, 1), "x\n"), 1),
+            ((token.NEWLINE, "\n", (1, 1), (1, 2), "x\n"), 1),
+            ((token.NAME, "y", (2, 0), (2, 1), "y\n"), 2),
+        ]
+        self.assertEqual(readline.call_count, 0)
+        for token_info, calls in expected:
+            self.assertEqual(next(iterator), token_info)
+            self.assertEqual(readline.call_count, calls)
+
+    def test_encoded_readline_replaces_invalid_bytes(self):
+        lines = iter([b"\xff\n", b""])
+        tokens = list(tokenize._generate_tokens_from_c_tokenizer(
+            lines.__next__,
+            extra_tokens=True,
+            encoding="utf-8",
+        ))
+        self.assertEqual(tokens, [
+            tokenize.TokenInfo(token.NAME, "�", (1, 0), (1, 1), "�\n"),
+            tokenize.TokenInfo(token.NEWLINE, "\n", (1, 1), (1, 2), "�\n"),
+            tokenize.TokenInfo(token.ENDMARKER, "", (2, 0), (2, 0), ""),
+        ])
+
+    def test_stop_iteration_skips_encoded_readline_codec_lookup(self):
+        iterator = _tokenize.TokenizerIter(
+            lambda: b"",
+            extra_tokens=True,
+            encoding="missing-tokenizer-codec",
+        )
+        with self.assertRaises(LookupError):
+            next(iterator)
+
+        iterator = _tokenize.TokenizerIter(
+            iter(()).__next__,
+            extra_tokens=True,
+            encoding="missing-tokenizer-codec",
+        )
+        self.assertEqual(
+            next(iterator),
+            (token.ENDMARKER, "", (1, 0), (1, 0), ""),
+        )
+
+    def test_fstring_offsets_survive_buffer_reallocation(self):
+        for prefix in ("f", "t"):
+            for extra_tokens in (False, True):
+                with self.subTest(prefix=prefix, extra_tokens=extra_tokens):
+                    physical_lines = [
+                        prefix + '"""\n',
+                        "{(\n",
+                        " " * 9000 + "1\n",
+                        ")=:>{2}}\n",
+                        '"""\n',
+                    ]
+                    source = "".join(physical_lines)
+                    chunks = iter([
+                        "".join(physical_lines[:2]),
+                        "".join(physical_lines[2:4]),
+                        physical_lines[4],
+                        "",
+                    ])
+                    expected = self._get_tokens(
+                        source, extra_tokens=extra_tokens)
+                    tokens = list(tokenize._generate_tokens_from_c_tokenizer(
+                        chunks.__next__, extra_tokens=extra_tokens))
+                    self.assertEqual(tokens, expected)
+
     def test_extra_tokens_relaxes_lexer_errors(self):
         cases = [
             (
@@ -2395,6 +2573,40 @@ class CTokenizeTest(TestCase):
             ("f-string: single '}' is not allowed", (1, 11)),
         )
 
+    def test_carriage_return_after_debug_comment(self):
+        for prefix in ("f", "t"):
+            with self.subTest(prefix=prefix):
+                tokens = self._get_tokens(f"{prefix}'''{{x=# comment\r}}'''")
+                self.assertEqual(tokens[4].string, "# comment\r}")
+
+    def test_incomplete_formatted_string_comment_after_carriage_return(self):
+        for prefix in ("f", "t"):
+            with self.subTest(prefix=prefix):
+                for extra_tokens in (False, True):
+                    with self.assertRaises(tokenize.TokenError) as caught:
+                        self._get_tokens(
+                            f"{prefix}'{{#\r!", extra_tokens=extra_tokens
+                        )
+                    self.assertEqual(
+                        caught.exception.args,
+                        ("unexpected EOF in multi-line statement", (1, 7)),
+                    )
+
+    def test_formatted_string_nesting_limit(self):
+        def nested_string(depth, prefix):
+            source = "'x'"
+            for _ in range(depth):
+                source = f'{prefix}"{{{source}}}"'
+            return source
+
+        for prefix in ("f", "t"):
+            with self.subTest(prefix=prefix):
+                self._get_tokens(nested_string(149, prefix))
+                with self.assertRaisesRegex(
+                        tokenize.TokenError,
+                        "too many nested f-strings or t-strings"):
+                    self._get_tokens(nested_string(150, prefix))
+
     def test_escaped_fstring_brace_has_a_position_gap(self):
         tokens = self._get_tokens('f"a{{"', extra_tokens=True)
         self.assertEqual(
@@ -2412,7 +2624,7 @@ class CTokenizeTest(TestCase):
             self._get_tokens('bé )tf"2 ', extra_tokens=True)
         self.assertEqual(
             caught.exception.args,
-            ("'f' and 't' prefixes are incompatible", (1, 6)),
+            ("'f' and 't' prefixes are incompatible", (1, 5)),
         )
 
     def test_tolerant_fstring_closer_at_expression_entry_depth(self):

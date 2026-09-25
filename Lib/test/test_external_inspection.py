@@ -1,3 +1,4 @@
+import asyncio
 import unittest
 import os
 import textwrap
@@ -440,6 +441,23 @@ class RemoteInspectionTestBase(unittest.TestCase):
 
 @requires_remote_subprocess_debugging()
 class TestSelfStackTrace(RemoteInspectionTestBase):
+    @skip_if_not_supported
+    def test_long_task_name_is_truncated(self):
+        # gh-157788
+        async def main():
+            asyncio.create_task(asyncio.sleep(10_000), name="x" * 300)
+            await asyncio.sleep(0)
+            names = [
+                task.task_name
+                for info in RemoteUnwinder(os.getpid()).get_all_awaited_by()
+                for task in info.awaited_by
+            ]
+            return asyncio.current_task().get_name(), names
+
+        main_name, names = asyncio.run(main())
+        self.assertIn(main_name, names)
+        self.assertEqual([len(n) for n in names if n.startswith("x")], [255])
+
     @skip_if_not_supported
     @unittest.skipIf(
         sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
@@ -1665,6 +1683,80 @@ class TestGetStackTrace(RemoteInspectionTestBase):
         self.assertTrue(this_thread_stack[0].filename.endswith("test_external_inspection.py"))
         self.assertEqual(this_thread_stack[1].funcname, "TestGetStackTrace.test_self_trace")
         self.assertTrue(this_thread_stack[1].filename.endswith("test_external_inspection.py"))
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
+    def test_empty_native_thread_stack(self):
+        _testcapi = import_module("_testcapi")
+        lock = threading.Lock()
+        lock.acquire()
+        # A built-in callback leaves the C thread's Python stack empty.
+        _testcapi.call_in_temporary_c_thread(lock.acquire, False)
+        try:
+            for cache_frames, native in ((False, False), (False, True),
+                                         (True, False), (True, True)):
+                with self.subTest(cache_frames=cache_frames, native=native):
+                    unwinder = RemoteUnwinder(
+                        os.getpid(), all_threads=True, cache_frames=cache_frames,
+                        native=native,
+                    )
+                    _get_stack_trace_with_retry(
+                        unwinder, condition=lambda trace: len(trace[0].threads) == 2,
+                    )
+                    threads = unwinder.get_stack_trace()[0].threads
+                    native_stack, python_stack = sorted(
+                        (thread.frame_info for thread in threads), key=len,
+                    )
+                    self.assertEqual(native_stack, [])
+                    self.assertEqual(
+                        python_stack[0].funcname,
+                        "TestGetStackTrace.test_empty_native_thread_stack",
+                    )
+        finally:
+            lock.release()
+            _testcapi.join_temporary_c_thread()
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
+    def test_popping_python_frame_is_not_native(self):
+        script = """\
+def leaf(depth):
+    if depth:
+        leaf(depth - 1)
+
+while True:
+        leaf(300)
+"""
+        with _managed_subprocess([sys.executable, "-c", script]) as process:
+            for _ in busy_retry(SHORT_TIMEOUT):
+                try:
+                    unwinder = RemoteUnwinder(
+                        process.pid, native=True, gc=False, cache_frames=False,
+                    )
+                except RuntimeError:
+                    continue
+                break
+            samples = 0
+            for _ in range(10_000):
+                try:
+                    threads = unwinder.get_stack_trace()[0].threads
+                except TRANSIENT_ERRORS:
+                    continue
+                if not threads:
+                    continue
+                frames = threads[0].frame_info
+                names = [frame.funcname for frame in frames]
+                if "leaf" not in names:
+                    continue
+                samples += 1
+                self.assertNotIn(("leaf", "<native>"), zip(names, names[1:]))
+            self.assertGreater(samples, 1000)
 
     @skip_if_not_supported
     @unittest.skipIf(
@@ -3906,8 +3998,8 @@ class TestMetadataDegradation(RemoteInspectionTestBase):
         return self._find_frame_in_trace(traces, predicate)
 
     def test_long_qualname_truncated_not_dropped(self):
-        """A qualname longer than 1024 chars is truncated with a marker
-        instead of failing the whole sample."""
+        """A qualname longer than 1024 chars is truncated instead of
+        failing the whole sample."""
         script_body = """\
             src = ("def " + "f" * 1100 + "():\\n"
                    "    sock.sendall(b'ready')\\n"
@@ -3921,13 +4013,11 @@ class TestMetadataDegradation(RemoteInspectionTestBase):
             frame = self._sample_until_frame(
                 p.pid, lambda f: f.funcname.startswith("fff")
             )
-            self.assertEqual(
-                frame.funcname, "f" * 1024 + "(len=1100)"
-            )
+            self.assertEqual(frame.funcname, "f" * 1024)
 
     def test_long_filename_truncated(self):
-        """A filename longer than 1024 chars is truncated with a marker
-        instead of failing the whole sample."""
+        """A filename longer than 1024 chars is truncated instead of
+        failing the whole sample."""
         script_body = """\
             src = ("def g():\\n"
                    "    sock.sendall(b'ready')\\n"
@@ -3941,33 +4031,7 @@ class TestMetadataDegradation(RemoteInspectionTestBase):
             frame = self._sample_until_frame(
                 p.pid, lambda f: f.funcname == "g"
             )
-            self.assertEqual(
-                frame.filename, "x" * 1024 + "(len=1503)"
-            )
-
-    def test_long_task_name_truncated(self):
-        """An asyncio task name longer than 255 chars is truncated with a
-        marker instead of failing the whole sample."""
-        script_body = """\
-            import asyncio
-
-            async def worker():
-                sock.sendall(b"ready")
-                await asyncio.sleep(10_000)
-
-            async def main():
-                await asyncio.create_task(worker(), name="T" * 300)
-
-            asyncio.run(main())
-            """
-        with self._running_target(script_body) as (p, client_socket):
-            _wait_for_signal(client_socket, b"ready")
-            names = [
-                task.task_name
-                for awaited_info in get_all_awaited_by(p.pid)
-                for task in awaited_info.awaited_by
-            ]
-            self.assertIn("T" * 255 + "(len=300)", names)
+            self.assertEqual(frame.filename, "x" * 1024)
 
     def test_oversized_linetable_degrades_to_no_location(self):
         """A linetable over MAX_LINETABLE_SIZE degrades to a frame without

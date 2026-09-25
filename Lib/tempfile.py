@@ -929,7 +929,8 @@ class TemporaryDirectory:
     @classmethod
     def _rmtree(cls, name, ignore_errors=False, repeated=False):
         def onexc(func, path, exc):
-            if isinstance(exc, PermissionError):
+            # On DragonFly BSD, UF_NOUNLINK removal fails with EISDIR, not EPERM.
+            if isinstance(exc, (PermissionError, IsADirectoryError)):
                 if repeated and path == name:
                     if ignore_errors:
                         return

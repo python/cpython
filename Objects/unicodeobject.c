@@ -67,7 +67,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <windows.h>
 #endif
 
-#ifdef HAVE_ICONV
+#ifdef _Py_HAVE_ICONV
 #include <iconv.h>                 // iconv_open()
 #endif
 
@@ -601,7 +601,6 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
 # define CHECK_IF_FT(expr) (void)(expr)
 #endif
 
-
     assert(op != NULL);
     CHECK(PyUnicode_Check(op));
 
@@ -647,13 +646,12 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
     }
 
     /* check that the best kind is used: O(n) operation */
+    const void *data = PyUnicode_DATA(ascii);
     if (check_content) {
         Py_ssize_t i;
         Py_UCS4 maxchar = 0;
-        const void *data;
         Py_UCS4 ch;
 
-        data = PyUnicode_DATA(ascii);
         for (i=0; i < ascii->length; i++)
         {
             ch = PyUnicode_READ(kind, data, i);
@@ -676,8 +674,11 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
             CHECK(maxchar >= 0x10000);
             CHECK(maxchar <= MAX_UNICODE);
         }
-        CHECK(PyUnicode_READ(kind, data, ascii->length) == 0);
     }
+
+    // Detect buffer overflow: check if the trailing null character
+    // has been overridden
+    CHECK(PyUnicode_READ(kind, data, ascii->length) == 0);
 
     /* Check interning state */
 #ifdef Py_DEBUG
@@ -796,6 +797,8 @@ backslashreplace(PyBytesWriter *writer, char *str,
         }
         size += incr;
     }
+    /* subtract preallocated bytes */
+    size -= (collend - collstart);
 
     str = PyBytesWriter_GrowAndUpdatePointer(writer, size, str);
     if (str == NULL) {
@@ -871,6 +874,8 @@ xmlcharrefreplace(PyBytesWriter *writer, char *str,
         }
         size += incr;
     }
+    /* subtract preallocated bytes */
+    size -= (collend - collstart);
 
     str = PyBytesWriter_GrowAndUpdatePointer(writer, size, str);
     if (str == NULL) {
@@ -879,10 +884,16 @@ xmlcharrefreplace(PyBytesWriter *writer, char *str,
 
     /* generate replacement */
     for (i = collstart; i < collend; ++i) {
-        size = sprintf(str, "&#%d;", PyUnicode_READ(kind, data, i));
-        if (size < 0) {
-            return NULL;
-        }
+        // Use snprintf() with a temporary buffer to not write the trailing
+        // NUL byte in the writer buffer.
+        Py_BUILD_ASSERT(_Py_MAX_UNICODE <= 0x10ffff);
+        // len('&#1114111;\0') is 11 bytes.
+        char buffer[11];
+        Py_UCS4 ch = PyUnicode_READ(kind, data, i);
+        size = snprintf(buffer, sizeof(buffer), "&#%d;", ch);
+        assert(4 <= size && (size_t)size <= (sizeof(buffer) - 1));
+
+        memcpy(str, buffer, size);
         str += size;
     }
     return str;
@@ -1733,17 +1744,20 @@ unicode_is_singleton(PyObject *unicode)
 }
 #endif
 
+// If this function is updated, update also _PyUnicodeWriter_CanWrite().
 int
 _PyUnicode_IsModifiable(PyObject *unicode)
 {
     assert(_PyUnicode_CHECK(unicode));
+    if (!PyUnicode_CheckExact(unicode))
+        return 0;
+    // On Free Threading, this test fails if called from a thread other
+    // than the one which created the str object.
     if (!_PyObject_IsUniquelyReferenced(unicode))
         return 0;
     if (PyUnicode_HASH(unicode) != -1)
         return 0;
     if (PyUnicode_CHECK_INTERNED(unicode))
-        return 0;
-    if (!PyUnicode_CheckExact(unicode))
         return 0;
 #ifdef Py_DEBUG
     /* singleton refcount is greater than 1 */
@@ -1998,6 +2012,7 @@ PyUnicodeWriter_WriteWideChar(PyUnicodeWriter *pub_writer,
     if (_PyUnicodeWriter_Prepare(writer, size - num_surrogates, maxchar) < 0) {
         return -1;
     }
+    assert(_PyUnicodeWriter_CanWrite(writer));
 
     int kind = writer->kind;
     void *data = (Py_UCS1*)writer->data + writer->pos * kind;
@@ -2256,6 +2271,7 @@ PyUnicodeWriter_WriteUCS4(PyUnicodeWriter *pub_writer,
     if (_PyUnicodeWriter_Prepare(writer, size, max_char) < 0) {
         return -1;
     }
+    assert(_PyUnicodeWriter_CanWrite(writer));
 
     int kind = writer->kind;
     void *data = (Py_UCS1*)writer->data + writer->pos * kind;
@@ -2542,8 +2558,10 @@ unicode_fromformat_write_str(_PyUnicodeWriter *writer, PyObject *str,
     else
         maxchar = writer->maxchar;
 
-    if (_PyUnicodeWriter_Prepare(writer, arglen, maxchar) == -1)
+    if (_PyUnicodeWriter_Prepare(writer, arglen, maxchar) == -1) {
         return -1;
+    }
+    assert(_PyUnicodeWriter_CanWrite(writer));
 
     fill = Py_MAX(width - length, 0);
     if (fill && !(flags & F_LJUST)) {
@@ -2833,8 +2851,10 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
         Py_ssize_t spacepad = Py_MAX(width - precision - sign, 0);
         Py_ssize_t zeropad = Py_MAX(precision - len, 0);
 
-        if (_PyUnicodeWriter_Prepare(writer, width, 127) == -1)
+        if (_PyUnicodeWriter_Prepare(writer, width, 127) == -1) {
             return NULL;
+        }
+        assert(_PyUnicodeWriter_CanWrite(writer));
 
         if (spacepad && !(flags & F_LJUST)) {
             if (PyUnicode_Fill(writer->buffer, writer->pos, spacepad, ' ') == -1)
@@ -5210,6 +5230,7 @@ unicode_decode_utf8_impl(_PyUnicodeWriter *writer,
 
             if (_PyUnicodeWriter_PrepareKind(writer, PyUnicode_2BYTE_KIND) < 0)
                 goto onError;
+            assert(_PyUnicodeWriter_CanWrite(writer));
             for (i=startinpos; i<endinpos; i++) {
                 ch = (Py_UCS4)(unsigned char)(starts[i]);
                 PyUnicode_WRITE(writer->kind, writer->data, writer->pos,
@@ -5361,6 +5382,7 @@ _PyUnicode_DecodeUTF8Writer(_PyUnicodeWriter *writer,
     if (_PyUnicodeWriter_Prepare(writer, size, 127) < 0) {
         return -1;
     }
+    assert(_PyUnicodeWriter_CanWrite(writer));
 
     const char *starts = s;
     const char *end = s + size;
@@ -7256,8 +7278,6 @@ unicode_encode_ucs1(PyObject *unicode,
                 break;
 
             case _Py_ERROR_BACKSLASHREPLACE:
-                /* subtract preallocated bytes */
-                writer->size -= (collend - collstart);
                 str = backslashreplace(writer, str,
                                        unicode, collstart, collend);
                 if (str == NULL)
@@ -7266,8 +7286,6 @@ unicode_encode_ucs1(PyObject *unicode,
                 break;
 
             case _Py_ERROR_XMLCHARREFREPLACE:
-                /* subtract preallocated bytes */
-                writer->size -= (collend - collstart);
                 str = xmlcharrefreplace(writer, str,
                                         unicode, collstart, collend);
                 if (str == NULL)
@@ -7308,13 +7326,16 @@ unicode_encode_ucs1(PyObject *unicode,
                     }
                 }
                 else {
-                    /* subtract preallocated bytes */
-                    writer->size -= newpos - collstart;
                     /* Only overallocate the buffer if it's not the last write */
                     writer->overallocate = (newpos < size);
+
+                    /* subtract preallocated bytes */
+                    if (PyBytesWriter_Grow(writer, -(newpos - collstart)) < 0) {
+                        goto onError;
+                    }
                 }
 
-                char *rep_str;
+                const char *rep_str;
                 Py_ssize_t rep_len;
                 if (PyBytes_Check(rep)) {
                     /* Directly copy bytes result to output. */
@@ -7452,6 +7473,7 @@ PyUnicode_DecodeASCII(const char *s,
                but we may switch to UCS2 at the first write */
             if (_PyUnicodeWriter_PrepareKind(&writer, PyUnicode_2BYTE_KIND) < 0)
                 goto onError;
+            assert(_PyUnicodeWriter_CanWrite(&writer));
             kind = writer.kind;
             data = writer.data;
 
@@ -8198,7 +8220,7 @@ PyUnicode_AsMBCSString(PyObject *unicode)
 
 /* --- iconv Codec -------------------------------------------------------- */
 
-#ifdef HAVE_ICONV
+#ifdef _Py_HAVE_ICONV
 
 /* iconv pivot: native-endian UTF-32, a raw array of Py_UCS4.  One input unit is
    one code point, so error handlers get the exact position.  A platform whose
@@ -8462,6 +8484,9 @@ _PyUnicode_EncodeIconv(const char *encoding, PyObject *unicode,
         }
 
         if (ret != (size_t)-1) {
+            if (flushing) {
+                break;
+            }
             /* A positive result counts nonreversible conversions: iconv()
                substituted an unencodable character instead of failing with
                EILSEQ (musl and *BSD citrus do this).  Treat it as unencodable
@@ -8478,9 +8503,6 @@ _PyUnicode_EncodeIconv(const char *encoding, PyObject *unicode,
                 /* This code point was substituted; drop it and report it. */
                 out = out_before;
                 up -= unit;
-            }
-            else if (flushing) {
-                break;
             }
             else if (careful && up < uend) {
                 continue;
@@ -8520,11 +8542,19 @@ _PyUnicode_EncodeIconv(const char *encoding, PyObject *unicode,
             replen = PyBytes_GET_SIZE(rep);
         }
         else {
-            /* A str replacement is encoded through the same codec. */
+            /* A str replacement is encoded through the same codec, but
+               strictly: handling its errors in turn could never terminate. */
             assert(PyUnicode_Check(rep));
-            repbytes = _PyUnicode_EncodeIconv(encoding, rep, errors);
+            repbytes = _PyUnicode_EncodeIconv(encoding, rep, NULL);
             Py_DECREF(rep);
             if (repbytes == NULL) {
+                if (PyErr_ExceptionMatches(PyExc_UnicodeEncodeError)) {
+                    /* Report the input the caller knows about, not the
+                       replacement. */
+                    PyErr_Clear();
+                    raise_encode_exception(&exc, encoding, unicode, pos, pos + 1,
+                            "unable to encode error handler result");
+                }
                 goto done;
             }
             repdata = PyBytes_AS_STRING(repbytes);
@@ -8572,7 +8602,7 @@ done:
     return result;
 }
 
-#endif /* HAVE_ICONV */
+#endif /* _Py_HAVE_ICONV */
 
 /* --- Character Mapping Codec -------------------------------------------- */
 
@@ -14447,6 +14477,7 @@ PyTypeObject PyUnicode_Type = {
     0,                            /* tp_alloc */
     unicode_new,                  /* tp_new */
     PyObject_Free,                /* tp_free */
+    .tp_version_tag = _Py_TYPE_VERSION_STR,
     .tp_vectorcall = unicode_vectorcall,
     ._tp_iteritem = unicode_iteritem,
 };
@@ -14726,6 +14757,15 @@ intern_common(PyInterpreterState *interp, PyObject *s /* stolen */,
     }
 #endif
 
+    // Why _Py_LOCK_DONT_DETACH is used here: waiting for the interned mutex
+    // must not detach the thread state. Extension code is expected to
+    // detach before blocking on opaque external synchronization. However,
+    // the lock used for C++ static initialization is hidden, making
+    // that difficult, and it is common for C++ extensions to call
+    // PyUnicode_InternFromString() from static initializers. Detaching here
+    // can therefore deadlock: a stop-the-world pause may prevent the lock
+    // owner from reattaching while the pause waits for another attached
+    // thread blocked on the hidden lock.
     FT_MUTEX_LOCK_FLAGS(INTERN_MUTEX, _Py_LOCK_DONT_DETACH);
     PyObject *t;
     {
@@ -15192,6 +15232,10 @@ init_stdio_encoding(PyInterpreterState *interp)
 {
     /* Update the stdio encoding to the normalized Python codec name. */
     PyConfig *config = (PyConfig*)_PyInterpreterState_GetConfig(interp);
+    if (config->stdio_encoding == NULL) {
+        /* gh-86427: The encoding is determined for every stream. */
+        return _PyStatus_OK();
+    }
     if (config_get_codec_name(&config->stdio_encoding) < 0) {
         return _PyStatus_ERR("failed to get the Python codec name "
                              "of the stdio encoding");

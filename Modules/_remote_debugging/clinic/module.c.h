@@ -56,7 +56,7 @@ PyDoc_STRVAR(_remote_debugging_RemoteUnwinder___init____doc__,
 
 static int
 _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
-                                               int pid, int all_threads,
+                                               pid_t pid, int all_threads,
                                                int only_active_thread,
                                                int mode, int debug,
                                                int skip_non_matching_threads,
@@ -99,7 +99,7 @@ _remote_debugging_RemoteUnwinder___init__(PyObject *self, PyObject *args, PyObje
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
-    int pid;
+    pid_t pid;
     int all_threads = 0;
     int only_active_thread = 0;
     int mode = 0;
@@ -116,8 +116,8 @@ _remote_debugging_RemoteUnwinder___init__(PyObject *self, PyObject *args, PyObje
     if (!fastargs) {
         goto exit;
     }
-    pid = PyLong_AsInt(fastargs[0]);
-    if (pid == -1 && PyErr_Occurred()) {
+    pid = PyLong_AsPid(fastargs[0]);
+    if (pid == (pid_t)(-1) && PyErr_Occurred()) {
         goto exit;
     }
     if (!noptargs) {
@@ -559,7 +559,7 @@ PyDoc_STRVAR(_remote_debugging_GCMonitor___init____doc__,
 "        target process");
 
 static int
-_remote_debugging_GCMonitor___init___impl(GCMonitorObject *self, int pid,
+_remote_debugging_GCMonitor___init___impl(GCMonitorObject *self, pid_t pid,
                                           int debug);
 
 static int
@@ -597,7 +597,7 @@ _remote_debugging_GCMonitor___init__(PyObject *self, PyObject *args, PyObject *k
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
-    int pid;
+    pid_t pid;
     int debug = 0;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
@@ -605,8 +605,8 @@ _remote_debugging_GCMonitor___init__(PyObject *self, PyObject *args, PyObject *k
     if (!fastargs) {
         goto exit;
     }
-    pid = PyLong_AsInt(fastargs[0]);
-    if (pid == -1 && PyErr_Occurred()) {
+    pid = PyLong_AsPid(fastargs[0]);
+    if (pid == (pid_t)(-1) && PyErr_Occurred()) {
         goto exit;
     }
     if (!noptargs) {
@@ -717,7 +717,7 @@ exit:
 
 PyDoc_STRVAR(_remote_debugging_BinaryWriter___init____doc__,
 "BinaryWriter(filename, sample_interval_us, start_time_us, *,\n"
-"             compression=0)\n"
+"             compression=0, mode=-1, capture_features=-1)\n"
 "--\n"
 "\n"
 "High-performance binary writer for profiling data.\n"
@@ -728,6 +728,9 @@ PyDoc_STRVAR(_remote_debugging_BinaryWriter___init____doc__,
 "    start_time_us: Start timestamp in microseconds (from\n"
 "        time.monotonic() * 1e6)\n"
 "    compression: 0=none, 1=zstd (default: 0)\n"
+"    mode: Profiling mode, or -1 if unknown (default: -1)\n"
+"    capture_features: Capture feature bit mask, or -1 if unknown\n"
+"        (default: -1)\n"
 "\n"
 "Use as a context manager or call finalize() when done.");
 
@@ -736,7 +739,8 @@ _remote_debugging_BinaryWriter___init___impl(BinaryWriterObject *self,
                                              PyObject *filename,
                                              unsigned long long sample_interval_us,
                                              unsigned long long start_time_us,
-                                             int compression);
+                                             int compression, int mode,
+                                             int capture_features);
 
 static int
 _remote_debugging_BinaryWriter___init__(PyObject *self, PyObject *args, PyObject *kwargs)
@@ -744,7 +748,7 @@ _remote_debugging_BinaryWriter___init__(PyObject *self, PyObject *args, PyObject
     int return_value = -1;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 4
+    #define NUM_KEYWORDS 6
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -753,7 +757,7 @@ _remote_debugging_BinaryWriter___init__(PyObject *self, PyObject *args, PyObject
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(filename), &_Py_ID(sample_interval_us), &_Py_ID(start_time_us), &_Py_ID(compression), },
+        .ob_item = { &_Py_ID(filename), &_Py_ID(sample_interval_us), &_Py_ID(start_time_us), &_Py_ID(compression), &_Py_ID(mode), &_Py_ID(capture_features), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -762,14 +766,14 @@ _remote_debugging_BinaryWriter___init__(PyObject *self, PyObject *args, PyObject
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"filename", "sample_interval_us", "start_time_us", "compression", NULL};
+    static const char * const _keywords[] = {"filename", "sample_interval_us", "start_time_us", "compression", "mode", "capture_features", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "BinaryWriter",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[4];
+    PyObject *argsbuf[6];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 3;
@@ -777,6 +781,8 @@ _remote_debugging_BinaryWriter___init__(PyObject *self, PyObject *args, PyObject
     unsigned long long sample_interval_us;
     unsigned long long start_time_us;
     int compression = 0;
+    int mode = -1;
+    int capture_features = -1;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
             /*minpos*/ 3, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -793,12 +799,30 @@ _remote_debugging_BinaryWriter___init__(PyObject *self, PyObject *args, PyObject
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    compression = PyLong_AsInt(fastargs[3]);
-    if (compression == -1 && PyErr_Occurred()) {
+    if (fastargs[3]) {
+        compression = PyLong_AsInt(fastargs[3]);
+        if (compression == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (fastargs[4]) {
+        mode = PyLong_AsInt(fastargs[4]);
+        if (mode == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    capture_features = PyLong_AsInt(fastargs[5]);
+    if (capture_features == -1 && PyErr_Occurred()) {
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = _remote_debugging_BinaryWriter___init___impl((BinaryWriterObject *)self, filename, sample_interval_us, start_time_us, compression);
+    return_value = _remote_debugging_BinaryWriter___init___impl((BinaryWriterObject *)self, filename, sample_interval_us, start_time_us, compression, mode, capture_features);
 
 exit:
     return return_value;
@@ -868,6 +892,103 @@ _remote_debugging_BinaryWriter_write_sample(PyObject *self, PyObject *const *arg
         goto exit;
     }
     return_value = _remote_debugging_BinaryWriter_write_sample_impl((BinaryWriterObject *)self, stack_frames, timestamp_us);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_remote_debugging_BinaryWriter_set_stats__doc__,
+"set_stats($self, /, duration_sec, sample_rate, error_rate=None,\n"
+"          missed_samples=None)\n"
+"--\n"
+"\n"
+"Store measured profile statistics in the binary file.");
+
+#define _REMOTE_DEBUGGING_BINARYWRITER_SET_STATS_METHODDEF    \
+    {"set_stats", _PyCFunction_CAST(_remote_debugging_BinaryWriter_set_stats), METH_FASTCALL|METH_KEYWORDS, _remote_debugging_BinaryWriter_set_stats__doc__},
+
+static PyObject *
+_remote_debugging_BinaryWriter_set_stats_impl(BinaryWriterObject *self,
+                                              double duration_sec,
+                                              double sample_rate,
+                                              PyObject *error_rate,
+                                              PyObject *missed_samples);
+
+static PyObject *
+_remote_debugging_BinaryWriter_set_stats(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 4
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(duration_sec), &_Py_ID(sample_rate), &_Py_ID(error_rate), &_Py_ID(missed_samples), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"duration_sec", "sample_rate", "error_rate", "missed_samples", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "set_stats",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[4];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
+    double duration_sec;
+    double sample_rate;
+    PyObject *error_rate = Py_None;
+    PyObject *missed_samples = Py_None;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 4, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (PyFloat_CheckExact(args[0])) {
+        duration_sec = PyFloat_AS_DOUBLE(args[0]);
+    }
+    else
+    {
+        duration_sec = PyFloat_AsDouble(args[0]);
+        if (duration_sec == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    if (PyFloat_CheckExact(args[1])) {
+        sample_rate = PyFloat_AS_DOUBLE(args[1]);
+    }
+    else
+    {
+        sample_rate = PyFloat_AsDouble(args[1]);
+        if (sample_rate == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[2]) {
+        error_rate = args[2];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    missed_samples = args[3];
+skip_optional_pos:
+    return_value = _remote_debugging_BinaryWriter_set_stats_impl((BinaryWriterObject *)self, duration_sec, sample_rate, error_rate, missed_samples);
 
 exit:
     return return_value;
@@ -1374,7 +1495,7 @@ PyDoc_STRVAR(_remote_debugging_get_child_pids__doc__,
     {"get_child_pids", _PyCFunction_CAST(_remote_debugging_get_child_pids), METH_FASTCALL|METH_KEYWORDS, _remote_debugging_get_child_pids__doc__},
 
 static PyObject *
-_remote_debugging_get_child_pids_impl(PyObject *module, int pid,
+_remote_debugging_get_child_pids_impl(PyObject *module, pid_t pid,
                                       int recursive);
 
 static PyObject *
@@ -1410,7 +1531,7 @@ _remote_debugging_get_child_pids(PyObject *module, PyObject *const *args, Py_ssi
     #undef KWTUPLE
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
-    int pid;
+    pid_t pid;
     int recursive = 1;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -1418,8 +1539,8 @@ _remote_debugging_get_child_pids(PyObject *module, PyObject *const *args, Py_ssi
     if (!args) {
         goto exit;
     }
-    pid = PyLong_AsInt(args[0]);
-    if (pid == -1 && PyErr_Occurred()) {
+    pid = PyLong_AsPid(args[0]);
+    if (pid == (pid_t)(-1) && PyErr_Occurred()) {
         goto exit;
     }
     if (!noptargs) {
@@ -1446,7 +1567,7 @@ PyDoc_STRVAR(_remote_debugging_is_python_process__doc__,
     {"is_python_process", _PyCFunction_CAST(_remote_debugging_is_python_process), METH_FASTCALL|METH_KEYWORDS, _remote_debugging_is_python_process__doc__},
 
 static PyObject *
-_remote_debugging_is_python_process_impl(PyObject *module, int pid);
+_remote_debugging_is_python_process_impl(PyObject *module, pid_t pid);
 
 static PyObject *
 _remote_debugging_is_python_process(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -1480,15 +1601,15 @@ _remote_debugging_is_python_process(PyObject *module, PyObject *const *args, Py_
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
-    int pid;
+    pid_t pid;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
-    pid = PyLong_AsInt(args[0]);
-    if (pid == -1 && PyErr_Occurred()) {
+    pid = PyLong_AsPid(args[0]);
+    if (pid == (pid_t)(-1) && PyErr_Occurred()) {
         goto exit;
     }
     return_value = _remote_debugging_is_python_process_impl(module, pid);
@@ -1527,7 +1648,7 @@ PyDoc_STRVAR(_remote_debugging_get_gc_stats__doc__,
     {"get_gc_stats", _PyCFunction_CAST(_remote_debugging_get_gc_stats), METH_FASTCALL|METH_KEYWORDS, _remote_debugging_get_gc_stats__doc__},
 
 static PyObject *
-_remote_debugging_get_gc_stats_impl(PyObject *module, int pid,
+_remote_debugging_get_gc_stats_impl(PyObject *module, pid_t pid,
                                     int all_interpreters);
 
 static PyObject *
@@ -1563,7 +1684,7 @@ _remote_debugging_get_gc_stats(PyObject *module, PyObject *const *args, Py_ssize
     #undef KWTUPLE
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
-    int pid;
+    pid_t pid;
     int all_interpreters = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -1571,8 +1692,8 @@ _remote_debugging_get_gc_stats(PyObject *module, PyObject *const *args, Py_ssize
     if (!args) {
         goto exit;
     }
-    pid = PyLong_AsInt(args[0]);
-    if (pid == -1 && PyErr_Occurred()) {
+    pid = PyLong_AsPid(args[0]);
+    if (pid == (pid_t)(-1) && PyErr_Occurred()) {
         goto exit;
     }
     if (!noptargs) {
@@ -1588,4 +1709,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a3df14a6ab7f2998 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8ad64b51aaffc3ad input=a9049054013a1b77]*/

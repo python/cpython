@@ -1,0 +1,4 @@
+On macOS, add run-time checks around the syscalls :manpage:`pipe2 (2)` and
+:manpage:`dup3 (2)`, in addition to the existing build-time checks. This
+means that Python built on macOS 27 (where these calls are available) can
+run on macOS 26 (where they aren't).

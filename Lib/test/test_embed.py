@@ -823,7 +823,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     # global config
     DEFAULT_GLOBAL_CONFIG = {
         'Py_HasFileSystemDefaultEncoding': 0,
-        'Py_HashRandomizationFlag': 1,
         '_Py_HasFileSystemDefaultEncodeErrors': 0,
     }
     COPY_GLOBAL_PRE_CONFIG = [
@@ -831,31 +830,9 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     ]
     COPY_GLOBAL_CONFIG = [
         # Copy core config to global config for expected values
-        # True means that the core config value is inverted (0 => 1 and 1 => 0)
-        ('Py_BytesWarningFlag', 'bytes_warning'),
-        ('Py_DebugFlag', 'parser_debug'),
-        ('Py_DontWriteBytecodeFlag', 'write_bytecode', True),
         ('Py_FileSystemDefaultEncodeErrors', 'filesystem_errors'),
         ('Py_FileSystemDefaultEncoding', 'filesystem_encoding'),
-        ('Py_FrozenFlag', 'pathconfig_warnings', True),
-        ('Py_IgnoreEnvironmentFlag', 'use_environment', True),
-        ('Py_InspectFlag', 'inspect'),
-        ('Py_InteractiveFlag', 'interactive'),
-        ('Py_IsolatedFlag', 'isolated'),
-        ('Py_NoSiteFlag', 'site_import', True),
-        ('Py_NoUserSiteDirectory', 'user_site_directory', True),
-        ('Py_OptimizeFlag', 'optimization_level'),
-        ('Py_QuietFlag', 'quiet'),
-        ('Py_UnbufferedStdioFlag', 'buffered_stdio', True),
-        ('Py_VerboseFlag', 'verbose'),
     ]
-    if MS_WINDOWS:
-        COPY_GLOBAL_PRE_CONFIG.extend((
-            ('Py_LegacyWindowsFSEncodingFlag', 'legacy_windows_fs_encoding'),
-        ))
-        COPY_GLOBAL_CONFIG.extend((
-            ('Py_LegacyWindowsStdioFlag', 'legacy_windows_stdio'),
-        ))
 
     EXPECTED_CONFIG = None
 
@@ -1013,20 +990,10 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         config = configs['config']
 
         expected = dict(self.DEFAULT_GLOBAL_CONFIG)
-        for item in self.COPY_GLOBAL_CONFIG:
-            if len(item) == 3:
-                global_key, core_key, opposite = item
-                expected[global_key] = 0 if config[core_key] else 1
-            else:
-                global_key, core_key = item
-                expected[global_key] = config[core_key]
-        for item in self.COPY_GLOBAL_PRE_CONFIG:
-            if len(item) == 3:
-                global_key, core_key, opposite = item
-                expected[global_key] = 0 if pre_config[core_key] else 1
-            else:
-                global_key, core_key = item
-                expected[global_key] = pre_config[core_key]
+        for global_key, core_key in self.COPY_GLOBAL_CONFIG:
+            expected[global_key] = config[core_key]
+        for global_key, core_key in self.COPY_GLOBAL_PRE_CONFIG:
+            expected[global_key] = pre_config[core_key]
 
         self.assertEqual(configs['global_config'], expected)
 
@@ -1095,24 +1062,11 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         self.check_all_configs("test_init_compat_config", api=API_COMPAT)
 
     def test_init_global_config(self):
+        # Test Py_UTF8Mode global configuration variable
         preconfig = {
             'utf8_mode': True,
         }
-        config = {
-            'site_import': False,
-            'bytes_warning': True,
-            'warnoptions': ['default::BytesWarning'],
-            'inspect': True,
-            'interactive': True,
-            'optimization_level': 2,
-            'write_bytecode': False,
-            'verbose': True,
-            'quiet': True,
-            'buffered_stdio': False,
-            'remote_debug': True,
-            'user_site_directory': False,
-            'pathconfig_warnings': False,
-        }
+        config = {}
         self.check_all_configs("test_init_global_config", config, preconfig,
                                api=API_COMPAT)
 
@@ -2113,6 +2067,10 @@ class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):
 
     def test_concurrent_finalization_stress(self):
         self.run_embedded_interpreter("test_concurrent_finalization_stress")
+
+    def test_py_getenv(self):
+        # Test Py_GETENV() before init, when initialized, and after finalize
+        self.run_embedded_interpreter("test_py_getenv")
 
 
 class MiscTests(EmbeddingTestsMixin, unittest.TestCase):

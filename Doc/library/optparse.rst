@@ -1073,6 +1073,12 @@ As you can see, most actions involve storing or updating a value somewhere.
    and can be overridden by a custom subclass passed to the *values* argument of
    :meth:`OptionParser.parse_args` (as described in :ref:`optparse-parsing-arguments`).
 
+   :class:`!Values` objects support :func:`copy.replace`,
+   which returns a copy of the object with the specified attributes replaced.
+
+   .. versionchanged:: next
+      Added support for :func:`copy.replace`.
+
 Option
 arguments (and various other values) are stored as attributes of this object,
 according to the :attr:`~Option.dest` (destination) option attribute.

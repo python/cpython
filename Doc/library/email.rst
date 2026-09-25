@@ -54,7 +54,7 @@ server.
 
 The email package does its best to hide the details of the various governing
 RFCs from the application.  Conceptually the application should be able to
-treat the email message as a structured tree of unicode text and binary
+treat the email message as a structured tree of Unicode text and binary
 attachments, without having to worry about how these are represented when
 serialized.  In practice, however, it is often necessary to be aware of at
 least some of the rules governing MIME messages and their structure,
@@ -84,7 +84,7 @@ to advanced applications.
 Following those is a set of examples of using the fundamental parts of the APIs
 covered in the preceding sections.
 
-The foregoing represent the modern (unicode friendly) API of the email package.
+The foregoing represent the modern (Unicode friendly) API of the email package.
 The remaining sections, starting with the :class:`~email.message.Message`
 class, cover the legacy :data:`~email.policy.compat32` API that deals much more
 directly with the details of how email messages are represented.  The

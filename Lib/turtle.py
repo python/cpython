@@ -1002,6 +1002,9 @@ class TurtleScreen(TurtleScreenBase):
             rootwindow.wm_attributes(topmost=True)
             rootwindow.wm_attributes(topmost=False)
 
+        # A new screen means that turtle graphics is running again.
+        TurtleScreen._RUNNING = True
+
     def clear(self):
         """Delete all drawings and all turtles from the TurtleScreen.
 

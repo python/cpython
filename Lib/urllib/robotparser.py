@@ -62,7 +62,9 @@ class RobotFileParser:
 
         if isinstance(url, urllib.request.Request):
             url = url.full_url
-        self.host, self.path = urllib.parse.urlsplit(url)[1:3]
+        parts = urllib.parse.urlsplit(url)
+        self.host = parts.netloc
+        self.path = parts.path
 
     def read(self):
         """Reads the robots.txt URL and feeds it to the parser."""
