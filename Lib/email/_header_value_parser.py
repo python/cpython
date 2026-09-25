@@ -152,7 +152,10 @@ class TokenList(list):
 
     @property
     def all_defects(self):
-        return sum((x.all_defects for x in self), self.defects)
+        defects = list(self.defects)
+        for x in self:
+            defects.extend(x.all_defects)
+        return defects
 
     def startswith_fws(self):
         return self[0].startswith_fws()

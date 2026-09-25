@@ -16,6 +16,25 @@ class TestTokens(TestEmailBase):
         self.assertEqual(x.value, '')
         self.assertEqual(x.token_type, 'fws')
 
+    def test_all_defects_collects_subtree_in_order(self):
+        leaf = parser.ValueTerminal('x', 'atext')
+        leaf.defects.append(errors.InvalidHeaderDefect('leaf'))
+        inner = parser.TokenList([leaf])
+        inner.defects.append(errors.InvalidHeaderDefect('inner'))
+        outer = parser.TokenList([inner])
+        outer.defects.append(errors.InvalidHeaderDefect('outer'))
+        self.assertEqual([str(d) for d in outer.all_defects],
+                         ['outer', 'inner', 'leaf'])
+
+    def test_all_defects_is_a_copy(self):
+        tl = parser.TokenList()
+        tl.defects.append(errors.InvalidHeaderDefect('only'))
+        defects = tl.all_defects
+        self.assertEqual([str(d) for d in defects], ['only'])
+        self.assertIsNot(defects, tl.defects)
+        defects.append(errors.InvalidHeaderDefect('added'))
+        self.assertEqual(len(tl.defects), 1)
+
 
 class TestParserMixin:
 
