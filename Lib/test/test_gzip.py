@@ -1201,9 +1201,11 @@ class TestCommandLine(unittest.TestCase):
     def test_decompress_suffix_like_gunzip(self):
         # gh-88661: the command line accepts the names gunzip accepts, and
         # writes the name gunzip would write.
-        for name, expected in (('testgzip.tgz', 'testgzip.tar'),
-                               ('testgzip.TGZ', 'testgzip.tar'),
-                               ('testgzip.GZ', 'testgzip')):
+        # Distinct stems: the names differ only in case on some platforms,
+        # and a case-insensitive filesystem would have them collide.
+        for name, expected in (('lower.tgz', 'lower.tar'),
+                               ('upper.TGZ', 'upper.tar'),
+                               ('caps.GZ', 'caps')):
             with self.subTest(name=name):
                 path = os.path.join(TEMPDIR, name)
                 with gzip.open(path, mode='wb') as fp:
