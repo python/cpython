@@ -3592,6 +3592,30 @@ while 1:
         ]:
             self._check_error(f"x = {lhs_stmt} if 1 else {rhs_stmt}", msg)
 
+    def test_diamond_operator(self):
+        self._check_error(
+            "1<>2",
+            r"Maybe you meant '!=' instead of '<>'\?",
+            lineno=1,
+            end_lineno=1,
+            offset=2,
+            end_offset=4,
+        )
+
+    def test_diamond_operator_barry_as_flufl(self):
+        compile(
+            "from __future__ import barry_as_FLUFL\n1<>2",
+            "<test>", "exec",
+        )
+        self._check_error(
+            "from __future__ import barry_as_FLUFL\na != b",
+            "with Barry as BDFL, use '<>' instead of '!='",
+            lineno=2,
+            end_lineno=2,
+            offset=3,
+            end_offset=5,
+        )
+
 
 class LazyImportRestrictionTestCase(SyntaxErrorTestCase):
     """Test syntax restrictions for lazy imports."""

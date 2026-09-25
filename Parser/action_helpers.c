@@ -6,6 +6,7 @@
 
 #include "pegen.h"
 #include "string_parser.h"          // _PyPegen_decode_string()
+#include "lexer/state.h"            // tok_state
 
 
 void *
@@ -2095,6 +2096,7 @@ _PyPegen_checked_from_import(Parser *p, asdl_seq *dots, expr_ty module_name,
             alias_ty alias = asdl_seq_GET(names, i);
             if (PyUnicode_CompareWithASCIIString(alias->name, "barry_as_FLUFL") == 0) {
                 p->flags |= PyPARSE_BARRY_AS_BDFL;
+                p->tok->barry_as_bdfl = 1;
             }
         }
     }
