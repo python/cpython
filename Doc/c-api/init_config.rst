@@ -249,7 +249,8 @@ Initialize Python
 
    .. versionchanged:: next
       The function no longer sets an exit code if a command line option wants
-      to exit Python. Instead, the option is processed in :c:func:`Py_RunMain`.
+      to exit Python. Instead, the option is now processed in
+      :c:func:`Py_RunMain`.
 
 
 .. _pyinitconfig-opts:

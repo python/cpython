@@ -245,7 +245,7 @@ typedef struct PyConfig {
 
     // If a command line option wants to exit Python, store it in this member
     // and only process the option in Py_RunMain() instead of PyConfig_Read().
-    // If equals to -1, there is no option.
+    // If equals to 0, there is no option.
     int _deferred_cmdline_option;
 } PyConfig;
 
