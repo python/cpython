@@ -1,0 +1,2 @@
+Clear ``Decompress.unconsumed_tail`` once decompression reaches EOF. Trailing
+input is available only through ``Decompress.unused_data``.

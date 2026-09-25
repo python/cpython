@@ -822,6 +822,18 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
                 self.assertEqual(dco.unconsumed_tail, b'')
                 self.assertEqual(dco.unused_data, remainder)
 
+    def test_decompress_unconsumed_tail_after_eof(self):
+        source = bytes(range(256)) * 4
+        remainder = b'extra'
+        dco = zlib.decompressobj()
+        chunks = [dco.decompress(zlib.compress(source) + remainder, 100)]
+        while not dco.eof:
+            chunks.append(dco.decompress(dco.unconsumed_tail, 100))
+
+        self.assertEqual(b''.join(chunks), source)
+        self.assertEqual(dco.unconsumed_tail, b'')
+        self.assertEqual(dco.unused_data, remainder)
+
     # issue27164
     def test_decompress_raw_with_dictionary(self):
         zdict = b'abcdefghijklmnopqrstuvwxyz'
