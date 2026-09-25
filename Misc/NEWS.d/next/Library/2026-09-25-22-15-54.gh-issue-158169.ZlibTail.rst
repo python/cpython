@@ -1,2 +1,2 @@
-Clear ``Decompress.unconsumed_tail`` once decompression reaches EOF. Trailing
-input is available only through ``Decompress.unused_data``.
+Fix :attr:`zlib.Decompress.unconsumed_tail` duplicating
+:attr:`~zlib.Decompress.unused_data` after end of stream when *max_length* was used.
