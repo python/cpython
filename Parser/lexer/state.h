@@ -108,6 +108,7 @@ struct tok_state {
 #ifdef Py_DEBUG
     int debug;
 #endif
+    int barry_as_bdfl;
 };
 
 static inline ftstring_state *
