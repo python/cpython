@@ -475,7 +475,7 @@ So, we'll need to *encode* the data, and we'll use the UTF-8 encoding for it.
 and the C API has special support for it.)
 
 The function to encode a Python string into a UTF-8 buffer is named
-:c:func:`PyUnicode_AsUTF8AndSize` [#why-pyunicodeasutf8]_.
+:c:func:`PyUnicode_AsUTF8` [#why-pyunicodeasutf8]_.
 Call it like this:
 
 .. code-block:: c
@@ -484,13 +484,13 @@ Call it like this:
    static PyObject *
    spam_system(PyObject *self, PyObject *arg)
    {
-      const char *command = PyUnicode_AsUTF8AndSize(arg, NULL);
+      const char *command = PyUnicode_AsUTF8(arg, NULL);
       int status = 3;
       PyObject *result = PyLong_FromLong(status);
       return result;
    }
 
-If :c:func:`PyUnicode_AsUTF8AndSize` is successful, *command* will point to the
+If :c:func:`PyUnicode_AsUTF8` is successful, *command* will point to the
 resulting C string -- a zero-terminated array of bytes [#embedded-nul]_.
 This buffer is managed by the *arg* object, which means we don't need to free
 it, but we must follow some rules:
@@ -500,14 +500,14 @@ it, but we must follow some rules:
   garbage-collected.
 * We must not modify it. This is why we use ``const``.
 
-If :c:func:`PyUnicode_AsUTF8AndSize` was *not* successful, it returns a ``NULL``
+If :c:func:`PyUnicode_AsUTF8` was *not* successful, it returns a ``NULL``
 pointer.
 When calling *any* Python C API, we always need to handle such error cases.
 The way to do this in general is left for later chapters of this documentation.
 For now, be assured that we are already handling errors from
 :c:func:`PyLong_FromLong` correctly.
 
-For the :c:func:`PyUnicode_AsUTF8AndSize` call, the correct way to handle
+For the :c:func:`PyUnicode_AsUTF8` call, the correct way to handle
 errors is returning ``NULL`` from ``spam_system``.
 Add an ``if`` block for this:
 
@@ -518,7 +518,7 @@ Add an ``if`` block for this:
    static PyObject *
    spam_system(PyObject *self, PyObject *arg)
    {
-      const char *command = PyUnicode_AsUTF8AndSize(arg);
+      const char *command = PyUnicode_AsUTF8(arg);
       if (command == NULL) {
          return NULL;
       }
@@ -548,7 +548,7 @@ the ``char *`` buffer, and using its result instead of the ``3``:
    static PyObject *
    spam_system(PyObject *self, PyObject *arg)
    {
-      const char *command = PyUnicode_AsUTF8AndSize(arg);
+      const char *command = PyUnicode_AsUTF8(arg);
       if (command == NULL) {
          return NULL;
       }
