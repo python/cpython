@@ -47,6 +47,10 @@ class BaseTests:
 
     def check_build(self, extension_name, std=None, limited=False,
                     abi3t=False, extra_cflags=None):
+        if self.LANGUAGE == 'C++' and not std and sys.platform == 'darwin':
+            # Old Apple clang++ default C++ std is gnu++98, use C++11 instead
+            std = 'c++11'
+
         pkg_dir = 'pkg'
         os.mkdir(pkg_dir)
         self.addCleanup(os_helper.rmtree, pkg_dir)
@@ -195,11 +199,7 @@ class TestInteralCpp(BaseTests, unittest.TestCase):
     TEST_INTERNAL_C_API = True
 
     def test_build(self):
-        kwargs = {}
-        if sys.platform == 'darwin':
-            # Old Apple clang++ default C++ std is gnu++98
-            kwargs['std'] = 'c++11'
-        self.check_build('_test_cppext_internal', **kwargs)
+        self.check_build('_test_cppext_internal')
 
 
 def setUpModule():
