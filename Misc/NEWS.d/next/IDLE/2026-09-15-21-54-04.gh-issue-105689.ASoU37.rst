@@ -1,0 +1,2 @@
+Fix calltips, parenthesis matching and auto-indent in the IDLE Shell after
+output containing unbalanced quotes or parentheses.

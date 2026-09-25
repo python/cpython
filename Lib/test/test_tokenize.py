@@ -2427,6 +2427,30 @@ class CTokenizeTest(TestCase):
             (token.ENDMARKER, "", (1, 0), (1, 0), ""),
         )
 
+    def test_fstring_offsets_survive_buffer_reallocation(self):
+        for prefix in ("f", "t"):
+            for extra_tokens in (False, True):
+                with self.subTest(prefix=prefix, extra_tokens=extra_tokens):
+                    physical_lines = [
+                        prefix + '"""\n',
+                        "{(\n",
+                        " " * 9000 + "1\n",
+                        ")=:>{2}}\n",
+                        '"""\n',
+                    ]
+                    source = "".join(physical_lines)
+                    chunks = iter([
+                        "".join(physical_lines[:2]),
+                        "".join(physical_lines[2:4]),
+                        physical_lines[4],
+                        "",
+                    ])
+                    expected = self._get_tokens(
+                        source, extra_tokens=extra_tokens)
+                    tokens = list(tokenize._generate_tokens_from_c_tokenizer(
+                        chunks.__next__, extra_tokens=extra_tokens))
+                    self.assertEqual(tokens, expected)
+
     def test_extra_tokens_relaxes_lexer_errors(self):
         cases = [
             (
@@ -2549,6 +2573,40 @@ class CTokenizeTest(TestCase):
             ("f-string: single '}' is not allowed", (1, 11)),
         )
 
+    def test_carriage_return_after_debug_comment(self):
+        for prefix in ("f", "t"):
+            with self.subTest(prefix=prefix):
+                tokens = self._get_tokens(f"{prefix}'''{{x=# comment\r}}'''")
+                self.assertEqual(tokens[4].string, "# comment\r}")
+
+    def test_incomplete_formatted_string_comment_after_carriage_return(self):
+        for prefix in ("f", "t"):
+            with self.subTest(prefix=prefix):
+                for extra_tokens in (False, True):
+                    with self.assertRaises(tokenize.TokenError) as caught:
+                        self._get_tokens(
+                            f"{prefix}'{{#\r!", extra_tokens=extra_tokens
+                        )
+                    self.assertEqual(
+                        caught.exception.args,
+                        ("unexpected EOF in multi-line statement", (1, 7)),
+                    )
+
+    def test_formatted_string_nesting_limit(self):
+        def nested_string(depth, prefix):
+            source = "'x'"
+            for _ in range(depth):
+                source = f'{prefix}"{{{source}}}"'
+            return source
+
+        for prefix in ("f", "t"):
+            with self.subTest(prefix=prefix):
+                self._get_tokens(nested_string(149, prefix))
+                with self.assertRaisesRegex(
+                        tokenize.TokenError,
+                        "too many nested f-strings or t-strings"):
+                    self._get_tokens(nested_string(150, prefix))
+
     def test_escaped_fstring_brace_has_a_position_gap(self):
         tokens = self._get_tokens('f"a{{"', extra_tokens=True)
         self.assertEqual(
@@ -2566,7 +2624,7 @@ class CTokenizeTest(TestCase):
             self._get_tokens('bé )tf"2 ', extra_tokens=True)
         self.assertEqual(
             caught.exception.args,
-            ("'f' and 't' prefixes are incompatible", (1, 6)),
+            ("'f' and 't' prefixes are incompatible", (1, 5)),
         )
 
     def test_tolerant_fstring_closer_at_expression_entry_depth(self):

@@ -1,0 +1,2 @@
+Remove :c:func:`!PyEval_InitThreads` function which did nothing since Python
+3.7 and was deprecated since Python 3.9. Patch by Victor Stinner.
