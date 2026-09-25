@@ -145,6 +145,25 @@ class _WriteBufferStream(io.RawIOBase):
         return True
 
 
+def _gunzip_name(name):
+    """The name :program:`gunzip` would decompress *name* to, or ``None``.
+
+    The suffix is matched ignoring case, and ``.tgz`` becomes ``.tar`` rather
+    than being stripped.  ``.taz`` is not handled: it means a ``.tar.Z``, and
+    this module does not do :program:`compress`.  Accepts and returns either
+    :class:`str` or :class:`bytes`.
+    """
+    if isinstance(name, bytes):
+        gz, tgz, tar = b'.gz', b'.tgz', b'.tar'
+    else:
+        gz, tgz, tar = '.gz', '.tgz', '.tar'
+    if name[-3:].lower() == gz:
+        return name[:-3]
+    if name[-4:].lower() == tgz:
+        return name[:-4] + tar
+    return None
+
+
 class GzipFile(_streams.BaseStream):
     """The GzipFile class simulates most of the methods of a file object with
     the exception of the truncate() method.
@@ -288,12 +307,9 @@ class GzipFile(_streams.BaseStream):
             fname = os.path.basename(self.name)
             if not isinstance(fname, bytes):
                 fname = fname.encode('latin-1')
-            # Like gunzip, match the suffix ignoring case, and turn ".tgz"
-            # and ".taz" into ".tar" instead of just stripping them.
-            if fname[-3:].lower() == b'.gz':
-                fname = fname[:-3]
-            elif fname[-4:].lower() in (b'.tgz', b'.taz'):
-                fname = fname[:-4] + b'.tar'
+            stripped = _gunzip_name(fname)
+            if stripped is not None:
+                fname = stripped
         except UnicodeEncodeError:
             fname = b''
         flags = 0
@@ -733,10 +749,11 @@ def main():
                 f = GzipFile(filename="", mode="rb", fileobj=sys.stdin.buffer)
                 g = sys.stdout.buffer
             else:
-                if arg[-3:] != ".gz":
-                    sys.exit(f"filename doesn't end in .gz: {arg!r}")
+                out = _gunzip_name(arg)
+                if out is None:
+                    sys.exit(f"filename doesn't end in .gz or .tgz: {arg!r}")
                 f = open(arg, "rb")
-                g = builtins.open(arg[:-3], "wb")
+                g = builtins.open(out, "wb")
         else:
             if arg == "-":
                 f = sys.stdin.buffer

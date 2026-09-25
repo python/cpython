@@ -1970,7 +1970,7 @@ class WriteTest(WriteTestBase, unittest.TestCase):
 class GzipFnameTestBase:
     # gh-88661: the FNAME field of the gzip header holds the name that the
     # archive is expected to have after decompression.  Like gunzip, the
-    # suffix is matched ignoring case, and ".tgz" and ".taz" become ".tar".
+    # suffix is matched ignoring case, and ".tgz" becomes ".tar".
 
     def gzip_header_fname(self, path):
         with open(path, "rb") as fobj:
@@ -1987,10 +1987,11 @@ class GzipFnameTestBase:
                                ("tmp.tgz", "tmp.tar"),
                                ("tmp.TGZ", "tmp.tar"),
                                ("tmp.tGz", "tmp.tar"),
-                               ("tmp.taz", "tmp.tar"),
-                               ("tmp.TAZ", "tmp.tar"),
+                               # .taz means .tar.Z, not gzip.
+                               ("tmp.taz", "tmp.taz"),
+                               ("tmp.TAZ", "tmp.TAZ"),
                                ("TMP.TGZ", "TMP.tar"),
-                               ("TMP.TAZ", "TMP.tar"),
+                               ("TMP.TAZ", "TMP.TAZ"),
                                ("tmp.tar", "tmp.tar")):
             with self.subTest(name=name):
                 path = os.path.join(TEMPDIR, name)

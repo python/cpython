@@ -456,11 +456,12 @@ class _Stream:
             mtime = int(time.time())
         timestamp = struct.pack("<L", mtime)
         self.__write(b"\037\213\010\010" + timestamp + b"\002\377")
-        # Like gunzip, match the suffix ignoring case, and turn ".tgz"
-        # and ".taz" into ".tar" instead of just stripping them.
+        # Like gunzip, match the suffix ignoring case, and turn ".tgz" into
+        # ".tar" instead of just stripping it.  (gzip._gunzip_name does the
+        # same, but importing gzip here would pull it into the w|gz path.)
         if self.name[-3:].lower() == ".gz":
             self.name = self.name[:-3]
-        elif self.name[-4:].lower() in (".tgz", ".taz"):
+        elif self.name[-4:].lower() == ".tgz":
             self.name = self.name[:-4] + ".tar"
         # Honor "directory components removed" from RFC1952
         self.name = os.path.basename(self.name)

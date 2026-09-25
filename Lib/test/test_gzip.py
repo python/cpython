@@ -440,7 +440,7 @@ class TestGzip(BaseTest):
     def test_metadata_name_suffix(self):
         # gh-88661: the FNAME field holds the name that the file is expected
         # to have after decompression.  Like gunzip, the suffix is matched
-        # ignoring case, and ".tgz" and ".taz" are turned into ".tar".
+        # ignoring case, and ".tgz" is turned into ".tar".
         base = os_helper.TESTFN_ASCII
         # Only the suffix is matched ignoring case; the rest of the name
         # keeps the case it was given, the way make_ofname() does in gunzip.
@@ -452,13 +452,12 @@ class TestGzip(BaseTest):
                                    (base + '.tgz', base + '.tar'),
                                    (base + '.TGZ', base + '.tar'),
                                    (base + '.tGz', base + '.tar'),
-                                   (base + '.taz', base + '.tar'),
-                                   (base + '.TAZ', base + '.tar'),
                                    (base + '.tar', base + '.tar'),
+                                   # .taz means .tar.Z, which this module cannot read.
+                                   (base + '.taz', base + '.taz'),
                                    (base + '.tgz.gz', base + '.tgz'),
                                    (upper + '.GZ', upper),
-                                   (upper + '.TGZ', upper + '.tar'),
-                                   (upper + '.TAZ', upper + '.tar')):
+                                   (upper + '.TGZ', upper + '.tar')):
             with self.subTest(filename=filename):
                 try:
                     with gzip.GzipFile(filename, 'w') as f:
@@ -1187,10 +1186,35 @@ class TestCommandLine(unittest.TestCase):
         self.assertEqual(err, b'')
 
     def test_decompress_infile_outfile_error(self):
-        rc, out, err = assert_python_failure('-m', 'gzip', '-d', 'thisisatest.out')
-        self.assertEqual(b"filename doesn't end in .gz: 'thisisatest.out'", err.strip())
-        self.assertEqual(rc, 1)
-        self.assertEqual(out, b'')
+        # ".taz" is a ".tar.Z", which this module cannot read, so it is
+        # rejected along with names that carry no gzip suffix at all.
+        for name in ('thisisatest.out', 'thisisatest.taz'):
+            with self.subTest(name=name):
+                rc, out, err = assert_python_failure('-m', 'gzip', '-d', name)
+                self.assertEqual(
+                    f"filename doesn't end in .gz or .tgz: {name!r}".encode(),
+                    err.strip())
+                self.assertEqual(rc, 1)
+                self.assertEqual(out, b'')
+
+    @create_and_remove_directory(TEMPDIR)
+    def test_decompress_suffix_like_gunzip(self):
+        # gh-88661: the command line accepts the names gunzip accepts, and
+        # writes the name gunzip would write.
+        for name, expected in (('testgzip.tgz', 'testgzip.tar'),
+                               ('testgzip.TGZ', 'testgzip.tar'),
+                               ('testgzip.GZ', 'testgzip')):
+            with self.subTest(name=name):
+                path = os.path.join(TEMPDIR, name)
+                with gzip.open(path, mode='wb') as fp:
+                    fp.write(self.data)
+
+                rc, out, err = assert_python_ok('-m', 'gzip', '-d', path)
+                self.assertEqual(rc, 0)
+                self.assertEqual(err, b'')
+
+                with open(os.path.join(TEMPDIR, expected), 'rb') as gunziped:
+                    self.assertEqual(gunziped.read(), self.data)
 
     @requires_subprocess()
     @create_and_remove_directory(TEMPDIR)
