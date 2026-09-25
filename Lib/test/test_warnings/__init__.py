@@ -726,6 +726,27 @@ class WarnTests(BaseTest):
                 self.module.warn_explicit("text", UserWarning, filename, 1)
                 self.assertEqual(w[-1].filename, filename)
 
+    def test_warn_explicit_keyword_args(self):
+        names = ('message', 'category', 'filename', 'lineno')
+        for message, category in (('text', UserWarning),
+                                  (UserWarning('text'), None)):
+            args = (message, category, 'test.py', 42)
+            for positional_count in range(len(args) + 1):
+                with self.subTest(message=message,
+                                  positional_count=positional_count):
+                    with self.module.catch_warnings(record=True) as w:
+                        self.module.simplefilter('always')
+                        self.module.warn_explicit(
+                            *args[:positional_count],
+                            **dict(zip(names[positional_count:],
+                                       args[positional_count:])),
+                        )
+                    self.assertEqual(len(w), 1)
+                    self.assertEqual(str(w[0].message), 'text')
+                    self.assertIs(w[0].category, UserWarning)
+                    self.assertEqual(w[0].filename, 'test.py')
+                    self.assertEqual(w[0].lineno, 42)
+
     def test_warn_explicit_type_errors(self):
         # warn_explicit() should error out gracefully if it is given objects
         # of the wrong types.
