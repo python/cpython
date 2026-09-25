@@ -335,6 +335,9 @@ _PyLexer_scan_string(struct tok_state *tok, struct token *token, int c)
             break;
         }
         if (c == EOF || (quote_size == 1 && c == '\n')) {
+            if (tok_failed(tok)) {
+                return MAKE_TOKEN(ERRORTOKEN);
+            }
             int end_lineno = tok->lineno;
             _PyTok_Loc location = tok->start_loc;
             const char *line = _PyLexer_BufferPointer(tok, tok->start) - location.byte_col;

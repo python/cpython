@@ -2409,6 +2409,12 @@ class CTokenizeTest(TestCase):
         )
         self.assertEqual(readline.call_count, 2)
 
+    def test_readline_memory_error_in_string(self):
+        readline = mock.Mock(side_effect=['"""first\n', MemoryError])
+        iterator = _tokenize.TokenizerIter(readline, extra_tokens=True)
+        with self.assertRaises(MemoryError):
+            next(iterator)
+
     def test_readline_callback_is_not_read_ahead(self):
         readline = mock.Mock(side_effect=["x\n", "y\n", ""])
         iterator = _tokenize.TokenizerIter(readline, extra_tokens=True)
