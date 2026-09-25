@@ -3231,6 +3231,155 @@ class SyntaxErrorTestCase(unittest.TestCase):
                           "Generator expression must be parenthesized",
                           lineno=1, end_lineno=1, offset=11, end_offset=53)
 
+    @support.subTests("prefix", (
+        "", "1, ", "*args, ", "x=", "*", "**",
+        "1, x=", "x=1, y=", "1, *", "x=1, **",
+    ))
+    def test_unparenthesized_yield_in_call(self, prefix):
+        message = "yield expression must be parenthesized"
+        for expression in ("yield", "yield 1", "yield 1, 2",
+                           "yield from values"):
+            with self.subTest(expression=expression):
+                code = "def f(): print({})"
+                offset = code.index("{}") + len(prefix) + 1
+                code = code.format(prefix + expression)
+                self._check_error(
+                    code, message, lineno=1, end_lineno=1,
+                    offset=offset, end_offset=offset + len(expression),
+                )
+                compile(f"def f():\n    print({prefix}({expression}))",
+                        "<testcase>", "exec")
+
+    def test_unparenthesized_multiline_yield_in_call(self):
+        self._check_error(
+            "def f():\n    print(yield (\n        1 + 2\n    ))",
+            "yield expression must be parenthesized",
+            lineno=2, end_lineno=4, offset=11, end_offset=6,
+        )
+
+    @support.subTests("template", (
+        "[{}]", "[0, {}]", "[*items, {}]", "[*{}]",
+        "(0, {})", "(*items, {})",
+        "{{{}}}", "{{0, {}}}", "{{*items, {}}}", "{{*{}}}",
+        "{{{}: 2}}", "{{0: 1, {}: 2}}",
+        "{{0: {}}}", "{{0: 1, 2: {}}}",
+        "{{0: {}, 3: 4}}", "{{0: {}, **items}}", "{{0: {},}}",
+        "{{0: {}, key if flag else other: 4}}", "{{'é': {}, 'ß': 4}}",
+        "{{**{}}}", "{{0: 1, **{}}}",
+        "1 + [{}]", "g([{}])",
+    ))
+    def test_unparenthesized_yield_in_display(self, template):
+        for expression in ("yield", "yield 1", "yield 1, 2",
+                           "yield from values"):
+            with self.subTest(expression=expression):
+                code = "def f(): return " + template.format(expression)
+                offset = code.index("yield") + 1
+                self._check_error(
+                    code, "yield expression must be parenthesized",
+                    lineno=1, end_lineno=1,
+                    offset=offset, end_offset=offset + len(expression),
+                )
+                compile(
+                    "def f(): return " + template.format(f"({expression})"),
+                    "<testcase>", "exec",
+                )
+
+    @support.subTests("template", (
+        "return {}", "return a[{}]", "return a[{}:]",
+        "return a[:{}]", "return a[::{}]",
+        "return lambda: {}", "return 1 if {} else 2",
+        "return +{}", "return -{}", "return ~{}", "return not {}",
+    ))
+    def test_unparenthesized_yield_in_expression(self, template):
+        for expression in ("yield", "yield 1", "yield 1, 2",
+                           "yield from values"):
+            with self.subTest(expression=expression):
+                code = "def f(): " + template.format(expression)
+                offset = code.index("yield") + 1
+                self._check_error(
+                    code, "yield expression must be parenthesized",
+                    lineno=1, end_lineno=1,
+                    offset=offset, end_offset=offset + len(expression),
+                )
+                compile(
+                    "def f(): " + template.format(f"({expression})"),
+                    "<testcase>", "exec",
+                )
+
+    @support.subTests("operator", (
+        "+", "-", "*", "/", "//", "%", "@", "**", "|", "^", "&", "<<", ">>",
+        "and", "or", "==", "!=", "<", "<=", ">", ">=", "is", "is not",
+        "in", "not in",
+    ))
+    def test_unparenthesized_yield_after_operator(self, operator):
+        code = f"def f(): return value {operator} yield 2"
+        offset = code.index("yield") + 1
+        self._check_error(
+            code, "yield expression must be parenthesized",
+            lineno=1, end_lineno=1, offset=offset, end_offset=offset + len("yield 2"),
+        )
+        compile(f"def f(): return value {operator} (yield 2)", "<testcase>", "exec")
+
+    def test_unparenthesized_yield_after_await(self):
+        code = "async def f(): await yield 1"
+        offset = code.index("yield") + 1
+        self._check_error(
+            code, "yield expression must be parenthesized",
+            lineno=1, end_lineno=1, offset=offset, end_offset=offset + len("yield 1"),
+        )
+        compile("async def f(): await (yield 1)", "<testcase>", "exec")
+
+    @support.subTests("template", (
+        "print({})", "return [{}]", "return {{{}}}", "return {{0: {}}}",
+        "return {}", "return a[{}]", "return 1 + {}", "return lambda: {}",
+    ))
+    def test_malformed_yield_expression(self, template):
+        for expression, message, token in (
+            ("yield from", "expected expression after 'yield from'", None),
+            ("yield 1 +", "invalid yield expression", "+"),
+            ("yield from values +", "invalid yield expression", "+"),
+        ):
+            with self.subTest(expression=expression):
+                code = "def f(): " + template.format(expression)
+                self._check_error(
+                    code, message,
+                    offset=code.rindex(token) + 1 if token else None,
+                )
+
+    @support.subTests("template", (
+        "[{} for x in xs]", "{{{} for x in xs}}", "({} for x in xs)",
+        "{{{}: x for x in xs}}", "{{x: {} for x in xs}}",
+        "g({} for x in xs)",
+    ))
+    def test_unparenthesized_yield_in_comprehension(self, template):
+        for expression in ("yield", "yield 1", "yield from values"):
+            with self.subTest(expression=expression):
+                code = "def f(): return " + template.format(expression)
+                offset = code.index("yield") + 1
+                self._check_error(
+                    code, "yield expression cannot be used in a comprehension",
+                    lineno=1, end_lineno=1,
+                    offset=offset, end_offset=offset + len(expression),
+                )
+                self._check_error(
+                    "def f(): return " + template.format(f"({expression})"),
+                    "'yield.*' inside .*comprehension|inside generator expression",
+                )
+
+    @support.subTests("statement", (
+        "yield 1", "x = yield 1", "(yield 1)",
+        "print((yield 1))", "[(yield 1)]",
+        "return (yield 1)", "return a[(yield 1)]", "return 1 + (yield 1)",
+        "return lambda: (yield 1)", "return {0: (yield 1), 2: 3}",
+        'f"{yield 1}"', 't"{yield 1}"',
+    ))
+    def test_valid_yield_before_syntax_error(self, statement):
+        code = f"def f(): {statement}; 1 = 2"
+        self._check_error(
+            code, "cannot assign to literal",
+            offset=code.index("1 = 2") + 1,
+        )
+
     def test_except_then_except_star(self):
         self._check_error("try: pass\nexcept ValueError: pass\nexcept* TypeError: pass",
                           r"cannot have both 'except' and 'except\*' on the same 'try'",
