@@ -582,6 +582,9 @@ in :ref:`abi3-compiling`.
 
 A practical :ref:`migration guide <abi3t-migration-howto>` for switching to
 ``abi3t`` is available.
+The community-maintained `Python Free-Threading Guide
+<https://py-free-threading.github.io/abi3t/>`__ provides examples of building
+and testing ``abi3t`` wheels.
 
 .. seealso:: :pep:`803` for further details.
 

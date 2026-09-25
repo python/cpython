@@ -190,6 +190,13 @@ following just after ``#include <Python.h>``::
 
 This should result in a different error than "``abi3t`` define is not set".
 
+.. seealso::
+
+   `Building and distributing abi3t extensions
+   <https://py-free-threading.github.io/abi3t/>`__:
+   Build configuration and wheel testing examples in the community-maintained
+   Python Free-Threading Guide.
+
 .. note::
 
    If your build tool doesn't support ``abi3t`` yet, set the following macro
