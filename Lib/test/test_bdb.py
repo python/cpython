@@ -57,6 +57,7 @@ import importlib
 import linecache
 from contextlib import contextmanager
 from itertools import islice, repeat
+from test.support import cpython_only
 from test.support import import_helper
 from test.support import os_helper
 from test.support import patch_list
@@ -1232,6 +1233,10 @@ class IssuesTestCase(BaseTestCase):
 
 
 class TestRegressions(unittest.TestCase):
+    @cpython_only
+    def test_lazy_import(self):
+        import_helper.ensure_lazy_imports("bdb", {"fnmatch", "threading", "weakref"})
+
     def test_format_stack_entry_no_lineno(self):
         # See gh-101517
         self.assertIn('Warning: lineno is None',
