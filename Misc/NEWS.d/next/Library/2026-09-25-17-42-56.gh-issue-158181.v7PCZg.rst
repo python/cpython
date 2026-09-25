@@ -1,0 +1,3 @@
+Fix :exc:`IndexError` instead of :exc:`tarfile.ReadError` when
+:mod:`tarfile` reads a truncated GNU sparse member whose extended header
+block is missing or short.
