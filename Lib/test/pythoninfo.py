@@ -941,6 +941,8 @@ def get_compiler_version(sysconfig_var):
 
     text = first_line(stdout)
     text = normalize_text(text)
+    if text:
+        text = f'[{program}] {text}'
     return text
 
 
