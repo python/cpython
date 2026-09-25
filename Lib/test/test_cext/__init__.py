@@ -16,6 +16,10 @@ from test import support
 from test.support import os_helper
 
 
+if not support.has_subprocess_support:
+    raise unittest.SkipTest("requires subprocess support")
+
+
 SOURCE_DIR = os.path.dirname(__file__)
 SOURCES = [
     os.path.join(SOURCE_DIR, 'extension.c'),
