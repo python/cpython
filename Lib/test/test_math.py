@@ -479,6 +479,7 @@ class MathTests(unittest.TestCase):
 
     def testDegrees(self):
         self.assertRaises(TypeError, math.degrees)
+        self.assertEqual(math.degrees(1.0), 180.0 / math.pi)
         self.ftest('degrees(pi)', math.degrees(math.pi), 180.0)
         self.ftest('degrees(pi/2)', math.degrees(math.pi/2), 90.0)
         self.ftest('degrees(-pi/4)', math.degrees(-math.pi/4), -45.0)
@@ -1748,6 +1749,7 @@ class MathTests(unittest.TestCase):
 
     def testRadians(self):
         self.assertRaises(TypeError, math.radians)
+        self.assertEqual(math.radians(1.0), math.pi / 180.0)
         self.ftest('radians(180)', math.radians(180), math.pi)
         self.ftest('radians(90)', math.radians(90), math.pi/2)
         self.ftest('radians(-45)', math.radians(-45), -math.pi/4)

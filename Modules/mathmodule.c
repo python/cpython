@@ -2610,8 +2610,11 @@ math_pow_impl(PyObject *module, double x, double y)
 }
 
 
-static const double degToRad = Py_MATH_PI / 180.0;
-static const double radToDeg = 180.0 / Py_MATH_PI;
+/* Precomputed for static initialization with MSVC /fp:strict. */
+/* Py_MATH_PI / 180: binary64 0x3f91df46a2529d39 */
+static const double degToRad = 0.017453292519943295769236907684886;
+/* 180 / Py_MATH_PI: binary64 0x404ca5dc1a63c1f8 */
+static const double radToDeg = 57.295779513082320876798154814105;
 
 /*[clinic input]
 math.degrees
@@ -3190,7 +3193,8 @@ math_exec(PyObject *module)
     if (PyModule_Add(module, "inf", PyFloat_FromDouble(INFINITY)) < 0) {
         return -1;
     }
-    if (PyModule_Add(module, "nan", PyFloat_FromDouble(fabs(Py_NAN))) < 0) {
+    if (PyModule_Add(module, "nan",
+                     PyFloat_FromDouble(fabs(nan("")))) < 0) {
         return -1;
     }
 

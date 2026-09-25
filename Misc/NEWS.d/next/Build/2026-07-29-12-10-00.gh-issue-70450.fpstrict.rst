@@ -1,0 +1,1 @@
+Fix the Windows build when using the MSVC ``/fp:strict`` option.
