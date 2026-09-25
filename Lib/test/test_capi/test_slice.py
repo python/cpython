@@ -64,7 +64,7 @@ class SliceTest(unittest.TestCase):
         self.assertEqual(getindices(slice(-3, -1), 10), (7, 9, 1))
         self.assertEqual(getindices(slice(-1, -3, -1), 10), (9, 7, -1))
         self.assertEqual(getindices(slice(None, None, -2), 0), (-1, -1, -2))
-        self.assertEqual(getindices(slice(-3, -5, 1), 0), (-3, -5, 1))        
+        self.assertEqual(getindices(slice(-3, -5, 1), 0), (-3, -5, 1))
 
         # It fails without setting an exception for out of bounds indices,
         # a zero step and non-integer indices.

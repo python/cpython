@@ -108,6 +108,9 @@ Slice Objects
    Out of bounds indices are clipped in a manner consistent with the handling
    of normal slices.
 
+   *step* must not be zero and must not be less than ``-PY_SSIZE_T_MAX``,
+   as guaranteed by :c:func:`PySlice_Unpack`.
+
    Return the length of the slice.  Always successful.  Doesn't call Python
    code.
 
