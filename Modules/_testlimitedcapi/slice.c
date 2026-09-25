@@ -1,8 +1,9 @@
 #include "pyconfig.h"   // Py_GIL_DISABLED
-
-// Need limited C API 3.6.1 for PySlice_Unpack() and PySlice_AdjustIndices()
-// and for PySlice_GetIndicesEx() implemented as a macro.
-#if !defined(Py_GIL_DISABLED) && !defined(Py_LIMITED_API)
+#ifdef Py_GIL_DISABLED
+#  define Py_TARGET_ABI3T 0x030f0000
+#else
+   // Need limited C API 3.6.1 for PySlice_Unpack() and PySlice_AdjustIndices()
+   // and for PySlice_GetIndicesEx() implemented as a macro.
 #  define Py_LIMITED_API 0x03060100
 #endif
 
@@ -62,7 +63,7 @@ slice_getindices(PyObject *Py_UNUSED(module), PyObject *args)
 /* Test PySlice_GetIndicesEx() implemented as a macro using PySlice_Unpack()
  * and PySlice_AdjustIndices(). */
 static PyObject *
-slice_getindicesex(PyObject *Py_UNUSED(module), PyObject *args)
+slice_getindicesex_macro(PyObject *Py_UNUSED(module), PyObject *args)
 {
     PyObject *slice;
     Py_ssize_t length = UNINITIALIZED_SIZE;
@@ -90,11 +91,11 @@ slice_getindicesex(PyObject *Py_UNUSED(module), PyObject *args)
     return Py_BuildValue("nnnn", start, stop, step, slicelength);
 }
 
-/* Same as slice_getindicesex(), but the length is the size of a sequence.
+/* Same as slice_getindicesex_macro(), but the length is the size of a sequence.
  * The macro evaluates it after calling PySlice_Unpack(), which can execute
  * arbitrary Python code and resize the sequence. */
 static PyObject *
-slice_getindicesex_seq(PyObject *Py_UNUSED(module), PyObject *args)
+slice_getindicesex_seq_macro(PyObject *Py_UNUSED(module), PyObject *args)
 {
     PyObject *slice, *seq;
     Py_ssize_t start = UNINITIALIZED_SIZE;
@@ -154,7 +155,7 @@ slice_adjustindices(PyObject *Py_UNUSED(module), PyObject *args)
 /* Test the deprecated PySlice_GetIndicesEx() function.  It is still exported
  * for the stable ABI and used if Py_LIMITED_API is older than 3.5.4. */
 static PyObject *
-slice_getindicesex_deprecated(PyObject *Py_UNUSED(module), PyObject *args)
+slice_getindicesex_func(PyObject *Py_UNUSED(module), PyObject *args)
 {
     PyObject *slice;
     Py_ssize_t length;
@@ -186,10 +187,10 @@ _Py_COMP_DIAG_POP
 }
 
 
-/* Same as slice_getindicesex_seq(), but using the deprecated function.
+/* Same as slice_getindicesex_seq_macro(), but using the deprecated function.
  * The length is evaluated before the call. */
 static PyObject *
-slice_getindicesex_seq_deprecated(PyObject *Py_UNUSED(module), PyObject *args)
+slice_getindicesex_seq_func(PyObject *Py_UNUSED(module), PyObject *args)
 {
     PyObject *slice, *seq;
     Py_ssize_t start = UNINITIALIZED_SIZE;
@@ -221,11 +222,11 @@ static PyMethodDef test_methods[] = {
     {"slice_check", slice_check, METH_O},
     {"slice_new", slice_new, METH_VARARGS},
     {"slice_getindices", slice_getindices, METH_VARARGS},
-    {"slice_getindicesex", slice_getindicesex, METH_VARARGS},
-    {"slice_getindicesex_seq", slice_getindicesex_seq, METH_VARARGS},
-    {"slice_getindicesex_deprecated", slice_getindicesex_deprecated,
+    {"slice_getindicesex_macro", slice_getindicesex_macro, METH_VARARGS},
+    {"slice_getindicesex_seq_macro", slice_getindicesex_seq_macro, METH_VARARGS},
+    {"slice_getindicesex_func", slice_getindicesex_func,
      METH_VARARGS},
-    {"slice_getindicesex_seq_deprecated", slice_getindicesex_seq_deprecated,
+    {"slice_getindicesex_seq_func", slice_getindicesex_seq_func,
      METH_VARARGS},
     {"slice_unpack", slice_unpack, METH_O},
     {"slice_adjustindices", slice_adjustindices, METH_VARARGS},

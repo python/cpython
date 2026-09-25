@@ -5,12 +5,12 @@ from test.support import import_helper
 _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
 
 NULL = None
-SIZE_MAX = sys.maxsize
-SIZE_MIN = -sys.maxsize - 1
+SSIZE_MAX = sys.maxsize
+SSIZE_MIN = -sys.maxsize - 1
 
-VALUES = [None, 0, 1, 2, 3, 5, 7, -1, -2, -3, -5, -7]
-STEPS = [None, 1, 2, 3, 5, -1, -2, -3, -5]
-LENGTHS = [0, 1, 2, 5, 10]
+VALUES = [None, 0, 1, 3, 7, -1, -3, -7]
+STEPS = [None, 1, 3, 5, -1, -3, -5]
+LENGTHS = [0, 1, 3, 10]
 
 
 class Index:
@@ -76,11 +76,11 @@ class SliceTest(unittest.TestCase):
         self.assertIsNone(getindices(slice(1, 'a'), 10))
         self.assertIsNone(getindices(slice(1, 7, 'a'), 10))
 
-        # negative length
-        self.assertIsNone(getindices(slice(None), -1))
-        self.assertIsNone(getindices(slice(1, 7, 2), -1))
-        self.assertEqual(getindices(slice(-10, -5, 1), -1), (-11, -6, 1))
-        self.assertEqual(getindices(slice(-5, -10, -2), -1), (-6, -11, -2))
+        # Negative length is not supported, but does not fail.
+        self.assertIsNone(getindices(slice(None), -3))
+        self.assertIsNone(getindices(slice(1, 7, 2), -3))
+        self.assertEqual(getindices(slice(-10, -5, 1), -3), (-13, -8, 1))
+        self.assertEqual(getindices(slice(-5, -10, -2), -3), (-8, -13, -2))
 
         # CRASHES getindices(NULL, 10)
         # CRASHES getindices(object(), 10)
@@ -92,27 +92,27 @@ class SliceTest(unittest.TestCase):
         self.assertEqual(unpack(slice(1, 7, 2)), (1, 7, 2))
         self.assertEqual(unpack(slice(7, 1, -2)), (7, 1, -2))
         self.assertEqual(unpack(slice(None, 7, 2)), (0, 7, 2))
-        self.assertEqual(unpack(slice(None, 7, -2)), (SIZE_MAX, 7, -2))
-        self.assertEqual(unpack(slice(1, None, 2)), (1, SIZE_MAX, 2))
-        self.assertEqual(unpack(slice(1, None, -2)), (1, SIZE_MIN, -2))
-        self.assertEqual(unpack(slice(None)), (0, SIZE_MAX, 1))
+        self.assertEqual(unpack(slice(None, 7, -2)), (SSIZE_MAX, 7, -2))
+        self.assertEqual(unpack(slice(1, None, 2)), (1, SSIZE_MAX, 2))
+        self.assertEqual(unpack(slice(1, None, -2)), (1, SSIZE_MIN, -2))
+        self.assertEqual(unpack(slice(None)), (0, SSIZE_MAX, 1))
         self.assertEqual(unpack(slice(None, None, -1)),
-                         (SIZE_MAX, SIZE_MIN, -1))
+                         (SSIZE_MAX, SSIZE_MIN, -1))
         # Negative indices are not adjusted.
         self.assertEqual(unpack(slice(-3, -1)), (-3, -1, 1))
         self.assertEqual(unpack(slice(Index(1), Index(7), Index(2))),
                          (1, 7, 2))
 
         # Values which do not fit in Py_ssize_t are silently clipped.
-        self.assertEqual(unpack(slice(1, 2**1000)), (1, SIZE_MAX, 1))
-        self.assertEqual(unpack(slice(1, -2**1000)), (1, SIZE_MIN, 1))
-        self.assertEqual(unpack(slice(2**1000, 7)), (SIZE_MAX, 7, 1))
-        self.assertEqual(unpack(slice(-2**1000, 7)), (SIZE_MIN, 7, 1))
-        self.assertEqual(unpack(slice(1, 7, 2**1000)), (1, 7, SIZE_MAX))
+        self.assertEqual(unpack(slice(1, 2**1000)), (1, SSIZE_MAX, 1))
+        self.assertEqual(unpack(slice(1, -2**1000)), (1, SSIZE_MIN, 1))
+        self.assertEqual(unpack(slice(2**1000, 7)), (SSIZE_MAX, 7, 1))
+        self.assertEqual(unpack(slice(-2**1000, 7)), (SSIZE_MIN, 7, 1))
+        self.assertEqual(unpack(slice(1, 7, 2**1000)), (1, 7, SSIZE_MAX))
         # The step is boosted to -PY_SSIZE_T_MAX, not PY_SSIZE_T_MIN, so
         # that negating it is safe.
-        self.assertEqual(unpack(slice(7, 1, -2**1000)), (7, 1, -SIZE_MAX))
-        self.assertEqual(unpack(slice(7, 1, SIZE_MIN)), (7, 1, -SIZE_MAX))
+        self.assertEqual(unpack(slice(7, 1, -2**1000)), (7, 1, -SSIZE_MAX))
+        self.assertEqual(unpack(slice(7, 1, SSIZE_MIN)), (7, 1, -SSIZE_MAX))
 
         with self.assertRaisesRegex(ValueError, 'slice step cannot be zero'):
             unpack(slice(1, 1, 0))
@@ -153,8 +153,8 @@ class SliceTest(unittest.TestCase):
         # Out of bounds indices are clipped.
         self.assertEqual(adjust(10, -100, 100, 1), (10, 0, 10))
         self.assertEqual(adjust(10, 100, -100, -1), (10, 9, -1))
-        self.assertEqual(adjust(10, SIZE_MIN, SIZE_MAX, 1), (10, 0, 10))
-        self.assertEqual(adjust(10, SIZE_MAX, SIZE_MIN, -1), (10, 9, -1))
+        self.assertEqual(adjust(10, SSIZE_MIN, SSIZE_MAX, 1), (10, 0, 10))
+        self.assertEqual(adjust(10, SSIZE_MAX, SSIZE_MIN, -1), (10, 9, -1))
         self.assertEqual(adjust(0, 1, 7, 1), (0, 0, 0))
         self.assertEqual(adjust(0, 7, 1, -1), (0, -1, -1))
 
@@ -170,18 +170,24 @@ class SliceTest(unittest.TestCase):
                             self.assertEqual(slicelength,
                                              len(range(start2, stop2, step)))
 
+        # Negative length is not supported, but does not fail.
+        self.assertEqual(adjust(-3, 1, 7, 1), (0, -3, -3))
+        self.assertEqual(adjust(-3, 7, 1, -1), (0, -4, -4))
+        self.assertEqual(adjust(-3, -10, -5, 1), (0, 0, 0))
+
         # The step is asserted to be neither zero nor less than
         # -PY_SSIZE_T_MAX.
         # CRASHES adjust(10, 0, 10, 0)
-        # CRASHES adjust(10, 0, 10, SIZE_MIN)
+        # CRASHES adjust(10, 0, 10, SSIZE_MIN)
 
 
-class GetIndicesExTest(unittest.TestCase):
+class GetIndicesExMacroTest(unittest.TestCase):
     # PySlice_GetIndicesEx() is a macro using PySlice_Unpack() and
     # PySlice_AdjustIndices().  It is also a deprecated function, exported
     # for the stable ABI.
-    getindicesex = staticmethod(_testlimitedcapi.slice_getindicesex)
-    getindicesex_seq = staticmethod(_testlimitedcapi.slice_getindicesex_seq)
+    getindicesex = staticmethod(_testlimitedcapi.slice_getindicesex_macro)
+    getindicesex_seq = staticmethod(
+        _testlimitedcapi.slice_getindicesex_seq_macro)
     # The macro evaluates the length after calling PySlice_Unpack(), so the
     # size of the list after removing an item is used.
     resized = (6, 8, 1, 2)
@@ -215,18 +221,21 @@ class GetIndicesExTest(unittest.TestCase):
         self.assertEqual(getindicesex(slice(100, -100, -1), 10),
                          (9, -1, -1, 10))
         self.assertEqual(getindicesex(slice(None), 0), (0, 0, 1, 0))
+        self.assertEqual(getindicesex(slice(1, 7, 2), 0), (0, 0, 2, 0))
+        self.assertEqual(getindicesex(slice(None, None, -1), 0),
+                         (-1, -1, -1, 0))
 
         # Indices which do not fit in Py_ssize_t are clipped, not rejected.
         # Note that slice.indices() does not clip the step.
         self.assertEqual(getindicesex(slice(1, 2**1000), 10), (1, 10, 1, 9))
         self.assertEqual(getindicesex(slice(2**1000, 7), 10), (10, 7, 1, 0))
         self.assertEqual(getindicesex(slice(1, 7, 2**1000), 10),
-                         (1, 7, SIZE_MAX, 1))
+                         (1, 7, SSIZE_MAX, 1))
         # -PY_SSIZE_T_MAX-1 is replaced with -PY_SSIZE_T_MAX.
         self.assertEqual(getindicesex(slice(7, 1, -2**1000), 10),
-                         (7, 1, -SIZE_MAX, 1))
-        self.assertEqual(getindicesex(slice(7, 1, SIZE_MIN), 10),
-                         (7, 1, -SIZE_MAX, 1))
+                         (7, 1, -SSIZE_MAX, 1))
+        self.assertEqual(getindicesex(slice(7, 1, SSIZE_MIN), 10),
+                         (7, 1, -SSIZE_MAX, 1))
 
         with self.assertRaisesRegex(ValueError, 'slice step cannot be zero'):
             getindicesex(slice(1, 7, 0), 10)
@@ -246,6 +255,11 @@ class GetIndicesExTest(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, 'bad index'):
             getindicesex(slice(1, 7, BadIndex()), 10)
 
+        # Negative length is not supported, but does not fail.
+        self.assertEqual(getindicesex(slice(None), -3), (-3, -3, 1, 0))
+        self.assertEqual(getindicesex(slice(1, 7, 2), -3), (-3, -3, 2, 0))
+        self.assertEqual(getindicesex(slice(7, 1, -2), -3), (-4, -4, -2, 0))
+
         # CRASHES getindicesex(NULL, 10)
         # CRASHES getindicesex(object(), 10)
 
@@ -254,6 +268,7 @@ class GetIndicesExTest(unittest.TestCase):
         getindicesex_seq = self.getindicesex_seq
         seq = list(range(10))
         self.assertEqual(getindicesex_seq(slice(-3, -1), seq), (7, 9, 1, 2))
+        self.assertEqual(getindicesex_seq(slice(-3, -1), []), (0, 0, 1, 0))
 
         # gh-72054: __index__() can resize the sequence.  Negative indices
         # are adjusted by the length, so the result depends on when it is
@@ -278,12 +293,12 @@ class GetIndicesExTest(unittest.TestCase):
         # CRASHES getindicesex_seq(slice(None), object())
 
 
-class GetIndicesExDeprecatedTest(GetIndicesExTest):
+class GetIndicesExFuncTest(GetIndicesExMacroTest):
     # The deprecated function is equivalent to the macro, except that the
     # length is evaluated before the call.
-    getindicesex = staticmethod(_testlimitedcapi.slice_getindicesex_deprecated)
+    getindicesex = staticmethod(_testlimitedcapi.slice_getindicesex_func)
     getindicesex_seq = staticmethod(
-        _testlimitedcapi.slice_getindicesex_seq_deprecated)
+        _testlimitedcapi.slice_getindicesex_seq_func)
     # The size of the list before removing an item is used.
     resized = (7, 9, 1, 2)
 
