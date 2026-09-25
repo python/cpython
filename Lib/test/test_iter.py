@@ -532,6 +532,28 @@ class TestCase(unittest.TestCase):
         with self.assertRaises(StopIteration):
             next(spam.iterator)
 
+    def test_calliter_reentrant_sentinel_compare(self):
+        destroyed = []
+        compared = []
+
+        class Sentinel:
+            def __del__(self):
+                destroyed.append(True)
+
+            def __eq__(self, other):
+                it.__setstate__(((), StopIteration))
+                return NotImplemented
+
+        class Result:
+            def __eq__(self, other):
+                compared.append(isinstance(other, Sentinel) and not destroyed)
+                return NotImplemented
+
+        it = iter(lambda: Result(), Sentinel())
+        value = next(it)
+        self.assertIsInstance(value, Result)
+        self.assertEqual(compared, [True])
+
     # Test exception propagation through function iterator
     def test_exception_function(self):
         def spam(state=[0]):
