@@ -555,12 +555,12 @@ complex_number[expr_ty]:
 
 signed_number[expr_ty]:
     | NUMBER
-    | '+' number=NUMBER { number }
+    | '+' number=NUMBER { _PyAST_UnaryOp(UAdd, number, EXTRA) }
     | '-' number=NUMBER { _PyAST_UnaryOp(USub, number, EXTRA) }
 
 signed_real_number[expr_ty]:
     | real_number
-    | '+' real=real_number { real }
+    | '+' real=real_number { _PyAST_UnaryOp(UAdd, real, EXTRA) }
     | '-' real=real_number { _PyAST_UnaryOp(USub, real, EXTRA) }
 
 real_number[expr_ty]:

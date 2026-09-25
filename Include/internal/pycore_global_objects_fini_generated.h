@@ -354,6 +354,7 @@ _PyStaticObjects_CheckAll(PyInterpreterState *interp) {
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(canonical), "canonical", 9);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(capath), "capath", 6);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(capitals), "capitals", 8);
+    _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(capture_features), "capture_features", 16);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(category), "category", 8);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(cb_type), "cb_type", 7);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(certfile), "certfile", 8);
@@ -404,6 +405,7 @@ _PyStaticObjects_CheckAll(PyInterpreterState *interp) {
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(ctx), "ctx", 3);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(cwd), "cwd", 3);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(d_parameter_type), "d_parameter_type", 16);
+    _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(daemon), "daemon", 6);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(data), "data", 4);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(database), "database", 8);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(date), "date", 4);
@@ -504,6 +506,7 @@ _PyStaticObjects_CheckAll(PyInterpreterState *interp) {
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(fset), "fset", 4);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(fullerror), "fullerror", 9);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(func), "func", 4);
+    _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(function), "function", 8);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(future), "future", 6);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(gc), "gc", 2);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(generation), "generation", 10);
