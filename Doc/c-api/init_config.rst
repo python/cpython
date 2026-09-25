@@ -116,12 +116,12 @@ Error Handling
 
    Get the *config* exit code.
 
-   Return ``0``.
+   Return ``0`` and leave *\*exitcode* unchanged.
 
    In Python 3.15, :c:func:`Py_InitializeFromInitConfig` sets an exit code if a
    command line option wants to exit Python. This is no longer the case in
-   Python 3.16. Instead, the option is processed in :c:func:`Py_RunMain`. This
-   function became useless.
+   Python 3.16. Instead, the option is now processed in :c:func:`Py_RunMain`.
+   This function became useless.
 
    .. deprecated:: next
 
@@ -787,9 +787,9 @@ PyStatus
       Exit Python with the specified exit code.
 
       .. deprecated:: next
-         :c:func:`Py_InitializeFromInitConfig` no longer sets an exit code if a
+         :c:func:`Py_InitializeFromConfig` no longer sets an exit code if a
          command line option wants to exit Python. Instead, the option is
-         processed in :c:func:`Py_RunMain`.
+         now processed in :c:func:`Py_RunMain`.
 
    Functions to handle a status:
 
@@ -807,9 +807,9 @@ PyStatus
       Is the result an exit?
 
       .. deprecated:: next
-         :c:func:`Py_InitializeFromInitConfig` no longer sets an exit code if a
+         :c:func:`Py_InitializeFromConfig` no longer sets an exit code if a
          command line option wants to exit Python. Instead, the option is
-         processed in :c:func:`Py_RunMain`.
+         now processed in :c:func:`Py_RunMain`.
 
    .. c:function:: void Py_ExitStatusException(PyStatus status)
 

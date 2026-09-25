@@ -2997,7 +2997,7 @@ static PyStatus
 config_parse_cmdline(PyConfig *config, PyWideStringList *warnoptions,
                      Py_ssize_t *opt_index)
 {
-    // DEFER_OPTION() only stores the first parsed deferred option
+    // Only store the first option
 #define DEFER_OPTION(OPTION) \
         do { \
             if (config->_deferred_cmdline_option == 0) { \
@@ -3143,12 +3143,6 @@ config_parse_cmdline(PyConfig *config, PyWideStringList *warnoptions,
 
         case 'V':
             print_version++;
-            if (print_version >= 2) {
-                DEFER_OPTION('W');
-            }
-            else {
-                DEFER_OPTION(c);
-            }
             break;
 
         case 'W':
@@ -3174,6 +3168,13 @@ config_parse_cmdline(PyConfig *config, PyWideStringList *warnoptions,
             break;
         }
     } while (config->_deferred_cmdline_option == 0);
+
+    if (print_version >= 2) {
+        DEFER_OPTION('W');
+    }
+    else if (print_version >= 1) {
+        DEFER_OPTION('V');
+    }
 
     if (config->run_command == NULL && config->run_module == NULL
         && _PyOS_optind < argv->length
