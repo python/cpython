@@ -2499,8 +2499,8 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                     names = [_get_action_name(action)
                              for action in group._group_actions
                              if action.help is not SUPPRESS]
-                    msg = _('one of the arguments %s is required')
-                    raise ArgumentError(None, msg % ' '.join(names))
+                    msg = _('one of the following arguments is required: %s')
+                    raise ArgumentError(None, msg % ', '.join(names))
 
         # return the updated namespace and the extra arguments
         return namespace, extras
