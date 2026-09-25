@@ -1,0 +1,6 @@
+Deprecate :c:func:`PyInitConfig_GetExitCode`, :c:func:`PyStatus_Exit`, and
+:c:func:`PyStatus_IsExit` functions, and :c:member:`PyStatus.exitcode`
+member. :c:func:`Py_InitializeFromInitConfig` and
+:c:func:`Py_InitializeFromConfig` can no longer return an exit code.
+Instead, if a command line option wants to exit Python, the option is
+now processed in :c:func:`Py_RunMain`. Patch by Victor Stinner.
