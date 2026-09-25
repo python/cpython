@@ -1314,6 +1314,15 @@ def splitport(host):
 _portprog = None
 def _splitport(host):
     """splitport('host:port') --> 'host', 'port'."""
+    # Handle bare IPv6 addresses with : (e.g. ::1)
+    if host.count(':') > 1 and not host.startswith('['):
+        try:
+            ipaddress.ip_address(host)
+        except ValueError:
+            pass
+        else:
+            return host, None
+
     global _portprog
     if _portprog is None:
         _portprog = re.compile('(.*):([0-9]*)', re.DOTALL)

@@ -263,6 +263,29 @@ class ProxyTests(unittest.TestCase):
         self.assertFalse(bypass('anotherdomain.com:8888\n'))
         self.assertFalse(bypass('newdomain.com:1234\n'))
 
+    def test_proxy_bypass_environment_cidrs(self):
+        bypass = lambda a, b: urllib.request.proxy_bypass_environment(a, {'no': b})
+
+        # IPv4 CIDRs
+        self.assertTrue(bypass('192.168.0.5', 'asdf.com,192.168.0.0/24'))
+        self.assertTrue(bypass('192.168.0.5', 'asdf.com,192.168.0.10/24'))
+        self.assertTrue(bypass('192.168.0.5:8443', 'asdf.com,192.168.0.0/24'))
+        self.assertTrue(bypass('192.168.0.5', 'asdf.com,192.168.0.5'))
+        self.assertTrue(bypass('192.168.0.5', 'asdf.com,192.168.0.5/32'))
+        self.assertFalse(bypass('10.1.2.3', 'asdf.com,192.168.0.0/24'))
+
+        # IPv6 CIDRs
+        self.assertTrue(bypass('2001:db8:85a3:1::10', 'asdf.com,2001:db8:85a3:1::/64'))
+        self.assertTrue(bypass('[2001:db8:85a3:1::10]', 'asdf.com,2001:db8:85a3:1::/64'))
+        self.assertTrue(bypass('[2001:db8:85a3:1::10]:443', 'asdf.com,2001:db8:85a3:1::/64'))
+        self.assertTrue(bypass('2001:db8:85a3:1::10', 'asdf.com,2001:db8:85a3:1::10'))
+        self.assertTrue(bypass('2001:db8:85a3:1::10', 'asdf.com,2001:db8:85a3:1::10/128'))
+        self.assertFalse(bypass('1001:db8:85a3:1::10', 'asdf.com,2001:db8:85a3:1::10/128'))
+
+        # Invalid CIDRs should be ignored
+        self.assertFalse(bypass('192.168.0.5', 'asdf.com,192.168.0.5/40'))
+        self.assertFalse(bypass('2001:db8:85a3:1::10', 'asdf.com,2001:db8:85a3:1::/150'))
+
 
 class ProxyTests_withOrderedEnv(unittest.TestCase):
 
