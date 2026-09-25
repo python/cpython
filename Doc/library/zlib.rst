@@ -487,11 +487,14 @@ the following constants:
 
    The version string of the zlib library actually loaded by the interpreter.
 
+   Prefer :const:`!zlib_version` over its :const:`!ZLIB_RUNTIME_VERSION` alias.
+
    .. versionadded:: 3.3
       The :const:`!ZLIB_RUNTIME_VERSION` constant.
 
    .. versionadded:: next
-      The :const:`!zlib_version` alias.
+      The :const:`!zlib_version` constant; :const:`!ZLIB_RUNTIME_VERSION` is now
+      an alias for it.
 
 
 .. data:: ZLIB_VERSION_INFO
