@@ -328,6 +328,16 @@ class SampleCallbacksTestCase(unittest.TestCase):
                              f"of ctypes callback function {func!r}")
             self.assertIsNone(cm.unraisable.object)
 
+    @unittest.skipUnless(sys.maxsize > 2**32, 'requires 64bit platform')
+    def test_narrow_int_return_widened(self):
+        @CFUNCTYPE(c_int)
+        def cb():
+            return -1
+
+        addr = ctypes.cast(cb, ctypes.c_void_p).value
+        wide = CFUNCTYPE(c_longlong)(addr)
+        self.assertEqual(wide(), -1)
+
 
 if __name__ == '__main__':
     unittest.main()
