@@ -791,9 +791,9 @@ how the command-line arguments should be handled. The supplied actions are:
 
 * ``'append'`` - This appends each argument value to a list.
   It is useful for allowing an option to be specified multiple times.
-  If the default value is a non-empty list, the parsed value will start
-  with the default list's elements and any values from the command line
-  will be appended after those default values. Example usage::
+  If the default value is a non-empty list, the parsed value for the option
+  will start with the default list's elements and any values from the
+  command line will be appended after those default values. Example usage::
 
     >>> parser = argparse.ArgumentParser()
     >>> parser.add_argument('--foo', action='append', default=['0'])
