@@ -2158,6 +2158,9 @@ class TestParser(TestParserMixin, TestEmailBase):
                 ' "Fred Flintstone" <dinsdale@test. example.com>'),
             [errors.InvalidHeaderDefect,   # the 'extra' text after the local part
              errors.InvalidHeaderDefect,   # the local part with no angle-addr
+             errors.InvalidHeaderDefect,   # misplaced '[' in the extra text
+             errors.InvalidHeaderDefect,   # misplaced ']' in the extra text
+             errors.InvalidHeaderDefect,   # misplaced '@' in the extra text
              errors.ObsoleteHeaderDefect,  # period in extra text (example.com)
              errors.ObsoleteHeaderDefect], # (bird) in valid address.
             '')
@@ -2186,7 +2189,9 @@ class TestParser(TestParserMixin, TestEmailBase):
                 ' "Fred Flintstone" <dinsdale@test.example.com>'),
             ('"Roy A. Bear" <dinsdale@example.com>@@,'
                 ' "Fred Flintstone" <dinsdale@test.example.com>'),
-            [errors.InvalidHeaderDefect],
+            [errors.InvalidHeaderDefect,   # the junk after the valid address
+             errors.InvalidHeaderDefect,   # first misplaced '@' in the junk
+             errors.InvalidHeaderDefect],  # second misplaced '@' in the junk
             '')
         self.assertEqual(len(mailbox_list.mailboxes), 1)
         self.assertEqual(len(mailbox_list.all_mailboxes), 2)
@@ -2688,6 +2693,8 @@ class TestParser(TestParserMixin, TestEmailBase):
              [errors.InvalidHeaderDefect,   # invalid address in list
               errors.InvalidHeaderDefect,   # 'Foo x' local part invalid.
               errors.InvalidHeaderDefect,   # Missing . in 'Foo x' local part
+              errors.InvalidHeaderDefect,   # misplaced '[' after the addr-spec
+              errors.InvalidHeaderDefect,   # misplaced ']' after the addr-spec
               errors.ObsoleteHeaderDefect,  # period in 'Is.' disp-name phrase
               errors.InvalidHeaderDefect,   # no domain part in addr-spec
               errors.ObsoleteHeaderDefect], # addr-spec has comment in it
@@ -2711,6 +2718,26 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertEqual(
             address_list.addresses[3].all_mailboxes[0].display_name,
                 "Nobody Is. Special")
+
+    def test_get_address_list_misplaced_special_has_defect(self):
+        address_list = self._test_get_x(parser.get_address_list,
+            'abc@xyz.c:om',
+            'abc@xyz.c:om',
+            'abc@xyz.c:om',
+            [errors.InvalidHeaderDefect,   # invalid address in list
+             errors.InvalidHeaderDefect],  # the misplaced ':'
+            '')
+        invalid_mailbox = address_list.addresses[1].all_mailboxes[0]
+        self.assertEqual(invalid_mailbox.token_type, 'invalid-mailbox')
+        misplaced = invalid_mailbox[0]
+        self.assertEqual(misplaced.token_type, 'misplaced-special')
+        self.assertEqual(misplaced, ':')
+        # The defect is attached to the misplaced-special token itself, so the
+        # offending character can be located in the parse tree.
+        self.assertDefectsEqual(misplaced.defects,
+                                [errors.InvalidHeaderDefect])
+        self.assertEqual(str(misplaced.defects[0]),
+                         "misplaced special character ':'")
 
     def test_get_address_list_group_empty(self):
         address_list = self._test_get_x(parser.get_address_list,
