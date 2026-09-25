@@ -1888,7 +1888,7 @@ run_tripped_handlers(PyThreadState *tstate)
 }
 
 
-/* Declared in cpython/pyerrors.h */
+/* Declared in pycore_pyerrors.h */
 int
 _PyErr_CheckSignalsTstate(PyThreadState *tstate)
 {
