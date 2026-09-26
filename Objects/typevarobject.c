@@ -780,50 +780,8 @@ typevar_typing_prepare_subst_impl(typevarobject *self, PyObject *alias,
                                   PyObject *args)
 /*[clinic end generated code: output=82c3f4691e0ded22 input=201a750415d14ffb]*/
 {
-    PyObject *params = PyObject_GetAttrString(alias, "__parameters__");
-    if (params == NULL) {
-        return NULL;
-    }
-    Py_ssize_t i = PySequence_Index(params, (PyObject *)self);
-    if (i == -1) {
-        Py_DECREF(params);
-        return NULL;
-    }
-    Py_ssize_t args_len = PySequence_Length(args);
-    if (args_len == -1) {
-        Py_DECREF(params);
-        return NULL;
-    }
-    if (i < args_len) {
-        // We already have a value for our TypeVar
-        Py_DECREF(params);
-        return Py_NewRef(args);
-    }
-    else if (i == args_len) {
-        // If the TypeVar has a default, use it.
-        PyObject *dflt = typevar_default((PyObject *)self, NULL);
-        if (dflt == NULL) {
-            Py_DECREF(params);
-            return NULL;
-        }
-        if (dflt != &_Py_NoDefaultStruct) {
-            PyObject *new_args = PyTuple_Pack(1, dflt);
-            Py_DECREF(dflt);
-            if (new_args == NULL) {
-                Py_DECREF(params);
-                return NULL;
-            }
-            PyObject *result = PySequence_Concat(args, new_args);
-            Py_DECREF(params);
-            Py_DECREF(new_args);
-            return result;
-        }
-    }
-    Py_DECREF(params);
-    PyErr_Format(PyExc_TypeError,
-                 "Too few arguments for %S; actual %zd, expected at least %zd",
-                 alias, args_len, i + 1);
-    return NULL;
+    PyObject *args_array[3] = {(PyObject *)self, alias, args};
+    return call_typing_func_object("_typevar_prepare_subst", args_array, 3);
 }
 
 /*[clinic input]
