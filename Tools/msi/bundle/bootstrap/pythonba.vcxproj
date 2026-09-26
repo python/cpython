@@ -1,11 +1,12 @@
-﻿<!-- dummy edit to trigger MSI CI -->
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <!--
   <copyright file="wixstdba.vcxproj" company="Outercurve Foundation">
     Copyright (c) 2004, Outercurve Foundation.
     This software is released under Microsoft Reciprocal License (MS-RL).
     The license and further copyright text can be found in the file
     LICENSE.TXT at the root directory of the distribution.
+
+    Dummy edit to trigger CI
   </copyright>
 -->
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
