@@ -3,6 +3,7 @@
 #include "opcode.h"
 
 #include "pycore_bytesobject.h"   // _PyBytes_Concat
+#include "pycore_call.h"          // _Py_METH_CALL_FLAGS
 #include "pycore_code.h"
 #include "pycore_critical_section.h"
 #include "pycore_descrobject.h"   // _PyMethodWrapper_Type
@@ -1710,9 +1711,7 @@ static int
 specialize_method_descriptor(PyMethodDescrObject *descr, PyObject *self_or_null,
                              _Py_CODEUNIT *instr, int nargs)
 {
-    switch (descr->d_method->ml_flags &
-        (METH_VARARGS | METH_FASTCALL | METH_NOARGS | METH_O |
-        METH_KEYWORDS | METH_METHOD)) {
+    switch (descr->d_method->ml_flags & _Py_METH_CALL_FLAGS) {
         case METH_NOARGS: {
             if (nargs != 1) {
                 SPECIALIZATION_FAIL(CALL, SPEC_FAIL_WRONG_NUMBER_ARGUMENTS);
@@ -1832,9 +1831,7 @@ specialize_c_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs)
         SPECIALIZATION_FAIL(CALL, SPEC_FAIL_OTHER);
         return 1;
     }
-    switch (PyCFunction_GET_FLAGS(callable) &
-        (METH_VARARGS | METH_FASTCALL | METH_NOARGS | METH_O |
-        METH_KEYWORDS | METH_METHOD)) {
+    switch (PyCFunction_GET_FLAGS(callable) & _Py_METH_CALL_FLAGS) {
         case METH_O: {
             if (nargs != 1) {
                 SPECIALIZATION_FAIL(CALL, SPEC_FAIL_WRONG_NUMBER_ARGUMENTS);

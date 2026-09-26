@@ -936,8 +936,7 @@ PyDescr_NewMethod(PyTypeObject *type, PyMethodDef *method)
 {
     /* Figure out correct vectorcall function to use */
     vectorcallfunc vectorcall;
-    switch (method->ml_flags & (METH_VARARGS | METH_FASTCALL | METH_NOARGS |
-                                METH_O | METH_KEYWORDS | METH_METHOD))
+    switch (method->ml_flags & _Py_METH_CALL_FLAGS)
     {
         case METH_VARARGS:
             vectorcall = method_vectorcall_VARARGS;
