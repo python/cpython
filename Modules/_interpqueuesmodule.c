@@ -763,6 +763,9 @@ _queue_clear_interpreter(_queue *queue, int64_t interpid)
             else {
                 prev->next = next;
             }
+            if (next == NULL) {
+                queue->items.last = prev;
+            }
             queue->items.count -= 1;
         }
         else {
