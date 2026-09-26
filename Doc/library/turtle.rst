@@ -24,25 +24,6 @@
 
 --------------
 
-Introduction
-============
-
-Turtle graphics is an implementation of `the popular geometric drawing tools
-introduced in Logo <https://en.wikipedia.org/wiki/Turtle_
-(robot)>`_, developed by Wally Feurzeig, Seymour Papert and Cynthia Solomon
-in 1967.
-
-.. include:: ../includes/optional-module.rst
-
-
-Get started
-===========
-
-Imagine a robotic turtle starting at (0, 0) in the x-y plane.  After an ``import turtle``, give it the
-command ``turtle.forward(15)``, and it moves (on-screen!) 15 pixels in the
-direction it is facing, drawing a line as it moves.  Give it the command
-``turtle.right(25)``, and it rotates in-place 25 degrees clockwise.
-
 .. sidebar:: Turtle star
 
    Turtle can draw intricate shapes using programs that repeat simple
@@ -51,21 +32,40 @@ direction it is facing, drawing a line as it moves.  Give it the command
    .. image:: turtle-star.png
       :align: center
 
-In Python, turtle graphics provides a representation of a physical "turtle"
-(a little robot with a pen) that draws on a sheet of paper on the floor.
+Imagine a robotic turtle starting at (0, 0) in the x-y plane.
+After an ``import turtle``, give it the command ``turtle.forward(15)``, and it
+moves (on-screen!) 15 pixels in the direction it is facing, drawing a line as
+it moves. Give it the command ``turtle.right(25)``, and it rotates in-place 25
+degrees clockwise.
 
-It's an effective and well-proven way for learners to encounter
-programming concepts and interaction with software, as it provides instant,
-visible feedback. It also provides convenient access to graphical output
-in general.
+Turtle graphics is an implementation of `the drawing tools introduced in Logo
+<https://en.wikipedia.org/wiki/Turtle_(robot)>`_ in 1967. It was created as an
+educational tool, and its instant, visible feedback makes it an effective way
+for learners to encounter programming concepts. It is also a convenient way to
+produce simple graphical output without bringing in external libraries.
 
-Turtle drawing was originally created as an educational tool, to be used by
-teachers in the classroom. For the programmer who needs to produce some
-graphical output it can be a way to do that without the overhead of
-introducing more complex or external libraries into their work.
+This document includes four main sections:
+
+* :ref:`turtle-tutorial` teaches the basics of turtle drawing.
+* :ref:`turtle-reference` describes the functions, methods and classes this
+  module defines.
+* :ref:`turtle-howtos` details how to handle specific tasks.
+* :ref:`turtle-explanation` provides background on the object-oriented
+  interface.
+
+.. note::
+
+   Turtle graphics requires the :mod:`tkinter` :term:`optional module`.
+   The python.org installers for Windows and macOS include it, but some
+   Linux distributions and other platforms may package it separately. If
+   ``import turtle`` fails with an error mentioning ``_tkinter``, look for
+   documentation from your distributor (that is, whoever provided Python to you).
+   Check this in advance if you're planning to use turtle graphics with a learner.
 
 
 .. _turtle-tutorial:
+.. _get-started:
+.. _get-started-as-quickly-as-possible:
 
 Tutorial
 ========
@@ -108,7 +108,8 @@ Notice how the turtle, represented by an arrow, points in different
 directions as you steer it.
 
 Experiment with those commands, and also with ``backward()`` and
-``right()``.
+``right()``. Many commands also have terser aliases, such as ``fd()`` for
+:func:`forward`.
 
 
 Pen control
@@ -188,36 +189,14 @@ Finally, complete the filling::
 ``end_fill()`` command.)
 
 
+.. _turtle-howtos:
 .. _turtle-how-to:
+.. _how-to:
 
-How to...
-=========
+How-to guides
+=============
 
 This section covers some typical turtle use-cases and approaches.
-
-
-Get started as quickly as possible
-----------------------------------
-
-One of the joys of turtle graphics is the immediate, visual feedback that's
-available from simple commands - it's an excellent way to introduce children
-to programming ideas, with a minimum of overhead (not just children, of
-course).
-
-The turtle module makes this possible by exposing all its basic functionality
-as functions, available with ``from turtle import *``. The :ref:`turtle
-graphics tutorial <turtle-tutorial>` covers this approach.
-
-It's worth noting that many of the turtle commands also have even more terse
-equivalents, such as ``fd()`` for :func:`forward`. These are especially
-useful when working with learners for whom typing is not a skill.
-
-.. _note:
-
-    You'll need to have the :mod:`Tk interface package <tkinter>` installed on
-    your system for turtle graphics to work. Be warned that this is not
-    always straightforward, so check this in advance if you're planning to
-    use turtle graphics with a learner.
 
 
 Automatically begin and end filling
@@ -323,8 +302,11 @@ The turtle's screen can be customised, for example::
     t.screen.bgcolor("orange")
 
 
-Turtle graphics reference
-=========================
+.. _turtle-reference:
+.. _turtle-graphics-reference:
+
+Reference
+=========
 
 .. note::
 
@@ -2571,6 +2553,25 @@ Public classes
    * ``a.rotate(angle)`` rotation
 
 
+Exceptions
+==========
+
+The :mod:`!turtle` module defines the following exception:
+
+.. exception:: TurtleGraphicsError
+
+   Raised for invalid arguments or operations.
+   For example, a malformed color string:
+
+   .. doctest::
+      :skipif: _tkinter is None
+
+      >>> turtle.color("blau")
+      Traceback (most recent call last):
+          ...
+      turtle.TurtleGraphicsError: bad color string: blau
+
+
 .. _turtle-explanation:
 
 Explanation
@@ -2881,49 +2882,6 @@ The demo scripts are:
 +------------------------+------------------------------+--------------------------------------+
 
 Have fun!
-
-
-Changes since Python 2.6
-========================
-
-- The methods :func:`Turtle.tracer <tracer>`, :func:`Turtle.window_width <window_width>` and
-  :func:`Turtle.window_height <window_height>` have been eliminated.
-  Methods with these names and functionality are now available only
-  as methods of :class:`Screen`. The functions derived from these remain
-  available. (In fact already in Python 2.6 these methods were merely
-  duplications of the corresponding
-  :class:`TurtleScreen`/:class:`Screen` methods.)
-
-- The method :func:`!Turtle.fill` has been eliminated.
-  The behaviour of :func:`begin_fill` and :func:`end_fill`
-  have changed slightly: now every filling process must be completed with an
-  ``end_fill()`` call.
-
-- A method :func:`Turtle.filling <filling>` has been added. It returns a boolean
-  value: ``True`` if a filling process is under way, ``False`` otherwise.
-  This behaviour corresponds to a ``fill()`` call without arguments in
-  Python 2.6.
-
-Changes since Python 3.0
-========================
-
-- The :class:`Turtle` methods :func:`shearfactor`, :func:`shapetransform` and
-  :func:`get_shapepoly` have been added. Thus the full range of
-  regular linear transforms is now available for transforming turtle shapes.
-  :func:`tiltangle` has been enhanced in functionality: it now can
-  be used to get or set the tilt angle.
-
-- The :class:`Screen` method :func:`onkeypress` has been added as a complement to
-  :func:`onkey`. As the latter binds actions to the key release event,
-  an alias: :func:`onkeyrelease` was also added for it.
-
-- The method :func:`Screen.mainloop <mainloop>` has been added,
-  so there is no longer a need to use the standalone :func:`mainloop` function
-  when working with :class:`Screen` and :class:`Turtle` objects.
-
-- Two input methods have been added: :func:`Screen.textinput <textinput>` and
-  :func:`Screen.numinput <numinput>`. These pop up input dialogs and return
-  strings and numbers respectively.
 
 
 .. doctest::

@@ -9,6 +9,7 @@ import functools
 import io
 import linecache
 import queue
+import signal
 import sys
 import textwrap
 import time
@@ -163,6 +164,7 @@ def main(del_exitfunc=False):
                     ).start()
 
     while True:
+        request = None
         try:
             if exit_now:
                 try:
@@ -173,9 +175,9 @@ def main(del_exitfunc=False):
             try:
                 request = rpc.request_queue.get(block=True, timeout=0.05)
             except queue.Empty:
-                request = None
                 # Issue 32207: calling handle_tk_events here adds spurious
                 # queue.Empty traceback to event handling exceptions.
+                pass
             if request:
                 seq, (method, args, kwargs) = request
                 ret = method(*args, **kwargs)
@@ -185,6 +187,10 @@ def main(del_exitfunc=False):
         except KeyboardInterrupt:
             if quitting:
                 exit_now = True
+            elif request:
+                # Interrupted while executing a request, as when debugging.
+                print_exception()
+                rpc.response_queue.put((seq, None))
             continue
         except SystemExit:
             capture_warnings(False)
@@ -678,7 +684,19 @@ class Executive:
 
     def interrupt_the_server(self):
         if interruptible:
-            thread.interrupt_main()
+            handler = signal.getsignal(signal.SIGINT)
+            if handler not in (signal.SIG_DFL, signal.SIG_IGN, None):
+                # A real signal interrupts blocking calls such as
+                # time.sleep() (gh-74112).  The lock prevents interrupting
+                # the main thread in the middle of sending a message.
+                with self.rpchandler.sendlock:
+                    if hasattr(signal, 'pthread_kill'):
+                        signal.pthread_kill(threading.main_thread().ident,
+                                            signal.SIGINT)
+                    else:
+                        signal.raise_signal(signal.SIGINT)
+            else:
+                thread.interrupt_main()
 
     def start_the_debugger(self, gui_adap_oid):
         return debugger_r.start_debugger(self.rpchandler, gui_adap_oid)
