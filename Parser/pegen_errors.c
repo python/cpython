@@ -327,6 +327,7 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
     }
 
     tmp = Py_BuildValue("(OnnNnn)", info.filename, lineno, col_number, error_line, end_lineno, end_col_number);
+    error_line = NULL;
     if (!tmp) {
         goto error;
     }

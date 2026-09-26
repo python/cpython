@@ -645,6 +645,20 @@ except Exception:
                             f"{prefix[-1]}-string: expecting '}}' to close '{{' "
                             f"on line {lineno}")
 
+    def test_unclosed_replacement_field_quote_line(self):
+        for prefix in ('f', 't', 'rf', 'rt'):
+            for quote in ('"', "'"):
+                triple = quote * 3
+                for suffix in ('', '\nx'):
+                    source = prefix + triple + '{1' + triple + suffix
+                    with self.subTest(source=source):
+                        with self.assertRaises(SyntaxError) as cm:
+                            compile(source, '<test>', 'exec')
+                        self.assertEqual(
+                            cm.exception.msg,
+                            f"{prefix[-1]}-string: expecting '}}'")
+                        self.assertEqual(cm.exception.lineno, 1)
+
     @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
     def test_mismatched_parens(self):
         self.assertAllRaise(SyntaxError, r"closing parenthesis '\}' "

@@ -8,6 +8,7 @@ import tempfile
 import token
 import tokenize
 import unittest
+import weakref
 from io import BytesIO, StringIO
 from textwrap import dedent
 from unittest import TestCase, mock
@@ -2268,6 +2269,18 @@ class CTokenizeTest(TestCase):
             )
             self.assertEqual(result, expected.rstrip().splitlines())
 
+    def test_readline_reference_cycle(self):
+        class Readline:
+            def __call__(self):
+                return ""
+
+        readline = Readline()
+        readline.iterator = _tokenize.TokenizerIter(readline, extra_tokens=True)
+        ref = weakref.ref(readline)
+        del readline
+        support.gc_collect()
+        self.assertIsNone(ref())
+
     def test_encoding(self):
         def readline(encoding):
             yield "1+1".encode(encoding)
@@ -2341,6 +2354,20 @@ class CTokenizeTest(TestCase):
             tokenize.TokenInfo(token.ENDMARKER, "", (2, 0), (2, 0), ""),
         ])
 
+    def test_utf8_decoder_spans_many_readline_calls(self):
+        for prefix in (b"", b"previous\n"):
+            with self.subTest(prefix=prefix):
+                chunks = ([prefix + b"x\xc3"] + [b"\xa9\xc3"] * 100
+                          + [b"\xa9\n", b"z\xc3", b"\xa9\n", b""])
+                source = b"".join(chunks)
+                expected = list(_tokenize.TokenizerIter(
+                    BytesIO(source).readline, encoding="utf-8", extra_tokens=True
+                ))
+                tokens = list(_tokenize.TokenizerIter(
+                    iter(chunks).__next__, encoding="utf-8", extra_tokens=True
+                ))
+                self.assertEqual(tokens, expected)
+
     def test_utf8_decoder_replaces_incomplete_input_at_eof(self):
         expected = [
             tokenize.TokenInfo(token.NAME, "x�", (1, 0), (1, 2), "x�"),
@@ -2395,6 +2422,12 @@ class CTokenizeTest(TestCase):
             (token.ENDMARKER, "", (3, 0), (3, 0), ""),
         )
         self.assertEqual(readline.call_count, 2)
+
+    def test_readline_memory_error_in_string(self):
+        readline = mock.Mock(side_effect=['"""first\n', MemoryError])
+        iterator = _tokenize.TokenizerIter(readline, extra_tokens=True)
+        with self.assertRaises(MemoryError):
+            next(iterator)
 
     def test_readline_callback_is_not_read_ahead(self):
         readline = mock.Mock(side_effect=["x\n", "y\n", ""])

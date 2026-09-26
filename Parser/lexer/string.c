@@ -13,7 +13,7 @@ string_error_token(struct tok_state *tok, struct token *token,
 {
     tok->diagnostic = (_PyTokenizer_Diagnostic){
         .location = {location.lineno, location.byte_col + 1},
-        .text_span = _PyTok_SpanFromBounds(start - location.byte_col, tok->inp),
+        .text_span = {start - location.byte_col, tok->inp},
     };
     int type = _PyLexer_token_setup(tok, token, ERRORTOKEN, -1, -1);
     token->start_loc = location;
@@ -254,7 +254,8 @@ _PyLexer_check_string_prefixes(struct tok_state *tok,
 }
 
 int
-_PyLexer_scan_fstring_start(struct tok_state *tok, struct token *token, int c)
+_PyLexer_scan_fstring_start(struct tok_state *tok, struct token *token,
+                            int c, ftstring_kind kind)
 {
     _PyTok_Off p_start = -1;
     _PyTok_Off p_end = -1;
@@ -293,30 +294,9 @@ _PyLexer_scan_fstring_start(struct tok_state *tok, struct token *token, int c)
     state->start_loc = tok->start_loc;
     state->expr_span = (_PyTok_Span){-1, -1};
 
-    int raw = 0;
-    int tstring = 0;
-    switch (*_PyLexer_BufferPointer(tok, tok->start)) {
-        case 'T':
-        case 't':
-            raw = Py_TOLOWER(_PyLexer_BufferPointer(tok, tok->start)[1]) == 'r';
-            tstring = 1;
-            break;
-        case 'F':
-        case 'f':
-            raw = Py_TOLOWER(_PyLexer_BufferPointer(tok, tok->start)[1]) == 'r';
-            break;
-        case 'R':
-        case 'r':
-            raw = 1;
-            tstring = Py_TOLOWER(_PyLexer_BufferPointer(tok, tok->start)[1]) == 't';
-            break;
-        default:
-            Py_UNREACHABLE();
-    }
-    state->kind = tstring
-        ? (raw ? RAW_TSTRING : TSTRING)
-        : (raw ? RAW_FSTRING : FSTRING);
-    return tstring ? MAKE_TOKEN(TSTRING_START) : MAKE_TOKEN(FSTRING_START);
+    state->kind = kind;
+    return _PyLexer_IsTString(kind)
+        ? MAKE_TOKEN(TSTRING_START) : MAKE_TOKEN(FSTRING_START);
 }
 
 int
@@ -355,6 +335,9 @@ _PyLexer_scan_string(struct tok_state *tok, struct token *token, int c)
             break;
         }
         if (c == EOF || (quote_size == 1 && c == '\n')) {
+            if (tok_failed(tok)) {
+                return MAKE_TOKEN(ERRORTOKEN);
+            }
             int end_lineno = tok->lineno;
             _PyTok_Loc location = tok->start_loc;
             const char *line = _PyLexer_BufferPointer(tok, tok->start) - location.byte_col;
@@ -370,7 +353,7 @@ _PyLexer_scan_string(struct tok_state *tok, struct token *token, int c)
                     assert(level >= 0 && level < tok->level);
                     assert(tok->parenstack[level] == '{');
                     int lineno = tok->parenlinenostack[level];
-                    if (lineno != tok->lineno) {
+                    if (lineno != location.lineno) {
                         _PyTokenizer_syntaxerror_at(
                             tok, line, cursor_offset, location.lineno, -1, -1,
                             "%c-string: expecting '}' to close '{' on line %d",

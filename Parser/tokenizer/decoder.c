@@ -8,6 +8,14 @@
 #include "helpers.h"
 #include "../lexer/state.h"
 
+#define UNICODE_BOM 0xFEFF
+#define UTF16_LE_BOM "\xff\xfe"
+#define UTF16_BE_BOM "\xfe\xff"
+#define UTF16_BOM_LENGTH ((Py_ssize_t)(sizeof(UTF16_LE_BOM) - 1))
+#define UTF8_BOM "\xef\xbb\xbf"
+#define UTF8_BOM_LENGTH ((Py_ssize_t)(sizeof(UTF8_BOM) - 1))
+#define NORMALIZED_LINE_INITIAL_CAPACITY 256
+
 char *
 _PyTok_CopyBytes(const char *data, Py_ssize_t len)
 {
@@ -60,9 +68,9 @@ chunk_set_unicode(struct tok_state *tok, _PyTok_Chunk *chunk,
         return -1;
     }
     if (strip_bom && PyUnicode_GET_LENGTH(unicode) > 0 &&
-            PyUnicode_ReadChar(unicode, 0) == 0xFEFF) {
-        utf8 += 3;
-        utf8_len -= 3;
+            PyUnicode_ReadChar(unicode, 0) == UNICODE_BOM) {
+        utf8 += UTF8_BOM_LENGTH;
+        utf8_len -= UTF8_BOM_LENGTH;
     }
     chunk_release_data(chunk);
     chunk->owner = unicode;
@@ -72,12 +80,12 @@ chunk_set_unicode(struct tok_state *tok, _PyTok_Chunk *chunk,
     return 0;
 }
 
-// The caller must provide len + 2 bytes: normalization can append a final
-// newline and always writes a NUL terminator.
+// The caller provides len + add_final_newline + 1 bytes for an optional
+// final newline and the NUL terminator.
 static void
 normalize_newlines_into(char *result, const char *data, Py_ssize_t len,
                         int preserve_crlf, int add_final_newline,
-                        Py_ssize_t *out_len, int *implicit_newline)
+                        Py_ssize_t *out_len)
 {
     Py_ssize_t write = 0;
     if (preserve_crlf || memchr(data, '\r', len) == NULL) {
@@ -97,33 +105,27 @@ normalize_newlines_into(char *result, const char *data, Py_ssize_t len,
             result[write++] = c;
         }
     }
-    int implicit = add_final_newline && write > 0 && result[write - 1] != '\n';
-    if (implicit) {
+    if (add_final_newline && write > 0 && result[write - 1] != '\n') {
         result[write++] = '\n';
     }
     result[write] = '\0';
     *out_len = write;
-    if (implicit_newline != NULL) {
-        *implicit_newline = implicit;
-    }
 }
 
 char *
-_PyTok_NormalizeNewlines(const char *data, Py_ssize_t len, int preserve_crlf,
-                         int add_final_newline, Py_ssize_t *out_len,
-                         int *implicit_newline)
+_PyTok_NormalizeNewlines(const char *data, Py_ssize_t len,
+                         Py_ssize_t *out_len)
 {
-    if (len > PY_SSIZE_T_MAX - 2) {
+    if (len < 0 || len == PY_SSIZE_T_MAX) {
         PyErr_NoMemory();
         return NULL;
     }
-    char *result = PyMem_Malloc((size_t)len + 2);
+    char *result = PyMem_Malloc((size_t)len + 1);
     if (result == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
-    normalize_newlines_into(result, data, len, preserve_crlf,
-                            add_final_newline, out_len, implicit_newline);
+    normalize_newlines_into(result, data, len, 0, 0, out_len);
     return result;
 }
 
@@ -158,11 +160,12 @@ find_cookie(const char *line, Py_ssize_t len, char **encoding, int *scan_next)
             return 0;
         }
     }
-    for (; i + 6 < len; i++) {
-        if (memcmp(line + i, "coding", 6) != 0) {
+    const Py_ssize_t marker_len = sizeof("coding") - 1;
+    for (; i < len - marker_len; i++) {
+        if (memcmp(line + i, "coding", marker_len) != 0) {
             continue;
         }
-        const char *cursor = line + i + 6;
+        const char *cursor = line + i + marker_len;
         if (*cursor != ':' && *cursor != '=') {
             continue;
         }
@@ -179,37 +182,36 @@ find_cookie(const char *line, Py_ssize_t len, char **encoding, int *scan_next)
         if (cursor == start) {
             continue;
         }
-        char *found = _PyTok_CopyBytes(start, cursor - start);
-        if (found == NULL) {
-            return -1;
-        }
-        char normalized[13];
-        int n;
-        for (n = 0; n < 12 && found[n] != '\0'; n++) {
-            normalized[n] = found[n] == '_' ? '-' : Py_TOLOWER(found[n]);
+        Py_ssize_t encoding_len = cursor - start;
+        // Include the longest recognized prefix and its NUL terminator.
+        char normalized[sizeof("iso-latin-1-")];
+        const Py_ssize_t prefix_len = Py_MIN(
+            encoding_len, (Py_ssize_t)sizeof(normalized) - 1);
+        Py_ssize_t n;
+        for (n = 0; n < prefix_len; n++) {
+            normalized[n] = start[n] == '_' ? '-' : Py_TOLOWER(start[n]);
         }
         normalized[n] = '\0';
-        const char *canonical = found;
+        const char *canonical = start;
         if (strcmp(normalized, "utf-8") == 0 ||
-                strncmp(normalized, "utf-8-", 6) == 0) {
+                strncmp(normalized, "utf-8-", sizeof("utf-8-") - 1) == 0) {
             canonical = "utf-8";
         }
         else if (strcmp(normalized, "latin-1") == 0 ||
                  strcmp(normalized, "iso-8859-1") == 0 ||
                  strcmp(normalized, "iso-latin-1") == 0 ||
-                 strncmp(normalized, "latin-1-", 8) == 0 ||
-                 strncmp(normalized, "iso-8859-1-", 11) == 0 ||
-                 strncmp(normalized, "iso-latin-1-", 12) == 0) {
+                 strncmp(normalized, "latin-1-", sizeof("latin-1-") - 1) == 0 ||
+                 strncmp(normalized, "iso-8859-1-", sizeof("iso-8859-1-") - 1) == 0 ||
+                 strncmp(normalized, "iso-latin-1-", sizeof("iso-latin-1-") - 1) == 0) {
             canonical = "iso-8859-1";
         }
-        if (canonical != found) {
-            PyMem_Free(found);
-            found = _PyTok_CopyBytes(canonical, strlen(canonical));
-            if (found == NULL) {
-                return -1;
-            }
+        if (canonical != start) {
+            encoding_len = strlen(canonical);
         }
-        *encoding = found;
+        *encoding = _PyTok_CopyBytes(canonical, encoding_len);
+        if (*encoding == NULL) {
+            return -1;
+        }
         *scan_next = 0;
         return 0;
     }
@@ -221,17 +223,15 @@ _PyTok_DetectEncoding(struct tok_state *tok, const _PyTok_Chunk *first,
                       const _PyTok_Chunk *second, int final,
                       Py_ssize_t *bom_len)
 {
-    int bom = first->len >= 3 &&
-        (unsigned char)first->data[0] == 0xEF &&
-        (unsigned char)first->data[1] == 0xBB &&
-        (unsigned char)first->data[2] == 0xBF;
-    *bom_len = bom ? 3 : 0;
+    int bom = first->len >= UTF8_BOM_LENGTH &&
+        memcmp(first->data, UTF8_BOM, UTF8_BOM_LENGTH) == 0;
+    *bom_len = bom ? UTF8_BOM_LENGTH : 0;
 
     char *cookie = NULL;
     int scan_next = 0;
     int cookie_line = 1;
-    const char *first_data = first->data + (bom ? 3 : 0);
-    Py_ssize_t first_len = first->len - (bom ? 3 : 0);
+    const char *first_data = first->data + *bom_len;
+    Py_ssize_t first_len = first->len - *bom_len;
     if (find_cookie(first_data, first_len, &cookie, &scan_next) < 0) {
         return _PYTOK_ENCODING_ERROR;
     }
@@ -256,8 +256,8 @@ _PyTok_DetectEncoding(struct tok_state *tok, const _PyTok_Chunk *first,
     }
     if (bom && strcmp(cookie, "utf-8") != 0) {
         const _PyTok_Chunk *line = cookie_line == 2 ? second : first;
-        const char *line_data = line->data + (cookie_line == 1 ? 3 : 0);
-        Py_ssize_t line_len = line->len - (cookie_line == 1 ? 3 : 0);
+        const char *line_data = line->data + (cookie_line == 1 ? *bom_len : 0);
+        Py_ssize_t line_len = line->len - (cookie_line == 1 ? *bom_len : 0);
         int end_col = (int)Py_MIN(line_len, INT_MAX);
         if (end_col > 0 && (line_data[end_col - 1] == '\n' ||
                             line_data[end_col - 1] == '\r')) {
@@ -269,11 +269,8 @@ _PyTok_DetectEncoding(struct tok_state *tok, const _PyTok_Chunk *first,
         PyMem_Free(cookie);
         return _PYTOK_ENCODING_ERROR;
     }
-    if (!bom && _PyTok_SetEncoding(tok, cookie) < 0) {
-        PyMem_Free(cookie);
-        return _PYTOK_ENCODING_ERROR;
-    }
-    PyMem_Free(cookie);
+    PyMem_Free(tok->encoding);
+    tok->encoding = cookie;
     return _PYTOK_ENCODING_DONE;
 }
 
@@ -329,37 +326,40 @@ store_prepared_source(struct tok_state *tok, const char *data, Py_ssize_t len,
               data[pos + raw_line_len - 1] == '\r';
         int add_newline = add_final_newline &&
             pos + raw_line_len == len && !terminated;
-        int normalize = add_newline ||
-            (!preserve_crlf &&
-             memchr(data + pos, '\r', raw_line_len) != NULL);
-
         const char *line = data + pos;
         Py_ssize_t line_len = raw_line_len;
-        int implicit = 0;
+        // raw_line_length stops at the first CR or LF, so any CR is in
+        // the line terminator.
+        int normalize = add_newline ||
+            (!preserve_crlf &&
+             (line[line_len - 1] == '\r' ||
+              (line_len > 1 && line[line_len - 2] == '\r')));
         if (normalize) {
-            if (line_len > PY_SSIZE_T_MAX - 2) {
+            if (line_len > PY_SSIZE_T_MAX - add_newline - 1) {
                 PyErr_NoMemory();
                 tok->done = E_NOMEM;
                 goto error;
             }
             // Reserve space for an optional final '\n' and the NUL terminator.
-            Py_ssize_t needed = line_len + 2;
-            if (_PyTok_ReserveBuffer(&normalized, &capacity, needed, 256) < 0) {
+            Py_ssize_t needed = line_len + add_newline + 1;
+            if (_PyTok_ReserveBuffer(&normalized, &capacity, needed,
+                                    NORMALIZED_LINE_INITIAL_CAPACITY) < 0) {
                 tok->done = E_NOMEM;
                 goto error;
             }
             normalize_newlines_into(normalized, line, line_len,
                                     preserve_crlf, add_newline,
-                                    &line_len, &implicit);
+                                    &line_len);
             line = normalized;
         }
         _PyTok_Off appended = _PyTok_SourceAppendLine(
-            &tok->source, line, line_len, implicit);
+            &tok->source, line, line_len);
         if (appended < 0) {
             tok->done = PyErr_ExceptionMatches(PyExc_MemoryError)
                 ? E_NOMEM : E_ERROR;
             goto error;
         }
+        tok->reader->prepared_final_newline_is_implicit = add_newline;
         pos += raw_line_len;
     }
     PyMem_Free(normalized);
@@ -472,11 +472,9 @@ _PyTok_DecodeChunk(struct tok_state *tok, _PyTok_Chunk *chunk, int final)
         return 0;
     }
     int strip_bom = reader->kind == _PYTOK_READER_READLINE &&
-        chunk->len >= 2 &&
-        (((unsigned char)chunk->data[0] == 0xFF &&
-          (unsigned char)chunk->data[1] == 0xFE) ||
-         ((unsigned char)chunk->data[0] == 0xFE &&
-          (unsigned char)chunk->data[1] == 0xFF));
+        chunk->len >= UTF16_BOM_LENGTH &&
+        (memcmp(chunk->data, UTF16_LE_BOM, UTF16_BOM_LENGTH) == 0 ||
+         memcmp(chunk->data, UTF16_BE_BOM, UTF16_BOM_LENGTH) == 0);
     PyObject *input;
     if (chunk->ownership == _PYTOK_CHUNK_PYOBJECT &&
             PyBytes_Check(chunk->owner) &&

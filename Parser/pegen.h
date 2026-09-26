@@ -190,6 +190,8 @@ expr_ty _PyPegen_soft_keyword_token(Parser *p);
 expr_ty _PyPegen_fstring_middle_token(Parser* p);
 Token *_PyPegen_get_last_nonnwhitespace_token(Parser *);
 int _PyPegen_fill_token(Parser *p);
+// Return NULL on failure, leaving the buffer and capacity unchanged.
+void **_PyPegen_grow_loop_buffer(void **buffer, Py_ssize_t *capacity);
 expr_ty _PyPegen_name_token(Parser *p);
 expr_ty _PyPegen_number_token(Parser *p);
 void *_PyPegen_string_token(Parser *p);
