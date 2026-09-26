@@ -1,4 +1,5 @@
 import datetime
+import locale
 import sys
 import time
 import unittest
@@ -251,6 +252,26 @@ def strptime_inputs():
 class DateTimeTest(unittest.TestCase):
     datetime_module = datetime
     theclass = datetime.datetime
+
+    @support.run_with_locale("LC_TIME", "fr_FR.UTF-8", "fr_FR.utf8",
+                             "de_DE.UTF-8", "de_DE.utf8", "en_US.UTF-8",
+                             "en_US.utf8", "en_US")
+    @hypothesis.settings(max_examples=25)
+    @hypothesis.given(day=st.dates(), abbreviated=st.booleans())
+    @hypothesis.example(day=datetime.date.min, abbreviated=False)
+    @hypothesis.example(day=datetime.date(2000, 2, 29), abbreviated=True)
+    @hypothesis.example(day=datetime.date(2024, 8, 31), abbreviated=False)
+    def test_locale_name_cache(self, day: datetime.date, abbreviated: bool) -> None:
+        selected_locale = locale.setlocale(locale.LC_TIME)
+        names = "%b|%a" if abbreviated else "%B|%A"
+        fmt = "%Y|%d|" + names
+        for locale_name in ("C", selected_locale, "C"):
+            with support.run_with_locale("LC_TIME", locale_name):
+                # Only obtain the localized names from libc. Construct years
+                # ourselves so that this tests the full supported year range.
+                value = f"{day.year:04}|{day.day}|{day.strftime(names)}"
+                actual = self.theclass.strptime(value, fmt)
+                self.assertEqual(actual.isoformat(), f"{day.isoformat()}T00:00:00")
 
     # Known failure: duplicate regex group names leak re.PatternError instead
     # of rejecting contradictory fields with the documented ValueError.
