@@ -1,0 +1,4 @@
+Fix :meth:`pathlib.Path.rename` and :meth:`pathlib.Path.replace` to validate
+the target before modifying the filesystem. Passing a bytes path, including
+a path-like object returning bytes, now raises :exc:`TypeError` without
+moving the source.
