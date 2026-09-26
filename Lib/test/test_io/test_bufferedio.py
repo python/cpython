@@ -623,6 +623,75 @@ class CBufferedReaderTest(BufferedReaderTest, SizeofTest, CTestCase):
             bufio.readline()
         self.assertIsInstance(cm.exception.__cause__, TypeError)
 
+    def test_reentrant_detach_during_read_all(self):
+        # gh-154997: Reentrant detach() during read_all() should not crash.
+        # Use a duck-typed raw stream so _bufferedreader_read_all()
+        # dispatches through raw.read(). Return EOF to terminate the loop.
+        class Duck:
+            closed = False
+
+            def __init__(self):
+                self.n = 0
+
+            def readable(self):
+                return True
+
+            def writable(self):
+                return False
+
+            def seekable(self):
+                return False
+
+            def close(self):
+                pass
+
+            def flush(self):
+                pass
+
+            def read(self, *args):
+                self.n += 1
+                if self.n == 1:
+                    self.buf.detach()
+                return b"abc" if self.n < 3 else b""
+
+            def readinto(self, b):
+                data = self.read()
+                b[0:len(data)] = data
+                return len(data)
+
+        raw = Duck()
+        buf = self.tp(raw)
+        raw.buf = buf
+
+        with self.assertRaisesRegex(ValueError, "detached"):
+            buf.read()
+
+    def test_reentrant_detach_during_raw_read(self):
+        # gh-154997: Reentrant detach() during read() should not crash.
+        # detach() fires from inside raw.readinto(), which
+        # _bufferedreader_raw_read() calls directly.
+        class Raw(io.RawIOBase):
+            def __init__(self):
+                super().__init__()
+                self.fired = False
+
+            def readable(self):
+                return True
+
+            def readinto(self, b):
+                if not self.fired:
+                    self.fired = True
+                    self.buf.detach()
+                b[0:1] = b"a"
+                return 1
+
+        raw = Raw()
+        buf = self.tp(raw, buffer_size=4)
+        raw.buf = buf
+
+        with self.assertRaisesRegex(ValueError, "detached"):
+            buf.read(64)
+
     @unittest.skipUnless(sys.maxsize > 2**32, 'requires 64bit platform')
     @unittest.skipIf(check_sanitizer(thread=True),
                      'ThreadSanitizer aborts on huge allocations (exit code 66).')
@@ -1001,6 +1070,209 @@ class CBufferedWriterTest(BufferedWriterTest, SizeofTest, CTestCase):
         self.assertRaisesRegex(ValueError, "test", bufio.write, b"")
         self.assertRaisesRegex(ValueError, "test", bufio.flush)
         self.assertRaisesRegex(ValueError, "test", bufio.close)
+
+    def test_reentrant_detach_during_close(self):
+        # gh-154997: Reentrant detach() during close() should not crash.
+
+        class B(self.tp):
+            armed = True
+
+            def flush(self):
+                if self.armed:
+                    self.armed = False
+                    super().detach()
+
+        buf = B(self.BytesIO())
+        with self.assertRaisesRegex(ValueError, "detached"):
+            buf.close()
+
+    def test_reentrant_detach_during_raw_write(self):
+        # gh-154997: Reentrant detach() during write() should not crash.
+        # Use a small buffer and partial writes so write() reaches
+        # _bufferedwriter_raw_write(). Override flush() to avoid
+        # re-entering the buffered lock during detach().
+        class B(self.tp):
+            def flush(self):
+                return None
+
+        class Raw(io.RawIOBase):
+            def __init__(self):
+                super().__init__()
+                self.fired = False
+
+            def writable(self):
+                return True
+
+            def write(self, b):
+                if not self.fired:
+                    self.fired = True
+                    self.buf.detach()
+                return 1  # partial write -> flush loop iterates again
+
+        raw = Raw()
+        buf = B(raw, buffer_size=4)
+        raw.buf = buf
+
+        with self.assertRaisesRegex(ValueError, "detached"):
+            buf.write(b"0123456789abcdef")
+
+    def test_reentrant_detach_during_truncate(self):
+        # gh-154997: Reentrant detach() during truncate() should not crash.
+        # Avoid the seek path and make flush() a no-op so detach()
+        # exercises the guarded truncate path without re-entering
+        # the buffered lock.
+        class B(self.tp):
+            def flush(self):
+                return None
+
+        class Raw(io.RawIOBase):
+            def __init__(self):
+                super().__init__()
+                self.fired = False
+
+            def readable(self):
+                return False
+
+            def writable(self):
+                return True
+
+            def seekable(self):
+                return True
+
+            def tell(self):
+                return 0
+
+            def seek(self, pos, whence=0):
+                return 0
+
+            def truncate(self, pos=None):
+                return 0
+
+            def write(self, b):
+                if not self.fired:
+                    self.fired = True
+                    self.buf.detach()
+                return len(b)
+
+        raw = Raw()
+        buf = B(raw, buffer_size=64)
+        raw.buf = buf
+
+        buf.write(b"012")
+        with self.assertRaisesRegex(ValueError, "detached"):
+            buf.truncate(1)
+
+    def test_reentrant_detach_during_raw_tell(self):
+        # gh-154997: After detach(), truncate() calls _buffered_raw_tell()
+        # to refresh the cached position. That ValueError is intentionally
+        # swallowed, so verify the guarded path by checking raw.tell() is
+        # not called again after detach().
+        class B(self.tp):
+            def flush(self):
+                return None
+
+        class Raw(io.RawIOBase):
+            def __init__(self):
+                super().__init__()
+                self.fired = False
+                self.tell_calls = 0
+
+            def readable(self):
+                return False
+
+            def writable(self):
+                return True
+
+            def seekable(self):
+                return True
+
+            def tell(self):
+                self.tell_calls += 1
+                return 0
+
+            def seek(self, pos, whence=0):
+                return 0
+
+            def write(self, b):
+                return len(b)
+
+            def truncate(self, pos=None):
+                if not self.fired:
+                    self.fired = True
+                    self.buf.detach()
+                return 0
+
+        raw = Raw()
+        buf = B(raw, buffer_size=64)
+        raw.buf = buf
+
+        # _buffered_init() calls _buffered_raw_tell() once at construction.
+        self.assertEqual(raw.tell_calls, 1)
+
+        buf.write(b"012")
+        # Must not crash; the swallowed ValueError means truncate() itself
+        # still reports success, unchanged from pre-detach behavior.
+        self.assertEqual(buf.truncate(1), 0)
+
+        # The critical assertion: raw_access_safe() short-circuited the
+        # post-truncate tell() call -- tell_calls stayed at 1, it did NOT
+        # increment to 2. Before the fix this dispatched through a NULL
+        # self->raw and crashed with SIGSEGV.
+        self.assertEqual(raw.tell_calls, 1)
+
+    def test_reentrant_detach_during_raw_seek(self):
+        # gh-154997: After detach(), seek() calls _buffered_raw_seek().
+        # Verify the guarded path by checking raw.seek() is not called
+        # again after detach().
+
+        class B(self.tp):
+            def flush(self):
+                return None
+
+        class Raw(io.RawIOBase):
+            def __init__(self):
+                super().__init__()
+                self.fired = False
+                self.seek_calls = 0
+
+            def readable(self):
+                return False
+
+            def writable(self):
+                return True
+
+            def seekable(self):
+                return True
+
+            def tell(self):
+                return 0
+
+            def seek(self, pos, whence=0):
+                self.seek_calls += 1
+                return 0
+
+            def write(self, b):
+                return len(b)
+
+            def truncate(self, pos=None):
+                if not self.fired:
+                    self.fired = True
+                    self.buf.detach()
+                return 0
+
+        raw = Raw()
+        buf = B(raw, buffer_size=64)
+        raw.buf = buf
+
+        # _buffered_init() performs one seek() during initialization.
+        initial_seek_calls = raw.seek_calls
+
+        buf.write(b"012")
+        self.assertEqual(buf.truncate(1), 0)
+
+        # _buffered_raw_seek() should not dispatch through a detached raw
+        # object, so no additional seek() should have occurred.
+        self.assertEqual(raw.seek_calls, initial_seek_calls)
 
 
 class PyBufferedWriterTest(BufferedWriterTest, PyTestCase):
