@@ -1,3 +1,4 @@
+import builtins
 import contextlib
 import dis
 import itertools
@@ -5053,6 +5054,86 @@ class TestUopsOptimization(unittest.TestCase):
         # A "good" f to enter the JIT code, and a "bad" f to trigger the bug:
         with self.assertRaises(NameError):
             jitted([f, f_with_bad_globals])
+
+    def test_jitted_code_sees_changed_copied_builtins(self):
+        # Trace-time check.  The traced function's builtins is a copy of the
+        # canonical dict with the same keys version, so a version check
+        # cannot tell them apart.  The optimizer must see that func_builtins
+        # is not interp->builtins and keep _LOAD_GLOBAL_BUILTINS, which reads
+        # the frame's own dict, rather than fold a constant from the
+        # canonical one.  No runtime guard is involved.
+
+        def f(n):
+            return [len("hello") for _ in range(n)]
+
+        copied_builtins = vars(builtins).copy()
+        f = types.FunctionType(f.__code__, {"__builtins__": copied_builtins})
+
+        f(TIER2_THRESHOLD)
+        ex = get_first_executor(f)
+        self.assertIsNotNone(ex)
+        # Not folded: the load must still consult the frame's builtins.
+        self.assertIn("_LOAD_GLOBAL_BUILTINS", get_opnames(ex))
+
+        # Replacing an existing value does not change the keys version.
+        copied_builtins["len"] = lambda s: 42
+        self.assertEqual(f(8), [42] * 8)
+
+    def test_jitted_code_sees_different_builtins(self):
+        # Runtime check.  The traced function's builtins IS the canonical
+        # dict, so folding len to a constant is correct at trace time.
+        # A second function sharing the code object then enters the same
+        # executor with other builtins, so only the runtime guard on the
+        # executing frame's builtins can catch it.
+        def f(n):
+            return [len("hello") for _ in range(n)]
+
+        namespace = {"__builtins__": builtins}
+        f_canonical = types.FunctionType(f.__code__, namespace)
+        copied_builtins = vars(builtins).copy()
+        namespace["__builtins__"] = copied_builtins
+        f_copied = types.FunctionType(f.__code__, namespace)
+
+
+        f_canonical(TIER2_THRESHOLD)
+        ex = get_first_executor(f_canonical)
+        self.assertIsNotNone(ex)
+        self.assertIn("_GUARD_BUILTINS_IS_CANONICAL", get_opnames(ex))
+
+        copied_builtins["len"] = lambda s: 42
+        # The executor's owner still sees the canonical len.
+        self.assertEqual(f_canonical(8), [5] * 8)
+        # A different function enters the same executor with other builtins.
+        self.assertEqual(f_copied(8), [42] * 8)
+
+    def test_builtins_guard_emitted_once_per_frame(self):
+        # A frame's builtins cannot change once the frame is pushed, so
+        # repeated builtin loads in one frame share a single guard, just as
+        # they already share a single _GUARD_GLOBALS_VERSION.
+
+        def warmup(n):
+            x = 0
+            for _ in range(n):
+                x += len("ab")
+            return x
+
+        def one_frame(n):
+            x = 0
+            for _ in range(n):
+                x += len("ab") + abs(-1) + ord("c")
+            return x
+
+        # The optimizer context is reused for every compilation, so compile an
+        # unrelated trace first: state that is not reset per frame leaks here.
+        warmup(TIER2_THRESHOLD)
+        self.assertIsNotNone(get_first_executor(warmup))
+
+        _, ex = self._run_with_optimizer(one_frame, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uop_names = get_opnames(ex)
+        self.assertNotIn("_LOAD_GLOBAL_BUILTINS", uop_names)  # all folded
+        self.assertEqual(uop_names.count("_GUARD_BUILTINS_IS_CANONICAL"), 1)
+        self.assertEqual(uop_names.count("_GUARD_GLOBALS_VERSION"), 1)
 
     def test_reference_tracking_across_call_doesnt_crash(self):
 
