@@ -208,12 +208,17 @@ def _analytic_ranges():
     }
 
 
+# Characters that are not significant in a Unicode property or value name
+# (see _normalize): ASCII whitespace, hyphens and underscores.
+_NON_SIGNIFICANT = str.maketrans("", "", " \t\n\r\f\v_-")
+
+
 def _normalize(name):
-    # Unicode property and value names are matched loosely: case, spaces,
-    # hyphens and underscores are not significant, and an initial "is" prefix
-    # is ignored (UAX #44 5.9, "Matching Rules", UAX44-LM3;
+    # Unicode property and value names are matched loosely: case, whitespace,
+    # hyphens and underscores are not significant, and an initial "is"
+    # prefix is ignored (UAX #44 5.9, "Matching Rules", UAX44-LM3;
     # https://www.unicode.org/reports/tr44/).
-    name = name.lower().replace("_", "").replace("-", "").replace(" ", "")
+    name = name.lower().translate(_NON_SIGNIFICANT)
     # Strip a leading "is", unless "is" is the whole name and so not a prefix
     # (e.g. the Line_Break value lb=IS).
     if name != "is":
