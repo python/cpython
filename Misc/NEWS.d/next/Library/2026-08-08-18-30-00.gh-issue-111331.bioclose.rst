@@ -1,0 +1,4 @@
+Closing a :class:`io.BytesIO` object which has exported buffers no longer
+fails with :exc:`BufferError`.  The exported buffers keep the data alive and
+stay usable.  As a result, destroying or garbage collecting such object no
+longer emits an unraisable exception.

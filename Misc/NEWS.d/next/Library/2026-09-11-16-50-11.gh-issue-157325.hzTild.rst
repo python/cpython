@@ -1,0 +1,2 @@
+Fix an out-of-bounds read in the ``hz`` incremental decoder when the input
+ends with ``~``.

@@ -1467,7 +1467,10 @@ class TestPyReplModuleCompleter(TestCase):
                         reader = self.prepare_reader(events, namespace={})
                         output = reader.readline()
                         self.assertEqual(output, expected)
-                        new_imports = sys.modules.keys() - _imported
+                        # The reader imports its own helpers lazily.
+                        new_imports = {name for name in
+                                       sys.modules.keys() - _imported
+                                       if not name.startswith('_pyrepl.')}
                         self.assertEqual(new_imports, expected_imports)
 
     @patch.dict(sys.modules)
@@ -2428,6 +2431,8 @@ class TestMain(ReplTestCase):
         env = os.environ.copy()
         env.pop("PYTHON_BASIC_REPL", "")
         env["PYTHON_BASIC_REPL"] = "1"
+        # Ensure user's .inputrc doesn't interfere with basic REPL output
+        env["INPUTRC"] = "/dev/null"
 
         commands = "print('Something pretty long', end='')\nexit()\n"
         expected_output_sequence = "Something pretty long>>> exit()"

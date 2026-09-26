@@ -16,15 +16,12 @@ Choosing an argument parsing library
 The standard library includes three argument parsing libraries:
 
 * :mod:`getopt`: a module that closely mirrors the procedural C ``getopt`` API.
-  Included in the standard library since before the initial Python 1.0 release.
 * :mod:`!optparse`: a declarative replacement for ``getopt`` that
   provides equivalent functionality without requiring each application
-  to implement its own procedural option parsing logic. Included
-  in the standard library since the Python 2.3 release.
+  to implement its own procedural option parsing logic.
 * :mod:`argparse`: a more opinionated alternative to ``optparse`` that
   provides more functionality by default, at the expense of reduced application
-  flexibility in controlling exactly how arguments are processed. Included in
-  the standard library since the Python 2.7 and Python 3.2 releases.
+  flexibility in controlling exactly how arguments are processed.
 
 In the absence of more specific argument parsing design constraints, :mod:`argparse`
 is the recommended choice for implementing command line applications, as it offers
@@ -1072,6 +1069,12 @@ As you can see, most actions involve storing or updating a value somewhere.
    Normally created by calling when calling :meth:`OptionParser.parse_args`,
    and can be overridden by a custom subclass passed to the *values* argument of
    :meth:`OptionParser.parse_args` (as described in :ref:`optparse-parsing-arguments`).
+
+   :class:`!Values` objects support :func:`copy.replace`,
+   which returns a copy of the object with the specified attributes replaced.
+
+   .. versionchanged:: next
+      Added support for :func:`copy.replace`.
 
 Option
 arguments (and various other values) are stored as attributes of this object,

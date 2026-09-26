@@ -807,6 +807,61 @@ FF
                 self.unfakehttp()
 
 
+class urlcleanup_Tests(unittest.TestCase, FakeHTTPMixin):
+    """Test urllib.request.urlcleanup()"""
+
+    def setUp(self):
+        self.addCleanup(urllib.request.urlcleanup)
+
+    def urlretrieve(self):
+        self.fakehttp(b'HTTP/1.1 200 OK\r\n\r\ndata')
+        try:
+            filename, headers = urllib.request.urlretrieve(
+                support.TEST_HTTP_URL)
+        finally:
+            self.unfakehttp()
+        self.addCleanup(os_helper.unlink, filename)
+        return filename
+
+    def fake_urlopen(self, data):
+        self.fakehttp(b'HTTP/1.1 200 OK\r\n\r\n' + data)
+        try:
+            with urllib.request.urlopen(support.TEST_HTTP_URL) as fp:
+                return fp.read()
+        finally:
+            self.unfakehttp()
+
+    def test_temporary_files(self):
+        filename = self.urlretrieve()
+        self.assertTrue(os.path.exists(filename))
+
+        urllib.request.urlcleanup()
+        self.assertFalse(os.path.exists(filename))
+
+        # A file created after the cleanup is not deleted.
+        os_helper.create_empty_file(filename)
+        urllib.request.urlcleanup()
+        self.assertTrue(os.path.exists(filename))
+
+    def test_opener(self):
+        # The implicitly created opener supports http.
+        self.assertEqual(self.fake_urlopen(b'first'), b'first')
+
+        # An installed opener replaces it and supports only its handlers.
+        opener = urllib.request.OpenerDirector()
+        opener.add_handler(urllib.request.DataHandler())
+        opener.add_handler(urllib.request.UnknownHandler())
+        urllib.request.install_opener(opener)
+        with urllib.request.urlopen('data:,hello') as fp:
+            self.assertEqual(fp.read(), b'hello')
+        with self.assertRaises(urllib.error.URLError):
+            self.fake_urlopen(b'')
+
+        # urlcleanup() resets the opener.
+        urllib.request.urlcleanup()
+        self.assertEqual(self.fake_urlopen(b'second'), b'second')
+
+
 class QuotingTests(unittest.TestCase):
     r"""Tests for urllib.quote() and urllib.quote_plus()
 

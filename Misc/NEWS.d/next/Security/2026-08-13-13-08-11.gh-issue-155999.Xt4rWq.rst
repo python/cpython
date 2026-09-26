@@ -1,0 +1,5 @@
+Fix the :mod:`tarfile` ``tar`` and ``data`` extraction filters creating
+directories outside the destination for members whose name leaves the
+destination and returns to it, such as ``../evil/../dest/sub/file``. The
+containment check used the resolved path, but intermediate directories were
+created from the name as given.

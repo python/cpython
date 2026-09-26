@@ -1,0 +1,5 @@
+Fix :meth:`subprocess.Popen.wait` raising :exc:`TypeError` (macOS and other
+BSDs) or :exc:`OverflowError` (Linux) for very large *timeout* values such
+as ``float('inf')``, a 3.15 regression in the new event-driven wait. Also
+fix :meth:`select.kqueue.control` masking :exc:`OverflowError` for
+out-of-range timeouts as :exc:`TypeError`.

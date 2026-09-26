@@ -116,6 +116,7 @@ class TaskGroup:
         # can be cancelled multiple times if our parent task
         # is being cancelled repeatedly (or even once, when
         # our own cancellation is already in progress)
+        pending_cancellation_error = None
         while self._tasks:
             if self._on_completed_fut is None:
                 self._on_completed_fut = self._loop.create_future()
@@ -123,6 +124,7 @@ class TaskGroup:
             try:
                 await self._on_completed_fut
             except exceptions.CancelledError as ex:
+                pending_cancellation_error = ex
                 if not self._aborting:
                     # Our parent task is being cancelled:
                     #
@@ -140,6 +142,18 @@ class TaskGroup:
         assert not self._tasks
 
         if self._base_error is not None:
+            # self._base_error (SystemExit or KeyboardInterrupt) is about
+            # to propagate out of this method, which discards any other
+            # collected task errors silently.  Report them instead of
+            # losing them.  See gh-135736.
+            for suppressed_exc in self._errors:
+                self._loop.call_exception_handler({
+                    'message': 'TaskGroup task exception was not '
+                               'propagated because the TaskGroup body '
+                               'is being closed with a BaseException',
+                    'exception': suppressed_exc,
+                    'task_group': self,
+                })
             try:
                 raise self._base_error
             finally:
@@ -151,6 +165,9 @@ class TaskGroup:
                 # If there are no pending cancellations left,
                 # don't propagate CancelledError.
                 propagate_cancellation_error = None
+            elif propagate_cancellation_error is None:
+                # gh-155433: the remaining cancellation is not ours, don't drop it
+                propagate_cancellation_error = pending_cancellation_error
 
         # Propagate CancelledError if there is one, except if there
         # are other errors -- those have priority.
@@ -174,10 +191,23 @@ class TaskGroup:
                 self._parent_task.uncancel()
                 self._parent_task.cancel()
             try:
-                raise BaseExceptionGroup(
-                    'unhandled errors in a TaskGroup',
-                    self._errors,
-                ) from None
+                # If the *only* error is a GeneratorExit from the body
+                # of the group, then instead of raising an
+                # ExceptionGroup we raise GeneratorExit. This ensures
+                # that async generators that use TaskGroup properly
+                # swallow the exception on `aclose()` while ensuring
+                # that no exceptions from subtasks are swallowed.
+                if (
+                    et is not None
+                    and issubclass(et, GeneratorExit)
+                    and len(self._errors) == 1
+                ):
+                    raise exc
+                else:
+                    raise BaseExceptionGroup(
+                        'unhandled errors in a TaskGroup',
+                        self._errors,
+                    ) from None
             finally:
                 exc = None
 
@@ -209,6 +239,9 @@ class TaskGroup:
         # the current task too early. gh-128550, gh-128588
         self._tasks.add(task)
         task.add_done_callback(self._on_task_done)
+        # gh-155418: an eager task can cancel the group before joining _tasks
+        if self._aborting and not task.done():
+            task.cancel()
         try:
             return task
         finally:

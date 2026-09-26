@@ -19,10 +19,8 @@
 # CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
 # CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-from __future__ import annotations
 import os
 import time
-from typing import TYPE_CHECKING
 
 # Categories of actions:
 #  killing
@@ -37,8 +35,7 @@ from .render import RenderedScreen
 from .trace import trace
 
 # types
-if TYPE_CHECKING:
-    from .historical_reader import HistoricalReader
+lazy from .historical_reader import HistoricalReader
 
 
 class Command:
