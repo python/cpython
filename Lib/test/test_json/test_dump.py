@@ -42,6 +42,43 @@ class TestDump:
         v = {b'invalid_key': False, 'valid_key': True}
         self.assertEqual(self.json.dumps(v, skipkeys=True, indent=4), '{\n    "valid_key": true\n}')
 
+    def test_dump_sort_keys_mixed_types(self):
+        # Keys of different types are sorted in separate groups.
+        self.assertEqual(
+            self.dumps({1: 'a', 'z': 'b', 'a': 'c'}, sort_keys=True),
+            '{"a": "c", "z": "b", "1": "a"}')
+        self.assertEqual(
+            self.dumps({None: 0, True: 1, False: 4, 2: 2, 'a': 3},
+                       sort_keys=True),
+            '{"a": 3, "false": 4, "true": 1, "2": 2, "null": 0}')
+        # Numbers are still sorted as numbers, and adding a string key
+        # does not change their order.
+        self.assertEqual(
+            self.dumps({10: 1, 2: 2}, sort_keys=True),
+            '{"2": 2, "10": 1}')
+        self.assertEqual(
+            self.dumps({10: 1, 2: 2, 'a': 3}, sort_keys=True),
+            '{"a": 3, "2": 2, "10": 1}')
+        # Unsupported keys are still reported, or skipped.
+        with self.assertRaises(TypeError):
+            self.dumps({(1, 2): 'x', 'z': 'b'}, sort_keys=True)
+        self.assertEqual(
+            self.dumps({(1, 2): 'x', 'z': 'b'}, skipkeys=True, sort_keys=True),
+            '{"z": "b"}')
+
+    def test_dump_sort_keys_unsupported(self):
+        # Unsupported keys are reported or skipped, whether or not they are
+        # comparable with each other.
+        for d in ({(2,): 1, (1,): 2},              # comparable
+                  {(2,): 1, (1,): 2, 'z': 3},
+                  {(1,): 1, ('a',): 2, 'z': 3}):   # not comparable
+            with self.subTest(d=d):
+                with self.assertRaises(TypeError):
+                    self.dumps(d, sort_keys=True)
+                self.assertEqual(
+                    self.dumps(d, skipkeys=True, sort_keys=True),
+                    '{"z": 3}' if 'z' in d else '{}')
+
     def test_encode_truefalse(self):
         self.assertEqual(self.dumps(
                  {True: False, False: True}, sort_keys=True),
