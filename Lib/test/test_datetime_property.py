@@ -1,5 +1,6 @@
 import datetime
 import sys
+import time
 import unittest
 from test import support
 from test.support import import_helper
@@ -248,7 +249,72 @@ def strptime_inputs():
 
 
 class DateTimeTest(unittest.TestCase):
+    datetime_module = datetime
     theclass = datetime.datetime
+
+    @hypothesis.settings(max_examples=50)
+    @hypothesis.given(
+        dt=st.datetimes(),
+        mode=st.sampled_from(("full", "date", "time", "year", "month", "minute",
+                              "ordinal", "iso", "redundant")),
+    )
+    @hypothesis.example(dt=datetime.datetime.min, mode="full")
+    @hypothesis.example(dt=datetime.datetime.max, mode="full")
+    @hypothesis.example(dt=datetime.datetime(2000, 2, 29, 12, 34, 56, 789), mode="date")
+    @hypothesis.example(dt=datetime.datetime(2000, 2, 29, 12, 34, 56, 789), mode="time")
+    @hypothesis.example(dt=datetime.datetime(1969, 7, 20, 20, 17), mode="year")
+    @hypothesis.example(dt=datetime.datetime(2000, 2, 29), mode="month")
+    @hypothesis.example(dt=datetime.datetime(2000, 1, 1, 23, 59), mode="minute")
+    @hypothesis.example(dt=datetime.datetime(2000, 12, 31), mode="ordinal")
+    @hypothesis.example(dt=datetime.datetime(2016, 1, 1), mode="iso")
+    @hypothesis.example(dt=datetime.datetime(2024, 2, 29), mode="redundant")
+    def test_public_entry_points(self, dt: datetime.datetime, mode: str) -> None:
+        expected = dt
+        clock = f"{dt.hour:02}:{dt.minute:02}:{dt.second:02}.{dt.microsecond:06}"
+        ordinal = dt.toordinal() - datetime.date(dt.year, 1, 1).toordinal() + 1
+        if mode == "full":
+            value = f"{dt.date().isoformat()} {clock}+00:00"
+            fmt = "%Y-%m-%d %H:%M:%S.%f%:z"
+        elif mode == "date":
+            value, fmt = dt.date().isoformat(), "%Y-%m-%d"
+            expected = datetime.datetime(dt.year, dt.month, dt.day)
+        elif mode == "time":
+            value, fmt = clock, "%H:%M:%S.%f"
+            expected = dt.replace(year=1900, month=1, day=1)
+        elif mode == "year":
+            value, fmt = f"{dt.year:04}", "%Y"
+            expected = datetime.datetime(dt.year, 1, 1)
+        elif mode == "month":
+            value, fmt = str(dt.month), "%m"
+            expected = datetime.datetime(1900, dt.month, 1)
+        elif mode == "minute":
+            value, fmt = str(dt.minute), "%M"
+            expected = datetime.datetime(1900, 1, 1, minute=dt.minute)
+        elif mode == "ordinal":
+            value, fmt = f"{dt.year:04} {ordinal} {clock}", "%Y %j %H:%M:%S.%f"
+        elif mode == "iso":
+            year, week, weekday = dt.isocalendar()
+            value = f"{year:04} {week} {weekday} {clock}"
+            fmt = "%G %V %u %H:%M:%S.%f"
+        else:
+            value = f"{dt.date().isoformat()} {ordinal} {dt.isoweekday()} {clock}"
+            fmt = "%Y-%m-%d %j %u %H:%M:%S.%f"
+
+        parsed = self.theclass.strptime(value, fmt)
+        date_result = self.datetime_module.date.strptime(value, fmt)
+        time_result = self.datetime_module.time.strptime(value, fmt)
+        struct_result = time.strptime(value, fmt)
+        self.assertEqual(parsed.replace(tzinfo=None).isoformat(), expected.isoformat())
+        self.assertEqual(date_result.isoformat(), expected.date().isoformat())
+        self.assertEqual(time_result.replace(tzinfo=None).isoformat(),
+                         expected.time().isoformat())
+        self.assertEqual(struct_result[:9], expected.timetuple()[:9])
+        for result in (parsed, time_result):
+            if mode == "full":
+                self.assertIsNotNone(result.tzinfo)
+                self.assertEqual(result.utcoffset().total_seconds(), 0)
+            else:
+                self.assertIsNone(result.tzinfo)
 
     @support.run_with_locale("LC_TIME", "C")
     @hypothesis.settings(max_examples=50)
