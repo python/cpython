@@ -2247,6 +2247,15 @@ broken_unicode_with_stateful = [
 
 
 class BasicUnicodeTest(unittest.TestCase, MixInCheckStateHandling):
+    def test_html5_aliases(self):
+        for alias, encoding in (
+            ('windows-874', 'cp874'),
+            ('x-mac-cyrillic', 'mac_cyrillic'),
+        ):
+            with self.subTest(alias=alias):
+                self.assertEqual(codecs.lookup(alias).name,
+                                 codecs.lookup(encoding).name)
+
     def test_basics(self):
         s = "abc123"  # all codecs should be able to encode these
         for encoding in all_unicode_encodings:
