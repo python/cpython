@@ -250,6 +250,55 @@ def strptime_inputs():
 class DateTimeTest(unittest.TestCase):
     theclass = datetime.datetime
 
+    @hypothesis.settings(max_examples=50)
+    @hypothesis.given(
+        day=st.dates(),
+        fmt=st.sampled_from(("%Y-%m-%d", "%y-%m-%d", "%Y %j",
+                             "%G %V %u", "%Y %U %w", "%Y %W %w")),
+        padded=st.booleans(),
+    )
+    @hypothesis.example(day=datetime.date.min, fmt="%Y %U %w", padded=False)
+    @hypothesis.example(day=datetime.date.max, fmt="%G %V %u", padded=True)
+    @hypothesis.example(day=datetime.date(2000, 2, 29), fmt="%Y %j", padded=False)
+    @hypothesis.example(day=datetime.date(1900, 3, 1), fmt="%Y %j", padded=True)
+    @hypothesis.example(day=datetime.date(2016, 1, 1), fmt="%G %V %u", padded=False)
+    @hypothesis.example(day=datetime.date(1968, 2, 29), fmt="%y-%m-%d", padded=True)
+    @hypothesis.example(day=datetime.date(2069, 1, 1), fmt="%y-%m-%d", padded=False)
+    @hypothesis.example(day=datetime.date(2023, 1, 1), fmt="%Y %W %w", padded=True)
+    @hypothesis.example(day=datetime.date(1, 1, 1), fmt="%Y-%m-%d", padded=False)
+    def test_calendar_representations(
+        self, day: datetime.date, fmt: str, padded: bool,
+    ) -> None:
+        # Build the input without strftime: libc year padding and calendar
+        # calculations must not also be the oracle for strptime.
+        width = 2 if padded else 1
+        expected = day
+        if fmt in ("%Y-%m-%d", "%y-%m-%d"):
+            if fmt.startswith("%y"):
+                year = day.year % 100
+                value = f"{year:02}"
+                expected = day.replace(year=year + (2000 if year <= 68 else 1900))
+            else:
+                value = f"{day.year:04}"
+            value += f"-{day.month:0{width}}-{day.day:0{width}}"
+        elif fmt == "%G %V %u":
+            year, week, weekday = day.isocalendar()
+            value = f"{year:04} {week:0{width}} {weekday}"
+            expected = datetime.date.fromisocalendar(year, week, weekday)
+        else:
+            ordinal = day.toordinal() - datetime.date(day.year, 1, 1).toordinal()
+            if fmt == "%Y %j":
+                value = f"{day.year:04} {ordinal + 1:0{3 if padded else 1}}"
+            else:
+                # Count complete weeks ending on this date. Week zero ends
+                # immediately before the first Sunday (%U) or Monday (%W).
+                weekday = (day.weekday() + 1) % 7
+                week_start = weekday if "%U" in fmt else day.weekday()
+                week = (ordinal + 7 - week_start) // 7
+                value = f"{day.year:04} {week:0{width}} {weekday}"
+        actual = self.theclass.strptime(value, fmt)
+        self.assertEqual(actual.isoformat(), f"{expected.isoformat()}T00:00:00")
+
     @support.run_with_locale("LC_TIME", "C")
     @hypothesis.given(case=strptime_inputs())
     @hypothesis.example(case=(
