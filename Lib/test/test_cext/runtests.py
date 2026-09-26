@@ -9,16 +9,14 @@ def run_tests(testmod, verbose=True):
         if not name.startswith('test'):
             continue
         func = getattr(testmod, name)
-        if verbose:
-            print(f"{name}()")
+        print(f"{name}()")
         func()
 
     print("add()")
     if testmod.add(11, 23) != 34:
         raise AssertionError("add() failed badly")
 
-    if verbose:
-        print(flush=True)
+    print(flush=True)
 
 
 def main():
@@ -28,6 +26,18 @@ def main():
     module_name = sys.argv[1]
 
     testmod = importlib.import_module(module_name)
+
+    newline = False
+    for name in ('__STDC_VERSION__', '__cplusplus', '_MSVC_LANG'):
+        try:
+            value = getattr(testmod, name)
+        except AttributeError:
+            pass
+        else:
+            print(f'{name}: {value}')
+            newline = True
+    if newline:
+        print()
 
     if hasattr(sys, 'gettotalrefcount'):
         # First run to warm up Python. For example, test_datetime() imports

@@ -373,6 +373,13 @@ module_exec(PyObject *module)
         return -1;
     }
 #endif
+#ifdef _MSVC_LANG
+    if (PyModule_AddIntMacro(module, _MSVC_LANG) < 0) {
+        return -1;
+    }
+#endif
+    // Ignore "unused argument" warning when none of these macros is defined
+    (void)module;
     return 0;
 }
 
