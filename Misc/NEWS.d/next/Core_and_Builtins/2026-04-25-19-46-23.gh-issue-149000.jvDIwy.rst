@@ -1,0 +1,5 @@
+Fix a race in the per-interpreter ``pickle.dumps``/``pickle.loads`` cache
+used by cross-interpreter data transfer. Concurrent use (first time) from
+multiple threads in the same interpreter could leak a reference to the
+imported attribute and also potentially expose a torn pointer read. The
+cache is now populated with an atomic compare-exchange.
