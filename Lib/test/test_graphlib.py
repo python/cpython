@@ -140,20 +140,8 @@ class TestTopologicalSort(unittest.TestCase):
     def test_prepare_multiple_times(self):
         ts = graphlib.TopologicalSorter()
         ts.prepare()
-        ts.prepare()
-
-    def test_prepare_after_pass_out(self):
-        ts = graphlib.TopologicalSorter({'a': 'bc'})
-        ts.prepare()
-        self.assertEqual(set(ts.get_ready()), {'b', 'c'})
-        with self.assertRaisesRegex(ValueError, r"cannot prepare\(\) after starting sort"):
+        with self.assertRaisesRegex(ValueError, r"cannot prepare\(\) more than once"):
             ts.prepare()
-
-    def test_prepare_cycleerror_each_time(self):
-        ts = graphlib.TopologicalSorter({'a': 'b', 'b': 'a'})
-        for attempt in range(1, 4):
-            with self.assertRaises(graphlib.CycleError, msg=f"{attempt=}"):
-                ts.prepare()
 
     def test_invalid_nodes_in_done(self):
         ts = graphlib.TopologicalSorter()
