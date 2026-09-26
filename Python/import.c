@@ -4376,6 +4376,50 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
     return final_mod;
 }
 
+// Inspect stored initialization state without running spec descriptors or
+// converting user-defined values to bool.  Unknown state stays pending.
+static int
+lazy_import_spec_is_initializing(PyObject *spec)
+{
+    if (spec == Py_None) {
+        return 0;
+    }
+    PyObject *dict = PyObject_GenericGetDict(spec, NULL);
+    if (dict == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            PyErr_Clear();
+            return 1;
+        }
+        return -1;
+    }
+    PyObject *initializing;
+    int rc = PyDict_GetItemRef(dict, &_Py_ID(_initializing), &initializing);
+    Py_DECREF(dict);
+    if (rc < 0) {
+        return -1;
+    }
+    if (rc == 0) {
+        initializing = _PyType_LookupRef(Py_TYPE(spec), &_Py_ID(_initializing));
+    }
+    if (initializing == NULL || initializing == Py_None) {
+        rc = 0;
+    }
+    else if (PyBool_Check(initializing) || PyLong_CheckExact(initializing) ||
+             PyFloat_CheckExact(initializing) || PyComplex_CheckExact(initializing) ||
+             PyUnicode_CheckExact(initializing) || PyBytes_CheckExact(initializing) ||
+             PyByteArray_CheckExact(initializing) || PyTuple_CheckExact(initializing) ||
+             PyList_CheckExact(initializing) || PyDict_CheckExact(initializing) ||
+             PyAnySet_CheckExact(initializing) || PyMemoryView_Check(initializing) ||
+             Py_IS_TYPE(initializing, &PyRange_Type)) {
+        rc = PyObject_IsTrue(initializing);
+    }
+    else {
+        rc = 1;
+    }
+    Py_XDECREF(initializing);
+    return rc;
+}
+
 // Check if a module is already loaded before adding it to sys.lazy_modules
 static int
 lazy_modules_add(PyThreadState *tstate, PyObject *name)
@@ -4397,7 +4441,7 @@ lazy_modules_add(PyThreadState *tstate, PyObject *name)
         int rc = PyDict_GetItemRef(_PyModule_GetDict(existing),
                                    &_Py_ID(__spec__), &spec);
         if (rc > 0) {
-            rc = _PyModuleSpec_IsInitializing(spec);
+            rc = lazy_import_spec_is_initializing(spec);
             Py_DECREF(spec);
         }
         if (rc < 0) {
@@ -4501,6 +4545,23 @@ static int
 register_from_lazy_on_parent(PyThreadState *tstate, PyObject *abs_name,
                              PyObject *from)
 {
+    // IMPORT_FROM returns stored attributes directly.  Their imports are
+    // already resolved or tracked by their own placeholders, so skip the alias.
+    PyObject *mod = import_get_module(tstate, abs_name);
+    if (mod == NULL && PyErr_Occurred()) {
+        return -1;
+    }
+    if (mod != NULL && PyModule_Check(mod)) {
+        int rc = PyDict_Contains(_PyModule_GetDict(mod), from);
+        Py_DECREF(mod);
+        if (rc != 0) {
+            return rc < 0 ? -1 : 0;
+        }
+    }
+    else {
+        Py_XDECREF(mod);
+    }
+
     PyObject *fromname = PyUnicode_FromFormat("%U.%U", abs_name, from);
     if (fromname == NULL) {
         return -1;
