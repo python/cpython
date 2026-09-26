@@ -1,48 +1,51 @@
 """Run human tests of Idle's window, dialog, and popup widgets.
 
-run(*tests) Create a master Tk() htest window.  Within that, run each
-callable in tests after finding the matching test spec in this file.  If
-tests is empty, run an htest for each spec dict in this file after
-finding the matching callable in the module named in the spec.  Close
-the master window to end testing.
+The main function, `run(*tests)`, is defined at the end of this file.
+Argument `tests` is a possibly empty tuple of callables defined in some
+idlelib.abc module (or possibly modules).  Its steps:
+1. Create a master Tk() htest window.  Within that window ...
+2a. If tuple `tests` is not empty, run was likely called from one
+    module.  Run each callable in `tests` after finding the matching
+    callable_spec test spec in this file.
+2b. If tests is empty, run was likely called from this file.
+    Run an htest for each spec dict in this file after finding the
+    matching callable in the module named in the spec.
+3. Close the master window to end testing.
 
-In a tested module, let X be a global name bound to a callable (class or
-function) whose .__name__ attribute is also X (the usual situation). The
-first parameter of X must be 'parent' or 'master'.  When called, the
-first argument will be the root window.  X must create a child
-Toplevel(parent/master) (or subclass thereof).  The Toplevel may be a
-test widget or dialog, in which case the callable is the corresponding
-class.  Or the Toplevel may contain the widget to be tested or set up a
-context in which a test widget is invoked.  In this latter case, the
-callable is a wrapper function that sets up the Toplevel and other
-objects.  Wrapper function names, such as _editor_window', should start
-with '_' and be lowercase.
-
+In a tested module, let X be a global name bound to a callable (class
+or function) whose .__name__ attribute (its `class` or `def` definition
+name) is also X.  X must expect exactly 1 positional argument, a
+parent toplevel window. Run passes the htest window.  X must create a
+child Toplevel(parent/master).  The callable may be either a runtime
+object or a wrapper function written just for the test.  In the latter
+case, its name should start with '_' and be lowercase (such as '_ttt').
 
 End the module with
-
+```
 if __name__ == '__main__':
-    <run unittest.main with 'exit=False'>
+    from unittest import main
+    main("idlelib.idle_test.test_xyz", verbosity=2, exit=False)
+
     from idlelib.idle_test.htest import run
-    run(callable)  # There could be multiple comma-separated callables.
+    run(callable)
+```
+Replace 'xyz' as appropriate and 'callable' with the callable name or
+comma-separated names (multiple names is rare).  'exit=False' is needed
+for the htest to run.
 
 To have wrapper functions ignored by coverage reports, tag the def
-header like so: "def _wrapper(parent):  # htest #".  Use the same tag
-for htest lines in widget code.  Make sure that the 'if __name__' line
-matches the above.  Then have make sure that .coveragerc includes the
-following:
-
+header like so: "def _wrapper(root):  # htest #".  Use the same tag
+for htest-only lines in the main code. To ignore the 'if __name__'
+statement, match the example above.  Add the below to coveragerc.
+```
 [report]
 exclude_lines =
     .*# htest #
     if __name__ == .__main__.:
-
-(The "." instead of "'" is intentional and necessary.)
-
+```
 
 To run any X, this file must contain a matching instance of the
 following template, with X.__name__ prepended to '_spec'.
-When all tests are run, the prefix is use to get X.
 
 callable_spec = {
     'file': '',
@@ -51,10 +54,9 @@ callable_spec = {
     }
 
 file (no .py): run() imports file.py.
-kwds: augmented with {'parent':root} and passed to X as **kwds.
+kwds: run() augments with {'parent':root} and passes to X as **kwds.
 title: an example kwd; some widgets need this, delete line if not.
 msg: master window hints about testing the widget.
-
 
 TODO test these modules and classes:
   autocomplete_w.AutoCompleteWindow
