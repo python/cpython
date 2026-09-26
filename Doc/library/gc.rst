@@ -193,8 +193,7 @@ The :mod:`!gc` module provides the following functions:
    ``False`` otherwise.  As a general rule, instances of atomic types aren't
    tracked and instances of non-atomic types (containers, user-defined
    objects...) are.  However, some type-specific optimizations can be present
-   in order to suppress the garbage collector footprint of simple instances
-   (e.g. dicts containing only atomic keys and values)::
+   in order to suppress the garbage collector footprint of simple instances::
 
       >>> gc.is_tracked(0)
       False
@@ -203,7 +202,7 @@ The :mod:`!gc` module provides the following functions:
       >>> gc.is_tracked([])
       True
       >>> gc.is_tracked({})
-      False
+      True
       >>> gc.is_tracked({"a": 1})
       True
 
