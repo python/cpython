@@ -246,11 +246,16 @@ drop_gil(PyInterpreterState *interp, PyThreadState *tstate, int final_release)
         Py_FatalError("drop_gil: GIL is not locked");
     }
 
+    int drop_requested = 0;
     if (!final_release) {
         /* Sub-interpreter support: threads might have been switched
            under our feet using PyThreadState_Swap(). Fix the GIL last
            holder variable so that our heuristics work. */
         _Py_atomic_store_ptr_relaxed(&gil->last_holder, tstate);
+
+        /* Checked here as tstate may freed outside gil. */
+        drop_requested = _Py_eval_breaker_bit_is_set(tstate,
+                                                     _PY_GIL_DROP_REQUEST_BIT);
     }
 
     drop_gil_impl(tstate, gil);
@@ -262,8 +267,7 @@ drop_gil(PyInterpreterState *interp, PyThreadState *tstate, int final_release)
        crash.  We can use final_release to indicate the thread is done with the
        GIL, and that's the only time we might delete the interpreter.  See
        https://github.com/python/cpython/issues/104341. */
-    if (!final_release &&
-        _Py_eval_breaker_bit_is_set(tstate, _PY_GIL_DROP_REQUEST_BIT)) {
+    if (!final_release && drop_requested) {
         MUTEX_LOCK(gil->switch_mutex);
         /* Not switched yet => wait */
         if (((PyThreadState*)_Py_atomic_load_ptr_relaxed(&gil->last_holder)) == tstate)
