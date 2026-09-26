@@ -202,6 +202,30 @@ typedef struct _PyExecutorObject {
     _PyExitData exits[1];
 } _PyExecutorObject;
 
+typedef struct _PyExecutorArrayInternal {
+    int size;
+    int capacity;
+    _PyExecutorObject *executors[1];
+} _PyExecutorArrayInternal;
+
+static inline _PyExecutorArrayInternal *
+_PyExecutorArray_CAST(_PyExecutorArray *executors)
+{
+    return (_PyExecutorArrayInternal *)executors;
+}
+
+static inline int
+_PyExecutorArray_SIZE(_PyExecutorArray *executors)
+{
+    return _PyExecutorArray_CAST(executors)->size;
+}
+
+static inline _PyExecutorObject **
+_PyExecutorArray_EXECUTORS(_PyExecutorArray *executors)
+{
+    return _PyExecutorArray_CAST(executors)->executors;
+}
+
 // Export for '_opcode' shared extension (JIT compiler).
 PyAPI_FUNC(_PyExecutorObject*) _Py_GetExecutor(PyCodeObject *code, int offset);
 
