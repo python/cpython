@@ -7,6 +7,7 @@
 #include "pycore_unicodeobject.h" // _PyUnicode_InternImmortal
 #include <errcode.h>
 
+#include "lexer/state.h"
 #include "tokenizer/tokenizer.h"
 #include "pegen.h"
 
@@ -1124,6 +1125,7 @@ _PyPegen_run_parser_from_file_pointer(FILE *fp, int start_rule, PyObject *filena
                              PyCompilerFlags *flags, int *errcode,
                              PyObject **interactive_src, PyArena *arena)
 {
+    int parser_flags = compute_parser_flags(flags);
     struct tok_state *tok = _PyTokenizer_FromFile(fp, enc, ps1, ps2);
     if (tok == NULL) {
         if (PyErr_Occurred()) {
@@ -1135,6 +1137,7 @@ _PyPegen_run_parser_from_file_pointer(FILE *fp, int start_rule, PyObject *filena
         }
         return NULL;
     }
+    tok->barry_as_bdfl = parser_flags & PyPARSE_BARRY_AS_BDFL;
 
     // From here on we need to clean up even if there's an error
     mod_ty result = NULL;
@@ -1146,7 +1149,6 @@ _PyPegen_run_parser_from_file_pointer(FILE *fp, int start_rule, PyObject *filena
     _PyTokenizer_SetContext(tok, filename_ob, module);
     Py_DECREF(module);
 
-    int parser_flags = compute_parser_flags(flags);
     Parser *p = _PyPegen_Parser_New(tok, start_rule, parser_flags, PY_MINOR_VERSION,
                                     errcode, NULL, arena);
     if (p == NULL) {
@@ -1176,6 +1178,7 @@ _PyPegen_run_parser_from_string(const char *str, int start_rule, PyObject *filen
                        PyCompilerFlags *flags, PyArena *arena, PyObject *module)
 {
     int exec_input = start_rule == Py_file_input;
+    int parser_flags = compute_parser_flags(flags);
 
     struct tok_state *tok;
     if (flags != NULL && flags->cf_flags & PyCF_IGNORE_COOKIE) {
@@ -1193,12 +1196,13 @@ _PyPegen_run_parser_from_string(const char *str, int start_rule, PyObject *filen
         }
         return NULL;
     }
+    tok->barry_as_bdfl = parser_flags & PyPARSE_BARRY_AS_BDFL;
+
     _PyTokenizer_SetContext(tok, filename_ob, module);
 
     // We need to clear up from here on
     mod_ty result = NULL;
 
-    int parser_flags = compute_parser_flags(flags);
     int feature_version = flags && (flags->cf_flags & PyCF_ONLY_AST) ?
         flags->cf_feature_version : PY_MINOR_VERSION;
     Parser *p = _PyPegen_Parser_New(tok, start_rule, parser_flags, feature_version,
