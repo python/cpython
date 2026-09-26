@@ -68,6 +68,8 @@ A :class:`Cmd` instance has the following methods:
    cursor to the left non-destructively, etc.).
 
    An end-of-file on input is passed back as the string ``'EOF'``.
+   To handle this gracefully, define a :meth:`!do_EOF` method in your subclass
+   (see :ref:`cmd-example` below).
 
    .. index::
       single: ? (question mark); in a command interpreter
@@ -117,7 +119,8 @@ A :class:`Cmd` instance has the following methods:
 .. method:: Cmd.emptyline()
 
    Method called when an empty line is entered in response to the prompt. If this
-   method is not overridden, it repeats the last nonempty command entered.
+   method is not overridden, it repeats the last nonempty command entered.  To
+   suppress this behavior, override with a method that does nothing (``pass``).
 
 
 .. method:: Cmd.default(line)
@@ -304,6 +307,16 @@ immediate playback::
             print('Thank you for using Turtle')
             self.close()
             bye()
+            return True
+
+        # ----- shell behavior -----
+        def emptyline(self):
+            'Do not repeat the last command on empty input'
+            pass
+        def do_EOF(self, arg):
+            'Exit on EOF (Ctrl-D):  EOF'
+            print()
+            self.close()
             return True
 
         # ----- record and playback -----
