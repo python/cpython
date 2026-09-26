@@ -1,0 +1,2 @@
+Don't raise exceptions on overflows in :class:`ctypes.c_float_complex`.
+Patch by Sergey B Kirpichev.

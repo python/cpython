@@ -85,6 +85,27 @@ class CProfileTest(ProfileTest):
             profiler_with_evil_timer.clear()
             self.assertEqual(cm.unraisable.exc_type, RuntimeError)
 
+    def test_enable_in_external_timer(self):
+        # gh-157639: Enabling the profiler from an external timer should not crash
+        import _lsprof
+
+        # the timer re-arms monitoring from inside disable(), so the tool
+        # id stays claimed once the profiler is torn down
+        self.addCleanup(sys.monitoring.free_tool_id, sys.monitoring.PROFILER_ID)
+
+        def timer():
+            try:
+                profiler.enable()
+            except Exception:
+                pass
+            return 0
+
+        profiler = _lsprof.Profiler(timer=timer)
+        profiler.enable()
+        (lambda: None)()
+        profiler.disable()
+        profiler.clear()
+
     def test_profile_enable_disable(self):
         prof = self.profilerclass()
         # Make sure we clean ourselves up if the test fails for some reason.

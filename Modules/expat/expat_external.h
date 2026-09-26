@@ -16,6 +16,7 @@
    Copyright (c) 2017      Rhodri James <rhodri@wildebeest.org.uk>
    Copyright (c) 2018      Yury Gribov <tetra2005@gmail.com>
    Copyright (c) 2026      Matthew Fernandez <matthew.fernandez@gmail.com>
+   Copyright (c) 2026      Braian Plaku <braianplaku@gmail.com>
    Licensed under the MIT license:
 
    Permission is  hereby granted,  free of charge,  to any  person obtaining
@@ -126,6 +127,17 @@
 #    define XML_ATTR_ALLOC_SIZE(x) __attribute__((__alloc_size__(x)))
 #  else
 #    define XML_ATTR_ALLOC_SIZE(x)
+#  endif
+
+/* Marks a function that Expat still provides but that callers should move off
+   of. */
+#  if defined(__clang__) || defined(__GNUC__)
+#    define XML_ATTR_DEPRECATED(message)                                       \
+      __attribute__((__deprecated__(message)))
+#  elif defined(_MSC_VER)
+#    define XML_ATTR_DEPRECATED(message) __declspec(deprecated(message))
+#  else
+#    define XML_ATTR_DEPRECATED(message) // empty i.e. no deprecation
 #  endif
 
 #  define XMLPARSEAPI(type) XMLIMPORT type XMLCALL

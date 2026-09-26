@@ -27,6 +27,10 @@ from test.support import script_helper
 from test.support import socket_helper
 from test.support import warnings_helper
 
+if support.MS_WINDOWS:
+    import _winapi
+
+
 TESTFN = os_helper.TESTFN
 
 
@@ -622,6 +626,20 @@ class TestSupport(unittest.TestCase):
             more = os_helper.fd_count()
         finally:
             os.close(fd)
+        self.assertEqual(more - start, 1)
+
+    @unittest.skipUnless(support.MS_WINDOWS, "test specific to Windows")
+    def test_handle_count(self):
+        start = os_helper.handle_count()
+        handle = _winapi.CreateFile(
+                        __file__, _winapi.GENERIC_READ,
+                        0, _winapi.NULL,
+                        _winapi.OPEN_EXISTING,
+                        0, _winapi.NULL)
+        try:
+            more = os_helper.handle_count()
+        finally:
+            _winapi.CloseHandle(handle)
         self.assertEqual(more - start, 1)
 
     def check_print_warning(self, msg, expected):

@@ -233,14 +233,14 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
 .. function:: _clear_type_cache()
 
-   Clear the internal type cache. The type cache is used to speed up attribute
-   and method lookups. Use the function *only* to drop unnecessary references
-   during reference leak debugging.
-
-   This function should be used for internal and specialized purposes only.
+   This function is a no-op. It used to clear the internal type cache, which
+   is now implemented per-type.
 
    .. deprecated:: 3.13
       Use the more general :func:`_clear_internal_caches` function instead.
+
+   .. versionchanged:: 3.16
+      This function is now a no-op.
 
 
 .. function:: _clear_internal_caches()
@@ -249,6 +249,9 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    release unnecessary references and memory blocks when hunting for leaks.
 
    .. versionadded:: 3.13
+
+   .. versionchanged:: 3.16
+      The type cache is no longer cleared, as it is now implemented per-type.
 
 
 .. function:: _current_frames()
@@ -1485,11 +1488,24 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 .. data:: lazy_modules
 
    A :class:`set` of fully qualified module name strings that have been lazily
-   imported in the current interpreter but not yet loaded.  When a
-   lazily imported module is accessed for the first time, its name is removed
-   from this set.
+   imported in the current interpreter but not yet loaded.
+   When a lazily imported module is accessed for the first time, its name is
+   typically removed from this set.
 
-   This attribute is intended for debugging and introspection.
+   The set may contain some additional strings.
+   It is intended for debugging and introspection, and consumers are expected
+   to verify each entry's status.
+
+   .. impl-detail::
+
+      Currently, :data:`!lazy_modules` may also contain:
+
+      * names of *attributes* (non-modules), such as ``"pathlib.Path"`` after
+        running ``lazy from pathlib import Path``, and
+      * names of items than have already been accessed.
+
+      In future versions of Python, these may be removed, and/or additional
+      extras may be added.
 
    See also :func:`set_lazy_imports` and :pep:`810`.
 

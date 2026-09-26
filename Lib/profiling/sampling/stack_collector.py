@@ -60,7 +60,8 @@ class CollapsedStackCollector(StackTraceCollector):
 
         lines.sort(key=lambda x: (-x[1], x[0]))
 
-        with open(filename, "w") as f:
+        with open(filename, "w",
+                  encoding="utf-8", errors="surrogatepass") as f:
             for stack, count in lines:
                 f.write(f"{stack} {count}\n")
         print(f"Collapsed stack output written to {filename}")
@@ -103,7 +104,6 @@ class FlamegraphCollector(StackTraceCollector):
         """Override to track thread status statistics before processing frames."""
         # Weight is number of timestamps (samples with identical stack)
         weight = len(timestamps_us) if timestamps_us else 1
-
         # Increment sample count by weight
         self._sample_count += weight
 
@@ -147,6 +147,23 @@ class FlamegraphCollector(StackTraceCollector):
             "missed_samples": missed_samples,
             "mode": mode
         }
+
+    def set_replay_stats(self, info):
+        """Restore measured statistics stored in a binary profile."""
+        duration_sec = info.get("duration_sec")
+        sample_rate = info.get("sample_rate")
+        if duration_sec is None or sample_rate is None:
+            return
+        self.set_stats(
+            self.sample_interval_usec,
+            duration_sec,
+            sample_rate,
+            error_rate=info.get("error_rate"),
+            missed_samples=info.get("missed_samples"),
+            mode=self.stats.get("mode"),
+        )
+    def set_mode(self, mode):
+        self.stats["mode"] = mode
 
     def export(self, filename):
         flamegraph_data = self._convert_to_flamegraph_format()
@@ -212,7 +229,7 @@ class FlamegraphCollector(StackTraceCollector):
             self._module_cache[filename] = module_name
         return module_name
 
-    def _convert_to_flamegraph_format(self):
+    def _convert_to_flamegraph_format(self, *, min_samples=None):
         if self._total_samples == 0:
             return {
                 "name": self._string_table.intern("No Data"),
@@ -302,7 +319,8 @@ class FlamegraphCollector(StackTraceCollector):
 
         # Filter out very small functions (less than 0.1% of total samples)
         total_samples = self._total_samples
-        min_samples = max(1, int(total_samples * 0.001))
+        if min_samples is None:
+            min_samples = max(1, int(total_samples * 0.001))
         path_info = get_python_path_info()
 
         root_children = convert_children(self._root["children"], min_samples, path_info)
@@ -550,13 +568,16 @@ class FlamegraphCollector(StackTraceCollector):
 class DiffFlamegraphCollector(FlamegraphCollector):
     """Differential flamegraph collector that compares against a baseline binary profile."""
 
-    def __init__(self, sample_interval_usec, *, baseline_binary_path, skip_idle=False):
+    def __init__(self, sample_interval_usec, *, baseline_binary_path,
+                 skip_idle=False, mode=None, capture_config=None):
         super().__init__(sample_interval_usec, skip_idle=skip_idle)
         if not os.path.exists(baseline_binary_path):
             raise ValueError(f"Baseline file not found: {baseline_binary_path}")
         self.baseline_binary_path = baseline_binary_path
         self._baseline_collector = None
         self._elided_paths = set()
+        self.mode = mode
+        self.capture_config = capture_config
 
     def _load_baseline(self):
         """Load baseline profile from binary file."""
@@ -564,6 +585,32 @@ class DiffFlamegraphCollector(FlamegraphCollector):
 
         with BinaryReader(self.baseline_binary_path) as reader:
             info = reader.get_info()
+
+            baseline_mode = info.get("mode")
+            if (
+                baseline_mode is not None
+                and self.mode is not None
+                and baseline_mode != self.mode
+            ):
+                raise ValueError(
+                    "Baseline profiling mode does not match current mode"
+                )
+
+            baseline_config = info.get("capture_config")
+            if baseline_config is not None and self.capture_config is not None:
+                names = baseline_config.keys() | self.capture_config.keys()
+                mismatches = [
+                    name for name in names
+                    if baseline_config.get(name, False)
+                    != self.capture_config.get(name, False)
+                ]
+            else:
+                mismatches = []
+            if mismatches:
+                raise ValueError(
+                    "Baseline capture configuration does not match current "
+                    f"configuration: {', '.join(sorted(mismatches))}"
+                )
 
             baseline_collector = FlamegraphCollector(
                 sample_interval_usec=info['sample_interval_us'],
@@ -660,9 +707,33 @@ class DiffFlamegraphCollector(FlamegraphCollector):
         current_data = current_stats.get(path_key, {"total": 0, "self": 0})
         baseline_data = baseline_stats.get(path_key, {"total": 0, "self": 0})
 
-        current_self = current_data["self"]
-        baseline_self = baseline_data["self"] * scale
-        baseline_total = baseline_data["total"] * scale
+        current_self = node.get("self", 0)
+        current_total = node.get("value", 0)
+
+        current_nonself = current_total - current_self
+        aggregate_nonself = current_data["total"] - current_data["self"]
+
+        # Allocate self and descendant samples separately.  Line-number
+        # changes can split one function path into several rendered nodes,
+        # and using independent weights for self and inclusive totals could
+        # otherwise assign a node more self samples than total samples.
+        self_weight = self._sample_weight(
+            current_self,
+            current_data["self"],
+            current_total,
+            current_data["total"],
+        )
+        nonself_weight = self._sample_weight(
+            current_nonself,
+            aggregate_nonself,
+            current_total,
+            current_data["total"],
+        )
+        baseline_self = baseline_data["self"] * scale * self_weight
+        baseline_nonself = (
+            baseline_data["total"] - baseline_data["self"]
+        ) * scale * nonself_weight
+        baseline_total = baseline_self + baseline_nonself
 
         diff = current_self - baseline_self
         if baseline_self > 0:
@@ -682,6 +753,14 @@ class DiffFlamegraphCollector(FlamegraphCollector):
             for child in node["children"]:
                 self._add_diff_data_to_node(child, path_key, current_stats, baseline_stats, scale)
 
+    @staticmethod
+    def _sample_weight(value, aggregate, fallback_value, fallback_aggregate):
+        if aggregate > 0:
+            return value / aggregate
+        if fallback_aggregate > 0:
+            return fallback_value / fallback_aggregate
+        return 0
+
     def _is_promoted_root(self, data):
         """Check if the data represents a promoted root node."""
         return "filename" in data and "funcname" in data
@@ -690,7 +769,15 @@ class DiffFlamegraphCollector(FlamegraphCollector):
         """Calculate elided paths and add elided flamegraph to stats."""
         self._elided_paths = baseline_stats.keys() - current_stats.keys()
 
-        current_flamegraph["stats"]["elided_count"] = len(self._elided_paths)
+        # A sampled stack can end at an internal path that also has elided
+        # descendants.  Count every disappeared path with self samples, not
+        # just the leaves of the elided path tree.
+        elided_stacks = {
+            path
+            for path in self._elided_paths
+            if baseline_stats[path]["self"] > 0
+        }
+        current_flamegraph["stats"]["elided_count"] = len(elided_stacks)
 
         if self._elided_paths:
             elided_flamegraph = self._build_elided_flamegraph(baseline_stats, scale)
@@ -713,7 +800,9 @@ class DiffFlamegraphCollector(FlamegraphCollector):
         orig_get_source = self._baseline_collector._get_source_lines
         self._baseline_collector._get_source_lines = lambda func: None
         try:
-            baseline_data = self._baseline_collector._convert_to_flamegraph_format()
+            baseline_data = self._baseline_collector._convert_to_flamegraph_format(
+                min_samples=1
+            )
         finally:
             self._baseline_collector._get_source_lines = orig_get_source
 
@@ -758,6 +847,9 @@ class DiffFlamegraphCollector(FlamegraphCollector):
             # elided nodes keep their original value to preserve self-samples
             if elided_children and not is_elided:
                 node["value"] = total_value
+                node["self"] = 0
+                node.pop("opcodes", None)
+                node.pop("thread_opcodes", None)
 
         # Keep this node if it's elided or has elided descendants
         return is_elided or bool(node.get("children"))
@@ -773,9 +865,13 @@ class DiffFlamegraphCollector(FlamegraphCollector):
         baseline_self = 0
         baseline_total = 0
         if func_key and current_path in baseline_stats:
-            baseline_data = baseline_stats[current_path]
-            baseline_self = baseline_data["self"] * scale
-            baseline_total = baseline_data["total"] * scale
+            baseline_total = node.get("value", 0) * scale
+
+            # Matched nodes are retained only as structural ancestors.  Their
+            # own samples are still present in the current profile and must
+            # not be reported as disappeared.
+            if current_path in self._elided_paths:
+                baseline_self = node.get("self", 0) * scale
 
             node["baseline"] = baseline_self
             node["baseline_total"] = baseline_total

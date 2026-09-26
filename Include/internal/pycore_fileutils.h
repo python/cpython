@@ -190,8 +190,6 @@ extern int _Py_open_osfhandle(void *handle, int flags);
      ? _PyStatus_ERR("cannot decode " NAME) \
      : _PyStatus_NO_MEMORY()
 
-extern int _Py_HasFileSystemDefaultEncodeErrors;
-
 extern int _Py_DecodeUTF8Ex(
     const char *arg,
     Py_ssize_t arglen,
@@ -301,6 +299,16 @@ extern void _Py_skiproot(const wchar_t *path, Py_ssize_t size, Py_ssize_t *drvsi
 
 // Export for 'select' shared extension (Argument Clinic code)
 PyAPI_FUNC(int) _PyLong_FileDescriptor_Converter(PyObject *, void *);
+
+#ifdef MS_WINDOWS
+/* Windows uses long long for offsets */
+typedef long long Py_off_t;
+#else
+typedef off_t Py_off_t;
+#endif
+
+// Export for '_ssl' and 'zlib' shared extensions (Argument Clinic code)
+PyAPI_FUNC(int) _Py_Off_t_Converter(PyObject *, void *);
 
 // Export for test_peg_generator
 PyAPI_FUNC(char*) _Py_UniversalNewlineFgetsWithSize(char *, int, FILE*, PyObject *, size_t*);
