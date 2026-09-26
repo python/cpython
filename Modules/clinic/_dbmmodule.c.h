@@ -7,6 +7,7 @@ preserve
 #endif
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
 PyDoc_STRVAR(_dbm_dbm_close__doc__,
 "close($self, /)\n"
@@ -225,13 +226,8 @@ dbmopen(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("open", "argument 2", "str", args[1]);
         goto exit;
     }
-    Py_ssize_t flags_length;
-    flags = PyUnicode_AsUTF8AndSize(args[1], &flags_length);
+    flags = _PyUnicode_AsUTF8NoNUL(args[1]);
     if (flags == NULL) {
-        goto exit;
-    }
-    if (strlen(flags) != (size_t)flags_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     if (nargs < 3) {
@@ -247,4 +243,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=677deecf525167a5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a841c5e1dae0e22d input=a9049054013a1b77]*/

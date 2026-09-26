@@ -8,6 +8,7 @@ preserve
 #endif
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
 PyDoc_STRVAR(syslog_openlog__doc__,
 "openlog($module, /, ident=<unrepresentable>, logoption=0,\n"
@@ -134,13 +135,8 @@ syslog_syslog(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("syslog", "argument", "str", args[nargs - 1]);
         goto exit;
     }
-    Py_ssize_t message_length;
-    message = PyUnicode_AsUTF8AndSize(args[nargs - 1], &message_length);
+    message = _PyUnicode_AsUTF8NoNUL(args[nargs - 1]);
     if (message == NULL) {
-        goto exit;
-    }
-    if (strlen(message) != (size_t)message_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     Py_BEGIN_CRITICAL_SECTION(module);
@@ -273,4 +269,4 @@ syslog_LOG_UPTO(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ab818466dcdbbe59 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0c9607f279107505 input=a9049054013a1b77]*/

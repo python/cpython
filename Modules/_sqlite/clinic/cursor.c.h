@@ -8,6 +8,7 @@ preserve
 #endif
 #include "pycore_long.h"          // _PyLong_UInt32_Converter()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
 static int
 pysqlite_cursor_init_impl(pysqlite_Cursor *self,
@@ -136,13 +137,8 @@ pysqlite_cursor_executescript(PyObject *self, PyObject *arg)
         _PyArg_BadArgument("executescript", "argument", "str", arg);
         goto exit;
     }
-    Py_ssize_t sql_script_length;
-    sql_script = PyUnicode_AsUTF8AndSize(arg, &sql_script_length);
+    sql_script = _PyUnicode_AsUTF8NoNUL(arg);
     if (sql_script == NULL) {
-        goto exit;
-    }
-    if (strlen(sql_script) != (size_t)sql_script_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = pysqlite_cursor_executescript_impl((pysqlite_Cursor *)self, sql_script);
@@ -364,4 +360,4 @@ exit:
 }
 #define _SQLITE3_CURSOR_ARRAYSIZE_GETSETDEF {"arraysize", (getter)_sqlite3_Cursor_arraysize_get, (setter)_sqlite3_Cursor_arraysize_set, NULL},
 
-/*[clinic end generated code: output=e920343d84bd4976 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c24b4d93900ed908 input=a9049054013a1b77]*/

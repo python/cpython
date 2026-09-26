@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
 PyDoc_STRVAR(_multibytecodec_MultibyteCodec_encode__doc__,
 "encode($self, /, input, errors=None)\n"
@@ -77,13 +78,8 @@ _multibytecodec_MultibyteCodec_encode(PyObject *self, PyObject *const *args, Py_
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
-        Py_ssize_t errors_length;
-        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
+        errors = _PyUnicode_AsUTF8NoNUL(args[1]);
         if (errors == NULL) {
-            goto exit;
-        }
-        if (strlen(errors) != (size_t)errors_length) {
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -169,13 +165,8 @@ _multibytecodec_MultibyteCodec_decode(PyObject *self, PyObject *const *args, Py_
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
-        Py_ssize_t errors_length;
-        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
+        errors = _PyUnicode_AsUTF8NoNUL(args[1]);
         if (errors == NULL) {
-            goto exit;
-        }
-        if (strlen(errors) != (size_t)errors_length) {
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -698,4 +689,4 @@ PyDoc_STRVAR(_multibytecodec___create_codec__doc__,
 
 #define _MULTIBYTECODEC___CREATE_CODEC_METHODDEF    \
     {"__create_codec", (PyCFunction)_multibytecodec___create_codec, METH_O, _multibytecodec___create_codec__doc__},
-/*[clinic end generated code: output=a84b1544d7d01abb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7ff5d19e433aecd2 input=a9049054013a1b77]*/

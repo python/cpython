@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
 PyDoc_STRVAR(builtin___import____doc__,
 "__import__($module, /, name, globals=None, locals=None, fromlist=(),\n"
@@ -415,13 +416,8 @@ builtin_compile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
         _PyArg_BadArgument("compile", "argument 'mode'", "str", args[2]);
         goto exit;
     }
-    Py_ssize_t mode_length;
-    mode = PyUnicode_AsUTF8AndSize(args[2], &mode_length);
+    mode = _PyUnicode_AsUTF8NoNUL(args[2]);
     if (mode == NULL) {
-        goto exit;
-    }
-    if (strlen(mode) != (size_t)mode_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     if (!noptargs) {
@@ -1501,4 +1497,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b56739f2e13f616a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9c67c0bd41101a57 input=a9049054013a1b77]*/

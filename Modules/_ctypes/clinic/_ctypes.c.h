@@ -8,6 +8,7 @@ preserve
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
 PyDoc_STRVAR(_ctypes_CType_Type___sizeof____doc__,
 "__sizeof__($self, /)\n"
@@ -295,13 +296,8 @@ CDataType_in_dll(PyObject *type, PyTypeObject *cls, PyObject *const *args, Py_ss
         _PyArg_BadArgument("in_dll", "argument 2", "str", args[1]);
         goto exit;
     }
-    Py_ssize_t name_length;
-    name = PyUnicode_AsUTF8AndSize(args[1], &name_length);
+    name = _PyUnicode_AsUTF8NoNUL(args[1]);
     if (name == NULL) {
-        goto exit;
-    }
-    if (strlen(name) != (size_t)name_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = CDataType_in_dll_impl(type, cls, dll, name);
@@ -968,4 +964,4 @@ Simple_from_outparm(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py
 
 #define _CTYPES_SIMPLE_VALUE_GETSETDEF {"value", (getter)_ctypes_Simple_value_get, (setter)_ctypes_Simple_value_set, NULL},
 
-/*[clinic end generated code: output=1d322c90c81649fd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3aaca12468398371 input=a9049054013a1b77]*/

@@ -9,6 +9,7 @@ preserve
 #include "pycore_abstract.h"      // _Py_convert_optional_to_ssize_t()
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
 PyDoc_STRVAR(_io__TextIOBase_detach__doc__,
 "detach($self, /)\n"
@@ -190,13 +191,8 @@ _io__TextIOBase_write(PyObject *self, PyTypeObject *cls, PyObject *const *args, 
         _PyArg_BadArgument("write", "argument 1", "str", args[0]);
         goto exit;
     }
-    Py_ssize_t s_length;
-    s = PyUnicode_AsUTF8AndSize(args[0], &s_length);
+    s = _PyUnicode_AsUTF8NoNUL(args[0]);
     if (s == NULL) {
-        goto exit;
-    }
-    if (strlen(s) != (size_t)s_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = _io__TextIOBase_write_impl(self, cls, s);
@@ -572,13 +568,8 @@ _io_TextIOWrapper___init__(PyObject *self, PyObject *args, PyObject *kwargs)
             encoding = NULL;
         }
         else if (PyUnicode_Check(fastargs[1])) {
-            Py_ssize_t encoding_length;
-            encoding = PyUnicode_AsUTF8AndSize(fastargs[1], &encoding_length);
+            encoding = _PyUnicode_AsUTF8NoNUL(fastargs[1]);
             if (encoding == NULL) {
-                goto exit;
-            }
-            if (strlen(encoding) != (size_t)encoding_length) {
-                PyErr_SetString(PyExc_ValueError, "embedded null character");
                 goto exit;
             }
         }
@@ -601,13 +592,8 @@ _io_TextIOWrapper___init__(PyObject *self, PyObject *args, PyObject *kwargs)
             newline = NULL;
         }
         else if (PyUnicode_Check(fastargs[3])) {
-            Py_ssize_t newline_length;
-            newline = PyUnicode_AsUTF8AndSize(fastargs[3], &newline_length);
+            newline = _PyUnicode_AsUTF8NoNUL(fastargs[3]);
             if (newline == NULL) {
-                goto exit;
-            }
-            if (strlen(newline) != (size_t)newline_length) {
-                PyErr_SetString(PyExc_ValueError, "embedded null character");
                 goto exit;
             }
         }
@@ -1299,4 +1285,4 @@ _io_TextIOWrapper_buffer_get(PyObject *self, void *Py_UNUSED(context))
 
 #define _IO_TEXTIOWRAPPER_BUFFER_GETSETDEF {"buffer", (getter)_io_TextIOWrapper_buffer_get, (setter)NULL, NULL},
 
-/*[clinic end generated code: output=102ae91df6216de2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1a8a4718813e63f0 input=a9049054013a1b77]*/
