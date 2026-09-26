@@ -129,6 +129,19 @@ class PyShellTest(unittest.TestCase):
         self.assertNotIn('console', text.tag_names('iomark-7c'))
         self.assertEqual(shell.shell_sidebar.line_prompts, {3: '>>>'})
 
+    def test_write_not_undoable(self):
+        # gh-67804: neither the output nor the input before it can be undone.
+        shell = self.shell
+        text = shell.text
+        text.insert('iomark', 'stmt')
+        shell.resetoutput()
+        self.assertEqual(shell.write('out\n', 'stdout'), 4)
+        shell.undo.undo_event(None)
+        self.assertEqual(text.get('1.0', 'end-1c'), 'stmt\nout\n')
+        text.insert('end-1c', 'abc')
+        shell.undo.undo_event(None)
+        self.assertEqual(text.get('1.0', 'end-1c'), 'stmt\nout\n')
+
 
 class InputStatementlTest(unittest.TestCase):
     # Test handling of response to input statements in user code.
