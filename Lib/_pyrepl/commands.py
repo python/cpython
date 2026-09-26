@@ -20,6 +20,7 @@
 # CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 import os
+import re
 import time
 
 # Categories of actions:
@@ -515,4 +516,19 @@ class perform_bracketed_paste(Command):
             l=len(data),
             s=time.time() - start,
         )
-        self.reader.insert(data.replace(done, ""))
+        data = data.replace(done, "")
+        if (
+            not self.reader.buffer
+            and getattr(self.reader, "more_lines", None) is not None
+            and data[:3] == ">>>"
+            and data[3:4] in ("", " ", "\r", "\n")
+        ):
+            # A pasted interactive session contains prompts and output.
+            lines = []
+            for line in re.findall(r"[^\r\n]*(?:\r\n?|\n|$)", data):
+                if line.startswith((">>> ", "... ")):
+                    lines.append(line[4:])
+                elif line.rstrip("\r\n") in (">>>", "..."):
+                    lines.append(line[3:])
+            data = "".join(lines)
+        self.reader.insert(data)
