@@ -1245,7 +1245,7 @@ def make_archive(base_name, format, root_dir=None, base_dir=None, verbose=0,
         root_dir = os.fspath(root_dir)
         stmd = os.stat(root_dir).st_mode
         if not stat.S_ISDIR(stmd):
-            raise NotADirectoryError(errno.ENOTDIR, 'Not a directory', root_dir)
+            raise NotADirectoryError(filename=root_dir)
 
         if supports_root_dir:
             kwargs['root_dir'] = root_dir
