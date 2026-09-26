@@ -335,6 +335,14 @@ class UnparseTestCase(ASTTestCase):
     def test_integer_parens(self):
         self.check_ast_roundtrip("3 .__abs__()")
 
+    def test_attribute_on_bool(self):
+        # gh-158237: True.real should not gain a space
+        self.check_src_roundtrip("x = True.real")
+        self.check_src_roundtrip("x = False.__class__")
+
+    def test_attribute_on_int_still_spaced(self):
+        self.check_src_roundtrip("x = 3 .__abs__()")
+
     def test_huge_float(self):
         self.check_ast_roundtrip("1e1000")
         self.check_ast_roundtrip("-1e1000")
