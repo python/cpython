@@ -179,7 +179,7 @@ class DummyFTPHandler(asynchat.async_chat):
 
     def cmd_epsv(self, arg):
         with socket.create_server((self.socket.getsockname()[0], 0),
-                                  family=socket.AF_INET6) as sock:
+                                  family=self.socket.family) as sock:
             sock.settimeout(TIMEOUT)
             port = sock.getsockname()[1]
             self.push('229 entering extended passive mode (|||%d|)' %port)
@@ -727,11 +727,31 @@ class TestFTPClass(TestCase):
         host, port = self.client.makepasv()
         conn = socket.create_connection((host, port), timeout=TIMEOUT)
         conn.close()
-        # IPv4 is in use, just make sure send_epsv has not been used
+        # IPv4 with prefer_epsv=True (default) should use EPSV
+        self.assertEqual(self.server.handler_instance.last_received_cmd, 'epsv')
+
+    def test_makepasv_prefer_epsv_disabled(self):
+        self.client.prefer_epsv = False
+        host, port = self.client.makepasv()
+        conn = socket.create_connection((host, port), timeout=TIMEOUT)
+        conn.close()
         self.assertEqual(self.server.handler_instance.last_received_cmd, 'pasv')
+
+    def test_makepasv_prefer_epsv_fallback_to_pasv(self):
+        # Simulate server not supporting EPSV by monkey-patching the handler
+        original_cmd_epsv = self.server.handler.cmd_epsv
+        self.server.handler.cmd_epsv = lambda self_handler, arg: self_handler.push('500 EPSV not understood')
+        try:
+            host, port = self.client.makepasv()
+            conn = socket.create_connection((host, port), timeout=TIMEOUT)
+            conn.close()
+            self.assertEqual(self.server.handler_instance.last_received_cmd, 'pasv')
+        finally:
+            self.server.handler.cmd_epsv = original_cmd_epsv
 
     def test_makepasv_issue43285_security_disabled(self):
         """Test the opt-in to the old vulnerable behavior."""
+        self.client.prefer_epsv = False
         self.client.trust_server_pasv_ipv4_address = True
         bad_host, port = self.client.makepasv()
         self.assertEqual(
@@ -742,6 +762,7 @@ class TestFTPClass(TestCase):
                                  timeout=TIMEOUT).close()
 
     def test_makepasv_issue43285_security_enabled_default(self):
+        self.client.prefer_epsv = False
         self.assertFalse(self.client.trust_server_pasv_ipv4_address)
         trusted_host, port = self.client.makepasv()
         self.assertNotEqual(
