@@ -2280,6 +2280,44 @@ class ModuleVariableNameCollisionTests(unittest.TestCase):
         """)
         assert_python_ok("-c", code)
 
+    def test_empty_fromlist_placeholder_matches_no_fromlist(self):
+        """An empty fromlist behaves like None."""
+        code = textwrap.dedent("""
+            expected = "<lazy_import 'xml.dom'>"
+            # In lists, so reading them does not resolve them.
+            for fromlist in (None, ()):
+                same = [__lazy_import__("xml.dom", fromlist=fromlist)]
+                assert repr(same[0]) == expected, (fromlist, repr(same[0]))
+            bare = [__lazy_import__("xml.dom")]
+            assert repr(bare[0]) == expected, repr(bare[0])
+        """)
+        assert_python_ok("-c", code)
+
+    def test_dotted_as_replays_lookups_on_dotted_placeholder(self):
+        """A dotted lazy import as replays its names on the hook's package."""
+        # importlib.metadata has a `metadata` attribute of its own, which the
+        # placeholder for importlib must not answer with.
+        for target in ("xml.dom", "importlib.metadata"):
+            with self.subTest(target=target):
+                leaf = target.rpartition(".")[2]
+                code = textwrap.dedent(f"""
+                    import builtins
+                    import sys
+                    import {target}
+
+                    # In a list, so the hook reading it does not resolve it.
+                    placeholder = [__lazy_import__("{target}", fromlist=())]
+                    default = builtins.__lazy_import__
+                    builtins.__lazy_import__ = lambda *args: placeholder[0]
+                    lazy import fake.{leaf} as {leaf}
+                    builtins.__lazy_import__ = default
+
+                    name = repr(globals()["{leaf}"])
+                    assert name == "<lazy_import '{target}'>", name
+                    assert {leaf} is sys.modules["{target}"], {leaf}
+                """)
+                assert_python_ok("-c", code)
+
 
 class DeletedModuleReimportTests(unittest.TestCase):
     """Tests for reimporting after module deletion from sys.modules."""

@@ -26,6 +26,10 @@ _PyLazyImport_New(_PyInterpreterFrame *frame, PyObject *builtins, PyObject *name
             "lazy_import: fromlist must be None, a string, or a tuple");
         return NULL;
     }
+    else if (PyTuple_Check(fromlist) && PyTuple_GET_SIZE(fromlist) == 0) {
+        // __import__("a.b", fromlist=()) returns `a`, as fromlist=None does.
+        fromlist = NULL;
+    }
     m = PyObject_GC_New(PyLazyImportObject, &PyLazyImport_Type);
     if (m == NULL) {
         return NULL;
