@@ -299,6 +299,20 @@ get_importtime_name(PyObject *name)
     return encoded;
 }
 
+/* Return the UTF-8 encoding of name for a DTrace probe, or NULL if it cannot
+   be encoded.  Never sets an exception and keeps the current one, if any. */
+static const char *
+get_dtrace_name(PyObject *name)
+{
+    PyObject *exc = PyErr_GetRaisedException();
+    const char *utf8 = PyUnicode_AsUTF8(name);
+    if (utf8 == NULL) {
+        PyErr_Clear();
+    }
+    PyErr_SetRaisedException(exc);
+    return utf8;
+}
+
 static int
 import_ensure_initialized(PyInterpreterState *interp, PyObject *mod, PyObject *name)
 {
@@ -4120,14 +4134,14 @@ import_find_and_load_with_name(PyThreadState *tstate, PyObject *abs_name,
     }
 
     if (PyDTrace_IMPORT_FIND_LOAD_START_ENABLED())
-        PyDTrace_IMPORT_FIND_LOAD_START(PyUnicode_AsUTF8(abs_name));
+        PyDTrace_IMPORT_FIND_LOAD_START(get_dtrace_name(abs_name));
 
     mod = PyObject_CallMethodObjArgs(IMPORTLIB(interp), find_and_load,
                                      abs_name, IMPORT_FUNC(interp), NULL);
 
     if (PyDTrace_IMPORT_FIND_LOAD_DONE_ENABLED()) {
         int found = mod != NULL && mod != not_found;
-        PyDTrace_IMPORT_FIND_LOAD_DONE(PyUnicode_AsUTF8(abs_name),
+        PyDTrace_IMPORT_FIND_LOAD_DONE(get_dtrace_name(abs_name),
                                        found);
     }
 
