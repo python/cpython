@@ -36,14 +36,14 @@ class _localimpl:
     def get_dict(self):
         """Return the dict for the current thread. Raises KeyError if none
         defined."""
-        thread = current_thread()
+        thread = threading.current_thread()
         return self.dicts[id(thread)][1]
 
     def create_dict(self):
         """Create a new dict for the current thread, and return it."""
         localdict = {}
         key = self.key
-        thread = current_thread()
+        thread = threading.current_thread()
         idt = id(thread)
         def local_deleted(_, key=key):
             # When the localimpl is deleted, remove the thread attribute.
@@ -88,7 +88,7 @@ class local:
         self = object.__new__(cls)
         impl = _localimpl()
         impl.localargs = (args, kw)
-        impl.locallock = RLock()
+        impl.locallock = threading.RLock()
         object.__setattr__(self, '_local__impl', impl)
         # We need to create the thread dict in anticipation of
         # __init__ being called, to make sure we don't call it
@@ -117,4 +117,4 @@ class local:
             return object.__delattr__(self, name)
 
 
-from threading import current_thread, RLock
+import threading
