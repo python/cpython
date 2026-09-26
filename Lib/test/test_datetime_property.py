@@ -299,6 +299,79 @@ class DateTimeTest(unittest.TestCase):
         actual = self.theclass.strptime(value, fmt)
         self.assertEqual(actual.isoformat(), f"{expected.isoformat()}T00:00:00")
 
+    @hypothesis.settings(max_examples=50)
+    @hypothesis.given(
+        fraction=st.text(alphabet="0123456789", min_size=1, max_size=6),
+        offset=st.integers(min_value=-86_399_999_999, max_value=86_399_999_999),
+        directive=st.sampled_from(("%z", "%:z")),
+        style=st.sampled_from(("minutes", "seconds", "fraction", "Z", "naive")),
+        colon=st.booleans(),
+    )
+    @hypothesis.example(fraction="1", offset=-1, directive="%z",
+                        style="fraction", colon=False)
+    @hypothesis.example(fraction="000001", offset=86_399_999_999, directive="%:z",
+                        style="fraction", colon=True)
+    @hypothesis.example(fraction="999999", offset=-86_399_999_999, directive="%z",
+                        style="fraction", colon=True)
+    @hypothesis.example(fraction="01", offset=0, directive="%:z",
+                        style="Z", colon=True)
+    @hypothesis.example(fraction="001", offset=0, directive="%z",
+                        style="naive", colon=False)
+    @hypothesis.example(fraction="1234", offset=-1, directive="%z",
+                        style="minutes", colon=False)
+    @hypothesis.example(fraction="12345", offset=3_661_000_000, directive="%z",
+                        style="seconds", colon=True)
+    def test_fractions_and_offsets(
+        self, fraction: str, offset: int, directive: str, style: str, colon: bool,
+    ) -> None:
+        sign = "-" if offset < 0 else "+"
+        magnitude = abs(offset)
+        if style == "minutes":
+            magnitude = magnitude // 60_000_000 * 60_000_000
+        elif style == "seconds":
+            magnitude = magnitude // 1_000_000 * 1_000_000
+        hours, remainder = divmod(magnitude, 3_600_000_000)
+        minutes, remainder = divmod(remainder, 60_000_000)
+        seconds, micros = divmod(remainder, 1_000_000)
+        separator = ":" if colon or directive == "%:z" else ""
+        zone = f"{sign}{hours:02}{separator}{minutes:02}"
+        if style in ("seconds", "fraction"):
+            zone += f"{separator}{seconds:02}"
+        if style == "fraction":
+            # Include every allowed fractional precision, including leading
+            # zeros. Removing trailing zeros doesn't change the value.
+            zone += "." + (f"{micros:06}".rstrip("0") or "0")
+        expected_offset = datetime.timedelta(
+            microseconds=-magnitude if sign == "-" else magnitude,
+        )
+        if style == "Z":
+            zone = "Z"
+            expected_offset = datetime.timedelta(0)
+        elif style == "naive":
+            zone = ""
+            expected_offset = None
+        actual = self.theclass.strptime(
+            f"2000-02-29 23:59:58.{fraction}|{zone}",
+            "%Y-%m-%d %H:%M:%S.%f|" + directive,
+        )
+        expected_fraction = int(fraction) * 10 ** (6 - len(fraction))
+        self.assertEqual(
+            (actual.year, actual.month, actual.day, actual.hour, actual.minute,
+             actual.second, actual.microsecond),
+            (2000, 2, 29, 23, 59, 58, expected_fraction),
+        )
+        actual_offset = actual.utcoffset()
+        if expected_offset is None:
+            self.assertIsNone(actual.tzinfo)
+        else:
+            # C and Python timedelta objects aren't directly comparable.
+            self.assertIsNotNone(actual_offset)
+            self.assertEqual(
+                (actual_offset.days, actual_offset.seconds, actual_offset.microseconds),
+                (expected_offset.days, expected_offset.seconds,
+                 expected_offset.microseconds),
+            )
+
     @support.run_with_locale("LC_TIME", "C")
     @hypothesis.given(case=strptime_inputs())
     @hypothesis.example(case=(
