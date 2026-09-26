@@ -1715,7 +1715,8 @@ Special read-only attributes
      - The mapping used by the frame to look up
        :ref:`local variables <naming>`.
        If the frame refers to an :term:`optimized scope`,
-       this may return a write-through proxy object.
+       this may return a write-through proxy object
+       (see :ref:`frame-locals-proxy-behaviour`).
 
        .. versionchanged:: 3.13
           Return a proxy for optimized scopes.
@@ -1792,6 +1793,35 @@ Frame objects support one method:
    .. versionchanged:: 3.13
       Attempting to clear a suspended frame raises :exc:`RuntimeError`
       (as has always been the case for executing frames).
+
+
+.. _frame-locals-proxy-behaviour:
+
+Frame locals proxy behaviour
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When :attr:`frame.f_locals` is accessed on a frame that refers to an
+:term:`optimized scope` (such as a function or comprehension), it returns a
+write-through proxy object rather than a direct reference to an internal
+dictionary.
+
+This proxy object exhibits several specific behaviours:
+
+* A new proxy instance is returned on every access to :attr:`frame.f_locals`.
+* Two proxy instances with the same keys and values will compare unequal
+  if they refer to different frame objects.
+* Extra keys (names that do not correspond to local variables of the code object)
+  can be stored in the proxy; these extra variables are stored on the frame itself
+  and are therefore shared across all proxy instances for that same frame.
+* Keys corresponding to local variables defined in the function cannot be deleted
+  from the proxy (attempting to do so raises :exc:`KeyError`).
+* Calling :meth:`~dict.copy` (or any other API that constructs a new container
+  from the proxy) returns a standard :class:`dict` instance rather than a proxy.
+
+.. seealso::
+
+   :pep:`667` -- Consistent views of namespaces
+      Introduced write-through proxy semantics for :attr:`frame.f_locals`.
 
 
 .. _traceback-objects:
