@@ -166,6 +166,14 @@ class TokenList(list):
             comments.extend(token.comments)
         return comments
 
+    def has_token_type(self, *token_types):
+        if self.token_type in token_types:
+            return True
+        for t in self:
+            if t.has_token_type(*token_types):
+                return True
+        return False
+
     def fold(self, *, policy):
         return _refold_parse_tree(self, policy=policy)
 
@@ -932,6 +940,9 @@ class Terminal(str):
     @property
     def comments(self):
         return []
+
+    def has_token_type(self, *token_types):
+        return self.token_type in token_types
 
     def __getnewargs__(self):
         return(str(self), self.token_type)
@@ -2916,7 +2927,7 @@ def _refold_with_ew(parse_tree, lines, maxlen, encoding, *, policy):
             continue
         tstr = str(part)
         if not want_encoding:
-            if part.token_type in ('ptext', 'vtext'):
+            if part.token_type == 'ptext' or part.has_token_type('vtext'):
                 # Encode if tstr contains special characters.
                 want_encoding = not SPECIALSNL.isdisjoint(tstr)
             else:
