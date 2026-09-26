@@ -5543,6 +5543,7 @@ dummy_func(
             _CHECK_METHOD_VERSION_KW +
             _EXPAND_METHOD_KW +
             flush + // so that self is in the argument array
+            _CHECK_RECURSION_REMAINING +
             _PY_FRAME_KW +
             _SAVE_RETURN_OFFSET +
             _PUSH_FRAME;
@@ -5763,6 +5764,7 @@ dummy_func(
             _CHECK_PEP_523 +
             _MAKE_CALLARGS_A_TUPLE +
             _CHECK_IS_PY_CALLABLE_EX +
+            _CHECK_RECURSION_REMAINING +
             _PY_FRAME_EX +
             _SAVE_RETURN_OFFSET +
             _PUSH_FRAME;
