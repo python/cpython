@@ -1317,6 +1317,111 @@ class TestGetStackTrace(unittest.TestCase):
                 "GIL holder should be among all threads",
             )
 
+    @skip_if_not_supported
+    @unittest.skipIf(sys._is_gil_enabled(), "Requires free-threading")
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Requires process_vm_readv",
+    )
+    def test_tlbc_cache_refresh_after_growth(self):
+        # Reproducer from gh-157660.
+        script = textwrap.dedent("""\
+            import os, threading
+            from _remote_debugging import RemoteUnwinder
+            from test import support
+
+            go = threading.Event()
+            stop = threading.Event()
+
+            def leaf():
+                stop.wait()
+
+            def wait_for_leaf_frames(u, expected_count):
+                for _ in support.sleeping_retry(
+                    support.SHORT_TIMEOUT,
+                    f"Expected {expected_count} leaf frames",
+                ):
+                    count = sum(
+                        f.funcname == "leaf"
+                        for t in u.get_stack_trace() for f in t.frame_info
+                    )
+                    if count == expected_count:
+                        return
+
+            threading.Thread(target=leaf, daemon=True).start()
+            for _ in range(16):
+                threading.Thread(target=stop.wait, daemon=True).start()
+            threading.Thread(target=lambda: (go.wait(), leaf()), daemon=True).start()
+
+            u = RemoteUnwinder(os.getpid(), all_threads=True)
+            wait_for_leaf_frames(u, 1)
+            go.set()
+            wait_for_leaf_frames(u, 2)
+            """)
+        result = subprocess.run(
+            [sys.executable, "-X", "gil=0", "-X", "tlbc=1", "-c", script],
+            capture_output=True,
+            text=True,
+            timeout=SHORT_TIMEOUT,
+        )
+        self.assertEqual(
+            result.returncode, 0,
+            f"stdout: {result.stdout}\nstderr: {result.stderr}",
+        )
+
+    @skip_if_not_supported
+    @unittest.skipIf(sys._is_gil_enabled(), "Requires free-threading")
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Requires process_vm_readv",
+    )
+    def test_tlbc_cache_refresh_after_slot_fill(self):
+        # Reproducer from gh-157660.
+        script = textwrap.dedent("""\
+            import os, threading
+            from _remote_debugging import RemoteUnwinder
+
+            go = threading.Event()
+            stop = threading.Event()
+
+            def leaf():
+                stop.wait()
+
+            from test import support
+
+            def lines(u, expected_count):
+                for _ in support.sleeping_retry(
+                    support.SHORT_TIMEOUT,
+                    f"Expected {expected_count} leaf frames",
+                ):
+                    result = sorted(
+                        f.lineno
+                        for t in u.get_stack_trace() for f in t.frame_info
+                        if f.funcname == "leaf"
+                    )
+                    if len(result) == expected_count:
+                        return result
+
+            threading.Thread(target=leaf, daemon=True).start()
+            threading.Thread(target=lambda: (go.wait(), leaf()), daemon=True).start()
+            u = RemoteUnwinder(os.getpid(), all_threads=True)
+            before = lines(u, 1)
+            assert before == [8], before
+            go.set()
+            cached = lines(u, 2)
+            assert cached == [8, 8], cached
+            """)
+        result = subprocess.run(
+            [sys.executable, "-X", "gil=0", "-X", "tlbc=1", "-c", script],
+            capture_output=True,
+            text=True,
+            timeout=SHORT_TIMEOUT,
+        )
+        self.assertEqual(
+            result.returncode, 0,
+            f"stdout: {result.stdout}\nstderr: {result.stderr}",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
