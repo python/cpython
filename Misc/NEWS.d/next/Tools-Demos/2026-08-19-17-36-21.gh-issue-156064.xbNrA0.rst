@@ -1,0 +1,3 @@
+Fix ``make patchcheck`` not finding the upstream remote in a partial clone,
+where ``git remote -v`` appends the object filter (for example
+``[blob:none]``) after ``(fetch)``.
