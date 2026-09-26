@@ -598,6 +598,23 @@ class TestSnapshot(unittest.TestCase):
         self.assertRaises(ValueError,
                           snapshot.statistics, 'traceback', cumulative=True)
 
+    def test_compare_to_does_not_mutate_group(self):
+        # gh-158232: _compare_grouped_stats() used to pop from old_group,
+        # silently draining the caller's dict.
+        tb_a = traceback(('f.py', 1))
+        tb_b = traceback(('f.py', 2))
+        tb_c = traceback(('f.py', 3))
+
+        old = {tb_a: tracemalloc.Statistic(tb_a, 100, 2),
+               tb_b: tracemalloc.Statistic(tb_b, 50, 1)}
+        new = {tb_a: tracemalloc.Statistic(tb_a, 200, 3),
+               tb_c: tracemalloc.Statistic(tb_c, 10, 1)}
+        old_copy = dict(old)
+
+        tracemalloc._compare_grouped_stats(old, new)
+
+        self.assertEqual(old, old_copy)
+
     def test_snapshot_group_by_cumulative(self):
         snapshot, snapshot2 = create_snapshots()
         tb_0 = traceback_filename('<unknown>')
