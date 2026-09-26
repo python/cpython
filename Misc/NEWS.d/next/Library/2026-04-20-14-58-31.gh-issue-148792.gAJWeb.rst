@@ -1,0 +1,3 @@
+:func:`locale.setlocale` now supports Unix-like locale names with
+@-modifiers on Windows. For example: "ca_ES@valencia", "sr_RS@latin",
+"uz_UZ@cyrillic" and "ks_IN@devanagari".
