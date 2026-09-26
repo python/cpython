@@ -31,6 +31,7 @@ Copyright (C) 1994 Steen Lumholt.
 #endif
 
 #include "pycore_long.h"          // _PyLong_IsNegative()
+#include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_LOAD_PTR, FT_ATOMIC_STORE_PTR
 #include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8String
 
 #include <signal.h>               // SIGINT
@@ -3675,7 +3676,7 @@ EventHook(void)
     int tfile;
     stdin_ready = 0;
 #endif
-    PyEval_RestoreThread(event_tstate);
+    PyEval_RestoreThread(FT_ATOMIC_LOAD_PTR(event_tstate));
     errorInCmd = 0;
 #ifdef MS_WINDOWS
     hStdin = GetStdHandle(STD_INPUT_HANDLE);
@@ -3707,7 +3708,7 @@ EventHook(void)
 #endif
         Py_BEGIN_ALLOW_THREADS
         if(tcl_lock)PyThread_acquire_lock(tcl_lock, 1);
-        tcl_tstate = event_tstate;
+        tcl_tstate = FT_ATOMIC_LOAD_PTR(event_tstate);
 
         result = Tcl_DoOneEvent(TCL_DONT_WAIT);
 
@@ -3745,7 +3746,7 @@ EnableEventHook(void)
 {
 #ifdef WAIT_FOR_STDIN
     if (PyOS_InputHook == NULL) {
-        event_tstate = PyThreadState_Get();
+        FT_ATOMIC_STORE_PTR(event_tstate, PyThreadState_Get());
         PyOS_InputHook = EventHook;
     }
 #endif
@@ -3757,6 +3758,7 @@ DisableEventHook(void)
 #ifdef WAIT_FOR_STDIN
     if (Tk_GetNumMainWindows() == 0 && PyOS_InputHook == EventHook) {
         PyOS_InputHook = NULL;
+        FT_ATOMIC_STORE_PTR(event_tstate, NULL);
     }
 #endif
 }
