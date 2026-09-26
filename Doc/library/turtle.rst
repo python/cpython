@@ -2694,19 +2694,19 @@ Translation of docstrings into different languages
 --------------------------------------------------
 
 The docstrings of the public methods of the Screen and Turtle classes, and of
-the functions derived from them, can be replaced by translations, so that
-:func:`help` and IDE tooltips are shown in another language. Only the help
+the corresponding functions, can be replaced with translations, so that
+:func:`help` and IDE tooltips are shown in another language. However, only the help
 text is translated, the names of the functions and methods stay the same.
 
 Translations are distributed on PyPI in the :pypi:`turtle-translations`
 package. To use them, install the package with :program:`pip` and select the
 language with the :envvar:`PYTHON_TURTLE_LANG` environment variable. For
-example, to show the help text in Irish:
+example, to show the help text in Spanish:
 
 .. code-block:: console
 
    $ python -m pip install turtle-translations
-   $ PYTHON_TURTLE_LANG=ga python
+   $ PYTHON_TURTLE_LANG=es python
    >>> import turtle
    >>> help(turtle.forward)
 
