@@ -1,0 +1,4 @@
+Fix :class:`!multiprocessing.sharedctypes.SynchronizedBase` and its subclasses
+raising :exc:`TypeError` when instantiated without a *lock* or a *ctx*
+argument: they called :func:`multiprocessing.get_context` with an
+unsupported ``force`` argument.

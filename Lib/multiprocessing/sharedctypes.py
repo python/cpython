@@ -189,7 +189,7 @@ class SynchronizedBase(object):
         if lock:
             self._lock = lock
         else:
-            ctx = ctx or get_context(force=True)
+            ctx = ctx or get_context()
             self._lock = ctx.RLock()
         self.acquire = self._lock.acquire
         self.release = self._lock.release
