@@ -380,16 +380,26 @@ tuple_hash(PyObject *op)
 
     Py_ssize_t len = Py_SIZE(v);
     PyObject **item = v->ob_item;
+
+    /* Hashing an item recurses back into tuple_hash() when that item is
+       itself a tuple, so guard the descent to raise RecursionError rather
+       than overflow the C stack on a deeply nested tuple. */
+    if (_Py_EnterRecursiveCall(" while hashing a tuple")) {
+        return -1;
+    }
+
     acc = _PyTuple_HASH_XXPRIME_5;
     for (Py_ssize_t i = 0; i < len; i++) {
         Py_uhash_t lane = PyObject_Hash(item[i]);
         if (lane == (Py_uhash_t)-1) {
+            _Py_LeaveRecursiveCall();
             return -1;
         }
         acc += lane * _PyTuple_HASH_XXPRIME_2;
         acc = _PyTuple_HASH_XXROTATE(acc);
         acc *= _PyTuple_HASH_XXPRIME_1;
     }
+    _Py_LeaveRecursiveCall();
 
     /* Add input length, mangled to keep the historical value of hash(()). */
     acc += len ^ (_PyTuple_HASH_XXPRIME_5 ^ 3527539UL);
