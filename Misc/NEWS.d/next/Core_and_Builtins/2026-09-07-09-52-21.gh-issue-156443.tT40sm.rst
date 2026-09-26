@@ -1,0 +1,2 @@
+Optimize shifts and division of large :class:`int` values. Speeds up the
+pyperformance ``pidigits`` benchmark by ~20% on AArch64.
