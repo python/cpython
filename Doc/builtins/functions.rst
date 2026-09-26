@@ -828,7 +828,7 @@ are always available.  They are listed here in alphabetical order.
       single: NaN
       single: Infinity
 
-   Return a floating-point number constructed from a number or a string.
+   Return a floating-point number constructed from a number, a string, or a bytes-like object.
 
    Examples:
 
@@ -844,6 +844,10 @@ are always available.  They are listed here in alphabetical order.
       1000000.0
       >>> float('-Infinity')
       -inf
+      >>> float(b'12.67')
+      12.67
+      >>> float(bytearray(b'-2.5'))
+      -2.5
 
    If the argument is a string, it should contain a decimal number, optionally
    preceded by a sign, and optionally embedded in whitespace.  The optional
@@ -868,6 +872,9 @@ are always available.  They are listed here in alphabetical order.
 
    Case is not significant, so, for example, "inf", "Inf", "INFINITY", and
    "iNfINity" are all acceptable spellings for positive infinity.
+
+   If the argument is a bytes-like object, it must contain only ASCII characters
+   that conform to the :token:`~float:floatvalue` rule.
 
    Otherwise, if the argument is an integer or a floating-point number, a
    floating-point number with the same value (within Python's floating-point
