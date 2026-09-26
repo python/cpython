@@ -257,6 +257,7 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_IMPORT_FROM] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_IS_NONE] = HAS_ESCAPES_FLAG,
     [_GET_LEN] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
+    [_MATCH_CLASS_GET_OPT_ATTR] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_MATCH_CLASS] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_MATCH_MAPPING] = 0,
     [_MATCH_SEQUENCE] = 0,
@@ -2445,6 +2446,15 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { -1, -1, -1 },
         },
     },
+    [_MATCH_CLASS_GET_OPT_ATTR] = {
+        .best = { 1, 1, 1, 1 },
+        .entries = {
+            { -1, -1, -1 },
+            { 3, 1, _MATCH_CLASS_GET_OPT_ATTR_r13 },
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+        },
+    },
     [_MATCH_CLASS] = {
         .best = { 3, 3, 3, 3 },
         .entries = {
@@ -4449,6 +4459,7 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_IMPORT_FROM_r12] = _IMPORT_FROM,
     [_IS_NONE_r11] = _IS_NONE,
     [_GET_LEN_r12] = _GET_LEN,
+    [_MATCH_CLASS_GET_OPT_ATTR_r13] = _MATCH_CLASS_GET_OPT_ATTR,
     [_MATCH_CLASS_r33] = _MATCH_CLASS,
     [_MATCH_MAPPING_r02] = _MATCH_MAPPING,
     [_MATCH_MAPPING_r12] = _MATCH_MAPPING,
@@ -5905,6 +5916,8 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_MAP_ADD_r20] = "_MAP_ADD_r20",
     [_MATCH_CLASS] = "_MATCH_CLASS",
     [_MATCH_CLASS_r33] = "_MATCH_CLASS_r33",
+    [_MATCH_CLASS_GET_OPT_ATTR] = "_MATCH_CLASS_GET_OPT_ATTR",
+    [_MATCH_CLASS_GET_OPT_ATTR_r13] = "_MATCH_CLASS_GET_OPT_ATTR_r13",
     [_MATCH_KEYS] = "_MATCH_KEYS",
     [_MATCH_KEYS_r23] = "_MATCH_KEYS_r23",
     [_MATCH_MAPPING] = "_MATCH_MAPPING",
@@ -6641,6 +6654,8 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _IS_NONE:
             return 1;
         case _GET_LEN:
+            return 0;
+        case _MATCH_CLASS_GET_OPT_ATTR:
             return 0;
         case _MATCH_CLASS:
             return 3;
