@@ -1,0 +1,2 @@
+Preserve existing per-instruction monitoring callbacks when a code object
+switches from single-tool to multi-tool monitoring.
