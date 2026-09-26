@@ -84,6 +84,12 @@ class ThreadRunningTests(BasicThreadTest):
             # size must be positive
             thread.stack_size(-4096)
 
+        if support.check_sanitizer(address=True, function=False):
+            # gh-141044: 127 KiB used to be accepted but leaked under ASan
+            with self.assertRaises(ValueError):
+                thread.stack_size(127 * 1024)
+            self.assertEqual(thread.stack_size(), 0)
+
     @unittest.skipIf(os.name not in ("nt", "posix"), 'test meant for nt and posix')
     def test_nt_and_posix_stack_size(self):
         try:
@@ -96,12 +102,22 @@ class ThreadRunningTests(BasicThreadTest):
                           "size")
 
         fail_msg = "stack_size(%d) failed - should succeed"
+        # 256 KiB may be below the sanitizer minimum (gh-141044 / TSan).
+        tested = []
         for tss in (262144, 0x100000, 0):
-            thread.stack_size(tss)
+            try:
+                thread.stack_size(tss)
+            except ValueError:
+                verbose_print("skipping stack_size(%d); below platform minimum"
+                              % tss)
+                continue
             self.assertEqual(thread.stack_size(), tss, fail_msg % tss)
             verbose_print("successfully set stack_size(%d)" % tss)
+            tested.append(tss)
 
         for tss in (262144, 0x100000):
+            if tss not in tested:
+                continue
             verbose_print("trying stack_size = (%d)" % tss)
             self.next_ident = 0
             self.created = 0

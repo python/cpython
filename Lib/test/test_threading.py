@@ -245,17 +245,19 @@ class ThreadTests(BaseTestCase):
             done.wait()
             self.assertEqual(ident[0], tid)
 
-    # run with a small(ish) thread stack size (256 KiB)
+    # run with a small(ish) thread stack size (512 KiB)
     def test_various_ops_small_stack(self):
         if verbose:
-            print('with 256 KiB thread stack size...')
+            print('with 512 KiB thread stack size...')
         try:
-            threading.stack_size(262144)
-        except _thread.error:
+            threading.stack_size(512 * 1024)
+        except (ValueError, _thread.error):
             raise unittest.SkipTest(
-                'platform does not support changing thread stack size')
-        self.test_various_ops()
-        threading.stack_size(0)
+                'platform does not support a 512 KiB thread stack')
+        try:
+            self.test_various_ops()
+        finally:
+            threading.stack_size(0)
 
     # run with a large thread stack size (1 MiB)
     def test_various_ops_large_stack(self):
@@ -268,6 +270,140 @@ class ThreadTests(BaseTestCase):
                 'platform does not support changing thread stack size')
         self.test_various_ops()
         threading.stack_size(0)
+
+    def test_stack_size_no_leak(self):
+        # gh-141044: a custom thread stack size used to leak Thread objects
+        # when the size passed _thread.stack_size() but was too small for
+        # threading.Thread bootstrap under AddressSanitizer.  The reported
+        # repro used 127 KiB and did not join the thread.
+        try:
+            threading.stack_size(0x100000)
+        except (ValueError, _thread.error):
+            self.skipTest(
+                'platform does not support a 1 MiB thread stack')
+        threading.stack_size(0)
+
+        def run_script(script):
+            _, _, err = assert_python_ok(
+                "-c", textwrap.dedent(script),
+                ASAN_OPTIONS="detect_leaks=1:halt_on_error=1")
+            err_s = err.decode("utf-8", "replace")
+            self.assertNotIn("LeakSanitizer", err_s, err_s)
+
+        min_stack_helper = """
+            import os
+            import threading
+            import _thread
+
+            def min_stack_size():
+                page = os.sysconf("SC_PAGESIZE") if hasattr(os, "sysconf") else 4096
+                size = page
+                while size <= 4 * 1024 * 1024:
+                    try:
+                        threading.stack_size(size)
+                    except ValueError:
+                        size += page
+                        continue
+                    except _thread.error:
+                        return None
+                    return size
+                return None
+            """
+
+        # Original reproducer: start, do not join.  127 KiB is rejected on
+        # ASan builds; if a build still accepts it, the thread must not leak.
+        run_script("""
+            import threading
+            try:
+                threading.stack_size(127 * 1024)
+            except ValueError:
+                raise SystemExit(0)
+            def worker():
+                pass
+            t = threading.Thread(target=worker, name="worker-thread")
+            t.start()
+            threading.stack_size(0)
+            """)
+
+        # Smallest accepted size, unjoined.  Wait until the worker finishes
+        # without join(); process shutdown also joins.  LSan plus (on debug
+        # builds) gettotalrefcount() must stay clean at this new minimum.
+        run_script(min_stack_helper + """
+            import gc
+            import sys
+            import time
+
+            def worker():
+                pass
+            size = min_stack_size()
+            if size is None:
+                raise SystemExit(0)
+
+            def wait_unjoined(threads, timeout=30):
+                deadline = time.monotonic() + timeout
+                for t in threads:
+                    while t.is_alive():
+                        if time.monotonic() > deadline:
+                            raise SystemExit("unjoined worker did not finish")
+                        time.sleep(0.001)
+
+            if hasattr(sys, "gettotalrefcount"):
+                gc.collect()
+                gc.collect()
+                start = sys.gettotalrefcount()
+                threads = []
+                for _ in range(8):
+                    t = threading.Thread(target=worker)
+                    t.start()
+                    threads.append(t)
+                wait_unjoined(threads)
+                del threads
+                threading.stack_size(0)
+                gc.collect()
+                gc.collect()
+                delta = sys.gettotalrefcount() - start
+                if delta > 50:
+                    raise SystemExit(f"refcount leak: {delta}")
+            else:
+                t = threading.Thread(target=worker, name="min-stack-worker")
+                t.start()
+                threading.stack_size(0)
+            """)
+
+        # Joined threads at the minimum must not leak references.
+        run_script(min_stack_helper + """
+            import gc
+            import sys
+
+            def worker():
+                pass
+            size = min_stack_size()
+            if size is None:
+                raise SystemExit(0)
+            for _ in range(3):
+                t = threading.Thread(target=worker)
+                t.start()
+                t.join()
+            if hasattr(sys, "gettotalrefcount"):
+                gc.collect()
+                gc.collect()
+                start = sys.gettotalrefcount()
+                for _ in range(8):
+                    t = threading.Thread(target=worker)
+                    t.start()
+                    t.join()
+                threading.stack_size(0)
+                gc.collect()
+                gc.collect()
+                delta = sys.gettotalrefcount() - start
+                if delta > 50:
+                    raise SystemExit(f"refcount leak: {delta}")
+            else:
+                t = threading.Thread(target=worker)
+                t.start()
+                t.join()
+                threading.stack_size(0)
+            """)
 
     def test_foreign_thread(self):
         # Check that a "foreign" thread can use the threading module.
