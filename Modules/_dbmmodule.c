@@ -28,7 +28,12 @@
   static const char which_dbm[] = "GNU gdbm";
 #elif defined(USE_NDBM)
   #include <ndbm.h>
+  #ifdef _GDBM_H_
+  /* ndbm.h is the GDBM compatibility interface. */
   static const char which_dbm[] = "GNU gdbm";
+  #else
+  static const char which_dbm[] = "ndbm";
+  #endif
 #elif defined(USE_BERKDB)
   #ifndef DB_DBM_HSEARCH
     #define DB_DBM_HSEARCH 1
@@ -628,6 +633,136 @@ static PyMethodDef dbmmodule_methods[] = {
     { 0, 0 },
 };
 
+#if defined(GDBM_VERSION_MAJOR) || defined(DB_VERSION_MAJOR)
+static PyStructSequence_Field version_info_fields[] = {
+    {"major", "Major release number"},
+    {"minor", "Minor release number"},
+    {"patch", "Patch release number"},
+    {0}
+};
+
+static PyObject *
+make_version_info(PyTypeObject *type, int major, int minor, int patch)
+{
+    PyObject *version;
+    int pos = 0;
+
+    version = PyStructSequence_New(type);
+    if (version == NULL) {
+        return NULL;
+    }
+
+#define SetItem(VALUE) \
+    PyStructSequence_SET_ITEM(version, pos++, VALUE); \
+    if (PyErr_Occurred()) { \
+        Py_DECREF(version); \
+        return NULL; \
+    }
+
+    SetItem(PyLong_FromLong(major))
+    SetItem(PyLong_FromLong(minor))
+    SetItem(PyLong_FromLong(patch))
+#undef SetItem
+
+    return version;
+}
+#endif
+
+#if defined(GDBM_VERSION_MAJOR)
+PyDoc_STRVAR(gdbm_version_info__doc__,
+"_dbm.gdbm_version_info\n\
+\n\
+GDBM version information as a named tuple.");
+
+static PyStructSequence_Desc gdbm_version_info_desc = {
+    "_dbm.gdbm_version_info",       /* name */
+    gdbm_version_info__doc__,       /* doc */
+    version_info_fields,            /* fields */
+    3
+};
+
+static int
+add_version_constants(PyObject *module)
+{
+    if (PyModule_AddStringConstant(module, "gdbm_version", gdbm_version) < 0) {
+        return -1;
+    }
+    PyTypeObject *version_type;
+    version_type = PyStructSequence_NewType(&gdbm_version_info_desc);
+    if (version_type == NULL) {
+        return -1;
+    }
+    if (PyModule_Add(module, "GDBM_VERSION_INFO",
+            make_version_info(version_type, GDBM_VERSION_MAJOR,
+                              GDBM_VERSION_MINOR, GDBM_VERSION_PATCH)) < 0)
+    {
+        Py_DECREF(version_type);
+        return -1;
+    }
+    if (PyModule_Add(module, "gdbm_version_info",
+            make_version_info(version_type, gdbm_version_number[0],
+                              gdbm_version_number[1],
+                              gdbm_version_number[2])) < 0)
+    {
+        Py_DECREF(version_type);
+        return -1;
+    }
+    Py_DECREF(version_type);
+    return 0;
+}
+#elif defined(DB_VERSION_MAJOR)
+PyDoc_STRVAR(bdb_version_info__doc__,
+"_dbm.bdb_version_info\n\
+\n\
+Berkeley DB version information as a named tuple.");
+
+static PyStructSequence_Desc bdb_version_info_desc = {
+    "_dbm.bdb_version_info",         /* name */
+    bdb_version_info__doc__,         /* doc */
+    version_info_fields,            /* fields */
+    3
+};
+
+static int
+add_version_constants(PyObject *module)
+{
+    int major, minor, patch;
+    const char *version = db_version(&major, &minor, &patch);
+    if (PyModule_AddStringConstant(module, "BDB_VERSION", DB_VERSION_STRING) < 0) {
+        return -1;
+    }
+    if (PyModule_AddStringConstant(module, "bdb_version", version) < 0) {
+        return -1;
+    }
+    PyTypeObject *version_type;
+    version_type = PyStructSequence_NewType(&bdb_version_info_desc);
+    if (version_type == NULL) {
+        return -1;
+    }
+    if (PyModule_Add(module, "BDB_VERSION_INFO",
+            make_version_info(version_type, DB_VERSION_MAJOR,
+                              DB_VERSION_MINOR, DB_VERSION_PATCH)) < 0)
+    {
+        Py_DECREF(version_type);
+        return -1;
+    }
+    if (PyModule_Add(module, "bdb_version_info",
+            make_version_info(version_type, major, minor, patch)) < 0)
+    {
+        Py_DECREF(version_type);
+        return -1;
+    }
+    Py_DECREF(version_type);
+    return 0;
+}
+#else
+static int
+add_version_constants(PyObject *module)
+{
+    return 0;
+}
+#endif
+
 static int
 _dbm_exec(PyObject *module)
 {
@@ -642,6 +777,9 @@ _dbm_exec(PyObject *module)
         return -1;
     }
     if (PyModule_AddStringConstant(module, "library", which_dbm) < 0) {
+        return -1;
+    }
+    if (add_version_constants(module) < 0) {
         return -1;
     }
     if (PyModule_AddType(module, (PyTypeObject *)state->dbm_error) < 0) {
