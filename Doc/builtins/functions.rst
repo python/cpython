@@ -385,13 +385,13 @@ are always available.  They are listed here in alphabetical order.
    by module name.
 
    This function raises :exc:`SyntaxError` if the compiled source is invalid,
-   including a *source* containing a null character or that cannot be decoded;
-   :exc:`ValueError` if *mode* or *flags* is invalid,
-   or if a string *source* contains surrogate characters;
-   :exc:`MemoryError` or :exc:`RecursionError` if *source* is too complex
-   to parse or compile,
-   for example an expression with many thousands of nested operators;
-   and :exc:`OverflowError` if *source* is too large.
+   including a *source* containing a null or surrogate character,
+   that cannot be decoded,
+   that is too complex to parse or compile,
+   for example an expression with many thousands of nested operators,
+   or that is too large;
+   :exc:`RecursionError` if an AST object *source* is too deeply nested;
+   and :exc:`ValueError` if *mode* or *flags* is invalid.
 
    If you want to parse Python code into its AST representation, see
    :func:`ast.parse`.
@@ -433,6 +433,13 @@ are always available.  They are listed here in alphabetical order.
 
    .. versionchanged:: 3.15
       Added the *module* parameter.
+
+   .. versionchanged:: next
+      :exc:`SyntaxError` is raised instead of :exc:`ValueError` when surrogate
+      characters are encountered in *source*,
+      instead of :exc:`MemoryError` or :exc:`RecursionError`
+      when *source* is too complex,
+      and instead of :exc:`OverflowError` when *source* is too large.
 
 
 .. class:: complex(number=0, /)
