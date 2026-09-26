@@ -23,6 +23,7 @@ Copyright (C) 2001-2021 Vinay Sajip. All Rights Reserved.
 To use, simply 'import logging.handlers' and log away!
 """
 
+import copy
 import io
 import logging
 import os
@@ -30,7 +31,6 @@ import re
 import threading
 import time
 lazy import base64
-lazy import copy
 lazy import email.utils
 lazy import http.client
 lazy import pickle

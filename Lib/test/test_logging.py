@@ -7643,7 +7643,7 @@ class LazyImportTest(unittest.TestCase):
     def test_lazy_imports_handlers(self):
         import_helper.ensure_lazy_imports(
             "logging.handlers",
-            {"base64", "copy", "email", "http", "pickle", "queue", "smtplib",
+            {"base64", "email", "http", "pickle", "queue", "smtplib",
              "socket", "ssl", "struct", "urllib"},
         )
 

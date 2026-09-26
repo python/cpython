@@ -34,6 +34,8 @@ import threading
 import traceback
 lazy import configparser
 lazy import json
+# Also rebinds `logging` here lazily, so using it binds `handlers` in
+# vars(logging) for fileConfig()'s eval; `lazy from` would not.
 lazy import logging.handlers
 lazy import queue
 lazy import select
