@@ -408,7 +408,7 @@ Importing Modules
 
    *spec* must be a :class:`~importlib.machinery.ModuleSpec` object.
 
-   *initfunc* must be an :ref:`initialization function <extension-export-hook>`,
+   *initfunc* must be an :ref:`initialization function <extension-pyinit>`,
    the same as for :c:func:`PyImport_AppendInittab`.
 
    On success, create and return a module object.
@@ -416,6 +416,17 @@ Importing Modules
    to initialize it.
    (Custom importers should do this in their
    :py:meth:`~importlib.abc.Loader.exec_module` method.)
+
+   If *initfunc* uses
+   :ref:`legacy single-phase initialization <single-phase-initialization>`,
+   the module is fully initialized by *initfunc* itself, and it is also
+   added to :data:`sys.modules` under the spec's name.
+   Calling :c:func:`PyModule_Exec` on such a module is still safe.
+   As with any single-phase module, the spec's name identifies the module:
+   if a single-phase module was previously created under the same name
+   (by this function, or in another interpreter), Python does not call
+   *initfunc* again but reuses the saved module contents, so a later call
+   with the same name but a different *initfunc* has no effect.
 
    On error, return NULL with an exception set.
 
