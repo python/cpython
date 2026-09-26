@@ -6,7 +6,7 @@ from libclinic import fail, warn, unspecified, Sentinels
 from libclinic.function import (
     Function, Parameter, ParamTuple,
     count_required, group_to_variable_name, permute_optional_groups,
-    GETTER, SETTER, SETTER_AND_DELETER, METHOD_INIT,
+    GETTER, SETTER, DELETER, SETTER_AND_DELETER, METHOD_INIT,
     ACCESSORS, SETTERS)
 from libclinic.converter import CConverter
 from libclinic.converters import (
@@ -191,13 +191,37 @@ SETTER_PREAMBLE: Final[str] = libclinic.normalize_snippet("""
         return -1;
     }}
 """, indent=4)
+DELETER_PREAMBLE: Final[str] = libclinic.normalize_snippet("""
+    if (arg != NULL) {{
+        PyErr_Format(PyExc_AttributeError,
+                     "attribute '{name}' of '%.100s' objects is not writable",
+                     Py_TYPE({self_name})->tp_name);
+        return -1;
+    }}
+""", indent=4)
 SETTERDEF_PROTOTYPE_DEFINE: Final[str] = libclinic.normalize_snippet("""
     #define {getset_name}_SETTER {c_basename}
+""")
+DELETERDEF_PROTOTYPE_DEFINE: Final[str] = libclinic.normalize_snippet("""
+    #define {getset_name}_DELETER {c_basename}
 """)
 METHODDEF_PROTOTYPE_IFNDEF: Final[str] = libclinic.normalize_snippet("""
     #ifndef {methoddef_name}
         #define {methoddef_name}
     #endif /* !defined({methoddef_name}) */
+""")
+# The setter slot of a PyGetSetDef entry is used both for setting and for
+# deleting the attribute.  If they are implemented by separate functions, an
+# intermediate function dispatches to one of them.
+SETDEL_DISPATCHER: Final[str] = libclinic.normalize_snippet("""
+    static int
+    {setdel_basename}(PyObject *self, PyObject *value, void *context)
+    {{
+        if (value == NULL) {{
+            return ((setter){deleter})(self, value, context);
+        }}
+        return ((setter){setter})(self, value, context);
+    }}
 """)
 # The entry of an attribute whose accessors are all compiled unconditionally.
 GETSETDEF_PROTOTYPE_DEFINE: Final[str] = libclinic.normalize_snippet("""
@@ -206,7 +230,25 @@ GETSETDEF_PROTOTYPE_DEFINE: Final[str] = libclinic.normalize_snippet("""
 # Composes the PyGetSetDef entry of an attribute.  It must be rendered after
 # all accessors of that attribute, so it is written to the same destination as
 # the "ifndef" of a method, which is emptied at the end of the file.
+#
+# The setter slot of the entry is used both for setting and for deleting the
+# attribute.  If they are implemented by separate functions, an intermediate
+# function dispatches to one of them.
 GETSETDEF_PROTOTYPE_COMBINE: Final[str] = libclinic.normalize_snippet("""
+    #if defined({getset_name}_SETTER) && defined({getset_name}_DELETER)
+    static int
+    {setdel_basename}(PyObject *self, PyObject *value, void *context)
+    {{
+        if (value == NULL) {{
+            return ((setter){getset_name}_DELETER)(self, value, context);
+        }}
+        return ((setter){getset_name}_SETTER)(self, value, context);
+    }}
+    #  undef {getset_name}_SETTER
+    #  define {getset_name}_SETTER {setdel_basename}
+    #elif defined({getset_name}_DELETER)
+    #  define {getset_name}_SETTER {getset_name}_DELETER
+    #endif
     #if defined({getset_name}_GETTER) || defined({getset_name}_SETTER)
     #  if !defined({getset_name}_GETTER)
     #    define {getset_name}_GETTER NULL
@@ -421,8 +463,12 @@ class ParseArgsCodeGen:
                      line_number=self.func.line_number)
             # The conversion of the value can fail before it is set.
             self.return_value_declaration = "int {parser_retval} = -1;"
-            self.methoddef_define = (SETTERDEF_PROTOTYPE_DEFINE
-                                     if self.func.condition else '')
+            if self.func.kind is DELETER:
+                self.methoddef_define = (DELETERDEF_PROTOTYPE_DEFINE
+                                         if self.func.condition else '')
+            else:
+                self.methoddef_define = (SETTERDEF_PROTOTYPE_DEFINE
+                                         if self.func.condition else '')
         else:
             self.docstring_prototype = DOCSTRING_PROTOTYPE_VAR
             self.docstring_definition = DOCSTRING_PROTOTYPE_STRVAR
@@ -483,7 +529,7 @@ class ParseArgsCodeGen:
         ])
 
     def parse_accessor(self) -> None:
-        """Generate the code of a getter or a setter."""
+        """Generate the code of a getter, a setter or a deleter."""
         parser_code: list[str] = []
         if self.func.kind is GETTER:
             self.parser_prototype = PARSER_PROTOTYPE_GETTER
@@ -494,7 +540,11 @@ class ParseArgsCodeGen:
             if self.func.kind is SETTER:
                 # The setter which is not the deleter rejects the deletion.
                 parser_code.append(SETTER_PREAMBLE)
-            parser_code.append(self.render_setter_value())
+            elif self.func.kind is DELETER:
+                # The deleter is called without a value.
+                parser_code.append(DELETER_PREAMBLE)
+            if self.func.kind is not DELETER:
+                parser_code.append(self.render_setter_value())
         self.finish_parser_body(parser_code)
 
     def parse_no_args(self) -> None:

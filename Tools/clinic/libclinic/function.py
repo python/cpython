@@ -59,7 +59,8 @@ class Property:
     """An attribute implemented by accessors, rendered into a PyGetSetDef entry.
 
     A slot can contain several implementations if they are guarded by
-    preprocessor conditions.
+    preprocessor conditions, and the same function if it is both the setter
+    and the deleter.
     """
     name: str
     full_name: str
@@ -68,6 +69,7 @@ class Property:
     def __post_init__(self) -> None:
         self.getter: list[Function] = []
         self.setter: list[Function] = []
+        self.deleter: list[Function] = []
         self.rendered = False
 
     def __repr__(self) -> str:
@@ -77,12 +79,18 @@ class Property:
     def is_plain(self) -> bool:
         """Can the entry be composed without the help of the preprocessor?"""
         return all(len(funcs) <= 1 and not (funcs and funcs[0].condition)
-                   for funcs in (self.getter, self.setter))
+                   for funcs in (self.getter, self.setter, self.deleter))
 
     @property
     def getset_name(self) -> str:
         """The prefix of the names of the macros of the entry."""
         return self.full_name.replace('.', '_').upper()
+
+    @property
+    def setdel_basename(self) -> str:
+        """The name of the function which dispatches to the setter or the
+        deleter."""
+        return self.full_name.replace('.', '_') + "_set_or_del"
 
 
 class FunctionKind(enum.Enum):
@@ -93,6 +101,7 @@ class FunctionKind(enum.Enum):
     METHOD_NEW      = enum.auto()
     GETTER          = enum.auto()
     SETTER          = enum.auto()
+    DELETER         = enum.auto()
     SETTER_AND_DELETER  = enum.auto()
 
     @functools.cached_property
@@ -110,10 +119,11 @@ METHOD_INIT: Final = FunctionKind.METHOD_INIT
 METHOD_NEW: Final = FunctionKind.METHOD_NEW
 GETTER: Final = FunctionKind.GETTER
 SETTER: Final = FunctionKind.SETTER
+DELETER: Final = FunctionKind.DELETER
 SETTER_AND_DELETER: Final = FunctionKind.SETTER_AND_DELETER
 
 # The kinds which implement the setter of an entry of PyGetSetDef.
-SETTERS: Final = frozenset({SETTER, SETTER_AND_DELETER})
+SETTERS: Final = frozenset({SETTER, DELETER, SETTER_AND_DELETER})
 # The kinds which implement an entry of PyGetSetDef.
 ACCESSORS: Final = SETTERS | {GETTER}
 
@@ -172,6 +182,8 @@ class Function:
         assert self.kind in ACCESSORS
         if self.kind is GETTER:
             return self.c_basename + "_get"
+        if self.kind is DELETER:
+            return self.c_basename + "_del"
         return self.c_basename + "_set"
 
     @functools.cached_property
