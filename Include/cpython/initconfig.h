@@ -11,19 +11,19 @@ typedef struct {
     enum {
         _PyStatus_TYPE_OK=0,
         _PyStatus_TYPE_ERROR=1,
-        _PyStatus_TYPE_EXIT=2
+        _PyStatus_TYPE_EXIT=2  // deprecated
     } _type;
     const char *func;
     const char *err_msg;
-    int exitcode;
+    Py_DEPRECATED(3.16) int exitcode;
 } PyStatus;
 
 PyAPI_FUNC(PyStatus) PyStatus_Ok(void);
 PyAPI_FUNC(PyStatus) PyStatus_Error(const char *err_msg);
 PyAPI_FUNC(PyStatus) PyStatus_NoMemory(void);
-PyAPI_FUNC(PyStatus) PyStatus_Exit(int exitcode);
+Py_DEPRECATED(3.16) PyAPI_FUNC(PyStatus) PyStatus_Exit(int exitcode);
 PyAPI_FUNC(int) PyStatus_IsError(PyStatus err);
-PyAPI_FUNC(int) PyStatus_IsExit(PyStatus err);
+Py_DEPRECATED(3.16) PyAPI_FUNC(int) PyStatus_IsExit(PyStatus err);
 PyAPI_FUNC(int) PyStatus_Exception(PyStatus err);
 
 /* --- PyWideStringList ------------------------------------------------ */
@@ -242,6 +242,11 @@ typedef struct PyConfig {
     // PYTHON_PRESITE=package.module or -X presite=package.module
     wchar_t *run_presite;
 #endif
+
+    // If a command line option wants to exit Python, store it in this member
+    // and only process the option in Py_RunMain() instead of PyConfig_Read().
+    // If equals to 0, there is no option.
+    int _deferred_cmdline_option;
 } PyConfig;
 
 PyAPI_FUNC(void) PyConfig_InitPythonConfig(PyConfig *config);
@@ -293,7 +298,7 @@ PyAPI_FUNC(void) PyInitConfig_Free(PyInitConfig *config);
 
 PyAPI_FUNC(int) PyInitConfig_GetError(PyInitConfig* config,
     const char **err_msg);
-PyAPI_FUNC(int) PyInitConfig_GetExitCode(PyInitConfig* config,
+Py_DEPRECATED(3.16) PyAPI_FUNC(int) PyInitConfig_GetExitCode(PyInitConfig* config,
     int *exitcode);
 
 PyAPI_FUNC(int) PyInitConfig_HasOption(PyInitConfig *config,

@@ -799,7 +799,7 @@ class AnnotationsVisitor(PickleVisitor):
                     FIELD_SEQUENCE = 2,
                     FIELD_BUILTIN = 4,
                 };
-                static PyTypeObject *const builtin_types[] = {
+                PyTypeObject *const builtin_types[] = {
         '''))
         for c_type in builtins:
             self.emit(f"&{c_type},", 2)

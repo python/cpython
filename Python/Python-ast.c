@@ -832,7 +832,7 @@ add_ast_annotations(struct ast_state *state)
         FIELD_SEQUENCE = 2,
         FIELD_BUILTIN = 4,
     };
-    static PyTypeObject *const builtin_types[] = {
+    PyTypeObject *const builtin_types[] = {
         &PyUnicode_Type,
         &PyLong_Type,
         &PyBaseObject_Type,

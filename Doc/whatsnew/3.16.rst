@@ -573,6 +573,16 @@ symtable
   like the builtin :func:`compile`.
   (Contributed by Serhiy Storchaka in :gh:`153844`.)
 
+* Inlined list, set and dict comprehensions (:pep:`709`) are now represented
+  as their own symbol table entries, of type
+  :attr:`~symtable.SymbolTableType.INLINED_COMPREHENSION`. Each such entry is
+  a lexical child of the enclosing scope and records the comprehension's own
+  locals, cells, and free names. It does not correspond to a separate
+  compilation unit. For names loaded only inside an inlined list, set, or
+  dict comprehension, :meth:`symtable.Symbol.is_referenced` can now return
+  ``True`` on the enclosing function.
+  (Contributed by Irit Katriel in :gh:`124697`.)
+
 
 tkinter
 -------
@@ -1118,6 +1128,18 @@ Deprecated C APIs
   and :c:func:`PyAsyncGen_New` are deprecated.
   They are scheduled for removal in 3.18.
 
+* Deprecate :c:func:`PyInitConfig_GetExitCode`, :c:func:`PyStatus_Exit`,
+  and :c:func:`PyStatus_IsExit` functions, and :c:member:`PyStatus.exitcode`
+  member. :c:func:`Py_InitializeFromInitConfig` and
+  :c:func:`Py_InitializeFromConfig` can no longer return an exit code.
+  Instead, if a command line option wants to exit Python, the option is
+  now processed in :c:func:`Py_RunMain`.
+  (Contributed by Victor Stinner in :gh:`158080`.)
+
+* :c:func:`PyModule_GetFilename` is no longer deprecated, but using
+  :c:func:`PyModule_GetFilenameObject` instead is still recommended.
+  (Contributed by Victor Stinner in :gh:`154757`.)
+
 .. Add C API deprecations above alphabetically, not here at the end.
 
 .. include:: ../deprecations/c-api-pending-removal-in-3.18.rst
@@ -1130,6 +1152,52 @@ Deprecated C APIs
 
 Removed C APIs
 --------------
+
+* Remove 21 global configuration variables, deprecated in Python 3.12.
+  To initialize Python, the :ref:`PyInitConfig C API <pyinitconfig_api>` can be
+  used instead.
+  To read these variables at runtime, :c:func:`PyConfig_Get` can be used
+  instead.
+  Removed variables with their :ref:`PyInitConfig C API <pyinitconfig_api>` and
+  :c:func:`PyConfig_Get` replacement:
+
+  * :c:var:`!Py_DebugFlag`: Use ``"parser_debug"`` instead.
+  * :c:var:`!Py_VerboseFlag`: Use ``"verbose"`` instead.
+  * :c:var:`!Py_QuietFlag`: Use ``"quiet"`` instead.
+  * :c:var:`!Py_InteractiveFlag`: Use ``"interactive"`` instead.
+  * :c:var:`!Py_InspectFlag`: Use ``"inspect"`` instead.
+  * :c:var:`!Py_OptimizeFlag`: Use ``"optimization_level"`` instead.
+  * :c:var:`!Py_NoSiteFlag`: Use ``"site_import"`` instead (opposite value).
+  * :c:var:`!Py_BytesWarningFlag`: Use ``"bytes_warning"`` instead.
+  * :c:var:`!Py_FrozenFlag`: Use ``"pathconfig_warnings"`` instead (opposite value).
+  * :c:var:`!Py_IgnoreEnvironmentFlag`: Use ``"use_environment"`` instead (opposite value).
+  * :c:var:`!Py_DontWriteBytecodeFlag`: Use ``"write_bytecode"`` instead (opposite value).
+  * :c:var:`!Py_NoUserSiteDirectory`: Use ``"user_site_directory"`` instead (opposite value).
+  * :c:var:`!Py_UnbufferedStdioFlag`: Use ``"buffered_stdio"`` instead (opposite value).
+  * :c:var:`!Py_HashRandomizationFlag`: Use ``"hash_seed"`` instead.
+  * :c:var:`!Py_IsolatedFlag`: Use ``"isolated"`` instead.
+  * :c:var:`!Py_LegacyWindowsFSEncodingFlag`: Use ``"legacy_windows_fs_encoding"`` instead.
+  * :c:var:`!Py_LegacyWindowsStdioFlag`: Use ``"legacy_windows_stdio"`` instead.
+  * :c:var:`!Py_FileSystemDefaultEncoding`, :c:var:`!Py_HasFileSystemDefaultEncoding`: Use ``"filesystem_encoding"`` instead.
+  * :c:var:`!Py_FileSystemDefaultEncodeErrors`: Use ``"filesystem_errors"`` instead.
+  * :c:var:`!Py_UTF8Mode`: Use ``"utf8_mode"`` instead.
+
+  (Contributed by Victor Stinner in :gh:`158001`.)
+
+* Remove :c:func:`!PyEval_InitThreads` function which did nothing since Python
+  3.7 and was deprecated since Python 3.9.
+  (Contributed by Victor Stinner in :gh:`154757`.)
+
+* Remove :c:func:`!Py_SetProgramName` and :c:func:`!Py_SetPythonHome`
+  functions, deprecated since Python 3.11. Instead, use :ref:`PyInitConfig C
+  API <pyinitconfig_api>` to set respectively ``"program_name"`` and
+  ``"home"``.
+  (Contributed by Victor Stinner in :gh:`158001`.)
+
+* Remove :c:func:`!PySys_SetArgv` and :c:func:`!PySys_SetArgvEx` functions,
+  deprecated since Python 3.11. Instead, set directly :data:`sys.argv`, and
+  maybe also :data:`sys.path`.
+  (Contributed by Victor Stinner in :gh:`158001`.)
 
 * The :c:var:`!PyUnstable_ExecutableKinds` array, as well as the macros
   :c:macro:`!PyUnstable_EXECUTABLE_KIND_SKIP`,

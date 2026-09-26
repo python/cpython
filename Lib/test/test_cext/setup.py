@@ -1,5 +1,5 @@
-# gh-91321: Build a basic C test extension to check that the Python C API is
-# compatible with C and does not emit C compiler warnings.
+# gh-91321: Build a basic C or C++ test extension module to check that the
+# Python C API does not emit compiler warnings.
 import os
 import shlex
 import sys
@@ -8,10 +8,17 @@ from test import support
 
 from setuptools import setup, Extension
 
+SOURCE = {
+    'C': 'extension.c',
+    'C++': 'extension.cpp',
+}
 
-SOURCE = 'extension.c'
+MSVC = support.MS_WINDOWS
 
-if not support.MS_WINDOWS:
+
+### C flags #################################################################
+
+if not MSVC:
     # C compiler flags for GCC and clang
     BASE_CFLAGS = [
         # The purpose of test_cext extension is to check that building a C
@@ -59,32 +66,74 @@ else:
     ]
 
 
+### C++ flags ###############################################################
+
+if not MSVC:
+    # C++ compiler flags for GCC and clang
+    CPPFLAGS = [
+        # gh-91321: The purpose of _testcppext extension is to check that building
+        # a C++ extension using the Python C API does not emit C++ compiler
+        # warnings
+        '-Werror',
+    ]
+
+    CPPFLAGS_PEDANTIC = [
+        # Ask for strict(er) compliance with the standard.
+        # We cannot do this for c++03 unlimited API, since several headers in
+        # Include/cpython/ use commas at end of `enum` declarations, a C++11
+        # feature for which GCC has no narrower option than -Wpedantic itself.
+        '-pedantic-errors',
+
+        # We also use `long long`, a C++11 feature we can enable individually.
+        '-Wno-long-long',
+    ]
+else:
+    # MSVC compiler flags
+    CPPFLAGS = [
+        # Display warnings level 1 to 4
+        '/W4',
+        # Treat all compiler warnings as compiler errors
+        '/WX',
+    ]
+    CPPFLAGS_PEDANTIC = []
+
+
 def main():
-    std = os.environ.get("CPYTHON_TEST_STD", "")
     module_name = os.environ["CPYTHON_TEST_EXT_NAME"]
+    language = os.environ.get("CPYTHON_TEST_LANG", "C")
+    std = os.environ.get("CPYTHON_TEST_STD", "")
     limited = bool(os.environ.get("CPYTHON_TEST_LIMITED", ""))
     abi3t = bool(os.environ.get("CPYTHON_TEST_ABI3T", ""))
-    internal = bool(int(os.environ.get("TEST_INTERNAL_C_API", "0")))
-    incdirs = os.environ.get("CPYTHON_EXTRA_INCDIRS", "")
-    libdirs = os.environ.get("CPYTHON_EXTRA_LIBDIRS", "")
+    internal = bool(int(os.environ.get("CPYTHON_TEST_INTERNAL_C_API", "0")))
+    incdirs = os.environ.get("CPYTHON_TEST_EXTRA_INCDIRS", "")
+    libdirs = os.environ.get("CPYTHON_TEST_EXTRA_LIBDIRS", "")
+    extra_cflags = os.environ.get("CPYTHON_TEST_EXTRA_CFLAGS", "")
 
-    sources = [SOURCE]
+    source = SOURCE[language]
 
-    if not internal:
-        cflags = list(PUBLIC_CFLAGS)
+    if language == 'C++':
+        flags = list(CPPFLAGS)
     else:
-        cflags = list(INTERNAL_CFLAGS)
-    cflags.append(f'-DMODULE_NAME={module_name}')
+        if not internal:
+            flags = list(PUBLIC_CFLAGS)
+        else:
+            flags = list(INTERNAL_CFLAGS)
+    flags.append(f'-DMODULE_NAME={module_name}')
 
     # Add -std=STD or /std:STD (MSVC) compiler flag
     if std:
-        if support.MS_WINDOWS:
-            cflags.append(f'/std:{std}')
+        if MSVC:
+            flags.append(f'/std:{std}')
         else:
-            cflags.append(f'-std={std}')
+            flags.append(f'-std={std}')
 
-    # Remove existing -std or /std options from CC command line.
-    # Python adds -std=c11 option.
+    if language == 'C++' and (limited or (std != 'c++03') and not internal):
+        # See CPPFLAGS_PEDANTIC docstring
+        flags.extend(CPPFLAGS_PEDANTIC)
+
+    # gh-105776: When "gcc -std=11" is used as the C++ compiler, -std=c11
+    # option emits a C++ compiler warning. Remove "-std11" option from the
+    # CC command.
     cmd = (sysconfig.get_config_var('CC') or '')
     if cmd is not None:
         if support.MS_WINDOWS:
@@ -99,13 +148,13 @@ def main():
 
     # Define opt-in macros
     if limited:
-        cflags.append(f'-DPy_LIMITED_API={sys.hexversion:#x}')
-
+        flags.append(f'-DPy_LIMITED_API={sys.hexversion:#x}')
     if abi3t:
-        cflags.append(f'-DPy_TARGET_ABI3T={sys.hexversion:#x}')
-
+        flags.append(f'-DPy_TARGET_ABI3T={sys.hexversion:#x}')
     if internal:
-        cflags.append('-DTEST_INTERNAL_C_API=1')
+        flags.append('-DTEST_INTERNAL_C_API=1')
+    if extra_cflags:
+        flags.extend(shlex.split(extra_cflags))
 
     # Add additional include and library directories, typically for in-tree
     # testing where not all directories are inferred
@@ -119,17 +168,19 @@ def main():
         library_dirs.extend(libdirs.split(os.pathsep))
 
     # Display information to help debugging
-    for env_name in ('CC', 'CFLAGS', 'CPPFLAGS'):
+    print(f"Language: {language}")
+    print(f"Source: {source}")
+    for env_name in ('CC', 'CXX', 'CFLAGS', 'CPPFLAGS', 'CXXFLAGS'):
         if env_name in os.environ:
             print(f"{env_name} env var: {os.environ[env_name]!r}")
         else:
             print(f"{env_name} env var: <missing>")
-    print(f"extra_compile_args: {cflags!r}")
+    print(f"extra_compile_args: {flags!r}")
 
     ext = Extension(
         module_name,
-        sources=sources,
-        extra_compile_args=cflags,
+        sources=[source],
+        extra_compile_args=flags,
         include_dirs=include_dirs,
         library_dirs=library_dirs)
     setup(name=f'internal_{module_name}',
