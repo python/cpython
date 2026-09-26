@@ -237,6 +237,12 @@ def _wrap_strftime(object, format, timetuple):
                         freplace = '%06d' % getattr(object,
                                                     'microsecond', 0)
                     newformat.append(freplace)
+                elif ch in '123456' and format[i:i+1] == 'f':
+                    i += 1
+                    if freplace is None:
+                        freplace = '%06d' % getattr(object,
+                                                    'microsecond', 0)
+                    newformat.append(freplace[:int(ch)])
                 elif ch == 'z':
                     if zreplace is None:
                         if hasattr(object, "utcoffset"):

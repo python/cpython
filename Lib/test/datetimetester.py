@@ -1630,6 +1630,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
 
         #check that this standard extension works
         t.strftime("%f")
+        self.assertEqual(t.strftime("%3f"), "000")
 
         # bpo-41260: The parameter was named "fmt" in the pure python impl.
         t.strftime(format="%f")
@@ -3189,6 +3190,12 @@ class TestDateTime(TestDate):
         t = self.theclass(2004, 12, 31, 6, 22, 33, 47)
         self.assertEqual(t.strftime("%m %d %y %f %S %M %H %j"),
                                     "12 31 04 000047 33 22 06 366")
+        t = self.theclass(2004, 12, 31, 6, 22, 33, 123456)
+        self.assertEqual(t.strftime("%1f %2f %3f %4f %5f %6f"),
+                                    "1 12 123 1234 12345 123456")
+        self.assertEqual(t.strftime("%S.%3f%%3f"), "33.123%3f")
+        t = self.theclass(2004, 12, 31, 6, 22, 33, 47)
+        self.assertEqual(t.strftime("%3f %5f"), "000 00004")
         for (s, us), z in [((33, 123), "33.000123"), ((33, 0), "33"),]:
             tz = timezone(-timedelta(hours=2, seconds=s, microseconds=us))
             t = t.replace(tzinfo=tz)
@@ -4102,6 +4109,7 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
     def test_strftime(self):
         t = self.theclass(1, 2, 3, 4)
         self.assertEqual(t.strftime('%H %M %S %f'), "01 02 03 000004")
+        self.assertEqual(t.strftime('%H %M %S %3f %6f'), "01 02 03 000 000004")
         # A naive object replaces %z, %:z and %Z with empty strings.
         self.assertEqual(t.strftime("'%z' '%:z' '%Z'"), "'' '' ''")
 
@@ -4258,12 +4266,19 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
             (self.theclass(13, 2, 47, 197000), '13:02:47.197', '%H:%M:%S.%f'),
             (self.theclass(13, 2, 47, 197000), '13:02\ud80047.197', '%H:%M\ud800%S.%f'),
             (self.theclass(13, 2, 47, 197000), '13\ud80002:47.197', '%H\ud800%M:%S.%f'),
+            (self.theclass(13, 2, 47, 197000), '13:02:47.197', '%H:%M:%S.%3f'),
+            (self.theclass(13, 2, 47, 100000), '13:02:47.1', '%H:%M:%S.%1f'),
+            (self.theclass(13, 2, 47, 197531), '13:02:47.197531', '%H:%M:%S.%6f'),
         ]
         for expected, string, format in inputs:
             with self.subTest(string=string, format=format):
                 got = self.theclass.strptime(string, format)
                 self.assertEqual(expected, got)
                 self.assertIs(type(got), self.theclass)
+        with self.assertRaises(ValueError):
+            self.theclass.strptime('13:02:47.19', '%H:%M:%S.%3f')
+        with self.assertRaises(ValueError):
+            self.theclass.strptime('13:02:47.1975', '%H:%M:%S.%3f')
 
     def test_strptime_tz(self):
         strptime = self.theclass.strptime
