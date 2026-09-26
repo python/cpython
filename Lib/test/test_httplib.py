@@ -507,6 +507,12 @@ class HeaderTests(TestCase):
             response = conn.getresponse()
             self.assertEqual(response.read(), chunked_expected)
 
+    def test_getallmatchingheaders_deprecated(self):
+        message = client.parse_headers(io.BytesIO(b"Set-Cookie: a=1\r\n\r\n"))
+        with self.assertWarns(DeprecationWarning):
+            message.getallmatchingheaders("Set-Cookie")
+
+
 class HttpMethodTests(TestCase):
     def test_invalid_method_names(self):
         methods = (
