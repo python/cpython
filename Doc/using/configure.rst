@@ -1009,15 +1009,18 @@ Debug options
 .. option:: --with-address-sanitizer
 
    Enable AddressSanitizer memory error detector, ``asan`` (default is no).
-   To improve ASan detection capabilities you may also want to combine this
-   with :option:`--without-pymalloc` to disable the specialized small-object
-   allocator whose allocations are not tracked by ASan.
+
+   When built with ``asan``, Python uses ``malloc`` instead of :ref:`pymalloc <pymalloc>` by default.
+   Set :envvar:`PYTHONMALLOC=pymalloc <PYTHONMALLOC>` to use pymalloc.
 
    .. versionadded:: 3.6
 
 .. option:: --with-memory-sanitizer
 
    Enable MemorySanitizer allocation error detector, ``msan`` (default is no).
+
+   When built with ``msan``, Python uses ``malloc`` instead of :ref:`pymalloc <pymalloc>` by default.
+   Set :envvar:`PYTHONMALLOC=pymalloc <PYTHONMALLOC>` to use pymalloc.
 
    .. versionadded:: 3.6
 

@@ -437,6 +437,8 @@ Release build                        ``"pymalloc"``           ``malloc``        
 Debug build                          ``"pymalloc_debug"``     ``malloc`` + debug    ``pymalloc`` + debug    ``pymalloc`` + debug
 Release build, without pymalloc      ``"malloc"``             ``malloc``            ``malloc``              ``malloc``
 Debug build, without pymalloc        ``"malloc_debug"``       ``malloc`` + debug    ``malloc`` + debug      ``malloc`` + debug
+Release build, with ASan or MSan     ``"malloc"``             ``malloc``            ``malloc``              ``malloc``
+Debug build, with ASan or MSan       ``"malloc_debug"``       ``malloc`` + debug    ``malloc`` + debug      ``malloc`` + debug
 Free-threaded build                  ``"mimalloc"``           ``mimalloc``          ``mimalloc``            ``mimalloc``
 Free-threaded debug build            ``"mimalloc_debug"``     ``mimalloc`` + debug  ``mimalloc`` + debug    ``mimalloc`` + debug
 ===================================  =======================  ====================  ======================  ======================
@@ -705,9 +707,11 @@ This allocator is disabled if Python is configured with the
 :option:`--without-pymalloc` option. It can also be disabled at runtime using
 the :envvar:`PYTHONMALLOC` environment variable (ex: ``PYTHONMALLOC=malloc``).
 
-Typically, it makes sense to disable the pymalloc allocator when building
-Python with AddressSanitizer (:option:`--with-address-sanitizer`) which helps
-uncover low level bugs within the C code.
+The pymalloc allocator is disabled by default when Python is built with
+AddressSanitizer (:option:`--with-address-sanitizer`) or MemorySanitizer
+(:option:`--with-memory-sanitizer`), since these sanitizers do not track
+allocations made by pymalloc. Use
+:envvar:`PYTHONMALLOC=pymalloc <PYTHONMALLOC>` to enable it.
 
 Customize pymalloc Arena Allocator
 ----------------------------------

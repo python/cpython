@@ -835,10 +835,13 @@ class CmdLineTest(unittest.TestCase):
             code = "import _testinternalcapi; print(_testinternalcapi.pymem_getallocatorsname())"
             with support.SuppressCrashReport():
                 out = self.run_xdev("-c", code, check_exitcode=False)
-            if support.with_pymalloc():
-                alloc_name = "pymalloc_debug"
-            elif support.Py_GIL_DISABLED:
+            if support.Py_GIL_DISABLED:
                 alloc_name = "mimalloc_debug"
+            elif support.check_sanitizer(address=True, memory=True):
+                # ASan and MSan builds default to malloc, even with pymalloc.
+                alloc_name = "malloc_debug"
+            elif support.with_pymalloc():
+                alloc_name = "pymalloc_debug"
             else:
                 alloc_name = "malloc_debug"
             self.assertEqual(out, alloc_name)
@@ -917,10 +920,15 @@ class CmdLineTest(unittest.TestCase):
         # Test the PYTHONMALLOC environment variable
         malloc = not support.Py_GIL_DISABLED
         pymalloc = support.with_pymalloc()
+        sanitizer = support.check_sanitizer(address=True, memory=True)
         mimalloc = support.with_mimalloc()
         if support.Py_GIL_DISABLED:
             default_name = 'mimalloc_debug' if support.Py_DEBUG else 'mimalloc'
             default_name_debug = 'mimalloc_debug'
+        elif sanitizer:
+            # ASan and MSan builds default to malloc, even with pymalloc.
+            default_name = 'malloc_debug' if support.Py_DEBUG else 'malloc'
+            default_name_debug = 'malloc_debug'
         elif pymalloc:
             default_name = 'pymalloc_debug' if support.Py_DEBUG else 'pymalloc'
             default_name_debug = 'pymalloc_debug'

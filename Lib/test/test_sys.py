@@ -1129,8 +1129,10 @@ class SysModuleTest(unittest.TestCase):
         # The sysconfig vars are not available on Windows.
         if sys.platform != "win32":
             with_pymalloc = sysconfig.get_config_var("WITH_PYMALLOC")
+            with_sanitizer = support.check_sanitizer(address=True, memory=True)
             self.assertIn(b"free PyDictObjects", err)
-            if with_pymalloc:
+            # ASan and MSan builds default to malloc, even with pymalloc.
+            if with_pymalloc and not with_sanitizer:
                 self.assertIn(b'Small block threshold', err)
 
         # The function has no parameter
