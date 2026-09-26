@@ -50,7 +50,7 @@ DATE_FORMAT_CODES = OneFormatFrom(
             (
                 EachFormatFrom(
                     (
-                        OneFormatFrom(("%Y", "%y")),
+                        OneFormatFrom(("%Y", "%y"), must_use=True),
                         OneFormatFrom(
                             (
                                 # Month and Day
@@ -62,14 +62,14 @@ DATE_FORMAT_CODES = OneFormatFrom(
                                 ),
                                 # Julian day of year
                                 OneFormatFrom(("%j",)),
-                                # Week number and day of week (Sunday = 0)
+                                # Monday-based week number and weekday
                                 EachFormatFrom(
                                     (
                                         OneFormatFrom(("%W",)),
                                         OneFormatFrom(("%w",)),
                                     ),
                                 ),
-                                # Week number and day of week (Monday = 0)
+                                # Sunday-based week number and weekday
                                 EachFormatFrom(
                                     (
                                         OneFormatFrom(("%U",)),
@@ -141,7 +141,7 @@ class DatetimeFormat:
         self.fmt = format_str
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(format_codes={self.codes}, format_str={self.fmt})"
+        return f"{self.__class__.__name__}(format_codes={self.codes!r}, format_str={self.fmt!r})"
 
     def __bool__(self):
         return bool(self.fmt)
@@ -163,7 +163,7 @@ def _make_strftime_strategy(format_codes, exclude=frozenset()):
                 new_sub_node = _exclude_codes(child)
                 if new_sub_node is None:
                     continue
-                new_children.append(_exclude_codes(child))
+                new_children.append(new_sub_node)
 
         if (
             not new_children
@@ -209,7 +209,11 @@ def _make_strftime_strategy(format_codes, exclude=frozenset()):
 
         def _make_interstitial():
             if draw(st.booleans()):
-                interstitial_text = draw(st.text()).replace("%", "%%")
+                # gh-124531: Some strftime implementations truncate at NUL.
+                interstitial_text = draw(st.text(
+                    alphabet=st.characters(exclude_characters="\x00"),
+                    max_size=10,
+                )).replace("%", "%%")
             else:
                 interstitial_text = ""
             return interstitial_text
@@ -219,7 +223,9 @@ def _make_strftime_strategy(format_codes, exclude=frozenset()):
             components.append(component)
         components.append(_make_interstitial())
 
-        format_str = "".join(components)
+        # Variable-width numeric directives can consume digits belonging to
+        # adjacent fields. Round trips require unambiguous field boundaries.
+        format_str = "|".join(components)
         return DatetimeFormat(
             format_codes=frozenset(selected_formats), format_str=format_str
         )
@@ -231,27 +237,61 @@ def datetime_strftimes(*args, **kwargs):
     return _make_strftime_strategy(DATETIME_FORMAT_CODES, *args, **kwargs)()
 
 
-all_timezones = st.one_of(
-    st.timezones(),
-    st.none(),
-    st.tuples(
-        st.timedeltas(
-            min_value=-datetime.timedelta(hours=24),
-            max_value=datetime.timedelta(hours=24),
-        ),
-        st.one_of(st.none(), st.text()),
-    ).map(lambda x: datetime.timezone(*x)),
-)
+def strptime_inputs():
+    # isoformat pads small years consistently across platforms, so these also
+    # cover the years that the platform strftime can't always round-trip.
+    return st.datetimes().map(lambda dt: (
+        dt.isoformat(" "),
+        "%Y-%m-%d %H:%M:%S" + (".%f" if dt.microsecond else ""),
+        dt,
+    ))
 
 
 class DateTimeTest(unittest.TestCase):
     theclass = datetime.datetime
 
     @support.run_with_locale("LC_TIME", "C")
+    @hypothesis.given(case=strptime_inputs())
+    @hypothesis.example(case=(
+        "0001-01-01 00:00:00", "%Y-%m-%d %H:%M:%S", datetime.datetime.min,
+    ))
+    @hypothesis.example(case=(
+        "+000000000001AM00", "%z%M%f%p%H",
+        datetime.datetime(1900, 1, 1, microsecond=100,
+                          tzinfo=datetime.timezone.utc),
+    ))
+    @hypothesis.example(case=(
+        "+000000000100", "%z%f%S",
+        datetime.datetime(1900, 1, 1, microsecond=100,
+                          tzinfo=datetime.timezone.utc),
+    ))
+    def test_strptime_fields(self, case):
+        value, fmt, expected = case
+        actual = self.theclass.strptime(value, fmt)
+        # Comparing components also works across the C and Python classes.
+        self.assertEqual(actual.isoformat(), expected.isoformat())
+
+    # Locale composites may include fields such as %Z that aren't invertible.
+    # Keep this property in the C locale, where their expansions are known.
+    @support.run_with_locale("LC_TIME", "C")
     @hypothesis.given(
-        dt=st.datetimes(timezones=st.timezones()),
-        # gh-12137: strptime does not accept "%:z"
-        fmt=datetime_strftimes(exclude={"%:z"}).filter(lambda x: x),
+        # Some strftime implementations don't pad %Y or %G to four digits.
+        dt=st.datetimes(min_value=datetime.datetime(1000, 1, 8),
+                        timezones=st.timezones()),
+        # gh-66571: Arbitrary IANA zone names cannot be parsed with %Z.
+        fmt=datetime_strftimes(exclude={"%Z"}).filter(lambda x: x),
+    )
+    @hypothesis.example(
+        dt=datetime.datetime(2000, 1, 1, tzinfo=datetime.timezone.utc),
+        fmt=DatetimeFormat(frozenset({"%z", "%H", "%d", "%m"}), "%z%H%d%m"),
+    )
+    @hypothesis.example(
+        dt=datetime.datetime(2000, 1, 3, tzinfo=datetime.timezone.utc),
+        fmt=DatetimeFormat(frozenset({"%W", "%Y"}), "%W%Y"),
+    )
+    @hypothesis.example(
+        dt=datetime.datetime(1968, 1, 1, tzinfo=datetime.timezone.utc),
+        fmt=DatetimeFormat(frozenset({"%A", "%j", "%y"}), "%A%j%y"),
     )
     @hypothesis.example(
         dt=datetime.datetime(2000, 1, 1, tzinfo=datetime.timezone.utc),
@@ -259,18 +299,15 @@ class DateTimeTest(unittest.TestCase):
     )
     def test_strftime_strptime_property(self, dt, fmt):
         fmt_code = fmt.fmt
-        # gh-124531: \x00 terminates format strings
-        hypothesis.assume("\x00" not in fmt_code)
-
         # This first step can be lossy so without more extensive logic, we
         # cannot directly make assertions about what this does.
         dt_str = dt.strftime(fmt_code)
 
-        # gh-124529: %c does not work for years < 1000
-        hypothesis.assume(not ("%c" in fmt.codes and dt.year < 1000))
-
-        # gh-66571: These can only be parsed back in specific situations
-        hypothesis.assume(not "%Z" in fmt.codes)
+        # Day-of-month parsing without a year is no longer supported.
+        if "%d" in fmt.codes and not ({"%Y", "%y"} & fmt.codes):
+            with self.assertRaises(ValueError):
+                self.theclass.strptime(dt_str, fmt_code)
+            return
 
         # From here on out strptime/strftime rounds should be idempotent
         dt_rt = self.theclass.strptime(dt_str, fmt_code)
@@ -280,15 +317,18 @@ class DateTimeTest(unittest.TestCase):
             (
                 not ({"%a", "%A", "%w", "%u"} & fmt.codes)
                 or (
-                    ("%Y" in fmt.codes or "%y" in fmt.codes)
-                    and ("%j" in fmt.codes or ("%m" in fmt.codes and "%b" in fmt.codes))
+                    ("%Y" in fmt.codes or
+                     ("%y" in fmt.codes and 1969 <= dt.year <= 2068))
+                    and ("%j" in fmt.codes or
+                         ("%d" in fmt.codes and {"%m", "%b", "%B"} & fmt.codes))
                 )
                 or ("%G" in fmt.codes)
             )
             and not ("%p" in fmt.codes and not ({"%H", "%I"} & fmt.codes))
-            and not any(
-                x in fmt_code
-                for x in ("%z%j", "%z%H", "%z%I", "%z%f", "%z%d", "%z%m", "%z%S")
+            # Week numbers are ignored unless a weekday is also supplied.
+            and not (
+                {"%U", "%W"} & fmt.codes
+                and not {"%a", "%A", "%w", "%u"} & fmt.codes
             )
         ):
             self.assertEqual(dt_rt_str, dt_str)
@@ -313,3 +353,7 @@ class PureDateTimeTest(DateTimeTest):
         with support.swap_item(sys.modules, "datetime", cls.datetime_module):
             strptime = import_helper.import_fresh_module("_strptime")
         cls.enterClassContext(support.swap_item(sys.modules, "_strptime", strptime))
+
+
+if __name__ == "__main__":
+    unittest.main()
