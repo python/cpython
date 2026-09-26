@@ -1,5 +1,6 @@
 import datetime
 import unittest
+from test import support
 from test.support.hypothesis_helper import hypothesis
 
 st = hypothesis.strategies
@@ -244,10 +245,15 @@ all_timezones = st.one_of(
 class DateTimeTest(unittest.TestCase):
     theclass = datetime.datetime
 
+    @support.run_with_locale("LC_TIME", "C")
     @hypothesis.given(
         dt=st.datetimes(timezones=st.timezones()),
         # gh-12137: strptime does not accept "%:z"
         fmt=datetime_strftimes(exclude={"%:z"}).filter(lambda x: x),
+    )
+    @hypothesis.example(
+        dt=datetime.datetime(2000, 1, 1, tzinfo=datetime.timezone.utc),
+        fmt=DatetimeFormat(frozenset({"%c"}), "|%c|"),
     )
     def test_strftime_strptime_property(self, dt, fmt):
         fmt_code = fmt.fmt
