@@ -1343,12 +1343,31 @@ class _Unpickler:
                 if not key:
                     raise EOFError
                 assert isinstance(key, bytes_types)
-                dispatch[key[0]](self)
+                try:
+                    handler = dispatch[key[0]]
+                except KeyError:
+                    self._invalid_opcode(key[0])
+                handler(self)
         except _Stop as stopinst:
             return stopinst.value
 
+    def _invalid_opcode(self, code):
+        if 0x20 <= code <= 0x7e and code not in b"'\\":
+            char = "'%c'" % code
+        else:
+            char = "'\\x%02x'" % code
+        raise UnpicklingError("invalid load key, %s." % char) from None
+
+    def _underflow(self):
+        # A pending MARK hides the rest of the stack, so an opcode reaching
+        # past it is reported differently, as in the C implementation.
+        raise UnpicklingError("unexpected MARK found" if self.metastack
+                              else "unpickling stack underflow") from None
+
     # Return a list of items pushed in the stack after last MARK instruction.
     def pop_mark(self):
+        if not self.metastack:
+            raise UnpicklingError("could not find MARK")
         items = self.stack
         self.stack = self.metastack.pop()
         self.append = self.stack.append
@@ -1383,7 +1402,10 @@ class _Unpickler:
     dispatch[PERSID[0]] = load_persid
 
     def load_binpersid(self):
-        pid = self.stack.pop()
+        try:
+            pid = self.stack.pop()
+        except IndexError:
+            self._underflow()
         self.append(self.persistent_load(pid))
     dispatch[BINPERSID[0]] = load_binpersid
 
@@ -1543,7 +1565,10 @@ class _Unpickler:
     dispatch[NEXT_BUFFER[0]] = load_next_buffer
 
     def load_readonly_buffer(self):
-        buf = self.stack[-1]
+        try:
+            buf = self.stack[-1]
+        except IndexError:
+            self._underflow()
         with memoryview(buf) as m:
             if not m.readonly:
                 self.stack[-1] = m.toreadonly()
@@ -1575,15 +1600,27 @@ class _Unpickler:
     dispatch[EMPTY_TUPLE[0]] = load_empty_tuple
 
     def load_tuple1(self):
-        self.stack[-1] = (self.stack[-1],)
+        stack = self.stack
+        try:
+            stack[-1] = (stack[-1],)
+        except IndexError:
+            self._underflow()
     dispatch[TUPLE1[0]] = load_tuple1
 
     def load_tuple2(self):
-        self.stack[-2:] = [(self.stack[-2], self.stack[-1])]
+        stack = self.stack
+        try:
+            stack[-2:] = [(stack[-2], stack[-1])]
+        except IndexError:
+            self._underflow()
     dispatch[TUPLE2[0]] = load_tuple2
 
     def load_tuple3(self):
-        self.stack[-3:] = [(self.stack[-3], self.stack[-2], self.stack[-1])]
+        stack = self.stack
+        try:
+            stack[-3:] = [(stack[-3], stack[-2], stack[-1])]
+        except IndexError:
+            self._underflow()
     dispatch[TUPLE3[0]] = load_tuple3
 
     def load_empty_list(self):
@@ -1610,6 +1647,8 @@ class _Unpickler:
 
     def load_dict(self):
         items = self.pop_mark()
+        if len(items) % 2:
+            raise UnpicklingError("odd number of items for DICT")
         d = {items[i]: items[i+1]
              for i in range(0, len(items), 2)}
         self.append(d)
@@ -1638,21 +1677,31 @@ class _Unpickler:
     def load_obj(self):
         # Stack is ... markobject classobject arg1 arg2 ...
         args = self.pop_mark()
+        if not args:
+            self._underflow()
         cls = args.pop(0)
         self._instantiate(cls, args)
     dispatch[OBJ[0]] = load_obj
 
     def load_newobj(self):
-        args = self.stack.pop()
-        cls = self.stack.pop()
+        stack = self.stack
+        try:
+            args = stack.pop()
+            cls = stack.pop()
+        except IndexError:
+            self._underflow()
         obj = cls.__new__(cls, *args)
         self.append(obj)
     dispatch[NEWOBJ[0]] = load_newobj
 
     def load_newobj_ex(self):
-        kwargs = self.stack.pop()
-        args = self.stack.pop()
-        cls = self.stack.pop()
+        stack = self.stack
+        try:
+            kwargs = stack.pop()
+            args = stack.pop()
+            cls = stack.pop()
+        except IndexError:
+            self._underflow()
         obj = cls.__new__(cls, *args, **kwargs)
         self.append(obj)
     dispatch[NEWOBJ_EX[0]] = load_newobj_ex
@@ -1665,8 +1714,12 @@ class _Unpickler:
     dispatch[GLOBAL[0]] = load_global
 
     def load_stack_global(self):
-        name = self.stack.pop()
-        module = self.stack.pop()
+        stack = self.stack
+        try:
+            name = stack.pop()
+            module = stack.pop()
+        except IndexError:
+            self._underflow()
         if type(name) is not str or type(module) is not str:
             raise UnpicklingError("STACK_GLOBAL requires str")
         self.append(self.find_class(module, name))
@@ -1723,16 +1776,21 @@ class _Unpickler:
 
     def load_reduce(self):
         stack = self.stack
-        args = stack.pop()
-        func = stack[-1]
+        try:
+            args = stack.pop()
+            func = stack[-1]
+        except IndexError:
+            self._underflow()
         stack[-1] = func(*args)
     dispatch[REDUCE[0]] = load_reduce
 
     def load_pop(self):
         if self.stack:
             del self.stack[-1]
-        else:
+        elif self.metastack:
             self.pop_mark()
+        else:
+            self._underflow()
     dispatch[POP[0]] = load_pop
 
     def load_pop_mark(self):
@@ -1740,7 +1798,11 @@ class _Unpickler:
     dispatch[POP_MARK[0]] = load_pop_mark
 
     def load_dup(self):
-        self.append(self.stack[-1])
+        try:
+            item = self.stack[-1]
+        except IndexError:
+            self._underflow()
+        self.append(item)
     dispatch[DUP[0]] = load_dup
 
     def load_get(self):
@@ -1774,38 +1836,60 @@ class _Unpickler:
         i = int(self.readline()[:-1])
         if i < 0:
             raise ValueError("negative PUT argument")
-        self.memo[i] = self.stack[-1]
+        try:
+            value = self.stack[-1]
+        except IndexError:
+            self._underflow()
+        self.memo[i] = value
     dispatch[PUT[0]] = load_put
 
     def load_binput(self):
         i = self.read(1)[0]
         if i < 0:
             raise ValueError("negative BINPUT argument")
-        self.memo[i] = self.stack[-1]
+        try:
+            value = self.stack[-1]
+        except IndexError:
+            self._underflow()
+        self.memo[i] = value
     dispatch[BINPUT[0]] = load_binput
 
     def load_long_binput(self):
         i, = unpack('<I', self.read(4))
         if i > maxsize:
             raise ValueError("negative LONG_BINPUT argument")
-        self.memo[i] = self.stack[-1]
+        try:
+            value = self.stack[-1]
+        except IndexError:
+            self._underflow()
+        self.memo[i] = value
     dispatch[LONG_BINPUT[0]] = load_long_binput
 
     def load_memoize(self):
         memo = self.memo
-        memo[len(memo)] = self.stack[-1]
+        try:
+            value = self.stack[-1]
+        except IndexError:
+            self._underflow()
+        memo[len(memo)] = value
     dispatch[MEMOIZE[0]] = load_memoize
 
     def load_append(self):
         stack = self.stack
-        value = stack.pop()
-        list = stack[-1]
+        try:
+            value = stack.pop()
+            list = stack[-1]
+        except IndexError:
+            self._underflow()
         list.append(value)
     dispatch[APPEND[0]] = load_append
 
     def load_appends(self):
         items = self.pop_mark()
-        list_obj = self.stack[-1]
+        try:
+            list_obj = self.stack[-1]
+        except IndexError:
+            self._underflow()
         try:
             extend = list_obj.extend
         except AttributeError:
@@ -1823,22 +1907,33 @@ class _Unpickler:
 
     def load_setitem(self):
         stack = self.stack
-        value = stack.pop()
-        key = stack.pop()
-        dict = stack[-1]
+        try:
+            value = stack.pop()
+            key = stack.pop()
+            dict = stack[-1]
+        except IndexError:
+            self._underflow()
         dict[key] = value
     dispatch[SETITEM[0]] = load_setitem
 
     def load_setitems(self):
         items = self.pop_mark()
-        dict = self.stack[-1]
+        try:
+            dict = self.stack[-1]
+        except IndexError:
+            self._underflow()
+        if len(items) % 2:
+            raise UnpicklingError("odd number of items for SETITEMS")
         for i in range(0, len(items), 2):
             dict[items[i]] = items[i + 1]
     dispatch[SETITEMS[0]] = load_setitems
 
     def load_additems(self):
         items = self.pop_mark()
-        set_obj = self.stack[-1]
+        try:
+            set_obj = self.stack[-1]
+        except IndexError:
+            self._underflow()
         if isinstance(set_obj, set):
             set_obj.update(items)
         else:
@@ -1849,8 +1944,11 @@ class _Unpickler:
 
     def load_build(self):
         stack = self.stack
-        state = stack.pop()
-        inst = stack[-1]
+        try:
+            state = stack.pop()
+            inst = stack[-1]
+        except IndexError:
+            self._underflow()
         setstate = getattr(inst, "__setstate__", _NoValue)
         if setstate is not _NoValue:
             setstate(state)
@@ -1878,7 +1976,10 @@ class _Unpickler:
     dispatch[MARK[0]] = load_mark
 
     def load_stop(self):
-        value = self.stack.pop()
+        try:
+            value = self.stack.pop()
+        except IndexError:
+            self._underflow()
         raise _Stop(value)
     dispatch[STOP[0]] = load_stop
 
