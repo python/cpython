@@ -1682,6 +1682,125 @@ fold_constant_seq_into_load_const(basicblock *bb, int i,
     return SUCCESS;
 }
 
+/* Replace LOAD_CONST c, FORMAT_SIMPLE
+   with    LOAD_CONST format(c)
+   where c is a constant of exact type str, int, float or bool.
+   Formatting these types calls no user code, so the result is known at
+   compile time.  This mirrors the fast path of the FORMAT_SIMPLE
+   instruction: formatting an exact str is the identity, so in that case
+   the instruction is simply removed.
+*/
+static int
+fold_format_simple(basicblock *bb, int i, PyObject *consts,
+                   PyObject *const_cache, _Py_hashtable_t *consts_index)
+{
+    /* Pre-conditions */
+    assert(PyDict_CheckExact(const_cache));
+    assert(PyList_CheckExact(consts));
+
+    cfg_instr *instr = &bb->b_instr[i];
+    assert(instr->i_opcode == FORMAT_SIMPLE);
+
+    cfg_instr *load;
+    if (!get_const_loading_instrs(bb, i-1, &load, 1)) {
+        /* not a constant operand */
+        return SUCCESS;
+    }
+
+    PyObject *value = get_const_value(load->i_opcode, load->i_oparg, consts);
+    if (value == NULL) {
+        return ERROR;
+    }
+    if (PyUnicode_CheckExact(value)) {
+        /* format(value) is value itself: keep the load, drop the format. */
+        Py_DECREF(value);
+        nop_out(&instr, 1);
+        return SUCCESS;
+    }
+    if (!PyLong_CheckExact(value) && !PyFloat_CheckExact(value) &&
+        !PyBool_Check(value))
+    {
+        /* Formatting anything else could call user code. */
+        Py_DECREF(value);
+        return SUCCESS;
+    }
+    PyObject *formatted = PyObject_Format(value, NULL);
+    Py_DECREF(value);
+    if (formatted == NULL) {
+        return ERROR;
+    }
+    nop_out(&load, 1);
+    return instr_make_load_const(instr, formatted, consts, const_cache,
+                                 consts_index);
+}
+
+/* Replace LOAD_CONST s1, LOAD_CONST s2, ..., LOAD_CONST sN, BUILD_STRING N
+   with    LOAD_CONST s1s2...sN
+   All pieces must be exact str constants; constant f-string fields have
+   already been reduced to that shape by fold_format_simple.
+*/
+static int
+fold_build_string_of_constants(basicblock *bb, int i, PyObject *consts,
+                               PyObject *const_cache,
+                               _Py_hashtable_t *consts_index)
+{
+    /* Pre-conditions */
+    assert(PyDict_CheckExact(const_cache));
+    assert(PyList_CheckExact(consts));
+
+    cfg_instr *instr = &bb->b_instr[i];
+    assert(instr->i_opcode == BUILD_STRING);
+
+    int seq_size = instr->i_oparg;
+    if (seq_size < 1 || seq_size > _PY_STACK_USE_GUIDELINE) {
+        return SUCCESS;
+    }
+
+    cfg_instr *const_instrs[_PY_STACK_USE_GUIDELINE];
+    if (!get_const_loading_instrs(bb, i-1, const_instrs, seq_size)) {
+        /* not a const sequence */
+        return SUCCESS;
+    }
+
+    PyObject *pieces = PyTuple_New((Py_ssize_t)seq_size);
+    if (pieces == NULL) {
+        return ERROR;
+    }
+    for (int pos = 0; pos < seq_size; pos++) {
+        cfg_instr *inst = const_instrs[pos];
+        assert(loads_const(inst->i_opcode));
+        PyObject *piece = get_const_value(inst->i_opcode, inst->i_oparg,
+                                          consts);
+        if (piece == NULL) {
+            Py_DECREF(pieces);
+            return ERROR;
+        }
+        PyTuple_SET_ITEM(pieces, pos, piece);
+        if (!PyUnicode_CheckExact(piece)) {
+            /* BUILD_STRING operands are always str when the sequence
+               comes from an f-string; don't fold anything else. */
+            Py_DECREF(pieces);
+            return SUCCESS;
+        }
+    }
+
+    PyObject *empty = PyUnicode_FromStringAndSize(NULL, 0);
+    if (empty == NULL) {
+        Py_DECREF(pieces);
+        return ERROR;
+    }
+    PyObject *joined = PyUnicode_Join(empty, pieces);
+    Py_DECREF(empty);
+    Py_DECREF(pieces);
+    if (joined == NULL) {
+        return ERROR;
+    }
+
+    nop_out(const_instrs, seq_size);
+    return instr_make_load_const(instr, joined, consts, const_cache,
+                                 consts_index);
+}
+
 #define MIN_CONST_SEQUENCE_SIZE 3
 /*
 Optimize lists and sets for:
@@ -2465,6 +2584,12 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts,
             case BUILD_LIST:
             case BUILD_SET:
                 RETURN_IF_ERROR(optimize_lists_and_sets(bb, i, nextop, consts, const_cache, consts_index));
+                break;
+            case FORMAT_SIMPLE:
+                RETURN_IF_ERROR(fold_format_simple(bb, i, consts, const_cache, consts_index));
+                break;
+            case BUILD_STRING:
+                RETURN_IF_ERROR(fold_build_string_of_constants(bb, i, consts, const_cache, consts_index));
                 break;
             case POP_JUMP_IF_NOT_NONE:
             case POP_JUMP_IF_NONE:
