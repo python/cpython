@@ -1,0 +1,6 @@
+When writing a gzip header, :mod:`gzip` and :mod:`tarfile` now derive the
+``FNAME`` field from the file name like :program:`gunzip` does: the suffix is
+matched ignoring case, and ``.tgz`` is replaced with ``.tar`` instead of being
+left in place.  Previously an archive created as :file:`spam.tgz` recorded
+``spam.tgz`` as the name to decompress to.  ``python -m gzip -d`` now accepts
+the same names, so :file:`spam.tgz` and :file:`spam.GZ` are no longer refused.
