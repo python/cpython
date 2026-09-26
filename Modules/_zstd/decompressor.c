@@ -187,6 +187,18 @@ _zstd_load_d_dict(ZstdDecompressor *self, PyObject *dict)
     return ret;
 }
 
+/* Only pre-allocate an output buffer of up to this size based on the
+   decompressed size recorded in a frame header, so that a hand-crafted
+   header cannot request an arbitrarily large allocation.  Larger outputs
+   use the progressively growing buffer. */
+#define OUTPUT_PREALLOC_MAX ((Py_ssize_t)1 << 30)
+
+/* A zstd block cannot expand to more than 128 KiB from less than 4 bytes
+   of compressed input, so a valid frame never expands by more than 32768x.
+   A recorded decompressed size claiming a higher ratio than this cannot be
+   fulfilled by the input and is treated as untrustworthy. */
+#define OUTPUT_MAX_EXPANSION 32768
+
 /*
     Decompress implementation in pseudo code:
 
@@ -220,8 +232,32 @@ decompress_lock_held(ZstdDecompressor *self, ZSTD_inBuffer *in,
     _BlocksOutputBuffer buffer = {.writer = NULL};
     PyObject *ret;
 
-    /* Initialize the output buffer */
-    if (_OutputBuffer_InitAndGrow(&buffer, &out, max_length) < 0) {
+    /* Initialize the output buffer.
+
+       Frames produced by the one-shot compression APIs record the
+       decompressed size in the frame header.  When *in* starts at a frame
+       header recording a plausible size, allocate the whole output buffer
+       at once instead of growing it in blocks: for an exactly-filled
+       single block, _OutputBuffer_Finish() returns it without a copy.
+
+       This is only a sizing hint, decompression does not rely on it: if
+       the recorded size turns out to be wrong, the buffer grows further
+       as needed, or is shrunk to the actual size on finish. */
+    size_t avail_in = in->size - in->pos;
+    unsigned long long content_size =
+        ZSTD_getFrameContentSize((const char*)in->src + in->pos, avail_in);
+    if (content_size != ZSTD_CONTENTSIZE_UNKNOWN
+        && content_size != ZSTD_CONTENTSIZE_ERROR
+        && 0 < content_size
+        && content_size <= (unsigned long long)OUTPUT_PREALLOC_MAX
+        && content_size / OUTPUT_MAX_EXPANSION <= avail_in)
+    {
+        if (_OutputBuffer_InitWithSize(&buffer, &out, max_length,
+                                       (Py_ssize_t)content_size) < 0) {
+            goto error;
+        }
+    }
+    else if (_OutputBuffer_InitAndGrow(&buffer, &out, max_length) < 0) {
         goto error;
     }
     assert(out.pos == 0);
