@@ -362,7 +362,8 @@ def copyfile(src, dst, *, follow_symlinks=True):
             # Issue 43219, raise a less confusing exception
             except IsADirectoryError as e:
                 if not os.path.exists(dst):
-                    raise FileNotFoundError(f'Directory does not exist: {dst}') from e
+                    raise FileNotFoundError('Directory does not exist',
+                                            filename=dst) from e
                 else:
                     raise
 
@@ -948,9 +949,8 @@ def move(src, dst, copy_function=copy2):
             if (_is_immutable(src)
                     or (not os.access(src, os.W_OK) and os.listdir(src)
                         and sys.platform == 'darwin')):
-                raise PermissionError("Cannot move the non-empty directory "
-                                      "'%s': Lacking write permission to '%s'."
-                                      % (src, src))
+                raise PermissionError("Cannot move the non-empty directory: "
+                                      "Lacking write permission", filename=src)
             copytree(src, real_dst, copy_function=copy_function,
                      symlinks=True)
             rmtree(src)
