@@ -16,7 +16,7 @@ body:
         Make sure to also search the [CPython issue tracker](https://github.com/python/cpython/issues?q=is%3Aissue+sort%3Acreated-desc) to check that the bug has not already been reported.
   - type: textarea
     attributes:
-      label: "Bug description:"
+      label: "Bug report"
       description: >
         Give a clear and concise description of what happened.
         Include a [minimal, reproducible example](https://stackoverflow.com/help/minimal-reproducible-example) if possible.
