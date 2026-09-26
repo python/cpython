@@ -252,6 +252,16 @@ class DateTimeTest(unittest.TestCase):
     datetime_module = datetime
     theclass = datetime.datetime
 
+    # Known failure: duplicate regex group names leak re.PatternError instead
+    # of rejecting contradictory fields with the documented ValueError.
+    @unittest.expectedFailure
+    @hypothesis.settings(max_examples=25)
+    @hypothesis.given(year=st.integers(min_value=1, max_value=9998))
+    @hypothesis.example(year=2000)
+    def test_repeated_directive_error(self, year: int) -> None:
+        with self.assertRaises(ValueError):
+            self.theclass.strptime(f"{year:04} {year + 1:04}", "%Y %Y")
+
     # Known failure: _strptime normalizes the date after rolling into the next
     # year, but leaves tm_yday relative to the input year (sometimes > 366).
     @unittest.expectedFailure
