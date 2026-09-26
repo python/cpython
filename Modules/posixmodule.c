@@ -14111,11 +14111,6 @@ os_WSTOPSIG_impl(PyObject *module, int status)
 
 
 #if defined(HAVE_FSTATVFS) && defined(HAVE_SYS_STATVFS_H)
-#ifdef _SCO_DS
-/* SCO OpenServer 5.0 and later requires _SVID3 before it reveals the
-   needed definitions in sys/statvfs.h */
-#define _SVID3
-#endif
 #include <sys/statvfs.h>
 
 #ifdef __APPLE__
