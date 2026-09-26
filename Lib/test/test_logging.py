@@ -1865,6 +1865,34 @@ class ConfigFileTest(BaseTest):
         finally:
             os.unlink(fn)
 
+    def test_class_from_handlers_module(self):
+        # gh-156777: "class=handlers.X" is evaluated against vars(logging).
+        # Use a subprocess: this module already imports logging.handlers.
+        ini = textwrap.dedent("""\
+            [loggers]
+            keys=root
+            [handlers]
+            keys=hand1
+            [formatters]
+            keys=
+            [logger_root]
+            handlers=hand1
+            [handler_hand1]
+            class=handlers.MemoryHandler
+            args=(10,)
+            """)
+        fd, fn = tempfile.mkstemp(prefix='test_logging_', suffix='.ini')
+        self.addCleanup(os.unlink, fn)
+        os.write(fd, ini.encode('ascii'))
+        os.close(fd)
+        code = textwrap.dedent(f"""
+            import logging, logging.config
+            logging.config.fileConfig({fn!r}, encoding="utf-8")
+            assert isinstance(logging.getLogger().handlers[0],
+                              logging.handlers.MemoryHandler)
+        """)
+        assert_python_ok("-c", code)
+
 
 @support.requires_working_socket()
 @threading_helper.requires_working_threading()
@@ -5437,6 +5465,30 @@ class ModuleLevelMiscTest(BaseTest):
         with open(filename, encoding="utf-8") as fp:
             self.assertEqual(fp.read().rstrip(), "ERROR:root:log in __del__")
 
+    def test_socket_handler_at_shutdown(self):
+        # gh-156777: SocketHandler pickles the record before sending it, and
+        # that must keep working when importing no longer can.
+        code = textwrap.dedent("""
+            import logging, logging.handlers, os
+
+            class Handler(logging.handlers.SocketHandler):
+                def send(self, s):
+                    os.write(1, b"sent")
+                def handleError(self, record):
+                    os.write(1, b"dropped")
+
+            h = Handler('localhost', 9020)
+            r = logging.LogRecord('n', logging.INFO, 'p', 1, 'msg', None, None)
+
+            class A:
+                def __del__(self, h=h, r=r):  # globals are cleared by now
+                    h.emit(r)
+
+            a = A()
+        """)
+        rc, out, err = assert_python_ok("-c", code)
+        self.assertEqual(out, b"sent")
+
     def test_recursion_error(self):
         # Issue 36272
         code = textwrap.dedent("""
@@ -7574,6 +7626,45 @@ class NTEventLogHandlerTest(BaseTest):
 
         r = logging.makeLogRecord({'msg': 'Hello!'})
         h.emit(r)
+
+
+class LazyImportTest(unittest.TestCase):
+
+    """Tests for the module level lazy imports of the logging package."""
+
+    def test_lazy_imports_config(self):
+        import_helper.ensure_lazy_imports(
+            "logging.config",
+            {"configparser", "json", "multiprocessing", "select", "socket",
+             "socketserver", "struct"},
+            additional_code="logging.config.dictConfig({'version': 1})\n",
+        )
+
+    def test_lazy_imports_handlers(self):
+        import_helper.ensure_lazy_imports(
+            "logging.handlers",
+            {"base64", "copy", "email", "http", "pickle", "queue", "smtplib",
+             "socket", "ssl", "struct", "urllib"},
+        )
+
+    def test_socket_handler_resolves_imports_when_created(self):
+        # gh-156777: emit() may run when importing no longer works
+        code = textwrap.dedent("""
+            import sys, logging.handlers
+            logging.handlers.SocketHandler('localhost', 9020)
+            assert {'pickle', 'socket', 'struct'} <= sys.modules.keys()
+        """)
+        assert_python_ok("-S", "-c", code)
+
+    def test_getmembers_without_ssl(self):
+        # gh-156777: getmembers() resolves lazy imports, so ssl must not be one
+        code = textwrap.dedent("""
+            import sys
+            sys.modules['_ssl'] = None
+            import inspect, logging.handlers
+            inspect.getmembers(logging.handlers)
+        """)
+        assert_python_ok("-c", code)
 
 
 class MiscTestCase(unittest.TestCase):

@@ -28,17 +28,19 @@ import errno
 import functools
 import io
 import logging
-import logging.handlers
 import os
-import queue
 import re
-import socket
-import struct
 import threading
 import traceback
-
-from bisect import bisect_left
-from socketserver import ThreadingTCPServer, StreamRequestHandler
+lazy import configparser
+lazy import json
+lazy import logging.handlers
+lazy import queue
+lazy import select
+lazy import socket
+lazy import struct
+lazy from bisect import bisect_left
+lazy from socketserver import StreamRequestHandler, ThreadingTCPServer
 
 
 DEFAULT_LOGGING_CONFIG_PORT = 9030
@@ -61,8 +63,6 @@ def fileConfig(fname, defaults=None, disable_existing_loggers=True, encoding=Non
     developer provides a mechanism to present the choices and load the chosen
     configuration).
     """
-    import configparser
-
     if isinstance(fname, str):
         if not os.path.exists(fname):
             raise FileNotFoundError(f"{fname} doesn't exist")
@@ -978,7 +978,6 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT, verify=None):
                     if chunk is not None:   # verified, can process
                         chunk = chunk.decode("utf-8")
                         try:
-                            import json
                             d =json.loads(chunk)
                             assert isinstance(d, dict)
                             dictConfig(d)
@@ -1023,7 +1022,6 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT, verify=None):
             self.verify = verify
 
         def serve_until_stopped(self):
-            import select
             abort = 0
             while not abort:
                 rd, wr, ex = select.select([self.socket.fileno()],
