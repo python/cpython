@@ -13,7 +13,7 @@
 
 # update when constants are added or removed
 
-MAGIC = 20260622
+MAGIC = 20260626
 
 from _sre import MAXREPEAT, MAXGROUPS  # noqa: F401
 
@@ -119,6 +119,10 @@ OPCODES = _makecodes(
     'LITERAL_UNI_IGNORE',
     'NOT_LITERAL_UNI_IGNORE',
     'RANGE_UNI_IGNORE',
+
+    # Matches a character by a unicodedata property, via the capsule (see
+    # _properties.py and sre.c).  The operand packs negate, property and value.
+    'CATEGORY_UCD',
 
     # The following opcodes are only occurred in the parser output,
     # but not in the compiled code.

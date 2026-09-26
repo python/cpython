@@ -697,6 +697,9 @@ character ``'$'``.
      The supported values are the groups ``L``, ``N``, ``Z`` and ``C`` and the
      values ``Lu``, ``Lt``, ``Lm``, ``Nd``, ``Nl``, ``No``, ``Zs``, ``Zl``,
      ``Zp``, ``Cc``, ``Cf``, ``Cs``, ``Co`` and ``Cn``.
+   * The enumerated properties ``Bidi_Class`` (``bc``),
+     ``East_Asian_Width`` (``ea``), ``Grapheme_Cluster_Break`` (``gcb``)
+     and ``Indic_Conjunct_Break`` (``incb``), for example ``\p{bc=AL}``.
    * The binary properties ``XID_Start``, ``XID_Continue``, ``Alphabetic``,
      ``Lowercase``, ``Uppercase``, ``Numeric``, ``Printable``, ``Cased`` and
      ``Case_Ignorable``.  A binary property may also be spelled
