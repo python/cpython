@@ -955,7 +955,7 @@ dec_vectorcall(PyObject *type, PyObject *const *args,
     PyObject *value = NULL;
     PyObject *context = Py_None;
 
-    assert(Py_Is(_PyType_CAST(type), &dec_spec));
+    assert(_PyType_CAST(type)->tp_new == dec_new);
     /* Make sure the type object is immutable: the generated
      * vectorcall doesn't deal e.g. with users reassigning __init__. */
     assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
@@ -7141,4 +7141,4 @@ exit:
 #ifndef _DECIMAL_CONTEXT_APPLY_METHODDEF
     #define _DECIMAL_CONTEXT_APPLY_METHODDEF
 #endif /* !defined(_DECIMAL_CONTEXT_APPLY_METHODDEF) */
-/*[clinic end generated code: output=922174787b0743ae input=a9049054013a1b77]*/
+/*[clinic end generated code: output=65782a3bf40cc49f input=a9049054013a1b77]*/
