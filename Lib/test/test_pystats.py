@@ -1,6 +1,7 @@
 import sys
 import textwrap
 import unittest
+from test import support
 from test.support import script_helper
 
 # This function is available for the --enable-pystats config.
@@ -70,8 +71,12 @@ def run_test_code(
     test_code,
     args=[],
     env_vars=None,
+    stat_names=None,
 ):
-    """Run test code and return the value of the "set_class" stats counter.
+    """Run test code and return stats counters printed when it exits.
+
+    Returns the value of the "set_class" counter, or, when `stat_names` is
+    given, a dict of those counters collected from the same run.
     """
     code = textwrap.dedent(TEST_TEMPLATE)
     code = code.replace('_TEST_CODE_', textwrap.dedent(test_code))
@@ -79,11 +84,26 @@ def run_test_code(
     env_vars = env_vars or {}
     res, _ = script_helper.run_python_until_end(*script_args, **env_vars)
     stderr = res.err.decode("ascii", "backslashreplace")
+
+    if stat_names is None:
+        stat_names = ('Rare event (set_class)',)
+        wanted_one = True
+    else:
+        wanted_one = False
+
+    # A run may print more than one block of stats, e.g. when it calls
+    # sys._stats_dump() itself and then prints again on the way out. Keep the
+    # first value seen for each counter.
+    found = {}
     for line in stderr.split('\n'):
-        if 'Rare event (set_class)' in line:
-            label, _, value = line.partition(':')
-            return value.strip()
-    return ''
+        label, sep, value = line.partition(':')
+        label = label.strip()
+        if sep and label in stat_names and label not in found:
+            found[label] = value.strip()
+
+    if wanted_one:
+        return found.get('Rare event (set_class)', '')
+    return found
 
 
 @unittest.skipUnless(HAVE_PYSTATS, "requires pystats build option")
@@ -209,6 +229,68 @@ class TestPyStats(unittest.TestCase):
         # Clearing stats will clear for all threads
         stat_count = run_test_code(code)
         self.assertEqual(stat_count, '0')
+
+
+@unittest.skipUnless(HAVE_PYSTATS, "requires pystats build option")
+@unittest.skipUnless(support.Py_GIL_DISABLED, "requires free-threaded build")
+class TestFreeThreadingStats(unittest.TestCase):
+    """Tests for the counters that only the free-threaded build keeps.
+    """
+
+    # How many times each worker thread stops the world.
+    COLLECTS = 10
+    WORKERS = 4
+
+    WORLD_STOPS = 'World stops (world_stops)'
+    TOTAL_NS = 'World stop total ns (world_stop_total_ns)'
+    MAX_NS = 'World stop max ns (world_stop_max_ns)'
+
+    def collect_in_threads(self):
+        """Stop the world from several threads, then report the counters.
+        """
+        code = f"""
+        import gc
+
+        THREADS = {self.WORKERS}
+
+        def func_start():
+            # Discard whatever start-up accumulated, so the counts below come
+            # from the collections the workers do and nothing else.
+            sys._stats_clear()
+
+        def func_test(thread_id):
+            for _ in range({self.COLLECTS}):
+                gc.collect()
+        """
+        return run_test_code(
+            code,
+            args=['-X', 'pystats'],
+            stat_names=(self.WORLD_STOPS, self.TOTAL_NS, self.MAX_NS),
+        )
+
+    def test_counters_are_summed_over_threads(self):
+        """Each thread's counts must be added, not overwrite the previous one.
+        """
+        stats = self.collect_in_threads()
+        stops = int(stats[self.WORLD_STOPS])
+        # Every worker stops the world COLLECTS times. Merging a thread's stats
+        # into the interpreter's by assignment would leave just one worker's
+        # share, so anything close to a single worker's count means the counts
+        # of the others were thrown away.
+        self.assertGreater(stops, 2 * self.COLLECTS)
+
+    def test_world_stop_durations_are_recorded(self):
+        stats = self.collect_in_threads()
+        stops = int(stats[self.WORLD_STOPS])
+        total = int(stats[self.TOTAL_NS])
+        longest = int(stats[self.MAX_NS])
+
+        self.assertGreater(stops, 0)
+        # Pauses that were counted must also have been timed.
+        self.assertGreater(total, 0)
+        self.assertGreater(longest, 0)
+        # A single pause cannot last longer than all of them put together.
+        self.assertLessEqual(longest, total)
 
 
 if __name__ == "__main__":
