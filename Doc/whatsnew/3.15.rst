@@ -46,14 +46,12 @@
    when researching a change.
 
 This article explains the new features in Python 3.15, compared to 3.14.
-
+Python 3.15 was released on 1 October 2026.
 For full details, see the :ref:`changelog <changelog>`.
 
-.. note::
+.. seealso::
 
-   Prerelease users should be aware that this document is currently in draft
-   form. It will be updated substantially as Python 3.15 moves towards release,
-   so it's worth checking back even after reading earlier versions.
+   :pep:`790` -- Python 3.15 release schedule
 
 
 Summary -- Release highlights
@@ -62,7 +60,7 @@ Summary -- Release highlights
 .. This section singles out the most important changes in Python 3.15.
    Brevity is key.
 
-Python 3.15 will be the latest stable release of the Python programming
+Python 3.15 is the latest stable release of the Python programming
 language, with a mix of changes to the language, the implementation,
 and the standard library.
 The biggest changes include
@@ -2041,9 +2039,6 @@ with all optimizations enabled. The speedups for JIT
 builds versus no JIT builds range from roughly 15% slowdown to over
 100% speedup (ignoring the ``unpack_sequence`` microbenchmark) on
 x86-64 Linux and AArch64 macOS systems.
-
-.. attention::
-    These results are not yet final.
 
 The major upgrades to the JIT are:
 
