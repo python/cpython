@@ -1,3 +1,4 @@
+import sys
 import unittest
 import tkinter
 from tkinter import messagebox, ttk
@@ -244,6 +245,26 @@ class SimpleDialogTest(AbstractDialogTest, unittest.TestCase):
         d = self.create()
         d.root.after(1, lambda: d._buttons[0].invoke())
         self.assertEqual(d.go(), 0)
+
+    def test_go_foreign_grab(self):
+        # gh-157676: the grab and the focus can be in a window which was not
+        # created by tkinter, such as a native message box; they must be
+        # restored after the dialog.
+        tk = self.root.tk
+        tk.call('toplevel', '.foreign')
+        self.addCleanup(tk.call, 'destroy', '.foreign')
+        tk.call('wm', 'deiconify', '.foreign')
+        tk.call('update')
+        tk.call('grab', 'set', '.foreign')
+        tk.call('focus', '-force', '.foreign')
+        d = self.create()
+        d.root.after(1, lambda: d._buttons[0].invoke())
+        self.assertEqual(d.go(), 0)
+        self.assertEqual(tk.call('grab', 'current', self.root._w), '.foreign')
+        # On Windows the application can lose the focus when the dialog is
+        # destroyed, and then "focus" returns an empty string.
+        if sys.platform != 'win32':
+            self.assertEqual(tk.call('focus'), '.foreign')
 
 
 class DialogTest(AbstractDialogTest, unittest.TestCase):
