@@ -113,9 +113,10 @@ maybe_small_long(PyLongObject *v)
  */
 #define HUGE_EXP_CUTOFF 60
 
-#define SIGCHECK(PyTryBlock)                    \
-    do {                                        \
-        if (PyErr_CheckSignals()) PyTryBlock    \
+/* Check for signals on every 32nd iteration `i` of a loop. */
+#define SIGCHECK(i, PyTryBlock)                                     \
+    do {                                                            \
+        if ((((i) & 31) == 31) && PyErr_CheckSignals()) PyTryBlock  \
     } while(0)
 
 /* Normalize (remove leading zeros from) an int object.
@@ -2186,7 +2187,7 @@ long_to_decimal_string_internal(PyObject *aa,
             hi /= _PyLong_DECIMAL_BASE;
         }
         /* check for keyboard interrupt */
-        SIGCHECK({
+        SIGCHECK(i, {
                 Py_DECREF(scratch);
                 return -1;
             });
@@ -3384,7 +3385,7 @@ x_divrem(PyLongObject *v1, PyLongObject *w1, PyLongObject **prem)
         /* inner loop: divide vk[0:size_w+1] by w0[0:size_w], giving
            single-digit quotient q, remainder in vk[0:size_w]. */
 
-        SIGCHECK({
+        SIGCHECK(vk - v0, {
                 Py_DECREF(a);
                 Py_DECREF(w);
                 Py_DECREF(v);
@@ -3957,7 +3958,7 @@ x_mul(PyLongObject *a, PyLongObject *b)
             digit *pz = z->long_value.ob_digit + (i << 1);
             digit *pa = a->long_value.ob_digit + i + 1;
 
-            SIGCHECK({
+            SIGCHECK(i, {
                     Py_DECREF(z);
                     return NULL;
                 });
@@ -4009,7 +4010,7 @@ x_mul(PyLongObject *a, PyLongObject *b)
             digit *pb = b->long_value.ob_digit;
             digit *pbend = b->long_value.ob_digit + size_b;
 
-            SIGCHECK({
+            SIGCHECK(i, {
                     Py_DECREF(z);
                     return NULL;
                 });
@@ -4111,6 +4112,13 @@ k_mul(PyLongObject *a, PyLongObject *b)
             return (PyLongObject *)PyLong_FromLong(0);
         else
             return x_mul(a, b);
+    }
+
+    /* x_mul() only checks for signals every 32nd row and the base cases of
+       the recursion below can have fewer rows than that, so check here,
+       once per Karatsuba step. */
+    if (PyErr_CheckSignals()) {
+        return NULL;
     }
 
     /* If a is small compared to b, splitting on b gives a degenerate
