@@ -11,6 +11,7 @@ preserve
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
 PyDoc_STRVAR(test_empty_function__doc__,
 "test_empty_function($module, /)\n"
@@ -4043,13 +4044,8 @@ clone_f1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
         _PyArg_BadArgument("clone_f1", "argument 'path'", "str", args[0]);
         goto exit;
     }
-    Py_ssize_t path_length;
-    path = PyUnicode_AsUTF8AndSize(args[0], &path_length);
+    path = _PyUnicode_AsUTF8NoNUL(args[0]);
     if (path == NULL) {
-        goto exit;
-    }
-    if (strlen(path) != (size_t)path_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = clone_f1_impl(module, path);
@@ -4112,13 +4108,8 @@ clone_f2(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
         _PyArg_BadArgument("clone_f2", "argument 'path'", "str", args[0]);
         goto exit;
     }
-    Py_ssize_t path_length;
-    path = PyUnicode_AsUTF8AndSize(args[0], &path_length);
+    path = _PyUnicode_AsUTF8NoNUL(args[0]);
     if (path == NULL) {
-        goto exit;
-    }
-    if (strlen(path) != (size_t)path_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = clone_f2_impl(module, path);
@@ -5349,4 +5340,4 @@ vc_kwonly_vectorcall(PyObject *type, PyObject *const *args,
         kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
         NULL, kwnames);
 }
-/*[clinic end generated code: output=8a219f606f1296ac input=a9049054013a1b77]*/
+/*[clinic end generated code: output=440e5a80f2f311f1 input=a9049054013a1b77]*/

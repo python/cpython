@@ -1,0 +1,3 @@
+Argument Clinic now calls the internal function ``_PyUnicode_AsUTF8NoNUL()`` for
+``s`` and ``z`` converters instead of writing equivalent code inline to reduce
+the generated ``.text`` segment.

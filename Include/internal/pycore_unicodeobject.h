@@ -450,7 +450,8 @@ extern void _PyUnicode_InternStatic(PyInterpreterState *interp, PyObject **);
 extern void _PyUnicode_ClearInterned(PyInterpreterState *interp);
 
 // Like PyUnicode_AsUTF8(), but check for embedded null characters.
-// Export for '_sqlite3' shared extension.
+// Export for '_sqlite3' shared extension, and for the Argument Clinic code
+// generated for the 's' and 'z' converters, which many shared extensions use.
 PyAPI_FUNC(const char *) _PyUnicode_AsUTF8NoNUL(PyObject *);
 
 

@@ -8,6 +8,7 @@ preserve
 #endif
 #include "pycore_long.h"          // _PyLong_UnsignedLongLong_Converter()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
 PyDoc_STRVAR(pyexpat_xmlparser_SetReparseDeferralEnabled__doc__,
 "SetReparseDeferralEnabled($self, enabled, /)\n"
@@ -183,13 +184,8 @@ pyexpat_xmlparser_SetBase(PyObject *self, PyObject *arg)
         _PyArg_BadArgument("SetBase", "argument", "str", arg);
         goto exit;
     }
-    Py_ssize_t base_length;
-    base = PyUnicode_AsUTF8AndSize(arg, &base_length);
+    base = _PyUnicode_AsUTF8NoNUL(arg);
     if (base == NULL) {
-        goto exit;
-    }
-    if (strlen(base) != (size_t)base_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = pyexpat_xmlparser_SetBase_impl((xmlparseobject *)self, base);
@@ -311,13 +307,8 @@ pyexpat_xmlparser_ExternalEntityParserCreate(PyObject *self, PyTypeObject *cls, 
         context = NULL;
     }
     else if (PyUnicode_Check(args[0])) {
-        Py_ssize_t context_length;
-        context = PyUnicode_AsUTF8AndSize(args[0], &context_length);
+        context = _PyUnicode_AsUTF8NoNUL(args[0]);
         if (context == NULL) {
-            goto exit;
-        }
-        if (strlen(context) != (size_t)context_length) {
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -332,13 +323,8 @@ pyexpat_xmlparser_ExternalEntityParserCreate(PyObject *self, PyTypeObject *cls, 
         _PyArg_BadArgument("ExternalEntityParserCreate", "argument 2", "str", args[1]);
         goto exit;
     }
-    Py_ssize_t encoding_length;
-    encoding = PyUnicode_AsUTF8AndSize(args[1], &encoding_length);
+    encoding = _PyUnicode_AsUTF8NoNUL(args[1]);
     if (encoding == NULL) {
-        goto exit;
-    }
-    if (strlen(encoding) != (size_t)encoding_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
 skip_optional_posonly:
@@ -774,13 +760,8 @@ pyexpat_ParserCreate(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
             encoding = NULL;
         }
         else if (PyUnicode_Check(args[0])) {
-            Py_ssize_t encoding_length;
-            encoding = PyUnicode_AsUTF8AndSize(args[0], &encoding_length);
+            encoding = _PyUnicode_AsUTF8NoNUL(args[0]);
             if (encoding == NULL) {
-                goto exit;
-            }
-            if (strlen(encoding) != (size_t)encoding_length) {
-                PyErr_SetString(PyExc_ValueError, "embedded null character");
                 goto exit;
             }
         }
@@ -797,13 +778,8 @@ pyexpat_ParserCreate(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
             namespace_separator = NULL;
         }
         else if (PyUnicode_Check(args[1])) {
-            Py_ssize_t namespace_separator_length;
-            namespace_separator = PyUnicode_AsUTF8AndSize(args[1], &namespace_separator_length);
+            namespace_separator = _PyUnicode_AsUTF8NoNUL(args[1]);
             if (namespace_separator == NULL) {
-                goto exit;
-            }
-            if (strlen(namespace_separator) != (size_t)namespace_separator_length) {
-                PyErr_SetString(PyExc_ValueError, "embedded null character");
                 goto exit;
             }
         }
@@ -870,4 +846,4 @@ exit:
 #ifndef PYEXPAT_XMLPARSER_SETALLOCTRACKERMAXIMUMAMPLIFICATION_METHODDEF
     #define PYEXPAT_XMLPARSER_SETALLOCTRACKERMAXIMUMAMPLIFICATION_METHODDEF
 #endif /* !defined(PYEXPAT_XMLPARSER_SETALLOCTRACKERMAXIMUMAMPLIFICATION_METHODDEF) */
-/*[clinic end generated code: output=c68606a1fbc3a501 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f3d03801815b5b13 input=a9049054013a1b77]*/
