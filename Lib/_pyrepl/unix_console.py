@@ -363,6 +363,7 @@ class UnixConsole(Console):
         raw.cc[termios.VMIN] = 1
         raw.cc[termios.VTIME] = 0
         self.__input_fd_set(raw)
+        self.__rawtermstate = raw
 
         # In macOS terminal we need to deactivate line wrap via ANSI escape code
         if self.is_apple_terminal:
@@ -599,7 +600,20 @@ class UnixConsole(Console):
         except ImportError:
             return None
         if posix._is_inputhook_installed():
-            return posix._inputhook
+            return self.__run_input_hook
+
+    def __run_input_hook(self):
+        import posix
+        # gh-152907: input hooks expect cooked output, but pyrepl runs with
+        # OPOST disabled.  Restore the saved output flags around the hook
+        # (only oflag; input must stay raw at the prompt).
+        cooked = self.__rawtermstate.copy()
+        cooked.oflag = self.__svtermstate.oflag
+        self.__input_fd_set(cooked)
+        try:
+            return posix._inputhook()
+        finally:
+            self.__input_fd_set(self.__rawtermstate)
 
     def __enable_bracketed_paste(self) -> None:
         os.write(self.output_fd, b"\x1b[?2004h")
