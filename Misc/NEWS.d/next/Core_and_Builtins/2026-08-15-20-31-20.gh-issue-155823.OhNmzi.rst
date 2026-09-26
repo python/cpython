@@ -1,0 +1,4 @@
+Fix a JIT bug where the side exit taken when a virtual iterator is exhausted
+left a stale value on the stack, so the tier one interpreter resumed with
+corrupted state and ``yield from`` raised :exc:`AttributeError` instead of
+finishing normally.
