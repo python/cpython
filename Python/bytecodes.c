@@ -1096,6 +1096,9 @@ dummy_func(
             else if (PyUnicode_CheckExact(container_o)) {
                 res_o = _PyUnicode_BinarySlice(container_o, start_o, stop_o);
             }
+            else if (PyBytes_CheckExact(container_o)) {
+                res_o = _PyBytes_BinarySlice(container_o, start_o, stop_o);
+            }
             else {
                 PyObject *slice = PySlice_New(start_o, stop_o, NULL);
                 if (slice == NULL) {
