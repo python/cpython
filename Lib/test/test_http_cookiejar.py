@@ -121,6 +121,11 @@ class DateTimeTests(unittest.TestCase):
             '08-01-3697739',
             '09 Feb 19942632 22:23:32 GMT',
             'Wed, 09 Feb 1994834 22:23:32 GMT',
+            # Strictly formatted string with a non-existent month name.  The
+            # month field matches the STRICT_DATE_RE fast path but is not a
+            # real month, and must not leak a ValueError.
+            'Wed, 09 Foo 1994 22:23:32 GMT',
+            'Mon, 01 Aaa 2000 00:00:00 GMT',
         ])
     def test_http2time_garbage(self, test):
         self.assertIsNone(http2time(test))
