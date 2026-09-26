@@ -1171,6 +1171,25 @@ class SMTPHandlerTest(BaseTest):
         self.assertEndsWith(data, '\n\nHello \u2713')
         h.close()
 
+    def test_connection_closed_on_send_failure(self):
+        handler = logging.handlers.SMTPHandler(
+            ("localhost", 25),
+            "me@example.com",
+            "you@example.com",
+            "subject",
+            timeout=self.TIMEOUT,
+        )
+        record = logging.makeLogRecord({"msg": "hello"})
+
+        smtp = unittest.mock.Mock()
+        smtp.send_message.side_effect = OSError("send failed")
+
+        with unittest.mock.patch("smtplib.SMTP", return_value=smtp):
+            with support.captured_stderr():
+                handler.emit(record)
+
+        smtp.close.assert_called_once()
+
     def process_message(self, *args):
         self.messages.append(args)
         self.handled.set()
