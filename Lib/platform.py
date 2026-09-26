@@ -240,7 +240,8 @@ def libc_ver(executable=None, lib='', version='', chunksize=16384):
                     lib = 'libc'
                     if soversion and (not ver or V(soversion) > V(ver)):
                         ver = soversion
-                    if threads and ver[-len(threads):] != threads:
+                    if (threads and ver is not None
+                            and ver[-len(threads):] != threads):
                         ver = ver + threads
             elif musl:
                 lib = 'musl'
