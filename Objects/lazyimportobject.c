@@ -33,6 +33,7 @@ _PyLazyImport_New(_PyInterpreterFrame *frame, PyObject *builtins, PyObject *name
     m->lz_builtins = Py_XNewRef(builtins);
     m->lz_from = Py_NewRef(name);
     m->lz_attr = Py_XNewRef(fromlist);
+    m->lz_resolved = NULL;
 
     // Capture frame information for the original import location.
     m->lz_code = NULL;
@@ -58,6 +59,7 @@ lazy_import_traverse(PyObject *op, visitproc visit, void *arg)
     Py_VISIT(m->lz_builtins);
     Py_VISIT(m->lz_from);
     Py_VISIT(m->lz_attr);
+    Py_VISIT(m->lz_resolved);
     Py_VISIT(m->lz_code);
     return 0;
 }
@@ -69,6 +71,7 @@ lazy_import_clear(PyObject *op)
     Py_CLEAR(m->lz_builtins);
     Py_CLEAR(m->lz_from);
     Py_CLEAR(m->lz_attr);
+    Py_CLEAR(m->lz_resolved);
     Py_CLEAR(m->lz_code);
     return 0;
 }
