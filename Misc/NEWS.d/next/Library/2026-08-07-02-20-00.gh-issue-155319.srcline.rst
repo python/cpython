@@ -1,0 +1,4 @@
+:func:`warnings.warn_explicit` now displays the source line taken from the
+loader of the module whose globals are passed as *module_globals*.  It also
+no longer raises :exc:`IndexError` if *lineno* is out of the range of the
+module source.
