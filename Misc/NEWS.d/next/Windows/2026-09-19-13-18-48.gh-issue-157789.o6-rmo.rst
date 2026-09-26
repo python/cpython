@@ -1,0 +1,2 @@
+Use compiler option ``-Og`` in case of clang-cl debug builds on Windows to
+reduce stack usage. Patch by Chris Eibl.
