@@ -1802,7 +1802,10 @@ encoder_listencode_dict(PyEncoderObject *s, PyUnicodeWriter *writer,
     PyObject *ident = NULL;
     bool first = true;
 
-    if (PyDict_GET_SIZE(dct) == 0) {
+    // Only take the fast path for exact dicts: a subclass may keep its
+    // contents outside the dict storage, so PyDict_GET_SIZE could be 0 while
+    // the mapping is non-empty (gh-110941).
+    if (PyAnyDict_CheckExact(dct) && PyDict_GET_SIZE(dct) == 0) {
         /* Fast path */
         return PyUnicodeWriter_WriteASCII(writer, "{}", 2);
     }
