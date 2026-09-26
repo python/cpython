@@ -21,6 +21,7 @@ tree but are maintained separately and are available from
 * `Sphinx <https://pypi.org/project/Sphinx/>`_
 * `blurb <https://pypi.org/project/blurb/>`_
 * `python-docs-theme <https://pypi.org/project/python-docs-theme/>`_
+* `sphinx-linklint <https://pypi.org/project/sphinx-linklint/>`_
 
 The easiest way to install these tools is to create a virtual environment and
 install the tools into there.
@@ -87,8 +88,6 @@ Available make targets are:
 * "linkcheck", which checks all external references to see whether they are
   broken, redirected or malformed, and outputs this information to stdout as
   well as a plain-text (.txt) file.
-* "linklint", which removes needless links from the documentation during the
-  Sphinx build.
 
 * "changes", which builds an overview over all versionadded/versionchanged/
   deprecated items in the current version. This is meant as a help for the
