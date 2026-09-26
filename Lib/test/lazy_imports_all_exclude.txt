@@ -35,6 +35,5 @@ test_pyrepl
 test_subprocess
 test_symtable
 test_tools
-test_trace
 test_type_annotations
 test_unittest
