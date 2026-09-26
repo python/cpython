@@ -1,0 +1,2 @@
+Subinterpreters are created with ``allow_daemon_threads=True``,
+allowing daemon threads in subinterpreters now.
