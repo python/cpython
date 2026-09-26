@@ -681,20 +681,25 @@ class CmdLineTest(unittest.TestCase):
     @support.cpython_only
     def test_unknown_options(self):
         rc, out, err = assert_python_failure('-E', '-z')
-        self.assertIn(b'Unknown option: -z', err)
-        self.assertEqual(err.splitlines().count(b'Unknown option: -z'), 1)
+        self.assertIn(b"Invalid option -- 'z'", err)
+        self.assertEqual(err.splitlines().count(b"Invalid option -- 'z'"), 1)
         self.assertEqual(b'', out)
         # Add "without='-E'" to prevent _assert_python to append -E
         # to env_vars and change the output of stderr
         rc, out, err = assert_python_failure('-z', without='-E')
-        self.assertIn(b'Unknown option: -z', err)
-        self.assertEqual(err.splitlines().count(b'Unknown option: -z'), 1)
+        self.assertIn(b"Invalid option -- 'z'", err)
+        self.assertEqual(err.splitlines().count(b"Invalid option -- 'z'"), 1)
         self.assertEqual(b'', out)
         rc, out, err = assert_python_failure('-a', '-z', without='-E')
-        self.assertIn(b'Unknown option: -a', err)
+        self.assertIn(b"Invalid option -- 'a'", err)
         # only the first unknown option is reported
-        self.assertNotIn(b'Unknown option: -z', err)
-        self.assertEqual(err.splitlines().count(b'Unknown option: -a'), 1)
+        self.assertNotIn(b"Invalid option -- 'z'", err)
+        self.assertEqual(err.splitlines().count(b"Invalid option -- 'a'"), 1)
+        self.assertEqual(b'', out)
+        # gh-132414: a quoted "-q -i" arrives as one argument; the space
+        # after -q must be visible in the error message
+        rc, out, err = assert_python_failure('-q -i', without='-E')
+        self.assertIn(b"Invalid option -- ' '", err)
         self.assertEqual(b'', out)
 
     @unittest.skipIf(interpreter_requires_environment(),
@@ -1155,7 +1160,7 @@ class CmdLineTest(unittest.TestCase):
                               stdout=subprocess.PIPE,
                               stderr=subprocess.PIPE,
                               text=True)
-        err_msg = "Unknown option: --unknown-option\nusage: "
+        err_msg = "Invalid option '--unknown-option'\nusage: "
         self.assertStartsWith(proc.stderr, err_msg)
         self.assertNotEqual(proc.returncode, 0)
 
