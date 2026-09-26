@@ -61,6 +61,12 @@ bytearray_reinit_from_bytes(PyByteArrayObject *self, Py_ssize_t size)
     /* Only the empty bytes may be immortal. */
     assert((alloc == 0) == _Py_IsImmortal(self->ob_bytes_object));
 
+    /* Bytes may be uniquely referenced with a hash set. Clear the hash so after
+       mutation it will be recomputed (gh-158219). */
+    if (!_Py_IsImmortal(self->ob_bytes_object)) {
+        _PyBytes_ClearHash(self->ob_bytes_object);
+    }
+
     self->ob_bytes = self->ob_start = PyBytes_AS_STRING(self->ob_bytes_object);
     Py_SET_SIZE(self, size);
     FT_ATOMIC_STORE_SSIZE_RELAXED(self->ob_alloc, alloc);

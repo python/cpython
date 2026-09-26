@@ -1,0 +1,2 @@
+Fix :meth:`bytearray.take_bytes` returning a :class:`bytes` object with an
+incorrect hash when the data was modified but not resized.
