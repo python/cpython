@@ -70,6 +70,13 @@ The module defines the following exception and functions:
    position *offset*.  Note that *offset* is a required argument.
    A negative *offset* counts from the end of *buffer*.
 
+   .. note::
+
+      This function only specifies the packed bytes written to *buffer*; it
+      does not guarantee the number, width, or ordering of the underlying
+      memory accesses used to write them, including for buffers backed by
+      memory-mapped I/O.
+
 
 .. function:: unpack(format, buffer)
 
