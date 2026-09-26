@@ -144,6 +144,8 @@ class _Database(collections.abc.MutableMapping):
     def __getitem__(self, key):
         if isinstance(key, str):
             key = key.encode('utf-8')
+        elif isinstance(key, bytearray):
+            key = bytes(key)
         self._verify_open()
         pos, siz = self._index[key]     # may raise KeyError
         with _io.open(self._datfile, 'rb') as f:
@@ -189,7 +191,9 @@ class _Database(collections.abc.MutableMapping):
             raise error('The database is opened for reading only')
         if isinstance(key, str):
             key = key.encode('utf-8')
-        elif not isinstance(key, (bytes, bytearray)):
+        elif isinstance(key, bytearray):
+            key = bytes(key)
+        elif not isinstance(key, bytes):
             raise TypeError("keys must be bytes or strings")
         if isinstance(val, str):
             val = val.encode('utf-8')
@@ -226,6 +230,8 @@ class _Database(collections.abc.MutableMapping):
             raise error('The database is opened for reading only')
         if isinstance(key, str):
             key = key.encode('utf-8')
+        elif isinstance(key, bytearray):
+            key = bytes(key)
         self._verify_open()
         self._modified = True
         # The blocks used by the associated value are lost.
@@ -249,6 +255,8 @@ class _Database(collections.abc.MutableMapping):
     def __contains__(self, key):
         if isinstance(key, str):
             key = key.encode('utf-8')
+        elif isinstance(key, bytearray):
+            key = bytes(key)
         try:
             return key in self._index
         except TypeError:
