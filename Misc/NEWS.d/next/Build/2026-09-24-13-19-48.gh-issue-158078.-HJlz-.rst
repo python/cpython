@@ -1,0 +1,3 @@
+Fix building the :mod:`curses` module against the narrow ncurses library:
+``configure`` now checks that optional curses functions such as
+``term_attrs()`` can be linked, not only that they are declared.
