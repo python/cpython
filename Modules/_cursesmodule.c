@@ -4964,7 +4964,11 @@ Return a logical OR of all video attributes supported by the terminal.
 static PyObject *
 _curses_termattrs_impl(PyObject *module)
 /*[clinic end generated code: output=b06f437fce1b6fc4 input=0559882a04f84d1d]*/
-NoArgReturnIntFunctionBody(termattrs)
+{
+    PyCursesStatefulInitialised(module);
+
+    return PyLong_FromUnsignedLong((unsigned long)(chtype)termattrs());
+}
 
 /*[clinic input]
 @permit_long_summary
