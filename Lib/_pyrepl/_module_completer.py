@@ -216,7 +216,14 @@ class ModuleCompleter:
         if not imported_module:
             return [], None, self._get_import_completion_action(path)
         try:
-            module_attributes = dir(imported_module)
+            if hasattr(imported_module, '__all__'): # Return __all__ directly
+                names = [
+                    attr_name for attr_name in imported_module.__all__
+                    if attr_name.startswith(prefix) and attr_name.isidentifier()
+                ]
+                return names, imported_module, None
+            else:
+                module_attributes = dir(imported_module)
         except Exception:
             module_attributes = []
         # Filter out invalid attribute names, such as dashes that cannot be
