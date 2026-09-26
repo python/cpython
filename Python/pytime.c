@@ -1418,14 +1418,17 @@ _PyDeadline_Get(PyTime_t deadline)
 }
 
 
-/* Locale-independent numeric strptime parsing.
+/* Implement common parts of strptime in C to improve performance. Callers
+ * fall back to Lib/_strptime.py for a full parse when this doesn't match.
  *
- * Return 1 for a complete numeric match, or 0 to use Lib/_strptime.py.
- * Parsing doesn't allocate or set exceptions. In particular, mismatches may
- * require regex backtracking, so their diagnostics belong to the fallback.
+ * Supported inputs are exact str objects containing only ASCII, with:
+ * - numeric %Y, %y, %m, %d, %H, %M, %S, and %f fields;
+ * - a terminal %z: empty, Z, or +/-HHMM or +/-HH:MM with hours below 24;
+ * - literal characters, %%, and ASCII whitespace.
+ * Duplicate directives, mixed %Y/%y, and day-of-month without a year use the
+ * fallback. So do other directives (including locale-dependent names and
+ * week/day-of-year calculations), and offsets with seconds or fractions.
  */
-
-
 
 static int
 strptime_digits(const unsigned char *data, Py_ssize_t length, Py_ssize_t pos,
@@ -1481,6 +1484,15 @@ strptime_offset(const unsigned char *data, Py_ssize_t length, Py_ssize_t pos,
     return 1;
 }
 
+/* Return 1 for a complete numeric match, or 0 if fallback is required.
+ *
+ * Parsing doesn't allocate or set exceptions. Some mismatches require regex
+ * backtracking, but even inputs known to be invalid use the Python parser:
+ * it owns the exception messages and error precedence. For example, month 13
+ * and empty input can't be repaired by backtracking, but diagnosing them here
+ * would duplicate the Python parser's error handling. A return value of 0
+ * therefore doesn't distinguish invalid input from an unsupported format.
+ */
 int
 _PyTime_Strptime(PyObject *string, PyObject *format, _PyTime_StrptimeFields *fields)
 {

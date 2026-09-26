@@ -463,27 +463,13 @@ days_before_month(int year, int month)
     return days;
 }
 
-/* year -> number of days before January 1st of year.  Remember that we
- * start with year 1, so days_before_year(1) == 0.
- */
-static int
-days_before_year(int year)
-{
-    int y = year - 1;
-    /* This is incorrect if year <= 0; we really want the floor
-     * here.  But so long as MINYEAR is 1, the smallest year this
-     * can see is 1.
-     */
-    assert (year >= 1);
-    return y*365 + y/4 - y/100 + y/400;
-}
 
 /* Number of days in 4, 100, and 400 year cycles.  That these have
  * the correct values is asserted in the module init function.
  */
-#define DI4Y    1461    /* days_before_year(5); days in 4 years */
-#define DI100Y  36524   /* days_before_year(101); days in 100 years */
-#define DI400Y  146097  /* days_before_year(401); days in 400 years  */
+#define DI4Y    1461    /* _PyTime_DaysBeforeYear(5); days in 4 years */
+#define DI100Y  36524   /* _PyTime_DaysBeforeYear(101); days in 100 years */
+#define DI400Y  146097  /* _PyTime_DaysBeforeYear(401); days in 400 years  */
 
 /* ordinal -> year, month, day, considering 01-Jan-0001 as day 1. */
 static void
@@ -573,14 +559,14 @@ ord_to_ymd(int ordinal, int *year, int *month, int *day)
 static int
 ymd_to_ord(int year, int month, int day)
 {
-    return days_before_year(year) + days_before_month(year, month) + day;
+    return _PyTime_DaysBeforeYear(year) + days_before_month(year, month) + day;
 }
 
 /* Day of week, where Monday==0, ..., Sunday==6.  1/1/1 was a Monday. */
 static int
 weekday(int year, int month, int day)
 {
-    return (ymd_to_ord(year, month, day) + 6) % 7;
+    return _PyTime_Weekday(year, days_before_month(year, month) + day);
 }
 
 /* Ordinal of the Monday starting week 1 of the ISO year.  Week 1 is the
@@ -7722,19 +7708,19 @@ _datetime_exec(PyObject *module)
      * pasting together 4 single years.
      */
     static_assert(DI4Y == 4 * 365 + 1, "DI4Y");
-    assert(DI4Y == days_before_year(4+1));
+    assert(DI4Y == _PyTime_DaysBeforeYear(4+1));
 
     /* Similarly, a 400-year cycle has an extra leap day over what we'd
      * get from pasting together 4 100-year cycles.
      */
     static_assert(DI400Y == 4 * DI100Y + 1, "DI400Y");
-    assert(DI400Y == days_before_year(400+1));
+    assert(DI400Y == _PyTime_DaysBeforeYear(400+1));
 
     /* OTOH, a 100-year cycle has one fewer leap day than we'd get from
      * pasting together 25 4-year cycles.
      */
     static_assert(DI100Y == 25 * DI4Y - 1, "DI100Y");
-    assert(DI100Y == days_before_year(100+1));
+    assert(DI100Y == _PyTime_DaysBeforeYear(100+1));
 
     if (set_current_module(interp, module) < 0) {
         goto error;

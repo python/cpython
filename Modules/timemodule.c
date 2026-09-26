@@ -998,14 +998,10 @@ time_strptime(PyObject *self, PyObject *args)
         if (result == NULL) {
             return NULL;
         }
-        /* January 1 of year 1 was a Monday. */
-        int year = fields.year - 1;
-        int weekday = (365 * year + year / 4 - year / 100 + year / 400 +
-                       fields.yday - 1) % 7;
         const int values[] = {
             fields.year, fields.month, fields.day,
             fields.hour, fields.minute, fields.second,
-            weekday, fields.yday, -1
+            _PyTime_Weekday(fields.year, fields.yday), fields.yday, -1
         };
         for (size_t i = 0; i < Py_ARRAY_LENGTH(values); i++) {
             PyObject *value = PyLong_FromLong(values[i]);

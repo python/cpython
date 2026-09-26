@@ -317,6 +317,29 @@ extern PyTime_t _PyTimeFraction_Mul(
 extern double _PyTimeFraction_Resolution(
     const _PyTimeFraction *frac);
 
+/* year -> number of days before January 1st of year.  Remember that we
+ * start with year 1, so days_before_year(1) == 0.
+ */
+static inline int
+_PyTime_DaysBeforeYear(int year)
+{
+    int y = year - 1;
+    /* This is incorrect if year <= 0; we really want the floor
+     * here.  But so long as MINYEAR is 1, the smallest year this
+     * can see is 1.
+     */
+    assert(year >= 1);
+    return y*365 + y/4 - y/100 + y/400;
+}
+
+// Weekday from a valid Gregorian year and 1-based day of year; Monday is 0.
+static inline int
+_PyTime_Weekday(int year, int yday)
+{
+    return (_PyTime_DaysBeforeYear(year) + yday + 6) % 7;
+}
+
+
 // Locale-independent numeric strptime parsing.
 // A complete match returns 1; otherwise use Lib/_strptime.py. This function
 // neither allocates nor sets exceptions. The calendar date is validated, but
