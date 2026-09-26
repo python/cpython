@@ -253,6 +253,71 @@ class DateTimeTest(unittest.TestCase):
     @hypothesis.settings(max_examples=50)
     @hypothesis.given(
         day=st.dates(),
+        field=st.sampled_from(("month", "day", "leap_day", "hour", "minute",
+                               "second", "offset", "fraction", "iso_year",
+                               "iso_week", "iso_weekday", "trailing", "year")),
+        excess=st.integers(min_value=0, max_value=99),
+    )
+    @hypothesis.example(day=datetime.date(1900, 2, 28), field="leap_day", excess=0)
+    @hypothesis.example(day=datetime.date(2000, 2, 29), field="month", excess=0)
+    @hypothesis.example(day=datetime.date(2000, 2, 29), field="month", excess=1)
+    @hypothesis.example(day=datetime.date.min, field="day", excess=0)
+    @hypothesis.example(day=datetime.date.min, field="day", excess=1)
+    @hypothesis.example(day=datetime.date.max, field="hour", excess=0)
+    @hypothesis.example(day=datetime.date.min, field="minute", excess=0)
+    @hypothesis.example(day=datetime.date.min, field="second", excess=0)
+    @hypothesis.example(day=datetime.date.min, field="offset", excess=0)
+    @hypothesis.example(day=datetime.date.min, field="fraction", excess=0)
+    @hypothesis.example(day=datetime.date.min, field="fraction", excess=1)
+    @hypothesis.example(day=datetime.date.min, field="iso_year", excess=0)
+    @hypothesis.example(day=datetime.date.min, field="iso_week", excess=0)
+    @hypothesis.example(day=datetime.date.min, field="iso_weekday", excess=0)
+    @hypothesis.example(day=datetime.date.min, field="trailing", excess=0)
+    @hypothesis.example(day=datetime.date.min, field="year", excess=0)
+    def test_invalid_fields(
+        self, day: datetime.date, field: str, excess: int,
+    ) -> None:
+        value = day.isoformat()
+        fmt = "%Y-%m-%d"
+        if field == "month":
+            month = 12 + excess if excess else 0
+            value = f"{day.year:04}-{month:02}-{day.day:02}"
+        elif field == "day":
+            invalid_day = 31 + excess if excess else 0
+            value = f"{day.year:04}-{day.month:02}-{invalid_day:02}"
+        elif field == "leap_day":
+            year = day.year
+            if year % 4 == 0 and (year % 100 != 0 or year % 400 == 0):
+                year -= 1
+            value = f"{year:04}-02-29"
+        elif field in ("hour", "minute", "second"):
+            directive, limit = {
+                "hour": ("%H", 24), "minute": ("%M", 60), "second": ("%S", 60),
+            }[field]
+            value += f" {limit + excess}"
+            fmt += " " + directive
+        elif field == "offset":
+            value += f" +{24 + excess:02}:00"
+            fmt += " %:z"
+        elif field == "fraction":
+            value += "." + ("1234567" if excess % 2 else "")
+            fmt += ".%f"
+        elif field == "iso_year":
+            value, fmt = f"{day.year:04} 01", "%G %V"
+        elif field == "iso_week":
+            value, fmt = f"{day.year:04} {54 + excess} 1", "%G %V %u"
+        elif field == "iso_weekday":
+            value, fmt = f"{day.year:04} 01 {8 + excess}", "%G %V %u"
+        elif field == "trailing":
+            value += "!" * (excess + 1)
+        else:
+            value = f"0000-{day.month:02}-{day.day:02}"
+        with self.assertRaises(ValueError):
+            self.theclass.strptime(value, fmt)
+
+    @hypothesis.settings(max_examples=50)
+    @hypothesis.given(
+        day=st.dates(),
         fmt=st.sampled_from(("%Y-%m-%d", "%y-%m-%d", "%Y %j",
                              "%G %V %u", "%Y %U %w", "%Y %W %w")),
         padded=st.booleans(),
