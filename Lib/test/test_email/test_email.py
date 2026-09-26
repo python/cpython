@@ -851,6 +851,27 @@ class TestMessageAPI(TestEmailBase):
         msg['Dummy'] = 'dummy\nX-Injected-Header: test'
         self.assertRaises(errors.HeaderParseError, msg.as_string)
 
+    # gh-76787: receivers accept whitespace between a header name and the
+    # colon, so a line using it is an injected header too.
+    def test_embedded_header_with_space_before_colon_rejected(self):
+        for injected in ('dummy\nX-Injected-Header : test',
+                         'dummy\nX-Injected-Header\t: test',
+                         'dummy\nX-Injected-Header \t : test'):
+            with self.subTest(injected=injected):
+                msg = Message()
+                msg['Dummy'] = Header(injected)
+                self.assertRaises(errors.HeaderParseError, msg.as_string)
+
+                msg = Message()
+                msg['Dummy'] = injected
+                self.assertRaises(errors.HeaderParseError, msg.as_string)
+
+    def test_folded_continuation_line_still_accepted(self):
+        # A continuation line starts with whitespace and is not an injection.
+        msg = Message()
+        msg['Dummy'] = Header('dummy\n continued here: not a header')
+        self.assertIn('continued here', msg.as_string())
+
     def test_unicode_header_defaults_to_utf8_encoding(self):
         # Issue 14291
         m = MIMEText('abc\n')
