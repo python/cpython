@@ -1042,9 +1042,10 @@ _queues_list_all(_queues *queues, int64_t *p_count)
 {
     struct queue_id_and_info *qids = NULL;
     PyThread_acquire_lock(queues->mutex, WAIT_LOCK);
-    struct queue_id_and_info *ids = PyMem_NEW(struct queue_id_and_info,
+    struct queue_id_and_info *ids = PyMem_New(struct queue_id_and_info,
                                               (Py_ssize_t)(queues->count));
     if (ids == NULL) {
+        PyErr_NoMemory();
         goto done;
     }
     _queueref *ref = queues->head;
@@ -1322,13 +1323,26 @@ static void *
 _queueid_xid_new(int64_t qid)
 {
     _queues *queues = _get_global_queues();
-    if (_queues_incref(queues, qid) < 0) {
+    int err = _queues_incref(queues, qid);
+    if (err < 0) {
+        assert(err == ERR_QUEUE_NOT_FOUND);
+        PyObject *mod = _get_current_module();
+        if (mod == NULL) {
+            if (!PyErr_Occurred()) {
+                PyErr_SetString(PyExc_SystemError,
+                                "missing " MODULE_NAME_STR " module");
+            }
+            return NULL;
+        }
+        (void)handle_queue_error(err, mod, qid);
+        Py_DECREF(mod);
         return NULL;
     }
 
     struct _queueid_xid *data = PyMem_RawMalloc(sizeof(struct _queueid_xid));
     if (data == NULL) {
         _queues_decref(queues, qid);
+        PyErr_NoMemory();
         return NULL;
     }
     data->qid = qid;
