@@ -3514,6 +3514,11 @@ datetime_date_strptime_impl(PyTypeObject *type, PyObject *string,
                             PyObject *format)
 /*[clinic end generated code: output=454d473bee2d5161 input=2db8f0b2b5242deb]*/
 {
+    _PyTime_StrptimeFields fields;
+    if (type == DATE_TYPE(NO_STATE) &&
+        _PyTime_Strptime(string, format, &fields)) {
+        return new_date_ex(fields.year, fields.month, fields.day, type);
+    }
     PyObject *result;
 
     PyObject *module = PyImport_Import(&_Py_ID(_strptime));
@@ -4786,6 +4791,20 @@ datetime_time_strptime_impl(PyTypeObject *type, PyObject *string,
                             PyObject *format)
 /*[clinic end generated code: output=ae05a9bc0241d3bf input=f01d0b9eb5383da5]*/
 {
+    _PyTime_StrptimeFields fields;
+    if (type == TIME_TYPE(NO_STATE) &&
+        _PyTime_Strptime(string, format, &fields)) {
+        PyObject *tzinfo = tzinfo_from_isoformat_results(
+            fields.gmtoff != INT_MIN, fields.gmtoff, 0);
+        if (tzinfo == NULL) {
+            return NULL;
+        }
+        PyObject *result = new_time_ex(
+            fields.hour, fields.minute, fields.second, fields.fraction,
+            tzinfo, type);
+        Py_DECREF(tzinfo);
+        return result;
+    }
     PyObject *result;
 
     PyObject *module = PyImport_Import(&_Py_ID(_strptime));
