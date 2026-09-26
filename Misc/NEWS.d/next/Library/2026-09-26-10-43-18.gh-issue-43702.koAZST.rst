@@ -1,0 +1,4 @@
+Fix :func:`email.encoders.encode_base64` and
+:func:`email.encoders.encode_quopri` adding a second
+:mailheader:`Content-Transfer-Encoding` header when they re-encode a
+message that already has one.

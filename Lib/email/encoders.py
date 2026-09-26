@@ -30,6 +30,7 @@ def encode_base64(msg):
     orig = msg.get_payload(decode=True)
     encdata = str(_bencode(orig), 'ascii')
     msg.set_payload(encdata)
+    del msg['Content-Transfer-Encoding']
     msg['Content-Transfer-Encoding'] = 'base64'
 
 
@@ -41,6 +42,7 @@ def encode_quopri(msg):
     orig = msg.get_payload(decode=True)
     encdata = _qencode(orig)
     msg.set_payload(encdata)
+    del msg['Content-Transfer-Encoding']
     msg['Content-Transfer-Encoding'] = 'quoted-printable'
 
 
