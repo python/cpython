@@ -21680,6 +21680,48 @@ then :
 
 fi
 
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for freadlink" >&5
+printf %s "checking for freadlink... " >&6; }
+if test ${ac_cv_func_freadlink+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <unistd.h>
+int
+main (void)
+{
+void *x=freadlink
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_func_freadlink=yes
+else case e in #(
+  e) ac_cv_func_freadlink=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_freadlink" >&5
+printf "%s\n" "$ac_cv_func_freadlink" >&6; }
+  if test "x$ac_cv_func_freadlink" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_FREADLINK 1" >>confdefs.h
+
+fi
+
+
+
+
 fi
 
 ac_fn_check_decl "$LINENO" "dirfd" "ac_cv_have_decl_dirfd" "#include <sys/types.h>
