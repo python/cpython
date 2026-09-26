@@ -4,10 +4,11 @@ import gc
 import math
 import sys
 import unittest
+import warnings
 from _ctypes import CTYPES_MAX_ARGCOUNT
-from ctypes import (CDLL, cdll, Structure, CFUNCTYPE,
+from ctypes import (CDLL, cdll, Structure, Union, CFUNCTYPE,
                     ArgumentError, POINTER, sizeof,
-                    c_byte, c_ubyte, c_char,
+                    c_byte, c_ubyte, c_char, c_char_p,
                     c_short, c_ushort, c_int, c_uint,
                     c_long, c_longlong, c_ulonglong, c_ulong,
                     c_float, c_double, c_longdouble, py_object)
@@ -292,6 +293,159 @@ class SampleCallbacksTestCase(unittest.TestCase):
         self.assertEqual(s.first, check.first)
         self.assertEqual(s.second, check.second)
         self.assertEqual(s.third, check.third)
+
+    # gh-49960: callbacks may return structures and unions by value.
+
+    def test_callback_return_small_struct(self):
+        class SmallRet(Structure):
+            _fields_ = [("a", c_int), ("b", c_int)]
+
+        CALLBACK = CFUNCTYPE(SmallRet)
+        dll = CDLL(_ctypes_test.__file__)
+        func = dll._testfunc_cbk_ret_small_struct
+        func.argtypes = (CALLBACK,)
+        func.restype = SmallRet
+
+        result = func(CALLBACK(lambda: SmallRet(17, 42)))
+        self.assertEqual((result.a, result.b), (17, 42))
+
+    def test_callback_return_struct_reaches_c(self):
+        # The C helper sums the fields itself, proving the bytes actually
+        # reached the C caller rather than only round-tripping in Python.
+        class SmallRet(Structure):
+            _fields_ = [("a", c_int), ("b", c_int)]
+
+        CALLBACK = CFUNCTYPE(SmallRet)
+        dll = CDLL(_ctypes_test.__file__)
+        func = dll._testfunc_cbk_ret_small_struct_sum
+        func.argtypes = (CALLBACK,)
+        func.restype = c_long
+
+        self.assertEqual(func(CALLBACK(lambda: SmallRet(300, 45))), 345)
+
+    def test_callback_return_large_struct(self):
+        # Mirrors `Test` in Modules/_ctypes/_ctypes_test.c: >8 bytes, so it
+        # is returned via a hidden pointer rather than in registers.
+        class X(Structure):
+            _fields_ = [("first", c_ulong),
+                        ("second", c_ulong),
+                        ("third", c_ulong)]
+
+        CALLBACK = CFUNCTYPE(X)
+        dll = CDLL(_ctypes_test.__file__)
+        func = dll._testfunc_cbk_ret_large_struct
+        func.argtypes = (CALLBACK,)
+        func.restype = X
+
+        result = func(CALLBACK(lambda: X(0xdeadbeef, 0xcafebabe, 0x0bad1dea)))
+        self.assertEqual(result.first, 0xdeadbeef)
+        self.assertEqual(result.second, 0xcafebabe)
+        self.assertEqual(result.third, 0x0bad1dea)
+
+    def test_callback_return_float_struct(self):
+        # All-float struct: SSE class on x86-64, HFA on AArch64.
+        class FloatRet(Structure):
+            _fields_ = [("x", c_double), ("y", c_double)]
+
+        CALLBACK = CFUNCTYPE(FloatRet)
+        dll = CDLL(_ctypes_test.__file__)
+        func = dll._testfunc_cbk_ret_float_struct
+        func.argtypes = (CALLBACK,)
+        func.restype = FloatRet
+
+        result = func(CALLBACK(lambda: FloatRet(1.5, -2.25)))
+        self.assertEqual((result.x, result.y), (1.5, -2.25))
+
+    def test_callback_return_union(self):
+        class UnionRet(Union):
+            _fields_ = [("i", c_int), ("f", c_float)]
+
+        CALLBACK = CFUNCTYPE(UnionRet)
+        dll = CDLL(_ctypes_test.__file__)
+        func = dll._testfunc_cbk_ret_union
+        func.argtypes = (CALLBACK,)
+        func.restype = UnionRet
+
+        result = func(CALLBACK(lambda: UnionRet(i=0x41424344)))
+        self.assertEqual(result.i, 0x41424344)
+
+    def test_callback_return_struct_repeatedly(self):
+        # Guards against per-call leaks and against regressing into the
+        # "memory leak in callback function" RuntimeWarning path.
+        class SmallRet(Structure):
+            _fields_ = [("a", c_int), ("b", c_int)]
+
+        CALLBACK = CFUNCTYPE(SmallRet)
+        dll = CDLL(_ctypes_test.__file__)
+        func = dll._testfunc_cbk_ret_small_struct_sum
+        func.argtypes = (CALLBACK,)
+        func.restype = c_long
+
+        cb = CALLBACK(lambda: SmallRet(1, 2))
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", RuntimeWarning)
+            for _ in range(100):
+                self.assertEqual(func(cb), 3)
+
+    def test_callback_return_struct_subclass(self):
+        # isinstance semantics: a subclass instance is acceptable.
+        class SmallRet(Structure):
+            _fields_ = [("a", c_int), ("b", c_int)]
+
+        class SubRet(SmallRet):
+            pass
+
+        CALLBACK = CFUNCTYPE(SmallRet)
+        dll = CDLL(_ctypes_test.__file__)
+        func = dll._testfunc_cbk_ret_small_struct_sum
+        func.argtypes = (CALLBACK,)
+        func.restype = c_long
+
+        self.assertEqual(func(CALLBACK(lambda: SubRet(4, 5))), 9)
+
+    def test_callback_return_struct_wrong_type(self):
+        class SmallRet(Structure):
+            _fields_ = [("a", c_int), ("b", c_int)]
+
+        class Other(Structure):
+            _fields_ = [("q", c_int)]
+
+        CALLBACK = CFUNCTYPE(SmallRet)
+        dll = CDLL(_ctypes_test.__file__)
+        func = dll._testfunc_cbk_ret_small_struct_sum
+        func.argtypes = (CALLBACK,)
+        func.restype = c_long
+
+        for bad in (None, 42, Other(1)):
+            with self.subTest(bad=bad):
+                def cb(bad=bad):
+                    return bad
+                with support.catch_unraisable_exception() as cm:
+                    # The buffer is zeroed on failure, so the sum is 0.
+                    self.assertEqual(func(CALLBACK(cb)), 0)
+                    self.assertIsInstance(cm.unraisable.exc_value, TypeError)
+                    self.assertEqual(
+                        cm.unraisable.err_msg,
+                        f"Exception ignored while converting result "
+                        f"of ctypes callback function {cb!r}")
+
+    def test_callback_return_struct_with_pointer(self):
+        # gh-49960 / bpo-5710 discussion: the struct is copied by value, so
+        # any pointer it contains must reference memory the caller keeps
+        # alive. Here `keepalive` does exactly that.
+        class WithPtr(Structure):
+            _fields_ = [("s", c_char_p)]
+
+        keepalive = b"hello"
+
+        CALLBACK = CFUNCTYPE(WithPtr)
+        dll = CDLL(_ctypes_test.__file__)
+        func = dll._testfunc_cbk_ret_ptr_struct
+        func.argtypes = (CALLBACK,)
+        func.restype = WithPtr
+
+        result = func(CALLBACK(lambda: WithPtr(keepalive)))
+        self.assertEqual(result.s, b"hello")
 
     def test_callback_too_many_args(self):
         def func(*args):

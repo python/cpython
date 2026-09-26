@@ -111,6 +111,7 @@ TryAddRef(PyObject *cnv, CDataObject *obj)
 static void _CallPythonObject(ctypes_state *st,
                               void *mem,
                               ffi_type *restype,
+                              PyObject *restype_obj,
                               SETFUNC setfunc,
                               PyObject *callable,
                               PyObject *converters,
@@ -220,46 +221,85 @@ static void _CallPythonObject(ctypes_state *st,
     Py_XDECREF(error_object);
 
     if (restype != &ffi_type_void && result) {
-        assert(setfunc);
 
 #ifdef WORDS_BIGENDIAN
         /* See the corresponding code in _ctypes_callproc():
-           in callproc.c, around line 1219. */
-        if (restype->type != FFI_TYPE_FLOAT && restype->size < sizeof(ffi_arg)) {
+           in callproc.c, around line 1330. */
+        if (restype->type != FFI_TYPE_FLOAT
+            && restype->type != FFI_TYPE_STRUCT
+            && restype->size < sizeof(ffi_arg))
+        {
             mem = (char *)mem + sizeof(ffi_arg) - restype->size;
         }
 #endif
 
-        /* keep is an object we have to keep alive so that the result
-           stays valid.  If there is no such object, the setfunc will
-           have returned Py_None.
-
-           If there is such an object, we have no choice than to keep
-           it alive forever - but a refcount and/or memory leak will
-           be the result.  EXCEPT when restype is py_object - Python
-           itself knows how to manage the refcount of these objects.
-        */
-        PyObject *keep = setfunc(mem, result, restype->size);
-
-        if (keep == NULL) {
-            /* Could not convert callback result. */
-            PyErr_FormatUnraisable(
-                    "Exception ignored while converting result "
-                    "of ctypes callback function %R",
-                    callable);
-        }
-        else if (setfunc != _ctypes_get_fielddesc("O")->setfunc) {
-            if (keep == Py_None) {
-                /* Nothing to keep */
-                Py_DECREF(keep);
+        if (setfunc == NULL) {
+            /* gh-49960: struct/union return. There is no setfunc for these
+               types, so copy the bytes out of the CData object directly.
+               The struct is copied by value and no object is kept alive, so
+               any pointer it contains must reference memory the caller keeps
+               alive - the same contract C imposes. */
+            int ok = 0;
+            if (CDataObject_Check(st, result)) {
+                int is_inst = PyObject_IsInstance(result, restype_obj);
+                if (is_inst < 0) {
+                    /* Discard this failure; the TypeError raised below is the
+                       more useful report and only one can be shown. */
+                    PyErr_Clear();
+                }
+                else if (is_inst) {
+                    CDataObject *cd = (CDataObject *)result;
+                    Py_BEGIN_CRITICAL_SECTION(cd);
+                    memcpy(mem, cd->b_ptr, restype->size);
+                    Py_END_CRITICAL_SECTION();
+                    ok = 1;
+                }
             }
-            else if (PyErr_WarnEx(PyExc_RuntimeWarning,
-                                  "memory leak in callback function.",
-                                  1) == -1) {
+            if (!ok) {
+                /* Zero the buffer so the C caller sees deterministic zeros
+                   rather than uninitialised memory. */
+                memset(mem, 0, restype->size);
+                PyErr_Format(PyExc_TypeError,
+                             "ctypes callback function returned unexpected "
+                             "type %T", result);
                 PyErr_FormatUnraisable(
                         "Exception ignored while converting result "
                         "of ctypes callback function %R",
                         callable);
+            }
+        }
+        else {
+            /* keep is an object we have to keep alive so that the result
+               stays valid.  If there is no such object, the setfunc will
+               have returned Py_None.
+
+               If there is such an object, we have no choice than to keep
+               it alive forever - but a refcount and/or memory leak will
+               be the result.  EXCEPT when restype is py_object - Python
+               itself knows how to manage the refcount of these objects.
+            */
+            PyObject *keep = setfunc(mem, result, restype->size);
+
+            if (keep == NULL) {
+                /* Could not convert callback result. */
+                PyErr_FormatUnraisable(
+                        "Exception ignored while converting result "
+                        "of ctypes callback function %R",
+                        callable);
+            }
+            else if (setfunc != _ctypes_get_fielddesc("O")->setfunc) {
+                if (keep == Py_None) {
+                    /* Nothing to keep */
+                    Py_DECREF(keep);
+                }
+                else if (PyErr_WarnEx(PyExc_RuntimeWarning,
+                                      "memory leak in callback function.",
+                                      1) == -1) {
+                    PyErr_FormatUnraisable(
+                            "Exception ignored while converting result "
+                            "of ctypes callback function %R",
+                            callable);
+                }
             }
         }
     }
@@ -293,6 +333,7 @@ static void closure_fcn(ffi_cif *cif,
     _CallPythonObject(st,
                       resp,
                       p->ffi_restype,
+                      p->restype,
                       p->setfunc,
                       p->callable,
                       p->converters,
@@ -371,10 +412,22 @@ CThunkObject *_ctypes_alloc_callback(ctypes_state *st,
             goto error;
         }
 
-        if (info == NULL || info->setfunc == NULL) {
-          PyErr_SetString(PyExc_TypeError,
-                          "invalid result type for callback function");
-          goto error;
+        if (info == NULL) {
+            PyErr_SetString(PyExc_TypeError,
+                            "invalid result type for callback function");
+            goto error;
+        }
+        /* gh-49960: structs and unions have no setfunc (that is reserved for
+           "simple" types), but can still be returned by value. Leaving
+           p->setfunc as NULL signals the struct-return path in
+           _CallPythonObject. */
+        if (info->setfunc == NULL
+            && !PyCStructTypeObject_Check(st, restype)
+            && !PyObject_TypeCheck(restype, st->UnionType_Type))
+        {
+            PyErr_SetString(PyExc_TypeError,
+                            "invalid result type for callback function");
+            goto error;
         }
         p->setfunc = info->setfunc;
         p->ffi_restype = &info->ffi_type_pointer;
