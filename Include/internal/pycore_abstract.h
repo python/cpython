@@ -12,8 +12,7 @@ extern "C" {
 static inline int
 _PyIndex_Check(PyObject *obj)
 {
-    PyNumberMethods *tp_as_number = Py_TYPE(obj)->tp_as_number;
-    return (tp_as_number != NULL && tp_as_number->nb_index != NULL);
+    return Py_TYPE(obj)->tp_as_number->nb_index != NULL;
 }
 
 // Exported for external JIT support
