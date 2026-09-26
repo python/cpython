@@ -17,3 +17,9 @@ class SamplingModuleNotFoundError(SamplingProfilerError):
     def __init__(self, module_name):
         self.module_name = module_name
         super().__init__(f"Module '{module_name}' not found.")
+
+class ControlError(SamplingProfilerError):
+    """Base exception for profiler control channel errors."""
+
+class ControlURIError(ControlError):
+    """Raised when a control URI is malformed or has an unsupported scheme."""
