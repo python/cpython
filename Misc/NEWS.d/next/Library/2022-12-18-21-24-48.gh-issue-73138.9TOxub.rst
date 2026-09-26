@@ -1,0 +1,1 @@
+Add the :attr:`~csv.Dialect.strict` attribute to :class:`csv.Dialect`.
