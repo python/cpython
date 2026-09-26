@@ -1,0 +1,3 @@
+Document that :class:`~abc.ABCMeta` only inspects the object a subclass binds
+to an abstract name, so overriding an abstract read-write property with a
+read-only one leaves the class instantiable.
