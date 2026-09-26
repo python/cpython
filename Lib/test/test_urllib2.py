@@ -1795,6 +1795,31 @@ class HandlerTests(unittest.TestCase):
         opener.add_handler(http_handler)
         self.assertRaises(ValueError, opener.open, "http://www.example.com")
 
+    def test_digest_auth_malformed_challenge(self):
+        # A malformed WWW-Authenticate digest challenge must make the handler
+        # decline (return None) rather than crash with a raw exception.
+        handler = urllib.request.HTTPDigestAuthHandler(None)
+        req = Request("http://www.example.com/")
+        for challenge in (
+            "Digest realm",   # parse_keqv_list: no '=' -> ValueError
+            "Digest realm=",  # parse_keqv_list: empty value -> IndexError
+            "Digest",         # auth.split(' ', 1) -> ValueError
+        ):
+            with self.subTest(challenge=challenge):
+                self.assertIsNone(handler.retry_http_digest_auth(req, challenge))
+
+        # Through the public opener.open() path the raw exception must not
+        # escape; the unhandled 401 surfaces as HTTPError instead.
+        opener = OpenerDirector()
+        opener.add_handler(urllib.request.HTTPDigestAuthHandler(None))
+        opener.add_handler(urllib.request.HTTPDefaultErrorHandler())
+        opener.add_handler(MockHTTPHandlerRedirect(
+            401, "WWW-Authenticate: Digest realm\r\n\r\n"))
+        with self.assertRaises(urllib.error.HTTPError) as cm:
+            opener.open("http://www.example.com/")
+        self.assertEqual(cm.exception.code, 401)
+        cm.exception.close()
+
     def test_unsupported_auth_basic_handler(self):
         # While using BasicAuthHandler
         opener = OpenerDirector()
