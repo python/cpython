@@ -651,11 +651,16 @@ if sys.platform == 'darwin':
         For http/https URLs with the default browser, /usr/bin/open is called
         directly; macOS routes these to the registered browser.
 
-        For all other URL schemes (e.g. file://) and for named browsers,
-        /usr/bin/open -b <bundle-id> is used so that the URL is always passed
-        to a browser application rather than dispatched by the OS file handler.
-        This prevents file injection attacks where a file:// URL pointing to an
-        executable bundle could otherwise be launched by the OS.
+        For file:// URLs and for named browsers, /usr/bin/open -b <bundle-id>
+        is used so that the URL is always passed to a browser application
+        rather than dispatched by the OS file handler. This prevents file
+        injection attacks where a file:// URL pointing to an executable
+        bundle could otherwise be launched by the OS.
+
+        Other URL schemes (e.g. custom app schemes like vscode:// or
+        slack://) are passed to /usr/bin/open without a bundle ID, so macOS
+        resolves the scheme's own registered handler application instead of
+        forcing it through the default browser.
 
         Named browsers with known bundle IDs use -b; unknown names fall back
         to -a.
@@ -678,9 +683,19 @@ if sys.platform == 'darwin':
                 proto, sep, _ = url.partition(':')
                 if sep and proto.lower() in {'http', 'https'}:
                     cmd = ['/usr/bin/open', url]
-                else:
+                elif sep and proto.lower() == 'file':
+                    # file:// URLs must be routed through the default
+                    # browser explicitly: the OS's generic file handler
+                    # dispatches file: URLs by the target file's type (e.g.
+                    # a text editor for .html), not to a web browser.
                     bundle_id = _macos_default_browser_bundle_id()
                     cmd = ['/usr/bin/open', '-b', bundle_id, url]
+                else:
+                    # Other custom URI schemes (e.g. vscode://, slack://)
+                    # aren't web content: let the OS resolve the scheme's
+                    # own registered handler instead of forcing it through
+                    # the browser (gh-149454).
+                    cmd = ['/usr/bin/open', url]
             else:
                 bundle_id = self._BUNDLE_IDS.get(self.name.lower())
                 if bundle_id:
