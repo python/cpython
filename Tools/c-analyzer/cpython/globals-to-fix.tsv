@@ -348,6 +348,7 @@ Modules/_testcapi/vectorcall.c	-	MethodDescriptorBase_Type	-
 Modules/_testcapi/vectorcall.c	-	MethodDescriptorDerived_Type	-
 Modules/_testcapi/vectorcall.c	-	MethodDescriptorNopGet_Type	-
 Modules/_testcapi/vectorcall.c	-	MethodDescriptor2_Type	-
+Modules/_testclinic.c	-	VcNew_Type	-
 
 
 ##################################

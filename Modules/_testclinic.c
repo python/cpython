@@ -2529,10 +2529,12 @@ output pop
 
 /* @vectorcall test types. Multiple types as tp_vectorcall is a single slot. */
 
-/* VcNew: __new__ with one optional positional-or-keyword arg */
+/* VcNew: __new__ with one optional positional-or-keyword arg.  A static
+ * type, so the generated vectorcall is exercised on both static and heap
+ * types. */
 
 /*[clinic input]
-class _testclinic.VcNew "PyObject *" ""
+class _testclinic.VcNew "PyObject *" "&VcNew_Type"
 @classmethod
 @vectorcall
 _testclinic.VcNew.__new__ as vc_plain_new
@@ -2541,22 +2543,18 @@ _testclinic.VcNew.__new__ as vc_plain_new
 
 static PyObject *
 vc_plain_new_impl(PyTypeObject *type, PyObject *a)
-/*[clinic end generated code: output=55b273e9797a3013 input=459ce1ed0393de54]*/
+/*[clinic end generated code: output=55b273e9797a3013 input=e15d88606280badc]*/
 {
     return type->tp_alloc(type, 0);
 }
 
-static PyType_Slot VcNew_slots[] = {
-    {Py_tp_new, vc_plain_new},
-    {Py_tp_vectorcall, vc_plain_vectorcall},
-    {0, NULL},
-};
-
-static PyType_Spec VcNew_spec = {
-    .name = "_testclinic.VcNew",
-    .basicsize = sizeof(PyObject),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE,
-    .slots = VcNew_slots,
+static PyTypeObject VcNew_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "_testclinic.VcNew",
+    .tp_basicsize = sizeof(PyObject),
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE,
+    .tp_new = vc_plain_new,
+    .tp_vectorcall = vc_plain_vectorcall,
 };
 
 
@@ -2901,7 +2899,6 @@ _testclinic_exec(PyObject *module)
         &DeprKwdNew_spec,
         &DeprKwdInit_spec,
         &DeprKwdInitNoInline_spec,
-        &VcNew_spec,
         &VcInit_spec,
         &VcNewBase_spec,
         &VcKwOnly_spec,
@@ -2910,6 +2907,9 @@ _testclinic_exec(PyObject *module)
         if (add_type(module, specs[i]) < 0) {
             return -1;
         }
+    }
+    if (PyModule_AddType(module, &VcNew_Type) < 0) {
+        return -1;
     }
     return 0;
 }
