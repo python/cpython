@@ -2293,7 +2293,38 @@ del assure_pickle_consistency
 ##############################################################################
 # A pickle opcode generator.
 
-def _genops(data, yield_end_pos=False):
+class _FramedReader:
+    """Wrap a file object to enforce pickle frame boundaries (PEP 3154).
+
+    Reads are limited to the current frame, so an argument that would straddle
+    a frame boundary is reported as truncated data by the argument readers,
+    just like a genuinely truncated pickle.
+    """
+
+    def __init__(self, file):
+        self.file = file
+        self.frame_len = None   # bytes left in the current frame, or None
+
+    def read(self, n):
+        if self.frame_len is None:
+            return self.file.read(n)
+        data = self.file.read(min(n, self.frame_len))
+        self.frame_len -= len(data)
+        if self.frame_len == 0:
+            self.frame_len = None
+        return data
+
+    def readline(self):
+        if self.frame_len is None:
+            return self.file.readline()
+        data = self.file.readline(self.frame_len)
+        self.frame_len -= len(data)
+        if self.frame_len == 0:
+            self.frame_len = None
+        return data
+
+
+def _genops(data, yield_end_pos=False, check_frames=False):
     if isinstance(data, bytes_types):
         data = io.BytesIO(data)
 
@@ -2317,6 +2348,13 @@ def _genops(data, yield_end_pos=False):
             arg = None
         else:
             arg = opcode.arg.reader(data)
+        if check_frames and opcode.name == 'FRAME':
+            if not isinstance(data, _FramedReader):
+                data = _FramedReader(data)
+            elif data.frame_len is not None:
+                raise ValueError("beginning of a new frame before end of "
+                                 "current frame")
+            data.frame_len = arg or None
         if yield_end_pos:
             yield opcode, arg, pos, getpos()
         else:
@@ -2325,7 +2363,7 @@ def _genops(data, yield_end_pos=False):
             assert opcode.name == 'STOP'
             break
 
-def genops(pickle):
+def genops(pickle, *, check_frames=False):
     """Generate all the opcodes in a pickle.
 
     'pickle' is a file-like object, or string, containing the pickle.
@@ -2347,8 +2385,13 @@ def genops(pickle):
     it's wrapped in a BytesIO object, and the latter's tell() result is
     used.  Else (the pickle doesn't have a tell(), and it's not obvious how
     to query its current position) pos is None.
+
+    Framing (PEP 3154) is ignored by default, as an unpickler is free to do.
+    If 'check_frames' is true, an argument that straddles a frame boundary, or
+    a frame that begins before the previous one ends, raises a ValueError, as
+    it does in the standard unpickler.
     """
-    return _genops(pickle)
+    return _genops(pickle, check_frames=check_frames)
 
 ##############################################################################
 # A pickle optimizer.
@@ -2420,7 +2463,8 @@ def optimize(p):
 ##############################################################################
 # A symbolic pickle disassembler.
 
-def dis(pickle, out=None, memo=None, indentlevel=4, annotate=0):
+def dis(pickle, out=None, memo=None, indentlevel=4, annotate=0, *,
+        check_frames=False):
     """Produce a symbolic disassembly of a pickle.
 
     'pickle' is a file-like object, or string, containing a (at least one)
@@ -2457,6 +2501,9 @@ def dis(pickle, out=None, memo=None, indentlevel=4, annotate=0):
     + A memo entry isn't referenced before it's defined.
 
     + The markobject isn't stored in the memo.
+
+    Framing (PEP 3154) is ignored by default.  If 'check_frames' is true,
+    frame boundaries are enforced as in the standard unpickler; see genops().
     """
 
     # Most of the hair here is for sanity checks, but most of it is needed
@@ -2472,7 +2519,7 @@ def dis(pickle, out=None, memo=None, indentlevel=4, annotate=0):
     errormsg = None
     annocol = annotate  # column hint for annotations
     t = get_theme(tty_file=out).pickletools
-    for opcode, arg, pos in genops(pickle):
+    for opcode, arg, pos in genops(pickle, check_frames=check_frames):
         if pos is not None:
             print(f"{t.position}{pos:5d}:{t.reset}", end=' ', file=out)
 
