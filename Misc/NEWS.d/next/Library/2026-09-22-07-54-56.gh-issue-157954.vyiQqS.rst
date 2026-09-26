@@ -1,0 +1,2 @@
+``inspect.formatannotation`` now uses fully qualified names for type
+aliases.
