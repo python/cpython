@@ -612,6 +612,21 @@ class MinidomTest(unittest.TestCase):
                 '<child/><nons xmlns=""/></root>')
         dom.unlink()
 
+    def testWriteXMLNoDuplicateXmlns(self):
+        # gh-158208: setting an explicit xmlns attribute must not
+        # result in a duplicate xmlns declaration in the output.
+        dom = Document()
+        svg = dom.appendChild(dom.createElement("svg"))
+        svg.setAttribute("xmlns", "https://www.w3.org/2000/svg")
+        xml = dom.toxml()
+        self.assertEqual(
+            xml,
+            '<?xml version="1.0" ?><svg xmlns="https://www.w3.org/2000/svg"/>'
+        )
+        # The result must be well-formed XML.
+        parseString(xml)
+        dom.unlink()
+
     def testWriteXMLAttributeNamespacePrefix(self):
         dom = Document()
         root = dom.appendChild(dom.createElement("root"))
