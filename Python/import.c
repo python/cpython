@@ -3917,20 +3917,6 @@ lazy_import_replay_from(PyThreadState *tstate, PyObject *mod,
     return obj;
 }
 
-// The import machinery only discards module names, so this is what removes
-// the "pkg.attr" entry left by `lazy from pkg import attr`, submodule or not.
-static int
-discard_reified_lazy_import(PyInterpreterState *interp, PyObject *lazy_import)
-{
-    PyObject *name = _PyLazyImport_GetName(lazy_import);
-    if (name == NULL) {
-        return -1;
-    }
-    int res = PySet_Discard(LAZY_MODULES(interp), name);
-    Py_DECREF(name);
-    return res < 0 ? -1 : 0;
-}
-
 PyObject *
 _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
 {
@@ -4114,8 +4100,12 @@ error:
     }
 
 ok:
-    if (obj != NULL && discard_reified_lazy_import(interp, lazy_import) < 0) {
-        Py_CLEAR(obj);
+    if (obj != NULL) {
+        PyObject *name = _PyLazyImport_GetName(lazy_import);
+        if (name == NULL || PySet_Discard(LAZY_MODULES(interp), name) < 0) {
+            Py_CLEAR(obj);
+        }
+        Py_XDECREF(name);
     }
 
     if (PySet_Discard(importing, lazy_import) < 0) {
@@ -4376,41 +4366,35 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
     return final_mod;
 }
 
-// Check if a module is already loaded before adding it to sys.lazy_modules
 static int
 lazy_modules_add(PyThreadState *tstate, PyObject *name)
 {
-    PyObject *modules = get_modules_dict(tstate, false);
-    if (modules == NULL) {
+    PyObject *mod = import_get_module(tstate, name);
+    if (mod == NULL && PyErr_Occurred()) {
         return -1;
     }
-    PyObject *existing;
-    if (PyDict_GetItemRef(modules, name, &existing) < 0) {
-        return -1;
-    }
-    // A None entry blocks the import rather than satisfying it.
-    int loaded = (existing != NULL && existing != Py_None);
-    if (loaded && PyModule_Check(existing)) {
-        // Check if the module is still initializing.  Read __spec__ from the
-        // module dict so that a descriptor on a module subclass is not run.
+    int loaded = mod != NULL && mod != Py_None;
+    if (loaded && PyModule_Check(mod)) {
         PyObject *spec;
-        int rc = PyDict_GetItemRef(_PyModule_GetDict(existing),
-                                   &_Py_ID(__spec__), &spec);
-        if (rc > 0) {
-            rc = _PyModuleSpec_IsInitializing(spec);
-            Py_DECREF(spec);
-        }
-        if (rc < 0) {
-            Py_DECREF(existing);
+        if (PyDict_GetItemRef(_PyModule_GetDict(mod), &_Py_ID(__spec__), &spec) < 0) {
+            Py_DECREF(mod);
             return -1;
         }
-        loaded = !rc;
+        loaded = spec == NULL || spec == Py_None;
+        if (!loaded) {
+            // Read the usual flag without callbacks or dictionary allocation.
+            // Unsupported spec representations stay conservatively tracked.
+            PyObject *initializing = NULL;
+            if ((Py_TYPE(spec)->tp_flags & Py_TPFLAGS_INLINE_VALUES) &&
+                _PyObject_TryGetInstanceAttribute(spec, &_Py_ID(_initializing), &initializing)) {
+                loaded = initializing == NULL || initializing == Py_False;
+            }
+            Py_XDECREF(initializing);
+        }
+        Py_XDECREF(spec);
     }
-    Py_XDECREF(existing);
-    if (loaded) {
-        return 0;
-    }
-    return PySet_Add(LAZY_MODULES(tstate->interp), name);
+    Py_XDECREF(mod);
+    return loaded ? 0 : PySet_Add(LAZY_MODULES(tstate->interp), name);
 }
 
 // ensure we have the set for the parent module name in sys.lazy_modules.
@@ -4501,19 +4485,32 @@ static int
 register_from_lazy_on_parent(PyThreadState *tstate, PyObject *abs_name,
                              PyObject *from)
 {
+    // IMPORT_FROM returns stored attributes directly.  Their imports are
+    // already resolved or tracked by their own placeholders, so skip the alias.
+    PyObject *mod = import_get_module(tstate, abs_name);
+    if (mod == NULL && PyErr_Occurred()) {
+        return -1;
+    }
+    int rc = 0;
+    if (mod != NULL && PyModule_Check(mod)) {
+        rc = PyDict_Contains(_PyModule_GetDict(mod), from);
+    }
+    Py_XDECREF(mod);
+    if (rc != 0) {
+        return rc < 0 ? -1 : 0;
+    }
+
     PyObject *fromname = PyUnicode_FromFormat("%U.%U", abs_name, from);
     if (fromname == NULL) {
         return -1;
     }
 
-    if (lazy_modules_add(tstate, fromname) < 0) {
-        Py_DECREF(fromname);
-        return -1;
+    rc = lazy_modules_add(tstate, fromname);
+    if (rc == 0) {
+        rc = register_lazy_on_parent(tstate, fromname);
     }
-
-    int res = register_lazy_on_parent(tstate, fromname);
     Py_DECREF(fromname);
-    return res;
+    return rc;
 }
 
 _PyLazySubmoduleImportResult
