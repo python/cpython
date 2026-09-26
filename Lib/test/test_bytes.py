@@ -11,6 +11,7 @@ import os
 import re
 import sys
 import copy
+lazy import codecs
 import functools
 import pickle
 import tempfile
@@ -1705,6 +1706,31 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         self.assertEqual(len(ba), 499)
         bytes_header_size = sys.getsizeof(b'')
         self.assertEqual(ba.__alloc__(), 499 + bytes_header_size)
+
+    def test_take_bytes_hash(self):
+        # gh-158219: Ensure `bytearray` resets hash when adopting an encoded
+        # bytes.
+
+        def encode(string, errors='strict'):
+            encoded = string.encode('utf-8')
+            hash(encoded)   # a codec may hash its own output
+            return encoded, len(string)
+
+        def hashing_codec(name):
+            if name != 'test_take_bytes_hash':
+                return None
+            return codecs.CodecInfo(encode, None, name=name)
+
+        codecs.register(hashing_codec)
+        self.addCleanup(codecs.unregister, hashing_codec)
+
+        ba = bytearray('hello', 'test_take_bytes_hash')
+
+        # Object should be same bytes and hash should include mutation.
+        ba[0] = ord('H')
+        taken = ba.take_bytes()
+        self.assertEqual(taken, b'Hello')
+        self.assertEqual(hash(taken), hash(b'Hello'))
 
     def test_take_bytes_reentrant_resize(self):
         # gh-153570: n.__index__() can resize the bytearray, so take_bytes()

@@ -19,6 +19,10 @@ extern PyObject* _PyBytes_FormatEx(
  * reference rather than modifying its first argument in place. */
 extern PyObject* _PyBytes_Concat(PyObject *a, PyObject *b);
 
+/* Clear the hash so it will be lazily recomputed. Use when going from an
+   immutable bytes object to a mutable one. */
+extern void _PyBytes_ClearHash(PyObject *op);
+
 extern PyObject* _PyBytes_FromHex(
     PyObject *string,
     int use_bytearray);

@@ -76,6 +76,20 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
 _Py_COMP_DIAG_POP
 }
 
+void
+_PyBytes_ClearHash(PyObject *op)
+{
+    // Safety check.
+    assert(PyBytes_Check(op));
+    assert(!_Py_IsImmortal(op));
+
+    // Clear before checking mutability.
+    set_ob_shash(_PyBytes_CAST(op), -1);
+
+    // Comprehensive checks: These require the hash is `-1`.
+    assert(_PyBytes_IsMutable(op));
+}
+
 
 /*
    For PyBytes_FromString(), the parameter 'str' points to a null-terminated
@@ -3346,6 +3360,10 @@ _PyBytes_IsMutable(PyObject *self)
         unsigned char ch = PyBytes_AS_STRING(self)[0];
         assert(self != (PyObject*)CHARACTER(ch));
     }
+
+    // There should not be a computed hash. Mutations to the bytes mean the hash
+    // needs to be recalculated (gh-158219).
+    assert(get_ob_shash((PyBytesObject *)self) == -1);
     return 1;
 }
 #endif
