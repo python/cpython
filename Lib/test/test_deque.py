@@ -810,6 +810,23 @@ class DequeWithBadIter(deque):
 
 class TestSubclass(unittest.TestCase):
 
+    def test_copy_preserves_dict(self):
+        # gh-152042: copy.copy(), copy.deepcopy() and .copy() of a deque
+        # subclass must preserve the instance __dict__ (like pickle does).
+        d = Deque([1, 2, 3])
+        d.label = "kept"
+        for e in (copy.copy(d), copy.deepcopy(d), d.copy(),
+                  pickle.loads(pickle.dumps(d))):
+            self.assertIs(type(e), Deque)
+            self.assertEqual(list(e), [1, 2, 3])
+            self.assertEqual(e.label, "kept")
+        # deepcopy must deep-copy the instance attributes.
+        d2 = Deque([1])
+        d2.payload = [10]
+        e2 = copy.deepcopy(d2)
+        d2.payload[0] = 11
+        self.assertEqual(e2.payload, [10])
+
     def test_basics(self):
         d = Deque(range(25))
         d.__init__(range(200))

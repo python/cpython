@@ -6,7 +6,7 @@ preserve
 #  include "pycore_runtime.h"     // _Py_SINGLETON()
 #endif
 #include "pycore_abstract.h"      // _PyNumber_Index()
-#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_modsupport.h"    // _PyArg_BadArgument()
 
 PyDoc_STRVAR(array_array_clear__doc__,
 "clear($self, /)\n"
@@ -45,7 +45,7 @@ array_array___copy__(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(array_array___deepcopy____doc__,
-"__deepcopy__($self, unused, /)\n"
+"__deepcopy__($self, memo, /)\n"
 "--\n"
 "\n"
 "Return a copy of the array.");
@@ -54,15 +54,22 @@ PyDoc_STRVAR(array_array___deepcopy____doc__,
     {"__deepcopy__", (PyCFunction)array_array___deepcopy__, METH_O, array_array___deepcopy____doc__},
 
 static PyObject *
-array_array___deepcopy___impl(arrayobject *self, PyObject *unused);
+array_array___deepcopy___impl(arrayobject *self, PyObject *memo);
 
 static PyObject *
-array_array___deepcopy__(PyObject *self, PyObject *unused)
+array_array___deepcopy__(PyObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
+    PyObject *memo;
 
-    return_value = array_array___deepcopy___impl((arrayobject *)self, unused);
+    if (!PyDict_Check(arg)) {
+        _PyArg_BadArgument("__deepcopy__", "argument", "dict", arg);
+        goto exit;
+    }
+    memo = arg;
+    return_value = array_array___deepcopy___impl((arrayobject *)self, memo);
 
+exit:
     return return_value;
 }
 
@@ -781,4 +788,4 @@ array_arrayiterator___setstate__(PyObject *self, PyObject *state)
 
     return return_value;
 }
-/*[clinic end generated code: output=32784678e77ac658 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=15f28826f243f877 input=a9049054013a1b77]*/
