@@ -1,6 +1,6 @@
 """ idlelib.run
 
-Simplified, pyshell.ModifiedInterpreter spawns a subprocess with
+Simplified: pyshell.ModifiedInterpreter spawns a subprocess with
 f'''{sys.executable} -c "__import__('idlelib.run').run.main()"'''
 '.run' is needed because __import__ returns idlelib, not idlelib.run.
 """
@@ -9,6 +9,7 @@ import functools
 import io
 import linecache
 import queue
+import signal
 import sys
 import textwrap
 import time
@@ -25,18 +26,24 @@ from idlelib import debugobj_r  # remote_object_tree_item
 from idlelib import iomenu  # encoding
 from idlelib import rpc  # multiple objects
 from idlelib import stackviewer  # StackTreeItem
-import __main__
+from idlelib import util  # fix_scaling
+import __main__  # self.locals in Executive.__init__.
 
 import tkinter  # Use tcl and, if startup fails, messagebox.
-if not hasattr(sys.modules['idlelib.run'], 'firstrun'):
-    # Undo modifications of tkinter by idlelib imports; see bpo-25507.
+
+def scrub_tkinter_submodules():  # Call in main when starting user process.
+    # Undo modifications of tkinter by idlelib imports; see gh-69693.
+    # Which of these submodules got imported (and thus added as a tkinter
+    # attribute) depends on what idlelib pulled in, so tolerate missing
+    # ones rather than assuming a fixed set; see gh-59396.
     for mod in ('simpledialog', 'messagebox', 'font',
                 'dialog', 'filedialog', 'commondialog',
                 'ttk'):
-        delattr(tkinter, mod)
-        del sys.modules['tkinter.' + mod]
-    # Avoid AttributeError if run again; see bpo-37038.
-    sys.modules['idlelib.run'].firstrun = False
+        try:
+            delattr(tkinter, mod)
+            del sys.modules['tkinter.' + mod]
+        except (AttributeError, KeyError):
+            pass
 
 LOCALHOST = '127.0.0.1'
 
@@ -132,6 +139,9 @@ def main(del_exitfunc=False):
     register and unregister themselves.
 
     """
+
+    scrub_tkinter_submodules()
+
     global exit_now
     global quitting
     global no_exitfunc
@@ -154,6 +164,7 @@ def main(del_exitfunc=False):
                     ).start()
 
     while True:
+        request = None
         try:
             if exit_now:
                 try:
@@ -164,9 +175,9 @@ def main(del_exitfunc=False):
             try:
                 request = rpc.request_queue.get(block=True, timeout=0.05)
             except queue.Empty:
-                request = None
                 # Issue 32207: calling handle_tk_events here adds spurious
                 # queue.Empty traceback to event handling exceptions.
+                pass
             if request:
                 seq, (method, args, kwargs) = request
                 ret = method(*args, **kwargs)
@@ -176,6 +187,10 @@ def main(del_exitfunc=False):
         except KeyboardInterrupt:
             if quitting:
                 exit_now = True
+            elif request:
+                # Interrupted while executing a request, as when debugging.
+                print_exception()
+                rpc.response_queue.put((seq, None))
             continue
         except SystemExit:
             capture_warnings(False)
@@ -216,7 +231,7 @@ def show_socket_error(err, address):
     import tkinter
     from tkinter.messagebox import showerror
     root = tkinter.Tk()
-    fix_scaling(root)
+    util.fix_scaling(root)
     root.withdraw()
     showerror(
             "Subprocess Connection Error",
@@ -389,16 +404,6 @@ def exit():
     sys.exit(0)
 
 
-def fix_scaling(root):
-    """Scale fonts on HiDPI displays."""
-    import tkinter.font
-    scaling = float(root.tk.call('tk', 'scaling'))
-    if scaling > 1.4:
-        for name in tkinter.font.names(root):
-            font = tkinter.font.Font(root=root, name=name, exists=True)
-            size = int(font['size'])
-            if size < 0:
-                font['size'] = round(-0.75*size)
 
 
 def fixdoc(fun, text):
@@ -679,7 +684,19 @@ class Executive:
 
     def interrupt_the_server(self):
         if interruptible:
-            thread.interrupt_main()
+            handler = signal.getsignal(signal.SIGINT)
+            if handler not in (signal.SIG_DFL, signal.SIG_IGN, None):
+                # A real signal interrupts blocking calls such as
+                # time.sleep() (gh-74112).  The lock prevents interrupting
+                # the main thread in the middle of sending a message.
+                with self.rpchandler.sendlock:
+                    if hasattr(signal, 'pthread_kill'):
+                        signal.pthread_kill(threading.main_thread().ident,
+                                            signal.SIGINT)
+                    else:
+                        signal.raise_signal(signal.SIGINT)
+            else:
+                thread.interrupt_main()
 
     def start_the_debugger(self, gui_adap_oid):
         return debugger_r.start_debugger(self.rpchandler, gui_adap_oid)
@@ -708,8 +725,7 @@ class Executive:
         item = stackviewer.StackTreeItem(exc, flist)
         return debugobj_r.remote_object_tree_item(item)
 
-
-if __name__ == '__main__':
+if __name__ == '__main__':  # __name__ is 'idlelib.run' in user subprocess.
     from unittest import main
     main('idlelib.idle_test.test_run', verbosity=2)
 

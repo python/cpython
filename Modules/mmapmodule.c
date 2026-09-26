@@ -338,7 +338,7 @@ _PyErr_SetFromNTSTATUS(ULONG status)
 }
 #endif
 
-#if defined(MS_WINDOWS) && !defined(DONT_USE_SEH)
+#if defined(MS_WINDOWS_DESKTOP) && !defined(DONT_USE_SEH)
 #define HANDLE_INVALID_MEM(sourcecode)                                     \
 do {                                                                       \
     EXCEPTION_RECORD record;                                               \
@@ -364,7 +364,7 @@ do {                                                                       \
 } while (0)
 #endif
 
-#if defined(MS_WINDOWS) && !defined(DONT_USE_SEH)
+#if defined(MS_WINDOWS_DESKTOP) && !defined(DONT_USE_SEH)
 #define HANDLE_INVALID_MEM_METHOD(self, sourcecode)                           \
 do {                                                                          \
     EXCEPTION_RECORD record;                                                  \
@@ -806,20 +806,12 @@ mmap_mmap_size_impl(mmap_object *self)
 
 #ifdef MS_WINDOWS
     if (self->file_handle != INVALID_HANDLE_VALUE) {
-        DWORD low,high;
-        long long size;
-        low = GetFileSize(self->file_handle, &high);
-        if (low == INVALID_FILE_SIZE) {
-            /* It might be that the function appears to have failed,
-               when indeed its size equals INVALID_FILE_SIZE */
-            DWORD error = GetLastError();
-            if (error != NO_ERROR)
-                return PyErr_SetFromWindowsErr(error);
+        LARGE_INTEGER size;
+        if (!GetFileSizeEx(self->file_handle, &size)) {
+          DWORD error = GetLastError();
+          return PyErr_SetFromWindowsErr(error);
         }
-        if (!high && low < LONG_MAX)
-            return PyLong_FromLong((long)low);
-        size = (((long long)high)<<32) + low;
-        return PyLong_FromLongLong(size);
+        return PyLong_FromLongLong(size.QuadPart);
     }
 #endif /* MS_WINDOWS */
 
@@ -977,10 +969,13 @@ mmap_mmap_resize_impl(mmap_object *self, Py_ssize_t new_size)
 #ifdef UNIX
         void *newmap;
 
-#ifdef __linux__
+#if defined(__linux__) || defined(__NetBSD__)
+        // Linux mremap() refuses to grow a shared anonymous mapping, and
+        // NetBSD mremap() returns a mapping whose grown region is not backed,
+        // so accessing it crashes.  Reject it here in both cases.
         if (self->fd == -1 && !(self->flags & MAP_PRIVATE) && new_size > self->size) {
             PyErr_Format(PyExc_ValueError,
-                "mmap: can't expand a shared anonymous mapping on Linux");
+                "mmap: can't expand a shared anonymous mapping");
             return NULL;
         }
 #endif
@@ -1654,24 +1649,15 @@ static int
 mmap_ass_subscript_lock_held(PyObject *op, PyObject *item, PyObject *value)
 {
     mmap_object *self = mmap_object_CAST(op);
-    CHECK_VALID(-1);
 
     if (!is_writable(self))
         return -1;
 
     if (PyIndex_Check(item)) {
         Py_ssize_t i = PyNumber_AsSsize_t(item, PyExc_IndexError);
-        Py_ssize_t v;
-
         if (i == -1 && PyErr_Occurred())
             return -1;
-        if (i < 0)
-            i += self->size;
-        if (i < 0 || i >= self->size) {
-            PyErr_SetString(PyExc_IndexError,
-                            "mmap index out of range");
-            return -1;
-        }
+
         if (value == NULL) {
             PyErr_SetString(PyExc_TypeError,
                             "mmap doesn't support item deletion");
@@ -1682,7 +1668,7 @@ mmap_ass_subscript_lock_held(PyObject *op, PyObject *item, PyObject *value)
                             "mmap item value must be an int");
             return -1;
         }
-        v = PyNumber_AsSsize_t(value, PyExc_TypeError);
+        Py_ssize_t v = PyNumber_AsSsize_t(value, PyExc_TypeError);
         if (v == -1 && PyErr_Occurred())
             return -1;
         if (v < 0 || v > 255) {
@@ -1691,7 +1677,18 @@ mmap_ass_subscript_lock_held(PyObject *op, PyObject *item, PyObject *value)
                             "in range(0, 256)");
             return -1;
         }
+
+        /* Converting item or value above may have run arbitrary code
+         * (e.g. __index__) that resized or closed the mmap, so bounds
+         * are only checked now, against the current size. */
         CHECK_VALID(-1);
+        if (i < 0)
+            i += self->size;
+        if (i < 0 || i >= self->size) {
+            PyErr_SetString(PyExc_IndexError,
+                            "mmap index out of range");
+            return -1;
+        }
 
         char v_char = (char) v;
         if (safe_byte_copy(self->data + i, &v_char) < 0) {
@@ -1706,7 +1703,6 @@ mmap_ass_subscript_lock_held(PyObject *op, PyObject *item, PyObject *value)
         if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
             return -1;
         }
-        slicelen = PySlice_AdjustIndices(self->size, &start, &stop, step);
         if (value == NULL) {
             PyErr_SetString(PyExc_TypeError,
                 "mmap object doesn't support slice deletion");
@@ -1714,6 +1710,12 @@ mmap_ass_subscript_lock_held(PyObject *op, PyObject *item, PyObject *value)
         }
         if (PyObject_GetBuffer(value, &vbuf, PyBUF_SIMPLE) < 0)
             return -1;
+
+        /* Acquiring the buffer above may have run arbitrary code (e.g. a
+         * __buffer__ method) that resized or closed this mmap, so the slice bounds
+         * are only computed now, against the current size. */
+        CHECK_VALID_OR_RELEASE(-1, vbuf);
+        slicelen = PySlice_AdjustIndices(self->size, &start, &stop, step);
         if (vbuf.len != slicelen) {
             PyErr_SetString(PyExc_IndexError,
                 "mmap slice assignment is wrong size");
@@ -1721,7 +1723,6 @@ mmap_ass_subscript_lock_held(PyObject *op, PyObject *item, PyObject *value)
             return -1;
         }
 
-        CHECK_VALID_OR_RELEASE(-1, vbuf);
         int result = 0;
         if (slicelen == 0) {
         }
@@ -2089,9 +2090,6 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
         fh = _Py_get_osfhandle(fileno);
         if (fh == INVALID_HANDLE_VALUE)
             return NULL;
-
-        /* Win9x appears to need us seeked to zero */
-        lseek(fileno, 0, SEEK_SET);
     }
 
     m_obj = (mmap_object *)type->tp_alloc(type, 0);
@@ -2127,18 +2125,14 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
             m_obj->file_handle = fh;
         }
         if (!map_size) {
-            DWORD low,high;
-            low = GetFileSize(fh, &high);
-            /* low might just happen to have the value INVALID_FILE_SIZE;
-               so we need to check the last error also. */
-            if (low == INVALID_FILE_SIZE &&
-                (dwErr = GetLastError()) != NO_ERROR)
+            LARGE_INTEGER li;
+            if (!GetFileSizeEx(fh, &li))
             {
+                dwErr = GetLastError();
                 Py_DECREF(m_obj);
                 return PyErr_SetFromWindowsErr(dwErr);
             }
-
-            size = (((long long) high) << 32) + low;
+            size = li.QuadPart;
             if (size == 0) {
                 PyErr_SetString(PyExc_ValueError,
                                 "cannot mmap an empty file");

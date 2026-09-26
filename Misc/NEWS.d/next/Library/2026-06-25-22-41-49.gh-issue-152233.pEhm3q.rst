@@ -1,0 +1,9 @@
+Add the :class:`curses.complexchar` type, representing a styled character
+cell (text, attributes and color pair), and the :mod:`curses` window methods
+:meth:`~curses.window.in_wch` and :meth:`~curses.window.getbkgrnd` that return
+one.  The character-cell methods (:meth:`~curses.window.addch`,
+:meth:`~curses.window.bkgd`, :meth:`~curses.window.border`,
+:meth:`~curses.window.hline` and others) now also accept a
+:class:`~curses.complexchar`.  This works whether or not Python was built
+against a wide-character-aware curses library; on a narrow build a cell holds a
+single character representable as one byte in the window's encoding.

@@ -176,3 +176,30 @@ if sys.platform == 'win32':
         return create_win32_code_page_codec(cp)
 
     codecs.register(win32_code_page_search_function)
+
+try:
+    from _codecs import iconv_encode as _iconv_encode
+except ImportError:
+    pass
+else:
+    from ._iconv_codecs import create_iconv_codec
+
+    # Last-resort search function backed by the C library's iconv(): provides
+    # any encoding iconv knows that Python has no built-in codec for.  Registered
+    # last, so it never shadows a built-in; an "iconv:" prefix forces it.
+    def iconv_search_function(encoding):
+        if encoding.startswith('iconv:'):
+            name = encoding[len('iconv:'):]
+        else:
+            name = encoding
+        if not name:
+            return None
+        # Test if the encoding is supported by iconv.
+        try:
+            _iconv_encode(name, '')
+        except (LookupError, OSError):
+            return None
+
+        return create_iconv_codec(encoding, name)
+
+    codecs.register(iconv_search_function)

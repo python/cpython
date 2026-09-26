@@ -78,7 +78,7 @@ def run_gdb(*args, exitcode=0, check=True, **env_vars):
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        encoding="utf8", errors="backslashreplace",
+        encoding="ascii", errors="surrogateescape",
         env=env)
 
     stdout = proc.stdout

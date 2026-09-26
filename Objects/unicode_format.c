@@ -159,8 +159,13 @@ formatfloat(PyObject *v,
             return -1;
         }
     }
-    else
+    else {
         *p_output = _PyUnicode_FromASCII(p, len);
+        if (*p_output == NULL) {
+            PyMem_Free(p);
+            return -1;
+        }
+    }
     PyMem_Free(p);
     return 0;
 }

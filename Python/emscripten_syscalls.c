@@ -132,6 +132,10 @@ EM_JS_MACROS(void, _emscripten_promising_main_js, (void), {
     };
 })
 
+EM_JS_DEPS(_emscripten_promising_main,
+           "$FS,$PATH,$FS_getMode,$resolveGlobalSymbol,"
+           "emscripten_exit_with_live_runtime");
+
 __attribute__((constructor)) void _emscripten_promising_main(void) {
     _emscripten_promising_main_js();
 }
@@ -198,6 +202,8 @@ EM_JS_MACROS(__externref_t, __maybe_fd_read_async, (
     })();
 };
 );
+
+EM_JS_DEPS(__maybe_fd_read_async, "$SYSCALLS");
 
 // Bind original fd_read syscall to __wasi_fd_read_orig().
 __wasi_errno_t __wasi_fd_read_orig(__wasi_fd_t fd, const __wasi_iovec_t *iovs,
@@ -280,6 +286,8 @@ EM_JS_MACROS(__externref_t, __maybe_poll_async, (intptr_t fds, int nfds, int tim
     })();
 });
 
+EM_JS_DEPS(__maybe_poll_async, "$FS");
+
 // Bind original poll syscall to syscall_poll_orig().
 int syscall_poll_orig(intptr_t fds, int nfds, int timeout)
     __attribute__((__import_module__("env"),
@@ -291,26 +299,6 @@ int __syscall_poll(intptr_t fds, int nfds, int timeout) {
         return syscall_poll_orig(fds, nfds, timeout);
     }
     return __block_for_int(p);
-}
-
-
-// Workaround for an Emscripten bug: getentropy(buffer, 1) returns the single
-// byte of entropy as the return code. Fixed upstream by
-// emscripten-core/emscripten#27122
-int __real_getentropy(void*, size_t);
-
-int __wrap_getentropy(void *buffer, size_t len) {
-    if (len != 1) {
-        return __real_getentropy(buffer, len);
-    }
-    // Length is 1. Workaround is to get two bytes of entropy and write the
-    // first one into the original target buffer.
-    uint8_t tmp[2];
-    int ret = __real_getentropy(tmp, 2);
-    if (ret == 0) {
-        *(uint8_t *)buffer = tmp[0];
-    }
-    return ret;
 }
 
 #include <sys/ioctl.h>

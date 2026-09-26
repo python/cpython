@@ -1,0 +1,4 @@
+Deprecate the *tagOrId* parameter of
+:meth:`!tkinter.PanedWindow.paneconfigure` (and its :meth:`!paneconfig`
+alias) in favor of *child*, for consistency with the other pane methods;
+it will be removed in Python 3.18.

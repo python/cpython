@@ -221,9 +221,12 @@ gc_get_count_impl(PyObject *module)
     _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
     struct _gc_thread_state *gc = &tstate->gc;
 
-    // Flush the local allocation count to the global count
-    _Py_atomic_add_int(&gcstate->young.count, (int)gc->alloc_count);
-    gc->alloc_count = 0;
+    // Don't flush: record_allocation() checks the threshold only when it fills.
+    int young = _Py_atomic_load_int_relaxed(&gcstate->young.count);
+    young += (int)gc->alloc_count;
+    if (young < 0) {
+        young = 0;
+    }
 #endif
 
 #ifndef Py_GIL_DISABLED
@@ -233,7 +236,7 @@ gc_get_count_impl(PyObject *module)
                          gcstate->generations[2].count);
 #else
     return Py_BuildValue("(iii)",
-                         _Py_atomic_load_int_relaxed(&gcstate->young.count),
+                         young,
                          gcstate->old[0].count,
                          gcstate->old[1].count);
 #endif
@@ -374,9 +377,15 @@ gc_get_stats_impl(PyObject *module)
     /* To get consistent values despite allocations while constructing
        the result list, we use a snapshot of the running stats. */
     GCState *gcstate = get_gc_state();
+#ifdef Py_GIL_DISABLED
+    PyMutex_Lock(&gcstate->stats_mutex);
+#endif
     stats[0] = gcstate->generation_stats->young.items[gcstate->generation_stats->young.index];
     stats[1] = gcstate->generation_stats->old[0].items[gcstate->generation_stats->old[0].index];
     stats[2] = gcstate->generation_stats->old[1].items[gcstate->generation_stats->old[1].index];
+#ifdef Py_GIL_DISABLED
+    PyMutex_Unlock(&gcstate->stats_mutex);
+#endif
 
     PyObject *result = PyList_New(0);
     if (result == NULL)

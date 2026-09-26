@@ -16,6 +16,7 @@
 #include "pycore_optimizer.h"     // _Py_Executors_InvalidateDependency()
 #include "pycore_tuple.h"         // _PyTuple_FromPair
 #include "pycore_unicodeobject.h" // _PyUnicode_Equal()
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 #include "frameobject.h"          // PyFrameLocalsProxyObject
 #include "opcode.h"               // EXTENDED_ARG
@@ -91,6 +92,22 @@ framelocalsproxy_hasval(_PyInterpreterFrame *frame, PyCodeObject *co, int i)
     }
     Py_DECREF(value);
     return true;
+}
+
+static int
+framelocalsproxy_is_first_occurrence(PyObject *seen, PyObject *name)
+{
+    int found = PySet_Contains(seen, name);
+    if (found < 0) {
+        return -1;
+    }
+    if (found) {
+        return 0;
+    }
+    if (PySet_Add(seen, name) < 0) {
+        return -1;
+    }
+    return 1;
 }
 
 static int
@@ -379,16 +396,28 @@ framelocalsproxy_keys(PyObject *self, PyObject *Py_UNUSED(ignored))
     if (names == NULL) {
         return NULL;
     }
+    // An inlined comprehension cell can share a name with a free var.
+    PyObject *seen = PySet_New(NULL);
+    if (seen == NULL) {
+        Py_DECREF(names);
+        return NULL;
+    }
 
     for (int i = 0; i < co->co_nlocalsplus; i++) {
         if (framelocalsproxy_hasval(frame->f_frame, co, i)) {
             PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
-            if (PyList_Append(names, name) < 0) {
-                Py_DECREF(names);
-                return NULL;
+            int first = framelocalsproxy_is_first_occurrence(seen, name);
+            if (first < 0) {
+                goto error;
+            }
+            if (first) {
+                if (PyList_Append(names, name) < 0) {
+                    goto error;
+                }
             }
         }
     }
+    Py_DECREF(seen);
 
     // Iterate through the extra locals
     if (frame->f_extra_locals) {
@@ -407,6 +436,11 @@ framelocalsproxy_keys(PyObject *self, PyObject *Py_UNUSED(ignored))
     }
 
     return names;
+
+error:
+    Py_DECREF(seen);
+    Py_DECREF(names);
+    return NULL;
 }
 
 static void
@@ -588,18 +622,30 @@ framelocalsproxy_values(PyObject *self, PyObject *Py_UNUSED(ignored))
     if (values == NULL) {
         return NULL;
     }
+    PyObject *seen = PySet_New(NULL);
+    if (seen == NULL) {
+        Py_DECREF(values);
+        return NULL;
+    }
 
     for (int i = 0; i < co->co_nlocalsplus; i++) {
         PyObject *value = framelocalsproxy_getval(frame->f_frame, co, i);
         if (value) {
-            if (PyList_Append(values, value) < 0) {
-                Py_DECREF(values);
-                Py_DECREF(value);
-                return NULL;
+            PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
+            int first = framelocalsproxy_is_first_occurrence(seen, name);
+            if (first == 1) {
+                if (PyList_Append(values, value) < 0) {
+                    Py_DECREF(value);
+                    goto error;
+                }
             }
             Py_DECREF(value);
+            if (first < 0) {
+                goto error;
+            }
         }
     }
+    Py_DECREF(seen);
 
     // Iterate through the extra locals
     if (frame->f_extra_locals) {
@@ -615,6 +661,11 @@ framelocalsproxy_values(PyObject *self, PyObject *Py_UNUSED(ignored))
     }
 
     return values;
+
+error:
+    Py_DECREF(seen);
+    Py_DECREF(values);
+    return NULL;
 }
 
 static PyObject *
@@ -626,22 +677,37 @@ framelocalsproxy_items(PyObject *self, PyObject *Py_UNUSED(ignored))
     if (items == NULL) {
         return NULL;
     }
+    PyObject *seen = PySet_New(NULL);
+    if (seen == NULL) {
+        Py_DECREF(items);
+        return NULL;
+    }
 
     for (int i = 0; i < co->co_nlocalsplus; i++) {
         PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
         PyObject *value = framelocalsproxy_getval(frame->f_frame, co, i);
 
         if (value) {
-            PyObject *pair = _PyTuple_FromPairSteal(Py_NewRef(name), value);
-            if (pair == NULL) {
-                goto error;
+            int first = framelocalsproxy_is_first_occurrence(seen, name);
+            if (first == 1) {
+                PyObject *pair = _PyTuple_FromPairSteal(Py_NewRef(name), value);
+                if (pair == NULL) {
+                    goto error;
+                }
+                if (_PyList_AppendTakeRef((PyListObject *)items, pair) < 0) {
+                    goto error;
+                }
             }
-
-            if (_PyList_AppendTakeRef((PyListObject *)items, pair) < 0) {
-                goto error;
+            else {
+                Py_DECREF(value);
+                if (first < 0) {
+                    goto error;
+                }
             }
         }
     }
+    Py_DECREF(seen);
+    seen = NULL;
 
     // Iterate through the extra locals
     if (frame->f_extra_locals) {
@@ -663,6 +729,7 @@ framelocalsproxy_items(PyObject *self, PyObject *Py_UNUSED(ignored))
     return items;
 
 error:
+    Py_XDECREF(seen);
     Py_DECREF(items);
     return NULL;
 }
@@ -679,11 +746,24 @@ framelocalsproxy_length(PyObject *self)
         size += PyDict_Size(frame->f_extra_locals);
     }
 
+    PyObject *seen = PySet_New(NULL);
+    if (seen == NULL) {
+        return -1;
+    }
     for (int i = 0; i < co->co_nlocalsplus; i++) {
         if (framelocalsproxy_hasval(frame->f_frame, co, i)) {
-            size++;
+            PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
+            int first = framelocalsproxy_is_first_occurrence(seen, name);
+            if (first < 0) {
+                Py_DECREF(seen);
+                return -1;
+            }
+            else if (first) {
+                size++;
+            }
         }
     }
+    Py_DECREF(seen);
     return size;
 }
 
@@ -1114,7 +1194,7 @@ frame_back_get_impl(PyFrameObject *self)
 /*[clinic end generated code: output=3a84c22a55a63c79 input=9e528570d0e1f44a]*/
 {
     PyObject *res = (PyObject *)PyFrame_GetBack(self);
-    if (res == NULL) {
+    if (res == NULL && !PyErr_Occurred()) {
         Py_RETURN_NONE;
     }
     return res;
@@ -1650,10 +1730,6 @@ frame_lineno_set_impl(PyFrameObject *self, PyObject *value)
 /*[clinic end generated code: output=e64c86ff6be64292 input=36ed3c896b27fb91]*/
 {
     PyCodeObject *code = _PyFrame_GetCode(self->f_frame);
-    if (value == NULL) {
-        PyErr_SetString(PyExc_AttributeError, "cannot delete attribute");
-        return -1;
-    }
     /* f_lineno must be an integer. */
     if (!PyLong_CheckExact(value)) {
         PyErr_SetString(PyExc_ValueError,
@@ -1867,12 +1943,13 @@ frame_trace_get_impl(PyFrameObject *self)
 @permit_long_summary
 @critical_section
 @setter
+@deleter
 frame.f_trace as frame_trace
 [clinic start generated code]*/
 
 static int
 frame_trace_set_impl(PyFrameObject *self, PyObject *value)
-/*[clinic end generated code: output=d6fe08335cf76ae4 input=e57380734815dac5]*/
+/*[clinic end generated code: output=d6fe08335cf76ae4 input=9fb7a5805196eae2]*/
 {
     if (value == Py_None) {
         value = NULL;
@@ -1908,16 +1985,16 @@ frame_generator_get_impl(PyFrameObject *self)
 
 
 static PyGetSetDef frame_getsetlist[] = {
-    FRAME_BACK_GETSETDEF
-    FRAME_LOCALS_GETSETDEF
-    FRAME_LINENO_GETSETDEF
-    FRAME_TRACE_GETSETDEF
-    FRAME_LASTI_GETSETDEF
-    FRAME_GLOBALS_GETSETDEF
-    FRAME_BUILTINS_GETSETDEF
-    FRAME_CODE_GETSETDEF
-    FRAME_TRACE_OPCODES_GETSETDEF
-    FRAME_GENERATOR_GETSETDEF
+    FRAME_F_BACK_GETSETDEF
+    FRAME_F_LOCALS_GETSETDEF
+    FRAME_F_LINENO_GETSETDEF
+    FRAME_F_TRACE_GETSETDEF
+    FRAME_F_LASTI_GETSETDEF
+    FRAME_F_GLOBALS_GETSETDEF
+    FRAME_F_BUILTINS_GETSETDEF
+    FRAME_F_CODE_GETSETDEF
+    FRAME_F_TRACE_OPCODES_GETSETDEF
+    FRAME_F_GENERATOR_GETSETDEF
     {0}
 };
 
@@ -1930,6 +2007,8 @@ frame_dealloc(PyObject *op)
     if (_PyObject_GC_IS_TRACKED(f)) {
         _PyObject_GC_UNTRACK(f);
     }
+
+    FT_CLEAR_WEAKREFS(op, f->f_weakreflist);
 
     /* GH-106092: If f->f_frame was on the stack and we reached the maximum
      * nesting depth for deallocations, the trashcan may have delayed this
@@ -2089,7 +2168,7 @@ PyTypeObject PyFrame_Type = {
     frame_traverse,                             /* tp_traverse */
     frame_tp_clear,                             /* tp_clear */
     0,                                          /* tp_richcompare */
-    0,                                          /* tp_weaklistoffset */
+    OFF(f_weakreflist),                         /* tp_weaklistoffset */
     0,                                          /* tp_iter */
     0,                                          /* tp_iternext */
     frame_methods,                              /* tp_methods */
@@ -2125,6 +2204,7 @@ _PyFrame_New_NoTrack(PyCodeObject *code)
     f->f_extra_locals = NULL;
     f->f_locals_cache = NULL;
     f->f_overwritten_fast_locals = NULL;
+    f->f_weakreflist = NULL;
     return f;
 }
 
@@ -2402,6 +2482,9 @@ PyFrame_GetBack(PyFrameObject *frame)
         prev = _PyFrame_GetFirstComplete(prev);
         if (prev) {
             back = _PyFrame_GetFrameObject(prev);
+            if (back == NULL) {
+                return NULL;
+            }
         }
     }
     return (PyFrameObject*)Py_XNewRef(back);

@@ -355,6 +355,20 @@ Error messages for specific failure modes of unpacking
         ^^^
     SyntaxError: cannot use dict unpacking in a dictionary value
 
+    >>> (**a)
+    Traceback (most recent call last):
+    ...
+    (**a)
+     ^^
+    SyntaxError: cannot use dict unpacking here
+
+    >>> {**a for a in {1: 2}.items(): b}
+    Traceback (most recent call last):
+    ...
+    {**a for a in {1: 2}.items(): b}
+     ^^
+    SyntaxError: cannot use dict unpacking here
+
 
 # Generator expression in function arguments
 

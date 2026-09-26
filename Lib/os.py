@@ -643,11 +643,13 @@ def _execvpe(file, args, env=None):
         argrest = (args,)
         env = environ
 
+    file = fspath(file)
     if path.dirname(file):
         exec_func(file, *argrest)
         return
     saved_exc = None
     path_list = get_exec_path(env)
+    orig_file = file
     if name != 'nt':
         file = fsencode(file)
         path_list = map(fsencode, path_list)
@@ -663,6 +665,11 @@ def _execvpe(file, args, env=None):
                 saved_exc = e
     if saved_exc is not None:
         raise saved_exc
+    # At this point, last_exc.filename contains the full path of whatever
+    # directory happened to be last in path_list. Set it to the filename that
+    # was passed in, which is what the caller will expect. This is what
+    # subprocess does too (see err_filename in Popen._execute_child()).
+    last_exc.filename = orig_file
     raise last_exc
 
 

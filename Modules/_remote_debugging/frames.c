@@ -163,6 +163,8 @@ find_frame_in_chunks(StackChunkList *chunks, uintptr_t remote_ptr)
  * FRAME PARSING FUNCTIONS
  * ============================================================================ */
 
+enum { FRAME_PARSE_INTERPRETER = 2 };
+
 int
 is_frame_valid(
     RemoteUnwinderObject *unwinder,
@@ -170,14 +172,14 @@ is_frame_valid(
     uintptr_t code_object_addr
 ) {
     if ((void*)code_object_addr == NULL) {
-        return 0;
+        return 0;  // Frame being cleared
     }
 
     void* frame = (void*)frame_addr;
 
     char owner = GET_MEMBER(char, frame, unwinder->debug_offsets.interpreter_frame.owner);
     if (owner == FRAME_OWNED_BY_INTERPRETER) {
-        return 0;  // C frame or sentinel base frame
+        return FRAME_PARSE_INTERPRETER;  // C frame or sentinel base frame
     }
 
     if (owner != FRAME_OWNED_BY_GENERATOR && owner != FRAME_OWNED_BY_THREAD) {
@@ -313,6 +315,7 @@ process_frame_chain(
     ctx->last_frame_visited = 0;
 
     while ((void*)frame_addr != NULL) {
+        int parse_result = 0;
         PyObject *frame = NULL;
         uintptr_t next_frame_addr = 0;
         uintptr_t stackpointer = 0;
@@ -326,14 +329,15 @@ process_frame_chain(
         assert(frame_count <= MAX_FRAMES);
 
         if (ctx->chunks && ctx->chunks->count > 0) {
-            if (parse_frame_from_chunks(unwinder, &frame, frame_addr, &next_frame_addr, &stackpointer, ctx->chunks) == 0) {
+            parse_result = parse_frame_from_chunks(
+                unwinder, &frame, frame_addr, &next_frame_addr, &stackpointer, ctx->chunks);
+            if (parse_result == 0) {
                 goto parsed_frame;
             }
             PyErr_Clear();
         }
         {
             uintptr_t address_of_code_object = 0;
-            int parse_result;
             if (ctx->prefetch.frame && ctx->prefetch.frame_addr == frame_addr) {
                 parse_result = parse_frame_buffer(
                     unwinder, &frame, ctx->prefetch.frame,
@@ -358,19 +362,19 @@ parsed_frame:
             continue;
         }
 
-        if (frame == NULL && PyList_GET_SIZE(ctx->frame_info) == 0) {
-            const char *e = "Failed to parse initial frame in chain";
-            PyErr_SetString(PyExc_RuntimeError, e);
-            return -1;
-        }
         PyObject *extra_frame = NULL;
         if (unwinder->gc && frame_addr == ctx->gc_frame) {
             _Py_DECLARE_STR(gc, "<GC>");
             extra_frame = &_Py_STR(gc);
         }
+        // A leading frame without Python code marks no transition between
+        // Python frames: it is a frame being popped or C code the thread is
+        // returning into.
         else if (unwinder->native &&
                  frame == NULL &&
+                 parse_result == FRAME_PARSE_INTERPRETER &&
                  next_frame_addr &&
+                 PyList_GET_SIZE(ctx->frame_info) > 0 &&
                  !(unwinder->gc && next_frame_addr == ctx->gc_frame))
         {
             _Py_DECLARE_STR(native, "<native>");
@@ -416,7 +420,7 @@ parsed_frame:
             Py_DECREF(frame);
         }
 
-        if (ctx->last_profiled_frame != 0 && frame_addr == ctx->last_profiled_frame) {
+        if (ctx->last_profiled.frame != 0 && frame_addr == ctx->last_profiled.frame) {
             ctx->stopped_at_cached_frame = 1;
             break;
         }
@@ -437,14 +441,23 @@ parsed_frame:
     return 0;
 }
 
-// Clear last_profiled_frame for all threads in the target process.
-// This must be called at the start of profiling to avoid stale values
-// from previous profilers causing us to stop frame walking early.
+int
+set_last_profiled_frame(RemoteUnwinderObject *unwinder, uintptr_t tstate_addr,
+                        uintptr_t frame_addr)
+{
+    uintptr_t lpf_addr = tstate_addr +
+        (uintptr_t)unwinder->debug_offsets.thread_state.last_profiled_frame;
+    return _Py_RemoteDebug_WriteRemoteMemory(&unwinder->handle, lpf_addr,
+                                             sizeof(uintptr_t), &frame_addr);
+}
+
+// Clear the profiler anchor frame for all threads in the target process.  The
+// sequence is intentionally preserved: a zero frame disables cache lookup, and
+// the next profiler-owned anchor should use the target's current generation.
 int
 clear_last_profiled_frames(RemoteUnwinderObject *unwinder)
 {
     uintptr_t current_interp = unwinder->interpreter_addr;
-    uintptr_t zero = 0;
     const size_t MAX_INTERPRETERS = 256;
     size_t interp_count = 0;
 
@@ -467,11 +480,8 @@ clear_last_profiled_frames(RemoteUnwinderObject *unwinder)
         size_t thread_count = 0;
         while (tstate_addr != 0 && thread_count < MAX_THREADS_PER_INTERP) {
             thread_count++;
-            // Clear last_profiled_frame
-            uintptr_t lpf_addr = tstate_addr + unwinder->debug_offsets.thread_state.last_profiled_frame;
-            if (_Py_RemoteDebug_WriteRemoteMemory(&unwinder->handle, lpf_addr,
-                                                  sizeof(uintptr_t), &zero) < 0) {
-                // Non-fatal: just continue
+            uintptr_t no_frame = 0;
+            if (set_last_profiled_frame(unwinder, tstate_addr, no_frame) < 0) {
                 PyErr_Clear();
             }
 
@@ -512,10 +522,10 @@ try_full_cache_hit(
     const FrameWalkContext *ctx,
     uint64_t thread_id)
 {
-    if (!unwinder->frame_cache || ctx->last_profiled_frame == 0) {
+    if (!unwinder->frame_cache || ctx->last_profiled.frame == 0) {
         return 0;
     }
-    if (ctx->frame_addr != ctx->last_profiled_frame) {
+    if (ctx->frame_addr != ctx->last_profiled.frame) {
         return 0;
     }
 
@@ -523,8 +533,14 @@ try_full_cache_hit(
     if (!entry || !entry->frame_list) {
         return 0;
     }
+    if (entry->thread_state_addr != ctx->thread_state_addr) {
+        return 0;
+    }
 
     if (entry->num_addrs == 0 || entry->addrs[0] != ctx->frame_addr) {
+        return 0;
+    }
+    if (entry->last_profiled_frame_seq != ctx->last_profiled.seq) {
         return 0;
     }
 
@@ -543,6 +559,11 @@ try_full_cache_hit(
     }
     if (parse_result < 0) {
         return -1;
+    }
+    if (!frame_cache_anchor_matches(unwinder, ctx->thread_state_addr,
+                                    ctx->last_profiled)) {
+        Py_XDECREF(current_frame);
+        return 0;
     }
 
     if (current_frame != NULL) {
@@ -582,9 +603,12 @@ collect_frames_with_cache(
 
     assert(ctx->chunks != NULL);
 
+    // Cache misses copy stack chunks before walking. Frames found there are
+    // parsed from a stable snapshot, which keeps moving stacks from seeding the
+    // cache with an impossible parent chain.
     if (ctx->chunks->count == 0) {
         if (copy_stack_chunks(unwinder, ctx->thread_state_addr, ctx->chunks) < 0) {
-            PyErr_Clear();
+            return -1;
         }
     }
 
@@ -598,7 +622,9 @@ collect_frames_with_cache(
 
     if (ctx->stopped_at_cached_frame) {
         Py_ssize_t frames_before_cache = PyList_GET_SIZE(ctx->frame_info);
-        int cache_result = frame_cache_lookup_and_extend(unwinder, thread_id, ctx->last_profiled_frame,
+        int cache_result = frame_cache_lookup_and_extend(unwinder, thread_id,
+                                                         ctx->thread_state_addr,
+                                                         ctx->last_profiled,
                                                          ctx->frame_info, ctx->frame_addrs, &ctx->num_addrs,
                                                          ctx->max_addrs);
         if (cache_result < 0) {
@@ -610,7 +636,7 @@ collect_frames_with_cache(
             // Continue walking from last_profiled_frame, skipping it (already processed)
             Py_ssize_t frames_before_walk = PyList_GET_SIZE(ctx->frame_info);
             FrameWalkContext continue_ctx = {
-                .frame_addr = ctx->last_profiled_frame,
+                .frame_addr = ctx->last_profiled.frame,
                 .base_frame_addr = ctx->base_frame_addr,
                 .gc_frame = ctx->gc_frame,
                 .chunks = ctx->chunks,
@@ -634,13 +660,14 @@ collect_frames_with_cache(
             STATS_ADD(unwinder, frames_read_from_cache, PyList_GET_SIZE(ctx->frame_info) - frames_before_cache);
         }
     } else {
-        if (ctx->last_profiled_frame == 0) {
+        if (ctx->last_profiled.frame == 0) {
             STATS_INC(unwinder, frame_cache_misses);
         }
     }
 
-    if (frame_cache_store(unwinder, thread_id, ctx->frame_info, ctx->frame_addrs, ctx->num_addrs,
-                          ctx->thread_state_addr, ctx->base_frame_addr,
+    if (frame_cache_store(unwinder, thread_id, ctx->frame_info, ctx->frame_addrs,
+                          ctx->num_addrs, ctx->thread_state_addr,
+                          ctx->last_profiled.seq, ctx->base_frame_addr,
                           ctx->last_frame_visited) < 0) {
         return -1;
     }

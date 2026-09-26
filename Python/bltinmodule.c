@@ -10,6 +10,7 @@
 #include "pycore_floatobject.h"   // _PyFloat_ExactDealloc()
 #include "pycore_interp.h"        // _PyInterpreterState_GetConfig()
 #include "pycore_import.h"        // _PyImport_LazyImportModuleLevelObject  ()
+#include "pycore_iterobject.h"    // _PyCallIter_NewEx()
 #include "pycore_long.h"          // _PyLong_CompactValue
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_object.h"        // _Py_AddToAllObjects()
@@ -960,9 +961,9 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
     tstate->suppress_co_const_immortalization++;
 #endif
 
-    result = _Py_CompileStringObjectWithModule(str, filename,
-                                               start[compile_mode], &cf,
-                                               optimize, modname);
+    result = _Py_CompileString(str, filename,
+                               start[compile_mode], &cf,
+                               optimize, modname);
 
 #ifdef Py_GIL_DISABLED
     tstate->suppress_co_const_immortalization--;
@@ -1893,97 +1894,71 @@ builtin_hex(PyObject *module, PyObject *integer)
 }
 
 
-/* AC: cannot convert yet, as needs PEP 457 group support in inspect */
-static PyObject *
-builtin_iter(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
-{
-    PyObject *v;
+/*[clinic input]
+@text_signature "($module, object, /, [stop_value], *, stop_exception=StopIteration)"
+iter as builtin_iter
 
-    if (!_PyArg_CheckPositional("iter", nargs, 1, 2))
-        return NULL;
-    v = args[0];
-    if (nargs == 1)
-        return PyObject_GetIter(v);
-    if (!PyCallable_Check(v)) {
+    object: object
+    /
+    stop_value: object = NULL
+    *
+    stop_exception: object = NULL
+
+Get an iterator from an object.
+
+In the first form, the argument must supply its own iterator, or be a
+sequence.  In the second form, the callable is called until it returns
+the stop value or raises the specified exception.
+[clinic start generated code]*/
+
+static PyObject *
+builtin_iter_impl(PyObject *module, PyObject *object, PyObject *stop_value,
+                  PyObject *stop_exception)
+/*[clinic end generated code: output=eb9c9ae8f77bf400 input=d3a2f767f29d9ae6]*/
+{
+    if (stop_value == NULL && stop_exception == NULL) {
+        return PyObject_GetIter(object);
+    }
+    if (!PyCallable_Check(object)) {
         PyErr_SetString(PyExc_TypeError,
-                        "iter(v, w): v must be callable");
+                        "iter(): the first argument must be callable");
         return NULL;
     }
-    PyObject *sentinel = args[1];
-    return PyCallIter_New(v, sentinel);
+    return _PyCallIter_NewEx(object, stop_value, stop_exception);
 }
-
-PyDoc_STRVAR(iter_doc,
-"iter(iterable) -> iterator\n\
-iter(callable, sentinel) -> iterator\n\
-\n\
-Get an iterator from an object.  In the first form, the argument must\n\
-supply its own iterator, or be a sequence.\n\
-In the second form, the callable is called until it returns the\n\
-sentinel.");
 
 
 /*[clinic input]
+@text_signature "($module, object, /, [stop_value], *, stop_exception=StopAsyncIteration)"
 aiter as builtin_aiter
 
-    async_iterable: object
+    object: object
     /
+    stop_value: object = NULL
+    *
+    stop_exception: object = NULL
 
 Return an AsyncIterator for an AsyncIterable object.
+
+In the second form, the callable is called and its result is awaited
+until it returns the stop value or raises the specified exception.
 [clinic start generated code]*/
 
 static PyObject *
-builtin_aiter(PyObject *module, PyObject *async_iterable)
-/*[clinic end generated code: output=1bae108d86f7960e input=473993d0cacc7d23]*/
+builtin_aiter_impl(PyObject *module, PyObject *object, PyObject *stop_value,
+                   PyObject *stop_exception)
+/*[clinic end generated code: output=2865edb3fbc45693 input=2adb37d12adafd0c]*/
 {
-    return PyObject_GetAIter(async_iterable);
-}
-
-PyObject *PyAnextAwaitable_New(PyObject *, PyObject *);
-
-/*[clinic input]
-anext as builtin_anext
-
-    async_iterator as aiterator: object
-    default: object = NULL
-    /
-
-Return the next item from the async iterator.
-
-If default is given and the async iterator is exhausted,
-it is returned instead of raising StopAsyncIteration.
-[clinic start generated code]*/
-
-static PyObject *
-builtin_anext_impl(PyObject *module, PyObject *aiterator,
-                   PyObject *default_value)
-/*[clinic end generated code: output=f02c060c163a81fa input=f3dc5a93f073e5ac]*/
-{
-    PyTypeObject *t;
-    PyObject *awaitable;
-
-    t = Py_TYPE(aiterator);
-    if (t->tp_as_async == NULL || t->tp_as_async->am_anext == NULL) {
-        PyErr_Format(PyExc_TypeError,
-            "'%.200s' object is not an async iterator",
-            t->tp_name);
+    if (stop_value == NULL && stop_exception == NULL) {
+        return PyObject_GetAIter(object);
+    }
+    if (!PyCallable_Check(object)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "aiter(): the first argument must be callable");
         return NULL;
     }
-
-    awaitable = (*t->tp_as_async->am_anext)(aiterator);
-    if (awaitable == NULL) {
-        return NULL;
-    }
-    if (default_value == NULL) {
-        return awaitable;
-    }
-
-    PyObject* new_awaitable = PyAnextAwaitable_New(
-            awaitable, default_value);
-    Py_DECREF(awaitable);
-    return new_awaitable;
+    return _PyACallIter_New(object, stop_value, stop_exception);
 }
-
 
 /*[clinic input]
 len as builtin_len
@@ -3472,14 +3447,13 @@ static PyMethodDef builtin_methods[] = {
     BUILTIN_INPUT_METHODDEF
     BUILTIN_ISINSTANCE_METHODDEF
     BUILTIN_ISSUBCLASS_METHODDEF
-    {"iter", _PyCFunction_CAST(builtin_iter), METH_FASTCALL, iter_doc},
+    BUILTIN_ITER_METHODDEF
     BUILTIN_AITER_METHODDEF
     BUILTIN_LEN_METHODDEF
     BUILTIN_LOCALS_METHODDEF
     {"max", _PyCFunction_CAST(builtin_max), METH_FASTCALL | METH_KEYWORDS, max_doc},
     {"min", _PyCFunction_CAST(builtin_min), METH_FASTCALL | METH_KEYWORDS, min_doc},
     {"next", _PyCFunction_CAST(builtin_next), METH_FASTCALL, next_doc},
-    BUILTIN_ANEXT_METHODDEF
     BUILTIN_OCT_METHODDEF
     BUILTIN_ORD_METHODDEF
     BUILTIN_POW_METHODDEF
@@ -3517,6 +3491,57 @@ static struct PyModuleDef builtinsmodule = {
     NULL
 };
 
+
+/* Builtins implemented in Python.
+
+   Lib/_pybuiltins.py is frozen into the interpreter as a bootstrap module
+   (see Tools/build/freeze_modules.py), so it can be imported here before
+   the import system exists.  The names in its __all__ are copied into the
+   builtins dict. */
+
+int
+_PyBuiltin_InitPythonFunctions(PyObject *dict)
+{
+    if (PyImport_ImportFrozenModule("_pybuiltins") <= 0) {
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(PyExc_ImportError,
+                            "frozen module _pybuiltins not found");
+        }
+        return -1;
+    }
+    PyObject *mod = PyImport_AddModuleRef("_pybuiltins");
+    if (mod == NULL) {
+        return -1;
+    }
+
+    int rc = -1;
+    PyObject *all = PyObject_GetAttr(mod, &_Py_ID(__all__));
+    if (all == NULL) {
+        goto done;
+    }
+    Py_ssize_t n = PyList_Size(all);
+    if (n < 0) {
+        goto done;
+    }
+    for (Py_ssize_t i = 0; i < n; i++) {
+        PyObject *name = PyList_GET_ITEM(all, i);
+        PyObject *func = PyObject_GetAttr(mod, name);
+        if (func == NULL) {
+            goto done;
+        }
+        int r = PyDict_SetItem(dict, name, func);
+        Py_DECREF(func);
+        if (r < 0) {
+            goto done;
+        }
+    }
+    rc = 0;
+
+done:
+    Py_XDECREF(all);
+    Py_DECREF(mod);
+    return rc;
+}
 
 PyObject *
 _PyBuiltin_Init(PyInterpreterState *interp)

@@ -30,6 +30,7 @@
 #include "pycore_instruction_sequence.h"  // _PyInstructionSequence_New()
 #include "pycore_interpframe.h"   // _PyFrame_GetFunction()
 #include "pycore_jit.h"           // _PyJIT_AddressInJitCode()
+#include "pycore_lock.h"          // PyEvent_WaitTimed()
 #include "pycore_object.h"        // _PyObject_IsFreed()
 #include "pycore_optimizer.h"     // _Py_Executor_DependsOn
 #include "pycore_pathconfig.h"    // _PyPathConfig_ClearGlobal()
@@ -98,6 +99,17 @@ static const uintptr_t min_frame_pointer_addr = 0x1000;
 // https://refspecs.linuxfoundation.org/ELF/ppc64/PPC-elf64abi-1.9.html#STACK
 #  define FRAME_POINTER_NEXT_OFFSET 0
 #  define FRAME_POINTER_RETURN_OFFSET 2
+#elif defined(__riscv)
+// RISC-V saves the return address at fp[-1], and the previous frame pointer at fp[-2].
+// See: https://riscv-non-isa.github.io/riscv-elf-psabi-doc/#_frame_pointer_convention
+#  define FRAME_POINTER_NEXT_OFFSET -2
+#  define FRAME_POINTER_RETURN_OFFSET -1
+#elif defined(__loongarch__)
+// On LoongArch, the frame pointer is the caller's stack pointer.
+// The saved frame pointer is stored at fp[-2], and the return
+// address is stored at fp[-1].
+#  define FRAME_POINTER_NEXT_OFFSET -2
+#  define FRAME_POINTER_RETURN_OFFSET -1
 #else
 #  define FRAME_POINTER_NEXT_OFFSET 0
 #  define FRAME_POINTER_RETURN_OFFSET 1
@@ -195,6 +207,23 @@ static PyObject*
 get_stack_margin(PyObject *self, PyObject *Py_UNUSED(args))
 {
     return PyLong_FromSize_t(_PyOS_STACK_MARGIN_BYTES);
+}
+
+static PyObject *
+test_stop_the_world(PyObject *self, PyObject *Py_UNUSED(args))
+{
+#ifdef Py_GIL_DISABLED
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    // Request consecutive pauses without running Python code between them.
+    for (int i = 0; i < 100; i++) {
+        _PyEval_StopTheWorld(interp);
+        // Give detached threads time to try to reattach during the pause.
+        PyEvent event = {0};
+        PyEvent_WaitTimed(&event, 10 * 1000 * 1000, /*detach=*/0);
+        _PyEval_StartTheWorld(interp);
+    }
+#endif
+    Py_RETURN_NONE;
 }
 
 #ifdef MS_WINDOWS
@@ -1346,13 +1375,16 @@ _testinternalcapi_assemble_code_object_impl(PyObject *module,
     umd.u_cellvars = PyDict_GetItemString(metadata, "cellvars");
     umd.u_freevars = PyDict_GetItemString(metadata, "freevars");
     umd.u_fasthidden = PyDict_GetItemString(metadata, "fasthidden");
+    if (umd.u_fasthidden == Py_None) {
+        umd.u_fasthidden = NULL;
+    }
 
     assert(PyDict_Check(umd.u_consts));
     assert(PyDict_Check(umd.u_names));
     assert(PyDict_Check(umd.u_varnames));
     assert(PyDict_Check(umd.u_cellvars));
     assert(PyDict_Check(umd.u_freevars));
-    assert(PyDict_Check(umd.u_fasthidden));
+    assert(umd.u_fasthidden == NULL || PySet_Check(umd.u_fasthidden));
 
     umd.u_argcount = get_nonnegative_int_from_dict(metadata, "argcount");
     umd.u_posonlyargcount = get_nonnegative_int_from_dict(metadata, "posonlyargcount");
@@ -1919,7 +1951,7 @@ pending_identify(PyObject *self, PyObject *args)
 
     PyThread_type_lock mutex = PyThread_allocate_lock();
     if (mutex == NULL) {
-        return NULL;
+        return PyErr_NoMemory();
     }
     PyThread_acquire_lock(mutex, WAIT_LOCK);
     /* It gets released in _pending_identify_callback(). */
@@ -2301,8 +2333,7 @@ destroy_interpreter(PyObject *self, PyObject *args, PyObject *kwargs)
         }
         t2 = PyThreadState_New(interp);
         prev = PyThreadState_Swap(t2);
-        PyThreadState_Clear(t1);
-        PyThreadState_Delete(t1);
+        // t1 is deliberately left alive; Py_EndInterpreter() must clean it up.
         Py_EndInterpreter(t2);
         PyThreadState_Swap(prev);
     }
@@ -3196,6 +3227,88 @@ test_thread_state_ensure_from_view_interp_switch(PyObject *self, PyObject *unuse
     Py_RETURN_NONE;
 }
 
+static PyObject *
+unicodewriter_overflow(PyObject *self, PyObject *unused)
+{
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
+    if (writer == NULL) {
+        return NULL;
+    }
+    if (PyUnicodeWriter_WriteASCII(writer, "hello", -1) < 0) {
+        PyUnicodeWriter_Discard(writer);
+        return NULL;
+    }
+
+    _PyUnicodeWriter *impl = (_PyUnicodeWriter*)writer;
+    PyObject *buffer = impl->buffer;
+    Py_ssize_t index = PyUnicode_GET_LENGTH(buffer);
+    PyUnicode_WRITE(impl->kind, impl->data, index, '#');  // overflow!
+
+    // Spoiler: the function doesn't return if an overflow is detected
+    // in debug mode
+    return PyUnicodeWriter_Finish(writer);
+}
+
+/* Self interrupting context manager */
+
+typedef struct {
+    PyObject_HEAD
+    int within;
+} SelfInterruptingContextManagerObject;
+
+static PyObject *
+new_self_interrupting(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    SelfInterruptingContextManagerObject *self =
+        (SelfInterruptingContextManagerObject *)type->tp_alloc(type, 0);
+    if (self != NULL) {
+        self->within = 0;
+    }
+    return (PyObject *)self;
+}
+
+static PyObject *
+self_interrupting_enter(PyObject *op, PyObject *Py_UNUSED(dummy))
+{
+    ((SelfInterruptingContextManagerObject *)op)->within = 1;
+    PyThreadState *tstate = PyThreadState_Get();
+    PyObject *ki = Py_NewRef(PyExc_KeyboardInterrupt);
+    PyObject *old_exc = _Py_atomic_exchange_ptr(&tstate->async_exc, ki);
+    _Py_set_eval_breaker_bit(tstate, _PY_ASYNC_EXCEPTION_BIT);
+    Py_XDECREF(old_exc);
+
+    return Py_NewRef(op);
+}
+
+static PyObject *
+self_interrupting_within(PyObject *op, PyObject *Py_UNUSED(dummy))
+{
+    return PyBool_FromLong(((SelfInterruptingContextManagerObject *)op)->within);
+}
+
+static PyObject *
+self_interrupting_exit(PyObject *op, PyObject *Py_UNUSED(args)) {
+    ((SelfInterruptingContextManagerObject *)op)->within = 0;
+    Py_RETURN_NONE;
+}
+
+static PyMethodDef self_interrupting_methods[] = {
+    {"__enter__", self_interrupting_enter, METH_NOARGS, NULL},
+    {"within", self_interrupting_within, METH_NOARGS, NULL},
+    {"__exit__", self_interrupting_exit, METH_VARARGS, NULL},
+    {NULL, NULL} /* sentinel */
+};
+
+static PyTypeObject SelfInterruptingContextManager_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "_testcapi.SelfInterruptingContextManager",
+    sizeof(SelfInterruptingContextManagerObject),
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE,
+    .tp_new = new_self_interrupting,
+    .tp_methods = self_interrupting_methods,
+};
+
+
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_eval_frame_stats", get_eval_frame_stats, METH_NOARGS, NULL},
@@ -3203,6 +3316,7 @@ static PyMethodDef module_functions[] = {
     {"get_c_recursion_remaining", get_c_recursion_remaining, METH_NOARGS},
     {"get_stack_pointer", get_stack_pointer, METH_NOARGS},
     {"get_stack_margin", get_stack_margin, METH_NOARGS},
+    {"test_stop_the_world", test_stop_the_world, METH_NOARGS},
     {"classify_stack_addresses", classify_stack_addresses, METH_VARARGS},
     {"get_jit_code_ranges", get_jit_code_ranges, METH_NOARGS},
     {"get_jit_backend", get_jit_backend, METH_NOARGS},
@@ -3323,6 +3437,7 @@ static PyMethodDef module_functions[] = {
     {"test_interp_guard_countdown", test_interp_guard_countdown, METH_NOARGS},
     {"test_interp_view_countdown", test_interp_view_countdown, METH_NOARGS},
     {"test_thread_state_ensure_from_view_interp_switch", test_thread_state_ensure_from_view_interp_switch, METH_NOARGS},
+    {"unicodewriter_overflow", unicodewriter_overflow, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
@@ -3349,7 +3464,13 @@ module_exec(PyObject *module)
     if (_PyTestInternalCapi_Init_CriticalSection(module) < 0) {
         return 1;
     }
+    if (_PyTestInternalCapi_Init_Tokenizer(module) < 0) {
+        return 1;
+    }
     if (_PyTestInternalCapi_Init_Tuple(module) < 0) {
+        return 1;
+    }
+    if (_PyTestInternalCapi_Init_TypeCache(module) < 0) {
         return 1;
     }
 
@@ -3417,6 +3538,11 @@ module_exec(PyObject *module)
         return 1;
     }
 #endif
+
+    if (PyType_Ready(&SelfInterruptingContextManager_Type) < 0) {
+        return 1;
+    }
+    PyModule_AddObject(module, "SelfInterruptingContextManager", (PyObject *)&SelfInterruptingContextManager_Type);
 
     return 0;
 }

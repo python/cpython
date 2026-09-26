@@ -85,6 +85,11 @@ typedef struct {
 } PyConfigSysSpec;
 
 typedef struct {
+    int *ptr;
+    int not;
+} PyConfigGlobalVar;
+
+typedef struct {
     const char *name;
     size_t offset;
     PyConfigMemberType type;
@@ -125,7 +130,8 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
     SPEC(pycache_prefix, WSTR_OPT, PUBLIC, SYS_ATTR("pycache_prefix")),
     SPEC(quiet, BOOL, PUBLIC, SYS_FLAG(10)),
     SPEC(stdlib_dir, WSTR_OPT, PUBLIC, SYS_ATTR("_stdlib_dir")),
-    SPEC(use_environment, BOOL, PUBLIC, SYS_FLAG_SETTER(7, config_sys_flag_not)),
+    SPEC(use_environment, BOOL, PUBLIC,
+         SYS_FLAG_SETTER(7, config_sys_flag_not)),
     SPEC(verbose, UINT, PUBLIC, SYS_FLAG(8)),
     SPEC(warnoptions, WSTR_LIST, PUBLIC, SYS_ATTR("warnoptions")),
     SPEC(write_bytecode, BOOL, PUBLIC, SYS_FLAG_SETTER(4, config_sys_flag_not)),
@@ -178,7 +184,7 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
     SPEC(show_ref_count, BOOL, READ_ONLY, NO_SYS),
     SPEC(site_import, BOOL, READ_ONLY, NO_SYS),  // sys.flags.no_site
     SPEC(skip_source_first_line, BOOL, READ_ONLY, NO_SYS),
-    SPEC(stdio_encoding, WSTR, READ_ONLY, NO_SYS),
+    SPEC(stdio_encoding, WSTR_OPT, READ_ONLY, NO_SYS),
     SPEC(stdio_errors, WSTR, READ_ONLY, NO_SYS),
     SPEC(tracemalloc, UINT, READ_ONLY, NO_SYS),
     SPEC(use_frozen_modules, BOOL, READ_ONLY, NO_SYS),
@@ -198,6 +204,7 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
     SPEC(module_search_paths_set, BOOL, INIT_ONLY, NO_SYS),
     SPEC(pythonpath_env, WSTR_OPT, INIT_ONLY, NO_SYS),
     SPEC(sys_path_0, WSTR_OPT, INIT_ONLY, NO_SYS),
+    SPEC(_deferred_cmdline_option, INT, INIT_ONLY, NO_SYS),
 
     // Array terminator
     {NULL, 0, 0, 0, NO_SYS},
@@ -587,45 +594,30 @@ static const char usage_envvars[] =
 
 /* --- Global configuration variables ----------------------------- */
 
+// Variable removed from Python limited C API 3.16, but kept in the stable ABI
+PyAPI_DATA(int) Py_UTF8Mode;
+
 /* UTF-8 mode (PEP 540): if equal to 1, use the UTF-8 encoding, and change
    stdin and stdout error handler to "surrogateescape". */
 int Py_UTF8Mode = 0;
-int Py_DebugFlag = 0; /* Needed by parser.c */
-int Py_VerboseFlag = 0; /* Needed by import.c */
-int Py_QuietFlag = 0; /* Needed by sysmodule.c */
-int Py_InteractiveFlag = 0; /* Previously, was used by Py_FdIsInteractive() */
-int Py_InspectFlag = 0; /* Needed to determine whether to exit at SystemExit */
-int Py_OptimizeFlag = 0; /* Needed by compile.c */
-int Py_NoSiteFlag = 0; /* Suppress 'import site' */
-int Py_BytesWarningFlag = 0; /* Warn on str(bytes) and str(buffer) */
-int Py_FrozenFlag = 0; /* Needed by getpath.c */
-int Py_IgnoreEnvironmentFlag = 0; /* e.g. PYTHONPATH, PYTHONHOME */
-int Py_DontWriteBytecodeFlag = 0; /* Suppress writing bytecode files (*.pyc) */
-int Py_NoUserSiteDirectory = 0; /* for -s and site.py */
-int Py_UnbufferedStdioFlag = 0; /* Unbuffered binary std{in,out,err} */
-int Py_HashRandomizationFlag = 0; /* for -R and PYTHONHASHSEED */
-int Py_IsolatedFlag = 0; /* for -I, isolate from user's env */
-#ifdef MS_WINDOWS
-int Py_LegacyWindowsFSEncodingFlag = 0; /* Uses mbcs instead of utf-8 */
-int Py_LegacyWindowsStdioFlag = 0; /* Uses FileIO instead of WindowsConsoleIO */
-#endif
 
 
 static PyObject *
 _Py_GetGlobalVariablesAsDict(void)
 {
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
-    PyObject *dict, *obj;
+    extern const char *Py_FileSystemDefaultEncoding;
+    extern const char *Py_FileSystemDefaultEncodeErrors;
+    extern int Py_HasFileSystemDefaultEncoding;
+    extern int _Py_HasFileSystemDefaultEncodeErrors;
 
-    dict = PyDict_New();
+    PyObject *dict = PyDict_New();
     if (dict == NULL) {
         return NULL;
     }
 
 #define SET_ITEM(KEY, EXPR) \
         do { \
-            obj = (EXPR); \
+            PyObject *obj = (EXPR); \
             if (obj == NULL) { \
                 goto fail; \
             } \
@@ -650,27 +642,6 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
     SET_ITEM_INT(_Py_HasFileSystemDefaultEncodeErrors);
 
     SET_ITEM_INT(Py_UTF8Mode);
-    SET_ITEM_INT(Py_DebugFlag);
-    SET_ITEM_INT(Py_VerboseFlag);
-    SET_ITEM_INT(Py_QuietFlag);
-    SET_ITEM_INT(Py_InteractiveFlag);
-    SET_ITEM_INT(Py_InspectFlag);
-
-    SET_ITEM_INT(Py_OptimizeFlag);
-    SET_ITEM_INT(Py_NoSiteFlag);
-    SET_ITEM_INT(Py_BytesWarningFlag);
-    SET_ITEM_INT(Py_FrozenFlag);
-    SET_ITEM_INT(Py_IgnoreEnvironmentFlag);
-    SET_ITEM_INT(Py_DontWriteBytecodeFlag);
-    SET_ITEM_INT(Py_NoUserSiteDirectory);
-    SET_ITEM_INT(Py_UnbufferedStdioFlag);
-    SET_ITEM_INT(Py_HashRandomizationFlag);
-    SET_ITEM_INT(Py_IsolatedFlag);
-
-#ifdef MS_WINDOWS
-    SET_ITEM_INT(Py_LegacyWindowsFSEncodingFlag);
-    SET_ITEM_INT(Py_LegacyWindowsStdioFlag);
-#endif
 
     return dict;
 
@@ -682,19 +653,22 @@ fail:
 #undef SET_ITEM
 #undef SET_ITEM_INT
 #undef SET_ITEM_STR
-_Py_COMP_DIAG_POP
 }
 
 char*
 Py_GETENV(const char *name)
 {
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
-    if (Py_IgnoreEnvironmentFlag) {
+    int use_environment = 1;
+    PyThreadState *tstate = PyThreadState_GetUnchecked();
+    if (tstate != NULL) {
+        const PyConfig *config = &tstate->interp->config;
+        use_environment = config->use_environment;
+    }
+
+    if (!use_environment) {
         return NULL;
     }
     return getenv(name);
-_Py_COMP_DIAG_POP
 }
 
 /* --- PyStatus ----------------------------------------------- */
@@ -1050,11 +1024,14 @@ config_check_consistency(const PyConfig *config)
     assert(config->module_search_paths_set >= 0);
     assert(config->filesystem_encoding != NULL);
     assert(config->filesystem_errors != NULL);
-    assert(config->stdio_encoding != NULL);
-    assert(config->stdio_errors != NULL);
 #ifdef MS_WINDOWS
+    /* stdio_encoding can be NULL in the legacy Windows stdio mode. */
+    assert(config->stdio_encoding != NULL || config->legacy_windows_stdio);
     assert(config->legacy_windows_stdio >= 0);
+#else
+    assert(config->stdio_encoding != NULL);
 #endif
+    assert(config->stdio_errors != NULL);
     /* -c and -m options are exclusive */
     assert(!(config->run_command != NULL && config->run_module != NULL));
     assert(config->check_hash_pycs_mode != NULL);
@@ -1787,90 +1764,19 @@ config_get_env_dup(PyConfig *config,
 
 
 static void
-config_get_global_vars(PyConfig *config)
+config_read_preconfig(PyConfig *config)
 {
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
-    if (config->_config_init != _PyConfig_INIT_COMPAT) {
-        /* Python and Isolated configuration ignore global variables */
-        return;
-    }
-
-#define COPY_FLAG(ATTR, VALUE) \
+#define COPY_FLAG(ATTR) \
         if (config->ATTR == -1) { \
-            config->ATTR = VALUE; \
-        }
-#define COPY_NOT_FLAG(ATTR, VALUE) \
-        if (config->ATTR == -1) { \
-            config->ATTR = !(VALUE); \
+            config->ATTR = preconfig->ATTR; \
         }
 
-    COPY_FLAG(isolated, Py_IsolatedFlag);
-    COPY_NOT_FLAG(use_environment, Py_IgnoreEnvironmentFlag);
-    COPY_FLAG(bytes_warning, Py_BytesWarningFlag);
-    COPY_FLAG(inspect, Py_InspectFlag);
-    COPY_FLAG(interactive, Py_InteractiveFlag);
-    COPY_FLAG(optimization_level, Py_OptimizeFlag);
-    COPY_FLAG(parser_debug, Py_DebugFlag);
-    COPY_FLAG(verbose, Py_VerboseFlag);
-    COPY_FLAG(quiet, Py_QuietFlag);
-#ifdef MS_WINDOWS
-    COPY_FLAG(legacy_windows_stdio, Py_LegacyWindowsStdioFlag);
-#endif
-    COPY_NOT_FLAG(pathconfig_warnings, Py_FrozenFlag);
-
-    COPY_NOT_FLAG(buffered_stdio, Py_UnbufferedStdioFlag);
-    COPY_NOT_FLAG(site_import, Py_NoSiteFlag);
-    COPY_NOT_FLAG(write_bytecode, Py_DontWriteBytecodeFlag);
-    COPY_NOT_FLAG(user_site_directory, Py_NoUserSiteDirectory);
+    const PyPreConfig *preconfig = &_PyRuntime.preconfig;
+    COPY_FLAG(isolated);
+    COPY_FLAG(use_environment);
+    COPY_FLAG(dev_mode);
 
 #undef COPY_FLAG
-#undef COPY_NOT_FLAG
-_Py_COMP_DIAG_POP
-}
-
-
-/* Set Py_xxx global configuration variables from 'config' configuration. */
-static void
-config_set_global_vars(const PyConfig *config)
-{
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
-#define COPY_FLAG(ATTR, VAR) \
-        if (config->ATTR != -1) { \
-            VAR = config->ATTR; \
-        }
-#define COPY_NOT_FLAG(ATTR, VAR) \
-        if (config->ATTR != -1) { \
-            VAR = !config->ATTR; \
-        }
-
-    COPY_FLAG(isolated, Py_IsolatedFlag);
-    COPY_NOT_FLAG(use_environment, Py_IgnoreEnvironmentFlag);
-    COPY_FLAG(bytes_warning, Py_BytesWarningFlag);
-    COPY_FLAG(inspect, Py_InspectFlag);
-    COPY_FLAG(interactive, Py_InteractiveFlag);
-    COPY_FLAG(optimization_level, Py_OptimizeFlag);
-    COPY_FLAG(parser_debug, Py_DebugFlag);
-    COPY_FLAG(verbose, Py_VerboseFlag);
-    COPY_FLAG(quiet, Py_QuietFlag);
-#ifdef MS_WINDOWS
-    COPY_FLAG(legacy_windows_stdio, Py_LegacyWindowsStdioFlag);
-#endif
-    COPY_NOT_FLAG(pathconfig_warnings, Py_FrozenFlag);
-
-    COPY_NOT_FLAG(buffered_stdio, Py_UnbufferedStdioFlag);
-    COPY_NOT_FLAG(site_import, Py_NoSiteFlag);
-    COPY_NOT_FLAG(write_bytecode, Py_DontWriteBytecodeFlag);
-    COPY_NOT_FLAG(user_site_directory, Py_NoUserSiteDirectory);
-
-    /* Random or non-zero hash seed */
-    Py_HashRandomizationFlag = (config->use_hash_seed == 0 ||
-                                config->hash_seed != 0);
-
-#undef COPY_FLAG
-#undef COPY_NOT_FLAG
-_Py_COMP_DIAG_POP
 }
 
 
@@ -2712,7 +2618,13 @@ config_init_stdio_encoding(PyConfig *config,
     }
 
     /* Choose the default error handler based on the current locale. */
-    if (config->stdio_encoding == NULL) {
+    if (config->stdio_encoding == NULL
+#ifdef MS_WINDOWS
+        /* gh-86427: it is determined for each stream: create_stdio() uses
+           _Py_device_encoding(), falling back to the locale encoding. */
+        && !config->legacy_windows_stdio
+#endif
+       ) {
         status = config_get_locale_encoding(config, preconfig,
                                             &config->stdio_encoding);
         if (_PyStatus_EXCEPTION(status)) {
@@ -3014,8 +2926,6 @@ config_init_stdio(const PyConfig *config)
 PyStatus
 _PyConfig_Write(const PyConfig *config, _PyRuntimeState *runtime)
 {
-    config_set_global_vars(config);
-
     if (config->configure_c_stdio) {
         config_init_stdio(config);
     }
@@ -3087,13 +2997,17 @@ static PyStatus
 config_parse_cmdline(PyConfig *config, PyWideStringList *warnoptions,
                      Py_ssize_t *opt_index)
 {
+    // Only store the first option
+#define DEFER_OPTION(OPTION) \
+        do { \
+            if (config->_deferred_cmdline_option == 0) { \
+                config->_deferred_cmdline_option = (OPTION); \
+            } \
+        } while (0)
+
     PyStatus status;
     const PyWideStringList *argv = &config->argv;
     int print_version = 0;
-    const wchar_t* program = config->program_name;
-    if (!program && argv->length >= 1) {
-        program = argv->items[0];
-    }
 
     _PyOS_ResetGetOpt();
     do {
@@ -3136,7 +3050,7 @@ config_parse_cmdline(PyConfig *config, PyWideStringList *warnoptions,
 
         switch (c) {
         // Integers represent long options, see Python/getopt.c
-        case 0:
+        case 1:
             // check-hash-based-pycs
             if (wcscmp(_PyOS_optarg, L"always") == 0
                 || wcscmp(_PyOS_optarg, L"never") == 0
@@ -3148,27 +3062,24 @@ config_parse_cmdline(PyConfig *config, PyWideStringList *warnoptions,
                     return status;
                 }
             } else {
-                fprintf(stderr, "--check-hash-based-pycs must be one of "
-                        "'default', 'always', or 'never'\n");
-                config_usage(1, program);
-                return _PyStatus_EXIT(2);
+                DEFER_OPTION(c);
             }
             break;
 
-        case 1:
-            // help-all
-            config_complete_usage(program);
-            return _PyStatus_EXIT(0);
-
         case 2:
-            // help-env
-            config_envvars_usage();
-            return _PyStatus_EXIT(0);
+            // help-all
+            DEFER_OPTION(c);
+            break;
 
         case 3:
+            // help-env
+            DEFER_OPTION(c);
+            break;
+
+        case 4:
             // help-xoptions
-            config_xoptions_usage();
-            return _PyStatus_EXIT(0);
+            DEFER_OPTION(c);
+            break;
 
         case 'b':
             config->bytes_warning++;
@@ -3227,8 +3138,8 @@ config_parse_cmdline(PyConfig *config, PyWideStringList *warnoptions,
 
         case 'h':
         case '?':
-            config_usage(0, program);
-            return _PyStatus_EXIT(0);
+            DEFER_OPTION(c);
+            break;
 
         case 'V':
             print_version++;
@@ -3253,15 +3164,16 @@ config_parse_cmdline(PyConfig *config, PyWideStringList *warnoptions,
 
         default:
             /* unknown argument: parsing failed */
-            config_usage(1, program);
-            return _PyStatus_EXIT(2);
+            DEFER_OPTION(c);
+            break;
         }
-    } while (1);
+    } while (config->_deferred_cmdline_option == 0);
 
-    if (print_version) {
-        printf("Python %s\n",
-                (print_version >= 2) ? Py_GetVersion() : PY_VERSION);
-        return _PyStatus_EXIT(0);
+    if (print_version >= 2) {
+        DEFER_OPTION('W');
+    }
+    else if (print_version >= 1) {
+        DEFER_OPTION('V');
     }
 
     if (config->run_command == NULL && config->run_module == NULL
@@ -3283,6 +3195,72 @@ config_parse_cmdline(PyConfig *config, PyWideStringList *warnoptions,
     *opt_index = _PyOS_optind;
 
     return _PyStatus_OK();
+
+#undef DEFER_OPTION
+}
+
+
+int
+_PyConfig_ProcessDeferredCmdlineOption(PyConfig *config)
+{
+    int c = config->_deferred_cmdline_option;
+    config->_deferred_cmdline_option = 0;
+    if (c == 0) {
+        // There is no deferred option
+        return -1;
+    }
+
+    // Select the program name
+    const PyWideStringList *argv = &config->argv;
+    const wchar_t* program = config->program_name;
+    if (!program && argv->length >= 1) {
+        program = argv->items[0];
+    }
+    if (!program) {
+        program = L"python";
+    }
+
+    switch (c) {
+    case 'h':
+    case '?':
+        config_usage(0, program);
+        return 0;
+
+    case 'V':
+        printf("Python %s\n", PY_VERSION);
+        return 0;
+
+    case 'W':  // -VV or more -V options
+        printf("Python %s\n", Py_GetVersion());
+        return 0;
+
+    // Integers represent long options, see Python/getopt.c
+    case 1:
+        // check-hash-based-pycs
+        fprintf(stderr, "--check-hash-based-pycs must be one of "
+                "'default', 'always', or 'never'\n");
+        config_usage(1, program);
+        return 2;
+
+    case 2:
+        // help-all
+        config_complete_usage(program);
+        return 0;
+
+    case 3:
+        // help-env
+        config_envvars_usage();
+        return 0;
+
+    case 4:
+        // help-xoptions
+        config_xoptions_usage();
+        return 0;
+
+    default:
+        config_usage(1, program);
+        return 2;
+    }
 }
 
 
@@ -3725,7 +3703,6 @@ config_argv0_add_exe(PyConfig *config)
 
    * Command line arguments
    * Environment variables
-   * Py_xxx global configuration variables
 
    The only side effects are to modify config and to call _Py_SetArgcArgv(). */
 PyStatus
@@ -3738,7 +3715,56 @@ _PyConfig_Read(PyConfig *config, int compute_path_config)
         return status;
     }
 
-    config_get_global_vars(config);
+    config_read_preconfig(config);
+
+    // Set default values
+    if (config->bytes_warning < 0) {
+        config->bytes_warning = 0;
+    }
+    if (config->inspect < 0) {
+        config->inspect = 0;
+    }
+    if (config->interactive < 0) {
+        config->interactive = 0;
+    }
+    if (config->optimization_level < 0) {
+        config->optimization_level = 0;
+    }
+    if (config->parser_debug < 0) {
+        config->parser_debug = 0;
+    }
+    if (config->quiet < 0) {
+        config->quiet = 0;
+    }
+    if (config->use_environment < 0) {
+        config->use_environment = 0;
+    }
+    if (config->verbose < 0) {
+        config->verbose = 0;
+    }
+    if (config->write_bytecode < 0) {
+        config->write_bytecode = 1;
+    }
+    if (config->buffered_stdio < 0) {
+        config->buffered_stdio = 1;
+    }
+    if (config->isolated < 0) {
+        config->isolated = 0;
+    }
+#ifdef MS_WINDOWS
+    if (config->legacy_windows_stdio < 0) {
+        config->legacy_windows_stdio = 0;
+    }
+#endif
+    if (config->pathconfig_warnings < 0) {
+        config->pathconfig_warnings = 1;
+    }
+    if (config->site_import < 0) {
+        config->site_import = 1;
+    }
+    if (config->user_site_directory < 0) {
+        config->user_site_directory = 1;
+    }
 
 #ifdef __CYGWIN__
     status = config_argv0_add_exe(config);
@@ -4008,22 +4034,7 @@ PyInitConfig_Free(PyInitConfig *config)
 int
 PyInitConfig_GetError(PyInitConfig* config, const char **perr_msg)
 {
-    if (_PyStatus_IS_EXIT(config->status)) {
-        char buffer[22];  // len("exit code -2147483648\0")
-        PyOS_snprintf(buffer, sizeof(buffer),
-                      "exit code %i",
-                      config->status.exitcode);
-
-        if (config->err_msg != NULL) {
-            free(config->err_msg);
-        }
-        config->err_msg = strdup(buffer);
-        if (config->err_msg != NULL) {
-            *perr_msg = config->err_msg;
-            return 1;
-        }
-        config->status = _PyStatus_NO_MEMORY();
-    }
+    assert(!_PyStatus_IS_EXIT(config->status));
 
     if (_PyStatus_IS_ERROR(config->status) && config->status.err_msg != NULL) {
         *perr_msg = config->status.err_msg;
@@ -4039,13 +4050,8 @@ PyInitConfig_GetError(PyInitConfig* config, const char **perr_msg)
 int
 PyInitConfig_GetExitCode(PyInitConfig* config, int *exitcode)
 {
-    if (_PyStatus_IS_EXIT(config->status)) {
-        *exitcode = config->status.exitcode;
-        return 1;
-    }
-    else {
-        return 0;
-    }
+    assert(!_PyStatus_IS_EXIT(config->status));
+    return 0;
 }
 
 

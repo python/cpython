@@ -1,0 +1,4 @@
+On Linux, :func:`os.copy_file_range` and :func:`os.memfd_create` now fall back
+to the raw syscall when the libc Python is built against does not provide the
+wrapper function, so they stay available on interpreters built against a libc
+older than glibc 2.27.

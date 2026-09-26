@@ -1299,8 +1299,6 @@ _PyModule_IsPossiblyShadowing(PyObject *origin)
     return result;
 }
 
-// Check if `name` is a lazily pending submodule of module `m`.
-// Returns a new reference on success, or NULL with no error set.
 static PyObject *
 try_load_lazy_submodule(PyModuleObject *m, PyObject *name)
 {
@@ -1313,10 +1311,13 @@ try_load_lazy_submodule(PyModuleObject *m, PyObject *name)
         Py_DECREF(mod_name);
         return NULL;
     }
-    PyObject *result = _PyImport_TryLoadLazySubmodule(mod_name, name);
+    PyObject *result = NULL;
+    _PyLazySubmoduleImportResult status =
+        _PyImport_TryLoadLazySubmodule(mod_name, name, &result);
     Py_DECREF(mod_name);
-    if (result == NULL) {
-        PyErr_Clear();
+    if (status != _Py_LAZY_SUBMODULE_LOADED) {
+        assert(status == _Py_LAZY_SUBMODULE_ERROR ||
+               status == _Py_LAZY_SUBMODULE_NOT_FOUND);
         return NULL;
     }
     if (PyDict_SetItem(m->md_dict, name, result) < 0) {

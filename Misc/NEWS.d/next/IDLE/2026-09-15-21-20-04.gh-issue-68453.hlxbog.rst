@@ -1,0 +1,3 @@
+Fix running IDLE with the -s option together with -c, -r or -: the command
+or script now runs after the startup file, without an error dialog and
+without restarting the shell.

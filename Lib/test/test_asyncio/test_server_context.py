@@ -13,7 +13,7 @@ except ImportError:
 from test.test_asyncio import utils as test_utils
 
 def tearDownModule():
-    asyncio.events._set_event_loop_policy(None)
+    asyncio.set_event_loop(None)
 
 class ServerContextvarsTestCase:
     loop_factory = None  # To be defined in subclasses

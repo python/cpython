@@ -1,5 +1,6 @@
 import os
 import sys
+from typing import Annotated
 import unittest
 from ctypes import (CDLL, Structure, sizeof, POINTER, byref, alignment,
                     LittleEndianStructure, BigEndianStructure,
@@ -8,8 +9,9 @@ from ctypes import (CDLL, Structure, sizeof, POINTER, byref, alignment,
                     c_short, c_ushort, c_int, c_uint, c_long, c_ulong,
                     c_longlong, c_ulonglong,
                     Union)
+from ctypes.util import struct, CFieldInfo
 from test import support
-from test.support import import_helper
+from test.support import import_helper, subTests
 from ._support import StructCheckMixin
 _ctypes_test = import_helper.import_module("_ctypes_test")
 
@@ -126,11 +128,19 @@ class BitFieldTest(unittest.TestCase, StructCheckMixin):
         self.check_struct(BITS_msvc)
         self.check_struct(BITS_gcc)
 
-    def test_longlong(self):
-        class X(Structure):
-            _fields_ = [("a", c_longlong, 1),
-                        ("b", c_longlong, 62),
-                        ("c", c_longlong, 1)]
+    @subTests("use_struct_util", [False, True])
+    def test_longlong(self, use_struct_util):
+        if use_struct_util:
+            @struct
+            class X:
+                a: Annotated[c_longlong, CFieldInfo(bit_width=1)]
+                b: Annotated[c_longlong, CFieldInfo(bit_width=62)]
+                c: Annotated[c_longlong, CFieldInfo(bit_width=1)]
+        else:
+            class X(Structure):
+                _fields_ = [("a", c_longlong, 1),
+                            ("b", c_longlong, 62),
+                            ("c", c_longlong, 1)]
         self.check_struct(X)
 
         self.assertEqual(sizeof(X), sizeof(c_longlong))

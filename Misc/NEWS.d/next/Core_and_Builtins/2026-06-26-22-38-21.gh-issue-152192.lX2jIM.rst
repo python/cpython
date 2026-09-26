@@ -1,0 +1,2 @@
+Fix a truncated ``oparg`` being passed to JIT trace initialization for a
+``JUMP_BACKWARD`` with an ``EXTENDED_ARG``.

@@ -246,6 +246,8 @@ struct _typeobject {
       * This function must escape to any code that can result in
       * the GC being run, such as Py_DECREF.  */
     _Py_iteritemfunc _tp_iteritem;
+
+    void *_tp_cache;
 };
 
 #define _Py_ATTR_CACHE_UNUSED (30000)  // (see tp_versions_used)
@@ -350,7 +352,7 @@ PyAPI_FUNC(PyObject *) _PyObject_FunctionStr(PyObject *);
 #ifdef _Py_TYPEOF
 #define Py_SETREF(dst, src) \
     do { \
-        _Py_TYPEOF(dst)* _tmp_dst_ptr = &(dst); \
+        _Py_TYPEOF(&(dst)) _tmp_dst_ptr = &(dst); \
         _Py_TYPEOF(dst) _tmp_old_dst = (*_tmp_dst_ptr); \
         *_tmp_dst_ptr = (src); \
         Py_DECREF(_tmp_old_dst); \
@@ -372,7 +374,7 @@ PyAPI_FUNC(PyObject *) _PyObject_FunctionStr(PyObject *);
 #ifdef _Py_TYPEOF
 #define Py_XSETREF(dst, src) \
     do { \
-        _Py_TYPEOF(dst)* _tmp_dst_ptr = &(dst); \
+        _Py_TYPEOF(&(dst)) _tmp_dst_ptr = &(dst); \
         _Py_TYPEOF(dst) _tmp_old_dst = (*_tmp_dst_ptr); \
         *_tmp_dst_ptr = (src); \
         Py_XDECREF(_tmp_old_dst); \
@@ -521,7 +523,8 @@ _Py_ThreadId(void)
 #elif defined(__MINGW32__) && defined(_M_IX86)
     tid = __readfsdword(24);
 #elif defined(__MINGW32__) && defined(_M_ARM64)
-    tid = __getReg(18);
+    // x18 is the Windows ARM64 platform register and points to the TEB.
+    __asm__ ("mov %0, x18" : "=r" (tid));
 #elif defined(__i386__)
     __asm__("{movl %%gs:0, %0|mov %0, dword ptr gs:[0]}" : "=r" (tid));  // 32-bit always uses GS
 #elif defined(__MACH__) && defined(__x86_64__)

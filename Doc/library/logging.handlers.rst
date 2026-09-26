@@ -631,7 +631,8 @@ supports sending logging messages to a remote or local Unix syslog.
    the form of a ``(host, port)`` tuple.  If *address* is not specified,
    ``('localhost', 514)`` is used.  The address is used to open a socket.  An
    alternative to providing a ``(host, port)`` tuple is providing an address as a
-   string, for example '/dev/log'. In this case, a Unix domain socket is used to
+   string or a :class:`bytes` object, for example '/dev/log'.
+   In this case, a Unix domain socket is used to
    send the message to the syslog. If *facility* is not specified,
    :const:`LOG_USER` is used. The type of socket opened depends on the
    *socktype* argument, which defaults to :const:`socket.SOCK_DGRAM` and thus
@@ -663,6 +664,9 @@ supports sending logging messages to a remote or local Unix syslog.
 
    .. versionchanged:: 3.14
       *timeout* was added.
+
+   .. versionchanged:: next
+      *address* can now be a :class:`bytes` object.
 
    .. method:: close()
 

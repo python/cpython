@@ -265,6 +265,15 @@ class Test_IncrementalDecoder(unittest.TestCase):
         self.assertRaises(UnicodeDecodeError, decoder.decode, b'', True)
         self.assertEqual(decoder.decode(b'B@$'), '\u4e16')
 
+    def test_hz_keep_buffer(self):
+        # A trailing '~' shouldn't read past the end of the input.
+        decoder = codecs.getincrementaldecoder('hz')()
+        self.assertEqual(decoder.decode(b'~'), '')
+        self.assertRaises(UnicodeDecodeError, decoder.decode, b'', True)
+        self.assertEqual(decoder.decode(b'~'), '~')
+        self.assertEqual(decoder.decode(b'~'), '')
+        self.assertEqual(decoder.decode(b'\n', True), '')
+
     def test_decode_unicode(self):
         # Trying to decode a unicode string should raise a TypeError
         for enc in ALL_CJKENCODINGS:
@@ -305,6 +314,24 @@ class Test_IncrementalDecoder(unittest.TestCase):
         self.assertRaises(TypeError, decoder.setstate, ("invalid", 0))
         self.assertRaises(TypeError, decoder.setstate, (b"1234", "invalid"))
         self.assertRaises(UnicodeDecodeError, decoder.setstate, (b"123456789", 0))
+
+    def test_setstate_invalid_designation(self):
+        # gh-153603: an unknown charset designation in the state must not crash
+        # the decoder.  0xff is not a registered charset mark and 0x21 ('!') is
+        # a GL byte that triggers the designation lookup.
+        for name in ('iso-2022-jp', 'iso-2022-kr'):
+            with self.subTest(codec=name):
+                decoder = codecs.getincrementaldecoder(name)()
+                decoder.setstate((b'', 0xff))
+                with self.assertRaises(UnicodeDecodeError) as cm:
+                    decoder.decode(b'!', final=True)
+                self.assertEqual(cm.exception.reason,
+                                 'illegal multibyte sequence')
+                self.assertEqual((cm.exception.start, cm.exception.end), (0, 1))
+                # One illegal byte is reported, so error handlers still work.
+                decoder = codecs.getincrementaldecoder(name)(errors='replace')
+                decoder.setstate((b'', 0xff))
+                self.assertEqual(decoder.decode(b'!', final=True), '\ufffd')
 
 class Test_StreamReader(unittest.TestCase):
     def test_bug1728403(self):

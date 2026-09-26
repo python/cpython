@@ -17,7 +17,7 @@ import linecache
 import zipapp
 import zipfile
 
-from asyncio.events import _set_event_loop_policy
+from asyncio import set_event_loop
 from contextlib import ExitStack, redirect_stdout
 from io import StringIO
 from test import support
@@ -3653,6 +3653,23 @@ def quux():
             ('bœr', 5),
         )
 
+    def test_find_function_too_complex(self):
+        # gh-69919: compile() can raise more than SyntaxError.
+        self._assert_find_function(
+            b"def foo():\n    return " + b"-" * 100_000 + b"1\n"
+            b"def bar():\n    pass\n",
+            'bar',
+            ('bar', 4),
+        )
+
+    def test_compile_error_message(self):
+        p = pdb.Pdb()
+        self.assertEqual(p._compile_error_message('1 + 1'), '')
+        self.assertIn('SyntaxError', p._compile_error_message('1 +'))
+        # gh-69919: compile() can raise more than SyntaxError.
+        self.assertRegex(p._compile_error_message('-' * 100_000 + '1'),
+                         r'^(MemoryError|RecursionError|SyntaxError):')
+
     def test_print_stack_entry_uses_dynamic_line_prefix(self):
         """Test that pdb.line_prefix binding is dynamic (gh-141781)."""
         stdout = io.StringIO()
@@ -4996,6 +5013,16 @@ class PdbTestColorize(unittest.TestCase):
         p.set_trace(commands=['ll', 'c'])
         self.assertNotIn("\x1b", output.getvalue())
 
+    def test_list_does_not_colorize_trailing_newlines(self):
+        # Keep the marker split so it is not present in the listed source.
+        caret_newline = "^" + "J"
+        output = io.StringIO()
+        p = pdb.Pdb(stdout=output, colorize=True)
+        p.set_trace(commands=['list', 'continue'])
+        result = output.getvalue()
+        self.assertIn("\x1b", result)
+        self.assertNotIn(caret_newline, result)
+
     def test_stack_entry(self):
         output = io.StringIO()
         p = pdb.Pdb(stdout=output, colorize=True)
@@ -5167,8 +5194,9 @@ class PdbTestReadline(unittest.TestCase):
 
         self.assertIn('I love Python', output)
 
-    @unittest.skipIf(sys.platform.startswith('freebsd'),
-                     '\\x08 is not interpreted as backspace on FreeBSD')
+    @unittest.skipIf(sys.platform.startswith(('freebsd', 'dragonfly', 'sunos')),
+                     '\\x08 does not remove the auto-indentation with '
+                     'GNU readline on this platform')
     def test_multiline_auto_indent(self):
         script = textwrap.dedent("""
             import pdb; pdb.Pdb().set_trace()
@@ -5207,8 +5235,9 @@ class PdbTestReadline(unittest.TestCase):
 
         self.assertIn('42', output)
 
-    @unittest.skipIf(sys.platform.startswith('freebsd'),
-                     '\\x08 is not interpreted as backspace on FreeBSD')
+    @unittest.skipIf(sys.platform.startswith(('freebsd', 'dragonfly', 'sunos')),
+                     '\\x08 does not remove the auto-indentation with '
+                     'GNU readline on this platform')
     def test_multiline_indent_completion(self):
         script = textwrap.dedent("""
             import pdb; pdb.Pdb().set_trace()
@@ -5312,7 +5341,7 @@ def load_tests(loader, tests, pattern):
         # Ensure that asyncio state has been cleared at the end of the test.
         # This prevents a "test altered the execution environment" warning if
         # asyncio features are used.
-        _set_event_loop_policy(None)
+        set_event_loop(None)
 
         # A doctest of pdb could have residues. For example, pdb could still
         # be running, or breakpoints might be left uncleared. These residues

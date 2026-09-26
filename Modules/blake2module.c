@@ -757,6 +757,10 @@ blake2_blake2b_copy_unlocked(Blake2Object *self, Blake2Object *cpy)
         }                                                                   \
     } while (0)
 
+    // Ensure that the implementation type is consistent with the HACL* state.
+    // See https://github.com/python/cpython/issues/152851 for details.
+    cpy->impl = self->impl;
+
     switch (self->impl) {
 #if _Py_HACL_CAN_COMPILE_VEC256
         case Blake2b_256:
@@ -778,7 +782,6 @@ blake2_blake2b_copy_unlocked(Blake2Object *self, Blake2Object *cpy)
             Py_UNREACHABLE();
     }
 #undef BLAKE2_COPY
-    cpy->impl = self->impl;
     return 0;
 
 error:
@@ -947,7 +950,9 @@ static PyObject *
 py_blake2b_get_digest_size(PyObject *op, void *Py_UNUSED(closure))
 {
     Blake2Object *self = _Blake2Object_CAST(op);
+    HASHLIB_ACQUIRE_LOCK(self);
     Hacl_Hash_Blake2b_index info = hacl_get_blake2_info(self);
+    HASHLIB_RELEASE_LOCK(self);
     return PyLong_FromLong(info.digest_length);
 }
 

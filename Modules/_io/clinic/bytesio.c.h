@@ -10,6 +10,30 @@ preserve
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
+PyDoc_STRVAR(_io_BytesIO_closed__doc__,
+"True if the file is closed.");
+
+static int
+_io_BytesIO_closed_get_impl(bytesio *self);
+
+static PyObject *
+_io_BytesIO_closed_get(PyObject *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+    int _return_value;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    _return_value = _io_BytesIO_closed_get_impl((bytesio *)self);
+    Py_END_CRITICAL_SECTION();
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_io_BytesIO_readable__doc__,
 "readable($self, /)\n"
 "--\n"
@@ -281,6 +305,53 @@ _io_BytesIO_read1(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 skip_optional:
     Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _io_BytesIO_read1_impl((bytesio *)self, size);
+    Py_END_CRITICAL_SECTION();
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_io_BytesIO_peek__doc__,
+"peek($self, size=0, /)\n"
+"--\n"
+"\n"
+"Return bytes from the stream without advancing the position.\n"
+"\n"
+"Return an empty bytes object at EOF.");
+
+#define _IO_BYTESIO_PEEK_METHODDEF    \
+    {"peek", _PyCFunction_CAST(_io_BytesIO_peek), METH_FASTCALL, _io_BytesIO_peek__doc__},
+
+static PyObject *
+_io_BytesIO_peek_impl(bytesio *self, Py_ssize_t size);
+
+static PyObject *
+_io_BytesIO_peek(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t size = 0;
+
+    if (!_PyArg_CheckPositional("peek", nargs, 0, 1)) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[0]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        size = ival;
+    }
+skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _io_BytesIO_peek_impl((bytesio *)self, size);
     Py_END_CRITICAL_SECTION();
 
 exit:
@@ -574,6 +645,52 @@ _io_BytesIO_close(PyObject *self, PyObject *Py_UNUSED(ignored))
     return return_value;
 }
 
+PyDoc_STRVAR(_io_BytesIO___getstate____doc__,
+"__getstate__($self, /)\n"
+"--\n"
+"\n");
+
+#define _IO_BYTESIO___GETSTATE___METHODDEF    \
+    {"__getstate__", (PyCFunction)_io_BytesIO___getstate__, METH_NOARGS, _io_BytesIO___getstate____doc__},
+
+static PyObject *
+_io_BytesIO___getstate___impl(bytesio *self);
+
+static PyObject *
+_io_BytesIO___getstate__(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _io_BytesIO___getstate___impl((bytesio *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+PyDoc_STRVAR(_io_BytesIO___setstate____doc__,
+"__setstate__($self, state, /)\n"
+"--\n"
+"\n");
+
+#define _IO_BYTESIO___SETSTATE___METHODDEF    \
+    {"__setstate__", (PyCFunction)_io_BytesIO___setstate__, METH_O, _io_BytesIO___setstate____doc__},
+
+static PyObject *
+_io_BytesIO___setstate___impl(bytesio *self, PyObject *state);
+
+static PyObject *
+_io_BytesIO___setstate__(PyObject *self, PyObject *state)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _io_BytesIO___setstate___impl((bytesio *)self, state);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_io_BytesIO___init____doc__,
 "BytesIO(initial_bytes=b\'\')\n"
 "--\n"
@@ -637,4 +754,30 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=eac3911e207aaf45 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_io_BytesIO___sizeof____doc__,
+"__sizeof__($self, /)\n"
+"--\n"
+"\n"
+"Size of object in memory, in bytes.");
+
+#define _IO_BYTESIO___SIZEOF___METHODDEF    \
+    {"__sizeof__", (PyCFunction)_io_BytesIO___sizeof__, METH_NOARGS, _io_BytesIO___sizeof____doc__},
+
+static PyObject *
+_io_BytesIO___sizeof___impl(bytesio *self);
+
+static PyObject *
+_io_BytesIO___sizeof__(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _io_BytesIO___sizeof___impl((bytesio *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+#define _IO_BYTESIO_CLOSED_GETSETDEF {"closed", (getter)_io_BytesIO_closed_get, (setter)NULL, _io_BytesIO_closed__doc__},
+
+/*[clinic end generated code: output=a3dc7a416dae6ae9 input=a9049054013a1b77]*/

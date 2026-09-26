@@ -554,8 +554,8 @@ class Obj2ModVisitor(PickleVisitor):
         self.emit("return 1;", 2)
         self.emit("}", 1)
         self.emit("if (!isinstance && field != NULL) {", 1)
-        error = "field '%%s' was expecting node of type '%s', got '%%s'" % name
-        self.emit("PyErr_Format(PyExc_TypeError, \"%s\", field, _PyType_Name(Py_TYPE(obj)));" % error, 2, reflow=False)
+        error = "field '%%s' was expecting node of type '%s', got '%%T'" % name
+        self.emit("PyErr_Format(PyExc_TypeError, \"%s\", field, obj);" % error, 2, reflow=False)
         self.emit("return 1;", 2)
         self.emit("}", 1)
 
@@ -692,7 +692,7 @@ class Obj2ModVisitor(PickleVisitor):
             self.emit("Py_ssize_t i;", depth+1)
             self.emit("if (!PyList_Check(tmp)) {", depth+1)
             self.emit("PyErr_Format(PyExc_TypeError, \"%s field \\\"%s\\\" must "
-                      "be a list, not a %%.200s\", _PyType_Name(Py_TYPE(tmp)));" %
+                      "be a list, not a %%T\", tmp);" %
                       (name, field.name),
                       depth+2, reflow=False)
             self.emit("goto failed;", depth+2)
@@ -786,63 +786,124 @@ class PyTypesDeclareVisitor(PickleVisitor):
 
 class AnnotationsVisitor(PickleVisitor):
     def visitModule(self, mod):
+        self.nodes = []
+        for dfn in mod.dfns:
+            self.visit(dfn)
+        builtins = list(dict.fromkeys(builtin_type_to_c_type.values()))
         self.file.write(textwrap.dedent('''
             static int
             add_ast_annotations(struct ast_state *state)
             {
-                bool cond;
+                enum {
+                    FIELD_OPTIONAL = 1,
+                    FIELD_SEQUENCE = 2,
+                    FIELD_BUILTIN = 4,
+                };
+                PyTypeObject *const builtin_types[] = {
         '''))
-        for dfn in mod.dfns:
-            self.visit(dfn)
-        self.file.write(textwrap.dedent('''
+        for c_type in builtins:
+            self.emit(f"&{c_type},", 2)
+        self.file.write(textwrap.dedent('''\
+            };
+            // Offsets refer to this interpreter's AST state, not global types.
+            static_assert(sizeof(struct ast_state) <= UINT16_MAX,
+                          "ast_state offsets must fit in uint16_t");
+            static const struct {
+                uint16_t name_offset;
+                uint16_t type_offset;  // An index into builtin_types for builtins.
+                uint8_t flags;
+            } fields[] = {
+        #''').removesuffix('#'))  # Use d-string if it accepted.
+        for name, fields in self.nodes:
+            for field in fields:
+                flags = []
+                if field.opt:
+                    flags.append("FIELD_OPTIONAL")
+                elif field.seq:
+                    flags.append("FIELD_SEQUENCE")
+                if field.type in builtin_type_to_c_type:
+                    c_type = builtin_type_to_c_type[field.type]
+                    type_offset = str(builtins.index(c_type))
+                    flags.append("FIELD_BUILTIN")
+                else:
+                    type_offset = f"offsetof(struct ast_state, {field.type}_type)"
+                flags = " | ".join(flags) or "0"
+                self.emit(f"{{offsetof(struct ast_state, {field.name}),", 2)
+                self.emit(f" {type_offset}, {flags}}},", 2)
+        self.file.write(textwrap.dedent('''\
+            };
+            static const struct {
+                uint16_t type_offset;
+                uint16_t first_field;
+                uint16_t nfields;
+            } nodes[] = {
+        #''').removesuffix('#'))
+        start = 0
+        for name, fields in self.nodes:
+            self.emit(f"{{offsetof(struct ast_state, {name}_type), "
+                      f"{start}, {len(fields)}}},", 2)
+            start += len(fields)
+        self.file.write(textwrap.dedent('''\
+                };
+                char *base = (char *)state;
+                PyObject *annotations = NULL;
+                for (size_t i = 0; i < Py_ARRAY_LENGTH(nodes); i++) {
+                    annotations = PyDict_New();
+                    if (annotations == NULL) {
+                        goto error;
+                    }
+                    size_t end = nodes[i].first_field + nodes[i].nfields;
+                    for (size_t j = nodes[i].first_field; j < end; j++) {
+                        PyObject *name = *(PyObject **)(base + fields[j].name_offset);
+                        PyObject *type;
+                        if (fields[j].flags & FIELD_BUILTIN) {
+                            type = (PyObject *)builtin_types[fields[j].type_offset];
+                        }
+                        else {
+                            type = *(PyObject **)(base + fields[j].type_offset);
+                        }
+                        if (fields[j].flags & FIELD_OPTIONAL) {
+                            type = _Py_union_type_or(type, Py_None);
+                        }
+                        else if (fields[j].flags & FIELD_SEQUENCE) {
+                            type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+                        }
+                        else {
+                            Py_INCREF(type);
+                        }
+                        if (type == NULL) {
+                            goto error;
+                        }
+                        int res = PyDict_SetItem(annotations, name, type);
+                        Py_DECREF(type);
+                        if (res < 0) {
+                            goto error;
+                        }
+                    }
+                    PyObject *node = *(PyObject **)(base + nodes[i].type_offset);
+                    if (PyObject_SetAttrString(node, "_field_types", annotations) < 0 ||
+                        PyObject_SetAttrString(node, "__annotations__", annotations) < 0)
+                    {
+                        goto error;
+                    }
+                    Py_CLEAR(annotations);
+                }
                 return 1;
+            error:
+                Py_XDECREF(annotations);
+                return 0;
             }
         '''))
 
     def visitProduct(self, prod, name):
-        self.emit_annotations(name, prod.fields)
+        self.nodes.append((name, prod.fields))
 
     def visitSum(self, sum, name):
         for t in sum.types:
             self.visitConstructor(t, name)
 
     def visitConstructor(self, cons, name):
-        self.emit_annotations(cons.name, cons.fields)
-
-    def emit_annotations(self, name, fields):
-        self.emit(f"PyObject *{name}_annotations = PyDict_New();", 1)
-        self.emit(f"if (!{name}_annotations) return 0;", 1)
-        for field in fields:
-            self.emit("{", 1)
-            if field.type in builtin_type_to_c_type:
-                self.emit(f"PyObject *type = (PyObject *)&{builtin_type_to_c_type[field.type]};", 2)
-            else:
-                self.emit(f"PyObject *type = state->{field.type}_type;", 2)
-            if field.opt:
-                self.emit("type = _Py_union_type_or(type, Py_None);", 2)
-                self.emit("cond = type != NULL;", 2)
-                self.emit_annotations_error(name, 2)
-            elif field.seq:
-                self.emit("type = Py_GenericAlias((PyObject *)&PyList_Type, type);", 2)
-                self.emit("cond = type != NULL;", 2)
-                self.emit_annotations_error(name, 2)
-            else:
-                self.emit("Py_INCREF(type);", 2)
-            self.emit(f"cond = PyDict_SetItemString({name}_annotations, \"{field.name}\", type) == 0;", 2)
-            self.emit("Py_DECREF(type);", 2)
-            self.emit_annotations_error(name, 2)
-            self.emit("}", 1)
-        self.emit(f'cond = PyObject_SetAttrString(state->{name}_type, "_field_types", {name}_annotations) == 0;', 1)
-        self.emit_annotations_error(name, 1)
-        self.emit(f'cond = PyObject_SetAttrString(state->{name}_type, "__annotations__", {name}_annotations) == 0;', 1)
-        self.emit_annotations_error(name, 1)
-        self.emit(f"Py_DECREF({name}_annotations);", 1)
-
-    def emit_annotations_error(self, name, depth):
-        self.emit("if (!cond) {", depth)
-        self.emit(f"Py_DECREF({name}_annotations);", depth + 1)
-        self.emit("return 0;", depth + 1)
-        self.emit("}", depth)
+        self.nodes.append((cons.name, cons.fields))
 
 
 class PyTypesVisitor(PickleVisitor):
@@ -991,10 +1052,9 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
 
     res = 0; /* if no error occurs, this stays 0 to the end */
     if (numfields < PyTuple_GET_SIZE(args)) {
-        PyErr_Format(PyExc_TypeError, "%.400s constructor takes at most "
+        PyErr_Format(PyExc_TypeError, "%T constructor takes at most "
                      "%zd positional argument%s",
-                     _PyType_Name(Py_TYPE(self)),
-                     numfields, numfields == 1 ? "" : "s");
+                     self, numfields, numfields == 1 ? "" : "s");
         res = -1;
         goto cleanup;
     }
@@ -1481,35 +1541,34 @@ ast_repr_max_depth(AST_object *self, int depth)
         return NULL;
     }
 
-    if (depth <= 0) {
-        return PyUnicode_FromFormat("%s(...)", Py_TYPE(self)->tp_name);
-    }
-
-    int status = Py_ReprEnter((PyObject *)self);
-    if (status != 0) {
-        if (status < 0) {
-            return NULL;
-        }
-        return PyUnicode_FromFormat("%s(...)", Py_TYPE(self)->tp_name);
-    }
-
-    PyObject *fields;
-    if (PyObject_GetOptionalAttr((PyObject *)Py_TYPE(self), state->_fields, &fields) < 0) {
-        Py_ReprLeave((PyObject *)self);
+    PyObject *fields = PyObject_GetAttr((PyObject *)Py_TYPE(self), state->_fields);
+    if (!fields) {
         return NULL;
     }
 
     Py_ssize_t numfields = PySequence_Size(fields);
     if (numfields < 0) {
-        Py_ReprLeave((PyObject *)self);
         Py_DECREF(fields);
         return NULL;
     }
 
     if (numfields == 0) {
-        Py_ReprLeave((PyObject *)self);
         Py_DECREF(fields);
         return PyUnicode_FromFormat("%s()", Py_TYPE(self)->tp_name);
+    }
+
+    if (depth <= 0) {
+        Py_DECREF(fields);
+        return PyUnicode_FromFormat("%s(...)", Py_TYPE(self)->tp_name);
+    }
+
+    int status = Py_ReprEnter((PyObject *)self);
+    if (status != 0) {
+        Py_DECREF(fields);
+        if (status < 0) {
+            return NULL;
+        }
+        return PyUnicode_FromFormat("%s(...)", Py_TYPE(self)->tp_name);
     }
 
     const char* tp_name = Py_TYPE(self)->tp_name;
@@ -1748,7 +1807,7 @@ static int obj2ast_constant(struct ast_state *Py_UNUSED(state), PyObject* obj,
 static int obj2ast_identifier(struct ast_state *state, PyObject* obj, PyObject** out, const char* field, PyArena* arena)
 {
     if (!PyUnicode_CheckExact(obj) && obj != Py_None) {
-        PyErr_Format(PyExc_TypeError, "field '%s' was expecting a string object", field);
+        PyErr_Format(PyExc_TypeError, "field '%s' was expecting a string object, got %T", field, obj);
         return -1;
     }
     return obj2ast_object(state, obj, out, field, arena);
@@ -1757,7 +1816,7 @@ static int obj2ast_identifier(struct ast_state *state, PyObject* obj, PyObject**
 static int obj2ast_string(struct ast_state *state, PyObject* obj, PyObject** out, const char* field, PyArena* arena)
 {
     if (!PyUnicode_CheckExact(obj) && !PyBytes_CheckExact(obj)) {
-        PyErr_Format(PyExc_TypeError, "field '%s' was expecting a string or bytes object", field);
+        PyErr_Format(PyExc_TypeError, "field '%s' was expecting a string or bytes object, got %T", field, obj);
         return -1;
     }
     return obj2ast_object(state, obj, out, field, arena);
@@ -2123,29 +2182,32 @@ PyObject* PyAST_mod2obj(mod_ty t)
     return result;
 }
 
-/* mode is 0 for "exec", 1 for "eval" and 2 for "single" input */
+/* mode is 0 for "exec", 1 for "eval", 2 for "single" and 3 for "func_type"
+   input */
 int PyAst_CheckMode(PyObject *ast, int mode)
 {
-    const char * const req_name[] = {"Module", "Expression", "Interactive"};
+    const char * const req_name[] = {"Module", "Expression", "Interactive",
+                                     "FunctionType"};
 
     struct ast_state *state = get_ast_state();
     if (state == NULL) {
         return -1;
     }
 
-    PyObject *req_type[3];
+    PyObject *req_type[4];
     req_type[0] = state->Module_type;
     req_type[1] = state->Expression_type;
     req_type[2] = state->Interactive_type;
+    req_type[3] = state->FunctionType_type;
 
-    assert(0 <= mode && mode <= 2);
+    assert(0 <= mode && mode <= 3);
     int isinstance = PyObject_IsInstance(ast, req_type[mode]);
     if (isinstance == -1) {
         return -1;
     }
     if (!isinstance) {
-        PyErr_Format(PyExc_TypeError, "expected %s node, got %.400s",
-                     req_name[mode], _PyType_Name(Py_TYPE(ast)));
+        PyErr_Format(PyExc_TypeError, "expected %s node, got %T",
+                     req_name[mode], ast);
         return -1;
     }
     return 0;
@@ -2211,9 +2273,15 @@ def generate_ast_fini(module_state, f):
                 struct ast_state *state = &interp->ast;
 
     """))
+    f.write("    static const size_t offsets[] = {\n")
     for s in module_state:
-        f.write("    Py_CLEAR(state->" + s + ');\n')
+        f.write("        offsetof(struct ast_state, " + s + "),\n")
+    f.write("    };\n")
     f.write(textwrap.dedent("""
+                for (size_t i = 0; i < Py_ARRAY_LENGTH(offsets); i++) {
+                    PyObject **field = (PyObject **)((char *)state + offsets[i]);
+                    Py_CLEAR(*field);
+                }
                 state->finalized = 1;
                 state->once = (_PyOnceFlag){0};
             }

@@ -10,7 +10,6 @@ high memory limit to regrtest, with the -M option.
 
 from test import support
 from test.support import bigmemtest, _1G, _2G, _4G, import_helper
-_testcapi = import_helper.import_module('_testcapi')
 
 import unittest
 import operator
@@ -902,7 +901,7 @@ class TupleTest(unittest.TestCase):
     def test_repeat_large(self, size):
         return self.basic_test_repeat(size)
 
-    @bigmemtest(size=_1G - 1, memuse=12)
+    @bigmemtest(size=_1G - 1, memuse=pointer_size * 3)
     def test_repeat_large_2(self, size):
         return self.basic_test_repeat(size)
 
@@ -1264,6 +1263,7 @@ class ImmortalityTest(unittest.TestCase):
     def test_stickiness(self, size):
         """Check that immortality is "sticky", so that
            once an object is immortal it remains so."""
+        _testcapi = import_helper.import_module('_testcapi')
         if size < _2G:
             # Not enough memory to cause immortality on overflow
             return

@@ -19,7 +19,7 @@
 *.zip binary
 
 # Specific binary files
-PC/classicAppCompat.* binary
+# -- None right now --
 
 # Text files that should not be subject to eol conversion
 [attr]noeol -text
@@ -80,12 +80,12 @@ Include/internal/pycore_ast_state.h                 generated
 Include/internal/pycore_opcode.h                    generated
 Include/internal/pycore_opcode_metadata.h           generated
 Include/internal/pycore_*_generated.h               generated
+Include/internal/pycore_token.h                     generated
 Include/internal/pycore_uop_ids.h                   generated
 Include/internal/pycore_uop_metadata.h              generated
 Include/opcode.h                                    generated
 Include/opcode_ids.h                                generated
 Include/slots_generated.h                           generated
-Include/token.h                                     generated
 Lib/_opcode_metadata.py                             generated
 Lib/idlelib/help.html                               generated
 Lib/keyword.py                                      generated

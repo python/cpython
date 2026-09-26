@@ -577,6 +577,28 @@ class TestTurtleScreen(unittest.TestCase):
             s.update.assert_not_called()
         s.update.assert_called_once()
 
+    def test_update_is_not_reentrant(self):
+        # ondrag(goto) reenters _update() while cv.update() processes events;
+        # without a guard this recurses without bound (gh-50966).
+        s = turtle.TurtleScreen(cv=unittest.mock.MagicMock())
+        depth = max_depth = 0
+
+        def reenter():
+            nonlocal depth, max_depth
+            depth += 1
+            max_depth = max(max_depth, depth)
+            if depth < 50:
+                s._update()  # as an event handler would
+            depth -= 1
+
+        s.cv.update.reset_mock()  # ignore calls made during construction
+        s.cv.update.side_effect = reenter
+        s._update()
+        # cv.update() runs once; reentrant calls only flush idle tasks.
+        self.assertEqual(s.cv.update.call_count, 1)
+        self.assertEqual(max_depth, 1)
+        self.assertTrue(s.cv.update_idletasks.called)
+
 
 class TestTurtle(unittest.TestCase):
     def setUp(self):

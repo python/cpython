@@ -12,7 +12,7 @@
 #include "pycore_freelist.h"      // _PyObject_ClearFreeLists()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interpframe.h"   // _PyThreadState_HasStackSpace()
-#include "pycore_object.h"        // _PyType_InitCache(), _Py_ClearImmortal()
+#include "pycore_object.h"        // _Py_ClearImmortal()
 #include "pycore_obmalloc.h"      // _PyMem_obmalloc_state_on_heap()
 #include "pycore_opcode_utils.h"  // NUM_COMMON_CONSTANTS
 #include "pycore_optimizer.h"     // JIT_CLEANUP_THRESHOLD
@@ -420,8 +420,6 @@ _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime)
     }
 #endif
 
-    _PyTypes_AfterFork();
-
     _PyThread_AfterFork(&runtime->threads);
 
     return _PyStatus_OK();
@@ -573,7 +571,6 @@ init_interpreter(PyInterpreterState *interp,
     _PyEval_InitState(interp);
     _PyGC_InitState(&interp->gc);
     PyConfig_InitPythonConfig(&interp->config);
-    _PyType_InitCache(interp);
 #ifdef Py_GIL_DISABLED
     _Py_brc_init_state(interp);
 #endif
@@ -656,6 +653,9 @@ init_interpreter(PyInterpreterState *interp,
         NULL,
         &alloc
     );
+    if (interp->open_stackrefs_table == NULL) {
+        return _PyStatus_NO_MEMORY();
+    }
 #  ifdef Py_STACKREF_CLOSE_DEBUG
     interp->closed_stackrefs_table = _Py_hashtable_new_full(
         _Py_hashtable_hash_ptr,
@@ -664,6 +664,9 @@ init_interpreter(PyInterpreterState *interp,
         NULL,
         &alloc
     );
+    if (interp->closed_stackrefs_table == NULL) {
+        return _PyStatus_NO_MEMORY();
+    }
 #  endif
     _Py_stackref_associate(interp, Py_None, PyStackRef_None);
     _Py_stackref_associate(interp, Py_False, PyStackRef_False);
@@ -1505,6 +1508,8 @@ alloc_threadstate(PyInterpreterState *interp)
         }
         reset_threadstate(tstate);
     }
+    // Set the interpreter before any later initialization can fail.
+    tstate->base.interp = interp;
     return tstate;
 }
 
@@ -1605,6 +1610,8 @@ init_threadstate(_PyThreadStateImpl *_tstate,
     tstate->current_frame = &_tstate->base_frame;
     // base_frame pointer for profilers to validate stack unwinding
     tstate->base_frame = &_tstate->base_frame;
+    tstate->last_profiled_frame = NULL;
+    tstate->last_profiled_frame_seq = 0;
     tstate->datastack_chunk = NULL;
     tstate->datastack_top = NULL;
     tstate->datastack_limit = NULL;
@@ -1662,21 +1669,23 @@ new_threadstate(PyInterpreterState *interp, int whence)
         return NULL;
     }
 
-#ifdef Py_GIL_DISABLED
-    Py_ssize_t qsbr_idx = _Py_qsbr_reserve(interp);
-    if (qsbr_idx < 0) {
+#ifdef Py_STATS
+    // The PyStats structure is quite large and is allocated separated from
+    // tstate.
+    if (!_PyStats_ThreadInit(interp, tstate)) {
         free_threadstate(tstate);
         return NULL;
     }
+#endif
+#ifdef Py_GIL_DISABLED
     int32_t tlbc_idx = _Py_ReserveTLBCIndex(interp);
     if (tlbc_idx < 0) {
         free_threadstate(tstate);
         return NULL;
     }
-#endif
-#ifdef Py_STATS
-    // The PyStats structure is quite large and is allocated separated from tstate.
-    if (!_PyStats_ThreadInit(interp, tstate)) {
+    Py_ssize_t qsbr_idx = _Py_qsbr_reserve(interp);
+    if (qsbr_idx < 0) {
+        _Py_UnreserveTLBCIndex(interp, tlbc_idx);
         free_threadstate(tstate);
         return NULL;
     }
@@ -1930,7 +1939,10 @@ tstate_delete_common(PyThreadState *tstate, int release_gil)
     if (tstate->next) {
         tstate->next->prev = tstate->prev;
     }
-    if (tstate->state != _Py_THREAD_SUSPENDED) {
+    int state = _Py_atomic_load_int_relaxed(&tstate->state);
+    if (state != _Py_THREAD_SUSPENDED &&
+        state != _Py_THREAD_SUSPENDED_WAITING)
+    {
         // Any ongoing stop-the-world request should not wait for us because
         // our thread is getting deleted.
         if (interp->stoptheworld.requested) {
@@ -2214,6 +2226,22 @@ tstate_try_attach(PyThreadState *tstate)
 #endif
 }
 
+static int
+tstate_try_attach_detached(PyThreadState *tstate, int *state)
+{
+#ifdef Py_GIL_DISABLED
+    assert(*state == _Py_THREAD_DETACHED ||
+           *state == _Py_THREAD_DETACHED_WAITING);
+    return _Py_atomic_compare_exchange_int(&tstate->state,
+                                           state,
+                                           _Py_THREAD_ATTACHED);
+#else
+    assert(tstate->state == _Py_THREAD_DETACHED);
+    tstate->state = _Py_THREAD_ATTACHED;
+    return 1;
+#endif
+}
+
 static void
 tstate_set_detached(PyThreadState *tstate, int detached_state)
 {
@@ -2228,10 +2256,20 @@ tstate_set_detached(PyThreadState *tstate, int detached_state)
 static void
 tstate_wait_attach(PyThreadState *tstate)
 {
-    do {
+    for (;;) {
         int state = _Py_atomic_load_int_relaxed(&tstate->state);
         if (state == _Py_THREAD_SUSPENDED) {
-            // Wait until we're switched out of SUSPENDED to DETACHED.
+            // Register an active attach waiter. The next stop-the-world
+            // request must let this thread attach before suspending it again.
+            if (!_Py_atomic_compare_exchange_int(
+                    &tstate->state, &state, _Py_THREAD_SUSPENDED_WAITING))
+            {
+                continue;
+            }
+            state = _Py_THREAD_SUSPENDED_WAITING;
+        }
+        if (state == _Py_THREAD_SUSPENDED_WAITING) {
+            // Park rechecks the state before sleeping, in case we were resumed.
             _PyParkingLot_Park(&tstate->state, &state, sizeof(tstate->state),
                                /*timeout=*/-1, NULL, /*detach=*/0);
         }
@@ -2240,10 +2278,13 @@ tstate_wait_attach(PyThreadState *tstate)
             _PyThreadState_HangThread(tstate);
         }
         else {
-            assert(state == _Py_THREAD_DETACHED);
+            assert(state == _Py_THREAD_DETACHED ||
+                   state == _Py_THREAD_DETACHED_WAITING);
+            if (tstate_try_attach_detached(tstate, &state)) {
+                return;
+            }
         }
-        // Once we're back in DETACHED we can re-attach
-    } while (!tstate_try_attach(tstate));
+    }
 }
 
 void
@@ -2371,6 +2412,41 @@ _PyThreadState_SetShuttingDown(PyThreadState *tstate)
 #endif
 }
 
+#ifdef Py_GIL_DISABLED
+int
+_PyThreadState_TrySuspendDetached(PyThreadState *tstate)
+{
+    assert(tstate != _PyThreadState_GET());
+    int expected = _Py_THREAD_DETACHED;
+    return _Py_atomic_compare_exchange_int(&tstate->state, &expected,
+                                           _Py_THREAD_SUSPENDED);
+}
+
+void
+_PyThreadState_ResumeDetached(PyThreadState *tstate)
+{
+    assert(tstate != _PyThreadState_GET());
+    int state = _Py_atomic_load_int_relaxed(&tstate->state);
+    int next_state;
+    do {
+        assert(state == _Py_THREAD_SUSPENDED ||
+               state == _Py_THREAD_SUSPENDED_WAITING);
+        if (state == _Py_THREAD_SUSPENDED_WAITING) {
+            next_state = _Py_THREAD_DETACHED_WAITING;
+        }
+        else {
+            next_state = _Py_THREAD_DETACHED;
+        }
+        // Retry if an attach waiter registered concurrently.
+    } while (!_Py_atomic_compare_exchange_int(
+                &tstate->state, &state, next_state));
+    // Wake the thread if it is parked in tstate_wait_attach().
+    if (state == _Py_THREAD_SUSPENDED_WAITING) {
+        _PyParkingLot_UnparkAll(&tstate->state);
+    }
+}
+#endif
+
 // Decrease stop-the-world counter of remaining number of threads that need to
 // pause. If we are the final thread to pause, notify the requesting thread.
 static void
@@ -2412,6 +2488,8 @@ park_detached_threads(struct _stoptheworld_state *stw)
     _Py_FOR_EACH_STW_INTERP(stw, i) {
         _Py_FOR_EACH_TSTATE_UNLOCKED(i, t) {
             int state = _Py_atomic_load_int_relaxed(&t->state);
+            // DETACHED_WAITING threads remain counted until they attach and
+            // stop, so repeated pauses cannot prevent them from attaching.
             if (state == _Py_THREAD_DETACHED) {
                 // Atomically transition to "suspended" if in "detached" state.
                 if (_Py_atomic_compare_exchange_int(
@@ -2500,10 +2578,7 @@ start_the_world(struct _stoptheworld_state *stw)
     _Py_FOR_EACH_STW_INTERP(stw, i) {
         _Py_FOR_EACH_TSTATE_UNLOCKED(i, t) {
             if (t != stw->requester) {
-                assert(_Py_atomic_load_int_relaxed(&t->state) ==
-                       _Py_THREAD_SUSPENDED);
-                _Py_atomic_store_int(&t->state, _Py_THREAD_DETACHED);
-                _PyParkingLot_UnparkAll(&t->state);
+                _PyThreadState_ResumeDetached(t);
             }
         }
     }
@@ -3410,8 +3485,8 @@ PyInterpreterGuard_FromCurrent(void)
     return guard;
 }
 
-void
-PyInterpreterGuard_Close(PyInterpreterGuard *guard)
+static void
+release_interp_guard(PyInterpreterGuard *guard)
 {
     PyInterpreterState *interp = guard->interp;
     assert(interp != NULL);
@@ -3423,7 +3498,26 @@ PyInterpreterGuard_Close(PyInterpreterGuard *guard)
     }
 
     assert(old_value > 0);
+}
+
+void
+PyInterpreterGuard_Close(PyInterpreterGuard *guard)
+{
+    release_interp_guard(guard);
     PyMem_RawFree(guard);
+}
+
+int
+_PyInterpreterGuard_TryAcquire(PyInterpreterState *interp,
+                               PyInterpreterGuard *guard)
+{
+    return try_acquire_interp_guard(interp, guard);
+}
+
+void
+_PyInterpreterGuard_Release(PyInterpreterGuard *guard)
+{
+    release_interp_guard(guard);
 }
 
 PyInterpreterView *

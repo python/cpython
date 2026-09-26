@@ -217,6 +217,17 @@ PyObject_AsFileDescriptor(PyObject *o)
 }
 
 int
+_Py_Off_t_Converter(PyObject *arg, void *addr)
+{
+#ifdef HAVE_LARGEFILE_SUPPORT
+    *((Py_off_t *)addr) = PyLong_AsLongLong(arg);
+#else
+    *((Py_off_t *)addr) = PyLong_AsLong(arg);
+#endif
+    return PyErr_Occurred() ? 0 : 1;
+}
+
+int
 _PyLong_FileDescriptor_Converter(PyObject *o, void *ptr)
 {
     int fd = PyObject_AsFileDescriptor(o);
