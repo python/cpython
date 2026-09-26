@@ -4384,19 +4384,40 @@ lazy_import_spec_is_initializing(PyObject *spec)
     if (spec == Py_None) {
         return 0;
     }
-    PyObject *dict = PyObject_GenericGetDict(spec, NULL);
-    if (dict == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
-            PyErr_Clear();
+    PyObject *initializing = NULL;
+    int rc = 0;
+    if ((Py_TYPE(spec)->tp_flags & Py_TPFLAGS_INLINE_VALUES) &&
+        _PyObject_TryGetInstanceAttribute(spec, &_Py_ID(_initializing), &initializing)) {
+        rc = initializing != NULL;
+    }
+    else {
+        // Read the existing dictionary without materializing inline values.
+        PyObject *dict = NULL;
+        bool has_dict = true;
+        Py_BEGIN_CRITICAL_SECTION(spec);
+        if (Py_TYPE(spec)->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
+            dict = Py_XNewRef((PyObject *)_PyObject_GetManagedDict(spec));
+        }
+        else {
+            PyObject **dictptr = _PyObject_ComputedDictPointer(spec);
+            if (dictptr != NULL) {
+                dict = Py_XNewRef(*dictptr);
+            }
+            else {
+                has_dict = false;
+            }
+        }
+        Py_END_CRITICAL_SECTION();
+        if (!has_dict) {
             return 1;
         }
-        return -1;
-    }
-    PyObject *initializing;
-    int rc = PyDict_GetItemRef(dict, &_Py_ID(_initializing), &initializing);
-    Py_DECREF(dict);
-    if (rc < 0) {
-        return -1;
+        if (dict != NULL) {
+            rc = PyDict_GetItemRef(dict, &_Py_ID(_initializing), &initializing);
+            Py_DECREF(dict);
+            if (rc < 0) {
+                return -1;
+            }
+        }
     }
     if (rc == 0) {
         initializing = _PyType_LookupRef(Py_TYPE(spec), &_Py_ID(_initializing));

@@ -1467,7 +1467,11 @@ class SysLazyModulesTrackingTests(LazyImportTestCase):
                 def _initializing(self):
                     raise RuntimeError("_initializing descriptor was run")
 
-            for spec in (Spec(), SlottedSpec()):
+            class EmptySpec:
+                __slots__ = ()
+
+            for spec in (Spec(), SlottedSpec(), EmptySpec(), object()):
+                sys.lazy_modules.discard("custom_spec")
                 module = types.ModuleType("custom_spec")
                 module.__spec__ = spec
                 sys.modules["custom_spec"] = module
