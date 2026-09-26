@@ -1,0 +1,5 @@
+Fix a crash in :mod:`sqlite3` window functions.  The ``value()`` and
+``inverse()`` aggregate callbacks no longer dereference a ``NULL`` pointer
+when SQLite invokes them for an empty window frame before ``step()`` has run
+for that aggregate instance; the aggregate instance is now created lazily, as
+it already was for ``step()``.
