@@ -1,3 +1,4 @@
+import copy
 import io
 import types
 import textwrap
@@ -253,6 +254,16 @@ class PolicyAPITests(unittest.TestCase):
         self.assertIsInstance(h, self.Foo)
         h = policy2.header_factory('foo', 'test')
         self.assertIsInstance(h, self.Foo)
+
+    def test_copy_replace(self):
+        policy = email.policy.default
+        new = copy.replace(policy, max_line_length=100)
+        self.assertIsInstance(new, type(policy))
+        self.assertEqual(new.max_line_length, 100)
+        self.assertEqual(new.linesep, policy.linesep)
+        self.assertEqual(policy.max_line_length, 78)
+        with self.assertRaises(TypeError):
+            copy.replace(policy, no_such_attribute=1)
 
     def test_new_factory_overrides_default(self):
         mypolicy = email.policy.EmailPolicy()
