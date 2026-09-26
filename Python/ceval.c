@@ -3333,7 +3333,43 @@ _PyEval_LazyImportFrom(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObje
     assert(PyUnicode_Check(name));
     PyObject *ret;
     PyLazyImportObject *d = (PyLazyImportObject *)v;
-    PyObject *mod = PyImport_GetModule(d->lz_from);
+
+    PyObject *from;
+    int last_step;
+    if (d->lz_attr != NULL) {
+        if (PyUnicode_Check(d->lz_attr)) {
+            from = PyUnicode_FromFormat("%U.%U", d->lz_from, d->lz_attr);
+            if (from == NULL) {
+                return NULL;
+            }
+            last_step = 0;
+        }
+        else {
+            from = Py_NewRef(d->lz_from);
+            last_step = 1;
+        }
+    }
+    else {
+        Py_ssize_t len = PyUnicode_GET_LENGTH(d->lz_from);
+        Py_ssize_t dot = PyUnicode_FindChar(d->lz_from, '.', 0, len, 1);
+        if (dot >= 0) {
+            from = PyUnicode_Substring(d->lz_from, 0, dot);
+            if (from == NULL) {
+                return NULL;
+            }
+            last_step = PyUnicode_FindChar(
+                d->lz_from, '.', dot + 1, len, 1) == -1;
+        }
+        else {
+            from = Py_NewRef(d->lz_from);
+            last_step = 1;
+        }
+    }
+
+    PyObject *mod = NULL;
+    if (last_step) {
+        mod = PyImport_GetModule(from);
+    }
     if (mod != NULL) {
         // Check if the module already has the attribute, if so, resolve it
         // eagerly.
@@ -3342,10 +3378,12 @@ _PyEval_LazyImportFrom(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObje
             if (mod_dict != NULL) {
                 if (PyDict_GetItemRef(mod_dict, name, &ret) < 0) {
                     Py_DECREF(mod);
+                    Py_DECREF(from);
                     return NULL;
                 }
                 if (ret != NULL) {
                     Py_DECREF(mod);
+                    Py_DECREF(from);
                     return ret;
                 }
             }
@@ -3353,33 +3391,8 @@ _PyEval_LazyImportFrom(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObje
         Py_DECREF(mod);
     }
 
-    if (d->lz_attr != NULL) {
-        if (PyUnicode_Check(d->lz_attr)) {
-            PyObject *from = PyUnicode_FromFormat(
-                "%U.%U", d->lz_from, d->lz_attr);
-            if (from == NULL) {
-                return NULL;
-            }
-            ret = _PyLazyImport_New(frame, d->lz_builtins, from, name);
-            Py_DECREF(from);
-            return ret;
-        }
-    }
-    else {
-        Py_ssize_t dot = PyUnicode_FindChar(
-            d->lz_from, '.', 0, PyUnicode_GET_LENGTH(d->lz_from), 1
-        );
-        if (dot >= 0) {
-            PyObject *from = PyUnicode_Substring(d->lz_from, 0, dot);
-            if (from == NULL) {
-                return NULL;
-            }
-            ret = _PyLazyImport_New(frame, d->lz_builtins, from, name);
-            Py_DECREF(from);
-            return ret;
-        }
-    }
-    ret = _PyLazyImport_New(frame, d->lz_builtins, d->lz_from, name);
+    ret = _PyLazyImport_New(frame, d->lz_builtins, from, name);
+    Py_DECREF(from);
     return ret;
 }
 
