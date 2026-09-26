@@ -1,0 +1,3 @@
+Fix :class:`wsgiref.headers.Headers` so that ``__setitem__`` keeps the
+existing header value when validation of the new value fails. Patch by
+Tony Leung.
