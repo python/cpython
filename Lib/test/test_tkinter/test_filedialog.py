@@ -4,7 +4,7 @@ from tkinter import filedialog
 from tkinter.commondialog import Dialog
 from test.support import requires, swap_attr
 from test.test_tkinter.support import setUpModule  # noqa: F401
-from test.test_tkinter.support import AbstractTkTest
+from test.test_tkinter.support import AbstractDialogTest, AbstractTkTest
 
 requires('gui')
 
@@ -37,7 +37,7 @@ class NativeDialogTest(AbstractTkTest, unittest.TestCase):
         self.check(filedialog.Directory, 'tk_chooseDirectory')
 
 
-class FileDialogTest(AbstractTkTest, unittest.TestCase):
+class FileDialogTest(AbstractDialogTest, unittest.TestCase):
     # The pure-Python FileDialog runs its own modal loop in go(); its logic is
     # exercised here without entering the loop.
 
