@@ -692,12 +692,25 @@ Glossary
          285
 
    generic function
-      A function composed of multiple functions implementing the same operation
-      for different types. Which implementation should be used during a call is
-      determined by the dispatch algorithm.
+      This term has two distinct meanings:
 
-      See also the :term:`single dispatch` glossary entry, the
-      :deco:`functools.singledispatch` decorator, and :pep:`443`.
+      * A function composed of multiple functions implementing the same
+        operation for different types. Which implementation should be used
+        during a call is determined by the dispatch algorithm.
+
+        See also the :term:`single dispatch` glossary entry, the
+        :deco:`functools.singledispatch` decorator, and :pep:`443`.
+
+      * A function parameterized by one or more type variables, so that it
+        can be used with many types while a :term:`static type checker`
+        still tracks how the types of its arguments relate to the type of
+        its return value. Such a function is usually declared with a
+        :ref:`type parameter list <type-params>`, as in
+        ``def first[T](values: list[T]) -> T: ...``; it can also be written
+        with explicit :class:`typing.TypeVar` objects, which was the only
+        way before Python 3.12.
+
+        See :ref:`generic-functions` and :pep:`695`.
 
    generic type
       A :term:`type` that can be parameterized; typically a
