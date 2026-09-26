@@ -3336,7 +3336,8 @@ _PyEval_LazyImportFrom(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObje
     PyObject *mod = NULL;
     // Only `from a import b` can take b off an already imported a;
     // `import a.b as c` has to import a.b first.
-    if (d->lz_attr != NULL && PyTuple_Check(d->lz_attr)) {
+    if (d->lz_attr != NULL && PyTuple_Check(d->lz_attr) &&
+        PyTuple_GET_SIZE(d->lz_attr) > 0) {
         mod = PyImport_GetModule(d->lz_from);
     }
     if (mod != NULL) {

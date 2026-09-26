@@ -26,10 +26,6 @@ _PyLazyImport_New(_PyInterpreterFrame *frame, PyObject *builtins, PyObject *name
             "lazy_import: fromlist must be None, a string, or a tuple");
         return NULL;
     }
-    else if (PyTuple_Check(fromlist) && PyTuple_GET_SIZE(fromlist) == 0) {
-        // __import__("a.b", fromlist=()) returns `a`, as fromlist=None does.
-        fromlist = NULL;
-    }
     m = PyObject_GC_New(PyLazyImportObject, &PyLazyImport_Type);
     if (m == NULL) {
         return NULL;
@@ -121,7 +117,8 @@ lazy_import_path(PyLazyImportObject *m)
         Py_DECREF(base);
         return res;
     }
-    if (m->lz_attr != NULL) {
+    if (m->lz_attr != NULL &&
+        (!PyTuple_Check(m->lz_attr) || PyTuple_GET_SIZE(m->lz_attr) > 0)) {
         return Py_NewRef(m->lz_from);
     }
     // __import__("a.b") returns the top-level package `a`.
@@ -143,7 +140,8 @@ lazy_import_name(PyLazyImportObject *m)
     if (PyLazyImport_CheckExact(m->lz_from)) {
         return lazy_import_path(m);
     }
-    if (m->lz_attr != NULL) {
+    if (m->lz_attr != NULL &&
+        (!PyTuple_Check(m->lz_attr) || PyTuple_GET_SIZE(m->lz_attr) > 0)) {
         return PyUnicode_FromFormat("%U...", m->lz_from);
     }
     return Py_NewRef(m->lz_from);

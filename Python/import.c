@@ -3984,8 +3984,10 @@ _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
 
     if (root->lz_attr != NULL) {
         // `from a import b, c`: import only the name being resolved.
-        fromlist = first ? PyTuple_Pack(1, first->lz_attr)
-                         : Py_NewRef(root->lz_attr);
+        // Keep an empty tuple intact for custom __import__ hooks.
+        fromlist = first && PyTuple_GET_SIZE(root->lz_attr) > 0
+            ? PyTuple_Pack(1, first->lz_attr)
+            : Py_NewRef(root->lz_attr);
         if (fromlist == NULL) {
             goto error;
         }

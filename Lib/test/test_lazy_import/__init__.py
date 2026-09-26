@@ -2293,6 +2293,36 @@ class ModuleVariableNameCollisionTests(unittest.TestCase):
         """)
         assert_python_ok("-c", code)
 
+    def test_empty_fromlist_preserved_for_custom_import(self):
+        code = textwrap.dedent("""
+            import builtins
+            import types
+
+            value = object()
+            module = types.SimpleNamespace(dom=value)
+            placeholder = [__lazy_import__("xml.dom", fromlist=())]
+            default_import = builtins.__import__
+            default_lazy_import = builtins.__lazy_import__
+            calls = []
+
+            def import_hook(name, globals, locals, fromlist, level):
+                assert name == "xml.dom", name
+                assert fromlist == (), fromlist
+                calls.append(fromlist)
+                return module
+
+            builtins.__import__ = import_hook
+            assert placeholder[0].resolve() is module
+            builtins.__lazy_import__ = lambda *args: placeholder[0]
+            lazy import fake.dom as dom
+            assert dom is value
+            builtins.__import__ = default_import
+            builtins.__lazy_import__ = default_lazy_import
+
+            assert calls == [(), ()], calls
+        """)
+        assert_python_ok("-c", code)
+
     def test_dotted_as_replays_lookups_on_dotted_placeholder(self):
         """A dotted lazy import as replays its names on the hook's package."""
         # importlib.metadata has a `metadata` attribute of its own, which the
