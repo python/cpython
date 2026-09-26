@@ -3683,6 +3683,23 @@ dummy_func(
             len = PyStackRef_FromPyObjectSteal(len_o);
         }
 
+        inst(MATCH_CLASS_GET_OPT_ATTR, (subject -- subject, attr, res)) {
+            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
+            assert(PyUnicode_CheckExact(name));
+            PyObject *subject_o = PyStackRef_AsPyObjectBorrow(subject);
+            PyObject *attr_o;
+            (void)PyObject_GetOptionalAttr(subject_o, name, &attr_o);
+            if (attr_o) {
+                assert(!_PyErr_Occurred(tstate));  // Success!
+                attr = PyStackRef_FromPyObjectSteal(attr_o);
+                res = PyStackRef_True;
+            } else {
+                ERROR_IF(_PyErr_Occurred(tstate));  // Error!
+                attr = PyStackRef_FromPyObjectSteal(Py_None);  // No attribute found!
+                res = PyStackRef_False;
+            }
+        }
+
         op(_MATCH_CLASS, (subject, type, names -- attrs, s, tp, n)) {
             // Pop TOS and TOS1. Set TOS to a tuple of attributes on success, or
             // None on failure.

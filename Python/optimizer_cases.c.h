@@ -3507,6 +3507,19 @@
             break;
         }
 
+        case _MATCH_CLASS_GET_OPT_ATTR: {
+            JitOptRef attr;
+            JitOptRef res;
+            attr = sym_new_not_null(ctx);
+            res = sym_new_not_null(ctx);
+            CHECK_STACK_BOUNDS(2);
+            stack_pointer[0] = attr;
+            stack_pointer[1] = res;
+            stack_pointer += 2;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
         case _MATCH_CLASS: {
             JitOptRef names;
             JitOptRef type;
