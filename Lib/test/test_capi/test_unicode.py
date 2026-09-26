@@ -1910,6 +1910,18 @@ class PyUnicodeWriterTest(unittest.TestCase):
         self.assertGreater(writer.get_buffer()[0], len(s))
         self.assertEqual(writer.finish(), s)
 
+    def test_str_subclass(self):
+        # The read-only optimization must not return a str subclass
+        class MyStr(str):
+            def __str__(self):
+                return self
+
+        writer = self.create_writer(0)
+        writer.write_str(MyStr('abc'))
+        result = writer.finish()
+        self.assertEqual(result, 'abc')
+        self.assertIs(type(result), str)
+
     def test_repr_null(self):
         writer = self.create_writer(0)
         writer.write_utf8(b'var=', -1)
