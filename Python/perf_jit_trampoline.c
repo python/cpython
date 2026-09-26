@@ -672,7 +672,7 @@ static void perf_map_jit_write_entry_with_name(
     uint64_t thread_id = 0;
     pthread_threadid_np(NULL, &thread_id);
     ev.thread_id = (uint32_t)thread_id;
-#elif defined(HAVE_GETTID)
+#elif defined(_Py_HAVE_GETTID)
     ev.thread_id = gettid();
 #else
     ev.thread_id = syscall(SYS_gettid);  // Get thread ID via system call

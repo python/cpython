@@ -20587,12 +20587,6 @@ then :
   printf "%s\n" "#define HAVE_GAI_STRERROR 1" >>confdefs.h
 
 fi
-ac_fn_c_check_func "$LINENO" "getdents64" "ac_cv_func_getdents64"
-if test "x$ac_cv_func_getdents64" = xyes
-then :
-  printf "%s\n" "#define HAVE_GETDENTS64 1" >>confdefs.h
-
-fi
 ac_fn_c_check_func "$LINENO" "getegid" "ac_cv_func_getegid"
 if test "x$ac_cv_func_getegid" = xyes
 then :
@@ -20767,12 +20761,6 @@ then :
   printf "%s\n" "#define HAVE_GETSPNAM 1" >>confdefs.h
 
 fi
-ac_fn_c_check_func "$LINENO" "gettid" "ac_cv_func_gettid"
-if test "x$ac_cv_func_gettid" = xyes
-then :
-  printf "%s\n" "#define HAVE_GETTID 1" >>confdefs.h
-
-fi
 ac_fn_c_check_func "$LINENO" "getuid" "ac_cv_func_getuid"
 if test "x$ac_cv_func_getuid" = xyes
 then :
@@ -20791,22 +20779,10 @@ then :
   printf "%s\n" "#define HAVE_GRANTPT 1" >>confdefs.h
 
 fi
-ac_fn_c_check_func "$LINENO" "if_indextoname" "ac_cv_func_if_indextoname"
-if test "x$ac_cv_func_if_indextoname" = xyes
-then :
-  printf "%s\n" "#define HAVE_IF_INDEXTONAME 1" >>confdefs.h
-
-fi
 ac_fn_c_check_func "$LINENO" "if_nameindex" "ac_cv_func_if_nameindex"
 if test "x$ac_cv_func_if_nameindex" = xyes
 then :
   printf "%s\n" "#define HAVE_IF_NAMEINDEX 1" >>confdefs.h
-
-fi
-ac_fn_c_check_func "$LINENO" "if_nametoindex" "ac_cv_func_if_nametoindex"
-if test "x$ac_cv_func_if_nametoindex" = xyes
-then :
-  printf "%s\n" "#define HAVE_IF_NAMETOINDEX 1" >>confdefs.h
 
 fi
 ac_fn_c_check_func "$LINENO" "initgroups" "ac_cv_func_initgroups"
@@ -20951,24 +20927,6 @@ ac_fn_c_check_func "$LINENO" "pause" "ac_cv_func_pause"
 if test "x$ac_cv_func_pause" = xyes
 then :
   printf "%s\n" "#define HAVE_PAUSE 1" >>confdefs.h
-
-fi
-ac_fn_c_check_func "$LINENO" "pidfd_open" "ac_cv_func_pidfd_open"
-if test "x$ac_cv_func_pidfd_open" = xyes
-then :
-  printf "%s\n" "#define HAVE_PIDFD_OPEN 1" >>confdefs.h
-
-fi
-ac_fn_c_check_func "$LINENO" "pidfd_getfd" "ac_cv_func_pidfd_getfd"
-if test "x$ac_cv_func_pidfd_getfd" = xyes
-then :
-  printf "%s\n" "#define HAVE_PIDFD_GETFD 1" >>confdefs.h
-
-fi
-ac_fn_c_check_func "$LINENO" "pidfd_send_signal" "ac_cv_func_pidfd_send_signal"
-if test "x$ac_cv_func_pidfd_send_signal" = xyes
-then :
-  printf "%s\n" "#define HAVE_PIDFD_SEND_SIGNAL 1" >>confdefs.h
 
 fi
 ac_fn_c_check_func "$LINENO" "pipe" "ac_cv_func_pipe"
@@ -21613,6 +21571,300 @@ then :
   printf "%s\n" "#define HAVE_WRITEV 1" >>confdefs.h
 
 fi
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for getdents64" >&5
+printf %s "checking for getdents64... " >&6; }
+if test ${ac_cv_func_getdents64+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+void *x=getdents64
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_func_getdents64=yes
+else case e in #(
+  e) ac_cv_func_getdents64=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_getdents64" >&5
+printf "%s\n" "$ac_cv_func_getdents64" >&6; }
+  if test "x$ac_cv_func_getdents64" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_GETDENTS64 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for gettid" >&5
+printf %s "checking for gettid... " >&6; }
+if test ${ac_cv_func_gettid+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+void *x=gettid
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_func_gettid=yes
+else case e in #(
+  e) ac_cv_func_gettid=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_gettid" >&5
+printf "%s\n" "$ac_cv_func_gettid" >&6; }
+  if test "x$ac_cv_func_gettid" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_GETTID 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for if_indextoname" >&5
+printf %s "checking for if_indextoname... " >&6; }
+if test ${ac_cv_func_if_indextoname+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+void *x=if_indextoname
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_func_if_indextoname=yes
+else case e in #(
+  e) ac_cv_func_if_indextoname=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_if_indextoname" >&5
+printf "%s\n" "$ac_cv_func_if_indextoname" >&6; }
+  if test "x$ac_cv_func_if_indextoname" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_IF_INDEXTONAME 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for if_nametoindex" >&5
+printf %s "checking for if_nametoindex... " >&6; }
+if test ${ac_cv_func_if_nametoindex+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+void *x=if_nametoindex
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_func_if_nametoindex=yes
+else case e in #(
+  e) ac_cv_func_if_nametoindex=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_if_nametoindex" >&5
+printf "%s\n" "$ac_cv_func_if_nametoindex" >&6; }
+  if test "x$ac_cv_func_if_nametoindex" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_IF_NAMETOINDEX 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for pidfd_open" >&5
+printf %s "checking for pidfd_open... " >&6; }
+if test ${ac_cv_func_pidfd_open+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+void *x=pidfd_open
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_func_pidfd_open=yes
+else case e in #(
+  e) ac_cv_func_pidfd_open=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_pidfd_open" >&5
+printf "%s\n" "$ac_cv_func_pidfd_open" >&6; }
+  if test "x$ac_cv_func_pidfd_open" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_PIDFD_OPEN 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for pidfd_getfd" >&5
+printf %s "checking for pidfd_getfd... " >&6; }
+if test ${ac_cv_func_pidfd_getfd+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+void *x=pidfd_getfd
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_func_pidfd_getfd=yes
+else case e in #(
+  e) ac_cv_func_pidfd_getfd=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_pidfd_getfd" >&5
+printf "%s\n" "$ac_cv_func_pidfd_getfd" >&6; }
+  if test "x$ac_cv_func_pidfd_getfd" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_PIDFD_GETFD 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for pidfd_send_signal" >&5
+printf %s "checking for pidfd_send_signal... " >&6; }
+if test ${ac_cv_func_pidfd_send_signal+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+void *x=pidfd_send_signal
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_func_pidfd_send_signal=yes
+else case e in #(
+  e) ac_cv_func_pidfd_send_signal=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_pidfd_send_signal" >&5
+printf "%s\n" "$ac_cv_func_pidfd_send_signal" >&6; }
+  if test "x$ac_cv_func_pidfd_send_signal" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_PIDFD_SEND_SIGNAL 1" >>confdefs.h
+
+fi
+
+
+
 
 
 # os.statx uses Linux's statx function.  AIX also has a function named statx,

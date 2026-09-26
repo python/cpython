@@ -1304,7 +1304,7 @@ signal_pthread_kill_impl(PyObject *module, unsigned long thread_id,
 
 
 // This system call always crashes on older Android versions.
-#if defined(HAVE_PIDFD_SEND_SIGNAL) \
+#if defined(_Py_HAVE_PIDFD_SEND_SIGNAL) \
     || (defined(__linux__) && defined(__NR_pidfd_send_signal) \
         && !(defined(__ANDROID__) && __ANDROID_API__ < 31))
 /*[clinic input]
@@ -1329,7 +1329,7 @@ signal_pidfd_send_signal_impl(PyObject *module, int pidfd, int signalnum,
         PyErr_SetString(PyExc_TypeError, "siginfo must be None");
         return NULL;
     }
-#ifdef HAVE_PIDFD_SEND_SIGNAL
+#ifdef _Py_HAVE_PIDFD_SEND_SIGNAL
     int res = pidfd_send_signal(pidfd, signalnum, NULL, flags);
 #else
     int res = syscall(__NR_pidfd_send_signal, pidfd, signalnum, NULL, flags);
