@@ -1372,6 +1372,25 @@ class SysLazyModulesTrackingTests(LazyImportTestCase):
         """)
         assert_python_ok("-c", code)
 
+    def test_module_spec_descriptor_is_not_run(self):
+        """Checking whether a module is loaded must not run its descriptors."""
+        code = textwrap.dedent("""
+            import sys
+            import types
+
+            class RaisingSpec(types.ModuleType):
+                @property
+                def __spec__(self):
+                    raise RuntimeError("__spec__ descriptor was run")
+
+            sys.modules["raising_spec"] = RaisingSpec("raising_spec")
+            lazy import raising_spec
+            assert "raising_spec" not in sys.lazy_modules, (
+                f"expected 'raising_spec' untracked, got {sys.lazy_modules}"
+            )
+        """)
+        assert_python_ok("-c", code)
+
     def test_pending_submodule_is_still_tracked(self):
         """`lazy from` a submodule that is not loaded must stay tracked."""
         code = textwrap.dedent("""

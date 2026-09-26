@@ -4390,10 +4390,12 @@ lazy_modules_add(PyThreadState *tstate, PyObject *name)
     }
     // A None entry blocks the import rather than satisfying it.
     int loaded = (existing != NULL && existing != Py_None);
-    if (loaded) {
-        // Check if the module is still initializing.
+    if (loaded && PyModule_Check(existing)) {
+        // Check if the module is still initializing.  Read __spec__ from the
+        // module dict so that a descriptor on a module subclass is not run.
         PyObject *spec;
-        int rc = PyObject_GetOptionalAttr(existing, &_Py_ID(__spec__), &spec);
+        int rc = PyDict_GetItemRef(_PyModule_GetDict(existing),
+                                   &_Py_ID(__spec__), &spec);
         if (rc > 0) {
             rc = _PyModuleSpec_IsInitializing(spec);
             Py_DECREF(spec);
