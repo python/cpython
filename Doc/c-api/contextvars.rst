@@ -108,6 +108,11 @@ Context object management functions:
    In case of error (e.g. no more watcher IDs available),
    return ``-1`` and set an exception.
 
+   This function may be called concurrently with other calls to
+   :c:func:`PyContext_AddWatcher` and :c:func:`PyContext_ClearWatcher`, and
+   while other threads are switching contexts.  Each successful call returns a
+   distinct watcher ID.
+
    .. versionadded:: 3.14
 
 .. c:function:: int PyContext_ClearWatcher(int watcher_id)
@@ -116,6 +121,14 @@ Context object management functions:
    :c:func:`PyContext_AddWatcher` for the current interpreter.
    Return ``0`` on success, or ``-1`` and set an exception on error
    (e.g. if the given *watcher_id* was never registered.)
+
+   After this returns, the callback is not selected for context switches that
+   begin later.  It does not wait for callbacks already in progress: in the
+   :term:`free-threaded <free threading>` build a callback selected on another
+   thread just before the watcher was cleared may still be running, or may
+   still be about to run.  State used by the callback must therefore remain
+   valid until the caller has established, by its own means, that no
+   invocation can still be in flight.
 
    .. versionadded:: 3.14
 
@@ -134,6 +147,11 @@ Context object management functions:
 
    Context object watcher callback function.  The object passed to the callback
    is event-specific; see :c:type:`PyContextEvent` for details.
+
+   The callback is invoked by the thread whose current context changed.  In the
+   :term:`free-threaded <free threading>` build several threads may therefore
+   run the same callback at the same time, and the callback is responsible for
+   synchronizing any state it shares between those invocations.
 
    If the callback returns with an exception set, it must return ``-1``; this
    exception will be printed as an unraisable exception using
