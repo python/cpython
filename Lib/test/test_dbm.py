@@ -4,7 +4,7 @@ import unittest
 import dbm
 import os
 from test.support import import_helper
-from test.support import os_helper
+from test.support import os_helper, gc_collect
 
 
 try:
@@ -58,6 +58,7 @@ class AnyDBMTestCase:
         for k in self._dict:
             f[k.encode("ascii")] = self._dict[k]
         f.close()
+        gc_collect()
 
     def keys_helper(self, f):
         keys = sorted(k.decode("ascii") for k in f.keys())
@@ -181,6 +182,7 @@ class AnyDBMTestCase:
                 f[k.encode('ascii')] = self._dict[k] * 100000
             db_keys = list(f.keys())
 
+        gc_collect()
         # Make sure to calculate size of database only after file is closed to ensure file content are flushed to disk.
         size_before = _calculate_db_size(os.path.dirname(_fname))
 
@@ -191,6 +193,7 @@ class AnyDBMTestCase:
                 del f[k]
             f.reorganize()
 
+        gc_collect()
         # Make sure to calculate size of database only after file is closed to ensure file content are flushed to disk.
         size_after = _calculate_db_size(os.path.dirname(_fname))
 
