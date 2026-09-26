@@ -250,6 +250,48 @@ def strptime_inputs():
 class DateTimeTest(unittest.TestCase):
     theclass = datetime.datetime
 
+    @support.run_with_locale("LC_TIME", "C")
+    @hypothesis.settings(max_examples=50)
+    @hypothesis.given(
+        day=st.dates(), hour=st.integers(min_value=0, max_value=23),
+        abbreviated=st.booleans(), casing=st.sampled_from(("upper", "lower", "title")),
+        literal=st.text(max_size=8),
+        whitespace=st.sampled_from((" ", "\t", "\n", "\r\n", "\u2003")),
+    )
+    @hypothesis.example(day=datetime.date(2000, 2, 29), hour=0,
+                        abbreviated=False, casing="upper", literal="\x00%[]",
+                        whitespace="\u2003")
+    @hypothesis.example(day=datetime.date.min, hour=12,
+                        abbreviated=True, casing="lower", literal="\\.^$*+?",
+                        whitespace="\r\n")
+    @hypothesis.example(day=datetime.date.max, hour=23,
+                        abbreviated=False, casing="title", literal="'\ud800",
+                        whitespace="\t")
+    def test_names_and_literals(
+        self, day: datetime.date, hour: int, abbreviated: bool, casing: str,
+        literal: str, whitespace: str,
+    ) -> None:
+        # Fixed C-locale tables avoid using strftime to supply the expected
+        # names. Arbitrary literals, including NUL, need only work in strptime.
+        months = ("January", "February", "March", "April", "May", "June", "July",
+                  "August", "September", "October", "November", "December")
+        weekdays = ("Monday", "Tuesday", "Wednesday", "Thursday", "Friday",
+                    "Saturday", "Sunday")
+        month = months[day.month - 1]
+        weekday = weekdays[day.weekday()]
+        if abbreviated:
+            month, weekday = month[:3], weekday[:3]
+        month = getattr(month, casing)()
+        weekday = getattr(weekday, casing)()
+        ampm = getattr("AM" if hour < 12 else "PM", casing)()
+        value = (f"{literal}|{day.year:04} {month} {day.day} {weekday}"
+                 f"{whitespace}{hour % 12 or 12}:07 {ampm}")
+        fmt = literal.replace("%", "%%") + "|%Y "
+        fmt += "%b %d %a" if abbreviated else "%B %d %A"
+        fmt += " %I:%M %p"
+        actual = self.theclass.strptime(value, fmt)
+        self.assertEqual(actual.isoformat(), f"{day.isoformat()}T{hour:02}:07:00")
+
     @hypothesis.settings(max_examples=50)
     @hypothesis.given(
         day=st.dates(),
