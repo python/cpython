@@ -115,6 +115,9 @@ resources to test.  Currently only the following are defined:
     network -        It is okay to run tests that use external network
                      resource, e.g. testing SSL support for sockets.
 
+    netraw -         It is okay to run tests that create raw sockets. These
+                     tests may require elevated privileges.
+
     decimal -        Test the decimal module against a large suite that
                      verifies compliance with standards.
 

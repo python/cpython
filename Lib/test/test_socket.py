@@ -945,6 +945,13 @@ def requireSocket(*args):
 
 class GeneralModuleTests(unittest.TestCase):
 
+    def test_create_raw_socket(self):
+        support.requires('netraw')
+        sock = socket.socket(
+            socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_ICMP)
+        with sock:
+            self.assertEqual(sock.type, socket.SOCK_RAW)
+
     @unittest.skipUnless(_socket is not None, 'need _socket module')
     def test_socket_type(self):
         self.assertTrue(gc.is_tracked(_socket.socket))

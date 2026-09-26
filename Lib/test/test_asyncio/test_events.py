@@ -152,6 +152,13 @@ class MyDatagramProto(asyncio.DatagramProtocol):
             self.done.set_result(None)
 
 
+class FakeRawSocket(socket.socket):
+
+    @property
+    def type(self):
+        return socket.SOCK_RAW
+
+
 class MyReadPipeProto(asyncio.Protocol):
     done = None
 
@@ -1508,6 +1515,25 @@ class EventLoopTestsMixin:
         self.assertIsInstance(pr, MyDatagramProto)
         tr.close()
         self.loop.run_until_complete(pr.done)
+
+    def test_create_datagram_endpoint_sock_raw(self):
+        if support.is_resource_enabled('netraw'):
+            sock = socket.socket(
+                socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_ICMP)
+        else:
+            sock = FakeRawSocket(socket.AF_INET, socket.SOCK_DGRAM)
+            sock.bind(('127.0.0.1', 0))
+
+        self.assertEqual(sock.type, socket.SOCK_RAW)
+        with sock:
+            f = self.loop.create_datagram_endpoint(
+                lambda: MyDatagramProto(loop=self.loop), sock=sock)
+            tr, pr = self.loop.run_until_complete(f)
+            self.assertIsInstance(tr, asyncio.Transport)
+            self.assertIsInstance(pr, MyDatagramProto)
+            tr.close()
+            self.loop.run_until_complete(pr.done)
+            self.assertEqual(sock.fileno(), -1)
 
     def test_datagram_send_to_non_listening_address(self):
         # see:
