@@ -3,6 +3,7 @@ import locale
 import sys
 import time
 import unittest
+from collections.abc import Sequence
 from test import support
 from test.support import import_helper
 from test.support.hypothesis_helper import hypothesis
@@ -252,6 +253,57 @@ def strptime_inputs():
 class DateTimeTest(unittest.TestCase):
     datetime_module = datetime
     theclass = datetime.datetime
+
+    @support.run_with_locale("LC_TIME", "C")
+    @hypothesis.settings(max_examples=25)
+    @hypothesis.given(
+        dt=st.datetimes(),
+        representation=st.sampled_from(("calendar", "iso", "clock", "offset")),
+        order=st.permutations((0, 1, 2, 3)),
+    )
+    @hypothesis.example(dt=datetime.datetime.min,
+                        representation="calendar", order=(3, 2, 1, 0))
+    @hypothesis.example(dt=datetime.datetime(1969, 7, 20),
+                        representation="calendar", order=(0, 1, 2, 3))
+    @hypothesis.example(dt=datetime.datetime(2016, 1, 1),
+                        representation="iso", order=(1, 0, 3, 2))
+    @hypothesis.example(dt=datetime.datetime(2000, 1, 1, 0),
+                        representation="clock", order=(3, 1, 2, 0))
+    @hypothesis.example(dt=datetime.datetime(2000, 1, 1, 12),
+                        representation="clock", order=(2, 1, 0, 3))
+    @hypothesis.example(dt=datetime.datetime.max,
+                        representation="offset", order=(3, 2, 1, 0))
+    def test_redundant_directive_order(
+        self, dt: datetime.datetime, representation: str, order: Sequence[int],
+    ) -> None:
+        date = ("%Y-%m-%d", dt.date().isoformat())
+        clock = ("%H:%M:%S.%f", dt.time().isoformat(timespec="microseconds"))
+        expected = dt
+        suffix = ""
+        if representation == "calendar":
+            ordinal = dt.toordinal() - datetime.date(dt.year, 1, 1).toordinal() + 1
+            parts = (("%Y", f"{dt.year:04}"),
+                     ("%m-%d", f"{dt.month:02}-{dt.day:02}"),
+                     ("%j", str(ordinal)), ("%u", str(dt.isoweekday())))
+            expected = datetime.datetime(dt.year, dt.month, dt.day)
+        elif representation == "iso":
+            year, week, weekday = dt.isocalendar()
+            parts = (date, ("%G %V %u", f"{year:04} {week} {weekday}"),
+                     clock, ("%z", "+010203.000004"))
+            suffix = "+01:02:03.000004"
+        elif representation == "clock":
+            ampm = "AM" if dt.hour < 12 else "PM"
+            parts = (date, ("%H", str(dt.hour)),
+                     ("%I %p", f"{dt.hour % 12 or 12} {ampm}"),
+                     ("%M:%S.%f", f"{dt.minute}:{dt.second}.{dt.microsecond:06}"))
+        else:
+            parts = (date, clock, ("%z", "+010203.000004"),
+                     ("%:z", "+01:02:03.000004"))
+            suffix = "+01:02:03.000004"
+        fmt = "|".join(parts[index][0] for index in order)
+        value = "|".join(parts[index][1] for index in order)
+        actual = self.theclass.strptime(value, fmt)
+        self.assertEqual(actual.isoformat(), expected.isoformat() + suffix)
 
     @support.run_with_locale("LC_TIME", "fr_FR.UTF-8", "fr_FR.utf8",
                              "de_DE.UTF-8", "de_DE.utf8", "en_US.UTF-8",
