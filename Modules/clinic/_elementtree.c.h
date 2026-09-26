@@ -7,7 +7,66 @@ preserve
 #  include "pycore_runtime.h"     // _Py_SINGLETON()
 #endif
 #include "pycore_abstract.h"      // _PyNumber_Index()
-#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+
+PyDoc_STRVAR(_elementtree_SubElement__doc__,
+"SubElement($module, parent, tag, attrib={}, /, **extra)\n"
+"--\n"
+"\n"
+"Create a new subelement of the parent element.");
+
+#define _ELEMENTTREE_SUBELEMENT_METHODDEF    \
+    {"SubElement", _PyCFunction_CAST(_elementtree_SubElement), METH_VARARGS|METH_KEYWORDS, _elementtree_SubElement__doc__},
+
+static PyObject *
+_elementtree_SubElement_impl(PyObject *module, PyObject *parent,
+                             PyObject *tag, PyObject *attrib,
+                             PyObject *extra);
+
+static PyObject *
+_elementtree_SubElement(PyObject *module, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *parent;
+    PyObject *tag;
+    PyObject *attrib = NULL;
+    PyObject *extra = NULL;
+
+    if (!_PyArg_CheckPositional("SubElement", PyTuple_GET_SIZE(args), 2, 3)) {
+        goto exit;
+    }
+    if (!PyObject_TypeCheck(PyTuple_GET_ITEM(args, 0), get_elementtree_state(module)->Element_Type)) {
+        _PyArg_BadArgument("SubElement", "argument 1", (get_elementtree_state(module)->Element_Type)->tp_name, PyTuple_GET_ITEM(args, 0));
+        goto exit;
+    }
+    parent = PyTuple_GET_ITEM(args, 0);
+    tag = PyTuple_GET_ITEM(args, 1);
+    if (PyTuple_GET_SIZE(args) < 3) {
+        goto skip_optional;
+    }
+    if (!PyDict_Check(PyTuple_GET_ITEM(args, 2))) {
+        _PyArg_BadArgument("SubElement", "argument 3", "dict", PyTuple_GET_ITEM(args, 2));
+        goto exit;
+    }
+    attrib = PyTuple_GET_ITEM(args, 2);
+skip_optional:
+    if (kwargs == NULL) {
+        extra = PyDict_New();
+        if (extra == NULL) {
+            goto exit;
+        }
+    }
+    else {
+        extra = Py_NewRef(kwargs);
+    }
+    return_value = _elementtree_SubElement_impl(module, parent, tag, attrib, extra);
+
+exit:
+    /* Cleanup for extra */
+    Py_XDECREF(extra);
+
+    return return_value;
+}
 
 PyDoc_STRVAR(_elementtree_Element_append__doc__,
 "append($self, subelement, /)\n"
@@ -1479,4 +1538,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e2e9cf288c4400f6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7a0ff4b8cc3838c1 input=a9049054013a1b77]*/

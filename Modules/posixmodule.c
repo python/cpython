@@ -16396,8 +16396,9 @@ os_set_blocking_impl(PyObject *module, int fd, int blocking)
 
 /*[clinic input]
 class os.DirEntry "DirEntry *" "DirEntryType"
+class os.ScandirIterator "PyObject *" "ScandirIteratorType"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=3c18c7a448247980]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=b845e502eb4a0406]*/
 
 typedef struct {
     PyObject_HEAD
@@ -17286,11 +17287,20 @@ ScandirIterator_enter(PyObject *self, PyObject *Py_UNUSED(dummy))
     return Py_NewRef(self);
 }
 
+/*[clinic input]
+os.ScandirIterator.__exit__
+
+    *exc_info: array
+
+Close the scandir iterator.
+[clinic start generated code]*/
+
 static PyObject *
-ScandirIterator_exit(PyObject *op, PyObject *Py_UNUSED(args))
+os_ScandirIterator___exit___impl(PyObject *self, PyObject * const *exc_info,
+                                 Py_ssize_t exc_info_length)
+/*[clinic end generated code: output=5d3941725a7c97c7 input=ff3ffe83ae605a36]*/
 {
-    ScandirIterator *self = ScandirIterator_CAST(op);
-    ScandirIterator_closedir(self);
+    ScandirIterator_closedir(ScandirIterator_CAST(self));
     Py_RETURN_NONE;
 }
 
@@ -17337,7 +17347,7 @@ ScandirIterator_dealloc(PyObject *op)
 
 static PyMethodDef ScandirIterator_methods[] = {
     {"__enter__", ScandirIterator_enter, METH_NOARGS},
-    {"__exit__", ScandirIterator_exit, METH_VARARGS},
+    OS_SCANDIRITERATOR___EXIT___METHODDEF
     {"close", ScandirIterator_close, METH_NOARGS},
     {NULL}
 };

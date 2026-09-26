@@ -4,6 +4,36 @@ preserve
 
 #include "pycore_modsupport.h"    // _PyArg_BadArgument()
 
+PyDoc_STRVAR(_tkinter_tkapp_call__doc__,
+"call($self, /, *args)\n"
+"--\n"
+"\n");
+
+#define _TKINTER_TKAPP_CALL_METHODDEF    \
+    {"call", _PyCFunction_CAST(_tkinter_tkapp_call), METH_FASTCALL, _tkinter_tkapp_call__doc__},
+
+static PyObject *
+_tkinter_tkapp_call_impl(TkappObject *self, PyObject *args);
+
+static PyObject *
+_tkinter_tkapp_call(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *__clinic_args = NULL;
+
+    __clinic_args = PyTuple_FromArray(args, nargs);
+    if (__clinic_args == NULL) {
+        goto exit;
+    }
+    return_value = _tkinter_tkapp_call_impl((TkappObject *)self, __clinic_args);
+
+exit:
+    /* Cleanup for args */
+    Py_XDECREF(__clinic_args);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_tkinter_tkapp_eval__doc__,
 "eval($self, script, /)\n"
 "--\n"
@@ -687,6 +717,41 @@ _tkinter_tkapp_loadtk(PyObject *self, PyObject *Py_UNUSED(ignored))
     return _tkinter_tkapp_loadtk_impl((TkappObject *)self);
 }
 
+PyDoc_STRVAR(_tkinter_tkapp_wantobjects__doc__,
+"wantobjects($self, value=-1, /)\n"
+"--\n"
+"\n"
+"Return the current setting, or set it if the argument is not -1.");
+
+#define _TKINTER_TKAPP_WANTOBJECTS_METHODDEF    \
+    {"wantobjects", _PyCFunction_CAST(_tkinter_tkapp_wantobjects), METH_FASTCALL, _tkinter_tkapp_wantobjects__doc__},
+
+static PyObject *
+_tkinter_tkapp_wantobjects_impl(TkappObject *self, int value);
+
+static PyObject *
+_tkinter_tkapp_wantobjects(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int value = -1;
+
+    if (!_PyArg_CheckPositional("wantobjects", nargs, 0, 1)) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    value = PyLong_AsInt(args[0]);
+    if (value == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
+    return_value = _tkinter_tkapp_wantobjects_impl((TkappObject *)self, value);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_tkinter_tkapp_settrace__doc__,
 "settrace($self, func, /)\n"
 "--\n"
@@ -967,4 +1032,4 @@ exit:
 #ifndef _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
     #define _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
 #endif /* !defined(_TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF) */
-/*[clinic end generated code: output=c807adb73e305725 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bb55a7d4c5a8a002 input=a9049054013a1b77]*/

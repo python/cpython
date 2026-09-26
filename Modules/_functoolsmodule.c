@@ -1817,14 +1817,31 @@ lru_cache_reduce(PyObject *self, PyObject *Py_UNUSED(dummy))
     return PyObject_GetAttrString(self, "__qualname__");
 }
 
+/*[clinic input]
+_functools._lru_cache_wrapper.__copy__
+
+Return a copy of the wrapper, which is the wrapper itself.
+[clinic start generated code]*/
+
 static PyObject *
-lru_cache_copy(PyObject *self, PyObject *Py_UNUSED(args))
+_functools__lru_cache_wrapper___copy___impl(PyObject *self)
+/*[clinic end generated code: output=d681851615d57391 input=41d000bde05efb2b]*/
 {
     return Py_NewRef(self);
 }
 
+/*[clinic input]
+_functools._lru_cache_wrapper.__deepcopy__
+
+    memo: object
+    /
+
+Return a deep copy of the wrapper, which is the wrapper itself.
+[clinic start generated code]*/
+
 static PyObject *
-lru_cache_deepcopy(PyObject *self, PyObject *Py_UNUSED(args))
+_functools__lru_cache_wrapper___deepcopy__(PyObject *self, PyObject *memo)
+/*[clinic end generated code: output=3445cd9d96273c9e input=84f706565f55ce46]*/
 {
     return Py_NewRef(self);
 }
@@ -1872,8 +1889,8 @@ static PyMethodDef lru_cache_methods[] = {
     _FUNCTOOLS__LRU_CACHE_WRAPPER_CACHE_INFO_METHODDEF
     _FUNCTOOLS__LRU_CACHE_WRAPPER_CACHE_CLEAR_METHODDEF
     {"__reduce__", lru_cache_reduce, METH_NOARGS},
-    {"__copy__", lru_cache_copy, METH_VARARGS},
-    {"__deepcopy__", lru_cache_deepcopy, METH_VARARGS},
+    _FUNCTOOLS__LRU_CACHE_WRAPPER___COPY___METHODDEF
+    _FUNCTOOLS__LRU_CACHE_WRAPPER___DEEPCOPY___METHODDEF
     {NULL}
 };
 
