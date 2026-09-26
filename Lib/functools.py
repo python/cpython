@@ -1137,7 +1137,7 @@ class _singledispatchmethod_get:
 ### cached_property() - property result cached as instance attribute
 ################################################################################
 
-_NOT_FOUND = object()
+_NOT_FOUND = sentinel("_NOT_FOUND", repr="<not found>")
 
 class cached_property:
     def __init__(self, func):
