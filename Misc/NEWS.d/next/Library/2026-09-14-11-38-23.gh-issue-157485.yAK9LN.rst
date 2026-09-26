@@ -1,0 +1,3 @@
+Add constants :const:`readline.READLINE_VERSION_INFO`,
+:const:`readline.readline_version_info` and :const:`readline.readline_version`,
+which provide information about the version of the Readline library in use.
