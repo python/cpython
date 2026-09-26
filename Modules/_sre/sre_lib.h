@@ -175,16 +175,71 @@ SRE(charset)(SRE_STATE* state, const SRE_CODE* set, SRE_CODE ch)
     }
 }
 
+/* Like SRE(charset), but matches both locale cases of ch against every set
+   member.  Testing the whole set once per case would complement it before
+   closing it under case instead of after, so that [^bc] matched b'B'.
+   BIGCHARSET and RANGE_UNI_IGNORE are not handled: they never occur in a
+   set of a bytes pattern. */
 LOCAL(int)
 SRE(charset_loc_ignore)(SRE_STATE* state, const SRE_CODE* set, SRE_CODE ch)
 {
     SRE_CODE lo, up;
-    lo = sre_lower_locale(ch);
-    if (SRE(charset)(state, set, lo))
-       return 1;
+    int ok = 1;
 
+    lo = sre_lower_locale(ch);
     up = sre_upper_locale(ch);
-    return up != lo && SRE(charset)(state, set, up);
+    if (up == lo)
+        return SRE(charset)(state, set, lo);
+
+    for (;;) {
+        switch (*set++) {
+
+        case SRE_OP_FAILURE:
+            return !ok;
+
+        case SRE_OP_LITERAL:
+            /* <LITERAL> <code> */
+            if (lo == set[0] || up == set[0])
+                return ok;
+            set++;
+            break;
+
+        case SRE_OP_CATEGORY:
+            /* <CATEGORY> <code> */
+            if (sre_category(set[0], (int) lo) ||
+                sre_category(set[0], (int) up))
+                return ok;
+            set++;
+            break;
+
+        case SRE_OP_CHARSET:
+            /* <CHARSET> <bitmap> */
+            if ((lo < 256 && (set[lo/SRE_CODE_BITS]
+                              & (1u << (lo & (SRE_CODE_BITS-1))))) ||
+                (up < 256 && (set[up/SRE_CODE_BITS]
+                              & (1u << (up & (SRE_CODE_BITS-1))))))
+                return ok;
+            set += 256/SRE_CODE_BITS;
+            break;
+
+        case SRE_OP_RANGE:
+            /* <RANGE> <lower> <upper> */
+            if ((set[0] <= lo && lo <= set[1]) ||
+                (set[0] <= up && up <= set[1]))
+                return ok;
+            set += 2;
+            break;
+
+        case SRE_OP_NEGATE:
+            ok = !ok;
+            break;
+
+        default:
+            /* internal error -- there's not much we can do about it
+               here, so let's just pretend it didn't match... */
+            return 0;
+        }
+    }
 }
 
 LOCAL(Py_ssize_t) SRE(match)(SRE_STATE* state, const SRE_CODE* pattern, int toplevel);
