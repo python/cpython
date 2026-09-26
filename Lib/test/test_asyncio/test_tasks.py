@@ -1250,6 +1250,24 @@ class BaseTaskTests:
 
         self.loop.run_until_complete(self.new_task(self.loop, coro()))
 
+    def test_gather_discards_awaited_by_for_cancelled_sibling(self):
+        # gh-157213: same, when gather() is ended by a cancelled child
+        async def survivor():
+            await asyncio.Future()
+
+        async def coro():
+            t = self.new_task(self.loop, survivor())
+            victim = self.new_task(self.loop, asyncio.sleep(10))
+            victim.cancel()
+            with self.assertRaises(asyncio.CancelledError):
+                await asyncio.gather(t, victim)
+            self.assertFalse(t._asyncio_awaited_by)
+            t.cancel()
+            with self.assertRaises(asyncio.CancelledError):
+                await t
+
+        self.loop.run_until_complete(self.new_task(self.loop, coro()))
+
     def test_wait_really_done(self):
         # there is possibility that some tasks in the pending list
         # became done but their callbacks haven't all been called yet
