@@ -1,0 +1,2 @@
+Use AC vectorcall support for the :class:`decimal.Decimal`.  This offers
+~1.15x speedup on creation of small instances.
