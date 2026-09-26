@@ -22,6 +22,7 @@ import sys
 import subprocess
 import time
 import types
+import typing
 import tempfile
 import textwrap
 import unicodedata
@@ -812,6 +813,7 @@ class TestRetrievingSourceCode(GetSourceBase):
         self.assertEqual(inspect.getcomments(mod), '# line 1\n')
         self.assertEqual(inspect.getcomments(mod.StupidGit), '# line 20\n')
         self.assertEqual(inspect.getcomments(mod2.cls160), '# line 159\n')
+        self.assertEqual(inspect.getcomments(mod.Sparrow), '# What is their airspeed?\n')
         # If the object source file is not available, return None.
         co = compile('x=1', '_non_existing_filename.py', 'exec')
         self.assertIsNone(inspect.getcomments(co))
@@ -851,6 +853,7 @@ class TestRetrievingSourceCode(GetSourceBase):
         self.assertSourceEqual(mod.StupidGit, 21, 51)
         self.assertSourceEqual(mod.lobbest, 75, 76)
         self.assertSourceEqual(mod.after_closing, 120, 120)
+        self.assertSourceEqual(mod.Sparrow, 123, 123)
 
     def test_getsourcefile(self):
         self.assertEqual(normcase(inspect.getsourcefile(mod.spam)), modfile)
@@ -863,6 +866,31 @@ class TestRetrievingSourceCode(GetSourceBase):
             self.assertEqual(normcase(inspect.getsourcefile(co)), fn)
         finally:
             del linecache.cache[co.co_filename]
+
+    def test_getsourcefile_type_alias(self):
+        self.assertEqual(normcase(inspect.getsourcefile(mod.Sparrow)),
+                         normcase(mod.__file__))
+        self.assertEqual(normcase(inspect.getfile(mod.Sparrow)),
+                         normcase(mod.__file__))
+
+        WrongModule = typing.TypeAliasType("WrongModule", int)
+        WrongModule.__module__ = "types"
+        self.assertEqual(normcase(inspect.getsourcefile(WrongModule)), normcase(types.__file__))
+        self.assertEqual(normcase(inspect.getfile(WrongModule)), normcase(types.__file__))
+
+        WrongModule.__module__ = "non-existing module"
+        with self.assertRaises(TypeError):
+            inspect.getsourcefile(WrongModule)
+        with self.assertRaises(TypeError):
+            inspect.getfile(WrongModule)
+
+    def test_getsource_on_generated_type_alias(self):
+        Alias = typing.TypeAliasType("Alias", int)
+        self.assertEqual(inspect.getsourcefile(Alias), __file__)
+        self.assertEqual(inspect.getfile(Alias), __file__)
+        self.assertRaises(OSError, inspect.getsource, Alias)
+        self.assertRaises(OSError, inspect.getsourcelines, Alias)
+        self.assertIsNone(inspect.getcomments(Alias))
 
     def test_getsource_empty_file(self):
         with temp_cwd() as cwd:
@@ -1134,6 +1162,20 @@ class TestBlockComments(GetSourceBase):
 
 class TestBuggyCases(GetSourceBase):
     fodderModule = mod2
+
+    def test_type_aliases(self):
+        cases = (
+            (mod2.GenericAlias, 404, 409, '# A multiline generic alias.\n'),
+            (mod2.TypeAliases.Nested, 413, 413, '# A nested alias.\n'),
+            (mod2.make_type_alias(), 417, 417, '# A local alias.\n'),
+        )
+        for alias, start, end, comments in cases:
+            with self.subTest(alias=alias):
+                self.assertSourceEqual(alias, start, end)
+                self.assertEqual(inspect.getsourcelines(alias),
+                                 (self.sourcerange(start, end).splitlines(True),
+                                  start))
+                self.assertEqual(inspect.getcomments(alias), comments)
 
     def test_with_comment(self):
         self.assertSourceEqual(mod2.with_comment, 58, 59)
@@ -6915,6 +6957,32 @@ class TestRepl(unittest.TestCase):
 
         expected = "The source is: <<<def f():\n    print(0)\n    return 1 + 2\n>>>"
         self.assertIn(expected, output)
+
+    @unittest.skipIf(not has_subprocess_support, "test requires subprocess")
+    def test_getsource_type_alias(self):
+        output = self.run_on_interactive_mode(textwrap.dedent("""\
+        type Alias = MissingName
+        import inspect
+        print(f"The source is: <<<{inspect.getsource(Alias)}>>>")
+        print(f"The lines are: {inspect.getsourcelines(Alias)!r}")
+        """))
+
+        self.assertIn("The source is: <<<type Alias = MissingName\n>>>", output)
+        self.assertIn("The lines are: (['type Alias = MissingName\\n'], 1)", output)
+
+    @unittest.skipIf(not has_subprocess_support, "test requires subprocess")
+    def test_getcomments_type_alias(self):
+        output = self.run_on_interactive_mode(textwrap.dedent("""\
+        def f():
+            # A local alias.
+            type Alias = MissingName
+            return Alias
+
+        import inspect
+        print(f"The comments are: <<<{inspect.getcomments(f())}>>>")
+        """))
+
+        self.assertIn("The comments are: <<<# A local alias.\n>>>", output)
 
 
 if __name__ == "__main__":
