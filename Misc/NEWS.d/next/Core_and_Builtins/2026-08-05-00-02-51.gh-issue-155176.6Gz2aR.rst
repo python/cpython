@@ -1,0 +1,3 @@
+:class:`frozendict` objects whose keys and values can never be tracked by
+the garbage collector are no longer tracked, like :class:`frozenset`
+objects.
