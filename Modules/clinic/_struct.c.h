@@ -639,6 +639,7 @@ unpack_from(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
         .keywords = _keywords,
         .fname = "unpack_from",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[3];
@@ -726,4 +727,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=021b89d2d3c3c225 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7abe72a89f0804f0 input=a9049054013a1b77]*/

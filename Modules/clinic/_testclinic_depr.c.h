@@ -1690,6 +1690,7 @@ depr_kwd_required_1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
         .keywords = _keywords,
         .fname = "depr_kwd_required_1",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
@@ -1774,6 +1775,7 @@ depr_kwd_required_2(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
         .keywords = _keywords,
         .fname = "depr_kwd_required_2",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[3];
@@ -1858,6 +1860,7 @@ depr_kwd_optional_1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
         .keywords = _keywords,
         .fname = "depr_kwd_optional_1",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
@@ -1947,6 +1950,7 @@ depr_kwd_optional_2(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
         .keywords = _keywords,
         .fname = "depr_kwd_optional_2",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[3];
@@ -2144,6 +2148,7 @@ depr_kwd_required_optional(PyObject *module, PyObject *const *args, Py_ssize_t n
         .keywords = _keywords,
         .fname = "depr_kwd_required_optional",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[3];
@@ -2324,6 +2329,7 @@ depr_kwd_multi(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
         .keywords = _keywords,
         .fname = "depr_kwd_multi",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[8];
@@ -2513,6 +2519,7 @@ depr_param(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
         .keywords = _keywords,
         .fname = "depr_param",
         .kwtuple = KWTUPLE,
+        .pos = 3,
     };
     #undef KWTUPLE
     PyObject *argsbuf[4];
@@ -2634,6 +2641,7 @@ depr_multi(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
         .keywords = _keywords,
         .fname = "depr_multi",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[7];
@@ -2681,4 +2689,4 @@ depr_multi(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=858abe8a5a885725 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=968807a8e3023dd4 input=a9049054013a1b77]*/

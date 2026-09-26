@@ -2045,21 +2045,11 @@ scan_keywords(const char * const *keywords, int *ptotal, int *pposonly)
 
 static int
 parse_format(const char *format, int total, int npos,
-             const char **pfname, const char **pcustommsg,
-             int *pmin, int *pmax)
+             const char **pfname, int *pmin, int *pmax)
 {
-    /* grab the function name or custom error msg first (mutually exclusive) */
-    const char *custommsg;
     const char *fname = strchr(format, ':');
     if (fname) {
         fname++;
-        custommsg = NULL;
-    }
-    else {
-        custommsg = strchr(format,';');
-        if (custommsg) {
-            custommsg++;
-        }
     }
 
     int min = INT_MAX;
@@ -2118,7 +2108,6 @@ parse_format(const char *format, int total, int npos,
     }
 
     *pfname = fname;
-    *pcustommsg = custommsg;
     *pmin = min;
     *pmax = max;
     return 0;
@@ -2152,9 +2141,7 @@ _parser_init(void *arg)
     struct _PyArg_Parser *parser = (struct _PyArg_Parser *)arg;
     const char * const *keywords = parser->keywords;
     assert(keywords != NULL);
-    assert(parser->pos == 0 &&
-           (parser->format == NULL || parser->fname == NULL) &&
-           parser->custom_msg == NULL &&
+    assert((parser->format == NULL || parser->fname == NULL) &&
            parser->min == 0 &&
            parser->max == 0);
 
@@ -2162,13 +2149,18 @@ _parser_init(void *arg)
     if (scan_keywords(keywords, &len, &pos) < 0) {
         return -1;
     }
+    if (len > UINT16_MAX) {
+        PyErr_SetString(PyExc_SystemError, "Too many keyword parameters");
+        return -1;
+    }
+    assert(parser->pos == 0 || parser->pos == pos);  // may be set statically
 
-    const char *fname, *custommsg = NULL;
+    const char *fname;
     int min = 0, max = 0;
     if (parser->format) {
         assert(parser->fname == NULL);
         if (parse_format(parser->format, len, pos,
-                         &fname, &custommsg, &min, &max) < 0) {
+                         &fname, &min, &max) < 0) {
             return -1;
         }
     }
@@ -2206,13 +2198,13 @@ _parser_init(void *arg)
         owned = 0;
     }
 
-    parser->pos = pos;
+    parser->pos = (uint16_t)pos;
     parser->fname = fname;
-    parser->custom_msg = custommsg;
-    parser->min = min;
-    parser->max = max;
-    parser->kwtuple = kwtuple;
+    parser->min = (uint16_t)min;
+    parser->max = (uint16_t)max;
     parser->is_kwtuple_owned = owned;
+    // Set last: see _PyArg_UnpackKeywords()
+    _Py_atomic_store_ptr_release(&parser->kwtuple, kwtuple);
 
     assert(parser->next == NULL);
     parser->next = _Py_atomic_load_ptr(&_PyRuntime.getargs.static_parsers);
@@ -2242,8 +2234,6 @@ parser_clear(struct _PyArg_Parser *parser)
     else {
         assert(parser->fname != NULL);
     }
-    parser->custom_msg = NULL;
-    parser->pos = 0;
     parser->min = 0;
     parser->max = 0;
     parser->is_kwtuple_owned = 0;
@@ -2412,7 +2402,15 @@ vgetargskeywordsfast_impl(PyObject *const *args, Py_ssize_t nargs,
                 levels, msgbuf, sizeof(msgbuf), &freelist);
             Py_DECREF(current_arg);
             if (msg) {
-                seterror(i+1, msg, levels, parser->fname, parser->custom_msg);
+                const char *custom_msg = NULL;
+                if (parser->fname == NULL) {
+                    // The format has ";message" instead of ":name"
+                    custom_msg = strchr(parser->format, ';');
+                    if (custom_msg != NULL) {
+                        custom_msg++;
+                    }
+                }
+                seterror(i+1, msg, levels, parser->fname, custom_msg);
                 return cleanreturn(0, &freelist);
             }
             continue;
@@ -2546,11 +2544,19 @@ _PyArg_UnpackKeywords(PyObject *const *args, Py_ssize_t nargs,
         args = buf;
     }
 
-    if (parser_init(parser) < 0) {
-        return NULL;
+    // No initialization needed for a static kwtuple
+    kwtuple = _Py_atomic_load_ptr_acquire(&parser->kwtuple);
+    if (kwtuple == NULL) {
+        if (parser_init(parser) < 0) {
+            return NULL;
+        }
+        kwtuple = parser->kwtuple;
     }
-
-    kwtuple = parser->kwtuple;
+#ifndef NDEBUG
+    for (i = 0; parser->keywords[i] && !*parser->keywords[i]; i++) {
+    }
+    assert(parser->pos == i);
+#endif
     posonly = parser->pos;
     minposonly = Py_MIN(posonly, minpos);
     maxargs = posonly + (int)PyTuple_GET_SIZE(kwtuple);

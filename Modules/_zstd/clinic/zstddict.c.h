@@ -57,6 +57,7 @@ _zstd_ZstdDict_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         .keywords = _keywords,
         .fname = "ZstdDict",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
@@ -176,4 +177,4 @@ _zstd_ZstdDict_as_prefix_get(PyObject *self, void *Py_UNUSED(context))
 
 #define _ZSTD_ZSTDDICT_AS_PREFIX_GETSETDEF {"as_prefix", (getter)_zstd_ZstdDict_as_prefix_get, (setter)NULL, _zstd_ZstdDict_as_prefix__doc__},
 
-/*[clinic end generated code: output=aa4d4b8fd985ae08 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=50181c96388d3874 input=a9049054013a1b77]*/

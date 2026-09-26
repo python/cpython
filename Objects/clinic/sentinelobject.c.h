@@ -40,6 +40,7 @@ sentinel_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         .keywords = _keywords,
         .fname = "sentinel",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
@@ -69,4 +70,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=958842ece254c82f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0e007ce816631bfd input=a9049054013a1b77]*/
