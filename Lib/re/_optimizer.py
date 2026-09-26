@@ -55,7 +55,7 @@ def _compile_charset(charset, flags, code):
             raise PatternError(f"internal: unsupported set operator {op!r}")
     emit(FAILURE)
 
-def _optimize_charset(charset, iscased=None, fixup=None, fixes=None):
+def _optimize_charset(charset, iscased=None, fixup=None, isunicode=False):
     # internal: optimize character set.
     #
     # The engine's charset() walk toggles polarity on every NEGATE (see
@@ -67,7 +67,7 @@ def _optimize_charset(charset, iscased=None, fixup=None, fixes=None):
     if not negates or negates == [0]:
         # Fast path: a plain union, optionally complemented as a whole -- every
         # charset the parser produces today, optimized as before.
-        return _optimize_charset_segment(charset, iscased, fixup, fixes)
+        return _optimize_charset_segment(charset, iscased, fixup, isunicode)
 
     # Optimize each NEGATE-delimited run on its own.  _allow_anyall is off: the
     # [\s\S] -> ANY_ALL / [^\s\S] -> empty shortcuts rewrite a whole set and
@@ -78,7 +78,8 @@ def _optimize_charset(charset, iscased=None, fixup=None, fixes=None):
     for i in negates + [len(charset)]:
         if i > start:                  # skip an empty run (e.g. a leading NEGATE)
             opt, cased = _optimize_charset_segment(
-                charset[start:i], iscased, fixup, fixes, _allow_anyall=False)
+                charset[start:i], iscased, fixup, isunicode,
+                _allow_anyall=False)
             out.extend(opt)
             hascased |= cased
         if i < len(charset):
@@ -86,8 +87,8 @@ def _optimize_charset(charset, iscased=None, fixup=None, fixes=None):
         start = i + 1
     return out, hascased
 
-def _optimize_charset_segment(charset, iscased=None, fixup=None, fixes=None,
-                              _allow_anyall=True):
+def _optimize_charset_segment(charset, iscased=None, fixup=None,
+                              isunicode=False, _allow_anyall=True):
     # internal: optimize one NEGATE-free union of character-set members
     out = []
     tail = []
@@ -100,9 +101,6 @@ def _optimize_charset_segment(charset, iscased=None, fixup=None, fixes=None,
                     if fixup: # IGNORECASE and not LOCALE
                         av = fixup(av)
                         charmap[av] = 1
-                        if fixes and av in fixes:
-                            for k in fixes[av]:
-                                charmap[k] = 1
                         if not hascased and iscased(av):
                             hascased = True
                     else:
@@ -110,15 +108,8 @@ def _optimize_charset_segment(charset, iscased=None, fixup=None, fixes=None,
                 elif op is RANGE:
                     r = range(av[0], av[1]+1)
                     if fixup: # IGNORECASE and not LOCALE
-                        if fixes:
-                            for i in map(fixup, r):
-                                charmap[i] = 1
-                                if i in fixes:
-                                    for k in fixes[i]:
-                                        charmap[k] = 1
-                        else:
-                            for i in map(fixup, r):
-                                charmap[i] = 1
+                        for i in map(fixup, r):
+                            charmap[i] = 1
                         if not hascased:
                             hascased = any(map(iscased, r))
                     else:
@@ -151,7 +142,7 @@ def _optimize_charset_segment(charset, iscased=None, fixup=None, fixes=None,
                     # Also, both c.lower() and c.lower().upper() are single
                     # characters for every non-BMP character.
                     if op is RANGE:
-                        if fixes: # not ASCII
+                        if isunicode:
                             op = RANGE_UNI_IGNORE
                         hascased = True
                     else:
