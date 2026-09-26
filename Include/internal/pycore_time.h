@@ -317,6 +317,22 @@ extern PyTime_t _PyTimeFraction_Mul(
 extern double _PyTimeFraction_Resolution(
     const _PyTimeFraction *frac);
 
+// Locale-independent numeric strptime parsing.
+// A complete match returns 1; otherwise use Lib/_strptime.py. This function
+// neither allocates nor sets exceptions. The calendar date is validated, but
+// seconds may be 60 or 61: callers must apply their own time validation.
+typedef struct {
+    int year, month, day;
+    int hour, minute, second, fraction;
+    int gmtoff;  // INT_MIN means no offset was supplied.
+    int yday;    // January 1 is day 1.
+} _PyTime_StrptimeFields;
+
+// Export for the '_datetime' shared extension.
+PyAPI_FUNC(int) _PyTime_Strptime(
+    PyObject *string, PyObject *format, _PyTime_StrptimeFields *fields);
+
+
 extern PyStatus _PyTime_Init(struct _Py_time_runtime_state *state);
 
 #ifdef __cplusplus
