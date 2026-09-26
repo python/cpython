@@ -69,7 +69,7 @@ class TestRecursion:
 
 
     @support.skip_if_pgo_task  # fails during PGO training w/ some stack sizes
-    @support.skip_if_huge_c_stack(500_000)
+    @support.run_with_limited_c_stack(500_000)
     @support.skip_emscripten_stack_overflow()
     @support.skip_wasi_stack_overflow()
     def test_highly_nested_objects_decoding(self):
