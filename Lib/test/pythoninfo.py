@@ -646,6 +646,7 @@ def collect_ssl(info_add):
     attributes = (
         'OPENSSL_VERSION',
         'OPENSSL_VERSION_INFO',
+        'OPENSSL_API_VERSION_INFO',
         'HAS_SNI',
         'OP_ALL',
         'OP_NO_TLSv1_1',
