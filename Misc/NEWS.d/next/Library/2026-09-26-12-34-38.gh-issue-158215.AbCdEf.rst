@@ -1,0 +1,2 @@
+Fix :mod:`sqlite3` completer to handle attached database names
+containing a double quote. Patch by Tony Leung.

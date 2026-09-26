@@ -11,6 +11,11 @@ CLI_COMMANDS = ('.quit', '.help', '.version')
 _completion_matches = []
 
 
+def _quote_schema(schema):
+    # Quote an SQLite identifier, doubling embedded double quotes.
+    return '"' + schema.replace('"', '""') + '"'
+
+
 def _complete(con, text, state):
     global _completion_matches
 
@@ -32,7 +37,7 @@ def _complete(con, text, state):
             # escape '_' which can appear in attached database names
             select_clauses = (
                 f"""\
-                SELECT name || ' ' FROM \"{schema}\".sqlite_master
+                SELECT name || ' ' FROM {_quote_schema(schema)}.sqlite_master
                 WHERE name LIKE REPLACE(:text, '_', '^_') || '%' ESCAPE '^'"""
                 for schema in schemata
             )
@@ -46,8 +51,8 @@ def _complete(con, text, state):
             try:
                 select_clauses = (
                     f"""\
-                    SELECT pti.name || ' ' FROM "{schema}".sqlite_master AS sm
-                    JOIN pragma_table_xinfo(sm.name,'{schema}') AS pti
+                    SELECT pti.name || ' ' FROM {_quote_schema(schema)}.sqlite_master AS sm
+                    JOIN pragma_table_xinfo(sm.name,{_quote_schema(schema)}) AS pti
                     WHERE sm.type='table' AND
                     pti.name LIKE REPLACE(:text, '_', '^_') || '%' ESCAPE '^'"""
                     for schema in schemata
