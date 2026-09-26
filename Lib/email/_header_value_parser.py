@@ -580,6 +580,8 @@ class DisplayName(Phrase):
             return res.value
         if res[0].token_type == 'cfws':
             res.pop(0)
+            if len(res) == 0:
+                return res.value
         else:
             if (isinstance(res[0], TokenList) and
                     res[0][0].token_type == 'cfws'):
@@ -2511,7 +2513,7 @@ def get_parameter(value):
             param.append(ValueTerminal('*', 'extended-parameter-marker'))
             value = value[1:]
             param.extended = True
-    if value[0] != '=':
+    if not value or value[0] != '=':
         raise errors.HeaderParseError("Parameter not followed by '='")
     param.append(ValueTerminal('=', 'parameter-separator'))
     value = value[1:]
