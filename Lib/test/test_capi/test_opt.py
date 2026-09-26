@@ -12,7 +12,8 @@ import _opcode
 
 from test.support import (script_helper, requires_specialization,
                           import_helper, Py_GIL_DISABLED, requires_jit_enabled,
-                          reset_code, SHORT_TIMEOUT, isolation)
+                          reset_code, SHORT_TIMEOUT, isolation,
+                          threading_helper)
 
 _testinternalcapi = import_helper.import_module("_testinternalcapi")
 
@@ -6267,6 +6268,34 @@ class TestUopsOptimization(unittest.TestCase):
 
         # A different iterator type must not link that executor to itself.
         exhaust(map(bool, values))
+
+    @isolation.runInSubprocess(
+            env={'PYTHON_JIT': '1', 'PYTHON_JIT_STRESS': '1'},
+            timeout=SHORT_TIMEOUT)
+    def test_157740_stale_oparg_executor_race(self):
+        import json
+        import threading
+
+        sys.setswitchinterval(1e-6)
+
+        def worker(data, index):
+            while data:
+                for d in list(data):
+                    d[index] = index
+
+        for _ in range(25):
+            # Race executor installation against tracing the same code.
+            worker.__code__ = worker.__code__.replace()
+            data = [{}, {}]
+            threads = [threading.Thread(target=worker, args=(data, i),
+                                        daemon=True)
+                       for i in range(4)]
+            with threading_helper.start_threads(threads, unlock=data.clear):
+                for _ in range(200):
+                    try:
+                        json.dumps(data)
+                    except Exception:
+                        pass
 
 def global_identity(x):
     return x
