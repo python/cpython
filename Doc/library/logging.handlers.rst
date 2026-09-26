@@ -874,7 +874,7 @@ The :class:`SMTPHandler` class, located in the :mod:`!logging.handlers` module,
 supports sending logging messages to an email address via SMTP.
 
 
-.. class:: SMTPHandler(mailhost, fromaddr, toaddrs, subject, credentials=None, secure=None, timeout=1.0)
+.. class:: SMTPHandler(mailhost, fromaddr, toaddrs, subject, credentials=None, secure=None, timeout=5.0)
 
    Returns a new instance of the :class:`SMTPHandler` class. The instance is
    initialized with the from and to addresses and subject line of the email. The
@@ -1090,16 +1090,18 @@ possible, while any potentially slow operations (such as sending an email via
       method is enqueued.
 
       The base implementation formats the record to merge the message,
-      arguments, exception and stack information, if present.  It also removes
-      unpickleable items from the record in-place. Specifically, it overwrites
-      the record's :attr:`msg` and :attr:`message` attributes with the merged
+      arguments, exception and stack information, if present. It also removes
+      unpickleable items from a copy of the record. Specifically, it overwrites
+      the copy's :attr:`msg` and :attr:`message` attributes with the merged
       message (obtained by calling the handler's :meth:`format` method), and
-      sets the :attr:`args`, :attr:`exc_info` and :attr:`exc_text` attributes
-      to ``None``.
+      sets the :attr:`args`, :attr:`exc_info`, :attr:`exc_text` and
+      :attr:`stack_info` attributes to ``None``.
+
+      These changes are made on the copy, so they do not affect the original
+      record.
 
       You might want to override this method if you want to convert
-      the record to a dict or JSON string, or send a modified copy
-      of the record while leaving the original intact.
+      the record to a dict or JSON string.
 
       .. note:: The base implementation formats the message with arguments, sets
          the ``message`` and ``msg`` attributes to the formatted message and
