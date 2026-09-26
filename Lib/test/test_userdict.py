@@ -307,6 +307,66 @@ class UserDictTest(mapping_tests.TestHashMappingProtocol):
         self.assertIs(type(u), UserDictSubclass)
         self.assertIs(u, u2)
 
+    def test_matches_dict(self):
+        key, value, missing = object(), object(), object()
+        class Missing:
+            def __missing__(self, key):
+                return missing
+        class _Dict(dict, Missing): pass
+        class _UserDict(UserDict, Missing): pass
+        _dict = _Dict({key: value})
+        _user_dict = _UserDict({key: value})
+        self.assertIs(_dict[key], _user_dict[key])
+        self.assertIs(_dict.get(key), _user_dict.get(key))
+        self.assertIs(_dict.get(missing), _user_dict.get(missing))
+        self.assertIs(_dict[missing], _user_dict[missing])
+
+    def test_data_delegation(self):
+        class Dict(dict):
+            def __init__(self, **kwargs):
+                super().__init__(**kwargs)
+                self.calls = []
+            def __contains__(self, *args, **kwargs):
+                self.calls.append('__contains__')
+                return super().__contains__(*args, **kwargs)
+            def __getitem__(self, *args, **kwargs):
+                self.calls.append('__getitem__')
+                return super().__getitem__(*args, **kwargs)
+            def __missing__(self, *args, **kwargs):
+                self.calls.append('__missing__')
+                if hasattr(self.data, '__missing__'):
+                    return super().__missing__(*args, **kwargs)
+            def get(self, *args, **kwargs):
+                self.calls.append('get')
+                return super().get(*args, **kwargs)
+        class _UserDict(UserDict):
+            def __init__(self, **kwargs):
+                super().__init__()
+                self.data = Dict(**kwargs)
+            def __missing__(self, key):
+                return 'missing'
+
+        # get with value
+        _dict = _UserDict(key='value')
+        self.assertEqual('value', _dict.get('key'))
+        self.assertEqual(['__contains__', '__contains__', '__getitem__'], # LH ??? why two contains
+                         _dict.data.calls)
+
+        # get without value
+        _dict = _UserDict()
+        self.assertEqual(None, _dict.get('key'))
+        self.assertEqual(['__contains__'], _dict.data.calls)
+
+        # getitem with value
+        _dict = _UserDict(key='value')
+        self.assertEqual('value', _dict['key'])
+        self.assertEqual(['__contains__', '__getitem__'], _dict.data.calls)
+
+        # getitem without value
+        _dict = _UserDict()
+        self.assertEqual('missing', _dict['key'])
+        self.assertEqual(['__contains__'], _dict.data.calls)
+
 
 if __name__ == "__main__":
     unittest.main()
