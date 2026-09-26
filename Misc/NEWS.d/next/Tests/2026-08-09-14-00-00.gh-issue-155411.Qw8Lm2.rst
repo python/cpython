@@ -1,0 +1,3 @@
+Fix :func:`!test.support.subTests` for asynchronous test methods.  They were
+wrapped in a synchronous function, which discarded the coroutine without
+awaiting it, so the test silently did not run at all.
