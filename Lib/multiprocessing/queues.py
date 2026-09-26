@@ -345,10 +345,14 @@ class JoinableQueue(Queue):
             if self._unfinished_tasks._semlock._is_zero():
                 self._cond.notify_all()
 
-    def join(self):
+    def join(self, timeout=None) -> None:
         with self._cond:
             if not self._unfinished_tasks._semlock._is_zero():
-                self._cond.wait()
+                self._cond.wait(timeout=timeout)
+
+    def is_done(self) -> bool:
+        with self._cond:
+            return self._unfinished_tasks._semlock._is_zero()
 
 #
 # Simplified Queue type -- really just a locked pipe
