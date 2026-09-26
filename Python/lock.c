@@ -4,6 +4,7 @@
 
 #include "pycore_lock.h"
 #include "pycore_parking_lot.h"
+#include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_STORE_SIZE_RELAXED()
 #include "pycore_semaphore.h"
 #include "pycore_time.h"          // _PyTime_Add()
 #include "pycore_stats.h"         // FT_STAT_MUTEX_SLEEP_INC()
@@ -418,7 +419,7 @@ _PyRecursiveMutex_Lock(_PyRecursiveMutex *m)
 {
     PyThread_ident_t thread = PyThread_get_thread_ident_ex();
     if (recursive_mutex_is_owned_by(m, thread)) {
-        m->level++;
+        FT_ATOMIC_STORE_SIZE_RELAXED(m->level, m->level + 1);
         return;
     }
     PyMutex_Lock(&m->mutex);
@@ -431,7 +432,7 @@ _PyRecursiveMutex_LockTimed(_PyRecursiveMutex *m, PyTime_t timeout, _PyLockFlags
 {
     PyThread_ident_t thread = PyThread_get_thread_ident_ex();
     if (recursive_mutex_is_owned_by(m, thread)) {
-        m->level++;
+        FT_ATOMIC_STORE_SIZE_RELAXED(m->level, m->level + 1);
         return PY_LOCK_ACQUIRED;
     }
     PyLockStatus s = _PyMutex_LockTimed(&m->mutex, timeout, flags);
@@ -459,7 +460,7 @@ _PyRecursiveMutex_TryUnlock(_PyRecursiveMutex *m)
         return -1;
     }
     if (m->level > 0) {
-        m->level--;
+        FT_ATOMIC_STORE_SIZE_RELAXED(m->level, m->level - 1);
         return 0;
     }
     assert(m->level == 0);
