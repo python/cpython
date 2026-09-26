@@ -1,0 +1,3 @@
+Raise :exc:`zipfile.BadZipFile` instead of :exc:`UnicodeDecodeError` when
+opening a :class:`zipfile.ZipFile` whose member name is flagged as UTF-8 but
+contains bytes that are not valid UTF-8.
