@@ -842,6 +842,7 @@ save_unconsumed_input(compobject *self, Py_buffer *data, int err)
             memcpy(PyBytes_AS_STRING(new_data) + old_size,
                       self->zst.next_in, left_size);
             Py_SETREF(self->unused_data, new_data);
+            self->zst.next_in += left_size;
             self->zst.avail_in = 0;
         }
     }
