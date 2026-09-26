@@ -51,8 +51,8 @@ A standard interface exists for objects that contain an array of items
 whose size is determined when the object is allocated.
 */
 
-/* Py_DEBUG implies Py_REF_DEBUG. */
-#if defined(Py_DEBUG) && !defined(Py_REF_DEBUG)
+/* Py_DEBUG implies Py_REF_DEBUG, unless explicitly disabled. */
+#if defined(Py_DEBUG) && !defined(Py_NO_PY_REF_DEBUG) && !defined(Py_REF_DEBUG)
 #  define Py_REF_DEBUG
 #endif
 
