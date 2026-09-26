@@ -1,0 +1,1 @@
+Use duck-typing in ``inspect`` to support Cython functions in ``getfile`` and ``getsource``
