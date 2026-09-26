@@ -169,13 +169,18 @@ or :c:member:`PyTypeObject.tp_itemsize`), it cannot be ported to
 ``abi3t`` 3.15.
 
 
+.. _abi3t-migration-build:
+
 Setting up the build
 ====================
 
-If you use a build tool (such as setuptools, meson-python, scikit-build-core),
-search its documentation for a way to select ``abi3t``.
-At the time of writing, not all of them have this; but if your tool does,
-use it.
+If your build tool supports ``abi3t``, use it to select the ABI.
+See the documentation for `meson-python
+<https://mesonbuild.com/meson-python/how-to-guides/limited-api.html#the-abi3t-stable-abi>`__,
+`scikit-build-core
+<https://scikit-build-core.readthedocs.io/en/stable/configuration/#customizing-the-output-wheel>`__,
+and `Maturin <https://www.maturin.rs/bindings#py_limited_apiabi3>`__,
+all of which support ``abi3t``.
 You may want to verify that it set the right flag by temporarily adding the
 following just after ``#include <Python.h>``::
 
@@ -184,6 +189,13 @@ following just after ``#include <Python.h>``::
    #endif
 
 This should result in a different error than "``abi3t`` define is not set".
+
+.. seealso::
+
+   `Building and distributing abi3t extensions
+   <https://py-free-threading.github.io/abi3t/>`__:
+   Build configuration and wheel testing examples in the community-maintained
+   Python Free-Threading Guide.
 
 .. note::
 
