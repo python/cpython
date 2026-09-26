@@ -12,6 +12,7 @@ from test.support import subTests
 import weakref
 import pickle
 import operator
+import re
 import struct
 import sys
 
@@ -109,6 +110,24 @@ class MiscTest(unittest.TestCase):
         for typecode in array.typecodes:
             self.assertIsInstance(typecode, str)
             self.assertGreaterEqual(len(typecode), 1)
+
+    @support.cpython_only
+    @support.requires_docstrings
+    def test_typecodes_documented(self):
+        # The type code table in the array.array docstring must list every
+        # supported type code, and nothing else, and the minimum size it
+        # gives for each of them must be one the implementation meets.
+        row = re.compile(r"^ {4}('\w+') +\S.*? +(\d+)(?: \(see note\))?$")
+        documented = {}
+        for line in array.array.__doc__.splitlines():
+            match = row.match(line)
+            if match is not None:
+                documented[match.group(1).strip("'")] = int(match.group(2))
+        self.assertEqual(sorted(documented), sorted(array.typecodes))
+        for typecode, minimum_size in documented.items():
+            with self.subTest(typecode=typecode):
+                self.assertGreaterEqual(array.array(typecode).itemsize,
+                                        minimum_size)
 
 
 # Machine format codes.
