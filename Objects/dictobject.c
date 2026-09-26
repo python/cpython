@@ -6303,6 +6303,12 @@ dictreviter_iter_lock_held(PyDictObject *d, PyObject *self)
             value = entry_ptr->me_value;
         }
     }
+    // We found an element, but did not expect it
+    if (di->len == 0) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "dictionary keys changed during iteration");
+        goto fail;
+    }
     di->di_pos = i-1;
     di->len--;
 
