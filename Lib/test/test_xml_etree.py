@@ -1324,6 +1324,11 @@ class ElementTreeTest(unittest.TestCase):
             ET.fromstring('<r>%s<</r>' % ('x' * size))
         self.assertEqual(cm.exception.position, (1, size + 4))
 
+    def test_parse_error_msg_is_string(self):
+        with self.assertRaises(ET.ParseError) as cm:
+            ET.XML("<")
+        self.assertIsInstance(cm.exception.msg, str)
+        self.assertEqual(cm.exception.msg, "unclosed token: line 1, column 0")
 
     @support.subTests('sample,exception', [
         (b'<x> \xa1</x>', UnicodeDecodeError),  # crashed
