@@ -19,7 +19,9 @@ from .types import CharBuffer, CharWidths
 from .trace import trace
 
 
-ANSI_ESCAPE_SEQUENCE = re.compile(r"\x1b\[[ -@]*[A-~]")
+ANSI_ESCAPE_SEQUENCE = re.compile(
+    r"\x1b(?:\[[ -@]*[A-~]|\][^\x1b\x07]*(?:\x07|\x1b\\))"
+)
 ZERO_WIDTH_BRACKET = re.compile(r"\x01.*?\x02")
 ZERO_WIDTH_TRANS = str.maketrans({"\x01": "", "\x02": ""})
 IDENTIFIERS_AFTER = frozenset({"def", "class"})
