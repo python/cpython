@@ -1,0 +1,1 @@
+Fixed mock objects autospec'd to function-like objects so they can be correctly tested by ``inspect.iscoroutinefunction`` and ``asyncio.iscoroutinefunction``.
