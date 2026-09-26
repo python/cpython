@@ -5145,6 +5145,11 @@ class CWhitebox(unittest.TestCase):
         self.assertRaises(KeyError, setattr, c, 'flags', {0:1})
         self.assertRaises(KeyError, setattr, c, 'traps', {0:1})
 
+        # Attributes cannot be deleted through the descriptor
+        for attr in ['prec', 'Emax', 'Emin', 'rounding', 'capitals', 'clamp']:
+            self.assertRaises(AttributeError,
+                              getattr(Context, attr).__delete__, c)
+
         # Test assignment from a signal dict with the correct length but
         # one invalid key.
         d = c.flags.copy()
