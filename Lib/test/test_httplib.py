@@ -1548,6 +1548,20 @@ class BasicTest(TestCase):
         self.assertEqual(sock.file.read(), extradata.encode("ascii")) #we read to the end
         resp.close()
 
+    def test_bodiless_status_with_chunked_sync(self):
+        """1xx, 204 and 304 responses have no body even with Transfer-Encoding: chunked"""
+        extradata = b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nok"
+        for status in (b"204 No Content", b"304 Not Modified"):
+            with self.subTest(status=status):
+                sock = FakeSocket(b"HTTP/1.1 " + status +
+                                  b"\r\nTransfer-Encoding: chunked\r\n\r\n" + extradata)
+                resp = client.HTTPResponse(sock, method="GET")
+                resp.begin()
+                self.assertEqual(resp.read(), b"")
+                # the next response must still be unread
+                self.assertEqual(sock.file.read(), extradata)
+                resp.close()
+
     def test_content_length_sync(self):
         """Check that we don't read past the end of the Content-Length stream"""
         extradata = b"extradata"
