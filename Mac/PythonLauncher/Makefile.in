@@ -27,6 +27,8 @@ install: Python\ Launcher.app
 	-test -d "$(DESTDIR)$(PYTHONAPPSDIR)/Python Launcher.app" && rm -r "$(DESTDIR)$(PYTHONAPPSDIR)/Python Launcher.app"
 	/bin/cp -r "Python Launcher.app" "$(DESTDIR)$(PYTHONAPPSDIR)"
 	touch "$(DESTDIR)$(PYTHONAPPSDIR)/Python Launcher.app"
+	chmod -R ugo+rX,go-w "$(DESTDIR)$(PYTHONAPPSDIR)/Python Launcher.app"
+	chmod ugo+x "$(DESTDIR)$(PYTHONAPPSDIR)/Python Launcher.app/Contents/MacOS/Python Launcher"
 
 clean:
 	rm -f *.o "Python Launcher"

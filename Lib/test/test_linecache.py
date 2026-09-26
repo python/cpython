@@ -1,12 +1,21 @@
 """ Tests for the linecache module """
 
+import importlib
 import linecache
 import unittest
 import os.path
+import sys
 import tempfile
+import threading
 import tokenize
+import zipfile
+import zipimport
+from importlib.machinery import ModuleSpec
 from test import support
+from test.support import import_helper
 from test.support import os_helper
+from test.support import threading_helper
+from test.support.script_helper import assert_python_ok
 
 
 FILENAME = linecache.__file__
@@ -73,16 +82,18 @@ class GetLineTestsBadData(TempFile):
     # file_byte_string = b'Bad data goes here'
 
     def test_getline(self):
-        self.assertRaises((SyntaxError, UnicodeDecodeError),
-                          linecache.getline, self.file_name, 1)
+        self.assertEqual(linecache.getline(self.file_name, 1), '')
 
     def test_getlines(self):
-        self.assertRaises((SyntaxError, UnicodeDecodeError),
-                          linecache.getlines, self.file_name)
+        self.assertEqual(linecache.getlines(self.file_name), [])
 
 
 class EmptyFile(GetLineTestsGoodData, unittest.TestCase):
     file_list = []
+
+    def test_getlines(self):
+        lines = linecache.getlines(self.file_name)
+        self.assertEqual(lines, ['\n'])
 
 
 class SingleEmptyLine(GetLineTestsGoodData, unittest.TestCase):
@@ -92,9 +103,21 @@ class SingleEmptyLine(GetLineTestsGoodData, unittest.TestCase):
 class GoodUnicode(GetLineTestsGoodData, unittest.TestCase):
     file_list = ['á\n', 'b\n', 'abcdef\n', 'ááááá\n']
 
+class BadUnicode_NoDeclaration(GetLineTestsBadData, unittest.TestCase):
+    file_byte_string = b'\n\x80abc'
 
-class BadUnicode(GetLineTestsBadData, unittest.TestCase):
-    file_byte_string = b'\x80abc'
+class BadUnicode_WithDeclaration(GetLineTestsBadData, unittest.TestCase):
+    file_byte_string = b'# coding=utf-8\n\x80abc'
+
+
+class FakeLoader:
+    def get_source(self, fullname):
+        return f'source for {fullname}'
+
+
+class NoSourceLoader:
+    def get_source(self, fullname):
+        return None
 
 
 class LineCacheTests(unittest.TestCase):
@@ -238,6 +261,116 @@ class LineCacheTests(unittest.TestCase):
         self.assertEqual(lines3, [])
         self.assertEqual(linecache.getlines(FILENAME), lines)
 
+    def test_loader(self):
+        filename = 'scheme://path'
+
+        linecache.clearcache()
+        module_globals = {'__name__': 'a.b.c', '__loader__': None}
+        self.assertEqual(linecache.getlines(filename, module_globals), [])
+
+        for loader in object(), NoSourceLoader():
+            linecache.clearcache()
+            module_globals = {'__name__': 'a.b.c', '__loader__': loader}
+            with self.assertWarns(DeprecationWarning) as w:
+                self.assertEqual(linecache.getlines(filename, module_globals), [])
+            self.assertEqual(str(w.warning),
+                             'Module globals is missing a __spec__.loader')
+
+        linecache.clearcache()
+        module_globals = {'__name__': 'a.b.c', '__loader__': FakeLoader()}
+        with self.assertWarns(DeprecationWarning) as w:
+            self.assertEqual(linecache.getlines(filename, module_globals),
+                             ['source for a.b.c\n'])
+        self.assertEqual(str(w.warning),
+                         'Module globals is missing a __spec__.loader')
+
+        for spec in None, object():
+            linecache.clearcache()
+            module_globals = {'__name__': 'a.b.c', '__loader__': FakeLoader(),
+                              '__spec__': spec}
+            with self.assertWarns(DeprecationWarning) as w:
+                self.assertEqual(linecache.getlines(filename, module_globals),
+                                 ['source for a.b.c\n'])
+            self.assertEqual(str(w.warning),
+                             'Module globals is missing a __spec__.loader')
+
+        linecache.clearcache()
+        module_globals = {'__name__': 'a.b.c', '__loader__': FakeLoader(),
+                          '__spec__': ModuleSpec('', FakeLoader())}
+        with self.assertWarns(DeprecationWarning) as w:
+            self.assertEqual(linecache.getlines(filename, module_globals),
+                             ['source for a.b.c\n'])
+        self.assertEqual(str(w.warning),
+                         'Module globals; __loader__ != __spec__.loader')
+
+        linecache.clearcache()
+        spec = ModuleSpec('x.y.z', FakeLoader())
+        module_globals = {'__name__': 'a.b.c', '__loader__': spec.loader,
+                          '__spec__': spec}
+        self.assertEqual(linecache.getlines(filename, module_globals),
+                         ['source for x.y.z\n'])
+
+    def test_frozen(self):
+        filename = '<frozen fakemodule>'
+        module_globals = {'__file__': FILENAME}
+        empty = linecache.getlines(filename)
+        self.assertEqual(empty, [])
+        lines = linecache.getlines(filename, module_globals)
+        self.assertGreater(len(lines), 0)
+        lines_cached = linecache.getlines(filename)
+        self.assertEqual(lines, lines_cached)
+        linecache.clearcache()
+        empty = linecache.getlines(filename)
+        self.assertEqual(empty, [])
+
+    def test_invalid_names(self):
+        for name, desc in [
+            ('\x00', 'NUL bytes filename'),
+            (__file__ + '\x00', 'filename with embedded NUL bytes'),
+            # A filename with surrogate codes. A UnicodeEncodeError is raised
+            # by os.stat() upon querying, which is a subclass of ValueError.
+            ("\uD834\uDD1E.py", 'surrogate codes (MUSICAL SYMBOL G CLEF)'),
+            # For POSIX platforms, an OSError will be raised but for Windows
+            # platforms, a ValueError is raised due to the path_t converter.
+            # See: https://github.com/python/cpython/issues/122170
+            ('a' * 1_000_000, 'very long filename'),
+        ]:
+            with self.subTest(f'updatecache: {desc}'):
+                linecache.clearcache()
+                lines = linecache.updatecache(name)
+                self.assertListEqual(lines, [])
+                self.assertNotIn(name, linecache.cache)
+
+            # hack into the cache (it shouldn't be allowed
+            # but we never know what people do...)
+            for key, fullname in [(name, 'ok'), ('key', name), (name, name)]:
+                with self.subTest(f'checkcache: {desc}',
+                                  key=key, fullname=fullname):
+                    linecache.clearcache()
+                    linecache.cache[key] = (0, 1234, [], fullname)
+                    linecache.checkcache(key)
+                    self.assertNotIn(key, linecache.cache)
+
+        # just to be sure that we did not mess with cache
+        linecache.clearcache()
+
+    def test_linecache_python_string(self):
+        cmdline = "import linecache;assert len(linecache.cache) == 0"
+        retcode, stdout, stderr = assert_python_ok('-c', cmdline)
+        self.assertEqual(retcode, 0)
+        self.assertEqual(stdout, b'')
+        self.assertEqual(stderr, b'')
+
+    def test_path_importer_cache_None(self):
+        # sys.path_importer_cache is set to None while the interpreter is
+        # shutting down, before objects with a __del__ that may end up here
+        # are released.
+        filename = os.path.abspath(os_helper.TESTFN + '.py')
+        with support.swap_attr(sys, 'path_importer_cache', None):
+            self.assertEqual(linecache.getlines(filename), [])
+            self.assertEqual(linecache.getline(filename, 1), '')
+        self.assertNotIn(filename, linecache.cache)
+
 
 class LineCacheInvalidationTests(unittest.TestCase):
     def setUp(self):
@@ -279,6 +412,133 @@ class LineCacheInvalidationTests(unittest.TestCase):
         self.assertNotIn(self.deleted_file, linecache.cache)
         self.assertNotIn(self.modified_file, linecache.cache)
         self.assertIn(self.unchanged_file, linecache.cache)
+
+
+class ZipArchiveTests(unittest.TestCase):
+    """Sources of modules imported from a zip archive on sys.path."""
+
+    MODULE_SOURCE = (
+        '"""A module inside a zip archive."""\n'
+        '\n'
+        'def f():\n'
+        '    return "from the zip"\n'
+    )
+    PACKAGE_SOURCE = 'value = 42\n'
+    LATIN1_SOURCE = (
+        '# -*- coding: latin-1 -*-\n'
+        'value = "caf\xe9"\n'
+    )
+
+    def setUp(self):
+        linecache.clearcache()
+        self.addCleanup(linecache.clearcache)
+        tmpdir = self.enterContext(os_helper.temp_dir())
+        self.zip_name = os.path.join(tmpdir, 'sources.zip')
+        with zipfile.ZipFile(self.zip_name, 'w') as zf:
+            zf.writestr('zipmod.py', self.MODULE_SOURCE)
+            zf.writestr('zippkg/__init__.py', self.PACKAGE_SOURCE)
+            zf.writestr('ziplatin1.py', self.LATIN1_SOURCE.encode('latin-1'))
+        self.enterContext(import_helper.DirsOnSysPath(self.zip_name))
+        for name in 'zipmod', 'zippkg', 'ziplatin1':
+            self.addCleanup(import_helper.unload, name)
+        self.addCleanup(sys.path_importer_cache.pop, self.zip_name, None)
+        self.addCleanup(zipimport._zip_directory_cache.pop,
+                        self.zip_name, None)
+        self.zipmod = importlib.import_module('zipmod')
+
+    def test_getlines_without_module_globals(self):
+        filename = self.zipmod.__file__
+        self.assertEqual(filename, os.path.join(self.zip_name, 'zipmod.py'))
+        self.assertFalse(os.path.exists(filename))
+        lines = self.MODULE_SOURCE.splitlines(keepends=True)
+        self.assertEqual(linecache.getlines(filename), lines)
+        self.assertEqual(linecache.getline(filename, 4),
+                         '    return "from the zip"\n')
+        self.assertEqual(linecache.getline(filename, 5), '')
+        code = self.zipmod.f.__code__
+        self.assertEqual(code.co_filename, filename)
+        self.assertEqual(linecache.getline(filename, code.co_firstlineno),
+                         'def f():\n')
+
+    def test_relative_archive_path(self):
+        # A relative sys.path entry gives its modules a relative __file__.
+        tmpdir, zip_base = os.path.split(self.zip_name)
+        self.addCleanup(sys.path_importer_cache.pop, zip_base, None)
+        self.addCleanup(zipimport._zip_directory_cache.pop, zip_base, None)
+        sys.path.insert(0, zip_base)
+        self.addCleanup(sys.path.remove, zip_base)
+        with os_helper.change_cwd(tmpdir):
+            zippkg = importlib.import_module('zippkg')
+            self.assertEqual(zippkg.__file__,
+                             os.path.join(zip_base, 'zippkg', '__init__.py'))
+            self.assertEqual(linecache.getlines(zippkg.__file__),
+                             ['value = 42\n'])
+
+    def test_package(self):
+        zippkg = importlib.import_module('zippkg')
+        self.assertEqual(linecache.getlines(zippkg.__file__),
+                         ['value = 42\n'])
+
+    def test_encoding_declaration(self):
+        ziplatin1 = importlib.import_module('ziplatin1')
+        self.assertEqual(linecache.getlines(ziplatin1.__file__),
+                         self.LATIN1_SOURCE.splitlines(keepends=True))
+
+    def test_missing_file(self):
+        filename = os.path.join(self.zip_name, 'missing.py')
+        self.assertEqual(linecache.getlines(filename), [])
+        self.assertEqual(linecache.getline(filename, 1), '')
+        self.assertNotIn(filename, linecache.cache)
+
+    def test_checkcache_and_clearcache(self):
+        filename = self.zipmod.__file__
+        lines = linecache.getlines(filename)
+        self.assertIn(filename, linecache.cache)
+        # A file inside an archive has no mtime of its own, so checkcache()
+        # keeps the entry, as it does for entries loaded through a loader.
+        self.assertIsNone(linecache.cache[filename][1])
+        linecache.checkcache(filename)
+        linecache.checkcache()
+        self.assertIn(filename, linecache.cache)
+        self.assertEqual(linecache.getlines(filename), lines)
+        linecache.clearcache()
+        self.assertNotIn(filename, linecache.cache)
+        self.assertEqual(linecache.getlines(filename), lines)
+
+
+class MultiThreadingTest(unittest.TestCase):
+    @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
+    def test_read_write_safety(self):
+
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            filenames = []
+            for i in range(10):
+                name = os.path.join(tmpdirname, f"test_{i}.py")
+                with open(name, "w") as h:
+                    h.write("import time\n")
+                    h.write("import system\n")
+                filenames.append(name)
+
+            def linecache_get_line(b):
+                b.wait()
+                for _ in range(100):
+                    for name in filenames:
+                        linecache.getline(name, 1)
+
+            def check(funcs):
+                barrier = threading.Barrier(len(funcs))
+                threads = []
+
+                for func in funcs:
+                    thread = threading.Thread(target=func, args=(barrier,))
+
+                    threads.append(thread)
+
+                with threading_helper.start_threads(threads):
+                    pass
+
+            check([linecache_get_line] * 20)
 
 
 if __name__ == "__main__":

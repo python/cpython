@@ -1,16 +1,18 @@
 .. _library-index:
 
 ###############################
-  The Python Standard Library
+  The Python standard library
 ###############################
 
-While :ref:`reference-index` describes the exact syntax and
-semantics of the Python language, this library reference manual
-describes the standard library that is distributed with Python. It also
-describes some of the optional components that are commonly included
-in Python distributions.
+This library reference manual describes the standard library
+distributed with Python. It also describes some of the optional
+components that are commonly included in Python distributions.
 
-Python's standard library is very extensive, offering a wide range of
+Elsewhere, :ref:`reference-index` describes the exact syntax and
+semantics of the Python language, and :ref:`builtins-index` describes
+the built-in functions.
+
+Python's standard library is extensive, offering a wide range of
 facilities as indicated by the long table of contents listed below. The
 library contains built-in modules (written in C) that provide access to
 system functionality such as file I/O that would otherwise be
@@ -27,8 +29,8 @@ as a collection of packages, so it may be necessary to use the packaging
 tools provided with the operating system to obtain some or all of the
 optional components.
 
-In addition to the standard library, there is a growing collection of
-several thousand components (from individual programs and modules to
+In addition to the standard library, there is an active collection of
+hundreds of thousands of components (from individual programs and modules to
 packages and entire application development frameworks), available from
 the `Python Package Index <https://pypi.org>`_.
 
@@ -39,10 +41,6 @@ the `Python Package Index <https://pypi.org>`_.
    :maxdepth: 2
 
    intro.rst
-   functions.rst
-   constants.rst
-   stdtypes.rst
-   exceptions.rst
 
    text.rst
    binary.rst
@@ -55,6 +53,7 @@ the `Python Package Index <https://pypi.org>`_.
    fileformats.rst
    crypto.rst
    allos.rst
+   cmdlinelibs.rst
    concurrency.rst
    ipc.rst
    netdata.rst
@@ -62,7 +61,6 @@ the `Python Package Index <https://pypi.org>`_.
    internet.rst
    mm.rst
    i18n.rst
-   frameworks.rst
    tk.rst
    development.rst
    debug.rst
@@ -73,5 +71,7 @@ the `Python Package Index <https://pypi.org>`_.
    language.rst
    windows.rst
    unix.rst
+   cmdline.rst
    superseded.rst
-   undoc.rst
+   removed.rst
+   security_warnings.rst

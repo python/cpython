@@ -1,0 +1,3 @@
+Fixed quadratic complexity in incremental parsing of long unterminated
+constructs (such as tags or comments) in :class:`html.parser.HTMLParser`,
+which could be exploited for a denial of service.

@@ -1,0 +1,3 @@
+Support set operations and nested sets in regular expression character
+classes, as described in Unicode Technical Standard #18: set difference
+(``[A--B]``), intersection (``[A&&B]``) and union (``[A||B]``).

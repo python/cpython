@@ -1,1 +1,0 @@
-Importlib.metadata now prefers f-strings to .format.

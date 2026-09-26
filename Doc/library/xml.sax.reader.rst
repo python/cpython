@@ -1,11 +1,8 @@
-:mod:`xml.sax.xmlreader` --- Interface for XML parsers
-======================================================
+:mod:`!xml.sax.xmlreader` --- Interface for XML parsers
+=======================================================
 
 .. module:: xml.sax.xmlreader
    :synopsis: Interface which SAX-compliant XML parsers must implement.
-
-.. moduleauthor:: Lars Marius Garshol <larsga@garshol.priv.no>
-.. sectionauthor:: Martin v. Löwis <martin@v.loewis.de>
 
 **Source code:** :source:`Lib/xml/sax/xmlreader.py`
 
@@ -217,6 +214,15 @@ Instances of :class:`IncrementalParser` offer the following additional methods:
    Assume the end of the document. That will check well-formedness conditions that
    can be checked only at the end, invoke handlers, and may clean up resources
    allocated during parsing.
+
+
+.. method:: IncrementalParser.prepareParser(source)
+
+   Prepare the parser for parsing *source*, an
+   :class:`InputSource` instance.
+   It is called by :meth:`~XMLReader.parse` before feeding the data.
+   The parser implementation must override this method;
+   the default implementation raises :exc:`NotImplementedError`.
 
 
 .. method:: IncrementalParser.reset()

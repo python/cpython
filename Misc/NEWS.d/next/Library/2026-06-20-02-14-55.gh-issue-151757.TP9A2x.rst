@@ -1,0 +1,9 @@
+The :mod:`curses` character-cell window methods now accept a full character
+cell -- a spacing character optionally followed by combining characters -- in
+addition to a single integer or byte character.  Add the wide-character read
+methods :meth:`curses.window.get_wstr` and :meth:`curses.window.in_wstr`, and
+the functions :func:`curses.erasewchar`, :func:`curses.killwchar` and
+:func:`curses.wunctrl`.  On a narrow (non-ncursesw) build the character cell
+holds a single character without combining marks, representable as one byte in
+the window's encoding, and :meth:`curses.window.in_wstr` returns its decoded
+text.

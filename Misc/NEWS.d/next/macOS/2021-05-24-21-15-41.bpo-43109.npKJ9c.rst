@@ -1,2 +1,0 @@
-Allow --with-lto configure option to work with Apple-supplied Xcode or
-Command Line Tools.

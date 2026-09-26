@@ -1,0 +1,5 @@
+Fix a crash on a complex type variable substitution.
+
+``from typing import TypeVar; memoryview[TypeVar("")][*typing.Mapping[...,
+...]]`` used to fail due to missing ``NULL`` check on ``_unpack_args`` C
+function call.

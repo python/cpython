@@ -3,6 +3,7 @@ import unittest
 import sys, io, subprocess
 import quopri
 
+from test import support
 
 
 ENCSAMPLE = b"""\
@@ -180,6 +181,7 @@ zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz''')
         for p, e in self.HSTRINGS:
             self.assertEqual(quopri.decodestring(e, header=True), p)
 
+    @support.requires_subprocess()
     def test_scriptencode(self):
         (p, e) = self.STRINGS[-1]
         process = subprocess.Popen([sys.executable, "-mquopri"],
@@ -196,6 +198,7 @@ zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz''')
             self.assertEqual(cout[i], e[i])
         self.assertEqual(cout, e)
 
+    @support.requires_subprocess()
     def test_scriptdecode(self):
         (p, e) = self.STRINGS[-1]
         process = subprocess.Popen([sys.executable, "-mquopri", "-d"],

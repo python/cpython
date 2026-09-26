@@ -1,4 +1,0 @@
-Fix a regression in :func:`type` when a metaclass raises an exception. The C
-function :c:func:`type_new` must properly report the exception when a metaclass
-constructor raises an exception and the winner class is not the metaclass.
-Patch by Victor Stinner.

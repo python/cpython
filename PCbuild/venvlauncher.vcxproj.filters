@@ -9,17 +9,12 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\PC\launcher.ico">
-      <Filter>Resource Files</Filter>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="..\PC\pylauncher.rc">
+    <ResourceCompile Include="..\PC\python_exe.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\PC\launcher.c">
+    <ClCompile Include="..\PC\venvlauncher.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -1,3 +1,5 @@
+"""Base class for the Tk common dialogs."""
+
 # base class for tk common dialogues
 #
 # this module provides a base class for accessing the common
@@ -10,7 +12,7 @@
 
 __all__ = ["Dialog"]
 
-from tkinter import Frame, _get_temp_root, _destroy_temp_root
+from tkinter import _get_temp_root, _destroy_temp_root
 
 
 class Dialog:

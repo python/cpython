@@ -1175,7 +1175,7 @@ Wed Mar 10 05:18:02 1999  Guido van Rossum  <guido@cnri.reston.va.us>
 	    classes in selected module
 	    methods of selected class
 
-	Sinlge clicking in a directory, module or class item updates the next
+	Single clicking in a directory, module or class item updates the next
 	column with info about the selected item.  Double clicking in a
 	module, class or method item opens the file (and selects the clicked
 	item if it is a class or method).

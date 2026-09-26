@@ -1,0 +1,2 @@
+Speed up the ``|``, ``&`` and ``^`` operations on :class:`enum.Flag` members.
+Patch by Bernát Gábor.

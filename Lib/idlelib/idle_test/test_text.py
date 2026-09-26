@@ -6,7 +6,7 @@ import unittest
 from test.support import requires
 from _tkinter import TclError
 
-class TextTest(object):
+class TextTest:
     "Define items common to both sets of tests."
 
     hw = 'hello\nworld'  # Several tests insert this after initialization.
@@ -233,4 +233,4 @@ class TkTextTest(TextTest, unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main(verbosity=2, exit=False)
+    unittest.main(verbosity=2)

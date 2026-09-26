@@ -1,0 +1,14 @@
+config-variables: null
+
+# Pending release of actionlint > 1.7.12 for ubuntu-26.04* support:
+# https://github.com/rhysd/actionlint/pull/683
+self-hosted-runner:
+  labels:
+    - ubuntu-26.04
+    - ubuntu-26.04-arm
+
+paths:
+  .github/workflows/**/*.yml:
+     ignore:
+     - 1st argument of function call is not assignable
+     - SC2(015|038|086|091|097|098|129|155)

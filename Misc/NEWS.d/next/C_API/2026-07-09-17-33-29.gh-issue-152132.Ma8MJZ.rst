@@ -1,0 +1,3 @@
+Fix :c:func:`Py_RunMain` to return an exit code, rather than calling
+:c:func:`Py_Exit`, when running a script, a command, or the REPL. Patch by
+Victor Stinner.

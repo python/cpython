@@ -14,9 +14,9 @@ extern "C" {
 
    Print an object 'o' on file 'fp'.  Returns -1 on error. The flags argument
    is used to enable certain printing options. The only option currently
-   supported is Py_Print_RAW.
-
-   (What should be said about Py_Print_RAW?). */
+   supported is Py_PRINT_RAW. By default (flags=0), PyObject_Print() formats
+   the object by calling PyObject_Repr(). If flags equals to Py_PRINT_RAW, it
+   formats the object by calling PyObject_Str(). */
 
 
 /* Implemented elsewhere:
@@ -50,6 +50,25 @@ extern "C" {
 
    This function always succeeds. */
 
+
+/* Implemented elsewhere:
+
+   int PyObject_HasAttrStringWithError(PyObject *o, const char *attr_name);
+
+   Returns 1 if object 'o' has the attribute attr_name, and 0 otherwise.
+   This is equivalent to the Python expression: hasattr(o,attr_name).
+   Returns -1 on failure. */
+
+
+/* Implemented elsewhere:
+
+   int PyObject_HasAttrWithError(PyObject *o, PyObject *attr_name);
+
+   Returns 1 if o has the attribute attr_name, and 0 otherwise.
+   This is equivalent to the Python expression: hasattr(o,attr_name).
+   Returns -1 on failure. */
+
+
 /* Implemented elsewhere:
 
    PyObject* PyObject_GetAttr(PyObject *o, PyObject *attr_name);
@@ -58,6 +77,38 @@ extern "C" {
    Returns the attribute value on success, or NULL on failure.
 
    This is the equivalent of the Python expression: o.attr_name. */
+
+
+/* Implemented elsewhere:
+
+   int PyObject_GetOptionalAttr(PyObject *obj, PyObject *attr_name, PyObject **result);
+
+   Variant of PyObject_GetAttr() which doesn't raise AttributeError
+   if the attribute is not found.
+
+   If the attribute is found, return 1 and set *result to a new strong
+   reference to the attribute.
+   If the attribute is not found, return 0 and set *result to NULL;
+   the AttributeError is silenced.
+   If an error other than AttributeError is raised, return -1 and
+   set *result to NULL.
+*/
+
+
+/* Implemented elsewhere:
+
+   int PyObject_GetOptionalAttrString(PyObject *obj, const char *attr_name, PyObject **result);
+
+   Variant of PyObject_GetAttrString() which doesn't raise AttributeError
+   if the attribute is not found.
+
+   If the attribute is found, return 1 and set *result to a new strong
+   reference to the attribute.
+   If the attribute is not found, return 0 and set *result to NULL;
+   the AttributeError is silenced.
+   If an error other than AttributeError is raised, return -1 and
+   set *result to NULL.
+*/
 
 
 /* Implemented elsewhere:
@@ -80,25 +131,33 @@ extern "C" {
 
    This is the equivalent of the Python statement o.attr_name=v. */
 
-/* Implemented as a macro:
+/* Implemented elsewhere:
 
    int PyObject_DelAttrString(PyObject *o, const char *attr_name);
 
    Delete attribute named attr_name, for object o. Returns
    -1 on failure.
 
-   This is the equivalent of the Python statement: del o.attr_name. */
-#define PyObject_DelAttrString(O,A) PyObject_SetAttrString((O),(A), NULL)
+   This is the equivalent of the Python statement: del o.attr_name.
+
+   Implemented as a macro in the limited C API 3.12 and older. */
+#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 < 0x030d0000
+#  define PyObject_DelAttrString(O, A) PyObject_SetAttrString((O), (A), NULL)
+#endif
 
 
-/* Implemented as a macro:
+/* Implemented elsewhere:
 
    int PyObject_DelAttr(PyObject *o, PyObject *attr_name);
 
    Delete attribute named attr_name, for object o. Returns -1
    on failure.  This is the equivalent of the Python
-   statement: del o.attr_name. */
-#define  PyObject_DelAttr(O,A) PyObject_SetAttr((O),(A), NULL)
+   statement: del o.attr_name.
+
+   Implemented as a macro in the limited C API 3.12 and older. */
+#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 < 0x030d0000
+#  define PyObject_DelAttr(O, A) PyObject_SetAttr((O), (A), NULL)
+#endif
 
 
 /* Implemented elsewhere:
@@ -133,12 +192,6 @@ extern "C" {
    and 0 otherwise.
 
    This function always succeeds. */
-
-
-#ifdef PY_SSIZE_T_CLEAN
-#  define PyObject_CallFunction _PyObject_CallFunction_SizeT
-#  define PyObject_CallMethod _PyObject_CallMethod_SizeT
-#endif
 
 
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03090000
@@ -195,15 +248,6 @@ PyAPI_FUNC(PyObject *) PyObject_CallMethod(PyObject *obj,
                                            const char *name,
                                            const char *format, ...);
 
-PyAPI_FUNC(PyObject *) _PyObject_CallFunction_SizeT(PyObject *callable,
-                                                    const char *format,
-                                                    ...);
-
-PyAPI_FUNC(PyObject *) _PyObject_CallMethod_SizeT(PyObject *obj,
-                                                  const char *name,
-                                                  const char *format,
-                                                  ...);
-
 /* Call a callable Python object 'callable' with a variable number of C
    arguments. The C arguments are provided as PyObject* values, terminated
    by a NULL.
@@ -228,6 +272,32 @@ PyAPI_FUNC(PyObject *) PyObject_CallMethodObjArgs(
     PyObject *name,
     ...);
 
+/* Given a vectorcall nargsf argument, return the actual number of arguments.
+ * (For use outside the limited API, this is re-defined as a static inline
+ * function in cpython/abstract.h)
+ */
+PyAPI_FUNC(Py_ssize_t) PyVectorcall_NARGS(size_t nargsf);
+
+/* Call "callable" (which must support vectorcall) with positional arguments
+   "tuple" and keyword arguments "dict". "dict" may also be NULL */
+PyAPI_FUNC(PyObject *) PyVectorcall_Call(PyObject *callable, PyObject *tuple, PyObject *dict);
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030C0000
+#define PY_VECTORCALL_ARGUMENTS_OFFSET \
+    (_Py_STATIC_CAST(size_t, 1) << (8 * sizeof(size_t) - 1))
+
+/* Perform a PEP 590-style vector call on 'callable' */
+PyAPI_FUNC(PyObject *) PyObject_Vectorcall(
+    PyObject *callable,
+    PyObject *const *args,
+    size_t nargsf,
+    PyObject *kwnames);
+
+/* Call the method 'name' on args[0] with arguments in args[1..nargsf-1]. */
+PyAPI_FUNC(PyObject *) PyObject_VectorcallMethod(
+    PyObject *name, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames);
+#endif
 
 /* Implemented elsewhere:
 
@@ -309,8 +379,6 @@ PyAPI_FUNC(int) PyObject_DelItemString(PyObject *o, const char *key);
 PyAPI_FUNC(int) PyObject_DelItem(PyObject *o, PyObject *key);
 
 
-/* === New Buffer API ============================================ */
-
 /* Takes an arbitrary object and returns the result of calling
    obj.__format__(format_spec). */
 PyAPI_FUNC(PyObject *) PyObject_Format(PyObject *obj,
@@ -327,7 +395,7 @@ PyAPI_FUNC(PyObject *) PyObject_GetIter(PyObject *);
 /* Takes an AsyncIterable object and returns an AsyncIterator for it.
    This is typically a new iterator but if the argument is an AsyncIterator,
    this returns itself. */
-PyAPI_FUNC(PyObject *) PyObject_GetAiter(PyObject *);
+PyAPI_FUNC(PyObject *) PyObject_GetAIter(PyObject *);
 
 /* Returns non-zero if the object 'obj' provides iterator protocols, and 0 otherwise.
 
@@ -337,7 +405,15 @@ PyAPI_FUNC(int) PyIter_Check(PyObject *);
 /* Returns non-zero if the object 'obj' provides AsyncIterator protocols, and 0 otherwise.
 
    This function always succeeds. */
-PyAPI_FUNC(int) PyAiter_Check(PyObject *);
+PyAPI_FUNC(int) PyAIter_Check(PyObject *);
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030e0000
+/* Return 1 and set 'item' to the next item of 'iter' on success.
+ * Return 0 and set 'item' to NULL when there are no remaining values.
+ * Return -1, set 'item' to NULL and set an exception on error.
+ */
+PyAPI_FUNC(int) PyIter_NextItem(PyObject *iter, PyObject **item);
+#endif
 
 /* Takes an iterator object and calls its tp_iternext slot,
    returning the next value.
@@ -345,7 +421,9 @@ PyAPI_FUNC(int) PyAiter_Check(PyObject *);
    If the iterator is exhausted, this returns NULL without setting an
    exception.
 
-   NULL with an exception means an error occurred. */
+   NULL with an exception means an error occurred.
+
+   Prefer PyIter_NextItem() instead. */
 PyAPI_FUNC(PyObject *) PyIter_Next(PyObject *);
 
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030A0000
@@ -667,22 +745,6 @@ PyAPI_FUNC(PyObject *) PySequence_List(PyObject *o);
    TypeError exception with 'm' as the message text. */
 PyAPI_FUNC(PyObject *) PySequence_Fast(PyObject *o, const char* m);
 
-/* Return the size of the sequence 'o', assuming that 'o' was returned by
-   PySequence_Fast and is not NULL. */
-#define PySequence_Fast_GET_SIZE(o) \
-    (PyList_Check(o) ? PyList_GET_SIZE(o) : PyTuple_GET_SIZE(o))
-
-/* Return the 'i'-th element of the sequence 'o', assuming that o was returned
-   by PySequence_Fast, and that i is within bounds. */
-#define PySequence_Fast_GET_ITEM(o, i)\
-     (PyList_Check(o) ? PyList_GET_ITEM(o, i) : PyTuple_GET_ITEM(o, i))
-
-/* Return a pointer to the underlying item array for
-   an object returned by PySequence_Fast */
-#define PySequence_Fast_ITEMS(sf) \
-    (PyList_Check(sf) ? ((PyListObject *)(sf))->ob_item \
-                      : ((PyTupleObject *)(sf))->ob_item)
-
 /* Return the number of occurrences on value on 'o', that is, return
    the number of keys for which o[key] == value.
 
@@ -755,7 +817,7 @@ PyAPI_FUNC(Py_ssize_t) PyMapping_Length(PyObject *o);
    failure.
 
    This is equivalent to the Python statement: del o[key]. */
-#define PyMapping_DelItemString(O,K) PyObject_DelItemString((O),(K))
+#define PyMapping_DelItemString(O, K) PyObject_DelItemString((O), (K))
 
 /* Implemented as a macro:
 
@@ -765,7 +827,7 @@ PyAPI_FUNC(Py_ssize_t) PyMapping_Length(PyObject *o);
    Returns -1 on failure.
 
    This is equivalent to the Python statement: del o[key]. */
-#define PyMapping_DelItem(O,K) PyObject_DelItem((O),(K))
+#define PyMapping_DelItem(O, K) PyObject_DelItem((O), (K))
 
 /* On success, return 1 if the mapping object 'o' has the key 'key',
    and 0 otherwise.
@@ -782,15 +844,27 @@ PyAPI_FUNC(int) PyMapping_HasKeyString(PyObject *o, const char *key);
    This function always succeeds. */
 PyAPI_FUNC(int) PyMapping_HasKey(PyObject *o, PyObject *key);
 
-/* On success, return a list or tuple of the keys in mapping object 'o'.
+/* Return 1 if the mapping object has the key 'key', and 0 otherwise.
+   This is equivalent to the Python expression: key in o.
+   On failure, return -1. */
+
+PyAPI_FUNC(int) PyMapping_HasKeyWithError(PyObject *o, PyObject *key);
+
+/* Return 1 if the mapping object has the key 'key', and 0 otherwise.
+   This is equivalent to the Python expression: key in o.
+   On failure, return -1. */
+
+PyAPI_FUNC(int) PyMapping_HasKeyStringWithError(PyObject *o, const char *key);
+
+/* On success, return a list of the keys in mapping object 'o'.
    On failure, return NULL. */
 PyAPI_FUNC(PyObject *) PyMapping_Keys(PyObject *o);
 
-/* On success, return a list or tuple of the values in mapping object 'o'.
+/* On success, return a list of the values in mapping object 'o'.
    On failure, return NULL. */
 PyAPI_FUNC(PyObject *) PyMapping_Values(PyObject *o);
 
-/* On success, return a list or tuple of the items in mapping object 'o',
+/* On success, return a list of the items in mapping object 'o',
    where each item is a tuple containing a key-value pair. On failure, return
    NULL. */
 PyAPI_FUNC(PyObject *) PyMapping_Items(PyObject *o);
@@ -800,6 +874,21 @@ PyAPI_FUNC(PyObject *) PyMapping_Items(PyObject *o);
    This is the equivalent of the Python expression: o[key]. */
 PyAPI_FUNC(PyObject *) PyMapping_GetItemString(PyObject *o,
                                                const char *key);
+
+/* Variants of PyObject_GetItem() and PyMapping_GetItemString() which don't
+   raise KeyError if the key is not found.
+
+   If the key is found, return 1 and set *result to a new strong
+   reference to the corresponding value.
+   If the key is not found, return 0 and set *result to NULL;
+   the KeyError is silenced.
+   If an error other than KeyError is raised, return -1 and
+   set *result to NULL.
+*/
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
+PyAPI_FUNC(int) PyMapping_GetOptionalItem(PyObject *, PyObject *, PyObject **);
+PyAPI_FUNC(int) PyMapping_GetOptionalItemString(PyObject *, const char *, PyObject **);
+#endif
 
 /* Map the string 'key' to the value 'v' in the mapping 'o'.
    Returns -1 on failure.
@@ -816,7 +905,7 @@ PyAPI_FUNC(int) PyObject_IsSubclass(PyObject *object, PyObject *typeorclass);
 
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_ABSTRACTOBJECT_H
-#  include  "cpython/abstract.h"
+#  include "cpython/abstract.h"
 #  undef Py_CPYTHON_ABSTRACTOBJECT_H
 #endif
 

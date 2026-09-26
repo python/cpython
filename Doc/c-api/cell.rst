@@ -7,7 +7,7 @@ Cell Objects
 
 "Cell" objects are used to implement variables referenced by multiple scopes.
 For each such variable, a cell object is created to store the value; the local
-variables of each stack frame that references the value contains a reference to
+variables of each stack frame that references the value contain a reference to
 the cells from outer scopes which also use that variable.  When the value is
 accessed, the value contained in the cell is used instead of the cell object
 itself.  This de-referencing of the cell object requires support from the
@@ -25,7 +25,7 @@ Cell objects are not likely to be useful elsewhere.
    The type object corresponding to cell objects.
 
 
-.. c:function:: int PyCell_Check(ob)
+.. c:function:: int PyCell_Check(PyObject *ob)
 
    Return true if *ob* is a cell object; *ob* must not be ``NULL``.  This
    function always succeeds.
@@ -39,7 +39,8 @@ Cell objects are not likely to be useful elsewhere.
 
 .. c:function:: PyObject* PyCell_Get(PyObject *cell)
 
-   Return the contents of the cell *cell*.
+   Return the contents of the cell *cell*, which can be ``NULL``.
+   If *cell* is not a cell object, returns ``NULL`` with an exception set.
 
 
 .. c:function:: PyObject* PyCell_GET(PyObject *cell)
@@ -52,8 +53,10 @@ Cell objects are not likely to be useful elsewhere.
 
    Set the contents of the cell object *cell* to *value*.  This releases the
    reference to any current content of the cell. *value* may be ``NULL``.  *cell*
-   must be non-``NULL``; if it is not a cell object, ``-1`` will be returned.  On
-   success, ``0`` will be returned.
+   must be non-``NULL``.
+
+   On success, return ``0``.
+   If *cell* is not a cell object, set an exception and return ``-1``.
 
 
 .. c:function:: void PyCell_SET(PyObject *cell, PyObject *value)

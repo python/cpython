@@ -1,0 +1,1 @@
+Add :class:`frozendict` to the fast paths of :c:func:`PyMapping_GetOptionalItem`, :c:func:`PyMapping_Keys`, :c:func:`PyMapping_Values`, and :c:func:`PyMapping_Items`.

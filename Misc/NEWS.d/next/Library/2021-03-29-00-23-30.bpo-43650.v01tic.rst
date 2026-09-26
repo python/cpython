@@ -1,2 +1,0 @@
-Fix :exc:`MemoryError` in :func:`shutil.unpack_archive` which fails inside
-:func:`shutil._unpack_zipfile` on large files. Patch by Igor Bolshakov.

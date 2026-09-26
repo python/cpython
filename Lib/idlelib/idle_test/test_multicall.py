@@ -2,7 +2,7 @@
 
 from idlelib import multicall
 import unittest
-from test.support import requires
+from test.support import requires, captured_stderr
 from tkinter import Tk, Text
 
 
@@ -19,7 +19,7 @@ class MultiCallTest(unittest.TestCase):
     def tearDownClass(cls):
         del cls.mc
         cls.root.update_idletasks()
-##        for id in cls.root.tk.call('after', 'info'):
+##        for id in cls.root.after_info():
 ##            cls.root.after_cancel(id)  # Need for EditorWindow.
         cls.root.destroy()
         del cls.root
@@ -27,7 +27,7 @@ class MultiCallTest(unittest.TestCase):
     def test_creator(self):
         mc = self.mc
         self.assertIs(multicall._multicall_dict[Text], mc)
-        self.assertTrue(issubclass(mc, Text))
+        self.assertIsSubclass(mc, Text)
         mc2 = multicall.MultiCallCreator(Text)
         self.assertIs(mc, mc2)
 
@@ -37,11 +37,57 @@ class MultiCallTest(unittest.TestCase):
 
     def test_yview(self):
         # Added for tree.wheel_event
-        # (it depends on yview to not be overriden)
+        # (it depends on yview to not be overridden)
         mc = self.mc
         self.assertIs(mc.yview, Text.yview)
         mctext = self.mc(self.root)
         self.assertIs(mctext.yview.__func__, Text.yview)
+
+    def test_valid_binding(self):
+        # A valid key binding must bind without a warning (cf. gh-55646).
+        mctext = self.mc(self.root)
+        with captured_stderr() as stderr:
+            mctext.event_add('<<test-good>>', '<Control-Key-Up>')
+            mctext.bind('<<test-good>>', lambda e: None)
+        self.assertEqual(stderr.getvalue(), '')
+
+    def test_invalid_triplet_binding(self):
+        # gh-55646: '<Control-Key-up>' parses into a triplet on every platform,
+        # so Tk rejects it in bind().
+        mctext = self.mc(self.root)
+        with captured_stderr() as stderr:
+            mctext.event_add('<<test-bad>>', '<Control-Key-up>')  # Must not raise.
+            mctext.bind('<<test-bad>>', lambda e: None)  # Must not raise.
+        warning = stderr.getvalue()
+        self.assertIn('invalid key binding', warning)
+        self.assertIn('test-bad', warning)  # The offending action is named.
+
+    def test_invalid_nontriplet_binding(self):
+        # gh-55646: '<Foo-Key-Up>' has no valid modifier, so MultiCall does not
+        # parse it and falls back to Tk's event_add, which rejects it.
+        mctext = self.mc(self.root)
+        with captured_stderr() as stderr:
+            mctext.event_add('<<test-bad>>', '<Foo-Key-Up>')  # Must not raise.
+            mctext.bind('<<test-bad>>', lambda e: None)  # Must not raise.
+        warning = stderr.getvalue()
+        self.assertIn('invalid key binding', warning)
+        self.assertIn('test-bad', warning)  # The offending action is named.
+
+    def test_event_delete_unbound_sequence(self):
+        # gh-89360: deleting a sequence that was not added to a virtual
+        # event is ignored instead of raising ValueError.
+        mctext = self.mc(self.root)
+        mctext.event_add('<<tester>>', '<Control-Key-a>')
+        info = mctext.event_info('<<tester>>')
+        self.assertEqual(len(info), 1)
+
+        # A different sequence, never added: a no-op, not an error.
+        mctext.event_delete('<<tester>>', '<Control-Key-b>')
+        self.assertEqual(mctext.event_info('<<tester>>'), info)
+
+        # The added sequence can still be deleted normally.
+        mctext.event_delete('<<tester>>', '<Control-Key-a>')
+        self.assertNotIn(info[0], mctext.event_info('<<tester>>'))
 
 
 if __name__ == '__main__':

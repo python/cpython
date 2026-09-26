@@ -1,0 +1,3 @@
+Fix :mod:`tarfile` so that GNU long-name directory entries have all
+trailing slashes stripped from their names, matching the behavior for
+short-name entries.  Previously, only a single trailing slash was removed.

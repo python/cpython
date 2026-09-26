@@ -1,0 +1,3 @@
+:func:`warnings.warn_explicit` no longer emits a spurious
+:exc:`DeprecationWarning` or raises :exc:`ImportError` when it is called with
+the globals of the :mod:`__main__` module.

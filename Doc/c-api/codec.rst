@@ -7,7 +7,7 @@ Codec registry and support functions
 
    Register a new codec search function.
 
-   As side effect, this tries to load the :mod:`encodings` package, if not yet
+   As a side effect, this tries to load the :mod:`!encodings` package, if not yet
    done, to make sure that it is always first in the list of search functions.
 
 .. c:function:: int PyCodec_Unregister(PyObject *search_function)
@@ -39,7 +39,7 @@ Codec registry and support functions
    *object* is passed through the decoder function found for the given
    *encoding* using the error handling method defined by *errors*.  *errors* may
    be ``NULL`` to use the default method defined for the codec.  Raises a
-   :exc:`LookupError` if no encoder can be found.
+   :exc:`LookupError` if no decoder can be found.
 
 
 Codec lookup API
@@ -129,3 +129,13 @@ Registry API for Unicode encoding error handlers
    Replace the unicode encode error with ``\N{...}`` escapes.
 
    .. versionadded:: 3.5
+
+
+Codec utility variables
+-----------------------
+
+.. c:var:: const char *Py_hexdigits
+
+   A string constant containing the lowercase hexadecimal digits: ``"0123456789abcdef"``.
+
+   .. versionadded:: 3.3

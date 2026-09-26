@@ -28,7 +28,7 @@ rounding:    half_even
 maxExponent: 384
 minexponent: -383
 
--- basics (examples in specificiation, etc.)
+-- basics (examples in specification, etc.)
 expx001 exp  -Infinity     -> 0
 expx002 exp  -10           -> 0.0000453999298 Inexact Rounded
 expx003 exp  -1            -> 0.367879441 Inexact Rounded

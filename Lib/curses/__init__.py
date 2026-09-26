@@ -11,11 +11,12 @@ the package, and perhaps a particular module inside it.
 """
 
 from _curses import *
+import _curses
 import os as _os
 import sys as _sys
 
-# Some constants, most notably the ACS_* ones, are only added to the C
-# _curses module's dictionary after initscr() is called.  (Some
+# Some constants, most notably the ACS_* and WACS_* ones, are only added
+# to the C _curses module's dictionary after initscr() is called.  (Some
 # versions of SGI's curses don't define values for those constants
 # until initscr() has been called.)  This wrapper function calls the
 # underlying C initscr(), and then copies the constants from the
@@ -30,10 +31,28 @@ def initscr():
               fd=_sys.__stdout__.fileno())
     stdscr = _curses.initscr()
     for key, value in _curses.__dict__.items():
-        if key[0:4] == 'ACS_' or key in ('LINES', 'COLS'):
+        if key.startswith(('ACS_', 'WACS_')) or key in ('LINES', 'COLS'):
             setattr(curses, key, value)
-
     return stdscr
+initscr.__doc__ = _curses.initscr.__doc__
+
+# newterm() is wrapped for the same reason as initscr(): the ACS_* and WACS_*
+# constants and LINES/COLS only become available once a terminal is
+# initialized, and are then copied to the curses package's dictionary.
+
+try:
+    newterm
+except NameError:
+    pass
+else:
+    def newterm(type=None, fd=None, infd=None, /):
+        import _curses, curses
+        screen = _curses.newterm(type, fd, infd)
+        for key, value in _curses.__dict__.items():
+            if key.startswith(('ACS_', 'WACS_')) or key in ('LINES', 'COLS'):
+                setattr(curses, key, value)
+        return screen
+    newterm.__doc__ = _curses.newterm.__doc__
 
 # This is a similar wrapper for start_color(), which adds the COLORS and
 # COLOR_PAIRS variables which are only available after start_color() is
@@ -41,19 +60,17 @@ def initscr():
 
 def start_color():
     import _curses, curses
-    retval = _curses.start_color()
-    if hasattr(_curses, 'COLORS'):
-        curses.COLORS = _curses.COLORS
-    if hasattr(_curses, 'COLOR_PAIRS'):
-        curses.COLOR_PAIRS = _curses.COLOR_PAIRS
-    return retval
+    _curses.start_color()
+    curses.COLORS = _curses.COLORS
+    curses.COLOR_PAIRS = _curses.COLOR_PAIRS
+start_color.__doc__ = _curses.start_color.__doc__
 
 # Import Python has_key() implementation if _curses doesn't contain has_key()
 
 try:
     has_key
 except NameError:
-    from .has_key import has_key
+    from .has_key import has_key  # noqa: F401
 
 # Wrapper for the entire curses-based application.  Runs a function which
 # should be the rest of your curses-based application.  If the application
@@ -85,10 +102,11 @@ def wrapper(func, /, *args, **kwds):
         # Start color, too.  Harmless if the terminal doesn't have
         # color; user can test with has_color() later on.  The try/catch
         # works around a minor bit of over-conscientiousness in the curses
-        # module -- the error return from C start_color() is ignorable.
+        # module -- the error return from C start_color() is ignorable,
+        # unless they are raised by the interpreter due to other issues.
         try:
             start_color()
-        except:
+        except _curses.error:
             pass
 
         return func(stdscr, *args, **kwds)
