@@ -1,0 +1,5 @@
+:func:`isinstance` and :func:`issubclass` no longer raise :exc:`TypeError`
+when the class being checked is unhashable -- for example because its
+metaclass defines ``__eq__`` without ``__hash__`` -- and it is checked against
+an :class:`abc.ABC`.  Such a class cannot be stored in the weak sets that
+cache the results of the checks, so the caches are now bypassed for it.

@@ -399,6 +399,150 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             A.register(NoClass)
             self.assertIsInstance(obj, A)
 
+        def test_unhashable_class(self):
+            # gh-129589: a class whose metaclass defines __eq__ without
+            # __hash__ is unhashable, so it cannot be stored in the caches
+            # that speed up the checks.  The caches must simply be bypassed
+            # instead of letting the TypeError escape.
+            class UnhashableMeta(type):
+                def __eq__(self, other):
+                    return self is other
+
+            class U(metaclass=UnhashableMeta):
+                pass
+
+            self.assertRaises(TypeError, hash, U)
+
+            class A(metaclass=abc_ABCMeta):
+                pass
+
+            # Cold caches: the negative answer cannot be recorded.
+            self.assertNotIsSubclass(U, A)
+            self.assertNotIsInstance(U(), A)
+            # Warm negative cache: it must not be looked up either.
+            class Plain:
+                pass
+            self.assertNotIsInstance(Plain(), A)
+            self.assertNotIsSubclass(U, A)
+            self.assertNotIsInstance(U(), A)
+
+            # Neither answer from __subclasshook__ is cacheable, but both
+            # must still be reported.
+            class B(metaclass=abc_ABCMeta):
+                @classmethod
+                def __subclasshook__(cls, subclass):
+                    return True
+
+            self.assertIsSubclass(U, B)
+            self.assertIsInstance(U(), B)
+
+            class C(metaclass=abc_ABCMeta):
+                @classmethod
+                def __subclasshook__(cls, subclass):
+                    return False
+
+            self.assertNotIsSubclass(U, C)
+            self.assertNotIsInstance(U(), C)
+
+            # Same for a real subclass of an ABC.
+            class UnhashableABCMeta(abc_ABCMeta):
+                def __eq__(self, other):
+                    return self is other
+
+            class D(A, metaclass=UnhashableABCMeta):
+                pass
+
+            self.assertRaises(TypeError, hash, D)
+            self.assertIsSubclass(D, A)
+            self.assertIsInstance(D(), A)
+
+        def test_unhashable_class_recursive_walk(self):
+            # gh-129589: same for an answer found by the recursive walk over
+            # __subclasses__(), which caches the result on the outer ABC too.
+            class UnhashableMeta(type):
+                def __eq__(self, other):
+                    return self is other
+
+            class Base(metaclass=abc_ABCMeta):
+                pass
+
+            class Derived(Base):
+                pass
+
+            class Mixin:
+                pass
+
+            Derived.register(Mixin)
+
+            class U(Mixin, metaclass=UnhashableMeta):
+                pass
+
+            self.assertRaises(TypeError, hash, U)
+            self.assertIsSubclass(U, Base)
+            self.assertIsInstance(U(), Base)
+
+        def test_unhashable_class_broken_hash(self):
+            # gh-129589: a class is unhashable whenever hashing it fails, not
+            # only when its metaclass sets __hash__ to None.  The caches are
+            # bypassed in those cases too, rather than letting an error about
+            # weak references escape from the check.
+            class RaisingHashMeta(type):
+                def __hash__(cls):
+                    raise TypeError('no hash for you')
+
+            class NotCallableHashMeta(type):
+                __hash__ = 42
+
+            for meta in (RaisingHashMeta, NotCallableHashMeta):
+                with self.subTest(metaclass=meta.__name__):
+                    class U(metaclass=meta):
+                        pass
+
+                    self.assertRaises(TypeError, hash, U)
+
+                    class A(metaclass=abc_ABCMeta):
+                        pass
+
+                    self.assertNotIsSubclass(U, A)
+                    self.assertNotIsInstance(U(), A)
+                    self.assertNotIsSubclass(U, A)
+
+                    class B(metaclass=abc_ABCMeta):
+                        @classmethod
+                        def __subclasshook__(cls, subclass):
+                            return True
+
+                    self.assertIsSubclass(U, B)
+                    self.assertIsInstance(U(), B)
+
+        def test_unhashable_class_registry(self):
+            # gh-129589: the registry is not a cache, so unlike the caches it
+            # cannot silently skip an unhashable class.
+            class UnhashableMeta(type):
+                def __eq__(self, other):
+                    return self is other
+
+            class U(metaclass=UnhashableMeta):
+                pass
+
+            class A(metaclass=abc_ABCMeta):
+                pass
+
+            self.assertRaises(TypeError, A.register, U)
+            self.assertNotIsSubclass(U, A)
+
+            # Registering a hashable base still makes the unhashable class a
+            # virtual subclass; the answer is just recomputed every time.
+            class Base:
+                pass
+
+            class Derived(Base, metaclass=UnhashableMeta):
+                pass
+
+            A.register(Base)
+            self.assertIsSubclass(Derived, A)
+            self.assertIsInstance(Derived(), A)
+
         def test_registration_edge_cases(self):
             class A(metaclass=abc_ABCMeta):
                 pass
