@@ -1088,8 +1088,7 @@ this approach.
 .. attribute:: module.__file__
 
    :attr:`!__file__` is an optional attribute that
-   may or may not be set. Both attributes should be a :class:`str` when they
-   are available.
+   may or may not be set. It should be a :class:`str` when it is available.
 
    An optional attribute, :attr:`!__file__` indicates the pathname of the file
    from which the module was loaded (if loaded from a file), or the pathname of
