@@ -882,7 +882,11 @@ class SysLogHandler(logging.Handler):
         self.facility = facility
         self.socktype = socktype
         self.socket = None
-        self.createSocket()
+        # The address is resolved again when emitting an event.
+        try:
+            self.createSocket()
+        except socket.gaierror:
+            pass
 
     def _connect_unixsocket(self, address):
         use_socktype = self.socktype
