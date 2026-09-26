@@ -14155,8 +14155,6 @@ then :
 printf "%s\n" "$withval" >&6; }
 BASECFLAGS="-fsanitize=address -fno-omit-frame-pointer $BASECFLAGS"
 LDFLAGS="-fsanitize=address $LDFLAGS"
-# ASan works by controlling memory allocation, our own malloc interferes,
-# so pymalloc is still built, but malloc is the default allocator at runtime.
 
 else case e in #(
   e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
@@ -14218,8 +14216,6 @@ else case e in #(
 esac
 fi
 
-# MSan works by controlling memory allocation, our own malloc interferes,
-# so pymalloc is still built, but malloc is the default allocator at runtime.
 
 else case e in #(
   e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
