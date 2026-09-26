@@ -252,6 +252,32 @@ class DateTimeTest(unittest.TestCase):
     datetime_module = datetime
     theclass = datetime.datetime
 
+    # Known failure: _strptime normalizes the date after rolling into the next
+    # year, but leaves tm_yday relative to the input year (sometimes > 366).
+    @unittest.expectedFailure
+    @hypothesis.settings(max_examples=25)
+    @hypothesis.given(year=st.integers(min_value=1, max_value=9998),
+                      representation=st.sampled_from(("ordinal", "Sunday", "Monday")))
+    @hypothesis.example(year=2024, representation="Sunday")
+    @hypothesis.example(year=2023, representation="ordinal")
+    @hypothesis.example(year=2023, representation="Monday")
+    def test_rollover_metadata(self, year: int, representation: str) -> None:
+        january = datetime.date(year, 1, 1)
+        if representation == "ordinal":
+            value, fmt = f"{year:04} 366", "%Y %j"
+            expected = january + datetime.timedelta(days=365)
+        else:
+            weekday = 6 if representation == "Sunday" else 0
+            first_week = january + datetime.timedelta(days=(weekday - january.weekday()) % 7)
+            expected = first_week + datetime.timedelta(weeks=52)
+            value = f"{year:04} 53 {(weekday + 1) % 7}"
+            fmt = "%Y %U %w" if representation == "Sunday" else "%Y %W %w"
+        parsed = time.strptime(value, fmt)
+        self.assertEqual(parsed[:3], (expected.year, expected.month, expected.day))
+        self.assertEqual(parsed.tm_wday, expected.weekday())
+        expected_yday = expected.toordinal() - datetime.date(expected.year, 1, 1).toordinal() + 1
+        self.assertEqual(parsed.tm_yday, expected_yday)
+
     @hypothesis.settings(max_examples=50)
     @hypothesis.given(
         dt=st.datetimes(),
