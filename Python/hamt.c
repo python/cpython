@@ -1,5 +1,6 @@
 #include "Python.h"
 #include "pycore_bitutils.h"      // _Py_popcount32()
+#include "pycore_critical_section.h"  // Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_hamt.h"
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_long.h"          // _PyLong_Format()
@@ -2480,7 +2481,27 @@ hamt_baseiter_tp_iternext(PyObject *op)
     PyHamtIterator *it = (PyHamtIterator*)op;
     PyObject *key;
     PyObject *val;
-    hamt_iter_t res = hamt_iterator_next(&it->hi_iter, &key, &val);
+    hamt_iter_t res;
+
+    /* The depth-first cursor (i_level, i_pos and i_nodes) is stored in the
+       iterator and is updated by every step of the descent, so two threads
+       advancing the same iterator would interleave their updates and leave
+       i_level pointing at an i_nodes slot that was never filled in.  Since
+       i_nodes holds borrowed pointers, that desync makes the next step
+       dereference a stale or NULL node.  Serialize the whole descent on the
+       iterator; the HAMT itself is immutable, so nothing else needs locking.
+
+       key and val are borrowed references into the tree and stay valid after
+       the lock is released: they are pinned via hi_obj, which this function
+       never drops, and tp_clear (the only other code that drops it) cannot
+       run concurrently because an in-flight tp_iternext call implies the
+       caller owns a reference to the iterator, keeping it reachable.
+
+       Concurrent iteration can still skip or repeat items, which matches the
+       behaviour of the other free-threaded iterators. */
+    Py_BEGIN_CRITICAL_SECTION(op);
+    res = hamt_iterator_next(&it->hi_iter, &key, &val);
+    Py_END_CRITICAL_SECTION();
 
     switch (res) {
         case I_END:

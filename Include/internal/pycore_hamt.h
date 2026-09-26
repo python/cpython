@@ -46,6 +46,11 @@ extern PyTypeObject _PyHamtItems_Type;
    - i_nodes: an array of seven pointers to tree nodes
    - i_level: the current node in i_nodes
    - i_pos: an array of positions within nodes in i_nodes.
+
+   Because i_nodes holds borrowed references, advancing the state is only
+   safe while nothing else can observe it half-updated.  When the state is
+   embedded in a PyHamtIterator (as opposed to living on the stack), it must
+   be advanced with the iterator locked -- see hamt_baseiter_tp_iternext().
 */
 typedef struct {
     PyHamtNode *i_nodes[_Py_HAMT_MAX_TREE_DEPTH];
