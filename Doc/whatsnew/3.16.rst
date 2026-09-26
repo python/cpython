@@ -584,6 +584,14 @@ symtable
   (Contributed by Irit Katriel in :gh:`124697`.)
 
 
+threading
+---------
+
+* Add :func:`threading.run` and :func:`threading.run_daemon`
+  as a convenient way to start threads.
+  (Contributed by Romain Vavassori in :gh:`156131`.)
+
+
 tkinter
 -------
 
