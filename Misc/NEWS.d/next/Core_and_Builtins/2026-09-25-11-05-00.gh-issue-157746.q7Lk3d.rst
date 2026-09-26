@@ -1,0 +1,3 @@
+Reduce the overhead of :c:func:`PyErr_CheckSignals` when no signal is
+pending: the cheap flag checks are now done before the main-thread check and
+the remote debugger configuration lookup.
