@@ -109,6 +109,34 @@ class InteractiveSession(unittest.TestCase):
         self.assertEqual(out.count(self.PS1), 1)
         self.assertEqual(out.count(self.PS2), 0)
 
+    @unittest.skipUnless(sys.platform == "win32", "Windows EOF is CTRL-Z")
+    def test_interact_banner_win(self):
+        _, err = self.run_cli()
+        self.assertIn('type ".quit" or CTRL-Z to quit', err)
+
+    @unittest.skipUnless(sys.platform != "win32", "Non-Windows EOF is CTRL-D")
+    def test_interact_banner_non_win(self):
+        _, err = self.run_cli()
+        self.assertIn('type ".quit" or CTRL-D to quit', err)
+
+    @unittest.skipUnless(sys.platform == "win32", "Windows EOF is CTRL-Z")
+    def test_interact_help_eof_win(self):
+        out, err = self.run_cli(commands=(".help",))
+        self.assertIn(self.MEMORY_DB_MSG, err)
+        self.assertIn("Exit the CLI, equivalent to CTRL-Z", out)
+        self.assertEndsWith(out, self.PS1)
+        self.assertEqual(out.count(self.PS1), 2)
+        self.assertEqual(out.count(self.PS2), 0)
+
+    @unittest.skipUnless(sys.platform != "win32", "Non-Windows EOF is CTRL-D")
+    def test_interact_help_eof_non_win(self):
+        out, err = self.run_cli(commands=(".help",))
+        self.assertIn(self.MEMORY_DB_MSG, err)
+        self.assertIn("Exit the CLI, equivalent to CTRL-D", out)
+        self.assertEndsWith(out, self.PS1)
+        self.assertEqual(out.count(self.PS1), 2)
+        self.assertEqual(out.count(self.PS2), 0)
+
     def test_interact_quit(self):
         out, err = self.run_cli(commands=(".quit",))
         self.assertIn(self.MEMORY_DB_MSG, err)
