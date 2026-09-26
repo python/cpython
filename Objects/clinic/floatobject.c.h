@@ -240,6 +240,35 @@ exit:
     return return_value;
 }
 
+static PyObject *
+float_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    PyObject *x = NULL;
+
+    assert(Py_Is(_PyType_CAST(type), &PyFloat_Type));
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    if (!_PyArg_NoKwnames("float", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("float", nargs, 0, 1)) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    x = args[0];
+skip_optional:
+    return_value = float_new_impl(_PyType_CAST(type), x);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(float_from_number__doc__,
 "from_number($type, number, /)\n"
 "--\n"
@@ -353,4 +382,4 @@ float___format__(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5d7b0bf9e47ff997 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3e2ac34f890dbbcb input=a9049054013a1b77]*/
