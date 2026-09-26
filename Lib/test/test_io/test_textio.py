@@ -1288,15 +1288,19 @@ class TextIOWrapperTest:
                 txt.reconfigure(encoding='\udcfe')
             with self.assertRaises(LookupError):
                 txt.reconfigure(encoding='locale\0')
-        # TODO: txt.reconfigure(encoding='utf-8\0')
-        # TODO: txt.reconfigure(encoding='nonexisting')
+        with self.assertRaises(LookupError):
+            txt.reconfigure(encoding='utf-8\0')
+        with self.assertRaises(LookupError):
+            txt.reconfigure(encoding='nonexisting')
         with self.assertRaises(TypeError):
             txt.reconfigure(errors=42)
         if self.is_C:
             with self.assertRaises(UnicodeEncodeError):
                 txt.reconfigure(errors='\udcfe')
-        # TODO: txt.reconfigure(errors='ignore\0')
-        # TODO: txt.reconfigure(errors='nonexisting')
+        with self.assertRaises(LookupError):
+            txt.reconfigure(errors='ignore\0')
+        with self.assertRaises(LookupError):
+            txt.reconfigure(errors='nonexisting')
         with self.assertRaises(TypeError):
             txt.reconfigure(newline=42)
         with self.assertRaises(ValueError):
