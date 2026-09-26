@@ -423,6 +423,7 @@ class ScrolledCanvas:
         if 'yscrollincrement' not in opts:
             opts['yscrollincrement'] = 17
         self.master = master
+        self.top = master.winfo_toplevel()
         self.frame = Frame(master)
         self.frame.rowconfigure(0, weight=1)
         self.frame.columnconfigure(0, weight=1)
@@ -457,7 +458,7 @@ class ScrolledCanvas:
         self.canvas.yview_scroll(1, "unit")
         return "break"
     def zoom_height(self, event):
-        zoomheight.zoom_height(self.master)
+        zoomheight.ZoomHeight(self).zoom_height()
         return "break"
 
 
