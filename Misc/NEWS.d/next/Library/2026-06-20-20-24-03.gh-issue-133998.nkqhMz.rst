@@ -1,0 +1,4 @@
+Fix :func:`tarfile.open` in streaming write mode (``w|gz``) raising
+:exc:`struct.error` when given an *mtime* outside the range of the gzip
+header's 32-bit timestamp field.  Out-of-range values are now stored as ``0``,
+matching :mod:`gzip`.
