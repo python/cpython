@@ -111,6 +111,37 @@ def _safe_tuple(t):
     return _safe_key(t[0]), _safe_key(t[1])
 
 
+class _EscapingWriter:
+    """Wrapper which escapes characters unencodable in the stream encoding."""
+
+    def __init__(self, stream, encoding):
+        self._stream = stream
+        self._encoding = encoding
+
+    def write(self, text):
+        text = text.encode(self._encoding, 'backslashreplace')
+        return self._stream.write(text.decode(self._encoding))
+
+    def __getattr__(self, name):
+        return getattr(self._stream, name)
+
+
+def _escape_unencodable(stream):
+    """Return a stream which never fails on unencodable characters.
+
+    The output is intended to be read by humans, so it is better to escape
+    unencodable characters than to fail.  Streams which do not encode the
+    written text, or which already handle unencodable characters, are
+    returned unchanged.
+    """
+    encoding = getattr(stream, 'encoding', None)
+    if encoding is None:
+        return stream
+    if getattr(stream, 'errors', 'strict') != 'strict':
+        return stream
+    return _EscapingWriter(stream, encoding)
+
+
 class PrettyPrinter:
     def __init__(self, indent=1, width=80, depth=None, stream=None, *,
                  compact=False, expand=False, sort_dicts=True,
@@ -171,8 +202,9 @@ class PrettyPrinter:
 
     def pprint(self, object):
         if self._stream is not None:
-            self._format(object, self._stream, 0, 0, {}, 0)
-            self._stream.write("\n")
+            stream = _escape_unencodable(self._stream)
+            self._format(object, stream, 0, 0, {}, 0)
+            stream.write("\n")
 
     def pformat(self, object):
         sio = _StringIO()
