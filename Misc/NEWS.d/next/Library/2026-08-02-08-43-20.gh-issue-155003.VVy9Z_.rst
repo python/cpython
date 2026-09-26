@@ -1,0 +1,2 @@
+Fix an error in the finalizer of :class:`multiprocessing.shared_memory.SharedMemory`
+which could leak a file descriptor.
