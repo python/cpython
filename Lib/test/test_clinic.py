@@ -3262,8 +3262,6 @@ class ClinicParserTest(TestCase):
             class Foo "FooObject *" "Foo_Type"
             @vectorcall
             Foo.__init__
-                iterable: object = NULL
-                /
         """
         func = self.parse_function(block, signatures_in_block=3,
                                    function_index=2)
@@ -3294,14 +3292,16 @@ class ClinicParserTest(TestCase):
         self.expect_failure(block, err, lineno=2)
 
     def test_vectorcall_without_type_object(self):
-        err = "@vectorcall requires the type object of 'Foo'"
+        # Heap types have no C pointer to name, so the type object is optional.
         block = """
             module m
             class Foo "FooObject *" ""
             @vectorcall
             Foo.__init__
         """
-        self.expect_failure(block, err, lineno=3)
+        func = self.parse_function(block, signatures_in_block=3,
+                                   function_index=2)
+        self.assertTrue(func.vectorcall)
 
     def test_vectorcall_unsupported_converter(self):
         # str(encoding=...) has no parse_arg() implementation.
