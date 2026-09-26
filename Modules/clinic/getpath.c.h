@@ -14,22 +14,28 @@ PyDoc_STRVAR(getpath_abspath__doc__,
     {"abspath", (PyCFunction)getpath_abspath, METH_O, getpath_abspath__doc__},
 
 static PyObject *
-getpath_abspath_impl(PyObject *module, PyObject *pathobj);
+getpath_abspath_impl(PyObject *module, const wchar_t *path);
 
 static PyObject *
 getpath_abspath(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    PyObject *pathobj;
+    const wchar_t *path = NULL;
 
     if (!PyUnicode_Check(arg)) {
         _PyArg_BadArgument("abspath", "argument", "str", arg);
         goto exit;
     }
-    pathobj = arg;
-    return_value = getpath_abspath_impl(module, pathobj);
+    path = PyUnicode_AsWideCharString(arg, NULL);
+    if (path == NULL) {
+        goto exit;
+    }
+    return_value = getpath_abspath_impl(module, path);
 
 exit:
+    /* Cleanup for path */
+    PyMem_Free((void *)path);
+
     return return_value;
 }
 
@@ -100,23 +106,34 @@ PyDoc_STRVAR(getpath_isabs__doc__,
 #define GETPATH_ISABS_METHODDEF    \
     {"isabs", (PyCFunction)getpath_isabs, METH_O, getpath_isabs__doc__},
 
-static PyObject *
-getpath_isabs_impl(PyObject *module, PyObject *pathobj);
+static int
+getpath_isabs_impl(PyObject *module, const wchar_t *path);
 
 static PyObject *
 getpath_isabs(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    PyObject *pathobj;
+    const wchar_t *path = NULL;
+    int _return_value;
 
     if (!PyUnicode_Check(arg)) {
         _PyArg_BadArgument("isabs", "argument", "str", arg);
         goto exit;
     }
-    pathobj = arg;
-    return_value = getpath_isabs_impl(module, pathobj);
+    path = PyUnicode_AsWideCharString(arg, NULL);
+    if (path == NULL) {
+        goto exit;
+    }
+    _return_value = getpath_isabs_impl(module, path);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
 
 exit:
+    /* Cleanup for path */
+    PyMem_Free((void *)path);
+
     return return_value;
 }
 
@@ -168,23 +185,34 @@ PyDoc_STRVAR(getpath_isdir__doc__,
 #define GETPATH_ISDIR_METHODDEF    \
     {"isdir", (PyCFunction)getpath_isdir, METH_O, getpath_isdir__doc__},
 
-static PyObject *
-getpath_isdir_impl(PyObject *module, PyObject *pathobj);
+static int
+getpath_isdir_impl(PyObject *module, const wchar_t *path);
 
 static PyObject *
 getpath_isdir(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    PyObject *pathobj;
+    const wchar_t *path = NULL;
+    int _return_value;
 
     if (!PyUnicode_Check(arg)) {
         _PyArg_BadArgument("isdir", "argument", "str", arg);
         goto exit;
     }
-    pathobj = arg;
-    return_value = getpath_isdir_impl(module, pathobj);
+    path = PyUnicode_AsWideCharString(arg, NULL);
+    if (path == NULL) {
+        goto exit;
+    }
+    _return_value = getpath_isdir_impl(module, path);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
 
 exit:
+    /* Cleanup for path */
+    PyMem_Free((void *)path);
+
     return return_value;
 }
 
@@ -334,4 +362,4 @@ getpath_realpath(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=766f73e4b40e9192 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=176f5c505fa66eff input=a9049054013a1b77]*/

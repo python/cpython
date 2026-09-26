@@ -70,30 +70,23 @@ module getpath
 /*[clinic input]
 getpath.abspath
 
-    path as pathobj: unicode
+    path: Py_UNICODE
     /
 
 Return the absolute path.
 [clinic start generated code]*/
 
 static PyObject *
-getpath_abspath_impl(PyObject *module, PyObject *pathobj)
-/*[clinic end generated code: output=a307fc0d5d82eb2e input=2f8179427a1a31a6]*/
+getpath_abspath_impl(PyObject *module, const wchar_t *path)
+/*[clinic end generated code: output=5009336e32e75b9b input=0fd554ce535744f2]*/
 {
-    PyObject *r = NULL;
-    wchar_t *path;
-    Py_ssize_t len;
-    path = PyUnicode_AsWideCharString(pathobj, &len);
-    if (path) {
-        wchar_t *abs;
-        if (_Py_abspath((const wchar_t *)_Py_normpath(path, -1), &abs) == 0 && abs) {
-            r = PyUnicode_FromWideChar(abs, -1);
-            PyMem_RawFree((void *)abs);
-        } else {
-            PyErr_SetString(PyExc_OSError, "failed to make path absolute");
-        }
-        PyMem_Free((void *)path);
+    wchar_t *abs;
+    if (_Py_abspath(_Py_normpath((wchar_t *)path, -1), &abs) < 0 || abs == NULL) {
+        PyErr_SetString(PyExc_OSError, "failed to make path absolute");
+        return NULL;
     }
+    PyObject *r = PyUnicode_FromWideChar(abs, -1);
+    PyMem_RawFree((void *)abs);
     return r;
 }
 
@@ -143,26 +136,19 @@ getpath_dirname_impl(PyObject *module, PyObject *path)
 
 
 /*[clinic input]
-getpath.isabs
+getpath.isabs -> bool
 
-    path as pathobj: unicode
+    path: Py_UNICODE
     /
 
 Return True if the path is absolute.
 [clinic start generated code]*/
 
-static PyObject *
-getpath_isabs_impl(PyObject *module, PyObject *pathobj)
-/*[clinic end generated code: output=7f5c62037d0b2c86 input=e49d90a186348140]*/
+static int
+getpath_isabs_impl(PyObject *module, const wchar_t *path)
+/*[clinic end generated code: output=4659b9e6f088c2ca input=04931a206cdd77f6]*/
 {
-    PyObject *r = NULL;
-    const wchar_t *path;
-    path = PyUnicode_AsWideCharString(pathobj, NULL);
-    if (path) {
-        r = _Py_isabs(path) ? Py_True : Py_False;
-        PyMem_Free((void *)path);
-    }
-    return Py_XNewRef(r);
+    return _Py_isabs(path);
 }
 
 
@@ -209,33 +195,26 @@ getpath_hassuffix_impl(PyObject *module, PyObject *pathobj,
 
 
 /*[clinic input]
-getpath.isdir
+getpath.isdir -> bool
 
-    path as pathobj: unicode
+    path: Py_UNICODE
     /
 
 Return True if the path is a directory.
 [clinic start generated code]*/
 
-static PyObject *
-getpath_isdir_impl(PyObject *module, PyObject *pathobj)
-/*[clinic end generated code: output=5af217f29e968e1b input=d1d4c4d74d2e37f1]*/
+static int
+getpath_isdir_impl(PyObject *module, const wchar_t *path)
+/*[clinic end generated code: output=467820dd83daa7a6 input=0ddd588cd5357a9a]*/
 {
-    PyObject *r = NULL;
-    const wchar_t *path;
-    path = PyUnicode_AsWideCharString(pathobj, NULL);
-    if (path) {
 #ifdef MS_WINDOWS
-        DWORD attr = GetFileAttributesW(path);
-        r = (attr != INVALID_FILE_ATTRIBUTES) &&
-            (attr & FILE_ATTRIBUTE_DIRECTORY) ? Py_True : Py_False;
+    DWORD attr = GetFileAttributesW(path);
+    return (attr != INVALID_FILE_ATTRIBUTES)
+           && (attr & FILE_ATTRIBUTE_DIRECTORY);
 #else
-        struct stat st;
-        r = (_Py_wstat(path, &st) == 0) && S_ISDIR(st.st_mode) ? Py_True : Py_False;
+    struct stat st;
+    return (_Py_wstat(path, &st) == 0) && S_ISDIR(st.st_mode);
 #endif
-        PyMem_Free((void *)path);
-    }
-    return Py_XNewRef(r);
 }
 
 
