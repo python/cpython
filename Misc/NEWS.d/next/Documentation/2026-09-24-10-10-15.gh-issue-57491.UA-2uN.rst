@@ -1,0 +1,3 @@
+Reduce the depth of the table of contents in the EPUB documentation from
+three levels to two, making it much shorter and easier to navigate in e-book
+readers.
