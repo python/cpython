@@ -1,6 +1,13 @@
 Pending removal in Python 3.19
 ------------------------------
 
+* :mod:`builtins`:
+
+  * Passing a complex number as the *real* or *imag* argument in the
+    :func:`complex` constructor is now deprecated; it should only be passed
+    as a single positional argument.
+    (Contributed by Serhiy Storchaka in :gh:`109218`.)
+
 * :mod:`ctypes`:
 
   * Implicitly switching to the MSVC-compatible struct layout by setting
