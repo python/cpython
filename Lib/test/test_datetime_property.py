@@ -1,6 +1,8 @@
 import datetime
+import sys
 import unittest
 from test import support
+from test.support import import_helper
 from test.support.hypothesis_helper import hypothesis
 
 st = hypothesis.strategies
@@ -295,3 +297,19 @@ class DateTimeTest(unittest.TestCase):
         # is ambiguous, but strptime can only generate code with fixed offsets.
         dt_rt_2 = self.theclass.strptime(dt_rt_str, fmt_code)
         self.assertEqual(dt_rt_2, dt_rt)
+
+
+class PureDateTimeTest(DateTimeTest):
+    datetime_module = import_helper.import_fresh_module(
+        "datetime", fresh=["_pydatetime"], blocked=["_datetime"],
+    )
+    theclass = datetime_module.datetime
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        # _strptime must construct timezones from the same implementation as
+        # the datetime class. Restore the module cache after the pure tests.
+        with support.swap_item(sys.modules, "datetime", cls.datetime_module):
+            strptime = import_helper.import_fresh_module("_strptime")
+        cls.enterClassContext(support.swap_item(sys.modules, "_strptime", strptime))
