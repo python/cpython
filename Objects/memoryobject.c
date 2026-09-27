@@ -1186,10 +1186,21 @@ memory_enter(PyObject *self, PyObject *args)
     return Py_NewRef(self);
 }
 
+/*[clinic input]
+memoryview.__exit__
+
+    *exc_info: array
+
+Release the underlying buffer exposed by the memoryview object.
+[clinic start generated code]*/
+
 static PyObject *
-memory_exit(PyObject *self, PyObject *args)
+memoryview___exit___impl(PyMemoryViewObject *self,
+                         PyObject * const *exc_info,
+                         Py_ssize_t exc_info_length)
+/*[clinic end generated code: output=c055c4c69baf495d input=881969146ff4d413]*/
 {
-    return memoryview_release_impl((PyMemoryViewObject *)self);
+    return memoryview_release_impl(self);
 }
 
 
@@ -3570,11 +3581,6 @@ PyDoc_STRVAR(memory_f_contiguous_doc,
              "A bool indicating whether the memory is Fortran contiguous.");
 PyDoc_STRVAR(memory_contiguous_doc,
              "A bool indicating whether the memory is contiguous.");
-PyDoc_STRVAR(memory_exit_doc,
-             "__exit__($self, /, *exc_info)\n--\n\n"
-             "Release the underlying buffer exposed by the memoryview object.");
-
-
 static PyGetSetDef memory_getsetlist[] = {
     {"obj",             memory_obj_get,        NULL, memory_obj_doc},
     {"nbytes",          memory_nbytes_get,     NULL, memory_nbytes_doc},
@@ -3603,7 +3609,7 @@ static PyMethodDef memory_methods[] = {
     MEMORYVIEW_COUNT_METHODDEF
     MEMORYVIEW_INDEX_METHODDEF
     {"__enter__",   memory_enter, METH_NOARGS, NULL},
-    {"__exit__",    memory_exit, METH_VARARGS, memory_exit_doc},
+    MEMORYVIEW___EXIT___METHODDEF
     {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS,
      PyDoc_STR("memoryviews are generic over the type of their underlying data")},
     {NULL,          NULL}

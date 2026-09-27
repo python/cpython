@@ -6170,11 +6170,10 @@ class TestSignatureDefinitions(unittest.TestCase):
         no_signature = {'type', 'super', 'bytearray', 'bytes',
                         'dict', 'frozendict', 'int', 'str'}
         # These need PEP 457 groups
-        needs_groups = {"range", "slice", "dir", "getattr",
-                        "next", "vars"}
+        needs_groups = {"range", "slice", "getattr", "next"}
         no_signature |= needs_groups
         # These have unrepresentable parameter default values of NULL
-        unsupported_signature = {"aiter", "iter"}
+        unsupported_signature = {"aiter", "iter", "dir", "vars"}
         # These need *args support in Argument Clinic
         needs_varargs = {"min", "max", "__build_class__"}
         no_signature |= needs_varargs
@@ -6207,10 +6206,12 @@ class TestSignatureDefinitions(unittest.TestCase):
                 methods_no_signature=methods_no_signature)
 
     def test_sys_module_has_signatures(self):
-        no_signature = {'getsizeof', 'set_asyncgen_hooks'}
-        no_signature |= {name for name in ['getobjects']
-                         if hasattr(sys, name)}
-        self._test_module_has_signatures(sys, no_signature)
+        no_signature = {name for name in ['getobjects']
+                        if hasattr(sys, name)}
+        # The C default is NULL and None has other meaning
+        unsupported_signature = {'getsizeof', 'set_asyncgen_hooks'}
+        self._test_module_has_signatures(sys, no_signature,
+                                         unsupported_signature)
 
     def test_abc_module_has_signatures(self):
         import abc
@@ -6313,7 +6314,6 @@ class TestSignatureDefinitions(unittest.TestCase):
     def test_re_module_has_signatures(self):
         import re
         methods_no_signature = {
-                'Match': {'group'},
                 'Pattern': {'match'},  # It is now an alias for prefixmatch
         }
         self._test_module_has_signatures(re,

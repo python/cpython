@@ -454,4 +454,44 @@ zoneinfo_ZoneInfo__unpickle(PyObject *type, PyTypeObject *cls, PyObject *const *
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c6df04d7b400bd7f input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(zoneinfo_ZoneInfo___init_subclass____doc__,
+"__init_subclass__($type, /, **kwargs)\n"
+"--\n"
+"\n"
+"Function to initialize subclasses.");
+
+#define ZONEINFO_ZONEINFO___INIT_SUBCLASS___METHODDEF    \
+    {"__init_subclass__", _PyCFunction_CAST(zoneinfo_ZoneInfo___init_subclass__), METH_VARARGS|METH_KEYWORDS|METH_CLASS, zoneinfo_ZoneInfo___init_subclass____doc__},
+
+static PyObject *
+zoneinfo_ZoneInfo___init_subclass___impl(PyTypeObject *type,
+                                         PyObject *kwargs);
+
+static PyObject *
+zoneinfo_ZoneInfo___init_subclass__(PyObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *__clinic_kwargs = NULL;
+
+    if (!_PyArg_NoPositional("__init_subclass__", args)) {
+        goto exit;
+    }
+    if (kwargs == NULL) {
+        __clinic_kwargs = PyDict_New();
+        if (__clinic_kwargs == NULL) {
+            goto exit;
+        }
+    }
+    else {
+        __clinic_kwargs = Py_NewRef(kwargs);
+    }
+    return_value = zoneinfo_ZoneInfo___init_subclass___impl((PyTypeObject *)type, __clinic_kwargs);
+
+exit:
+    /* Cleanup for kwargs */
+    Py_XDECREF(__clinic_kwargs);
+
+    return return_value;
+}
+/*[clinic end generated code: output=72997ab6d06a94f6 input=a9049054013a1b77]*/
