@@ -328,15 +328,19 @@ class SampleCallbacksTestCase(unittest.TestCase):
                              f"of ctypes callback function {func!r}")
             self.assertIsNone(cm.unraisable.object)
 
-    @unittest.skipUnless(support.is_s390x, 's390x only test')
     def test_narrow_int_return_widened(self):
-        @CFUNCTYPE(c_int)
+        # gh-156933: Narrow integers were not widened on s390x
+        dll = CDLL(_ctypes_test.__file__)
+        CALLBACK = CFUNCTYPE(c_int)
+        func = dll._testfunc_callback_int_to_longlong
+        func.argtypes = (CALLBACK,)
+        func.restype = c_longlong
+
+        @CALLBACK
         def cb():
             return -1
 
-        addr = ctypes.cast(cb, ctypes.c_void_p).value
-        wide = CFUNCTYPE(c_longlong)(addr)
-        self.assertEqual(wide(), -1)
+        self.assertEqual(func(cb), -1)
 
 
 if __name__ == '__main__':

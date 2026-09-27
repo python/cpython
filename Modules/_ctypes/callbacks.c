@@ -240,12 +240,19 @@ static void _CallPythonObject(ctypes_state *st,
 
         /* libffi's closure contract requires integral results narrower
            than ffi_arg to fill a whole register, sign-extended if signed;
-           setfunc() only writes restype->size bytes. Cf. _ctypes_callproc()
-           in callproc.c. */
-        ffi_arg widened = 0;
+           setfunc() only writes restype->size bytes. */
+        union {
+            ffi_arg arg;
+            int8_t s8;
+            uint8_t u8;
+            int16_t s16;
+            uint16_t u16;
+            int32_t s32;
+            uint32_t u32;
+        } narrow_res = {0};
         int narrow = restype->size < sizeof(ffi_arg) &&
                      is_narrow_int_ffi_type(restype->type);
-        void *resmem = narrow ? &widened : mem;
+        void *resmem = narrow ? (void *)&narrow_res : mem;
 
         /* keep is an object we have to keep alive so that the result
            stays valid.  If there is no such object, the setfunc will
@@ -259,27 +266,28 @@ static void _CallPythonObject(ctypes_state *st,
         PyObject *keep = setfunc(resmem, result, restype->size);
 
         if (narrow && keep != NULL) {
+            ffi_arg widened;
             switch (restype->type) {
             case FFI_TYPE_SINT8:
-                widened = (ffi_arg)(ffi_sarg)*(int8_t *)&widened;
+                widened = (ffi_arg)(ffi_sarg)narrow_res.s8;
                 break;
             case FFI_TYPE_SINT16:
-                widened = (ffi_arg)(ffi_sarg)*(int16_t *)&widened;
+                widened = (ffi_arg)(ffi_sarg)narrow_res.s16;
                 break;
             case FFI_TYPE_SINT32:
-                widened = (ffi_arg)(ffi_sarg)*(int32_t *)&widened;
+                widened = (ffi_arg)(ffi_sarg)narrow_res.s32;
                 break;
             case FFI_TYPE_UINT8:
-                widened = *(uint8_t *)&widened;
+                widened = narrow_res.u8;
                 break;
             case FFI_TYPE_UINT16:
-                widened = *(uint16_t *)&widened;
+                widened = narrow_res.u16;
                 break;
             case FFI_TYPE_UINT32:
-                widened = *(uint32_t *)&widened;
+                widened = narrow_res.u32;
                 break;
             default:
-                break;
+                Py_UNREACHABLE();
             }
             memcpy(mem, &widened, sizeof(ffi_arg));
         }

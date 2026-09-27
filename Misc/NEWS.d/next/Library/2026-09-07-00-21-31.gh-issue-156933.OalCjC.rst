@@ -1,3 +1,2 @@
-Fix :mod:`ctypes` callbacks returning an integer narrower than a machine
-register: the result is now widened to fill the register, as libffi's
-closure contract requires.
+Fix incorrect integer return values from :mod:`ctypes` callbacks on some
+platforms, such as s390x.
