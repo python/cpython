@@ -4128,7 +4128,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
     return final_mod;
 }
 
-// ensure we have the set for the parent module name in sys.lazy_modules.
+// Ensure a set of pending submodule names exists for the parent.
 // Returns a new reference.
 static PyObject *
 ensure_lazy_pending_submodules(PyDictObject *lazy_modules, PyObject *parent)
@@ -4157,59 +4157,35 @@ ensure_lazy_pending_submodules(PyDictObject *lazy_modules, PyObject *parent)
 static int
 register_lazy_on_parent(PyThreadState *tstate, PyObject *name)
 {
-    int ret = -1;
-    PyObject *parent = NULL;
-    PyObject *child = NULL;
-
-    PyInterpreterState *interp = tstate->interp;
-    PyObject *lazy_pending_submodules = LAZY_PENDING_SUBMODULES(interp);
-    assert(lazy_pending_submodules != NULL);
-
-    Py_INCREF(name);
+    PyDictObject *pending =
+        (PyDictObject *)LAZY_PENDING_SUBMODULES(tstate->interp);
+    assert(pending != NULL);
+    Py_ssize_t end = PyUnicode_GET_LENGTH(name);
     while (true) {
-        Py_ssize_t dot = PyUnicode_FindChar(name, '.', 0,
-                                            PyUnicode_GET_LENGTH(name), -1);
+        Py_ssize_t dot = PyUnicode_FindChar(name, '.', 0, end, -1);
         if (dot < 0) {
-            PyObject *lazy_submodules = ensure_lazy_pending_submodules(
-                (PyDictObject *)lazy_pending_submodules, name);
-            if (lazy_submodules == NULL) {
-                goto done;
-            }
-            Py_DECREF(lazy_submodules);
-            ret = 0;
-            goto done;
+            return dot == -1 ? 0 : -1;
         }
-        parent = PyUnicode_Substring(name, 0, dot);
+        PyObject *parent = PyUnicode_Substring(name, 0, dot);
         if (parent == NULL) {
-            goto done;
+            return -1;
         }
-        Py_XDECREF(child);
-        child = PyUnicode_Substring(name, dot + 1, PyUnicode_GET_LENGTH(name));
+        PyObject *child = PyUnicode_Substring(name, dot + 1, end);
         if (child == NULL) {
-            goto done;
+            Py_DECREF(parent);
+            return -1;
         }
 
-        PyObject *lazy_submodules = ensure_lazy_pending_submodules(
-            (PyDictObject *)lazy_pending_submodules, parent);
-        if (lazy_submodules == NULL) {
-            goto done;
+        PyObject *submodules = ensure_lazy_pending_submodules(pending, parent);
+        Py_DECREF(parent);
+        int err = submodules == NULL ? -1 : PySet_Add(submodules, child);
+        Py_DECREF(child);
+        Py_XDECREF(submodules);
+        if (err < 0) {
+            return -1;
         }
-
-        if (PySet_Add(lazy_submodules, child) < 0) {
-            Py_DECREF(lazy_submodules);
-            goto done;
-        }
-        Py_DECREF(lazy_submodules);
-
-        Py_SETREF(name, parent);
-        parent = NULL;
+        end = dot;
     }
-
-done:
-    Py_XDECREF(child);
-    Py_XDECREF(parent);
-    Py_XDECREF(name);
-    return ret;
 }
 
 static int
@@ -4223,80 +4199,65 @@ register_from_lazy_on_parent(PyThreadState *tstate, PyObject *abs_name,
 
     // Add the module name to sys.lazy_modules set (PEP 810).
     PyObject *lazy_modules = LAZY_MODULES(tstate->interp);
-    if (PySet_Add(lazy_modules, fromname) < 0) {
-        Py_DECREF(fromname);
-        return -1;
+    int res = PySet_Add(lazy_modules, fromname);
+    if (res == 0) {
+        res = register_lazy_on_parent(tstate, fromname);
     }
-
-    int res = register_lazy_on_parent(tstate, fromname);
     Py_DECREF(fromname);
     return res;
 }
 
-_PyLazySubmoduleImportResult
-_PyImport_TryLoadLazySubmodule(PyObject *mod_name, PyObject *attr_name,
-                               PyObject **result)
+PyObject *
+_PyImport_TryLoadLazySubmodule(PyObject *module, PyObject *attr_name,
+                              int *recheck_dict)
 {
-    assert(result != NULL);
-    *result = NULL;
-
+    *recheck_dict = 0;
+    PyObject *mod_dict = _PyModule_GetDict(module);
+    PyObject *mod_name;
+    if (PyDict_GetItemRef(mod_dict, &_Py_ID(__name__), &mod_name) <= 0) {
+        return NULL;
+    }
+    PyObject *mod = NULL, *pending_set = NULL;
+    if (!PyUnicode_Check(mod_name)) {
+        goto done;
+    }
     PyThreadState *tstate = _PyThreadState_GET();
-    PyInterpreterState *interp = tstate->interp;
-    PyObject *lazy_pending = LAZY_PENDING_SUBMODULES(interp);
-    if (lazy_pending == NULL) {
-        return _Py_LAZY_SUBMODULE_NOT_FOUND;
+    PyObject *lazy_pending = LAZY_PENDING_SUBMODULES(tstate->interp);
+    if (lazy_pending == NULL ||
+        PyDict_GetItemRef(lazy_pending, mod_name, &pending_set) <= 0) {
+        goto done;
     }
 
-    PyObject *pending_set;
-    int rc = PyDict_GetItemRef(lazy_pending, mod_name, &pending_set);
-    if (rc < 0) {
-        return _Py_LAZY_SUBMODULE_ERROR;
+    *recheck_dict = 1;
+    if (PySet_Contains(pending_set, attr_name) <= 0) {
+        goto done;
     }
-    if (rc == 0) {
-        return _Py_LAZY_SUBMODULE_NOT_FOUND;
-    }
-
-    int contains = PySet_Contains(pending_set, attr_name);
-    if (contains < 0) {
-        Py_DECREF(pending_set);
-        return _Py_LAZY_SUBMODULE_ERROR;
-    }
-    if (contains == 0) {
-        Py_DECREF(pending_set);
-        return _Py_LAZY_SUBMODULE_NOT_FOUND;
-    }
-
     PyObject *full_name = PyUnicode_FromFormat("%U.%U", mod_name, attr_name);
     if (full_name == NULL) {
-        Py_DECREF(pending_set);
-        return _Py_LAZY_SUBMODULE_ERROR;
+        goto done;
     }
-
-    PyObject *mod = import_find_and_load_with_name(
-        tstate, full_name, &_Py_ID(_find_and_load_lazy_submodule), Py_None);
-    if (mod == NULL) {
-        Py_DECREF(pending_set);
-        Py_DECREF(full_name);
-        remove_importlib_frames(tstate);
-        return _Py_LAZY_SUBMODULE_ERROR;
+    // Match eager from-imports: accept a partial module in an import cycle.
+    mod = PyImport_GetModule(full_name);
+    if ((mod == NULL && !PyErr_Occurred()) || mod == Py_None) {
+        Py_XDECREF(mod);
+        mod = import_find_and_load_with_name(
+            tstate, full_name, &_Py_ID(_find_and_load_lazy_submodule), Py_None);
     }
-    if (mod == Py_None) {
-        Py_DECREF(mod);
-        Py_DECREF(pending_set);
-        Py_DECREF(full_name);
-        return _Py_LAZY_SUBMODULE_NOT_FOUND;
-    }
-
-    if (PySet_Discard(pending_set, attr_name) < 0) {
-        Py_DECREF(mod);
-        Py_DECREF(pending_set);
-        Py_DECREF(full_name);
-        return _Py_LAZY_SUBMODULE_ERROR;
-    }
-    Py_DECREF(pending_set);
     Py_DECREF(full_name);
-    *result = mod;
-    return _Py_LAZY_SUBMODULE_LOADED;
+    if (mod == NULL) {
+        remove_importlib_frames(tstate);
+    }
+    /* Keep missing children pending: a finder may provide them later. */
+    else if (mod == Py_None ||
+             PyDict_SetItem(mod_dict, attr_name, mod) < 0 ||
+             PySet_Discard(pending_set, attr_name) < 0) {
+        Py_CLEAR(mod);
+    }
+
+done:
+    Py_XDECREF(pending_set);
+    Py_DECREF(mod_name);
+    return mod;
 }
 
 PyObject *
