@@ -335,7 +335,7 @@ class DateTimeTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.theclass.strptime(f"{year:04} {year + 1:04}", "%Y %Y")
 
-    # Known failure: _strptime normalizes the date after rolling into the next
+    # gh-73267: _strptime normalizes the date after rolling into the next
     # year, but leaves tm_yday relative to the input year (sometimes > 366).
     @unittest.expectedFailure
     @hypothesis.settings(max_examples=25)
