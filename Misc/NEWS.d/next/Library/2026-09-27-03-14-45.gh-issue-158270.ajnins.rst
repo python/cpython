@@ -1,0 +1,4 @@
+When possible, make :func:`json.dump` and :func:`json.dumps` bypass
+:class:`json.JSONEncoder` and call the internal encoding logic directly.
+This reduces the time required to encode small JSON objects by about 20%
+with the default options and about 50% with non-default options.
