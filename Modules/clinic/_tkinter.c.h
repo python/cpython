@@ -960,6 +960,137 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_tkinter_set_service_mode__doc__,
+"set_service_mode($module, mode, /)\n"
+"--\n"
+"\n"
+"Set the service mode and return the previous mode.\n"
+"\n"
+"Tcl service mode controls whether Tcl_ServiceAll services timer and file\n"
+"events.");
+
+#define _TKINTER_SET_SERVICE_MODE_METHODDEF    \
+    {"set_service_mode", (PyCFunction)_tkinter_set_service_mode, METH_O, _tkinter_set_service_mode__doc__},
+
+static PyObject *
+_tkinter_set_service_mode_impl(PyObject *module, int mode);
+
+static PyObject *
+_tkinter_set_service_mode(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int mode;
+
+    mode = PyLong_AsInt(arg);
+    if (mode == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = _tkinter_set_service_mode_impl(module, mode);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_tkinter_service_all__doc__,
+"service_all($module, /)\n"
+"--\n"
+"\n"
+"Service all pending Tcl events.\n"
+"\n"
+"This is the equivalent of calling Tcl_DoOneEvent in a loop until no\n"
+"more events are pending.");
+
+#define _TKINTER_SERVICE_ALL_METHODDEF    \
+    {"service_all", (PyCFunction)_tkinter_service_all, METH_NOARGS, _tkinter_service_all__doc__},
+
+static PyObject *
+_tkinter_service_all_impl(PyObject *module);
+
+static PyObject *
+_tkinter_service_all(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _tkinter_service_all_impl(module);
+}
+
+PyDoc_STRVAR(_tkinter_queue_event__doc__,
+"queue_event($module, func, /)\n"
+"--\n"
+"\n"
+"Queue a Python callable as a Tcl event for an external event loop.\n"
+"\n"
+"The callable is invoked with a single argument holding the Tcl event\n"
+"flags.  It should return a truthy value when the event has been\n"
+"handled.");
+
+#define _TKINTER_QUEUE_EVENT_METHODDEF    \
+    {"queue_event", (PyCFunction)_tkinter_queue_event, METH_O, _tkinter_queue_event__doc__},
+
+PyDoc_STRVAR(_tkinter_set_notifier__doc__,
+"set_notifier($module, set_timer, wait_for_event, create_file_handler,\n"
+"             delete_file_handler, init_notifier, finalize_notifier,\n"
+"             alert_notifier, service_mode_hook, /)\n"
+"--\n"
+"\n"
+"Install a custom Tcl notifier for use by an external event loop.\n"
+"\n"
+"This must be called before the first Tcl interpreter is created (that\n"
+"is, before creating any Tk() window), and can only be called once.\n"
+"Each argument is a callable:\n"
+"\n"
+"set_timer(t)  - arm/cancel next timer (None or (sec, usec))\n"
+"  wait_for_event(timeout) - wait for an event, returning 0\n"
+"  create_file_handler(fd, mask, proc, cd) - watch a file descriptor\n"
+"  delete_file_handler(fd) - stop watching a file descriptor\n"
+"  init_notifier()       - initialize the notifier\n"
+"  finalize_notifier(cd) - finalize the notifier\n"
+"  alert_notifier(cd)    - wake the notifier up\n"
+"  service_mode_hook(mode) - called when the service mode changes\n"
+"\n"
+"Pass None for a callback slot that should not be overridden.");
+
+#define _TKINTER_SET_NOTIFIER_METHODDEF    \
+    {"set_notifier", _PyCFunction_CAST(_tkinter_set_notifier), METH_FASTCALL, _tkinter_set_notifier__doc__},
+
+static PyObject *
+_tkinter_set_notifier_impl(PyObject *module, PyObject *set_timer,
+                           PyObject *wait_for_event,
+                           PyObject *create_file_handler,
+                           PyObject *delete_file_handler,
+                           PyObject *init_notifier,
+                           PyObject *finalize_notifier,
+                           PyObject *alert_notifier,
+                           PyObject *service_mode_hook);
+
+static PyObject *
+_tkinter_set_notifier(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *set_timer;
+    PyObject *wait_for_event;
+    PyObject *create_file_handler;
+    PyObject *delete_file_handler;
+    PyObject *init_notifier;
+    PyObject *finalize_notifier;
+    PyObject *alert_notifier;
+    PyObject *service_mode_hook;
+
+    if (!_PyArg_CheckPositional("set_notifier", nargs, 8, 8)) {
+        goto exit;
+    }
+    set_timer = args[0];
+    wait_for_event = args[1];
+    create_file_handler = args[2];
+    delete_file_handler = args[3];
+    init_notifier = args[4];
+    finalize_notifier = args[5];
+    alert_notifier = args[6];
+    service_mode_hook = args[7];
+    return_value = _tkinter_set_notifier_impl(module, set_timer, wait_for_event, create_file_handler, delete_file_handler, init_notifier, finalize_notifier, alert_notifier, service_mode_hook);
+
+exit:
+    return return_value;
+}
+
 #ifndef _TKINTER_TKAPP_CREATEFILEHANDLER_METHODDEF
     #define _TKINTER_TKAPP_CREATEFILEHANDLER_METHODDEF
 #endif /* !defined(_TKINTER_TKAPP_CREATEFILEHANDLER_METHODDEF) */
@@ -967,4 +1098,4 @@ exit:
 #ifndef _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
     #define _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
 #endif /* !defined(_TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF) */
-/*[clinic end generated code: output=c807adb73e305725 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f87287a87e987c37 input=a9049054013a1b77]*/
