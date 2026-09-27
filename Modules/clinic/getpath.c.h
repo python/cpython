@@ -146,7 +146,7 @@ PyDoc_STRVAR(getpath_hassuffix__doc__,
 #define GETPATH_HASSUFFIX_METHODDEF    \
     {"hassuffix", _PyCFunction_CAST(getpath_hassuffix), METH_FASTCALL, getpath_hassuffix__doc__},
 
-static PyObject *
+static int
 getpath_hassuffix_impl(PyObject *module, PyObject *pathobj,
                        PyObject *suffixobj);
 
@@ -156,6 +156,7 @@ getpath_hassuffix(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     PyObject *pathobj;
     PyObject *suffixobj;
+    int _return_value;
 
     if (!_PyArg_CheckPositional("hassuffix", nargs, 2, 2)) {
         goto exit;
@@ -170,7 +171,11 @@ getpath_hassuffix(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     suffixobj = args[1];
-    return_value = getpath_hassuffix_impl(module, pathobj, suffixobj);
+    _return_value = getpath_hassuffix_impl(module, pathobj, suffixobj);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
 
 exit:
     return return_value;
@@ -225,7 +230,7 @@ PyDoc_STRVAR(getpath_isfile__doc__,
 #define GETPATH_ISFILE_METHODDEF    \
     {"isfile", (PyCFunction)getpath_isfile, METH_O, getpath_isfile__doc__},
 
-static PyObject *
+static int
 getpath_isfile_impl(PyObject *module, PyObject *pathobj);
 
 static PyObject *
@@ -233,13 +238,18 @@ getpath_isfile(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     PyObject *pathobj;
+    int _return_value;
 
     if (!PyUnicode_Check(arg)) {
         _PyArg_BadArgument("isfile", "argument", "str", arg);
         goto exit;
     }
     pathobj = arg;
-    return_value = getpath_isfile_impl(module, pathobj);
+    _return_value = getpath_isfile_impl(module, pathobj);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
 
 exit:
     return return_value;
@@ -254,7 +264,7 @@ PyDoc_STRVAR(getpath_isxfile__doc__,
 #define GETPATH_ISXFILE_METHODDEF    \
     {"isxfile", (PyCFunction)getpath_isxfile, METH_O, getpath_isxfile__doc__},
 
-static PyObject *
+static int
 getpath_isxfile_impl(PyObject *module, PyObject *pathobj);
 
 static PyObject *
@@ -262,13 +272,18 @@ getpath_isxfile(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     PyObject *pathobj;
+    int _return_value;
 
     if (!PyUnicode_Check(arg)) {
         _PyArg_BadArgument("isxfile", "argument", "str", arg);
         goto exit;
     }
     pathobj = arg;
-    return_value = getpath_isxfile_impl(module, pathobj);
+    _return_value = getpath_isxfile_impl(module, pathobj);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
 
 exit:
     return return_value;
@@ -362,4 +377,4 @@ getpath_realpath(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=176f5c505fa66eff input=a9049054013a1b77]*/
+/*[clinic end generated code: output=74266cdd2d87e28d input=a9049054013a1b77]*/

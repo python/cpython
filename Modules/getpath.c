@@ -153,7 +153,7 @@ getpath_isabs_impl(PyObject *module, const wchar_t *path)
 
 
 /*[clinic input]
-getpath.hassuffix
+getpath.hassuffix -> bool
 
     path as pathobj: unicode
     suffix as suffixobj: unicode
@@ -162,30 +162,24 @@ getpath.hassuffix
 Return True if the path ends with the suffix, ignoring the case.
 [clinic start generated code]*/
 
-static PyObject *
+static int
 getpath_hassuffix_impl(PyObject *module, PyObject *pathobj,
                        PyObject *suffixobj)
-/*[clinic end generated code: output=40e52a2ebe497e47 input=dffaf0ddc9d63647]*/
+/*[clinic end generated code: output=c4cbd6f2f567f83c input=4b477740575b94d8]*/
 {
-    PyObject *r = NULL;
-    const wchar_t *path;
-    const wchar_t *suffix;
+    int r = -1;
     Py_ssize_t len, suffixLen;
-    path = PyUnicode_AsWideCharString(pathobj, &len);
+    const wchar_t *path = PyUnicode_AsWideCharString(pathobj, &len);
     if (path) {
-        suffix = PyUnicode_AsWideCharString(suffixobj, &suffixLen);
+        const wchar_t *suffix = PyUnicode_AsWideCharString(suffixobj,
+                                                          &suffixLen);
         if (suffix) {
-            if (suffixLen > len ||
+            r = suffixLen <= len &&
 #ifdef MS_WINDOWS
-                wcsicmp(&path[len - suffixLen], suffix) != 0
+                wcsicmp(&path[len - suffixLen], suffix) == 0;
 #else
-                wcscmp(&path[len - suffixLen], suffix) != 0
+                wcscmp(&path[len - suffixLen], suffix) == 0;
 #endif
-            ) {
-                r = Py_NewRef(Py_False);
-            } else {
-                r = Py_NewRef(Py_True);
-            }
             PyMem_Free((void *)suffix);
         }
         PyMem_Free((void *)path);
@@ -219,7 +213,7 @@ getpath_isdir_impl(PyObject *module, const wchar_t *path)
 
 
 /*[clinic input]
-getpath.isfile
+getpath.isfile -> bool
 
     path as pathobj: unicode
     /
@@ -227,36 +221,33 @@ getpath.isfile
 Return True if the path is a regular file.
 [clinic start generated code]*/
 
-static PyObject *
+static int
 getpath_isfile_impl(PyObject *module, PyObject *pathobj)
-/*[clinic end generated code: output=0060d782bd507740 input=71831c61d25e3f9e]*/
+/*[clinic end generated code: output=197acb7a5434b9d1 input=ba1c2746ec8f2f47]*/
 {
-
-    int isfile;
 #ifdef MS_WINDOWS
     wchar_t *path = PyUnicode_AsWideCharString(pathobj, NULL);
     if (path == NULL) {
-        return NULL;
+        return -1;
     }
 
     DWORD attr = GetFileAttributesW(path);
     PyMem_Free(path);
-    isfile = ((attr != INVALID_FILE_ATTRIBUTES)
-               && !(attr & FILE_ATTRIBUTE_DIRECTORY));
+    return (attr != INVALID_FILE_ATTRIBUTES)
+           && !(attr & FILE_ATTRIBUTE_DIRECTORY);
 #else
     struct stat st;
     int res = _Py_stat(pathobj, &st);
     if (res == -2) {
-        return NULL;
+        return -1;
     }
-    isfile = ((res == 0) && S_ISREG(st.st_mode));
+    return (res == 0) && S_ISREG(st.st_mode);
 #endif
-    return PyBool_FromLong(isfile);
 }
 
 
 /*[clinic input]
-getpath.isxfile
+getpath.isxfile -> bool
 
     path as pathobj: unicode
     /
@@ -264,36 +255,32 @@ getpath.isxfile
 Return True if the path is an executable file.
 [clinic start generated code]*/
 
-static PyObject *
+static int
 getpath_isxfile_impl(PyObject *module, PyObject *pathobj)
-/*[clinic end generated code: output=67348f84968ac985 input=4b272be4846d89a2]*/
+/*[clinic end generated code: output=2f0bc6708d945bc8 input=6d99faa90e262511]*/
 {
-
-    int isxfile;
 #ifdef MS_WINDOWS
     Py_ssize_t cchPath;
     wchar_t *path = PyUnicode_AsWideCharString(pathobj, &cchPath);
     if (path == NULL) {
-        return NULL;
+        return -1;
     }
 
     DWORD attr = GetFileAttributesW(path);
+    int isxfile = (attr != INVALID_FILE_ATTRIBUTES) &&
+                  !(attr & FILE_ATTRIBUTE_DIRECTORY) &&
+                  (cchPath >= 4) &&
+                  (CompareStringOrdinal(path + cchPath - 4, -1, L".exe", -1, 1 /* ignore case */) == CSTR_EQUAL);
     PyMem_Free(path);
-    isxfile = (attr != INVALID_FILE_ATTRIBUTES) &&
-              !(attr & FILE_ATTRIBUTE_DIRECTORY) &&
-              (cchPath >= 4) &&
-              (CompareStringOrdinal(path + cchPath - 4, -1, L".exe", -1, 1 /* ignore case */) == CSTR_EQUAL);
+    return isxfile;
 #else
     struct stat st;
     int res = _Py_stat(pathobj, &st);
     if (res == -2) {
-        return NULL;
+        return -1;
     }
-    isxfile = ((res == 0)
-               && S_ISREG(st.st_mode)
-               && (st.st_mode & 0111));
+    return (res == 0) && S_ISREG(st.st_mode) && (st.st_mode & 0111);
 #endif
-    return PyBool_FromLong(isxfile);
 }
 
 
