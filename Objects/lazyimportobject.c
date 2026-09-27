@@ -265,6 +265,25 @@ lazy_import_add_exception_cause(PyThreadState *tstate, PyLazyImportObject *lz)
     if (funcname == NULL) {
         goto done;
     }
+    PyBaseExceptionObject *base_exc = (PyBaseExceptionObject *)exc;
+    if (base_exc->cause != NULL || base_exc->context != NULL ||
+        base_exc->suppress_context) {
+        // Preserve the original chain, including `raise ... from None`.
+        PyObject *note = PyUnicode_FromFormat(
+            "lazy import of '%U' declared in %s at %s:%d",
+            name, funcname, filename, lineno);
+        if (note != NULL) {
+            PyObject *notes;
+            if (PyObject_GetOptionalAttr(exc, &_Py_ID(__notes__), &notes) >= 0) {
+                if (notes == NULL || PySequence_Contains(notes, note) == 0) {
+                    (void)_PyException_AddNote(exc, note);
+                }
+                Py_XDECREF(notes);
+            }
+            Py_DECREF(note);
+        }
+        goto done;
+    }
     PyObject *msg = PyUnicode_FromFormat(
         "lazy import of '%U' raised an exception during resolution", name);
     if (msg == NULL) {
