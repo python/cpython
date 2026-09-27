@@ -1,0 +1,3 @@
+Fix :mod:`_pyrepl` to preserve the reader state (buffer, position, and kill ring)
+across :meth:`~_pyrepl.reader.Reader.suspend`.
+
