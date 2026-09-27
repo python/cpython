@@ -50,7 +50,7 @@ jobs:
           --with-pydebug \
           ${{ inputs.free-threading && '--disable-gil' || '' }} \
           --prefix=/opt/python-dev \
-          --with-openssl="$(brew --prefix openssl@3.0)"
+          --with-openssl="$(brew --prefix openssl@3.5)"
     - name: Build CPython
       run: make -j8
     - name: Display build info
