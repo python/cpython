@@ -69,40 +69,67 @@ _PyLazyImport_New(_PyInterpreterFrame *frame, PyObject *builtins,
     return (PyObject *)m;
 }
 
+// Reuse concrete attributes of initialized modules without waiting for imports
+// or resolving lazy attributes. Failed cache lookups are retried at resolution.
+static PyObject *
+lazy_import_get_loaded_attr(PyThreadState *tstate, PyObject *name,
+                            PyObject *attr_name)
+{
+    PyObject *mod = NULL, *spec = NULL, *current = NULL, *attr = NULL;
+    PyObject *modules = Py_XNewRef(_PyImport_GetModules(tstate->interp));
+    if (modules == NULL) {
+        return NULL;
+    }
+    int rc = PyMapping_GetOptionalItem(modules, name, &mod);
+    if (rc <= 0 || !PyModule_Check(mod)) {
+        goto done;
+    }
+    PyObject *dict = _PyModule_GetDict(mod);
+    if (PyObject_GetOptionalAttr(mod, &_Py_ID(__spec__), &spec) < 0 ||
+        _PyModuleSpec_IsInitializing(spec) != 0) {
+        goto done;
+    }
+    // An initialization check can replace the module in sys.modules.
+    if (modules != _PyImport_GetModules(tstate->interp) ||
+        PyMapping_GetOptionalItem(modules, name, &current) <= 0 ||
+        current != mod) {
+        goto done;
+    }
+    if (PyDict_GetItemRef(dict, attr_name, &attr) < 0) {
+        goto done;
+    }
+    if (attr != NULL && PyLazyImport_CheckExact(attr)) {
+        Py_CLEAR(attr);
+    }
+
+done:
+    Py_XDECREF(current);
+    Py_XDECREF(spec);
+    Py_XDECREF(mod);
+    Py_DECREF(modules);
+    if (PyErr_ExceptionMatches(PyExc_Exception)) {
+        PyErr_Clear();
+    }
+    return attr;
+}
+
 PyObject *
-_PyEval_LazyImportFrom(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject *v, PyObject *name)
+_PyEval_LazyImportFrom(PyThreadState *tstate, _PyInterpreterFrame *frame,
+                       PyObject *v, PyObject *name)
 {
     assert(PyLazyImport_CheckExact(v));
     assert(name);
     assert(PyUnicode_Check(name));
-    PyObject *ret;
-    PyLazyImportObject *d = (PyLazyImportObject *)v;
-    PyObject *mod = NULL;
+    PyLazyImportObject *lz = PyLazyImportObject_CAST(v);
     // Only `from a import b` can take b off an already imported a;
     // `import a.b as c` has to import a.b first.
-    if (d->lz_attr != NULL && PyTuple_Check(d->lz_attr) &&
-        PyTuple_GET_SIZE(d->lz_attr) > 0) {
-        mod = PyImport_GetModule(d->lz_from);
-    }
-    if (mod != NULL) {
-        // Check if the module already has the attribute, if so, resolve it
-        // eagerly.
-        if (PyModule_Check(mod)) {
-            PyObject *mod_dict = PyModule_GetDict(mod);
-            if (mod_dict != NULL) {
-                if (PyDict_GetItemRef(mod_dict, name, &ret) < 0) {
-                    Py_DECREF(mod);
-                    return NULL;
-                }
-                if (ret != NULL) {
-                    Py_DECREF(mod);
-                    return ret;
-                }
-            }
+    if (lz->lz_attr != NULL && PyTuple_Check(lz->lz_attr) &&
+        PyTuple_GET_SIZE(lz->lz_attr) > 0) {
+        PyObject *attr = lazy_import_get_loaded_attr(tstate, lz->lz_from, name);
+        if (attr != NULL || PyErr_Occurred()) {
+            return attr;
         }
-        Py_DECREF(mod);
     }
-
     return _PyLazyImport_New(frame, NULL, v, name);
 }
 
