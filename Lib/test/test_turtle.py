@@ -7,6 +7,7 @@ import unittest.mock
 from test import support
 from test.support import import_helper
 from test.support import os_helper
+from test.support.script_helper import assert_python_ok
 
 
 turtle = import_helper.import_module('turtle')
@@ -711,6 +712,34 @@ class TestModuleLevel(unittest.TestCase):
                 obj = getattr(turtle, name)
                 sig = inspect.signature(obj)
                 self.assertEqual(str(sig), known_signatures[name])
+
+
+class TurtleDocstringTranslationTest(unittest.TestCase):
+
+    def _make_translation(self, dirname, filename, docstring):
+        with open(os.path.join(dirname, filename), 'w') as f:
+            f.write('docsdict = {"Turtle.forward": %r}\n' % docstring)
+
+    def _get_forward_docstring(self, dirname, lang):
+        rc, out, err = assert_python_ok(
+            '-c', 'import turtle; print(turtle.forward.__doc__)',
+            PYTHONPATH=dirname, PYTHON_TURTLE_LANG=lang)
+        return out.decode()
+
+    def test_translation(self):
+        with os_helper.temp_dir() as dirname:
+            self._make_translation(dirname, 'turtle_docstringdict_ga.py',
+                                  'chun tosaigh')
+
+            out = self._get_forward_docstring(dirname, 'ga')
+            self.assertIn('chun tosaigh', out)
+
+    def test_unknown_language(self):
+        with os_helper.temp_dir() as dirname:
+            out = self._get_forward_docstring(dirname, 'ga')
+
+            self.assertIn('Cannot find docsdict for ga', out)
+            self.assertIn('Move the turtle forward', out)
 
 
 if __name__ == '__main__':
