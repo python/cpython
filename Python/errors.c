@@ -4,6 +4,7 @@
 #include "Python.h"
 #include "pycore_audit.h"         // _PySys_Audit()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_ceval.h"         // _Py_ReachedRecursionLimitWithMargin()
 #include "pycore_fileutils.h"     // _PyFile_Flush
 #include "pycore_initconfig.h"    // _PyStatus_ERR()
 #include "pycore_pyerrors.h"      // _PyErr_Format()
@@ -337,7 +338,15 @@ PyErr_GivenExceptionMatches(PyObject *err, PyObject *exc)
         return 0;
     }
     if (PyTuple_Check(exc)) {
-        if (Py_EnterRecursiveCall(" in PyErr_GivenExceptionMatches")) {
+        PyThreadState *tstate = _PyThreadState_GET();
+        if (_Py_ReachedRecursionLimitWithMargin(tstate, 2)) {
+            PyObject *exc_value = _PyErr_GetRaisedException(tstate);
+            _PyErr_SetString(tstate, PyExc_RecursionError,
+                             "maximum recursion depth exceeded while "
+                             "checking exception tuple");
+            PyErr_FormatUnraisable("Exception ignored while "
+                                   "checking exception tuple");
+            _PyErr_SetRaisedException(tstate, exc_value);
             return 0;
         }
         int res = 0;
@@ -349,7 +358,6 @@ PyErr_GivenExceptionMatches(PyObject *err, PyObject *exc)
                 break;
             }
         }
-        Py_LeaveRecursiveCall();
         return res;
     }
     /* err might be an instance, so check its class. */

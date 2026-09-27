@@ -70,9 +70,7 @@ _testcapi_err_givenexceptionmatches_impl(PyObject *module, PyObject *err,
 {
     assert(!PyErr_Occurred());
     int res = PyErr_GivenExceptionMatches(err, exc);
-    if (res == 0 && PyErr_Occurred()) {
-        return NULL;
-    }
+    assert(!PyErr_Occurred());
     return PyBool_FromLong(res);
 }
 

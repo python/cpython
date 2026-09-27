@@ -2827,8 +2827,10 @@ class TestInvalidExceptionMatcher(unittest.TestCase):
         for _ in range(500_000):
             tup = (tup,)
 
-        with self.assertRaises(RecursionError):
-            _testcapi.err_givenexceptionmatches(TypeError(), tup)
+        with support.catch_unraisable_exception() as cm:
+            self.assertFalse(
+                _testcapi.err_givenexceptionmatches(ValueError(), tup))
+            self.assertIsInstance(cm.unraisable.exc_value, RecursionError)
 
 
 class PEP626Tests(unittest.TestCase):
