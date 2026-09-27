@@ -3325,43 +3325,6 @@ done:
     return NULL;
 }
 
-PyObject *
-_PyEval_LazyImportFrom(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject *v, PyObject *name)
-{
-    assert(PyLazyImport_CheckExact(v));
-    assert(name);
-    assert(PyUnicode_Check(name));
-    PyObject *ret;
-    PyLazyImportObject *d = (PyLazyImportObject *)v;
-    PyObject *mod = NULL;
-    // Only `from a import b` can take b off an already imported a;
-    // `import a.b as c` has to import a.b first.
-    if (d->lz_attr != NULL && PyTuple_Check(d->lz_attr) &&
-        PyTuple_GET_SIZE(d->lz_attr) > 0) {
-        mod = PyImport_GetModule(d->lz_from);
-    }
-    if (mod != NULL) {
-        // Check if the module already has the attribute, if so, resolve it
-        // eagerly.
-        if (PyModule_Check(mod)) {
-            PyObject *mod_dict = PyModule_GetDict(mod);
-            if (mod_dict != NULL) {
-                if (PyDict_GetItemRef(mod_dict, name, &ret) < 0) {
-                    Py_DECREF(mod);
-                    return NULL;
-                }
-                if (ret != NULL) {
-                    Py_DECREF(mod);
-                    return ret;
-                }
-            }
-        }
-        Py_DECREF(mod);
-    }
-
-    return _PyLazyImport_New(frame, d->lz_builtins, v, name);
-}
-
 #define CANNOT_CATCH_MSG "catching classes that do not inherit from "\
                          "BaseException is not allowed"
 
