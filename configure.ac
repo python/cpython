@@ -5568,6 +5568,7 @@ fi
 # raise an error if used at runtime. Force these symbols off.
 if test "$ac_sys_system" != "iOS" ; then
   AC_CHECK_FUNCS([dup3 getentropy getgroups pipe2 system])
+  PY_CHECK_FUNC_PRIVATE([freadlink], [@%:@include <unistd.h>])
 fi
 
 AC_CHECK_DECL([dirfd],
