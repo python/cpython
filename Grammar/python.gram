@@ -789,6 +789,7 @@ compare_op_bitwise_or_pair[CmpopExprPair*]:
     | (tok='!=' { _PyPegen_check_barry_as_flufl(p, tok) ? NULL : tok }) a=bitwise_or {
         _PyPegen_cmpop_expr_pair(p, NotEq, a) }
     | '<=' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, LtE, a) }
+    | invalid_noteq
     | '<' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, Lt, a) }
     | '>=' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, GtE, a) }
     | '>' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, Gt, a) }
@@ -1614,4 +1615,11 @@ invalid_bitwise_or:
         _PyPegen_tokens_are_adjacent(b, c)
         ? RAISE_SYNTAX_ERROR_KNOWN_RANGE(b, c, "invalid syntax.  Maybe you meant 'or' or '|' instead of '||'?")
         : NULL
+    }
+
+invalid_noteq:
+    | a='<' b='>' {
+      _PyPegen_tokens_are_adjacent(a, b)
+      ? RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax.  Maybe you meant '!=' instead of '<>'?")
+      : NULL
     }

@@ -386,8 +386,10 @@ class IOBinding:
         ("All files", "*"),
         )
 
-    # Output windows (Shell, Output) are not Python source, so they list
-    # text files first and default to ".txt" (gh-65339).
+    save_filetypes = filetypes
+
+    # Output windows (Shell, Output) are not Python source, so they save
+    # with text files listed first and default to ".txt" (gh-65339).
     text_filetypes = (
         ("Text files", "*.txt", "TEXT"),
         ("Python files", py_extensions, "TEXT"),
@@ -427,7 +429,7 @@ class IOBinding:
         if not self.savedialog:
             self.savedialog = filedialog.SaveAs(
                     parent=self.text,
-                    filetypes=self.filetypes,
+                    filetypes=self.save_filetypes,
                     defaultextension=self.defaultextension)
         filename = self.savedialog.show(initialdir=dir, initialfile=base)
         return filename

@@ -783,6 +783,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'use_frozen_modules': not support.Py_DEBUG,
         'safe_path': False,
         '_is_python_build': IGNORE_CONFIG,
+        '_deferred_cmdline_option': 0,
     }
     if Py_STATS:
         CONFIG_COMPAT['_pystats'] = False
