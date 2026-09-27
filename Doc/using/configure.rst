@@ -132,9 +132,9 @@ Dependencies to build optional modules are:
    :mod:`zlib` module.
 .. [8] OpenSSL 1.1.1 is the minimum possible version to build against,
    but the latest public release of the series has known vulnerabilities.
-   For best compatibility and security it is recommended to always use
+   For best compatibility and security it is recommended to use
    the latest patch release of a current LTS release series (see the
-   `OpenSSL Roadmap <https://openssl-library.org/roadmap/index.html>`_),
+   `OpenSSL Roadmap <https://openssl-library.org/roadmap/index.html>`__),
    or the package provided by your operating system if available.  Other
    libraries that offer an API compatible with OpenSSL 1.1.1 or later may
    also be usable, but are not officially supported.
