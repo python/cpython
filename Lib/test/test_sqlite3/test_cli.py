@@ -342,13 +342,12 @@ class Completion(unittest.TestCase):
         self.assertEqual(
             candidates, ["_col_attached", "_col_table", "_col_temp"]
         )
-
-    @unittest.skipIf(sqlite3.sqlite_version_info < (3, 30, 0),
+    @unittest.skipIf(sqlite3.sqlite_version_info < (3, 16, 0),
                      "PRAGMA function_list is not available until "
-                     "SQLite 3.30.0")
+                     "SQLite 3.16.0")
     def test_complete_view_columns(self):
         input_ = textwrap.dedent("""\
-            CREATE TABLE _table (_col_table);
+            CREATE TABLE _table (_col_table, _col_view);
             CREATE VIEW _view AS SELECT _col_view AS _col_view_alias,
                                          _col_table AS _col_table_alias
                                   FROM _table;
