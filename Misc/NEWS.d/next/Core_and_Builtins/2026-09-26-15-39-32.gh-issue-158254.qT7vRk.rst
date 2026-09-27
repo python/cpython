@@ -1,0 +1,3 @@
+Reverse iterators over a :class:`dict` and its views now raise
+:exc:`RuntimeError` if the dictionary's keys change during iteration, like
+forward iterators, instead of yielding entries for the new keys.
