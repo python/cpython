@@ -1641,6 +1641,7 @@ extern "C" {
     INIT_ID(canonical), \
     INIT_ID(capath), \
     INIT_ID(capitals), \
+    INIT_ID(capture_features), \
     INIT_ID(category), \
     INIT_ID(cb_type), \
     INIT_ID(certfile), \
@@ -1691,6 +1692,7 @@ extern "C" {
     INIT_ID(ctx), \
     INIT_ID(cwd), \
     INIT_ID(d_parameter_type), \
+    INIT_ID(daemon), \
     INIT_ID(data), \
     INIT_ID(database), \
     INIT_ID(date), \
@@ -1722,6 +1724,7 @@ extern "C" {
     INIT_ID(dont_inherit), \
     INIT_ID(dst), \
     INIT_ID(dst_dir_fd), \
+    INIT_ID(duration_sec), \
     INIT_ID(eager_start), \
     INIT_ID(effective_ids), \
     INIT_ID(element_factory), \
@@ -1735,6 +1738,7 @@ extern "C" {
     INIT_ID(endpos), \
     INIT_ID(entrypoint), \
     INIT_ID(env), \
+    INIT_ID(error_rate), \
     INIT_ID(errors), \
     INIT_ID(event), \
     INIT_ID(eventmask), \
@@ -1771,7 +1775,9 @@ extern "C" {
     INIT_ID(filter), \
     INIT_ID(filters), \
     INIT_ID(final), \
+    INIT_ID(finalizer), \
     INIT_ID(find_class), \
+    INIT_ID(firstiter), \
     INIT_ID(fix_imports), \
     INIT_ID(flags), \
     INIT_ID(flush), \
@@ -1789,6 +1795,7 @@ extern "C" {
     INIT_ID(fset), \
     INIT_ID(fullerror), \
     INIT_ID(func), \
+    INIT_ID(function), \
     INIT_ID(future), \
     INIT_ID(gc), \
     INIT_ID(generation), \
@@ -1919,6 +1926,7 @@ extern "C" {
     INIT_ID(milliseconds), \
     INIT_ID(minute), \
     INIT_ID(minutes), \
+    INIT_ID(missed_samples), \
     INIT_ID(mod), \
     INIT_ID(mode), \
     INIT_ID(module), \
@@ -2051,6 +2059,7 @@ extern "C" {
     INIT_ID(rounding), \
     INIT_ID(salt), \
     INIT_ID(sample_interval_us), \
+    INIT_ID(sample_rate), \
     INIT_ID(sched_priority), \
     INIT_ID(scheduler), \
     INIT_ID(script), \
@@ -2102,6 +2111,8 @@ extern "C" {
     INIT_ID(stdout), \
     INIT_ID(step), \
     INIT_ID(steps), \
+    INIT_ID(stop_exception), \
+    INIT_ID(stop_value), \
     INIT_ID(store_name), \
     INIT_ID(strategy), \
     INIT_ID(strftime), \

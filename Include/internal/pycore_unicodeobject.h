@@ -10,13 +10,16 @@ extern "C" {
 
 #include "pycore_fileutils.h"     // _Py_error_handler
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
+#include "pycore_runtime.h"       // _Py_LATIN1_CHR()
 
 
 // Maximum code point of Unicode 6.0: 0x10ffff (1,114,111).
 #define _Py_MAX_UNICODE 0x10ffff
 
 
-extern int _PyUnicode_IsModifiable(PyObject *unicode);
+// Export for '_multibytecodec' shared extension. _PyUnicodeWriter_CanWrite()
+// calls this function when assertions are enabled.
+PyAPI_FUNC(int) _PyUnicode_IsModifiable(PyObject *unicode);
 extern void _PyUnicodeWriter_InitWithBuffer(
     _PyUnicodeWriter *writer,
     PyObject *buffer);
@@ -105,12 +108,69 @@ _PyUnicode_EnsureUnicode(PyObject *obj)
     return 0;
 }
 
+#ifndef NDEBUG
+static inline int
+_PyUnicodeWriter_CanWrite(_PyUnicodeWriter *writer)
+{
+    assert(!writer->readonly);
+
+    PyObject *buffer = writer->buffer;
+    assert(buffer != NULL);
+
+    // Code adapted from _PyUnicode_IsModifiable().
+    // Do not use _PyObject_IsUniquelyReferenced(): the caller can have its own
+    // lock to prevent a writer from being used by two threads at the same
+    // time.
+    assert(Py_REFCNT(buffer) == 1);
+    assert(PyUnstable_Unicode_GET_CACHED_HASH(buffer) == -1);
+    assert(!PyUnicode_CHECK_INTERNED(buffer));
+    assert(!_Py_IsImmortal(buffer));
+    return 1;
+}
+#endif
+
+static inline void
+_PyUnicodeWriter_Update(_PyUnicodeWriter *writer)
+{
+    PyObject *buffer = writer->buffer;
+    writer->maxchar = PyUnicode_MAX_CHAR_VALUE(buffer);
+    writer->data = PyUnicode_DATA(buffer);
+    writer->kind = PyUnicode_KIND(buffer);
+
+    if (!writer->readonly) {
+        writer->size = PyUnicode_GET_LENGTH(buffer);
+    }
+    else {
+        /* Copy-on-write mode: set buffer size to 0 so
+         * _PyUnicodeWriter_Prepare() will copy (and enlarge) the buffer on
+         * next write. */
+        writer->size = 0;
+    }
+}
+
 static inline int
 _PyUnicodeWriter_WriteCharInline(_PyUnicodeWriter *writer, Py_UCS4 ch)
 {
-    assert(ch <= _Py_MAX_UNICODE);
-    if (_PyUnicodeWriter_Prepare(writer, 1, ch) < 0)
-        return -1;
+    if (ch > writer->maxchar || 1 > writer->size - writer->pos) {
+        if (writer->buffer == NULL && ch <= 255) {
+            // If the first write is a Latin1 character, use the singleton
+            // as a read-only object
+            PyObject *obj = _Py_LATIN1_CHR(ch);
+            writer->readonly = 1;
+            writer->buffer = obj; // Py_NewRef() is not need on immortal object
+            _PyUnicodeWriter_Update(writer);
+            assert(writer->pos == 0);
+            writer->pos = 1;
+            // The next write will create a new buffer and copy the string
+            return 0;
+        }
+
+        if (_PyUnicodeWriter_PrepareInternal(writer, 1, ch) == -1) {
+            return -1;
+        }
+    }
+    assert(_PyUnicodeWriter_CanWrite(writer));
+
     PyUnicode_WRITE(writer->kind, writer->data, writer->pos, ch);
     writer->pos++;
     return 0;
@@ -184,7 +244,7 @@ extern int _PyUnicodeWriter_FormatV(
 
 /* --- iconv Codec -------------------------------------------------------- */
 
-#ifdef HAVE_ICONV
+#ifdef _Py_HAVE_ICONV
 extern PyObject* _PyUnicode_DecodeIconv(
     const char *encoding,       /* iconv encoding name */
     const char *string,         /* encoded string */
