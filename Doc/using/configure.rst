@@ -131,13 +131,13 @@ Dependencies to build optional modules are:
 .. [7] See :option:`--with-zlib` for choosing the backend for the
    :mod:`zlib` module.
 .. [8] OpenSSL 1.1.1 is the minimum possible version to build against,
-   but the latest public release of the series has known vulnerabilities.
-   For best compatibility and security it is recommended to use
-   the latest patch release of a current LTS release series (see the
+   but the series is end-of-life and no longer receives public security
+   fixes.  Use
+   the latest patch release of a currently supported LTS release series (see the
    `OpenSSL Roadmap <https://openssl-library.org/roadmap/index.html>`__),
    or the package provided by your operating system if available.  Other
    libraries that offer an API compatible with OpenSSL 1.1.1 or later may
-   also be usable, but are not officially supported.
+   work, but are not officially supported.
 
 Note that the table does not include all optional modules; in particular,
 platform-specific modules like :mod:`winreg` are not listed here.
