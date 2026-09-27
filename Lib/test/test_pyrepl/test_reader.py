@@ -295,6 +295,29 @@ class TestReader(ScreenEqualMixin, TestCase):
 
         self.assertEqual(len(input_hook.mock_calls), 4)
 
+    def test_suspend_preserves_buffer(self):
+        console = prepare_console([])
+        reader = prepare_reader(console)
+        reader.buffer[:] = list("hello world")
+        reader.pos = 5
+        reader.kill_ring.append(list("saved"))
+
+        before = (list(reader.buffer), reader.pos, 
+                  [list(k) for k in reader.kill_ring])
+        with reader.suspend():
+            pass
+        after = (list(reader.buffer), reader.pos,
+                 [list(k) for k in reader.kill_ring])
+        self.assertEqual(before, after)
+
+    def test_suspend_preserves_arg(self):
+        console = prepare_console([])
+        reader = prepare_reader(console)
+        reader.arg = 42
+        with reader.suspend():
+            pass
+        self.assertEqual(reader.arg, 42)
+        
     def test_keyboard_interrupt_clears_screen(self):
         namespace = {"itertools": itertools}
         code = "import itertools\nitertools."

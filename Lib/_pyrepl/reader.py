@@ -852,15 +852,22 @@ class Reader:
     @contextmanager
     def suspend(self) -> SimpleContextManager:
         """A context manager to delegate to another reader."""
-        prev_state = {f.name: getattr(self, f.name) for f in fields(self)}
+        prev_state = {}
+        for f in fields(self):
+            value = getattr(self, f.name)
+            if isinstance(value, list):
+                value = value.copy()
+            prev_state[f.name] = value
         try:
             self.restore()
             yield
         finally:
-            for arg in ("msg", "ps1", "ps2", "ps3", "ps4", "paste_mode"):
-                setattr(self, arg, prev_state[arg])
             self.prepare()
-
+            for name, value in prev_state.items():
+                if name == "invalidation":
+                    continue
+                setattr(self, name, value)
+            self.invalidate_full()
     @contextmanager
     def suspend_colorization(self) -> SimpleContextManager:
         try:
