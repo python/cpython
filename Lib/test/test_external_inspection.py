@@ -2259,9 +2259,15 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                     support.SHORT_TIMEOUT,
                     f"Expected {expected_count} leaf frames",
                 ):
+                    try:
+                        traces = u.get_stack_trace()
+                    except RuntimeError as exc:
+                        if str(exc) != "Failed to parse initial frame in chain":
+                            raise
+                        continue
                     count = sum(
                         f.funcname == "leaf"
-                        for i in u.get_stack_trace()
+                        for i in traces
                         for t in i.threads for f in t.frame_info
                     )
                     if count == expected_count:
@@ -2313,13 +2319,21 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                     support.SHORT_TIMEOUT,
                     f"Expected {expected_count} leaf frames",
                 ):
+                    try:
+                        traces = u.get_stack_trace()
+                    except RuntimeError as exc:
+                        if str(exc) != "Failed to parse initial frame in chain":
+                            raise
+                        continue
                     result = sorted(
                         f.location.lineno
-                        for i in u.get_stack_trace()
+                        for i in traces
                         for t in i.threads for f in t.frame_info
                         if f.funcname == "leaf"
                     )
-                    if len(result) == expected_count:
+                    # A new frame can still point at the function definition.
+                    if (len(result) == expected_count and
+                        leaf.__code__.co_firstlineno not in result):
                         return result
 
             threading.Thread(target=leaf, daemon=True).start()
