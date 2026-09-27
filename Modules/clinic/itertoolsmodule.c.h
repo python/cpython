@@ -788,17 +788,13 @@ itertools_accumulate(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     }
     iterable = fastargs[0];
     if (!noptargs) {
-        goto skip_optional_pos;
+        goto skip_optional_kwonly;
     }
     if (fastargs[1]) {
         binop = fastargs[1];
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
-    }
-skip_optional_pos:
-    if (!noptargs) {
-        goto skip_optional_kwonly;
     }
     initial = fastargs[2];
 skip_optional_kwonly:
@@ -980,4 +976,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a34a31f60100e0ff input=a9049054013a1b77]*/
+/*[clinic end generated code: output=39902880b6679729 input=a9049054013a1b77]*/

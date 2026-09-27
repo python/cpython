@@ -790,7 +790,7 @@ datetime_time(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         goto exit;
     }
     if (!noptargs) {
-        goto skip_optional_pos;
+        goto skip_optional_kwonly;
     }
     if (fastargs[0]) {
         hour = PyLong_AsInt(fastargs[0]);
@@ -798,7 +798,7 @@ datetime_time(PyTypeObject *type, PyObject *args, PyObject *kwargs)
             goto exit;
         }
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
     }
     if (fastargs[1]) {
@@ -807,7 +807,7 @@ datetime_time(PyTypeObject *type, PyObject *args, PyObject *kwargs)
             goto exit;
         }
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
     }
     if (fastargs[2]) {
@@ -816,7 +816,7 @@ datetime_time(PyTypeObject *type, PyObject *args, PyObject *kwargs)
             goto exit;
         }
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
     }
     if (fastargs[3]) {
@@ -825,18 +825,14 @@ datetime_time(PyTypeObject *type, PyObject *args, PyObject *kwargs)
             goto exit;
         }
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
     }
     if (fastargs[4]) {
         tzinfo = fastargs[4];
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
-    }
-skip_optional_pos:
-    if (!noptargs) {
-        goto skip_optional_kwonly;
     }
     fold = PyLong_AsInt(fastargs[5]);
     if (fold == -1 && PyErr_Occurred()) {
@@ -1131,7 +1127,7 @@ datetime_time_replace(PyObject *self, PyObject *const *args, Py_ssize_t nargs, P
         goto exit;
     }
     if (!noptargs) {
-        goto skip_optional_pos;
+        goto skip_optional_kwonly;
     }
     if (args[0]) {
         hour = PyLong_AsInt(args[0]);
@@ -1139,7 +1135,7 @@ datetime_time_replace(PyObject *self, PyObject *const *args, Py_ssize_t nargs, P
             goto exit;
         }
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
     }
     if (args[1]) {
@@ -1148,7 +1144,7 @@ datetime_time_replace(PyObject *self, PyObject *const *args, Py_ssize_t nargs, P
             goto exit;
         }
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
     }
     if (args[2]) {
@@ -1157,7 +1153,7 @@ datetime_time_replace(PyObject *self, PyObject *const *args, Py_ssize_t nargs, P
             goto exit;
         }
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
     }
     if (args[3]) {
@@ -1166,18 +1162,14 @@ datetime_time_replace(PyObject *self, PyObject *const *args, Py_ssize_t nargs, P
             goto exit;
         }
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
     }
     if (args[4]) {
         tzinfo = args[4];
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
-    }
-skip_optional_pos:
-    if (!noptargs) {
-        goto skip_optional_kwonly;
     }
     fold = PyLong_AsInt(args[5]);
     if (fold == -1 && PyErr_Occurred()) {
@@ -1341,7 +1333,7 @@ datetime_datetime(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         goto exit;
     }
     if (!noptargs) {
-        goto skip_optional_pos;
+        goto skip_optional_kwonly;
     }
     if (fastargs[3]) {
         hour = PyLong_AsInt(fastargs[3]);
@@ -1349,7 +1341,7 @@ datetime_datetime(PyTypeObject *type, PyObject *args, PyObject *kwargs)
             goto exit;
         }
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
     }
     if (fastargs[4]) {
@@ -1358,7 +1350,7 @@ datetime_datetime(PyTypeObject *type, PyObject *args, PyObject *kwargs)
             goto exit;
         }
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
     }
     if (fastargs[5]) {
@@ -1367,7 +1359,7 @@ datetime_datetime(PyTypeObject *type, PyObject *args, PyObject *kwargs)
             goto exit;
         }
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
     }
     if (fastargs[6]) {
@@ -1376,18 +1368,14 @@ datetime_datetime(PyTypeObject *type, PyObject *args, PyObject *kwargs)
             goto exit;
         }
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
     }
     if (fastargs[7]) {
         tzinfo = fastargs[7];
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
-    }
-skip_optional_pos:
-    if (!noptargs) {
-        goto skip_optional_kwonly;
     }
     fold = PyLong_AsInt(fastargs[8]);
     if (fold == -1 && PyErr_Occurred()) {
@@ -1898,7 +1886,7 @@ datetime_datetime_replace(PyObject *self, PyObject *const *args, Py_ssize_t narg
         goto exit;
     }
     if (!noptargs) {
-        goto skip_optional_pos;
+        goto skip_optional_kwonly;
     }
     if (args[0]) {
         year = PyLong_AsInt(args[0]);
@@ -1906,7 +1894,7 @@ datetime_datetime_replace(PyObject *self, PyObject *const *args, Py_ssize_t narg
             goto exit;
         }
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
     }
     if (args[1]) {
@@ -1915,7 +1903,7 @@ datetime_datetime_replace(PyObject *self, PyObject *const *args, Py_ssize_t narg
             goto exit;
         }
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
     }
     if (args[2]) {
@@ -1924,7 +1912,7 @@ datetime_datetime_replace(PyObject *self, PyObject *const *args, Py_ssize_t narg
             goto exit;
         }
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
     }
     if (args[3]) {
@@ -1933,7 +1921,7 @@ datetime_datetime_replace(PyObject *self, PyObject *const *args, Py_ssize_t narg
             goto exit;
         }
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
     }
     if (args[4]) {
@@ -1942,7 +1930,7 @@ datetime_datetime_replace(PyObject *self, PyObject *const *args, Py_ssize_t narg
             goto exit;
         }
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
     }
     if (args[5]) {
@@ -1951,7 +1939,7 @@ datetime_datetime_replace(PyObject *self, PyObject *const *args, Py_ssize_t narg
             goto exit;
         }
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
     }
     if (args[6]) {
@@ -1960,18 +1948,14 @@ datetime_datetime_replace(PyObject *self, PyObject *const *args, Py_ssize_t narg
             goto exit;
         }
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
     }
     if (args[7]) {
         tzinfo = args[7];
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
-    }
-skip_optional_pos:
-    if (!noptargs) {
-        goto skip_optional_kwonly;
     }
     fold = PyLong_AsInt(args[8]);
     if (fold == -1 && PyErr_Occurred()) {
@@ -2091,4 +2075,4 @@ datetime_datetime___reduce__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return datetime_datetime___reduce___impl((PyDateTime_DateTime *)self);
 }
-/*[clinic end generated code: output=8f63509398651723 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9b521432f8f260f0 input=a9049054013a1b77]*/

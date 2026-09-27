@@ -82,17 +82,13 @@ py_blake2b_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         goto exit;
     }
     if (!noptargs) {
-        goto skip_optional_pos;
+        goto skip_optional_kwonly;
     }
     if (fastargs[0]) {
         data_obj = fastargs[0];
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
-    }
-skip_optional_pos:
-    if (!noptargs) {
-        goto skip_optional_kwonly;
     }
     if (fastargs[1]) {
         digest_size = PyLong_AsInt(fastargs[1]);
@@ -291,17 +287,13 @@ py_blake2s_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         goto exit;
     }
     if (!noptargs) {
-        goto skip_optional_pos;
+        goto skip_optional_kwonly;
     }
     if (fastargs[0]) {
         data_obj = fastargs[0];
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
-    }
-skip_optional_pos:
-    if (!noptargs) {
-        goto skip_optional_kwonly;
     }
     if (fastargs[1]) {
         digest_size = PyLong_AsInt(fastargs[1]);
@@ -506,4 +498,4 @@ _blake2_blake2b_hexdigest(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _blake2_blake2b_hexdigest_impl((Blake2Object *)self);
 }
-/*[clinic end generated code: output=5f76c18211cd7f8f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b594120c27192a78 input=a9049054013a1b77]*/

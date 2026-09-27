@@ -1273,7 +1273,7 @@ class ParseArgsCodeGen:
                     parser_code = []
                     use_parser_code = False
                     break
-                if add_label and (i == self.pos_only or i == self.max_pos):
+                if add_label and (i == self.pos_only or (i == self.max_pos and add_label != 'skip_optional_kwonly')):
                     parser_code.append("%s:" % add_label)
                     add_label = None
                 if not p.is_optional():
@@ -1292,18 +1292,26 @@ class ParseArgsCodeGen:
                     parser_code.append(libclinic.normalize_snippet(parsearg, indent=4))
                 else:
                     if i < self.max_pos:
-                        label = 'skip_optional_pos'
+                        # If there are no required keyword-only parameters, gotos from
+                        # optional positional parameters can jump directly to skip_optional_kwonly.
+                        if len(self.parameters) > self.max_pos and not self.min_kw_only:
+                            label = 'skip_optional_kwonly'
+                        else:
+                            label = 'skip_optional_pos'
                         first_opt = max(self.min_pos, self.pos_only)
                     else:
                         label = 'skip_optional_kwonly'
                         first_opt = self.max_pos + self.min_kw_only
                     if i == first_opt:
                         add_label = label
-                        parser_code.append(libclinic.normalize_snippet("""
-                            if (!noptargs) {{
-                                goto %s;
-                            }}
-                            """ % add_label, indent=4))
+                        # Skip redundant 'if (!noptargs)' check when entering keyword-only section
+                        # if it was already checked at the start of optional positional parameters.
+                        if not (i == self.max_pos and self.max_pos > max(self.min_pos, self.pos_only)):
+                            parser_code.append(libclinic.normalize_snippet("""
+                                if (!noptargs) {{
+                                    goto %s;
+                                }}
+                                """ % add_label, indent=4))
                     if i + 1 == len(self.parameters):
                         parser_code.append(libclinic.normalize_snippet(parsearg, indent=4))
                     else:

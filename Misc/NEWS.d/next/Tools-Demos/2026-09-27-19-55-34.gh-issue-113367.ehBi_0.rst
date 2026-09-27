@@ -1,0 +1,1 @@
+Avoid generating redundant gotos and labels in Argument Clinic when a function has optional positional arguments and optional keyword-only arguments without required keyword-only arguments.

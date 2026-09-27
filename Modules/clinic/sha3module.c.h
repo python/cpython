@@ -64,17 +64,13 @@ py_sha3_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         goto exit;
     }
     if (!noptargs) {
-        goto skip_optional_pos;
+        goto skip_optional_kwonly;
     }
     if (fastargs[0]) {
         data_obj = fastargs[0];
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
-    }
-skip_optional_pos:
-    if (!noptargs) {
-        goto skip_optional_kwonly;
     }
     if (fastargs[1]) {
         usedforsecurity = PyObject_IsTrue(fastargs[1]);
@@ -320,4 +316,4 @@ _sha3_shake_128_hexdigest(PyObject *self, PyObject *const *args, Py_ssize_t narg
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=78284adde71d590c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e1626a28f7a96e3b input=a9049054013a1b77]*/

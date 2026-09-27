@@ -144,17 +144,13 @@ _md5_md5(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
         goto exit;
     }
     if (!noptargs) {
-        goto skip_optional_pos;
+        goto skip_optional_kwonly;
     }
     if (args[0]) {
         data = args[0];
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
-    }
-skip_optional_pos:
-    if (!noptargs) {
-        goto skip_optional_kwonly;
     }
     if (args[1]) {
         usedforsecurity = PyObject_IsTrue(args[1]);
@@ -172,4 +168,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=920fe54b9ed06f92 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=41e45e1e4547eb7e input=a9049054013a1b77]*/
