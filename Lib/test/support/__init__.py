@@ -1373,11 +1373,7 @@ def nomemtest(test):
         import_module('_testcapi')
         return test(*args, **kwargs)
 
-    use_tsan = check_sanitizer(thread=True)
-    reason ='not working with thread sanitizer (gh-157415)'
-    skip_if_tsan = unittest.skipIf(use_tsan, reason)
-
-    return cpython_only(skip_if_tsan(internal))
+    return cpython_only(internal)
 
 def bigaddrspacetest(f):
     """Decorator for tests that fill the address space."""
@@ -3559,7 +3555,7 @@ def inject_memory_error(start=0, stop=0):
 
 
 @contextlib.contextmanager
-def memory_error_cm(start=0, stop=0):
+def inject_memory_error_cm(start=0, stop=0):
     """
     Similar to inject_memory_error() but can be used as a context manager.
 

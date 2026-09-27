@@ -2635,6 +2635,68 @@ class BaseTaskTests:
         finally:
             loop.close()
 
+    def test_context_not_a_context(self):
+        # gh-157301
+        async def coro():
+            pass
+
+        loop = asyncio.new_event_loop()
+        c = coro()
+        try:
+            with self.assertRaises(TypeError):
+                self.new_task(loop, c, context='not a context')
+        finally:
+            c.close()
+            loop.close()
+
+    def test_context_not_a_context_leaves_loop_usable(self):
+        # gh-157301
+        async def coro():
+            pass
+
+        async def main():
+            c = coro()
+            try:
+                with self.assertRaises(TypeError):
+                    self.new_task(loop, c, context='not a context',
+                                  eager_start=True)
+            finally:
+                c.close()
+            await asyncio.sleep(0)
+
+        loop = asyncio.new_event_loop()
+        loop.call_later(support.SHORT_TIMEOUT, loop.stop)
+        try:
+            loop.run_until_complete(self.new_task(loop, main()))
+        finally:
+            loop.close()
+
+    def test_context_already_entered_leaves_loop_usable(self):
+        # gh-157301
+        async def coro():
+            pass
+
+        async def main():
+            ctx = contextvars.copy_context()
+
+            def inside():
+                c = coro()
+                try:
+                    with self.assertRaises(RuntimeError):
+                        self.new_task(loop, c, context=ctx, eager_start=True)
+                finally:
+                    c.close()
+
+            ctx.run(inside)
+            await asyncio.sleep(0)
+
+        loop = asyncio.new_event_loop()
+        loop.call_later(support.SHORT_TIMEOUT, loop.stop)
+        try:
+            loop.run_until_complete(self.new_task(loop, main()))
+        finally:
+            loop.close()
+
     def test_context_2(self):
         cvar = contextvars.ContextVar('cvar', default='nope')
 

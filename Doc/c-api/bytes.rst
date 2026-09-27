@@ -305,8 +305,8 @@ object.
 
    A bytes writer object.
 
-   The API is **not thread safe**. A :c:type:`PyBytesWriter` object must only
-   be used by a single thread, it must not be shared between threads.
+   The API is **not thread safe**. To share a writer with multiple threads, a
+   critical section or a lock is needed.
 
    The instance must be destroyed by :c:func:`PyBytesWriter_Finish` on
    success, or :c:func:`PyBytesWriter_Discard` on error.

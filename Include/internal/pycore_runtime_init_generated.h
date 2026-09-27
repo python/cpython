@@ -1641,6 +1641,7 @@ extern "C" {
     INIT_ID(canonical), \
     INIT_ID(capath), \
     INIT_ID(capitals), \
+    INIT_ID(capture_features), \
     INIT_ID(category), \
     INIT_ID(cb_type), \
     INIT_ID(certfile), \
@@ -1691,6 +1692,7 @@ extern "C" {
     INIT_ID(ctx), \
     INIT_ID(cwd), \
     INIT_ID(d_parameter_type), \
+    INIT_ID(daemon), \
     INIT_ID(data), \
     INIT_ID(database), \
     INIT_ID(date), \
@@ -1791,6 +1793,7 @@ extern "C" {
     INIT_ID(fset), \
     INIT_ID(fullerror), \
     INIT_ID(func), \
+    INIT_ID(function), \
     INIT_ID(future), \
     INIT_ID(gc), \
     INIT_ID(generation), \

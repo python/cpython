@@ -162,14 +162,16 @@ class CodeTestCase(unittest.TestCase):
         data = {'a': [({co, 0},)]}
         dump = marshal.dumps(data, allow_code=True)
         self.assertEqual(marshal.loads(dump, allow_code=True), data)
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(ValueError,
+                                    'marshalling code objects is disallowed'):
             marshal.dumps(data, allow_code=False)
         with self.assertRaises(ValueError):
             marshal.loads(dump, allow_code=False)
 
         marshal.dump(data, io.BytesIO(), allow_code=True)
         self.assertEqual(marshal.load(io.BytesIO(dump), allow_code=True), data)
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(ValueError,
+                                    'marshalling code objects is disallowed'):
             marshal.dump(data, io.BytesIO(), allow_code=False)
         with self.assertRaises(ValueError):
             marshal.load(io.BytesIO(dump), allow_code=False)
@@ -347,16 +349,29 @@ class BugsTestCase(unittest.TestCase):
             self.assertIsInstance(b, dict)
             self.assertIs(b[None], b)
 
+    def check_reference_loop(self, a, typename, minversion,
+                             oldmsg='object too deeply nested to marshal'):
+        # Only versions supporting references to the type detect the loop;
+        # older versions fail for a different reason.
+        for v in range(minversion):
+            with self.subTest(version=v):
+                with self.assertRaisesRegex(ValueError, oldmsg):
+                    marshal.dumps(a, v)
+        for v in range(minversion, marshal.version + 1):
+            with self.subTest(version=v):
+                with self.assertRaisesRegex(
+                        ValueError,
+                        f'cannot marshal recursion {typename} objects'):
+                    marshal.dumps(a, v)
+
     def test_reference_loop_tuple(self):
         a = ([],)
         a[0].append(a)
-        for v in range(marshal.version + 1):
-            self.assertRaises(ValueError, marshal.dumps, a, v)
+        self.check_reference_loop(a, 'tuple', 3)
 
         a = ({},)
         a[0][None] = a
-        for v in range(marshal.version + 1):
-            self.assertRaises(ValueError, marshal.dumps, a, v)
+        self.check_reference_loop(a, 'tuple', 3)
 
     def test_shared_reference_tuple(self):
         # A tuple referenced more than once still round-trips with the
@@ -381,30 +396,28 @@ class BugsTestCase(unittest.TestCase):
         # so we need to break the loop manually. See gh-148722.
         self.addCleanup(a.clear)
         a.append(code)
-        for v in range(marshal.version + 1):
-            self.assertRaises(ValueError, marshal.dumps, code, v)
+        self.check_reference_loop(code, 'code', 3)
 
     def test_reference_loop_slice(self):
+        oldmsg = 'marshalling slice objects requires version 5 or higher'
         a = slice([], None)
         a.start.append(a)
-        for v in range(marshal.version + 1):
-            self.assertRaises(ValueError, marshal.dumps, a, v)
+        self.check_reference_loop(a, 'slice', 5, oldmsg)
 
         a = slice(None, [])
         a.stop.append(a)
-        for v in range(marshal.version + 1):
-            self.assertRaises(ValueError, marshal.dumps, a, v)
+        self.check_reference_loop(a, 'slice', 5, oldmsg)
 
         a = slice(None, None, [])
         a.step.append(a)
-        for v in range(marshal.version + 1):
-            self.assertRaises(ValueError, marshal.dumps, a, v)
+        self.check_reference_loop(a, 'slice', 5, oldmsg)
 
     def test_reference_loop_frozendict(self):
         a = frozendict({None: []})
         a[None].append(a)
-        for v in range(marshal.version + 1):
-            self.assertRaises(ValueError, marshal.dumps, a, v)
+        self.check_reference_loop(
+            a, 'frozendict', 6,
+            'marshalling frozendict objects requires version 6 or higher')
 
     def test_shared_reference_frozendict(self):
         # A frozendict referenced more than once must round-trip with the
@@ -475,7 +488,9 @@ class BugsTestCase(unittest.TestCase):
             # Note: str subclasses are not tested because they get handled
             # by marshal's routines for objects supporting the buffer API.
             subtyp = type('subtyp', (typ,), {})
-            self.assertRaises(ValueError, marshal.dumps, subtyp())
+            with self.assertRaisesRegex(ValueError,
+                                        r'cannot marshal \S*subtyp objects'):
+                marshal.dumps(subtyp())
 
     # Issue #1792 introduced a change in how marshal increases the size of its
     # internal buffer; this test ensures that the new code is exercised.
@@ -578,8 +593,24 @@ class BugsTestCase(unittest.TestCase):
                  ('code', code))
         for name, arg in cases:
             with self.subTest(name, arg=arg):
-                with self.assertRaisesRegex(ValueError, "unmarshallable object"):
+                with self.assertRaisesRegex(ValueError,
+                                            "cannot marshal type objects"):
                     marshal.dumps((arg, memoryview(b'')))
+
+    def test_error_in_set_item(self):
+        # Set items are sorted by their marshalled representation, and NaNs
+        # are only distinguished by identity, so they are compared as
+        # complex numbers.
+        nan = float('nan')
+        with self.assertRaisesRegex(TypeError, "'<' not supported"):
+            marshal.dumps({complex(nan, 0), complex(nan, 0)})
+
+    def test_error_in_buffer(self):
+        # The BufferError raised for a non-contiguous buffer is not replaced
+        # with a generic error.
+        step2 = slice(None, None, 2)
+        with self.assertRaises(BufferError):
+            marshal.dumps(memoryview(bytearray(b'abcdef'))[step2])
 
 
 LARGE_SIZE = 2**31
@@ -591,8 +622,14 @@ class NullWriter:
 
 @unittest.skipIf(LARGE_SIZE > sys.maxsize, "test cannot run on 32-bit systems")
 class LargeValuesTestCase(unittest.TestCase):
-    def check_unmarshallable(self, data):
-        self.assertRaises(ValueError, marshal.dump, data, NullWriter())
+    def check_unmarshallable(self, data, msg='object too large to marshal'):
+        with self.assertRaisesRegex(ValueError, msg):
+            marshal.dump(data, NullWriter())
+
+    @support.bigmemtest(size=LARGE_SIZE, memuse=4, dry_run=False)
+    def test_int(self, size):
+        # An int with more than SIZE32_MAX 15-bit digits.
+        self.check_unmarshallable(1 << (15 * size), 'int too large to marshal')
 
     @support.bigmemtest(size=LARGE_SIZE, memuse=2, dry_run=False)
     def test_bytes(self, size):
@@ -725,7 +762,10 @@ class InstancingTestCase(unittest.TestCase, HelperMixin):
             self.helper(dictobj)
 
             for version in range(6):
-                with self.assertRaises(ValueError):
+                with self.assertRaisesRegex(
+                        ValueError,
+                        'marshalling frozendict objects requires '
+                        'version 6 or higher'):
                     marshal.dumps(dictobj, version)
 
     def testModule(self):
@@ -794,7 +834,10 @@ class SliceTestCase(unittest.TestCase, HelperMixin):
                 self.helper(obj)
 
                 for version in range(5):
-                    with self.assertRaises(ValueError):
+                    with self.assertRaisesRegex(
+                            ValueError,
+                            'marshalling slice objects requires '
+                            'version 5 or higher'):
                         marshal.dumps(obj, version)
 
 

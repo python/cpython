@@ -567,6 +567,21 @@ bytearray_overflow(PyObject *Py_UNUSED(module), PyObject *args)
 }
 
 
+// Write into an immutable bytes object to test _PyStaticObjects_CheckAll()
+static PyObject *
+corrupt_bytes(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    char *bytes, *override;
+    Py_ssize_t size;
+    if (!PyArg_ParseTuple(args, "yy#", &bytes, &override, &size)) {
+        return NULL;
+    }
+
+    memcpy(bytes, override, size);
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef test_methods[] = {
     {"bytes_resize", bytes_resize, METH_VARARGS},
     {"bytes_join", bytes_join, METH_VARARGS},
@@ -576,6 +591,7 @@ static PyMethodDef test_methods[] = {
     {"test_byteswriter_ptr", test_byteswriter_ptr, METH_NOARGS},
     {"bytes_overflow", bytes_overflow, METH_VARARGS},
     {"bytearray_overflow", bytearray_overflow, METH_VARARGS},
+    {"corrupt_bytes", corrupt_bytes, METH_VARARGS},
     {NULL},
 };
 
