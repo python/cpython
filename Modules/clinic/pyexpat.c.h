@@ -88,6 +88,7 @@ pyexpat_xmlparser_Parse(PyObject *self, PyTypeObject *cls, PyObject *const *args
         .keywords = _keywords,
         .fname = "Parse",
         .kwtuple = KWTUPLE,
+        .pos = 2,
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
@@ -144,6 +145,7 @@ pyexpat_xmlparser_ParseFile(PyObject *self, PyTypeObject *cls, PyObject *const *
         .keywords = _keywords,
         .fname = "ParseFile",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -296,6 +298,7 @@ pyexpat_xmlparser_ExternalEntityParserCreate(PyObject *self, PyTypeObject *cls, 
         .keywords = _keywords,
         .fname = "ExternalEntityParserCreate",
         .kwtuple = KWTUPLE,
+        .pos = 2,
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
@@ -416,6 +419,7 @@ pyexpat_xmlparser_UseForeignDTD(PyObject *self, PyTypeObject *cls, PyObject *con
         .keywords = _keywords,
         .fname = "UseForeignDTD",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -483,6 +487,7 @@ pyexpat_xmlparser_SetBillionLaughsAttackProtectionActivationThreshold(PyObject *
         .keywords = _keywords,
         .fname = "SetBillionLaughsAttackProtectionActivationThreshold",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -552,6 +557,7 @@ pyexpat_xmlparser_SetBillionLaughsAttackProtectionMaximumAmplification(PyObject 
         .keywords = _keywords,
         .fname = "SetBillionLaughsAttackProtectionMaximumAmplification",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -615,6 +621,7 @@ pyexpat_xmlparser_SetAllocTrackerActivationThreshold(PyObject *self, PyTypeObjec
         .keywords = _keywords,
         .fname = "SetAllocTrackerActivationThreshold",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -682,6 +689,7 @@ pyexpat_xmlparser_SetAllocTrackerMaximumAmplification(PyObject *self, PyTypeObje
         .keywords = _keywords,
         .fname = "SetAllocTrackerMaximumAmplification",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -870,4 +878,4 @@ exit:
 #ifndef PYEXPAT_XMLPARSER_SETALLOCTRACKERMAXIMUMAMPLIFICATION_METHODDEF
     #define PYEXPAT_XMLPARSER_SETALLOCTRACKERMAXIMUMAMPLIFICATION_METHODDEF
 #endif /* !defined(PYEXPAT_XMLPARSER_SETALLOCTRACKERMAXIMUMAMPLIFICATION_METHODDEF) */
-/*[clinic end generated code: output=c68606a1fbc3a501 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3262fdda2b084734 input=a9049054013a1b77]*/

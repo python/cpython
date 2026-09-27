@@ -719,6 +719,7 @@ bytearray_translate(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyO
         .keywords = _keywords,
         .fname = "translate",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
@@ -842,6 +843,7 @@ bytearray_replace(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObj
         .keywords = _keywords,
         .fname = "replace",
         .kwtuple = KWTUPLE,
+        .pos = 2,
     };
     #undef KWTUPLE
     PyObject *argsbuf[3];
@@ -1882,4 +1884,4 @@ bytearray_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl((PyByteArrayObject *)self);
 }
-/*[clinic end generated code: output=6dc315d35de3e670 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c707496beae6f6c8 input=a9049054013a1b77]*/

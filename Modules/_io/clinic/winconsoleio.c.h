@@ -237,6 +237,7 @@ _io__WindowsConsoleIO_readinto(PyObject *self, PyTypeObject *cls, PyObject *cons
         .keywords = _keywords,
         .fname = "readinto",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -322,6 +323,7 @@ _io__WindowsConsoleIO_read(PyObject *self, PyTypeObject *cls, PyObject *const *a
         .keywords = _keywords,
         .fname = "read",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -380,6 +382,7 @@ _io__WindowsConsoleIO_write(PyObject *self, PyTypeObject *cls, PyObject *const *
         .keywords = _keywords,
         .fname = "write",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -594,4 +597,4 @@ _io__WindowsConsoleIO_mode_get(PyObject *self, void *Py_UNUSED(context))
 #  define _IO__WINDOWSCONSOLEIO_MODE_GETSETDEF
 #endif
 
-/*[clinic end generated code: output=24fe425795203cee input=a9049054013a1b77]*/
+/*[clinic end generated code: output=233938d4a46ebe28 input=a9049054013a1b77]*/

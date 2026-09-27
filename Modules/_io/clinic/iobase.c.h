@@ -52,6 +52,7 @@ _io__IOBase_seek(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ss
         .keywords = _keywords,
         .fname = "seek",
         .kwtuple = KWTUPLE,
+        .pos = 2,
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
@@ -130,6 +131,7 @@ _io__IOBase_truncate(PyObject *self, PyTypeObject *cls, PyObject *const *args, P
         .keywords = _keywords,
         .fname = "truncate",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -602,4 +604,4 @@ PyDoc_STRVAR(_io__RawIOBase_write__doc__,
     {"write", (PyCFunction)_io__RawIOBase_write, METH_O, _io__RawIOBase_write__doc__},
 #define _IO__IOBASE_CLOSED_GETSETDEF {"closed", (getter)_io__IOBase_closed_get, (setter)NULL, _io__IOBase_closed__doc__},
 
-/*[clinic end generated code: output=fe3b46799e3cf0a9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1ce31ad0f61ef8ed input=a9049054013a1b77]*/

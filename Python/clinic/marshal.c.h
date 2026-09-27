@@ -63,6 +63,7 @@ marshal_dump(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
         .keywords = _keywords,
         .fname = "dump",
         .kwtuple = KWTUPLE,
+        .pos = 3,
     };
     #undef KWTUPLE
     PyObject *argsbuf[4];
@@ -155,6 +156,7 @@ marshal_load(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
         .keywords = _keywords,
         .fname = "load",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
@@ -234,6 +236,7 @@ marshal_dumps(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
         .keywords = _keywords,
         .fname = "dumps",
         .kwtuple = KWTUPLE,
+        .pos = 2,
     };
     #undef KWTUPLE
     PyObject *argsbuf[3];
@@ -318,6 +321,7 @@ marshal_loads(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
         .keywords = _keywords,
         .fname = "loads",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
@@ -351,4 +355,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=a574570c3717f60e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c425311647fb2e87 input=a9049054013a1b77]*/

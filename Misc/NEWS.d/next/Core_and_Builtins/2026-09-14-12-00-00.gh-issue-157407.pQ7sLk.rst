@@ -1,0 +1,2 @@
+Reduce the size of Argument Clinic argument parsers and skip their
+initialization in builtin modules.

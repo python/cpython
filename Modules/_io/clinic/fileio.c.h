@@ -263,6 +263,7 @@ _io_FileIO_readinto(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py
         .keywords = _keywords,
         .fname = "readinto",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -354,6 +355,7 @@ _io_FileIO_read(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssi
         .keywords = _keywords,
         .fname = "read",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -408,6 +410,7 @@ _io_FileIO_write(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ss
         .keywords = _keywords,
         .fname = "write",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -530,6 +533,7 @@ _io_FileIO_truncate(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py
         .keywords = _keywords,
         .fname = "truncate",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -677,4 +681,4 @@ exit:
 
 #define _IO_FILEIO__BLKSIZE_GETSETDEF {"_blksize", (getter)_io_FileIO__blksize_get, (setter)NULL, _io_FileIO__blksize__doc__},
 
-/*[clinic end generated code: output=d0a63950bc345c85 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8a9f696670b4983e input=a9049054013a1b77]*/

@@ -82,6 +82,7 @@ binascii_b2a_uu(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
         .keywords = _keywords,
         .fname = "b2a_uu",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
@@ -173,6 +174,7 @@ binascii_a2b_base64(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
         .keywords = _keywords,
         .fname = "a2b_base64",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[6];
@@ -296,6 +298,7 @@ binascii_b2a_base64(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
         .keywords = _keywords,
         .fname = "b2a_base64",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[5];
@@ -415,6 +418,7 @@ binascii_a2b_ascii85(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
         .keywords = _keywords,
         .fname = "a2b_ascii85",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[5];
@@ -533,6 +537,7 @@ binascii_b2a_ascii85(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
         .keywords = _keywords,
         .fname = "b2a_ascii85",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[5];
@@ -645,6 +650,7 @@ binascii_a2b_base85(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
         .keywords = _keywords,
         .fname = "a2b_base85",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[4];
@@ -748,6 +754,7 @@ binascii_b2a_base85(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
         .keywords = _keywords,
         .fname = "b2a_base85",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[4];
@@ -855,6 +862,7 @@ binascii_a2b_base32(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
         .keywords = _keywords,
         .fname = "a2b_base32",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[5];
@@ -968,6 +976,7 @@ binascii_b2a_base32(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
         .keywords = _keywords,
         .fname = "b2a_base32",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[4];
@@ -1393,6 +1402,7 @@ binascii_a2b_hex(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
         .keywords = _keywords,
         .fname = "a2b_hex",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
@@ -1476,6 +1486,7 @@ binascii_unhexlify(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
         .keywords = _keywords,
         .fname = "unhexlify",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
@@ -1685,4 +1696,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=42dd48f323cbb118 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ea05ddab5cd56a1a input=a9049054013a1b77]*/

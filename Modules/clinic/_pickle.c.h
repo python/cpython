@@ -59,6 +59,7 @@ _pickle_Pickler_dump(PyObject *self, PyTypeObject *cls, PyObject *const *args, P
         .keywords = _keywords,
         .fname = "dump",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -297,6 +298,7 @@ _pickle_Unpickler_persistent_load(PyObject *self, PyTypeObject *cls, PyObject *c
         .keywords = _keywords,
         .fname = "persistent_load",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -376,6 +378,7 @@ _pickle_Unpickler_find_class(PyObject *self, PyTypeObject *cls, PyObject *const 
         .keywords = _keywords,
         .fname = "find_class",
         .kwtuple = KWTUPLE,
+        .pos = 2,
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
@@ -1027,6 +1030,7 @@ _pickle_loads(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
         .keywords = _keywords,
         .fname = "loads",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[5];
@@ -1098,4 +1102,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=6331c72b3c427f63 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=355f605fbbbe652d input=a9049054013a1b77]*/

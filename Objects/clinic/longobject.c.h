@@ -41,6 +41,7 @@ long_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         .keywords = _keywords,
         .fname = "int",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
@@ -493,4 +494,4 @@ int_is_integer(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return int_is_integer_impl(self);
 }
-/*[clinic end generated code: output=d95766fb7ff46963 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c8779e2a833ba8d6 input=a9049054013a1b77]*/

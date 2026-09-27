@@ -228,6 +228,7 @@ array_array_extend(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_
         .keywords = _keywords,
         .fname = "extend",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -397,6 +398,7 @@ array_array_fromfile(PyObject *self, PyTypeObject *cls, PyObject *const *args, P
         .keywords = _keywords,
         .fname = "fromfile",
         .kwtuple = KWTUPLE,
+        .pos = 2,
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
@@ -459,6 +461,7 @@ array_array_tofile(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_
         .keywords = _keywords,
         .fname = "tofile",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -721,6 +724,7 @@ array_array___reduce_ex__(PyObject *self, PyTypeObject *cls, PyObject *const *ar
         .keywords = _keywords,
         .fname = "__reduce_ex__",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
@@ -781,4 +785,4 @@ array_arrayiterator___setstate__(PyObject *self, PyObject *state)
 
     return return_value;
 }
-/*[clinic end generated code: output=32784678e77ac658 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d55dfe1b7fe87b74 input=a9049054013a1b77]*/

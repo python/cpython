@@ -219,6 +219,7 @@ _imp_find_frozen(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
         .keywords = _keywords,
         .fname = "find_frozen",
         .kwtuple = KWTUPLE,
+        .pos = 1,
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
@@ -665,4 +666,4 @@ exit:
 #ifndef _IMP_EXEC_DYNAMIC_METHODDEF
     #define _IMP_EXEC_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_EXEC_DYNAMIC_METHODDEF) */
-/*[clinic end generated code: output=0974db098d601372 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=13245ae7342e5408 input=a9049054013a1b77]*/
