@@ -1,0 +1,3 @@
+Add the *converter* parameter in :func:`csv.reader` and the *formatter*
+parameter in :func:`csv.writer`.  They are used instead of :func:`float` and
+:func:`str` for converting between fields and values.
