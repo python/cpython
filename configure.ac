@@ -7813,6 +7813,44 @@ if test "$block_huge_inlining_in_ceval" = yes && test "$ac_cv_computed_gotos" = 
     # interpreter.
     CFLAGS_CEVAL="$CFLAGS_CEVAL -finline-max-stacksize=512"
 fi
+AC_MSG_CHECKING([if tail duplication of the dispatch jumps needs to be forced])
+AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+// gh-158283: LLVM 19 limits tail duplication of blocks ending in an
+// indirect branch (llvm/llvm-project#78582), so the computed-goto
+// interpreter is compiled with a single shared dispatch jump instead of one
+// per instruction, which defeats per-opcode branch prediction (~9% slower
+// on pyperformance).  Fully fixed in LLVM 20.1.1 (llvm/llvm-project#114990).
+// Apple clang 1700.0.x (Xcode 16.3-16.4) has the same bug, and 1700.3-1700.6
+// (Xcode 26.0-26.3) still merges most of the dispatch jumps.  Older
+// compilers are not affected and reject the option.
+#if defined(__apple_build_version__)
+#  if __apple_build_version__ < 17000000 || __apple_build_version__ >= 18000000
+#    error not affected
+#  endif
+#elif !defined(__clang__) || __clang_major__ != 19
+#  error not affected
+#endif
+]])],
+[force_dispatch_tail_dup=yes],
+[force_dispatch_tail_dup=no])
+AC_MSG_RESULT([$force_dispatch_tail_dup])
+
+if test "$force_dispatch_tail_dup" = yes && test "$ac_cv_computed_gotos" = yes; then
+    CFLAGS_CEVAL="$CFLAGS_CEVAL -mllvm -tail-dup-pred-size=1000"
+    # With LTO, code generation happens in the linker's LTO plugin, and the
+    # clang driver does not forward -mllvm options there: pass the option to
+    # the linker directly (ld64 takes -mllvm; ld.lld and GNU ld/gold with
+    # LLVMgold take -plugin-opt).
+    if test "$Py_LTO" = 'true'; then
+        case $ac_sys_system in
+            Darwin*)
+                LDFLAGS_NODIST="$LDFLAGS_NODIST -Wl,-mllvm,-tail-dup-pred-size=1000" ;;
+            *)
+                LDFLAGS_NODIST="$LDFLAGS_NODIST -Wl,-plugin-opt=-tail-dup-pred-size=1000" ;;
+        esac
+    fi
+fi
+
 AC_SUBST([CFLAGS_CEVAL])
 
 if test "$ac_cv_gcc_asm_for_x87" = yes; then
