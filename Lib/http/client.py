@@ -80,6 +80,11 @@ import sys
 import collections.abc
 from urllib.parse import urlsplit
 
+try:
+    import ssl
+except ImportError:
+    ssl = None
+
 # HTTPMessage, parse_headers(), and the HTTP status code constants are
 # intentionally omitted for simplicity
 __all__ = ["HTTPResponse", "HTTPConnection",
@@ -118,6 +123,10 @@ _MAXHEADERS = 100
 # A socket timeout cannot detect that as data keeps arriving within every
 # timeout window.
 _MAXINTERIMRESPONSES = 100
+
+# default number of seconds to wait for a "100 Continue" response before
+# sending the body of a request with an "Expect: 100-Continue" header.
+_DEFAULT_CONTINUE_TIMEOUT = 2.5
 
 # Data larger than this will be read in chunks, to prevent extreme
 # overallocation.
@@ -336,7 +345,7 @@ class HTTPResponse(io.BufferedIOBase):
             raise BadStatusLine(line)
         return version, status, reason
 
-    def begin(self, *, ignore_100_continue=True, _max_headers=None):
+    def begin(self, *, support_continue=False, _max_headers=None):
         if self.headers is not None:
             # we've already started reading the response
             return
@@ -349,8 +358,13 @@ class HTTPResponse(io.BufferedIOBase):
         # read until we get a non-100 response
         for _ in range(_MAXINTERIMRESPONSES):
             version, status, reason = self._read_status()
-            if not (ignore_100_continue and status == CONTINUE):
+
+            if support_continue or status != CONTINUE:
+                # This is the response to return to the caller: either a
+                # final response (status != CONTINUE), or a 100 Continue
+                # the caller asked to see.
                 break
+
             # skip the header from the 100 response
             skipped_headers = _read_headers(self.fp, _max_headers)
             if self.debuglevel > 0:
@@ -916,9 +930,8 @@ class HTTPConnection:
         return None
 
     def __init__(self, host, port=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
-                 source_address=None, blocksize=8192, continue_timeout=2.5, *, max_response_headers=None):
+                 source_address=None, blocksize=8192, *, max_response_headers=None):
         self.timeout = timeout
-        self.continue_timeout = continue_timeout
         self.source_address = source_address
         self.blocksize = blocksize
         self.sock = None
@@ -926,6 +939,7 @@ class HTTPConnection:
         self.__response = None
         self.__pending_response = None
         self.__state = _CS_IDLE
+        self._continue_timeout = _DEFAULT_CONTINUE_TIMEOUT
         self._method = None
         self._tunnel_host = None
         self._tunnel_port = None
@@ -1150,7 +1164,8 @@ class HTTPConnection:
             yield datablock
 
     def _send_output(self, message_body=None, encode_chunked=False,
-                     expect_continue=False):
+                     expect_continue=False,
+                     continue_timeout=_DEFAULT_CONTINUE_TIMEOUT):
         """Send the currently buffered request and clear the buffer.
 
         Appends an extra \\r\\n to the buffer.
@@ -1163,8 +1178,14 @@ class HTTPConnection:
 
         if message_body is not None:
             if expect_continue and not self.__response:
-                read_ready, _, _ = self._select([self.sock], [], [],
-                                                self.continue_timeout)
+                # For a TLS socket, check for already decrypted data in the
+                # internal buffer of the SSLSocket.
+                if (ssl is not None and isinstance(self.sock, ssl.SSLSocket)
+                        and self.sock.pending() > 0):
+                    read_ready = True
+                else:
+                    read_ready, _, _ = self._select([self.sock], [], [],
+                                                    continue_timeout)
                 if read_ready:
                     if self.debuglevel > 0:
                         response = self.response_class(self.sock,
@@ -1173,7 +1194,12 @@ class HTTPConnection:
                     else:
                         response = self.response_class(self.sock,
                                                        method=self._method)
-                    response.begin(ignore_100_continue=False)
+                    if self.max_response_headers is None:
+                        response.begin(support_continue=True)
+                    else:
+                        response.begin(
+                            support_continue=True,
+                            _max_headers=self.max_response_headers)
                     if response.code != CONTINUE:
                         # Break without sending the body
                         self.__pending_response = response
@@ -1222,7 +1248,8 @@ class HTTPConnection:
                 self.send(b'0\r\n\r\n')
 
     def putrequest(self, method, url, skip_host=False,
-                   skip_accept_encoding=False):
+                   skip_accept_encoding=False,
+                   continue_timeout=_DEFAULT_CONTINUE_TIMEOUT):
         """Send a request to the server.
 
         'method' specifies an HTTP request method, e.g. 'GET'.
@@ -1231,11 +1258,13 @@ class HTTPConnection:
         'skip_accept_encoding' if True does not add automatically an
            'Accept-Encoding:' header
         """
+        if continue_timeout <= 0.0:
+            raise ValueError("continue_timeout must be greater than 0")
+        self._continue_timeout = continue_timeout
 
         # if a prior response has been completed, then forget about it.
         if self.__response and self.__response.isclosed():
             self.__response = None
-
 
         # in certain cases, we cannot issue another request on this connection.
         # this occurs when:
@@ -1405,8 +1434,7 @@ class HTTPConnection:
         header = header + b': ' + value
         self._output(header)
 
-    def endheaders(self, message_body=None, *, encode_chunked=False,
-                   expect_continue=False):
+    def endheaders(self, message_body=None, *, encode_chunked=False):
         """Indicate that the last header line has been sent to the server.
 
         This method sends the request to the server.  The optional message_body
@@ -1417,15 +1445,31 @@ class HTTPConnection:
             self.__state = _CS_REQ_SENT
         else:
             raise CannotSendHeader()
+
+        expect_continue = False
+        if message_body is not None and not self.__response:
+            prefix = b'expect:'
+            for line in self._buffer:
+                if line.lower().startswith(prefix):
+                    value = line[len(prefix):].strip().lower()
+                    expect_continue = value == b'100-continue'
+                    break
+
         self._send_output(message_body, encode_chunked=encode_chunked,
-                          expect_continue=expect_continue)
+                          expect_continue=expect_continue,
+                          continue_timeout=self._continue_timeout)
 
     def request(self, method, url, body=None, headers={}, *,
-                encode_chunked=False):
+                encode_chunked=False,
+                continue_timeout=_DEFAULT_CONTINUE_TIMEOUT):
         """Send a complete request to the server."""
-        self._send_request(method, url, body, headers, encode_chunked)
+        if continue_timeout <= 0.0:
+            raise ValueError("continue_timeout must be greater than 0")
+        self._send_request(method, url, body, headers, encode_chunked,
+                           continue_timeout)
 
-    def _send_request(self, method, url, body, headers, encode_chunked):
+    def _send_request(self, method, url, body, headers, encode_chunked,
+                      continue_timeout):
         # Honor explicitly requested Host: and Accept-Encoding: headers.
         header_names = frozenset(k.lower() for k in headers)
         skips = {}
@@ -1434,7 +1478,8 @@ class HTTPConnection:
         if 'accept-encoding' in header_names:
             skips['skip_accept_encoding'] = 1
 
-        self.putrequest(method, url, **skips)
+        self.putrequest(method, url, **skips,
+                        continue_timeout=continue_timeout)
 
         # chunked encoding will happen if HTTP/1.1 is used and either
         # the caller passes encode_chunked=True or the following
@@ -1463,33 +1508,21 @@ class HTTPConnection:
         else:
             encode_chunked = False
 
-        # If the Expect: 100-continue header is set, we will try to honor it
-        # (if possible). We can only do so if 1) the request has a body, and
-        # 2) there is no current incomplete response (since we need to read
-        # the response stream to check if the code is 100 or not)
-        expect_continue = (
-            body and not self.__response
-            and 'expect' in header_names
-            and '100-continue' in {v.lower() for k, v in headers.items()
-                                   if k.lower() == 'expect'}
-        )
-
         for hdr, value in headers.items():
             self.putheader(hdr, value)
         if isinstance(body, str):
             # RFC 2616 Section 3.7.1 says that text default has a
             # default charset of iso-8859-1.
             body = _encode(body, 'body')
-        self.endheaders(body, encode_chunked=encode_chunked,
-                        expect_continue=expect_continue)
+        self.endheaders(body, encode_chunked=encode_chunked)
 
-    def getresponse(self, ignore_100_continue=True):
+    def getresponse(self, support_continue=False):
         """Get the response from the server.
 
         If the HTTPConnection is in the correct state, returns an
         instance of HTTPResponse or of whatever object is returned by the
         response_class variable. The connection will wait for a response other
-        than code 100 ('Continue') unless ignore_100_continue is set to False.
+        than code 100 ('Continue') unless support_continue is set to True.
 
         If a request has not been sent or if a previous response has
         not be handled, ResponseNotReady is raised.  If the HTTP
@@ -1532,9 +1565,10 @@ class HTTPConnection:
         try:
             try:
                 if self.max_response_headers is None:
-                    response.begin(ignore_100_continue=ignore_100_continue)
+                    response.begin(support_continue=support_continue)
                 else:
-                    response.begin(ignore_100_continue=ignore_100_continue, _max_headers=self.max_response_headers)
+                    response.begin(support_continue=support_continue,
+                                   _max_headers=self.max_response_headers)
             except ConnectionError:
                 self.close()
                 raise
@@ -1555,11 +1589,8 @@ class HTTPConnection:
             response.close()
             raise
 
-try:
-    import ssl
-except ImportError:
-    pass
-else:
+if ssl is not None:
+
     class HTTPSConnection(HTTPConnection):
         "This class allows communication via SSL."
 
