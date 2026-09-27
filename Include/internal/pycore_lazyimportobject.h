@@ -20,6 +20,12 @@ PyAPI_FUNC(PyObject *) _PyLazyImport_New(
 
 extern int _PyLazyImport_IsResolving(PyThreadState *tstate, PyObject *op);
 
+// Resolve a placeholder and replace its binding only if it is unchanged.
+// namespace is the source captured during lookup, before resolution runs.
+PyAPI_FUNC(PyObject *) _PyLazyImport_Reify(
+    PyThreadState *tstate, PyObject *placeholder,
+    PyObject *name, PyObject *ns);
+
 #ifdef __cplusplus
 }
 #endif

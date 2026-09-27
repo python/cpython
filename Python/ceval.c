@@ -3590,13 +3590,13 @@ _PyEval_GetANext(PyObject *aiter)
 void
 _PyEval_LoadGlobalStackRef(PyObject *globals, PyObject *builtins, PyObject *name, _PyStackRef *writeto)
 {
+    PyObject *namespace = globals;
     if (PyAnyDict_CheckExact(globals) && PyAnyDict_CheckExact(builtins)) {
-        _PyDict_LoadGlobalStackRef((PyDictObject *)globals,
-                                    (PyDictObject *)builtins,
-                                    name, writeto);
+        namespace = _PyDict_LoadGlobalStackRef((PyDictObject *)globals,
+                                             (PyDictObject *)builtins,
+                                             name, writeto);
         if (PyStackRef_IsNull(*writeto) && !PyErr_Occurred()) {
-            /* _PyDict_LoadGlobal() returns NULL without raising
-                * an exception if the key doesn't exist */
+            // A missing key does not set an exception in the dictionary helper.
             _PyEval_FormatExcCheckArg(PyThreadState_GET(), PyExc_NameError,
                                         NAME_ERROR_MSG, name);
         }
@@ -3611,6 +3611,7 @@ _PyEval_LoadGlobalStackRef(PyObject *globals, PyObject *builtins, PyObject *name
         }
         if (res == NULL) {
             /* namespace 2: builtins */
+            namespace = builtins;
             if (PyMapping_GetOptionalItem(builtins, name, &res) < 0) {
                 *writeto = PyStackRef_NULL;
                 return;
@@ -3628,20 +3629,10 @@ _PyEval_LoadGlobalStackRef(PyObject *globals, PyObject *builtins, PyObject *name
 
     PyObject *res_o = PyStackRef_AsPyObjectBorrow(*writeto);
     if (res_o != NULL && PyLazyImport_CheckExact(res_o)) {
-        PyObject *l_v = _PyImport_LoadLazyImportTstate(PyThreadState_GET(), res_o);
+        PyObject *l_v = _PyLazyImport_Reify(
+            PyThreadState_GET(), res_o, name, namespace);
         PyStackRef_CLOSE(writeto[0]);
-        if (l_v == NULL) {
-            assert(PyErr_Occurred());
-            *writeto = PyStackRef_NULL;
-            return;
-        }
-        int err = PyDict_SetItem(globals, name, l_v);
-        if (err < 0) {
-            Py_DECREF(l_v);
-            *writeto = PyStackRef_NULL;
-            return;
-        }
-        *writeto = PyStackRef_FromPyObjectSteal(l_v);
+        *writeto = l_v == NULL ? PyStackRef_NULL : PyStackRef_FromPyObjectSteal(l_v);
     }
 }
 
@@ -3672,32 +3663,39 @@ _PyEval_GetAwaitable(PyObject *iterable, int oparg)
 PyObject *
 _PyEval_LoadName(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject *name)
 {
-
     PyObject *value;
-    if (frame->f_locals == NULL) {
+    PyObject *namespace = frame->f_locals;
+    if (namespace == NULL) {
         _PyErr_SetString(tstate, PyExc_SystemError,
                             "no locals found");
         return NULL;
     }
-    if (PyMapping_GetOptionalItem(frame->f_locals, name, &value) < 0) {
+    if (PyMapping_GetOptionalItem(namespace, name, &value) < 0) {
         return NULL;
     }
     if (value != NULL) {
-        return value;
+        goto found;
     }
-    if (PyDict_GetItemRef(frame->f_globals, name, &value) < 0) {
+    namespace = frame->f_globals;
+    if (PyDict_GetItemRef(namespace, name, &value) < 0) {
         return NULL;
     }
     if (value != NULL) {
-        return value;
+        goto found;
     }
-    if (PyMapping_GetOptionalItem(frame->f_builtins, name, &value) < 0) {
+    namespace = frame->f_builtins;
+    if (PyMapping_GetOptionalItem(namespace, name, &value) < 0) {
         return NULL;
     }
     if (value == NULL) {
         _PyEval_FormatExcCheckArg(
                     tstate, PyExc_NameError,
-                    NAME_ERROR_MSG, name);
+                            NAME_ERROR_MSG, name);
+        return NULL;
+    }
+found:
+    if (PyLazyImport_CheckExact(value)) {
+        Py_SETREF(value, _PyLazyImport_Reify(tstate, value, name, namespace));
     }
     return value;
 }

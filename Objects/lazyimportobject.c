@@ -451,6 +451,41 @@ done:
     return obj;
 }
 
+PyObject *
+_PyLazyImport_Reify(PyThreadState *tstate, PyObject *placeholder,
+                    PyObject *name, PyObject *namespace)
+{
+    PyObject *value = _PyImport_LoadLazyImportTstate(tstate, placeholder);
+    if (value == NULL) {
+        return NULL;
+    }
+    int rc;
+    if (PyDict_CheckExact(namespace)) {
+        rc = _PyDict_ReplaceItemIf(namespace, name, placeholder, value);
+    }
+    else if (Py_TYPE(namespace)->tp_as_mapping == NULL ||
+             Py_TYPE(namespace)->tp_as_mapping->mp_ass_subscript == NULL) {
+        // Read-only namespaces can resolve a value without caching it.
+        return value;
+    }
+    else {
+        // Custom namespaces retain their mapping protocol. Atomic replacement
+        // is only available for exact dictionaries.
+        PyObject *current;
+        rc = PyMapping_GetOptionalItem(namespace, name, &current);
+        if (rc > 0) {
+            if (current == placeholder) {
+                rc = PyObject_SetItem(namespace, name, value);
+            }
+            Py_DECREF(current);
+        }
+    }
+    if (rc < 0) {
+        Py_CLEAR(value);
+    }
+    return value;
+}
+
 static PyObject *
 lazy_import_resolve(PyObject *self, PyObject *args)
 {

@@ -1311,13 +1311,9 @@ module_get_resolved_dict_item(PyObject *dict, PyObject *name, PyObject **result)
         Py_CLEAR(*result);
         return 0;
     }
-    PyObject *value = _PyImport_LoadLazyImportTstate(tstate, *result);
+    PyObject *value = _PyLazyImport_Reify(tstate, *result, name, dict);
     Py_SETREF(*result, value);
-    if (value == NULL || PyDict_SetItem(dict, name, value) < 0) {
-        Py_CLEAR(*result);
-        return -1;
-    }
-    return 1;
+    return value == NULL ? -1 : 1;
 }
 
 PyObject*
@@ -1394,15 +1390,8 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
                 Py_DECREF(attr);
                 return NULL;
             }
-            PyObject *new_value = _PyImport_LoadLazyImportTstate(tstate, attr);
-            if (new_value == NULL) {
-                Py_DECREF(attr);
-                return NULL;
-            }
-
-            if (PyDict_SetItem(m->md_dict, name, new_value) < 0) {
-                Py_CLEAR(new_value);
-            }
+            PyObject *new_value = _PyLazyImport_Reify(
+                tstate, attr, name, m->md_dict);
             Py_DECREF(attr);
             return new_value;
         }

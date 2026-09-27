@@ -2009,6 +2009,31 @@ _PyDict_InsertSplitValue(PyDictObject *mp, PyObject *key, PyObject *value, Py_ss
     ASSERT_CONSISTENT(mp);
 }
 
+// Replace a value at an existing entry. Steals the new value reference.
+static void
+replace_value(PyDictObject *mp, PyObject *key, Py_ssize_t ix,
+              PyObject *old_value, PyObject *value)
+{
+    if (old_value != value) {
+        _PyDict_NotifyEvent(PyDict_EVENT_MODIFIED, mp, key, value);
+        assert(old_value != NULL);
+        if (DK_IS_UNICODE(mp->ma_keys)) {
+            if (_PyDict_HasSplitTable(mp)) {
+                STORE_SPLIT_VALUE(mp, ix, value);
+            }
+            else {
+                PyDictUnicodeEntry *ep = &DK_UNICODE_ENTRIES(mp->ma_keys)[ix];
+                STORE_VALUE(ep, value);
+            }
+        }
+        else {
+            PyDictKeyEntry *ep = &DK_ENTRIES(mp->ma_keys)[ix];
+            STORE_VALUE(ep, value);
+        }
+    }
+    Py_DECREF(old_value); /* which **CAN** re-enter (see issue #22653) */
+}
+
 /*
 Internal routine to insert a new item into the table.
 Used both by the internal resize routine and by the public insert routine.
@@ -2056,24 +2081,7 @@ insertdict(PyDictObject *mp,
         return 0;
     }
 
-    if (old_value != value) {
-        _PyDict_NotifyEvent(PyDict_EVENT_MODIFIED, mp, key, value);
-        assert(old_value != NULL);
-        if (DK_IS_UNICODE(mp->ma_keys)) {
-            if (_PyDict_HasSplitTable(mp)) {
-                STORE_SPLIT_VALUE(mp, ix, value);
-            }
-            else {
-                PyDictUnicodeEntry *ep = &DK_UNICODE_ENTRIES(mp->ma_keys)[ix];
-                STORE_VALUE(ep, value);
-            }
-        }
-        else {
-            PyDictKeyEntry *ep = &DK_ENTRIES(mp->ma_keys)[ix];
-            STORE_VALUE(ep, value);
-        }
-    }
-    Py_XDECREF(old_value); /* which **CAN** re-enter (see issue #22653) */
+    replace_value(mp, key, ix, old_value, value);
     ASSERT_CONSISTENT(mp);
     Py_DECREF(key);
     return 0;
@@ -2700,44 +2708,7 @@ _PyDict_GetItemStringWithError(PyObject *v, const char *key)
     return rv;
 }
 
-/* Fast version of global value lookup (LOAD_GLOBAL).
- * Lookup in globals, then builtins.
- *
- *
- *
- *
- * Raise an exception and return NULL if an error occurred (ex: computing the
- * key hash failed, key comparison failed, ...). Return NULL if the key doesn't
- * exist. Return the value if the key exists.
- *
- * Returns a new reference.
- */
 PyObject *
-_PyDict_LoadGlobal(PyDictObject *globals, PyDictObject *builtins, PyObject *key)
-{
-    Py_ssize_t ix;
-    Py_hash_t hash;
-    PyObject *value;
-
-    hash = _PyObject_HashDictKey(key);
-    if (hash == -1) {
-        return NULL;
-    }
-
-    /* namespace 1: globals */
-    ix = _Py_dict_lookup_threadsafe(globals, key, hash, &value);
-    if (ix == DKIX_ERROR)
-        return NULL;
-    if (ix != DKIX_EMPTY && value != NULL)
-        return value;
-
-    /* namespace 2: builtins */
-    ix = _Py_dict_lookup_threadsafe(builtins, key, hash, &value);
-    assert(ix >= 0 || value == NULL);
-    return value;
-}
-
-void
 _PyDict_LoadGlobalStackRef(PyDictObject *globals, PyDictObject *builtins, PyObject *key, _PyStackRef *res)
 {
     Py_ssize_t ix;
@@ -2746,21 +2717,22 @@ _PyDict_LoadGlobalStackRef(PyDictObject *globals, PyDictObject *builtins, PyObje
     hash = _PyObject_HashDictKey(key);
     if (hash == -1) {
         *res = PyStackRef_NULL;
-        return;
+        return NULL;
     }
 
     /* namespace 1: globals */
     ix = _Py_dict_lookup_threadsafe_stackref(globals, key, hash, res);
     if (ix == DKIX_ERROR) {
-        return;
+        return NULL;
     }
     if (ix != DKIX_EMPTY && !PyStackRef_IsNull(*res)) {
-        return;
+        return (PyObject *)globals;
     }
 
     /* namespace 2: builtins */
     ix = _Py_dict_lookup_threadsafe_stackref(builtins, key, hash, res);
     assert(ix >= 0 || PyStackRef_IsNull(*res));
+    return PyStackRef_IsNull(*res) ? NULL : (PyObject *)builtins;
 }
 
 PyObject *
@@ -3103,6 +3075,34 @@ _PyDict_DelItemIf(PyObject *op, PyObject *key,
     res = delitemif_lock_held(op, key, predicate, arg);
     Py_END_CRITICAL_SECTION();
     return res;
+}
+
+int
+_PyDict_ReplaceItemIf(PyObject *op, PyObject *key,
+                      PyObject *expected, PyObject *replacement)
+{
+    assert(PyDict_Check(op));
+    assert(expected != NULL && replacement != NULL);
+    Py_hash_t hash = PyObject_Hash(key);
+    if (hash == -1) {
+        return -1;
+    }
+    int result = 0;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    PyDictObject *mp = (PyDictObject *)op;
+    PyObject *current;
+    Py_ssize_t ix = _Py_dict_lookup(mp, key, hash, &current);
+    if (ix == DKIX_ERROR) {
+        result = -1;
+    }
+    else if (current == expected) {
+        // Do not look up the key again: equality can execute Python code.
+        replace_value(mp, key, ix, current, Py_NewRef(replacement));
+        ASSERT_CONSISTENT(mp);
+        result = 1;
+    }
+    Py_END_CRITICAL_SECTION();
+    return result;
 }
 
 static void
