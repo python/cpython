@@ -1,0 +1,3 @@
+:func:`pwd.getpwuid` now raises :exc:`OverflowError` instead of
+:exc:`KeyError` if the user id is out of the range of the C ``uid_t`` type,
+as :func:`grp.getgrgid` does for the group id.
