@@ -694,13 +694,13 @@ class TurtleScreenBase:
         return self.cv.type(item)
 
     def _pointlist(self, item):
-        """returns list of coordinate-pairs of points of item
-        Example (for insiders):
-        >>> from turtle import *
+        """Return list of coordinate pairs of points of item.
+
+        For example:
         >>> getscreen()._pointlist(getturtle().turtle._item)
         [(0.0, 9.9999999999999982), (0.0, -9.9999999999999982),
         (9.9999999999999982, 0.0)]
-        >>> """
+        """
         cl = self.cv.coords(item)
         pl = [(cl[i], -cl[i+1]) for i in range(0, len(cl), 2)]
         return  pl
@@ -721,8 +721,9 @@ class TurtleScreenBase:
             self.cv.coords(item, *newcoordlist)
 
     def _resize(self, canvwidth=None, canvheight=None, bg=None):
-        """Resize the canvas the turtles are drawing on. Does
-        not alter the drawing window.
+        """Resize the canvas the turtles are drawing on.
+
+        Does not alter the drawing window.
         """
         # needs amendment
         if not isinstance(self.cv, ScrolledCanvas):
@@ -736,8 +737,7 @@ class TurtleScreenBase:
         self.cv.reset(canvwidth, canvheight, bg)
 
     def _window_size(self):
-        """ Return the width and height of the turtle window.
-        """
+        """Return the width and height of the turtle window."""
         width = self.cv.winfo_width()
         if width <= 1:  # the window isn't managed by a geometry manager
             width = self.cv['width']
@@ -3362,9 +3362,10 @@ class RawTurtle(TPen, TNavigator):
         self._update()
 
     def _newLine(self, usePos=True):
-        """Closes current line item and starts a new one.
-           Remark: if current line became too long, animation
-           performance (via _drawline) slowed down considerably.
+        """Closes the current line item and starts a new one.
+
+        If the current line becomes too long, animation performance (via _drawline)
+        can slow down considerably.
         """
         if len(self.currentLine) > 1:
             self.screen._drawline(self.currentLineItem, self.currentLine,
@@ -3581,7 +3582,7 @@ class RawTurtle(TPen, TNavigator):
         self._creatingPoly = False
 
     def get_poly(self):
-        """Return the lastly recorded polygon.
+        """Return the last recorded polygon.
 
         No argument.
 
@@ -3594,11 +3595,10 @@ class RawTurtle(TPen, TNavigator):
             return tuple(self._poly)
 
     def getscreen(self):
-        """Return the TurtleScreen object, the turtle is drawing  on.
+        """Return the TurtleScreen object the turtle is drawing on.
 
         No argument.
 
-        Return the TurtleScreen object, the turtle is drawing  on.
         So TurtleScreen-methods can be called for that object.
 
         Example (for a Turtle instance named turtle):
@@ -3965,7 +3965,7 @@ def write_docstringdict(filename="turtle_docstringdict"):
         f.close()
 
 def read_docstrings(lang):
-    """Read in docstrings from lang-specific docstring dictionary.
+    """Read in docstrings from a language-specific docstring dictionary.
 
     Transfer docstrings, translated to lang, from a dictionary-file
     to the methods of classes Screen and Turtle and - in revised form -
