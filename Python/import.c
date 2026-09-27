@@ -11,7 +11,6 @@
 #include "pycore_interp.h"        // struct _import_runtime_state
 #include "pycore_interpframe.h"
 #include "pycore_lazyimportobject.h"
-#include "pycore_long.h"          // _PyLong_GetZero
 #include "pycore_magic_number.h"  // PYC_MAGIC_NUMBER_TOKEN
 #include "pycore_moduleobject.h"  // _PyModule_GetDef()
 #include "pycore_namespace.h"     // _PyNamespace_Type
@@ -25,7 +24,6 @@
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_sysmodule.h"     // _PySys_ClearAttrString()
 #include "pycore_time.h"          // _PyTime_AsMicroseconds()
-#include "pycore_traceback.h"
 #include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 
@@ -3891,13 +3889,6 @@ resolve_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level
     return NULL;
 }
 
-PyObject *
-_PyImport_ResolveName(PyThreadState *tstate, PyObject *name,
-                      PyObject *globals, int level)
-{
-  return resolve_name(tstate, name, globals, level);
-}
-
 static PyObject *
 import_find_and_load_with_name(PyThreadState *tstate, PyObject *abs_name,
                                PyObject *find_and_load,
@@ -3966,9 +3957,9 @@ import_find_and_load(PyThreadState *tstate, PyObject *abs_name)
         tstate, abs_name, &_Py_ID(_find_and_load), NULL);
 }
 
-static PyObject *
-get_abs_name(PyThreadState *tstate, PyObject *name, PyObject *globals,
-             int level)
+PyObject *
+_PyImport_GetAbsName(PyThreadState *tstate, PyObject *name, PyObject *globals,
+                     int level)
 {
     if (level > 0) {
         return resolve_name(tstate, name, globals, level);
@@ -3978,13 +3969,6 @@ get_abs_name(PyThreadState *tstate, PyObject *name, PyObject *globals,
         return NULL;
     }
     return Py_NewRef(name);
-}
-
-PyObject *
-_PyImport_GetAbsName(PyThreadState *tstate, PyObject *name,
-                     PyObject *globals, int level)
-{
-    return get_abs_name(tstate, name, globals, level);
 }
 
 
@@ -4018,7 +4002,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
         goto error;
     }
 
-    abs_name = get_abs_name(tstate, name, globals, level);
+    abs_name = _PyImport_GetAbsName(tstate, name, globals, level);
     if (abs_name == NULL) {
         goto error;
     }
@@ -4332,12 +4316,11 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
         return NULL;
     }
 
-    PyObject *abs_name = get_abs_name(tstate, name, globals, level);
+    PyObject *abs_name = _PyImport_GetAbsName(tstate, name, globals, level);
     if (abs_name == NULL) {
         return NULL;
     }
 
-    PyInterpreterState *interp = tstate->interp;
     _PyInterpreterFrame *frame = _PyEval_GetFrame();
     if (frame == NULL || frame->f_globals != frame->f_locals) {
         Py_DECREF(abs_name);
@@ -4346,71 +4329,69 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
         return NULL;
     }
 
+    PyObject *res = NULL;
+    if (fromlist != NULL && PyUnicode_Check(fromlist)) {
+        fromlist = PyTuple_Pack(1, fromlist);
+        if (fromlist == NULL) {
+            goto done;
+        }
+    }
+    else {
+        fromlist = Py_NewRef(fromlist != NULL ? fromlist : Py_None);
+    }
+
     // Check if the filter disables the lazy import.
-    // We must hold a reference to the filter while calling it to prevent
-    // use-after-free if another thread replaces it via
-    // PyImport_SetLazyImportsFilter.
-    LAZY_IMPORTS_LOCK(interp);
-    PyObject *filter = Py_XNewRef(LAZY_IMPORTS_FILTER(interp));
-    LAZY_IMPORTS_UNLOCK(interp);
+    PyObject *filter = PyImport_GetLazyImportsFilter();
 
     if (filter != NULL) {
         PyObject *modname;
         if (PyDict_GetItemRef(globals, &_Py_ID(__name__), &modname) < 0) {
             Py_DECREF(filter);
-            Py_DECREF(abs_name);
-            return NULL;
+            goto done;
         }
         if (modname == NULL) {
             assert(!PyErr_Occurred());
             modname = Py_NewRef(Py_None);
         }
-        if (fromlist == NULL) {
-            assert(!PyErr_Occurred());
-            fromlist = Py_None;
-        }
         PyObject *args[] = {modname, abs_name, fromlist};
-        PyObject *res = PyObject_Vectorcall(filter, args, 3, NULL);
+        PyObject *decision = PyObject_Vectorcall(filter, args, 3, NULL);
 
         Py_DECREF(modname);
         Py_DECREF(filter);
 
-        if (res == NULL) {
-            Py_DECREF(abs_name);
-            return NULL;
+        if (decision == NULL) {
+            goto done;
         }
 
-        int is_true = PyObject_IsTrue(res);
-        Py_DECREF(res);
+        int is_true = PyObject_IsTrue(decision);
+        Py_DECREF(decision);
 
         if (is_true < 0) {
-            Py_DECREF(abs_name);
-            return NULL;
+            goto done;
         }
         if (!is_true) {
-            Py_DECREF(abs_name);
-            return PyImport_ImportModuleLevelObject(
+            res = PyImport_ImportModuleLevelObject(
                 name, globals, locals, fromlist, level
             );
+            goto done;
         }
     }
 
-    // here, 'filter' is either NULL or is equivalent to a borrowed reference
-    if (fromlist && PyUnicode_Check(fromlist)) {
-        fromlist = PyTuple_Pack(1, fromlist);
-        if (fromlist == NULL) {
-            Py_DECREF(abs_name);
-            return NULL;
+    // Validate the entire fromlist before registering any pending imports.
+    if (PyTuple_Check(fromlist)) {
+        for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(fromlist); i++) {
+            PyObject *item = PyTuple_GET_ITEM(fromlist, i);
+            if (!PyUnicode_Check(item)) {
+                _PyErr_Format(tstate, PyExc_TypeError,
+                              "Item in ``from list'' must be str, not %.200s",
+                              Py_TYPE(item)->tp_name);
+                goto done;
+            }
         }
     }
-    else {
-        Py_XINCREF(fromlist);
-    }
-    PyObject *res = _PyLazyImport_New(frame, builtins, abs_name, fromlist);
+    res = _PyLazyImport_New(frame, builtins, abs_name, fromlist);
     if (res == NULL) {
-        Py_XDECREF(fromlist);
-        Py_DECREF(abs_name);
-        return NULL;
+        goto done;
     }
 
     // Add the module name to sys.lazy_modules set (PEP 810).
@@ -4419,7 +4400,7 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
         goto error;
     }
 
-    if (fromlist && PyTuple_Check(fromlist) && PyTuple_GET_SIZE(fromlist)) {
+    if (PyTuple_Check(fromlist) && PyTuple_GET_SIZE(fromlist)) {
         for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(fromlist); i++) {
             if (register_from_lazy_on_parent(tstate, abs_name,
                                              PyTuple_GET_ITEM(fromlist, i)) < 0)
@@ -4432,14 +4413,13 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
         goto error;
     }
 
+    goto done;
+error:
+    Py_CLEAR(res);
+done:
     Py_XDECREF(fromlist);
     Py_DECREF(abs_name);
     return res;
-error:
-    Py_XDECREF(fromlist);
-    Py_DECREF(abs_name);
-    Py_DECREF(res);
-    return NULL;
 }
 
 PyObject *
@@ -5445,13 +5425,13 @@ _imp._set_lazy_attributes
     modobj: object
     name: unicode
     /
-Sets attributes to lazy submodules on the module, as side effects.
+Remove the resolved module name from sys.lazy_modules.
 [clinic start generated code]*/
 
 static PyObject *
 _imp__set_lazy_attributes_impl(PyObject *module, PyObject *modobj,
                                PyObject *name)
-/*[clinic end generated code: output=3369bb3242b1f043 input=38ea6f30956dd7d6]*/
+/*[clinic end generated code: output=3369bb3242b1f043 input=900339e013ab2b82]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (PySet_Discard(LAZY_MODULES(interp), name) < 0) {

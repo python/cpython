@@ -3150,8 +3150,8 @@ _PyEval_LazyImportName(PyThreadState *tstate, PyObject *builtins,
         goto error;
     }
 
-    PyObject *args[6] = {name, globals, locals, fromlist, level, builtins};
-    res = PyObject_Vectorcall(lazy_import_func, args, 6, NULL);
+    PyObject *args[5] = {name, globals, locals, fromlist, level};
+    res = PyObject_Vectorcall(lazy_import_func, args, 5, NULL);
 error:
     Py_XDECREF(lazy_import_func);
     return res;

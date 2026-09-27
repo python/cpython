@@ -32,8 +32,6 @@ extern int _PyImport_FixupBuiltin(
     PyObject *modules
     );
 
-extern PyObject * _PyImport_ResolveName(
-    PyThreadState *tstate, PyObject *name, PyObject *globals, int level);
 extern PyObject * _PyImport_GetAbsName(
     PyThreadState *tstate, PyObject *name, PyObject *globals, int level);
 // Symbol is exported for the JIT on Windows builds.
