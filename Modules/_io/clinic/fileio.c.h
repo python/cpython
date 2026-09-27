@@ -9,6 +9,27 @@ preserve
 #include "pycore_abstract.h"      // _Py_convert_optional_to_ssize_t()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
+PyDoc_STRVAR(_io_FileIO__dealloc_warn__doc__,
+"_dealloc_warn($self, source, /)\n"
+"--\n"
+"\n");
+
+#define _IO_FILEIO__DEALLOC_WARN_METHODDEF    \
+    {"_dealloc_warn", (PyCFunction)_io_FileIO__dealloc_warn, METH_O, _io_FileIO__dealloc_warn__doc__},
+
+static PyObject *
+_io_FileIO__dealloc_warn_impl(fileio *self, PyObject *source);
+
+static PyObject *
+_io_FileIO__dealloc_warn(PyObject *self, PyObject *source)
+{
+    PyObject *return_value = NULL;
+
+    return_value = _io_FileIO__dealloc_warn_impl((fileio *)self, source);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_io_FileIO_close__doc__,
 "close($self, /)\n"
 "--\n"
@@ -550,7 +571,110 @@ _io_FileIO_isatty(PyObject *self, PyObject *Py_UNUSED(ignored))
     return _io_FileIO_isatty_impl((fileio *)self);
 }
 
+PyDoc_STRVAR(_io_FileIO__isatty_open_only__doc__,
+"_isatty_open_only($self, /)\n"
+"--\n"
+"\n");
+
+#define _IO_FILEIO__ISATTY_OPEN_ONLY_METHODDEF    \
+    {"_isatty_open_only", (PyCFunction)_io_FileIO__isatty_open_only, METH_NOARGS, _io_FileIO__isatty_open_only__doc__},
+
+static PyObject *
+_io_FileIO__isatty_open_only_impl(fileio *self);
+
+static PyObject *
+_io_FileIO__isatty_open_only(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _io_FileIO__isatty_open_only_impl((fileio *)self);
+}
+
+PyDoc_STRVAR(_io_FileIO_closed__doc__,
+"True if the file is closed.");
+
+static int
+_io_FileIO_closed_get_impl(fileio *self);
+
+static PyObject *
+_io_FileIO_closed_get(PyObject *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+    int _return_value;
+
+    _return_value = _io_FileIO_closed_get_impl((fileio *)self);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_io_FileIO_closefd__doc__,
+"True if the file descriptor will be closed by close().");
+
+static int
+_io_FileIO_closefd_get_impl(fileio *self);
+
+static PyObject *
+_io_FileIO_closefd_get(PyObject *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+    int _return_value;
+
+    _return_value = _io_FileIO_closefd_get_impl((fileio *)self);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_io_FileIO_mode__doc__,
+"String giving the file mode.");
+
+static PyObject *
+_io_FileIO_mode_get_impl(fileio *self);
+
+static PyObject *
+_io_FileIO_mode_get(PyObject *self, void *Py_UNUSED(context))
+{
+    return _io_FileIO_mode_get_impl((fileio *)self);
+}
+
+PyDoc_STRVAR(_io_FileIO__blksize__doc__,
+"Stat st_blksize if available.");
+
+static long
+_io_FileIO__blksize_get_impl(fileio *self);
+
+static PyObject *
+_io_FileIO__blksize_get(PyObject *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+    long _return_value;
+
+    _return_value = _io_FileIO__blksize_get_impl((fileio *)self);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromLong(_return_value);
+
+exit:
+    return return_value;
+}
+
 #ifndef _IO_FILEIO_TRUNCATE_METHODDEF
     #define _IO_FILEIO_TRUNCATE_METHODDEF
 #endif /* !defined(_IO_FILEIO_TRUNCATE_METHODDEF) */
-/*[clinic end generated code: output=453d584e2e72f986 input=a9049054013a1b77]*/
+#define _IO_FILEIO_CLOSED_GETSETDEF {"closed", (getter)_io_FileIO_closed_get, (setter)NULL, _io_FileIO_closed__doc__},
+
+#define _IO_FILEIO_CLOSEFD_GETSETDEF {"closefd", (getter)_io_FileIO_closefd_get, (setter)NULL, _io_FileIO_closefd__doc__},
+
+#define _IO_FILEIO_MODE_GETSETDEF {"mode", (getter)_io_FileIO_mode_get, (setter)NULL, _io_FileIO_mode__doc__},
+
+#define _IO_FILEIO__BLKSIZE_GETSETDEF {"_blksize", (getter)_io_FileIO__blksize_get, (setter)NULL, _io_FileIO__blksize__doc__},
+
+/*[clinic end generated code: output=d0a63950bc345c85 input=a9049054013a1b77]*/

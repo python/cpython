@@ -1537,6 +1537,10 @@ class ReTests(unittest.TestCase):
         with warnings.catch_warnings():
             warnings.simplefilter('error', FutureWarning)
             re.compile(r'[a-z--[aeiou]]')
+        # A reserved construct inside a nested operand warns against the caller.
+        with self.assertWarnsRegex(FutureWarning, 'Possible nested set ') as w:
+            re.compile(r'[\w--[[:digit:]]]')
+        self.assertEqual(w.filename, __file__)
 
         # Set union  A||B == A or B (an explicit form of [AB]); flat operands
         # merge into one charset, otherwise the operations are alternated.
@@ -1557,6 +1561,10 @@ class ReTests(unittest.TestCase):
             self.assertEqual(re.findall(r'[\d~~1]', s), list('0123456789~'))
         self.assertEqual(w.filename, __file__)
         self.assertEqual(re.findall(r'[~~1]', s), list('1~'))
+        with self.assertWarnsRegex(FutureWarning,
+                                   'Possible set symmetric difference ') as w:
+            re.compile(r'[\w--[\d~~1]]')
+        self.assertEqual(w.filename, __file__)
 
     def test_search_coverage(self):
         self.assertEqual(re.search(r"\s(b)", " b").group(1), "b")
