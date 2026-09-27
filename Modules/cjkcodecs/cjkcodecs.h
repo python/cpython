@@ -163,7 +163,7 @@ get_module_state(PyObject *mod)
     do {                                                                   \
         Py_UCS4 _c1 = (c1);                                                \
         Py_UCS4 _c2 = (c2);                                                \
-        if (_PyUnicodeWriter_Prepare(writer, 2, Py_MAX(_c1, c2)) < 0)      \
+        if (_PyUnicodeWriter_Prepare(writer, 2, Py_MAX(_c1, _c2)) < 0)     \
             return MBERR_EXCEPTION;                                        \
         PyUnicode_WRITE(writer->kind, writer->data, writer->pos, _c1);     \
         PyUnicode_WRITE(writer->kind, writer->data, writer->pos + 1, _c2); \
