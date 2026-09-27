@@ -2,11 +2,8 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_runtime.h"     // _Py_SINGLETON()
-#endif
 #include "pycore_abstract.h"      // _Py_convert_optional_to_ssize_t()
-#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(_io__IOBase_seek__doc__,
 "seek($self, offset, whence=os.SEEK_SET, /)\n"
@@ -41,26 +38,13 @@ static PyObject *
 _io__IOBase_seek(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", "", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "seek",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[2];
     int offset;
     int whence = 0;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("seek", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("seek", nargs, 1, 2)) {
         goto exit;
     }
     offset = PyLong_AsInt(args[0]);
@@ -68,13 +52,13 @@ _io__IOBase_seek(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ss
         goto exit;
     }
     if (nargs < 2) {
-        goto skip_optional_posonly;
+        goto skip_optional;
     }
     whence = PyLong_AsInt(args[1]);
     if (whence == -1 && PyErr_Occurred()) {
         goto exit;
     }
-skip_optional_posonly:
+skip_optional:
     return_value = _io__IOBase_seek_impl(self, cls, offset, whence);
 
 exit:
@@ -119,32 +103,19 @@ static PyObject *
 _io__IOBase_truncate(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "truncate",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *size = Py_None;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("truncate", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("truncate", nargs, 0, 1)) {
         goto exit;
     }
     if (nargs < 1) {
-        goto skip_optional_posonly;
+        goto skip_optional;
     }
     size = args[0];
-skip_optional_posonly:
+skip_optional:
     return_value = _io__IOBase_truncate_impl(self, cls, size);
 
 exit:
@@ -602,4 +573,4 @@ PyDoc_STRVAR(_io__RawIOBase_write__doc__,
     {"write", (PyCFunction)_io__RawIOBase_write, METH_O, _io__RawIOBase_write__doc__},
 #define _IO__IOBASE_CLOSED_GETSETDEF {"closed", (getter)_io__IOBase_closed_get, (setter)NULL, _io__IOBase_closed__doc__},
 
-/*[clinic end generated code: output=fe3b46799e3cf0a9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fd729b0ef2ad52b8 input=a9049054013a1b77]*/

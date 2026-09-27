@@ -1,0 +1,2 @@
+Argument Clinic now parses arguments of positional-only methods with a
+*defining class* directly, without a :c:type:`!_PyArg_Parser`.

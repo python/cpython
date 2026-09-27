@@ -596,25 +596,12 @@ static PyObject *
 _multibytecodec_MultibyteStreamWriter_write(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "write",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *strobj;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("write", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("write", nargs, 1, 1)) {
         goto exit;
     }
     strobj = args[0];
@@ -641,25 +628,12 @@ static PyObject *
 _multibytecodec_MultibyteStreamWriter_writelines(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "writelines",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *lines;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("writelines", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("writelines", nargs, 1, 1)) {
         goto exit;
     }
     lines = args[0];
@@ -698,4 +672,4 @@ PyDoc_STRVAR(_multibytecodec___create_codec__doc__,
 
 #define _MULTIBYTECODEC___CREATE_CODEC_METHODDEF    \
     {"__create_codec", (PyCFunction)_multibytecodec___create_codec, METH_O, _multibytecodec___create_codec__doc__},
-/*[clinic end generated code: output=a84b1544d7d01abb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b7eb6679d9f627b7 input=a9049054013a1b77]*/

@@ -4,7 +4,7 @@ preserve
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 #  include "pycore_gc.h"          // PyGC_Head
-#  include "pycore_runtime.h"     // _Py_SINGLETON()
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
@@ -89,25 +89,12 @@ static PyObject *
 _elementtree_Element_append(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "append",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *subelement;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("append", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("append", nargs, 1, 1)) {
         goto exit;
     }
     if (!PyObject_TypeCheck(args[0], clinic_state()->Element_Type)) {
@@ -251,25 +238,12 @@ static PyObject *
 _elementtree_Element___setstate__(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "__setstate__",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *state;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("__setstate__", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("__setstate__", nargs, 1, 1)) {
         goto exit;
     }
     state = args[0];
@@ -298,25 +272,12 @@ static PyObject *
 _elementtree_Element_extend(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "extend",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *elements;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("extend", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("extend", nargs, 1, 1)) {
         goto exit;
     }
     elements = args[0];
@@ -907,26 +868,13 @@ static PyObject *
 _elementtree_Element_makeelement(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", "", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "makeelement",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[2];
     PyObject *tag;
     PyObject *attrib;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("makeelement", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("makeelement", nargs, 2, 2)) {
         goto exit;
     }
     tag = args[0];
@@ -1538,4 +1486,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=7a0ff4b8cc3838c1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9f9f792978663b16 input=a9049054013a1b77]*/
