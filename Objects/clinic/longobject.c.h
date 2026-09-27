@@ -327,7 +327,7 @@ int_to_bytes(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *
         goto exit;
     }
     if (!noptargs) {
-        goto skip_optional_pos;
+        goto skip_optional_kwonly;
     }
     if (args[0]) {
         {
@@ -348,7 +348,7 @@ int_to_bytes(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *
             }
         }
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
     }
     if (args[1]) {
@@ -358,12 +358,8 @@ int_to_bytes(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *
         }
         byteorder = args[1];
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
-    }
-skip_optional_pos:
-    if (!noptargs) {
-        goto skip_optional_kwonly;
     }
     is_signed = PyObject_IsTrue(args[2]);
     if (is_signed < 0) {
@@ -449,7 +445,7 @@ int_from_bytes(PyObject *type, PyObject *const *args, Py_ssize_t nargs, PyObject
     }
     bytes_obj = args[0];
     if (!noptargs) {
-        goto skip_optional_pos;
+        goto skip_optional_kwonly;
     }
     if (args[1]) {
         if (!PyUnicode_Check(args[1])) {
@@ -458,12 +454,8 @@ int_from_bytes(PyObject *type, PyObject *const *args, Py_ssize_t nargs, PyObject
         }
         byteorder = args[1];
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
-    }
-skip_optional_pos:
-    if (!noptargs) {
-        goto skip_optional_kwonly;
     }
     is_signed = PyObject_IsTrue(args[2]);
     if (is_signed < 0) {
@@ -493,4 +485,4 @@ int_is_integer(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return int_is_integer_impl(self);
 }
-/*[clinic end generated code: output=d95766fb7ff46963 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c1899e4339547d7f input=a9049054013a1b77]*/

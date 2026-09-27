@@ -70,12 +70,12 @@ faulthandler_dump_traceback_py(PyObject *module, PyObject *const *args, Py_ssize
         goto exit;
     }
     if (!noptargs) {
-        goto skip_optional_pos;
+        goto skip_optional_kwonly;
     }
     if (args[0]) {
         file = args[0];
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
     }
     if (args[1]) {
@@ -84,12 +84,8 @@ faulthandler_dump_traceback_py(PyObject *module, PyObject *const *args, Py_ssize
             goto exit;
         }
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
-    }
-skip_optional_pos:
-    if (!noptargs) {
-        goto skip_optional_kwonly;
     }
     {
         Py_ssize_t ival = -1;
@@ -232,12 +228,12 @@ faulthandler_py_enable(PyObject *module, PyObject *const *args, Py_ssize_t nargs
         goto exit;
     }
     if (!noptargs) {
-        goto skip_optional_pos;
+        goto skip_optional_kwonly;
     }
     if (args[0]) {
         file = args[0];
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
     }
     if (args[1]) {
@@ -246,7 +242,7 @@ faulthandler_py_enable(PyObject *module, PyObject *const *args, Py_ssize_t nargs
             goto exit;
         }
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
     }
     if (args[2]) {
@@ -255,12 +251,8 @@ faulthandler_py_enable(PyObject *module, PyObject *const *args, Py_ssize_t nargs
             goto exit;
         }
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
-    }
-skip_optional_pos:
-    if (!noptargs) {
-        goto skip_optional_kwonly;
     }
     {
         Py_ssize_t ival = -1;
@@ -393,7 +385,7 @@ faulthandler_dump_traceback_later(PyObject *module, PyObject *const *args, Py_ss
     }
     timeout_obj = args[0];
     if (!noptargs) {
-        goto skip_optional_pos;
+        goto skip_optional_kwonly;
     }
     if (args[1]) {
         repeat = PyObject_IsTrue(args[1]);
@@ -401,13 +393,13 @@ faulthandler_dump_traceback_later(PyObject *module, PyObject *const *args, Py_ss
             goto exit;
         }
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
     }
     if (args[2]) {
         file = args[2];
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
     }
     if (args[3]) {
@@ -416,12 +408,8 @@ faulthandler_dump_traceback_later(PyObject *module, PyObject *const *args, Py_ss
             goto exit;
         }
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
-    }
-skip_optional_pos:
-    if (!noptargs) {
-        goto skip_optional_kwonly;
     }
     {
         Py_ssize_t ival = -1;
@@ -530,12 +518,12 @@ faulthandler_register_py(PyObject *module, PyObject *const *args, Py_ssize_t nar
         goto exit;
     }
     if (!noptargs) {
-        goto skip_optional_pos;
+        goto skip_optional_kwonly;
     }
     if (args[1]) {
         file = args[1];
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
     }
     if (args[2]) {
@@ -544,7 +532,7 @@ faulthandler_register_py(PyObject *module, PyObject *const *args, Py_ssize_t nar
             goto exit;
         }
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
     }
     if (args[3]) {
@@ -553,12 +541,8 @@ faulthandler_register_py(PyObject *module, PyObject *const *args, Py_ssize_t nar
             goto exit;
         }
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
-    }
-skip_optional_pos:
-    if (!noptargs) {
-        goto skip_optional_kwonly;
     }
     {
         Py_ssize_t ival = -1;
@@ -782,4 +766,4 @@ exit:
 #ifndef FAULTHANDLER__RAISE_EXCEPTION_METHODDEF
     #define FAULTHANDLER__RAISE_EXCEPTION_METHODDEF
 #endif /* !defined(FAULTHANDLER__RAISE_EXCEPTION_METHODDEF) */
-/*[clinic end generated code: output=14815a5f8afe813f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b96c325afb2605fc input=a9049054013a1b77]*/

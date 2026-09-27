@@ -317,17 +317,13 @@ _hashlib_HASH_new(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
         goto exit;
     }
     if (!noptargs) {
-        goto skip_optional_pos;
+        goto skip_optional_kwonly;
     }
     if (args[1]) {
         data = args[1];
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
-    }
-skip_optional_pos:
-    if (!noptargs) {
-        goto skip_optional_kwonly;
     }
     if (args[2]) {
         usedforsecurity = PyObject_IsTrue(args[2]);
@@ -402,17 +398,13 @@ _hashlib_openssl_md5(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
         goto exit;
     }
     if (!noptargs) {
-        goto skip_optional_pos;
+        goto skip_optional_kwonly;
     }
     if (args[0]) {
         data = args[0];
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
-    }
-skip_optional_pos:
-    if (!noptargs) {
-        goto skip_optional_kwonly;
     }
     if (args[1]) {
         usedforsecurity = PyObject_IsTrue(args[1]);
@@ -487,17 +479,13 @@ _hashlib_openssl_sha1(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
         goto exit;
     }
     if (!noptargs) {
-        goto skip_optional_pos;
+        goto skip_optional_kwonly;
     }
     if (args[0]) {
         data = args[0];
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
-    }
-skip_optional_pos:
-    if (!noptargs) {
-        goto skip_optional_kwonly;
     }
     if (args[1]) {
         usedforsecurity = PyObject_IsTrue(args[1]);
@@ -573,17 +561,13 @@ _hashlib_openssl_sha224(PyObject *module, PyObject *const *args, Py_ssize_t narg
         goto exit;
     }
     if (!noptargs) {
-        goto skip_optional_pos;
+        goto skip_optional_kwonly;
     }
     if (args[0]) {
         data = args[0];
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
-    }
-skip_optional_pos:
-    if (!noptargs) {
-        goto skip_optional_kwonly;
     }
     if (args[1]) {
         usedforsecurity = PyObject_IsTrue(args[1]);
@@ -659,17 +643,13 @@ _hashlib_openssl_sha256(PyObject *module, PyObject *const *args, Py_ssize_t narg
         goto exit;
     }
     if (!noptargs) {
-        goto skip_optional_pos;
+        goto skip_optional_kwonly;
     }
     if (args[0]) {
         data = args[0];
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
-    }
-skip_optional_pos:
-    if (!noptargs) {
-        goto skip_optional_kwonly;
     }
     if (args[1]) {
         usedforsecurity = PyObject_IsTrue(args[1]);
@@ -745,17 +725,13 @@ _hashlib_openssl_sha384(PyObject *module, PyObject *const *args, Py_ssize_t narg
         goto exit;
     }
     if (!noptargs) {
-        goto skip_optional_pos;
+        goto skip_optional_kwonly;
     }
     if (args[0]) {
         data = args[0];
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
-    }
-skip_optional_pos:
-    if (!noptargs) {
-        goto skip_optional_kwonly;
     }
     if (args[1]) {
         usedforsecurity = PyObject_IsTrue(args[1]);
@@ -831,17 +807,13 @@ _hashlib_openssl_sha512(PyObject *module, PyObject *const *args, Py_ssize_t narg
         goto exit;
     }
     if (!noptargs) {
-        goto skip_optional_pos;
+        goto skip_optional_kwonly;
     }
     if (args[0]) {
         data = args[0];
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
-    }
-skip_optional_pos:
-    if (!noptargs) {
-        goto skip_optional_kwonly;
     }
     if (args[1]) {
         usedforsecurity = PyObject_IsTrue(args[1]);
@@ -919,17 +891,13 @@ _hashlib_openssl_sha3_224(PyObject *module, PyObject *const *args, Py_ssize_t na
         goto exit;
     }
     if (!noptargs) {
-        goto skip_optional_pos;
+        goto skip_optional_kwonly;
     }
     if (args[0]) {
         data = args[0];
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
-    }
-skip_optional_pos:
-    if (!noptargs) {
-        goto skip_optional_kwonly;
     }
     if (args[1]) {
         usedforsecurity = PyObject_IsTrue(args[1]);
@@ -1009,17 +977,13 @@ _hashlib_openssl_sha3_256(PyObject *module, PyObject *const *args, Py_ssize_t na
         goto exit;
     }
     if (!noptargs) {
-        goto skip_optional_pos;
+        goto skip_optional_kwonly;
     }
     if (args[0]) {
         data = args[0];
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
-    }
-skip_optional_pos:
-    if (!noptargs) {
-        goto skip_optional_kwonly;
     }
     if (args[1]) {
         usedforsecurity = PyObject_IsTrue(args[1]);
@@ -1099,17 +1063,13 @@ _hashlib_openssl_sha3_384(PyObject *module, PyObject *const *args, Py_ssize_t na
         goto exit;
     }
     if (!noptargs) {
-        goto skip_optional_pos;
+        goto skip_optional_kwonly;
     }
     if (args[0]) {
         data = args[0];
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
-    }
-skip_optional_pos:
-    if (!noptargs) {
-        goto skip_optional_kwonly;
     }
     if (args[1]) {
         usedforsecurity = PyObject_IsTrue(args[1]);
@@ -1189,17 +1149,13 @@ _hashlib_openssl_sha3_512(PyObject *module, PyObject *const *args, Py_ssize_t na
         goto exit;
     }
     if (!noptargs) {
-        goto skip_optional_pos;
+        goto skip_optional_kwonly;
     }
     if (args[0]) {
         data = args[0];
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
-    }
-skip_optional_pos:
-    if (!noptargs) {
-        goto skip_optional_kwonly;
     }
     if (args[1]) {
         usedforsecurity = PyObject_IsTrue(args[1]);
@@ -1279,17 +1235,13 @@ _hashlib_openssl_shake_128(PyObject *module, PyObject *const *args, Py_ssize_t n
         goto exit;
     }
     if (!noptargs) {
-        goto skip_optional_pos;
+        goto skip_optional_kwonly;
     }
     if (args[0]) {
         data = args[0];
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
-    }
-skip_optional_pos:
-    if (!noptargs) {
-        goto skip_optional_kwonly;
     }
     if (args[1]) {
         usedforsecurity = PyObject_IsTrue(args[1]);
@@ -1369,17 +1321,13 @@ _hashlib_openssl_shake_256(PyObject *module, PyObject *const *args, Py_ssize_t n
         goto exit;
     }
     if (!noptargs) {
-        goto skip_optional_pos;
+        goto skip_optional_kwonly;
     }
     if (args[0]) {
         data = args[0];
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
-    }
-skip_optional_pos:
-    if (!noptargs) {
-        goto skip_optional_kwonly;
     }
     if (args[1]) {
         usedforsecurity = PyObject_IsTrue(args[1]);
@@ -1986,4 +1934,4 @@ exit:
 #ifndef _HASHLIB_OPENSSL_SHAKE_256_METHODDEF
     #define _HASHLIB_OPENSSL_SHAKE_256_METHODDEF
 #endif /* !defined(_HASHLIB_OPENSSL_SHAKE_256_METHODDEF) */
-/*[clinic end generated code: output=cf405e652a340bb2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d43bf82c91881fa5 input=a9049054013a1b77]*/

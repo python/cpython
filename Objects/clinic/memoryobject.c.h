@@ -212,17 +212,13 @@ memoryview_cast(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObjec
     }
     format = args[0];
     if (!noptargs) {
-        goto skip_optional_pos;
+        goto skip_optional_kwonly;
     }
     if (args[1]) {
         shape = args[1];
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
-    }
-skip_optional_pos:
-    if (!noptargs) {
-        goto skip_optional_kwonly;
     }
     if (!PyUnicode_Check(args[2])) {
         _PyArg_BadArgument("cast", "argument 'order'", "a unicode character", args[2]);
@@ -532,4 +528,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=17a403895f4f778c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=24596e21df872146 input=a9049054013a1b77]*/

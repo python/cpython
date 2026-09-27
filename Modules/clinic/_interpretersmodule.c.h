@@ -71,17 +71,13 @@ _interpreters_create(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
         goto exit;
     }
     if (!noptargs) {
-        goto skip_optional_pos;
+        goto skip_optional_kwonly;
     }
     if (args[0]) {
         configobj = args[0];
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
-    }
-skip_optional_pos:
-    if (!noptargs) {
-        goto skip_optional_kwonly;
     }
     reqrefs = PyObject_IsTrue(args[1]);
     if (reqrefs < 0) {
@@ -414,7 +410,7 @@ _interpreters_exec(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     id = args[0];
     code = args[1];
     if (!noptargs) {
-        goto skip_optional_pos;
+        goto skip_optional_kwonly;
     }
     if (args[2]) {
         if (!PyDict_Check(args[2])) {
@@ -423,12 +419,8 @@ _interpreters_exec(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
         }
         shared = args[2];
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
-    }
-skip_optional_pos:
-    if (!noptargs) {
-        goto skip_optional_kwonly;
     }
     restricted = PyObject_IsTrue(args[3]);
     if (restricted < 0) {
@@ -507,7 +499,7 @@ _interpreters_run_string(PyObject *module, PyObject *const *args, Py_ssize_t nar
     }
     script = args[1];
     if (!noptargs) {
-        goto skip_optional_pos;
+        goto skip_optional_kwonly;
     }
     if (args[2]) {
         if (!PyDict_Check(args[2])) {
@@ -516,12 +508,8 @@ _interpreters_run_string(PyObject *module, PyObject *const *args, Py_ssize_t nar
         }
         shared = args[2];
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
-    }
-skip_optional_pos:
-    if (!noptargs) {
-        goto skip_optional_kwonly;
     }
     restricted = PyObject_IsTrue(args[3]);
     if (restricted < 0) {
@@ -599,7 +587,7 @@ _interpreters_run_func(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     id = args[0];
     func = args[1];
     if (!noptargs) {
-        goto skip_optional_pos;
+        goto skip_optional_kwonly;
     }
     if (args[2]) {
         if (!PyDict_Check(args[2])) {
@@ -608,12 +596,8 @@ _interpreters_run_func(PyObject *module, PyObject *const *args, Py_ssize_t nargs
         }
         shared = args[2];
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
-    }
-skip_optional_pos:
-    if (!noptargs) {
-        goto skip_optional_kwonly;
     }
     restricted = PyObject_IsTrue(args[3]);
     if (restricted < 0) {
@@ -691,7 +675,7 @@ _interpreters_call(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     id = args[0];
     callable = args[1];
     if (!noptargs) {
-        goto skip_optional_pos;
+        goto skip_optional_kwonly;
     }
     if (args[2]) {
         if (!PyTuple_Check(args[2])) {
@@ -700,7 +684,7 @@ _interpreters_call(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
         }
         __clinic_args = args[2];
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
     }
     if (args[3]) {
@@ -710,12 +694,8 @@ _interpreters_call(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
         }
         __clinic_kwargs = args[3];
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
-    }
-skip_optional_pos:
-    if (!noptargs) {
-        goto skip_optional_kwonly;
     }
     if (args[4]) {
         preserve_exc = PyObject_IsTrue(args[4]);
@@ -1200,4 +1180,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=8c3ca09c304378ad input=a9049054013a1b77]*/
+/*[clinic end generated code: output=243e4d12d60b3772 input=a9049054013a1b77]*/

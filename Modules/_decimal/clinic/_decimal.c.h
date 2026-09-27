@@ -643,17 +643,13 @@ _decimal_localcontext(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
         goto exit;
     }
     if (!noptargs) {
-        goto skip_optional_pos;
+        goto skip_optional_kwonly;
     }
     if (args[0]) {
         local = args[0];
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
-    }
-skip_optional_pos:
-    if (!noptargs) {
-        goto skip_optional_kwonly;
     }
     if (args[1]) {
         prec = args[1];
@@ -7100,4 +7096,4 @@ exit:
 #ifndef _DECIMAL_CONTEXT_APPLY_METHODDEF
     #define _DECIMAL_CONTEXT_APPLY_METHODDEF
 #endif /* !defined(_DECIMAL_CONTEXT_APPLY_METHODDEF) */
-/*[clinic end generated code: output=718b1f6c20412350 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=08f053eb7fd36db1 input=a9049054013a1b77]*/

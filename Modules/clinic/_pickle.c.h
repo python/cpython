@@ -698,17 +698,13 @@ _pickle_dump(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     obj = args[0];
     file = args[1];
     if (!noptargs) {
-        goto skip_optional_pos;
+        goto skip_optional_kwonly;
     }
     if (args[2]) {
         protocol = args[2];
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
-    }
-skip_optional_pos:
-    if (!noptargs) {
-        goto skip_optional_kwonly;
     }
     if (args[3]) {
         fix_imports = PyObject_IsTrue(args[3]);
@@ -803,17 +799,13 @@ _pickle_dumps(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     }
     obj = args[0];
     if (!noptargs) {
-        goto skip_optional_pos;
+        goto skip_optional_kwonly;
     }
     if (args[1]) {
         protocol = args[1];
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
-    }
-skip_optional_pos:
-    if (!noptargs) {
-        goto skip_optional_kwonly;
     }
     if (args[2]) {
         fix_imports = PyObject_IsTrue(args[2]);
@@ -1098,4 +1090,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=6331c72b3c427f63 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=76c28e8069b6a1a6 input=a9049054013a1b77]*/

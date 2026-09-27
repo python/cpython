@@ -1147,17 +1147,13 @@ _socket_socket_sendmsg_afalg(PyObject *self, PyObject *const *args, Py_ssize_t n
         goto exit;
     }
     if (!noptargs) {
-        goto skip_optional_pos;
+        goto skip_optional_kwonly;
     }
     if (args[0]) {
         data_arg = args[0];
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
-    }
-skip_optional_pos:
-    if (!noptargs) {
-        goto skip_optional_kwonly;
     }
     if (args[1]) {
         if (!PyLong_Check(args[1])) {
@@ -2478,4 +2474,4 @@ exit:
 #ifndef _SOCKET_CMSG_SPACE_METHODDEF
     #define _SOCKET_CMSG_SPACE_METHODDEF
 #endif /* !defined(_SOCKET_CMSG_SPACE_METHODDEF) */
-/*[clinic end generated code: output=dfe0ca7c716c1183 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e97b369b1029f0bf input=a9049054013a1b77]*/
