@@ -487,6 +487,13 @@ class ConnectionTests(unittest.TestCase):
                     cx.isolation_level = level
                     self.assertEqual(cx.isolation_level, level)
 
+    def test_connection_delete_isolation_level(self):
+        with memory_database() as cx:
+            with self.assertRaisesRegex(AttributeError,
+                                        "cannot delete attribute"):
+                del cx.isolation_level
+            self.assertEqual(cx.isolation_level, "")
+
     def test_connection_reinit(self):
         with memory_database() as cx:
             cx.text_factory = bytes
@@ -1075,9 +1082,16 @@ class CursorTests(unittest.TestCase):
         UINT32_MAX = (1 << 32) - 1
         setter = functools.partial(setattr, self.cu, 'arraysize')
 
+        self.cu.arraysize = 2
         self.assertRaises(TypeError, setter, 1.0)
         self.assertRaises(ValueError, setter, -3)
         self.assertRaises(OverflowError, setter, UINT32_MAX + 1)
+        self.assertRaises(OverflowError, setter, 2**1000)
+        self.assertRaises(ValueError, setter, -2**1000)
+        self.assertRaisesRegex(AttributeError, 'cannot be deleted',
+                               delattr, self.cu, 'arraysize')
+        # a failed assignment does not change the value
+        self.assertEqual(self.cu.arraysize, 2)
 
     def test_fetchmany(self):
         # no active SQL statement
@@ -1390,9 +1404,34 @@ class BlobTests(unittest.TestCase):
     def test_blob_get_slice_with_skip(self):
         self.assertEqual(self.blob[0:10:2], b"ti lb")
 
+    def test_blob_get_slice_with_negative_step(self):
+        # gh-150449: negative-step slices must not crash
+        self.assertEqual(self.blob[9:0:-2], self.data[9:0:-2])
+        self.assertEqual(self.blob[9::-2], self.data[9::-2])
+        self.assertEqual(self.blob[::-1], self.data[::-1])
+        # When start <= stop with a negative step the slice is empty; this
+        # must return b"" rather than crashing or raising an exception.
+        self.assertEqual(self.blob[3:8:-1], self.data[3:8:-1])   # b""
+        self.assertEqual(self.blob[5:5:-1], self.data[5:5:-1])   # b""
+        # Extreme step values: cur += (size_t)step must not overflow.
+        self.assertEqual(self.blob[5::sys.maxsize], self.data[5::sys.maxsize])
+        self.assertEqual(self.blob[::-sys.maxsize - 1], self.data[::-sys.maxsize - 1])
+
     def test_blob_set_slice(self):
         self.blob[0:5] = b"12345"
         expected = b"12345" + self.data[5:]
+        actual = self.cx.execute("select b from test").fetchone()[0]
+        self.assertEqual(actual, expected)
+
+    def test_blob_set_slice_with_step_keeps_bytes_intact(self):
+        # The buffer used for the read-patch-write cycle must not be the
+        # bytes object read from the blob: for a single byte it is an
+        # immortal singleton.
+        old_byte = self.data[5]
+        self.blob[5:6:2] = b"\xab"
+        self.assertEqual(bytes([old_byte])[0], old_byte)
+        self.assertEqual(self.blob[5:6], b"\xab")
+        expected = self.data[:5] + b"\xab" + self.data[6:]
         actual = self.cx.execute("select b from test").fetchone()[0]
         self.assertEqual(actual, expected)
 
@@ -1417,6 +1456,43 @@ class BlobTests(unittest.TestCase):
         actual = self.cx.execute("select b from test").fetchone()[0]
         expected = b"1h2s3b4o5 " + self.data[10:]
         self.assertEqual(actual, expected)
+
+    def test_blob_set_slice_with_negative_step(self):
+        # gh-150449: negative-step slice assignment must not crash
+        expected = bytearray(self.data)
+        expected[9:0:-2] = b"12345"
+        self.blob[9:0:-2] = b"12345"
+        actual = self.cx.execute("select b from test").fetchone()[0]
+        self.assertEqual(actual, bytes(expected))
+
+        # Also verify a slice that includes index 0
+        expected2 = bytearray(self.data)
+        expected2[9::-2] = b"12345"
+        self.blob[9::-2] = b"12345"
+        actual2 = self.cx.execute("select b from test").fetchone()[0]
+        self.assertEqual(actual2, bytes(expected2))
+
+        # When start <= stop with a negative step the slice is empty;
+        # assigning b"" to it must be a no-op (blob contents unchanged).
+        state_before = bytes(self.blob[:])
+        self.blob[3:8:-1] = b""
+        self.assertEqual(bytes(self.blob[:]), state_before)
+
+    def test_blob_set_slice_with_extreme_positive_step(self):
+        expected = bytearray(self.data)
+        expected[5::sys.maxsize] = b"\xab"
+        self.blob[5::sys.maxsize] = b"\xab"
+        actual = self.cx.execute("select b from test").fetchone()[0]
+        self.assertEqual(actual, bytes(expected))
+        self.assertEqual(actual[5], 0xab)
+
+    def test_blob_set_slice_with_extreme_negative_step(self):
+        expected = bytearray(self.data)
+        expected[::-sys.maxsize - 1] = b"\xcd"
+        self.blob[::-sys.maxsize - 1] = b"\xcd"
+        actual = self.cx.execute("select b from test").fetchone()[0]
+        self.assertEqual(actual, bytes(expected))
+        self.assertEqual(actual[-1], 0xcd)
 
     def test_blob_mapping_invalid_index_type(self):
         msg = "indices must be integers"

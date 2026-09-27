@@ -227,6 +227,18 @@ class Test_Csv(unittest.TestCase):
                          quoting = csv.QUOTE_STRINGS)
         self._write_test(['a','',None,1], '"a","",,"1"',
                          quoting = csv.QUOTE_NOTNULL)
+        # FULLWIDTH QUOTATION MARK
+        self._write_test(['a', 1, 'p,q', 'r＂s', 'x！y'],
+                         'a,1,＂p,q＂,＂r＂＂s＂,x！y',
+                         quotechar='＂')
+
+    def test_write_delimiter(self):
+        self._write_test(['a', 1, 'p,q', 'x;y'], 'a,1,"p,q",x;y')
+        self._write_test(['a', 1, 'p;q', 'x,y'], 'a;1;"p;q";x,y', delimiter=';')
+        self._write_test(['a', 1, 'p\0q', 'x,y'], 'a\x001\0"p\0q"\0x,y',
+                         delimiter='\0')
+        self._write_test(['a', 1, 'p🍌q', 'x🍍y'], 'a🍌1🍌"p🍌q"🍌x🍍y',
+                         delimiter='🍌')
 
     def test_write_escape(self):
         self._write_test(['a',1,'p,q'], 'a,1,"p,q"',
@@ -258,19 +270,26 @@ class Test_Csv(unittest.TestCase):
                          escapechar='\\', quoting=csv.QUOTE_MINIMAL)
         self._write_test(['C\\', '6', '7', 'X"'], 'C\\\\,6,7,"X"""',
                          escapechar='\\', quoting=csv.QUOTE_MINIMAL)
+        # SYMBOL FOR ESCAPE
+        self._write_test(['a', 1, 'p,q', 'r\u241bs', 'x\u241ay'],
+                         'a,1,p\u241b,q,r\u241b\u241bs,x\u241ay',
+                         escapechar='\u241b', quoting=csv.QUOTE_NONE)
 
     def test_write_lineterminator(self):
-        for lineterminator in '\r\n', '\n', '\r', '!@#', '\0':
+        for lineterminator in ('\r\n', '\n', '\r', '!@#', '\0',
+                               '\x85', '\u2028', '\U0001f600'):
             with self.subTest(lineterminator=lineterminator):
                 with StringIO() as sio:
                     writer = csv.writer(sio, lineterminator=lineterminator)
                     writer.writerow(['a', 'b'])
                     writer.writerow([1, 2])
                     writer.writerow(['\r', '\n'])
+                    writer.writerow([f'a{lineterminator[-1]}b', 'c'])
                     self.assertEqual(sio.getvalue(),
                                      f'a,b{lineterminator}'
                                      f'1,2{lineterminator}'
-                                     f'"\r","\n"{lineterminator}')
+                                     f'"\r","\n"{lineterminator}'
+                                     f'"a{lineterminator[-1]}b",c{lineterminator}')
 
     def test_write_iterable(self):
         self._write_test(iter(['a', 1, 'p,q']), 'a,1,"p,q"')
@@ -706,6 +725,61 @@ class TestDialectRegistry(unittest.TestCase):
         for name in csv.list_dialects():
             dialect = csv.get_dialect(name)
             self.assertRaises(TypeError, copy.copy, dialect)
+
+    def test_replace(self):
+        dialect = csv.get_dialect('excel')
+        new = copy.replace(dialect, delimiter=';', strict=True)
+        self.assertIsInstance(new, type(dialect))
+        self.assertEqual(new.delimiter, ';')
+        self.assertTrue(new.strict)
+        # Not replaced parameters are inherited from the original dialect.
+        self.assertEqual(new.quotechar, dialect.quotechar)
+        self.assertEqual(new.escapechar, dialect.escapechar)
+        self.assertEqual(new.lineterminator, dialect.lineterminator)
+        self.assertEqual(new.quoting, dialect.quoting)
+        self.assertEqual(new.doublequote, dialect.doublequote)
+        self.assertEqual(new.skipinitialspace, dialect.skipinitialspace)
+        # The original dialect is left unchanged.
+        self.assertEqual(dialect.delimiter, ',')
+        self.assertFalse(dialect.strict)
+        self.assertEqual(list(csv.reader(['a;b'], new)), [['a', 'b']])
+
+        self.assertIs(copy.replace(dialect), dialect)
+        self.assertRaises(TypeError, copy.replace, dialect, delimeter=';')
+        self.assertRaises(TypeError, copy.replace, dialect, delimiter=';;')
+        self.assertRaises(TypeError, dialect.__replace__, dialect)
+
+    def test_replace_dialect_subclass(self):
+        class mydialect(csv.Dialect):
+            delimiter = ";"
+            quotechar = '"'
+            doublequote = False
+            skipinitialspace = True
+            lineterminator = '\r\n'
+            quoting = csv.QUOTE_ALL
+
+        dialect = mydialect()
+        new = copy.replace(dialect, delimiter=':', quoting=csv.QUOTE_MINIMAL)
+        self.assertIsInstance(new, mydialect)
+        self.assertEqual(new.delimiter, ':')
+        self.assertEqual(new.quoting, csv.QUOTE_MINIMAL)
+        # Not replaced parameters are inherited from the original dialect.
+        self.assertEqual(new.quotechar, '"')
+        self.assertEqual(new.escapechar, None)
+        self.assertEqual(new.lineterminator, '\r\n')
+        self.assertFalse(new.doublequote)
+        self.assertTrue(new.skipinitialspace)
+        # The original dialect is left unchanged.
+        self.assertEqual(dialect.delimiter, ';')
+        self.assertEqual(dialect.quoting, csv.QUOTE_ALL)
+        self.assertEqual(list(csv.reader(['a:b'], new)), [['a', 'b']])
+        # "strict" is supported even if it is not set on the class.
+        self.assertTrue(copy.replace(dialect, strict=True).strict)
+
+        with self.assertRaises(csv.Error):
+            copy.replace(dialect, delimiter='::')
+        with self.assertRaisesRegex(TypeError, "'delimeter'"):
+            copy.replace(dialect, delimeter=':')
 
     def test_pickle(self):
         for name in csv.list_dialects():
@@ -1644,6 +1718,39 @@ ghi\0jkl
         dialect = sniffer.sniff(sample)
         self.assertEqual(dialect.delimiter, ',')
         self.assertEqual(dialect.quotechar, '"')
+        self.assertEqual(dialect.lineterminator, '\r\n')
+
+    def test_sniff_lineterminator(self):
+        sniffer = csv.Sniffer()
+        for lineterminator in '\r\n', '\n', '\r':
+            with self.subTest(lineterminator=lineterminator):
+                sample = lineterminator.join(['a,b,c', 'd,e,f', 'g,h,i', ''])
+                dialect = sniffer.sniff(sample)
+                self.assertEqual(dialect.lineterminator, lineterminator)
+                self.assertEqual(dialect.delimiter, ',')
+        # The majority wins.
+        sample = 'a,b,c\nd,e,f\r\ng,h,i\n'
+        self.assertEqual(sniffer.sniff(sample).lineterminator, '\n')
+        sample = 'a,b,c\r\nd,e,f\ng,h,i\r\n'
+        self.assertEqual(sniffer.sniff(sample).lineterminator, '\r\n')
+        # A line break inside a quoted field is counted too, but it is
+        # outvoted by the real ones.
+        sample = 'a,"x\ny",c\r\nd,e,f\r\ng,h,i\r\n'
+        self.assertEqual(sniffer.sniff(sample).lineterminator, '\r\n')
+
+    def test_sniff_lineterminator_tie(self):
+        # A tie is broken in the order '\r\n', '\n', '\r'.
+        sniffer = csv.Sniffer()
+        for sample, lineterminator in (
+            ('a,b,c\nd,e,f\r\n', '\r\n'),
+            ('a,b,c\r\nd,e,f\ng,h,i\rj,k,l', '\r\n'),
+            ('a,b,c\nd,e,f\rg,h,i', '\n'),
+            # A sample without a complete line is a tie of zeros.
+            ('a,b,c', '\r\n'),
+        ):
+            with self.subTest(sample=sample):
+                self.assertEqual(sniffer.sniff(sample).lineterminator,
+                                 lineterminator)
 
     def test_sniff_excel_tab_with_quotes(self):
         # gh-62029: tab-delimited data with a quoted field containing

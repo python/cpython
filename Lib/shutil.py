@@ -18,23 +18,28 @@ try:
 except ImportError:
     _ZLIB_SUPPORTED = False
 
+# bz2, lzma and compression.zstd are pure Python wrappers whose only
+# importable dependency that may be missing is the extension module they
+# wrap.  Probe those extensions directly instead: it gives the same answer
+# without executing the wrappers, which shutil only needs when an archive
+# is actually created or extracted.
 try:
-    import bz2
-    del bz2
+    import _bz2
+    del _bz2
     _BZ2_SUPPORTED = True
 except ImportError:
     _BZ2_SUPPORTED = False
 
 try:
-    import lzma
-    del lzma
+    import _lzma
+    del _lzma
     _LZMA_SUPPORTED = True
 except ImportError:
     _LZMA_SUPPORTED = False
 
 try:
-    from compression import zstd
-    del zstd
+    import _zstd
+    del _zstd
     _ZSTD_SUPPORTED = True
 except ImportError:
     _ZSTD_SUPPORTED = False
@@ -983,7 +988,7 @@ def _get_gid(name):
     except KeyError:
         result = None
     if result is not None:
-        return result[2]
+        return result.gr_gid
     return None
 
 def _get_uid(name):
@@ -1001,7 +1006,7 @@ def _get_uid(name):
     except KeyError:
         result = None
     if result is not None:
-        return result[2]
+        return result.pw_uid
     return None
 
 def _make_tarball(base_name, base_dir, compress="gzip", verbose=0, dry_run=0,

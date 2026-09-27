@@ -286,6 +286,19 @@ _PyImport_ClearLazyModules(PyInterpreterState *interp)
     Py_CLEAR(LAZY_PENDING_SUBMODULES(interp));
 }
 
+static PyObject *
+get_importtime_name(PyObject *name)
+{
+    PyObject *exc = PyErr_GetRaisedException();
+    PyObject *encoded = PyUnicode_AsEncodedString(name, "utf-8",
+                                                  "backslashreplace");
+    if (encoded == NULL) {
+        PyErr_Clear();
+    }
+    PyErr_SetRaisedException(exc);
+    return encoded;
+}
+
 static int
 import_ensure_initialized(PyInterpreterState *interp, PyObject *mod, PyObject *name)
 {
@@ -323,8 +336,11 @@ done:
     if (_PyInterpreterState_GetConfig(interp)->import_time == 2) {
         _IMPORT_TIME_HEADER(interp);
 #define import_level FIND_AND_LOAD(interp).import_level
+        PyObject *encoded_name = get_importtime_name(name);
         fprintf(stderr, "import time: cached    | cached     | %*s\n",
-                import_level*2, PyUnicode_AsUTF8(name));
+                import_level*2,
+                encoded_name != NULL ? PyBytes_AS_STRING(encoded_name) : "?");
+        Py_XDECREF(encoded_name);
 #undef import_level
     }
 
@@ -3882,6 +3898,25 @@ _PyImport_ResolveName(PyThreadState *tstate, PyObject *name,
   return resolve_name(tstate, name, globals, level);
 }
 
+// Look up, in order, the attributes recorded from the root placeholder to lz
+// on the module the root's import returned.
+static PyObject *
+lazy_import_replay_from(PyThreadState *tstate, PyObject *mod,
+                        PyLazyImportObject *lz)
+{
+    if (!PyLazyImport_CheckExact(lz->lz_from)) {
+        return Py_NewRef(mod);
+    }
+    PyObject *from = lazy_import_replay_from(
+        tstate, mod, (PyLazyImportObject *)lz->lz_from);
+    if (from == NULL) {
+        return NULL;
+    }
+    PyObject *obj = _PyEval_ImportFrom(tstate, from, lz->lz_attr);
+    Py_DECREF(from);
+    return obj;
+}
+
 PyObject *
 _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
 {
@@ -3893,6 +3928,13 @@ _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
 
     PyLazyImportObject *lz = (PyLazyImportObject *)lazy_import;
     PyInterpreterState *interp = tstate->interp;
+
+    // Walk back to the placeholder IMPORT_NAME left, and the first lookup on it.
+    PyLazyImportObject *root = lz, *first = NULL;
+    while (PyLazyImport_CheckExact(root->lz_from)) {
+        first = root;
+        root = (PyLazyImportObject *)root->lz_from;
+    }
 
     // Acquire the global import lock to serialize reification
     _PyImport_AcquireLock(interp);
@@ -3930,7 +3972,7 @@ _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
             return NULL;
         }
         PyErr_SetImportErrorSubclass(PyExc_ImportCycleError, errmsg,
-                                     lz->lz_from, NULL);
+                                     root->lz_from, NULL);
         Py_DECREF(errmsg);
         Py_DECREF(name);
         _PyImport_ReleaseLock(interp);
@@ -3940,37 +3982,20 @@ _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
         goto error;
     }
 
-    Py_ssize_t dot = -1;
-    int full = 0;
-    if (lz->lz_attr != NULL) {
-        full = 1;
-    }
-    if (!full) {
-        dot = PyUnicode_FindChar(lz->lz_from, '.', 0,
-                                 PyUnicode_GET_LENGTH(lz->lz_from), 1);
-    }
-    if (dot < 0) {
-        full = 1;
-    }
-
-    if (lz->lz_attr != NULL) {
-        if (PyUnicode_Check(lz->lz_attr)) {
-            fromlist = PyTuple_New(1);
-            if (fromlist == NULL) {
-                goto error;
-            }
-            Py_INCREF(lz->lz_attr);
-            PyTuple_SET_ITEM(fromlist, 0, lz->lz_attr);
-        }
-        else {
-            Py_INCREF(lz->lz_attr);
-            fromlist = lz->lz_attr;
+    if (root->lz_attr != NULL) {
+        // `from a import b, c`: import only the name being resolved.
+        // Keep an empty tuple intact for custom __import__ hooks.
+        fromlist = first && PyTuple_GET_SIZE(root->lz_attr) > 0
+            ? PyTuple_Pack(1, first->lz_attr)
+            : Py_NewRef(root->lz_attr);
+        if (fromlist == NULL) {
+            goto error;
         }
     }
 
     PyObject *globals = PyEval_GetGlobals();
 
-    if (PyMapping_GetOptionalItem(lz->lz_builtins, &_Py_ID(__import__),
+    if (PyMapping_GetOptionalItem(root->lz_builtins, &_Py_ID(__import__),
                                   &import_func) < 0) {
         goto error;
     }
@@ -3978,34 +4003,19 @@ _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
         PyErr_SetString(PyExc_ImportError, "__import__ not found");
         goto error;
     }
-    if (full) {
-        obj = _PyEval_ImportNameWithImport(
-            tstate, import_func, globals, globals,
-            lz->lz_from, fromlist, _PyLong_GetZero()
-        );
-    }
-    else {
-        PyObject *name = PyUnicode_Substring(lz->lz_from, 0, dot);
-        if (name == NULL) {
-            goto error;
-        }
-        obj = _PyEval_ImportNameWithImport(
-            tstate, import_func, globals, globals,
-            name, fromlist, _PyLong_GetZero()
-        );
-        Py_DECREF(name);
-    }
+    obj = _PyEval_ImportNameWithImport(
+        tstate, import_func, globals, globals,
+        root->lz_from, fromlist, _PyLong_GetZero()
+    );
     if (obj == NULL) {
         goto error;
     }
 
-    if (lz->lz_attr != NULL && PyUnicode_Check(lz->lz_attr)) {
-        PyObject *from = obj;
-        obj = _PyEval_ImportFrom(tstate, from, lz->lz_attr);
-        Py_DECREF(from);
-        if (obj == NULL) {
-            goto error;
-        }
+    PyObject *from = obj;
+    obj = lazy_import_replay_from(tstate, from, lz);
+    Py_DECREF(from);
+    if (obj == NULL) {
+        goto error;
     }
 
     assert(!PyLazyImport_CheckExact(obj));
@@ -4147,10 +4157,13 @@ import_find_and_load_with_name(PyThreadState *tstate, PyObject *abs_name,
         PyTime_t cum = t2 - t1;
 
         import_level--;
+        PyObject *encoded_name = get_importtime_name(abs_name);
         fprintf(stderr, "import time: %9ld | %10ld | %*s%s\n",
                 (long)_PyTime_AsMicroseconds(cum - accumulated, _PyTime_ROUND_CEILING),
                 (long)_PyTime_AsMicroseconds(cum, _PyTime_ROUND_CEILING),
-                import_level*2, "", PyUnicode_AsUTF8(abs_name));
+                import_level*2, "",
+                encoded_name != NULL ? PyBytes_AS_STRING(encoded_name) : "?");
+        Py_XDECREF(encoded_name);
 
         accumulated = accumulated_copy + cum;
     }

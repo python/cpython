@@ -10355,7 +10355,8 @@
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyFrame_StackPointerValidate(frame);
-                int err = _PyObject_LookupSpecialMethod(name, method_and_self);
+                int err = _PyObject_LookupSpecialMethod(name, &method_and_self[0],
+                    &method_and_self[1]);
                 _PyFrame_StackPointerInvalidate(frame);
                 if (err <= 0) {
                     if (err == 0) {
@@ -12993,11 +12994,11 @@
             _PyStackRef value;
             _PyStackRef res;
             _PyStackRef v;
-            // _GUARD_TOS_INT
+            // _GUARD_TOS_EXACT_INT
             {
                 value = stack_pointer[-1];
                 PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
-                if (!_PyLong_CheckExactAndCompact(value_o)) {
+                if (!PyLong_CheckExact(value_o)) {
                     UPDATE_MISS_STATS(TO_BOOL);
                     assert(_PyOpcode_Deopt[opcode] == (TO_BOOL));
                     JUMP_TO_PREDICTED(TO_BOOL);

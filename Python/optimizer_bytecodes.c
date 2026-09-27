@@ -217,6 +217,13 @@ dummy_func(void) {
         }
     }
 
+    op(_GUARD_TOS_EXACT_INT, (value -- value)) {
+        if (sym_matches_type(value, &PyLong_Type)) {
+            ADD_OP(_NOP, 0, 0);
+        }
+        sym_set_type(value, &PyLong_Type);
+    }
+
     op(_GUARD_NOS_INT, (left, unused -- left, unused)) {
         if (sym_is_compact_int(left)) {
             ADD_OP(_NOP, 0, 0);

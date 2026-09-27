@@ -1,0 +1,44 @@
+name: Reusable Ubuntu (installed)
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+env:
+  FORCE_COLOR: 1
+
+jobs:
+  build-install-test:
+    name: build, install and test
+    runs-on: ubuntu-26.04-arm
+    timeout-minutes: 60
+    env:
+      PYTHONSTRICTEXTENSIONBUILD: 1
+    steps:
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      with:
+        persist-credentials: false
+    - name: Register gcc problem matcher
+      run: echo "::add-matcher::.github/problem-matchers/gcc.json"
+    - name: Set install dir
+      run:
+        echo "INSTALL_DIR=$(realpath "${GITHUB_WORKSPACE}/../installed-python")" >> "$GITHUB_ENV"
+    - name: Install dependencies
+      run: sudo ./.github/workflows/posix-deps-apt.sh
+    - name: Configure CPython
+      run: ./configure --config-cache --prefix="$INSTALL_DIR"
+    - name: Build CPython
+      run: make -j
+    - name: Install CPython
+      run: make install
+    - name: Set installed interpreter
+      run: |
+        ldversion=$(./python -c 'import sysconfig; print(sysconfig.get_config_var("LDVERSION"))')
+        echo "INSTALLED_PYTHON=${INSTALL_DIR}/bin/python${ldversion}" >> "$GITHUB_ENV"
+    - name: Display build info
+      run: |
+        "$INSTALLED_PYTHON" -m test.pythoninfo
+    - name: Test the installed Python
+      run: xvfb-run "$INSTALLED_PYTHON" -m test --fast-ci --timeout=900

@@ -14,8 +14,8 @@ PyObject *
 _PyLazyImport_New(_PyInterpreterFrame *frame, PyObject *builtins, PyObject *name, PyObject *fromlist)
 {
     PyLazyImportObject *m;
-    if (!name || !PyUnicode_Check(name)) {
-        PyErr_SetString(PyExc_TypeError, "expected str for name");
+    if (!name || !(PyUnicode_Check(name) || PyLazyImport_CheckExact(name))) {
+        PyErr_SetString(PyExc_TypeError, "expected str or lazy_import for name");
         return NULL;
     }
     if (fromlist == Py_None || fromlist == NULL) {
@@ -81,16 +81,68 @@ lazy_import_dealloc(PyObject *op)
     Py_TYPE(op)->tp_free(op);
 }
 
+/* Specialize the error message for failed attribute lookups. */
+static PyObject *
+lazy_import_getattro(PyObject *op, PyObject *name)
+{
+    PyObject *value = _PyObject_GenericGetAttrWithDict(op, name, NULL, /* suppress */1);
+    if (value == NULL) {
+        if (PyErr_Occurred()) {
+            // pass up non-AttributeError exception
+            return NULL;
+        }
+        PyObject *lz_name = _PyLazyImport_GetName(op);
+        if (lz_name == NULL) {
+            return NULL;
+        }
+        PyErr_Format(PyExc_AttributeError,
+                     "cannot access attribute %R on unresolved lazy import %R",
+                     name, lz_name);
+        Py_DECREF(lz_name);
+        return NULL;
+    }
+    return value;
+}
+
+// The dotted name of the object that resolving the placeholder returns.
+static PyObject *
+lazy_import_path(PyLazyImportObject *m)
+{
+    if (PyLazyImport_CheckExact(m->lz_from)) {
+        PyObject *base = lazy_import_path((PyLazyImportObject *)m->lz_from);
+        if (base == NULL) {
+            return NULL;
+        }
+        PyObject *res = PyUnicode_FromFormat("%U.%U", base, m->lz_attr);
+        Py_DECREF(base);
+        return res;
+    }
+    if (m->lz_attr != NULL &&
+        (!PyTuple_Check(m->lz_attr) || PyTuple_GET_SIZE(m->lz_attr) > 0)) {
+        return Py_NewRef(m->lz_from);
+    }
+    // __import__("a.b") returns the top-level package `a`.
+    Py_ssize_t dot = PyUnicode_FindChar(
+        m->lz_from, '.', 0, PyUnicode_GET_LENGTH(m->lz_from), 1
+    );
+    if (dot == -2) {
+        return NULL;
+    }
+    if (dot < 0) {
+        return Py_NewRef(m->lz_from);
+    }
+    return PyUnicode_Substring(m->lz_from, 0, dot);
+}
+
 static PyObject *
 lazy_import_name(PyLazyImportObject *m)
 {
-    if (m->lz_attr != NULL) {
-        if (PyUnicode_Check(m->lz_attr)) {
-            return PyUnicode_FromFormat("%U.%U", m->lz_from, m->lz_attr);
-        }
-        else {
-            return PyUnicode_FromFormat("%U...", m->lz_from);
-        }
+    if (PyLazyImport_CheckExact(m->lz_from)) {
+        return lazy_import_path(m);
+    }
+    if (m->lz_attr != NULL &&
+        (!PyTuple_Check(m->lz_attr) || PyTuple_GET_SIZE(m->lz_attr) > 0)) {
+        return PyUnicode_FromFormat("%U...", m->lz_from);
     }
     return Py_NewRef(m->lz_from);
 }
@@ -149,6 +201,7 @@ PyTypeObject PyLazyImport_Type = {
     .tp_repr = lazy_import_repr,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .tp_doc = lazy_import_doc,
+    .tp_getattro = lazy_import_getattro,
     .tp_traverse = lazy_import_traverse,
     .tp_clear = lazy_import_clear,
     .tp_methods = lazy_import_methods,
