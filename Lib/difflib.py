@@ -31,7 +31,7 @@ __all__ = ['get_close_matches', 'ndiff', 'restore', 'SequenceMatcher',
            'unified_diff', 'diff_bytes', 'HtmlDiff', 'Match']
 
 from heapq import nlargest as _nlargest
-from collections import namedtuple as _namedtuple
+from collections import deque as _deque, namedtuple as _namedtuple
 from types import GenericAlias
 lazy from _colorize import can_colorize, get_theme
 
@@ -1571,7 +1571,7 @@ def _mdiff(fromlines, tolines, context=None, linejunk=None,
         is defined) does not need to be of module scope.
         """
         line_iterator = _line_iterator()
-        fromlines,tolines=[],[]
+        fromlines, tolines = _deque(), _deque()
         while True:
             # Collecting lines of text until we have a from/to pair
             while (len(fromlines)==0 or len(tolines)==0):
@@ -1584,8 +1584,8 @@ def _mdiff(fromlines, tolines, context=None, linejunk=None,
                 if to_line is not None:
                     tolines.append((to_line,found_diff))
             # Once we have a pair, remove them from the collection and yield it
-            from_line, fromDiff = fromlines.pop(0)
-            to_line, to_diff = tolines.pop(0)
+            from_line, fromDiff = fromlines.popleft()
+            to_line, to_diff = tolines.popleft()
             yield (from_line,to_line,fromDiff or to_diff)
 
     # Handle case where user does not want context differencing, just yield

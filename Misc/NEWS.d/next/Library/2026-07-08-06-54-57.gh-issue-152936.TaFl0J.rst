@@ -1,0 +1,6 @@
+:func:`os.chroot`, :func:`os.initgroups`, :func:`os.setegid`,
+:func:`os.seteuid`, :func:`os.setgid`, :func:`os.setregid`,
+:func:`os.setresgid`, :func:`os.setresuid`, :func:`os.setreuid`,
+:func:`os.setuid`, and :func:`socket.sethostname` are now available on
+Android. Calling them without sufficient privileges now raises
+:exc:`PermissionError` instead of the functions being unavailable.

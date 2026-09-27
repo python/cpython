@@ -1,0 +1,4 @@
+Fixed a spurious ``^J`` printed at the end of every source line by the
+``list`` command of :mod:`pdb` when the output is colorized (for example
+when attaching to a running process). The source line is now stripped before
+it is colorized, like the ``where`` command already did.

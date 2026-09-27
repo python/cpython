@@ -376,6 +376,47 @@ class SendfileMixin(SendfileBase):
         self.assertEqual(srv_proto.data, self.DATA)
         self.assertEqual(self.file.tell(), len(self.DATA))
 
+    def test_sendfile_cancel_empty_waiter(self):
+        for reading in (True, False):
+            with self.subTest(reading=reading):
+                srv_proto, cli_proto = self.prepare_sendfile()
+                transport = cli_proto.transport
+                if not reading:
+                    transport.pause_reading()
+                waiter = self.loop.create_future()
+
+                def make_empty_waiter():
+                    transport._empty_waiter = waiter
+                    return waiter
+
+                with mock.patch.object(transport, '_make_empty_waiter',
+                                       side_effect=make_empty_waiter):
+                    task = self.loop.create_task(
+                        self.loop.sendfile(transport, self.file))
+                    test_utils.run_briefly(self.loop)
+                    self.assertIs(transport._empty_waiter, waiter)
+                    self.assertFalse(waiter.done())
+                    self.assertFalse(transport.is_reading())
+                    task.cancel()
+                    with self.assertRaises(asyncio.CancelledError):
+                        self.run_loop(task)
+
+                try:
+                    self.assertIsNone(transport._empty_waiter)
+                    self.assertEqual(transport.is_reading(), reading)
+                    if isinstance(self.loop, asyncio.SelectorEventLoop):
+                        self.assertIs(
+                            self.loop._transports[transport._sock_fd],
+                            transport)
+                finally:
+                    transport._reset_empty_waiter()
+
+                ret = self.run_loop(self.loop.sendfile(transport, self.file))
+                transport.close()
+                self.run_loop(srv_proto.done)
+                self.assertEqual(ret, len(self.DATA))
+                self.assertEqual(srv_proto.data, self.DATA)
+
     def test_sendfile_force_fallback(self):
         srv_proto, cli_proto = self.prepare_sendfile()
 

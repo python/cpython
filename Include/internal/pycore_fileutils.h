@@ -190,8 +190,6 @@ extern int _Py_open_osfhandle(void *handle, int flags);
      ? _PyStatus_ERR("cannot decode " NAME) \
      : _PyStatus_NO_MEMORY()
 
-extern int _Py_HasFileSystemDefaultEncodeErrors;
-
 extern int _Py_DecodeUTF8Ex(
     const char *arg,
     Py_ssize_t arglen,
