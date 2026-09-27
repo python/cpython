@@ -11,7 +11,7 @@ from ctypes import (CDLL, cdll, Structure, CFUNCTYPE,
                     c_short, c_ushort, c_int, c_uint,
                     c_long, c_longlong, c_ulonglong, c_ulong,
                     c_float, c_double, c_longdouble, py_object)
-from ctypes.util import find_library
+from ctypes.util import find_library, wrap_dll_function
 from test import support
 from test.support import import_helper
 _ctypes_test = import_helper.import_module("_ctypes_test")
@@ -327,6 +327,20 @@ class SampleCallbacksTestCase(unittest.TestCase):
                              f"Exception ignored while converting result "
                              f"of ctypes callback function {func!r}")
             self.assertIsNone(cm.unraisable.object)
+
+    def test_narrow_int_return_widened(self):
+        # gh-156933: Narrow integers were not widened on s390x
+        CALLBACK = CFUNCTYPE(c_int)
+
+        @wrap_dll_function(CDLL(_ctypes_test.__file__))
+        def _testfunc_callback_int_to_longlong(func: CALLBACK) -> c_longlong:
+            pass
+
+        @CALLBACK
+        def cb():
+            return -1
+
+        self.assertEqual(_testfunc_callback_int_to_longlong(cb), -1)
 
 
 if __name__ == '__main__':
