@@ -10991,7 +10991,15 @@ os_unshare_impl(PyObject *module, int flags)
 #endif
 
 
+
 #if defined(HAVE_READLINK) || defined(MS_WINDOWS)
+
+#if (defined(__linux__) || defined(__ANDROID__)) && defined(O_PATH)
+// readlinkat(fd, "", ...) reads the symlink that fd refers to.
+// supported since Linux 2.6.39 (same version that O_PATH was introduced).
+#define _Py_READLINKAT_SUPPORTS_EMPTY_PATH
+#endif
+
 /*[clinic input]
 os.readlink
 
@@ -11045,7 +11053,7 @@ os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
                 "freadlink() is unavailable");
             return NULL;
         }
-#elif defined(HAVE_READLINKAT) && defined(O_PATH)
+#elif defined(HAVE_READLINKAT) && defined(_Py_READLINKAT_SUPPORTS_EMPTY_PATH)
         // linux/android:
         // readlinkat(fd, "", ...) reads the link that fd refers to.
         if (HAVE_READLINKAT_RUNTIME) {
