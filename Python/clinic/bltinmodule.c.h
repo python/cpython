@@ -478,6 +478,49 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(builtin_dir__doc__,
+"dir($module, object=<unrepresentable>, /)\n"
+"--\n"
+"\n"
+"Return an alphabetized list of the attributes of the object.\n"
+"\n"
+"If called without an argument, return the names in the current scope.\n"
+"Else, return an alphabetized list of names comprising (some of) the\n"
+"attributes of the given object, and of attributes reachable from it.\n"
+"If the object supplies a method named __dir__, it will be used;\n"
+"otherwise the default dir() logic is used and returns:\n"
+"  for a module object: the module\'s attributes.\n"
+"  for a class object:  its attributes, and recursively the attributes\n"
+"    of its bases.\n"
+"  for any other object: its attributes, its class\'s attributes, and\n"
+"    recursively the attributes of its class\'s base classes.");
+
+#define BUILTIN_DIR_METHODDEF    \
+    {"dir", _PyCFunction_CAST(builtin_dir), METH_FASTCALL, builtin_dir__doc__},
+
+static PyObject *
+builtin_dir_impl(PyObject *module, PyObject *arg);
+
+static PyObject *
+builtin_dir(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *arg = NULL;
+
+    if (!_PyArg_CheckPositional("dir", nargs, 0, 1)) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    arg = args[0];
+skip_optional:
+    return_value = builtin_dir_impl(module, arg);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(builtin_divmod__doc__,
 "divmod($module, x, y, /)\n"
 "--\n"
@@ -1363,6 +1406,41 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(builtin_vars__doc__,
+"vars($module, object=<unrepresentable>, /)\n"
+"--\n"
+"\n"
+"Show vars.\n"
+"\n"
+"Without arguments, equivalent to locals().\n"
+"With an argument, equivalent to object.__dict__.");
+
+#define BUILTIN_VARS_METHODDEF    \
+    {"vars", _PyCFunction_CAST(builtin_vars), METH_FASTCALL, builtin_vars__doc__},
+
+static PyObject *
+builtin_vars_impl(PyObject *module, PyObject *v);
+
+static PyObject *
+builtin_vars(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *v = NULL;
+
+    if (!_PyArg_CheckPositional("vars", nargs, 0, 1)) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    v = args[0];
+skip_optional:
+    return_value = builtin_vars_impl(module, v);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(builtin_sum__doc__,
 "sum($module, iterable, /, start=0)\n"
 "--\n"
@@ -1501,4 +1579,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b56739f2e13f616a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2454c3867f2a73f3 input=a9049054013a1b77]*/

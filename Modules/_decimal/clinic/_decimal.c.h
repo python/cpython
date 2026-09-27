@@ -705,6 +705,34 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_decimal_ContextManager___exit____doc__,
+"__exit__($self, /, *exc_info)\n"
+"--\n"
+"\n"
+"Restore the global context.");
+
+#define _DECIMAL_CONTEXTMANAGER___EXIT___METHODDEF    \
+    {"__exit__", _PyCFunction_CAST(_decimal_ContextManager___exit__), METH_FASTCALL, _decimal_ContextManager___exit____doc__},
+
+static PyObject *
+_decimal_ContextManager___exit___impl(PyDecContextManagerObject *self,
+                                      PyObject * const *exc_info,
+                                      Py_ssize_t exc_info_length);
+
+static PyObject *
+_decimal_ContextManager___exit__(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject * const *exc_info;
+    Py_ssize_t exc_info_length;
+
+    exc_info = args;
+    exc_info_length = nargs;
+    return_value = _decimal_ContextManager___exit___impl((PyDecContextManagerObject *)self, exc_info, exc_info_length);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_decimal_Decimal_from_float__doc__,
 "from_float($type, f, /)\n"
 "--\n"
@@ -7100,4 +7128,4 @@ exit:
 #ifndef _DECIMAL_CONTEXT_APPLY_METHODDEF
     #define _DECIMAL_CONTEXT_APPLY_METHODDEF
 #endif /* !defined(_DECIMAL_CONTEXT_APPLY_METHODDEF) */
-/*[clinic end generated code: output=718b1f6c20412350 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=73c37ff551bca176 input=a9049054013a1b77]*/

@@ -687,14 +687,21 @@ gdbm__enter__(PyObject *self, PyObject *args)
     return Py_NewRef(self);
 }
 
+/*[clinic input]
+@critical_section
+_gdbm.gdbm.__exit__
+
+    *exc_info: array
+
+Close the database.
+[clinic start generated code]*/
+
 static PyObject *
-gdbm__exit__(PyObject *self, PyObject *args)
+_gdbm_gdbm___exit___impl(gdbmobject *self, PyObject * const *exc_info,
+                         Py_ssize_t exc_info_length)
+/*[clinic end generated code: output=4bb425e091228932 input=b22b90a00b22cf18]*/
 {
-    PyObject *result;
-    Py_BEGIN_CRITICAL_SECTION(self);
-    result = _gdbm_gdbm_close_impl((gdbmobject *)self);
-    Py_END_CRITICAL_SECTION();
-    return result;
+    return _gdbm_gdbm_close_impl(self);
 }
 
 static PyMethodDef gdbm_methods[] = {
@@ -708,7 +715,7 @@ static PyMethodDef gdbm_methods[] = {
     _GDBM_GDBM_SETDEFAULT_METHODDEF
     _GDBM_GDBM_CLEAR_METHODDEF
     {"__enter__", gdbm__enter__, METH_NOARGS, NULL},
-    {"__exit__",  gdbm__exit__, METH_VARARGS, NULL},
+    _GDBM_GDBM___EXIT___METHODDEF
     {NULL,              NULL}           /* sentinel */
 };
 
