@@ -513,15 +513,21 @@ dbm__enter__(PyObject *self, PyObject *Py_UNUSED(dummy))
     return Py_NewRef(self);
 }
 
+/*[clinic input]
+@critical_section
+_dbm.dbm.__exit__
+
+    *exc_info: array
+
+Close the database.
+[clinic start generated code]*/
+
 static PyObject *
-dbm__exit__(PyObject *self, PyObject *Py_UNUSED(args))
+_dbm_dbm___exit___impl(dbmobject *self, PyObject * const *exc_info,
+                       Py_ssize_t exc_info_length)
+/*[clinic end generated code: output=f9549bf513b3285d input=340d8190b6fb0f15]*/
 {
-    PyObject *result;
-    dbmobject *dp = dbmobject_CAST(self);
-    Py_BEGIN_CRITICAL_SECTION(self);
-    result = _dbm_dbm_close_impl(dp);
-    Py_END_CRITICAL_SECTION();
-    return result;
+    return _dbm_dbm_close_impl(self);
 }
 
 static PyMethodDef dbm_methods[] = {
@@ -531,7 +537,7 @@ static PyMethodDef dbm_methods[] = {
     _DBM_DBM_SETDEFAULT_METHODDEF
     _DBM_DBM_CLEAR_METHODDEF
     {"__enter__", dbm__enter__, METH_NOARGS, NULL},
-    {"__exit__",  dbm__exit__, METH_VARARGS, NULL},
+    _DBM_DBM___EXIT___METHODDEF
     {NULL,  NULL}           /* sentinel */
 };
 

@@ -2030,20 +2030,17 @@ Upgraded experimental JIT compiler
 ----------------------------------
 
 Results from the `pyperformance <https://github.com/python/pyperformance>`__
-benchmark suite report
-`8-9% <https://www.doesjitgobrrr.com/run/2026-04-29>`__
+benchmark suite report a
+`7-8% <https://www.doesjitgobrrr.com/run/2026-09-25>`__
 geometric mean performance improvement for the JIT over the standard CPython
 interpreter built with all optimizations enabled on x86-64 Linux. On AArch64
-macOS, the JIT has a
-`12-13% <https://www.doesjitgobrrr.com/run/2026-04-29>`__
+macOS, the JIT has an
+`11-12% <https://www.doesjitgobrrr.com/run/2026-09-25>`__
 speedup over the :ref:`tail calling interpreter <whatsnew314-tail-call-interpreter>`
 with all optimizations enabled. The speedups for JIT
 builds versus no JIT builds range from roughly 15% slowdown to over
 100% speedup (ignoring the ``unpack_sequence`` microbenchmark) on
 x86-64 Linux and AArch64 macOS systems.
-
-.. attention::
-    These results are not yet final.
 
 The major upgrades to the JIT are:
 

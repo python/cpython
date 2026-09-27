@@ -148,6 +148,34 @@ memoryview_release(PyObject *self, PyObject *Py_UNUSED(ignored))
     return memoryview_release_impl((PyMemoryViewObject *)self);
 }
 
+PyDoc_STRVAR(memoryview___exit____doc__,
+"__exit__($self, /, *exc_info)\n"
+"--\n"
+"\n"
+"Release the underlying buffer exposed by the memoryview object.");
+
+#define MEMORYVIEW___EXIT___METHODDEF    \
+    {"__exit__", _PyCFunction_CAST(memoryview___exit__), METH_FASTCALL, memoryview___exit____doc__},
+
+static PyObject *
+memoryview___exit___impl(PyMemoryViewObject *self,
+                         PyObject * const *exc_info,
+                         Py_ssize_t exc_info_length);
+
+static PyObject *
+memoryview___exit__(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject * const *exc_info;
+    Py_ssize_t exc_info_length;
+
+    exc_info = args;
+    exc_info_length = nargs;
+    return_value = memoryview___exit___impl((PyMemoryViewObject *)self, exc_info, exc_info_length);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(memoryview_cast__doc__,
 "cast($self, /, format, shape=<unrepresentable>, *, order=\'C\')\n"
 "--\n"
@@ -528,4 +556,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e207155e2006ff40 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=889b7cc1a94bfc9b input=a9049054013a1b77]*/

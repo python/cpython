@@ -12434,6 +12434,33 @@ os_DirEntry___fspath__(PyObject *self, PyObject *Py_UNUSED(ignored))
     return os_DirEntry___fspath___impl((DirEntry *)self);
 }
 
+PyDoc_STRVAR(os_ScandirIterator___exit____doc__,
+"__exit__($self, /, *exc_info)\n"
+"--\n"
+"\n"
+"Close the scandir iterator.");
+
+#define OS_SCANDIRITERATOR___EXIT___METHODDEF    \
+    {"__exit__", _PyCFunction_CAST(os_ScandirIterator___exit__), METH_FASTCALL, os_ScandirIterator___exit____doc__},
+
+static PyObject *
+os_ScandirIterator___exit___impl(PyObject *self, PyObject * const *exc_info,
+                                 Py_ssize_t exc_info_length);
+
+static PyObject *
+os_ScandirIterator___exit__(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject * const *exc_info;
+    Py_ssize_t exc_info_length;
+
+    exc_info = args;
+    exc_info_length = nargs;
+    return_value = os_ScandirIterator___exit___impl(self, exc_info, exc_info_length);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(os_scandir__doc__,
 "scandir($module, /, path=None)\n"
 "--\n"
@@ -13733,4 +13760,4 @@ exit:
 #ifndef OS__EMSCRIPTEN_LOG_METHODDEF
     #define OS__EMSCRIPTEN_LOG_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_LOG_METHODDEF) */
-/*[clinic end generated code: output=8e456e180637dfb3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f1113bf7c270d271 input=a9049054013a1b77]*/
