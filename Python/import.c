@@ -4651,7 +4651,6 @@ _PyImport_ClearCore(PyInterpreterState *interp)
     Py_CLEAR(LAZY_IMPORT_FUNC(interp));
     Py_CLEAR(interp->imports.lazy_pending_submodules);
     Py_CLEAR(interp->imports.lazy_modules);
-    Py_CLEAR(interp->imports.lazy_importing_modules);
     Py_CLEAR(interp->imports.lazy_imports_filter);
 }
 

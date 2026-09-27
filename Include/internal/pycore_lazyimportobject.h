@@ -14,10 +14,11 @@ extern "C" {
 PyAPI_DATA(PyTypeObject) PyLazyImport_Type;
 #define PyLazyImport_CheckExact(op) Py_IS_TYPE((op), &PyLazyImport_Type)
 
-
-PyAPI_FUNC(PyObject *) _PyLazyImport_GetName(PyObject *lazy_import);
 PyAPI_FUNC(PyObject *) _PyLazyImport_New(
-    struct _PyInterpreterFrame *frame, PyObject *import_func, PyObject *from, PyObject *attr);
+    struct _PyInterpreterFrame *frame, PyObject *builtins,
+    PyObject *name, PyObject *fromlist);
+
+extern int _PyLazyImport_IsResolving(PyThreadState *tstate, PyObject *op);
 
 #ifdef __cplusplus
 }

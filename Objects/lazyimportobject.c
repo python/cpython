@@ -2,32 +2,37 @@
 
 #include "Python.h"
 #include "pycore_ceval.h"
-#include "pycore_frame.h"
+#include "pycore_dict.h"
+#include "pycore_gc.h"
 #include "pycore_import.h"
-#include "pycore_interp.h"
-#include "pycore_long.h"
-#include "pycore_setobject.h"
-#include "pycore_traceback.h"
 #include "pycore_interpframe.h"
 #include "pycore_lazyimportobject.h"
-#include "pycore_modsupport.h"
+#include "pycore_long.h"
+#include "pycore_moduleobject.h"
+#include "pycore_pyerrors.h"
+#include "pycore_traceback.h"
+#include "pycore_tstate.h"
 
 typedef struct {
     PyObject_HEAD
-    PyObject *lz_builtins;
+    PyObject *lz_builtins;  // Roots own the mapping; projections retain the root.
+    // A root stores its absolute name and original fromlist. A projection
+    // stores its source placeholder and the attribute to import from it.
     PyObject *lz_from;
     PyObject *lz_attr;
-    // Frame information for the original import location.
-    PyCodeObject *lz_code;     // Code object where the lazy import was created.
-    int lz_instr_offset;       // Instruction offset where the lazy import was created.
+    // Declaration location.
+    PyCodeObject *lz_code;
+    int lz_instr_offset;
 } PyLazyImportObject;
 
 #define PyLazyImportObject_CAST(op) ((PyLazyImportObject *)(op))
 
+static PyObject *lazy_import_name(PyLazyImportObject *m);
+
 PyObject *
-_PyLazyImport_New(_PyInterpreterFrame *frame, PyObject *builtins, PyObject *name, PyObject *fromlist)
+_PyLazyImport_New(_PyInterpreterFrame *frame, PyObject *builtins,
+                  PyObject *name, PyObject *fromlist)
 {
-    PyLazyImportObject *m;
     if (!name || !(PyUnicode_Check(name) || PyLazyImport_CheckExact(name))) {
         PyErr_SetString(PyExc_TypeError, "expected str or lazy_import for name");
         return NULL;
@@ -40,7 +45,11 @@ _PyLazyImport_New(_PyInterpreterFrame *frame, PyObject *builtins, PyObject *name
             "lazy_import: fromlist must be None, a string, or a tuple");
         return NULL;
     }
-    m = PyObject_GC_New(PyLazyImportObject, &PyLazyImport_Type);
+    assert(PyLazyImport_CheckExact(name) ? builtins == NULL : builtins != NULL);
+    assert(!PyLazyImport_CheckExact(name) ||
+           (fromlist != NULL && PyUnicode_Check(fromlist)));
+    PyLazyImportObject *m = PyObject_GC_New(
+        PyLazyImportObject, &PyLazyImport_Type);
     if (m == NULL) {
         return NULL;
     }
@@ -48,17 +57,12 @@ _PyLazyImport_New(_PyInterpreterFrame *frame, PyObject *builtins, PyObject *name
     m->lz_from = Py_NewRef(name);
     m->lz_attr = Py_XNewRef(fromlist);
 
-    // Capture frame information for the original import location.
     m->lz_code = NULL;
     m->lz_instr_offset = -1;
 
     if (frame != NULL) {
-        PyCodeObject *code = _PyFrame_GetCode(frame);
-        if (code != NULL) {
-            m->lz_code = (PyCodeObject *)Py_NewRef(code);
-            // Calculate the instruction offset from the current frame.
-            m->lz_instr_offset = _PyInterpreterFrame_LASTI(frame);
-        }
+        m->lz_code = (PyCodeObject *)Py_NewRef(_PyFrame_GetCode(frame));
+        m->lz_instr_offset = _PyInterpreterFrame_LASTI(frame);
     }
 
     _PyObject_GC_TRACK(m);
@@ -99,7 +103,7 @@ _PyEval_LazyImportFrom(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObje
         Py_DECREF(mod);
     }
 
-    return _PyLazyImport_New(frame, d->lz_builtins, v, name);
+    return _PyLazyImport_New(frame, NULL, v, name);
 }
 
 static int
@@ -136,23 +140,20 @@ lazy_import_dealloc(PyObject *op)
 static PyObject *
 lazy_import_getattro(PyObject *op, PyObject *name)
 {
-    PyObject *value = _PyObject_GenericGetAttrWithDict(op, name, NULL, /* suppress */1);
-    if (value == NULL) {
-        if (PyErr_Occurred()) {
-            // pass up non-AttributeError exception
-            return NULL;
-        }
-        PyObject *lz_name = _PyLazyImport_GetName(op);
-        if (lz_name == NULL) {
-            return NULL;
-        }
-        PyErr_Format(PyExc_AttributeError,
-                     "cannot access attribute %R on unresolved lazy import %R",
-                     name, lz_name);
-        Py_DECREF(lz_name);
+    PyObject *value = _PyObject_GenericGetAttrWithDict(
+        op, name, NULL, /* suppress */ 1);
+    if (value != NULL || PyErr_Occurred()) {
+        return value;
+    }
+    PyObject *lz_name = lazy_import_name(PyLazyImportObject_CAST(op));
+    if (lz_name == NULL) {
         return NULL;
     }
-    return value;
+    PyErr_Format(PyExc_AttributeError,
+                 "cannot access attribute %R on unresolved lazy import %R",
+                 name, lz_name);
+    Py_DECREF(lz_name);
+    return NULL;
 }
 
 // The dotted name of the object that resolving the placeholder returns.
@@ -211,12 +212,17 @@ lazy_import_repr(PyObject *op)
     return res;
 }
 
-PyObject *
-_PyLazyImport_GetName(PyObject *op)
+// Consume a result, resolving a placeholder returned by an import hook or
+// an attribute lookup under the same cycle and recursion checks.
+static PyObject *
+lazy_import_resolve_result(PyThreadState *tstate, PyObject *obj)
 {
-    PyLazyImportObject *lazy_import = PyLazyImportObject_CAST(op);
-    assert(PyLazyImport_CheckExact(lazy_import));
-    return lazy_import_name(lazy_import);
+    if (obj == NULL || !PyLazyImport_CheckExact(obj)) {
+        return obj;
+    }
+    PyObject *result = _PyImport_LoadLazyImportTstate(tstate, obj);
+    Py_DECREF(obj);
+    return result;
 }
 
 // Look up, in order, the attributes recorded from the root placeholder to lz
@@ -235,20 +241,70 @@ lazy_import_replay_from(PyThreadState *tstate, PyObject *mod,
     }
     PyObject *obj = _PyEval_ImportFrom(tstate, from, lz->lz_attr);
     Py_DECREF(from);
-    return obj;
+    return lazy_import_resolve_result(tstate, obj);
+}
+
+// Preserve the resolution error and attach the import's declaration location.
+static void
+lazy_import_add_exception_cause(PyThreadState *tstate, PyLazyImportObject *lz)
+{
+    if (!PyErr_Occurred() || lz->lz_code == NULL || lz->lz_instr_offset < 0) {
+        return;
+    }
+    PyObject *exc = _PyErr_GetRaisedException(tstate);
+    PyObject *name = lazy_import_name(lz);
+    if (name == NULL) {
+        goto done;
+    }
+    int lineno = PyCode_Addr2Line(lz->lz_code, lz->lz_instr_offset * 2);
+    const char *filename = PyUnicode_AsUTF8(lz->lz_code->co_filename);
+    if (filename == NULL) {
+        goto done;
+    }
+    const char *funcname = PyUnicode_AsUTF8(lz->lz_code->co_name);
+    if (funcname == NULL) {
+        goto done;
+    }
+    PyObject *msg = PyUnicode_FromFormat(
+        "lazy import of '%U' raised an exception during resolution", name);
+    if (msg == NULL) {
+        goto done;
+    }
+    PyObject *cause = PyObject_CallOneArg(PyExc_ImportError, msg);
+    Py_DECREF(msg);
+    if (cause == NULL) {
+        goto done;
+    }
+    _PyErr_SetRaisedException(tstate, cause);
+    _PyTraceback_Add(funcname, filename, lineno);
+    PyException_SetCause(exc, _PyErr_GetRaisedException(tstate));
+
+done:
+    Py_XDECREF(name);
+    _PyErr_SetRaisedException(tstate, exc);
+}
+
+int
+_PyLazyImport_IsResolving(PyThreadState *tstate, PyObject *op)
+{
+    _PyThreadStateImpl *ts = (_PyThreadStateImpl *)tstate;
+    assert(PyLazyImport_CheckExact(op));
+    int active = ts->lazy_imports == NULL ? 0 : PySet_Contains(ts->lazy_imports, op);
+    assert(active >= 0);  // Exact placeholders use identity hashing and equality.
+    return active;
 }
 
 PyObject *
 _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
 {
     PyObject *obj = NULL;
-    PyObject *fromlist = Py_None;
+    PyObject *fromlist = NULL;
     PyObject *import_func = NULL;
+    PyObject *resolving = NULL;
     assert(lazy_import != NULL);
     assert(PyLazyImport_CheckExact(lazy_import));
 
     PyLazyImportObject *lz = (PyLazyImportObject *)lazy_import;
-    PyInterpreterState *interp = tstate->interp;
 
     // Walk back to the placeholder IMPORT_NAME left, and the first lookup on it.
     PyLazyImportObject *root = lz, *first = NULL;
@@ -257,179 +313,95 @@ _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
         root = (PyLazyImportObject *)root->lz_from;
     }
 
-    // Acquire the global import lock to serialize reification
-    _PyImport_AcquireLock(interp);
-
-    // Check if we are already importing this module, if so, then we want to
-    // return an error that indicates we've hit a cycle which will indicate
-    // the value isn't yet available.
-    PyObject *importing = interp->imports.lazy_importing_modules;
-    if (importing == NULL) {
-        importing = interp->imports.lazy_importing_modules = PySet_New(NULL);
-        if (importing == NULL) {
-            _PyImport_ReleaseLock(interp);
-            return NULL;
-        }
-    }
-
-    assert(PyAnySet_CheckExact(importing));
-    int is_loading = _PySet_Contains((PySetObject *)importing, lazy_import);
-    if (is_loading < 0) {
-        _PyImport_ReleaseLock(interp);
-        return NULL;
-    }
-    else if (is_loading == 1) {
-        PyObject *name = _PyLazyImport_GetName(lazy_import);
+    if (_PyLazyImport_IsResolving(tstate, lazy_import)) {
+        PyObject *name = lazy_import_name(lz);
         if (name == NULL) {
-            _PyImport_ReleaseLock(interp);
             return NULL;
         }
         PyObject *errmsg = PyUnicode_FromFormat(
             "cannot import name %R (most likely due to a circular import)",
             name);
-        if (errmsg == NULL) {
-            Py_DECREF(name);
-            _PyImport_ReleaseLock(interp);
-            return NULL;
-        }
-        PyErr_SetImportErrorSubclass(PyExc_ImportCycleError, errmsg,
-                                     root->lz_from, NULL);
-        Py_DECREF(errmsg);
         Py_DECREF(name);
-        _PyImport_ReleaseLock(interp);
+        if (errmsg != NULL) {
+            PyErr_SetImportErrorSubclass(PyExc_ImportCycleError, errmsg,
+                                         root->lz_from, NULL);
+            Py_DECREF(errmsg);
+        }
         return NULL;
     }
-    else if (PySet_Add(importing, lazy_import) < 0) {
-        goto error;
+    if (_Py_EnterRecursiveCallTstate(tstate, " while resolving a lazy import")) {
+        return NULL;
+    }
+    _PyThreadStateImpl *ts = (_PyThreadStateImpl *)tstate;
+    if (ts->lazy_imports == NULL) {
+        ts->lazy_imports = PySet_New(NULL);
+        if (ts->lazy_imports == NULL) {
+            goto done;
+        }
+    }
+    resolving = ts->lazy_imports;
+    if (PySet_Add(resolving, lazy_import) < 0) {
+        goto done;
     }
 
-    if (root->lz_attr != NULL) {
-        // `from a import b, c`: import only the name being resolved.
-        // Keep an empty tuple intact for custom __import__ hooks.
-        fromlist = first && PyTuple_GET_SIZE(root->lz_attr) > 0
-            ? PyTuple_Pack(1, first->lz_attr)
-            : Py_NewRef(root->lz_attr);
-        if (fromlist == NULL) {
-            goto error;
-        }
+    // `from a import b, c`: import only the name being resolved.
+    // Keep an empty tuple intact for custom __import__ hooks.
+    if (first != NULL && root->lz_attr != NULL &&
+        PyTuple_Check(root->lz_attr) && PyTuple_GET_SIZE(root->lz_attr) > 0) {
+        fromlist = PyTuple_Pack(1, first->lz_attr);
+    }
+    else {
+        fromlist = Py_NewRef(root->lz_attr != NULL ? root->lz_attr : Py_None);
+    }
+    if (fromlist == NULL) {
+        goto done;
     }
 
     PyObject *globals = PyEval_GetGlobals();
+    if (globals == NULL) {
+        globals = Py_None;
+    }
 
     if (PyMapping_GetOptionalItem(root->lz_builtins, &_Py_ID(__import__),
                                   &import_func) < 0) {
-        goto error;
+        goto done;
     }
     if (import_func == NULL) {
         PyErr_SetString(PyExc_ImportError, "__import__ not found");
-        goto error;
+        goto done;
     }
     obj = _PyEval_ImportNameWithImport(
         tstate, import_func, globals, globals,
         root->lz_from, fromlist, _PyLong_GetZero()
     );
+    obj = lazy_import_resolve_result(tstate, obj);
+    if (obj != NULL && first != NULL) {
+        // Keep the hook and root result alive until all attribute lookups finish.
+        PyObject *from = obj;
+        obj = lazy_import_replay_from(tstate, from, lz);
+        Py_DECREF(from);
+    }
+
+done:
     if (obj == NULL) {
-        goto error;
+        lazy_import_add_exception_cause(tstate, lz);
     }
-
-    PyObject *from = obj;
-    obj = lazy_import_replay_from(tstate, from, lz);
-    Py_DECREF(from);
-    if (obj == NULL) {
-        goto error;
+    assert(obj == NULL || !PyLazyImport_CheckExact(obj));
+    if (resolving != NULL) {
+        // A failed set resize can leave the placeholder inserted. Removing by
+        // identity also permits greenlets to finish in a different order.
+        if (PySet_Discard(resolving, lazy_import) < 0) {
+            Py_CLEAR(obj);
+        }
+        if (PySet_GET_SIZE(resolving) == 0) {
+            // Keep the set, but release the capacity used by deep resolutions.
+            (void)PySet_Clear(resolving);
+        }
     }
-
-    assert(!PyLazyImport_CheckExact(obj));
-
-    goto ok;
-
-error:
-    Py_CLEAR(obj);
-
-    // If an error occurred and we have frame information, add it to the
-    // exception.
-    if (PyErr_Occurred() && lz->lz_code != NULL && lz->lz_instr_offset >= 0) {
-        // Get the current exception - this already has the full traceback
-        // from the access point.
-        PyObject *exc = _PyErr_GetRaisedException(tstate);
-
-        // Get import name - this can fail and set an exception.
-        PyObject *import_name = _PyLazyImport_GetName(lazy_import);
-        if (!import_name) {
-            // Failed to get import name, just restore original exception.
-            _PyErr_SetRaisedException(tstate, exc);
-            goto ok;
-        }
-
-        // Resolve line number from instruction offset on demand.
-        int lineno = PyCode_Addr2Line((PyCodeObject *)lz->lz_code,
-                                      lz->lz_instr_offset*2);
-
-        // Get strings - these can return NULL on encoding errors.
-        const char *filename_str = PyUnicode_AsUTF8(lz->lz_code->co_filename);
-        if (!filename_str) {
-            // Unicode conversion failed - clear error and restore original
-            // exception.
-            PyErr_Clear();
-            Py_DECREF(import_name);
-            _PyErr_SetRaisedException(tstate, exc);
-            goto ok;
-        }
-
-        const char *funcname_str = PyUnicode_AsUTF8(lz->lz_code->co_name);
-        if (!funcname_str) {
-            // Unicode conversion failed - clear error and restore original
-            // exception.
-            PyErr_Clear();
-            Py_DECREF(import_name);
-            _PyErr_SetRaisedException(tstate, exc);
-            goto ok;
-        }
-
-        // Create a cause exception showing where the lazy import was declared.
-        PyObject *msg = PyUnicode_FromFormat(
-            "lazy import of '%U' raised an exception during resolution",
-            import_name
-        );
-        Py_DECREF(import_name); // Done with import_name.
-
-        if (!msg) {
-            // Failed to create message - restore original exception.
-            _PyErr_SetRaisedException(tstate, exc);
-            goto ok;
-        }
-
-        PyObject *cause_exc = PyObject_CallOneArg(PyExc_ImportError, msg);
-        Py_DECREF(msg);  // Done with msg.
-
-        if (!cause_exc) {
-            // Failed to create exception - restore original.
-            _PyErr_SetRaisedException(tstate, exc);
-            goto ok;
-        }
-
-        // Add traceback entry for the lazy import declaration.
-        _PyErr_SetRaisedException(tstate, cause_exc);
-        _PyTraceback_Add(funcname_str, filename_str, lineno);
-        PyObject *cause_with_tb = _PyErr_GetRaisedException(tstate);
-
-        // Set the cause on the original exception.
-        PyException_SetCause(exc, cause_with_tb);  // Steals ref to cause_with_tb.
-
-        // Restore the original exception with its full traceback.
-        _PyErr_SetRaisedException(tstate, exc);
-    }
-
-ok:
-    if (PySet_Discard(importing, lazy_import) < 0) {
-        Py_CLEAR(obj);
-    }
-
-    // Release the global import lock.
-    _PyImport_ReleaseLock(interp);
 
     Py_XDECREF(fromlist);
     Py_XDECREF(import_func);
+    _Py_LeaveRecursiveCallTstate(tstate);
     return obj;
 }
 
