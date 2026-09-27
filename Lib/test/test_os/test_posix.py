@@ -1908,7 +1908,7 @@ class TestPosixDirFd(unittest.TestCase):
             self.addCleanup(posix.unlink, fullname)
             fd = self._open_symlink_as_fd(fullname)
             self.addCleanup(os.close, fd)
-            self.assertEqual(os.readlink(fd), b"symlink")
+            self.assertEqual(os.readlink(fd), "symlink")
 
     @unittest.skipUnless(_support_readlink_with_fd,
                          "feature not supported on this platform")
@@ -1916,6 +1916,11 @@ class TestPosixDirFd(unittest.TestCase):
         with self.prepare_file() as (dir_fd, name, fullname):
             fd = os.open(fullname, os.O_RDONLY)
             self.addCleanup(os.close, fd)
+            # on Linux/Android, readlinkat("", fd, ...) fails with ENOENT, which
+            # Python translates to a FileNotFoundError, a subclass of OSError.
+            # On MacOS, freadlink(fd, ...) fails with EINVAL, which gets raised
+            # as a OSError.
+            # So catching OSError here covers both cases.
             with self.assertRaises(OSError):
                 os.readlink(fd)
 
@@ -1941,6 +1946,11 @@ class TestPosixDirFd(unittest.TestCase):
         self.addCleanup(os.close, fd)
         with self.assertRaises(NotImplementedError):
             os.readlink(fd)
+
+    @unittest.skipUnless(hasattr(os, "supports_fd") and hasattr(os, "readlink"),
+                         "feature not supported on this platform")
+    def test_readlink_is_in_supports_fd_on_supported_platforms(self):
+        self.assertEqual(os.readlink in os.supports_fd, self._support_readlink_with_fd)
 
     @unittest.skipUnless(os.rename in os.supports_dir_fd, "test needs dir_fd support in os.rename()")
     def test_rename_dir_fd(self):
