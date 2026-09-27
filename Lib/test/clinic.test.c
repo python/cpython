@@ -4946,6 +4946,7 @@ Test_cls_with_param_impl(TestObj *self, PyTypeObject *cls, int a)
 
 
 /*[clinic input]
+@vectorcall
 Test.__init__
 Empty init method.
 [clinic start generated code]*/
@@ -4981,9 +4982,46 @@ exit:
     return return_value;
 }
 
+static PyObject *
+Test_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    PyObject *self;
+    int _result;
+
+    assert(_PyType_CAST(type)->tp_init == Test___init__);
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError,
+                        "Test() takes no positional arguments");
+        goto exit;
+    }
+    if (!_PyArg_NoKwnames("Test", kwnames)) {
+        goto exit;
+    }
+    self = _PyType_CAST(type)->tp_new(_PyType_CAST(type),
+        (PyObject *)&_Py_SINGLETON(tuple_empty), NULL);
+    if (self == NULL) {
+        goto exit;
+    }
+    _result = Test___init___impl((TestObj *)self);
+    if (_result != 0) {
+        Py_DECREF(self);
+        goto exit;
+    }
+    return_value = self;
+
+exit:
+    return return_value;
+}
+
 static int
 Test___init___impl(TestObj *self)
-/*[clinic end generated code: output=f6a35c85bc5b408f input=4ea79fee54d0c3ff]*/
+/*[clinic end generated code: output=3798499df7a60323 input=645fe693f6c6b9b6]*/
 
 
 /*[clinic input]
