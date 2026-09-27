@@ -340,8 +340,9 @@ _PyLazyImport_IsResolving(PyThreadState *tstate, PyObject *op)
     return active;
 }
 
-PyObject *
-_PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
+static PyObject *
+lazy_import_resolve_impl(PyThreadState *tstate, PyObject *lazy_import,
+                         PyObject **imported_module)
 {
     PyObject *obj = NULL;
     PyObject *fromlist = NULL;
@@ -421,6 +422,12 @@ _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
         root->lz_from, fromlist, _PyLong_GetZero()
     );
     obj = lazy_import_resolve_result(tstate, obj);
+    // The normal importer may publish this module on its parent. Custom
+    // hooks retain control of their own assignments to the parent.
+    if (imported_module != NULL && obj != NULL && PyModule_Check(obj) &&
+        _PyImport_IsDefaultImportFunc(tstate->interp, import_func)) {
+        *imported_module = Py_NewRef(obj);
+    }
     if (obj != NULL && first != NULL) {
         // Keep the hook and root result alive until all attribute lookups finish.
         PyObject *from = obj;
@@ -452,20 +459,80 @@ done:
 }
 
 PyObject *
+_PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
+{
+    return lazy_import_resolve_impl(tstate, lazy_import, NULL);
+}
+
+// Loading pkg.child can replace a placeholder in pkg.child with the module
+// before a from-import retrieves the value that belongs in that binding.
+static int
+lazy_import_replace_child(PyThreadState *tstate, PyObject *placeholder,
+                          PyObject *name, PyObject *namespace,
+                          PyObject *child, PyObject *value)
+{
+    PyLazyImportObject *root = (PyLazyImportObject *)placeholder;
+    if (!PyLazyImport_CheckExact(root->lz_from)) {
+        return 0;
+    }
+    while (PyLazyImport_CheckExact(root->lz_from)) {
+        root = (PyLazyImportObject *)root->lz_from;
+    }
+    Py_ssize_t end = PyUnicode_GET_LENGTH(root->lz_from);
+    Py_ssize_t dot = PyUnicode_FindChar(root->lz_from, '.', 0, end, -1);
+    if (dot < 0) {
+        return dot == -1 ? 0 : -1;
+    }
+    if (end - dot - 1 != PyUnicode_GET_LENGTH(name)) {
+        return 0;
+    }
+    int matches = PyUnicode_Tailmatch(root->lz_from, name, dot + 1, end, 1);
+    if (matches <= 0) {
+        return matches;
+    }
+    PyObject *parent_name = PyUnicode_Substring(root->lz_from, 0, dot);
+    if (parent_name == NULL) {
+        return -1;
+    }
+    PyObject *modules = Py_XNewRef(_PyImport_GetModules(tstate->interp));
+    PyObject *parent = NULL;
+    int rc = 0;
+    if (modules != NULL) {
+        rc = PyMapping_GetOptionalItem(modules, parent_name, &parent);
+        if (rc > 0 && PyModule_Check(parent) &&
+            _PyModule_GetDict(parent) == namespace) {
+            rc = _PyDict_ReplaceItemIf(namespace, name, child, value);
+        }
+    }
+    Py_XDECREF(parent);
+    Py_XDECREF(modules);
+    Py_DECREF(parent_name);
+    return rc;
+}
+
+PyObject *
 _PyLazyImport_Reify(PyThreadState *tstate, PyObject *placeholder,
                     PyObject *name, PyObject *namespace)
 {
-    PyObject *value = _PyImport_LoadLazyImportTstate(tstate, placeholder);
+    PyObject *imported_module = NULL;
+    PyObject *value = lazy_import_resolve_impl(
+        tstate, placeholder, &imported_module);
     if (value == NULL) {
+        Py_XDECREF(imported_module);
         return NULL;
     }
     int rc;
     if (PyDict_CheckExact(namespace)) {
         rc = _PyDict_ReplaceItemIf(namespace, name, placeholder, value);
+        if (rc == 0 && imported_module != NULL) {
+            rc = lazy_import_replace_child(
+                tstate, placeholder, name, namespace, imported_module, value);
+        }
     }
     else if (Py_TYPE(namespace)->tp_as_mapping == NULL ||
              Py_TYPE(namespace)->tp_as_mapping->mp_ass_subscript == NULL) {
         // Read-only namespaces can resolve a value without caching it.
+        Py_XDECREF(imported_module);
         return value;
     }
     else {
@@ -483,6 +550,7 @@ _PyLazyImport_Reify(PyThreadState *tstate, PyObject *placeholder,
     if (rc < 0) {
         Py_CLEAR(value);
     }
+    Py_XDECREF(imported_module);
     return value;
 }
 
