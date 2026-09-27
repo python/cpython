@@ -162,6 +162,35 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_dbm_dbm___exit____doc__,
+"__exit__($self, /, *exc_info)\n"
+"--\n"
+"\n"
+"Close the database.");
+
+#define _DBM_DBM___EXIT___METHODDEF    \
+    {"__exit__", _PyCFunction_CAST(_dbm_dbm___exit__), METH_FASTCALL, _dbm_dbm___exit____doc__},
+
+static PyObject *
+_dbm_dbm___exit___impl(dbmobject *self, PyObject * const *exc_info,
+                       Py_ssize_t exc_info_length);
+
+static PyObject *
+_dbm_dbm___exit__(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject * const *exc_info;
+    Py_ssize_t exc_info_length;
+
+    exc_info = args;
+    exc_info_length = nargs;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _dbm_dbm___exit___impl((dbmobject *)self, exc_info, exc_info_length);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(dbmopen__doc__,
 "open($module, filename, flags=\'r\', mode=0o666, /)\n"
 "--\n"
@@ -224,4 +253,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d3e844f437419eed input=a9049054013a1b77]*/
+/*[clinic end generated code: output=336b7a79dd19219c input=a9049054013a1b77]*/
