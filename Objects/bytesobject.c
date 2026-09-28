@@ -2335,15 +2335,19 @@ bytes_translate_impl(PyBytesObject *self, PyObject *table,
             c = Py_CHARMASK(*input++);
             *output++ = table_chars[c];
         }
-        PyObject *result = PyBytesWriter_Finish(writer);
 
         /* Check if anything changed (for returning original object) */
         /* We save this check until the end so that the compiler will */
         /* unroll the loop above leading to MUCH faster code. */
-        if (result != NULL && PyBytes_CheckExact(input_obj)) {
-            if (memcmp(PyBytes_AS_STRING(input_obj), output_start, inlen) == 0) {
-                Py_SETREF(result, Py_NewRef(input_obj));
-            }
+        PyObject *result;
+        if (PyBytes_CheckExact(input_obj)
+            && memcmp(PyBytes_AS_STRING(input_obj), output_start, inlen) == 0)
+        {
+            PyBytesWriter_Discard(writer);
+            result = Py_NewRef(input_obj);
+        }
+        else {
+            result = PyBytesWriter_Finish(writer);
         }
 
         PyBuffer_Release(&del_table_view);
