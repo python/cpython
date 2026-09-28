@@ -379,7 +379,7 @@ PyAPI_FUNC(PyObject *) _PyObject_FunctionStr(PyObject *);
 /* Py_XSETREF() is a variant of Py_SETREF() that uses Py_XDECREF() instead of
  * Py_DECREF().
  */
-#if defined(_Py_TYPEOF)
+#ifdef _Py_TYPEOF
 #define Py_XSETREF(dst, src) \
     do { \
         _Py_TYPEOF(&(dst)) _tmp_dst_ptr = &(dst); \
