@@ -206,7 +206,7 @@ Move and draw
 .. function:: forward(distance)
               fd(distance)
 
-   :param distance: a number (integer or float)
+   :param distance: a number
 
    Move the turtle forward by the specified *distance*, in the direction the
    turtle is headed.
@@ -231,7 +231,7 @@ Move and draw
    :param distance: a number
 
    Move the turtle backward by *distance*, opposite to the direction the
-   turtle is headed.  Do not change the turtle's heading.
+   turtle is headed. The turtle's heading does not change.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -252,11 +252,12 @@ Move and draw
 .. function:: right(angle)
               rt(angle)
 
-   :param angle: a number (integer or float)
+   :param angle: a number
 
-   Turn turtle right by *angle* units.  (Units are by default degrees, but
-   can be set via the :func:`degrees` and :func:`radians` functions.)  Angle
-   orientation depends on the turtle mode, see :func:`mode`.
+   Turn the turtle right by the specified *angle*. The angle is measured in
+   degrees by default; the unit can be changed with :func:`degrees` or
+   :func:`radians`. How the heading is measured depends on the turtle mode,
+   see :func:`mode`.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -277,11 +278,12 @@ Move and draw
 .. function:: left(angle)
               lt(angle)
 
-   :param angle: a number (integer or float)
+   :param angle: a number
 
-   Turn turtle left by *angle* units.  (Units are by default degrees, but
-   can be set via the :func:`degrees` and :func:`radians` functions.)  Angle
-   orientation depends on the turtle mode, see :func:`mode`.
+   Turn the turtle left by the specified *angle*. The angle is measured in
+   degrees by default; the unit can be changed with :func:`degrees` or
+   :func:`radians`. How the heading is measured depends on the turtle mode,
+   see :func:`mode`.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -306,11 +308,10 @@ Move and draw
    :param x: a number or a pair/vector of numbers
    :param y: a number or ``None``
 
-   If *y* is ``None``, *x* must be a pair of coordinates or a :class:`Vec2D`
-   (e.g. as returned by :func:`pos`).
-
-   Move turtle to an absolute position.  If the pen is down, draw line.  Do
-   not change the turtle's orientation.
+   Move the turtle to an absolute position. If *y* is ``None``, *x* must be a
+   pair of coordinates or a :class:`Vec2D`, for example as returned by
+   :func:`pos`. If the pen is down, a line is drawn. The turtle's heading does
+   not change.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -324,13 +325,13 @@ Move and draw
       >>> tp = turtle.pos()
       >>> tp
       (0.00,0.00)
-      >>> turtle.setpos(60,30)
+      >>> turtle.goto(60,30)
       >>> turtle.pos()
       (60.00,30.00)
-      >>> turtle.setpos((20,80))
+      >>> turtle.goto((20,80))
       >>> turtle.pos()
       (20.00,80.00)
-      >>> turtle.setpos(tp)
+      >>> turtle.goto(tp)
       >>> turtle.pos()
       (0.00,0.00)
 
@@ -375,10 +376,9 @@ Move and draw
 
 .. function:: setx(x)
 
-   :param x: a number (integer or float)
+   :param x: a number
 
-   Set the turtle's first coordinate to *x*, leave second coordinate
-   unchanged.
+   Set the turtle's x coordinate to *x*. The y coordinate is unchanged.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -398,9 +398,9 @@ Move and draw
 
 .. function:: sety(y)
 
-   :param y: a number (integer or float)
+   :param y: a number
 
-   Set the turtle's second coordinate to *y*, leave first coordinate unchanged.
+   Set the turtle's y coordinate to *y*. The x coordinate is unchanged.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -421,10 +421,10 @@ Move and draw
 .. function:: setheading(to_angle)
               seth(to_angle)
 
-   :param to_angle: a number (integer or float)
+   :param to_angle: a number
 
-   Set the orientation of the turtle to *to_angle*.  Here are some common
-   directions in degrees:
+   Set the turtle's heading to *to_angle*. Here are some common directions in
+   degrees:
 
    =================== ====================
     standard mode           logo mode
@@ -445,8 +445,9 @@ Move and draw
 
 .. function:: home()
 
-   Move turtle to the origin -- coordinates (0,0) -- and set its heading to
-   its start-orientation (which depends on the mode, see :func:`mode`).
+   Move the turtle to the origin, coordinates (0,0). The turtle's heading is
+   set to its start orientation, which depends on the turtle mode, see
+   :func:`mode`.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -472,20 +473,20 @@ Move and draw
 .. function:: circle(radius, extent=None, steps=None)
 
    :param radius: a number
-   :param extent: a number (or ``None``)
-   :param steps: an integer (or ``None``)
+   :param extent: a number or ``None``
+   :param steps: an integer or ``None``
 
-   Draw a circle with given *radius*.  The center is *radius* units left of
-   the turtle; *extent* -- an angle -- determines which part of the circle
-   is drawn.  If *extent* is not given, draw the entire circle.  If *extent*
-   is not a full circle, one endpoint of the arc is the current pen
-   position.  Draw the arc in counterclockwise direction if *radius* is
-   positive, otherwise in clockwise direction.  Finally the direction of the
-   turtle is changed by the amount of *extent*.
+   Draw a circle with the given *radius*. The center is *radius* units left
+   of the turtle; *extent*, an angle, determines which part of the circle is
+   drawn. If *extent* is not given, draw the entire circle. If *extent* is
+   not a full circle, one endpoint of the arc is the current pen position.
+   Draw the arc in counterclockwise direction if *radius* is positive,
+   otherwise in clockwise direction. Finally, the turtle's heading is changed
+   by *extent*.
 
    As the circle is approximated by an inscribed regular polygon, *steps*
-   determines the number of steps to use.  If not given, it will be
-   calculated automatically.  May be used to draw regular polygons.
+   determines the number of steps to use. If not given, it will be calculated
+   automatically. May be used to draw regular polygons.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -644,7 +645,7 @@ Tell Turtle's state
 .. function:: position()
               pos()
 
-   Return the turtle's current location (x,y) (as a :class:`Vec2D` vector).
+   Return the turtle's current location (x,y) as a :class:`Vec2D` vector.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -658,9 +659,11 @@ Tell Turtle's state
    :param x: a number or a pair/vector of numbers or a turtle instance
    :param y: a number if *x* is a number, else ``None``
 
-   Return the angle between the line from turtle position to position specified
-   by (x,y), the vector or the other turtle.  This depends on the turtle's start
-   orientation which depends on the mode - "standard"/"world" or "logo".
+   Return the angle of the line from the turtle's position to (x,y). If *y* is
+   ``None``, *x* must be a pair of coordinates, a :class:`Vec2D`, for example
+   as returned by :func:`pos`, or another turtle. The angle is measured from
+   the turtle's start orientation, which depends on the turtle mode, see
+   :func:`mode`.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -704,8 +707,8 @@ Tell Turtle's state
 
 .. function:: heading()
 
-   Return the turtle's current heading (value depends on the turtle mode, see
-   :func:`mode`).
+   Return the turtle's current heading. The value depends on the turtle mode,
+   see :func:`mode`.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -721,8 +724,9 @@ Tell Turtle's state
    :param x: a number or a pair/vector of numbers or a turtle instance
    :param y: a number if *x* is a number, else ``None``
 
-   Return the distance from the turtle to (x,y), the given vector, or the given
-   other turtle, in turtle step units.
+   Return the distance from the turtle to (x,y) in turtle step units. If *y* is
+   ``None``, *x* must be a pair of coordinates, a :class:`Vec2D`, for example
+   as returned by :func:`pos`, or another turtle.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -745,8 +749,8 @@ Settings for measurement
 
    :param fullcircle: a number
 
-   Set angle measurement units, i.e. set number of "degrees" for a full circle.
-   Default value is 360 degrees.
+   Set the angle measurement units to degrees. The number of degrees in a full
+   circle is set to *fullcircle*, which defaults to 360.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -769,7 +773,7 @@ Settings for measurement
 .. function:: radians()
 
    Set the angle measurement units to radians.  Equivalent to
-   ``degrees(2*math.pi)``.
+   ``degrees(2 * math.pi)``.
 
    .. doctest::
       :skipif: _tkinter is None
