@@ -5197,6 +5197,36 @@ class ThreadedTests(unittest.TestCase):
 
             self.assertEqual(sslsock.pending(), 0)
 
+    def test_oserror_does_not_leak_to_other_sockets(self):
+        # gh-158313: An OSError for one connection must not stay on the
+        # thread's OpenSSL error queue and be raised for another connection.
+        client_context, server_context, hostname = testing_context()
+        server_context.num_tickets = 0
+
+        def connect():
+            csock, ssock = socket.socketpair()
+            client = client_context.wrap_socket(
+                csock, server_hostname=hostname, do_handshake_on_connect=False)
+            server = server_context.wrap_socket(
+                ssock, server_side=True, do_handshake_on_connect=False)
+            thread = threading.Thread(target=server.do_handshake)
+            thread.start()
+            client.do_handshake()
+            thread.join()
+            return client, server
+
+        client, server = connect()
+        client2, server2 = connect()
+        with client, server, client2, server2:
+            server.close()
+            client.settimeout(support.SHORT_TIMEOUT)
+            with self.assertRaises(OSError):
+                while True:
+                    client.send(b'x' * 1024)
+
+            client2.setblocking(False)
+            self.assertRaises(ssl.SSLWantReadError, client2.recv, 1)
+
 
 @unittest.skipUnless(has_tls_version('TLSv1_3') and ssl.HAS_PHA,
                      "Test needs TLS 1.3 PHA")
