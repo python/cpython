@@ -1,0 +1,4 @@
+Fix :func:`compile` and :func:`ast.parse` raising :exc:`SyntaxError` instead
+of :exc:`MemoryError` when a memory allocation fails while decoding the
+escape sequences of a string literal. Debug builds aborted with an assertion
+failure in this case.
