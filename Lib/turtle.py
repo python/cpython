@@ -22,80 +22,17 @@
 # 3. This notice may not be removed or altered from any source distribution.
 
 """
-Turtle graphics is a popular way for introducing programming to
-kids. It was part of the original Logo programming language developed
-by Wally Feurzig and Seymour Papert in 1966.
+Imagine a robotic turtle starting at (0, 0) in the x-y plane.
+After an `import turtle`, give it the command `turtle.forward(15)`, and it
+moves (on-screen!) 15 pixels in the direction it is facing, drawing a line as
+it moves. Give it the command `turtle.right(25)`, and it rotates in-place 25
+degrees clockwise.
 
-Imagine a robotic turtle starting at (0, 0) in the x-y plane. After an ``import turtle``, give it
-the command turtle.forward(15), and it moves (on-screen!) 15 pixels in
-the direction it is facing, drawing a line as it moves. Give it the
-command turtle.right(25), and it rotates in-place 25 degrees clockwise.
-
-By combining together these and similar commands, intricate shapes and
-pictures can easily be drawn.
-
------ turtle.py
-
-This module is an extended reimplementation of turtle.py from the
-Python standard distribution up to Python 2.5. (See: https://www.python.org)
-
-It tries to keep the merits of turtle.py and to be (nearly) 100%
-compatible with it. This means in the first place to enable the
-learning programmer to use all the commands, classes and methods
-interactively when using the module from within IDLE run with
-the -n switch.
-
-Roughly it has the following features added:
-
-- Better animation of the turtle movements, especially of turning the
-  turtle. So the turtles can more easily be used as a visual feedback
-  instrument by the (beginning) programmer.
-
-- Different turtle shapes, image files as turtle shapes, user defined
-  and user controllable turtle shapes, among them compound
-  (multicolored) shapes. Turtle shapes can be stretched and tilted, which
-  makes turtles very versatile geometrical objects.
-
-- Fine control over turtle movement and screen updates via delay(),
-  and enhanced tracer() and speed() methods.
-
-- Aliases for the most commonly used commands, like fd for forward etc.,
-  following the early Logo traditions. This reduces the boring work of
-  typing long sequences of commands, which often occur in a natural way
-  when kids try to program fancy pictures on their first encounter with
-  turtle graphics.
-
-- Turtles now have an undo()-method with configurable undo-buffer.
-
-- Some simple commands/methods for creating event driven programs
-  (mouse-, key-, timer-events). Especially useful for programming games.
-
-- A scrollable Canvas class. The default scrollable Canvas can be
-  extended interactively as needed while playing around with the turtle(s).
-
-- A TurtleScreen class with methods controlling background color or
-  background image, window and canvas size and other properties of the
-  TurtleScreen.
-
-- There is a method, setworldcoordinates(), to install a user defined
-  coordinate-system for the TurtleScreen.
-
-- The implementation uses a 2-vector class named Vec2D, derived from tuple.
-  This class is public, so it can be imported by the application programmer,
-  which makes certain types of computations very natural and compact.
-
-- Appearance of the TurtleScreen and the Turtles at startup/import can be
-  configured by means of a turtle.cfg configuration file.
-  The default configuration mimics the appearance of the old turtle module.
-
-- If configured appropriately the module reads in docstrings from a docstring
-  dictionary in some different language, supplied separately  and replaces
-  the English ones by those read in. There is a utility function
-  write_docstringdict() to write a dictionary with the original (English)
-  docstrings to disc, so it can serve as a template for translations.
-
-Behind the scenes there are some features included with possible
-extensions in mind. These will be commented and documented elsewhere.
+Turtle graphics is an implementation of the drawing tools introduced in Logo
+in 1967. It was created as an educational tool, and its instant, visible
+feedback makes it an effective way for learners to encounter programming
+concepts. It is also a convenient way to produce simple graphical output
+without bringing in external libraries.
 """
 
 import tkinter as TK
@@ -166,7 +103,7 @@ _CFG = {"width" : 0.5,               # Screen
        }
 
 def config_dict(filename):
-    """Convert content of config-file into dictionary."""
+    """Convert the content of a config file into a dict."""
     with open(filename, "r") as f:
         cfglines = f.readlines()
     cfgdict = {}
@@ -195,17 +132,17 @@ def config_dict(filename):
     return cfgdict
 
 def readconfig(cfgdict):
-    """Read config-files, change configuration-dict accordingly.
+    """Read config files and update the configuration dict accordingly.
 
     If there is a turtle.cfg file in the current working directory,
-    read it from there. If this contains an importconfig-value,
-    say 'myway', construct filename turtle_mayway.cfg else use
-    turtle.cfg and read it from the import-directory, where
-    turtle.py is located.
-    Update configuration dictionary first according to config-file,
-    in the import directory, then according to config-file in the
-    current working directory.
-    If no config-file is found, the default configuration is used.
+    read it. If it contains an importconfig value, say 'myway',
+    use the filename turtle_myway.cfg, otherwise turtle.cfg, and
+    read that file from the directory where turtle.py is located.
+
+    The configuration dict is updated first from the config file in
+    the turtle.py directory, then from the one in the current working
+    directory. If no config file is found, the default configuration
+    is used.
     """
     default_cfg = "turtle.cfg"
     cfgdict1 = {}
@@ -231,46 +168,54 @@ except Exception:
 
 
 class Vec2D(tuple):
-    """A 2 dimensional vector class, used as a helper class
-    for implementing turtle graphics.
-    May be useful for turtle graphics programs also.
-    Derived from tuple, so a vector is a tuple!
+    """A two-dimensional vector class, used as a helper class for
+    implementing turtle graphics. May be useful for turtle graphics
+    programs too. Derived from tuple, so a vector is a tuple!
 
     Provides (for a, b vectors, k number):
-       a+b vector addition
-       a-b vector subtraction
-       a*b inner product
-       k*a and a*k multiplication with scalar
-       |a| absolute value of a
-       a.rotate(angle) rotation
+       a + b: vector addition
+       a - b: vector subtraction
+       a * b: inner product
+       k * a and a * k: multiplication with scalar
+       abs(a): absolute value of a
+       a.rotate(angle): rotation
     """
+
     def __new__(cls, x, y):
         return tuple.__new__(cls, (x, y))
+
     def __add__(self, other):
         return Vec2D(self[0]+other[0], self[1]+other[1])
+
     def __mul__(self, other):
         if isinstance(other, Vec2D):
             return self[0]*other[0]+self[1]*other[1]
         return Vec2D(self[0]*other, self[1]*other)
+
     def __rmul__(self, other):
         if isinstance(other, int) or isinstance(other, float):
             return Vec2D(self[0]*other, self[1]*other)
         return NotImplemented
+
     def __sub__(self, other):
         return Vec2D(self[0]-other[0], self[1]-other[1])
+
     def __neg__(self):
         return Vec2D(-self[0], -self[1])
+
     def __abs__(self):
         return math.hypot(*self)
+
     def rotate(self, angle):
-        """rotate self counterclockwise by angle
-        """
+        """Rotate self counterclockwise by angle."""
         perp = Vec2D(-self[1], self[0])
         angle = math.radians(angle)
         c, s = math.cos(angle), math.sin(angle)
         return Vec2D(self[0]*c+perp[0]*s, self[1]*c+perp[1]*s)
+
     def __getnewargs__(self):
         return (self[0], self[1])
+
     def __repr__(self):
         return "(%.2f,%.2f)" % self
 
@@ -284,7 +229,7 @@ class Vec2D(tuple):
 ## to ScrolledCanvas class
 
 def __methodDict(cls, _dict):
-    """helper function for Scrolled Canvas"""
+    """Helper function for Scrolled Canvas."""
     baseList = list(cls.__bases__)
     baseList.reverse()
     for _super in baseList:
@@ -294,7 +239,7 @@ def __methodDict(cls, _dict):
             _dict[key] = value
 
 def __methods(cls):
-    """helper function for Scrolled Canvas"""
+    """Helper function for Scrolled Canvas."""
     _dict = {}
     __methodDict(cls, _dict)
     return _dict.keys()
@@ -356,7 +301,7 @@ class ScrolledCanvas(TK.Frame):
         self._rootwindow.bind('<Configure>', self.onResize)
 
     def reset(self, canvwidth=None, canvheight=None, bg = None):
-        """Adjust canvas and scrollbars according to given canvas size."""
+        """Adjust canvas size, background color and scrollbars."""
         if canvwidth:
             self.canvwidth = canvwidth
         if canvheight:
@@ -374,8 +319,7 @@ class ScrolledCanvas(TK.Frame):
 
 
     def adjustScrolls(self):
-        """ Adjust scrollbars according to window- and canvas-size.
-        """
+        """Adjust scrollbars according to window and canvas size."""
         cwidth = self._canvas.winfo_width()
         cheight = self._canvas.winfo_height()
         self._canvas.xview_moveto(0.5*(self.canvwidth-cwidth)/self.canvwidth)
@@ -453,7 +397,7 @@ class _Root(TK.Tk):
 Canvas = TK.Canvas
 
 
-class TurtleScreenBase(object):
+class TurtleScreenBase:
     """Provide the basic graphics functionality.
        Interface between Tkinter and turtle.py.
 
@@ -462,14 +406,13 @@ class TurtleScreenBase(object):
     """
 
     def _blankimage(self):
-        """return a blank image object
-        """
+        """Return a blank image object."""
         img = TK.PhotoImage(width=1, height=1, master=self.cv)
         img.blank()
         return img
 
     def _image(self, filename):
-        """return an image object containing the
+        """Return an image object containing the
         imagedata from an image file named filename.
         """
         return TK.PhotoImage(file=filename, master=self.cv)
@@ -489,20 +432,21 @@ class TurtleScreenBase(object):
         self._updating = False
 
     def _createpoly(self):
-        """Create an invisible polygon item on canvas self.cv)
-        """
+        """Create an invisible polygon item on canvas self.cv."""
         return self.cv.create_polygon((0, 0, 0, 0, 0, 0), fill="", outline="")
 
     def _drawpoly(self, polyitem, coordlist, fill=None,
                   outline=None, width=None, top=False):
-        """Configure polygonitem polyitem according to provided
-        arguments:
-        coordlist is sequence of coordinates
-        fill is filling color
-        outline is outline color
-        top is a boolean value, which specifies if polyitem
-        will be put on top of the canvas' displaylist so it
-        will not be covered by other items.
+        """Configure polygon item polyitem according to the given arguments.
+
+        Arguments:
+            coordlist -- a sequence of coordinates
+            fill -- the fill color
+            outline -- the outline color
+            width -- the outline width
+            top -- a boolean value, which specifies if polyitem will be
+                put on top of the canvas' display list so it will not
+                be covered by other items
         """
         cl = []
         for x, y in coordlist:
@@ -519,20 +463,21 @@ class TurtleScreenBase(object):
             self.cv.tag_raise(polyitem)
 
     def _createline(self):
-        """Create an invisible line item on canvas self.cv)
-        """
+        """Create an invisible line item on canvas self.cv."""
         return self.cv.create_line(0, 0, 0, 0, fill="", width=2,
                                    capstyle = TK.ROUND)
 
     def _drawline(self, lineitem, coordlist=None,
                   fill=None, width=None, top=False):
-        """Configure lineitem according to provided arguments:
-        coordlist is sequence of coordinates
-        fill is drawing color
-        width is width of drawn line.
-        top is a boolean value, which specifies if polyitem
-        will be put on top of the canvas' displaylist so it
-        will not be covered by other items.
+        """Configure line item lineitem according to the given arguments.
+
+        Arguments:
+            coordlist -- a sequence of coordinates
+            fill -- the drawing color
+            width -- the width of the drawn line
+            top -- a boolean value, which specifies if lineitem will be
+                put on top of the canvas' display list so it will not
+                be covered by other items
         """
         if coordlist is not None:
             cl = []
@@ -549,13 +494,13 @@ class TurtleScreenBase(object):
 
     def _delete(self, item):
         """Delete graphics item from canvas.
-        If item is"all" delete all graphics items.
+
+        If item is "all", delete all graphics items.
         """
         self.cv.delete(item)
 
     def _update(self):
-        """Redraw graphics items on canvas
-        """
+        """Redraw graphics items on canvas."""
         if self._updating:
             # Reentrant call (e.g. a drag handler moving the turtle,
             # gh-50966): flush drawing without reprocessing input.
@@ -591,10 +536,11 @@ class TurtleScreenBase(object):
             return self.cv.cget("bg")
 
     def _write(self, pos, txt, align, font, pencolor):
-        """Write txt at pos in canvas with specified font
-        and color.
-        Return text item and x-coord of right bottom corner
-        of text's bounding box."""
+        """Write txt at pos on the canvas with specified font and color.
+
+        Return text item and x-coord of right bottom corner of text's
+        bounding box.
+        """
         x, y = pos
         x = x * self.xscale
         y = y * self.yscale
@@ -747,13 +693,13 @@ class TurtleScreenBase(object):
         return self.cv.type(item)
 
     def _pointlist(self, item):
-        """returns list of coordinate-pairs of points of item
-        Example (for insiders):
-        >>> from turtle import *
+        """Return list of coordinate pairs of points of item.
+
+        For example:
         >>> getscreen()._pointlist(getturtle().turtle._item)
         [(0.0, 9.9999999999999982), (0.0, -9.9999999999999982),
         (9.9999999999999982, 0.0)]
-        >>> """
+        """
         cl = self.cv.coords(item)
         pl = [(cl[i], -cl[i+1]) for i in range(0, len(cl), 2)]
         return  pl
@@ -774,8 +720,9 @@ class TurtleScreenBase(object):
             self.cv.coords(item, *newcoordlist)
 
     def _resize(self, canvwidth=None, canvheight=None, bg=None):
-        """Resize the canvas the turtles are drawing on. Does
-        not alter the drawing window.
+        """Resize the canvas the turtles are drawing on.
+
+        Does not alter the drawing window.
         """
         # needs amendment
         if not isinstance(self.cv, ScrolledCanvas):
@@ -789,8 +736,7 @@ class TurtleScreenBase(object):
         self.cv.reset(canvwidth, canvheight, bg)
 
     def _window_size(self):
-        """ Return the width and height of the turtle window.
-        """
+        """Return the width and height of the turtle window."""
         width = self.cv.winfo_width()
         if width <= 1:  # the window isn't managed by a geometry manager
             width = self.cv['width']
@@ -804,7 +750,7 @@ class TurtleScreenBase(object):
 
         No argument.
 
-        Must be last statement in a turtle graphics program.
+        Must be the last statement in a turtle graphics program.
         Must NOT be used if a script is run from within IDLE in -n mode
         (No subprocess) - for interactive use of turtle graphics.
 
@@ -867,11 +813,10 @@ class Terminator (Exception):
 
 
 class TurtleGraphicsError(Exception):
-    """Some TurtleGraphics Error
-    """
+    """Raised for invalid arguments or operations."""
 
 
-class Shape(object):
+class Shape:
     """Data structure modeling shapes.
 
     attribute _type is one of "polygon", "image", "compound"
@@ -915,13 +860,15 @@ class Shape(object):
         self._data.append([poly, fill, outline])
 
 
-class Tbuffer(object):
-    """Ring buffer used as undobuffer for RawTurtle objects."""
+class Tbuffer:
+    """Ring buffer used as undo buffer for RawTurtle objects."""
+
     def __init__(self, bufsize=10):
         self.bufsize = bufsize
         self.buffer = [[None]] * bufsize
         self.ptr = -1
         self.cumulate = False
+
     def reset(self, bufsize=None):
         if bufsize is None:
             for i in range(self.bufsize):
@@ -930,6 +877,7 @@ class Tbuffer(object):
             self.bufsize = bufsize
             self.buffer = [[None]] * bufsize
         self.ptr = -1
+
     def push(self, item):
         if self.bufsize > 0:
             if not self.cumulate:
@@ -937,6 +885,7 @@ class Tbuffer(object):
                 self.buffer[self.ptr] = item
             else:
                 self.buffer[self.ptr].append(item)
+
     def pop(self):
         if self.bufsize > 0:
             item = self.buffer[self.ptr]
@@ -946,8 +895,10 @@ class Tbuffer(object):
                 self.buffer[self.ptr] = [None]
                 self.ptr = (self.ptr - 1) % self.bufsize
                 return (item)
+
     def nr_of_items(self):
         return self.bufsize - self.buffer.count([None])
+
     def __repr__(self):
         return str(self.buffer) + " " + str(self.ptr)
 
@@ -956,9 +907,9 @@ class Tbuffer(object):
 class TurtleScreen(TurtleScreenBase):
     """Provides screen oriented methods like bgcolor etc.
 
-    Only relies upon the methods of TurtleScreenBase and NOT
-    upon components of the underlying graphics toolkit -
-    which is Tkinter in this case.
+    Only relies upon the methods of TurtleScreenBase and not upon
+    components of the underlying graphics toolkit, which is Tkinter
+    in this case.
     """
     _RUNNING = True
 
@@ -1289,7 +1240,7 @@ class TurtleScreen(TurtleScreenBase):
             self.update()
 
     def delay(self, delay=None):
-        """ Return or set the drawing delay in milliseconds.
+        """Return or set the drawing delay in milliseconds.
 
         Optional argument:
         delay -- positive integer
@@ -1333,8 +1284,7 @@ class TurtleScreen(TurtleScreenBase):
             self._updatecounter %= self._tracing
 
     def update(self):
-        """Perform a TurtleScreen update.
-        """
+        """Perform a TurtleScreen update."""
         tracing = self._tracing
         self._tracing = True
         for t in self.turtles():
@@ -1344,7 +1294,7 @@ class TurtleScreen(TurtleScreenBase):
         self._update()
 
     def window_width(self):
-        """ Return the width of the turtle window.
+        """Return the width of the turtle window.
 
         Example (for a TurtleScreen instance named screen):
         >>> screen.window_width()
@@ -1353,7 +1303,7 @@ class TurtleScreen(TurtleScreenBase):
         return self._window_size()[0]
 
     def window_height(self):
-        """ Return the height of the turtle window.
+        """Return the height of the turtle window.
 
         Example (for a TurtleScreen instance named screen):
         >>> screen.window_height()
@@ -1578,7 +1528,7 @@ class TurtleScreen(TurtleScreenBase):
     addshape = register_shape
     onkeyrelease = onkey
 
-class TNavigator(object):
+class TNavigator:
     """Navigation part of the RawTurtle.
     Implements methods for turtle movement.
     """
@@ -2096,10 +2046,12 @@ class TNavigator(object):
     seth = setheading
 
 
-class TPen(object):
+class TPen:
     """Drawing part of the RawTurtle.
+
     Implements drawing properties.
     """
+
     def __init__(self, resizemode=_CFG["resizemode"]):
         self._resizemode = resizemode # or "user" or "noresize"
         self.undobuffer = None
@@ -2572,7 +2524,7 @@ class TPen(object):
     ht = hideturtle
 
 
-class _TurtleImage(object):
+class _TurtleImage:
     """Helper class: Datatype to store Turtle attributes
     """
 
@@ -3406,9 +3358,10 @@ class RawTurtle(TPen, TNavigator):
         self._update()
 
     def _newLine(self, usePos=True):
-        """Closes current line item and starts a new one.
-           Remark: if current line became too long, animation
-           performance (via _drawline) slowed down considerably.
+        """Closes the current line item and starts a new one.
+
+        If the current line becomes too long, animation performance (via _drawline)
+        can slow down considerably.
         """
         if len(self.currentLine) > 1:
             self.screen._drawline(self.currentLineItem, self.currentLine,
@@ -3625,7 +3578,7 @@ class RawTurtle(TPen, TNavigator):
         self._creatingPoly = False
 
     def get_poly(self):
-        """Return the lastly recorded polygon.
+        """Return the last recorded polygon.
 
         No argument.
 
@@ -3638,11 +3591,10 @@ class RawTurtle(TPen, TNavigator):
             return tuple(self._poly)
 
     def getscreen(self):
-        """Return the TurtleScreen object, the turtle is drawing  on.
+        """Return the TurtleScreen object the turtle is drawing on.
 
         No argument.
 
-        Return the TurtleScreen object, the turtle is drawing  on.
         So TurtleScreen-methods can be called for that object.
 
         Example (for a Turtle instance named turtle):
@@ -4009,7 +3961,7 @@ def write_docstringdict(filename="turtle_docstringdict"):
         f.close()
 
 def read_docstrings(lang):
-    """Read in docstrings from lang-specific docstring dictionary.
+    """Read in docstrings from a language-specific docstring dictionary.
 
     Transfer docstrings, translated to lang, from a dictionary-file
     to the methods of classes Screen and Turtle and - in revised form -
