@@ -1,4 +1,4 @@
-/* ee5f82c3ffd57c5224394ba46f348dbce466d34d6c925a527ae46b1cfe6adf1d (2.8.3+)
+/* 13c4e8da8fccffb0e8e599684e0d447ad14c1bb0b48792cf5dd77d8712301871 (2.8.4+)
                             __  __            _
                          ___\ \/ /_ __   __ _| |_
                         / _ \\  /| '_ \ / _` | __|
@@ -51,6 +51,9 @@
    Copyright (c) 2026      Kartik Kenchi <netliomax25@gmail.com>
    Copyright (c) 2026      Haris Hussain <hextheshadow0x@gmail.com>
    Copyright (c) 2026      Evgeny Kotkov <kotkov@apache.org>
+   Copyright (c) 2026      Darren Carreras <carrerasdarren@gmail.com>
+   Copyright (c) 2026      Alberto Maschietto <albertomaschietto9@gmail.com>
+   Copyright (c) 2026      Zeyou Liu <zeyouliu@tencent.com>
    Licensed under the MIT license:
 
    Permission is  hereby granted,  free of charge,  to any  person obtaining
@@ -330,7 +333,7 @@ typedef struct {
   const XML_Char *base;
   const XML_Char *publicId;
   const XML_Char *notation;
-  XML_Bool open;
+  bool open;
   XML_Bool hasMore; /* true if entity has not been completely processed */
   /* An entity can be open while being already completely processed (hasMore ==
     XML_FALSE). The reason is the delayed closing of entities until their inner
@@ -381,6 +384,22 @@ typedef struct {
   const XML_Char *value;
 } DEFAULT_ATTRIBUTE;
 
+// This structure allows mapping attribute names to instances of
+// `DEFAULT_ATTRIBUTE`.
+typedef struct {
+  // Member `name` goes first to make this structure compatible with structure
+  // `NAMED` (further up), which is needed to support use of structure
+  // `NAME_AND_DEFAULT_ATTRIBUTE` in a hash table as implemented by function
+  // `lookup` (further down).
+  const XML_Char *name;
+  // We would store a `DEFAULT_ATTRIBUTE *` here but the backing array
+  // can be reallocated which would invalidate the pointer. Using an index
+  // into the array instead, avoids that problem.
+  size_t attIndex;
+  // This is set to `false` by function `lookup`.
+  bool initialized;
+} NAME_AND_DEFAULT_ATTRIBUTE;
+
 typedef struct {
   unsigned long version;
   unsigned long hash;
@@ -394,7 +413,7 @@ typedef struct {
   size_t nDefaultAtts;
   size_t allocDefaultAtts;
   DEFAULT_ATTRIBUTE *defaultAtts;
-  HASH_TABLE defaultAttsNames;
+  HASH_TABLE defaultAttForName;
 } ELEMENT_TYPE;
 
 typedef struct {
@@ -579,6 +598,8 @@ static int dtdCopy(XML_Parser oldParser, DTD *newDtd, const DTD *oldDtd,
                    XML_Parser parser);
 static int copyEntityTable(XML_Parser oldParser, HASH_TABLE *newTable,
                            STRING_POOL *newPool, const HASH_TABLE *oldTable);
+static NAMED *lookupWithLength(XML_Parser parser, HASH_TABLE *table, KEY name,
+                               size_t nameLen, size_t createSize);
 static NAMED *lookup(XML_Parser parser, HASH_TABLE *table, KEY name,
                      size_t createSize);
 static void FASTCALL hashTableInit(HASH_TABLE *table, XML_Parser parser);
@@ -755,6 +776,8 @@ struct XML_ParserStruct {
   void *m_unknownEncodingMem;
   void *m_unknownEncodingData;
   void *m_unknownEncodingHandlerData;
+  // Application callback invoked by callUnknownEncodingConvert.
+  int(XMLCALL *m_unknownEncodingConvert)(void *, const char *);
   void(XMLCALL *m_unknownEncodingRelease)(void *);
   PROLOG_STATE m_prologState;
   Processor *m_processor;
@@ -1177,6 +1200,25 @@ isCalledFromInsideHandler(XML_Parser parser) {
   return parser->m_handlerCallDepth > 0;
 }
 
+static void
+callUnknownEncodingRelease(XML_Parser parser) {
+  beforeHandler(parser);
+  parser->m_unknownEncodingRelease(parser->m_unknownEncodingData);
+  afterHandler(parser);
+  parser->m_unknownEncodingRelease = NULL;
+  parser->m_unknownEncodingData = NULL;
+}
+
+static int XMLCALL
+callUnknownEncodingConvert(void *data, const char *p) {
+  XML_Parser parser = data;
+  beforeHandler(parser);
+  const int result
+      = parser->m_unknownEncodingConvert(parser->m_unknownEncodingData, p);
+  afterHandler(parser);
+  return result;
+}
+
 static enum XML_Error
 callProcessor(XML_Parser parser, const char *start, const char *end,
               const char **endPtr) {
@@ -1524,6 +1566,7 @@ parserInit(XML_Parser parser, const XML_Char *encodingName) {
   parser->m_inheritedBindings = NULL;
   parser->m_nSpecifiedAtts = 0;
   parser->m_unknownEncodingMem = NULL;
+  parser->m_unknownEncodingConvert = NULL;
   parser->m_unknownEncodingRelease = NULL;
   parser->m_unknownEncodingData = NULL;
   parser->m_parsingStatus.parsing = XML_INITIALIZED;
@@ -1604,7 +1647,7 @@ XML_ParserReset(XML_Parser parser, const XML_Char *encodingName) {
   moveToFreeBindingList(parser, parser->m_inheritedBindings);
   FREE(parser, parser->m_unknownEncodingMem);
   if (parser->m_unknownEncodingRelease)
-    parser->m_unknownEncodingRelease(parser->m_unknownEncodingData);
+    callUnknownEncodingRelease(parser);
   poolClear(&parser->m_tempPool);
   poolClear(&parser->m_temp2Pool);
   FREE(parser, (void *)parser->m_protocolEncodingName);
@@ -1915,7 +1958,7 @@ XML_ParserFree(XML_Parser parser) {
   FREE(parser, parser->m_nsAtts);
   FREE(parser, parser->m_unknownEncodingMem);
   if (parser->m_unknownEncodingRelease)
-    parser->m_unknownEncodingRelease(parser->m_unknownEncodingData);
+    callUnknownEncodingRelease(parser);
   FREE(parser, parser);
 }
 
@@ -2739,7 +2782,7 @@ XML_GetCurrentLineNumber(XML_Parser parser) {
                       parser->m_eventPtr, &parser->m_position);
     parser->m_positionPtr = parser->m_eventPtr;
   }
-  // NOTE: XML_Size is known to wrap around for >2 4iB content
+  // NOTE: XML_Size is known to wrap around for >4 GiB content
   //       on 32bit machines and 64bit Windows, unless (non-default and
   //       uncommon) XML_LARGE_SIZE is defined.
   //       That's a bug and it only lives on because we cannot break
@@ -2756,7 +2799,7 @@ XML_GetCurrentColumnNumber(XML_Parser parser) {
                       parser->m_eventPtr, &parser->m_position);
     parser->m_positionPtr = parser->m_eventPtr;
   }
-  // NOTE: XML_Size is known to wrap around for >2 4iB content
+  // NOTE: XML_Size is known to wrap around for >4 GiB content
   //       on 32bit machines and 64bit Windows, unless (non-default and
   //       uncommon) XML_LARGE_SIZE is defined.
   //       That's a bug and it only lives on because we cannot break
@@ -3410,9 +3453,9 @@ doContent(XML_Parser parser, int startTagLevel, const ENCODING *enc,
           return result;
       } else if (parser->m_externalEntityRefHandler) {
         const XML_Char *context;
-        entity->open = XML_TRUE;
+        entity->open = true;
         context = getContext(parser);
-        entity->open = XML_FALSE;
+        entity->open = false;
         if (! context)
           return XML_ERROR_NO_MEMORY;
         beforeHandler(parser);
@@ -3837,8 +3880,8 @@ storeAtts(XML_Parser parser, const ENCODING *enc, const char *attStr,
                                          sizeof(ELEMENT_TYPE));
     if (! elementType)
       return XML_ERROR_NO_MEMORY;
-    if (! elementType->defaultAttsNames.parser)
-      hashTableInit(&(elementType->defaultAttsNames), parser);
+    if (! elementType->defaultAttForName.parser)
+      hashTableInit(&(elementType->defaultAttForName), parser);
     if (parser->m_ns && ! setElementTypePrefix(parser, elementType))
       return XML_ERROR_NO_MEMORY;
   }
@@ -3951,11 +3994,14 @@ storeAtts(XML_Parser parser, const ENCODING *enc, const char *attStr,
 
       /* figure out whether declared as other than CDATA */
       if (attId->maybeTokenized) {
-        for (size_t j = 0; j < nDefaultAtts; j++) {
-          if (attId == elementType->defaultAtts[j].id) {
-            isCdata = elementType->defaultAtts[j].isCdata;
-            break;
-          }
+        NAME_AND_DEFAULT_ATTRIBUTE *const nameAndDefaultAttribute
+            = (NAME_AND_DEFAULT_ATTRIBUTE *)lookup(
+                parser, &(elementType->defaultAttForName), attId->name, 0);
+        if (nameAndDefaultAttribute != NULL) {
+          assert(nameAndDefaultAttribute->attIndex < elementType->nDefaultAtts);
+          const DEFAULT_ATTRIBUTE *const att
+              = elementType->defaultAtts + nameAndDefaultAttribute->attIndex;
+          isCdata = att->isCdata;
         }
       }
 
@@ -4046,8 +4092,8 @@ storeAtts(XML_Parser parser, const ENCODING *enc, const char *attStr,
     unsigned int nsAttsSize = 1u << parser->m_nsAttsPower;
     unsigned char oldNsAttsPower = parser->m_nsAttsPower;
     /* size of hash table must be at least 2 * (# of prefixed attributes) */
-    if ((nPrefixes << 1)
-        >> parser->m_nsAttsPower) { /* true for m_nsAttsPower = 0 */
+    if (parser->m_nsAttsPower == 0
+        || (nPrefixes >> (parser->m_nsAttsPower - 1))) {
       /* hash table size must also be a power of 2 and >= 8 */
       while (nPrefixes >> parser->m_nsAttsPower++)
         ;
@@ -4946,25 +4992,34 @@ handleUnknownEncoding(XML_Parser parser, const XML_Char *encodingName) {
     const int status = parser->m_unknownEncodingHandler(
         parser->m_unknownEncodingHandlerData, encodingName, &info);
     afterHandler(parser);
+
+    parser->m_unknownEncodingRelease = info.release;
+    parser->m_unknownEncodingData = info.data;
+
     if (status) {
       ENCODING *enc;
       parser->m_unknownEncodingMem = MALLOC(parser, XmlSizeOfUnknownEncoding());
       if (! parser->m_unknownEncodingMem) {
-        if (info.release)
-          info.release(info.data);
+        if (parser->m_unknownEncodingRelease)
+          callUnknownEncodingRelease(parser);
+        else
+          parser->m_unknownEncodingData = NULL;
         return XML_ERROR_NO_MEMORY;
       }
+      parser->m_unknownEncodingConvert = info.convert;
       enc = (parser->m_ns ? XmlInitUnknownEncodingNS : XmlInitUnknownEncoding)(
-          parser->m_unknownEncodingMem, info.map, info.convert, info.data);
+          parser->m_unknownEncodingMem, info.map,
+          info.convert ? callUnknownEncodingConvert : NULL, parser);
       if (enc) {
-        parser->m_unknownEncodingData = info.data;
-        parser->m_unknownEncodingRelease = info.release;
         parser->m_encoding = enc;
         return XML_ERROR_NONE;
       }
+      parser->m_unknownEncodingConvert = NULL;
     }
-    if (info.release != NULL)
-      info.release(info.data);
+    if (parser->m_unknownEncodingRelease != NULL)
+      callUnknownEncodingRelease(parser);
+    else
+      parser->m_unknownEncodingData = NULL;
   }
   return XML_ERROR_UNKNOWN_ENCODING;
 }
@@ -6092,7 +6147,7 @@ doProlog(XML_Parser parser, const ENCODING *enc, const char *s, const char *end,
         }
         if (parser->m_externalEntityRefHandler) {
           dtd->paramEntityRead = XML_FALSE;
-          entity->open = XML_TRUE;
+          entity->open = true;
           entityTrackingOnOpen(parser, entity, __LINE__);
           beforeHandler(parser);
           const int status = parser->m_externalEntityRefHandler(
@@ -6101,11 +6156,11 @@ doProlog(XML_Parser parser, const ENCODING *enc, const char *s, const char *end,
           afterHandler(parser);
           if (! status) {
             entityTrackingOnClose(parser, entity, __LINE__);
-            entity->open = XML_FALSE;
+            entity->open = false;
             return XML_ERROR_EXTERNAL_ENTITY_HANDLING;
           }
           entityTrackingOnClose(parser, entity, __LINE__);
-          entity->open = XML_FALSE;
+          entity->open = false;
           handleDefault = XML_FALSE;
           if (! dtd->paramEntityRead) {
             dtd->keepProcessing = dtd->standalone;
@@ -6429,7 +6484,7 @@ processEntity(XML_Parser parser, ENTITY *entity, XML_Bool betweenDecl,
     if (! openEntity)
       return XML_ERROR_NO_MEMORY;
   }
-  entity->open = XML_TRUE;
+  entity->open = true;
   entity->hasMore = XML_TRUE;
 #if XML_GE == 1
   entityTrackingOnOpen(parser, entity, __LINE__);
@@ -6520,7 +6575,7 @@ internalEntityProcessor(XML_Parser parser, const char *s, const char *end,
   // to false. This means we can directly remove the head of
   // m_openInternalEntities
   assert(parser->m_openInternalEntities == openEntity);
-  entity->open = XML_FALSE;
+  entity->open = false;
   parser->m_openInternalEntities = parser->m_openInternalEntities->next;
 
   /* put openEntity back in list of free instances */
@@ -6598,7 +6653,7 @@ storeAttributeValue(XML_Parser parser, const ENCODING *enc, XML_Bool isCdata,
       // with hasMore set to false. This means we can directly remove the head
       // of m_openAttributeEntities
       assert(parser->m_openAttributeEntities == openEntity);
-      entity->open = XML_FALSE;
+      entity->open = false;
       parser->m_openAttributeEntities = parser->m_openAttributeEntities->next;
 
       /* put openEntity back in list of free instances */
@@ -6894,7 +6949,7 @@ storeEntityValue(XML_Parser parser, const ENCODING *enc,
         if (entity->systemId) {
           if (parser->m_externalEntityRefHandler) {
             dtd->paramEntityRead = XML_FALSE;
-            entity->open = XML_TRUE;
+            entity->open = true;
             entityTrackingOnOpen(parser, entity, __LINE__);
             beforeHandler(parser);
             const int status = parser->m_externalEntityRefHandler(
@@ -6903,12 +6958,12 @@ storeEntityValue(XML_Parser parser, const ENCODING *enc,
             afterHandler(parser);
             if (! status) {
               entityTrackingOnClose(parser, entity, __LINE__);
-              entity->open = XML_FALSE;
+              entity->open = false;
               result = XML_ERROR_EXTERNAL_ENTITY_HANDLING;
               goto endEntityValue;
             }
             entityTrackingOnClose(parser, entity, __LINE__);
-            entity->open = XML_FALSE;
+            entity->open = false;
             if (! dtd->paramEntityRead)
               dtd->keepProcessing = dtd->standalone;
           } else
@@ -7058,7 +7113,7 @@ callStoreEntityValue(XML_Parser parser, const ENCODING *enc,
       // with hasMore set to false. This means we can directly remove the head
       // of m_openValueEntities
       assert(parser->m_openValueEntities == openEntity);
-      entity->open = XML_FALSE;
+      entity->open = false;
       parser->m_openValueEntities = parser->m_openValueEntities->next;
 
       /* put openEntity back in list of free instances */
@@ -7239,7 +7294,7 @@ defineAttribute(ELEMENT_TYPE *type, ATTRIBUTE_ID *attId, XML_Bool isCdata,
     /* The handling of default attributes gets messed up if we have
        a default which duplicates a non-default. */
     NAMED *const nameFound
-        = lookup(parser, &(type->defaultAttsNames), attId->name, 0);
+        = lookup(parser, &(type->defaultAttForName), attId->name, 0);
     if (nameFound)
       return 1;
     if (isId && ! type->idAtt && ! attId->xmlns)
@@ -7275,10 +7330,23 @@ defineAttribute(ELEMENT_TYPE *type, ATTRIBUTE_ID *attId, XML_Bool isCdata,
   if (! isCdata)
     attId->maybeTokenized = XML_TRUE;
 
-  NAMED *const nameAddedOrFound
-      = lookup(parser, &(type->defaultAttsNames), attId->name, sizeof(NAMED));
-  if (! nameAddedOrFound)
+  NAME_AND_DEFAULT_ATTRIBUTE *const nameAndDefaultAttribute
+      = (NAME_AND_DEFAULT_ATTRIBUTE *)lookup(
+          parser, &(type->defaultAttForName), attId->name,
+          sizeof(NAME_AND_DEFAULT_ATTRIBUTE));
+  if (! nameAndDefaultAttribute)
     return 0;
+
+  assert(nameAndDefaultAttribute->name == attId->name);
+
+  // NOTE: The XML 1.0r4 spec says:
+  // "When more than one definition is provided for the same attribute of a
+  // given element type, the first declaration is binding and later
+  // declarations are ignored."
+  if (! nameAndDefaultAttribute->initialized) {
+    nameAndDefaultAttribute->attIndex = type->nDefaultAtts;
+    nameAndDefaultAttribute->initialized = true;
+  }
 
   type->nDefaultAtts += 1;
   return 1;
@@ -7480,7 +7548,7 @@ setContext(XML_Parser parser, const XML_Char *context) {
       e = (ENTITY *)lookup(parser, &dtd->generalEntities,
                            poolStart(&parser->m_tempPool), 0);
       if (e)
-        e->open = XML_TRUE;
+        e->open = true;
       if (*s != XML_T('\0'))
         s++;
       context = s;
@@ -7597,7 +7665,7 @@ dtdReset(DTD *p, XML_Parser parser) {
     ELEMENT_TYPE *e = (ELEMENT_TYPE *)hashTableIterNext(&iter);
     if (! e)
       break;
-    hashTableDestroy(&(e->defaultAttsNames));
+    hashTableDestroy(&(e->defaultAttForName));
     FREE(parser, e->defaultAtts);
   }
   hashTableClear(&(p->generalEntities));
@@ -7639,7 +7707,7 @@ dtdDestroy(DTD *p, XML_Bool isDocEntity, XML_Parser parser) {
     ELEMENT_TYPE *e = (ELEMENT_TYPE *)hashTableIterNext(&iter);
     if (! e)
       break;
-    hashTableDestroy(&(e->defaultAttsNames));
+    hashTableDestroy(&(e->defaultAttForName));
     FREE(parser, e->defaultAtts);
   }
   hashTableDestroy(&(p->generalEntities));
@@ -7732,8 +7800,8 @@ dtdCopy(XML_Parser oldParser, DTD *newDtd, const DTD *oldDtd,
     if (! newE)
       return 0;
 
-    if (! newE->defaultAttsNames.parser)
-      hashTableInit(&(newE->defaultAttsNames), parser);
+    if (! newE->defaultAttForName.parser)
+      hashTableInit(&(newE->defaultAttForName), parser);
 
     if (oldE->nDefaultAtts) {
       /* Detect and prevent integer overflow. */
@@ -7766,10 +7834,21 @@ dtdCopy(XML_Parser oldParser, DTD *newDtd, const DTD *oldDtd,
       } else
         newE->defaultAtts[i].value = NULL;
 
-      NAMED *const nameAddedOrFound = lookup(parser, &(newE->defaultAttsNames),
-                                             attributeName, sizeof(NAMED));
-      if (! nameAddedOrFound) {
+      NAME_AND_DEFAULT_ATTRIBUTE *const nameAndDefaultAttribute
+          = (NAME_AND_DEFAULT_ATTRIBUTE *)lookup(
+              parser, &(newE->defaultAttForName), attributeName,
+              sizeof(NAME_AND_DEFAULT_ATTRIBUTE));
+      if (! nameAndDefaultAttribute) {
         return 0;
+      }
+
+      // NOTE: The XML 1.0r4 spec says:
+      // "When more than one definition is provided for the same attribute of a
+      // given element type, the first declaration is binding and later
+      // declarations are ignored."
+      if (! nameAndDefaultAttribute->initialized) {
+        nameAndDefaultAttribute->attIndex = i;
+        nameAndDefaultAttribute->initialized = true;
       }
     }
   }
@@ -7867,19 +7946,23 @@ copyEntityTable(XML_Parser oldParser, HASH_TABLE *newTable,
 
 #define INIT_POWER 6
 
+// Compares two strings `s1` and `s2` whereas:
+// - `s2` is zero-terminated but
+// - `s1` is made up of exactly (not just up to) `s1len` non-zero characters.
 static XML_Bool FASTCALL
-keyeq(KEY s1, KEY s2) {
+keyeq(KEY s1, size_t s1len, KEY s2) {
 #ifdef XML_UNICODE
 #  ifdef XML_UNICODE_WCHAR_T
-  return (wcscmp(s1, s2) == 0) ? XML_TRUE : XML_FALSE;
+  return (wcsncmp(s1, s2, s1len) == 0 && s2[s1len] == L'\0') ? XML_TRUE
+                                                             : XML_FALSE;
 #  else
-  for (; *s1 == *s2; s1++, s2++)
-    if (*s1 == 0)
-      return XML_TRUE;
-  return XML_FALSE;
+  for (; s1len > 0 && *s1 == *s2; s1len--, s1++, s2++)
+    ; /* no loop body! */
+  return ((s1len == 0) && (*s2 == 0)) ? XML_TRUE : XML_FALSE;
 #  endif
 #else
-  return (strcmp(s1, s2) == 0) ? XML_TRUE : XML_FALSE;
+  return (strncmp(s1, s2, s1len) == 0 && s2[s1len] == '\0') ? XML_TRUE
+                                                            : XML_FALSE;
 #endif
 }
 
@@ -7897,18 +7980,38 @@ copy_salt_to_sipkey(XML_Parser parser, struct sipkey *key) {
 }
 
 static unsigned long FASTCALL
-hash(XML_Parser parser, KEY s) {
+hash(XML_Parser parser, KEY s, size_t keyLen) {
   struct siphash state;
   struct sipkey key;
   (void)sip24_valid;
   copy_salt_to_sipkey(parser, &key);
   sip24_init(&state, &key);
-  sip24_update(&state, s, keylen(s) * sizeof(XML_Char));
+  sip24_update(&state, s, keyLen * sizeof(XML_Char));
   return (unsigned long)sip24_final(&state);
 }
 
+// Function `lookupWithLength` can be used to either…
+//
+// a) check whether an element with key `name` exists in the given hash table
+//    (read-only mode where `createSize == 0`) or
+//
+// b) check whether an element with key `name` exists in the given hash table
+//    *and* insert it if missing (i.e. read-write mode where `createSize != 0`.
+//
+// When inserting, a block of `createSize` number of bytes will be allocated
+// and set to zero, and the resulting block of memory will be considered
+// to start with a `NAMED` structure, and `->name = name;` is performed.
+// The fact that all other bytes in the structure are initially zero can
+// be used to tell cases "existed and found" and "newly inserted" apart
+// with the structure returned.
+//
+// NOTE: Read-only lookup does not need zero-terminated keys but
+//       read-write mode does, because keys can be re-hashed later and the
+//       hash table does not store key length information.
+//
 static NAMED *
-lookup(XML_Parser parser, HASH_TABLE *table, KEY name, size_t createSize) {
+lookupWithLength(XML_Parser parser, HASH_TABLE *table, KEY name, size_t nameLen,
+                 size_t createSize) {
   size_t i;
   if (table->size == 0) {
     size_t tsize;
@@ -7924,14 +8027,14 @@ lookup(XML_Parser parser, HASH_TABLE *table, KEY name, size_t createSize) {
       return NULL;
     }
     memset(table->v, 0, tsize);
-    i = hash(parser, name) & ((unsigned long)table->size - 1);
+    i = hash(parser, name, nameLen) & ((unsigned long)table->size - 1);
   } else {
-    unsigned long h = hash(parser, name);
+    unsigned long h = hash(parser, name, nameLen);
     unsigned long mask = (unsigned long)table->size - 1;
     unsigned char step = 0;
     i = h & mask;
     while (table->v[i]) {
-      if (keyeq(name, table->v[i]->name))
+      if (keyeq(name, nameLen, table->v[i]->name))
         return table->v[i];
       if (! step)
         step = PROBE_STEP(h, mask, table->power);
@@ -7964,7 +8067,8 @@ lookup(XML_Parser parser, HASH_TABLE *table, KEY name, size_t createSize) {
       memset(newV, 0, tsize);
       for (i = 0; i < table->size; i++)
         if (table->v[i]) {
-          unsigned long newHash = hash(parser, table->v[i]->name);
+          KEY const key = table->v[i]->name;
+          unsigned long newHash = hash(parser, key, keylen(key));
           size_t j = newHash & newMask;
           step = 0;
           while (newV[j]) {
@@ -7987,13 +8091,34 @@ lookup(XML_Parser parser, HASH_TABLE *table, KEY name, size_t createSize) {
       }
     }
   }
+  assert(createSize >= sizeof(NAMED));
   table->v[i] = MALLOC(table->parser, createSize);
   if (! table->v[i])
     return NULL;
   memset(table->v[i], 0, createSize);
-  table->v[i]->name = name;
+  table->v[i]->name = name; // NOTE: This requires and assumes zero termination!
   (table->used)++;
   return table->v[i];
+}
+
+// Function `lookup` can be used to either…
+//
+// a) check whether an element with key `name` exists in the given hash table
+//    (read-only mode where `createSize == 0`) or
+//
+// b) check whether an element with key `name` exists in the given hash table
+//    *and* insert it if missing (i.e. read-write mode where `createSize != 0`.
+//
+// When inserting, a block of `createSize` number of bytes will be allocated
+// and set to zero, and the resulting block of memory will be considered
+// to start with a `NAMED` structure, and `->name = name;` is performed.
+// The fact that all other bytes in the structure are initially zero can
+// be used to tell cases "existed and found" and "newly inserted" apart
+// with the structure returned.
+//
+static NAMED *
+lookup(XML_Parser parser, HASH_TABLE *table, KEY name, size_t createSize) {
+  return lookupWithLength(parser, table, name, keylen(name), createSize);
 }
 
 static void FASTCALL
@@ -8535,8 +8660,8 @@ getElementType(XML_Parser parser, const ENCODING *enc, const char *ptr,
                                sizeof(ELEMENT_TYPE));
   if (! ret)
     return NULL;
-  if (! ret->defaultAttsNames.parser)
-    hashTableInit(&(ret->defaultAttsNames), getRootParserOf(parser, NULL));
+  if (! ret->defaultAttForName.parser)
+    hashTableInit(&(ret->defaultAttForName), getRootParserOf(parser, NULL));
   if (ret->name != name)
     poolDiscard(&dtd->pool);
   else {
