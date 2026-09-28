@@ -638,6 +638,11 @@ EXPORT(long long) _testfunc_callback_q_qf(long long value,
     return sum;
 }
 
+EXPORT(long long) _testfunc_callback_int_to_longlong(int (*func)(void))
+{
+    return func();
+}
+
 typedef struct {
     char *name;
     char *value;

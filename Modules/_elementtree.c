@@ -612,33 +612,41 @@ element_get_tail(ElementObject* self)
     return Py_NewRef(res);
 }
 
-static PyObject*
-subelement(PyObject *self, PyObject *args, PyObject *kwds)
+/*[clinic input]
+_elementtree.SubElement
+
+    parent: object(subclass_of='get_elementtree_state(module)->Element_Type')
+    tag: object
+    attrib: object(subclass_of='&PyDict_Type', c_default='NULL') = {}
+    /
+    **extra: dict
+
+Create a new subelement of the parent element.
+[clinic start generated code]*/
+
+static PyObject *
+_elementtree_SubElement_impl(PyObject *module, PyObject *parent,
+                             PyObject *tag, PyObject *attrib,
+                             PyObject *extra)
+/*[clinic end generated code: output=42e8a4ebc5db08aa input=8588fc68283cdaa0]*/
 {
     PyObject* elem;
 
-    elementtreestate *st = get_elementtree_state(self);
-    ElementObject* parent;
-    PyObject* tag;
-    PyObject* attrib = NULL;
-    if (!PyArg_ParseTuple(args, "O!O|O!:SubElement",
-                          st->Element_Type, &parent, &tag,
-                          &PyDict_Type, &attrib)) {
-        return NULL;
-    }
+    elementtreestate *st = get_elementtree_state(module);
+    ElementObject* parent_elem = (ElementObject *)parent;
 
     if (attrib) {
         /* attrib passed as positional arg */
         attrib = PyDict_Copy(attrib);
         if (!attrib)
             return NULL;
-        if (kwds != NULL && PyDict_Update(attrib, kwds) < 0) {
+        if (PyDict_Update(attrib, extra) < 0) {
             Py_DECREF(attrib);
             return NULL;
         }
-    } else if (kwds) {
+    } else if (PyDict_GET_SIZE(extra)) {
         /* have keyword args */
-        attrib = get_attrib_from_keywords(kwds);
+        attrib = get_attrib_from_keywords(extra);
         if (!attrib)
             return NULL;
     } else {
@@ -650,7 +658,7 @@ subelement(PyObject *self, PyObject *args, PyObject *kwds)
     if (elem == NULL)
         return NULL;
 
-    if (element_add_subelement(st, parent, elem) < 0) {
+    if (element_add_subelement(st, parent_elem, elem) < 0) {
         Py_DECREF(elem);
         return NULL;
     }
@@ -4547,7 +4555,7 @@ static PyType_Spec xmlparser_spec = {
 /* python module interface */
 
 static PyMethodDef _functions[] = {
-    {"SubElement", _PyCFunction_CAST(subelement), METH_VARARGS | METH_KEYWORDS},
+    _ELEMENTTREE_SUBELEMENT_METHODDEF
     _ELEMENTTREE__SET_FACTORIES_METHODDEF
     {NULL, NULL}
 };

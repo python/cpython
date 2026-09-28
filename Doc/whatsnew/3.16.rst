@@ -712,6 +712,16 @@ tkinter
   with no unit suffix to :class:`int` or :class:`float`.
   (Contributed by Serhiy Storchaka in :gh:`153513`.)
 
+
+turtle
+------
+
+* Translations of the :mod:`turtle` docstrings are now distributed on PyPI
+  in the :pypi:`turtle-translations` package. Additionally, added the
+  :envvar:`PYTHON_TURTLE_LANG` environment variable to select the language.
+  (Contributed by Stan Ulbrych in :gh:`156360`.)
+
+
 unicodedata
 -----------
 
@@ -1127,6 +1137,14 @@ Deprecated C APIs
 * :c:func:`PyGen_New`, :c:func:`PyGen_NewWithQualName`, :c:func:`PyCoro_New`,
   and :c:func:`PyAsyncGen_New` are deprecated.
   They are scheduled for removal in 3.18.
+
+* Deprecate :c:func:`PyInitConfig_GetExitCode`, :c:func:`PyStatus_Exit`,
+  and :c:func:`PyStatus_IsExit` functions, and :c:member:`PyStatus.exitcode`
+  member. :c:func:`Py_InitializeFromInitConfig` and
+  :c:func:`Py_InitializeFromConfig` can no longer return an exit code.
+  Instead, if a command line option wants to exit Python, the option is
+  now processed in :c:func:`Py_RunMain`.
+  (Contributed by Victor Stinner in :gh:`158080`.)
 
 * :c:func:`PyModule_GetFilename` is no longer deprecated, but using
   :c:func:`PyModule_GetFilenameObject` instead is still recommended.

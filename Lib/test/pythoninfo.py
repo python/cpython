@@ -917,18 +917,17 @@ def collect_support_threading_helper(info_add):
     copy_attributes(info_add, threading_helper, 'support_threading_helper.%s', attributes)
 
 
-def collect_cc(info_add):
+def get_compiler_version(sysconfig_var):
     import sysconfig
-
-    CC = sysconfig.get_config_var('CC')
-    if not CC:
+    program = sysconfig.get_config_var(sysconfig_var)
+    if not program:
         return
 
     try:
         import shlex
-        args = shlex.split(CC)
+        args = shlex.split(program)
     except ImportError:
-        args = CC.split()
+        args = program.split()
     args.append('--version')
 
     stdout = run_command(args)
@@ -942,7 +941,21 @@ def collect_cc(info_add):
 
     text = first_line(stdout)
     text = normalize_text(text)
-    info_add('CC.version', text)
+    if text:
+        text = f'[{program}] {text}'
+    return text
+
+
+def collect_cc(info_add):
+    # C compiler
+    version = get_compiler_version('CC')
+    if version:
+        info_add('CC.version', version)
+
+    # C++ compiler
+    version = get_compiler_version('CXX')
+    if version:
+        info_add('CXX.version', version)
 
 
 def collect_gdbm(info_add):
