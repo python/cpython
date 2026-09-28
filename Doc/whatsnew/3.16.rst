@@ -151,6 +151,13 @@ concurrent.futures
   Use method :meth:`!close` to explicitly close the iterator.
   (Contributed by xzmeng and Serhiy Storchaka in :gh:`108518`.)
 
+concurrent.interpreters
+-----------------------
+
+* :class:`~concurrent.interpreters.Interpreter` objects now support the
+  :term:`context manager` protocol. Exiting the :keyword:`with` block calls
+  :meth:`~concurrent.interpreters.Interpreter.close`.
+  (Contributed by Peter Bierma in :gh:`158370`.)
 
 csv
 ---
