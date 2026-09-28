@@ -951,6 +951,9 @@ class DSLParser:
             self.deprecated_until = self.parse_version(match[1], 'until')
             line = match[2]
 
+        if not self.expecting_parameters:
+            fail(f'parameters cannot follow var-keyword parameter: {line!r}')
+
         func = self.function
         match line:
             case '*':
@@ -966,10 +969,6 @@ class DSLParser:
 
     def parse_parameter(self, line: str) -> None:
         assert self.function is not None
-
-        if not self.expecting_parameters:
-            fail('Encountered parameter line when not expecting '
-                 f'parameters: {line}')
 
         match self.parameter_state:
             case ParamState.START | ParamState.REQUIRED:
@@ -1021,8 +1020,9 @@ class DSLParser:
                 for p in self.function.parameters.values()
             )
             if has_non_positional_param:
-                fail(f"Function {self.function.name!r} has an "
-                     f"invalid parameter declaration (**kwargs?): {line!r}")
+                fail(f'Function {self.function.name!r} cannot use a var-keyword '
+                     f'parameter with pos-or-keyword or keyword-only '
+                     f'parameters.')
             is_var_keyword = True
             parameter = function_args.kwarg
         else:
@@ -1161,6 +1161,9 @@ class DSLParser:
 
         kind: inspect._ParameterKind
         if is_vararg:
+            if self.group_stack:
+                fail("A var-positional parameter cannot be in an optional "
+                     "group.")
             if any(p.group for p in self.function.parameters.values()):
                 # With "foo([a, b], *args)" the number of arguments does not
                 # tell whether the group is passed or all arguments belong
@@ -1169,6 +1172,9 @@ class DSLParser:
                      f"groups with a var-positional parameter.")
             kind = inspect.Parameter.VAR_POSITIONAL
         elif is_var_keyword:
+            if self.group_stack:
+                fail("A var-keyword parameter cannot be in an optional "
+                     "group.")
             kind = inspect.Parameter.VAR_KEYWORD
         elif self.keyword_only:
             kind = inspect.Parameter.KEYWORD_ONLY
@@ -1287,9 +1293,6 @@ class DSLParser:
         The 'version' parameter signifies the future version from which
         the marker will take effect (None means it is already in effect).
         """
-        if not self.expecting_parameters:
-            fail("Encountered '*' when not expecting parameters")
-
         if version is None:
             self.check_previous_star()
             self.check_remaining_star()
@@ -1356,9 +1359,6 @@ class DSLParser:
         The 'version' parameter signifies the future version from which
         the marker will take effect (None means it is already in effect).
         """
-        if not self.expecting_parameters:
-            fail("Encountered '/' when not expecting parameters")
-
         if version is None:
             if self.deprecated_keyword:
                 fail(f"Function {function.name!r}: '/' must precede '/ [from ...]'")
