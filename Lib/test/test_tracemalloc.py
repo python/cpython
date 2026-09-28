@@ -626,6 +626,20 @@ class TestSnapshot(unittest.TestCase):
             tracemalloc.Statistic(tb_a_5, 2, 1),
         ])
 
+    def test_compare_grouped_stats_no_mutation(self):
+        tb_a = traceback_lineno('a.py', 1)
+        tb_b = traceback_lineno('b.py', 1)
+        old = {
+            tb_a: tracemalloc.Statistic(tb_a, 100, 2),
+            tb_b: tracemalloc.Statistic(tb_b, 50, 1),
+        }
+        new = {
+            tb_a: tracemalloc.Statistic(tb_a, 200, 3),
+        }
+        old_copy = dict(old)
+        tracemalloc._compare_grouped_stats(old, new)
+        self.assertEqual(old, old_copy)
+
     def test_trace_format(self):
         snapshot, snapshot2 = create_snapshots()
         trace = snapshot.traces[0]

@@ -1,0 +1,3 @@
+Fix :func:`tracemalloc._compare_grouped_stats` mutating its *old_group*
+argument. Also fix a typo in a :mod:`tracemalloc` error message:
+"cannot by used" → "cannot be used".
