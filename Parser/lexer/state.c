@@ -1,59 +1,10 @@
 #include "Python.h"
-#include "pycore_pystate.h"
 #include "pycore_token.h"
 #include "errcode.h"
 
 #include "state.h"
 #include "../tokenizer/helpers.h"
 #include "../tokenizer/reader.h"
-
-/* Create and initialize a new tok_state structure */
-struct tok_state *
-_PyTokenizer_tok_new(void)
-{
-    struct tok_state *tok = (struct tok_state *)PyMem_Calloc(
-                                            1,
-                                            sizeof(struct tok_state));
-    if (tok == NULL) {
-        PyErr_NoMemory();
-        return NULL;
-    }
-
-    tok->buf = tok->cur = tok->inp = NULL;
-    tok->fp_interactive = 0;
-    tok->interactive_src_start = NULL;
-    tok->interactive_src_end = NULL;
-    tok->start = NULL;
-    tok->done = E_OK;
-    tok->fp = NULL;
-    tok->indent = 0;
-    tok->indstack[0] = 0;
-    tok->atbol = 1;
-    tok->pendin = 0;
-    tok->prompt = NULL;
-    tok->lineno = 0;
-    tok->start_loc = (_PyTok_Loc){-1, -1};
-    tok->level = 0;
-    tok->altindstack[0] = 0;
-    tok->encoding = NULL;
-    tok->filename = NULL;
-    tok->module = NULL;
-    tok->type_comments = 0;
-    tok->interactive_underflow = IUNDERFLOW_NORMAL;
-    tok->str = NULL;
-    tok->report_warnings = 1;
-    tok->tok_extra_tokens = 0;
-    tok->comment_newline = 0;
-    tok->implicit_newline = 0;
-    _PyTok_SourceInit(&tok->source);
-    tok->reader = NULL;
-    tok->ftstring_stack = tok->ftstring_stack_inline;
-    tok->ftstring_capacity = FTSTRING_STACK_INLINE_CAPACITY;
-#ifdef Py_DEBUG
-    tok->debug = _Py_GetConfig()->parser_debug;
-#endif
-    return tok;
-}
 
 ftstring_state *
 _PyLexer_PushFTString(struct tok_state *tok)
@@ -124,26 +75,23 @@ _PyTokenizer_Free(struct tok_state *tok)
 }
 
 void
-_PyToken_Free(struct token *token) {
-    Py_XDECREF(token->metadata);
-}
-
-void
 _PyToken_Init(struct token *token) {
-#ifdef Py_DEBUG
-    token->span = (_PyTok_Span){-1, -1};
-    token->start_loc = (_PyTok_Loc){-1, -1};
-    token->end_loc = (_PyTok_Loc){-1, -1};
-#endif
-    token->metadata = NULL;
+    *token = (struct token){
+        .type = -1,
+        .span = {-1, -1},
+        .start_loc = {-1, -1},
+        .end_loc = {-1, -1},
+    };
 }
 
 int
-_PyLexer_token_setup(struct tok_state *tok, struct token *token, int type, const char *start, const char *end)
+_PyLexer_token_setup(struct tok_state *tok, struct token *token, int type, _PyTok_Off start, _PyTok_Off end)
 {
     token->level = tok->level;
-    token->span = _PyLexer_BufferSpan(tok, start, end);
-    if (start != NULL && end != NULL) {
+    token->is_raw = 0;
+    assert((start == -1 && end == -1) || (start >= 0 && end >= start));
+    token->span = (_PyTok_Span){start, end};
+    if (start >= 0) {
         token->start_loc = tok->start_loc;
         token->end_loc = (_PyTok_Loc){tok->lineno, _PyLexer_ByteColumn(tok)};
     }

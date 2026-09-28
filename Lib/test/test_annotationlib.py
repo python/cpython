@@ -1869,7 +1869,7 @@ class TestTypeRepr(unittest.TestCase):
         self.assertEqual(type_repr(t'''{ 0
             & 1
             | 2
-        }'''), 't"""{ 0\n            & 1\n            | 2}"""')
+        }'''), 't"""{ 0\n            & 1\n            | 2\n        }"""')
         self.assertEqual(
             type_repr(Template("hi", Interpolation(42, "42"))), "t'hi{42}'"
         )

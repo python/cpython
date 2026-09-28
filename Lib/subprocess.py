@@ -1629,21 +1629,31 @@ class Popen:
             assert not pass_fds, "pass_fds not supported on Windows."
 
             if isinstance(args, str):
-                pass
+                # Filename is the program only. Later arguments can
+                # hold secrets. A leading quote ends at the next quote.
+                # Otherwise stop at the first space.
+                if args[:1] == '"':
+                    end = args.find('"', 1)
+                    orig_filename = args[1:end] if end != -1 else args
+                else:
+                    orig_filename = args.split(' ', 1)[0]
             elif isinstance(args, bytes):
                 if shell:
                     raise TypeError('bytes args is not allowed on Windows')
+                orig_filename = os.fsdecode(args)
                 args = list2cmdline([args])
             elif isinstance(args, os.PathLike):
                 if shell:
                     raise TypeError('path-like args is not allowed when '
                                     'shell is true')
+                orig_filename = os.fsdecode(args)
                 args = list2cmdline([args])
             else:
+                args = list(args)
+                orig_filename = os.fsdecode(args[0]) if args else None
                 args = list2cmdline(args)
-
             if executable is not None:
-                executable = os.fsdecode(executable)
+                orig_filename = executable = os.fsdecode(executable)
 
             # Process startup details
             if startupinfo is None:
@@ -1725,6 +1735,19 @@ class Popen:
                                          env,
                                          cwd,
                                          startupinfo)
+            except OSError as e:
+                # gh-119646: POSIX already puts the attempted path on
+                # OSError.filename. Windows CreateProcess did not, so
+                # failures (missing exe, WSL paths, invalid cwd) were
+                # reported without naming the command.
+                if e.filename is None:
+                    # ERROR_DIRECTORY (267): CreateProcess rejected cwd.
+                    if cwd is not None and e.winerror == 267:
+                        name = cwd
+                    else:
+                        name = orig_filename
+                    raise type(e)(e.errno, e.strerror, name, e.winerror) from None
+                raise
             finally:
                 # Child is launched. Close the parent's copy of those pipe
                 # handles that only the child should have open.  You need

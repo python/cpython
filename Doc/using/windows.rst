@@ -943,7 +943,7 @@ checking for that feed.
    }
 
 
-Proxy Settings
+Proxy settings
 --------------
 
 .. versionadded:: 26.4
@@ -1345,14 +1345,15 @@ UTF-8 mode
    Python UTF-8 mode is now enabled by default (:pep:`686`).
 
 Windows still uses legacy encodings for the system encoding (the ANSI Code
-Page).  Python uses it for the default encoding of text files (e.g.
-:func:`locale.getencoding`).
+Page).  When the :ref:`Python UTF-8 Mode <utf8-mode>` is disabled, Python
+uses the ANSI Code Page as the default encoding of text files, as
+returned by :func:`locale.getencoding`.
 
 This may cause issues because UTF-8 is widely used on the internet
 and most Unix systems, including WSL (Windows Subsystem for Linux).
 
-The :ref:`Python UTF-8 Mode <utf8-mode>`, enabled by default, can help by
-changing the default text encoding to UTF-8.
+The :ref:`Python UTF-8 Mode <utf8-mode>`, enabled by default, ignores the
+system encoding and uses UTF-8 as the default text encoding.
 When the :ref:`UTF-8 mode <utf8-mode>` is enabled, you can still use the
 system encoding (the ANSI Code Page) via the "mbcs" codec.
 

@@ -48,6 +48,26 @@ def requires_curses_window_meth(name):
 
 WIDE_BUILD = import_module('_curses')._wide_character_support
 
+def encodable(s, encoding):
+    # Wide characters are only supported in a locale that can encode them.
+    try:
+        s.encode(encoding)
+    except UnicodeEncodeError:
+        return False
+    return True
+
+def storable(s, encoding):
+    # Text the current build can place in character cells.  A wide build
+    # stores any locale-encodable text (combining sequences and multibyte
+    # characters included).  A narrow build has no wide-character cells, so
+    # each character must occupy a single cell -- that is, encode to exactly
+    # one byte.
+    if not encodable(s, encoding):
+        return False
+    if WIDE_BUILD:
+        return True
+    return len(s.encode(encoding)) == len(s)
+
 def requires_wide_build(test):
     @functools.wraps(test)
     def wrapped(self, *args, **kwargs):
@@ -387,24 +407,10 @@ class TestCurses(unittest.TestCase):
     # combining sequence or a multibyte character are guarded with _storable().
 
     def _encodable(self, s):
-        # Wide characters are only supported in a locale that can encode them.
-        try:
-            s.encode(self.stdscr.encoding)
-        except UnicodeEncodeError:
-            return False
-        return True
+        return encodable(s, self.stdscr.encoding)
 
     def _storable(self, s):
-        # Text the current build can place in character cells.  A wide build
-        # stores any locale-encodable text (combining sequences and multibyte
-        # characters included).  A narrow build has no wide-character cells, so
-        # each character must occupy a single cell -- that is, encode to exactly
-        # one byte.
-        if not self._encodable(s):
-            return False
-        if WIDE_BUILD:
-            return True
-        return len(s.encode(self.stdscr.encoding)) == len(s)
+        return storable(s, self.stdscr.encoding)
 
     def _char_code(self, ch):
         # The integer the int-input API (addch(int), do_command()) uses for a
@@ -1124,7 +1130,11 @@ class TestCurses(unittest.TestCase):
         # A cell holding a NUL reads back as the cell that writes it.
         win = curses.newwin(3, 8, 0, 0)
         win.insch(0, 0, '\0')
-        self.assertEqual(win.in_wch(0, 0), cell)
+        if WIDE_BUILD:
+            self.assertEqual(win.in_wch(0, 0), cell)
+        else:
+            # A narrow build inserts a NUL as "^@".
+            self.assertEqual(str(win.in_wch(0, 0)), '^')
         # A string of cells cannot hold a NUL: it would end a batch write.
         self.assertRaises(ValueError, curses.complexstr, 'a\0b')
         self.assertRaises(ValueError, curses.complexstr, '\0')
@@ -2431,6 +2441,22 @@ class TestCurses(unittest.TestCase):
         panel.set_userptr(A())
         panel.set_userptr(None)
 
+    @requires_curses_func('panel')
+    def test_userptr_dealloc_segfault(self):
+        w = curses.newwin(10, 10)
+        panel = curses.panel.new_panel(w)
+        seen = []
+        class A:
+            def __del__(self):
+                # The panel is being deallocated, so it must already be off
+                # the stack: handing it back here would resurrect an object
+                # whose refcount is zero -- segfaults.
+                seen.append(curses.panel.top_panel() is None)
+        panel.set_userptr(A())
+        del panel
+        gc_collect()
+        self.assertEqual(seen, [True])
+
     @cpython_only
     @requires_curses_func('panel')
     def test_disallow_instantiation(self):
@@ -3465,6 +3491,44 @@ class ScreenTests(NewtermTestBase):
         # The current screen is unchanged.
         screen.stdscr.refresh()
 
+    @unittest.skipUnless(hasattr(curses, 'new_prescr'),
+                         'requires curses.new_prescr()')
+    def test_new_prescr_returns_existing_screen(self):
+        pre1 = curses.new_prescr()
+        pre2 = curses.new_prescr()
+        self.assertIs(pre1, pre2)
+
+    @unittest.skipUnless(hasattr(curses, 'new_prescr'),
+                         'requires curses.new_prescr()')
+    def test_newterm_after_new_prescr_keeps_screen_alive(self):
+        # newterm() adopts the SCREEN created by new_prescr().  Dropping the
+        # pre-screen wrapper must not delete the live screen.
+        s = self.make_pty()
+        pre = curses.new_prescr()
+        screen = curses.newterm('xterm', s, s)
+        del pre
+        gc_collect()
+        screen.stdscr.addstr(0, 0, 'x')
+        screen.stdscr.refresh()
+
+    @unittest.skipUnless(hasattr(curses, 'new_prescr'),
+                         'requires curses.new_prescr()')
+    def test_initscr_after_new_prescr_keeps_screen_alive(self):
+        # initscr() adopts the SCREEN created by new_prescr().  Dropping the
+        # pre-screen wrapper must not delete the live screen.
+        s = self.make_pty()
+        saved = os.dup(1)
+        self.addCleanup(os.close, saved)
+        self.addCleanup(os.dup2, saved, 1)
+        os.dup2(s, 1)
+
+        pre = curses.new_prescr()
+        stdscr = curses.initscr()
+        del pre
+        gc_collect()
+        stdscr.addstr(0, 0, 'x')
+        stdscr.refresh()
+
     def test_initscr_after_newterm_keeps_screen_alive(self):
         # initscr() called while a newterm() screen is current returns that
         # screen's own standard window, so the window keeps the screen alive.
@@ -3539,10 +3603,8 @@ class SLKTests(NewtermTestBase):
     def test_set_wide(self):
         screen = self.make_slk_screen()
         label = 'Ångström'
-        try:
-            label.encode(screen.stdscr.encoding)
-        except UnicodeEncodeError:
-            self.skipTest('the locale cannot encode %r' % label)
+        if not storable(label, screen.stdscr.encoding):
+            self.skipTest('cannot store %r in this locale' % label)
         curses.slk_set(1, label, 0)
         # The label can be truncated to fit the soft label width, e.g. in the
         # EUC-JP locale, where "Å" and "ö" are double-width JIS X 0212
