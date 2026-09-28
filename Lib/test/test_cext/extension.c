@@ -82,6 +82,7 @@ static PyObject *
 test_macros(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
 {
     PyObject *obj, *dict;
+    PyObject *slots[1];
 
     // test Py_BUILD_ASSERT() and Py_BUILD_ASSERT_EXPR()
     Py_BUILD_ASSERT(sizeof(int) == sizeof(unsigned int));
@@ -97,16 +98,31 @@ test_macros(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     Py_CLEAR(obj);
     assert(obj == _Py_NULL);
 
+    // gh-157649: Test Py_CLEAR() on an array
+    slots[0] = Py_None;
+    Py_CLEAR(slots[0]);
+    assert(slots[0] == _Py_NULL);
+
 #ifndef Py_LIMITED_API
     // Test Py_SETREF(): use typeof()/__typeof__() if available, or memcpy()
     obj = Py_None;
     Py_SETREF(obj, _Py_NULL);
     assert(obj == _Py_NULL);
 
+    // gh-157649: Test Py_SETREF() on an array
+    slots[0] = Py_None;
+    Py_SETREF(slots[0], _Py_NULL);
+    assert(slots[0] == _Py_NULL);
+
     // Test Py_XSETREF(): use typeof()/__typeof__() if available, or memcpy()
     obj = Py_None;
     Py_XSETREF(obj, _Py_NULL);
     assert(obj == _Py_NULL);
+
+    // gh-157649: Test Py_XSETREF() on an array
+    slots[0] = Py_None;
+    Py_XSETREF(slots[0], _Py_NULL);
+    assert(slots[0] == _Py_NULL);
 #endif
 
     // Test that Py_BEGIN_CRITICAL_SECTION is available
