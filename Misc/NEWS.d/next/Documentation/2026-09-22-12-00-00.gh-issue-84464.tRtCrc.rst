@@ -1,0 +1,2 @@
+Clarify the documentation of :func:`turtle.circle`: the sign of *extent*
+also affects whether the arc is drawn clockwise or counterclockwise.
