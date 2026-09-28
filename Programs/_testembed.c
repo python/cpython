@@ -23,9 +23,16 @@ extern void PySys_AddWarnOption(const wchar_t *s);
 extern void PySys_AddXOption(const wchar_t *s);
 extern void Py_SetPath(const wchar_t *path);
 
+// Functions removed from Python 3.16 API but still exported for the stable
+// ABI.
+extern void Py_SetPythonHome(const wchar_t *);
+
 // These functions were removed from Python 3.15 API but are still exported
 // for the stable ABI. We want to test them in this program.
 extern void PySys_ResetWarnOptions(void);
+
+// Variable removed from Python 3.16 limited C API, but kept in the stable ABI
+PyAPI_DATA(int) Py_UTF8Mode;
 
 
 int main_argc;
@@ -1715,7 +1722,7 @@ static int test_initconfig_api(void)
         goto error;
     }
 
-    // Set a list of UTF-8 strings (argv)
+    // Set a list of UTF-8 strings (xoptions)
     char* xoptions[] = {"faulthandler"};
     if (PyInitConfig_SetStrList(config, "xoptions",
                                 Py_ARRAY_LENGTH(xoptions), xoptions) < 0) {
@@ -1807,29 +1814,25 @@ static int test_initconfig_get_api(void)
 
 static int test_initconfig_exit(void)
 {
+    // -h command line option is stored as PyConfig._deferred_cmdline_option
     PyInitConfig *config = PyInitConfig_Create();
     if (config == NULL) {
         printf("Init allocation error\n");
         return 1;
     }
 
-    char *argv[] = {PROGRAM_NAME_UTF8, "--help"};
+    char *argv[] = {PROGRAM_NAME_UTF8, "-h"};
     assert(PyInitConfig_SetStrList(config, "argv",
                                    Py_ARRAY_LENGTH(argv), argv) == 0);
-
     assert(PyInitConfig_SetInt(config, "parse_argv", 1) == 0);
 
-    assert(Py_InitializeFromInitConfig(config) < 0);
-
-    int exitcode;
-    assert(PyInitConfig_GetExitCode(config, &exitcode) == 1);
-    assert(exitcode == 0);
-
-    const char *err_msg;
-    assert(PyInitConfig_GetError(config, &err_msg) == 1);
-    assert(strcmp(err_msg, "exit code 0") == 0);
-
+    assert(Py_InitializeFromInitConfig(config) == 0);
     PyInitConfig_Free(config);
+
+    const PyConfig *rt_config = _Py_GetConfig();
+    assert(rt_config->_deferred_cmdline_option == 'h');
+
+    Py_Finalize();
     return 0;
 }
 
