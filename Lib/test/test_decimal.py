@@ -4331,7 +4331,7 @@ class ContextInputValidation:
 
         # Attributes cannot be deleted
         for attr in ['prec', 'Emax', 'Emin', 'rounding', 'capitals', 'clamp',
-                     'flags', 'traps']:
+                     'flags', 'traps', '_allcr', '_flags', '_traps']:
             self.assertRaises(AttributeError, c.__delattr__, attr)
 
         # Invalid attributes

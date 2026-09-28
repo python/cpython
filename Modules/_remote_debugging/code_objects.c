@@ -32,9 +32,12 @@ get_tlbc_cache_entry(RemoteUnwinderObject *self, uintptr_t code_addr, uint32_t c
     TLBCCacheEntry *entry = _Py_hashtable_get(self->tlbc_cache, key);
 
     if (entry && entry->generation != current_generation) {
-        // Entry is stale, remove it by setting to NULL
-        _Py_hashtable_set(self->tlbc_cache, key, NULL);
-        entry = NULL;
+        // Entry is stale, remove it from the cache and destroy it
+        TLBCCacheEntry *old = _Py_hashtable_steal(self->tlbc_cache, key);
+        if (old != NULL) {
+            tlbc_cache_entry_destroy(old);
+        }
+        return NULL;
     }
 
     return entry;
@@ -447,6 +450,22 @@ parse_code_object(RemoteUnwinderObject *unwinder,
             goto error;
         }
         tlbc_entry = get_tlbc_cache_entry(unwinder, real_address, unwinder->tlbc_generation);
+    }
+
+    if (tlbc_entry && ctx->tlbc_index >= 0) {
+        uintptr_t *entries = (uintptr_t *)((char *)tlbc_entry->tlbc_array + sizeof(Py_ssize_t));
+        if (ctx->tlbc_index >= tlbc_entry->tlbc_array_size ||
+            entries[ctx->tlbc_index] == 0) {
+            TLBCCacheEntry *old = _Py_hashtable_steal(unwinder->tlbc_cache, (void *)real_address);
+            if (old != NULL) {
+                tlbc_cache_entry_destroy(old);
+            }
+            if (!cache_tlbc_array(unwinder, real_address, real_address + unwinder->debug_offsets.code_object.co_tlbc,
+                                unwinder->tlbc_generation)) {
+                goto error;
+            }
+            tlbc_entry = get_tlbc_cache_entry(unwinder, real_address, unwinder->tlbc_generation);
+        }
     }
 
     // Validate tlbc_index and check TLBC cache
