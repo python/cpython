@@ -264,8 +264,11 @@ class VirtualPyObject : public PyObject {
 public:
     VirtualPyObject();
     virtual ~VirtualPyObject() {
+        PyTypeObject *type = Py_TYPE(this);
         delete [] internal_data;
         --instance_count;
+        // Do not call type->tp_free(this), C++ manages the memory
+        Py_DECREF(type);
     }
     virtual void set_internal_data() {
         internal_data[0] = 1;
@@ -295,7 +298,7 @@ _Py_COMP_DIAG_PUSH
 #endif
 
 PyType_Slot VirtualPyObject_Slots[] = {
-    {Py_tp_free, (void*)VirtualPyObject::dealloc},
+    {Py_tp_dealloc, (void*)VirtualPyObject::dealloc},
     {0, _Py_NULL},
 };
 
@@ -333,6 +336,10 @@ test_virtual_object(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
             "instance_count should be 0, got %d",
             VirtualPyObject::instance_count);
     }
+
+    // Force a garbage collection to delete the temporary heap type
+    // used by this test
+    PyGC_Collect();
     Py_RETURN_NONE;
 }
 #endif  // __cplusplus && !Py_TARGET_ABI3T
@@ -356,8 +363,6 @@ static PyMethodDef module_methods[] = {
 static int
 module_exec(PyObject *module)
 {
-    PyObject *result;
-
 #ifdef __STDC_VERSION__
     if (PyModule_AddIntMacro(module, __STDC_VERSION__) < 0) {
         return -1;
@@ -368,31 +373,13 @@ module_exec(PyObject *module)
         return -1;
     }
 #endif
-
-    result = PyObject_CallMethod(module, "test_macros", "");
-    if (!result) return -1;
-    Py_DECREF(result);
-
-    result = PyObject_CallMethod(module, "test_datetime", "");
-    if (!result) return -1;
-    Py_DECREF(result);
-
-    result = PyObject_CallMethod(module, "test_unicode", "");
-    if (!result) return -1;
-    Py_DECREF(result);
-
-#ifdef __cplusplus
-    result = PyObject_CallMethod(module, "test_api_casts", "");
-    if (!result) return -1;
-    Py_DECREF(result);
+#ifdef _MSVC_LANG
+    if (PyModule_AddIntMacro(module, _MSVC_LANG) < 0) {
+        return -1;
+    }
 #endif
-
-#if defined(__cplusplus) && !defined(Py_TARGET_ABI3T)
-    result = PyObject_CallMethod(module, "test_virtual_object", "");
-    if (!result) return -1;
-    Py_DECREF(result);
-#endif
-
+    // Ignore "unused argument" warning when none of these macros is defined
+    (void)module;
     return 0;
 }
 
