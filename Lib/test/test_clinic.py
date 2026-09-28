@@ -2106,6 +2106,28 @@ class ClinicParserTest(TestCase):
         err = "Function 'empty_group' has a ']' without a matching '['"
         self.expect_failure(block, err)
 
+    def test_disallowed_grouping__varpos(self):
+        err = "cannot use optional groups with a var-positional parameter"
+        block = """
+            module foo
+            foo.bar
+                [
+                a: int
+                ]
+                *args: tuple
+        """
+        self.expect_failure(block, err, lineno=5)
+        block = """
+            module foo
+            foo.bar
+                a: int
+                *args: tuple
+                [
+                b: int
+                ]
+        """
+        self.expect_failure(block, err, lineno=4)
+
     def test_disallowed_grouping__must_be_position_only(self):
         dataset = ("""
             with_kwds
