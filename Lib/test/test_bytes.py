@@ -1138,6 +1138,12 @@ class BaseBytesTest:
         c = b.translate(None, b'e')
         self.assertEqual(c, b'hllo')
 
+        # short inputs starting with NUL bytes
+        table = bytes.maketrans(b'\x00', b'Z')
+        for data in b'\x00', b'\x00' * 8, b'\x00' * 8 + b'a' * 247:
+            c = self.type2test(data).translate(table)
+            self.assertEqual(c, data.replace(b'\x00', b'Z'))
+
         # test delete as a keyword argument
         c = b.translate(rosetta, delete=b'')
         self.assertEqual(c, b'helle')
