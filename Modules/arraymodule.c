@@ -585,15 +585,18 @@ static int
 e_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
 {
     double x;
+    char buf[sizeof(short)];
     if (!PyArg_Parse(v, "d;array item must be float", &x)) {
+        return -1;
+    }
+    if (PyFloat_Pack2(x, buf, PY_LITTLE_ENDIAN) < 0) {
         return -1;
     }
 
     CHECK_ARRAY_BOUNDS(ap, i);
 
     if (i >= 0) {
-        return PyFloat_Pack2(x, ap->ob_item + sizeof(short)*i,
-                             PY_LITTLE_ENDIAN);
+        memcpy(ap->ob_item + sizeof(short)*i, buf, sizeof(buf));
     }
     return 0;
 }
@@ -608,14 +611,17 @@ static int
 f_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
 {
     double x;
+    char buf[sizeof(float)];
     if (!PyArg_Parse(v, "d;array item must be float", &x))
         return -1;
+    if (PyFloat_Pack4(x, buf, PY_LITTLE_ENDIAN) < 0) {
+        return -1;
+    }
 
     CHECK_ARRAY_BOUNDS(ap, i);
 
     if (i >= 0) {
-        return PyFloat_Pack4(x, ap->ob_item + sizeof(float)*i,
-                             PY_LITTLE_ENDIAN);
+        memcpy(ap->ob_item + sizeof(float)*i, buf, sizeof(buf));
     }
     return 0;
 }
@@ -653,25 +659,21 @@ static int
 cf_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
 {
     Py_complex x;
+    char f[8];
 
     if (!PyArg_Parse(v, "D;array item must be complex", &x)) {
+        return -1;
+    }
+    if (PyFloat_Pack4(x.real, f, PY_LITTLE_ENDIAN) < 0
+        || PyFloat_Pack4(x.imag, f + sizeof(float), PY_LITTLE_ENDIAN) < 0)
+    {
         return -1;
     }
 
     CHECK_ARRAY_BOUNDS(ap, i);
 
     if (i >= 0) {
-        char f[8];
-        int ret = PyFloat_Pack4(x.real, f, PY_LITTLE_ENDIAN);
-
-        if (ret) {
-            return ret;
-        }
-        ret = PyFloat_Pack4(x.imag, f + sizeof(float), PY_LITTLE_ENDIAN);
-        if (!ret) {
-            memcpy(ap->ob_item + i*sizeof(f), &f, sizeof(f));
-        }
-        return ret;
+        memcpy(ap->ob_item + i*sizeof(f), &f, sizeof(f));
     }
     return 0;
 }
