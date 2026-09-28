@@ -64,5 +64,5 @@ jobs:
             awaiting merge
           message: >-
             This PR is labelled type-feature. All features require a review from a
-            core team member. Once approved, they will add the "awaiting merge"
-            label. Found: {{ applied }}
+            core team member. Once approved, the "awaiting merge" label will be
+            added by Bedevere. Found: {{ applied }}
