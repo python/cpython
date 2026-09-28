@@ -1,0 +1,2 @@
+Fix :exc:`ZeroDivisionError` in :func:`turtle.degrees` when *fullcircle* is
+``0``; it now raises :exc:`ValueError`.
