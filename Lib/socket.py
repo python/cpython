@@ -661,7 +661,7 @@ def _fallback_socketpair(family=AF_INET, type=SOCK_STREAM, proto=0):
     # able to connect to {host}:{port} instead of us.
     # We expect only AF_INET and AF_INET6 families.
     #
-    # Note that we skip this on WASI because on that platorm the client socket
+    # Note that we skip this on WASI because on that platform the client socket
     # may not have finished connecting by the time we've reached this point (gh-146139).
     if sys.platform != "wasi":
         try:
