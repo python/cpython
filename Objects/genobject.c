@@ -2017,7 +2017,10 @@ async_gen_asend_dealloc(PyObject *self)
     assert(PyAsyncGenASend_CheckExact(self));
     PyAsyncGenASend *ags = _PyAsyncGenASend_CAST(self);
 
-    if (PyObject_CallFinalizerFromDealloc(self)) {
+    // The finalizer only warns about an asend() that was never awaited.
+    if (ags->ags_state == AWAITABLE_STATE_INIT
+        && PyObject_CallFinalizerFromDealloc(self))
+    {
         return;
     }
 
