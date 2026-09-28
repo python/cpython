@@ -23676,6 +23676,13 @@
             if (target->op.code == ENTER_EXECUTOR) {
                 PyCodeObject *code = _PyFrame_GetCode(frame);
                 executor = code->co_executors->executors[target->op.arg];
+                if (executor == _PyExecutor_FromExit(exit)) {
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    _Py_ExecutorDetach(executor);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                    SET_CURRENT_CACHED_VALUES(0);
+                    GOTO_TIER_ONE(target);
+                }
                 Py_INCREF(executor);
                 assert(tstate->jit_exit == exit);
                 exit->executor = executor;

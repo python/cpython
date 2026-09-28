@@ -1638,21 +1638,23 @@ new_threadstate(PyInterpreterState *interp, int whence)
         return NULL;
     }
 
-#ifdef Py_GIL_DISABLED
-    Py_ssize_t qsbr_idx = _Py_qsbr_reserve(interp);
-    if (qsbr_idx < 0) {
+#ifdef Py_STATS
+    // The PyStats structure is quite large and is allocated separated from
+    // tstate.
+    if (!_PyStats_ThreadInit(interp, tstate)) {
         free_threadstate(tstate);
         return NULL;
     }
+#endif
+#ifdef Py_GIL_DISABLED
     int32_t tlbc_idx = _Py_ReserveTLBCIndex(interp);
     if (tlbc_idx < 0) {
         free_threadstate(tstate);
         return NULL;
     }
-#endif
-#ifdef Py_STATS
-    // The PyStats structure is quite large and is allocated separated from tstate.
-    if (!_PyStats_ThreadInit(interp, tstate)) {
+    Py_ssize_t qsbr_idx = _Py_qsbr_reserve(interp);
+    if (qsbr_idx < 0) {
+        _Py_UnreserveTLBCIndex(interp, tlbc_idx);
         free_threadstate(tstate);
         return NULL;
     }
@@ -3386,8 +3388,8 @@ PyInterpreterGuard_FromCurrent(void)
     return guard;
 }
 
-void
-PyInterpreterGuard_Close(PyInterpreterGuard *guard)
+static void
+release_interp_guard(PyInterpreterGuard *guard)
 {
     PyInterpreterState *interp = guard->interp;
     assert(interp != NULL);
@@ -3399,7 +3401,26 @@ PyInterpreterGuard_Close(PyInterpreterGuard *guard)
     }
 
     assert(old_value > 0);
+}
+
+void
+PyInterpreterGuard_Close(PyInterpreterGuard *guard)
+{
+    release_interp_guard(guard);
     PyMem_RawFree(guard);
+}
+
+int
+_PyInterpreterGuard_TryAcquire(PyInterpreterState *interp,
+                               PyInterpreterGuard *guard)
+{
+    return try_acquire_interp_guard(interp, guard);
+}
+
+void
+_PyInterpreterGuard_Release(PyInterpreterGuard *guard)
+{
+    release_interp_guard(guard);
 }
 
 PyInterpreterView *

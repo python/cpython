@@ -1717,6 +1717,8 @@ _remote_debugging.BinaryWriter.__init__
     start_time_us: unsigned_long_long
     *
     compression: int = 0
+    mode: int = -1
+    capture_features: int = -1
 
 High-performance binary writer for profiling data.
 
@@ -1726,6 +1728,9 @@ Arguments:
     start_time_us: Start timestamp in microseconds (from
         time.monotonic() * 1e6)
     compression: 0=none, 1=zstd (default: 0)
+    mode: Profiling mode, or -1 if unknown (default: -1)
+    capture_features: Capture feature bit mask, or -1 if unknown
+        (default: -1)
 
 Use as a context manager or call finalize() when done.
 [clinic start generated code]*/
@@ -1735,14 +1740,26 @@ _remote_debugging_BinaryWriter___init___impl(BinaryWriterObject *self,
                                              PyObject *filename,
                                              unsigned long long sample_interval_us,
                                              unsigned long long start_time_us,
-                                             int compression)
-/*[clinic end generated code: output=00446656ea2e5986 input=2e3f298c69fc7666]*/
+                                             int compression, int mode,
+                                             int capture_features)
+/*[clinic end generated code: output=3c1c9576795658ce input=98add735b20403ad]*/
 {
+    if (mode < -1 || mode > PROFILING_MODE_EXCEPTION) {
+        PyErr_SetString(PyExc_ValueError, "invalid profiling mode");
+        return -1;
+    }
+    if (capture_features < -1 ||
+        capture_features > (int)PROFILING_FEATURE_MASK) {
+        PyErr_SetString(PyExc_ValueError, "invalid capture features");
+        return -1;
+    }
     if (self->writer) {
         binary_writer_destroy(self->writer);
     }
 
-    self->writer = binary_writer_create(filename, sample_interval_us, compression, start_time_us);
+    self->writer = binary_writer_create(
+        filename, sample_interval_us, compression, start_time_us, mode,
+        capture_features);
     if (!self->writer) {
         return -1;
     }
@@ -1778,6 +1795,53 @@ _remote_debugging_BinaryWriter_write_sample_impl(BinaryWriterObject *self,
         return NULL;
     }
 
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+_remote_debugging.BinaryWriter.set_stats
+    duration_sec: double
+    sample_rate: double
+    error_rate: object = None
+    missed_samples: object = None
+
+Store measured profile statistics in the binary file.
+[clinic start generated code]*/
+
+static PyObject *
+_remote_debugging_BinaryWriter_set_stats_impl(BinaryWriterObject *self,
+                                              double duration_sec,
+                                              double sample_rate,
+                                              PyObject *error_rate,
+                                              PyObject *missed_samples)
+/*[clinic end generated code: output=28ab1bdd7c631a97 input=1646e7182f4c2259]*/
+{
+    if (!self->writer) {
+        PyErr_SetString(PyExc_ValueError, "Writer is closed");
+        return NULL;
+    }
+    uint32_t present = 0;
+    double error_rate_value = 0.0;
+    double missed_samples_value = 0.0;
+    if (error_rate != Py_None) {
+        error_rate_value = PyFloat_AsDouble(error_rate);
+        if (error_rate_value == -1.0 && PyErr_Occurred()) {
+            return NULL;
+        }
+        present |= PROFILE_STATS_ERROR_RATE;
+    }
+    if (missed_samples != Py_None) {
+        missed_samples_value = PyFloat_AsDouble(missed_samples);
+        if (missed_samples_value == -1.0 && PyErr_Occurred()) {
+            return NULL;
+        }
+        present |= PROFILE_STATS_MISSED;
+    }
+    if (binary_writer_set_stats(self->writer, duration_sec, sample_rate,
+                                error_rate_value, missed_samples_value,
+                                present) < 0) {
+        return NULL;
+    }
     Py_RETURN_NONE;
 }
 
@@ -1928,6 +1992,7 @@ static PyGetSetDef BinaryWriter_getset[] = {
 
 static PyMethodDef BinaryWriter_methods[] = {
     _REMOTE_DEBUGGING_BINARYWRITER_WRITE_SAMPLE_METHODDEF
+    _REMOTE_DEBUGGING_BINARYWRITER_SET_STATS_METHODDEF
     _REMOTE_DEBUGGING_BINARYWRITER_FINALIZE_METHODDEF
     _REMOTE_DEBUGGING_BINARYWRITER_CLOSE_METHODDEF
     _REMOTE_DEBUGGING_BINARYWRITER___ENTER___METHODDEF

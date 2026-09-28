@@ -25,6 +25,7 @@ try:
     )
     from profiling.sampling.binary_collector import BinaryCollector
     from profiling.sampling.binary_reader import BinaryReader, convert_binary_to_format
+    from profiling.sampling.constants import PROFILING_MODE_CPU
     from profiling.sampling.gecko_collector import GeckoCollector
 
     ZSTD_AVAILABLE = _remote_debugging.zstd_available()
@@ -151,19 +152,24 @@ class BinaryFormatTestBase(unittest.TestCase):
             if os.path.exists(f):
                 os.unlink(f)
 
-    def create_binary_file(self, samples, interval=1000, compression="none"):
+    def create_binary_file(self, samples, interval=1000, compression="none",
+                           mode=None, capture_config=None):
         """Create a test binary file and track it for cleanup."""
-        filename, _ = self.write_binary_file(samples, interval, compression)
+        filename, _ = self.write_binary_file(
+            samples, interval, compression, mode, capture_config
+        )
         return filename
 
-    def write_binary_file(self, samples, interval=1000, compression="none"):
+    def write_binary_file(self, samples, interval=1000, compression="none",
+                          mode=None, capture_config=None):
         """Like create_binary_file but also returns the writer collector."""
         with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as f:
             filename = f.name
         self.temp_files.append(filename)
 
         collector = BinaryCollector(
-            filename, interval, compression=compression
+            filename, interval, compression=compression, mode=mode,
+            capture_config=capture_config,
         )
         for sample in samples:
             collector.collect(sample)
@@ -515,6 +521,37 @@ class TestBinaryRoundTrip(BinaryFormatTestBase):
                 with BinaryReader(filename) as reader:
                     info = reader.get_info()
                     self.assertEqual(info["sample_interval_us"], interval)
+
+    def test_profiling_mode_preserved(self):
+        filename = self.create_binary_file([], mode=PROFILING_MODE_CPU)
+        with BinaryReader(filename) as reader:
+            self.assertEqual(reader.get_info()["mode"], PROFILING_MODE_CPU)
+
+    def test_missing_profiling_mode_is_unknown(self):
+        filename = self.create_binary_file([])
+        with BinaryReader(filename) as reader:
+            self.assertIsNone(reader.get_info()["mode"])
+
+    def test_capture_config_preserved(self):
+        capture_config = {
+            "all_threads": True,
+            "native": True,
+            "gc": False,
+            "opcodes": True,
+            "blocking": False,
+        }
+        filename = self.create_binary_file(
+            [], capture_config=capture_config
+        )
+        with BinaryReader(filename) as reader:
+            self.assertEqual(
+                reader.get_info()["capture_config"], capture_config
+            )
+
+    def test_missing_capture_config_is_unknown(self):
+        filename = self.create_binary_file([])
+        with BinaryReader(filename) as reader:
+            self.assertIsNone(reader.get_info()["capture_config"])
 
     def test_threads_interleaved_samples(self):
         """Multiple threads with interleaved varying samples."""
@@ -1580,11 +1617,103 @@ class TestTimestampPreservation(BinaryFormatTestBase):
         self.assertEqual(ts_collector.all_timestamps, expected_timestamps)
 
 
+class TestBinaryReplayToFlamegraph(BinaryFormatTestBase):
+    def test_replay_includes_persisted_stats(self):
+        frames = [
+            make_frame("hot.py", 99, "hot_func"),
+            make_frame("main.py", 1, "main"),
+        ]
+        samples = [
+            [
+                make_interpreter(
+                    0,
+                    [make_thread(1, frames, THREAD_STATUS_HAS_GIL)],
+                )
+            ]
+            for _ in range(5)
+        ]
+        with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as file:
+            bin_path = file.name
+        self.temp_files.append(bin_path)
+        collector = BinaryCollector(bin_path, 2000, compression="none")
+        for sample in samples:
+            collector.collect(sample)
+        collector.set_stats(
+            2000, 1.25, 4.0, error_rate=2.5, missed_samples=1.5
+        )
+        collector.export(None)
+
+        with BinaryReader(bin_path) as reader:
+            info = reader.get_info()
+        self.assertEqual(info["duration_sec"], 1.25)
+        self.assertEqual(info["sample_rate"], 4.0)
+        self.assertEqual(info["error_rate"], 2.5)
+        self.assertEqual(info["missed_samples"], 1.5)
+
+        with tempfile.NamedTemporaryFile(suffix=".html", delete=False) as file:
+            html_path = file.name
+        self.temp_files.append(html_path)
+
+        convert_binary_to_format(bin_path, html_path, "flamegraph")
+
+        with open(html_path, encoding="utf-8") as file:
+            content = file.read()
+        self.assertIn('"duration_sec": 1.25', content)
+        self.assertIn('"sample_rate": 4.0', content)
+        self.assertIn('"error_rate": 2.5', content)
+        self.assertIn('"missed_samples": 1.5', content)
+
+    def test_legacy_binary_has_no_measured_stats(self):
+        frame = make_frame("hot.py", 99, "hot_func")
+        bin_path = self.create_binary_file([
+            [make_interpreter(0, [make_thread(1, [frame])])]
+        ])
+
+        with BinaryReader(bin_path) as reader:
+            info = reader.get_info()
+
+        self.assertIsNone(info["duration_sec"])
+        self.assertIsNone(info["sample_rate"])
+        self.assertIsNone(info["error_rate"])
+        self.assertIsNone(info["missed_samples"])
+
+    def test_original_stats_extension_remains_readable(self):
+        frame = make_frame("hot.py", 99, "hot_func")
+        with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as file:
+            bin_path = file.name
+        self.temp_files.append(bin_path)
+        collector = BinaryCollector(bin_path, 2000, compression="none")
+        collector.collect([
+            make_interpreter(0, [make_thread(1, [frame])])
+        ])
+        collector.set_stats(2000, 1.25, 4.0)
+        collector.export(None)
+
+        with open(bin_path, "rb") as file:
+            data = file.read()
+        stats = data[-88:-32]
+        footer = bytearray(data[-32:])
+        old_stats = stats[:16] + b"TACHSTAT" + struct.pack("=II", 1, 32)
+        old_data = bytearray(data[:-88] + old_stats + footer)
+        struct.pack_into("=Q", old_data, -24, len(old_data))
+        with open(bin_path, "wb") as file:
+            file.write(old_data)
+
+        with BinaryReader(bin_path) as reader:
+            info = reader.get_info()
+        self.assertEqual(info["duration_sec"], 1.25)
+        self.assertEqual(info["sample_rate"], 4.0)
+        self.assertIsNone(info["error_rate"])
+        self.assertIsNone(info["missed_samples"])
+
+
 class TestBinaryReplayToJsonl(BinaryFormatTestBase):
     """Tests for binary -> JSONL replay via convert_binary_to_format."""
 
-    def _replay_to_jsonl(self, samples, interval=1000):
-        bin_path = self.create_binary_file(samples, interval=interval)
+    def _replay_to_jsonl(self, samples, interval=1000, mode=None):
+        bin_path = self.create_binary_file(
+            samples, interval=interval, mode=mode
+        )
         with tempfile.NamedTemporaryFile(suffix=".jsonl", delete=False) as f:
             jsonl_path = f.name
         self.temp_files.append(jsonl_path)
@@ -1613,6 +1742,16 @@ class TestBinaryReplayToJsonl(BinaryFormatTestBase):
 
         self.assertEqual(len(frame_defs), 1)
         self.assertEqual(frame_defs[0]["line"], 99)
+
+    def test_binary_replay_to_jsonl_preserves_mode(self):
+        frame = make_frame("hot.py", 99, "hot_func")
+        records = self._replay_to_jsonl(
+            [[make_interpreter(0, [make_thread(1, [frame])])]],
+            mode=PROFILING_MODE_CPU,
+        )
+
+        meta = next(record for record in records if record["type"] == "meta")
+        self.assertEqual(meta["mode"], "cpu")
 
     def test_binary_replay_to_jsonl_rle_weight_propagation(self):
         """RLE-batched identical samples land as a single agg entry with the right total."""
