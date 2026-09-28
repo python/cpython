@@ -2130,9 +2130,8 @@ class ClinicParserTest(TestCase):
         # Only positional-only parameters can follow an optional group.
         group_err = ("You cannot use optional groups ('[' and ']') unless all "
                      "parameters are positional-only ('/')")
-        kwds_err = ("Function 'bar' uses a var-keyword parameter and other "
-                    "non-positional parameters, which Argument Clinic does "
-                    "not currently support: '**kwds: dict'")
+        kwds_err = ("cannot use a var-keyword parameter with pos-or-keyword "
+                    "or keyword-only parameters")
         dataset = (("""
             module foo
             foo.bar
@@ -2717,7 +2716,7 @@ class ClinicParserTest(TestCase):
                 **kwds: dict
                 ]
         """
-        err = "parameters cannot follow var-keyword parameter: ']'"
+        err = "A var-keyword parameter cannot be in an optional group."
         self.expect_failure(block, err)
 
     def test_group_with_var_positional(self):
@@ -2727,8 +2726,7 @@ class ClinicParserTest(TestCase):
                 *args: tuple
                 ]
         """
-        err = ("You cannot use optional groups ('[' and ']') unless all "
-               "parameters are positional-only ('/')")
+        err = "A var-positional parameter cannot be in an optional group."
         self.expect_failure(block, err)
 
     def test_depr_star_must_come_after_slash(self):
@@ -3630,9 +3628,8 @@ class ClinicParserTest(TestCase):
                x: int
                **kwds: dict
         """
-        err = ("Function 'bar' uses a var-keyword parameter and other "
-               "non-positional parameters, which Argument Clinic does "
-               "not currently support: '**kwds: dict'")
+        err = ("Function 'bar' cannot use a var-keyword parameter with "
+               "pos-or-keyword or keyword-only parameters.")
         self.expect_failure(block, err)
 
     def test_var_keyword_with_kw_only(self):
@@ -3645,9 +3642,8 @@ class ClinicParserTest(TestCase):
                y: int
                **kwds: dict
         """
-        err = ("Function 'bar' uses a var-keyword parameter and other "
-               "non-positional parameters, which Argument Clinic does "
-               "not currently support: '**kwds: dict'")
+        err = ("Function 'bar' cannot use a var-keyword parameter with "
+               "pos-or-keyword or keyword-only parameters.")
         self.expect_failure(block, err)
 
     def test_var_keyword_with_pos_or_kw_and_kw_only(self):
@@ -3661,9 +3657,8 @@ class ClinicParserTest(TestCase):
                z: int
                **kwds: dict
         """
-        err = ("Function 'bar' uses a var-keyword parameter and other "
-               "non-positional parameters, which Argument Clinic does "
-               "not currently support: '**kwds: dict'")
+        err = ("Function 'bar' cannot use a var-keyword parameter with "
+               "pos-or-keyword or keyword-only parameters.")
         self.expect_failure(block, err)
 
     def test_allow_negative_accepted_by_py_ssize_t_converter_only(self):

@@ -1020,9 +1020,9 @@ class DSLParser:
                 for p in self.function.parameters.values()
             )
             if has_non_positional_param:
-                fail(f'Function {self.function.name!r} uses a var-keyword parameter '
-                     f'and other non-positional parameters, which Argument Clinic '
-                     f'does not currently support: {line!r}')
+                fail(f'Function {self.function.name!r} cannot use a var-keyword '
+                     f'parameter with pos-or-keyword or keyword-only '
+                     f'parameters.')
             is_var_keyword = True
             parameter = function_args.kwarg
         else:
@@ -1161,6 +1161,9 @@ class DSLParser:
 
         kind: inspect._ParameterKind
         if is_vararg:
+            if self.group_stack:
+                fail("A var-positional parameter cannot be in an optional "
+                     "group.")
             if any(p.group for p in self.function.parameters.values()):
                 # With "foo([a, b], *args)" the number of arguments does not
                 # tell whether the group is passed or all arguments belong
@@ -1169,6 +1172,9 @@ class DSLParser:
                      f"groups with a var-positional parameter.")
             kind = inspect.Parameter.VAR_POSITIONAL
         elif is_var_keyword:
+            if self.group_stack:
+                fail("A var-keyword parameter cannot be in an optional "
+                     "group.")
             kind = inspect.Parameter.VAR_KEYWORD
         elif self.keyword_only:
             kind = inspect.Parameter.KEYWORD_ONLY
