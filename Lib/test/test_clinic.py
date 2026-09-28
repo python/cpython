@@ -2104,6 +2104,28 @@ class ClinicParserTest(TestCase):
         err = "Function 'empty_group' has a ']' without a matching '['"
         self.expect_failure(block, err)
 
+    def test_disallowed_grouping__varpos(self):
+        err = "cannot use optional groups with a var-positional parameter"
+        block = """
+            module foo
+            foo.bar
+                [
+                a: int
+                ]
+                *args: tuple
+        """
+        self.expect_failure(block, err, lineno=5)
+        block = """
+            module foo
+            foo.bar
+                a: int
+                *args: tuple
+                [
+                b: int
+                ]
+        """
+        self.expect_failure(block, err, lineno=4)
+
     def test_disallowed_grouping__parameter_after_group(self):
         # Only positional-only parameters can follow an optional group.
         group_err = ("You cannot use optional groups ('[' and ']') unless all "
@@ -5163,7 +5185,7 @@ class ClinicFunctionalTest(unittest.TestCase):
         cls = ac_tester.TestClass
         obj = cls()
         fn = obj.defclass_posonly_varpos
-        errmsg = 'takes at least 2 positional arguments'
+        errmsg = 'expected at least 2 arguments'
         self.assertRaisesRegex(TypeError, errmsg, fn)
         self.assertRaisesRegex(TypeError, errmsg, fn, 1)
         self.assertEqual(fn(1, 2), (cls, 1, 2, ()))

@@ -62,3 +62,6 @@ jobs:
           count: 1
           labels: |
             awaiting merge
+          message: >-
+            This PR is labelled type-feature. All features require approval from a
+            core team member before merge. Found: {{ applied }}
