@@ -62,3 +62,7 @@ jobs:
           count: 1
           labels: |
             awaiting merge
+          message: >-
+            This PR is labelled type-feature. All features require a review from a
+            core team member. Once approved, they will add the "awaiting merge"
+            label. Found: {{ applied }}
