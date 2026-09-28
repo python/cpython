@@ -575,6 +575,11 @@ class EditorWindow:
             return 'disabled'
         else:
             return 'normal'
+        
+    def rmenu_check_select_all(self):
+        if self.text.compare("end-1c", "==", "1.0"):
+            return "disabled"
+        return "normal"
 
     def about_dialog(self, event=None):
         "Handle Help 'About IDLE' event."
@@ -626,6 +631,7 @@ class EditorWindow:
         return "break"
 
     def select_all(self, event=None):
+        self.text.event_generate("<<Select-All>>")
         self.text.tag_add("sel", "1.0", "end-1c")
         self.text.mark_set("insert", "1.0")
         self.text.see("insert")

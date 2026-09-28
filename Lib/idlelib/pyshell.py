@@ -152,6 +152,7 @@ class PyShellEditorWindow(EditorWindow):
         ("Cut", "<<cut>>", "rmenu_check_cut"),
         ("Copy", "<<copy>>", "rmenu_check_copy"),
         ("Paste", "<<paste>>", "rmenu_check_paste"),
+        ("Select All", "<<select-all>>", "rmenu_check_select_all"),
         (None, None, None),
         ("Set Breakpoint", "<<set-breakpoint>>", None),
         ("Clear Breakpoint", "<<clear-breakpoint>>", None)
@@ -1488,6 +1489,11 @@ class PyShell(OutputWindow):
         if self.text.compare('insert','<','iomark'):
             return 'disabled'
         return super().rmenu_check_paste()
+
+    def rmenu_check_select_all(self):
+        if self.text.compare("end-1c", "==", "1.0"):
+            return "disabled"
+        return super().rmenu_check_select_all()
 
     def squeeze_current_text_event(self, event=None):
         self.squeezer.squeeze_current_text()
