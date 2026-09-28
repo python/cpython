@@ -2186,6 +2186,7 @@ static void
 async_gen_asend_finalize(PyObject *self)
 {
     PyAsyncGenASend *ags = _PyAsyncGenASend_CAST(self);
+    // async_gen_asend_dealloc() calls this only in the INIT state.
     if (ags->ags_state == AWAITABLE_STATE_INIT) {
         _PyErr_WarnUnawaitedAgenMethod(ags->ags_gen, &_Py_ID(asend));
     }
