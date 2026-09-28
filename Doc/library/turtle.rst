@@ -2689,12 +2689,51 @@ These modified docstrings are created automatically together with the function
 definitions that are derived from the methods at import time.
 
 
+.. _turtle-docstring-translation:
+
 Translation of docstrings into different languages
 --------------------------------------------------
 
-There is a utility to create a dictionary the keys of which are the method names
-and the values of which are the docstrings of the public methods of the classes
-Screen and Turtle.
+The docstrings of the public methods of the Screen and Turtle classes, and of
+the corresponding functions, can be replaced with translations, so that
+:func:`help` and IDE tooltips are shown in another language. However, only the help
+text is translated, the names of the functions and methods stay the same.
+
+Translations are distributed on PyPI in the :pypi:`turtle-translations`
+package. To use them, install the package with :program:`pip` and select the
+language with the :envvar:`PYTHON_TURTLE_LANG` environment variable. For
+example, to show the help text in Spanish:
+
+.. code-block:: console
+
+   $ python -m pip install turtle-translations
+   $ PYTHON_TURTLE_LANG=es python
+   >>> import turtle
+   >>> help(turtle.forward)
+
+The language can also be set permanently with the *language* entry of the
+:file:`turtle.cfg` file (see :ref:`turtle-configuration`). If no translation
+is found for the selected language, the English docstrings are kept.
+
+To add a new language or improve an existing translation, see the
+contribution instructions in the :pypi:`turtle-translations` project.
+
+A translation is a docstring dictionary. It is a top-level module named
+:samp:`turtle_docstringdict_{language}.py` on :data:`sys.path` defining a
+dictionary named ``docsdict``, the keys of which are method names such as
+``Turtle.forward`` and the values of which are the translated docstrings. It is
+read in at import time. Entries naming a method which does not exist in the
+running version are ignored.
+
+.. versionchanged:: 3.16
+   Entries naming an unknown method are ignored instead of reported.
+
+.. envvar:: PYTHON_TURTLE_LANG
+
+   The name of the language to read the translation for. It takes precedence
+   over the *language* entry of the :file:`turtle.cfg` file.
+
+   .. versionadded:: 3.16
 
 .. function:: write_docstringdict(filename="turtle_docstringdict")
 
@@ -2706,17 +2745,8 @@ Screen and Turtle.
    Python script :file:`{filename}.py`.  It is intended to serve as a template
    for translation of the docstrings into different languages.
 
-If you (or your students) want to use :mod:`!turtle` with online help in your
-native language, you have to translate the docstrings and save the resulting
-file as e.g. :file:`turtle_docstringdict_german.py`.
 
-If you have an appropriate entry in your :file:`turtle.cfg` file this dictionary
-will be read in at import time and will replace the original English docstrings.
-
-At the time of this writing there are docstring dictionaries in German and in
-Italian.  (Requests please to glingl@aon.at.)
-
-
+.. _turtle-configuration:
 
 How to configure Screen and Turtles
 -----------------------------------
@@ -2767,9 +2797,9 @@ Short explanation of selected entries:
   the cfg file).
 - If you want to reflect the turtle its state, you have to use ``resizemode =
   auto``.
-- If you set e.g. ``language = italian`` the docstringdict
-  :file:`turtle_docstringdict_italian.py` will be loaded at import time (if
-  present on the import path, e.g. in the same directory as :mod:`!turtle`).
+- The *language* entry selects the language of the docstrings, unless the
+  :envvar:`PYTHON_TURTLE_LANG` environment variable is set. See
+  :ref:`turtle-docstring-translation` for more information.
 - The entries *exampleturtle* and *examplescreen* define the names of these
   objects as they occur in the docstrings.  The transformation of
   method-docstrings to function-docstrings will delete these names from the

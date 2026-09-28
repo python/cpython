@@ -488,7 +488,9 @@ _PyStaticObjects_CheckAll(PyInterpreterState *interp) {
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(filter), "filter", 6);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(filters), "filters", 7);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(final), "final", 5);
+    _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(finalizer), "finalizer", 9);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(find_class), "find_class", 10);
+    _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(firstiter), "firstiter", 9);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(fix_imports), "fix_imports", 11);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(flags), "flags", 5);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(flush), "flush", 5);
