@@ -63,18 +63,7 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
 _Py_COMP_DIAG_POP
 }
 
-static inline Py_hash_t
-get_ob_shash(PyBytesObject *a)
-{
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
-#ifdef Py_GIL_DISABLED
-    return _Py_atomic_load_ssize_relaxed(&a->ob_shash);
-#else
-    return a->ob_shash;
-#endif
-_Py_COMP_DIAG_POP
-}
+#define get_ob_shash(op) _PyBytes_GET_CACHED_HASH(op)
 
 
 /*
@@ -3346,6 +3335,12 @@ _PyBytes_IsMutable(PyObject *self)
         unsigned char ch = PyBytes_AS_STRING(self)[0];
         assert(self != (PyObject*)CHARACTER(ch));
     }
+
+    // gh-158219: The hash value must not be cached yet. Otherwise, it means
+    // that the bytes object was already used in Python somehow (ex: as a
+    // dictionary key).
+    assert(get_ob_shash((PyBytesObject *)self) == -1);
+
     return 1;
 }
 #endif
