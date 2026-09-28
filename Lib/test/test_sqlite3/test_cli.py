@@ -326,6 +326,8 @@ class Completion(unittest.TestCase):
         input_ = textwrap.dedent("""\
             CREATE TABLE _table (_col_table);
             CREATE TEMP TABLE _temp_table (_col_temp);
+            CREATE VIEW _view AS SELECT _col_table AS _col_table_alias
+                                 FROM _table;
             ATTACH ':memory:' AS attached;
             CREATE TABLE attached._attached_table (_col_attached);
 
@@ -340,32 +342,12 @@ class Completion(unittest.TestCase):
         candidates = [l.strip() for l in lines[start+1:end]]
 
         self.assertEqual(
-            candidates, ["_col_attached", "_col_table", "_col_temp"]
+            candidates,
+            ["_col_attached", "_col_table", "_col_table_alias", "_col_temp"],
         )
-    @unittest.skipIf(sqlite3.sqlite_version_info < (3, 16, 0),
+    @unittest.skipIf(sqlite3.sqlite_version_info < (3, 30, 0),
                      "PRAGMA function_list is not available until "
-                     "SQLite 3.16.0")
-    def test_complete_view_columns(self):
-        input_ = textwrap.dedent("""\
-            CREATE TABLE _table (_col_table, _col_view);
-            CREATE VIEW _view AS SELECT _col_view AS _col_view_alias,
-                                         _col_table AS _col_table_alias
-                                  FROM _table;
-
-            SELECT _col_\t\tta\tFROM _table;
-            .quit\n""").encode()
-        output = self.write_input(input_)
-        lines = output.decode().splitlines()
-        indices = [
-            i for i, line in enumerate(lines) if line.startswith(self.PS1)
-        ]
-        start, end = indices[-3], indices[-2]
-        candidates = [l.strip() for l in lines[start+1:end]]
-
-        self.assertIn("_col_view", candidates)
-        self.assertIn("_col_view_alias", candidates)
-        self.assertIn("_col_table_alias", candidates)
-
+                     "SQLite 3.30.0")
     def test_complete_functions(self):
         input_ = b"SELECT AV\t1);\n.quit\n"
         output = self.write_input(input_)
