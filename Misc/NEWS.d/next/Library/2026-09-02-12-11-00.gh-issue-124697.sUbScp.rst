@@ -1,0 +1,3 @@
+The :mod:`symtable` module now represents inlined list, set and dict
+comprehensions (:pep:`709`) as their own symbol table entries of type
+:attr:`~symtable.SymbolTableType.INLINED_COMPREHENSION`.

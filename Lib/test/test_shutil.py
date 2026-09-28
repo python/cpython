@@ -552,11 +552,7 @@ class TestRmTree(BaseTest, unittest.TestCase):
             os.lstat = orig_lstat
 
     def test_rmtree_uses_safe_fd_version_if_available(self):
-        _use_fd_functions = ({os.open, os.stat, os.unlink, os.rmdir} <=
-                             os.supports_dir_fd and
-                             os.listdir in os.supports_fd and
-                             os.stat in os.supports_follow_symlinks)
-        if _use_fd_functions:
+        if shutil._use_fd_functions:
             self.assertTrue(shutil.rmtree.avoids_symlink_attacks)
             tmp_dir = self.mkdtemp()
             d = os.path.join(tmp_dir, 'a')
