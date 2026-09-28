@@ -1161,6 +1161,12 @@ class DSLParser:
 
         kind: inspect._ParameterKind
         if is_vararg:
+            if any(p.group for p in self.function.parameters.values()):
+                # With "foo([a, b], *args)" the number of arguments does not
+                # tell whether the group is passed or all arguments belong
+                # to the var-positional parameter.
+                fail(f"Function {self.function.name!r} cannot use optional "
+                     f"groups with a var-positional parameter.")
             kind = inspect.Parameter.VAR_POSITIONAL
         elif is_var_keyword:
             kind = inspect.Parameter.VAR_KEYWORD
@@ -1303,6 +1309,9 @@ class DSLParser:
 
     def parse_opening_square_bracket(self, function: Function) -> None:
         """Parse opening parameter group symbol '['."""
+        if any(p.is_vararg() for p in function.parameters.values()):
+            fail(f"Function {function.name!r} cannot use optional groups "
+                 f"with a var-positional parameter.")
         # A group can only be nested in a group which does not contain
         # parameters yet, but two groups on the same nesting level can
         # follow each other.
