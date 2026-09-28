@@ -56,14 +56,12 @@ class TestSpecifics(unittest.TestCase):
                 finally:
                     _testcapi.remove_mem_hooks()
 
+            assert failures > 0
             actual = compile("x", "<test>", "exec")
-            print(failures, actual.co_code == expected.co_code,
-                  actual.co_linetable == expected.co_linetable)
+            assert actual.co_code == expected.co_code
+            assert actual.co_linetable == expected.co_linetable
         """)
-        _, output, _ = script_helper.assert_python_ok('-c', code)
-        failures, code_matches, linetable_matches = output.split()
-        self.assertGreater(int(failures), 0)
-        self.assertEqual((code_matches, linetable_matches), (b'True', b'True'))
+        script_helper.assert_python_ok('-c', code)
 
     def test_other_newlines(self):
         compile("\r\n", "<test>", "exec")
