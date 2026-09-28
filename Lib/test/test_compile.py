@@ -39,6 +39,32 @@ class TestSpecifics(unittest.TestCase):
     def test_empty(self):
         compile("", "<test>", "exec")
 
+    @support.requires_subprocess()
+    @support.nomemtest
+    def test_assemble_init_allocation_failure(self):
+        code = textwrap.dedent("""\
+            import _testcapi
+
+            expected = compile("x", "<test>", "exec")
+            failures = 0
+            for n in range(1, 500):
+                _testcapi.set_nomemory(n, n + 1)
+                try:
+                    compile("x", "<test>", "exec")
+                except MemoryError:
+                    failures += 1
+                finally:
+                    _testcapi.remove_mem_hooks()
+
+            actual = compile("x", "<test>", "exec")
+            print(failures, actual.co_code == expected.co_code,
+                  actual.co_linetable == expected.co_linetable)
+        """)
+        _, output, _ = script_helper.assert_python_ok('-c', code)
+        failures, code_matches, linetable_matches = output.split()
+        self.assertGreater(int(failures), 0)
+        self.assertEqual((code_matches, linetable_matches), (b'True', b'True'))
+
     def test_other_newlines(self):
         compile("\r\n", "<test>", "exec")
         compile("\r", "<test>", "exec")
