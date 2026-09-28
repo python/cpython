@@ -4014,6 +4014,7 @@ class ClinicExternalTest(TestCase):
             "DWORD",
             "fildes",
             "float",
+            "gid_t",
             "HANDLE",
             "int",
             "long",
@@ -4032,6 +4033,7 @@ class ClinicExternalTest(TestCase):
             "size_t",
             "slice_index",
             "str",
+            "uid_t",
             "uint16",
             "uint32",
             "uint64",
@@ -5112,7 +5114,7 @@ class ClinicFunctionalTest(unittest.TestCase):
         cls = ac_tester.TestClass
         obj = cls()
         fn = obj.defclass_posonly_varpos
-        errmsg = 'takes at least 2 positional arguments'
+        errmsg = 'expected at least 2 arguments'
         self.assertRaisesRegex(TypeError, errmsg, fn)
         self.assertRaisesRegex(TypeError, errmsg, fn, 1)
         self.assertEqual(fn(1, 2), (cls, 1, 2, ()))
