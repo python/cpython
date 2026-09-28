@@ -1963,8 +1963,7 @@ PyAsyncGen_New(PyFrameObject *f, PyObject *name, PyObject *qualname)
     return (PyObject*)ag;
 }
 
-// Like async_gen_unwrap_value(), but an async yield is reported as
-// PYGEN_RETURN with the yielded value instead of raising StopIteration.
+// Report an async yield as PYGEN_RETURN with the yielded value.
 static PySendResult
 async_gen_unwrap_send(PyAsyncGenObject *gen, PyObject *result,
                       PyObject **presult)
