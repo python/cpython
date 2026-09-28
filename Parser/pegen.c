@@ -149,20 +149,22 @@ init_normalization(Parser *p)
     return 1;
 }
 
-void **
-_PyPegen_grow_loop_buffer(void **buffer, Py_ssize_t *capacity)
+int
+_PyPegen_grow_loop_buffer(void ***buffer, Py_ssize_t *capacity)
 {
     if ((size_t)*capacity > (size_t)PY_SSIZE_T_MAX /
-            (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*buffer))) {
-        return NULL;
+            (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(**buffer))) {
+        return -1;
     }
     Py_ssize_t new_capacity = *capacity == 0
         ? 1 : *capacity * PEGEN_ARRAY_GROWTH_FACTOR;
-    void **new_buffer = PyMem_Realloc(buffer, new_capacity * sizeof(*buffer));
-    if (new_buffer != NULL) {
-        *capacity = new_capacity;
+    void **new_buffer = PyMem_Realloc(*buffer, new_capacity * sizeof(**buffer));
+    if (new_buffer == NULL) {
+        return -1;
     }
-    return new_buffer;
+    *buffer = new_buffer;
+    *capacity = new_capacity;
+    return 0;
 }
 
 static int

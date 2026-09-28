@@ -314,8 +314,7 @@ finalize_decoding(struct tok_state *tok)
             return -1;
         }
     }
-    if (reader->decoded_pos < reader->decoded_len &&
-            append_implicit_newline(reader) < 0) {
+    if (append_implicit_newline(reader) < 0) {
         tok->done = E_NOMEM;
         return -1;
     }
@@ -542,7 +541,6 @@ next_interactive(struct tok_state *tok, _PyTok_Chunk *chunk)
         decoded.data, decoded.len, &chunk->len);
     _PyTok_ChunkClear(&decoded);
     if (chunk->data == NULL) {
-        PyErr_NoMemory();
         tok->done = E_NOMEM;
         return _PYTOK_READ_ERROR;
     }
@@ -840,14 +838,12 @@ _PyTokenizer_FindEncodingFilename(int fd, PyObject *filename)
     }
     _Py_DECLARE_STR(anon_string, "<string>");
     tok->filename = Py_NewRef(filename != NULL ? filename : &_Py_STR(anon_string));
-    if (initialize_file(tok) < 0) {
-        fclose(fp);
-        _PyTokenizer_Free(tok);
-        return NULL;
+    char *encoding = NULL;
+    if (initialize_file(tok) == 0) {
+        encoding = tok->encoding;
+        tok->encoding = NULL;
     }
     fclose(fp);
-    char *encoding = tok->encoding;
-    tok->encoding = NULL;
     _PyTokenizer_Free(tok);
     return encoding;
 }

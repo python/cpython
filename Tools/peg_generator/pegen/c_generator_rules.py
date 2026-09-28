@@ -45,7 +45,6 @@ class _LoopBuffer:
     def __init__(self, writer: CWriter, returns: _CReturnEmitter):
         self._print = writer.print
         self._indent = writer.indent
-        self._returns = returns
         self.error_returns = returns.with_cleanup(self._release)
 
     def initialize(self) -> None:
@@ -56,11 +55,9 @@ class _LoopBuffer:
     def append(self, value: str) -> None:
         self._print("if (_n == _children_capacity) {")
         with self._indent():
-            self._print(
-                "void **_new_children = _PyPegen_grow_loop_buffer(_children, &_children_capacity);"
+            self._check_memory(
+                "_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0"
             )
-            self._check_memory("!_new_children")
-            self._print("_children = _new_children;")
         self._print("}")
         self._print(f"_children[_n++] = {value};")
 
@@ -79,8 +76,7 @@ class _LoopBuffer:
     def _check_memory(self, expr: str) -> None:
         self._print(f"if ({expr}) {{")
         with self._indent():
-            self._print(self._release)
-            self._returns.no_memory()
+            self.error_returns.no_memory()
         self._print("}")
 
 
