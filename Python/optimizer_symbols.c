@@ -1388,6 +1388,7 @@ _Py_uop_frame_new(
     }
 
     // Initialize with the initial state of all local variables
+    arg_len = Py_MIN(arg_len, co->co_argcount);
     for (int i = 0; i < arg_len; i++) {
         frame->locals[i] = PyJitRef_RemoveUnique(args[i]);
     }

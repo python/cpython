@@ -1826,6 +1826,23 @@ class TestUopsOptimization(unittest.TestCase):
                 WithDefault()
             """), PYTHON_JIT="1")
 
+    def test_init_with_changed_code_argcount(self):
+        class C:
+            def __init__(self, value):
+                self.value = False
+
+            def varargs_init(self, *args):
+                self.value = isinstance(args, tuple)
+
+        def testfunc(n):
+            for _ in range(n):
+                result = C(42).value
+            return result
+
+        self.assertFalse(testfunc(100))
+        C.__init__.__code__ = C.varargs_init.__code__
+        self.assertTrue(testfunc(TIER2_THRESHOLD * 3))
+
     def test_init_guards_removed(self):
         class MyPoint:
             def __init__(self, x, y):
