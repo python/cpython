@@ -5079,6 +5079,39 @@ class TestUopsOptimization(unittest.TestCase):
         copied_builtins["len"] = lambda s: 42
         self.assertEqual(f(8), [42] * 8)
 
+    def test_jitted_code_sees_changed_copied_globals(self):
+        # Copying a dict must not carry over the keys version of the source.
+        # The optimizer folds a global to a constant guarded only by the
+        # globals keys version plus a watcher on the traced dict.  A copy is
+        # not watched, and replacing an existing value does not change the
+        # keys version, so a function whose globals are a copy of the traced
+        # dict would otherwise pass _GUARD_GLOBALS_VERSION and see the stale
+        # constant.
+        def f(n):
+            for _ in range(n):
+                x = COPIED_GLOBAL
+            return x
+
+        for copy in (dict.copy, dict):
+            with self.subTest(copy=copy):
+                original = {"COPIED_GLOBAL": 1}
+                # A fresh code object, so that each subtest traces anew.
+                f_original = types.FunctionType(f.__code__.replace(), original)
+                self.assertEqual(f_original(TIER2_THRESHOLD), 1)
+                ex = get_first_executor(f_original)
+                self.assertIsNotNone(ex)
+                uops = get_opnames(ex)
+                self.assertIn("_GUARD_GLOBALS_VERSION", uops)
+                # The global was folded to a constant.
+                self.assertNotIn("_LOAD_GLOBAL_MODULE", uops)
+
+                copied = copy(original)
+                copied["COPIED_GLOBAL"] = 2
+                # Share the code object, so that the same executor is entered.
+                f_copied = types.FunctionType(f_original.__code__, copied)
+                self.assertEqual(f_copied(TIER2_THRESHOLD), 2)
+                self.assertEqual(f_original(TIER2_THRESHOLD), 1)
+
     def test_jitted_code_sees_different_builtins(self):
         # Runtime check.  The traced function's builtins IS the canonical
         # dict, so folding len to a constant is correct at trace time.
