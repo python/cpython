@@ -43,7 +43,7 @@ Typical usage:
     >>> x.bytes
     b'\x00\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\x0c\r\x0e\x0f'
 
-    # make a UUID from a 16-byte string
+    # make a UUID from a 16-byte bytes object
     >>> uuid.UUID(bytes=x.bytes)
     UUID('00010203-0405-0607-0809-0a0b0c0d0e0f')
 
@@ -118,19 +118,19 @@ class UUID:
     '12345678-1234-1234-1234-123456789abc'.  The UUID constructor accepts
     five possible forms: a similar string of hexadecimal digits, or a tuple
     of six integer fields (with 32-bit, 16-bit, 16-bit, 8-bit, 8-bit, and
-    48-bit values respectively) as an argument named 'fields', or a string
-    of 16 bytes (with all the integer fields in big-endian order) as an
-    argument named 'bytes', or a string of 16 bytes (with the first three
-    fields in little-endian order) as an argument named 'bytes_le', or a
-    single 128-bit integer as an argument named 'int'.
+    48-bit values respectively) as an argument named 'fields', or a 16-byte
+    bytes object (with all the integer fields in big-endian order) as an
+    argument named 'bytes', or a 16-byte bytes object (with the first three
+    fields in little-endian order) as an argument named 'bytes_le', or a single
+    128-bit integer as an argument named 'int'.
 
     UUIDs have these read-only attributes:
 
-        bytes       the UUID as a 16-byte string (containing the six
+        bytes       the UUID as a 16-byte bytes object (containing the six
                     integer fields in big-endian byte order)
 
-        bytes_le    the UUID as a 16-byte string (with time_low, time_mid,
-                    and time_hi_version in little-endian byte order)
+        bytes_le    the UUID as a 16-byte bytes object (with time_low,
+                    time_mid, and time_hi_version in little-endian byte order)
 
         fields      a tuple of the six integer fields of the UUID,
                     which are also available as six individual attributes
@@ -179,7 +179,7 @@ class UUID:
                        int=None, version=None,
                        *, is_safe=SafeUUID.unknown):
         r"""Create a UUID from either a string of 32 hexadecimal digits,
-        a string of 16 bytes as the 'bytes' argument, a string of 16 bytes
+        a 16-byte bytes object as the 'bytes' argument, a 16-byte bytes object
         in little-endian order as the 'bytes_le' argument, a tuple of six
         integers (32-bit time_low, 16-bit time_mid, 16-bit time_hi_version,
         8-bit clock_seq_hi_variant, 8-bit clock_seq_low, 48-bit node) as
@@ -191,9 +191,9 @@ class UUID:
         UUID('{12345678-1234-5678-1234-567812345678}')
         UUID('12345678123456781234567812345678')
         UUID('urn:uuid:12345678-1234-5678-1234-567812345678')
-        UUID(bytes='\x12\x34\x56\x78'*4)
-        UUID(bytes_le='\x78\x56\x34\x12\x34\x12\x78\x56' +
-                      '\x12\x34\x56\x78\x12\x34\x56\x78')
+        UUID(bytes=b'\x12\x34\x56\x78'*4)
+        UUID(bytes_le=b'\x78\x56\x34\x12\x34\x12\x78\x56' +
+                      b'\x12\x34\x56\x78\x12\x34\x56\x78')
         UUID(fields=(0x12345678, 0x1234, 0x5678, 0x12, 0x34, 0x567812345678))
         UUID(int=0x12345678123456781234567812345678)
 

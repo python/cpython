@@ -1,0 +1,2 @@
+When building with Visual Studio 2026 (Version 18), use PlatformToolSet v145
+by default. Patch by Chris Eibl.

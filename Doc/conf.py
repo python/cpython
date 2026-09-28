@@ -469,6 +469,10 @@ epub_exclude_files = ('index.xhtml', 'download.xhtml')
 # https://github.com/sphinx-doc/sphinx/issues/12359
 epub_use_index = False
 
+# The default depth of 3 lists over a thousand entries, which makes the
+# table of contents hard to navigate in e-book readers
+epub_tocdepth = 2
+
 # translation tag
 # ---------------
 
