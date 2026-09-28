@@ -313,7 +313,7 @@ _PyUnicodeWriter_WriteStr(_PyUnicodeWriter *writer, PyObject *str)
     Py_UCS4 maxchar = PyUnicode_MAX_CHAR_VALUE(str);
 
     if (maxchar > writer->maxchar || len > writer->size - writer->pos) {
-        if (writer->buffer == NULL) {
+        if (writer->buffer == NULL && PyUnicode_CheckExact(str)) {
             assert(_PyUnicode_CheckConsistency(str, 1));
             writer->readonly = 1;
             writer->buffer = Py_NewRef(str);

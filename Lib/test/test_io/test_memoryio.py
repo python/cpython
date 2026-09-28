@@ -1118,7 +1118,11 @@ class CStringIOTest(PyStringIOTest):
         s = MyStr("correct")
         memio = self.ioclass()
         memio.write(s)
-        self.assertEqual(memio.getvalue(), "correct")
+        value = memio.getvalue()
+        self.assertEqual(value, "correct")
+        self.assertIs(type(value), str)
+        memio.write("!")
+        self.assertEqual(memio.getvalue(), "correct!")
 
         # Also test the fast path where pos == string_size (STATE_ACCUMULATING)
         memio2 = self.ioclass()
