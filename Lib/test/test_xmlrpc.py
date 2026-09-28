@@ -1542,6 +1542,113 @@ class UseBuiltinTypesTestCase(unittest.TestCase):
         self.assertTrue(server.use_builtin_types)
 
 
+class SafeTransportTestCase(unittest.TestCase):
+    def test_init_default_context(self):
+        t = xmlrpclib.SafeTransport()
+        self.assertIsNone(t.context)
+
+    def test_init_with_context(self):
+        import ssl
+        ctx = ssl.create_default_context()
+        t = xmlrpclib.SafeTransport(context=ctx)
+        self.assertIs(t.context, ctx)
+
+    def test_init_with_datetime_and_builtin_types(self):
+        import ssl
+        ctx = ssl.create_default_context()
+        t = xmlrpclib.SafeTransport(use_datetime=True, use_builtin_types=True,
+                                    context=ctx)
+        self.assertTrue(t._use_datetime)
+        self.assertTrue(t._use_builtin_types)
+        self.assertIs(t.context, ctx)
+
+    def test_init_with_headers(self):
+        import ssl
+        ctx = ssl.create_default_context()
+        headers = [('X-Custom', 'value')]
+        t = xmlrpclib.SafeTransport(headers=headers, context=ctx)
+        self.assertEqual(t._headers, headers)
+        self.assertIs(t.context, ctx)
+
+    @mock.patch('http.client.HTTPSConnection')
+    def test_make_connection(self, mock_https_conn):
+        mock_conn = mock.MagicMock()
+        mock_https_conn.return_value = mock_conn
+
+        t = xmlrpclib.SafeTransport()
+        result = t.make_connection('example.com')
+
+        mock_https_conn.assert_called_once_with('example.com', None,
+                                                 context=None)
+        self.assertIs(result, mock_conn)
+        self.assertEqual(t._connection, ('example.com', mock_conn))
+
+    @mock.patch('http.client.HTTPSConnection')
+    def test_make_connection_with_context(self, mock_https_conn):
+        import ssl
+        ctx = ssl.create_default_context()
+        mock_conn = mock.MagicMock()
+        mock_https_conn.return_value = mock_conn
+
+        t = xmlrpclib.SafeTransport(context=ctx)
+        result = t.make_connection('example.com')
+
+        mock_https_conn.assert_called_once_with('example.com', None,
+                                                 context=ctx)
+        self.assertIs(result, mock_conn)
+
+    @mock.patch('http.client.HTTPSConnection')
+    def test_make_connection_with_tuple_host(self, mock_https_conn):
+        mock_conn = mock.MagicMock()
+        mock_https_conn.return_value = mock_conn
+
+        x509 = {'certfile': '/path/to/cert.pem'}
+        t = xmlrpclib.SafeTransport()
+        result = t.make_connection(('example.com', x509))
+
+        mock_https_conn.assert_called_once_with('example.com', None,
+                                                 context=None,
+                                                 certfile='/path/to/cert.pem')
+        self.assertIs(result, mock_conn)
+
+    @mock.patch('http.client.HTTPSConnection')
+    def test_make_connection_caches(self, mock_https_conn):
+        mock_conn = mock.MagicMock()
+        mock_https_conn.return_value = mock_conn
+
+        t = xmlrpclib.SafeTransport()
+        conn1 = t.make_connection('example.com')
+        conn2 = t.make_connection('example.com')
+
+        self.assertEqual(mock_https_conn.call_count, 1)
+        self.assertIs(conn1, conn2)
+
+    @mock.patch('http.client.HTTPSConnection')
+    def test_make_connection_different_hosts(self, mock_https_conn):
+        mock_conn1 = mock.MagicMock()
+        mock_conn2 = mock.MagicMock()
+        mock_https_conn.side_effect = [mock_conn1, mock_conn2]
+
+        t = xmlrpclib.SafeTransport()
+        conn1 = t.make_connection('host1.example.com')
+        conn2 = t.make_connection('host2.example.com')
+
+        self.assertEqual(mock_https_conn.call_count, 2)
+        self.assertIs(conn1, mock_conn1)
+        self.assertIs(conn2, mock_conn2)
+
+    def test_make_connection_no_https(self):
+        old = http.client.HTTPSConnection
+        try:
+            del http.client.HTTPSConnection
+            t = xmlrpclib.SafeTransport()
+            with self.assertRaises(NotImplementedError) as cm:
+                t.make_connection('example.com')
+            self.assertIn('HTTPS', str(cm.exception))
+        finally:
+            http.client.HTTPSConnection = old
+
+
 def setUpModule():
     thread_info = threading_helper.threading_setup()
     unittest.addModuleCleanup(threading_helper.threading_cleanup, *thread_info)
