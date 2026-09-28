@@ -587,7 +587,7 @@ jobs:
       - name: Display build info
         run: |
           "$BUILD_DIR/cross-python/bin/python3" -m test.pythoninfo
-      - name: Run test subset with host build
+      - name: Run test subset with cross build build
         run: |
           "$BUILD_DIR/cross-python/bin/python3" -m test test_sysconfig test_site test_embed
 
