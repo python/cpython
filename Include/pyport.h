@@ -546,7 +546,7 @@ extern "C" {
 #if defined (__STDC_VERSION__) && __STDC_VERSION__ >= 202311L
 #  define _Py_TYPEOF(expr) typeof(expr)
 #elif (defined(__GNUC__) || defined(__clang__) \
-       || (defined(_MSC_VER) && _MSC_VER >= 1939))
+       || (defined(_MSC_VER) && _MSC_VER >= 1939 && !defined(__cplusplus)))
 #  define _Py_TYPEOF(expr) __typeof__(expr)
 #endif
 
