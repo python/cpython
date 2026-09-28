@@ -146,12 +146,10 @@ class _WriteBufferStream(io.RawIOBase):
 
 
 def _gunzip_name(name):
-    """The name :program:`gunzip` would decompress *name* to, or ``None``.
+    """The name gunzip would decompress name to, or None.
 
-    The suffix is matched ignoring case, and ``.tgz`` becomes ``.tar`` rather
-    than being stripped.  ``.taz`` is not handled: it means a ``.tar.Z``, and
-    this module does not do :program:`compress`.  Accepts and returns either
-    :class:`str` or :class:`bytes`.
+    The suffix is matched ignoring case, and .tgz becomes .tar rather than
+    being stripped.  Accepts and returns either str or bytes.
     """
     if isinstance(name, bytes):
         gz, tgz, tar = b'.gz', b'.tgz', b'.tar'
