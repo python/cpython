@@ -1147,6 +1147,34 @@ class BaseBytesTest:
         c = b.translate(None, delete=b'e')
         self.assertEqual(c, b'hllo')
 
+        # short inputs starting with NUL bytes
+        table = bytes.maketrans(b'\x00', b'Z')
+        for data in b'\x00', b'\x00' * 8, b'\x00' * 8 + b'a' * 247:
+            c = self.type2test(data).translate(table)
+            self.assertEqual(c, data.replace(b'\x00', b'Z'))
+
+    @support.cpython_only
+    def test_translate_unchanged(self):
+        if self.type2test != bytes:
+            self.skipTest("test specific bytes.translate()")
+
+        # bytes.translate() returns the input string unchanged
+        # if no byte is modified
+        size = 1024
+        b = b'hell' + b'o' * size
+        rosetta = bytearray(range(256))
+        rosetta[ord('#')] = ord('?')
+        self.assertIs(b.translate(rosetta), b)
+
+        # bytes.translate() always create a new object
+        # if the input string is a bytes subclass
+        class bytes_subclass(bytes):
+            pass
+        b = bytes_subclass(b)
+        result = b.translate(rosetta)
+        self.assertIsNot(result, b)
+        self.assertEqual(result, b)
+
     def test_sq_item(self):
         _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
         obj = self.type2test((42,))
