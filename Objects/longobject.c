@@ -2045,10 +2045,6 @@ pylong_int_to_decimal_string(PyObject *aa,
         goto error;
     }
     if (writer) {
-        Py_ssize_t size = PyUnicode_GET_LENGTH(s);
-        if (_PyUnicodeWriter_Prepare(writer, size, '9') == -1) {
-            goto error;
-        }
         if (_PyUnicodeWriter_WriteStr(writer, s) < 0) {
             goto error;
         }

@@ -2262,6 +2262,35 @@ class PyUnicodeWriterTest(unittest.TestCase):
                 self.assertEqual(writer.get_buffer(), expected)
                 self.assertIs(writer.finish(), unique_string)
 
+    def test_readonly_optim_large_int(self):
+        # Read-only optimization in _PyLong_FormatWriter() for large integer:
+        # use _pylong.int_to_decimal_string() result as a read-only string.
+        # See pylong_int_to_decimal_string().
+
+        self.addCleanup(sys.set_int_max_str_digits,
+                        sys.get_int_max_str_digits())
+        sys.set_int_max_str_digits(0)
+
+        # _PyLong_FormatWriter() calls _pylong.int_to_decimal_string() for
+        # integer with Py_SIZE() > 1000.
+        large_int = 1 << (sys.int_info.bits_per_digit * 1020)
+        large_int_str = str(large_int)
+        expected = (len(large_int_str), 127, True)
+
+        for size in (0, 123):
+            with self.subTest(size=size):
+                # Test PyUnicodeWriter_WriteStr()
+                writer = self.create_writer(size)
+                writer.write_str(large_int)
+                self.assertEqual(writer.get_buffer(), expected)
+                self.assertEqual(writer.finish(), large_int_str)
+
+                # Test PyUnicodeWriter_WriteRepr()
+                writer = self.create_writer(size)
+                writer.write_repr(large_int)
+                self.assertEqual(writer.get_buffer(), expected)
+                self.assertEqual(writer.finish(), large_int_str)
+
 
 # Test PyUnicodeWriter_Format()
 @unittest.skipIf(ctypes is None, 'need ctypes')
