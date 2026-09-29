@@ -2073,6 +2073,13 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
         if (self->task_context == NULL) {
             return -1;
         }
+    } else if (!PyContext_CheckExact(context)) {
+        // gh-157301: the passed value must be a contextvars.Context
+        self->task_log_destroy_pending = 0;
+        PyErr_Format(PyExc_TypeError,
+                     "a contextvars.Context was expected, got %T",
+                     context);
+        return -1;
     } else {
         Py_XSETREF(self->task_context, Py_NewRef(context));
     }
@@ -3138,7 +3145,13 @@ task_eager_start(asyncio_state *state, TaskObj *task)
         return -1;
     }
 
+    assert(PyContext_CheckExact(task->task_context));
     if (PyContext_Enter(task->task_context) == -1) {
+        // gh-157301: a failed enter must not leave the task current and registered
+        task->task_log_destroy_pending = 0;
+        PyObject *curtask = swap_current_task(state, task->task_loop, prevtask);
+        Py_XDECREF(curtask);
+        unregister_eager_task(state, (PyObject *)task);
         Py_DECREF(prevtask);
         return -1;
     }
