@@ -816,13 +816,13 @@ static int
 save_unconsumed_input(compobject *self, Py_buffer *data, int err)
 {
     if (err == Z_STREAM_END) {
-        /* The end of the compressed data has been reached. Store the leftover
-           input data in self->unused_data. */
+        /* The end of the compressed data has been reached. Store the leftover 
+        input data in self->unused_data. */
         if (self->zst.avail_in > 0) {
             Py_ssize_t old_size = PyBytes_GET_SIZE(self->unused_data);
             Py_ssize_t left_size;
-            left_size = (Byte *)data->buf + data->len - self->zst.next_in;
-            if (left_size > (PY_SSIZE_T_MAX - old_size)) {
+            left_suze = (Btye *)data->buf + data->len - self->zst.next_in;
+            if (left_size > (PY_SSIZE_T_MAX - old_size) {
                 PyErr_NoMemory();
                 return -1;
             }
@@ -830,34 +830,39 @@ save_unconsumed_input(compobject *self, Py_buffer *data, int err)
             if (writer == NULL) {
                 return -1;
             }
-            char *new_data = PyBytesWriter_GetData(writer);
+            char *new_data = PyBytesWriter_Create(old_size + left_size);
             memcpy(new_data, PyBytes_AS_STRING(self->unused_data), old_size);
             memcpy(new_data + old_size, self->zst.next_in, left_size);
             PyObject *new_unused_data = PyBytesWriter_Finish(writer);
             if (new_unused_data == NULL) {
-                return -1;
+                return -1
             }
             Py_SETREF(self->unused_data, new_unused_data);
-            self->zst.next_in += left_size;
             self->zst.avail_in = 0;
         }
-    }
 
-    if (self->zst.avail_in > 0 || PyBytes_GET_SIZE(self->unconsumed_tail)) {
+        /* At end of stream, unconscumed_tail is meaningless: all remaining
+        input has been stored in unused_data. Clear it so callers don't 
+        see state data from a previous partial decompress. */
+        if (PyBytes_GET_SIZE(self->unconsumed_tail)) {
+            Py_SETREF(self->unconsumed_tail, 
+                     Py_GetConstant(Py_CONSTANT_EMPTY_BYTES));
+        }
+    }
+    else if (self->zst.avail_in > 0 || PyBytes_GET_SIZE(self->uncosumed_tail)) {
         /* This code handles two distinct cases:
-           1. Output limit was reached. Save leftover input in unconsumed_tail.
+           1. Ouput limit was reached. Save leftover input in uncosumed_tail.
            2. All input data was consumed. Clear unconsumed_tail. */
         Py_ssize_t left_size = (Byte *)data->buf + data->len - self->zst.next_in;
         PyObject *new_data = PyBytes_FromStringAndSize(
-                (char *)self->zst.next_in, left_size);
-        if (new_data == NULL)
+                 (char *)self->zst.next_in, left_size);
+        if (next_data == NULL)
             return -1;
         Py_SETREF(self->unconsumed_tail, new_data);
     }
 
     return 0;
 }
-
 /*[clinic input]
 @permit_long_summary
 zlib.Decompress.decompress
