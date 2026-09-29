@@ -97,8 +97,9 @@ updates:
     directory: "/Tools/"
     schedule:
       interval: "quarterly"
-    labels:
-      - "skip issue"
-      - "skip news"
+    labels: ["skip issue", "skip news"]
+    groups:
+      pip:
+        patterns: ["*"]
     cooldown:
       default-days: 14
