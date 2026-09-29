@@ -492,7 +492,10 @@ elif _sys.platform in ["android", "cygwin"]:
     # These are Unix-like platforms which use a dynamically-linked libpython.
     pythonapi = PyDLL(_sysconfig.get_config_var("LDLIBRARY"))
 else:
-    pythonapi = PyDLL(None)
+    try:
+        pythonapi = PyDLL(None)
+    except OSError:
+        pythonapi = None
 
 
 if _os.name == "nt":

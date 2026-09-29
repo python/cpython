@@ -1,0 +1,2 @@
+Updated macOS installer to use OpenSSL 3.5.8, jumping from the 3.0 series
+to 3.5 after 3.0's end of public support in September 2026.
