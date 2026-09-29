@@ -945,6 +945,17 @@ def collect_cc(info_add):
         info_add('CXX.version', version)
 
 
+def collect_ndbm(info_add):
+    try:
+        import _dbm
+    except ImportError:
+        return
+
+    attributes = ('library', 'GDBM_VERSION_INFO', 'gdbm_version',
+                  'BDB_VERSION', 'bdb_version')
+    copy_attributes(info_add, _dbm, 'ndbm.%s', attributes)
+
+
 def collect_gdbm(info_add):
     try:
         import _gdbm
@@ -1368,6 +1379,7 @@ def collect_info(info):
         collect_expat,
         collect_fips,
         collect_gdb,
+        collect_ndbm,
         collect_gdbm,
         collect_get_config,
         collect_locale,
