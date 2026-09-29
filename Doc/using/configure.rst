@@ -22,8 +22,14 @@ Features and minimum versions required to build CPython:
 
 * Support for threads.
 
-* OpenSSL 1.1.1 is the minimum version and OpenSSL 3.0.18 is the recommended
-  minimum version for the :mod:`ssl` and :mod:`hashlib` extension modules.
+* OpenSSL 1.1.1 is the minimum possible version to build the :mod:`ssl` and
+  :mod:`hashlib` extension modules against, but the series is end-of-life and
+  no longer receives public security fixes.  Use the latest patch release of a
+  currently supported LTS release series (see the `OpenSSL Roadmap
+  <https://openssl-library.org/roadmap/index.html>`__), or the package
+  provided by your operating system if available.  Other libraries that offer
+  an API compatible with OpenSSL 1.1.1 or later may work, but are not
+  officially supported.
 
 * SQLite 3.15.2 for the :mod:`sqlite3` extension module.
 

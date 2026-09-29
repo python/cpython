@@ -57,9 +57,10 @@ typedef struct _tokenizer_mode {
     Py_ssize_t f_string_start_offset;
     Py_ssize_t f_string_multi_line_start_offset;
 
-    Py_ssize_t last_expr_size;
-    Py_ssize_t last_expr_end;
-    char* last_expr_buffer;
+    /* Points into tok->buf, which is retained while INSIDE_FSTRING(tok). */
+    const char* last_expr_start;
+    Py_ssize_t last_expr_start_offset;
+
     int f_string_debug;
     int in_format_spec;
 } tokenizer_mode;
@@ -130,6 +131,7 @@ struct tok_state {
 #ifdef Py_DEBUG
     int debug;
 #endif
+    int barry_as_bdfl;
 };
 
 int _PyLexer_type_comment_token_setup(struct tok_state *tok, struct token *token, int type, int col_offset,
