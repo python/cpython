@@ -3166,16 +3166,21 @@ PyUnicodeWriter_Format(PyUnicodeWriter *writer, const char *format, ...)
 }
 
 int
-_PyUnicodeWriter_FormatV(PyUnicodeWriter *writer, const char *format,
+_PyUnicodeWriter_FormatV(PyUnicodeWriter *pub_writer, const char *format,
                          va_list vargs)
 {
-    _PyUnicodeWriter *_writer = (_PyUnicodeWriter*)writer;
-    Py_ssize_t old_pos = _writer->pos;
+    _PyUnicodeWriter *writer = (_PyUnicodeWriter*)pub_writer;
+    Py_ssize_t old_pos = writer->pos;
+    Py_UCS4 old_maxchar = writer->maxchar;
 
-    int res = unicode_from_format(_writer, format, vargs);
+    int res = unicode_from_format(writer, format, vargs);
 
     if (res < 0) {
-        _writer->pos = old_pos;
+        writer->pos = old_pos;
+        if (writer->maxchar > old_maxchar) {
+            // _PyUnicodeWriter_Finish() will check maxchar
+            writer->recheck_maxchar = 1;
+        }
     }
     return res;
 }
@@ -5364,7 +5369,7 @@ unicode_decode_utf8(const char *s, Py_ssize_t size,
 }
 
 
-// Used by PyUnicodeWriter_WriteUTF8() implementation
+// Used by PyUnicodeWriter_WriteUTF8() and PyUnicodeWriter_DecodeUTF8Stateful()
 int
 _PyUnicode_DecodeUTF8Writer(_PyUnicodeWriter *writer,
                             const char *s, Py_ssize_t size,
@@ -5378,18 +5383,20 @@ _PyUnicode_DecodeUTF8Writer(_PyUnicodeWriter *writer,
         return 0;
     }
 
+    Py_ssize_t old_pos = writer->pos;
+    Py_UCS4 old_maxchar = writer->maxchar;
+
     // fast path: try ASCII string.
     if (_PyUnicodeWriter_Prepare(writer, size, 127) < 0) {
-        return -1;
+        goto error;
     }
     assert(_PyUnicodeWriter_CanWrite(writer));
 
     const char *starts = s;
     const char *end = s + size;
-    Py_ssize_t decoded = 0;
-    Py_UCS1 *dest = (Py_UCS1*)writer->data + writer->pos * writer->kind;
     if (writer->kind == PyUnicode_1BYTE_KIND) {
-        decoded = ascii_decode(s, end, dest);
+        Py_UCS1 *dest = (Py_UCS1*)writer->data + writer->pos * writer->kind;
+        Py_ssize_t decoded = ascii_decode(s, end, dest);
         writer->pos += decoded;
 
         if (decoded == size) {
@@ -5401,8 +5408,24 @@ _PyUnicode_DecodeUTF8Writer(_PyUnicodeWriter *writer,
         s += decoded;
     }
 
-    return unicode_decode_utf8_impl(writer, starts, s, end,
-                                    error_handler, errors, consumed);
+    int res = unicode_decode_utf8_impl(writer, starts, s, end,
+                                       error_handler, errors, consumed);
+    if (res < 0) {
+        goto error;
+    }
+    return 0;
+
+error:
+    // Restore the writer to its previous state
+    writer->pos = old_pos;
+    if (writer->maxchar > old_maxchar) {
+        // _PyUnicodeWriter_Finish() will check maxchar
+        writer->recheck_maxchar = 1;
+    }
+    if (consumed) {
+        *consumed = 0;
+    }
+    return -1;
 }
 
 

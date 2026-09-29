@@ -516,8 +516,8 @@ PyAPI_FUNC(int) PyUnicodeWriter_Format(
     ...);
 PyAPI_FUNC(int) PyUnicodeWriter_DecodeUTF8Stateful(
     PyUnicodeWriter *writer,
-    const char *string,         /* UTF-8 encoded string */
-    Py_ssize_t length,          /* size of string */
+    const char *str,            /* UTF-8 encoded string */
+    Py_ssize_t size,            /* size of string */
     const char *errors,         /* error handling */
     Py_ssize_t *consumed);      /* bytes consumed */
 
@@ -537,6 +537,9 @@ typedef struct {
 
     /* minimum character (default: 127, ASCII) */
     Py_UCS4 min_char;
+
+    // If non-zero, _PyUnicodeWriter_Finish() needs to check maxchar.
+    int recheck_maxchar;
 
     /* If non-zero, overallocate the buffer (default: 0). */
     unsigned char overallocate;
