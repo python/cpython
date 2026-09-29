@@ -2349,6 +2349,27 @@ _PyThreadState_SetShuttingDown(PyThreadState *tstate)
 #endif
 }
 
+#ifdef Py_GIL_DISABLED
+int
+_PyThreadState_TrySuspendDetached(PyThreadState *tstate)
+{
+    assert(tstate != _PyThreadState_GET());
+    int expected = _Py_THREAD_DETACHED;
+    return _Py_atomic_compare_exchange_int(&tstate->state, &expected,
+                                           _Py_THREAD_SUSPENDED);
+}
+
+void
+_PyThreadState_ResumeDetached(PyThreadState *tstate)
+{
+    assert(tstate != _PyThreadState_GET());
+    assert(_Py_atomic_load_int_relaxed(&tstate->state) == _Py_THREAD_SUSPENDED);
+    _Py_atomic_store_int(&tstate->state, _Py_THREAD_DETACHED);
+    // Wake the thread if it is parked in tstate_wait_attach().
+    _PyParkingLot_UnparkAll(&tstate->state);
+}
+#endif
+
 // Decrease stop-the-world counter of remaining number of threads that need to
 // pause. If we are the final thread to pause, notify the requesting thread.
 static void
