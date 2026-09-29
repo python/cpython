@@ -731,6 +731,31 @@ writer_get_pointer(PyObject *self_raw, PyObject *args)
 
 
 static PyObject*
+writer_get_buffer(PyObject *self_raw, PyObject *args)
+{
+    WriterObject *self = (WriterObject *)self_raw;
+    if (writer_check(self) < 0) {
+        return NULL;
+    }
+
+    _PyUnicodeWriter *writer = (_PyUnicodeWriter*)self->writer;
+    PyObject *allocated;
+    Py_UCS4 maxchar;
+    if (writer->buffer) {
+        allocated = PyLong_FromSsize_t(PyUnicode_GET_LENGTH(writer->buffer));
+        maxchar = PyUnicode_MAX_CHAR_VALUE(writer->buffer);
+    }
+    else {
+        allocated = Py_None;
+        maxchar = writer->min_char;
+    }
+    return Py_BuildValue("(NkN)",
+                         allocated, (unsigned long)maxchar,
+                         PyBool_FromLong(writer->readonly));
+}
+
+
+static PyObject*
 writer_finish(PyObject *self_raw, PyObject *Py_UNUSED(args))
 {
     WriterObject *self = (WriterObject *)self_raw;
@@ -755,6 +780,7 @@ static PyMethodDef writer_methods[] = {
     {"write_substring", _PyCFunction_CAST(writer_write_substring), METH_VARARGS},
     {"decodeutf8stateful", _PyCFunction_CAST(writer_decodeutf8stateful), METH_VARARGS},
     {"get_pointer", _PyCFunction_CAST(writer_get_pointer), METH_VARARGS},
+    {"get_buffer", _PyCFunction_CAST(writer_get_buffer), METH_VARARGS},
     {"finish", _PyCFunction_CAST(writer_finish), METH_NOARGS},
     {NULL,              NULL}           /* sentinel */
 };
