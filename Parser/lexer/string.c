@@ -83,18 +83,17 @@ finish_ftstring_expr(struct tok_state *tok, ftstring_state *state,
     PyObject *res;
     if (comments != NULL && comments->count > 0) {
         Py_ssize_t stripped_size = expr_len;
-        _PyTok_Off previous_end = state->expr_span.start;
         Py_ssize_t comment_count = 0;
         for (Py_ssize_t i = 0; i < comments->count; i++) {
             _PyTok_Span comment = comments->spans[i];
             assert(_PyTok_SpanIsValid(comment));
-            assert(comment.start >= previous_end);
+            assert(comment.start >= (i == 0 ? state->expr_span.start
+                                           : comments->spans[i - 1].end));
             if (comment.start >= state->expr_span.end) {
                 break;
             }
             assert(comment.end <= state->expr_span.end);
             stripped_size -= comment.end - comment.start;
-            previous_end = comment.end;
             comment_count++;
         }
         char *stripped = PyMem_Malloc((size_t)stripped_size);
