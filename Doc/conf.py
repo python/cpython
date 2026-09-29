@@ -76,6 +76,8 @@ _doc_authors = 'Python documentation authors'
 # and replace the values accordingly.
 # See Doc/tools/extensions/patchlevel.py
 version, release = get_version_info()
+v = get_header_version_info()
+branch = "main" if v.releaselevel == "alpha" else f"{v.major}.{v.minor}"
 
 rst_epilog = f"""
 .. |python_version_literal| replace:: ``Python {version}``
@@ -294,6 +296,7 @@ html_context = {
     "repository_url": repository_url or None,
     "pr_id": os.getenv("READTHEDOCS_VERSION"),
     "enable_analytics": os.getenv("PYTHON_DOCS_ENABLE_ANALYTICS"),
+    "source_branch": branch,
 }
 
 # This 'Last updated on:' timestamp is inserted at the bottom of every page.
@@ -302,6 +305,9 @@ html_last_updated_use_utc = True
 
 # Path to find HTML templates to override theme
 templates_path = ['tools/templates']
+
+# We link to sources on GitHub, so don't copy them into the HTML output.
+html_copy_source = False
 
 # Custom sidebar templates, filenames relative to this file.
 html_sidebars = {
@@ -456,6 +462,10 @@ epub_exclude_files = ('index.xhtml', 'download.xhtml')
 # https://github.com/sphinx-doc/sphinx/issues/12359
 epub_use_index = False
 
+# The default depth of 3 lists over a thousand entries, which makes the
+# table of contents hard to navigate in e-book readers
+epub_tocdepth = 2
+
 # translation tag
 # ---------------
 
@@ -564,9 +574,6 @@ linkcheck_ignore = [
 # Options for sphinx.ext.extlinks
 # -------------------------------
 
-v = get_header_version_info()
-branch = "main" if v.releaselevel == "alpha" else f"{v.major}.{v.minor}"
-
 # This config is a dictionary of external sites,
 # mapping unique short aliases to a base URL and a prefix.
 # https://www.sphinx-doc.org/en/master/usage/extensions/extlinks.html
@@ -623,3 +630,40 @@ rediraffe_redirects = {
     "library/constants.rst": "builtins/constants.rst",
     "library/exceptions.rst": "builtins/exceptions.rst",
 }
+
+# Refuse to run the doctest builder under a mismatched Python
+# -----------------------------------------------------------
+
+
+def _check_doctest_interpreter(app):
+    # The doctests are executed by the interpreter running Sphinx,
+    # so refuse to run them if its version doesn't match the source tree.
+    if app.builder.name != "doctest":
+        return
+
+    running_version = f"{sys.version_info.major}.{sys.version_info.minor}"
+    if running_version != version:
+        from sphinx.util import logging as sphinx_logging
+
+        logger = sphinx_logging.getLogger(__name__)
+        logger.error(
+            "The doctests are executed by the Python running Sphinx, "
+            "which is Python %s, however this source tree is Python %s, "
+            "so they would test Python %s rather than the code "
+            "documented here.\n"
+            "Recreate the venv with a matching interpreter, for example: "
+            "'make clean-venv && make venv PYTHON=../python'.",
+            running_version,
+            version,
+            running_version,
+        )
+        raise SystemExit(1)
+
+
+def setup(app):
+    app.connect("builder-inited", _check_doctest_interpreter)
+    return {
+        "version": "1.0",
+        "parallel_read_safe": True,
+        "parallel_write_safe": True,
+    }

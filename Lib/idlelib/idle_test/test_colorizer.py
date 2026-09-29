@@ -480,6 +480,21 @@ class ColorDelegatorTest(unittest.TestCase):
         # def followed by non-keyword
         self._assert_highlighting('def ++', {'KEYWORD': [('1.0', '1.3')]})
 
+    def test_type_soft_keyword(self):
+        # type as a soft keyword
+        self._assert_highlighting('type X = int',
+                                  {'KEYWORD': [('1.0', '1.4')],
+                                   'BUILTIN': [('1.9', '1.12')]})
+        # type as a name
+        self._assert_highlighting('type = type(1)',
+                                  {'BUILTIN': [('1.0', '1.4'), ('1.7', '1.11')]})
+        self._assert_highlighting('type(x)',
+                                  {'BUILTIN': [('1.0', '1.4')]})
+        self._assert_highlighting('type in (int, str)',
+                                  {'KEYWORD': [('1.5', '1.7')],
+                                   'BUILTIN': [('1.0', '1.4'), ('1.9', '1.12'),
+                                               ('1.14', '1.17')]})
+
     def test_match_soft_keyword(self):
         # empty match
         self._assert_highlighting('match', {'KEYWORD': [('1.0', '1.5')]})
@@ -550,6 +565,18 @@ class ColorDelegatorTest(unittest.TestCase):
             e"""
             ''')
         self._assert_highlighting(source, {'STRING': [('1.0', '5.4')]})
+        source = '"""a\nb""" + str\n'
+        self._assert_highlighting(source, {'STRING': [('1.0', '2.4')],
+                                           'BUILTIN': [('2.7', '2.10')]})
+
+    def test_long_line(self):
+        # gh-103089: only the first MAX_COLORIZED_LINE characters of a line
+        # are colorized.
+        n = colorizer.MAX_COLORIZED_LINE
+        source = f"pass\n{'x' * (n - 3)}'a', 'b'\n'c'\n"
+        self._assert_highlighting(source, {'KEYWORD': [('1.0', '1.4')],
+                                           'STRING': [(f'2.{n-3}', f'2.{n}'),
+                                                      ('3.0', '3.3')]})
 
     @run_in_tk_mainloop(delay=50)
     def test_incremental_editing(self):
