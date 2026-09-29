@@ -1,0 +1,4 @@
+Fix a crash or incorrect output when formatting a :class:`float` using the
+``'f'``, ``'e'`` or ``'g'`` presentation types with a precision close to the
+platform's ``INT_MAX``.  Such precisions now raise :exc:`ValueError`, as
+precisions above ``INT_MAX`` already did.

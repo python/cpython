@@ -2108,7 +2108,8 @@ _Py_dg_strtod(const char *s00, char **se)
 static char *
 rv_alloc(int i)
 {
-    int j, k, *r;
+    int k, *r;
+    size_t j;   /* size_t so that j <<= 1 cannot overflow for i near INT_MAX */
 
     j = sizeof(ULong);
     for(k = 0;
@@ -2372,6 +2373,14 @@ _Py_dg_dtoa(double dd, int mode, int ndigits,
         leftright = 0;
         _Py_FALLTHROUGH;
     case 5:
+        /* -330 < k < 330 for any finite nonzero double.  Clamp ndigits so
+           that ndigits + k + 1 stays within int range; no double has
+           anywhere near this many decimal digits so the digits returned
+           are unaffected. */
+        if (ndigits > INT_MAX - 1024)
+            ndigits = INT_MAX - 1024;
+        else if (ndigits < -(INT_MAX - 1024))
+            ndigits = -(INT_MAX - 1024);
         i = ndigits + k + 1;
         ilim = i;
         ilim1 = i - 1;
