@@ -132,6 +132,8 @@ _PyUnicodeWriter_CanWrite(_PyUnicodeWriter *writer)
 static inline void
 _PyUnicodeWriter_SetBuffer(_PyUnicodeWriter *writer, PyObject *buffer)
 {
+    assert(writer->pos <= PyUnicode_GET_LENGTH(buffer));
+
     // Py_DECREF() the previous buffer (if any)
     Py_XSETREF(writer->buffer, buffer);
     writer->data = PyUnicode_DATA(buffer);

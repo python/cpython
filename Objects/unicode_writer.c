@@ -643,7 +643,12 @@ _PyUnicodeWriter_FinishWithSize(_PyUnicodeWriter *writer, Py_ssize_t size)
 {
     assert(0 <= size);
     if (writer->buffer != NULL) {
+        assert(size <= writer->pos);
         assert(size <= PyUnicode_GET_LENGTH(writer->buffer));
+        if (size < writer->pos) {
+            // Truncate the string: we may need to adjust the string kind
+            writer->recheck_maxchar = 1;
+        }
     }
     else {
         assert(size == 0);
