@@ -638,6 +638,21 @@ done:
 }
 
 
+PyObject *
+_PyUnicodeWriter_FinishWithSize(_PyUnicodeWriter *writer, Py_ssize_t size)
+{
+    assert(0 <= size);
+    if (writer->buffer != NULL) {
+        assert(size <= PyUnicode_GET_LENGTH(writer->buffer));
+    }
+    else {
+        assert(size == 0);
+    }
+    writer->pos = size;
+    return _PyUnicodeWriter_Finish(writer);
+}
+
+
 PyObject*
 PyUnicodeWriter_Finish(PyUnicodeWriter *writer)
 {
