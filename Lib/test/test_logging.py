@@ -2212,6 +2212,24 @@ class IPv6SysLogHandlerTest(SysLogHandlerTest):
         super(IPv6SysLogHandlerTest, self).tearDown()
 
 @support.requires_working_socket()
+class UnresolvableSysLogAddressTest(BaseTest):
+
+    """Test for SysLogHandler with a temporarily unresolvable address."""
+
+    @patch('socket.getaddrinfo')
+    def test_unresolvable_address(self, mock_getaddrinfo):
+        # The address can be unresolvable when the handler is created.
+        mock_getaddrinfo.side_effect = socket.gaierror
+        hdlr = logging.handlers.SysLogHandler(('localhost', 514))
+        self.addCleanup(hdlr.close)
+        self.assertIsNone(hdlr.socket)
+        # It is resolved again when a record is emitted.
+        calls = mock_getaddrinfo.call_count
+        with support.captured_stderr():
+            hdlr.emit(logging.makeLogRecord({'msg': 'sp\xe4m'}))
+        self.assertGreater(mock_getaddrinfo.call_count, calls)
+
+@support.requires_working_socket()
 @threading_helper.requires_working_threading()
 class HTTPHandlerTest(BaseTest):
     """Test for HTTPHandler."""
@@ -6446,11 +6464,12 @@ class BaseFileTest(BaseTest):
         self.rmfiles = []
 
     def tearDown(self):
-        for fn in self.rmfiles:
-            os.unlink(fn)
-        if os.path.exists(self.fn):
-            os.unlink(self.fn)
-        BaseTest.tearDown(self)
+        try:
+            for fn in self.rmfiles:
+                os_helper.unlink(fn)
+            os_helper.unlink(self.fn)
+        finally:
+            BaseTest.tearDown(self)
 
     def assertLogFile(self, filename):
         "Assert a log file is there and register it for deletion"
@@ -6483,6 +6502,46 @@ class FileHandlerTest(BaseFileTest):
         fh.emit(self.next_rec())    # '2'
         with open(self.fn) as fp:
             self.assertEqual(fp.read().strip(), '1')
+
+    def _check_open_error(self, h):
+        # gh-135683: an error while opening the file in emit() respects
+        # raiseExceptions, like an error during the actual write.
+        r = logging.makeLogRecord({})
+        old_raise = logging.raiseExceptions
+        self.addCleanup(setattr, logging, 'raiseExceptions', old_raise)
+
+        logging.raiseExceptions = True
+        with support.captured_stderr() as stderr:
+            h.handle(r)
+        self.assertIn('\nFileNotFoundError:', stderr.getvalue())
+
+        logging.raiseExceptions = False
+        with support.captured_stderr() as stderr:
+            h.handle(r)
+        self.assertEqual('', stderr.getvalue())
+
+    def test_emit_open_error(self):
+        # FileHandler with delay: the failing open happens in emit().
+        d = tempfile.mkdtemp()
+        self.addCleanup(os_helper.rmtree, d)
+        h = logging.FileHandler(os.path.join(d, 'missing', 'a.log'),
+                                encoding='utf-8', delay=True)
+        self.addCleanup(h.close)
+        self._check_open_error(h)
+
+    @unittest.skipIf(os.name == 'nt',
+                     'WatchedFileHandler not appropriate for Windows.')
+    def test_emit_reopen_error(self):
+        # WatchedFileHandler: reopenIfNeeded() fails after the dir is removed.
+        d = tempfile.mkdtemp()
+        self.addCleanup(os_helper.rmtree, d)
+        subdir = os.path.join(d, 'sub')
+        os.mkdir(subdir)
+        h = logging.handlers.WatchedFileHandler(
+            os.path.join(subdir, 'b.log'), encoding='utf-8')
+        self.addCleanup(h.close)
+        os_helper.rmtree(subdir)
+        self._check_open_error(h)
 
 class RotatingFileHandlerTest(BaseFileTest):
     def test_should_not_rollover(self):

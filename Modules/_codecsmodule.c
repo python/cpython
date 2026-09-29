@@ -56,7 +56,7 @@ static struct PyModuleDef codecsmodule;
 #define get_codecs_state_by_type(type) \
     (get_codecs_state(PyType_GetModuleByDef(type, &codecsmodule)))
 
-#ifdef HAVE_ICONV
+#ifdef _Py_HAVE_ICONV
 typedef struct {
     PyObject_HEAD
     iconv_t cd;
@@ -671,7 +671,7 @@ _codecs_code_page_decode_impl(PyObject *module, int codepage,
 
 #endif /* MS_WINDOWS */
 
-#ifdef HAVE_ICONV
+#ifdef _Py_HAVE_ICONV
 
 /*[clinic input]
 @classmethod
@@ -796,7 +796,7 @@ _codecs_iconv_decode_impl(PyObject *module, const char *encoding,
     return codec_tuple(decoded, consumed);
 }
 
-#endif /* HAVE_ICONV */
+#endif /* _Py_HAVE_ICONV */
 
 /* --- Encoder ------------------------------------------------------------ */
 
@@ -1108,7 +1108,7 @@ _codecs_code_page_encode_impl(PyObject *module, int code_page, PyObject *str,
 
 #endif /* MS_WINDOWS */
 
-#ifdef HAVE_ICONV
+#ifdef _Py_HAVE_ICONV
 
 /*[clinic input]
 _codecs.iconv_encode
@@ -1127,7 +1127,7 @@ _codecs_iconv_encode_impl(PyObject *module, const char *encoding,
                        PyUnicode_GET_LENGTH(str));
 }
 
-#endif /* HAVE_ICONV */
+#endif /* _Py_HAVE_ICONV */
 
 /* --- Error handler registry --------------------------------------------- */
 
@@ -1296,7 +1296,7 @@ static PyMethodDef _codecs_functions[] = {
 static int
 _codecs_exec(PyObject *module)
 {
-#ifdef HAVE_ICONV
+#ifdef _Py_HAVE_ICONV
     _codecs_state *state = get_codecs_state(module);
     state->IconvDecoderType = (PyTypeObject *)PyType_FromModuleAndSpec(
             module, &iconv_decoder_spec, NULL);

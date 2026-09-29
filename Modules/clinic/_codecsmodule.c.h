@@ -1629,7 +1629,7 @@ exit:
 
 #endif /* defined(MS_WINDOWS) */
 
-#if defined(HAVE_ICONV)
+#if defined(_Py_HAVE_ICONV)
 
 PyDoc_STRVAR(_codecs_IconvDecoder__doc__,
 "IconvDecoder(encoding, /)\n"
@@ -1676,9 +1676,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_ICONV) */
+#endif /* defined(_Py_HAVE_ICONV) */
 
-#if defined(HAVE_ICONV)
+#if defined(_Py_HAVE_ICONV)
 
 PyDoc_STRVAR(_codecs_IconvDecoder_decode__doc__,
 "decode($self, data, errors=None, final=False, /)\n"
@@ -1746,9 +1746,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_ICONV) */
+#endif /* defined(_Py_HAVE_ICONV) */
 
-#if defined(HAVE_ICONV)
+#if defined(_Py_HAVE_ICONV)
 
 PyDoc_STRVAR(_codecs_iconv_decode__doc__,
 "iconv_decode($module, encoding, data, errors=None, final=False, /)\n"
@@ -1830,7 +1830,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_ICONV) */
+#endif /* defined(_Py_HAVE_ICONV) */
 
 PyDoc_STRVAR(_codecs_readbuffer_encode__doc__,
 "readbuffer_encode($module, data, errors=None, /)\n"
@@ -2846,7 +2846,7 @@ exit:
 
 #endif /* defined(MS_WINDOWS) */
 
-#if defined(HAVE_ICONV)
+#if defined(_Py_HAVE_ICONV)
 
 PyDoc_STRVAR(_codecs_iconv_encode__doc__,
 "iconv_encode($module, encoding, str, errors=None, /)\n"
@@ -2917,7 +2917,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_ICONV) */
+#endif /* defined(_Py_HAVE_ICONV) */
 
 PyDoc_STRVAR(_codecs_register_error__doc__,
 "register_error($module, errors, handler, /)\n"
@@ -3156,4 +3156,4 @@ exit:
 #ifndef _CODECS_ICONV_ENCODE_METHODDEF
     #define _CODECS_ICONV_ENCODE_METHODDEF
 #endif /* !defined(_CODECS_ICONV_ENCODE_METHODDEF) */
-/*[clinic end generated code: output=8b51735946040ff2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d7b659a32625e2db input=a9049054013a1b77]*/

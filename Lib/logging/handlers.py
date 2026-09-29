@@ -563,8 +563,13 @@ class WatchedFileHandler(logging.FileHandler):
         If underlying file has changed, reopen the file before emitting the
         record to it.
         """
-        self.reopenIfNeeded()
-        logging.FileHandler.emit(self, record)
+        # Report an error while reopening the file, like emit errors.
+        try:
+            self.reopenIfNeeded()
+        except Exception:
+            self.handleError(record)
+        else:
+            logging.FileHandler.emit(self, record)
 
 
 class SocketHandler(logging.Handler):
@@ -902,7 +907,11 @@ class SysLogHandler(logging.Handler):
         self.socktype = socktype
         self.timeout = timeout
         self.socket = None
-        self.createSocket()
+        # The address is resolved again when emitting an event.
+        try:
+            self.createSocket()
+        except socket.gaierror:
+            pass
 
     def _connect_unixsocket(self, address):
         use_socktype = self.socktype

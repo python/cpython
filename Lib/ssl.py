@@ -103,6 +103,7 @@ from enum import _simple_enum
 import _ssl             # if we can't import it, let the error propagate
 
 from _ssl import OPENSSL_VERSION_NUMBER, OPENSSL_VERSION_INFO, OPENSSL_VERSION
+from _ssl import OPENSSL_API_VERSION_INFO
 from _ssl import _SSLContext, MemoryBIO, SSLSession
 from _ssl import (
     SSLError, SSLZeroReturnError, SSLWantReadError, SSLWantWriteError,
@@ -754,11 +755,11 @@ def _create_unverified_context(protocol=None, *, cert_reqs=CERT_NONE,
         raise ValueError(purpose)
 
     context = SSLContext(protocol)
+    # Setting verify_mode to CERT_NONE fails while check_hostname is
+    # enabled, so assign check_hostname first (gh-114905).
     context.check_hostname = check_hostname
     if cert_reqs is not None:
         context.verify_mode = cert_reqs
-    if check_hostname:
-        context.check_hostname = True
 
     if keyfile and not certfile:
         raise ValueError("certfile must be specified")
