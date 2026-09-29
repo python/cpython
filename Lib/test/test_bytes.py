@@ -5,14 +5,15 @@ the latter should be modernized).
 """
 
 import array
+import codecs
 import contextlib
-import operator
-import os
-import re
-import sys
 import copy
 import functools
+import operator
+import os
 import pickle
+import re
+import sys
 import tempfile
 import textwrap
 import threading
@@ -1705,6 +1706,29 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         self.assertEqual(len(ba), 499)
         bytes_header_size = sys.getsizeof(b'')
         self.assertEqual(ba.__alloc__(), 499 + bytes_header_size)
+
+    def test_take_bytes_hash(self):
+        # gh-158219: bytearray constructor must not use a bytes object
+        # if its hash value is already cached.
+
+        def encode(string, errors='strict'):
+            encoded = string.encode('utf-8')
+            hash(encoded)   # a codec may hash its own output
+            return encoded, len(string)
+
+        def hashing_codec(name):
+            if name != 'test_take_bytes_hash':
+                return None
+            return codecs.CodecInfo(encode, None, name=name)
+
+        codecs.register(hashing_codec)
+        self.addCleanup(codecs.unregister, hashing_codec)
+
+        ba = bytearray('hello', 'test_take_bytes_hash')
+        ba[0] = ord('H')
+        taken = ba.take_bytes()
+        self.assertEqual(taken, b'Hello')
+        self.assertEqual(hash(taken), hash(b'Hello'))
 
     def test_take_bytes_reentrant_resize(self):
         # gh-153570: n.__index__() can resize the bytearray, so take_bytes()
