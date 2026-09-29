@@ -24,13 +24,13 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
-    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         persist-credentials: false
     - name: Runner image version
       run: echo "IMAGE_OS_VERSION=${ImageOS}-${ImageVersion}" >> "$GITHUB_ENV"
     - name: Restore config.cache
-      uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: config.cache
         key: ${{ github.job }}-${{ env.IMAGE_OS_VERSION }}-${{ inputs.config_hash }}
@@ -53,7 +53,7 @@ jobs:
       run: |
         echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
     - name: Configure ccache action
-      uses: hendrikmuhs/ccache-action@5ebbd400eff9e74630f759d94ddd7b6c26299639 # v1.2.20
+      uses: hendrikmuhs/ccache-action@f09c25b45002a07be2955cbe52e8cee55643f89d # v1.2.24
       with:
         save: ${{ github.event_name == 'push' }}
         max-size: "200M"
