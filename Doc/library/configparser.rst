@@ -1311,7 +1311,7 @@ RawConfigParser Objects
                            inline_comment_prefixes=None, strict=True, \
                            empty_lines_in_values=True, \
                            default_section=configparser.DEFAULTSECT, \
-                           interpolation=BasicInterpolation(), converters={}, \
+                           interpolation=Interpolation(), converters={}, \
                            allow_unnamed_section=False)
 
    Legacy variant of the :class:`ConfigParser`.  It has interpolation
