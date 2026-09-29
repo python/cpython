@@ -1,0 +1,4 @@
+If :c:func:`PyUnicodeWriter_WriteUTF8` or :c:func:`PyUnicodeWriter_Format`
+fails, :c:func:`PyUnicodeWriter_Finish` now checks if the string uses the most
+efficient storage. Previously, :c:func:`PyUnicodeWriter_Finish` could return a
+string with an inefficient storage. Patch by Victor Stinner.

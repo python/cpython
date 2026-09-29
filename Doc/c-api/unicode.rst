@@ -1945,7 +1945,7 @@ object.
    On success, return ``0``.
    On error, set an exception, leave the writer unchanged, and return ``-1``.
 
-.. c:function:: int PyUnicodeWriter_DecodeUTF8Stateful(PyUnicodeWriter *writer, const char *string, Py_ssize_t length, const char *errors, Py_ssize_t *consumed)
+.. c:function:: int PyUnicodeWriter_DecodeUTF8Stateful(PyUnicodeWriter *writer, const char *str, Py_ssize_t size, const char *errors, Py_ssize_t *consumed)
 
    Decode the string *str* from UTF-8 with *errors* error handler and write the
    output into *writer*.

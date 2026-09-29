@@ -160,7 +160,8 @@ PyUnicodeWriter_Create(Py_ssize_t length)
 }
 
 
-void PyUnicodeWriter_Discard(PyUnicodeWriter *writer)
+void
+PyUnicodeWriter_Discard(PyUnicodeWriter *writer)
 {
     if (writer == NULL) {
         return;
@@ -511,8 +512,7 @@ PyUnicodeWriter_WriteASCII(PyUnicodeWriter *writer,
     assert(writer != NULL);
     _Py_AssertHoldsTstate();
 
-    _PyUnicodeWriter *priv_writer = (_PyUnicodeWriter*)writer;
-    return _PyUnicodeWriter_WriteASCIIString(priv_writer, str, size);
+    return _PyUnicodeWriter_WriteASCIIString((_PyUnicodeWriter*)writer, str, size);
 }
 
 
@@ -525,40 +525,25 @@ PyUnicodeWriter_WriteUTF8(PyUnicodeWriter *writer,
         size = strlen(str);
     }
 
-    _PyUnicodeWriter *_writer = (_PyUnicodeWriter*)writer;
-    Py_ssize_t old_pos = _writer->pos;
-    int res = _PyUnicode_DecodeUTF8Writer(_writer, str, size,
-                                          _Py_ERROR_STRICT, NULL, NULL);
-    if (res < 0) {
-        _writer->pos = old_pos;
-    }
-    return res;
+    return _PyUnicode_DecodeUTF8Writer((_PyUnicodeWriter*)writer, str, size,
+                                       _Py_ERROR_STRICT, NULL, NULL);
 }
 
 
 int
 PyUnicodeWriter_DecodeUTF8Stateful(PyUnicodeWriter *writer,
-                                   const char *string,
-                                   Py_ssize_t length,
+                                   const char *str,
+                                   Py_ssize_t size,
                                    const char *errors,
                                    Py_ssize_t *consumed)
 {
-    if (length < 0) {
-        length = strlen(string);
+    if (size < 0) {
+        size = strlen(str);
     }
 
-    _PyUnicodeWriter *_writer = (_PyUnicodeWriter*)writer;
-    Py_ssize_t old_pos = _writer->pos;
-    int res = _PyUnicode_DecodeUTF8Writer(_writer, string, length,
-                                          _Py_ERROR_UNKNOWN, errors,
-                                          consumed);
-    if (res < 0) {
-        _writer->pos = old_pos;
-        if (consumed) {
-            *consumed = 0;
-        }
-    }
-    return res;
+    return _PyUnicode_DecodeUTF8Writer((_PyUnicodeWriter*)writer, str, size,
+                                       _Py_ERROR_UNKNOWN, errors,
+                                       consumed);
 }
 
 
@@ -600,30 +585,55 @@ _PyUnicodeWriter_Finish(_PyUnicodeWriter *writer)
 
     Py_ssize_t final_size = writer->pos;
     if (final_size == 0) {
+        // Get the empty string singleton
         PyObject *empty = _PyUnicode_GetEmpty();
         Py_XDECREF(str);  // writer->buffer can be NULL if the position is 0
         return empty;
     }
 
-    Py_ssize_t length = PyUnicode_GET_LENGTH(str);
+    if (writer->readonly) {
+        assert(final_size == PyUnicode_GET_LENGTH(str));
+        goto done;
+    }
+    assert(final_size <= PyUnicode_GET_LENGTH(str));
+
     if (final_size == 1 && PyUnicode_KIND(str) == PyUnicode_1BYTE_KIND) {
-        assert(length >= 1);
+        // Get the single character singleton
+        assert(PyUnicode_GET_LENGTH(str) >= 1);
         const Py_UCS1 *data = PyUnicode_1BYTE_DATA(str);
         Py_UCS1 ch = data[0];
-        PyObject *latin1_char = _Py_LATIN1_CHR(ch);
         Py_DECREF(str);
-        return latin1_char;
+        str = _Py_LATIN1_CHR(ch);
+        goto done;
     }
 
-    if (!writer->readonly && length != final_size) {
+    if (writer->recheck_maxchar) {
+        Py_UCS4 maxchar = _PyUnicode_FindMaxChar(str, 0, final_size);
+        if (maxchar != writer->maxchar) {
+            // Adjust the string kind
+            PyObject *str2 = PyUnicode_New(final_size, maxchar);
+            if (str2 == NULL) {
+                Py_DECREF(str);
+                return NULL;
+            }
+            _PyUnicode_FastCopyCharacters(str2, 0, str, 0, final_size);
+            Py_SETREF(str, str2);
+            goto done;
+        }
+    }
+
+    if (PyUnicode_GET_LENGTH(str) != final_size) {
+        // Truncate the string
         PyObject *str2 = _PyUnicode_ResizeCompact(str, final_size);
         if (str2 == NULL) {
             Py_DECREF(str);
             return NULL;
         }
         str = str2;
+        goto done;
     }
 
+done:
     assert(_PyUnicode_CheckConsistency(str, 1));
     return str;
 }
