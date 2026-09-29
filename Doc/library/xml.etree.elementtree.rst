@@ -188,9 +188,17 @@ remove the processed children from it::
 
 These examples are not universal,
 they only give an idea for two common cases.
-If you do not need a tree at all,
-parse with :class:`XMLParser` and a custom target instead;
-it is not built then, and nothing has to be removed.
+If you do not need the tree,
+parse with the :class:`XMLPullTarget` target instead:
+it reports the elements without building a tree,
+and :meth:`XMLPullParser.expand` builds the subtree of an element
+when it is needed::
+
+   it = ET.iterparse(source, events=('start', 'end'), target=ET.XMLPullTarget())
+   for event, elem in it:
+       if event == 'start' and elem.tag == 'record':
+           it.expand(elem)
+           process(elem)
 
 Where *immediate* feedback through events is wanted, calling method
 :meth:`XMLPullParser.flush` can help reduce delay;
@@ -1340,6 +1348,60 @@ QName Objects
 
 
 
+.. _elementtree-xmlpulltarget-objects:
+
+XMLPullTarget Objects
+^^^^^^^^^^^^^^^^^^^^^
+
+
+.. class:: XMLPullTarget(element_factory=None)
+
+   A target of :class:`XMLParser` which reports elements
+   without building a tree.
+   It can be used with :class:`XMLPullParser` and :func:`iterparse`,
+   which report the objects returned by its methods.
+   The reported object is an :class:`Element` with the tag, the attributes
+   and, for the ``"end"`` event, the text, but without children:
+   they are reported as their own events.
+   Nothing is kept, so a document of any size can be parsed
+   with a constant amount of memory.
+
+   *element_factory*, when given, is called to create new elements,
+   like the argument of :class:`TreeBuilder` with the same name.
+
+   Use :meth:`XMLPullParser.expand` to build the subtree of an element.
+
+   .. method:: start(tag, attrib)
+
+      Opens a new element and returns it, without children and text.
+
+   .. method:: data(data)
+
+      Adds text to the current element,
+      or to the tail of the last closed one.
+
+   .. method:: end(tag)
+
+      Closes the current element and returns the same object
+      which was returned by :meth:`start`, with its text,
+      but still without children.
+
+   .. method:: comment(text)
+
+      Handles a comment and returns a comment element.
+
+   .. method:: pi(target, text=None)
+
+      Handles a processing instruction
+      and returns a processing instruction element.
+
+   .. method:: close()
+
+      Returns ``None``.
+
+   .. versionadded:: next
+
+
 .. _elementtree-treebuilder-objects:
 
 TreeBuilder Objects
@@ -1595,6 +1657,23 @@ XMLPullParser Objects
       :meth:`XMLParser.close`, this method always returns :const:`None`.
       Any events not yet retrieved when the parser is closed can still be
       read with :meth:`read_events`.
+
+   .. method:: expand(element)
+
+      Build the subtree of *element* from the events which are already read
+      from the parser, and return *element*.
+      The events of its descendants are consumed and the corresponding
+      objects are added to it, up to the ``"end"`` event of *element*.
+
+      Both the ``"start"`` and the ``"end"`` events should be reported,
+      and the ``"start"`` event of *element* should be already read.
+      :exc:`ValueError` is raised if the element is not complete yet;
+      feed more data to the parser and call :meth:`!expand` again.
+      The iterator returned by :func:`iterparse` has a method with the same
+      name which reads more data itself.
+
+      .. versionadded:: next
+
 
    .. method:: read_events()
 
