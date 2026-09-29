@@ -33,6 +33,8 @@ Copyright (C) 1994 Steen Lumholt.
 #include "pycore_long.h"          // _PyLong_IsNegative()
 #include "pycore_sysmodule.h"     // _PySys_GetOptionalAttrString()
 
+#include <signal.h>               // SIGINT
+
 #ifdef MS_WINDOWS
 #  include <windows.h>
 #endif
@@ -538,6 +540,30 @@ class _tkinter.tktimertoken "TkttObject *" "&Tktt_Type_spec"
 int Tcl_AppInit(Tcl_Interp *);
 #endif
 
+int
+Tkinter_TkInit(Tcl_Interp *interp)
+{
+#ifdef __APPLE__
+    /* Tk on macOS replaces the handlers of these signals with its own,
+       which exits the process.  Keep the handlers installed by Python
+       (gh-157672). */
+    static const int signals[] = {SIGINT, SIGHUP, SIGTERM};
+    PyOS_sighandler_t handlers[Py_ARRAY_LENGTH(signals)];
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(signals); i++) {
+        handlers[i] = PyOS_getsig(signals[i]);
+    }
+#endif
+    int result = Tk_Init(interp);
+#ifdef __APPLE__
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(signals); i++) {
+        if (handlers[i] != SIG_DFL) {
+            PyOS_setsig(signals[i], handlers[i]);
+        }
+    }
+#endif
+    return result;
+}
+
 #ifndef WITH_APPINIT
 int
 Tcl_AppInit(Tcl_Interp *interp)
@@ -556,7 +582,7 @@ Tcl_AppInit(Tcl_Interp *interp)
         return TCL_OK;
     }
 
-    if (Tk_Init(interp) == TCL_ERROR) {
+    if (Tkinter_TkInit(interp) == TCL_ERROR) {
         PySys_WriteStderr("Tk_Init error: %s\n", Tcl_GetStringResult(interp));
         return TCL_ERROR;
     }
@@ -2980,7 +3006,7 @@ _tkinter_tkapp_loadtk_impl(TkappObject *self)
         return NULL;
     }
     if (_tk_exists == NULL || strcmp(_tk_exists, "1") != 0)     {
-        if (Tk_Init(interp)             == TCL_ERROR) {
+        if (Tkinter_TkInit(interp)      == TCL_ERROR) {
             Tkinter_Error(self);
             return NULL;
         }

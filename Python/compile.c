@@ -114,7 +114,7 @@ compiler IR.
 enum fblocktype { WHILE_LOOP, FOR_LOOP, TRY_EXCEPT, FINALLY_TRY, FINALLY_END,
                   WITH, ASYNC_WITH, HANDLER_CLEANUP, POP_VALUE, EXCEPTION_HANDLER,
                   EXCEPTION_GROUP_HANDLER, ASYNC_COMPREHENSION_GENERATOR,
-                  STOP_ITERATION };
+                  INLINED_COMPREHENSION, STOP_ITERATION };
 
 struct fblockinfo {
     enum fblocktype fb_type;
@@ -1082,6 +1082,8 @@ codegen_addop_j(instr_sequence *seq, location loc,
     return _PyInstructionSequence_Addop(seq, opcode, target.id, loc);
 }
 
+static void compiler_exit_scope(struct compiler *c);
+
 #define RETURN_IF_ERROR_IN_SCOPE(C, CALL) { \
     if ((CALL) < 0) { \
         compiler_exit_scope((C)); \
@@ -1177,6 +1179,23 @@ codegen_addop_j(instr_sequence *seq, location loc,
     } \
 }
 
+
+static int
+codegen_init_new_scope(struct compiler *c, location loc)
+{
+    if (c->u->u_scope_type == COMPILER_SCOPE_MODULE) {
+        loc.lineno = 0;
+    }
+    else {
+        RETURN_IF_ERROR(compiler_set_qualname(c));
+    }
+    ADDOP_I(c, loc, RESUME, RESUME_AT_FUNC_START);
+
+    if (c->u->u_scope_type == COMPILER_SCOPE_MODULE) {
+        loc.lineno = -1;
+    }
+    return SUCCESS;
+}
 
 static int
 compiler_enter_scope(struct compiler *c, identifier name,
@@ -1288,17 +1307,7 @@ compiler_enter_scope(struct compiler *c, identifier name,
 
     c->c_nestlevel++;
 
-    if (u->u_scope_type == COMPILER_SCOPE_MODULE) {
-        loc.lineno = 0;
-    }
-    else {
-        RETURN_IF_ERROR(compiler_set_qualname(c));
-    }
-    ADDOP_I(c, loc, RESUME, RESUME_AT_FUNC_START);
-
-    if (u->u_scope_type == COMPILER_SCOPE_MODULE) {
-        loc.lineno = -1;
-    }
+    RETURN_IF_ERROR_IN_SCOPE(c, codegen_init_new_scope(c, loc));
     return SUCCESS;
 }
 
@@ -1523,6 +1532,7 @@ compiler_unwind_fblock(struct compiler *c, location *ploc,
         case EXCEPTION_HANDLER:
         case EXCEPTION_GROUP_HANDLER:
         case ASYNC_COMPREHENSION_GENERATOR:
+        case INLINED_COMPREHENSION:
         case STOP_ITERATION:
             return SUCCESS;
 
@@ -5714,8 +5724,10 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
         NEW_JUMP_TARGET_LABEL(c, end);
         state->end = end;
 
-        // no need to push an fblock for this "virtual" try/finally; there can't
-        // be return/continue/break inside a comprehension
+        // Count against CO_MAXBLOCKS: SETUP_FINALLY consumes an except-stack
+        // slot even though return/continue/break cannot appear here.
+        RETURN_IF_ERROR(compiler_push_fblock(c, loc, INLINED_COMPREHENSION,
+                                             cleanup, NO_LABEL, NULL));
         ADDOP_JUMP(c, loc, SETUP_FINALLY, cleanup);
     }
 
@@ -5761,6 +5773,7 @@ pop_inlined_comprehension_state(struct compiler *c, location loc,
     }
     if (state.pushed_locals) {
         ADDOP(c, NO_LOCATION, POP_BLOCK);
+        compiler_pop_fblock(c, INLINED_COMPREHENSION, state.cleanup);
         ADDOP_JUMP(c, NO_LOCATION, JUMP_NO_INTERRUPT, state.end);
 
         // cleanup from an exception inside the comprehension
