@@ -4534,8 +4534,13 @@ class CheckAttributes(unittest.TestCase):
 
         self.assertEqual(C.SPEC_VERSION, P.SPEC_VERSION)
 
-        self.assertLessEqual(set(dir(C)), set(dir(P)))
-        self.assertEqual([n for n in dir(C) if n[:2] != '__'], sorted(P.__all__))
+        # Information about the libmpdec library, specific to the C module.
+        libmpdec_names = {'LIBMPDEC_VERSION', 'LIBMPDEC_VERSION_INFO',
+                          'libmpdec_version', 'libmpdec_version_info'}
+        self.assertLessEqual(set(dir(C)) - libmpdec_names, set(dir(P)))
+        self.assertEqual([n for n in dir(C)
+                          if n[:2] != '__' and n not in libmpdec_names],
+                         sorted(P.__all__))
 
     def test_context_attributes(self):
 
@@ -5058,6 +5063,38 @@ class CFunctionality(unittest.TestCase):
 
         self.assertEqual(C.DecTraps,
                          C.DecErrors|C.DecOverflow|C.DecUnderflow)
+
+@requires_cdecimal
+class CVersion(unittest.TestCase):
+    """Information about the libmpdec library in _decimal"""
+
+    def _test_libmpdec_version(self, v, string):
+        self.assertIsInstance(v[:], tuple)
+        self.assertEqual(len(v), 3)
+        self.assertIsInstance(v[0], int)
+        self.assertIsInstance(v[1], int)
+        self.assertIsInstance(v[2], int)
+        self.assertIsInstance(v.major, int)
+        self.assertIsInstance(v.minor, int)
+        self.assertIsInstance(v.micro, int)
+        self.assertEqual(v[0], v.major)
+        self.assertEqual(v[1], v.minor)
+        self.assertEqual(v[2], v.micro)
+        self.assertGreaterEqual(v.major, 2)
+        self.assertGreaterEqual(v.minor, 0)
+        self.assertGreaterEqual(v.micro, 0)
+        self.assertEqual(string, '%d.%d.%d' % v)
+
+    def test_libmpdec_version(self):
+        if support.verbose:
+            print(f'LIBMPDEC_VERSION = {C.LIBMPDEC_VERSION}', flush=True)
+            print(f'libmpdec_version = {C.libmpdec_version}', flush=True)
+            print(f'LIBMPDEC_VERSION_INFO = {C.LIBMPDEC_VERSION_INFO}', flush=True)
+            print(f'libmpdec_version_info = {C.libmpdec_version_info}', flush=True)
+        self._test_libmpdec_version(C.LIBMPDEC_VERSION_INFO, C.LIBMPDEC_VERSION)
+        self._test_libmpdec_version(C.libmpdec_version_info, C.libmpdec_version)
+        self.assertEqual(C.LIBMPDEC_VERSION_INFO[0], C.libmpdec_version_info[0])
+        self.assertIs(C.libmpdec_version, C.__libmpdec_version__)
 
 @requires_cdecimal
 class CWhitebox(unittest.TestCase):
