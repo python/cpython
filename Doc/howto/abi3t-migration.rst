@@ -217,9 +217,9 @@ Module export hook
 
 Unless you've done this step already, your extension module defines a
 :ref:`module initialization function <extension-pyinit>`
-named :samp:`PyInit_{<module_name>}`.
+named :samp:`PyInit_{<modname>}` (where ``modname`` is the name of your module).
 You will need to port it to a :ref:`module export hook <extension-export-hook>`,
-:samp:`PyModExport_{<module name>}`, a feature added in CPython 3.15 in
+:samp:`PyModExport_{<modname>}`, a feature added in CPython 3.15 in
 :pep:`793`.
 
 Your existing init function should look like this (with your own names
@@ -296,6 +296,34 @@ As in the example, your ``PyModExport_`` function should *only* return a
 pointer to static data.
 If you cannot avoid additional code, refer to the
 :ref:`caveats in PyModExport documentation <pymodexport-api-caveats>`.
+
+.. note::
+
+   When building for Windows using the Setuptools_ build tool,
+   removing the :samp:`PyInit_{<modname>}` function may result in the linker error
+   :samp:`LINK : error LNK2001: unresolved external symbol PyInit_{<modname>}`.
+   This is caused by Setuptools passing an ``/EXPORT`` linker flag, which
+   is redundant since Python 3.15 (see :gh:`141671`).
+   A workaround is to add a dummy :samp:`PyInit_{<modname>}` function
+   to your code.
+   Python 3.15+ will never call this function if
+   :samp:`PyModExport_{<modname>}` is present, so it can always fail:
+
+   .. code-block:: c
+
+      // Workaround for https://github.com/pypa/distutils/issues/387
+      PyMODINIT_FUNC
+      PyInit_<modname>(void)
+      {
+         PyErr_SetString(PyExc_SystemError,
+                         "PyInit_* called for module with PyModExport_*");
+         return NULL;
+      }
+
+   (This issue is present in Setuptools 84.0.0; it might be fixed in newer
+   versions.)
+
+.. _Setuptools: https://setuptools.pypa.io/
 
 
 Existing slots
