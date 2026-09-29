@@ -459,6 +459,25 @@ class TestSelfStackTrace(RemoteInspectionTestBase):
         self.assertEqual([len(n) for n in names if n.startswith("x")], [255])
 
     @skip_if_not_supported
+    def test_running_task_reports_its_call_stack(self):
+        # gh-158443
+        async def inner():
+            return [
+                [frame.funcname.rpartition(".")[2] for frame in coro.call_stack]
+                for info in RemoteUnwinder(os.getpid()).get_all_awaited_by()
+                for task in info.awaited_by
+                for coro in task.coroutine_stack
+            ]
+
+        async def middle():
+            return await inner()
+
+        async def main():
+            return await middle()
+
+        self.assertEqual(asyncio.run(main()), [["inner", "middle", "main"]])
+
+    @skip_if_not_supported
     @unittest.skipIf(
         sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
         "Test only runs on Linux with process_vm_readv support",
