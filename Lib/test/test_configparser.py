@@ -1362,8 +1362,7 @@ class ConfigParserTestCaseExtendedInterpolation(BasicTestCase, unittest.TestCase
             cf['interpolation fail']['case6'] = "BLACK $ABBATH"
 
     def test_get_with_vars_nested(self):
-        # gh-70999: caller-supplied ``vars`` must be honoured at every level
-        # of a same-section interpolation chain, not just the first.
+        # gh-70999: honor vars at all levels of same-section interpolation
         cf = self.fromstring(textwrap.dedent("""
             [section]
             a = ${b}
