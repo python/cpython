@@ -178,8 +178,7 @@ _PyUnicodeWriter_InitWithBuffer(_PyUnicodeWriter *writer, PyObject *buffer)
     assert(PyUnstable_Object_IsUniquelyReferenced(buffer));
 
     memset(writer, 0, sizeof(*writer));
-    writer->buffer = buffer;
-    _PyUnicodeWriter_Update(writer);
+    _PyUnicodeWriter_SetBuffer(writer, buffer);
     writer->min_length = writer->size;
     assert(_PyUnicodeWriter_CanWrite(writer));
 }
@@ -204,16 +203,19 @@ _PyUnicodeWriter_PrepareInternal(_PyUnicodeWriter *writer,
 
     maxchar = Py_MAX(maxchar, writer->min_char);
 
-    PyObject *newbuffer;
+    PyObject *new_buffer;
     if (writer->buffer == NULL) {
         assert(!writer->readonly);
-        // Do not overallocate at the first allocation, but use min_length
-        if (alloc < writer->min_length)
-            alloc = writer->min_length;
 
-        writer->buffer = PyUnicode_New(alloc, maxchar);
-        if (writer->buffer == NULL)
+        // Do not overallocate at the first allocation, but use min_length
+        if (alloc < writer->min_length) {
+            alloc = writer->min_length;
+        }
+
+        new_buffer = PyUnicode_New(alloc, maxchar);
+        if (new_buffer == NULL) {
             return -1;
+        }
     }
     else if (alloc > writer->size) {
         // Do not overallocate at the first allocation, but use min_length
@@ -223,38 +225,42 @@ _PyUnicodeWriter_PrepareInternal(_PyUnicodeWriter *writer,
             /* overallocate to limit the number of realloc() */
             alloc += alloc / OVERALLOCATE_FACTOR;
         }
-        if (alloc < writer->min_length)
+        if (alloc < writer->min_length) {
             alloc = writer->min_length;
+        }
 
         if (maxchar > writer->maxchar || writer->readonly) {
             /* resize + widen */
             maxchar = Py_MAX(maxchar, writer->maxchar);
-            newbuffer = PyUnicode_New(alloc, maxchar);
-            if (newbuffer == NULL)
+            new_buffer = PyUnicode_New(alloc, maxchar);
+            if (new_buffer == NULL) {
                 return -1;
-            _PyUnicode_FastCopyCharacters(newbuffer, 0,
+            }
+            _PyUnicode_FastCopyCharacters(new_buffer, 0,
                                           writer->buffer, 0, writer->pos);
-            writer->readonly = 0;
-            Py_DECREF(writer->buffer);
-            writer->buffer = newbuffer;
         }
         else {
-            newbuffer = _PyUnicode_ResizeCompact(writer->buffer, alloc);
-            if (newbuffer == NULL)
+            new_buffer = _PyUnicode_ResizeCompact(writer->buffer, alloc);
+            if (new_buffer == NULL) {
                 return -1;
-            writer->buffer = newbuffer;
+            }
+            // Do not DECREF the old buffer
+            writer->buffer = NULL;
         }
     }
-    else if (maxchar > writer->maxchar) {
+    else {
+        assert(maxchar > writer->maxchar);
         assert(!writer->readonly);
-        newbuffer = PyUnicode_New(writer->size, maxchar);
-        if (newbuffer == NULL)
+
+        new_buffer = PyUnicode_New(writer->size, maxchar);
+        if (new_buffer == NULL) {
             return -1;
-        _PyUnicode_FastCopyCharacters(newbuffer, 0,
+        }
+        _PyUnicode_FastCopyCharacters(new_buffer, 0,
                                       writer->buffer, 0, writer->pos);
-        Py_SETREF(writer->buffer, newbuffer);
     }
-    _PyUnicodeWriter_Update(writer);
+
+    _PyUnicodeWriter_SetBuffer(writer, new_buffer);
     return 0;
 
 #undef OVERALLOCATE_FACTOR
@@ -316,11 +322,7 @@ _PyUnicodeWriter_WriteStr(_PyUnicodeWriter *writer, PyObject *str)
     if (maxchar > writer->maxchar || len > writer->size - writer->pos) {
         if (writer->buffer == NULL && PyUnicode_CheckExact(str)) {
             assert(_PyUnicode_CheckConsistency(str, 1));
-            writer->readonly = 1;
-            writer->buffer = Py_NewRef(str);
-            _PyUnicodeWriter_Update(writer);
-            writer->pos += len;
-            // The next write will create a new buffer and copy the string
+            _PyUnicodeWriter_SetReadOnly(writer, Py_NewRef(str), len);
             return 0;
         }
         if (_PyUnicodeWriter_PrepareInternal(writer, len, maxchar) == -1)
@@ -457,10 +459,7 @@ _PyUnicodeWriter_WriteASCIIString(_PyUnicodeWriter *writer,
         if (str == NULL)
             return -1;
 
-        writer->readonly = 1;
-        writer->buffer = str;
-        _PyUnicodeWriter_Update(writer);
-        writer->pos += len;
+        _PyUnicodeWriter_SetReadOnly(writer, str, len);
         return 0;
     }
 
