@@ -35,7 +35,7 @@ from inspect import iscoroutinefunction
 import threading
 from annotationlib import Format
 from dataclasses import fields, is_dataclass
-from types import CodeType, ModuleType, MethodType
+from types import CodeType, LazyImportType, ModuleType, MethodType
 from unittest.util import safe_repr
 from functools import wraps, partial
 from threading import RLock
@@ -1506,6 +1506,10 @@ class _patch(object):
             raise TypeError("Can't provide explicit spec_set *and* spec or autospec")
 
         original, local = self.get_original()
+
+        if (isinstance(original, LazyImportType)
+                and (spec is True or spec_set is True or autospec is True)):
+            original = original.resolve()
 
         if new is DEFAULT and autospec is None:
             inherit = False
