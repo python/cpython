@@ -461,6 +461,20 @@ class RunnerTests(BaseTest):
             with self.assertRaises(asyncio.CancelledError):
                 runner.run(coro())
 
+    def test_interrupt_after_main_task_done(self):
+        assert threading.current_thread() is threading.main_thread()
+
+        async def coro():
+            nonlocal task
+            task = asyncio.create_task(asyncio.Event().wait())
+            asyncio.get_running_loop().call_soon(interrupt_self)
+
+        task = None
+        with asyncio.Runner(loop_factory=self.new_loop) as runner:
+            with self.assertRaises(KeyboardInterrupt):
+                runner.run(coro())
+        self.assertTrue(task.cancelled())
+
     def test_signal_install_not_supported_ok(self):
         # signal.signal() can throw if the "main thread" doesn't have signals enabled
         assert threading.current_thread() is threading.main_thread()
