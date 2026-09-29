@@ -1,0 +1,4 @@
+Fix :class:`asyncio.ProactorEventLoop` UDP transports so that a write
+error no longer strands a paused protocol: the write loop is now
+rescheduled when data remains buffered, and the protocol is resumed
+when the buffer has drained.
