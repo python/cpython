@@ -401,11 +401,12 @@ _Py_string_to_number_with_underscores(
     return NULL;
 }
 
-/* Largest precision accepted by PyOS_double_to_string().  The output buffer
-   sizes computed below and within _Py_dg_dtoa() use int and Py_ssize_t
-   arithmetic on roughly precision + (digits before the point, at most
-   DBL_MAX_10_EXP + 1 == 309) + a few bytes of sign, point and exponent.
-   Staying this far below INT_MAX keeps all of those sums in range. */
+/* Largest precision magnitude accepted by PyOS_double_to_string().  The
+   output buffer sizes computed below and within _Py_dg_dtoa() use int and
+   Py_ssize_t arithmetic on roughly precision + (digits before the point, at
+   most DBL_MAX_10_EXP + 1 == 309) + a few bytes of sign, point and exponent.
+   Staying this far inside the int range keeps all of those sums in range.
+   (Only C callers can pass a negative precision.) */
 #define DOUBLE_TO_STRING_PRECISION_MAX (INT_MAX - 1024)
 
 #if _PY_SHORT_FLOAT_REPR == 0
@@ -773,7 +774,8 @@ char * PyOS_double_to_string(double val,
     int t, exp;
     int upper = 0;
 
-    if (precision > DOUBLE_TO_STRING_PRECISION_MAX) {
+    if (precision > DOUBLE_TO_STRING_PRECISION_MAX
+        || precision < -DOUBLE_TO_STRING_PRECISION_MAX) {
         PyErr_SetString(PyExc_ValueError, "precision too big");
         return NULL;
     }
@@ -1239,7 +1241,8 @@ char * PyOS_double_to_string(double val,
     const char * const *float_strings = lc_float_strings;
     int mode;
 
-    if (precision > DOUBLE_TO_STRING_PRECISION_MAX) {
+    if (precision > DOUBLE_TO_STRING_PRECISION_MAX
+        || precision < -DOUBLE_TO_STRING_PRECISION_MAX) {
         PyErr_SetString(PyExc_ValueError, "precision too big");
         return NULL;
     }
