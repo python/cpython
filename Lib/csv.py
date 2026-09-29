@@ -244,7 +244,13 @@ class Sniffer:
     def sniff(self, sample, delimiters=None):
         """
         Returns a dialect (or None) corresponding to the sample
+
+        If several delimiters fit the sample equally well, the
+        delimiters listed in the preferred attribute are preferred, in
+        that order, no matter how many times each of them occurs.
         """
+
+        sample = sample.replace('\r\n', '\n').replace('\r', '\n')
 
         quotechar, doublequote, delimiter, skipinitialspace = \
                    self._guess_quote_and_delimiter(sample, delimiters)
@@ -282,12 +288,16 @@ class Sniffer:
         this way.
         """
 
+        # The body of a quoted field ends at the first quote which is
+        # not doubled, as it does for a reader.  A lazy ".*?" scans to
+        # the end of the sample instead, from every start: quadratically.
+        body = r'(?:(?P=quote){2}|(?!(?P=quote)).)*+'
         matches = []
-        for restr in (r'(?P<delim>[^\w\n"\'])(?P<space> ?)(?P<quote>["\']).*?(?P=quote)(?P=delim)', # ,".*?",
-                      r'(?:^|\n)(?P<quote>["\']).*?(?P=quote)(?P<delim>[^\w\n"\'])(?P<space> ?)',   #  ".*?",
-                      r'(?P<delim>[^\w\n"\'])(?P<space> ?)(?P<quote>["\']).*?(?P=quote)(?:$|\n)',   # ,".*?"
-                      r'(?:^|\n)(?P<quote>["\']).*?(?P=quote)(?:$|\n)'):                            #  ".*?" (no delim, no space)
-            regexp = re.compile(restr, re.DOTALL | re.MULTILINE)
+        for restr in (r'(?P<delim>[^\w\n"\'])(?P<space> ?)(?P<quote>["\'])%s(?P=quote)(?P=delim)',   # ,"...",
+                      r'(?:^|\n)(?P<quote>["\'])%s(?P=quote)(?P<delim>[^\w\n"\'])(?P<space> ?)',     #  "...",
+                      r'(?P<delim>[^\w\n"\'])(?P<space> ?)(?P<quote>["\'])%s(?P=quote)(?:$|\n)',  # ,"..."
+                      r'(?:^|\n)(?P<quote>["\'])%s(?P=quote)(?:$|\n)'):                           #  "..." (no delim, no space)
+            regexp = re.compile(restr % body, re.DOTALL | re.MULTILINE)
             matches = regexp.findall(data)
             if matches:
                 break
@@ -330,18 +340,22 @@ class Sniffer:
             delim = ''
             skipinitialspace = 0
 
-        # if we see an extra quote between delimiters, we've got a
-        # double quoted format
-        dq_regexp = re.compile(
-                               r"((%(delim)s)|^)\W*%(quote)s[^%(delim)s\n]*%(quote)s[^%(delim)s\n]*%(quote)s\W*((%(delim)s)|$)" % \
-                               {'delim':re.escape(delim), 'quote':quotechar}, re.MULTILINE)
-
-
-
-        if dq_regexp.search(data):
-            doublequote = True
-        else:
-            doublequote = False
+        # A doubled quote character inside a quoted field means
+        # a double quoted format.  Match whole fields, so that a match
+        # cannot slide across field boundaries.
+        doublequote = False
+        if delim:
+            dq_regexp = re.compile(
+                    r"(?:(?<=%(delim)s)|^)%(space)s%(quote)s"     # ,"
+                    r"((?:%(quote)s%(quote)s|[^%(quote)s]++)*+)"  # the body
+                    r"%(quote)s(?:%(delim)s|$)"                   # ",
+                    % {'delim': re.escape(delim), 'quote': quotechar,
+                       # Skipping spaces after a space rescans them.
+                       'space': ' *+' if delim != ' ' else ''},
+                    re.MULTILINE)
+            dquotechar = quotechar * 2
+            doublequote = any(dquotechar in m[1]
+                              for m in dq_regexp.finditer(data))
 
         return (quotechar, doublequote, delim, skipinitialspace)
 

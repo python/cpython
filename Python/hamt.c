@@ -2487,6 +2487,10 @@ static int
 hamt_baseiter_tp_clear(PyHamtIterator *it)
 {
     Py_CLEAR(it->hi_obj);
+    /* i_nodes holds borrowed pointers into the tree that hi_obj was keeping
+       alive, so the cursor must not be used again.  A negative i_level makes
+       hamt_iterator_next() report I_END without touching i_nodes. */
+    it->hi_iter.i_level = -1;
     return 0;
 }
 
@@ -2530,6 +2534,10 @@ hamt_baseiter_tp_iternext(PyHamtIterator *it)
 static Py_ssize_t
 hamt_baseiter_tp_len(PyHamtIterator *it)
 {
+    if (it->hi_obj == NULL) {
+        /* tp_clear() ran on this iterator. */
+        return 0;
+    }
     return it->hi_obj->h_count;
 }
 
@@ -2550,6 +2558,7 @@ hamt_baseiter_new(PyTypeObject *type, binaryfunc yield, PyHamtObject *o)
 
     hamt_iterator_init(&it->hi_iter, o->h_root);
 
+    PyObject_GC_Track(it);
     return (PyObject*)it;
 }
 

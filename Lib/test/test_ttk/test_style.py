@@ -161,9 +161,16 @@ class StyleTest(AbstractTkTest, unittest.TestCase):
                     newname = f'C.{name}'
                     self.assertEqual(style.configure(newname), None)
                     style.configure(newname, **default)
-                    self.assertEqual(style.configure(newname), default)
+                    # gh-128846: the aqua theme with Tk 9 reports an unset
+                    # option as an empty tuple, while the copy reports it as an
+                    # empty string.
+                    def norm(value):
+                        return '' if value == () else value
+                    self.assertEqual(style.configure(newname),
+                                     {k: norm(v) for k, v in default.items()})
                     for key, value in default.items():
-                        self.assertEqual(style.configure(newname, key), value)
+                        self.assertEqual(style.configure(newname, key),
+                                         norm(value))
 
 
     def test_map_custom_copy(self):
@@ -222,7 +229,8 @@ class StyleTest(AbstractTkTest, unittest.TestCase):
         style = self.style
         with self.assertRaises(IndexError):
             style.element_create('plain.newelem', 'from')
-        with self.assertRaisesRegex(TclError, 'theme "spam" doesn\'t exist'):
+        with self.assertRaisesRegex(TclError,
+            'theme "spam" (does not|doesn\'t) exist'):
             style.element_create('plain.newelem', 'from', 'spam')
 
     def test_element_create_image(self):
@@ -419,7 +427,8 @@ class StyleTest(AbstractTkTest, unittest.TestCase):
 
         b = ttk.Label(self.root, style='TestWidget')
         b.pack(expand=True, fill='both')
-        self.assertEqual(b.winfo_reqwidth(), 134)
+        # The exact width varies with the Tk version and display scaling.
+        self.assertGreater(b.winfo_reqwidth(), 130)
         self.assertEqual(b.winfo_reqheight(), 100)
 
         style.theme_use(curr_theme)

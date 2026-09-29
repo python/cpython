@@ -8,7 +8,7 @@ from libclinic import fail, Null, unspecified, unknown
 from libclinic.function import (
     Function, Parameter,
     CALLABLE, STATIC_METHOD, CLASS_METHOD, METHOD_INIT, METHOD_NEW,
-    GETTER, SETTER)
+    ACCESSORS)
 from libclinic.codegen import CRenderData, TemplateDict
 from libclinic.converter import (
     CConverter, legacy_converters, add_legacy_c_converter)
@@ -1110,7 +1110,7 @@ class Py_buffer_converter(CConverter):
 def correct_name_for_self(
         f: Function
 ) -> tuple[str, str]:
-    if f.kind in {CALLABLE, METHOD_INIT, GETTER, SETTER}:
+    if f.kind in {CALLABLE, METHOD_INIT} | ACCESSORS:
         if f.cls:
             return "PyObject *", "self"
         return "PyObject *", "module"

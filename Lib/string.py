@@ -70,6 +70,11 @@ class Template:
         super().__init_subclass__()
         if 'pattern' in cls.__dict__:
             pattern = cls.pattern
+            if isinstance(pattern, _re.Pattern):
+                # An already-compiled pattern (which the documentation allows)
+                # is used as-is; re.compile() rejects flags on a compiled
+                # pattern.
+                return
         else:
             delim = _re.escape(cls.delimiter)
             id = cls.idpattern

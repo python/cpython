@@ -65,9 +65,17 @@ class RobotFileParser:
             f = urllib.request.urlopen(self.url)
         except urllib.error.HTTPError as err:
             if err.code in (401, 403):
+                # If access to robot.txt has the status Unauthorized/Forbidden,
+                # then most likely this applies to the entire site.
                 self.disallow_all = True
-            elif err.code >= 400 and err.code < 500:
+            elif 400 <= err.code < 500:
+                # RFC 9309, Section 2.3.1.3: the crawler MAY access any
+                # resources on the server.
                 self.allow_all = True
+            elif 500 <= err.code < 600:
+                # RFC 9309, Section 2.3.1.4: the crawler MUST assume
+                # complete disallow.
+                self.disallow_all = True
             err.close()
         else:
             raw = f.read()
@@ -135,15 +143,15 @@ class RobotFileParser:
                         # before trying to convert to int we need to make
                         # sure that robots.txt has valid syntax otherwise
                         # it will crash
-                        if line[1].strip().isdigit():
+                        if line[1].strip().isdecimal():
                             entry.delay = int(line[1])
                         state = 2
                 elif line[0] == "request-rate":
                     if state != 0:
                         numbers = line[1].split('/')
                         # check if all values are sane
-                        if (len(numbers) == 2 and numbers[0].strip().isdigit()
-                            and numbers[1].strip().isdigit()):
+                        if (len(numbers) == 2 and numbers[0].strip().isdecimal()
+                            and numbers[1].strip().isdecimal()):
                             entry.req_rate = RequestRate(int(numbers[0]), int(numbers[1]))
                         state = 2
                 elif line[0] == "sitemap":

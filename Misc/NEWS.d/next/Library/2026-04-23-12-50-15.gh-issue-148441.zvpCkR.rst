@@ -1,4 +1,0 @@
-:mod:`xml.parsers.expat`: prevent a crash in
-:meth:`~xml.parsers.expat.xmlparser.CharacterDataHandler`
-when the character data size exceeds the parser's
-:attr:`buffer size <xml.parsers.expat.xmlparser.buffer_size>`.

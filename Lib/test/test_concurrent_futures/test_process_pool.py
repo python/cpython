@@ -201,6 +201,33 @@ class ProcessPoolExecutorTest(ExecutorTest):
         executor = self.executor_type(1, max_tasks_per_child=3)
         self.assertEqual(executor._mp_context.get_start_method(), "spawn")
 
+    def test_max_tasks_per_child_pending_tasks_gh115634(self):
+        # gh-115634: A worker exiting at its max_tasks_per_child limit left a
+        # stale token in the idle worker semaphore, so no replacement worker
+        # was spawned and the remaining queued tasks deadlocked.  Submit more
+        # tasks than the pool can run at once so a backlog is queued while
+        # workers hit their task limit.
+        context = self.get_context()
+        if context.get_start_method(allow_none=False) == "fork":
+            raise unittest.SkipTest("Incompatible with the fork start method.")
+
+        for max_workers, max_tasks, num_tasks in [(1, 2, 6), (2, 2, 8)]:
+            with self.subTest(max_workers=max_workers, max_tasks=max_tasks):
+                executor = self.executor_type(
+                        max_workers, mp_context=context,
+                        max_tasks_per_child=max_tasks)
+                try:
+                    futures = [executor.submit(mul, i, 2)
+                               for i in range(num_tasks)]
+                    # If the deadlock regresses, the result() calls time out,
+                    # and the shutdown below hangs until the test timeout.
+                    results = [f.result(timeout=support.SHORT_TIMEOUT)
+                               for f in futures]
+                    self.assertEqual(results,
+                                     [i * 2 for i in range(num_tasks)])
+                finally:
+                    executor.shutdown(wait=True, cancel_futures=True)
+
     def test_max_tasks_early_shutdown(self):
         context = self.get_context()
         if context.get_start_method(allow_none=False) == "fork":

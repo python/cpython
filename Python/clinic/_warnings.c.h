@@ -11,7 +11,7 @@ preserve
 
 PyDoc_STRVAR(warnings_warn__doc__,
 "warn($module, /, message, category=None, stacklevel=1, source=None, *,\n"
-"     skip_file_prefixes=<unrepresentable>)\n"
+"     skip_file_prefixes=())\n"
 "--\n"
 "\n"
 "Issue a warning, or maybe ignore it or raise an exception.\n"
@@ -244,4 +244,4 @@ warnings_filters_mutated(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return warnings_filters_mutated_impl(module);
 }
-/*[clinic end generated code: output=f2d4214c382717a6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0e02494c9d18b918 input=a9049054013a1b77]*/

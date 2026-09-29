@@ -65,8 +65,10 @@ class _Target(typing.Generic[_S, _R]):
         args = ["--disassemble", "--reloc", f"{path}"]
         output = await _llvm.maybe_run("llvm-objdump", args, echo=self.verbose)
         if output is not None:
+            # Make sure that full paths don't leak out (for reproducibility):
+            long, short = str(path), str(path.name)
             group.code.disassembly.extend(
-                line.expandtabs().strip()
+                line.expandtabs().strip().replace(long, short)
                 for line in output.splitlines()
                 if not line.isspace()
             )

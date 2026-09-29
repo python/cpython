@@ -312,18 +312,18 @@ def ismethod(object):
 def ismethoddescriptor(object):
     """Return true if the object is a method descriptor.
 
-    But not if ismethod() or isclass() or isfunction() are true.
+    But not if ismethod(), isclass() or isfunction() is true.
 
-    This is new in Python 2.2, and, for example, is true of int.__add__.
-    An object passing this test has a __get__ attribute, but not a
-    __set__ attribute or a __delete__ attribute. Beyond that, the set
-    of attributes varies; __name__ is usually sensible, and __doc__
-    often is.
+    An object passing this test (for example, int.__add__) has a __get__
+    attribute, but not a __set__ attribute or a __delete__ attribute.
+    Beyond that, the set of attributes varies; __name__ is usually
+    sensible, and __doc__ often is.
 
     Methods implemented via descriptors that also pass one of the other
-    tests return false from the ismethoddescriptor() test, simply because
-    the other tests promise more -- you can, e.g., count on having the
-    __func__ attribute (etc) when an object passes ismethod()."""
+    tests (ismethod(), isclass(), isfunction()) make this function return
+    false, simply because those other tests promise more -- you can, for
+    example, count on having the __func__ attribute when an object passes
+    ismethod()."""
     if isclass(object) or ismethod(object) or isfunction(object):
         # mutual exclusion
         return False
@@ -340,8 +340,13 @@ def ismethoddescriptor(object):
 def isdatadescriptor(object):
     """Return true if the object is a data descriptor.
 
+    But not if ismethod(), isclass() or isfunction() is true.
+
     Data descriptors have a __set__ or a __delete__ attribute.  Examples are
-    properties (defined in Python) and getsets and members (defined in C).
+    properties, getsets, and members.  For the latter two (defined only in C
+    extension modules) more specific tests are available as well:
+    isgetsetdescriptor() and ismemberdescriptor(), respectively.
+
     Typically, data descriptors will also have __name__ and __doc__ attributes
     (properties, getsets, and members have both of these attributes), but this
     is not guaranteed."""
@@ -409,6 +414,8 @@ def _has_code_flag(f, flag):
     f = functools._unwrap_partial(f)
     if not (isfunction(f) or _signature_is_functionlike(f)):
         return False
+    # If it's a pure Python function, or an object that is duck type
+    # of a Python function (Cython and Mock functions, for instance), then:
     return bool(f.__code__.co_flags & flag)
 
 def isgeneratorfunction(obj):
@@ -2403,7 +2410,7 @@ def _signature_from_function(cls, func, skip_bound_arg=True,
             is_duck_function = True
         else:
             # If it's not a pure Python function, and not a duck type
-            # of pure function:
+            # of pure function (Cython and Mock functions, for instance), then:
             raise TypeError('{!r} is not a Python function'.format(func))
 
     s = getattr(func, "__text_signature__", None)
@@ -2596,7 +2603,7 @@ def _signature_from_callable(obj, *,
 
     if isfunction(obj) or _signature_is_functionlike(obj):
         # If it's a pure Python function, or an object that is duck type
-        # of a Python function (Cython functions, for instance), then:
+        # of a Python function (Cython and Mock functions, for instance), then:
         return _signature_from_function(sigcls, obj,
                                         skip_bound_arg=skip_bound_arg,
                                         globals=globals, locals=locals, eval_str=eval_str)
@@ -3416,6 +3423,10 @@ def _main():
     """ Logic for inspecting an object given at command line """
     import argparse
     import importlib
+
+    # The printed text can contain characters unencodable in the encoding
+    # of stdout, e.g. undecodable bytes of a file name.
+    sys.stdout.reconfigure(errors='backslashreplace')
 
     parser = argparse.ArgumentParser()
     parser.add_argument(

@@ -92,7 +92,7 @@ xibufferview_from_xid(PyTypeObject *cls, _PyCrossInterpreterData *data)
     assert(_PyCrossInterpreterData_INTERPID(data) >= 0);
     XIBufferViewObject *self = PyObject_Malloc(sizeof(XIBufferViewObject));
     if (self == NULL) {
-        return NULL;
+        return PyErr_NoMemory();
     }
     PyObject_Init((PyObject *)self, cls);
     self->view = (Py_buffer *)_PyCrossInterpreterData_DATA(data);
@@ -174,6 +174,7 @@ _memoryview_shared(PyThreadState *tstate, PyObject *obj,
 {
     Py_buffer *view = PyMem_RawMalloc(sizeof(Py_buffer));
     if (view == NULL) {
+        PyErr_NoMemory();
         return -1;
     }
     if (PyObject_GetBuffer(obj, view, PyBUF_FULL_RO) < 0) {

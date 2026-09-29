@@ -1,0 +1,2 @@
+``_PyBytes_Resize(&obj, 1)`` no longer returns a single byte singleton if the
+reference count is greater than ``1``. Patch by Stan Ulbrych.

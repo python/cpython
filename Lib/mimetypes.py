@@ -226,7 +226,7 @@ class MimeTypes:
         list of standard types, else to the list of non-standard
         types.
         """
-        with open(filename, encoding='utf-8') as fp:
+        with open(filename, encoding='utf-8', errors='surrogateescape') as fp:
             self.readfp(fp, strict)
 
     def readfp(self, fp, strict=True):
@@ -414,7 +414,7 @@ def init(files=None):
 
 def read_mime_types(file):
     try:
-        f = open(file, encoding='utf-8')
+        f = open(file, encoding='utf-8', errors='surrogateescape')
     except OSError:
         return None
     with f:

@@ -814,6 +814,15 @@ class ClassPropertiesAndMethods(unittest.TestCase, ExtraAssertions):
             class X(int(), C):
                 pass
 
+    @unittest.skipIf(_testcapi is None, 'need the _testcapi module')
+    def test_type_with_null_new_metaclass(self):
+        metaclass = _testcapi.HeapCTypeMetaclassNullNew
+        base = _testcapi.pytype_fromspec_meta(metaclass)
+
+        # Exercise type_new's metaclass selection path, not a direct call.
+        with self.assertRaisesRegex(TypeError, r"cannot create '.*' instances"):
+            type("Derived", (base,), {})
+
     def test_module_subclasses(self):
         # Testing Python subclass of module...
         log = []

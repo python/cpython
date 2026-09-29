@@ -1,0 +1,3 @@
+A failed assignment to an attribute defined with :c:type:`PyMemberDef` of
+type ``Py_T_LONG``, ``Py_T_LONGLONG``, ``Py_T_PYSSIZET`` or ``Py_T_DOUBLE``
+no longer changes its value.

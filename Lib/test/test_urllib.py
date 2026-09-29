@@ -4,6 +4,7 @@ import urllib.parse
 import urllib.request
 import urllib.error
 import http.client
+import nturl2path
 import email.message
 import io
 import unittest
@@ -514,6 +515,25 @@ Connection: close
             finally:
                 self.unfakehttp()
 
+    def test_http_error_attribute_values(self):
+        hdrs = {
+            "Authorization": "Bearer foobar",
+            "Accept": "application/json"
+        }
+        err = urllib.error.HTTPError("http://something", 404, "foo", hdrs, None)
+        self.assertEqual(err.filename, "http://something")
+        self.assertEqual(err.code, 404)
+        self.assertEqual(err.msg, "foo")
+        self.assertEqual(err.reason, "foo")
+        self.assertEqual(err.hdrs, hdrs)
+        self.assertEqual(err.headers, hdrs)
+        err.close()
+
+    def test_http_error_default_fp(self):
+        err = urllib.error.HTTPError("http://something", 404, "foo", {}, None)
+        self.assertIsInstance(err.fp, io.BytesIO)
+        err.close()
+
     def test_empty_socket(self):
         # urlopen() raises OSError if the underlying socket does not send any
         # data. (#1680230)
@@ -565,6 +585,11 @@ Connection: close
             urlopen('ftp://localhost')
         finally:
             self.unfakeftp()
+
+    def test_url_error_stringified(self):
+        reason = 'sixseven'
+        err = urllib.error.URLError(reason)
+        self.assertEqual(str(err), f'<urlopen error {reason}>')
 
     def test_userpass_inurl(self):
         self.fakehttp(b"HTTP/1.0 200 OK\r\n\r\nHello!")
@@ -868,6 +893,61 @@ FF
                 urllib.request.urlretrieve(support.TEST_HTTP_URL)
             finally:
                 self.unfakehttp()
+
+
+class urlcleanup_Tests(unittest.TestCase, FakeHTTPMixin):
+    """Test urllib.request.urlcleanup()"""
+
+    def setUp(self):
+        self.addCleanup(urllib.request.urlcleanup)
+
+    def urlretrieve(self):
+        self.fakehttp(b'HTTP/1.1 200 OK\r\n\r\ndata')
+        try:
+            filename, headers = urllib.request.urlretrieve(
+                support.TEST_HTTP_URL)
+        finally:
+            self.unfakehttp()
+        self.addCleanup(os_helper.unlink, filename)
+        return filename
+
+    def fake_urlopen(self, data):
+        self.fakehttp(b'HTTP/1.1 200 OK\r\n\r\n' + data)
+        try:
+            with urllib.request.urlopen(support.TEST_HTTP_URL) as fp:
+                return fp.read()
+        finally:
+            self.unfakehttp()
+
+    def test_temporary_files(self):
+        filename = self.urlretrieve()
+        self.assertTrue(os.path.exists(filename))
+
+        urllib.request.urlcleanup()
+        self.assertFalse(os.path.exists(filename))
+
+        # A file created after the cleanup is not deleted.
+        os_helper.create_empty_file(filename)
+        urllib.request.urlcleanup()
+        self.assertTrue(os.path.exists(filename))
+
+    def test_opener(self):
+        # The implicitly created opener supports http.
+        self.assertEqual(self.fake_urlopen(b'first'), b'first')
+
+        # An installed opener replaces it and supports only its handlers.
+        opener = urllib.request.OpenerDirector()
+        opener.add_handler(urllib.request.DataHandler())
+        opener.add_handler(urllib.request.UnknownHandler())
+        urllib.request.install_opener(opener)
+        with urllib.request.urlopen('data:,hello') as fp:
+            self.assertEqual(fp.read(), b'hello')
+        with self.assertRaises(urllib.error.URLError):
+            self.fake_urlopen(b'')
+
+        # urlcleanup() resets the opener.
+        urllib.request.urlcleanup()
+        self.assertEqual(self.fake_urlopen(b'second'), b'second')
 
 
 class QuotingTests(unittest.TestCase):
@@ -1580,6 +1660,18 @@ class Pathname_Tests(unittest.TestCase):
         url = urllib.parse.quote(os_helper.FS_NONASCII, encoding=encoding, errors=errors)
         self.assertEqual(urllib.request.pathname2url(os_helper.FS_NONASCII), url)
 
+    @unittest.skipUnless(os_helper.TESTFN_UNDECODABLE,
+                         'need os_helper.TESTFN_UNDECODABLE')
+    def test_pathname2url_surrogates(self):
+        # gh-156713: the filesystem encoding and error handler are used,
+        # so that paths containing surrogate characters can be converted.
+        encoding = sys.getfilesystemencoding()
+        errors = sys.getfilesystemencodeerrors()
+        path = os.fsdecode(os_helper.TESTFN_UNDECODABLE)
+        url = urllib.parse.quote(path, encoding=encoding, errors=errors)
+        self.assertEqual(nturl2path.pathname2url('C:\\' + path),
+                         '///C:/' + url)
+
     @unittest.skipUnless(sys.platform == 'win32',
                          'test specific to Windows pathnames.')
     def test_url2pathname_win(self):
@@ -1640,6 +1732,18 @@ class Pathname_Tests(unittest.TestCase):
         self.assertEqual(urllib.request.url2pathname(url), os_helper.FS_NONASCII)
         url = urllib.parse.quote(url, encoding=encoding, errors=errors)
         self.assertEqual(urllib.request.url2pathname(url), os_helper.FS_NONASCII)
+
+    @unittest.skipUnless(os_helper.TESTFN_UNDECODABLE,
+                         'need os_helper.TESTFN_UNDECODABLE')
+    def test_url2pathname_surrogates(self):
+        # gh-156713: the filesystem encoding and error handler are used, so
+        # that URLs containing percent-encoded surrogates can be converted.
+        encoding = sys.getfilesystemencoding()
+        errors = sys.getfilesystemencodeerrors()
+        path = os.fsdecode(os_helper.TESTFN_UNDECODABLE)
+        url = urllib.parse.quote(path, encoding=encoding, errors=errors)
+        self.assertEqual(nturl2path.url2pathname('///C:/' + url),
+                         'C:\\' + path)
 
 class Utility_Tests(unittest.TestCase):
     """Testcase to test the various utility functions in the urllib."""

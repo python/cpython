@@ -18,11 +18,9 @@ the metadata of an installed `Distribution Package <https://packaging.python.org
 such as its entry points
 or its top-level names (`Import Package <https://packaging.python.org/en/latest/glossary/#term-Import-Package>`_\s, modules, if any).
 Built in part on Python's import system, this library
-intends to replace similar functionality in the `entry point
-API`_ and `metadata API`_ of ``pkg_resources``.  Along with
-:mod:`importlib.resources`,
-this package can eliminate the need to use the older and less efficient
-``pkg_resources`` package.
+provides the entry point and metadata APIs that were previously
+exposed by the now-removed ``pkg_resources`` package. Along with
+:mod:`importlib.resources`, it supersedes ``pkg_resources``.
 
 ``importlib.metadata`` operates on third-party *distribution packages*
 installed into Python's ``site-packages`` directory via tools such as
@@ -92,6 +90,7 @@ collection of :ref:`EntryPoint <entry-points>` objects.
 
 You can get the :ref:`metadata for a distribution <metadata>`::
 
+    >>> from importlib.metadata import metadata  # doctest: +SKIP
     >>> list(metadata('wheel'))  # doctest: +SKIP
     ['Metadata-Version', 'Name', 'Version', 'Summary', 'Home-page', 'Author', 'Author-email', 'Maintainer', 'Maintainer-email', 'License', 'Project-URL', 'Project-URL', 'Project-URL', 'Keywords', 'Platform', 'Classifier', 'Classifier', 'Classifier', 'Classifier', 'Classifier', 'Classifier', 'Classifier', 'Classifier', 'Classifier', 'Classifier', 'Classifier', 'Classifier', 'Requires-Python', 'Provides-Extra', 'Requires-Dist', 'Requires-Dist']
 
@@ -584,7 +583,3 @@ packages served by the ``DatabaseImporter``, assuming that the
 The ``DatabaseDistribution`` may also provide other metadata files, like
 ``RECORD`` (required for ``Distribution.files``) or override the
 implementation of ``Distribution.files``. See the source for more inspiration.
-
-
-.. _`entry point API`: https://setuptools.readthedocs.io/en/latest/pkg_resources.html#entry-points
-.. _`metadata API`: https://setuptools.readthedocs.io/en/latest/pkg_resources.html#metadata-api

@@ -1,5 +1,6 @@
 import socket
 import asyncio
+import select
 import sys
 import unittest
 
@@ -257,6 +258,38 @@ class BaseSockTestsMixin:
 
         self.skipTest(skip_reason)
 
+    async def _basetest_sock_accept_racing(self, listener, sock):
+        # gh-153761: cancelling sock_accept() must not let a scheduled
+        # _sock_accept run on the cancelled future.
+        listener.setblocking(False)
+        listener.bind(('127.0.0.1', 0))
+        listener.listen(1)
+        addr = listener.getsockname()
+
+        errors = []
+        self.loop.set_exception_handler(lambda loop, ctx: errors.append(ctx))
+        task = asyncio.create_task(self.loop.sock_accept(listener))
+        await asyncio.sleep(0)
+
+        sock.connect(addr)
+        select.select([listener], [], [], support.SHORT_TIMEOUT)
+
+        self.loop.call_soon(task.cancel)
+        await asyncio.sleep(0)
+        await asyncio.sleep(0)
+
+        with self.assertRaises(asyncio.CancelledError):
+            await task
+        self.assertEqual(errors, [])
+
+        # The pending connection must survive
+        conn, conn_addr = await self.loop.sock_accept(listener)
+        with conn:
+            self.assertEqual(conn_addr, sock.getsockname())
+            sock.setblocking(False)
+            await self.loop.sock_sendall(conn, b'ping')
+            self.assertEqual(await self.loop.sock_recv(sock, 4), b'ping')
+
     def test_sock_client_racing(self):
         with test_utils.run_test_server() as httpd:
             sock = socket.socket()
@@ -279,6 +312,16 @@ class BaseSockTestsMixin:
         with listener, sock:
             self.loop.run_until_complete(asyncio.wait_for(
                 self._basetest_sock_connect_racing(listener, sock), 10))
+
+    def test_sock_accept_racing(self):
+        if sys.platform == 'win32':
+            if isinstance(self.loop, asyncio.ProactorEventLoop):
+                raise unittest.SkipTest('Not relevant to ProactorEventLoop')
+        listener = socket.socket()
+        sock = socket.socket()
+        with listener, sock:
+            self.loop.run_until_complete(asyncio.wait_for(
+                self._basetest_sock_accept_racing(listener, sock), 10))
 
     async def _basetest_huge_content(self, address):
         sock = socket.socket()

@@ -60,7 +60,7 @@ class TestCopy(unittest.TestCase):
             def __reduce_ex__(self, proto):
                 c.append(1)
                 return ""
-            def __reduce__(self):
+            def __reduce__(*args):
                 self.fail("shouldn't call this")
         c = []
         x = C()
@@ -70,9 +70,15 @@ class TestCopy(unittest.TestCase):
 
     def test_copy_reduce(self):
         class C(object):
+            def __reduce_ex__(*args):
+                self.fail("shouldn't call this")
             def __reduce__(self):
                 c.append(1)
                 return ""
+            def __getattribute__(self, name):
+                if name == "__reduce_ex__":
+                    raise AttributeError(name)
+                return object.__getattribute__(self, name)
         c = []
         x = C()
         y = copy.copy(x)
@@ -323,7 +329,7 @@ class TestCopy(unittest.TestCase):
             def __reduce_ex__(self, proto):
                 c.append(1)
                 return ""
-            def __reduce__(self):
+            def __reduce__(*args):
                 self.fail("shouldn't call this")
         c = []
         x = C()
@@ -333,9 +339,15 @@ class TestCopy(unittest.TestCase):
 
     def test_deepcopy_reduce(self):
         class C(object):
+            def __reduce_ex__(*args):
+                self.fail("shouldn't call this")
             def __reduce__(self):
                 c.append(1)
                 return ""
+            def __getattribute__(self, name):
+                if name == "__reduce_ex__":
+                    raise AttributeError(name)
+                return object.__getattribute__(self, name)
         c = []
         x = C()
         y = copy.deepcopy(x)

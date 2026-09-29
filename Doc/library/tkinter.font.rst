@@ -54,6 +54,8 @@ The different font weights and slants are:
       requested ones because of platform limitations.
       With no *option*, return a dictionary of all the attributes; if *option*
       is given, return the value of that single attribute.
+      The attributes are resolved on the display of the *displayof* widget,
+      or the main application window if it is not specified.
 
    .. method:: cget(option)
 
@@ -71,7 +73,11 @@ The different font weights and slants are:
 
    .. method:: copy()
 
-      Return new instance of the current font.
+      Return a distinct copy of the current font:
+      a new named font with the same attributes but a different name,
+      which can be reconfigured independently of the original.
+      If the current font wraps a font description,
+      the copy is instead a named font with its resolved attributes.
 
    .. method:: measure(text, displayof=None)
 

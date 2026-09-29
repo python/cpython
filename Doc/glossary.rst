@@ -382,7 +382,7 @@ Glossary
    decorator
       A function returning another function, usually applied as a function
       transformation using the ``@wrapper`` syntax.  Common examples for
-      decorators are :func:`classmethod` and :func:`staticmethod`.
+      decorators are :deco:`classmethod` and :deco:`staticmethod`.
 
       The decorator syntax is merely syntactic sugar, the following two
       function definitions are semantically equivalent::
@@ -470,7 +470,7 @@ Glossary
       A piece of syntax which can be evaluated to some value.  In other words,
       an expression is an accumulation of expression elements like literals,
       names, attribute access, operators or function calls which all return a
-      value.  In contrast to many other languages, not all language constructs
+      value.  Not all language constructs
       are expressions.  There are also :term:`statement`\s which cannot be used
       as expressions, such as :keyword:`while`.  Assignments are also statements,
       not expressions.
@@ -642,7 +642,7 @@ Glossary
       determined by the dispatch algorithm.
 
       See also the :term:`single dispatch` glossary entry, the
-      :func:`functools.singledispatch` decorator, and :pep:`443`.
+      :deco:`functools.singledispatch` decorator, and :pep:`443`.
 
    generic type
       A :term:`type` that can be parameterized; typically a
@@ -1434,6 +1434,14 @@ Glossary
 
    stdlib
       An abbreviation of :term:`standard library`.
+
+   steal
+      In Python's C API, "*stealing*" an argument means that ownership of the
+      argument is transferred to the called function.
+      The caller must not use that reference after the call.
+      Generally, functions that "steal" an argument do so even if they fail.
+
+      See :ref:`api-refcountdetails` for a full explanation.
 
    strong reference
       In Python's C API, a strong reference is a reference to an object

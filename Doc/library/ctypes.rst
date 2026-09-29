@@ -438,7 +438,7 @@ object with an :attr:`!_as_parameter_` attribute::
    >>>
 
 If you don't want to store the instance's data in the :attr:`!_as_parameter_`
-instance variable, you could define a :class:`property` which makes the
+instance variable, you could define a :deco:`property` which makes the
 attribute available on request.
 
 
@@ -834,6 +834,15 @@ you're doing, just as in C: You can access or change arbitrary memory locations.
 Generally you only use this feature if you receive a pointer from a C function,
 and you *know* that the pointer actually points to an array instead of a single
 item.
+
+.. warning::
+
+   Because pointer objects support subscription, they implicitly support
+   :term:`iteration <iterator>`. Unless doing this in a controlled manner,
+   such as by manually calling :func:`next` on a :func:`pointer` iterator, this
+   will typically lead to infinite loops or crashes, because ctypes has no way
+   of knowing when to stop iteration. In other words, a ``pointer`` iterator
+   will infinitely yield arbitrary memory.
 
 Behind the scenes, the :func:`pointer` function does more than simply create
 pointer instances, it has to create pointer *types* first. This is done with the
@@ -1615,6 +1624,9 @@ object is available:
    attributes.  Note that all these functions are assumed to return C
    :c:expr:`int`, which is of course not always the truth, so you have to assign
    the correct :attr:`!restype` attribute to use these functions.
+
+      Note that if the Python interpreter is statically linked, this will be
+      ``None``, as ``dlopen`` is not possible in this case.
 
 .. audit-event:: ctypes.dlopen name ctypes.LibraryLoader
 

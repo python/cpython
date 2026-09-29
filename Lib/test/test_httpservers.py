@@ -339,6 +339,8 @@ class HTTP09ServerTestCase(BaseTestCase):
     def test_invalid_request(self):
         self.sock.send(b'POST /index.html\r\n')
         res = self.sock.recv(1024)
+        # The error response is not sent in the bare HTTP/0.9 style.
+        self.assertStartsWith(res, b'HTTP/1.0 400 ')
         self.assertIn(b"Bad HTTP/0.9 request type ('POST')", res)
 
     def test_single_request(self):
@@ -1021,7 +1023,16 @@ class CGIHTTPServerTestCase(BaseTestCase):
             self.assertEqual(res.read(), b'%d %d' % (size, size) + self.linesep)
 
     def test_large_content_length_truncated(self):
-        with support.swap_attr(self.request_handler, 'timeout', 0.001):
+        timeout = support.LOOPBACK_TIMEOUT
+        if not hasattr(os, 'fork'):
+            # On Windows, request() waits for the entire timeout; the default
+            # LOOPBACK_TIMEOUT (10s) is too long for 40 repetitions.
+            # Use a fraction of that (for slow machines), or .001 (in case
+            # LOOPBACK_TIMEOUT is configured to be smaller).
+            timeout = max(timeout / 100, 0.001)
+            # (On Unix, request() returns early so a large LOOPBACK_TIMEOUT
+            # isn't an issue.)
+        with support.swap_attr(self.request_handler, 'timeout', timeout):
             for w in range(18, 65):
                 size = 1 << w
                 headers = {'Content-Length' : str(size)}
@@ -1233,6 +1244,19 @@ class BaseHTTPRequestHandlerTestCase(unittest.TestCase, ExtraAssertions):
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0], b'<html><body>Data</body></html>\r\n')
         self.verify_get_called()
+
+    @support.subTests('request,code', [
+        (b'GET / FUBAR\r\n\r\n', 400),     # bad version
+        (b'GET / HTTP/2.0\r\n\r\n', 505),  # unsupported version
+        (b'GET\r\n', 400),                 # bad syntax
+        (b'POST /\r\n', 400),              # bad HTTP/0.9 request type
+    ])
+    def test_request_line_error_has_status_line(self, request, code):
+        self.handler = SocketlessRequestHandler()
+        result = self.send_typical_request(request)
+        self.assertStartsWith(result[0], b'HTTP/1.1 %d ' % code)
+        self.verify_expected_headers(result[1:result.index(b'\r\n')])
+        self.assertFalse(self.handler.get_called)
 
     def test_extra_space(self):
         result = self.send_typical_request(

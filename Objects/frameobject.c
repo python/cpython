@@ -979,6 +979,11 @@ frame_gettrace_opcodes(PyFrameObject *f, void *closure)
 static int
 frame_settrace_opcodes(PyFrameObject *f, PyObject* value, void *Py_UNUSED(ignored))
 {
+    if (value == NULL) {
+        PyErr_SetString(PyExc_AttributeError,
+                        "cannot delete attribute f_trace_opcodes");
+        return -1;
+    }
     if (!PyBool_Check(value)) {
         PyErr_SetString(PyExc_TypeError,
                         "attribute value type must be bool");

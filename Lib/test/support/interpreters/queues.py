@@ -230,14 +230,14 @@ class Queue:
             timeout = int(timeout)
             if timeout < 0:
                 raise ValueError(f'timeout value must be non-negative')
-            end = time.time() + timeout
+            end = time.monotonic() + timeout
         if fmt is _PICKLED:
             obj = pickle.dumps(obj)
         while True:
             try:
                 _queues.put(self._id, obj, fmt, unboundop)
             except QueueFull as exc:
-                if timeout is not None and time.time() >= end:
+                if timeout is not None and time.monotonic() >= end:
                     raise  # re-raise
                 time.sleep(_delay)
             else:
@@ -271,12 +271,12 @@ class Queue:
             timeout = int(timeout)
             if timeout < 0:
                 raise ValueError(f'timeout value must be non-negative')
-            end = time.time() + timeout
+            end = time.monotonic() + timeout
         while True:
             try:
                 obj, fmt, unboundop = _queues.get(self._id)
             except QueueEmpty as exc:
-                if timeout is not None and time.time() >= end:
+                if timeout is not None and time.monotonic() >= end:
                     raise  # re-raise
                 time.sleep(_delay)
             else:

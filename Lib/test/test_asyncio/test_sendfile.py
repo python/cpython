@@ -98,7 +98,12 @@ class SendfileBase:
     # 64 KiB page configuration.
     DATA = b"x" * (1024 * 17 * 64 + 1)
     # Reduce socket buffer size to test on relative small data sets.
-    BUF_SIZE = 4 * 1024   # 4 KiB
+    if sys.platform.startswith('dragonfly'):
+        # A smaller buffer makes every window update wait 100 ms for the
+        # delayed ACK timer.
+        BUF_SIZE = 32 * 1024  # 32 KiB
+    else:
+        BUF_SIZE = 4 * 1024   # 4 KiB
 
     def create_event_loop(self):
         raise NotImplementedError

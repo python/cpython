@@ -406,7 +406,10 @@ if sys.platform.startswith("win"):
                           file=sys.__stderr__)
                     mode = 0
                 if stat.S_ISDIR(mode):
-                    _waitfor(_rmtree_inner, fullname, waitall=True)
+                    # Do not follow junctions, which os.lstat() reports
+                    # as directories.
+                    if not os.path.isjunction(fullname):
+                        _waitfor(_rmtree_inner, fullname, waitall=True)
                     _force_run(fullname, os.rmdir, fullname)
                 else:
                     _force_run(fullname, os.unlink, fullname)
@@ -440,12 +443,23 @@ else:
 
         def _rmtree_inner(path):
             from test.support import _force_run
+            # Clear file flags (e.g. UF_IMMUTABLE, UF_NOUNLINK on BSD).
+            if hasattr(os, 'chflags'):
+                try:
+                    os.chflags(path, 0)
+                except OSError:
+                    pass
             for name in _force_run(path, os.listdir, path):
                 fullname = os.path.join(path, name)
                 try:
                     mode = os.lstat(fullname).st_mode
                 except OSError:
                     mode = 0
+                if hasattr(os, 'lchflags'):
+                    try:
+                        os.lchflags(fullname, 0)
+                    except OSError:
+                        pass
                 if stat.S_ISDIR(mode):
                     _rmtree_inner(fullname)
                     _force_run(path, os.rmdir, fullname)

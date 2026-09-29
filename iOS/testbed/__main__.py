@@ -220,8 +220,14 @@ def run_testbed(simulator: str | None, args: list[str], verbose: bool = False):
     update_test_plan(location, args)
     print(" done.")
 
+    # xcodebuild doesn't guarantee that the CoreSimulatorService daemon is
+    # running prior to using a simulator, but calling `xcrun simctl list` does.
+    # Determining the default simulator that *would* be used is a cheap action;
+    # so use that as a way to ensure that the CoreSimulatorService daemon is
+    # running.
+    default_simulator = select_simulator_device()
     if simulator is None:
-        simulator = select_simulator_device()
+        simulator = default_simulator
     print(f"Running test on {simulator}")
 
     xcode_test(location, simulator=simulator, verbose=verbose)

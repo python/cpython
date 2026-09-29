@@ -802,6 +802,23 @@ class HandlerTest(BaseTest):
 
             support.wait_process(pid, exitcode=0)
 
+    def test_remove_handler_while_emitting(self):
+        # Removing a handler while callHandlers() iterates over the handlers
+        # should not cause the following handlers to be skipped (gh-79366).
+        logger = logging.Logger('test_remove_handler_while_emitting')
+        calls = []
+        class RemovingHandler(logging.Handler):
+            def emit(self, record):
+                calls.append('removing')
+                logger.removeHandler(self)
+        class CountingHandler(logging.Handler):
+            def emit(self, record):
+                calls.append('counting')
+        logger.addHandler(RemovingHandler())
+        logger.addHandler(CountingHandler())
+        logger.error('spam')
+        self.assertEqual(calls, ['removing', 'counting'])
+
 
 class BadStream(object):
     def write(self, data):
@@ -3584,14 +3601,14 @@ class ConfigDictTest(BaseTest):
         # Ask for a randomly assigned port (by using port 0)
         t = logging.config.listen(0, verify)
         t.start()
-        t.ready.wait()
+        self.assertTrue(t.ready.wait(support.LONG_TIMEOUT),
+                        msg='the listener did not start')
         # Now get the port allocated
         port = t.port
         t.ready.clear()
         try:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(2.0)
-            sock.connect(('localhost', port))
+            # The server can listen on IPv6, so do not force a family.
+            sock = socket.create_connection(('localhost', port), timeout=2.0)
 
             slen = struct.pack('>L', len(text))
             s = slen + text
@@ -3705,6 +3722,18 @@ class ConfigDictTest(BaseTest):
             ('INFO', '1'),
             ('ERROR', '2'),
         ], pat=r"^[\w.]+ -> (\w+): (\d+)$")
+
+    @support.requires_working_socket()
+    def test_listen_server_error(self):
+        # The "ready" event should be set even if the server fails to start.
+        t = logging.config.listen(-1)
+        t.daemon = True
+        with threading_helper.catch_threading_exception() as cm:
+            t.start()
+            self.assertTrue(t.ready.wait(support.SHORT_TIMEOUT),
+                            msg='the listener did not report the failure')
+            threading_helper.join_thread(t)
+            self.assertIs(cm.exc_type, OverflowError)
 
     def test_bad_format(self):
         self.assertRaises(ValueError, self.apply_config, self.bad_format)
@@ -6215,11 +6244,12 @@ class BaseFileTest(BaseTest):
         self.rmfiles = []
 
     def tearDown(self):
-        for fn in self.rmfiles:
-            os.unlink(fn)
-        if os.path.exists(self.fn):
-            os.unlink(self.fn)
-        BaseTest.tearDown(self)
+        try:
+            for fn in self.rmfiles:
+                os_helper.unlink(fn)
+            os_helper.unlink(self.fn)
+        finally:
+            BaseTest.tearDown(self)
 
     def assertLogFile(self, filename):
         "Assert a log file is there and register it for deletion"
@@ -6252,6 +6282,46 @@ class FileHandlerTest(BaseFileTest):
         fh.emit(self.next_rec())    # '2'
         with open(self.fn) as fp:
             self.assertEqual(fp.read().strip(), '1')
+
+    def _check_open_error(self, h):
+        # gh-135683: an error while opening the file in emit() respects
+        # raiseExceptions, like an error during the actual write.
+        r = logging.makeLogRecord({})
+        old_raise = logging.raiseExceptions
+        self.addCleanup(setattr, logging, 'raiseExceptions', old_raise)
+
+        logging.raiseExceptions = True
+        with support.captured_stderr() as stderr:
+            h.handle(r)
+        self.assertIn('\nFileNotFoundError:', stderr.getvalue())
+
+        logging.raiseExceptions = False
+        with support.captured_stderr() as stderr:
+            h.handle(r)
+        self.assertEqual('', stderr.getvalue())
+
+    def test_emit_open_error(self):
+        # FileHandler with delay: the failing open happens in emit().
+        d = tempfile.mkdtemp()
+        self.addCleanup(os_helper.rmtree, d)
+        h = logging.FileHandler(os.path.join(d, 'missing', 'a.log'),
+                                encoding='utf-8', delay=True)
+        self.addCleanup(h.close)
+        self._check_open_error(h)
+
+    @unittest.skipIf(os.name == 'nt',
+                     'WatchedFileHandler not appropriate for Windows.')
+    def test_emit_reopen_error(self):
+        # WatchedFileHandler: reopenIfNeeded() fails after the dir is removed.
+        d = tempfile.mkdtemp()
+        self.addCleanup(os_helper.rmtree, d)
+        subdir = os.path.join(d, 'sub')
+        os.mkdir(subdir)
+        h = logging.handlers.WatchedFileHandler(
+            os.path.join(subdir, 'b.log'), encoding='utf-8')
+        self.addCleanup(h.close)
+        os_helper.rmtree(subdir)
+        self._check_open_error(h)
 
 class RotatingFileHandlerTest(BaseFileTest):
     def test_should_not_rollover(self):

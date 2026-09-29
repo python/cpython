@@ -828,7 +828,11 @@ class Random(_random.Random):
             if not c:
                 return x
             while True:
-                y += _floor(_log2(random()) / c) + 1
+                try:
+                    y += _floor(_log2(random()) / c) + 1
+                except ValueError:
+                    # Reject case where random() returned 0.0
+                    continue
                 if y > n:
                     return x
                 x += 1
@@ -849,7 +853,11 @@ class Random(_random.Random):
             u = random()
             u -= 0.5
             us = 0.5 - _fabs(u)
-            k = _floor((2.0 * a / us + b) * u + c)
+            try:
+                k = _floor((2.0 * a / us + b) * u + c)
+            except ZeroDivisionError:
+                # Reject case where random() returned 0.0
+                continue
             if k < 0 or k > n:
                 continue
 

@@ -67,8 +67,8 @@ _curses_window_addch(PyCursesWindowObject *self, PyObject *args)
             if (!PyArg_ParseTuple(args, "iiOl:addch", &y, &x, &ch, &attr)) {
                 goto exit;
             }
-            group_right_1 = 1;
             group_left_1 = 1;
+            group_right_1 = 1;
             break;
         default:
             PyErr_SetString(PyExc_TypeError, "_curses.window.addch requires 1 to 4 arguments");
@@ -139,8 +139,8 @@ _curses_window_addstr(PyCursesWindowObject *self, PyObject *args)
             if (!PyArg_ParseTuple(args, "iiOl:addstr", &y, &x, &str, &attr)) {
                 goto exit;
             }
-            group_right_1 = 1;
             group_left_1 = 1;
+            group_right_1 = 1;
             break;
         default:
             PyErr_SetString(PyExc_TypeError, "_curses.window.addstr requires 1 to 4 arguments");
@@ -214,8 +214,8 @@ _curses_window_addnstr(PyCursesWindowObject *self, PyObject *args)
             if (!PyArg_ParseTuple(args, "iiOil:addnstr", &y, &x, &str, &n, &attr)) {
                 goto exit;
             }
-            group_right_1 = 1;
             group_left_1 = 1;
+            group_right_1 = 1;
             break;
         default:
             PyErr_SetString(PyExc_TypeError, "_curses.window.addnstr requires 2 to 5 arguments");
@@ -683,7 +683,7 @@ exit:
     return return_value;
 }
 
-#if defined(NCURSES_MOUSE_VERSION)
+#if (defined(HAVE_CURSES_GETMOUSE) || defined(PDCURSES))
 
 PyDoc_STRVAR(_curses_window_enclose__doc__,
 "enclose($self, y, x, /)\n"
@@ -726,7 +726,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(NCURSES_MOUSE_VERSION) */
+#endif /* (defined(HAVE_CURSES_GETMOUSE) || defined(PDCURSES)) */
 
 PyDoc_STRVAR(_curses_window_getbkgd__doc__,
 "getbkgd($self, /)\n"
@@ -758,17 +758,24 @@ exit:
 
 PyDoc_STRVAR(_curses_window_getch__doc__,
 "getch([y, x])\n"
-"Get a character code from terminal keyboard.\n"
+"Read a key press and return it as an integer.\n"
 "\n"
 "  y\n"
 "    Y-coordinate.\n"
 "  x\n"
 "    X-coordinate.\n"
 "\n"
-"The integer returned does not have to be in ASCII range: function\n"
-"keys, keypad keys and so on return numbers higher than 256.  In\n"
-"no-delay mode, -1 is returned if there is no input, else getch()\n"
-"waits until a key is pressed.");
+"Wait until a key is pressed, or return -1 if the read is\n"
+"non-blocking or times out.\n"
+"\n"
+"An ordinary key is returned as the code of a single byte of its\n"
+"encoding in the current locale, so a character encoded with several\n"
+"bytes takes several calls.  Use get_wch() to read it as a single\n"
+"character.\n"
+"\n"
+"In keypad mode function keys and other special keys are returned as\n"
+"one of the KEY_* constants, which cannot be mistaken for an ordinary\n"
+"key.  Otherwise their bytes are returned one at a time.");
 
 #define _CURSES_WINDOW_GETCH_METHODDEF    \
     {"getch", (PyCFunction)_curses_window_getch, METH_VARARGS, _curses_window_getch__doc__},
@@ -806,17 +813,17 @@ exit:
 
 PyDoc_STRVAR(_curses_window_getkey__doc__,
 "getkey([y, x])\n"
-"Get a character (string) from terminal keyboard.\n"
+"Read a key press and return it as a str.\n"
 "\n"
 "  y\n"
 "    Y-coordinate.\n"
 "  x\n"
 "    X-coordinate.\n"
 "\n"
-"Returning a string instead of an integer, as getch() does.  Function\n"
-"keys, keypad keys and other special keys return a multibyte string\n"
-"containing the key name.  In no-delay mode, an exception is raised\n"
-"if there is no input.");
+"Read as getch() does, but return an ordinary key as a one-character\n"
+"string, the byte decoded as Latin-1, and a special key as its name,\n"
+"such as \'KEY_UP\'.  Raise curses.error instead of returning -1 if\n"
+"there is no input.");
 
 #define _CURSES_WINDOW_GETKEY_METHODDEF    \
     {"getkey", (PyCFunction)_curses_window_getkey, METH_VARARGS, _curses_window_getkey__doc__},
@@ -856,15 +863,19 @@ exit:
 
 PyDoc_STRVAR(_curses_window_get_wch__doc__,
 "get_wch([y, x])\n"
-"Get a wide character from terminal keyboard.\n"
+"Read a key press and return it as a one-character str.\n"
 "\n"
 "  y\n"
 "    Y-coordinate.\n"
 "  x\n"
 "    X-coordinate.\n"
 "\n"
-"Return a character for most keys, or an integer for function keys,\n"
-"keypad keys, and other special keys.");
+"Wait until a key is pressed, or raise curses.error if the read is\n"
+"non-blocking or times out.\n"
+"\n"
+"In keypad mode function keys and other special keys are returned as\n"
+"one of the KEY_* constants, an integer.  Otherwise their characters\n"
+"are returned one at a time.");
 
 #define _CURSES_WINDOW_GET_WCH_METHODDEF    \
     {"get_wch", (PyCFunction)_curses_window_get_wch, METH_VARARGS, _curses_window_get_wch__doc__},
@@ -959,8 +970,8 @@ _curses_window_hline(PyCursesWindowObject *self, PyObject *args)
             if (!PyArg_ParseTuple(args, "iiOil:hline", &y, &x, &ch, &n, &attr)) {
                 goto exit;
             }
-            group_right_1 = 1;
             group_left_1 = 1;
+            group_right_1 = 1;
             break;
         default:
             PyErr_SetString(PyExc_TypeError, "_curses.window.hline requires 2 to 5 arguments");
@@ -1029,8 +1040,8 @@ _curses_window_insch(PyCursesWindowObject *self, PyObject *args)
             if (!PyArg_ParseTuple(args, "iiOl:insch", &y, &x, &ch, &attr)) {
                 goto exit;
             }
-            group_right_1 = 1;
             group_left_1 = 1;
+            group_right_1 = 1;
             break;
         default:
             PyErr_SetString(PyExc_TypeError, "_curses.window.insch requires 1 to 4 arguments");
@@ -1153,8 +1164,8 @@ _curses_window_insstr(PyCursesWindowObject *self, PyObject *args)
             if (!PyArg_ParseTuple(args, "iiOl:insstr", &y, &x, &str, &attr)) {
                 goto exit;
             }
-            group_right_1 = 1;
             group_left_1 = 1;
+            group_right_1 = 1;
             break;
         default:
             PyErr_SetString(PyExc_TypeError, "_curses.window.insstr requires 1 to 4 arguments");
@@ -1230,8 +1241,8 @@ _curses_window_insnstr(PyCursesWindowObject *self, PyObject *args)
             if (!PyArg_ParseTuple(args, "iiOil:insnstr", &y, &x, &str, &n, &attr)) {
                 goto exit;
             }
-            group_right_1 = 1;
             group_left_1 = 1;
+            group_right_1 = 1;
             break;
         default:
             PyErr_SetString(PyExc_TypeError, "_curses.window.insnstr requires 2 to 5 arguments");
@@ -1828,8 +1839,8 @@ _curses_window_vline(PyCursesWindowObject *self, PyObject *args)
             if (!PyArg_ParseTuple(args, "iiOil:vline", &y, &x, &ch, &n, &attr)) {
                 goto exit;
             }
-            group_right_1 = 1;
             group_left_1 = 1;
+            group_right_1 = 1;
             break;
         default:
             PyErr_SetString(PyExc_TypeError, "_curses.window.vline requires 2 to 5 arguments");
@@ -1846,7 +1857,13 @@ exit:
 PyDoc_STRVAR(_curses_filter__doc__,
 "filter($module, /)\n"
 "--\n"
-"\n");
+"\n"
+"Restrict screen updates to the current line.\n"
+"\n"
+"Must be called before initscr().  Afterwards curses confines the cursor\n"
+"and screen updates to a single line, which is useful for enabling\n"
+"character-at-a-time line editing without touching the rest of the\n"
+"screen.");
 
 #define _CURSES_FILTER_METHODDEF    \
     {"filter", (PyCFunction)_curses_filter, METH_NOARGS, _curses_filter__doc__},
@@ -2303,7 +2320,7 @@ _curses_getsyx(PyObject *module, PyObject *Py_UNUSED(ignored))
 
 #endif /* defined(getsyx) */
 
-#if defined(NCURSES_MOUSE_VERSION)
+#if (defined(HAVE_CURSES_GETMOUSE) || defined(PDCURSES))
 
 PyDoc_STRVAR(_curses_getmouse__doc__,
 "getmouse($module, /)\n"
@@ -2326,9 +2343,9 @@ _curses_getmouse(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _curses_getmouse_impl(module);
 }
 
-#endif /* defined(NCURSES_MOUSE_VERSION) */
+#endif /* (defined(HAVE_CURSES_GETMOUSE) || defined(PDCURSES)) */
 
-#if defined(NCURSES_MOUSE_VERSION)
+#if (defined(HAVE_CURSES_GETMOUSE) || defined(PDCURSES))
 
 PyDoc_STRVAR(_curses_ungetmouse__doc__,
 "ungetmouse($module, id, x, y, z, bstate, /)\n"
@@ -2400,7 +2417,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(NCURSES_MOUSE_VERSION) */
+#endif /* (defined(HAVE_CURSES_GETMOUSE) || defined(PDCURSES)) */
 
 PyDoc_STRVAR(_curses_getwin__doc__,
 "getwin($module, file, /)\n"
@@ -2770,7 +2787,7 @@ exit:
     return return_value;
 }
 
-#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102)
+#if defined(HAVE_CURSES_ESCDELAY)
 
 PyDoc_STRVAR(_curses_get_escdelay__doc__,
 "get_escdelay($module, /)\n"
@@ -2794,9 +2811,9 @@ _curses_get_escdelay(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _curses_get_escdelay_impl(module);
 }
 
-#endif /* (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102) */
+#endif /* defined(HAVE_CURSES_ESCDELAY) */
 
-#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102)
+#if defined(HAVE_CURSES_SET_ESCDELAY)
 
 PyDoc_STRVAR(_curses_set_escdelay__doc__,
 "set_escdelay($module, ms, /)\n"
@@ -2833,9 +2850,9 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102) */
+#endif /* defined(HAVE_CURSES_SET_ESCDELAY) */
 
-#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102)
+#if defined(HAVE_CURSES_TABSIZE)
 
 PyDoc_STRVAR(_curses_get_tabsize__doc__,
 "get_tabsize($module, /)\n"
@@ -2858,9 +2875,9 @@ _curses_get_tabsize(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _curses_get_tabsize_impl(module);
 }
 
-#endif /* (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102) */
+#endif /* defined(HAVE_CURSES_TABSIZE) */
 
-#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102)
+#if defined(HAVE_CURSES_SET_TABSIZE)
 
 PyDoc_STRVAR(_curses_set_tabsize__doc__,
 "set_tabsize($module, size, /)\n"
@@ -2896,12 +2913,17 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102) */
+#endif /* defined(HAVE_CURSES_SET_TABSIZE) */
 
 PyDoc_STRVAR(_curses_intrflush__doc__,
 "intrflush($module, flag, /)\n"
 "--\n"
-"\n");
+"\n"
+"Control flushing of the output buffer when an interrupt key is pressed.\n"
+"\n"
+"If flag is true, pressing an interrupt key (interrupt, break, or quit)\n"
+"flushes all output in the terminal driver queue.  If flag is false, no\n"
+"flushing is done.");
 
 #define _CURSES_INTRFLUSH_METHODDEF    \
     {"intrflush", (PyCFunction)_curses_intrflush, METH_O, _curses_intrflush__doc__},
@@ -3089,7 +3111,7 @@ exit:
     return return_value;
 }
 
-#if defined(NCURSES_MOUSE_VERSION)
+#if (defined(HAVE_CURSES_GETMOUSE) || defined(PDCURSES))
 
 PyDoc_STRVAR(_curses_mouseinterval__doc__,
 "mouseinterval($module, interval, /)\n"
@@ -3126,9 +3148,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(NCURSES_MOUSE_VERSION) */
+#endif /* (defined(HAVE_CURSES_GETMOUSE) || defined(PDCURSES)) */
 
-#if defined(NCURSES_MOUSE_VERSION)
+#if (defined(HAVE_CURSES_GETMOUSE) || defined(PDCURSES))
 
 PyDoc_STRVAR(_curses_mousemask__doc__,
 "mousemask($module, newmask, /)\n"
@@ -3164,7 +3186,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(NCURSES_MOUSE_VERSION) */
+#endif /* (defined(HAVE_CURSES_GETMOUSE) || defined(PDCURSES)) */
 
 PyDoc_STRVAR(_curses_napms__doc__,
 "napms($module, ms, /)\n"
@@ -3577,7 +3599,10 @@ exit:
 PyDoc_STRVAR(_curses_update_lines_cols__doc__,
 "update_lines_cols($module, /)\n"
 "--\n"
-"\n");
+"\n"
+"Update the LINES and COLS module variables.\n"
+"\n"
+"This is useful for detecting manual screen resize.");
 
 #define _CURSES_UPDATE_LINES_COLS_METHODDEF    \
     {"update_lines_cols", (PyCFunction)_curses_update_lines_cols, METH_NOARGS, _curses_update_lines_cols__doc__},
@@ -4187,10 +4212,11 @@ PyDoc_STRVAR(_curses_unctrl__doc__,
 "unctrl($module, ch, /)\n"
 "--\n"
 "\n"
-"Return a string which is a printable representation of the character ch.\n"
+"Return a bytes object which is a printable representation of ch.\n"
 "\n"
-"Control characters are displayed as a caret followed by the character,\n"
-"for example as ^C.  Printing characters are left as they are.");
+"Control characters are displayed as a caret followed by the\n"
+"character, for example as ^C.  Printing characters are left as they\n"
+"are.  Any attributes and color pair are ignored.");
 
 #define _CURSES_UNCTRL_METHODDEF    \
     {"unctrl", (PyCFunction)_curses_unctrl, METH_O, _curses_unctrl__doc__},
@@ -4395,4 +4421,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_USE_DEFAULT_COLORS_METHODDEF
     #define _CURSES_USE_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_USE_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=96171a19048053ba input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a449af71cde3da29 input=a9049054013a1b77]*/

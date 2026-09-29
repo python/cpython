@@ -60,7 +60,10 @@ class ReadWriteTests:
 
     def _test_overflow(self, name, value):
         ts = self.ts
+        oldvalue = getattr(ts, name)
         self.assertRaises(OverflowError, setattr, ts, name, value)
+        # a failed assignment does not change the value
+        self.assertEqual(getattr(ts, name), oldvalue)
 
     def _test_int_range(self, name, minval, maxval, *, hardlimit=None,
                         indexlimit=None):
@@ -154,8 +157,11 @@ class ReadWriteTests:
         # issue8014: this produced 'bad argument to internal function'
         # internal error
         for nonint in None, 3.2j, "full of eels", {}, []:
-            for attr in integer_attributes:
+            for attr in integer_attributes + ['T_FLOAT', 'T_DOUBLE']:
+                oldvalue = getattr(ts, attr)
                 self.assertRaises(TypeError, setattr, ts, attr, nonint)
+                # a failed assignment does not change the value
+                self.assertEqual(getattr(ts, attr), oldvalue)
 
     def test_inplace_string(self):
         ts = self.ts

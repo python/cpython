@@ -2318,6 +2318,9 @@ symtable_visit_type_param_bound_or_default(
 
         PyObject *error_msg = PyUnicode_FromFormat("reserved name '%U' cannot be "
                                                    "used for type parameter", name);
+        if (error_msg == NULL) {
+            return 0;
+        }
         PyErr_SetObject(PyExc_SyntaxError, error_msg);
         Py_DECREF(error_msg);
         PyErr_RangedSyntaxLocationObject(st->st_filename,
