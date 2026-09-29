@@ -1,0 +1,2 @@
+Fix the namespace used for completions to be that of the running shell, when
+a shell window exists.
