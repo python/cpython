@@ -2212,7 +2212,7 @@ long_to_decimal_string_internal(PyObject *aa,
         }
     }
     if (writer) {
-        if (_PyUnicodeWriter_Prepare(writer, strlen, '9') == -1) {
+        if (_PyUnicodeWriter_Prepare(writer, strlen, 127) == -1) {
             Py_DECREF(scratch);
             return -1;
         }
@@ -2227,7 +2227,7 @@ long_to_decimal_string_internal(PyObject *aa,
         }
     }
     else {
-        str = PyUnicode_New(strlen, '9');
+        str = PyUnicode_New(strlen, 127);
         if (str == NULL) {
             Py_DECREF(scratch);
             return -1;
@@ -2385,9 +2385,10 @@ long_format_binary(PyObject *aa, int base, int alternate,
         /* 2 characters for prefix  */
         sz += 2;
     }
+    assert(sz >= 1);
 
     if (writer) {
-        if (_PyUnicodeWriter_Prepare(writer, sz, 'x') == -1) {
+        if (_PyUnicodeWriter_Prepare(writer, sz, 127) == -1) {
             return -1;
         }
         assert(_PyUnicodeWriter_CanWrite(writer));

@@ -138,9 +138,10 @@ _PyUnicodeWriter_PrepareInternal(_PyUnicodeWriter *writer,
     assert(length >= 0);
     assert(maxchar <= _Py_MAX_UNICODE);
 
-    /* ensure that the _PyUnicodeWriter_Prepare macro was used */
-    assert((maxchar > writer->maxchar && length >= 0)
-           || length > 0);
+    // Check that _PyUnicodeWriter_Prepare() or _PyUnicodeWriter_PrepareKind()
+    // was used
+    assert(maxchar > writer->maxchar
+           || (length > (writer->size - writer->pos) && length >= 1));
 
     if (length > PY_SSIZE_T_MAX - writer->pos) {
         PyErr_NoMemory();
@@ -334,11 +335,12 @@ _PyUnicodeWriter_WriteSubstring(_PyUnicodeWriter *writer, PyObject *str,
                                 Py_ssize_t start, Py_ssize_t end)
 {
     assert(0 <= start);
-    assert(end <= PyUnicode_GET_LENGTH(str));
     assert(start <= end);
+    assert(end <= PyUnicode_GET_LENGTH(str));
 
-    if (start == 0 && end == PyUnicode_GET_LENGTH(str))
+    if (start == 0 && end == PyUnicode_GET_LENGTH(str)) {
         return _PyUnicodeWriter_WriteStr(writer, str);
+    }
 
     Py_ssize_t len = end - start;
     if (len == 0) {
