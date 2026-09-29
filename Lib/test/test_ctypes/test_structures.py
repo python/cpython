@@ -955,6 +955,37 @@ class StructureTestCase(unittest.TestCase, StructCheckMixin):
 
         self.assertEqual(Foo.__name__, "Foo")
 
+    @subTests("endian", ["native", "little", "big"])
+    def test_struct_util_class_cell(self, endian):
+        @struct_util(endian=endian)
+        class Foo:
+            x: c_int
+
+            def __init__(self, x=0):
+                super().__init__(x)
+
+        self.assertEqual(Foo(1).x, 1)
+
+        @struct_util(endian=endian)
+        class Foo:
+            x: c_int
+
+            @classmethod
+            def create(cls):
+                return super().__new__(cls)
+
+        self.assertIsInstance(Foo.create(), Foo)
+
+        @struct_util(endian=endian)
+        class Foo:
+            x: c_int
+
+            @property
+            def cls(self):
+                return __class__
+
+        self.assertIs(Foo().cls, Foo)
+
     def test_string_annotations(self):
         from test.test_ctypes import struct_str_ann
         Point = struct_str_ann.Point
