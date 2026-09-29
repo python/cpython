@@ -1,0 +1,2 @@
+Fix :func:`time.strptime` returning an inconsistent day of year when a week
+number or ordinal day resolves to a date in the following year.
