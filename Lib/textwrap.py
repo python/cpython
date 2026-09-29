@@ -159,15 +159,17 @@ class TextWrapper:
 
         Split the text to wrap into indivisible chunks.  Chunks are
         not quite the same as words; see _wrap_chunks() for full
-        details.  As an example, the text
+        details.
+
+        As an example, the text
           Look, goof-ball -- use the -b option!
-        breaks into the following chunks:
+        breaks into the following chunks if break_on_hyphens is True:
           'Look,', ' ', 'goof-', 'ball', ' ', '--', ' ',
           'use', ' ', 'the', ' ', '-b', ' ', 'option!'
-        if break_on_hyphens is True, or in:
+
+        If break_on_hyphens is False, it instead breaks into these chunks:
           'Look,', ' ', 'goof-ball', ' ', '--', ' ',
           'use', ' ', 'the', ' ', '-b', ' ', option!'
-        otherwise.
         """
         if self.break_on_hyphens is True:
             chunks = self.wordsep_re.split(text)
@@ -295,6 +297,35 @@ class TextWrapper:
                 # Nope, this line is full.
                 else:
                     break
+
+            # If the last chunk on this line is all whitespace,
+            # and drop_whitespace is on,
+            # see if substituting a one-space chunk here leaves enough
+            # room to add the next non-whitespace chunk to the end.
+            # This fixes bpo-32397, where running wrap() twice on
+            # a paragraph might not be stable--the second run might
+            # produce different results than the first.  (If the first
+            # wrap() turned "foo.  bar" into "foo.\nbar", the second
+            # wrap() might turn it back into "foo. bar".  In that
+            # scenario, wrap() wil now produce "foo. bar".)
+            #
+            # This is all complicated slightly by fix_sentence_endings,
+            # where the chunk we add back in might need to be two spaces
+            # instead of one.
+            if (chunks and self.drop_whitespace
+                and cur_line and cur_line[-1].strip() == ''):
+                spacer = " "
+                if (self.fix_sentence_endings
+                    and (len(cur_line) > 1)
+                    and self.sentence_end_re.search(cur_line[-2])):
+                    spacer = "  "
+                new_len = cur_len - len(cur_line[-1]) + len(spacer) + len(chunks[-1])
+                if new_len <= width:
+                    cur_line.pop()
+                    cur_line.append(spacer)
+                    cur_line.append(chunks[-1])
+                    chunks.pop()
+                    cur_len = new_len
 
             # The current line is full, and the next chunk is too big to
             # fit on *any* line (not just this one).
