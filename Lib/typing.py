@@ -1056,8 +1056,8 @@ def evaluate_type(
     type_hint,
     *,
     owner=None,
-    globalns=None,
-    localns=None,
+    globals=None,
+    locals=None,
     type_params=None,
     format=None,
 ):
@@ -1066,8 +1066,20 @@ def evaluate_type(
     This is similar to the evaluate_forward_ref() method, but unlike that method,
     evaluate_type() also supports arbitrary type hints.
     """
+    if isinstance(type_hint, str):
+        if owner is None or isinstance(owner, type):
+            # Without an owner, we can't make any assumption about where the
+            # type hint comes from, so allow any type qualifier.
+            is_argument, is_class = False, True
+        elif isinstance(owner, types.ModuleType):
+            is_argument, is_class = False, False
+        else:
+            is_argument, is_class = True, False
+        type_hint = _make_forward_ref(type_hint, owner=owner,
+                                      is_argument=is_argument, is_class=is_class)
 
-    return _eval_type(type_hint, owner=owner, globalns=globalns, localns=localns, type_params=type_params, format=format)
+    return _eval_type(type_hint, globals, locals, type_params,
+                      format=format, owner=owner)
 
 
 def _is_unpacked_typevartuple(x: Any) -> bool:

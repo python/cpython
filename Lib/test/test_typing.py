@@ -7562,6 +7562,100 @@ class EvaluateForwardRefTests(BaseTestCase):
             fwdref_module.fw,)
 
 
+class EvaluateTypeTests(BaseTestCase):
+    def test_evaluate_type(self):
+        self.assertIs(typing.evaluate_type(int), int)
+        self.assertEqual(typing.evaluate_type(list[int]), list[int])
+        self.assertIs(typing.evaluate_type(ForwardRef('int')), int)
+
+    def test_nested_forward_refs(self):
+        self.assertEqual(
+            typing.evaluate_type(list['int']),
+            list[int],
+        )
+        self.assertEqual(
+            typing.evaluate_type(List['int']),
+            List[int],
+        )
+        self.assertEqual(
+            typing.evaluate_type(int | list['str']),
+            int | list[str],
+        )
+
+    def test_string(self):
+        self.assertIs(typing.evaluate_type('int'), int)
+        self.assertEqual(
+            typing.evaluate_type("int | list['str']"),
+            int | list[str],
+        )
+        self.assertIs(typing.evaluate_type('None'), None)
+
+    def test_string_undefined(self):
+        with self.assertRaises(NameError):
+            typing.evaluate_type('missing')
+        self.assertEqual(
+            typing.evaluate_type('missing', format=annotationlib.Format.FORWARDREF),
+            EqualToForwardRef('missing', is_class=True),
+        )
+        self.assertEqual(
+            typing.evaluate_type('missing', format=annotationlib.Format.STRING),
+            'missing',
+        )
+
+    def test_globals(self):
+        with self.assertRaises(NameError):
+            typing.evaluate_type('list[A]')
+        self.assertEqual(
+            typing.evaluate_type('list[A]', globals={'A': A}),
+            list[A],
+        )
+        self.assertEqual(
+            typing.evaluate_type(list['A'], globals={'A': A}),
+            list[A],
+        )
+
+    def test_owner(self):
+        with self.assertRaises(NameError):
+            typing.evaluate_type('A')
+        self.assertIs(typing.evaluate_type('A', owner=Loop), A)
+        self.assertEqual(
+            typing.evaluate_type(list['A'], owner=Loop),
+            list[A],
+        )
+
+    def test_string_type_qualifiers(self):
+        self.assertEqual(
+            typing.evaluate_type('ClassVar[int]', owner=Loop),
+            ClassVar[int],
+        )
+        self.assertEqual(
+            typing.evaluate_type('Final[int]', owner=sys.modules[__name__]),
+            Final[int],
+        )
+
+    def test_string_forward_ref_flags(self):
+        def func(): pass
+        module = sys.modules[__name__]
+
+        cases = [
+            # owner, is_argument, is_class
+            (None, False, True),
+            (Loop, False, True),
+            (module, False, False),
+            (func, True, False),
+        ]
+        for owner, is_argument, is_class in cases:
+            with self.subTest(owner=owner):
+                with patch.object(
+                    typing, '_make_forward_ref', wraps=typing._make_forward_ref,
+                ) as make_forward_ref:
+                    typing.evaluate_type('int', owner=owner)
+                make_forward_ref.assert_called_once_with(
+                    'int', owner=owner,
+                    is_argument=is_argument, is_class=is_class,
+                )
+
+
 class CollectionsAbcTests(BaseTestCase):
 
     def test_hashable(self):

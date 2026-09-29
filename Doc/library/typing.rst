@@ -3734,6 +3734,8 @@ Introspection helpers
 
    This is similar to calling :func:`evaluate_forward_ref`, but unlike that
    method, :func:`evaluate_type` also supports arbitrary type hints.
+   If *type_hint* is a string, it is converted to a
+   :class:`~annotationlib.ForwardRef` before being evaluated.
 
    See the documentation for :meth:`annotationlib.ForwardRef.evaluate` for
    the meaning of the *owner*, *globals*, *locals*, *type_params*, and *format* parameters.
