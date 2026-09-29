@@ -73,6 +73,12 @@ AC_DEFUN([PY_CHECK_FUNC],
   AS_VAR_POPDEF([py_define])
 ])
 
+dnl PY_CHECK_FUNC_PRIVATE(FUNCTION, [INCLUDES], [AC_DEFINE-VAR])
+dnl Similar to PY_CHECK_FUNC but define macro _Py_HAVE_xxx instead of HAVE_xxx
+AC_DEFUN([PY_CHECK_FUNC_PRIVATE],
+[ PY_CHECK_FUNC([$1], [$2], m4_ifblank([$3], [[_Py_HAVE_]m4_toupper($1)], [$3]))
+])
+
 dnl PY_CHECK_LIB(LIBRARY, FUNCTION, [ACTION-IF-FOUND], [ACTION-IF-NOT-FOUND], [OTHER-LIBRARIES])
 dnl Like AC_CHECK_LIB() but does not modify LIBS
 AC_DEFUN([PY_CHECK_LIB],
@@ -2434,9 +2440,6 @@ AS_CASE([$ac_sys_system],
     dnl Start with 20 MB and allow to grow
     AS_VAR_APPEND([LINKFORSHARED], [" -sALLOW_MEMORY_GROWTH -sINITIAL_MEMORY=20971520"])
 
-    dnl map int64_t and uint64_t to JS bigint
-    AS_VAR_APPEND([LDFLAGS_NODIST], [" -sWASM_BIGINT"])
-
     dnl Include file system support
     AS_VAR_APPEND([LINKFORSHARED], [" -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"])
     AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV,HEAPU32,TTY,ERRNO_CODES"])
@@ -3989,7 +3992,7 @@ if test "$py_have_iconv" = yes; then
     ])
   ])
   if test "$ac_cv_have_iconv" != no; then
-    AC_DEFINE([HAVE_ICONV], [1],
+    AC_DEFINE([_Py_HAVE_ICONV], [1],
               [Define if you have a working iconv() function.])
     if test "$ac_cv_have_iconv" = -liconv; then
       LIBS="-liconv $LIBS"
@@ -4486,7 +4489,7 @@ int main(void)
 [ac_cv_float16_supported=no],
 [ac_cv_float16_supported=no])]))
 AS_VAR_IF([ac_cv_float16_supported], [yes],
-          [AC_DEFINE([HAVE_FLOAT16], [1],
+          [AC_DEFINE([_Py_HAVE_FLOAT16], [1],
                      [Defined if _Float16 C type is supported])])
 
 dnl Check for libmpdec >= 2.5.0
@@ -6562,7 +6565,13 @@ AC_CHECK_FUNCS(
   [AC_MSG_ERROR([Python requires C99 compatible libm])]
 )
 
-AC_CHECK_FUNCS_ONCE(acospi asinpi atanpi atan2pi cospi sinpi tanpi)
+PY_CHECK_FUNC_PRIVATE([acospi], [@%:@include <math.h>])
+PY_CHECK_FUNC_PRIVATE([asinpi], [@%:@include <math.h>])
+PY_CHECK_FUNC_PRIVATE([atanpi], [@%:@include <math.h>])
+PY_CHECK_FUNC_PRIVATE([atan2pi], [@%:@include <math.h>])
+PY_CHECK_FUNC_PRIVATE([cospi], [@%:@include <math.h>])
+PY_CHECK_FUNC_PRIVATE([sinpi], [@%:@include <math.h>])
+PY_CHECK_FUNC_PRIVATE([tanpi], [@%:@include <math.h>])
 LIBS=$LIBS_SAVE
 
 dnl For multiprocessing module, check that sem_open
@@ -7427,16 +7436,18 @@ then
 fi
 
 dnl PY_CHECK_CURSES_FUNC(FUNCTION)
+dnl Link, not just compile: a header can declare a function that the library
+dnl lacks, for example term_attrs() in the narrow ncurses library.
 AC_DEFUN([PY_CHECK_CURSES_FUNC],
 [ AS_VAR_PUSHDEF([py_var], [ac_cv_lib_curses_$1])
   AS_VAR_PUSHDEF([py_define], [HAVE_CURSES_]m4_toupper($1))
   AC_CACHE_CHECK(
     [for curses function $1],
     [py_var],
-    [AC_COMPILE_IFELSE(
+    [AC_LINK_IFELSE(
       [AC_LANG_PROGRAM(_CURSES_INCLUDES, [
         #ifndef $1
-        void *x=$1
+        void * volatile x = (void *)$1; (void)x;
         #endif
       ])],
       [AS_VAR_SET([py_var], [yes])],

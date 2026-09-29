@@ -6,6 +6,7 @@
 
 #include "pegen.h"
 #include "string_parser.h"          // _PyPegen_decode_string()
+#include "lexer/state.h"            // tok_state
 
 
 void *
@@ -344,6 +345,20 @@ _PyPegen_set_expr_context(Parser *p, expr_ty expr, expr_context_ty ctx)
             new = expr;
     }
     return new;
+}
+
+/* Invalid targets return NULL without raising, allowing parsing to backtrack.
+   Copy valid targets to preserve the memoized expression's context. */
+expr_ty
+_PyPegen_make_target(Parser *p, expr_ty expr, TARGETS_TYPE targets_type)
+{
+    assert(expr != NULL);
+    assert(targets_type != FOR_TARGETS);
+    if (_PyPegen_get_invalid_target(expr, targets_type) != NULL) {
+        return NULL;
+    }
+    return _PyPegen_set_expr_context(
+        p, expr, targets_type == DEL_TARGETS ? Del : Store);
 }
 
 /* Constructs a KeyValuePair that is used when parsing a dict's key value pairs */
@@ -1236,6 +1251,14 @@ _PyPegen_get_invalid_target(expr_ty e, TARGETS_TYPE targets_type)
         return NULL;
     }
 
+    if (targets_type == SINGLE_TARGETS ||
+        targets_type == ATTRIBUTE_OR_SUBSCRIPT_TARGETS) {
+        if (targets_type == SINGLE_TARGETS && e->kind == Name_kind) {
+            return NULL;
+        }
+        return e->kind == Attribute_kind || e->kind == Subscript_kind ? NULL : e;
+    }
+
 #define VISIT_CONTAINER(CONTAINER, TYPE) do { \
         Py_ssize_t len = asdl_seq_LEN((CONTAINER)->v.TYPE.elts);\
         for (Py_ssize_t i = 0; i < len; i++) {\
@@ -2111,6 +2134,7 @@ _PyPegen_checked_from_import(Parser *p, asdl_seq *dots, expr_ty module_name,
             alias_ty alias = asdl_seq_GET(names, i);
             if (PyUnicode_CompareWithASCIIString(alias->name, "barry_as_FLUFL") == 0) {
                 p->flags |= PyPARSE_BARRY_AS_BDFL;
+                p->tok->barry_as_bdfl = 1;
             }
         }
     }

@@ -339,7 +339,7 @@ static PyMethodDef writer_methods[] = {
     {"get_size", _PyCFunction_CAST(writer_get_size), METH_NOARGS},
     {"finish", _PyCFunction_CAST(writer_finish), METH_NOARGS},
     {"finish_with_size", _PyCFunction_CAST(writer_finish_with_size), METH_VARARGS},
-    {"discard", _PyCFunction_CAST(writer_discard), METH_VARARGS},
+    {"discard", _PyCFunction_CAST(writer_discard), METH_NOARGS},
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -470,7 +470,7 @@ test_byteswriter_ptr(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     memset(str, 'x', 100);
     str += 100;
 
-    // make sure that the test switchs to a bytes object
+    // make sure that the test switches to a bytes object
     assert((100 + 200) > pybyteswriter_small_buffer_size());
     char *old_str = str;
     str = PyBytesWriter_GrowAndUpdatePointer(writer, 200, str);
@@ -489,10 +489,10 @@ test_byteswriter_ptr(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     }
     assert(PyBytes_GET_SIZE(result) == 300);
     str = PyBytes_AS_STRING(result);
-    for (Py_ssize_t i=0; i < 100; i++) {
+    for (Py_ssize_t i = 0; i < 100; i++) {
         assert(str[i] == 'x');
     }
-    for (Py_ssize_t i=0; i < 200; i++) {
+    for (Py_ssize_t i = 0; i < 200; i++) {
         assert(str[100 + i] == 'y');
     }
     Py_DECREF(result);
@@ -528,6 +528,60 @@ test_byteswriter_ptr(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
 }
 
 
+static PyObject *
+bytes_overflow(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    Py_ssize_t alloc, overflow = 1;
+    if (!PyArg_ParseTuple(args, "n|n", &alloc, &overflow))
+        return NULL;
+
+    PyObject *bytes = PyObject_CallFunction((PyObject*)&PyBytes_Type, "n", alloc);
+    if (bytes == NULL) {
+        return NULL;
+    }
+
+    char *data = PyBytes_AS_STRING(bytes);
+    Py_ssize_t size = PyBytes_GET_SIZE(bytes);
+    memset(data, 'x', size);
+    memset(data + size, '#', overflow);  // Buffer overflow!
+    return bytes;
+}
+
+
+static PyObject *
+bytearray_overflow(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    Py_ssize_t alloc, overflow = 1;
+    if (!PyArg_ParseTuple(args, "n|n", &alloc, &overflow))
+        return NULL;
+
+    PyObject *bytearray = PyObject_CallFunction((PyObject*)&PyByteArray_Type, "n", alloc);
+    if (bytearray == NULL) {
+        return NULL;
+    }
+
+    char *data = PyByteArray_AS_STRING(bytearray);
+    Py_ssize_t size = PyByteArray_GET_SIZE(bytearray);
+    memset(data + size, '#', overflow);  // Buffer overflow!
+    return bytearray;
+}
+
+
+// Write into an immutable bytes object to test _PyStaticObjects_CheckAll()
+static PyObject *
+corrupt_bytes(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    char *bytes, *override;
+    Py_ssize_t size;
+    if (!PyArg_ParseTuple(args, "yy#", &bytes, &override, &size)) {
+        return NULL;
+    }
+
+    memcpy(bytes, override, size);
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef test_methods[] = {
     {"bytes_resize", bytes_resize, METH_VARARGS},
     {"bytes_join", bytes_join, METH_VARARGS},
@@ -535,6 +589,9 @@ static PyMethodDef test_methods[] = {
     {"byteswriter_resize", byteswriter_resize, METH_NOARGS},
     {"byteswriter_highlevel", byteswriter_highlevel, METH_NOARGS},
     {"test_byteswriter_ptr", test_byteswriter_ptr, METH_NOARGS},
+    {"bytes_overflow", bytes_overflow, METH_VARARGS},
+    {"bytearray_overflow", bytearray_overflow, METH_VARARGS},
+    {"corrupt_bytes", corrupt_bytes, METH_VARARGS},
     {NULL},
 };
 
@@ -558,7 +615,6 @@ _PyTestCapi_Init_Bytes(PyObject *m)
     // PyBytesWriter.obj is the second member, small_buffer is the first member
     long size = (long)pybyteswriter_small_buffer_size();
     if (PyModule_AddIntConstant(m, "PyBytesWriter_small_buffer", size) < 0) {
-        Py_DECREF(writer_type);
         return -1;
     }
 
