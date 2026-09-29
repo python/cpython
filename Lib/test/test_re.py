@@ -2208,6 +2208,15 @@ class ReTests(unittest.TestCase):
         self.checkPatternError(r'(?i+', 'missing -, : or )', 3)
         self.checkPatternError(r'(?iz', 'unknown flag', 3)
 
+    def test_scoped_type_flags_search_prefix(self):
+        # The search() prefilter must use the type flags of the group
+        # the leading character set was taken from.
+        self.assertEqual(re.search(r'(?u:\w)', '\xe9', re.ASCII).group(), '\xe9')
+        self.assertEqual(re.search(r'(?u:\d)', '\u0663', re.ASCII).group(), '\u0663')
+        self.assertEqual(re.search(r'(?a:\W)', '\xdf').group(), '\xdf')
+        self.assertEqual(re.search(r'(?a:\S)', '\u2003').group(), '\u2003')
+        self.assertEqual(re.findall(r'(?a:\W)', 'Stra\xdfe!'), ['\xdf', '!'])
+
     def test_ignore_spaces(self):
         for space in " \t\n\r\v\f":
             self.assertTrue(re.fullmatch(space + 'a', 'a', re.VERBOSE))
