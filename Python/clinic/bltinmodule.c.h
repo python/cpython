@@ -478,6 +478,49 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(builtin_dir__doc__,
+"dir($module, object=<unrepresentable>, /)\n"
+"--\n"
+"\n"
+"Return an alphabetized list of the attributes of the object.\n"
+"\n"
+"If called without an argument, return the names in the current scope.\n"
+"Else, return an alphabetized list of names comprising (some of) the\n"
+"attributes of the given object, and of attributes reachable from it.\n"
+"If the object supplies a method named __dir__, it will be used;\n"
+"otherwise the default dir() logic is used and returns:\n"
+"  for a module object: the module\'s attributes.\n"
+"  for a class object:  its attributes, and recursively the attributes\n"
+"    of its bases.\n"
+"  for any other object: its attributes, its class\'s attributes, and\n"
+"    recursively the attributes of its class\'s base classes.");
+
+#define BUILTIN_DIR_METHODDEF    \
+    {"dir", _PyCFunction_CAST(builtin_dir), METH_FASTCALL, builtin_dir__doc__},
+
+static PyObject *
+builtin_dir_impl(PyObject *module, PyObject *arg);
+
+static PyObject *
+builtin_dir(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *arg = NULL;
+
+    if (!_PyArg_CheckPositional("dir", nargs, 0, 1)) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    arg = args[0];
+skip_optional:
+    return_value = builtin_dir_impl(module, arg);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(builtin_divmod__doc__,
 "divmod($module, x, y, /)\n"
 "--\n"
@@ -1011,44 +1054,6 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(builtin_anext__doc__,
-"anext($module, async_iterator, default=<unrepresentable>, /)\n"
-"--\n"
-"\n"
-"Return the next item from the async iterator.\n"
-"\n"
-"If default is given and the async iterator is exhausted,\n"
-"it is returned instead of raising StopAsyncIteration.");
-
-#define BUILTIN_ANEXT_METHODDEF    \
-    {"anext", _PyCFunction_CAST(builtin_anext), METH_FASTCALL, builtin_anext__doc__},
-
-static PyObject *
-builtin_anext_impl(PyObject *module, PyObject *aiterator,
-                   PyObject *default_value);
-
-static PyObject *
-builtin_anext(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
-{
-    PyObject *return_value = NULL;
-    PyObject *aiterator;
-    PyObject *default_value = NULL;
-
-    if (!_PyArg_CheckPositional("anext", nargs, 1, 2)) {
-        goto exit;
-    }
-    aiterator = args[0];
-    if (nargs < 2) {
-        goto skip_optional;
-    }
-    default_value = args[1];
-skip_optional:
-    return_value = builtin_anext_impl(module, aiterator, default_value);
-
-exit:
-    return return_value;
-}
-
 PyDoc_STRVAR(builtin_len__doc__,
 "len($module, obj, /)\n"
 "--\n"
@@ -1401,6 +1406,41 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(builtin_vars__doc__,
+"vars($module, object=<unrepresentable>, /)\n"
+"--\n"
+"\n"
+"Show vars.\n"
+"\n"
+"Without arguments, equivalent to locals().\n"
+"With an argument, equivalent to object.__dict__.");
+
+#define BUILTIN_VARS_METHODDEF    \
+    {"vars", _PyCFunction_CAST(builtin_vars), METH_FASTCALL, builtin_vars__doc__},
+
+static PyObject *
+builtin_vars_impl(PyObject *module, PyObject *v);
+
+static PyObject *
+builtin_vars(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *v = NULL;
+
+    if (!_PyArg_CheckPositional("vars", nargs, 0, 1)) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    v = args[0];
+skip_optional:
+    return_value = builtin_vars_impl(module, v);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(builtin_sum__doc__,
 "sum($module, iterable, /, start=0)\n"
 "--\n"
@@ -1539,4 +1579,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5fb1ac6a4253ee2f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2454c3867f2a73f3 input=a9049054013a1b77]*/

@@ -10299,6 +10299,17 @@ class ParamSpecTests(BaseTestCase):
         self.assertEqual(repr(P.args), "P.args")
         self.assertEqual(repr(P.kwargs), "P.kwargs")
 
+    def test_args_kwargs_weakrefs(self):
+        P = ParamSpec('P')
+        for attr_name in ('args', 'kwargs'):
+            with self.subTest(attr_name=attr_name):
+                callback_fired = []
+                attr = getattr(P, attr_name)
+                ref = weakref.ref(attr, lambda _: callback_fired.append(True))
+                del attr
+                self.assertEqual(callback_fired, [True])
+                self.assertIsNone(ref())
+
     def test_stringized(self):
         P = ParamSpec('P')
         class C(Generic[P]):
