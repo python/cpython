@@ -1,0 +1,3 @@
+:meth:`unittest.TestLoader.discover` now restores the loader's top-level
+directory when discovery fails, so a later call on the same loader is not
+affected.
