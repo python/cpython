@@ -26,6 +26,7 @@ SOURCES = [
     os.path.join(SOURCE_DIR, 'extension.cpp'),
     os.path.join(SOURCE_DIR, 'setup.py'),
 ]
+RUNTESTS_PY = os.path.join(SOURCE_DIR, 'runtests.py')
 MSVC = support.MS_WINDOWS
 
 
@@ -99,21 +100,10 @@ class BaseTests:
             cmd.append('-v')
         run_cmd('Install', cmd)
 
-        # Do a reference run. Until we test that running python
-        # doesn't leak references (gh-94755), run it so one can manually check
-        # -X showrefcount results against this baseline.
-        cmd = [python_exe,
-               '-X', 'dev',
-               '-X', 'showrefcount',
-               '-c', 'pass']
-        run_cmd('Reference run', cmd)
-
-        # Import the C/C++ extension
-        cmd = [python_exe,
-               '-X', 'dev',
-               '-X', 'showrefcount',
-               '-c', f"import {extension_name}"]
-        run_cmd('Import', cmd)
+        # Import the extension module and run tests.
+        # On a debug build, check also for reference leaks.
+        cmd = [python_exe, '-X', 'dev', RUNTESTS_PY, extension_name]
+        run_cmd('Tests', cmd)
 
 
 class TestPublicC(BaseTests, unittest.TestCase):
