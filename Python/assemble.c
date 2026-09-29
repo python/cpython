@@ -81,8 +81,11 @@ assemble_init(struct assembler *a, int firstlineno)
     return SUCCESS;
 error:
     PyBytesWriter_Discard(a->a_bytecode_writer);
+    a->a_bytecode_writer = NULL;
     PyBytesWriter_Discard(a->a_linetable_writer);
+    a->a_linetable_writer = NULL;
     PyBytesWriter_Discard(a->a_except_table_writer);
+    a->a_except_table_writer = NULL;
     return ERROR;
 }
 
