@@ -427,27 +427,13 @@ def collect_readline(info_add):
     except ImportError:
         return
 
-    def format_attr(attr, value):
-        if isinstance(value, int):
-            return "%#x" % value
-        else:
-            return value
-
     attributes = (
-        "_READLINE_VERSION",
-        "_READLINE_RUNTIME_VERSION",
-        "_READLINE_LIBRARY_VERSION",
+        "backend",
+        "READLINE_VERSION_INFO",
+        "readline_version_info",
+        "readline_version",
     )
-    copy_attributes(info_add, readline, 'readline.%s', attributes,
-                    formatter=format_attr)
-
-    if not hasattr(readline, "_READLINE_LIBRARY_VERSION"):
-        # _READLINE_LIBRARY_VERSION has been added to CPython 3.7
-        doc = getattr(readline, '__doc__', '')
-        if 'libedit readline' in doc:
-            info_add('readline.library', 'libedit readline')
-        elif 'GNU readline' in doc:
-            info_add('readline.library', 'GNU readline')
+    copy_attributes(info_add, readline, 'readline.%s', attributes)
 
 
 def run_command(cmd, check=True, **kwargs):
@@ -701,7 +687,7 @@ def collect_sqlite(info_add):
     except ImportError:
         return
 
-    attributes = ('sqlite_version',)
+    attributes = ('SQLITE_VERSION', 'sqlite_version')
     copy_attributes(info_add, sqlite3, 'sqlite3.%s', attributes)
 
 
@@ -743,6 +729,16 @@ def collect_zstd(info_add):
 
     attributes = ('ZSTD_VERSION', 'zstd_version')
     copy_attributes(info_add, _zstd, 'zstd.%s', attributes)
+
+
+def collect_ctypes(info_add):
+    try:
+        import _ctypes
+    except ImportError:
+        return
+
+    attributes = ('LIBFFI_VERSION', 'libffi_version')
+    copy_attributes(info_add, _ctypes, 'ctypes.%s', attributes)
 
 
 def collect_expat(info_add):
@@ -907,18 +903,17 @@ def collect_support_threading_helper(info_add):
     copy_attributes(info_add, threading_helper, 'support_threading_helper.%s', attributes)
 
 
-def collect_cc(info_add):
+def get_compiler_version(sysconfig_var):
     import sysconfig
-
-    CC = sysconfig.get_config_var('CC')
-    if not CC:
+    program = sysconfig.get_config_var(sysconfig_var)
+    if not program:
         return
 
     try:
         import shlex
-        args = shlex.split(CC)
+        args = shlex.split(program)
     except ImportError:
-        args = CC.split()
+        args = program.split()
     args.append('--version')
 
     stdout = run_command(args)
@@ -932,16 +927,31 @@ def collect_cc(info_add):
 
     text = first_line(stdout)
     text = normalize_text(text)
-    info_add('CC.version', text)
+    if text:
+        text = f'[{program}] {text}'
+    return text
+
+
+def collect_cc(info_add):
+    # C compiler
+    version = get_compiler_version('CC')
+    if version:
+        info_add('CC.version', version)
+
+    # C++ compiler
+    version = get_compiler_version('CXX')
+    if version:
+        info_add('CXX.version', version)
 
 
 def collect_gdbm(info_add):
     try:
-        from _gdbm import _GDBM_VERSION
+        import _gdbm
     except ImportError:
         return
 
-    info_add('gdbm.GDBM_VERSION', '.'.join(map(str, _GDBM_VERSION)))
+    attributes = ('GDBM_VERSION_INFO', 'gdbm_version')
+    copy_attributes(info_add, _gdbm, 'gdbm.%s', attributes)
 
 
 def collect_get_config(info_add):
@@ -1353,6 +1363,7 @@ def collect_info(info):
         collect_curses,
         collect_datetime,
         collect_decimal,
+        collect_ctypes,
         collect_expat,
         collect_fips,
         collect_gdb,

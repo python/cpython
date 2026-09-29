@@ -2220,6 +2220,7 @@ long_to_decimal_string_internal(PyObject *aa,
             Py_DECREF(scratch);
             return -1;
         }
+        assert(_PyUnicodeWriter_CanWrite(writer));
     }
     else if (bytes_writer) {
         *bytes_str = PyBytesWriter_GrowAndUpdatePointer(bytes_writer, strlen,
@@ -2390,8 +2391,10 @@ long_format_binary(PyObject *aa, int base, int alternate,
     }
 
     if (writer) {
-        if (_PyUnicodeWriter_Prepare(writer, sz, 'x') == -1)
+        if (_PyUnicodeWriter_Prepare(writer, sz, 'x') == -1) {
             return -1;
+        }
+        assert(_PyUnicodeWriter_CanWrite(writer));
     }
     else if (bytes_writer) {
         *bytes_str = PyBytesWriter_GrowAndUpdatePointer(bytes_writer, sz,
@@ -6269,9 +6272,10 @@ static Py_ssize_t
 int___sizeof___impl(PyObject *self)
 /*[clinic end generated code: output=3303f008eaa6a0a5 input=9b51620c76fc4507]*/
 {
+    Py_ssize_t ndigits = _PyLong_DigitCount((PyLongObject *)self);
     /* using Py_MAX(..., 1) because we always allocate space for at least
        one digit, even though the integer zero has a digit count of 0 */
-    Py_ssize_t ndigits = Py_MAX(_PyLong_DigitCount((PyLongObject *)self), 1);
+    ndigits = Py_MAX(ndigits, 1);
     return Py_TYPE(self)->tp_basicsize + Py_TYPE(self)->tp_itemsize * ndigits;
 }
 

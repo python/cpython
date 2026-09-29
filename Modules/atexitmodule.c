@@ -12,6 +12,13 @@
 #include "pycore_interp.h"        // PyInterpreterState.atexit
 #include "pycore_pystate.h"       // _PyInterpreterState_GET
 
+/*[clinic input]
+module atexit
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=ac8fd67d15bf23fc]*/
+
+#include "clinic/atexitmodule.c.h"
+
 /* ===================================================================== */
 /* Callback machinery. */
 
@@ -157,45 +164,34 @@ _PyAtExit_Call(PyInterpreterState *interp)
 /* Module methods. */
 
 
-PyDoc_STRVAR(atexit_register__doc__,
-"register($module, func, /, *args, **kwargs)\n\
---\n\
-\n\
-Register a function to be executed upon normal program termination\n\
-\n\
-    func - function to be called at exit\n\
-    args - optional arguments to pass to func\n\
-    kwargs - optional keyword arguments to pass to func\n\
-\n\
-    func is returned to facilitate usage as a decorator.");
+/*[clinic input]
+atexit.register
+
+    func: object
+    /
+    *args: tuple
+    **kwargs: dict
+
+Register a function to be executed upon normal program termination
+
+    func - function to be called at exit
+    args - optional arguments to pass to func
+    kwargs - optional keyword arguments to pass to func
+
+    func is returned to facilitate usage as a decorator.
+[clinic start generated code]*/
 
 static PyObject *
-atexit_register(PyObject *module, PyObject *args, PyObject *kwargs)
+atexit_register_impl(PyObject *module, PyObject *func, PyObject *args,
+                     PyObject *kwargs)
+/*[clinic end generated code: output=c921286994bd8612 input=a682b5a343a82e4a]*/
 {
-    if (PyTuple_GET_SIZE(args) == 0) {
-        PyErr_SetString(PyExc_TypeError,
-                "register() takes at least 1 argument (0 given)");
-        return NULL;
-    }
-
-    PyObject *func = PyTuple_GET_ITEM(args, 0);
     if (!PyCallable_Check(func)) {
         PyErr_SetString(PyExc_TypeError,
                 "the first argument must be callable");
         return NULL;
     }
-    PyObject *func_args = PyTuple_GetSlice(args, 1, PyTuple_GET_SIZE(args));
-    if (func_args == NULL) {
-        return NULL;
-    }
-    PyObject *func_kwargs = kwargs;
-
-    if (func_kwargs == NULL)
-    {
-        func_kwargs = Py_None;
-    }
-    PyObject *callback = PyTuple_Pack(3, func, func_args, func_kwargs);
-    Py_DECREF(func_args);
+    PyObject *callback = PyTuple_Pack(3, func, args, kwargs);
     if (callback == NULL)
     {
         return NULL;
@@ -318,8 +314,7 @@ atexit_unregister(PyObject *module, PyObject *func)
 
 
 static PyMethodDef atexit_methods[] = {
-    {"register", _PyCFunction_CAST(atexit_register), METH_VARARGS|METH_KEYWORDS,
-        atexit_register__doc__},
+    ATEXIT_REGISTER_METHODDEF
     {"_clear", atexit_clear, METH_NOARGS, atexit_clear__doc__},
     {"unregister", atexit_unregister, METH_O, atexit_unregister__doc__},
     {"_run_exitfuncs", atexit_run_exitfuncs, METH_NOARGS,
