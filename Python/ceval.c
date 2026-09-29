@@ -3358,6 +3358,11 @@ _PyEval_LazyImportFrom(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObje
         }
         Py_DECREF(mod);
     }
+    else if (PyErr_Occurred()) {
+        // Getting the module failed. Ignore that for now; future
+        // reification will likely fail again.
+        PyErr_Clear();
+    }
 
     return _PyLazyImport_New(frame, d->lz_builtins, v, name);
 }

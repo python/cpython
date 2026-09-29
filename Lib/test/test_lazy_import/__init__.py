@@ -894,6 +894,32 @@ class ErrorHandlingTests(LazyImportTestCase):
             self.assertEqual(result.returncode, 1)
             self.assertIn("Error", result.stderr)
 
+    def test_raising_spec_initializing(self):
+        """Test a raising spec._initializing"""
+        code = textwrap.dedent("""
+            import sys
+            import types
+
+            class Spec:
+                @property
+                def _initializing(self):
+                    raise RuntimeError("boom")
+
+            module = types.ModuleType("cached_spec")
+            module.__spec__ = Spec()
+            module.attr = 1
+            sys.modules["cached_spec"] = module
+            lazy from cached_spec import attr  # this ignores the error
+            try:
+                attr  # this runs into the error again
+            except RuntimeError as e:
+                print('error:', e)
+            else:
+                raise AssertionError("exception not raised")
+        """)
+        proc = assert_python_ok("-c", code)
+        self.assertIn(b"error: boom", proc.out)
+
 
 @support.requires_subprocess()
 class GlobalsAndDictTests(LazyImportTestCase):
