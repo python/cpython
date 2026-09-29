@@ -1,6 +1,7 @@
 """Tests monitoring, sys.settrace, and sys.setprofile in a multi-threaded
 environment to verify things are thread-safe in a free-threaded build"""
 
+import dis
 import sys
 import threading
 import time
@@ -251,6 +252,59 @@ class TraceBuf:
 
 @threading_helper.requires_working_threading()
 class MonitoringMisc(MonitoringTestMixin, TestCase):
+    def test_disable_line_keeps_instruction_events(self):
+        def func(x):
+            a = x + 1
+            b = a * 2
+            return b
+
+        code = func.__code__
+        expected = [instr.offset for instr in dis.get_instructions(func)
+                    if instr.opname != "RESUME"]
+        records = [[[], []] for _ in range(2)]
+        local = threading.local()
+        ready = Barrier(len(records) + 1)
+        start = threading.Event()
+
+        def worker(calls):
+            # Create each thread's bytecode copy before enabling monitoring.
+            func(1)
+            ready.wait()
+            start.wait()
+            for instructions in calls:
+                local.instructions = instructions
+                func(1)
+
+        def instruction(code, offset):
+            local.instructions.append(offset)
+
+        def line(code, lineno):
+            return monitoring.DISABLE
+
+        threads = [Thread(target=worker, args=(calls,)) for calls in records]
+        try:
+            with threading_helper.start_threads(threads, unlock=start.set):
+                ready.wait()
+                monitoring.register_callback(
+                    self.tool_id, monitoring.events.INSTRUCTION, instruction)
+                monitoring.register_callback(
+                    self.tool_id, monitoring.events.LINE, line)
+                monitoring.set_local_events(
+                    self.tool_id, code,
+                    monitoring.events.INSTRUCTION | monitoring.events.LINE)
+                start.set()
+        finally:
+            monitoring.set_local_events(self.tool_id, code, 0)
+            monitoring.register_callback(
+                self.tool_id, monitoring.events.INSTRUCTION, None)
+            monitoring.register_callback(
+                self.tool_id, monitoring.events.LINE, None)
+            monitoring.restart_events()
+
+        for calls in records:
+            for instructions in calls:
+                self.assertEqual(instructions, expected)
+
     def register_callback(self, barrier):
         barrier.wait()
 

@@ -1192,6 +1192,72 @@ LINE_AND_INSTRUCTION_RECORDERS = InstructionRecorder, LineRecorder
 class TestLineAndInstructionEvents(CheckEvents):
     maxDiff = None
 
+    def test_disable_line_keeps_instruction_events(self):
+        for local in (False, True):
+            for line_tool in (TEST_TOOL, TEST_TOOL2):
+                with self.subTest(local=local, line_tool=line_tool):
+                    self.check_disable_line_keeps_instruction_events(
+                        local, line_tool)
+
+    def check_disable_line_keeps_instruction_events(self, local, line_tool):
+        def func(x):
+            a = x + 1
+            b = (
+                a * 2
+            )
+            return b
+
+        code = func.__code__
+        instructions = []
+        lines = []
+        disable = False
+
+        def instruction(code_arg, offset):
+            if code_arg is code:
+                instructions.append(offset)
+
+        def line(code_arg, lineno):
+            if code_arg is code:
+                lines.append(lineno)
+                if disable:
+                    return sys.monitoring.DISABLE
+
+        sys.monitoring.register_callback(TEST_TOOL, E.INSTRUCTION, instruction)
+        sys.monitoring.register_callback(line_tool, E.LINE, line)
+        events = {TEST_TOOL: E.INSTRUCTION}
+        events[line_tool] = events.get(line_tool, 0) | E.LINE
+        try:
+            for tool, mask in events.items():
+                if local:
+                    sys.monitoring.set_local_events(tool, code, mask)
+                else:
+                    sys.monitoring.set_events(tool, mask)
+            func(1)
+            expected_instructions = instructions[:]
+            expected_lines = lines[:]
+            self.assertEqual(expected_instructions, [
+                inst.offset for inst in dis.get_instructions(func)
+                if inst.opname != "RESUME"
+            ])
+            self.assertTrue(expected_lines)
+            disable = True
+            for restart in (False, True):
+                if restart:
+                    sys.monitoring.restart_events()
+                for call in range(2):
+                    instructions.clear()
+                    lines.clear()
+                    func(1)
+                    self.assertEqual(instructions, expected_instructions)
+                    self.assertEqual(lines, expected_lines if call == 0 else [])
+        finally:
+            for tool in events:
+                sys.monitoring.set_local_events(tool, code, 0)
+                sys.monitoring.set_events(tool, 0)
+            sys.monitoring.register_callback(TEST_TOOL, E.INSTRUCTION, None)
+            sys.monitoring.register_callback(line_tool, E.LINE, None)
+            sys.monitoring.restart_events()
+
     def test_simple(self):
 
         def func1():
