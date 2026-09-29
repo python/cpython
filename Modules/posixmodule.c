@@ -11018,7 +11018,7 @@ using it will raise a NotImplementedError.
 
 On Linux, Android and MacOS, path may be a file descriptor referring to
 a symlink. If it is, dir_fd must be None, and the return value will be a
-bytes object. (File descriptors for symlinks can be obtained with
+string object. (File descriptors for symlinks can be obtained with
 
     os.open(..., os.O_RDONLY | os.O_PATH | os.O_NOFOLLOW)
 
@@ -11031,7 +11031,7 @@ on MacOS.)
 
 static PyObject *
 os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
-/*[clinic end generated code: output=d21b732a2e814030 input=30272a2c5fba427c]*/
+/*[clinic end generated code: output=d21b732a2e814030 input=eda43153b2f38ee6]*/
 {
 #if defined(HAVE_READLINK)
     char buffer[MAXPATHLEN+1];

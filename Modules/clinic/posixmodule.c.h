@@ -6660,7 +6660,7 @@ PyDoc_STRVAR(os_readlink__doc__,
 "\n"
 "On Linux, Android and MacOS, path may be a file descriptor referring to\n"
 "a symlink. If it is, dir_fd must be None, and the return value will be a\n"
-"bytes object. (File descriptors for symlinks can be obtained with\n"
+"string object. (File descriptors for symlinks can be obtained with\n"
 "\n"
 "    os.open(..., os.O_RDONLY | os.O_PATH | os.O_NOFOLLOW)\n"
 "\n"
@@ -13759,4 +13759,4 @@ exit:
 #ifndef OS__EMSCRIPTEN_LOG_METHODDEF
     #define OS__EMSCRIPTEN_LOG_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_LOG_METHODDEF) */
-/*[clinic end generated code: output=43bb5390a8962eb5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f98b9987509b0dfa input=a9049054013a1b77]*/
