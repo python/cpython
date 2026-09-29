@@ -1,0 +1,3 @@
+Decorators are now unwrapped in :func:`inspect.getcomments`, :func:`inspect.getfile`,
+and :func:`inspect.getsourcefile`, making these functions consistent with
+:func:`inspect.getsource`.
