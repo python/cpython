@@ -335,7 +335,7 @@ exit:
         it->done = 1;
     }
 
-unlock:
+unlock:;
     Py_END_CRITICAL_SECTION();
     return result;
 }
