@@ -6658,17 +6658,17 @@ PyDoc_STRVAR(os_readlink__doc__,
 "dir_fd may not be implemented on your platform.  If it is unavailable,\n"
 "using it will raise a NotImplementedError.\n"
 "\n"
-"On Linux, Android and MacOS, path may be a file descriptor referring to\n"
+"On Linux, Android and macOS, path may be a file descriptor referring to\n"
 "a symlink. If it is, dir_fd must be None, and the return value will be a\n"
 "string object. (File descriptors for symlinks can be obtained with\n"
 "\n"
 "    os.open(..., os.O_RDONLY | os.O_PATH | os.O_NOFOLLOW)\n"
 "\n"
-"on Linux and Android, and\n"
+"on Linux and Android, and:\n"
 "\n"
 "    os.open(..., os.O_RDONLY | os.O_SYMLINK)\n"
 "\n"
-"on MacOS.)");
+"on macOS.)");
 
 #define OS_READLINK_METHODDEF    \
     {"readlink", _PyCFunction_CAST(os_readlink), METH_FASTCALL|METH_KEYWORDS, os_readlink__doc__},
@@ -13759,4 +13759,4 @@ exit:
 #ifndef OS__EMSCRIPTEN_LOG_METHODDEF
     #define OS__EMSCRIPTEN_LOG_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_LOG_METHODDEF) */
-/*[clinic end generated code: output=f98b9987509b0dfa input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9311611c1c6b74c3 input=a9049054013a1b77]*/

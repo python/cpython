@@ -11016,22 +11016,22 @@ that directory.
 dir_fd may not be implemented on your platform.  If it is unavailable,
 using it will raise a NotImplementedError.
 
-On Linux, Android and MacOS, path may be a file descriptor referring to
+On Linux, Android and macOS, path may be a file descriptor referring to
 a symlink. If it is, dir_fd must be None, and the return value will be a
 string object. (File descriptors for symlinks can be obtained with
 
     os.open(..., os.O_RDONLY | os.O_PATH | os.O_NOFOLLOW)
 
-on Linux and Android, and
+on Linux and Android, and:
 
     os.open(..., os.O_RDONLY | os.O_SYMLINK)
 
-on MacOS.)
+on macOS.)
 [clinic start generated code]*/
 
 static PyObject *
 os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
-/*[clinic end generated code: output=d21b732a2e814030 input=eda43153b2f38ee6]*/
+/*[clinic end generated code: output=d21b732a2e814030 input=14546747b3db62f6]*/
 {
 #if defined(HAVE_READLINK)
     char buffer[MAXPATHLEN+1];
@@ -11047,12 +11047,7 @@ os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
             Py_BEGIN_ALLOW_THREADS
             length = freadlink(path->fd, buffer, MAXPATHLEN);
             Py_END_ALLOW_THREADS
-        } else {
-            PyErr_SetString(PyExc_NotImplementedError,
-                "readlink cannot read file descriptors on this platform, "
-                "freadlink() is unavailable");
-            return NULL;
-        }
+        } else
 #elif defined(HAVE_READLINKAT) && defined(_Py_READLINKAT_SUPPORTS_EMPTY_PATH)
         // linux/android:
         // readlinkat(fd, "", ...) reads the link that fd refers to.
@@ -11060,20 +11055,13 @@ os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
             Py_BEGIN_ALLOW_THREADS
             length = readlinkat(path->fd, "", buffer, MAXPATHLEN);
             Py_END_ALLOW_THREADS
-        } else {
-            // this should be unreachable:
-            // HAVE_READLINKAT_RUNTIME is always 1 on Linux/Android.
-            // Leaving it here as a safeguard.
+        } else
+#endif
+        {
             PyErr_SetString(PyExc_NotImplementedError,
-                "readlink cannot read file descriptors on this platform, "
-                "readlinkat() is unavailable");
+                "readlink cannot read file descriptors on this platform");
             return NULL;
         }
-#else
-        PyErr_SetString(PyExc_NotImplementedError,
-            "readlink cannot read file descriptors on this platform");
-        return NULL;
-#endif
     } else
 #ifdef HAVE_READLINKAT
     if (dir_fd != DEFAULT_DIR_FD) {

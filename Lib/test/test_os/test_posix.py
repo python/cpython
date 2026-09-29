@@ -1883,7 +1883,7 @@ class TestPosixDirFd(unittest.TestCase):
 
 
     _support_readlink_with_fd = hasattr(os, 'readlink') and (
-        "HAVE_FREADLINK" in posix._have_functions  # MacOS
+        "HAVE_FREADLINK" in posix._have_functions  # macOS
         or (
             os.readlink in os.supports_dir_fd
             and sys.platform in ["linux", "android"]
@@ -1892,7 +1892,7 @@ class TestPosixDirFd(unittest.TestCase):
 
     def _open_symlink_as_fd(self, path):
         open_flags = os.O_RDONLY
-        if hasattr(os, "O_SYMLINK"):  # MacOS
+        if hasattr(os, "O_SYMLINK"):  # macOS
             open_flags |= os.O_SYMLINK
         elif hasattr(os, "O_NOFOLLOW") and hasattr(os, "O_PATH"):  # Linux
             open_flags |= os.O_NOFOLLOW | os.O_PATH
@@ -1918,7 +1918,7 @@ class TestPosixDirFd(unittest.TestCase):
             self.addCleanup(os.close, fd)
             # on Linux/Android, readlinkat("", fd, ...) fails with ENOENT, which
             # Python translates to a FileNotFoundError, a subclass of OSError.
-            # On MacOS, freadlink(fd, ...) fails with EINVAL, which gets raised
+            # On macOS, freadlink(fd, ...) fails with EINVAL, which gets raised
             # as a OSError.
             # So catching OSError here covers both cases.
             with self.assertRaises(OSError):
@@ -2698,8 +2698,8 @@ class TestPosixWeaklinking(unittest.TestCase):
 
         else:
             self.assertNotIn("HAVE_FREADLINK", posix._have_functions)
-
-            with self.assertRaisesRegex(NotImplementedError, "readlink cannot read file descriptors on this platform"):
+            errmsg = "readlink cannot read file descriptors on this platform"
+            with self.assertRaisesRegex(NotImplementedError, errmsg):
                 os.readlink(0)
 
     def test_symlink(self):
