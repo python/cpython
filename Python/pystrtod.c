@@ -406,7 +406,8 @@ _Py_string_to_number_with_underscores(
    Py_ssize_t arithmetic on roughly precision + (digits before the point, at
    most DBL_MAX_10_EXP + 1 == 309) + a few bytes of sign, point and exponent.
    Staying this far inside the int range keeps all of those sums in range.
-   (Only C callers can pass a negative precision.) */
+   (Only C callers can pass a negative precision.)  _Py_dg_dtoa() applies
+   the same bound to its ndigits argument. */
 #define DOUBLE_TO_STRING_PRECISION_MAX (INT_MAX - 1024)
 
 #if _PY_SHORT_FLOAT_REPR == 0
@@ -775,7 +776,8 @@ char * PyOS_double_to_string(double val,
     int upper = 0;
 
     if (precision > DOUBLE_TO_STRING_PRECISION_MAX
-        || precision < -DOUBLE_TO_STRING_PRECISION_MAX) {
+        || precision < -DOUBLE_TO_STRING_PRECISION_MAX)
+    {
         PyErr_SetString(PyExc_ValueError, "precision too big");
         return NULL;
     }
@@ -1242,7 +1244,8 @@ char * PyOS_double_to_string(double val,
     int mode;
 
     if (precision > DOUBLE_TO_STRING_PRECISION_MAX
-        || precision < -DOUBLE_TO_STRING_PRECISION_MAX) {
+        || precision < -DOUBLE_TO_STRING_PRECISION_MAX)
+    {
         PyErr_SetString(PyExc_ValueError, "precision too big");
         return NULL;
     }
