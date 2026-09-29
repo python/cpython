@@ -1896,7 +1896,7 @@ object.
 
 .. c:function:: int PyUnicodeWriter_WriteUCS4(PyUnicodeWriter *writer, const Py_UCS4 *str, Py_ssize_t size)
 
-   Writer the UCS4 string *str* into *writer*.
+   Write the UCS4 string *str* into *writer*.
 
    *size* is a number of UCS4 characters.
 

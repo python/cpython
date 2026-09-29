@@ -1,0 +1,4 @@
+:c:func:`PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND)
+<PyUnicode_FromKindAndData>` and :c:func:`PyUnicodeWriter_WriteUCS4` now raise
+an exception if a character is not in the [U+0000; U+10ffff] range, instead of
+creating an invalid str object. Patch by Victor Stinner.
