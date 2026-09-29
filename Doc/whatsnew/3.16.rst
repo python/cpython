@@ -963,6 +963,14 @@ New deprecations
     3.9, now issues a deprecation warning on use. This property is slated for
     removal in 3.21. Use ``ast.Tuple.elts`` instead.
 
+* :mod:`socket`:
+
+  * ``ALG_SET_PUBKEY``, ``ALG_OP_SIGN`` and ``ALG_OP_VERIFY`` are deprecated
+    and slated for removal in Python 3.21.  They are libkcapi's own values
+    and were never defined by the Linux kernel, which uses the value of
+    ``ALG_SET_PUBKEY`` for ``ALG_SET_DRBG_ENTROPY``.
+    (Contributed by Parman Mohammadalizadeh in :gh:`158285`.)
+
 * :mod:`struct`:
 
   * The ``'F'`` and ``'D'`` type codes, soft-deprecated since Python 3.15,
