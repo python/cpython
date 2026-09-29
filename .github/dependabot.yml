@@ -26,13 +26,10 @@ updates:
     directory: "/"
     schedule:
       interval: "quarterly"
-    labels:
-      - "skip issue"
-      - "skip news"
+    labels: ["skip issue", "skip news"]
     groups:
       actions:
-        patterns:
-          - "*"
+        patterns: ["*"]
     cooldown:
       default-days: 14
 
