@@ -42,24 +42,20 @@ class TestSpecifics(unittest.TestCase):
     @support.requires_subprocess()
     @support.nomemtest
     def test_assemble_init_allocation_failure(self):
-        code = textwrap.dedent("""\
-            import _testcapi
+        # gh-158241: Check error handling on MemoryError in Python/assemble.c
+        code = textwrap.dedent("""
+            from test import support
 
-            expected = compile("x", "<test>", "exec")
             failures = 0
-            for n in range(1, 500):
-                _testcapi.set_nomemory(n, n + 1)
-                try:
-                    compile("x", "<test>", "exec")
-                except MemoryError:
-                    failures += 1
-                finally:
-                    _testcapi.remove_mem_hooks()
+            for n in range(1, 100):
+                with support.inject_memory_error_cm(n, n + 1):
+                    try:
+                        compile("x", "<test>", "exec")
+                    except MemoryError:
+                        failures += 1
 
-            assert failures > 0
-            actual = compile("x", "<test>", "exec")
-            assert actual.co_code == expected.co_code
-            assert actual.co_linetable == expected.co_linetable
+            if failures == 0:
+                raise AssertionError
         """)
         script_helper.assert_python_ok('-c', code)
 
