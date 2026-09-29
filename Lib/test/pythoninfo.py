@@ -427,27 +427,13 @@ def collect_readline(info_add):
     except ImportError:
         return
 
-    def format_attr(attr, value):
-        if isinstance(value, int):
-            return "%#x" % value
-        else:
-            return value
-
     attributes = (
-        "_READLINE_VERSION",
-        "_READLINE_RUNTIME_VERSION",
-        "_READLINE_LIBRARY_VERSION",
+        "backend",
+        "READLINE_VERSION_INFO",
+        "readline_version_info",
+        "readline_version",
     )
-    copy_attributes(info_add, readline, 'readline.%s', attributes,
-                    formatter=format_attr)
-
-    if not hasattr(readline, "_READLINE_LIBRARY_VERSION"):
-        # _READLINE_LIBRARY_VERSION has been added to CPython 3.7
-        doc = getattr(readline, '__doc__', '')
-        if 'libedit readline' in doc:
-            info_add('readline.library', 'libedit readline')
-        elif 'GNU readline' in doc:
-            info_add('readline.library', 'GNU readline')
+    copy_attributes(info_add, readline, 'readline.%s', attributes)
 
 
 def run_command(cmd, check=True, **kwargs):
