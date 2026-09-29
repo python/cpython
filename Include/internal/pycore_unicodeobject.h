@@ -153,11 +153,11 @@ _PyUnicodeWriter_SetReadOnly(_PyUnicodeWriter *writer, PyObject *obj,
 
     writer->buffer = obj;
     writer->data = NULL;
-    /* Set kind, maxchar and size to 0 to make sure that the next
+    /* Set kind and size to 0 to make sure that the next
      * _PyUnicodeWriter_Prepare() call allocates a new buffer and copies
      * characters. */
     writer->kind = 0;
-    writer->maxchar = 0;
+    writer->maxchar = PyUnicode_MAX_CHAR_VALUE(obj);
     writer->size = 0;
     writer->pos = length;
     writer->readonly = 1;
