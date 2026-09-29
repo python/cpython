@@ -1,0 +1,2 @@
+During a lazy import, if getting an existing module fails with an exception,
+ignore the exception. (Later reification will likely trigger it again.)
