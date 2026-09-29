@@ -1268,6 +1268,19 @@ class BaseTaskTests:
 
         self.loop.run_until_complete(self.new_task(self.loop, coro()))
 
+    def test_gather_does_not_add_callback_to_outer(self):
+        # gh-158239: gather() must not add an internal done callback to
+        # the outer future just to maintain the await graph.
+        async def child():
+            await asyncio.sleep(0)
+
+        async def coro():
+            outer = asyncio.gather(child(), child())
+            self.assertFalse(outer._callbacks)
+            await outer
+
+        self.loop.run_until_complete(self.new_task(self.loop, coro()))
+
     def test_wait_really_done(self):
         # there is possibility that some tasks in the pending list
         # became done but their callbacks haven't all been called yet
