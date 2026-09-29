@@ -68,17 +68,25 @@ assemble_init(struct assembler *a, int firstlineno)
     a->a_lineno = firstlineno;
     a->a_bytecode_writer = PyBytesWriter_Create(DEFAULT_CODE_SIZE);
     if (a->a_bytecode_writer == NULL) {
-        return ERROR;
+        goto error;
     }
     a->a_linetable_writer = PyBytesWriter_Create(DEFAULT_CNOTAB_SIZE);
     if (a->a_linetable_writer == NULL) {
-        return ERROR;
+        goto error;
     }
     a->a_except_table_writer = PyBytesWriter_Create(DEFAULT_LNOTAB_SIZE);
     if (a->a_except_table_writer == NULL) {
-        return ERROR;
+        goto error;
     }
     return SUCCESS;
+error:
+    PyBytesWriter_Discard(a->a_bytecode_writer);
+    a->a_bytecode_writer = NULL;
+    PyBytesWriter_Discard(a->a_linetable_writer);
+    a->a_linetable_writer = NULL;
+    PyBytesWriter_Discard(a->a_except_table_writer);
+    a->a_except_table_writer = NULL;
+    return ERROR;
 }
 
 static void
