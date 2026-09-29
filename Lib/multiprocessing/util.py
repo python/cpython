@@ -234,7 +234,10 @@ def _has_writeable_tempdir():
     #
     # See: https://github.com/python/cpython/issues/155717.
 
-    path = _get_base_temp_dir()
+    try:
+        path = _get_base_temp_dir()
+    except OSError:
+        return False
     if path is None:
         return False
 

@@ -6514,6 +6514,38 @@ class TestStartMethod(unittest.TestCase):
             _, out, err = script_helper.assert_python_ok('-c', cmd, TMPDIR=TMPDIR)
         self.assertEqual(out.decode().strip(), "spawn")
 
+    @unittest.skipIf(os.name == "nt", "requires POSIX")
+    @support.requires_non_root_user
+    def test_import_without_usable_tempdir(self):
+        # Importing multiprocessing must not fail when tempfile finds no
+        # usable temporary directory at all, and the default start method
+        # must then be 'spawn'.
+        #
+        # See https://github.com/python/cpython/issues/155717.
+
+        cmd = '''if 1:
+            import os, tempfile
+            # Make TMPDIR the only candidate, so that tempfile.gettempdir()
+            # raises FileNotFoundError instead of falling back to /tmp.
+            tempfile._candidate_tempdir_list = lambda: [os.environ["TMPDIR"]]
+            try:
+                tempfile.gettempdir()
+            except FileNotFoundError:
+                pass
+            else:
+                raise AssertionError("TMPDIR is usable")
+
+            import multiprocessing
+            if __name__ == "__main__":
+                print(multiprocessing.get_start_method())
+        '''
+
+        with support.os_helper.temp_dir() as root:
+            TMPDIR = pathlib.Path(root, "TMPDIR")
+            TMPDIR.mkdir(mode=os.R_OK | os.X_OK)
+            _, out, err = script_helper.assert_python_ok('-c', cmd, TMPDIR=TMPDIR)
+        self.assertEqual(out.decode().strip(), "spawn")
+
 
 @unittest.skipIf(sys.platform == "win32",
                  "test semantics don't make sense on Windows")
