@@ -408,9 +408,9 @@ as operands and always lock both objects:
 iterate through all the passed iterables and do the following:
 
    * :meth:`set.update` and :meth:`set.union` lock both objects only when
-      the other operand is a :class:`set`, :class:`frozenset`, or :class:`dict`.
+     the other operand is a :class:`set`, :class:`frozenset`, or :class:`dict`.
    * :meth:`set.intersection` and :meth:`set.difference` always try to lock
-      all objects.
+     all objects.
 
 :meth:`set.symmetric_difference` tries to lock both objects.
 
@@ -418,9 +418,9 @@ The update variants of the above methods also have some differences between
 them:
 
    * :meth:`set.difference_update` and :meth:`set.intersection_update` try
-      to lock all objects one-by-one.
+     to lock all objects one-by-one.
    * :meth:`set.symmetric_difference_update` only locks the arguments if it is
-      of type :class:`set`, :class:`frozenset`, or :class:`dict`.
+     of type :class:`set`, :class:`frozenset`, or :class:`dict`.
 
 The following methods always try to lock both objects:
 
