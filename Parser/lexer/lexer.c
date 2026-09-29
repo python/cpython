@@ -162,6 +162,19 @@ set_fstring_expr(struct tok_state* tok, struct token *token, char c) {
         while (i < expression_size) {
             char ch = expression[i];
 
+            // Copy escaped characters as-is. This keeps an escaped quote from
+            // flipping the in_string state, which would otherwise stop a real
+            // comment from being detected (see the detection loop above).
+            if (ch == '\\') {
+                result[j++] = ch;
+                i++;
+                if (i < expression_size) {
+                    result[j++] = expression[i];
+                    i++;
+                }
+                continue;
+            }
+
             // Handle string quotes
             if (ch == '"' || ch == '\'') {
                 // See comment above to understand this part
