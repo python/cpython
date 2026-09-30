@@ -14,6 +14,7 @@ import unittest
 from test import support
 from test.support import os_helper
 from test.support import force_not_colorized
+from test.support import import_helper
 from test.support import threading_helper
 from test.support.script_helper import (
     spawn_python, kill_python, assert_python_ok, assert_python_failure,
@@ -60,14 +61,17 @@ class CmdLineTest(unittest.TestCase):
     @support.cpython_only
     @support.force_not_colorized
     def test_help(self):
-        self.verify_valid_flag('-h')
-        self.verify_valid_flag('-?')
-        out = self.verify_valid_flag('--help')
-        lines = out.splitlines()
-        self.assertIn(b'usage', lines[0])
-        self.assertNotIn(b'PYTHONHOME', out)
-        self.assertNotIn(b'-X dev', out)
-        self.assertLess(len(lines), 50)
+        options = ['-h', '-?', '--help']
+        if support.MS_WINDOWS:
+            options.append('/?')
+        for opt in options:
+            with self.subTest(opt=opt):
+                out = self.verify_valid_flag(opt)
+                lines = out.splitlines()
+                self.assertIn(b'usage', lines[0])
+                self.assertNotIn(b'PYTHONHOME', out)
+                self.assertNotIn(b'-X dev', out)
+                self.assertLess(len(lines), 50)
 
     @support.cpython_only
     @support.force_not_colorized
@@ -1402,6 +1406,71 @@ class CmdLineTest(unittest.TestCase):
         proc = assert_python_failure(*cmd, PYTHONHOME=nonexistent)
         self.assertIn(b'Python path configuration:', proc.err)
         self.assertIn(f"PYTHONHOME = '{nonexistent}'".encode(), proc.err)
+
+    def test_short_options(self):
+        # Skip the test if _testcapi cannot be imported:
+        # the test uses _testcapi.config_get().
+        import_helper.import_module('_testcapi')
+
+        # Test short command line options
+        def check(option, config_name, expr, expected):
+            if isinstance(option, str):
+                option = (option,)
+            code = (
+                'from _testcapi import config_get; '
+                'import sys; '
+                f'print(config_get({config_name!a}), {expr})'
+            )
+            args = option + ("-c", code)
+            proc = assert_python_ok(*args)
+            self.assertEqual(proc.out.rstrip(), expected.encode())
+
+        def check_ignored(option):
+            # Just test that passing the option doesn't fail
+            assert_python_ok(option, "-c", "pass")
+
+        check('-b', 'bytes_warning', 'sys.flags.bytes_warning', '1 1')
+        check('-bb', 'bytes_warning', 'sys.flags.bytes_warning', '2 2')
+        check('-B', 'write_bytecode', 'sys.dont_write_bytecode', 'False True')
+        check('-d', 'parser_debug', 'sys.flags.debug', 'True 1')
+        check('-E', 'use_environment', 'sys.flags.ignore_environment', 'False 1')
+        check('-i', 'inspect',
+              'config_get("interactive"), sys.flags.inspect, sys.flags.interactive',
+              'True True 1 1')
+        check('-I', 'isolated', 'sys.flags.isolated', 'True 1')
+        check('-O', 'optimization_level', 'sys.flags.optimize', '1 1')
+        check('-OO', 'optimization_level', 'sys.flags.optimize', '2 2')
+        check('-P', 'safe_path', 'sys.flags.safe_path', 'True True')
+        check('-q', 'quiet', 'sys.flags.quiet', 'True 1')
+        check('-R', 'use_hash_seed', 'sys.flags.hash_randomization', 'False 1')
+        check('-s', 'user_site_directory', 'sys.flags.no_user_site', 'False 1')
+        check('-S', 'site_import', 'sys.flags.no_site', 'False 1')
+        check_ignored('-t')
+        check('-u', 'buffered_stdio', 'sys.stdout.write_through', 'False True')
+        check('-v', 'verbose', 'sys.flags.verbose', '1 1')
+        check('-Wignore', 'warnoptions', 'sys.warnoptions',
+              "['ignore'] ['ignore']")
+        check('-x', 'skip_source_first_line', '', 'True')
+        check(('-X', 'xoption=value'), 'xoptions', 'sys._xoptions',
+              # assert_python_ok() adds -X faulthandler
+              "{'faulthandler': True, 'xoption': 'value'} "
+              "{'faulthandler': True, 'xoption': 'value'}")
+
+        # -c, -h, -m, -V and -? are tested elsewhere
+
+    def test_long_options(self):
+        # Test long command line options
+
+        # Test --check-hash-based-pycs option
+        code = 'import _imp; print(_imp.check_hash_based_pycs)'
+        opt = f"--check-hash-based-pycs"
+        for value in ('always', 'never', 'default'):
+            with self.subTest(value=value):
+                proc = assert_python_ok(opt, value, "-c", code)
+                self.assertEqual(proc.out.rstrip(), value.encode())
+
+        # Other long options --help-all, --help-env and --help-xoptions
+        # are tested elsewhere
 
 
 @unittest.skipIf(interpreter_requires_environment(),

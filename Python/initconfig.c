@@ -3051,7 +3051,7 @@ config_parse_cmdline(PyConfig *config, PyWideStringList *warnoptions,
         switch (c) {
         // Integers represent long options, see Python/getopt.c
         case 1:
-            // check-hash-based-pycs
+            // --check-hash-based-pycs option
             if (wcscmp(getopt.arg, L"always") == 0
                 || wcscmp(getopt.arg, L"never") == 0
                 || wcscmp(getopt.arg, L"default") == 0)
@@ -3067,17 +3067,17 @@ config_parse_cmdline(PyConfig *config, PyWideStringList *warnoptions,
             break;
 
         case 2:
-            // help-all
+            // --help-all option
             DEFER_OPTION(c);
             break;
 
         case 3:
-            // help-env
+            // --help-env option
             DEFER_OPTION(c);
             break;
 
         case 4:
-            // help-xoptions
+            // --help-xoptions option
             DEFER_OPTION(c);
             break;
 
