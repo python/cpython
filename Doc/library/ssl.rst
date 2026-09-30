@@ -2003,7 +2003,11 @@ to speed up repeated connections from the same clients.
    outgoing BIO.
 
    The *server_side*, *server_hostname* and *session* parameters have the
-   same meaning as in :meth:`SSLContext.wrap_socket`.
+   same meaning as in :meth:`SSLContext.wrap_socket`, and are validated in
+   the same way: in particular a :exc:`ValueError` is raised when
+   :attr:`~SSLContext.check_hostname` is enabled but no *server_hostname* is
+   given, since there would be no name to match the peer's certificate
+   against.
 
    .. versionchanged:: 3.6
       *session* argument was added.
@@ -2011,6 +2015,13 @@ to speed up repeated connections from the same clients.
    .. versionchanged:: 3.7
       The method returns an instance of :attr:`SSLContext.sslobject_class`
       instead of hard-coded :class:`SSLObject`.
+
+   .. versionchanged:: next
+      The *server_side*, *server_hostname* and *session* parameters are now
+      validated as :meth:`SSLContext.wrap_socket` validates them. Previously
+      a context with :attr:`~SSLContext.check_hostname` enabled and no
+      *server_hostname* was accepted, and verified the certificate chain but
+      never the peer's identity.
 
 .. attribute:: SSLContext.sslobject_class
 
