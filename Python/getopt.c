@@ -65,12 +65,17 @@ _PyOS_GetOpt_Init(struct _PyOS_GetOpt *getopt,
 int
 _PyOS_GetOpt(struct _PyOS_GetOpt *getopt)
 {
+    // Local copy of read-only members to omit "getopt->"
+    const Py_ssize_t argc = getopt->argc;
+    wchar_t * const *argv = getopt->argv;
+    const int error = getopt->error;
+
     if (*getopt->ptr == '\0') {
-        if (getopt->index >= getopt->argc) {
+        if (getopt->index >= argc) {
             return -1;
         }
 
-        const wchar_t *arg = getopt->argv[getopt->index];
+        const wchar_t *arg = argv[getopt->index];
         if (arg[0] != L'-' || arg[1] == L'\0' /* lone dash */ ) {
             return -1;
         }
@@ -94,7 +99,7 @@ _PyOS_GetOpt(struct _PyOS_GetOpt *getopt)
             return 'V';
         }
 
-        getopt->ptr = &getopt->argv[getopt->index++][1];
+        getopt->ptr = &argv[getopt->index++][1];
     }
 
     wchar_t option = *getopt->ptr++;
@@ -105,7 +110,7 @@ _PyOS_GetOpt(struct _PyOS_GetOpt *getopt)
     if (option == L'-') {
         // Parse long option.
         if (*getopt->ptr == L'\0') {
-            if (getopt->error) {
+            if (error) {
                 fprintf(stderr, "Expected long option\n");
             }
             return -1;
@@ -119,8 +124,8 @@ _PyOS_GetOpt(struct _PyOS_GetOpt *getopt)
         }
 
         if (!opt->name) {
-            if (getopt->error) {
-                fprintf(stderr, "Unknown option: %ls\n", getopt->argv[getopt->index - 1]);
+            if (error) {
+                fprintf(stderr, "Unknown option: %ls\n", argv[getopt->index - 1]);
             }
             return '_';
         }
@@ -129,20 +134,20 @@ _PyOS_GetOpt(struct _PyOS_GetOpt *getopt)
         if (!opt->has_arg) {
             return opt->val;
         }
-        if (getopt->index >= getopt->argc) {
-            if (getopt->error) {
+        if (getopt->index >= argc) {
+            if (error) {
                 fprintf(stderr, "Argument expected for the %ls options\n",
-                        getopt->argv[getopt->index - 1]);
+                        argv[getopt->index - 1]);
             }
             return '_';
         }
-        getopt->arg = getopt->argv[getopt->index++];
+        getopt->arg = argv[getopt->index++];
         return opt->val;
     }
 
     wchar_t *ptr = wcschr(SHORT_OPTS, option);
     if (ptr == NULL) {
-        if (getopt->error) {
+        if (error) {
             fprintf(stderr, "Unknown option: -%c\n", (char)option);
         }
         return '_';
@@ -154,15 +159,15 @@ _PyOS_GetOpt(struct _PyOS_GetOpt *getopt)
             getopt->ptr = L"";
         }
         else {
-            if (getopt->index >= getopt->argc) {
-                if (getopt->error) {
+            if (getopt->index >= argc) {
+                if (error) {
                     fprintf(stderr,
                         "Argument expected for the -%c option\n", (char)option);
                 }
                 return '_';
             }
 
-            getopt->arg = getopt->argv[getopt->index++];
+            getopt->arg = argv[getopt->index++];
         }
     }
 
