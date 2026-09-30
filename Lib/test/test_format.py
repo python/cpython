@@ -492,8 +492,7 @@ class FormatTest(unittest.TestCase):
     def test_precision_near_int_max(self):
         # gh-158446: Precisions just below INT_MAX are rejected before any
         # output buffer size is computed from them.
-        _testcapi = import_module("_testcapi")
-        INT_MAX = _testcapi.INT_MAX
+        from _testcapi import INT_MAX
 
         f = 1e300
         c = complex(f)
