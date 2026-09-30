@@ -1,4 +1,0 @@
-This directory is intentionally empty.
-
-It should be used as a target for `--enable-framework` when compiling an iOS simulator
-build for testing purposes (either x86_64 or ARM64).
