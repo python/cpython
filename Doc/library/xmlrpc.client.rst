@@ -142,6 +142,9 @@ between conformable Python objects and XML on the wire.
    via XML-RPC, use :class:`bytes` or :class:`bytearray` classes or the
    :class:`Binary` wrapper class described below.
 
+   :class:`!Server` is retained as an alias for :class:`ServerProxy` for backwards
+   compatibility.  New code should use :class:`ServerProxy`.
+
    .. versionchanged:: 3.5
       Added the *context* argument.
 
@@ -151,12 +154,6 @@ between conformable Python objects and XML on the wire.
       implementation for numerics: ``i1``, ``i2``, ``i8``, ``biginteger``,
       ``float`` and ``bigdecimal``.
       See https://ws.apache.org/xmlrpc/types.html for a description.
-
-
-.. class:: Server
-
-   Retained as an alias for :class:`ServerProxy` for backwards compatibility.
-   New code should use :class:`ServerProxy`.
 
 
 .. exception:: Error
