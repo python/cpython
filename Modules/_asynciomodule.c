@@ -1954,21 +1954,22 @@ FutureIter_throw(PyObject *op, PyObject *const *args, Py_ssize_t nargs)
     return NULL;
 }
 
+static PyObject *
+FutureIter_close(PyObject *self, PyObject *arg)
+{
+    futureiterobject *it = (futureiterobject*)self;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    Py_CLEAR(it->future);
+    Py_END_CRITICAL_SECTION();
+    Py_RETURN_NONE;
+}
+
 static int
 FutureIter_clear(PyObject *op)
 {
     futureiterobject *it = (futureiterobject*)op;
-    Py_BEGIN_CRITICAL_SECTION(op);
     Py_CLEAR(it->future);
-    Py_END_CRITICAL_SECTION();
     return 0;
-}
-
-static PyObject *
-FutureIter_close(PyObject *self, PyObject *arg)
-{
-    (void)FutureIter_clear(self);
-    Py_RETURN_NONE;
 }
 
 static int
