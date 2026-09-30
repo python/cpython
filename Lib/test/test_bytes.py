@@ -18,6 +18,7 @@ import tempfile
 import textwrap
 import threading
 import unittest
+from _codecs import _unregister_error as _codecs_unregister_error
 
 import test.support
 from test import support
@@ -2203,13 +2204,14 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
             self.assertRaises(BufferError, b.clear)
             self.assertRaises(BufferError, b.append, 0)
             return ('?', exc.end)
+        self.addCleanup(_codecs_unregister_error, 'test.bytearray_decode_resize')
         codecs.register_error('test.bytearray_decode_resize', handler)
         for encoding in 'utf-8', 'utf-8-sig':
             with self.subTest(encoding=encoding):
                 self.assertEqual(
                     b.decode(encoding, 'test.bytearray_decode_resize'),
                     'ab?cd')
-                self.assertEqual(b, b'ab\xffcd')
+        self.assertEqual(b, b'ab\xffcd')
 
     def test_decode_subclass_buffer(self):
         # decode() decodes the buffer that the object exports.
