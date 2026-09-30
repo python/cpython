@@ -12,6 +12,11 @@ extern "C" {
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_stats.h"
 
+/* Flags that determine the C calling convention. */
+#define _Py_METH_CALL_FLAGS \
+    (METH_VARARGS | METH_FASTCALL | METH_NOARGS | METH_O | \
+     METH_KEYWORDS | METH_METHOD)
+
 /* Suggested size (number of positional arguments) for arrays of PyObject*
    allocated on a C stack to avoid allocating memory on the heap memory. Such
    array is used to pass positional arguments to call functions of the
