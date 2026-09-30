@@ -131,7 +131,9 @@ hardware_stack_limits(uintptr_t *base, uintptr_t *top, uintptr_t sp)
     GetCurrentThreadStackLimits(&low, &high);
     *top = (uintptr_t)high;
     ULONG guarantee = 0;
+#ifdef MS_WINDOWS_DESKTOP
     SetThreadStackGuarantee(&guarantee);
+#endif
     *base = (uintptr_t)low + guarantee;
 #elif defined(__APPLE__)
     pthread_t this_thread = pthread_self();
@@ -3331,7 +3333,13 @@ _PyEval_LazyImportFrom(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObje
     assert(PyUnicode_Check(name));
     PyObject *ret;
     PyLazyImportObject *d = (PyLazyImportObject *)v;
-    PyObject *mod = PyImport_GetModule(d->lz_from);
+    PyObject *mod = NULL;
+    // Only `from a import b` can take b off an already imported a;
+    // `import a.b as c` has to import a.b first.
+    if (d->lz_attr != NULL && PyTuple_Check(d->lz_attr) &&
+        PyTuple_GET_SIZE(d->lz_attr) > 0) {
+        mod = PyImport_GetModule(d->lz_from);
+    }
     if (mod != NULL) {
         // Check if the module already has the attribute, if so, resolve it
         // eagerly.
@@ -3351,34 +3359,7 @@ _PyEval_LazyImportFrom(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObje
         Py_DECREF(mod);
     }
 
-    if (d->lz_attr != NULL) {
-        if (PyUnicode_Check(d->lz_attr)) {
-            PyObject *from = PyUnicode_FromFormat(
-                "%U.%U", d->lz_from, d->lz_attr);
-            if (from == NULL) {
-                return NULL;
-            }
-            ret = _PyLazyImport_New(frame, d->lz_builtins, from, name);
-            Py_DECREF(from);
-            return ret;
-        }
-    }
-    else {
-        Py_ssize_t dot = PyUnicode_FindChar(
-            d->lz_from, '.', 0, PyUnicode_GET_LENGTH(d->lz_from), 1
-        );
-        if (dot >= 0) {
-            PyObject *from = PyUnicode_Substring(d->lz_from, 0, dot);
-            if (from == NULL) {
-                return NULL;
-            }
-            ret = _PyLazyImport_New(frame, d->lz_builtins, from, name);
-            Py_DECREF(from);
-            return ret;
-        }
-    }
-    ret = _PyLazyImport_New(frame, d->lz_builtins, d->lz_from, name);
-    return ret;
+    return _PyLazyImport_New(frame, d->lz_builtins, v, name);
 }
 
 #define CANNOT_CATCH_MSG "catching classes that do not inherit from "\

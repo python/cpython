@@ -84,21 +84,33 @@ def normalize_trace_output(output):
 
 
 USE_PROCESS_GROUP = (hasattr(os, "setsid") and hasattr(os, "killpg"))
+TERMINATE_TIMEOUT = 10
 
 def create_process_group(*args, **kwargs):
     if USE_PROCESS_GROUP:
         kwargs['start_new_session'] = True
     return subprocess.Popen(*args, **kwargs)
 
-def kill_process_group(proc):
+def terminate_process_group(proc):
     if USE_PROCESS_GROUP:
         try:
-            os.killpg(proc.pid, signal.SIGKILL)
+            os.killpg(proc.pid, signal.SIGTERM)
         except ProcessLookupError:
             pass
     else:
-        proc.kill()
-    proc.communicate()  # Clean up
+        proc.terminate()
+
+    try:
+        proc.communicate(timeout=TERMINATE_TIMEOUT)
+    except subprocess.TimeoutExpired:
+        if USE_PROCESS_GROUP:
+            try:
+                os.killpg(proc.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+        else:
+            proc.kill()
+        proc.communicate(timeout=TERMINATE_TIMEOUT)  # Clean up
 
 
 def run_readelf(cmd):
@@ -132,6 +144,7 @@ class TraceBackend:
     EXTENSION = None
     COMMAND = None
     COMMAND_ARGS = []
+    USABILITY_TIMEOUT = 10
 
     def run_case(self, name, optimize_python=None):
         try:
@@ -163,7 +176,7 @@ class TraceBackend:
         try:
             stdout, _ = proc.communicate(timeout=timeout)
         except subprocess.TimeoutExpired:
-            kill_process_group(proc)
+            terminate_process_group(proc)
             raise
         if check_returncode and proc.returncode:
             raise AssertionError(
@@ -183,7 +196,7 @@ class TraceBackend:
     def assert_usable(self):
         try:
             output = self.trace(abspath("assert_usable" + self.EXTENSION),
-                                timeout=10)
+                                timeout=self.USABILITY_TIMEOUT)
             output = output.strip()
         except subprocess.TimeoutExpired:
             raise unittest.SkipTest(
@@ -208,6 +221,7 @@ class SystemTapBackend(TraceBackend):
     EXTENSION = ".stp"
     COMMAND = ["stap", "-g"]
     PROBE_PLACEHOLDER = "@PYTHON_SYSTEMTAP_PROBE@"
+    USABILITY_TIMEOUT = 60
 
     @staticmethod
     def quote_systemtap_string(value):
@@ -361,7 +375,7 @@ gc__done:1""",
             )
             stdout, stderr = proc.communicate(timeout=60)
         except subprocess.TimeoutExpired:
-            kill_process_group(proc)
+            terminate_process_group(proc)
             raise AssertionError("bpftrace timed out")
         except (FileNotFoundError, PermissionError) as e:
             raise unittest.SkipTest(f"bpftrace not available: {e}")
@@ -400,7 +414,7 @@ gc__done:1""",
             )
             stdout, stderr = proc.communicate(timeout=10)
         except subprocess.TimeoutExpired:
-            kill_process_group(proc)
+            terminate_process_group(proc)
             raise unittest.SkipTest("bpftrace timed out during usability check")
         except OSError as e:
             raise unittest.SkipTest(f"bpftrace not available: {e}")
