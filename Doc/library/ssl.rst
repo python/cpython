@@ -1666,6 +1666,12 @@ to speed up repeated connections from the same clients.
    :class:`SSLContext` representing a certificate chain that matches the server
    name.
 
+   If the callback assigns a new context to :attr:`SSLSocket.context`, any
+   further ClientHello message on the same connection (for example after a
+   TLS 1.3 HelloRetryRequest) is dispatched to the new context's
+   *sni_callback*, if it has one; the original callback is not called again
+   for that connection.
+
    Due to the early negotiation phase of the TLS connection, only limited
    methods and attributes are usable like
    :meth:`SSLSocket.selected_alpn_protocol` and :attr:`SSLSocket.context`.
@@ -1688,6 +1694,11 @@ to speed up repeated connections from the same clients.
    had OPENSSL_NO_TLSEXT defined when it was built.
 
    .. versionadded:: 3.7
+
+   .. versionchanged:: next
+      After the callback assigns a new :attr:`SSLSocket.context`, later
+      ClientHello messages on the connection are dispatched to the new
+      context's *sni_callback*.
 
 .. attribute:: SSLContext.set_servername_callback(server_name_callback)
 
