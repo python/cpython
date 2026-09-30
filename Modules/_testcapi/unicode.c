@@ -795,6 +795,31 @@ writer_finish(PyObject *self_raw, PyObject *Py_UNUSED(args))
 }
 
 
+static PyObject*
+writer_finish_with_size(PyObject *self_raw, PyObject *args)
+{
+    PyAPI_FUNC(PyObject*) _PyUnicodeWriter_FinishWithSize(
+        _PyUnicodeWriter *writer,
+        Py_ssize_t size);
+
+    WriterObject *self = (WriterObject *)self_raw;
+    if (writer_check(self) < 0) {
+        return NULL;
+    }
+
+    Py_ssize_t size;
+    if (!PyArg_ParseTuple(args, "n", &size)) {
+        return NULL;
+    }
+
+    _PyUnicodeWriter *writer = (_PyUnicodeWriter*)self->writer;
+    PyObject *str = _PyUnicodeWriter_FinishWithSize(writer, size);
+    PyUnicodeWriter_Discard(self->writer);
+    self->writer = NULL;
+    return str;
+}
+
+
 static PyMethodDef writer_methods[] = {
     {"write_char", _PyCFunction_CAST(writer_write_char), METH_VARARGS},
     {"write_utf8", _PyCFunction_CAST(writer_write_utf8), METH_VARARGS},
@@ -809,6 +834,7 @@ static PyMethodDef writer_methods[] = {
     {"get_pointer", _PyCFunction_CAST(writer_get_pointer), METH_VARARGS},
     {"get_buffer", _PyCFunction_CAST(writer_get_buffer), METH_VARARGS},
     {"finish", _PyCFunction_CAST(writer_finish), METH_NOARGS},
+    {"finish_with_size", _PyCFunction_CAST(writer_finish_with_size), METH_VARARGS},
     {NULL,              NULL}           /* sentinel */
 };
 

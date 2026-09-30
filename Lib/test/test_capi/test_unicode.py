@@ -2322,6 +2322,19 @@ class PyUnicodeWriterTest(unittest.TestCase):
                 self.assertEqual(writer.get_buffer(), expected)
                 self.assertEqual(writer.finish(), large_int_str)
 
+    def test_finish_with_size(self):
+        # Test _PyUnicodeWriter_FinishWithSize(). Truncate text requires
+        # to change the buffer kind.
+        text = 'a\xff\u20ac\U0010ffff'
+        expected = (0x10ffff, False)  # do not test the buffer size
+        for size in range(len(text) + 1):
+            writer = self.create_writer(0)
+            writer.write_utf8(text.encode(), -1)
+            self.assertEqual(writer.get_buffer()[1:], expected)
+            self.assertEqual(writer.finish_with_size(size), text[:size])
+
+        # CRASHES writer.finish_with_size(len(text) + 1)
+
 
 # Test PyUnicodeWriter_Format()
 @unittest.skipIf(ctypes is None, 'need ctypes')
