@@ -2033,7 +2033,7 @@ replace_value(PyDictObject *mp, PyObject *key, Py_ssize_t ix,
             STORE_VALUE(ep, value);
         }
     }
-    Py_DECREF(old_value); /* which **CAN** re-enter (see issue #22653) */
+    Py_DECREF(old_value); /* which **CAN** re-enter (see gh-66843) */
 
     ASSERT_CONSISTENT(mp);
 }
