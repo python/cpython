@@ -363,31 +363,31 @@ Creating an interpreter and running code in it::
     from concurrent import interpreters
 
     with interpreters.create() as interp:
-      # Run in the current OS thread.
+        # Run in the current OS thread.
 
-      interp.exec('print("spam!")')
+        interp.exec('print("spam!")')
 
-      interp.exec("""if True:
-         print('spam!')
-         """)
+        interp.exec("""if True:
+            print('spam!')
+            """)
 
-      from textwrap import dedent
-      interp.exec(dedent("""
-         print('spam!')
-         """))
+        from textwrap import dedent
+        interp.exec(dedent("""
+            print('spam!')
+            """))
 
-      def run(arg):
-         return arg
+        def run(arg):
+            return arg
 
-      res = interp.call(run, 'spam!')
-      print(res)
+        res = interp.call(run, 'spam!')
+        print(res)
 
-      def run():
-         print('spam!')
+        def run():
+            print('spam!')
 
-      interp.call(run)
+        interp.call(run)
 
-      # Run in new OS thread.
+        # Run in new OS thread.
 
-      t = interp.call_in_thread(run)
-      t.join()
+        t = interp.call_in_thread(run)
+        t.join()
