@@ -285,15 +285,16 @@ _PyUnicodeWriter_WriteStr(_PyUnicodeWriter *writer, PyObject *str)
 
 
 int
-PyUnicodeWriter_WriteStr(PyUnicodeWriter *writer, PyObject *obj)
+PyUnicodeWriter_WriteStr(PyUnicodeWriter *pub_writer, PyObject *obj)
 {
+    _PyUnicodeWriter *writer = (_PyUnicodeWriter*)pub_writer;
     PyTypeObject *type = Py_TYPE(obj);
     if (type == &PyUnicode_Type) {
-        return _PyUnicodeWriter_WriteStr((_PyUnicodeWriter*)writer, obj);
+        return _PyUnicodeWriter_WriteStr(writer, obj);
     }
 
     if (type == &PyLong_Type) {
-        return _PyLong_FormatWriter((_PyUnicodeWriter*)writer, obj, 10, 0);
+        return _PyLong_FormatWriter(writer, obj, 10, 0);
     }
 
     PyObject *str = PyObject_Str(obj);
@@ -301,21 +302,22 @@ PyUnicodeWriter_WriteStr(PyUnicodeWriter *writer, PyObject *obj)
         return -1;
     }
 
-    int res = _PyUnicodeWriter_WriteStr((_PyUnicodeWriter*)writer, str);
+    int res = _PyUnicodeWriter_WriteStr(writer, str);
     Py_DECREF(str);
     return res;
 }
 
 
 int
-PyUnicodeWriter_WriteRepr(PyUnicodeWriter *writer, PyObject *obj)
+PyUnicodeWriter_WriteRepr(PyUnicodeWriter *pub_writer, PyObject *obj)
 {
+    _PyUnicodeWriter *writer = (_PyUnicodeWriter*)pub_writer;
     if (obj == NULL) {
-        return _PyUnicodeWriter_WriteASCIIString((_PyUnicodeWriter*)writer, "<NULL>", 6);
+        return _PyUnicodeWriter_WriteASCIIString(writer, "<NULL>", 6);
     }
 
     if (Py_TYPE(obj) == &PyLong_Type) {
-        return _PyLong_FormatWriter((_PyUnicodeWriter*)writer, obj, 10, 0);
+        return _PyLong_FormatWriter(writer, obj, 10, 0);
     }
 
     PyObject *repr = PyObject_Repr(obj);
@@ -323,7 +325,7 @@ PyUnicodeWriter_WriteRepr(PyUnicodeWriter *writer, PyObject *obj)
         return -1;
     }
 
-    int res = _PyUnicodeWriter_WriteStr((_PyUnicodeWriter*)writer, repr);
+    int res = _PyUnicodeWriter_WriteStr(writer, repr);
     Py_DECREF(repr);
     return res;
 }
