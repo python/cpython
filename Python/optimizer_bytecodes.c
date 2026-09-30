@@ -2521,6 +2521,7 @@ dummy_func(void) {
         }
         else if (ctx->frame->func == NULL ||
                  ctx->frame->func->func_builtins != builtins) {
+            /* Do nothing */
         }
         else {
             if (!ctx->builtins_watched) {
