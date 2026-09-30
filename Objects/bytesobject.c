@@ -218,7 +218,7 @@ bytes_fromformat(PyBytesWriter *writer, Py_ssize_t writer_pos,
         size_t len = (len_expr); \
         s = PyBytesWriter_GrowAndUpdatePointer(writer, len, s); \
         if (s == NULL) { \
-            goto error; \
+            return NULL; \
         } \
         memcpy(s, (str), len); \
         s += len; \
@@ -272,7 +272,7 @@ bytes_fromformat(PyBytesWriter *writer, Py_ssize_t writer_pos,
                 PyErr_SetString(PyExc_OverflowError,
                                 "PyBytes_FromFormatV(): %c format "
                                 "expects an integer in range [0; 255]");
-                goto error;
+                return NULL;
             }
             *s++ = (unsigned char)c;
             break;
@@ -365,9 +365,6 @@ bytes_fromformat(PyBytesWriter *writer, Py_ssize_t writer_pos,
 #undef WRITE_BYTES_LEN
 
     return s;
-
- error:
-    return NULL;
 }
 
 
@@ -3746,7 +3743,7 @@ PyObject*
 PyBytesWriter_FinishWithSize(PyBytesWriter *writer, Py_ssize_t size)
 {
     PyObject *result;
-    if (size == 0) {
+    if (size == 0 && !writer->use_bytearray) {
         result = bytes_get_empty();
     }
     else if (writer->obj != NULL) {
@@ -3910,6 +3907,7 @@ int
 PyBytesWriter_Format(PyBytesWriter *writer, const char *format, ...)
 {
     Py_ssize_t pos = writer->size;
+    Py_ssize_t old_pos = pos;
     if (PyBytesWriter_Grow(writer, strlen(format)) < 0) {
         return -1;
     }
@@ -3918,6 +3916,12 @@ PyBytesWriter_Format(PyBytesWriter *writer, const char *format, ...)
     va_start(vargs, format);
     char *buf = bytes_fromformat(writer, pos, format, vargs);
     va_end(vargs);
+
+    if (buf == NULL) {
+        // On error, reset the writer to its previous state (undo any write)
+        writer->size = old_pos;
+        return -1;
+    }
 
     Py_ssize_t size = buf - byteswriter_data(writer);
     return PyBytesWriter_Resize(writer, size);
