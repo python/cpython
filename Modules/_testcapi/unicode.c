@@ -686,6 +686,32 @@ writer_write_substring(PyObject *self_raw, PyObject *args)
 
 
 static PyObject*
+writer_write_latin1(PyObject *self_raw, PyObject *args)
+{
+    WriterObject *self = (WriterObject *)self_raw;
+    if (writer_check(self) < 0) {
+        return NULL;
+    }
+
+    const char *str;
+    Py_ssize_t bsize, size;
+    if (!PyArg_ParseTuple(args, "z#n", &str, &bsize, &size)) {
+        return NULL;
+    }
+
+    _PyUnicodeWriter *writer = (_PyUnicodeWriter*)self->writer;
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
+    if (_PyUnicodeWriter_WriteLatin1String(writer, str, size) < 0) {
+        return NULL;
+    }
+_Py_COMP_DIAG_POP
+
+    Py_RETURN_NONE;
+}
+
+
+static PyObject*
 writer_decodeutf8stateful(PyObject *self_raw, PyObject *args)
 {
     WriterObject *self = (WriterObject *)self_raw;
@@ -778,6 +804,7 @@ static PyMethodDef writer_methods[] = {
     {"write_str", _PyCFunction_CAST(writer_write_str), METH_O},
     {"write_repr", _PyCFunction_CAST(writer_write_repr), METH_O},
     {"write_substring", _PyCFunction_CAST(writer_write_substring), METH_VARARGS},
+    {"write_latin1", _PyCFunction_CAST(writer_write_latin1), METH_VARARGS},
     {"decodeutf8stateful", _PyCFunction_CAST(writer_decodeutf8stateful), METH_VARARGS},
     {"get_pointer", _PyCFunction_CAST(writer_get_pointer), METH_VARARGS},
     {"get_buffer", _PyCFunction_CAST(writer_get_buffer), METH_VARARGS},
