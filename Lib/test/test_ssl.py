@@ -2116,6 +2116,86 @@ class SSLObjectTests(unittest.TestCase):
         c_in.write(s_out.read())
         client.unwrap()
 
+    def test_sni_callback_context_released_and_callback_raises(self):
+        # Variant of the test below without a HelloRetryRequest: the callback
+        # switches the connection to another context, drops the last
+        # references to the context that carries it, and raises.  The C
+        # callback must not touch that context after the Python callback
+        # returned.
+        client_ctx, server_ctx, hostname = testing_context()
+        leaf_ctx = server_ctx
+
+        def sni_cb(sslobj, server_name, ctx):
+            sslobj.context = leaf_ctx
+            del ctx
+            raise LookupError("no certificate for " + repr(server_name))
+
+        def make_server():
+            dispatch_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+            dispatch_ctx.load_cert_chain(SIGNED_CERTFILE)
+            dispatch_ctx.sni_callback = sni_cb
+            s_in, s_out = ssl.MemoryBIO(), ssl.MemoryBIO()
+            server = dispatch_ctx.wrap_bio(s_in, s_out, server_side=True)
+            return server, s_in, s_out
+
+        server, s_in, s_out = make_server()
+        c_in, c_out = ssl.MemoryBIO(), ssl.MemoryBIO()
+        client = client_ctx.wrap_bio(c_in, c_out, server_hostname=hostname)
+        with self.assertRaises(ssl.SSLWantReadError):
+            client.do_handshake()
+        s_in.write(c_out.read())
+        with support.catch_unraisable_exception() as cm:
+            with self.assertRaises(ssl.SSLError):
+                server.do_handshake()
+            self.assertIsInstance(cm.unraisable.exc_value, LookupError)
+        self.assertIs(server.context, leaf_ctx)
+
+    def test_sni_callback_context_released_before_second_client_hello(self):
+        # The SSLContext carrying sni_callback may be released by the
+        # application once the callback has switched the connection over to
+        # another context.  If the server then sends a HelloRetryRequest, the
+        # second ClientHello makes OpenSSL consult the original SSL_CTX's
+        # servername callback again; that must not use the deallocated
+        # SSLContext object.
+        client_ctx, leaf_ctx, hostname = testing_context()
+        calls = []
+
+        def make_server():
+            dispatch_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+            dispatch_ctx.load_cert_chain(SIGNED_CERTFILE)
+            # Force a HelloRetryRequest: the client offers an X25519 key
+            # share first, the server only accepts P-384.
+            dispatch_ctx.set_ecdh_curve("secp384r1")
+            def sni_cb(sslobj, server_name, ctx):
+                calls.append(server_name)
+                sslobj.context = leaf_ctx
+            dispatch_ctx.sni_callback = sni_cb
+            s_in, s_out = ssl.MemoryBIO(), ssl.MemoryBIO()
+            server = dispatch_ctx.wrap_bio(s_in, s_out, server_side=True)
+            return server, s_in, s_out, weakref.ref(dispatch_ctx)
+
+        # After this only the C-level SSL object references dispatch_ctx.
+        server, s_in, s_out, dispatch_ref = make_server()
+        c_in, c_out = ssl.MemoryBIO(), ssl.MemoryBIO()
+        client = client_ctx.wrap_bio(c_in, c_out, server_hostname=hostname)
+        for _ in range(10):
+            for obj, out, peer_in in ((client, c_out, s_in),
+                                      (server, s_out, c_in)):
+                try:
+                    obj.do_handshake()
+                except ssl.SSLWantReadError:
+                    pass
+                if out.pending:
+                    peer_in.write(out.read())
+        client.do_handshake()
+        server.do_handshake()
+        support.gc_collect()
+        self.assertIsNone(dispatch_ref())
+        self.assertGreaterEqual(len(calls), 1)
+        self.assertEqual(calls[0], hostname)
+        self.assertIs(server.context, leaf_ctx)
+        self.assertIsNotNone(client.cipher())
+
 class SimpleBackgroundTests(unittest.TestCase):
     """Tests that connect to a simple server running in the background"""
 
