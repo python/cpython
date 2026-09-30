@@ -1458,6 +1458,26 @@ class CmdLineTest(unittest.TestCase):
 
         # -c, -h, -m, -V and -? are tested elsewhere
 
+    def test_unknown_options(self):
+        for option in ('-a', '--long-option'):
+            with self.subTest(option=option):
+                proc = assert_python_failure(option)
+                errmsg = f'Unknown option: {option}'
+                self.assertStartsWith(proc.err.rstrip(), errmsg.encode())
+
+    def test_missing_argument(self):
+        def check_missing_arg(option):
+            proc = assert_python_failure(option)
+            self.assertEqual(proc.rc, 2)
+            errmsg = f"Argument expected for the {option} option"
+            self.assertStartsWith(proc.err.rstrip(), errmsg.encode())
+
+        check_missing_arg('-c')
+        check_missing_arg('-m')
+        check_missing_arg('-W')
+        check_missing_arg('-X')
+        check_missing_arg('--check-hash-based-pycs')
+
     def test_long_options(self):
         # Test long command line options
 
@@ -1469,8 +1489,17 @@ class CmdLineTest(unittest.TestCase):
                 proc = assert_python_ok(opt, value, "-c", code)
                 self.assertEqual(proc.out.rstrip(), value.encode())
 
-        # Other long options --help-all, --help-env and --help-xoptions
-        # are tested elsewhere
+        # Other long options --help-all, --help-env, --help-xoptions
+        # and --version are tested elsewhere
+
+    def test_dash_option(self):
+        # Test -- in the command line
+        code = (
+            'import sys; '
+            'print(sys.flags.isolated, sys.flags.optimize, sys.argv)'
+        )
+        proc = assert_python_ok('-I', '-c', code, '--', '-O')
+        self.assertEqual(proc.out.rstrip(), b"1 0 ['-c', '--', '-O']")
 
 
 @unittest.skipIf(interpreter_requires_environment(),

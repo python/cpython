@@ -3013,7 +3013,7 @@ config_parse_cmdline(PyConfig *config, PyWideStringList *warnoptions,
     _PyOS_GetOpt_Init(&getopt, argv->length, argv->items);
     do {
         int c = _PyOS_GetOpt(&getopt);
-        if (c == EOF) {
+        if (c == -1) {
             break;
         }
 
@@ -3257,6 +3257,9 @@ _PyConfig_ProcessDeferredCmdlineOption(PyConfig *config)
         config_xoptions_usage();
         return 0;
 
+    case '_':
+        // Unknown option or missing argument
+        _Py_FALLTHROUGH;
     default:
         config_usage(1, program);
         return 2;

@@ -62,6 +62,17 @@ _PyOS_GetOpt_Init(struct _PyOS_GetOpt *getopt,
     getopt->argv = argv;
 }
 
+// Parse a command line option.
+//
+// Return a character for short option (ex: return 'h' for -h).
+// Return a number for long options (see 'longopts' array).
+// Return '_' on unknown option or missing argument.
+// Return -1 when done.
+//
+// Return 'h' for --help and return 'V' for --version.
+//
+// If an option has an argument, set getopt->arg to the argument.
+// If getopt->error is non-error, write error messages to stderr.
 int
 _PyOS_GetOpt(struct _PyOS_GetOpt *getopt)
 {

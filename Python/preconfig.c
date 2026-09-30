@@ -194,8 +194,7 @@ precmdline_parse_cmdline(_PyPreCmdline *cmdline)
     getopt.error = 0;
     do {
         int c = _PyOS_GetOpt(&getopt);
-
-        if (c == EOF || c == 'c' || c == 'm') {
+        if (c == -1 || c == 'c' || c == 'm') {
             break;
         }
 
