@@ -330,16 +330,6 @@ pysqlite_cursor_close(PyObject *self, PyObject *Py_UNUSED(ignored))
     return pysqlite_cursor_close_impl((pysqlite_Cursor *)self);
 }
 
-#if !defined(_sqlite3_Cursor_arraysize_DOCSTR)
-#  define _sqlite3_Cursor_arraysize_DOCSTR NULL
-#endif
-#if defined(_SQLITE3_CURSOR_ARRAYSIZE_GETSETDEF)
-#  undef _SQLITE3_CURSOR_ARRAYSIZE_GETSETDEF
-#  define _SQLITE3_CURSOR_ARRAYSIZE_GETSETDEF {"arraysize", (getter)_sqlite3_Cursor_arraysize_get, (setter)_sqlite3_Cursor_arraysize_set, _sqlite3_Cursor_arraysize_DOCSTR},
-#else
-#  define _SQLITE3_CURSOR_ARRAYSIZE_GETSETDEF {"arraysize", (getter)_sqlite3_Cursor_arraysize_get, NULL, _sqlite3_Cursor_arraysize_DOCSTR},
-#endif
-
 static PyObject *
 _sqlite3_Cursor_arraysize_get_impl(pysqlite_Cursor *self);
 
@@ -349,32 +339,29 @@ _sqlite3_Cursor_arraysize_get(PyObject *self, void *Py_UNUSED(context))
     return _sqlite3_Cursor_arraysize_get_impl((pysqlite_Cursor *)self);
 }
 
-#if !defined(_sqlite3_Cursor_arraysize_DOCSTR)
-#  define _sqlite3_Cursor_arraysize_DOCSTR NULL
-#endif
-#if defined(_SQLITE3_CURSOR_ARRAYSIZE_GETSETDEF)
-#  undef _SQLITE3_CURSOR_ARRAYSIZE_GETSETDEF
-#  define _SQLITE3_CURSOR_ARRAYSIZE_GETSETDEF {"arraysize", (getter)_sqlite3_Cursor_arraysize_get, (setter)_sqlite3_Cursor_arraysize_set, _sqlite3_Cursor_arraysize_DOCSTR},
-#else
-#  define _SQLITE3_CURSOR_ARRAYSIZE_GETSETDEF {"arraysize", NULL, (setter)_sqlite3_Cursor_arraysize_set, NULL},
-#endif
+static int
+_sqlite3_Cursor_arraysize_set_impl(pysqlite_Cursor *self, uint32_t value);
 
 static int
-_sqlite3_Cursor_arraysize_set_impl(pysqlite_Cursor *self, PyObject *value);
-
-static int
-_sqlite3_Cursor_arraysize_set(PyObject *self, PyObject *value, void *Py_UNUSED(context))
+_sqlite3_Cursor_arraysize_set(PyObject *self, PyObject *arg, void *Py_UNUSED(context))
 {
-    int return_value;
+    int return_value = -1;
+    uint32_t value;
 
-    if (value == NULL) {
+    if (arg == NULL) {
         PyErr_Format(PyExc_AttributeError,
                      "attribute 'arraysize' of '%.100s' objects cannot be deleted",
                      Py_TYPE(self)->tp_name);
         return -1;
     }
+    if (!_PyLong_UInt32_Converter(arg, &value)) {
+        goto exit;
+    }
     return_value = _sqlite3_Cursor_arraysize_set_impl((pysqlite_Cursor *)self, value);
 
+exit:
     return return_value;
 }
-/*[clinic end generated code: output=e7b20358f8213fd7 input=a9049054013a1b77]*/
+#define _SQLITE3_CURSOR_ARRAYSIZE_GETSETDEF {"arraysize", (getter)_sqlite3_Cursor_arraysize_get, (setter)_sqlite3_Cursor_arraysize_set, NULL},
+
+/*[clinic end generated code: output=e920343d84bd4976 input=a9049054013a1b77]*/

@@ -3898,6 +3898,25 @@ _PyImport_ResolveName(PyThreadState *tstate, PyObject *name,
   return resolve_name(tstate, name, globals, level);
 }
 
+// Look up, in order, the attributes recorded from the root placeholder to lz
+// on the module the root's import returned.
+static PyObject *
+lazy_import_replay_from(PyThreadState *tstate, PyObject *mod,
+                        PyLazyImportObject *lz)
+{
+    if (!PyLazyImport_CheckExact(lz->lz_from)) {
+        return Py_NewRef(mod);
+    }
+    PyObject *from = lazy_import_replay_from(
+        tstate, mod, (PyLazyImportObject *)lz->lz_from);
+    if (from == NULL) {
+        return NULL;
+    }
+    PyObject *obj = _PyEval_ImportFrom(tstate, from, lz->lz_attr);
+    Py_DECREF(from);
+    return obj;
+}
+
 PyObject *
 _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
 {
@@ -3909,6 +3928,13 @@ _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
 
     PyLazyImportObject *lz = (PyLazyImportObject *)lazy_import;
     PyInterpreterState *interp = tstate->interp;
+
+    // Walk back to the placeholder IMPORT_NAME left, and the first lookup on it.
+    PyLazyImportObject *root = lz, *first = NULL;
+    while (PyLazyImport_CheckExact(root->lz_from)) {
+        first = root;
+        root = (PyLazyImportObject *)root->lz_from;
+    }
 
     // Acquire the global import lock to serialize reification
     _PyImport_AcquireLock(interp);
@@ -3946,7 +3972,7 @@ _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
             return NULL;
         }
         PyErr_SetImportErrorSubclass(PyExc_ImportCycleError, errmsg,
-                                     lz->lz_from, NULL);
+                                     root->lz_from, NULL);
         Py_DECREF(errmsg);
         Py_DECREF(name);
         _PyImport_ReleaseLock(interp);
@@ -3956,24 +3982,20 @@ _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
         goto error;
     }
 
-    if (lz->lz_attr != NULL) {
-        if (PyUnicode_Check(lz->lz_attr)) {
-            fromlist = PyTuple_New(1);
-            if (fromlist == NULL) {
-                goto error;
-            }
-            Py_INCREF(lz->lz_attr);
-            PyTuple_SET_ITEM(fromlist, 0, lz->lz_attr);
-        }
-        else {
-            Py_INCREF(lz->lz_attr);
-            fromlist = lz->lz_attr;
+    if (root->lz_attr != NULL) {
+        // `from a import b, c`: import only the name being resolved.
+        // Keep an empty tuple intact for custom __import__ hooks.
+        fromlist = first && PyTuple_GET_SIZE(root->lz_attr) > 0
+            ? PyTuple_Pack(1, first->lz_attr)
+            : Py_NewRef(root->lz_attr);
+        if (fromlist == NULL) {
+            goto error;
         }
     }
 
     PyObject *globals = PyEval_GetGlobals();
 
-    if (PyMapping_GetOptionalItem(lz->lz_builtins, &_Py_ID(__import__),
+    if (PyMapping_GetOptionalItem(root->lz_builtins, &_Py_ID(__import__),
                                   &import_func) < 0) {
         goto error;
     }
@@ -3983,19 +4005,17 @@ _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
     }
     obj = _PyEval_ImportNameWithImport(
         tstate, import_func, globals, globals,
-        lz->lz_from, fromlist, _PyLong_GetZero()
+        root->lz_from, fromlist, _PyLong_GetZero()
     );
     if (obj == NULL) {
         goto error;
     }
 
-    if (lz->lz_attr != NULL && PyUnicode_Check(lz->lz_attr)) {
-        PyObject *from = obj;
-        obj = _PyEval_ImportFrom(tstate, from, lz->lz_attr);
-        Py_DECREF(from);
-        if (obj == NULL) {
-            goto error;
-        }
+    PyObject *from = obj;
+    obj = lazy_import_replay_from(tstate, from, lz);
+    Py_DECREF(from);
+    if (obj == NULL) {
+        goto error;
     }
 
     assert(!PyLazyImport_CheckExact(obj));

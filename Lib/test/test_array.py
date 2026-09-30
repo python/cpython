@@ -1607,9 +1607,18 @@ class HalfFloatTest(FPTest, unittest.TestCase):
     typecode = 'e'
     minitemsize = 2
 
+    def test_overflows(self):
+        # Overflows half-float type:
+        self.assertRaises(OverflowError, array.array, self.typecode, [123456])
+        # Overflows also float type:
+        self.assertRaises(OverflowError, array.array, self.typecode, [1e300])
+
 class FloatTest(FPTest, unittest.TestCase):
     typecode = 'f'
     minitemsize = 4
+
+    def test_overflows(self):
+        self.assertRaises(OverflowError, array.array, self.typecode, [1e300])
 
 class DoubleTest(FPTest, unittest.TestCase):
     typecode = 'd'
@@ -1636,6 +1645,10 @@ class DoubleTest(FPTest, unittest.TestCase):
 class ComplexFloatTest(CFPTest, unittest.TestCase):
     typecode = 'Zf'
     minitemsize = 8
+
+    def test_overflows(self):
+        self.assertRaises(OverflowError, array.array, self.typecode, [1e300])
+        self.assertRaises(OverflowError, array.array, self.typecode, [1e300j])
 
 class ComplexDoubleTest(CFPTest, unittest.TestCase):
     typecode = 'Zd'
