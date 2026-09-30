@@ -563,7 +563,7 @@ lazy_import_resolve(PyObject *self, PyObject *args)
 static PyMethodDef lazy_import_methods[] = {
     {
         "resolve", lazy_import_resolve, METH_NOARGS,
-        PyDoc_STR("resolves the lazy import and returns the actual object")
+        PyDoc_STR("Resolve the lazy import and return the imported object.")
     },
     {NULL, NULL}
 };
