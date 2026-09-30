@@ -1,0 +1,5 @@
+Fixed a vulnerability in the :mod:`tarfile` ``data`` and ``tar`` extraction
+filters where a crafted archive using a hard link to a symbolic link could
+change the permissions and modification time of a file outside the
+destination directory, and expose its contents inside the extracted tree.
+This addresses :cve:`2026-82049`.
