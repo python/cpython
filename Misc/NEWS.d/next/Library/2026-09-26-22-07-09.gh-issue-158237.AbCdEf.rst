@@ -1,0 +1,3 @@
+Fix :func:`ast.unparse` to not insert a space before attribute
+access on bool constants (e.g. ``True.real`` instead of
+``True .real``).

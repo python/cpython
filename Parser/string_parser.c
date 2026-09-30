@@ -147,7 +147,7 @@ decode_unicode_with_escapes(Parser *parser, const char *s, size_t len, Token *t)
     Py_ssize_t alloc = (Py_ssize_t)len * 6;
     char *buf = PyMem_Malloc(alloc);
     if (buf == NULL) {
-        return NULL;
+        return PyErr_NoMemory();
     }
     p = buf;
     end = s + len;
