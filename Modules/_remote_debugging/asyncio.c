@@ -791,7 +791,7 @@ parse_async_frame_chain(
         }
 
         Py_DECREF(frame_info);
-        
+
         // gh-158522: compare frame instead of code-object
         if (this_frame == running_task_frame) {
             break;
