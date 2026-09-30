@@ -45,7 +45,15 @@ typedef enum {
     _Py_LAZY_SUBMODULE_LOADED = 1,
 } _PyLazySubmoduleImportResult;
 extern _PyLazySubmoduleImportResult _PyImport_TryLoadLazySubmodule(
-    PyObject *mod_name, PyObject *attr_name, PyObject **result);
+    PyObject *mod_name, PyObject *attr_name, PyObject *lazy_pending,
+    int suppress, PyObject **result);
+// Registries of submodule names recorded by lazy imports.  Names in
+// _PyImport_GetLazySubmodules() come from a plain `lazy import a.b` and are
+// always submodules, so they are resolved before the module dict; names in
+// _PyImport_GetLazyPendingSubmodules() come from `lazy from a import b` and
+// may be plain attributes, so they are resolved afterwards.
+extern PyObject * _PyImport_GetLazySubmodules(PyInterpreterState *interp);
+extern PyObject * _PyImport_GetLazyPendingSubmodules(PyInterpreterState *interp);
 extern PyObject * _PyImport_LazyImportModuleLevelObject(
     PyThreadState *tstate, PyObject *name, PyObject *builtins,
     PyObject *globals, PyObject *locals, PyObject *fromlist, int level);

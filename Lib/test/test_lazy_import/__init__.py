@@ -474,6 +474,61 @@ class PackageTests(LazyImportTestCase):
         self.assertIs(pkg.__dict__["bar"], sys.modules["test.test_lazy_import.data.pkg.bar"])
         self.assertIn("BAR_MODULE_LOADED", out.getvalue())
 
+    @support.requires_subprocess()
+    def test_lazy_import_sibling_submodules(self):
+        """gh-158140: two lazy imports of submodules of one package.
+
+        `lazy import a.b` binds the name `a`, so the submodules must be
+        imported one at a time as they are used.  The second statement used to
+        overwrite the first one's `a` binding with a placeholder for its own
+        submodule, which made reading `a` import that sibling.
+        """
+        code = textwrap.dedent("""
+            lazy import test.test_lazy_import.data.siblingpkg.a
+            lazy import test.test_lazy_import.data.siblingpkg.b
+
+            import sys
+
+            # The statement binds the root package, not the last component.
+            assert "test" in globals()
+            assert "siblingpkg" not in globals()
+
+            a = "test.test_lazy_import.data.siblingpkg.a"
+            b = "test.test_lazy_import.data.siblingpkg.b"
+            assert a not in sys.modules
+            assert b not in sys.modules
+
+            # Reading the root package imports neither submodule.
+            test.test_lazy_import.data
+            assert a not in sys.modules, sys.modules.keys()
+            assert b not in sys.modules, sys.modules.keys()
+
+            # Using .a must not import .b.
+            test.test_lazy_import.data.siblingpkg.a
+            assert a in sys.modules
+            assert b not in sys.modules
+
+            # .b is still imported once it is used.
+            test.test_lazy_import.data.siblingpkg.b
+            assert b in sys.modules
+        """)
+        assert_python_ok("-c", code)
+
+    @support.requires_subprocess()
+    def test_lazy_import_binds_root_placeholder(self):
+        """gh-158140: the placeholder names the root package it reifies to."""
+        code = textwrap.dedent("""
+            lazy import test.test_lazy_import.data.siblingpkg.a
+            # globals() keeps the placeholder unresolved, so reading it does
+            # not import anything.
+            assert repr(globals()["test"]) == "<lazy_import 'test'>", (
+                repr(globals()["test"])
+            )
+            import sys
+            assert "test.test_lazy_import.data.siblingpkg" not in sys.modules
+        """)
+        assert_python_ok("-c", code)
+
     def test_lazy_import_pkg_cross_import(self):
         """Cross-imports within package should preserve lazy imports."""
         import test.test_lazy_import.data.pkg.c
@@ -2283,7 +2338,9 @@ class ModuleVariableNameCollisionTests(unittest.TestCase):
     def test_empty_fromlist_placeholder_matches_no_fromlist(self):
         """An empty fromlist behaves like None."""
         code = textwrap.dedent("""
-            expected = "<lazy_import 'xml.dom'>"
+            # gh-158140: the placeholder names the root package, which is the
+            # name an `import a.b` statement binds, not the full dotted target.
+            expected = "<lazy_import 'xml'>"
             # In lists, so reading them does not resolve them.
             for fromlist in (None, ()):
                 same = [__lazy_import__("xml.dom", fromlist=fromlist)]
@@ -2306,7 +2363,9 @@ class ModuleVariableNameCollisionTests(unittest.TestCase):
             calls = []
 
             def import_hook(name, globals, locals, fromlist, level):
-                assert name == "xml.dom", name
+                # gh-158140: only the root package is reified here; the `.dom`
+                # part is resolved afterwards as an attribute lookup.
+                assert name == "xml", name
                 assert fromlist == (), fromlist
                 calls.append(fromlist)
                 return module

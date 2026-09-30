@@ -362,6 +362,13 @@ struct _import_state {
     // lazily. When the package is reified we need to add a
     // LazyImportObject which refers to the submodule on the module.
     PyObject *lazy_pending_submodules;
+    // A dict mapping package names to a set of submodule names registered by
+    // a plain `lazy import a.b` statement.  Unlike lazy_pending_submodules
+    // these names are known to be submodules rather than plain attributes, so
+    // they are resolved before the module dict is consulted.  That lets
+    // `lazy import a.b` bind the root `a` and leave `a.b` to be imported on
+    // first use, instead of importing `a.b` when `a` is read.
+    PyObject *lazy_submodules;
 #ifdef Py_GIL_DISABLED
     PyMutex lazy_mutex;
 #endif

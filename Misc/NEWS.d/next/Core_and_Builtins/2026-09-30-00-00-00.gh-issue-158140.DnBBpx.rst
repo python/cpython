@@ -1,0 +1,7 @@
+Fix ``lazy import a.b`` eagerly importing ``a.b``.  The statement binds the
+name ``a``, so the placeholder it leaves behind now names the root package it
+reifies to instead of the full dotted target: reading ``a`` imports only ``a``,
+and ``a.b`` is imported when that attribute is first used.  Previously each
+statement created a placeholder for its own dotted target, so lazily importing
+two submodules of the same package left only the second one reachable, and
+reading ``a`` imported that sibling submodule.

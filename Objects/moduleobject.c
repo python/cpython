@@ -1300,7 +1300,8 @@ _PyModule_IsPossiblyShadowing(PyObject *origin)
 }
 
 static PyObject *
-try_load_lazy_submodule(PyModuleObject *m, PyObject *name)
+try_load_lazy_submodule(PyModuleObject *m, PyObject *name, PyObject *registry,
+                        int suppress)
 {
     PyObject *mod_name;
     int rc = PyDict_GetItemRef(m->md_dict, &_Py_ID(__name__), &mod_name);
@@ -1312,8 +1313,24 @@ try_load_lazy_submodule(PyModuleObject *m, PyObject *name)
         return NULL;
     }
     PyObject *result = NULL;
+    // A name recorded by `lazy import a.b` has to be resolved as a submodule
+    // even when the module cannot provide it, and that failure must surface as
+    // the ModuleNotFoundError the equivalent eager import raises.  Stay quiet
+    // for hasattr()/getattr(..., default), and whenever the module defines
+    // __getattr__, which still gets its chance.
+    int quiet = suppress;
+    if (!quiet) {
+        PyObject *getattr;
+        int grc = PyDict_GetItemRef(m->md_dict, &_Py_ID(__getattr__), &getattr);
+        if (grc < 0) {
+            Py_DECREF(mod_name);
+            return NULL;
+        }
+        quiet = (grc == 1);
+        Py_XDECREF(getattr);
+    }
     _PyLazySubmoduleImportResult status =
-        _PyImport_TryLoadLazySubmodule(mod_name, name, &result);
+        _PyImport_TryLoadLazySubmodule(mod_name, name, registry, quiet, &result);
     Py_DECREF(mod_name);
     if (status != _Py_LAZY_SUBMODULE_LOADED) {
         assert(status == _Py_LAZY_SUBMODULE_ERROR ||
@@ -1332,6 +1349,21 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
 {
     // When suppress=1, this function suppresses AttributeError.
     PyObject *attr, *mod_name, *getattr;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    // gh-158140: a name recorded by a plain `lazy import a.b` is known to be a
+    // submodule, so it is resolved before the module dict is consulted.  That
+    // way the statement can bind the root `a` and leave `a.b` to be imported
+    // on first use, and a dotted lazy import still imports the module it names
+    // even when a variable of the same name shadows the attribute.  Plain
+    // `import a.b` behaves this way too.
+    attr = try_load_lazy_submodule(m, name, _PyImport_GetLazySubmodules(interp),
+                                   suppress);
+    if (attr != NULL) {
+        return attr;
+    }
+    if (PyErr_Occurred()) {
+        return NULL;
+    }
     attr = _PyObject_GenericGetAttrWithDict((PyObject *)m, name, NULL, suppress);
     if (attr) {
         if (PyLazyImport_CheckExact(attr)) {
@@ -1391,7 +1423,11 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
         PyErr_Clear();
     }
     assert(m->md_dict != NULL);
-    attr = try_load_lazy_submodule(m, name);
+    // Names recorded by `lazy from a import b` may be plain attributes of `a`,
+    // so the module dict is consulted first and only then the lazy submodule.
+    attr = try_load_lazy_submodule(m, name,
+                                   _PyImport_GetLazyPendingSubmodules(interp),
+                                   suppress);
     if (attr != NULL) {
         return attr;
     }
