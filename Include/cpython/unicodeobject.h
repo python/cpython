@@ -567,7 +567,7 @@ _Py_DEPRECATED_EXTERNALLY(3.14) PyAPI_FUNC(int) _PyUnicodeWriter_PrepareInternal
 // with the specified maximum character.
 //
 // Return 0 on success. Set an exception and return -1 on error.
-static inline int
+_Py_DEPRECATED_EXTERNALLY(3.14) static inline int
 _PyUnicodeWriter_Prepare(_PyUnicodeWriter *writer,
                          Py_ssize_t length, Py_UCS4 maxchar)
 {
@@ -578,7 +578,10 @@ _PyUnicodeWriter_Prepare(_PyUnicodeWriter *writer,
     if (length == 0) {
         return 0;
     }
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     return _PyUnicodeWriter_PrepareInternal(writer, length, maxchar);
+_Py_COMP_DIAG_POP
 }
 
 /* Prepare the buffer to have at least the kind KIND.
