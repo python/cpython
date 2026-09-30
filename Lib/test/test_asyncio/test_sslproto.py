@@ -96,8 +96,8 @@ class SslProtoHandshakeTests(test_utils.TestCase):
         waiter = mock.Mock()
 
         # Supplying an empty server_hostname fails with check_hostname enabled.
-        with self.assertRaisesRegex(
-                ValueError,
+        with self.assertWarnsRegex(
+                UserWarning,
                 'check_hostname requires server_hostname'):
             sslproto.SSLProtocol(self.loop, app_proto, sslcontext,
                                  waiter,

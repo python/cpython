@@ -1810,10 +1810,10 @@ to speed up repeated connections from the same clients.
 
    The *server_side*, *server_hostname* and *session* parameters have the
    same meaning as in :meth:`SSLContext.wrap_socket`, and are validated in
-   the same way: in particular a :exc:`ValueError` is raised when
+   the same way: in particular a :exc:`DeprecationWarning` is raised when
    :attr:`~SSLContext.check_hostname` is enabled but no *server_hostname* is
    given, since there would be no name to match the peer's certificate
-   against.
+   against. In Python 3.13 and later a ``ValueError`` is raised instead.
 
    .. versionchanged:: 3.6
       *session* argument was added.
