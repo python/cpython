@@ -1,0 +1,1 @@
+Expose the future being waited on by a ``FutureIter`` as ``fi_future``.
