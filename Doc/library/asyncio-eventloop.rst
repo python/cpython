@@ -544,6 +544,11 @@ Opening network connections
    .. versionchanged:: 3.12
       *all_errors* was added.
 
+   .. versionchanged:: next
+      Raises a ``DeprecationWarning`` if ``ssl.check_hostname`` is ``True``
+      and ``server_hostname`` is not supplied. In Python 3.13 and
+      later a ``ValueError`` is raised instead.
+
    .. seealso::
 
       The :func:`open_connection` function is a high-level alternative

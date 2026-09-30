@@ -382,6 +382,11 @@ StreamWriter
       .. versionchanged:: 3.12
          Added the *ssl_shutdown_timeout* parameter.
 
+      .. versionchanged:: next
+         Raises a ``DeprecationWarning`` if ``ssl.check_hostname`` is ``True``
+         and ``server_hostname`` is not supplied. In Python 3.13 and
+         later a ``ValueError`` is raised instead.
+
 
    .. method:: is_closing()
 

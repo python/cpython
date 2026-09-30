@@ -70,6 +70,56 @@ class SslProtoHandshakeTests(test_utils.TestCase):
             sslproto.SSLProtocol(self.loop, app_proto, sslcontext, waiter,
                                  ssl_handshake_timeout=-10)
 
+    def test_check_hostname_accepts_server_hostname(self):
+        # Supplying a server_hostname succeeds with check_hostname enabled.
+        sslcontext = test_utils.simple_client_sslcontext(disable_verify=False)
+        sslcontext.check_hostname = True
+        app_proto = mock.Mock()
+        waiter = mock.Mock()
+
+        # No ValueError is raised from SSLProtocol with 'server_hostname'.
+        ssl_proto = sslproto.SSLProtocol(self.loop, app_proto, sslcontext, waiter,
+                             server_hostname='example.org')
+        self.addCleanup(ssl_proto._app_transport.close)
+
+    def test_check_hostname_requires_server_hostname(self):
+        # A caller-supplied context asking for hostname checking used to be
+        # taken through wrap_bio() with no name to check against, verifying
+        # the certificate chain but never the peer's identity.
+        # loop.start_tls() defaults server_hostname to None, and
+        # loop.create_connection() turns server_hostname='' into None here,
+        # so both reached that state.
+        sslcontext = test_utils.simple_client_sslcontext(disable_verify=False)
+        sslcontext.check_hostname = True
+        app_proto = mock.Mock()
+        waiter = mock.Mock()
+        server_hostname = None
+
+        # Supplying no server_hostname warns with check_hostname enabled.
+        with self.assertWarnsRegex(
+                DeprecationWarning,
+                'check_hostname requires server_hostname'):
+            sslproto.SSLProtocol(self.loop, app_proto, sslcontext,
+                                 waiter)
+
+        with self.assertWarnsRegex(
+                DeprecationWarning,
+                'check_hostname requires server_hostname'):
+            sslproto.SSLProtocol(self.loop, app_proto, sslcontext,
+                                 waiter,
+                                 server_hostname=server_hostname)
+
+        # Disabling check_hostname allows for an empty or unset server_hostname.
+        sslcontext.check_hostname = False
+
+        ssl_proto = sslproto.SSLProtocol(self.loop, app_proto, sslcontext, waiter)
+        self.addCleanup(ssl_proto._app_transport.close)
+
+        ssl_proto = sslproto.SSLProtocol(self.loop, app_proto, sslcontext,
+                             waiter,
+                             server_hostname=server_hostname)
+        self.addCleanup(ssl_proto._app_transport.close)
+
     def test_eof_received_waiter(self):
         waiter = self.loop.create_future()
         ssl_proto = self.ssl_protocol(waiter=waiter)
