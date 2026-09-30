@@ -45,9 +45,16 @@ _PyLazyImport_New(_PyInterpreterFrame *frame, PyObject *builtins,
             "lazy_import: fromlist must be None, a string, or a tuple");
         return NULL;
     }
-    assert(PyLazyImport_CheckExact(name) ? builtins == NULL : builtins != NULL);
-    assert(!PyLazyImport_CheckExact(name) ||
-           (fromlist != NULL && PyUnicode_Check(fromlist)));
+#ifndef NDEBUG
+    if (PyLazyImport_CheckExact(name)) {
+        assert(builtins == NULL);
+        assert(fromlist != NULL);
+        assert(PyUnicode_Check(fromlist));
+    }
+    else {
+        assert(builtins != NULL);
+    }
+#endif
     PyLazyImportObject *m = PyObject_GC_New(
         PyLazyImportObject, &PyLazyImport_Type);
     if (m == NULL) {

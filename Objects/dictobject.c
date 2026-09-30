@@ -3085,7 +3085,9 @@ _PyDict_ReplaceItemIf(PyObject *op, PyObject *key,
                       PyObject *expected, PyObject *replacement)
 {
     assert(PyDict_Check(op));
-    assert(expected != NULL && replacement != NULL);
+    assert(expected != NULL);
+    assert(replacement != NULL);
+
     Py_hash_t hash = PyObject_Hash(key);
     if (hash == -1) {
         return -1;
