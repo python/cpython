@@ -1,2 +1,0 @@
-Fix a crash when deleting the :attr:`~frame.f_trace_opcodes` attribute of
-a frame object.  It now raises :exc:`AttributeError`.

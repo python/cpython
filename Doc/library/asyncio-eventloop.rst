@@ -576,7 +576,7 @@ Opening network connections
    .. versionchanged:: 3.12
       *all_errors* was added.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.13.16
       Raises a ``ValueError`` if ``ssl.check_hostname`` is ``True``
       and ``server_hostname`` is not supplied.
 
