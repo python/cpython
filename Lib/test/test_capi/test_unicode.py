@@ -461,6 +461,14 @@ class CAPITest(unittest.TestCase):
         check_format('%abc',
                      b'%%%s', b'abc')
 
+        # test "%s" with empty string
+        check_format('x=',
+                     b'x=%s', b'')
+        check_format('x=',
+                     b'x=%0s', b'')
+        check_format('x=',
+                     b'x=%.3s', b'')
+
         # truncated string
         check_format('abc',
                      b'%.3s', b'abcdef')

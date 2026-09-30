@@ -168,15 +168,13 @@ _PyUnicodeWriter_SetReadOnly(_PyUnicodeWriter *writer, PyObject *obj,
 static inline int
 _PyUnicodeWriter_WriteCharInline(_PyUnicodeWriter *writer, Py_UCS4 ch)
 {
-    if (ch > writer->maxchar || 1 > writer->size - writer->pos) {
+    if (ch > writer->maxchar || 1 > (writer->size - writer->pos)) {
         if (writer->buffer == NULL && ch <= 255) {
             // If the first write is a Latin1 character, use the singleton
             // as a read-only object
             PyObject *obj = _Py_LATIN1_CHR(ch);
-            // Py_NewRef() is not need on immortal object
+            // Py_NewRef() is not needed on immortal object
             _PyUnicodeWriter_SetReadOnly(writer, obj, 1);
-
-            // The next write will create a new buffer and copy the string
             return 0;
         }
 

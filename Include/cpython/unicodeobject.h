@@ -557,24 +557,32 @@ typedef struct {
 _Py_DEPRECATED_EXTERNALLY(3.14) PyAPI_FUNC(void) _PyUnicodeWriter_Init(
     _PyUnicodeWriter *writer);
 
-/* Prepare the buffer to write 'length' characters
-   with the specified maximum character.
-
-   Return 0 on success, raise an exception and return -1 on error. */
-#define _PyUnicodeWriter_Prepare(WRITER, LENGTH, MAXCHAR)             \
-    (((MAXCHAR) <= (WRITER)->maxchar                                  \
-      && (LENGTH) <= (WRITER)->size - (WRITER)->pos)                  \
-     ? 0                                                              \
-     : (((LENGTH) == 0)                                               \
-        ? 0                                                           \
-        : _PyUnicodeWriter_PrepareInternal((WRITER), (LENGTH), (MAXCHAR))))
-
-/* Don't call this function directly, use the _PyUnicodeWriter_Prepare() macro
-   instead. */
+// Don't call this function directly, use _PyUnicodeWriter_Prepare() instead.
 _Py_DEPRECATED_EXTERNALLY(3.14) PyAPI_FUNC(int) _PyUnicodeWriter_PrepareInternal(
     _PyUnicodeWriter *writer,
     Py_ssize_t length,
     Py_UCS4 maxchar);
+
+// Prepare the buffer to write 'length' characters
+// with the specified maximum character.
+//
+// Return 0 on success. Set an exception and return -1 on error.
+_Py_DEPRECATED_EXTERNALLY(3.14) static inline int
+_PyUnicodeWriter_Prepare(_PyUnicodeWriter *writer,
+                         Py_ssize_t length, Py_UCS4 maxchar)
+{
+    assert(0 <= length);
+    if (maxchar <= writer->maxchar && length <= (writer->size - writer->pos)) {
+        return 0;
+    }
+    if (length == 0) {
+        return 0;
+    }
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
+    return _PyUnicodeWriter_PrepareInternal(writer, length, maxchar);
+_Py_COMP_DIAG_POP
+}
 
 /* Prepare the buffer to have at least the kind KIND.
    For example, kind=PyUnicode_2BYTE_KIND ensures that the writer will
