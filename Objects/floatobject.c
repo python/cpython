@@ -1921,7 +1921,7 @@ PyFloat_Pack2(double x, char *data, int le)
     unsigned char sign;
     int e;
     double f;
-    unsigned short bits;
+    uint16_t bits;
 
     if (x == 0.0) {
         sign = (copysign(1.0, x) == -1.0);
@@ -2001,15 +2001,10 @@ PyFloat_Pack2(double x, char *data, int le)
     bits |= (e << 10) | (sign << 15);
 
     /* Write out result. */
-    unsigned char *p = (unsigned char *)data;
-    if (le) {
-        p[0] = (unsigned char)(bits & 0xFF);
-        p[1] = (unsigned char)((bits >> 8) & 0xFF);
+    if ((_PY_FLOAT_LITTLE_ENDIAN && !le) || (_PY_FLOAT_BIG_ENDIAN && le)) {
+        bits = _Py_bswap16(bits);  // Swap bytes
     }
-    else {
-        p[0] = (unsigned char)((bits >> 8) & 0xFF);
-        p[1] = (unsigned char)(bits & 0xFF);
-    }
+    memcpy(data, &bits, 2);
     return 0;
 
   Overflow:
