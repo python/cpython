@@ -2060,7 +2060,8 @@ class SSLObjectTests(unittest.TestCase):
                                 server_hostname=hostname)
 
         # Asking for no hostname check remains a way to say so explicitly.
-        context = make_test_context()
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        context.check_hostname = False
         self.assertFalse(context.check_hostname)
         context.wrap_bio(ssl.MemoryBIO(), ssl.MemoryBIO())
 
