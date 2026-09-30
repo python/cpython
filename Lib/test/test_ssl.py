@@ -9,6 +9,7 @@ from test.support import os_helper
 from test.support import socket_helper
 from test.support import threading_helper
 from test.support import warnings_helper
+import contextlib
 import re
 import socket
 import select
@@ -326,6 +327,34 @@ def testing_context(server_cert=SIGNED_CERTFILE, *, server_chain=True):
         server_context.load_verify_locations(SIGNING_CA)
 
     return client_context, server_context, hostname
+
+
+def connected_bio_pair(client_context, server_context, hostname, max_retry=5):
+    """Handshake a client and a server SSLObject against each other.
+
+    Everything happens in memory, so this needs no socket and no thread.
+    Returns the two objects followed by their four BIOs, in the order
+    client, server, c_in, c_out, s_in, s_out.
+    """
+    c_in, c_out = ssl.MemoryBIO(), ssl.MemoryBIO()
+    s_in, s_out = ssl.MemoryBIO(), ssl.MemoryBIO()
+    client = client_context.wrap_bio(c_in, c_out, server_hostname=hostname)
+    server = server_context.wrap_bio(s_in, s_out, server_side=True)
+
+    # Loop on the handshake for a bit to get it settled
+    for _ in range(max_retry):
+        with contextlib.suppress(ssl.SSLWantReadError):
+            client.do_handshake()
+        if c_out.pending:
+            s_in.write(c_out.read())
+        with contextlib.suppress(ssl.SSLWantReadError):
+            server.do_handshake()
+        if s_out.pending:
+            c_in.write(s_out.read())
+    # Now the handshakes should be complete (don't raise WantReadError)
+    client.do_handshake()
+    server.do_handshake()
+    return client, server, c_in, c_out, s_in, s_out
 
 
 class BasicSocketTests(unittest.TestCase):
@@ -1888,6 +1917,10 @@ class SSLErrorTests(unittest.TestCase):
 
     def test_bad_server_hostname(self):
         ctx = ssl.create_default_context()
+        # Omitting the name entirely is bad too: this context checks it.
+        with self.assertRaises(ValueError):
+            ctx.wrap_bio(ssl.MemoryBIO(), ssl.MemoryBIO(),
+                         server_hostname=None)
         with self.assertRaises(ValueError):
             ctx.wrap_bio(ssl.MemoryBIO(), ssl.MemoryBIO(),
                          server_hostname="")
@@ -1967,6 +2000,65 @@ class SSLObjectTests(unittest.TestCase):
         bio = ssl.MemoryBIO()
         with self.assertRaisesRegex(TypeError, "public constructor"):
             ssl.SSLObject(bio, bio)
+
+    def test_check_hostname_requires_server_hostname(self):
+        # wrap_bio() used to accept a context asking for hostname checking
+        # without a name to check against, and then verify the certificate
+        # chain but never the peer's identity, with check_hostname still
+        # reporting True and nothing reporting the check had been skipped.
+        # It must refuse that call, as wrap_socket() already did.
+        client_context, _, hostname = testing_context()
+        self.assertTrue(client_context.check_hostname)
+
+        for server_hostname in (None, ""):
+            with self.subTest(server_hostname=server_hostname):
+                with self.assertRaisesRegex(
+                        ValueError,
+                        "check_hostname requires server_hostname"):
+                    client_context.wrap_bio(ssl.MemoryBIO(), ssl.MemoryBIO(),
+                                            server_hostname=server_hostname)
+                # The sibling constructor refuses the very same call.
+                with socket.socket() as sock:
+                    with self.assertRaisesRegex(
+                            ValueError,
+                            "check_hostname requires server_hostname"):
+                        client_context.wrap_socket(
+                            sock, server_hostname=server_hostname)
+
+        # A name was all that was missing.
+        client_context.wrap_bio(ssl.MemoryBIO(), ssl.MemoryBIO(),
+                                server_hostname=hostname)
+
+        # Asking for no hostname check remains a way to say so explicitly.
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        context.check_hostname = False
+        self.assertFalse(context.check_hostname)
+        context.wrap_bio(ssl.MemoryBIO(), ssl.MemoryBIO())
+
+    def test_server_side_bad_params(self):
+        # A server neither sends a hostname nor resumes a client's session,
+        # so wrap_bio() rejects both in server mode like wrap_socket()
+        client_context, server_context, hostname = testing_context()
+
+        with self.assertRaisesRegex(
+                ValueError,
+                "server_hostname can only be specified in client mode"):
+            server_context.wrap_bio(ssl.MemoryBIO(), ssl.MemoryBIO(),
+                                    server_side=True,
+                                    server_hostname=hostname)
+
+        client, server, *_ = connected_bio_pair(
+            client_context, server_context, hostname)
+        session = client.session
+        self.assertIsNotNone(session)
+        with self.assertRaisesRegex(
+                ValueError, "session can only be specified in client mode"):
+            server_context.wrap_bio(ssl.MemoryBIO(), ssl.MemoryBIO(),
+                                    server_side=True, session=session)
+
+        # Neither argument is what a server passes, so this still works.
+        server_context.wrap_bio(ssl.MemoryBIO(), ssl.MemoryBIO(),
+                                server_side=True)
 
     def test_unwrap(self):
         client_ctx, server_ctx, hostname = testing_context()

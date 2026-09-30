@@ -505,6 +505,10 @@ Opening network connections
 
       For more information: https://tools.ietf.org/html/rfc6555
 
+   .. versionchanged:: next
+      Raises a ``ValueError`` if ``ssl.check_hostname`` is ``True``
+      and ``server_hostname`` is not supplied.
+
    .. seealso::
 
       The :func:`open_connection` function is a high-level alternative
