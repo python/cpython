@@ -1970,6 +1970,24 @@ class PyUnicodeWriterTest(unittest.TestCase):
         writer.write_ascii(b"Python! <truncated>", 6)
         self.assertEqual(writer.finish(), "Hello Python")
 
+    def test_write_latin1(self):
+        # Test _PyUnicodeWriter_WriteLatin1String()
+        writer = self.create_writer(0)
+        # Start with ASCII buffer
+        writer.write_latin1(b"abc IGNORED", 3)
+        writer.write_latin1(b"IGNORED", 0)
+        # Change buffer kind to UCS-1
+        writer.write_latin1(b"\xe9", 1)
+        # Change buffer kind to UCS-2
+        writer.write_str('[\u20ac]')
+        writer.write_latin1(b"def\xa0", 4)
+        # Change buffer kind to UCS-4
+        writer.write_str('[\U0010ffff]')
+        writer.write_latin1(b"ghi\xff.", 5)
+        writer.write_latin1(b"IGNORED", 0)
+        self.assertEqual(writer.finish(),
+                         "abc\xe9[\u20ac]def\xa0[\U0010ffff]ghi\xff.")
+
     def test_invalid_utf8(self):
         writer = self.create_writer(0)
         with self.assertRaises(UnicodeDecodeError):
