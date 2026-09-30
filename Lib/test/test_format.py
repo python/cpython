@@ -240,6 +240,8 @@ class FormatTest(unittest.TestCase):
         testcommon("%d", 42, "42")
         testcommon("%d", -42, "-42")
         testcommon("%d", 42.0, "42")
+        testcommon("%#d", 42, "42")
+        testcommon("%#d", -42, "-42")
         testcommon("%#x", 1, "0x1")
         testcommon("%#X", 1, "0X1")
         testcommon("%#o", 1, "0o1")
@@ -250,8 +252,12 @@ class FormatTest(unittest.TestCase):
         testcommon("%#X", 0, "0X0")
         testcommon("%x", 0x42, "42")
         testcommon("%x", -0x42, "-42")
+        testcommon("%#x", 0x42, "0x42")
+        testcommon("%#x", -0x42, "-0x42")
         testcommon("%o", 0o42, "42")
         testcommon("%o", -0o42, "-42")
+        testcommon("%#o", 0o42, "0o42")
+        testcommon("%#o", -0o42, "-0o42")
         # alternate float formatting
         testcommon('%g', 1.1, '1.1')
         testcommon('%#g', 1.1, '1.10000')
@@ -344,11 +350,20 @@ class FormatTest(unittest.TestCase):
                         "format argument 1: %g requires a real number, not str")
 
     def test_str_format(self):
+        testformat("%s", "abc", "abc")
         testformat("%r", "\u0378", "'\\u0378'")  # non printable
         testformat("%a", "\u0378", "'\\u0378'")  # non printable
         testformat("%r", "\u0374", "'\u0374'")   # printable
         testformat("%a", "\u0374", "'\\u0374'")  # printable
         testformat('%(x)r', {'x': 1}, '1')
+
+        # Some small ints
+        for fmt in ('s', 'r', 'a'):
+            with self.subTest(fmt=fmt):
+                testformat("%" + fmt, 42, "42")
+                testformat("%#" + fmt, 42, "42")
+                testformat("%" + fmt, -42, "-42")
+                testformat("%#" + fmt, -42, "-42")
 
         # Test exception for unknown format characters, etc.
         if verbose:
