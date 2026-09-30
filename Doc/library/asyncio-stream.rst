@@ -365,6 +365,11 @@ StreamWriter
 
       .. versionadded:: 3.11
 
+      .. versionchanged:: next
+         Raises a ``ValueError`` if ``sslcontext.check_hostname`` is ``True``
+         and ``server_hostname`` is not supplied.
+
+
    .. method:: is_closing()
 
       Return ``True`` if the stream is closed or in the process of

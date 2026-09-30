@@ -521,6 +521,10 @@ Opening network connections
 
       Added the *ssl_shutdown_timeout* parameter.
 
+   .. versionchanged:: next
+      Raises a ``ValueError`` if ``ssl.check_hostname`` is ``True``
+      and ``server_hostname`` is not supplied.
+
    .. seealso::
 
       The :func:`open_connection` function is a high-level alternative
