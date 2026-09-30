@@ -684,16 +684,22 @@ class CmdLineTest(unittest.TestCase):
 
     @support.cpython_only
     def test_unknown_options(self):
-        rc, out, err = assert_python_failure('-E', '-z')
-        self.assertIn(b'Unknown option: -z', err)
-        self.assertEqual(err.splitlines().count(b'Unknown option: -z'), 1)
-        self.assertEqual(b'', out)
+        # Test unknown option -a
+        for option in ('-z', '--long-option', '---'):
+            with self.subTest(option=option):
+                rc, out, err = assert_python_failure('-E', option)
+                errmsg = f'Unknown option: {option}'.encode()
+                self.assertIn(errmsg, err)
+                self.assertEqual(err.splitlines().count(errmsg), 1)
+                self.assertEqual(b'', out)
+
         # Add "without='-E'" to prevent _assert_python to append -E
         # to env_vars and change the output of stderr
         rc, out, err = assert_python_failure('-z', without='-E')
         self.assertIn(b'Unknown option: -z', err)
         self.assertEqual(err.splitlines().count(b'Unknown option: -z'), 1)
         self.assertEqual(b'', out)
+
         rc, out, err = assert_python_failure('-a', '-z', without='-E')
         self.assertIn(b'Unknown option: -a', err)
         # only the first unknown option is reported
@@ -1413,15 +1419,14 @@ class CmdLineTest(unittest.TestCase):
         import_helper.import_module('_testcapi')
 
         # Test short command line options
-        def check(option, config_name, expr, expected):
-            if isinstance(option, str):
-                option = (option,)
-            code = (
-                'from _testcapi import config_get; '
-                'import sys; '
-                f'print(config_get({config_name!a}), {expr})'
-            )
-            args = option + ("-c", code)
+        def check(options, config_names, expected):
+            if isinstance(config_names, str):
+                config_names = (config_names,)
+            if isinstance(options, str):
+                options = (options,)
+            expr = ', '.join(f'config_get({name!a})' for name in config_names)
+            code = f'from _testcapi import config_get; print({expr})'
+            args = options + ("-c", code)
             proc = assert_python_ok(*args)
             self.assertEqual(proc.out.rstrip(), expected.encode())
 
@@ -1429,41 +1434,34 @@ class CmdLineTest(unittest.TestCase):
             # Just test that passing the option doesn't fail
             assert_python_ok(option, "-c", "pass")
 
-        check('-b', 'bytes_warning', 'sys.flags.bytes_warning', '1 1')
-        check('-bb', 'bytes_warning', 'sys.flags.bytes_warning', '2 2')
-        check('-B', 'write_bytecode', 'sys.dont_write_bytecode', 'False True')
-        check('-d', 'parser_debug', 'sys.flags.debug', 'True 1')
-        check('-E', 'use_environment', 'sys.flags.ignore_environment', 'False 1')
-        check('-i', 'inspect',
-              'config_get("interactive"), sys.flags.inspect, sys.flags.interactive',
-              'True True 1 1')
-        check('-I', 'isolated', 'sys.flags.isolated', 'True 1')
-        check('-O', 'optimization_level', 'sys.flags.optimize', '1 1')
-        check('-OO', 'optimization_level', 'sys.flags.optimize', '2 2')
-        check('-P', 'safe_path', 'sys.flags.safe_path', 'True True')
-        check('-q', 'quiet', 'sys.flags.quiet', 'True 1')
-        check('-R', 'use_hash_seed', 'sys.flags.hash_randomization', 'False 1')
-        check('-s', 'user_site_directory', 'sys.flags.no_user_site', 'False 1')
-        check('-S', 'site_import', 'sys.flags.no_site', 'False 1')
+        check('-b', 'bytes_warning', '1')
+        check('-bb', 'bytes_warning', '2')
+        check('-B', 'write_bytecode', 'False')
+        check('-d', 'parser_debug', 'True')
+        check('-E', 'use_environment', 'False')
+        check('-i', ('inspect', 'interactive'), 'True True')
+        check('-I', 'isolated', 'True')
+        check('-O', 'optimization_level', '1')
+        check('-OO', 'optimization_level', '2')
+        check('-P', 'safe_path', 'True')
+        check('-q', 'quiet', 'True')
+        check('-R', 'use_hash_seed', 'False')
+        check('-s', 'user_site_directory', 'False')
+        check('-S', 'site_import', 'False')
         check_ignored('-t')
-        check('-u', 'buffered_stdio', 'sys.stdout.write_through', 'False True')
-        check('-v', 'verbose', 'sys.flags.verbose', '1 1')
-        check('-Wignore', 'warnoptions', 'sys.warnoptions',
-              "['ignore'] ['ignore']")
-        check('-x', 'skip_source_first_line', '', 'True')
-        check(('-X', 'xoption=value'), 'xoptions', 'sys._xoptions',
+        check('-u', 'buffered_stdio', 'False')
+        check('-v', 'verbose', '1')
+        check('-Wignore', 'warnoptions', "['ignore']")
+        check('-x', 'skip_source_first_line', 'True')
+        check(('-X', 'xoption=value'), 'xoptions',
               # assert_python_ok() adds -X faulthandler
-              "{'faulthandler': True, 'xoption': 'value'} "
               "{'faulthandler': True, 'xoption': 'value'}")
 
-        # -c, -h, -m, -V and -? are tested elsewhere
+        # Short options can be combined
+        check('-bIs', ('bytes_warning', 'isolated', 'user_site_directory'),
+              '1 True False')
 
-    def test_unknown_options(self):
-        for option in ('-a', '--long-option'):
-            with self.subTest(option=option):
-                proc = assert_python_failure(option)
-                errmsg = f'Unknown option: {option}'
-                self.assertStartsWith(proc.err.rstrip(), errmsg.encode())
+        # -c, -h, -m, -V and -? are tested elsewhere
 
     def test_missing_argument(self):
         def check_missing_arg(option):
@@ -1488,6 +1486,11 @@ class CmdLineTest(unittest.TestCase):
             with self.subTest(value=value):
                 proc = assert_python_ok(opt, value, "-c", code)
                 self.assertEqual(proc.out.rstrip(), value.encode())
+
+        # "Expected long option" error
+        proc = assert_python_ok("-b-")
+        self.assertEqual(proc.out, b'')
+        self.assertEqual(proc.err.rstrip(), b"Expected long option")
 
         # Other long options --help-all, --help-env, --help-xoptions
         # and --version are tested elsewhere
