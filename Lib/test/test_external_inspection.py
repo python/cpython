@@ -459,6 +459,21 @@ class TestSelfStackTrace(RemoteInspectionTestBase):
         self.assertEqual([len(n) for n in names if n.startswith("x")], [255])
 
     @skip_if_not_supported
+    def test_recursive_coroutine_stack_is_not_truncated(self):
+        # gh-158522
+        async def rec(n):
+            if n:
+                return await rec(n - 1)
+            return [
+                frame.funcname.rpartition(".")[2]
+                for task in RemoteUnwinder(os.getpid()).get_async_stack_trace()[0].awaited_by
+                for coro in task.coroutine_stack
+                for frame in coro.call_stack
+            ]
+
+        self.assertEqual(asyncio.run(rec(3)), ["rec"] * 4)
+
+    @skip_if_not_supported
     @unittest.skipIf(
         sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
         "Test only runs on Linux with process_vm_readv support",
