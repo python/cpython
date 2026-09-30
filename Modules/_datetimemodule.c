@@ -1983,8 +1983,9 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
                 goto Error;
             }
             start = i;
+            Py_ssize_t precision = ch - '0';
             if (PyUnicodeWriter_WriteSubstring(writer, freplacement,
-                                               0, ch - '0') < 0)
+                                               0, precision) < 0)
             {
                 goto Error;
             }
