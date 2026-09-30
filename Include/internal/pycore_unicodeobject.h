@@ -189,7 +189,8 @@ _PyUnicodeWriter_WriteCharInline(_PyUnicodeWriter *writer, Py_UCS4 ch)
     return 0;
 }
 
-extern PyObject* _PyUnicodeWriter_FinishWithSize(
+// Export for '_testcapi' shared extension
+PyAPI_FUNC(PyObject*) _PyUnicodeWriter_FinishWithSize(
     _PyUnicodeWriter *writer,
     Py_ssize_t size);
 
