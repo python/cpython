@@ -810,7 +810,8 @@ class SSLObject:
             if session is not None:
                 raise ValueError("session can only be specified in "
                                  "client mode")
-        if context.check_hostname and not server_hostname:
+        if context.check_hostname and server_hostname is None:
+            # Note: server_hostname='' is handled within _wrap_bio().
             warnings.warn("check_hostname requires server_hostname",
                           category=DeprecationWarning,
                           stacklevel=3)
