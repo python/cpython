@@ -1725,7 +1725,7 @@ class SSLErrorTests(unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             ctx.wrap_bio(ssl.MemoryBIO(), ssl.MemoryBIO(),
                          server_hostname=None)
-        with self.assertRaises(DeprecationWarning):
+        with self.assertRaises(ValueError):
             ctx.wrap_bio(ssl.MemoryBIO(), ssl.MemoryBIO(),
                          server_hostname="")
         with self.assertRaises(ValueError):
@@ -1817,30 +1817,32 @@ class SSLObjectTests(unittest.TestCase):
         client_context, _, hostname = testing_context()
         self.assertTrue(client_context.check_hostname)
 
-        for server_hostname in (None, ""):
-            with self.subTest(server_hostname=server_hostname):
-                with self.assertWarnsRegex(
-                        DeprecationWarning,
-                        "check_hostname requires server_hostname"):
-                    client_context.wrap_bio(ssl.MemoryBIO(), ssl.MemoryBIO(),
-                                            server_hostname=server_hostname)
-                # The sibling constructor refuses the very same call.
-                with socket.socket() as sock:
-                    with self.assertWarnsRegex(
-                        DeprecationWarning,
-                            "check_hostname requires server_hostname"):
-                        client_context.wrap_socket(
-                            sock, server_hostname=server_hostname)
+        server_hostname = None
+        with self.assertWarnsRegex(
+                DeprecationWarning,
+                "check_hostname requires server_hostname"):
+            client_context.wrap_bio(ssl.MemoryBIO(), ssl.MemoryBIO(),
+                                    server_hostname=server_hostname)
+        # The sibling constructor refuses the very same call, but with
+        # a ValueError instead of DeprecationWarning.
+        with socket.socket() as sock:
+            with self.assertRaisesRegex(
+                ValueError,
+                    "check_hostname requires server_hostname"):
+                client_context.wrap_socket(
+                    sock, server_hostname=server_hostname)
 
         # A name was all that was missing.
-        client_context.wrap_bio(ssl.MemoryBIO(), ssl.MemoryBIO(),
-                                server_hostname=hostname)
+        with warnings_helper.check_no_warnings(self):
+            client_context.wrap_bio(ssl.MemoryBIO(), ssl.MemoryBIO(),
+                                    server_hostname=hostname)
 
         # Asking for no hostname check remains a way to say so explicitly.
         context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         context.check_hostname = False
         self.assertFalse(context.check_hostname)
-        context.wrap_bio(ssl.MemoryBIO(), ssl.MemoryBIO())
+        with warnings_helper.check_no_warnings(self):
+            context.wrap_bio(ssl.MemoryBIO(), ssl.MemoryBIO())
 
     def test_server_side_bad_params(self):
         # A server neither sends a hostname nor resumes a client's session,

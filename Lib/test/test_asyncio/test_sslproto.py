@@ -82,8 +82,7 @@ class SslProtoHandshakeTests(test_utils.TestCase):
                              server_hostname='example.org')
         self.addCleanup(ssl_proto._app_transport.close)
 
-    @support.subTests("server_hostname", [None, ''])
-    def test_check_hostname_requires_server_hostname(self, server_hostname):
+    def test_check_hostname_requires_server_hostname(self):
         # A caller-supplied context asking for hostname checking used to be
         # taken through wrap_bio() with no name to check against, verifying
         # the certificate chain but never the peer's identity.
@@ -94,10 +93,17 @@ class SslProtoHandshakeTests(test_utils.TestCase):
         sslcontext.check_hostname = True
         app_proto = mock.Mock()
         waiter = mock.Mock()
+        server_hostname = None
 
-        # Supplying an empty server_hostname fails with check_hostname enabled.
+        # Supplying no server_hostname warns with check_hostname enabled.
         with self.assertWarnsRegex(
-                UserWarning,
+                DeprecationWarning,
+                'check_hostname requires server_hostname'):
+            sslproto.SSLProtocol(self.loop, app_proto, sslcontext,
+                                 waiter)
+
+        with self.assertWarnsRegex(
+                DeprecationWarning,
                 'check_hostname requires server_hostname'):
             sslproto.SSLProtocol(self.loop, app_proto, sslcontext,
                                  waiter,
