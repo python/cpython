@@ -1,0 +1,3 @@
+Quote the invalid option in the error message printed for an unknown
+command-line option, following the GNU getopt format. A stray space, as in
+``python "-q -i"``, is now visible as ``Invalid option -- ' '``.

@@ -114,7 +114,7 @@ int _PyOS_GetOpt(Py_ssize_t argc, wchar_t * const *argv, int *longindex)
         }
         if (!opt->name) {
             if (_PyOS_opterr) {
-                fprintf(stderr, "Unknown option: %ls\n", argv[_PyOS_optind - 1]);
+                fprintf(stderr, "Invalid option '%ls'\n", argv[_PyOS_optind - 1]);
             }
             return '_';
         }
@@ -135,7 +135,7 @@ int _PyOS_GetOpt(Py_ssize_t argc, wchar_t * const *argv, int *longindex)
 
     if ((ptr = wcschr(SHORT_OPTS, option)) == NULL) {
         if (_PyOS_opterr) {
-            fprintf(stderr, "Unknown option: -%c\n", (char)option);
+            fprintf(stderr, "Invalid option -- '%c'\n", (char)option);
         }
         return '_';
     }
