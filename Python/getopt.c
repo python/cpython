@@ -87,16 +87,17 @@ _PyOS_GetOpt(struct _PyOS_GetOpt *getopt)
         }
 
         const wchar_t *arg = argv[getopt->index];
-        if (arg[0] != L'-' || arg[1] == L'\0' /* lone dash */ ) {
-            return -1;
-        }
-
 #ifdef MS_WINDOWS
         if (wcscmp(arg, L"/?") == 0) {
             ++getopt->index;
             return 'h';
         }
 #endif
+
+        if (arg[0] != L'-' || arg[1] == L'\0' /* lone dash */ ) {
+            return -1;
+        }
+
         if (wcscmp(arg, L"--") == 0) {
             ++getopt->index;
             return -1;
