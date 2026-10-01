@@ -2114,6 +2114,8 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             '2020-W 5',         # space in the week number
             '2020061',          # 7 chars: day slice reads a 1-character tail
             '2020-W2',          # 1-digit week number
+            '2020010112',       # Trailing characters after a basic-format date
+            '2020W011xx',       # Trailing characters after a basic-format week date
             '٢025-03-09',       # Unicode characters
             '2009\ud80002\ud80028',     # Separators are surrogate codepoints
         ]

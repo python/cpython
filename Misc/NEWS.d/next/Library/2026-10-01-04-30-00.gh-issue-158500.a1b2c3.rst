@@ -1,0 +1,2 @@
+Fix :meth:`datetime.date.fromisoformat` accepting basic-format date strings
+with trailing characters.

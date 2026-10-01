@@ -991,6 +991,10 @@ parse_isoformat_date(const char *dtstr, const size_t len, int *year, int *month,
             iso_day = 1;
         }
 
+        if ((size_t)(p - dtstr) != len) {
+            return -1;
+        }
+
         int rv = iso_to_ymd(*year, iso_week, iso_day, year, month, day);
         if (rv) {
             return -3 + rv;
@@ -1009,6 +1013,9 @@ parse_isoformat_date(const char *dtstr, const size_t len, int *year, int *month,
     }
     p = parse_digits(p, day, 2);
     if (p == NULL) {
+        return -1;
+    }
+    if ((size_t)(p - dtstr) != len) {
         return -1;
     }
     return 0;
