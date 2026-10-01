@@ -48,7 +48,8 @@ class TestUtils(TestCase):
         self.assertEqual(wlen('a\N{ZERO WIDTH JOINER}b'), 2)
 
     def test_wlen_with_osc_sequence(self):
-        self.assertEqual(wlen("\x1b]633;A\x07>>> "), 4)
+        prompt = ">>> "
+        self.assertEqual(wlen("\x1b]633;A\x07" + prompt), len(prompt))
 
     def test_wlen_with_unterminated_osc_sequence(self):
         self.assertEqual(wlen("\x1b]633;A"), 7)

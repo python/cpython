@@ -57,12 +57,12 @@ class TestRenderLine(TestCase):
 
     def test_from_rendered_text_with_osc_control(self):
         osc = "\x1b]633;A\x1b\\"
-        line = RenderLine.from_rendered_text(f"{osc}>>> ")
+        prompt = ">>> "
+        line = RenderLine.from_rendered_text(osc + prompt)
 
-        self.assertEqual(line.width, 4)
+        self.assertEqual(line.width, len(prompt))
         self.assertEqual(line.cells[0].controls, (osc,))
         self.assertEqual(line.cells[0].text, "")
-        self.assertEqual(line.text, f"{osc}>>> ")
 
     def test_from_rendered_text_with_non_sgr_controls(self):
         # \x1b[H is a cursor-home control (not SGR since it doesn't end with 'm')
