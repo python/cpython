@@ -486,9 +486,9 @@ lazy_import_replace_child(PyThreadState *tstate, PyObject *placeholder,
     if (end - dot - 1 != PyUnicode_GET_LENGTH(name)) {
         return 0;
     }
-    int matches = PyUnicode_Tailmatch(root->lz_from, name, dot + 1, end, 1);
+    Py_ssize_t matches = PyUnicode_Tailmatch(root->lz_from, name, dot + 1, end, 1);
     if (matches <= 0) {
-        return matches;
+        return matches ? -1 : 0;
     }
     PyObject *parent_name = PyUnicode_Substring(root->lz_from, 0, dot);
     if (parent_name == NULL) {
