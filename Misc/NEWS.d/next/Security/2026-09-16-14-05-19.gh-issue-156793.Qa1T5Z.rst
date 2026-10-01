@@ -1,9 +1,0 @@
-:meth:`ssl.SSLContext.wrap_bio` now validates its *server_side*,
-*server_hostname* and *session* arguments similar to
-:meth:`ssl.SSLContext.wrap_socket`, but for backward compatiblity reasons
-emits :exc:`DeprecationWarning` instead of :exc:`ValueError`.
-
-In particular, a context with :attr:`~ssl.SSLContext.check_hostname` enabled
-and no *server_hostname* passed to :meth:`!wrap_bio` now emits
-:exc:`DeprecationWarning` to indicate the hostname wasn't checked.
-(In Python 3.13 and later, this raises :exc:`ValueError`.)

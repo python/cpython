@@ -962,7 +962,7 @@ reused in custom filters:
 
   Return the modified ``TarInfo`` member.
 
-  .. versionchanged:: next
+  .. versionchanged:: 3.10.22
 
      Filenames containing ``..`` components are now normalized.
 

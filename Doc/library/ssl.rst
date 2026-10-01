@@ -1779,7 +1779,7 @@ to speed up repeated connections from the same clients.
 
    .. versionadded:: 3.7
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.10.22
       After the callback assigns a new :attr:`SSLSocket.context`, later
       ClientHello messages on the connection are dispatched to the new
       context's *sni_callback*.
@@ -1914,7 +1914,7 @@ to speed up repeated connections from the same clients.
       The method returns on instance of :attr:`SSLContext.sslobject_class`
       instead of hard-coded :class:`SSLObject`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.10.22
       The *server_side*, *server_hostname* and *session* parameters are now
       validated as :meth:`SSLContext.wrap_socket` validates them. Previously
       a context with :attr:`~SSLContext.check_hostname` enabled and no

@@ -505,7 +505,7 @@ Opening network connections
 
       For more information: https://tools.ietf.org/html/rfc6555
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.10.22
       Raises a ``DeprecationWarning`` if ``ssl.check_hostname`` is ``True``
       and ``server_hostname`` is not supplied. In Python 3.13 and
       later a ``ValueError`` is raised instead.

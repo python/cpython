@@ -1,0 +1,171 @@
+.. date: 2026-09-29-16-32-46
+.. gh-issue: 158446
+.. nonce: dToaPr
+.. release date: 2026-10-01
+.. section: Security
+
+Fix a crash or incorrect output that could occur when formatting a
+:class:`float` or :class:`complex` with a precision close to the platform's
+``INT_MAX``.  :c:func:`PyOS_double_to_string` now raises :exc:`ValueError`
+for any precision of that magnitude, regardless of presentation type or
+value, as the format string parsers already did for precisions above
+``INT_MAX``.
+
+..
+
+.. date: 2026-09-23-11-34-30
+.. gh-issue: 156793
+.. nonce: zC_AjF
+.. section: Security
+
+:mod:`asyncio`: :meth:`loop.start_tls() <asyncio.loop.start_tls>` and
+:meth:`loop.create_connection() <asyncio.loop.create_connection>` now
+validate the *server_hostname* argument if an :class:`ssl.SSLContext` is
+passed with *check_hostname* set to ``True``, emitting
+:exc:`DeprecationWarning` if *server_hostname* is missing. (This will raise
+:exc:`ValueError` in Python 3.13 and later.)
+
+..
+
+.. date: 2026-09-16-14-05-19
+.. gh-issue: 156793
+.. nonce: Qa1T5Z
+.. section: Security
+
+:meth:`ssl.SSLContext.wrap_bio` now validates its *server_side*,
+*server_hostname* and *session* arguments similar to
+:meth:`ssl.SSLContext.wrap_socket`, but for backward compatiblity reasons
+emits :exc:`DeprecationWarning` instead of :exc:`ValueError`.
+
+In particular, a context with :attr:`~ssl.SSLContext.check_hostname` enabled
+and no *server_hostname* passed to :meth:`!wrap_bio` now emits
+:exc:`DeprecationWarning` to indicate the hostname wasn't checked. (In
+Python 3.13 and later, this raises :exc:`ValueError`.)
+
+..
+
+.. date: 2026-09-10-13-38-11
+.. gh-issue: 157265
+.. nonce: -vYuMp
+.. section: Security
+
+In :mod:`tarfile`, when extracting a link falls back to extracting a member
+of the archive, skip the member when the filter function returns None when
+called with the extracted member's name replaced with the link's.
+
+..
+
+.. date: 2026-09-06-11-02-46
+.. gh-issue: 157190
+.. nonce: tarhln
+.. section: Security
+
+Fixed a vulnerability in the :mod:`tarfile` ``data`` and ``tar`` extraction
+filters where a crafted archive using a hard link to a symbolic link could
+change the permissions and modification time of a file outside the
+destination directory, and expose its contents inside the extracted tree.
+This addresses CVE 2026-82049.
+
+..
+
+.. date: 2026-08-31-16-47-33
+.. gh-issue: 157953
+.. nonce: KxCF5N
+.. section: Security
+
+Update bundled `libexpat <https://libexpat.github.io/>`_ to version 2.8.5.
+
+..
+
+.. date: 2026-08-18-13-54-05
+.. gh-issue: 156002
+.. nonce: CcWXPP
+.. section: Security
+
+Bound the amount of data :mod:`zipfile` decompresses per read for members
+compressed with bzip2, LZMA, or Zstandard, matching the existing limit for
+deflate. A small archive member could previously expand into an unbounded
+allocation even when read in small chunks.
+
+..
+
+.. date: 2026-08-13-13-08-11
+.. gh-issue: 155999
+.. nonce: Xt4rWq
+.. section: Security
+
+Fix the :mod:`tarfile` ``tar`` and ``data`` extraction filters creating
+directories outside the destination for members whose name leaves the
+destination and returns to it, such as ``../evil/../dest/sub/file``. The
+containment check used the resolved path, but intermediate directories were
+created from the name as given.
+
+..
+
+.. date: 2026-08-10-12-00-00
+.. gh-issue: 156293
+.. nonce: sNIcbk
+.. section: Security
+
+Fix a crash in :mod:`ssl` when an :attr:`~ssl.SSLContext.sni_callback`
+switches a connection to another :class:`~ssl.SSLContext` and the context
+that carries the callback is no longer referenced by the application.
+Servers that keep their ``sni_callback`` context alive (the usual case when
+it wraps the listening socket or is stored on the server object) were not
+affected. This addresses `CVE-2026-19445
+<https://www.cve.org/CVERecord?id=CVE-2026-19445>`_.
+
+..
+
+.. date: 2026-08-06-11-43-20
+.. gh-issue: 155292
+.. nonce: j4pHBO
+.. section: Security
+
+Change the :mod:`stringprep` module and :mod:`encodings.idna` codec to not
+consider Unicode codepoint attributes beyond those defined in :rfc:`3454`.
+
+..
+
+.. date: 2026-07-31-16-20-17
+.. gh-issue: 155694
+.. nonce: SsxlKG
+.. section: Security
+
+Fix `CVE-2026-15806 <https://www.cve.org/CVERecord?id=CVE-2026-15806>`_  by
+scoping :class:`~urllib.request.HTTPPasswordMgr` credentials to the URL
+scheme, preventing credentials stored for an HTTPS URL from being used for a
+matching HTTP URL, while URIs without a scheme continue to match any scheme.
+
+..
+
+.. date: 2026-04-26-19-30-45
+.. gh-issue: 149018
+.. nonce: a9SqWb
+.. section: Security
+
+Improved protection against XML hash-flooding attacks in
+:mod:`xml.parsers.expat` and :mod:`xml.etree.ElementTree` when Python is
+compiled with libExpat 2.8.0 or later.
+
+..
+
+.. date: 2026-09-08-13-06-29
+.. gh-issue: 156002
+.. nonce: vmOC8T
+.. section: Library
+
+:mod:`zipfile` again reads members through a third-party decompressor
+installed by monkey-patching the private ``_get_decompressor()`` to return
+an object that only implements old BZ2Decompressor API from Python 3.3. Note
+that decompressors without ``needs_input`` and two-argument ``decompress()``
+are vulnerable to CVE 2026-15310.
+
+..
+
+.. date: 2026-08-26-02-30-00
+.. gh-issue: 156353
+.. nonce: abcdef
+.. section: Library
+
+Fix :mod:`configparser` parsing when using whitespace in *delimiters*.
