@@ -104,6 +104,7 @@
     <ClInclude Include="..\Modules\expat\expat_config.h" />
     <ClInclude Include="..\Modules\expat\expat_external.h" />
     <ClInclude Include="..\Modules\expat\fallthrough.h" />
+    <ClInclude Include="..\Modules\expat\hash_table.h" />
     <ClInclude Include="..\Modules\expat\iasciitab.h" />
     <ClInclude Include="..\Modules\expat\internal.h" />
     <ClInclude Include="..\Modules\expat\latin1tab.h" />
