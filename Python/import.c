@@ -287,7 +287,7 @@ _PyImport_ClearLazyModules(PyInterpreterState *interp)
 int
 _PyImport_DiscardLazyModule(PyInterpreterState *interp, PyObject *name)
 {
-    return PySet_Discard(LAZY_MODULES(interp), name) < 0 ? -1 : 0;
+    return PySet_Discard(LAZY_MODULES(interp), name);
 }
 
 static PyObject *
