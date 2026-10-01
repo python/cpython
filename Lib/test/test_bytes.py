@@ -18,6 +18,7 @@ import tempfile
 import textwrap
 import threading
 import unittest
+from _codecs import _unregister_error as _codecs_unregister_error
 
 import test.support
 from test import support
@@ -2194,6 +2195,30 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
             b[1:-1:2] = b""
         self.assertRaises(BufferError, delslice)
         self.assertEqual(b, orig)
+
+    def test_decode_resize_forbidden(self):
+        # The storage is pinned while it is decoded, so an error handler
+        # cannot resize the bytearray.
+        b = bytearray(b'ab\xffcd')
+        errors = 'test.bytearray_decode_resize'
+        def handler(exc):
+            self.assertRaises(BufferError, b.clear)
+            self.assertRaises(BufferError, b.append, 0)
+            return ('?', exc.end)
+        self.addCleanup(_codecs_unregister_error, errors)
+        codecs.register_error(errors, handler)
+        for encoding in 'utf-8', 'utf-8-sig':
+            with self.subTest(encoding=encoding):
+                self.assertEqual(b.decode(encoding, errors), 'ab?cd')
+        self.assertEqual(b, b'ab\xffcd')
+
+    def test_decode_subclass_buffer(self):
+        # decode() decodes the buffer that the object exports.
+        class B(bytearray):
+            def __buffer__(self, flags):
+                return memoryview(b'other')
+        self.assertEqual(B(b'mine').decode(), 'other')
+        self.assertEqual(B(b'mine').decode('latin-1'), 'other')
 
     @test.support.cpython_only
     def test_obsolete_write_lock(self):

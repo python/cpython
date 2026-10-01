@@ -1,0 +1,2 @@
+On Free Threading, speed up :meth:`bytearray.decode` by decoding the underlying
+storage directly instead of going through the buffer protocol.

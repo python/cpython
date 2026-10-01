@@ -2599,7 +2599,19 @@ bytearray_decode_impl(PyByteArrayObject *self, const char *encoding,
 {
     if (encoding == NULL)
         encoding = PyUnicode_GetDefaultEncoding();
-    return PyUnicode_FromEncodedObject((PyObject*)self, encoding, errors);
+    if (Py_TYPE(self)->tp_as_buffer->bf_getbuffer != bytearray_getbuffer) {
+        /* A subclass may export a different buffer. */
+        return PyUnicode_FromEncodedObject((PyObject*)self, encoding, errors);
+    }
+
+    /* Decode the storage directly instead of exporting a buffer, which
+       would re-acquire the critical section we already hold.  Increase
+       exports to prevent the storage from changing during the decode. */
+    self->ob_exports++;
+    PyObject *res = PyUnicode_Decode(PyByteArray_AS_STRING(self),
+                                     Py_SIZE(self), encoding, errors);
+    self->ob_exports--;
+    return res;
 }
 
 PyDoc_STRVAR(alloc_doc,
