@@ -85,6 +85,13 @@ In a Python shell, import all the objects of the ``turtle`` module::
 If you run into a ``Standard library module '_tkinter' was not found`` error,
 you'll have to install the :mod:`Tk interface package <tkinter>` on your system.
 
+Nothing appears yet. To open the turtle window, make the turtle visible::
+
+    showturtle()
+
+A new window opens, with the turtle in the middle, shown as an arrow
+heading East.
+
 
 Basic drawing
 -------------
@@ -93,9 +100,9 @@ Send the turtle forward 100 steps::
 
    forward(100)
 
-You should see (most likely, in a new window on your display) a line
-drawn by the turtle, heading East. Change the direction of the turtle,
-so that it turns 120 degrees left (anti-clockwise)::
+You should see a line drawn by the turtle, heading East. Change the
+direction of the turtle, so that it turns 120 degrees left
+(anti-clockwise)::
 
    left(120)
 
