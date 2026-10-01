@@ -1909,7 +1909,7 @@ PyFloat_Pack2(double x, char *data, int le)
         if ((_PY_FLOAT_LITTLE_ENDIAN && !le) || (_PY_FLOAT_BIG_ENDIAN && le)) {
             uint16_t word;
             memcpy(&word, &y, 2);
-            word = _Py_bswap16(word);  // Swap bytes
+            word = _Py_bswap16(word);
             memcpy(data, &word, 2);
         }
         else {
@@ -2002,7 +2002,7 @@ PyFloat_Pack2(double x, char *data, int le)
 
     /* Write out result. */
     if ((_PY_FLOAT_LITTLE_ENDIAN && !le) || (_PY_FLOAT_BIG_ENDIAN && le)) {
-        bits = _Py_bswap16(bits);  // Swap bytes
+        bits = _Py_bswap16(bits);
     }
     memcpy(data, &bits, 2);
     return 0;
@@ -2064,7 +2064,7 @@ PyFloat_Pack4(double x, char *data, int le)
     if ((_PY_FLOAT_LITTLE_ENDIAN && !le) || (_PY_FLOAT_BIG_ENDIAN && le)) {
         uint32_t word;
         memcpy(&word, &y, 4);
-        word = _Py_bswap32(word);  // Swap bytes
+        word = _Py_bswap32(word);
         memcpy(data, &word, 4);
     }
     else {
@@ -2079,7 +2079,7 @@ PyFloat_Pack8(double x, char *data, int le)
     if ((_PY_FLOAT_LITTLE_ENDIAN && !le) || (_PY_FLOAT_BIG_ENDIAN && le)) {
         uint64_t word;
         memcpy(&word, &x, 8);
-        word = _Py_bswap64(word);  // Swap bytes
+        word = _Py_bswap64(word);
         memcpy(data, &word, 8);
     }
     else {
