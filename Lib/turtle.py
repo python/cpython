@@ -1358,7 +1358,7 @@ class TurtleScreen(TurtleScreenBase):
         Example (for a Screen instance named screen):
             >>> cv = screen.getcanvas()
             >>> cv
-            <turtle.ScrolledCanvas instance at ...>
+            <turtle.ScrolledCanvas object ...>
         """
         return self.cv
 
