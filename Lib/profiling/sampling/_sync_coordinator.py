@@ -168,10 +168,10 @@ def _execute_script(script_path: str, script_args: List[str], cwd: str) -> None:
     if not os.path.isfile(script_path):
         raise TargetError(f"Script not found: {script_path}")
 
-    # Put directory containing the script (not the current working directory) on sys.path so that modules next to it can be imported. Similar to ``python script.py``
-    script_dir = os.path.dirname(script_path)
-    if script_dir not in sys.path:
-        sys.path.insert(0, script_dir)
+    script_dir = os.path.dirname(os.path.realpath(script_path))
+    if script_dir in sys.path:
+        sys.path.remove(script_dir)
+    sys.path.insert(0, script_dir)
 
     # Replace sys.argv to match original script call
     sys.argv = [script_path] + script_args
