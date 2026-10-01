@@ -168,6 +168,15 @@ def _execute_script(script_path: str, script_args: List[str], cwd: str) -> None:
     if not os.path.isfile(script_path):
         raise TargetError(f"Script not found: {script_path}")
 
+    # gh-158540: ``python script.py`` puts the directory containing the
+    # script (not the current working directory) on sys.path so that modules
+    # next to the script can be imported.  _setup_environment() added the
+    # working directory for module (``-m``) imports; make the script's
+    # directory importable as well.
+    script_dir = os.path.dirname(script_path)
+    if script_dir not in sys.path:
+        sys.path.insert(0, script_dir)
+
     # Replace sys.argv to match original script call
     sys.argv = [script_path] + script_args
 
