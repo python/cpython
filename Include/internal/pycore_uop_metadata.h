@@ -267,7 +267,7 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_PUSH_TAGGED_ZERO] = 0,
     [_GET_ITER_TRAD] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_FOR_ITER_TIER_TWO] = HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
-    [_GUARD_TYPE_ITER] = HAS_EXIT_FLAG,
+    [_GUARD_NOS_TYPE] = HAS_EXIT_FLAG,
     [_ITER_NEXT_INLINE] = HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_GUARD_NOS_ITER_VIRTUAL] = HAS_EXIT_FLAG,
     [_GUARD_TOS_NOT_NULL] = HAS_EXIT_FLAG,
@@ -2537,13 +2537,13 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { -1, -1, -1 },
         },
     },
-    [_GUARD_TYPE_ITER] = {
+    [_GUARD_NOS_TYPE] = {
         .best = { 0, 1, 2, 3 },
         .entries = {
-            { 2, 0, _GUARD_TYPE_ITER_r02 },
-            { 2, 1, _GUARD_TYPE_ITER_r12 },
-            { 2, 2, _GUARD_TYPE_ITER_r22 },
-            { 3, 3, _GUARD_TYPE_ITER_r33 },
+            { 2, 0, _GUARD_NOS_TYPE_r02 },
+            { 2, 1, _GUARD_NOS_TYPE_r12 },
+            { 2, 2, _GUARD_NOS_TYPE_r22 },
+            { 3, 3, _GUARD_NOS_TYPE_r33 },
         },
     },
     [_ITER_NEXT_INLINE] = {
@@ -4485,10 +4485,10 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_PUSH_TAGGED_ZERO_r23] = _PUSH_TAGGED_ZERO,
     [_GET_ITER_TRAD_r12] = _GET_ITER_TRAD,
     [_FOR_ITER_TIER_TWO_r23] = _FOR_ITER_TIER_TWO,
-    [_GUARD_TYPE_ITER_r02] = _GUARD_TYPE_ITER,
-    [_GUARD_TYPE_ITER_r12] = _GUARD_TYPE_ITER,
-    [_GUARD_TYPE_ITER_r22] = _GUARD_TYPE_ITER,
-    [_GUARD_TYPE_ITER_r33] = _GUARD_TYPE_ITER,
+    [_GUARD_NOS_TYPE_r02] = _GUARD_NOS_TYPE,
+    [_GUARD_NOS_TYPE_r12] = _GUARD_NOS_TYPE,
+    [_GUARD_NOS_TYPE_r22] = _GUARD_NOS_TYPE,
+    [_GUARD_NOS_TYPE_r33] = _GUARD_NOS_TYPE,
     [_ITER_NEXT_INLINE_r23] = _ITER_NEXT_INLINE,
     [_GUARD_NOS_ITER_VIRTUAL_r02] = _GUARD_NOS_ITER_VIRTUAL,
     [_GUARD_NOS_ITER_VIRTUAL_r12] = _GUARD_NOS_ITER_VIRTUAL,
@@ -5538,6 +5538,11 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_GUARD_NOS_TUPLE_r12] = "_GUARD_NOS_TUPLE_r12",
     [_GUARD_NOS_TUPLE_r22] = "_GUARD_NOS_TUPLE_r22",
     [_GUARD_NOS_TUPLE_r33] = "_GUARD_NOS_TUPLE_r33",
+    [_GUARD_NOS_TYPE] = "_GUARD_NOS_TYPE",
+    [_GUARD_NOS_TYPE_r02] = "_GUARD_NOS_TYPE_r02",
+    [_GUARD_NOS_TYPE_r12] = "_GUARD_NOS_TYPE_r12",
+    [_GUARD_NOS_TYPE_r22] = "_GUARD_NOS_TYPE_r22",
+    [_GUARD_NOS_TYPE_r33] = "_GUARD_NOS_TYPE_r33",
     [_GUARD_NOS_TYPE_VERSION] = "_GUARD_NOS_TYPE_VERSION",
     [_GUARD_NOS_TYPE_VERSION_r02] = "_GUARD_NOS_TYPE_VERSION_r02",
     [_GUARD_NOS_TYPE_VERSION_r12] = "_GUARD_NOS_TYPE_VERSION_r12",
@@ -5648,11 +5653,6 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_GUARD_TYPE_r11] = "_GUARD_TYPE_r11",
     [_GUARD_TYPE_r22] = "_GUARD_TYPE_r22",
     [_GUARD_TYPE_r33] = "_GUARD_TYPE_r33",
-    [_GUARD_TYPE_ITER] = "_GUARD_TYPE_ITER",
-    [_GUARD_TYPE_ITER_r02] = "_GUARD_TYPE_ITER_r02",
-    [_GUARD_TYPE_ITER_r12] = "_GUARD_TYPE_ITER_r12",
-    [_GUARD_TYPE_ITER_r22] = "_GUARD_TYPE_ITER_r22",
-    [_GUARD_TYPE_ITER_r33] = "_GUARD_TYPE_ITER_r33",
     [_GUARD_TYPE_VERSION] = "_GUARD_TYPE_VERSION",
     [_GUARD_TYPE_VERSION_r01] = "_GUARD_TYPE_VERSION_r01",
     [_GUARD_TYPE_VERSION_r11] = "_GUARD_TYPE_VERSION_r11",
@@ -6688,7 +6688,7 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 1;
         case _FOR_ITER_TIER_TWO:
             return 0;
-        case _GUARD_TYPE_ITER:
+        case _GUARD_NOS_TYPE:
             return 0;
         case _ITER_NEXT_INLINE:
             return 0;

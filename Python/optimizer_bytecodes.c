@@ -1468,7 +1468,7 @@ dummy_func(void) {
                 sym_set_type(iter, type);
                 assert((this_instr - 1)->opcode == _RECORD_NOS_TYPE);
                 int32_t orig_target = (this_instr - 1)->target;
-                ADD_OP(_GUARD_TYPE_ITER, 0, (uintptr_t)type);
+                ADD_OP(_GUARD_NOS_TYPE, 0, (uintptr_t)type);
                 uop_buffer_last(&ctx->out_buffer)->target = orig_target;
             }
             ADD_OP(_ITER_NEXT_INLINE, 0, (uintptr_t)type->tp_iternext);
@@ -2212,7 +2212,7 @@ dummy_func(void) {
                 ADD_OP(_NOP, 0, 0);
             }
             else {
-                ADD_OP(_GUARD_TYPE, 0, (uintptr_t)tp);
+                ADD_OP(_GUARD_NOS_TYPE, 0, (uintptr_t)tp);
                 sym_set_type(nos, tp);
             }
             PyType_Watch(TYPE_WATCHER_ID, (PyObject *)tp);
@@ -2233,7 +2233,7 @@ dummy_func(void) {
                 ADD_OP(_NOP, 0, 0);
             }
             else {
-                ADD_OP(_GUARD_TYPE, 0, (uintptr_t)tp);
+                ADD_OP(_GUARD_NOS_TYPE, 0, (uintptr_t)tp);
                 sym_set_type(nos, tp);
             }
             PyType_Watch(TYPE_WATCHER_ID, (PyObject *)tp);
