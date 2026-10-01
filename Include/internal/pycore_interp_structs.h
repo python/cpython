@@ -352,15 +352,12 @@ struct _import_state {
     PyObject *lazy_import_func;
     int lazy_imports_mode;
     PyObject *lazy_imports_filter;
-    PyObject *lazy_importing_modules;
     // The set stored in sys.lazy_modules if values that have been
     // lazily imported. This value is only for debugging/introspection
     // purposes and is not used by the runtime.
     PyObject *lazy_modules;
     // A dict mapping package names to a set of submodule names that
-    // have been imported lazily from packages which have been imported
-    // lazily. When the package is reified we need to add a
-    // LazyImportObject which refers to the submodule on the module.
+    // may need to be imported when an attribute is missing on the package.
     PyObject *lazy_pending_submodules;
 #ifdef Py_GIL_DISABLED
     PyMutex lazy_mutex;
@@ -538,7 +535,7 @@ struct _py_func_state {
    If you add a new static type to the standard library, you may have to
    update one of these numbers.
    */
-#define _Py_NUM_MANAGED_PREINITIALIZED_TYPES 120
+#define _Py_NUM_MANAGED_PREINITIALIZED_TYPES 122
 #define _Py_MAX_MANAGED_STATIC_BUILTIN_TYPES \
     (_Py_NUM_MANAGED_PREINITIALIZED_TYPES + 83)
 #define _Py_MAX_MANAGED_STATIC_EXT_TYPES 10
@@ -977,7 +974,6 @@ struct _is {
     struct _obmalloc_state *obmalloc;
 
     PyObject *audit_hooks;
-    PyMutex audit_hooks_mutex;
     PyType_WatchCallback type_watchers[TYPE_MAX_WATCHERS];
     PyCode_WatchCallback code_watchers[CODE_MAX_WATCHERS];
     PyContext_WatchCallback context_watchers[CONTEXT_MAX_WATCHERS];

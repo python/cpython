@@ -1,4 +1,3 @@
-import importlib
 import pickle
 import threading
 from textwrap import dedent
@@ -28,7 +27,12 @@ class LowLevelTests(TestBase):
 
     def test_highlevel_reloaded(self):
         # See gh-115490 (https://github.com/python/cpython/issues/115490).
-        importlib.reload(channels)
+        interp = interpreters.create()
+        interp.exec(dedent(f"""
+            import importlib
+            from test.support import channels
+            importlib.reload(channels)
+            """));
 
 
 class TestChannels(TestBase):

@@ -1,0 +1,3 @@
+Argument Clinic now supports the ``--dry-run`` and ``--diff`` options.
+They list the files which would be changed, or write a unified diff of the
+changes to the standard output, without modifying any file.
