@@ -117,12 +117,13 @@ class MiscTest(unittest.TestCase):
         # The type code table in the array.array docstring must list every
         # supported type code, and nothing else, and the minimum size it
         # gives for each of them must be one the implementation meets.
-        row = re.compile(r"^ {4}('\w+') +\S.*? +(\d+)(?: \(see note\))?$")
+        row = re.compile(r"^ {4}'(\w+)' +\S.*? +(\d+)(?: \(see note\))?$")
         documented = {}
         for line in array.array.__doc__.splitlines():
             match = row.match(line)
             if match is not None:
-                documented[match.group(1).strip("'")] = int(match.group(2))
+                documented[match.group(1)] = int(match.group(2))
+
         self.assertEqual(sorted(documented), sorted(array.typecodes))
         for typecode, minimum_size in documented.items():
             with self.subTest(typecode=typecode):
