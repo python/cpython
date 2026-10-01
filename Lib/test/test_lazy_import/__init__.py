@@ -617,7 +617,7 @@ class DunderLazyImportTests(LazyImportTestCase):
         with self.assertRaises(TypeError):
             __lazy_import__("sys", globals=1)
 
-        code = textwrap.dedent(f"""
+        code = textwrap.dedent("""
             __lazy_import__("sys", fromlist=(1, 2, 3))
         """)
         result = assert_python_failure("-c", code, NO_COLOR='y')
@@ -782,7 +782,6 @@ class ErrorHandlingTests(LazyImportTestCase):
     def test_chained_exception_import_shows_notes(self, name):
         """Accessing missing attribute from lazy from-import should chain errors."""
         code = textwrap.dedent(f"""
-            import re
             lazy import {name}
 
             try:
