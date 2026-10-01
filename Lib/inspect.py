@@ -1154,10 +1154,6 @@ def getblock(lines):
             blockfinder.tokeneater(*_token)
     except (EndOfBlock, IndentationError):
         pass
-    except tokenize.TokenError:
-        # The lines may start in the middle of a multiline string.
-        if blockfinder.started:
-            raise
     except SyntaxError as e:
         if "unmatched" not in e.msg:
             raise e from None
@@ -1167,6 +1163,31 @@ def getblock(lines):
         except (EndOfBlock, IndentationError):
             pass
     return lines[:blockfinder.last]
+
+def _find_string_start(lines, lnum):
+    """Return the index of the line where lines[lnum] begins, or the index
+    of the line where a multiline string that is still open at the start of
+    lines[lnum] begins.
+    """
+    # A line that starts inside a string must contain the closing quote.
+    if '"' not in lines[lnum] and "'" not in lines[lnum]:
+        return lnum
+    starts = []
+    try:
+        for tok in tokenize.generate_tokens(iter(lines[:lnum + 1]).__next__):
+            if tok.start[0] > lnum:
+                break
+            if tok.type in (tokenize.FSTRING_START, tokenize.TSTRING_START):
+                starts.append(tok.start[0] - 1)
+            elif tok.type in (tokenize.FSTRING_END, tokenize.TSTRING_END):
+                starts.pop()
+            elif (tok.end[0] > lnum and
+                  tok.type in (tokenize.STRING, tokenize.FSTRING_MIDDLE,
+                               tokenize.TSTRING_MIDDLE)):
+                return starts[0] if starts else tok.start[0] - 1
+    except (tokenize.TokenError, SyntaxError):
+        pass
+    return lnum
 
 def getsourcelines(object):
     """Return a list of source lines and starting line number for an object.
@@ -1187,6 +1208,17 @@ def getsourcelines(object):
         (isframe(object) and object.f_code.co_name == "<module>")):
         return lines, 0
     else:
+        # A lambda or generator expression may start in the middle of a
+        # multiline string, which cannot be tokenized without the line
+        # where the string begins.
+        if isframe(object):
+            object = object.f_code
+        elif ismethod(object):
+            object = object.__func__
+        if isfunction(object):
+            object = object.__code__
+        if iscode(object) and object.co_name.startswith('<'):
+            lnum = _find_string_start(lines, lnum)
         return getblock(lines[lnum:]), lnum + 1
 
 def getsource(object):

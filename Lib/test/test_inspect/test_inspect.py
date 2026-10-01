@@ -1071,6 +1071,16 @@ class TestOneliners(GetSourceBase):
         # Test inspect.getsource with a nested lambda function.
         self.assertSourceEqual(mod2.nested_lambda, 291, 292)
 
+    def test_lambda_after_multiline_string(self):
+        # gh-158556: the lambda starts on the line where a multiline string
+        # ends, and a later docstring must not change the result.
+        self.assertSourceEqual(mod2.string_then_lambda[1], 407, 408)
+        self.assertSourceEqual(mod2.string_then_multiline_lambda[1], 416, 418)
+        self.assertSourceEqual(mod2.string_then_fstring_lambda[1], 422, 423)
+
+    def test_genexpr_after_multiline_string(self):
+        self.assertSourceEqual(mod2.string_then_genexpr[1].gi_code, 427, 428)
+
     def test_onelinefunc(self):
         # Test inspect.getsource with a regular one-line function.
         self.assertSourceEqual(mod2.onelinefunc, 37, 37)
@@ -1132,8 +1142,8 @@ class TestOneliners(GetSourceBase):
         with ready_to_import('lambda_after_string', src) as (name, path):
             module = import_helper.import_module(name)
             lines, lnum = inspect.getsourcelines(module.pair[1])
-        self.assertEqual(lines, ['""", lambda: None\n'])
-        self.assertEqual(lnum, 3)
+        self.assertEqual(lines, ['    """text\n', '""", lambda: None\n'])
+        self.assertEqual(lnum, 2)
 
 class TestBlockComments(GetSourceBase):
     fodderModule = mod
