@@ -1,6 +1,0 @@
-:mod:`asyncio`: :meth:`loop.start_tls() <asyncio.loop.start_tls>` and
-:meth:`loop.create_connection() <asyncio.loop.create_connection>` now
-validate the *server_hostname* argument if an :class:`ssl.SSLContext` is
-passed with *check_hostname* set to ``True``, emitting
-:exc:`DeprecationWarning` if *server_hostname* is missing. (This will raise
-:exc:`ValueError` in Python 3.13 and later.)
