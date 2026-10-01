@@ -145,6 +145,7 @@ Release changes:
 
 * :ref:`The official Windows 64-bit binaries now use the tail-calling interpreter
   <whatsnew315-windows-tail-calling-interpreter>`
+* The official macOS binaries now install free-threading support by default
 
 
 New features
