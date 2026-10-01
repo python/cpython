@@ -16,8 +16,10 @@
 typedef struct {
     PyObject_HEAD
     PyObject *lz_builtins;  // Roots own the mapping; projections retain the root.
-    // A root stores its absolute name and original fromlist. A projection
-    // stores its source placeholder and the attribute to import from it.
+    // A root stores its absolute name (PyUnicode) in lz_from, and original
+    // fromlist in lz_attr.
+    // A projection stores its source placeholder (a PyLazyImportObject)
+    // in lz_from, and the attribute to import from (PyUnicode) it in lz_attr.
     PyObject *lz_from;
     PyObject *lz_attr;
     // Declaration location.
@@ -45,9 +47,18 @@ _PyLazyImport_New(_PyInterpreterFrame *frame, PyObject *builtins,
             "lazy_import: fromlist must be None, a string, or a tuple");
         return NULL;
     }
-    assert(PyLazyImport_CheckExact(name) ? builtins == NULL : builtins != NULL);
-    assert(!PyLazyImport_CheckExact(name) ||
-           (fromlist != NULL && PyUnicode_Check(fromlist)));
+#ifndef NDEBUG
+    if (PyLazyImport_CheckExact(name)) {
+        // projection
+        assert(builtins == NULL);
+        assert(fromlist != NULL);
+        assert(PyUnicode_Check(fromlist));
+    }
+    else {
+        // root
+        assert(builtins != NULL);
+    }
+#endif
     PyLazyImportObject *m = PyObject_GC_New(
         PyLazyImportObject, &PyLazyImport_Type);
     if (m == NULL) {
@@ -71,6 +82,7 @@ _PyLazyImport_New(_PyInterpreterFrame *frame, PyObject *builtins,
 
 // Reuse concrete attributes of initialized modules without waiting for imports
 // or resolving lazy attributes. Failed cache lookups are retried at resolution.
+// May return NULL with or without an exception set.
 static PyObject *
 lazy_import_get_loaded_attr(PyThreadState *tstate, PyObject *name,
                             PyObject *attr_name)
@@ -466,6 +478,7 @@ _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
 
 // Loading pkg.child can replace a placeholder in pkg.child with the module
 // before a from-import retrieves the value that belongs in that binding.
+// This is an optimization that can be safely skipped.
 static int
 lazy_import_replace_child(PyThreadState *tstate, PyObject *placeholder,
                           PyObject *name, PyObject *namespace,
@@ -563,7 +576,7 @@ lazy_import_resolve(PyObject *self, PyObject *args)
 static PyMethodDef lazy_import_methods[] = {
     {
         "resolve", lazy_import_resolve, METH_NOARGS,
-        PyDoc_STR("resolves the lazy import and returns the actual object")
+        PyDoc_STR("Resolve the lazy import and return the imported object.")
     },
     {NULL, NULL}
 };

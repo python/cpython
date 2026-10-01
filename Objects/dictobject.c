@@ -2014,9 +2014,11 @@ static void
 replace_value(PyDictObject *mp, PyObject *key, Py_ssize_t ix,
               PyObject *old_value, PyObject *value)
 {
+    assert(can_modify_dict(mp));
+    assert(old_value != NULL);
+
     if (old_value != value) {
         _PyDict_NotifyEvent(PyDict_EVENT_MODIFIED, mp, key, value);
-        assert(old_value != NULL);
         if (DK_IS_UNICODE(mp->ma_keys)) {
             if (_PyDict_HasSplitTable(mp)) {
                 STORE_SPLIT_VALUE(mp, ix, value);
@@ -2031,7 +2033,9 @@ replace_value(PyDictObject *mp, PyObject *key, Py_ssize_t ix,
             STORE_VALUE(ep, value);
         }
     }
-    Py_DECREF(old_value); /* which **CAN** re-enter (see issue #22653) */
+    Py_DECREF(old_value); /* which **CAN** re-enter (see gh-66843) */
+
+    ASSERT_CONSISTENT(mp);
 }
 
 /*
@@ -2082,7 +2086,6 @@ insertdict(PyDictObject *mp,
     }
 
     replace_value(mp, key, ix, old_value, value);
-    ASSERT_CONSISTENT(mp);
     Py_DECREF(key);
     return 0;
 
@@ -3082,7 +3085,9 @@ _PyDict_ReplaceItemIf(PyObject *op, PyObject *key,
                       PyObject *expected, PyObject *replacement)
 {
     assert(PyDict_Check(op));
-    assert(expected != NULL && replacement != NULL);
+    assert(expected != NULL);
+    assert(replacement != NULL);
+
     Py_hash_t hash = PyObject_Hash(key);
     if (hash == -1) {
         return -1;
@@ -3098,7 +3103,6 @@ _PyDict_ReplaceItemIf(PyObject *op, PyObject *key,
     else if (current == expected) {
         // Do not look up the key again: equality can execute Python code.
         replace_value(mp, key, ix, current, Py_NewRef(replacement));
-        ASSERT_CONSISTENT(mp);
         result = 1;
     }
     Py_END_CRITICAL_SECTION();
