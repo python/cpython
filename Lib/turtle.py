@@ -697,9 +697,9 @@ class TurtleScreenBase:
         """Return list of coordinate pairs of points of item.
 
         For example:
-        >>> getscreen()._pointlist(getturtle().turtle._item)
-        [(0.0, 9.9999999999999982), (0.0, -9.9999999999999982),
-        (9.9999999999999982, 0.0)]
+            >>> getscreen()._pointlist(getturtle().turtle._item)
+            [(0.0, 9.9999999999999982), (0.0, -9.9999999999999982),
+            (9.9999999999999982, 0.0)]
         """
         cl = self.cv.coords(item)
         pl = [(cl[i], -cl[i+1]) for i in range(0, len(cl), 2)]
@@ -747,52 +747,54 @@ class TurtleScreenBase:
         return width, height
 
     def mainloop(self):
-        """Starts event loop - calling Tkinter's mainloop function.
+        """Start the event loop by calling Tkinter's mainloop function.
 
-        No argument.
-
-        Must be the last statement in a turtle graphics program.
-        Must NOT be used if a script is run from within IDLE in -n mode
-        (No subprocess) - for interactive use of turtle graphics.
+        Must be the last statement in a turtle graphics program. Must not
+        be used if a script is run from within IDLE in -n mode (no
+        subprocess).
 
         Example (for a TurtleScreen instance named screen):
-        >>> screen.mainloop()
-
+            >>> screen.mainloop()
         """
         self.cv.tk.mainloop()
 
     def textinput(self, title, prompt):
         """Pop up a dialog window for input of a string.
 
-        Arguments: title is the title of the dialog window,
-        prompt is a text mostly describing what information to input.
-
-        Return the string input
+        title is the title of the dialog window and prompt is a text
+        describing what information to input. Return the string entered.
         If the dialog is canceled, return None.
 
-        Example (for a TurtleScreen instance named screen):
-        >>> screen.textinput("NIM", "Name of first player:")
+        Arguments:
+            title -- a string
+            prompt -- a string
 
+        Example (for a TurtleScreen instance named screen):
+            >>> screen.textinput("NIM", "Name of first player:")
         """
         return simpledialog.askstring(title, prompt, parent=self.cv)
 
     def numinput(self, title, prompt, default=None, minval=None, maxval=None):
         """Pop up a dialog window for input of a number.
 
-        Arguments: title is the title of the dialog window,
-        prompt is a text mostly describing what numerical information to input.
-        default: default value
-        minval: minimum value for input
-        maxval: maximum value for input
+        title is the title of the dialog window and prompt is a text
+        describing what numerical information to input. default is the
+        default value, minval and maxval are the minimum and maximum
+        values for input. If these are given, the number entered must be
+        between minval and maxval. If not, a hint is issued and the dialog
+        remains open for correction. Return the number entered.
+        If the dialog is canceled, return None.
 
-        The number input must be in the range minval .. maxval if these are
-        given. If not, a hint is issued and the dialog remains open for
-        correction. Return the number input.
-        If the dialog is canceled,  return None.
+        Arguments:
+            title -- a string
+            prompt -- a string
+            default -- a number or None
+            minval -- a number or None
+            maxval -- a number or None
 
         Example (for a TurtleScreen instance named screen):
-        >>> screen.numinput("Poker", "Your stakes:", 1000, minval=10, maxval=10000)
-
+            >>> screen.numinput("Poker", "Your stakes:", 1000,
+            ...                 minval=10, maxval=10000)
         """
         return simpledialog.askfloat(title, prompt, initialvalue=default,
                                      minvalue=minval, maxvalue=maxval,
@@ -804,7 +806,7 @@ class TurtleScreenBase:
 ##############################################################################
 
 
-class Terminator (Exception):
+class Terminator(Exception):
     """Will be raised in TurtleScreen.update, if _RUNNING becomes False.
 
     This stops execution of a turtle graphics script.
@@ -820,9 +822,11 @@ class TurtleGraphicsError(Exception):
 class Shape:
     """Data structure modeling shapes.
 
-    attribute _type is one of "polygon", "image", "compound"
-    attribute _data is - depending on _type a poygon-tuple,
-    an image or a list constructed using the addcomponent method.
+    type_ is one of the strings "polygon", "image" or "compound". What
+    data must be depends on type_: for "polygon" a tuple of pairs of
+    coordinates, for "image" an image (only used internally), and for
+    "compound" None, as a compound shape is built up using the
+    addcomponent method.
     """
     def __init__(self, type_, data=None):
         self._type = type_
@@ -838,20 +842,22 @@ class Shape:
         self._data = data
 
     def addcomponent(self, poly, fill, outline=None):
-        """Add component to a shape of type compound.
+        """Add a component to a shape of type "compound".
 
-        Arguments: poly is a polygon, i. e. a tuple of number pairs.
-        fill is the fillcolor of the component,
-        outline is the outline color of the component.
+        poly is a polygon, a tuple of pairs of numbers. fill is the color
+        the polygon is filled with and outline is the color of its
+        outline. If outline is not given, fill is used for it as well.
 
-        call (for a Shapeobject namend s):
-        --   s.addcomponent(((0,0), (10,10), (-10,10)), "red", "blue")
+        Arguments:
+            poly -- a tuple of pairs of numbers
+            fill -- a color
+            outline -- a color or None
 
         Example:
-        >>> poly = ((0,0),(10,-5),(0,10),(-10,-5))
-        >>> s = Shape("compound")
-        >>> s.addcomponent(poly, "red", "blue")
-        >>> # .. add more components and then use register_shape()
+            >>> poly = ((0,0), (10,-5), (0,10), (-10,-5))
+            >>> s = Shape("compound")
+            >>> s.addcomponent(poly, "red", "blue")
+            >>> # ... add more components and then use register_shape()
         """
         if self._type != "compound":
             raise TurtleGraphicsError("Cannot add component to %s Shape"
@@ -960,15 +966,16 @@ class TurtleScreen(TurtleScreenBase):
     def clear(self):
         """Delete all drawings and all turtles from the TurtleScreen.
 
-        No argument.
+        Aliases: clear | clearscreen
 
-        Reset empty TurtleScreen to its initial state: white background,
-        no backgroundimage, no eventbindings and tracing on.
+        Reset the now empty TurtleScreen to its initial state: white
+        background, no background image, no event bindings and tracing on.
+        As a function, this method is only available under the name
+        clearscreen. The function clear is derived from the Turtle method
+        clear.
 
         Example (for a TurtleScreen instance named screen):
-        >>> screen.clear()
-
-        Note: this method is not available as function.
+            >>> screen.clearscreen()
         """
         self._delayvalue = _CFG["delay"]
         self._colormode = _CFG["colormode"]
@@ -988,26 +995,29 @@ class TurtleScreen(TurtleScreenBase):
         Turtle._pen = None
 
     def mode(self, mode=None):
-        """Set turtle-mode ('standard', 'logo' or 'world') and perform reset.
+        """Set the turtle mode and perform a reset.
 
-        Optional argument:
-        mode -- one of the strings 'standard', 'logo' or 'world'
+        mode is one of the strings "standard", "logo" or "world". If mode
+        is not given, return the current mode.
 
-        Mode 'standard' is compatible with turtle.py.
-        Mode 'logo' is compatible with most Logo-Turtle-Graphics.
-        Mode 'world' uses userdefined 'worldcoordinates'. *Attention*: in
-        this mode angles appear distorted if x/y unit-ratio doesn't equal 1.
-        If mode is not given, return the current mode.
+        Mode "standard" is compatible with the old turtle module. Mode
+        "logo" is compatible with most Logo turtle graphics. Mode "world"
+        uses user-defined world coordinates, see setworldcoordinates(). In
+        this mode, angles appear distorted if the x and y units are not of
+        equal length.
 
              Mode      Initial turtle heading     positive angles
          ------------|-------------------------|-------------------
-          'standard'    to the right (east)       counterclockwise
-            'logo'        upward    (north)         clockwise
+          "standard"    to the right (east)       counterclockwise
+            "logo"        upward    (north)         clockwise
 
-        Examples:
-        >>> mode('logo')   # resets turtle heading to north
-        >>> mode()
-        'logo'
+        Argument:
+            mode -- a string or None
+
+        Example (for a TurtleScreen instance named screen):
+            >>> screen.mode("logo")  # resets turtle heading to north
+            >>> screen.mode()
+            'logo'
         """
         if mode is None:
             return self._mode
@@ -1022,26 +1032,29 @@ class TurtleScreen(TurtleScreenBase):
         self.reset()
 
     def setworldcoordinates(self, llx, lly, urx, ury):
-        """Set up a user defined coordinate-system.
+        """Set up a user-defined coordinate system.
+
+        llx and lly are the x and y coordinates of the lower left corner of
+        the canvas. urx and ury are the x and y coordinates of the upper
+        right corner. Switch to mode "world" if necessary, which performs a
+        reset. If mode "world" is already active, all drawings are redrawn
+        according to the new coordinates. In user-defined coordinate
+        systems, angles may appear distorted, see mode().
 
         Arguments:
-        llx -- a number, x-coordinate of lower left corner of canvas
-        lly -- a number, y-coordinate of lower left corner of canvas
-        urx -- a number, x-coordinate of upper right corner of canvas
-        ury -- a number, y-coordinate of upper right corner of canvas
-
-        Set up user coodinat-system and switch to mode 'world' if necessary.
-        This performs a screen.reset. If mode 'world' is already active,
-        all drawings are redrawn according to the new coordinates.
-
-        But ATTENTION: in user-defined coordinatesystems angles may appear
-        distorted. (see Screen.mode())
+            llx -- a number
+            lly -- a number
+            urx -- a number
+            ury -- a number
 
         Example (for a TurtleScreen instance named screen):
-        >>> screen.setworldcoordinates(-10,-0.5,50,1.5)
-        >>> for _ in range(36):
-        ...     left(10)
-        ...     forward(0.5)
+            >>> screen.reset()
+            >>> screen.setworldcoordinates(-50,-7.5,50,7.5)
+            >>> for _ in range(72):
+            ...     left(10)
+            ...
+            >>> for _ in range(8):
+            ...     left(45); fd(2)   # a regular octagon
         """
         if self.mode() != "world":
             self.mode("world")
@@ -1061,31 +1074,35 @@ class TurtleScreen(TurtleScreenBase):
         self.update()
 
     def register_shape(self, name, shape=None):
-        """Adds a turtle shape to TurtleScreen's shapelist.
+        """Add a turtle shape to the TurtleScreen's shape list.
+
+        Aliases: register_shape | addshape
+
+        It can be called in four different ways:
+
+        (1) name is the name of an image file (PNG, GIF, PGM, and PPM) and
+            shape is None. Install the corresponding image shape.
+        (2) name is an arbitrary string and shape is the name of an image
+            file (PNG, GIF, PGM, and PPM). Install the corresponding image
+            shape.
+        (3) name is an arbitrary string and shape is a tuple of pairs of
+            coordinates. Install the corresponding polygon shape.
+        (4) name is an arbitrary string and shape is a (compound) Shape
+            object. Install the corresponding compound shape.
+
+        Image shapes do not rotate when turning the turtle, so they do not
+        display the heading of the turtle. To use a registered shape, call
+        shape() with its name.
 
         Arguments:
-        (1) name is the name of an image file (PNG, GIF, PGM, and PPM) and shape is None.
-            Installs the corresponding image shape.
-            !! Image-shapes DO NOT rotate when turning the turtle,
-            !! so they do not display the heading of the turtle!
-        (2) name is an arbitrary string and shape is the name of an image file (PNG, GIF, PGM, and PPM).
-            Installs the corresponding image shape.
-            !! Image-shapes DO NOT rotate when turning the turtle,
-            !! so they do not display the heading of the turtle!
-        (3) name is an arbitrary string and shape is a tuple
-            of pairs of coordinates. Installs the corresponding
-            polygon shape
-        (4) name is an arbitrary string and shape is a
-            (compound) Shape object. Installs the corresponding
-            compound shape.
-        To use a shape, you have to issue the command shape(shapename).
-
-        call: register_shape("turtle.gif")
-        --or: register_shape("tri", ((0,0), (10,10), (-10,10)))
+            name -- a string
+            shape -- a string, a tuple of pairs of numbers, a Shape object
+                     or None
 
         Example (for a TurtleScreen instance named screen):
-        >>> screen.register_shape("triangle", ((5,-3),(0,5),(-5,-3)))
-
+            >>> screen.register_shape("turtle.gif")
+            >>> screen.register_shape("turtle", "turtle.gif")
+            >>> screen.register_shape("triangle", ((5,-3), (0,5), (-5,-3)))
         """
         if shape is None:
             shape = Shape("image", self._image(name))
@@ -1097,14 +1114,12 @@ class TurtleScreen(TurtleScreenBase):
         self._shapes[name] = shape
 
     def _colorstr(self, color):
-        """Return color string corresponding to args.
+        """Return the color string corresponding to color.
 
-        Argument may be a string or a tuple of three
-        numbers corresponding to actual colormode,
-        i.e. in the range 0<=n<=colormode.
+        color may be a string or a tuple of three numbers, each between 0 and
+        the current colormode.
 
-        If the argument doesn't represent a color,
-        an error is raised.
+        If color doesn't represent a color, an error is raised.
         """
         if len(color) == 1:
             color = color[0]
@@ -1137,16 +1152,24 @@ class TurtleScreen(TurtleScreenBase):
     def colormode(self, cmode=None):
         """Return the colormode or set it to 1.0 or 255.
 
-        Optional argument:
-        cmode -- one of the values 1.0 or 255
+        After setting it, the r, g and b values of color triples have to
+        be between 0 and cmode.
 
-        r, g, b values of colortriples have to be in range 0..cmode.
+        Argument:
+            cmode -- a number or None
 
         Example (for a TurtleScreen instance named screen):
-        >>> screen.colormode()
-        1.0
-        >>> screen.colormode(255)
-        >>> pencolor(240,160,80)
+            >>> screen.colormode(1)
+            >>> turtle.pencolor(240, 160, 80)
+            Traceback (most recent call last):
+                 ...
+            TurtleGraphicsError: bad color sequence: (240, 160, 80)
+            >>> screen.colormode()
+            1.0
+            >>> screen.colormode(255)
+            >>> screen.colormode()
+            255
+            >>> turtle.pencolor(240,160,80)
         """
         if cmode is None:
             return self._colormode
@@ -1156,12 +1179,16 @@ class TurtleScreen(TurtleScreenBase):
             self._colormode = int(cmode)
 
     def reset(self):
-        """Reset all Turtles on the Screen to their initial state.
+        """Reset all turtles on the screen to their initial state.
 
-        No argument.
+        Aliases: reset | resetscreen
+
+        As a function, this method is only available under the name
+        resetscreen. The function reset is derived from the Turtle method
+        reset().
 
         Example (for a TurtleScreen instance named screen):
-        >>> screen.reset()
+            >>> screen.resetscreen()
         """
         for turtle in self._turtles:
             turtle._setmode(self._mode)
@@ -1171,40 +1198,40 @@ class TurtleScreen(TurtleScreenBase):
         """Return the list of turtles on the screen.
 
         Example (for a TurtleScreen instance named screen):
-        >>> screen.turtles()
-        [<turtle.Turtle object at 0x00E11FB0>]
+            >>> for turtle in screen.turtles():
+            ...     turtle.color("red")
         """
         return self._turtles
 
     def bgcolor(self, *args):
-        """Set or return backgroundcolor of the TurtleScreen.
+        """Return or set the background color of the TurtleScreen.
 
         Four input formats are allowed:
           - bgcolor()
-            Return the current background color as color specification
+            Return the current background color as a color specification
             string or as a tuple (see example).  May be used as input
-            to another color/pencolor/fillcolor/bgcolor call.
+            to another color(), pencolor(), fillcolor() or bgcolor() call.
           - bgcolor(colorstring)
             Set the background color to colorstring, which is a Tk color
             specification string, such as "red", "yellow", or "#33cc8c".
           - bgcolor((r, g, b))
             Set the background color to the RGB color represented by
-            the tuple of r, g, and b.  Each of r, g, and b must be in
-            the range 0..colormode, where colormode is either 1.0 or 255
+            the tuple of r, g, and b.  Each of r, g, and b must be
+            between 0 and colormode, where colormode is either 1.0 or 255
             (see colormode()).
           - bgcolor(r, g, b)
             Set the background color to the RGB color represented by
-            r, g, and b.  Each of r, g, and b must be in the range
-            0..colormode.
+            r, g, and b.  Each of r, g, and b must be between 0 and
+            colormode.
 
         Example (for a TurtleScreen instance named screen):
-        >>> screen.bgcolor("orange")
-        >>> screen.bgcolor()
-        'orange'
-        >>> colormode(255)
-        >>> screen.bgcolor('#800080')
-        >>> screen.bgcolor()
-        (128.0, 0.0, 128.0)
+            >>> screen.bgcolor("orange")
+            >>> screen.bgcolor()
+            'orange'
+            >>> screen.colormode(255)
+            >>> screen.bgcolor("#800080")
+            >>> screen.bgcolor()
+            (128.0, 0.0, 128.0)
         """
         if args:
             color = self._colorstr(args)
@@ -1216,23 +1243,26 @@ class TurtleScreen(TurtleScreenBase):
         return color
 
     def tracer(self, n=None, delay=None):
-        """Turns turtle animation on/off and set delay for update drawings.
+        """Turn turtle animation on or off and set the drawing delay.
 
-        Optional arguments:
-        n -- nonnegative  integer
-        delay -- nonnegative  integer
+        If n is given, only every n-th regular screen update is performed,
+        which can be used to speed up the drawing of complex graphics. If
+        n is 0, animation is turned off and the screen is only updated by
+        calling update(). If delay is given, it sets the drawing delay, see
+        delay(). When called without arguments, return the current value
+        of n.
 
-        If n is given, only each n-th regular screen update is really performed.
-        (Can be used to accelerate the drawing of complex graphics.)
-        Second arguments sets delay value (see RawTurtle.delay())
+        Arguments:
+            n -- a nonnegative integer or None
+            delay -- a nonnegative integer or None
 
         Example (for a TurtleScreen instance named screen):
-        >>> screen.tracer(8, 25)
-        >>> dist = 2
-        >>> for i in range(200):
-        ...     fd(dist)
-        ...     rt(90)
-        ...     dist += 2
+            >>> screen.tracer(8, 25)
+            >>> dist = 2
+            >>> for i in range(200):
+            ...     fd(dist)
+            ...     rt(90)
+            ...     dist += 2
         """
         if n is None:
             return self._tracing
@@ -1246,13 +1276,19 @@ class TurtleScreen(TurtleScreenBase):
     def delay(self, delay=None):
         """Return or set the drawing delay in milliseconds.
 
-        Optional argument:
-        delay -- positive integer
+        This is approximately the time interval between two consecutive
+        canvas updates. The longer the drawing delay, the slower the
+        animation.
+
+        Argument:
+            delay -- a nonnegative integer or None
 
         Example (for a TurtleScreen instance named screen):
-        >>> screen.delay(15)
-        >>> screen.delay()
-        15
+            >>> screen.delay()
+            10
+            >>> screen.delay(5)
+            >>> screen.delay()
+            5
         """
         if delay is None:
             return self._delayvalue
@@ -1260,16 +1296,17 @@ class TurtleScreen(TurtleScreenBase):
 
     @contextmanager
     def no_animation(self):
-        """Temporarily turn off auto-updating the screen.
+        """Temporarily turn off turtle animation.
 
-        This is useful for drawing complex shapes where even the fastest setting
-        is too slow. Once this context manager is exited, the drawing will
-        be displayed.
+        The code inside the with block is not animated. Once the block is
+        exited, the drawing appears. This is useful for drawing complex
+        shapes where even the fastest speed setting is too slow.
 
-        Example (for a TurtleScreen instance named screen
-        and a Turtle instance named turtle):
-        >>> with screen.no_animation():
-        ...    turtle.circle(50)
+        Example (for a TurtleScreen instance named screen):
+            >>> with screen.no_animation():
+            ...     for dist in range(2, 400, 2):
+            ...         fd(dist)
+            ...         rt(90)
         """
         tracer = self.tracer()
         try:
@@ -1279,7 +1316,7 @@ class TurtleScreen(TurtleScreenBase):
             self.tracer(tracer)
 
     def _incrementudc(self):
-        """Increment update counter."""
+        """Increment the update counter."""
         if not TurtleScreen._RUNNING:
             TurtleScreen._RUNNING = True
             raise Terminator
@@ -1301,8 +1338,8 @@ class TurtleScreen(TurtleScreenBase):
         """Return the width of the turtle window.
 
         Example (for a TurtleScreen instance named screen):
-        >>> screen.window_width()
-        640
+            >>> screen.window_width()
+            640
         """
         return self._window_size()[0]
 
@@ -1310,48 +1347,53 @@ class TurtleScreen(TurtleScreenBase):
         """Return the height of the turtle window.
 
         Example (for a TurtleScreen instance named screen):
-        >>> screen.window_height()
-        480
+            >>> screen.window_height()
+            480
         """
         return self._window_size()[1]
 
     def getcanvas(self):
         """Return the Canvas of this TurtleScreen.
 
-        No argument.
-
         Example (for a Screen instance named screen):
-        >>> cv = screen.getcanvas()
-        >>> cv
-        <turtle.ScrolledCanvas instance at 0x010742D8>
+            >>> cv = screen.getcanvas()
+            >>> cv
+            <turtle.ScrolledCanvas instance at ...>
         """
         return self.cv
 
     def getshapes(self):
         """Return a list of names of all currently available turtle shapes.
 
-        No argument.
-
         Example (for a TurtleScreen instance named screen):
-        >>> screen.getshapes()
-        ['arrow', 'blank', 'circle', ... , 'turtle']
+            >>> screen.getshapes()
+            ['arrow', 'blank', 'circle', ..., 'turtle']
         """
         return sorted(self._shapes.keys())
 
     def onclick(self, fun, btn=1, add=None):
-        """Bind fun to mouse-click event on canvas.
+        """Bind fun to mouse-click events on this screen.
+
+        Aliases: onclick | onscreenclick
+
+        fun is called with the coordinates of the clicked point on the
+        canvas. If fun is None, existing bindings are removed. btn is the
+        number of the mouse button and defaults to 1, the left mouse
+        button. If add is True, a new binding is added, otherwise it
+        replaces a former binding. As a function, this method is only
+        available under the name onscreenclick. The function onclick is
+        derived from the Turtle method onclick.
 
         Arguments:
-        fun -- a function with two arguments, the coordinates of the
-               clicked point on the canvas.
-        btn -- the number of the mouse-button, defaults to 1
+            fun -- a function with two arguments or None
+            btn -- an integer
+            add -- a boolean or None
 
-        Example (for a TurtleScreen instance named screen)
-
-        >>> screen.onclick(goto)
-        >>> # Subsequently clicking into the TurtleScreen will
-        >>> # make the turtle move to the clicked point.
-        >>> screen.onclick(None)
+        Example (for a TurtleScreen instance named screen):
+            >>> screen.onscreenclick(turtle.goto)
+            >>> # Subsequently clicking into the TurtleScreen will
+            >>> # make the turtle move to the clicked point.
+            >>> screen.onscreenclick(None)  # remove event binding again
         """
         self._onscreenclick(fun, btn, add)
 
@@ -1557,9 +1599,9 @@ class TNavigator:
         TNavigator.reset(self)
 
     def reset(self):
-        """Reset turtle to its initial values.
+        """Reset the turtle to its initial values.
 
-        Will be overwritten by the parent class.
+        Will be overwritten by the child class.
         """
         self._position = Vec2D(0.0, 0.0)
         self._orient =  TNavigator.START_ORIENTATION[self._mode]
@@ -2325,6 +2367,7 @@ class TPen:
 
     def teleport(self, x=None, y=None, *, fill_gap: bool = False) -> None:
         """To be overwritten by child class RawTurtle.
+
         Includes no TNavigator references.
         """
         pendown = self.isdown()
@@ -2333,43 +2376,38 @@ class TPen:
         self.pen(pendown=pendown)
 
     def showturtle(self):
-        """Makes the turtle visible.
+        """Make the turtle visible.
 
         Aliases: showturtle | st
 
-        No argument.
-
         Example (for a Turtle instance named turtle):
-        >>> turtle.hideturtle()
-        >>> turtle.showturtle()
+            >>> turtle.showturtle()
         """
         self.pen(shown=True)
 
     def hideturtle(self):
-        """Makes the turtle invisible.
+        """Make the turtle invisible.
 
         Aliases: hideturtle | ht
 
-        No argument.
-
-        It's a good idea to do this while you're in the
-        middle of a complicated drawing, because hiding
-        the turtle speeds up the drawing observably.
+        It's a good idea to do this while you're in the middle of a complex
+        drawing, because hiding the turtle speeds up the drawing noticeably.
 
         Example (for a Turtle instance named turtle):
-        >>> turtle.hideturtle()
+            >>> turtle.hideturtle()
         """
         self.pen(shown=False)
 
     def isvisible(self):
-        """Return True if the Turtle is shown, False if it's hidden.
-
-        No argument.
+        """Return True if the turtle is shown, False if it's hidden.
 
         Example (for a Turtle instance named turtle):
-        >>> turtle.hideturtle()
-        >>> print(turtle.isvisible())
-        False
+            >>> turtle.hideturtle()
+            >>> turtle.isvisible()
+            False
+            >>> turtle.showturtle()
+            >>> turtle.isvisible()
+            True
         """
         return self._shown
 
@@ -2498,16 +2536,18 @@ class TPen:
                                 -scx*sa, scy*(ca - shf*sa))
         self._update()
 
-## three dummy methods to be implemented by child class:
+    # Three dummy methods to be implemented by the child class:
 
     def _newLine(self, usePos = True):
-        """dummy method - to be overwritten by child class"""
+        """Dummy method - to be overwritten by the child class."""
     def _update(self, count=True, forced=False):
-        """dummy method - to be overwritten by child class"""
+        """Dummy method - to be overwritten by the child class."""
     def _color(self, args):
-        """dummy method - to be overwritten by child class"""
+        """Dummy method - to be overwritten by the child class."""
     def _colorstr(self, args):
-        """dummy method - to be overwritten by child class"""
+        """Dummy method - to be overwritten by the child class."""
+
+    # Aliases for the commonly used commands:
 
     width = pensize
     up = penup
@@ -2519,8 +2559,7 @@ class TPen:
 
 
 class _TurtleImage:
-    """Helper class: Datatype to store Turtle attributes
-    """
+    """Helper class holding the canvas items that display a turtle's shape."""
 
     def __init__(self, screen, shapeIndex):
         self.screen = screen
@@ -2550,9 +2589,10 @@ class _TurtleImage:
 
 
 class RawTurtle(TPen, TNavigator):
-    """Animation part of the RawTurtle.
-    Puts RawTurtle upon a TurtleScreen and provides tools for
-    its animation.
+    """A turtle that draws on the given canvas or TurtleScreen.
+
+    Combines the navigation part (TNavigator) and the drawing part (TPen)
+    and adds the animation of the turtle on the screen.
     """
     screens = []
 
@@ -2597,23 +2637,22 @@ class RawTurtle(TPen, TNavigator):
         self._update()
 
     def reset(self):
-        """Delete the turtle's drawings and restore its default values.
+        """Delete the turtle's drawings and re-center the turtle.
 
-        No argument.
-
-        Delete the turtle's drawings from the screen, re-center the turtle
-        and set variables to the default values.
+        The turtle's settings are restored to their default values.
 
         Example (for a Turtle instance named turtle):
-        >>> turtle.position()
-        (0.00,-22.00)
-        >>> turtle.heading()
-        100.0
-        >>> turtle.reset()
-        >>> turtle.position()
-        (0.00,0.00)
-        >>> turtle.heading()
-        0.0
+            >>> turtle.goto(0,-22)
+            >>> turtle.left(100)
+            >>> turtle.position()
+            (0.00,-22.00)
+            >>> turtle.heading()
+            100.0
+            >>> turtle.reset()
+            >>> turtle.position()
+            (0.00,0.00)
+            >>> turtle.heading()
+            0.0
         """
         TNavigator.reset(self)
         TPen._reset(self)
@@ -2641,20 +2680,18 @@ class RawTurtle(TPen, TNavigator):
             self.undobuffer = Tbuffer(size)
 
     def undobufferentries(self):
-        """Return count of entries in the undobuffer.
-
-        No argument.
+        """Return the number of entries in the undobuffer.
 
         Example (for a Turtle instance named turtle):
-        >>> while undobufferentries():
-        ...     undo()
+            >>> while undobufferentries():
+            ...     undo()
         """
         if self.undobuffer is None:
             return 0
         return self.undobuffer.nr_of_items()
 
     def _clear(self):
-        """Delete all of pen's drawings"""
+        """Delete all of the pen's drawings."""
         self._fillitem = self._fillpath = None
         for item in self.items:
             self.screen._delete(item)
@@ -2668,16 +2705,13 @@ class RawTurtle(TPen, TNavigator):
 
 
     def clear(self):
-        """Delete the turtle's drawings from the screen. Do not move turtle.
+        """Delete the turtle's drawings from the screen.
 
-        No arguments.
+        The state and position of the turtle as well as the drawings of
+        other turtles are not affected.
 
-        Delete the turtle's drawings from the screen. Do not move turtle.
-        State and position of the turtle as well as drawings of other
-        turtles are not affected.
-
-        Examples (for a Turtle instance named turtle):
-        >>> turtle.clear()
+        Example (for a Turtle instance named turtle):
+            >>> turtle.clear()
         """
         self._clear()
         self._update()
@@ -2691,8 +2725,7 @@ class RawTurtle(TPen, TNavigator):
                                   self._pencolor, self._pensize)
 
     def _update(self):
-        """Perform a Turtle-data update.
-        """
+        """Perform a Turtle-data update."""
         screen = self.screen
         if screen._tracing == 0:
             return
@@ -2736,8 +2769,7 @@ class RawTurtle(TPen, TNavigator):
         return self.screen._colorstr(args)
 
     def _cc(self, args):
-        """Convert colortriples to hexstrings.
-        """
+        """Convert colortriples to hexstrings."""
         if isinstance(args, str):
             return args
         try:
@@ -3151,8 +3183,7 @@ class RawTurtle(TPen, TNavigator):
         return stitem
 
     def _clearstamp(self, stampid):
-        """does the work for clearstamp() and clearstamps()
-        """
+        """Does the work for clearstamp() and clearstamps()."""
         if stampid in self.stampItems:
             if isinstance(stampid, tuple):
                 for subitem in stampid:
@@ -3269,8 +3300,7 @@ class RawTurtle(TPen, TNavigator):
         self._update() #count=True)
 
     def _undogoto(self, entry):
-        """Reverse a _goto. Used for undo()
-        """
+        """Reverse a _goto(). Used for undo()."""
         old, new, go_modes, coodata = entry
         drawing, pc, ps, filling = go_modes
         cLI, cL, pl, items = coodata
@@ -3334,8 +3364,7 @@ class RawTurtle(TPen, TNavigator):
         self._update() #count=True)
 
     def _rotate(self, angle):
-        """Turns pen clockwise by angle.
-        """
+        """Turns pen clockwise by angle."""
         if self.undobuffer:
             self.undobuffer.push(("rot", angle, self._degreesPerAU))
         angle *= self._degreesPerAU
@@ -3547,13 +3576,7 @@ class RawTurtle(TPen, TNavigator):
     def begin_poly(self):
         """Start recording the vertices of a polygon.
 
-        No argument.
-
-        Start recording the vertices of a polygon. Current turtle position
-        is first point of polygon.
-
-        Example (for a Turtle instance named turtle):
-        >>> turtle.begin_poly()
+        The current turtle position is the first vertex of the polygon.
         """
         self._poly = [self._position]
         self._creatingPoly = True
@@ -3561,58 +3584,53 @@ class RawTurtle(TPen, TNavigator):
     def end_poly(self):
         """Stop recording the vertices of a polygon.
 
-        No argument.
-
-        Stop recording the vertices of a polygon. Current turtle position is
-        last point of polygon. This will be connected with the first point.
-
-        Example (for a Turtle instance named turtle):
-        >>> turtle.end_poly()
+        The current turtle position is the last vertex of the polygon.
+        This will be connected with the first vertex.
         """
         self._creatingPoly = False
 
     def get_poly(self):
         """Return the last recorded polygon.
 
-        No argument.
-
         Example (for a Turtle instance named turtle):
-        >>> p = turtle.get_poly()
-        >>> turtle.register_shape("myFavouriteShape", p)
+            >>> turtle.home()
+            >>> turtle.begin_poly()
+            >>> turtle.fd(100)
+            >>> turtle.left(20)
+            >>> turtle.fd(30)
+            >>> turtle.left(60)
+            >>> turtle.fd(50)
+            >>> turtle.end_poly()
+            >>> p = turtle.get_poly()
+            >>> register_shape("myFavouriteShape", p)
         """
-        ## check if there is any poly?
+        # Check if there are any poly?
         if self._poly is not None:
             return tuple(self._poly)
 
     def getscreen(self):
         """Return the TurtleScreen object the turtle is drawing on.
 
-        No argument.
-
         So TurtleScreen-methods can be called for that object.
 
         Example (for a Turtle instance named turtle):
-        >>> ts = turtle.getscreen()
-        >>> ts
-        <turtle.TurtleScreen object at 0x0106B770>
-        >>> ts.bgcolor("pink")
+            >>> ts = turtle.getscreen()
+            >>> ts
+            <turtle.TurtleScreen object at ...>
+            >>> ts.bgcolor("pink")
         """
         return self.screen
 
     def getturtle(self):
         """Return the Turtleobject itself.
 
-        No argument.
-
         Only reasonable use: as a function to return the 'anonymous turtle':
 
         Example:
-        >>> pet = getturtle()
-        >>> pet.fd(50)
-        >>> pet
-        <turtle.Turtle object at 0x0187D810>
-        >>> turtles()
-        [<turtle.Turtle object at 0x0187D810>]
+            >>> pet = getturtle()
+            >>> pet.fd(50)
+            >>> pet
+            <turtle.Turtle object at ...>
         """
         return self
 
@@ -3624,27 +3642,29 @@ class RawTurtle(TPen, TNavigator):
     ################################################################
 
     def _delay(self, delay=None):
-        """Set delay value which determines speed of turtle animation.
-        """
+        """Set the delay which determines the speed of turtle animation."""
         return self.screen.delay(delay)
 
     def onclick(self, fun, btn=1, add=None):
-        """Bind fun to mouse-click event on this turtle on canvas.
+        """Bind fun to mouse-click events on this turtle.
+
+        fun is called with the coordinates of the clicked point on the
+        canvas. If fun is None, existing bindings are removed. btn is the
+        number of the mouse button and defaults to 1, the left mouse
+        button. If add is True, a new binding is added, otherwise it
+        replaces a former binding.
 
         Arguments:
-        fun --  a function with two arguments, to which will be assigned
-                the coordinates of the clicked point on the canvas.
-        btn --  number of the mouse-button defaults to 1 (left mouse button).
-        add --  True or False. If True, new binding will be added, otherwise
-                it will replace a former binding.
+            fun -- a function with two arguments or None
+            btn -- an integer
+            add -- a boolean or None
 
-        Example for the anonymous turtle, i. e. the procedural way:
-
-        >>> def turn(x, y):
-        ...     left(360)
-        ...
-        >>> onclick(turn)  # Now clicking into the turtle will turn it.
-        >>> onclick(None)  # event-binding will be removed
+        Example for the anonymous turtle, that is, the procedural way:
+            >>> def turn(x, y):
+            ...     left(180)
+            ...
+            >>> onclick(turn)  # Now clicking into the turtle will turn it.
+            >>> onclick(None)  # event-binding will be removed
         """
         self.screen._onclick(self.turtle._item, fun, btn, add)
         self._update()
@@ -3696,8 +3716,7 @@ class RawTurtle(TPen, TNavigator):
 
 
     def _undo(self, action, data):
-        """Does the main part of the work for undo()
-        """
+        """Does the main part of the work for undo()."""
         if self.undobuffer is None:
             return
         if action == "rot":
@@ -3763,9 +3782,10 @@ RawPen = RawTurtle
 ###  Screen - Singleton  ########################
 
 def Screen():
-    """Return the singleton screen object.
-    If none exists at the moment, create a new one and return it,
-    else return the existing one."""
+    """Return the single screen object.
+
+    If it does not exist yet, create it. Otherwise return the existing one.
+    """
     if Turtle._screen is None:
         Turtle._screen = _Screen()
     return Turtle._screen
@@ -3834,17 +3854,17 @@ class _Screen(TurtleScreen):
         self.update()
 
     def title(self, titlestring):
-        """Set title of turtle-window
+        """Set the title of the turtle window to titlestring.
+
+        The title is shown in the title bar of the turtle graphics window.
+        This is a method of the Screen class. It is not available for
+        TurtleScreen objects.
 
         Argument:
-        titlestring -- a string, to appear in the titlebar of the
-                       turtle graphics window.
-
-        This is a method of Screen-class. Not available for TurtleScreen-
-        objects.
+            titlestring -- a string
 
         Example (for a Screen instance named screen):
-        >>> screen.title("Welcome to the turtle-zoo!")
+            >>> screen.title("Welcome to the turtle zoo!")
         """
         if _Screen._root is not None:
             _Screen._root.title(titlestring)
@@ -3861,11 +3881,7 @@ class _Screen(TurtleScreen):
         root.destroy()
 
     def bye(self):
-        """Shut the turtlegraphics window.
-
-        Example (for a TurtleScreen instance named screen):
-        >>> screen.bye()
-        """
+        """Close the turtle graphics window."""
         self._destroy()
 
     def exitonclick(self):
@@ -4026,8 +4042,7 @@ def getmethparlist(ob):
     return str(func_sig), call_text
 
 def _turtle_docrevise(docstr):
-    """To reduce docstrings from RawTurtle class for functions
-    """
+    """To reduce docstrings from the RawTurtle class for functions."""
     import re
     if docstr is None:
         return None
@@ -4038,8 +4053,7 @@ def _turtle_docrevise(docstr):
     return newdocstr
 
 def _screen_docrevise(docstr):
-    """To reduce docstrings from TurtleScreen class for functions
-    """
+    """To reduce docstrings from the TurtleScreen class for functions."""
     import re
     if docstr is None:
         return None

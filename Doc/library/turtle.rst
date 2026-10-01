@@ -909,7 +909,8 @@ Color control
    ``pencolor()``
       Return the current pencolor as color specification string or
       as a tuple (see example).  May be used as input to another
-      color/pencolor/fillcolor/bgcolor call.
+      :func:`color`, :func:`pencolor`, :func:`fillcolor` or :func:`bgcolor`
+      call.
 
    ``pencolor(colorstring)``
       Set pencolor to *colorstring*, which is a Tk color specification string,
@@ -960,7 +961,8 @@ Color control
    ``fillcolor()``
       Return the current fillcolor as color specification string, possibly
       in tuple format (see example).  May be used as input to another
-      color/pencolor/fillcolor/bgcolor call.
+      :func:`color`, :func:`pencolor`, :func:`fillcolor` or :func:`bgcolor`
+      call.
 
    ``fillcolor(colorstring)``
       Set fillcolor to *colorstring*, which is a Tk color specification string,
@@ -1109,8 +1111,8 @@ More drawing control
 
 .. function:: reset()
 
-   Delete the turtle's drawings from the screen, re-center the turtle and set
-   variables to the default values.
+   Delete the turtle's drawings and re-center the turtle. The turtle's
+   settings are restored to their default values.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -1130,8 +1132,8 @@ More drawing control
 
 .. function:: clear()
 
-   Delete the turtle's drawings from the screen.  Do not move turtle.  State and
-   position of the turtle as well as drawings of other turtles are not affected.
+   Delete the turtle's drawings from the screen. The state and position of the
+   turtle as well as the drawings of other turtles are not affected.
 
 
 .. function:: write(arg, move=False, align="left", font=("Arial", 8, "normal"))
@@ -1162,9 +1164,9 @@ Visibility
 .. function:: hideturtle()
               ht()
 
-   Make the turtle invisible.  It's a good idea to do this while you're in the
-   middle of doing some complex drawing, because hiding the turtle speeds up the
-   drawing observably.
+   Make the turtle invisible. It's a good idea to do this while you're in the
+   middle of a complex drawing, because hiding the turtle speeds up the drawing
+   noticeably.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -1185,7 +1187,7 @@ Visibility
 
 .. function:: isvisible()
 
-   Return ``True`` if the Turtle is shown, ``False`` if it's hidden.
+   Return ``True`` if the turtle is shown, ``False`` if it's hidden.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -1387,15 +1389,16 @@ Using events
 .. function:: onclick(fun, btn=1, add=None)
    :noindex:
 
-   :param fun: a function with two arguments which will be called with the
-               coordinates of the clicked point on the canvas
-   :param btn: number of the mouse-button, defaults to 1 (left mouse button)
-   :param add: ``True`` or ``False`` -- if ``True``, a new binding will be
-               added, otherwise it will replace a former binding
+   :param fun: a function with two arguments or ``None``
+   :param btn: an integer
+   :param add: a boolean or ``None``
 
-   Bind *fun* to mouse-click events on this turtle.  If *fun* is ``None``,
-   existing bindings are removed.  Example for the anonymous turtle, i.e. the
-   procedural way:
+   Bind *fun* to mouse-click events on this turtle. *fun* is called with the
+   coordinates of the clicked point on the canvas. If *fun* is ``None``,
+   existing bindings are removed. *btn* is the number of the mouse button and
+   defaults to 1, the left mouse button. If *add* is ``True``, a new binding
+   is added, otherwise it replaces a former binding. Example for the
+   anonymous turtle, that is, the procedural way:
 
    .. doctest::
       :skipif: _tkinter is None
@@ -1477,14 +1480,14 @@ Special Turtle methods
 
 .. function:: begin_poly()
 
-   Start recording the vertices of a polygon.  Current turtle position is first
-   vertex of polygon.
+   Start recording the vertices of a polygon. The current turtle position is
+   the first vertex of the polygon.
 
 
 .. function:: end_poly()
 
-   Stop recording the vertices of a polygon.  Current turtle position is last
-   vertex of polygon.  This will be connected with the first vertex.
+   Stop recording the vertices of a polygon. The current turtle position is
+   the last vertex of the polygon. This will be connected with the first vertex.
 
 
 .. function:: get_poly()
@@ -1641,9 +1644,10 @@ Window control
    Four input formats are allowed:
 
    ``bgcolor()``
-      Return the current background color as color specification string or
+      Return the current background color as a color specification string or
       as a tuple (see example).  May be used as input to another
-      color/pencolor/fillcolor/bgcolor call.
+      :func:`color`, :func:`pencolor`, :func:`fillcolor` or :func:`bgcolor`
+      call.
 
    ``bgcolor(colorstring)``
       Set the background color to *colorstring*, which is a Tk color
@@ -1652,12 +1656,12 @@ Window control
    ``bgcolor((r, g, b))``
       Set the background color to the RGB color represented by the tuple of
       *r*, *g*, and *b*.
-      Each of *r*, *g*, and *b* must be in the range 0..colormode, where
+      Each of *r*, *g*, and *b* must be between 0 and colormode, where
       colormode is either 1.0 or 255 (see :func:`colormode`).
 
    ``bgcolor(r, g, b)``
-      Set the background color to the RGB color represented by *r*, *g*, and *b*.  Each of
-      *r*, *g*, and *b* must be in the range 0..colormode.
+      Set the background color to the RGB color represented by *r*, *g*, and
+      *b*. Each of *r*, *g*, and *b* must be between 0 and colormode.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -1714,7 +1718,7 @@ Window control
 
 .. function:: resetscreen()
 
-   Reset all Turtles on the Screen to their initial state.
+   Reset all turtles on the screen to their initial state.
 
 
 .. function:: screensize(canvwidth=None, canvheight=None, bg=None)
@@ -1743,17 +1747,17 @@ Window control
 
 .. function:: setworldcoordinates(llx, lly, urx, ury)
 
-   :param llx: a number, x-coordinate of lower left corner of canvas
-   :param lly: a number, y-coordinate of lower left corner of canvas
-   :param urx: a number, x-coordinate of upper right corner of canvas
-   :param ury: a number, y-coordinate of upper right corner of canvas
+   :param llx: a number
+   :param lly: a number
+   :param urx: a number
+   :param ury: a number
 
-   Set up user-defined coordinate system and switch to mode "world" if
-   necessary.  This performs a ``screen.reset()``.  If mode "world" is already
-   active, all drawings are redrawn according to the new coordinates.
-
-   **ATTENTION**: in user-defined coordinate systems angles may appear
-   distorted.
+   Set up a user-defined coordinate system. *llx* and *lly* are the x and y
+   coordinates of the lower left corner of the canvas. *urx* and *ury* are the
+   x and y coordinates of the upper right corner. Switch to mode "world" if
+   necessary, which performs a reset. If mode "world" is already active, all
+   drawings are redrawn according to the new coordinates. In user-defined
+   coordinate systems, angles may appear distorted, see :func:`mode`.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -1780,9 +1784,10 @@ Animation control
 
 .. function:: no_animation()
 
-   Temporarily disable turtle animation. The code written inside the
-   ``no_animation`` block will not be animated;
-   once the code block is exited, the drawing will appear.
+   Temporarily turn off turtle animation. The code inside the :keyword:`with`
+   block is not animated. Once the block is exited, the drawing appears. This
+   is useful for drawing complex shapes where even the fastest speed setting
+   is too slow.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -1797,13 +1802,11 @@ Animation control
 
 .. function:: delay(delay=None)
 
-   :param delay: positive integer
+   :param delay: a nonnegative integer or ``None``
 
-   Set or return the drawing *delay* in milliseconds.  (This is approximately
-   the time interval between two consecutive canvas updates.)  The longer the
+   Return or set the drawing delay in milliseconds. This is approximately the
+   time interval between two consecutive canvas updates. The longer the
    drawing delay, the slower the animation.
-
-   Optional argument:
 
    .. doctest::
       :skipif: _tkinter is None
@@ -1817,15 +1820,15 @@ Animation control
 
 .. function:: tracer(n=None, delay=None)
 
-   :param n: nonnegative integer
-   :param delay: nonnegative integer
+   :param n: a nonnegative integer or ``None``
+   :param delay: a nonnegative integer or ``None``
 
-   Turn turtle animation on/off and set delay for update drawings.  If
-   *n* is given, only each n-th regular screen update is really
-   performed.  (Can be used to accelerate the drawing of complex
-   graphics.)  When called without arguments, returns the currently
-   stored value of n. Second argument sets delay value (see
-   :func:`delay`).
+   Turn turtle animation on or off and set the drawing delay. If *n* is given,
+   only every n-th regular screen update is performed, which can be used to
+   speed up the drawing of complex graphics. If *n* is 0, animation is turned
+   off and the screen is only updated by calling :func:`update`. If *delay* is
+   given, it sets the drawing delay, see :func:`delay`. When called without
+   arguments, return the current value of *n*.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -1898,14 +1901,15 @@ Using screen events
 .. function:: onclick(fun, btn=1, add=None)
               onscreenclick(fun, btn=1, add=None)
 
-   :param fun: a function with two arguments which will be called with the
-               coordinates of the clicked point on the canvas
-   :param btn: number of the mouse-button, defaults to 1 (left mouse button)
-   :param add: ``True`` or ``False`` -- if ``True``, a new binding will be
-               added, otherwise it will replace a former binding
+   :param fun: a function with two arguments or ``None``
+   :param btn: an integer
+   :param add: a boolean or ``None``
 
-   Bind *fun* to mouse-click events on this screen.  If *fun* is ``None``,
-   existing bindings are removed.
+   Bind *fun* to mouse-click events on this screen. *fun* is called with the
+   coordinates of the clicked point on the canvas. If *fun* is ``None``,
+   existing bindings are removed. *btn* is the number of the mouse button and
+   defaults to 1, the left mouse button. If *add* is ``True``, a new binding
+   is added, otherwise it replaces a former binding.
 
    Example for a TurtleScreen instance named ``screen`` and a Turtle instance
    named ``turtle``:
@@ -1946,10 +1950,10 @@ Using screen events
 .. function:: mainloop()
               done()
 
-   Starts event loop - calling Tkinter's mainloop function.
-   Must be the last statement in a turtle graphics program.
-   Must *not* be used if a script is run from within IDLE in -n mode
-   (No subprocess) - for interactive use of turtle graphics. ::
+   Start the event loop by calling Tkinter's :meth:`~tkinter.Misc.mainloop`
+   method. Must be the last statement in a turtle graphics program. Must
+   *not* be used if a script is run from within IDLE in -n mode (see
+   :ref:`idle-no-subprocess`). ::
 
       >>> screen.mainloop()
 
@@ -1959,33 +1963,31 @@ Input methods
 
 .. function:: textinput(title, prompt)
 
-   :param title: string
-   :param prompt: string
+   :param title: a string
+   :param prompt: a string
 
-   Pop up a dialog window for input of a string. Parameter title is
-   the title of the dialog window, prompt is a text mostly describing
-   what information to input.
-   Return the string input. If the dialog is canceled, return ``None``. ::
+   Pop up a dialog window for input of a string. *title* is the title of the
+   dialog window and *prompt* is a text describing what information to input.
+   Return the string entered. If the dialog is canceled, return ``None``. ::
 
       >>> screen.textinput("NIM", "Name of first player:")
 
 
 .. function:: numinput(title, prompt, default=None, minval=None, maxval=None)
 
-   :param title: string
-   :param prompt: string
-   :param default: number (optional)
-   :param minval: number (optional)
-   :param maxval: number (optional)
+   :param title: a string
+   :param prompt: a string
+   :param default: a number or ``None``
+   :param minval: a number or ``None``
+   :param maxval: a number or ``None``
 
-   Pop up a dialog window for input of a number. title is the title of the
-   dialog window, prompt is a text mostly describing what numerical information
-   to input. default: default value, minval: minimum value for input,
-   maxval: maximum value for input.
-   The number input must be in the range minval .. maxval if these are
-   given. If not, a hint is issued and the dialog remains open for
-   correction.
-   Return the number input. If the dialog is canceled,  return ``None``. ::
+   Pop up a dialog window for input of a number. *title* is the title of the
+   dialog window and *prompt* is a text describing what numerical information
+   to input. *default* is the default value, *minval* and *maxval* are the
+   minimum and maximum values for input. If these are given, the number
+   entered must be between *minval* and *maxval*. If not, a hint is issued
+   and the dialog remains open for correction. Return the number entered. If
+   the dialog is canceled, return ``None``. ::
 
       >>> screen.numinput("Poker", "Your stakes:", 1000, minval=10, maxval=10000)
 
@@ -1995,15 +1997,16 @@ Settings and special methods
 
 .. function:: mode(mode=None)
 
-   :param mode: one of the strings "standard", "logo" or "world"
+   :param mode: a string or ``None``
 
-   Set turtle mode ("standard", "logo" or "world") and perform reset.  If mode
-   is not given, current mode is returned.
+   Set the turtle mode and perform a reset. *mode* is one of the strings
+   "standard", "logo" or "world". If *mode* is not given, return the current
+   mode.
 
-   Mode "standard" is compatible with old :mod:`!turtle`.  Mode "logo" is
-   compatible with most Logo turtle graphics.  Mode "world" uses user-defined
-   "world coordinates". **Attention**: in this mode angles appear distorted if
-   ``x/y`` unit-ratio doesn't equal 1.
+   Mode "standard" is compatible with the old :mod:`!turtle` module. Mode
+   "logo" is compatible with most Logo turtle graphics. Mode "world" uses
+   user-defined world coordinates, see :func:`setworldcoordinates`. In this
+   mode, angles appear distorted if the x and y units are not of equal length.
 
    ============ ========================= ===================
        Mode      Initial turtle heading     positive angles
@@ -2015,17 +2018,17 @@ Settings and special methods
    .. doctest::
       :skipif: _tkinter is None
 
-      >>> mode("logo")   # resets turtle heading to north
+      >>> mode("logo")  # resets turtle heading to north
       >>> mode()
       'logo'
 
 
 .. function:: colormode(cmode=None)
 
-   :param cmode: one of the values 1.0 or 255
+   :param cmode: a number or ``None``
 
-   Return the colormode or set it to 1.0 or 255.  Subsequently *r*, *g*, *b*
-   values of color triples have to be in the range 0..*cmode*.
+   Return the colormode or set it to 1.0 or 255. After setting it, the *r*,
+   *g* and *b* values of color triples have to be between 0 and *cmode*.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -2053,7 +2056,7 @@ Settings and special methods
 
       >>> cv = screen.getcanvas()
       >>> cv
-      <turtle.ScrolledCanvas object ...>
+      <turtle.ScrolledCanvas object at ...>
 
 
 .. function:: getshapes()
@@ -2070,25 +2073,22 @@ Settings and special methods
 .. function:: register_shape(name, shape=None)
               addshape(name, shape=None)
 
-   There are four different ways to call this function:
+   :param name: a string
+   :param shape: a string, a tuple of pairs of numbers, a :class:`Shape`
+                 object or ``None``
 
-   (1) *name* is the name of an image file (PNG, GIF, PGM, and PPM) and *shape* is ``None``: Install the
-       corresponding image shape. ::
+   Add a turtle shape to the TurtleScreen's shape list. It can be called in
+   four different ways:
+
+   (1) *name* is the name of an image file (PNG, GIF, PGM, and PPM) and
+       *shape* is ``None``: Install the corresponding image shape. ::
 
        >>> screen.register_shape("turtle.gif")
 
-       .. note::
-          Image shapes *do not* rotate when turning the turtle, so they do not
-          display the heading of the turtle!
-
-   (2) *name* is an arbitrary string and *shape* is the name of an image file (PNG, GIF, PGM, and PPM): Install the
-       corresponding image shape. ::
+   (2) *name* is an arbitrary string and *shape* is the name of an image file
+       (PNG, GIF, PGM, and PPM): Install the corresponding image shape. ::
 
        >>> screen.register_shape("turtle", "turtle.gif")
-
-       .. note::
-          Image shapes *do not* rotate when turning the turtle, so they do not
-          display the heading of the turtle!
 
    (3) *name* is an arbitrary string and *shape* is a tuple of pairs of
        coordinates: Install the corresponding polygon shape.
@@ -2101,8 +2101,9 @@ Settings and special methods
    (4) *name* is an arbitrary string and *shape* is a (compound) :class:`Shape`
        object: Install the corresponding compound shape.
 
-   Add a turtle shape to TurtleScreen's shapelist.  Only thusly registered
-   shapes can be used by issuing the command ``shape(shapename)``.
+   Image shapes do not rotate when turning the turtle, so they do not display
+   the heading of the turtle. To use a registered shape, call :func:`shape`
+   with its name.
 
    .. versionchanged:: 3.14
       Added support for PNG, PGM, and PPM image formats.
@@ -2144,7 +2145,7 @@ Screen-only methods
 
 .. function:: bye()
 
-   Shut the turtlegraphics window.
+   Close the turtle graphics window.
 
 
 .. function:: exitonclick()
@@ -2205,10 +2206,10 @@ Screen-only methods
 
 .. function:: title(titlestring)
 
-   :param titlestring: a string that is shown in the titlebar of the turtle
-                       graphics window
+   :param titlestring: a string
 
-   Set title of turtle window to *titlestring*.
+   Set the title of the turtle window to *titlestring*. The title is shown in
+   the title bar of the turtle graphics window.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -2245,7 +2246,10 @@ Public classes
 
 .. class:: Screen()
 
-   Subclass of TurtleScreen, with :ref:`four methods added <screenspecific>`.
+   Subclass of :class:`TurtleScreen`, with :ref:`four methods added
+   <screenspecific>`. Calling ``Screen()`` returns the single screen object.
+   If it does not exist yet, it is created. Otherwise the existing one is
+   returned.
 
 
 .. class:: ScrolledCanvas(master)
@@ -2258,33 +2262,32 @@ Public classes
 
 .. class:: Shape(type_, data)
 
-   :param type\_: one of the strings "polygon", "image", "compound"
+   :param type\_: a string
+   :param data: depends on *type_*
 
-   Data structure modeling shapes.  The pair ``(type_, data)`` must follow this
-   specification:
-
-
-   =========== ===========
-   *type_*     *data*
-   =========== ===========
-   "polygon"   a polygon-tuple, i.e. a tuple of pairs of coordinates
-   "image"     an image  (in this form only used internally!)
-   "compound"  ``None`` (a compound shape has to be constructed using the
-               :meth:`addcomponent` method)
-   =========== ===========
+   Data structure modeling shapes. *type_* is one of the strings "polygon",
+   "image" or "compound". What *data* must be depends on *type_*: for
+   "polygon" a tuple of pairs of coordinates, for "image" an image (only used
+   internally), and for "compound" ``None``, as a compound shape is built up
+   using the :meth:`addcomponent` method.
 
    .. method:: addcomponent(poly, fill, outline=None)
 
-      :param poly: a polygon, i.e. a tuple of pairs of numbers
-      :param fill: a color the *poly* will be filled with
-      :param outline: a color for the poly's outline (if given)
+      :param poly: a tuple of pairs of numbers
+      :param fill: a color
+      :param outline: a color or ``None``
+
+      Add a component to a shape of type "compound". *poly* is a polygon, a
+      tuple of pairs of numbers. *fill* is the color the polygon is filled
+      with and *outline* is the color of its outline. If *outline* is not
+      given, *fill* is used for it as well.
 
       Example:
 
       .. doctest::
          :skipif: _tkinter is None
 
-         >>> poly = ((0,0),(10,-5),(0,10),(-10,-5))
+         >>> poly = ((0,0), (10,-5), (0,10), (-10,-5))
          >>> s = Shape("compound")
          >>> s.addcomponent(poly, "red", "blue")
          >>> # ... add more components and then use register_shape()
