@@ -81,7 +81,8 @@ class SslProtoHandshakeTests(test_utils.TestCase):
         # No ValueError is raised from SSLProtocol with 'server_hostname'.
         ssl_proto = sslproto.SSLProtocol(self.loop, app_proto, sslcontext, waiter,
                              server_hostname='example.org')
-        self.addCleanup(ssl_proto._app_transport.close)
+        self.addCleanup(ssl_proto.connection_lost, None)
+        ssl_proto.connection_made(mock.Mock())
 
     def test_check_hostname_requires_server_hostname(self):
         # A caller-supplied context asking for hostname checking used to be
@@ -100,26 +101,32 @@ class SslProtoHandshakeTests(test_utils.TestCase):
         with self.assertWarnsRegex(
                 DeprecationWarning,
                 'check_hostname requires server_hostname'):
-            sslproto.SSLProtocol(self.loop, app_proto, sslcontext,
-                                 waiter)
+            ssl_proto = sslproto.SSLProtocol(
+                self.loop, app_proto, sslcontext, waiter)
+            self.addCleanup(ssl_proto.connection_lost, None)
+            ssl_proto.connection_made(mock.Mock())
 
         with self.assertWarnsRegex(
                 DeprecationWarning,
                 'check_hostname requires server_hostname'):
-            sslproto.SSLProtocol(self.loop, app_proto, sslcontext,
-                                 waiter,
-                                 server_hostname=server_hostname)
+            ssl_proto = sslproto.SSLProtocol(
+                self.loop, app_proto, sslcontext, waiter,
+                server_hostname=server_hostname)
+            self.addCleanup(ssl_proto.connection_lost, None)
+            ssl_proto.connection_made(mock.Mock())
 
         # Disabling check_hostname allows for an empty or unset server_hostname.
         sslcontext.check_hostname = False
 
         ssl_proto = sslproto.SSLProtocol(self.loop, app_proto, sslcontext, waiter)
-        self.addCleanup(ssl_proto._app_transport.close)
+        self.addCleanup(ssl_proto.connection_lost, None)
+        ssl_proto.connection_made(mock.Mock())
 
         ssl_proto = sslproto.SSLProtocol(self.loop, app_proto, sslcontext,
                              waiter,
                              server_hostname=server_hostname)
-        self.addCleanup(ssl_proto._app_transport.close)
+        self.addCleanup(ssl_proto.connection_lost, None)
+        ssl_proto.connection_made(mock.Mock())
 
     def test_eof_received_waiter(self):
         waiter = self.loop.create_future()
