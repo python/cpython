@@ -1656,14 +1656,15 @@ class TNavigator:
     def _undo_sequence(self):
         """Record the enclosed actions as a single undo step."""
         undobuffer = self.undobuffer
-        if undobuffer:
-            undobuffer.push(["seq"])
-            undobuffer.cumulate = True
+        if not undobuffer or undobuffer.cumulate:
+            yield
+            return
+        undobuffer.push(["seq"])
+        undobuffer.cumulate = True
         try:
             yield
         finally:
-            if undobuffer:
-                undobuffer.cumulate = False
+            undobuffer.cumulate = False
 
     def teleport(self, x=None, y=None, *, fill_gap: bool = False) -> None:
         """To be overwritten by child class RawTurtle.

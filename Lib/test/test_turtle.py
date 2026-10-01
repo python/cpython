@@ -706,6 +706,14 @@ class TestTurtle(unittest.TestCase):
             self.assertRaises(ValueError, self.turtle.write, "spam")
         self.assertFalse(self.turtle.undobuffer.cumulate)
 
+    def test_nested_undo_sequence(self):
+        with self.turtle._undo_sequence():
+            self.turtle.teleport(10, 20)
+            self.turtle.forward(10)
+        self.assertEqual(self.turtle.undobufferentries(), 1)
+        self.turtle.undo()
+        self.assertEqual(self.turtle.pos(), (0, 0))
+
     def test_stamp_without_undobuffer(self):
         shape = turtle.Shape("polygon", ((0, 0), (5, 9), (-5, 9)))
         self.turtle.screen._shapes = {self.turtle.shape(): shape}
