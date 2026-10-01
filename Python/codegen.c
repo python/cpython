@@ -6223,6 +6223,61 @@ validate_kwd_attrs(compiler *c, asdl_identifier_seq *attrs, asdl_pattern_seq* pa
 }
 
 static int
+codegen_addop_name_match_class_attr(compiler *c, location loc, int opcode,
+                                    PyObject *name)
+{
+    // No name mangling for match attributes
+    Py_ssize_t arg = _PyCompile_DictAddObj(METADATA(c)->u_names, name);
+    if (arg < 0) {
+        return ERROR;
+    }
+    ADDOP_I(c, loc, opcode, arg);
+    return SUCCESS;
+}
+
+static int
+codegen_pattern_class_fast(compiler *c, pattern_ty p, pattern_context *pc)
+{
+    assert(p->kind == MatchClass_kind);
+    assert(!asdl_seq_LEN(p->v.MatchClass.patterns));
+    asdl_identifier_seq *kwd_attrs = p->v.MatchClass.kwd_attrs;
+    asdl_pattern_seq *kwd_patterns = p->v.MatchClass.kwd_patterns;
+    Py_ssize_t nattrs = asdl_seq_LEN(kwd_attrs);
+    assert(nattrs > 0);
+    ADDOP_I(c, LOC(p), COPY, 1);
+    VISIT(c, expr, p->v.MatchClass.cls);
+    ADDOP_I(c, LOC(p), CALL_INTRINSIC_2, INTRINSIC_MATCH_CLASS_ISINSTANCE);
+    // TOS is now subject:
+    pc->on_top++;
+    RETURN_IF_ERROR(jump_to_fail_pop(c, LOC(p), pc, POP_JUMP_IF_FALSE));
+
+    Py_ssize_t i;
+    identifier name;
+    pattern_ty pattern;
+    for (i = 0; i < nattrs; i++) {
+        name = asdl_seq_GET(kwd_attrs, i);
+        RETURN_IF_ERROR(codegen_addop_name_match_class_attr(c, LOC(p),
+            MATCH_CLASS_GET_OPT_ATTR, name));
+        // TOS is now attribute:
+        pc->on_top++;
+        RETURN_IF_ERROR(jump_to_fail_pop(c, LOC(p), pc, POP_JUMP_IF_FALSE));
+        pc->on_top--;
+
+        pattern = asdl_seq_GET(kwd_patterns, i);
+        if (WILDCARD_CHECK(pattern)) {
+            ADDOP(c, LOC(p), POP_TOP);
+            continue;
+        }
+        RETURN_IF_ERROR(codegen_pattern_subpattern(c, pattern, pc));
+    }
+
+    pc->on_top--;
+    // Success! POP subject:
+    ADDOP(c, LOC(p), POP_TOP);
+    return SUCCESS;
+}
+
+static int
 codegen_pattern_class(compiler *c, pattern_ty p, pattern_context *pc)
 {
     assert(p->kind == MatchClass_kind);
@@ -6251,6 +6306,9 @@ codegen_pattern_class(compiler *c, pattern_ty p, pattern_context *pc)
         ADDOP_I(c, LOC(p), CALL_INTRINSIC_2, INTRINSIC_MATCH_CLASS_ISINSTANCE);
         RETURN_IF_ERROR(jump_to_fail_pop(c, LOC(p), pc, POP_JUMP_IF_FALSE));
         return SUCCESS;
+    } else if (nargs == 0) {
+        // Only keyword patterns
+        return codegen_pattern_class_fast(c, p, pc);
     }
     VISIT(c, expr, p->v.MatchClass.cls);
     PyObject *attr_names = PyTuple_New(nattrs);
