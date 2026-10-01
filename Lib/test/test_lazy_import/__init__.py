@@ -294,6 +294,98 @@ class LazyImportTypeTests(LazyImportTestCase):
         """)
         assert_python_ok("-c", code)
 
+    # Setup for the two tests below.  A repeat import is visible both in
+    # ``calls`` and as a different module object.  They read the proxy out of
+    # the module dict because a plain global load would reify it first.
+    _COUNTING_IMPORT = """
+        import builtins
+        import types
+
+        real_import = builtins.__import__
+        calls = []
+        fail_import = False
+
+        lazy import target_module as target
+
+        def counting_import(name, *args, **kwargs):
+            if name != "target_module":
+                return real_import(name, *args, **kwargs)
+            calls.append(name)
+            if fail_import:
+                raise ImportError("no target_module for you")
+            return types.ModuleType(name)
+
+        builtins.__import__ = counting_import
+    """
+
+    def _assert_counting_import_ok(self, body):
+        """Run *body* in a subprocess with the counting __import__ installed."""
+        code = textwrap.dedent(self._COUNTING_IMPORT) + textwrap.dedent(body)
+        return assert_python_ok("-c", code)
+
+    @support.requires_subprocess()
+    def test_proxy_reifies_once_whichever_path_reaches_it(self):
+        """Every reification of one proxy yields the first imported object."""
+        self._assert_counting_import_ok("""
+            def main():
+                proxy = globals()["target"]
+                resolved = proxy.resolve()
+                assert proxy.resolve() is resolved
+                # The global is still bound to the proxy, so loading it reifies.
+                assert target is resolved, (target, resolved)
+                # So does loading a copy of the proxy from another namespace.
+                namespace = {"__builtins__": builtins, "alias": proxy}
+                exec("alias", namespace)
+                assert namespace["alias"] is resolved
+                assert calls == ["target_module"], calls
+
+            main()
+        """)
+
+    @support.requires_subprocess()
+    def test_failed_resolve_is_not_cached(self):
+        """A failed reification is retried rather than remembered."""
+        self._assert_counting_import_ok("""
+            def main():
+                global fail_import
+                fail_import = True
+                proxy = globals()["target"]
+                try:
+                    proxy.resolve()
+                except ImportError:
+                    pass
+                else:
+                    assert False, 'ImportError is not raised'
+                fail_import = False
+                resolved = proxy.resolve()
+                assert proxy.resolve() is resolved
+                assert calls == ["target_module"] * 2, calls
+
+            main()
+        """)
+
+    @support.requires_subprocess()
+    def test_from_import_proxy_remembers_the_attribute(self):
+        """A `lazy from` proxy binds the attribute, not the module."""
+        code = textwrap.dedent("""
+            import sys
+
+            lazy from test.test_lazy_import.data.basic2 import f
+
+            def main():
+                proxy = globals()["f"]
+                resolved = proxy.resolve()
+                module = sys.modules["test.test_lazy_import.data.basic2"]
+                assert resolved is module.f, (resolved, module.f)
+                # Rebinding on the source module does not retarget the proxy,
+                # just as it does not for an eager ``from ... import``.
+                module.f = lambda: None
+                assert proxy.resolve() is resolved
+
+            main()
+        """)
+        assert_python_ok("-c", code)
+
 
 class SyntaxRestrictionTests(LazyImportTestCase):
     """Tests for syntax restrictions on lazy imports."""
