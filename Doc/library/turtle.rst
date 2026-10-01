@@ -1171,25 +1171,13 @@ Visibility
 .. function:: hideturtle()
               ht()
 
-   Make the turtle invisible. It's a good idea to do this while you're in the
-   middle of a complex drawing, because hiding the turtle speeds up the drawing
-   noticeably.
-
-   .. doctest::
-      :skipif: _tkinter is None
-
-      >>> turtle.hideturtle()
+   Make the turtle invisible. If the pen is down, movement still draws.
 
 
 .. function:: showturtle()
               st()
 
    Make the turtle visible.
-
-   .. doctest::
-      :skipif: _tkinter is None
-
-      >>> turtle.showturtle()
 
 
 .. function:: isvisible()
@@ -1960,9 +1948,7 @@ Using screen events
    Start the event loop by calling Tkinter's :meth:`~tkinter.Misc.mainloop`
    method. Must be the last statement in a turtle graphics program. Must
    *not* be used if a script is run from within IDLE in -n mode (see
-   :ref:`idle-no-subprocess`). ::
-
-      >>> screen.mainloop()
+   :ref:`idle-no-subprocess`).
 
 
 Input methods

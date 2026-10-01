@@ -752,9 +752,6 @@ class TurtleScreenBase:
         Must be the last statement in a turtle graphics program. Must not
         be used if a script is run from within IDLE in -n mode (no
         subprocess).
-
-        Example (for a TurtleScreen instance named screen):
-            >>> screen.mainloop()
         """
         self.cv.tk.mainloop()
 
@@ -1186,9 +1183,6 @@ class TurtleScreen(TurtleScreenBase):
         As a function, this method is only available under the name
         resetscreen. The function reset is derived from the Turtle method
         reset().
-
-        Example (for a TurtleScreen instance named screen):
-            >>> screen.resetscreen()
         """
         for turtle in self._turtles:
             turtle._setmode(self._mode)
@@ -2162,11 +2156,6 @@ class TPen:
         """Pull the pen up -- no drawing when moving.
 
         Aliases: penup | pu | up
-
-        No argument
-
-        Example (for a Turtle instance named turtle):
-        >>> turtle.penup()
         """
         if not self._drawing:
             return
@@ -2176,11 +2165,6 @@ class TPen:
         """Pull the pen down -- drawing when moving.
 
         Aliases: pendown | pd | down
-
-        No argument.
-
-        Example (for a Turtle instance named turtle):
-        >>> turtle.pendown()
         """
         if self._drawing:
             return
@@ -2188,8 +2172,6 @@ class TPen:
 
     def isdown(self):
         """Return True if pen is down, False if it's up.
-
-        No argument.
 
         Example (for a Turtle instance named turtle):
         >>> turtle.penup()
@@ -2379,9 +2361,6 @@ class TPen:
         """Make the turtle visible.
 
         Aliases: showturtle | st
-
-        Example (for a Turtle instance named turtle):
-            >>> turtle.showturtle()
         """
         self.pen(shown=True)
 
@@ -2390,11 +2369,7 @@ class TPen:
 
         Aliases: hideturtle | ht
 
-        It's a good idea to do this while you're in the middle of a complex
-        drawing, because hiding the turtle speeds up the drawing noticeably.
-
-        Example (for a Turtle instance named turtle):
-            >>> turtle.hideturtle()
+        If the pen is down, movement still draws.
         """
         self.pen(shown=False)
 
