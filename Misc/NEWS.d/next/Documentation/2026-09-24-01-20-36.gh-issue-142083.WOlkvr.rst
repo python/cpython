@@ -1,0 +1,3 @@
+Document the ``'w'`` type code in the :class:`array.array` docstring, so
+that it lists the same type codes as :data:`array.typecodes` and the
+:mod:`array` module documentation.
