@@ -1812,6 +1812,37 @@ class TestUopsOptimization(unittest.TestCase):
         # __init__ resolution allows promotion of range to constant
         self.assertNotIn("_LOAD_GLOBAL_BUILTINS", uops)
 
+    # See https://github.com/python/cpython/issues/158072
+    def test_init_with_default_argument(self):
+        script_helper.assert_python_ok("-c", textwrap.dedent(f"""\
+            sentinel = object()
+
+            class WithDefault:
+                def __init__(self, value=sentinel):
+                    if value is not sentinel:
+                        pass
+
+            for _ in range({TIER2_THRESHOLD * 3}):
+                WithDefault()
+            """), PYTHON_JIT="1")
+
+    def test_init_with_changed_code_argcount(self):
+        class C:
+            def __init__(self, value):
+                self.value = False
+
+            def varargs_init(self, *args):
+                self.value = isinstance(args, tuple)
+
+        def testfunc(n):
+            for _ in range(n):
+                result = C(42).value
+            return result
+
+        self.assertFalse(testfunc(100))
+        C.__init__.__code__ = C.varargs_init.__code__
+        self.assertTrue(testfunc(TIER2_THRESHOLD * 3))
+
     def test_init_guards_removed(self):
         class MyPoint:
             def __init__(self, x, y):
@@ -2445,7 +2476,18 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(uops.count("_STORE_SUBSCR_DICT_KNOWN_HASH"), 1)
         self.assertEqual(uops.count("_GUARD_NOS_DICT_SUBSCRIPT"), 0)
         self.assertEqual(uops.count("_GUARD_NOS_DICT_STORE_SUBSCRIPT"), 0)
-        self.assertEqual(uops.count("_GUARD_TYPE"), 1)
+        self.assertEqual(uops.count("_GUARD_NOS_TYPE"), 1)
+
+    def test_dict_subscr_probable_type(self):
+        def f(d):
+            for _ in range(TIER2_THRESHOLD):
+                value = d["key"]
+            return value
+
+        res, ex = self._run_with_optimizer(f, {"key": 1})
+        self.assertEqual(res, 1)
+        self.assertIsNotNone(ex)
+        self.assertIn("_GUARD_NOS_TYPE", get_opnames(ex))
 
     def test_dict_subclass_subscr_with_override(self):
         class MyDict(dict):
@@ -3306,6 +3348,186 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertIn("_CALL_BUILTIN_FAST_WITH_KEYWORDS", uops)
         self.assertNotIn("_GUARD_CALLABLE_BUILTIN_FAST_WITH_KEYWORDS", uops)
+
+    def test_call_builtin_o_extra_flags(self):
+        # Extra method flags must not prevent callable guard elimination.
+        _testcapi = import_helper.import_module("_testcapi")
+        self.addCleanup(_testinternalcapi.clear_executor_deletion_list)
+
+        namespace = {
+            "METH_CLASS_O": _testcapi.MethClass.meth_o,
+            "METH_STATIC_O": _testcapi.MethStatic.meth_o,
+            "METH_COEXIST_O": {}.__contains__,
+        }
+
+        @reset_code
+        def testfunc(n):
+            for _ in range(n):
+                class_result = METH_CLASS_O(1)
+                static_result = METH_STATIC_O(1)
+                coexist_result = METH_COEXIST_O(1)
+            return class_result, static_result, coexist_result
+
+        testfunc = types.FunctionType(testfunc.__code__, namespace)
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, ((_testcapi.MethClass, 1), (None, 1), False))
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertEqual(uops.count("_CALL_BUILTIN_O"), 3)
+        self.assertNotIn("_GUARD_CALLABLE_BUILTIN_O", uops)
+
+    def test_call_builtin_fast_extra_flags(self):
+        _testcapi = import_helper.import_module("_testcapi")
+        self.addCleanup(_testinternalcapi.clear_executor_deletion_list)
+
+        obj = _testcapi.MethInstance()
+        namespace = {
+            "METH_CLASS_FASTCALL": _testcapi.MethClass.meth_fastcall,
+            "METH_STATIC_FASTCALL": _testcapi.MethStatic.meth_fastcall,
+            "METH_COEXIST_FASTCALL": obj.meth_fastcall_coexist,
+        }
+
+        @reset_code
+        def testfunc(n):
+            for _ in range(n):
+                class_result = METH_CLASS_FASTCALL(1, 2)
+                static_result = METH_STATIC_FASTCALL(1, 2)
+                coexist_result = METH_COEXIST_FASTCALL(1, 2)
+            return class_result, static_result, coexist_result
+
+        testfunc = types.FunctionType(testfunc.__code__, namespace)
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, (
+            (_testcapi.MethClass, (1, 2)),
+            (None, (1, 2)),
+            (obj, (1, 2)),
+        ))
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertEqual(uops.count("_CALL_BUILTIN_FAST"), 3)
+        self.assertNotIn("_GUARD_CALLABLE_BUILTIN_FAST", uops)
+
+    def test_call_builtin_fast_with_keywords_extra_flags(self):
+        _testcapi = import_helper.import_module("_testcapi")
+        self.addCleanup(_testinternalcapi.clear_executor_deletion_list)
+
+        obj = _testcapi.MethInstance()
+        namespace = {
+            "METH_CLASS_FASTCALL_KEYWORDS": (
+                _testcapi.MethClass.meth_fastcall_keywords),
+            "METH_STATIC_FASTCALL_KEYWORDS": (
+                _testcapi.MethStatic.meth_fastcall_keywords),
+            "METH_COEXIST_FASTCALL_KEYWORDS": (
+                obj.meth_fastcall_keywords_coexist),
+        }
+
+        @reset_code
+        def testfunc(n):
+            # Use positional arguments to exercise CALL, not CALL_KW.
+            for _ in range(n):
+                class_result = METH_CLASS_FASTCALL_KEYWORDS(1, 2)
+                static_result = METH_STATIC_FASTCALL_KEYWORDS(1, 2)
+                coexist_result = METH_COEXIST_FASTCALL_KEYWORDS(1, 2)
+            return class_result, static_result, coexist_result
+
+        testfunc = types.FunctionType(testfunc.__code__, namespace)
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, (
+            (_testcapi.MethClass, (1, 2), {}),
+            (None, (1, 2), {}),
+            (obj, (1, 2), {}),
+        ))
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertEqual(uops.count("_CALL_BUILTIN_FAST_WITH_KEYWORDS"), 3)
+        self.assertNotIn("_GUARD_CALLABLE_BUILTIN_FAST_WITH_KEYWORDS", uops)
+
+    def test_call_method_descriptor_o_extra_flags(self):
+        self.addCleanup(_testinternalcapi.clear_executor_deletion_list)
+
+        @reset_code
+        def testfunc(n):
+            d = {1: None}
+            for _ in range(n):
+                result = d.__contains__(1)
+            return result
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertIs(res, True)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertEqual(uops.count("_CALL_METHOD_DESCRIPTOR_O_INLINE"), 1)
+        self.assertNotIn("_GUARD_CALLABLE_METHOD_DESCRIPTOR_O", uops)
+
+    def test_call_method_descriptor_noargs_extra_flags(self):
+        _testcapi = import_helper.import_module("_testcapi")
+        self.addCleanup(_testinternalcapi.clear_executor_deletion_list)
+
+        namespace = {
+            "METH_COEXIST_NOARGS_OBJECT": _testcapi.DocStringNoSignatureTest(),
+        }
+
+        @reset_code
+        def testfunc(n):
+            for _ in range(n):
+                result = METH_COEXIST_NOARGS_OBJECT.meth_noargs_coexist()
+            return result
+
+        testfunc = types.FunctionType(testfunc.__code__, namespace)
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertIsNone(res)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertEqual(
+            uops.count("_CALL_METHOD_DESCRIPTOR_NOARGS_INLINE"), 1)
+        self.assertNotIn("_GUARD_CALLABLE_METHOD_DESCRIPTOR_NOARGS", uops)
+
+    def test_call_method_descriptor_fast_extra_flags(self):
+        _testcapi = import_helper.import_module("_testcapi")
+        self.addCleanup(_testinternalcapi.clear_executor_deletion_list)
+
+        obj = _testcapi.MethInstance()
+        namespace = {"METH_COEXIST_FAST_OBJECT": obj}
+
+        @reset_code
+        def testfunc(n):
+            for _ in range(n):
+                result = METH_COEXIST_FAST_OBJECT.meth_fastcall_coexist(1, 2)
+            return result
+
+        testfunc = types.FunctionType(testfunc.__code__, namespace)
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, (obj, (1, 2)))
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertEqual(uops.count("_CALL_METHOD_DESCRIPTOR_FAST_INLINE"), 1)
+        self.assertNotIn("_GUARD_CALLABLE_METHOD_DESCRIPTOR_FAST", uops)
+
+    def test_call_method_descriptor_fast_with_keywords_extra_flags(self):
+        _testcapi = import_helper.import_module("_testcapi")
+        self.addCleanup(_testinternalcapi.clear_executor_deletion_list)
+
+        obj = _testcapi.MethInstance()
+        namespace = {"METH_COEXIST_FAST_OBJECT": obj}
+
+        @reset_code
+        def testfunc(n):
+            # Use positional arguments to exercise CALL, not CALL_KW.
+            for _ in range(n):
+                result = (
+                    METH_COEXIST_FAST_OBJECT.meth_fastcall_keywords_coexist(
+                        1, 2))
+            return result
+
+        testfunc = types.FunctionType(testfunc.__code__, namespace)
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, (obj, (1, 2), {}))
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertEqual(
+            uops.count("_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS_INLINE"), 1)
+        self.assertNotIn(
+            "_GUARD_CALLABLE_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS", uops)
 
     def test_call_method_descriptor_o(self):
         def testfunc(n):

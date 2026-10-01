@@ -10,6 +10,7 @@
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_audit.h"         // _PySys_Audit()
 #include "pycore_backoff.h"
+#include "pycore_call.h"          // _Py_METH_CALL_FLAGS
 #include "pycore_cell.h"          // PyCell_GetRef()
 #include "pycore_ceval.h"         // _PyEval_LazyImportName(), _PyEval_LazyImportFrom()
 #include "pycore_code.h"
@@ -3846,9 +3847,9 @@ dummy_func(
             next = item;
         }
 
-        tier2 op(_GUARD_TYPE_ITER, (expected_type/4, iter, null_or_index -- iter, null_or_index)) {
-            PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
-            EXIT_IF(Py_TYPE(iter_o) != (PyTypeObject *)expected_type);
+        tier2 op(_GUARD_NOS_TYPE, (expected_type/4, nos, unused -- nos, unused)) {
+            PyObject *nos_o = PyStackRef_AsPyObjectBorrow(nos);
+            EXIT_IF(Py_TYPE(nos_o) != (PyTypeObject *)expected_type);
         }
 
         tier2 op(_ITER_NEXT_INLINE, (iternext_fn/4, iter, null_or_index -- iter, null_or_index, next)) {
@@ -4872,7 +4873,8 @@ dummy_func(
         op(_GUARD_CALLABLE_BUILTIN_O, (callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
             EXIT_IF(!PyCFunction_CheckExact(callable_o));
-            EXIT_IF(PyCFunction_GET_FLAGS(callable_o) != METH_O);
+            EXIT_IF((PyCFunction_GET_FLAGS(callable_o) &
+                     _Py_METH_CALL_FLAGS) != METH_O);
             int total_args = oparg;
             if (!PyStackRef_IsNull(self_or_null)) {
                 total_args++;
@@ -4916,7 +4918,8 @@ dummy_func(
         op(_GUARD_CALLABLE_BUILTIN_FAST, (callable, unused, unused[oparg] -- callable, unused, unused[oparg])) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
             EXIT_IF(!PyCFunction_CheckExact(callable_o));
-            EXIT_IF(PyCFunction_GET_FLAGS(callable_o) != METH_FASTCALL);
+            EXIT_IF((PyCFunction_GET_FLAGS(callable_o) &
+                     _Py_METH_CALL_FLAGS) != METH_FASTCALL);
         }
 
         op(_CALL_BUILTIN_FAST, (callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
@@ -4954,7 +4957,8 @@ dummy_func(
         op(_GUARD_CALLABLE_BUILTIN_FAST_WITH_KEYWORDS, (callable, unused, unused[oparg] -- callable, unused, unused[oparg])) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
             EXIT_IF(!PyCFunction_CheckExact(callable_o));
-            EXIT_IF(PyCFunction_GET_FLAGS(callable_o) != (METH_FASTCALL | METH_KEYWORDS));
+            EXIT_IF((PyCFunction_GET_FLAGS(callable_o) &
+                     _Py_METH_CALL_FLAGS) != (METH_FASTCALL | METH_KEYWORDS));
         }
 
         op(_CALL_BUILTIN_FAST_WITH_KEYWORDS, (callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
@@ -5088,7 +5092,8 @@ dummy_func(
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
             PyMethodDescrObject *method = (PyMethodDescrObject *)callable_o;
             EXIT_IF(!Py_IS_TYPE(method, &PyMethodDescr_Type));
-            EXIT_IF(method->d_method->ml_flags != METH_O);
+            EXIT_IF((method->d_method->ml_flags & _Py_METH_CALL_FLAGS) !=
+                    METH_O);
             int total_args = oparg;
             if (!PyStackRef_IsNull(self_or_null)) {
                 total_args++;
@@ -5163,7 +5168,8 @@ dummy_func(
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
             PyMethodDescrObject *method = (PyMethodDescrObject *)callable_o;
             EXIT_IF(!Py_IS_TYPE(method, &PyMethodDescr_Type));
-            EXIT_IF(method->d_method->ml_flags != (METH_FASTCALL|METH_KEYWORDS));
+            EXIT_IF((method->d_method->ml_flags & _Py_METH_CALL_FLAGS) !=
+                    (METH_FASTCALL | METH_KEYWORDS));
             int total_args = oparg;
             _PyStackRef *arguments = args;
             if (!PyStackRef_IsNull(self_or_null)) {
@@ -5237,7 +5243,8 @@ dummy_func(
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
             PyMethodDescrObject *method = (PyMethodDescrObject *)callable_o;
             EXIT_IF(!Py_IS_TYPE(method, &PyMethodDescr_Type));
-            EXIT_IF(method->d_method->ml_flags != METH_NOARGS);
+            EXIT_IF((method->d_method->ml_flags & _Py_METH_CALL_FLAGS) !=
+                    METH_NOARGS);
             int total_args = oparg;
             if (!PyStackRef_IsNull(self_or_null)) {
                 total_args++;
@@ -5306,7 +5313,8 @@ dummy_func(
             PyMethodDescrObject *method = (PyMethodDescrObject *)callable_o;
             /* Builtin METH_FASTCALL methods, without keywords */
             EXIT_IF(!Py_IS_TYPE(method, &PyMethodDescr_Type));
-            EXIT_IF(method->d_method->ml_flags != METH_FASTCALL);
+            EXIT_IF((method->d_method->ml_flags & _Py_METH_CALL_FLAGS) !=
+                    METH_FASTCALL);
             int total_args = oparg;
             if (!PyStackRef_IsNull(self_or_null)) {
                 total_args++;

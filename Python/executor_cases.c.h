@@ -14816,20 +14816,20 @@
             break;
         }
 
-        case _GUARD_TYPE_ITER_r02: {
+        case _GUARD_NOS_TYPE_r02: {
             CHECK_CURRENT_CACHED_VALUES(0);
             ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE(__FILE__, __LINE__);
-            _PyStackRef iter;
-            iter = stack_pointer[-2];
+            _PyStackRef nos;
+            nos = stack_pointer[-2];
             PyObject *expected_type = (PyObject *)CURRENT_OPERAND0_64();
-            PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
-            if (Py_TYPE(iter_o) != (PyTypeObject *)expected_type) {
+            PyObject *nos_o = PyStackRef_AsPyObjectBorrow(nos);
+            if (Py_TYPE(nos_o) != (PyTypeObject *)expected_type) {
                 UOP_STAT_INC(uopcode, miss);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
             }
             _tos_cache1 = stack_pointer[-1];
-            _tos_cache0 = iter;
+            _tos_cache0 = nos;
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -14837,22 +14837,22 @@
             break;
         }
 
-        case _GUARD_TYPE_ITER_r12: {
+        case _GUARD_NOS_TYPE_r12: {
             CHECK_CURRENT_CACHED_VALUES(1);
             ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE(__FILE__, __LINE__);
-            _PyStackRef iter;
+            _PyStackRef nos;
             _PyStackRef _stack_item_0 = _tos_cache0;
-            iter = stack_pointer[-1];
+            nos = stack_pointer[-1];
             PyObject *expected_type = (PyObject *)CURRENT_OPERAND0_64();
-            PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
-            if (Py_TYPE(iter_o) != (PyTypeObject *)expected_type) {
+            PyObject *nos_o = PyStackRef_AsPyObjectBorrow(nos);
+            if (Py_TYPE(nos_o) != (PyTypeObject *)expected_type) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache0 = _stack_item_0;
                 SET_CURRENT_CACHED_VALUES(1);
                 JUMP_TO_JUMP_TARGET();
             }
             _tos_cache1 = _stack_item_0;
-            _tos_cache0 = iter;
+            _tos_cache0 = nos;
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -14860,49 +14860,49 @@
             break;
         }
 
-        case _GUARD_TYPE_ITER_r22: {
+        case _GUARD_NOS_TYPE_r22: {
             CHECK_CURRENT_CACHED_VALUES(2);
             ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE(__FILE__, __LINE__);
-            _PyStackRef iter;
+            _PyStackRef nos;
             _PyStackRef _stack_item_0 = _tos_cache0;
             _PyStackRef _stack_item_1 = _tos_cache1;
-            iter = _stack_item_0;
+            nos = _stack_item_0;
             PyObject *expected_type = (PyObject *)CURRENT_OPERAND0_64();
-            PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
-            if (Py_TYPE(iter_o) != (PyTypeObject *)expected_type) {
+            PyObject *nos_o = PyStackRef_AsPyObjectBorrow(nos);
+            if (Py_TYPE(nos_o) != (PyTypeObject *)expected_type) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache1 = _stack_item_1;
-                _tos_cache0 = iter;
+                _tos_cache0 = nos;
                 SET_CURRENT_CACHED_VALUES(2);
                 JUMP_TO_JUMP_TARGET();
             }
             _tos_cache1 = _stack_item_1;
-            _tos_cache0 = iter;
+            _tos_cache0 = nos;
             SET_CURRENT_CACHED_VALUES(2);
             ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE(__FILE__, __LINE__);
             break;
         }
 
-        case _GUARD_TYPE_ITER_r33: {
+        case _GUARD_NOS_TYPE_r33: {
             CHECK_CURRENT_CACHED_VALUES(3);
             ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE(__FILE__, __LINE__);
-            _PyStackRef iter;
+            _PyStackRef nos;
             _PyStackRef _stack_item_0 = _tos_cache0;
             _PyStackRef _stack_item_1 = _tos_cache1;
             _PyStackRef _stack_item_2 = _tos_cache2;
-            iter = _stack_item_1;
+            nos = _stack_item_1;
             PyObject *expected_type = (PyObject *)CURRENT_OPERAND0_64();
-            PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
-            if (Py_TYPE(iter_o) != (PyTypeObject *)expected_type) {
+            PyObject *nos_o = PyStackRef_AsPyObjectBorrow(nos);
+            if (Py_TYPE(nos_o) != (PyTypeObject *)expected_type) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache2 = _stack_item_2;
-                _tos_cache1 = iter;
+                _tos_cache1 = nos;
                 _tos_cache0 = _stack_item_0;
                 SET_CURRENT_CACHED_VALUES(3);
                 JUMP_TO_JUMP_TARGET();
             }
             _tos_cache2 = _stack_item_2;
-            _tos_cache1 = iter;
+            _tos_cache1 = nos;
             _tos_cache0 = _stack_item_0;
             SET_CURRENT_CACHED_VALUES(3);
             ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE(__FILE__, __LINE__);
@@ -18366,7 +18366,8 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
             }
-            if (PyCFunction_GET_FLAGS(callable_o) != METH_O) {
+            if ((PyCFunction_GET_FLAGS(callable_o) &
+                     _Py_METH_CALL_FLAGS) != METH_O) {
                 UOP_STAT_INC(uopcode, miss);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
@@ -18440,7 +18441,8 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
             }
-            if (PyCFunction_GET_FLAGS(callable_o) != METH_FASTCALL) {
+            if ((PyCFunction_GET_FLAGS(callable_o) &
+                     _Py_METH_CALL_FLAGS) != METH_FASTCALL) {
                 UOP_STAT_INC(uopcode, miss);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
@@ -18506,7 +18508,8 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
             }
-            if (PyCFunction_GET_FLAGS(callable_o) != (METH_FASTCALL | METH_KEYWORDS)) {
+            if ((PyCFunction_GET_FLAGS(callable_o) &
+                     _Py_METH_CALL_FLAGS) != (METH_FASTCALL | METH_KEYWORDS)) {
                 UOP_STAT_INC(uopcode, miss);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
@@ -19153,7 +19156,8 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
             }
-            if (method->d_method->ml_flags != METH_O) {
+            if ((method->d_method->ml_flags & _Py_METH_CALL_FLAGS) !=
+                    METH_O) {
                 UOP_STAT_INC(uopcode, miss);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
@@ -19358,7 +19362,8 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
             }
-            if (method->d_method->ml_flags != (METH_FASTCALL|METH_KEYWORDS)) {
+            if ((method->d_method->ml_flags & _Py_METH_CALL_FLAGS) !=
+                    (METH_FASTCALL | METH_KEYWORDS)) {
                 UOP_STAT_INC(uopcode, miss);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
@@ -19502,7 +19507,8 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
             }
-            if (method->d_method->ml_flags != METH_NOARGS) {
+            if ((method->d_method->ml_flags & _Py_METH_CALL_FLAGS) !=
+                    METH_NOARGS) {
                 UOP_STAT_INC(uopcode, miss);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
@@ -19631,7 +19637,8 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
             }
-            if (method->d_method->ml_flags != METH_FASTCALL) {
+            if ((method->d_method->ml_flags & _Py_METH_CALL_FLAGS) !=
+                    METH_FASTCALL) {
                 UOP_STAT_INC(uopcode, miss);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
