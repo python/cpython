@@ -13,7 +13,7 @@ import os
 import contextlib
 
 from test import support
-from test.support.script_helper import assert_python_ok
+from test.support.script_helper import assert_python_ok, assert_python_failure
 
 try:
     import _testcapi
@@ -616,6 +616,14 @@ class DunderLazyImportTests(LazyImportTestCase):
             __lazy_import__("sys", level=-1)
         with self.assertRaises(TypeError):
             __lazy_import__("sys", globals=1)
+
+        code = textwrap.dedent(f"""
+            __lazy_import__("sys", fromlist=(1, 2, 3))
+        """)
+        result = assert_python_failure("-c", code, NO_COLOR='y')
+        self.assertIn(
+            b"TypeError: Item in ``from list'' must be str, not int",
+            result.err)
 
     def test_dunder_lazy_import_builtins(self):
         """__lazy_import__ should use module's __builtins__ for __import__."""
