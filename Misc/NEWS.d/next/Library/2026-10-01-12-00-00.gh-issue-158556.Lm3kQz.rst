@@ -1,0 +1,2 @@
+Fix :func:`inspect.getsource` and :func:`inspect.getsourcelines` for a lambda
+that is on the same line as the closing delimiter of a multiline string.

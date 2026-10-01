@@ -1120,6 +1120,21 @@ class TestOneliners(GetSourceBase):
         self.assertRaises(OSError, inspect.getsource, mod2.dc370)
         self.assertRaises(OSError, inspect.getsource, mod2.dc371)
 
+    def test_lambda_after_multiline_string_end(self):
+        # gh-158556: a lambda on the same line as the closing delimiter of a
+        # multiline string must not make getblock() fail while tokenizing.
+        src = textwrap.dedent('''\
+            pair = (
+                """text
+            """, lambda: None
+            )
+            ''')
+        with ready_to_import('lambda_after_string', src) as (name, path):
+            module = import_helper.import_module(name)
+            lines, lnum = inspect.getsourcelines(module.pair[1])
+        self.assertEqual(lines, ['""", lambda: None\n'])
+        self.assertEqual(lnum, 3)
+
 class TestBlockComments(GetSourceBase):
     fodderModule = mod
 

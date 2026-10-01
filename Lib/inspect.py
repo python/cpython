@@ -1154,6 +1154,10 @@ def getblock(lines):
             blockfinder.tokeneater(*_token)
     except (EndOfBlock, IndentationError):
         pass
+    except tokenize.TokenError:
+        # The lines may start in the middle of a multiline string.
+        if blockfinder.started:
+            raise
     except SyntaxError as e:
         if "unmatched" not in e.msg:
             raise e from None
