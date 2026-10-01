@@ -1,0 +1,1 @@
+Treat an undecodable zipapp shebang as having no interpreter.

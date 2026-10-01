@@ -279,6 +279,12 @@ class ZipAppTest(unittest.TestCase):
         zipapp.create_archive(str(source), str(target))
         self.assertEqual(zipapp.get_interpreter(str(target)), None)
 
+    def test_read_invalid_shebang(self):
+        # Test that an undecodable shebang is treated as having no interpreter.
+        target = self.tmpdir / 'source.pyz'
+        target.write_bytes(b'#!\xff\xfe\xff\xfe\nx')
+        self.assertIsNone(zipapp.get_interpreter(str(target)))
+
     def test_modify_shebang(self):
         # Test that we can change the shebang of a file.
         source = self.tmpdir / 'source'
