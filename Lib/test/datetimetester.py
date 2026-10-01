@@ -2119,6 +2119,9 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             '٢025-03-09',       # Unicode characters
             '2009\ud80002\ud80028',     # Separators are surrogate codepoints
         ]
+        if not issubclass(self.theclass, datetime):
+            # 9 characters, 10 UTF-8 bytes; exercise the C parser's 10-byte path.
+            bad_strs.append('20200101\u00e9')
 
         for bad_str in bad_strs:
             with self.assertRaises(ValueError):
