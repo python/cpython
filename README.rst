@@ -1,5 +1,5 @@
-This is Python version 3.10.22
-==============================
+This is Python version 3.10.22+
+===============================
 
 .. image:: https://travis-ci.com/python/cpython.svg?branch=master
    :alt: CPython build status on Travis CI
