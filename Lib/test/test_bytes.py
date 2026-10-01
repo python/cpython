@@ -2200,17 +2200,16 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         # The storage is pinned while it is decoded, so an error handler
         # cannot resize the bytearray.
         b = bytearray(b'ab\xffcd')
+        errors = 'test.bytearray_decode_resize'
         def handler(exc):
             self.assertRaises(BufferError, b.clear)
             self.assertRaises(BufferError, b.append, 0)
             return ('?', exc.end)
-        self.addCleanup(_codecs_unregister_error, 'test.bytearray_decode_resize')
-        codecs.register_error('test.bytearray_decode_resize', handler)
+        self.addCleanup(_codecs_unregister_error, errors)
+        codecs.register_error(errors, handler)
         for encoding in 'utf-8', 'utf-8-sig':
             with self.subTest(encoding=encoding):
-                self.assertEqual(
-                    b.decode(encoding, 'test.bytearray_decode_resize'),
-                    'ab?cd')
+                self.assertEqual(b.decode(encoding, errors), 'ab?cd')
         self.assertEqual(b, b'ab\xffcd')
 
     def test_decode_subclass_buffer(self):
