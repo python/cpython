@@ -1527,7 +1527,7 @@ store_subscr_fail_kind(PyObject *container, PyObject *sub)
         return SPEC_FAIL_SUBSCR_DICT_SUBCLASS_NO_OVERRIDE;
     }
     if (PyObject_CheckBuffer(container)) {
-        if (PyLong_CheckExact(sub) && (!_PyLong_IsNonNegativeCompact((PyLongObject *)sub))) {
+        if (PyLong_CheckExact(sub) && !_PyLong_CheckExactAndCompact(sub)) {
             return SPEC_FAIL_OUT_OF_RANGE;
         }
         else if (strcmp(container_type->tp_name, "array.array") == 0) {
@@ -1591,17 +1591,20 @@ _Py_Specialize_StoreSubscr(_PyStackRef container_st, _PyStackRef sub_st, _Py_COD
     PyTypeObject *container_type = Py_TYPE(container);
     if (container_type == &PyList_Type) {
         if (PyLong_CheckExact(sub)) {
-            if (_PyLong_IsNonNegativeCompact((PyLongObject *)sub)
-                && ((PyLongObject *)sub)->long_value.ob_digit[0] < (size_t)PyList_GET_SIZE(container))
-            {
-                specialize(instr, STORE_SUBSCR_LIST_INT);
-                return;
+            if (_PyLong_CheckExactAndCompact(sub)) {
+                Py_ssize_t index = _PyLong_CompactValue((PyLongObject *)sub);
+                Py_ssize_t len = PyList_GET_SIZE(container);
+                if (index < 0) {
+                    index += len;
+                }
+                if (0 <= index && index < len) {
+                    specialize(instr, STORE_SUBSCR_LIST_INT);
+                    return;
+                }
             }
-            else {
-                SPECIALIZATION_FAIL(STORE_SUBSCR, SPEC_FAIL_OUT_OF_RANGE);
-                unspecialize(instr);
-                return;
-            }
+            SPECIALIZATION_FAIL(STORE_SUBSCR, SPEC_FAIL_OUT_OF_RANGE);
+            unspecialize(instr);
+            return;
         }
         else if (PySlice_Check(sub)) {
             SPECIALIZATION_FAIL(STORE_SUBSCR, SPEC_FAIL_SUBSCR_LIST_SLICE);
@@ -2020,7 +2023,9 @@ binary_op_fail_kind(int oparg, PyObject *lhs, PyObject *rhs)
             return SPEC_FAIL_BINARY_OP_XOR;
         case NB_SUBSCR:
             if (PyList_CheckExact(lhs)) {
-                if (PyLong_CheckExact(rhs) && !_PyLong_IsNonNegativeCompact((PyLongObject *)rhs)) {
+                if (PyLong_CheckExact(rhs) &&
+                    !_PyLong_CheckExactAndCompact(rhs))
+                {
                     return SPEC_FAIL_OUT_OF_RANGE;
                 }
                 if (PySlice_Check(rhs)) {
@@ -2028,7 +2033,7 @@ binary_op_fail_kind(int oparg, PyObject *lhs, PyObject *rhs)
                 }
             }
             if (PyTuple_CheckExact(lhs)) {
-                if (PyLong_CheckExact(rhs) && !_PyLong_IsNonNegativeCompact((PyLongObject *)rhs)) {
+                if (PyLong_CheckExact(rhs) && !_PyLong_CheckExactAndCompact(rhs)) {
                     return SPEC_FAIL_OUT_OF_RANGE;
                 }
                 if (PySlice_Check(rhs)) {
@@ -2036,7 +2041,7 @@ binary_op_fail_kind(int oparg, PyObject *lhs, PyObject *rhs)
                 }
             }
             if (PyUnicode_CheckExact(lhs)) {
-                if (PyLong_CheckExact(rhs) && !_PyLong_IsNonNegativeCompact((PyLongObject *)rhs)) {
+                if (PyLong_CheckExact(rhs) && !_PyLong_CheckExactAndCompact(rhs)) {
                     return SPEC_FAIL_OUT_OF_RANGE;
                 }
                 if (PySlice_Check(rhs)) {
@@ -2403,16 +2408,16 @@ _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *in
             }
             break;
         case NB_SUBSCR:
-            if (PyLong_CheckExact(rhs) && _PyLong_IsNonNegativeCompact((PyLongObject *)rhs)) {
-                if (PyList_CheckExact(lhs)) {
-                    specialize(instr, BINARY_OP_SUBSCR_LIST_INT);
-                    return;
-                }
+            if (_PyLong_CheckExactAndCompact(rhs) && PyList_CheckExact(lhs)) {
+                specialize(instr, BINARY_OP_SUBSCR_LIST_INT);
+                return;
+            }
+            if (_PyLong_CheckExactAndCompact(rhs)) {
                 if (PyTuple_CheckExact(lhs)) {
                     specialize(instr, BINARY_OP_SUBSCR_TUPLE_INT);
                     return;
                 }
-                if (PyUnicode_CheckExact(lhs) && _PyLong_IsNonNegativeCompact((PyLongObject*)rhs)) {
+                if (PyUnicode_CheckExact(lhs)) {
                     if (PyUnicode_IS_COMPACT_ASCII(lhs)) {
                         specialize(instr, BINARY_OP_SUBSCR_STR_INT);
                         return;
