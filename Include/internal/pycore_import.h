@@ -32,20 +32,16 @@ extern int _PyImport_FixupBuiltin(
     PyObject *modules
     );
 
-extern PyObject * _PyImport_ResolveName(
-    PyThreadState *tstate, PyObject *name, PyObject *globals, int level);
 extern PyObject * _PyImport_GetAbsName(
     PyThreadState *tstate, PyObject *name, PyObject *globals, int level);
 // Symbol is exported for the JIT on Windows builds.
 PyAPI_FUNC(PyObject *) _PyImport_LoadLazyImportTstate(
     PyThreadState *tstate, PyObject *lazy_import);
-typedef enum {
-    _Py_LAZY_SUBMODULE_ERROR = -1,
-    _Py_LAZY_SUBMODULE_NOT_FOUND = 0,
-    _Py_LAZY_SUBMODULE_LOADED = 1,
-} _PyLazySubmoduleImportResult;
-extern _PyLazySubmoduleImportResult _PyImport_TryLoadLazySubmodule(
-    PyObject *mod_name, PyObject *attr_name, PyObject **result);
+// Bind a pending child on module before removing its registration. Return a
+// new reference, NULL without an exception if absent, or NULL on error.
+// Set recheck_dict if a concurrent lookup may have already bound the child.
+extern PyObject * _PyImport_TryLoadLazySubmodule(
+    PyObject *module, PyObject *attr_name, int *recheck_dict);
 extern PyObject * _PyImport_LazyImportModuleLevelObject(
     PyThreadState *tstate, PyObject *name, PyObject *builtins,
     PyObject *globals, PyObject *locals, PyObject *fromlist, int level);

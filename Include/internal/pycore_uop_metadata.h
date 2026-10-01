@@ -190,6 +190,7 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_STORE_ATTR] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_STORE_GLOBAL] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_LOAD_LOCALS] = HAS_ERROR_FLAG,
+    [_LOAD_FROM_DICT_OR_GLOBALS] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_LOAD_NAME] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_LOAD_GLOBAL] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_PUSH_NULL_CONDITIONAL] = HAS_ARG_FLAG,
@@ -1838,6 +1839,15 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { 1, 0, _LOAD_LOCALS_r01 },
             { 2, 1, _LOAD_LOCALS_r12 },
             { 3, 2, _LOAD_LOCALS_r23 },
+            { -1, -1, -1 },
+        },
+    },
+    [_LOAD_FROM_DICT_OR_GLOBALS] = {
+        .best = { 1, 1, 1, 1 },
+        .entries = {
+            { -1, -1, -1 },
+            { 1, 1, _LOAD_FROM_DICT_OR_GLOBALS_r11 },
+            { -1, -1, -1 },
             { -1, -1, -1 },
         },
     },
@@ -4316,6 +4326,7 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_LOAD_LOCALS_r01] = _LOAD_LOCALS,
     [_LOAD_LOCALS_r12] = _LOAD_LOCALS,
     [_LOAD_LOCALS_r23] = _LOAD_LOCALS,
+    [_LOAD_FROM_DICT_OR_GLOBALS_r11] = _LOAD_FROM_DICT_OR_GLOBALS,
     [_LOAD_NAME_r01] = _LOAD_NAME,
     [_LOAD_GLOBAL_r00] = _LOAD_GLOBAL,
     [_PUSH_NULL_CONDITIONAL_r00] = _PUSH_NULL_CONDITIONAL,
@@ -5829,6 +5840,8 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_LOAD_FAST_CHECK_r23] = "_LOAD_FAST_CHECK_r23",
     [_LOAD_FROM_DICT_OR_DEREF] = "_LOAD_FROM_DICT_OR_DEREF",
     [_LOAD_FROM_DICT_OR_DEREF_r11] = "_LOAD_FROM_DICT_OR_DEREF_r11",
+    [_LOAD_FROM_DICT_OR_GLOBALS] = "_LOAD_FROM_DICT_OR_GLOBALS",
+    [_LOAD_FROM_DICT_OR_GLOBALS_r11] = "_LOAD_FROM_DICT_OR_GLOBALS_r11",
     [_LOAD_GLOBAL] = "_LOAD_GLOBAL",
     [_LOAD_GLOBAL_r00] = "_LOAD_GLOBAL_r00",
     [_LOAD_GLOBAL_BUILTINS] = "_LOAD_GLOBAL_BUILTINS",
@@ -6495,6 +6508,8 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 1;
         case _LOAD_LOCALS:
             return 0;
+        case _LOAD_FROM_DICT_OR_GLOBALS:
+            return 1;
         case _LOAD_NAME:
             return 0;
         case _LOAD_GLOBAL:
