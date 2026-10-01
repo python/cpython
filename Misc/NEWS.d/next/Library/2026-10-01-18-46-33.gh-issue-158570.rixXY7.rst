@@ -1,0 +1,3 @@
+Fix a deadlock in :meth:`concurrent.futures.ProcessPoolExecutor.shutdown`
+when the pipe used to return results fills up with worker exit
+notifications.
