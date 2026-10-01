@@ -2685,9 +2685,10 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
         if (Py_ISSPACE(*str)) {
             do {
                 str++;
+                if (str >= end) {
+                    goto done;
+                }
             } while (Py_ISSPACE(*str));
-            if (str >= end)
-                break;
         }
 
         top = _PyLong_DigitValue[*str];
@@ -2696,6 +2697,9 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
             goto error;
         }
         str++;
+        if (str >= end) {
+            break;
+        }
 
         bot = _PyLong_DigitValue[*str];
         if (bot >= 16) {
@@ -2712,6 +2716,7 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
         *buf++ = (unsigned char)((top << 4) + bot);
     }
 
+  done:
     if (view.obj != NULL) {
        PyBuffer_Release(&view);
     }
