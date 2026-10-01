@@ -678,9 +678,17 @@ class _ExecutorManagerThread(threading.Thread):
 
         # If .join() is not called on the created processes then
         # some ctx.Queue methods may deadlock on Mac OS X.
+        result_reader = self.result_queue._reader
         for p in self.processes.values():
             if broken:
                 p.terminate()
+            else:
+                # Exiting workers put their pid on the result queue. Keep
+                # draining it, otherwise once the pipe is full a worker
+                # blocks forever writing to it and never exits.
+                while p.sentinel not in mp.connection.wait(
+                        [result_reader, p.sentinel]):
+                    result_reader.recv_bytes()
             p.join()
 
     def get_n_children_alive(self):
