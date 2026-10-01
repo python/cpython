@@ -13,7 +13,7 @@ import os
 import contextlib
 
 from test import support
-from test.support.script_helper import assert_python_ok
+from test.support.script_helper import assert_python_ok, assert_python_failure
 
 try:
     import _testcapi
@@ -618,6 +618,14 @@ class DunderLazyImportTests(LazyImportTestCase):
         with self.assertRaises(TypeError):
             __lazy_import__("sys", globals=1)
 
+        code = textwrap.dedent("""
+            __lazy_import__("sys", fromlist=(1, 2, 3))
+        """)
+        result = assert_python_failure("-c", code, NO_COLOR='y')
+        self.assertIn(
+            b"TypeError: Item in ``from list'' must be str, not int",
+            result.err)
+
     def test_dunder_lazy_import_builtins(self):
         """__lazy_import__ should use module's __builtins__ for __import__."""
         from test.test_lazy_import.data import dunder_lazy_import_builtins
@@ -762,6 +770,28 @@ class ErrorHandlingTests(LazyImportTestCase):
                 _ = nonexistent_name
             except ImportError as e:
                 assert e.__cause__ is not None, "Expected chained exception"
+            else:
+                raise AssertionError("ImportError was not raised")
+        """)
+        assert_python_ok("-c", code)
+
+    @support.subTests('name', (
+        'test.test_lazy_import.data.broken_module_chained_cause',
+        'test.test_lazy_import.data.broken_module_chained_context',
+        'test.test_lazy_import.data.broken_module_chained_suppressed',
+    ))
+    def test_chained_exception_import_shows_notes(self, name):
+        """Accessing missing attribute from lazy from-import should chain errors."""
+        code = textwrap.dedent(f"""
+            lazy import {name}
+
+            try:
+                _ = test
+            except ValueError as e:
+                assert any(
+                    note.startswith("lazy import of '{name}' declared in ")
+                    for note in e.__notes__
+                ), e.__notes__
             else:
                 raise AssertionError("ImportError was not raised")
         """)
@@ -1336,25 +1366,15 @@ class SysLazyModulesTrackingTests(LazyImportTestCase):
         """)
         assert_python_ok("-c", code)
 
-    def test_cached_lazy_attribute_keeps_its_import_context(self):
+    def test_cached_lazy_attribute_tracks_its_target(self):
         code = textwrap.dedent("""
-            import builtins
             import sys
             import test.test_lazy_import.data.basic_from_unused
 
             holder = "test.test_lazy_import.data.basic_from_unused"
             target = "test.test_lazy_import.data.basic2"
-            default_import = builtins.__import__
 
-            def import_hook(name, *args):
-                if name == holder:
-                    raise RuntimeError("cached placeholder imported its holder")
-                return default_import(name, *args)
-
-            namespace = {
-                "__builtins__": dict(builtins.__dict__, __import__=import_hook),
-                "__name__": "cached_import_test",
-            }
+            namespace = {"__name__": "cached_import_test"}
             exec(f"lazy from {holder} import basic2", namespace)
             assert holder + ".basic2" not in sys.lazy_modules, sys.lazy_modules
             assert target in sys.lazy_modules, sys.lazy_modules

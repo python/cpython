@@ -5,18 +5,20 @@ the latter should be modernized).
 """
 
 import array
+import codecs
 import contextlib
-import operator
-import os
-import re
-import sys
 import copy
 import functools
+import operator
+import os
 import pickle
+import re
+import sys
 import tempfile
 import textwrap
 import threading
 import unittest
+from _codecs import _unregister_error as _codecs_unregister_error
 
 import test.support
 from test import support
@@ -1146,6 +1148,34 @@ class BaseBytesTest:
         c = b.translate(None, delete=b'e')
         self.assertEqual(c, b'hllo')
 
+        # short inputs starting with NUL bytes
+        table = bytes.maketrans(b'\x00', b'Z')
+        for data in b'\x00', b'\x00' * 8, b'\x00' * 8 + b'a' * 247:
+            c = self.type2test(data).translate(table)
+            self.assertEqual(c, data.replace(b'\x00', b'Z'))
+
+    @support.cpython_only
+    def test_translate_unchanged(self):
+        if self.type2test != bytes:
+            self.skipTest("test specific bytes.translate()")
+
+        # bytes.translate() returns the input string unchanged
+        # if no byte is modified
+        size = 1024
+        b = b'hell' + b'o' * size
+        rosetta = bytearray(range(256))
+        rosetta[ord('#')] = ord('?')
+        self.assertIs(b.translate(rosetta), b)
+
+        # bytes.translate() always create a new object
+        # if the input string is a bytes subclass
+        class bytes_subclass(bytes):
+            pass
+        b = bytes_subclass(b)
+        result = b.translate(rosetta)
+        self.assertIsNot(result, b)
+        self.assertEqual(result, b)
+
     def test_sq_item(self):
         _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
         obj = self.type2test((42,))
@@ -1706,6 +1736,29 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         bytes_header_size = sys.getsizeof(b'')
         self.assertEqual(ba.__alloc__(), 499 + bytes_header_size)
 
+    def test_take_bytes_hash(self):
+        # gh-158219: bytearray constructor must not use a bytes object
+        # if its hash value is already cached.
+
+        def encode(string, errors='strict'):
+            encoded = string.encode('utf-8')
+            hash(encoded)   # a codec may hash its own output
+            return encoded, len(string)
+
+        def hashing_codec(name):
+            if name != 'test_take_bytes_hash':
+                return None
+            return codecs.CodecInfo(encode, None, name=name)
+
+        codecs.register(hashing_codec)
+        self.addCleanup(codecs.unregister, hashing_codec)
+
+        ba = bytearray('hello', 'test_take_bytes_hash')
+        ba[0] = ord('H')
+        taken = ba.take_bytes()
+        self.assertEqual(taken, b'Hello')
+        self.assertEqual(hash(taken), hash(b'Hello'))
+
     def test_take_bytes_reentrant_resize(self):
         # gh-153570: n.__index__() can resize the bytearray, so take_bytes()
         # must re-read the size afterwards.  It cached the size before the
@@ -2142,6 +2195,30 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
             b[1:-1:2] = b""
         self.assertRaises(BufferError, delslice)
         self.assertEqual(b, orig)
+
+    def test_decode_resize_forbidden(self):
+        # The storage is pinned while it is decoded, so an error handler
+        # cannot resize the bytearray.
+        b = bytearray(b'ab\xffcd')
+        errors = 'test.bytearray_decode_resize'
+        def handler(exc):
+            self.assertRaises(BufferError, b.clear)
+            self.assertRaises(BufferError, b.append, 0)
+            return ('?', exc.end)
+        self.addCleanup(_codecs_unregister_error, errors)
+        codecs.register_error(errors, handler)
+        for encoding in 'utf-8', 'utf-8-sig':
+            with self.subTest(encoding=encoding):
+                self.assertEqual(b.decode(encoding, errors), 'ab?cd')
+        self.assertEqual(b, b'ab\xffcd')
+
+    def test_decode_subclass_buffer(self):
+        # decode() decodes the buffer that the object exports.
+        class B(bytearray):
+            def __buffer__(self, flags):
+                return memoryview(b'other')
+        self.assertEqual(B(b'mine').decode(), 'other')
+        self.assertEqual(B(b'mine').decode('latin-1'), 'other')
 
     @test.support.cpython_only
     def test_obsolete_write_lock(self):

@@ -19,6 +19,11 @@ _testinternalcapi = import_helper.import_module('_testinternalcapi')
 from _testcapi import PY_SSIZE_T_MIN, PY_SSIZE_T_MAX, SIZEOF_WCHAR_T
 
 
+MAX_UNICODE = _testinternalcapi._Py_MAX_UNICODE
+# The first invalid character after MAX_UNICODE
+INVALID_CHAR = MAX_UNICODE + 1
+# Maximum invalid character which fits into 32-bit Py_UCS4
+MAX_INVALID_CHAR = 0xFFFF_FFFF
 NULL = None
 
 class Str(str):
@@ -39,6 +44,12 @@ SSTATE_NOT_INTERNED = 0
 SSTATE_INTERNED_MORTAL = 1
 SSTATE_INTERNED_IMMORTAL = 2
 SSTATE_INTERNED_IMMORTAL_STATIC = 3
+
+
+def assert_invalid_string(testcase, text):
+    # Check that a Unicode string contains invalid characters:
+    # not in range [U+0000; U+10ffff]
+    testcase.assertRaises(SystemError, list, text)
 
 
 class CAPITest(unittest.TestCase):
@@ -73,14 +84,14 @@ class CAPITest(unittest.TestCase):
             self.assertEqual(new(0, maxchar), '')
             self.assertEqual(new(5, maxchar), chr(maxchar)*5)
             self.assertRaises(MemoryError, new, PY_SSIZE_T_MAX, maxchar)
-        self.assertEqual(new(0, 0x110000), '')
+        self.assertEqual(new(0, INVALID_CHAR), '')
         self.assertRaises(MemoryError, new, PY_SSIZE_T_MAX//2, 0x4f60)
         self.assertRaises(MemoryError, new, PY_SSIZE_T_MAX//2+1, 0x4f60)
         self.assertRaises(MemoryError, new, PY_SSIZE_T_MAX//2, 0x1f600)
         self.assertRaises(MemoryError, new, PY_SSIZE_T_MAX//2+1, 0x1f600)
         self.assertRaises(MemoryError, new, PY_SSIZE_T_MAX//4, 0x1f600)
         self.assertRaises(MemoryError, new, PY_SSIZE_T_MAX//4+1, 0x1f600)
-        self.assertRaises(SystemError, new, 5, 0x110000)
+        self.assertRaises(SystemError, new, 5, INVALID_CHAR)
         self.assertRaises(SystemError, new, -1, 0)
         self.assertRaises(SystemError, new, PY_SSIZE_T_MIN, 0)
 
@@ -115,7 +126,7 @@ class CAPITest(unittest.TestCase):
         s = strings[0]
         self.assertRaises(IndexError, fill, s, -1, 0, 0x78)
         self.assertRaises(IndexError, fill, s, PY_SSIZE_T_MIN, 0, 0x78)
-        self.assertRaises(ValueError, fill, s, 0, 0, 0x110000)
+        self.assertRaises(ValueError, fill, s, 0, 0, INVALID_CHAR)
         self.assertRaises(SystemError, fill, b'abc', 0, 0, 0x78)
         self.assertRaises(SystemError, fill, [], 0, 0, 0x78)
         # CRASHES fill(s, 0, NULL, 0, 0)
@@ -129,7 +140,7 @@ class CAPITest(unittest.TestCase):
             '\U0001f600\U0001f601\U0001f602'
         ]
         # one character for every kind + out of range code
-        chars = [0x78, 0xa9, 0x20ac, 0x1f638, 0x110000]
+        chars = [0x78, 0xa9, 0x20ac, 0x1f638, INVALID_CHAR]
         for i, s in enumerate(strings):
             for j, c in enumerate(chars):
                 if j <= i:
@@ -301,7 +312,22 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(ValueError, fromkindanddata, 1, NULL, -1)
         self.assertRaises(ValueError, fromkindanddata, 1, NULL, PY_SSIZE_T_MIN)
         # CRASHES fromkindanddata(1, NULL, 1)
-        # CRASHES fromkindanddata(4, b'\xff\xff\xff\xff')
+
+        # Test invalid UCS-4 string. Create an invalid string in release mode,
+        # or raise SystemError in debug mode.
+        for invalid_char in (INVALID_CHAR, MAX_INVALID_CHAR):
+            with self.subTest(invalid_char=invalid_char):
+                # Test single character
+                ucs4_char = invalid_char.to_bytes(4, byteorder=sys.byteorder)
+                self.assertRaises(SystemError, fromkindanddata, 4, ucs4_char)
+
+                # Test multiple characters
+                s = 'valid'.encode(enc4) + ucs4_char
+                if support.Py_DEBUG:
+                    self.assertRaises(SystemError, fromkindanddata, 4, s)
+                else:
+                    result = fromkindanddata(4, s)
+                    assert_invalid_string(self, result)
 
     def test_substring(self):
         """Test PyUnicode_Substring()"""
@@ -446,7 +472,7 @@ class CAPITest(unittest.TestCase):
         check_format('\U0010ffff',
                      b'%c', c_int(0x10ffff))
         with self.assertRaises(OverflowError):
-            PyUnicode_FromFormat(b'%c', c_int(0x110000))
+            PyUnicode_FromFormat(b'%c', c_int(INVALID_CHAR))
         # Issue #18183
         check_format('\U00010000\U00100000',
                      b'%c%c', c_int(0x10000), c_int(0x100000))
@@ -460,6 +486,14 @@ class CAPITest(unittest.TestCase):
                      b'[%%]')
         check_format('%abc',
                      b'%%%s', b'abc')
+
+        # test "%s" with empty string
+        check_format('x=',
+                     b'x=%s', b'')
+        check_format('x=',
+                     b'x=%0s', b'')
+        check_format('x=',
+                     b'x=%.3s', b'')
 
         # truncated string
         check_format('abc',
@@ -1015,7 +1049,7 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(fromordinal(0x20ac), '\u20ac')
         self.assertEqual(fromordinal(0x1f600), '\U0001f600')
 
-        self.assertRaises(ValueError, fromordinal, 0x110000)
+        self.assertRaises(ValueError, fromordinal, INVALID_CHAR)
         self.assertRaises(ValueError, fromordinal, -1)
 
     def test_asutf8(self):
@@ -1367,8 +1401,8 @@ class CAPITest(unittest.TestCase):
                 self.assertEqual(unicode_findchar(str, ord(ch), 0, len(str), -1), i)
 
         str = "!>_<!"
-        self.assertEqual(unicode_findchar(str, 0x110000, 0, len(str), 1), -1)
-        self.assertEqual(unicode_findchar(str, 0x110000, 0, len(str), -1), -1)
+        self.assertEqual(unicode_findchar(str, INVALID_CHAR, 0, len(str), 1), -1)
+        self.assertEqual(unicode_findchar(str, INVALID_CHAR, 0, len(str), -1), -1)
         # start < end
         self.assertEqual(unicode_findchar(str, ord('!'), 1, len(str)+1, 1), 4)
         self.assertEqual(unicode_findchar(str, ord('!'), 1, PY_SSIZE_T_MAX, 1), 4)
@@ -1757,7 +1791,7 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(max_char_value('ascii'), 0x7f)
         self.assertEqual(max_char_value('latin1:\xe9'), 0xff)
         self.assertEqual(max_char_value('bmp:\u20ac'), 0xffff)
-        self.assertEqual(max_char_value('\U0010ffff'), 0x10_ffff)
+        self.assertEqual(max_char_value(chr(0x10_0000)), 0x10_ffff)
 
         # CRASHES max_char_value(NULL)
 
@@ -1910,6 +1944,18 @@ class PyUnicodeWriterTest(unittest.TestCase):
         self.assertGreater(writer.get_buffer()[0], len(s))
         self.assertEqual(writer.finish(), s)
 
+    def test_str_subclass(self):
+        # The read-only optimization must not return a str subclass
+        class MyStr(str):
+            def __str__(self):
+                return self
+
+        writer = self.create_writer(0)
+        writer.write_str(MyStr('abc'))
+        result = writer.finish()
+        self.assertEqual(result, 'abc')
+        self.assertIs(type(result), str)
+
     def test_repr_null(self):
         writer = self.create_writer(0)
         writer.write_utf8(b'var=', -1)
@@ -1923,8 +1969,8 @@ class PyUnicodeWriterTest(unittest.TestCase):
         writer.write_char(ord('$'))
         writer.write_char(0x20ac)
         writer.write_char(0x10_ffff)
-        self.assertRaises(ValueError, writer.write_char, 0x11_0000)
-        self.assertRaises(ValueError, writer.write_char, 0xFFFF_FFFF)
+        self.assertRaises(ValueError, writer.write_char, INVALID_CHAR)
+        self.assertRaises(ValueError, writer.write_char, MAX_INVALID_CHAR)
         self.assertEqual(writer.finish(),
                          "\0$\u20AC\U0010FFFF")
 
@@ -1958,13 +2004,35 @@ class PyUnicodeWriterTest(unittest.TestCase):
         writer.write_ascii(b"Python! <truncated>", 6)
         self.assertEqual(writer.finish(), "Hello Python")
 
+    def test_write_latin1(self):
+        # Test _PyUnicodeWriter_WriteLatin1String()
+        writer = self.create_writer(0)
+        # Start with ASCII buffer
+        writer.write_latin1(b"abc IGNORED", 3)
+        writer.write_latin1(b"IGNORED", 0)
+        # Change buffer kind to UCS-1
+        writer.write_latin1(b"\xe9", 1)
+        # Change buffer kind to UCS-2
+        writer.write_str('[\u20ac]')
+        writer.write_latin1(b"def\xa0", 4)
+        # Change buffer kind to UCS-4
+        writer.write_str('[\U0010ffff]')
+        writer.write_latin1(b"ghi\xff.", 5)
+        writer.write_latin1(b"IGNORED", 0)
+        self.assertEqual(writer.finish(),
+                         "abc\xe9[\u20ac]def\xa0[\U0010ffff]ghi\xff.")
+
     def test_invalid_utf8(self):
         writer = self.create_writer(0)
         with self.assertRaises(UnicodeDecodeError):
             writer.write_utf8(b"invalid=\xFF", -1)
 
     def test_recover_utf8_error(self):
-        # test recovering from PyUnicodeWriter_WriteUTF8() error
+        # Recover from PyUnicodeWriter_WriteUTF8() errors. A temporary write
+        # changes the buffer kind to UCS-2 before raising UnicodeDecodeError.
+        # Then, PyUnicodeWriter_Finish() has to change the buffer kind back to
+        # ASCII.
+
         writer = self.create_writer(0)
         writer.write_utf8(b"value=", -1)
 
@@ -1974,12 +2042,13 @@ class PyUnicodeWriterTest(unittest.TestCase):
         with self.assertRaises(UnicodeDecodeError):
             s = "truncated\u20AC".encode()
             writer.write_utf8(s, len(s) - 1)
+        with self.assertRaises(UnicodeDecodeError):
+            # Change buffer kind to UCS-2 then raise UnicodeDecodeError
+            s = "\u20AC\u20AC".encode()
+            writer.write_utf8(s, len(s) - 1)
 
-        # retry write with a valid string
         writer.write_utf8(b"valid", -1)
-
-        self.assertEqual(writer.finish(),
-                         "value=valid")
+        self.assertEqual(writer.finish(), "value=valid")
 
     def test_decode_utf8(self):
         # test PyUnicodeWriter_DecodeUTF8Stateful()
@@ -2094,15 +2163,37 @@ class PyUnicodeWriterTest(unittest.TestCase):
         writer.write_ucs4("pair\uD83D\uDC0D".encode(encoding, 'surrogatepass'))
         writer.write_char(ord("-"))
         writer.write_ucs4("null[\0]".encode(encoding), 7)
-        invalid = (b'\x00\x00\x11\x00' if sys.byteorder == 'little' else
-                   b'\x00\x11\x00\x00')
-        # CRASHES writer.write_ucs4("invalid".encode(encoding) + invalid)
         writer.write_ucs4(NULL, 0)
         # CRASHES writer.write_ucs4(NULL, 1)
         self.assertEqual(writer.finish(),
                          "lone\udc80-pair\ud83d\udc0d-null[\x00]")
 
-        # invalid size
+        # Invalid UCS-4 characters. Create an invalid string in release mode,
+        # or raise SystemError in debug mode.
+        writer = self.create_writer(0)
+        for invalid_char in (INVALID_CHAR, MAX_INVALID_CHAR):
+            with self.subTest(invalid_char=invalid_char):
+                # Test single character
+                ucs4_char = invalid_char.to_bytes(4, byteorder=sys.byteorder)
+                if support.Py_DEBUG:
+                    self.assertRaises(SystemError, writer.write_ucs4, ucs4_char)
+                else:
+                    writer.write_ucs4(ucs4_char)
+
+                # Test multiple characters
+                s = 'valid'.encode(encoding) + ucs4_char
+                if support.Py_DEBUG:
+                    self.assertRaises(SystemError, writer.write_ucs4, s)
+                else:
+                    writer.write_ucs4(s)
+
+        if support.Py_DEBUG:
+            self.assertEqual(writer.finish(), '')
+        else:
+            result = writer.finish()
+            assert_invalid_string(self, result)
+
+        # Invalid size
         writer = self.create_writer(0)
         with self.assertRaises(ValueError):
             writer.write_ucs4("text".encode(encoding), -1)
@@ -2250,6 +2341,48 @@ class PyUnicodeWriterTest(unittest.TestCase):
                 self.assertEqual(writer.get_buffer(), expected)
                 self.assertIs(writer.finish(), unique_string)
 
+    def test_readonly_optim_large_int(self):
+        # Read-only optimization in _PyLong_FormatWriter() for large integer:
+        # use _pylong.int_to_decimal_string() result as a read-only string.
+        # See pylong_int_to_decimal_string().
+
+        self.addCleanup(sys.set_int_max_str_digits,
+                        sys.get_int_max_str_digits())
+        sys.set_int_max_str_digits(0)
+
+        # _PyLong_FormatWriter() calls _pylong.int_to_decimal_string() for
+        # integer with Py_SIZE() > 1000.
+        large_int = 1 << (sys.int_info.bits_per_digit * 1020)
+        large_int_str = str(large_int)
+        expected = (len(large_int_str), 127, True)
+
+        for size in (0, 123):
+            with self.subTest(size=size):
+                # Test PyUnicodeWriter_WriteStr()
+                writer = self.create_writer(size)
+                writer.write_str(large_int)
+                self.assertEqual(writer.get_buffer(), expected)
+                self.assertEqual(writer.finish(), large_int_str)
+
+                # Test PyUnicodeWriter_WriteRepr()
+                writer = self.create_writer(size)
+                writer.write_repr(large_int)
+                self.assertEqual(writer.get_buffer(), expected)
+                self.assertEqual(writer.finish(), large_int_str)
+
+    def test_finish_with_size(self):
+        # Test _PyUnicodeWriter_FinishWithSize(). Truncate text requires
+        # to change the buffer kind.
+        text = 'a\xff\u20ac\U0010ffff'
+        expected = (0x10ffff, False)  # do not test the buffer size
+        for size in range(len(text) + 1):
+            writer = self.create_writer(0)
+            writer.write_utf8(text.encode(), -1)
+            self.assertEqual(writer.get_buffer()[1:], expected)
+            self.assertEqual(writer.finish_with_size(size), text[:size])
+
+        # CRASHES writer.finish_with_size(len(text) + 1)
+
 
 # Test PyUnicodeWriter_Format()
 @unittest.skipIf(ctypes is None, 'need ctypes')
@@ -2286,6 +2419,29 @@ class PyUnicodeWriterFormatTest(unittest.TestCase):
         self.writer_format(writer, b"%s.", b"World")
 
         self.assertEqual(writer.finish(), 'Hello World.')
+
+    def test_recheck_maxchar(self):
+        # PyUnicodeWriter_Format() changes buffer kind to UCS-2 before raising
+        # an exception. Then, PyUnicodeWriter_Finish() has to change the buffer
+        # kind back to ASCII.
+        from ctypes import py_object
+
+        class StrError:
+            def __str__(self):
+                raise RuntimeError("bug")
+
+        writer = self.create_writer(0)
+        # Allocate ASCII buffer
+        writer.write_str('ascii')
+
+        obj = StrError()
+        ucs2_utf8 = '\u20ac'.encode()
+        with self.assertRaises(RuntimeError):
+            # Change buffer kind to UCS-2, but then raise RuntimeError
+            self.writer_format(writer, b"%s%S", ucs2_utf8, py_object(obj))
+
+        writer.write_str('.')
+        self.assertEqual(writer.finish(), 'ascii.')
 
     def test_readonly_optim(self):
         # Read-only optimization: if the first and only write is a Python str

@@ -347,6 +347,39 @@ concurrent.futures
   (Contributed by xzmeng and Serhiy Storchaka in :gh:`108518`.)
 
 
+decimal
+-------
+
+* Added constants :const:`~decimal.LIBMPDEC_VERSION`,
+  :const:`~decimal.libmpdec_version`, :const:`~decimal.LIBMPDEC_VERSION_INFO`,
+  and :const:`~decimal.libmpdec_version_info` in the C implementation,
+  which provide information about the version of the libmpdec library in use.
+  (Contributed by Serhiy Storchaka in :gh:`157475`.)
+
+
+dbm.gnu
+-------
+
+* Added constants :const:`~dbm.gnu.GDBM_VERSION_INFO`,
+  :const:`~dbm.gnu.gdbm_version_info` and :const:`~dbm.gnu.gdbm_version`,
+  which provide information about the version of the GDBM library in use.
+  (Contributed by Serhiy Storchaka in :gh:`157478`.)
+
+
+dbm.ndbm
+--------
+
+* Added constants which provide information about the version of the
+  underlying library in use: :const:`~dbm.ndbm.GDBM_VERSION_INFO`,
+  :const:`~dbm.ndbm.gdbm_version_info` and :const:`~dbm.ndbm.gdbm_version`
+  if it is GDBM, or :const:`~dbm.ndbm.BDB_VERSION`,
+  :const:`~dbm.ndbm.bdb_version`, :const:`~dbm.ndbm.BDB_VERSION_INFO` and
+  :const:`~dbm.ndbm.bdb_version_info` if it is Berkeley DB.
+  :const:`dbm.ndbm.library` is now ``'ndbm'`` instead of ``'GNU gdbm'``
+  for a classic NDBM library.
+  (Contributed by Serhiy Storchaka in :gh:`157480`.)
+
+
 difflib
 -------
 
@@ -521,6 +554,16 @@ pydoc
   (Contributed by Serhiy Storchaka in :gh:`153906`.)
 
 
+readline
+--------
+
+* Added constants :const:`~readline.READLINE_VERSION_INFO`,
+  :const:`~readline.readline_version_info` and
+  :const:`~readline.readline_version`, which provide information about
+  the version of the Readline library in use.
+  (Contributed by Serhiy Storchaka in :gh:`157485`.)
+
+
 re
 --
 
@@ -565,6 +608,22 @@ sqlite3
   :exc:`SystemError` or :exc:`ValueError`.
   (Contributed by Jiseok CHOI in :gh:`150449`.)
 
+* Added constants :const:`~sqlite3.SQLITE_VERSION` and
+  :const:`~sqlite3.SQLITE_VERSION_INFO` which provide information
+  about the version of the SQLite library that was used for building the module.
+  :const:`~sqlite3.sqlite_version_info` is now a named tuple.
+  (Contributed by Serhiy Storchaka in :gh:`157470`.)
+
+
+ssl
+---
+
+* :const:`ssl.OPENSSL_VERSION_INFO` is now a named tuple.
+  Added :const:`~ssl.OPENSSL_API_VERSION_INFO` which provides information
+  about the version of the OpenSSL library that was used for building
+  the module.
+  (Contributed by Serhiy Storchaka in :gh:`157513`.)
+
 
 symtable
 --------
@@ -596,6 +655,11 @@ tkinter
   :meth:`~tkinter.ttk.Treeview.expand` and :meth:`~tkinter.ttk.Treeview.collapse`
   methods (without recursion) also work on Tk older than 9.1.
   (Contributed by Serhiy Storchaka in :gh:`151910`.)
+
+* Added constants :const:`~tkinter.TCL_VERSION_INFO` and
+  :const:`~tkinter.TK_VERSION_INFO`, named tuples with the versions of
+  the Tcl and Tk libraries that were used for building the module.
+  (Contributed by Serhiy Storchaka in :gh:`157514`.)
 
 * Added new :class:`!tkinter.Text` methods :meth:`~tkinter.Text.edit_canundo`
   and :meth:`~tkinter.Text.edit_canredo` which return whether an undo or redo
@@ -712,6 +776,16 @@ tkinter
   with no unit suffix to :class:`int` or :class:`float`.
   (Contributed by Serhiy Storchaka in :gh:`153513`.)
 
+
+turtle
+------
+
+* Translations of the :mod:`turtle` docstrings are now distributed on PyPI
+  in the :pypi:`turtle-translations` package. Additionally, added the
+  :envvar:`PYTHON_TURTLE_LANG` environment variable to select the language.
+  (Contributed by Stan Ulbrych in :gh:`156360`.)
+
+
 unicodedata
 -----------
 
@@ -779,6 +853,12 @@ xml
   the target, so a large document can be parsed incrementally without
   building a tree for it.
   (Contributed by Serhiy Storchaka in :gh:`63102`.)
+
+* Added constant :const:`~xml.parsers.expat.VERSION_INFO` in the
+  :mod:`XML parser <xml.parsers.expat>` module, which provides information
+  about the version of the Expat library that was used for building the module.
+  :const:`~xml.parsers.expat.version_info` is now a named tuple.
+  (Contributed by Serhiy Storchaka in :gh:`157473`.)
 
 zipfile
 -------

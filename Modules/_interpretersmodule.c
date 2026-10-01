@@ -802,23 +802,33 @@ get_summary(PyInterpreterState *interp)
 }
 
 
-// Not converted to Argument Clinic because the function uses ``**kwargs``.
-static PyObject *
-interp_new_config(PyObject *self, PyObject *args, PyObject *kwds)
-{
-    const char *name = NULL;
-    if (!PyArg_ParseTuple(args, "|s:" MODULE_NAME_STR ".new_config", &name))
-    {
-        return NULL;
-    }
-    PyObject *overrides = kwds;
+/*[clinic input]
+_interpreters.new_config
 
+    name: str(c_default="NULL") = 'isolated'
+    /
+    **overrides: dict
+
+Return a representation of a new PyInterpreterConfig.
+
+The name determines the initial values of the config.  Supported named
+configs are: default, isolated, legacy, and empty.
+
+Any keyword arguments are set on the corresponding config fields,
+overriding the initial values.
+[clinic start generated code]*/
+
+static PyObject *
+_interpreters_new_config_impl(PyObject *module, const char *name,
+                              PyObject *overrides)
+/*[clinic end generated code: output=90ca53e5c8f66e31 input=67a5a2832894a72b]*/
+{
     PyInterpreterConfig config;
     if (init_named_config(&config, name) < 0) {
         return NULL;
     }
 
-    if (overrides != NULL && PyDict_GET_SIZE(overrides) > 0) {
+    if (PyDict_GET_SIZE(overrides) > 0) {
         if (_PyInterpreterConfig_UpdateFromDict(&config, overrides) < 0) {
             return NULL;
         }
@@ -833,18 +843,6 @@ interp_new_config(PyObject *self, PyObject *args, PyObject *kwds)
     Py_DECREF(dict);
     return configobj;
 }
-
-PyDoc_STRVAR(new_config_doc,
-"new_config($module, name='isolated', /, **overrides)\n\
---\n\
-\n\
-Return a representation of a new PyInterpreterConfig.\n\
-\n\
-The name determines the initial values of the config.  Supported named\n\
-configs are: default, isolated, legacy, and empty.\n\
-\n\
-Any keyword arguments are set on the corresponding config fields,\n\
-overriding the initial values.");
 
 
 /*[clinic input]
@@ -1558,8 +1556,7 @@ finally:
 
 
 static PyMethodDef module_functions[] = {
-    {"new_config",                _PyCFunction_CAST(interp_new_config),
-     METH_VARARGS | METH_KEYWORDS, new_config_doc},
+    _INTERPRETERS_NEW_CONFIG_METHODDEF
 
     _INTERPRETERS_CREATE_METHODDEF
     _INTERPRETERS_DESTROY_METHODDEF
