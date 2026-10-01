@@ -133,11 +133,16 @@ class CmdLineTest(unittest.TestCase):
 
     @support.cpython_only
     def test_version(self):
-        version = ('Python %d.%d' % sys.version_info[:2]).encode("ascii")
-        for switch in '-V', '--version', '-VV':
-            rc, out, err = assert_python_ok(switch)
-            self.assertNotStartsWith(err, version)
-            self.assertStartsWith(out, version)
+        short_version = ('Python %d.%d' % sys.version_info[:2])
+        for switch in ('-V', '--version'):
+            with self.subTest(switch=switch):
+                rc, out, err = assert_python_ok(switch)
+                self.assertStartsWith(out, short_version.encode())
+                self.assertEqual(err, b'')
+
+        rc, out, err = assert_python_ok('-VV')
+        self.assertEqual(out.rstrip(), f"Python {sys.version}".encode())
+        self.assertEqual(err, b'')
 
     def test_verbose(self):
         # -v causes imports to write to stderr.  If the write to
