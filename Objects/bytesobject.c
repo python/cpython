@@ -2696,9 +2696,11 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
             invalid_char = str - start;
             goto error;
         }
+
         str++;
         if (str >= end) {
-            break;
+            invalid_char = -1;
+            goto error;
         }
 
         bot = _PyLong_DigitValue[*str];
