@@ -9567,6 +9567,8 @@
             break;
         }
 
+        /* _CLEANUP_ASYNC_THROW is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
+
         case _LOAD_COMMON_CONSTANT_r01: {
             CHECK_CURRENT_CACHED_VALUES(0);
             ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE(__FILE__, __LINE__);

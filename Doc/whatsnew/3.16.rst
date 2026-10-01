@@ -63,13 +63,38 @@ Summary --- release highlights
    Brevity is key.
 
 
-.. PEP-sized items next.
+* :pep:`828`: :ref:`'yield from' in async generators <whatsnew315-async-yield-from>`
 
 
 
 New features
 ============
 
+.. _whatsnew315-async-yield-from:
+
+:pep:`828`: Supporting ``yield from`` in asynchronous generators
+----------------------------------------------------------------
+
+Use of the :keyword:`yield from <yield>` construct and the :keyword:`return`
+statement with a non-``None`` value is now allowed in an
+:term:`asynchronous generator function <asynchronous generator>`. For example,
+the following code would previously raise a :class:`SyntaxError`:
+
+.. code-block:: python
+
+   async def asubgen():
+      yield 2
+      yield 3
+      yield 4
+
+   async def agenerator():
+      yield 1
+      yield from asubgen()  # Now allowed!
+      return 5  # Now allowed!
+
+.. seealso:: :pep:`828` for further details.
+
+(Contributed by Peter Bierma in :gh:`155126`.)
 
 
 Other language changes
