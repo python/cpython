@@ -1378,6 +1378,7 @@ _Py_uop_frame_new(
     frame->stack_pointer = frame->stack;
     frame->globals_checked_version = 0;
     frame->globals_watched = false;
+    frame->builtins_checked = false;
     frame->func = NULL;
     frame->caller = false;
     frame->is_c_recursion_checked = false;
