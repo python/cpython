@@ -1786,8 +1786,6 @@ dummy_func(
                 if (index < 0) {
                     ERROR_NO_POP();
                 }
-                next = none;
-                DEAD(none);
                 EXIT_IF(true);
             }
             DEAD(none);
