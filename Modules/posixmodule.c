@@ -8565,6 +8565,23 @@ static Py_ssize_t get_number_of_os_threads(void)
         if (task_threads(macos_task, &macos_threads,
                          &macos_n_threads) == KERN_SUCCESS) {
             num_python_threads = macos_n_threads;
+#if defined(__x86_64__)
+            // Rosetta 2 runs a thread of its own in every translated
+            // process. It is not one of ours, so do not count it.
+            for (mach_msg_type_number_t i = 0; i < macos_n_threads; i++) {
+                thread_extended_info_data_t info;
+                mach_msg_type_number_t count = THREAD_EXTENDED_INFO_COUNT;
+                kern_return_t kr = thread_info(
+                    macos_threads[i], THREAD_EXTENDED_INFO,
+                    (thread_info_t)&info, &count);
+                if (kr == KERN_SUCCESS &&
+                    strncmp(info.pth_name, "com.apple.rosetta.exceptionserver",
+                            sizeof(info.pth_name)) == 0)
+                {
+                    num_python_threads--;
+                }
+            }
+#endif
         }
     }
 #elif defined(__linux__)

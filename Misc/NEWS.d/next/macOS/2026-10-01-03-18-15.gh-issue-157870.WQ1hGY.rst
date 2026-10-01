@@ -1,0 +1,4 @@
+Fix a spurious :exc:`DeprecationWarning` about a multi-threaded process from
+:func:`os.fork` and :func:`os.forkpty` when an x86-64 build of Python runs
+under Rosetta 2 on Apple Silicon Macs. The thread that Rosetta adds to every
+translated process is no longer counted.

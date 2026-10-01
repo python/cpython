@@ -5568,6 +5568,25 @@ class ForkTests(unittest.TestCase):
         else:
             assert_python_ok("-c", code, PYTHONMALLOC="malloc_debug")
 
+    def test_fork_does_not_warn_when_single_threaded(self):
+        # gh-157870: on macOS, Rosetta 2 adds a thread of its own to every
+        # translated x86-64 process; it must not count as a thread of ours.
+        code = """if 1:
+            import os, warnings
+            with warnings.catch_warnings(record=True) as ws:
+                warnings.simplefilter("always", DeprecationWarning)
+                pid = os.fork()
+                if pid == 0:
+                    os._exit(0)  # child
+                # Waiting allows an error in the child to hit stderr.
+                exitcode = os.wait()[1]
+                assert exitcode == 0, f"child exited {exitcode}"
+            assert not ws, [str(w.message) for w in ws]
+        """
+        _, out, err = assert_python_ok("-c", code, PYTHONOPTIMIZE='0')
+        self.assertEqual(err.decode("utf-8"), "")
+        self.assertEqual(out.decode("utf-8"), "")
+
     @unittest.skipUnless(sys.platform in ("linux", "android", "darwin"),
                          "Only Linux and macOS detect this today.")
     @unittest.skipIf(_testcapi is None, "requires _testcapi")
