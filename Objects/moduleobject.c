@@ -7,7 +7,7 @@
 #include "pycore_fileutils.h"     // _Py_wgetcwd
 #include "pycore_import.h"        // _PyImport_GetNextModuleIndex()
 #include "pycore_interp.h"        // PyInterpreterState.importlib
-#include "pycore_lazyimportobject.h" // _PyLazyImportObject_Check()
+#include "pycore_lazyimportobject.h" // PyLazyImport_CheckExact()
 #include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_modsupport.h"    // _PyModule_CreateInitialized()
 #include "pycore_moduleobject.h"  // _PyModule_GetDefOrNull()
@@ -1299,32 +1299,21 @@ _PyModule_IsPossiblyShadowing(PyObject *origin)
     return result;
 }
 
-static PyObject *
-try_load_lazy_submodule(PyModuleObject *m, PyObject *name)
+static int
+module_get_resolved_dict_item(PyObject *dict, PyObject *name, PyObject **result)
 {
-    PyObject *mod_name;
-    int rc = PyDict_GetItemRef(m->md_dict, &_Py_ID(__name__), &mod_name);
-    if (rc <= 0) {
-        return NULL;
+    int rc = PyDict_GetItemRef(dict, name, result);
+    if (rc <= 0 || !PyLazyImport_CheckExact(*result)) {
+        return rc;
     }
-    if (!PyUnicode_Check(mod_name)) {
-        Py_DECREF(mod_name);
-        return NULL;
+    PyThreadState *tstate = PyThreadState_GET();
+    if (_PyLazyImport_IsResolving(tstate, *result)) {
+        Py_CLEAR(*result);
+        return 0;
     }
-    PyObject *result = NULL;
-    _PyLazySubmoduleImportResult status =
-        _PyImport_TryLoadLazySubmodule(mod_name, name, &result);
-    Py_DECREF(mod_name);
-    if (status != _Py_LAZY_SUBMODULE_LOADED) {
-        assert(status == _Py_LAZY_SUBMODULE_ERROR ||
-               status == _Py_LAZY_SUBMODULE_NOT_FOUND);
-        return NULL;
-    }
-    if (PyDict_SetItem(m->md_dict, name, result) < 0) {
-        Py_DECREF(result);
-        return NULL;
-    }
-    return result;
+    PyObject *value = _PyLazyImport_Reify(tstate, *result, name, dict);
+    Py_SETREF(*result, value);
+    return value == NULL ? -1 : 1;
 }
 
 PyObject*
@@ -1333,11 +1322,52 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
     // When suppress=1, this function suppresses AttributeError.
     PyObject *attr, *mod_name, *getattr;
     attr = _PyObject_GenericGetAttrWithDict((PyObject *)m, name, NULL, suppress);
+    if (attr == NULL) {
+        if (suppress == 1) {
+            if (PyErr_Occurred()) {
+                // pass up non-AttributeError exception
+                return NULL;
+            }
+        }
+        else {
+            if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
+                // pass up non-AttributeError exception
+                return NULL;
+            }
+            PyErr_Clear();
+        }
+        assert(m->md_dict != NULL);
+        int recheck_dict;
+        attr = _PyImport_TryLoadLazySubmodule((PyObject *)m, name, &recheck_dict);
+        if (attr != NULL || PyErr_Occurred()) {
+            return attr;
+        }
+        // A concurrent load may have bound the child and removed its pending
+        // registration after our initial dictionary lookup.
+        if (recheck_dict) {
+            if (Py_TYPE(m) != &PyModule_Type) {
+                PyObject *descr = _PyType_LookupRef(Py_TYPE(m), name);
+                if (descr != NULL) {
+                    // Preserve the fallback after a descriptor raised.
+                    recheck_dict = Py_TYPE(descr)->tp_descr_get == NULL;
+                    Py_DECREF(descr);
+                }
+            }
+            if (recheck_dict &&
+                PyDict_GetItemRef(m->md_dict, name, &attr) < 0) {
+                return NULL;
+            }
+        }
+    }
     if (attr) {
         if (PyLazyImport_CheckExact(attr)) {
             // gh-144957: Module __getattr__ should get a chance to provide
             // the attribute before resolving a lazy import placeholder.
-            if (PyDict_GetItemRef(m->md_dict, &_Py_ID(__getattr__), &getattr) < 0) {
+            // Resolving __getattr__ itself must not invoke the hook.
+            getattr = NULL;
+            if (!_PyUnicode_EqualToASCIIString(name, "__getattr__") &&
+                module_get_resolved_dict_item(
+                    m->md_dict, &_Py_ID(__getattr__), &getattr) < 0) {
                 Py_DECREF(attr);
                 return NULL;
             }
@@ -1354,51 +1384,21 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
                 }
                 PyErr_Clear();
             }
-            PyObject *new_value = _PyImport_LoadLazyImportTstate(
-                PyThreadState_GET(), attr);
-            if (new_value == NULL) {
-                if (suppress &&
-                    PyErr_ExceptionMatches(PyExc_ImportCycleError)) {
-                    // ImportCycleError is raised when a lazy object tries
-                    // to import itself. In this case, the error should not
-                    // propagate to the caller and instead treated as if the
-                    // attribute doesn't exist.
-                    PyErr_Clear();
-                }
+            PyThreadState *tstate = PyThreadState_GET();
+            if (suppress && _PyLazyImport_IsResolving(tstate, attr)) {
+                // Only direct reentry means this attribute is unavailable.
                 Py_DECREF(attr);
                 return NULL;
             }
-
-            if (PyDict_SetItem(m->md_dict, name, new_value) < 0) {
-                Py_CLEAR(new_value);
-            }
+            PyObject *new_value = _PyLazyImport_Reify(
+                tstate, attr, name, m->md_dict);
             Py_DECREF(attr);
             return new_value;
         }
         return attr;
     }
-    if (suppress == 1) {
-        if (PyErr_Occurred()) {
-            // pass up non-AttributeError exception
-            return NULL;
-        }
-    }
-    else {
-        if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
-            // pass up non-AttributeError exception
-            return NULL;
-        }
-        PyErr_Clear();
-    }
-    assert(m->md_dict != NULL);
-    attr = try_load_lazy_submodule(m, name);
-    if (attr != NULL) {
-        return attr;
-    }
-    if (PyErr_Occurred()) {
-        return NULL;
-    }
-    if (PyDict_GetItemRef(m->md_dict, &_Py_ID(__getattr__), &getattr) < 0) {
+    if (module_get_resolved_dict_item(
+            m->md_dict, &_Py_ID(__getattr__), &getattr) < 0) {
         return NULL;
     }
     if (getattr) {
@@ -1589,11 +1589,14 @@ module_dir(PyObject *self, PyObject *args)
 
     if (dict != NULL) {
         if (PyDict_Check(dict)) {
-            PyObject *dirfunc = PyDict_GetItemWithError(dict, &_Py_ID(__dir__));
-            if (dirfunc) {
+            PyObject *dirfunc;
+            int rc = module_get_resolved_dict_item(
+                dict, &_Py_ID(__dir__), &dirfunc);
+            if (rc > 0) {
                 result = _PyObject_CallNoArgs(dirfunc);
+                Py_DECREF(dirfunc);
             }
-            else if (!PyErr_Occurred()) {
+            else if (rc == 0) {
                 result = PyDict_Keys(dict);
             }
         }
