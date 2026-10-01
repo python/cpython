@@ -1907,10 +1907,20 @@ PyFloat_Pack2(double x, char *data, int le)
         }
 
         if ((_PY_FLOAT_LITTLE_ENDIAN && !le) || (_PY_FLOAT_BIG_ENDIAN && le)) {
+#if defined(__s390x__) && defined(__GNUC__)
+            // gh-158567: Workaround GCC crash on s390x.
+            // Avoid __builtin_bswap16() with _Float16.
+            // https://bugzilla.redhat.com/show_bug.cgi?id=2544649
+            char buffer[2];
+            memcpy(buffer, &y, 2);
+            data[0] = buffer[1];
+            data[1] = buffer[0];
+#else
             uint16_t word;
             memcpy(&word, &y, 2);
             word = _Py_bswap16(word);
             memcpy(data, &word, 2);
+#endif
         }
         else {
             memcpy(data, &y, sizeof(_Float16));
