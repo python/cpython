@@ -766,6 +766,29 @@ class ErrorHandlingTests(LazyImportTestCase):
         """)
         assert_python_ok("-c", code)
 
+    @support.subTests('name', (
+        'test.test_lazy_import.data.broken_module_chained_cause',
+        'test.test_lazy_import.data.broken_module_chained_context',
+        'test.test_lazy_import.data.broken_module_chained_suppressed',
+    ))
+    def test_chained_exception_import_shows_notes(self, name):
+        """Accessing missing attribute from lazy from-import should chain errors."""
+        code = textwrap.dedent(f"""
+            import re
+            lazy import {name}
+
+            try:
+                _ = test
+            except ValueError as e:
+                assert any(
+                    note.startswith("lazy import of '{name}' declared in ")
+                    for note in e.__notes__
+                ), e.__notes__
+            else:
+                raise AssertionError("ImportError was not raised")
+        """)
+        assert_python_ok("-c", code)
+
     def test_reification_retries_on_failure(self):
         """Failed reification should allow retry on subsequent access.
 
