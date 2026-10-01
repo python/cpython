@@ -165,11 +165,16 @@ test suite, thanks to the :option:`-m` option: :program:`python -m test`. Under
 the hood, it uses :mod:`!test.regrtest`; the call :program:`python -m
 test.regrtest` used in previous Python versions still works.  Running the
 script by itself automatically starts running all regression tests in the
-:mod:`!test` package. It does this by finding all modules in the package whose
-name starts with ``test_``, importing them, and executing the function
-:func:`test_main` if present or loading the tests via
-unittest.TestLoader.loadTestsFromModule if ``test_main`` does not exist.  The
-names of tests to execute may also be passed to the script. Specifying a single
+:mod:`!test` package. It does this by finding modules and packages whose names
+start with ``test_``, importing each one, and loading its tests with
+:meth:`unittest.TestLoader.loadTestsFromModule`. The loader collects
+:class:`unittest.TestCase` tests defined in the module. If the module defines
+``load_tests``, the loader calls it with that suite and runs the suite the
+function returns. Test packages use ``load_tests``, often via
+:func:`test.support.load_package_tests`, to add tests discovered in
+submodules. A module-level ``test_main()`` function is not called. If a test
+module defines ``test_main``, :mod:`!test.regrtest` fails that test. The names of
+tests to execute may also be passed to the script. Specifying a single
 regression test (:program:`python -m test test_spam`) will minimize output and
 only print whether the test passed or failed.
 
@@ -882,9 +887,11 @@ The :mod:`!test.support` module defines the following functions:
 
 .. function:: reap_children()
 
-   Use this at the end of ``test_main`` whenever sub-processes are started.
-   This will help ensure that no extra children (zombies) stick around to
-   hog resources and create problems when looking for refleaks.
+   Call this from a test's :meth:`~unittest.TestCase.setUp`,
+   :meth:`~unittest.TestCase.tearDown`, or from ``tearDownModule`` when the
+   test starts subprocesses.  This will help ensure that no extra children
+   (zombies) stick around to hog resources and create problems when looking
+   for refleaks.
 
 
 .. function:: get_attribute(obj, name)
