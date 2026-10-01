@@ -10,6 +10,7 @@ import textwrap
 import zipfile
 import zipimport
 import doctest
+import importlib
 import inspect
 import linecache
 import unittest
@@ -95,6 +96,36 @@ class ZipSupportTests(unittest.TestCase):
                 self.assertEqual(inspect.getsource(zip_pkg.foo), test_src)
             finally:
                 del sys.modules["zip_pkg"]
+
+    def test_inspect_fresh_namespace_uses_module_loader(self):
+        test_src = textwrap.dedent("""\
+            import inspect
+
+            def capture():
+                return inspect.currentframe()
+
+            frame = capture()
+        """)
+        expected_source = textwrap.dedent("""\
+            def capture():
+                return inspect.currentframe()
+        """)
+        module_name = "test_zipped_inspect"
+        with os_helper.temp_dir() as d:
+            script_name = make_script(d, module_name, test_src)
+            zip_name, _ = make_zip_script(d, "test_zip", script_name)
+            os.remove(script_name)
+            sys.path.insert(0, zip_name)
+            module = importlib.import_module(module_name)
+            try:
+                namespace = {}
+                exec(compile(test_src, module.__file__, "exec"), namespace)
+                frame = namespace["frame"]
+
+                self.assertIs(inspect.getmodule(frame), module)
+                self.assertEqual(inspect.getsource(frame), expected_source)
+            finally:
+                del sys.modules[module_name]
 
     def test_doctest_issue4197(self):
         # To avoid having to keep two copies of the doctest module's

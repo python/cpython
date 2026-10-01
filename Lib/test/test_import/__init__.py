@@ -373,6 +373,109 @@ class ImportTests(unittest.TestCase):
 
         self.assertEqual(set(sys.modules), before)
 
+    def test_module_registry_version(self):
+        self.assertIsNone(_imp._get_module_registry_version({}))
+
+        name = f"{TESTFN}_module_registry_version"
+        module = ModuleType(name)
+        sys.modules[name] = module
+        try:
+            version = _imp._get_module_registry_version(sys.modules)
+            self.assertIsInstance(version, int)
+
+            # Use a non-constant key to verify that the watcher compares the
+            # key by value rather than relying on interned-string identity.
+            file_key = ''.join(('__fi', 'le__'))
+            module.__dict__[file_key] = "first.py"
+            changed = _imp._get_module_registry_version(sys.modules)
+            self.assertNotEqual(changed, version)
+
+            module.unrelated = None
+            self.assertEqual(
+                _imp._get_module_registry_version(sys.modules), changed)
+            module.__dict__["12345678"] = None
+            self.assertEqual(
+                _imp._get_module_registry_version(sys.modules), changed)
+
+            module.__file__ = "second.py"
+            changed_again = _imp._get_module_registry_version(sys.modules)
+            self.assertNotEqual(changed_again, changed)
+
+            del module.__file__
+            self.assertNotEqual(
+                _imp._get_module_registry_version(sys.modules),
+                changed_again)
+
+            before_name_change = _imp._get_module_registry_version(
+                sys.modules)
+            module.__name__ = name + "_renamed"
+            after_name_change = _imp._get_module_registry_version(
+                sys.modules)
+            self.assertNotEqual(after_name_change, before_name_change)
+
+            getattr_key = ''.join(('__get', 'attr__'))
+            module.__dict__[getattr_key] = lambda name: None
+            after_getattr_change = _imp._get_module_registry_version(
+                sys.modules)
+            self.assertNotEqual(
+                after_getattr_change, after_name_change)
+
+            class ModuleSubclass(ModuleType):
+                pass
+
+            module.__class__ = ModuleSubclass
+            after_class_change = _imp._get_module_registry_version(
+                sys.modules)
+            self.assertNotEqual(
+                after_class_change, after_getattr_change)
+
+            replacement = ModuleType(name)
+            before_replacement = _imp._get_module_registry_version(
+                sys.modules)
+            sys.modules[name] = replacement
+            self.assertNotEqual(
+                _imp._get_module_registry_version(sys.modules),
+                before_replacement)
+        finally:
+            sys.modules.pop(name, None)
+
+    def test_module_registry_version_clear(self):
+        name = f"{TESTFN}_module_registry_clear"
+        module = ModuleType(name)
+        module.__file__ = "module.py"
+        sys.modules[name] = module
+        try:
+            version = _imp._get_module_registry_version(sys.modules)
+            module.__dict__.clear()
+            self.assertNotEqual(
+                _imp._get_module_registry_version(sys.modules), version)
+        finally:
+            sys.modules.pop(name, None)
+
+    @requires_subinterpreters
+    def test_module_registry_version_is_per_interpreter(self):
+        version = _imp._get_module_registry_version(sys.modules)
+        code = textwrap.dedent('''
+            import _imp
+            import sys
+            import types
+
+            before = _imp._get_module_registry_version(sys.modules)
+            module = types.ModuleType("_registry_version_subinterp")
+            sys.modules[module.__name__] = module
+            after_add = _imp._get_module_registry_version(sys.modules)
+            assert after_add != before
+            module.__file__ = "subinterp.py"
+            assert _imp._get_module_registry_version(sys.modules) != after_add
+        ''')
+        interpid = _interpreters.create()
+        try:
+            self.assertIsNone(_interpreters.run_string(interpid, code))
+        finally:
+            _interpreters.destroy(interpid)
+        self.assertEqual(
+            _imp._get_module_registry_version(sys.modules), version)
+
     def test_from_import_missing_module_raises_ModuleNotFoundError(self):
         with self.assertRaises(ModuleNotFoundError):
             from something_that_should_not_exist_anywhere import blah
