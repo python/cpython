@@ -1021,6 +1021,27 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
 class DeflateCompressedZipImportTestCase(UncompressedZipImportTestCase):
     compression = ZIP_DEFLATED
 
+    def testCorruptDeflateDataRaisesZipImportError(self):
+        # gh-158494: a corrupt deflate stream in a .pyc must surface as
+        # ZipImportError, not zlib.error.
+        files = {TESTMOD + pyc_ext: test_pyc}
+        self.makeZip(files)
+
+        # Corrupt the deflate stream of the .pyc entry in place.
+        with open(TEMP_ZIP, "r+b") as f:
+            data = f.read()
+            idx = data.find((TESTMOD + pyc_ext).encode())
+            lh = data.rfind(b"PK\x03\x04")
+            name_len, extra_len = struct.unpack_from("<HH", data, lh + 26)
+            data_start = lh + 30 + name_len + extra_len
+            f.seek(data_start)
+            f.write(b"\xff" * 8)
+
+        sys.path.insert(0, TEMP_ZIP)
+
+        with self.assertRaises(zipimport.ZipImportError):
+            importlib.import_module(TESTMOD)
+
 
 @support.requires_zstd()
 class ZStdCompressedZipImportTestCase(UncompressedZipImportTestCase):
