@@ -261,6 +261,9 @@ class MonitoringMisc(MonitoringTestMixin, TestCase):
         code = func.__code__
         expected = [instr.offset for instr in dis.get_instructions(func)
                     if instr.opname != "RESUME"]
+        # Two threads, each with two lists of instruction offsets (one per call).
+        # Check that disabling LINE preserves INSTRUCTION events in every
+        # thread-local bytecode copy, including on subsequent calls.
         records = [[[], []] for _ in range(2)]
         local = threading.local()
         ready = Barrier(len(records) + 1)

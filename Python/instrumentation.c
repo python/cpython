@@ -879,9 +879,9 @@ remove_line_tools(PyCodeObject * code, int offset, int tools)
         should_de_instrument = ((single_tool & tools) == single_tool);
     }
     if (should_de_instrument) {
-        MODIFY_BYTECODE(code, de_instrument_line, monitoring, offset);
         /* Restore all thread-local bytecodes before updating the shared
          * original opcode. */
+        MODIFY_BYTECODE(code, de_instrument_line, monitoring, offset);
         if (_PyCode_GetOriginalOpcode(monitoring->lines, offset) ==
             INSTRUMENTED_INSTRUCTION)
         {

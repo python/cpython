@@ -1194,14 +1194,22 @@ class TestLineAndInstructionEvents(CheckEvents):
 
     def test_disable_line_keeps_instruction_events(self):
         for local in (False, True):
-            for line_tool in (TEST_TOOL, TEST_TOOL2):
-                with self.subTest(local=local, line_tool=line_tool):
+            # Use the same tool or different tools for LINE and INSTRUCTION.
+            for line_tool, instr_tool in (
+                (TEST_TOOL, TEST_TOOL),
+                (TEST_TOOL2, TEST_TOOL),
+            ):
+                with self.subTest(local=local, line_tool=line_tool,
+                                  instr_tool=instr_tool):
                     self.check_disable_line_keeps_instruction_events(
-                        local, line_tool)
+                        local, line_tool, instr_tool)
 
-    def check_disable_line_keeps_instruction_events(self, local, line_tool):
+    def check_disable_line_keeps_instruction_events(self, local, line_tool,
+                                                   instr_tool):
         def func(x):
             a = x + 1
+            # Split the assignment so line events also move backwards from
+            # the expression's line to the assignment's line.
             b = (
                 a * 2
             )
@@ -1222,9 +1230,9 @@ class TestLineAndInstructionEvents(CheckEvents):
                 if disable:
                     return sys.monitoring.DISABLE
 
-        sys.monitoring.register_callback(TEST_TOOL, E.INSTRUCTION, instruction)
+        sys.monitoring.register_callback(instr_tool, E.INSTRUCTION, instruction)
         sys.monitoring.register_callback(line_tool, E.LINE, line)
-        events = {TEST_TOOL: E.INSTRUCTION}
+        events = {instr_tool: E.INSTRUCTION}
         events[line_tool] = events.get(line_tool, 0) | E.LINE
         try:
             for tool, mask in events.items():
@@ -1254,7 +1262,7 @@ class TestLineAndInstructionEvents(CheckEvents):
             for tool in events:
                 sys.monitoring.set_local_events(tool, code, 0)
                 sys.monitoring.set_events(tool, 0)
-            sys.monitoring.register_callback(TEST_TOOL, E.INSTRUCTION, None)
+            sys.monitoring.register_callback(instr_tool, E.INSTRUCTION, None)
             sys.monitoring.register_callback(line_tool, E.LINE, None)
             sys.monitoring.restart_events()
 
