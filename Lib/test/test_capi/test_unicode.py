@@ -292,6 +292,7 @@ class CAPITest(unittest.TestCase):
 
         # Test invalid UCS-4 string. Create an invalid string in release mode,
         # or raise SystemError in debug mode.
+        built_with_assert = support.built_with_c_assertions()
         for invalid_char in (INVALID_CHAR, MAX_INVALID_CHAR):
             with self.subTest(invalid_char=invalid_char):
                 # Test single character
@@ -302,9 +303,12 @@ class CAPITest(unittest.TestCase):
                 s = 'valid'.encode(enc4) + ucs4_char
                 if support.Py_DEBUG:
                     self.assertRaises(SystemError, fromkindanddata, 4, s)
-                else:
+                elif not built_with_assert :
                     result = fromkindanddata(4, s)
                     assert_invalid_string(self, result)
+                else:
+                    # PyUnicode_FromKindAndData() fails with an assertion error
+                    pass
 
     @support.cpython_only
     @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
@@ -1994,6 +1998,7 @@ class PyUnicodeWriterTest(unittest.TestCase):
 
         # Invalid UCS-4 characters. Create an invalid string in release mode,
         # or raise SystemError in debug mode.
+        built_with_assert = support.built_with_c_assertions()
         writer = self.create_writer(0)
         for invalid_char in (INVALID_CHAR, MAX_INVALID_CHAR):
             with self.subTest(invalid_char=invalid_char):
@@ -2013,9 +2018,12 @@ class PyUnicodeWriterTest(unittest.TestCase):
 
         if support.Py_DEBUG:
             self.assertEqual(writer.finish(), '')
-        else:
+        elif not built_with_assert:
             result = writer.finish()
             assert_invalid_string(self, result)
+        else:
+            # PyUnicodeWriter_Finish() fails with an assertion error
+            pass
 
         # Invalid size
         writer = self.create_writer(0)
