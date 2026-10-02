@@ -3358,7 +3358,9 @@ static inline int
 bytes_resize_inplace(PyObject **pv, Py_ssize_t newsize)
 {
     PyObject *v = *pv;
-    assert(_PyObject_IsUniquelyReferenced(v));
+    // Do not test _PyObject_IsUniquelyReferenced(). The function is used by
+    // PyBytesWriter_FinishWithSize() and its caller can have its own lock.
+    assert(Py_REFCNT(v) == 1);
     assert(PyBytes_GET_SIZE(v) >= 1);
     assert(newsize >= 1);
 
