@@ -30,6 +30,10 @@ class CAPITest(unittest.TestCase):
         self.assertIsInstance(buildinfo, str)
         self.assertNotEqual(buildinfo, '')
 
+    # Test internal _Py_GetBuiltWithAssert()
+    def test__getbuiltwithassert(self):
+        self.assertIn(_testlimitedcapi._py_getbuiltwithassert(), (0, 1))
+
 
 if __name__ == "__main__":
     unittest.main()
