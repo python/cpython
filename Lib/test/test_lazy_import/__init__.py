@@ -457,6 +457,121 @@ class WithStatementTests(LazyImportTestCase):
         self.assertNotIn("test.test_lazy_import.data.basic2", sys.modules)
 
 
+@support.requires_subprocess()
+class IndependentSubmoduleTests(LazyImportTestCase):
+    def check(self, code):
+        assert_python_ok('-c', textwrap.dedent(code))
+
+    def test_siblings(self):
+        for package, children in (
+            ('test.test_lazy_import.data.pkg', ('b', 'bar')),
+            ('test.test_lazy_import.data.metasyntactic.foo', ('ack', 'bar')),
+        ):
+            for first, second in (children, children[::-1]):
+                with self.subTest(package=package, first=first):
+                    self.check(f"""
+                        import sys
+                        lazy import {package}.{first}
+                        lazy import {package}.{second}
+                        assert {package}.{first} is sys.modules['{package}.{first}']
+                        assert '{package}.{second}' not in sys.modules
+                        assert {package}.{second} is sys.modules['{package}.{second}']
+                    """)
+
+    def test_star_import(self):
+        self.check("""
+            lazy import urllib.nonexistent
+            lazy import urllib
+            assert urllib.__name__ == 'urllib'
+            from urllib import *
+        """)
+
+    def test_deleted_child(self):
+        self.check("""
+            lazy from xml import dom
+            assert dom.__name__ == 'xml.dom'
+            import xml
+            del xml.dom
+            assert not hasattr(xml, 'dom')
+            lazy from xml import dom
+            assert hasattr(xml, 'dom')
+        """)
+
+    def test_cached_import_releases_builtins(self):
+        for statement in ('lazy from xml.dom import Node',
+                          'lazy import xml.dom.minidom'):
+            with self.subTest(statement=statement):
+                self.check(f"""
+                    import builtins, gc, weakref
+                    import xml.dom.minidom
+                    class Payload:
+                        pass
+                    payload = Payload()
+                    reference = weakref.ref(payload)
+                    namespace = {{'__builtins__': dict(vars(builtins), payload=payload)}}
+                    exec({statement!r}, namespace)
+                    exec('Node' if 'from' in {statement!r} else 'xml.dom.minidom', namespace)
+                    del namespace, payload
+                    gc.collect()
+                    assert reference() is None
+                """)
+
+    def test_invalid_descendant_retries(self):
+        self.check("""
+            lazy import test.test_lazy_import.data.pkg.b.foo
+            for _ in range(2):
+                try:
+                    test.test_lazy_import.data.pkg.b.foo
+                except ModuleNotFoundError:
+                    pass
+                else:
+                    raise AssertionError('imported an attribute as a module')
+            import test.test_lazy_import.data.pkg.b
+            assert callable(test.test_lazy_import.data.pkg.b.foo)
+        """)
+
+    def test_namespace_import_hooks(self):
+        self.check("""
+            import builtins
+            first = {'__builtins__': vars(builtins).copy()}
+            second = {'__builtins__': vars(builtins).copy()}
+            exec('lazy import xml.dom', first)
+            exec('lazy import xml.dom', second)
+            def denied(*args):
+                raise AssertionError('used another namespace import hook')
+            second['__builtins__']['__import__'] = denied
+            exec('assert xml.dom.__name__ == "xml.dom"', first)
+        """)
+
+    def test_retry_after_recursive_access(self):
+        self.check("""
+            import sys, xml
+            from importlib.machinery import ModuleSpec
+            class Loader:
+                calls = 0
+                def find_spec(self, name, path=None, target=None):
+                    if name == 'xml.broken':
+                        return ModuleSpec(name, self)
+                def create_module(self, spec):
+                    return None
+                def exec_module(self, module):
+                    self.calls += 1
+                    xml.broken
+                    raise RuntimeError('failed initialization')
+            loader = Loader()
+            sys.meta_path.insert(0, loader)
+            lazy import xml.broken
+            for _ in range(2):
+                try:
+                    xml.broken
+                except RuntimeError as exc:
+                    assert str(exc) == 'failed initialization'
+                else:
+                    raise AssertionError('returned a failed partial module')
+            assert loader.calls == 2
+        """)
+
+
 class PackageTests(LazyImportTestCase):
     """Tests for lazy imports with packages."""
 
@@ -794,7 +909,7 @@ class ErrorHandlingTests(LazyImportTestCase):
             lazy import {name}
 
             try:
-                _ = test
+                _ = {name}
             except ValueError as e:
                 assert any(
                     note.startswith("lazy import of '{name}' declared in ")
