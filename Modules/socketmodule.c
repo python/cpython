@@ -763,6 +763,9 @@ set_error(void)
 static PyObject *
 decode_error_message(const char *str)
 {
+#ifdef _Py_MEMORY_SANITIZER
+    __msan_unpoison_string(str);
+#endif
     return PyUnicode_DecodeLocale(str, "surrogateescape");
 }
 #endif
@@ -6522,6 +6525,9 @@ _socket_getservbyport_impl(PyObject *module, int port, const char *proto)
         PyErr_SetString(PyExc_OSError, "port/proto not found");
         return NULL;
     }
+#ifdef _Py_MEMORY_SANITIZER
+    __msan_unpoison_string(sp->s_name);
+#endif
     return PyUnicode_FromString(sp->s_name);
 }
 

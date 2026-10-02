@@ -1,8 +1,10 @@
 import unittest
 
-from asyncio import tools
+from test.support import import_helper
 
-import _remote_debugging
+_remote_debugging = import_helper.import_module('_remote_debugging')
+
+from asyncio import tools
 
 
 def LocationInfo(lineno, end_lineno=None, col_offset=None, end_col_offset=None):
