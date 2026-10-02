@@ -268,13 +268,12 @@ jobs:
           # unsupported as it most resembles other 1.1.1-work-a-like ssl APIs
           # supported by important vendors such as AWS-LC.
           - { name: openssl, version: 1.1.1w }
-          - { name: openssl, version: 3.0.22 }
-          - { name: openssl, version: 3.4.7 }
-          - { name: openssl, version: 3.5.8 }
-          - { name: openssl, version: 3.6.4 }
-          - { name: openssl, version: 4.0.2 }
+          - { name: openssl, version: 3.4.8 }
+          - { name: openssl, version: 3.5.9 }
+          - { name: openssl, version: 3.6.5 }
+          - { name: openssl, version: 4.0.3 }
           ## AWS-LC
-          - { name: aws-lc, version: 5.5.0 }
+          - { name: aws-lc, version: 5.10.0 }
     env:
       SSLLIB_VER: ${{ matrix.ssllib.version }}
       MULTISSL_DIR: ${{ github.workspace }}/multissl
@@ -379,7 +378,7 @@ jobs:
     needs: build-context
     if: needs.build-context.outputs.run-ubuntu == 'true'
     env:
-      OPENSSL_VER: 3.5.8
+      OPENSSL_VER: 3.5.9
       PYTHONSTRICTEXTENSIONBUILD: 1
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -493,7 +492,7 @@ jobs:
       matrix:
         os: [ubuntu-26.04]
     env:
-      OPENSSL_VER: 3.5.8
+      OPENSSL_VER: 3.5.9
       PYTHONSTRICTEXTENSIONBUILD: 1
       ASAN_OPTIONS: detect_leaks=0:allocator_may_return_null=1:handle_segv=0
     steps:
@@ -587,7 +586,7 @@ jobs:
       - name: Display build info
         run: |
           "$BUILD_DIR/cross-python/bin/python3" -m test.pythoninfo
-      - name: Run test subset with host build
+      - name: Run test subset with cross build
         run: |
           "$BUILD_DIR/cross-python/bin/python3" -m test test_sysconfig test_site test_embed
 

@@ -3544,6 +3544,10 @@ module_exec(PyObject *module)
     }
     PyModule_AddObject(module, "SelfInterruptingContextManager", (PyObject *)&SelfInterruptingContextManager_Type);
 
+    if (PyModule_AddIntMacro(module, _Py_MAX_UNICODE) < 0) {
+        return 1;
+    }
+
     return 0;
 }
 
