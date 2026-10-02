@@ -1,4 +1,5 @@
 "Test InteractiveConsole and InteractiveInterpreter from code module"
+import subprocess
 import sys
 import traceback
 import unittest
@@ -7,6 +8,7 @@ from contextlib import ExitStack
 from unittest import mock
 from test.support import force_not_colorized_test_class
 from test.support import import_helper
+from test.support.script_helper import spawn_python
 
 code = import_helper.import_module('code')
 
@@ -351,6 +353,58 @@ class TestInteractiveConsoleLocalExit(unittest.TestCase, MockSys):
         err_msg = self.stderr.method_calls[1]
         expected = 'now exiting InteractiveConsole...\n'
         self.assertEqual(err_msg, ['write', (expected,), {}])
+
+
+@force_not_colorized_test_class
+class CommandLineTest(unittest.TestCase):
+    exitmsg = '\nnow exiting InteractiveConsole...\n'
+
+    def run_cli(self, *args, python_args=(), input=''):
+        with spawn_python(*python_args, '-m', 'code', *args,
+                          stderr=subprocess.PIPE, text=True) as proc:
+            stdout, stderr = proc.communicate(input)
+        return proc.returncode, stdout, stderr
+
+    def test_banner(self):
+        rc, stdout, stderr = self.run_cli()
+        self.assertEqual(rc, 0)
+        self.assertEqual(stdout, '>>> ')
+        self.assertStartsWith(stderr,
+                              f'Python {sys.version} on {sys.platform}\n')
+        self.assertIn('\n(InteractiveConsole)\n', stderr)
+        self.assertEndsWith(stderr, self.exitmsg)
+
+    def test_quiet_option(self):
+        rc, stdout, stderr = self.run_cli('-q')
+        self.assertEqual(rc, 0)
+        self.assertEqual(stdout, '>>> ')
+        self.assertEqual(stderr, self.exitmsg)
+
+    def test_quiet_interpreter_flag(self):
+        rc, stdout, stderr = self.run_cli(python_args=('-q',))
+        self.assertEqual(rc, 0)
+        self.assertEqual(stdout, '>>> ')
+        self.assertEqual(stderr, self.exitmsg)
+
+    def test_input_from_stdin(self):
+        source = 'print(1 + 1)\nfor i in range(2):\n    print(i)\n\n'
+        rc, stdout, stderr = self.run_cli('-q', input=source)
+        self.assertEqual(rc, 0)
+        self.assertEqual(stdout, '>>> 2\n>>> ... ... 0\n1\n>>> ')
+        self.assertEqual(stderr, self.exitmsg)
+
+    def test_help(self):
+        rc, stdout, stderr = self.run_cli('-h')
+        self.assertEqual(rc, 0)
+        self.assertStartsWith(stdout, 'usage:')
+        self.assertIn("don't print version and copyright messages", stdout)
+        self.assertEqual(stderr, '')
+
+    def test_unknown_option(self):
+        rc, stdout, stderr = self.run_cli('--unknown')
+        self.assertEqual(rc, 2)
+        self.assertEqual(stdout, '')
+        self.assertIn('unrecognized arguments: --unknown', stderr)
 
 
 if __name__ == "__main__":
