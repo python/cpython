@@ -1338,7 +1338,8 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
         }
         assert(m->md_dict != NULL);
         int recheck_dict;
-        attr = _PyImport_TryLoadLazySubmodule((PyObject *)m, name, &recheck_dict);
+        attr = _PyImport_TryLoadLazySubmodule((PyObject *)m, name, suppress,
+                                             &recheck_dict);
         if (attr != NULL || PyErr_Occurred()) {
             return attr;
         }

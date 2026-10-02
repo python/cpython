@@ -356,9 +356,11 @@ struct _import_state {
     // lazily imported. This value is only for debugging/introspection
     // purposes and is not used by the runtime.
     PyObject *lazy_modules;
-    // A dict mapping package names to a set of submodule names that
-    // may need to be imported when an attribute is missing on the package.
+    // Package names map to pending children: declarations for plain imports,
+    // or None for from-import names that may be ordinary attributes.
     PyObject *lazy_pending_submodules;
+    // Avoid pending-child work for ordinary cached imports.
+    int has_lazy_submodules;
 #ifdef Py_GIL_DISABLED
     PyMutex lazy_mutex;
 #endif

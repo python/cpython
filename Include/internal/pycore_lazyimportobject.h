@@ -18,6 +18,10 @@ PyAPI_FUNC(PyObject *) _PyLazyImport_New(
     struct _PyInterpreterFrame *frame, PyObject *builtins,
     PyObject *name, PyObject *fromlist);
 
+extern PyObject *_PyLazyImport_LoadChild(
+    PyThreadState *tstate, PyObject *declaration, PyObject *name);
+extern int _PyLazyImport_IsActive(PyObject *declaration);
+
 extern int _PyLazyImport_IsResolving(PyThreadState *tstate, PyObject *op);
 
 // Resolve a placeholder and replace its binding if it is unchanged or holds
