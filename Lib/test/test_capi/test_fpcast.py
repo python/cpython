@@ -7,11 +7,15 @@ these calls through a trampoline (Python/wasm_trampoline.c) that detects the
 real signature. Calling each variant must work everywhere.
 """
 import unittest
-from test.support import import_helper, is_wasm32
+from test.support import check_sanitizer, import_helper, is_wasm32
 
 _testcapi = import_helper.import_module('_testcapi')
 
 
+# Native ABIs tolerate these calls but they are implementation-defined behavior.
+# -fsanitize=undefined correctly trips on them.
+@unittest.skipIf(check_sanitizer(ub=True),
+                 "calls through mis-cast function pointers are UB natively")
 class FpcastTest(unittest.TestCase):
     def check_calls(self, obj, prefix):
         for arity in range(4):
