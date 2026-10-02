@@ -75,12 +75,11 @@ jobs:
         echo "MSAN_OPTIONS=${SAN_LOG_OPTION} allocator_may_return_null=1" >> "$GITHUB_ENV"
         # MSan reports false positives for memory initialized by libraries
         # that are not built with MSan, so disable modules that use them.
-        # _remote_debugging is disabled because it links to libzstd directly.
+        # _remote_debugging links to libzstd directly, but we unpoision the memory.
         {
           echo '*disabled*'
           echo '_bz2 _ctypes _curses _curses_panel _dbm _decimal _gdbm _hashlib'
-          echo '_lzma _remote_debugging _sqlite3 _ssl _tkinter _uuid _zstd'
-          echo 'readline zlib'
+          echo '_lzma _sqlite3 _ssl _tkinter _uuid _zstd readline zlib'
         } > Modules/Setup.local
       env:
         SAN_LOG_OPTION: log_path=${{ github.workspace }}/san_log
@@ -108,6 +107,8 @@ jobs:
     # gh-157958: -O2 instead of the pydebug default -Og to avoid a clang 21
     # compile-time blowup on some interpreter files.
     # (https://github.com/llvm/llvm-project/issues/179695)
+    # MSan uses --with-assertions instead of --with-pydebug because its
+    # hooks on the Python memory allocators hide uninitialized reads.
     - name: Configure CPython
       run: >-
         ./configure
@@ -120,7 +121,7 @@ jobs:
           && '--with-memory-sanitizer'
           || '--with-undefined-behavior-sanitizer --with-strict-overflow'
         }}
-        --with-pydebug
+        ${{ inputs.sanitizer == 'MSan' && '--with-assertions' || '--with-pydebug' }}
         ${{ inputs.sanitizer == 'TSan' && '--with-openssl="$OPENSSL_DIR" --with-openssl-rpath=auto' || '' }}
         ${{ inputs.free-threading && '--disable-gil' || '' }}
     - name: Build CPython
