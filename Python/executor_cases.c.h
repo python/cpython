@@ -17903,6 +17903,7 @@
             _PyStackRef arg;
             _PyStackRef res;
             _PyStackRef a;
+            Py_GCC_ATTRIBUTE((unused))
             _PyStackRef _stack_item_0 = _tos_cache0;
             oparg = CURRENT_OPARG();
             arg = _stack_item_0;
@@ -17926,7 +17927,9 @@
             _PyStackRef arg;
             _PyStackRef res;
             _PyStackRef a;
+            Py_GCC_ATTRIBUTE((unused))
             _PyStackRef _stack_item_0 = _tos_cache0;
+            Py_GCC_ATTRIBUTE((unused))
             _PyStackRef _stack_item_1 = _tos_cache1;
             oparg = CURRENT_OPARG();
             arg = _stack_item_1;
@@ -17950,8 +17953,11 @@
             _PyStackRef arg;
             _PyStackRef res;
             _PyStackRef a;
+            Py_GCC_ATTRIBUTE((unused))
             _PyStackRef _stack_item_0 = _tos_cache0;
+            Py_GCC_ATTRIBUTE((unused))
             _PyStackRef _stack_item_1 = _tos_cache1;
+            Py_GCC_ATTRIBUTE((unused))
             _PyStackRef _stack_item_2 = _tos_cache2;
             oparg = CURRENT_OPARG();
             arg = _stack_item_2;
@@ -23370,6 +23376,7 @@
             _PyStackRef top;
             _PyStackRef middle;
             _PyStackRef bottom;
+            Py_GCC_ATTRIBUTE((unused))
             _PyStackRef _stack_item_0 = _tos_cache0;
             top = _stack_item_0;
             middle = stack_pointer[-1];
@@ -23394,7 +23401,9 @@
             _PyStackRef top;
             _PyStackRef middle;
             _PyStackRef bottom;
+            Py_GCC_ATTRIBUTE((unused))
             _PyStackRef _stack_item_0 = _tos_cache0;
+            Py_GCC_ATTRIBUTE((unused))
             _PyStackRef _stack_item_1 = _tos_cache1;
             top = _stack_item_1;
             middle = _stack_item_0;
@@ -23419,8 +23428,11 @@
             _PyStackRef top;
             _PyStackRef middle;
             _PyStackRef bottom;
+            Py_GCC_ATTRIBUTE((unused))
             _PyStackRef _stack_item_0 = _tos_cache0;
+            Py_GCC_ATTRIBUTE((unused))
             _PyStackRef _stack_item_1 = _tos_cache1;
+            Py_GCC_ATTRIBUTE((unused))
             _PyStackRef _stack_item_2 = _tos_cache2;
             top = _stack_item_2;
             middle = _stack_item_1;
