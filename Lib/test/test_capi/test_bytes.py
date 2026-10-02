@@ -239,23 +239,37 @@ class CAPITest(unittest.TestCase):
         """Test _PyBytes_Resize()"""
         _resize = _testcapi.bytes_resize
 
+        def assert_is_fresh_copy(result, refcnt, is_new_obj):
+            self.assertEqual(refcnt, 1)
+            self.assertTrue(is_new_obj)
+            self.assertFalse(sys._is_immortal(result))
+
         def resize(obj, size, new, compute_hash=False):
             old_size = len(obj)
             result, refcnt, is_new_obj = _resize(obj, size, new,
                                                  compute_hash=compute_hash)
-            if 1 <= len(result):
-                if new or (size != old_size):
-                    # gh-156995: Make sure that the result is a fresh object.
-                    # Previously, _PyBytes_Resize(&obj, 1) returned a singleton
-                    # if _PyObject_IsUniquelyReferenced() is false.
-                    self.assertEqual(refcnt, 1)
-                    self.assertFalse(sys._is_immortal(result))
-                if (size != old_size) and compute_hash:
-                    # If the hash value was computed, return a copy
-                    self.assertTrue(is_new_obj)
-            else:
+
+            if size == old_size:
+                # Return the same object unchanged
+                self.assertFalse(is_new_obj)
+            elif old_size == 0:
+                assert_is_fresh_copy(result, refcnt, is_new_obj)
+            elif size == 0:
                 # check that the result is the empty bytes string singleton
+                self.assertEqual(result, b'')
                 self.assertTrue(sys._is_immortal(result))
+                self.assertTrue(is_new_obj)
+            elif (not new) or compute_hash:
+                # gh-156995: Make sure that the result is a fresh object.
+                # Previously, _PyBytes_Resize(&obj, 1) returned a singleton
+                # if _PyObject_IsUniquelyReferenced() is false.
+                assert_is_fresh_copy(result, refcnt, is_new_obj)
+            else:
+                # An in-place resize can return the same memory address, or
+                # not. 'is_new_obj' cannot be tested.
+                self.assertEqual(refcnt, 1)
+                self.assertFalse(sys._is_immortal(result))
+
             return result
 
         for new in True, False:
