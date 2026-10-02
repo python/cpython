@@ -53,7 +53,7 @@ class TestUtils(TestCase):
 
     def test_wlen_with_unterminated_osc_sequence_as_individual_characters(self):
         # \x1b is treated as a single character (ESC)
-        self.assertEqual(wlen("\x1b]633;A"), 7)
+        self.assertEqual(wlen("\x1b]633;A"), len("\x1b]633;A"))
 
     def test_prev_next_window(self):
         def gen_normal():
