@@ -1,0 +1,4 @@
+Fix a deadlock in the :term:`free-threaded build` when a thread holding a
+critical section requested a stop-the-world pause while another thread was
+waiting for the pause with the same lock held. The waiting thread no longer
+re-acquires its critical sections until the pause ends.
