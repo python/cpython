@@ -51,9 +51,6 @@ typedef struct _PyThreadStateImpl {
     PyObject *asyncio_running_loop; // Strong reference
     PyObject *asyncio_running_task; // Strong reference
 
-    // Reused for the thread's lifetime; owns placeholders while they resolve.
-    PyObject *lazy_imports;
-
     // Distinguishes between yield and return from PyEval_EvalFrame().
     // See gen_send_ex2() in Objects/genobject.c
     enum {
@@ -105,6 +102,9 @@ typedef struct _PyThreadStateImpl {
 #if _Py_TIER2
     struct _PyJitTracerState *jit_tracer_state;
 #endif
+
+    // Reused for the thread's lifetime; owns placeholders while they resolve.
+    PyObject *lazy_imports;
 
 #ifdef Py_GIL_DISABLED
     // gh-144438: Add padding to ensure that the fields above don't share a
