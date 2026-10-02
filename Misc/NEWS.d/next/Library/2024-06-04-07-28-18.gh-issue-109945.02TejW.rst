@@ -1,0 +1,1 @@
+Adds support for multiple curves to be specified in SSLContext.set_ecdh_curve() for OpenSSL 3.0 and above by setting curve_name to a colon separated list of curves. This allows multiple curves to be passed on a TLS client hello.
