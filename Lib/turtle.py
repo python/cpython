@@ -897,6 +897,15 @@ class Tbuffer:
                 self.ptr = (self.ptr - 1) % self.bufsize
                 return (item)
 
+    def remove(self, item):
+        if item not in self.buffer:
+            return
+        index = self.buffer.index(item)
+        self.buffer.remove(item)
+        if index <= self.ptr:
+            self.ptr = (self.ptr - 1) % self.bufsize
+        self.buffer.insert((self.ptr+1) % self.bufsize, [None])
+
     def nr_of_items(self):
         return self.bufsize - self.buffer.count([None])
 
@@ -1643,6 +1652,20 @@ class TNavigator:
         """Move the turtle to the end position."""
         self._position = end
 
+    @contextmanager
+    def _undo_sequence(self):
+        """Record the enclosed actions as a single undo step."""
+        undobuffer = self.undobuffer
+        if not undobuffer or undobuffer.cumulate:
+            yield
+            return
+        undobuffer.push(["seq"])
+        undobuffer.cumulate = True
+        try:
+            yield
+        finally:
+            undobuffer.cumulate = False
+
     def teleport(self, x=None, y=None, *, fill_gap: bool = False) -> None:
         """To be overwritten by child class RawTurtle.
         Includes no TPen references."""
@@ -1985,15 +2008,12 @@ class TNavigator:
             >>> turtle.circle(50)
             >>> turtle.circle(120, 180)  # draw a semicircle
         """
-        if self.undobuffer:
-            self.undobuffer.push(["seq"])
-            self.undobuffer.cumulate = True
         speed = self.speed()
         if extent is None:
             extent = self._fullcircle
         if steps is None:
             frac = abs(extent)/self._fullcircle
-            steps = 1+int(min(11+abs(radius)/6.0, 59.0)*frac)
+            steps = 1 + int(min(11 + abs(radius) / 6.0, 59.0) * frac)
         w = 1.0 * extent / steps
         w2 = 0.5 * w
         l = 2.0 * radius * math.sin(math.radians(w2)*self._degreesPerAU)
@@ -2001,22 +2021,21 @@ class TNavigator:
             l, w, w2 = -l, -w, -w2
         tr = self._tracer()
         dl = self._delay()
-        if speed == 0:
-            self._tracer(0, 0)
-        else:
-            self.speed(0)
-        self._rotate(w2)
-        for i in range(steps):
+        with self._undo_sequence():
+            if speed == 0:
+                self._tracer(0, 0)
+            else:
+                self.speed(0)
+            self._rotate(w2)
+            for i in range(steps):
+                self.speed(speed)
+                self._go(l)
+                self.speed(0)
+                self._rotate(w)
+            self._rotate(-w2)
+            if speed == 0:
+                self._tracer(tr, dl)
             self.speed(speed)
-            self._go(l)
-            self.speed(0)
-            self._rotate(w)
-        self._rotate(-w2)
-        if speed == 0:
-            self._tracer(tr, dl)
-        self.speed(speed)
-        if self.undobuffer:
-            self.undobuffer.cumulate = False
 
     # Three dummy methods to be implemented by the child class:
 
@@ -2787,16 +2806,19 @@ class RawTurtle(TPen, TNavigator):
         """
         pendown = self.isdown()
         was_filling = self.filling()
-        if pendown:
-            self.pen(pendown=False)
-        if was_filling and not fill_gap:
-            self.end_fill()
-        new_x = x if x is not None else self._position[0]
-        new_y = y if y is not None else self._position[1]
-        self._position = Vec2D(new_x, new_y)
-        self.pen(pendown=pendown)
-        if was_filling and not fill_gap:
-            self.begin_fill()
+        with self._undo_sequence():
+            if pendown:
+                self.pen(pendown=False)
+            if was_filling and not fill_gap:
+                self.end_fill()
+            new_x = x if x is not None else self._position[0]
+            new_y = y if y is not None else self._position[1]
+            if self.undobuffer:
+                self.undobuffer.push(("teleport", self._position))
+            self._position = Vec2D(new_x, new_y)
+            self.pen(pendown=pendown)
+            if was_filling and not fill_gap:
+                self.begin_fill()
 
     def clone(self):
         """Create and return a clone of the turtle.
@@ -3147,7 +3169,8 @@ class RawTurtle(TPen, TNavigator):
                 screen._drawpoly(item, poly, fill=self._cc(fc),
                                  outline=self._cc(oc), width=self._outlinewidth, top=True)
         self.stampItems.append(stitem)
-        self.undobuffer.push(("stamp", stitem))
+        if self.undobuffer:
+            self.undobuffer.push(("stamp", stitem))
         return stitem
 
     def _clearstamp(self, stampid):
@@ -3162,15 +3185,8 @@ class RawTurtle(TPen, TNavigator):
             self.stampItems.remove(stampid)
         # Delete stampitem from undobuffer if necessary
         # if clearstamp is called directly.
-        item = ("stamp", stampid)
-        buf = self.undobuffer
-        if item not in buf.buffer:
-            return
-        index = buf.buffer.index(item)
-        buf.buffer.remove(item)
-        if index <= buf.ptr:
-            buf.ptr = (buf.ptr - 1) % buf.bufsize
-        buf.buffer.insert((buf.ptr+1)%buf.bufsize, [None])
+        if self.undobuffer:
+            self.undobuffer.remove(("stamp", stampid))
 
     def clearstamp(self, stampid):
         """Delete stamp with given stampid
@@ -3468,20 +3484,16 @@ class RawTurtle(TPen, TNavigator):
             color = self._colorstr(color)
         # If screen were to gain a dot function, see GH #104218.
         pen = self.pen()
-        if self.undobuffer:
-            self.undobuffer.push(["seq"])
-            self.undobuffer.cumulate = True
-        try:
-            if self.resizemode() == 'auto':
-                self.ht()
-            self.pendown()
-            self.pensize(size)
-            self.pencolor(color)
-            self.forward(0)
-        finally:
-            self.pen(pen)
-        if self.undobuffer:
-            self.undobuffer.cumulate = False
+        with self._undo_sequence():
+            try:
+                if self.resizemode() == 'auto':
+                    self.ht()
+                self.pendown()
+                self.pensize(size)
+                self.pencolor(color)
+                self.forward(0)
+            finally:
+                self.pen(pen)
 
     def _write(self, txt, align, font):
         """Performs the writing for write()
@@ -3513,15 +3525,11 @@ class RawTurtle(TPen, TNavigator):
         >>> turtle.write('Home = ', True, align="center")
         >>> turtle.write((0,0), True)
         """
-        if self.undobuffer:
-            self.undobuffer.push(["seq"])
-            self.undobuffer.cumulate = True
-        end = self._write(str(arg), align.lower(), font)
-        if move:
-            x, y = self.pos()
-            self.setpos(end, y)
-        if self.undobuffer:
-            self.undobuffer.cumulate = False
+        with self._undo_sequence():
+            end = self._write(str(arg), align.lower(), font)
+            if move:
+                x, y = self.pos()
+                self.setpos(end, y)
 
     @contextmanager
     def poly(self):
@@ -3709,6 +3717,9 @@ class RawTurtle(TPen, TNavigator):
             self.clearstamp(stitem)
         elif action == "go":
             self._undogoto(data)
+        elif action == "teleport":
+            self._position = data[0]
+            self._update()
         elif action in ["wri", "dot"]:
             item = data[0]
             self.screen._delete(item)
