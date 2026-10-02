@@ -1,3 +1,0 @@
-Fix :c:func:`PyBytesWriter_FinishWithSize` to return an empty bytearray when
-:c:func:`!_PyBytesWriter_CreateByteArray` is used, instead of returning an
-empty bytes string. Patch by Victor Stinner.
