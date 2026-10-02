@@ -528,7 +528,7 @@ done:
     }
     assert(obj == NULL || !PyLazyImport_CheckExact(obj));
     if (obj != NULL) {
-        PyObject *name = lazy_import_name(lz);
+        PyObject *name = lazy_import_path(lz);
         if (name == NULL ||
             _PyImport_DiscardLazyModule(tstate->interp, name) < 0) {
             Py_CLEAR(obj);
