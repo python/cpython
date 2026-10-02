@@ -1,10 +1,9 @@
 /*
- * Tests for the WebAssembly function pointer cast trampoline
- * (Python/wasm_trampoline.c).
+ * Tests for Python/wasm_trampoline.c
  *
  * Third party extensions frequently cast functions with the "wrong" number of
  * arguments to PyCFunction, getter, setter or ternaryfunc. On native targets
- * this works by accident; on WebAssembly, call_indirect checks the signature
+ * this works by accident. On WebAssembly, call_indirect checks the signature
  * and traps, so CPython routes these calls through a trampoline that detects
  * the real signature.
  */
@@ -35,8 +34,7 @@ three(PyObject *self, PyObject *args, PyObject *kwargs)
     Py_RETURN_NONE;
 }
 
-/* Four pointer arguments: no trampoline signature matches, so calling this
- * must raise SystemError instead of trapping. */
+// Using this as a handler should raise a SystemError.
 static PyObject *
 four(PyObject *self, PyObject *a, PyObject *b, PyObject *c)
 {
@@ -49,8 +47,6 @@ set_two(PyObject *self, PyObject *value)
     return 0;
 }
 
-/* Record the arguments the setter actually receives so the test can check
- * that the trampoline passes them through correctly. */
 static PyObject *last_set_value = NULL;
 
 static int
@@ -69,9 +65,6 @@ get_last_set_value(PyObject *self, PyObject *Py_UNUSED(args))
     return Py_NewRef(last_set_value);
 }
 
-/* The module-level and type-level tables must be separate arrays: module
- * functions are called via cfunction_vectorcall_* / cfunction_call, while
- * methods go through method_vectorcall_* in descrobject.c. */
 #define FPCAST_METHODS(prefix)                                              \
     {prefix "noargs0", _PyCFunction_CAST(zero), METH_NOARGS},               \
     {prefix "noargs1", _PyCFunction_CAST(one), METH_NOARGS},                \
