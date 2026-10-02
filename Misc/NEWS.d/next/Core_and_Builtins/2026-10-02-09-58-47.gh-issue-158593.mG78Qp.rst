@@ -1,0 +1,2 @@
+Move the ``lazy_imports`` field to the end of the internal ``_PyThreadStateImpl``
+struct so that the offsets of the existing fields match 3.15 rc1 and rc2.
