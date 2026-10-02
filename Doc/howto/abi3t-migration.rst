@@ -315,9 +315,9 @@ If you cannot avoid additional code, refer to the
       PyMODINIT_FUNC
       PyInit_<modname>(void)
       {
-         PyErr_SetString(PyExc_SystemError,
-                         "PyInit_* called for module with PyModExport_*");
-         return NULL;
+          PyErr_SetString(PyExc_SystemError,
+                          "PyInit_* called for module with PyModExport_*");
+          return NULL;
       }
 
    (This issue is present in Setuptools 84.0.0; it might be fixed in newer
