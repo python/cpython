@@ -255,6 +255,7 @@ def configure_wasi_python(context, working_dir):
         f"--host={context.host_triple}",
         f"--build={context.build_python_path.name}",
         f"--with-build-python={build_python}",
+        "CFLAGS=-DPY_CALL_TRAMPOLINE",
     ]
     if context.is_debug:
         configure.append("--with-pydebug")
