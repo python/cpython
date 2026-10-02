@@ -51,7 +51,8 @@ class TestUtils(TestCase):
         prompt = ">>> "
         self.assertEqual(wlen("\x1b]633;A\x07" + prompt), len(prompt))
 
-    def test_wlen_with_unterminated_osc_sequence(self):
+    def test_wlen_with_unterminated_osc_sequence_as_individual_characters(self):
+        # \x1b is treated as a single character (ESC)
         self.assertEqual(wlen("\x1b]633;A"), 7)
 
     def test_prev_next_window(self):
