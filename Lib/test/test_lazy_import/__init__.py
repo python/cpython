@@ -485,6 +485,8 @@ class IndependentSubmoduleTests(LazyImportTestCase):
             import xml
             del xml.dom
             assert not hasattr(xml, 'dom')
+            lazy from xml import dom
+            assert hasattr(xml, 'dom')
         """)
 
     def test_cached_import_releases_builtins(self):

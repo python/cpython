@@ -564,7 +564,8 @@ PyObject *
 _PyLazyImport_LoadChild(PyThreadState *tstate, PyObject *declaration,
                         PyObject *name)
 {
-    PyLazyImportObject *source = (PyLazyImportObject *)declaration;
+    assert(PyLazyImport_CheckExact(declaration));
+    PyLazyImportObject *source = PyLazyImportObject_CAST(declaration);
     PyObject *lz = _PyLazyImport_New(NULL, source->lz_builtins, name, NULL);
     Py_ssize_t end = PyUnicode_GET_LENGTH(name);
     Py_ssize_t dot = PyUnicode_FindChar(name, '.', 0, end, 1);
@@ -587,7 +588,7 @@ _PyLazyImport_LoadChild(PyThreadState *tstate, PyObject *declaration,
     if (lz == NULL) {
         return NULL;
     }
-    PyLazyImportObject *child = (PyLazyImportObject *)lz;
+    PyLazyImportObject *child = PyLazyImportObject_CAST(lz);
     child->lz_code = (PyCodeObject *)Py_XNewRef(source->lz_code);
     child->lz_instr_offset = source->lz_instr_offset;
     PyObject *result = _PyImport_LoadLazyImportTstate(tstate, lz);
@@ -605,8 +606,9 @@ _PyLazyImport_LoadChild(PyThreadState *tstate, PyObject *declaration,
 int
 _PyLazyImport_IsActive(PyObject *declaration)
 {
+    assert(PyLazyImport_CheckExact(declaration));
     return FT_ATOMIC_LOAD_INT_RELAXED(
-        ((PyLazyImportObject *)declaration)->lz_active);
+        PyLazyImportObject_CAST(declaration)->lz_active);
 }
 
 // Loading pkg.child can replace a placeholder in pkg.child with the module
