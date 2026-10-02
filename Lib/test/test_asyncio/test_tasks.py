@@ -1231,6 +1231,25 @@ class BaseTaskTests:
 
         self.loop.run_until_complete(self.new_task(self.loop, coro()))
 
+    def test_gather_discards_awaited_by_for_pending(self):
+        # gh-157213: a child outliving gather() must lose the awaited-by edge
+        async def fail():
+            raise ValueError
+
+        async def survivor():
+            await asyncio.Future()
+
+        async def coro():
+            t = self.new_task(self.loop, survivor())
+            with self.assertRaises(ValueError):
+                await asyncio.gather(t, fail())
+            self.assertFalse(t._asyncio_awaited_by)
+            t.cancel()
+            with self.assertRaises(asyncio.CancelledError):
+                await t
+
+        self.loop.run_until_complete(self.new_task(self.loop, coro()))
+
     def test_wait_really_done(self):
         # there is possibility that some tasks in the pending list
         # became done but their callbacks haven't all been called yet
@@ -1891,6 +1910,30 @@ class BaseTaskTests:
             self.loop.run_until_complete(task),
             'ko')
 
+    def test_step_dont_swallow_systemexit_or_keyboardinterrupt(self):
+        # see gh-108549: do not swallow SystemExit and KeyboardInterrupt
+        # in Task.__step when the current task must be cancelled.
+        async def sub_task(exc):
+            raise exc
+
+        async def current_task(exc):
+            try:
+                await asyncio.create_task(sub_task(exc))
+            except exc:
+                pass
+            except BaseException as e:
+                self.fail(f'{exc} is expected, instead of {type(e)}')
+            return "ok"
+
+        for exc in (SystemExit, KeyboardInterrupt):
+            with self.subTest(exc):
+                t = self.new_task(self.loop, current_task(exc))
+                self.assertRaises(exc, self.loop.run_until_complete, t)
+                t.cancel()
+                test_utils.run_briefly(self.loop)
+                self.assertTrue(not t.cancelled())
+                self.assertEqual(t.result(), "ok")
+
     def test_step_result_future(self):
         # If coroutine returns future, task waits on this future.
 
@@ -2110,7 +2153,7 @@ class BaseTaskTests:
         self.assertTrue(outer.cancelled())
         self.assertEqual(0, 0 if outer._callbacks is None else len(outer._callbacks))
         self.assertFalse(inner._asyncio_awaited_by)
-        self.assertTrue({f for f, _ctx in inner._callbacks or []} <= {asyncio.tasks._log_on_exception})
+        self.assertFalse(inner._callbacks)
 
     def test_shield_cancel_outer_result(self):
         mock_handler = mock.Mock()
@@ -2125,6 +2168,8 @@ class BaseTaskTests:
         mock_handler.assert_not_called()
 
     def test_shield_cancel_outer_exception(self):
+        # gh-156321: an exception in the inner future must not be reported
+        # eagerly, as it may still be retrieved later.
         mock_handler = mock.Mock()
         self.loop.set_exception_handler(mock_handler)
         inner = self.new_future(self.loop)
@@ -2134,7 +2179,29 @@ class BaseTaskTests:
         test_utils.run_briefly(self.loop)
         inner.set_exception(Exception('foo'))
         test_utils.run_briefly(self.loop)
+        mock_handler.assert_not_called()
+        self.assertIsInstance(inner.exception(), Exception)
+
+    def test_shield_cancel_outer_exception_never_retrieved(self):
+        # gh-156321: an exception nobody retrieves is reported by the inner
+        # future itself when it is garbage collected, like any other future.
+        mock_handler = mock.Mock()
+        self.loop.set_exception_handler(mock_handler)
+        inner = self.new_future(self.loop)
+        outer = asyncio.shield(inner)
+        test_utils.run_briefly(self.loop)
+        outer.cancel()
+        test_utils.run_briefly(self.loop)
+        inner.set_exception(Exception('foo'))
+        test_utils.run_briefly(self.loop)
+        mock_handler.assert_not_called()
+        inner = None
+        outer = None
+        support.gc_collect()
         mock_handler.assert_called_once()
+        context = mock_handler.call_args[0][1]
+        self.assertEndsWith(context['message'], 'exception was never retrieved')
+        self.assertIsInstance(context['exception'], Exception)
 
     def test_shield_cancel_outer_in_task(self):
         inner = self.new_future(self.loop)
@@ -2149,9 +2216,9 @@ class BaseTaskTests:
         task = self.new_task(self.loop, coro())
         self.loop.run_until_complete(task)
         self.assertFalse(inner._asyncio_awaited_by)
-        self.assertTrue({f for f, _ctx in inner._callbacks or []} <= {asyncio.tasks._log_on_exception})
+        self.assertFalse(inner._callbacks)
 
-    def test_shield_duplicate_log_once(self):
+    def test_shield_cancel_outer_twice_exception(self):
         mock_handler = mock.Mock()
         self.loop.set_exception_handler(mock_handler)
         inner = self.new_future(self.loop)
@@ -2163,9 +2230,11 @@ class BaseTaskTests:
         test_utils.run_briefly(self.loop)
         outer.cancel()
         test_utils.run_briefly(self.loop)
+        self.assertFalse(inner._callbacks)
         inner.set_exception(Exception('foo'))
         test_utils.run_briefly(self.loop)
-        mock_handler.assert_called_once()
+        mock_handler.assert_not_called()
+        self.assertIsInstance(inner.exception(), Exception)
 
     def test_shield_shortcut(self):
         fut = self.new_future(self.loop)
@@ -2589,6 +2658,68 @@ class BaseTaskTests:
         try:
             task = self.new_task(loop, main())
             loop.run_until_complete(task)
+        finally:
+            loop.close()
+
+    def test_context_not_a_context(self):
+        # gh-157301
+        async def coro():
+            pass
+
+        loop = asyncio.new_event_loop()
+        c = coro()
+        try:
+            with self.assertRaises(TypeError):
+                self.new_task(loop, c, context='not a context')
+        finally:
+            c.close()
+            loop.close()
+
+    def test_context_not_a_context_leaves_loop_usable(self):
+        # gh-157301
+        async def coro():
+            pass
+
+        async def main():
+            c = coro()
+            try:
+                with self.assertRaises(TypeError):
+                    self.new_task(loop, c, context='not a context',
+                                  eager_start=True)
+            finally:
+                c.close()
+            await asyncio.sleep(0)
+
+        loop = asyncio.new_event_loop()
+        loop.call_later(support.SHORT_TIMEOUT, loop.stop)
+        try:
+            loop.run_until_complete(self.new_task(loop, main()))
+        finally:
+            loop.close()
+
+    def test_context_already_entered_leaves_loop_usable(self):
+        # gh-157301
+        async def coro():
+            pass
+
+        async def main():
+            ctx = contextvars.copy_context()
+
+            def inside():
+                c = coro()
+                try:
+                    with self.assertRaises(RuntimeError):
+                        self.new_task(loop, c, context=ctx, eager_start=True)
+                finally:
+                    c.close()
+
+            ctx.run(inside)
+            await asyncio.sleep(0)
+
+        loop = asyncio.new_event_loop()
+        loop.call_later(support.SHORT_TIMEOUT, loop.stop)
+        try:
+            loop.run_until_complete(self.new_task(loop, main()))
         finally:
             loop.close()
 

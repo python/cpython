@@ -635,10 +635,15 @@ _io_IncrementalNewlineDecoder_reset_impl(nldecoder_object *self)
         Py_RETURN_NONE;
 }
 
+/*[clinic input]
+@getter
+_io.IncrementalNewlineDecoder.newlines
+[clinic start generated code]*/
+
 static PyObject *
-incrementalnewlinedecoder_newlines_get(PyObject *op, void *Py_UNUSED(context))
+_io_IncrementalNewlineDecoder_newlines_get_impl(nldecoder_object *self)
+/*[clinic end generated code: output=4370cf5202a83d08 input=040f9a26aef317a8]*/
 {
-    nldecoder_object *self = nldecoder_object_CAST(op);
     CHECK_INITIALIZED_DECODER(self);
 
     switch (self->seennl) {
@@ -1671,17 +1676,17 @@ _textiowrapper_writeflush(textio *self)
     }
     else {
         assert(PyList_Check(pending));
-        b = PyBytes_FromStringAndSize(NULL, self->pending_bytes_count);
-        if (b == NULL) {
+        PyBytesWriter *writer = PyBytesWriter_Create(self->pending_bytes_count);
+        if (writer == NULL) {
             return -1;
         }
 
-        char *buf = PyBytes_AsString(b);
+        char *buf = PyBytesWriter_GetData(writer);
         Py_ssize_t pos = 0;
 
         for (Py_ssize_t i = 0; i < PyList_GET_SIZE(pending); i++) {
             PyObject *obj = PyList_GET_ITEM(pending, i);
-            char *src;
+            const char *src;
             Py_ssize_t len;
             if (PyUnicode_Check(obj)) {
                 assert(PyUnicode_IS_ASCII(obj));
@@ -1690,15 +1695,18 @@ _textiowrapper_writeflush(textio *self)
             }
             else {
                 assert(PyBytes_Check(obj));
-                if (PyBytes_AsStringAndSize(obj, &src, &len) < 0) {
-                    Py_DECREF(b);
-                    return -1;
-                }
+                src = PyBytes_AS_STRING(obj);
+                len = PyBytes_GET_SIZE(obj);
             }
             memcpy(buf + pos, src, len);
             pos += len;
         }
         assert(pos == self->pending_bytes_count);
+
+        b = PyBytesWriter_Finish(writer);
+        if (b == NULL) {
+            return -1;
+        }
     }
 
     self->pending_bytes_count = 0;
@@ -3391,38 +3399,35 @@ _io_TextIOWrapper_errors_get_impl(textio *self)
 /*[clinic input]
 @critical_section
 @getter
-_io.TextIOWrapper._CHUNK_SIZE
+_io.TextIOWrapper._CHUNK_SIZE -> Py_ssize_t
 [clinic start generated code]*/
 
-static PyObject *
+static Py_ssize_t
 _io_TextIOWrapper__CHUNK_SIZE_get_impl(textio *self)
-/*[clinic end generated code: output=039925cd2df375bc input=e9715b0e06ff0fa6]*/
+/*[clinic end generated code: output=3fe34b873b6b2c8c input=cae767b74b6b46bd]*/
 {
-    CHECK_ATTACHED(self);
-    return PyLong_FromSsize_t(self->chunk_size);
+    CHECK_ATTACHED_INT(self);
+    return self->chunk_size;
 }
 
 /*[clinic input]
 @critical_section
 @setter
 _io.TextIOWrapper._CHUNK_SIZE
+    value: Py_ssize_t
 [clinic start generated code]*/
 
 static int
-_io_TextIOWrapper__CHUNK_SIZE_set_impl(textio *self, PyObject *value)
-/*[clinic end generated code: output=edb86d2db660a5ab input=32fc99861db02a0a]*/
+_io_TextIOWrapper__CHUNK_SIZE_set_impl(textio *self, Py_ssize_t value)
+/*[clinic end generated code: output=5170a93dd4d74917 input=ede7bae6145f941b]*/
 {
-    Py_ssize_t n;
     CHECK_ATTACHED_INT(self);
-    n = PyNumber_AsSsize_t(value, PyExc_ValueError);
-    if (n == -1 && PyErr_Occurred())
-        return -1;
-    if (n <= 0) {
+    if (value <= 0) {
         PyErr_SetString(PyExc_ValueError,
                         "a strictly positive integer is required");
         return -1;
     }
-    self->chunk_size = n;
+    self->chunk_size = value;
     return 0;
 }
 
@@ -3448,7 +3453,7 @@ static PyMethodDef incrementalnewlinedecoder_methods[] = {
 };
 
 static PyGetSetDef incrementalnewlinedecoder_getset[] = {
-    {"newlines", incrementalnewlinedecoder_newlines_get, NULL, NULL},
+    _IO_INCREMENTALNEWLINEDECODER_NEWLINES_GETSETDEF
     {NULL}
 };
 
