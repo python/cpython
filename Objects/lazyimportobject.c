@@ -9,6 +9,7 @@
 #include "pycore_lazyimportobject.h"
 #include "pycore_long.h"
 #include "pycore_moduleobject.h"
+#include "pycore_pyatomic_ft_wrappers.h"
 #include "pycore_pyerrors.h"
 #include "pycore_traceback.h"
 #include "pycore_tstate.h"
@@ -25,6 +26,8 @@ typedef struct {
     // Declaration location.
     PyCodeObject *lz_code;
     int lz_instr_offset;
+    // The root was accessed, so its declared path requires import semantics.
+    int lz_active;
 } PyLazyImportObject;
 
 #define PyLazyImportObject_CAST(op) ((PyLazyImportObject *)(op))
@@ -70,6 +73,7 @@ _PyLazyImport_New(_PyInterpreterFrame *frame, PyObject *builtins,
 
     m->lz_code = NULL;
     m->lz_instr_offset = -1;
+    m->lz_active = 0;
 
     if (frame != NULL) {
         m->lz_code = (PyCodeObject *)Py_NewRef(_PyFrame_GetCode(frame));
@@ -429,10 +433,81 @@ lazy_import_resolve_impl(PyThreadState *tstate, PyObject *lazy_import,
         PyErr_SetString(PyExc_ImportError, "__import__ not found");
         goto done;
     }
+    PyObject *name = Py_NewRef(root->lz_from);
+    if (first == NULL &&
+        (fromlist == Py_None ||
+         (PyTuple_Check(fromlist) && PyTuple_GET_SIZE(fromlist) == 0)) &&
+        _PyImport_IsDefaultImportFunc(tstate->interp, import_func) &&
+        root->lz_builtins == tstate->interp->builtins) {
+        // A plain import binds the root package. Its pending children are
+        // imported separately when their attributes are accessed.
+        Py_ssize_t dot = PyUnicode_FindChar(
+            name, '.', 0, PyUnicode_GET_LENGTH(name), 1);
+        if (dot >= 0) {
+            // Preserve eager traversal through aliased or non-package parents.
+            int regular = 1;
+            int complete = 1;
+            Py_ssize_t end = PyUnicode_GET_LENGTH(name);
+            for (Py_ssize_t i = dot; i >= 0 && regular;
+                 i = PyUnicode_FindChar(name, '.', i + 1, end, 1)) {
+                PyObject *prefix = PyUnicode_Substring(name, 0, i);
+                PyObject *cached = prefix == NULL ? NULL :
+                    lazy_import_get_loaded_attr(tstate, prefix, &_Py_ID(__name__));
+                if (cached == NULL) {
+                    complete = 0;
+                    Py_XDECREF(prefix);
+                    break;
+                }
+                PyObject *path = lazy_import_get_loaded_attr(
+                    tstate, prefix, &_Py_ID(__path__));
+                regular = path != NULL && PyUnicode_Check(cached) &&
+                    PyUnicode_Compare(cached, prefix) == 0;
+                Py_XDECREF(path);
+                Py_DECREF(cached);
+                Py_DECREF(prefix);
+            }
+            PyObject *loaded = lazy_import_get_loaded_attr(
+                tstate, name, &_Py_ID(__name__));
+            if (regular && (!complete || loaded == NULL) && !PyErr_Occurred()) {
+                Py_SETREF(name, PyUnicode_Substring(name, 0, dot));
+            }
+            Py_XDECREF(loaded);
+            if (PyErr_Occurred()) {
+                Py_CLEAR(name);
+            }
+        }
+        else if (dot == -2) {
+            Py_CLEAR(name);
+        }
+        if (name == NULL) {
+            goto done;
+        }
+    }
     obj = _PyEval_ImportNameWithImport(
         tstate, import_func, globals, globals,
-        root->lz_from, fromlist, _PyLong_GetZero()
+        name, fromlist, _PyLong_GetZero()
     );
+    if (obj != NULL && name != root->lz_from) {
+        FT_ATOMIC_STORE_INT_RELAXED(root->lz_active, 1);
+        FT_ATOMIC_STORE_INT_RELAXED(tstate->interp->imports.has_lazy_submodules, 1);
+        int package = PyModule_CheckExact(obj) ?
+            PyDict_Contains(_PyModule_GetDict(obj), &_Py_ID(__path__)) : 0;
+        if (package < 0) {
+            Py_CLEAR(obj);
+        }
+        else if (!package) {
+            Py_DECREF(obj);
+            obj = _PyEval_ImportNameWithImport(
+                tstate, import_func, globals, globals,
+                root->lz_from, fromlist, _PyLong_GetZero());
+        }
+    }
+    if (obj != NULL && name == root->lz_from &&
+        _PyImport_IsDefaultImportFunc(tstate->interp, import_func) &&
+        _PyImport_ClearLazySubmodule(tstate, name, 0) < 0) {
+        Py_CLEAR(obj);
+    }
+    Py_DECREF(name);
     obj = lazy_import_resolve_result(tstate, obj);
     // The normal importer may publish this module on its parent. Custom
     // hooks retain control of their own assignments to the parent.
@@ -453,7 +528,7 @@ done:
     }
     assert(obj == NULL || !PyLazyImport_CheckExact(obj));
     if (obj != NULL) {
-        PyObject *name = lazy_import_name(lz);
+        PyObject *name = lazy_import_path(lz);
         if (name == NULL ||
             _PyImport_DiscardLazyModule(tstate->interp, name) < 0) {
             Py_CLEAR(obj);
@@ -482,6 +557,58 @@ PyObject *
 _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
 {
     return lazy_import_resolve_impl(tstate, lazy_import, NULL);
+}
+
+// Resolve a pending child as an aliased import, preserving its declaration.
+PyObject *
+_PyLazyImport_LoadChild(PyThreadState *tstate, PyObject *declaration,
+                        PyObject *name)
+{
+    assert(PyLazyImport_CheckExact(declaration));
+    PyLazyImportObject *source = PyLazyImportObject_CAST(declaration);
+    PyObject *lz = _PyLazyImport_New(NULL, source->lz_builtins, name, NULL);
+    Py_ssize_t end = PyUnicode_GET_LENGTH(name);
+    Py_ssize_t dot = PyUnicode_FindChar(name, '.', 0, end, 1);
+    if (dot == -2) {
+        Py_CLEAR(lz);
+    }
+    while (lz != NULL && dot >= 0) {
+        Py_ssize_t start = dot + 1;
+        dot = PyUnicode_FindChar(name, '.', start, end, 1);
+        if (dot == -2) {
+            Py_CLEAR(lz);
+            break;
+        }
+        PyObject *attr = PyUnicode_Substring(name, start, dot < 0 ? end : dot);
+        PyObject *next = attr == NULL ? NULL :
+            _PyLazyImport_New(NULL, NULL, lz, attr);
+        Py_XDECREF(attr);
+        Py_SETREF(lz, next);
+    }
+    if (lz == NULL) {
+        return NULL;
+    }
+    PyLazyImportObject *child = PyLazyImportObject_CAST(lz);
+    child->lz_code = (PyCodeObject *)Py_XNewRef(source->lz_code);
+    child->lz_instr_offset = source->lz_instr_offset;
+    PyObject *result = _PyImport_LoadLazyImportTstate(tstate, lz);
+    Py_DECREF(lz);
+    if (result != NULL && PyModule_Check(result) &&
+        PyUnicode_Compare(source->lz_from, name) != 0 &&
+        !PyDict_Contains(_PyModule_GetDict(result), &_Py_ID(__path__))) {
+        // Reaching a non-package must still reject an invalid dotted import.
+        Py_DECREF(result);
+        return _PyLazyImport_LoadChild(tstate, declaration, source->lz_from);
+    }
+    return result;
+}
+
+int
+_PyLazyImport_IsActive(PyObject *declaration)
+{
+    assert(PyLazyImport_CheckExact(declaration));
+    return FT_ATOMIC_LOAD_INT_RELAXED(
+        PyLazyImportObject_CAST(declaration)->lz_active);
 }
 
 // Loading pkg.child can replace a placeholder in pkg.child with the module
