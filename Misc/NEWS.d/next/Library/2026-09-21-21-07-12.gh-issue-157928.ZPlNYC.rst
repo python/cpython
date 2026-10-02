@@ -1,1 +1,1 @@
-Correctly detect and handle OSC sequences in PyREPL
+Correctly detect and handle OSC sequences in PyREPL.
