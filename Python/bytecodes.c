@@ -3833,9 +3833,9 @@ dummy_func(
             next = item;
         }
 
-        tier2 op(_GUARD_TYPE_ITER, (expected_type/4, iter, null_or_index -- iter, null_or_index)) {
-            PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
-            EXIT_IF(Py_TYPE(iter_o) != (PyTypeObject *)expected_type);
+        tier2 op(_GUARD_NOS_TYPE, (expected_type/4, nos, unused -- nos, unused)) {
+            PyObject *nos_o = PyStackRef_AsPyObjectBorrow(nos);
+            EXIT_IF(Py_TYPE(nos_o) != (PyTypeObject *)expected_type);
         }
 
         tier2 op(_ITER_NEXT_INLINE, (iternext_fn/4, iter, null_or_index -- iter, null_or_index, next)) {
