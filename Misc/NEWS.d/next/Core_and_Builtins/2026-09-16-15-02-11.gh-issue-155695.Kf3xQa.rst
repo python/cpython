@@ -1,0 +1,3 @@
+Resolved names are now removed from :data:`sys.lazy_modules` more
+consistently: a lazy import of an already loaded module is no longer recorded,
+and reifying ``lazy from pkg import attr`` now discards the ``pkg.attr`` entry.
