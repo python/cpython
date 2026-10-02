@@ -2153,7 +2153,7 @@ class BaseTaskTests:
         self.assertTrue(outer.cancelled())
         self.assertEqual(0, 0 if outer._callbacks is None else len(outer._callbacks))
         self.assertFalse(inner._asyncio_awaited_by)
-        self.assertTrue({f for f, _ctx in inner._callbacks or []} <= {asyncio.tasks._log_on_exception})
+        self.assertFalse(inner._callbacks)
 
     def test_shield_cancel_outer_result(self):
         mock_handler = mock.Mock()
@@ -2168,6 +2168,8 @@ class BaseTaskTests:
         mock_handler.assert_not_called()
 
     def test_shield_cancel_outer_exception(self):
+        # gh-156321: an exception in the inner future must not be reported
+        # eagerly, as it may still be retrieved later.
         mock_handler = mock.Mock()
         self.loop.set_exception_handler(mock_handler)
         inner = self.new_future(self.loop)
@@ -2177,7 +2179,29 @@ class BaseTaskTests:
         test_utils.run_briefly(self.loop)
         inner.set_exception(Exception('foo'))
         test_utils.run_briefly(self.loop)
+        mock_handler.assert_not_called()
+        self.assertIsInstance(inner.exception(), Exception)
+
+    def test_shield_cancel_outer_exception_never_retrieved(self):
+        # gh-156321: an exception nobody retrieves is reported by the inner
+        # future itself when it is garbage collected, like any other future.
+        mock_handler = mock.Mock()
+        self.loop.set_exception_handler(mock_handler)
+        inner = self.new_future(self.loop)
+        outer = asyncio.shield(inner)
+        test_utils.run_briefly(self.loop)
+        outer.cancel()
+        test_utils.run_briefly(self.loop)
+        inner.set_exception(Exception('foo'))
+        test_utils.run_briefly(self.loop)
+        mock_handler.assert_not_called()
+        inner = None
+        outer = None
+        support.gc_collect()
         mock_handler.assert_called_once()
+        context = mock_handler.call_args[0][1]
+        self.assertEndsWith(context['message'], 'exception was never retrieved')
+        self.assertIsInstance(context['exception'], Exception)
 
     def test_shield_cancel_outer_in_task(self):
         inner = self.new_future(self.loop)
@@ -2192,9 +2216,9 @@ class BaseTaskTests:
         task = self.new_task(self.loop, coro())
         self.loop.run_until_complete(task)
         self.assertFalse(inner._asyncio_awaited_by)
-        self.assertTrue({f for f, _ctx in inner._callbacks or []} <= {asyncio.tasks._log_on_exception})
+        self.assertFalse(inner._callbacks)
 
-    def test_shield_duplicate_log_once(self):
+    def test_shield_cancel_outer_twice_exception(self):
         mock_handler = mock.Mock()
         self.loop.set_exception_handler(mock_handler)
         inner = self.new_future(self.loop)
@@ -2206,9 +2230,11 @@ class BaseTaskTests:
         test_utils.run_briefly(self.loop)
         outer.cancel()
         test_utils.run_briefly(self.loop)
+        self.assertFalse(inner._callbacks)
         inner.set_exception(Exception('foo'))
         test_utils.run_briefly(self.loop)
-        mock_handler.assert_called_once()
+        mock_handler.assert_not_called()
+        self.assertIsInstance(inner.exception(), Exception)
 
     def test_shield_shortcut(self):
         fut = self.new_future(self.loop)

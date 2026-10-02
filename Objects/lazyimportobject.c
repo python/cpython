@@ -527,6 +527,14 @@ done:
         lazy_import_add_exception_cause(tstate, lz);
     }
     assert(obj == NULL || !PyLazyImport_CheckExact(obj));
+    if (obj != NULL) {
+        PyObject *name = lazy_import_name(lz);
+        if (name == NULL ||
+            _PyImport_DiscardLazyModule(tstate->interp, name) < 0) {
+            Py_CLEAR(obj);
+        }
+        Py_XDECREF(name);
+    }
     if (resolving != NULL) {
         // A failed set resize can leave the placeholder inserted. Removing by
         // identity also permits greenlets to finish in a different order.

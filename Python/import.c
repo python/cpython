@@ -284,6 +284,12 @@ _PyImport_ClearLazyModules(PyInterpreterState *interp)
     Py_CLEAR(LAZY_PENDING_SUBMODULES(interp));
 }
 
+int
+_PyImport_DiscardLazyModule(PyInterpreterState *interp, PyObject *name)
+{
+    return PySet_Discard(LAZY_MODULES(interp), name);
+}
+
 static PyObject *
 get_importtime_name(PyObject *name)
 {
@@ -4135,6 +4141,47 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
     return final_mod;
 }
 
+// Add *name* to `sys.lazy_modules`.
+// Skip the registration if *name* is already imported, and fully initialized.
+// If *existing_mod_p* is not NULL, set it to the already imported object (or
+// NULL if not found), for use by register_lazy_on_parent.
+static int
+lazy_modules_add(PyThreadState *tstate, PyObject *name,
+                 PyObject **existing_mod_p)
+{
+    PyObject *mod = import_get_module(tstate, name);
+    if (mod == NULL && PyErr_Occurred()) {
+        return -1;
+    }
+    int loaded = mod != NULL && mod != Py_None;
+    if (loaded && PyModule_Check(mod)) {
+        PyObject *spec;
+        if (PyDict_GetItemRef(_PyModule_GetDict(mod), &_Py_ID(__spec__), &spec) < 0) {
+            Py_DECREF(mod);
+            return -1;
+        }
+        loaded = spec == NULL || spec == Py_None;
+        if (!loaded) {
+            // Read the usual flag without callbacks or dictionary allocation.
+            // Unsupported spec representations stay conservatively tracked.
+            PyObject *initializing = NULL;
+            if ((Py_TYPE(spec)->tp_flags & Py_TPFLAGS_INLINE_VALUES) &&
+                _PyObject_TryGetInstanceAttribute(spec, &_Py_ID(_initializing), &initializing)) {
+                loaded = initializing == NULL || initializing == Py_False;
+            }
+            Py_XDECREF(initializing);
+        }
+        Py_XDECREF(spec);
+    }
+    if (existing_mod_p != NULL) {
+        *existing_mod_p = mod;
+    }
+    else {
+        Py_XDECREF(mod);
+    }
+    return loaded ? 0 : PySet_Add(LAZY_MODULES(tstate->interp), name);
+}
+
 // Ensure a dict of pending submodule names exists for the parent.
 // Returns a new reference.
 static PyObject *
@@ -4207,22 +4254,30 @@ register_lazy_on_parent(PyThreadState *tstate, PyObject *name, PyObject *source)
 }
 
 static int
-register_from_lazy_on_parent(PyThreadState *tstate, PyObject *abs_name,
-                             PyObject *from)
+register_from_lazy_on_parent(PyThreadState *tstate, PyObject *existing_module,
+                             PyObject *abs_name, PyObject *from)
 {
+    // IMPORT_FROM returns stored attributes directly.  Their imports are
+    // already resolved or tracked by their own placeholders, so skip the alias.
+    int rc = 0;
+    if (existing_module != NULL && PyModule_Check(existing_module)) {
+        rc = PyDict_Contains(_PyModule_GetDict(existing_module), from);
+        if (rc != 0) {
+            return rc < 0 ? -1 : 0;
+        }
+    }
+
     PyObject *fromname = PyUnicode_FromFormat("%U.%U", abs_name, from);
     if (fromname == NULL) {
         return -1;
     }
 
-    // Add the module name to sys.lazy_modules set (PEP 810).
-    PyObject *lazy_modules = LAZY_MODULES(tstate->interp);
-    int res = PySet_Add(lazy_modules, fromname);
-    if (res == 0) {
-        res = register_lazy_on_parent(tstate, fromname, Py_None);
+    rc = lazy_modules_add(tstate, fromname, NULL);
+    if (rc == 0) {
+        rc = register_lazy_on_parent(tstate, fromname, Py_None);
     }
     Py_DECREF(fromname);
-    return res;
+    return rc;
 }
 
 // Release completed declarations, retaining names while their parent may fail.
@@ -4415,6 +4470,8 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
     }
 
     PyObject *res = NULL;
+    PyObject *existing_module = NULL;
+
     if (fromlist != NULL && PyUnicode_Check(fromlist)) {
         fromlist = PyTuple_Pack(1, fromlist);
         if (fromlist == NULL) {
@@ -4479,15 +4536,13 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
         goto done;
     }
 
-    // Add the module name to sys.lazy_modules set (PEP 810).
-    PyObject *lazy_modules = LAZY_MODULES(tstate->interp);
-    if (PySet_Add(lazy_modules, abs_name) < 0) {
+    if (lazy_modules_add(tstate, abs_name, &existing_module) < 0) {
         goto error;
     }
 
     if (PyTuple_Check(fromlist) && PyTuple_GET_SIZE(fromlist)) {
         for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(fromlist); i++) {
-            if (register_from_lazy_on_parent(tstate, abs_name,
+            if (register_from_lazy_on_parent(tstate, existing_module, abs_name,
                                              PyTuple_GET_ITEM(fromlist, i)) < 0)
             {
                 goto error;
@@ -4504,6 +4559,7 @@ error:
 done:
     Py_XDECREF(fromlist);
     Py_DECREF(abs_name);
+    Py_XDECREF(existing_module);
     return res;
 }
 
