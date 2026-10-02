@@ -1196,6 +1196,21 @@ int _PyEval_StoreName(PyThreadState *tstate, _PyStackRef v, PyObject *name, PyOb
 #endif
 
 #ifdef WITH_DTRACE
+/* Return the UTF-8 encoding of name, or NULL if it cannot be encoded
+   (e.g. it contains a lone surrogate).  Never sets an exception and keeps
+   the current one, if any, since it is used in the unwinding path. */
+static const char *
+dtrace_utf8(PyObject *name)
+{
+    PyObject *exc = PyErr_GetRaisedException();
+    const char *utf8 = PyUnicode_AsUTF8(name);
+    if (utf8 == NULL) {
+        PyErr_Clear();
+    }
+    PyErr_SetRaisedException(exc);
+    return utf8;
+}
+
 static void
 dtrace_function_entry(_PyInterpreterFrame *frame)
 {
@@ -1204,8 +1219,8 @@ dtrace_function_entry(_PyInterpreterFrame *frame)
     int lineno;
 
     PyCodeObject *code = _PyFrame_GetCode(frame);
-    filename = PyUnicode_AsUTF8(code->co_filename);
-    funcname = PyUnicode_AsUTF8(code->co_name);
+    filename = dtrace_utf8(code->co_filename);
+    funcname = dtrace_utf8(code->co_name);
     lineno = PyUnstable_InterpreterFrame_GetLine(frame);
 
     PyDTrace_FUNCTION_ENTRY(filename, funcname, lineno);
@@ -1219,8 +1234,8 @@ dtrace_function_return(_PyInterpreterFrame *frame)
     int lineno;
 
     PyCodeObject *code = _PyFrame_GetCode(frame);
-    filename = PyUnicode_AsUTF8(code->co_filename);
-    funcname = PyUnicode_AsUTF8(code->co_name);
+    filename = dtrace_utf8(code->co_filename);
+    funcname = dtrace_utf8(code->co_name);
     lineno = PyUnstable_InterpreterFrame_GetLine(frame);
 
     PyDTrace_FUNCTION_RETURN(filename, funcname, lineno);

@@ -308,6 +308,20 @@ class BPFTraceBackend(TraceBackend):
             }}
             END {{ clear(@tracing); }}
         """,
+        "unencodable_names": """
+            usdt:{python}:python:function__entry /arg0 == 0 || arg1 == 0/ {{
+                printf("%lld\\tfunction__entry:%d\\n", nsecs, arg2);
+            }}
+            usdt:{python}:python:function__return /arg0 == 0 || arg1 == 0/ {{
+                printf("%lld\\tfunction__return:%d\\n", nsecs, arg2);
+            }}
+            usdt:{python}:python:import__find__load__start /arg0 == 0/ {{
+                printf("%lld\\timport__find__load__start\\n", nsecs);
+            }}
+            usdt:{python}:python:import__find__load__done /arg0 == 0/ {{
+                printf("%lld\\timport__find__load__done:%d\\n", nsecs, arg1);
+            }}
+        """,
     }
 
     # Which test scripts to filter by filename (None = use @tracing flag)
@@ -352,6 +366,12 @@ gc__start:2
 gc__done:0
 gc__start:2
 gc__done:1""",
+        "unencodable_names": """function__entry:1
+function__return:2
+function__entry:4
+function__return:5
+import__find__load__start
+import__find__load__done:0""",
     }
 
     def run_case(self, name, optimize_python=None):
@@ -493,6 +513,9 @@ class TraceTests:
 
     def test_gc(self):
         self.run_case("gc")
+
+    def test_unencodable_names(self):
+        self.run_case("unencodable_names")
 
 
 class DTraceNormalTests(TraceTests, unittest.TestCase):

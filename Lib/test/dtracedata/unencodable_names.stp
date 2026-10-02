@@ -1,0 +1,21 @@
+probe @PYTHON_SYSTEMTAP_PROBE@("function__entry"),
+      @PYTHON_SYSTEMTAP_PROBE@("function__return")
+{
+    if ($arg1 == 0 || $arg2 == 0) {
+        printf("%d\t%s:%d\n", gettimeofday_us(), $$name, $arg3);
+    }
+}
+
+probe @PYTHON_SYSTEMTAP_PROBE@("import__find__load__start")
+{
+    if ($arg1 == 0) {
+        printf("%d\t%s\n", gettimeofday_us(), $$name);
+    }
+}
+
+probe @PYTHON_SYSTEMTAP_PROBE@("import__find__load__done")
+{
+    if ($arg1 == 0) {
+        printf("%d\t%s:%d\n", gettimeofday_us(), $$name, $arg2);
+    }
+}
