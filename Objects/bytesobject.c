@@ -349,6 +349,7 @@ bytes_fromformat(PyBytesWriter *writer, Py_ssize_t writer_pos,
                 memmove(buffer + 2, buffer, len + 1);
                 buffer[0] = '0';
                 buffer[1] = 'x';
+                len += 2;
             }
             WRITE_BYTES(buffer, len);
             break;
