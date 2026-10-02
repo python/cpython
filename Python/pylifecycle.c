@@ -3080,7 +3080,18 @@ create_stdio(const PyConfig *config, PyObject* io,
     newline = "\n";
 #endif
 
-    PyObject *encoding_str = PyUnicode_FromWideChar(encoding, -1);
+    PyObject *encoding_str;
+    if (encoding != NULL) {
+        encoding_str = PyUnicode_FromWideChar(encoding, -1);
+    }
+    else {
+        /* gh-86427: use the encoding of the device. */
+        encoding_str = _Py_device_encoding(fd);
+        if (encoding_str == Py_None) {
+            Py_DECREF(encoding_str);
+            encoding_str = _Py_GetLocaleEncodingObject();
+        }
+    }
     if (encoding_str == NULL) {
         Py_CLEAR(buf);
         goto error;
@@ -3819,10 +3830,9 @@ _Py_FatalRefcountErrorFunc(const char *func, const char *msg)
 void _Py_NO_RETURN
 Py_ExitStatusException(PyStatus status)
 {
-    if (_PyStatus_IS_EXIT(status)) {
-        exit(status.exitcode);
-    }
-    else if (_PyStatus_IS_ERROR(status)) {
+    assert(!_PyStatus_IS_EXIT(status));
+
+    if (_PyStatus_IS_ERROR(status)) {
         fatal_error(fileno(stderr), 1, status.func, status.err_msg, 1);
     }
     else {
