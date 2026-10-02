@@ -989,7 +989,8 @@ bytearray___init___impl(PyByteArrayObject *self, PyObject *arg,
 
         /* Most encodes return a new unique bytes, just use it as buffer. */
         if (_PyObject_IsUniquelyReferenced(encoded)
-            && PyBytes_CheckExact(encoded))
+            && PyBytes_CheckExact(encoded)
+            && _PyBytes_GET_CACHED_HASH((PyBytesObject*)encoded) == -1)
         {
             Py_ssize_t size = Py_SIZE(encoded);
             self->ob_bytes_object = encoded;
