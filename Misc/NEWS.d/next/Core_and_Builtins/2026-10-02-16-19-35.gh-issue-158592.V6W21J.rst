@@ -1,0 +1,3 @@
+Fix deletion by index from a :class:`list` (``del list[index]``), which did
+not reallocate the underlying array and thus did not free memory (a
+regression made in 3.13.0a5).
