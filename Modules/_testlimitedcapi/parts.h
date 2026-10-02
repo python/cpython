@@ -53,5 +53,6 @@ int _PyTestLimitedCAPI_Init_Weakref(PyObject *module);
 int _PyTestLimitedCAPI_Init_Run(PyObject *module);
 int _PyTestLimitedCAPI_Init_Type(PyObject *module);
 int _PyTestLimitedCAPI_Init_Hash(PyObject *module);
+int _PyTestLimitedCAPI_Init_Build(PyObject *module);
 
 #endif // Py_TESTLIMITEDCAPI_PARTS_H

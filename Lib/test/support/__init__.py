@@ -3525,17 +3525,12 @@ def check_immutable_type(testcase, type):
 
 def built_with_c_assertions():
     """Check if Python was built with C assertions (assert())."""
-
-    if MS_WINDOWS:
-        # On Windows, rely on the Py_DEBUG macro to check for assertions
+    try:
+        import _testlimitedcapi
+    except ImportError:
         return Py_DEBUG
-
-    # Check if the NDEBUG macro is defined in C compiler flags
-    PY_CFLAGS = (sysconfig.get_config_var('PY_CFLAGS') or '')
-    if '-DNDEBUG' in PY_CFLAGS:
-        return False
-
-    return True
+    else:
+        return bool(_testlimitedcapi._py_getbuiltwithassert())
 
 
 def inject_memory_error(start=0, stop=0):
