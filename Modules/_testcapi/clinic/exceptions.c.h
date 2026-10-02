@@ -16,6 +16,37 @@ PyDoc_STRVAR(_testcapi_err_set_raised__doc__,
 #define _TESTCAPI_ERR_SET_RAISED_METHODDEF    \
     {"err_set_raised", (PyCFunction)_testcapi_err_set_raised, METH_O, _testcapi_err_set_raised__doc__},
 
+PyDoc_STRVAR(_testcapi_err_givenexceptionmatches__doc__,
+"err_givenexceptionmatches($module, err, exc, /)\n"
+"--\n"
+"\n"
+"Test PyErr_GivenExceptionMatches().");
+
+#define _TESTCAPI_ERR_GIVENEXCEPTIONMATCHES_METHODDEF    \
+    {"err_givenexceptionmatches", _PyCFunction_CAST(_testcapi_err_givenexceptionmatches), METH_FASTCALL, _testcapi_err_givenexceptionmatches__doc__},
+
+static PyObject *
+_testcapi_err_givenexceptionmatches_impl(PyObject *module, PyObject *err,
+                                         PyObject *exc);
+
+static PyObject *
+_testcapi_err_givenexceptionmatches(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *err;
+    PyObject *exc;
+
+    if (!_PyArg_CheckPositional("err_givenexceptionmatches", nargs, 2, 2)) {
+        goto exit;
+    }
+    err = args[0];
+    exc = args[1];
+    return_value = _testcapi_err_givenexceptionmatches_impl(module, err, exc);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_testcapi_exception_print__doc__,
 "exception_print($module, exception, legacy=False, /)\n"
 "--\n"
@@ -459,4 +490,4 @@ _testcapi_unstable_exc_prep_reraise_star(PyObject *module, PyObject *const *args
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=357caea020348789 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a21ce5554900dba1 input=a9049054013a1b77]*/
