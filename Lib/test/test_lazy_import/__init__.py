@@ -13,7 +13,7 @@ import os
 import contextlib
 
 from test import support
-from test.support.script_helper import assert_python_ok
+from test.support.script_helper import assert_python_ok, assert_python_failure
 
 try:
     import _testcapi
@@ -617,6 +617,14 @@ class DunderLazyImportTests(LazyImportTestCase):
         with self.assertRaises(TypeError):
             __lazy_import__("sys", globals=1)
 
+        code = textwrap.dedent("""
+            __lazy_import__("sys", fromlist=(1, 2, 3))
+        """)
+        result = assert_python_failure("-c", code, NO_COLOR='y')
+        self.assertIn(
+            b"TypeError: Item in ``from list'' must be str, not int",
+            result.err)
+
     def test_dunder_lazy_import_builtins(self):
         """__lazy_import__ should use module's __builtins__ for __import__."""
         from test.test_lazy_import.data import dunder_lazy_import_builtins
@@ -724,10 +732,17 @@ class ErrorHandlingTests(LazyImportTestCase):
         assert_python_ok("-c", code)
 
     def test_non_package_lazily_imported_as(self):
-        """Doing a dotted lazy import as still works"""
+        """A dotted lazy import as raises when the name is not a module."""
+        # gh-157757: the eager statement raises, so the lazy one raises too.
         code = textwrap.dedent("""
             lazy import math.pi as pi
-            pi
+
+            try:
+                pi
+            except ModuleNotFoundError:
+                pass
+            else:
+                raise AssertionError("ModuleNotFoundError was not raised")
         """)
         assert_python_ok("-c", code)
 
@@ -754,6 +769,28 @@ class ErrorHandlingTests(LazyImportTestCase):
                 _ = nonexistent_name
             except ImportError as e:
                 assert e.__cause__ is not None, "Expected chained exception"
+            else:
+                raise AssertionError("ImportError was not raised")
+        """)
+        assert_python_ok("-c", code)
+
+    @support.subTests('name', (
+        'test.test_lazy_import.data.broken_module_chained_cause',
+        'test.test_lazy_import.data.broken_module_chained_context',
+        'test.test_lazy_import.data.broken_module_chained_suppressed',
+    ))
+    def test_chained_exception_import_shows_notes(self, name):
+        """Accessing missing attribute from lazy from-import should chain errors."""
+        code = textwrap.dedent(f"""
+            lazy import {name}
+
+            try:
+                _ = test
+            except ValueError as e:
+                assert any(
+                    note.startswith("lazy import of '{name}' declared in ")
+                    for note in e.__notes__
+                ), e.__notes__
             else:
                 raise AssertionError("ImportError was not raised")
         """)
@@ -1169,6 +1206,22 @@ class MultipleNameFromImportTests(LazyImportTestCase):
         )
         self.assertEqual(result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}")
         self.assertIn("OK", result.stdout)
+
+    def test_accessing_one_name_imports_only_its_submodule(self):
+        """Accessing one name should not import the other names' submodules."""
+        code = textwrap.dedent("""
+            import sys
+
+            lazy from test.test_lazy_import.data.pkg import b, bar, broken
+
+            # Importing bar prints, and importing broken raises.
+            b.foo()
+
+            assert "test.test_lazy_import.data.pkg.bar" not in sys.modules
+            assert "test.test_lazy_import.data.pkg.broken" not in sys.modules
+        """)
+        rc, out, err = assert_python_ok("-c", code)
+        self.assertEqual(out, b"")
 
     def test_all_names_reified_after_all_accessed(self):
         """All names should be reified after each is accessed."""
@@ -2208,6 +2261,122 @@ class ModuleVariableNameCollisionTests(unittest.TestCase):
             "test.test_lazy_import.data.module_same_name_var_order2.bar"
         ]
         self.assertIs(module_same_name_var_order2.bar, bar_mod)
+
+    def test_lazy_import_as_wins_over_variable(self):
+        """A dotted lazy import as imports the submodule the variable hides."""
+        # gh-157757: importing pkg.b rebinds pkg.b from the variable to the
+        # module, eagerly and lazily alike.
+        code = textwrap.dedent("""
+            import sys
+            import test.test_lazy_import.data.pkg as pkg
+            pkg.b = "hides the b submodule"
+
+            lazy import test.test_lazy_import.data.pkg.b as b
+            lazy import test.test_lazy_import.data.metasyntactic.foo.bar as bar
+
+            assert b is sys.modules["test.test_lazy_import.data.pkg.b"], b
+            assert bar is sys.modules[
+                "test.test_lazy_import.data.metasyntactic.foo.bar"], bar
+        """)
+        assert_python_ok("-c", code)
+
+    def test_dotted_as_of_loaded_module(self):
+        """A dotted lazy import as binds the module, not a same-named attribute."""
+        # importlib.metadata is already loaded and has a `metadata` attribute.
+        code = textwrap.dedent("""
+            import importlib.metadata
+            import importlib.metadata as eager
+
+            lazy import importlib.metadata as lazily
+
+            assert lazily is eager, lazily
+        """)
+        assert_python_ok("-c", code)
+
+    def test_dotted_as_replays_lookups_on_custom_placeholder(self):
+        """A dotted lazy import as looks up its names on what the hook returned."""
+        code = textwrap.dedent("""
+            import builtins
+            import xml.dom
+
+            # In a list, so the hook reading it does not resolve it.
+            placeholder = [__lazy_import__("xml")]
+            default = builtins.__lazy_import__
+            builtins.__lazy_import__ = lambda *args: placeholder[0]
+            lazy import fake.dom as dom
+            builtins.__lazy_import__ = default
+
+            assert dom is xml.dom, dom
+        """)
+        assert_python_ok("-c", code)
+
+    def test_empty_fromlist_placeholder_matches_no_fromlist(self):
+        """An empty fromlist behaves like None."""
+        code = textwrap.dedent("""
+            expected = "<lazy_import 'xml.dom'>"
+            # In lists, so reading them does not resolve them.
+            for fromlist in (None, ()):
+                same = [__lazy_import__("xml.dom", fromlist=fromlist)]
+                assert repr(same[0]) == expected, (fromlist, repr(same[0]))
+            bare = [__lazy_import__("xml.dom")]
+            assert repr(bare[0]) == expected, repr(bare[0])
+        """)
+        assert_python_ok("-c", code)
+
+    def test_empty_fromlist_preserved_for_custom_import(self):
+        code = textwrap.dedent("""
+            import builtins
+            import types
+
+            value = object()
+            module = types.SimpleNamespace(dom=value)
+            placeholder = [__lazy_import__("xml.dom", fromlist=())]
+            default_import = builtins.__import__
+            default_lazy_import = builtins.__lazy_import__
+            calls = []
+
+            def import_hook(name, globals, locals, fromlist, level):
+                assert name == "xml.dom", name
+                assert fromlist == (), fromlist
+                calls.append(fromlist)
+                return module
+
+            builtins.__import__ = import_hook
+            assert placeholder[0].resolve() is module
+            builtins.__lazy_import__ = lambda *args: placeholder[0]
+            lazy import fake.dom as dom
+            assert dom is value
+            builtins.__import__ = default_import
+            builtins.__lazy_import__ = default_lazy_import
+
+            assert calls == [(), ()], calls
+        """)
+        assert_python_ok("-c", code)
+
+    def test_dotted_as_replays_lookups_on_dotted_placeholder(self):
+        """A dotted lazy import as replays its names on the hook's package."""
+        # importlib.metadata has a `metadata` attribute of its own, which the
+        # placeholder for importlib must not answer with.
+        for target in ("xml.dom", "importlib.metadata"):
+            with self.subTest(target=target):
+                leaf = target.rpartition(".")[2]
+                code = textwrap.dedent(f"""
+                    import builtins
+                    import sys
+                    import {target}
+
+                    # In a list, so the hook reading it does not resolve it.
+                    placeholder = [__lazy_import__("{target}", fromlist=())]
+                    default = builtins.__lazy_import__
+                    builtins.__lazy_import__ = lambda *args: placeholder[0]
+                    lazy import fake.{leaf} as {leaf}
+                    builtins.__lazy_import__ = default
+
+                    name = repr(globals()["{leaf}"])
+                    assert name == "<lazy_import '{target}'>", name
+                    assert {leaf} is sys.modules["{target}"], {leaf}
+                """)
+                assert_python_ok("-c", code)
 
 
 class DeletedModuleReimportTests(unittest.TestCase):

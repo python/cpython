@@ -326,9 +326,10 @@ Input options
 
    The curses library does "line-breakout optimization" by looking for typeahead
    periodically while updating the screen.  If input is found, and it is coming
-   from a tty, the current update is postponed until refresh or doupdate is called
-   again, allowing faster response to commands typed in advance. This function
-   allows specifying a different file descriptor for typeahead checking.
+   from a tty, the current update is postponed until :meth:`~window.refresh` or
+   :func:`doupdate` is called again, allowing faster response to commands typed
+   in advance. This function allows specifying a different file descriptor for
+   typeahead checking.
 
 .. function:: is_cbreak()
 
@@ -702,7 +703,8 @@ labels.
    (eight labels).  Where the underlying curses library supports them, ``2``
    gives 4-4-4 (twelve labels) and ``3`` gives 4-4-4 with an index line.
 
-   Must be called before :func:`initscr` or :func:`newterm`.
+   Must be called before :func:`initscr` or :func:`newterm`,
+   and affects only the screen created next.
 
    .. versionadded:: next
 
@@ -1067,8 +1069,10 @@ Utilities
 
 .. function:: filter()
 
-   The :func:`.filter` routine, if used, must be called before :func:`initscr` is
-   called.  The effect is that, during the initialization, :envvar:`LINES` is set to ``1``; the
+   The :func:`.filter` routine, if used, must be called before :func:`initscr`
+   or :func:`newterm` is called,
+   and affects every screen created afterwards.
+   The effect is that, during the initialization, :envvar:`LINES` is set to ``1``; the
    capabilities ``clear``, ``cup``, ``cud``, ``cud1``, ``cuu1``, ``cuu``, ``vpa`` are disabled; and the ``home``
    string is set to the value of ``cr``. The effect is that the cursor is confined to
    the current line, and so are screen updates.  This may be used for enabling
@@ -1087,8 +1091,10 @@ Utilities
 
 .. function:: use_env(flag)
 
-   If used, this function should be called before :func:`initscr` or newterm are
-   called.  When *flag* is ``False``, the values of lines and columns specified in the
+   If used, this function should be called before :func:`initscr` or
+   :func:`newterm` are called,
+   and affects every screen created afterwards.
+   When *flag* is ``False``, the values of lines and columns specified in the
    terminfo database will be used, even if environment variables :envvar:`LINES`
    and :envvar:`COLUMNS` (used by default) are set, or if curses is running in a
    window (in which case default behavior would be to use the window size if
@@ -1106,6 +1112,9 @@ Utilities
    to distinguish between an individual escape character entered on the
    keyboard from escape sequences sent by cursor and function keys.
 
+   Depending on the curses library, the setting may apply to all screens,
+   not only to the current one.
+
    .. versionadded:: 3.9
 
 .. function:: get_tabsize()
@@ -1118,6 +1127,9 @@ Utilities
 
    Sets the number of columns used by the curses library when converting a tab
    character to spaces as it adds the tab to a window.
+
+   Depending on the curses library, the setting may apply to all screens,
+   not only to the current one, and creating a screen may reset it.
 
    .. versionadded:: 3.9
 
@@ -2002,7 +2014,8 @@ Other
 
 .. attribute:: window.encoding
 
-   Encoding used to encode method arguments (Unicode strings and characters).
+   Encoding used to encode the string arguments of the methods and to decode
+   their results on a build without wide-character support.
    The encoding attribute is inherited from the parent window when a subwindow
    is created, for example with :meth:`window.subwin`.
    By default, current locale encoding is used (see :func:`locale.getencoding`).

@@ -2610,31 +2610,38 @@ _sre_SRE_Match_expand_impl(MatchObject *self, PyObject *template)
     return result;
 }
 
-static PyObject*
-match_group(PyObject *op, PyObject* args)
+/*[clinic input]
+_sre.SRE_Match.group
+
+    *args: array
+
+Return subgroup(s) of the match by indices or names.
+
+For 0 returns the entire match.
+[clinic start generated code]*/
+
+static PyObject *
+_sre_SRE_Match_group_impl(MatchObject *self, PyObject * const *args,
+                          Py_ssize_t args_length)
+/*[clinic end generated code: output=240cddd2cf62ee2a input=f6d9bfa0d01f3cda]*/
 {
-    MatchObject *self = _MatchObject_CAST(op);
     PyObject* result;
-    Py_ssize_t i, size;
+    Py_ssize_t i;
 
-    size = PyTuple_GET_SIZE(args);
-
-    switch (size) {
+    switch (args_length) {
     case 0:
         result = match_getslice(self, _PyLong_GetZero(), Py_None);
         break;
     case 1:
-        result = match_getslice(self, PyTuple_GET_ITEM(args, 0), Py_None);
+        result = match_getslice(self, args[0], Py_None);
         break;
     default:
         /* fetch multiple items */
-        result = PyTuple_New(size);
+        result = PyTuple_New(args_length);
         if (!result)
             return NULL;
-        for (i = 0; i < size; i++) {
-            PyObject* item = match_getslice(
-                self, PyTuple_GET_ITEM(args, i), Py_None
-                );
+        for (i = 0; i < args_length; i++) {
+            PyObject* item = match_getslice(self, args[i], Py_None);
             if (!item) {
                 Py_DECREF(result);
                 return NULL;
@@ -2875,11 +2882,6 @@ _sre_SRE_Match___deepcopy___impl(MatchObject *self, PyObject *memo)
 PyDoc_STRVAR(match_doc,
 "The result of re.search(), re.prefixmatch(), and re.fullmatch().\n\
 Match objects always have a boolean value of True.");
-
-PyDoc_STRVAR(match_group_doc,
-"group([group1, ...]) -> str or tuple.\n\
-    Return subgroup(s) of the match by indices or names.\n\
-    For 0 returns the entire match.");
 
 static PyObject *
 match_lastindex_get(PyObject *op, void *Py_UNUSED(ignored))
@@ -3436,7 +3438,7 @@ static PyType_Spec pattern_spec = {
 };
 
 static PyMethodDef match_methods[] = {
-    {"group", match_group, METH_VARARGS, match_group_doc},
+    _SRE_SRE_MATCH_GROUP_METHODDEF
     _SRE_SRE_MATCH_START_METHODDEF
     _SRE_SRE_MATCH_END_METHODDEF
     _SRE_SRE_MATCH_SPAN_METHODDEF
