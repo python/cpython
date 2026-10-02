@@ -607,14 +607,44 @@ class BaseWriterTest:
 
         writer = self.create_writer()
         writer.format_i(b'x=%i, ', 123)
-        writer.format_i(b'y=%i', 456)
+        writer.format_i(b'y=%d', 456)
         self.bytes_equal(writer.finish(), b'x=123, y=456')
+
+        # Make sure that %i allocates the right number of bytes
+        n_str = '1234567'
+        for i in range(1, len(n_str) + 1):
+            n = int(n_str[:i])
+            writer = self.create_writer(0)
+            writer.format_i(b'n=%i', n)
+            self.bytes_equal(writer.finish(), f'n={n}'.encode())
+
+        # Test invalid format: "%t" is invalid, stop the parser and copy
+        # remaining bytes
+        writer = self.create_writer()
+        writer.write_bytes(b'prefix ', -1)
+        writer.format_i(b'y=%._ t %i', 0)
+        writer.write_bytes(b'.', 1)
+        self.bytes_equal(writer.finish(), b'prefix y=%._ t %i.')
 
     def test_format_s(self):
         # Test PyBytesWriter_Format()
         writer = self.create_writer()
         writer.format_s(b's=%s', b'Hello World')
         self.bytes_equal(writer.finish(), b's=Hello World')
+
+        # Test precision
+        writer = self.create_writer()
+        writer.format_s(b'%.6s', b'Monty Python')
+        writer.format_s(b'%.20s', b'3.0')
+        self.bytes_equal(writer.finish(), b'Monty 3.0')
+
+        # Make sure that %s allocates the right number of bytes
+        text = b'1234567'
+        for i in range(1, len(text) + 1):
+            s = text[:i]
+            writer = self.create_writer(0)
+            writer.format_s(b's=%s', s)
+            self.bytes_equal(writer.finish(), b's=' + s)
 
     @support.nomemtest
     def test_format_s_memory_error(self):
