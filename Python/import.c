@@ -4134,8 +4134,13 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
     return final_mod;
 }
 
+// Add *name* to `sys.lazy_modules`.
+// Skip the registration if *name* is already imported, and fully initialized.
+// If *existing_mod_p* is not NULL, set it to the already imported object (or
+// NULL if not found), for use by register_lazy_on_parent.
 static int
-lazy_modules_add(PyThreadState *tstate, PyObject *name)
+lazy_modules_add(PyThreadState *tstate, PyObject *name,
+                 PyObject **existing_mod_p)
 {
     PyObject *mod = import_get_module(tstate, name);
     if (mod == NULL && PyErr_Occurred()) {
@@ -4161,7 +4166,12 @@ lazy_modules_add(PyThreadState *tstate, PyObject *name)
         }
         Py_XDECREF(spec);
     }
-    Py_XDECREF(mod);
+    if (existing_mod_p != NULL) {
+        *existing_mod_p = mod;
+    }
+    else {
+        Py_XDECREF(mod);
+    }
     return loaded ? 0 : PySet_Add(LAZY_MODULES(tstate->interp), name);
 }
 
@@ -4226,22 +4236,17 @@ register_lazy_on_parent(PyThreadState *tstate, PyObject *name)
 }
 
 static int
-register_from_lazy_on_parent(PyThreadState *tstate, PyObject *abs_name,
-                             PyObject *from)
+register_from_lazy_on_parent(PyThreadState *tstate, PyObject *existing_module,
+                             PyObject *abs_name, PyObject *from)
 {
     // IMPORT_FROM returns stored attributes directly.  Their imports are
     // already resolved or tracked by their own placeholders, so skip the alias.
-    PyObject *mod = import_get_module(tstate, abs_name);
-    if (mod == NULL && PyErr_Occurred()) {
-        return -1;
-    }
     int rc = 0;
-    if (mod != NULL && PyModule_Check(mod)) {
-        rc = PyDict_Contains(_PyModule_GetDict(mod), from);
-    }
-    Py_XDECREF(mod);
-    if (rc != 0) {
-        return rc < 0 ? -1 : 0;
+    if (existing_module != NULL && PyModule_Check(existing_module)) {
+        rc = PyDict_Contains(_PyModule_GetDict(existing_module), from);
+        if (rc != 0) {
+            return rc < 0 ? -1 : 0;
+        }
     }
 
     PyObject *fromname = PyUnicode_FromFormat("%U.%U", abs_name, from);
@@ -4249,7 +4254,7 @@ register_from_lazy_on_parent(PyThreadState *tstate, PyObject *abs_name,
         return -1;
     }
 
-    rc = lazy_modules_add(tstate, fromname);
+    rc = lazy_modules_add(tstate, fromname, NULL);
     if (rc == 0) {
         rc = register_lazy_on_parent(tstate, fromname);
     }
@@ -4341,6 +4346,8 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
     }
 
     PyObject *res = NULL;
+    PyObject *existing_module = NULL;
+
     if (fromlist != NULL && PyUnicode_Check(fromlist)) {
         fromlist = PyTuple_Pack(1, fromlist);
         if (fromlist == NULL) {
@@ -4405,13 +4412,13 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
         goto done;
     }
 
-    if (lazy_modules_add(tstate, abs_name) < 0) {
+    if (lazy_modules_add(tstate, abs_name, &existing_module) < 0) {
         goto error;
     }
 
     if (PyTuple_Check(fromlist) && PyTuple_GET_SIZE(fromlist)) {
         for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(fromlist); i++) {
-            if (register_from_lazy_on_parent(tstate, abs_name,
+            if (register_from_lazy_on_parent(tstate, existing_module, abs_name,
                                              PyTuple_GET_ITEM(fromlist, i)) < 0)
             {
                 goto error;
@@ -4428,6 +4435,7 @@ error:
 done:
     Py_XDECREF(fromlist);
     Py_DECREF(abs_name);
+    Py_XDECREF(existing_module);
     return res;
 }
 
