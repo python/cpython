@@ -1,4 +1,5 @@
-Soft deprecate :c:func:`PyUnicode_New`, :c:func:`PyUnicode_CopyCharacters`,
+Soft deprecate functions modifying Unicode strings:
+:c:func:`PyUnicode_New`, :c:func:`PyUnicode_CopyCharacters`,
 :c:func:`PyUnicode_Fill`, :c:func:`PyUnicode_Resize`,
-:c:func:`PyUnicode_WRITE` and :c:func:`PyUnicode_WriteChar` functions. Use
+:c:func:`PyUnicode_WRITE` and :c:func:`PyUnicode_WriteChar`. Use
 the :c:type:`PyUnicodeWriter` API instead. Patch by Victor Stinner.
