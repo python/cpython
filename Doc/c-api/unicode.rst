@@ -414,7 +414,8 @@ APIs:
    functions below.
 
    While str objects are usually immutable in Python, this special C API
-   returns a str object which can be mutated.
+   returns a str object which can be mutated; except if *size* is zero in which
+   case it returns the immutable empty string.
 
    .. versionadded:: 3.3
 
@@ -790,8 +791,10 @@ APIs:
    The function doesn't check string content, the result may not be a
    string in canonical representation.
 
-   While str objects are usually immutable in Python, this special C API allows
-   mutating a fresh str object in-place if the string was not “used” yet.
+   While str objects are usually immutable in Python, this special C API
+   can resize a str object in-place if the string was not “used” yet.
+   It returns a str object which can be mutated; except if *size* is zero in
+   which case it returns the immutable empty string.
 
    .. soft-deprecated:: next
       Use the :c:type:`PyUnicodeWriter` API instead.
