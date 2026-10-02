@@ -42,11 +42,22 @@ static Py_ssize_t _PyBytesWriter_ResizeToAllocated(PyBytesWriter *writer);
 
 
 // Return a reference to the immortal empty bytes string singleton.
-static inline PyObject* bytes_get_empty(void)
+static inline PyObject*
+bytes_get_empty(void)
 {
     PyObject *empty = &EMPTY->ob_base.ob_base;
     assert(_Py_IsImmortal(empty));
     return empty;
+}
+
+
+// The function cannot fail
+static inline PyObject*
+bytes_get_char(uint8_t ch)
+{
+    PyObject *obj = (PyObject*)CHARACTER(ch);
+    assert(_Py_IsImmortal(obj));
+    return obj;
 }
 
 
@@ -130,9 +141,7 @@ PyBytes_FromStringAndSize(const char *str, Py_ssize_t size)
         return NULL;
     }
     if (size == 1 && str != NULL) {
-        op = CHARACTER(*str & 255);
-        assert(_Py_IsImmortal(op));
-        return (PyObject *)op;
+        return bytes_get_char((uint8_t)*str);
     }
     if (size == 0) {
         return bytes_get_empty();
@@ -166,9 +175,7 @@ PyBytes_FromString(const char *str)
         return bytes_get_empty();
     }
     else if (size == 1) {
-        op = CHARACTER(*str & 255);
-        assert(_Py_IsImmortal(op));
-        return (PyObject *)op;
+        return bytes_get_char((uint8_t)*str);
     }
 
     /* Inline PyObject_NewVar */
@@ -3347,6 +3354,53 @@ _PyBytes_IsMutable(PyObject *self)
 #endif
 
 
+static inline int
+bytes_resize_inplace(PyObject **pv, Py_ssize_t newsize)
+{
+    PyObject *v = *pv;
+    // Do not test _PyObject_IsUniquelyReferenced(). The function is used by
+    // PyBytesWriter_FinishWithSize() and its caller can have its own lock.
+    assert(Py_REFCNT(v) == 1);
+    assert(PyBytes_GET_SIZE(v) >= 1);
+    assert(newsize >= 1);
+
+    // Only mutable bytes can be resized in-place
+    assert(_PyBytes_IsMutable(v));
+
+    if ((size_t)newsize > (size_t)PY_SSIZE_T_MAX - PyBytesObject_SIZE) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "byte string is too large");
+        return -1;
+    }
+
+#ifdef Py_TRACE_REFS
+    _Py_ForgetReference(v);
+#endif
+    _PyReftracerTrack(v, PyRefTracer_DESTROY);
+
+    PyObject *result = PyObject_Realloc(v, PyBytesObject_SIZE + newsize);
+    if (result == NULL) {
+#ifdef Py_TRACE_REFS
+        _Py_AddToAllObjects(v);
+#endif
+        _PyReftracerTrack(v, PyRefTracer_CREATE);
+
+        PyErr_NoMemory();
+        return -1;
+    }
+
+    *pv = result;
+    v = result;
+    _Py_NewReferenceNoTotal(v);
+    PyBytesObject *sv = (PyBytesObject *)v;
+    Py_SET_SIZE(sv, newsize);
+    sv->ob_sval[newsize] = '\0';
+    set_ob_shash(sv, -1);          /* invalidate cached hash value */
+    assert(_PyBytes_IsMutable(*pv));
+    return 0;
+}
+
+
 /* The following function breaks the notion that bytes are immutable:
    it changes the size of a bytes object.  You can think of it
    as creating a new bytes object and destroying the old one, only
@@ -3410,40 +3464,7 @@ _PyBytes_ResizeKeepOnError(PyObject **pv, Py_ssize_t newsize)
         return 0;
     }
 
-    // Only mutable bytes can be resized in-place
-    assert(_PyBytes_IsMutable(v));
-
-    if ((size_t)newsize > (size_t)PY_SSIZE_T_MAX - PyBytesObject_SIZE) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "byte string is too large");
-        return -1;
-    }
-
-#ifdef Py_TRACE_REFS
-    _Py_ForgetReference(v);
-#endif
-    _PyReftracerTrack(v, PyRefTracer_DESTROY);
-
-    result = (PyObject *)PyObject_Realloc(v, PyBytesObject_SIZE + newsize);
-    if (result == NULL) {
-#ifdef Py_TRACE_REFS
-        _Py_AddToAllObjects(v);
-#endif
-        _PyReftracerTrack(v, PyRefTracer_CREATE);
-
-        PyErr_NoMemory();
-        return -1;
-    }
-
-    *pv = result;
-    v = result;
-    _Py_NewReferenceNoTotal(v);
-    PyBytesObject *sv = (PyBytesObject *)v;
-    Py_SET_SIZE(sv, newsize);
-    sv->ob_sval[newsize] = '\0';
-    set_ob_shash(sv, -1);          /* invalidate cached hash value */
-    assert(_PyBytes_IsMutable(*pv));
-    return 0;
+    return bytes_resize_inplace(pv, newsize);
 }
 
 
@@ -3903,9 +3924,6 @@ PyBytesWriter_FinishWithSize(PyBytesWriter *writer, Py_ssize_t size)
 {
     assert(byteswriter_check_consistency(writer));
 
-    // Check for negative size here to raise ValueError in all cases, rather
-    // than having a different exception depending on the code path. For
-    // example, _PyBytes_Resize() raises SystemError on negative size.
     if (size < 0) {
         PyErr_Format(PyExc_ValueError, "size must be positive");
         goto error;
@@ -3919,6 +3937,13 @@ PyBytesWriter_FinishWithSize(PyBytesWriter *writer, Py_ssize_t size)
     PyObject *result;
     if (size == 0 && !writer->use_bytearray) {
         result = bytes_get_empty();
+        if (writer->obj != NULL) {
+#ifdef Py_DEBUG
+            byteswriter_reset_trailing_byte(writer);
+#endif
+            Py_DECREF(writer->obj);
+            writer->obj = NULL;
+        }
     }
     else if (writer->obj != NULL) {
         // Truncate the bytes/bytearray object if needed
@@ -3935,14 +3960,11 @@ PyBytesWriter_FinishWithSize(PyBytesWriter *writer, Py_ssize_t size)
         }
         else {
             if (size == 1) {
-                // Get the single byte singleton
                 unsigned char ch = PyBytes_AS_STRING(writer->obj)[0];
-                PyObject *op = (PyObject*)CHARACTER(ch);
-                assert(_Py_IsImmortal(op));
-                Py_SETREF(writer->obj, op);
+                Py_SETREF(writer->obj, bytes_get_char(ch));
             }
             else if (size != PyBytes_GET_SIZE(writer->obj)) {
-                if (_PyBytes_Resize(&writer->obj, size)) {
+                if (bytes_resize_inplace(&writer->obj, size)) {
                     goto error;
                 }
             }
@@ -3953,23 +3975,26 @@ PyBytesWriter_FinishWithSize(PyBytesWriter *writer, Py_ssize_t size)
     }
     else {
         // Create an object from the small buffer
+        const char *buffer = (const char *)writer->small_buffer;
         if (writer->use_bytearray) {
-            result = PyByteArray_FromStringAndSize(writer->small_buffer, size);
+            result = PyByteArray_FromStringAndSize(buffer, size);
         }
         else {
-            // The function returns single byte singleton if size equals 1
-            result = PyBytes_FromStringAndSize(writer->small_buffer, size);
+            if (size == 1) {
+                result = bytes_get_char((uint8_t)buffer[0]);
+            }
+            else {
+                result = _PyBytes_FromSize(size, 0);
+                if (result == NULL) {
+                    goto error;
+                }
+                memcpy(PyBytes_AS_STRING(result), buffer, size);
+            }
         }
     }
 
-#ifdef Py_DEBUG
-    // Reset the writer, so byteswriter_check_consistency() doesn't fail
-    // in PyBytesWriter_Discard().
-    writer->size = 0;
-    byteswriter_write_canary_byte(writer);
-#endif
-
-    PyBytesWriter_Discard(writer);
+    assert(writer->obj == NULL);
+    _Py_FREELIST_FREE(bytes_writers, writer, PyMem_Free);
     return result;
 
 error:
