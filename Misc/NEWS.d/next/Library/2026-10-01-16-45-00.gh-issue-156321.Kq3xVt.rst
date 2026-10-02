@@ -1,0 +1,5 @@
+Fix :func:`asyncio.shield` reporting an exception from the inner future
+through the loop exception handler as soon as it completes after the shield
+was cancelled, even when the exception is retrieved afterwards. The
+exception is now reported only if it is never retrieved, as with any other
+future.
