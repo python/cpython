@@ -17,9 +17,11 @@ import time
 import types
 import weakref
 import errno
+import warnings
 
 from queue import Empty, Full
 
+from .synchronize import SEM_VALUE_MAX
 from . import connection
 from . import context
 _ForkingPickler = context.reduction.ForkingPickler
@@ -36,6 +38,9 @@ class Queue(object):
         if maxsize <= 0:
             # Can raise ImportError (see issues #3770 and #23400)
             from .synchronize import SEM_VALUE_MAX as maxsize
+        elif maxsize > SEM_VALUE_MAX:
+            maxsize = SEM_VALUE_MAX
+            warnings.warn(f"maxsize exceeds SEM_VALUE_MAX; setting maxsize to {SEM_VALUE_MAX}", UserWarning)
         self._maxsize = maxsize
         self._reader, self._writer = connection.Pipe(duplex=False)
         self._rlock = ctx.Lock()
