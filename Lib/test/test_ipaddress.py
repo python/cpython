@@ -986,6 +986,17 @@ class ComparisonTests(unittest.TestCase):
             self.assertFalse(lhs >= rhs)
             self.assertFalse(rhs <= lhs)
 
+    def test_scoped_ipv6_ordering_same_ip(self):
+        # gh-151769: addresses with the same integer but different
+        # scope_id must be ordered; None < any string
+        unscoped = self.v6addr
+        scoped = ipaddress.IPv6Address(str(unscoped) + '%eth0')
+        self.assertNotEqual(unscoped, scoped)
+        self.assertLess(unscoped, scoped)
+        self.assertGreater(scoped, unscoped)
+        # sorted() must be deterministic
+        self.assertEqual(sorted([scoped, unscoped]), [unscoped, scoped])
+
     def test_containment(self):
         for obj in self.v4_addresses:
             self.assertIn(obj, self.v4net)
