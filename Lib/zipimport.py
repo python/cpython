@@ -668,7 +668,10 @@ def _get_data(archive, toc_entry):
                 decompress = _get_zlib_decompress_func()
             except Exception:
                 raise ZipImportError("can't decompress data; zlib not available")
-            return decompress(raw_data, -15)
+            try:
+                return decompress(raw_data, -15)
+            except Exception:
+                raise ZipImportError("could not decompress deflate data")
         case 93:  # zstd
             try:
                 return _zstd_decompress(raw_data)
