@@ -664,6 +664,11 @@ check_missing___main___attr(PyObject *exc)
         }
     }
     const char *err = PyUnicode_AsUTF8(msgobj);
+    if (err == NULL) {
+        PyErr_Clear();
+        Py_DECREF(msgobj);
+        return 0;
+    }
 
     // Check if it's a missing __main__ attr.
     int cmp = strncmp(err, "module '__main__' has no attribute '", 36);

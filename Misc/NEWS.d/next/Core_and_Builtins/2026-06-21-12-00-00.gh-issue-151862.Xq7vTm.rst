@@ -1,0 +1,3 @@
+Fixed a crash (``NULL`` dereference) when an object passed between
+interpreters via :mod:`concurrent.interpreters` fails to unpickle with an
+:exc:`AttributeError` whose first argument is not a string.
