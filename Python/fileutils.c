@@ -354,10 +354,12 @@ _Py_ResetForceASCII(void)
 
 
 static int
-encode_ascii(const wchar_t *text, char **str,
-             size_t *error_pos, const char **reason,
-             int raw_malloc, _Py_error_handler errors)
+encode_ascii(const wchar_t *text, char **str, size_t *output_length,
+             size_t *error_pos, int raw_malloc, _Py_error_handler errors)
 {
+    assert(str != NULL);
+    assert(output_length != NULL);
+
     char *result = NULL, *out;
     size_t len, i;
     wchar_t ch;
@@ -368,6 +370,7 @@ encode_ascii(const wchar_t *text, char **str,
     }
 
     len = wcslen(text);
+    *output_length = len;
 
     /* +1 for NULL byte */
     if (raw_malloc) {
@@ -381,7 +384,7 @@ encode_ascii(const wchar_t *text, char **str,
     }
 
     out = result;
-    for (i=0; i<len; i++) {
+    for (i=0; i < len; i++) {
         ch = text[i];
 
         if (ch <= 0x7f) {
@@ -401,9 +404,6 @@ encode_ascii(const wchar_t *text, char **str,
             }
             if (error_pos != NULL) {
                 *error_pos = i;
-            }
-            if (reason) {
-                *reason = "encoding error";
             }
             return -2;
         }
@@ -689,7 +689,7 @@ Py_DecodeLocale(const char* arg, size_t *wlen)
                                  NULL, 0,
                                  _Py_ERROR_SURROGATEESCAPE);
     if (res != 0) {
-        assert(res != -3);
+        assert(res == -1 || res == -2);
         if (wlen != NULL) {
             *wlen = (size_t)res;
         }
@@ -699,80 +699,105 @@ Py_DecodeLocale(const char* arg, size_t *wlen)
 }
 
 
-static int
-encode_current_locale(const wchar_t *text, char **str,
-                      size_t *error_pos, const char **reason,
-                      int raw_malloc, _Py_error_handler errors)
+static size_t
+encode_current_locale_impl(const wchar_t *text, const size_t len,
+                           int surrogateescape,
+                           char *bytes, size_t size,
+                           size_t *error_pos)
 {
-    const size_t len = wcslen(text);
-    char *result = NULL, *bytes = NULL;
-    size_t i, size, converted;
-    wchar_t c, buf[2];
+    wchar_t buf[2];
+    buf[1] = 0;
+
+    for (size_t i=0; i < len; i++) {
+        wchar_t c = text[i];
+        if (c >= 0xdc80 && c <= 0xdcff) {
+            if (!surrogateescape) {
+                if (error_pos != NULL) {
+                    *error_pos = i;
+                }
+                return DECODE_ERROR;
+            }
+            /* UTF-8b surrogate */
+            if (bytes != NULL) {
+                *bytes++ = c - 0xdc00;
+                size--;
+            }
+            else {
+                size++;
+            }
+        }
+        else {
+            buf[0] = c;
+            size_t converted;
+            if (bytes != NULL) {
+                converted = wcstombs(bytes, buf, size);
+            }
+            else {
+                converted = wcstombs(NULL, buf, 0);
+            }
+            if (converted == DECODE_ERROR) {
+                if (error_pos != NULL) {
+                    *error_pos = i;
+                }
+                return DECODE_ERROR;
+            }
+            if (bytes != NULL) {
+                bytes += converted;
+                size -= converted;
+            }
+            else {
+                size += converted;
+            }
+        }
+    }
+    if (bytes) {
+        *bytes = '\0';
+    }
+    return size;
+}
+
+
+static int
+encode_current_locale(const wchar_t *text, char **str, size_t *output_length,
+                      size_t *error_pos, int raw_malloc,
+                      _Py_error_handler errors)
+{
+    assert(str != NULL);
+    assert(output_length != NULL);
 
     int surrogateescape;
     if (get_surrogateescape(errors, &surrogateescape) < 0) {
         return -3;
     }
 
-    /* The function works in two steps:
-       1. compute the length of the output buffer in bytes (size)
-       2. outputs the bytes */
-    size = 0;
-    buf[1] = 0;
-    while (1) {
-        for (i=0; i < len; i++) {
-            c = text[i];
-            if (c >= 0xdc80 && c <= 0xdcff) {
-                if (!surrogateescape) {
-                    goto encode_error;
-                }
-                /* UTF-8b surrogate */
-                if (bytes != NULL) {
-                    *bytes++ = c - 0xdc00;
-                    size--;
-                }
-                else {
-                    size++;
-                }
-                continue;
-            }
-            else {
-                buf[0] = c;
-                if (bytes != NULL) {
-                    converted = wcstombs(bytes, buf, size);
-                }
-                else {
-                    converted = wcstombs(NULL, buf, 0);
-                }
-                if (converted == DECODE_ERROR) {
-                    goto encode_error;
-                }
-                if (bytes != NULL) {
-                    bytes += converted;
-                    size -= converted;
-                }
-                else {
-                    size += converted;
-                }
-            }
-        }
-        if (result != NULL) {
-            *bytes = '\0';
-            break;
-        }
-
-        size += 1; /* nul byte at the end */
-        if (raw_malloc) {
-            result = PyMem_RawMalloc(size);
-        }
-        else {
-            result = PyMem_Malloc(size);
-        }
-        if (result == NULL) {
-            return -1;
-        }
-        bytes = result;
+    // First, compute the output length
+    char *result = NULL;
+    const size_t len = wcslen(text);
+    size_t size = encode_current_locale_impl(text, len, surrogateescape,
+                                             NULL, 0, error_pos);
+    if (size == DECODE_ERROR) {
+        goto encode_error;
     }
+
+    *output_length = size;
+    if (raw_malloc) {
+        result = PyMem_RawMalloc(size + 1);
+    }
+    else {
+        result = PyMem_Malloc(size + 1);
+    }
+    if (result == NULL) {
+        return -1;
+    }
+
+    // Second, encode characters
+    size = encode_current_locale_impl(text, len, surrogateescape,
+                                      result, size, error_pos);
+    if (size == DECODE_ERROR) {
+        goto encode_error;
+    }
+    assert(size == 0);
+
     *str = result;
     return 0;
 
@@ -783,15 +808,54 @@ encode_error:
     else {
         PyMem_Free(result);
     }
-    if (error_pos != NULL) {
-        *error_pos = i;
-    }
-    if (reason) {
-        *reason = "encoding error";
-    }
     return -2;
 }
 
+
+static int
+encode_locale_inner(const wchar_t *text, char **str, size_t *output_length,
+                    size_t *error_pos, int raw_malloc,
+                    int current_locale, _Py_error_handler errors)
+{
+    if (current_locale) {
+#ifdef _Py_FORCE_UTF8_LOCALE
+        return _Py_EncodeUTF8Ex(text, str, output_length,
+                                error_pos, raw_malloc, errors);
+#else
+        return encode_current_locale(text, str, output_length,
+                                     error_pos, raw_malloc, errors);
+#endif
+    }
+
+#ifdef _Py_FORCE_UTF8_FS_ENCODING
+    return _Py_EncodeUTF8Ex(text, str, output_length,
+                            error_pos,
+                            raw_malloc, errors);
+#else
+    int use_utf8 = (_PyRuntime.preconfig.utf8_mode >= 1);
+#ifdef MS_WINDOWS
+    use_utf8 |= (_PyRuntime.preconfig.legacy_windows_fs_encoding == 0);
+#endif
+    if (use_utf8) {
+        return _Py_EncodeUTF8Ex(text, str, output_length,
+                                error_pos, raw_malloc, errors);
+    }
+
+#ifdef USE_FORCE_ASCII
+    if (force_ascii == -1) {
+        force_ascii = check_force_ascii();
+    }
+
+    if (force_ascii) {
+        return encode_ascii(text, str, output_length,
+                            error_pos, raw_malloc, errors);
+    }
+#endif
+
+    return encode_current_locale(text, str, output_length,
+                                 error_pos, raw_malloc, errors);
+#endif   /* _Py_FORCE_UTF8_FS_ENCODING */
+}
 
 /* Encode a string to the locale encoding.
 
@@ -811,47 +875,32 @@ encode_error:
    -3: the error handler 'errors' is not supported.
  */
 static int
-encode_locale_ex(const wchar_t *text, char **str, size_t *error_pos,
-                 const char **reason,
-                 int raw_malloc, int current_locale, _Py_error_handler errors)
+encode_locale_impl(const wchar_t *text, char **str, size_t *output_length,
+                   size_t *error_pos, const char **reason,
+                   int raw_malloc, int current_locale, _Py_error_handler errors)
 {
-    if (current_locale) {
-#ifdef _Py_FORCE_UTF8_LOCALE
-        return _Py_EncodeUTF8Ex(text, str, error_pos, reason,
-                                raw_malloc, errors);
-#else
-        return encode_current_locale(text, str, error_pos, reason,
-                                     raw_malloc, errors);
-#endif
+    int res = encode_locale_inner(text, str, output_length,
+                                  error_pos, raw_malloc,
+                                  current_locale, errors);
+    if (res < 0) {
+        if (output_length) {
+            *output_length = 0;
+        }
+        if (res == -2) {
+            if (reason) {
+                *reason = "encoding error";
+            }
+        }
+        else {
+            if (error_pos) {
+                *error_pos = 0;
+            }
+            if (reason) {
+                *reason = NULL;
+            }
+        }
     }
-
-#ifdef _Py_FORCE_UTF8_FS_ENCODING
-    return _Py_EncodeUTF8Ex(text, str, error_pos, reason,
-                            raw_malloc, errors);
-#else
-    int use_utf8 = (_PyRuntime.preconfig.utf8_mode >= 1);
-#ifdef MS_WINDOWS
-    use_utf8 |= (_PyRuntime.preconfig.legacy_windows_fs_encoding == 0);
-#endif
-    if (use_utf8) {
-        return _Py_EncodeUTF8Ex(text, str, error_pos, reason,
-                                raw_malloc, errors);
-    }
-
-#ifdef USE_FORCE_ASCII
-    if (force_ascii == -1) {
-        force_ascii = check_force_ascii();
-    }
-
-    if (force_ascii) {
-        return encode_ascii(text, str, error_pos, reason,
-                            raw_malloc, errors);
-    }
-#endif
-
-    return encode_current_locale(text, str, error_pos, reason,
-                                 raw_malloc, errors);
-#endif   /* _Py_FORCE_UTF8_FS_ENCODING */
+    return res;
 }
 
 static char*
@@ -859,15 +908,15 @@ encode_locale(const wchar_t *text, size_t *error_pos,
               int raw_malloc, int current_locale)
 {
     char *str;
-    int res = encode_locale_ex(text, &str, error_pos, NULL,
-                               raw_malloc, current_locale,
-                               _Py_ERROR_SURROGATEESCAPE);
-    if (res != -2 && error_pos) {
-        *error_pos = (size_t)-1;
-    }
+    size_t output_length;
+    int res = encode_locale_impl(text, &str, &output_length,
+                                 error_pos, NULL,
+                                 raw_malloc, current_locale,
+                                 _Py_ERROR_SURROGATEESCAPE);
     if (res != 0) {
         return NULL;
     }
+    assert(strlen(str) == output_length);
     return str;
 }
 
@@ -900,12 +949,13 @@ _Py_EncodeLocaleRaw(const wchar_t *text, size_t *error_pos)
 
 
 int
-_Py_EncodeLocaleEx(const wchar_t *text, char **str,
+_Py_EncodeLocaleEx(const wchar_t *text, char **str, size_t *output_length,
                    size_t *error_pos, const char **reason,
                    int current_locale, _Py_error_handler errors)
 {
-    return encode_locale_ex(text, str, error_pos, reason, 1,
-                            current_locale, errors);
+    return encode_locale_impl(text, str, output_length,
+                              error_pos, reason, 1,
+                              current_locale, errors);
 }
 
 

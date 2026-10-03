@@ -36,6 +36,7 @@ PyAPI_FUNC(int) _Py_DecodeLocaleEx(
 PyAPI_FUNC(int) _Py_EncodeLocaleEx(
     const wchar_t *text,
     char **str,
+    size_t *output_length,
     size_t *error_pos,
     const char **reason,
     int current_locale,
@@ -201,8 +202,8 @@ extern int _Py_DecodeUTF8Ex(
 extern int _Py_EncodeUTF8Ex(
     const wchar_t *text,
     char **str,
+    size_t *output_length,
     size_t *error_pos,
-    const char **reason,
     int raw_malloc,
     _Py_error_handler errors);
 
