@@ -7,6 +7,7 @@
 #include "pycore_frame.h"         // PyFrameObject
 #include "pycore_interp.h"        // PyInterpreterState.gc
 #include "pycore_interpframe.h"   // _PyFrame_GetCode()
+#include "pycore_object.h"        // _PyObject_IsFreed()
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_traceback.h"     // EXCEPTION_TB_HEADER
@@ -898,15 +899,17 @@ dump_char(int fd, char ch)
 void
 _Py_DumpASCII(int fd, PyObject *text)
 {
-    PyASCIIObject *ascii = _PyASCIIObject_CAST(text);
     Py_ssize_t i, size;
     int truncated;
     int kind;
     void *data = NULL;
     Py_UCS4 ch;
 
-    if (!PyUnicode_Check(text))
+    if (_PyObject_IsFreed(text) || !PyUnicode_Check(text)) {
         return;
+    }
+
+    PyASCIIObject *ascii = _PyASCIIObject_CAST(text);
 
     size = ascii->length;
     kind = ascii->state.kind;
@@ -1043,19 +1046,26 @@ dump_frame(int fd, _PyInterpreterFrame *frame)
 
     int res = 0;
     PUTS(fd, "  File ");
-    if (code->co_filename != NULL
-        && PyUnicode_Check(code->co_filename))
-    {
-        PUTS(fd, "\"");
-        _Py_DumpASCII(fd, code->co_filename);
-        PUTS(fd, "\"");
+    if (_PyObject_IsFreed((PyObject *)code) || !PyCode_Check(code)) {
+        PUTS(fd, "???, line ??? in ???\n");
+        return -1;
     }
-    else {
+    PyObject *filename = code->co_filename;
+    if (_PyObject_IsFreed(filename) || !PyUnicode_Check(filename)) {
         PUTS(fd, "???");
         res = -1;
     }
+    else {
+        PUTS(fd, "\"");
+        _Py_DumpASCII(fd, filename);
+        PUTS(fd, "\"");
+    }
 
     PUTS(fd, ", line ");
+    if (_PyObject_IsFreed((PyObject *)code) || !PyCode_Check(code)) {
+        PUTS(fd, "??? in ???\n");
+        return -1;
+    }
     int lasti = _PyFrame_SafeGetLasti(frame);
     int lineno = -1;
     if (lasti >= 0) {
@@ -1070,12 +1080,17 @@ dump_frame(int fd, _PyInterpreterFrame *frame)
     }
 
     PUTS(fd, " in ");
-    if (code->co_name != NULL && PyUnicode_Check(code->co_name)) {
-        _Py_DumpASCII(fd, code->co_name);
+    if (_PyObject_IsFreed((PyObject *)code) || !PyCode_Check(code)) {
+        PUTS(fd, "???\n");
+        return -1;
     }
-    else {
+    PyObject *name = code->co_name;
+    if (_PyObject_IsFreed(name) || !PyUnicode_Check(name)) {
         PUTS(fd, "???");
         res = -1;
+    }
+    else {
+        _Py_DumpASCII(fd, name);
     }
     PUTS(fd, "\n");
     return res;
