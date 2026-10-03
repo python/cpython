@@ -257,6 +257,7 @@ Modules/_lsprof.c	-	callback_table	-
 Modules/_pickle.c	-	READ_WHOLE_LINE	-
 Modules/_sqlite/module.c	-	error_codes	-
 Modules/_sre/sre.c	pattern_repr	flag_names	-
+Modules/_sre/sre.c	sre_category_ucd	capi	-
 # XXX I'm pretty sure this is actually constant:
 Modules/_sre/sre_targets.h	-	sre_targets	-
 Modules/_sre.c	pattern_repr	flag_names	-
@@ -331,6 +332,8 @@ Modules/pyexpat.c	-	handler_info	-
 Modules/termios.c	-	termios_constants	-
 Modules/timemodule.c	init_timezone	YEAR	-
 Modules/unicodedata.c	unicodedata_create_capi	capi	-
+Modules/unicodedata.c	unicodedata_create_re_capi	capi	-
+Modules/unicodedata.c	unicodedata_ucd_re_info	enumerated	-
 Objects/bytearrayobject.c	-	_PyByteArray_empty_string	-
 Objects/complexobject.c	-	c_1	-
 Objects/exceptions.c	-	static_exceptions	-
