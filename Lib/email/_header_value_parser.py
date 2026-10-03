@@ -2580,12 +2580,15 @@ def get_parameter(value):
             return param, value
     else:
         if token is not None:
-            for t in token:
+            # The charset is parsed as a Value child, but belongs to the
+            # parameter itself. Retype its extended-attrtext as plain attrtext.
+            charset = token[0]
+            for t in charset:
                 if t.token_type == 'extended-attrtext':
+                    t.token_type = 'attrtext'
                     break
-            t.token_type == 'attrtext'
-            appendto.append(t)
-            param.charset = t.value
+            appendto.append(charset)
+            param.charset = charset.stripped_value
         if value[0] != "'":
             raise errors.HeaderParseError("Expected RFC2231 char/lang encoding "
                                           "delimiter, but found {!r}".format(value))
