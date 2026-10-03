@@ -78,10 +78,11 @@ class FTP:
             host, user, passwd, acct, timeout, source_address, encoding
 
     The first four arguments are all strings, and have default value ''.
-    The parameter ´timeout´ must be numeric and defaults to None if not
-    passed, meaning that no timeout will be set on any ftp socket(s).
-    If a timeout is passed, then this is now the default timeout for all ftp
-    socket operations for this instance.
+    The parameter ´timeout´ must be numeric or None. If not passed, the
+    global default timeout setting is used (see socket.getdefaulttimeout()).
+    None means that no timeout will be set on any ftp socket(s).
+    The timeout is the default for all ftp socket operations for this
+    instance.
     The last parameter is the encoding of filenames, which defaults to utf-8.
 
     Then use self.connect() with optional host and port argument.
