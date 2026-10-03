@@ -113,8 +113,8 @@ int
 _PyLexer_scan_number(struct tok_state *tok, struct token *token, int c,
                      int leading_dot)
 {
-    const char *p_start = NULL;
-    const char *p_end = NULL;
+    _PyTok_Off p_start = -1;
+    _PyTok_Off p_end = -1;
 
     if (leading_dot) {
         goto fraction;
@@ -214,7 +214,7 @@ _PyLexer_scan_number(struct tok_state *tok, struct token *token, int c,
                 }
                 c = tok_nextc(tok);
             }
-            char* zeros_end = tok->cur;
+            _PyTok_Off zeros_end = tok->cur;
             if (Py_ISDIGIT(c)) {
                 nonzero = 1;
                 c = tok_decimal_tail(tok);

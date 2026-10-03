@@ -475,6 +475,9 @@ def _eval_type(t, globalns, localns, type_params, *, recursive_guard=frozenset()
                                     type_params=type_params, owner=owner,
                                     _recursive_guard=recursive_guard, format=format)
     if isinstance(t, (_GenericAlias, GenericAlias, Union)):
+        if isinstance(t, _LiteralGenericAlias):
+            # Unlike other generic aliases, Literal arguments aren't type expressions
+            return t
         if isinstance(t, GenericAlias):
             args = tuple(
                 _make_forward_ref(arg, parent_fwdref=parent_fwdref) if isinstance(arg, str) else arg

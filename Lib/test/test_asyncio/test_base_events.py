@@ -2041,6 +2041,43 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         self.loop.run_until_complete(protocol.done)
         self.assertEqual('CLOSED', protocol.state)
 
+    def test_create_datagram_endpoint_transport_error_closes_sock(self):
+        # gh-156400: the socket is closed if the transport is never created.
+        sock = mock.Mock()
+        sock.type = socket.SOCK_DGRAM
+
+        def factory():
+            raise ZeroDivisionError
+
+        coro = self.loop.create_datagram_endpoint(factory, sock=sock)
+        with self.assertRaises(ZeroDivisionError):
+            self.loop.run_until_complete(coro)
+        self.assertTrue(sock.close.called)
+
+    def test_connect_read_pipe_transport_error_closes_pipe(self):
+        # gh-156400: the pipe is closed if the transport is never created.
+        pipe = mock.Mock()
+
+        def factory():
+            raise ZeroDivisionError
+
+        coro = self.loop.connect_read_pipe(factory, pipe)
+        with self.assertRaises(ZeroDivisionError):
+            self.loop.run_until_complete(coro)
+        self.assertTrue(pipe.close.called)
+
+    def test_connect_write_pipe_transport_error_closes_pipe(self):
+        # gh-156400: the pipe is closed if the transport is never created.
+        pipe = mock.Mock()
+
+        def factory():
+            raise ZeroDivisionError
+
+        coro = self.loop.connect_write_pipe(factory, pipe)
+        with self.assertRaises(ZeroDivisionError):
+            self.loop.run_until_complete(coro)
+        self.assertTrue(pipe.close.called)
+
     @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'No UNIX Sockets')
     def test_create_datagram_endpoint_sock_unix(self):
         fut = self.loop.create_datagram_endpoint(

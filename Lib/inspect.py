@@ -298,6 +298,8 @@ def _has_code_flag(f, flag):
     f = functools._unwrap_partial(f)
     if not (isfunction(f) or _signature_is_functionlike(f)):
         return False
+    # If it's a pure Python function, or an object that is duck type
+    # of a Python function (Cython and Mock functions, for instance), then:
     return bool(f.__code__.co_flags & flag)
 
 def isgeneratorfunction(obj):
@@ -2338,7 +2340,7 @@ def _signature_from_function(cls, func, skip_bound_arg=True,
             is_duck_function = True
         else:
             # If it's not a pure Python function, and not a duck type
-            # of pure function:
+            # of pure function (Cython and Mock functions, for instance), then:
             raise TypeError('{!r} is not a Python function'.format(func))
 
     s = getattr(func, "__text_signature__", None)
@@ -2346,6 +2348,8 @@ def _signature_from_function(cls, func, skip_bound_arg=True,
         return _signature_fromstr(cls, func, s, skip_bound_arg)
 
     Parameter = cls._parameter_cls
+    if Parameter is Signature._parameter_cls and not is_duck_function:
+        Parameter = Parameter._from_code
 
     # Parameter information.
     func_code = func.__code__
@@ -2531,7 +2535,7 @@ def _signature_from_callable(obj, *,
 
     if isfunction(obj) or _signature_is_functionlike(obj):
         # If it's a pure Python function, or an object that is duck type
-        # of a Python function (Cython functions, for instance), then:
+        # of a Python function (Cython and Mock functions, for instance), then:
         return _signature_from_function(sigcls, obj,
                                         skip_bound_arg=skip_bound_arg,
                                         globals=globals, locals=locals, eval_str=eval_str,
@@ -2743,6 +2747,18 @@ class Parameter:
             raise ValueError('{!r} is not a valid parameter name'.format(name))
 
         self._name = name
+
+    @classmethod
+    def _from_code(cls, name, kind, *, default=_empty, annotation=_empty):
+        # Fast path for Python functions: only the name needs validation.
+        if iskeyword(name) or not name.isidentifier():
+            return cls(name, kind, default=default, annotation=annotation)
+        self = object.__new__(cls)
+        self._name = name
+        self._kind = kind
+        self._default = default
+        self._annotation = annotation
+        return self
 
     def __reduce__(self):
         return (type(self),
@@ -3463,6 +3479,10 @@ def _main():
     """ Logic for inspecting an object given at command line """
     import argparse
     import importlib
+
+    # The printed text can contain characters unencodable in the encoding
+    # of stdout, e.g. undecodable bytes of a file name.
+    sys.stdout.reconfigure(errors='backslashreplace')
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
