@@ -41,6 +41,22 @@ class TestImportTime(unittest.TestCase):
             "dataclasses", {"inspect", "re", "copy"}
         )
 
+    @cpython_only
+    def test_slots_does_not_import_inspect(self):
+        # inspect is only needed to unwrap user-defined methods
+        # that are wrapped by a decorator.
+        create_slotted_class = textwrap.dedent(
+            """
+            @dataclasses.dataclass(slots=True)
+            class C:
+                x: int = 0
+            """
+        )
+        import_helper.ensure_lazy_imports(
+            "dataclasses", {"inspect"},
+            additional_code=create_slotted_class,
+        )
+
 
 class TestCase(unittest.TestCase):
     def test_no_fields(self):
@@ -5436,6 +5452,19 @@ class TestZeroArgumentSuperWithSlots(unittest.TestCase):
                 super()
 
         A().foo()
+
+    def test_zero_argument_super_with_frozen(self):
+        @dataclass(frozen=True, slots=True)
+        class F:
+            x: int
+            def m(self):
+                return super().__repr__()
+
+        f = F(1)
+        with self.assertRaises(FrozenInstanceError):
+            f.y = 2
+        self.assertEqual(repr(f), f"{F.__qualname__}(x=1)")
+        f.m()
 
     def test_dunder_class_with_old_property(self):
         @dataclass(slots=True)
