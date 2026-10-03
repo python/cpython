@@ -20,15 +20,11 @@ class CAPITest(unittest.TestCase):
 
     # Test Py_GetCompiler()
     def test_getcompiler(self):
-        compiler = _testlimitedcapi.py_getcompiler()
-        self.assertIsInstance(compiler, str)
-        self.assertNotEqual(compiler, '')
+        self.assertIn(_testlimitedcapi.py_getcompiler(), sys.version)
 
     # Test Py_GetBuildInfo()
     def test_getbuildinfo(self):
-        buildinfo = _testlimitedcapi.py_getbuildinfo()
-        self.assertIsInstance(buildinfo, str)
-        self.assertNotEqual(buildinfo, '')
+        self.assertIn(_testlimitedcapi.py_getbuildinfo(), sys.version)
 
     # Test internal _Py_GetBuiltWithAssert()
     def test__getbuiltwithassert(self):
