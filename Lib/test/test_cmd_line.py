@@ -684,7 +684,7 @@ class CmdLineTest(unittest.TestCase):
 
     @support.cpython_only
     def test_unknown_options(self):
-        # Test unknown option -a
+        # Test unknown option
         for option in ('-z', '--long-option', '---'):
             with self.subTest(option=option):
                 rc, out, err = assert_python_failure('-E', option)
