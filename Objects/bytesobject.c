@@ -2705,7 +2705,6 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
 
         bot = _PyLong_DigitValue[*str];
         if (bot >= 16) {
-            /* Check if we had a second digit */
             invalid_char = str - start;
             goto error;
         }

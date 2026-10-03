@@ -523,7 +523,7 @@ class BaseBytesTest:
         self.assertEqual(self.type2test.fromhex(a), b'\x12\x34')
 
         a = array.array('B', list(b'12345'))  # Missing second digit
-        with self.assertRaises(ValueError) as cm:
+        with self.assertRaises(ValueError):
             self.type2test.fromhex(a)
 
     def test_hex(self):
