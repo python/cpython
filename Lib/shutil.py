@@ -980,6 +980,10 @@ def _is_immutable(src):
     immutable_states = [stat.UF_IMMUTABLE, stat.SF_IMMUTABLE]
     return hasattr(st, 'st_flags') and st.st_flags in immutable_states
 
+def _raise_not_EXDEV(err):
+    if err.errno != errno.EXDEV:
+        raise err from None
+
 def _get_gid(name):
     """Returns a gid, given a group name."""
     if name is None:
