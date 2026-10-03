@@ -1,0 +1,2 @@
+Fix an incorrect architecture macro check that prevented CPU prefetching in
+the free-threaded garbage collector on 32-bit Windows builds.
