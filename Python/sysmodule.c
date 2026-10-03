@@ -1104,25 +1104,33 @@ trace_trampoline(PyObject *self, PyFrameObject *frame,
 {
     PyObject *callback;
     if (what == PyTrace_CALL) {
-        callback = self;
+        callback = Py_XNewRef(self);
     }
     else {
-        callback = frame->f_trace;
+        Py_BEGIN_CRITICAL_SECTION(frame);
+        callback = Py_XNewRef(frame->f_trace);
+        Py_END_CRITICAL_SECTION();
     }
     if (callback == NULL) {
         return 0;
     }
 
     PyThreadState *tstate = _PyThreadState_GET();
+    /* The callback can change f_trace or release the thread state. */
     PyObject *result = call_trampoline(tstate, callback, frame, what, arg);
+    Py_DECREF(callback);
     if (result == NULL) {
         _PyEval_SetTrace(tstate, NULL, NULL);
+        Py_BEGIN_CRITICAL_SECTION(frame);
         Py_CLEAR(frame->f_trace);
+        Py_END_CRITICAL_SECTION();
         return -1;
     }
 
     if (result != Py_None) {
+        Py_BEGIN_CRITICAL_SECTION(frame);
         Py_XSETREF(frame->f_trace, result);
+        Py_END_CRITICAL_SECTION();
     }
     else {
         Py_DECREF(result);
