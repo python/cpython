@@ -1,0 +1,3 @@
+Use atomic loads for ``UnicodeDecodeError.start`` and
+``UnicodeDecodeError.end`` in ``UnicodeDecodeError.__str__()`` to avoid a
+data race in free-threaded builds.
