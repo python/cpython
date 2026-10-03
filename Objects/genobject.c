@@ -1963,8 +1963,10 @@ PyAsyncGen_New(PyFrameObject *f, PyObject *name, PyObject *qualname)
     return (PyObject*)ag;
 }
 
-static PyObject *
-async_gen_unwrap_value(PyAsyncGenObject *gen, PyObject *result)
+// Report an async yield as PYGEN_RETURN with the yielded value.
+static PySendResult
+async_gen_unwrap_send(PyAsyncGenObject *gen, PyObject *result,
+                      PyObject **presult)
 {
     if (result == NULL) {
         if (!PyErr_Occurred()) {
@@ -1977,17 +1979,31 @@ async_gen_unwrap_value(PyAsyncGenObject *gen, PyObject *result)
             FT_ATOMIC_STORE_INT8_RELAXED(gen->ag_closed, 1);
         }
 
-        return NULL;
+        *presult = NULL;
+        return PYGEN_ERROR;
     }
 
     if (_PyAsyncGenWrappedValue_CheckExact(result)) {
         /* async yield */
-        _PyGen_SetStopIterationValue(((_PyAsyncGenWrappedValue*)result)->agw_val);
+        *presult = Py_NewRef(((_PyAsyncGenWrappedValue*)result)->agw_val);
         Py_DECREF(result);
-        return NULL;
+        return PYGEN_RETURN;
     }
 
-    return result;
+    *presult = result;
+    return PYGEN_NEXT;
+}
+
+static PyObject *
+async_gen_unwrap_value(PyAsyncGenObject *gen, PyObject *result)
+{
+    PyObject *value;
+    if (async_gen_unwrap_send(gen, result, &value) == PYGEN_RETURN) {
+        _PyGen_SetStopIterationValue(value);
+        Py_DECREF(value);
+        return NULL;
+    }
+    return value;
 }
 
 
@@ -2000,7 +2016,10 @@ async_gen_asend_dealloc(PyObject *self)
     assert(PyAsyncGenASend_CheckExact(self));
     PyAsyncGenASend *ags = _PyAsyncGenASend_CAST(self);
 
-    if (PyObject_CallFinalizerFromDealloc(self)) {
+    // The finalizer only warns about an asend() that was never awaited.
+    if (ags->ags_state == AWAITABLE_STATE_INIT
+        && PyObject_CallFinalizerFromDealloc(self))
+    {
         return;
     }
 
@@ -2023,18 +2042,19 @@ async_gen_asend_traverse(PyObject *self, visitproc visit, void *arg)
 }
 
 
-static PyObject *
-async_gen_asend_send(PyObject *self, PyObject *arg)
+PySendResult
+_PyAsyncGenASend_Send(PyObject *self, PyObject *arg, PyObject **presult)
 {
     PyAsyncGenASend *o = _PyAsyncGenASend_CAST(self);
 
+    *presult = NULL;
     int8_t state = FT_ATOMIC_LOAD_INT8_RELAXED(o->ags_state);
     do {
         if (state == AWAITABLE_STATE_CLOSED) {
             PyErr_SetString(
                 PyExc_RuntimeError,
                 "cannot reuse already awaited __anext__()/asend()");
-            return NULL;
+            return PYGEN_ERROR;
         }
         if (state == AWAITABLE_STATE_ITER) {
             goto do_send;
@@ -2051,7 +2071,7 @@ async_gen_asend_send(PyObject *self, PyObject *arg)
         PyErr_SetString(
             PyExc_RuntimeError,
             "anext(): asynchronous generator is already running");
-        return NULL;
+        return PYGEN_ERROR;
     }
 
     if (arg == NULL || arg == Py_None) {
@@ -2059,29 +2079,29 @@ async_gen_asend_send(PyObject *self, PyObject *arg)
     }
 
     PyObject *result;
+    PySendResult res;
 do_send:
     result = gen_send((PyObject*)o->ags_gen, arg);
-    result = async_gen_unwrap_value(o->ags_gen, result);
+    res = async_gen_unwrap_send(o->ags_gen, result, presult);
 
-    if (result == NULL) {
+    if (res != PYGEN_NEXT) {
         FT_ATOMIC_STORE_INT8_RELAXED(o->ags_state, AWAITABLE_STATE_CLOSED);
         FT_ATOMIC_STORE_INT8_RELEASE(o->ags_gen->ag_running_async, 0);
     }
 
-    return result;
+    return res;
 }
 
-PySendResult
-_PyAsyncGenASend_Send(PyObject *iter, PyObject *arg, PyObject **result)
+static PyObject *
+async_gen_asend_send(PyObject *self, PyObject *arg)
 {
-    *result = async_gen_asend_send(iter, arg);
-    if (*result != NULL) {
-        return PYGEN_NEXT;
+    PyObject *result;
+    if (_PyAsyncGenASend_Send(self, arg, &result) == PYGEN_RETURN) {
+        _PyGen_SetStopIterationValue(result);
+        Py_DECREF(result);
+        return NULL;
     }
-    if (_PyGen_FetchStopIterationValue(result) == 0) {
-        return PYGEN_RETURN;
-    }
-    return PYGEN_ERROR;
+    return result;
 }
 
 
@@ -2166,6 +2186,7 @@ static void
 async_gen_asend_finalize(PyObject *self)
 {
     PyAsyncGenASend *ags = _PyAsyncGenASend_CAST(self);
+    // async_gen_asend_dealloc() calls this only in the INIT state.
     if (ags->ags_state == AWAITABLE_STATE_INIT) {
         _PyErr_WarnUnawaitedAgenMethod(ags->ags_gen, &_Py_ID(asend));
     }
