@@ -60,9 +60,12 @@ terms of the MIT license. A copy of the license can be found in the file
 // Use syscalls for some primitives to allow for libraries that override open/read/close etc.
 // and do allocation themselves; using syscalls prevents recursion when mimalloc is
 // still initializing (issue #713)
+//
+// This isn't done on Android because some versions have an excessively strict
+// seccomp filter (https://github.com/android/ndk/issues/1298).
 //------------------------------------------------------------------------------------
 
-#if defined(MI_HAS_SYSCALL_H) && defined(SYS_open) && defined(SYS_close) && defined(SYS_read) && defined(SYS_access)
+#if defined(MI_HAS_SYSCALL_H) && defined(SYS_open) && defined(SYS_close) && defined(SYS_read) && defined(SYS_access) && !defined(__ANDROID__)
 
 static int mi_prim_open(const char* fpath, int open_flags) {
   return syscall(SYS_open,fpath,open_flags,0);
