@@ -1501,6 +1501,13 @@ class TestParser(TestParserMixin, TestEmailBase):
         with self.assertRaises(errors.HeaderParseError):
             parser.get_domain("  (foo)\t, broken")
 
+    def test_get_domain_obsolete_trailing_dot_raises(self):
+        # gh-101034: a trailing dot must not surface get_atom's internal
+        # "expected atext but found ''" error.
+        with self.assertRaisesRegex(errors.HeaderParseError,
+                                    "expected atom after '.'"):
+            parser.get_domain("example.org.")
+
 
     # get_addr_spec
 
