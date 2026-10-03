@@ -2841,6 +2841,11 @@ class _TestContainers(BaseTestCase):
         self.assertIsInstance(outer[0], list)  # Not a ListProxy
         self.assertEqual(outer[-1][-1]['feed'], 3)
 
+    def test_set_isinstance(self):
+        s = self.set()
+        self.assertIsInstance(s, collections.abc.MutableSet)
+        self.assertNotIsInstance(s, collections.abc.MutableMapping)
+
     def test_nested_queue(self):
         a = self.list() # Test queue inside list
         a.append(self.Queue())
@@ -7777,6 +7782,7 @@ class ManagerMixin(BaseMixin):
     Array = property(operator.attrgetter('manager.Array'))
     list = property(operator.attrgetter('manager.list'))
     dict = property(operator.attrgetter('manager.dict'))
+    set = property(operator.attrgetter('manager.set'))
     Namespace = property(operator.attrgetter('manager.Namespace'))
 
     @classmethod
