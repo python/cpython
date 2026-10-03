@@ -1495,6 +1495,7 @@ class Babyl(_singlefileMailbox):
                 vis_buffer = io.BytesIO()
                 vis_generator = email.generator.BytesGenerator(vis_buffer, False, 0)
                 vis_generator.flatten(message.get_visible())
+                vis_buffer.seek(0)
                 while True:
                     line = vis_buffer.readline()
                     self._file.write(line.replace(b'\n', linesep))
