@@ -2925,9 +2925,9 @@ delete_index_from_values(PyDictValues *values, Py_ssize_t ix)
     assert(i < size);
     size--;
     for (; i < size; i++) {
-        array[i] = array[i+1];
+        FT_ATOMIC_STORE_UINT8_RELAXED(array[i], array[i+1]);
     }
-    values->size = size;
+    FT_ATOMIC_STORE_UINT8_RELEASE(values->size, size);
 }
 
 static void
@@ -3122,7 +3122,7 @@ clear_embedded_values(PyDictValues *values, Py_ssize_t nentries)
         refs[i] = values->values[i];
         FT_ATOMIC_STORE_PTR_RELEASE(values->values[i], NULL);
     }
-    values->size = 0;
+    FT_ATOMIC_STORE_UINT8_RELEASE(values->size, 0);
     for (Py_ssize_t i = 0; i < nentries; i++) {
         Py_XDECREF(refs[i]);
     }
@@ -6102,9 +6102,14 @@ dictiter_iternext_threadsafe(PyDictObject *d, PyObject *self,
         // We're racing against writes to the order from delete_index_from_values, but
         // single threaded can suffer from concurrent modification to those as well and
         // can have either duplicated or skipped attributes, so we strive to do no better
-        // here.
-        int index = get_index_from_order(d, i);
+        // here. Use the same values snapshot as the size load above.
+        uint8_t *order = get_insertion_order_array(values);
+        int index = _Py_atomic_load_uint8_relaxed(&order[i]);
         PyObject *value = _Py_atomic_load_ptr(&values->values[index]);
+        if (value == NULL) {
+            // Deletion clears the slot before decrementing values->size.
+            goto try_locked;
+        }
         if (acquire_key_value(&DK_UNICODE_ENTRIES(k)[index].me_key, value,
                                &values->values[index], out_key, out_value) < 0) {
             goto try_locked;
