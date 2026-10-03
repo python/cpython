@@ -918,6 +918,56 @@ class BaseEventLoopTests(test_utils.TestCase):
         self.loop.run_forever()
         self.assertTrue(func.called)
 
+    def test_run_until_complete_interrupted_after_done(self):
+        # gh-158406: an interrupt after the future is done must not stop
+        # the next run_until_complete() call early.
+        self.loop._process_events = mock.Mock()
+        for exc in (KeyboardInterrupt, SystemExit):
+            with self.subTest(exc=exc):
+                def interrupt():
+                    raise exc
+
+                async def main():
+                    self.loop.call_soon(interrupt)
+
+                with self.assertRaises(exc):
+                    self.loop.run_until_complete(main())
+                result = self.loop.run_until_complete(asyncio.sleep(0, "ret"))
+                self.assertEqual(result, "ret")
+
+    def test_run_until_complete_stopped_after_done(self):
+        # gh-158406: stop() in the iteration in which the future is done
+        # must not stop the next run_until_complete() call early.
+        async def main():
+            self.loop.stop()
+            return 1
+
+        self.loop._process_events = mock.Mock()
+        self.assertEqual(self.loop.run_until_complete(main()), 1)
+        result = self.loop.run_until_complete(asyncio.sleep(0, "ret"))
+        self.assertEqual(result, "ret")
+
+    def test_run_forever_after_interrupted_run_until_complete(self):
+        # gh-158406: an interrupt after the future is done must not stop
+        # a later run_forever() call early.
+        def interrupt():
+            raise KeyboardInterrupt
+
+        async def main():
+            self.loop.call_soon(interrupt)
+
+        self.loop._process_events = mock.Mock()
+        with self.assertRaises(KeyboardInterrupt):
+            self.loop.run_until_complete(main())
+
+        def func():
+            self.loop.stop()
+            func.called = True
+        func.called = False
+        self.loop.call_soon(self.loop.call_soon, func)
+        self.loop.run_forever()
+        self.assertTrue(func.called)
+
     def test_single_selecter_event_callback_after_stopping(self):
         # Python issue #25593: A stopped event loop may cause event callbacks
         # to run more than once.

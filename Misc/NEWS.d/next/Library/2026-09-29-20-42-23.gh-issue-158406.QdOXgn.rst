@@ -1,0 +1,4 @@
+Fix :meth:`asyncio.loop.run_until_complete` raising :exc:`RuntimeError` when
+the previous call was interrupted or stopped just as its future completed.
+This could make :func:`asyncio.run` raise :exc:`RuntimeError` instead of
+:exc:`KeyboardInterrupt` on Ctrl-C and skip part of its cleanup.
