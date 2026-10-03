@@ -3819,7 +3819,7 @@ byteswriter_check_consistency(PyBytesWriter *writer)
 static inline int
 byteswriter_resize(PyBytesWriter *writer, Py_ssize_t new_size, int resize)
 {
-    assert(new_size >= 0);
+    assert(new_size >= 1);
 
     Py_ssize_t old_allocated = byteswriter_allocated(writer);
     if (new_size <= old_allocated) {
