@@ -459,6 +459,36 @@ class TestSelfStackTrace(RemoteInspectionTestBase):
         self.assertEqual([len(n) for n in names if n.startswith("x")], [255])
 
     @skip_if_not_supported
+    def test_deep_awaiter_chain_is_walked_depth_first(self):
+        # gh-158688
+        depth = 20000
+
+        async def root():
+            await asyncio.sleep(0)
+            return [
+                task.task_name
+                for info in RemoteUnwinder(os.getpid()).get_async_stack_trace()
+                for task in info.awaited_by
+            ]
+
+        async def link(awaited):
+            return await awaited
+
+        async def main():
+            first = asyncio.create_task(root(), name="root")
+            top = first
+            for i in range(depth):
+                top = asyncio.create_task(link(top), name=f"a{i}")
+            asyncio.create_task(link(first), name="b")
+            return (await top), asyncio.current_task().get_name()
+
+        names, main_name = asyncio.run(main())
+        self.assertEqual(len(names), depth + 3)
+        head = names.index("a0")
+        self.assertEqual(names[head:head + 2], ["a0", "a1"])
+        self.assertEqual(names[head + depth], main_name)
+
+    @skip_if_not_supported
     @unittest.skipIf(
         sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
         "Test only runs on Linux with process_vm_readv support",

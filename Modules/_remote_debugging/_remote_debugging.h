@@ -765,12 +765,6 @@ extern int process_single_task_node(
     PyObject *result
 );
 
-extern int process_task_and_waiters(
-    RemoteUnwinderObject *unwinder,
-    uintptr_t task_addr,
-    PyObject *result
-);
-
 extern int find_running_task_in_thread(
     RemoteUnwinderObject *unwinder,
     uintptr_t thread_state_addr,

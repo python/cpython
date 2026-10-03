@@ -513,9 +513,6 @@ error:
  * TASK AWAITED_BY PROCESSING
  * ============================================================================ */
 
-// Forward declaration for mutual recursion
-static int process_waiter_task(RemoteUnwinderObject *unwinder, uintptr_t key_addr, void *context);
-
 // Processor function for parsing tasks in sets
 static int
 process_task_parser(
@@ -658,30 +655,90 @@ error:
     return -1;
 }
 
-int
-process_task_and_waiters(
-    RemoteUnwinderObject *unwinder,
-    uintptr_t task_addr,
-    PyObject *result
-) {
-    // First, add this task to the result
-    if (process_single_task_node(unwinder, task_addr, NULL, result) < 0) {
-        return -1;
-    }
-
-    // Now find all tasks that are waiting for this task and process them
-    return process_task_awaited_by(unwinder, task_addr, process_waiter_task, result);
-}
-
 // Processor function for task waiters
 static int
-process_waiter_task(
+queue_waiter_task(
     RemoteUnwinderObject *unwinder,
     uintptr_t key_addr,
     void *context
 ) {
-    PyObject *result = (PyObject *)context;
-    return process_task_and_waiters(unwinder, key_addr, result);
+    PyObject *queue = (PyObject *)context;
+    PyObject *addr = PyLong_FromUnsignedLongLong(key_addr);
+    if (addr == NULL) {
+        set_exception_cause(unwinder, PyExc_MemoryError, "Failed to create task address");
+        return -1;
+    }
+    int res = PyList_Append(queue, addr);
+    Py_DECREF(addr);
+    if (res < 0) {
+        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to queue waiter task");
+    }
+    return res;
+}
+
+// gh-158688: Add every task that transitively waits for task_addr, already in the result
+static int
+process_task_waiters(
+    RemoteUnwinderObject *unwinder,
+    uintptr_t task_addr,
+    PyObject *result
+) {
+    PyObject *queue = PyList_New(0);
+    PyObject *seen = PySet_New(NULL);
+    PyObject *waiters = PyList_New(0);
+    int res = -1;
+
+    if (queue == NULL || seen == NULL || waiters == NULL) {
+        set_exception_cause(unwinder, PyExc_MemoryError, "Failed to create task queue");
+        goto done;
+    }
+
+    int seeded = queue_waiter_task(unwinder, task_addr, queue);
+    if (seeded < 0) {
+        goto done;
+    }
+
+    for (Py_ssize_t i = 0; i < PyList_GET_SIZE(queue); i++) {
+        PyObject *addr = PyList_GET_ITEM(queue, i);
+        Py_ssize_t seen_count = PySet_GET_SIZE(seen);
+
+        int marked = PySet_Add(seen, addr);
+        if (marked < 0) {
+            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to mark task as seen");
+            goto done;
+        }
+        if (PySet_GET_SIZE(seen) == seen_count) {
+            // already visited
+            continue;
+        }
+
+        uintptr_t waiter_addr = (uintptr_t)PyLong_AsUnsignedLongLong(addr);
+        if (i > 0) {
+            int added = process_single_task_node(unwinder, waiter_addr, NULL, result);
+            if (added < 0) {
+                goto done;
+            }
+        }
+
+        int queued = process_task_awaited_by(unwinder, waiter_addr, queue_waiter_task, waiters);
+        if (queued < 0) {
+            goto done;
+        }
+
+        // Visit the waiters before the rest of the queue, depth first
+        int spliced = PyList_SetSlice(queue, i + 1, i + 1, waiters);
+        int cleared = PyList_SetSlice(waiters, 0, PyList_GET_SIZE(waiters), NULL);
+        if (spliced < 0 || cleared < 0) {
+            goto done;
+        }
+    }
+    res = 0;
+
+done:
+    Py_XDECREF(queue);
+    Py_XDECREF(seen);
+    Py_XDECREF(waiters);
+    return res;
 }
 
 /* ============================================================================
@@ -978,7 +1035,7 @@ process_running_task_chain(
     }
 
     // Now find all tasks that are waiting for this task and process them
-    if (process_task_awaited_by(unwinder, running_task_addr, process_waiter_task, result) < 0) {
+    if (process_task_waiters(unwinder, running_task_addr, result) < 0) {
         return -1;
     }
 
