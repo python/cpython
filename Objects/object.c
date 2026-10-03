@@ -3385,6 +3385,7 @@ _Py_Dealloc(PyObject *op)
         return;
     }
 #endif
+    // GC objects (trashcan), reftracer set, or debug builds.
     dealloc_general(op);
 }
 
