@@ -831,6 +831,34 @@ class BaseProactorEventLoopTests(test_utils.TestCase):
         self.loop._loop_self_reading()
         self.assertTrue(self.loop.call_exception_handler.called)
 
+    def test_loop_self_reading_eof_rebuilds_self_pipe(self):
+        # gh-156333: a clean EOF on the self-pipe (recv returns b'') must
+        # rebuild the socketpair instead of re-arming a read that completes
+        # immediately, which would busy-loop the CPU at 100%.
+        fut = mock.Mock()
+        fut.result.return_value = b''
+        self.loop._self_reading_future = fut
+
+        new_ssock, new_csock = mock.Mock(), mock.Mock()
+        with mock.patch('asyncio.proactor_events.socket.socketpair',
+                        return_value=(new_ssock, new_csock)):
+            with mock.patch('signal.set_wakeup_fd') as m_wakeup_fd:
+                self.loop._loop_self_reading(fut)
+
+        # the dead pipe is closed and replaced
+        self.assertTrue(self.ssock.close.called)
+        self.assertTrue(self.csock.close.called)
+        self.assertIs(self.loop._ssock, new_ssock)
+        self.assertIs(self.loop._csock, new_csock)
+        self.assertEqual(self.loop._internal_fds, 1)
+        # the wakeup fd is re-registered to the new socket before the old
+        # sockets are closed
+        self.assertEqual(m_wakeup_fd.call_args.args, (new_csock.fileno(),))
+        # a new read is armed on the NEW socket, not the dead one
+        self.proactor.recv.assert_called_with(new_ssock, 4096)
+        self.assertIs(self.loop._self_reading_future,
+                      self.proactor.recv.return_value)
+
     def test_write_to_self(self):
         self.loop._write_to_self()
         self.csock.send.assert_called_with(b'\0')

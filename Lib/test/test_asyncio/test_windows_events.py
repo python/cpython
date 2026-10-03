@@ -252,6 +252,61 @@ class ProactorTests(WindowsEventsTestCase):
         self.close_loop(self.loop)
         self.assertFalse(self.loop.call_exception_handler.called)
 
+    def test_read_self_pipe_eof_rebuild(self):
+        # Regression test for gh-156333: if the self-pipe socketpair
+        # reaches a clean EOF (e.g. the OS tears down the loopback
+        # connection across a power/session state change), re-arming
+        # recv() on the dead socket completes immediately and reschedules
+        # _loop_self_reading forever, pinning a CPU core.  The loop must
+        # instead rebuild the pipe.
+        loop = self.loop
+        calls = 0
+        orig = loop._loop_self_reading
+        def counting(f=None):
+            nonlocal calls
+            calls += 1
+            return orig(f)
+        loop._loop_self_reading = counting
+
+        old_ssock = loop._ssock
+
+        async def main():
+            # Let the loop arm its self-pipe read first.
+            await asyncio.sleep(0.1)
+            # Graceful half-close: the read half sees a clean EOF, which
+            # is what an OS teardown of the loopback connection looks like.
+            loop._csock.shutdown(socket.SHUT_WR)
+            # Wait (bounded) for the rebuild instead of assuming a fixed
+            # delay, so a slow machine cannot fail the test spuriously.
+            deadline = time.monotonic() + support.LOOPBACK_TIMEOUT
+            while (loop._ssock is old_ssock
+                   and time.monotonic() < deadline):
+                await asyncio.sleep(0.01)
+            # Let any (buggy) busy-loop rescheduling surface.
+            await asyncio.sleep(0.3)
+
+        loop.run_until_complete(main())
+
+        # Without the fix, _loop_self_reading is rescheduled hundreds of
+        # thousands of times here; with the fix, the pipe is rebuilt and
+        # the loop goes back to sleep.
+        self.assertIsNot(loop._ssock, old_ssock)
+        self.assertLess(calls, 100)
+
+        # The rebuilt pipe must still deliver cross-thread wakeups.
+        woke = []
+        async def main2():
+            threading.Thread(
+                target=lambda: loop.call_soon_threadsafe(woke.append, True)
+            ).start()
+            for _ in range(200):
+                if woke:
+                    break
+                await asyncio.sleep(0.01)
+        loop.run_until_complete(main2())
+        self.assertEqual(woke, [True])
+        self.close_loop(self.loop)
+
     def test_address_argument_type_error(self):
         # Regression test for https://github.com/python/cpython/issues/98793
         proactor = self.loop._proactor
