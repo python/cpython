@@ -259,7 +259,7 @@ HTTPConnection Objects
 
 
 .. method:: HTTPConnection.request(method, url, body=None, headers={}, *, \
-            encode_chunked=False)
+            encode_chunked=False, continue_timeout=2.5)
 
    This will send a request to the server using the HTTP request
    method *method* and the request URI *url*. The provided *url* must be
@@ -335,10 +335,32 @@ HTTPConnection Objects
       No attempt is made to determine the Content-Length for file
       objects.
 
-.. method:: HTTPConnection.getresponse()
+   .. versionchanged:: next
+      The *continue_timeout* parameter was added.
+
+      If the headers include ``Expect: 100-Continue`` and *body* is set, the
+      body will not be sent until either a ``100 Continue`` response is
+      received from the server or *continue_timeout* seconds have elapsed; if a
+      response code other than 100 is received, the body will not be sent at all.
+
+      *continue_timeout* value must be greater than zero, otherwise
+      :exc:`ValueError` is raised.
+
+.. method:: HTTPConnection.getresponse(support_continue=False)
 
    Should be called after a request is sent to get the response from the server.
    Returns an :class:`HTTPResponse` instance.
+
+   By default, ``100 Continue`` responses are skipped and the method returns
+   the first response with a status other than 100.  If *support_continue*
+   is true, a ``100 Continue`` response is returned to the caller, which must
+   then send the request body and call :meth:`getresponse` again to obtain
+   the final response.
+
+   .. note::
+
+      The whole response must be read before a new request can be sent to
+      the server.
 
    .. versionchanged:: 3.5
       If a :exc:`ConnectionError` or subclass is raised, the
@@ -348,6 +370,10 @@ HTTPConnection Objects
       Note that this does not apply to :exc:`OSError`\s raised by the underlying
       socket. Instead the caller is responsible to call :meth:`close` on the
       existing connection.
+
+   .. versionchanged:: next
+      Added the *support_continue* parameter. (In prior versions
+      a ``Continue`` response was always ignored.)
 
 
 .. method:: HTTPConnection.set_debuglevel(level)
@@ -443,7 +469,8 @@ also send your request step by step, by using the four functions below.
 
 
 .. method:: HTTPConnection.putrequest(method, url, skip_host=False, \
-                                      skip_accept_encoding=False)
+                                      skip_accept_encoding=False, \
+                                      continue_timeout=2.5)
 
    This should be the first call after the connection to the server has been
    made. It sends a line to the server consisting of the *method* string,
@@ -451,6 +478,14 @@ also send your request step by step, by using the four functions below.
    sending of ``Host:`` or ``Accept-Encoding:`` headers (for example to accept
    additional content encodings), specify *skip_host* or *skip_accept_encoding*
    with non-False values.
+
+   If an ``Expect: 100-Continue`` header is sent, the optional
+   *continue_timeout* parameter sets how many seconds the client will wait for
+   a ``100 Continue`` response before sending the message body,    It must be
+   greater than zero, otherwise :exc:`ValueError` is raised.
+
+   .. versionchanged:: next
+      *continue_timeout* parameter was added.
 
 
 .. method:: HTTPConnection.putheader(header, argument[, ...])
@@ -465,7 +500,12 @@ also send your request step by step, by using the four functions below.
 
    Send a blank line to the server, signalling the end of the headers. The
    optional *message_body* argument can be used to pass a message body
-   associated with the request.
+   associated with the request. If a body is provided and an
+   ``Expect: 100-Continue`` header has been sent, the body will not be sent
+   until a ``100 Continue`` response is received from the server; if another
+   response code is received, the body is not sent at all.  If no response
+   is received within the *continue_timeout* given to :meth:`putrequest`,
+   the body will be sent regardless.
 
    If *encode_chunked* is ``True``, the result of each iteration of
    *message_body* will be chunk-encoded as specified in :rfc:`7230`,
@@ -485,6 +525,12 @@ also send your request step by step, by using the four functions below.
 
    .. versionchanged:: 3.6
       Added chunked encoding support and the *encode_chunked* parameter.
+
+   .. versionchanged:: next
+      If an ``Expect: 100-Continue`` header has been sent, the body will not be
+      sent until a ``100 Continue`` response is received from the server, or a
+      contine_timeout has elapsed. If the response code is not 100, the body
+      will not be sent at all.
 
 
 .. method:: HTTPConnection.send(data)
@@ -660,6 +706,46 @@ method attribute. Here is an example session that uses the ``PUT`` method::
     >>> BODY = "***filecontents***"
     >>> conn = http.client.HTTPConnection("localhost", 8080)
     >>> conn.request("PUT", "/file", BODY)
+    >>> response = conn.getresponse()
+    >>> print(response.status, response.reason)
+    200, OK
+
+Conditional transmission of the body is supported when an ``Expect: 100-Continue``
+header is set. To use this in a simple case, just set the header, and
+optionally the time for which the client should wait for a ``100 Continue``
+response before sending the body regardless::
+
+    >>> import http.client
+    >>> BODY = "***filecontents***"
+    >>> conn = http.client.HTTPConnection("localhost", 8080)
+    >>> conn.request("PUT", "/file", BODY, headers={'Expect': '100-Continue'},
+    ...              continue_timeout=1.0)
+    >>> response = conn.getresponse()
+    >>> # You will not see the '100' response, as it is handled internally
+    >>> print(response.status, response.reason)
+    200, OK
+
+Here is a more complex example in which we manually check the response and
+decide whether to send the body. This may be useful if the body must be
+generated by some resource-intensive process which should be skipped if the
+server will not accept it.  *continue_timeout* does not apply here, so this
+should only be used with servers known to support ``Expect: 100-Continue``;
+otherwise :meth:`~HTTPConnection.getresponse` may block until the
+connection's *timeout* expires. ::
+
+    >>> import http.client
+    >>> conn = http.client.HTTPConnection("localhost", 8080)
+    >>> conn.putrequest("PUT", "/file")
+    >>> conn.putheader('Expect', '100-Continue')
+    >>> # Assuming you know in advance what the length will be
+    >>> # If not, you will need to encode it as chunked
+    >>> conn.putheader('Content-Length', '42')
+    >>> conn.endheaders()
+    >>> response = conn.getresponse(support_continue=True)
+    >>> print(response.status, response.reason)
+    100, Continue
+    >>> BODY = resource_intensive_calculation()
+    >>> conn.send(BODY)
     >>> response = conn.getresponse()
     >>> print(response.status, response.reason)
     200, OK
