@@ -828,7 +828,6 @@ internal_setblocking(PySocketSockObject *s, int block)
     int delay_flag, new_delay_flag;
 #endif
 
-    Py_BEGIN_ALLOW_THREADS
 #ifndef MS_WINDOWS
 #if (defined(HAVE_SYS_IOCTL_H) && defined(FIONBIO))
     block = !block;
@@ -855,8 +854,6 @@ internal_setblocking(PySocketSockObject *s, int block)
     result = 0;
 
   done:
-    Py_END_ALLOW_THREADS
-
     if (result) {
 #ifndef MS_WINDOWS
         PyErr_SetFromErrno(PyExc_OSError);
@@ -3915,9 +3912,7 @@ _socket_socket_getsockname_impl(PySocketSockObject *s)
     if (!getsockaddrlen(s, &addrlen))
         return NULL;
     memset(&addrbuf, 0, addrlen);
-    Py_BEGIN_ALLOW_THREADS
     res = getsockname(get_sock_fd(s), SAS2SA(&addrbuf), &addrlen);
-    Py_END_ALLOW_THREADS
     if (res < 0)
         return s->errorhandler();
     return makesockaddr(get_sock_fd(s), SAS2SA(&addrbuf), addrlen,
@@ -3950,9 +3945,7 @@ _socket_socket_getpeername_impl(PySocketSockObject *s)
     if (!getsockaddrlen(s, &addrlen))
         return NULL;
     memset(&addrbuf, 0, addrlen);
-    Py_BEGIN_ALLOW_THREADS
     res = getpeername(get_sock_fd(s), SAS2SA(&addrbuf), &addrlen);
-    Py_END_ALLOW_THREADS
     if (res < 0)
         return s->errorhandler();
     return makesockaddr(get_sock_fd(s), SAS2SA(&addrbuf), addrlen,
@@ -5968,9 +5961,7 @@ _socket_gethostname_impl(PyObject *module)
 #else
     char buf[1024];
     int res;
-    Py_BEGIN_ALLOW_THREADS
     res = gethostname(buf, (int) sizeof buf - 1);
-    Py_END_ALLOW_THREADS
     if (res < 0)
         return set_error();
     buf[sizeof buf - 1] = '\0';
