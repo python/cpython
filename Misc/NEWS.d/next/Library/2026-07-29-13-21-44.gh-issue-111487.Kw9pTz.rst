@@ -1,0 +1,5 @@
+Fix :meth:`csv.Sniffer.sniff` never testing the documented minimum delimiter
+consistency of 90%.  The consistency counter was stepped down by repeatedly
+subtracting ``0.01`` from a float, so it stopped at ``0.9099999999999999`` and
+the final pass at the threshold was skipped; the comparison against the
+threshold now allows for that accumulated error.
