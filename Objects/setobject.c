@@ -1861,15 +1861,25 @@ set_intersection_update_multi_impl(PySetObject *so, PyObject * const *others,
                                    Py_ssize_t others_length)
 /*[clinic end generated code: output=d768b5584675b48d input=782e422fc370e4fc]*/
 {
-    PyObject *tmp;
+    PyObject *copy;
+    PyObject *result = NULL;
 
-    tmp = set_intersection_multi_impl(so, others, others_length);
-    if (tmp == NULL)
-        return NULL;
     Py_BEGIN_CRITICAL_SECTION(so);
-    set_swap_bodies(so, (PySetObject *)tmp);
+    copy = set_copy_untracked_lock_held(so);
+    if (copy != NULL) {
+        result = set_intersection_multi_impl((PySetObject *)copy,
+                                             others, others_length);
+        Py_DECREF(copy);
+        if (result != NULL) {
+            set_swap_bodies(so, (PySetObject *)result);
+        }
+    }
     Py_END_CRITICAL_SECTION();
-    Py_DECREF(tmp);
+
+    if (result == NULL) {
+        return NULL;
+    }
+    Py_DECREF(result);
     Py_RETURN_NONE;
 }
 
