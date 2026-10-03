@@ -1,0 +1,2 @@
+Add support for arbitrary C integer types in :c:member:`PyMemberDef.type`.
+The macro :c:macro:`Py_T_INTEGER(type) <Py_T_INTEGER>` represents a C type *type*.
