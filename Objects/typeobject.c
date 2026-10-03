@@ -12463,10 +12463,13 @@ PyType_Freeze(PyTypeObject *type)
         return -1;
     }
 
+    pinned_mutexes_t pinned;
     BEGIN_TYPE_LOCK();
+    type_lock_prevent_release(&pinned);
     types_stop_world();
     type_add_flags(type, Py_TPFLAGS_IMMUTABLETYPE);
     types_start_world();
+    type_lock_allow_release(&pinned);
     ASSERT_TYPE_LOCK_HELD();
     _PyType_Modified_Unlocked(type);
     END_TYPE_LOCK();
