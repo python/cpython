@@ -1,0 +1,2 @@
+Add ``zipfile.ZipExtFile._init_read()`` to deduplicate read
+(re)initialization in ``seek()``.
