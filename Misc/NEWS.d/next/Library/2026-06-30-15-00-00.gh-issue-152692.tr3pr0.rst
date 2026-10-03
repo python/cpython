@@ -1,0 +1,4 @@
+Fix :func:`annotationlib.type_repr` returning a string such as
+``None.list.append`` for bound built-in methods, whose ``__module__`` is
+``None``.  It now returns the qualified name, as it already did for other
+builtins.
