@@ -81,6 +81,7 @@ class shlex:
         self.infile = newfile
         self.instream = newstream
         self.lineno = 1
+        self.state = ' '
         if self.debug:
             if newfile is not None:
                 print('shlex: pushing to file %s' % (self.infile,))
