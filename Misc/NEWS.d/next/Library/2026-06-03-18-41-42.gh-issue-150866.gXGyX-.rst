@@ -1,0 +1,2 @@
+Fix :meth:`asyncio.loop.shutdown_asyncgens` to report any
+:exc:`BaseException` raised during asynchronous generator cleanup.

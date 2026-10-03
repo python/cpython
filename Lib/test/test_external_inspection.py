@@ -1,3 +1,4 @@
+import asyncio
 import unittest
 import os
 import textwrap
@@ -436,6 +437,73 @@ class RemoteInspectionTestBase(unittest.TestCase):
 # ============================================================================
 # Test classes
 # ============================================================================
+
+
+@requires_remote_subprocess_debugging()
+class TestSelfStackTrace(RemoteInspectionTestBase):
+    @skip_if_not_supported
+    def test_long_task_name_is_truncated(self):
+        # gh-157788
+        async def main():
+            asyncio.create_task(asyncio.sleep(10_000), name="x" * 300)
+            await asyncio.sleep(0)
+            names = [
+                task.task_name
+                for info in RemoteUnwinder(os.getpid()).get_all_awaited_by()
+                for task in info.awaited_by
+            ]
+            return asyncio.current_task().get_name(), names
+
+        main_name, names = asyncio.run(main())
+        self.assertIn(main_name, names)
+        self.assertEqual([len(n) for n in names if n.startswith("x")], [255])
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
+    def test_self_trace_with_large_linetable(self):
+        script = textwrap.dedent("""\
+            import os
+            import _remote_debugging
+
+            assignments = "\\n".join(
+                f"value_{i} = {i}" for i in range(1000)
+            )
+            expected_lineno = len(assignments.splitlines()) + 1
+            source = (
+                f"{assignments}\\n"
+                "stack_trace = "
+                "_remote_debugging.RemoteUnwinder(os.getpid()).get_stack_trace()\\n"
+            )
+            code = compile(source, "large_linetable.py", "exec")
+            assert len(code.co_linetable) > 4096, len(code.co_linetable)
+            namespace = {"os": os, "_remote_debugging": _remote_debugging}
+            exec(code, namespace)
+            large_linetable_frames = [
+                frame
+                for interpreter in namespace["stack_trace"]
+                for thread in interpreter.threads
+                for frame in thread.frame_info
+                if frame.filename == "large_linetable.py"
+            ]
+            assert len(large_linetable_frames) == 1, large_linetable_frames
+            assert large_linetable_frames[0].location.lineno == expected_lineno, (
+                large_linetable_frames[0]
+            )
+            """)
+
+        result = subprocess.run(
+            [sys.executable, "-c", script],
+            capture_output=True,
+            text=True,
+            timeout=SHORT_TIMEOUT,
+        )
+        self.assertEqual(
+            result.returncode, 0,
+            f"stdout: {result.stdout}\nstderr: {result.stderr}"
+        )
 
 
 @requires_remote_subprocess_debugging()
@@ -1621,6 +1689,80 @@ class TestGetStackTrace(RemoteInspectionTestBase):
         sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
         "Test only runs on Linux with process_vm_readv support",
     )
+    def test_empty_native_thread_stack(self):
+        _testcapi = import_module("_testcapi")
+        lock = threading.Lock()
+        lock.acquire()
+        # A built-in callback leaves the C thread's Python stack empty.
+        _testcapi.call_in_temporary_c_thread(lock.acquire, False)
+        try:
+            for cache_frames, native in ((False, False), (False, True),
+                                         (True, False), (True, True)):
+                with self.subTest(cache_frames=cache_frames, native=native):
+                    unwinder = RemoteUnwinder(
+                        os.getpid(), all_threads=True, cache_frames=cache_frames,
+                        native=native,
+                    )
+                    _get_stack_trace_with_retry(
+                        unwinder, condition=lambda trace: len(trace[0].threads) == 2,
+                    )
+                    threads = unwinder.get_stack_trace()[0].threads
+                    native_stack, python_stack = sorted(
+                        (thread.frame_info for thread in threads), key=len,
+                    )
+                    self.assertEqual(native_stack, [])
+                    self.assertEqual(
+                        python_stack[0].funcname,
+                        "TestGetStackTrace.test_empty_native_thread_stack",
+                    )
+        finally:
+            lock.release()
+            _testcapi.join_temporary_c_thread()
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
+    def test_popping_python_frame_is_not_native(self):
+        script = """\
+def leaf(depth):
+    if depth:
+        leaf(depth - 1)
+
+while True:
+        leaf(300)
+"""
+        with _managed_subprocess([sys.executable, "-c", script]) as process:
+            for _ in busy_retry(SHORT_TIMEOUT):
+                try:
+                    unwinder = RemoteUnwinder(
+                        process.pid, native=True, gc=False, cache_frames=False,
+                    )
+                except RuntimeError:
+                    continue
+                break
+            samples = 0
+            for _ in range(10_000):
+                try:
+                    threads = unwinder.get_stack_trace()[0].threads
+                except TRANSIENT_ERRORS:
+                    continue
+                if not threads:
+                    continue
+                frames = threads[0].frame_info
+                names = [frame.funcname for frame in frames]
+                if "leaf" not in names:
+                    continue
+                samples += 1
+                self.assertNotIn(("leaf", "<native>"), zip(names, names[1:]))
+            self.assertGreater(samples, 1000)
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
     @requires_subinterpreters
     def test_subinterpreter_stack_trace(self):
         port = find_unused_port()
@@ -2184,6 +2326,127 @@ class TestGetStackTrace(RemoteInspectionTestBase):
         actual = (location.lineno, location.end_lineno,
                   location.col_offset, location.end_col_offset)
         self.assertIn(actual, valid_locations)
+
+    @skip_if_not_supported
+    @unittest.skipIf(sys._is_gil_enabled(), "Requires free-threading")
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Requires process_vm_readv",
+    )
+    def test_tlbc_cache_refresh_after_growth(self):
+        # Reproducer from gh-157660.
+        script = textwrap.dedent("""\
+            import os, threading
+            from _remote_debugging import RemoteUnwinder
+            from test import support
+
+            go = threading.Event()
+            stop = threading.Event()
+
+            def leaf():
+                stop.wait()
+
+            def wait_for_leaf_frames(u, expected_count):
+                for _ in support.sleeping_retry(
+                    support.SHORT_TIMEOUT,
+                    f"Expected {expected_count} leaf frames",
+                ):
+                    try:
+                        traces = u.get_stack_trace()
+                    except RuntimeError as exc:
+                        if str(exc) != "Failed to parse initial frame in chain":
+                            raise
+                        continue
+                    count = sum(
+                        f.funcname == "leaf"
+                        for i in traces
+                        for t in i.threads for f in t.frame_info
+                    )
+                    if count == expected_count:
+                        return
+
+            threading.Thread(target=leaf, daemon=True).start()
+            for _ in range(16):
+                threading.Thread(target=stop.wait, daemon=True).start()
+            threading.Thread(target=lambda: (go.wait(), leaf()), daemon=True).start()
+
+            u = RemoteUnwinder(os.getpid(), all_threads=True, cache_frames=False)
+            wait_for_leaf_frames(u, 1)
+            go.set()
+            wait_for_leaf_frames(u, 2)
+            """)
+        result = subprocess.run(
+            [sys.executable, "-X", "gil=0", "-X", "tlbc=1", "-c", script],
+            capture_output=True,
+            text=True,
+            timeout=SHORT_TIMEOUT,
+        )
+        self.assertEqual(
+            result.returncode, 0,
+            f"stdout: {result.stdout}\nstderr: {result.stderr}",
+        )
+
+    @skip_if_not_supported
+    @unittest.skipIf(sys._is_gil_enabled(), "Requires free-threading")
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Requires process_vm_readv",
+    )
+    def test_tlbc_cache_refresh_after_slot_fill(self):
+        # Reproducer from gh-157660.
+        script = textwrap.dedent("""\
+            import os, threading
+            from _remote_debugging import RemoteUnwinder
+
+            go = threading.Event()
+            stop = threading.Event()
+
+            def leaf():
+                stop.wait()
+
+            from test import support
+
+            def lines(u, expected_count):
+                for _ in support.sleeping_retry(
+                    support.SHORT_TIMEOUT,
+                    f"Expected {expected_count} leaf frames",
+                ):
+                    try:
+                        traces = u.get_stack_trace()
+                    except RuntimeError as exc:
+                        if str(exc) != "Failed to parse initial frame in chain":
+                            raise
+                        continue
+                    result = sorted(
+                        f.location.lineno
+                        for i in traces
+                        for t in i.threads for f in t.frame_info
+                        if f.funcname == "leaf"
+                    )
+                    # A new frame can still point at the function definition.
+                    if (len(result) == expected_count and
+                        leaf.__code__.co_firstlineno not in result):
+                        return result
+
+            threading.Thread(target=leaf, daemon=True).start()
+            threading.Thread(target=lambda: (go.wait(), leaf()), daemon=True).start()
+            u = RemoteUnwinder(os.getpid(), all_threads=True, cache_frames=False)
+            before = lines(u, 1)
+            assert before == [8], before
+            go.set()
+            cached = lines(u, 2)
+            assert cached == [8, 8], cached
+            """)
+        result = subprocess.run(
+            [sys.executable, "-X", "gil=0", "-X", "tlbc=1", "-c", script],
+            capture_output=True,
+            text=True,
+            timeout=SHORT_TIMEOUT,
+        )
+        self.assertEqual(
+            result.returncode, 0,
+            f"stdout: {result.stdout}\nstderr: {result.stderr}",
+        )
 
 
 class TestUnsupportedPlatformHandling(unittest.TestCase):

@@ -1,0 +1,3 @@
+Fix :mod:`marshal` so that a ``frozendict`` referenced more than once in the
+serialized data round-trips correctly, instead of failing to load with
+:exc:`ValueError`. Patch by tonghuaroot.

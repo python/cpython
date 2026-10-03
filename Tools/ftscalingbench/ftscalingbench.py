@@ -325,6 +325,19 @@ def enum_attr():
         MyEnum.Y
         MyEnum.Z
 
+_MCACHE_NUM_TYPES = 1 << 14
+_MCACHE_PAIRS = [
+    (type(f"C{i}", (), {f"m{i}": i % 256})(), sys.intern(f"m{i}"))
+    for i in range(_MCACHE_NUM_TYPES)
+]
+
+@register_benchmark
+def type_lookup():
+    pairs = _MCACHE_PAIRS
+    for _ in range(WORK_SCALE // 10):
+        for inst, name in pairs:
+            getattr(inst, name)
+
 
 def bench_one_thread(func):
     t0 = time.perf_counter_ns()
