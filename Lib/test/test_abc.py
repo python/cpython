@@ -184,7 +184,7 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
                 @abc.abstractmethod
                 def method_one(self):
                     pass
-            msg = r"class C without an implementation for abstract method 'method_one'"
+            msg = r"class .*\.C without an implementation for abstract method 'method_one'"
             self.assertRaisesRegex(TypeError, msg, C)
 
         def test_object_new_with_many_abstractmethods(self):
@@ -195,7 +195,7 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
                 @abc.abstractmethod
                 def method_two(self):
                     pass
-            msg = r"class C without an implementation for abstract methods 'method_one', 'method_two'"
+            msg = r"class .*\.C without an implementation for abstract methods 'method_one', 'method_two'"
             self.assertRaisesRegex(TypeError, msg, C)
 
         @warnings_helper.ignore_warnings(category=DeprecationWarning)
@@ -586,7 +586,7 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             A.foo = updated_foo
             abc.update_abstractmethods(A)
             self.assertEqual(A.__abstractmethods__, {'foo', 'bar'})
-            msg = "class A without an implementation for abstract methods 'bar', 'foo'"
+            msg = r"class .*\.A without an implementation for abstract methods 'bar', 'foo'"
             self.assertRaisesRegex(TypeError, msg, A)
 
         def test_update_implementation(self):
@@ -598,7 +598,7 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             class B(A):
                 pass
 
-            msg = "class B without an implementation for abstract method 'foo'"
+            msg = r"class .*\.B without an implementation for abstract method 'foo'"
             self.assertRaisesRegex(TypeError, msg, B)
             self.assertEqual(B.__abstractmethods__, {'foo'})
 
@@ -656,7 +656,7 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
 
             abc.update_abstractmethods(B)
 
-            msg = "class B without an implementation for abstract method 'foo'"
+            msg = r"class .*\.B without an implementation for abstract method 'foo'"
             self.assertRaisesRegex(TypeError, msg, B)
 
         def test_update_layered_implementation(self):
@@ -678,7 +678,7 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
 
             abc.update_abstractmethods(C)
 
-            msg = "class C without an implementation for abstract method 'foo'"
+            msg = r"class .*\.C without an implementation for abstract method 'foo'"
             self.assertRaisesRegex(TypeError, msg, C)
 
         def test_update_multi_inheritance(self):
@@ -732,18 +732,59 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
                 pass
             self.assertEqual(saved_kwargs, dict(name="test"))
 
-    return TestLegacyAPI, TestABC, TestABCWithInitSubclass
 
-TestLegacyAPI_Py, TestABC_Py, TestABCWithInitSubclass_Py = test_factory(_py_abc.ABCMeta,
-                                                                        _py_abc.get_cache_token)
-TestLegacyAPI_C, TestABC_C, TestABCWithInitSubclass_C = test_factory(abc.ABCMeta,
-                                                                     abc.get_cache_token)
+    class TestAbstractClassErrorMessage(unittest.TestCase):
+
+        class MyAbstractClass(metaclass=abc_ABCMeta):
+            @abc.abstractmethod
+            def my_method(self):
+                pass
+
+        def test_error_contains_class_name(self):
+            with self.assertRaises(TypeError) as cm:
+                self.MyAbstractClass()
+            self.assertIn("MyAbstractClass", str(cm.exception))
+
+        def test_error_contains_module_when_not_main(self):
+            original_module = self.MyAbstractClass.__module__
+
+            try:
+                self.MyAbstractClass.__module__ = "test_module"
+
+                with self.assertRaises(TypeError) as cm:
+                    self.MyAbstractClass()
+
+                self.assertRegex(str(cm.exception), r"test_module\..*\.MyAbstractClass")
+            finally:
+                self.MyAbstractClass.__module__ = original_module
+
+        def test_error_without_module_when_main(self):
+            original_module = self.MyAbstractClass.__module__
+
+            try:
+                self.MyAbstractClass.__module__ = "__main__"
+
+                with self.assertRaises(TypeError) as cm:
+                    self.MyAbstractClass()
+
+                self.assertRegex(str(cm.exception), r"MyAbstractClass")
+                self.assertNotRegex(str(cm.exception), r"__main__\.")
+            finally:
+                self.MyAbstractClass.__module__ = original_module
+
+    return TestLegacyAPI, TestABC, TestABCWithInitSubclass, TestAbstractClassErrorMessage
+
+TestLegacyAPI_Py, TestABC_Py, TestABCWithInitSubclass_Py, TestAbstractClassErrorMessage_Py = test_factory(_py_abc.ABCMeta,
+                                                                                                         _py_abc.get_cache_token)
+TestLegacyAPI_C, TestABC_C, TestABCWithInitSubclass_C, TestAbstractClassErrorMessage_C = test_factory(abc.ABCMeta,
+                                                                                                    abc.get_cache_token)
 
 # gh-130095: The _py_abc tests are not thread-safe when run with
 # `--parallel-threads`
 TestLegacyAPI_Py.__unittest_thread_unsafe__ = True
 TestABC_Py.__unittest_thread_unsafe__ = True
 TestABCWithInitSubclass_Py.__unittest_thread_unsafe__ = True
+TestAbstractClassErrorMessage_Py.__unittest_thread_unsafe__ = True
 
 if __name__ == "__main__":
     unittest.main()

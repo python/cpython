@@ -5066,7 +5066,7 @@ class TestAbstract(unittest.TestCase):
             day: 'int'
 
         self.assertTrue(inspect.isabstract(Date))
-        msg = "class Date without an implementation for abstract method 'foo'"
+        msg = r"class .*\.Date without an implementation for abstract method 'foo'"
         self.assertRaisesRegex(TypeError, msg, Date)
 
 
