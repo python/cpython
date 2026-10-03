@@ -1945,7 +1945,7 @@ are always available.  They are listed here in alphabetical order.
       >>> MISSING
       <MISSING>
 
-   Sentinel objects are truthy and compare equal only to themselves.  They are
+   Sentinel objects are true and compare equal only to themselves.  They are
    intended to be compared with the :keyword:`is` operator.
 
    ``sentinel`` does not support subclassing.
