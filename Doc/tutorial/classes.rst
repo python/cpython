@@ -344,7 +344,7 @@ function that "belongs to" an object.
 
 Valid method names of an instance object depend on its class.  By definition,
 all attributes of a class that are function  objects define corresponding
-methods of its instances.  So in our example, ``x.f`` is a valid method
+methods of its instances.  So in our :ref:`previous example <tut-classobjects>`, ``x.f`` is a valid method
 reference, since ``MyClass.f`` is a function, but ``x.i`` is not, since
 ``MyClass.i`` is not.  But ``x.f`` is not the same thing as ``MyClass.f`` --- it
 is a *method object*, not a function object.
