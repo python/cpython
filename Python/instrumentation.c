@@ -1367,7 +1367,7 @@ _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame,
             if (frame_obj == NULL) {
                 return -1;
             }
-            if (frame_obj->f_trace_lines) {
+            if (FT_ATOMIC_LOAD_CHAR_RELAXED(frame_obj->f_trace_lines)) {
                 /* Need to set tracing and what_event as if using
                  * the instrumentation call. */
                 int old_what = tstate->what_event;
