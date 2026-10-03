@@ -1,0 +1,3 @@
+Document the no-argument form of :meth:`configparser.ConfigParser.items` in
+its docstring; called without a section it returns a view of
+``(section_name, section_proxy)`` pairs.
