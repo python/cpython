@@ -3196,6 +3196,36 @@ class TestMove(BaseTest, unittest.TestCase):
                 os.lchflags(TESTFN_DST, stat.UF_OPAQUE)
                 os_helper.rmtree(TESTFN_DST)
 
+    @os_helper.skip_unless_working_chmod
+    def test_no_copied_file_left_not_EXDEV(self):
+        mode = stat.S_IREAD|stat.S_IEXEC
+        os.chmod(self.src_dir, mode)
+        new_file = os.path.join(self.dst_dir, "bar")
+        self.assertRaises(PermissionError, shutil.move, self.src_file, new_file)
+        self.assertFalse(os.path.exists(new_file))
+
+    @os_helper.skip_unless_working_chmod
+    def test_no_copied_dir_left_not_EXDEV(self):
+        subdir = os.path.join(self.src_dir, "subdir")
+        os.mkdir(subdir)
+        create_file(os.path.join(subdir, "foo2"), b"another spam")
+        mode = stat.S_IREAD|stat.S_IEXEC
+        os.chmod(self.src_dir, mode)
+        new_dir = os.path.join(self.dst_dir, "new_dir")
+        self.assertRaises(PermissionError, shutil.move, subdir, new_dir)
+        self.assertFalse(os.path.exists(new_dir))
+
+    @os_helper.skip_unless_working_chmod
+    @os_helper.skip_unless_symlink
+    def test_no_copied_symlink_left_not_EXDEV(self):
+        old_link = os.path.join(self.src_dir, "bar")
+        os.symlink(self.src_file, old_link)
+        mode = stat.S_IREAD|stat.S_IEXEC
+        os.chmod(self.src_dir, mode)
+        new_link = os.path.join(self.dst_dir, "new_link")
+        self.assertRaises(PermissionError, shutil.move, old_link, new_link)
+        self.assertFalse(os.path.exists(new_link))
+
 
 class TestCopyFile(unittest.TestCase):
 

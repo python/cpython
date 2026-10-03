@@ -943,9 +943,10 @@ def move(src, dst, copy_function=copy2):
             raise Error("Destination path '%s' already exists" % real_dst)
     try:
         os.rename(src, real_dst)
-    except OSError:
+    except OSError as e:
         if os.path.islink(src):
             linkto = os.readlink(src)
+            _raise_not_EXDEV(e)
             os.symlink(linkto, real_dst)
             os.unlink(src)
         elif os.path.isdir(src):
@@ -958,10 +959,12 @@ def move(src, dst, copy_function=copy2):
                 raise PermissionError("Cannot move the non-empty directory "
                                       "'%s': Lacking write permission to '%s'."
                                       % (src, src))
+            _raise_not_EXDEV(e)
             copytree(src, real_dst, copy_function=copy_function,
                      symlinks=True)
             rmtree(src)
         else:
+            _raise_not_EXDEV(e)
             copy_function(src, real_dst)
             os.unlink(src)
     return real_dst
@@ -979,6 +982,10 @@ def _is_immutable(src):
     st = _stat(src)
     immutable_states = [stat.UF_IMMUTABLE, stat.SF_IMMUTABLE]
     return hasattr(st, 'st_flags') and st.st_flags in immutable_states
+
+def _raise_not_EXDEV(err):
+    if err.errno != errno.EXDEV:
+        raise err from None
 
 def _get_gid(name):
     """Returns a gid, given a group name."""
