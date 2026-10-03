@@ -488,20 +488,25 @@ class GNUTranslations(NullTranslations):
         return tmsg
 
 
+def _default_languages():
+    languages = []
+    for envar in ('LANGUAGE', 'LC_ALL', 'LC_MESSAGES', 'LANG'):
+        val = os.environ.get(envar)
+        if val:
+            languages = val.split(':')
+            break
+    if 'C' not in languages:
+        languages.append('C')
+    return languages
+
+
 # Locate a .mo file using the gettext strategy
 def find(domain, localedir=None, languages=None, all=False):
     # Get some reasonable defaults for arguments that were not supplied
     if localedir is None:
         localedir = _default_localedir
     if languages is None:
-        languages = []
-        for envar in ('LANGUAGE', 'LC_ALL', 'LC_MESSAGES', 'LANG'):
-            val = os.environ.get(envar)
-            if val:
-                languages = val.split(':')
-                break
-        if 'C' not in languages:
-            languages.append('C')
+        languages = _default_languages()
     # now normalize and expand the languages
     nelangs = []
     for lang in languages:
@@ -588,44 +593,41 @@ def bindtextdomain(domain, localedir=None):
     return _localedirs.get(domain, _default_localedir)
 
 
-def dgettext(domain, message):
+# a mapping from (domain, localedir, languages) to the translation used by
+# dgettext() and friends; .mo files added or removed later are not noticed
+_domain_translations = {}
+
+
+def _domain_translation(domain):
+    languages = _default_languages()
     try:
-        t = translation(domain, _localedirs.get(domain, None))
+        localedir = os.path.abspath(_localedirs.get(domain, _default_localedir))
+        key = (domain, localedir, tuple(languages))
+        t = _domain_translations.get(key)
+        if t is None:
+            t = translation(domain, localedir, languages, fallback=True)
+            _domain_translations[key] = t
     except OSError:
-        return message
-    return t.gettext(message)
+        # A .mo file could not be read or the current directory is gone.
+        # Nothing is cached, so the next call searches again.
+        return NullTranslations()
+    return t
+
+
+def dgettext(domain, message):
+    return _domain_translation(domain).gettext(message)
 
 
 def dngettext(domain, msgid1, msgid2, n):
-    try:
-        t = translation(domain, _localedirs.get(domain, None))
-    except OSError:
-        n = _as_int2(n)
-        if n == 1:
-            return msgid1
-        else:
-            return msgid2
-    return t.ngettext(msgid1, msgid2, n)
+    return _domain_translation(domain).ngettext(msgid1, msgid2, n)
 
 
 def dpgettext(domain, context, message):
-    try:
-        t = translation(domain, _localedirs.get(domain, None))
-    except OSError:
-        return message
-    return t.pgettext(context, message)
+    return _domain_translation(domain).pgettext(context, message)
 
 
 def dnpgettext(domain, context, msgid1, msgid2, n):
-    try:
-        t = translation(domain, _localedirs.get(domain, None))
-    except OSError:
-        n = _as_int2(n)
-        if n == 1:
-            return msgid1
-        else:
-            return msgid2
-    return t.npgettext(context, msgid1, msgid2, n)
+    return _domain_translation(domain).npgettext(context, msgid1, msgid2, n)
 
 
 def gettext(message):

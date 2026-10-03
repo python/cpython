@@ -98,6 +98,14 @@ class-based API instead.
 Note that GNU :program:`gettext` also defines a :func:`!dcgettext` method, but
 this was deemed not useful and so it is currently unimplemented.
 
+Like GNU :program:`gettext`, these functions search for the :file:`.mo` file
+only once for each combination of domain, locale directory, and languages, and
+reuse the result.  A :file:`.mo` file that is added or removed after the first
+search is not noticed.
+
+.. versionchanged:: next
+   The result of the search is cached.
+
 Here's an example of typical usage for this API::
 
    import gettext
