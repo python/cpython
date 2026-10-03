@@ -1,0 +1,3 @@
+Fix :func:`inspect.getsource` and :func:`inspect.getsourcelines` for a lambda
+or generator expression that starts on the line where a multiline string ends.
+The returned source now begins on the line where that string starts.
