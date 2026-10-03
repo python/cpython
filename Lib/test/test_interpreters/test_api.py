@@ -2071,6 +2071,10 @@ class LowLevelTests(TestBase):
             with self.subTest(f'bad override (gil={value!r})'):
                 with self.assertRaises(ValueError):
                     _interpreters.new_config(gil=value)
+        with self.subTest('bad override (gil=lone surrogate)'):
+            # gh-156117: a lone surrogate cannot be encoded as UTF-8
+            with self.assertRaises(UnicodeEncodeError):
+                _interpreters.new_config(gil='\ud800')
 
     def test_get_main(self):
         interpid, whence = _interpreters.get_main()
