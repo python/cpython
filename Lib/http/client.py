@@ -408,6 +408,9 @@ class HTTPResponse(io.BufferedIOBase):
             100 <= status < 200 or      # 1xx codes
             self._method == "HEAD"):
             self.length = 0
+            # These responses never have a body, so a Transfer-Encoding
+            # header must not make read() wait for chunks (RFC 9112 6.3).
+            self.chunked = False
 
         # if the connection remains open, and we aren't using chunked, and
         # a content-length was not provided, then assume that the connection
