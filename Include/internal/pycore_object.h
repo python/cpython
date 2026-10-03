@@ -1038,6 +1038,37 @@ static inline Py_ALWAYS_INLINE void _Py_INCREF_MORTAL(PyObject *op)
  * references. */
 PyAPI_FUNC(int) _PyObject_VisitType(PyObject *op, visitproc visit, void *arg);
 
+// Pointer-by-pointer memmove for PyObject** arrays that is safe for shared
+// objects in Py_GIL_DISABLED builds.  Locking is the caller's responsibility.
+static inline void
+_PyObject_ptr_wise_atomic_memmove(PyObject *a, PyObject **dest, PyObject **src,
+                             Py_ssize_t n)
+{
+#ifndef Py_GIL_DISABLED
+    (void)a;
+    memmove(dest, src, n * sizeof(PyObject *));
+#else
+    if (_Py_IsOwnedByCurrentThread(a) && !_PyObject_GC_IS_SHARED(a)) {
+        // No other threads can read this object's array concurrently
+        memmove(dest, src, n * sizeof(PyObject *));
+        return;
+    }
+    if (dest < src) {
+        for (Py_ssize_t i = 0; i != n; i++) {
+            _Py_atomic_store_ptr_release(&dest[i], src[i]);
+        }
+    }
+    else {
+        // copy backwards to avoid overwriting src before it's read
+        for (Py_ssize_t i = n; i != 0; i--) {
+            _Py_atomic_store_ptr_release(&dest[i - 1], src[i - 1]);
+        }
+    }
+#endif
+}
+
+#define _PyObject_ptr_wise_atomic_memmove(a, dest, src, n) _PyObject_ptr_wise_atomic_memmove(_PyObject_CAST(a), dest, src, n)
+
 #ifdef __cplusplus
 }
 #endif
