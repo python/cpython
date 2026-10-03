@@ -4,9 +4,6 @@
 .. module:: platform
    :synopsis: Retrieves as much platform identifying data as possible.
 
-.. moduleauthor:: Marc-André Lemburg <mal@egenix.com>
-.. sectionauthor:: Bjorn Pettersen <bpettersen@corp.fairisaac.com>
-
 **Source code:** :source:`Lib/platform.py`
 
 --------------
@@ -55,6 +52,8 @@ Cross platform
 
    Returns the machine type, e.g. ``'AMD64'``. An empty string is returned if the
    value cannot be determined.
+
+   The output is platform-dependent and may differ in casing and naming conventions.
 
 
 .. function:: node()
@@ -142,6 +141,8 @@ Cross platform
    Returns the system's release, e.g. ``'2.2.0'`` or ``'NT'``. An empty string is
    returned if the value cannot be determined.
 
+   On iOS and Android, this is the user-facing OS release. To obtain the
+   Darwin or Linux kernel release, use :func:`os.uname`.
 
 .. function:: system()
 
@@ -163,9 +164,6 @@ Cross platform
 
    Returns the system's release version, e.g. ``'#3 on degas'``. An empty string is
    returned if the value cannot be determined.
-
-   On iOS and Android, this is the user-facing OS version. To obtain the
-   Darwin or Linux kernel version, use :func:`os.uname`.
 
 .. function:: uname()
 
@@ -355,7 +353,7 @@ Android platform
 Command-line usage
 ------------------
 
-:mod:`platform` can also be invoked directly using the :option:`-m`
+:mod:`!platform` can also be invoked directly using the :option:`-m`
 switch of the interpreter::
 
    python -m platform [--terse] [--nonaliased] [{nonaliased,terse} ...]

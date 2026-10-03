@@ -154,6 +154,7 @@ class Stats:
             arg.create_stats()
             self.stats = arg.stats
             arg.stats = {}
+            return
         if not self.stats:
             raise TypeError("Cannot create or construct a %r object from %r"
                             % (self.__class__, arg))

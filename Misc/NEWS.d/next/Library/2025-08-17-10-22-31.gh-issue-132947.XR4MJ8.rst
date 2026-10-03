@@ -1,6 +1,0 @@
-Applied changes to ``importlib.metadata`` from `importlib_metadata 8.7
-<https://importlib-metadata.readthedocs.io/en/latest/history.html#v8-7-0>`_,
-including ``dist`` now disallowed for ``EntryPoints.select``; deferred
-imports for faster import times; added support for metadata with newlines
-(python/cpython#119650); and ``metadata()`` function now returns ``None``
-when a metadata directory is present but no metadata is present.

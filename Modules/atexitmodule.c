@@ -12,6 +12,13 @@
 #include "pycore_interp.h"        // PyInterpreterState.atexit
 #include "pycore_pystate.h"       // _PyInterpreterState_GET
 
+/*[clinic input]
+module atexit
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=ac8fd67d15bf23fc]*/
+
+#include "clinic/atexitmodule.c.h"
+
 /* ===================================================================== */
 /* Callback machinery. */
 
@@ -112,6 +119,7 @@ atexit_callfuncs(struct atexit_state *state)
     {
         PyErr_FormatUnraisable("Exception ignored while "
                                "copying atexit callbacks");
+        atexit_cleanup(state);
         return;
     }
 
@@ -156,41 +164,34 @@ _PyAtExit_Call(PyInterpreterState *interp)
 /* Module methods. */
 
 
-PyDoc_STRVAR(atexit_register__doc__,
-"register($module, func, /, *args, **kwargs)\n\
---\n\
-\n\
-Register a function to be executed upon normal program termination\n\
-\n\
-    func - function to be called at exit\n\
-    args - optional arguments to pass to func\n\
-    kwargs - optional keyword arguments to pass to func\n\
-\n\
-    func is returned to facilitate usage as a decorator.");
+/*[clinic input]
+atexit.register
+
+    func: object
+    /
+    *args: tuple
+    **kwargs: dict
+
+Register a function to be executed upon normal program termination
+
+    func - function to be called at exit
+    args - optional arguments to pass to func
+    kwargs - optional keyword arguments to pass to func
+
+    func is returned to facilitate usage as a decorator.
+[clinic start generated code]*/
 
 static PyObject *
-atexit_register(PyObject *module, PyObject *args, PyObject *kwargs)
+atexit_register_impl(PyObject *module, PyObject *func, PyObject *args,
+                     PyObject *kwargs)
+/*[clinic end generated code: output=c921286994bd8612 input=a682b5a343a82e4a]*/
 {
-    if (PyTuple_GET_SIZE(args) == 0) {
-        PyErr_SetString(PyExc_TypeError,
-                "register() takes at least 1 argument (0 given)");
-        return NULL;
-    }
-
-    PyObject *func = PyTuple_GET_ITEM(args, 0);
     if (!PyCallable_Check(func)) {
         PyErr_SetString(PyExc_TypeError,
                 "the first argument must be callable");
         return NULL;
     }
-    PyObject *func_args = PyTuple_GetSlice(args, 1, PyTuple_GET_SIZE(args));
-    PyObject *func_kwargs = kwargs;
-
-    if (func_kwargs == NULL)
-    {
-        func_kwargs = Py_None;
-    }
-    PyObject *callback = PyTuple_Pack(3, func, func_args, func_kwargs);
+    PyObject *callback = PyTuple_Pack(3, func, args, kwargs);
     if (callback == NULL)
     {
         return NULL;
@@ -255,21 +256,36 @@ atexit_ncallbacks(PyObject *module, PyObject *Py_UNUSED(dummy))
 static int
 atexit_unregister_locked(PyObject *callbacks, PyObject *func)
 {
-    for (Py_ssize_t i = 0; i < PyList_GET_SIZE(callbacks); ++i) {
-        PyObject *tuple = PyList_GET_ITEM(callbacks, i);
+    for (Py_ssize_t i = PyList_GET_SIZE(callbacks) - 1; i >= 0; --i) {
+        PyObject *tuple = Py_NewRef(PyList_GET_ITEM(callbacks, i));
         assert(PyTuple_CheckExact(tuple));
         PyObject *to_compare = PyTuple_GET_ITEM(tuple, 0);
         int cmp = PyObject_RichCompareBool(func, to_compare, Py_EQ);
-        if (cmp < 0)
-        {
+        if (cmp < 0) {
+            Py_DECREF(tuple);
             return -1;
         }
         if (cmp == 1) {
             // We found a callback!
-            if (PyList_SetSlice(callbacks, i, i + 1, NULL) < 0) {
-                return -1;
+            // But its index could have changed if it or other callbacks were
+            // unregistered during the comparison.
+            Py_ssize_t j = PyList_GET_SIZE(callbacks) - 1;
+            j = Py_MIN(j, i);
+            for (; j >= 0; --j) {
+                if (PyList_GET_ITEM(callbacks, j) == tuple) {
+                    // We found the callback index! For real!
+                    if (PyList_SetSlice(callbacks, j, j + 1, NULL) < 0) {
+                        Py_DECREF(tuple);
+                        return -1;
+                    }
+                    i = j;
+                    break;
+                }
             }
-            --i;
+        }
+        Py_DECREF(tuple);
+        if (i >= PyList_GET_SIZE(callbacks)) {
+            i = PyList_GET_SIZE(callbacks);
         }
     }
 
@@ -298,8 +314,7 @@ atexit_unregister(PyObject *module, PyObject *func)
 
 
 static PyMethodDef atexit_methods[] = {
-    {"register", _PyCFunction_CAST(atexit_register), METH_VARARGS|METH_KEYWORDS,
-        atexit_register__doc__},
+    ATEXIT_REGISTER_METHODDEF
     {"_clear", atexit_clear, METH_NOARGS, atexit_clear__doc__},
     {"unregister", atexit_unregister, METH_O, atexit_unregister__doc__},
     {"_run_exitfuncs", atexit_run_exitfuncs, METH_NOARGS,
@@ -321,6 +336,7 @@ Two public functions, register and unregister, are defined.\n\
 ");
 
 static PyModuleDef_Slot atexitmodule_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}

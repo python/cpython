@@ -18,6 +18,9 @@
     <ClCompile Include="$(lzmaDir)src\liblzma\simple\arm.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="$(lzmaDir)src\liblzma\simple\arm64.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="$(lzmaDir)src\liblzma\simple\armthumb.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -54,13 +57,7 @@
     <ClCompile Include="$(lzmaDir)src\liblzma\check\crc32_fast.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="$(lzmaDir)src\liblzma\check\crc32_table.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="$(lzmaDir)src\liblzma\check\crc64_fast.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="$(lzmaDir)src\liblzma\check\crc64_table.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="$(lzmaDir)src\liblzma\delta\delta_common.c">
@@ -428,7 +425,7 @@
     <ClInclude Include="$(lzmaDir)src\liblzma\simple\simple_private.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="$(lzmaDir)windows\vs2019\config.h">
+    <ClInclude Include="$(lzmaDir)windows\config.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

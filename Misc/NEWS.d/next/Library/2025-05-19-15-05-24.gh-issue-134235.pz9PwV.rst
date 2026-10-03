@@ -1,2 +1,0 @@
-Updated tab completion on REPL to include builtin modules. Contributed by
-Tom Wang, Hunter Young

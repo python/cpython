@@ -944,7 +944,7 @@ It is always ``'freebsd'``, instead of ``'freebsd13'`` or ``'freebsd14'``.
 .. date: 2025-01-28-06-23-59
 .. gh-issue: 129345
 .. nonce: uOjkML
-.. section: Core and Builtins
+.. section: Library
 
 Fix null pointer dereference in :func:`syslog.openlog` when an audit hook
 raises an exception.
@@ -1197,7 +1197,7 @@ generator. Patch by Mikhail Efimov.
 .. date: 2024-11-03-06-05-16
 .. gh-issue: 126349
 .. nonce: 7YwWsI
-.. section: Core and Builtins
+.. section: Library
 
 Add :func:`turtle.fill`, :func:`turtle.poly` and :func:`turtle.no_animation`
 context managers. Patch by Marie Roald and Yngve Mardal Moe.
@@ -1218,7 +1218,7 @@ Willmer.
 .. date: 2023-12-04-15-53-25
 .. gh-issue: 112713
 .. nonce: Zrhv77
-.. section: Core and Builtins
+.. section: Library
 
 Added support for the ``Partitioned`` cookie flag in :mod:`http.cookies`.
 

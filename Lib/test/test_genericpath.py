@@ -9,9 +9,9 @@ import pickle
 import sys
 import unittest
 import warnings
-from test.support import (
-    is_apple, os_helper, warnings_helper
-)
+from test import support
+from test.support import os_helper
+from test.support import warnings_helper
 from test.support.script_helper import assert_python_ok
 from test.support.os_helper import FakePath
 
@@ -34,6 +34,10 @@ class GenericTest:
                                 .format(self.pathmodule.__name__, attr))
 
     def test_commonprefix(self):
+        with warnings_helper.check_warnings((".*commonpath().*", DeprecationWarning)):
+            self.do_test_commonprefix()
+
+    def do_test_commonprefix(self):
         commonprefix = self.pathmodule.commonprefix
         self.assertEqual(
             commonprefix([]),
@@ -462,6 +466,19 @@ class CommonTest(GenericTest):
                   os.fsencode('$bar%s bar' % nonascii))
             check(b'$spam}bar', os.fsencode('%s}bar' % nonascii))
 
+    @support.requires_resource('cpu')
+    def test_expandvars_large(self):
+        expandvars = self.pathmodule.expandvars
+        with os_helper.EnvironmentVarGuard() as env:
+            env.clear()
+            env["A"] = "B"
+            n = 100_000
+            self.assertEqual(expandvars('$A'*n), 'B'*n)
+            self.assertEqual(expandvars('${A}'*n), 'B'*n)
+            self.assertEqual(expandvars('$A!'*n), 'B!'*n)
+            self.assertEqual(expandvars('${A}A'*n), 'BA'*n)
+            self.assertEqual(expandvars('${'*10*n), '${'*10*n)
+
     def test_abspath(self):
         self.assertIn("foo", self.pathmodule.abspath("foo"))
         with warnings.catch_warnings():
@@ -519,7 +536,7 @@ class CommonTest(GenericTest):
             # directory (when the bytes name is used).
             and sys.platform not in {
                 "win32", "emscripten", "wasi"
-            } and not is_apple
+            } and not support.is_apple
         ):
             name = os_helper.TESTFN_UNDECODABLE
         elif os_helper.TESTFN_NONASCII:
@@ -593,8 +610,9 @@ class PathLikeTests(unittest.TestCase):
         self.assertPathEqual(os.path.isdir)
 
     def test_path_commonprefix(self):
-        self.assertEqual(os.path.commonprefix([self.file_path, self.file_name]),
-                         self.file_name)
+        with warnings_helper.check_warnings((".*commonpath().*", DeprecationWarning)):
+            self.assertEqual(os.path.commonprefix([self.file_path, self.file_name]),
+                             self.file_name)
 
     def test_path_getsize(self):
         self.assertPathEqual(os.path.getsize)

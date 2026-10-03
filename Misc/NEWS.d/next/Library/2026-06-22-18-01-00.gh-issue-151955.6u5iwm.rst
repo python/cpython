@@ -1,0 +1,2 @@
+Allow more types to be used in the ``bound`` argument to
+:class:`typing.ParamSpec` and :class:`typing.TypeVarTuple`.

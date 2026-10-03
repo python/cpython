@@ -459,7 +459,7 @@ static inline uint16_t
 _Py_atomic_load_uint16(const uint16_t *obj)
 {
     _Py_USING_STD;
-    return atomic_load((const _Atomic(uint32_t)*)obj);
+    return atomic_load((const _Atomic(uint16_t)*)obj);
 }
 
 static inline uint32_t
@@ -949,14 +949,6 @@ _Py_atomic_store_ushort_relaxed(unsigned short *obj, unsigned short value)
 }
 
 static inline void
-_Py_atomic_store_uint_release(unsigned int *obj, unsigned int value)
-{
-    _Py_USING_STD;
-    atomic_store_explicit((_Atomic(unsigned int)*)obj, value,
-                          memory_order_relaxed);
-}
-
-static inline void
 _Py_atomic_store_long_relaxed(long *obj, long value)
 {
     _Py_USING_STD;
@@ -1028,6 +1020,22 @@ _Py_atomic_store_int_release(int *obj, int value)
 {
     _Py_USING_STD;
     atomic_store_explicit((_Atomic(int)*)obj, value,
+                          memory_order_release);
+}
+
+static inline void
+_Py_atomic_store_int8_release(int8_t *obj, int8_t value)
+{
+    _Py_USING_STD;
+    atomic_store_explicit((_Atomic(int8_t)*)obj, value,
+                          memory_order_release);
+}
+
+static inline void
+_Py_atomic_store_uint_release(unsigned int *obj, unsigned int value)
+{
+    _Py_USING_STD;
+    atomic_store_explicit((_Atomic(unsigned int)*)obj, value,
                           memory_order_release);
 }
 

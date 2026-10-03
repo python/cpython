@@ -1,0 +1,12 @@
+Add :mod:`curses` functions and window methods that report state which could
+previously only be set: the window methods :meth:`~curses.window.is_cleared`,
+:meth:`~curses.window.is_idcok`, :meth:`~curses.window.is_idlok`,
+:meth:`~curses.window.is_immedok`, :meth:`~curses.window.is_keypad`,
+:meth:`~curses.window.is_leaveok`, :meth:`~curses.window.is_nodelay`,
+:meth:`~curses.window.is_notimeout`, :meth:`~curses.window.is_pad`,
+:meth:`~curses.window.is_scrollok`, :meth:`~curses.window.is_subwin`,
+:meth:`~curses.window.is_syncok`, :meth:`~curses.window.getdelay`,
+:meth:`~curses.window.getparent` and :meth:`~curses.window.getscrreg`, and the
+functions :func:`curses.is_cbreak`, :func:`curses.is_echo`,
+:func:`curses.is_nl` and :func:`curses.is_raw`.  They are only available when
+built against an ncurses with ``NCURSES_EXT_FUNCS``.

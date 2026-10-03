@@ -1,0 +1,35 @@
+{
+  "multiline": {
+    "a": {
+      "type": "integer",
+      "value": "1"
+    },
+    "b": {
+      "type": "integer",
+      "value": "2"
+    },
+    "c": [
+      {
+        "type": "integer",
+        "value": "1"
+      },
+      {
+        "type": "integer",
+        "value": "2"
+      },
+      {
+        "type": "integer",
+        "value": "3"
+      }
+    ],
+    "d": {
+      "type": "integer",
+      "value": "3"
+    },
+    "e": {
+      "type": "integer",
+      "value": "4"
+    },
+    "f": {}
+  }
+}

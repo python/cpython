@@ -255,7 +255,7 @@ Fix specialization stats gathering for :opcode:`!PRECALL` instructions.
 .. bpo: 46794
 .. date: 2022-02-22-12-07-53
 .. nonce: 6WvJ9o
-.. section: Core and Builtins
+.. section: Library
 
 Bump up the libexpat version into 2.4.6
 
@@ -379,7 +379,7 @@ involving lots of brackets. Patch by Pablo Galindo.
 .. bpo: 46323
 .. date: 2022-02-10-02-29-12
 .. nonce: HK_cs0
-.. section: Core and Builtins
+.. section: Library
 
 :mod:`ctypes` now allocates memory on the stack instead of on the heap to
 pass arguments while calling a Python callback function. Patch by Donghee
@@ -429,7 +429,7 @@ now 254.
 .. bpo: 40479
 .. date: 2022-02-06-23-08-30
 .. nonce: zED3Zu
-.. section: Core and Builtins
+.. section: Library
 
 Add a missing call to ``va_end()`` in ``Modules/_hashopenssl.c``.
 
@@ -438,7 +438,7 @@ Add a missing call to ``va_end()`` in ``Modules/_hashopenssl.c``.
 .. bpo: 46323
 .. date: 2022-02-05-14-46-21
 .. nonce: FC1OJg
-.. section: Core and Builtins
+.. section: Library
 
 Use :c:func:`PyObject_Vectorcall` while calling ctypes callback function.
 Patch by Donghee Na.

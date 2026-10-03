@@ -1,2 +1,0 @@
-:mod:`os`: the :class:`os.DirEntry` type and the type of :func:`os.scandir`
-are now immutable. Patch by Bénédikt Tran.

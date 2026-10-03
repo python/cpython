@@ -1,3 +1,0 @@
-Raises :exc:`AttributeError` when accessing
-:class:`concurrent.futures.InterpreterPoolExecutor` and subinterpreters are
-not available.

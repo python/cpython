@@ -1,1 +1,0 @@
-The perf profiler can now be used if a previous frame evaluation API has been provided.

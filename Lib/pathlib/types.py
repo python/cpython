@@ -234,6 +234,33 @@ class _JoinablePath(ABC):
             parent = split(path)[0]
         return tuple(parents)
 
+    def relative_to(self, other, *, walk_up=False):
+        """Return the relative path to another path identified by the passed
+        arguments.  If the operation is not possible (because this is not
+        related to the other path), raise ValueError.
+
+        The *walk_up* parameter controls whether `..` may be used to resolve
+        the path.
+        """
+        parts = []
+        for path in (other,) + other.parents:
+            if self.is_relative_to(path):
+                break
+            elif not walk_up:
+                raise ValueError(f"{self!r} is not in the subpath of {other!r}")
+            elif path.name == '..':
+                raise ValueError(f"'..' segment in {other!r} cannot be walked")
+            else:
+                parts.append('..')
+        else:
+            raise ValueError(f"{self!r} and {other!r} have different anchors")
+        return self.with_segments(*parts, *self.parts[len(path.parts):])
+
+    def is_relative_to(self, other):
+        """Return True if the path is relative to another path or False.
+        """
+        return other == self or other in self.parents
+
     def full_match(self, pattern):
         """
         Return True if this path matches the given glob-style pattern. The
@@ -404,6 +431,7 @@ class _WritablePath(_JoinablePath):
     def write_bytes(self, data):
         """
         Open the file in bytes mode, write to it, and close the file.
+        Return the number of bytes written.
         """
         # type-check for the buffer interface before truncating the file
         view = memoryview(data)
@@ -413,6 +441,7 @@ class _WritablePath(_JoinablePath):
     def write_text(self, data, encoding=None, errors=None, newline=None):
         """
         Open the file in text mode, write to it, and close the file.
+        Return the number of characters written.
         """
         # Call io.text_encoding() here to ensure any warning is raised at an
         # appropriate stack level.

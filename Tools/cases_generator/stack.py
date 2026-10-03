@@ -216,11 +216,19 @@ def array_or_scalar(var: StackItem | Local) -> str:
     return "array" if var.is_array() else "scalar"
 
 class Stack:
-    def __init__(self) -> None:
+    def __init__(self, check_stack_bounds: bool = False) -> None:
         self.base_offset = PointerOffset.zero()
-        self.physical_sp = PointerOffset.zero()
+        self.physical_sp:PointerOffset | None = PointerOffset.zero()
+        self.frame_sp:PointerOffset | None = None
         self.logical_sp = PointerOffset.zero()
         self.variables: list[Local] = []
+        self.check_stack_bounds = check_stack_bounds
+
+    def push_cache(self, cached_items:list[str], out: CWriter) -> None:
+        for i, name in enumerate(cached_items):
+            out.start_line()
+            out.emit(f"_PyStackRef _stack_item_{i} = {name};\n")
+            self.push(Local.register(f"_stack_item_{i}"))
 
     def drop(self, var: StackItem, check_liveness: bool) -> None:
         self.logical_sp = self.logical_sp.pop(var)
@@ -232,6 +240,7 @@ class Stack:
             raise StackError(f"Dropping live value '{var.name}'")
 
     def pop(self, var: StackItem, out: CWriter) -> Local:
+        assert self.physical_sp is not None
         if self.variables:
             top = self.variables[-1]
             if var.is_array() != top.is_array() or top.size != var.size:
@@ -292,11 +301,13 @@ class Stack:
         out.emit(f"stack_pointer[{stack_offset.to_c()}] = {var.name};\n")
 
     def _save_physical_sp(self, out: CWriter) -> None:
+        if self.physical_sp is None:
+            return
         if self.physical_sp != self.logical_sp:
             diff = self.logical_sp - self.physical_sp
             out.start_line()
             out.emit(f"stack_pointer += {diff.to_c()};\n")
-            out.emit(f"assert(WITHIN_STACK_BOUNDS());\n")
+            out.emit(f"ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);\n")
             self.physical_sp = self.logical_sp
             self._print(out)
 
@@ -304,6 +315,7 @@ class Stack:
         out.start_line()
         var_offset = self.base_offset
         for var in self.variables:
+            assert self.physical_sp is not None
             if (
                 var.in_local and
                 not var.memory_offset and
@@ -316,11 +328,60 @@ class Stack:
                 self._print(out)
             var_offset = var_offset.push(var.item)
 
+    def stack_bound_check(self, out: CWriter) -> None:
+        if self.physical_sp is None:
+            return
+        if not self.check_stack_bounds:
+            return
+        if self.physical_sp != self.logical_sp:
+            diff = self.logical_sp - self.physical_sp
+            out.start_line()
+            out.emit(f"CHECK_STACK_BOUNDS({diff});\n")
+
     def flush(self, out: CWriter) -> None:
         self._print(out)
+        self.stack_bound_check(out)
         self.save_variables(out)
         self._save_physical_sp(out)
         out.start_line()
+
+    def emit_spill(self, out: CWriter) -> None:
+        if self.frame_sp != self.physical_sp:
+            out.emit_str("_PyFrame_SetStackPointer(frame, stack_pointer);\n")
+            self.frame_sp = self.physical_sp
+        else:
+            out.emit_str("assert(stack_pointer == _PyFrame_GetStackPointer(frame));\n")
+        out.emit_str("_PyFrame_StackPointerValidate(frame);\n");
+
+    def expected_frame_pointer(self) -> str:
+        assert self.frame_sp is not None
+        assert self.physical_sp is not None
+        diff = self.frame_sp - self.physical_sp
+        return f"(stack_pointer + {diff.to_c()})"
+
+    def emit_reload(self, out: CWriter) -> None:
+        if self.physical_sp is None:
+            out.emit_str("stack_pointer = _PyFrame_GetStackPointer(frame);\n")
+            if self.frame_sp is None:
+                self.frame_sp = PointerOffset.zero()
+            self.physical_sp = self.frame_sp
+        out.emit_str("_PyFrame_StackPointerInvalidate(frame);\n");
+
+    def emit_fullreload(self, out: CWriter, spilled: bool = True) -> None:
+        self._print(out)
+        while self.variables:
+            top = self.variables.pop()
+            if not top.in_memory():
+                raise StackError(f"Cannot reload with live variable: {top.name}")
+        self.base_offset = PointerOffset.zero()
+        self.physical_sp = PointerOffset.zero()
+        self.frame_sp = PointerOffset.zero()
+        self.logical_sp = PointerOffset.zero()
+        out.emit_str("stack_pointer = _PyFrame_GetStackPointer(frame);\n")
+        if spilled:
+            out.emit_str("_PyFrame_StackPointerInvalidate(frame);\n")
+        else:
+            out.emit_str("_PyFrame_StackAssertInvalid(frame);\n")
 
     def is_flushed(self) -> bool:
         for var in self.variables:
@@ -329,12 +390,15 @@ class Stack:
         return self.physical_sp == self.logical_sp
 
     def sp_offset(self) -> str:
+        assert self.physical_sp is not None
         return (self.physical_sp - self.logical_sp).to_c()
 
     def as_comment(self) -> str:
         variables = ", ".join([v.compact_str() for v in self.variables])
+        sp = "undefined" if self.physical_sp is None else self.physical_sp.to_c()
+        fp = "undefined" if self.frame_sp is None else self.frame_sp.to_c()
         return (
-            f"/* Variables=[{variables}]; base={self.base_offset.to_c()}; sp={self.physical_sp.to_c()}; logical_sp={self.logical_sp.to_c()} */"
+            f"/* Variables=[{variables}]; base={self.base_offset.to_c()}; sp={sp}; logical_sp={self.logical_sp.to_c()}; frame_sp={fp} */"
         )
 
     def _print(self, out: CWriter) -> None:
@@ -346,7 +410,9 @@ class Stack:
         other.base_offset = self.base_offset
         other.physical_sp = self.physical_sp
         other.logical_sp = self.logical_sp
+        other.frame_sp = self.frame_sp
         other.variables = [var.copy() for var in self.variables]
+        other.check_stack_bounds = self.check_stack_bounds
         return other
 
     def __eq__(self, other: object) -> bool:
@@ -362,12 +428,18 @@ class Stack:
     def align(self, other: "Stack", out: CWriter) -> None:
         if self.logical_sp != other.logical_sp:
             raise StackError("Cannot align stacks: differing logical top")
+        if self.physical_sp is None and other.physical_sp is None:
+            return
+        if self.physical_sp is None or other.physical_sp is None:
+            raise StackError("Cannot align stacks: stack_pointer is partly undefined")
         if self.physical_sp == other.physical_sp:
             return
         diff = other.physical_sp - self.physical_sp
         out.start_line()
         out.emit(f"stack_pointer += {diff.to_c()};\n")
         self.physical_sp = other.physical_sp
+        if self.frame_sp != other.frame_sp:
+            self.frame_sp = None
 
     def merge(self, other: "Stack", out: CWriter) -> None:
         if len(self.variables) != len(other.variables):
@@ -385,6 +457,9 @@ class Stack:
                     raise StackError(f"Mismatched stack depths for {self_var.name}: {self_var.memory_offset} and {other_var.memory_offset}")
             elif other_var.memory_offset is None:
                 self_var.memory_offset = None
+        if self.frame_sp != other.frame_sp:
+            self.frame_sp = None
+            other.frame_sp = None
 
 
 def stacks(inst: Instruction | PseudoInstruction) -> Iterator[StackEffect]:
@@ -475,7 +550,7 @@ class Storage:
     def _push_defined_outputs(self) -> None:
         defined_output = ""
         for output in self.outputs:
-            if output.in_local and not output.memory_offset:
+            if output.in_local and not output.memory_offset and not output.item.peek:
                 defined_output = output.name
         if not defined_output:
             return
@@ -499,6 +574,7 @@ class Storage:
         return False
 
     def flush(self, out: CWriter) -> None:
+        self._print(out)
         self.clear_dead_inputs()
         self._push_defined_outputs()
         self.stack.flush(out)
@@ -507,7 +583,7 @@ class Storage:
         assert self.spilled >= 0
         if self.spilled == 0:
             out.start_line()
-            out.emit_spill()
+            self.stack.emit_spill(out)
         self.spilled += 1
 
     def save_inputs(self, out: CWriter) -> None:
@@ -516,7 +592,7 @@ class Storage:
             self.clear_dead_inputs()
             self.stack.flush(out)
             out.start_line()
-            out.emit_spill()
+            self.stack.emit_spill(out)
         self.spilled += 1
 
     def reload(self, out: CWriter) -> None:
@@ -526,10 +602,25 @@ class Storage:
         self.spilled -= 1
         if self.spilled == 0:
             out.start_line()
-            out.emit_reload()
+            self.stack.emit_reload(out)
+
+    def full_reload(self, out: CWriter) -> None:
+        if self.spilled == 0:
+            # Already spilled, presumably an explicit request
+            # to reload the stack from memory
+            out.start_line()
+            out.emit_str("// Explicit stack reload\n");
+            self.stack.emit_fullreload(out, spilled=False)
+        else:
+            assert self.spilled > 0
+            self.spilled -= 1
+            implicit = True
+            self.stack.emit_fullreload(out)
 
     @staticmethod
     def for_uop(stack: Stack, uop: Uop, out: CWriter, check_liveness: bool = True) -> "Storage":
+        if stack.physical_sp is None:
+            raise StackError("stack pointer must be defined for uop")
         inputs: list[Local] = []
         peeks: list[Local] = []
         for input in reversed(uop.stack.inputs):
@@ -614,7 +705,7 @@ class Storage:
 
     def push_outputs(self) -> None:
         if self.spilled:
-            raise StackError(f"Unbalanced stack spills")
+            raise StackError(f"Too many stack spills")
         self.clear_inputs("at the end of the micro-op")
         if len(self.inputs) > self.peeks and self.check_liveness:
             raise StackError(f"Input variable '{self.inputs[-1].name}' is still live")

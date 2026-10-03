@@ -1,5 +1,0 @@
-When cross-compiling for WASI, require that the HOSTRUNNER environment
-variable be explicitly set.
-
-This was needed as macOS lacks the appropriate CLI tools to set a reasonable
-default.

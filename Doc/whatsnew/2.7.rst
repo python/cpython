@@ -858,8 +858,8 @@ Some smaller changes made to the core Python language are:
 
   .. XXX bytearray doesn't seem to be documented
 
-* When using :class:`@classmethod <classmethod>` and
-  :class:`@staticmethod <staticmethod>` to wrap
+* When using :deco:`classmethod` and
+  :deco:`staticmethod` to wrap
   methods as class or static methods, the wrapper object now
   exposes the wrapped function as their :attr:`~method.__func__`
   attribute.
@@ -1267,7 +1267,7 @@ changes, or look through the Subversion logs for all the details.
   uploads thanks to an added *rest* parameter (patch by Pablo Mouzo;
   :issue:`6845`.)
 
-* New class decorator: :func:`~functools.total_ordering` in the :mod:`functools`
+* New class decorator: :deco:`~functools.total_ordering` in the :mod:`functools`
   module takes a class that defines an :meth:`~object.__eq__` method and one of
   :meth:`~object.__lt__`, :meth:`~object.__le__`, :meth:`~object.__gt__`, or :meth:`~object.__ge__`,
   and generates the missing comparison methods.  Since the
@@ -2181,22 +2181,20 @@ Changes to Python's build process and to the C API include:
   discussed in :issue:`5753`, and fixed by Antoine Pitrou.
 
 * New macros: the Python header files now define the following macros:
-  :c:macro:`!Py_ISALNUM`,
-  :c:macro:`!Py_ISALPHA`,
-  :c:macro:`!Py_ISDIGIT`,
-  :c:macro:`!Py_ISLOWER`,
-  :c:macro:`!Py_ISSPACE`,
-  :c:macro:`!Py_ISUPPER`,
-  :c:macro:`!Py_ISXDIGIT`,
-  :c:macro:`!Py_TOLOWER`, and :c:macro:`!Py_TOUPPER`.
+  :c:macro:`Py_ISALNUM`,
+  :c:macro:`Py_ISALPHA`,
+  :c:macro:`Py_ISDIGIT`,
+  :c:macro:`Py_ISLOWER`,
+  :c:macro:`Py_ISSPACE`,
+  :c:macro:`Py_ISUPPER`,
+  :c:macro:`Py_ISXDIGIT`,
+  :c:macro:`Py_TOLOWER`, and :c:macro:`Py_TOUPPER`.
   All of these functions are analogous to the C
   standard macros for classifying characters, but ignore the current
   locale setting, because in
   several places Python needs to analyze characters in a
   locale-independent way.  (Added by Eric Smith;
   :issue:`5793`.)
-
-  .. XXX these macros don't seem to be described in the c-api docs.
 
 * Removed function: :c:func:`!PyEval_CallObject` is now only available
   as a macro.  A function version was being kept around to preserve

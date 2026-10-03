@@ -1,2 +1,0 @@
-Fixed :exc:`UnboundLocalError` that could occur during :mod:`email` header
-parsing if an expected trailing delimiter is missing in some contexts.

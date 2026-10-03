@@ -128,7 +128,8 @@ _ssl_Certificate_get_info_impl(PySSLCertificate *self)
 }
 
 static PyObject*
-_x509name_print(_sslmodulestate *state, X509_NAME *name, int indent, unsigned long flags)
+_x509name_print(_sslmodulestate *state, const X509_NAME *name,
+                int indent, unsigned long flags)
 {
     PyObject *res;
     BIO *biobuf;

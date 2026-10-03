@@ -1,1 +1,0 @@
-:mod:`email` is added to Emscripten build.

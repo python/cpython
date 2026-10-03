@@ -36,7 +36,7 @@ the :mod:`glob` module.)
 
    Since different operating systems have different path name conventions, there
    are several versions of this module in the standard library.  The
-   :mod:`os.path` module is always the path module suitable for the operating
+   :mod:`!os.path` module is always the path module suitable for the operating
    system Python is running on, and therefore usable for local paths.  However,
    you can also import and use the individual modules if you want to manipulate
    a path that is *always* in one of the different formats.  They all have the
@@ -57,8 +57,21 @@ the :mod:`glob` module.)
 .. function:: abspath(path)
 
    Return a normalized absolutized version of the pathname *path*. On most
-   platforms, this is equivalent to calling the function :func:`normpath` as
-   follows: ``normpath(join(os.getcwd(), path))``.
+   platforms, this is equivalent to calling ``normpath(join(os.getcwd(), path))``.
+
+   On Windows the path is normalized by the operating system,
+   therefore the result can differ from ``normpath(join(os.getcwd(), path))``.
+   A drive-relative path is resolved against the current directory
+   of the specified drive, and the drive letter is capitalized.
+   Trailing dots and spaces are stripped.
+   For example::
+
+      >>> os.path.abspath('c:spam')
+      'C:\\Temp\\spam'
+      >>> os.path.abspath('c:/temp/spam. . .')
+      'c:\\temp\\spam'
+
+   .. seealso:: :func:`os.path.join` and :func:`os.path.normpath`.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
@@ -96,15 +109,17 @@ the :mod:`glob` module.)
 
 .. function:: commonprefix(list, /)
 
-   Return the longest path prefix (taken character-by-character) that is a
-   prefix of all paths in  *list*.  If *list* is empty, return the empty string
+   Return the longest string prefix (taken character-by-character) that is a
+   prefix of all strings in *list*.  If *list* is empty, return the empty string
    (``''``).
 
-   .. note::
+   .. warning::
 
       This function may return invalid paths because it works a
-      character at a time.  To obtain a valid path, see
-      :func:`commonpath`.
+      character at a time.
+      If you need a **common path prefix**, then the algorithm
+      implemented in this function is not secure. Use
+      :func:`commonpath` for finding a common path prefix.
 
       ::
 
@@ -116,6 +131,14 @@ the :mod:`glob` module.)
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+   .. deprecated:: 3.15
+      Deprecated in favor of :func:`os.path.commonpath` for path prefixes.
+      The :func:`os.path.commonprefix` function is being deprecated due to
+      having a misleading name and module. The function is not safe to use for
+      path prefixes despite being included in a module about path manipulation,
+      meaning it is easy to accidentally introduce path traversal
+      vulnerabilities into Python programs by using this function.
 
 
 .. function:: dirname(path, /)
@@ -243,6 +266,8 @@ the :mod:`glob` module.)
    begins with a slash, on Windows that it begins with two (back)slashes, or a
    drive letter, colon, and (back)slash together.
 
+   .. seealso:: :func:`abspath`
+
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
@@ -357,14 +382,28 @@ the :mod:`glob` module.)
    concatenation of *path* and all members of *\*paths*, with exactly one
    directory separator following each non-empty part, except the last. That is,
    the result will only end in a separator if the last part is either empty or
-   ends in a separator. If a segment is an absolute path (which on Windows
-   requires both a drive and a root), then all previous segments are ignored and
-   joining continues from the absolute path segment.
+   ends in a separator.
+
+   If a segment is an absolute path (which on Windows requires both a drive and
+   a root), then all previous segments are ignored and joining continues from the
+   absolute path segment. On Linux, for example::
+
+      >>> os.path.join('/home/foo', 'bar')
+      '/home/foo/bar'
+      >>> os.path.join('/home/foo', '/home/bar')
+      '/home/bar'
 
    On Windows, the drive is not reset when a rooted path segment (e.g.,
    ``r'\foo'``) is encountered. If a segment is on a different drive or is an
-   absolute path, all previous segments are ignored and the drive is reset. Note
-   that since there is a current directory for each drive,
+   absolute path, all previous segments are ignored and the drive is reset. For
+   example::
+
+      >>> os.path.join('c:\\', 'foo')
+      'c:\\foo'
+      >>> os.path.join('c:\\foo', 'd:\\bar')
+      'd:\\bar'
+
+   Note that since there is a current directory for each drive,
    ``os.path.join("c:", "foo")`` represents a path relative to the current
    directory on drive :file:`C:` (:file:`c:foo`), not :file:`c:\\foo`.
 
@@ -408,6 +447,9 @@ the :mod:`glob` module.)
    links encountered in the path (if they are supported by the operating
    system). On Windows, this function will also resolve MS-DOS (also called 8.3)
    style names such as ``C:\\PROGRA~1`` to ``C:\\Program Files``.
+   The returned path uses the case reported by the operating system,
+   which can differ from the case of *path*,
+   in particular the drive letter is capitalized.
 
    By default, the path is evaluated up to the first component that does not
    exist, is a symlink loop, or whose evaluation raises :exc:`OSError`.
@@ -449,7 +491,7 @@ the :mod:`glob` module.)
    .. versionchanged:: 3.10
       The *strict* parameter was added.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       The :data:`ALL_BUT_LAST` and :data:`ALLOW_MISSING` values for
       the *strict* parameter was added.
 
@@ -457,13 +499,13 @@ the :mod:`glob` module.)
 
    Special value used for the *strict* argument in :func:`realpath`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. data:: ALLOW_MISSING
 
    Special value used for the *strict* argument in :func:`realpath`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. function:: relpath(path, start=os.curdir)
@@ -527,8 +569,8 @@ the :mod:`glob` module.)
    *path* is empty, both *head* and *tail* are empty.  Trailing slashes are
    stripped from *head* unless it is the root (one or more slashes only).  In
    all cases, ``join(head, tail)`` returns a path to the same location as *path*
-   (but the strings may differ).  Also see the functions :func:`dirname` and
-   :func:`basename`.
+   (but the strings may differ).  Also see the functions :func:`join`,
+   :func:`dirname` and :func:`basename`.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.

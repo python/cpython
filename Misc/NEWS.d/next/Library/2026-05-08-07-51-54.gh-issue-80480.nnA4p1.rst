@@ -1,0 +1,2 @@
+Remove deprecated ``'u'`` type code (:c:type:`wchar_t`) for the :mod:`array`
+module.  Use ``'w'`` format code instead (:c:type:`Py_UCS4`, always 4 bytes).

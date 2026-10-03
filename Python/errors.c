@@ -4,6 +4,7 @@
 #include "Python.h"
 #include "pycore_audit.h"         // _PySys_Audit()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_ceval.h"         // _Py_ReachedRecursionLimitWithMargin()
 #include "pycore_fileutils.h"     // _PyFile_Flush
 #include "pycore_initconfig.h"    // _PyStatus_ERR()
 #include "pycore_pyerrors.h"      // _PyErr_Format()
@@ -12,6 +13,8 @@
 #include "pycore_structseq.h"     // _PyStructSequence_FiniBuiltin()
 #include "pycore_traceback.h"     // _PyTraceBack_FromFrame()
 #include "pycore_unicodeobject.h" // _PyUnicode_Equal()
+
+#include "../Parser/tokenizer/tokenizer.h"
 
 #ifdef MS_WINDOWS
 #  include <windows.h>
@@ -246,13 +249,23 @@ PyErr_SetObject(PyObject *exception, PyObject *value)
     _PyErr_SetObject(tstate, exception, value);
 }
 
-/* Set a key error with the specified argument, wrapping it in a
- * tuple automatically so that tuple keys are not unpacked as the
- * exception arguments. */
+/* Set a key error with the specified argument. This function should be used to
+ * raise a KeyError with an argument instead of PyErr_SetObject(PyExc_KeyError,
+ * arg) which has a special behavior. PyErr_SetObject() unpacks arg if it's a
+ * tuple, and it uses arg instead of creating a new exception if arg is an
+ * exception.
+ *
+ * If an exception is already set, override the exception. */
 void
 _PyErr_SetKeyError(PyObject *arg)
 {
     PyThreadState *tstate = _PyThreadState_GET();
+
+    // PyObject_CallOneArg() must not be called with an exception set,
+    // otherwise _Py_CheckFunctionResult() can fail if the function returned
+    // a result with an excception set.
+    _PyErr_Clear(tstate);
+
     PyObject *exc = PyObject_CallOneArg(PyExc_KeyError, arg);
     if (!exc) {
         /* caller will expect error to be set anyway */
@@ -325,17 +338,27 @@ PyErr_GivenExceptionMatches(PyObject *err, PyObject *exc)
         return 0;
     }
     if (PyTuple_Check(exc)) {
-        Py_ssize_t i, n;
-        n = PyTuple_Size(exc);
-        for (i = 0; i < n; i++) {
-            /* Test recursively */
-             if (PyErr_GivenExceptionMatches(
-                 err, PyTuple_GET_ITEM(exc, i)))
-             {
-                 return 1;
-             }
+        PyThreadState *tstate = _PyThreadState_GET();
+        if (_Py_ReachedRecursionLimitWithMargin(tstate, 2)) {
+            PyObject *exc_value = _PyErr_GetRaisedException(tstate);
+            _PyErr_SetString(tstate, PyExc_RecursionError,
+                             "maximum recursion depth exceeded while "
+                             "checking exception tuple");
+            PyErr_FormatUnraisable("Exception ignored while "
+                                   "checking exception tuple");
+            _PyErr_SetRaisedException(tstate, exc_value);
+            return 0;
         }
-        return 0;
+        int res = 0;
+        Py_ssize_t n = PyTuple_GET_SIZE(exc);
+        for (Py_ssize_t i = 0; i < n; i++) {
+            /* Test recursively */
+            if (PyErr_GivenExceptionMatches(err, PyTuple_GET_ITEM(exc, i))) {
+                res = 1;
+                break;
+            }
+        }
+        return res;
     }
     /* err might be an instance, so check its class. */
     if (PyExceptionInstance_Check(err))
@@ -1656,6 +1679,7 @@ format_unraisable_v(const char *format, va_list va, PyObject *obj)
     _Py_EnsureTstateNotNULL(tstate);
 
     PyObject *err_msg = NULL;
+    PyObject *hook = NULL;
     PyObject *exc_type, *exc_value, *exc_tb;
     _PyErr_Fetch(tstate, &exc_type, &exc_value, &exc_tb);
 
@@ -1700,7 +1724,6 @@ format_unraisable_v(const char *format, va_list va, PyObject *obj)
         goto error;
     }
 
-    PyObject *hook;
     if (PySys_GetOptionalAttr(&_Py_ID(unraisablehook), &hook) < 0) {
         Py_DECREF(hook_args);
         err_msg_str = NULL;
@@ -1713,7 +1736,6 @@ format_unraisable_v(const char *format, va_list va, PyObject *obj)
     }
 
     if (_PySys_Audit(tstate, "sys.unraisablehook", "OO", hook, hook_args) < 0) {
-        Py_DECREF(hook);
         Py_DECREF(hook_args);
         err_msg_str = "Exception ignored in audit hook";
         obj = NULL;
@@ -1721,13 +1743,11 @@ format_unraisable_v(const char *format, va_list va, PyObject *obj)
     }
 
     if (hook == Py_None) {
-        Py_DECREF(hook);
         Py_DECREF(hook_args);
         goto default_hook;
     }
 
     PyObject *res = PyObject_CallOneArg(hook, hook_args);
-    Py_DECREF(hook);
     Py_DECREF(hook_args);
     if (res != NULL) {
         Py_DECREF(res);
@@ -1757,6 +1777,7 @@ done:
     Py_XDECREF(exc_value);
     Py_XDECREF(exc_tb);
     Py_XDECREF(err_msg);
+    Py_XDECREF(hook);
     _PyErr_Clear(tstate); /* Just in case */
 }
 
@@ -1960,10 +1981,11 @@ _PyErr_RaiseSyntaxError(PyObject *msg, PyObject *filename, int lineno, int col_o
 */
 int
 _PyErr_EmitSyntaxWarning(PyObject *msg, PyObject *filename, int lineno, int col_offset,
-                         int end_lineno, int end_col_offset)
+                         int end_lineno, int end_col_offset,
+                         PyObject *module)
 {
-    if (_PyErr_WarnExplicitObjectWithContext(PyExc_SyntaxWarning, msg,
-                                             filename, lineno) < 0)
+    if (PyErr_WarnExplicitObject(PyExc_SyntaxWarning, msg, filename, lineno,
+                                 module, NULL) < 0)
     {
         if (PyErr_ExceptionMatches(PyExc_SyntaxWarning)) {
             /* Replace the SyntaxWarning exception with a SyntaxError
@@ -2040,9 +2062,6 @@ PyErr_ProgramText(const char *filename, int lineno)
     Py_DECREF(filename_obj);
     return res;
 }
-
-/* Function from Parser/tokenizer/file_tokenizer.c */
-extern char* _PyTokenizer_FindEncodingFilename(int, PyObject *);
 
 PyObject *
 _PyErr_ProgramDecodedTextObject(PyObject *filename, int lineno, const char* encoding)

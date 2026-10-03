@@ -1,1 +1,0 @@
-:func:`functools.partial` calls are now faster when keyword arguments are used.

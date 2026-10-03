@@ -13,12 +13,7 @@ class TestGdbm(unittest.TestCase):
     @staticmethod
     def setUpClass():
         if support.verbose:
-            try:
-                from _gdbm import _GDBM_VERSION as version
-            except ImportError:
-                pass
-            else:
-                print(f"gdbm version: {version}")
+            print(f"gdbm version: {gdbm.gdbm_version}")
 
     def setUp(self):
         self.g = None
@@ -29,6 +24,35 @@ class TestGdbm(unittest.TestCase):
         unlink(filename)
 
     @cpython_only
+    def _test_gdbm_version(self, v):
+        self.assertIsInstance(v[:], tuple)
+        self.assertEqual(len(v), 3)
+        self.assertIsInstance(v[0], int)
+        self.assertIsInstance(v[1], int)
+        self.assertIsInstance(v[2], int)
+        self.assertIsInstance(v.major, int)
+        self.assertIsInstance(v.minor, int)
+        self.assertIsInstance(v.patch, int)
+        self.assertEqual(v[0], v.major)
+        self.assertEqual(v[1], v.minor)
+        self.assertEqual(v[2], v.patch)
+        self.assertGreaterEqual(v.major, 1)
+        self.assertGreaterEqual(v.minor, 0)
+        self.assertGreaterEqual(v.patch, 0)
+
+    @unittest.skipUnless(hasattr(gdbm, 'GDBM_VERSION_INFO'),
+                         'requires gdbm >= 1.9')
+    def test_gdbm_version(self):
+        if support.verbose:
+            print(f'GDBM_VERSION_INFO = {gdbm.GDBM_VERSION_INFO}', flush=True)
+            print(f'gdbm_version_info = {gdbm.gdbm_version_info}', flush=True)
+        self._test_gdbm_version(gdbm.GDBM_VERSION_INFO)
+        self._test_gdbm_version(gdbm.gdbm_version_info)
+        self.assertEqual(gdbm.GDBM_VERSION_INFO[0], gdbm.gdbm_version_info[0])
+        v = gdbm.gdbm_version_info
+        self.assertIsInstance(gdbm.gdbm_version, str)
+        self.assertStartsWith(gdbm.gdbm_version, 'GDBM version %d.%d' % v[:2])
+
     def test_disallow_instantiation(self):
         # Ensure that the type disallows instantiation (bpo-43916)
         self.g = gdbm.open(filename, 'c')
@@ -74,12 +98,12 @@ class TestGdbm(unittest.TestCase):
         # Test the flag parameter open() by trying all supported flag modes.
         all = set(gdbm.open_flags)
         # Test standard flags (presumably "crwn").
-        modes = all - set('fsum')
+        modes = all - set('fsu')
         for mode in sorted(modes):  # put "c" mode first
             self.g = gdbm.open(filename, mode)
             self.g.close()
 
-        # Test additional flags (presumably "fsum").
+        # Test additional flags (presumably "fsu").
         flags = all - set('crwn')
         for mode in modes:
             for flag in flags:
@@ -216,29 +240,6 @@ class TestGdbm(unittest.TestCase):
         with temp_dir() as d:
             create_empty_file(os.path.join(d, 'test'))
             self.assertRaises(gdbm.error, gdbm.open, filename, 'r')
-
-    @unittest.skipUnless('m' in gdbm.open_flags, "requires 'm' in open_flags")
-    def test_nommap_no_crash(self):
-        self.g = g = gdbm.open(filename, 'nm')
-        os.truncate(filename, 0)
-
-        g.get(b'a', b'c')
-        g.keys()
-        g.firstkey()
-        g.nextkey(b'a')
-        with self.assertRaises(KeyError):
-            g[b'a']
-        with self.assertRaises(gdbm.error):
-            len(g)
-
-        with self.assertRaises(gdbm.error):
-            g[b'a'] = b'c'
-        with self.assertRaises(gdbm.error):
-            del g[b'a']
-        with self.assertRaises(gdbm.error):
-            g.setdefault(b'a', b'c')
-        with self.assertRaises(gdbm.error):
-            g.reorganize()
 
 
 if __name__ == '__main__':

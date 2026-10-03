@@ -1,3 +1,0 @@
-Fixes a crash of :class:`types.SimpleNamespace` on :term:`free threading` builds,
-when several threads were calling its :meth:`~object.__repr__` method at the
-same time.

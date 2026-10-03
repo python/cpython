@@ -1,1 +1,0 @@
-Fix :mod:`asyncio` to not close subprocess pipes which would otherwise error out when the event loop is already closed.

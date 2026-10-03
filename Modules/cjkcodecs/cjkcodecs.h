@@ -155,15 +155,15 @@ get_module_state(PyObject *mod)
 
 #define OUTCHAR(c)                                                         \
     do {                                                                   \
-        if (_PyUnicodeWriter_WriteChar(writer, (c)) < 0)                   \
-            return MBERR_EXCEPTION;                                         \
+        if (_PyUnicodeWriter_WriteCharInline(writer, (c)) < 0)             \
+            return MBERR_EXCEPTION;                                        \
     } while (0)
 
 #define OUTCHAR2(c1, c2)                                                   \
     do {                                                                   \
         Py_UCS4 _c1 = (c1);                                                \
         Py_UCS4 _c2 = (c2);                                                \
-        if (_PyUnicodeWriter_Prepare(writer, 2, Py_MAX(_c1, c2)) < 0)      \
+        if (_PyUnicodeWriter_Prepare(writer, 2, Py_MAX(_c1, _c2)) < 0)     \
             return MBERR_EXCEPTION;                                        \
         PyUnicode_WRITE(writer->kind, writer->data, writer->pos, _c1);     \
         PyUnicode_WRITE(writer->kind, writer->data, writer->pos + 1, _c2); \
@@ -500,6 +500,7 @@ static struct PyMethodDef _cjk_methods[] = {
 };
 
 static PyModuleDef_Slot _cjk_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, _cjk_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

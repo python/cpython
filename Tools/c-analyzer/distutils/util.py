@@ -8,7 +8,6 @@ import os
 import re
 import string
 import sys
-from distutils.errors import DistutilsPlatformError
 
 def get_host_platform():
     """Return a string that identifies the current platform.  This is used mainly to
@@ -19,8 +18,8 @@ def get_host_platform():
     particularly important.
 
     Examples of returned values:
-       linux-i586
-       linux-alpha (?)
+       linux-x86_64
+       linux-aarch64
        solaris-2.6-sun4u
 
     Windows will return one of:

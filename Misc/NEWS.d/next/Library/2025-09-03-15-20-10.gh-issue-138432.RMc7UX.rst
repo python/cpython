@@ -1,6 +1,0 @@
-:meth:`zoneinfo.reset_tzpath` will now convert any :class:`os.PathLike` objects
-it receives into strings before adding them to ``TZPATH``. It will raise
-``TypeError`` if anything other than a string is found after this conversion.
-If given an :class:`os.PathLike` object that represents a relative path, it
-will now raise ``ValueError`` instead of ``TypeError``, and present a more
-informative error message.

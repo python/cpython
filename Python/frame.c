@@ -20,7 +20,6 @@ _PyFrame_Traverse(_PyInterpreterFrame *frame, visitproc visit, void *arg)
 PyFrameObject *
 _PyFrame_MakeAndSetFrameObject(_PyInterpreterFrame *frame)
 {
-    assert(frame->frame_obj == NULL);
     PyObject *exc = PyErr_GetRaisedException();
 
     PyFrameObject *f = _PyFrame_New_NoTrack(_PyFrame_GetCode(frame));
@@ -37,10 +36,18 @@ _PyFrame_MakeAndSetFrameObject(_PyInterpreterFrame *frame)
     // Notice that _PyFrame_New_NoTrack() can potentially raise a MemoryError,
     // but it won't allocate a traceback until the frame unwinds, so we are safe
     // here.
-    assert(frame->frame_obj == NULL);
     assert(frame->owner != FRAME_OWNED_BY_FRAME_OBJECT);
     f->f_frame = frame;
+#ifdef Py_GIL_DISABLED
+    PyFrameObject *expected = NULL;
+    if (!_Py_atomic_compare_exchange_ptr(&frame->frame_obj, &expected, f)) {
+        Py_DECREF(f);
+        return expected;
+    }
+#else
+    assert(frame->frame_obj == NULL);
     frame->frame_obj = f;
+#endif
     return f;
 }
 
@@ -54,7 +61,7 @@ take_ownership(PyFrameObject *f, _PyInterpreterFrame *frame)
     _PyFrame_Copy(frame, new_frame);
     // _PyFrame_Copy takes the reference to the executable,
     // so we need to restore it.
-    frame->f_executable = PyStackRef_DUP(new_frame->f_executable);
+    new_frame->f_executable = PyStackRef_DUP(new_frame->f_executable);
     f->f_frame = new_frame;
     new_frame->owner = FRAME_OWNED_BY_FRAME_OBJECT;
     if (_PyFrame_IsIncomplete(new_frame)) {
@@ -109,13 +116,13 @@ _PyFrame_ClearExceptCode(_PyInterpreterFrame *frame)
     /* It is the responsibility of the owning generator/coroutine
      * to have cleared the enclosing generator, if any. */
     assert(frame->owner != FRAME_OWNED_BY_GENERATOR ||
-        _PyGen_GetGeneratorFromFrame(frame)->gi_frame_state == FRAME_CLEARED);
+           FT_ATOMIC_LOAD_INT8_RELAXED(_PyGen_GetGeneratorFromFrame(frame)->gi_frame_state) == FRAME_CLEARED);
     // GH-99729: Clearing this frame can expose the stack (via finalizers). It's
     // crucial that this frame has been unlinked, and is no longer visible:
     assert(_PyThreadState_GET()->current_frame != frame);
-    if (frame->frame_obj) {
-        PyFrameObject *f = frame->frame_obj;
-        frame->frame_obj = NULL;
+    PyFrameObject *f = FT_ATOMIC_LOAD_PTR_RELAXED(frame->frame_obj);
+    if (f != NULL) {
+        FT_ATOMIC_STORE_PTR_RELAXED(frame->frame_obj, NULL);
         if (!_PyObject_IsUniquelyReferenced((PyObject *)f)) {
             take_ownership(f, frame);
             Py_DECREF(f);
@@ -135,25 +142,17 @@ PyUnstable_InterpreterFrame_GetCode(struct _PyInterpreterFrame *frame)
     return PyStackRef_AsPyObjectNew(frame->f_executable);
 }
 
-int
+// NOTE: We allow racy accesses to the instruction pointer from other threads
+// for sys._current_frames() and similar APIs.
+int _Py_NO_SANITIZE_THREAD
 PyUnstable_InterpreterFrame_GetLasti(struct _PyInterpreterFrame *frame)
 {
     return _PyInterpreterFrame_LASTI(frame) * sizeof(_Py_CODEUNIT);
 }
 
-// NOTE: We allow racy accesses to the instruction pointer from other threads
-// for sys._current_frames() and similar APIs.
 int _Py_NO_SANITIZE_THREAD
 PyUnstable_InterpreterFrame_GetLine(_PyInterpreterFrame *frame)
 {
     int addr = _PyInterpreterFrame_LASTI(frame) * sizeof(_Py_CODEUNIT);
     return PyCode_Addr2Line(_PyFrame_GetCode(frame), addr);
 }
-
-const PyTypeObject *const PyUnstable_ExecutableKinds[PyUnstable_EXECUTABLE_KINDS+1] = {
-    [PyUnstable_EXECUTABLE_KIND_SKIP] = &_PyNone_Type,
-    [PyUnstable_EXECUTABLE_KIND_PY_FUNCTION] = &PyCode_Type,
-    [PyUnstable_EXECUTABLE_KIND_BUILTIN_FUNCTION] = &PyMethod_Type,
-    [PyUnstable_EXECUTABLE_KIND_METHOD_DESCRIPTOR] = &PyMethodDescr_Type,
-    [PyUnstable_EXECUTABLE_KINDS] = NULL,
-};

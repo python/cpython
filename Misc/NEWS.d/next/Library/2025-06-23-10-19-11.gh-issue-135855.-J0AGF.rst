@@ -1,3 +1,0 @@
-Raise :exc:`TypeError` instead of :exc:`SystemError` when
-:func:`!_interpreters.set___main___attrs` is passed a non-dict object.
-Patch by Brian Schubert.

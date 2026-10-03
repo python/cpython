@@ -1,4 +1,0 @@
-With :option:`-Werror <-W>`, the DeprecationWarning emitted by :py:func:`os.fork`
-and :py:func:`os.forkpty` in mutli-threaded processes is now raised as an exception.
-Previously it was silently ignored.
-Patch by Rani Pinchuk.
