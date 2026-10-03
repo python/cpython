@@ -3,6 +3,10 @@
 import sys
 if __name__ == "__main__":
     sys.modules['idlelib.pyshell'] = sys.modules['__main__']
+    if __spec__ is not None and not sys.flags.safe_path:
+        # Remove the current directory, prepended by "python -m", so that
+        # user files do not shadow IDLE's imports (gh-70331).
+        del sys.path[0]
 
 try:
     from tkinter import *
@@ -451,7 +455,10 @@ class ModifiedInterpreter(InteractiveInterpreter):
         del_exitf = idleConf.GetOption('main', 'General', 'delete-exitfunc',
                                        default=False, type='bool')
         command = f"__import__('idlelib.run').run.main({del_exitf!r})"
-        return [sys.executable] + w + ["-c", command, str(self.port)]
+        # -P keeps the current directory off sys.path, so that user files
+        # do not shadow run's imports (gh-70331).  transfer_path() sets
+        # sys.path later.
+        return [sys.executable, '-P'] + w + ["-c", command, str(self.port)]
 
     def start_subprocess(self):
         addr = (HOST, self.port)
