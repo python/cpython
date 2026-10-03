@@ -113,11 +113,13 @@ typedef struct _Py_DebugOffsets {
         uint64_t gil_requested;
         uint64_t current_exception;
         uint64_t exc_state;
+        uint64_t exc_info;
     } thread_state;
 
     // Exception stack item offset
     struct {
         uint64_t exc_value;
+        uint64_t previous_item;
     } err_stackitem;
 
     // InterpreterFrame offset;
@@ -304,9 +306,11 @@ typedef struct _Py_DebugOffsets {
         .gil_requested = offsetof(PyThreadState, gil_requested), \
         .current_exception = offsetof(PyThreadState, current_exception), \
         .exc_state = offsetof(PyThreadState, exc_state), \
+        .exc_info = offsetof(PyThreadState, exc_info), \
     }, \
     .err_stackitem = { \
         .exc_value = offsetof(_PyErr_StackItem, exc_value), \
+        .previous_item = offsetof(_PyErr_StackItem, previous_item), \
     }, \
     .interpreter_frame = { \
         .size = sizeof(_PyInterpreterFrame), \

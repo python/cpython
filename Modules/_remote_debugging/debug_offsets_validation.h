@@ -31,7 +31,7 @@
 #define FIELD_SIZE(type, member) sizeof(((type *)0)->member)
 
 enum {
-    PY_REMOTE_DEBUG_OFFSETS_TOTAL_SIZE = 888,
+    PY_REMOTE_DEBUG_OFFSETS_TOTAL_SIZE = 904,
     PY_REMOTE_ASYNC_DEBUG_OFFSETS_TOTAL_SIZE = 104,
 };
 
@@ -257,6 +257,7 @@ validate_fixed_field(
     APPLY(thread_state, holds_gil, sizeof(int), _Alignof(int), buffer_size); \
     APPLY(thread_state, gil_requested, sizeof(int), _Alignof(int), buffer_size); \
     APPLY(thread_state, current_exception, sizeof(uintptr_t), _Alignof(uintptr_t), buffer_size); \
+    APPLY(thread_state, exc_info, sizeof(uintptr_t), _Alignof(uintptr_t), buffer_size); \
     APPLY(thread_state, thread_id, sizeof(unsigned long), _Alignof(long), buffer_size); \
     APPLY(thread_state, next, sizeof(uintptr_t), _Alignof(uintptr_t), buffer_size); \
     APPLY(thread_state, current_frame, sizeof(uintptr_t), _Alignof(uintptr_t), buffer_size); \
@@ -354,6 +355,12 @@ _PyRemoteDebug_ValidateDebugOffsetsLayout(struct _Py_DebugOffsets *debug_offsets
     PY_REMOTE_DEBUG_VALIDATE_FIXED_FIELD(
         err_stackitem,
         exc_value,
+        sizeof(uintptr_t),
+        _Alignof(uintptr_t),
+        sizeof(_PyErr_StackItem));
+    PY_REMOTE_DEBUG_VALIDATE_FIXED_FIELD(
+        err_stackitem,
+        previous_item,
         sizeof(uintptr_t),
         _Alignof(uintptr_t),
         sizeof(_PyErr_StackItem));
