@@ -363,6 +363,17 @@ parse_coro_chain(
         return 0;
     }
 
+    if (frame_state == FRAME_EXECUTING && unwinder->walked_thread_addr) {
+        // gh-158443: a running coroutine keeps its inner frames on the thread stack
+        Py_DECREF(name);
+        if (parse_async_frame_chain(unwinder, render_to,
+                                    unwinder->walked_thread_addr,
+                                    address_of_code_object) < 0) {
+            return -1;
+        }
+        return PyList_Reverse(render_to);
+    }
+
     if (PyList_Append(render_to, name)) {
         Py_DECREF(name);
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to append frame to coro chain");
@@ -930,7 +941,11 @@ process_thread_for_awaited_by(
 ) {
     PyObject *result = (PyObject *)context;
     uintptr_t head_addr = thread_state_addr + (uintptr_t)unwinder->async_debug_offsets.asyncio_thread_state.asyncio_tasks_head;
-    return append_awaited_by(unwinder, tid, head_addr, result);
+
+    unwinder->walked_thread_addr = thread_state_addr;
+    int res = append_awaited_by(unwinder, tid, head_addr, result);
+    unwinder->walked_thread_addr = 0;
+    return res;
 }
 
 static int
