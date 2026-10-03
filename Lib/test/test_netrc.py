@@ -38,6 +38,20 @@ class NetrcTestCase(unittest.TestCase):
         self.assertEqual(nrc.hosts['host.domain.com'], ('log1', 'acct1', 'pass1'))
         self.assertEqual(nrc.hosts['default'], ('log2', 'acct2', 'pass2'))
 
+    def test_repr_roundtrip(self):
+        # __repr__() writes the data in .netrc format, so parsing its output
+        # should give back the same entries.
+        values = ['pass', 'pass word', ' pass', 'pass\tword', 'pass\nword',
+                  'pass"word', 'pass\\word', '']
+        for value in values:
+            with self.subTest(value=value):
+                nrc = self.make_nrc("""\
+                    machine host.domain.com login log password pass
+                    """)
+                nrc.hosts['host.domain.com'] = (value, 'acct', value)
+                nrc2 = self.make_nrc(repr(nrc))
+                self.assertEqual(nrc2.hosts, nrc.hosts)
+
     def test_macros(self):
         data = """\
             macdef macro1
