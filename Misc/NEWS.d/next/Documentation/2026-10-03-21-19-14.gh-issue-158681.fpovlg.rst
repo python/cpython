@@ -1,0 +1,5 @@
+`Doc/library/test.rst` said that `python -m test` calls a module-level `test_main()` when it exists, and otherwise loads tests with `unittest.TestLoader.loadTestsFromModule`. It also told readers to call `test.support.reap_children()` at the end of `test_main`. The docstring of `reap_children()` said the same thing.
+
+`libregrtest` does not call `test_main()`. If the imported module defines it, `Lib/test/libregrtest/single.py` raises `Exception`. regrtest reports the module as failed with an uncaught exception (stderr: `test <name> crashed`; summary: `failed (uncaught exception)`). Tests are loaded with `loadTestsFromModule`, which collects `TestCase` classes and, when the module defines `load_tests`, runs the suite that function returns. Packages use `load_tests`, usually via `test.support.load_package_tests`, to add tests from submodules. `reap_children()` is called from `setUp()`, `tearDown()`, and `tearDownModule()`.
+
+The runner is unchanged. This updates the library page and the `reap_children()` docstring.
