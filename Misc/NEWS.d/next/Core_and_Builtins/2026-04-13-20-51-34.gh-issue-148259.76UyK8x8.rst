@@ -1,0 +1,4 @@
+:meth:`list.remove` now raises :exc:`RuntimeError` if the list is mutated
+during the ``__eq__`` rich comparison and a matching element was found. This
+prevents silent data corruption where the wrong element could be removed from
+a list under concurrent mutation.
