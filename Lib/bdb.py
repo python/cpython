@@ -747,7 +747,7 @@ class Bdb:
             return 'There are no breakpoints in %s' % filename
         for line in self.breaks[filename]:
             blist = Breakpoint.bplist[filename, line]
-            for bp in blist:
+            for bp in blist[:]:
                 bp.deleteMe()
         del self.breaks[filename]
         return None
