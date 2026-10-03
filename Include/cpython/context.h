@@ -40,10 +40,13 @@ typedef enum {
  * Context object watcher callback function.  The object passed to the callback
  * is event-specific; see PyContextEvent for details.
  *
- * if the callback returns with an exception set, it must return -1. Otherwise
- * it should return 0
+ * Any pending exception is cleared before the callback is called and restored
+ * after the callback returns.
+ *
+ * If the callback raises an exception it will be printed as an unraisable
+ * exception using PyErr_FormatUnraisable and discarded.
  */
-typedef int (*PyContext_WatchCallback)(PyContextEvent, PyObject *);
+typedef void (*PyContext_WatchCallback)(PyContextEvent, PyObject *);
 
 /*
  * Register a per-interpreter callback that will be invoked for context object
