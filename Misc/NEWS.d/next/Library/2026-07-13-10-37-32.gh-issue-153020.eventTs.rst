@@ -1,0 +1,1 @@
+Fix a data race in :mod:`!_tkinter` input event handling under the :term:`free-threaded build`.
