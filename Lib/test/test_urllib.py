@@ -400,12 +400,16 @@ class urlopen_HttpTests(unittest.TestCase, FakeHTTPMixin):
         host = "localhost\r\nX-injected: header\r\n"
         schemeless_url = "//" + host + ":8080/test/?test=a"
         try:
-            InvalidURL = http.client.InvalidURL
-            with self.assertRaisesRegex(
-                InvalidURL, r"contain control.*\\r"):
+            # The URL is rejected when it is parsed, because the injected
+            # header is not a valid port.
+            with self.assertRaises(ValueError):
                 urllib.request.urlopen(f"http:{schemeless_url}")
-            with self.assertRaisesRegex(InvalidURL, r"contain control.*\\n"):
+            with self.assertRaises(ValueError):
                 urllib.request.urlopen(f"https:{schemeless_url}")
+            # Such host is rejected by http.client as well.
+            with self.assertRaisesRegex(http.client.InvalidURL,
+                                        r"contain control.*\\r"):
+                http.client.HTTPConnection(host, 8080)
         finally:
             self.unfakehttp()
 
