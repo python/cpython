@@ -1046,48 +1046,64 @@ get_getpath_codeobject(PyObject *self, PyObject *Py_UNUSED(args)) {
 }
 
 
+// Test _Py_EncodeLocaleEx()
 static PyObject *
 encode_locale_ex(PyObject *self, PyObject *args)
 {
     PyObject *unicode;
     int current_locale = 0;
-    wchar_t *wstr;
     PyObject *res = NULL;
     const char *errors = NULL;
 
     if (!PyArg_ParseTuple(args, "U|is", &unicode, &current_locale, &errors)) {
         return NULL;
     }
-    wstr = PyUnicode_AsWideCharString(unicode, NULL);
+
+    wchar_t *wstr = PyUnicode_AsWideCharString(unicode, NULL);
     if (wstr == NULL) {
         return NULL;
     }
     _Py_error_handler error_handler = _Py_GetErrorHandler(errors);
 
     char *str = NULL;
-    size_t error_pos;
-    const char *reason = NULL;
+    size_t error_pos_canary = (size_t)-123;
+    size_t error_pos = error_pos_canary;
+    size_t output_length = (size_t)-123;
+    const char *reason_canary = "canary";
+    const char *reason = reason_canary;
     int ret = _Py_EncodeLocaleEx(wstr,
-                                 &str, &error_pos, &reason,
+                                 &str, &output_length, &error_pos, &reason,
                                  current_locale, error_handler);
     PyMem_Free(wstr);
 
     switch(ret) {
     case 0:
-        res = PyBytes_FromString(str);
+        res = PyBytes_FromStringAndSize(str, output_length);
         PyMem_RawFree(str);
         break;
     case -1:
+        assert(output_length == 0);
+        assert(error_pos == 0);
+        assert(reason == NULL);
         PyErr_NoMemory();
         break;
     case -2:
+        assert(output_length == 0);
+        assert(error_pos != error_pos_canary);
+        assert(reason != reason_canary);
         PyErr_Format(PyExc_RuntimeError, "encode error: pos=%zu, reason=%s",
                      error_pos, reason);
         break;
     case -3:
+        assert(output_length == 0);
+        assert(error_pos == 0);
+        assert(reason == NULL);
         PyErr_SetString(PyExc_ValueError, "unsupported error handler");
         break;
     default:
+        assert(output_length == 0);
+        assert(error_pos == 0);
+        assert(reason == NULL);
         PyErr_SetString(PyExc_ValueError, "unknown error code");
         break;
     }
@@ -1095,6 +1111,7 @@ encode_locale_ex(PyObject *self, PyObject *args)
 }
 
 
+// Test _Py_DecodeLocaleEx()
 static PyObject *
 decode_locale_ex(PyObject *self, PyObject *args)
 {

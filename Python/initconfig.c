@@ -4153,7 +4153,9 @@ static char*
 wstr_to_utf8(PyInitConfig *config, wchar_t *wstr)
 {
     char *utf8;
-    int res = _Py_EncodeUTF8Ex(wstr, &utf8, NULL, NULL, 1, _Py_ERROR_STRICT);
+    size_t utf8_len;
+    int res = _Py_EncodeUTF8Ex(wstr, &utf8, &utf8_len,
+                               NULL, 1, _Py_ERROR_STRICT);
     if (res == -2) {
         initconfig_set_error(config, "encoding error");
         return NULL;
@@ -4164,7 +4166,7 @@ wstr_to_utf8(PyInitConfig *config, wchar_t *wstr)
     }
 
     // Copy to use the malloc() memory allocator
-    size_t size = strlen(utf8) + 1;
+    size_t size = utf8_len + 1;
     char *str = malloc(size);
     if (str == NULL) {
         PyMem_RawFree(utf8);
