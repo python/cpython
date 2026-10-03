@@ -136,30 +136,37 @@ def splitdrive(p, /):
     return p[:0], p
 
 
+def splitroot(p, /):
+    """Split a pathname into drive, root and tail.
+
+    The tail contains anything after the root."""
+    p = os.fspath(p)
+    if isinstance(p, bytes):
+        sep = b'/'
+        empty = b''
+    else:
+        sep = '/'
+        empty = ''
+    if p[:1] != sep:
+        # Relative path, e.g.: 'foo'
+        return empty, empty, p
+    elif p[1:2] != sep or p[2:3] == sep:
+        # Absolute path, e.g.: '/foo', '///foo', '////foo', etc.
+        return empty, sep, p[1:]
+    else:
+        # Precisely two leading slashes, e.g.: '//foo'. Implementation defined per POSIX, see
+        # https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap04.html#tag_04_13
+        return empty, p[:2], p[2:]
+
+
+# Kept under a private name so that posix._path_splitroot_ex() can delegate to
+# it for bytes paths that cannot be decoded with the filesystem encoding.
+_splitroot_fallback = splitroot
+
 try:
     from posix import _path_splitroot_ex as splitroot
 except ImportError:
-    def splitroot(p, /):
-        """Split a pathname into drive, root and tail.
-
-        The tail contains anything after the root."""
-        p = os.fspath(p)
-        if isinstance(p, bytes):
-            sep = b'/'
-            empty = b''
-        else:
-            sep = '/'
-            empty = ''
-        if p[:1] != sep:
-            # Relative path, e.g.: 'foo'
-            return empty, empty, p
-        elif p[1:2] != sep or p[2:3] == sep:
-            # Absolute path, e.g.: '/foo', '///foo', '////foo', etc.
-            return empty, sep, p[1:]
-        else:
-            # Precisely two leading slashes, e.g.: '//foo'. Implementation defined per POSIX, see
-            # https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap04.html#tag_04_13
-            return empty, p[:2], p[2:]
+    pass
 
 
 # Return the tail (basename) part of a path, same as split(path)[1].
@@ -338,37 +345,43 @@ def expandvars(path):
 # It should be understood that this may change the meaning of the path
 # if it contains symbolic links!
 
+def normpath(path):
+    """Normalize path, eliminating double slashes, etc."""
+    path = os.fspath(path)
+    if isinstance(path, bytes):
+        sep = b'/'
+        dot = b'.'
+        dotdot = b'..'
+    else:
+        sep = '/'
+        dot = '.'
+        dotdot = '..'
+    if not path:
+        return dot
+    _, initial_slashes, path = _splitroot_fallback(path)
+    comps = path.split(sep)
+    new_comps = []
+    for comp in comps:
+        if not comp or comp == dot:
+            continue
+        if (comp != dotdot or (not initial_slashes and not new_comps) or
+             (new_comps and new_comps[-1] == dotdot)):
+            new_comps.append(comp)
+        elif new_comps:
+            new_comps.pop()
+    comps = new_comps
+    path = initial_slashes + sep.join(comps)
+    return path or dot
+
+
+# Kept under a private name so that posix._path_normpath() can delegate to it
+# for bytes paths that cannot be decoded with the filesystem encoding.
+_normpath_fallback = normpath
+
 try:
     from posix import _path_normpath as normpath
-
 except ImportError:
-    def normpath(path):
-        """Normalize path, eliminating double slashes, etc."""
-        path = os.fspath(path)
-        if isinstance(path, bytes):
-            sep = b'/'
-            dot = b'.'
-            dotdot = b'..'
-        else:
-            sep = '/'
-            dot = '.'
-            dotdot = '..'
-        if not path:
-            return dot
-        _, initial_slashes, path = splitroot(path)
-        comps = path.split(sep)
-        new_comps = []
-        for comp in comps:
-            if not comp or comp == dot:
-                continue
-            if (comp != dotdot or (not initial_slashes and not new_comps) or
-                 (new_comps and new_comps[-1] == dotdot)):
-                new_comps.append(comp)
-            elif new_comps:
-                new_comps.pop()
-        comps = new_comps
-        path = initial_slashes + sep.join(comps)
-        return path or dot
+    pass
 
 
 def abspath(path):
