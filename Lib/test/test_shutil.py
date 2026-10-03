@@ -3196,6 +3196,29 @@ class TestMove(BaseTest, unittest.TestCase):
                 os.lchflags(TESTFN_DST, stat.UF_OPAQUE)
                 os_helper.rmtree(TESTFN_DST)
 
+    def test_no_copied_file_left_not_EXDEV(self):
+        os.chmod(self.src_dir, 0o500)
+        new_file = os.path.join(self.dst_dir, "bar")
+        self.assertRaises(PermissionError, shutil.move, self.src_file, new_file)
+        self.assertFalse(os.path.exists(new_file))
+
+    def test_no_copied_dir_left_not_EXDEV(self):
+        subdir = os.path.join(self.src_dir, "subdir")
+        os.mkdir(subdir)
+        create_file(os.path.join(subdir, "foo2"), b"another spam")
+        os.chmod(self.src_dir, 0o500)
+        new_dir = os.path.join(self.dst_dir, "new_dir")
+        self.assertRaises(PermissionError, shutil.move, subdir, new_dir)
+        self.assertFalse(os.path.exists(new_dir))
+
+    def test_no_copied_symlink_left_not_EXDEV(self):
+        old_link = os.path.join(self.src_dir, "bar")
+        os.symlink(self.src_file, old_link)
+        os.chmod(self.src_dir, 0o500)
+        new_link = os.path.join(self.dst_dir, "new_link")
+        self.assertRaises(PermissionError, shutil.move, old_link, new_link)
+        self.assertFalse(os.path.exists(new_link))
+
 
 class TestCopyFile(unittest.TestCase):
 
