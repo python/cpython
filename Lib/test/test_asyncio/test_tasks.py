@@ -1669,6 +1669,26 @@ class BaseTaskTests:
                     )
                     self.assertCountEqual(results, (0, 1, 2, 3))
 
+    def test_as_completed_async_iterator_cancelled_anext(self):
+        async def main():
+            loop = asyncio.get_running_loop()
+            a = loop.create_future()
+            b = loop.create_future()
+            iterator = asyncio.as_completed([a, b])
+
+            waiter = asyncio.create_task(anext(iterator))
+            await asyncio.sleep(0)
+            waiter.cancel()
+            with self.assertRaises(asyncio.CancelledError):
+                await waiter
+
+            a.set_result('a')
+            b.set_result('b')
+            return [await f async for f in iterator]
+
+        results = self.loop.run_until_complete(main())
+        self.assertCountEqual(results, ['a', 'b'])
+
     def test_as_completed_reverse_wait(self):
         # Tests the plain iterator style of as_completed iteration to
         # ensure that the first future awaited resolves to the first
