@@ -1,0 +1,1 @@
+Prevent ``statistics.kde`` from raising ``OverflowError`` with the logistic and sigmoid kernels for finite inputs far from the data.

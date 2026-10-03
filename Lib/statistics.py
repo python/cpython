@@ -139,7 +139,7 @@ from decimal import Decimal
 from itertools import compress, count, groupby, repeat
 from bisect import bisect_left, bisect_right
 from math import hypot, sqrt, fabs, exp, erfc, log, fsum, sumprod
-from math import isfinite, isinf, pi, sin, cosh
+from math import isfinite, isinf, pi, sin
 from math import sinpi, cospi, tanpi, asinpi, acospi, atanpi
 from functools import reduce
 from operator import itemgetter
@@ -832,8 +832,13 @@ def normal_kernel():
 @register('logistic')
 def logistic_kernel():
     # 1.0 / (exp(t) + 2.0 + exp(-t))
-    pdf = lambda t: 1/2 / (1.0 + cosh(t))
-    cdf = lambda t: 1.0 - 1.0 / (exp(t) + 1.0)
+    def pdf(t):
+        e = exp(-abs(t))
+        return e / (1.0 + e)**2
+
+    def cdf(t):
+        e = exp(-abs(t))
+        return 1.0 / (1.0 + e) if t >= 0 else e / (1.0 + e)
     invcdf = lambda p: log(p / (1.0 - p))
     support = None
     return pdf, cdf, invcdf, support
@@ -842,8 +847,12 @@ def logistic_kernel():
 def sigmoid_kernel():
     # (2/pi) / (exp(t) + exp(-t))
     recip_pi = 1 / pi
-    pdf = lambda t: recip_pi / cosh(t)
-    cdf = lambda t: 2.0 * atanpi(exp(t))
+    def pdf(t):
+        e = exp(-abs(t))
+        return 2.0 * recip_pi * e / (1.0 + e*e)
+
+    def cdf(t):
+        return 1.0 - 2.0 * atanpi(exp(-t)) if t > 0 else 2.0 * atanpi(exp(t))
     invcdf = lambda p: log(tanpi(p * 0.5))
     support = None
     return pdf, cdf, invcdf, support

@@ -2428,6 +2428,24 @@ class TestKDE(unittest.TestCase):
         data.append(100)
         self.assertGreater(f_hat(100), 0.0)
 
+    @support.requires_resource('cpu')
+    def test_kde_logistic_and_sigmoid_extreme_values(self):
+        for kernel in ('logistic', 'sigmoid'):
+            with self.subTest(kernel=kernel):
+                pdf = statistics.kde([0.0], h=1.0, kernel=kernel)
+                cdf = statistics.kde([0.0], h=1.0, kernel=kernel, cumulative=True)
+                self.assertEqual(pdf(-1000.0), 0.0)
+                self.assertEqual(pdf(1000.0), 0.0)
+                self.assertEqual(cdf(-1000.0), 0.0)
+                self.assertEqual(cdf(1000.0), 1.0)
+
+                # A small bandwidth can reach the overflow range at
+                # ordinary distances from the data.
+                pdf = statistics.kde([0.0], h=0.01, kernel=kernel)
+                cdf = statistics.kde([0.0], h=0.01, kernel=kernel, cumulative=True)
+                self.assertEqual(pdf(8.0), 0.0)
+                self.assertEqual(cdf(8.0), 1.0)
+
     def test_kde_kernel_specs(self):
         # White-box test for the kernel formulas in isolation from
         # their downstream use in kde() and kde_random()
