@@ -1,0 +1,3 @@
+Add an optional *env* mapping to :class:`multiprocessing.Process` for the
+POSIX ``spawn`` start method, allowing callers to specify the child interpreter's
+environment without modifying the parent process's environment.
