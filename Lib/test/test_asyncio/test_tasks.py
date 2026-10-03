@@ -1770,6 +1770,22 @@ class BaseTaskTests:
             futs = asyncio.as_completed([a])
             list(futs)
 
+    def test_as_completed_outside_running_loop(self):
+        # gh-157856: as_completed() must not require a running event loop
+        # when the iterator is created, only when it is driven.
+        loop = self.new_test_loop()
+        self.addCleanup(asyncio.set_event_loop, None)
+        asyncio.set_event_loop(loop)
+
+        async def coro(v):
+            await asyncio.sleep(0)
+            return v
+
+        tasks = [loop.create_task(coro(v)) for v in (1, 2)]
+        futs = asyncio.as_completed(tasks)
+        results = [loop.run_until_complete(f) for f in futs]
+        self.assertEqual(sorted(results), [1, 2])
+
     def test_as_completed_coroutine_use_running_loop(self):
         loop = self.new_test_loop()
 
