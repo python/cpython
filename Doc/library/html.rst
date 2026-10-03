@@ -34,6 +34,25 @@ This module defines utilities to manipulate HTML.
 
    .. versionadded:: 3.4
 
+
+.. function:: htmlcharrefreplace_errors(exception)
+
+   Implements the ``htmlcharrefreplace`` error handling (for encoding only):
+   the unencodable character is replaced by the corresponding HTML named
+   character reference from :data:`html.entities.codepoint2name`, or by a
+   numeric character reference if there is no name for it.
+
+   This error handler is not registered by default, you should register it
+   with :func:`codecs.register_error`::
+
+      >>> import codecs, html
+      >>> codecs.register_error('htmlcharrefreplace',
+      ...                       html.htmlcharrefreplace_errors)
+      >>> '∀ x∈ℜ'.encode('ascii', 'htmlcharrefreplace')
+      b'&forall; x&isin;&real;'
+
+   .. versionadded:: next
+
 --------------
 
 Submodules in the ``html`` package are:
