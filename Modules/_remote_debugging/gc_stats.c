@@ -103,11 +103,35 @@ get_gc_stats_from_interpreter_state(RuntimeOffsets *offsets,
     }
 
     struct gc_stats stats;
+    uintptr_t sequence_address = gc_stats_addr
+        + offsetof(struct gc_stats, update_seq);
+    uint32_t before;
+    if (_Py_RemoteDebug_ReadRemoteMemory(&offsets->handle,
+                                         sequence_address,
+                                         sizeof(before), &before) < 0) {
+        set_exception_cause(offsets, PyExc_RuntimeError,
+                            "Failed to read GC update sequence");
+        return -1;
+    }
     if (_Py_RemoteDebug_ReadRemoteMemory(&offsets->handle,
                                          gc_stats_addr,
                                          sizeof(stats),
                                          &stats) < 0) {
         set_exception_cause(offsets, PyExc_RuntimeError, "Failed to read GC state");
+        return -1;
+    }
+
+    uint32_t after;
+    if (_Py_RemoteDebug_ReadRemoteMemory(&offsets->handle,
+                                         sequence_address,
+                                         sizeof(after), &after) < 0) {
+        set_exception_cause(offsets, PyExc_RuntimeError,
+                            "Failed to read GC update sequence");
+        return -1;
+    }
+    if (before != after || before != stats.update_seq || (after & 1)) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "GC stats changed while being read; retry later");
         return -1;
     }
 
