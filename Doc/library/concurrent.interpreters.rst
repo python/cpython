@@ -21,7 +21,7 @@ thread) and calling a function in that execution context.
 For concurrency, interpreters themselves (and this module) don't
 provide much more than isolation, which on its own isn't useful.
 Actual concurrency is available separately through
-:mod:`threads <threading>`  See `below <interp-concurrency_>`_
+:mod:`threads <threading>` -- see `below <interp-concurrency_>`_.
 
 .. seealso::
 
@@ -191,7 +191,7 @@ objects are either directly shared or copied efficiently.  For example:
 * :class:`float`
 * :class:`tuple` (of similarly supported objects)
 
-There is a small number of Python types that actually share mutable
+There are a small number of Python types that actually share mutable
 data between interpreters:
 
 * :class:`memoryview`
@@ -274,7 +274,7 @@ Interpreter objects
 
    .. method:: call(callable, /, *args, **kwargs)
 
-      Return the result of calling running the given function in the
+      Return the result of running the given function in the
       interpreter (in the current thread).
 
    .. _interp-call-in-thread:

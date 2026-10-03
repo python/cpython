@@ -17,7 +17,7 @@ permissions:
 
 env:
   FORCE_COLOR: 1
-  OPENSSL_VER: 3.5.7
+  OPENSSL_VER: 3.5.9
 
 jobs:
   build-san-reusable:
@@ -30,7 +30,7 @@ jobs:
     runs-on: ubuntu-26.04
     timeout-minutes: 60
     steps:
-    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         persist-credentials: false
     - name: Runner image version
@@ -39,6 +39,8 @@ jobs:
       run: |
         sudo ./.github/workflows/posix-deps-apt.sh
         # On ubuntu-26.04 image, clang is clang-21 by default
+        # NOTE: when bumping to a new version of clang,
+        # please update the versions in `Tools/pixi-packages/variants.yaml` too.
         echo "CC=clang" >> "$GITHUB_ENV"
         echo "CXX=clang++" >> "$GITHUB_ENV"
     - name: TSan option setup
@@ -53,7 +55,7 @@ jobs:
         SAN_LOG_OPTION: log_path=${{ github.workspace }}/san_log
         SUPPRESSIONS_SUFFIX: >-
           ${{
-            fromJSON(inputs.free-threading)
+            inputs.free-threading
             && '_free_threading'
             || ''
           }}
@@ -73,7 +75,7 @@ jobs:
     - name: 'Restore OpenSSL build (TSan)'
       id: cache-openssl
       if: inputs.sanitizer == 'TSan'
-      uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ./multissl/openssl/${{ env.OPENSSL_VER }}
         key: ${{ env.IMAGE_OS_VERSION }}-multissl-openssl-tsan-${{ env.OPENSSL_VER }}
@@ -88,10 +90,14 @@ jobs:
         --openssl="${OPENSSL_VER}"
         --system=Linux
         --tsan
+    # gh-157958: -O2 instead of the pydebug default -Og to avoid a clang 21
+    # compile-time blowup on some interpreter files.
+    # (https://github.com/llvm/llvm-project/issues/179695)
     - name: Configure CPython
       run: >-
         ./configure
         --config-cache
+        OPT="-O2 -g"
         ${{
           inputs.sanitizer == 'TSan'
           && '--with-thread-sanitizer'
@@ -99,7 +105,7 @@ jobs:
         }}
         --with-pydebug
         ${{ inputs.sanitizer == 'TSan' && '--with-openssl="$OPENSSL_DIR" --with-openssl-rpath=auto' || '' }}
-        ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
+        ${{ inputs.free-threading && '--disable-gil' || '' }}
     - name: Build CPython
       run: make -j4
     - name: Display build info
@@ -112,18 +118,18 @@ jobs:
     - name: Parallel tests
       if: >-
         inputs.sanitizer == 'TSan'
-        && fromJSON(inputs.free-threading)
+        && inputs.free-threading
       run: ./python -m test --tsan-parallel --parallel-threads=4 -j4 -W --timeout=600 --slowest
     - name: Display logs
       if: always()
       run: find "${GITHUB_WORKSPACE}" -name 'san_log.*' | xargs head -n 1000
     - name: Archive logs
       if: always()
-      uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
       with:
         name: >-
           ${{ inputs.sanitizer }}-logs-${{
-            fromJSON(inputs.free-threading)
+            inputs.free-threading
             && 'free-threading'
             || 'default'
           }}

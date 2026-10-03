@@ -1,0 +1,4 @@
+:mod:`curses.ascii` predicates and the :func:`~curses.ascii.ctrl` and
+:func:`~curses.ascii.unctrl` functions now accept a :class:`curses.complexchar`.
+:func:`~curses.ascii.ctrl` now returns a non-ASCII argument unchanged instead
+of masking it to a control character.

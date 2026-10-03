@@ -6,7 +6,196 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
-#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+#include "pycore_modsupport.h"    // _PyArg_NoPositional()
+
+PyDoc_STRVAR(_csv_Dialect___reduce____doc__,
+"__reduce__($self, /)\n"
+"--\n"
+"\n"
+"Raise an exception to avoid pickling.");
+
+#define _CSV_DIALECT___REDUCE___METHODDEF    \
+    {"__reduce__", (PyCFunction)_csv_Dialect___reduce__, METH_NOARGS, _csv_Dialect___reduce____doc__},
+
+static PyObject *
+_csv_Dialect___reduce___impl(DialectObj *self);
+
+static PyObject *
+_csv_Dialect___reduce__(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _csv_Dialect___reduce___impl((DialectObj *)self);
+}
+
+PyDoc_STRVAR(_csv_Dialect___reduce_ex____doc__,
+"__reduce_ex__($self, protocol, /)\n"
+"--\n"
+"\n"
+"Raise an exception to avoid pickling.");
+
+#define _CSV_DIALECT___REDUCE_EX___METHODDEF    \
+    {"__reduce_ex__", (PyCFunction)_csv_Dialect___reduce_ex__, METH_O, _csv_Dialect___reduce_ex____doc__},
+
+static PyObject *
+_csv_Dialect___reduce_ex___impl(DialectObj *self, PyObject *protocol);
+
+static PyObject *
+_csv_Dialect___reduce_ex__(PyObject *self, PyObject *protocol)
+{
+    PyObject *return_value = NULL;
+
+    return_value = _csv_Dialect___reduce_ex___impl((DialectObj *)self, protocol);
+
+    return return_value;
+}
+
+PyDoc_STRVAR(_csv_Dialect___replace____doc__,
+"__replace__($self, /, **changes)\n"
+"--\n"
+"\n"
+"Return a copy of the dialect with the specified options replaced.");
+
+#define _CSV_DIALECT___REPLACE___METHODDEF    \
+    {"__replace__", _PyCFunction_CAST(_csv_Dialect___replace__), METH_VARARGS|METH_KEYWORDS, _csv_Dialect___replace____doc__},
+
+static PyObject *
+_csv_Dialect___replace___impl(DialectObj *self, PyObject *changes);
+
+static PyObject *
+_csv_Dialect___replace__(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *changes = NULL;
+
+    if (!_PyArg_NoPositional("__replace__", args)) {
+        goto exit;
+    }
+    if (kwargs == NULL) {
+        changes = PyDict_New();
+        if (changes == NULL) {
+            goto exit;
+        }
+    }
+    else {
+        changes = Py_NewRef(kwargs);
+    }
+    return_value = _csv_Dialect___replace___impl((DialectObj *)self, changes);
+
+exit:
+    /* Cleanup for changes */
+    Py_XDECREF(changes);
+
+    return return_value;
+}
+
+PyDoc_STRVAR(_csv_reader__doc__,
+"reader($module, iterable, dialect=\'excel\', /, **fmtparams)\n"
+"--\n"
+"\n"
+"Return a reader object that will process lines from the given iterable.\n"
+"\n"
+"The \"iterable\" argument can be any object that returns a line\n"
+"of input for each iteration, such as a file object or a list.  The\n"
+"optional \"dialect\" argument defines a CSV dialect.  The function\n"
+"also accepts optional keyword arguments which override settings\n"
+"provided by the dialect.\n"
+"\n"
+"The returned object is an iterator.  Each iteration returns a row\n"
+"of the CSV file (which can span multiple input lines).");
+
+#define _CSV_READER_METHODDEF    \
+    {"reader", _PyCFunction_CAST(_csv_reader), METH_VARARGS|METH_KEYWORDS, _csv_reader__doc__},
+
+static PyObject *
+_csv_reader_impl(PyObject *module, PyObject *iterable, PyObject *dialect,
+                 PyObject *fmtparams);
+
+static PyObject *
+_csv_reader(PyObject *module, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *iterable;
+    PyObject *dialect = NULL;
+    PyObject *fmtparams = NULL;
+
+    if (!_PyArg_CheckPositional("reader", PyTuple_GET_SIZE(args), 1, 2)) {
+        goto exit;
+    }
+    iterable = PyTuple_GET_ITEM(args, 0);
+    if (PyTuple_GET_SIZE(args) < 2) {
+        goto skip_optional;
+    }
+    dialect = PyTuple_GET_ITEM(args, 1);
+skip_optional:
+    if (kwargs == NULL) {
+        fmtparams = PyDict_New();
+        if (fmtparams == NULL) {
+            goto exit;
+        }
+    }
+    else {
+        fmtparams = Py_NewRef(kwargs);
+    }
+    return_value = _csv_reader_impl(module, iterable, dialect, fmtparams);
+
+exit:
+    /* Cleanup for fmtparams */
+    Py_XDECREF(fmtparams);
+
+    return return_value;
+}
+
+PyDoc_STRVAR(_csv_writer__doc__,
+"writer($module, fileobj, dialect=\'excel\', /, **fmtparams)\n"
+"--\n"
+"\n"
+"Return a writer object writing user data to the given file object.\n"
+"\n"
+"The \"fileobj\" argument can be any object that supports the file API.\n"
+"The optional \"dialect\" argument defines a CSV dialect.  The function\n"
+"also accepts optional keyword arguments which override settings\n"
+"provided by the dialect.");
+
+#define _CSV_WRITER_METHODDEF    \
+    {"writer", _PyCFunction_CAST(_csv_writer), METH_VARARGS|METH_KEYWORDS, _csv_writer__doc__},
+
+static PyObject *
+_csv_writer_impl(PyObject *module, PyObject *output_file, PyObject *dialect,
+                 PyObject *fmtparams);
+
+static PyObject *
+_csv_writer(PyObject *module, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *output_file;
+    PyObject *dialect = NULL;
+    PyObject *fmtparams = NULL;
+
+    if (!_PyArg_CheckPositional("writer", PyTuple_GET_SIZE(args), 1, 2)) {
+        goto exit;
+    }
+    output_file = PyTuple_GET_ITEM(args, 0);
+    if (PyTuple_GET_SIZE(args) < 2) {
+        goto skip_optional;
+    }
+    dialect = PyTuple_GET_ITEM(args, 1);
+skip_optional:
+    if (kwargs == NULL) {
+        fmtparams = PyDict_New();
+        if (fmtparams == NULL) {
+            goto exit;
+        }
+    }
+    else {
+        fmtparams = Py_NewRef(kwargs);
+    }
+    return_value = _csv_writer_impl(module, output_file, dialect, fmtparams);
+
+exit:
+    /* Cleanup for fmtparams */
+    Py_XDECREF(fmtparams);
+
+    return return_value;
+}
 
 PyDoc_STRVAR(_csv_list_dialects__doc__,
 "list_dialects($module, /)\n"
@@ -24,6 +213,59 @@ static PyObject *
 _csv_list_dialects(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _csv_list_dialects_impl(module);
+}
+
+PyDoc_STRVAR(_csv_register_dialect__doc__,
+"register_dialect($module, name, dialect=\'excel\', /, **fmtparams)\n"
+"--\n"
+"\n"
+"Create a mapping from a string name to a CVS dialect.\n"
+"\n"
+"The optional \"dialect\" argument specifies the base dialect instance\n"
+"or the name of the registered dialect.  The function also accepts\n"
+"optional keyword arguments which override settings provided by the\n"
+"dialect.");
+
+#define _CSV_REGISTER_DIALECT_METHODDEF    \
+    {"register_dialect", _PyCFunction_CAST(_csv_register_dialect), METH_VARARGS|METH_KEYWORDS, _csv_register_dialect__doc__},
+
+static PyObject *
+_csv_register_dialect_impl(PyObject *module, PyObject *name_obj,
+                           PyObject *dialect_obj, PyObject *fmtparams);
+
+static PyObject *
+_csv_register_dialect(PyObject *module, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *name_obj;
+    PyObject *dialect_obj = NULL;
+    PyObject *fmtparams = NULL;
+
+    if (!_PyArg_CheckPositional("register_dialect", PyTuple_GET_SIZE(args), 1, 2)) {
+        goto exit;
+    }
+    name_obj = PyTuple_GET_ITEM(args, 0);
+    if (PyTuple_GET_SIZE(args) < 2) {
+        goto skip_optional;
+    }
+    dialect_obj = PyTuple_GET_ITEM(args, 1);
+skip_optional:
+    if (kwargs == NULL) {
+        fmtparams = PyDict_New();
+        if (fmtparams == NULL) {
+            goto exit;
+        }
+    }
+    else {
+        fmtparams = Py_NewRef(kwargs);
+    }
+    return_value = _csv_register_dialect_impl(module, name_obj, dialect_obj, fmtparams);
+
+exit:
+    /* Cleanup for fmtparams */
+    Py_XDECREF(fmtparams);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_csv_unregister_dialect__doc__,
@@ -207,4 +449,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ed77cb69fad9f3b4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1a90b8a8ed82497d input=a9049054013a1b77]*/
