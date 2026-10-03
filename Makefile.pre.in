@@ -83,6 +83,7 @@ MAKESETUP=      $(srcdir)/Modules/makesetup
 # Compiler options
 OPT=		@OPT@
 BASECFLAGS=	@BASECFLAGS@
+FRAME_POINTER_CFLAGS=	@FRAME_POINTER_CFLAGS@
 BASECPPFLAGS=	@BASECPPFLAGS@
 CONFIGURE_CFLAGS=	@CFLAGS@
 # CFLAGS_NODIST is used for building the interpreter and stdlib C extensions.
