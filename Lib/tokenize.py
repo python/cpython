@@ -173,7 +173,7 @@ class Untokenizer:
         self.prev_line = ""
         self.encoding = None
 
-    def add_whitespace(self, start):
+    def add_whitespace(self, start, line=""):
         row, col = start
         if row < self.prev_row or row == self.prev_row and col < self.prev_col:
             raise ValueError("start ({},{}) precedes previous end ({},{})"
@@ -181,7 +181,10 @@ class Untokenizer:
         self.add_backslash_continuation(start)
         col_offset = col - self.prev_col
         if col_offset:
-            self.tokens.append(" " * col_offset)
+            if line:
+                self.tokens.append(line[self.prev_col:col])
+            else:
+                self.tokens.append(" " * col_offset)
 
     def add_backslash_continuation(self, start):
         """Add backslash continuation characters if the row has increased
@@ -196,7 +199,7 @@ class Untokenizer:
 
         newline = '\r\n' if self.prev_line.endswith('\r\n') else '\n'
         line = self.prev_line.rstrip('\\\r\n')
-        ws = ''.join(_itertools.takewhile(str.isspace, reversed(line)))
+        ws = line[len(line.rstrip()):]
         self.tokens.append(ws + f"\\{newline}" * row_offset)
         self.prev_col = 0
 
@@ -260,7 +263,7 @@ class Untokenizer:
                     extra_chars = last_line.count("{{") + last_line.count("}}")
                     end = (end_line, end_col + extra_chars)
 
-            self.add_whitespace(start)
+            self.add_whitespace(start, line)
             self.tokens.append(token)
             self.prev_row, self.prev_col = end
             if tok_type in (NEWLINE, NL):
