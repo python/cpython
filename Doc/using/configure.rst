@@ -25,6 +25,11 @@ To build CPython, you will need:
 
 * Support for threads.
 
+* Optionally, a Python interpreter, found by ``configure`` as
+  ``PYTHON_FOR_REGEN``, to build the perf trampoline (see
+  :doc:`/howto/perf_profiling`). Without it, ``configure`` disables the perf
+  trampoline.
+
 .. versionchanged:: 3.5
    On Windows, Visual Studio 2015 or later is now required.
 
