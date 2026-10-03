@@ -1,0 +1,1 @@
+Fix the calculation of constant HAVE_GETVALUE in ``test._test_multiprocessing.py`` test file.
