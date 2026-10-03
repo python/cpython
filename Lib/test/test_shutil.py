@@ -3211,6 +3211,7 @@ class TestMove(BaseTest, unittest.TestCase):
         self.assertRaises(PermissionError, shutil.move, subdir, new_dir)
         self.assertFalse(os.path.exists(new_dir))
 
+    @os_helper.skip_unless_symlink
     def test_no_copied_symlink_left_not_EXDEV(self):
         old_link = os.path.join(self.src_dir, "bar")
         os.symlink(self.src_file, old_link)
