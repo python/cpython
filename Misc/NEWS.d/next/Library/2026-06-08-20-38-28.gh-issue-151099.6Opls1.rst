@@ -1,0 +1,3 @@
+Change :func:`repr` output of :class:`string.templatelib.Template` objects to
+resemble the source code the template was created from, additionally including
+the value of each interpolation.

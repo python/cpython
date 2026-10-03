@@ -208,14 +208,163 @@ template_traverse(PyObject *op, visitproc visit, void *arg)
     return 0;
 }
 
+/* Return the quote character to use for the t-string in the repr: a single
+   quote, unless that would have to be escaped in one of the literal parts and
+   a double quote wouldn't. This mirrors what the repr of a string does. */
+static Py_UCS4
+template_quote(PyObject *strings)
+{
+    int single_quote_found = 0;
+
+    for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(strings); i++) {
+        PyObject *string = PyTuple_GET_ITEM(strings, i);
+        Py_ssize_t len = PyUnicode_GET_LENGTH(string);
+        if (PyUnicode_FindChar(string, '"', 0, len, 1) >= 0) {
+            return '\'';
+        }
+        if (PyUnicode_FindChar(string, '\'', 0, len, 1) >= 0) {
+            single_quote_found = 1;
+        }
+    }
+    return single_quote_found ? '"' : '\'';
+}
+
+/* Write a literal part of the template to 'writer' the way it would appear in
+   the source code of a t-string delimited by 'quote': backslashes, the quote
+   character itself and unprintable characters are escaped, and braces are
+   doubled (since a single brace would start or end an interpolation). */
+static int
+template_write_string(PyUnicodeWriter *writer, PyObject *string, Py_UCS4 quote)
+{
+    Py_ssize_t len = PyUnicode_GET_LENGTH(string);
+    int kind = PyUnicode_KIND(string);
+    const void *data = PyUnicode_DATA(string);
+
+    for (Py_ssize_t i = 0; i < len; i++) {
+        Py_UCS4 ch = PyUnicode_READ(kind, data, i);
+        const char *escape = NULL;
+        switch (ch) {
+            case '\\':
+                escape = "\\\\";
+                break;
+            case '\t':
+                escape = "\\t";
+                break;
+            case '\n':
+                escape = "\\n";
+                break;
+            case '\r':
+                escape = "\\r";
+                break;
+        }
+        if (escape != NULL) {
+            if (PyUnicodeWriter_WriteASCII(writer, escape, 2) < 0) {
+                return -1;
+            }
+        }
+        else if (ch == quote) {
+            if (PyUnicodeWriter_WriteChar(writer, '\\') < 0) {
+                return -1;
+            }
+            if (PyUnicodeWriter_WriteChar(writer, ch) < 0) {
+                return -1;
+            }
+        }
+        else if (ch == '{' || ch == '}') {
+            if (PyUnicodeWriter_WriteChar(writer, ch) < 0) {
+                return -1;
+            }
+            if (PyUnicodeWriter_WriteChar(writer, ch) < 0) {
+                return -1;
+            }
+        }
+        else if (Py_UNICODE_ISPRINTABLE(ch)) {
+            if (PyUnicodeWriter_WriteChar(writer, ch) < 0) {
+                return -1;
+            }
+        }
+        else {
+            const char *format;
+            if (ch <= 0xff) {
+                format = "\\x%02x";
+            }
+            else if (ch <= 0xffff) {
+                format = "\\u%04x";
+            }
+            else {
+                format = "\\U%08x";
+            }
+            if (PyUnicodeWriter_Format(writer, format, ch) < 0) {
+                return -1;
+            }
+        }
+    }
+    return 0;
+}
+
 static PyObject *
 template_repr(PyObject *op)
 {
     templateobject *self = templateobject_CAST(op);
-    return PyUnicode_FromFormat("%s(strings=%R, interpolations=%R)",
-                                _PyType_Name(Py_TYPE(self)),
-                                self->strings,
-                                self->interpolations);
+
+    int res = Py_ReprEnter(op);
+    if (res != 0) {
+        if (res < 0)
+            return NULL;
+        else
+            return PyUnicode_FromFormat("<%s ... at %p>",
+                                        _PyType_Name(Py_TYPE(self)), self);
+    }
+
+    Py_ssize_t stringslen = PyTuple_GET_SIZE(self->strings);
+    Py_ssize_t interpolationslen = PyTuple_GET_SIZE(self->interpolations);
+    Py_UCS4 quote = template_quote(self->strings);
+
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(10);
+    if (writer == NULL) {
+        Py_ReprLeave(op);
+        return NULL;
+    }
+
+    if (PyUnicodeWriter_Format(writer, "<%s t",
+                               _PyType_Name(Py_TYPE(self))) < 0) {
+        goto error;
+    }
+    if (PyUnicodeWriter_WriteChar(writer, quote) < 0) {
+        goto error;
+    }
+
+    /* Render the strings and interpolations interleaved, so that the result
+       resembles the source code the template was created from, but with the
+       value of each interpolation included. */
+    for (Py_ssize_t i = 0; i < stringslen; i++) {
+        PyObject *string = PyTuple_GET_ITEM(self->strings, i);
+        if (template_write_string(writer, string, quote) < 0) {
+            goto error;
+        }
+        if (i < interpolationslen) {
+            PyObject *interpolation = PyTuple_GET_ITEM(self->interpolations, i);
+            if (_PyInterpolation_WriteSource(writer, interpolation) < 0) {
+                goto error;
+            }
+        }
+    }
+
+    if (PyUnicodeWriter_WriteChar(writer, quote) < 0) {
+        goto error;
+    }
+    if (PyUnicodeWriter_Format(writer, " at %p>", self) < 0) {
+        goto error;
+    }
+
+    Py_ReprLeave(op);
+
+    return PyUnicodeWriter_Finish(writer);
+
+error:
+    Py_ReprLeave(op);
+    PyUnicodeWriter_Discard(writer);
+    return NULL;
 }
 
 static PyObject *
