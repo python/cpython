@@ -1,0 +1,2 @@
+Fix :func:`statistics.quantiles` returning unsorted cut points for duplicate
+floats.
