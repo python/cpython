@@ -1,0 +1,1 @@
+Add missing :attr:`Dialect.strict` attribute to :class:`csv.Dialect`.
