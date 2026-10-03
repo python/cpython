@@ -1,0 +1,2 @@
+:func:`wave.open` now raises :exc:`wave.Error` instead of :exc:`EOFError` when
+the ``fmt`` chunk of a WAV file is truncated. Patch by tonghuaroot.
