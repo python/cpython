@@ -935,18 +935,18 @@ Test cases
       provide a better error message in case of failure.
 
 
-   .. method:: assertIs(first, second, msg=None)
-               assertIsNot(first, second, msg=None)
+   .. method:: assertIs(expr1, expr2, msg=None)
+               assertIsNot(expr1, expr2, msg=None)
 
-      Test that *first* and *second* are (or are not) the same object.
+      Test that *expr1* and *expr2* are (or are not) the same object.
 
       .. versionadded:: 3.1
 
 
-   .. method:: assertIsNone(expr, msg=None)
-               assertIsNotNone(expr, msg=None)
+   .. method:: assertIsNone(obj, msg=None)
+               assertIsNotNone(obj, msg=None)
 
-      Test that *expr* is (or is not) ``None``.
+      Test that *obj* is (or is not) ``None``.
 
       .. versionadded:: 3.1
 
@@ -1004,19 +1004,19 @@ Test cases
    | <TestCase.assertNoLogs>`                                |  *logger* with minimum *level*       |            |
    +---------------------------------------------------------+--------------------------------------+------------+
 
-   .. method:: assertRaises(exception, callable, *args, **kwds)
-               assertRaises(exception, *, msg=None)
+   .. method:: assertRaises(expected_exception, callable, *args, **kwds)
+               assertRaises(expected_exception, *, msg=None)
 
       Test that an exception is raised when *callable* is called with any
       positional or keyword arguments that are also passed to
-      :meth:`assertRaises`.  The test passes if *exception* is raised, is an
-      error if another exception is raised, or fails if no exception is raised.
-      To catch any of a group of exceptions, a tuple containing the exception
-      classes may be passed as *exception*.
+      :meth:`assertRaises`.  The test passes if *expected_exception* is
+      raised, is an error if another exception is raised, or fails if no
+      exception is raised.  To catch any of a group of exceptions, a tuple
+      containing the exception classes may be passed as *expected_exception*.
 
-      If only the *exception* and possibly the *msg* arguments are given,
-      return a context manager so that the code under test can be written
-      inline rather than as a function::
+      If only the *expected_exception* and possibly the *msg* arguments are
+      given, return a context manager so that the code under test can be
+      written inline rather than as a function::
 
          with self.assertRaises(SomeException):
              do_something()
@@ -1044,13 +1044,13 @@ Test cases
          Added the *msg* keyword argument when used as a context manager.
 
 
-   .. method:: assertRaisesRegex(exception, regex, callable, *args, **kwds)
-               assertRaisesRegex(exception, regex, *, msg=None)
+   .. method:: assertRaisesRegex(expected_exception, expected_regex, callable, *args, **kwds)
+               assertRaisesRegex(expected_exception, expected_regex, *, msg=None)
 
-      Like :meth:`assertRaises` but also tests that *regex* matches
-      on the string representation of the raised exception.  *regex* may be
-      a regular expression object or a string containing a regular expression
-      suitable for use by :func:`re.search`.  Examples::
+      Like :meth:`assertRaises` but also tests that *expected_regex* matches
+      on the string representation of the raised exception.  *expected_regex*
+      may be a regular expression object or a string containing a regular
+      expression suitable for use by :func:`re.search`.  Examples::
 
          self.assertRaisesRegex(ValueError, "invalid literal for.*XYZ'$",
                                 int, 'XYZ')
@@ -1070,19 +1070,19 @@ Test cases
          Added the *msg* keyword argument when used as a context manager.
 
 
-   .. method:: assertWarns(warning, callable, *args, **kwds)
-               assertWarns(warning, *, msg=None)
+   .. method:: assertWarns(expected_warning, callable, *args, **kwds)
+               assertWarns(expected_warning, *, msg=None)
 
       Test that a warning is triggered when *callable* is called with any
       positional or keyword arguments that are also passed to
-      :meth:`assertWarns`.  The test passes if *warning* is triggered and
-      fails if it isn't.  Any exception is an error.
+      :meth:`assertWarns`.  The test passes if *expected_warning* is triggered
+      and fails if it isn't.  Any exception is an error.
       To catch any of a group of warnings, a tuple containing the warning
-      classes may be passed as *warnings*.
+      classes may be passed as *expected_warning*.
 
-      If only the *warning* and possibly the *msg* arguments are given,
-      return a context manager so that the code under test can be written
-      inline rather than as a function::
+      If only the *expected_warning* and possibly the *msg* arguments are
+      given, return a context manager so that the code under test can be
+      written inline rather than as a function::
 
          with self.assertWarns(SomeWarning):
              do_something()
@@ -1122,13 +1122,13 @@ Test cases
          swallowed.
          Nested context managers are now supported.
 
-   .. method:: assertWarnsRegex(warning, regex, callable, *args, **kwds)
-               assertWarnsRegex(warning, regex, *, msg=None)
+   .. method:: assertWarnsRegex(expected_warning, expected_regex, callable, *args, **kwds)
+               assertWarnsRegex(expected_warning, expected_regex, *, msg=None)
 
-      Like :meth:`assertWarns` but also tests that *regex* matches on the
-      message of the triggered warning.  *regex* may be a regular expression
-      object or a string containing a regular expression suitable for use
-      by :func:`re.search`.  Example::
+      Like :meth:`assertWarns` but also tests that *expected_regex* matches on
+      the message of the triggered warning.  *expected_regex* may be a regular
+      expression object or a string containing a regular expression suitable
+      for use by :func:`re.search`.  Example::
 
          self.assertWarnsRegex(DeprecationWarning,
                                r'legacy_function\(\) is deprecated',
@@ -1297,13 +1297,13 @@ Test cases
          if the objects compare equal.  Added the *delta* keyword argument.
 
 
-   .. method:: assertGreater(first, second, msg=None)
-               assertGreaterEqual(first, second, msg=None)
-               assertLess(first, second, msg=None)
-               assertLessEqual(first, second, msg=None)
+   .. method:: assertGreater(a, b, msg=None)
+               assertGreaterEqual(a, b, msg=None)
+               assertLess(a, b, msg=None)
+               assertLessEqual(a, b, msg=None)
 
-      Test that *first* is respectively >, >=, < or <= than *second* depending
-      on the method name.  If not, the test will fail::
+      Test that *a* is respectively >, >=, < or <= than *b* depending on the
+      method name.  If not, the test will fail::
 
          >>> self.assertGreaterEqual(3, 4)
          AssertionError: "3" unexpectedly not greater than or equal to "4"
@@ -1311,14 +1311,15 @@ Test cases
       .. versionadded:: 3.1
 
 
-   .. method:: assertRegex(text, regex, msg=None)
-               assertNotRegex(text, regex, msg=None)
+   .. method:: assertRegex(text, expected_regex, msg=None)
+               assertNotRegex(text, unexpected_regex, msg=None)
 
-      Test that a *regex* search matches (or does not match) *text*.  In case
+      Test that a regex search matches (or does not match) *text*.  In case
       of failure, the error message will include the pattern and the *text* (or
-      the pattern and the part of *text* that unexpectedly matched).  *regex*
-      may be a regular expression object or a string containing a regular
-      expression suitable for use by :func:`re.search`.
+      the pattern and the part of *text* that unexpectedly matched).
+      *expected_regex* (respectively *unexpected_regex*) may be a regular
+      expression object or a string containing a regular expression suitable
+      for use by :func:`re.search`.
 
       .. versionadded:: 3.1
          Added under the name ``assertRegexpMatches``.
@@ -1430,10 +1431,10 @@ Test cases
       .. versionadded:: 3.1
 
 
-   .. method:: assertSequenceEqual(first, second, msg=None, seq_type=None)
+   .. method:: assertSequenceEqual(seq1, seq2, msg=None, seq_type=None)
 
       Tests that two sequences are equal.  If a *seq_type* is supplied, both
-      *first* and *second* must be instances of *seq_type* or a failure will
+      *seq1* and *seq2* must be instances of *seq_type* or a failure will
       be raised.  If the sequences are different an error message is
       constructed that shows the difference between the two.
 
@@ -1444,8 +1445,8 @@ Test cases
       .. versionadded:: 3.1
 
 
-   .. method:: assertListEqual(first, second, msg=None)
-               assertTupleEqual(first, second, msg=None)
+   .. method:: assertListEqual(list1, list2, msg=None)
+               assertTupleEqual(tuple1, tuple2, msg=None)
 
       Tests that two lists or tuples are equal.  If not, an error message is
       constructed that shows only the differences between the two.  An error
@@ -1456,19 +1457,19 @@ Test cases
       .. versionadded:: 3.1
 
 
-   .. method:: assertSetEqual(first, second, msg=None)
+   .. method:: assertSetEqual(set1, set2, msg=None)
 
       Tests that two sets are equal.  If not, an error message is constructed
       that lists the differences between the sets.  This method is used by
       default when comparing sets or frozensets with :meth:`assertEqual`.
 
-      Fails if either of *first* or *second* does not have a :meth:`~frozenset.difference`
-      method.
+      Fails if either of *set1* or *set2* does not have a
+      :meth:`~frozenset.difference` method.
 
       .. versionadded:: 3.1
 
 
-   .. method:: assertDictEqual(first, second, msg=None)
+   .. method:: assertDictEqual(d1, d2, msg=None)
 
       Test that two dictionaries are equal.  If not, an error message is
       constructed that shows the differences in the dictionaries. This
