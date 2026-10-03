@@ -185,11 +185,12 @@ The :mod:`!functools` module defines the following functions:
    types such as *str* and *int* may be cached separately even when *typed*
    is false.)
 
-   Note, type specificity applies only to the function's immediate arguments
-   rather than their contents.  The scalar arguments, ``Decimal(42)`` and
-   ``Fraction(42)`` are treated as distinct calls with distinct results.
-   In contrast, the tuple arguments ``('answer', Decimal(42))`` and
-   ``('answer', Fraction(42))`` are treated as equivalent.
+   If *typed* is true, type specificity applies only to the function's
+   immediate arguments rather than their contents.  The scalar arguments,
+   ``Decimal(42)`` and ``Fraction(42)`` are treated as distinct calls with
+   distinct results.  In contrast, the tuple arguments
+   ``('answer', Decimal(42))`` and ``('answer', Fraction(42))`` are treated
+   as equivalent.
 
    The wrapped function is instrumented with a :func:`!cache_parameters`
    function that returns a new :class:`dict` showing the values for *maxsize*
