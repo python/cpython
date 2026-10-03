@@ -2054,6 +2054,7 @@ check_pyobject_uninitialized_is_freed(PyObject *self,
 {
     PyObject *op = (PyObject *)PyObject_Malloc(sizeof(PyObject));
     if (op == NULL) {
+        PyErr_NoMemory();
         return NULL;
     }
     /* Initialize reference count to avoid early crash in ceval or GC */
@@ -2070,6 +2071,7 @@ check_pyobject_forbidden_bytes_is_freed(PyObject *self,
     /* Allocate an incomplete PyObject structure: truncate 'ob_type' field */
     PyObject *op = (PyObject *)PyObject_Malloc(offsetof(PyObject, ob_type));
     if (op == NULL) {
+        PyErr_NoMemory();
         return NULL;
     }
     /* Initialize reference count to avoid early crash in ceval or GC */
