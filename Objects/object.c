@@ -3306,8 +3306,8 @@ next" object in the chain to 0.  This can easily lead to stack overflows.
 To avoid that, if the C stack is nearing its limit, instead of calling
 dealloc on the object, it is added to a queue to be freed later when the
 stack is shallower */
-void
-_Py_Dealloc(PyObject *op)
+static Py_NO_INLINE void
+dealloc_general(PyObject *op)
 {
     PyTypeObject *type = Py_TYPE(op);
     unsigned long gc_flag = type->tp_flags & Py_TPFLAGS_HAVE_GC;
@@ -3370,6 +3370,22 @@ _Py_Dealloc(PyObject *op)
     if (gc_flag && tstate->delete_later && margin >= 4) {
         _PyTrash_thread_destroy_chain(tstate);
     }
+}
+
+void
+_Py_Dealloc(PyObject *op)
+{
+#if !defined(Py_DEBUG) && !defined(Py_TRACE_REFS)
+    // gh-130706: Remove unnecessary stack frame for non-GC objects.
+    PyTypeObject *type = Py_TYPE(op);
+    if (_PyRuntime.ref_tracer.tracer_func == NULL
+        && !(type->tp_flags & Py_TPFLAGS_HAVE_GC))
+    {
+        type->tp_dealloc(op);
+        return;
+    }
+#endif
+    dealloc_general(op);
 }
 
 
