@@ -38,7 +38,18 @@ get_type_attr_as_size(PyTypeObject *tp, PyObject *name)
                      name, tp->tp_name);
         return -1;
     }
-    return PyLong_AsSsize_t(v);
+    Py_ssize_t result = PyLong_AsSsize_t(v);
+    if (result < 0 && !PyErr_Occurred()) {
+        // gh-155322: a legitimate (non-overflow) negative value, e.g. the
+        // user set n_fields = -1. Callers treat "< 0" as "an exception is
+        // already set" and bail without formatting their own message, so
+        // we must set one here rather than silently returning -1.
+        PyErr_Format(PyExc_TypeError,
+                     "%.500s: attribute '%U' must be a non-negative integer",
+                     tp->tp_name, name);
+        return -1;
+    }
+    return result;
 }
 
 #define VISIBLE_SIZE(op) Py_SIZE(op)
@@ -52,13 +63,65 @@ get_type_attr_as_size(PyTypeObject *tp, PyObject *name)
     get_type_attr_as_size(tp, &_Py_ID(n_unnamed_fields))
 #define UNNAMED_FIELDS(op) UNNAMED_FIELDS_TP(Py_TYPE(op))
 
+// gh-155322: Hidden slots stored in tp_basicsize beyond tp_members.
+static Py_ssize_t
+structseq_hidden_size(PyTypeObject *type)
+{
+    return (type->tp_basicsize - offsetof(PyStructSequence, ob_item))
+           / sizeof(PyObject *);
+}
+
 static Py_ssize_t
 get_real_size(PyObject *op)
 {
     // Compute the real size from the visible size (i.e., Py_SIZE()) and the
     // number of non-sequence fields accounted for in tp_basicsize.
-    Py_ssize_t hidden = Py_TYPE(op)->tp_basicsize - offsetof(PyStructSequence, ob_item);
-    return Py_SIZE(op) + hidden / sizeof(PyObject *);
+    return Py_SIZE(op) + structseq_hidden_size(Py_TYPE(op));
+}
+
+// gh-155322: Upper bound on visible fields derived from tp_members.
+static Py_ssize_t
+structseq_named_member_count(PyTypeObject *type)
+{
+    Py_ssize_t count = 0;
+    if (type->tp_members != NULL) {
+        while (type->tp_members[count].name != NULL) {
+            count++;
+        }
+    }
+    return count;
+}
+
+// gh-155322: Validate user-modifiable size attributes against the immutable
+// structseq layout.
+static int
+structseq_validate_sizes(PyTypeObject *type, Py_ssize_t n_fields,
+                          Py_ssize_t n_sequence_fields,
+                          Py_ssize_t n_unnamed_fields)
+{
+    Py_ssize_t hidden = structseq_hidden_size(type);
+    Py_ssize_t named_max = structseq_named_member_count(type);
+
+    if (n_unnamed_fields < 0 || n_unnamed_fields > n_sequence_fields) {
+        PyErr_Format(PyExc_TypeError,
+                     "%.500s: n_unnamed_fields (%zd) is invalid",
+                     type->tp_name, n_unnamed_fields);
+        return -1;
+    }
+    if (n_sequence_fields < 0 || n_sequence_fields > named_max) {
+        PyErr_Format(PyExc_TypeError,
+                     "%.500s: n_sequence_fields (%zd) is invalid",
+                     type->tp_name, n_sequence_fields);
+        return -1;
+    }
+    if (n_fields != n_sequence_fields + hidden) {
+        PyErr_Format(PyExc_TypeError,
+                     "%.500s: n_fields (%zd) is inconsistent with "
+                     "n_sequence_fields (%zd)",
+                     type->tp_name, n_fields, n_sequence_fields);
+        return -1;
+    }
+    return 0;
 }
 
 PyObject *
@@ -71,6 +134,11 @@ PyStructSequence_New(PyTypeObject *type)
     }
     Py_ssize_t vsize = VISIBLE_SIZE_TP(type);
     if (vsize < 0) {
+        return NULL;
+    }
+
+    // gh-155322: Validate the type's declared layout before allocating.
+    if (structseq_validate_sizes(type, size, vsize, 0) < 0) {
         return NULL;
     }
 
@@ -180,6 +248,11 @@ structseq_new_impl(PyTypeObject *type, PyObject *arg, PyObject *dict)
     }
     n_unnamed_fields = UNNAMED_FIELDS_TP(type);
     if (n_unnamed_fields < 0) {
+        return NULL;
+    }
+
+    // gh-155322: Validate the declared layout before indexing tp_members.
+    if (structseq_validate_sizes(type, max_len, min_len, n_unnamed_fields) < 0) {
         return NULL;
     }
 
