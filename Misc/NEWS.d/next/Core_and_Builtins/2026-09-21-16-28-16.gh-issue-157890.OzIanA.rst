@@ -1,0 +1,2 @@
+Raise :exc:`SyntaxError` instead of :exc:`UnicodeDecodeError` for malformed
+Unicode character name escapes in f-string and t-string format specifiers.

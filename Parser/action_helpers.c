@@ -1505,8 +1505,9 @@ expr_ty _PyPegen_decoded_constant_from_token(Parser* p, Token* tok) {
 
     int is_raw = tok->is_raw;
 
-    PyObject* str = _PyPegen_decode_string(p, is_raw, bstr, bsize, tok);
+    PyObject *str = _PyPegen_decode_string(p, is_raw, bstr, bsize, tok);
     if (str == NULL) {
+        _Pypegen_raise_decode_error(p);
         return NULL;
     }
     if (_PyArena_AddPyObject(p->arena, str) < 0) {

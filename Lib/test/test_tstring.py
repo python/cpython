@@ -356,6 +356,11 @@ class TestTString(unittest.TestCase, TStringBaseCase):
             with self.subTest(case), self.assertRaisesRegex(SyntaxError, err):
                 eval(case)
 
+        # Malformed Unicode escapes in format specifiers are decoded
+        # through a separate parser path.
+        with self.assertRaises(SyntaxError):
+            eval(r"t'{x:\N}'")
+
     def test_runtime_errors(self):
         # Test missing variables
         with self.assertRaises(NameError):
