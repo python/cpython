@@ -1441,9 +1441,9 @@ class BytesTest(BaseBytesTest, unittest.TestCase):
     @support.cpython_only
     def test_repeat_singleton(self):
         for b in b'', b'x', b"abc":
-            for repeat in (0, -23):
-                self.assertIs(b * repeat, b'')
-                self.assertIs(self.type2test(b) * repeat, b'')
+            self.assertIs(b * 1, b)
+            self.assertIs(b * 0, b'')
+            self.assertIs(b * -23, b'')
 
 
 class ByteArrayTest(BaseBytesTest, unittest.TestCase):
