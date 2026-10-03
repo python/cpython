@@ -1,4 +1,6 @@
 import collections
+import errno
+import os
 import subprocess
 import warnings
 import os
@@ -148,7 +150,7 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
 
     def _check_proc(self):
         if self._proc is None:
-            raise ProcessLookupError()
+            raise ProcessLookupError(errno.ESRCH, os.strerror(errno.ESRCH))
 
     if sys.platform == 'win32':
         def send_signal(self, signal):
