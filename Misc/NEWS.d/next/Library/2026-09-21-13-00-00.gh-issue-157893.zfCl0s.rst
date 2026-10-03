@@ -1,0 +1,3 @@
+:meth:`zipfile.ZipFile.testzip`, :meth:`~zipfile.ZipFile.extract` and
+:meth:`~zipfile.ZipFile.extractall` now consistently raise :exc:`ValueError`
+on a closed :class:`~zipfile.ZipFile` before touching the filesystem.
