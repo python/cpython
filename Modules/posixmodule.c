@@ -10138,9 +10138,7 @@ os_getlogin_impl(PyObject *module)
         errno = old_errno;
     }
     else {
-#ifdef _Py_MEMORY_SANITIZER
-        __msan_unpoison(name, sizeof(name));
-#endif
+        _Py_MSAN_UNPOISON(name, sizeof(name));
         result = PyUnicode_DecodeFSDefault(name);
     }
 #else
