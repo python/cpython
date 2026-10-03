@@ -1,0 +1,3 @@
+Ensure that :func:`hashlib.file_digest` honors the current position of the
+file object when given an :class:`io.BytesIO` object. Patch by Bénédikt
+Tran.
