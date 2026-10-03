@@ -160,6 +160,22 @@ type_issubtype(PyObject *module, PyObject *args)
 }
 
 
+// Test PyType_GenericAlloc()
+static PyObject *
+type_genericalloc(PyObject *module, PyObject *args)
+{
+    PyObject *arg;
+    Py_ssize_t nitems = 0;
+    if (!PyArg_ParseTuple(args, "O|n", &arg, &nitems)) {
+        return NULL;
+    }
+    NULLABLE(arg);
+    PyTypeObject *type = (PyTypeObject *)arg;
+
+    return PyType_GenericAlloc(type, nitems);
+}
+
+
 static PyMethodDef test_methods[] = {
     {"get_heaptype_for_name", get_heaptype_for_name, METH_NOARGS},
     {"get_type_name", get_type_name, METH_O},
@@ -172,6 +188,7 @@ static PyMethodDef test_methods[] = {
     {"type_clearcache", type_clearcache, METH_NOARGS},
     {"type_getflags", type_getflags, METH_O},
     {"type_issubtype", type_issubtype, METH_VARARGS},
+    {"type_genericalloc", type_genericalloc, METH_VARARGS},
     {NULL},
 };
 

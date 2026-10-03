@@ -157,6 +157,18 @@ type_get_tp_mro(PyObject *self, PyObject *arg)
 }
 
 
+// Test PyType_SUPPORTS_WEAKREFS()
+static PyObject *
+type_supports_weakrefs(PyObject *self, PyObject *arg)
+{
+    NULLABLE(arg);
+    PyTypeObject *type = (PyTypeObject*)arg;
+
+    int res = PyType_SUPPORTS_WEAKREFS(type);
+    return PyLong_FromLong(res);
+}
+
+
 static PyMethodDef test_methods[] = {
     {"test_get_type_dict", test_get_type_dict, METH_NOARGS},
     {"test_get_statictype_slots", test_get_statictype_slots,     METH_NOARGS},
@@ -164,6 +176,7 @@ static PyMethodDef test_methods[] = {
     {"type_assign_version", type_assign_version, METH_O, PyDoc_STR("PyUnstable_Type_AssignVersionTag")},
     {"type_get_tp_bases", type_get_tp_bases, METH_O},
     {"type_get_tp_mro", type_get_tp_mro, METH_O},
+    {"type_supports_weakrefs", type_supports_weakrefs, METH_O, PyDoc_STR("PyType_SUPPORTS_WEAKREFS(type)")},
     {NULL},
 };
 

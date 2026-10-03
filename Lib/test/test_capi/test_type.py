@@ -495,3 +495,39 @@ class TypeTests(unittest.TestCase):
 
         # CRASHES type_modified(NULL)
         # CRASHES type_modified({}): argument must be a type
+
+    def test_type_genericalloc(self):
+        # Test PyType_GenericAlloc()
+        type_genericalloc = _testlimitedcapi.type_genericalloc
+
+        class HeapType:
+            pass
+
+        obj = type_genericalloc(HeapType)
+        self.assertIsInstance(obj, HeapType)
+
+        obj2 = type_genericalloc(HeapType, 0)
+        self.assertIsInstance(obj2, HeapType)
+
+        # CRASHES type_genericalloc(NULL)
+        # CRASHES type_genericalloc(123): argument must be a type
+
+    def test_type_supports_weakrefs(self):
+        # Test PyType_SUPPORTS_WEAKREFS()
+        type_supports_weakrefs = _testcapi.type_supports_weakrefs
+
+        class WithWeakref:
+            pass
+
+        class NoWeakref:
+            __slots__ = ('x',)
+
+        self.assertTrue(type_supports_weakrefs(WithWeakref))
+        self.assertFalse(type_supports_weakrefs(NoWeakref))
+        self.assertFalse(type_supports_weakrefs(int))
+        self.assertFalse(type_supports_weakrefs(str))
+        self.assertFalse(type_supports_weakrefs(list))
+        self.assertFalse(type_supports_weakrefs(dict))
+
+        # CRASHES type_supports_weakrefs(NULL)
+        # CRASHES type_supports_weakrefs(123): argument must be a type
