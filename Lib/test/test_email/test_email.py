@@ -400,6 +400,18 @@ class TestMessageAPI(TestEmailBase):
         filename = msg.get_filename()
         self.assertEqual(filename, 'foo bar.txt')
 
+    def test_continuation_with_hyphenated_name(self):
+        # gh-130110: parameter names containing hyphens were not recognized
+        # as RFC 2231 continuations and were left undecoded.
+        msg = email.message_from_string(
+            "Content-Disposition: attachment; "
+            "file-name*0*=\"utf-8''start\"; "
+            "file-name*1*=\"-middle-\"; "
+            "file-name*2*=\"end\"\n"
+        )
+        value = msg.get_param('file-name', header='content-disposition')
+        self.assertEqual(value, ('utf-8', '', 'start-middle-end'))
+
     def test_sorting_no_continuations(self):
         msg = email.message_from_string(
             "Content-Disposition: attachment; "
