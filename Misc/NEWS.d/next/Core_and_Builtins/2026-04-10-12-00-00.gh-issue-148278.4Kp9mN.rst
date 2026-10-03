@@ -1,0 +1,4 @@
+Fix exception table coverage for ``try`` blocks: pseudo ``SETUP_FINALLY`` and
+``POP_BLOCK`` instructions are now labeled with the active handler, so
+``continue`` inside ``try``/``except`` and other minimal try bodies handle
+pending exceptions and tracing like the rest of the protected region.
