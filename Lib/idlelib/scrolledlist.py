@@ -2,6 +2,7 @@ from tkinter import *
 from tkinter.ttk import Frame, Scrollbar
 
 from idlelib import macosx
+from idlelib.config import idleConf
 
 
 class ScrolledList:
@@ -15,8 +16,9 @@ class ScrolledList:
         self.frame.pack(fill="both", expand=1)
         self.vbar = vbar = Scrollbar(frame, name="vbar")
         self.vbar.pack(side="right", fill="y")
+        theme = idleConf.CurrentTheme()
         self.listbox = listbox = Listbox(frame, exportselection=0,
-            background="white")
+            **idleConf.GetHighlight(theme, 'normal'))
         if options:
             listbox.configure(options)
         listbox.pack(expand=1, fill="both")
