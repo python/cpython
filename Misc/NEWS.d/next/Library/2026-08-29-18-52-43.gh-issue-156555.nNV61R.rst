@@ -1,0 +1,3 @@
+Fix a crash in :class:`sqlite3.Row` when it is given a
+:class:`sqlite3.Cursor` whose ``__init__()`` was not called; it now raises
+:exc:`sqlite3.ProgrammingError` instead.
