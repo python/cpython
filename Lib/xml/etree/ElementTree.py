@@ -98,6 +98,7 @@ import collections.abc
 import contextlib
 import weakref
 
+from .. import is_valid_name
 from . import ElementPath
 
 
@@ -1029,6 +1030,29 @@ _serialize = {
 }
 
 
+_XML_NAMESPACE = "http://www.w3.org/XML/1998/namespace"
+_XMLNS_NAMESPACE = "http://www.w3.org/2000/xmlns/"
+
+def _check_prefix(prefix, uri):
+    # Check a namespace prefix and the namespace URI bound to it
+    # (see Namespaces in XML 1.0, 3 and 4).  The empty prefix is allowed.
+    if not isinstance(prefix, str) or not isinstance(uri, str):
+        raise TypeError("namespace prefix and URI must be strings")
+    if re.match(r"ns\d+$", prefix):
+        raise ValueError("Prefix format reserved for internal use")
+    if prefix == "xml":
+        if uri != _XML_NAMESPACE:
+            raise ValueError("the 'xml' prefix can only be bound to "
+                             "the XML namespace")
+    elif uri == _XML_NAMESPACE:
+        raise ValueError("the XML namespace can only be bound to "
+                         "the 'xml' prefix")
+    elif prefix == "xmlns" or uri == _XMLNS_NAMESPACE:
+        raise ValueError("the 'xmlns' prefix cannot be bound")
+    elif prefix and (not is_valid_name(prefix) or ':' in prefix):
+        raise ValueError("invalid namespace prefix %r" % (prefix,))
+
+
 def register_namespace(prefix, uri):
     """Register a namespace prefix.
 
@@ -1041,8 +1065,7 @@ def register_namespace(prefix, uri):
     ValueError is raised if prefix is reserved or is invalid.
 
     """
-    if re.match(r"ns\d+$", prefix):
-        raise ValueError("Prefix format reserved for internal use")
+    _check_prefix(prefix, uri)
     for k, v in list(_namespace_map.items()):
         if k == uri or v == prefix:
             del _namespace_map[k]
