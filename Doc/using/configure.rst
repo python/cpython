@@ -1434,107 +1434,87 @@ Main build steps
 Main Makefile targets
 ---------------------
 
-make
-^^^^
+.. make-target:: make
 
-For the most part, when rebuilding after editing some code or
-refreshing your checkout from upstream, all you need to do is execute
-``make``, which (per Make's semantics) builds the default target, the
-first one defined in the Makefile.  By tradition (including in the
-CPython project) this is usually the ``all`` target. The
-``configure`` script expands an ``autoconf`` variable,
-``@DEF_MAKE_ALL_RULE@`` to describe precisely which targets ``make
-all`` will build. The three choices are:
+   For the most part, when rebuilding after editing some code or
+   refreshing your checkout from upstream, all you need to do is execute
+   ``make``, which (per Make's semantics) builds the default target, the
+   first one defined in the Makefile.  By tradition (including in the
+   CPython project) this is usually the ``all`` target. The
+   ``configure`` script expands an ``autoconf`` variable,
+   ``@DEF_MAKE_ALL_RULE@`` to describe precisely which targets ``make
+   all`` will build. The three choices are:
 
-* ``profile-opt`` (configured with ``--enable-optimizations``)
-* ``build_wasm`` (chosen if the host platform matches ``wasm32-wasi*`` or
-  ``wasm32-emscripten``)
-* ``build_all`` (configured without explicitly using either of the others)
+   * ``profile-opt`` (configured with ``--enable-optimizations``)
+   * ``build_wasm`` (chosen if the host platform matches ``wasm32-wasi*`` or
+     ``wasm32-emscripten``)
+   * ``build_all`` (configured without explicitly using either of the others)
 
-Depending on the most recent source file changes, Make will rebuild
-any targets (object files and executables) deemed out-of-date,
-including running ``configure`` again if necessary. Source/target
-dependencies are many and maintained manually however, so Make
-sometimes doesn't have all the information necessary to correctly
-detect all targets which need to be rebuilt.  Depending on which
-targets aren't rebuilt, you might experience a number of problems. If
-you have build or test problems which you can't otherwise explain,
-``make clean && make`` should work around most dependency problems, at
-the expense of longer build times.
+   Depending on the most recent source file changes, Make will rebuild
+   any targets (object files and executables) deemed out-of-date,
+   including running ``configure`` again if necessary. Source/target
+   dependencies are many and maintained manually however, so Make
+   sometimes doesn't have all the information necessary to correctly
+   detect all targets which need to be rebuilt.  Depending on which
+   targets aren't rebuilt, you might experience a number of problems. If
+   you have build or test problems which you can't otherwise explain,
+   ``make clean && make`` should work around most dependency problems, at
+   the expense of longer build times.
 
+.. make-target:: make platform
 
-make platform
-^^^^^^^^^^^^^
+   Build the ``python`` program, but don't build the standard library
+   extension modules. This generates a file named ``platform`` which
+   contains a single line describing the details of the build platform,
+   e.g., ``macosx-14.3-arm64-3.12`` or ``linux-x86_64-3.13``.
 
-Build the ``python`` program, but don't build the standard library
-extension modules. This generates a file named ``platform`` which
-contains a single line describing the details of the build platform,
-e.g., ``macosx-14.3-arm64-3.12`` or ``linux-x86_64-3.13``.
+.. make-target:: make profile-opt
 
+   Build Python using profile-guided optimization (PGO).  You can use the
+   configure :option:`--enable-optimizations` option to make this the
+   default target of the ``make`` command (``make all`` or just
+   ``make``).
 
-make profile-opt
-^^^^^^^^^^^^^^^^
+.. make-target:: make clean
 
-Build Python using profile-guided optimization (PGO).  You can use the
-configure :option:`--enable-optimizations` option to make this the
-default target of the ``make`` command (``make all`` or just
-``make``).
+   Remove built files.
 
+.. make-target:: make distclean
 
+   In addition to the work done by ``make clean``, remove files
+   created by the configure script.  ``configure`` will have to be run
+   before building again. [#]_
 
-make clean
-^^^^^^^^^^
+.. make-target:: make install
 
-Remove built files.
+   Build the ``all`` target and install Python.
 
+.. make-target:: make test
 
-make distclean
-^^^^^^^^^^^^^^
+   Build the ``all`` target and run the Python test suite with the
+   ``--fast-ci`` option without GUI tests. Variables:
 
-In addition to the work done by ``make clean``, remove files
-created by the configure script.  ``configure`` will have to be run
-before building again. [#]_
+   * ``TESTOPTS``: additional regrtest command-line options.
+   * ``TESTPYTHONOPTS``: additional Python command-line options.
+   * ``TESTTIMEOUT``: timeout in seconds (default: 10 minutes).
 
+.. make-target:: make ci
 
-make install
-^^^^^^^^^^^^
+   This is similar to ``make test``, but uses the ``-ugui`` to also run GUI tests.
 
-Build the ``all`` target and install Python.
+   .. versionadded:: 3.14
 
+.. make-target:: make buildbottest
 
-make test
-^^^^^^^^^
+   This is similar to ``make test``, but uses the ``--slow-ci``
+   option and default timeout of 20 minutes, instead of ``--fast-ci`` option.
 
-Build the ``all`` target and run the Python test suite with the
-``--fast-ci`` option without GUI tests. Variables:
+.. make-target:: make regen-all
 
-* ``TESTOPTS``: additional regrtest command-line options.
-* ``TESTPYTHONOPTS``: additional Python command-line options.
-* ``TESTTIMEOUT``: timeout in seconds (default: 10 minutes).
-
-
-make ci
-^^^^^^^
-
-This is similar to ``make test``, but uses the ``-ugui`` to also run GUI tests.
-
-.. versionadded:: 3.14
-
-
-make buildbottest
-^^^^^^^^^^^^^^^^^
-
-This is similar to ``make test``, but uses the ``--slow-ci``
-option and default timeout of 20 minutes, instead of ``--fast-ci`` option.
-
-
-make regen-all
-^^^^^^^^^^^^^^
-
-Regenerate (almost) all generated files. These include (but are not
-limited to) bytecode cases, and parser generator file.
-``make regen-stdlib-module-names`` and ``autoconf`` must be run
-separately for the remaining `generated files <#generated-files>`_.
+   Regenerate (almost) all generated files. These include (but are not
+   limited to) bytecode cases, and parser generator file.
+   ``make regen-stdlib-module-names`` and ``autoconf`` must be run
+   separately for the remaining `generated files <#generated-files>`_.
 
 
 C extensions
