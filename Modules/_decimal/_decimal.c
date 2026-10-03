@@ -3321,6 +3321,7 @@ PyDec_FromObject(PyObject *v, PyObject *context)
 }
 
 /*[clinic input]
+@vectorcall
 @classmethod
 _decimal.Decimal.__new__ as dec_new
 
@@ -3337,7 +3338,7 @@ trap is active.
 
 static PyObject *
 dec_new_impl(PyTypeObject *type, PyObject *value, PyObject *context)
-/*[clinic end generated code: output=35f48a40c65625ba input=5f8a0892d3fcef80]*/
+/*[clinic end generated code: output=35f48a40c65625ba input=0e5ca99183562cd9]*/
 {
     decimal_state *state = get_module_state_by_def(type);
     CONTEXT_CHECK_VA(state, context);
@@ -6198,6 +6199,7 @@ static PyType_Slot dec_slots[] = {
     {Py_tp_methods, dec_methods},
     {Py_tp_getset, dec_getsets},
     {Py_tp_new, dec_new},
+    {Py_tp_vectorcall, dec_vectorcall},
 
     // Number protocol
     {Py_nb_add, nm_mpd_qadd},
