@@ -10,6 +10,7 @@
 #include "Python.h"
 #include "pycore_call.h"                // _PyObject_CallNoArgs()
 #include "pycore_fileutils.h"           // _PyFile_Flush
+#include "pycore_memoryobject.h"        // _PyMemoryView_FromBufferProc()
 #include "pycore_object.h"              // _PyObject_GC_UNTRACK()
 #include "pycore_pyerrors.h"            // _Py_FatalErrorFormat()
 #include "pycore_pylifecycle.h"         // _Py_IsInterpreterFinalizing()
@@ -253,6 +254,10 @@ typedef struct {
     /* Just after the last byte waiting to be written, or -1 if the buffer
        isn't ready for writing. */
     Py_off_t write_end;
+
+    /* Region handed to the raw stream by _bufferedreader_raw_read(). */
+    char *raw_read_start;
+    Py_ssize_t raw_read_len;
 
     PyThread_type_lock lock;
     volatile unsigned long owner;
@@ -1619,16 +1624,25 @@ _io_BufferedReader___init___impl(buffered *self, PyObject *raw,
     return 0;
 }
 
+/* The memoryview passed to raw.readinto() owns a reference to the buffered
+   object so that storing it in Python code cannot outlive its memory. */
+static int
+_bufferedreader_raw_read_getbuffer(PyObject *op, Py_buffer *view, int flags)
+{
+    buffered *self = buffered_CAST(op);
+    return PyBuffer_FillInfo(view, op, self->raw_read_start,
+                             self->raw_read_len, 0, flags);
+}
+
 static Py_ssize_t
 _bufferedreader_raw_read(buffered *self, char *start, Py_ssize_t len)
 {
-    Py_buffer buf;
     PyObject *memobj, *res;
     Py_ssize_t n;
-    /* NOTE: the buffer needn't be released as its object is NULL. */
-    if (PyBuffer_FillInfo(&buf, NULL, start, len, 0, PyBUF_CONTIG) == -1)
-        return -1;
-    memobj = PyMemoryView_FromBuffer(&buf);
+    self->raw_read_start = start;
+    self->raw_read_len = len;
+    memobj = _PyMemoryView_FromBufferProc((PyObject *)self, PyBUF_CONTIG,
+                                          _bufferedreader_raw_read_getbuffer);
     if (memobj == NULL)
         return -1;
     /* NOTE: PyErr_SetFromErrno() calls PyErr_CheckSignals() when EINTR
