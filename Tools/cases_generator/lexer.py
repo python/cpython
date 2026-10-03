@@ -389,7 +389,8 @@ if __name__ == "__main__":
     if filename == "-c":
         src = sys.argv[2]
     else:
-        src = open(filename).read()
+        with open(filename, encoding="utf-8") as f:
+            src = f.read()
     # print(to_text(tokenize(src)))
     for tkn in tokenize(src, filename=filename):
         print(tkn)
