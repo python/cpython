@@ -1614,10 +1614,15 @@ _PyBytes_Concat(PyObject *a, PyObject *b)
         goto done;
     }
 
-    result = bytes_alloc(va.len + vb.len);
-    if (result != NULL) {
-        memcpy(PyBytes_AS_STRING(result), va.buf, va.len);
-        memcpy(PyBytes_AS_STRING(result) + va.len, vb.buf, vb.len);
+    if ((va.len + vb.len) != 0) {
+        result = bytes_alloc(va.len + vb.len);
+        if (result != NULL) {
+            memcpy(PyBytes_AS_STRING(result), va.buf, va.len);
+            memcpy(PyBytes_AS_STRING(result) + va.len, vb.buf, vb.len);
+        }
+    }
+    else {
+        result = bytes_get_empty();
     }
 
   done:

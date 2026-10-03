@@ -410,6 +410,8 @@ class BaseBytesTest:
         self.assertRaises(TypeError, lambda: b1 + "def")
         self.assertRaises(TypeError, lambda: "abc" + b2)
 
+        self.assertEqual(self.type2test() + memoryview(b''), b'')
+
     def test_repeat(self):
         for b in b"abc", self.type2test(b"abc"):
             self.assertEqual(b * 3, b"abcabcabc")
@@ -1439,7 +1441,19 @@ class BytesTest(BaseBytesTest, unittest.TestCase):
         self.assertNotEqual(id(s), id(s * 2))
 
     @support.cpython_only
-    def test_repeat_singleton(self):
+    def test_concat_cpython(self):
+        # Test optimizations
+        empty = b''
+        s = b"abc"
+        self.assertIs(s + empty, s)
+        self.assertIs(empty + s, s)
+
+        self.assertIs(empty + bytearray(b''), empty)
+        self.assertIs(empty + memoryview(b''), empty)
+
+    @support.cpython_only
+    def test_repeat_cpython(self):
+        # Test optimizations
         for b in b'', b'x', b"abc":
             self.assertIs(b * 1, b)
             self.assertIs(b * 0, b'')
