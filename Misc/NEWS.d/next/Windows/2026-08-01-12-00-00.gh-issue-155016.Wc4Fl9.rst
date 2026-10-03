@@ -1,0 +1,4 @@
+Fix encoding to Windows code pages which only support conversion with
+``dwFlags`` set to 0: ISO-2022 (50220, 50221, 50222, 50225, 50227 and 50229),
+HZ-GB2312 (52936), GB18030 (54936) and ISCII (57002--57011).  Previously
+encoding to them always failed with :exc:`OSError`.
