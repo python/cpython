@@ -46,7 +46,7 @@
    when researching a change.
 
 This article explains the new features in Python 3.15, compared to 3.14.
-Python 3.15 was released on 1 October 2026.
+Python 3.15 was released on 9 October 2026.
 For full details, see the :ref:`changelog <changelog>`.
 
 .. seealso::
