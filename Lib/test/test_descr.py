@@ -5145,6 +5145,85 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         self.assertEqual(x["y"], 42)
         self.assertEqual(x, -x)
 
+    def test_mixing_mapping_assignment_slot_wrappers(self):
+        class SetOnly(dict):
+            def __setitem__(self, key, value):
+                super().__setitem__(key, value + 1)
+
+        class DelOnly(dict):
+            def __delitem__(self, key):
+                super().__delitem__(key)
+
+        obj = SetOnly()
+        obj["x"] = 1
+        self.assertEqual(obj, {"x": 2})
+        del obj["x"]
+        self.assertEqual(obj, {})
+        with self.assertRaises(KeyError) as cm:
+            del obj["missing"]
+        self.assertEqual(cm.exception.args, ("missing",))
+
+        obj = DelOnly()
+        obj["x"] = 1
+        self.assertEqual(obj, {"x": 1})
+        del obj["x"]
+        self.assertEqual(obj, {})
+
+        class SetOnlyList(list):
+            def __setitem__(self, key, value):
+                super().__setitem__(key, value)
+
+        obj = SetOnlyList([1, 2, 3])
+        del obj[1:]
+        self.assertEqual(obj, [1])
+
+    def test_mapping_assignment_slot_wrapper_fallback(self):
+        class ReturnSetWrapper:
+            def __get__(self, obj, owner=None):
+                return dict.__setitem__
+
+        class ReturnDeleteWrapper:
+            def __get__(self, obj, owner=None):
+                return dict.__delitem__
+
+        class X(dict):
+            __setitem__ = ReturnSetWrapper()
+
+            def __delitem__(self, key):
+                super().__delitem__(key)
+
+        with self.assertRaisesRegex(TypeError, "requires a 'dict' object"):
+            X()["key"] = "value"
+
+        class Y(dict):
+            def __setitem__(self, key, value):
+                super().__setitem__(key, value)
+
+            __delitem__ = ReturnDeleteWrapper()
+
+        with self.assertRaisesRegex(TypeError, "requires a 'dict' object"):
+            del Y()["key"]
+
+        from collections import OrderedDict
+
+        class WrongOwner(dict):
+            __setitem__ = OrderedDict.__setitem__
+
+            def __delitem__(self, key):
+                super().__delitem__(key)
+
+        with self.assertRaises(TypeError):
+            WrongOwner()["key"] = "value"
+
+        class WrongOperation(dict):
+            __setitem__ = dict.__delitem__
+
+            def __delitem__(self, key):
+                super().__delitem__(key)
+
+        with self.assertRaises(TypeError):
+            WrongOperation()["key"] = "value"
+
     def test_wrong_class_slot_wrapper(self):
         # Check bpo-37619: a wrapper descriptor taken from the wrong class
         # should raise an exception instead of silently being ignored
