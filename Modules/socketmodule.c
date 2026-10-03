@@ -6404,6 +6404,20 @@ _socket_gethostbyaddr(PyObject *module, PyObject *hobj)
         PyErr_SetString(PyExc_OSError, "unsupported address family");
         goto finally;
     }
+#if defined(__sun) && defined(ENABLE_IPV6)
+    /* Solaris gethostbyaddr supports AF_INET only; use platform
+       specific and AF_INET6 capable getipnodebyaddr instead. */
+    if (af == AF_INET6) {
+        Py_BEGIN_ALLOW_THREADS
+        h = getipnodebyaddr(ap, al, af, &h_error);
+        Py_END_ALLOW_THREADS
+        ret = gethost_common(state, h, SAS2SA(&addr), sizeof(addr), af, h_error);
+        if (h != NULL) {
+            freehostent(h);
+        }
+        goto finally;
+    }
+#endif
     Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_GETHOSTBYNAME_R
 #if   defined(HAVE_GETHOSTBYNAME_R_6_ARG)
