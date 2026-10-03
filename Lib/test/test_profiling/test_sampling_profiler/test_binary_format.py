@@ -952,6 +952,26 @@ class TestBinaryEdgeCases(BinaryFormatTestBase):
         self.assertIn((0, 1), reader_collector.by_thread)
         self.assertEqual(len(reader_collector.by_thread[(0, 1)]), 2)
 
+    def test_writer_failed_sample_does_not_advance_timestamp(self):
+        """A rejected frame must not shift later timestamps."""
+        with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as f:
+            filename = f.name
+        self.temp_files.append(filename)
+
+        good = [make_interpreter(0, [make_thread(1, [make_frame("a.py", 1, "f")])])]
+        bad = [make_interpreter(0, [make_thread(1, [make_frame(42, 1, "f")])])]
+
+        with _remote_debugging.BinaryWriter(filename, 1000, 0) as writer:
+            writer.write_sample(good, 1000)
+            with self.assertRaises(TypeError):
+                writer.write_sample(bad, 5000)
+            writer.write_sample(good, 6000)
+
+        collector = TimestampCollector()
+        with BinaryReader(filename) as reader:
+            reader.replay_samples(collector)
+        self.assertEqual(collector.all_timestamps, [1000, 6000])
+
     def test_writer_total_samples_after_finalize_matches_reader(self):
         """BinaryWriter.total_samples after finalize() matches the reader's count."""
         # Five IDENTICAL samples force every sample beyond the first into the

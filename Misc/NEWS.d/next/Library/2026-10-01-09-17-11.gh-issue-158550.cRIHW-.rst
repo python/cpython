@@ -1,0 +1,2 @@
+Fix incorrect timestamps in Tachyon binary profiles after a sample fails to be
+written.  Patch by Maurycy Pawłowski-Wieronski.

@@ -950,7 +950,6 @@ process_thread_sample(BinaryWriter *writer, PyObject *thread_info,
 
     /* Calculate timestamp delta */
     uint64_t delta = timestamp_us - entry->prev_timestamp;
-    entry->prev_timestamp = timestamp_us;
 
     /* Process frames and build current stack */
     uint32_t curr_stack[MAX_STACK_DEPTH];
@@ -1006,6 +1005,7 @@ process_thread_sample(BinaryWriter *writer, PyObject *thread_info,
         entry->prev_stack_depth = curr_depth;
     }
 
+    entry->prev_timestamp = timestamp_us;
     writer->total_samples++;
     return 0;
 }
