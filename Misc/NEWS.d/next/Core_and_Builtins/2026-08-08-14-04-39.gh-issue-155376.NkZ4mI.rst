@@ -1,0 +1,2 @@
+Fix a crash in :func:`super` when an uninitialized ``super`` object created
+with ``super.__new__(super)`` was used as a descriptor.
