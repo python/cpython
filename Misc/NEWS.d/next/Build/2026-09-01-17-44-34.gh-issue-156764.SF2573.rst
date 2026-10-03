@@ -1,0 +1,2 @@
+Fix the default handling of the ``safety`` configure option and the
+``--disable-*`` handling of the ``safety`` and ``slower-safety`` options.
