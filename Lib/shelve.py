@@ -236,9 +236,9 @@ class DbfilenameShelf(Shelf):
     """
 
     def __init__(self, filename, flag='c', protocol=None, writeback=False, *,
-                 serializer=None, deserializer=None):
+                 mode=0o666, serializer=None, deserializer=None):
         import dbm
-        Shelf.__init__(self, dbm.open(filename, flag), protocol, writeback,
+        Shelf.__init__(self, dbm.open(filename, flag, mode), protocol, writeback,
                        serializer=serializer, deserializer=deserializer)
 
     def clear(self):
@@ -249,7 +249,7 @@ class DbfilenameShelf(Shelf):
         self.dict.clear()
 
 def open(filename, flag='c', protocol=None, writeback=False, *,
-         serializer=None, deserializer=None):
+         mode=0o666, serializer=None, deserializer=None):
     """Open a persistent dictionary for reading and writing.
 
     The filename parameter is the base filename for the underlying
@@ -257,10 +257,12 @@ def open(filename, flag='c', protocol=None, writeback=False, *,
     filename and more than one file may be created.  The optional flag
     parameter has the same interpretation as the flag parameter of
     dbm.open(). The optional protocol parameter specifies the
-    version of the pickle protocol.
+    version of the pickle protocol. The optional mode parameter is
+    passed to dbm.open() and controls the file mode when creating a
+    new shelf, set to 0666 by default.
 
     See the module's __doc__ string for an overview of the interface.
     """
 
-    return DbfilenameShelf(filename, flag, protocol, writeback,
+    return DbfilenameShelf(filename, flag, protocol, writeback, mode=mode,
                            serializer=serializer, deserializer=deserializer)
