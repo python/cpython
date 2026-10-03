@@ -1438,6 +1438,13 @@ class BytesTest(BaseBytesTest, unittest.TestCase):
         self.assertNotEqual(id(s), id(1 * s))
         self.assertNotEqual(id(s), id(s * 2))
 
+    @support.cpython_only
+    def test_repeat_singleton(self):
+        for b in b'', b'x', b"abc":
+            for repeat in (0, -23):
+                self.assertIs(b * repeat, b'')
+                self.assertIs(self.type2test(b) * repeat, b'')
+
 
 class ByteArrayTest(BaseBytesTest, unittest.TestCase):
     type2test = bytearray
