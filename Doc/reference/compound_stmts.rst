@@ -1845,6 +1845,18 @@ is accessed. To this end, the default value is evaluated in a separate
 for a type parameter, the ``__default__`` attribute is set to the special
 sentinel object :data:`typing.NoDefault`.
 
+A default value may refer to type parameters that appear earlier in the same
+type parameter list. Such a reference is replaced by the value that was
+supplied for that type parameter::
+
+   class Bar[T, S = list[T]]: ...
+
+   Bar[int]  # equivalent to Bar[int, list[int]]
+
+Referring to a type parameter that does not appear earlier in the same type
+parameter list, including the type parameter itself, raises :exc:`TypeError`
+when the default is used.
+
 The following example indicates the full set of allowed type parameter declarations::
 
    def overly_generic[
