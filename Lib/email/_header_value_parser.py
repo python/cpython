@@ -152,7 +152,10 @@ class TokenList(list):
 
     @property
     def all_defects(self):
-        return sum((x.all_defects for x in self), self.defects)
+        defects = list(self.defects)
+        for x in self:
+            defects.extend(x.all_defects)
+        return defects
 
     def startswith_fws(self):
         return self[0].startswith_fws()
@@ -1859,8 +1862,10 @@ def get_invalid_mailbox(value, endchars):
     invalid_mailbox = InvalidMailbox()
     while value and value[0] not in endchars:
         if value[0] in PHRASE_ENDS:
-            invalid_mailbox.append(ValueTerminal(value[0],
-                                                 'misplaced-special'))
+            special = ValueTerminal(value[0], 'misplaced-special')
+            special.defects.append(errors.InvalidHeaderDefect(
+                "misplaced special character {!r}".format(value[0])))
+            invalid_mailbox.append(special)
             value = value[1:]
         else:
             token, value = get_phrase(value)
