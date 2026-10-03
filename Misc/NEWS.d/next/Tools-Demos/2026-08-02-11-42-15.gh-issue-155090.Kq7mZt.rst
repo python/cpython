@@ -1,0 +1,4 @@
+``Tools/ftscalingbench`` now uses every performance core on processors that
+clock some of them higher than others, such as Intel parts with Turbo Boost
+Max 3.0. It previously kept only the fastest cores and ran with fewer threads
+than the machine offered.
