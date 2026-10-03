@@ -1657,6 +1657,81 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_winapi_OpenThread__doc__,
+"OpenThread($module, desired_access, inherit_handle, thread_id, /)\n"
+"--\n"
+"\n");
+
+#define _WINAPI_OPENTHREAD_METHODDEF    \
+    {"OpenThread", _PyCFunction_CAST(_winapi_OpenThread), METH_FASTCALL, _winapi_OpenThread__doc__},
+
+static HANDLE
+_winapi_OpenThread_impl(PyObject *module, DWORD desired_access,
+                        BOOL inherit_handle, DWORD thread_id);
+
+static PyObject *
+_winapi_OpenThread(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    DWORD desired_access;
+    BOOL inherit_handle;
+    DWORD thread_id;
+    HANDLE _return_value;
+
+    if (!_PyArg_CheckPositional("OpenThread", nargs, 3, 3)) {
+        goto exit;
+    }
+    if (!_PyLong_UnsignedLong_Converter(args[0], &desired_access)) {
+        goto exit;
+    }
+    inherit_handle = PyLong_AsInt(args[1]);
+    if (inherit_handle == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (!_PyLong_UnsignedLong_Converter(args[2], &thread_id)) {
+        goto exit;
+    }
+    _return_value = _winapi_OpenThread_impl(module, desired_access, inherit_handle, thread_id);
+    if ((_return_value == INVALID_HANDLE_VALUE) && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (_return_value == NULL) {
+        Py_RETURN_NONE;
+    }
+    return_value = HANDLE_TO_PYNUM(_return_value);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_winapi_CancelSynchronousIo__doc__,
+"CancelSynchronousIo($module, thread, /)\n"
+"--\n"
+"\n"
+"Cancel pending synchronous I/O issued by the specified thread.");
+
+#define _WINAPI_CANCELSYNCHRONOUSIO_METHODDEF    \
+    {"CancelSynchronousIo", (PyCFunction)_winapi_CancelSynchronousIo, METH_O, _winapi_CancelSynchronousIo__doc__},
+
+static PyObject *
+_winapi_CancelSynchronousIo_impl(PyObject *module, HANDLE thread);
+
+static PyObject *
+_winapi_CancelSynchronousIo(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    HANDLE thread;
+
+    thread = PyLong_AsVoidPtr(arg);
+    if (!thread && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = _winapi_CancelSynchronousIo_impl(module, thread);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_winapi_PeekNamedPipe__doc__,
 "PeekNamedPipe($module, handle, size=0, /)\n"
 "--\n"
@@ -3057,4 +3132,4 @@ _winapi_GetTickCount64(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef _WINAPI_GETSHORTPATHNAME_METHODDEF
     #define _WINAPI_GETSHORTPATHNAME_METHODDEF
 #endif /* !defined(_WINAPI_GETSHORTPATHNAME_METHODDEF) */
-/*[clinic end generated code: output=8173751196d44211 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=dd093fb3083ee507 input=a9049054013a1b77]*/
