@@ -1,0 +1,2 @@
+The function :func:`math.copysign` no longer sets ``errno`` to zero.
+Contributed by High Performance Kernels LLC.

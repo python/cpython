@@ -1030,8 +1030,9 @@ math_2(PyObject *const *args, Py_ssize_t nargs,
        double (*func) (double, double), const char *funcname)
 {
     double x, y, r;
-    if (!_PyArg_CheckPositional(funcname, nargs, 2, 2))
+    if (!_PyArg_CheckPositional(funcname, nargs, 2, 2)) {
         return NULL;
+    }
     x = PyFloat_AsDouble(args[0]);
     if (x == -1.0 && PyErr_Occurred()) {
         return NULL;
@@ -1068,8 +1069,9 @@ math_2ne(PyObject *const *args, Py_ssize_t nargs,
          double (*func) (double, double), const char *funcname)
 {
     double x, y, r;
-    if (!_PyArg_CheckPositional(funcname, nargs, 2, 2))
+    if (!_PyArg_CheckPositional(funcname, nargs, 2, 2)) {
         return NULL;
+    }
     x = PyFloat_AsDouble(args[0]);
     if (x == -1.0 && PyErr_Occurred()) {
         return NULL;
