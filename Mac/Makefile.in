@@ -19,6 +19,9 @@ LDFLAGS=@LDFLAGS@
 FRAMEWORKUNIXTOOLSPREFIX=@FRAMEWORKUNIXTOOLSPREFIX@
 PYTHONFRAMEWORK=@PYTHONFRAMEWORK@
 PYTHONFRAMEWORKIDENTIFIER=@PYTHONFRAMEWORKIDENTIFIER@
+PYTHONFRAMEWORKDIR=@PYTHONFRAMEWORKDIR@
+PYTHONFRAMEWORKPREFIX=@PYTHONFRAMEWORKPREFIX@
+PYTHONFRAMEWORKINSTALLNAMEPREFIX=@PYTHONFRAMEWORKINSTALLNAMEPREFIX@
 LIPO_32BIT_FLAGS=@LIPO_32BIT_FLAGS@
 LIPO_INTEL64_FLAGS=@LIPO_INTEL64_FLAGS@
 CC=@CC@
@@ -173,7 +176,8 @@ altinstallunixtools:
 	fi
 
 pythonw: $(srcdir)/Tools/pythonw.c Makefile
-	$(CC) $(LDFLAGS) -DPYTHONFRAMEWORK='"$(PYTHONFRAMEWORK)"' -o $@ \
+	$(CC) $(LDFLAGS) -Wl,-headerpad_max_install_names \
+		-DPYTHONFRAMEWORK='"$(PYTHONFRAMEWORK)"' -o $@ \
 		$(srcdir)/Tools/pythonw.c -I.. -I$(srcdir)/../Include \
 		../$(PYTHONFRAMEWORK).framework/Versions/$(VERSION)/$(PYTHONFRAMEWORK)
 
@@ -224,6 +228,13 @@ install_Python:
 		done; \
 	done
 	$(INSTALL_PROGRAM) $(STRIPFLAG) $(BUILDPYTHON) "$(DESTDIR)$(APPINSTALLDIR)/Contents/MacOS/$(PYTHONFRAMEWORK)"
+	@# Use @rpath to avoid encoded actual prefix in Python.app
+	install_name_tool \
+		-change $(PYTHONFRAMEWORKINSTALLNAMEPREFIX)/$(PYTHONFRAMEWORK) \
+			@rpath/$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK) \
+		-add_rpath @executable_path/`$(RUNSHARED) $(BUILDPYTHON) -c \
+			"import os; print(os.path.relpath('$(PYTHONFRAMEWORKPREFIX)', '$(APPINSTALLDIR)/Contents/MacOS'))"` \
+		"$(DESTDIR)$(APPINSTALLDIR)/Contents/MacOS/$(PYTHONFRAMEWORK)"
 	sed -e "s!%bundleid%!$(PYTHONFRAMEWORKIDENTIFIER)!g" \
 		-e "s!%version%!`$(RUNSHARED) $(BUILDPYTHON) \
 		-c 'import platform; print(platform.python_version())'`!g" \
