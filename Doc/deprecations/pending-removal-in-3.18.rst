@@ -16,3 +16,12 @@ Pending removal in Python 3.18
   * ``import`` lines in :file:`{name}.pth` files are silently ignored.
 
   (Contributed by Barry Warsaw in :gh:`148641`.)
+
+* :mod:`functools`:
+
+  * Using a return annotation to infer the dispatch type for
+    :func:`functools.singledispatch` or
+    :class:`functools.singledispatchmethod` is deprecated since Python 3.16
+    and will raise :exc:`TypeError` in Python 3.18. Annotate the dispatch
+    parameter or pass the dispatch type explicitly instead.
+    (Contributed by Bartosz Sławecki in :gh:`143465`.)
