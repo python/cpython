@@ -1146,9 +1146,7 @@ class StreamHandler(Handler):
         If a formatter is specified, it is used to format the record.
         The record is then written to the stream with a trailing newline.  If
         exception information is present, it is formatted using
-        traceback.print_exception and appended to the stream.  If the stream
-        has an 'encoding' attribute, it is used to determine how to do the
-        output to the stream.
+        traceback.print_exception and appended to the stream.
         """
         try:
             msg = self.format(record)
@@ -1747,9 +1745,11 @@ class Logger(Filterer):
         Pass a record to all relevant handlers.
 
         Loop through all handlers for this logger and its parents in the
-        logger hierarchy. If no handler was found, output a one-off error
-        message to sys.stderr. Stop searching up the hierarchy whenever a
-        logger with the "propagate" attribute set to zero is found - that
+        logger hierarchy. If no handler was found, the record is passed to
+        lastResort, if set and if the record's level is appropriate. If
+        lastResort is not set and raiseExceptions is true, output a one-off
+        error message to sys.stderr. Stop searching up the hierarchy whenever
+        a logger with the "propagate" attribute set to zero is found - that
         will be the last logger whose handlers are called.
         """
         c = self
@@ -2055,7 +2055,7 @@ def basicConfig(**kwargs):
     level     Set the root logger level to the specified level.
     stream    Use the specified stream to initialize the StreamHandler. Note
               that this argument is incompatible with 'filename' - if both
-              are present, 'stream' is ignored.
+              are present, a ValueError is raised.
     handlers  If specified, this should be an iterable of already created
               handlers, which will be added to the root logger. Any handler
               in the list which does not have a formatter assigned will be
@@ -2093,9 +2093,8 @@ def basicConfig(**kwargs):
     .. versionchanged:: 3.3
        Added the ``handlers`` parameter. A ``ValueError`` is now thrown for
        incompatible arguments (e.g. ``handlers`` specified together with
-       ``filename``/``filemode``, or ``filename``/``filemode`` specified
-       together with ``stream``, or ``handlers`` specified together with
-       ``stream``.
+       ``filename`` or ``stream``, or ``stream`` specified together with
+       ``filename``).
 
     .. versionchanged:: 3.8
        Added the ``force`` parameter.

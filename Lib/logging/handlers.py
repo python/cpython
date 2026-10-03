@@ -1026,8 +1026,7 @@ class SysLogHandler(logging.Handler):
         """
         Emit a record.
 
-        The record is formatted, and then sent to the syslog server. If
-        exception information is present, it is NOT sent to the server.
+        The record is formatted, and then sent to the syslog server.
         """
         try:
             msg = self.format(record)
@@ -1083,7 +1082,7 @@ class SMTPHandler(logging.Handler):
         certificate file. (This tuple is passed to the
         `ssl.SSLContext.load_cert_chain` method).
         A timeout in seconds can be specified for the SMTP connection (the
-        default is one second).
+        default is five seconds).
         """
         logging.Handler.__init__(self)
         if isinstance(mailhost, (list, tuple)):
@@ -1525,15 +1524,17 @@ class QueueHandler(logging.Handler):
         enqueued.
 
         The base implementation formats the record to merge the message and
-        arguments, and removes unpickleable items from the record in-place.
-        Specifically, it overwrites the record's `msg` and
+        arguments, and removes unpickleable items from a copy of the record.
+        Specifically, it overwrites the copy's `msg` and
         `message` attributes with the merged message (obtained by
         calling the handler's `format` method), and sets the `args`,
-        `exc_info` and `exc_text` attributes to None.
+        `exc_info`, `exc_text` and `stack_info` attributes to None.
+
+        These changes are made on the copy, so they do not affect the original
+        record.
 
         You might want to override this method if you want to convert
-        the record to a dict or JSON string, or send a modified copy
-        of the record while leaving the original intact.
+        the record to a dict or JSON string.
         """
         # The format operation gets traceback text into record.exc_text
         # (if there's exception data), and also returns the formatted
