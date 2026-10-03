@@ -702,6 +702,28 @@ class MinidomTest(unittest.TestCase):
                 '<child xmlns="" xmlnsabc="v"/></root>')
         dom.unlink()
 
+    def testWriteXMLOwnDefaultNamespaceDeclaration(self):
+        # An element in no namespace which declares the default namespace
+        # itself is written with that declaration only.
+        dom = Document()
+        svg = dom.appendChild(dom.createElement("svg"))
+        svg.setAttribute("xmlns", "http://www.w3.org/2000/svg")
+        svg.appendChild(dom.createElement("g"))
+        self.assertEqual(dom.documentElement.toxml(),
+                '<svg xmlns="http://www.w3.org/2000/svg"><g/></svg>')
+        dom.unlink()
+
+        dom = Document()
+        root = dom.appendChild(
+            dom.createElementNS("http://xml.python.org/ns", "root"))
+        svg = root.appendChild(dom.createElement("svg"))
+        svg.setAttribute("xmlns", "http://www.w3.org/2000/svg")
+        svg.appendChild(dom.createElement("g"))
+        self.assertEqual(dom.documentElement.toxml(),
+                '<root xmlns="http://xml.python.org/ns">'
+                '<svg xmlns="http://www.w3.org/2000/svg"><g/></svg></root>')
+        dom.unlink()
+
     def testWriteXMLDoesNotModifyDocument(self):
         dom = Document()
         root = dom.appendChild(
