@@ -9,6 +9,7 @@ extern "C" {
 #endif
 
 #  define PyTuple_MAXSAVESIZE 20     // Largest tuple to save on freelist
+#  define PyBytes_FREELIST_BUCKETS 8
 #  define Py_tuple_MAXFREELIST 2000  // Maximum number of tuples of each size to save
 #  define Py_lists_MAXFREELIST 80
 #  define Py_list_iters_MAXFREELIST 10
@@ -28,6 +29,7 @@ extern "C" {
 #  define Py_object_stack_chunks_MAXFREELIST 4
 #  define Py_unicode_writers_MAXFREELIST 1
 #  define Py_bytes_writers_MAXFREELIST 1
+#  define Py_bytes_MAXFREELIST 20
 #  define Py_pycfunctionobject_MAXFREELIST 16
 #  define Py_pycmethodobject_MAXFREELIST 16
 #  define Py_pymethodobjects_MAXFREELIST 20
@@ -63,6 +65,7 @@ struct _Py_freelists {
     struct _Py_freelist object_stack_chunks;
     struct _Py_freelist unicode_writers;
     struct _Py_freelist bytes_writers;
+    struct _Py_freelist bytes[PyBytes_FREELIST_BUCKETS];
     struct _Py_freelist pycfunctionobject;
     struct _Py_freelist pycmethodobject;
     struct _Py_freelist pymethodobjects;

@@ -952,6 +952,9 @@ _PyObject_ClearFreeLists(struct _Py_freelists *freelists, int is_finalization)
     }
     clear_freelist(&freelists->unicode_writers, is_finalization, PyMem_Free);
     clear_freelist(&freelists->bytes_writers, is_finalization, PyMem_Free);
+    for (Py_ssize_t i = 0; i < PyBytes_FREELIST_BUCKETS; i++) {
+        clear_freelist(&freelists->bytes[i], is_finalization, PyObject_Free);
+    }
     clear_freelist(&freelists->ints, is_finalization, free_object);
     clear_freelist(&freelists->pycfunctionobject, is_finalization, PyObject_GC_Del);
     clear_freelist(&freelists->pycmethodobject, is_finalization, PyObject_GC_Del);

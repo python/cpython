@@ -28,6 +28,19 @@ class bytes "PyBytesObject *" "&PyBytes_Type"
 #include "clinic/bytesobject.c.h"
 
 #define PyBytesObject_SIZE _PyBytesObject_SIZE
+#define FREELIST_MAX_SIZE 255
+#define PyBytes_FREELIST_BUCKET(size) ((size) / 32)
+
+static inline Py_ssize_t
+PyBytes_FREELIST_ALLOC(Py_ssize_t size)
+{
+    if (size <= FREELIST_MAX_SIZE) {
+        return (PyBytes_FREELIST_BUCKET(size) * 32 + 31);
+    }
+    else {
+        return size;
+    }
+}
 
 /* Forward declaration */
 static void* _PyBytesWriter_ResizeAndUpdatePointer(PyBytesWriter *writer,
@@ -116,10 +129,28 @@ _PyBytes_FromSize(Py_ssize_t size, int use_calloc)
     }
 
     /* Inline PyObject_NewVar */
-    if (use_calloc)
-        op = (PyBytesObject *)PyObject_Calloc(1, PyBytesObject_SIZE + size);
-    else
-        op = (PyBytesObject *)PyObject_Malloc(PyBytesObject_SIZE + size);
+    if (size <= FREELIST_MAX_SIZE) {
+        Py_ssize_t alloc = PyBytes_FREELIST_ALLOC(size);
+        Py_ssize_t bucket = PyBytes_FREELIST_BUCKET(size);
+        op = _Py_FREELIST_POP_MEM(bytes[bucket]);
+        if (op != NULL) {
+            if (use_calloc) {
+                memset(op, 0, PyBytesObject_SIZE + alloc);
+            }
+        }
+        else {
+            if (use_calloc)
+                op = (PyBytesObject *)PyObject_Calloc(1, PyBytesObject_SIZE + alloc);
+            else
+                op = (PyBytesObject *)PyObject_Malloc(PyBytesObject_SIZE + alloc);
+        }
+    }
+    else {
+        if (use_calloc)
+            op = (PyBytesObject *)PyObject_Calloc(1, PyBytesObject_SIZE + size);
+        else
+            op = (PyBytesObject *)PyObject_Malloc(PyBytesObject_SIZE + size);
+    }
     if (op == NULL) {
         return PyErr_NoMemory();
     }
@@ -165,11 +196,6 @@ PyBytes_FromString(const char *str)
 
     assert(str != NULL);
     size = strlen(str);
-    if (size > PY_SSIZE_T_MAX - PyBytesObject_SIZE) {
-        PyErr_SetString(PyExc_OverflowError,
-            "byte string is too long");
-        return NULL;
-    }
 
     if (size == 0) {
         return bytes_get_empty();
@@ -179,12 +205,10 @@ PyBytes_FromString(const char *str)
     }
 
     /* Inline PyObject_NewVar */
-    op = (PyBytesObject *)PyObject_Malloc(PyBytesObject_SIZE + size);
+    op = (PyBytesObject *)_PyBytes_FromSize(size, 0);
     if (op == NULL) {
         return PyErr_NoMemory();
     }
-    _PyObject_InitVar((PyVarObject*)op, &PyBytes_Type, size);
-    set_ob_shash(op, -1);
     memcpy(op->ob_sval, str, size+1);
     return (PyObject *) op;
 }
@@ -1604,19 +1628,10 @@ _PyBytes_Repeat(PyObject *self, Py_ssize_t n)
     if (size == Py_SIZE(a) && PyBytes_CheckExact(a)) {
         return Py_NewRef(a);
     }
-    size_t nbytes = (size_t)size;
-    if (nbytes + PyBytesObject_SIZE <= nbytes) {
-        PyErr_SetString(PyExc_OverflowError,
-            "repeated bytes are too long");
-        return NULL;
-    }
-    PyBytesObject *op = PyObject_Malloc(PyBytesObject_SIZE + nbytes);
+    PyBytesObject *op = (PyBytesObject *)_PyBytes_FromSize(size, 0);
     if (op == NULL) {
         return PyErr_NoMemory();
     }
-    _PyObject_InitVar((PyVarObject*)op, &PyBytes_Type, size);
-    set_ob_shash(op, -1);
-    op->ob_sval[size] = '\0';
 
     _PyBytes_RepeatBuffer(op->ob_sval, size, a->ob_sval, Py_SIZE(a));
 
@@ -3212,16 +3227,28 @@ _PyBytes_CheckOverflow(PyObject *self, void *addr, const char *type_name)
                              type_name, addr, size);
     }
 }
+#endif
 
 
 static void
 bytes_dealloc(PyObject *op)
 {
     PyBytesObject *self = _PyBytes_CAST(op);
+    PyTypeObject *type = Py_TYPE(self);
+    Py_ssize_t size = PyBytes_GET_SIZE(self);
+#ifdef Py_DEBUG
     _PyBytes_CheckOverflow(op, op, "bytes");
-    Py_TYPE(self)->tp_free((PyObject *)self);
-}
 #endif
+    if (size <= FREELIST_MAX_SIZE && type == &PyBytes_Type) {
+        Py_ssize_t bucket = PyBytes_FREELIST_BUCKET(size);
+        if (!_Py_FREELIST_PUSH(bytes[bucket], op, Py_bytes_MAXFREELIST)) {
+            PyObject_Free(op);
+        }
+    }
+    else {
+        type->tp_free((PyObject *)self);
+    }
+}
 
 
 PyTypeObject PyBytes_Type = {
@@ -3229,11 +3256,7 @@ PyTypeObject PyBytes_Type = {
     "bytes",
     PyBytesObject_SIZE,
     sizeof(char),
-#ifdef Py_DEBUG
     bytes_dealloc,                              /* tp_dealloc */
-#else
-    0,                                          /* tp_dealloc */
-#endif
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
@@ -3377,7 +3400,9 @@ bytes_resize_inplace(PyObject **pv, Py_ssize_t newsize)
     // Only mutable bytes can be resized in-place
     assert(_PyBytes_IsMutable(v));
 
-    if ((size_t)newsize > (size_t)PY_SSIZE_T_MAX - PyBytesObject_SIZE) {
+#define FREELIST_MAX_SIZE 255
+    Py_ssize_t alloc = PyBytes_FREELIST_ALLOC(newsize);
+    if ((size_t)alloc > (size_t)PY_SSIZE_T_MAX - PyBytesObject_SIZE) {
         PyErr_SetString(PyExc_OverflowError,
                         "byte string is too large");
         return -1;
@@ -3388,7 +3413,7 @@ bytes_resize_inplace(PyObject **pv, Py_ssize_t newsize)
 #endif
     _PyReftracerTrack(v, PyRefTracer_DESTROY);
 
-    PyObject *result = PyObject_Realloc(v, PyBytesObject_SIZE + newsize);
+    PyObject *result = PyObject_Realloc(v, PyBytesObject_SIZE + alloc);
     if (result == NULL) {
 #ifdef Py_TRACE_REFS
         _Py_AddToAllObjects(v);
