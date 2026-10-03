@@ -29,7 +29,6 @@ class MyMapping(dict):
         return self.mapping
 
 
-@threading_helper.reap_threads
 @threading_helper.requires_working_threading()
 class TestJsonEncoding(CTest):
     # Test encoding json with concurrent threads modifying the data cannot
