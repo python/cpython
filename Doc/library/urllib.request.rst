@@ -512,6 +512,31 @@ The following classes are provided:
    Process HTTP error responses.
 
 
+.. class:: HTTPGzipHandler()
+
+   Request and transparently decode gzip-compressed responses.
+
+   This handler is not one of the handlers installed by :func:`build_opener`
+   by default; pass it explicitly to opt in::
+
+      opener = urllib.request.build_opener(urllib.request.HTTPGzipHandler)
+      with opener.open("http://www.example.com/") as response:
+          body = response.read()
+
+   Unless the request already has an :mailheader:`Accept-Encoding` header,
+   the handler adds ``Accept-Encoding: gzip``.  If the response is then sent
+   with ``Content-Encoding: gzip``, its body is decoded as it is read and the
+   :mailheader:`Content-Encoding` and :mailheader:`Content-Length` headers,
+   which describe the compressed body, are removed.  If the request already
+   carries an :mailheader:`Accept-Encoding` header, the response is returned
+   unchanged, so a caller that asked for compressed data can decode it itself.
+
+   Only ``gzip`` is supported.  The :mod:`zlib` module is required;
+   constructing the handler without it raises :exc:`ImportError`.
+
+   .. versionadded:: next
+
+
 .. _request-objects:
 
 Request Objects
