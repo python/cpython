@@ -1305,9 +1305,7 @@ _buffered_readline(buffered *self, Py_ssize_t limit)
     }
 
 found:
-    if (locked) {
-        LEAVE_BUFFERED(self)
-    }
+    LEAVE_BUFFERED(self)
     return PyBytesWriter_Finish(writer);
 
 error:
