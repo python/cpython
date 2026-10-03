@@ -57,7 +57,6 @@
   #define _PY_DEC_ROUND_GUARD (MPD_ROUND_GUARD-1)
 #endif
 
-#include "clinic/_decimal.c.h"
 
 #define MPD_SPEC_VERSION "1.70"  // Highest version of the spec this complies with
                                  // See https://speleotrove.com/decimal/decarith.html
@@ -66,8 +65,9 @@
 module _decimal
 class _decimal.Decimal "PyObject *" "&dec_spec"
 class _decimal.Context "PyObject *" "&context_spec"
+class _decimal.ContextManager "PyDecContextManagerObject *" "&ctxmanager_spec"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=a6a6c0bdf4e576ef]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=52b8c97cabc5bf05]*/
 
 struct PyDecContextObject;
 struct DecCondMap;
@@ -233,6 +233,8 @@ typedef struct {
     PyObject *local;
     PyObject *global;
 } PyDecContextManagerObject;
+
+#include "clinic/_decimal.c.h"
 
 #define _PyDecContextManagerObject_CAST(op) ((PyDecContextManagerObject *)(op))
 
@@ -1333,32 +1335,37 @@ context_setattr(PyObject *self, PyObject *name, PyObject *value)
     return PyObject_GenericSetAttr(self, name, value);
 }
 
+/* In the constructor None means "not specified". */
+#define NONE_TO_NULL(x) ((x) == Py_None ? NULL : (x))
+
+/* Set the given attributes.  An attribute is left unchanged if the
+   corresponding argument is NULL. */
 static int
 context_setattrs(PyObject *self, PyObject *prec, PyObject *rounding,
                  PyObject *emin, PyObject *emax, PyObject *capitals,
                  PyObject *clamp, PyObject *status, PyObject *traps) {
 
     int ret;
-    if (prec != Py_None && context_setprec(self, prec, NULL) < 0) {
+    if (prec != NULL && context_setprec(self, prec, NULL) < 0) {
         return -1;
     }
-    if (rounding != Py_None && context_setround(self, rounding, NULL) < 0) {
+    if (rounding != NULL && context_setround(self, rounding, NULL) < 0) {
         return -1;
     }
-    if (emin != Py_None && context_setemin(self, emin, NULL) < 0) {
+    if (emin != NULL && context_setemin(self, emin, NULL) < 0) {
         return -1;
     }
-    if (emax != Py_None && context_setemax(self, emax, NULL) < 0) {
+    if (emax != NULL && context_setemax(self, emax, NULL) < 0) {
         return -1;
     }
-    if (capitals != Py_None && context_setcapitals(self, capitals, NULL) < 0) {
+    if (capitals != NULL && context_setcapitals(self, capitals, NULL) < 0) {
         return -1;
     }
-    if (clamp != Py_None && context_setclamp(self, clamp, NULL) < 0) {
+    if (clamp != NULL && context_setclamp(self, clamp, NULL) < 0) {
        return -1;
     }
 
-    if (traps != Py_None) {
+    if (traps != NULL) {
         if (PyList_Check(traps)) {
             ret = context_settraps_list(self, traps);
         }
@@ -1374,7 +1381,7 @@ context_setattrs(PyObject *self, PyObject *prec, PyObject *rounding,
             return ret;
         }
     }
-    if (status != Py_None) {
+    if (status != NULL) {
         if (PyList_Check(status)) {
             ret = context_setstatus_list(self, status);
         }
@@ -1499,6 +1506,20 @@ static int
 context_clear(PyObject *op)
 {
     PyDecContextObject *self = _PyDecContextObject_CAST(op);
+    /* Since traps and flags hold a borrowed reference to the
+       flags stored in the context object, these references need
+       to be cleared when the context object is deallocated
+       because traps and flags can survive. See gh-146011. */
+    PyDecSignalDictObject *traps = _PyDecSignalDictObject_CAST(self->traps);
+    PyDecSignalDictObject *flags = _PyDecSignalDictObject_CAST(self->flags);
+
+    if (traps != NULL) {
+        traps->flags = NULL;
+    }
+    if (flags != NULL) {
+        flags->flags = NULL;
+    }
+
     Py_CLEAR(self->traps);
     Py_CLEAR(self->flags);
     return 0;
@@ -1545,10 +1566,11 @@ context_init_impl(PyObject *self, PyObject *prec, PyObject *rounding,
                   PyObject *clamp, PyObject *status, PyObject *traps)
 /*[clinic end generated code: output=8bfdc59fbe862f44 input=45c704b93cd02959]*/
 {
+    /* The context has already been initialized with the default values. */
     return context_setattrs(
-        self, prec, rounding,
-        emin, emax, capitals,
-        clamp, status, traps
+        self, NONE_TO_NULL(prec), NONE_TO_NULL(rounding),
+        NONE_TO_NULL(emin), NONE_TO_NULL(emax), NONE_TO_NULL(capitals),
+        NONE_TO_NULL(clamp), NONE_TO_NULL(status), NONE_TO_NULL(traps)
     );
 }
 
@@ -1676,12 +1698,12 @@ _decimal.Context.copy
 
     cls: defining_class
 
-Return a duplicate of the context with all flags cleared.
+Return a duplicate of the context.
 [clinic start generated code]*/
 
 static PyObject *
 _decimal_Context_copy_impl(PyObject *self, PyTypeObject *cls)
-/*[clinic end generated code: output=31c9c8eeb0c0cf77 input=aef1c0bddabdf8f0]*/
+/*[clinic end generated code: output=31c9c8eeb0c0cf77 input=87f8b92b1c7462a5]*/
 {
     decimal_state *state = PyType_GetModuleState(cls);
 
@@ -1700,6 +1722,47 @@ _decimal_Context___copy___impl(PyObject *self, PyTypeObject *cls)
     decimal_state *state = PyType_GetModuleState(cls);
 
     return context_copy(state, self);
+}
+
+/*[clinic input]
+@text_signature "($self, /, **changes)"
+_decimal.Context.__replace__
+
+    cls: defining_class
+    *
+    prec: object = NULL
+    rounding: object = NULL
+    Emin as emin: object = NULL
+    Emax as emax: object = NULL
+    capitals: object = NULL
+    clamp: object = NULL
+    flags as status: object = NULL
+    traps: object = NULL
+
+Return a copy of the context with the specified attributes replaced.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context___replace___impl(PyObject *self, PyTypeObject *cls,
+                                  PyObject *prec, PyObject *rounding,
+                                  PyObject *emin, PyObject *emax,
+                                  PyObject *capitals, PyObject *clamp,
+                                  PyObject *status, PyObject *traps)
+/*[clinic end generated code: output=375ef0392df682ec input=414d9d00b25af6f3]*/
+{
+    decimal_state *state = PyType_GetModuleState(cls);
+
+    PyObject *result = context_copy(state, self);
+    if (result == NULL) {
+        return NULL;
+    }
+    if (context_setattrs(result, prec, rounding, emin, emax, capitals,
+                         clamp, status, traps) < 0)
+    {
+        Py_DECREF(result);
+        return NULL;
+    }
+    return result;
 }
 
 /*[clinic input]
@@ -2038,14 +2101,14 @@ _decimal.localcontext
 
     ctx as local: object = None
     *
-    prec: object = None
-    rounding: object = None
-    Emin: object = None
-    Emax: object = None
-    capitals: object = None
-    clamp: object = None
-    flags: object = None
-    traps: object = None
+    prec: object = NULL
+    rounding: object = NULL
+    Emin: object = NULL
+    Emax: object = NULL
+    capitals: object = NULL
+    clamp: object = NULL
+    flags: object = NULL
+    traps: object = NULL
 
 Return a context manager for a copy of the supplied context.
 
@@ -2060,7 +2123,7 @@ _decimal_localcontext_impl(PyObject *module, PyObject *local, PyObject *prec,
                            PyObject *rounding, PyObject *Emin,
                            PyObject *Emax, PyObject *capitals,
                            PyObject *clamp, PyObject *flags, PyObject *traps)
-/*[clinic end generated code: output=9bf4e47742a809b0 input=490307b9689c3856]*/
+/*[clinic end generated code: output=9bf4e47742a809b0 input=616abb6ee1654373]*/
 {
     PyObject *global;
 
@@ -2148,11 +2211,21 @@ ctxmanager_set_local(PyObject *op, PyObject *Py_UNUSED(dummy))
     return Py_NewRef(self->local);
 }
 
+/*[clinic input]
+_decimal.ContextManager.__exit__
+
+    *exc_info: array
+
+Restore the global context.
+[clinic start generated code]*/
+
 static PyObject *
-ctxmanager_restore_global(PyObject *op, PyObject *Py_UNUSED(args))
+_decimal_ContextManager___exit___impl(PyDecContextManagerObject *self,
+                                      PyObject * const *exc_info,
+                                      Py_ssize_t exc_info_length)
+/*[clinic end generated code: output=744a645b0145842d input=a86ec9080e28dff3]*/
 {
     PyObject *ret;
-    PyDecContextManagerObject *self = _PyDecContextManagerObject_CAST(op);
     ret = PyDec_SetCurrentContext(PyType_GetModule(Py_TYPE(self)), self->global);
     if (ret == NULL) {
         return NULL;
@@ -2165,7 +2238,7 @@ ctxmanager_restore_global(PyObject *op, PyObject *Py_UNUSED(args))
 
 static PyMethodDef ctxmanager_methods[] = {
   {"__enter__", ctxmanager_set_local, METH_NOARGS, NULL},
-  {"__exit__", ctxmanager_restore_global, METH_VARARGS, NULL},
+  _DECIMAL_CONTEXTMANAGER___EXIT___METHODDEF
   {NULL, NULL}
 };
 
@@ -5921,11 +5994,13 @@ static Py_hash_t
 dec_hash(PyObject *op)
 {
     PyDecObject *self = _PyDecObject_CAST(op);
-    if (self->hash == -1) {
-        self->hash = _dec_hash(self);
-    }
+    Py_hash_t hash = FT_ATOMIC_LOAD_SSIZE_RELAXED(self->hash);
 
-    return self->hash;
+    if (hash == -1) {
+        hash = _dec_hash(self);
+        FT_ATOMIC_STORE_SSIZE_RELAXED(self->hash, hash);
+    }
+    return hash;
 }
 
 /*[clinic input]
@@ -7541,6 +7616,7 @@ static PyMethodDef context_methods [] =
 
   /* Miscellaneous */
   _DECIMAL_CONTEXT___COPY___METHODDEF
+  _DECIMAL_CONTEXT___REPLACE___METHODDEF
   _DECIMAL_CONTEXT___REDUCE___METHODDEF
   _DECIMAL_CONTEXT_COPY_METHODDEF
   _DECIMAL_CONTEXT_CREATE_DECIMAL_METHODDEF
@@ -7678,6 +7754,104 @@ error:
     PyErr_Format(PyExc_RuntimeError,
         "internal error: could not find method %s", name);
     return NULL;
+}
+
+PyDoc_STRVAR(libmpdec_version_info__doc__,
+"decimal.libmpdec_version_info\n\
+\n\
+libmpdec version information as a named tuple.");
+
+static PyStructSequence_Field libmpdec_version_info_fields[] = {
+    {"major", "Major release number"},
+    {"minor", "Minor release number"},
+    {"micro", "Micro release number"},
+    {0}
+};
+
+static PyStructSequence_Desc libmpdec_version_info_desc = {
+    "decimal.libmpdec_version_info",    /* name */
+    libmpdec_version_info__doc__,       /* doc */
+    libmpdec_version_info_fields,       /* fields */
+    3
+};
+
+static PyObject *
+make_libmpdec_version_info(PyTypeObject *type, int major, int minor, int micro)
+{
+    PyObject *version;
+    int pos = 0;
+
+    version = PyStructSequence_New(type);
+    if (version == NULL) {
+        return NULL;
+    }
+
+#define SetItem(VALUE) \
+    PyStructSequence_SET_ITEM(version, pos++, VALUE); \
+    if (PyErr_Occurred()) { \
+        Py_DECREF(version); \
+        return NULL; \
+    }
+
+    SetItem(PyLong_FromLong(major))
+    SetItem(PyLong_FromLong(minor))
+    SetItem(PyLong_FromLong(micro))
+#undef SetItem
+
+    return version;
+}
+
+static PyObject *
+parse_libmpdec_version_info(PyTypeObject *type, const char *version)
+{
+    int major, minor, micro;
+    if (sscanf(version, "%d.%d.%d", &major, &minor, &micro) != 3) {
+        PyErr_Format(PyExc_RuntimeError,
+                     "unexpected libmpdec version string %s", version);
+        return NULL;
+    }
+    return make_libmpdec_version_info(type, major, minor, micro);
+}
+
+static int
+add_version_constants(PyObject *m)
+{
+    const char *version = mpd_version();
+    if (PyModule_AddStringConstant(m, "LIBMPDEC_VERSION", MPD_VERSION) < 0) {
+        return -1;
+    }
+    PyObject *obj = PyUnicode_FromString(version);
+    if (obj == NULL) {
+        return -1;
+    }
+    if (PyModule_AddObjectRef(m, "libmpdec_version", obj) < 0 ||
+        PyModule_AddObjectRef(m, "__libmpdec_version__", obj) < 0)
+    {
+        Py_DECREF(obj);
+        return -1;
+    }
+    Py_DECREF(obj);
+    PyTypeObject *version_type;
+    version_type = PyStructSequence_NewType(&libmpdec_version_info_desc);
+    if (version_type == NULL) {
+        return -1;
+    }
+    if (PyModule_Add(m, "LIBMPDEC_VERSION_INFO",
+            make_libmpdec_version_info(version_type, MPD_MAJOR_VERSION,
+                                       MPD_MINOR_VERSION,
+                                       MPD_MICRO_VERSION)) < 0)
+    {
+        Py_DECREF(version_type);
+        return -1;
+    }
+    if (PyModule_Add(m, "libmpdec_version_info",
+            parse_libmpdec_version_info(version_type, version)) < 0)
+    {
+        Py_DECREF(version_type);
+        return -1;
+    }
+    Py_DECREF(version_type);
+    return 0;
 }
 
 static int minalloc_is_set = 0;
@@ -7928,7 +8102,7 @@ _decimal_exec(PyObject *m)
 
     /* Add specification version number */
     CHECK_INT(PyModule_AddStringConstant(m, "SPEC_VERSION", MPD_SPEC_VERSION));
-    CHECK_INT(PyModule_AddStringConstant(m, "__libmpdec_version__", mpd_version()));
+    CHECK_INT(add_version_constants(m));
 
     return 0;
 

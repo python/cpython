@@ -1,0 +1,2 @@
+Fix a JIT assertion during interpreter shutdown by initializing ``vm_data``
+fields for cold executors that bypass ``_Py_ExecutorInit()``.

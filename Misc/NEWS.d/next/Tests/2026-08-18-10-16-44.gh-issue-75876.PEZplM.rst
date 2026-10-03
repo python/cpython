@@ -1,0 +1,6 @@
+A test decorated with :func:`~test.support.bigmemtest` now runs in a
+subprocess if it really allocates the memory it asks for (that is, if the
+``-M`` option is used), so that the memory it uses and the address space it
+fragments are released when it ends.  A dummy run stays in the process.  The
+separate memory watchdog process is no longer needed: the parent process
+watches the memory usage of the subprocess.
