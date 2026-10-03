@@ -1494,8 +1494,7 @@
                 tp = sym_get_probable_type(nos);
                 definite = false;
             }
-            if (tp && tp->tp_as_mapping &&
-                tp->tp_as_mapping->mp_subscript == _PyDict_Subscript) {
+            if (tp && tp->tp_as_mapping->mp_subscript == _PyDict_Subscript) {
                 if (definite) {
                     ADD_OP(_NOP, 0, 0);
                 }
@@ -1518,8 +1517,7 @@
                 tp = sym_get_probable_type(nos);
                 definite = false;
             }
-            if (tp && tp->tp_as_mapping &&
-                tp->tp_as_mapping->mp_ass_subscript == _PyDict_StoreSubscript) {
+            if (tp && tp->tp_as_mapping->mp_ass_subscript == _PyDict_StoreSubscript) {
                 if (definite) {
                     ADD_OP(_NOP, 0, 0);
                 }
