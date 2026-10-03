@@ -6747,13 +6747,13 @@ and :mod:`!tkinter.constants` namespaces.
           YES
           ON
 
-   Truthy values, all equal to the integer ``1``.
+   True values, all equal to the integer ``1``.
 
 .. data:: FALSE
           NO
           OFF
 
-   Falsy values, all equal to the integer ``0``.
+   False values, all equal to the integer ``0``.
 
 .. data:: N
           S
