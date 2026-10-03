@@ -951,6 +951,16 @@ class GeneralModuleTests(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, "immutable"):
             _socket.socket.foo = 1
 
+    @unittest.skipUnless(hasattr(_socket, 'ALG_SET_PUBKEY'),
+                         'need the libkcapi ALG_* constants')
+    def test_deprecated_alg_constants(self):
+        for name in ('ALG_SET_PUBKEY', 'ALG_OP_SIGN', 'ALG_OP_VERIFY'):
+            with self.subTest(name=name):
+                self.assertNotIn(name, socket.__all__)
+                with self.assertWarnsRegex(DeprecationWarning, name):
+                    value = getattr(socket, name)
+                self.assertEqual(value, getattr(_socket, name))
+
     def test_SocketType_is_socketobject(self):
         import _socket
         self.assertTrue(socket.SocketType is _socket.socket)
