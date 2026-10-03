@@ -364,6 +364,7 @@ def detect_encoding(readline):
 
     It will call readline a maximum of twice, and return the encoding used
     (as a string) and a list of any lines (left as bytes) it has read in.
+    A TypeError is raised if readline returns a str instead of bytes.
 
     It detects the encoding from the presence of a utf-8 bom or an encoding
     cookie as specified in pep-0263.  If both a bom and a cookie are present,
@@ -382,9 +383,15 @@ def detect_encoding(readline):
     default = 'utf-8'
     def read_or_stop():
         try:
-            return readline()
+            line = readline()
         except StopIteration:
             return b''
+        if isinstance(line, str):
+            raise TypeError("detect_encoding() requires a readline callable "
+                            "returning bytes, but it returned str; read the "
+                            "source as bytes, or use "
+                            "tokenize.generate_tokens() to tokenize text")
+        return line
 
     def check(line, encoding):
         # Check if the line matches the encoding.

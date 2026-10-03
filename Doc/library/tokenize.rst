@@ -109,7 +109,8 @@ function it uses to do this is available:
 
     It will call readline a maximum of twice, and return the encoding used
     (as a string) and a list of any lines (not decoded from bytes) it has read
-    in.
+    in. A :exc:`TypeError` is raised if readline returns a :class:`str`
+    instead of bytes.
 
     It detects the encoding from the presence of a UTF-8 BOM or an encoding
     cookie as specified in :pep:`263`. If both a BOM and a cookie are present,
