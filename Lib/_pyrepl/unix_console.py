@@ -272,6 +272,7 @@ class UnixConsole(Console):
     def _sigcont_handler(self, signum, frame):
         self.restore()
         self.prepare()
+        self.event_queue.insert(Event("resize", ""))
 
     def __read(self, n: int) -> bytes:
         return os.read(self.input_fd, n)
