@@ -706,7 +706,7 @@ _PyJit_translate_single_bytecode_to_trace(
     }
 
     if (opcode == ENTER_EXECUTOR) {
-        _PyExecutorObject *executor = old_code->co_executors->executors[oparg & 255];
+        _PyExecutorObject *executor = old_code->co_executors->executors[this_instr->op.arg];
         opcode = executor->vm_data.opcode;
         oparg = (oparg & ~255) | executor->vm_data.oparg;
     }
