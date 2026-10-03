@@ -188,7 +188,7 @@ name:
    lazy import json
    lazy from pathlib import Path
 
-   print("Starting up...")  # json and pathlib not are fully imported yet
+   print("Starting up...")  # json and pathlib are not fully imported yet
 
    data = json.loads('{"key": "value"}')  # json gets fully imported here
    p = Path(".")  # pathlib gets fully imported here
