@@ -223,7 +223,10 @@ def write_uop(uop: Uop, emitter: Tier2Emitter, stack: Stack, cached_items: int =
         for cache in uop.caches:
             if cache.name != "unused":
                 bits = cache.size*16
-                if cache.size == 4:
+                if cache.pretagged:
+                    type = "uintptr_t "
+                    cast = "uintptr_t"
+                elif cache.size == 4:
                     type = cast = "PyObject *"
                 else:
                     type = f"uint{bits}_t "
