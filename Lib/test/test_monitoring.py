@@ -561,6 +561,79 @@ class MultipleMonitorsTest(MonitoringTestBase, unittest.TestCase):
             sys.monitoring.set_events(TEST_TOOL2, 0)
             self.assertEqual(sys.monitoring._all_events(), {})
 
+    def test_add_second_instruction_tool(self):
+        active = False
+        counts = [0, 0]
+
+        def callback1(code, offset):
+            if active and code is f.__code__:
+                counts[0] += 1
+
+        def callback2(code, offset):
+            if active and code is f.__code__:
+                counts[1] += 1
+
+        def f():
+            nonlocal active
+            sys.monitoring.set_local_events(TEST_TOOL2, f.__code__, E.INSTRUCTION)
+            active = True
+            value = 1
+            value += 1
+            active = False
+            return value
+
+        try:
+            sys.monitoring.register_callback(TEST_TOOL, E.INSTRUCTION, callback1)
+            sys.monitoring.register_callback(TEST_TOOL2, E.INSTRUCTION, callback2)
+            sys.monitoring.set_events(TEST_TOOL, E.INSTRUCTION)
+            self.assertEqual(f(), 2)
+            self.assertGreater(counts[0], 0)
+            self.assertEqual(counts[0], counts[1])
+        finally:
+            sys.monitoring.set_events(TEST_TOOL, 0)
+            sys.monitoring.set_local_events(TEST_TOOL2, f.__code__, 0)
+            sys.monitoring.register_callback(TEST_TOOL, E.INSTRUCTION, None)
+            sys.monitoring.register_callback(TEST_TOOL2, E.INSTRUCTION, None)
+
+    def test_add_instruction_tool_preserves_disabled_locations(self):
+        disabling = True
+        counts = [0, 0]
+
+        def callback1(code, offset):
+            if code is f.__code__:
+                counts[0] += 1
+                if disabling:
+                    return sys.monitoring.DISABLE
+
+        def callback2(code, offset):
+            if code is f.__code__:
+                counts[1] += 1
+
+        def f():
+            value = 1
+            value += 1
+            return value
+
+        try:
+            sys.monitoring.register_callback(TEST_TOOL, E.INSTRUCTION, callback1)
+            sys.monitoring.register_callback(TEST_TOOL2, E.INSTRUCTION, callback2)
+            sys.monitoring.set_events(TEST_TOOL, E.INSTRUCTION)
+            self.assertEqual(f(), 2)
+            self.assertGreater(counts[0], 0)
+
+            disabling = False
+            counts[:] = [0, 0]
+            sys.monitoring.set_local_events(TEST_TOOL2, f.__code__, E.INSTRUCTION)
+            self.assertEqual(f(), 2)
+            self.assertEqual(counts[0], 0)
+            self.assertGreater(counts[1], 0)
+        finally:
+            sys.monitoring.set_events(TEST_TOOL, 0)
+            sys.monitoring.set_local_events(TEST_TOOL2, f.__code__, 0)
+            sys.monitoring.register_callback(TEST_TOOL, E.INSTRUCTION, None)
+            sys.monitoring.register_callback(TEST_TOOL2, E.INSTRUCTION, None)
+            sys.monitoring.restart_events()
+
 
 class LineMonitoringTest(MonitoringTestBase, unittest.TestCase):
 

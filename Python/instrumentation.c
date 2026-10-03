@@ -1677,6 +1677,27 @@ initialize_line_tools(PyCodeObject *code, _Py_LocalMonitors *all_events)
     }
 }
 
+static void
+initialize_per_instruction_tools(PyCodeObject *code)
+{
+    ASSERT_WORLD_STOPPED_OR_LOCKED(code);
+    _PyCoMonitoringData *monitoring = code->_co_monitoring;
+    uint8_t *per_instruction_tools = monitoring->per_instruction_tools;
+
+    assert(per_instruction_tools != NULL);
+    uint8_t tools = monitoring->active_monitors.tools[PY_MONITORING_EVENT_INSTRUCTION];
+    assert(_Py_popcount32(tools) <= 1);
+
+    int code_len = (int)Py_SIZE(code);
+    for (int i = 0; i < code_len; i++) {
+        int opcode = _PyCode_CODE(code)[i].op.code;
+        if (opcode == INSTRUMENTED_LINE) {
+            opcode = _PyCode_GetOriginalOpcode(monitoring->lines, i);
+        }
+        per_instruction_tools[i] = opcode == INSTRUMENTED_INSTRUCTION ? tools : 0;
+    }
+}
+
 static int
 allocate_instrumentation_data(PyCodeObject *code)
 {
@@ -1797,9 +1818,7 @@ update_instrumentation_data(PyCodeObject *code, PyInterpreterState *interp)
                 PyErr_NoMemory();
                 return -1;
             }
-            for (int i = 0; i < code_len; i++) {
-                code->_co_monitoring->per_instruction_tools[i] = 0;
-            }
+            initialize_per_instruction_tools(code);
         }
     }
     return 0;
