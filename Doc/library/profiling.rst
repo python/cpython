@@ -2,9 +2,9 @@
 
 .. _profiling-module:
 
-***************************************
-:mod:`profiling` --- Python profilers
-***************************************
+**************************************
+:mod:`!profiling` --- Python profilers
+**************************************
 
 .. module:: profiling
    :synopsis: Python profiling tools for performance analysis.
@@ -31,7 +31,7 @@ performance bottlenecks and guide optimization efforts. Python provides two
 fundamentally different approaches to collecting this information: statistical
 sampling and deterministic tracing.
 
-The :mod:`profiling` package organizes Python's built-in profiling tools under
+The :mod:`!profiling` package organizes Python's built-in profiling tools under
 a single namespace. It contains two submodules, each implementing a different
 profiling methodology:
 
@@ -63,7 +63,7 @@ Choosing a profiler
 
 For most performance analysis, use the statistical profiler
 (:mod:`profiling.sampling`). It has minimal overhead, works for both development
-and production, and provides rich visualization options including flamegraphs,
+and production, and provides rich visualization options including flame graphs,
 heatmaps, GIL analysis, and more.
 
 Use the deterministic profiler (:mod:`profiling.tracing`) when you need **exact
@@ -81,7 +81,7 @@ The following table summarizes the key differences:
 +--------------------+------------------------------+------------------------------+
 | **Accuracy**       | Statistical estimate         | Exact call counts            |
 +--------------------+------------------------------+------------------------------+
-| **Output formats** | pstats, flamegraph, heatmap, | pstats                       |
+| **Output formats** | pstats, flame graph, heatmap,| pstats                       |
 |                    | gecko, collapsed             |                              |
 +--------------------+------------------------------+------------------------------+
 | **Profiling modes**| Wall-clock, CPU, GIL         | Wall-clock                   |
@@ -103,7 +103,7 @@ performance analysis tasks. Use it the same way you would use
 
 One of the main strengths of the sampling profiler is its variety of output
 formats. Beyond traditional pstats tables, it can generate interactive
-flamegraphs that visualize call hierarchies, line-level source heatmaps that
+flame graphs that visualize call hierarchies, line-level source heatmaps that
 show exactly where time is spent in your code, and Firefox Profiler output for
 timeline-based analysis.
 
@@ -157,7 +157,7 @@ command::
    python -m profiling.sampling run -m mypackage.module
 
 This runs the script under the profiler and prints a summary of where time was
-spent. For an interactive flamegraph::
+spent. For an interactive flame graph::
 
    python -m profiling.sampling run --flamegraph script.py
 
@@ -197,7 +197,7 @@ Understanding profile output
 
 Both profilers collect function-level statistics, though they present them in
 different formats. The sampling profiler offers multiple visualizations
-(flamegraphs, heatmaps, Firefox Profiler, pstats tables), while the
+(flame graphs, heatmaps, Firefox Profiler, pstats tables), while the
 deterministic profiler produces pstats-compatible output. Regardless of format,
 the underlying concepts are the same.
 
@@ -226,7 +226,7 @@ Key profiling concepts:
 
 **Caller/Callee relationships**
    Which functions called a given function (callers) and which functions it
-   called (callees). Flamegraphs visualize this as nested rectangles; pstats
+   called (callees). Flame graphs visualize this as nested rectangles; pstats
    can display it via the :meth:`~pstats.Stats.print_callers` and
    :meth:`~pstats.Stats.print_callees` methods.
 
@@ -248,7 +248,7 @@ continue to work without modification in all future Python versions.
 .. seealso::
 
    :mod:`profiling.sampling`
-      Statistical sampling profiler with flamegraphs, heatmaps, and GIL analysis.
+      Statistical sampling profiler with flame graphs, heatmaps, and GIL analysis.
       Recommended for most users.
 
    :mod:`profiling.tracing`

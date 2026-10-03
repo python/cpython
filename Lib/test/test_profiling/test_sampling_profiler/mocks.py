@@ -91,3 +91,22 @@ class MockAwaitedInfo:
 
     def __repr__(self):
         return f"MockAwaitedInfo(thread_id={self.thread_id}, awaited_by={len(self.awaited_by)} tasks)"
+
+
+def make_diff_collector_with_mock_baseline(baseline_samples):
+    """Create a DiffFlamegraphCollector with baseline injected directly,
+    skipping the binary round-trip that _load_baseline normally does."""
+    from profiling.sampling.stack_collector import (
+        DiffFlamegraphCollector,
+        FlamegraphCollector,
+    )
+
+    baseline = FlamegraphCollector(1000)
+    for sample in baseline_samples:
+        baseline.collect(sample)
+
+    # Path is unused since we inject _baseline_collector directly;
+    # use __file__ as a dummy path that passes the existence check.
+    diff = DiffFlamegraphCollector(1000, baseline_binary_path=__file__)
+    diff._baseline_collector = baseline
+    return diff

@@ -12,9 +12,11 @@
    Copyright (c) 2001-2002 Greg Stein <gstein@users.sourceforge.net>
    Copyright (c) 2002-2006 Karl Waclawek <karl@waclawek.net>
    Copyright (c) 2016      Cristian Rodríguez <crrodriguez@opensuse.org>
-   Copyright (c) 2016-2019 Sebastian Pipping <sebastian@pipping.org>
+   Copyright (c) 2016-2025 Sebastian Pipping <sebastian@pipping.org>
    Copyright (c) 2017      Rhodri James <rhodri@wildebeest.org.uk>
    Copyright (c) 2018      Yury Gribov <tetra2005@gmail.com>
+   Copyright (c) 2026      Matthew Fernandez <matthew.fernandez@gmail.com>
+   Copyright (c) 2026      Braian Plaku <braianplaku@gmail.com>
    Licensed under the MIT license:
 
    Permission is  hereby granted,  free of charge,  to any  person obtaining
@@ -35,6 +37,8 @@
    DAMAGES OR  OTHER LIABILITY, WHETHER  IN AN  ACTION OF CONTRACT,  TORT OR
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+   SPDX-License-Identifier: MIT
 */
 
 #ifndef Expat_External_INCLUDED
@@ -48,7 +52,7 @@
 /* Expat tries very hard to make the API boundary very specifically
    defined.  There are two macros defined to control this boundary;
    each of these can be defined before including this header to
-   achieve some different behavior, but doing so it not recommended or
+   achieve some different behavior, but doing so is not recommended or
    tested frequently.
 
    XMLCALL    - The calling convention to use for all calls across the
@@ -91,8 +95,7 @@
 #    ifndef XML_BUILDING_EXPAT
 /* using Expat from an application */
 
-#      if defined(_MSC_EXTENSIONS) && ! defined(__BEOS__)                      \
-          && ! defined(__CYGWIN__)
+#      if defined(_MSC_VER) && ! defined(__BEOS__) && ! defined(__CYGWIN__)
 #        define XMLIMPORT __declspec(dllimport)
 #      endif
 
@@ -124,6 +127,17 @@
 #    define XML_ATTR_ALLOC_SIZE(x) __attribute__((__alloc_size__(x)))
 #  else
 #    define XML_ATTR_ALLOC_SIZE(x)
+#  endif
+
+/* Marks a function that Expat still provides but that callers should move off
+   of. */
+#  if defined(__clang__) || defined(__GNUC__)
+#    define XML_ATTR_DEPRECATED(message)                                       \
+      __attribute__((__deprecated__(message)))
+#  elif defined(_MSC_VER)
+#    define XML_ATTR_DEPRECATED(message) __declspec(deprecated(message))
+#  else
+#    define XML_ATTR_DEPRECATED(message) // empty i.e. no deprecation
 #  endif
 
 #  define XMLPARSEAPI(type) XMLIMPORT type XMLCALL

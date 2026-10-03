@@ -2,6 +2,7 @@
 
 # Initial tests are copied as is from "test_poll.py"
 
+import errno
 import os
 import random
 import select
@@ -111,6 +112,15 @@ class DevPollTests(unittest.TestCase):
         self.assertRaises(ValueError, devpoll.poll)
         self.assertRaises(ValueError, devpoll.register, fd, select.POLLIN)
         self.assertRaises(ValueError, devpoll.unregister, fd)
+
+    def test_close_error(self):
+        # gh-146205: close() should raise OSError if underlying fd is invalid
+        devpoll = select.devpoll()
+        fd = devpoll.fileno()
+        os.close(fd)
+        with self.assertRaises(OSError) as cm:
+            devpoll.close()
+        self.assertEqual(cm.exception.errno, errno.EBADF)
 
     def test_fd_non_inheritable(self):
         devpoll = select.devpoll()

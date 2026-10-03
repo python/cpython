@@ -372,6 +372,8 @@ class TypeAliasTypeTest(unittest.TestCase):
                          mod_generics_cache.__name__)
         self.assertEqual(mod_generics_cache.OldStyle.__module__,
                          mod_generics_cache.__name__)
+        Alias.__module__ = "ham.spam.eggs"
+        self.assertEqual(Alias.__module__, "ham.spam.eggs")
 
     def test_unpack(self):
         type Alias = tuple[int, int]

@@ -1,15 +1,17 @@
 import itertools
+import io
 import json
 import os
 import platform
 import sys
+import tempfile
 import threading
 import time
 
 from .collector import Collector, filter_internal_frames
 from .opcode_utils import get_opcode_info, format_opcode
 try:
-    from _remote_debugging import THREAD_STATUS_HAS_GIL, THREAD_STATUS_ON_CPU, THREAD_STATUS_UNKNOWN, THREAD_STATUS_GIL_REQUESTED, THREAD_STATUS_HAS_EXCEPTION
+    from _remote_debugging import THREAD_STATUS_HAS_GIL, THREAD_STATUS_ON_CPU, THREAD_STATUS_UNKNOWN, THREAD_STATUS_GIL_REQUESTED, THREAD_STATUS_HAS_EXCEPTION, THREAD_STATUS_MAIN_THREAD
 except ImportError:
     # Fallback if module not available (shouldn't happen in normal use)
     THREAD_STATUS_HAS_GIL = (1 << 0)
@@ -17,6 +19,7 @@ except ImportError:
     THREAD_STATUS_UNKNOWN = (1 << 2)
     THREAD_STATUS_GIL_REQUESTED = (1 << 3)
     THREAD_STATUS_HAS_EXCEPTION = (1 << 4)
+    THREAD_STATUS_MAIN_THREAD = (1 << 5)
 
 
 # Categories matching Firefox Profiler expectations
@@ -60,8 +63,81 @@ FRAME_INLINE_DEPTH_ROOT = 0
 PROCESS_TYPE_MAIN = 0
 STACKWALK_DISABLED = 0
 
+# In-memory buffer before spilling to disk
+DEFAULT_SPILL_BUFFER_BYTES = 128 * 1024
+_JSON_SEPARATORS = (",", ":")
+_JSON_ENCODER = json.JSONEncoder(
+    separators=_JSON_SEPARATORS, allow_nan=False
+)
+
+
+class SpillColumn:
+    def __init__(self, directory, basename, *,
+                 buffer_bytes=None):
+        self.path = os.path.join(directory, basename)
+        self.buffer = bytearray()
+        self._buffer_bytes = (
+            DEFAULT_SPILL_BUFFER_BYTES if buffer_bytes is None
+            else buffer_bytes
+        )
+
+    def append(self, value):
+        self.buffer += (_JSON_ENCODER.encode(value) + "\n").encode("utf-8")
+        if len(self.buffer) >= self._buffer_bytes:
+            self.flush()
+
+    def flush(self):
+        with open(self.path, "ab") as file:
+            file.write(self.buffer)
+        self.buffer.clear()
+
+    def iter_tokens(self):
+        with open(self.path, encoding="utf-8") as file:
+            for line in file:
+                yield line.rstrip("\n")
+
+
+class GeckoThreadSpill:
+    _COLUMNS = (
+        ("samples_stack", "samples-stack.json"),
+        ("samples_time", "samples-time.json"),
+        ("markers_name", "markers-name.json"),
+        ("markers_start_time", "markers-start-time.json"),
+        ("markers_end_time", "markers-end-time.json"),
+        ("markers_phase", "markers-phase.json"),
+        ("markers_category", "markers-category.json"),
+        ("markers_data", "markers-data.json"),
+    )
+
+    def __init__(self, directory, tid):
+        prefix = f"thread-{tid}-"
+        for attr, basename in self._COLUMNS:
+            setattr(self, attr, SpillColumn(directory, prefix + basename))
+        self.sample_count = 0
+        self.marker_count = 0
+
+    def append_sample(self, stack_index, time_ms):
+        self.samples_stack.append(stack_index)
+        self.samples_time.append(time_ms)
+        self.sample_count += 1
+
+    def append_marker(self, name_idx, start_time, end_time, phase, category, data):
+        self.markers_name.append(name_idx)
+        self.markers_start_time.append(start_time)
+        self.markers_end_time.append(end_time)
+        self.markers_phase.append(phase)
+        self.markers_category.append(category)
+        self.markers_data.append(data)
+        self.marker_count += 1
+
+    def prepare_read(self):
+        for attr, _basename in self._COLUMNS:
+            getattr(self, attr).flush()
+
 
 class GeckoCollector(Collector):
+    aggregating = True
+
     def __init__(self, sample_interval_usec, *, skip_idle=False, opcodes=False):
         self.sample_interval_usec = sample_interval_usec
         self.skip_idle = skip_idle
@@ -74,6 +150,8 @@ class GeckoCollector(Collector):
 
         # Per-thread data structures
         self.threads = {}  # tid -> thread data
+        self.spill_dir = None
+        self.exported = False
 
         # Global tables
         self.libs = []
@@ -148,6 +226,9 @@ class GeckoCollector(Collector):
             stack_frames: List of interpreter/thread frame info
             timestamps_us: List of timestamps in microseconds (None for live sampling)
         """
+        if self.exported:
+            raise RuntimeError("cannot append to GeckoCollector after export")
+
         # Handle live sampling (no timestamps provided)
         if timestamps_us is None:
             current_time = (time.monotonic() * 1000) - self.start_time
@@ -169,20 +250,40 @@ class GeckoCollector(Collector):
             self.interval = (times[-1] - self.last_sample_time) / self.sample_count
         self.last_sample_time = times[-1]
 
+        # Process async tasks
+        if stack_frames and hasattr(stack_frames[0], "awaited_by"):
+            for frames, thread_id, _ in self._iter_async_frames(stack_frames):
+                frames = filter_internal_frames(frames)
+                if not frames:
+                    continue
+
+                if thread_id not in self.threads:
+                    self.threads[thread_id] = self._create_thread(
+                        thread_id, False
+                    )
+
+                self._record_stack_sample(
+                    self.threads[thread_id], frames, thread_id, times, first_time
+                )
+
+            self.sample_count += len(times)
+            return
+
         # Process threads
         for interpreter_info in stack_frames:
             for thread_info in interpreter_info.threads:
                 frames = filter_internal_frames(thread_info.frame_info)
                 tid = thread_info.thread_id
+                status_flags = thread_info.status
+                is_main_thread = bool(status_flags & THREAD_STATUS_MAIN_THREAD)
 
                 # Initialize thread if needed
                 if tid not in self.threads:
-                    self.threads[tid] = self._create_thread(tid)
+                    self.threads[tid] = self._create_thread(tid, is_main_thread)
 
                 thread_data = self.threads[tid]
 
                 # Decode status flags
-                status_flags = thread_info.status
                 has_gil = bool(status_flags & THREAD_STATUS_HAS_GIL)
                 on_cpu = bool(status_flags & THREAD_STATUS_ON_CPU)
                 gil_requested = bool(status_flags & THREAD_STATUS_GIL_REQUESTED)
@@ -251,55 +352,51 @@ class GeckoCollector(Collector):
                 if not frames:
                     continue
 
-                # Process stack once to get stack_index
-                stack_index = self._process_stack(thread_data, frames)
-
-                # Add samples with timestamps
-                samples = thread_data["samples"]
-                samples_stack = samples["stack"]
-                samples_time = samples["time"]
-                samples_delay = samples["eventDelay"]
-
-                for t in times:
-                    samples_stack.append(stack_index)
-                    samples_time.append(t)
-                    samples_delay.append(None)
-
-                # Handle opcodes
-                if self.opcodes_enabled and frames:
-                    leaf_frame = frames[0]
-                    filename, location, funcname, opcode = leaf_frame
-                    if isinstance(location, tuple):
-                        lineno, _, col_offset, _ = location
-                    else:
-                        lineno = location
-                        col_offset = -1
-
-                    current_state = (opcode, lineno, col_offset, funcname, filename)
-
-                    if tid not in self.opcode_state:
-                        self.opcode_state[tid] = (*current_state, first_time)
-                    elif self.opcode_state[tid][:5] != current_state:
-                        prev_opcode, prev_lineno, prev_col, prev_funcname, prev_filename, prev_start = self.opcode_state[tid]
-                        self._add_opcode_interval_marker(
-                            tid, prev_opcode, prev_lineno, prev_col, prev_funcname, prev_start, first_time
-                        )
-                        self.opcode_state[tid] = (*current_state, first_time)
+                self._record_stack_sample(
+                    thread_data, frames, tid, times, first_time
+                )
 
         self.sample_count += len(times)
 
-    def _create_thread(self, tid):
-        """Create a new thread structure with processed profile format."""
+    def _record_stack_sample(self, thread_data, frames, tid, times, first_time):
+        stack_index = self._process_stack(thread_data, frames)
 
-        # Determine if this is the main thread
-        try:
-            is_main = tid == threading.main_thread().ident
-        except (RuntimeError, AttributeError):
-            is_main = False
+        thread_spill = thread_data["_spill"]
+        for t in times:
+            thread_spill.append_sample(stack_index, t)
+
+        if self.opcodes_enabled and frames:
+            leaf_frame = frames[0]
+            filename, location, funcname, opcode = leaf_frame
+            if isinstance(location, tuple):
+                lineno, _, col_offset, _ = location
+            else:
+                lineno = location
+                col_offset = -1
+
+            current_state = (opcode, lineno, col_offset, funcname, filename)
+
+            if tid not in self.opcode_state:
+                self.opcode_state[tid] = (*current_state, first_time)
+            elif self.opcode_state[tid][:5] != current_state:
+                (
+                    prev_opcode, prev_lineno, prev_col, prev_funcname,
+                    prev_filename, prev_start
+                ) = self.opcode_state[tid]
+                self._add_opcode_interval_marker(
+                    tid, prev_opcode, prev_lineno, prev_col, prev_funcname,
+                    prev_start, first_time
+                )
+                self.opcode_state[tid] = (*current_state, first_time)
+
+    def _create_thread(self, tid, is_main_thread):
+        """Create a new thread structure with processed profile format."""
+        if self.spill_dir is None:
+            self.spill_dir = tempfile.TemporaryDirectory()
 
         thread = {
             "name": f"Thread-{tid}",
-            "isMainThread": is_main,
+            "isMainThread": is_main_thread,
             "processStartupTime": 0,
             "processShutdownTime": None,
             "registerTime": 0,
@@ -309,15 +406,6 @@ class GeckoCollector(Collector):
             "tid": tid,
             "processType": "default",
             "processName": "Python Process",
-            # Sample data - processed format with direct arrays
-            "samples": {
-                "stack": [],
-                "time": [],
-                "eventDelay": [],
-                "weight": None,
-                "weightType": "samples",
-                "length": 0,  # Will be updated on export
-            },
             # Stack table - processed format
             "stackTable": {
                 "frame": [],
@@ -368,21 +456,12 @@ class GeckoCollector(Collector):
                 "functionSize": [],
                 "length": 0,
             },
-            # Markers - processed format (arrays)
-            "markers": {
-                "data": [],
-                "name": [],
-                "startTime": [],
-                "endTime": [],
-                "phase": [],
-                "category": [],
-                "length": 0,
-            },
             # Caches for deduplication
             "_stackCache": {},
             "_frameCache": {},
             "_funcCache": {},
             "_resourceCache": {},
+            "_spill": GeckoThreadSpill(self.spill_dir.name, tid),
         }
 
         return thread
@@ -407,51 +486,42 @@ class GeckoCollector(Collector):
         if tid not in self.threads:
             return
 
-        thread_data = self.threads[tid]
         duration = end_time - start_time
 
         name_idx = self._intern_string(name)
-        markers = thread_data["markers"]
-        markers["name"].append(name_idx)
-        markers["startTime"].append(start_time)
-        markers["endTime"].append(end_time)
-        markers["phase"].append(1)  # 1 = interval marker
-        markers["category"].append(category)
-        markers["data"].append({
-            "type": name.replace(" ", ""),
-            "duration": duration,
-            "tid": tid
-        })
+        self.threads[tid]["_spill"].append_marker(
+            name_idx, start_time, end_time, 1, category, {
+                "type": name.replace(" ", ""),
+                "duration": duration,
+                "tid": tid,
+            }
+        )
 
-    def _add_opcode_interval_marker(self, tid, opcode, lineno, col_offset, funcname, start_time, end_time):
+    def _add_opcode_interval_marker(self, tid, opcode, lineno, col_offset,
+                                    funcname, start_time, end_time):
         """Add an interval marker for opcode execution span."""
         if tid not in self.threads or opcode is None:
             return
 
-        thread_data = self.threads[tid]
         opcode_info = get_opcode_info(opcode)
         # Use formatted opcode name (with base opcode for specialized ones)
         formatted_opname = format_opcode(opcode)
 
         name_idx = self._intern_string(formatted_opname)
 
-        markers = thread_data["markers"]
-        markers["name"].append(name_idx)
-        markers["startTime"].append(start_time)
-        markers["endTime"].append(end_time)
-        markers["phase"].append(1)  # 1 = interval marker
-        markers["category"].append(CATEGORY_OPCODES)
-        markers["data"].append({
-            "type": "Opcode",
-            "opcode": opcode,
-            "opname": formatted_opname,
-            "base_opname": opcode_info["base_opname"],
-            "is_specialized": opcode_info["is_specialized"],
-            "line": lineno,
-            "column": col_offset if col_offset >= 0 else None,
-            "function": funcname,
-            "duration": end_time - start_time,
-        })
+        self.threads[tid]["_spill"].append_marker(
+            name_idx, start_time, end_time, 1, CATEGORY_OPCODES, {
+                "type": "Opcode",
+                "opcode": opcode,
+                "opname": formatted_opname,
+                "base_opname": opcode_info["base_opname"],
+                "is_specialized": opcode_info["is_specialized"],
+                "line": lineno,
+                "column": col_offset if col_offset >= 0 else None,
+                "function": funcname,
+                "duration": end_time - start_time,
+            }
+        )
 
     def _process_stack(self, thread_data, frames):
         """Process a stack and return the stack index."""
@@ -662,7 +732,6 @@ class GeckoCollector(Collector):
 
     def export(self, filename):
         """Export the profile to a Gecko JSON file."""
-
         if self.sample_count > 0 and self.last_sample_time > 0:
             self.interval = self.last_sample_time / self.sample_count
 
@@ -683,24 +752,36 @@ class GeckoCollector(Collector):
         spinner_thread = threading.Thread(target=spin, daemon=True)
         spinner_thread.start()
 
+        temp_path = None
+        replaced = False
         try:
-            # Finalize any open markers before building profile
-            self._finalize_markers()
-
-            profile = self._build_profile()
-
-            with open(filename, "w") as f:
-                json.dump(profile, f, separators=(",", ":"))
+            self._prepare_for_serialization()
+            output_dir = os.path.dirname(os.path.abspath(filename)) or "."
+            with tempfile.NamedTemporaryFile(
+                "w", dir=output_dir, delete=False
+            ) as file:
+                temp_path = file.name
+                self._stream_profile(file)
+            os.replace(temp_path, filename)
+            replaced = True
         finally:
+            self.exported = True
             stop_spinner.set()
             spinner_thread.join(timeout=1.0)
             # Small delay to ensure the clear happens
             time.sleep(0.01)
+            if temp_path is not None and not replaced:
+                try:
+                    os.unlink(temp_path)
+                except FileNotFoundError:
+                    pass
+            self._cleanup_spills()
 
         print(f"Gecko profile written to {filename}")
         print(
             f"Open in Firefox Profiler: https://profiler.firefox.com/"
         )
+        return True
 
     def _build_marker_schema(self):
         """Build marker schema definitions for Firefox Profiler."""
@@ -729,34 +810,17 @@ class GeckoCollector(Collector):
 
     def _build_profile(self):
         """Build the complete profile structure in processed format."""
-        # Convert thread data to final format
-        threads = []
+        try:
+            self._prepare_for_serialization()
+            file = io.StringIO()
+            self._stream_profile(file)
+            return json.loads(file.getvalue())
+        finally:
+            self.exported = True
+            self._cleanup_spills()
 
-        for tid, thread_data in self.threads.items():
-            # Update lengths
-            samples = thread_data["samples"]
-            stack_table = thread_data["stackTable"]
-            frame_table = thread_data["frameTable"]
-            func_table = thread_data["funcTable"]
-            resource_table = thread_data["resourceTable"]
-
-            samples["length"] = len(samples["stack"])
-            stack_table["length"] = len(stack_table["frame"])
-            frame_table["length"] = len(frame_table["func"])
-            func_table["length"] = len(func_table["name"])
-            resource_table["length"] = len(resource_table["name"])
-            thread_data["markers"]["length"] = len(thread_data["markers"]["name"])
-
-            # Clean up internal caches
-            del thread_data["_stackCache"]
-            del thread_data["_frameCache"]
-            del thread_data["_funcCache"]
-            del thread_data["_resourceCache"]
-
-            threads.append(thread_data)
-
-        # Main profile structure in processed format
-        profile = {
+    def _profile_head(self):
+        return {
             "meta": {
                 "interval": self.interval,
                 "startTime": self.start_time,
@@ -786,7 +850,10 @@ class GeckoCollector(Collector):
                 },
             },
             "libs": self.libs,
-            "threads": threads,
+        }
+
+    def _profile_tail(self):
+        return {
             "pages": [],
             "shared": {
                 "stringArray": self.global_strings,
@@ -794,4 +861,146 @@ class GeckoCollector(Collector):
             },
         }
 
-        return profile
+    def _prepare_for_serialization(self):
+        if self.exported:
+            raise RuntimeError("GeckoCollector has already been exported")
+        self._finalize_markers()
+        for thread_data in self.threads.values():
+            thread_data["_spill"].prepare_read()
+            thread_data["stackTable"]["length"] = len(thread_data["stackTable"]["frame"])
+            thread_data["frameTable"]["length"] = len(thread_data["frameTable"]["func"])
+            thread_data["funcTable"]["length"] = len(thread_data["funcTable"]["name"])
+            thread_data["resourceTable"]["length"] = len(thread_data["resourceTable"]["name"])
+
+    def _cleanup_spills(self):
+        if self.spill_dir is not None:
+            self.spill_dir.cleanup()
+            self.spill_dir = None
+
+    def _stream_profile(self, file):
+        file.write("{")
+        first = True
+        for key, value in self._profile_head().items():
+            first = _write_json_member(file, key, value, first)
+
+        first = _write_member_name(file, "threads", first)
+        file.write("[")
+        for index, (tid, thread_data) in enumerate(self.threads.items()):
+            if index:
+                file.write(",")
+            self._stream_thread(file, tid, thread_data)
+        file.write("]")
+
+        for key, value in self._profile_tail().items():
+            first = _write_json_member(file, key, value, first)
+        file.write("}")
+
+    def _stream_thread(self, file, tid, thread_data):
+        spill = thread_data["_spill"]
+        metadata = {
+            "name": thread_data["name"],
+            "isMainThread": thread_data["isMainThread"],
+            "processStartupTime": thread_data["processStartupTime"],
+            "processShutdownTime": thread_data["processShutdownTime"],
+            "registerTime": thread_data["registerTime"],
+            "unregisterTime": thread_data["unregisterTime"],
+            "pausedRanges": thread_data["pausedRanges"],
+            "pid": thread_data["pid"],
+            "tid": thread_data["tid"],
+            "processType": thread_data["processType"],
+            "processName": thread_data["processName"],
+        }
+        file.write("{")
+        first = True
+        for key, value in metadata.items():
+            first = _write_json_member(file, key, value, first)
+
+        first = _write_member_name(file, "samples", first)
+        self._stream_samples(file, spill)
+        for key in (
+            "stackTable",
+            "frameTable",
+            "funcTable",
+            "resourceTable",
+            "nativeSymbols",
+        ):
+            first = _write_json_member(file, key, thread_data[key], first)
+        first = _write_member_name(file, "markers", first)
+        self._stream_markers(file, spill)
+        file.write("}")
+
+    def _stream_samples(self, file, spill):
+        _stream_column_table(
+            file,
+            (
+                ("stack", spill.samples_stack.iter_tokens()),
+                ("time", spill.samples_time.iter_tokens()),
+                ("eventDelay", ("null" for _ in range(spill.sample_count))),
+            ),
+            spill.sample_count,
+            (
+                ("weight", None),
+                ("weightType", "samples"),
+                ("length", spill.sample_count),
+            ),
+        )
+
+    def _stream_markers(self, file, spill):
+        _stream_column_table(
+            file,
+            (
+                ("data", spill.markers_data.iter_tokens()),
+                ("name", spill.markers_name.iter_tokens()),
+                ("startTime", spill.markers_start_time.iter_tokens()),
+                ("endTime", spill.markers_end_time.iter_tokens()),
+                ("phase", spill.markers_phase.iter_tokens()),
+                ("category", spill.markers_category.iter_tokens()),
+            ),
+            spill.marker_count,
+            (("length", spill.marker_count),),
+        )
+
+
+def _write_json(file, value):
+    for chunk in _JSON_ENCODER.iterencode(value):
+        file.write(chunk)
+
+
+def _write_member_name(file, name, first):
+    if not first:
+        file.write(",")
+    _write_json(file, name)
+    file.write(":")
+    return False
+
+
+def _write_json_member(file, name, value, first):
+    first = _write_member_name(file, name, first)
+    _write_json(file, value)
+    return first
+
+
+def _stream_column_table(file, columns, expected_count, trailing_members=()):
+    file.write("{")
+    first = True
+    for name, token_iter in columns:
+        first = _write_member_name(file, name, first)
+        _stream_array(file, token_iter, expected_count, name)
+    for name, value in trailing_members:
+        first = _write_json_member(file, name, value, first)
+    file.write("}")
+
+
+def _stream_array(file, token_iter, expected_count, label="array"):
+    file.write("[")
+    count = 0
+    for token in token_iter:
+        if count:
+            file.write(",")
+        file.write(token)
+        count += 1
+    if count != expected_count:
+        raise RuntimeError(
+            f"streamed {count} {label} items, expected {expected_count}"
+        )
+    file.write("]")

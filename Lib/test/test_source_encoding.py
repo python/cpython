@@ -3,8 +3,8 @@
 import unittest
 from test import support
 from test.support import script_helper
-from test.support.os_helper import TESTFN, unlink, rmtree
-from test.support.import_helper import unload
+from test.support.os_helper import TESTFN, TESTFN_ASCII, unlink, rmtree
+from test.support.import_helper import import_module, unload
 import importlib
 import os
 import sys
@@ -64,6 +64,81 @@ class MiscSourceEncodingTest(unittest.TestCase):
 
         # two bytes in common with the UTF-8 BOM
         self.assertRaises(SyntaxError, eval, b'\xef\xbb\x20')
+
+    def test_truncated_utf8_at_eof(self):
+        # Regression test for https://issues.oss-fuzz.com/issues/451112368
+        # Truncated multi-byte UTF-8 sequences at end of input caused an
+        # out-of-bounds read in Parser/tokenizer/helpers.c:valid_utf8().
+        truncated = [
+            b'\xc2',              # 2-byte lead, missing 1 continuation
+            b'\xdf',              # 2-byte lead, missing 1 continuation
+            b'\xe0',              # 3-byte lead, missing 2 continuations
+            b'\xe0\xa0',          # 3-byte lead, missing 1 continuation
+            b'\xf0\x90',          # 4-byte lead, missing 2 continuations
+            b'\xf0\x90\x80',      # 4-byte lead, missing 1 continuation
+            b'\xf3',              # 4-byte lead, missing 3 (the oss-fuzz reproducer)
+        ]
+        for seq in truncated:
+            with self.subTest(seq=seq):
+                self.assertRaises(SyntaxError, compile, seq, '<test>', 'exec')
+
+    def test_invalid_utf8_offset_after_non_ascii(self):
+        for name in ('é', 'éé', '𝒜'):
+            with self.subTest(name=name):
+                source = ('x = ' + name).encode() + b'\xff\n'
+                with self.assertRaises(SyntaxError) as caught:
+                    compile(source, '<test>', 'exec')
+                error = caught.exception
+                self.assertEqual(
+                    (error.lineno, error.offset, error.end_lineno, error.end_offset),
+                    (1, 5 + len(name), 1, 5 + len(name)),
+                )
+
+    @support.cpython_only
+    def test_invalid_utf8_file_offset_after_non_ascii(self):
+        _testcapi = import_module('_testcapi')
+        self.addCleanup(unlink, TESTFN_ASCII)
+        with open(TESTFN_ASCII, 'wb') as f:
+            f.write(b'\nx = \xc3\xa9\xc3\xa9\xff\n')
+        with self.assertRaises(SyntaxError) as caught:
+            _testcapi.run_file(
+                os.fsencode(TESTFN_ASCII), _testcapi.Py_file_input, {})
+        error = caught.exception
+        self.assertEqual(
+            (error.lineno, error.offset, error.end_lineno, error.end_offset),
+            (2, 7, 2, 7),
+        )
+
+    def test_long_bom_conflict_message_is_not_truncated(self):
+        encoding = "x" * 400
+        source = b"\xef\xbb\xbf# coding:" + encoding.encode() + b"\n"
+        with self.assertRaises(SyntaxError) as caught:
+            compile(source, "<test>", "exec")
+        self.assertEqual(
+            caught.exception.msg,
+            f"encoding problem: {encoding} with BOM",
+        )
+
+    def _assert_python_file_ok(self, source):
+        with tempfile.TemporaryDirectory() as directory:
+            filename = script_helper.make_script(directory, "source", source)
+            script_helper.assert_python_ok(filename)
+
+    @support.requires_subprocess()
+    def test_stateful_file_decoder_spans_lines(self):
+        encoded_name = "変数".encode("iso2022_jp")
+        payload = encoded_name[3:-3]
+        source = (
+            b"# coding: iso2022_jp\n"
+            b"# \x1b$B" + payload + b"\n"
+            + payload + b"\x1b(B = 1\n"
+        )
+        self._assert_python_file_ok(source)
+
+    @support.requires_subprocess()
+    def test_stateful_file_decoder_finalizes_before_implicit_newline(self):
+        source = b"# coding: hz\n# ~{1dA?"
+        self._assert_python_file_ok(source)
 
     @support.requires_subprocess()
     def test_20731(self):
@@ -370,8 +445,7 @@ class AbstractSourceEncodingTest:
                b'#third\xa4\n'
                b'raise RuntimeError\n')
         self.check_script_error(src,
-                br"'utf-8' codec can't decode byte|"
-                br"encoding problem: utf8")
+                br"'utf-8' codec can't decode byte")
 
     def test_crlf(self):
         src = (b'print(ascii("""\r\n"""))\n')
@@ -523,6 +597,20 @@ class FileSourceEncodingTest(AbstractSourceEncodingTest, unittest.TestCase):
                 line = line.removeprefix('\ufeff')
             self.assertIn(line.encode(), err)
 
+    def test_coding_spec_unknown_encoding(self):
+        src = (b'# coding: c1252\n'
+               b'print("Hi!")\n')
+        self.check_script_error(src, br"unknown encoding: c1252")
+
+    def test_coding_spec_decode_error(self):
+        src = (b'# coding: shift-jis\n'
+               b'print("\xc4\x85")\n')
+        self.check_script_error(src, br"'shift_jis' codec can't decode byte")
+
+    def test_coding_spec_non_text_encoding(self):
+        src = (b'# coding: hex_codec\n'
+               b'print("eggs")\n')
+        self.check_script_error(src, br"'hex_codec' is not a text encoding")
 
 
 if __name__ == "__main__":

@@ -7,6 +7,8 @@
 
 #include "_remote_debugging.h"
 
+#define MAX_LINETABLE_SIZE (64 * 1024)
+
 /* ============================================================================
  * TLBC CACHING FUNCTIONS (Py_GIL_DISABLED only)
  * ============================================================================ */
@@ -30,9 +32,12 @@ get_tlbc_cache_entry(RemoteUnwinderObject *self, uintptr_t code_addr, uint32_t c
     TLBCCacheEntry *entry = _Py_hashtable_get(self->tlbc_cache, key);
 
     if (entry && entry->generation != current_generation) {
-        // Entry is stale, remove it by setting to NULL
-        _Py_hashtable_set(self->tlbc_cache, key, NULL);
-        entry = NULL;
+        // Entry is stale, remove it from the cache and destroy it
+        TLBCCacheEntry *old = _Py_hashtable_steal(self->tlbc_cache, key);
+        if (old != NULL) {
+            tlbc_cache_entry_destroy(old);
+        }
+        return NULL;
     }
 
     return entry;
@@ -47,7 +52,6 @@ cache_tlbc_array(RemoteUnwinderObject *unwinder, uintptr_t code_addr, uintptr_t 
 
     // Read the TLBC array pointer
     if (read_ptr(unwinder, tlbc_array_addr, &tlbc_array_ptr) != 0) {
-        PyErr_SetString(PyExc_RuntimeError, "Failed to read TLBC array pointer");
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read TLBC array pointer");
         return 0; // Read error
     }
@@ -61,7 +65,6 @@ cache_tlbc_array(RemoteUnwinderObject *unwinder, uintptr_t code_addr, uintptr_t 
     // Read the TLBC array size
     Py_ssize_t tlbc_size;
     if (_Py_RemoteDebug_PagedReadRemoteMemory(&unwinder->handle, tlbc_array_ptr, sizeof(tlbc_size), &tlbc_size) != 0) {
-        PyErr_SetString(PyExc_RuntimeError, "Failed to read TLBC array size");
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read TLBC array size");
         return 0; // Read error
     }
@@ -110,6 +113,7 @@ cache_tlbc_array(RemoteUnwinderObject *unwinder, uintptr_t code_addr, uintptr_t 
     void *key = (void *)code_addr;
     if (_Py_hashtable_set(unwinder->tlbc_cache, key, entry) < 0) {
         tlbc_cache_entry_destroy(entry);
+        PyErr_NoMemory();
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to store TLBC entry in cache");
         return 0; // Cache error
     }
@@ -187,11 +191,7 @@ parse_linetable(const uintptr_t addrq, const char* linetable, Py_ssize_t linetab
     int computed_line = firstlineno;  // Running accumulator, separate from output
     int val;  // Temporary for varint results
     uint8_t byte;  // Temporary for byte reads
-    const size_t MAX_LINETABLE_ENTRIES = 65536;
-    size_t entry_count = 0;
-
-    while (ptr < end && *ptr != '\0' && entry_count < MAX_LINETABLE_ENTRIES) {
-        entry_count++;
+    while (ptr < end && *ptr != '\0') {
         uint8_t first_byte = *(ptr++);
         uint8_t code = (first_byte >> 3) & 15;
         size_t length = (first_byte & 7) + 1;
@@ -388,7 +388,8 @@ parse_code_object(RemoteUnwinderObject *unwinder,
         }
 
         linetable = read_py_bytes(unwinder,
-            GET_MEMBER(uintptr_t, code_object, unwinder->debug_offsets.code_object.linetable), 4096);
+            GET_MEMBER(uintptr_t, code_object, unwinder->debug_offsets.code_object.linetable),
+            MAX_LINETABLE_SIZE);
         if (!linetable) {
             set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read linetable from code object");
             goto error;
@@ -404,11 +405,20 @@ parse_code_object(RemoteUnwinderObject *unwinder,
         meta->func_name = func;
         meta->file_name = file;
         meta->linetable = linetable;
+        meta->last_frame_info = NULL;
+        meta->last_addrq = -1;
         meta->first_lineno = GET_MEMBER(int, code_object, unwinder->debug_offsets.code_object.firstlineno);
         meta->addr_code_adaptive = real_address + (uintptr_t)unwinder->debug_offsets.code_object.co_code_adaptive;
 
         if (unwinder && unwinder->code_object_cache && _Py_hashtable_set(unwinder->code_object_cache, key, meta) < 0) {
+            // Ownership of func/file/linetable was transferred to meta,
+            // so NULL them before destroying meta to prevent double-free
+            // in the error label's Py_XDECREF calls.
+            func = NULL;
+            file = NULL;
+            linetable = NULL;
             cached_code_metadata_destroy(meta);
+            PyErr_NoMemory();
             set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to cache code metadata");
             goto error;
         }
@@ -424,7 +434,7 @@ parse_code_object(RemoteUnwinderObject *unwinder,
 
 #ifdef Py_GIL_DISABLED
     // Handle thread-local bytecode (TLBC) in free threading builds
-    if (ctx->tlbc_index == 0 || unwinder->debug_offsets.code_object.co_tlbc == 0 || unwinder == NULL) {
+    if (ctx->tlbc_index == 0 || unwinder == NULL || unwinder->debug_offsets.code_object.co_tlbc == 0) {
         // No TLBC or no unwinder - use main bytecode directly
         addrq = (uint16_t *)ip - (uint16_t *)meta->addr_code_adaptive;
         goto done_tlbc;
@@ -442,10 +452,29 @@ parse_code_object(RemoteUnwinderObject *unwinder,
         tlbc_entry = get_tlbc_cache_entry(unwinder, real_address, unwinder->tlbc_generation);
     }
 
+    if (tlbc_entry && ctx->tlbc_index >= 0) {
+        uintptr_t *entries = (uintptr_t *)((char *)tlbc_entry->tlbc_array + sizeof(Py_ssize_t));
+        if (ctx->tlbc_index >= tlbc_entry->tlbc_array_size ||
+            entries[ctx->tlbc_index] == 0) {
+            TLBCCacheEntry *old = _Py_hashtable_steal(unwinder->tlbc_cache, (void *)real_address);
+            if (old != NULL) {
+                tlbc_cache_entry_destroy(old);
+            }
+            if (!cache_tlbc_array(unwinder, real_address, real_address + unwinder->debug_offsets.code_object.co_tlbc,
+                                unwinder->tlbc_generation)) {
+                goto error;
+            }
+            tlbc_entry = get_tlbc_cache_entry(unwinder, real_address, unwinder->tlbc_generation);
+        }
+    }
+
     // Validate tlbc_index and check TLBC cache
     if (tlbc_entry) {
         // Validate index bounds (also catches negative values since tlbc_index is signed)
         if (ctx->tlbc_index < 0 || ctx->tlbc_index >= tlbc_entry->tlbc_array_size) {
+            PyErr_Format(PyExc_RuntimeError,
+                "Invalid tlbc_index %d (array size %zd, corrupted remote memory)",
+                ctx->tlbc_index, tlbc_entry->tlbc_array_size);
             set_exception_cause(unwinder, PyExc_RuntimeError,
                 "Invalid tlbc_index (corrupted remote memory)");
             goto error;
@@ -471,6 +500,12 @@ done_tlbc:
     addrq = (uint16_t *)ip - (uint16_t *)meta->addr_code_adaptive;
 #endif
     ;  // Empty statement to avoid C23 extension warning
+
+    if (!unwinder->opcodes && meta->last_frame_info != NULL && meta->last_addrq == addrq) {
+        *result = Py_NewRef(meta->last_frame_info);
+        return 0;
+    }
+
     LocationInfo info = {0};
     bool ok = parse_linetable(addrq, PyBytes_AS_STRING(meta->linetable),
                               PyBytes_GET_SIZE(meta->linetable),
@@ -516,6 +551,11 @@ done_tlbc:
     Py_XDECREF(opcode_obj);
     if (!tuple) {
         goto error;
+    }
+
+    if (!unwinder->opcodes) {
+        Py_XSETREF(meta->last_frame_info, Py_NewRef(tuple));
+        meta->last_addrq = addrq;
     }
 
     *result = tuple;

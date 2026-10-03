@@ -100,6 +100,9 @@ class TestResult:
     # partial coverage in a worker run; not used by sequential in-process runs
     covered_lines: list[Location] | None = None
 
+    # short descriptions of how the test altered the execution environment
+    env_changed_reasons: list[str] | None = None
+
     def is_failed(self, fail_env_changed: bool) -> bool:
         if self.state == State.ENV_CHANGED:
             return fail_env_changed
@@ -175,9 +178,15 @@ class TestResult:
     def has_meaningful_duration(self):
         return State.has_meaningful_duration(self.state)
 
-    def set_env_changed(self):
+    def set_env_changed(self, *reasons):
         if self.state is None or self.state == State.PASSED:
             self.state = State.ENV_CHANGED
+        if reasons:
+            if self.env_changed_reasons is None:
+                self.env_changed_reasons = []
+            for reason in reasons:
+                if reason not in self.env_changed_reasons:
+                    self.env_changed_reasons.append(reason)
 
     def must_stop(self, fail_fast: bool, fail_env_changed: bool) -> bool:
         if State.must_stop(self.state):

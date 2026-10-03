@@ -17,7 +17,7 @@
 _Py_HashSecret_t _Py_HashSecret = {{0}};
 
 #if Py_HASH_ALGORITHM == Py_HASH_EXTERNAL
-extern PyHash_FuncDef PyHash_Func;
+Py_DEPRECATED(3.15) extern PyHash_FuncDef PyHash_Func;
 #else
 static PyHash_FuncDef PyHash_Func;
 #endif

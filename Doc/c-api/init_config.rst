@@ -116,15 +116,14 @@ Error Handling
 
    Get the *config* exit code.
 
-   * Set *\*exitcode* and return ``1`` if *config* has an exit code set.
-   * Return ``0`` if *config* has no exit code set.
+   Return ``0`` and leave *\*exitcode* unchanged.
 
-   Only the ``Py_InitializeFromInitConfig()`` function can set an exit
-   code if the ``parse_argv`` option is non-zero.
+   In Python 3.15, :c:func:`Py_InitializeFromInitConfig` sets an exit code if a
+   command line option wants to exit Python. This is no longer the case in
+   Python 3.16. Instead, the option is now processed in :c:func:`Py_RunMain`.
+   This function became useless.
 
-   An exit code can be set when parsing the command line failed (exit
-   code ``2``) or when a command line option asks to display the command
-   line help (exit code ``0``).
+   .. deprecated:: next
 
 
 Get Options
@@ -247,10 +246,11 @@ Initialize Python
 
    * Return ``0`` on success.
    * Set an error in *config* and return ``-1`` on error.
-   * Set an exit code in *config* and return ``-1`` if Python wants to
-     exit.
 
-   See ``PyInitConfig_GetExitcode()`` for the exit code case.
+   .. versionchanged:: next
+      The function no longer sets an exit code if a command line option wants
+      to exit Python. Instead, the option is now processed in
+      :c:func:`Py_RunMain`.
 
 
 .. _pyinitconfig-opts:
@@ -544,9 +544,9 @@ Configuration Options
 
 Visibility:
 
-* Public: Can by get by :c:func:`PyConfig_Get` and set by
+* Public: Can be retrieved by :c:func:`PyConfig_Get` and set by
   :c:func:`PyConfig_Set`.
-* Read-only: Can by get by :c:func:`PyConfig_Get`, but cannot be set by
+* Read-only: Can be retrieved by :c:func:`PyConfig_Get`, but cannot be set by
   :c:func:`PyConfig_Set`.
 
 
@@ -623,6 +623,10 @@ Some options are read from the :mod:`sys` attributes. For example, the option
 
    .. versionadded:: 3.14
 
+   .. versionchanged:: next
+      The function now replaces :data:`sys.flags` (create a new object),
+      instead of modifying :data:`sys.flags` in-place.
+
 
 .. _pyconfig_api:
 
@@ -686,9 +690,6 @@ Example of customized Python always running in isolated mode::
 
     exception:
         PyConfig_Clear(&config);
-        if (PyStatus_IsExit(status)) {
-            return status.exitcode;
-        }
         /* Display the error message and exit the process with
            non-zero exit code */
         Py_ExitStatusException(status);
@@ -754,6 +755,8 @@ PyStatus
 
       Exit code. Argument passed to ``exit()``.
 
+      .. deprecated:: next
+
    .. c:member:: const char *err_msg
 
       Error message.
@@ -784,6 +787,11 @@ PyStatus
 
       Exit Python with the specified exit code.
 
+      .. deprecated:: next
+         :c:func:`Py_InitializeFromConfig` no longer sets an exit code if a
+         command line option wants to exit Python. Instead, the option is
+         now processed in :c:func:`Py_RunMain`.
+
    Functions to handle a status:
 
    .. c:function:: int PyStatus_Exception(PyStatus status)
@@ -798,6 +806,11 @@ PyStatus
    .. c:function:: int PyStatus_IsExit(PyStatus status)
 
       Is the result an exit?
+
+      .. deprecated:: next
+         :c:func:`Py_InitializeFromConfig` no longer sets an exit code if a
+         command line option wants to exit Python. Instead, the option is
+         now processed in :c:func:`Py_RunMain`.
 
    .. c:function:: void Py_ExitStatusException(PyStatus status)
 
@@ -1153,7 +1166,7 @@ PyConfig
 
    Most ``PyConfig`` methods :ref:`preinitialize Python <c-preinit>` if needed.
    In that case, the Python preinitialization configuration
-   (:c:type:`PyPreConfig`) in based on the :c:type:`PyConfig`. If configuration
+   (:c:type:`PyPreConfig`) is based on the :c:type:`PyConfig`. If configuration
    fields which are in common with :c:type:`PyPreConfig` are tuned, they must
    be set before calling a :c:type:`PyConfig` method:
 
@@ -1231,9 +1244,9 @@ PyConfig
 
    .. c:member:: wchar_t* base_executable
 
-      Python base executable: :data:`sys._base_executable`.
+      Python base executable: ``sys._base_executable``.
 
-      Set by the :envvar:`__PYVENV_LAUNCHER__` environment variable.
+      Set by the ``__PYVENV_LAUNCHER__`` environment variable.
 
       Set from :c:member:`PyConfig.executable` if ``NULL``.
 
@@ -1744,7 +1757,7 @@ PyConfig
 
       * On macOS, use :envvar:`PYTHONEXECUTABLE` environment variable if set.
       * If the ``WITH_NEXT_FRAMEWORK`` macro is defined, use
-        :envvar:`__PYVENV_LAUNCHER__` environment variable if set.
+        ``__PYVENV_LAUNCHER__`` environment variable if set.
       * Use ``argv[0]`` of :c:member:`~PyConfig.argv` if available and
         non-empty.
       * Otherwise, use ``L"python"`` on Windows, or ``L"python3"`` on other
@@ -1807,10 +1820,10 @@ PyConfig
 
    .. c:member:: wchar_t* run_presite
 
-      ``package.module`` path to module that should be imported before
-      ``site.py`` is run.
+      ``module`` or ``module:func`` entry point that should be executed before
+      the :mod:`site` module is imported.
 
-      Set by the :option:`-X presite=package.module <-X>` command-line
+      Set by the :option:`-X presite=module:func <-X>` command-line
       option and the :envvar:`PYTHON_PRESITE` environment variable.
       The command-line option takes precedence.
 
@@ -1980,8 +1993,7 @@ PyConfig
 
       The :mod:`warnings` module adds :data:`sys.warnoptions` in the reverse
       order: the last :c:member:`PyConfig.warnoptions` item becomes the first
-      item of :data:`warnings.filters` which is checked first (highest
-      priority).
+      item of ``warnings.filters`` which is checked first (highest priority).
 
       The :option:`-W` command line options adds its value to
       :c:member:`~PyConfig.warnoptions`, it can be used multiple times.
@@ -2299,13 +2311,91 @@ Py_GetArgcArgv()
 
    See also :c:member:`PyConfig.orig_argv` member.
 
-Delaying main module execution
-==============================
 
-In some embedding use cases, it may be desirable to separate interpreter initialization
-from the execution of the main module.
+Multi-Phase Initialization Private Provisional API
+==================================================
 
-This separation can be achieved by setting ``PyConfig.run_command`` to the empty
-string during initialization (to prevent the interpreter from dropping into the
-interactive prompt), and then subsequently executing the desired main module
-code using ``__main__.__dict__`` as the global namespace.
+This section is a private provisional API introducing multi-phase
+initialization, the core feature of :pep:`432`:
+
+* "Core" initialization phase, "bare minimum Python":
+
+  * Builtin types;
+  * Builtin exceptions;
+  * Builtin and frozen modules;
+  * The :mod:`sys` module is only partially initialized
+    (ex: :data:`sys.path` doesn't exist yet).
+
+* "Main" initialization phase, Python is fully initialized:
+
+  * Install and configure :mod:`importlib`;
+  * Apply the :ref:`Path Configuration <init-path-config>`;
+  * Install signal handlers;
+  * Finish :mod:`sys` module initialization (ex: create :data:`sys.stdout`
+    and :data:`sys.path`);
+  * Enable optional features like :mod:`faulthandler` and :mod:`tracemalloc`;
+  * Import the :mod:`site` module;
+  * etc.
+
+Private provisional API:
+
+.. c:member:: int PyConfig._init_main
+
+   If set to ``0``, :c:func:`Py_InitializeFromConfig` stops at the "Core"
+   initialization phase.
+
+.. c:function:: PyStatus _Py_InitializeMain(void)
+
+   Move to the "Main" initialization phase, finish the Python initialization.
+
+No module is imported during the "Core" phase and the ``importlib`` module is
+not configured: the :ref:`Path Configuration <init-path-config>` is only
+applied during the "Main" phase. It may allow to customize Python in Python to
+override or tune the :ref:`Path Configuration <init-path-config>`, maybe
+install a custom :data:`sys.meta_path` importer or an import hook, etc.
+
+It may become possible to calculate the :ref:`Path Configuration
+<init-path-config>` in Python, after the Core phase and before the Main phase,
+which is one of the :pep:`432` motivation.
+
+The "Core" phase is not properly defined: what should be and what should
+not be available at this phase is not specified yet. The API is marked
+as private and provisional: the API can be modified or even be removed
+anytime until a proper public API is designed.
+
+Example running Python code between "Core" and "Main" initialization
+phases::
+
+    void init_python(void)
+    {
+        PyStatus status;
+
+        PyConfig config;
+        PyConfig_InitPythonConfig(&config);
+        config._init_main = 0;
+
+        /* ... customize 'config' configuration ... */
+
+        status = Py_InitializeFromConfig(&config);
+        PyConfig_Clear(&config);
+        if (PyStatus_Exception(status)) {
+            Py_ExitStatusException(status);
+        }
+
+        /* Use sys.stderr because sys.stdout is only created
+           by _Py_InitializeMain() */
+        int res = PyRun_SimpleString(
+            "import sys; "
+            "print('Run Python code before _Py_InitializeMain', "
+                   "file=sys.stderr)");
+        if (res < 0) {
+            exit(1);
+        }
+
+        /* ... put more configuration code here ... */
+
+        status = _Py_InitializeMain();
+        if (PyStatus_Exception(status)) {
+            Py_ExitStatusException(status);
+        }
+    }

@@ -1,0 +1,3 @@
+:mod:`asyncio`: ``sendfile()`` and ``sock_sendfile()`` event loop methods
+now call ``file.seek(offset)`` if *file* has a ``seek()`` method,
+even if *offset* is ``0`` (default value).

@@ -1,0 +1,2 @@
+Corrected the use of ``AC_PATH_TOOL`` in ``configure.ac`` to allow a C++
+compiler to be found on :envvar:`!PATH`.

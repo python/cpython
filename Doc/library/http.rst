@@ -12,7 +12,7 @@
 
 --------------
 
-:mod:`http` is a package that collects several modules for working with the
+:mod:`!http` is a package that collects several modules for working with the
 HyperText Transfer Protocol:
 
 * :mod:`http.client` is a low-level HTTP protocol client; for high-level URL
@@ -22,7 +22,7 @@ HyperText Transfer Protocol:
 * :mod:`http.cookiejar` provides persistence of cookies
 
 
-The :mod:`http` module also defines the following enums that help you work with http related code:
+The :mod:`!http` module also defines the following enums that help you work with http related code:
 
 .. class:: HTTPStatus
 

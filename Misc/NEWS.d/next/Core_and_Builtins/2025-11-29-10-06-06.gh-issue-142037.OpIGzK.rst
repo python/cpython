@@ -1,7 +1,0 @@
-Improve error messages for printf-style formatting.
-For errors in the format string, always include the position of the
-start of the format unit.
-For errors related to the formatted arguments, always include the number
-or the name of the argument.
-Raise more specific errors and include more information (type and number
-of arguments, most probable causes of error).

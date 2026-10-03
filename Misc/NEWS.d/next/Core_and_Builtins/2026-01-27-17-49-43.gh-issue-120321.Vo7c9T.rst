@@ -1,2 +1,0 @@
-Made ``gi_yieldfrom`` thread-safe in the free-threading build
-by using a lightweight lock on the frame state.

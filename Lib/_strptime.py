@@ -7,7 +7,7 @@ CLASSES:
 
 FUNCTIONS:
     _getlang -- Figure out what language is being used for the locale
-    strptime -- Calculates the time struct represented by the passed-in string
+    _strptime -- Calculates the time struct represented by the passed-in string
 
 """
 import os
@@ -238,7 +238,7 @@ class LocaleTime(object):
                         current_format = current_format.replace(tz, "%Z")
             # Transform all non-ASCII digits to digits in range U+0660 to U+0669.
             if not current_format.isascii() and self.LC_alt_digits is None:
-                current_format = re_sub(r'\d(?<![0-9])',
+                current_format = re_sub(r'[\d--0-9]',
                                         lambda m: chr(0x0660 + int(m[0])),
                                         current_format)
             for old, new in replacement_pairs:
@@ -382,7 +382,10 @@ class TimeRE(dict):
             'Z': self.__seqToRE((tz for tz_names in self.locale_time.timezone
                                         for tz in tz_names),
                                 'Z'),
-            '%': '%'}
+            'n': r'\s*',
+            't': r'\s*',
+            '%': '%',
+        }
         if self.locale_time.LC_alt_digits is None:
             for d in 'dmyCHIMS':
                 mapping['O' + d] = r'(?P<%s>\d\d|\d| \d)' % d
@@ -418,6 +421,8 @@ class TimeRE(dict):
         mapping['W'] = mapping['U'].replace('U', 'W')
 
         base.__init__(mapping)
+        base.__setitem__('D', self.pattern('%m/%d/%y'))
+        base.__setitem__('F', self.pattern('%Y-%m-%d'))
         base.__setitem__('T', self.pattern('%H:%M:%S'))
         base.__setitem__('R', self.pattern('%H:%M'))
         base.__setitem__('r', self.pattern(self.locale_time.LC_time_ampm))
@@ -459,9 +464,10 @@ class TimeRE(dict):
         format = re_sub(r'\s+', r'\\s+', format)
         format = re_sub(r"'", "['\u02bc]", format)  # needed for br_FR
         year_in_format = False
-        day_of_month_in_format = False
+        day_d_in_format = False
+        day_e_in_format = False
         def repl(m):
-            nonlocal year_in_format, day_of_month_in_format
+            nonlocal year_in_format, day_d_in_format, day_e_in_format
             directive = m.group()[1:] # exclude `%` symbol
             match directive:
                 case 'Y' | 'y' | 'G':
@@ -471,19 +477,28 @@ class TimeRE(dict):
                                       SyntaxWarning, skip_file_prefixes=(os.path.dirname(__file__),))
                     year_in_format = True
                 case 'd':
-                    day_of_month_in_format = True
+                    day_d_in_format = True
+                case 'e':
+                    day_e_in_format = True
             return self[directive]
         format = re_sub(r'%[-_0^#]*[0-9]*([OE]?[:\\]?.?)', repl, format)
-        if day_of_month_in_format and not year_in_format:
-            import warnings
-            warnings.warn("""\
+        if not year_in_format:
+            if day_d_in_format:
+                raise ValueError(
+                    "Day of month directive '%d' may not be used without "
+                    "a year directive. Parsing dates involving a day of "
+                    "month without a year is ambiguous and fails to parse "
+                    "leap day. Add a year to the input and format. "
+                    "See https://github.com/python/cpython/issues/70647.")
+            if day_e_in_format:
+                import warnings
+                warnings.warn("""\
 Parsing dates involving a day of month without a year specified is ambiguous
-and fails to parse leap day. The default behavior will change in Python 3.15
-to either always raise an exception or to use a different default year (TBD).
-To avoid trouble, add a specific year to the input & format.
+and fails to parse leap day. '%e' without a year will become an error in Python 3.17.
+To avoid trouble, add a specific year to the input and format.
 See https://github.com/python/cpython/issues/70647.""",
-                          DeprecationWarning,
-                          skip_file_prefixes=(os.path.dirname(__file__),))
+                              DeprecationWarning,
+                              skip_file_prefixes=(os.path.dirname(__file__),))
         return format
 
     def compile(self, format):
@@ -519,9 +534,10 @@ def _calc_julian_from_U_or_W(year, week_of_year, day_of_week, week_starts_Mon):
 
 
 def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
-    """Return a 2-tuple consisting of a time struct and an int containing
-    the number of microseconds based on the input string and the
-    format string."""
+    """Return a 3-tuple consisting of a tuple with time components,
+    an int containing the number of microseconds, and an int
+    containing the microseconds part of the GMT offset, based on the
+    input string and the format string."""
 
     for index, arg in enumerate([data_string, format]):
         if not isinstance(arg, str):
@@ -550,15 +566,15 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
                 del err
                 bad_directive = bad_directive.replace('\\s', '')
                 if not bad_directive:
-                    raise ValueError("stray %% in format '%s'" % format) from None
+                    raise ValueError(f"stray % in format {format!r}") from None
                 bad_directive = bad_directive.replace('\\', '', 1)
-                raise ValueError("'%s' is a bad directive in format '%s'" %
-                                    (bad_directive, format)) from None
+                raise ValueError(f"{bad_directive!r} is a bad directive "
+                                 f"in format {format!r}") from None
             _regex_cache[format] = format_regex
     found = format_regex.match(data_string)
     if not found:
-        raise ValueError("time data %r does not match format %r" %
-                         (data_string, format))
+        raise ValueError(f"time data {data_string!r} does not match "
+                         f"format {format!r}")
     if len(data_string) != found.end():
         rest = data_string[found.end():]
         # Specific check for '%:z' directive
@@ -568,9 +584,9 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
             and rest[0] != ":"
         ):
             raise ValueError(
-                f"Missing colon in %:z before '{rest}', got '{data_string}'"
+                f"Missing colon in %:z before {rest!r}, got {data_string!r}"
             )
-        raise ValueError("unconverted data remains: %s" % rest)
+        raise ValueError(f"unconverted data remains: {rest!r}")
 
     iso_year = year = None
     month = day = 1
@@ -686,7 +702,7 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
                         z = z[:3] + z[4:]
                         if len(z) > 5:
                             if z[5] != ':':
-                                msg = f"Inconsistent use of : in {found_dict[group_key]}"
+                                msg = f"Inconsistent use of : in {found_dict[group_key]!r}"
                                 raise ValueError(msg)
                             z = z[:5] + z[6:]
                     hours = int(z[1:3])

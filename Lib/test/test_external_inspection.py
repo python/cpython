@@ -1,3 +1,4 @@
+import asyncio
 import unittest
 import os
 import textwrap
@@ -17,6 +18,7 @@ from test.support import (
     requires_gil_enabled,
     requires_remote_subprocess_debugging,
 )
+from test.support.import_helper import import_module
 from test.support.script_helper import make_script
 from test.support.socket_helper import find_unused_port
 
@@ -438,6 +440,73 @@ class RemoteInspectionTestBase(unittest.TestCase):
 
 
 @requires_remote_subprocess_debugging()
+class TestSelfStackTrace(RemoteInspectionTestBase):
+    @skip_if_not_supported
+    def test_long_task_name_is_truncated(self):
+        # gh-157788
+        async def main():
+            asyncio.create_task(asyncio.sleep(10_000), name="x" * 300)
+            await asyncio.sleep(0)
+            names = [
+                task.task_name
+                for info in RemoteUnwinder(os.getpid()).get_all_awaited_by()
+                for task in info.awaited_by
+            ]
+            return asyncio.current_task().get_name(), names
+
+        main_name, names = asyncio.run(main())
+        self.assertIn(main_name, names)
+        self.assertEqual([len(n) for n in names if n.startswith("x")], [255])
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
+    def test_self_trace_with_large_linetable(self):
+        script = textwrap.dedent("""\
+            import os
+            import _remote_debugging
+
+            assignments = "\\n".join(
+                f"value_{i} = {i}" for i in range(1000)
+            )
+            expected_lineno = len(assignments.splitlines()) + 1
+            source = (
+                f"{assignments}\\n"
+                "stack_trace = "
+                "_remote_debugging.RemoteUnwinder(os.getpid()).get_stack_trace()\\n"
+            )
+            code = compile(source, "large_linetable.py", "exec")
+            assert len(code.co_linetable) > 4096, len(code.co_linetable)
+            namespace = {"os": os, "_remote_debugging": _remote_debugging}
+            exec(code, namespace)
+            large_linetable_frames = [
+                frame
+                for interpreter in namespace["stack_trace"]
+                for thread in interpreter.threads
+                for frame in thread.frame_info
+                if frame.filename == "large_linetable.py"
+            ]
+            assert len(large_linetable_frames) == 1, large_linetable_frames
+            assert large_linetable_frames[0].location.lineno == expected_lineno, (
+                large_linetable_frames[0]
+            )
+            """)
+
+        result = subprocess.run(
+            [sys.executable, "-c", script],
+            capture_output=True,
+            text=True,
+            timeout=SHORT_TIMEOUT,
+        )
+        self.assertEqual(
+            result.returncode, 0,
+            f"stdout: {result.stdout}\nstderr: {result.stderr}"
+        )
+
+
+@requires_remote_subprocess_debugging()
 class TestGetStackTrace(RemoteInspectionTestBase):
     @skip_if_not_supported
     @unittest.skipIf(
@@ -515,6 +584,117 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                     )
             finally:
                 _cleanup_sockets(client_socket, server_socket)
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
+    def test_self_trace_after_ctypes_import(self):
+        """Test that RemoteUnwinder works on the same process after _ctypes import.
+
+        When _ctypes is imported, it may call dlopen on the libpython shared
+        library, creating a duplicate mapping in the process address space.
+        The remote debugging code must skip these uninitialized duplicate
+        mappings and find the real PyRuntime. See gh-144563.
+        """
+
+        # Skip the test if the _ctypes module is missing.
+        import_module("_ctypes")
+
+        # Run the test in a subprocess to avoid side effects
+        script = textwrap.dedent("""\
+            import os
+            import _remote_debugging
+
+            # Should work before _ctypes import
+            unwinder = _remote_debugging.RemoteUnwinder(os.getpid())
+
+            import _ctypes
+
+            # Should still work after _ctypes import (gh-144563)
+            unwinder = _remote_debugging.RemoteUnwinder(os.getpid())
+            """)
+
+        result = subprocess.run(
+            [sys.executable, "-c", script],
+            capture_output=True,
+            text=True,
+            timeout=SHORT_TIMEOUT,
+        )
+        self.assertEqual(
+            result.returncode, 0,
+            f"stdout: {result.stdout}\nstderr: {result.stderr}"
+        )
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
+    def test_remote_stack_trace_non_ascii_names(self):
+        # Exercise each PyUnicode kind (1-byte non-ASCII, 2-byte BMP,
+        # 4-byte non-BMP) for both the filename and the function name
+        # reported in the stack trace.
+        latin1 = "zażółć"          # 1-byte non-ASCII (forces non-ASCII path)
+        bmp = "λάμβδα"             # 2-byte BMP
+        astral = "𐌀𐌁𐌂𐌃"            # 4-byte non-BMP (Old Italic; XID, no NFKC fold)
+        func_name = f"{latin1}_{bmp}_{astral}"
+        script_basename = f"mod_{latin1}_{bmp}_{astral}"
+
+        port = find_unused_port()
+        script = textwrap.dedent(
+            f"""\
+            import socket
+            import time
+
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect(('localhost', {port}))
+
+            def {func_name}():
+                sock.sendall(b"ready")
+                time.sleep(10_000)
+
+            {func_name}()
+            """
+        )
+        with os_helper.temp_dir() as work_dir:
+            script_dir = os.path.join(work_dir, "script_pkg")
+            os.mkdir(script_dir)
+            script_name = _make_test_script(script_dir, script_basename, script)
+
+            server_socket = _create_server_socket(port)
+            client_socket = None
+            try:
+                p = subprocess.Popen([sys.executable, script_name])
+                client_socket, _ = server_socket.accept()
+                server_socket.close()
+                _wait_for_signal(client_socket, b"ready")
+
+                stack_trace = get_stack_trace(p.pid)
+            except PermissionError:
+                self.skipTest("Insufficient permissions to read the stack trace")
+            finally:
+                if client_socket is not None:
+                    client_socket.close()
+                p.kill()
+                p.wait(timeout=SHORT_TIMEOUT)
+
+            frames = [
+                frame
+                for interp in stack_trace
+                for thread in interp.threads
+                for frame in thread.frame_info
+            ]
+            target = next(
+                (f for f in frames if f.funcname == func_name), None
+            )
+            self.assertIsNotNone(
+                target,
+                f"Frame for {func_name!r} missing; got "
+                f"{[(f.filename, f.funcname) for f in frames]}",
+            )
+            self.assertEqual(target.filename, script_name)
 
     @skip_if_not_supported
     @unittest.skipIf(
@@ -1330,6 +1510,160 @@ class TestGetStackTrace(RemoteInspectionTestBase):
         sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
         "Test only runs on Linux with process_vm_readv support",
     )
+    def test_async_global_awaited_by_from_non_main_thread(self):
+        port = find_unused_port()
+        script = textwrap.dedent(
+            f"""\
+            import asyncio
+            import socket
+            import threading
+            import time
+
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect(('localhost', {port}))
+
+            async def worker_main():
+                task = asyncio.create_task(
+                    asyncio.sleep(10_000),
+                    name="worker task",
+                )
+                await asyncio.sleep(0)
+                sock.sendall(f"ready:{{threading.get_native_id()}}\\n".encode())
+                await task
+
+            def run_worker_loop():
+                asyncio.run(worker_main())
+
+            threading.Thread(
+                target=run_worker_loop,
+                name="async-worker",
+                daemon=True,
+            ).start()
+            time.sleep(10_000)
+            """
+        )
+
+        with os_helper.temp_dir() as work_dir:
+            script_dir = os.path.join(work_dir, "script_pkg")
+            os.mkdir(script_dir)
+
+            server_socket = _create_server_socket(port)
+            script_name = _make_test_script(script_dir, "script", script)
+            client_socket = None
+
+            try:
+                with _managed_subprocess([sys.executable, script_name]) as p:
+                    client_socket, _ = server_socket.accept()
+                    server_socket.close()
+                    server_socket = None
+
+                    response = _wait_for_signal(client_socket, b"ready:")
+                    worker_thread_id = int(
+                        response.split(b"ready:", 1)[1].splitlines()[0]
+                    )
+
+                    for _ in busy_retry(SHORT_TIMEOUT):
+                        all_awaited_by = get_all_awaited_by(p.pid)
+                        if any(
+                            task.task_name == "worker task"
+                            for info in all_awaited_by
+                            if info.thread_id == worker_thread_id
+                            for task in info.awaited_by
+                        ):
+                            break
+                    else:
+                        self.fail(
+                            "get_all_awaited_by() did not report "
+                            "the asyncio task from the non-main thread"
+                        )
+            finally:
+                _cleanup_sockets(client_socket, server_socket)
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
+    def test_async_remote_stack_trace_from_non_main_thread(self):
+        port = find_unused_port()
+        script = textwrap.dedent(
+            f"""\
+            import asyncio
+            import socket
+            import threading
+            import time
+
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect(('localhost', {port}))
+
+            def blocking_call():
+                sock.sendall(f"ready:{{threading.get_native_id()}}\\n".encode())
+                time.sleep(10_000)
+
+            async def worker_task():
+                await asyncio.sleep(0)
+                blocking_call()
+
+            async def worker_main():
+                task = asyncio.create_task(
+                    worker_task(),
+                    name="worker task",
+                )
+                await task
+
+            def run_worker_loop():
+                asyncio.run(worker_main())
+
+            threading.Thread(
+                target=run_worker_loop,
+                name="async-worker",
+                daemon=True,
+            ).start()
+            time.sleep(10_000)
+            """
+        )
+
+        with os_helper.temp_dir() as work_dir:
+            script_dir = os.path.join(work_dir, "script_pkg")
+            os.mkdir(script_dir)
+
+            server_socket = _create_server_socket(port)
+            script_name = _make_test_script(script_dir, "script", script)
+            client_socket = None
+
+            try:
+                with _managed_subprocess([sys.executable, script_name]) as p:
+                    client_socket, _ = server_socket.accept()
+                    server_socket.close()
+                    server_socket = None
+
+                    response = _wait_for_signal(client_socket, b"ready:")
+                    worker_thread_id = int(
+                        response.split(b"ready:", 1)[1].splitlines()[0]
+                    )
+
+                    for _ in busy_retry(SHORT_TIMEOUT):
+                        stack_trace = get_async_stack_trace(p.pid)
+                        if any(
+                            task.task_name == "worker task"
+                            for info in stack_trace
+                            if info.thread_id == worker_thread_id
+                            for task in info.awaited_by
+                        ):
+                            break
+                    else:
+                        self.fail(
+                            "get_async_stack_trace() did not report "
+                            "the running asyncio task from the non-main thread"
+                        )
+            finally:
+                _cleanup_sockets(client_socket, server_socket)
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
     def test_self_trace(self):
         stack_trace = get_stack_trace(os.getpid())
 
@@ -1349,6 +1683,80 @@ class TestGetStackTrace(RemoteInspectionTestBase):
         self.assertTrue(this_thread_stack[0].filename.endswith("test_external_inspection.py"))
         self.assertEqual(this_thread_stack[1].funcname, "TestGetStackTrace.test_self_trace")
         self.assertTrue(this_thread_stack[1].filename.endswith("test_external_inspection.py"))
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
+    def test_empty_native_thread_stack(self):
+        _testcapi = import_module("_testcapi")
+        lock = threading.Lock()
+        lock.acquire()
+        # A built-in callback leaves the C thread's Python stack empty.
+        _testcapi.call_in_temporary_c_thread(lock.acquire, False)
+        try:
+            for cache_frames, native in ((False, False), (False, True),
+                                         (True, False), (True, True)):
+                with self.subTest(cache_frames=cache_frames, native=native):
+                    unwinder = RemoteUnwinder(
+                        os.getpid(), all_threads=True, cache_frames=cache_frames,
+                        native=native,
+                    )
+                    _get_stack_trace_with_retry(
+                        unwinder, condition=lambda trace: len(trace[0].threads) == 2,
+                    )
+                    threads = unwinder.get_stack_trace()[0].threads
+                    native_stack, python_stack = sorted(
+                        (thread.frame_info for thread in threads), key=len,
+                    )
+                    self.assertEqual(native_stack, [])
+                    self.assertEqual(
+                        python_stack[0].funcname,
+                        "TestGetStackTrace.test_empty_native_thread_stack",
+                    )
+        finally:
+            lock.release()
+            _testcapi.join_temporary_c_thread()
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
+    def test_popping_python_frame_is_not_native(self):
+        script = """\
+def leaf(depth):
+    if depth:
+        leaf(depth - 1)
+
+while True:
+        leaf(300)
+"""
+        with _managed_subprocess([sys.executable, "-c", script]) as process:
+            for _ in busy_retry(SHORT_TIMEOUT):
+                try:
+                    unwinder = RemoteUnwinder(
+                        process.pid, native=True, gc=False, cache_frames=False,
+                    )
+                except RuntimeError:
+                    continue
+                break
+            samples = 0
+            for _ in range(10_000):
+                try:
+                    threads = unwinder.get_stack_trace()[0].threads
+                except TRANSIENT_ERRORS:
+                    continue
+                if not threads:
+                    continue
+                frames = threads[0].frame_info
+                names = [frame.funcname for frame in frames]
+                if "leaf" not in names:
+                    continue
+                samples += 1
+                self.assertNotIn(("leaf", "<native>"), zip(names, names[1:]))
+            self.assertGreater(samples, 1000)
 
     @skip_if_not_supported
     @unittest.skipIf(
@@ -1918,6 +2326,127 @@ class TestGetStackTrace(RemoteInspectionTestBase):
         actual = (location.lineno, location.end_lineno,
                   location.col_offset, location.end_col_offset)
         self.assertIn(actual, valid_locations)
+
+    @skip_if_not_supported
+    @unittest.skipIf(sys._is_gil_enabled(), "Requires free-threading")
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Requires process_vm_readv",
+    )
+    def test_tlbc_cache_refresh_after_growth(self):
+        # Reproducer from gh-157660.
+        script = textwrap.dedent("""\
+            import os, threading
+            from _remote_debugging import RemoteUnwinder
+            from test import support
+
+            go = threading.Event()
+            stop = threading.Event()
+
+            def leaf():
+                stop.wait()
+
+            def wait_for_leaf_frames(u, expected_count):
+                for _ in support.sleeping_retry(
+                    support.SHORT_TIMEOUT,
+                    f"Expected {expected_count} leaf frames",
+                ):
+                    try:
+                        traces = u.get_stack_trace()
+                    except RuntimeError as exc:
+                        if str(exc) != "Failed to parse initial frame in chain":
+                            raise
+                        continue
+                    count = sum(
+                        f.funcname == "leaf"
+                        for i in traces
+                        for t in i.threads for f in t.frame_info
+                    )
+                    if count == expected_count:
+                        return
+
+            threading.Thread(target=leaf, daemon=True).start()
+            for _ in range(16):
+                threading.Thread(target=stop.wait, daemon=True).start()
+            threading.Thread(target=lambda: (go.wait(), leaf()), daemon=True).start()
+
+            u = RemoteUnwinder(os.getpid(), all_threads=True, cache_frames=False)
+            wait_for_leaf_frames(u, 1)
+            go.set()
+            wait_for_leaf_frames(u, 2)
+            """)
+        result = subprocess.run(
+            [sys.executable, "-X", "gil=0", "-X", "tlbc=1", "-c", script],
+            capture_output=True,
+            text=True,
+            timeout=SHORT_TIMEOUT,
+        )
+        self.assertEqual(
+            result.returncode, 0,
+            f"stdout: {result.stdout}\nstderr: {result.stderr}",
+        )
+
+    @skip_if_not_supported
+    @unittest.skipIf(sys._is_gil_enabled(), "Requires free-threading")
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Requires process_vm_readv",
+    )
+    def test_tlbc_cache_refresh_after_slot_fill(self):
+        # Reproducer from gh-157660.
+        script = textwrap.dedent("""\
+            import os, threading
+            from _remote_debugging import RemoteUnwinder
+
+            go = threading.Event()
+            stop = threading.Event()
+
+            def leaf():
+                stop.wait()
+
+            from test import support
+
+            def lines(u, expected_count):
+                for _ in support.sleeping_retry(
+                    support.SHORT_TIMEOUT,
+                    f"Expected {expected_count} leaf frames",
+                ):
+                    try:
+                        traces = u.get_stack_trace()
+                    except RuntimeError as exc:
+                        if str(exc) != "Failed to parse initial frame in chain":
+                            raise
+                        continue
+                    result = sorted(
+                        f.location.lineno
+                        for i in traces
+                        for t in i.threads for f in t.frame_info
+                        if f.funcname == "leaf"
+                    )
+                    # A new frame can still point at the function definition.
+                    if (len(result) == expected_count and
+                        leaf.__code__.co_firstlineno not in result):
+                        return result
+
+            threading.Thread(target=leaf, daemon=True).start()
+            threading.Thread(target=lambda: (go.wait(), leaf()), daemon=True).start()
+            u = RemoteUnwinder(os.getpid(), all_threads=True, cache_frames=False)
+            before = lines(u, 1)
+            assert before == [8], before
+            go.set()
+            cached = lines(u, 2)
+            assert cached == [8, 8], cached
+            """)
+        result = subprocess.run(
+            [sys.executable, "-X", "gil=0", "-X", "tlbc=1", "-c", script],
+            capture_output=True,
+            text=True,
+            timeout=SHORT_TIMEOUT,
+        )
+        self.assertEqual(
+            result.returncode, 0,
+            f"stdout: {result.stdout}\nstderr: {result.stderr}",
+        )
 
 
 class TestUnsupportedPlatformHandling(unittest.TestCase):
@@ -3501,6 +4030,13 @@ recurse({depth})
             "frames_read_from_cache",
             "frames_read_from_memory",
             "frame_cache_hit_rate",
+            "batched_read_attempts",
+            "batched_read_successes",
+            "batched_read_misses",
+            "batched_read_segments_requested",
+            "batched_read_segments_completed",
+            "batched_read_success_rate",
+            "batched_read_segment_completion_rate",
         ]
         for key in expected_keys:
             self.assertIn(key, stats)

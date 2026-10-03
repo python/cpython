@@ -1,0 +1,2 @@
+Fix a potential :exc:`SystemError` during vector calls when memory allocation fails.
+A :exc:`MemoryError` is now raised instead.

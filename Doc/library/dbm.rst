@@ -8,7 +8,7 @@
 
 --------------
 
-:mod:`dbm` is a generic interface to variants of the DBM database:
+:mod:`!dbm` is a generic interface to variants of the DBM database:
 
 * :mod:`dbm.sqlite3`
 * :mod:`dbm.gnu`
@@ -107,7 +107,7 @@ will automatically close them when done.
 
 .. versionchanged:: 3.2
    :meth:`!get` and :meth:`!setdefault` methods are now available for all
-   :mod:`dbm` backends.
+   :mod:`!dbm` backends.
 
 .. versionchanged:: 3.4
    Added native support for the context management protocol to the objects
@@ -118,7 +118,7 @@ will automatically close them when done.
    instead of :exc:`KeyError`.
 
 .. versionchanged:: 3.13
-   :meth:`!clear` methods are now available for all :mod:`dbm` backends.
+   :meth:`!clear` methods are now available for all :mod:`!dbm` backends.
 
 
 The following example records some hostnames and a corresponding title,  and
@@ -157,11 +157,10 @@ then prints out the contents of the database::
 
 The individual submodules are described in the following sections.
 
-:mod:`dbm.sqlite3` --- SQLite backend for dbm
----------------------------------------------
+:mod:`!dbm.sqlite3` --- SQLite backend for dbm
+----------------------------------------------
 
 .. module:: dbm.sqlite3
-   :platform: All
    :synopsis: SQLite backend for dbm
 
 .. versionadded:: 3.13
@@ -171,8 +170,8 @@ The individual submodules are described in the following sections.
 --------------
 
 This module uses the standard library :mod:`sqlite3` module to provide an
-SQLite backend for the :mod:`dbm` module.
-The files created by :mod:`dbm.sqlite3` can thus be opened by :mod:`sqlite3`,
+SQLite backend for the :mod:`!dbm` module.
+The files created by :mod:`!dbm.sqlite3` can thus be opened by :mod:`sqlite3`,
 or any other SQLite browser, including the SQLite CLI.
 
 .. include:: ../includes/wasm-notavail.rst
@@ -215,42 +214,75 @@ or any other SQLite browser, including the SQLite CLI.
 
       .. note::
          While reorganizing, as much as two times the size of the original database is required
-         in free disk space. However, be aware that this factor changes for each :mod:`dbm` submodule.
+         in free disk space. However, be aware that this factor changes for each :mod:`!dbm` submodule.
 
       .. versionadded:: 3.15
 
 
-:mod:`dbm.gnu` --- GNU database manager
----------------------------------------
+:mod:`!dbm.gnu` --- GNU database manager
+----------------------------------------
 
 .. module:: dbm.gnu
-   :platform: Unix
    :synopsis: GNU database manager
 
 **Source code:** :source:`Lib/dbm/gnu.py`
 
 --------------
 
-The :mod:`dbm.gnu` module provides an interface to the :abbr:`GDBM (GNU dbm)`
+The :mod:`!dbm.gnu` module provides an interface to the :abbr:`GDBM (GNU dbm)`
 library, similar to the :mod:`dbm.ndbm` module, but with additional
 functionality like crash tolerance.
 
 .. note::
 
-   The file formats created by :mod:`dbm.gnu` and :mod:`dbm.ndbm` are incompatible
+   The file formats created by :mod:`!dbm.gnu` and :mod:`dbm.ndbm` are incompatible
    and can not be used interchangeably.
 
 .. include:: ../includes/wasm-mobile-notavail.rst
 
+.. availability:: Unix.
+
 .. exception:: error
 
-   Raised on :mod:`dbm.gnu`-specific errors, such as I/O errors. :exc:`KeyError` is
+   Raised on :mod:`!dbm.gnu`-specific errors, such as I/O errors. :exc:`KeyError` is
    raised for general mapping errors like specifying an incorrect key.
 
 
 .. data:: open_flags
 
    A string of characters the *flag* parameter of :meth:`~dbm.gnu.open` supports.
+
+
+.. data:: GDBM_VERSION_INFO
+
+   A named tuple containing the three components of the GDBM library
+   version that was used for building the module:
+   *major*, *minor*, and *patch*.
+   All values are integers.
+   The components can also be accessed by name,
+   so ``dbm.gnu.GDBM_VERSION_INFO[0]`` is equivalent to
+   ``dbm.gnu.GDBM_VERSION_INFO.major`` and so on.
+   This may be different from the GDBM library actually used at runtime,
+   which is available as :const:`gdbm_version_info`.
+
+   .. versionadded:: next
+
+
+.. data:: gdbm_version_info
+
+   A named tuple containing the version of the GDBM library
+   actually loaded by the interpreter,
+   with the same fields as :const:`GDBM_VERSION_INFO`.
+
+   .. versionadded:: next
+
+
+.. data:: gdbm_version
+
+   The release string of the GDBM library actually loaded by the interpreter,
+   like ``'GDBM version 1.26. 30/07/2025'``.
+
+   .. versionadded:: next
 
 
 .. function:: open(filename, flag="r", mode=0o666, /)
@@ -335,7 +367,7 @@ functionality like crash tolerance.
 
       .. note::
          While reorganizing, as much as one time the size of the original database is required
-         in free disk space. However, be aware that this factor changes for each :mod:`dbm` submodule.
+         in free disk space. However, be aware that this factor changes for each :mod:`!dbm` submodule.
 
    .. method:: gdbm.sync()
 
@@ -343,25 +375,24 @@ functionality like crash tolerance.
       unwritten data to be written to the disk.
 
 
-:mod:`dbm.ndbm` --- New Database Manager
-----------------------------------------
+:mod:`!dbm.ndbm` --- New Database Manager
+-----------------------------------------
 
 .. module:: dbm.ndbm
-   :platform: Unix
    :synopsis: The New Database Manager
 
 **Source code:** :source:`Lib/dbm/ndbm.py`
 
 --------------
 
-The :mod:`dbm.ndbm` module provides an interface to the
+The :mod:`!dbm.ndbm` module provides an interface to the
 :abbr:`NDBM (New Database Manager)` library.
 This module can be used with the "classic" NDBM interface or the
 :abbr:`GDBM (GNU dbm)` compatibility interface.
 
 .. note::
 
-   The file formats created by :mod:`dbm.gnu` and :mod:`dbm.ndbm` are incompatible
+   The file formats created by :mod:`dbm.gnu` and :mod:`!dbm.ndbm` are incompatible
    and can not be used interchangeably.
 
 .. warning::
@@ -373,15 +404,79 @@ This module can be used with the "classic" NDBM interface or the
 
 .. include:: ../includes/wasm-mobile-notavail.rst
 
+.. availability:: Unix.
+
 .. exception:: error
 
-   Raised on :mod:`dbm.ndbm`-specific errors, such as I/O errors. :exc:`KeyError` is raised
+   Raised on :mod:`!dbm.ndbm`-specific errors, such as I/O errors. :exc:`KeyError` is raised
    for general mapping errors like specifying an incorrect key.
 
 
 .. data:: library
 
-   Name of the NDBM implementation library used.
+   Name of the NDBM implementation library used:
+   ``'GNU gdbm'``, ``'Berkeley DB'`` or ``'ndbm'``.
+
+   .. versionchanged:: next
+      The value is ``'ndbm'`` for a classic NDBM library.
+      It was ``'GNU gdbm'`` before.
+
+
+.. data:: GDBM_VERSION_INFO
+          gdbm_version_info
+          gdbm_version
+
+   Information about the GDBM library in use,
+   with the same meaning as the constants of the same names in :mod:`dbm.gnu`.
+   Only available if :const:`library` is ``'GNU gdbm'``.
+
+   .. versionadded:: next
+
+
+.. data:: BDB_VERSION
+
+   The version string of the Berkeley DB library that was used for building
+   the module, like ``'Berkeley DB 5.3.28: (September  9, 2013)'``.
+   This may be different from the Berkeley DB library actually used at runtime,
+   which is available as :const:`bdb_version`.
+   Only available if :const:`library` is ``'Berkeley DB'``.
+
+   .. versionadded:: next
+
+
+.. data:: bdb_version
+
+   The version string of the Berkeley DB library actually loaded by the
+   interpreter.
+   Only available if :const:`library` is ``'Berkeley DB'``.
+
+   .. versionadded:: next
+
+
+.. data:: BDB_VERSION_INFO
+
+   A named tuple containing the three components of the Berkeley DB library
+   version that was used for building the module:
+   *major*, *minor*, and *patch*.
+   All values are integers.
+   The components can also be accessed by name,
+   so ``dbm.ndbm.BDB_VERSION_INFO[0]`` is equivalent to
+   ``dbm.ndbm.BDB_VERSION_INFO.major`` and so on.
+   This may be different from the Berkeley DB library actually used at runtime,
+   which is available as :const:`bdb_version_info`.
+   Only available if :const:`library` is ``'Berkeley DB'``.
+
+   .. versionadded:: next
+
+
+.. data:: bdb_version_info
+
+   A named tuple containing the version of the Berkeley DB library
+   actually loaded by the interpreter,
+   with the same fields as :const:`BDB_VERSION_INFO`.
+   Only available if :const:`library` is ``'Berkeley DB'``.
+
+   .. versionadded:: next
 
 
 .. function:: open(filename, flag="r", mode=0o666, /)
@@ -425,8 +520,8 @@ This module can be used with the "classic" NDBM interface or the
       Close the NDBM database.
 
 
-:mod:`dbm.dumb` --- Portable DBM implementation
------------------------------------------------
+:mod:`!dbm.dumb` --- Portable DBM implementation
+------------------------------------------------
 
 .. module:: dbm.dumb
    :synopsis: Portable implementation of the simple DBM interface.
@@ -437,23 +532,23 @@ This module can be used with the "classic" NDBM interface or the
 
 .. note::
 
-   The :mod:`dbm.dumb` module is intended as a last resort fallback for the
-   :mod:`dbm` module when a more robust module is not available. The :mod:`dbm.dumb`
+   The :mod:`!dbm.dumb` module is intended as a last resort fallback for the
+   :mod:`!dbm` module when a more robust module is not available. The :mod:`!dbm.dumb`
    module is not written for speed and is not nearly as heavily used as the other
    database modules.
 
 --------------
 
-The :mod:`dbm.dumb` module provides a persistent :class:`dict`-like
+The :mod:`!dbm.dumb` module provides a persistent :class:`dict`-like
 interface which is written entirely in Python.
-Unlike other :mod:`dbm` backends, such as :mod:`dbm.gnu`, no
+Unlike other :mod:`!dbm` backends, such as :mod:`dbm.gnu`, no
 external library is required.
 
 The :mod:`!dbm.dumb` module defines the following:
 
 .. exception:: error
 
-   Raised on :mod:`dbm.dumb`-specific errors, such as I/O errors.  :exc:`KeyError` is
+   Raised on :mod:`!dbm.dumb`-specific errors, such as I/O errors.  :exc:`KeyError` is
    raised for general mapping errors like specifying an incorrect key.
 
 
@@ -484,7 +579,7 @@ The :mod:`!dbm.dumb` module defines the following:
       Python's AST compiler.
 
    .. warning::
-      :mod:`dbm.dumb` does not support concurrent read/write access. (Multiple
+      :mod:`!dbm.dumb` does not support concurrent read/write access. (Multiple
       simultaneous read accesses are safe.) When a program has the database open
       for writing, no other program should have it open for reading or writing.
 
@@ -517,7 +612,7 @@ The :mod:`!dbm.dumb` module defines the following:
 
       .. note::
          While reorganizing, no additional free disk space is required. However, be aware
-         that this factor changes for each :mod:`dbm` submodule.
+         that this factor changes for each :mod:`!dbm` submodule.
 
       .. versionadded:: 3.15
 

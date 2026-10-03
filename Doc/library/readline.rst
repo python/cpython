@@ -2,14 +2,11 @@
 ===========================================
 
 .. module:: readline
-   :platform: Unix
    :synopsis: GNU readline support for Python.
-
-.. sectionauthor:: Skip Montanaro <skip.montanaro@gmail.com>
 
 --------------
 
-The :mod:`readline` module defines a number of functions to facilitate
+The :mod:`!readline` module defines a number of functions to facilitate
 completion and reading/writing of history files from the Python interpreter.
 This module can be used directly, or via the :mod:`rlcompleter` module, which
 supports completion of Python identifiers at the interactive prompt.  Settings
@@ -28,11 +25,13 @@ Readline library in general.
 
 .. include:: ../includes/optional-module.rst
 
+.. availability:: Unix.
+
 .. note::
 
   The underlying Readline library API may be implemented by
   the ``editline`` (``libedit``) library instead of GNU readline.
-  On macOS the :mod:`readline` module detects which library is being used
+  On macOS the :mod:`!readline` module detects which library is being used
   at run time.
 
   The configuration file for ``editline`` is different from that
@@ -57,6 +56,38 @@ Readline library in general.
    ``"readline"`` or ``"editline"``.
 
    .. versionadded:: 3.13
+
+.. data:: READLINE_VERSION_INFO
+
+   A named tuple containing the two components of the Readline library
+   version that was used for building the module: *major* and *minor*.
+   Both values are integers.
+   The components can also be accessed by name,
+   so ``readline.READLINE_VERSION_INFO[0]`` is equivalent to
+   ``readline.READLINE_VERSION_INFO.major`` and so on.
+   This may be different from the Readline library actually used at runtime,
+   which is available as :const:`readline_version_info`.
+
+   With the ``editline`` backend, this is the version of the Readline
+   interface emulated by libedit, not the version of libedit.
+
+   .. versionadded:: next
+
+.. data:: readline_version_info
+
+   A named tuple containing the version of the Readline library
+   actually loaded by the interpreter,
+   with the same fields as :const:`READLINE_VERSION_INFO`.
+
+   .. versionadded:: next
+
+.. data:: readline_version
+
+   The version string of the Readline library actually loaded by the
+   interpreter, like ``'8.3'``.
+   With the ``editline`` backend, this is ``'EditLine wrapper'``.
+
+   .. versionadded:: next
 
 Init file
 ---------
@@ -264,7 +295,7 @@ The following functions relate to implementing a custom word completion
 function.  This is typically operated by the Tab key, and can suggest and
 automatically complete a word being typed.  By default, Readline is set up
 to be used by :mod:`rlcompleter` to complete Python identifiers for
-the interactive interpreter.  If the :mod:`readline` module is to be used
+the interactive interpreter.  If the :mod:`!readline` module is to be used
 with a custom completer, a different set of word delimiters should be set.
 
 
@@ -333,7 +364,7 @@ with a custom completer, a different set of word delimiters should be set.
 Example
 -------
 
-The following example demonstrates how to use the :mod:`readline` module's
+The following example demonstrates how to use the :mod:`!readline` module's
 history reading and writing functions to automatically load and save a history
 file named :file:`.python_history` from the user's home directory.  The code
 below would normally be executed automatically during interactive sessions

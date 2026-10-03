@@ -3,8 +3,6 @@
 IDLE --- Python editor and shell
 ================================
 
-.. moduleauthor:: Guido van Rossum <guido@python.org>
-
 **Source code:** :source:`Lib/idlelib/`
 
 .. index::

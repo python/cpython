@@ -4,14 +4,6 @@
 .. module:: decimal
    :synopsis: Implementation of the General Decimal Arithmetic Specification.
 
-.. moduleauthor:: Eric Price <eprice at tjhsst.edu>
-.. moduleauthor:: Facundo Batista <facundo at taniquetil.com.ar>
-.. moduleauthor:: Raymond Hettinger <python at rcn.com>
-.. moduleauthor:: Aahz <aahz at pobox.com>
-.. moduleauthor:: Tim Peters <tim.one at comcast.net>
-.. moduleauthor:: Stefan Krah <skrah at bytereef.org>
-.. sectionauthor:: Raymond D. Hettinger <python at rcn.com>
-
 **Source code:** :source:`Lib/decimal.py`
 
 .. import modules for testing inline doctests with the Sphinx doctest builder
@@ -30,7 +22,7 @@
 
 --------------
 
-The :mod:`decimal` module provides support for fast correctly rounded
+The :mod:`!decimal` module provides support for fast correctly rounded
 decimal floating-point arithmetic. It offers several advantages over the
 :class:`float` datatype:
 
@@ -289,7 +281,7 @@ For more advanced work, it may be useful to create alternate contexts using the
 :meth:`Context` constructor.  To make an alternate active, use the :func:`setcontext`
 function.
 
-In accordance with the standard, the :mod:`decimal` module provides two ready to
+In accordance with the standard, the :mod:`!decimal` module provides two ready to
 use standard contexts, :const:`BasicContext` and :const:`ExtendedContext`. The
 former is especially useful for debugging because many of the traps are
 enabled:
@@ -1190,6 +1182,14 @@ In addition to the three supplied contexts, new contexts can be created with the
 
       Return a duplicate of the context.
 
+      :class:`!Context` objects also support :func:`copy.replace`,
+      which returns a duplicate with the specified fields replaced.
+      Fields which are not specified keep the values
+      they have in the original context.
+
+      .. versionchanged:: next
+         Added support for :func:`copy.replace`.
+
    .. method:: copy_decimal(num, /)
 
       Return a copy of the Decimal instance num.
@@ -1632,6 +1632,46 @@ are also included in the pure Python version for compatibility.
 
    .. versionadded:: 3.8.3
 
+The following constants are only available in the C module.
+
+.. data:: LIBMPDEC_VERSION
+
+   The version string of the libmpdec library that was used for building
+   the module.
+   This may be different from the libmpdec library actually used at runtime,
+   which is available as :const:`libmpdec_version`.
+
+   .. versionadded:: next
+
+.. data:: libmpdec_version
+
+   The version string of the libmpdec library actually loaded by the
+   interpreter.
+
+   .. versionadded:: next
+
+.. data:: LIBMPDEC_VERSION_INFO
+
+   A named tuple containing the three components of the libmpdec library
+   version that was used for building the module:
+   *major*, *minor*, and *micro*.
+   All values are integers.
+   The components can also be accessed by name,
+   so ``decimal.LIBMPDEC_VERSION_INFO[0]`` is equivalent to
+   ``decimal.LIBMPDEC_VERSION_INFO.major`` and so on.
+   This may be different from the libmpdec library actually used at runtime,
+   which is available as :const:`libmpdec_version_info`.
+
+   .. versionadded:: next
+
+.. data:: libmpdec_version_info
+
+   A named tuple containing the version of the libmpdec library
+   actually loaded by the interpreter,
+   with the same fields as :const:`LIBMPDEC_VERSION_INFO`.
+
+   .. versionadded:: next
+
 
 Rounding modes
 --------------
@@ -1847,7 +1887,7 @@ properties of addition:
    >>> u * (v+w)
    Decimal('0.0060000')
 
-The :mod:`decimal` module makes it possible to restore the identities by
+The :mod:`!decimal` module makes it possible to restore the identities by
 expanding the precision sufficiently to avoid loss of significance:
 
 .. doctest:: newcontext
@@ -1869,7 +1909,7 @@ expanding the precision sufficiently to avoid loss of significance:
 Special values
 ^^^^^^^^^^^^^^
 
-The number system for the :mod:`decimal` module provides special values
+The number system for the :mod:`!decimal` module provides special values
 including ``NaN``, ``sNaN``, ``-Infinity``, ``Infinity``,
 and two zeros, ``+0`` and ``-0``.
 

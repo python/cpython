@@ -1,1 +1,0 @@
-Add :meth:`symtable.Function.get_cells` and :meth:`symtable.Symbol.is_cell` methods.
