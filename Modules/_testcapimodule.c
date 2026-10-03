@@ -2889,6 +2889,37 @@ uptime_bsd(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(args))
 #endif
 
 
+static PyObject *
+bench_writer(PyObject *self, PyObject *args)
+{
+    Py_ssize_t size, loops;
+    if (!PyArg_ParseTuple(args, "nn", &size, &loops)) {
+        return NULL;
+    }
+
+    PyTime_t t1, t2;
+    (void)PyTime_PerfCounterRaw(&t1);
+    for (Py_ssize_t i=0; i < loops; i++) {
+        PyBytesWriter *writer = PyBytesWriter_Create(size);
+        if (writer == NULL) {
+            return NULL;
+        }
+
+        char *str = PyBytesWriter_GetData(writer);
+        memset(str, 'x', size);
+
+        PyObject *bytes = PyBytesWriter_Finish(writer);
+        if (bytes == NULL) {
+            return NULL;
+        }
+        Py_DECREF(bytes);
+    }
+    (void)PyTime_PerfCounterRaw(&t2);
+
+    return PyFloat_FromDouble(PyTime_AsSecondsDouble(t2 - t1));
+}
+
+
 static PyMethodDef TestMethods[] = {
     {"set_errno",               set_errno,                       METH_VARARGS},
     {"test_config",             test_config,                     METH_NOARGS},
@@ -2988,6 +3019,7 @@ static PyMethodDef TestMethods[] = {
 #ifdef HAVE_SYSCTLBYNAME
     {"uptime_bsd", uptime_bsd, METH_NOARGS},
 #endif
+    {"bench_writer", bench_writer, METH_VARARGS},
     {NULL, NULL} /* sentinel */
 };
 
