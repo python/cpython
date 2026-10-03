@@ -275,11 +275,11 @@ structseq_repr(PyObject *op)
 {
     PyStructSequence *obj = (PyStructSequence *)op;
     PyTypeObject *typ = Py_TYPE(obj);
+    Py_ssize_t n_visible_fields = VISIBLE_SIZE(obj);
 
     // count 5 characters per item: "x=1, "
     Py_ssize_t type_name_len = strlen(typ->tp_name);
-    Py_ssize_t prealloc = (type_name_len + 1
-                           + VISIBLE_SIZE(obj) * 5 + 1);
+    Py_ssize_t prealloc = type_name_len + 1 + n_visible_fields * 5 + 1;
     PyUnicodeWriter *writer = PyUnicodeWriter_Create(prealloc);
     if (writer == NULL) {
         return NULL;
@@ -293,7 +293,10 @@ structseq_repr(PyObject *op)
         goto error;
     }
 
-    for (Py_ssize_t i=0; i < VISIBLE_SIZE(obj); i++) {
+    // Unnamed slots have no tp_members entry; match each member to its slot by
+    // offset so unnamed slots print "<unnamed@i>", not a later name (gh-154387).
+    Py_ssize_t member_index = 0;
+    for (Py_ssize_t i = 0; i < n_visible_fields; i++) {
         if (i > 0) {
             // Write ", "
             if (PyUnicodeWriter_WriteChar(writer, ',') < 0) {
@@ -304,16 +307,26 @@ structseq_repr(PyObject *op)
             }
         }
 
-        // Write name
-        const char *name_utf8 = typ->tp_members[i].name;
-        if (name_utf8 == NULL) {
-            PyErr_Format(PyExc_SystemError,
-                         "In structseq_repr(), member %zd name is NULL"
-                         " for type %.500s", i, typ->tp_name);
-            goto error;
+        // The named member's slot is recovered from its offset.
+        const PyMemberDef *member = &typ->tp_members[member_index];
+        Py_ssize_t named_slot = -1;
+        if (member->name != NULL) {
+            // Recover the true slot index. See also function `initialize_members` below.
+            named_slot = (member->offset - (Py_ssize_t)offsetof(PyStructSequence, ob_item))
+                           / sizeof(PyObject *);
         }
-        if (PyUnicodeWriter_WriteUTF8(writer, name_utf8, -1) < 0) {
-            goto error;
+
+        // Write the field name, or "<unnamed@i>" for an unnamed field.
+        if (named_slot == i) {
+            if (PyUnicodeWriter_WriteUTF8(writer, member->name, -1) < 0) {
+                goto error;
+            }
+            member_index++;
+        }
+        else {
+            if (PyUnicodeWriter_Format(writer, "<unnamed@%zd>", i) < 0) {
+                goto error;
+            }
         }
 
         // Write "=" + repr(value)
