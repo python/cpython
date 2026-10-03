@@ -1034,7 +1034,7 @@ because the :ref:`call protocol <call>` takes care of recursion handling.
    case, a :exc:`RecursionError` is set and a nonzero value is returned.
    Otherwise, zero is returned.
 
-   The limit is based on how much C stack the current thread has consumed,
+   The check is based on the remaining C stack space of the current thread,
    not on a count of calls, so it is unaffected by
    :c:func:`Py_SetRecursionLimit` and :func:`sys.setrecursionlimit`.
 
