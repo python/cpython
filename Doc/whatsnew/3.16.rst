@@ -108,6 +108,16 @@ New modules
 Improved modules
 ================
 
+argparse
+--------
+
+* :class:`~argparse.ArgumentGroup` and
+  :class:`~argparse.MutuallyExclusiveGroup`, the types returned by
+  :meth:`~argparse.ArgumentParser.add_argument_group` and
+  :meth:`~argparse.ArgumentParser.add_mutually_exclusive_group`, are now
+  public. The ``_``-prefixed names remain as aliases.
+  (Contributed by Bernát Gábor in :gh:`144812`.)
+
 asyncio
 -------
 
