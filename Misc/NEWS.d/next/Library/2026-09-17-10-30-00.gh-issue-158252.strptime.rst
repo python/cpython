@@ -1,0 +1,4 @@
+Speed up :func:`time.strptime`, :meth:`datetime.date.strptime`,
+:meth:`datetime.time.strptime`, and :meth:`datetime.datetime.strptime` for
+common numeric formats by parsing fields and constructing the result in C.
+Other inputs continue to use the Python parser.
