@@ -2502,6 +2502,26 @@ class TestInit(unittest.TestCase):
                 self.x = 2 * x
         self.assertEqual(C(5).x, 10)
 
+    def test_overwriting_init_with_field_ordering_conflict(self):
+        # gh-148941: When a class defines its own __init__, @dataclass must
+        # not raise TypeError due to field ordering issues in the generated
+        # __init__ signature — it would be discarded anyway.
+        @dataclass
+        class Base:
+            x: int = 0  # has a default
+
+        # Without a user-defined __init__, this would raise TypeError
+        # ("non-default argument 'y' follows default argument 'x'").
+        @dataclass
+        class Child(Base):
+            y: int  # no default — would produce invalid signature
+            def __init__(self, y):
+                self.y = y
+
+        self.assertEqual(Child(5).y, 5)
+        # Verify it's Child's own __init__, not a generated one.
+        self.assertNotIn('x', vars(Child(5)))
+
     def test_inherit_from_protocol(self):
         # Dataclasses inheriting from protocol should preserve their own `__init__`.
         # See bpo-45081.
