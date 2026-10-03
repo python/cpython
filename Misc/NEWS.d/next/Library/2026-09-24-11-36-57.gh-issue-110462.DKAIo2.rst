@@ -1,0 +1,6 @@
+:class:`urllib.request.AbstractHTTPHandler` now raises :exc:`TypeError` with
+a clear message when the request data is a mapping (such as a
+:class:`dict`), instead of failing later in :mod:`http.client` with an
+unrelated error. Previously, a mapping with :class:`bytes` keys did not
+fail, but only its keys were sent as the request body and the values were
+dropped.
