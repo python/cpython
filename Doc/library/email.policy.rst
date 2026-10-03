@@ -254,6 +254,11 @@ added matters.  To illustrate::
       values as the current instance, except where those attributes are
       given new values by the keyword arguments.
 
+      This method is also used by :func:`copy.replace`.
+
+      .. versionchanged:: next
+         Added support for :func:`copy.replace`.
+
 
    The remaining :class:`Policy` methods are called by the email package code,
    and are not intended to be called by an application using the email package.
