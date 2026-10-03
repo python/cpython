@@ -170,27 +170,74 @@ class CAPITest(unittest.TestCase):
 
     def test_resize(self):
         """Test PyUnicode_Resize()"""
-        resize = _testlimitedcapi.unicode_resize
+        _resize = _testlimitedcapi.unicode_resize
+        resize_null = _testlimitedcapi.unicode_resize_null
+
+        def resize(s, length, new=True, compute_hash=False):
+            if s is not NULL and isinstance(s, str):
+                old_length = len(s)
+            else:
+                old_length = 0
+            result, int_result, refcnt, is_new_obj = _resize(s, length,
+                                                             new, compute_hash)
+            self.assertEqual(int_result, 0)
+
+            if length == old_length:
+                # Return the same object unchanged
+                self.assertFalse(is_new_obj)
+            elif length == 0:
+                # Get the empty Unicode string
+                self.assertEqual(result, '')
+                self.assertTrue(sys._is_immortal(result))
+                self.assertTrue(is_new_obj)
+            elif (not new) or compute_hash:
+                # Get a fresh copy
+                self.assertEqual(refcnt, 1)
+                self.assertTrue(is_new_obj)
+                self.assertFalse(sys._is_immortal(result))
+            else:
+                # In-size replace can return the same address, or not.
+                # So 'is_new_obj' cannot be tested.
+                self.assertFalse(sys._is_immortal(result))
+
+            return result
 
         strings = [
             # all strings have exactly 3 characters
             'abc', '\xa1\xa2\xa3', '\u4f60\u597d\u4e16',
             '\U0001f600\U0001f601\U0001f602'
         ]
-        for s in strings:
-            self.assertEqual(resize(s, 3), (s, 0))
-            self.assertEqual(resize(s, 2), (s[:2], 0))
-            self.assertEqual(resize(s, 4), (s + '\0', 0))
-            self.assertEqual(resize(s, 10), (s + '\0'*7, 0))
-            self.assertEqual(resize(s, 0), ('', 0))
-            self.assertRaises(MemoryError, resize, s, PY_SSIZE_T_MAX)
-            self.assertRaises(SystemError, resize, s, -1)
-            self.assertRaises(SystemError, resize, s, PY_SSIZE_T_MIN)
+        for new in (True, False):
+            for compute_hash in (True, False):
+                for s in strings:
+                    with self.subTest(new=new, compute_hash=compute_hash, s=s):
+                        self.assertEqual(resize(s, 3, new, compute_hash),
+                                         s)
+                        self.assertEqual(resize(s, 2, new, compute_hash),
+                                         s[:2])
+                        self.assertEqual(resize(s, 4, new, compute_hash),
+                                         s + '\0')
+                        self.assertEqual(resize(s, 10, new, compute_hash),
+                                         s + '\0'*7)
+                        self.assertEqual(resize(s, 0, new, compute_hash),
+                                         '')
+
+                        with self.assertRaises(MemoryError):
+                            resize(s, PY_SSIZE_T_MAX, new, compute_hash)
+                        with self.assertRaises(SystemError):
+                            resize(s, -1, new, compute_hash)
+                        with self.assertRaises(SystemError):
+                            resize(s, PY_SSIZE_T_MIN, new, compute_hash)
+
         self.assertRaises(SystemError, resize, b'abc', 0)
         self.assertRaises(SystemError, resize, [], 0)
         self.assertRaises(SystemError, resize, NULL, 0)
         # TODO: Test PyUnicode_Resize() with non-modifiable and legacy unicode
         # and with NULL as the address.
+
+        # Test PyUnicode_Resize(NULL, length)
+        self.assertRaises(SystemError, resize_null, 0)
+        self.assertRaises(SystemError, resize_null, 123)
 
     def test_append(self):
         """Test PyUnicode_Append()"""
