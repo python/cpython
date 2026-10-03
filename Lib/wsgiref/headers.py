@@ -59,11 +59,12 @@ class Headers:
 
     def __setitem__(self, name, val):
         """Set the value of a header."""
+        name = self._convert_string_type(name, name=True)
+        val = self._convert_string_type(val, name=False)
         del self[name]
-        self._headers.append(
-            (self._convert_string_type(name, name=True), self._convert_string_type(val, name=False)))
+        self._headers.append((name, val))
 
-    def __delitem__(self,name):
+    def __delitem__(self, name):
         """Delete all occurrences of a header, if present.
 
         Does *not* raise an exception if the header is missing.

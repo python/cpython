@@ -592,6 +592,19 @@ class HeaderTests(TestCase):
         self.assertEqual(h["foo"],"baz")
         self.assertEqual(h["zoo"],"whee")
 
+    def testSetItemValidationFailureKeepsOldValue(self):
+        # gh-158225: __setitem__ must not delete the old header
+        # before validating the new name and value.
+        for bad_value, exc_type in [
+            ("bad\x00value", ValueError),
+            (123, AssertionError),
+        ]:
+            with self.subTest(bad_value=bad_value):
+                h = Headers([("Content-Type", "text/html")])
+                with self.assertRaises(exc_type):
+                    h["Content-Type"] = bad_value
+                self.assertEqual(h["Content-Type"], "text/html")
+
     def testRequireList(self):
         self.assertRaises(TypeError, Headers, "foo")
 
