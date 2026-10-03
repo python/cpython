@@ -135,6 +135,85 @@ class ProfileTest(unittest.TestCase):
             self.assertTrue(os.path.exists('out.pstats'))
 
 
+class ProfileCLITest(unittest.TestCase):
+    """Tests for the profile module command-line interface."""
+
+    def _module_name(self):
+        return 'profile'
+
+    def test_no_args_prints_usage(self):
+        # Running with no arguments should print usage and exit with code 2
+        rc, out, err = assert_python_failure('-m', self._module_name())
+        self.assertEqual(rc, 2)
+
+    def test_help(self):
+        # -h / --help should print usage and exit with code 0
+        rc, out, err = assert_python_ok('-m', self._module_name(), '-h')
+        output = out.decode()
+        self.assertIn('profile', output.lower())
+
+    def test_profile_script(self):
+        # Profile a simple inline script via a temp file
+        with temp_dir() as tmpdir:
+            script = os.path.join(tmpdir, 'hello.py')
+            with open(script, 'w', encoding='utf-8') as f:
+                f.write('x = 1 + 1\n')
+            rc, out, err = assert_python_ok(
+                '-m', self._module_name(), script
+            )
+            self.assertEqual(rc, 0)
+
+    def test_profile_module(self):
+        # -m flag should profile a library module
+        rc, out, err = assert_python_ok(
+            '-m', self._module_name(), '-m', 'timeit', '-n', '1'
+        )
+        self.assertEqual(rc, 0)
+
+    def test_profile_module_missing(self):
+        # -m with a non-existent module should fail
+        rc, out, err = assert_python_failure(
+            '-m', self._module_name(), '-m', 'nonexistent_module_xyz'
+        )
+        self.assertNotEqual(rc, 0)
+
+    def test_output_file(self):
+        # -o should write stats to a file
+        with temp_dir() as tmpdir:
+            outfile = os.path.join(tmpdir, 'stats.pstats')
+            script = os.path.join(tmpdir, 'hello.py')
+            with open(script, 'w', encoding='utf-8') as f:
+                f.write('x = 1 + 1\n')
+            rc, out, err = assert_python_ok(
+                '-m', self._module_name(),
+                '-o', outfile,
+                script,
+            )
+            self.assertEqual(rc, 0)
+            self.assertTrue(os.path.exists(outfile))
+            # The output file should be a valid pstats file
+            stats = pstats.Stats(outfile)
+            self.assertIsNotNone(stats)
+
+    def test_sort_option(self):
+        # -s / --sort should accept a valid sort key without error
+        with temp_dir() as tmpdir:
+            script = os.path.join(tmpdir, 'hello.py')
+            with open(script, 'w', encoding='utf-8') as f:
+                f.write('x = 1 + 1\n')
+            rc, out, err = assert_python_ok(
+                '-m', self._module_name(), '-s', 'cumulative', script
+            )
+            self.assertEqual(rc, 0)
+
+    def test_m_flag_requires_argument(self):
+        # -m alone (with no module name) should fail
+        rc, out, err = assert_python_failure(
+            '-m', self._module_name(), '-m'
+        )
+        self.assertNotEqual(rc, 0)
+
+
 def regenerate_expected_output(filename, cls):
     filename = filename.rstrip('co')
     print('Regenerating %s...' % filename)
