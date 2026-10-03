@@ -59,7 +59,9 @@ from .case import (addModuleCleanup, TestCase, FunctionTestCase, SkipTest, skip,
                    enterModuleContext)
 from .suite import BaseTestSuite, TestSuite  # noqa: F401
 from .loader import TestLoader, defaultTestLoader
-from .main import TestProgram, main  # noqa: F401
+from .main import TestProgram
+# A lazily imported 'main' would be rebound to the submodule once it loads.
+main = TestProgram
 from .runner import TextTestRunner, TextTestResult
 from .signals import installHandler, registerResult, removeResult, removeHandler
 # IsolatedAsyncioTestCase will be imported lazily.
