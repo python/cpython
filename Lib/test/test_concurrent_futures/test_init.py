@@ -6,6 +6,7 @@ import time
 import unittest
 import sys
 import io
+from concurrent import futures
 from concurrent.futures._base import BrokenExecutor
 from concurrent.futures.process import _check_system_limits
 
@@ -38,6 +39,15 @@ def init_fail(log_queue=None):
         logger.propagate = False
     time.sleep(0.1)  # let some futures be scheduled
     raise ValueError('error in initializer')
+
+
+class PublicAPITest(unittest.TestCase):
+    def test_executor_shutdown_error(self):
+        from concurrent.futures import ExecutorShutdownError
+
+        self.assertIs(ExecutorShutdownError, futures.ExecutorShutdownError)
+        self.assertIn("ExecutorShutdownError", futures.__all__)
+        self.assertTrue(issubclass(ExecutorShutdownError, RuntimeError))
 
 
 class InitializerMixin(ExecutorMixin):
