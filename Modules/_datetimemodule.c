@@ -1969,6 +1969,28 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             }
             replacement = freplacement;
         }
+        else if (ch >= '1' && ch <= '6'
+                 && i < flen && PyUnicode_READ_CHAR(format, i) == 'f')
+        {
+            /* %Nf -> first N digits of microseconds */
+            i++;
+            if (freplacement == NULL) {
+                freplacement = make_freplacement(object);
+                if (freplacement == NULL)
+                    goto Error;
+            }
+            if (PyUnicodeWriter_WriteSubstring(writer, format, start, end) < 0) {
+                goto Error;
+            }
+            start = i;
+            Py_ssize_t precision = ch - '0';
+            if (PyUnicodeWriter_WriteSubstring(writer, freplacement,
+                                               0, precision) < 0)
+            {
+                goto Error;
+            }
+            continue;
+        }
         else if (normalize_century()
                  && (ch == 'Y' || ch == 'G' || ch == 'F' || ch == 'C'))
         {
