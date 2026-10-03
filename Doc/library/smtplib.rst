@@ -164,11 +164,11 @@ A nice selection of exceptions is defined as well:
 
    .. attribute:: smtp_code
 
-      The error code.
+      The error code as an integer.
 
    .. attribute:: smtp_error
 
-      The error message.
+      The error message as a :class:`bytes` object.
 
 
 .. exception:: SMTPSenderRefused
@@ -251,8 +251,10 @@ An :class:`SMTP` instance has the following methods:
    Send a command *cmd* to the server.  The optional argument *args* is simply
    concatenated to the command, separated by a space.
 
-   This returns a 2-tuple composed of a numeric response code and the actual
-   response line (multiline responses are joined into one long line.)
+   This returns a ``(code, message)`` tuple, where *code* is the server
+   response code as an integer and *message* is the server response as a
+   :class:`bytes` object. Multiline responses are joined into a single
+   response.
 
    In normal operation it should not be necessary to call this method explicitly.
    It is used to implement other methods and may be useful for testing private
@@ -269,8 +271,8 @@ An :class:`SMTP` instance has the following methods:
    followed by a number, that suffix will be stripped off and the number
    interpreted as the port number to use. This method is automatically invoked by
    the constructor if a host is specified during instantiation.  Returns a
-   2-tuple of the response code and message sent by the server in its
-   connection response.
+   ``(code, message)`` tuple, where *code* is the server response code as an
+   integer and *message* is the server response as a :class:`bytes` object.
 
    If port is not changed from its default value of 0, the value of the :attr:`default_port`
    attribute is used.
@@ -323,9 +325,11 @@ An :class:`SMTP` instance has the following methods:
 .. method:: SMTP.verify(address)
 
    Check the validity of an address on this server using SMTP ``VRFY``. Returns a
-   tuple consisting of code 250 and a full :rfc:`822` address (including human
-   name) if the user address is valid. Otherwise returns an SMTP error code of 400
-   or greater and an error string.
+   ``(code, message)`` tuple, where *code* is the server response code as an
+   integer and *message* is the server response as a :class:`bytes` object.
+   If the user address is valid, *code* is 250 and *message* contains a full
+   :rfc:`822` address (including human name). Otherwise *code* is an SMTP error
+   code of 400 or greater and *message* contains the error response.
 
    .. note::
 
@@ -485,8 +489,10 @@ An :class:`SMTP` instance has the following methods:
    recipient. Otherwise it will raise an exception.  That is, if this method does
    not raise an exception, then someone should get your mail. If this method does
    not raise an exception, it returns a dictionary, with one entry for each
-   recipient that was refused.  Each entry contains a tuple of the SMTP error code
-   and the accompanying error message sent by the server.
+   recipient that was refused. Each entry contains a
+   ``(code, response)`` tuple, where *code* is the SMTP error code as an
+   integer and *response* is the accompanying server error response as a
+   :class:`bytes` object.
 
    If ``SMTPUTF8`` is included in *mail_options*, and the server supports it,
    *from_addr* and *to_addrs* may contain non-ASCII characters.
