@@ -1,0 +1,1 @@
+Fix error handling in windows events where clients terminating connections could result in an :mod:`asyncio` server using Proactor event loops to hang indefinitely.
