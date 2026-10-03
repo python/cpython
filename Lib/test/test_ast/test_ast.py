@@ -1126,7 +1126,8 @@ class AST_Tests(unittest.TestCase):
             broken = prefix + repeated * crash_depth
             details = "Compiling ({!r} + {!r} * {})".format(
                         prefix, repeated, crash_depth)
-            with self.assertRaises(RecursionError, msg=details):
+            with self.assertRaisesRegex(SyntaxError, "too complex to compile",
+                                        msg=details):
                 with support.infinite_recursion():
                     ast.parse(broken)
 

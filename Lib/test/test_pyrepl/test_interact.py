@@ -135,12 +135,13 @@ SyntaxError: duplicate parameter 'x' in function definition"""
     def test_runsource_compile_error(self):
         # Any error raised by compile() is reported (gh-69919).
         console = InteractiveColoredConsole()
-        source = '-' * 100_000 + '1'
         f = io.StringIO()
-        with contextlib.redirect_stderr(f):
-            result = console.runsource(source)
+        with (contextlib.redirect_stderr(f),
+              patch.object(console.compile, 'compiler',
+                           side_effect=MemoryError('spam'))):
+            result = console.runsource('1')
         self.assertFalse(result)
-        self.assertRegex(f.getvalue(), r'^(MemoryError|RecursionError): ')
+        self.assertRegex(f.getvalue(), r'^MemoryError: spam$')
 
     def test_runsource_survives_null_bytes(self):
         console = InteractiveColoredConsole()
@@ -195,9 +196,10 @@ class TestMoreLines(unittest.TestCase):
 
     def test_compile_error_single_line(self):
         namespace = {}
-        code = '-' * 100_000 + '1'  # MemoryError or RecursionError
+        code = "1"
         console = InteractiveColoredConsole(namespace, filename="<stdin>")
-        self.assertFalse(_more_lines(console, code))
+        with patch.object(console, 'compile', side_effect=MemoryError):
+            self.assertFalse(_more_lines(console, code))
 
     def test_empty_line(self):
         namespace = {}

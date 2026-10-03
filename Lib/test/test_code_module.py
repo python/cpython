@@ -132,23 +132,29 @@ class TestInteractiveConsole(unittest.TestCase, MockSys):
         self.console.interact()
         output = ''.join(''.join(call[1]) for call in self.stderr.method_calls)
         output = output[output.index('(InteractiveConsole)'):]
-        output = output[output.index('\n') + 1:]
-        self.assertStartsWith(output, 'UnicodeEncodeError: ')
-        self.assertIs(self.sysmod.last_type, UnicodeEncodeError)
-        self.assertIs(type(self.sysmod.last_value), UnicodeEncodeError)
+        output = output[:output.index('\nnow exiting')]
+        self.assertEqual(output.splitlines()[1:], [
+            '  File "<console>", line 1',
+            "    '\ud800'",
+            '     ^',
+            'SyntaxError: source code string cannot contain surrogate characters'])
+        self.assertIs(self.sysmod.last_type, SyntaxError)
+        self.assertIs(type(self.sysmod.last_value), SyntaxError)
         self.assertIsNone(self.sysmod.last_traceback)
         self.assertIsNone(self.sysmod.last_value.__traceback__)
         self.assertIs(self.sysmod.last_exc, self.sysmod.last_value)
 
     def test_compile_error(self):
         # Any error raised by compile() must be reported (gh-69919).
-        self.infunc.side_effect = ['-' * 100_000 + '1', EOFError('Finished')]
-        self.console.interact()
+        self.infunc.side_effect = ['1', EOFError('Finished')]
+        with mock.patch.object(self.console, 'compile',
+                               side_effect=MemoryError('spam')):
+            self.console.interact()
         output = ''.join(''.join(call[1]) for call in self.stderr.method_calls)
         output = output[output.index('(InteractiveConsole)'):]
         output = output[output.index('\n') + 1:]
-        self.assertRegex(output, r'^(MemoryError|RecursionError): ')
-        self.assertIn(self.sysmod.last_type, (MemoryError, RecursionError))
+        self.assertRegex(output, r'^MemoryError: spam\n')
+        self.assertIs(self.sysmod.last_type, MemoryError)
         self.assertIs(self.sysmod.last_exc, self.sysmod.last_value)
 
     def test_sysexcepthook(self):
