@@ -2,6 +2,7 @@ import contextlib
 import importlib
 import io
 import itertools
+lazy import json
 import os
 import pathlib
 import pkgutil
@@ -13,6 +14,7 @@ import sys
 import tempfile
 from functools import partial
 from pkgutil import ModuleInfo
+from types import ModuleType
 from unittest import TestCase, skipUnless, SkipTest
 from unittest.mock import Mock, patch
 import warnings
@@ -1766,6 +1768,39 @@ class TestPyReplModuleCompleter(TestCase):
             f"{module_color}mock{R}",
         ])
         self.assertIsNone(action)
+
+    def test_find_attributes_uses_all(self):
+        """Test that _find_attributes respects __all__ when available."""
+        completer = ModuleCompleter()
+        # json module has __all__ defined
+        attrs, module, _ = completer._find_attributes('json', '')
+        # Should match __all__ contents, not dir() which includes methods
+        expected = sorted(json.__all__)
+        self.assertEqual(sorted(attrs), expected)
+        # Should NOT contain __all__
+        self.assertNotIn('__all__', attrs)
+        # Verify we got the actual module object
+        self.assertIs(module, sys.modules.get('json'))
+
+    def test_find_attributes_uses_all_with_private_names(self):
+        module = ModuleType("module_with_private_all")
+        module.__all__ = ["public", "_private", "not-valid"]
+
+        completer = ModuleCompleter()
+        with patch.dict(sys.modules, {module.__name__: module}):
+            cases = (
+                ("", ["public", "_private"]),
+                ("pub", ["public"]),
+                ("_", ["_private"]),
+            )
+            for prefix, expected in cases:
+                with self.subTest(prefix=prefix):
+                    attrs, actual_module, action = completer._find_attributes(
+                        module.__name__, prefix
+                    )
+                    self.assertEqual(attrs, expected)
+                    self.assertIs(actual_module, module)
+                    self.assertIsNone(action)
 
 
 # Audit hook used to check for stdlib modules import side-effects
