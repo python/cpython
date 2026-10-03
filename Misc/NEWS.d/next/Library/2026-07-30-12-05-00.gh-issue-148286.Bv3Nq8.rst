@@ -1,0 +1,2 @@
+Fix undefined behaviour in :meth:`!io.StringIO.read` when reading from a
+position past the end of the buffer.
