@@ -1783,6 +1783,36 @@ PyGC_IsEnabled(void)
     return gcstate->enabled;
 }
 
+void
+_PyGC_DeferAutomaticCollection(PyThreadState *tstate)
+{
+    GCState *gcstate = &tstate->interp->gc;
+    _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
+    assert(gcstate->automatic_collection_pause_count >= 0);
+    assert(tstate_impl->gc.automatic_collection_pause_count >= 0);
+    gcstate->automatic_collection_pause_count++;
+    tstate_impl->gc.automatic_collection_pause_count++;
+}
+
+void
+_PyGC_ResumeAutomaticCollection(PyThreadState *tstate)
+{
+    GCState *gcstate = &tstate->interp->gc;
+    _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
+    assert(gcstate->automatic_collection_pause_count > 0);
+    assert(tstate_impl->gc.automatic_collection_pause_count > 0);
+    gcstate->automatic_collection_pause_count--;
+    tstate_impl->gc.automatic_collection_pause_count--;
+}
+
+void
+_PyGC_AfterFork(PyThreadState *tstate)
+{
+    _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
+    tstate->interp->gc.automatic_collection_pause_count =
+        tstate_impl->gc.automatic_collection_pause_count;
+}
+
 /* Public API to invoke gc.collect() from C */
 Py_ssize_t
 PyGC_Collect(void)
@@ -1983,8 +2013,9 @@ _PyObject_GC_Link(PyObject *op)
     gc->_gc_prev = 0;
     gcstate->generations[0].count++; /* number of allocated GC objects */
     if (gcstate->generations[0].count > gcstate->generations[0].threshold &&
-        gcstate->enabled &&
         gcstate->generations[0].threshold &&
+        gcstate->enabled &&
+        !gcstate->automatic_collection_pause_count &&
         !_Py_atomic_load_int_relaxed(&gcstate->collecting) &&
         !_PyErr_Occurred(tstate))
     {
@@ -1996,7 +2027,8 @@ void
 _Py_RunGC(PyThreadState *tstate)
 {
     GCState *gcstate = get_gc_state();
-    if (!gcstate->enabled) {
+    if (!gcstate->enabled ||
+        gcstate->automatic_collection_pause_count) {
         return;
     }
     gc_collect_main(tstate, GENERATION_AUTO, _Py_GC_REASON_HEAP);

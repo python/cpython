@@ -1,0 +1,4 @@
+Add a private, nestable API for temporarily deferring automatic garbage
+collection without changing the interpreter-visible garbage collector state.
+Use it to avoid unproductive collections while converting ASTs to Python
+objects and unmarshalling objects from memory.
