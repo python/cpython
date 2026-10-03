@@ -622,6 +622,27 @@ class TestHeatmapCollectorExport(unittest.TestCase):
             # Should have line-related content
             self.assertIn('line-', content)
 
+    def test_export_skips_nonexistent_source(self):
+        """Source files that do not exist produce a placeholder."""
+        collector = HeatmapCollector(sample_interval_usec=100)
+
+        frames = [('/no/such/file.py', (1, 1, -1, -1), 'f', None)]
+        collector.process_frames(frames, thread_id=1)
+
+        output_path = os.path.join(self.test_dir, 'missing_src')
+
+        with captured_stdout(), captured_stderr():
+            collector.export(output_path)
+
+        html_files = [f for f in os.listdir(output_path)
+                      if f.startswith('file_') and f.endswith('.html')]
+        if html_files:
+            with open(os.path.join(output_path, html_files[0]),
+                      'r', encoding='utf-8') as f:
+                content = f.read()
+            self.assertIn('Source file not available', content)
+
+
 
 class MockFrameInfo:
     """Mock FrameInfo for testing.

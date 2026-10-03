@@ -783,14 +783,14 @@ class HeatmapCollector(StackTraceCollector):
                           line_counts: Dict[int, int], self_counts: Dict[int, int],
                           file_stat: FileStats):
         """Generate HTML for a single source file with heatmap coloring."""
-        # Read source file
+        source_lines = [f"# Source file not available: {filename}"]
         try:
-            source_lines = Path(filename).read_text(encoding='utf-8', errors='replace').splitlines()
-        except (IOError, OSError) as e:
-            if not (filename.startswith('<') or filename.startswith('[') or
-                    filename in ('~', '...', '.') or len(filename) < 2):
-                print(f"Warning: Could not read source file {filename}: {e}")
-            source_lines = [f"# Source file not available: {filename}"]
+            resolved = Path(filename).resolve()
+            if resolved.is_file():
+                source_lines = resolved.read_text(
+                    encoding='utf-8', errors='replace').splitlines()
+        except (IOError, OSError):
+            pass
 
         # Generate HTML for each line
         max_samples = max(line_counts.values()) if line_counts else 1
