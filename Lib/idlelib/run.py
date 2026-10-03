@@ -4,7 +4,6 @@ Simplified, pyshell.ModifiedInterpreter spawns a subprocess with
 f'''{sys.executable} -c "__import__('idlelib.run').run.main()"'''
 '.run' is needed because __import__ returns idlelib, not idlelib.run.
 """
-import contextlib
 import functools
 import io
 import linecache
@@ -230,15 +229,8 @@ def show_socket_error(err, address):
 
 
 def get_message_lines(typ, exc, tb):
-    "Return line composing the exception message."
-    if typ in (AttributeError, NameError):
-        # 3.10+ hints are not directly accessible from python (#44026).
-        err = io.StringIO()
-        with contextlib.redirect_stderr(err):
-            sys.__excepthook__(typ, exc, tb)
-        return [err.getvalue().split("\n")[-2] + "\n"]
-    else:
-        return traceback.format_exception_only(typ, exc)
+    "Return lines of the exception message, with any suggestion."
+    return list(traceback.TracebackException(typ, exc, tb).format_exception_only())
 
 
 def print_exception():
