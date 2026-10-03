@@ -55,17 +55,9 @@ class TestBase(unittest.TestCase):
     def assert_specialization_stable(self, f, *args, calls=10):
         """Assert that no specialized instruction in f misses its guard.
 
-        A specialized instruction whose guard holds leaves its adaptive
-        counter untouched.  One whose guard fails on every execution
-        (the specializer accepted a site its guard then rejects) advances
-        the counter on each miss, so comparing the counters before and
-        after a few more calls detects the mismatch without needing a
-        pystats build.
-
-        f must start from a fresh code object (see reset_code()): a nested
-        function reuses its code object across calls of the enclosing test,
-        so a specialization left over from a previous run with different
-        operands would show up here as a miss.
+        A guard miss advances the instruction's adaptive counter.  f should
+        have a fresh code object (see reset_code()), otherwise leftover
+        specializations from earlier runs can show up as misses.
         """
         before = self.adaptive_counters(f)
         self.assertTrue(before, f"{f.__qualname__} has no specialized "
@@ -73,8 +65,12 @@ class TestBase(unittest.TestCase):
         for _ in range(calls):
             f(*args)
         after = self.adaptive_counters(f)
-        moved = [f"{op} at offset {off}: counter {before[off][1]} -> {c}"
-                 for off, (op, c) in after.items() if before[off] != (op, c)]
+        # Ignore instructions that only specialize during these calls.
+        moved = []
+        for off, (op, counter) in before.items():
+            if after.get(off) != (op, counter):
+                now = after[off][1] if off in after else "unspecialized"
+                moved.append(f"{op} at offset {off}: counter {counter} -> {now}")
         self.assertEqual(moved, [],
                          f"specialized instructions in {f.__qualname__} "
                          f"missed their guard during {calls} calls")
@@ -2218,12 +2214,10 @@ class TestSpecializer(TestBase):
 
     @cpython_only
     @requires_specialization
-    @requires_jit_disabled   # JIT-compiled code stops moving tier-1 counters
+    @requires_jit_disabled
     def test_call_method_descriptor_subclass_instance(self):
-        # A C method inherited from a built-in type is specialized for
-        # subclass instances too; each guard must accept the subtype
-        # rather than miss on every call.  One case per guard, plus the
-        # unbound form where the receiver is the first argument.
+        # C methods inherited from a built-in type must not miss
+        # their guard on subclass instances.  One case per guard, plus unbound.
         class MyStr(str): pass
         Point = collections.namedtuple("Point", "x y")
         counts = collections.defaultdict(int, {1: 2})
