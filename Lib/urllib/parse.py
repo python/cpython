@@ -856,6 +856,13 @@ def unquote(string, encoding='utf-8', errors='replace'):
     return ''.join(_generate_unquoted_parts(string, encoding, errors))
 
 
+# RFC 3986
+_VALID_QUERY_CHARS = frozenset(
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+    "-._~!$&'()*+,;=:@/?%"
+)
+
+
 def parse_qs(qs, keep_blank_values=False, strict_parsing=False,
              encoding='utf-8', errors='replace', max_num_fields=None, separator='&'):
     """Parse a query given as a string argument.
@@ -967,6 +974,19 @@ def parse_qsl(qs, keep_blank_values=False, strict_parsing=False,
         num_fields = 1 + qs.count(separator)
         if max_num_fields < num_fields:
             raise ValueError('Max number of fields exceeded')
+
+    if strict_parsing:
+        if isinstance(qs, bytes):
+            qs_chars = {chr(b) for b in qs}
+            sep_chars = {chr(b) for b in separator}
+        else:
+            qs_chars = set(qs)
+            sep_chars = set(separator)
+        invalid = qs_chars - _VALID_QUERY_CHARS - sep_chars
+        if invalid:
+            raise ValueError(
+                "invalid query characters: %r" % ''.join(sorted(invalid))
+            )
 
     r = []
     for name_value in qs.split(separator):
