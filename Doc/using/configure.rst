@@ -7,7 +7,7 @@ Configure Python
 
 .. _build-requirements:
 
-Build Requirements
+Build requirements
 ==================
 
 To build CPython, you will need:
@@ -181,9 +181,11 @@ files. Commands to regenerate all generated files::
     make regen-stdlib-module-names
     make regen-limited-abi
     make regen-configure
+    make regen-sbom
+    make regen-unicodedata
 
-The ``Makefile.pre.in`` file documents generated files, their inputs, and tools used
-to regenerate them. Search for ``regen-*`` make targets.
+The :source:`Makefile.pre.in` file documents generated files, their inputs, and
+tools used to regenerate them. Search for ``regen-*`` make targets.
 
 configure script
 ----------------
@@ -214,7 +216,7 @@ and `pkg-config <https://www.freedesktop.org/wiki/Software/pkg-config/>`_ 1.8.1.
 
 .. _configure-options:
 
-Configure Options
+Configure options
 =================
 
 List all :file:`configure` script options using::
@@ -223,7 +225,7 @@ List all :file:`configure` script options using::
 
 See also the :file:`Misc/SpecialBuilds.txt` in the Python source distribution.
 
-General Options
+General options
 ---------------
 
 .. option:: --enable-loadable-sqlite-extensions
@@ -628,7 +630,7 @@ Options for third-party dependencies
    overriding ``pkg-config``.
 
 
-WebAssembly Options
+WebAssembly options
 -------------------
 
 .. option:: --enable-wasm-dynamic-linking
@@ -647,7 +649,7 @@ WebAssembly Options
    .. versionadded:: 3.11
 
 
-Install Options
+Install options
 ---------------
 
 .. option:: --prefix=PREFIX
@@ -911,7 +913,7 @@ also be used to improve performance.
 
 .. _debug-build:
 
-Python Debug Build
+Python debug build
 ------------------
 
 A debug build is Python built with the :option:`--with-pydebug` configure
@@ -1202,7 +1204,7 @@ Libraries options
    .. versionadded:: 3.10
 
 
-Security Options
+Security options
 ----------------
 
 .. option:: --with-hash-algorithm=[fnv|siphash13|siphash24]
@@ -1280,7 +1282,7 @@ Security Options
    .. versionadded:: 3.14
 
 
-macOS Options
+macOS options
 -------------
 
 See :source:`Mac/README.rst`.
@@ -1335,7 +1337,7 @@ See :source:`Mac/README.rst`.
 
    .. versionadded:: 3.13
 
-iOS Options
+iOS options
 -----------
 
 See :source:`Platforms/Apple/iOS/README.md`.
@@ -1360,7 +1362,7 @@ rejects :option:`--enable-shared`. See
    iOS builds may be configured without a framework.
 
 
-Cross Compiling Options
+Cross compiling options
 -----------------------
 
 Cross compiling, also known as cross building, can be used to build Python
@@ -1410,7 +1412,7 @@ Cross compiling example::
        --with-build-python=../x86_64/python
 
 
-Python Build System
+Python build system
 ===================
 
 Main files of the build system
@@ -1443,12 +1445,14 @@ Main Makefile targets
    CPython project) this is usually the ``all`` target. The
    ``configure`` script expands an ``autoconf`` variable,
    ``@DEF_MAKE_ALL_RULE@`` to describe precisely which targets ``make
-   all`` will build. The three choices are:
+   all`` will build. The choices are:
 
    * ``profile-opt`` (configured with ``--enable-optimizations``)
-   * ``build_wasm`` (chosen if the host platform matches ``wasm32-wasi*`` or
+   * ``bolt-opt`` (configured with ``--enable-bolt``)
+   * ``build_emscripten`` (chosen if the host platform matches
      ``wasm32-emscripten``)
-   * ``build_all`` (configured without explicitly using either of the others)
+   * ``build_wasm`` (chosen if the host platform matches ``wasm32-wasi*``)
+   * ``build_all`` (configured without explicitly using any of the others)
 
    Depending on the most recent source file changes, Make will rebuild
    any targets (object files and executables) deemed out-of-date,
@@ -1466,7 +1470,7 @@ Main Makefile targets
    Build the ``python`` program, but don't build the standard library
    extension modules. This generates a file named ``platform`` which
    contains a single line describing the details of the build platform,
-   e.g., ``macosx-14.3-arm64-3.12`` or ``linux-x86_64-3.13``.
+   for example, ``macosx-14.3-arm64-3.12`` or ``linux-x86_64-3.13``.
 
 .. make-target:: make profile-opt
 
@@ -1513,7 +1517,9 @@ Main Makefile targets
 
    Regenerate (almost) all generated files. These include (but are not
    limited to) bytecode cases, and parser generator file.
-   ``make regen-stdlib-module-names`` and ``autoconf`` must be run
+   ``make regen-stdlib-module-names``, ``make regen-limited-abi``,
+   ``make regen-configure``, ``make regen-sbom`` and
+   ``make regen-unicodedata`` must be run
    separately for the remaining `generated files <#generated-files>`_.
 
 
@@ -1534,23 +1540,23 @@ Built-in modules have no ``__file__`` attribute:
       File "<stdin>", line 1, in <module>
     AttributeError: module 'sys' has no attribute '__file__'
 
-Other C extensions are built as dynamic libraries, like the ``_asyncio`` module.
+Other C extensions are built as dynamic libraries, like the ``_zoneinfo`` module.
 They are built with the ``Py_BUILD_CORE_MODULE`` macro defined.
-Example on Linux x86-64:
+For example on Linux x86-64:
 
 .. code-block:: pycon
 
-    >>> import _asyncio
-    >>> _asyncio
-    <module '_asyncio' from '/usr/lib64/python3.9/lib-dynload/_asyncio.cpython-39-x86_64-linux-gnu.so'>
-    >>> _asyncio.__file__
-    '/usr/lib64/python3.9/lib-dynload/_asyncio.cpython-39-x86_64-linux-gnu.so'
+    >>> import _zoneinfo
+    >>> _zoneinfo
+    <module '_zoneinfo' from '/.../lib.linux-x86_64-3.16/_zoneinfo.cpython-316d-x86_64-linux-gnu.so'>
+    >>> _zoneinfo.__file__
+    '/.../lib.linux-x86_64-3.16/_zoneinfo.cpython-316d-x86_64-linux-gnu.so'
 
 :file:`Modules/Setup` is used to generate Makefile targets to build C extensions.
 At the beginning of the files, C extensions are built as built-in modules.
 Extensions defined after the ``*shared*`` marker are built as dynamic libraries.
 
-The :c:macro:`!PyAPI_FUNC()`, :c:macro:`!PyAPI_DATA()` and
+The :c:macro:`PyAPI_FUNC()`, :c:macro:`PyAPI_DATA()` and
 :c:macro:`PyMODINIT_FUNC` macros of :file:`Include/exports.h` are defined
 differently depending if the ``Py_BUILD_CORE_MODULE`` macro is defined:
 
