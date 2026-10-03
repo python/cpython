@@ -285,8 +285,6 @@ _PyType_HasFeature(PyTypeObject *type, unsigned long feature) {
     return ((type->tp_flags) & feature) != 0;
 }
 
-extern void _PyType_InitCache(PyInterpreterState *interp);
-
 extern PyStatus _PyObject_InitState(PyInterpreterState *interp);
 extern void _PyObject_FiniState(PyInterpreterState *interp);
 extern bool _PyRefchain_IsTraced(PyInterpreterState *interp, PyObject *obj);
@@ -959,7 +957,8 @@ extern int _PyObject_IsInstanceDictEmpty(PyObject *);
 
 // Export for 'math' shared extension
 PyAPI_FUNC(PyObject*) _PyObject_LookupSpecial(PyObject *, PyObject *);
-PyAPI_FUNC(int) _PyObject_LookupSpecialMethod(PyObject *attr, _PyStackRef *method_and_self);
+PyAPI_FUNC(int) _PyObject_LookupSpecialMethod(PyObject *attr, _PyStackRef *method,
+                                              _PyStackRef *self);
 
 // Calls the method named `attr` on `self`, but does not set an exception if
 // the attribute does not exist.

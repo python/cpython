@@ -1,0 +1,4 @@
+Build the :mod:`curses` module against a wide-character capable ncurses
+even when it is not named ``ncursesw`` -- for example the pkgsrc ncurses on
+NetBSD and illumos, or the system ncurses on macOS.  Such a library
+previously produced a narrow build.

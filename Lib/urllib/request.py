@@ -280,7 +280,7 @@ def request_host(request):
 
     """
     url = request.full_url
-    host = urlparse(url)[1]
+    host = urlparse(url).netloc
     if host == "":
         host = request.get_header("Host", "")
 
@@ -821,16 +821,17 @@ class HTTPPasswordMgr:
             self.passwd[realm] = {}
         for default_port in True, False:
             reduced_uri = tuple(
-                self.reduce_uri(u, default_port) for u in uri)
+                self._reduce_uri_with_scheme(u, default_port) for u in uri)
             self.passwd[realm][reduced_uri] = (user, passwd)
 
     def find_user_password(self, realm, authuri):
         domains = self.passwd.get(realm, {})
         for default_port in True, False:
-            reduced_authuri = self.reduce_uri(authuri, default_port)
+            reduced_authuri = self._reduce_uri_with_scheme(
+                authuri, default_port)
             for uris, authinfo in domains.items():
                 for uri in uris:
-                    if self.is_suburi(uri, reduced_authuri):
+                    if self._is_suburi_with_scheme(uri, reduced_authuri):
                         return authinfo
         return None, None
 
@@ -838,11 +839,11 @@ class HTTPPasswordMgr:
         """Accept authority or URI and extract only the authority and path."""
         # note HTTP URLs do not have a userinfo component
         parts = urlsplit(uri)
-        if parts[1]:
+        if parts.netloc:
             # URI
-            scheme = parts[0]
-            authority = parts[1]
-            path = parts[2] or '/'
+            scheme = parts.scheme
+            authority = parts.netloc
+            path = parts.path or '/'
         else:
             # host or host:port
             scheme = None
@@ -856,6 +857,17 @@ class HTTPPasswordMgr:
             if dport is not None:
                 authority = "%s:%d" % (host, dport)
         return authority, path
+
+    def _reduce_uri_with_scheme(self, uri, default_port=True):
+        parts = urlsplit(uri)
+        scheme = parts[0] if parts[1] else None
+        return (scheme or None, *self.reduce_uri(uri, default_port))
+
+    def _is_suburi_with_scheme(self, base, test):
+        if (base[0] is not None and test[0] is not None and
+                base[0] != test[0]):
+            return False
+        return self.is_suburi(base[1:], test[1:])
 
     def is_suburi(self, base, test):
         """Check if test is below base in a URI tree
@@ -902,14 +914,15 @@ class HTTPPasswordMgrWithPriorAuth(HTTPPasswordMgrWithDefaultRealm):
 
         for default_port in True, False:
             for u in uri:
-                reduced_uri = self.reduce_uri(u, default_port)
+                reduced_uri = self._reduce_uri_with_scheme(u, default_port)
                 self.authenticated[reduced_uri] = is_authenticated
 
     def is_authenticated(self, authuri):
         for default_port in True, False:
-            reduced_authuri = self.reduce_uri(authuri, default_port)
+            reduced_authuri = self._reduce_uri_with_scheme(
+                authuri, default_port)
             for uri in self.authenticated:
-                if self.is_suburi(uri, reduced_authuri):
+                if self._is_suburi_with_scheme(uri, reduced_authuri):
                     return self.authenticated[uri]
 
 
@@ -1215,7 +1228,7 @@ class HTTPDigestAuthHandler(BaseHandler, AbstractDigestAuthHandler):
     handler_order = 490  # before Basic auth
 
     def http_error_401(self, req, fp, code, msg, headers):
-        host = urlparse(req.full_url)[1]
+        host = urlparse(req.full_url).netloc
         retry = self.http_error_auth_reqed('www-authenticate',
                                            host, req, headers)
         self.reset_retry_count()

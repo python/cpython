@@ -950,7 +950,9 @@ static PyObject *
 py_blake2b_get_digest_size(PyObject *op, void *Py_UNUSED(closure))
 {
     Blake2Object *self = _Blake2Object_CAST(op);
+    HASHLIB_ACQUIRE_LOCK(self);
     Hacl_Hash_Blake2b_index info = hacl_get_blake2_info(self);
+    HASHLIB_RELEASE_LOCK(self);
     return PyLong_FromLong(info.digest_length);
 }
 
