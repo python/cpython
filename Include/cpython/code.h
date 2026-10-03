@@ -15,11 +15,7 @@ typedef struct {
     PyObject *_co_freevars;
 } _PyCoCached;
 
-typedef struct {
-    int size;
-    int capacity;
-    struct _PyExecutorObject *executors[1];
-} _PyExecutorArray;
+typedef struct _PyExecutorArray _PyExecutorArray;
 
 
 #ifdef Py_GIL_DISABLED
