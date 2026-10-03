@@ -1,0 +1,3 @@
+Relax parsing :mod:`HTTP coockies <http.cookies>` values: allow any
+characters except semicolon (``';'``) and control characters in non-quoted
+cookie values. The ``';'`` separator is now mandatory between name-value pairs.

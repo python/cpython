@@ -48,7 +48,21 @@ class CookieTests(unittest.TestCase):
                     'Set-Cookie: d=r',
                     'Set-Cookie: f=h'
                 ))
-            }
+            },
+
+            # gh-149028: allow any characters in non-quoted cookie values
+            {
+                'data': 'cookie={"key": "value"}',
+                'dict': {'cookie': '{"key": "value"}'},
+                'repr': "<SimpleCookie: cookie='{\"key\": \"value\"}'>",
+                'output': 'Set-Cookie: cookie={"key": "value"}',
+            },
+            {
+                'data': 'key="some value; surrounded by quotes"',
+                'dict': {'key': 'some value; surrounded by quotes'},
+                'repr': "<SimpleCookie: key='some value; surrounded by quotes'>",
+                'output': 'Set-Cookie: key="some value; surrounded by quotes"',
+            },
         ]
 
         for case in cases:
@@ -295,7 +309,7 @@ class CookieTests(unittest.TestCase):
         C = cookies.SimpleCookie()
         for s in (']foo=x', '[foo=x', 'blah]foo=x', 'blah[foo=x',
                   'Set-Cookie: foo=bar', 'Set-Cookie: foo',
-                  'foo=bar; baz', 'baz; foo=bar',
+                  'foo=bar; baz', 'baz; foo=bar', 'foo,bar=baz',
                   'secure;foo=bar', 'Version=1;foo=bar'):
             C.load(s)
             self.assertEqual(dict(C), {})
@@ -313,12 +327,6 @@ class CookieTests(unittest.TestCase):
             with self.subTest(proto=proto):
                 C1 = pickle.loads(pickle.dumps(C, protocol=proto))
                 self.assertEqual(C1.output(), expected_output)
-
-    def test_illegal_chars(self):
-        rawdata = "a=b; c,d=e"
-        C = cookies.SimpleCookie()
-        with self.assertRaises(cookies.CookieError):
-            C.load(rawdata)
 
     def test_comment_quoting(self):
         c = cookies.SimpleCookie()
