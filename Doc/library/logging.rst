@@ -1062,6 +1062,9 @@ the options available to you.
 |                |                         | of the logging call which resulted in the     |
 |                |                         | creation of this record.                      |
 +----------------+-------------------------+-----------------------------------------------+
+| nativeThreadId | ``%(nativeThreadId)d``  | Native thread ID (if available). See          |
+|                |                         | :func:`threading.get_native_id`.              |
++----------------+-------------------------+-----------------------------------------------+
 | thread         | ``%(thread)d``          | Thread ID (if available).                     |
 +----------------+-------------------------+-----------------------------------------------+
 | threadName     | ``%(threadName)s``      | Thread name (if available).                   |
@@ -1074,6 +1077,9 @@ the options available to you.
 
 .. versionchanged:: 3.12
    *taskName* was added.
+
+.. versionchanged:: 3.15
+   *nativeThreadId* was added.
 
 .. _logger-adapter:
 
