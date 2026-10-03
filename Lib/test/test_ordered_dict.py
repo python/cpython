@@ -1014,6 +1014,28 @@ class CPythonOrderedDictTests(OrderedDictTests,
 
         gc.collect()
 
+    def test_pop_inconsistent_eq(self):
+        class K:
+            def __init__(self):
+                self.calls = 0
+
+            def __hash__(self):
+                return 12345
+
+            # Behave inconsistently across repeated equality checks.
+            def __eq__(self, other):
+                self.calls += 1
+                return self.calls <= 2
+
+        k1 = K()
+        k2 = K()
+
+        od = self.OrderedDict()
+        od[k1] = "value"
+
+        with self.assertRaises(KeyError):
+            od.pop(k2)
+
 
 class PurePythonOrderedDictSubclassTests(PurePythonOrderedDictTests):
 
