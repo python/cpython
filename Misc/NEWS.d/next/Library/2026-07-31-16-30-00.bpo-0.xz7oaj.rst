@@ -1,0 +1,3 @@
+On Windows, :mod:`tarfile` extraction filters now report drive-relative
+member names and link targets using structured filter errors instead of
+allowing :exc:`ValueError` from :func:`os.path.commonpath` to escape.
