@@ -1782,6 +1782,7 @@ types
   as described in :pep:`667`.
   (Contributed by Peter Bierma in :gh:`136492`.)
 
+* Expose ``_PyObject_LookupSpecial`` as :func:`types.lookup_special`.
 
 typing
 ------
