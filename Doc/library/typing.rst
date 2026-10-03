@@ -3027,6 +3027,10 @@ ABCs and Protocols for working with I/O
    :func:`open`. Please note that these classes are not protocols, and
    their interface is fairly broad.
 
+   .. versionchanged:: next
+      ``BinaryIO`` now declares a ``readinto()`` method, matching the binary
+      streams that :func:`open` returns.
+
 The protocols :class:`io.Reader` and :class:`io.Writer` offer a simpler
 alternative for argument types, when only the ``read()`` or ``write()``
 methods are accessed, respectively::
