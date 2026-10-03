@@ -74,6 +74,21 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
 _Py_COMP_DIAG_POP
 }
 
+// Similar to set_ob_shash() but don't use an atomic operation on Free
+// Threading. This function must only be used on newly allocated bytes objects.
+static inline void
+set_ob_shash_unsafe(PyBytesObject *a, Py_hash_t hash)
+{
+    // Don't test _PyObject_IsUniquelyReferenced(), so the function can be
+    // called by bytes_resize_inplace().
+    assert(Py_REFCNT(a) == 1);
+
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
+    a->ob_shash = hash;
+_Py_COMP_DIAG_POP
+}
+
 #define get_ob_shash(op) _PyBytes_GET_CACHED_HASH(op)
 
 
@@ -99,8 +114,36 @@ _Py_COMP_DIAG_POP
    PyBytes_FromStringAndSize()) or the length of the string in the 'str'
    parameter (for PyBytes_FromString()).
 */
+
+// Allocate a new bytes object with contents left uninitialized. The caller is
+// responsible to fill the contents. size must be greater than 0.
 static PyObject *
-_PyBytes_FromSize(Py_ssize_t size, int use_calloc)
+bytes_alloc(Py_ssize_t size)
+{
+    assert(size >= 1);
+
+    if ((size_t)size > (size_t)PY_SSIZE_T_MAX - PyBytesObject_SIZE) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "byte string is too large");
+        return NULL;
+    }
+    size_t alloc = PyBytesObject_SIZE + size;
+
+    /* Inline PyObject_NewVar */
+    PyBytesObject *op = (PyBytesObject *)PyObject_Malloc(alloc);
+    if (op == NULL) {
+        return PyErr_NoMemory();
+    }
+
+    _PyObject_InitVar(_PyVarObject_CAST(op), &PyBytes_Type, size);
+    set_ob_shash_unsafe(op, -1);
+    op->ob_sval[size] = '\0';
+    return (PyObject *) op;
+}
+
+// Create a new bytes object with contents initialized to zero. size can be 0.
+static PyObject *
+_PyBytes_FromSizeZero(Py_ssize_t size)
 {
     PyBytesObject *op;
     assert(size >= 0);
@@ -114,77 +157,77 @@ _PyBytes_FromSize(Py_ssize_t size, int use_calloc)
                         "byte string is too large");
         return NULL;
     }
+    size_t alloc = PyBytesObject_SIZE + size;
 
     /* Inline PyObject_NewVar */
-    if (use_calloc)
-        op = (PyBytesObject *)PyObject_Calloc(1, PyBytesObject_SIZE + size);
-    else
-        op = (PyBytesObject *)PyObject_Malloc(PyBytesObject_SIZE + size);
+    op = (PyBytesObject *)PyObject_Calloc(1, alloc);
     if (op == NULL) {
         return PyErr_NoMemory();
     }
     _PyObject_InitVar((PyVarObject*)op, &PyBytes_Type, size);
-    set_ob_shash(op, -1);
-    if (!use_calloc) {
-        op->ob_sval[size] = '\0';
+    set_ob_shash_unsafe(op, -1);
+    // op->ob_sval[size] is equal to '\0'
+    return (PyObject *) op;
+}
+
+// Similar to PyBytes_FromStringAndSize(), but str must not be NULL.
+static PyObject *
+_PyBytes_FromStringAndSize(const char *str, Py_ssize_t size)
+{
+    assert(str != NULL);
+    assert(size >= 0);
+
+    if (size == 0) {
+        return bytes_get_empty();
     }
+    if (size == 1) {
+        return bytes_get_char((uint8_t)str[0]);
+    }
+
+    PyBytesObject *op = (PyBytesObject *)bytes_alloc(size);
+    if (op == NULL) {
+        return NULL;
+    }
+    memcpy(op->ob_sval, str, size);
     return (PyObject *) op;
 }
 
 PyObject *
 PyBytes_FromStringAndSize(const char *str, Py_ssize_t size)
 {
-    PyBytesObject *op;
     if (size < 0) {
         PyErr_SetString(PyExc_SystemError,
             "Negative size passed to PyBytes_FromStringAndSize");
         return NULL;
     }
-    if (size == 1 && str != NULL) {
-        return bytes_get_char((uint8_t)*str);
-    }
-    if (size == 0) {
-        return bytes_get_empty();
-    }
 
-    op = (PyBytesObject *)_PyBytes_FromSize(size, 0);
-    if (op == NULL)
-        return NULL;
-    if (str == NULL)
-        return (PyObject *) op;
-
-    memcpy(op->ob_sval, str, size);
-    return (PyObject *) op;
+    if (str != NULL) {
+        return _PyBytes_FromStringAndSize(str, size);
+    }
+    else {
+        if (size == 0) {
+            return bytes_get_empty();
+        }
+        return bytes_alloc(size);
+    }
 }
 
 PyObject *
 PyBytes_FromString(const char *str)
 {
-    size_t size;
-    PyBytesObject *op;
-
     assert(str != NULL);
-    size = strlen(str);
-    if (size > PY_SSIZE_T_MAX - PyBytesObject_SIZE) {
-        PyErr_SetString(PyExc_OverflowError,
-            "byte string is too long");
-        return NULL;
-    }
-
+    size_t size = strlen(str);
     if (size == 0) {
         return bytes_get_empty();
     }
-    else if (size == 1) {
-        return bytes_get_char((uint8_t)*str);
+    if (size == 1) {
+        return bytes_get_char((uint8_t)str[0]);
     }
 
-    /* Inline PyObject_NewVar */
-    op = (PyBytesObject *)PyObject_Malloc(PyBytesObject_SIZE + size);
+    PyBytesObject *op = (PyBytesObject *)bytes_alloc(size);
     if (op == NULL) {
         return PyErr_NoMemory();
     }
-    _PyObject_InitVar((PyVarObject*)op, &PyBytes_Type, size);
-    set_ob_shash(op, -1);
     memcpy(op->ob_sval, str, size+1);
     return (PyObject *) op;
 }
@@ -489,7 +532,7 @@ formatfloat(PyObject *v, Py_ssize_t argidx, PyObject *key,
         return str;
     }
 
-    result = PyBytes_FromStringAndSize(p, len);
+    result = _PyBytes_FromStringAndSize(p, len);
     PyMem_Free(p);
     *p_result = result;
     return result != NULL ? str : NULL;
@@ -743,8 +786,7 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                                  (Py_ssize_t)(fmtstart - format - 1));
                     goto error;
                 }
-                key = PyBytes_FromStringAndSize(keystart,
-                                                 keylen);
+                key = _PyBytes_FromStringAndSize(keystart, keylen);
                 if (key == NULL)
                     goto error;
                 if (args_owned) {
@@ -1572,7 +1614,7 @@ _PyBytes_Concat(PyObject *a, PyObject *b)
         goto done;
     }
 
-    result = PyBytes_FromStringAndSize(NULL, va.len + vb.len);
+    result = bytes_alloc(va.len + vb.len);
     if (result != NULL) {
         memcpy(PyBytes_AS_STRING(result), va.buf, va.len);
         memcpy(PyBytes_AS_STRING(result) + va.len, vb.buf, vb.len);
@@ -1600,26 +1642,22 @@ _PyBytes_Repeat(PyObject *self, Py_ssize_t n)
             "repeated bytes are too long");
         return NULL;
     }
-    Py_ssize_t size = Py_SIZE(a) * n;
-    if (size == Py_SIZE(a) && PyBytes_CheckExact(a)) {
+    Py_ssize_t old_size = Py_SIZE(a);
+    Py_ssize_t new_size = old_size * n;
+    if (new_size == old_size && PyBytes_CheckExact(a)) {
         return Py_NewRef(a);
     }
-    size_t nbytes = (size_t)size;
-    if (nbytes + PyBytesObject_SIZE <= nbytes) {
-        PyErr_SetString(PyExc_OverflowError,
-            "repeated bytes are too long");
-        return NULL;
+
+    if (new_size == 0) {
+        return bytes_get_empty();
     }
-    PyBytesObject *op = PyObject_Malloc(PyBytesObject_SIZE + nbytes);
+
+    PyBytesObject *op = (PyBytesObject *)bytes_alloc(new_size);
     if (op == NULL) {
         return PyErr_NoMemory();
     }
-    _PyObject_InitVar((PyVarObject*)op, &PyBytes_Type, size);
-    set_ob_shash(op, -1);
-    op->ob_sval[size] = '\0';
 
-    _PyBytes_RepeatBuffer(op->ob_sval, size, a->ob_sval, Py_SIZE(a));
-
+    _PyBytes_RepeatBuffer(op->ob_sval, new_size, a->ob_sval, old_size);
     return (PyObject *) op;
 }
 
@@ -1755,7 +1793,6 @@ bytes_subscript(PyObject *op, PyObject* item)
         size_t cur;
         const char* source_buf;
         char* result_buf;
-        PyObject* result;
 
         if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
             return NULL;
@@ -1772,22 +1809,22 @@ bytes_subscript(PyObject *op, PyObject* item)
             return Py_NewRef(self);
         }
         else if (step == 1) {
-            return PyBytes_FromStringAndSize(
+            return _PyBytes_FromStringAndSize(
                 PyBytes_AS_STRING(self) + start,
                 slicelength);
         }
         else {
             source_buf = PyBytes_AS_STRING(self);
-            result = PyBytes_FromStringAndSize(NULL, slicelength);
-            if (result == NULL)
+            PyObject* result = bytes_alloc(slicelength);
+            if (result == NULL) {
                 return NULL;
+            }
 
             result_buf = PyBytes_AS_STRING(result);
             for (cur = start, i = 0; i < slicelength;
                  cur += step, i++) {
                 result_buf[i] = source_buf[cur];
             }
-
             return result;
         }
     }
@@ -1843,7 +1880,7 @@ bytes___bytes___impl(PyBytesObject *self)
         return Py_NewRef(self);
     }
     else {
-        return PyBytes_FromStringAndSize(self->ob_sval, Py_SIZE(self));
+        return _PyBytes_FromStringAndSize(self->ob_sval, Py_SIZE(self));
     }
 }
 
@@ -2134,7 +2171,7 @@ do_xstrip(PyBytesObject *self, int striptype, PyObject *sepobj)
         return Py_NewRef(self);
     }
     else
-        return PyBytes_FromStringAndSize(s+i, j-i);
+        return _PyBytes_FromStringAndSize(s+i, j-i);
 }
 
 
@@ -2163,7 +2200,7 @@ do_strip(PyBytesObject *self, int striptype)
         return Py_NewRef(self);
     }
     else
-        return PyBytes_FromStringAndSize(s+i, j-i);
+        return _PyBytes_FromStringAndSize(s+i, j-i);
 }
 
 
@@ -2468,15 +2505,15 @@ bytes_removeprefix_impl(PyBytesObject *self, Py_buffer *prefix)
         && prefix_len > 0
         && memcmp(self_start, prefix_start, prefix_len) == 0)
     {
-        return PyBytes_FromStringAndSize(self_start + prefix_len,
-                                         self_len - prefix_len);
+        return _PyBytes_FromStringAndSize(self_start + prefix_len,
+                                          self_len - prefix_len);
     }
 
     if (PyBytes_CheckExact(self)) {
         return Py_NewRef(self);
     }
 
-    return PyBytes_FromStringAndSize(self_start, self_len);
+    return _PyBytes_FromStringAndSize(self_start, self_len);
 }
 
 /*[clinic input]
@@ -2507,15 +2544,15 @@ bytes_removesuffix_impl(PyBytesObject *self, Py_buffer *suffix)
         && memcmp(self_start + self_len - suffix_len,
                   suffix_start, suffix_len) == 0)
     {
-        return PyBytes_FromStringAndSize(self_start,
-                                         self_len - suffix_len);
+        return _PyBytes_FromStringAndSize(self_start,
+                                          self_len - suffix_len);
     }
 
     if (PyBytes_CheckExact(self)) {
         return Py_NewRef(self);
     }
 
-    return PyBytes_FromStringAndSize(self_start, self_len);
+    return _PyBytes_FromStringAndSize(self_start, self_len);
 }
 
 /*[clinic input]
@@ -2953,7 +2990,7 @@ bytes_new_impl(PyTypeObject *type, PyObject *x, const char *encoding,
                 PyErr_SetString(PyExc_ValueError, "negative count");
                 return NULL;
             }
-            bytes = _PyBytes_FromSize(size, 1);
+            bytes = _PyBytes_FromSizeZero(size);
         }
     }
     else {
@@ -3142,13 +3179,14 @@ PyBytes_FromObject(PyObject *x)
  * This allocator will be removed when ob_shash is removed.
  */
 static PyObject *
-bytes_alloc(PyTypeObject *self, Py_ssize_t nitems)
+bytes_type_alloc(PyTypeObject *self, Py_ssize_t nitems)
 {
+    // Initialize memory to zero
     PyBytesObject *obj = (PyBytesObject*)PyType_GenericAlloc(self, nitems);
     if (obj == NULL) {
         return NULL;
     }
-    set_ob_shash(obj, -1);
+    set_ob_shash_unsafe(obj, -1);
     return (PyObject*)obj;
 }
 
@@ -3163,10 +3201,9 @@ bytes_subtype_new(PyTypeObject *type, PyObject *tmp)
     n = PyBytes_GET_SIZE(tmp);
     pnew = type->tp_alloc(type, n);
     if (pnew != NULL) {
-        memcpy(PyBytes_AS_STRING(pnew),
-                  PyBytes_AS_STRING(tmp), n+1);
-        set_ob_shash((PyBytesObject *)pnew,
-            get_ob_shash((PyBytesObject *)tmp));
+        memcpy(PyBytes_AS_STRING(pnew), PyBytes_AS_STRING(tmp), n+1);
+        set_ob_shash_unsafe((PyBytesObject*)pnew,
+                            get_ob_shash((PyBytesObject *)tmp));
     }
     return pnew;
 }
@@ -3267,7 +3304,7 @@ PyTypeObject PyBytes_Type = {
     0,                                          /* tp_descr_set */
     0,                                          /* tp_dictoffset */
     0,                                          /* tp_init */
-    bytes_alloc,                                /* tp_alloc */
+    bytes_type_alloc,                           /* tp_alloc */
     bytes_new,                                  /* tp_new */
     PyObject_Free,                              /* tp_free */
     .tp_version_tag = _Py_TYPE_VERSION_BYTES,
@@ -3405,7 +3442,7 @@ bytes_resize_inplace(PyObject **pv, Py_ssize_t newsize)
     PyBytesObject *sv = (PyBytesObject *)v;
     Py_SET_SIZE(sv, newsize);
     sv->ob_sval[newsize] = '\0';
-    set_ob_shash(sv, -1);          /* invalidate cached hash value */
+    set_ob_shash_unsafe(sv, -1);  // invalidate cached hash value
     assert(_PyBytes_IsMutable(*pv));
     return 0;
 }
@@ -3428,7 +3465,6 @@ int
 _PyBytes_ResizeKeepOnError(PyObject **pv, Py_ssize_t newsize)
 {
     PyObject *v = *pv;
-    PyObject *result;
 
     if (!PyBytes_Check(v) || newsize < 0) {
         PyErr_BadInternalCall();
@@ -3442,7 +3478,8 @@ _PyBytes_ResizeKeepOnError(PyObject **pv, Py_ssize_t newsize)
     }
 
     if (oldsize == 0) {
-        result = _PyBytes_FromSize(newsize, 0);
+        assert(newsize >= 1);
+        PyObject *result = bytes_alloc(newsize);
         if (result == NULL) {
             return -1;
         }
@@ -3461,7 +3498,7 @@ _PyBytes_ResizeKeepOnError(PyObject **pv, Py_ssize_t newsize)
     if (!_PyObject_IsUniquelyReferenced(v)) {
         // Allocate and then copy so we don't get a shared immortal
         // one-character singleton!
-        result = _PyBytes_FromSize(newsize, 0);
+        PyObject *result = bytes_alloc(newsize);
         if (!result) {
             return -1;
         }
@@ -3824,7 +3861,7 @@ byteswriter_resize(PyBytesWriter *writer, Py_ssize_t new_size, int resize)
             data = PyByteArray_AS_STRING(writer->obj);
         }
         else {
-            writer->obj = PyBytes_FromStringAndSize(NULL, alloc);
+            writer->obj = bytes_alloc(alloc);
             if (writer->obj == NULL) {
                 return -1;
             }
@@ -3994,7 +4031,7 @@ PyBytesWriter_FinishWithSize(PyBytesWriter *writer, Py_ssize_t size)
                 result = bytes_get_char((uint8_t)buffer[0]);
             }
             else {
-                result = _PyBytes_FromSize(size, 0);
+                result = bytes_alloc(size);
                 if (result == NULL) {
                     goto error;
                 }
