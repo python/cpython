@@ -1,0 +1,3 @@
+Fix :mod:`ssl` leaving a system error on the OpenSSL error queue of the
+thread after raising :exc:`OSError`, which made later I/O on other SSL
+sockets in the same thread fail with the same error.
