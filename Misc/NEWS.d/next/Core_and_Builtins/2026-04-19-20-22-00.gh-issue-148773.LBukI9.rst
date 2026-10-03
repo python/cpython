@@ -1,0 +1,4 @@
+Fixes a bug in :func:`print` which could result in a hangup signal (``SIGHUP``)
+being sent to the user session under certain circumstances when printing an
+empty string to unbuffered stdout, e.g. if ``python3 -u`` is used or the
+:envvar:`PYTHONUNBUFFERED` environment variable is set.
