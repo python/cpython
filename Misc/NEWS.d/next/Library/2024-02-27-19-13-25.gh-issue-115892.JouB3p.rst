@@ -1,0 +1,2 @@
+:func:`os.path.splitext` on Windows no longer splits an "extension" from the
+server or share name in the UNC path.
