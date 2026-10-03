@@ -2558,6 +2558,9 @@ with the :class:`Pool` class.
       set *buffersize* at least to the number of processes in pool
       (to consume *iterable* as you go), or even higher
       (to prefetch the next ``N=buffersize-processes`` arguments).
+      Once :meth:`join` is called, *buffersize* is no longer honored:
+      the rest of the *iterable* is submitted without waiting for results
+      to be yielded.
 
       .. versionchanged:: next
          Added the *buffersize* parameter.
