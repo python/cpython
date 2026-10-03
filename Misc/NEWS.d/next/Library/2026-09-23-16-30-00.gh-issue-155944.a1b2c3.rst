@@ -1,0 +1,5 @@
+:func:`xml.dom.getDOMImplementation` skips a well-known candidate whose
+factory fails, so a later candidate can still be chosen. A missing module
+or a missing factory is still treated as unavailable. If every candidate
+fails and one of them raised from its factory, that exception is
+re-raised instead of a generic :exc:`ImportError`.
