@@ -402,6 +402,14 @@ encodings
   (Contributed by Petr Viktorin in :gh:`157675`.)
 
 
+functools
+---------
+
+* Added :func:`functools.cached_method` decorator for applying a cache to
+  instance methods.
+  (Contributed by Stephen Rosen in :gh:`102618`.)
+
+
 gzip
 ----
 
