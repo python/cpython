@@ -8,6 +8,8 @@
 #include "pycore_time.h"          // _PyTimeFraction
 
 #include <time.h>                 // clock()
+#include <string.h>               // strncpy()
+
 #ifdef HAVE_SYS_TIMES_H
 #  include <sys/times.h>          // times()
 #endif
@@ -85,6 +87,7 @@ typedef struct {
     // clock() frequency in hertz
     _PyTimeFraction clock_base;
 #endif
+    PyMutex timezone_mutex;
 } time_module_state;
 
 static inline time_module_state*
@@ -93,6 +96,18 @@ get_time_state(PyObject *module)
     void *state = _PyModule_GetState(module);
     assert(state != NULL);
     return (time_module_state *)state;
+}
+
+static inline void
+lock_timezone(PyObject *module)
+{
+    PyMutex_Lock(&get_time_state(module)->timezone_mutex);
+}
+
+static inline void
+unlock_timezone(PyObject *module)
+{
+    PyMutex_Unlock(&get_time_state(module)->timezone_mutex);
 }
 
 
@@ -590,6 +605,21 @@ Convert seconds since the Epoch to a time tuple expressing local time.
 When 'seconds' is not passed in, convert the current time instead.
 [clinic start generated code]*/
 
+#ifdef HAVE_STRUCT_TM_TM_ZONE
+static void
+snapshot_tm_zone(struct tm *p, char *buf, size_t n)
+{
+    if (p->tm_zone != NULL) {
+        strncpy(buf, p->tm_zone, n - 1);
+        buf[n - 1] = '\0';
+    }
+    else {
+        buf[0] = '\0';
+    }
+    p->tm_zone = buf;
+}
+#endif
+
 static PyObject *
 time_localtime_impl(PyObject *module, PyObject *ot)
 /*[clinic end generated code: output=d3c1c6818abd34a1 input=43b4e8bf4914300e]*/
@@ -599,11 +629,18 @@ time_localtime_impl(PyObject *module, PyObject *ot)
 
     if (!parse_time_t_arg(ot, &when))
         return NULL;
-    if (_PyTime_localtime(when, &buf) != 0)
+
+    lock_timezone(module);
+    if (_PyTime_localtime(when, &buf) != 0) {
+        unlock_timezone(module);
         return NULL;
+    }
 
     time_module_state *state = get_time_state(module);
 #ifdef HAVE_STRUCT_TM_TM_ZONE
+    char zone_buf[64];
+    snapshot_tm_zone(&buf, zone_buf, sizeof(zone_buf));
+    unlock_timezone(module);
     return tmtotuple(state, &buf);
 #else
     {
@@ -612,6 +649,7 @@ time_localtime_impl(PyObject *module, PyObject *ot)
         time_t gmtoff;
         strftime(zone, sizeof(zone), "%Z", &buf);
         gmtoff = timegm(&buf) - when;
+        unlock_timezone(module);
         return tmtotuple(state, &local, zone, gmtoff);
     }
 #endif
@@ -901,8 +939,12 @@ time_strftime(PyObject *module, PyObject *args)
     time_module_state *state = get_time_state(module);
     if (tup == NULL) {
         time_t tt = time(NULL);
-        if (_PyTime_localtime(tt, &buf) != 0)
+        lock_timezone(module);
+        if (_PyTime_localtime(tt, &buf) != 0) {
+            unlock_timezone(module);
             return NULL;
+        }
+        unlock_timezone(module);
     }
     else if (!gettmarg(state, tup, &buf,
                        "iiiiiiiii;strftime(): illegal time tuple argument") ||
@@ -958,8 +1000,10 @@ time_strftime(PyObject *module, PyObject *args)
         }
         if (fmtlen) {
             format[fmtlen] = 0;
+            lock_timezone(module);
             PyObject *unicode = time_strftime1(&outbuf, &bufsize,
                                                format, fmtlen, &buf);
+            unlock_timezone(module);
             if (unicode == NULL) {
                 goto error;
             }
@@ -1069,8 +1113,12 @@ time_asctime_impl(PyObject *module, PyObject *tup)
     time_module_state *state = get_time_state(module);
     if (tup == NULL) {
         time_t tt = time(NULL);
-        if (_PyTime_localtime(tt, &buf) != 0)
+        lock_timezone(module);
+        if (_PyTime_localtime(tt, &buf) != 0) {
+            unlock_timezone(module);
             return NULL;
+        }
+        unlock_timezone(module);
     }
     else if (!gettmarg(state, tup, &buf,
                        "iiiiiiiii;asctime(): illegal time tuple argument") ||
@@ -1101,8 +1149,12 @@ time_ctime_impl(PyObject *module, PyObject *ot)
     struct tm buf;
     if (!parse_time_t_arg(ot, &tt))
         return NULL;
-    if (_PyTime_localtime(tt, &buf) != 0)
+    lock_timezone(self);
+    if (_PyTime_localtime(tt, &buf) != 0) {
+        unlock_timezone(self);
         return NULL;
+    }
+    unlock_timezone(self);
     return _asctime(&buf);
 }
 
@@ -1222,15 +1274,18 @@ time_tzset_impl(PyObject *module)
         return NULL;
     }
 
+    lock_timezone(self);
 #if !defined(MS_WINDOWS) || defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
     tzset();
 #endif
 
     /* Reset timezone, altzone, daylight and tzname */
     if (init_timezone(m) < 0) {
+        unlock_timezone(self);
         Py_DECREF(m);
         return NULL;
     }
+    unlock_timezone(self);
     Py_DECREF(m);
     if (PyErr_Occurred())
         return NULL;
