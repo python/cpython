@@ -1,6 +1,6 @@
 //  This implements the reference cycle garbage collector.
 //  The Python module interface to the collector is in gcmodule.c.
-//  See InternalDocs/garbage_collector.md for more infromation.
+//  See InternalDocs/garbage_collector.md for more information.
 
 #include "Python.h"
 #include "pycore_ceval.h"         // _Py_set_eval_breaker_bit()
@@ -513,7 +513,7 @@ visit_reachable(PyObject *op, void *arg)
     PyGC_Head *gc = AS_GC(op);
     const Py_ssize_t gc_refs = gc_get_refs(gc);
 
-    // Ignore objects in other generation.
+    // Ignore objects in other generations.
     // This also skips objects "to the left" of the current position in
     // move_unreachable's scan of the 'young' list - they've already been
     // traversed, and no longer have the PREV_MASK_COLLECTING flag.
@@ -770,7 +770,7 @@ move_legacy_finalizer_reachable(PyGC_Head *finalizers)
  * whose callbacks must be invoked.  See gc_weakref.txt for overview & some
  * details.
  *
- * The clearing of weakrefs is suble and must be done carefully, as there was
+ * The clearing of weakrefs is subtle and must be done carefully, as there were
  * previous bugs related to this.  First, weakrefs to the unreachable set of
  * objects must be cleared before we start calling `tp_clear`.  If we don't,
  * those weakrefs can reveal unreachable objects to Python-level code and that
