@@ -83,9 +83,12 @@ def format_list(extracted_list):
     for printing.
 
     Each string in the resulting list corresponds to the item with the
-    same index in the argument list.  Each string ends in a newline;
-    the strings may contain internal newlines as well, for those items
-    whose source text line is not None.
+    same index in the argument list.  Each string ends in a newline and may
+    contain internal newlines.  When an item's source text spans multiple
+    physical lines, every line is displayed only if the item has both column
+    position information and an end line number greater than its line number;
+    otherwise just the first physical line is displayed.  Old-style tuples
+    never have column position information.
     """
     return StackSummary.from_list(extracted_list).format()
 
@@ -324,8 +327,8 @@ class FrameSummary:
       active when the frame was captured.
     - :attr:`name` The name of the function or method that was executing
       when the frame was captured.
-    - :attr:`line` The text from the linecache module for the line
-      of code that was running when the frame was captured.
+    - :attr:`line` The first physical line of code that was running when
+      the frame was captured.
     - :attr:`locals` Either None if locals were not supplied, or a dict
       mapping the name to the repr() of the variable.
     - :attr:`end_lineno` The last line number of the source code for this frame.
@@ -558,6 +561,11 @@ class StackSummary(list):
         """
         Create a StackSummary object from a supplied list of
         FrameSummary objects or old-style list of tuples.
+
+        Old-style tuples do not have column position information, so only the
+        first physical line of the line element is displayed when they are
+        formatted.  The same applies to FrameSummary objects without column
+        position information.
         """
         # While doing a fast-path check for isinstance(a_list, StackSummary) is
         # appealing, idlelib.run.cleanup_traceback and other similar code may
@@ -794,8 +802,11 @@ class StackSummary(list):
 
         Returns a list of strings ready for printing.  Each string in the
         resulting list corresponds to a single frame from the stack.
-        Each string ends in a newline; the strings may contain internal
-        newlines as well, for those items with source text lines.
+        Each string ends in a newline and may contain internal newlines.  When
+        a frame's source text spans multiple physical lines, every line is
+        displayed only if the frame has both column position information and an
+        end line number greater than its line number; otherwise just the first
+        physical line is displayed.
 
         For long sequences of the same frame and line, the first few
         repetitions are shown, followed by a summary line stating the exact
