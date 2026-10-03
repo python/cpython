@@ -1,0 +1,3 @@
+:func:`!http.cookiejar.http2time` now returns ``None`` instead of raising
+:exc:`ValueError` for a strictly-formatted date with a non-existent month
+name. Patch by tonghuaroot.

@@ -263,10 +263,15 @@ def http2time(text):
     m = STRICT_DATE_RE.search(text)
     if m:
         g = m.groups()
-        mon = MONTHS_LOWER.index(g[1].lower()) + 1
-        tt = (int(g[2]), mon, int(g[0]),
-              int(g[3]), int(g[4]), float(g[5]))
-        return _timegm(tt)
+        try:
+            mon = MONTHS_LOWER.index(g[1].lower()) + 1
+        except ValueError:
+            # Not a real month name; fall through to the slower parser.
+            pass
+        else:
+            tt = (int(g[2]), mon, int(g[0]),
+                  int(g[3]), int(g[4]), float(g[5]))
+            return _timegm(tt)
 
     # No, we need some messy parsing...
 
