@@ -1,0 +1,5 @@
+Fix :meth:`datetime.time.fromisoformat` and
+:meth:`datetime.datetime.fromisoformat` in the C implementation accepting a
+fractional seconds component that is not introduced by a decimal mark, such
+as ``'12345678'`` (previously parsed as ``12:34:56.780000``).  Such strings
+are now rejected, matching the pure-Python implementation.
