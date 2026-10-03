@@ -46,6 +46,8 @@ Functions
       A file-like object to which the output will be written
       by calling its :meth:`!write` method.
       If ``None`` (the default), :data:`sys.stdout` is used.
+      Characters which cannot be encoded in the encoding of the stream are
+      escaped with backslashes, unless the stream itself handles them.
    :type stream: :term:`file-like object` | None
 
    :param int indent:
@@ -100,6 +102,10 @@ Functions
     'ni']
 
    .. versionadded:: 3.8
+
+   .. versionchanged:: next
+      Unencodable characters are escaped instead of raising
+      :exc:`UnicodeEncodeError`.
 
 
 .. function:: pprint(object, stream=None, indent=1, width=80, depth=None, *, \
@@ -237,6 +243,9 @@ PrettyPrinter Objects
 
    Print the formatted representation of *object* on the configured stream,
    followed by a newline.
+
+   Characters which cannot be encoded in the encoding of the stream are
+   escaped with backslashes, unless the stream itself handles them.
 
 The following methods provide the implementations for the corresponding
 functions of the same names.  Using these methods on an instance is slightly
