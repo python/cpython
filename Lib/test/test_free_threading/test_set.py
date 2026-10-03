@@ -148,6 +148,98 @@ class RaceTestBase:
         for t in threads:
             t.join()
 
+    def test_intersection_update_concurrent(self):
+        """Test one-operand intersection updates of one shared set."""
+        NUM_ITERS = 10
+        BLOCK_SIZE = self.SET_SIZE * 100
+
+        sources = [
+            set(range(4 * BLOCK_SIZE)),
+            set(range(3 * BLOCK_SIZE)),
+            set(range(2 * BLOCK_SIZE)),
+            set(range(BLOCK_SIZE)),
+        ]
+        expected = set(range(BLOCK_SIZE))
+
+        for _ in range(NUM_ITERS):
+            target = set(range(5 * BLOCK_SIZE))
+            barrier = Barrier(len(sources), timeout=2)
+
+            def intersect(source):
+                barrier.wait()
+                target.intersection_update(source)
+
+            threads = [Thread(target=intersect, args=(source,))
+                       for source in sources]
+            for thread in threads:
+                thread.start()
+            for thread in threads:
+                thread.join()
+
+            self.assertEqual(target, expected)
+
+    def test_intersection_update_multiple_concurrent(self):
+        """Test multi-operand intersection updates of one shared set."""
+        NUM_ITERS = 10
+        BLOCK_SIZE = self.SET_SIZE * 100
+
+        evens = set(range(0, 4 * BLOCK_SIZE, 2))
+        below_three_blocks = set(range(3 * BLOCK_SIZE))
+        multiples_of_three = set(range(0, 2 * BLOCK_SIZE, 3))
+        below_one_block = set(range(BLOCK_SIZE))
+        expected = set(range(0, BLOCK_SIZE, 6))
+
+        for _ in range(NUM_ITERS):
+            target = set(range(5 * BLOCK_SIZE))
+            barrier = Barrier(2, timeout=2)
+
+            def intersect(first, second):
+                barrier.wait()
+                target.intersection_update(first, second)
+
+            threads = [
+                Thread(target=intersect,
+                       args=(evens, below_three_blocks)),
+                Thread(target=intersect,
+                       args=(multiples_of_three, below_one_block)),
+            ]
+            for thread in threads:
+                thread.start()
+            for thread in threads:
+                thread.join()
+
+            self.assertEqual(target, expected)
+
+    def test_iand_concurrent(self):
+        """Test concurrent &= operations on one shared set."""
+        NUM_ITERS = 10
+        BLOCK_SIZE = self.SET_SIZE * 100
+
+        sources = [
+            set(range(4 * BLOCK_SIZE)),
+            set(range(3 * BLOCK_SIZE)),
+            set(range(2 * BLOCK_SIZE)),
+            set(range(BLOCK_SIZE)),
+        ]
+        expected = set(range(BLOCK_SIZE))
+
+        for _ in range(NUM_ITERS):
+            target = set(range(5 * BLOCK_SIZE))
+            barrier = Barrier(len(sources), timeout=2)
+
+            def intersect(source):
+                barrier.wait()
+                target.__iand__(source)
+
+            threads = [Thread(target=intersect, args=(source,))
+                       for source in sources]
+            for thread in threads:
+                thread.start()
+            for thread in threads:
+                thread.join()
+
+            self.assertEqual(target, expected)
+
 
 @threading_helper.requires_working_threading()
 class SmallSetTest(RaceTestBase, unittest.TestCase):
