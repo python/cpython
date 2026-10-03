@@ -2181,7 +2181,7 @@ _socket_if_nameindex(PyObject *module, PyObject *Py_UNUSED(ignored))
 
 #endif /* (defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS_DESKTOP)) */
 
-#if (defined(HAVE_IF_NAMETOINDEX) || defined(MS_WINDOWS_DESKTOP))
+#if (defined(_Py_HAVE_IF_NAMETOINDEX) || defined(MS_WINDOWS_DESKTOP))
 
 PyDoc_STRVAR(_socket_if_nametoindex__doc__,
 "if_nametoindex($module, oname, /)\n"
@@ -2213,9 +2213,9 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(HAVE_IF_NAMETOINDEX) || defined(MS_WINDOWS_DESKTOP)) */
+#endif /* (defined(_Py_HAVE_IF_NAMETOINDEX) || defined(MS_WINDOWS_DESKTOP)) */
 
-#if (defined(HAVE_IF_INDEXTONAME) || defined(MS_WINDOWS_DESKTOP))
+#if (defined(_Py_HAVE_IF_INDEXTONAME) || defined(MS_WINDOWS_DESKTOP))
 
 PyDoc_STRVAR(_socket_if_indextoname__doc__,
 "if_indextoname($module, if_index, /)\n"
@@ -2244,7 +2244,7 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(HAVE_IF_INDEXTONAME) || defined(MS_WINDOWS_DESKTOP)) */
+#endif /* (defined(_Py_HAVE_IF_INDEXTONAME) || defined(MS_WINDOWS_DESKTOP)) */
 
 #if defined(CMSG_LEN)
 
