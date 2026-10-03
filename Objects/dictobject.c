@@ -4583,7 +4583,14 @@ copy_lock_held_untracked(PyObject *o, int as_frozendict)
     }
     if (copy == NULL)
         return NULL;
-    if (dict_merge(copy, o, 1, NULL) < 0) {
+    int res;
+    if (!PyFrozenDict_Check(o) && Py_TYPE(mp)->tp_iter == dict_iter) {
+        res = dict_dict_merge((PyDictObject *)copy, mp, 1, NULL);
+    }
+    else {
+        res = dict_merge(copy, o, 1, NULL);
+    }
+    if (res < 0) {
         Py_DECREF(copy);
         return NULL;
     }
