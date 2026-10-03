@@ -38,6 +38,43 @@ class TestBase(unittest.TestCase):
         opnames = {instruction.opname for instruction in instructions}
         self.assertNotIn(opname, opnames)
 
+    def adaptive_counters(self, f):
+        """Map each specialized instruction in f to its adaptive counter."""
+        counters = {}
+        for instruction in dis.get_instructions(f, adaptive=True):
+            if instruction.opname == instruction.baseopname:
+                continue
+            if instruction.baseopname in ("RESUME", "JUMP_BACKWARD"):
+                continue
+            cache = {name: data for name, _, data in instruction.cache_info}
+            if "counter" in cache:
+                counters[instruction.offset] = (instruction.opname,
+                                                cache["counter"])
+        return counters
+
+    def assert_specialization_stable(self, f, *args, calls=10):
+        """Assert that no specialized instruction in f misses its guard.
+
+        A guard miss advances the instruction's adaptive counter.  f should
+        have a fresh code object (see reset_code()), otherwise leftover
+        specializations from earlier runs can show up as misses.
+        """
+        before = self.adaptive_counters(f)
+        self.assertTrue(before, f"{f.__qualname__} has no specialized "
+                                "instructions")
+        for _ in range(calls):
+            f(*args)
+        after = self.adaptive_counters(f)
+        # Ignore instructions that only specialize during these calls.
+        moved = []
+        for off, (op, counter) in before.items():
+            if after.get(off) != (op, counter):
+                now = after[off][1] if off in after else "unspecialized"
+                moved.append(f"{op} at offset {off}: counter {counter} -> {now}")
+        self.assertEqual(moved, [],
+                         f"specialized instructions in {f.__qualname__} "
+                         f"missed their guard during {calls} calls")
+
 
 class TestLoadSuperAttrCache(unittest.TestCase):
     def test_descriptor_not_double_executed_on_spec_fail(self):
@@ -1976,6 +2013,19 @@ class TestSpecializer(TestBase):
         binary_subscr_str_int_non_compact()
         self.assert_specialized(binary_subscr_str_int_non_compact, "BINARY_OP_SUBSCR_USTR_INT")
         self.assert_no_opcode(binary_subscr_str_int_non_compact, "BINARY_OP_SUBSCR_STR_INT")
+
+        @reset_code
+        def binary_subscr_str_int_latin1():
+            # Latin-1 characters are interned too, so reads must not miss.
+            for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                a = "olá mundo, ça va?"
+                for idx, expected in enumerate(a):
+                    self.assertEqual(a[idx], expected)
+
+        binary_subscr_str_int_latin1()
+        self.assert_specialized(binary_subscr_str_int_latin1, "BINARY_OP_SUBSCR_USTR_INT")
+        self.assert_no_opcode(binary_subscr_str_int_latin1, "BINARY_OP_SUBSCR_STR_INT")
+        self.assert_specialization_stable(binary_subscr_str_int_latin1)
 
         def binary_subscr_getitems():
             class C:
