@@ -994,8 +994,8 @@ PyDoc_STRVAR(bytearray_partition__doc__,
 "\n"
 "This will search for the separator sep in the bytearray.  If the\n"
 "separator is found, returns a 3-tuple containing the part before the\n"
-"separator, the separator itself, and the part after it as new\n"
-"bytearray objects.\n"
+"separator as a new bytearray object, the separator itself, and the\n"
+"part after it as a new bytearray object.\n"
 "\n"
 "If the separator is not found, returns a 3-tuple containing the copy\n"
 "of the original bytearray object and two empty bytearray objects.");
@@ -1004,16 +1004,26 @@ PyDoc_STRVAR(bytearray_partition__doc__,
     {"partition", (PyCFunction)bytearray_partition, METH_O, bytearray_partition__doc__},
 
 static PyObject *
-bytearray_partition_impl(PyByteArrayObject *self, PyObject *sep);
+bytearray_partition_impl(PyByteArrayObject *self, Py_buffer *sep);
 
 static PyObject *
-bytearray_partition(PyObject *self, PyObject *sep)
+bytearray_partition(PyObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
+    Py_buffer sep = {NULL, NULL};
 
+    if (PyObject_GetBuffer(arg, &sep, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
     Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = bytearray_partition_impl((PyByteArrayObject *)self, sep);
+    return_value = bytearray_partition_impl((PyByteArrayObject *)self, &sep);
     Py_END_CRITICAL_SECTION();
+
+exit:
+    /* Cleanup for sep */
+    if (sep.obj) {
+       PyBuffer_Release(&sep);
+    }
 
     return return_value;
 }
@@ -1026,8 +1036,8 @@ PyDoc_STRVAR(bytearray_rpartition__doc__,
 "\n"
 "This will search for the separator sep in the bytearray, starting at\n"
 "the end.  If the separator is found, returns a 3-tuple containing\n"
-"the part before the separator, the separator itself, and the part\n"
-"after it as new bytearray objects.\n"
+"the part before the separator as a new bytearray object, the\n"
+"separator itself, and the part after it as a new bytearray object.\n"
 "\n"
 "If the separator is not found, returns a 3-tuple containing two\n"
 "empty bytearray objects and the copy of the original bytearray\n"
@@ -1037,16 +1047,26 @@ PyDoc_STRVAR(bytearray_rpartition__doc__,
     {"rpartition", (PyCFunction)bytearray_rpartition, METH_O, bytearray_rpartition__doc__},
 
 static PyObject *
-bytearray_rpartition_impl(PyByteArrayObject *self, PyObject *sep);
+bytearray_rpartition_impl(PyByteArrayObject *self, Py_buffer *sep);
 
 static PyObject *
-bytearray_rpartition(PyObject *self, PyObject *sep)
+bytearray_rpartition(PyObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
+    Py_buffer sep = {NULL, NULL};
 
+    if (PyObject_GetBuffer(arg, &sep, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
     Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = bytearray_rpartition_impl((PyByteArrayObject *)self, sep);
+    return_value = bytearray_rpartition_impl((PyByteArrayObject *)self, &sep);
     Py_END_CRITICAL_SECTION();
+
+exit:
+    /* Cleanup for sep */
+    if (sep.obj) {
+       PyBuffer_Release(&sep);
+    }
 
     return return_value;
 }
@@ -1882,4 +1902,4 @@ bytearray_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl((PyByteArrayObject *)self);
 }
-/*[clinic end generated code: output=6dc315d35de3e670 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9af6c8590747ccbf input=a9049054013a1b77]*/

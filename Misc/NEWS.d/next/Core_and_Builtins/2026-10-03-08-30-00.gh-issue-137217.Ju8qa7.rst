@@ -1,0 +1,4 @@
+:meth:`bytearray.partition` and :meth:`bytearray.rpartition` now return the
+original separator object instead of a bytearray copy when it is found,
+consistent with :class:`bytes` and :class:`str`.  They also reject
+non-contiguous buffers as separators.

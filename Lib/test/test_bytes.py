@@ -954,6 +954,63 @@ class BaseBytesTest:
         self.assertEqual(b.rpartition(b'i'), (b'mississipp', b'i', b''))
         self.assertEqual(b.rpartition(b'w'), (b'', b'', b'mississippi'))
 
+    def test_partition_buffer(self):
+        for method in ('partition', 'rpartition'):
+            for sep_type in (bytes, bytearray, BytesSubclass, ByteArraySubclass,
+                             memoryview, lambda b: array.array('B', b)):
+                sep = sep_type(b'BC')
+                for data in (b'ABCD', b'BC', b'BCABCD', b'ABC', b'BCD',
+                             b'AB', b''):
+                    with self.subTest(method=method, sep_type=sep_type,
+                                      data=data):
+                        b = self.type2test(data)
+                        result = getattr(b, method)(sep)
+                        expected = getattr(data, method)(b'BC')
+                        self.assertIs(type(result), tuple)
+                        self.assertTypedEqual(result[0],
+                                              self.type2test(expected[0]))
+                        self.assertTypedEqual(result[2],
+                                              self.type2test(expected[2]))
+                        if expected[1]:
+                            self.assertIs(result[1], sep)
+                        else:
+                            self.assertTypedEqual(result[1], self.type2test())
+
+    def test_partition_self(self):
+        b = self.type2test(b'ABCD')
+        for method in ('partition', 'rpartition'):
+            with self.subTest(method=method):
+                before, sep, after = getattr(b, method)(b)
+                self.assertTypedEqual(before, self.type2test())
+                self.assertIs(sep, b)
+                self.assertTypedEqual(after, self.type2test())
+
+    def test_partition_buffer_errors(self):
+        b = self.type2test(b'ABCD')
+        for method in (b.partition, b.rpartition):
+            for sep_type in (bytes, bytearray, memoryview):
+                with self.subTest(method=method, sep_type=sep_type):
+                    self.assertRaises(ValueError, method, sep_type(b''))
+            with self.subTest(method=method):
+                self.assertRaises(BufferError, method,
+                                  memoryview(b'CB')[::-1])
+                sep = memoryview(b'BC')
+                sep.release()
+                self.assertRaises(ValueError, method, sep)
+
+    def test_partition_releases_buffer(self):
+        b = self.type2test(b'ABCD')
+        for method in (b.partition, b.rpartition):
+            for data in (b'BC', b'X', b''):
+                sep = bytearray(data)
+                with self.subTest(method=method, data=data):
+                    if data:
+                        method(sep)
+                    else:
+                        self.assertRaises(ValueError, method, sep)
+                    # Resizing fails if the method did not release the buffer.
+                    sep.extend(b'!')
+
     def test_partition_string_error(self):
         self.assertRaises(TypeError, self.type2test(b'a b').partition, ' ')
         self.assertRaises(TypeError, self.type2test(b'a b').rpartition, ' ')

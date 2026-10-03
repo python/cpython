@@ -4051,13 +4051,18 @@ arbitrary binary data.
             bytearray.partition(sep, /)
 
    Split the sequence at the first occurrence of *sep*, and return a 3-tuple
-   containing the part before the separator, the separator itself or its
-   bytearray copy, and the part after the separator.
+   containing the part before the separator, the separator itself, and the
+   part after the separator.  The parts before and after the separator are
+   bytes or bytearray objects, respectively.
    If the separator is not found, return a 3-tuple
    containing a copy of the original sequence, followed by two empty bytes or
    bytearray objects.
 
    The separator to search for may be any :term:`bytes-like object`.
+
+   .. versionchanged:: 3.16
+      :meth:`bytearray.partition` returns the separator itself instead of
+      a bytearray copy and no longer accepts non-contiguous buffers.
 
 
 .. method:: bytes.replace(old, new, /, count=-1)
@@ -4112,13 +4117,18 @@ arbitrary binary data.
             bytearray.rpartition(sep, /)
 
    Split the sequence at the last occurrence of *sep*, and return a 3-tuple
-   containing the part before the separator, the separator itself or its
-   bytearray copy, and the part after the separator.
+   containing the part before the separator, the separator itself, and the
+   part after the separator.  The parts before and after the separator are
+   bytes or bytearray objects, respectively.
    If the separator is not found, return a 3-tuple
    containing two empty bytes or bytearray objects, followed by a copy of the
    original sequence.
 
    The separator to search for may be any :term:`bytes-like object`.
+
+   .. versionchanged:: 3.16
+      :meth:`bytearray.rpartition` returns the separator itself instead of
+      a bytearray copy and no longer accepts non-contiguous buffers.
 
 
 .. method:: bytes.startswith(prefix[, start[, end]])

@@ -150,26 +150,6 @@ PyByteArray_FromObject(PyObject *input)
     return PyObject_CallOneArg((PyObject *)&PyByteArray_Type, input);
 }
 
-static PyObject *
-_PyByteArray_FromBufferObject(PyObject *obj)
-{
-    PyObject *result;
-    Py_buffer view;
-
-    if (PyObject_GetBuffer(obj, &view, PyBUF_FULL_RO) < 0) {
-        return NULL;
-    }
-    result = PyByteArray_FromStringAndSize(NULL, view.len);
-    if (result != NULL &&
-        PyBuffer_ToContiguous(PyByteArray_AS_STRING(result),
-                              &view, view.len, 'C') < 0)
-    {
-        Py_CLEAR(result);
-    }
-    PyBuffer_Release(&view);
-    return result;
-}
-
 PyObject *
 PyByteArray_FromStringAndSize(const char *bytes, Py_ssize_t size)
 {
@@ -1909,54 +1889,44 @@ done:
 @critical_section
 bytearray.partition
 
-    sep: object
+    sep: Py_buffer
     /
 
 Partition the bytearray into three parts using the given separator.
 
 This will search for the separator sep in the bytearray.  If the
 separator is found, returns a 3-tuple containing the part before the
-separator, the separator itself, and the part after it as new
-bytearray objects.
+separator as a new bytearray object, the separator itself, and the
+part after it as a new bytearray object.
 
 If the separator is not found, returns a 3-tuple containing the copy
 of the original bytearray object and two empty bytearray objects.
 [clinic start generated code]*/
 
 static PyObject *
-bytearray_partition_impl(PyByteArrayObject *self, PyObject *sep)
-/*[clinic end generated code: output=b5fa1e03f10cfccb input=d76673ed03acf5dd]*/
+bytearray_partition_impl(PyByteArrayObject *self, Py_buffer *sep)
+/*[clinic end generated code: output=66009bca3ac5fd46 input=668666ba02f6616f]*/
 {
-    PyObject *bytesep, *result;
-
-    bytesep = _PyByteArray_FromBufferObject(sep);
-    if (! bytesep)
-        return NULL;
-
-    result = stringlib_partition(
-            (PyObject*) self,
-            PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self),
-            bytesep,
-            PyByteArray_AS_STRING(bytesep), PyByteArray_GET_SIZE(bytesep)
-            );
-
-    Py_DECREF(bytesep);
-    return result;
+    return stringlib_partition(
+        (PyObject*) self,
+        PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self),
+        sep->obj, (const char *)sep->buf, sep->len
+        );
 }
 
 /*[clinic input]
 @critical_section
 bytearray.rpartition
 
-    sep: object
+    sep: Py_buffer
     /
 
 Partition the bytearray into three parts using the given separator.
 
 This will search for the separator sep in the bytearray, starting at
 the end.  If the separator is found, returns a 3-tuple containing
-the part before the separator, the separator itself, and the part
-after it as new bytearray objects.
+the part before the separator as a new bytearray object, the
+separator itself, and the part after it as a new bytearray object.
 
 If the separator is not found, returns a 3-tuple containing two
 empty bytearray objects and the copy of the original bytearray
@@ -1964,24 +1934,14 @@ object.
 [clinic start generated code]*/
 
 static PyObject *
-bytearray_rpartition_impl(PyByteArrayObject *self, PyObject *sep)
-/*[clinic end generated code: output=0186ce7b1ef61289 input=b9216a2074174a36]*/
+bytearray_rpartition_impl(PyByteArrayObject *self, Py_buffer *sep)
+/*[clinic end generated code: output=7b2a778282772096 input=8a32510b897a4430]*/
 {
-    PyObject *bytesep, *result;
-
-    bytesep = _PyByteArray_FromBufferObject(sep);
-    if (! bytesep)
-        return NULL;
-
-    result = stringlib_rpartition(
-            (PyObject*) self,
-            PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self),
-            bytesep,
-            PyByteArray_AS_STRING(bytesep), PyByteArray_GET_SIZE(bytesep)
-            );
-
-    Py_DECREF(bytesep);
-    return result;
+    return stringlib_rpartition(
+        (PyObject*) self,
+        PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self),
+        sep->obj, (const char *)sep->buf, sep->len
+        );
 }
 
 /*[clinic input]

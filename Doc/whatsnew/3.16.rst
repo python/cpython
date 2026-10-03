@@ -1081,6 +1081,12 @@ Porting to Python 3.16
 This section lists previously described changes and other bugfixes
 that may require changes to your code.
 
+* :meth:`bytearray.partition` and :meth:`bytearray.rpartition` now return
+  the original separator object instead of a bytearray copy when it is found,
+  matching the behavior of :class:`bytes` and :class:`str`.
+  They also no longer accept non-contiguous buffers as separators.
+  (Contributed by KayanoLiam in :gh:`137217`.)
+
 * In :mod:`tkinter`, the *name* parameter of the
   :meth:`~tkinter.Misc.wait_variable`, :meth:`~tkinter.Misc.setvar` and
   :meth:`~tkinter.Misc.getvar` methods and the *value* parameter of
