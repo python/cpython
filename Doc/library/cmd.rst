@@ -13,6 +13,13 @@ command interpreters.  These are often useful for test harnesses, administrative
 tools, and prototypes that will later be wrapped in a more sophisticated
 interface.
 
+A command interpreter built with :class:`Cmd` presents the user with an
+interactive prompt, reads input one line at a time, and runs each command by
+calling the method whose name matches it.  For example, the ``help`` command is
+handled by a ``do_help()`` method.  Apart from the built-in ``help`` command,
+the interpreter's behavior is defined by the ``do_*`` methods you add in your
+own subclass.
+
 .. class:: Cmd(completekey='tab', stdin=None, stdout=None)
 
    A :class:`Cmd` instance or subclass instance is a line-oriented interpreter
