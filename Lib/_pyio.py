@@ -1325,8 +1325,8 @@ class BufferedWriter(_BufferedIOMixin):
                                    "should not raise BlockingIOError")
             if n is None:
                 raise BlockingIOError(
-                    errno.EAGAIN,
-                    "write could not complete without blocking", 0)
+                    "write could not complete without blocking",
+                    characters_written=0)
             if n > len(self._write_buf) or n < 0:
                 raise OSError("write() returned incorrect number of bytes")
             del self._write_buf[:n]
@@ -1629,8 +1629,7 @@ class FileIO(RawIOBase):
             self._stat_atopen = os.fstat(fd)
             try:
                 if stat.S_ISDIR(self._stat_atopen.st_mode):
-                    raise IsADirectoryError(errno.EISDIR,
-                                            os.strerror(errno.EISDIR), file)
+                    raise IsADirectoryError(filename=file)
             except AttributeError:
                 # Ignore the AttributeError if stat.S_ISDIR or errno.EISDIR
                 # don't exist.
