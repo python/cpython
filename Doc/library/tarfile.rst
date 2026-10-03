@@ -1056,7 +1056,8 @@ can be:
 
 * the string ``'tar'``: Honor most *tar*-specific features (i.e. features of
   UNIX-like filesystems), but block features that are very likely to be
-  surprising or malicious. See :func:`tar_filter` for details.
+  surprising or malicious. This does not include limiting the targets of
+  symbolic links. See :func:`tar_filter` for details.
 
 * the string ``'data'``: Ignore or block most features specific to UNIX-like
   filesystems. Intended for extracting cross-platform data archives.
@@ -1123,6 +1124,19 @@ reused in custom filters:
     (:const:`~stat.S_IWGRP` | :const:`~stat.S_IWOTH`).
 
   Return the modified ``TarInfo`` member.
+
+  .. warning::
+
+     This filter does not limit where a link member *points*.
+     :attr:`TarInfo.linkname` is not checked, so a symbolic link whose target
+     is an absolute path, or a relative path that climbs outside the
+     destination, is extracted as given.
+     The rule above constrains where each member is *written*; it does not
+     constrain where a link resolves to.
+
+     Only :func:`data_filter` refuses such members, raising
+     :class:`~tarfile.AbsoluteLinkError` or
+     :class:`~tarfile.LinkOutsideDestinationError`.
 
   .. versionchanged:: next
 
