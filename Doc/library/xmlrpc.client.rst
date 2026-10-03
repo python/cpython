@@ -39,8 +39,8 @@ between conformable Python objects and XML on the wire.
    remote XML-RPC server.  The required first argument is a URI (Uniform Resource
    Indicator), and will normally be the URL of the server.  The optional second
    argument is a transport factory instance; by default it is an internal
-   :class:`SafeTransport` instance for https: URLs and an internal HTTP
-   :class:`Transport` instance otherwise.  The optional third argument is an
+   :class:`!SafeTransport` instance for https: URLs and an internal HTTP
+   :class:`!Transport` instance otherwise.  The optional third argument is an
    encoding, by default UTF-8. The optional fourth argument is a debugging flag.
 
    The following parameters govern the use of the returned proxy instance.
@@ -142,7 +142,7 @@ between conformable Python objects and XML on the wire.
    via XML-RPC, use :class:`bytes` or :class:`bytearray` classes or the
    :class:`Binary` wrapper class described below.
 
-   :class:`Server` is retained as an alias for :class:`ServerProxy` for backwards
+   :class:`!Server` is retained as an alias for :class:`ServerProxy` for backwards
    compatibility.  New code should use :class:`ServerProxy`.
 
    .. versionchanged:: 3.5
@@ -154,6 +154,11 @@ between conformable Python objects and XML on the wire.
       implementation for numerics: ``i1``, ``i2``, ``i8``, ``biginteger``,
       ``float`` and ``bigdecimal``.
       See https://ws.apache.org/xmlrpc/types.html for a description.
+
+
+.. exception:: Error
+
+   Base class of the :exc:`Fault` and :exc:`ProtocolError` exceptions.
 
 
 .. seealso::
@@ -181,7 +186,7 @@ by returning data in a conformant type or by raising a :class:`Fault` or
 :class:`ProtocolError` exception indicating an error.
 
 Servers that support the XML introspection API support some common methods
-grouped under the reserved :attr:`~ServerProxy.system` attribute:
+grouped under the reserved :attr:`!system` attribute:
 
 
 .. method:: ServerProxy.system.listMethods()
