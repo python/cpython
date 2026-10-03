@@ -1,0 +1,4 @@
+:func:`runpy.run_path` and the execution of a directory or a zipfile now
+search the ``__main__`` module only in that directory or zipfile.  Previously
+an existing ``__main__`` module located elsewhere on :data:`sys.path` could be
+executed instead.
