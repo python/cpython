@@ -1,0 +1,3 @@
+The function :func:`cmath.phase` should not raise ``OverflowError``, and the
+functions :func:`math.atan2`, :func:`math.atan2pi`, and :func:`cmath.phase`
+should not raise ``ValueError``.  Contributed by High Performance Kernels LLC.
