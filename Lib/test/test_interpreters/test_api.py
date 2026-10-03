@@ -1306,6 +1306,7 @@ class TestInterpreterCall(TestBase):
         for arg in [
             None,
             10,
+            1+2j,
             'spam!',
             b'spam!',
             (1, 2, 'spam!'),
@@ -1903,6 +1904,7 @@ class TestIsShareable(TestBase):
                 True,
                 False,
                 100.0,
+                1+2j,
                 (),
                 (1, ('spam', 'eggs'), True),
                 ]
