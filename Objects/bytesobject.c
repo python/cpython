@@ -3786,13 +3786,15 @@ byteswriter_resize(PyBytesWriter *writer, Py_ssize_t new_size, int resize)
     }
 
     Py_ssize_t alloc = new_size;
-    if (resize && writer->overallocate) {
-        if (alloc <= (PY_SSIZE_T_MAX - alloc / OVERALLOCATE_FACTOR)) {
-            alloc += alloc / OVERALLOCATE_FACTOR;
-        }
-    }
-
     if (writer->obj != NULL) {
+        // Overallocate the bytes object. Do not overallocate bytearray or
+        // if overallocation was disabled (using the private C API).
+        if (writer->overallocate) {
+            if (alloc <= (PY_SSIZE_T_MAX - alloc / OVERALLOCATE_FACTOR)) {
+                alloc += alloc / OVERALLOCATE_FACTOR;
+            }
+        }
+
         if (writer->use_bytearray) {
             if (PyByteArray_Resize(writer->obj, alloc)) {
 #ifdef Py_DEBUG
@@ -3815,6 +3817,12 @@ byteswriter_resize(PyBytesWriter *writer, Py_ssize_t new_size, int resize)
         assert(writer->obj != NULL);
     }
     else {
+        // gh-158585: Optimistic allocation strategy: don't overallocate when
+        // the first bytes/bytearray object is created. The bet is that the
+        // most common case is that a single bytes/bytearray is needed for the
+        // whole writer lifecycle. In that case, PyBytesWriter_Finish() doesn't
+        // need to truncate the bytes/bytearray object.
+
         char *data;
         if (writer->use_bytearray) {
             writer->obj = PyByteArray_FromStringAndSize(NULL, alloc);

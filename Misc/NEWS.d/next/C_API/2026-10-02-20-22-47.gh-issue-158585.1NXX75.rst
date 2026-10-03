@@ -1,0 +1,4 @@
+:c:func:`PyBytesWriter_Resize` and :c:func:`PyBytesWriter_Grow` no longer
+overallocate when the first bytes/bytearray object is allocated. Only
+overallocate bytes objects at next :c:func:`PyBytesWriter_Resize` and
+:c:func:`PyBytesWriter_Grow` calls. Patch by Victor Stinner.
