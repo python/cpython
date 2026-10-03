@@ -3326,10 +3326,6 @@ _io_TextIOWrapper__CHUNK_SIZE_set_impl(textio *self, PyObject *value)
 {
     Py_ssize_t n;
     CHECK_ATTACHED_INT(self);
-    if (value == NULL) {
-        PyErr_SetString(PyExc_AttributeError, "cannot delete attribute");
-        return -1;
-    }
     n = PyNumber_AsSsize_t(value, PyExc_ValueError);
     if (n == -1 && PyErr_Occurred())
         return -1;
