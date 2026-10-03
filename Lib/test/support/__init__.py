@@ -1270,25 +1270,67 @@ def set_memlimit(limit: str) -> None:
     max_memuse = memlimit
 
 
-def _memory_watchdog(pid):
-    """Return a function printing the memory usage of process *pid*.
+def _memory_limit(nbytes):
+    """How much memory a test declaring *nbytes* may use.
 
-    The largest value it saw is kept in its ``peak`` attribute.
+    The interpreter itself reserves about 250 MiB, whatever the test asks for.
+    """
+    return int(nbytes) + 512 * _1M
+
+
+def _limit_address_space(nbytes):
+    """Limit the address space of this process to what a test may use.
+
+    A test which uses much more memory than it declares then fails with a
+    MemoryError instead of making the machine swap.
+    """
+    if check_sanitizer(address=True):
+        # AddressSanitizer reserves terabytes of address space for its shadow
+        # memory, so any limit stops the interpreter from starting.
+        return
+    if sys.platform == 'darwin':
+        # macOS reserves much more address space than it uses.
+        return
+    try:
+        import resource
+        rlimit = resource.RLIMIT_AS
+    except (ImportError, AttributeError):
+        return
+    limit = _memory_limit(nbytes)
+    soft, hard = resource.getrlimit(rlimit)
+    for current in soft, hard:
+        if current != resource.RLIM_INFINITY:
+            limit = min(limit, current)
+    resource.setrlimit(rlimit, (limit, hard))
+
+
+def _memory_watchdog(proc, limit):
+    """Return a function watching the memory used by the test in *proc*.
+
+    It reports the usage in verbose mode, keeps the largest value it saw in
+    its ``peak`` attribute, and kills the test if it uses more than *limit*
+    bytes.  This is the only limit where the address space cannot be limited.
     """
     # Imported here: test.support does not depend on test.libregrtest.
     from test.libregrtest.utils import get_process_memory_usage
 
     def watch():
-        mem = get_process_memory_usage(pid)
-        if mem is not None:
-            watch.peak = max(watch.peak, mem)
+        mem = get_process_memory_usage(proc.pid)
+        if mem is None:
+            return
+        watch.peak = max(watch.peak, mem)
+        if verbose:
             print(f" ... process data size: {mem / (1024 ** 3):.1f} GiB",
                   flush=True)
+        if limit is not None and mem > limit:
+            watch.exceeded = mem
+            proc.kill()
     watch.peak = 0
+    watch.exceeded = None
     return watch
 
 
-def bigmemtest(size, memuse, dry_run=True):
+def bigmemtest(size, memuse, dry_run=True, *, limit_address_space=True):
     """Decorator for bigmem tests.
 
     'size' is a requested size for the test (in arbitrary, test-interpreted
@@ -1304,6 +1346,12 @@ def bigmemtest(size, memuse, dry_run=True):
     A test that actually allocates the requested memory (that is, one run with
     -M) runs in a subprocess, so that the memory it uses and the address space
     it fragments are released when it ends.  A dummy run stays in the process.
+
+    The address space of that subprocess is limited to what the test declares
+    plus a margin, so that a test which uses much more memory than it declares
+    fails instead of making the machine swap.  Pass 'limit_address_space' as
+    false for a test which reserves much more address space than it uses, for
+    example one which starts many threads.
     """
     def decorator(f):
         from test.support import isolation
@@ -1337,9 +1385,17 @@ def bigmemtest(size, memuse, dry_run=True):
                 cls = type(self)
                 qualname = f'{cls.__qualname__}.{f.__name__}'
                 proc = isolation._start_test(cls.__module__, qualname)
-                watchdog = _memory_watchdog(proc.pid) if verbose else None
+                # Watched even if the address space is not limited: this
+                # counts the memory really used.
+                watchdog = _memory_watchdog(proc,
+                                            _memory_limit(size * memuse))
                 payload, output, returncode = proc.wait(tick=watchdog)
-                if watchdog:
+                if watchdog.exceeded:
+                    raise AssertionError(
+                        f'the test used {watchdog.exceeded / _1G:.1f} GiB, '
+                        f'more than the {size * memuse / _1G:.1f} GiB '
+                        f'it declares')
+                if verbose:
                     # The subprocess measures its own peak exactly.  What the
                     # parent sampled is only a lower bound.
                     maxrss = payload and payload.get('maxrss')
@@ -1347,15 +1403,21 @@ def bigmemtest(size, memuse, dry_run=True):
                     if peak:
                         print(f" ... peak memory use: "
                               f"{peak / (1024 ** 3):.1f} GiB"
-                              f"{'' if maxrss else ' or more'}", flush=True)
+                              f"{'' if maxrss else ' or more'}",
+                              flush=True)
                     majflt = payload and payload.get('majflt')
                     if majflt:
-                        # The test did not fit in memory, so its timing means
-                        # little.
+                        # The test did not fit in memory, so its
+                        # timing means little.
                         print(f" ... {majflt} major page faults: the test "
                               f"waited for the disk", flush=True)
                 isolation._replay_test(self, payload, output, returncode)
                 return
+
+            if (real_max_memuse and limit_address_space
+                    and isolation.runningInSubprocess):
+                # Only in the subprocess: the limit is never lifted.
+                _limit_address_space(size * memuse)
 
             return f(self, maxsize)
 
