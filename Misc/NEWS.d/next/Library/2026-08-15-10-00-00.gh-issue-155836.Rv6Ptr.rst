@@ -1,0 +1,3 @@
+Fix :attr:`ipaddress.IPv6Address.reverse_pointer` returning an invalid name
+for an address carrying a scope id; the scope id is no longer spliced into the
+reverse DNS pointer.
