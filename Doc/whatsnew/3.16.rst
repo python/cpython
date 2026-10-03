@@ -546,6 +546,11 @@ os
   now raises :exc:`PermissionError` instead of the functions being unavailable.
   (Contributed by Md Arif in :gh:`152936`.)
 
+* :func:`os.readlink` has a new *printname* parameter
+  to return the print name of a link on Windows --
+  the target path as it was specified when the link was created.
+  (Contributed by Serhiy Storchaka in :gh:`85004`.)
+
 
 pydoc
 -----
