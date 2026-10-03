@@ -1,0 +1,2 @@
+Avoid holding memory much longer than needed after deleting
+an item from a list via :keyword:`del`.
