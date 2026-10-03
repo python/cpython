@@ -1,8 +1,10 @@
-:mod:`!copyreg` --- Register :mod:`!pickle` support functions
-=============================================================
+.. _copyreg-register-pickle-support-functions:
+
+:mod:`!copyreg` --- Register :mod:`!pickle` and :mod:`!copy` support functions
+==============================================================================
 
 .. module:: copyreg
-   :synopsis: Register pickle support functions.
+   :synopsis: Register pickle and copy support functions.
 
 **Source code:** :source:`Lib/copyreg.py`
 
@@ -12,10 +14,12 @@
 
 --------------
 
-The :mod:`!copyreg` module offers a way to define functions used while pickling
-specific objects.  The :mod:`pickle` and :mod:`copy` modules use those functions
-when pickling/copying those objects.  The module provides configuration
-information about object constructors which are not classes.
+The :mod:`!copyreg` module offers a way to define functions
+used while pickling and copying specific objects.
+The :mod:`pickle` and :mod:`copy` modules use those functions
+when pickling/copying those objects.
+The module provides configuration information
+about object constructors which are not classes.
 Such constructors may be factory functions or class instances.
 
 
@@ -38,6 +42,42 @@ Such constructors may be factory functions or class instances.
    Note that the :attr:`~pickle.Pickler.dispatch_table` attribute of a pickler
    object or subclass of :class:`pickle.Pickler` can also be used for
    declaring reduction functions.
+
+
+.. function:: copy(type, function)
+
+   Declares that *function* should be used as the shallow copy function
+   for objects of type *type*.
+   *function* is called with the object as its only argument
+   and must return the copy,
+   like the :meth:`~object.__copy__` method.
+   Registration is by exact type:
+   it does not apply to subclasses of *type*.
+
+   :func:`copy.copy` uses the registered function
+   in preference to the :meth:`~object.__copy__` method
+   and the pickle interfaces.
+   Unlike a reduction function registered with :func:`pickle`,
+   it affects only shallow copying.
+   The registered functions are stored in ``copy_dispatch_table``,
+   the same table that holds the handlers for the built-in
+   container types, so registering a function for a built-in
+   container type overrides its default copying.
+
+   .. versionadded:: next
+
+
+.. function:: deepcopy(type, function)
+
+   Like :func:`copy`, but registers the deep copy function
+   used by :func:`copy.deepcopy`.
+   *function* is called with the object and the memo dictionary
+   as its two arguments,
+   like the :meth:`~object.__deepcopy__` method.
+   The registered functions are stored in ``deepcopy_dispatch_table``.
+
+   .. versionadded:: next
+
 
 Example
 -------
