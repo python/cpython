@@ -5700,7 +5700,7 @@ _Py_EncodeUTF8Ex(const wchar_t *text, char **str, size_t *output_length,
         else if (Py_UNICODE_IS_SURROGATE(ch) && !surrogatepass) {
             /* surrogateescape error handler */
             if (!surrogateescape || !(0xDC80 <= ch && ch <= 0xDCFF)) {
-                if (error_pos) {
+                if (error_pos != NULL) {
                     *error_pos = (size_t)ch_pos;
                 }
                 if (raw_malloc) {

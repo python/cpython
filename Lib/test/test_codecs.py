@@ -4097,12 +4097,15 @@ class LocaleCodecTest(unittest.TestCase):
                         with self.assertRaises(ValueError) as cm:
                             self.encode_locale(text)
                         errmsg = str(cm.exception)
-                        self.assertRegex(errmsg, f"Py_EncodeLocale failed: error_pos={error_pos}")
+                        regex = f"Py_EncodeLocale failed: error_pos={error_pos}"
+                        self.assertRegex(errmsg, regex)
 
                     with self.assertRaises(RuntimeError) as cm:
                         self.encode_locale_ex(text, errors)
                     errmsg = str(cm.exception)
-                    self.assertRegex(errmsg, f"encode error: pos={error_pos}, reason=encoding error")
+                    regex = (f"encode error: pos={error_pos}, "
+                             "reason=encoding error")
+                    self.assertRegex(errmsg, regex)
                 else:
                     if errors in ("strict", "surrogateescape"):
                         encoded = self.encode_locale(text)
