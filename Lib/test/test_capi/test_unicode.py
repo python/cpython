@@ -224,7 +224,7 @@ class CAPITest(unittest.TestCase):
             else:
                 # In-size replace can return the same address, or not.
                 # So 'is_new_obj' cannot be tested.
-                self.assertFalse(sys._is_immortal(result))
+                self.assert_is_mutable(result, refcnt)
 
             return result
 
