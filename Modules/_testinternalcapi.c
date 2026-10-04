@@ -1046,7 +1046,7 @@ get_getpath_codeobject(PyObject *self, PyObject *Py_UNUSED(args)) {
 }
 
 
-// Test _Py_EncodeLocaleEx()
+// Test _Py_EncodeLocale()
 static PyObject *
 encode_locale_ex(PyObject *self, PyObject *args)
 {
@@ -1072,7 +1072,7 @@ encode_locale_ex(PyObject *self, PyObject *args)
     const size_t output_length_canary = (size_t)-456;
     size_t output_length = output_length_canary;
     const char *reason_canary = (const char*)0x123456;
-    int ret = _Py_EncodeLocaleEx(wstr,
+    int ret = _Py_EncodeLocale(wstr,
                                  &str, &output_length, &error_pos,
                                  current_locale, error_handler);
     PyMem_Free(wstr);
@@ -1114,7 +1114,7 @@ encode_locale_ex(PyObject *self, PyObject *args)
 }
 
 
-// Test _Py_DecodeLocaleEx()
+// Test _Py_DecodeLocale()
 static PyObject *
 decode_locale_ex(PyObject *self, PyObject *args)
 {
@@ -1132,7 +1132,7 @@ decode_locale_ex(PyObject *self, PyObject *args)
     wchar_t *wstr = (wchar_t*)wstr_canary;
     const size_t wlen_canary = (size_t)-123;
     size_t wlen = wlen_canary;
-    int ret = _Py_DecodeLocaleEx(str, &wstr, &wlen,
+    int ret = _Py_DecodeLocale(str, &wstr, &wlen,
                                  current_locale, error_handler);
 
     switch(ret) {

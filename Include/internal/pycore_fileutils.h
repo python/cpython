@@ -24,7 +24,7 @@ extern "C" {
 PyAPI_FUNC(_Py_error_handler) _Py_GetErrorHandler(const char *errors);
 
 // Export for '_testinternalcapi' shared extension
-PyAPI_FUNC(int) _Py_DecodeLocaleEx(
+PyAPI_FUNC(int) _Py_DecodeLocale(
     const char *arg,
     wchar_t **wstr,
     size_t *wlen,
@@ -32,7 +32,7 @@ PyAPI_FUNC(int) _Py_DecodeLocaleEx(
     _Py_error_handler errors);
 
 // Export for '_testinternalcapi' shared extension
-PyAPI_FUNC(int) _Py_EncodeLocaleEx(
+PyAPI_FUNC(int) _Py_EncodeLocale(
     const wchar_t *text,
     char **str,
     size_t *output_length,
@@ -194,14 +194,14 @@ extern int _Py_open_osfhandle(void *handle, int flags);
 #define _Py_CODEC_ENCODE_ERROR -2
 #define _Py_CODEC_UNSUPPORTED_ERROR_HANDLER -3
 
-extern int _Py_DecodeUTF8Ex(
+extern int _Py_DecodeUTF8(
     const char *arg,
     Py_ssize_t arglen,
     wchar_t **wstr,
     size_t *wlen,
     _Py_error_handler errors);
 
-extern int _Py_EncodeUTF8Ex(
+extern int _Py_EncodeUTF8(
     const wchar_t *text,
     char **str,
     size_t *output_length,
