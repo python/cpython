@@ -3767,7 +3767,7 @@ unicode_encode_locale(PyObject *unicode, _Py_error_handler error_handler,
     size_t str_len;
     size_t error_pos;
     int res = _Py_EncodeLocale(wstr, &str, &str_len, &error_pos,
-                                 current_locale, error_handler);
+                               current_locale, error_handler);
     PyMem_Free(wstr);
 
     if (res != 0) {
@@ -3985,8 +3985,7 @@ unicode_decode_locale(const char *str, Py_ssize_t len,
 
     wchar_t *wstr;
     size_t wlen;
-    int res = _Py_DecodeLocale(str, &wstr, &wlen,
-                                 current_locale, errors);
+    int res = _Py_DecodeLocale(str, &wstr, &wlen, current_locale, errors);
     if (res != 0) {
         if (res == _Py_CODEC_DECODE_ERROR) {
             PyObject *exc;
@@ -5504,7 +5503,7 @@ PyUnicode_DecodeUTF8Stateful(const char *s,
 // supported.
 int
 _Py_DecodeUTF8(const char *s, Py_ssize_t size, wchar_t **wstr, size_t *wlen,
-                 _Py_error_handler errors)
+               _Py_error_handler errors)
 {
     assert(s != NULL);
     assert(wstr != NULL);
@@ -5610,7 +5609,7 @@ _Py_DecodeUTF8_surrogateescape(const char *arg, Py_ssize_t arglen,
 {
     wchar_t *wstr;
     int res = _Py_DecodeUTF8(arg, arglen, &wstr, wlen,
-                               _Py_ERROR_SURROGATEESCAPE);
+                             _Py_ERROR_SURROGATEESCAPE);
     if (res != 0) {
         /* _Py_DecodeUTF8() must support _Py_ERROR_SURROGATEESCAPE */
         assert(res != _Py_CODEC_UNSUPPORTED_ERROR_HANDLER);
@@ -5638,7 +5637,7 @@ _Py_DecodeUTF8_surrogateescape(const char *arg, Py_ssize_t arglen,
 */
 int
 _Py_EncodeUTF8(const wchar_t *text, char **str, size_t *output_length,
-                 size_t *error_pos, int raw_malloc, _Py_error_handler errors)
+               size_t *error_pos, int raw_malloc, _Py_error_handler errors)
 {
     assert(str != NULL);
     assert(output_length != NULL);
@@ -15234,7 +15233,7 @@ encode_wstr_utf8(wchar_t *wstr, char **str, const char *name)
 
     size_t output_length;
     int res = _Py_EncodeUTF8(wstr, str, &output_length,
-                               NULL, 1, _Py_ERROR_STRICT);
+                             NULL, 1, _Py_ERROR_STRICT);
     if (res == -2) {
         PyErr_Format(PyExc_RuntimeError, "cannot encode %s", name);
         return -1;

@@ -1072,8 +1072,8 @@ encode_locale(PyObject *self, PyObject *args)
     const size_t output_length_canary = (size_t)-456;
     size_t output_length = output_length_canary;
     int ret = _Py_EncodeLocale(wstr,
-                                 &str, &output_length, &error_pos,
-                                 current_locale, error_handler);
+                               &str, &output_length, &error_pos,
+                               current_locale, error_handler);
     PyMem_Free(wstr);
 
     switch(ret) {
@@ -1132,7 +1132,7 @@ decode_locale(PyObject *self, PyObject *args)
     const size_t wlen_canary = (size_t)-123;
     size_t wlen = wlen_canary;
     int ret = _Py_DecodeLocale(str, &wstr, &wlen,
-                                 current_locale, error_handler);
+                               current_locale, error_handler);
 
     switch(ret) {
     case 0:

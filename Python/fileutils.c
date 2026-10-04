@@ -627,8 +627,7 @@ decode_locale_impl(const char* arg, wchar_t **wstr, size_t *wlen,
 {
     if (current_locale) {
 #ifdef _Py_FORCE_UTF8_LOCALE
-        return _Py_DecodeUTF8(arg, strlen(arg), wstr, wlen,
-                                errors);
+        return _Py_DecodeUTF8(arg, strlen(arg), wstr, wlen, errors);
 #else
         return decode_current_locale(arg, wstr, wlen, errors);
 #endif
@@ -690,7 +689,7 @@ decode_locale_impl(const char* arg, wchar_t **wstr, size_t *wlen,
 // arg and wstr must not be NULL.
 int
 _Py_DecodeLocale(const char* arg, wchar_t **wstr, size_t *wlen,
-                   int current_locale, _Py_error_handler errors)
+                 int current_locale, _Py_error_handler errors)
 {
     assert(arg != NULL);
     assert(wstr != NULL);
@@ -751,7 +750,7 @@ Py_DecodeLocale(const char* arg, size_t *wlen)
 {
     wchar_t *wstr;
     int res = _Py_DecodeLocale(arg, &wstr, wlen, 0,
-                                 _Py_ERROR_SURROGATEESCAPE);
+                               _Py_ERROR_SURROGATEESCAPE);
     if (res != 0) {
         assert(res == _Py_CODEC_MEMORY_ERROR || res == _Py_CODEC_DECODE_ERROR);
         if (wlen != NULL) {
@@ -901,7 +900,7 @@ encode_locale_inner(const wchar_t *text, char **str, size_t *output_length,
     if (current_locale) {
 #ifdef _Py_FORCE_UTF8_LOCALE
         return _Py_EncodeUTF8(text, str, output_length,
-                                error_pos, raw_malloc, errors);
+                              error_pos, raw_malloc, errors);
 #else
         return encode_current_locale(text, str, output_length,
                                      error_pos, raw_malloc, errors);
@@ -910,8 +909,7 @@ encode_locale_inner(const wchar_t *text, char **str, size_t *output_length,
 
 #ifdef _Py_FORCE_UTF8_FS_ENCODING
     return _Py_EncodeUTF8(text, str, output_length,
-                            error_pos,
-                            raw_malloc, errors);
+                          error_pos, raw_malloc, errors);
 #else
     int use_utf8 = (_PyRuntime.preconfig.utf8_mode >= 1);
 #ifdef MS_WINDOWS
@@ -919,7 +917,7 @@ encode_locale_inner(const wchar_t *text, char **str, size_t *output_length,
 #endif
     if (use_utf8) {
         return _Py_EncodeUTF8(text, str, output_length,
-                                error_pos, raw_malloc, errors);
+                              error_pos, raw_malloc, errors);
     }
 
 #ifdef USE_FORCE_ASCII
@@ -1044,8 +1042,8 @@ _Py_EncodeLocaleRaw(const wchar_t *text, size_t *error_pos)
 
 int
 _Py_EncodeLocale(const wchar_t *text, char **str, size_t *output_length,
-                   size_t *error_pos, int current_locale,
-                   _Py_error_handler errors)
+                 size_t *error_pos, int current_locale,
+                 _Py_error_handler errors)
 {
     return encode_locale_impl(text, str, output_length,
                               error_pos, 1, current_locale, errors);
