@@ -194,72 +194,76 @@ static char*
 bytes_fromformat(PyBytesWriter *writer, Py_ssize_t writer_pos,
                  const char *format, va_list vargs)
 {
-    const char *f;
-    const char *p;
-    Py_ssize_t prec;
-    int longflag;
-    int size_tflag;
     /* Longest 64-bit formatted numbers:
        - "18446744073709551615\0" (21 bytes)
        - "-9223372036854775808\0" (21 bytes)
        Decimal takes the most space (it isn't enough for octal.)
 
        Longest 64-bit pointer representation:
-       "0xffffffffffffffff\0" (19 bytes). */
+       "0xffffffffffffffff\0" (19 bytes).
+
+       Longest 64-bit "%p" with "0x" prefix: len(hex(2**64-1)+'\0') = 19.
+    */
     char buffer[21];
 
     char *s = (char*)PyBytesWriter_GetData(writer) + writer_pos;
 
-#define WRITE_BYTES_LEN(str, len_expr) \
+#define WRITE_BYTES(str, len_expr) \
     do { \
-        size_t len = (len_expr); \
-        s = PyBytesWriter_GrowAndUpdatePointer(writer, len, s); \
-        if (s == NULL) { \
-            return NULL; \
+        size_t _len = (len_expr); \
+        size_t _prealloc = (f - p + 1); \
+        if (_len > _prealloc) { \
+            s = PyBytesWriter_GrowAndUpdatePointer(writer, _len - _prealloc, s); \
+            if (s == NULL) { \
+                return NULL; \
+            } \
         } \
-        memcpy(s, (str), len); \
-        s += len; \
+        memcpy(s, (str), _len); \
+        s += _len; \
     } while (0)
-#define WRITE_BYTES(str) WRITE_BYTES_LEN(str, strlen(str))
 
-    for (f = format; *f; f++) {
+    for (const char *f = format; *f; f++) {
         if (*f != '%') {
             *s++ = *f;
             continue;
         }
 
-        p = f++;
+        const char *p = f++;
 
         /* ignore the width (ex: 10 in "%10s") */
         while (Py_ISDIGIT(*f))
             f++;
 
         /* parse the precision (ex: 10 in "%.10s") */
-        prec = 0;
+        Py_ssize_t prec = 0;
         if (*f == '.') {
             f++;
             for (; Py_ISDIGIT(*f); f++) {
                 prec = (prec * 10) + (*f - '0');
             }
         }
+        assert(prec >= 0);
 
-        while (*f && *f != '%' && !Py_ISALPHA(*f))
+        while (*f && *f != '%' && !Py_ISALPHA(*f)) {
             f++;
+        }
 
         /* handle the long flag ('l'), but only for %ld and %lu.
            others can be added when necessary. */
-        longflag = 0;
+        int longflag = 0;
         if (*f == 'l' && (f[1] == 'd' || f[1] == 'u')) {
             longflag = 1;
             ++f;
         }
 
         /* handle the size_t flag ('z'). */
-        size_tflag = 0;
+        int size_tflag = 0;
         if (*f == 'z' && (f[1] == 'd' || f[1] == 'u')) {
             size_tflag = 1;
             ++f;
         }
+
+        Py_ssize_t len;
 
         switch (*f) {
         case 'c':
@@ -277,74 +281,77 @@ bytes_fromformat(PyBytesWriter *writer, Py_ssize_t writer_pos,
 
         case 'd':
             if (longflag) {
-                sprintf(buffer, "%ld", va_arg(vargs, long));
+                len = sprintf(buffer, "%ld", va_arg(vargs, long));
             }
             else if (size_tflag) {
-                sprintf(buffer, "%zd", va_arg(vargs, Py_ssize_t));
+                len = sprintf(buffer, "%zd", va_arg(vargs, Py_ssize_t));
             }
             else {
-                sprintf(buffer, "%d", va_arg(vargs, int));
+                len = sprintf(buffer, "%d", va_arg(vargs, int));
             }
-            assert(strlen(buffer) < sizeof(buffer));
-            WRITE_BYTES(buffer);
+            assert(1 <= len && len < (Py_ssize_t)sizeof(buffer));
+            WRITE_BYTES(buffer, len);
             break;
 
         case 'u':
             if (longflag) {
-                sprintf(buffer, "%lu", va_arg(vargs, unsigned long));
+                len = sprintf(buffer, "%lu", va_arg(vargs, unsigned long));
             }
             else if (size_tflag) {
-                sprintf(buffer, "%zu", va_arg(vargs, size_t));
+                len = sprintf(buffer, "%zu", va_arg(vargs, size_t));
             }
             else {
-                sprintf(buffer, "%u", va_arg(vargs, unsigned int));
+                len = sprintf(buffer, "%u", va_arg(vargs, unsigned int));
             }
-            assert(strlen(buffer) < sizeof(buffer));
-            WRITE_BYTES(buffer);
+            assert(1 <= len && len < (Py_ssize_t)sizeof(buffer));
+            WRITE_BYTES(buffer, len);
             break;
 
         case 'i':
-            sprintf(buffer, "%i", va_arg(vargs, int));
-            assert(strlen(buffer) < sizeof(buffer));
-            WRITE_BYTES(buffer);
+            len = sprintf(buffer, "%i", va_arg(vargs, int));
+            assert(1 <= len && len < (Py_ssize_t)sizeof(buffer));
+            WRITE_BYTES(buffer, len);
             break;
 
         case 'x':
-            sprintf(buffer, "%x", va_arg(vargs, int));
-            assert(strlen(buffer) < sizeof(buffer));
-            WRITE_BYTES(buffer);
+            len = sprintf(buffer, "%x", va_arg(vargs, int));
+            assert(1 <= len && len < (Py_ssize_t)sizeof(buffer));
+            WRITE_BYTES(buffer, len);
             break;
 
         case 's':
         {
-            Py_ssize_t i;
-
-            p = va_arg(vargs, const char*);
-            if (prec <= 0) {
-                i = strlen(p);
+            const char *str = va_arg(vargs, const char*);
+            if (prec == 0) {
+                len = strlen(str);
             }
             else {
-                i = 0;
-                while (i < prec && p[i]) {
-                    i++;
+                const char *end = memchr(str, 0, prec);
+                if (end != NULL) {
+                    len = (end - str);
+                }
+                else {
+                    len = (size_t)prec;
                 }
             }
-            WRITE_BYTES_LEN(p, i);
+            WRITE_BYTES(str, len);
             break;
         }
 
         case 'p':
-            sprintf(buffer, "%p", va_arg(vargs, void*));
-            assert(strlen(buffer) < sizeof(buffer));
+            len = sprintf(buffer, "%p", va_arg(vargs, void*));
+            assert(1 <= len && len < (Py_ssize_t)sizeof(buffer));
             /* %p is ill-defined:  ensure leading 0x. */
-            if (buffer[1] == 'X')
-                buffer[1] = 'x';
-            else if (buffer[1] != 'x') {
-                memmove(buffer+2, buffer, strlen(buffer)+1);
-                buffer[0] = '0';
+            if (buffer[1] == 'X') {
                 buffer[1] = 'x';
             }
-            WRITE_BYTES(buffer);
+            else if (buffer[1] != 'x') {
+                memmove(buffer + 2, buffer, len + 1);
+                buffer[0] = '0';
+                buffer[1] = 'x';
+                len += 2;
+            }
+            WRITE_BYTES(buffer, len);
             break;
 
         case '%':
@@ -352,16 +359,19 @@ bytes_fromformat(PyBytesWriter *writer, Py_ssize_t writer_pos,
             break;
 
         default:
-            /* invalid format string: copy unformatted string and exit */
-            WRITE_BYTES(p);
+            // Invalid format string: copy unformatted string and exit.
+            // No need to grow the writer buffer, we already preallocated
+            // enough bytes.
+            len = strlen(p);
+            memcpy(s, p, len);
+            s += len;
             return s;
         }
     }
 
-#undef WRITE_BYTES
-#undef WRITE_BYTES_LEN
-
     return s;
+
+#undef WRITE_BYTES
 }
 
 
@@ -2692,9 +2702,10 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
         if (Py_ISSPACE(*str)) {
             do {
                 str++;
+                if (str >= end) {
+                    goto done;
+                }
             } while (Py_ISSPACE(*str));
-            if (str >= end)
-                break;
         }
 
         top = _PyLong_DigitValue[*str];
@@ -2702,16 +2713,16 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
             invalid_char = str - start;
             goto error;
         }
+
         str++;
+        if (str >= end) {
+            invalid_char = -1;
+            goto error;
+        }
 
         bot = _PyLong_DigitValue[*str];
         if (bot >= 16) {
-            /* Check if we had a second digit */
-            if (str >= end){
-                invalid_char = -1;
-            } else {
-                invalid_char = str - start;
-            }
+            invalid_char = str - start;
             goto error;
         }
         str++;
@@ -2719,6 +2730,7 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
         *buf++ = (unsigned char)((top << 4) + bot);
     }
 
+  done:
     if (view.obj != NULL) {
        PyBuffer_Release(&view);
     }
@@ -3395,7 +3407,6 @@ bytes_resize_inplace(PyObject **pv, Py_ssize_t newsize)
     PyBytesObject *sv = (PyBytesObject *)v;
     Py_SET_SIZE(sv, newsize);
     sv->ob_sval[newsize] = '\0';
-    set_ob_shash(sv, -1);          /* invalidate cached hash value */
     assert(_PyBytes_IsMutable(*pv));
     return 0;
 }
@@ -3427,7 +3438,9 @@ _PyBytes_ResizeKeepOnError(PyObject **pv, Py_ssize_t newsize)
 
     Py_ssize_t oldsize = PyBytes_GET_SIZE(v);
     if (oldsize == newsize) {
-        /* return early if newsize equals to v->ob_size */
+        // Leave the object unchanged if the new size is the same as the old
+        // size, even if the object is not uniquely referenced or if the hash
+        // value was already computed.
         return 0;
     }
 
@@ -3448,7 +3461,10 @@ _PyBytes_ResizeKeepOnError(PyObject **pv, Py_ssize_t newsize)
         return 0;
     }
 
-    if (!_PyObject_IsUniquelyReferenced(v)) {
+    if (!_PyObject_IsUniquelyReferenced(v)
+        // Return a copy if the hash value was already computed
+        || get_ob_shash((PyBytesObject *)v) != -1)
+    {
         // Allocate and then copy so we don't get a shared immortal
         // one-character singleton!
         result = _PyBytes_FromSize(newsize, 0);
