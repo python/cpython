@@ -5496,8 +5496,9 @@ PyUnicode_DecodeUTF8Stateful(const char *s,
 //
 // On memory allocation failure, return _Py_CODEC_MEMORY_ERROR.
 //
-// On decoding error (if surrogateescape is zero), return -2. If wlen is
-// non-NULL, write the start of the illegal byte sequence into *wlen.
+// On decoding error (if surrogateescape is zero), return
+// _Py_CODEC_DECODE_ERROR. If wlen is non-NULL, write the start of the illegal
+// byte sequence into *wlen.
 //
 // Return _Py_CODEC_UNSUPPORTED_ERROR_HANDLER if 'errors' error handler is not
 // supported.
