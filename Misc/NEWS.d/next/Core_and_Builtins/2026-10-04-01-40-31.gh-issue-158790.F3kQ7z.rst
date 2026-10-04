@@ -1,0 +1,1 @@
+Speed up ``list.insert()`` and ``del list[i]`` in free-threaded builds by using ``memmove()`` to shift elements when the list is not shared.

@@ -478,10 +478,13 @@ end:;
     return ret;
 }
 
+static void ptr_wise_atomic_memmove(PyListObject *a, PyObject **dest,
+                                    PyObject **src, Py_ssize_t n);
+
 static int
 ins1(PyListObject *self, Py_ssize_t where, PyObject *v)
 {
-    Py_ssize_t i, n = Py_SIZE(self);
+    Py_ssize_t n = Py_SIZE(self);
     PyObject **items;
     if (v == NULL) {
         PyErr_BadInternalCall();
@@ -500,8 +503,17 @@ ins1(PyListObject *self, Py_ssize_t where, PyObject *v)
     if (where > n)
         where = n;
     items = self->ob_item;
-    for (i = n; --i >= where; )
+#ifdef Py_GIL_DISABLED
+    if (where < n) {
+        ptr_wise_atomic_memmove(self, &items[where + 1], &items[where],
+                                n - where);
+    }
+#else
+    /* The compiler expands this loop inline. This is faster than a
+       memmove() call for short lists. */
+    for (Py_ssize_t i = n; --i >= where; )
         FT_ATOMIC_STORE_PTR_RELEASE(items[i+1], items[i]);
+#endif
     FT_ATOMIC_STORE_PTR_RELEASE(items[where], Py_NewRef(v));
     return 0;
 }
@@ -1145,9 +1157,16 @@ list_ass_item_lock_held(PyListObject *a, Py_ssize_t i, PyObject *v)
     PyObject *tmp = a->ob_item[i];
     if (v == NULL) {
         Py_ssize_t size = Py_SIZE(a);
+#ifdef Py_GIL_DISABLED
+        if (i < size - 1) {
+            ptr_wise_atomic_memmove(a, &a->ob_item[i], &a->ob_item[i + 1],
+                                    size - 1 - i);
+        }
+#else
         for (Py_ssize_t idx = i; idx < size - 1; idx++) {
             FT_ATOMIC_STORE_PTR_RELEASE(a->ob_item[idx], a->ob_item[idx + 1]);
         }
+#endif
         Py_SET_SIZE(a, size - 1);
     }
     else {
