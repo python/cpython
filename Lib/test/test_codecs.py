@@ -4074,7 +4074,6 @@ class LocaleCodecTest(unittest.TestCase):
                "surrogates:\uDC80\uDCFF",
                "embed\0char")
     BYTES_STRINGS = (b"blatin1:\xa7\xe9", b"b255:\xff")
-    SURROGATES = "\uDC80\uDCFF"
 
     def encode_locale_surrogateescape(self, text):
         # Test public Py_EncodeLocale() C API:
