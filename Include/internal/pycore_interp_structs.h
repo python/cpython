@@ -359,6 +359,8 @@ struct _import_state {
     // Package names map to pending children: declarations for plain imports,
     // or None for from-import names that may be ordinary attributes.
     PyObject *lazy_pending_submodules;
+    // Weakly indexed declaration groups, owned by unresolved placeholders.
+    PyObject *lazy_import_groups;
     // Avoid pending-child work for ordinary cached imports.
     int has_lazy_submodules;
 #ifdef Py_GIL_DISABLED

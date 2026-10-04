@@ -470,6 +470,272 @@ class IndependentSubmoduleTests(LazyImportTestCase):
                         assert {package}.{second} is sys.modules['{package}.{second}']
                     """)
 
+    def test_siblings_with_import_hook(self):
+        accesses = ('xml.dom', 'getattr(xml, "dom")',
+                    'getattr(xml, "dom", None)', 'hasattr(xml, "dom")',
+                    'helper(xml)', 'xml')
+        for private in (False, True):
+            for sibling in ('xml.etree', 'xml.missing'):
+                for reverse in (False, True):
+                    statements = ['lazy import xml.dom',
+                                  f'lazy import {sibling}']
+                    if reverse:
+                        statements.reverse()
+                    for access in accesses:
+                        code = '\n'.join(statements + [f'result = {access}'])
+                        with self.subTest(private=private, sibling=sibling,
+                                          reverse=reverse, access=access):
+                            self.check(f"""
+                                import builtins, sys
+                                original = builtins.__import__
+                                calls = []
+                                def hook(name, *args):
+                                    if name.startswith('xml'):
+                                        calls.append(name)
+                                    return original(name, *args)
+                                def helper(package):
+                                    return package.dom
+                                namespace = {{'helper': helper}}
+                                if {private}:
+                                    namespace['__builtins__'] = dict(
+                                        vars(builtins), __import__=hook)
+                                else:
+                                    builtins.__import__ = hook
+                                exec({code!r}, namespace)
+                                assert {sibling!r} not in calls, calls
+                                assert {sibling!r} not in sys.modules
+                                if {access!r} == 'xml':
+                                    assert namespace['result'] is sys.modules['xml']
+                                    assert 'xml.dom' not in sys.modules
+                                    assert calls == ['xml'], calls
+                                else:
+                                    result = namespace['result']
+                                    if {access!r} == 'hasattr(xml, "dom")':
+                                        assert result is True
+                                    else:
+                                        assert result is sys.modules['xml.dom']
+                                    assert calls == ['xml', 'xml.dom'], calls
+                            """)
+
+    def test_preloaded_sibling_with_import_hook(self):
+        for private in (False, True):
+            with self.subTest(private=private):
+                self.check(f"""
+                    import builtins, sys, xml.etree
+                    original = builtins.__import__
+                    calls = []
+                    def hook(name, *args):
+                        if name.startswith('xml'):
+                            calls.append(name)
+                        if name == 'xml.etree':
+                            raise AssertionError('requested an unused sibling')
+                        return original(name, *args)
+                    namespace = {{}}
+                    if {private}:
+                        namespace['__builtins__'] = dict(
+                            vars(builtins), __import__=hook)
+                    else:
+                        builtins.__import__ = hook
+                    exec('lazy import xml.dom\\nlazy import xml.etree', namespace)
+                    exec('root = xml', namespace)
+                    assert namespace['root'] is sys.modules['xml']
+                    assert 'xml.dom' not in sys.modules
+                    assert calls == ['xml'], calls
+                    exec('result = xml.dom', namespace)
+                    assert namespace['result'] is sys.modules['xml.dom']
+                    assert calls == ['xml', 'xml.dom'], calls
+                """)
+
+    def test_pending_child_preserves_fromlist(self):
+        for previous, fromlist in ((None, ()), ((), None)):
+            with self.subTest(fromlist=fromlist):
+                self.check(f"""
+                    import builtins
+                    original = builtins.__import__
+                    calls = []
+                    def hook(name, globals, locals, fromlist, level):
+                        calls.append((name, fromlist))
+                        assert fromlist == {fromlist!r}
+                        return original(name, globals, locals, fromlist, level)
+                    namespace = {{'__builtins__': dict(
+                        vars(builtins), __import__=hook)}}
+                    exec("xml = __lazy_import__('xml.dom.minidom', fromlist={previous!r})\\n"
+                         "xml = __lazy_import__('xml.dom.pulldom', fromlist={fromlist!r})",
+                         namespace)
+                    exec("assert xml.dom.__name__ == 'xml.dom'", namespace)
+                    assert calls == [('xml', {fromlist!r}),
+                                     ('xml.dom', {fromlist!r})], calls
+                """)
+
+    def test_cached_child_with_import_hook(self):
+        for access in ('xml.dom', 'getattr(xml, "dom", None)', 'helper(xml)'):
+            with self.subTest(access=access):
+                self.check(f"""
+                    import builtins, sys, xml.dom
+                    del xml.dom
+                    original = builtins.__import__
+                    calls = []
+                    denied = True
+                    def hook(name, *args):
+                        calls.append(name)
+                        if denied and name == 'xml.dom':
+                            raise PermissionError('denied child')
+                        return original(name, *args)
+                    def helper(package):
+                        return package.dom
+                    namespace = {{'helper': helper, '__builtins__': dict(
+                        vars(builtins), __import__=hook)}}
+                    exec('lazy import xml.dom\\nlazy import xml.missing', namespace)
+                    try:
+                        exec({access!r}, namespace)
+                    except PermissionError:
+                        pass
+                    else:
+                        raise AssertionError('import hook was bypassed')
+                    assert calls == ['xml', 'xml.dom'], calls
+                    denied = False
+                    exec('result = ' + {access!r}, namespace)
+                    assert namespace['result'] is sys.modules['xml.dom']
+                    assert calls == ['xml', 'xml.dom', 'xml.dom'], calls
+                """)
+
+    def test_failed_hook_preserves_namespace_declarations(self):
+        self.check("""
+            import builtins, sys
+            original = builtins.__import__
+            calls = []
+            def second_import(name, *args, **kwargs):
+                if name == 'xml.dom':
+                    calls.append('second')
+                    raise RuntimeError('second')
+                return original(name, *args, **kwargs)
+            second = {'__builtins__': dict(vars(builtins), __import__=second_import)}
+            def first_import(name, *args, **kwargs):
+                module = original(name, *args, **kwargs)
+                if name == 'xml.dom':
+                    calls.append('first')
+                    del module.dom
+                    del sys.modules[name]
+                    exec('lazy import xml.dom', second)
+                    raise RuntimeError('first')
+                return module
+            first = {'__builtins__': dict(vars(builtins), __import__=first_import)}
+            exec('lazy import xml.dom', first)
+            for namespace, message in ((first, 'first'), (first, 'first'),
+                                       (second, 'second')):
+                try:
+                    exec('xml.dom', namespace)
+                except RuntimeError as exc:
+                    assert str(exc) == message, exc
+                else:
+                    raise AssertionError('hook did not run')
+            assert calls == ['first', 'first', 'second'], calls
+        """)
+
+    def test_siblings_after_builtins_replacement(self):
+        self.check("""
+            import builtins, types, xml.dom
+            calls = []
+            def hook(name, *args):
+                calls.append(name)
+                assert name == 'xml.dom', name
+                return types.SimpleNamespace(dom=42)
+            def helper(package):
+                return package.dom
+            namespace = {'__builtins__': dict(vars(builtins), __import__=hook),
+                         'helper': helper}
+            exec('lazy import xml.dom', namespace)
+            namespace['__builtins__'] = vars(builtins)
+            exec('lazy import xml.missing', namespace)
+            del xml.dom
+            exec('result = helper(xml)', namespace)
+            assert namespace['result'] == 42
+            assert calls == ['xml.dom'], calls
+            assert 'dom' not in vars(xml)
+        """)
+
+    def test_live_namespace_keeps_overwritten_sibling_source(self):
+        for statement in ('lazy import {name}',
+                          'live_owners = __lazy_import__({name!r})',
+                          "dict.__setitem__(globals(), 'live_owners', "
+                          "__lazy_import__({name!r}))"):
+            code = '\n'.join(statement.format(name='live_owners.' + child)
+                             for child in ('child', 'missing'))
+            with self.subTest(statement=statement):
+                self.check(f"""
+                    import builtins, gc, sys, types
+                    root = types.ModuleType('live_owners')
+                    root.__path__ = []
+                    sys.modules['live_owners'] = root
+                    def first_import(name, *args):
+                        raise AssertionError('used the first namespace hook')
+                    first = {{'__builtins__': dict(
+                        vars(builtins), __import__=first_import)}}
+                    calls = []
+                    def second_import(name, *args):
+                        calls.append(name)
+                        if name == 'live_owners':
+                            return root
+                        assert name == 'live_owners.child', name
+                        return types.SimpleNamespace(child=42)
+                    second = {{'__builtins__': dict(
+                        vars(builtins), __import__=second_import)}}
+                    exec('lazy import live_owners.child', first)
+                    exec({code!r}, second)
+                    gc.collect()
+                    exec('root = live_owners', second)
+                    gc.collect()
+                    exec('result = live_owners.child', second)
+                    assert second['result'] == 42
+                    assert calls == ['live_owners', 'live_owners.child'], calls
+                """)
+
+    def test_discarded_namespaces_do_not_retain_all_import_hooks(self):
+        self.check("""
+            import builtins, gc, weakref
+            class Payload:
+                pass
+            references = []
+            for _ in range(32):
+                payload = Payload()
+                references.append(weakref.ref(payload))
+                namespace = {'__builtins__': dict(vars(builtins), payload=payload)}
+                exec('lazy import dormant_owners.child', namespace)
+                del namespace, payload
+            gc.collect()
+            # Keep one fallback for accesses outside the declaring namespace.
+            assert sum(ref() is not None for ref in references) == 1
+        """)
+
+    def test_cached_declaration_does_not_run_spec_callbacks(self):
+        self.check("""
+            import xml.dom
+            class Spec:
+                @property
+                def _initializing(self):
+                    raise AssertionError('spec read during declaration')
+            xml.__spec__ = Spec()
+            lazy import xml.dom
+        """)
+
+    def test_hook_creates_aliased_package(self):
+        self.check("""
+            import builtins, sys, types
+            root = types.ModuleType('alias')
+            root.__path__ = []
+            calls = []
+            def hook(name, *args):
+                calls.append(name)
+                sys.modules['pkg'] = root
+                if name == 'pkg.child':
+                    root.child = 42
+                return root
+            namespace = {'__builtins__': dict(vars(builtins), __import__=hook)}
+            exec('lazy import pkg.child\\nresult = pkg.child', namespace)
+            assert namespace['result'] == 42
+            assert calls == ['pkg', 'pkg.child'], calls
+        """)
+
     def test_star_import(self):
         self.check("""
             lazy import urllib.nonexistent
@@ -2708,9 +2974,8 @@ class ModuleVariableNameCollisionTests(unittest.TestCase):
             calls = []
 
             def import_hook(name, globals, locals, fromlist, level):
-                assert name == "xml.dom", name
                 assert fromlist == (), fromlist
-                calls.append(fromlist)
+                calls.append((name, fromlist))
                 return module
 
             builtins.__import__ = import_hook
@@ -2721,7 +2986,7 @@ class ModuleVariableNameCollisionTests(unittest.TestCase):
             builtins.__import__ = default_import
             builtins.__lazy_import__ = default_lazy_import
 
-            assert calls == [(), ()], calls
+            assert calls == [('xml', ()), ('xml.dom', ()), ('xml.dom', ())], calls
         """)
         assert_python_ok("-c", code)
 
