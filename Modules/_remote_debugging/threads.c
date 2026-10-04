@@ -861,7 +861,7 @@ wait_for_threads_to_stop(RemoteUnwinderObject *unwinder)
             CloseHandle(previous);
         }
         previous = next;
-        if (status == (NTSTATUS)0x8000001AL) {  // STATUS_NO_MORE_ENTRIES
+        if (status == STATUS_NO_MORE_ENTRIES) {
             break;
         }
         if (status < 0) {
