@@ -1,0 +1,1 @@
+Fix an issue where the vectorcall optimization for class calls could bypass a custom metaclass's ``__call__`` method.
