@@ -1,1 +1,2 @@
 Added logic to evaluate importers when running Profile and cProfile, then use _run_module_as_main to run the target script.
+If importer is not none then the target script is run using _run_module_as_main.
