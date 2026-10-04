@@ -91,6 +91,8 @@ ensure_shared_on_resize(PyListObject *self)
 #endif
 }
 
+#define LIST_SMALL_ALLOCATED 16
+
 /* Ensure ob_item has room for at least newsize elements, and set
  * ob_size to newsize.  If newsize > ob_size on entry, the content
  * of the new slots at exit is undefined heap trash; it's the caller's
@@ -135,6 +137,15 @@ list_resize(PyListObject *self, Py_ssize_t newsize)
 
     if (newsize == 0)
         new_allocated = 0;
+
+    // gh-158602: when shrinking, do not reallocate the array of a small list.
+    if (newsize < allocated) {
+        if (allocated <= LIST_SMALL_ALLOCATED) {
+            Py_SET_SIZE(self, newsize);
+            return 0;
+        }
+        assert(new_allocated < (size_t)allocated);
+    }
 
     ensure_shared_on_resize(self);
 
@@ -1148,7 +1159,7 @@ list_ass_item_lock_held(PyListObject *a, Py_ssize_t i, PyObject *v)
         for (Py_ssize_t idx = i; idx < size - 1; idx++) {
             FT_ATOMIC_STORE_PTR_RELEASE(a->ob_item[idx], a->ob_item[idx + 1]);
         }
-        Py_SET_SIZE(a, size - 1);
+        list_resize(a, size - 1);  // NB: shrinking a list can't fail
     }
     else {
         FT_ATOMIC_STORE_PTR_RELEASE(a->ob_item[i], Py_NewRef(v));
