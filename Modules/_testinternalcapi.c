@@ -1103,10 +1103,7 @@ encode_locale(PyObject *self, PyObject *args)
         PyErr_SetString(PyExc_ValueError, "unsupported error handler");
         break;
     default:
-        assert(str == NULL);
-        assert(output_length == 0);
-        assert(error_pos == 0);
-        PyErr_SetString(PyExc_ValueError, "unknown error code");
+        PyErr_SetString(PyExc_SystemError, "unknown error code");
         break;
     }
     return res;
@@ -1157,7 +1154,7 @@ decode_locale(PyObject *self, PyObject *args)
         PyErr_SetString(PyExc_ValueError, "unsupported error handler");
         break;
     default:
-        PyErr_SetString(PyExc_ValueError, "unknown error code");
+        PyErr_SetString(PyExc_SystemError, "unknown error code");
         break;
     }
     return res;

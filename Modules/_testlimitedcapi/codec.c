@@ -25,25 +25,28 @@ decode_locale(PyObject *Py_UNUSED(module), PyObject *arg)
         return NULL;
     }
 
-    size_t wstr_len = (size_t)-123;
-    wchar_t *wstr = Py_DecodeLocale(str, &wstr_len);
+    const size_t size_canary = (size_t)-123;
+    size_t size = size_canary;
+    wchar_t *wstr = Py_DecodeLocale(str, &size);
 
     if (str == NULL) {
-        if (wstr_len == (size_t)-1) {
+        if (size == (size_t)-1) {
             PyErr_NoMemory();
         }
-        else if (wstr_len == (size_t)-2) {
-            PyErr_SetString(PyExc_ValueError, "decode error");
+        else if (size == (size_t)-2) {
+            PyErr_SetString(PyExc_RuntimeError, "decode error");
         }
         else {
             PyErr_Format(PyExc_SystemError,
                          "unknown Py_DecodeLocale() return value: %zd",
-                         (Py_ssize_t)wstr_len);
+                         (Py_ssize_t)size);
         }
         return NULL;
     }
+    assert(wstr != NULL);
+    assert(size != size_canary);
 
-    PyObject *result = PyUnicode_FromWideChar(wstr, wstr_len);
+    PyObject *result = PyUnicode_FromWideChar(wstr, size);
     PyMem_RawFree(wstr);
     return result;
 }
@@ -69,10 +72,14 @@ encode_locale(PyObject *Py_UNUSED(module), PyObject *arg)
     PyMem_Free(wstr);
 
     if (str == NULL) {
-        assert(error_pos != error_pos_canary);
-        return PyErr_Format(PyExc_ValueError,
-                            "Py_EncodeLocale failed: error_pos=%zd",
-                            error_pos);
+        if (error_pos == (size_t)-1) {
+            return PyErr_NoMemory();
+        }
+        else {
+            assert(error_pos != error_pos_canary);
+            return PyErr_Format(PyExc_RuntimeError,
+                                "encode error: pos=%zd", error_pos);
+        }
     }
     assert(error_pos == error_pos_canary);
 

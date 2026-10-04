@@ -3773,12 +3773,12 @@ unicode_encode_locale(PyObject *unicode, _Py_error_handler error_handler,
     if (res != 0) {
         if (res == _Py_CODEC_ENCODE_ERROR) {
             PyObject *exc;
-            assert(error_pos <= (PY_SSIZE_T_MAX - 1));
+            assert(error_pos <= (size_t)(PY_SSIZE_T_MAX - 1));
             exc = PyObject_CallFunction(PyExc_UnicodeEncodeError, "sOnns",
                     "locale", unicode,
                     (Py_ssize_t)error_pos,
                     (Py_ssize_t)(error_pos+1),
-                    "encoding error");
+                    "encode error");
             if (exc != NULL) {
                 PyCodec_StrictErrors(exc);
                 Py_DECREF(exc);
@@ -3989,12 +3989,12 @@ unicode_decode_locale(const char *str, Py_ssize_t len,
     if (res != 0) {
         if (res == _Py_CODEC_DECODE_ERROR) {
             PyObject *exc;
-            assert(wlen <= (PY_SSIZE_T_MAX - 1));
+            assert(wlen <= (size_t)(PY_SSIZE_T_MAX - 1));
             exc = PyObject_CallFunction(PyExc_UnicodeDecodeError, "sy#nns",
                                         "locale", str, len,
                                         (Py_ssize_t)wlen,
                                         (Py_ssize_t)(wlen + 1),
-                                        "decoding error");
+                                        "decode error");
             if (exc != NULL) {
                 PyCodec_StrictErrors(exc);
                 Py_DECREF(exc);
@@ -5495,23 +5495,19 @@ PyUnicode_DecodeUTF8Stateful(const char *s,
 //
 // On memory allocation failure, return _Py_CODEC_MEMORY_ERROR.
 //
-// On decoding error (if surrogateescape is zero), return
-// _Py_CODEC_DECODE_ERROR. If wlen is non-NULL, write the start of the illegal
-// byte sequence into *wlen.
+// On decoding error (if errors is "strict"), return _Py_CODEC_DECODE_ERROR.
+// If wlen is non-NULL, write the start of the illegal byte sequence into
+// *wlen.
 //
-// Return _Py_CODEC_UNSUPPORTED_ERROR_HANDLER if 'errors' error handler is not
+// Return _Py_CODEC_UNSUPPORTED_ERROR_HANDLER if errors error handler is not
 // supported.
 int
 _Py_DecodeUTF8(const char *s, Py_ssize_t size, wchar_t **wstr, size_t *wlen,
                _Py_error_handler errors)
 {
+    assert(0 <= size);
     assert(s != NULL);
     assert(wstr != NULL);
-
-    const char *orig_s = s;
-    const char *e;
-    wchar_t *unicode;
-    Py_ssize_t outpos;
 
     int surrogateescape = 0;
     int surrogatepass = 0;
@@ -5531,18 +5527,18 @@ _Py_DecodeUTF8(const char *s, Py_ssize_t size, wchar_t **wstr, size_t *wlen,
 
     /* Note: size will always be longer than the resulting Unicode
        character count */
-    if (PY_SSIZE_T_MAX / (Py_ssize_t)sizeof(wchar_t) - 1 < size) {
+    if ((size_t)PY_SSIZE_T_MAX / sizeof(wchar_t) - 1 < (size_t)size) {
         return _Py_CODEC_MEMORY_ERROR;
     }
-
-    unicode = PyMem_RawMalloc((size + 1) * sizeof(wchar_t));
+    wchar_t *unicode = PyMem_RawMalloc((size + 1) * sizeof(wchar_t));
     if (!unicode) {
         return _Py_CODEC_MEMORY_ERROR;
     }
 
     /* Unpack UTF-8 encoded data */
-    e = s + size;
-    outpos = 0;
+    const char *orig_s = s;
+    const char *e = s + size;
+    Py_ssize_t outpos = 0;
     while (s < e) {
         Py_UCS4 ch;
 #if SIZEOF_WCHAR_T == 4

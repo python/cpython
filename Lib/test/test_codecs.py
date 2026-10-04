@@ -4072,11 +4072,12 @@ class LocaleCodecTest(unittest.TestCase):
     SURROGATES = "\uDC80\uDCFF"
 
     def encode_locale_surrogateescape(self, text):
-        # Test Py_EncodeLocale(): use the "surrogateescape" error handler
+        # Test public Py_EncodeLocale() C API:
+        # use the "surrogateescape" error handler
         return _testlimitedcapi.encode_locale(text)
 
-    def encode_locale_ex(self, text, errors="strict"):
-        # Test _Py_EncodeLocale()
+    def encode_locale(self, text, errors="strict"):
+        # Test the internal _Py_EncodeLocale() C API
         return _testinternalcapi.encode_locale(text, 0, errors)
 
     def check_encode_strings(self, errors):
@@ -4094,13 +4095,13 @@ class LocaleCodecTest(unittest.TestCase):
                         self.fail("failed to compute error_pos")
 
                     if errors == "surrogateescape":
-                        with self.assertRaises(ValueError) as cm:
+                        with self.assertRaises(RuntimeError) as cm:
                             self.encode_locale_surrogateescape(text)
-                        errmsg = f"Py_EncodeLocale failed: error_pos={error_pos}"
+                        errmsg = f"encode error: pos={error_pos}"
                         self.assertEqual(str(cm.exception), errmsg)
 
                     with self.assertRaises(RuntimeError) as cm:
-                        self.encode_locale_ex(text, errors)
+                        self.encode_locale(text, errors)
                     errmsg = f"encode error: pos={error_pos}"
                     self.assertEqual(str(cm.exception), errmsg)
                 else:
@@ -4108,7 +4109,7 @@ class LocaleCodecTest(unittest.TestCase):
                         encoded = self.encode_locale_surrogateescape(text)
                         self.assertEqual(encoded, expected)
 
-                    encoded = self.encode_locale_ex(text, errors)
+                    encoded = self.encode_locale(text, errors)
                     self.assertEqual(encoded, expected)
 
     def test_encode_strict(self):
@@ -4119,7 +4120,7 @@ class LocaleCodecTest(unittest.TestCase):
 
     def test_encode_surrogatepass(self):
         try:
-            self.encode_locale_ex('', 'surrogatepass')
+            self.encode_locale('', 'surrogatepass')
         except ValueError as exc:
             if str(exc) == 'unsupported error handler':
                 self.skipTest(f"{self.ENCODING!r} encoder doesn't support "
@@ -4131,15 +4132,16 @@ class LocaleCodecTest(unittest.TestCase):
 
     def test_encode_unsupported_error_handler(self):
         with self.assertRaises(ValueError) as cm:
-            self.encode_locale_ex('', 'backslashreplace')
+            self.encode_locale('', 'backslashreplace')
         self.assertEqual(str(cm.exception), 'unsupported error handler')
 
     def decode_locale(self, encoded, errors="strict"):
-        # Test _Py_DecodeLocale()
+        # Test the internal _Py_DecodeLocale() C API
         return _testinternalcapi.decode_locale(encoded, 0, errors)
 
     def decode_locale_surrogateescape(self, encoded):
-        # Test Py_DecodeLocale(): use the "surrogateescape" error handler
+        # Test the public Py_DecodeLocale() C API:
+        # use the "surrogateescape" error handler
         return _testlimitedcapi.decode_locale(encoded)
 
     def check_decode_strings(self, errors):
@@ -4179,7 +4181,7 @@ class LocaleCodecTest(unittest.TestCase):
                         self.fail("failed to compute error_pos")
 
                     if errors == "surrogateescape":
-                        with self.assertRaises(ValueError) as cm:
+                        with self.assertRaises(RuntimeError) as cm:
                             self.decode_locale_surrogateescape(encoded)
                         errmsg = f"Py_DecodeLocale failed: error_pos={error_pos}"
                         self.assertEqual(str(cm.exception), errmsg)

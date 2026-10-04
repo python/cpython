@@ -52,9 +52,9 @@ int _Py_open_cloexec_works = -1;
 #endif
 
 // wcstombs() error
-static const size_t ENCODE_ERROR = ((size_t)-1);
+static const size_t ENCODE_ERROR = (size_t)-1;
 // mbstowcs() and mbrtowc() errors
-static const size_t DECODE_ERROR = ((size_t)-1);
+static const size_t DECODE_ERROR = (size_t)-1;
 #ifdef HAVE_MBRTOWC
 static const size_t INCOMPLETE_CHARACTER = (size_t)-2;
 #endif
@@ -437,9 +437,9 @@ _Py_ResetForceASCII(void)
 
 
 #if !defined(HAVE_MBRTOWC) || defined(USE_FORCE_ASCII)
-// Decode a bytes string from ASCII. If 'errors' is "surrogateescape", handle
-// non-ASCII with "surrogateescape" error handler and so the output is
-// non-ASCII.
+// Decode a bytes string from the ASCII encoding. If 'errors' is
+// "surrogateescape", decode non-ASCII bytes with "surrogateescape" error
+// handler and so the output is non-ASCII.
 //
 // On success, set *wstr and *wlen (if set) and return 0.
 // On error, return a negative number: _Py_CODEC_MEMORY_ERROR,
@@ -498,7 +498,7 @@ decode_ascii(const char *arg, wchar_t **wstr, size_t *wlen,
 }
 #endif   /* !HAVE_MBRTOWC */
 
-// Decode a bytes string from the current locale.
+// Decode a bytes string from the current locale encoding.
 // On success, set *wstr and *wlen (if set) and return 0.
 // On error, return a negative number: _Py_CODEC_MEMORY_ERROR,
 // _Py_CODEC_DECODE_ERROR or _Py_CODEC_UNSUPPORTED_ERROR_HANDLER.
@@ -509,15 +509,6 @@ decode_current_locale(const char* arg, wchar_t **wstr, size_t *wlen,
 {
     assert(arg != NULL);
     assert(wstr != NULL);
-
-    wchar_t *res;
-    size_t argsize;
-    size_t count;
-#ifdef HAVE_MBRTOWC
-    unsigned char *in;
-    wchar_t *out;
-    mbstate_t mbs;
-#endif
 
     int surrogateescape;
     if (get_surrogateescape(errors, &surrogateescape) < 0) {
@@ -530,10 +521,11 @@ decode_current_locale(const char* arg, wchar_t **wstr, size_t *wlen,
      * mbstowcs which does not count the characters that
      * would result from conversion.  Use an upper bound.
      */
-    argsize = strlen(arg);
+    size_t argsize = strlen(arg);
 #else
-    argsize = _Py_mbstowcs(NULL, arg, 0);
+    size_t argsize = _Py_mbstowcs(NULL, arg, 0);
 #endif
+    wchar_t *res;
     if (argsize != DECODE_ERROR) {
         if (argsize > PY_SSIZE_T_MAX / sizeof(wchar_t) - 1) {
             return _Py_CODEC_MEMORY_ERROR;
@@ -543,8 +535,11 @@ decode_current_locale(const char* arg, wchar_t **wstr, size_t *wlen,
             return _Py_CODEC_MEMORY_ERROR;
         }
 
-        count = _Py_mbstowcs(res, arg, argsize + 1);
+        // +1 to write also the trailing NUL character
+        size_t count = _Py_mbstowcs(res, arg, argsize + 1);
         if (count != DECODE_ERROR) {
+            // Success
+            assert(count == argsize);
             *wstr = res;
             if (wlen != NULL) {
                 *wlen = count;
@@ -569,8 +564,9 @@ decode_current_locale(const char* arg, wchar_t **wstr, size_t *wlen,
         return _Py_CODEC_MEMORY_ERROR;
     }
 
-    in = (unsigned char*)arg;
-    out = res;
+    unsigned char *in = (unsigned char*)arg;
+    wchar_t *out = res;
+    mbstate_t mbs;
     memset(&mbs, 0, sizeof mbs);
     while (argsize) {
         size_t converted = _Py_mbrtowc(out, (char*)in, argsize, &mbs);
@@ -602,6 +598,7 @@ decode_current_locale(const char* arg, wchar_t **wstr, size_t *wlen,
     }
     if (wlen != NULL) {
         *wlen = out - res;
+        assert(res[*wlen] == 0);
     }
     *wstr = res;
     return 0;
@@ -662,11 +659,13 @@ decode_locale_impl(const char* arg, wchar_t **wstr, size_t *wlen,
 
 // Decode a byte string from the locale encoding.
 //
-// Use the strict error handler if 'surrogateescape' is zero.  Use the
-// surrogateescape error handler if 'surrogateescape' is non-zero: undecodable
-// bytes are decoded as characters in range U+DC80..U+DCFF. If a byte sequence
-// can be decoded as a surrogate character, escape the bytes using the
-// surrogateescape error handler instead of decoding them.
+// Supported error handlers are _Py_ERROR_STRICT and _Py_ERROR_SURROGATEESCAPE.
+// The UTF-8 decoder also supports _Py_ERROR_SURROGATEPASS.
+//
+// If errors is _Py_ERROR_SURROGATEESCAPE, undecodable bytes are decoded as
+// characters in range U+DC80..U+DCFF. If a byte sequence can be decoded as a
+// surrogate character, escape the bytes using the surrogateescape error
+// handler instead of decoding them.
 //
 // On success, return 0 and write the newly allocated wide character string into
 // *wstr (use PyMem_RawFree() to free the memory). If wlen is not NULL, write
@@ -674,13 +673,13 @@ decode_locale_impl(const char* arg, wchar_t **wstr, size_t *wlen,
 //
 // On error, return a negative number.
 //
-// On memory allocation failure, return _Py_CODEC_MEMORY_ERROR (-1).
+// On memory allocation failure, return _Py_CODEC_MEMORY_ERROR.
 //
-// On decoding error, return _Py_CODEC_DECODE_ERROR (-2). If wlen is not NULL,
+// On decoding error, return _Py_CODEC_DECODE_ERROR. If wlen is not NULL,
 // write the start of invalid byte sequence in the input string into *wlen. If
 // reason is not NULL, write the decoding error message into *reason.
 //
-// Return _Py_CODEC_UNSUPPORTED_ERROR_HANDLER (-3) if the 'errors' error
+// Return _Py_CODEC_UNSUPPORTED_ERROR_HANDLER if the 'errors' error
 // handler is not supported: other than "strict" and "surrogateescape".
 //
 // Use the _Py_EncodeLocale() function to encode the character string back to
@@ -720,7 +719,9 @@ _Py_DecodeLocale(const char* arg, wchar_t **wstr, size_t *wlen,
         // Success
         assert(*wstr != NULL);
 #ifdef Py_DEBUG
-        assert(wlen == NULL || *wlen != wlen_canary);
+        if (wlen != NULL) {
+            assert(*wlen == wcslen(*wstr));
+        }
 #endif
     }
     return res;
@@ -728,32 +729,31 @@ _Py_DecodeLocale(const char* arg, wchar_t **wstr, size_t *wlen,
 
 
 // Decode a byte string from the locale encoding with the
-// surrogateescape error handler: undecodable bytes are decoded as characters
+// surrogateescape error handler. Undecodable bytes are decoded as characters
 // in range U+DC80..U+DCFF. If a byte sequence can be decoded as a surrogate
 // character, escape the bytes using the surrogateescape error handler instead
 // of decoding them.
 //
 // Return a pointer to a newly allocated wide character string, use
-// PyMem_RawFree() to free the memory. If wlen is not NULL, write the number of
-// wide characters excluding the null character into *wlen.
+// PyMem_RawFree() to free the memory. If size is not NULL, write the number of
+// wide characters excluding the null character into *size.
 //
-// Return NULL on decoding error or memory allocation error. If wlen is not
-// NULL, *wlen is set to (size_t)_Py_CODEC_MEMORY_ERROR on memory error or set
-// to (size_t)_Py_CODEC_DECODE_ERROR on decoding error.
+// On memory allocation failure, set *size to (size_t)-1 and return NULL.
 //
+// On decode error, set *size to (size_t)-2 and return NULL.
 // Decoding errors should never happen, unless there is a bug in the C library.
 //
 // Use the Py_EncodeLocale() function to encode the character string back to a
 // byte string.
 wchar_t*
-Py_DecodeLocale(const char* arg, size_t *wlen)
+Py_DecodeLocale(const char* arg, size_t *size)
 {
     wchar_t *wstr;
-    int res = _Py_DecodeLocale(arg, &wstr, wlen, 0, _Py_ERROR_SURROGATEESCAPE);
+    int res = _Py_DecodeLocale(arg, &wstr, size, 0, _Py_ERROR_SURROGATEESCAPE);
     if (res != 0) {
         assert(res == _Py_CODEC_MEMORY_ERROR || res == _Py_CODEC_DECODE_ERROR);
-        if (wlen != NULL) {
-            *wlen = (size_t)res;
+        if (size != NULL) {
+            *size = (size_t)res;
         }
         return NULL;
     }
@@ -761,7 +761,7 @@ Py_DecodeLocale(const char* arg, size_t *wlen)
 }
 
 
-// If bytes is NULL, return the length in 'bytes' of the encoded string.
+// If bytes is NULL, compute the length in 'bytes' of the encoded string.
 // Otherwise, encode the wide string into 'bytes', decrements 'size', and
 // return 0 on success.
 // On encoding error, set 'error_pos' (if set) and return ENCODE_ERROR.
@@ -848,23 +848,18 @@ encode_current_locale(const wchar_t *text, char **str, size_t *output_length,
     }
 
     // First, compute the output length
-    char *result = NULL;
     const size_t len = wcslen(text);
     // Sanity check, it cannot happen in practice
     assert(len != ENCODE_ERROR);
     size_t size = encode_current_locale_impl(text, len, surrogateescape,
                                              NULL, 0, error_pos);
     if (size == ENCODE_ERROR) {
-        goto encode_error;
+        return _Py_CODEC_ENCODE_ERROR;
     }
 
     *output_length = size;
-    if (raw_malloc) {
-        result = PyMem_RawMalloc(size + 1);
-    }
-    else {
-        result = PyMem_Malloc(size + 1);
-    }
+    char *result;
+    result = raw_malloc ? PyMem_RawMalloc(size + 1) : PyMem_Malloc(size + 1);
     if (result == NULL) {
         return _Py_CODEC_MEMORY_ERROR;
     }
@@ -873,21 +868,18 @@ encode_current_locale(const wchar_t *text, char **str, size_t *output_length,
     size = encode_current_locale_impl(text, len, surrogateescape,
                                       result, size, error_pos);
     if (size == ENCODE_ERROR) {
-        goto encode_error;
+        if (raw_malloc) {
+            PyMem_RawFree(result);
+        }
+        else {
+            PyMem_Free(result);
+        }
+        return _Py_CODEC_ENCODE_ERROR;
     }
     assert(size == 0);
 
     *str = result;
     return 0;
-
-encode_error:
-    if (raw_malloc) {
-        PyMem_RawFree(result);
-    }
-    else {
-        PyMem_Free(result);
-    }
-    return _Py_CODEC_ENCODE_ERROR;
 }
 
 
@@ -944,16 +936,17 @@ encode_locale_inner(const wchar_t *text, char **str, size_t *output_length,
 //   of PyMem_Malloc().
 // * current_locale: if non-zero, use the current LC_CTYPE, otherwise use
 //   Python filesystem encoding.
-// * errors: error handler like "strict" or "surrogateescape".
+// * errors: supported error handlers are _Py_ERROR_STRICT and
+//   _Py_ERROR_SURROGATEESCAPE. The UTF-8 encoder also supports
+//   _Py_ERROR_SURROGATEPASS.
 //
 // Set *str to a newly allocated decoded string and return 0 on success.
 // Return a negative result on error:
 //
-// * _Py_CODEC_MEMORY_ERROR (-1): memory allocation failure
-// * _Py_CODEC_ENCODE_ERROR (-2): encoding error, set *error_pos.
-// * _Py_CODEC_UNSUPPORTED_ERROR_HANDLER (-3): the 'errors' error handler
-//   is not supported. Most functions only support "strict" and
-//   "surrogateescape". The UTF-8 encoder also supports "surrogatepass".
+// * _Py_CODEC_MEMORY_ERROR: memory allocation failure
+// * _Py_CODEC_ENCODE_ERROR: encoding error, set *error_pos.
+// * _Py_CODEC_UNSUPPORTED_ERROR_HANDLER: the 'errors' error handler
+//   is not supported.
 //
 // text, str and output_length must not be NULL.
 static int
@@ -965,11 +958,6 @@ encode_locale_impl(const wchar_t *text, char **str, size_t *output_length,
     assert(str != NULL);
     assert(output_length != NULL);
 
-#ifdef Py_DEBUG
-    const size_t output_length_canary = (size_t)-2;
-    *output_length = output_length_canary;
-#endif
-
     int res = encode_locale_inner(text, str, output_length,
                                   error_pos, raw_malloc,
                                   current_locale, errors);
@@ -977,9 +965,7 @@ encode_locale_impl(const wchar_t *text, char **str, size_t *output_length,
         // Error
         *str = NULL;
         *output_length = 0;
-        if (res == _Py_CODEC_ENCODE_ERROR) {
-        }
-        else {
+        if (res != _Py_CODEC_ENCODE_ERROR) {
             if (error_pos) {
                 *error_pos = 0;
             }
@@ -987,9 +973,7 @@ encode_locale_impl(const wchar_t *text, char **str, size_t *output_length,
     }
     else {
         assert(*str != NULL);
-#ifdef Py_DEBUG
-        assert(*output_length != output_length_canary);
-#endif
+        assert(*output_length == strlen(*str));
         // *error_pos is left unchanged
     }
     return res;
@@ -1000,29 +984,34 @@ encode_locale(const wchar_t *text, size_t *error_pos,
               int raw_malloc, int current_locale)
 {
     char *str;
-    size_t output_length;
-    int res = encode_locale_impl(text, &str, &output_length,
+    size_t unused_output_length;
+    int res = encode_locale_impl(text, &str, &unused_output_length,
                                  error_pos, raw_malloc, current_locale,
                                  _Py_ERROR_SURROGATEESCAPE);
     if (res != 0) {
+        assert(res == _Py_CODEC_MEMORY_ERROR || res == _Py_CODEC_ENCODE_ERROR);
+        if (res == _Py_CODEC_MEMORY_ERROR && error_pos != NULL) {
+            *error_pos = (size_t)-1;
+        }
         return NULL;
     }
-    assert(strlen(str) == output_length);
     return str;
 }
 
-/* Encode a wide character string to the locale encoding with the
-   surrogateescape error handler: surrogate characters in the range
-   U+DC80..U+DCFF are converted to bytes 0x80..0xFF.
-
-   Return a pointer to a newly allocated byte string, use PyMem_Free() to free
-   the memory. Return NULL on encoding or memory allocation error.
-
-   If error_pos is not NULL, *error_pos is set to (size_t)-1 on success, or set
-   to the index of the invalid character on encoding error.
-
-   Use the Py_DecodeLocale() function to decode the bytes string back to a wide
-   character string. */
+// Encode a wide character string to the locale encoding with the
+// surrogateescape error handler. Surrogate characters in the range
+// U+DC80..U+DCFF are encoded to bytes 0x80..0xFF.
+//
+// Return a pointer to a newly allocated byte string, use PyMem_Free() to free
+// the memory. Return NULL on encoding or memory allocation error.
+//
+// On memory allocation failure, set *error_pos to (size_t)-1 and return NULL.
+//
+// On encoding error, set *error_pos to the index of the first invalid
+// character and return NULL.
+//
+// Use the Py_DecodeLocale() function to decode the bytes string back to a wide
+// character string.
 char*
 Py_EncodeLocale(const wchar_t *text, size_t *error_pos)
 {
