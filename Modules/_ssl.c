@@ -3647,6 +3647,9 @@ context_dealloc(PyObject *op)
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(self);
     (void)context_clear(op);
+    /* The SSL_CTX may outlive this object as the session_ctx of sockets that
+       were switched to another context; leave no Python callback behind. */
+    SSL_CTX_set_tlsext_servername_callback(self->ctx, NULL);
     SSL_CTX_free(self->ctx);
     PyMem_FREE(self->alpn_protocols);
     tp->tp_free(self);
@@ -5119,10 +5122,10 @@ _ssl__SSLContext_set_ecdh_curve_impl(PySSLContext *self, PyObject *name)
 }
 
 static int
-_servername_callback(SSL *s, int *al, void *args)
+_servername_callback(SSL *s, int *al, void *Py_UNUSED(args))
 {
     int ret;
-    PySSLContext *sslctx = (PySSLContext *) args;
+    PySSLContext *sslctx;
     PySSLSocket *ssl;
     PyObject *result;
     /* The high-level ssl.SSLSocket object */
@@ -5131,17 +5134,29 @@ _servername_callback(SSL *s, int *al, void *args)
     const char *servername = SSL_get_servername(s, TLSEXT_NAMETYPE_host_name);
     PyGILState_STATE gstate = PyGILState_Ensure();
 
+    /* Do not use the SSL_CTX's servername arg to find the context: it is a
+       borrowed pointer to whichever _SSLContext installed the callback, and
+       that object may already be gone while OpenSSL still reaches this
+       callback through the connection's session_ctx (e.g. on the second
+       ClientHello after a HelloRetryRequest, once sni_callback has switched
+       the socket to another context).  The socket's current context is
+       always alive. */
+    ssl = SSL_get_app_data(s);
+    assert(ssl != NULL);
+    Py_BEGIN_CRITICAL_SECTION(ssl);
+    sslctx = (PySSLContext *)Py_NewRef(ssl->ctx);
+    Py_END_CRITICAL_SECTION();
+    assert(Py_IS_TYPE(ssl, get_state_ctx(sslctx)->PySSLSocket_Type));
+
     Py_BEGIN_CRITICAL_SECTION(sslctx);
     sni_cb = Py_XNewRef(sslctx->set_sni_cb);
     Py_END_CRITICAL_SECTION();
 
     if (sni_cb == NULL) {
+        Py_DECREF(sslctx);
         PyGILState_Release(gstate);
         return SSL_TLSEXT_ERR_OK;
     }
-
-    ssl = SSL_get_app_data(s);
-    assert(Py_IS_TYPE(ssl, get_state_ctx(sslctx)->PySSLSocket_Type));
 
     /* The servername callback expects an argument that represents the current
      * SSL connection and that has a .context attribute that can be changed to
@@ -5225,12 +5240,14 @@ _servername_callback(SSL *s, int *al, void *args)
     }
 
     Py_DECREF(sni_cb);
+    Py_DECREF(sslctx);
     PyGILState_Release(gstate);
     return ret;
 
 error:
     Py_XDECREF(ssl_socket);
     Py_XDECREF(sni_cb);
+    Py_DECREF(sslctx);
     *al = SSL_AD_INTERNAL_ERROR;
     ret = SSL_TLSEXT_ERR_ALERT_FATAL;
     PyGILState_Release(gstate);
@@ -5289,7 +5306,6 @@ _ssl__SSLContext_sni_callback_set_impl(PySSLContext *self, PyObject *value)
     }
     else {
         Py_XSETREF(self->set_sni_cb, Py_NewRef(value));
-        SSL_CTX_set_tlsext_servername_arg(self->ctx, self);
         SSL_CTX_set_tlsext_servername_callback(self->ctx, _servername_callback);
     }
     return 0;
@@ -7229,12 +7245,62 @@ parse_openssl_version(unsigned long libver,
     *major = libver & 0xFF;
 }
 
+PyDoc_STRVAR(openssl_version_info__doc__,
+"ssl.OPENSSL_VERSION_INFO\n\
+\n\
+OpenSSL version information as a named tuple.");
+
+static PyStructSequence_Field openssl_version_info_fields[] = {
+    {"major", "Major release number"},
+    {"minor", "Minor release number"},
+    {"fix", "Fix release number"},
+    {"patch", "Patch release number"},
+    {"status", "Release status"},
+    {0}
+};
+
+static PyStructSequence_Desc openssl_version_info_desc = {
+    "ssl.OPENSSL_VERSION_INFO",     /* name */
+    openssl_version_info__doc__,    /* doc */
+    openssl_version_info_fields,    /* fields */
+    5
+};
+
+static PyObject *
+make_openssl_version_info(PyTypeObject *type, unsigned long libver)
+{
+    PyObject *version;
+    int pos = 0;
+    unsigned int major, minor, fix, patch, status;
+
+    parse_openssl_version(libver, &major, &minor, &fix, &patch, &status);
+    version = PyStructSequence_New(type);
+    if (version == NULL) {
+        return NULL;
+    }
+
+#define SetItem(VALUE) \
+    PyStructSequence_SET_ITEM(version, pos++, VALUE); \
+    if (PyErr_Occurred()) { \
+        Py_DECREF(version); \
+        return NULL; \
+    }
+
+    SetItem(PyLong_FromUnsignedLong(major))
+    SetItem(PyLong_FromUnsignedLong(minor))
+    SetItem(PyLong_FromUnsignedLong(fix))
+    SetItem(PyLong_FromUnsignedLong(patch))
+    SetItem(PyLong_FromUnsignedLong(status))
+#undef SetItem
+
+    return version;
+}
+
 static int
 sslmodule_init_versioninfo(PyObject *m)
 {
     PyObject *r;
     unsigned long libver;
-    unsigned int major, minor, fix, patch, status;
 
     /* OpenSSL version */
     /* SSLeay() gives us the version of the library linked against,
@@ -7245,20 +7311,33 @@ sslmodule_init_versioninfo(PyObject *m)
     if (PyModule_Add(m, "OPENSSL_VERSION_NUMBER", r) < 0)
         return -1;
 
-    parse_openssl_version(libver, &major, &minor, &fix, &patch, &status);
-    r = Py_BuildValue("IIIII", major, minor, fix, patch, status);
-    if (PyModule_Add(m, "OPENSSL_VERSION_INFO", r) < 0)
-        return -1;
-
     r = PyUnicode_FromString(OpenSSL_version(OPENSSL_VERSION));
     if (PyModule_Add(m, "OPENSSL_VERSION", r) < 0)
         return -1;
 
-    libver = OPENSSL_VERSION_NUMBER;
-    parse_openssl_version(libver, &major, &minor, &fix, &patch, &status);
-    r = Py_BuildValue("IIIII", major, minor, fix, patch, status);
-    if (PyModule_Add(m, "_OPENSSL_API_VERSION", r) < 0)
+    PyTypeObject *version_type;
+    version_type = PyStructSequence_NewType(&openssl_version_info_desc);
+    if (version_type == NULL) {
         return -1;
+    }
+    if (PyModule_Add(m, "OPENSSL_VERSION_INFO",
+            make_openssl_version_info(version_type, libver)) < 0)
+    {
+        Py_DECREF(version_type);
+        return -1;
+    }
+    r = make_openssl_version_info(version_type, OPENSSL_VERSION_NUMBER);
+    Py_DECREF(version_type);
+    if (r == NULL) {
+        return -1;
+    }
+    if (PyModule_AddObjectRef(m, "OPENSSL_API_VERSION_INFO", r) < 0 ||
+        PyModule_AddObjectRef(m, "_OPENSSL_API_VERSION", r) < 0)
+    {
+        Py_DECREF(r);
+        return -1;
+    }
+    Py_DECREF(r);
 
     return 0;
 }

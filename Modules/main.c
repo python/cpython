@@ -847,6 +847,7 @@ pymain_free(void)
     _PyPathConfig_ClearGlobal();
     _Py_ClearArgcArgv();
     _PyRuntime_Finalize();
+    _Py_GetVersion_Fini();
 }
 
 
