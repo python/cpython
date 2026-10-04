@@ -1444,12 +1444,32 @@ class BytesTest(BaseBytesTest, unittest.TestCase):
     def test_concat_cpython(self):
         # Test optimizations
         empty = b''
-        s = b"abc"
-        self.assertIs(s + empty, s)
-        self.assertIs(empty + s, s)
-
+        abc = b"abc"
+        self.assertIs(abc + empty, abc)
+        self.assertIs(empty + abc, abc)
         self.assertIs(empty + bytearray(b''), empty)
         self.assertIs(empty + memoryview(b''), empty)
+
+        class Subclass(bytes):
+            pass
+
+        empty_subclass = Subclass(b"")
+        self.assertIs(empty + empty_subclass, empty)
+        self.assertIs(empty_subclass + empty, empty)
+        self.assertIs(abc + empty_subclass, abc)
+        self.assertIs(empty_subclass + abc, abc)
+
+        def assert_copy(result, expected):
+            self.assertIsNot(result, expected)
+            self.assertEqual(type(result), bytes)
+            self.assertEqual(result, expected)
+
+        # Copy the string if it's a subclass
+        def_subclass = Subclass(b"def")
+        assert_copy(def_subclass + empty, b'def')
+        assert_copy(empty + def_subclass, b'def')
+        assert_copy(abc + def_subclass, b'abcdef')
+        assert_copy(def_subclass + abc, b'defabc')
 
     @support.cpython_only
     def test_repeat_cpython(self):
