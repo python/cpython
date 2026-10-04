@@ -376,14 +376,9 @@ parse_code_object(RemoteUnwinderObject *unwinder,
                 goto error;
             }
             PyErr_Clear();
-            PyObject *tuple = make_frame_info(
-                unwinder, _Py_LATIN1_CHR('~'), Py_None,
-                &_Py_STR(unreadable_frame), Py_None);
-            if (tuple == NULL) {
-                goto error;
-            }
-            *result = tuple;
-            return 0;
+            func = Py_NewRef(&_Py_STR(unreadable_frame));
+            file = Py_NewRef(_Py_LATIN1_CHR('~'));
+            goto degraded;
         }
 
         func = read_py_str(unwinder,
