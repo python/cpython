@@ -2590,6 +2590,27 @@ class SubmoduleLazinessTests(unittest.TestCase):
         )
 
 
+class StdlibLazyImportTests(LazyImportTestCase):
+    """Tests for lazy imports used by standard library modules."""
+
+    @support.requires_subprocess()
+    def test_ctypes_does_not_leave_sysconfig_pending(self):
+        """
+        Importing ctypes must not leave an unused lazy sysconfig import.
+        """
+        # gh-158684: ctypes used its lazy sysconfig import at module scope
+        # in the Android and Cygwin branches.  That reified the import
+        # eagerly on those platforms and left it pending forever on the
+        # rest, even though it could never be resolved lazily there.
+        code = textwrap.dedent("""\
+            import ctypes
+            import sys
+            pending = sorted(sys.lazy_modules)
+            assert "sysconfig" not in pending, pending
+        """)
+        assert_python_ok("-c", code)
+
+
 class AttributeSideEffectTests(unittest.TestCase):
     """Tests that submodule imports don't overwrite parent attributes."""
 
