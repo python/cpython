@@ -91,7 +91,7 @@ ensure_shared_on_resize(PyListObject *self)
 #endif
 }
 
-#define LIST_SMALL_ALLOCATED 16
+#define LIST_SMALL_ALLOCATED 32
 
 /* Ensure ob_item has room for at least newsize elements, and set
  * ob_size to newsize.  If newsize > ob_size on entry, the content
