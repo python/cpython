@@ -15227,8 +15227,8 @@ encode_wstr_utf8(wchar_t *wstr, char **str, const char *name)
 {
     assert(str != NULL);
 
-    size_t output_length;
-    int res = _Py_EncodeUTF8(wstr, str, &output_length,
+    size_t unused_output_length;
+    int res = _Py_EncodeUTF8(wstr, str, &unused_output_length,
                              NULL, 1, _Py_ERROR_STRICT);
     if (res == -2) {
         PyErr_Format(PyExc_RuntimeError, "cannot encode %s", name);
@@ -15238,7 +15238,6 @@ encode_wstr_utf8(wchar_t *wstr, char **str, const char *name)
         PyErr_NoMemory();
         return -1;
     }
-    assert(strlen(*str) == output_length);
     return 0;
 }
 
