@@ -1006,8 +1006,8 @@ cmath_phase_impl(PyObject *module, Py_complex z)
 
     phi = atan2(z.imag, z.real);
     /* gh-153144: Ignore atan2() errno on purpose since it can optionally be
-     *            EDOM, which we should ignore, or ERANGE if phi underflows,
-     *            which is silent on Python.  Overflow is not possible. */
+                  EDOM, which we should ignore, or ERANGE if phi underflows,
+                  which is silent on Python.  Overflow is not possible. */
     return PyFloat_FromDouble(phi);
 }
 
