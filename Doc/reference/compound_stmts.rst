@@ -162,7 +162,7 @@ once; it should yield an :term:`iterable` object. An :term:`iterator` is
 created for that iterable. The first item provided by the iterator is then
 assigned to the target list using the standard rules for assignments
 (see :ref:`assignment`), and the suite is executed. This repeats for each
-item provided by the iterator. When the iterator is exhausted,
+item provided by the iterator. When the iterator is :term:`exhausted`,
 the suite in the :keyword:`!else` clause,
 if present, is executed, and the loop terminates.
 
@@ -1235,7 +1235,7 @@ A function definition defines a user-defined function object (see section
                  :   | `parameter_list_no_posonly`
    parameter_list_no_posonly: `defparameter` ("," `defparameter`)* ["," [`parameter_list_starargs`]]
                             : | `parameter_list_starargs`
-   parameter_list_starargs: "*" [`star_parameter`] ("," `defparameter`)* ["," [`parameter_star_kwargs`]]
+   parameter_list_starargs: "*" `star_parameter` ("," `defparameter`)* ["," [`parameter_star_kwargs`]]
                           : | "*" ("," `defparameter`)+ ["," [`parameter_star_kwargs`]]
                           : | `parameter_star_kwargs`
    parameter_star_kwargs: "**" `parameter` [","]
