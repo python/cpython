@@ -3300,6 +3300,26 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_CALL_BUILTIN_CLASS", uops)
         self.assertNotIn("_GUARD_CALLABLE_BUILTIN_CLASS", uops)
 
+    def test_call_builtin_class_custom_metaclass(self):
+        _testcapi = import_helper.import_module("_testcapi")
+
+        def testfunc(cls, n):
+            for _ in range(n):
+                result = cls()
+            return result
+
+        Meta = _testcapi.make_vectorcall_class(type)
+        C = type.__new__(Meta, "C", (), {})
+        Meta.set_vectorcall(C, type)
+
+        testfunc(list, TIER2_THRESHOLD)
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_GUARD_CALLABLE_BUILTIN_CLASS", uops)
+        self.assertIn("_CALL_BUILTIN_CLASS", uops)
+        self.assertEqual(testfunc(C, 16), "tp_call")
+
     def test_call_builtin_o(self):
         def testfunc(n):
             x = 0

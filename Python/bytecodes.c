@@ -4794,7 +4794,7 @@ dummy_func(
 
         op(_GUARD_CALLABLE_BUILTIN_CLASS, (callable, unused, unused[oparg] -- callable, unused, unused[oparg])) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
-            EXIT_IF(!PyType_Check(callable_o));
+            EXIT_IF(!Py_IS_TYPE(callable_o, &PyType_Type));
             PyTypeObject *tp = (PyTypeObject *)callable_o;
             EXIT_IF(tp->tp_vectorcall == NULL);
         }

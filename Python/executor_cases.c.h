@@ -18392,7 +18392,7 @@
             oparg = CURRENT_OPARG();
             callable = stack_pointer[-2 - oparg];
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
-            if (!PyType_Check(callable_o)) {
+            if (!Py_IS_TYPE(callable_o, &PyType_Type)) {
                 UOP_STAT_INC(uopcode, miss);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
