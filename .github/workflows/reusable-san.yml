@@ -72,7 +72,7 @@ jobs:
     - name: MSan option setup
       if: inputs.sanitizer == 'MSan'
       run: |
-        echo "MSAN_OPTIONS=${SAN_LOG_OPTION} allocator_may_return_null=1" >> "$GITHUB_ENV"
+        echo "MSAN_OPTIONS=${SAN_LOG_OPTION} allocator_may_return_null=1 handle_segv=0" >> "$GITHUB_ENV"
         # MSan reports false positives for memory initialized by libraries
         # that are not built with MSan, so disable modules that use them.
         # _remote_debugging links to libzstd directly, but we unpoision the memory.
