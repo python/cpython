@@ -4061,7 +4061,11 @@ class StreamRecoderTest(unittest.TestCase):
 @unittest.skipIf(_testinternalcapi is None, 'need _testinternalcapi module')
 class LocaleCodecTest(unittest.TestCase):
     """
-    Test indirectly _Py_DecodeUTF8Ex() and _Py_EncodeUTF8Ex().
+    Test public Py_EncodeLocale() and Py_DecodeLocale() C API.
+
+    Test internal _Py_EncodeLocale() and _Py_DecodeLocale() C API.
+
+    Test indirectly _Py_DecodeUTF8() and _Py_EncodeUTF8().
     """
     ENCODING = sys.getfilesystemencoding()
     STRINGS = ("ascii", "ulatin1:\xa7\xe9",
@@ -4078,7 +4082,7 @@ class LocaleCodecTest(unittest.TestCase):
         return _testlimitedcapi.encode_locale(text)
 
     def encode_locale(self, text, errors="strict"):
-        # Test the internal _Py_EncodeLocale() C API
+        # Test internal _Py_EncodeLocale() C API
         return _testinternalcapi.encode_locale(text, 0, errors)
 
     def check_encode_strings(self, errors):
@@ -4141,7 +4145,7 @@ class LocaleCodecTest(unittest.TestCase):
         self.assertEqual(str(cm.exception), 'unsupported error handler')
 
     def decode_locale(self, encoded, errors="strict"):
-        # Test the internal _Py_DecodeLocale() C API
+        # Test internal _Py_DecodeLocale() C API
         return _testinternalcapi.decode_locale(encoded, 0, errors)
 
     def decode_locale_surrogateescape(self, encoded):
