@@ -25,7 +25,6 @@ read_##type_name(RemoteUnwinderObject *unwinder, uintptr_t address, c_type *resu
 }
 
 DEFINE_MEMORY_READER(ptr, uintptr_t, "Failed to read pointer from remote memory")
-DEFINE_MEMORY_READER(Py_ssize_t, Py_ssize_t, "Failed to read Py_ssize_t from remote memory")
 DEFINE_MEMORY_READER(char, char, "Failed to read char from remote memory")
 
 int
