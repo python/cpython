@@ -72,7 +72,45 @@ outcomes += [_outcome('expected_failure', t, tb)
              for t, tb in result.expectedFailures]
 outcomes += [_outcome('skipped', t, reason) for t, reason in result.skipped]
 
-payload = {'outcomes': outcomes, 'durations': result.id_durations}
+def _usage():
+    """What this process used: peak resident set size in bytes, and the
+    number of major page faults it took, either of which can be None.
+
+    A major page fault is served from disk, so a non-zero count means swapping.
+
+    The modules are imported here, after the test has run, so that the test
+    does not see them.
+    """
+    try:
+        import resource
+    except ImportError:
+        pass
+    else:
+        usage = resource.getrusage(resource.RUSAGE_SELF)
+        # Solaris and illumos leave these fields at 0, which no live process
+        # has, so treat it as "not supported".
+        if not usage.ru_maxrss:
+            return {'maxrss': None, 'majflt': None}
+        # ru_maxrss is in bytes on macOS, in kilobytes on Linux and the BSDs.
+        maxrss = usage.ru_maxrss
+        return {'maxrss': maxrss if sys.platform == 'darwin' else maxrss * 1024,
+                'majflt': usage.ru_majflt}
+    try:
+        import os
+        import _winapi
+        handle = _winapi.OpenProcess(
+            _winapi.PROCESS_QUERY_LIMITED_INFORMATION, False, os.getpid())
+    except (ImportError, OSError):
+        return {'maxrss': None, 'majflt': None}
+    try:
+        info = _winapi.GetProcessMemoryInfo(handle)
+    finally:
+        _winapi.CloseHandle(handle)
+    # PageFaultCount counts all faults, not only the ones served from disk.
+    return {'maxrss': info['PeakWorkingSetSize'], 'majflt': None}
+
+
+payload = {'outcomes': outcomes, 'durations': result.id_durations, **_usage()}
 with open(outfile, 'wb') as f:
     marshal.dump(payload, f)
 

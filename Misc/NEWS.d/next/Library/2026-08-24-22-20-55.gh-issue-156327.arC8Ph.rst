@@ -1,0 +1,2 @@
+Fix :func:`asyncio.print_call_graph` including its own frame in the printed
+call stack.
