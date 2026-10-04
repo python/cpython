@@ -3251,6 +3251,48 @@ class _TestPool(BaseTestCase):
         self.assertTrue(finished.is_set(), "close()/join() deadlocked")
 
     @support.subTests('method_name', ("imap", "imap_unordered"))
+    def test_imap_with_buffersize_does_not_block_other_tasks(
+        self, method_name
+    ):
+        # gh-158677: a buffersize iterator waiting to be consumed must not
+        # prevent other tasks from being submitted to the pool.
+        p = self.Pool(2)
+        self.addCleanup(p.join)
+        self.addCleanup(p.terminate)
+        method = getattr(p, method_name)
+        a = method(sqr, range(10), buffersize=2)
+        b = method(sqr, range(10, 20), buffersize=2)
+
+        res = p.apply_async(sqr, (7,))
+        self.assertEqual(res.get(timeout=support.SHORT_TIMEOUT), 49)
+
+        results_a, results_b = zip(*zip(a, b))
+        self.assertEqual(sorted(results_a), list(map(sqr, range(10))))
+        self.assertEqual(sorted(results_b), list(map(sqr, range(10, 20))))
+
+    @support.subTests('method_name', ("imap", "imap_unordered"))
+    def test_imap_with_buffersize_handle_iterable_exception(
+        self, method_name
+    ):
+        if self.TYPE == 'manager':
+            self.skipTest('test not appropriate for {}'.format(self.TYPE))
+
+        # An exception raised by the iterable is delivered by next(), at
+        # its position in the results.
+        method = getattr(self.pool, method_name)
+        it = method(sqr, exception_throwing_generator(1, -1), buffersize=2)
+        self.assertRaises(SayWhenError, it.__next__)
+        self.assertRaises(StopIteration, it.__next__)
+
+        it = method(sqr, exception_throwing_generator(10, 3), buffersize=2)
+        results = []
+        with self.assertRaises(SayWhenError):
+            for _ in range(4):
+                results.append(next(it))
+        results.extend(it)
+        self.assertEqual(sorted(results), list(map(sqr, range(3))))
+
+    @support.subTests('method_name', ("imap", "imap_unordered"))
     def test_imap_and_imap_unordered_with_buffersize_on_empty_iterable(
         self, method_name
     ):

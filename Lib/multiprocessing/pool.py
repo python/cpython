@@ -190,11 +190,6 @@ class Pool(object):
         self._ctx = context or get_context()
         self._setup_queues()
         self._taskqueue = queue.SimpleQueue()
-        # The _taskqueue_buffersize_semaphores exist to allow calling .release()
-        # on every active semaphore when the pool is terminating to let task_handler
-        # wake up to stop. It's a set so that each iterator object can efficiently
-        # deregister its semaphore when iterator finishes.
-        self._taskqueue_buffersize_semaphores = set()
         # The _change_notifier queue exist to wake up self._handle_workers()
         # when the cache (self._cache) is empty or when there is a change in
         # the _state variable of the thread that runs _handle_workers.
@@ -261,8 +256,7 @@ class Pool(object):
             self, self._terminate_pool,
             args=(self._taskqueue, self._inqueue, self._outqueue, self._pool,
                   self._change_notifier, self._worker_handler, self._task_handler,
-                  self._result_handler, self._cache,
-                  self._taskqueue_buffersize_semaphores),
+                  self._result_handler, self._cache),
             exitpriority=15
             )
         self._state = RUN
@@ -388,32 +382,14 @@ class Pool(object):
         return self._map_async(func, iterable, starmapstar, chunksize,
                                callback, error_callback)
 
-    def _guarded_task_generation(self, result_job, func, iterable, sema=None):
+    def _guarded_task_generation(self, result_job, func, iterable):
         '''Provides a generator of tasks for imap and imap_unordered with
         appropriate handling for iterables which throw exceptions during
         iteration.'''
         try:
             i = -1
-
-            if sema is None:
-                for i, x in enumerate(iterable):
-                    yield (result_job, i, func, (x,), {})
-
-            else:
-                enumerated_iter = iter(enumerate(iterable))
-                while True:
-                    sema.acquire()
-                    if self._state != RUN:
-                        # The pool is closing or terminating; stop submitting
-                        # the still-throttled tasks so the task handler can
-                        # finish instead of blocking here forever.
-                        break
-                    try:
-                        i, x = next(enumerated_iter)
-                    except StopIteration:
-                        break
-                    yield (result_job, i, func, (x,), {})
-
+            for i, x in enumerate(iterable):
+                yield (result_job, i, func, (x,), {})
         except Exception as e:
             yield (result_job, i+1, _helper_reraises_exception, (e,), {})
 
@@ -491,27 +467,20 @@ class Pool(object):
             if buffersize < 1:
                 raise ValueError("buffersize must be None or > 0")
 
-        result = iterator_cls(self, buffersize=buffersize)
+        result = iterator_cls(self)
         if chunksize == 1:
-            self._taskqueue.put(
-                (
-                    self._guarded_task_generation(result._job, func, iterable,
-                                                  result._buffersize_sema),
-                    result._set_length,
-                )
-            )
-            return result
+            tasks = self._guarded_task_generation(result._job, func, iterable)
+            items = result
         else:
             task_batches = Pool._get_tasks(func, iterable, chunksize)
-            self._taskqueue.put(
-                (
-                    self._guarded_task_generation(result._job, mapstar,
-                                                  task_batches,
-                                                  result._buffersize_sema),
-                    result._set_length,
-                )
-            )
-            return (item for chunk in result for item in chunk)
+            tasks = self._guarded_task_generation(result._job, mapstar,
+                                                  task_batches)
+            items = (item for chunk in result for item in chunk)
+        if buffersize is None:
+            self._taskqueue.put((tasks, result._set_length))
+        else:
+            result._throttle(tasks, buffersize)
+        return items
 
     @staticmethod
     def _wait_for_updates(sentinels, change_notifier, timeout=None):
@@ -664,12 +633,14 @@ class Pool(object):
         util.debug('closing pool')
         if self._state == RUN:
             self._state = CLOSE
+            # Stop the imap iterators throttled by buffersize from submitting
+            # more tasks.  This has to be done before the task handler is
+            # told to exit, so that it can still finish them.
+            for job in self._cache.copy().values():
+                if isinstance(job, IMapIterator):
+                    job._stop_throttling()
             self._worker_handler._state = CLOSE
             self._change_notifier.put(None)
-            # Wake any task generator throttled on a buffersize semaphore so
-            # it observes the CLOSE state and stops submitting.
-            for sema in list(self._taskqueue_buffersize_semaphores):
-                sema.release()
 
     def terminate(self):
         util.debug('terminating pool')
@@ -699,8 +670,7 @@ class Pool(object):
 
     @classmethod
     def _terminate_pool(cls, taskqueue, inqueue, outqueue, pool, change_notifier,
-                        worker_handler, task_handler, result_handler, cache,
-                        taskqueue_buffersize_semaphores):
+                        worker_handler, task_handler, result_handler, cache):
         # this is guaranteed to only be called once
         util.debug('finalizing pool')
 
@@ -711,10 +681,6 @@ class Pool(object):
         change_notifier.put(None)
 
         task_handler._state = TERMINATE
-        # Release all semaphores to wake up task_handler to stop.
-        for buffersize_sema in tuple(taskqueue_buffersize_semaphores):
-            buffersize_sema.release()
-            taskqueue_buffersize_semaphores.discard(buffersize_sema)
 
         util.debug('helping task handler/workers to finish')
         cls._help_stuff_finish(inqueue, task_handler, len(pool))
@@ -893,7 +859,7 @@ class MapResult(ApplyResult):
 
 class IMapIterator(object):
 
-    def __init__(self, pool, *, buffersize=None):
+    def __init__(self, pool):
         self._pool = pool
         self._cond = threading.Condition(threading.Lock())
         self._job = next(job_counter)
@@ -903,11 +869,14 @@ class IMapIterator(object):
         self._length = None
         self._unsorted = {}
         self._cache[self._job] = self
-        if buffersize is None:
-            self._buffersize_sema = None
-        else:
-            self._buffersize_sema = threading.Semaphore(buffersize)
-            self._pool._taskqueue_buffersize_semaphores.add(self._buffersize_sema)
+        # Only used when the tasks are throttled by buffersize.
+        self._taskqueue = pool._taskqueue
+        self._throttle_lock = threading.Lock()
+        self._tasks = None
+        self._free_slots = None
+        self._submitted = 0
+        self._parked = False
+        self._stopped = False
 
     def __iter__(self):
         return self
@@ -918,31 +887,65 @@ class IMapIterator(object):
                 item = self._items.popleft()
             except IndexError:
                 if self._index == self._length:
-                    self._stop_iterator()
+                    self._pool = None
+                    raise StopIteration from None
                 self._cond.wait(timeout)
                 try:
                     item = self._items.popleft()
                 except IndexError:
                     if self._index == self._length:
-                        self._stop_iterator()
+                        self._pool = None
+                        raise StopIteration from None
                     raise TimeoutError from None
 
-        if self._buffersize_sema is not None:
-            self._buffersize_sema.release()
+        if self._free_slots is not None:
+            # A result left the buffer: there is room for one more task.
+            with self._throttle_lock:
+                self._free_slots += 1
+                self._resume_throttled_tasks()
 
         success, value = item
         if success:
             return value
         raise value
 
-    def _stop_iterator(self):
-        if self._pool is not None:
-            # `self._pool` could be set to `None` in previous `.next()` calls
-            self._pool._taskqueue_buffersize_semaphores.discard(self._buffersize_sema)
-        self._pool = None
-        raise StopIteration from None
-
     __next__ = next                    # XXX
+
+    def _throttle(self, tasks, buffersize):
+        self._tasks = tasks
+        self._free_slots = buffersize
+        self._taskqueue.put((self._throttled_tasks(), None))
+
+    def _throttled_tasks(self):
+        # Runs in the task handler thread.  It must not wait there for the
+        # buffer to have room, since that would hold up every other task of
+        # the pool.  It returns instead, and is put back on the task queue
+        # once there is room again.
+        while True:
+            with self._throttle_lock:
+                if self._stopped:
+                    break
+                if not self._free_slots:
+                    self._parked = True
+                    return
+                self._free_slots -= 1
+            task = next(self._tasks, None)
+            if task is None:
+                break
+            self._submitted += 1
+            yield task
+        self._set_length(self._submitted)
+
+    def _resume_throttled_tasks(self):
+        if self._parked:
+            self._parked = False
+            self._taskqueue.put((self._throttled_tasks(), None))
+
+    def _stop_throttling(self):
+        if self._free_slots is not None:
+            with self._throttle_lock:
+                self._stopped = True
+                self._resume_throttled_tasks()
 
     def _set(self, i, obj):
         with self._cond:
