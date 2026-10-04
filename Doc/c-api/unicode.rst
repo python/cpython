@@ -425,6 +425,10 @@ APIs:
    the UCS1 range, it will be transformed into UCS1
    (:c:macro:`PyUnicode_1BYTE_KIND`).
 
+   All characters must be in range [U+0000; U+10ffff]. If *kind* is
+   :c:macro:`PyUnicode_4BYTE_KIND` and the string contains invalid characters,
+   the behavior is undefined.
+
    .. versionadded:: 3.3
 
 
@@ -1896,9 +1900,12 @@ object.
 
 .. c:function:: int PyUnicodeWriter_WriteUCS4(PyUnicodeWriter *writer, const Py_UCS4 *str, Py_ssize_t size)
 
-   Writer the UCS4 string *str* into *writer*.
+   Write the UCS4 string *str* into *writer*.
 
    *size* is a number of UCS4 characters.
+
+   All characters must be in range [U+0000; U+10ffff]. If the string contains
+   invalid characters, the behavior is undefined.
 
    On success, return ``0``.
    On error, set an exception, leave the writer unchanged, and return ``-1``.
@@ -1945,7 +1952,7 @@ object.
    On success, return ``0``.
    On error, set an exception, leave the writer unchanged, and return ``-1``.
 
-.. c:function:: int PyUnicodeWriter_DecodeUTF8Stateful(PyUnicodeWriter *writer, const char *string, Py_ssize_t length, const char *errors, Py_ssize_t *consumed)
+.. c:function:: int PyUnicodeWriter_DecodeUTF8Stateful(PyUnicodeWriter *writer, const char *str, Py_ssize_t size, const char *errors, Py_ssize_t *consumed)
 
    Decode the string *str* from UTF-8 with *errors* error handler and write the
    output into *writer*.
