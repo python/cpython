@@ -3307,7 +3307,7 @@ To avoid that, if the C stack is nearing its limit, instead of calling
 dealloc on the object, it is added to a queue to be freed later when the
 stack is shallower */
 static Py_NO_INLINE void
-dealloc_general(PyObject *op)
+py_dealloc(PyObject *op)
 {
     PyTypeObject *type = Py_TYPE(op);
     unsigned long gc_flag = type->tp_flags & Py_TPFLAGS_HAVE_GC;
@@ -3372,11 +3372,16 @@ dealloc_general(PyObject *op)
     }
 }
 
+/*
+ * gh-130706: Keep the GC/reftracer path in the non-inlined py_dealloc().
+ * Inlining it makes the compiler save callee-saved registers at entry,
+ * so the non-GC objects path would have unnecessary register spills.
+ */
 void
 _Py_Dealloc(PyObject *op)
 {
 #if !defined(Py_DEBUG) && !defined(Py_TRACE_REFS)
-    // gh-130706: Remove unnecessary stack frame for non-GC objects.
+    // gh-130706: Avoid unnecessary register spills for non-GC objects.
     PyTypeObject *type = Py_TYPE(op);
     if (_PyRuntime.ref_tracer.tracer_func == NULL
         && !(type->tp_flags & Py_TPFLAGS_HAVE_GC))
@@ -3386,7 +3391,7 @@ _Py_Dealloc(PyObject *op)
     }
 #endif
     // GC objects (trashcan), reftracer set, or debug builds.
-    dealloc_general(op);
+    py_dealloc(op);
 }
 
 
