@@ -687,6 +687,78 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(sys_set_asyncgen_hooks__doc__,
+"set_asyncgen_hooks($module, /, firstiter=<unrepresentable>,\n"
+"                   finalizer=<unrepresentable>)\n"
+"--\n"
+"\n"
+"Set a finalizer for async generators objects.");
+
+#define SYS_SET_ASYNCGEN_HOOKS_METHODDEF    \
+    {"set_asyncgen_hooks", _PyCFunction_CAST(sys_set_asyncgen_hooks), METH_FASTCALL|METH_KEYWORDS, sys_set_asyncgen_hooks__doc__},
+
+static PyObject *
+sys_set_asyncgen_hooks_impl(PyObject *module, PyObject *firstiter,
+                            PyObject *finalizer);
+
+static PyObject *
+sys_set_asyncgen_hooks(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(firstiter), &_Py_ID(finalizer), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"firstiter", "finalizer", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "set_asyncgen_hooks",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    PyObject *firstiter = NULL;
+    PyObject *finalizer = NULL;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[0]) {
+        firstiter = args[0];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    finalizer = args[1];
+skip_optional_pos:
+    return_value = sys_set_asyncgen_hooks_impl(module, firstiter, finalizer);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(sys_get_asyncgen_hooks__doc__,
 "get_asyncgen_hooks($module, /)\n"
 "--\n"
@@ -930,6 +1002,71 @@ sys_set_int_max_str_digits(PyObject *module, PyObject *const *args, Py_ssize_t n
         goto exit;
     }
     return_value = sys_set_int_max_str_digits_impl(module, maxdigits);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(sys_getsizeof__doc__,
+"getsizeof($module, /, object, default=<unrepresentable>)\n"
+"--\n"
+"\n"
+"Return the size of object in bytes.");
+
+#define SYS_GETSIZEOF_METHODDEF    \
+    {"getsizeof", _PyCFunction_CAST(sys_getsizeof), METH_FASTCALL|METH_KEYWORDS, sys_getsizeof__doc__},
+
+static PyObject *
+sys_getsizeof_impl(PyObject *module, PyObject *o, PyObject *dflt);
+
+static PyObject *
+sys_getsizeof(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(object), &_Py_ID(default), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"object", "default", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "getsizeof",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    PyObject *o;
+    PyObject *dflt = NULL;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    o = args[0];
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    dflt = args[1];
+skip_optional_pos:
+    return_value = sys_getsizeof_impl(module, o, dflt);
 
 exit:
     return return_value;
@@ -2089,4 +2226,4 @@ exit:
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=8a4482f9c5c493e5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0de5ea347ec24d8a input=a9049054013a1b77]*/

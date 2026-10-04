@@ -892,8 +892,10 @@ calc_number_widths(NumberFieldWidths *spec, Py_ssize_t n_prefix,
     if (spec->n_lpadding || spec->n_spadding || spec->n_rpadding)
         *maxchar = Py_MAX(*maxchar, format->fill_char);
 
-    if (spec->n_decimal)
-        *maxchar = Py_MAX(*maxchar, PyUnicode_MAX_CHAR_VALUE(locale->decimal_point));
+    if (spec->n_decimal) {
+        Py_UCS4 point_maxchar = PyUnicode_MAX_CHAR_VALUE(locale->decimal_point);
+        *maxchar = Py_MAX(*maxchar, point_maxchar);
+    }
 
     return spec->n_lpadding + spec->n_sign + spec->n_prefix +
         spec->n_spadding + spec->n_grouped_digits + spec->n_decimal +
@@ -1347,6 +1349,7 @@ format_long_internal(PyObject *value, const InternalFormatSpec *format,
     if (n_total == -1) {
         goto done;
     }
+    assert(n_total >= 1);
 
     /* Allocate the memory. */
     if (_PyUnicodeWriter_Prepare(writer, n_total, maxchar) == -1)
@@ -1501,6 +1504,7 @@ format_float_internal(PyObject *value,
     if (n_total == -1) {
         goto done;
     }
+    assert(n_total >= 1);
 
     /* Allocate the memory. */
     if (_PyUnicodeWriter_Prepare(writer, n_total, maxchar) == -1)
@@ -1712,6 +1716,7 @@ format_complex_internal(PyObject *value,
     /* Add 1 for the 'j', and optionally 2 for parens. */
     calc_padding(n_re_total + n_im_total + 1 + add_parens * 2,
                  format->width, format->align, &lpad, &rpad, &total);
+    assert(total >= 1);
 
     if (lpad || rpad)
         maxchar = Py_MAX(maxchar, format->fill_char);

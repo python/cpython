@@ -8,6 +8,13 @@
 
 #include <stddef.h>               // offsetof()
 
+/*[clinic input]
+class hamt "PyHamtObject *" "&_PyHamt_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=ab743c139c849b8e]*/
+
+#include "clinic/hamt.c.h"
+
 /*
 This file provides an implementation of an immutable mapping using the
 Hash Array Mapped Trie (or HAMT) datastructure.
@@ -2451,6 +2458,10 @@ hamt_baseiter_tp_clear(PyObject *op)
 {
     PyHamtIterator *it = (PyHamtIterator*)op;
     Py_CLEAR(it->hi_obj);
+    /* i_nodes holds borrowed pointers into the tree that hi_obj was keeping
+       alive, so the cursor must not be used again.  A negative i_level makes
+       hamt_iterator_next() report I_END without touching i_nodes. */
+    it->hi_iter.i_level = -1;
     return 0;
 }
 
@@ -2497,6 +2508,10 @@ static Py_ssize_t
 hamt_baseiter_tp_len(PyObject *op)
 {
     PyHamtIterator *it = (PyHamtIterator*)op;
+    if (it->hi_obj == NULL) {
+        /* tp_clear() ran on this iterator. */
+        return 0;
+    }
     return it->hi_obj->h_count;
 }
 
@@ -2517,6 +2532,7 @@ hamt_baseiter_new(PyTypeObject *type, binaryfunc yield, PyHamtObject *o)
 
     hamt_iterator_init(&it->hi_iter, o->h_root);
 
+    PyObject_GC_Track(it);
     return (PyObject*)it;
 }
 
@@ -2723,32 +2739,38 @@ hamt_tp_iter(PyObject *op)
     return _PyHamt_NewIterKeys(self);
 }
 
+/*[clinic input]
+hamt.set
+
+    key: object
+    val: object
+    /
+
+Return a copy of the mapping with the key set to the value.
+[clinic start generated code]*/
+
 static PyObject *
-hamt_py_set(PyObject *op, PyObject *args)
+hamt_set_impl(PyHamtObject *self, PyObject *key, PyObject *val)
+/*[clinic end generated code: output=2256fa2f6cf80a86 input=d0775605f5ad8fc1]*/
 {
-    PyObject *key;
-    PyObject *val;
-
-    if (!PyArg_UnpackTuple(args, "set", 2, 2, &key, &val)) {
-        return NULL;
-    }
-
-    PyHamtObject *self = _PyHamtObject_CAST(op);
     return (PyObject *)_PyHamt_Assoc(self, key, val);
 }
 
+/*[clinic input]
+hamt.get
+
+    key: object
+    default as def: object = None
+    /
+
+Return the value for the key, or the default if it is not found.
+[clinic start generated code]*/
+
 static PyObject *
-hamt_py_get(PyObject *op, PyObject *args)
+hamt_get_impl(PyHamtObject *self, PyObject *key, PyObject *def)
+/*[clinic end generated code: output=32bfe9cfd2ac5b22 input=2636859ec1bf5912]*/
 {
-    PyObject *key;
-    PyObject *def = NULL;
-
-    if (!PyArg_UnpackTuple(args, "get", 1, 2, &key, &def)) {
-        return NULL;
-    }
-
     PyObject *val = NULL;
-    PyHamtObject *self = _PyHamtObject_CAST(op);
     hamt_find_t res = hamt_find(self, key, &val);
     switch (res) {
         case F_ERROR:
@@ -2756,9 +2778,6 @@ hamt_py_get(PyObject *op, PyObject *args)
         case F_FOUND:
             return Py_NewRef(val);
         case F_NOT_FOUND:
-            if (def == NULL) {
-                Py_RETURN_NONE;
-            }
             return Py_NewRef(def);
         default:
             Py_UNREACHABLE();
@@ -2804,8 +2823,8 @@ hamt_py_dump(PyObject *op, PyObject *Py_UNUSED(args))
 
 
 static PyMethodDef PyHamt_methods[] = {
-    {"set", hamt_py_set, METH_VARARGS, NULL},
-    {"get", hamt_py_get, METH_VARARGS, NULL},
+    HAMT_SET_METHODDEF
+    HAMT_GET_METHODDEF
     {"delete", hamt_py_delete, METH_O, NULL},
     {"items", hamt_py_items, METH_NOARGS, NULL},
     {"keys", hamt_py_keys, METH_NOARGS, NULL},

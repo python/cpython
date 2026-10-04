@@ -1,0 +1,4 @@
+Add the ``--single-process-per-case`` option to libregrtest to run
+every test case in a separate process. Test cases from the same
+test module are run sequentially. This helps to detect order
+dependencies and environment leaks between test cases.

@@ -1,0 +1,2 @@
+:func:`marshal.load` and :func:`marshal.loads` can now get 1-byte string
+singletons. Patch by Victor Stinner.

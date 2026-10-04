@@ -6,11 +6,12 @@ import time
 import traceback
 import unittest
 import unittest.mock
+import weakref
 from concurrent import futures
 from concurrent.futures.process import BrokenProcessPool
 
 from test import support
-from test.support import hashlib_helper, warnings_helper
+from test.support import hashlib_helper, threading_helper, warnings_helper
 from test.test_importlib.metadata.fixtures import parameterize
 
 from .executor import ExecutorTest, mul
@@ -40,6 +41,13 @@ def _put_wait_put(queue, event):
 
     # We should never get here since the event will not get set
     queue.put('finished')
+
+
+def _report_wait_return(queue, event, value):
+    """ Used as part of _run_stranded_worker_exit_test """
+    queue.put(value)
+    event.wait()
+    return value
 
 
 class ProcessPoolExecutorTest(ExecutorTest):
@@ -267,6 +275,126 @@ class ProcessPoolExecutorTest(ExecutorTest):
                                      [i * 2 for i in range(num_tasks)])
                 finally:
                     executor.shutdown(wait=True, cancel_futures=True)
+
+    def _run_stranded_worker_exit_test(self, *, shutdown, drop_reference):
+        # A worker exits upon reaching its max_tasks_per_child limit while
+        # more submitted work is queued.  While the executor object is
+        # alive a replacement worker must be spawned and the remaining
+        # work executed; once it has been garbage collected no replacement
+        # is possible and the remaining futures must fail promptly instead
+        # of never resolving.
+        context = self.get_context()
+        if context.get_start_method(allow_none=False) == "fork":
+            raise unittest.SkipTest("Incompatible with the fork start method.")
+        manager = context.Manager()
+        self.addCleanup(manager.join)
+        self.addCleanup(manager.shutdown)
+        started = manager.Queue()
+        gate = manager.Event()
+
+        executor = self.executor_type(
+                1, mp_context=context, max_tasks_per_child=1)
+        futs = [executor.submit(_report_wait_return, started, gate, i)
+                for i in range(3)]
+        self.addCleanup(threading_helper.join_thread,
+                        executor._executor_manager_thread)
+        # Wait until the worker is inside the first task so that it exits
+        # at its task limit only after the executor has been shut down
+        # and/or garbage collected below.
+        self.assertEqual(started.get(timeout=support.SHORT_TIMEOUT), 0)
+        if shutdown:
+            executor.shutdown(wait=False)
+        if drop_reference:
+            executor_ref = weakref.ref(executor)
+            executor = None
+            for _ in support.sleeping_retry(support.SHORT_TIMEOUT):
+                support.gc_collect()
+                if executor_ref() is None:
+                    break
+        gate.set()
+
+        self.assertEqual(futs[0].result(timeout=support.SHORT_TIMEOUT), 0)
+        if drop_reference:
+            for fut in futs[1:]:
+                with self.assertRaisesRegex(BrokenProcessPool,
+                                            "garbage collected"):
+                    fut.result(timeout=support.SHORT_TIMEOUT)
+        else:
+            results = [f.result(timeout=support.SHORT_TIMEOUT)
+                       for f in futs[1:]]
+            self.assertEqual(results, [1, 2])
+
+    def test_shutdown_no_wait_max_tasks_gh119592(self):
+        # gh-119592: shutdown(wait=False) used to clear executor state that
+        # worker replacement relied on.  A worker exiting at its
+        # max_tasks_per_child limit afterwards could not be replaced, so
+        # the remaining submitted work never ran, and a racing worker exit
+        # could crash the manager thread on the partially cleared state.
+        for drop_reference in (False, True):
+            with self.subTest(drop_reference=drop_reference):
+                self._run_stranded_worker_exit_test(
+                        shutdown=True, drop_reference=drop_reference)
+
+    def test_gc_during_max_tasks_worker_exit_gh152967(self):
+        # gh-152967: If the executor was garbage collected without
+        # shutdown() while its last worker exited at its
+        # max_tasks_per_child limit, no replacement worker could be
+        # spawned and the remaining futures were never resolved.
+        self._run_stranded_worker_exit_test(
+                shutdown=False, drop_reference=True)
+
+    def _run_unreplaceable_worker_exit_test(self, *, error_regex,
+                                            force_shutting_down=False,
+                                            failing_spawn=False):
+        # Drive a max_tasks_per_child worker exit while worker
+        # replacement is impossible; the queued futures must fail
+        # promptly with a BrokenProcessPool explaining why.
+        context = self.get_context()
+        if context.get_start_method(allow_none=False) == "fork":
+            raise unittest.SkipTest("Incompatible with the fork start method.")
+        manager = context.Manager()
+        self.addCleanup(manager.join)
+        self.addCleanup(manager.shutdown)
+        started = manager.Queue()
+        gate = manager.Event()
+
+        executor = self.executor_type(
+                1, mp_context=context, max_tasks_per_child=1)
+        futs = [executor.submit(_report_wait_return, started, gate, i)
+                for i in range(3)]
+        self.addCleanup(threading_helper.join_thread,
+                        executor._executor_manager_thread)
+        self.assertEqual(started.get(timeout=support.SHORT_TIMEOUT), 0)
+        if force_shutting_down:
+            with executor._shutdown_lock:
+                executor._force_shutting_down = True
+        if failing_spawn:
+            spawn_patch = unittest.mock.patch(
+                    "concurrent.futures.process._spawn_worker",
+                    side_effect=OSError("spawn failed"))
+            spawn_patch.start()
+            self.addCleanup(spawn_patch.stop)
+        gate.set()
+
+        self.assertEqual(futs[0].result(timeout=support.SHORT_TIMEOUT), 0)
+        for fut in futs[1:]:
+            with self.assertRaisesRegex(BrokenProcessPool, error_regex):
+                fut.result(timeout=support.SHORT_TIMEOUT)
+
+    def test_force_shutdown_during_max_tasks_worker_exit(self):
+        # A worker exiting at its max_tasks_per_child limit during
+        # terminate_workers()/kill_workers() must not be replaced (the
+        # replacement would escape the kill); queued futures fail instead.
+        self._run_unreplaceable_worker_exit_test(
+                force_shutting_down=True,
+                error_regex="forcefully shut down")
+
+    def test_failed_worker_replacement_breaks_pool(self):
+        # If no replacement worker can be started and no workers remain,
+        # the pool must break rather than strand the queued futures.
+        self._run_unreplaceable_worker_exit_test(
+                failing_spawn=True,
+                error_regex="could not be started")
 
     def test_max_tasks_early_shutdown(self):
         context = self.get_context()

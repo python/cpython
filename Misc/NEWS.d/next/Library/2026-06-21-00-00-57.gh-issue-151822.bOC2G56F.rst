@@ -1,0 +1,1 @@
+Colorize ``exit``, ``quit``, ``copyright``, ``help``, and ``clear`` as commands in the :term:`REPL` when typed alone on a line. Patch by Bartosz Sławecki.

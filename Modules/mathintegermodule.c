@@ -180,10 +180,9 @@ that the bound `(a - 1)**2 < (n >> s) < (a + 1)**2` is maintained from one
 iteration to the next. A sketch of the proof of this is given below.
 
 In addition to the proof sketch, a formal, computer-verified proof
-of correctness (using Lean) of an equivalent recursive algorithm can be found
-here:
+of correctness (using Lean) of the algorithm can be found here:
 
-    https://github.com/mdickinson/snippets/blob/master/proofs/isqrt/src/isqrt.lean
+    https://github.com/mdickinson/snippets/tree/41ce2d256fef06fb32f24fe7014cfa95173ac5e0/proofs/isqrt
 
 
 Here's Python code equivalent to the C implementation below:

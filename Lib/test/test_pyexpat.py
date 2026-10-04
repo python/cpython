@@ -904,7 +904,7 @@ class ElementDeclHandlerTest(unittest.TestCase):
         parser.ElementDeclHandler = lambda _1, _2: None
         self.assertRaises(TypeError, parser.Parse, data, True)
 
-    @support.skip_if_unlimited_stack_size
+    @support.run_with_limited_c_stack(800_000)
     @support.skip_emscripten_stack_overflow()
     @support.skip_wasi_stack_overflow()
     def test_deeply_nested_content_model(self):
@@ -1045,6 +1045,16 @@ class ParentParserLifetimeTest(unittest.TestCase):
         del parser
         del subparser
 
+    # gh-155485: GetReparseDeferralEnabled always returns False with Expat <2.6.0.
+    @unittest.skipIf(not expat.ParserCreate().GetReparseDeferralEnabled(),
+                     "requires Python compiled with Expat >= 2.6.0")
+    def test_subparser_inherits_reparse_deferral(self):
+        for enabled in (True, False):
+            parser = expat.ParserCreate()
+            parser.SetReparseDeferralEnabled(enabled)
+            subparser = parser.ExternalEntityParserCreate(None)
+            self.assertEqual(subparser.GetReparseDeferralEnabled(), enabled)
+
 
 class ExternalEntityParserCreateErrorTest(unittest.TestCase):
     """ExternalEntityParserCreate error paths should not crash or leak
@@ -1067,18 +1077,9 @@ class ExternalEntityParserCreateErrorTest(unittest.TestCase):
         parser.buffer_text = True
         rc_before = sys.getrefcount(parser)
 
-        # We avoid self.assertRaises(MemoryError) here because the
-        # context manager itself needs memory allocations that fail
-        # while the nomemory hook is active.
-        self.testcapi.set_nomemory(1, 10)
-        raised = False
-        try:
-            parser.ExternalEntityParserCreate(None)
-        except MemoryError:
-            raised = True
-        finally:
-            self.testcapi.remove_mem_hooks()
-        self.assertTrue(raised, "MemoryError not raised")
+        with self.assertRaises(MemoryError):
+            with support.inject_memory_error_cm(1, 10):
+                parser.ExternalEntityParserCreate(None)
 
         rc_after = sys.getrefcount(parser)
         self.assertEqual(rc_after, rc_before)
@@ -1390,6 +1391,35 @@ class MemoryProtectionTest(AttackProtectionTestBase, unittest.TestCase):
         # Craft a payload for which the peak amplification factor is < 1e4.
         payload = self.exponential_expansion_payload(ncols=1, nrows=2)
         self.assertIsNotNone(parser.Parse(payload, True))
+
+
+class VersionTest(unittest.TestCase):
+
+    def _test_version_info(self, v):
+        self.assertIsInstance(v[:], tuple)
+        self.assertEqual(len(v), 3)
+        self.assertIsInstance(v[0], int)
+        self.assertIsInstance(v[1], int)
+        self.assertIsInstance(v[2], int)
+        self.assertIsInstance(v.major, int)
+        self.assertIsInstance(v.minor, int)
+        self.assertIsInstance(v.micro, int)
+        self.assertEqual(v[0], v.major)
+        self.assertEqual(v[1], v.minor)
+        self.assertEqual(v[2], v.micro)
+        self.assertGreaterEqual(v.major, 2)
+        self.assertGreaterEqual(v.minor, 0)
+        self.assertGreaterEqual(v.micro, 0)
+
+    def test_version_info(self):
+        if support.verbose:
+            print(f'EXPAT_VERSION = {expat.EXPAT_VERSION}', flush=True)
+            print(f'VERSION_INFO = {expat.VERSION_INFO}', flush=True)
+            print(f'version_info = {expat.version_info}', flush=True)
+        self._test_version_info(expat.VERSION_INFO)
+        self._test_version_info(expat.version_info)
+        self.assertEqual(expat.EXPAT_VERSION, 'expat_%d.%d.%d' % expat.version_info)
+        self.assertEqual(expat.VERSION_INFO[0], expat.version_info[0])
 
 
 if __name__ == "__main__":

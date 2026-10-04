@@ -1,7 +1,4 @@
-"""Constants/functions for interpreting results of os.stat() and os.lstat().
-
-Suggested usage: from stat import *
-"""
+"""Constants/functions for interpreting results of os.stat() and os.lstat()."""
 
 # Indices for stat struct members in the tuple returned by os.stat()
 

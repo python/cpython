@@ -1,0 +1,4 @@
+Clear the internal :mod:`typing` caches from an exit handler. Previously, an
+extension module that leaked a reference to :mod:`typing` would also keep every
+subscripted type alive past interpreter shutdown, including types owned by
+unrelated extension modules.

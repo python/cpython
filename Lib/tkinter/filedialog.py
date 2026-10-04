@@ -575,6 +575,12 @@ def askopenfiles(mode = "r", **options):
     returns a list of open file objects or an empty list if
     cancel selected
     """
+    import warnings
+    warnings._deprecated(
+        "tkinter.filedialog.askopenfiles",
+        message=f"{warnings._DEPRECATED_MSG}; iterate over the names returned "
+                "by askopenfilenames() and open them instead",
+        remove=(3, 19))
 
     files = askopenfilenames(**options)
     return [open(filename, mode) for filename in files]
