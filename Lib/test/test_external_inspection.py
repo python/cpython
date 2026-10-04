@@ -2336,63 +2336,52 @@ while True:
     def test_tlbc_cache_refresh_after_growth(self):
         # Reproducer from gh-157660.
         script = textwrap.dedent("""\
-            import os, sys, threading
+            import os, threading
             from _remote_debugging import RemoteUnwinder
+            from _queue import SimpleQueue
             from test import support
 
             go = threading.Lock()
             stop = threading.Lock()
             go.acquire()
             stop.acquire()
+            ready = SimpleQueue()
 
             def leaf():
+                ready.put(None)
                 stop.acquire()
 
-            def wait_for_leaf_frames(u, expected_count):
-                for _ in support.sleeping_retry(
-                    support.SHORT_TIMEOUT,
-                    f"Expected {expected_count} leaf frames",
-                ):
-                    # Wait until the workers have entered their native lock
-                    # calls, so sampling cannot race with Python frame changes.
-                    frames = sys._current_frames()
-                    frames.pop(threading.get_ident())
-                    if len(frames) != 18:
-                        continue
-                    leaves = [f for f in frames.values()
-                              if f.f_code is leaf.__code__]
-                    if (len(leaves) != expected_count or
-                        any(f.f_lineno != leaf.__code__.co_firstlineno + 1
-                            for f in leaves)):
-                        continue
-                    if any(f.f_code not in (leaf.__code__, start_leaf.__code__,
-                                            threading.Thread.run.__code__)
-                           for f in frames.values()):
-                        continue
-                    try:
-                        traces = u.get_stack_trace()
-                    except RuntimeError as exc:
-                        if str(exc) != "Failed to parse initial frame in chain":
-                            raise
-                        continue
-                    count = sum(
-                        f.funcname == "leaf"
-                        for i in traces
-                        for t in i.threads for f in t.frame_info
-                    )
-                    if count == expected_count:
-                        return
+            def start_leaf():
+                ready.put(None)
+                go.acquire()
+                leaf()
 
+            def park():
+                ready.put(None)
+                stop.acquire()
+
+            def leaf_count(u):
+                return sum(
+                    f.funcname == "leaf"
+                    for i in u.get_stack_trace()
+                    for t in i.threads for f in t.frame_info
+                )
+
+            # SimpleQueue.put() and Lock.acquire() do not push Python frames.
+            # Once notified, the worker's stack stays stable until go is released.
             threading.Thread(target=leaf, daemon=True).start()
+            ready.get(timeout=support.SHORT_TIMEOUT)
             for _ in range(16):
-                threading.Thread(target=stop.acquire, daemon=True).start()
-            start_leaf = lambda: (go.acquire(), leaf())
+                threading.Thread(target=park, daemon=True).start()
+                ready.get(timeout=support.SHORT_TIMEOUT)
             threading.Thread(target=start_leaf, daemon=True).start()
+            ready.get(timeout=support.SHORT_TIMEOUT)
 
             u = RemoteUnwinder(os.getpid(), all_threads=True, cache_frames=False)
-            wait_for_leaf_frames(u, 1)
+            assert leaf_count(u) == 1
             go.release()
-            wait_for_leaf_frames(u, 2)
+            ready.get(timeout=support.SHORT_TIMEOUT)
+            assert leaf_count(u) == 2
             """)
         result = subprocess.run(
             [sys.executable, "-X", "gil=0", "-X", "tlbc=1", "-c", script],
@@ -2414,66 +2403,51 @@ while True:
     def test_tlbc_cache_refresh_after_slot_fill(self):
         # Reproducer from gh-157660.
         script = textwrap.dedent("""\
-            import os, sys, threading
+            import os, threading
             from _remote_debugging import RemoteUnwinder
+            from _queue import SimpleQueue
 
             go = threading.Lock()
             stop = threading.Lock()
             go.acquire()
             stop.acquire()
+            ready = SimpleQueue()
 
             def leaf():
+                ready.put(None)
                 stop.acquire()
+
+            def start_leaf():
+                ready.put(None)
+                go.acquire()
+                leaf()
 
             from test import support
 
-            def lines(u, expected_count):
-                for _ in support.sleeping_retry(
-                    support.SHORT_TIMEOUT,
-                    f"Expected {expected_count} leaf frames",
-                ):
-                    # Wait until the workers have entered their native lock
-                    # calls, so sampling cannot race with Python frame changes.
-                    frames = sys._current_frames()
-                    frames.pop(threading.get_ident())
-                    if len(frames) != 2:
-                        continue
-                    leaves = [f for f in frames.values()
-                              if f.f_code is leaf.__code__]
-                    if (len(leaves) != expected_count or
-                        any(f.f_lineno != leaf.__code__.co_firstlineno + 1
-                            for f in leaves)):
-                        continue
-                    if any(f.f_code not in (leaf.__code__, start_leaf.__code__,
-                                            threading.Thread.run.__code__)
-                           for f in frames.values()):
-                        continue
-                    try:
-                        traces = u.get_stack_trace()
-                    except RuntimeError as exc:
-                        if str(exc) != "Failed to parse initial frame in chain":
-                            raise
-                        continue
-                    result = sorted(
-                        f.location.lineno
-                        for i in traces
-                        for t in i.threads for f in t.frame_info
-                        if f.funcname == "leaf"
-                    )
-                    # A new frame can still point at the function definition.
-                    if (len(result) == expected_count and
-                        leaf.__code__.co_firstlineno not in result):
-                        return result
+            def lines(u):
+                return sorted(
+                    f.location.lineno
+                    for i in u.get_stack_trace()
+                    for t in i.threads for f in t.frame_info
+                    if f.funcname == "leaf"
+                )
 
+            # SimpleQueue.put() and Lock.acquire() do not push Python frames.
+            # Once notified, the worker's stack stays stable until go is released.
             threading.Thread(target=leaf, daemon=True).start()
-            start_leaf = lambda: (go.acquire(), leaf())
+            ready.get(timeout=support.SHORT_TIMEOUT)
             threading.Thread(target=start_leaf, daemon=True).start()
+            ready.get(timeout=support.SHORT_TIMEOUT)
             u = RemoteUnwinder(os.getpid(), all_threads=True, cache_frames=False)
-            before = lines(u, 1)
-            assert before == [10], before
+            before = lines(u)
+            # The notification can be observed before put() returns, so either
+            # line in leaf() is a valid sample.
+            assert before in ([12], [13]), before
             go.release()
-            cached = lines(u, 2)
-            assert cached == [10, 10], cached
+            ready.get(timeout=support.SHORT_TIMEOUT)
+            cached = lines(u)
+            assert len(cached) == 2, cached
+            assert all(line in (12, 13) for line in cached), cached
             """)
         result = subprocess.run(
             [sys.executable, "-X", "gil=0", "-X", "tlbc=1", "-c", script],
