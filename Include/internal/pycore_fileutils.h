@@ -191,6 +191,11 @@ extern int _Py_open_osfhandle(void *handle, int flags);
      ? _PyStatus_ERR("cannot decode " NAME) \
      : _PyStatus_NO_MEMORY()
 
+#define _Py_CODEC_MEMORY_ERROR -1
+#define _Py_CODEC_DECODE_ERROR -2
+#define _Py_CODEC_ENCODE_ERROR -2
+#define _Py_CODEC_UNSUPPORTED_ERROR_HANDLER -3
+
 extern int _Py_DecodeUTF8Ex(
     const char *arg,
     Py_ssize_t arglen,

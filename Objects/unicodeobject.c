@@ -5628,10 +5628,11 @@ _Py_DecodeUTF8_surrogateescape(const char *arg, Py_ssize_t arglen,
    On success, return 0 and write the newly allocated character string (use
    PyMem_Free() to free the memory) into *str.
 
-   On encoding failure, return -2 and write the position of the invalid
-   surrogate character into *error_pos (if error_pos is set).
+   On encoding failure, return _Py_CODEC_ENCODE_ERROR (-2) and write the
+   position of the invalid surrogate character into *error_pos (if error_pos is
+   set).
 
-   On memory allocation failure, return -1. */
+   On memory allocation failure, return _Py_CODEC_MEMORY_ERROR (-1). */
 int
 _Py_EncodeUTF8Ex(const wchar_t *text, char **str, size_t *output_length,
                  size_t *error_pos, int raw_malloc, _Py_error_handler errors)
@@ -5639,9 +5640,9 @@ _Py_EncodeUTF8Ex(const wchar_t *text, char **str, size_t *output_length,
     assert(str != NULL);
     assert(output_length != NULL);
 
-    const Py_ssize_t max_char_size = 4;
-    Py_ssize_t len = wcslen(text);
-    assert(len >= 0);
+    // U+10ffff encoded to UTF-8 takes 4 bytes
+    const size_t max_char_size = 4;
+    size_t len = wcslen(text);
 
     int surrogateescape = 0;
     int surrogatepass = 0;
@@ -5656,11 +5657,11 @@ _Py_EncodeUTF8Ex(const wchar_t *text, char **str, size_t *output_length,
         surrogatepass = 1;
         break;
     default:
-        return -3;
+        return _Py_CODEC_UNSUPPORTED_ERROR_HANDLER;
     }
 
-    if (len > PY_SSIZE_T_MAX / max_char_size - 1) {
-        return -1;
+    if (len > (size_t)PY_SSIZE_T_MAX / max_char_size - 1) {
+        return _Py_CODEC_MEMORY_ERROR;
     }
     char *bytes;
     if (raw_malloc) {
@@ -5670,12 +5671,11 @@ _Py_EncodeUTF8Ex(const wchar_t *text, char **str, size_t *output_length,
         bytes = PyMem_Malloc((len + 1) * max_char_size);
     }
     if (bytes == NULL) {
-        return -1;
+        return _Py_CODEC_MEMORY_ERROR;
     }
 
     char *p = bytes;
-    Py_ssize_t i;
-    for (i = 0; i < len; ) {
+    for (size_t i = 0; i < len; ) {
         Py_ssize_t ch_pos = i;
         Py_UCS4 ch = text[i];
         i++;
@@ -5709,7 +5709,7 @@ _Py_EncodeUTF8Ex(const wchar_t *text, char **str, size_t *output_length,
                 else {
                     PyMem_Free(bytes);
                 }
-                return -2;
+                return _Py_CODEC_ENCODE_ERROR;
             }
             *p++ = (char)(ch & 0xff);
         }
@@ -5727,27 +5727,29 @@ _Py_EncodeUTF8Ex(const wchar_t *text, char **str, size_t *output_length,
             *p++ = (char)(0x80 | (ch & 0x3f));
         }
     }
-    *p++ = '\0';
 
+    *p++ = '\0';  // trailing NUL byte
     size_t final_size = (p - bytes);
-    char *bytes2;
+    assert(final_size >= 1);
+    *output_length = final_size - 1;  // -1 for the trailing NUL byte
+
+    char *result;
     if (raw_malloc) {
-        bytes2 = PyMem_RawRealloc(bytes, final_size);
+        result = PyMem_RawRealloc(bytes, final_size);
     }
     else {
-        bytes2 = PyMem_Realloc(bytes, final_size);
+        result = PyMem_Realloc(bytes, final_size);
     }
-    if (bytes2 == NULL) {
+    if (result == NULL) {
         if (raw_malloc) {
             PyMem_RawFree(bytes);
         }
         else {
             PyMem_Free(bytes);
         }
-        return -1;
+        return _Py_CODEC_MEMORY_ERROR;
     }
-    *str = bytes2;
-    *output_length = final_size - 1;  // -1 for the trailing NUL byte
+    *str = result;
     return 0;
 }
 
