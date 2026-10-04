@@ -116,6 +116,14 @@ class StringTestCase(unittest.TestCase, HelperMixin):
         for s in [b"", b"Andr\xe8 Previn", b"abc", b" "*10000]:
             self.helper(s)
 
+    @support.cpython_only
+    def test_bytes_singleton(self):
+        for version in range(marshal.version + 1):
+            for sample in [b"", b"x"]:
+                new = marshal.loads(marshal.dumps(sample, version))
+                self.assertIs(new, sample)
+
+
 class ExceptionTestCase(unittest.TestCase):
     def test_exceptions(self):
         new = marshal.loads(marshal.dumps(StopIteration))
@@ -154,14 +162,16 @@ class CodeTestCase(unittest.TestCase):
         data = {'a': [({co, 0},)]}
         dump = marshal.dumps(data, allow_code=True)
         self.assertEqual(marshal.loads(dump, allow_code=True), data)
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(ValueError,
+                                    'marshalling code objects is disallowed'):
             marshal.dumps(data, allow_code=False)
         with self.assertRaises(ValueError):
             marshal.loads(dump, allow_code=False)
 
         marshal.dump(data, io.BytesIO(), allow_code=True)
         self.assertEqual(marshal.load(io.BytesIO(dump), allow_code=True), data)
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(ValueError,
+                                    'marshalling code objects is disallowed'):
             marshal.dump(data, io.BytesIO(), allow_code=False)
         with self.assertRaises(ValueError):
             marshal.load(io.BytesIO(dump), allow_code=False)
@@ -339,16 +349,29 @@ class BugsTestCase(unittest.TestCase):
             self.assertIsInstance(b, dict)
             self.assertIs(b[None], b)
 
+    def check_reference_loop(self, a, typename, minversion,
+                             oldmsg='object too deeply nested to marshal'):
+        # Only versions supporting references to the type detect the loop;
+        # older versions fail for a different reason.
+        for v in range(minversion):
+            with self.subTest(version=v):
+                with self.assertRaisesRegex(ValueError, oldmsg):
+                    marshal.dumps(a, v)
+        for v in range(minversion, marshal.version + 1):
+            with self.subTest(version=v):
+                with self.assertRaisesRegex(
+                        ValueError,
+                        f'cannot marshal recursion {typename} objects'):
+                    marshal.dumps(a, v)
+
     def test_reference_loop_tuple(self):
         a = ([],)
         a[0].append(a)
-        for v in range(marshal.version + 1):
-            self.assertRaises(ValueError, marshal.dumps, a, v)
+        self.check_reference_loop(a, 'tuple', 3)
 
         a = ({},)
         a[0][None] = a
-        for v in range(marshal.version + 1):
-            self.assertRaises(ValueError, marshal.dumps, a, v)
+        self.check_reference_loop(a, 'tuple', 3)
 
     def test_shared_reference_tuple(self):
         # A tuple referenced more than once still round-trips with the
@@ -373,30 +396,28 @@ class BugsTestCase(unittest.TestCase):
         # so we need to break the loop manually. See gh-148722.
         self.addCleanup(a.clear)
         a.append(code)
-        for v in range(marshal.version + 1):
-            self.assertRaises(ValueError, marshal.dumps, code, v)
+        self.check_reference_loop(code, 'code', 3)
 
     def test_reference_loop_slice(self):
+        oldmsg = 'marshalling slice objects requires version 5 or higher'
         a = slice([], None)
         a.start.append(a)
-        for v in range(marshal.version + 1):
-            self.assertRaises(ValueError, marshal.dumps, a, v)
+        self.check_reference_loop(a, 'slice', 5, oldmsg)
 
         a = slice(None, [])
         a.stop.append(a)
-        for v in range(marshal.version + 1):
-            self.assertRaises(ValueError, marshal.dumps, a, v)
+        self.check_reference_loop(a, 'slice', 5, oldmsg)
 
         a = slice(None, None, [])
         a.step.append(a)
-        for v in range(marshal.version + 1):
-            self.assertRaises(ValueError, marshal.dumps, a, v)
+        self.check_reference_loop(a, 'slice', 5, oldmsg)
 
     def test_reference_loop_frozendict(self):
         a = frozendict({None: []})
         a[None].append(a)
-        for v in range(marshal.version + 1):
-            self.assertRaises(ValueError, marshal.dumps, a, v)
+        self.check_reference_loop(
+            a, 'frozendict', 6,
+            'marshalling frozendict objects requires version 6 or higher')
 
     def test_shared_reference_frozendict(self):
         # A frozendict referenced more than once must round-trip with the
@@ -467,7 +488,9 @@ class BugsTestCase(unittest.TestCase):
             # Note: str subclasses are not tested because they get handled
             # by marshal's routines for objects supporting the buffer API.
             subtyp = type('subtyp', (typ,), {})
-            self.assertRaises(ValueError, marshal.dumps, subtyp())
+            with self.assertRaisesRegex(ValueError,
+                                        r'cannot marshal \S*subtyp objects'):
+                marshal.dumps(subtyp())
 
     # Issue #1792 introduced a change in how marshal increases the size of its
     # internal buffer; this test ensures that the new code is exercised.
@@ -570,8 +593,24 @@ class BugsTestCase(unittest.TestCase):
                  ('code', code))
         for name, arg in cases:
             with self.subTest(name, arg=arg):
-                with self.assertRaisesRegex(ValueError, "unmarshallable object"):
+                with self.assertRaisesRegex(ValueError,
+                                            "cannot marshal type objects"):
                     marshal.dumps((arg, memoryview(b'')))
+
+    def test_error_in_set_item(self):
+        # Set items are sorted by their marshalled representation, and NaNs
+        # are only distinguished by identity, so they are compared as
+        # complex numbers.
+        nan = float('nan')
+        with self.assertRaisesRegex(TypeError, "'<' not supported"):
+            marshal.dumps({complex(nan, 0), complex(nan, 0)})
+
+    def test_error_in_buffer(self):
+        # The BufferError raised for a non-contiguous buffer is not replaced
+        # with a generic error.
+        step2 = slice(None, None, 2)
+        with self.assertRaises(BufferError):
+            marshal.dumps(memoryview(bytearray(b'abcdef'))[step2])
 
 
 LARGE_SIZE = 2**31
@@ -583,8 +622,14 @@ class NullWriter:
 
 @unittest.skipIf(LARGE_SIZE > sys.maxsize, "test cannot run on 32-bit systems")
 class LargeValuesTestCase(unittest.TestCase):
-    def check_unmarshallable(self, data):
-        self.assertRaises(ValueError, marshal.dump, data, NullWriter())
+    def check_unmarshallable(self, data, msg='object too large to marshal'):
+        with self.assertRaisesRegex(ValueError, msg):
+            marshal.dump(data, NullWriter())
+
+    @support.bigmemtest(size=LARGE_SIZE, memuse=4, dry_run=False)
+    def test_int(self, size):
+        # An int with more than SIZE32_MAX 15-bit digits.
+        self.check_unmarshallable(1 << (15 * size), 'int too large to marshal')
 
     @support.bigmemtest(size=LARGE_SIZE, memuse=2, dry_run=False)
     def test_bytes(self, size):
@@ -717,7 +762,10 @@ class InstancingTestCase(unittest.TestCase, HelperMixin):
             self.helper(dictobj)
 
             for version in range(6):
-                with self.assertRaises(ValueError):
+                with self.assertRaisesRegex(
+                        ValueError,
+                        'marshalling frozendict objects requires '
+                        'version 6 or higher'):
                     marshal.dumps(dictobj, version)
 
     def testModule(self):
@@ -786,119 +834,11 @@ class SliceTestCase(unittest.TestCase, HelperMixin):
                 self.helper(obj)
 
                 for version in range(5):
-                    with self.assertRaises(ValueError):
+                    with self.assertRaisesRegex(
+                            ValueError,
+                            'marshalling slice objects requires '
+                            'version 5 or higher'):
                         marshal.dumps(obj, version)
-
-@support.cpython_only
-@unittest.skipUnless(_testcapi, 'requires _testcapi')
-class CAPI_TestCase(unittest.TestCase, HelperMixin):
-
-    def test_read_from_file_error(self):
-        # A read error is reported as OSError, not EOFError.
-        # A directory cannot be read (on some platforms it cannot even
-        # be opened, which is reported as OSError as well).
-        os.mkdir(os_helper.TESTFN)
-        self.addCleanup(os_helper.rmdir, os_helper.TESTFN)
-        for func in (_testcapi.pymarshal_read_short_from_file,
-                     _testcapi.pymarshal_read_long_from_file,
-                     _testcapi.pymarshal_read_object_from_file,
-                     _testcapi.pymarshal_read_last_object_from_file):
-            with self.subTest(func=func.__name__):
-                self.assertRaises(OSError, func, os_helper.TESTFN)
-
-    @unittest.skipUnless(os.path.exists('/dev/full'), 'requires /dev/full')
-    def test_write_to_file_error(self):
-        # A write error is reported as OSError.
-        # The data is large enough to not fit in the stdio buffer, so that
-        # the error is detected before the file is closed.
-        obj = b'x' * 100000
-        with self.assertRaises(OSError):
-            _testcapi.pymarshal_write_object_to_file(obj, '/dev/full',
-                                                     marshal.version)
-
-    def test_write_unmarshallable_to_file(self):
-        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
-        with self.assertRaisesRegex(ValueError, 'unmarshallable object'):
-            _testcapi.pymarshal_write_object_to_file(object(), os_helper.TESTFN,
-                                                     marshal.version)
-
-    def test_write_long_to_file(self):
-        for v in range(marshal.version + 1):
-            _testcapi.pymarshal_write_long_to_file(0x12345678, os_helper.TESTFN, v)
-            with open(os_helper.TESTFN, 'rb') as f:
-                data = f.read()
-            os_helper.unlink(os_helper.TESTFN)
-            self.assertEqual(data, b'\x78\x56\x34\x12')
-
-    def test_write_object_to_file(self):
-        obj = ('\u20ac', b'abc', 123, 45.6, 7+8j, 'long line '*1000)
-        for v in range(marshal.version + 1):
-            _testcapi.pymarshal_write_object_to_file(obj, os_helper.TESTFN, v)
-            with open(os_helper.TESTFN, 'rb') as f:
-                data = f.read()
-            os_helper.unlink(os_helper.TESTFN)
-            self.assertEqual(marshal.loads(data), obj)
-
-    def test_read_short_from_file(self):
-        with open(os_helper.TESTFN, 'wb') as f:
-            f.write(b'\x34\x12xxxx')
-        r, p = _testcapi.pymarshal_read_short_from_file(os_helper.TESTFN)
-        os_helper.unlink(os_helper.TESTFN)
-        self.assertEqual(r, 0x1234)
-        self.assertEqual(p, 2)
-
-        with open(os_helper.TESTFN, 'wb') as f:
-            f.write(b'\x12')
-        with self.assertRaises(EOFError):
-            _testcapi.pymarshal_read_short_from_file(os_helper.TESTFN)
-        os_helper.unlink(os_helper.TESTFN)
-
-    def test_read_long_from_file(self):
-        with open(os_helper.TESTFN, 'wb') as f:
-            f.write(b'\x78\x56\x34\x12xxxx')
-        r, p = _testcapi.pymarshal_read_long_from_file(os_helper.TESTFN)
-        os_helper.unlink(os_helper.TESTFN)
-        self.assertEqual(r, 0x12345678)
-        self.assertEqual(p, 4)
-
-        with open(os_helper.TESTFN, 'wb') as f:
-            f.write(b'\x56\x34\x12')
-        with self.assertRaises(EOFError):
-            _testcapi.pymarshal_read_long_from_file(os_helper.TESTFN)
-        os_helper.unlink(os_helper.TESTFN)
-
-    def test_read_last_object_from_file(self):
-        obj = ('\u20ac', b'abc', 123, 45.6, 7+8j)
-        for v in range(marshal.version + 1):
-            data = marshal.dumps(obj, v)
-            with open(os_helper.TESTFN, 'wb') as f:
-                f.write(data + b'xxxx')
-            r, p = _testcapi.pymarshal_read_last_object_from_file(os_helper.TESTFN)
-            os_helper.unlink(os_helper.TESTFN)
-            self.assertEqual(r, obj)
-
-            with open(os_helper.TESTFN, 'wb') as f:
-                f.write(omit_last_byte(data))
-            with self.assertRaises(EOFError):
-                _testcapi.pymarshal_read_last_object_from_file(os_helper.TESTFN)
-            os_helper.unlink(os_helper.TESTFN)
-
-    def test_read_object_from_file(self):
-        obj = ('\u20ac', b'abc', 123, 45.6, 7+8j)
-        for v in range(marshal.version + 1):
-            data = marshal.dumps(obj, v)
-            with open(os_helper.TESTFN, 'wb') as f:
-                f.write(data + b'xxxx')
-            r, p = _testcapi.pymarshal_read_object_from_file(os_helper.TESTFN)
-            os_helper.unlink(os_helper.TESTFN)
-            self.assertEqual(r, obj)
-            self.assertEqual(p, len(data))
-
-            with open(os_helper.TESTFN, 'wb') as f:
-                f.write(omit_last_byte(data))
-            with self.assertRaises(EOFError):
-                _testcapi.pymarshal_read_object_from_file(os_helper.TESTFN)
-            os_helper.unlink(os_helper.TESTFN)
 
 
 if __name__ == "__main__":

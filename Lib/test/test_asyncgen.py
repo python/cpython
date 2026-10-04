@@ -1,7 +1,9 @@
 import inspect
+import traceback
 import types
 import unittest
 import contextlib
+import warnings
 
 from test.support.import_helper import import_module
 from test.support import gc_collect, requires_working_socket
@@ -709,7 +711,16 @@ class AsyncGenAsyncioTest(unittest.TestCase):
         async def test_throw():
             p = ait_class()
             obj = anext(p, "completed")
-            self.assertRaises(SyntaxError, obj.throw, SyntaxError)
+            with warnings.catch_warnings():
+                # Throwing into the unstarted anext() coroutine leaves the
+                # inner __anext__() awaitable never awaited.
+                warnings.simplefilter("ignore", RuntimeWarning)
+                self.assertRaises(SyntaxError, obj.throw, SyntaxError)
+            if isinstance(p, types.AsyncGeneratorType):
+                # The never-run asend() already registered the async
+                # generator with the loop's finalizer; close it explicitly
+                # so no aclose() task is left pending at loop close.
+                await p.aclose()
             return "completed"
 
         result = self.loop.run_until_complete(test_throw())
@@ -1036,6 +1047,40 @@ class AsyncGenAsyncioTest(unittest.TestCase):
         result = self.loop.run_until_complete(do_test())
         self.assertEqual(result, "completed")
 
+    def test_anext_traceback_filename(self):
+        # anext() is implemented in Python in Lib/_pybuiltins.py, which is
+        # frozen under the builtins ID, so its frames name builtins rather
+        # than the module they are frozen from.
+        def filenames(exc):
+            return [frame.filename
+                    for frame in traceback.extract_tb(exc.__traceback__)]
+
+        class AIter:
+            def __aiter__(self):
+                return self
+            async def __anext__(self):
+                raise ZeroDivisionError
+
+        # assertRaises() drops the traceback, so catch the exceptions here.
+        async def do_test():
+            try:
+                anext(42, "default")
+            except TypeError as exc:
+                self.assertIn("<frozen builtins>", filenames(exc))
+            else:
+                self.fail("TypeError was not raised")
+
+            try:
+                await anext(AIter(), "default")
+            except ZeroDivisionError as exc:
+                self.assertIn("<frozen builtins>", filenames(exc))
+            else:
+                self.fail("ZeroDivisionError was not raised")
+            return "completed"
+
+        result = self.loop.run_until_complete(do_test())
+        self.assertEqual(result, "completed")
+
     def test_anext_iter(self):
         @types.coroutine
         def _async_yield(v):
@@ -1132,9 +1177,13 @@ class AsyncGenAsyncioTest(unittest.TestCase):
                 yield 'aaa'
 
             agen = agenfn()
-            with contextlib.closing(anext(agen, "default").__await__()) as g:
-                with self.assertRaises(MyError):
-                    g.throw(MyError())
+            with warnings.catch_warnings():
+                # Throwing into the unstarted anext() coroutine leaves the
+                # inner asend() awaitable never awaited.
+                warnings.simplefilter("ignore", RuntimeWarning)
+                with contextlib.closing(anext(agen, "default").__await__()) as g:
+                    with self.assertRaises(MyError):
+                        g.throw(MyError())
 
         def run_test(test):
             with self.subTest('pure-Python anext()'):
