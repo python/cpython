@@ -62,59 +62,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "stringlib/undef.h"
 
 
-/* Copy an ASCII or latin1 char* string into a Python Unicode string.
-
-   WARNING: The function doesn't copy the terminating null character and
-   doesn't check the maximum character (may write a latin1 character in an
-   ASCII string). */
-static void
-unicode_write_cstr(PyObject *unicode, Py_ssize_t index,
-                   const char *str, Py_ssize_t len)
-{
-    int kind = PyUnicode_KIND(unicode);
-    const void *data = PyUnicode_DATA(unicode);
-    const char *end = str + len;
-
-    assert(index + len <= PyUnicode_GET_LENGTH(unicode));
-    switch (kind) {
-    case PyUnicode_1BYTE_KIND: {
-#ifdef Py_DEBUG
-        if (PyUnicode_IS_ASCII(unicode)) {
-            Py_UCS4 maxchar = ucs1lib_find_max_char(
-                (const Py_UCS1*)str,
-                (const Py_UCS1*)str + len);
-            assert(maxchar < 128);
-        }
-#endif
-        memcpy((char *) data + index, str, len);
-        break;
-    }
-    case PyUnicode_2BYTE_KIND: {
-        Py_UCS2 *start = (Py_UCS2 *)data + index;
-        Py_UCS2 *ucs2 = start;
-
-        for (; str < end; ++ucs2, ++str)
-            *ucs2 = (Py_UCS2)*str;
-
-        assert((ucs2 - start) <= PyUnicode_GET_LENGTH(unicode));
-        break;
-    }
-    case PyUnicode_4BYTE_KIND: {
-        Py_UCS4 *start = (Py_UCS4 *)data + index;
-        Py_UCS4 *ucs4 = start;
-
-        for (; str < end; ++ucs4, ++str)
-            *ucs4 = (Py_UCS4)*str;
-
-        assert((ucs4 - start) <= PyUnicode_GET_LENGTH(unicode));
-        break;
-    }
-    default:
-        Py_UNREACHABLE();
-    }
-}
-
-
 void
 _PyUnicodeWriter_Init(_PyUnicodeWriter *writer)
 {
@@ -160,7 +107,8 @@ PyUnicodeWriter_Create(Py_ssize_t length)
 }
 
 
-void PyUnicodeWriter_Discard(PyUnicodeWriter *writer)
+void
+PyUnicodeWriter_Discard(PyUnicodeWriter *writer)
 {
     if (writer == NULL) {
         return;
@@ -177,8 +125,7 @@ _PyUnicodeWriter_InitWithBuffer(_PyUnicodeWriter *writer, PyObject *buffer)
     assert(PyUnstable_Object_IsUniquelyReferenced(buffer));
 
     memset(writer, 0, sizeof(*writer));
-    writer->buffer = buffer;
-    _PyUnicodeWriter_Update(writer);
+    _PyUnicodeWriter_SetBuffer(writer, buffer);
     writer->min_length = writer->size;
     assert(_PyUnicodeWriter_CanWrite(writer));
 }
@@ -191,9 +138,10 @@ _PyUnicodeWriter_PrepareInternal(_PyUnicodeWriter *writer,
     assert(length >= 0);
     assert(maxchar <= _Py_MAX_UNICODE);
 
-    /* ensure that the _PyUnicodeWriter_Prepare macro was used */
-    assert((maxchar > writer->maxchar && length >= 0)
-           || length > 0);
+    // Check that _PyUnicodeWriter_Prepare() or _PyUnicodeWriter_PrepareKind()
+    // was used
+    assert(maxchar > writer->maxchar
+           || (length > (writer->size - writer->pos) && length >= 1));
 
     if (length > PY_SSIZE_T_MAX - writer->pos) {
         PyErr_NoMemory();
@@ -203,16 +151,19 @@ _PyUnicodeWriter_PrepareInternal(_PyUnicodeWriter *writer,
 
     maxchar = Py_MAX(maxchar, writer->min_char);
 
-    PyObject *newbuffer;
+    PyObject *new_buffer;
     if (writer->buffer == NULL) {
         assert(!writer->readonly);
-        // Do not overallocate at the first allocation, but use min_length
-        if (alloc < writer->min_length)
-            alloc = writer->min_length;
 
-        writer->buffer = PyUnicode_New(alloc, maxchar);
-        if (writer->buffer == NULL)
+        // Do not overallocate at the first allocation, but use min_length
+        if (alloc < writer->min_length) {
+            alloc = writer->min_length;
+        }
+
+        new_buffer = PyUnicode_New(alloc, maxchar);
+        if (new_buffer == NULL) {
             return -1;
+        }
     }
     else if (alloc > writer->size) {
         // Do not overallocate at the first allocation, but use min_length
@@ -222,38 +173,42 @@ _PyUnicodeWriter_PrepareInternal(_PyUnicodeWriter *writer,
             /* overallocate to limit the number of realloc() */
             alloc += alloc / OVERALLOCATE_FACTOR;
         }
-        if (alloc < writer->min_length)
+        if (alloc < writer->min_length) {
             alloc = writer->min_length;
+        }
 
         if (maxchar > writer->maxchar || writer->readonly) {
             /* resize + widen */
             maxchar = Py_MAX(maxchar, writer->maxchar);
-            newbuffer = PyUnicode_New(alloc, maxchar);
-            if (newbuffer == NULL)
+            new_buffer = PyUnicode_New(alloc, maxchar);
+            if (new_buffer == NULL) {
                 return -1;
-            _PyUnicode_FastCopyCharacters(newbuffer, 0,
+            }
+            _PyUnicode_FastCopyCharacters(new_buffer, 0,
                                           writer->buffer, 0, writer->pos);
-            writer->readonly = 0;
-            Py_DECREF(writer->buffer);
-            writer->buffer = newbuffer;
         }
         else {
-            newbuffer = _PyUnicode_ResizeCompact(writer->buffer, alloc);
-            if (newbuffer == NULL)
+            new_buffer = _PyUnicode_ResizeCompact(writer->buffer, alloc);
+            if (new_buffer == NULL) {
                 return -1;
-            writer->buffer = newbuffer;
+            }
+            // Do not DECREF the old buffer
+            writer->buffer = NULL;
         }
     }
-    else if (maxchar > writer->maxchar) {
+    else {
+        assert(maxchar > writer->maxchar);
         assert(!writer->readonly);
-        newbuffer = PyUnicode_New(writer->size, maxchar);
-        if (newbuffer == NULL)
+
+        new_buffer = PyUnicode_New(writer->size, maxchar);
+        if (new_buffer == NULL) {
             return -1;
-        _PyUnicode_FastCopyCharacters(newbuffer, 0,
+        }
+        _PyUnicode_FastCopyCharacters(new_buffer, 0,
                                       writer->buffer, 0, writer->pos);
-        Py_SETREF(writer->buffer, newbuffer);
     }
-    _PyUnicodeWriter_Update(writer);
+
+    _PyUnicodeWriter_SetBuffer(writer, new_buffer);
     return 0;
 
 #undef OVERALLOCATE_FACTOR
@@ -313,13 +268,9 @@ _PyUnicodeWriter_WriteStr(_PyUnicodeWriter *writer, PyObject *str)
     Py_UCS4 maxchar = PyUnicode_MAX_CHAR_VALUE(str);
 
     if (maxchar > writer->maxchar || len > writer->size - writer->pos) {
-        if (writer->buffer == NULL) {
+        if (writer->buffer == NULL && PyUnicode_CheckExact(str)) {
             assert(_PyUnicode_CheckConsistency(str, 1));
-            writer->readonly = 1;
-            writer->buffer = Py_NewRef(str);
-            _PyUnicodeWriter_Update(writer);
-            writer->pos += len;
-            // The next write will create a new buffer and copy the string
+            _PyUnicodeWriter_SetReadOnly(writer, Py_NewRef(str), len);
             return 0;
         }
         if (_PyUnicodeWriter_PrepareInternal(writer, len, maxchar) == -1)
@@ -335,15 +286,16 @@ _PyUnicodeWriter_WriteStr(_PyUnicodeWriter *writer, PyObject *str)
 
 
 int
-PyUnicodeWriter_WriteStr(PyUnicodeWriter *writer, PyObject *obj)
+PyUnicodeWriter_WriteStr(PyUnicodeWriter *pub_writer, PyObject *obj)
 {
+    _PyUnicodeWriter *writer = (_PyUnicodeWriter*)pub_writer;
     PyTypeObject *type = Py_TYPE(obj);
     if (type == &PyUnicode_Type) {
-        return _PyUnicodeWriter_WriteStr((_PyUnicodeWriter*)writer, obj);
+        return _PyUnicodeWriter_WriteStr(writer, obj);
     }
 
     if (type == &PyLong_Type) {
-        return _PyLong_FormatWriter((_PyUnicodeWriter*)writer, obj, 10, 0);
+        return _PyLong_FormatWriter(writer, obj, 10, 0);
     }
 
     PyObject *str = PyObject_Str(obj);
@@ -351,21 +303,22 @@ PyUnicodeWriter_WriteStr(PyUnicodeWriter *writer, PyObject *obj)
         return -1;
     }
 
-    int res = _PyUnicodeWriter_WriteStr((_PyUnicodeWriter*)writer, str);
+    int res = _PyUnicodeWriter_WriteStr(writer, str);
     Py_DECREF(str);
     return res;
 }
 
 
 int
-PyUnicodeWriter_WriteRepr(PyUnicodeWriter *writer, PyObject *obj)
+PyUnicodeWriter_WriteRepr(PyUnicodeWriter *pub_writer, PyObject *obj)
 {
+    _PyUnicodeWriter *writer = (_PyUnicodeWriter*)pub_writer;
     if (obj == NULL) {
-        return _PyUnicodeWriter_WriteASCIIString((_PyUnicodeWriter*)writer, "<NULL>", 6);
+        return _PyUnicodeWriter_WriteASCIIString(writer, "<NULL>", 6);
     }
 
     if (Py_TYPE(obj) == &PyLong_Type) {
-        return _PyLong_FormatWriter((_PyUnicodeWriter*)writer, obj, 10, 0);
+        return _PyLong_FormatWriter(writer, obj, 10, 0);
     }
 
     PyObject *repr = PyObject_Repr(obj);
@@ -373,7 +326,7 @@ PyUnicodeWriter_WriteRepr(PyUnicodeWriter *writer, PyObject *obj)
         return -1;
     }
 
-    int res = _PyUnicodeWriter_WriteStr((_PyUnicodeWriter*)writer, repr);
+    int res = _PyUnicodeWriter_WriteStr(writer, repr);
     Py_DECREF(repr);
     return res;
 }
@@ -384,11 +337,12 @@ _PyUnicodeWriter_WriteSubstring(_PyUnicodeWriter *writer, PyObject *str,
                                 Py_ssize_t start, Py_ssize_t end)
 {
     assert(0 <= start);
-    assert(end <= PyUnicode_GET_LENGTH(str));
     assert(start <= end);
+    assert(end <= PyUnicode_GET_LENGTH(str));
 
-    if (start == 0 && end == PyUnicode_GET_LENGTH(str))
+    if (start == 0 && end == PyUnicode_GET_LENGTH(str)) {
         return _PyUnicodeWriter_WriteStr(writer, str);
+    }
 
     Py_ssize_t len = end - start;
     if (len == 0) {
@@ -456,10 +410,7 @@ _PyUnicodeWriter_WriteASCIIString(_PyUnicodeWriter *writer,
         if (str == NULL)
             return -1;
 
-        writer->readonly = 1;
-        writer->buffer = str;
-        _PyUnicodeWriter_Update(writer);
-        writer->pos += len;
+        _PyUnicodeWriter_SetReadOnly(writer, str, len);
         return 0;
     }
 
@@ -511,8 +462,7 @@ PyUnicodeWriter_WriteASCII(PyUnicodeWriter *writer,
     assert(writer != NULL);
     _Py_AssertHoldsTstate();
 
-    _PyUnicodeWriter *priv_writer = (_PyUnicodeWriter*)writer;
-    return _PyUnicodeWriter_WriteASCIIString(priv_writer, str, size);
+    return _PyUnicodeWriter_WriteASCIIString((_PyUnicodeWriter*)writer, str, size);
 }
 
 
@@ -525,40 +475,25 @@ PyUnicodeWriter_WriteUTF8(PyUnicodeWriter *writer,
         size = strlen(str);
     }
 
-    _PyUnicodeWriter *_writer = (_PyUnicodeWriter*)writer;
-    Py_ssize_t old_pos = _writer->pos;
-    int res = _PyUnicode_DecodeUTF8Writer(_writer, str, size,
-                                          _Py_ERROR_STRICT, NULL, NULL);
-    if (res < 0) {
-        _writer->pos = old_pos;
-    }
-    return res;
+    return _PyUnicode_DecodeUTF8Writer((_PyUnicodeWriter*)writer, str, size,
+                                       _Py_ERROR_STRICT, NULL, NULL);
 }
 
 
 int
 PyUnicodeWriter_DecodeUTF8Stateful(PyUnicodeWriter *writer,
-                                   const char *string,
-                                   Py_ssize_t length,
+                                   const char *str,
+                                   Py_ssize_t size,
                                    const char *errors,
                                    Py_ssize_t *consumed)
 {
-    if (length < 0) {
-        length = strlen(string);
+    if (size < 0) {
+        size = strlen(str);
     }
 
-    _PyUnicodeWriter *_writer = (_PyUnicodeWriter*)writer;
-    Py_ssize_t old_pos = _writer->pos;
-    int res = _PyUnicode_DecodeUTF8Writer(_writer, string, length,
-                                          _Py_ERROR_UNKNOWN, errors,
-                                          consumed);
-    if (res < 0) {
-        _writer->pos = old_pos;
-        if (consumed) {
-            *consumed = 0;
-        }
-    }
-    return res;
+    return _PyUnicode_DecodeUTF8Writer((_PyUnicodeWriter*)writer, str, size,
+                                       _Py_ERROR_UNKNOWN, errors,
+                                       consumed);
 }
 
 
@@ -566,13 +501,43 @@ int
 _PyUnicodeWriter_WriteLatin1String(_PyUnicodeWriter *writer,
                                    const char *str, Py_ssize_t len)
 {
-    Py_UCS4 maxchar;
+    if (len == 0) {
+        return 0;
+    }
 
-    maxchar = ucs1lib_find_max_char((const Py_UCS1*)str, (const Py_UCS1*)str + len);
-    if (_PyUnicodeWriter_Prepare(writer, len, maxchar) == -1)
+    const Py_UCS1 *ucs1 = (const Py_UCS1 *)str;
+    Py_UCS4 maxchar = ucs1lib_find_max_char(ucs1, ucs1 + len);
+    if (_PyUnicodeWriter_Prepare(writer, len, maxchar) < 0) {
         return -1;
+    }
     assert(_PyUnicodeWriter_CanWrite(writer));
-    unicode_write_cstr(writer->buffer, writer->pos, str, len);
+
+    Py_ssize_t index = writer->pos;
+    switch (writer->kind) {
+    case PyUnicode_1BYTE_KIND: {
+        memcpy((Py_UCS1 *)writer->data + index, ucs1, len);
+        break;
+    }
+    case PyUnicode_2BYTE_KIND: {
+        Py_UCS2 *ucs2 = (Py_UCS2 *)writer->data + index;
+        const Py_UCS1 *end = ucs1 + len;
+        for (; ucs1 < end; ++ucs2, ++ucs1) {
+            *ucs2 = (Py_UCS2)*ucs1;
+        }
+        break;
+    }
+    case PyUnicode_4BYTE_KIND: {
+        Py_UCS4 *ucs4 = (Py_UCS4 *)writer->data + index;
+        const Py_UCS1 *end = ucs1 + len;
+        for (; ucs1 < end; ++ucs4, ++ucs1) {
+            *ucs4 = (Py_UCS4)*ucs1;
+        }
+        break;
+    }
+    default:
+        Py_UNREACHABLE();
+    }
+
     writer->pos += len;
     return 0;
 }
@@ -600,32 +565,77 @@ _PyUnicodeWriter_Finish(_PyUnicodeWriter *writer)
 
     Py_ssize_t final_size = writer->pos;
     if (final_size == 0) {
+        // Get the empty string singleton
         PyObject *empty = _PyUnicode_GetEmpty();
         Py_XDECREF(str);  // writer->buffer can be NULL if the position is 0
         return empty;
     }
 
-    Py_ssize_t length = PyUnicode_GET_LENGTH(str);
+    if (writer->readonly) {
+        assert(final_size == PyUnicode_GET_LENGTH(str));
+        goto done;
+    }
+    assert(final_size <= PyUnicode_GET_LENGTH(str));
+
     if (final_size == 1 && PyUnicode_KIND(str) == PyUnicode_1BYTE_KIND) {
-        assert(length >= 1);
+        // Get the single character singleton
+        assert(PyUnicode_GET_LENGTH(str) >= 1);
         const Py_UCS1 *data = PyUnicode_1BYTE_DATA(str);
         Py_UCS1 ch = data[0];
-        PyObject *latin1_char = _Py_LATIN1_CHR(ch);
         Py_DECREF(str);
-        return latin1_char;
+        str = _Py_LATIN1_CHR(ch);
+        goto done;
     }
 
-    if (!writer->readonly && length != final_size) {
+    if (writer->recheck_maxchar) {
+        Py_UCS4 maxchar = _PyUnicode_FindMaxChar(str, 0, final_size);
+        if (maxchar != writer->maxchar) {
+            // Adjust the string kind
+            PyObject *str2 = PyUnicode_New(final_size, maxchar);
+            if (str2 == NULL) {
+                Py_DECREF(str);
+                return NULL;
+            }
+            _PyUnicode_FastCopyCharacters(str2, 0, str, 0, final_size);
+            Py_SETREF(str, str2);
+            goto done;
+        }
+    }
+
+    if (PyUnicode_GET_LENGTH(str) != final_size) {
+        // Truncate the string
         PyObject *str2 = _PyUnicode_ResizeCompact(str, final_size);
         if (str2 == NULL) {
             Py_DECREF(str);
             return NULL;
         }
         str = str2;
+        goto done;
     }
 
+done:
     assert(_PyUnicode_CheckConsistency(str, 1));
     return str;
+}
+
+
+PyObject *
+_PyUnicodeWriter_FinishWithSize(_PyUnicodeWriter *writer, Py_ssize_t size)
+{
+    assert(0 <= size);
+    if (writer->buffer != NULL) {
+        assert(size <= writer->pos);
+        assert(size <= PyUnicode_GET_LENGTH(writer->buffer));
+        if (size < writer->pos) {
+            // Truncate the string: we may need to adjust the string kind
+            writer->recheck_maxchar = 1;
+        }
+    }
+    else {
+        assert(size == 0);
+    }
+    writer->pos = size;
+    return _PyUnicodeWriter_Finish(writer);
 }
 
 
