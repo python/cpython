@@ -683,7 +683,7 @@ decode_locale_impl(const char* arg, wchar_t **wstr, size_t *wlen,
 // Return _Py_CODEC_UNSUPPORTED_ERROR_HANDLER (-3) if the 'errors' error
 // handler is not supported: other than "strict" and "surrogateescape".
 //
-// Use the Py_EncodeLocaleEx() function to encode the character string back to
+// Use the _Py_EncodeLocale() function to encode the character string back to
 // a byte string.
 //
 // arg and wstr must not be NULL.
@@ -749,8 +749,7 @@ wchar_t*
 Py_DecodeLocale(const char* arg, size_t *wlen)
 {
     wchar_t *wstr;
-    int res = _Py_DecodeLocale(arg, &wstr, wlen, 0,
-                               _Py_ERROR_SURROGATEESCAPE);
+    int res = _Py_DecodeLocale(arg, &wstr, wlen, 0, _Py_ERROR_SURROGATEESCAPE);
     if (res != 0) {
         assert(res == _Py_CODEC_MEMORY_ERROR || res == _Py_CODEC_DECODE_ERROR);
         if (wlen != NULL) {
@@ -1033,7 +1032,7 @@ Py_EncodeLocale(const wchar_t *text, size_t *error_pos)
 
 /* Similar to Py_EncodeLocale(), but result must be freed by PyMem_RawFree()
    instead of PyMem_Free(). */
-char*
+static char*
 _Py_EncodeLocaleRaw(const wchar_t *text, size_t *error_pos)
 {
     return encode_locale(text, error_pos, 1, 0);

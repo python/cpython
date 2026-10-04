@@ -40,10 +40,6 @@ PyAPI_FUNC(int) _Py_EncodeLocale(
     int current_locale,
     _Py_error_handler errors);
 
-extern char* _Py_EncodeLocaleRaw(
-    const wchar_t *text,
-    size_t *error_pos);
-
 extern PyObject* _Py_device_encoding(int);
 
 #if defined(MS_WINDOWS) || defined(__APPLE__)
