@@ -728,25 +728,24 @@ _Py_DecodeLocale(const char* arg, wchar_t **wstr, size_t *wlen,
 }
 
 
-/* Decode a byte string from the locale encoding with the
-   surrogateescape error handler: undecodable bytes are decoded as characters
-   in range U+DC80..U+DCFF. If a byte sequence can be decoded as a surrogate
-   character, escape the bytes using the surrogateescape error handler instead
-   of decoding them.
-
-   Return a pointer to a newly allocated wide character string, use
-   PyMem_RawFree() to free the memory. If size is not NULL, write the number of
-   wide characters excluding the null character into *size
-
-   Return NULL on decoding error or memory allocation error. If *size* is not
-   NULL, *size is set to (size_t)-1 on memory error or set to (size_t)-2 on
-   decoding error.
-
-   Decoding errors should never happen, unless there is a bug in the C
-   library.
-
-   Use the Py_EncodeLocale() function to encode the character string back to a
-   byte string. */
+// Decode a byte string from the locale encoding with the
+// surrogateescape error handler: undecodable bytes are decoded as characters
+// in range U+DC80..U+DCFF. If a byte sequence can be decoded as a surrogate
+// character, escape the bytes using the surrogateescape error handler instead
+// of decoding them.
+//
+// Return a pointer to a newly allocated wide character string, use
+// PyMem_RawFree() to free the memory. If wlen is not NULL, write the number of
+// wide characters excluding the null character into *wlen.
+//
+// Return NULL on decoding error or memory allocation error. If wlen is not
+// NULL, *wlen is set to (size_t)_Py_CODEC_MEMORY_ERROR on memory error or set
+// to (size_t)_Py_CODEC_DECODE_ERROR on decoding error.
+//
+// Decoding errors should never happen, unless there is a bug in the C library.
+//
+// Use the Py_EncodeLocale() function to encode the character string back to a
+// byte string.
 wchar_t*
 Py_DecodeLocale(const char* arg, size_t *wlen)
 {
@@ -754,7 +753,7 @@ Py_DecodeLocale(const char* arg, size_t *wlen)
     int res = _Py_DecodeLocale(arg, &wstr, wlen, 0,
                                  _Py_ERROR_SURROGATEESCAPE);
     if (res != 0) {
-        assert(res == -1 || res == -2);
+        assert(res == _Py_CODEC_MEMORY_ERROR || res == _Py_CODEC_DECODE_ERROR);
         if (wlen != NULL) {
             *wlen = (size_t)res;
         }

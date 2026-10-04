@@ -1048,7 +1048,7 @@ get_getpath_codeobject(PyObject *self, PyObject *Py_UNUSED(args)) {
 
 // Test _Py_EncodeLocale()
 static PyObject *
-encode_locale_ex(PyObject *self, PyObject *args)
+encode_locale(PyObject *self, PyObject *args)
 {
     PyObject *unicode;
     int current_locale = 0;
@@ -1071,7 +1071,6 @@ encode_locale_ex(PyObject *self, PyObject *args)
     size_t error_pos = error_pos_canary;
     const size_t output_length_canary = (size_t)-456;
     size_t output_length = output_length_canary;
-    const char *reason_canary = (const char*)0x123456;
     int ret = _Py_EncodeLocale(wstr,
                                  &str, &output_length, &error_pos,
                                  current_locale, error_handler);
@@ -1116,7 +1115,7 @@ encode_locale_ex(PyObject *self, PyObject *args)
 
 // Test _Py_DecodeLocale()
 static PyObject *
-decode_locale_ex(PyObject *self, PyObject *args)
+decode_locale(PyObject *self, PyObject *args)
 {
     char *str;
     int current_locale = 0;
@@ -3358,8 +3357,8 @@ static PyMethodDef module_functions[] = {
     {"test_bytes_find", test_bytes_find, METH_NOARGS},
     {"normalize_path", normalize_path, METH_O, NULL},
     {"get_getpath_codeobject", get_getpath_codeobject, METH_NOARGS, NULL},
-    {"EncodeLocaleEx", encode_locale_ex, METH_VARARGS},
-    {"DecodeLocaleEx", decode_locale_ex, METH_VARARGS},
+    {"encode_locale", encode_locale, METH_VARARGS},
+    {"decode_locale", decode_locale, METH_VARARGS},
     {"set_eval_frame_default", set_eval_frame_default, METH_NOARGS, NULL},
     {"set_eval_frame_interp", set_eval_frame_interp, METH_VARARGS, NULL},
     {"set_eval_frame_record", set_eval_frame_record, METH_O, NULL},
