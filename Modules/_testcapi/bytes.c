@@ -42,6 +42,7 @@ bytes_resize(PyObject *Py_UNUSED(module), PyObject *args, PyObject *kwargs)
 
     if (compute_hash) {
         if (PyObject_Hash(obj) == -1) {
+            Py_DECREF(obj);
             return NULL;
         }
     }
@@ -56,7 +57,7 @@ bytes_resize(PyObject *Py_UNUSED(module), PyObject *args, PyObject *kwargs)
     }
 
     Py_ssize_t refcnt = Py_REFCNT(obj);
-    return Py_BuildValue("Onp", obj, refcnt, obj != old_obj);
+    return Py_BuildValue("Nnp", obj, refcnt, obj != old_obj);
 }
 
 
