@@ -509,8 +509,6 @@ ins1(PyListObject *self, Py_ssize_t where, PyObject *v)
                                 n - where);
     }
 #else
-    /* The compiler expands this loop inline. This is faster than a
-       memmove() call for short lists. */
     for (Py_ssize_t i = n; --i >= where; )
         FT_ATOMIC_STORE_PTR_RELEASE(items[i+1], items[i]);
 #endif
