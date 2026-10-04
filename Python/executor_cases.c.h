@@ -6849,6 +6849,17 @@
                 res_o = _PyUnicode_BinarySlice(container_o, start_o, stop_o);
                 _PyFrame_StackPointerInvalidate(frame);
             }
+            else if (PyBytes_CheckExact(container_o)) {
+                stack_pointer[0] = container;
+                stack_pointer[1] = start;
+                stack_pointer[2] = stop;
+                stack_pointer += 3;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                _PyFrame_StackPointerValidate(frame);
+                res_o = _PyBytes_BinarySlice(container_o, start_o, stop_o);
+                _PyFrame_StackPointerInvalidate(frame);
+            }
             else {
                 PyObject *slice = PySlice_New(start_o, stop_o, NULL);
                 if (slice == NULL) {
