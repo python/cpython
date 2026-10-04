@@ -2702,9 +2702,10 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
         if (Py_ISSPACE(*str)) {
             do {
                 str++;
+                if (str >= end) {
+                    goto done;
+                }
             } while (Py_ISSPACE(*str));
-            if (str >= end)
-                break;
         }
 
         top = _PyLong_DigitValue[*str];
@@ -2712,16 +2713,16 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
             invalid_char = str - start;
             goto error;
         }
+
         str++;
+        if (str >= end) {
+            invalid_char = -1;
+            goto error;
+        }
 
         bot = _PyLong_DigitValue[*str];
         if (bot >= 16) {
-            /* Check if we had a second digit */
-            if (str >= end){
-                invalid_char = -1;
-            } else {
-                invalid_char = str - start;
-            }
+            invalid_char = str - start;
             goto error;
         }
         str++;
@@ -2729,6 +2730,7 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
         *buf++ = (unsigned char)((top << 4) + bot);
     }
 
+  done:
     if (view.obj != NULL) {
        PyBuffer_Release(&view);
     }
@@ -3405,7 +3407,6 @@ bytes_resize_inplace(PyObject **pv, Py_ssize_t newsize)
     PyBytesObject *sv = (PyBytesObject *)v;
     Py_SET_SIZE(sv, newsize);
     sv->ob_sval[newsize] = '\0';
-    set_ob_shash(sv, -1);          /* invalidate cached hash value */
     assert(_PyBytes_IsMutable(*pv));
     return 0;
 }
@@ -3437,7 +3438,9 @@ _PyBytes_ResizeKeepOnError(PyObject **pv, Py_ssize_t newsize)
 
     Py_ssize_t oldsize = PyBytes_GET_SIZE(v);
     if (oldsize == newsize) {
-        /* return early if newsize equals to v->ob_size */
+        // Leave the object unchanged if the new size is the same as the old
+        // size, even if the object is not uniquely referenced or if the hash
+        // value was already computed.
         return 0;
     }
 
@@ -3458,7 +3461,10 @@ _PyBytes_ResizeKeepOnError(PyObject **pv, Py_ssize_t newsize)
         return 0;
     }
 
-    if (!_PyObject_IsUniquelyReferenced(v)) {
+    if (!_PyObject_IsUniquelyReferenced(v)
+        // Return a copy if the hash value was already computed
+        || get_ob_shash((PyBytesObject *)v) != -1)
+    {
         // Allocate and then copy so we don't get a shared immortal
         // one-character singleton!
         result = _PyBytes_FromSize(newsize, 0);
