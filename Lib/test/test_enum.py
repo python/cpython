@@ -4080,6 +4080,39 @@ class OldTestFlag(unittest.TestCase):
         self.assertFalse(NeverEnum.__dict__.get('_test1', False))
         self.assertFalse(NeverEnum.__dict__.get('_test2', False))
 
+    def test_mixin_operator_override(self):
+        # a mixin's own bitwise-operator overrides must not be clobbered
+        # by Flag's default __or__/__and__/__xor__/__invert__ -- gh-121291
+        class OperatorMixin:
+            def __or__(self, other):
+                return 'mixin-or'
+            def __ror__(self, other):
+                return 'mixin-ror'
+            def __invert__(self):
+                return 'mixin-invert'
+        class MixedFlag(OperatorMixin, Flag):
+            A = 1
+            B = 2
+        self.assertIs(MixedFlag.__or__, OperatorMixin.__or__)
+        self.assertIs(MixedFlag.__ror__, OperatorMixin.__ror__)
+        self.assertIs(MixedFlag.__invert__, OperatorMixin.__invert__)
+        self.assertEqual(MixedFlag.A | MixedFlag.B, 'mixin-or')
+        self.assertEqual(1 | MixedFlag.A, 'mixin-ror')
+        self.assertEqual(~MixedFlag.A, 'mixin-invert')
+        # dunders the mixin didn't override still get Flag's own
+        self.assertIs(MixedFlag.__and__, Flag.__and__)
+        self.assertIs(MixedFlag.__xor__, Flag.__xor__)
+        self.assertIs(MixedFlag.__rand__, Flag.__rand__)
+        self.assertIs(MixedFlag.__rxor__, Flag.__rxor__)
+        self.assertEqual(MixedFlag.A & MixedFlag.B, MixedFlag(0))
+        #
+        # a plain (non-mixin) Flag subclass is unaffected
+        class PlainFlag(Flag):
+            A = 1
+            B = 2
+        self.assertIs(PlainFlag.__or__, Flag.__or__)
+        self.assertEqual(PlainFlag.A | PlainFlag.B, PlainFlag(3))
+
 
 class OldTestIntFlag(unittest.TestCase):
     """Tests of the IntFlags."""
@@ -4563,6 +4596,26 @@ class OldTestIntFlag(unittest.TestCase):
                 failed,
                 'at least one thread failed while creating composite members')
         self.assertEqual(256, len(seen), 'too many composite members created')
+
+    def test_mixin_operator_override(self):
+        # IntFlag's own mixed-in `int` also defines these operators, so the
+        # fix for gh-121291 must still override `int`'s raw operators with
+        # Flag's (returning IntFlag instances, not plain ints), while still
+        # respecting a genuine, separate mixin's override.
+        Color = self.Color
+        combined = Color.RED | Color.BLUE
+        self.assertIs(type(combined), Color)
+        self.assertEqual(combined, Color.PURPLE)
+        self.assertEqual(repr(combined), '<Color.PURPLE: 5>')
+        #
+        class OperatorMixin:
+            def __or__(self, other):
+                return 'mixin-or'
+        class MixedIntFlag(OperatorMixin, IntFlag):
+            A = 1
+            B = 2
+        self.assertIs(MixedIntFlag.__or__, OperatorMixin.__or__)
+        self.assertEqual(MixedIntFlag.A | MixedIntFlag.B, 'mixin-or')
 
 
 class TestEmptyAndNonLatinStrings(unittest.TestCase):

@@ -1,0 +1,6 @@
+Fix the pure-Python implementations of :meth:`datetime.date.fromisoformat`,
+:meth:`datetime.time.fromisoformat` and :meth:`datetime.datetime.fromisoformat`
+silently accepting some malformed ISO 8601 strings, such as non-ASCII digits or
+a sign in a fixed-width field (for example ``'2020+12'`` or ``'20201212T0102٣٤'``).
+Each field is now required to be exactly *N* ASCII digits, matching the C
+implementation.

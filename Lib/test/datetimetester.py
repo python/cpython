@@ -2106,7 +2106,15 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             '10000-W25-1',      # Invalid year
             '2020-W25-0',       # Invalid day-of-week
             '2020-W25-8',       # Invalid day-of-week
-            '٢025-03-09'        # Unicode characters
+            # gh-152204: each fixed-width field must be exactly N ASCII digits
+            '2020+12',          # '+' in a basic-format field
+            '2020 12',          # space in a basic-format field
+            '+020-06-15',       # leading sign in the year
+            '202012+9',         # '+' in the day field
+            '2020-W 5',         # space in the week number
+            '2020061',          # 7 chars: day slice reads a 1-character tail
+            '2020-W2',          # 1-digit week number
+            '٢025-03-09',       # Unicode characters
             '2009\ud80002\ud80028',     # Separators are surrogate codepoints
         ]
 
@@ -3758,6 +3766,15 @@ class TestDateTime(TestDate):
             '2009-04-19T12:30:45-00:90:00', # Time zone field out from range
             '2009-04-19T12:30:45-00:00:90', # Time zone field out from range
             '2020-2020',                    # Ambiguous 9-char date portion
+            # gh-152204: each time field must be exactly N ASCII digits
+            '2020-12-12T0٥:02:03',          # Unicode digit in the hour
+            '2020-12-12T01:0٥:03',          # Unicode digit in the minute
+            '2020-12-12T01:02:0٥',          # Unicode digit in the second
+            '2020-12-12T01:02:03.٥',        # Unicode digit in the fraction
+            '2020-12-12T01:02:03.4_6',      # underscore in the fraction
+            '2020-12-12T01:02:03+0٥:00',    # Unicode digit in the tz hour
+            '2020-12-12T01:02:03+01:0٥',    # Unicode digit in the tz minute
+            '20201212T0102٣٤',              # Unicode digits in the basic-format time
             '2009-04-19T12:30:45.+05:00',   # Empty fraction before offset
             '2009-04-19T12:30:45.-05:00',   # Empty fraction before offset
             '2009-04-19T12:30:45.Z',        # Empty fraction before Z
@@ -4675,6 +4692,33 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
         # Issue #6697:
         Badtzname.tz = '\ud800'
         self.assertEqual(t.strftime("%Z"), '\ud800')
+
+    def test_subminute_offset_equality(self):
+        t1 = self.theclass(12, tzinfo=timezone.utc)
+        t2 = self.theclass(12, 0, 1, tzinfo=timezone(timedelta(seconds=1)))
+        self.assertEqual(t1, t2)
+        t2 = self.theclass(12, 0, 0, 1, tzinfo=timezone(timedelta(microseconds=1)))
+        self.assertEqual(t1, t2)
+        t2 = self.theclass(11, 59, 59, 999999, tzinfo=timezone(timedelta(microseconds=-1)))
+        self.assertEqual(t1, t2)
+
+    def test_subminute_offset_ordering(self):
+        t1 = self.theclass(0, tzinfo=timezone.utc)
+        t2 = self.theclass(0, tzinfo=timezone(timedelta(microseconds=1)))
+        self.assertGreater(t1, t2)
+
+        t1 = self.theclass(13, 59, 59, 900000, tzinfo=timezone(timedelta(hours=2)))
+        t2 = self.theclass(14, tzinfo=timezone(timedelta(hours=2, microseconds=900000)))
+        self.assertGreater(t1, t2)
+
+    def test_subminute_offset_hash(self):
+        t1 = self.theclass(12, tzinfo=timezone.utc)
+        t2 = self.theclass(12, 0, 1, tzinfo=timezone(timedelta(seconds=1)))
+        self.assertEqual(hash(t1), hash(t2))
+        t2 = self.theclass(12, 0, 0, 1, tzinfo=timezone(timedelta(microseconds=1)))
+        self.assertEqual(hash(t1), hash(t2))
+        t2 = self.theclass(11, 59, 59, 999999, tzinfo=timezone(timedelta(microseconds=-1)))
+        self.assertEqual(hash(t1), hash(t2))
 
     def test_hash_edge_cases(self):
         # Offsets that overflow a basic time.

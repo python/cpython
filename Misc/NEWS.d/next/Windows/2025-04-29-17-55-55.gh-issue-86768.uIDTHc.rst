@@ -1,0 +1,6 @@
+:func:`os.lseek` and :meth:`~io.IOBase.seek` of file objects now raise
+:exc:`OSError` for pipes on Windows, and :meth:`~io.IOBase.seekable` now
+returns ``False`` for them.  Previously seeking a pipe silently appeared to
+succeed.  As a consequence, opening a pipe in a read-write binary mode
+(``'r+b'`` or ``'w+b'``) now raises :exc:`io.UnsupportedOperation` unless
+buffering is disabled.
