@@ -293,15 +293,20 @@ PyDoc_STRVAR(_remote_debugging_RemoteUnwinder_get_all_awaited_by__doc__,
 "Returns:\n"
 "    A list of AwaitedInfo objects, where each object contains:\n"
 "\n"
-"    - thread_id (int): Identifier of the thread.\n"
-"    - awaited_by (list[TaskInfo]): List of TaskInfo objects representing tasks\n"
-"      awaiting this thread.\n"
+"    - thread_id (int): Identifier of the thread, or 0 for tasks in the\n"
+"      interpreter\'s fallback task list.\n"
+"    - awaited_by (list[TaskInfo]): Tasks registered with this thread.\n"
 "\n"
 "Each TaskInfo contains:\n"
 "    - task_id (int): Identifier of the task.\n"
 "    - task_name (str): Name of the task.\n"
 "    - coroutine_stack (list[CoroInfo]): Stack of coroutine frames.\n"
-"    - awaited_by (list[TaskInfo]): Nested tasks awaited by this task.\n"
+"    - awaited_by (list[CoroInfo]): Coroutine information for tasks or futures\n"
+"      awaiting this task.\n"
+"\n"
+"Each CoroInfo contains:\n"
+"    - call_stack (list[FrameInfo]): Call stack frames for the coroutine.\n"
+"    - task_name (int): Identifier of the task or future.\n"
 "\n"
 "Raises:\n"
 "    RuntimeError: If AsyncioDebug section is not available in the\n"
@@ -1706,4 +1711,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9f71c6f5522a27db input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8424a993a85ef2bd input=a9049054013a1b77]*/

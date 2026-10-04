@@ -913,15 +913,20 @@ Get awaited_by relationships for tasks in the remote process.
 Returns:
     A list of AwaitedInfo objects, where each object contains:
 
-    - thread_id (int): Identifier of the thread.
-    - awaited_by (list[TaskInfo]): List of TaskInfo objects representing tasks
-      awaiting this thread.
+    - thread_id (int): Identifier of the thread, or 0 for tasks in the
+      interpreter's fallback task list.
+    - awaited_by (list[TaskInfo]): Tasks registered with this thread.
 
 Each TaskInfo contains:
     - task_id (int): Identifier of the task.
     - task_name (str): Name of the task.
     - coroutine_stack (list[CoroInfo]): Stack of coroutine frames.
-    - awaited_by (list[TaskInfo]): Nested tasks awaited by this task.
+    - awaited_by (list[CoroInfo]): Coroutine information for tasks or futures
+      awaiting this task.
+
+Each CoroInfo contains:
+    - call_stack (list[FrameInfo]): Call stack frames for the coroutine.
+    - task_name (int): Identifier of the task or future.
 
 Raises:
     RuntimeError: If AsyncioDebug section is not available in the
@@ -948,7 +953,7 @@ Example output:
 
 static PyObject *
 _remote_debugging_RemoteUnwinder_get_all_awaited_by_impl(RemoteUnwinderObject *self)
-/*[clinic end generated code: output=6a49cd345e8aec53 input=64456ccc05d9bfd2]*/
+/*[clinic end generated code: output=6a49cd345e8aec53 input=79e556b3973d21a8]*/
 {
     if (ensure_async_debug_offsets(self) < 0) {
         return NULL;
