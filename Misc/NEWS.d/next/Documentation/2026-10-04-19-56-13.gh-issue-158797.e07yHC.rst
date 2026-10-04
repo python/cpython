@@ -1,0 +1,7 @@
+Document the previously undocumented helpers in
+:mod:`test.support.import_helper`, including
+:func:`~test.support.import_helper.ensure_lazy_imports`, and fix the documented
+signatures of :func:`~test.support.import_helper.forget`,
+:func:`~test.support.import_helper.import_fresh_module`,
+:func:`~test.support.import_helper.make_legacy_pyc` and
+:class:`~test.support.import_helper.CleanImport` to match the implementation.
