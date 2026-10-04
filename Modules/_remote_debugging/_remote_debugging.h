@@ -402,6 +402,8 @@ typedef struct {
     pid_t *thread_tids;           // Reusable buffer for thread IDs
     size_t thread_tids_capacity;  // Current capacity of thread_tids buffer
 #endif
+    // Thread whose task list is being walked, 0 when there is none
+    uintptr_t walked_thread_addr;
 } RemoteUnwinderObject;
 
 #define RemoteUnwinder_CAST(op) ((RemoteUnwinderObject *)(op))

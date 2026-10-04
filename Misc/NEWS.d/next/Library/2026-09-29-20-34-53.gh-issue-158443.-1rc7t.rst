@@ -1,0 +1,2 @@
+Fix ``python -m asyncio ps`` showing a task that is running as a single
+frame instead of its call stack. Patch by Timofei Ivankov.
