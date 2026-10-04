@@ -154,7 +154,7 @@ Operating System Utilities
 
    Decode a byte string from the :term:`filesystem encoding <filesystem
    encoding and error handler>` with the :ref:`surrogateescape error handler
-   <surrogateescape>` error handler.
+   <surrogateescape>`.
 
    Undecodable bytes are decoded as characters in range U+DC80..U+DCFF. If a
    byte sequence can be decoded as a surrogate character, escape the bytes
@@ -207,7 +207,7 @@ Operating System Utilities
    On memory allocation failure, set *\*error_pos* to ``(size_t)-1`` and return
    ``NULL``.
 
-   On encoding error, set *\*error_pos* to the index of the first invalid
+   On encoding error, set *\*error_pos* to the index of the first unencodable
    character and return ``NULL``.
 
    The :term:`filesystem encoding and error handler` are selected by

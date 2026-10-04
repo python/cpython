@@ -1007,7 +1007,7 @@ encode_locale(const wchar_t *text, size_t *error_pos,
 //
 // On memory allocation failure, set *error_pos to (size_t)-1 and return NULL.
 //
-// On encoding error, set *error_pos to the index of the first invalid
+// On encoding error, set *error_pos to the index of the first unencodable
 // character and return NULL.
 //
 // Use the Py_DecodeLocale() function to decode the bytes string back to a wide
