@@ -1,3 +1,4 @@
-The function :func:`cmath.phase` should not raise ``OverflowError``, and the
-functions :func:`math.atan2`, :func:`math.atan2pi`, and :func:`cmath.phase`
-should not raise ``ValueError``.  Contributed by High Performance Kernels LLC.
+:func:`math.atan2` and :func:`math.atan2pi` no longer raise :exc:`ValueError`.
+:func:`cmath.phase` no longer raises :exc:`OverflowError` or :exc:`ValueError`,
+and the values of ``math.atan2(b, a)`` and ``cmath.phase(complex(a, b))`` always
+match.  Contributed by High Performance Kernels LLC.

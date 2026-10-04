@@ -348,6 +348,15 @@ class MathTests(unittest.TestCase):
         self.assertTrue(math.isnan(math.atan2(NAN, 2.3)))
         self.assertTrue(math.isnan(math.atan2(NAN, INF)))
         self.assertTrue(math.isnan(math.atan2(NAN, NAN)))
+        # overflow and underflow of y/x
+        self.assertEqual(math.atan2(1E-320, 1E300), 0.0)
+        self.assertEqual(math.atan2(-1E-320, 1E300), -0.0)
+        self.assertAlmostEqual(math.atan2(1E300, 1E-320), math.pi/2)
+        self.assertAlmostEqual(math.atan2(1E300, -1E-320), math.pi/2)
+        self.assertAlmostEqual(math.atan2(1E-320, -1E300), math.pi)
+        self.assertAlmostEqual(math.atan2(-1E-320, -1E300), -math.pi)
+        self.assertAlmostEqual(math.atan2(-1E300, 1E-320), -math.pi/2)
+        self.assertAlmostEqual(math.atan2(-1E300, -1E-320), -math.pi/2)
 
     def testCbrt(self):
         self.assertRaises(TypeError, math.cbrt)
