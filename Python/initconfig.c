@@ -4326,7 +4326,7 @@ utf8_to_wstr(PyInitConfig *config, const char *str)
     wchar_t *wstr;
     size_t wlen;
     int res = _Py_DecodeUTF8Ex(str, strlen(str), &wstr, &wlen,
-                               NULL, _Py_ERROR_STRICT);
+                               _Py_ERROR_STRICT);
     if (res == _Py_CODEC_DECODE_ERROR) {
         initconfig_set_error(config, "decoding error");
         return NULL;

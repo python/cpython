@@ -4096,16 +4096,13 @@ class LocaleCodecTest(unittest.TestCase):
                     if errors == "surrogateescape":
                         with self.assertRaises(ValueError) as cm:
                             self.encode_locale(text)
-                        errmsg = str(cm.exception)
-                        regex = f"Py_EncodeLocale failed: error_pos={error_pos}"
-                        self.assertRegex(errmsg, regex)
+                        errmsg = f"Py_EncodeLocale failed: error_pos={error_pos}"
+                        self.assertEqual(str(cm.exception), errmsg)
 
                     with self.assertRaises(RuntimeError) as cm:
                         self.encode_locale_ex(text, errors)
-                    errmsg = str(cm.exception)
-                    regex = (f"encode error: pos={error_pos}, "
-                             "reason=encoding error")
-                    self.assertRegex(errmsg, regex)
+                    errmsg = f"encode error: pos={error_pos}"
+                    self.assertEqual(str(cm.exception), errmsg)
                 else:
                     if errors in ("strict", "surrogateescape"):
                         encoded = self.encode_locale(text)
@@ -4171,14 +4168,26 @@ class LocaleCodecTest(unittest.TestCase):
                 try:
                     expected = encoded.decode(self.ENCODING, errors)
                 except UnicodeDecodeError:
+                    for error_pos in range(len(text) - 1, -1, -1):
+                        try:
+                            encoded[:error_pos].decode(self.ENCODING, errors)
+                        except UnicodeDecodeError:
+                            pass
+                        else:
+                            break
+                    else:
+                        self.fail("failed to compute error_pos")
+
                     if errors == "surrogateescape":
-                        with self.assertRaises(ValueError):
+                        with self.assertRaises(ValueError) as cm:
                             self.decode_locale(encoded)
+                        errmsg = f"Py_DecodeLocale failed: error_pos={error_pos}"
+                        self.assertEqual(str(cm.exception), errmsg)
 
                     with self.assertRaises(RuntimeError) as cm:
                         self.decode_locale_ex(encoded, errors)
-                    errmsg = str(cm.exception)
-                    self.assertStartsWith(errmsg, "decode error: ")
+                    errmsg = f"decode error: pos={error_pos}"
+                    self.assertEqual(str(cm.exception), errmsg)
                 else:
                     if errors == ("strict", "surrogateescape"):
                         decoded = self.decode_locale(encoded)

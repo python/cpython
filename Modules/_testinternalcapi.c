@@ -1072,9 +1072,8 @@ encode_locale_ex(PyObject *self, PyObject *args)
     const size_t output_length_canary = (size_t)-456;
     size_t output_length = output_length_canary;
     const char *reason_canary = (const char*)0x123456;
-    const char *reason = reason_canary;
     int ret = _Py_EncodeLocaleEx(wstr,
-                                 &str, &output_length, &error_pos, &reason,
+                                 &str, &output_length, &error_pos,
                                  current_locale, error_handler);
     PyMem_Free(wstr);
 
@@ -1083,7 +1082,6 @@ encode_locale_ex(PyObject *self, PyObject *args)
         assert(str != NULL && str != str_canary);
         assert(output_length != output_length_canary);
         assert(error_pos == error_pos_canary);
-        assert(reason == reason_canary);
         res = PyBytes_FromStringAndSize(str, output_length);
         PyMem_RawFree(str);
         break;
@@ -1091,29 +1089,24 @@ encode_locale_ex(PyObject *self, PyObject *args)
         assert(str == NULL);
         assert(output_length == 0);
         assert(error_pos == 0);
-        assert(reason == NULL);
         PyErr_NoMemory();
         break;
     case _Py_CODEC_ENCODE_ERROR:
         assert(str == NULL);
         assert(output_length == 0);
         assert(error_pos != error_pos_canary);
-        assert(reason != NULL && reason != reason_canary);
-        PyErr_Format(PyExc_RuntimeError, "encode error: pos=%zu, reason=%s",
-                     error_pos, reason);
+        PyErr_Format(PyExc_RuntimeError, "encode error: pos=%zu", error_pos);
         break;
     case _Py_CODEC_UNSUPPORTED_ERROR_HANDLER:
         assert(str == NULL);
         assert(output_length == 0);
         assert(error_pos == 0);
-        assert(reason == NULL);
         PyErr_SetString(PyExc_ValueError, "unsupported error handler");
         break;
     default:
         assert(str == NULL);
         assert(output_length == 0);
         assert(error_pos == 0);
-        assert(reason == NULL);
         PyErr_SetString(PyExc_ValueError, "unknown error code");
         break;
     }
@@ -1139,37 +1132,29 @@ decode_locale_ex(PyObject *self, PyObject *args)
     wchar_t *wstr = (wchar_t*)wstr_canary;
     const size_t wlen_canary = (size_t)-123;
     size_t wlen = wlen_canary;
-    const char *reason_canary = (const char*)0x123456;
-    const char *reason = reason_canary;
-    int ret = _Py_DecodeLocaleEx(str,
-                                 &wstr, &wlen, &reason,
+    int ret = _Py_DecodeLocaleEx(str, &wstr, &wlen,
                                  current_locale, error_handler);
 
     switch(ret) {
     case 0:
         assert(wstr != NULL && wstr != wstr_canary);
         assert(wlen != wlen_canary);
-        assert(reason == reason_canary);
         res = PyUnicode_FromWideChar(wstr, wlen);
         PyMem_RawFree(wstr);
         break;
     case _Py_CODEC_MEMORY_ERROR:
         assert(wstr == NULL);
         assert(wlen == 0);
-        assert(reason == NULL);
         PyErr_NoMemory();
         break;
     case _Py_CODEC_DECODE_ERROR:
         assert(wstr == NULL);
         assert(wlen != wlen_canary);
-        assert(reason != NULL && reason != reason_canary);
-        PyErr_Format(PyExc_RuntimeError, "decode error: pos=%zu, reason=%s",
-                     wlen, reason);
+        PyErr_Format(PyExc_RuntimeError, "decode error: pos=%zu", wlen);
         break;
     case _Py_CODEC_UNSUPPORTED_ERROR_HANDLER:
         assert(wstr == NULL);
         assert(wlen == 0);
-        assert(reason == NULL);
         PyErr_SetString(PyExc_ValueError, "unsupported error handler");
         break;
     default:
