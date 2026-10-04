@@ -168,8 +168,8 @@ access to internal read-only data of Unicode objects:
    The function performs no checks for any of its requirements,
    and is intended for usage in loops.
 
-   While str objects are usually immutable in Python, this special C API allows
-   mutating a fresh str object if the string was not “used” yet.
+   While :class:`str` objects are usually immutable in Python, this special C API allows
+   mutating a fresh :class:`str` object if the string has not been "used" yet.
 
    .. versionadded:: 3.3
 
@@ -413,9 +413,9 @@ APIs:
    using the :c:type:`PyUnicodeWriter` API, or one of the ``PyUnicode_From*``
    functions below.
 
-   While str objects are usually immutable in Python, this special C API
-   returns a str object which can be mutated; except if *size* is zero in which
-   case it returns the immutable empty string.
+   While :class:`str` objects are usually immutable in Python, this special C API
+   returns a :class:`str` object that can be mutated, except if *size* is zero, in which
+   case it returns the immutable empty string constant.
 
    .. versionadded:: 3.3
 
@@ -766,8 +766,8 @@ APIs:
    possible.  Returns ``-1`` and sets an exception on error, otherwise returns
    the number of copied characters.
 
-   While str objects are usually immutable in Python, this special C API allows
-   mutating a fresh str object if the string was not “used” yet.
+   While :class:`str` objects are usually immutable in Python, this special C API allows
+   mutating a fresh :class:`str` object if the string has not been "used" yet.
 
    See :c:func:`PyUnicode_New` for details.
 
@@ -791,10 +791,10 @@ APIs:
    The function doesn't check string content, the result may not be a
    string in canonical representation.
 
-   While str objects are usually immutable in Python, this special C API
-   can resize a str object in-place if the string was not “used” yet.
-   It returns a str object which can be mutated; except if *size* is zero in
-   which case it returns the immutable empty string.
+   While :class:`str` objects are usually immutable in Python, this special C API
+   can resize a :class:`str` object in-place if the string has not been "used" yet.
+   It returns a :class:`str` object which can be mutated, except if *size* is zero, in
+   which case it returns the immutable empty string constant.
 
    .. soft-deprecated:: next
       Use the :c:type:`PyUnicodeWriter` API instead.
@@ -812,8 +812,8 @@ APIs:
    Return the number of written characters, or return ``-1`` and raise an
    exception on error.
 
-   While str objects are usually immutable in Python, this special C API allows
-   mutating a fresh str object if the string was not “used” yet.
+   While :class:`str` objects are usually immutable in Python, this special C API allows
+   mutating a fresh :class:`str` object if the string has not been "used" yet.
 
    See :c:func:`PyUnicode_New` for details.
 
@@ -834,8 +834,8 @@ APIs:
    See :c:func:`PyUnicode_WRITE` for a version that skips these checks,
    making them your responsibility.
 
-   While str objects are usually immutable in Python, this special C API allows
-   mutating a fresh str object if the string was not “used” yet.
+   While :class:`str` objects are usually immutable in Python, this special C API allows
+   mutating a fresh :class:`str` object if the string has not been "used" yet.
 
    See :c:func:`PyUnicode_New` for details.
 
