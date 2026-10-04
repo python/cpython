@@ -372,7 +372,6 @@ parse_code_object(RemoteUnwinderObject *unwinder,
                 &unwinder->handle, real_address, SIZEOF_CODE_OBJ, code_object) < 0)
         {
             if (_Py_RemoteDebug_IsFatalReadError()) {
-                set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read code object");
                 goto error;
             }
             PyErr_Clear();
@@ -385,7 +384,6 @@ parse_code_object(RemoteUnwinderObject *unwinder,
             GET_MEMBER(uintptr_t, code_object, unwinder->debug_offsets.code_object.qualname), 1024);
         if (!func) {
             if (_Py_RemoteDebug_IsFatalReadError()) {
-                set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read function name from code object");
                 goto error;
             }
             PyErr_Clear();
@@ -397,7 +395,6 @@ parse_code_object(RemoteUnwinderObject *unwinder,
             GET_MEMBER(uintptr_t, code_object, unwinder->debug_offsets.code_object.filename), 1024);
         if (!file) {
             if (_Py_RemoteDebug_IsFatalReadError()) {
-                set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read filename from code object");
                 goto error;
             }
             PyErr_Clear();
@@ -414,7 +411,6 @@ parse_code_object(RemoteUnwinderObject *unwinder,
             MAX_LINETABLE_SIZE);
         if (!linetable) {
             if (_Py_RemoteDebug_IsFatalReadError()) {
-                set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read linetable from code object");
                 goto error;
             }
             PyErr_Clear();
