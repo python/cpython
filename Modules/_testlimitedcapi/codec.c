@@ -21,7 +21,9 @@ static PyObject *
 decode_locale(PyObject *Py_UNUSED(module), PyObject *arg)
 {
     const char *str;
-    if (PyArg_Parse(arg, "y", &str) < 0) {
+    Py_ssize_t unused_len;
+    // Accept embedded null bytes
+    if (PyArg_Parse(arg, "y#", &str, &unused_len) < 0) {
         return NULL;
     }
 
@@ -61,7 +63,9 @@ encode_locale(PyObject *Py_UNUSED(module), PyObject *arg)
         return NULL;
     }
 
-    wchar_t *wstr = PyUnicode_AsWideCharString(unicode, NULL);
+    // Accept embedded null characters
+    Py_ssize_t unused_wlen;
+    wchar_t *wstr = PyUnicode_AsWideCharString(unicode, &unused_wlen);
     if (wstr == NULL) {
         return NULL;
     }

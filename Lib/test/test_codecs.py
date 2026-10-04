@@ -4067,7 +4067,8 @@ class LocaleCodecTest(unittest.TestCase):
     STRINGS = ("ascii", "ulatin1:\xa7\xe9",
                "u255:\xff",
                "UCS:\xe9\u20ac\U0010ffff",
-               "surrogates:\uDC80\uDCFF")
+               "surrogates:\uDC80\uDCFF",
+               "embed\0char")
     BYTES_STRINGS = (b"blatin1:\xa7\xe9", b"b255:\xff")
     SURROGATES = "\uDC80\uDCFF"
 
@@ -4085,6 +4086,10 @@ class LocaleCodecTest(unittest.TestCase):
             with self.subTest(text=text):
                 try:
                     expected = text.encode(self.ENCODING, errors)
+                    if b"\0" in expected:
+                        # Py_EncodeLocale() and _Py_EncodeLocale()
+                        # truncate the input string at the first NUL character
+                        expected = expected.partition(b'\0')[0]
                 except UnicodeEncodeError:
                     for error_pos in range(len(text)):
                         try:
@@ -4169,8 +4174,12 @@ class LocaleCodecTest(unittest.TestCase):
             with self.subTest(encoded=encoded):
                 try:
                     expected = encoded.decode(self.ENCODING, errors)
+                    if "\0" in expected:
+                        # Py_DecodeLocale() and _Py_DecodeLocale() truncate
+                        # the input string at the first NUL byte
+                        expected = expected.partition('\0')[0]
                 except UnicodeDecodeError:
-                    for error_pos in range(len(text) - 1, -1, -1):
+                    for error_pos in range(len(encoded) - 1, -1, -1):
                         try:
                             encoded[:error_pos].decode(self.ENCODING, errors)
                         except UnicodeDecodeError:

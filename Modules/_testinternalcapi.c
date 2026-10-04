@@ -1059,7 +1059,9 @@ encode_locale(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    wchar_t *wstr = PyUnicode_AsWideCharString(unicode, NULL);
+    // Accept embedded null characters
+    Py_ssize_t unused_wlen;
+    wchar_t *wstr = PyUnicode_AsWideCharString(unicode, &unused_wlen);
     if (wstr == NULL) {
         return NULL;
     }
@@ -1115,11 +1117,13 @@ static PyObject *
 decode_locale(PyObject *self, PyObject *args)
 {
     char *str;
+    Py_ssize_t unused_len;
     int current_locale = 0;
     PyObject *res = NULL;
     const char *errors = NULL;
-
-    if (!PyArg_ParseTuple(args, "y|is", &str, &current_locale, &errors)) {
+    // Accept embedded null bytes in str
+    if (!PyArg_ParseTuple(args, "y#|is",
+                          &str, &unused_len, &current_locale, &errors)) {
         return NULL;
     }
     _Py_error_handler error_handler = _Py_GetErrorHandler(errors);
