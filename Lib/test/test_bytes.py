@@ -518,6 +518,15 @@ class BaseBytesTest:
                 self.type2test.fromhex(data)
             self.assertIn('at position %s' % pos, str(cm.exception))
 
+        # gh-158583: Check for out of bounds reads (uninitialized bytes).
+        # Create an array from a list to not overallocate.
+        a = array.array('B', list(b'1234  '))  # Py_ISSPACE() loop
+        self.assertEqual(self.type2test.fromhex(a), b'\x12\x34')
+
+        a = array.array('B', list(b'12345'))  # Missing second digit
+        with self.assertRaises(ValueError):
+            self.type2test.fromhex(a)
+
     def test_hex(self):
         self.assertRaises(TypeError, self.type2test.hex)
         self.assertRaises(TypeError, self.type2test.hex, 1)
