@@ -2336,21 +2336,39 @@ while True:
     def test_tlbc_cache_refresh_after_growth(self):
         # Reproducer from gh-157660.
         script = textwrap.dedent("""\
-            import os, threading
+            import os, sys, threading
             from _remote_debugging import RemoteUnwinder
             from test import support
 
-            go = threading.Event()
-            stop = threading.Event()
+            go = threading.Lock()
+            stop = threading.Lock()
+            go.acquire()
+            stop.acquire()
 
             def leaf():
-                stop.wait()
+                stop.acquire()
 
             def wait_for_leaf_frames(u, expected_count):
                 for _ in support.sleeping_retry(
                     support.SHORT_TIMEOUT,
                     f"Expected {expected_count} leaf frames",
                 ):
+                    # Wait until the workers have entered their native lock
+                    # calls, so sampling cannot race with Python frame changes.
+                    frames = sys._current_frames()
+                    frames.pop(threading.get_ident())
+                    if len(frames) != 18:
+                        continue
+                    leaves = [f for f in frames.values()
+                              if f.f_code is leaf.__code__]
+                    if (len(leaves) != expected_count or
+                        any(f.f_lineno != leaf.__code__.co_firstlineno + 1
+                            for f in leaves)):
+                        continue
+                    if any(f.f_code not in (leaf.__code__, start_leaf.__code__,
+                                            threading.Thread.run.__code__)
+                           for f in frames.values()):
+                        continue
                     try:
                         traces = u.get_stack_trace()
                     except RuntimeError as exc:
@@ -2367,12 +2385,13 @@ while True:
 
             threading.Thread(target=leaf, daemon=True).start()
             for _ in range(16):
-                threading.Thread(target=stop.wait, daemon=True).start()
-            threading.Thread(target=lambda: (go.wait(), leaf()), daemon=True).start()
+                threading.Thread(target=stop.acquire, daemon=True).start()
+            start_leaf = lambda: (go.acquire(), leaf())
+            threading.Thread(target=start_leaf, daemon=True).start()
 
             u = RemoteUnwinder(os.getpid(), all_threads=True, cache_frames=False)
             wait_for_leaf_frames(u, 1)
-            go.set()
+            go.release()
             wait_for_leaf_frames(u, 2)
             """)
         result = subprocess.run(
@@ -2395,14 +2414,16 @@ while True:
     def test_tlbc_cache_refresh_after_slot_fill(self):
         # Reproducer from gh-157660.
         script = textwrap.dedent("""\
-            import os, threading
+            import os, sys, threading
             from _remote_debugging import RemoteUnwinder
 
-            go = threading.Event()
-            stop = threading.Event()
+            go = threading.Lock()
+            stop = threading.Lock()
+            go.acquire()
+            stop.acquire()
 
             def leaf():
-                stop.wait()
+                stop.acquire()
 
             from test import support
 
@@ -2411,6 +2432,22 @@ while True:
                     support.SHORT_TIMEOUT,
                     f"Expected {expected_count} leaf frames",
                 ):
+                    # Wait until the workers have entered their native lock
+                    # calls, so sampling cannot race with Python frame changes.
+                    frames = sys._current_frames()
+                    frames.pop(threading.get_ident())
+                    if len(frames) != 2:
+                        continue
+                    leaves = [f for f in frames.values()
+                              if f.f_code is leaf.__code__]
+                    if (len(leaves) != expected_count or
+                        any(f.f_lineno != leaf.__code__.co_firstlineno + 1
+                            for f in leaves)):
+                        continue
+                    if any(f.f_code not in (leaf.__code__, start_leaf.__code__,
+                                            threading.Thread.run.__code__)
+                           for f in frames.values()):
+                        continue
                     try:
                         traces = u.get_stack_trace()
                     except RuntimeError as exc:
@@ -2429,13 +2466,14 @@ while True:
                         return result
 
             threading.Thread(target=leaf, daemon=True).start()
-            threading.Thread(target=lambda: (go.wait(), leaf()), daemon=True).start()
+            start_leaf = lambda: (go.acquire(), leaf())
+            threading.Thread(target=start_leaf, daemon=True).start()
             u = RemoteUnwinder(os.getpid(), all_threads=True, cache_frames=False)
             before = lines(u, 1)
-            assert before == [8], before
-            go.set()
+            assert before == [10], before
+            go.release()
             cached = lines(u, 2)
-            assert cached == [8, 8], cached
+            assert cached == [10, 10], cached
             """)
         result = subprocess.run(
             [sys.executable, "-X", "gil=0", "-X", "tlbc=1", "-c", script],
