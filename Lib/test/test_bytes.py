@@ -5,17 +5,20 @@ the latter should be modernized).
 """
 
 import array
-import operator
-import os
-import re
-import sys
+import codecs
+import contextlib
 import copy
 import functools
+import operator
+import os
 import pickle
+import re
+import sys
 import tempfile
 import textwrap
 import threading
 import unittest
+from _codecs import _unregister_error as _codecs_unregister_error
 
 import test.support
 from test import support
@@ -46,6 +49,13 @@ class Indexable:
         self.value = value
     def __index__(self):
         return self.value
+
+
+@contextlib.contextmanager
+def inject_memory_error(testcase, start=0):
+    with testcase.assertRaises(MemoryError):
+        with support.inject_memory_error_cm(start):
+            yield
 
 
 class BaseBytesTest:
@@ -507,6 +517,15 @@ class BaseBytesTest:
             with self.assertRaises(ValueError) as cm:
                 self.type2test.fromhex(data)
             self.assertIn('at position %s' % pos, str(cm.exception))
+
+        # gh-158583: Check for out of bounds reads (uninitialized bytes).
+        # Create an array from a list to not overallocate.
+        a = array.array('B', list(b'1234  '))  # Py_ISSPACE() loop
+        self.assertEqual(self.type2test.fromhex(a), b'\x12\x34')
+
+        a = array.array('B', list(b'12345'))  # Missing second digit
+        with self.assertRaises(ValueError):
+            self.type2test.fromhex(a)
 
     def test_hex(self):
         self.assertRaises(TypeError, self.type2test.hex)
@@ -1116,13 +1135,14 @@ class BaseBytesTest:
         self.assertRaises(ValueError, b.translate, bytes(range(255)))
 
         c = b.translate(rosetta, b'hello')
-        self.assertEqual(b, b'hello')
-        self.assertIsInstance(c, self.type2test)
+        self.assertEqual(c, b'')
+        self.assertEqual(type(c), self.type2test)
 
         c = b.translate(rosetta)
         d = b.translate(rosetta, b'')
-        self.assertEqual(c, d)
         self.assertEqual(c, b'helle')
+        self.assertEqual(type(c), self.type2test)
+        self.assertEqual(d, b'helle')
 
         c = b.translate(rosetta, b'l')
         self.assertEqual(c, b'hee')
@@ -1136,6 +1156,34 @@ class BaseBytesTest:
         self.assertEqual(c, b'hee')
         c = b.translate(None, delete=b'e')
         self.assertEqual(c, b'hllo')
+
+        # short inputs starting with NUL bytes
+        table = bytes.maketrans(b'\x00', b'Z')
+        for data in b'\x00', b'\x00' * 8, b'\x00' * 8 + b'a' * 247:
+            c = self.type2test(data).translate(table)
+            self.assertEqual(c, data.replace(b'\x00', b'Z'))
+
+    @support.cpython_only
+    def test_translate_unchanged(self):
+        if self.type2test != bytes:
+            self.skipTest("test specific bytes.translate()")
+
+        # bytes.translate() returns the input string unchanged
+        # if no byte is modified
+        size = 1024
+        b = b'hell' + b'o' * size
+        rosetta = bytearray(range(256))
+        rosetta[ord('#')] = ord('?')
+        self.assertIs(b.translate(rosetta), b)
+
+        # bytes.translate() always create a new object
+        # if the input string is a bytes subclass
+        class bytes_subclass(bytes):
+            pass
+        b = bytes_subclass(b)
+        result = b.translate(rosetta)
+        self.assertIsNot(result, b)
+        self.assertEqual(result, b)
 
     def test_sq_item(self):
         _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
@@ -1555,6 +1603,36 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         self.assertRaises(MemoryError, bytearray().resize, sys.maxsize)
         self.assertRaises(MemoryError, bytearray(1000).resize, sys.maxsize)
 
+    @support.nomemtest
+    def test_resize_error(self):
+        # gh-157242: If bytearray.resize() fails (MemoryError),
+        # the bytearray must be left unchanged.
+
+        offset = 3
+        for logical_offset in (False, True):
+            with self.subTest(logical_offset=logical_offset):
+                # grow bytearray
+                ba = bytearray(b'0123456789')
+                if logical_offset:
+                    expected = ba[offset:]
+                    del ba[:offset]
+                else:
+                    expected = ba.copy()
+                with inject_memory_error(self):
+                    ba.resize(1024)
+                self.assertEqual(ba, expected)
+
+                # shrink bytearray
+                ba = bytearray(b'0123456789')
+                if logical_offset:
+                    expected = ba[offset:]
+                    del ba[:offset]
+                else:
+                    expected = ba.copy()
+                with inject_memory_error(self):
+                    ba.resize(1)
+                self.assertEqual(ba, expected)
+
     def test_take_bytes(self):
         ba = bytearray(b'ab')
         self.assertEqual(ba.take_bytes(), b'ab')
@@ -1611,6 +1689,36 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
             self.assertRaises(BufferError, ba.take_bytes)
         self.assertEqual(ba.take_bytes(), b'abc')
 
+        # Leaving one byte must not adopt the shared single-byte bytes object
+        # as the buffer.
+        ba = bytearray(b'abc')
+        self.assertEqual(ba.take_bytes(2), b'ab')
+        ba[0] = ord('A')
+        self.assertEqual(ba, bytearray(b'A'))
+        self.assertEqual(ord(b'c'), ord('c'))
+
+    @support.nomemtest
+    def test_take_bytes_error(self):
+        # gh-157242: If bytearray.take_bytes() fails (MemoryError),
+        # the bytearray must be left unchanged.
+
+        for logical_offset, to_take, start_list in (
+            (True, 5, (0, 1)),
+            (False, 5, (0, 1)),
+            (True, None, (0,)),
+        ):
+            for start in start_list:
+                with self.subTest(logical_offset=logical_offset, start=start):
+                    ba = bytearray(b'0123456789')
+                    if logical_offset:
+                        expected = ba[3:]
+                        del ba[:3]
+                    else:
+                        expected = ba.copy()
+                    with inject_memory_error(self, start):
+                        ba.take_bytes(to_take)
+                    self.assertEqual(ba, expected)
+
     @support.cpython_only  # tests an implementation detail
     def test_take_bytes_optimization(self):
         # Validate optimization around taking lots of little chunks out of a
@@ -1636,6 +1744,29 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         self.assertEqual(len(ba), 499)
         bytes_header_size = sys.getsizeof(b'')
         self.assertEqual(ba.__alloc__(), 499 + bytes_header_size)
+
+    def test_take_bytes_hash(self):
+        # gh-158219: bytearray constructor must not use a bytes object
+        # if its hash value is already cached.
+
+        def encode(string, errors='strict'):
+            encoded = string.encode('utf-8')
+            hash(encoded)   # a codec may hash its own output
+            return encoded, len(string)
+
+        def hashing_codec(name):
+            if name != 'test_take_bytes_hash':
+                return None
+            return codecs.CodecInfo(encode, None, name=name)
+
+        codecs.register(hashing_codec)
+        self.addCleanup(codecs.unregister, hashing_codec)
+
+        ba = bytearray('hello', 'test_take_bytes_hash')
+        ba[0] = ord('H')
+        taken = ba.take_bytes()
+        self.assertEqual(taken, b'Hello')
+        self.assertEqual(hash(taken), hash(b'Hello'))
 
     def test_take_bytes_reentrant_resize(self):
         # gh-153570: n.__index__() can resize the bytearray, so take_bytes()
@@ -2073,6 +2204,30 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
             b[1:-1:2] = b""
         self.assertRaises(BufferError, delslice)
         self.assertEqual(b, orig)
+
+    def test_decode_resize_forbidden(self):
+        # The storage is pinned while it is decoded, so an error handler
+        # cannot resize the bytearray.
+        b = bytearray(b'ab\xffcd')
+        errors = 'test.bytearray_decode_resize'
+        def handler(exc):
+            self.assertRaises(BufferError, b.clear)
+            self.assertRaises(BufferError, b.append, 0)
+            return ('?', exc.end)
+        self.addCleanup(_codecs_unregister_error, errors)
+        codecs.register_error(errors, handler)
+        for encoding in 'utf-8', 'utf-8-sig':
+            with self.subTest(encoding=encoding):
+                self.assertEqual(b.decode(encoding, errors), 'ab?cd')
+        self.assertEqual(b, b'ab\xffcd')
+
+    def test_decode_subclass_buffer(self):
+        # decode() decodes the buffer that the object exports.
+        class B(bytearray):
+            def __buffer__(self, flags):
+                return memoryview(b'other')
+        self.assertEqual(B(b'mine').decode(), 'other')
+        self.assertEqual(B(b'mine').decode('latin-1'), 'other')
 
     @test.support.cpython_only
     def test_obsolete_write_lock(self):
@@ -3054,6 +3209,19 @@ class FreeThreadingTest(unittest.TestCase):
         threads = [threading.Thread(target=resize_stress, args=(ba,)) for _ in range(4)]
         with threading_helper.start_threads(threads):
             pass
+
+    @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
+    def test_free_threading_bytearray_resize_other_thread(self):
+        # Shrinking a bytearray whose buffer another thread owns must not
+        # adopt the immortal single-byte bytes object a the buffer.
+        ba = bytearray(b'abc')
+        thread = threading.Thread(target=ba.resize, args=(1,))
+        with threading_helper.start_threads([thread]):
+            pass
+        ba[0] = ord('X')
+        self.assertEqual(ba, bytearray(b'X'))
+        self.assertEqual(ord(b'a'), ord('a'))
 
 if __name__ == "__main__":
     unittest.main()

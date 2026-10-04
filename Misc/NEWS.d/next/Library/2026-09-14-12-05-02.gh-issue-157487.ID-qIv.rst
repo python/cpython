@@ -1,0 +1,4 @@
+Add constants :const:`ctypes.LIBFFI_VERSION`, :const:`ctypes.libffi_version`,
+:const:`ctypes.LIBFFI_VERSION_INFO` and :const:`ctypes.libffi_version_info`,
+which provide information about the version of the libffi library in use.
+They are only available with libffi 3.5 or later.

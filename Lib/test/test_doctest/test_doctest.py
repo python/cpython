@@ -6,6 +6,7 @@ from test import support
 from test.support import import_helper
 import doctest
 import functools
+import io
 import os
 import sys
 import importlib
@@ -469,7 +470,7 @@ We'll simulate a __file__ attr that ends in pyc:
     >>> tests = finder.find(sample_func)
 
     >>> print(tests)  # doctest: +ELLIPSIS
-    [<DocTest sample_func from test_doctest.py:36 (1 example)>]
+    [<DocTest sample_func from test_doctest.py:37 (1 example)>]
 
 The exact name depends on how test_doctest was invoked, so allow for
 leading path components.
@@ -801,6 +802,59 @@ class TestDocTest(unittest.TestCase):
         self.assertEqual(tuple(results), (2, 3))
         x, y = results
         self.assertEqual((x, y), (2, 3))
+
+
+class TestDocTestSuiteVerbosity(unittest.TestCase):
+
+    def run_suite(self, module='test.test_doctest.sample_doctest', **kwargs):
+        """Return what the test runner wrote and what leaked to stdout."""
+        suite = doctest.DocTestSuite(module)
+        stream = io.StringIO()
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            unittest.TextTestRunner(stream=stream, **kwargs).run(suite)
+        return stream.getvalue(), stdout.getvalue()
+
+    def test_quiet(self):
+        for verbosity in range(3):
+            with self.subTest(verbosity=verbosity):
+                output, stdout = self.run_suite(verbosity=verbosity)
+                self.assertNotIn('Trying:', output)
+                self.assertNotIn('Expecting:', output)
+                self.assertEqual(stdout, '')
+
+    def test_verbose(self):
+        output, stdout = self.run_suite(verbosity=3)
+        self.assertIn('Trying:\n    2+2\n', output)
+        self.assertIn('Expecting:\n    4\n', output)
+        self.assertIn('\nok\n', output)
+        # Reported to the stream of the test runner, not to the stdout.
+        self.assertEqual(stdout, '')
+
+    def test_verbose_buffered(self):
+        # result.buffer replaces sys.stdout, which would swallow the examples.
+        output, stdout = self.run_suite(verbosity=3, buffer=True)
+        self.assertIn('Trying:\n    2+2\n', output)
+        self.assertEqual(stdout, '')
+
+    def test_verbose_failure_not_duplicated(self):
+        module = 'test.test_doctest.sample_doctest_errors'
+        quiet, _ = self.run_suite(module, verbosity=2)
+        verbose, _ = self.run_suite(module, verbosity=3)
+        self.assertIn('Trying:', verbose)
+        self.assertNotIn('Trying:', quiet)
+        # Reporting the examples does not report the failures once more.
+        self.assertEqual(verbose.count('Failed example:'),
+                         quiet.count('Failed example:'))
+        self.assertGreater(quiet.count('Failed example:'), 0)
+
+    def test_plain_result(self):
+        # A result which is not from a text test runner has no stream.
+        suite = doctest.DocTestSuite('test.test_doctest.sample_doctest')
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            suite.run(unittest.TestResult())
+        self.assertEqual(stdout.getvalue(), '')
 
 
 class TestDocTestFinder(unittest.TestCase):

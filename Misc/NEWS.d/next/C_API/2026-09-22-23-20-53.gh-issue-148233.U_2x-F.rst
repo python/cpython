@@ -1,0 +1,1 @@
+Add :c:func:`Py_HashBuffer` to the limited C API. Patch by Victor Stinner.

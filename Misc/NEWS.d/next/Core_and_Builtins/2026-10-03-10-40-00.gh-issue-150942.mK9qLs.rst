@@ -1,0 +1,2 @@
+Avoid redundant reference count updates in the ``values()`` method of the
+:attr:`frame.f_locals` proxy for optimized scopes.
