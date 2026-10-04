@@ -410,6 +410,8 @@ class BaseBytesTest:
         self.assertRaises(TypeError, lambda: b1 + "def")
         self.assertRaises(TypeError, lambda: "abc" + b2)
 
+        self.assertEqual(self.type2test() + memoryview(b''), b'')
+
     def test_repeat(self):
         for b in b"abc", self.type2test(b"abc"):
             self.assertEqual(b * 3, b"abcabcabc")
@@ -1446,6 +1448,45 @@ class BytesTest(BaseBytesTest, unittest.TestCase):
         self.assertNotEqual(id(s), id(s * 1))
         self.assertNotEqual(id(s), id(1 * s))
         self.assertNotEqual(id(s), id(s * 2))
+
+    @support.cpython_only
+    def test_concat_cpython(self):
+        # Test optimizations
+        empty = b''
+        abc = b"abc"
+        self.assertIs(abc + empty, abc)
+        self.assertIs(empty + abc, abc)
+        self.assertIs(empty + bytearray(b''), empty)
+        self.assertIs(empty + memoryview(b''), empty)
+
+        class Subclass(bytes):
+            pass
+
+        empty_subclass = Subclass(b"")
+        self.assertIs(empty + empty_subclass, empty)
+        self.assertIs(empty_subclass + empty, empty)
+        self.assertIs(abc + empty_subclass, abc)
+        self.assertIs(empty_subclass + abc, abc)
+
+        def assert_copy(result, expected):
+            self.assertIsNot(result, expected)
+            self.assertEqual(type(result), bytes)
+            self.assertEqual(result, expected)
+
+        # Copy the string if it's a subclass
+        def_subclass = Subclass(b"def")
+        assert_copy(def_subclass + empty, b'def')
+        assert_copy(empty + def_subclass, b'def')
+        assert_copy(abc + def_subclass, b'abcdef')
+        assert_copy(def_subclass + abc, b'defabc')
+
+    @support.cpython_only
+    def test_repeat_cpython(self):
+        # Test optimizations
+        for b in b'', b'x', b"abc":
+            self.assertIs(b * 1, b)
+            self.assertIs(b * 0, b'')
+            self.assertIs(b * -23, b'')
 
 
 class ByteArrayTest(BaseBytesTest, unittest.TestCase):

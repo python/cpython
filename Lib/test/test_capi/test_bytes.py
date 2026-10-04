@@ -61,10 +61,12 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(fromstringandsize(b'abc'), b'abc')
         self.assertEqual(fromstringandsize(b'abc', 2), b'ab')
         self.assertEqual(fromstringandsize(b'abc\0def'), b'abc\0def')
-        self.assertEqual(fromstringandsize(b'a'), b'a')
-        self.assertEqual(fromstringandsize(b'a', 1), b'a')
-        self.assertEqual(fromstringandsize(b'', 0), b'')
-        self.assertEqual(fromstringandsize(NULL, 0), b'')
+
+        # Return singleton for 0 or 1 bytes
+        self.assertIs(fromstringandsize(b'', 0), b'')
+        self.assertIs(fromstringandsize(NULL, 0), b'')
+        self.assertIs(fromstringandsize(b'a', 1), b'a')
+
         self.assertEqual(len(fromstringandsize(NULL, 3)), 3)
         self.assertRaises((MemoryError, OverflowError),
                           fromstringandsize, NULL, PY_SSIZE_T_MAX)
@@ -79,7 +81,10 @@ class CAPITest(unittest.TestCase):
         fromstring = _testlimitedcapi.bytes_fromstring
 
         self.assertEqual(fromstring(b'abc\0def'), b'abc')
-        self.assertEqual(fromstring(b''), b'')
+
+        # Return singleton for 0 or 1 bytes
+        self.assertIs(fromstring(b''), b'')
+        self.assertIs(fromstring(b'a'), b'a')
 
         # CRASHES fromstring(NULL)
 
