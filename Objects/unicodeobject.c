@@ -5482,22 +5482,31 @@ PyUnicode_DecodeUTF8Stateful(const char *s,
 }
 
 
-/* UTF-8 decoder: use surrogateescape error handler if 'surrogateescape' is
-   non-zero, use strict error handler otherwise.
-
-   On success, write a pointer to a newly allocated wide character string into
-   *wstr (use PyMem_RawFree() to free the memory) and write the output length
-   (in number of wchar_t units) into *wlen (if wlen is set).
-
-   On memory allocation failure, return -1.
-
-   On decoding error (if surrogateescape is zero), return -2. If wlen is
-   non-NULL, write the start of the illegal byte sequence into *wlen. If reason
-   is not NULL, write the decoding error message into *reason. */
+// UTF-8 decoder.
+//
+// Supported error handlers: "strict", "surrogateescape" and "surrogatepass".
+//
+// On success, write a pointer to a newly allocated wide character string into
+// *wstr (use PyMem_RawFree() to free the memory), write the output length
+// (in number of wchar_t units) into *wlen (if wlen is set), and return 0.
+//
+// On error, return a negative number.
+//
+// On memory allocation failure, return _Py_CODEC_MEMORY_ERROR.
+//
+// On decoding error (if surrogateescape is zero), return -2. If wlen is
+// non-NULL, write the start of the illegal byte sequence into *wlen. If reason
+// is not NULL, write the decoding error message into *reason.
+//
+// Return _Py_CODEC_UNSUPPORTED_ERROR_HANDLER if 'errors' error handler is not
+// supported.
 int
 _Py_DecodeUTF8Ex(const char *s, Py_ssize_t size, wchar_t **wstr, size_t *wlen,
                  const char **reason, _Py_error_handler errors)
 {
+    assert(s != NULL);
+    assert(wstr != NULL);
+
     const char *orig_s = s;
     const char *e;
     wchar_t *unicode;
@@ -5516,18 +5525,18 @@ _Py_DecodeUTF8Ex(const char *s, Py_ssize_t size, wchar_t **wstr, size_t *wlen,
         surrogatepass = 1;
         break;
     default:
-        return -3;
+        return _Py_CODEC_UNSUPPORTED_ERROR_HANDLER;
     }
 
     /* Note: size will always be longer than the resulting Unicode
        character count */
     if (PY_SSIZE_T_MAX / (Py_ssize_t)sizeof(wchar_t) - 1 < size) {
-        return -1;
+        return _Py_CODEC_MEMORY_ERROR;
     }
 
     unicode = PyMem_RawMalloc((size + 1) * sizeof(wchar_t));
     if (!unicode) {
-        return -1;
+        return _Py_CODEC_MEMORY_ERROR;
     }
 
     /* Unpack UTF-8 encoded data */
@@ -5589,7 +5598,7 @@ _Py_DecodeUTF8Ex(const char *s, Py_ssize_t size, wchar_t **wstr, size_t *wlen,
                     if (wlen != NULL) {
                         *wlen = s - orig_s;
                     }
-                    return -2;
+                    return _Py_CODEC_DECODE_ERROR;
                 }
             }
         }
@@ -5603,6 +5612,10 @@ _Py_DecodeUTF8Ex(const char *s, Py_ssize_t size, wchar_t **wstr, size_t *wlen,
 }
 
 
+// Decode from UTF-8 with the "surrogateescape" error handler.
+// On success, set *wlen and return a newly allocated string.
+// On error, set *wlen to the error (_Py_CODEC_MEMORY_ERROR or
+// _Py_CODEC_DECODE_ERROR) and the return NULL
 wchar_t*
 _Py_DecodeUTF8_surrogateescape(const char *arg, Py_ssize_t arglen,
                                size_t *wlen)
@@ -5613,7 +5626,7 @@ _Py_DecodeUTF8_surrogateescape(const char *arg, Py_ssize_t arglen,
                                NULL, _Py_ERROR_SURROGATEESCAPE);
     if (res != 0) {
         /* _Py_DecodeUTF8Ex() must support _Py_ERROR_SURROGATEESCAPE */
-        assert(res != -3);
+        assert(res != _Py_CODEC_UNSUPPORTED_ERROR_HANDLER);
         if (wlen) {
             *wlen = (size_t)res;
         }
@@ -5632,7 +5645,10 @@ _Py_DecodeUTF8_surrogateescape(const char *arg, Py_ssize_t arglen,
    position of the invalid surrogate character into *error_pos (if error_pos is
    set).
 
-   On memory allocation failure, return _Py_CODEC_MEMORY_ERROR (-1). */
+   On memory allocation failure, return _Py_CODEC_MEMORY_ERROR (-1).
+
+   str and output_length must not be NULL
+*/
 int
 _Py_EncodeUTF8Ex(const wchar_t *text, char **str, size_t *output_length,
                  size_t *error_pos, int raw_malloc, _Py_error_handler errors)

@@ -4325,12 +4325,14 @@ utf8_to_wstr(PyInitConfig *config, const char *str)
 {
     wchar_t *wstr;
     size_t wlen;
-    int res = _Py_DecodeUTF8Ex(str, strlen(str), &wstr, &wlen, NULL, _Py_ERROR_STRICT);
-    if (res == -2) {
+    int res = _Py_DecodeUTF8Ex(str, strlen(str), &wstr, &wlen,
+                               NULL, _Py_ERROR_STRICT);
+    if (res == _Py_CODEC_DECODE_ERROR) {
         initconfig_set_error(config, "decoding error");
         return NULL;
     }
     if (res < 0) {
+        assert(res == _Py_CODEC_MEMORY_ERROR);
         config->status = _PyStatus_NO_MEMORY();
         return NULL;
     }

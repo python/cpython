@@ -63,16 +63,18 @@ encode_locale(PyObject *Py_UNUSED(module), PyObject *arg)
         return NULL;
     }
 
-    size_t error_pos = (size_t)-123;
+    const size_t error_pos_canary = (size_t)-123;
+    size_t error_pos = error_pos_canary;
     char *str = Py_EncodeLocale(wstr, &error_pos);
     PyMem_Free(wstr);
 
     if (str == NULL) {
+        assert(error_pos != error_pos_canary);
         return PyErr_Format(PyExc_ValueError,
                             "Py_EncodeLocale failed: error_pos=%zd",
                             error_pos);
     }
-    assert(error_pos == (size_t)-123);
+    assert(error_pos == error_pos_canary);
 
     PyObject *result = PyBytes_FromString(str);
     PyMem_Free(str);
