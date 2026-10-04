@@ -1,0 +1,2 @@
+Fix an unused variable compiler warning for the tracing dispatch table when
+building with :option:`--with-tail-call-interp` without the JIT.
