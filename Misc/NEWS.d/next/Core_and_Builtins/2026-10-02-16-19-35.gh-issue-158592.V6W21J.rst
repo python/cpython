@@ -1,2 +1,1 @@
-Avoid holding memory much longer than needed after deleting
-an item from a list via :keyword:`del`.
+``del list[index]`` now triggers shrinking the list's internal array.
