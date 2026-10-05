@@ -25,6 +25,7 @@ INVALID_CHAR = MAX_UNICODE + 1
 # Maximum invalid character which fits into 32-bit Py_UCS4
 MAX_INVALID_CHAR = 0xFFFF_FFFF
 NULL = None
+USED_STR_ERROR = 'Cannot modify a string currently used'
 
 class Str(str):
     pass
@@ -76,9 +77,27 @@ class CAPITest(unittest.TestCase):
         # Test PyUnicode_CheckExact()
         self._test_check(_testlimitedcapi.unicode_checkexact, exact=True)
 
+    def assert_is_mutable(self, result, refcnt):
+        # Check that result is a "mutable" Unicode string
+        self.assertEqual(refcnt, 1)
+        self.assertFalse(sys._is_immortal(result))
+
+    def assert_is_empty_singleton(self, result):
+        # Check that result is the empty string singleton
+        self.assertEqual(result, '')
+        self.assertTrue(sys._is_immortal(result))
+
     def test_new(self):
         """Test PyUnicode_New()"""
-        new = _testcapi.unicode_new
+        _unicode_new = _testcapi.unicode_new
+
+        def new(size, maxchar):
+            result = _unicode_new(size, maxchar)
+            if size != 0:
+                self.assert_is_mutable(result, sys.getrefcount(result))
+            else:
+                self.assert_is_empty_singleton(result)
+            return result
 
         for maxchar in 0, 0x61, 0xa1, 0x4f60, 0x1f600, 0x10ffff:
             self.assertEqual(new(0, maxchar), '')
@@ -123,6 +142,10 @@ class CAPITest(unittest.TestCase):
                         self.assertEqual(fill(to, start, length, fill_char),
                                         (expected, filled))
 
+        # A string with 2 references cannot be modified
+        with self.assertRaisesRegex(SystemError, USED_STR_ERROR):
+            fill('abc', 0, 3, ord('x'), incref=True)
+
         s = strings[0]
         self.assertRaises(IndexError, fill, s, -1, 0, 0x78)
         self.assertRaises(IndexError, fill, s, PY_SSIZE_T_MIN, 0, 0x78)
@@ -162,7 +185,12 @@ class CAPITest(unittest.TestCase):
 
     def test_writechar(self):
         """Test PyUnicode_WriteChar()"""
-        self._test_writechar(_testlimitedcapi.unicode_writechar, check=True)
+        writechar = _testlimitedcapi.unicode_writechar
+        self._test_writechar(writechar, check=True)
+
+        # A string with 2 references cannot be modified
+        with self.assertRaisesRegex(SystemError, USED_STR_ERROR):
+            writechar('abc', 1, ord('x'), incref=True)
 
     def test_write_macro(self):
         """Test PyUnicode_WRITE()"""
@@ -187,18 +215,16 @@ class CAPITest(unittest.TestCase):
                 self.assertFalse(is_new_obj)
             elif length == 0:
                 # Get the empty Unicode string
-                self.assertEqual(result, '')
-                self.assertTrue(sys._is_immortal(result))
+                self.assert_is_empty_singleton(result)
                 self.assertTrue(is_new_obj)
             elif (not new) or compute_hash:
                 # Get a fresh copy
-                self.assertEqual(refcnt, 1)
+                self.assert_is_mutable(result, refcnt)
                 self.assertTrue(is_new_obj)
-                self.assertFalse(sys._is_immortal(result))
             else:
                 # In-size replace can return the same address, or not.
                 # So 'is_new_obj' cannot be tested.
-                self.assertFalse(sys._is_immortal(result))
+                self.assert_is_mutable(result, refcnt)
 
             return result
 
@@ -1793,6 +1819,11 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(SystemError, unicode_copycharacters, s, 0, s, 0, PY_SSIZE_T_MIN)
         self.assertRaises(SystemError, unicode_copycharacters, s, 0, b'', 0, 0)
         self.assertRaises(SystemError, unicode_copycharacters, s, 0, [], 0, 0)
+
+        # A string with 2 references cannot be modified
+        with self.assertRaisesRegex(SystemError, USED_STR_ERROR):
+            unicode_copycharacters('abc', 0, 'abc', 0, 1, incref=True)
+
         # CRASHES unicode_copycharacters(s, 0, NULL, 0, 0)
         # TODO: Test PyUnicode_CopyCharacters() with non-unicode and
         # non-modifiable unicode as "to".
