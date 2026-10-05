@@ -68,8 +68,8 @@ class CollapsedStackCollector(StackTraceCollector):
         return True
 
 
-# Bounded by the unwinder's maximum captured stack depth (MAX_FRAMES).
-_FLAMEGRAPH_RECURSION_MARGIN = 2000
+# Allow for tree conversion and the dict/list frames in the Python JSON encoder.
+_FLAMEGRAPH_RECURSION_MARGIN = 6000
 
 
 class FlamegraphCollector(StackTraceCollector):
@@ -498,7 +498,12 @@ class FlamegraphCollector(StackTraceCollector):
             return None
 
     def _create_flamegraph_html(self, data):
-        data_json = json.dumps(data)
+        try:
+            data_json = json.dumps(data)
+        except RecursionError:
+            # The C encoder can exhaust the C stack independently of the
+            # Python recursion limit. iterencode() uses the Python encoder.
+            data_json = "".join(json.JSONEncoder().iterencode(data))
 
         template_dir = importlib.resources.files(__package__)
         vendor_dir = template_dir / "_vendor"
