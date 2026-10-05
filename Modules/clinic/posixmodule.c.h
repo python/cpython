@@ -6646,7 +6646,7 @@ exit:
 #if (defined(HAVE_READLINK) || defined(MS_WINDOWS))
 
 PyDoc_STRVAR(os_readlink__doc__,
-"readlink($module, /, path, *, dir_fd=None)\n"
+"readlink($module, /, path, *, dir_fd=None, printname=False)\n"
 "--\n"
 "\n"
 "Return a string representing the path to which the symbolic link points.\n"
@@ -6656,13 +6656,19 @@ PyDoc_STRVAR(os_readlink__doc__,
 "that directory.\n"
 "\n"
 "dir_fd may not be implemented on your platform.  If it is unavailable,\n"
-"using it will raise a NotImplementedError.");
+"using it will raise a NotImplementedError.\n"
+"\n"
+"On Windows, if printname is true, return the print name of the link --\n"
+"the target path as it was specified when the link was created -- instead\n"
+"of the substitute name used by the system to resolve the link.\n"
+"\n"
+"printname is ignored on non-Windows platforms.");
 
 #define OS_READLINK_METHODDEF    \
     {"readlink", _PyCFunction_CAST(os_readlink), METH_FASTCALL|METH_KEYWORDS, os_readlink__doc__},
 
 static PyObject *
-os_readlink_impl(PyObject *module, path_t *path, int dir_fd);
+os_readlink_impl(PyObject *module, path_t *path, int dir_fd, int printname);
 
 static PyObject *
 os_readlink(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -6670,7 +6676,7 @@ os_readlink(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 2
+    #define NUM_KEYWORDS 3
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -6679,7 +6685,7 @@ os_readlink(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(path), &_Py_ID(dir_fd), },
+        .ob_item = { &_Py_ID(path), &_Py_ID(dir_fd), &_Py_ID(printname), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -6688,17 +6694,18 @@ os_readlink(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"path", "dir_fd", NULL};
+    static const char * const _keywords[] = {"path", "dir_fd", "printname", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "readlink",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     path_t path = PATH_T_INITIALIZE_P("readlink", "path", 0, 0, 0, 0);
     int dir_fd = DEFAULT_DIR_FD;
+    int printname = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -6711,11 +6718,20 @@ os_readlink(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (!READLINKAT_DIR_FD_CONVERTER(args[1], &dir_fd)) {
+    if (args[1]) {
+        if (!READLINKAT_DIR_FD_CONVERTER(args[1], &dir_fd)) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    printname = PyObject_IsTrue(args[2]);
+    if (printname < 0) {
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = os_readlink_impl(module, &path, dir_fd);
+    return_value = os_readlink_impl(module, &path, dir_fd, printname);
 
 exit:
     /* Cleanup for path */
@@ -13774,4 +13790,4 @@ exit:
 #ifndef OS__EMSCRIPTEN_LOG_METHODDEF
     #define OS__EMSCRIPTEN_LOG_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_LOG_METHODDEF) */
-/*[clinic end generated code: output=38edcd9b6f56b729 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a91a1844476f2d0f input=a9049054013a1b77]*/

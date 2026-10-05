@@ -730,6 +730,7 @@ _PyStaticObjects_CheckAll(PyInterpreterState *interp) {
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(prec), "prec", 4);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(preserve_exc), "preserve_exc", 12);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(print_file_and_line), "print_file_and_line", 19);
+    _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(printname), "printname", 9);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(priority), "priority", 8);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(progress), "progress", 8);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(progress_callback), "progress_callback", 17);
