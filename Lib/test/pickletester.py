@@ -4925,6 +4925,31 @@ class AbstractPickleModuleTests:
         unpickled = self.load(stream)
         self.assertEqual(unpickled, data)
 
+    def test_load_from_file_returning_bytes_subclass(self):
+        # gh-158841: read() returning a bytes subclass must not crash
+        # when the payload is large enough to need several chunked reads.
+        class MyBytes(bytes):
+            pass
+
+        class Reader:
+            def __init__(self, data):
+                self.data = data
+                self.pos = 0
+            def read(self, n):
+                chunk = self.data[self.pos:self.pos + n]
+                self.pos += len(chunk)
+                return MyBytes(chunk)
+            def readline(self):
+                end = self.data.find(b'\n', self.pos)
+                end = len(self.data) if end < 0 else end + 1
+                line = self.data[self.pos:end]
+                self.pos = end
+                return line
+
+        obj = {'v': 'B' * (3 * 1024 * 1024)}
+        data = self.dumps(obj, protocol=4)
+        self.assertEqual(self.load(Reader(data)), obj)
+
     def test_highest_protocol(self):
         # Of course this needs to be changed when HIGHEST_PROTOCOL changes.
         self.assertEqual(pickle.HIGHEST_PROTOCOL, 5)
