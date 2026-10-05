@@ -2689,13 +2689,6 @@
 [function.PyErr_SetHandledException]
     added = '3.11'
 
-# Python 3.11 macros
-
-[macro.PyBUF_CONTIG_RO]
-    added = '3.11'
-[macro.PyBUF_STRIDED_RO]
-    added = '3.11'
-
 
 ### Python 3.12 #############################################################
 
