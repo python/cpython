@@ -2258,10 +2258,6 @@ parse_code_object(RemoteUnwinderObject *unwinder,
                   uintptr_t *previous_frame,
                   int32_t tlbc_index)
 {
-    _Py_DECLARE_STR(unknown_function, "<unknown function>");
-    _Py_DECLARE_STR(unknown_file, "<unknown file>");
-    _Py_DECLARE_STR(unreadable_frame, "<unreadable frame>");
-
     void *key = (void *)address;
     CachedCodeMetadata *meta = NULL;
     PyObject *func = NULL;
@@ -2292,7 +2288,10 @@ parse_code_object(RemoteUnwinderObject *unwinder,
                 goto error;
             }
             PyErr_Clear();
-            func = Py_NewRef(&_Py_STR(unreadable_frame));
+            func = PyUnicode_FromString("<unreadable frame>");
+            if (!func) {
+                goto error;
+            }
             file = Py_NewRef(_Py_LATIN1_CHR('~'));
             goto degraded;
         }
@@ -2304,7 +2303,10 @@ parse_code_object(RemoteUnwinderObject *unwinder,
                 goto error;
             }
             PyErr_Clear();
-            func = Py_NewRef(&_Py_STR(unknown_function));
+            func = PyUnicode_FromString("<unknown function>");
+            if (!func) {
+                goto error;
+            }
             code_metadata_incomplete = 1;
         }
 
@@ -2315,7 +2317,10 @@ parse_code_object(RemoteUnwinderObject *unwinder,
                 goto error;
             }
             PyErr_Clear();
-            file = Py_NewRef(&_Py_STR(unknown_file));
+            file = PyUnicode_FromString("<unknown file>");
+            if (!file) {
+                goto error;
+            }
             code_metadata_incomplete = 1;
         }
 
