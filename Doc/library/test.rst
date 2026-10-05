@@ -1904,7 +1904,7 @@ Lazy imports
 
 .. function:: ensure_lazy_imports(imported_module, modules_to_block, *, additional_code=None)
 
-   Test that when *imported_module* is imported, none of the modules in *modules_to_block*
+   Test that when *imported_module* is imported, none of the modules named in *modules_to_block*
    are imported as a side effect.
 
    *additional_code* if given should be additional python source code to execute before
