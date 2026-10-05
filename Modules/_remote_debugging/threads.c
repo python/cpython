@@ -873,6 +873,89 @@ _Py_RemoteDebug_ResumeAllThreads(RemoteUnwinderObject *unwinder, _Py_RemoteDebug
 
 #elif defined(MS_WINDOWS)
 
+static int
+wait_for_threads_to_stop(RemoteUnwinderObject *unwinder)
+{
+    typedef NTSTATUS (NTAPI *NtGetNextThreadFunc)(
+        HANDLE, HANDLE, ACCESS_MASK, ULONG, ULONG, PHANDLE);
+    static NtGetNextThreadFunc pNtGetNextThread = NULL;
+    static int tried_load = 0;
+
+    if (!tried_load) {
+        HMODULE hNtdll = GetModuleHandleW(L"ntdll.dll");
+        if (hNtdll) {
+            pNtGetNextThread = (NtGetNextThreadFunc)GetProcAddress(
+                hNtdll, "NtGetNextThread");
+        }
+        tried_load = 1;
+    }
+    if (pNtGetNextThread == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "NtGetNextThread not available");
+        return -1;
+    }
+
+    HANDLE previous = NULL;
+    int result = -1;
+    for (;;) {
+        HANDLE next = NULL;
+        // Enumerate with the available access, then obtain context access
+        // separately so threads that deny it are not silently skipped.
+        NTSTATUS status = pNtGetNextThread(unwinder->handle.hProcess,
+                                           previous, MAXIMUM_ALLOWED, 0, 0, &next);
+        if (previous != NULL) {
+            CloseHandle(previous);
+        }
+        previous = next;
+        if (status == STATUS_NO_MORE_ENTRIES) {
+            break;
+        }
+        if (status < 0) {
+            if (!is_process_alive(unwinder->handle.hProcess)) {
+                PyErr_Format(PyExc_ProcessLookupError,
+                             "Process %d has terminated", unwinder->handle.pid);
+            }
+            else {
+                PyErr_Format(PyExc_RuntimeError,
+                             "NtGetNextThread failed: 0x%lx", status);
+            }
+            goto done;
+        }
+        HANDLE thread;
+        if (!DuplicateHandle(GetCurrentProcess(), next, GetCurrentProcess(),
+                             &thread, THREAD_GET_CONTEXT | SYNCHRONIZE,
+                             FALSE, 0)) {
+            PyErr_SetFromWindowsErr(GetLastError());
+            goto done;
+        }
+        // Suspension is asynchronous. Reading the context waits for the
+        // thread to stop before we start reading the target's memory.
+        CONTEXT context = {.ContextFlags = CONTEXT_CONTROL};
+        if (!GetThreadContext(thread, &context)) {
+            DWORD error = GetLastError();
+            int exited = WaitForSingleObject(thread, 0) == WAIT_OBJECT_0;
+            CloseHandle(thread);
+            if (exited) {
+                continue;
+            }
+            PyErr_SetFromWindowsErr(error);
+            goto done;
+        }
+        CloseHandle(thread);
+    }
+    if (!is_process_alive(unwinder->handle.hProcess)) {
+        PyErr_Format(PyExc_ProcessLookupError,
+                     "Process %d has terminated", unwinder->handle.pid);
+        goto done;
+    }
+    result = 0;
+
+done:
+    if (previous != NULL) {
+        CloseHandle(previous);
+    }
+    return result;
+}
+
 void
 _Py_RemoteDebug_InitThreadsState(RemoteUnwinderObject *unwinder, _Py_RemoteDebug_ThreadsState *st)
 {
@@ -903,6 +986,12 @@ _Py_RemoteDebug_StopAllThreads(RemoteUnwinderObject *unwinder, _Py_RemoteDebug_T
     if (status >= 0) {
         st->hProcess = unwinder->handle.hProcess;
         st->suspended = 1;
+        if (wait_for_threads_to_stop(unwinder) < 0) {
+            // pause_threads() has not yet set threads_stopped, so its caller
+            // will not resume the process when we return an error.
+            _Py_RemoteDebug_ResumeAllThreads(unwinder, st);
+            return -1;
+        }
         _Py_RemoteDebug_ClearCache(&unwinder->handle);
         return 0;
     }
