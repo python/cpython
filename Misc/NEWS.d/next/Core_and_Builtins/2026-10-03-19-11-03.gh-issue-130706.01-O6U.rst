@@ -1,0 +1,2 @@
+Add a fast path to ``_Py_Dealloc()`` for non-GC objects. Patch by Donghee
+Na.
