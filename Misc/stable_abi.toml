@@ -1872,6 +1872,10 @@
 [function.PyThread_start_new_thread]
     added = '3.2'
 
+# Python 3.2 macros
+[macro.Py_CLEAR]
+    added = '3.2'
+
 
 ### Python 3.3 ##############################################################
 
