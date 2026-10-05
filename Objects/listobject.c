@@ -481,6 +481,36 @@ end:;
 static void ptr_wise_atomic_memmove(PyListObject *a, PyObject **dest,
                                     PyObject **src, Py_ssize_t n);
 
+static inline void
+list_shift_items_right_lock_held(PyListObject *self, Py_ssize_t first,
+                                 Py_ssize_t last)
+{
+#ifdef Py_GIL_DISABLED
+    ptr_wise_atomic_memmove(self, &self->ob_item[first + 1],
+                            &self->ob_item[first], last - first);
+#else
+    PyObject **items = self->ob_item;
+    for (Py_ssize_t i = last; --i >= first; ) {
+        items[i + 1] = items[i];
+    }
+#endif
+}
+
+static inline void
+list_shift_items_left_lock_held(PyListObject *self, Py_ssize_t first,
+                                Py_ssize_t last)
+{
+#ifdef Py_GIL_DISABLED
+    ptr_wise_atomic_memmove(self, &self->ob_item[first],
+                            &self->ob_item[first + 1], last - first);
+#else
+    PyObject **items = self->ob_item;
+    for (Py_ssize_t i = first; i < last; i++) {
+        items[i] = items[i + 1];
+    }
+#endif
+}
+
 static int
 ins1(PyListObject *self, Py_ssize_t where, PyObject *v)
 {
@@ -503,15 +533,9 @@ ins1(PyListObject *self, Py_ssize_t where, PyObject *v)
     if (where > n)
         where = n;
     items = self->ob_item;
-#ifdef Py_GIL_DISABLED
     if (where < n) {
-        ptr_wise_atomic_memmove(self, &items[where + 1], &items[where],
-                                n - where);
+        list_shift_items_right_lock_held(self, where, n);
     }
-#else
-    for (Py_ssize_t i = n; --i >= where; )
-        FT_ATOMIC_STORE_PTR_RELEASE(items[i+1], items[i]);
-#endif
     FT_ATOMIC_STORE_PTR_RELEASE(items[where], Py_NewRef(v));
     return 0;
 }
@@ -1155,16 +1179,9 @@ list_ass_item_lock_held(PyListObject *a, Py_ssize_t i, PyObject *v)
     PyObject *tmp = a->ob_item[i];
     if (v == NULL) {
         Py_ssize_t size = Py_SIZE(a);
-#ifdef Py_GIL_DISABLED
         if (i < size - 1) {
-            ptr_wise_atomic_memmove(a, &a->ob_item[i], &a->ob_item[i + 1],
-                                    size - 1 - i);
+            list_shift_items_left_lock_held(a, i, size - 1);
         }
-#else
-        for (Py_ssize_t idx = i; idx < size - 1; idx++) {
-            FT_ATOMIC_STORE_PTR_RELEASE(a->ob_item[idx], a->ob_item[idx + 1]);
-        }
-#endif
         Py_SET_SIZE(a, size - 1);
     }
     else {
