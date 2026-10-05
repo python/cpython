@@ -80,7 +80,6 @@ struct tok_state {
     _PyTok_SourceText source;
     int done;           /* E_OK normally, E_EOF at EOF, otherwise error code */
     /* NB If done != E_OK, cur must be == inp!!! */
-    FILE *fp;           /* Rest of input; NULL if tokenizing a string */
     lexer_layout_state layout;
     int lineno;         /* Current line number */
     _PyTok_Loc start_loc;
@@ -92,9 +91,6 @@ struct tok_state {
     int parencolstack[MAXLEVEL];
     PyObject *filename;
     PyObject *module;
-    /* Stuff for PEP 0263 */
-    char *encoding;         /* Source encoding. */
-
     struct _PyTok_Reader *reader;
 
     int type_comments;      /* Whether to look for type comments */

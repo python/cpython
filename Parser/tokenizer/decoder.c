@@ -117,8 +117,8 @@ _PyTok_SetEncoding(struct tok_state *tok, const char *encoding)
         tok->done = E_NOMEM;
         return -1;
     }
-    PyMem_Free(tok->encoding);
-    tok->encoding = copy;
+    PyMem_Free(tok->reader->encoding);
+    tok->reader->encoding = copy;
     return 0;
 }
 
@@ -246,8 +246,8 @@ _PyTok_DetectEncoding(struct tok_state *tok, const _PyTok_Chunk *first,
         PyMem_Free(cookie);
         return _PYTOK_ENCODING_ERROR;
     }
-    PyMem_Free(tok->encoding);
-    tok->encoding = cookie;
+    PyMem_Free(tok->reader->encoding);
+    tok->reader->encoding = cookie;
     return _PYTOK_ENCODING_DONE;
 }
 
@@ -393,9 +393,10 @@ _PyTok_PrepareString(struct tok_state *tok, const char *input, int utf8_only,
         .len = raw_len,
         .ownership = _PYTOK_CHUNK_BORROWED,
     };
-    if (tok->encoding != NULL && strcmp(tok->encoding, "utf-8") != 0) {
+    const char *encoding = tok->reader->encoding;
+    if (encoding != NULL && strcmp(encoding, "utf-8") != 0) {
         if (_PyTok_DecodeOnce(
-                tok, &decoded, tok->encoding, NULL) < 0) {
+                tok, &decoded, encoding, NULL) < 0) {
             return -1;
         }
     }
@@ -407,7 +408,7 @@ _PyTok_PrepareString(struct tok_state *tok, const char *input, int utf8_only,
         return -1;
     }
     if (!utf8_only &&
-            (tok->encoding == NULL || strcmp(tok->encoding, "utf-8") == 0) &&
+            (encoding == NULL || strcmp(encoding, "utf-8") == 0) &&
             !_PyTokenizer_ensure_utf8(_PyTok_SourceData(&tok->source), tok, 1)) {
         return -1;
     }
@@ -418,15 +419,15 @@ int
 _PyTok_StartDecoder(struct tok_state *tok, const char *errors)
 {
     _PyTok_Reader *reader = tok->reader;
-    if (tok->encoding == NULL || reader->decoder != NULL) {
+    if (reader->encoding == NULL || reader->decoder != NULL) {
         return 0;
     }
     if (reader->kind == _PYTOK_READER_FILE &&
-            strcmp(tok->encoding, "utf-8") == 0) {
+            strcmp(reader->encoding, "utf-8") == 0) {
         return 0;
     }
 
-    PyObject *codec = _PyCodec_LookupTextEncoding(tok->encoding, NULL);
+    PyObject *codec = _PyCodec_LookupTextEncoding(reader->encoding, NULL);
     if (codec != NULL) {
         PyObject *factory = PyObject_GetAttrString(codec, "incrementaldecoder");
         Py_DECREF(codec);

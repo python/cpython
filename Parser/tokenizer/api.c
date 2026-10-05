@@ -4,6 +4,7 @@
 
 #include "tokenizer.h"
 #include "reader.h"
+#include "reader_internal.h"
 #include "../lexer/state.h"
 
 _PyTokenizer_Info
@@ -21,10 +22,10 @@ _PyTokenizer_GetInfo(const struct tok_state *tok)
         .delimiter_loc = {-1, -1},
         .in_formatted_string = tok->ftstring_depth != 0,
         .is_interactive = _PyTok_ReaderIsInteractive(tok),
-        .is_file = tok->fp != NULL && tok->fp != stdin,
+        .is_file = tok->reader->fp != NULL && tok->reader->fp != stdin,
         .filename = tok->filename,
         .module = tok->module,
-        .encoding = tok->encoding,
+        .encoding = tok->reader->encoding,
     };
     if (tok->level > 0) {
         int level = tok->level - 1;
