@@ -3219,6 +3219,7 @@ t.join()
             self._check_exception_status(p, thread_tid, expect_exception=False)
 
 
+@skip_if_not_supported
 class TestExceptionDetectionInProcess(RemoteInspectionTestBase):
     """gh-158539: HAS_EXCEPTION for handlers running in generators/coroutines.
 
