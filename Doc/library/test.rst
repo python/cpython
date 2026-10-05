@@ -1696,19 +1696,19 @@ The :mod:`!test.support.import_helper` module provides support for import tests.
 
 .. function:: forget(modname)
 
-   Remove the module named *modname* from ``sys.modules`` and delete any
+   Remove the module named *modname* from :data:`sys.modules` and delete any
    byte-compiled files of the module.
 
 
 .. function:: import_fresh_module(name, fresh=(), blocked=(), *, deprecated=False, usefrozen=False)
 
    This function imports and returns a fresh copy of the named Python module
-   by removing the named module from ``sys.modules`` before doing the import.
+   by removing the named module from :data:`sys.modules` before doing the import.
    Note that unlike :func:`reload`, the original module is not affected by
    this operation.
 
    *fresh* is an iterable of additional module names that are also removed
-   from the ``sys.modules`` cache before doing the import.
+   from the :data:`sys.modules` cache before doing the import.
 
    *blocked* is an iterable of module names that are replaced with ``None``
    in the module cache during the import to ensure that attempts to import
@@ -1716,7 +1716,7 @@ The :mod:`!test.support.import_helper` module provides support for import tests.
 
    The named module and any modules named in the *fresh* and *blocked*
    parameters are saved before starting the import and then reinserted into
-   ``sys.modules`` when the fresh import is complete.
+   :data:`sys.modules` when the fresh import is complete.
 
    Module and package deprecation messages are suppressed during this import
    if *deprecated* is ``True``.
@@ -1766,7 +1766,7 @@ The :mod:`!test.support.import_helper` module provides support for import tests.
 
 .. function:: unload(name)
 
-   Delete *name* from ``sys.modules``.
+   Delete *name* from :data:`sys.modules`.
 
 
 .. function:: make_legacy_pyc(source, allow_compile=False)
@@ -1809,6 +1809,91 @@ The :mod:`!test.support.import_helper` module provides support for import tests.
    Note that *all* :data:`sys.path` modifications in the body of the
    context manager, including replacement of the object,
    will be reverted at the end of the block.
+
+
+.. function:: create_module(name, loader=None, *, ispkg=False)
+
+   Create a new, empty :term:`module` or :term:`package` and return it.
+
+   *name*, *loader* and *ispkg* (as ``is_package``) are passed to
+   :class:`importlib.machinery.ModuleSpec`.
+
+
+.. function:: add_module(spec, *, parents=True)
+
+   Create a :term:`module` from a name or spec and add it to :data:`sys.modules`.
+
+   If *parents* is ``True`` then also create any missing parent modules.
+
+   Return the new module.
+
+
+.. function:: add_package(spec, *, parents=True)
+
+   Create a :term:`package` from a name and add it to :data:`sys.modules`.
+
+   If *parents* is ``True`` then also create any missing parent modules.
+
+   Return the new package.
+
+
+.. function:: ensure_module_imported(name, *, clearnone=True)
+
+   Import and return the named module.
+
+   If the module is already imported, this is returned. Otherwise, import
+   the module and return it. If the module is not found a new, empty module
+   will be created.
+
+   If *clearnone* is ``True``, this will first remove any ``None`` values that
+   would block the import.
+
+
+.. function:: frozen_modules(enabled=True)
+
+   A context manager that forces frozen modules to be used or excluded.
+
+   This only applies to modules that have not yet been imported. Some essential
+   modules will always be imported frozen.
+
+
+.. function:: isolated_modules()
+
+   A context manager that makes a copy of :data:`sys.modules` on entry and restores
+   it on exit.
+
+
+.. function:: multi_interp_extensions_check(enabled=True)
+
+   A context manager that forces (if ``True``) or prevents legacy modules from being
+   allowed in subinterpreters.
+
+   ("legacy" == single-phase init)
+
+   This only applies to modules that haven't been imported yet.
+   It overrides the PyInterpreterConfig.check_multi_interp_extensions
+   setting.
+
+
+.. function:: ready_to_import(name=None, source="")
+
+   A context manager that will create a new python module *name* with *source*
+   source code in a temporary directory and inserts this directory at the start
+   of :data:`sys.path`.
+
+   If the name already defines a module, this will be cleared from :data:`sys.modules`
+   on entry and restored on exit.
+
+   Yields (name, path_to_script)
+
+
+.. function:: ensure_lazy_imports(imported_module, modules_to_block, *, additional_code=None)
+
+   Test that when *imported_module* is imported, none of the modules in *modules_to_block*
+   are imported as a side effect.
+
+   *additional_code*, if given, should be additional python source code to execute before
+   checking that the blocked modules still haven't been imported.
 
 
 :mod:`!test.support.warnings_helper` --- Utilities for warnings tests
