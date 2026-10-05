@@ -1,0 +1,2 @@
+Fix the PowerSort mask calculation in :meth:`list.sort` for very large
+lists.
