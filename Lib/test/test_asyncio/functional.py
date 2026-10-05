@@ -131,12 +131,14 @@ class TestSocketWrapper:
 
     def start_tls(self, ssl_context, *,
                   server_side=False,
-                  server_hostname=None):
+                  server_hostname=None,
+                  suppress_ragged_eofs=True):
 
         ssl_sock = ssl_context.wrap_socket(
             self.__sock, server_side=server_side,
             server_hostname=server_hostname,
-            do_handshake_on_connect=False)
+            do_handshake_on_connect=False,
+            suppress_ragged_eofs=suppress_ragged_eofs)
 
         try:
             ssl_sock.do_handshake()
