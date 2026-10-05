@@ -1700,7 +1700,7 @@ The :mod:`!test.support.import_helper` module provides support for import tests.
    byte-compiled files of the module.
 
 
-.. function:: import_fresh_module(name, fresh=(), blocked=(), deprecated=False)
+.. function:: import_fresh_module(name, fresh=(), blocked=(), *, deprecated=False, usefrozen=False)
 
    This function imports and returns a fresh copy of the named Python module
    by removing the named module from ``sys.modules`` before doing the import.
@@ -1720,6 +1720,9 @@ The :mod:`!test.support.import_helper` module provides support for import tests.
 
    Module and package deprecation messages are suppressed during this import
    if *deprecated* is ``True``.
+
+   If *usefrozen* is False (the default) then the frozen importer is
+   disabled (except for essential modules like importlib._bootstrap).
 
    This function will raise :exc:`ImportError` if the named module cannot be
    imported.
@@ -1774,11 +1777,16 @@ The :mod:`!test.support.import_helper` module provides support for import tests.
    3147/488 pyc file must exist.
 
 
-.. class:: CleanImport(*module_names)
+.. class:: CleanImport(*module_names, usefrozen=False)
 
    A context manager to force import to return a new module reference.  This
    is useful for testing module-level behaviors, such as the emission of a
-   :exc:`DeprecationWarning` on import.  Example usage::
+   :exc:`DeprecationWarning` on import.
+
+   If *usefrozen* is False (the default) then the frozen importer is
+   disabled (except for essential modules like importlib._bootstrap).
+
+   Example usage::
 
       with CleanImport('foo'):
           importlib.import_module('foo')  # New reference.
