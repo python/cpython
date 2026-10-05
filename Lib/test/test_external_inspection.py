@@ -1329,41 +1329,49 @@ class TestGetStackTrace(unittest.TestCase):
         script = textwrap.dedent("""\
             import os, threading
             from _remote_debugging import RemoteUnwinder
+            from _queue import SimpleQueue
             from test import support
 
-            go = threading.Event()
-            stop = threading.Event()
+            go = threading.Lock()
+            stop = threading.Lock()
+            go.acquire()
+            stop.acquire()
+            ready = SimpleQueue()
 
             def leaf():
-                stop.wait()
+                ready.put(None)
+                stop.acquire()
 
-            def wait_for_leaf_frames(u, expected_count):
-                for _ in support.sleeping_retry(
-                    support.SHORT_TIMEOUT,
-                    f"Expected {expected_count} leaf frames",
-                ):
-                    try:
-                        traces = u.get_stack_trace()
-                    except RuntimeError as exc:
-                        if str(exc) != "Failed to parse initial frame in chain":
-                            raise
-                        continue
-                    count = sum(
-                        f.funcname == "leaf"
-                        for t in traces for f in t.frame_info
-                    )
-                    if count == expected_count:
-                        return
+            def start_leaf():
+                ready.put(None)
+                go.acquire()
+                leaf()
 
+            def park():
+                ready.put(None)
+                stop.acquire()
+
+            def leaf_count(u):
+                return sum(
+                    f.funcname == "leaf"
+                    for t in u.get_stack_trace() for f in t.frame_info
+                )
+
+            # SimpleQueue.put() and Lock.acquire() do not push Python frames.
+            # Once notified, the worker's stack stays stable until go is released.
             threading.Thread(target=leaf, daemon=True).start()
+            ready.get(timeout=support.SHORT_TIMEOUT)
             for _ in range(16):
-                threading.Thread(target=stop.wait, daemon=True).start()
-            threading.Thread(target=lambda: (go.wait(), leaf()), daemon=True).start()
+                threading.Thread(target=park, daemon=True).start()
+                ready.get(timeout=support.SHORT_TIMEOUT)
+            threading.Thread(target=start_leaf, daemon=True).start()
+            ready.get(timeout=support.SHORT_TIMEOUT)
 
             u = RemoteUnwinder(os.getpid(), all_threads=True)
-            wait_for_leaf_frames(u, 1)
-            go.set()
-            wait_for_leaf_frames(u, 2)
+            assert leaf_count(u) == 1
+            go.release()
+            ready.get(timeout=support.SHORT_TIMEOUT)
+            assert leaf_count(u) == 2
             """)
         result = subprocess.run(
             [sys.executable, "-X", "gil=0", "-X", "tlbc=1", "-c", script],
@@ -1387,44 +1395,48 @@ class TestGetStackTrace(unittest.TestCase):
         script = textwrap.dedent("""\
             import os, threading
             from _remote_debugging import RemoteUnwinder
+            from _queue import SimpleQueue
 
-            go = threading.Event()
-            stop = threading.Event()
+            go = threading.Lock()
+            stop = threading.Lock()
+            go.acquire()
+            stop.acquire()
+            ready = SimpleQueue()
 
             def leaf():
-                stop.wait()
+                ready.put(None)
+                stop.acquire()
+
+            def start_leaf():
+                ready.put(None)
+                go.acquire()
+                leaf()
 
             from test import support
 
-            def lines(u, expected_count):
-                for _ in support.sleeping_retry(
-                    support.SHORT_TIMEOUT,
-                    f"Expected {expected_count} leaf frames",
-                ):
-                    try:
-                        traces = u.get_stack_trace()
-                    except RuntimeError as exc:
-                        if str(exc) != "Failed to parse initial frame in chain":
-                            raise
-                        continue
-                    result = sorted(
-                        f.lineno
-                        for t in traces for f in t.frame_info
-                        if f.funcname == "leaf"
-                    )
-                    # A new frame can still point at the function definition.
-                    if (len(result) == expected_count and
-                        leaf.__code__.co_firstlineno not in result):
-                        return result
+            def lines(u):
+                return sorted(
+                    f.lineno
+                    for t in u.get_stack_trace() for f in t.frame_info
+                    if f.funcname == "leaf"
+                )
 
+            # SimpleQueue.put() and Lock.acquire() do not push Python frames.
+            # Once notified, the worker's stack stays stable until go is released.
             threading.Thread(target=leaf, daemon=True).start()
-            threading.Thread(target=lambda: (go.wait(), leaf()), daemon=True).start()
+            ready.get(timeout=support.SHORT_TIMEOUT)
+            threading.Thread(target=start_leaf, daemon=True).start()
+            ready.get(timeout=support.SHORT_TIMEOUT)
             u = RemoteUnwinder(os.getpid(), all_threads=True)
-            before = lines(u, 1)
-            assert before == [8], before
-            go.set()
-            cached = lines(u, 2)
-            assert cached == [8, 8], cached
+            before = lines(u)
+            # The notification can be observed before put() returns, so either
+            # line in leaf() is a valid sample.
+            assert before in ([12], [13]), before
+            go.release()
+            ready.get(timeout=support.SHORT_TIMEOUT)
+            cached = lines(u)
+            assert len(cached) == 2, cached
+            assert all(line in (12, 13) for line in cached), cached
             """)
         result = subprocess.run(
             [sys.executable, "-X", "gil=0", "-X", "tlbc=1", "-c", script],
