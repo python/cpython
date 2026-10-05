@@ -15,6 +15,24 @@ PyDoc_STRVAR(pwd_getpwuid__doc__,
 #define PWD_GETPWUID_METHODDEF    \
     {"getpwuid", (PyCFunction)pwd_getpwuid, METH_O, pwd_getpwuid__doc__},
 
+static PyObject *
+pwd_getpwuid_impl(PyObject *module, uid_t uid);
+
+static PyObject *
+pwd_getpwuid(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    uid_t uid;
+
+    if (!_Py_Uid_Converter(arg, &uid)) {
+        goto exit;
+    }
+    return_value = pwd_getpwuid_impl(module, uid);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(pwd_getpwnam__doc__,
 "getpwnam($module, name, /)\n"
 "--\n"
@@ -73,4 +91,4 @@ pwd_getpwall(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef PWD_GETPWALL_METHODDEF
     #define PWD_GETPWALL_METHODDEF
 #endif /* !defined(PWD_GETPWALL_METHODDEF) */
-/*[clinic end generated code: output=5a8fb12939ff4ea3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5bca0b2c2f4c5e89 input=a9049054013a1b77]*/

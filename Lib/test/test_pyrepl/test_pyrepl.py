@@ -2431,6 +2431,8 @@ class TestMain(ReplTestCase):
         env = os.environ.copy()
         env.pop("PYTHON_BASIC_REPL", "")
         env["PYTHON_BASIC_REPL"] = "1"
+        # Ensure user's .inputrc doesn't interfere with basic REPL output
+        env["INPUTRC"] = "/dev/null"
 
         commands = "print('Something pretty long', end='')\nexit()\n"
         expected_output_sequence = "Something pretty long>>> exit()"
