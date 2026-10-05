@@ -1,0 +1,4 @@
+Fix :mod:`profiling.sampling` not adding the directory containing the
+profiled script to :data:`sys.path`, which prevented the script from
+importing modules placed next to it.  The script's directory is now added,
+matching the behavior of ``python script.py``.
