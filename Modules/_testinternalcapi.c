@@ -1578,6 +1578,44 @@ get_frame_locals(PyObject *self, PyObject *Py_UNUSED(ignored))
     return dict;
 }
 
+// Calls PyUnstable_InterpreterFrame_GetLocal on the caller's frame for a single
+// index and returns (rc, value), or raises if rc is -1.
+static PyObject *
+get_frame_local(PyObject *self, PyObject *arg)
+{
+    Py_ssize_t index = PyLong_AsSsize_t(arg);
+    if (index == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyInterpreterFrame *frame = _PyThreadState_GetFrame(tstate);
+    if (frame == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "no caller frame");
+        return NULL;
+    }
+    PyObject *value;
+    int rc = PyUnstable_InterpreterFrame_GetLocal(frame, index, &value);
+    if (rc < 0) {
+        assert(value == NULL);
+        return NULL;
+    }
+    if (rc == 0) {
+        assert(value == NULL);
+        return Py_BuildValue("iO", rc, Py_None);
+    }
+    return Py_BuildValue("iN", rc, value);
+}
+
+static PyObject *
+code_get_localsplus_names(PyObject *self, PyObject *arg)
+{
+    if (!PyCode_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a code object");
+        return NULL;
+    }
+    return PyUnstable_Code_GetLocalPlusNames((PyCodeObject *)arg);
+}
+
 static PyObject *
 code_returns_only_none(PyObject *self, PyObject *arg)
 {
@@ -3393,6 +3431,8 @@ static PyMethodDef module_functions[] = {
     {"iframe_getline", iframe_getline, METH_O, NULL},
     {"iframe_getlasti", iframe_getlasti, METH_O, NULL},
     {"get_frame_locals", get_frame_locals, METH_NOARGS, NULL},
+    {"get_frame_local", get_frame_local, METH_O, NULL},
+    {"code_get_localsplus_names", code_get_localsplus_names, METH_O, NULL},
     {"code_returns_only_none", code_returns_only_none, METH_O, NULL},
     {"get_co_framesize", get_co_framesize, METH_O, NULL},
     {"get_co_localskinds", get_co_localskinds, METH_O, NULL},

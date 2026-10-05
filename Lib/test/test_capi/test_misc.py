@@ -2836,6 +2836,32 @@ class TestInternalFrameApi(unittest.TestCase):
         d = inner()
         self.assertEqual(d['z'], 7)
 
+    def test_get_local_index_out_of_range(self):
+        def f(index):
+            return _testinternalcapi.get_frame_local(index)
+
+        # f has no cell or free variables, so co_nlocalsplus == co_nlocals.
+        code = f.__code__
+        self.assertFalse(code.co_cellvars or code.co_freevars)
+        nlocalsplus = code.co_nlocals
+        for index in (-1, nlocalsplus, nlocalsplus + 1):
+            with self.subTest(index=index):
+                with self.assertRaises(IndexError):
+                    f(index)
+
+    def test_get_local_unset(self):
+        def f():
+            if False:
+                unset = 1
+            names = f.__code__.co_varnames
+            return _testinternalcapi.get_frame_local(names.index('unset'))
+
+        self.assertEqual(f(), (0, None))
+
+    def test_get_local_set(self):
+        x = 5
+        index = self.test_get_local_set.__code__.co_varnames.index('x')
+        self.assertEqual(_testinternalcapi.get_frame_local(index), (1, 5))
 
     def test_code_get_localsplus_names(self):
         def outer(a, b):
