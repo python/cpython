@@ -1916,6 +1916,12 @@
     added = '3.2'
 [macro.PyDict_CheckExact]
     added = '3.2'
+[macro.PyDoc_STR]
+    added = '3.2'
+[macro.PyDoc_STRVAR]
+    added = '3.2'
+[macro.PyDoc_VAR]
+    added = '3.2'
 [macro.PyExceptionClass_Check]
     added = '3.2'
 [macro.PyExceptionInstance_Check]
@@ -2042,6 +2048,8 @@
     added = '3.2'
 [macro.Py_ARITHMETIC_RIGHT_SHIFT]
     added = '3.2'
+[macro.Py_CHARMASK]
+    added = '3.2'
 [macro.Py_CLEAR]
     added = '3.2'
 [macro.Py_DECREF]
@@ -2113,19 +2121,11 @@
 
 # Python 3.3 macros
 
-[macro.PyDoc_STR]
-    added = '3.3'
-[macro.PyDoc_STRVAR]
-    added = '3.3'
-[macro.PyDoc_VAR]
-    added = '3.3'
 [macro.Py_ARRAY_LENGTH]
     added = '3.3'
 [macro.Py_BUILD_ASSERT]
     added = '3.3'
 [macro.Py_BUILD_ASSERT_EXPR]
-    added = '3.3'
-[macro.Py_CHARMASK]
     added = '3.3'
 [macro.Py_MAX]
     added = '3.3'
