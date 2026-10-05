@@ -177,7 +177,8 @@ next_prepared(struct tok_state *tok, _PyTok_Chunk *chunk)
     _PyTok_Span tail = {tok->inp, tok->source.base_offset + tok->source.len};
     _PyTok_Off newline = _PyTok_SourceFindByte(&tok->source, tail, '\n');
     _PyTok_Span line = {tail.start, newline >= 0 ? newline + 1 : tail.end};
-    chunk->data = (char *)_PyTok_SourceSpanView(&tok->source, line, &chunk->len);
+    chunk->data = (char *)_PyTok_SourceSpanView(
+        &tok->source, line, &chunk->len);
     chunk->ownership = _PYTOK_CHUNK_BORROWED;
     chunk->implicit_newline = line.end == tail.end &&
         tok->reader->prepared_final_newline_is_implicit;
@@ -607,7 +608,7 @@ _PyTok_ReaderUnderflow(struct tok_state *tok)
     _PyTok_ReaderKind kind = reader->kind;
     int prepared = kind == _PYTOK_READER_PREPARED;
     int streaming = reader_is_streaming(kind);
-    int reset_buffer = !prepared && tok->start < 0 &&
+    int reset_buffer = tok->start < 0 &&
         _PyLexer_CurrentFTString(tok) == NULL;
 
     _PyTok_Chunk chunk;
@@ -660,12 +661,11 @@ _PyTok_ReaderUnderflow(struct tok_state *tok)
             tok->cur = source_start;
             tok->buf_offset = source_start;
             tok->line_start = tok->buf_offset;
-            tok->start = -1;
         }
         tok->inp = source_start + chunk.len;
     }
     else {
-        if (tok->start < 0 && _PyLexer_CurrentFTString(tok) == NULL) {
+        if (reset_buffer) {
             tok->buf_offset = tok->inp;
         }
         tok->inp += chunk.len;
@@ -674,9 +674,11 @@ _PyTok_ReaderUnderflow(struct tok_state *tok)
 
     tok->lineno++;
     if (kind == _PYTOK_READER_FILE &&
-            (reader->encoding == NULL || strcmp(reader->encoding, "utf-8") == 0) &&
+            (reader->encoding == NULL ||
+             strcmp(reader->encoding, "utf-8") == 0) &&
             !_PyTokenizer_ensure_utf8(
-                _PyTok_SourcePointer(&tok->source, tok->cur), tok, tok->lineno)) {
+                _PyTok_SourcePointer(&tok->source, tok->cur),
+                tok, tok->lineno)) {
         _PyTok_ChunkClear(&chunk);
         return 0;
     }

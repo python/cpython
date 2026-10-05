@@ -43,14 +43,15 @@ _PyTok_SourceSpanView(const _PyTok_SourceText *source, _PyTok_Span span,
 {
     assert(length != NULL);
     assert(_PyTok_SpanIsValid(span));
+    assert(span.end - source->base_offset <= source->len);
     *length = span.end - span.start;
-    (void)_PyTok_SourcePointer(source, span.end);
     return _PyTok_SourcePointer(source, span.start);
 }
 
 /* Return the first matching offset within span, or -1 if absent. */
 static inline _PyTok_Off
-_PyTok_SourceFindByte(const _PyTok_SourceText *source, _PyTok_Span span, int byte)
+_PyTok_SourceFindByte(const _PyTok_SourceText *source, _PyTok_Span span,
+                      int byte)
 {
     Py_ssize_t length;
     const char *data = _PyTok_SourceSpanView(source, span, &length);

@@ -158,12 +158,16 @@ exit:
 
 static PyObject *
 _get_current_line(tokenizeriterobject *it, int current_lineno,
-                  const char *line_start, Py_ssize_t size, int *line_changed)
+                  const _PyToken_View *view, int *line_changed)
 {
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(it);
     if (current_lineno != it->last_lineno) {
-        // Line has changed since last token, so we fetch the new line and cache it
-        // in the iter object.
+        Py_ssize_t size;
+        const char *line_start = _PyTokenizer_SpanView(
+            it->tok, view->line_span, &size);
+        if (size > 0 && view->implicit_newline) {
+            size--;
+        }
         Py_XDECREF(it->last_line);
         it->last_line = PyUnicode_DecodeUTF8(line_start, size, "replace");
         it->byte_col_offset_diff = 0;
@@ -263,13 +267,8 @@ tokenizeriter_next(PyObject *op)
     if (it->extra_tokens && is_trailing_token) {
         line = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
     } else {
-        Py_ssize_t size = view.line_span.end - view.line_span.start;
-        if (size >= 1 && view.implicit_newline) {
-            size -= 1;
-        }
-
         line = _get_current_line(
-            it, token.end_loc.lineno, view.line, size, &line_changed);
+            it, token.end_loc.lineno, &view, &line_changed);
     }
     if (line == NULL) {
         Py_DECREF(str);

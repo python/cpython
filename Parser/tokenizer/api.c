@@ -68,7 +68,6 @@ _PyToken_GetView(const struct tok_state *tok, const struct token *token,
             ? token->span.start - token->start_loc.byte_col : tok->line_start,
         tok->inp,
     };
-    view->line = _PyTok_SourcePointer(&tok->source, view->line_span.start);
     view->implicit_newline = tok->implicit_newline;
     view->at_eof = tok->done == E_EOF;
 }

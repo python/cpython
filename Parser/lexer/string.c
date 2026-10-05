@@ -79,7 +79,8 @@ finish_ftstring_expr(struct tok_state *tok, ftstring_state *state,
     tokenizer_comments *comments = state->comments;
     PyObject *res;
     if (comments != NULL && comments->count > 0) {
-        Py_ssize_t stripped_size = state->expr_span.end - state->expr_span.start;
+        Py_ssize_t stripped_size =
+            state->expr_span.end - state->expr_span.start;
         Py_ssize_t comment_count = 0;
         for (Py_ssize_t i = 0; i < comments->count; i++) {
             _PyTok_Span comment = comments->spans[i];
@@ -98,22 +99,22 @@ finish_ftstring_expr(struct tok_state *tok, ftstring_state *state,
             PyErr_NoMemory();
             return -1;
         }
-        _PyTok_Off copied_to = state->expr_span.start;
+        _PyTok_Span kept = {state->expr_span.start, state->expr_span.start};
         Py_ssize_t stripped_len = 0;
-        for (Py_ssize_t i = 0; i <= comment_count; i++) {
-            _PyTok_Span span = {
-                copied_to,
-                i < comment_count ? comments->spans[i].start : state->expr_span.end,
-            };
+        for (Py_ssize_t i = 0; i < comment_count; i++) {
+            kept.end = comments->spans[i].start;
             Py_ssize_t length;
-            const char *text = _PyTok_SourceSpanView(&tok->source, span, &length);
+            const char *text = _PyTok_SourceSpanView(
+                &tok->source, kept, &length);
             memcpy(stripped + stripped_len, text, (size_t)length);
             stripped_len += length;
-            if (i < comment_count) {
-                copied_to = comments->spans[i].end;
-            }
+            kept.start = comments->spans[i].end;
         }
-        res = PyUnicode_DecodeUTF8(stripped, stripped_len, NULL);
+        kept.end = state->expr_span.end;
+        Py_ssize_t length;
+        const char *text = _PyTok_SourceSpanView(&tok->source, kept, &length);
+        memcpy(stripped + stripped_len, text, (size_t)length);
+        res = PyUnicode_DecodeUTF8(stripped, stripped_size, NULL);
         PyMem_Free(stripped);
     }
     else {
