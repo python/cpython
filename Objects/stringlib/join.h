@@ -134,13 +134,15 @@ STRINGLIB(bytes_join)(PyObject *sep, PyObject *iterable)
         }
     }
     else {
-        for (i = 0; i < nbufs; i++) {
-            Py_ssize_t n;
-            char *q;
-            if (i) {
-                memcpy(p, sepstr, seplen);
-                p += seplen;
-            }
+        Py_ssize_t n = buffers[0].len;
+        char *q = buffers[0].buf;
+        memcpy(p, q, n);
+        p += n;
+
+        for (i = 1; i < nbufs; i++) {
+            memcpy(p, sepstr, seplen);
+            p += seplen;
+
             n = buffers[i].len;
             q = buffers[i].buf;
             memcpy(p, q, n);
