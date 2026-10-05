@@ -1,2 +1,2 @@
-Module-level :meth:`~module.__getattr__` was called before a module's own
-lazy imports were resolved, so it could shadow them.
+Fix module-level :meth:`~module.__getattr__` being called before a module's
+own lazy imports were resolved, which allowed it to shadow them.
