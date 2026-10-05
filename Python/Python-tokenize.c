@@ -180,14 +180,13 @@ _get_col_offsets(tokenizeriterobject *it, const struct token *token,
                  Py_ssize_t *col_offset, Py_ssize_t *end_col_offset)
 {
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(it);
-    const char *token_start = view->text;
-    const char *token_end = token_start == NULL
-        ? NULL : token_start + view->length;
+    _PyTok_Off token_start = token->span.start;
+    _PyTok_Off token_end = token->span.end;
     Py_ssize_t lineno = token->start_loc.lineno;
     Py_ssize_t end_lineno = token->end_loc.lineno;
     Py_ssize_t byte_offset = -1;
-    if (token_start != NULL && token_start >= view->line) {
-        byte_offset = token_start - view->line;
+    if (token_start >= view->line_span.start) {
+        byte_offset = token_start - view->line_span.start;
         if (line_changed) {
             *col_offset = _PyPegen_byte_offset_to_character_offset_line(line, 0, byte_offset);
             if (*col_offset < 0) {
@@ -200,8 +199,8 @@ _get_col_offsets(tokenizeriterobject *it, const struct token *token,
         }
     }
 
-    if (token_end != NULL && token_end >= view->end_line) {
-        Py_ssize_t end_byte_offset = token_end - view->end_line;
+    if (token_end >= view->end_line_start) {
+        Py_ssize_t end_byte_offset = token_end - view->end_line_start;
         if (lineno == end_lineno) {
             // Avoid rescanning the prefix of a very long line.
             Py_ssize_t token_col_offset = _PyPegen_byte_offset_to_character_offset_line(line, byte_offset, end_byte_offset);
@@ -213,7 +212,8 @@ _get_col_offsets(tokenizeriterobject *it, const struct token *token,
         }
         else {
             *end_col_offset = _PyPegen_byte_offset_to_character_offset_line(
-                line, view->end_line - view->line, token_end - view->line);
+                line, view->end_line_start - view->line_span.start,
+                token_end - view->line_span.start);
             if (*end_col_offset < 0) {
                 return -1;
             }
@@ -251,15 +251,7 @@ tokenizeriter_next(PyObject *op)
     }
     _PyToken_View view;
     _PyToken_GetView(it->tok, &token, &view);
-    const char *token_start = view.text;
-    PyObject *str;
-    if (token.span.start < 0) {
-        assert(token.span.start == -1 && token.span.end == -1);
-        str = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
-    }
-    else {
-        str = PyUnicode_FromStringAndSize(token_start, view.length);
-    }
+    PyObject *str = PyUnicode_FromStringAndSize(view.text, view.length);
     if (str == NULL) {
         goto exit;
     }
@@ -271,7 +263,7 @@ tokenizeriter_next(PyObject *op)
     if (it->extra_tokens && is_trailing_token) {
         line = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
     } else {
-        Py_ssize_t size = view.line_length;
+        Py_ssize_t size = view.line_span.end - view.line_span.start;
         if (size >= 1 && view.implicit_newline) {
             size -= 1;
         }
@@ -307,8 +299,7 @@ tokenizeriter_next(PyObject *op)
         else if (type == NEWLINE) {
             if (!view.implicit_newline) {
                 Py_DECREF(str);
-                assert(token_start != NULL);
-                if (token_start[0] == '\r') {
+                if (view.text[0] == '\r') {
                     str = PyUnicode_FromString("\r\n");
                 } else {
                     str = PyUnicode_FromString("\n");

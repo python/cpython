@@ -60,19 +60,14 @@ _PyToken_GetView(const struct tok_state *tok, const struct token *token,
                  _PyToken_View *view)
 {
     assert(view != NULL);
-    assert((token->span.start == -1 && token->span.end == -1) ||
-           _PyTok_SpanIsValid(token->span));
-    if (token->span.start >= 0) {
-        (void)_PyTok_SourcePointer(&tok->source, token->span.end);
-    }
-    view->text = token->span.start < 0
-        ? NULL : _PyTok_SourcePointer(&tok->source, token->span.start);
-    view->length = token->span.end - token->span.start;
-    view->end_line = _PyTok_SourcePointer(&tok->source, tok->line_start);
-    view->line = ISSTRINGLIT(token->type)
-        ? view->text - token->start_loc.byte_col : view->end_line;
-    view->line_length = tok->inp - tok->line_start +
-        (view->end_line - view->line);
+    view->text = _PyToken_TextView(tok, token, &view->length);
+    view->end_line_start = tok->line_start;
+    view->line_span = (_PyTok_Span){
+        ISSTRINGLIT(token->type)
+            ? token->span.start - token->start_loc.byte_col : tok->line_start,
+        tok->inp,
+    };
+    view->line = _PyTok_SourcePointer(&tok->source, view->line_span.start);
     view->implicit_newline = tok->implicit_newline;
     view->at_eof = tok->done == E_EOF;
 }
