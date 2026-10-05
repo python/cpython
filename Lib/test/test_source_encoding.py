@@ -29,6 +29,30 @@ class MiscSourceEncodingTest(unittest.TestCase):
         exec(c, d)
         self.assertEqual(d['u'], '\xf3')
 
+    def test_compilestring_line_endings(self):
+        for newline in ('\n', '\r', '\r\n', '\r\r\n'):
+            expected = 'é\n\ntext' if newline == '\r\r\n' else 'é\ntext'
+            for suffix in ('', newline):
+                for mode in ('exec', 'eval'):
+                    source = f"'''é{newline}text'''{suffix}"
+                    if mode == 'exec':
+                        source = 'value = ' + source
+                    for encoding in (None, 'utf-8', 'latin-1'):
+                        with self.subTest(newline=newline, suffix=suffix,
+                                          mode=mode, encoding=encoding):
+                            input = source
+                            if encoding is not None:
+                                input = (f'# coding: {encoding}{newline}'
+                                         + source).encode(encoding)
+                            code = compile(input, '<test>', mode)
+                            if mode == 'exec':
+                                namespace = {}
+                                exec(code, namespace)
+                                value = namespace['value']
+                            else:
+                                value = eval(code)
+                            self.assertEqual(value, expected)
+
     def test_issue2301(self):
         try:
             compile(b"# coding: cp932\nprint '\x94\x4e'", "dummy", "exec")
@@ -133,6 +157,11 @@ class MiscSourceEncodingTest(unittest.TestCase):
             b"# \x1b$B" + payload + b"\n"
             + payload + b"\x1b(B = 1\n"
         )
+        self._assert_python_file_ok(source)
+
+    @support.requires_subprocess()
+    def test_stateful_file_decoder_preserves_buffered_text(self):
+        source = b"# coding: hz\nx~\ny = 1\nassert xy == 1\n"
         self._assert_python_file_ok(source)
 
     @support.requires_subprocess()
