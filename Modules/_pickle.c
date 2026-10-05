@@ -1439,6 +1439,17 @@ _Unpickler_ReadFromFile(PickleState *state, UnpicklerObject *self, Py_ssize_t n)
         if (data == NULL) {
             return -1;
         }
+        if (cursize < n && PyBytes_Check(data) && !PyBytes_CheckExact(data)) {
+            /* read() may return a bytes subclass, which cannot be resized
+               in place.  Copy it into an exact bytes object. */
+            PyObject *exact = PyBytes_FromStringAndSize(
+                PyBytes_AS_STRING(data), PyBytes_GET_SIZE(data));
+            Py_DECREF(data);
+            if (exact == NULL) {
+                return -1;
+            }
+            data = exact;
+        }
         while (cursize < n) {
             Py_ssize_t prevsize = cursize;
             // geometrically double the chunk size to avoid CPU DoS
