@@ -17,9 +17,6 @@
 #include <sys/wait.h>
 #endif
 
-/* Bound traversal of corrupted remote exception chains. */
-#define MAX_EXCEPTION_CHAIN_DEPTH (2 << 15)
-
 /* ============================================================================
  * THREAD ITERATION FUNCTIONS
  * ============================================================================ */
@@ -439,49 +436,16 @@ unwind_stack_for_thread(
         has_exception = 1;
     }
 
-    // Generators and coroutines use their own exception stack items.
-    // Follow exc_info to find the innermost handler, as sys.exception() does.
+    // Check exc_state.exc_value (exception being handled in except block)
+    // exc_state is embedded in PyThreadState, so we read it directly from
+    // the thread state buffer. This catches most cases; nested exception
+    // handlers where exc_info points elsewhere are rare.
     if (!has_exception) {
-        uintptr_t exc_info = GET_MEMBER(uintptr_t, ts,
-            unwinder->debug_offsets.thread_state.current_exception +
-            sizeof(uintptr_t));
-        uintptr_t exc_state_addr =
-            *current_tstate + unwinder->debug_offsets.thread_state.exc_state;
-        uintptr_t exc_value_offset =
-            unwinder->debug_offsets.err_stackitem.exc_value;
-        uintptr_t previous_item_offset =
-            exc_value_offset + sizeof(uintptr_t);
-
-        for (int depth = 0; exc_info != 0 && depth < MAX_EXCEPTION_CHAIN_DEPTH;
-             depth++)
-        {
-            if (exc_info == exc_state_addr) {
-                // Bottom of the chain: the stack item embedded in the thread
-                // state, which is already in the local thread state buffer.
-                uintptr_t exc_value = GET_MEMBER(uintptr_t, ts,
-                    unwinder->debug_offsets.thread_state.exc_state +
-                    exc_value_offset);
-                if (exc_value != 0) {
-                    has_exception = 1;
-                }
-                break;
-            }
-            uintptr_t exc_value = 0;
-            if (read_ptr(unwinder, exc_info + exc_value_offset, &exc_value) < 0) {
-                PyErr_Clear();  // Best effort: treat as no active exception
-                break;
-            }
-            if (exc_value != 0) {
-                has_exception = 1;
-                break;
-            }
-            uintptr_t previous_item = 0;
-            if (read_ptr(unwinder, exc_info + previous_item_offset,
-                         &previous_item) < 0) {
-                PyErr_Clear();
-                break;
-            }
-            exc_info = previous_item;
+        uintptr_t exc_value = GET_MEMBER(uintptr_t, ts,
+            unwinder->debug_offsets.thread_state.exc_state +
+            unwinder->debug_offsets.err_stackitem.exc_value);
+        if (exc_value != 0) {
+            has_exception = 1;
         }
     }
 
