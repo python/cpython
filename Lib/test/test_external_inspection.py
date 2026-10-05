@@ -466,7 +466,8 @@ class TestSelfStackTrace(RemoteInspectionTestBase):
                 return await rec(n - 1)
             return [
                 frame.funcname.rpartition(".")[2]
-                for task in RemoteUnwinder(os.getpid()).get_async_stack_trace()[0].awaited_by
+                for task in RemoteUnwinder(
+                    os.getpid()).get_async_stack_trace()[0].awaited_by
                 for coro in task.coroutine_stack
                 for frame in coro.call_stack
             ]
