@@ -1865,10 +1865,8 @@ The :mod:`!test.support.import_helper` module provides support for import tests.
 
 .. function:: multi_interp_extensions_check(enabled=True)
 
-   A context manager that forces (if ``True``) or prevents legacy modules from being
-   allowed in subinterpreters.
-
-   ("legacy" == single-phase init)
+   A context manager that forces (if ``True``) or prevents legacy (single-phase init)
+   modules from being allowed in subinterpreters.
 
    This only applies to modules that haven't been imported yet.
    It overrides the ``PyInterpreterConfig.check_multi_interp_extensions``
@@ -1892,7 +1890,7 @@ The :mod:`!test.support.import_helper` module provides support for import tests.
    Test that when *imported_module* is imported, none of the modules in *modules_to_block*
    are imported as a side effect.
 
-   *additional_code*, if given, should be additional python source code to execute before
+   *additional_code* if given should be additional python source code to execute before
    checking that the blocked modules still haven't been imported.
 
 
