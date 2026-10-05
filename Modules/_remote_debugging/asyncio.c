@@ -792,7 +792,8 @@ parse_async_frame_chain(
 
         Py_DECREF(frame_info);
 
-        // gh-158522: compare frame instead of code-object
+        // Stop at the task's own frame. Code objects are shared by
+        // recursive calls, so they cannot identify it.
         if (this_frame == running_task_frame) {
             break;
         }
