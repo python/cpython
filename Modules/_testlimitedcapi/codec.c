@@ -31,7 +31,7 @@ decode_locale(PyObject *Py_UNUSED(module), PyObject *arg)
     size_t size = size_canary;
     wchar_t *wstr = Py_DecodeLocale(str, &size);
 
-    if (str == NULL) {
+    if (wstr == NULL) {
         if (size == (size_t)-1) {
             PyErr_NoMemory();
         }

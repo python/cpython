@@ -4203,7 +4203,7 @@ class LocaleCodecTest(unittest.TestCase):
                     errmsg = f"decode error: pos={error_pos}"
                     self.assertEqual(str(cm.exception), errmsg)
                 else:
-                    if errors == ("strict", "surrogateescape"):
+                    if errors in ("strict", "surrogateescape"):
                         decoded = self.decode_locale_surrogateescape(encoded)
                         self.assertEqual(decoded, expected)
 
@@ -4232,6 +4232,24 @@ class LocaleCodecTest(unittest.TestCase):
         with self.assertRaises(ValueError) as cm:
             self.decode_locale(b'', 'backslashreplace')
         self.assertEqual(str(cm.exception), 'unsupported error handler')
+
+    def test_memory_error(self):
+        # Make sure that MemoryError is handled properly
+        with self.assertRaises(MemoryError):
+            with support.inject_memory_error_cm():
+                self.decode_locale(b'short ascii string', 0, 'strict')
+
+        with self.assertRaises(MemoryError):
+            with support.inject_memory_error_cm():
+                self.decode_locale_surrogateescape(b'short ascii string')
+
+        with self.assertRaises(MemoryError):
+            with support.inject_memory_error_cm():
+                self.encode_locale('short string', 0, 'strict')
+
+        with self.assertRaises(MemoryError):
+            with support.inject_memory_error_cm():
+                self.encode_locale_surrogateescape('short string')
 
 
 class Rot13Test(unittest.TestCase):
