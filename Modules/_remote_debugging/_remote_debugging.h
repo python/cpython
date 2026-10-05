@@ -182,7 +182,7 @@ typedef enum _WIN32_THREADSTATE {
 #define set_exception_cause(unwinder, exc_type, message)                              \
     do {                                                                              \
         assert(PyErr_Occurred() && "function returned -1 without setting exception"); \
-        if (unwinder->debug && !_Py_RemoteDebug_IsFatalReadError()) {                 \
+        if (unwinder->debug && !_Py_RemoteDebug_HasPermissionError()) {               \
             _set_debug_exception_cause(exc_type, message);                            \
         }                                                                             \
     } while (0)
