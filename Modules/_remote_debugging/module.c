@@ -958,7 +958,9 @@ _remote_debugging_RemoteUnwinder_get_all_awaited_by_impl(RemoteUnwinderObject *s
     if (ensure_async_debug_offsets(self) < 0) {
         return NULL;
     }
-    if (refresh_generation_caches_for_interpreter(self, self->interpreter_addr) < 0) {
+    PyObject *seen = PySet_New(NULL);
+    if (seen == NULL) {
+        set_exception_cause(self, PyExc_MemoryError, "Failed to create interpreter set");
         return NULL;
     }
 
@@ -968,30 +970,65 @@ _remote_debugging_RemoteUnwinder_get_all_awaited_by_impl(RemoteUnwinderObject *s
         goto result_err;
     }
 
-    // Process all threads
-    if (iterate_threads(self, process_thread_for_awaited_by, result) < 0) {
-        goto result_err;
-    }
+    // gh-158880: Tasks live in every interpreter, not only the one at the list head
+    for (uintptr_t interp = self->interpreter_addr; interp != 0; ) {
+        PyObject *addr = PyLong_FromUnsignedLongLong(interp);
+        if (addr == NULL) {
+            set_exception_cause(self, PyExc_MemoryError, "Failed to create interpreter address");
+            goto result_err;
+        }
+        Py_ssize_t seen_count = PySet_GET_SIZE(seen);
+        int marked = PySet_Add(seen, addr);
+        Py_DECREF(addr);
+        if (marked < 0) {
+            set_exception_cause(self, PyExc_RuntimeError, "Failed to mark interpreter as seen");
+            goto result_err;
+        }
+        if (PySet_GET_SIZE(seen) == seen_count) {
+            // already walked
+            break;
+        }
 
-    uintptr_t head_addr = self->interpreter_addr
-        + (uintptr_t)self->async_debug_offsets.asyncio_interpreter_state.asyncio_tasks_head;
+        if (refresh_generation_caches_for_interpreter(self, interp) < 0) {
+            goto result_err;
+        }
 
-    // On top of a per-thread task lists used by default by asyncio to avoid
-    // contention, there is also a fallback per-interpreter list of tasks;
-    // any tasks still pending when a thread is destroyed will be moved to the
-    // per-interpreter task list.  It's unlikely we'll find anything here, but
-    // interesting for debugging.
-    if (append_awaited_by(self, 0, head_addr, result))
-    {
-        set_exception_cause(self, PyExc_RuntimeError, "Failed to append interpreter awaited_by in get_all_awaited_by");
-        goto result_err;
+        // Process all threads
+        if (iterate_threads(self, interp, process_thread_for_awaited_by, result) < 0) {
+            goto result_err;
+        }
+
+        uintptr_t head_addr = interp
+            + (uintptr_t)self->async_debug_offsets.asyncio_interpreter_state.asyncio_tasks_head;
+
+        // On top of a per-thread task lists used by default by asyncio to avoid
+        // contention, there is also a fallback per-interpreter list of tasks;
+        // any tasks still pending when a thread is destroyed will be moved to
+        // the per-interpreter task list.  It's unlikely we'll find anything
+        // here, but interesting for debugging.
+        if (append_awaited_by(self, 0, head_addr, result))
+        {
+            set_exception_cause(self, PyExc_RuntimeError, "Failed to append interpreter awaited_by in get_all_awaited_by");
+            goto result_err;
+        }
+
+        if (_Py_RemoteDebug_PagedReadRemoteMemory(
+                &self->handle,
+                interp + (uintptr_t)self->debug_offsets.interpreter_state.next,
+                sizeof(void*),
+                &interp) < 0) {
+            set_exception_cause(self, PyExc_RuntimeError, "Failed to read next interpreter address");
+            goto result_err;
+        }
     }
 
     _Py_RemoteDebug_ClearCache(&self->handle);
+    Py_DECREF(seen);
     return result;
 
 result_err:
     _Py_RemoteDebug_ClearCache(&self->handle);
+    Py_DECREF(seen);
     Py_XDECREF(result);
     return NULL;
 }
@@ -1064,7 +1101,8 @@ _remote_debugging_RemoteUnwinder_get_async_stack_trace_impl(RemoteUnwinderObject
     }
 
     // Process all threads
-    if (iterate_threads(self, process_thread_for_async_stack_trace, result) < 0) {
+    if (iterate_threads(self, self->interpreter_addr,
+                        process_thread_for_async_stack_trace, result) < 0) {
         goto result_err;
     }
 

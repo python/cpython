@@ -46,6 +46,7 @@ TRANSIENT_ERRORS = (OSError, RuntimeError, UnicodeDecodeError)
 
 try:
     from concurrent import interpreters
+    from concurrent.futures import InterpreterPoolExecutor
 except ImportError:
     interpreters = None
 
@@ -212,6 +213,15 @@ skip_if_not_supported = unittest.skipIf(
     ),
     "Test only runs on Linux, Windows and MacOS",
 )
+
+
+def _asyncio_in_subinterpreter():
+    import asyncio
+
+    async def sub_worker():
+        await asyncio.sleep(2)
+
+    asyncio.run(sub_worker())
 
 
 def requires_subinterpreters(meth):
@@ -491,6 +501,33 @@ class TestSelfStackTrace(RemoteInspectionTestBase):
         main_name, names = asyncio.run(main())
         self.assertIn(main_name, names)
         self.assertEqual([len(n) for n in names if n.startswith("x")], [255])
+
+    @skip_if_not_supported
+    @requires_subinterpreters
+    def test_all_awaited_by_covers_every_interpreter(self):
+        # gh-158880
+        async def main_worker():
+            await asyncio.sleep(2)
+
+        async def main():
+            with InterpreterPoolExecutor() as pool:
+                loop = asyncio.get_running_loop()
+                loop.run_in_executor(pool, _asyncio_in_subinterpreter)
+                task = asyncio.create_task(main_worker(), name="main_worker")
+                self.addCleanup(task.cancel)
+                await asyncio.sleep(1)
+                return [
+                    [frame.funcname.rpartition(".")[2]
+                     for frame in coro.call_stack]
+                    for info in RemoteUnwinder(
+                        os.getpid()).get_all_awaited_by()
+                    for task in info.awaited_by
+                    for coro in task.coroutine_stack
+                ]
+
+        stacks = asyncio.run(main())
+        self.assertIn(["sleep", "sub_worker"], stacks)
+        self.assertIn(["sleep", "main_worker"], stacks)
 
     @skip_if_not_supported
     def test_recursive_coroutine_stack_is_not_truncated(self):

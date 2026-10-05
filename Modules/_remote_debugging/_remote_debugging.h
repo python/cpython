@@ -663,6 +663,7 @@ extern int collect_frames_with_cache(
 
 extern int iterate_threads(
     RemoteUnwinderObject *unwinder,
+    uintptr_t interpreter_addr,
     thread_processor_func processor,
     void *context
 );
