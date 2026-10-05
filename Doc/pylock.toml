@@ -220,9 +220,9 @@ wheels = [{ url = "https://files.pythonhosted.org/packages/71/46/17f022dd3e953bf
 
 [[packages]]
 name = "python-docs-theme"
-version = "2026.9"
-sdist = { url = "https://files.pythonhosted.org/packages/5a/5e/fee7dbfd6a5ebf27f4a91c8cdf204f35f0744fd1fbde7f50cd479d1d890c/python_docs_theme-2026.9.tar.gz", upload-time = 2026-09-19T08:41:45Z, size = 40572, hashes = { sha256 = "1a400cb5e6ac6c8b4788eb0a98067a8c35e8aea15e38941e90a7f764582702fc" } }
-wheels = [{ url = "https://files.pythonhosted.org/packages/68/e1/0d603158c9d9a59cd05dfa98a1682c2fffbc387f1e3a724794480f8acaab/python_docs_theme-2026.9-py3-none-any.whl", upload-time = 2026-09-19T08:41:43Z, size = 49214, hashes = { sha256 = "1a4bdc4f9c664c35a58714af0a98efee4ecb7c3bc4ee0752782c953164ac8fc3" } }]
+version = "2026.9.1"
+sdist = { url = "https://files.pythonhosted.org/packages/10/84/74b9dc8e57aad8e77e20e56b42db5ca101ef250272b178734c3e638e6c9c/python_docs_theme-2026.9.1.tar.gz", upload-time = 2026-09-30T16:17:50Z, size = 92406, hashes = { sha256 = "575743d4c38f39c8615c564269bb3eac5856c1e0191e5798168656cff828ec59" } }
+wheels = [{ url = "https://files.pythonhosted.org/packages/85/cd/1b313c9440012be2bca5aebac85f86990aa7deafb37a3cac816c21fd6c04/python_docs_theme-2026.9.1-py3-none-any.whl", upload-time = 2026-09-30T16:17:49Z, size = 99993, hashes = { sha256 = "3e4743ec90bdaf5d1144741b3b9c38cf9bf82c605d3c9a23ae178d9cea0f4429" } }]
 
 [[packages]]
 name = "requests"
@@ -316,6 +316,6 @@ wheels = [{ url = "https://files.pythonhosted.org/packages/87/55/ab40a0d1378ee5c
 
 [[packages]]
 name = "urllib3"
-version = "2.7.0"
-sdist = { url = "https://files.pythonhosted.org/packages/53/0c/06f8b233b8fd13b9e5ee11424ef85419ba0d8ba0b3138bf360be2ff56953/urllib3-2.7.0.tar.gz", upload-time = 2026-05-07T16:13:18Z, size = 433602, hashes = { sha256 = "231e0ec3b63ceb14667c67be60f2f2c40a518cb38b03af60abc813da26505f4c" } }
-wheels = [{ url = "https://files.pythonhosted.org/packages/7f/3e/5db95bcf282c52709639744ca2a8b149baccf648e39c8cc87553df9eae0c/urllib3-2.7.0-py3-none-any.whl", upload-time = 2026-05-07T16:13:17Z, size = 131087, hashes = { sha256 = "9fb4c81ebbb1ce9531cce37674bbc6f1360472bc18ca9a553ede278ef7276897" } }]
+version = "2.8.0"
+sdist = { url = "https://files.pythonhosted.org/packages/e3/05/b17359e1cefb4f909b5e40b1b90a496d987258916dbbf88e842c729f510e/urllib3-2.8.0.tar.gz", upload-time = 2026-09-15T19:29:36Z, size = 458972, hashes = { sha256 = "63bf2ead4c879426ebf22ef2a781eeb4aa3b4ae798a0435506f8687fd5bb9b63" } }
+wheels = [{ url = "https://files.pythonhosted.org/packages/92/9d/c4e665119135114480843e7ab388fa94d8480650450e6f8e26b70d323a4c/urllib3-2.8.0-py3-none-any.whl", upload-time = 2026-09-15T19:29:34Z, size = 135717, hashes = { sha256 = "0cf3cae568d36aa9576b28dfb35f11328f1cb974ca7647d9475ebb86c75ac6e3" } }]

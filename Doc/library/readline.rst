@@ -57,6 +57,38 @@ Readline library in general.
 
    .. versionadded:: 3.13
 
+.. data:: READLINE_VERSION_INFO
+
+   A named tuple containing the two components of the Readline library
+   version that was used for building the module: *major* and *minor*.
+   Both values are integers.
+   The components can also be accessed by name,
+   so ``readline.READLINE_VERSION_INFO[0]`` is equivalent to
+   ``readline.READLINE_VERSION_INFO.major`` and so on.
+   This may be different from the Readline library actually used at runtime,
+   which is available as :const:`readline_version_info`.
+
+   With the ``editline`` backend, this is the version of the Readline
+   interface emulated by libedit, not the version of libedit.
+
+   .. versionadded:: next
+
+.. data:: readline_version_info
+
+   A named tuple containing the version of the Readline library
+   actually loaded by the interpreter,
+   with the same fields as :const:`READLINE_VERSION_INFO`.
+
+   .. versionadded:: next
+
+.. data:: readline_version
+
+   The version string of the Readline library actually loaded by the
+   interpreter, like ``'8.3'``.
+   With the ``editline`` backend, this is ``'EditLine wrapper'``.
+
+   .. versionadded:: next
+
 Init file
 ---------
 
