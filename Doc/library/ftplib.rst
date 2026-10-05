@@ -81,7 +81,7 @@ FTP objects
 .. |param_doc_encoding| replace::
    The encoding for directories and filenames (default: ``'utf-8'``).
 
-.. class:: FTP(host='', user='', passwd='', acct=''[, timeout], \
+.. class:: FTP(host='', user='', passwd='', acct='', timeout=None, \
                source_address=None, *, encoding='utf-8')
 
    Return a new instance of the :class:`FTP` class.
@@ -158,7 +158,7 @@ FTP objects
       * ``2`` or higher: Produce the maximum amount of debugging output,
         logging each line sent and received on the control connection.
 
-   .. method:: FTP.connect(host='', port=0[, timeout], source_address=None)
+   .. method:: FTP.connect(host='', port=0, timeout=None, source_address=None)
 
       Connect to the given host and port.
       This function should be called only once for each instance;
@@ -446,8 +446,8 @@ FTP objects
 FTP_TLS objects
 ^^^^^^^^^^^^^^^
 
-.. class:: FTP_TLS(host='', user='', passwd='', acct='', *, context=None \
-                   [, timeout], source_address=None, encoding='utf-8')
+.. class:: FTP_TLS(host='', user='', passwd='', acct='', *, context=None, \
+                   timeout=None, source_address=None, encoding='utf-8')
 
    An :class:`FTP` subclass which adds TLS support to FTP as described in
    :rfc:`4217`.
