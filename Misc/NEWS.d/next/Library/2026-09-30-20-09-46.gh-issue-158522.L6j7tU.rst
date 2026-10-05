@@ -1,0 +1,2 @@
+Fix :mod:`profiling.sampling` showing a single frame for a task whose
+coroutine recurses. Patch by Timofei Ivankov.
