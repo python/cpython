@@ -1329,6 +1329,9 @@ extern "C" {
     INIT_STR(native, "<native>"), \
     INIT_STR(str_replace_inf, "1e309"), \
     INIT_STR(type_params, ".type_params"), \
+    INIT_STR(unknown_file, "<unknown file>"), \
+    INIT_STR(unknown_function, "<unknown function>"), \
+    INIT_STR(unreadable_frame, "<unreadable frame>"), \
     INIT_STR(utf_8, "utf-8"), \
 }
 
@@ -1775,7 +1778,9 @@ extern "C" {
     INIT_ID(filter), \
     INIT_ID(filters), \
     INIT_ID(final), \
+    INIT_ID(finalizer), \
     INIT_ID(find_class), \
+    INIT_ID(firstiter), \
     INIT_ID(fix_imports), \
     INIT_ID(flags), \
     INIT_ID(flush), \
