@@ -9,6 +9,8 @@ import tempfile
 import unittest
 from collections import defaultdict
 
+from test.support import captured_stderr
+
 try:
     import _remote_debugging
     from _remote_debugging import (
@@ -665,6 +667,26 @@ class TestBinaryRoundTrip(BinaryFormatTestBase):
         collector, count = self.roundtrip(samples)
         self.assertEqual(count, 3)
 
+    def test_synthetic_frames_roundtrip(self):
+        """Degraded/sentinel frames (location=None) survive the binary format."""
+        frames = [
+            FrameInfo(("~", None, name, None))
+            for name in (
+                "<GC>",
+                "<native>",
+                "<unknown function>",
+                "<unknown file>",
+                "<unreadable frame>",
+            )
+        ]
+        frames.append(FrameInfo(("app.py", None, "<unknown function>", None)))
+        frames.append(FrameInfo(("<unknown file>", None, "real_func", None)))
+        samples = [[make_interpreter(0, [make_thread(1, frames)])]]
+
+        collector, count = self.roundtrip(samples)
+        self.assertEqual(count, 1)
+        self.assert_samples_equal(samples, collector)
+
 
 class TestBinaryEdgeCases(BinaryFormatTestBase):
     """Tests for edge cases in binary format."""
@@ -1030,6 +1052,142 @@ class TestBinaryEdgeCases(BinaryFormatTestBase):
             w.write_sample(sample, i * 1000)
         w.close()
         self.assertEqual(w.total_samples, 0)
+
+    def test_binary_collector_stops_gracefully_on_overflow(self):
+        """OverflowError from the writer stops collection via the running
+        protocol instead of propagating and corrupting the file.
+        See gh-151292."""
+        with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as f:
+            filename = f.name
+        self.temp_files.append(filename)
+
+        collector = BinaryCollector(filename, 1000, compression="none")
+        self.assertTrue(collector.running)
+
+        sample = [
+            make_interpreter(0, [make_thread(1, [make_frame("a.py", 1, "f")])])
+        ]
+
+        # Collect real samples first, then hit the limit.
+        for i in range(3):
+            collector.collect(sample, timestamp_us=(i + 1) * 1000)
+        self.assertTrue(collector.running)
+
+        bad = [make_interpreter(2**32, sample[0].threads)]
+        with captured_stderr() as stderr:
+            collector.collect(bad, timestamp_us=4000)
+            collector.collect(sample, timestamp_us=5000)
+
+        self.assertFalse(collector.running)
+        self.assertTrue(collector._writer.limit_reached)
+        self.assertEqual(stderr.getvalue().count("Warning:"), 1)
+        self.assertIn("interpreter_id", stderr.getvalue())
+
+        collector.export(None)
+
+        self.assertEqual(collector.total_samples, 3)
+
+        reader_collector = RawCollector()
+        with BinaryReader(filename) as reader:
+            self.assertEqual(reader.replay_samples(reader_collector), 3)
+
+    def test_interpreter_id_overflow_rejected(self):
+        """An interpreter_id wider than u32 raises OverflowError before any
+        writer state is mutated: subsequent valid samples are still accepted
+        and finalize produces a readable file."""
+        with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as f:
+            filename = f.name
+        self.temp_files.append(filename)
+
+        good = [
+            make_interpreter(0, [make_thread(1, [make_frame("a.py", 1, "f")])])
+        ]
+        bad = [
+            make_interpreter(2**32, [make_thread(1, [make_frame("a.py", 1, "f")])])
+        ]
+
+        writer = _remote_debugging.BinaryWriter(filename, 1000, 0, compression=0)
+        writer.write_sample(good, 1000)
+        with self.assertRaises(OverflowError):
+            writer.write_sample(bad, 2000)
+        writer.write_sample(good, 3000)
+        writer.finalize()
+        self.assertEqual(writer.total_samples, 2)
+
+        reader_collector = RawCollector()
+        with BinaryReader(filename) as reader:
+            self.assertEqual(reader.replay_samples(reader_collector), 2)
+
+    def test_writer_finalizes_after_format_limit(self):
+        for compression in (0, 1) if ZSTD_AVAILABLE else (0,):
+            with self.subTest(compression=compression):
+                with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as f:
+                    filename = f.name
+                self.temp_files.append(filename)
+                good = [make_interpreter(0, [
+                    make_thread(1, [make_frame("a.py", 1, "f")])
+                ])]
+                bad = [make_interpreter(2**32, good[0].threads)]
+                writer = _remote_debugging.BinaryWriter(
+                    filename, 1000, 0, compression=compression
+                )
+                with self.assertRaises(OverflowError):
+                    with writer:
+                        writer.write_sample(good, 1000)
+                        writer.write_sample(good, 2000)
+                        # The first interpreter is committed before the limit.
+                        writer.write_sample(good + bad, 3000)
+                self.assertEqual(writer.total_samples, 3)
+                with BinaryReader(filename) as reader:
+                    self.assertEqual(reader.replay_samples(RawCollector()), 3)
+
+    def test_collector_does_not_swallow_unrelated_overflow(self):
+        class BadStatus:
+            def __index__(self):
+                raise OverflowError("status conversion failed")
+
+        with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as f:
+            filename = f.name
+        self.temp_files.append(filename)
+        collector = BinaryCollector(filename, 1000, compression="none")
+        self.addCleanup(collector._writer.close)
+        sample = [make_interpreter(0, [make_thread(1, [], BadStatus())])]
+        with captured_stderr() as stderr:
+            with self.assertRaisesRegex(OverflowError, "status conversion failed"):
+                collector.collect(sample, timestamp_us=1000)
+        self.assertEqual(stderr.getvalue(), "")
+        self.assertFalse(collector._writer.limit_reached)
+        with self.assertRaisesRegex(ValueError, "broken"):
+            collector.export()
+        with self.assertRaisesRegex(ValueError, "broken"):
+            collector._writer.write_sample([], 2000)
+        # Closing a broken writer must not attempt to finalize it.
+        collector.__exit__(None, None, None)
+
+    def test_collector_finalizes_after_external_exception(self):
+        with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as f:
+            filename = f.name
+        self.temp_files.append(filename)
+        with self.assertRaisesRegex(RuntimeError, "sampling failed"):
+            with BinaryCollector(filename, 1000, compression="none") as collector:
+                collector.collect([make_interpreter(0, [make_thread(1, [])])])
+                raise RuntimeError("sampling failed")
+        self.assertEqual(collector.total_samples, 1)
+        with BinaryReader(filename) as reader:
+            self.assertEqual(reader.replay_samples(RawCollector()), 1)
+
+    @unittest.skipUnless(os.path.exists("/dev/full"), "requires /dev/full")
+    def test_finalize_failure_breaks_writer(self):
+        writer = _remote_debugging.BinaryWriter("/dev/full", 1000, 0)
+        self.addCleanup(writer.close)
+        writer.write_sample([make_interpreter(0, [make_thread(1, [])])], 1000)
+        with self.assertRaises(OSError):
+            writer.finalize()
+        self.assertFalse(writer.limit_reached)
+        with self.assertRaisesRegex(ValueError, "broken"):
+            writer.finalize()
+        with self.assertRaisesRegex(ValueError, "broken"):
+            writer.write_sample([], 2000)
 
 
 class TestBinaryFormatValidation(BinaryFormatTestBase):
