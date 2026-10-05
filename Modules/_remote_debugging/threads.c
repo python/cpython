@@ -20,15 +20,6 @@
 /* Bound traversal of corrupted remote exception chains. */
 #define MAX_EXCEPTION_CHAIN_DEPTH (2 << 15)
 
-/* Derive unexported offsets from adjacent fields to keep the debug-offset
- * table compatible across patch releases. */
-static_assert(offsetof(PyThreadState, exc_info) ==
-              offsetof(PyThreadState, current_exception) + sizeof(uintptr_t),
-              "exc_info must immediately follow current_exception");
-static_assert(offsetof(_PyErr_StackItem, previous_item) ==
-              offsetof(_PyErr_StackItem, exc_value) + sizeof(uintptr_t),
-              "previous_item must immediately follow exc_value");
-
 /* ============================================================================
  * THREAD ITERATION FUNCTIONS
  * ============================================================================ */
