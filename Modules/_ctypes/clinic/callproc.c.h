@@ -5,6 +5,7 @@ preserve
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
 PyDoc_STRVAR(_ctypes_get_errno__doc__,
 "get_errno($module, /)\n"
@@ -406,13 +407,8 @@ _ctypes_dlsym(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("dlsym", "argument 2", "str", args[1]);
         goto exit;
     }
-    Py_ssize_t name_length;
-    name = PyUnicode_AsUTF8AndSize(args[1], &name_length);
+    name = _PyUnicode_AsUTF8NoNUL(args[1]);
     if (name == NULL) {
-        goto exit;
-    }
-    if (strlen(name) != (size_t)name_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = _ctypes_dlsym_impl(module, handle, name);
@@ -797,4 +793,4 @@ PyDoc_STRVAR(_ctypes_buffer_info__doc__,
 #ifndef _CTYPES_DLLIST_METHODDEF
     #define _CTYPES_DLLIST_METHODDEF
 #endif /* !defined(_CTYPES_DLLIST_METHODDEF) */
-/*[clinic end generated code: output=71a41a6d90e69821 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=615c411ddc01d0a4 input=a9049054013a1b77]*/

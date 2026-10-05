@@ -9,6 +9,7 @@ preserve
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
 PyDoc_STRVAR(mmap_mmap_close__doc__,
 "close($self, /)\n"
@@ -547,13 +548,8 @@ mmap_mmap_set_name(PyObject *self, PyObject *arg)
         _PyArg_BadArgument("set_name", "argument", "str", arg);
         goto exit;
     }
-    Py_ssize_t name_length;
-    name = PyUnicode_AsUTF8AndSize(arg, &name_length);
+    name = _PyUnicode_AsUTF8NoNUL(arg);
     if (name == NULL) {
-        goto exit;
-    }
-    if (strlen(name) != (size_t)name_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     Py_BEGIN_CRITICAL_SECTION(self);
@@ -881,4 +877,4 @@ exit:
 #ifndef MMAP_MMAP_MADVISE_METHODDEF
     #define MMAP_MMAP_MADVISE_METHODDEF
 #endif /* !defined(MMAP_MMAP_MADVISE_METHODDEF) */
-/*[clinic end generated code: output=1122b93314aebc5c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d2ae0d1d754f51cc input=a9049054013a1b77]*/
