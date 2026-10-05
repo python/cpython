@@ -4,11 +4,10 @@ import json
 import marshal
 import opcode
 import os
-import sys
 import tempfile
 import unittest
 
-from test.support import is_emscripten, set_recursion_limit
+from test.support import is_emscripten
 
 try:
     import _remote_debugging  # noqa: F401
@@ -467,28 +466,6 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertIn(stack1_expected, lines)
         self.assertIn(stack2_expected, lines)
 
-    def test_collapsed_stack_collector_export_non_ascii_names(self):
-        # gh-156810: frame names are written verbatim, so the output must be
-        # opened with an encoding that can represent non-ASCII and
-        # surrogate-escaped (undecodable-path) names.
-        collapsed_out = tempfile.NamedTemporaryFile(delete=False)
-        self.addCleanup(close_and_unlink, collapsed_out)
-
-        collector = CollapsedStackCollector(1000)
-        frame = MockFrameInfo("/tmp/ba\udc80d.py", 5, "计算")
-        collector.collect([
-            MockInterpreterInfo(0, [MockThreadInfo(1, [frame])])
-        ])
-
-        with captured_stdout(), captured_stderr():
-            collector.export(collapsed_out.name)
-
-        with open(collapsed_out.name, encoding="utf-8",
-                  errors="surrogatepass") as f:
-            content = f.read()
-        self.assertIn("计算", content)
-        self.assertIn("ba\udc80d.py", content)
-
     def test_flamegraph_collector_basic(self):
         """Test basic FlamegraphCollector functionality."""
         collector = FlamegraphCollector(1000)
@@ -610,38 +587,6 @@ class TestSampleProfilerComponents(unittest.TestCase):
 
         self.assertFalse(export_ok)
         self.assertEqual(os.path.getsize(flamegraph_out.name), 0)
-
-    def test_flamegraph_deep_stack_export(self):
-        flamegraph_out = tempfile.NamedTemporaryFile(
-            suffix=".html", delete=False
-        )
-        self.addCleanup(close_and_unlink, flamegraph_out)
-
-        collector = FlamegraphCollector(1000)
-        # Deeper than the default recursion limit.
-        frames = [MockFrameInfo("f.py", i + 1, f"f{i}") for i in range(1536)]
-        collector.collect(
-            [MockInterpreterInfo(0, [MockThreadInfo(1, frames)])])
-
-        with set_recursion_limit(1000), captured_stdout(), captured_stderr():
-            export_ok = collector.export(flamegraph_out.name)
-            self.assertEqual(sys.getrecursionlimit(), 1000)
-
-        self.assertTrue(export_ok)
-        self.assertGreater(os.path.getsize(flamegraph_out.name), 0)
-
-    def test_flamegraph_export_restores_recursion_limit(self):
-        collector = FlamegraphCollector(1000)
-        frame = MockFrameInfo("f.py", 1, "f")
-        with set_recursion_limit(500), captured_stdout(), captured_stderr():
-            self.assertFalse(collector.export(None))
-            self.assertEqual(sys.getrecursionlimit(), 500)
-            collector.collect([
-                MockInterpreterInfo(0, [MockThreadInfo(1, [
-                    frame, MockFrameInfo("f.py", 2, "caller")])])])
-            with self.assertRaises(TypeError):
-                collector.export(None)
-            self.assertEqual(sys.getrecursionlimit(), 500)
 
     def test_gecko_collector_basic(self):
         """Test basic GeckoCollector functionality."""

@@ -1789,15 +1789,7 @@ _remote_debugging_BinaryWriter_write_sample_impl(BinaryWriterObject *self,
         return NULL;
     }
 
-    if (self->writer->state == BINARY_WRITER_BROKEN) {
-        PyErr_SetString(PyExc_ValueError, "Writer is broken");
-        return NULL;
-    }
-    self->writer->state = BINARY_WRITER_OPEN;
     if (binary_writer_write_sample(self->writer, stack_frames, timestamp_us) < 0) {
-        if (self->writer->state != BINARY_WRITER_LIMIT_REACHED) {
-            self->writer->state = BINARY_WRITER_BROKEN;
-        }
         return NULL;
     }
 
@@ -1860,12 +1852,7 @@ _remote_debugging_BinaryWriter_set_stats_impl(BinaryWriterObject *self,
 static int
 binary_writer_finalize_and_cache(BinaryWriterObject *self)
 {
-    if (self->writer->state == BINARY_WRITER_BROKEN) {
-        PyErr_SetString(PyExc_ValueError, "Writer is broken");
-        return -1;
-    }
     if (binary_writer_finalize(self->writer) < 0) {
-        self->writer->state = BINARY_WRITER_BROKEN;
         return -1;
     }
     self->cached_total_samples = self->writer->total_samples;
@@ -1946,7 +1933,8 @@ _remote_debugging_BinaryWriter___exit___impl(BinaryWriterObject *self,
 /*[clinic end generated code: output=61831f47c72a53c6 input=12334ce1009af37f]*/
 {
     if (self->writer) {
-        if (self->writer->state != BINARY_WRITER_BROKEN) {
+        /* Only finalize on normal exit (no exception) */
+        if (exc_type == Py_None) {
             if (binary_writer_finalize_and_cache(self) < 0) {
                 if (self->writer) {
                     binary_writer_destroy(self->writer);
@@ -1995,17 +1983,8 @@ BinaryWriter_get_total_samples(PyObject *op, void *closure)
     return PyLong_FromUnsignedLongLong(self->writer->total_samples);
 }
 
-static PyObject *
-BinaryWriter_get_limit_reached(PyObject *op, void *closure)
-{
-    BinaryWriter *writer = BinaryWriter_CAST(op)->writer;
-    return PyBool_FromLong(writer && writer->state == BINARY_WRITER_LIMIT_REACHED);
-}
-
 static PyGetSetDef BinaryWriter_getset[] = {
     {"total_samples", BinaryWriter_get_total_samples, NULL, "Total samples written", NULL},
-    {"limit_reached", BinaryWriter_get_limit_reached, NULL,
-     "A format limit was reached; the collected samples can still be finalized", NULL},
     {NULL}
 };
 

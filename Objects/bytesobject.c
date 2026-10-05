@@ -2691,10 +2691,9 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
         if (Py_ISSPACE(*str)) {
             do {
                 str++;
-                if (str >= end) {
-                    goto done;
-                }
             } while (Py_ISSPACE(*str));
+            if (str >= end)
+                break;
         }
 
         top = _PyLong_DigitValue[*str];
@@ -2702,16 +2701,16 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
             invalid_char = str - start;
             goto error;
         }
-
         str++;
-        if (str >= end) {
-            invalid_char = -1;
-            goto error;
-        }
 
         bot = _PyLong_DigitValue[*str];
         if (bot >= 16) {
-            invalid_char = str - start;
+            /* Check if we had a second digit */
+            if (str >= end){
+                invalid_char = -1;
+            } else {
+                invalid_char = str - start;
+            }
             goto error;
         }
         str++;
@@ -2719,7 +2718,6 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
         *buf++ = (unsigned char)((top << 4) + bot);
     }
 
-  done:
     if (view.obj != NULL) {
        PyBuffer_Release(&view);
     }

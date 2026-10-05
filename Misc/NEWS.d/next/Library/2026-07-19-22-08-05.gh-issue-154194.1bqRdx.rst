@@ -1,3 +1,0 @@
-Fix the sampling profiler dropping entire samples when a non-fatal read fails;
-frames now keep any readable metadata, and long funcnames and filenames are
-truncated instead. Patch by Maurycy Pawłowski-Wieroński.
