@@ -438,7 +438,7 @@ next_frame_pointer_is_valid(uintptr_t *frame_pointer, uintptr_t *next_fp,
 #endif
 }
 
-static PyObject * _Py_NO_SANITIZE_MEMORY
+static PyObject *
 manual_unwind_from_fp(uintptr_t *frame_pointer)
 {
     uintptr_t stack_min = 0;
@@ -2049,8 +2049,8 @@ check_pyobject_forbidden_bytes_is_freed(PyObject *self,
 static PyObject *
 check_pyobject_freed_is_freed(PyObject *self, PyObject *Py_UNUSED(args))
 {
-    /* ASan, MSan or TSan would report an error. */
-#if defined(_Py_ADDRESS_SANITIZER) || defined(_Py_THREAD_SANITIZER) || defined(_Py_MEMORY_SANITIZER)
+    /* ASan or TSan would report an use-after-free error */
+#if defined(_Py_ADDRESS_SANITIZER) || defined(_Py_THREAD_SANITIZER)
     Py_RETURN_NONE;
 #else
     PyObject *op = PyObject_CallNoArgs((PyObject *)&PyBaseObject_Type);

@@ -10137,7 +10137,6 @@ os_getlogin_impl(PyObject *module)
         errno = old_errno;
     }
     else {
-        _Py_MSAN_UNPOISON(name, sizeof(name));
         result = PyUnicode_DecodeFSDefault(name);
     }
 #else

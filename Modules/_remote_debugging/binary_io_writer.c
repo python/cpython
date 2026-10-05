@@ -19,10 +19,6 @@
 #include <zstd.h>
 #endif
 
-#ifdef _Py_MEMORY_SANITIZER
-#  include <sanitizer/msan_interface.h>
-#endif
-
 /* ============================================================================
  * CONSTANTS FOR BINARY FORMAT SIZES
  * ============================================================================ */
@@ -239,7 +235,6 @@ writer_flush_buffer(BinaryWriter *writer)
                 return -1;
             }
 
-            _Py_MSAN_UNPOISON(writer->zstd.compressed_buffer, output.pos);
             if (output.pos > 0) {
                 if (fwrite_checked_allow_threads(writer->zstd.compressed_buffer, output.pos, writer->fp) < 0) {
                     return -1;
@@ -1109,7 +1104,6 @@ binary_writer_finalize(BinaryWriter *writer)
                 return -1;
             }
 
-            _Py_MSAN_UNPOISON(writer->zstd.compressed_buffer, output.pos);
             if (output.pos > 0) {
                 if (fwrite_checked_allow_threads(writer->zstd.compressed_buffer, output.pos, writer->fp) < 0) {
                     return -1;

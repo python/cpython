@@ -1015,10 +1015,6 @@ Debug options
 
    Enable MemorySanitizer allocation error detector, ``msan`` (default is no).
 
-   MSan reports false positives for memory initialized by libraries that are
-   not built with MSan, so either build all dependencies with MSan or disable
-   the extension modules that use them in :file:`Modules/Setup.local`.
-
    .. versionadded:: 3.6
 
 .. option:: --with-undefined-behavior-sanitizer
