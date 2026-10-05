@@ -23,16 +23,19 @@ also syntactically compound statements.
    single: suite
    single: ; (semicolon)
 
-A compound statement consists of one or more 'clauses.'  A clause consists of a
-header and a 'suite.'  The clause headers of a particular compound statement are
-all at the same indentation level. Each clause header begins with a uniquely
-identifying keyword and ends with a colon.  A suite is a group of statements
-controlled by a clause.  A suite can be one or more semicolon-separated simple
-statements on the same line as the header, following the header's colon, or it
-can be one or more indented statements on subsequent lines.  Only the latter
-form of a suite can contain nested compound statements; the following is illegal,
-mostly because it wouldn't be clear to which :keyword:`if` clause a following
-:keyword:`else` clause would belong::
+A compound statement has a header and a 'suite.'  Many compound statements can
+also have additional clauses.  A clause consists of a header and a suite; the
+headers of clauses belonging to the same compound statement are at the same
+indentation level.  A header begins with a keyword and ends with a colon.  In
+:keyword:`async for`, :keyword:`async with`, and :keyword:`async def`, two
+keywords begin the header.  A :keyword:`match` statement instead has a suite
+containing indented :keyword:`case` blocks, each with its own header and suite.
+A suite is a group of statements controlled by its header.  It can be one or more
+semicolon-separated simple statements on the same line as the header, following
+the header's colon, or it can be one or more indented statements on subsequent
+lines.  Only the latter form of a suite can contain nested compound statements;
+the following is illegal, mostly because it wouldn't be clear to which
+:keyword:`if` clause a following :keyword:`else` clause would belong::
 
    if test1: if test2: print(x)
 

@@ -1,0 +1,2 @@
+Clarify how clauses relate to compound-statement headers and explain that
+``match`` statements contain indented ``case`` blocks.
