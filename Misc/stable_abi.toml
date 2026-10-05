@@ -1872,6 +1872,213 @@
 [function.PyThread_start_new_thread]
     added = '3.2'
 
+# Python 3.2 macros
+
+[function.PyAnySet_Check]
+    added = '3.2'
+[function.PyAnySet_CheckExact]
+    added = '3.2'
+[function.PyBool_Check]
+    added = '3.2'
+[function.PyByteArray_Check]
+    added = '3.2'
+[function.PyByteArray_CheckExact]
+    added = '3.2'
+[function.PyBytes_Check]
+    added = '3.2'
+[function.PyBytes_CheckExact]
+    added = '3.2'
+[function.PyCFunction_Check]
+    added = '3.2'
+[function.PyCallIter_Check]
+    added = '3.2'
+[function.PyCapsule_CheckExact]
+    added = '3.2'
+[function.PyComplex_Check]
+    added = '3.2'
+[function.PyComplex_CheckExact]
+    added = '3.2'
+[function.PyCursesWindow_Check]
+    added = '3.2'
+[function.PyDictItems_Check]
+    added = '3.2'
+[function.PyDictKeys_Check]
+    added = '3.2'
+[function.PyDictValues_Check]
+    added = '3.2'
+[function.PyDictViewSet_Check]
+    added = '3.2'
+[function.PyDict_Check]
+    added = '3.2'
+[function.PyDict_CheckExact]
+    added = '3.2'
+[function.PyExceptionClass_Check]
+    added = '3.2'
+[function.PyExceptionInstance_Check]
+    added = '3.2'
+[function.PyFloat_Check]
+    added = '3.2'
+[function.PyFloat_CheckExact]
+    added = '3.2'
+[function.PyFrozenSet_Check]
+    added = '3.2'
+[function.PyFrozenSet_CheckExact]
+    added = '3.2'
+[function.PyImport_ImportModuleEx]
+    added = '3.2'
+[function.PyList_Check]
+    added = '3.2'
+[function.PyList_CheckExact]
+    added = '3.2'
+[function.PyLong_AS_LONG]
+    added = '3.2'
+[function.PyLong_Check]
+    added = '3.2'
+[function.PyLong_CheckExact]
+    added = '3.2'
+[function.PyMapping_DelItem]
+    added = '3.2'
+[function.PyMapping_DelItemString]
+    added = '3.2'
+[function.PyMem_Del]
+    added = '3.2'
+[function.PyMemoryView_Check]
+    added = '3.2'
+[function.PyModule_Check]
+    added = '3.2'
+[function.PyModule_CheckExact]
+    added = '3.2'
+[function.PyModule_Create]
+    added = '3.2'
+[function.PyObject_New]
+    added = '3.2'
+[function.PyObject_NewVar]
+    added = '3.2'
+[function.PyObject_TypeCheck]
+    added = '3.2'
+[function.PyRange_Check]
+    added = '3.2'
+[function.PySeqIter_Check]
+    added = '3.2'
+[function.PySet_Check]
+    added = '3.2'
+[function.PySlice_Check]
+    added = '3.2'
+[function.PyTraceBack_Check]
+    added = '3.2'
+[function.PyTuple_Check]
+    added = '3.2'
+[function.PyTuple_CheckExact]
+    added = '3.2'
+[function.PyType_Check]
+    added = '3.2'
+[function.PyType_CheckExact]
+    added = '3.2'
+[function.PyType_FastSubclass]
+    added = '3.2'
+[function.PyType_IS_GC]
+    added = '3.2'
+[function.PyUnicode_Check]
+    added = '3.2'
+[function.PyUnicode_CheckExact]
+    added = '3.2'
+[function.PyWeakref_Check]
+    added = '3.2'
+[function.PyWeakref_CheckProxy]
+    added = '3.2'
+[function.PyWeakref_CheckRef]
+    added = '3.2'
+[function.PyWeakref_CheckRefExact]
+    added = '3.2'
+[function.Py_CLEAR]
+    added = '3.2'
+[function.Py_DECREF]
+    added = '3.2'
+[function.Py_INCREF]
+    added = '3.2'
+[function.Py_XDECREF]
+    added = '3.2'
+[function.Py_XINCREF]
+    added = '3.2'
+[macro.PyAPI_DATA]
+    added = '3.2'
+[macro.PyAPI_FUNC]
+    added = '3.2'
+[macro.PyExceptionInstance_Class]
+    added = '3.2'
+[macro.PyMem_DEL]
+    added = '3.2'
+[macro.PyMem_FREE]
+    added = '3.2'
+[macro.PyMem_MALLOC]
+    added = '3.2'
+[macro.PyMem_NEW]
+    added = '3.2'
+[macro.PyMem_New]
+    added = '3.2'
+[macro.PyMem_REALLOC]
+    added = '3.2'
+[macro.PyMem_RESIZE]
+    added = '3.2'
+[macro.PyMem_Resize]
+    added = '3.2'
+[macro.PyModule_AddIntMacro]
+    added = '3.2'
+[macro.PyModule_AddStringMacro]
+    added = '3.2'
+[macro.PyObject_GC_New]
+    added = '3.2'
+[macro.PyObject_GC_NewVar]
+    added = '3.2'
+[macro.PyObject_GC_Resize]
+    added = '3.2'
+[macro.PyObject_HEAD_INIT]
+    added = '3.2'
+[macro.PyObject_INIT]
+    added = '3.2'
+[macro.PyObject_INIT_VAR]
+    added = '3.2'
+[macro.PyObject_NEW]
+    added = '3.2'
+[macro.PyObject_NEW_VAR]
+    added = '3.2'
+[macro.PyThreadState_GET]
+    added = '3.2'
+[macro.PyVarObject_HEAD_INIT]
+    added = '3.2'
+[macro.Py_ABS]
+    added = '3.2'
+[macro.Py_ALIGNED]
+    added = '3.2'
+[macro.Py_ARITHMETIC_RIGHT_SHIFT]
+    added = '3.2'
+[macro.Py_DEPRECATED]
+    added = '3.2'
+[macro.Py_FORCE_EXPANSION]
+    added = '3.2'
+[macro.Py_GCC_ATTRIBUTE]
+    added = '3.2'
+[macro.Py_IS_FINITE]
+    added = '3.2'
+[macro.Py_IS_INFINITY]
+    added = '3.2'
+[macro.Py_IS_NAN]
+    added = '3.2'
+[macro.Py_LL]
+    added = '3.2'
+[macro.Py_LOCAL]
+    added = '3.2'
+[macro.Py_LOCAL_INLINE]
+    added = '3.2'
+[macro.Py_RETURN_INF]
+    added = '3.2'
+[macro.Py_SAFE_DOWNCAST]
+    added = '3.2'
+[macro.Py_ULL]
+    added = '3.2'
+[macro.Py_VISIT]
+    added = '3.2'
+
 
 ### Python 3.3 ##############################################################
 
@@ -1904,6 +2111,27 @@
 [function.PyThread_GetInfo]
     added = '3.3'
 
+# Python 3.3 macros
+
+[macro.PyDoc_STR]
+    added = '3.3'
+[macro.PyDoc_STRVAR]
+    added = '3.3'
+[macro.PyDoc_VAR]
+    added = '3.3'
+[macro.Py_ARRAY_LENGTH]
+    added = '3.3'
+[macro.Py_BUILD_ASSERT]
+    added = '3.3'
+[macro.Py_BUILD_ASSERT_EXPR]
+    added = '3.3'
+[macro.Py_CHARMASK]
+    added = '3.3'
+[macro.Py_MAX]
+    added = '3.3'
+[macro.Py_MIN]
+    added = '3.3'
+
 
 ### Python 3.4 ##############################################################
 
@@ -1913,6 +2141,11 @@
 [function.PyCFunction_New]
     added = '3.4'
 [function.PyType_GetSlot]
+    added = '3.4'
+
+# Python 3.4 macro
+
+[macro.Py_UNUSED]
     added = '3.4'
 
 
@@ -1956,6 +2189,13 @@
 [const.Py_tp_finalize]
     added = '3.5'
 
+# Python 3.5 macros
+
+[function.PyModule_FromDefAndSpec]
+    added = '3.5'
+[macro.Py_STRINGIFY]
+    added = '3.5'
+
 
 ### Python 3.6 ##############################################################
 
@@ -1971,6 +2211,11 @@
 [function.PyErr_SetImportErrorSubclass]
     added = '3.6'
 [data.PyExc_ModuleNotFoundError]
+    added = '3.6'
+
+# Python 3.6 macro
+
+[macro.Py_MEMBER_SIZE]
     added = '3.6'
 
 
@@ -2171,6 +2416,13 @@
 [const.METH_METHOD]
     added = '3.7'
 
+# Python 3.7 macros
+
+[macro.Py_RETURN_RICHCOMPARE]
+    added = '3.7'
+[macro.Py_UNREACHABLE]
+    added = '3.7'
+
 
 ### Python 3.8 ##############################################################
 
@@ -2223,6 +2475,15 @@
 [function.PyObject_GC_IsFinalized]
     added = '3.9'
 [function.PyObject_GC_IsTracked]
+    added = '3.9'
+
+# Python 3.9 macros
+
+[function.PyCFunction_CheckExact]
+    added = '3.9'
+[function.Py_SET_REFCNT]
+    added = '3.9'
+[function.Py_SET_TYPE]
     added = '3.9'
 
 
@@ -2311,6 +2572,11 @@
 # New slots in Python 3.10:
 
 [const.Py_am_send]
+    added = '3.10'
+
+# Python 3.10 macro
+
+[function.PySet_CheckExact]
     added = '3.10'
 
 
@@ -2421,6 +2687,13 @@
 [function.PyErr_GetHandledException]
     added = '3.11'
 [function.PyErr_SetHandledException]
+    added = '3.11'
+
+# Python 3.11 macros
+
+[macro.PyBUF_CONTIG_RO]
+    added = '3.11'
+[macro.PyBUF_STRIDED_RO]
     added = '3.11'
 
 

@@ -1,0 +1,2 @@
+Add all old macros of the limited C API to ``Misc/stable_abi.toml``. Patch
+by Victor Stinner.
