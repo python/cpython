@@ -10487,7 +10487,7 @@ _PyUnicode_JoinArray(PyObject *separator, PyObject *const *items, Py_ssize_t seq
     else {
         /* Set up sep and seplen */
         if (separator == NULL) {
-            /* fall back to a blank space separator */
+            /* fall back to a blank space separator (immortal object) */
             sep = get_latin1_char(' ');
             seplen = 1;
             maxchar = 32;
@@ -10503,8 +10503,6 @@ _PyUnicode_JoinArray(PyObject *separator, PyObject *const *items, Py_ssize_t seq
             sep = separator;
             seplen = PyUnicode_GET_LENGTH(separator);
             maxchar = PyUnicode_MAX_CHAR_VALUE(separator);
-            /* inc refcount to keep this code path symmetric with the
-               above case of a blank separator */
             Py_INCREF(sep);
         }
         last_obj = sep;
