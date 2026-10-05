@@ -41,10 +41,6 @@ class Context:
         return build_path / relative_dir
 
     @functools.cached_property
-    def setup_local_path(self):
-        return self.checkout / "Modules" / "Setup.local"
-
-    @functools.cached_property
     def host_triple(self):
         if self._host_triple:
             return self._host_triple
