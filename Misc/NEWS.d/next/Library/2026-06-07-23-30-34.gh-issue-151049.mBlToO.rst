@@ -1,0 +1,4 @@
+:mod:`ipaddress`: fix ``is_global`` and ``is_private`` for the
+``2001:1::3/128`` (DNS-SD Service Registration Protocol Anycast) address,
+which IANA registered as globally reachable per :rfc:`9665`. It is now
+correctly reported with ``is_global`` ``True`` and ``is_private`` ``False``.

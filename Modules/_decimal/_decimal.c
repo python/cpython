@@ -57,7 +57,6 @@
   #define _PY_DEC_ROUND_GUARD (MPD_ROUND_GUARD-1)
 #endif
 
-#include "clinic/_decimal.c.h"
 
 #define MPD_SPEC_VERSION "1.70"  // Highest version of the spec this complies with
                                  // See https://speleotrove.com/decimal/decarith.html
@@ -66,8 +65,9 @@
 module _decimal
 class _decimal.Decimal "PyObject *" "&dec_spec"
 class _decimal.Context "PyObject *" "&context_spec"
+class _decimal.ContextManager "PyDecContextManagerObject *" "&ctxmanager_spec"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=a6a6c0bdf4e576ef]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=52b8c97cabc5bf05]*/
 
 struct PyDecContextObject;
 struct DecCondMap;
@@ -233,6 +233,8 @@ typedef struct {
     PyObject *local;
     PyObject *global;
 } PyDecContextManagerObject;
+
+#include "clinic/_decimal.c.h"
 
 #define _PyDecContextManagerObject_CAST(op) ((PyDecContextManagerObject *)(op))
 
@@ -2209,11 +2211,21 @@ ctxmanager_set_local(PyObject *op, PyObject *Py_UNUSED(dummy))
     return Py_NewRef(self->local);
 }
 
+/*[clinic input]
+_decimal.ContextManager.__exit__
+
+    *exc_info: array
+
+Restore the global context.
+[clinic start generated code]*/
+
 static PyObject *
-ctxmanager_restore_global(PyObject *op, PyObject *Py_UNUSED(args))
+_decimal_ContextManager___exit___impl(PyDecContextManagerObject *self,
+                                      PyObject * const *exc_info,
+                                      Py_ssize_t exc_info_length)
+/*[clinic end generated code: output=744a645b0145842d input=a86ec9080e28dff3]*/
 {
     PyObject *ret;
-    PyDecContextManagerObject *self = _PyDecContextManagerObject_CAST(op);
     ret = PyDec_SetCurrentContext(PyType_GetModule(Py_TYPE(self)), self->global);
     if (ret == NULL) {
         return NULL;
@@ -2226,7 +2238,7 @@ ctxmanager_restore_global(PyObject *op, PyObject *Py_UNUSED(args))
 
 static PyMethodDef ctxmanager_methods[] = {
   {"__enter__", ctxmanager_set_local, METH_NOARGS, NULL},
-  {"__exit__", ctxmanager_restore_global, METH_VARARGS, NULL},
+  _DECIMAL_CONTEXTMANAGER___EXIT___METHODDEF
   {NULL, NULL}
 };
 
@@ -7744,6 +7756,104 @@ error:
     return NULL;
 }
 
+PyDoc_STRVAR(libmpdec_version_info__doc__,
+"decimal.libmpdec_version_info\n\
+\n\
+libmpdec version information as a named tuple.");
+
+static PyStructSequence_Field libmpdec_version_info_fields[] = {
+    {"major", "Major release number"},
+    {"minor", "Minor release number"},
+    {"micro", "Micro release number"},
+    {0}
+};
+
+static PyStructSequence_Desc libmpdec_version_info_desc = {
+    "decimal.libmpdec_version_info",    /* name */
+    libmpdec_version_info__doc__,       /* doc */
+    libmpdec_version_info_fields,       /* fields */
+    3
+};
+
+static PyObject *
+make_libmpdec_version_info(PyTypeObject *type, int major, int minor, int micro)
+{
+    PyObject *version;
+    int pos = 0;
+
+    version = PyStructSequence_New(type);
+    if (version == NULL) {
+        return NULL;
+    }
+
+#define SetItem(VALUE) \
+    PyStructSequence_SET_ITEM(version, pos++, VALUE); \
+    if (PyErr_Occurred()) { \
+        Py_DECREF(version); \
+        return NULL; \
+    }
+
+    SetItem(PyLong_FromLong(major))
+    SetItem(PyLong_FromLong(minor))
+    SetItem(PyLong_FromLong(micro))
+#undef SetItem
+
+    return version;
+}
+
+static PyObject *
+parse_libmpdec_version_info(PyTypeObject *type, const char *version)
+{
+    int major, minor, micro;
+    if (sscanf(version, "%d.%d.%d", &major, &minor, &micro) != 3) {
+        PyErr_Format(PyExc_RuntimeError,
+                     "unexpected libmpdec version string %s", version);
+        return NULL;
+    }
+    return make_libmpdec_version_info(type, major, minor, micro);
+}
+
+static int
+add_version_constants(PyObject *m)
+{
+    const char *version = mpd_version();
+    if (PyModule_AddStringConstant(m, "LIBMPDEC_VERSION", MPD_VERSION) < 0) {
+        return -1;
+    }
+    PyObject *obj = PyUnicode_FromString(version);
+    if (obj == NULL) {
+        return -1;
+    }
+    if (PyModule_AddObjectRef(m, "libmpdec_version", obj) < 0 ||
+        PyModule_AddObjectRef(m, "__libmpdec_version__", obj) < 0)
+    {
+        Py_DECREF(obj);
+        return -1;
+    }
+    Py_DECREF(obj);
+    PyTypeObject *version_type;
+    version_type = PyStructSequence_NewType(&libmpdec_version_info_desc);
+    if (version_type == NULL) {
+        return -1;
+    }
+    if (PyModule_Add(m, "LIBMPDEC_VERSION_INFO",
+            make_libmpdec_version_info(version_type, MPD_MAJOR_VERSION,
+                                       MPD_MINOR_VERSION,
+                                       MPD_MICRO_VERSION)) < 0)
+    {
+        Py_DECREF(version_type);
+        return -1;
+    }
+    if (PyModule_Add(m, "libmpdec_version_info",
+            parse_libmpdec_version_info(version_type, version)) < 0)
+    {
+        Py_DECREF(version_type);
+        return -1;
+    }
+    Py_DECREF(version_type);
+    return 0;
+}
+
 static int minalloc_is_set = 0;
 
 static int
@@ -7992,7 +8102,7 @@ _decimal_exec(PyObject *m)
 
     /* Add specification version number */
     CHECK_INT(PyModule_AddStringConstant(m, "SPEC_VERSION", MPD_SPEC_VERSION));
-    CHECK_INT(PyModule_AddStringConstant(m, "__libmpdec_version__", mpd_version()));
+    CHECK_INT(add_version_constants(m));
 
     return 0;
 

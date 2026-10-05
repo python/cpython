@@ -107,9 +107,18 @@ _Py_RemoteDebug_HasPermissionError(void)
         && PyErr_ExceptionMatches(PyExc_PermissionError);
 }
 
+static inline int
+_Py_RemoteDebug_IsFatalReadError(void)
+{
+    return _Py_RemoteDebug_HasPermissionError()
+        || PyErr_ExceptionMatches(PyExc_MemoryError)
+        || PyErr_ExceptionMatches(PyExc_ProcessLookupError)
+        || (PyErr_Occurred() && !PyErr_ExceptionMatches(PyExc_Exception));
+}
+
 #define _set_debug_exception_cause(exception, format, ...) \
     do { \
-        if (!_Py_RemoteDebug_HasPermissionError()) { \
+        if (!_Py_RemoteDebug_IsFatalReadError()) { \
             PyThreadState *tstate = _PyThreadState_GET(); \
             if (!_PyErr_Occurred(tstate)) { \
                 _PyErr_Format(tstate, exception, format, ##__VA_ARGS__); \
@@ -142,7 +151,8 @@ get_page_size(void) {
         GetSystemInfo(&si);
         page_size = si.dwPageSize;
 #else
-        page_size = (size_t)getpagesize();
+        long n = sysconf(_SC_PAGESIZE);
+        page_size = (n > 0) ? (size_t)n : 4096;
 #endif
     }
     return page_size;
