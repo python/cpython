@@ -394,7 +394,7 @@ class VersionHexCheatsheet(SphinxDirective):
         current_minor = int(self.config.version.removeprefix('3.'))
         for minor in range(current_minor - 5, current_minor + 1):
             value = (3 << 24) | (minor << 16)
-            content.append(f'    {value:#x}  /* Py_PACK_VERSION(3.{minor}) */')
+            content.append(f'    {value:#x}  /* Py_PACK_VERSION(3,{minor}) */')
         node = nodes.paragraph()
         self.state.nested_parse(StringList(content), 0, node)
         return [node]

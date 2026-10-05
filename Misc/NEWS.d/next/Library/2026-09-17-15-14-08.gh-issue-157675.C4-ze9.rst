@@ -1,0 +1,5 @@
+:func:`encodings.idna.nameprep` now takes a *limit* argument that allows
+rejecting extremely large input early. The ``idna`` encoding and the
+:func:`!encodings.idna.ToASCII` and :func:`!encodings.idna.ToUnicode`
+functions use this to avoid passing unbounded input to quadratic-time
+algorithms.

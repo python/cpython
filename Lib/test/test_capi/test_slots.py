@@ -312,3 +312,38 @@ class ModuleSlotsTests(unittest.TestCase):
             _testlimitedcapi.module_from_slots("repeat_exec", FakeSpec())
         with self.assertRaisesRegex(SystemError, "multiple"):
             _testlimitedcapi.module_from_slots("repeat_gil", FakeSpec())
+
+    def test_bases_slots(self):
+        create = _testlimitedcapi.type_from_base_slots
+
+        # Py_tp_bases overrides Py_tp_base
+        cls = create(base=int, bases=float)
+        self.assertEqual(cls.mro(), [cls, float, object])
+
+        # type is equivalent to one-element tuple
+        cls = create(base=None, bases=int)
+        self.assertEqual(cls.mro(), [cls, int, object])
+
+        cls = create(base=None, bases=(int,))
+        self.assertEqual(cls.mro(), [cls, int, object])
+
+        cls = create(base=int)
+        self.assertEqual(cls.mro(), [cls, int, object])
+
+        cls = create(base=(int,))
+        self.assertEqual(cls.mro(), [cls, int, object])
+
+        # Tuple of bases works
+        class Custom:
+            pass
+        cls = create(bases=int)
+        sub = create(base=float, bases=(Custom, cls, int))
+        self.assertEqual(sub.mro(), [sub, Custom, cls, int, object])
+
+        # Reasonable error message for non-types
+        with self.assertRaisesRegex(TypeError,
+                                    "bases must be types; got 'NoneType'"):
+            create(base=None)
+        with self.assertRaisesRegex(TypeError,
+                                    "bases must be types; got 'str'"):
+            create(bases="a string")

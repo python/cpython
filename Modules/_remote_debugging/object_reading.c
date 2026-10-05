@@ -6,6 +6,7 @@
  ******************************************************************************/
 
 #include "_remote_debugging.h"
+#include <limits.h>
 
 /* ============================================================================
  * MEMORY READING FUNCTIONS
@@ -24,7 +25,6 @@ read_##type_name(RemoteUnwinderObject *unwinder, uintptr_t address, c_type *resu
 }
 
 DEFINE_MEMORY_READER(ptr, uintptr_t, "Failed to read pointer from remote memory")
-DEFINE_MEMORY_READER(Py_ssize_t, Py_ssize_t, "Failed to read Py_ssize_t from remote memory")
 DEFINE_MEMORY_READER(char, char, "Failed to read char from remote memory")
 
 int
@@ -63,11 +63,15 @@ read_py_str(
     }
 
     Py_ssize_t len = GET_MEMBER(Py_ssize_t, unicode_obj, unwinder->debug_offsets.unicode_object.length);
-    if (len < 0 || len > max_len) {
+    if (len < 0) {
         PyErr_Format(PyExc_RuntimeError,
                      "Invalid string length (%zd) at 0x%lx", len, address);
         set_exception_cause(unwinder, PyExc_RuntimeError, "Invalid string length in remote Unicode object");
         return NULL;
+    }
+    if (len > max_len) {
+        // gh-157788: a long name must not fail the whole read
+        len = max_len;
     }
 
     // Inspect state to pick the right data offset and character width.
@@ -264,26 +268,16 @@ read_py_long(
     Py_ssize_t inline_digits_space = SIZEOF_LONG_OBJ - ob_digit_offset;
     Py_ssize_t max_inline_digits = inline_digits_space / (Py_ssize_t)sizeof(digit);
 
-    // If the long object has inline digits that fit in our buffer, use them directly
-    digit *digits;
+    digit *digits = (digit *)PyMem_RawMalloc(size * sizeof(digit));
+    if (!digits) {
+        PyErr_NoMemory();
+        set_exception_cause(unwinder, PyExc_MemoryError, "Failed to allocate digits for PyLong");
+        return -1;
+    }
+
     if (size <= max_inline_digits && size <= _PY_NSMALLNEGINTS + _PY_NSMALLPOSINTS) {
-        // For small integers, digits are inline in the long_value.ob_digit array
-        digits = (digit *)PyMem_RawMalloc(size * sizeof(digit));
-        if (!digits) {
-            PyErr_NoMemory();
-            set_exception_cause(unwinder, PyExc_MemoryError, "Failed to allocate digits for small PyLong");
-            return -1;
-        }
         memcpy(digits, long_obj + ob_digit_offset, size * sizeof(digit));
     } else {
-        // For larger integers, we need to read the digits separately
-        digits = (digit *)PyMem_RawMalloc(size * sizeof(digit));
-        if (!digits) {
-            PyErr_NoMemory();
-            set_exception_cause(unwinder, PyExc_MemoryError, "Failed to allocate digits for large PyLong");
-            return -1;
-        }
-
         bytes_read = _Py_RemoteDebug_PagedReadRemoteMemory(
             &unwinder->handle,
             address + (uintptr_t)unwinder->debug_offsets.long_object.ob_digit,
@@ -296,19 +290,34 @@ read_py_long(
         }
     }
 
-    long long value = 0;
+    unsigned long limit = negative
+        ? (unsigned long)LONG_MAX + 1UL
+        : (unsigned long)LONG_MAX;
+    unsigned long value = 0;
 
-    // In theory this can overflow, but because of llvm/llvm-project#16778
-    // we can't use __builtin_mul_overflow because it fails to link with
-    // __muloti4 on aarch64. In practice this is fine because all we're
-    // testing here are task numbers that would fit in a single byte.
-    for (Py_ssize_t i = 0; i < size; ++i) {
-        long long factor = digits[i] * (1UL << (Py_ssize_t)(shift * i));
-        value += factor;
+    for (Py_ssize_t i = size; i-- > 0;) {
+        if (digits[i] >= PyLong_BASE) {
+            PyErr_Format(PyExc_RuntimeError,
+                "Invalid PyLong digit: %u (base %u)", digits[i], PyLong_BASE);
+            set_exception_cause(unwinder, PyExc_RuntimeError,
+                "Invalid PyLong digit (corrupted remote memory)");
+            goto error;
+        }
+        if (value > ((limit - (unsigned long)digits[i]) >> shift)) {
+            PyErr_SetString(PyExc_OverflowError,
+                "Remote PyLong value does not fit in C long");
+            set_exception_cause(unwinder, PyExc_OverflowError,
+                "Remote PyLong value is too large");
+            goto error;
+        }
+        value = (value << shift) | (unsigned long)digits[i];
     }
     PyMem_RawFree(digits);
     if (negative) {
-        value *= -1;
+        if (value == (unsigned long)LONG_MAX + 1UL) {
+            return LONG_MIN;
+        }
+        return -(long)value;
     }
     return (long)value;
 error:

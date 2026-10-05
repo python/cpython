@@ -47,9 +47,8 @@ elif sys.platform == "darwin":
     # FS encoding is UTF-8 on macOS
     EXPECTED_C_LOCALE_FS_ENCODING = "utf-8"
 elif sys.platform == "cygwin":
-    # Cygwin defaults to using C.UTF-8
-    # TODO: Work out a robust dynamic test for this that doesn't rely on
-    #       CPython's own locale handling machinery
+    DEFAULT_LOCALE_IS_C = False
+    DEFAULT_ENCODING = "utf-8"
     EXPECT_COERCION_IN_DEFAULT_LOCALE = False
 elif sys.platform == "vxworks":
     # VxWorks defaults to using UTF-8 for all system interfaces

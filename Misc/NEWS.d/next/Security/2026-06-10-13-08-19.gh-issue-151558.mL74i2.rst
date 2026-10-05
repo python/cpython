@@ -1,0 +1,3 @@
+Fixed an vulnerability in the :mod:`tarfile` ``data`` and ``tar`` extraction
+filters where crafted archives could create a symlink pointing outside the
+destination directory. This was a bypass of :cve:`2025-4330`.

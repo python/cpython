@@ -1,0 +1,2 @@
+Fix a race condition in ``_random.Random.__init__`` method in free-threading
+mode.

@@ -363,6 +363,9 @@ error:
    https://github.com/Cyan4973/xxHash/blob/master/doc/xxhash_spec.md
 
    The constants for the hash function are defined in pycore_tuple.h.
+
+   If you update this code, update also frozendict_pair_hash() which copied
+   this code.
 */
 
 static Py_hash_t
@@ -778,6 +781,7 @@ static PyObject *
 tuple_subtype_new(PyTypeObject *type, PyObject *iterable);
 
 /*[clinic input]
+@vectorcall
 @classmethod
 tuple.__new__ as tuple_new
     iterable: object(c_default="NULL") = ()
@@ -793,7 +797,7 @@ If the argument is a tuple, the return value is the same object.
 
 static PyObject *
 tuple_new_impl(PyTypeObject *type, PyObject *iterable)
-/*[clinic end generated code: output=4546d9f0d469bce7 input=86963bcde633b5a2]*/
+/*[clinic end generated code: output=4546d9f0d469bce7 input=8fdda913493ebe48]*/
 {
     if (type != &PyTuple_Type)
         return tuple_subtype_new(type, iterable);
@@ -803,27 +807,6 @@ tuple_new_impl(PyTypeObject *type, PyObject *iterable)
     }
     else {
         return PySequence_Tuple(iterable);
-    }
-}
-
-static PyObject *
-tuple_vectorcall(PyObject *type, PyObject * const*args,
-                 size_t nargsf, PyObject *kwnames)
-{
-    if (!_PyArg_NoKwnames("tuple", kwnames)) {
-        return NULL;
-    }
-
-    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
-    if (!_PyArg_CheckPositional("tuple", nargs, 0, 1)) {
-        return NULL;
-    }
-
-    if (nargs) {
-        return tuple_new_impl(_PyType_CAST(type), args[0]);
-    }
-    else {
-        return tuple_get_empty();
     }
 }
 
@@ -951,11 +934,19 @@ tuple___getnewargs___impl(PyTupleObject *self)
     return Py_BuildValue("(N)", tuple_slice(self, 0, Py_SIZE(self)));
 }
 
+
+PyDoc_STRVAR(tuple_class_getitem_doc,
+"Tuples are generic over the types of their contents.\n\n\
+For example, use ``tuple[int, str]`` for a pair whose first element\n\
+is an int and second element is a string.\n\n\
+Tuples also support the form ``tuple[T, ...]`` to indicate\n\
+an arbitrary length tuple of elements of type T.");
+
 static PyMethodDef tuple_methods[] = {
     TUPLE___GETNEWARGS___METHODDEF
     TUPLE_INDEX_METHODDEF
     TUPLE_COUNT_METHODDEF
-    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, tuple_class_getitem_doc},
     {NULL,              NULL}           /* sentinel */
 };
 

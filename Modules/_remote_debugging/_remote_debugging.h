@@ -30,6 +30,7 @@ extern "C" {
 #include "internal/pycore_llist.h"          // struct llist_node
 #include "internal/pycore_long.h"           // _PyLong_GetZero
 #include "internal/pycore_pyerrors.h"       // _PyErr_FormatFromCause
+#include "internal/pycore_pyhash.h"        // _Py_HashPointerRaw
 #include "internal/pycore_stackref.h"       // Py_TAG_BITS
 #include "../../Python/remote_debug.h"
 
@@ -146,6 +147,8 @@ typedef enum _WIN32_THREADSTATE {
 #define MAX_STACK_CHUNK_SIZE (16 * 1024 * 1024)  /* 16 MB max for stack chunks */
 #define MAX_LONG_DIGITS 64  /* Allows values up to ~2^1920 */
 #define MAX_SET_TABLE_SIZE (1 << 20)  /* 1 million entries max for set iteration */
+#define MAX_FRAME_CHAIN_DEPTH (1024 + 512)  /* Iteration bound for frame chain walks */
+#define MAX_TASK_WAITER_WALK_TASKS (1 << 14)  /* Total-task bound for waiter walks */
 
 #ifndef MAX
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
@@ -179,7 +182,7 @@ typedef enum _WIN32_THREADSTATE {
 #define set_exception_cause(unwinder, exc_type, message)                              \
     do {                                                                              \
         assert(PyErr_Occurred() && "function returned -1 without setting exception"); \
-        if (unwinder->debug) {                                                        \
+        if (unwinder->debug && !_Py_RemoteDebug_IsFatalReadError()) {                 \
             _set_debug_exception_cause(exc_type, message);                            \
         }                                                                             \
     } while (0)
@@ -215,6 +218,8 @@ typedef struct {
     PyObject *file_name;
     int first_lineno;
     PyObject *linetable;  // bytes
+    PyObject *last_frame_info;
+    ptrdiff_t last_addrq;
     uintptr_t addr_code_adaptive;
 } CachedCodeMetadata;
 
@@ -223,11 +228,47 @@ typedef struct {
 #define FRAME_CACHE_MAX_FRAMES 1024
 
 typedef struct {
+    uintptr_t frame;
+    uintptr_t seq;
+} FrameCacheAnchor;
+
+typedef struct {
     uint64_t thread_id;                      // 0 = empty slot
+    uintptr_t thread_state_addr;
+    uintptr_t last_profiled_frame_seq;       // sequence paired with addrs[0]
     uintptr_t addrs[FRAME_CACHE_MAX_FRAMES];
     Py_ssize_t num_addrs;
+    PyObject *thread_id_obj;                 // owned reference, NULL if empty
     PyObject *frame_list;                    // owned reference, NULL if empty
 } FrameCacheEntry;
+
+#define INTERPRETER_THREAD_CACHE_SIZE 32
+#if (INTERPRETER_THREAD_CACHE_SIZE & (INTERPRETER_THREAD_CACHE_SIZE - 1)) != 0
+#  error "INTERPRETER_THREAD_CACHE_SIZE must be a power of two"
+#endif
+
+// The two per-interpreter L2 caches below are split into per-field tables so
+// that a writer rebinding one slot cannot leave stale data in a field owned by
+// the other when the slot is reused across interpreters.
+typedef struct {
+    uintptr_t interpreter_addr;
+    uintptr_t thread_state_addr;
+} InterpreterTstateCacheEntry;
+typedef struct {
+    uintptr_t interpreter_addr;
+    uint64_t code_object_generation;
+} InterpreterGenerationCacheEntry;
+
+// Carries already-read thread state and/or frame buffers across helpers so the
+// downstream callee can skip a remote read. Address fields are caller-supplied
+// inputs; buffer pointers (tstate, frame) are NULL unless a prior batched read
+// successfully populated them.
+typedef struct {
+    const char *tstate;
+    uintptr_t tstate_addr;
+    const char *frame;
+    uintptr_t frame_addr;
+} RemoteReadPrefetch;
 
 /* Statistics for profiling performance analysis */
 typedef struct {
@@ -242,14 +283,44 @@ typedef struct {
     uint64_t code_object_cache_hits;         // Code object cache hits
     uint64_t code_object_cache_misses;       // Code object cache misses
     uint64_t stale_cache_invalidations;      // Times stale entries were cleared
+    uint64_t batched_read_attempts;          // Batched remote-read attempts
+    uint64_t batched_read_successes;         // Attempts that read all requested segments
+    uint64_t batched_read_misses;            // Attempts that fell back or partially read
+    uint64_t batched_read_segments_requested; // Segments requested by batched reads
+    uint64_t batched_read_segments_completed; // Segments completed by batched reads
 } UnwinderStats;
+
+#if defined(__GNUC__) || defined(__clang__)
+#  define REMOTE_DEBUG_UNLIKELY(value) __builtin_expect(!!(value), 0)
+#else
+#  define REMOTE_DEBUG_UNLIKELY(value) (value)
+#endif
 
 /* Stats tracking macros - no-op when stats collection is disabled */
 #define STATS_INC(unwinder, field) \
-    do { if ((unwinder)->collect_stats) (unwinder)->stats.field++; } while(0)
+    do { if (REMOTE_DEBUG_UNLIKELY((unwinder)->collect_stats)) (unwinder)->stats.field++; } while(0)
 
 #define STATS_ADD(unwinder, field, val) \
-    do { if ((unwinder)->collect_stats) (unwinder)->stats.field += (val); } while(0)
+    do { if (REMOTE_DEBUG_UNLIKELY((unwinder)->collect_stats)) (unwinder)->stats.field += (val); } while(0)
+
+#if HAVE_PROCESS_VM_READV
+#  define STATS_BATCHED_READ(unwinder, requested, completed) \
+    do { \
+        if (REMOTE_DEBUG_UNLIKELY((unwinder)->collect_stats)) { \
+            (unwinder)->stats.batched_read_attempts++; \
+            (unwinder)->stats.batched_read_segments_requested += (uint64_t)(requested); \
+            (unwinder)->stats.batched_read_segments_completed += (uint64_t)(completed); \
+            if ((completed) == (requested)) { \
+                (unwinder)->stats.batched_read_successes++; \
+            } \
+            else { \
+                (unwinder)->stats.batched_read_misses++; \
+            } \
+        } \
+    } while(0)
+#else
+#  define STATS_BATCHED_READ(unwinder, requested, completed) ((void)0)
+#endif
 
 typedef struct {
     PyTypeObject *RemoteDebugging_Type;
@@ -290,7 +361,6 @@ typedef struct {
     struct _Py_AsyncioModuleDebugOffsets async_debug_offsets;
     uintptr_t interpreter_addr;
     uintptr_t tstate_addr;
-    uint64_t code_object_generation;
     _Py_hashtable_t *code_object_cache;
     int debug;
     int only_active_thread;
@@ -302,9 +372,17 @@ typedef struct {
     int cache_frames;
     int collect_stats;  // whether to collect statistics
     uint32_t stale_invalidation_counter;  // counter for throttling frame_cache_invalidate_stale
+    // L1 single-entry shortcut over cached_tstates[]: most workloads sample one
+    // interpreter, so check these pairs before hashing into the table below.
+    uintptr_t cached_tstate_interpreter_addr;
+    uintptr_t cached_tstate_addr;
+    uintptr_t cached_generation_interpreter_addr;
+    uint64_t cached_code_object_generation;
     RemoteDebuggingState *cached_state;
     FrameCacheEntry *frame_cache;  // preallocated array of FRAME_CACHE_MAX_THREADS entries
     UnwinderStats stats;  // statistics for performance analysis
+    InterpreterTstateCacheEntry cached_tstates[INTERPRETER_THREAD_CACHE_SIZE];
+    InterpreterGenerationCacheEntry cached_generations[INTERPRETER_THREAD_CACHE_SIZE];
 #ifdef Py_GIL_DISABLED
     uint32_t tlbc_generation;
     _Py_hashtable_t *tlbc_cache;
@@ -361,11 +439,13 @@ typedef struct {
 typedef struct {
     /* Inputs */
     uintptr_t frame_addr;           // Starting frame address
+    uintptr_t thread_state_addr;    // Owning thread state address
     uintptr_t base_frame_addr;      // Sentinel at bottom (for validation)
     uintptr_t gc_frame;             // GC frame address (0 if not tracking)
-    uintptr_t last_profiled_frame;  // Last cached frame (0 if no cache)
+    FrameCacheAnchor last_profiled; // Last cached frame anchor
     StackChunkList *chunks;         // Pre-copied stack chunks
     int skip_first_frame;           // Skip frame_addr itself (continue from its caller)
+    RemoteReadPrefetch prefetch;     // Optional already-read thread/frame buffers
 
     /* Outputs */
     PyObject *frame_info;           // List to append FrameInfo objects
@@ -397,12 +477,6 @@ typedef int (*thread_processor_func)(
     RemoteUnwinderObject *unwinder,
     uintptr_t thread_state_addr,
     unsigned long tid,
-    void *context
-);
-
-typedef int (*set_entry_processor_func)(
-    RemoteUnwinderObject *unwinder,
-    uintptr_t key_addr,
     void *context
 );
 
@@ -450,7 +524,6 @@ extern int validate_debug_offsets(struct _Py_DebugOffsets *debug_offsets);
  * ============================================================================ */
 
 extern int read_ptr(RemoteUnwinderObject *unwinder, uintptr_t address, uintptr_t *result);
-extern int read_Py_ssize_t(RemoteUnwinderObject *unwinder, uintptr_t address, Py_ssize_t *result);
 extern int read_char(RemoteUnwinderObject *unwinder, uintptr_t address, char *result);
 extern int read_py_ptr(RemoteUnwinderObject *unwinder, uintptr_t address, uintptr_t *ptr_addr);
 
@@ -548,16 +621,23 @@ extern int process_frame_chain(
 extern int frame_cache_init(RemoteUnwinderObject *unwinder);
 extern void frame_cache_cleanup(RemoteUnwinderObject *unwinder);
 extern FrameCacheEntry *frame_cache_find(RemoteUnwinderObject *unwinder, uint64_t thread_id);
+extern FrameCacheEntry *frame_cache_find_by_tstate(RemoteUnwinderObject *unwinder, uintptr_t tstate_addr);
 extern int clear_last_profiled_frames(RemoteUnwinderObject *unwinder);
+extern int set_last_profiled_frame(RemoteUnwinderObject *unwinder, uintptr_t tstate_addr, uintptr_t frame_addr);
 extern void frame_cache_invalidate_stale(RemoteUnwinderObject *unwinder, PyObject *result);
 extern int frame_cache_lookup_and_extend(
     RemoteUnwinderObject *unwinder,
     uint64_t thread_id,
-    uintptr_t last_profiled_frame,
+    uintptr_t thread_state_addr,
+    FrameCacheAnchor anchor,
     PyObject *frame_info,
     uintptr_t *frame_addrs,
     Py_ssize_t *num_addrs,
     Py_ssize_t max_addrs);
+extern int frame_cache_anchor_matches(
+    RemoteUnwinderObject *unwinder,
+    uintptr_t thread_state_addr,
+    FrameCacheAnchor anchor);
 // Returns: 1 = stored, 0 = not stored (graceful), -1 = error
 // Only stores complete stacks that reach base_frame_addr
 extern int frame_cache_store(
@@ -566,6 +646,8 @@ extern int frame_cache_store(
     PyObject *frame_list,
     const uintptr_t *addrs,
     Py_ssize_t num_addrs,
+    uintptr_t thread_state_addr,
+    uintptr_t last_profiled_frame_seq,
     uintptr_t base_frame_addr,
     uintptr_t last_frame_visited);
 
@@ -605,7 +687,8 @@ extern PyObject* unwind_stack_for_thread(
     uintptr_t *current_tstate,
     uintptr_t gil_holder_tstate,
     uintptr_t gc_frame,
-    uintptr_t main_thread_tstate
+    uintptr_t main_thread_tstate,
+    const RemoteReadPrefetch *prefetch
 );
 
 /* Thread stopping functions (for blocking mode) */
@@ -641,12 +724,6 @@ extern int parse_task(
     PyObject *render_to
 );
 
-extern int parse_coro_chain(
-    RemoteUnwinderObject *unwinder,
-    uintptr_t coro_address,
-    PyObject *render_to
-);
-
 extern int parse_async_frame_chain(
     RemoteUnwinderObject *unwinder,
     PyObject *calls,
@@ -654,32 +731,10 @@ extern int parse_async_frame_chain(
     uintptr_t running_task_code_obj
 );
 
-/* Set iteration */
-extern int iterate_set_entries(
-    RemoteUnwinderObject *unwinder,
-    uintptr_t set_addr,
-    set_entry_processor_func processor,
-    void *context
-);
-
-/* Task awaited_by processing */
-extern int process_task_awaited_by(
-    RemoteUnwinderObject *unwinder,
-    uintptr_t task_address,
-    set_entry_processor_func processor,
-    void *context
-);
-
 extern int process_single_task_node(
     RemoteUnwinderObject *unwinder,
     uintptr_t task_addr,
     PyObject **task_info,
-    PyObject *result
-);
-
-extern int process_task_and_waiters(
-    RemoteUnwinderObject *unwinder,
-    uintptr_t task_addr,
     PyObject *result
 );
 

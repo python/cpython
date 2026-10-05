@@ -1,0 +1,3 @@
+On glibc, :func:`locale.nl_langinfo` now decodes the ``LC_TIME`` items (such
+as the month and day names) using the wide locale data, so the result no
+longer depends on the ``LC_CTYPE`` encoding.

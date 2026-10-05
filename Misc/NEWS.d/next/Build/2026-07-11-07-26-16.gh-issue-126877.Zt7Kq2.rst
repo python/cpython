@@ -1,0 +1,2 @@
+Fix the :program:`configure` check for Tcl/Tk which could wrongly succeed
+with optimizing compilers when the libraries are missing.

@@ -1,0 +1,2 @@
+The :mod:`email` package now uses standard MIME charset names "gb2312" and
+"big5" instead of non-standard names "eucgb2312_cn" and "big5_tw".

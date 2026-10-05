@@ -4,8 +4,11 @@
 #include <Python.h>
 #include <pycore_ast.h>
 #include <pycore_token.h>
+#include <pycore_ceval.h>     // _Py_ReachedRecursionLimitWithMargin()
+#include <pycore_pystate.h>   // _Py_get_machine_stack_pointer()
+#include <pycore_pythonrun.h> // _PyOS_STACK_MARGIN_BYTES
 
-#include "lexer/state.h"
+#include "tokenizer/tokenizer.h"
 
 #if 0
 #define PyPARSE_YIELD_IS_KEYWORD        0x0001
@@ -26,9 +29,6 @@
 
 #define CURRENT_POS (-5)
 
-#define TOK_GET_MODE(tok) (&(tok->tok_mode_stack[tok->tok_mode_stack_index]))
-#define TOK_GET_STRING_PREFIX(tok) (TOK_GET_MODE(tok)->string_kind == TSTRING ? 't' : 'f')
-
 typedef struct _memo {
     int type;
     void *node;
@@ -38,10 +38,16 @@ typedef struct _memo {
 
 typedef struct {
     int type;
+    // Text required by grammar actions or helpers; otherwise NULL.
     PyObject *bytes;
     int level;
+    int is_raw;
     int lineno, col_offset, end_lineno, end_col_offset;
     Memo *memo;
+    // Filter over the rule types present in `memo` (bit `type & 63` is set
+    // for every entry): lets lookups skip walking the list on definite
+    // misses, which are the common case.
+    uint64_t memo_mask;
     PyObject *metadata;
 } Token;
 
@@ -67,6 +73,8 @@ typedef struct {
     int end_col_offset;
 } location;
 
+typedef struct _identifier_cache_entry IdentifierCacheEntry;
+
 typedef struct {
     struct tok_state *tok;
     Token **tokens;
@@ -91,7 +99,29 @@ typedef struct {
     int call_invalid_rules;
     int debug;
     location last_stmt_location;
+    IdentifierCacheEntry *identifier_cache;
+    PyThreadState *tstate;
+    // Cached copy of tstate->c_stack_soft_limit offset by one margin toward
+    // the stack top, so the per-rule stack check is a single inline comparison.
+    uintptr_t stack_soft_limit;
 } Parser;
+
+// C-stack exhaustion check run on every rule entry. The fast path compares
+// the machine stack pointer against the soft limit cached in the Parser;
+// only when the stack is nearly exhausted is the full check called.
+static inline int
+_PyPegen_stack_exhausted(Parser *p)
+{
+#if _Py_STACK_GROWS_DOWN
+    if (_Py_get_machine_stack_pointer() > p->stack_soft_limit) {
+#else
+    if (_Py_get_machine_stack_pointer() <= p->stack_soft_limit) {
+#endif
+        assert(!_Py_ReachedRecursionLimitWithMargin(p->tstate, 1));
+        return 0;
+    }
+    return _Py_ReachedRecursionLimitWithMargin(p->tstate, 1);
+}
 
 typedef struct {
     cmpop_ty cmpop;
@@ -143,6 +173,7 @@ PyObject *_PyPegen_get_memo_statistics(void);
 
 int _PyPegen_insert_memo(Parser *p, int mark, int type, void *node);
 int _PyPegen_update_memo(Parser *p, int mark, int type, void *node);
+Memo *_PyPegen_insert_memo_direct(Parser *p, int mark, int type);
 int _PyPegen_is_memoized(Parser *p, int type, void *pres);
 
 int _PyPegen_lookahead(int, void *(func)(Parser *), Parser *);
@@ -166,15 +197,16 @@ Py_ssize_t _PyPegen_byte_offset_to_character_offset_line(PyObject *line, Py_ssiz
 Py_ssize_t _PyPegen_byte_offset_to_character_offset(PyObject *line, Py_ssize_t col_offset);
 Py_ssize_t _PyPegen_byte_offset_to_character_offset_raw(const char*, Py_ssize_t col_offset);
 
-// Error handling functions and APIs
 typedef enum {
     STAR_TARGETS,
     DEL_TARGETS,
-    FOR_TARGETS
+    FOR_TARGETS,
+    SINGLE_TARGETS,
+    ATTRIBUTE_OR_SUBSCRIPT_TARGETS
 } TARGETS_TYPE;
 
+// Error handling functions and APIs
 int _Pypegen_raise_decode_error(Parser *p);
-void _PyPegen_raise_tokenizer_init_error(PyObject *filename);
 int _Pypegen_tokenizer_error(Parser *p);
 void *_PyPegen_raise_error(Parser *p, PyObject *errtype, int use_mark, const char *errmsg, ...);
 void *_PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
@@ -208,6 +240,12 @@ RAISE_ERROR_KNOWN_LOCATION(Parser *p, PyObject *errtype,
 #define RAISE_SYNTAX_ERROR_STARTING_FROM(a, msg, ...) \
     RAISE_ERROR_KNOWN_LOCATION(p, PyExc_SyntaxError, (a)->lineno, (a)->col_offset, CURRENT_POS, CURRENT_POS, msg, ##__VA_ARGS__)
 #define RAISE_SYNTAX_ERROR_INVALID_TARGET(type, e) _RAISE_SYNTAX_ERROR_INVALID_TARGET(p, type, e)
+
+Py_LOCAL_INLINE(int)
+_PyPegen_tokens_are_adjacent(Token *a, Token *b)
+{
+    return (a->end_lineno == b->lineno) && (a->end_col_offset == b->col_offset);
+}
 
 Py_LOCAL_INLINE(void *)
 CHECK_CALL(Parser *p, void *result)
@@ -320,6 +358,7 @@ CmpopExprPair *_PyPegen_cmpop_expr_pair(Parser *, cmpop_ty, expr_ty);
 asdl_int_seq *_PyPegen_get_cmpops(Parser *p, asdl_seq *);
 asdl_expr_seq *_PyPegen_get_exprs(Parser *, asdl_seq *);
 expr_ty _PyPegen_set_expr_context(Parser *, expr_ty, expr_context_ty);
+expr_ty _PyPegen_make_target(Parser *, expr_ty, TARGETS_TYPE);
 KeyValuePair *_PyPegen_key_value_pair(Parser *, expr_ty, expr_ty);
 asdl_expr_seq *_PyPegen_get_keys(Parser *, asdl_seq *);
 asdl_expr_seq *_PyPegen_get_values(Parser *, asdl_seq *);
@@ -366,8 +405,10 @@ mod_ty _PyPegen_make_module(Parser *, asdl_stmt_seq *);
 void *_PyPegen_arguments_parsing_error(Parser *, expr_ty);
 expr_ty _PyPegen_get_last_comprehension_item(comprehension_ty comprehension);
 void *_PyPegen_nonparen_genexp_in_call(Parser *p, expr_ty args, asdl_comprehension_seq *comprehensions);
-stmt_ty _PyPegen_checked_future_import(Parser *p, identifier module, asdl_alias_seq *,
-                                       int, expr_ty, int, int, int, int, PyArena *);
+stmt_ty _PyPegen_checked_from_import(Parser *p, asdl_seq *dots, expr_ty module_name,
+                                     asdl_alias_seq *names, expr_ty lazy_token, int lineno,
+                                     int col_offset, int end_lineno, int end_col_offset,
+                                     PyArena *arena);
 asdl_stmt_seq* _PyPegen_register_stmts(Parser *p, asdl_stmt_seq* stmts);
 stmt_ty _PyPegen_register_stmt(Parser *p, stmt_ty s);
 

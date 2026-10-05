@@ -1,0 +1,5 @@
+Error responses of :class:`http.server.BaseHTTPRequestHandler` to malformed
+request lines now include a status line and headers instead of being sent in
+the bare HTTP/0.9 style.
+Only a valid HTTP/0.9 request (a two-word ``GET`` request line) now receives
+an HTTP/0.9 style response.
