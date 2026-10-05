@@ -1887,7 +1887,19 @@ set_intersection_update_multi_impl(PySetObject *so, PyObject * const *others,
             Py_SETREF(result, newresult);
         }
         if (result != NULL) {
-            set_swap_bodies(so, (PySetObject *)result);
+            if (others_length == 1) {
+                set_swap_bodies(so, (PySetObject *)result);
+            }
+            else {
+                /* A later operand's critical section may have suspended
+                   so's lock. Preserve concurrent removals by intersecting
+                   the result with so's current contents. */
+                PyObject *updated = set_intersection_update(so, result);
+                if (updated == NULL) {
+                    Py_CLEAR(result);
+                }
+                Py_XDECREF(updated);
+            }
         }
     }
     Py_END_CRITICAL_SECTION2();

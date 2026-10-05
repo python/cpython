@@ -210,6 +210,49 @@ class RaceTestBase:
 
             self.assertEqual(target, expected)
 
+    def test_intersection_update_suspended_lock(self):
+        """Test an update while a later operand's lock is held."""
+        NUM_ITERS = 200
+        BLOCK_SIZE = self.SET_SIZE * 1_000
+        HOLD_WORK = 10_000
+
+        initial = set(range(BLOCK_SIZE))
+        blocked_operand = set(initial)
+        evens = set(range(0, BLOCK_SIZE, 2))
+        threes = set(range(0, BLOCK_SIZE, 3))
+        expected = set(range(0, BLOCK_SIZE, 6))
+
+        class SlowEmpty:
+            def __iter__(self):
+                for _ in range(HOLD_WORK):
+                    pass
+                return iter(())
+
+        # Repeat because the lock suspension depends on thread scheduling.
+        for _ in range(NUM_ITERS):
+            target = set(initial)
+
+            def hold_operand():
+                blocked_operand.intersection(SlowEmpty())
+
+            def first_update():
+                target.intersection_update(evens, blocked_operand)
+
+            def second_update():
+                target.intersection_update(threes)
+
+            threads = [
+                Thread(target=hold_operand),
+                Thread(target=first_update),
+                Thread(target=second_update),
+            ]
+            for thread in threads:
+                thread.start()
+            for thread in threads:
+                thread.join()
+
+            self.assertEqual(target, expected)
+
     def test_iand_concurrent(self):
         """Test concurrent &= operations on one shared set."""
         NUM_ITERS = 10
