@@ -1598,6 +1598,99 @@ sock.connect(('localhost', {port}))
 
 
 
+@skip_if_not_supported
+@unittest.skipIf(
+    sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+    "Test only runs on Linux with process_vm_readv support",
+)
+class TestMetadataDegradation(RemoteInspectionTestBase):
+    """Tests for graceful degradation of oversized code-object metadata."""
+
+    def _find_frame_in_trace(self, stack_trace, predicate):
+        for thread_info in stack_trace:
+            for frame in thread_info.frame_info:
+                if predicate(frame):
+                    return frame
+        return None
+
+    def test_long_qualname_truncated_not_dropped(self):
+        """A qualname longer than 1024 chars is truncated instead of
+        failing the whole sample."""
+        name = "f" * 1100
+        src = f"def {name}(sample):\n    return sample()\n"
+        ns = {}
+        exec(src, ns)
+
+        trace = ns[name](RemoteUnwinder(os.getpid()).get_stack_trace)
+        frame = self._find_frame_in_trace(
+            trace, lambda f: f.funcname.startswith("fff")
+        )
+        self.assertIsNotNone(frame)
+        self.assertEqual(frame.funcname, "f" * 1024)
+
+    def test_long_filename_truncated(self):
+        """A filename longer than 1024 chars is truncated instead of
+        failing the whole sample."""
+        src = "def g(sample):\n    return sample()\n"
+        ns = {}
+        exec(compile(src, "x" * 1500 + ".py", "exec"), ns)
+
+        trace = ns["g"](RemoteUnwinder(os.getpid()).get_stack_trace)
+        frame = self._find_frame_in_trace(trace, lambda f: f.funcname == "g")
+        self.assertIsNotNone(frame)
+        self.assertEqual(frame.filename, "x" * 1024)
+
+    def test_oversized_linetable_degrades_to_no_location(self):
+        """A linetable over the 4096-byte limit degrades to a frame without
+        location instead of failing the whole sample."""
+        src = (
+            "def big(sample):\n"
+            + "    x = 1\n" * 1200
+            + "    return sample()\n"
+        )
+        ns = {}
+        exec(compile(src, "big_linetable.py", "exec"), ns)
+        big = ns["big"]
+        self.assertGreater(len(big.__code__.co_linetable), 4096)
+
+        trace = big(RemoteUnwinder(os.getpid()).get_stack_trace)
+        frame = self._find_frame_in_trace(
+            trace, lambda f: f.funcname == "big"
+        )
+        self.assertIsNone(frame.lineno)
+        self.assertEqual(frame.filename, "big_linetable.py")
+
+    @unittest.skipUnless(
+        sys.platform == "linux",
+        "Process death maps to ProcessLookupError only on Linux in 3.14",
+    )
+    def test_dead_process_raises_not_degrades(self):
+        """Death of the target raises ProcessLookupError instead of
+        degrading to synthetic frames."""
+        script_body = """\
+            import time
+            sock.sendall(b"ready")
+            time.sleep(10_000)
+            """
+        with self._target_process(script_body) as (p, client_socket, make_unwinder):
+            _wait_for_signal(client_socket, b"ready")
+            unwinder = make_unwinder()
+            unwinder.get_stack_trace()
+
+            p.kill()
+            p.wait()
+
+            for _ in busy_retry(SHORT_TIMEOUT, error=False):
+                try:
+                    unwinder.get_stack_trace()
+                except ProcessLookupError:
+                    break
+                except RuntimeError:
+                    continue
+            else:
+                self.fail("ProcessLookupError never raised for dead process")
+
+
 class TestFrameChainLimits(RemoteInspectionTestBase):
     """Frame chain walks abort instead of looping/overflowing on deep chains."""
 
