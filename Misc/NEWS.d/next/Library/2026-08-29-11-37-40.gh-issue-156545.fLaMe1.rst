@@ -1,0 +1,3 @@
+Fix the sampling profiler's flamegraph export so that profiling a deeply
+recursive program no longer fails with :exc:`RecursionError` instead of
+producing a flamegraph. Patch by tonghuaroot.
