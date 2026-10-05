@@ -199,19 +199,23 @@
         } while(0)
 #endif
 
-/* Get the number of elements in a visible array
-
-   This does not work on pointers, or arrays declared as [], or function
-   parameters. With correct compiler support, such usage will cause a build
-   error (see Py_BUILD_ASSERT_EXPR).
-
-   Written by Rusty Russell, public domain, http://ccodearchive.net/
-
-   Requires at GCC 3.1+ */
-#if (defined(__GNUC__) && !defined(__STRICT_ANSI__) && \
-    (((__GNUC__ == 3) && (__GNUC_MINOR__ >= 1)) || (__GNUC__ >= 4)))
-/* Two gcc extensions.
-   &a[0] degrades to a pointer: a different type from an array */
+// Get the number of elements in a visible array.
+//
+// This does not work on pointers, or arrays declared as [], or function
+// parameters. With correct compiler support, such usage will cause a build
+// error (see Py_BUILD_ASSERT_EXPR).
+//
+// Written by Rusty Russell, public domain, http://ccodearchive.net/
+//
+// Require GCC 4 (it works on GCC 3.1).
+//
+// Two GCC extensions: &a[0] degrades to a pointer, a different type from an
+// array.
+//
+// gh-158810: Do not use __builtin_types_compatible_p() in strict C ANSI mode
+// and on C++.
+#if (defined(__GNUC__) && __GNUC__ >= 4 \
+        && !defined(__STRICT_ANSI__) && !defined(__cplusplus))
 #define Py_ARRAY_LENGTH(array) \
     (sizeof(array) / sizeof((array)[0]) \
      + Py_BUILD_ASSERT_EXPR(!__builtin_types_compatible_p(typeof(array), \
