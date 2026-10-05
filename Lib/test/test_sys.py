@@ -1969,6 +1969,7 @@ class SizeofTest(unittest.TestCase):
 
         sys.set_asyncgen_hooks(firstiter=firstiter)
         hooks = sys.get_asyncgen_hooks()
+        self.assertTrue(gc.is_tracked(hooks))
         self.assertIs(hooks.firstiter, firstiter)
         self.assertIs(hooks[0], firstiter)
         self.assertIs(hooks.finalizer, None)

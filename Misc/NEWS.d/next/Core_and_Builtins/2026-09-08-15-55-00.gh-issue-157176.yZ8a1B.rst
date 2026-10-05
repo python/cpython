@@ -1,1 +1,1 @@
-Fix GC tracking for :class:`!PyStructSequence` instances created via :c:func:`PyStructSequence_New`. Patch by Shamil Abdulaev.
+Track :func:`time.struct_time` and :func:`sys.get_asyncgen_hooks` objects in the garbage collector to prevent reference cycle leaks. Patch by Shamil Abdulaev.

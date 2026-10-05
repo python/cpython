@@ -497,6 +497,7 @@ tmtotuple(time_module_state *state, struct tm *p
 #undef SET
 #undef SET_ITEM
 
+    PyObject_GC_Track(v);
     return v;
 }
 
