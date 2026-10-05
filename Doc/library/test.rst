@@ -1722,7 +1722,7 @@ The :mod:`!test.support.import_helper` module provides support for import tests.
    if *deprecated* is ``True``.
 
    If *usefrozen* is False (the default) then the frozen importer is
-   disabled (except for essential modules like importlib._bootstrap).
+   disabled (except for essential modules like ``importlib._bootstrap``).
 
    This function will raise :exc:`ImportError` if the named module cannot be
    imported.
@@ -1784,7 +1784,7 @@ The :mod:`!test.support.import_helper` module provides support for import tests.
    :exc:`DeprecationWarning` on import.
 
    If *usefrozen* is False (the default) then the frozen importer is
-   disabled (except for essential modules like importlib._bootstrap).
+   disabled (except for essential modules like ``importlib._bootstrap``).
 
    Example usage::
 
