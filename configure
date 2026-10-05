@@ -20493,12 +20493,6 @@ then :
   printf "%s\n" "#define HAVE_DUP 1" >>confdefs.h
 
 fi
-ac_fn_c_check_func "$LINENO" "dup3" "ac_cv_func_dup3"
-if test "x$ac_cv_func_dup3" = xyes
-then :
-  printf "%s\n" "#define HAVE_DUP3 1" >>confdefs.h
-
-fi
 ac_fn_c_check_func "$LINENO" "execv" "ac_cv_func_execv"
 if test "x$ac_cv_func_execv" = xyes
 then :
@@ -21013,12 +21007,6 @@ ac_fn_c_check_func "$LINENO" "pipe" "ac_cv_func_pipe"
 if test "x$ac_cv_func_pipe" = xyes
 then :
   printf "%s\n" "#define HAVE_PIPE 1" >>confdefs.h
-
-fi
-ac_fn_c_check_func "$LINENO" "pipe2" "ac_cv_func_pipe2"
-if test "x$ac_cv_func_pipe2" = xyes
-then :
-  printf "%s\n" "#define HAVE_PIPE2 1" >>confdefs.h
 
 fi
 ac_fn_c_check_func "$LINENO" "plock" "ac_cv_func_plock"
@@ -21769,6 +21757,47 @@ fi
 
 
 
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for dup3" >&5
+printf %s "checking for dup3... " >&6; }
+if test ${ac_cv_func_dup3+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <unistd.h>
+int
+main (void)
+{
+void *x=dup3
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_func_dup3=yes
+else case e in #(
+  e) ac_cv_func_dup3=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_dup3" >&5
+printf "%s\n" "$ac_cv_func_dup3" >&6; }
+  if test "x$ac_cv_func_dup3" = xyes
+then :
+
+printf "%s\n" "#define HAVE_DUP3 1" >>confdefs.h
+
+fi
+
+
+
+
+
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for link" >&5
 printf %s "checking for link... " >&6; }
 if test ${ac_cv_func_link+y}
@@ -21803,6 +21832,47 @@ printf "%s\n" "$ac_cv_func_link" >&6; }
 then :
 
 printf "%s\n" "#define HAVE_LINK 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for pipe2" >&5
+printf %s "checking for pipe2... " >&6; }
+if test ${ac_cv_func_pipe2+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <unistd.h>
+int
+main (void)
+{
+void *x=pipe2
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_func_pipe2=yes
+else case e in #(
+  e) ac_cv_func_pipe2=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_pipe2" >&5
+printf "%s\n" "$ac_cv_func_pipe2" >&6; }
+  if test "x$ac_cv_func_pipe2" = xyes
+then :
+
+printf "%s\n" "#define HAVE_PIPE2 1" >>confdefs.h
 
 fi
 

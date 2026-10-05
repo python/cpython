@@ -5528,7 +5528,7 @@ fi
 AC_CHECK_FUNCS([ \
   accept4 alarm bind_textdomain_codeset chmod chown clearenv \
   clock closefrom close_range confstr \
-  copy_file_range ctermid dladdr dup dup3 execv explicit_bzero explicit_memset \
+  copy_file_range ctermid dladdr dup execv explicit_bzero explicit_memset \
   faccessat fchmod fchmodat fchown fchownat fdopendir fdwalk fexecve \
   fork fork1 fpathconf fstatat ftime ftruncate futimens futimes futimesat \
   gai_strerror getdents64 getegid geteuid getgid getgrent getgrgid getgrgid_r \
@@ -5539,7 +5539,7 @@ AC_CHECK_FUNCS([ \
   if_nametoindex initgroups kill killpg lchown linkat \
   lockf lstat lutimes madvise mbrtowc memrchr mkdirat mkfifo mkfifoat \
   mknod mknodat mktime mmap mremap nice openat opendir pathconf pause \
-  pidfd_open pidfd_getfd pidfd_send_signal pipe pipe2 \
+  pidfd_open pidfd_getfd pidfd_send_signal pipe \
   plock poll ppoll posix_fadvise posix_fallocate posix_openpt posix_spawn posix_spawnp \
   posix_spawn_file_actions_addclosefrom_np \
   pread preadv preadv2 process_vm_readv \
@@ -5590,7 +5590,9 @@ AC_CHECK_DECL([dirfd],
 # For some functions, having a definition is not sufficient, since
 # we want to take their address.
 PY_CHECK_FUNC([chroot], [@%:@include <unistd.h>])
+PY_CHECK_FUNC([dup3], [@%:@include <unistd.h>])
 PY_CHECK_FUNC([link], [@%:@include <unistd.h>])
+PY_CHECK_FUNC([pipe2], [@%:@include <unistd.h>])
 PY_CHECK_FUNC([symlink], [@%:@include <unistd.h>])
 PY_CHECK_FUNC([fchdir], [@%:@include <unistd.h>])
 PY_CHECK_FUNC([fsync], [@%:@include <unistd.h>])
