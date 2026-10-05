@@ -2498,7 +2498,8 @@ Struct_pack_impl(PyStructObject *self, PyObject * const *values,
         return NULL;
     }
 
-    return PyBytesWriter_FinishWithSize(writer, self->s_size);
+    assert(PyBytesWriter_GetSize(writer) == self->s_size);
+    return PyBytesWriter_Finish(writer);
 }
 
 /*[clinic input]

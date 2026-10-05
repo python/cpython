@@ -4880,7 +4880,7 @@ _PyUnicode_EncodeUTF7(PyObject *str,
         else { /* not in a shift sequence */
             if (ch == '+') {
                 *out++ = '+';
-                        *out++ = '-';
+                *out++ = '-';
             }
             else if (ENCODE_DIRECT(ch)) {
                 *out++ = (char) ch;
@@ -8644,10 +8644,7 @@ _PyUnicode_EncodeIconv(const char *encoding, PyObject *unicode,
         iconv(cd, NULL, NULL, NULL, NULL);
     }
 
-    if (PyBytesWriter_Resize(writer, out - (char *)PyBytesWriter_GetData(writer)) < 0) {
-        goto done;
-    }
-    result = PyBytesWriter_Finish(writer);
+    result = PyBytesWriter_FinishWithPointer(writer, out);
     writer = NULL;
 
 done:
