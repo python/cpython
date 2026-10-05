@@ -1,4 +1,2 @@
-Skip the array reallocation when shrinking a small :class:`list`-
-When deleting an item from a list via :keyword:`del`, lists are
-also now correctly reallocated unless small, thereby avoiding
-holding memory for too long. Patch by Donghee Na.
+Skip the array reallocation when shrinking a small :class:`list`. Patch by
+Donghee Na.
