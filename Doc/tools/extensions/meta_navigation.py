@@ -93,7 +93,7 @@ def _splice_flow(
             target,
             title,
             accesskey,
-            sphinx_gettext(direction),
+            sphinx_gettext('previous' if direction == 'prev' else 'next'),
         )
 
     context['rellinks'] = [
@@ -125,6 +125,7 @@ def add_meta_page_relations(
     docname = app.config.root_doc
     while docname is not None:
         if docname == 'glossary':
+            # prepend modindex and genindex to glossary
             if _has_module_index(app):
                 flow.append('py-modindex')
             flow.extend(_genindex_pages(app, context))
