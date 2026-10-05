@@ -76,13 +76,10 @@ finish_ftstring_expr(struct tok_state *tok, ftstring_state *state,
     if (!(state->debug_expr || tstring_interpolation) || token->metadata) {
         return 0;
     }
-    Py_ssize_t expr_len;
-    const char *expr = _PyTok_SourceSpanView(
-        &tok->source, state->expr_span, &expr_len);
     tokenizer_comments *comments = state->comments;
     PyObject *res;
     if (comments != NULL && comments->count > 0) {
-        Py_ssize_t stripped_size = expr_len;
+        Py_ssize_t stripped_size = state->expr_span.end - state->expr_span.start;
         Py_ssize_t comment_count = 0;
         for (Py_ssize_t i = 0; i < comments->count; i++) {
             _PyTok_Span comment = comments->spans[i];
@@ -103,24 +100,26 @@ finish_ftstring_expr(struct tok_state *tok, ftstring_state *state,
         }
         _PyTok_Off copied_to = state->expr_span.start;
         Py_ssize_t stripped_len = 0;
-        for (Py_ssize_t i = 0; i < comment_count; i++) {
-            _PyTok_Span comment = comments->spans[i];
-            Py_ssize_t length = comment.start - copied_to;
-            memcpy(stripped + stripped_len,
-                   expr + copied_to - state->expr_span.start,
-                   (size_t)length);
+        for (Py_ssize_t i = 0; i <= comment_count; i++) {
+            _PyTok_Span span = {
+                copied_to,
+                i < comment_count ? comments->spans[i].start : state->expr_span.end,
+            };
+            Py_ssize_t length;
+            const char *text = _PyTok_SourceSpanView(&tok->source, span, &length);
+            memcpy(stripped + stripped_len, text, (size_t)length);
             stripped_len += length;
-            copied_to = comment.end;
+            if (i < comment_count) {
+                copied_to = comments->spans[i].end;
+            }
         }
-        Py_ssize_t length = state->expr_span.end - copied_to;
-        memcpy(stripped + stripped_len,
-               expr + copied_to - state->expr_span.start,
-               (size_t)length);
-        stripped_len += length;
         res = PyUnicode_DecodeUTF8(stripped, stripped_len, NULL);
         PyMem_Free(stripped);
     }
     else {
+        Py_ssize_t expr_len;
+        const char *expr = _PyTok_SourceSpanView(
+            &tok->source, state->expr_span, &expr_len);
         res = PyUnicode_DecodeUTF8(expr, expr_len, NULL);
     }
 

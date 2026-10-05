@@ -175,13 +175,11 @@ next_prepared(struct tok_state *tok, _PyTok_Chunk *chunk)
         return _PYTOK_READ_EOF;
     }
     _PyTok_Span tail = {tok->inp, tok->source.base_offset + tok->source.len};
-    Py_ssize_t remaining;
-    const char *start = _PyTok_SourceSpanView(&tok->source, tail, &remaining);
-    const char *newline = memchr(start, '\n', remaining);
-    chunk->data = (char *)start;
-    chunk->len = newline != NULL ? newline - start + 1 : remaining;
+    _PyTok_Off newline = _PyTok_SourceFindByte(&tok->source, tail, '\n');
+    _PyTok_Span line = {tail.start, newline >= 0 ? newline + 1 : tail.end};
+    chunk->data = (char *)_PyTok_SourceSpanView(&tok->source, line, &chunk->len);
     chunk->ownership = _PYTOK_CHUNK_BORROWED;
-    chunk->implicit_newline = chunk->len == remaining &&
+    chunk->implicit_newline = line.end == tail.end &&
         tok->reader->prepared_final_newline_is_implicit;
     return _PYTOK_READ_LINE;
 }
@@ -667,11 +665,10 @@ _PyTok_ReaderUnderflow(struct tok_state *tok)
         tok->inp = source_start + chunk.len;
     }
     else {
-        _PyTok_Off source_start = _PyTok_SourceOffset(&tok->source, chunk.data);
         if (tok->start < 0 && _PyLexer_CurrentFTString(tok) == NULL) {
-            tok->buf_offset = source_start;
+            tok->buf_offset = tok->inp;
         }
-        tok->inp = source_start + chunk.len;
+        tok->inp += chunk.len;
     }
     tok->implicit_newline = chunk.implicit_newline;
 

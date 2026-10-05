@@ -107,22 +107,28 @@ _PyTokenizer_ImplyDedents(struct tok_state *tok)
 int
 _PyTokenizer_HasTrailingStatement(const struct tok_state *tok)
 {
-    const char *cur = _PyTok_SourcePointer(&tok->source, tok->cur);
-    char c = *cur;
-    for (;;) {
-        while (c == ' ' || c == '\t' || c == '\n' || c == '\014') {
-            c = *++cur;
-        }
-        if (!c) {
+    _PyTok_Off cur = tok->cur;
+    _PyTok_Off end = tok->source.base_offset + tok->source.len;
+    while (cur < end) {
+        int c = _PyTok_SourceByte(&tok->source, cur++);
+        if (c == '\0') {
             return 0;
+        }
+        if (c == ' ' || c == '\t' || c == '\n' || c == '\014') {
+            continue;
         }
         if (c != '#') {
             return 1;
         }
-        while (c && c != '\n') {
-            c = *++cur;
+        while (cur < end) {
+            c = _PyTok_SourceByte(&tok->source, cur);
+            if (c == '\0' || c == '\n') {
+                break;
+            }
+            cur++;
         }
     }
+    return 0;
 }
 
 int

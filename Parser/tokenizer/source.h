@@ -21,14 +21,6 @@ _PyTok_SourceData(const _PyTok_SourceText *source)
 
 /* Convert positions within the retained source window. Pointers and views
    are borrowed; append, discard, and clear invalidate them. */
-static inline _PyTok_Off
-_PyTok_SourceOffset(const _PyTok_SourceText *source, const char *position)
-{
-    const char *base = _PyTok_SourceData(source);
-    assert(position >= base && position <= base + source->len);
-    return source->base_offset + (position - base);
-}
-
 static inline const char *
 _PyTok_SourcePointer(const _PyTok_SourceText *source, _PyTok_Off offset)
 {
@@ -54,6 +46,16 @@ _PyTok_SourceSpanView(const _PyTok_SourceText *source, _PyTok_Span span,
     *length = span.end - span.start;
     (void)_PyTok_SourcePointer(source, span.end);
     return _PyTok_SourcePointer(source, span.start);
+}
+
+/* Return the first matching offset within span, or -1 if absent. */
+static inline _PyTok_Off
+_PyTok_SourceFindByte(const _PyTok_SourceText *source, _PyTok_Span span, int byte)
+{
+    Py_ssize_t length;
+    const char *data = _PyTok_SourceSpanView(source, span, &length);
+    const char *found = memchr(data, byte, length);
+    return found != NULL ? span.start + (found - data) : -1;
 }
 
 PyAPI_FUNC(void) _PyTok_SourceInit(_PyTok_SourceText *);
