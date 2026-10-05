@@ -58,6 +58,7 @@ typedef struct {
    Errors are returned as ERRORTOKEN, with or without a Python exception. */
 void _PyTokenizer_Get(struct tok_state *, struct token *);
 void _PyTokenizer_Free(struct tok_state *);
+int _PyTokenizer_Traverse(struct tok_state *, visitproc, void *);
 void _PyTokenizer_raise_init_error(PyObject *filename);
 void _PyToken_Init(struct token *);
 static inline void
