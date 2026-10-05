@@ -4219,6 +4219,7 @@ register_lazy_on_parent(PyThreadState *tstate, PyObject *name, PyObject *source)
 {
     PyDictObject *pending =
         (PyDictObject *)LAZY_PENDING_SUBMODULES(tstate->interp);
+    // Finalizers can still run after finalize_modules() cleared the dict.
     if (pending == NULL) {
         return 0;
     }

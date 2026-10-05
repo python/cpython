@@ -2846,6 +2846,21 @@ class LazyImportFinalizationTests(unittest.TestCase):
         """)
         self.assertEqual(assert_python_ok("-c", code).out, b"module")
 
+    def test_set_lazy_attributes(self):
+        code = textwrap.dedent("""
+            import _imp, os, sys
+
+            class Canary:
+                def __del__(self, write=os.write,
+                            set_lazy=_imp._set_lazy_attributes):
+                    set_lazy(None, "mod")
+                    write(1, b"ok")
+
+            # Freed while sys.lazy_modules is being cleared.
+            sys.lazy_modules.add(Canary())
+        """)
+        self.assertEqual(assert_python_ok("-c", code).out, b"ok")
+
 
 if __name__ == '__main__':
     unittest.main()
