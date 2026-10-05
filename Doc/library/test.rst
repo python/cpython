@@ -1785,6 +1785,10 @@ The :mod:`!test.support.import_helper` module provides support for import tests.
    is useful for testing module-level behaviors, such as the emission of a
    :exc:`DeprecationWarning` on import.
 
+   When created, this makes a copy of :data:`sys.modules` and removes names from
+   *module_names* from the original. On exit, the original module references are
+   restored.
+
    If *usefrozen* is False (the default) then the frozen importer is
    disabled (except for essential modules like ``importlib._bootstrap``).
 
