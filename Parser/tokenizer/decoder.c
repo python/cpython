@@ -429,12 +429,8 @@ _PyTok_StartDecoder(struct tok_state *tok, const char *errors)
 
     PyObject *codec = _PyCodec_LookupTextEncoding(reader->encoding, NULL);
     if (codec != NULL) {
-        PyObject *factory = PyObject_GetAttrString(codec, "incrementaldecoder");
+        reader->decoder = _PyCodecInfo_GetIncrementalDecoder(codec, errors);
         Py_DECREF(codec);
-        if (factory != NULL) {
-            reader->decoder = PyObject_CallFunction(factory, "s", errors);
-            Py_DECREF(factory);
-        }
     }
     if (reader->decoder == NULL) {
         tok->done = PyErr_ExceptionMatches(PyExc_MemoryError)
