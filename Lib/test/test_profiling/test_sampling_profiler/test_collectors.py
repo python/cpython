@@ -8,7 +8,7 @@ import sys
 import tempfile
 import unittest
 
-from test.support import is_emscripten, set_recursion_limit
+from test.support import is_emscripten, run_with_limited_c_stack, set_recursion_limit
 
 try:
     import _remote_debugging  # noqa: F401
@@ -611,6 +611,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertFalse(export_ok)
         self.assertEqual(os.path.getsize(flamegraph_out.name), 0)
 
+    @run_with_limited_c_stack(size=1024 * 1024)
     def test_flamegraph_deep_stack_export(self):
         flamegraph_out = tempfile.NamedTemporaryFile(
             suffix=".html", delete=False
