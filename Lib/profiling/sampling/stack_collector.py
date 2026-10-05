@@ -68,8 +68,8 @@ class CollapsedStackCollector(StackTraceCollector):
         return True
 
 
-# Bounded by the unwinder's maximum captured stack depth (MAX_FRAMES).
-_FLAMEGRAPH_RECURSION_MARGIN = 2000
+# Allow for tree conversion and the dict/list frames in the Python JSON encoder.
+_FLAMEGRAPH_RECURSION_MARGIN = 6000
 
 
 class FlamegraphCollector(StackTraceCollector):
@@ -498,7 +498,12 @@ class FlamegraphCollector(StackTraceCollector):
             return None
 
     def _create_flamegraph_html(self, data):
-        data_json = json.dumps(data)
+        try:
+            data_json = json.dumps(data)
+        except RecursionError:
+            # The C encoder can exhaust the C stack independently of the
+            # Python recursion limit. iterencode() uses the Python encoder.
+            data_json = "".join(json.JSONEncoder().iterencode(data))
 
         template_dir = importlib.resources.files(__package__)
         vendor_dir = template_dir / "_vendor"
@@ -676,16 +681,16 @@ class DiffFlamegraphCollector(FlamegraphCollector):
         current_stats = self._aggregate_path_samples(self._root)
         baseline_stats = self._aggregate_path_samples(self._baseline_collector._root)
 
-        # Scale baseline values to make them comparable, accounting for both
-        # sample count differences and sample interval differences.
+        # Express baseline samples in units of the current sample interval.
+        # Do not normalize by total profile duration: doing so makes unchanged
+        # functions appear different when another function becomes faster or
+        # slower.
         baseline_total = self._baseline_collector._total_samples
-        if baseline_total > 0 and self._total_samples > 0:
-            current_time = self._total_samples * self.sample_interval_usec
-            baseline_time = baseline_total * self._baseline_collector.sample_interval_usec
-            scale = current_time / baseline_time
-        elif baseline_total > 0:
-            # Current profile is empty - use interval-based scale for elided display
-            scale = self.sample_interval_usec / self._baseline_collector.sample_interval_usec
+        if baseline_total > 0:
+            scale = (
+                self._baseline_collector.sample_interval_usec
+                / self.sample_interval_usec
+            )
         else:
             scale = 1.0
 
@@ -901,6 +906,10 @@ class DiffFlamegraphCollector(FlamegraphCollector):
             node["diff_pct"] = -100.0
         else:
             node["diff_pct"] = 0.0
+
+        # Scale geometry after computing metadata from raw baseline counts.
+        node["value"] = node.get("value", 0) * scale
+        node["self"] = node.get("self", 0) * scale
 
         if "children" in node and node["children"]:
             for child in node["children"]:
