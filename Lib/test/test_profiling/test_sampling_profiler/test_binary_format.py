@@ -7,6 +7,7 @@ import random
 import struct
 import tempfile
 import unittest
+from unittest import mock
 from collections import defaultdict
 
 from test.support import captured_stderr
@@ -1545,6 +1546,34 @@ class TestBinaryEncodings(BinaryFormatTestBase):
         self.assertEqual(count, num_samples)
         self.assertEqual(len(collector.batches), num_samples)
         self.assertEqual(collector.batches, expected)
+
+
+    def test_rle_long_run_splits_batches(self):
+        # Construct a single repeat record larger than the writer's buffer.
+        num_samples = 8193
+        filename = self.create_binary_file([], compression="none")
+        data = bytearray(pathlib.Path(filename).read_bytes())
+        record = (struct.pack("=QIB", 1, 0, 0)  # STACK_REPEAT
+                  + b"\x81\x40"  # 8193 as a varint
+                  + b"\x01\x00" * num_samples)  # delta=1, status=0
+        data[64:64] = record
+        struct.pack_into("=Q", data, 12, 0)  # start timestamp
+        struct.pack_into("=Q", data, 28, num_samples)
+        struct.pack_into("=I", data, 36, 1)  # thread count
+        for offset in (40, 48):  # string and frame table offsets
+            old_offset = struct.unpack_from("=Q", data, offset)[0]
+            struct.pack_into("=Q", data, offset, old_offset + len(record))
+        struct.pack_into("=Q", data, len(data) - 24, len(data))
+        pathlib.Path(filename).write_bytes(data)
+
+        collector = mock.Mock()
+        with BinaryReader(filename) as reader:
+            count = reader.replay_samples(collector)
+        batches = [call.args[1] for call in collector.collect.call_args_list]
+        self.assertEqual(count, num_samples)
+        self.assertEqual([len(batch) for batch in batches], [8192, 1])
+        self.assertEqual([ts for batch in batches for ts in batch],
+                         list(range(1, num_samples + 1)))
 
 
 class TestBinaryStress(BinaryFormatTestBase):
