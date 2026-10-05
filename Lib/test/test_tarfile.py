@@ -1888,13 +1888,13 @@ class GzipStreamWriteTest(GzipTest, StreamWriteTest):
     def test_create_with_mtime_out_of_range(self):
         # gh-133998: an mtime outside the gzip header's 32-bit range is
         # stored as 0 rather than raising struct.error.
+        self.addCleanup(os_helper.unlink, tmpname)
         for mtime in (-1, 2**32):
             with self.subTest(mtime=mtime):
                 tarfile.open(tmpname, self.mode, mtime=mtime).close()
                 with self.open(tmpname, 'r') as fobj:
                     fobj.read()
                     self.assertEqual(fobj.mtime, 0)
-                os_helper.unlink(tmpname)
 
     def test_create_with_mtime_at_boundary(self):
         # gh-133998: the largest in-range mtime is preserved, not clamped.
