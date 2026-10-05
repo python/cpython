@@ -963,6 +963,11 @@ A ``TarInfo`` object has the following public data attributes:
    If *deep* is false, the copy is shallow, i.e. ``pax_headers``
    and any custom attributes are shared with the original ``TarInfo`` object.
 
+   This method is also used by :func:`copy.replace`.
+
+   .. versionchanged:: next
+      Added support for :func:`copy.replace`.
+
 A :class:`TarInfo` object also provides some convenient query methods:
 
 
@@ -1107,6 +1112,10 @@ reused in custom filters:
     paths (in case the name is absolute
     even after stripping slashes, e.g. ``C:/foo`` on Windows).
     This raises :class:`~tarfile.AbsolutePathError`.
+  - Normalize filenames (:attr:`TarInfo.name`) that contain ``..`` components
+    using :func:`os.path.normpath`.
+    Note that this removes internal ``..`` components, which may change the
+    meaning of the name if it traverses symbolic links.
   - :ref:`Refuse <tarfile-extraction-refuse>` to extract files whose absolute
     path (after following symlinks) would end up outside the destination.
     This raises :class:`~tarfile.OutsideDestinationError`.
@@ -1114,6 +1123,10 @@ reused in custom filters:
     (:const:`~stat.S_IWGRP` | :const:`~stat.S_IWOTH`).
 
   Return the modified ``TarInfo`` member.
+
+  .. versionchanged:: next
+
+     Filenames containing ``..`` components are now normalized.
 
 .. function:: data_filter(member, path)
 
@@ -1195,6 +1208,8 @@ Here is an incomplete list of things to consider:
 * Check filenames against an allow-list of characters
   (to filter out control characters, confusables, foreign path separators,
   and so on).
+* Check for platform-specific filename semantics. For example, on Windows
+  some names can have reserved meanings.
 * Check that filenames have expected extensions (discouraging files that
   execute when you “click on them”, or extension-less files like Windows
   special device names).

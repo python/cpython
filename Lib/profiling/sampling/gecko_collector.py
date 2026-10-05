@@ -250,6 +250,25 @@ class GeckoCollector(Collector):
             self.interval = (times[-1] - self.last_sample_time) / self.sample_count
         self.last_sample_time = times[-1]
 
+        # Process async tasks
+        if stack_frames and hasattr(stack_frames[0], "awaited_by"):
+            for frames, thread_id, _ in self._iter_async_frames(stack_frames):
+                frames = filter_internal_frames(frames)
+                if not frames:
+                    continue
+
+                if thread_id not in self.threads:
+                    self.threads[thread_id] = self._create_thread(
+                        thread_id, False
+                    )
+
+                self._record_stack_sample(
+                    self.threads[thread_id], frames, thread_id, times, first_time
+                )
+
+            self.sample_count += len(times)
+            return
+
         # Process threads
         for interpreter_info in stack_frames:
             for thread_info in interpreter_info.threads:
@@ -333,36 +352,42 @@ class GeckoCollector(Collector):
                 if not frames:
                     continue
 
-                # Process stack once to get stack_index
-                stack_index = self._process_stack(thread_data, frames)
-
-                # Add samples with timestamps
-                thread_spill = thread_data["_spill"]
-                for t in times:
-                    thread_spill.append_sample(stack_index, t)
-
-                # Handle opcodes
-                if self.opcodes_enabled and frames:
-                    leaf_frame = frames[0]
-                    filename, location, funcname, opcode = leaf_frame
-                    if isinstance(location, tuple):
-                        lineno, _, col_offset, _ = location
-                    else:
-                        lineno = location
-                        col_offset = -1
-
-                    current_state = (opcode, lineno, col_offset, funcname, filename)
-
-                    if tid not in self.opcode_state:
-                        self.opcode_state[tid] = (*current_state, first_time)
-                    elif self.opcode_state[tid][:5] != current_state:
-                        prev_opcode, prev_lineno, prev_col, prev_funcname, prev_filename, prev_start = self.opcode_state[tid]
-                        self._add_opcode_interval_marker(
-                            tid, prev_opcode, prev_lineno, prev_col, prev_funcname, prev_start, first_time
-                        )
-                        self.opcode_state[tid] = (*current_state, first_time)
+                self._record_stack_sample(
+                    thread_data, frames, tid, times, first_time
+                )
 
         self.sample_count += len(times)
+
+    def _record_stack_sample(self, thread_data, frames, tid, times, first_time):
+        stack_index = self._process_stack(thread_data, frames)
+
+        thread_spill = thread_data["_spill"]
+        for t in times:
+            thread_spill.append_sample(stack_index, t)
+
+        if self.opcodes_enabled and frames:
+            leaf_frame = frames[0]
+            filename, location, funcname, opcode = leaf_frame
+            if isinstance(location, tuple):
+                lineno, _, col_offset, _ = location
+            else:
+                lineno = location
+                col_offset = -1
+
+            current_state = (opcode, lineno, col_offset, funcname, filename)
+
+            if tid not in self.opcode_state:
+                self.opcode_state[tid] = (*current_state, first_time)
+            elif self.opcode_state[tid][:5] != current_state:
+                (
+                    prev_opcode, prev_lineno, prev_col, prev_funcname,
+                    prev_filename, prev_start
+                ) = self.opcode_state[tid]
+                self._add_opcode_interval_marker(
+                    tid, prev_opcode, prev_lineno, prev_col, prev_funcname,
+                    prev_start, first_time
+                )
+                self.opcode_state[tid] = (*current_state, first_time)
 
     def _create_thread(self, tid, is_main_thread):
         """Create a new thread structure with processed profile format."""
@@ -756,6 +781,7 @@ class GeckoCollector(Collector):
         print(
             f"Open in Firefox Profiler: https://profiler.firefox.com/"
         )
+        return True
 
     def _build_marker_schema(self):
         """Build marker schema definitions for Firefox Profiler."""

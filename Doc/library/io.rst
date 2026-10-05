@@ -115,34 +115,21 @@ The raw stream API is described in detail in the docs of :class:`RawIOBase`.
 
 .. _io-text-encoding:
 
-Text Encoding
+Text encoding
 -------------
 
-The default encoding of :class:`TextIOWrapper` and :func:`open` is
-locale-specific (:func:`locale.getencoding`).
-
-However, many developers forget to specify the encoding when opening text files
-encoded in UTF-8 (e.g. JSON, TOML, Markdown, etc...) since most Unix
-platforms use UTF-8 locale by default. This causes bugs because the locale
-encoding is not UTF-8 for most Windows users. For example::
-
-   # May not work on Windows when non-ASCII characters in the file.
-   with open("README.md") as f:
-       long_description = f.read()
-
-Accordingly, it is highly recommended that you specify the encoding
-explicitly when opening text files. If you want to use UTF-8, pass
-``encoding="utf-8"``. To use the current locale encoding,
-``encoding="locale"`` is supported since Python 3.10.
+The default encoding of :class:`TextIOWrapper` and :func:`open` is UTF-8.
+If :ref:`Python UTF-8 Mode <utf8-mode>` is disabled, the default encoding
+is locale-specific (:func:`locale.getencoding`).
 
 .. seealso::
 
    :ref:`utf8-mode`
-      Python UTF-8 Mode can be used to change the default encoding to
-      UTF-8 from locale-specific encoding.
+      Python UTF-8 Mode ignores the locale encoding and forces the use
+      of UTF-8.
 
    :pep:`686`
-      Python 3.15 will make :ref:`utf8-mode` default.
+      Python 3.15 made :ref:`utf8-mode` the default.
 
 .. _io-encoding-warning:
 
@@ -152,7 +139,7 @@ Opt-in EncodingWarning
 .. versionadded:: 3.10
    See :pep:`597` for more details.
 
-To find where the default locale encoding is used, you can enable
+To find where the default encoding is used, you can enable
 the :option:`-X warn_default_encoding <-X>` command line option or set the
 :envvar:`PYTHONWARNDEFAULTENCODING` environment variable, which will
 emit an :exc:`EncodingWarning` when the default encoding is used.
@@ -165,7 +152,7 @@ please consider using UTF-8 by default (i.e. ``encoding="utf-8"``) for
 new APIs.
 
 
-High-level Module Interface
+High-level module interface
 ---------------------------
 
 .. data:: DEFAULT_BUFFER_SIZE
@@ -315,7 +302,7 @@ ABC                        Inherits            Stub Methods              Mixin M
 =========================  ==================  ========================  ==================================================
 
 
-I/O Base Classes
+I/O base classes
 ^^^^^^^^^^^^^^^^
 
 .. class:: IOBase
@@ -660,7 +647,7 @@ I/O Base Classes
       so the implementation should only access *b* during the method call.
 
 
-Raw File I/O
+Raw file I/O
 ^^^^^^^^^^^^
 
 .. class:: FileIO(name, mode='r', closefd=True, opener=None)
@@ -728,7 +715,7 @@ Raw File I/O
       given in the constructor.
 
 
-Buffered Streams
+Buffered streams
 ^^^^^^^^^^^^^^^^
 
 Buffered I/O streams provide a higher-level interface to an I/O device
@@ -763,14 +750,28 @@ than raw I/O does.
 
       .. note::
          As long as the view exists, the :class:`BytesIO` object cannot be
-         resized or closed.
+         resized.  Closing it does not invalidate the view.
 
       .. versionadded:: 3.2
+
+      .. versionchanged:: next
+         The :class:`BytesIO` object can now be closed while the view exists.
 
    .. method:: getvalue()
 
       Return :class:`bytes` containing the entire contents of the buffer.
 
+   .. method:: peek(size=0, /)
+
+      Return a copy of the buffer from the current position onwards without
+      advancing the position.
+
+      If *size* is less than one or omitted, at most
+      :data:`DEFAULT_BUFFER_SIZE` bytes are returned.
+      Otherwise, at most *size* bytes are returned.
+      Return an empty :class:`bytes` object at EOF.
+
+      .. versionadded:: next
 
    .. method:: read1(size=-1, /)
 
@@ -990,8 +991,8 @@ Text I/O
    :class:`TextIOBase`.
 
    *encoding* gives the name of the encoding that the stream will be decoded or
-   encoded with.  In :ref:`UTF-8 Mode <utf8-mode>`, this defaults to UTF-8.
-   Otherwise, it defaults to :func:`locale.getencoding`.
+   encoded with.  This defaults to UTF-8; if :ref:`UTF-8 Mode <utf8-mode>` is
+   disabled, it defaults to :func:`locale.getencoding`.
    ``encoding="locale"`` can be used to specify the current locale's encoding
    explicitly. See :ref:`io-text-encoding` for more information.
 
@@ -1173,7 +1174,7 @@ Text I/O
    It inherits from :class:`codecs.IncrementalDecoder`.
 
 
-Static Typing
+Static typing
 -------------
 
 The following protocols can be used for annotating function and method

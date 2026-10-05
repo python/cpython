@@ -159,3 +159,29 @@ class TestUtils(TestCase):
                     span_text = code[color.span.start:color.span.end + 1]
                     actual_highlights.append((span_text, color.tag))
                 self.assertEqual(actual_highlights, expected_highlights)
+
+    def test_gen_colors_command_highlighting(self):
+        cases = [
+            # highlights bare command names (after stripping whitespaces)
+            ("exit", [("exit", "command")]),
+            ("quit", [("quit", "command")]),
+            ("copyright", [("copyright", "command")]),
+            ("help", [("help", "command")]),
+            ("clear", [("clear", "command")]),
+            ("  clear ", [("clear", "command")]),
+            # no highlight when not the only token on the line
+            ("x = exit", [("=", "op"), ("exit", "builtin")]),
+            ("obj.exit", [(".", "op")]),
+            # falls through to builtin when called as function or used in expression
+            ("exit()", [("exit", "builtin"), ("(", "op"), (")", "op")]),
+            ("quit(0)", [("quit", "builtin"), ("(", "op"), ("0", "number"), (")", "op")]),
+            ("print(exit)", [("print", "builtin"), ("(", "op"), ("exit", "builtin"), (")", "op")]),
+        ]
+        for code, expected_highlights in cases:
+            with self.subTest(code=code):
+                colors = list(gen_colors(code))
+                actual_highlights = []
+                for color in colors:
+                    span_text = code[color.span.start:color.span.end + 1]
+                    actual_highlights.append((span_text, color.tag))
+                self.assertEqual(actual_highlights, expected_highlights)

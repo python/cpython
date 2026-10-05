@@ -1,0 +1,2 @@
+:class:`io.BytesIO` is no longer closed on ``write()`` and ``truncate()``
+failure (:exc:`MemoryError`). Patch by Victor Stinner.

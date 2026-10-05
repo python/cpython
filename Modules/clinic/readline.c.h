@@ -366,7 +366,13 @@ readline_get_pre_input_hook_impl(PyObject *module);
 static PyObject *
 readline_get_pre_input_hook(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
-    return readline_get_pre_input_hook_impl(module);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(module);
+    return_value = readline_get_pre_input_hook_impl(module);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 #endif /* defined(HAVE_RL_PRE_INPUT_HOOK) */
@@ -651,7 +657,13 @@ readline_get_completer_impl(PyObject *module);
 static PyObject *
 readline_get_completer(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
-    return readline_get_completer_impl(module);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(module);
+    return_value = readline_get_completer_impl(module);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(readline_get_history_item__doc__,
@@ -823,4 +835,4 @@ readline_redisplay(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef READLINE_CLEAR_HISTORY_METHODDEF
     #define READLINE_CLEAR_HISTORY_METHODDEF
 #endif /* !defined(READLINE_CLEAR_HISTORY_METHODDEF) */
-/*[clinic end generated code: output=4bd95070973cd0e2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=acf4e4c35191cf09 input=a9049054013a1b77]*/

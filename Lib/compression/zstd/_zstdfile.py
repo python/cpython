@@ -34,7 +34,7 @@ class ZstdFile(_streams.BaseStream):
                  level=None, options=None, zstd_dict=None):
         """Open a Zstandard compressed file in binary mode.
 
-        *file* can be either an file-like object, or a file name to open.
+        *file* can be either a file-like object, or a file name to open.
 
         *mode* can be 'r' for reading (default), 'w' for (over)writing, 'x'
         for creating exclusively, or 'a' for appending.  These can
@@ -246,6 +246,7 @@ class ZstdFile(_streams.BaseStream):
         return self._buffer.peek(size)
 
     def __next__(self):
+        self._check_can_read()
         if ret := self._buffer.readline():
             return ret
         raise StopIteration

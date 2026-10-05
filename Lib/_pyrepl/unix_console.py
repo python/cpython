@@ -19,8 +19,6 @@
 # CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
 # CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-from __future__ import annotations
-
 import errno
 import os
 import re
@@ -34,7 +32,9 @@ import platform
 from collections.abc import Callable
 from dataclasses import dataclass
 from fcntl import ioctl
-from typing import TYPE_CHECKING, overload
+from typing import AbstractSet, IO, Literal, overload
+
+from _colorize import ANSIColors
 
 from . import terminfo
 from .console import Console, Event
@@ -59,9 +59,6 @@ except ImportError:
     posix = None
 
 # types
-if TYPE_CHECKING:
-    from typing import AbstractSet, IO, Literal
-
 type _MoveFunc = Callable[[int, int], None]
 type _PendingWrite = tuple[str | bytes, bool]
 
@@ -489,6 +486,7 @@ class UnixConsole(Console):
         raw.cc[termios.VMIN] = b"\x01"
         raw.cc[termios.VTIME] = b"\x00"
         self.__input_fd_set(raw)
+        self.__rawtermstate = raw
 
         # Apple Terminal will re-wrap lines for us unless we preempt the
         # damage.
@@ -517,6 +515,7 @@ class UnixConsole(Console):
         Restore the console to the default state
         """
         trace("unix.restore")
+        self.__write(ANSIColors.RESET)
         self.__disable_bracketed_paste()
         self.__maybe_write_code(self._rmkx)
         self.flushoutput()
@@ -654,6 +653,7 @@ class UnixConsole(Console):
         while y >= 0 and not rendered_lines[y].text:
             y -= 1
         self.__move(0, min(y, self.height + self.__offset - 1))
+        self.__write(ANSIColors.RESET)
         self.__write("\n\r")
         self.flushoutput()
 
@@ -727,7 +727,19 @@ class UnixConsole(Console):
         # avoid inline imports here so the repl doesn't get flooded
         # with import logging from -X importtime=2
         if posix is not None and posix._is_inputhook_installed():
-            return posix._inputhook
+            return self.__run_input_hook
+
+    def __run_input_hook(self):
+        # gh-152907: input hooks expect cooked output, but pyrepl runs with
+        # OPOST disabled.  Restore the saved output flags around the hook
+        # (only oflag; input must stay raw at the prompt).
+        cooked = self.__rawtermstate.copy()
+        cooked.oflag = self.__svtermstate.oflag
+        self.__input_fd_set(cooked)
+        try:
+            return posix._inputhook()
+        finally:
+            self.__input_fd_set(self.__rawtermstate)
 
     def __enable_bracketed_paste(self) -> None:
         os.write(self.output_fd, b"\x1b[?2004h")

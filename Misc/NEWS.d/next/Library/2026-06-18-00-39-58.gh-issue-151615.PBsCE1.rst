@@ -1,0 +1,2 @@
+Fix :mod:`asyncio` servers repeatedly logging and rescheduling on a single
+event loop iteration when ``accept()`` fails with a resource errors.
