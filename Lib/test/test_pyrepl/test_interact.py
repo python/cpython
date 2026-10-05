@@ -1,16 +1,42 @@
 import contextlib
 import io
+import sys
 import warnings
 import unittest
-from unittest.mock import patch
+from unittest.mock import ANY, patch
 from textwrap import dedent
 
 from test.support import force_not_colorized
 
 from _pyrepl.console import InteractiveColoredConsole
-from _pyrepl.simple_interact import _more_lines
+from _pyrepl.simple_interact import (
+    _more_lines,
+    run_multiline_interactive_console,
+)
 
 class TestSimpleInteract(unittest.TestCase):
+    def test_prompts_are_converted_to_strings(self):
+        console = InteractiveColoredConsole()
+
+        class Prompt:
+            def __init__(self, value):
+                self.value = value
+
+            def __str__(self):
+                return self.value
+
+        with (
+            patch.object(sys, "ps1", Prompt("primary"), create=True),
+            patch.object(sys, "ps2", Prompt("secondary"), create=True),
+            patch("_pyrepl.readline._setup"),
+            patch(
+                "_pyrepl.simple_interact.multiline_input", side_effect=EOFError
+            ) as multiline_input,
+        ):
+            run_multiline_interactive_console(console)
+
+        multiline_input.assert_called_once_with(ANY, "primary", "secondary")
+
     def test_multiple_statements(self):
         namespace = {}
         code = dedent("""\
