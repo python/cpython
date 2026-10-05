@@ -2170,8 +2170,8 @@ class TestMisc(BaseTestCase):
             tests.append('C:name')
         tests.extend(tuple(os.fsencode(path) for path in tests))
 
-        PREFIX_ERR = "'prefix' can't contain a directory component"
-        SUFFIX_ERR = "'suffix' can't contain a directory component"
+        PREFIX_ERR = "prefix can't contain a directory component"
+        SUFFIX_ERR = "suffix can't contain a directory component"
         for value in tests:
             with self.subTest(value):
                 # test prefix
