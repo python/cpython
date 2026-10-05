@@ -1713,14 +1713,10 @@ class ParseArgsCodeGen:
         """No keyword or positional arguments."""
         parser_code = self._vectorcall_type_check()
         self.codegen.add_include('pycore_modsupport.h',
-                                 '_PyArg_NoKwnames()')
+                                 '_PyArg_NoPositionalStack()')
         parser_code.append(libclinic.normalize_snippet("""
-            if (nargs) {{
-                PyErr_SetString(PyExc_TypeError,
-                                "{name}() takes no positional arguments");
-                goto exit;
-            }}
-            if (!_PyArg_NoKwnames("{name}", kwnames)) {{
+            if (!_PyArg_NoPositionalStack("{name}", nargs) ||
+                !_PyArg_NoKwnames("{name}", kwnames)) {{
                 goto exit;
             }}
             """, indent=4))

@@ -4995,12 +4995,8 @@ Test_vectorcall(PyObject *type, PyObject *const *args,
     /* Make sure the type object is immutable: the generated
      * vectorcall doesn't deal e.g. with users reassigning __init__. */
     assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
-    if (nargs) {
-        PyErr_SetString(PyExc_TypeError,
-                        "Test() takes no positional arguments");
-        goto exit;
-    }
-    if (!_PyArg_NoKwnames("Test", kwnames)) {
+    if (!_PyArg_NoPositionalStack("Test", nargs) ||
+        !_PyArg_NoKwnames("Test", kwnames)) {
         goto exit;
     }
     self = _PyType_CAST(type)->tp_new(_PyType_CAST(type),
@@ -5021,7 +5017,7 @@ exit:
 
 static int
 Test___init___impl(TestObj *self)
-/*[clinic end generated code: output=3798499df7a60323 input=645fe693f6c6b9b6]*/
+/*[clinic end generated code: output=ce04b9d7beacd894 input=645fe693f6c6b9b6]*/
 
 
 /*[clinic input]

@@ -2933,6 +2933,7 @@ _PyArg_UnpackStack(PyObject *const *args, Py_ssize_t nargs, const char *name,
 #undef _PyArg_NoKeywords
 #undef _PyArg_NoKwnames
 #undef _PyArg_NoPositional
+#undef _PyArg_NoPositionalStack
 
 /* For type constructors that don't take keyword args
  *
@@ -2967,8 +2968,15 @@ _PyArg_NoPositional(const char *funcname, PyObject *args)
         PyErr_BadInternalCall();
         return 0;
     }
-    if (PyTuple_GET_SIZE(args) == 0)
+    return _PyArg_NoPositionalStack(funcname, PyTuple_GET_SIZE(args));
+}
+
+int
+_PyArg_NoPositionalStack(const char *funcname, Py_ssize_t nargs)
+{
+    if (nargs == 0) {
         return 1;
+    }
 
     PyErr_Format(PyExc_TypeError, "%.200s() takes no positional arguments",
                     funcname);
