@@ -747,6 +747,7 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
             char onechar; /* For byte_converter() */
             Py_ssize_t alloc;
 
+            const char *start = fmt;
             fmt++;
             if (*fmt == '%') {
                 *res++ = '%';
@@ -1108,9 +1109,10 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
             alloc = width;
             if (sign != 0 && len == width)
                 alloc++;
-            /* 2: size preallocated for %s */
-            if (alloc > 2) {
-                res = PyBytesWriter_GrowAndUpdatePointer(writer, alloc - 2, res);
+            /* size preallocated for the format */
+            Py_ssize_t prealloc = fmt - start;
+            if (alloc > prealloc) {
+                res = PyBytesWriter_GrowAndUpdatePointer(writer, alloc - prealloc, res);
                 if (res == NULL) {
                     Py_XDECREF(temp);
                     goto error;
