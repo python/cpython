@@ -1,1 +1,1 @@
-Updated ``can_colorize`` logic in ``_colorize.py`` to catch all exceptions when checking if a file is a TTY, returning ``False`` if any exception occurs. This prevents crashes in edge cases, such as when a file is closed.
+Updated :func:``!_colorize.can_colorize`` to not raise when given a closed file stream.

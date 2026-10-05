@@ -191,7 +191,7 @@ class TestColorizeFunction(unittest.TestCase):
             # gh-157581: A closed file raises ValueError from fileno().
             file = tempfile.TemporaryFile(mode="w")
             file.close()
-            self.assertEqual(_colorize.can_colorize(file=file), False)
+            self.assertFalse(_colorize.can_colorize(file=file))
 
 
 if __name__ == "__main__":
