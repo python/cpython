@@ -785,9 +785,9 @@ class HeatmapCollector(StackTraceCollector):
         """Generate HTML for a single source file with heatmap coloring."""
         source_lines = [f"# Source file not available: {filename}"]
         try:
-            resolved = Path(filename).resolve()
-            if resolved.is_file():
-                source_lines = resolved.read_text(
+            path = Path(filename)
+            if path.is_file():
+                source_lines = path.read_text(
                     encoding='utf-8', errors='replace').splitlines()
         except (IOError, OSError):
             pass
