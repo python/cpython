@@ -16,6 +16,7 @@
 #endif
 #include "Python.h"
 #include <internal/pycore_debug_offsets.h>  // _Py_DebugOffsets
+#include <internal/pycore_global_objects.h>
 #include <internal/pycore_frame.h>          // FRAME_SUSPENDED_YIELD_FROM
 #include <internal/pycore_interpframe.h>    // FRAME_OWNED_BY_CSTACK
 #include <internal/pycore_llist.h>          // struct llist_node
@@ -804,7 +805,7 @@ static int append_awaited_by(RemoteUnwinderObject *unwinder, unsigned long tid, 
 #define set_exception_cause(unwinder, exc_type, message)                              \
     do {                                                                              \
         assert(PyErr_Occurred() && "function returned -1 without setting exception"); \
-        if (unwinder->debug && !_Py_RemoteDebug_HasPermissionError()) {               \
+        if (unwinder->debug && !_Py_RemoteDebug_IsFatalReadError()) {               \
             _set_debug_exception_cause(exc_type, message);                            \
         }                                                                             \
     } while (0)
@@ -2264,6 +2265,7 @@ parse_code_object(RemoteUnwinderObject *unwinder,
     PyObject *linetable = NULL;
     PyObject *lineno = NULL;
     PyObject *tuple = NULL;
+    int code_metadata_incomplete = 0;
 
 #ifdef Py_GIL_DISABLED
     // In free threading builds, code object addresses might have the low bit set
@@ -2282,29 +2284,59 @@ parse_code_object(RemoteUnwinderObject *unwinder,
         if (_Py_RemoteDebug_PagedReadRemoteMemory(
                 &unwinder->handle, real_address, SIZEOF_CODE_OBJ, code_object) < 0)
         {
-            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read code object");
-            goto error;
+            if (_Py_RemoteDebug_IsFatalReadError()) {
+                goto error;
+            }
+            PyErr_Clear();
+            func = PyUnicode_FromString("<unreadable frame>");
+            if (!func) {
+                goto error;
+            }
+            file = Py_NewRef(_Py_LATIN1_CHR('~'));
+            goto degraded;
         }
 
         func = read_py_str(unwinder,
             GET_MEMBER(uintptr_t, code_object, unwinder->debug_offsets.code_object.qualname), 1024);
         if (!func) {
-            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read function name from code object");
-            goto error;
+            if (_Py_RemoteDebug_IsFatalReadError()) {
+                goto error;
+            }
+            PyErr_Clear();
+            func = PyUnicode_FromString("<unknown function>");
+            if (!func) {
+                goto error;
+            }
+            code_metadata_incomplete = 1;
         }
 
         file = read_py_str(unwinder,
             GET_MEMBER(uintptr_t, code_object, unwinder->debug_offsets.code_object.filename), 1024);
         if (!file) {
-            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read filename from code object");
-            goto error;
+            if (_Py_RemoteDebug_IsFatalReadError()) {
+                goto error;
+            }
+            PyErr_Clear();
+            file = PyUnicode_FromString("<unknown file>");
+            if (!file) {
+                goto error;
+            }
+            code_metadata_incomplete = 1;
+        }
+
+        if (code_metadata_incomplete) {
+            goto degraded;
         }
 
         linetable = read_py_bytes(unwinder,
-            GET_MEMBER(uintptr_t, code_object, unwinder->debug_offsets.code_object.linetable), 4096);
+            GET_MEMBER(uintptr_t, code_object, unwinder->debug_offsets.code_object.linetable),
+            4096);
         if (!linetable) {
-            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read linetable from code object");
-            goto error;
+            if (_Py_RemoteDebug_IsFatalReadError()) {
+                goto error;
+            }
+            PyErr_Clear();
+            goto degraded;
         }
 
         meta = PyMem_RawMalloc(sizeof(CachedCodeMetadata));
@@ -2433,6 +2465,19 @@ done_tlbc:
 
     *result = tuple;
     return 0;
+
+degraded: {
+    RemoteDebuggingState *state = RemoteDebugging_GetStateFromObject((PyObject *)unwinder);
+    PyObject *degraded_tuple = PyStructSequence_New(state->FrameInfo_Type);
+    if (!degraded_tuple) {
+        goto error;
+    }
+    PyStructSequence_SetItem(degraded_tuple, 0, file);
+    PyStructSequence_SetItem(degraded_tuple, 1, Py_NewRef(Py_None));
+    PyStructSequence_SetItem(degraded_tuple, 2, func);
+    *result = degraded_tuple;
+    return 0;
+}
 
 error:
     Py_XDECREF(func);
