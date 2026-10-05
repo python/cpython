@@ -2647,29 +2647,32 @@ class TestQuantiles(unittest.TestCase):
             self.assertEqual(quantiles(data, method='inclusive'),
                             [10.0, 10.0, 10.0])
 
-    def test_monotonic_with_duplicate_floats(self):
+    @support.subTests("x", [
+        math.pi,  # irrational
+        1.2,  # simple non-integer decimal
+        1/3,  # repeating binary fraction
+        0.1,  # non-exact decimal
+        2.0,  # exact power of two
+        1e300,  # large magnitude
+        1e-300,  # small magnitude
+        float.fromhex('0x1.fffffffffffffp+1023'),  # near max float
+        sys.float_info.min,  # smallest normal
+        float('inf'),
+        float('-inf'),
+    ])
+    @support.subTests("method", ["inclusive", "exclusive"])
+    def test_monotonic_with_duplicate_floats(self, x, method):
         quantiles = statistics.quantiles
-        for x in (3.141592653589793,  # irrational-ish
-                  1/3,                # repeating binary fraction
-                  0.1,                # non-exact decimal
-                  2.0,                # exact power of two
-                  1e300,              # large magnitude
-                  1e-300,             # small magnitude
-                  float.fromhex('0x1.fffffffffffffp+1023'),  # near max float
-                  sys.float_info.min, # smallest normal
-                  float('inf'),
-                  float('-inf'),
-                  ):
-            for method in ('exclusive', 'inclusive'):
-                for n in range(2, 20):
-                    with self.subTest(x=x, n=n, method=method):
-                        result = quantiles([x, x], n=n, method=method)
-                        self.assertEqual(result, sorted(result))
-                        self.assertTrue(all(v == x for v in result))
+        for n in range(2, 20):
+            result = quantiles([x, x], n=n, method=method)
+            self.assertListEqual(result, sorted(result))
+            self.assertSetEqual(set(result), {x})
 
+    def test_monotonic_with_adjacent_floats(self):
+        quantiles = statistics.quantiles
         result = quantiles([0.09999999999999999, 0.1, 0.1],
                            n=9, method='inclusive')
-        self.assertEqual(result, sorted(result))
+        self.assertListEqual(result, sorted(result))
 
     def test_mixed_types(self):
         data = [Fraction(1, 2), 0.5, 2.0]
