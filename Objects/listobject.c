@@ -111,8 +111,12 @@ list_resize(PyListObject *self, Py_ssize_t newsize)
     /* Bypass realloc() when a previous overallocation is large enough
        to accommodate the newsize.  If the newsize falls lower than half
        the allocated size, then proceed with the realloc() to shrink the list.
+       gh-158602: do not shrink a small list, the realloc() cost is bigger
+       than the memory we get back.
     */
-    if (allocated >= newsize && newsize >= (allocated >> 1)) {
+    if (allocated >= newsize
+        && (newsize >= (allocated >> 1) || allocated <= LIST_SMALL_ALLOCATED))
+    {
         assert(self->ob_item != NULL || newsize == 0);
         Py_SET_SIZE(self, newsize);
         return 0;
@@ -138,14 +142,7 @@ list_resize(PyListObject *self, Py_ssize_t newsize)
     if (newsize == 0)
         new_allocated = 0;
 
-    // gh-158602: when shrinking, do not reallocate the array of a small list.
-    if (newsize < allocated) {
-        if (allocated <= LIST_SMALL_ALLOCATED) {
-            Py_SET_SIZE(self, newsize);
-            return 0;
-        }
-        assert(new_allocated < (size_t)allocated);
-    }
+    assert(newsize > allocated || new_allocated < (size_t)allocated);
 
     ensure_shared_on_resize(self);
 
