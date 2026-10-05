@@ -15,6 +15,9 @@
     <ClInclude Include="..\Modules\expat\fallthrough.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\Modules\expat\hash_table.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="..\Modules\expat\memory_sanitizer.h">
       <Filter>Header Files</Filter>
     </ClInclude>

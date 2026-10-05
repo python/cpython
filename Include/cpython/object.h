@@ -342,9 +342,9 @@ PyAPI_FUNC(PyObject *) _PyObject_FunctionStr(PyObject *);
  * `dst` points to a valid object.
  *
  * Temporary variables are used to only evaluate macro arguments once and so
- * avoid the duplication of side effects. _Py_TYPEOF() or memcpy() is used to
- * avoid a miscompilation caused by type punning. See Py_CLEAR() comment for
- * implementation details about type punning.
+ * avoid the duplication of side effects. _Py_TYPEOF(), C++ auto, or memcpy()
+ * is used to avoid a miscompilation caused by type punning. See Py_CLEAR()
+ * comment for implementation details about type punning.
  *
  * The memcpy() implementation does not emit a compiler warning if 'src' has
  * not the same type than 'src': any pointer type is accepted for 'src'.
@@ -354,6 +354,14 @@ PyAPI_FUNC(PyObject *) _PyObject_FunctionStr(PyObject *);
     do { \
         _Py_TYPEOF(&(dst)) _tmp_dst_ptr = &(dst); \
         _Py_TYPEOF(dst) _tmp_old_dst = (*_tmp_dst_ptr); \
+        *_tmp_dst_ptr = (src); \
+        Py_DECREF(_tmp_old_dst); \
+    } while (0)
+#elif defined(__cplusplus) && (__cplusplus >= 201103L ||  _MSVC_LANG >= 201103L)
+#define Py_SETREF(dst, src) \
+    do { \
+        auto _tmp_dst_ptr = &(dst); \
+        auto _tmp_old_dst = (*_tmp_dst_ptr); \
         *_tmp_dst_ptr = (src); \
         Py_DECREF(_tmp_old_dst); \
     } while (0)
@@ -376,6 +384,14 @@ PyAPI_FUNC(PyObject *) _PyObject_FunctionStr(PyObject *);
     do { \
         _Py_TYPEOF(&(dst)) _tmp_dst_ptr = &(dst); \
         _Py_TYPEOF(dst) _tmp_old_dst = (*_tmp_dst_ptr); \
+        *_tmp_dst_ptr = (src); \
+        Py_XDECREF(_tmp_old_dst); \
+    } while (0)
+#elif defined(__cplusplus) && (__cplusplus >= 201103L ||  _MSVC_LANG >= 201103L)
+#define Py_XSETREF(dst, src) \
+    do { \
+        auto _tmp_dst_ptr = &(dst); \
+        auto _tmp_old_dst = (*_tmp_dst_ptr); \
         *_tmp_dst_ptr = (src); \
         Py_XDECREF(_tmp_old_dst); \
     } while (0)
@@ -523,7 +539,8 @@ _Py_ThreadId(void)
 #elif defined(__MINGW32__) && defined(_M_IX86)
     tid = __readfsdword(24);
 #elif defined(__MINGW32__) && defined(_M_ARM64)
-    tid = __getReg(18);
+    // x18 is the Windows ARM64 platform register and points to the TEB.
+    __asm__ ("mov %0, x18" : "=r" (tid));
 #elif defined(__i386__)
     __asm__("{movl %%gs:0, %0|mov %0, dword ptr gs:[0]}" : "=r" (tid));  // 32-bit always uses GS
 #elif defined(__MACH__) && defined(__x86_64__)
