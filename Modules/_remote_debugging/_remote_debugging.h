@@ -729,7 +729,7 @@ extern int parse_async_frame_chain(
     RemoteUnwinderObject *unwinder,
     PyObject *calls,
     uintptr_t address_of_thread,
-    uintptr_t running_task_frame
+    uintptr_t running_task_code_obj
 );
 
 extern int process_single_task_node(
@@ -745,10 +745,10 @@ extern int find_running_task_in_thread(
     uintptr_t *running_task_addr
 );
 
-extern int get_task_frame(
+extern int get_task_code_object(
     RemoteUnwinderObject *unwinder,
     uintptr_t task_addr,
-    uintptr_t *frame_addr
+    uintptr_t *code_obj_addr
 );
 
 extern int append_awaited_by(
