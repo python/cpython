@@ -829,6 +829,36 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
                 'exception': exc,
                 'loop': self,
             })
+            if f is not None and self._self_reading_future is f:
+                # The read itself failed (e.g. an aborted or reset
+                # overlapped operation on Windows), but the loop is still
+                # running and nothing else will re-arm it: report, then
+                # rebuild the pipe and arm a fresh read, or cross-thread
+                # wakeups would be lost silently for the life of the loop.
+                # A recovery that fails in turn is reported the same way
+                # and leaves the loop un-wakeable, like the original code;
+                # the field is reset so a later run_forever() can arm a
+                # read again, though that arm is not itself recovered if
+                # the pipe is still dead.  Rebuilding gives the next read
+                # a fresh socketpair, so a repeat failure needs a new
+                # cause -- sustained exhaustion of sockets or handles
+                # fails the rebuild itself and ends the cycle above.
+                try:
+                    self._rebuild_self_pipe()
+                    f = self._proactor.recv(self._ssock, 4096)
+                except (SystemExit, KeyboardInterrupt):
+                    raise
+                except BaseException as exc:
+                    self._self_reading_future = None
+                    self.call_exception_handler({
+                        'message': ('Error on re-arming the event loop '
+                                    'self pipe read'),
+                        'exception': exc,
+                        'loop': self,
+                    })
+                else:
+                    self._self_reading_future = f
+                    f.add_done_callback(self._loop_self_reading)
         else:
             self._self_reading_future = f
             f.add_done_callback(self._loop_self_reading)
