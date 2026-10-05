@@ -3731,12 +3731,6 @@ _PyBytes_RepeatBuffer(char* dest, Py_ssize_t len_dest,
 // one extra NUL byte which is a common error.
 #define PyBytesWriter_CANARY_BYTE PYMEM_DEADBYTE
 
-static inline char*
-byteswriter_data(PyBytesWriter *writer)
-{
-    return _PyBytesWriter_GetData(writer);
-}
-
 
 static inline Py_ssize_t
 byteswriter_allocated(PyBytesWriter *writer)
@@ -3758,7 +3752,7 @@ byteswriter_allocated(PyBytesWriter *writer)
 static void
 byteswriter_write_canary_byte(PyBytesWriter *writer)
 {
-    unsigned char *data = (unsigned char*)byteswriter_data(writer);
+    unsigned char *data = (unsigned char*)_PyBytesWriter_GetData(writer);
     data[writer->size] = PyBytesWriter_CANARY_BYTE;
 }
 
@@ -3770,7 +3764,7 @@ byteswriter_reset_trailing_byte(PyBytesWriter *writer)
     // bytes/bytearray expects the last byte to be a null byte.
     // Reset the last byte to null for bytes/bytearray.
     Py_ssize_t allocated = byteswriter_allocated(writer);
-    char *data = byteswriter_data(writer);
+    char *data = _PyBytesWriter_GetData(writer);
     data[allocated] = '\0';
 }
 #endif
@@ -3801,7 +3795,7 @@ byteswriter_check_consistency(PyBytesWriter *writer)
     }
 
 #ifdef Py_DEBUG
-    const unsigned char *data = (const unsigned char*)byteswriter_data(writer);
+    const unsigned char *data = (const unsigned char*)_PyBytesWriter_GetData(writer);
     unsigned char canary = data[writer->size];
     if (canary != PyBytesWriter_CANARY_BYTE) {
         _Py_FatalErrorFormat(__func__,
@@ -3895,7 +3889,7 @@ byteswriter_resize(PyBytesWriter *writer, Py_ssize_t new_size, int resize)
     if (resize) {
         Py_ssize_t old_size = writer->size;
         assert(allocated > old_size);
-        memset(byteswriter_data(writer) + old_size, PyBytesWrite_NEW_BYTE,
+        memset(_PyBytesWriter_GetData(writer) + old_size, PyBytesWrite_NEW_BYTE,
                allocated - old_size);
     }
 #endif
@@ -3921,24 +3915,25 @@ byteswriter_create(Py_ssize_t size, int use_bytearray)
         }
     }
     writer->obj = NULL;
-    writer->size = 0;
+    writer->size = size;
     writer->use_bytearray = use_bytearray;
     writer->overallocate = !use_bytearray;
 
-    if (size >= 1) {
+    Py_ssize_t allocated = sizeof(writer->small_buffer) - 1;
+    if (size > allocated) {
         if (byteswriter_resize(writer, size, 0) < 0) {
 #ifdef Py_DEBUG
             // Write the canary byte so byteswriter_check_consistency()
             // doesn't fail in PyBytesWriter_Discard()
+            writer->size = 0;
             byteswriter_write_canary_byte(writer);
 #endif
             PyBytesWriter_Discard(writer);
             return NULL;
         }
-        writer->size = size;
     }
 #ifdef Py_DEBUG
-    memset(byteswriter_data(writer), PyBytesWrite_NEW_BYTE,
+    memset(_PyBytesWriter_GetData(writer), PyBytesWrite_NEW_BYTE,
            byteswriter_allocated(writer));
     byteswriter_write_canary_byte(writer);
 #endif
@@ -3967,34 +3962,23 @@ PyBytesWriter_Discard(PyBytesWriter *writer)
     }
 
     assert(byteswriter_check_consistency(writer));
-#ifdef Py_DEBUG
     if (writer->obj != NULL) {
+#ifdef Py_DEBUG
         byteswriter_reset_trailing_byte(writer);
-    }
 #endif
-
-    Py_XDECREF(writer->obj);
+        Py_DECREF(writer->obj);
+    }
     _Py_FREELIST_FREE(bytes_writers, writer, PyMem_Free);
 }
 
 
-PyObject*
-PyBytesWriter_FinishWithSize(PyBytesWriter *writer, Py_ssize_t size)
+static inline PyObject*
+byteswriter_finish_with_size(PyBytesWriter *writer, Py_ssize_t final_size)
 {
     assert(byteswriter_check_consistency(writer));
 
-    if (size < 0) {
-        PyErr_Format(PyExc_ValueError, "size must be positive");
-        goto error;
-    }
-
-    if (size > writer->size) {
-        PyErr_SetString(PyExc_ValueError, "size larger than allocated size");
-        goto error;
-    }
-
     PyObject *result;
-    if (size == 0 && !writer->use_bytearray) {
+    if (final_size == 0 && !writer->use_bytearray) {
         result = bytes_get_empty();
         if (writer->obj != NULL) {
 #ifdef Py_DEBUG
@@ -4011,19 +3995,19 @@ PyBytesWriter_FinishWithSize(PyBytesWriter *writer, Py_ssize_t size)
 #endif
 
         if (writer->use_bytearray) {
-            if (size != PyByteArray_GET_SIZE(writer->obj)) {
-                if (PyByteArray_Resize(writer->obj, size)) {
+            if (final_size != PyByteArray_GET_SIZE(writer->obj)) {
+                if (PyByteArray_Resize(writer->obj, final_size)) {
                     goto error;
                 }
             }
         }
         else {
-            if (size == 1) {
+            if (final_size == 1) {
                 unsigned char ch = PyBytes_AS_STRING(writer->obj)[0];
                 Py_SETREF(writer->obj, bytes_get_char(ch));
             }
-            else if (size != PyBytes_GET_SIZE(writer->obj)) {
-                if (bytes_resize_inplace(&writer->obj, size)) {
+            else if (final_size != PyBytes_GET_SIZE(writer->obj)) {
+                if (bytes_resize_inplace(&writer->obj, final_size)) {
                     goto error;
                 }
             }
@@ -4036,18 +4020,18 @@ PyBytesWriter_FinishWithSize(PyBytesWriter *writer, Py_ssize_t size)
         // Create an object from the small buffer
         const char *buffer = (const char *)writer->small_buffer;
         if (writer->use_bytearray) {
-            result = PyByteArray_FromStringAndSize(buffer, size);
+            result = PyByteArray_FromStringAndSize(buffer, final_size);
         }
         else {
-            if (size == 1) {
+            if (final_size == 1) {
                 result = bytes_get_char((uint8_t)buffer[0]);
             }
             else {
-                result = bytes_alloc(size);
+                result = bytes_alloc(final_size);
                 if (result == NULL) {
                     goto error;
                 }
-                memcpy(PyBytes_AS_STRING(result), buffer, size);
+                memcpy(PyBytes_AS_STRING(result), buffer, final_size);
             }
         }
     }
@@ -4062,16 +4046,35 @@ error:
 }
 
 PyObject*
+PyBytesWriter_FinishWithSize(PyBytesWriter *writer, Py_ssize_t size)
+{
+    if (size < 0) {
+        PyErr_Format(PyExc_ValueError, "size must be positive");
+        goto error;
+    }
+    if (size > writer->size) {
+        PyErr_SetString(PyExc_ValueError, "size larger than allocated size");
+        goto error;
+    }
+    return byteswriter_finish_with_size(writer, size);
+
+error:
+    PyBytesWriter_Discard(writer);
+    return NULL;
+}
+
+PyObject*
 PyBytesWriter_Finish(PyBytesWriter *writer)
 {
-    return PyBytesWriter_FinishWithSize(writer, writer->size);
+    return byteswriter_finish_with_size(writer, writer->size);
 }
 
 
 PyObject*
 PyBytesWriter_FinishWithPointer(PyBytesWriter *writer, void *buf)
 {
-    Py_ssize_t size = (char*)buf - byteswriter_data(writer);
+    Py_ssize_t size = (char*)buf - _PyBytesWriter_GetData(writer);
+    // Call PyBytesWriter_FinishWithSize() to check size
     return PyBytesWriter_FinishWithSize(writer, size);
 }
 
@@ -4081,7 +4084,7 @@ PyBytesWriter_GetData(PyBytesWriter *writer)
 {
     assert(byteswriter_check_consistency(writer));
 
-    return byteswriter_data(writer);
+    return _PyBytesWriter_GetData(writer);
 }
 
 
@@ -4125,11 +4128,11 @@ static void*
 _PyBytesWriter_ResizeAndUpdatePointer(PyBytesWriter *writer, Py_ssize_t size,
                                       void *data)
 {
-    Py_ssize_t pos = (char*)data - byteswriter_data(writer);
+    Py_ssize_t pos = (char*)data - _PyBytesWriter_GetData(writer);
     if (PyBytesWriter_Resize(writer, size) < 0) {
         return NULL;
     }
-    return byteswriter_data(writer) + pos;
+    return _PyBytesWriter_GetData(writer) + pos;
 }
 
 
@@ -4176,11 +4179,11 @@ void*
 PyBytesWriter_GrowAndUpdatePointer(PyBytesWriter *writer, Py_ssize_t size,
                                    void *buf)
 {
-    Py_ssize_t pos = (char*)buf - byteswriter_data(writer);
+    Py_ssize_t pos = (char*)buf - _PyBytesWriter_GetData(writer);
     if (PyBytesWriter_Grow(writer, size) < 0) {
         return NULL;
     }
-    return byteswriter_data(writer) + pos;
+    return _PyBytesWriter_GetData(writer) + pos;
 }
 
 
@@ -4201,7 +4204,7 @@ PyBytesWriter_WriteBytes(PyBytesWriter *writer,
     if (PyBytesWriter_Grow(writer, size) < 0) {
         return -1;
     }
-    char *buf = byteswriter_data(writer);
+    char *buf = _PyBytesWriter_GetData(writer);
     memcpy(buf + pos, bytes, size);
 
     assert(byteswriter_check_consistency(writer));
@@ -4232,7 +4235,7 @@ PyBytesWriter_Format(PyBytesWriter *writer, const char *format, ...)
         return -1;
     }
 
-    Py_ssize_t size = buf - byteswriter_data(writer);
+    Py_ssize_t size = buf - _PyBytesWriter_GetData(writer);
     return PyBytesWriter_Resize(writer, size);
 }
 
