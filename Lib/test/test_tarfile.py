@@ -2977,6 +2977,26 @@ class LimitsTest(unittest.TestCase):
 
 class MiscTest(unittest.TestCase):
 
+    def test_stream_write_large_chunks(self):
+        # A chunk spanning many blocks is still written one block at a time.
+        data = bytes(range(256)) * 1024
+        writes = []
+        class Recorder(io.BytesIO):
+            def write(self, b):
+                writes.append(b)
+                return super().write(b)
+        fobj = Recorder()
+        with tarfile.open(fileobj=fobj, mode='w|',
+                          copybufsize=len(data)) as tar:
+            tarinfo = tarfile.TarInfo('data')
+            tarinfo.size = len(data)
+            tar.addfile(tarinfo, io.BytesIO(data))
+        self.assertEqual({(type(b), len(b)) for b in writes},
+                         {(bytes, tarfile.RECORDSIZE)})
+        fobj.seek(0)
+        with tarfile.open(fileobj=fobj, mode='r|') as tar:
+            self.assertEqual(tar.extractfile(tar.next()).read(), data)
+
     def test_char_fields(self):
         self.assertEqual(tarfile.stn("foo", 8, "ascii", "strict"),
                          b"foo\0\0\0\0\0")
