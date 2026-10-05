@@ -23,9 +23,16 @@ extern void PySys_AddWarnOption(const wchar_t *s);
 extern void PySys_AddXOption(const wchar_t *s);
 extern void Py_SetPath(const wchar_t *path);
 
+// Functions removed from Python 3.16 API but still exported for the stable
+// ABI.
+extern void Py_SetPythonHome(const wchar_t *);
+
 // These functions were removed from Python 3.15 API but are still exported
 // for the stable ABI. We want to test them in this program.
 extern void PySys_ResetWarnOptions(void);
+
+// Variable removed from Python 3.16 limited C API, but kept in the stable ABI
+PyAPI_DATA(int) Py_UTF8Mode;
 
 
 int main_argc;
@@ -61,6 +68,53 @@ static void error(const char *msg)
 {
     fprintf(stderr, "ERROR: %s\n", msg);
     fflush(stderr);
+}
+
+
+static void error_fmt(const char *format, ...)
+{
+    va_list vargs;
+    va_start(vargs, format);
+    fprintf(stderr, "ERROR: ");
+    vfprintf(stderr, format, vargs);
+    fprintf(stderr, "\n");
+    va_end(vargs);
+    fflush(stderr);
+}
+
+
+static wchar_t* py_getenv(const char *name)
+{
+    const char *env = getenv(name);
+    if (env == NULL) {
+        error_fmt("need %s env var", name);
+        return NULL;
+    }
+
+    wchar_t *result = Py_DecodeLocale(env, NULL);
+    if (result == NULL) {
+        error("Py_DecodeLocale() failed");
+        return NULL;
+    }
+    return result;
+}
+
+
+static wchar_t* get_cmdline_arg(const char *arg_name)
+{
+    if (main_argc < 3) {
+        const char *test = main_argv[1];
+        fprintf(stderr, "usage: %s %s %s\n", PROGRAM, test, arg_name);
+        return NULL;
+    }
+    const char *arg = main_argv[2];
+
+    wchar_t *result = Py_DecodeLocale(arg, NULL);
+    if (result == NULL) {
+        error_fmt("failed to decode %s command line argument", arg_name);
+        return NULL;
+    }
+    return result;
 }
 
 
@@ -550,42 +604,8 @@ static int test_init_compat_config(void)
 
 static int test_init_global_config(void)
 {
-    /* FIXME: test Py_IgnoreEnvironmentFlag */
-
     putenv("PYTHONUTF8=0");
     Py_UTF8Mode = 1;
-
-    /* Py_IsolatedFlag is not tested */
-    Py_NoSiteFlag = 1;
-    Py_BytesWarningFlag = 1;
-
-    putenv("PYTHONINSPECT=");
-    Py_InspectFlag = 1;
-
-    putenv("PYTHONOPTIMIZE=0");
-    Py_InteractiveFlag = 1;
-
-    putenv("PYTHONDEBUG=0");
-    Py_OptimizeFlag = 2;
-
-    /* Py_DebugFlag is not tested */
-
-    putenv("PYTHONDONTWRITEBYTECODE=");
-    Py_DontWriteBytecodeFlag = 1;
-
-    putenv("PYTHONVERBOSE=0");
-    Py_VerboseFlag = 1;
-
-    Py_QuietFlag = 1;
-    Py_NoUserSiteDirectory = 1;
-
-    putenv("PYTHONUNBUFFERED=");
-    Py_UnbufferedStdioFlag = 1;
-
-    Py_FrozenFlag = 1;
-
-    /* FIXME: test Py_LegacyWindowsFSEncodingFlag */
-    /* FIXME: test Py_LegacyWindowsStdioFlag */
 
     _testembed_initialize();
     dump_config();
@@ -687,39 +707,30 @@ static int test_init_from_config(void)
     config_set_string(&config, &config.platlibdir, L"my_platlibdir");
 
     putenv("PYTHONVERBOSE=0");
-    Py_VerboseFlag = 0;
     config.verbose = 1;
 
-    Py_NoSiteFlag = 0;
     config.site_import = 0;
 
-    Py_BytesWarningFlag = 0;
     config.bytes_warning = 1;
 
     putenv("PYTHONINSPECT=");
-    Py_InspectFlag = 0;
     config.inspect = 1;
 
-    Py_InteractiveFlag = 0;
     config.interactive = 1;
 
     putenv("PYTHONOPTIMIZE=0");
-    Py_OptimizeFlag = 1;
     config.optimization_level = 2;
 
     /* FIXME: test parser_debug */
 
     putenv("PYTHONDONTWRITEBYTECODE=");
-    Py_DontWriteBytecodeFlag = 0;
     config.write_bytecode = 0;
 
-    Py_QuietFlag = 0;
     config.quiet = 1;
 
     config.configure_c_stdio = 1;
 
     putenv("PYTHONUNBUFFERED=");
-    Py_UnbufferedStdioFlag = 0;
     config.buffered_stdio = 0;
 
     putenv("PYTHONIOENCODING=cp424");
@@ -727,12 +738,10 @@ static int test_init_from_config(void)
     config_set_string(&config, &config.stdio_errors, L"replace");
 
     putenv("PYTHONNOUSERSITE=");
-    Py_NoUserSiteDirectory = 0;
     config.user_site_directory = 0;
 
     config_set_string(&config, &config.check_hash_pycs_mode, L"always");
 
-    Py_FrozenFlag = 0;
     config.pathconfig_warnings = 0;
 
     config.safe_path = 1;
@@ -835,7 +844,6 @@ static void set_all_env_vars(void)
 static int test_init_compat_env(void)
 {
     /* Test initialization from environment variables */
-    Py_IgnoreEnvironmentFlag = 0;
     set_all_env_vars();
     _testembed_initialize();
     dump_config();
@@ -871,7 +879,6 @@ static void set_all_env_vars_dev_mode(void)
 static int test_init_env_dev_mode(void)
 {
     /* Test initialization from environment variables */
-    Py_IgnoreEnvironmentFlag = 0;
     set_all_env_vars_dev_mode();
     _testembed_initialize();
     dump_config();
@@ -883,7 +890,6 @@ static int test_init_env_dev_mode(void)
 static int test_init_env_dev_mode_alloc(void)
 {
     /* Test initialization from environment variables */
-    Py_IgnoreEnvironmentFlag = 0;
     set_all_env_vars_dev_mode();
 #ifndef Py_GIL_DISABLED
     putenv("PYTHONMALLOC=malloc");
@@ -903,7 +909,6 @@ static int test_init_isolated_flag(void)
     PyConfig config;
     PyConfig_InitPythonConfig(&config);
 
-    Py_IsolatedFlag = 0;
     config.isolated = 1;
     // These options are set to 1 by isolated=1
     config.safe_path = 0;
@@ -963,7 +968,6 @@ static int test_preinit_isolated2(void)
     PyConfig config;
     _PyConfig_InitCompatConfig(&config);
 
-    Py_IsolatedFlag = 0;
     config.isolated = 1;
 
     config_set_program_name(&config);
@@ -1034,28 +1038,6 @@ static int test_preinit_parse_argv(void)
 
 
 
-static void set_all_global_config_variables(void)
-{
-    Py_IsolatedFlag = 0;
-    Py_IgnoreEnvironmentFlag = 0;
-    Py_BytesWarningFlag = 2;
-    Py_InspectFlag = 1;
-    Py_InteractiveFlag = 1;
-    Py_OptimizeFlag = 1;
-    Py_DebugFlag = 1;
-    Py_VerboseFlag = 1;
-    Py_QuietFlag = 1;
-    Py_FrozenFlag = 0;
-    Py_UnbufferedStdioFlag = 1;
-    Py_NoSiteFlag = 1;
-    Py_DontWriteBytecodeFlag = 1;
-    Py_NoUserSiteDirectory = 1;
-#ifdef MS_WINDOWS
-    Py_LegacyWindowsStdioFlag = 1;
-#endif
-}
-
-
 static int check_preinit_isolated_config(int preinit)
 {
     PyStatus status;
@@ -1063,9 +1045,6 @@ static int check_preinit_isolated_config(int preinit)
 
     /* environment variables must be ignored */
     set_all_env_vars();
-
-    /* global configuration variables must be ignored */
-    set_all_global_config_variables();
 
     if (preinit) {
         PyPreConfig preconfig;
@@ -1111,19 +1090,6 @@ static int test_init_isolated_config(void)
 
 static int check_init_python_config(int preinit)
 {
-    /* global configuration variables must be ignored */
-    set_all_global_config_variables();
-    Py_IsolatedFlag = 1;
-    Py_IgnoreEnvironmentFlag = 1;
-    Py_FrozenFlag = 1;
-    Py_UnbufferedStdioFlag = 1;
-    Py_NoSiteFlag = 1;
-    Py_DontWriteBytecodeFlag = 1;
-    Py_NoUserSiteDirectory = 1;
-#ifdef MS_WINDOWS
-    Py_LegacyWindowsStdioFlag = 1;
-#endif
-
     if (preinit) {
         PyPreConfig preconfig;
         PyPreConfig_InitPythonConfig(&preconfig);
@@ -1229,7 +1195,6 @@ static int test_open_code_hook(void)
         return 2;
     }
 
-    Py_IgnoreEnvironmentFlag = 0;
     _testembed_initialize();
     result = 0;
 
@@ -1292,7 +1257,6 @@ static int _test_audit(Py_ssize_t setValue)
 {
     Py_ssize_t sawSet = 0;
 
-    Py_IgnoreEnvironmentFlag = 0;
     PySys_AddAuditHook(_audit_hook, &sawSet);
     _testembed_initialize();
 
@@ -1404,7 +1368,6 @@ static int _audit_subinterpreter_hook(const char *event, PyObject *args, void *u
 
 static int test_audit_subinterpreter(void)
 {
-    Py_IgnoreEnvironmentFlag = 0;
     PySys_AddAuditHook(_audit_subinterpreter_hook, NULL);
     _testembed_initialize();
 
@@ -1454,7 +1417,6 @@ static int test_audit_run_command(void)
     AuditRunCommandTest test = {"cpython.run_command"};
     wchar_t *argv[] = {PROGRAM_NAME, L"-c", L"pass"};
 
-    Py_IgnoreEnvironmentFlag = 0;
     PySys_AddAuditHook(_audit_hook_run, (void*)&test);
 
     return Py_Main(Py_ARRAY_LENGTH(argv), argv);
@@ -1465,7 +1427,6 @@ static int test_audit_run_file(void)
     AuditRunCommandTest test = {"cpython.run_file"};
     wchar_t *argv[] = {PROGRAM_NAME, L"filename.py"};
 
-    Py_IgnoreEnvironmentFlag = 0;
     PySys_AddAuditHook(_audit_hook_run, (void*)&test);
 
     return Py_Main(Py_ARRAY_LENGTH(argv), argv);
@@ -1564,14 +1525,8 @@ fail:
 
 static int test_init_setpath(void)
 {
-    char *env = getenv("TESTPATH");
-    if (!env) {
-        error("missing TESTPATH env var");
-        return 1;
-    }
-    wchar_t *path = Py_DecodeLocale(env, NULL);
+    wchar_t *path = py_getenv("TESTPATH");
     if (path == NULL) {
-        error("failed to decode TESTPATH");
         return 1;
     }
     Py_SetPath(path);
@@ -1597,14 +1552,8 @@ static int test_init_setpath_config(void)
         Py_ExitStatusException(status);
     }
 
-    char *env = getenv("TESTPATH");
-    if (!env) {
-        error("missing TESTPATH env var");
-        return 1;
-    }
-    wchar_t *path = Py_DecodeLocale(env, NULL);
+    wchar_t *path = py_getenv("TESTPATH");
     if (path == NULL) {
-        error("failed to decode TESTPATH");
         return 1;
     }
     Py_SetPath(path);
@@ -1626,14 +1575,8 @@ static int test_init_setpath_config(void)
 
 static int test_init_setpythonhome(void)
 {
-    char *env = getenv("TESTHOME");
-    if (!env) {
-        error("missing TESTHOME env var");
-        return 1;
-    }
-    wchar_t *home = Py_DecodeLocale(env, NULL);
+    wchar_t *home = py_getenv("TESTHOME");
     if (home == NULL) {
-        error("failed to decode TESTHOME");
         return 1;
     }
     Py_SetPythonHome(home);
@@ -1651,14 +1594,8 @@ static int test_init_is_python_build(void)
 {
     // gh-91985: in-tree builds fail to check for build directory landmarks
     // under the effect of 'home' or PYTHONHOME environment variable.
-    char *env = getenv("TESTHOME");
-    if (!env) {
-        error("missing TESTHOME env var");
-        return 1;
-    }
-    wchar_t *home = Py_DecodeLocale(env, NULL);
+    wchar_t *home = py_getenv("TESTHOME");
     if (home == NULL) {
-        error("failed to decode TESTHOME");
         return 1;
     }
 
@@ -1672,7 +1609,7 @@ static int test_init_is_python_build(void)
     // Use an impossible value so we can detect whether it isn't updated
     // during initialization.
     config._is_python_build = INT_MAX;
-    env = getenv("NEGATIVE_ISPYTHONBUILD");
+    char *env = getenv("NEGATIVE_ISPYTHONBUILD");
     if (env && strcmp(env, "0") != 0) {
         config._is_python_build = INT_MIN;
     }
@@ -1785,7 +1722,7 @@ static int test_initconfig_api(void)
         goto error;
     }
 
-    // Set a list of UTF-8 strings (argv)
+    // Set a list of UTF-8 strings (xoptions)
     char* xoptions[] = {"faulthandler"};
     if (PyInitConfig_SetStrList(config, "xoptions",
                                 Py_ARRAY_LENGTH(xoptions), xoptions) < 0) {
@@ -1877,29 +1814,25 @@ static int test_initconfig_get_api(void)
 
 static int test_initconfig_exit(void)
 {
+    // -h command line option is stored as PyConfig._deferred_cmdline_option
     PyInitConfig *config = PyInitConfig_Create();
     if (config == NULL) {
         printf("Init allocation error\n");
         return 1;
     }
 
-    char *argv[] = {PROGRAM_NAME_UTF8, "--help"};
+    char *argv[] = {PROGRAM_NAME_UTF8, "-h"};
     assert(PyInitConfig_SetStrList(config, "argv",
                                    Py_ARRAY_LENGTH(argv), argv) == 0);
-
     assert(PyInitConfig_SetInt(config, "parse_argv", 1) == 0);
 
-    assert(Py_InitializeFromInitConfig(config) < 0);
-
-    int exitcode;
-    assert(PyInitConfig_GetExitCode(config, &exitcode) == 1);
-    assert(exitcode == 0);
-
-    const char *err_msg;
-    assert(PyInitConfig_GetError(config, &err_msg) == 1);
-    assert(strcmp(err_msg, "exit code 0") == 0);
-
+    assert(Py_InitializeFromInitConfig(config) == 0);
     PyInitConfig_Free(config);
+
+    const PyConfig *rt_config = _Py_GetConfig();
+    assert(rt_config->_deferred_cmdline_option == 'h');
+
+    Py_Finalize();
     return 0;
 }
 
@@ -1994,6 +1927,82 @@ static int test_init_run_main(void)
     init_from_config_clear(&config);
 
     return Py_RunMain();
+}
+
+
+static int test_init_run_main_exitcode(Py_ssize_t argc, wchar_t * const *argv)
+{
+    PyConfig config;
+    PyConfig_InitPythonConfig(&config);
+
+    config.parse_argv = 1;
+    config_set_argv(&config, argc, argv);
+    config_set_string(&config, &config.program_name, L"./python3");
+
+    init_from_config_clear(&config);
+
+    int exitcode = Py_RunMain();
+    if (exitcode != 123) {
+        error_fmt("Py_RunMain() returned %i, expected 123", exitcode);
+        return 1;
+    }
+
+    // If Py_RunMain() calls Py_Exit(), this message is not written to stdout
+    printf("ok! Py_RunMain() returned 123\n");
+
+    return 0;
+}
+
+
+static int test_init_run_main_script_exitcode(void)
+{
+    wchar_t *filename = get_cmdline_arg("FILENAME");
+    if (filename == NULL) {
+        return 1;
+    }
+
+    wchar_t* argv[] = {L"python3", filename};
+    int res = test_init_run_main_exitcode(Py_ARRAY_LENGTH(argv), argv);
+    PyMem_RawFree(filename);
+
+    return res;
+}
+
+
+static int test_init_run_main_module_exitcode(void)
+{
+    wchar_t *module = get_cmdline_arg("MODULE");
+    if (module == NULL) {
+        return 1;
+    }
+
+    wchar_t* argv[] = {L"python3", L"-m", module};
+    int res = test_init_run_main_exitcode(Py_ARRAY_LENGTH(argv), argv);
+    PyMem_RawFree(module);
+
+    return res;
+}
+
+
+static int test_init_run_main_interactive_exitcode(void)
+{
+    wchar_t* argv[] = {L"python3", L"-i"};
+    return test_init_run_main_exitcode(Py_ARRAY_LENGTH(argv), argv);
+}
+
+
+static int test_init_run_main_code_exitcode(void)
+{
+    wchar_t *code = get_cmdline_arg("CODE");
+    if (code == NULL) {
+        return 1;
+    }
+
+    wchar_t* argv[] = {L"python3", L"-c", code};
+    int res = test_init_run_main_exitcode(Py_ARRAY_LENGTH(argv), argv);
+    PyMem_RawFree(code);
+
+    return res;
 }
 
 
@@ -2254,6 +2263,43 @@ static int test_isinitialized_false_during_site_import(void)
     }
 
     Py_Finalize();
+    return 0;
+}
+
+
+static int test_py_getenv(void)
+{
+    const char *name = "PYTHON_TESTEMBED_VARIABLE";
+    const char *expected = "expected_value";
+    putenv("PYTHON_TESTEMBED_VARIABLE=expected_value");
+
+    const char *var = Py_GETENV(name);
+    if (var == NULL || strcmp(var, expected) != 0) {
+        error_fmt("%s is not set before Python initialization", name);
+        return 1;
+    }
+
+    // Initialize Python with use_environment=0
+    PyConfig config;
+    _PyConfig_InitCompatConfig(&config);
+    config_set_program_name(&config);
+    config.use_environment = 0;
+    init_from_config_clear(&config);
+
+    var = Py_GETENV(name);
+    if (var != NULL) {
+        error_fmt("Py_GETENV() doesn't ignore %s after Python init", name);
+        return 1;
+    }
+
+    Py_Finalize();
+    var = Py_GETENV(name);
+    if (var == NULL || strcmp(var, expected) != 0) {
+        error_fmt("%s is not set after Python finalization", name);
+        return 1;
+    }
+
+    printf("OK\n");
     return 0;
 }
 
@@ -2938,6 +2984,10 @@ static struct TestCase TestCases[] = {
     {"test_preinit_parse_argv", test_preinit_parse_argv},
     {"test_preinit_dont_parse_argv", test_preinit_dont_parse_argv},
     {"test_init_run_main", test_init_run_main},
+    {"test_init_run_main_code_exitcode", test_init_run_main_code_exitcode},
+    {"test_init_run_main_script_exitcode", test_init_run_main_script_exitcode},
+    {"test_init_run_main_module_exitcode", test_init_run_main_module_exitcode},
+    {"test_init_run_main_interactive_exitcode", test_init_run_main_interactive_exitcode},
     {"test_init_main", test_init_main},
     {"test_init_sys_add", test_init_sys_add},
     {"test_init_setpath", test_init_setpath},
@@ -2956,6 +3006,7 @@ static struct TestCase TestCases[] = {
     {"test_init_main_interpreter_settings", test_init_main_interpreter_settings},
     {"test_init_in_background_thread", test_init_in_background_thread},
     {"test_isinitialized_false_during_site_import", test_isinitialized_false_during_site_import},
+    {"test_py_getenv", test_py_getenv},
 
     // Audit
     {"test_open_code_hook", test_open_code_hook},

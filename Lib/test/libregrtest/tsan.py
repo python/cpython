@@ -8,6 +8,7 @@ TSAN_TESTS = [
     'test_ctypes',
     'test_concurrent_futures',
     'test_enum',
+    'test_enumerate',
     'test_functools',
     'test_httpservers',
     'test_imaplib',

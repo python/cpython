@@ -12,7 +12,7 @@ body:
         Major feature proposals should generally be discussed on [Discourse](https://discuss.python.org/c/ideas/6) before opening a GitHub issue. Wait until it's clear that most people support your idea before filling in this form.
   - type: textarea
     attributes:
-      label: "Proposal:"
+      label: "Feature or enhancement"
       description: >
         Explain your proposal, why it should be implemented, and how it would be used.
         Add examples, if applicable.

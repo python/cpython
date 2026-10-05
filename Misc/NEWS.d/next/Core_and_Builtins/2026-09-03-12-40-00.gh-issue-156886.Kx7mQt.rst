@@ -1,0 +1,3 @@
+Fix :exc:`ZeroDivisionError` spuriously raised for a complex power
+with a non-zero base when the phase of the result is infinite,
+e.g. ``1e300**1e308j`` or ``complex('inf')**1j``.

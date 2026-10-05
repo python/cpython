@@ -9,6 +9,7 @@ from test import support
 from test.support import import_helper
 
 _testcapi = import_helper.import_module('_testcapi')
+_testinternalcapi = import_helper.import_module('_testinternalcapi')
 
 
 # Is the Py_STATS macro defined?

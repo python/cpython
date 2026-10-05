@@ -405,6 +405,7 @@ class Syntax(ThemeSection):
     keyword: str = ANSIColors.BOLD_BLUE
     keyword_constant: str = ANSIColors.BOLD_BLUE
     builtin: str = ANSIColors.CYAN
+    command: str = ANSIColors.BOLD_CYAN
     comment: str = ANSIColors.RED
     string: str = ANSIColors.GREEN
     number: str = ANSIColors.YELLOW

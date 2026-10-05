@@ -4,6 +4,46 @@ Released on 2026-10-01
 =========================
 
 
+gh-152745:  When "Run... Customized" with "Restart shell" unchecked
+while Shell is running code, including waiting for an input('prompt:')
+response, just report that the shell is executing instead of
+reporting twice and restarting anyway.  Patch by Serhiy Storchaka.
+
+gh-152743: When an integer entry in IDLE's Settings dialog, such as
+"Auto squeeze min lines", is deleted, do not save '', which is an
+invalid configuration value.  Patch by Serhiy Storchaka.
+
+gh-152742: MakeChange the default extension when saving a Shell or
+Output window '.txt' and list text files before Python files.  Their
+content is not Python source. Patch by Serhiy Storchaka and Claude Code.
+
+gh-152740: Fill the "In files:" field of IDLE's Find in Files dialog
+with a full directory path, even for an unsaved editor or the Shell.
+In the grep output whow which directory was searched.  Patch by Serhiy
+Storchaka and Claude Code.
+
+gh-152739: Omit the idlelib directory from the path of the IDLE user
+process. User code imports such as `import help' can no longer import
+an idlelib submodule (here idlelib.help) instead of the intended
+top-level module.  Patch by Serhiy Storchaka and Claude Code.
+
+gh-152738: Fix a rare crash in the IDLE editor when the completion
+window is closed: deleting a key binding for a sequence that is not
+bound to the virtual event is now ignored instead of raising a
+ValueError. Patch by Serhiy Storchaka and Claude Code.
+
+gh-152737: Fix Replace All in the IDLE editor's Replace dialog when the
+search direction is "Up" and "Wrap around" is off: it now replaces all
+matches above the current position instead of only the first one.
+Patch by Serhiy Storchaka and Claude Code.
+
+gh-152733: For X11 window managers, set toplevel window classes to
+"Idle".  Patch by Serhiy Storchaka and Claude Code.
+
+gh-152728: Move functions run.fix_scaling, editor.fixwordbreaks
+(as 'fix_word_breaks') and pyshell.fix_x11_paste to module util.
+Patch by Terry J. Reedy.
+
 gh-85320: IDLE now reads and writes its configuration files and the
 breakpoints file using UTF-8 instead of the locale encoding.
 Files with non-ASCII characters and non-UTF-8 encoding may need

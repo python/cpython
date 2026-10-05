@@ -23,6 +23,11 @@ PyAPI_FUNC(int) _PyDict_DelItemIf(PyObject *mp, PyObject *key,
                                   int (*predicate)(PyObject *value, void *arg),
                                   void *arg);
 
+// Atomically replace an existing value if it is expected (by identity).
+// Return 1 if replaced, 0 if absent or different, or -1 on error.
+extern int _PyDict_ReplaceItemIf(PyObject *dict, PyObject *key,
+                               PyObject *expected, PyObject *replacement);
+
 // "KnownHash" variants
 // Export for '_asyncio' shared extension
 PyAPI_FUNC(int) _PyDict_SetItem_KnownHash(PyObject *mp, PyObject *key,
@@ -90,6 +95,7 @@ typedef struct {
 } PyDictUnicodeEntry;
 
 extern PyDictKeysObject *_PyDict_NewKeysForClass(PyHeapTypeObject *);
+extern void _PyDict_RemoveKeysForClass(PyHeapTypeObject *);
 extern PyObject *_PyDict_FromKeys(PyObject *, PyObject *, PyObject *);
 
 /* Implementations of the `|` and `|=` operators for dict, used by the
@@ -146,8 +152,8 @@ PyAPI_FUNC(Py_ssize_t) _PyDictKeys_StringLookup(PyDictKeysObject* dictkeys, PyOb
  */
 PyAPI_FUNC(Py_ssize_t) _PyDictKeys_StringLookupAndVersion(PyDictKeysObject* dictkeys, PyObject *key, uint32_t *version);
 PyAPI_FUNC(Py_ssize_t) _PyDictKeys_StringLookupSplit(PyDictKeysObject* dictkeys, PyObject *key);
-PyAPI_FUNC(PyObject *)_PyDict_LoadGlobal(PyDictObject *, PyDictObject *, PyObject *);
-PyAPI_FUNC(void) _PyDict_LoadGlobalStackRef(PyDictObject *, PyDictObject *, PyObject *, _PyStackRef *);
+// Return the borrowed source dictionary, or NULL if absent or on error.
+PyAPI_FUNC(PyObject *) _PyDict_LoadGlobalStackRef(PyDictObject *, PyDictObject *, PyObject *, _PyStackRef *);
 
 // Loads the __builtins__ object from the globals dict. Returns a new reference.
 extern PyObject *_PyDict_LoadBuiltinsFromGlobals(PyObject *globals);
@@ -238,6 +244,17 @@ struct _dictkeysobject {
     /* "PyDictKeyEntry or PyDictUnicodeEntry dk_entries[USABLE_FRACTION(DK_SIZE(dk))];" array follows:
        see the DK_ENTRIES() / DK_UNICODE_ENTRIES() functions below */
 };
+
+struct _instancekeysobject {
+    PyTypeObject* dsk_owning_type;
+    struct _dictkeysobject dsk_keys;
+};
+
+static inline struct _instancekeysobject *_PyDictKeys_AsSharedKeys(struct _dictkeysobject *keys)
+{
+    assert(keys->dk_kind == DICT_KEYS_SPLIT);
+    return _Py_CONTAINER_OF(keys, struct _instancekeysobject, dsk_keys);
+}
 
 /* This must be no more than 250, for the prefix size to fit in one byte. */
 #define SHARED_KEYS_MAX_SIZE 30

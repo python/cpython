@@ -40,3 +40,11 @@ Pending removal in Python 3.19
     Before Python 3.14, this property was used to implement the corresponding
     ``read()`` and ``readline()`` methods for :class:`~imaplib.IMAP4` but this
     is no longer the case since then.
+
+* :mod:`tkinter`:
+
+  * :func:`tkinter.filedialog.askopenfiles` has been deprecated since Python
+    3.16.  Iterate over the names returned by
+    :func:`~tkinter.filedialog.askopenfilenames` and open them one by one
+    instead.
+    (Contributed by Serhiy Storchaka in :gh:`152638`.)

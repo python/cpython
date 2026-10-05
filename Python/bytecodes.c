@@ -10,6 +10,7 @@
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_audit.h"         // _PySys_Audit()
 #include "pycore_backoff.h"
+#include "pycore_call.h"          // _Py_METH_CALL_FLAGS
 #include "pycore_cell.h"          // PyCell_GetRef()
 #include "pycore_ceval.h"         // _PyEval_LazyImportName(), _PyEval_LazyImportFrom()
 #include "pycore_code.h"
@@ -161,7 +162,7 @@ dummy_func(
         }
 
         replaced op(_CHECK_PERIODIC_AT_END, (--)) {
-            int err = check_periodics(tstate);
+            int err = check_periodics_at_end(tstate, frame);
             ERROR_IF(err != 0);
         }
 
@@ -526,7 +527,7 @@ dummy_func(
         }
 
         macro(TO_BOOL_INT) =
-            _GUARD_TOS_INT + unused/1 + unused/2 + _TO_BOOL_INT + _POP_TOP_INT;
+            _GUARD_TOS_EXACT_INT + unused/1 + unused/2 + _TO_BOOL_INT + _POP_TOP_INT;
 
         op(_GUARD_NOS_LIST, (nos, unused -- nos, unused)) {
             PyObject *o = PyStackRef_AsPyObjectBorrow(nos);
@@ -641,6 +642,11 @@ dummy_func(
         op(_GUARD_TOS_INT, (value -- value)) {
             PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
             EXIT_IF(!_PyLong_CheckExactAndCompact(value_o));
+        }
+
+        op(_GUARD_TOS_EXACT_INT, (value -- value)) {
+            PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
+            EXIT_IF(!PyLong_CheckExact(value_o));
         }
 
         op(_GUARD_NOS_OVERFLOWED, (left, unused -- left, unused)) {
@@ -1780,8 +1786,6 @@ dummy_func(
                 if (index < 0) {
                     ERROR_NO_POP();
                 }
-                next = none;
-                DEAD(none);
                 EXIT_IF(true);
             }
             DEAD(none);
@@ -1997,40 +2001,14 @@ dummy_func(
         inst(STORE_NAME, (v -- )) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             PyObject *ns = LOCALS();
-            int err;
-            if (ns == NULL) {
-                _PyErr_Format(tstate, PyExc_SystemError,
-                              "no locals found when storing %R", name);
-                PyStackRef_CLOSE(v);
-                ERROR_IF(true);
-            }
-            if (PyDict_CheckExact(ns)) {
-                err = PyDict_SetItem(ns, name, PyStackRef_AsPyObjectBorrow(v));
+            int error = _PyEval_StoreName(tstate, v, name, ns);
+            if (PyStackRef_IsNull(v)) {
+                DEAD(v);
             }
             else {
-                err = PyObject_SetItem(ns, name, PyStackRef_AsPyObjectBorrow(v));
+                PyStackRef_CLOSE(v);
             }
-            PyStackRef_CLOSE(v);
-            ERROR_IF(err);
-        }
-
-        inst(DELETE_NAME, (--)) {
-            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            PyObject *ns = LOCALS();
-            int err;
-            if (ns == NULL) {
-                _PyErr_Format(tstate, PyExc_SystemError,
-                              "no locals when deleting %R", name);
-                ERROR_NO_POP();
-            }
-            err = PyObject_DelItem(ns, name);
-            // Can't use ERROR_IF here.
-            if (err != 0) {
-                _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
-                                          NAME_ERROR_MSG,
-                                          name);
-                ERROR_NO_POP();
-            }
+            ERROR_IF(error);
         }
 
         family(UNPACK_SEQUENCE, INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE) = {
@@ -2157,13 +2135,15 @@ dummy_func(
             STORE_ATTR_WITH_HINT,
         };
 
-        specializing op(_SPECIALIZE_STORE_ATTR, (counter/1, owner -- owner)) {
+        specializing op(_SPECIALIZE_STORE_ATTR, (counter/1, v, owner -- v, owner)) {
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
-                PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-                next_instr = this_instr;
-                _Py_Specialize_StoreAttr(owner, next_instr, name);
-                DISPATCH_SAME_OPARG();
+                if (!PyStackRef_IsNull(v)) {
+                    PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
+                    next_instr = this_instr;
+                    _Py_Specialize_StoreAttr(owner, next_instr, name);
+                    DISPATCH_SAME_OPARG();
+                }
             }
             OPCODE_DEFERRED_INC(STORE_ATTR);
             ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
@@ -2174,38 +2154,30 @@ dummy_func(
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             int err = PyObject_SetAttr(PyStackRef_AsPyObjectBorrow(owner),
                                        name, PyStackRef_AsPyObjectBorrow(v));
-            DECREF_INPUTS();
+            PyStackRef_CLOSE(owner);
+            PyStackRef_XCLOSE(v);
             ERROR_IF(err);
         }
 
         macro(STORE_ATTR) = _SPECIALIZE_STORE_ATTR + unused/3 + _STORE_ATTR;
 
-        inst(DELETE_ATTR, (owner --)) {
-            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            int err = PyObject_DelAttr(PyStackRef_AsPyObjectBorrow(owner), name);
-            PyStackRef_CLOSE(owner);
-            ERROR_IF(err);
-        }
-
         inst(STORE_GLOBAL, (v --)) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            int err = PyDict_SetItem(GLOBALS(), name, PyStackRef_AsPyObjectBorrow(v));
-            PyStackRef_CLOSE(v);
-            ERROR_IF(err);
-        }
-
-        inst(DELETE_GLOBAL, (--)) {
-            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            int err = PyDict_Pop(GLOBALS(), name, NULL);
-            // Can't use ERROR_IF here.
-            if (err < 0) {
-                ERROR_NO_POP();
+            int err;
+            if (PyStackRef_IsNull(v)) {
+                DEAD(v);
+                err = PyDict_Pop(GLOBALS(), name, NULL);
+                if (err == 0) {
+                    err = -1;
+                    _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
+                                            NAME_ERROR_MSG, name);
+                }
             }
-            if (err == 0) {
-                _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
-                                          NAME_ERROR_MSG, name);
-                ERROR_NO_POP();
+            else {
+                err = PyDict_SetItem(GLOBALS(), name, PyStackRef_AsPyObjectBorrow(v));
+                PyStackRef_CLOSE(v);
             }
+            ERROR_IF(err < 0);
         }
 
         inst(LOAD_LOCALS, ( -- locals)) {
@@ -2220,80 +2192,30 @@ dummy_func(
 
         inst(LOAD_FROM_DICT_OR_GLOBALS, (mod_or_class_dict -- v)) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
+            PyObject *namespace = PyStackRef_AsPyObjectBorrow(mod_or_class_dict);
             int err;
-            PyObject *v_o = _PyMapping_GetOptionalItem2(PyStackRef_AsPyObjectBorrow(mod_or_class_dict), name, &err);
-
+            PyObject *v_o = _PyMapping_GetOptionalItem2(namespace, name, &err);
+            if (v_o != NULL && PyLazyImport_CheckExact(v_o)) {
+                Py_SETREF(v_o, _PyLazyImport_Reify(tstate, v_o, name, namespace));
+                if (v_o == NULL) {
+                    err = -1;
+                }
+            }
             PyStackRef_CLOSE(mod_or_class_dict);
             ERROR_IF(err < 0);
             if (v_o == NULL) {
-                if (PyDict_CheckExact(GLOBALS())
-                    && PyDict_CheckExact(BUILTINS()))
-                {
-                    v_o = _PyDict_LoadGlobal((PyDictObject *)GLOBALS(),
-                                             (PyDictObject *)BUILTINS(),
-                                             name);
-                    if (v_o == NULL) {
-                        if (!_PyErr_Occurred(tstate)) {
-                            /* _PyDict_LoadGlobal() returns NULL without raising
-                            * an exception if the key doesn't exist */
-                            _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
-                                                    NAME_ERROR_MSG, name);
-                        }
-                        ERROR_NO_POP();
-                    }
-
-                    if (PyLazyImport_CheckExact(v_o)) {
-                        PyObject *l_v = _PyImport_LoadLazyImportTstate(tstate, v_o);
-                        Py_SETREF(v_o, l_v);
-                        ERROR_IF(v_o == NULL);
-                    }
-                }
-                else {
-                    /* Slow-path if globals or builtins is not a dict */
-                    /* namespace 1: globals */
-                    v_o = _PyMapping_GetOptionalItem2(GLOBALS(), name, &err);
-                    ERROR_IF(err < 0);
-                    if (v_o == NULL) {
-                        /* namespace 2: builtins */
-                        v_o = _PyMapping_GetOptionalItem2(BUILTINS(), name, &err);
-                        ERROR_IF(err < 0);
-                        if (v_o == NULL) {
-                            _PyEval_FormatExcCheckArg(
-                                        tstate, PyExc_NameError,
-                                        NAME_ERROR_MSG, name);
-                            ERROR_IF(true);
-                        }
-                    }
-                    if (PyLazyImport_CheckExact(v_o)) {
-                        PyObject *l_v = _PyImport_LoadLazyImportTstate(tstate, v_o);
-                        Py_SETREF(v_o, l_v);
-                        ERROR_IF(v_o == NULL);
-                    }
-                }
+                _PyEval_LoadGlobalStackRef(GLOBALS(), BUILTINS(), name, &v);
+                ERROR_IF(PyStackRef_IsNull(v));
             }
-            v = PyStackRef_FromPyObjectSteal(v_o);
+            else {
+                v = PyStackRef_FromPyObjectSteal(v_o);
+            }
         }
 
         inst(LOAD_NAME, (-- v)) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             PyObject *v_o = _PyEval_LoadName(tstate, frame, name);
             ERROR_IF(v_o == NULL);
-            if (PyLazyImport_CheckExact(v_o)) {
-                PyObject *l_v = _PyImport_LoadLazyImportTstate(tstate, v_o);
-                // cannot early-decref v_o as it may cause a side-effect on l_v
-                if (l_v == NULL) {
-                    Py_DECREF(v_o);
-                    ERROR_IF(true);
-                }
-                int err = PyDict_SetItem(GLOBALS(), name, l_v);
-                if (err < 0) {
-                    Py_DECREF(v_o);
-                    Py_DECREF(l_v);
-                    ERROR_IF(true);
-                }
-                Py_SETREF(v_o, l_v);
-            }
-
             v = PyStackRef_FromPyObjectSteal(v_o);
         }
 
@@ -2384,6 +2306,10 @@ dummy_func(
             STAT_INC(LOAD_GLOBAL, hit);
         }
 
+        tier2 op(_GUARD_BUILTINS_IS_CANONICAL, (--)) {
+            DEOPT_IF(BUILTINS() != tstate->interp->builtins);
+        }
+
         macro(LOAD_GLOBAL_MODULE) =
             unused/1 + // Skip over the counter
             NOP + // For guard insertion in the JIT optimizer
@@ -2452,6 +2378,13 @@ dummy_func(
                 value_o = PyCell_GetRef(cell);
                 if (value_o == NULL) {
                     _PyEval_FormatExcUnbound(tstate, _PyFrame_GetCode(frame), oparg);
+                    ERROR_NO_POP();
+                }
+            }
+            else if (PyLazyImport_CheckExact(value_o)) {
+                Py_SETREF(value_o, _PyLazyImport_Reify(
+                    tstate, value_o, name, class_dict));
+                if (value_o == NULL) {
                     ERROR_NO_POP();
                 }
             }
@@ -3873,9 +3806,9 @@ dummy_func(
             next = item;
         }
 
-        tier2 op(_GUARD_TYPE_ITER, (expected_type/4, iter, null_or_index -- iter, null_or_index)) {
-            PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
-            EXIT_IF(Py_TYPE(iter_o) != (PyTypeObject *)expected_type);
+        tier2 op(_GUARD_NOS_TYPE, (expected_type/4, nos, unused -- nos, unused)) {
+            PyObject *nos_o = PyStackRef_AsPyObjectBorrow(nos);
+            EXIT_IF(Py_TYPE(nos_o) != (PyTypeObject *)expected_type);
         }
 
         tier2 op(_ITER_NEXT_INLINE, (iternext_fn/4, iter, null_or_index -- iter, null_or_index, next)) {
@@ -4168,7 +4101,8 @@ dummy_func(
 
         op(_LOAD_SPECIAL, (method_and_self[2] -- method_and_self[2])) {
             PyObject *name = _Py_SpecialMethods[oparg].name;
-            int err = _PyObject_LookupSpecialMethod(name, method_and_self);
+            int err = _PyObject_LookupSpecialMethod(name, &method_and_self[0],
+                                                    &method_and_self[1]);
             if (err <= 0) {
                 if (err == 0) {
                     PyObject *owner = PyStackRef_AsPyObjectBorrow(method_and_self[1]);
@@ -4263,20 +4197,6 @@ dummy_func(
             DEAD(exc);
         }
 
-        op(_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT, (owner -- owner)) {
-            PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
-            assert(Py_TYPE(owner_o)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
-            PyDictValues *ivs = _PyObject_InlineValues(owner_o);
-            EXIT_IF(!FT_ATOMIC_LOAD_UINT8(ivs->valid));
-        }
-
-        op(_GUARD_KEYS_VERSION, (keys_version/2, owner -- owner)) {
-            PyTypeObject *owner_cls = Py_TYPE(PyStackRef_AsPyObjectBorrow(owner));
-            PyHeapTypeObject *owner_heap_type = (PyHeapTypeObject *)owner_cls;
-            PyDictKeysObject *keys = owner_heap_type->ht_cached_keys;
-            EXIT_IF(FT_ATOMIC_LOAD_UINT32_RELAXED(keys->dk_version) != keys_version);
-        }
-
         op(_LOAD_ATTR_METHOD_WITH_VALUES, (descr/4, owner -- attr, self)) {
             assert(oparg & 1);
             /* Cached method object */
@@ -4292,8 +4212,8 @@ dummy_func(
             unused/1 +
             _RECORD_TOS_TYPE +
             _GUARD_TYPE_VERSION +
-            _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT +
-            _GUARD_KEYS_VERSION +
+            _CHECK_MANAGED_OBJECT_HAS_VALUES +
+            unused/2 +
             _LOAD_ATTR_METHOD_WITH_VALUES;
 
         op(_LOAD_ATTR_METHOD_NO_DICT, (descr/4, owner -- attr, self)) {
@@ -4326,8 +4246,8 @@ dummy_func(
             unused/1 +
             _RECORD_TOS_TYPE +
             _GUARD_TYPE_VERSION +
-            _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT +
-            _GUARD_KEYS_VERSION +
+            _CHECK_MANAGED_OBJECT_HAS_VALUES +
+            unused/2 +
             _LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES;
 
         op(_LOAD_ATTR_NONDESCRIPTOR_NO_DICT, (descr/4, owner -- attr)) {
@@ -4912,7 +4832,8 @@ dummy_func(
         op(_GUARD_CALLABLE_BUILTIN_O, (callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
             EXIT_IF(!PyCFunction_CheckExact(callable_o));
-            EXIT_IF(PyCFunction_GET_FLAGS(callable_o) != METH_O);
+            EXIT_IF((PyCFunction_GET_FLAGS(callable_o) &
+                     _Py_METH_CALL_FLAGS) != METH_O);
             int total_args = oparg;
             if (!PyStackRef_IsNull(self_or_null)) {
                 total_args++;
@@ -4956,7 +4877,8 @@ dummy_func(
         op(_GUARD_CALLABLE_BUILTIN_FAST, (callable, unused, unused[oparg] -- callable, unused, unused[oparg])) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
             EXIT_IF(!PyCFunction_CheckExact(callable_o));
-            EXIT_IF(PyCFunction_GET_FLAGS(callable_o) != METH_FASTCALL);
+            EXIT_IF((PyCFunction_GET_FLAGS(callable_o) &
+                     _Py_METH_CALL_FLAGS) != METH_FASTCALL);
         }
 
         op(_CALL_BUILTIN_FAST, (callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
@@ -4994,7 +4916,8 @@ dummy_func(
         op(_GUARD_CALLABLE_BUILTIN_FAST_WITH_KEYWORDS, (callable, unused, unused[oparg] -- callable, unused, unused[oparg])) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
             EXIT_IF(!PyCFunction_CheckExact(callable_o));
-            EXIT_IF(PyCFunction_GET_FLAGS(callable_o) != (METH_FASTCALL | METH_KEYWORDS));
+            EXIT_IF((PyCFunction_GET_FLAGS(callable_o) &
+                     _Py_METH_CALL_FLAGS) != (METH_FASTCALL | METH_KEYWORDS));
         }
 
         op(_CALL_BUILTIN_FAST_WITH_KEYWORDS, (callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
@@ -5128,7 +5051,8 @@ dummy_func(
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
             PyMethodDescrObject *method = (PyMethodDescrObject *)callable_o;
             EXIT_IF(!Py_IS_TYPE(method, &PyMethodDescr_Type));
-            EXIT_IF(method->d_method->ml_flags != METH_O);
+            EXIT_IF((method->d_method->ml_flags & _Py_METH_CALL_FLAGS) !=
+                    METH_O);
             int total_args = oparg;
             if (!PyStackRef_IsNull(self_or_null)) {
                 total_args++;
@@ -5203,7 +5127,8 @@ dummy_func(
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
             PyMethodDescrObject *method = (PyMethodDescrObject *)callable_o;
             EXIT_IF(!Py_IS_TYPE(method, &PyMethodDescr_Type));
-            EXIT_IF(method->d_method->ml_flags != (METH_FASTCALL|METH_KEYWORDS));
+            EXIT_IF((method->d_method->ml_flags & _Py_METH_CALL_FLAGS) !=
+                    (METH_FASTCALL | METH_KEYWORDS));
             int total_args = oparg;
             _PyStackRef *arguments = args;
             if (!PyStackRef_IsNull(self_or_null)) {
@@ -5277,7 +5202,8 @@ dummy_func(
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
             PyMethodDescrObject *method = (PyMethodDescrObject *)callable_o;
             EXIT_IF(!Py_IS_TYPE(method, &PyMethodDescr_Type));
-            EXIT_IF(method->d_method->ml_flags != METH_NOARGS);
+            EXIT_IF((method->d_method->ml_flags & _Py_METH_CALL_FLAGS) !=
+                    METH_NOARGS);
             int total_args = oparg;
             if (!PyStackRef_IsNull(self_or_null)) {
                 total_args++;
@@ -5346,7 +5272,8 @@ dummy_func(
             PyMethodDescrObject *method = (PyMethodDescrObject *)callable_o;
             /* Builtin METH_FASTCALL methods, without keywords */
             EXIT_IF(!Py_IS_TYPE(method, &PyMethodDescr_Type));
-            EXIT_IF(method->d_method->ml_flags != METH_FASTCALL);
+            EXIT_IF((method->d_method->ml_flags & _Py_METH_CALL_FLAGS) !=
+                    METH_FASTCALL);
             int total_args = oparg;
             if (!PyStackRef_IsNull(self_or_null)) {
                 total_args++;
@@ -6308,6 +6235,10 @@ dummy_func(
             if (target->op.code == ENTER_EXECUTOR) {
                 PyCodeObject *code = _PyFrame_GetCode(frame);
                 executor = code->co_executors->executors[target->op.arg];
+                if (executor == _PyExecutor_FromExit(exit)) {
+                    _Py_ExecutorDetach(executor);
+                    GOTO_TIER_ONE(target);
+                }
                 Py_INCREF(executor);
                 assert(tstate->jit_exit == exit);
                 exit->executor = executor;

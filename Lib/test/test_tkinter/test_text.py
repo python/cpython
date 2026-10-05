@@ -18,10 +18,10 @@ class TextTest(AbstractTkTest, unittest.TestCase):
         text = self.text
         olddebug = text.debug()
         try:
-            text.debug(0)
-            self.assertEqual(text.debug(), 0)
-            text.debug(1)
-            self.assertEqual(text.debug(), 1)
+            text.debug(False)
+            self.assertIs(text.debug(), False)
+            text.debug(True)
+            self.assertIs(text.debug(), True)
         finally:
             text.debug(olddebug)
             self.assertEqual(text.debug(), olddebug)
@@ -293,13 +293,13 @@ class TextTest(AbstractTkTest, unittest.TestCase):
 
     def test_edit_modified(self):
         text = self.text
-        self.assertEqual(text.edit_modified(), 0)
+        self.assertIs(text.edit_modified(), False)
         text.insert('1.0', 'spam')
-        self.assertEqual(text.edit_modified(), 1)
+        self.assertIs(text.edit_modified(), True)
         text.edit_modified(False)
-        self.assertEqual(text.edit_modified(), 0)
+        self.assertIs(text.edit_modified(), False)
         text.edit_modified(True)
-        self.assertEqual(text.edit_modified(), 1)
+        self.assertIs(text.edit_modified(), True)
 
     def test_edit_undo_redo(self):
         text = self.text
@@ -389,6 +389,9 @@ class TextTest(AbstractTkTest, unittest.TestCase):
         # An embedded image occupies a single index position.
         self.assertEqual(text.index('end - 1 char'), '1.3')
 
+        # The image name can be used as an index; it is matched as a whole.
+        self.assertEqual(text.index(name), '1.1')
+
         # Either a name or an image is required, and the index must be valid.
         self.assertRaises(TclError, text.image_create, '1.0')
         self.assertRaises(TclError, text.image_create, 'invalid',
@@ -404,6 +407,11 @@ class TextTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(self.root.splitlist(text.window_names()),
                          (str(button),))
         self.assertEqual(text.window_cget('1.1', 'window'), str(button))
+
+        # The window can be addressed by its name where an index is expected;
+        # the name is matched as a whole rather than parsed (gh-143070).
+        self.assertEqual(text.index(str(button)), '1.1')
+        self.assertEqual(text.window_cget(str(button), 'window'), str(button))
 
         text.window_configure('1.1', padx=5)
         self.assertEqual(text.window_cget('1.1', 'padx'), 5)
@@ -508,10 +516,12 @@ class TextTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(str(text.image_cget(name, 'image')), str(image))
         for value in ('top', 'center', 'bottom', 'baseline'):
             text.image_configure(name, align=value)
-            self.assertEqual(str(text.image_cget(name, 'align')), value)
+            self.assertEqual(text.image_cget(name, 'align'), value)
         text.image_configure(name, padx=3, pady=4)
-        self.assertEqual(text.tk.getint(text.image_cget(name, 'padx')), 3)
-        self.assertEqual(text.tk.getint(text.image_cget(name, 'pady')), 4)
+        self.assertEqual(text.image_cget(name, 'padx'),
+                         3 if self.wantobjects else '3')
+        self.assertEqual(text.image_cget(name, 'pady'),
+                         4 if self.wantobjects else '4')
 
         # Querying returns the full option set.
         cnf = text.image_configure(name)
@@ -528,10 +538,12 @@ class TextTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(text.window_cget('1.1', 'window'), str(button))
         for value in ('top', 'center', 'bottom', 'baseline'):
             text.window_configure('1.1', align=value)
-            self.assertEqual(str(text.window_cget('1.1', 'align')), value)
+            self.assertEqual(text.window_cget('1.1', 'align'), value)
         text.window_configure('1.1', padx=3, pady=4)
-        self.assertEqual(text.tk.getint(text.window_cget('1.1', 'padx')), 3)
-        self.assertEqual(text.tk.getint(text.window_cget('1.1', 'pady')), 4)
+        self.assertEqual(text.window_cget('1.1', 'padx'),
+                         3 if self.wantobjects else '3')
+        self.assertEqual(text.window_cget('1.1', 'pady'),
+                         4 if self.wantobjects else '4')
         text.window_configure('1.1', stretch=True)
         self.assertIs(text.tk.getboolean(text.window_cget('1.1', 'stretch')),
                       True)

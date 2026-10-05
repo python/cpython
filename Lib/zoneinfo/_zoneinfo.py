@@ -720,6 +720,8 @@ def _parse_dst_start_end(dststr):
         else:
             n_is_julian = False
 
+        if re.fullmatch(r"\d{1,3}", date, re.ASCII) is None:
+            raise ValueError(f"Invalid dst start/end date: {dststr}")
         doy = int(date)
         offset = _DayOffset(doy, n_is_julian)
 

@@ -266,7 +266,7 @@ class CheckbuttonTest(AbstractLabelTest, unittest.TestCase):
                 b = tkinter.Checkbutton(f, text=j)
                 b.pack()
                 buttons.append(b)
-        variables = [str(b['variable']) for b in buttons]
+        variables = [b['variable'] for b in buttons]
         self.assertEqual(len(set(variables)), 4, variables)
 
     def test_same_name(self):
@@ -442,14 +442,15 @@ class OptionMenuTest(MenubuttonTest, unittest.TestCase):
         # Menubutton options can be passed at construction (gh-101284).
         widget = tkinter.OptionMenu(self.root, None, 'b',
                                     width=10, direction='right')
+        # Menubutton -width is a string on Tk 8.6, an int on 9.0+.
         self.assertEqual(int(widget['width']), 10)
-        self.assertEqual(str(widget['direction']), 'right')
+        self.assertEqual(widget['direction'], 'right')
         # They override OptionMenu's own appearance defaults,
         widget = tkinter.OptionMenu(self.root, None, 'b', relief='flat')
-        self.assertEqual(str(widget['relief']), 'flat')
+        self.assertEqual(widget['relief'], 'flat')
         # which otherwise keep their historical values.
         widget = tkinter.OptionMenu(self.root, None, 'b')
-        self.assertEqual(str(widget['relief']), 'raised')
+        self.assertEqual(widget['relief'], 'raised')
 
     def test_bad_kwarg(self):
         with self.assertRaisesRegex(TclError, r'^unknown option "-spam"$'):
@@ -914,9 +915,7 @@ class TextTest(AbstractWidgetTest, unittest.TestCase):
         widget = self.create()
         self.checkParam(widget, 'tabs', (10.2, 20.7, '1i', '2i'))
         self.checkParam(widget, 'tabs', '10.2 20.7 1i 2i',
-                        expected=(10.2, 20.7, '1i', '2i')
-                                 if get_tk_patchlevel(self.root) >= (8, 6, 14)
-                                 else ('10.2', '20.7', '1i', '2i'))
+                        expected=(10.2, 20.7, '1i', '2i'))
         self.checkParam(widget, 'tabs', '2c left 4c 6c center',
                         expected=('2c', 'left', '4c', '6c', 'center'))
         self.checkInvalidParam(widget, 'tabs', 'spam',
@@ -1484,6 +1483,12 @@ class CanvasTest(AbstractWidgetTest, unittest.TestCase):
         self.assertEqual(c.find_withtag('nonexistent'), ())
         for result in (c.find_all(), c.find_withtag(r1)):
             self.assertIsInstance(result, tuple)
+
+        # An automatically generated widget name can be used as a tag
+        # (gh-143070).
+        w = tkinter.Frame(c)
+        r4 = c.create_window(0, 0, window=w, tags=str(w))
+        self.assertEqual(c.find_withtag(str(w)), (r4,))
 
         self.assertRaises(TclError, c.find_closest, 'spam', 0)
         self.assertRaises(TclError, c.find_enclosed, 0, 0, 'spam', 0)
@@ -2077,9 +2082,13 @@ class ScaleTest(AbstractWidgetTest, unittest.TestCase):
     def test_identify(self):
         widget = self.create()
         widget.pack()
-        widget.update_idletasks()
-        self.assertIn(widget.identify(5, 5),
-                      ('slider', 'trough1', 'trough2', ''))
+        # Probe a point on the trough centreline (Scale.coords()) rather than
+        # a fixed pixel: (5, 5) lies outside the trough and always identifies
+        # as '', so it would not actually exercise identify().
+        if wait_until_mapped(widget):
+            x, y = widget.coords()
+            self.assertIn(widget.identify(int(x), int(y)),
+                          ('slider', 'trough1', 'trough2'))
         self.assertRaises(TclError, widget.identify, 'a', 'b')
 
 
@@ -2397,6 +2406,27 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
         self.check_paneconfigure_bad(p, b, 'width',
                 EXPECTED_SCREEN_DISTANCE_OR_EMPTY_ERRMSG.format('badValue'))
 
+    def test_paneconfigure_child(self):
+        p, b, c = self.create2()
+        # The child pane is the first argument, positionally or by keyword.
+        p.paneconfigure(b, minsize=40)
+        self.assertEqual(p.panecget(b, 'minsize'), 40)
+        p.paneconfigure(child=b, minsize=50)
+        self.assertEqual(p.panecget(b, 'minsize'), 50)
+        self.assertIsInstance(p.paneconfigure(b), dict)
+        self.assertEqual(p.paneconfigure(b, 'minsize')[4], 50)
+        # Omitting the child is an error.
+        self.assertRaises(TypeError, p.paneconfigure)
+
+    def test_paneconfigure_tagOrId_deprecated(self):
+        p, b, c = self.create2()
+        # 'tagOrId' is a deprecated alias of 'child'.
+        with self.assertWarns(DeprecationWarning):
+            p.paneconfigure(tagOrId=b, minsize=40)
+        self.assertEqual(p.panecget(b, 'minsize'), 40)
+        # Giving both 'child' and 'tagOrId' is an error.
+        self.assertRaises(TypeError, p.paneconfigure, b, tagOrId=c)
+
 
 @add_configure_tests(StandardOptionsTests)
 class MenuTest(AbstractWidgetTest, unittest.TestCase):
@@ -2472,9 +2502,9 @@ class MenuTest(AbstractWidgetTest, unittest.TestCase):
         v2 = tkinter.BooleanVar(self.root)
         m1.add_checkbutton(variable=v1, onvalue=True, offvalue=False,
                            label='Nonsense')
-        self.assertEqual(str(m1.entrycget(1, 'variable')), str(v1))
+        self.assertEqual(m1.entrycget(1, 'variable'), str(v1))
         m1.entryconfigure(1, variable=v2)
-        self.assertEqual(str(m1.entrycget(1, 'variable')), str(v2))
+        self.assertEqual(m1.entrycget(1, 'variable'), str(v2))
 
     def test_add(self):
         m = self.create(tearoff=False)
