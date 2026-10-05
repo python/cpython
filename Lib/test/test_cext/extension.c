@@ -83,6 +83,7 @@ test_macros(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
 {
     PyObject *obj, *dict;
     PyObject *slots[1];
+    int small_array[] = {2, 5, 7};
 
     // test Py_BUILD_ASSERT() and Py_BUILD_ASSERT_EXPR()
     Py_BUILD_ASSERT(sizeof(int) == sizeof(unsigned int));
@@ -133,6 +134,9 @@ test_macros(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     Py_BEGIN_CRITICAL_SECTION(dict);
     Py_END_CRITICAL_SECTION();
     Py_DECREF(dict);
+
+    // Test Py_ARRAY_LENGTH()
+    assert(Py_ARRAY_LENGTH(small_array) == 3);
 
     Py_RETURN_NONE;
 }
