@@ -599,11 +599,6 @@ C extensions.
       Hangs the current thread, rather than terminating it, if called while the
       interpreter is finalizing.
 
-.. c:function:: PyThreadState* PyThreadState_GET()
-
-   Alias to :c:func:`PyThreadState_Get`.
-
-
 .. c:function:: PyThreadState* PyThreadState_Get()
 
    Return the :term:`attached thread state`. If the thread has no attached
@@ -612,6 +607,10 @@ C extensions.
    for ``NULL``).
 
    See also :c:func:`PyThreadState_GetUnchecked`.
+
+.. c:function:: PyThreadState* PyThreadState_GET()
+
+   Alias to :c:func:`PyThreadState_Get`.
 
 .. c:function:: PyThreadState* PyThreadState_GetUnchecked()
 
