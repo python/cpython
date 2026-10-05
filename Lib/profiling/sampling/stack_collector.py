@@ -170,7 +170,7 @@ class FlamegraphCollector(StackTraceCollector):
         self.stats["mode"] = mode
 
     def export(self, filename):
-        # export() and json.dumps() recurse to the sampled stack depth.
+        # Converting the call tree recurses to the sampled stack depth.
         old_limit = sys.getrecursionlimit()
         sys.setrecursionlimit(old_limit + _FLAMEGRAPH_RECURSION_MARGIN)
         try:
