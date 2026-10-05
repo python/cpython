@@ -1,6 +1,0 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<WixLocalization Culture="en-us" xmlns="http://schemas.microsoft.com/wix/2006/localization">
-    <String Id="Descriptor">Append to Path</String>
-    <String Id="ShortDescriptor">AppendPath</String>
-    <String Id="NoPython">No !(loc.ProductName) installation was detected.</String>
-</WixLocalization>

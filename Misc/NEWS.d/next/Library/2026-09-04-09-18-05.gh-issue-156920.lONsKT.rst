@@ -1,0 +1,5 @@
+Fix :mod:`asyncio` on Windows: closing a :class:`~asyncio.DatagramTransport`
+under :class:`~asyncio.ProactorEventLoop` while datagrams were still queued,
+or while an in-flight write failed right as ``close()`` was draining the
+buffer, could strand the queued data and never call ``connection_lost()``,
+hanging the close indefinitely.

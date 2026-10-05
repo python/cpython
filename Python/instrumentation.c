@@ -989,8 +989,12 @@ call_one_instrument(
     if (res == NULL) {
         return -1;
     }
+    if (res == &_PyInstrumentation_DISABLE) {
+        assert(_Py_IsImmortal(res));
+        return 1;
+    }
     Py_DECREF(res);
-    return (res == &_PyInstrumentation_DISABLE);
+    return 0;
 }
 
 static const int8_t MOST_SIGNIFICANT_BITS[16] = {
@@ -1686,6 +1690,7 @@ allocate_instrumentation_data(PyCodeObject *code)
         }
         monitoring->local_monitors = (_Py_LocalMonitors){ 0 };
         monitoring->active_monitors = (_Py_LocalMonitors){ 0 };
+        memset(monitoring->tool_versions, 0, sizeof(monitoring->tool_versions));
         monitoring->tools = NULL;
         monitoring->lines = NULL;
         monitoring->line_tools = NULL;

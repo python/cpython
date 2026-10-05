@@ -25,6 +25,7 @@ class StressTests(TestBase):
         del alive
         support.gc_collect()
 
+    @threading_helper.requires_working_threading()
     @support.bigmemtest(size=200, memuse=32*2**20, dry_run=False)
     def test_create_many_threaded(self, size):
         alive = []
@@ -77,12 +78,9 @@ class StressTests(TestBase):
 
     @support.nomemtest
     def test_create_interpreter_no_memory(self):
-        import _testcapi
-
-        assertion = self.assertRaises(InterpreterError)
-        _testcapi.set_nomemory(0, 1)
-        with assertion:
-            _interpreters.create()
+        with self.assertRaises(InterpreterError):
+            with support.inject_memory_error_cm(0, 1):
+                _interpreters.create()
 
 
 if __name__ == '__main__':

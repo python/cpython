@@ -635,7 +635,7 @@ class TestDiscovery(unittest.TestCase):
         program._do_discovery = args.append
         program.parseArgs(['something', '-v', '-b', '-v', '-c', '-f'])
         self.assertEqual(args, [[]])
-        self.assertEqual(program.verbosity, 2)
+        self.assertEqual(program.verbosity, 3)  # -v is passed twice
         self.assertIs(program.buffer, True)
         self.assertIs(program.catchbreak, True)
         self.assertIs(program.failfast, True)

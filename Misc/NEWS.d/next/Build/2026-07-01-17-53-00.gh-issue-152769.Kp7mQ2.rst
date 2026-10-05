@@ -1,0 +1,4 @@
+Enable the :ref:`perf profiler <perf_profiling>` trampoline on Alpine Linux with the
+musl C library on ``x86_64`` and ``aarch64``. The
+trampoline is architecture-specific and does not depend on the C library, so
+the same assembly trampoline used for glibc is reused for musl.

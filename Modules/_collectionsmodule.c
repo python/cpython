@@ -512,7 +512,6 @@ deque_extend_impl(dequeobject *deque, PyObject *iterable)
     iternext = *Py_TYPE(it)->tp_iternext;
     while ((item = iternext(it)) != NULL) {
         if (deque_append_lock_held(deque, item, maxlen) == -1) {
-            Py_DECREF(item);
             Py_DECREF(it);
             return NULL;
         }

@@ -1,0 +1,6 @@
+Detect the :mod:`curses` mouse interface (:func:`~curses.getmouse`,
+:func:`~curses.has_mouse`, the ``BUTTON*`` constants, and others) and the
+window ``is_*`` state-query methods with configure capability probes or library
+macros instead of gating them on ncurses-specific macros.  They are now also
+available with other curses implementations that provide them, such as NetBSD
+curses and PDCurses (the latter underpins ``windows-curses``).
