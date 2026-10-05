@@ -1769,12 +1769,14 @@ The :mod:`!test.support.import_helper` module provides support for import tests.
    Delete *name* from ``sys.modules``.
 
 
-.. function:: make_legacy_pyc(source)
+.. function:: make_legacy_pyc(source, allow_compile=False)
 
    Move a :pep:`3147`/:pep:`488` pyc file to its legacy pyc location and return the file
    system path to the legacy pyc file.  The *source* value is the file system
    path to the source file.  It does not need to exist, however the PEP
-   3147/488 pyc file must exist.
+   3147/488 pyc file must exist or *allow_compile* must be set.
+
+   *allow_compile* will create a .pyc file if it does not exist.
 
 
 .. class:: CleanImport(*module_names, usefrozen=False)
