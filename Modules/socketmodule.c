@@ -774,7 +774,9 @@ set_herror(socket_state *state, int h_error)
     PyObject *v;
 
 #ifdef HAVE_HSTRERROR
-    v = Py_BuildValue("(iN)", h_error, decode_error_message(hstrerror(h_error)));
+    const char *errmsg = hstrerror(h_error);
+    _Py_MSAN_UNPOISON_STRING(errmsg);
+    v = Py_BuildValue("(iN)", h_error, decode_error_message(errmsg));
 #else
     v = Py_BuildValue("(is)", h_error, "host not found");
 #endif
@@ -801,7 +803,9 @@ set_gaierror(socket_state *state, int error)
 #endif
 
 #ifdef HAVE_GAI_STRERROR
-    v = Py_BuildValue("(iN)", error, decode_error_message(gai_strerror(error)));
+    const char *errmsg = gai_strerror(error);
+    _Py_MSAN_UNPOISON_STRING(errmsg);
+    v = Py_BuildValue("(iN)", error, decode_error_message(errmsg));
 #else
     v = Py_BuildValue("(is)", error, "getaddrinfo failed");
 #endif
@@ -6522,6 +6526,7 @@ _socket_getservbyport_impl(PyObject *module, int port, const char *proto)
         PyErr_SetString(PyExc_OSError, "port/proto not found");
         return NULL;
     }
+    _Py_MSAN_UNPOISON_STRING(sp->s_name);
     return PyUnicode_FromString(sp->s_name);
 }
 

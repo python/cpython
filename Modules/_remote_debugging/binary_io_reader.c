@@ -19,6 +19,10 @@
 #include <zstd.h>
 #endif
 
+#ifdef _Py_MEMORY_SANITIZER
+#  include <sanitizer/msan_interface.h>
+#endif
+
 /* ============================================================================
  * CONSTANTS FOR BINARY FORMAT SIZES
  * ============================================================================ */
@@ -315,6 +319,7 @@ reader_decompress_samples(BinaryReader *reader, const uint8_t *data)
             return -1;
         }
 
+        _Py_MSAN_UNPOISON(output.dst, output.pos);
         total_output += output.pos;
     }
 
