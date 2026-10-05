@@ -40,14 +40,11 @@ tok_nextc(struct tok_state *tok)
             return EOF;
         }
     }
-    assert(tok->cur >= tok->source.base_offset);
-    assert(tok->cur - tok->source.base_offset < tok->source.len);
     if (tok->cur - tok->line_start >= INT_MAX) {
         tok->done = E_COLUMNOVERFLOW;
         return EOF;
     }
-    return Py_CHARMASK(
-        tok->source.bytes[tok->cur++ - tok->source.base_offset]);
+    return _PyTok_SourceByte(&tok->source, tok->cur++);
 }
 
 /* Return -1 on error, otherwise whether the line is blank. */

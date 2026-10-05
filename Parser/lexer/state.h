@@ -135,33 +135,6 @@ _PyLexer_FTStringBracketDepth(const struct tok_state *tok,
     return tok->level - state->paren_level;
 }
 
-static inline _PyTok_Off
-_PyLexer_BufferOffset(const struct tok_state *tok, const char *position)
-{
-    const char *base = _PyTok_SourceData(&tok->source);
-    assert(position >= base && position <= base + tok->source.len);
-    return tok->source.base_offset + (position - base);
-}
-
-static inline const char *
-_PyLexer_BufferPointer(const struct tok_state *tok, _PyTok_Off offset)
-{
-    assert(offset >= tok->source.base_offset);
-    assert(offset - tok->source.base_offset <= tok->source.len);
-    return _PyTok_SourceData(&tok->source) + (offset - tok->source.base_offset);
-}
-
-static inline const char *
-_PyLexer_BufferSpanView(const struct tok_state *tok, _PyTok_Span span,
-                        Py_ssize_t *length)
-{
-    assert(length != NULL);
-    assert(_PyTok_SpanIsValid(span));
-    *length = span.end - span.start;
-    (void)_PyLexer_BufferPointer(tok, span.end);
-    return _PyLexer_BufferPointer(tok, span.start);
-}
-
 static inline int
 _PyLexer_ByteColumn(const struct tok_state *tok)
 {

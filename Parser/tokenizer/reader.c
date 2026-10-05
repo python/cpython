@@ -173,15 +173,14 @@ next_prepared(struct tok_state *tok, _PyTok_Chunk *chunk)
     if (tok->lineno >= tok->source.nlines) {
         return _PYTOK_READ_EOF;
     }
-    const char *start = _PyLexer_BufferPointer(tok, tok->inp);
-    const char *newline = memchr(
-        start, '\n', tok->source.bytes + tok->source.len - start);
-    _PyTok_Off end = newline != NULL
-        ? newline - tok->source.bytes + 1 : tok->source.len;
+    _PyTok_Span tail = {tok->inp, tok->source.base_offset + tok->source.len};
+    Py_ssize_t remaining;
+    const char *start = _PyTok_SourceSpanView(&tok->source, tail, &remaining);
+    const char *newline = memchr(start, '\n', remaining);
     chunk->data = (char *)start;
-    chunk->len = tok->source.bytes + end - start;
+    chunk->len = newline != NULL ? newline - start + 1 : remaining;
     chunk->ownership = _PYTOK_CHUNK_BORROWED;
-    chunk->implicit_newline = end == tok->source.len &&
+    chunk->implicit_newline = chunk->len == remaining &&
         tok->reader->prepared_final_newline_is_implicit;
     return _PYTOK_READ_LINE;
 }
@@ -665,19 +664,20 @@ _PyTok_ReaderUnderflow(struct tok_state *tok)
         }
         tok->inp = source_start + chunk.len;
     }
-    if (prepared) {
+    else {
+        _PyTok_Off source_start = _PyTok_SourceOffset(&tok->source, chunk.data);
         if (tok->start < 0 && _PyLexer_CurrentFTString(tok) == NULL) {
-            tok->buf_offset = tok->source.base_offset +
-                (chunk.data - tok->source.bytes);
+            tok->buf_offset = source_start;
         }
-        tok->inp = _PyLexer_BufferOffset(tok, chunk.data) + chunk.len;
+        tok->inp = source_start + chunk.len;
     }
     tok->implicit_newline = chunk.implicit_newline;
 
     tok->lineno++;
     if (kind == _PYTOK_READER_FILE &&
             (tok->encoding == NULL || strcmp(tok->encoding, "utf-8") == 0) &&
-            !_PyTokenizer_ensure_utf8(_PyLexer_BufferPointer(tok, tok->cur), tok, tok->lineno)) {
+            !_PyTokenizer_ensure_utf8(
+                _PyTok_SourcePointer(&tok->source, tok->cur), tok, tok->lineno)) {
         _PyTok_ChunkClear(&chunk);
         return 0;
     }

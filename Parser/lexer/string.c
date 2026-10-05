@@ -77,8 +77,8 @@ finish_ftstring_expr(struct tok_state *tok, ftstring_state *state,
         return 0;
     }
     Py_ssize_t expr_len;
-    const char *expr = _PyLexer_BufferSpanView(
-        tok, state->expr_span, &expr_len);
+    const char *expr = _PyTok_SourceSpanView(
+        &tok->source, state->expr_span, &expr_len);
     tokenizer_comments *comments = state->comments;
     PyObject *res;
     if (comments != NULL && comments->count > 0) {
@@ -339,7 +339,8 @@ _PyLexer_scan_string(struct tok_state *tok, struct token *token, int c)
             }
             int end_lineno = tok->lineno;
             _PyTok_Loc location = tok->start_loc;
-            const char *line = _PyLexer_BufferPointer(tok, tok->start) - location.byte_col;
+            const char *line = _PyTok_SourcePointer(
+                &tok->source, tok->start - location.byte_col);
             Py_ssize_t cursor_offset = (Py_ssize_t)location.byte_col + 1;
 
             const ftstring_state *state = _PyLexer_CurrentFTString(tok);
@@ -460,7 +461,8 @@ _PyLexer_get_ftstring(struct tok_state *tok, ftstring_state *current, struct tok
 
             int end_lineno = tok->lineno;
             _PyTok_Loc location = current->start_loc;
-            const char *line = _PyLexer_BufferPointer(tok, current->start) - location.byte_col;
+            const char *line = _PyTok_SourcePointer(
+                &tok->source, current->start - location.byte_col);
             Py_ssize_t cursor_offset = (Py_ssize_t)location.byte_col + 1;
 
             if (quote_size == 3) {

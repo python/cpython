@@ -19,6 +19,43 @@ _PyTok_SourceData(const _PyTok_SourceText *source)
     return source->bytes != NULL ? source->bytes : "";
 }
 
+/* Convert positions within the retained source window. Pointers and views
+   are borrowed; append, discard, and clear invalidate them. */
+static inline _PyTok_Off
+_PyTok_SourceOffset(const _PyTok_SourceText *source, const char *position)
+{
+    const char *base = _PyTok_SourceData(source);
+    assert(position >= base && position <= base + source->len);
+    return source->base_offset + (position - base);
+}
+
+static inline const char *
+_PyTok_SourcePointer(const _PyTok_SourceText *source, _PyTok_Off offset)
+{
+    assert(offset >= source->base_offset);
+    assert(offset - source->base_offset <= source->len);
+    return _PyTok_SourceData(source) + (offset - source->base_offset);
+}
+
+static inline unsigned char
+_PyTok_SourceByte(const _PyTok_SourceText *source, _PyTok_Off offset)
+{
+    assert(offset >= source->base_offset);
+    assert(offset - source->base_offset < source->len);
+    return (unsigned char)source->bytes[offset - source->base_offset];
+}
+
+static inline const char *
+_PyTok_SourceSpanView(const _PyTok_SourceText *source, _PyTok_Span span,
+                      Py_ssize_t *length)
+{
+    assert(length != NULL);
+    assert(_PyTok_SpanIsValid(span));
+    *length = span.end - span.start;
+    (void)_PyTok_SourcePointer(source, span.end);
+    return _PyTok_SourcePointer(source, span.start);
+}
+
 PyAPI_FUNC(void) _PyTok_SourceInit(_PyTok_SourceText *);
 /* Clear invalidates all spans and views for the source. */
 PyAPI_FUNC(void) _PyTok_SourceClear(_PyTok_SourceText *);

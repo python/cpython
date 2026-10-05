@@ -29,8 +29,9 @@ _PyLexer_refill(struct tok_state *tok)
 #if defined(Py_DEBUG)
     if (tok->debug) {
         fprintf(stderr, "line[%d] = ", tok->lineno);
-        _PyTokenizer_print_escape(stderr, _PyLexer_BufferPointer(tok, tok->cur),
-                                  tok->inp - tok->cur);
+        _PyTokenizer_print_escape(
+            stderr, _PyTok_SourcePointer(&tok->source, tok->cur),
+            tok->inp - tok->cur);
         fprintf(stderr, "  tok->done = %d\n", tok->done);
     }
 #endif
@@ -39,7 +40,7 @@ _PyLexer_refill(struct tok_state *tok)
         return 0;
     }
     tok->line_start = tok->cur;
-    if (contains_null_bytes(_PyLexer_BufferPointer(tok, tok->line_start),
+    if (contains_null_bytes(_PyTok_SourcePointer(&tok->source, tok->line_start),
                             tok->inp - tok->line_start)) {
         _PyTokenizer_syntaxerror(tok, "source code cannot contain null bytes");
         tok->cur = tok->inp;
@@ -56,7 +57,8 @@ _PyLexer_backup(struct tok_state *tok, int c)
         if (--tok->cur < tok->buf_offset) {
             Py_FatalError("tokenizer beginning of buffer");
         }
-        if ((int)(unsigned char)*_PyLexer_BufferPointer(tok, tok->cur) != Py_CHARMASK(c)) {
+        const char *cur = _PyTok_SourcePointer(&tok->source, tok->cur);
+        if ((int)(unsigned char)*cur != Py_CHARMASK(c)) {
             Py_FatalError("tok_backup: wrong character");
         }
     }
@@ -74,7 +76,8 @@ verify_identifier(struct tok_state *tok)
     PyObject *s;
     if (tok_failed(tok))
         return 0;
-    s = PyUnicode_DecodeUTF8(_PyLexer_BufferPointer(tok, tok->start), tok->cur - tok->start, NULL);
+    s = PyUnicode_DecodeUTF8(_PyTok_SourcePointer(&tok->source, tok->start),
+                             tok->cur - tok->start, NULL);
     if (s == NULL) {
         if (PyErr_ExceptionMatches(PyExc_UnicodeDecodeError)) {
             tok->done = E_DECODE;
@@ -105,13 +108,13 @@ verify_identifier(struct tok_state *tok)
         Py_DECREF(s);
         if (Py_UNICODE_ISPRINTABLE(ch)) {
             _PyTokenizer_syntaxerror_at(
-                tok, _PyLexer_BufferPointer(tok, tok->line_start),
+                tok, _PyTok_SourcePointer(&tok->source, tok->line_start),
                 error_cursor - tok->line_start, tok->lineno, -1, -1,
                 "invalid character '%c' (U+%04X)", ch, ch);
         }
         else {
             _PyTokenizer_syntaxerror_at(
-                tok, _PyLexer_BufferPointer(tok, tok->line_start),
+                tok, _PyTok_SourcePointer(&tok->source, tok->line_start),
                 error_cursor - tok->line_start, tok->lineno, -1, -1,
                 "invalid non-printable character U+%04X", ch);
         }
@@ -193,14 +196,14 @@ _PyLexer_get_normal(struct tok_state *tok, ftstring_state *current, struct token
         }
 
         if (tok->tok_extra_tokens) {
-            p = _PyLexer_BufferPointer(tok, tok->start);
+            p = _PyTok_SourcePointer(&tok->source, tok->start);
         }
 
         if (tok->type_comments) {
-            p = _PyLexer_BufferPointer(tok, tok->start);
+            p = _PyTok_SourcePointer(&tok->source, tok->start);
             current_starting_col_offset = tok->start_loc.byte_col;
             prefix = type_comment_prefix;
-            while (*prefix && p < _PyLexer_BufferPointer(tok, tok->cur)) {
+            while (*prefix && p < _PyTok_SourcePointer(&tok->source, tok->cur)) {
                 if (*prefix == ' ') {
                     while (*p == ' ' || *p == '\t') {
                         p++;
@@ -229,8 +232,9 @@ _PyLexer_get_normal(struct tok_state *tok, ftstring_state *current, struct token
                 /* A TYPE_IGNORE is "type: ignore" followed by the end of the token
                  * or anything ASCII and non-alphanumeric. */
                 is_type_ignore = (
-                    _PyLexer_BufferPointer(tok, tok->cur) >= ignore_end && memcmp(p, "ignore", 6) == 0
-                    && !(_PyLexer_BufferPointer(tok, tok->cur) > ignore_end
+                    _PyTok_SourcePointer(&tok->source, tok->cur) >= ignore_end
+                    && memcmp(p, "ignore", 6) == 0
+                    && !(_PyTok_SourcePointer(&tok->source, tok->cur) > ignore_end
                          && ((unsigned char)ignore_end[0] >= 128 || Py_ISALNUM(ignore_end[0]))));
 
                 int type = is_type_ignore ? TYPE_IGNORE : TYPE_COMMENT;
@@ -238,7 +242,7 @@ _PyLexer_get_normal(struct tok_state *tok, ftstring_state *current, struct token
                     ? ignore_end_col_offset : current_starting_col_offset;
                 p_end = tok->cur;
                 if (is_type_ignore) {
-                    p_start = _PyLexer_BufferOffset(tok, ignore_end);
+                    p_start = _PyTok_SourceOffset(&tok->source, ignore_end);
 
                     /* If this type ignore is the only thing on the line, consume the newline also. */
                     if (blankline) {
@@ -246,7 +250,7 @@ _PyLexer_get_normal(struct tok_state *tok, ftstring_state *current, struct token
                         tok->layout.at_bol = 1;
                     }
                 } else {
-                    p_start = _PyLexer_BufferOffset(tok, type_start);
+                    p_start = _PyTok_SourceOffset(&tok->source, type_start);
                 }
                 _PyLexer_token_setup(tok, token, type, p_start, p_end);
                 token->start_loc = (_PyTok_Loc){tok->lineno, start_col_offset};
@@ -257,7 +261,7 @@ _PyLexer_get_normal(struct tok_state *tok, ftstring_state *current, struct token
         }
         if (tok->tok_extra_tokens) {
             tok_backup(tok, c);  /* don't eat the newline or EOF */
-            p_start = _PyLexer_BufferOffset(tok, p);
+            p_start = _PyTok_SourceOffset(&tok->source, p);
             p_end = tok->cur;
             tok->layout.comment_newline = blankline;
             return MAKE_TOKEN(COMMENT);
