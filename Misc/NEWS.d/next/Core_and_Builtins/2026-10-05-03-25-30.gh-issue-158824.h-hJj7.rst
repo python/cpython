@@ -1,1 +1,2 @@
-Bug fix: module level `__getattr__` was obfuscating lazy imports from being reified.
+Module-level :meth:`~module.__getattr__` was called before a module's own
+lazy imports were resolved, so it could shadow them.
