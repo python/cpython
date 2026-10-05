@@ -1924,6 +1924,19 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
     if (descr != NULL) {
         f = Py_TYPE(descr)->tp_descr_get;
         if (f != NULL && PyDescr_IsData(descr)) {
+            // gh-157840: We special-case member descriptors here to avoid
+            // allocating an extra AttributeError
+            if (suppress && Py_IS_TYPE(descr, &PyMemberDescr_Type)) {
+                PyMemberDef *member = ((PyMemberDescrObject *)descr)->d_member;
+                if (member->type == Py_T_OBJECT_EX
+                    && !(member->flags & Py_AUDIT_READ)
+                    && PyObject_TypeCheck(obj, PyDescr_TYPE(descr))) {
+                    PyObject **addr = _PyMember_GetOffset(obj, member);
+                    if (FT_ATOMIC_LOAD_PTR(*addr) == NULL) {
+                        goto done;
+                    }
+                }
+            }
             res = f(descr, obj, (PyObject *)Py_TYPE(obj));
             if (res == NULL && suppress &&
                     PyErr_ExceptionMatches(PyExc_AttributeError)) {
