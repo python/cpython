@@ -161,6 +161,9 @@
 #ifdef HAVE_SYS_SYSCALL_H
 #  include <sys/syscall.h>        // syscall(), __NR_xxx syscall numbers
 #endif
+#if !defined(SYS_getrandom) && defined(__NR_getrandom)
+#  define SYS_getrandom __NR_getrandom
+#endif
 
 #ifdef HAVE_POSIX_SPAWN
 #  include <spawn.h>              // posix_spawn()
@@ -2021,6 +2024,14 @@ win32_wchdir(LPCWSTR path)
 #define HAVE_STRUCT_STAT_ST_FILE_ATTRIBUTES 1
 #define HAVE_STRUCT_STAT_ST_REPARSE_TAG 1
 
+/* The \\?\ prefix disables the path normalization, in particular
+   stripping of trailing dots and spaces. */
+static int
+is_extended_path(const wchar_t *path)
+{
+    return wcsncmp(path, L"\\\\?\\", 4) == 0;
+}
+
 static void
 find_data_to_file_info(WIN32_FIND_DATAW *pFileData,
                        FILE_BASIC_INFO* basic_info,
@@ -2094,12 +2105,20 @@ update_st_mode_from_path(const wchar_t *path, DWORD attr,
            GetSecurityInfo, OpenThreadToken/OpenProcessToken, and
            AccessCheck to check for generic read, write, and execute
            access. */
-        const wchar_t *fileExtension = wcsrchr(path, '.');
-        if (fileExtension) {
-            if (_wcsicmp(fileExtension, L".exe") == 0 ||
-                _wcsicmp(fileExtension, L".bat") == 0 ||
-                _wcsicmp(fileExtension, L".cmd") == 0 ||
-                _wcsicmp(fileExtension, L".com") == 0) {
+        size_t len = wcslen(path);
+        if (!is_extended_path(path)) {
+            /* Trailing dots and spaces are stripped from the last component
+               of the path. */
+            while (len > 0 && (path[len - 1] == L'.' || path[len - 1] == L' ')) {
+                len--;
+            }
+        }
+        if (len >= 4) {
+            const wchar_t *fileExtension = path + len - 4;
+            if (_wcsnicmp(fileExtension, L".exe", 4) == 0 ||
+                _wcsnicmp(fileExtension, L".bat", 4) == 0 ||
+                _wcsnicmp(fileExtension, L".cmd", 4) == 0 ||
+                _wcsnicmp(fileExtension, L".com", 4) == 0) {
                 result->st_mode |= 0111;
             }
         }
@@ -3185,14 +3204,6 @@ class dir_fd_converter(CConverter):
     def c_default_init(self):
         self.c_default = 'DEFAULT_DIR_FD'
 
-class uid_t_converter(CConverter):
-    type = "uid_t"
-    converter = '_Py_Uid_Converter'
-
-class gid_t_converter(CConverter):
-    type = "gid_t"
-    converter = '_Py_Gid_Converter'
-
 class dev_t_converter(CConverter):
     type = 'dev_t'
     converter = '_Py_Dev_Converter'
@@ -3249,7 +3260,7 @@ class confname_converter(CConverter):
         """, argname=argname, converter=self.converter, table=self.table)
 
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=e459765bdf453ebf]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=7ceccf55bb600f61]*/
 
 /*[clinic input]
 
@@ -4383,6 +4394,14 @@ static PyObject *
 os_chroot_impl(PyObject *module, path_t *path)
 /*[clinic end generated code: output=de80befc763a4475 input=14822965652c3dc3]*/
 {
+#ifdef __ANDROID__
+    // On Android, calling this function as a non-root user leads to a process crash
+    // rather than returning a permission error.
+    if (getuid() != 0) {
+        errno = EPERM;
+        return path_error(path);
+    }
+#endif
     int res;
     Py_BEGIN_ALLOW_THREADS
     res = chroot(path->narrow);
@@ -9859,6 +9878,14 @@ os_initgroups_impl(PyObject *module, PyObject *oname, gid_t gid)
 /*[clinic end generated code: output=59341244521a9e3f input=7e4514dff4526a95]*/
 #endif
 {
+#ifdef __ANDROID__
+    // On Android, calling this function as a non-root user leads to a process crash
+    // rather than returning a permission error.
+    if (getuid() != 0) {
+        errno = EPERM;
+        return posix_error();
+    }
+#endif
     const char *username = PyBytes_AS_STRING(oname);
 
     if (initgroups(username, gid) == -1)
@@ -10111,6 +10138,7 @@ os_getlogin_impl(PyObject *module)
         errno = old_errno;
     }
     else {
+        _Py_MSAN_UNPOISON(name, sizeof(name));
         result = PyUnicode_DecodeFSDefault(name);
     }
 #else
@@ -10285,6 +10313,14 @@ static PyObject *
 os_setuid_impl(PyObject *module, uid_t uid)
 /*[clinic end generated code: output=a0a41fd0d1ec555f input=c921a3285aa22256]*/
 {
+#ifdef __ANDROID__
+    // On Android, calling this function as a non-root user leads to a process crash
+    // rather than returning a permission error.
+    if (getuid() != 0) {
+        errno = EPERM;
+        return posix_error();
+    }
+#endif
     if (setuid(uid) < 0)
         return posix_error();
     Py_RETURN_NONE;
@@ -10306,6 +10342,14 @@ static PyObject *
 os_seteuid_impl(PyObject *module, uid_t euid)
 /*[clinic end generated code: output=102e3ad98361519a input=ba93d927e4781aa9]*/
 {
+#ifdef __ANDROID__
+    // On Android, calling this function as a non-root user leads to a process crash
+    // rather than returning a permission error.
+    if (getuid() != 0) {
+        errno = EPERM;
+        return posix_error();
+    }
+#endif
     if (seteuid(euid) < 0)
         return posix_error();
     Py_RETURN_NONE;
@@ -10327,6 +10371,14 @@ static PyObject *
 os_setegid_impl(PyObject *module, gid_t egid)
 /*[clinic end generated code: output=4e4b825a6a10258d input=4080526d0ccd6ce3]*/
 {
+#ifdef __ANDROID__
+    // On Android, calling this function as a non-root user leads to a process crash
+    // rather than returning a permission error.
+    if (getuid() != 0) {
+        errno = EPERM;
+        return posix_error();
+    }
+#endif
     if (setegid(egid) < 0)
         return posix_error();
     Py_RETURN_NONE;
@@ -10349,6 +10401,14 @@ static PyObject *
 os_setreuid_impl(PyObject *module, uid_t ruid, uid_t euid)
 /*[clinic end generated code: output=62d991210006530a input=0ca8978de663880c]*/
 {
+#ifdef __ANDROID__
+    // On Android, calling this function as a non-root user leads to a process crash
+    // rather than returning a permission error.
+    if (getuid() != 0) {
+        errno = EPERM;
+        return posix_error();
+    }
+#endif
     if (setreuid(ruid, euid) < 0) {
         return posix_error();
     } else {
@@ -10373,6 +10433,14 @@ static PyObject *
 os_setregid_impl(PyObject *module, gid_t rgid, gid_t egid)
 /*[clinic end generated code: output=aa803835cf5342f3 input=c59499f72846db78]*/
 {
+#ifdef __ANDROID__
+    // On Android, calling this function as a non-root user leads to a process crash
+    // rather than returning a permission error.
+    if (getuid() != 0) {
+        errno = EPERM;
+        return posix_error();
+    }
+#endif
     if (setregid(rgid, egid) < 0)
         return posix_error();
     Py_RETURN_NONE;
@@ -10393,6 +10461,14 @@ static PyObject *
 os_setgid_impl(PyObject *module, gid_t gid)
 /*[clinic end generated code: output=bdccd7403f6ad8c3 input=27d30c4059045dc6]*/
 {
+#ifdef __ANDROID__
+    // On Android, calling this function as a non-root user leads to a process crash
+    // rather than returning a permission error.
+    if (getuid() != 0) {
+        errno = EPERM;
+        return posix_error();
+    }
+#endif
     if (setgid(gid) < 0)
         return posix_error();
     Py_RETURN_NONE;
@@ -15490,6 +15566,14 @@ static PyObject *
 os_setresuid_impl(PyObject *module, uid_t ruid, uid_t euid, uid_t suid)
 /*[clinic end generated code: output=834a641e15373e97 input=9e33cb79a82792f3]*/
 {
+#ifdef __ANDROID__
+    // On Android, calling this function as a non-root user leads to a process crash
+    // rather than returning a permission error.
+    if (getuid() != 0) {
+        errno = EPERM;
+        return posix_error();
+    }
+#endif
     if (setresuid(ruid, euid, suid) < 0)
         return posix_error();
     Py_RETURN_NONE;
@@ -15513,6 +15597,14 @@ static PyObject *
 os_setresgid_impl(PyObject *module, gid_t rgid, gid_t egid, gid_t sgid)
 /*[clinic end generated code: output=6aa402f3d2e514a9 input=33e9e0785ef426b1]*/
 {
+#ifdef __ANDROID__
+    // On Android, calling this function as a non-root user leads to a process crash
+    // rather than returning a permission error.
+    if (getuid() != 0) {
+        errno = EPERM;
+        return posix_error();
+    }
+#endif
     if (setresgid(rgid, egid, sgid) < 0)
         return posix_error();
     Py_RETURN_NONE;
@@ -16297,8 +16389,9 @@ os_set_blocking_impl(PyObject *module, int fd, int blocking)
 
 /*[clinic input]
 class os.DirEntry "DirEntry *" "DirEntryType"
+class os.ScandirIterator "PyObject *" "ScandirIteratorType"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=3c18c7a448247980]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=b845e502eb4a0406]*/
 
 typedef struct {
     PyObject_HEAD
@@ -16717,12 +16810,6 @@ static PyType_Spec DirEntryType_spec = {
 
 
 #ifdef MS_WINDOWS
-
-static int
-is_extended_path(const wchar_t *path)
-{
-    return wcsncmp(path, L"\\\\?\\", 4) == 0;
-}
 
 static wchar_t *
 join_path_filenameW(const wchar_t *path_wide, const wchar_t *filename,
@@ -17193,11 +17280,20 @@ ScandirIterator_enter(PyObject *self, PyObject *Py_UNUSED(dummy))
     return Py_NewRef(self);
 }
 
+/*[clinic input]
+os.ScandirIterator.__exit__
+
+    *exc_info: array
+
+Close the scandir iterator.
+[clinic start generated code]*/
+
 static PyObject *
-ScandirIterator_exit(PyObject *op, PyObject *Py_UNUSED(args))
+os_ScandirIterator___exit___impl(PyObject *self, PyObject * const *exc_info,
+                                 Py_ssize_t exc_info_length)
+/*[clinic end generated code: output=5d3941725a7c97c7 input=ff3ffe83ae605a36]*/
 {
-    ScandirIterator *self = ScandirIterator_CAST(op);
-    ScandirIterator_closedir(self);
+    ScandirIterator_closedir(ScandirIterator_CAST(self));
     Py_RETURN_NONE;
 }
 
@@ -17244,7 +17340,7 @@ ScandirIterator_dealloc(PyObject *op)
 
 static PyMethodDef ScandirIterator_methods[] = {
     {"__enter__", ScandirIterator_enter, METH_NOARGS},
-    {"__exit__", ScandirIterator_exit, METH_VARARGS},
+    OS_SCANDIRITERATOR___EXIT___METHODDEF
     {"close", ScandirIterator_close, METH_NOARGS},
     {NULL}
 };

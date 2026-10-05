@@ -239,6 +239,9 @@ class TaskGroup:
         # the current task too early. gh-128550, gh-128588
         self._tasks.add(task)
         task.add_done_callback(self._on_task_done)
+        # gh-155418: an eager task can cancel the group before joining _tasks
+        if self._aborting and not task.done():
+            task.cancel()
         try:
             return task
         finally:

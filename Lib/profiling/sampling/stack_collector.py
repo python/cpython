@@ -60,11 +60,16 @@ class CollapsedStackCollector(StackTraceCollector):
 
         lines.sort(key=lambda x: (-x[1], x[0]))
 
-        with open(filename, "w") as f:
+        with open(filename, "w",
+                  encoding="utf-8", errors="surrogatepass") as f:
             for stack, count in lines:
                 f.write(f"{stack} {count}\n")
         print(f"Collapsed stack output written to {filename}")
         return True
+
+
+# Bounded by the unwinder's maximum captured stack depth (MAX_FRAMES).
+_FLAMEGRAPH_RECURSION_MARGIN = 2000
 
 
 class FlamegraphCollector(StackTraceCollector):
@@ -103,7 +108,6 @@ class FlamegraphCollector(StackTraceCollector):
         """Override to track thread status statistics before processing frames."""
         # Weight is number of timestamps (samples with identical stack)
         weight = len(timestamps_us) if timestamps_us else 1
-
         # Increment sample count by weight
         self._sample_count += weight
 
@@ -148,35 +152,59 @@ class FlamegraphCollector(StackTraceCollector):
             "mode": mode
         }
 
-    def export(self, filename):
-        flamegraph_data = self._convert_to_flamegraph_format()
-
-        # Debug output with string table statistics
-        num_functions = len(flamegraph_data.get("children", []))
-        total_time = flamegraph_data.get("value", 0)
-        string_count = len(self._string_table)
-        s1 = "" if num_functions == 1 else "s"
-        s2 = "" if total_time == 1 else "s"
-        s3 = "" if string_count == 1 else "s"
-        print(
-            f"Flamegraph data: {num_functions} root function{s1}, "
-            f"{total_time} total sample{s2}, "
-            f"{string_count} unique string{s3}"
+    def set_replay_stats(self, info):
+        """Restore measured statistics stored in a binary profile."""
+        duration_sec = info.get("duration_sec")
+        sample_rate = info.get("sample_rate")
+        if duration_sec is None or sample_rate is None:
+            return
+        self.set_stats(
+            self.sample_interval_usec,
+            duration_sec,
+            sample_rate,
+            error_rate=info.get("error_rate"),
+            missed_samples=info.get("missed_samples"),
+            mode=self.stats.get("mode"),
         )
+    def set_mode(self, mode):
+        self.stats["mode"] = mode
 
-        if num_functions == 0:
+    def export(self, filename):
+        # Converting the call tree recurses to the sampled stack depth.
+        old_limit = sys.getrecursionlimit()
+        sys.setrecursionlimit(old_limit + _FLAMEGRAPH_RECURSION_MARGIN)
+        try:
+            flamegraph_data = self._convert_to_flamegraph_format()
+
+            # Debug output with string table statistics
+            num_functions = len(flamegraph_data.get("children", []))
+            total_time = flamegraph_data.get("value", 0)
+            string_count = len(self._string_table)
+            s1 = "" if num_functions == 1 else "s"
+            s2 = "" if total_time == 1 else "s"
+            s3 = "" if string_count == 1 else "s"
             print(
-                "Warning: No functions found in profiling data. Check if sampling captured any data."
+                f"Flamegraph data: {num_functions} root function{s1}, "
+                f"{total_time} total sample{s2}, "
+                f"{string_count} unique string{s3}"
             )
-            return False
 
-        html_content = self._create_flamegraph_html(flamegraph_data)
+            if num_functions == 0:
+                print(
+                    "Warning: No functions found in profiling data. "
+                    "Check if sampling captured any data."
+                )
+                return False
 
-        with open(filename, "w", encoding="utf-8") as f:
-            f.write(html_content)
+            html_content = self._create_flamegraph_html(flamegraph_data)
 
-        print(f"Flamegraph saved to: {filename}")
-        return True
+            with open(filename, "w", encoding="utf-8") as f:
+                f.write(html_content)
+
+            print(f"Flamegraph saved to: {filename}")
+            return True
+        finally:
+            sys.setrecursionlimit(old_limit)
 
     @staticmethod
     @functools.lru_cache(maxsize=None)
@@ -551,13 +579,16 @@ class FlamegraphCollector(StackTraceCollector):
 class DiffFlamegraphCollector(FlamegraphCollector):
     """Differential flamegraph collector that compares against a baseline binary profile."""
 
-    def __init__(self, sample_interval_usec, *, baseline_binary_path, skip_idle=False):
+    def __init__(self, sample_interval_usec, *, baseline_binary_path,
+                 skip_idle=False, mode=None, capture_config=None):
         super().__init__(sample_interval_usec, skip_idle=skip_idle)
         if not os.path.exists(baseline_binary_path):
             raise ValueError(f"Baseline file not found: {baseline_binary_path}")
         self.baseline_binary_path = baseline_binary_path
         self._baseline_collector = None
         self._elided_paths = set()
+        self.mode = mode
+        self.capture_config = capture_config
 
     def _load_baseline(self):
         """Load baseline profile from binary file."""
@@ -565,6 +596,32 @@ class DiffFlamegraphCollector(FlamegraphCollector):
 
         with BinaryReader(self.baseline_binary_path) as reader:
             info = reader.get_info()
+
+            baseline_mode = info.get("mode")
+            if (
+                baseline_mode is not None
+                and self.mode is not None
+                and baseline_mode != self.mode
+            ):
+                raise ValueError(
+                    "Baseline profiling mode does not match current mode"
+                )
+
+            baseline_config = info.get("capture_config")
+            if baseline_config is not None and self.capture_config is not None:
+                names = baseline_config.keys() | self.capture_config.keys()
+                mismatches = [
+                    name for name in names
+                    if baseline_config.get(name, False)
+                    != self.capture_config.get(name, False)
+                ]
+            else:
+                mismatches = []
+            if mismatches:
+                raise ValueError(
+                    "Baseline capture configuration does not match current "
+                    f"configuration: {', '.join(sorted(mismatches))}"
+                )
 
             baseline_collector = FlamegraphCollector(
                 sample_interval_usec=info['sample_interval_us'],
@@ -764,10 +821,7 @@ class DiffFlamegraphCollector(FlamegraphCollector):
         if not self._extract_elided_nodes(baseline_data, path=()):
             return None
 
-        # Metadata is calculated from raw baseline sample counts.  Scale the
-        # rendered geometry only after those counts have been annotated.
         self._add_elided_metadata(baseline_data, baseline_stats, scale, path=())
-        self._scale_flamegraph_values(baseline_data, scale)
 
         # Merge only profiling metadata, not thread-level stats
         for key in ("sample_interval_usec", "duration_sec", "sample_rate",
@@ -779,13 +833,6 @@ class DiffFlamegraphCollector(FlamegraphCollector):
         baseline_data["stats"]["current_samples"] = self._total_samples
 
         return baseline_data
-
-    def _scale_flamegraph_values(self, node, scale):
-        """Express flamegraph values in units of the current sample interval."""
-        node["value"] = node.get("value", 0) * scale
-        node["self"] = node.get("self", 0) * scale
-        for child in node.get("children", ()):
-            self._scale_flamegraph_values(child, scale)
 
     def _extract_elided_nodes(self, node, path):
         """Remove non-elided nodes and recalculate values bottom-up."""
@@ -854,6 +901,10 @@ class DiffFlamegraphCollector(FlamegraphCollector):
             node["diff_pct"] = -100.0
         else:
             node["diff_pct"] = 0.0
+
+        # Scale geometry after computing metadata from raw baseline counts.
+        node["value"] = node.get("value", 0) * scale
+        node["self"] = node.get("self", 0) * scale
 
         if "children" in node and node["children"]:
             for child in node["children"]:

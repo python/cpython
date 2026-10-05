@@ -452,6 +452,12 @@ creation according to their needs, the :class:`EnvBuilder` class.
         On POSIX systems, if a specific executable ``python3.x`` was used,
         symlinks to ``python`` and ``python3`` will be created pointing to that
         executable, unless files with those names already exist.
+        On POSIX systems, a broken symlink at a destination path is removed
+        before the copy or symlink is created.
+
+        .. versionchanged:: next
+           A broken symlink at a destination path is now removed and replaced.
+           Previously it was left in place, or it made the copy fail.
 
     .. method:: setup_scripts(context)
 

@@ -9,12 +9,12 @@ class X(Structure):
 
 class TestCase(unittest.TestCase):
     def test_simple(self):
-        with self.assertRaises(TypeError):
+        with self.assertRaises(AttributeError):
             del c_int(42).value
 
     def test_chararray(self):
         chararray = (c_char * 5)()
-        with self.assertRaises(TypeError):
+        with self.assertRaises(AttributeError):
             del chararray.value
 
     def test_pointer_contents(self):
