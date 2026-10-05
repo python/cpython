@@ -289,13 +289,13 @@ itertools.pairwise.__new__ as pairwise_new
     /
 Return an iterator of overlapping pairs taken from the input iterator.
 
-    s -> (s0,s1), (s1,s2), (s2, s3), ...
+    s -> (s0,s1), (s1,s2), (s2,s3), ...
 
 [clinic start generated code]*/
 
 static PyObject *
 pairwise_new_impl(PyTypeObject *type, PyObject *iterable)
-/*[clinic end generated code: output=9f0267062d384456 input=6e7c3cddb431a8d6]*/
+/*[clinic end generated code: output=9f0267062d384456 input=9a46953818e0801a]*/
 {
     PyObject *it;
     pairwiseobject *po;
