@@ -6,11 +6,13 @@ import signal
 import subprocess
 import sys
 import sysconfig
+import tempfile
 import types
 import unittest
 
 from test import support
 from test.support import findfile, MS_WINDOWS
+from test.support import os_helper
 
 
 if not support.has_subprocess_support:
@@ -23,6 +25,31 @@ if not sysconfig.get_config_var('WITH_DTRACE'):
 
 def abspath(filename):
     return os.path.abspath(findfile(filename, subdir="dtracedata"))
+
+
+def get_probe_binary():
+    binary = sys.executable
+    if sysconfig.get_config_var("Py_ENABLE_SHARED"):
+        lib_dir = sysconfig.get_config_var("LIBDIR")
+        if not lib_dir or sysconfig.is_python_build():
+            lib_dir = os.path.abspath(os.path.dirname(sys.executable))
+
+        lib_names = []
+        for name in (
+            sysconfig.get_config_var("INSTSONAME"),
+            sysconfig.get_config_var("LDLIBRARY"),
+        ):
+            if name and name not in lib_names:
+                lib_names.append(name)
+
+        if lib_dir:
+            for name in lib_names:
+                libpython_path = os.path.join(lib_dir, name)
+                if os.path.exists(libpython_path):
+                    binary = libpython_path
+                    break
+
+    return binary
 
 
 def normalize_trace_output(output):
@@ -57,21 +84,33 @@ def normalize_trace_output(output):
 
 
 USE_PROCESS_GROUP = (hasattr(os, "setsid") and hasattr(os, "killpg"))
+TERMINATE_TIMEOUT = 10
 
 def create_process_group(*args, **kwargs):
     if USE_PROCESS_GROUP:
         kwargs['start_new_session'] = True
     return subprocess.Popen(*args, **kwargs)
 
-def kill_process_group(proc):
+def terminate_process_group(proc):
     if USE_PROCESS_GROUP:
         try:
-            os.killpg(proc.pid, signal.SIGKILL)
+            os.killpg(proc.pid, signal.SIGTERM)
         except ProcessLookupError:
             pass
     else:
-        proc.kill()
-    proc.communicate()  # Clean up
+        proc.terminate()
+
+    try:
+        proc.communicate(timeout=TERMINATE_TIMEOUT)
+    except subprocess.TimeoutExpired:
+        if USE_PROCESS_GROUP:
+            try:
+                os.killpg(proc.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+        else:
+            proc.kill()
+        proc.communicate(timeout=TERMINATE_TIMEOUT)  # Clean up
 
 
 def run_readelf(cmd):
@@ -105,6 +144,7 @@ class TraceBackend:
     EXTENSION = None
     COMMAND = None
     COMMAND_ARGS = []
+    USABILITY_TIMEOUT = 10
 
     def run_case(self, name, optimize_python=None):
         try:
@@ -136,7 +176,7 @@ class TraceBackend:
         try:
             stdout, _ = proc.communicate(timeout=timeout)
         except subprocess.TimeoutExpired:
-            kill_process_group(proc)
+            terminate_process_group(proc)
             raise
         if check_returncode and proc.returncode:
             raise AssertionError(
@@ -156,7 +196,7 @@ class TraceBackend:
     def assert_usable(self):
         try:
             output = self.trace(abspath("assert_usable" + self.EXTENSION),
-                                timeout=10)
+                                timeout=self.USABILITY_TIMEOUT)
             output = output.strip()
         except subprocess.TimeoutExpired:
             raise unittest.SkipTest(
@@ -180,6 +220,57 @@ class DTraceBackend(TraceBackend):
 class SystemTapBackend(TraceBackend):
     EXTENSION = ".stp"
     COMMAND = ["stap", "-g"]
+    PROBE_PLACEHOLDER = "@PYTHON_SYSTEMTAP_PROBE@"
+    USABILITY_TIMEOUT = 60
+
+    @staticmethod
+    def quote_systemtap_string(value):
+        return value.replace("\\", "\\\\").replace('"', '\\"')
+
+    def python_probe(self):
+        executable = self.quote_systemtap_string(sys.executable)
+        probe_binary = get_probe_binary()
+        if probe_binary == sys.executable:
+            return f'process("{executable}").mark'
+
+        # Python built with --enable-shared
+        probe_binary = self.quote_systemtap_string(probe_binary)
+        return f'process("{executable}").library("{probe_binary}").mark'
+
+    def render_script(self, filename):
+        with open(filename) as fp:
+            script = fp.read()
+
+        return script.replace(self.PROBE_PLACEHOLDER, self.python_probe())
+
+    def generate_trace_command(self, script_file, subcommand=None):
+        probe_binary = get_probe_binary()
+        if subcommand and probe_binary != sys.executable:
+            library_path = os.path.dirname(probe_binary)
+            if existing_path := os.environ.get("LD_LIBRARY_PATH"):
+                library_path = os.pathsep.join((library_path, existing_path))
+            env = shlex.join(["env", f"LD_LIBRARY_PATH={library_path}"])
+            subcommand = f"{env} {subcommand}"
+
+        return super().generate_trace_command(script_file, subcommand)
+
+    def trace(self, script_file, subcommand=None, *, timeout=None,
+              check_returncode=False):
+        with tempfile.NamedTemporaryFile(
+            mode="w", encoding="utf-8", suffix=self.EXTENSION, delete=False
+        ) as script:
+            script.write(self.render_script(script_file))
+            generated_script_file = script.name
+
+        try:
+            return super().trace(
+                generated_script_file,
+                subcommand,
+                timeout=timeout,
+                check_returncode=check_returncode,
+            )
+        finally:
+            os_helper.unlink(generated_script_file)
 
 
 class BPFTraceBackend(TraceBackend):
@@ -273,7 +364,7 @@ gc__done:1""",
             python_flags.extend(["-O"] * optimize_python)
 
         subcommand = [sys.executable] + python_flags + [python_file]
-        program = self.PROGRAMS[name].format(python=sys.executable)
+        program = self.PROGRAMS[name].format(python=get_probe_binary())
 
         try:
             proc = create_process_group(
@@ -284,7 +375,7 @@ gc__done:1""",
             )
             stdout, stderr = proc.communicate(timeout=60)
         except subprocess.TimeoutExpired:
-            kill_process_group(proc)
+            terminate_process_group(proc)
             raise AssertionError("bpftrace timed out")
         except (FileNotFoundError, PermissionError) as e:
             raise unittest.SkipTest(f"bpftrace not available: {e}")
@@ -312,7 +403,7 @@ gc__done:1""",
 
     def assert_usable(self):
         # Check if bpftrace is available and can attach to USDT probes
-        program = f'usdt:{sys.executable}:python:function__entry {{ printf("probe: success\\n"); exit(); }}'
+        program = f'usdt:{get_probe_binary()}:python:function__entry {{ printf("probe: success\\n"); exit(); }}'
         try:
             proc = create_process_group(
                 ["bpftrace", "-e", program, "-c",
@@ -323,7 +414,7 @@ gc__done:1""",
             )
             stdout, stderr = proc.communicate(timeout=10)
         except subprocess.TimeoutExpired:
-            kill_process_group(proc)
+            terminate_process_group(proc)
             raise unittest.SkipTest("bpftrace timed out during usability check")
         except OSError as e:
             raise unittest.SkipTest(f"bpftrace not available: {e}")
@@ -455,28 +546,7 @@ class CheckDtraceProbes(unittest.TestCase):
         return int(match.group(1)), int(match.group(2))
 
     def get_readelf_output(self):
-        binary = sys.executable
-        if sysconfig.get_config_var("Py_ENABLE_SHARED"):
-            lib_dir = sysconfig.get_config_var("LIBDIR")
-            if not lib_dir or sysconfig.is_python_build():
-                lib_dir = os.path.abspath(os.path.dirname(sys.executable))
-
-            lib_names = []
-            for name in (
-                sysconfig.get_config_var("INSTSONAME"),
-                sysconfig.get_config_var("LDLIBRARY"),
-            ):
-                if name and name not in lib_names:
-                    lib_names.append(name)
-
-            if lib_dir:
-                for name in lib_names:
-                    libpython_path = os.path.join(lib_dir, name)
-                    if os.path.exists(libpython_path):
-                        binary = libpython_path
-                        break
-
-        return run_readelf(["readelf", "-n", binary])
+        return run_readelf(["readelf", "-n", get_probe_binary()])
 
     def test_check_probes(self):
         readelf_output = self.get_readelf_output()

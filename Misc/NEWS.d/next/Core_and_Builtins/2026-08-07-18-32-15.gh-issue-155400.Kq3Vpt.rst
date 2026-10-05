@@ -1,0 +1,5 @@
+Fix a deadlock in the free-threaded build between two threads assigning to a
+special method of the same class.  While applying the type slot updates with
+the world stopped, only the type lock was prevented from being released; the
+type dict mutex could still be released and re-acquired, in the wrong order,
+if the thread blocked on the stop-the-world mutex.

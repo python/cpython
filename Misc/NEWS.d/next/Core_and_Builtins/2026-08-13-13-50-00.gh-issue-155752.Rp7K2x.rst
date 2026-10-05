@@ -1,0 +1,2 @@
+Fix a crash when a :class:`types.GenericAlias` argument gains a
+``__typing_subst__`` hook after the alias parameters have been cached.

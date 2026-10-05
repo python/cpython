@@ -9,6 +9,7 @@
 #include "pycore_initconfig.h"    // _PyStatus_NO_MEMORY()
 #include "pycore_interp.h"        // PyInterpreterState.gc
 #include "pycore_interpframe.h"   // _PyFrame_GetLocalsArray()
+#include "pycore_list.h"          // _PyList_GetItemRef()
 #include "pycore_object_alloc.h"  // _PyObject_MallocWithType()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_tstate.h"        // _PyThreadStateImpl
@@ -547,7 +548,7 @@ static_assert(BUFFER_HI < BUFFER_SIZE &&
     #define PREFETCH_T1(ptr)  __builtin_prefetch(ptr, 0, 2)
     #define PREFETCH_T2(ptr)  __builtin_prefetch(ptr, 0, 1)
     #define PREFETCH_NTA(ptr)  __builtin_prefetch(ptr, 0, 0)
-#elif defined(_MSC_VER) && (defined(_M_X64) || defined(_M_I86)) && !defined(_M_ARM64EC)
+#elif defined(_MSC_VER) && (defined(_M_X64) || defined(_M_IX86)) && !defined(_M_ARM64EC)
     #include <mmintrin.h>
     #define PREFETCH_T0(ptr)  _mm_prefetch((const char*)(ptr), _MM_HINT_T0)
     #define PREFETCH_T1(ptr)  _mm_prefetch((const char*)(ptr), _MM_HINT_T1)
@@ -1940,24 +1941,25 @@ invoke_gc_callback(PyThreadState *tstate, const char *phase,
 
     /* The local variable cannot be rebound, check it for sanity */
     assert(PyList_CheckExact(gcstate->callbacks));
-    PyObject *info = NULL;
-    if (PyList_GET_SIZE(gcstate->callbacks) != 0) {
-        info = Py_BuildValue("{sisnsnsnsd}",
-            "generation", generation,
-            "collected", collected,
-            "uncollectable", uncollectable,
-            "candidates", candidates,
-            "duration", duration);
-        if (info == NULL) {
-            PyErr_FormatUnraisable("Exception ignored while "
-                                   "invoking gc callbacks");
-            return;
-        }
+    if (PyList_GET_SIZE(gcstate->callbacks) == 0) {
+        return;
+    }
+
+    PyObject *info = Py_BuildValue("{sisnsnsnsd}",
+        "generation", generation,
+        "collected", collected,
+        "uncollectable", uncollectable,
+        "candidates", candidates,
+        "duration", duration);
+    if (info == NULL) {
+        PyErr_FormatUnraisable("Exception ignored while "
+                               "invoking gc callbacks");
+        return;
     }
 
     PyObject *phase_obj = PyUnicode_FromString(phase);
     if (phase_obj == NULL) {
-        Py_XDECREF(info);
+        Py_DECREF(info);
         PyErr_FormatUnraisable("Exception ignored while "
                                "invoking gc callbacks");
         return;
@@ -1965,8 +1967,10 @@ invoke_gc_callback(PyThreadState *tstate, const char *phase,
 
     PyObject *stack[] = {phase_obj, info};
     for (Py_ssize_t i=0; i<PyList_GET_SIZE(gcstate->callbacks); i++) {
-        PyObject *r, *cb = PyList_GET_ITEM(gcstate->callbacks, i);
-        Py_INCREF(cb); /* make sure cb doesn't go away */
+        PyObject *r, *cb = _PyList_GetItemRef((PyListObject *)gcstate->callbacks, i);
+        if (cb == NULL) {
+            break;
+        }
         r = PyObject_Vectorcall(cb, stack, 2, NULL);
         if (r == NULL) {
             PyErr_FormatUnraisable("Exception ignored while "
@@ -1978,7 +1982,7 @@ invoke_gc_callback(PyThreadState *tstate, const char *phase,
         Py_DECREF(cb);
     }
     Py_DECREF(phase_obj);
-    Py_XDECREF(info);
+    Py_DECREF(info);
     assert(!_PyErr_Occurred(tstate));
 }
 
@@ -2283,6 +2287,12 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
 
     /* Update stats. */
     PyMutex_Lock(&gcstate->stats_mutex);
+    struct gc_stats *generation_stats = gcstate->generation_stats;
+    uint32_t seq = _Py_atomic_load_uint32_relaxed(&generation_stats->update_seq);
+    assert((seq & 1) == 0);
+    /* Odd seq tells the reader that an update is in progress. */
+    _Py_atomic_store_uint32_relaxed(&generation_stats->update_seq, seq + 1);
+    _Py_atomic_fence_seq_cst();
     struct gc_generation_stats *stats = get_stats(gcstate, generation);
     stats->ts_start = start;
     stats->ts_stop = stop;
@@ -2291,6 +2301,7 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     stats->uncollectable += n;
     stats->duration += duration;
     stats->candidates += state.candidates;
+    _Py_atomic_store_uint32_release(&generation_stats->update_seq, seq + 2);
     PyMutex_Unlock(&gcstate->stats_mutex);
 
     GC_STAT_ADD(generation, objects_collected, m);
@@ -2856,7 +2867,7 @@ static bool
 custom_visitor_wrapper(const mi_heap_t *heap, const mi_heap_area_t *area,
                        void *block, size_t block_size, void *args)
 {
-    PyObject *op = op_from_block(block, args, false);
+    PyObject *op = op_from_block(block, args, true);
     if (op == NULL) {
         return true;
     }

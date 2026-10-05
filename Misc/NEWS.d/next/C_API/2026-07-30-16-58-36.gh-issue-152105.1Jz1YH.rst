@@ -1,0 +1,6 @@
+Remove the :c:var:`!PyUnstable_ExecutableKinds` array, as well as the macros
+:c:macro:`!PyUnstable_EXECUTABLE_KIND_SKIP`,
+:c:macro:`!PyUnstable_EXECUTABLE_KIND_PY_FUNCTION`,
+:c:macro:`!PyUnstable_EXECUTABLE_KIND_BUILTIN_FUNCTION`,
+:c:macro:`!PyUnstable_EXECUTABLE_KIND_METHOD_DESCRIPTOR` and
+:c:macro:`!PyUnstable_EXECUTABLE_KINDS`, from the C API.

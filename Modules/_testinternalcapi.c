@@ -30,6 +30,7 @@
 #include "pycore_instruction_sequence.h"  // _PyInstructionSequence_New()
 #include "pycore_interpframe.h"   // _PyFrame_GetFunction()
 #include "pycore_jit.h"           // _PyJIT_AddressInJitCode()
+#include "pycore_lock.h"          // PyEvent_WaitTimed()
 #include "pycore_object.h"        // _PyObject_IsFreed()
 #include "pycore_optimizer.h"     // _Py_Executor_DependsOn
 #include "pycore_pathconfig.h"    // _PyPathConfig_ClearGlobal()
@@ -206,6 +207,23 @@ static PyObject*
 get_stack_margin(PyObject *self, PyObject *Py_UNUSED(args))
 {
     return PyLong_FromSize_t(_PyOS_STACK_MARGIN_BYTES);
+}
+
+static PyObject *
+test_stop_the_world(PyObject *self, PyObject *Py_UNUSED(args))
+{
+#ifdef Py_GIL_DISABLED
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    // Request consecutive pauses without running Python code between them.
+    for (int i = 0; i < 100; i++) {
+        _PyEval_StopTheWorld(interp);
+        // Give detached threads time to try to reattach during the pause.
+        PyEvent event = {0};
+        PyEvent_WaitTimed(&event, 10 * 1000 * 1000, /*detach=*/0);
+        _PyEval_StartTheWorld(interp);
+    }
+#endif
+    Py_RETURN_NONE;
 }
 
 #ifdef MS_WINDOWS
@@ -451,7 +469,7 @@ next_frame_pointer_is_valid(uintptr_t *frame_pointer, uintptr_t *next_fp,
 #endif
 }
 
-static PyObject *
+static PyObject * _Py_NO_SANITIZE_MEMORY
 manual_unwind_from_fp(uintptr_t *frame_pointer)
 {
     uintptr_t stack_min = 0;
@@ -1028,92 +1046,119 @@ get_getpath_codeobject(PyObject *self, PyObject *Py_UNUSED(args)) {
 }
 
 
+// Test _Py_EncodeLocale()
 static PyObject *
-encode_locale_ex(PyObject *self, PyObject *args)
+encode_locale(PyObject *self, PyObject *args)
 {
     PyObject *unicode;
     int current_locale = 0;
-    wchar_t *wstr;
     PyObject *res = NULL;
     const char *errors = NULL;
 
     if (!PyArg_ParseTuple(args, "U|is", &unicode, &current_locale, &errors)) {
         return NULL;
     }
-    wstr = PyUnicode_AsWideCharString(unicode, NULL);
+
+    // Accept embedded null characters
+    Py_ssize_t unused_wlen;
+    wchar_t *wstr = PyUnicode_AsWideCharString(unicode, &unused_wlen);
     if (wstr == NULL) {
         return NULL;
     }
     _Py_error_handler error_handler = _Py_GetErrorHandler(errors);
 
-    char *str = NULL;
-    size_t error_pos;
-    const char *reason = NULL;
-    int ret = _Py_EncodeLocaleEx(wstr,
-                                 &str, &error_pos, &reason,
-                                 current_locale, error_handler);
+    const char *str_canary = (const char*)0x1234;
+    char *str = (char*)str_canary;
+    size_t error_pos_canary = (size_t)-123;
+    size_t error_pos = error_pos_canary;
+    const size_t output_length_canary = (size_t)-456;
+    size_t output_length = output_length_canary;
+    int ret = _Py_EncodeLocale(wstr,
+                               &str, &output_length, &error_pos,
+                               current_locale, error_handler);
     PyMem_Free(wstr);
 
     switch(ret) {
     case 0:
-        res = PyBytes_FromString(str);
+        assert(str != NULL && str != str_canary);
+        assert(output_length != output_length_canary);
+        assert(error_pos == error_pos_canary);
+        res = PyBytes_FromStringAndSize(str, output_length);
         PyMem_RawFree(str);
         break;
-    case -1:
+    case _Py_CODEC_MEMORY_ERROR:
+        assert(str == NULL);
+        assert(output_length == 0);
+        assert(error_pos == 0);
         PyErr_NoMemory();
         break;
-    case -2:
-        PyErr_Format(PyExc_RuntimeError, "encode error: pos=%zu, reason=%s",
-                     error_pos, reason);
+    case _Py_CODEC_ENCODE_ERROR:
+        assert(str == NULL);
+        assert(output_length == 0);
+        assert(error_pos != error_pos_canary);
+        PyErr_Format(PyExc_RuntimeError, "encode error: pos=%zu", error_pos);
         break;
-    case -3:
+    case _Py_CODEC_UNSUPPORTED_ERROR_HANDLER:
+        assert(str == NULL);
+        assert(output_length == 0);
+        assert(error_pos == 0);
         PyErr_SetString(PyExc_ValueError, "unsupported error handler");
         break;
     default:
-        PyErr_SetString(PyExc_ValueError, "unknown error code");
+        PyErr_SetString(PyExc_SystemError, "unknown error code");
         break;
     }
     return res;
 }
 
 
+// Test _Py_DecodeLocale()
 static PyObject *
-decode_locale_ex(PyObject *self, PyObject *args)
+decode_locale(PyObject *self, PyObject *args)
 {
     char *str;
+    Py_ssize_t unused_len;
     int current_locale = 0;
     PyObject *res = NULL;
     const char *errors = NULL;
-
-    if (!PyArg_ParseTuple(args, "y|is", &str, &current_locale, &errors)) {
+    // Accept embedded null bytes in str
+    if (!PyArg_ParseTuple(args, "y#|is",
+                          &str, &unused_len, &current_locale, &errors)) {
         return NULL;
     }
     _Py_error_handler error_handler = _Py_GetErrorHandler(errors);
 
-    wchar_t *wstr = NULL;
-    size_t wlen = 0;
-    const char *reason = NULL;
-    int ret = _Py_DecodeLocaleEx(str,
-                                 &wstr, &wlen, &reason,
-                                 current_locale, error_handler);
+    const wchar_t *wstr_canary = (const wchar_t*)0x12345;
+    wchar_t *wstr = (wchar_t*)wstr_canary;
+    const size_t wlen_canary = (size_t)-123;
+    size_t wlen = wlen_canary;
+    int ret = _Py_DecodeLocale(str, &wstr, &wlen,
+                               current_locale, error_handler);
 
     switch(ret) {
     case 0:
+        assert(wstr != NULL && wstr != wstr_canary);
+        assert(wlen != wlen_canary);
         res = PyUnicode_FromWideChar(wstr, wlen);
         PyMem_RawFree(wstr);
         break;
-    case -1:
+    case _Py_CODEC_MEMORY_ERROR:
+        assert(wstr == NULL);
+        assert(wlen == 0);
         PyErr_NoMemory();
         break;
-    case -2:
-        PyErr_Format(PyExc_RuntimeError, "decode error: pos=%zu, reason=%s",
-                     wlen, reason);
+    case _Py_CODEC_DECODE_ERROR:
+        assert(wstr == NULL);
+        assert(wlen != wlen_canary);
+        PyErr_Format(PyExc_RuntimeError, "decode error: pos=%zu", wlen);
         break;
-    case -3:
+    case _Py_CODEC_UNSUPPORTED_ERROR_HANDLER:
+        assert(wstr == NULL);
+        assert(wlen == 0);
         PyErr_SetString(PyExc_ValueError, "unsupported error handler");
         break;
     default:
-        PyErr_SetString(PyExc_ValueError, "unknown error code");
+        PyErr_SetString(PyExc_SystemError, "unknown error code");
         break;
     }
     return res;
@@ -1357,13 +1402,16 @@ _testinternalcapi_assemble_code_object_impl(PyObject *module,
     umd.u_cellvars = PyDict_GetItemString(metadata, "cellvars");
     umd.u_freevars = PyDict_GetItemString(metadata, "freevars");
     umd.u_fasthidden = PyDict_GetItemString(metadata, "fasthidden");
+    if (umd.u_fasthidden == Py_None) {
+        umd.u_fasthidden = NULL;
+    }
 
     assert(PyDict_Check(umd.u_consts));
     assert(PyDict_Check(umd.u_names));
     assert(PyDict_Check(umd.u_varnames));
     assert(PyDict_Check(umd.u_cellvars));
     assert(PyDict_Check(umd.u_freevars));
-    assert(PyDict_Check(umd.u_fasthidden));
+    assert(umd.u_fasthidden == NULL || PySet_Check(umd.u_fasthidden));
 
     umd.u_argcount = get_nonnegative_int_from_dict(metadata, "argcount");
     umd.u_posonlyargcount = get_nonnegative_int_from_dict(metadata, "posonlyargcount");
@@ -2062,8 +2110,8 @@ check_pyobject_forbidden_bytes_is_freed(PyObject *self,
 static PyObject *
 check_pyobject_freed_is_freed(PyObject *self, PyObject *Py_UNUSED(args))
 {
-    /* ASan or TSan would report an use-after-free error */
-#if defined(_Py_ADDRESS_SANITIZER) || defined(_Py_THREAD_SANITIZER)
+    /* ASan, MSan or TSan would report an error. */
+#if defined(_Py_ADDRESS_SANITIZER) || defined(_Py_THREAD_SANITIZER) || defined(_Py_MEMORY_SANITIZER)
     Py_RETURN_NONE;
 #else
     PyObject *op = PyObject_CallNoArgs((PyObject *)&PyBaseObject_Type);
@@ -2312,8 +2360,7 @@ destroy_interpreter(PyObject *self, PyObject *args, PyObject *kwargs)
         }
         t2 = PyThreadState_New(interp);
         prev = PyThreadState_Swap(t2);
-        PyThreadState_Clear(t1);
-        PyThreadState_Delete(t1);
+        // t1 is deliberately left alive; Py_EndInterpreter() must clean it up.
         Py_EndInterpreter(t2);
         PyThreadState_Swap(prev);
     }
@@ -3207,6 +3254,28 @@ test_thread_state_ensure_from_view_interp_switch(PyObject *self, PyObject *unuse
     Py_RETURN_NONE;
 }
 
+static PyObject *
+unicodewriter_overflow(PyObject *self, PyObject *unused)
+{
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
+    if (writer == NULL) {
+        return NULL;
+    }
+    if (PyUnicodeWriter_WriteASCII(writer, "hello", -1) < 0) {
+        PyUnicodeWriter_Discard(writer);
+        return NULL;
+    }
+
+    _PyUnicodeWriter *impl = (_PyUnicodeWriter*)writer;
+    PyObject *buffer = impl->buffer;
+    Py_ssize_t index = PyUnicode_GET_LENGTH(buffer);
+    PyUnicode_WRITE(impl->kind, impl->data, index, '#');  // overflow!
+
+    // Spoiler: the function doesn't return if an overflow is detected
+    // in debug mode
+    return PyUnicodeWriter_Finish(writer);
+}
+
 /* Self interrupting context manager */
 
 typedef struct {
@@ -3274,6 +3343,7 @@ static PyMethodDef module_functions[] = {
     {"get_c_recursion_remaining", get_c_recursion_remaining, METH_NOARGS},
     {"get_stack_pointer", get_stack_pointer, METH_NOARGS},
     {"get_stack_margin", get_stack_margin, METH_NOARGS},
+    {"test_stop_the_world", test_stop_the_world, METH_NOARGS},
     {"classify_stack_addresses", classify_stack_addresses, METH_VARARGS},
     {"get_jit_code_ranges", get_jit_code_ranges, METH_NOARGS},
     {"get_jit_backend", get_jit_backend, METH_NOARGS},
@@ -3288,8 +3358,8 @@ static PyMethodDef module_functions[] = {
     {"test_bytes_find", test_bytes_find, METH_NOARGS},
     {"normalize_path", normalize_path, METH_O, NULL},
     {"get_getpath_codeobject", get_getpath_codeobject, METH_NOARGS, NULL},
-    {"EncodeLocaleEx", encode_locale_ex, METH_VARARGS},
-    {"DecodeLocaleEx", decode_locale_ex, METH_VARARGS},
+    {"encode_locale", encode_locale, METH_VARARGS},
+    {"decode_locale", decode_locale, METH_VARARGS},
     {"set_eval_frame_default", set_eval_frame_default, METH_NOARGS, NULL},
     {"set_eval_frame_interp", set_eval_frame_interp, METH_VARARGS, NULL},
     {"set_eval_frame_record", set_eval_frame_record, METH_O, NULL},
@@ -3394,6 +3464,7 @@ static PyMethodDef module_functions[] = {
     {"test_interp_guard_countdown", test_interp_guard_countdown, METH_NOARGS},
     {"test_interp_view_countdown", test_interp_view_countdown, METH_NOARGS},
     {"test_thread_state_ensure_from_view_interp_switch", test_thread_state_ensure_from_view_interp_switch, METH_NOARGS},
+    {"unicodewriter_overflow", unicodewriter_overflow, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
@@ -3420,7 +3491,13 @@ module_exec(PyObject *module)
     if (_PyTestInternalCapi_Init_CriticalSection(module) < 0) {
         return 1;
     }
+    if (_PyTestInternalCapi_Init_Tokenizer(module) < 0) {
+        return 1;
+    }
     if (_PyTestInternalCapi_Init_Tuple(module) < 0) {
+        return 1;
+    }
+    if (_PyTestInternalCapi_Init_TypeCache(module) < 0) {
         return 1;
     }
 
@@ -3493,6 +3570,10 @@ module_exec(PyObject *module)
         return 1;
     }
     PyModule_AddObject(module, "SelfInterruptingContextManager", (PyObject *)&SelfInterruptingContextManager_Type);
+
+    if (PyModule_AddIntMacro(module, _Py_MAX_UNICODE) < 0) {
+        return 1;
+    }
 
     return 0;
 }

@@ -9,6 +9,8 @@ import tempfile
 import unittest
 from collections import defaultdict
 
+from test.support import captured_stderr
+
 try:
     import _remote_debugging
     from _remote_debugging import (
@@ -25,6 +27,7 @@ try:
     )
     from profiling.sampling.binary_collector import BinaryCollector
     from profiling.sampling.binary_reader import BinaryReader, convert_binary_to_format
+    from profiling.sampling.constants import PROFILING_MODE_CPU
     from profiling.sampling.gecko_collector import GeckoCollector
 
     ZSTD_AVAILABLE = _remote_debugging.zstd_available()
@@ -151,19 +154,24 @@ class BinaryFormatTestBase(unittest.TestCase):
             if os.path.exists(f):
                 os.unlink(f)
 
-    def create_binary_file(self, samples, interval=1000, compression="none"):
+    def create_binary_file(self, samples, interval=1000, compression="none",
+                           mode=None, capture_config=None):
         """Create a test binary file and track it for cleanup."""
-        filename, _ = self.write_binary_file(samples, interval, compression)
+        filename, _ = self.write_binary_file(
+            samples, interval, compression, mode, capture_config
+        )
         return filename
 
-    def write_binary_file(self, samples, interval=1000, compression="none"):
+    def write_binary_file(self, samples, interval=1000, compression="none",
+                          mode=None, capture_config=None):
         """Like create_binary_file but also returns the writer collector."""
         with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as f:
             filename = f.name
         self.temp_files.append(filename)
 
         collector = BinaryCollector(
-            filename, interval, compression=compression
+            filename, interval, compression=compression, mode=mode,
+            capture_config=capture_config,
         )
         for sample in samples:
             collector.collect(sample)
@@ -516,6 +524,37 @@ class TestBinaryRoundTrip(BinaryFormatTestBase):
                     info = reader.get_info()
                     self.assertEqual(info["sample_interval_us"], interval)
 
+    def test_profiling_mode_preserved(self):
+        filename = self.create_binary_file([], mode=PROFILING_MODE_CPU)
+        with BinaryReader(filename) as reader:
+            self.assertEqual(reader.get_info()["mode"], PROFILING_MODE_CPU)
+
+    def test_missing_profiling_mode_is_unknown(self):
+        filename = self.create_binary_file([])
+        with BinaryReader(filename) as reader:
+            self.assertIsNone(reader.get_info()["mode"])
+
+    def test_capture_config_preserved(self):
+        capture_config = {
+            "all_threads": True,
+            "native": True,
+            "gc": False,
+            "opcodes": True,
+            "blocking": False,
+        }
+        filename = self.create_binary_file(
+            [], capture_config=capture_config
+        )
+        with BinaryReader(filename) as reader:
+            self.assertEqual(
+                reader.get_info()["capture_config"], capture_config
+            )
+
+    def test_missing_capture_config_is_unknown(self):
+        filename = self.create_binary_file([])
+        with BinaryReader(filename) as reader:
+            self.assertIsNone(reader.get_info()["capture_config"])
+
     def test_threads_interleaved_samples(self):
         """Multiple threads with interleaved varying samples."""
         samples = []
@@ -627,6 +666,26 @@ class TestBinaryRoundTrip(BinaryFormatTestBase):
         samples = [[make_interpreter(0, [make_thread(1, [f])]) for f in frames]]
         collector, count = self.roundtrip(samples)
         self.assertEqual(count, 3)
+
+    def test_synthetic_frames_roundtrip(self):
+        """Degraded/sentinel frames (location=None) survive the binary format."""
+        frames = [
+            FrameInfo(("~", None, name, None))
+            for name in (
+                "<GC>",
+                "<native>",
+                "<unknown function>",
+                "<unknown file>",
+                "<unreadable frame>",
+            )
+        ]
+        frames.append(FrameInfo(("app.py", None, "<unknown function>", None)))
+        frames.append(FrameInfo(("<unknown file>", None, "real_func", None)))
+        samples = [[make_interpreter(0, [make_thread(1, frames)])]]
+
+        collector, count = self.roundtrip(samples)
+        self.assertEqual(count, 1)
+        self.assert_samples_equal(samples, collector)
 
 
 class TestBinaryEdgeCases(BinaryFormatTestBase):
@@ -993,6 +1052,142 @@ class TestBinaryEdgeCases(BinaryFormatTestBase):
             w.write_sample(sample, i * 1000)
         w.close()
         self.assertEqual(w.total_samples, 0)
+
+    def test_binary_collector_stops_gracefully_on_overflow(self):
+        """OverflowError from the writer stops collection via the running
+        protocol instead of propagating and corrupting the file.
+        See gh-151292."""
+        with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as f:
+            filename = f.name
+        self.temp_files.append(filename)
+
+        collector = BinaryCollector(filename, 1000, compression="none")
+        self.assertTrue(collector.running)
+
+        sample = [
+            make_interpreter(0, [make_thread(1, [make_frame("a.py", 1, "f")])])
+        ]
+
+        # Collect real samples first, then hit the limit.
+        for i in range(3):
+            collector.collect(sample, timestamp_us=(i + 1) * 1000)
+        self.assertTrue(collector.running)
+
+        bad = [make_interpreter(2**32, sample[0].threads)]
+        with captured_stderr() as stderr:
+            collector.collect(bad, timestamp_us=4000)
+            collector.collect(sample, timestamp_us=5000)
+
+        self.assertFalse(collector.running)
+        self.assertTrue(collector._writer.limit_reached)
+        self.assertEqual(stderr.getvalue().count("Warning:"), 1)
+        self.assertIn("interpreter_id", stderr.getvalue())
+
+        collector.export(None)
+
+        self.assertEqual(collector.total_samples, 3)
+
+        reader_collector = RawCollector()
+        with BinaryReader(filename) as reader:
+            self.assertEqual(reader.replay_samples(reader_collector), 3)
+
+    def test_interpreter_id_overflow_rejected(self):
+        """An interpreter_id wider than u32 raises OverflowError before any
+        writer state is mutated: subsequent valid samples are still accepted
+        and finalize produces a readable file."""
+        with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as f:
+            filename = f.name
+        self.temp_files.append(filename)
+
+        good = [
+            make_interpreter(0, [make_thread(1, [make_frame("a.py", 1, "f")])])
+        ]
+        bad = [
+            make_interpreter(2**32, [make_thread(1, [make_frame("a.py", 1, "f")])])
+        ]
+
+        writer = _remote_debugging.BinaryWriter(filename, 1000, 0, compression=0)
+        writer.write_sample(good, 1000)
+        with self.assertRaises(OverflowError):
+            writer.write_sample(bad, 2000)
+        writer.write_sample(good, 3000)
+        writer.finalize()
+        self.assertEqual(writer.total_samples, 2)
+
+        reader_collector = RawCollector()
+        with BinaryReader(filename) as reader:
+            self.assertEqual(reader.replay_samples(reader_collector), 2)
+
+    def test_writer_finalizes_after_format_limit(self):
+        for compression in (0, 1) if ZSTD_AVAILABLE else (0,):
+            with self.subTest(compression=compression):
+                with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as f:
+                    filename = f.name
+                self.temp_files.append(filename)
+                good = [make_interpreter(0, [
+                    make_thread(1, [make_frame("a.py", 1, "f")])
+                ])]
+                bad = [make_interpreter(2**32, good[0].threads)]
+                writer = _remote_debugging.BinaryWriter(
+                    filename, 1000, 0, compression=compression
+                )
+                with self.assertRaises(OverflowError):
+                    with writer:
+                        writer.write_sample(good, 1000)
+                        writer.write_sample(good, 2000)
+                        # The first interpreter is committed before the limit.
+                        writer.write_sample(good + bad, 3000)
+                self.assertEqual(writer.total_samples, 3)
+                with BinaryReader(filename) as reader:
+                    self.assertEqual(reader.replay_samples(RawCollector()), 3)
+
+    def test_collector_does_not_swallow_unrelated_overflow(self):
+        class BadStatus:
+            def __index__(self):
+                raise OverflowError("status conversion failed")
+
+        with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as f:
+            filename = f.name
+        self.temp_files.append(filename)
+        collector = BinaryCollector(filename, 1000, compression="none")
+        self.addCleanup(collector._writer.close)
+        sample = [make_interpreter(0, [make_thread(1, [], BadStatus())])]
+        with captured_stderr() as stderr:
+            with self.assertRaisesRegex(OverflowError, "status conversion failed"):
+                collector.collect(sample, timestamp_us=1000)
+        self.assertEqual(stderr.getvalue(), "")
+        self.assertFalse(collector._writer.limit_reached)
+        with self.assertRaisesRegex(ValueError, "broken"):
+            collector.export()
+        with self.assertRaisesRegex(ValueError, "broken"):
+            collector._writer.write_sample([], 2000)
+        # Closing a broken writer must not attempt to finalize it.
+        collector.__exit__(None, None, None)
+
+    def test_collector_finalizes_after_external_exception(self):
+        with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as f:
+            filename = f.name
+        self.temp_files.append(filename)
+        with self.assertRaisesRegex(RuntimeError, "sampling failed"):
+            with BinaryCollector(filename, 1000, compression="none") as collector:
+                collector.collect([make_interpreter(0, [make_thread(1, [])])])
+                raise RuntimeError("sampling failed")
+        self.assertEqual(collector.total_samples, 1)
+        with BinaryReader(filename) as reader:
+            self.assertEqual(reader.replay_samples(RawCollector()), 1)
+
+    @unittest.skipUnless(os.path.exists("/dev/full"), "requires /dev/full")
+    def test_finalize_failure_breaks_writer(self):
+        writer = _remote_debugging.BinaryWriter("/dev/full", 1000, 0)
+        self.addCleanup(writer.close)
+        writer.write_sample([make_interpreter(0, [make_thread(1, [])])], 1000)
+        with self.assertRaises(OSError):
+            writer.finalize()
+        self.assertFalse(writer.limit_reached)
+        with self.assertRaisesRegex(ValueError, "broken"):
+            writer.finalize()
+        with self.assertRaisesRegex(ValueError, "broken"):
+            writer.write_sample([], 2000)
 
 
 class TestBinaryFormatValidation(BinaryFormatTestBase):
@@ -1580,11 +1775,103 @@ class TestTimestampPreservation(BinaryFormatTestBase):
         self.assertEqual(ts_collector.all_timestamps, expected_timestamps)
 
 
+class TestBinaryReplayToFlamegraph(BinaryFormatTestBase):
+    def test_replay_includes_persisted_stats(self):
+        frames = [
+            make_frame("hot.py", 99, "hot_func"),
+            make_frame("main.py", 1, "main"),
+        ]
+        samples = [
+            [
+                make_interpreter(
+                    0,
+                    [make_thread(1, frames, THREAD_STATUS_HAS_GIL)],
+                )
+            ]
+            for _ in range(5)
+        ]
+        with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as file:
+            bin_path = file.name
+        self.temp_files.append(bin_path)
+        collector = BinaryCollector(bin_path, 2000, compression="none")
+        for sample in samples:
+            collector.collect(sample)
+        collector.set_stats(
+            2000, 1.25, 4.0, error_rate=2.5, missed_samples=1.5
+        )
+        collector.export(None)
+
+        with BinaryReader(bin_path) as reader:
+            info = reader.get_info()
+        self.assertEqual(info["duration_sec"], 1.25)
+        self.assertEqual(info["sample_rate"], 4.0)
+        self.assertEqual(info["error_rate"], 2.5)
+        self.assertEqual(info["missed_samples"], 1.5)
+
+        with tempfile.NamedTemporaryFile(suffix=".html", delete=False) as file:
+            html_path = file.name
+        self.temp_files.append(html_path)
+
+        convert_binary_to_format(bin_path, html_path, "flamegraph")
+
+        with open(html_path, encoding="utf-8") as file:
+            content = file.read()
+        self.assertIn('"duration_sec": 1.25', content)
+        self.assertIn('"sample_rate": 4.0', content)
+        self.assertIn('"error_rate": 2.5', content)
+        self.assertIn('"missed_samples": 1.5', content)
+
+    def test_legacy_binary_has_no_measured_stats(self):
+        frame = make_frame("hot.py", 99, "hot_func")
+        bin_path = self.create_binary_file([
+            [make_interpreter(0, [make_thread(1, [frame])])]
+        ])
+
+        with BinaryReader(bin_path) as reader:
+            info = reader.get_info()
+
+        self.assertIsNone(info["duration_sec"])
+        self.assertIsNone(info["sample_rate"])
+        self.assertIsNone(info["error_rate"])
+        self.assertIsNone(info["missed_samples"])
+
+    def test_original_stats_extension_remains_readable(self):
+        frame = make_frame("hot.py", 99, "hot_func")
+        with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as file:
+            bin_path = file.name
+        self.temp_files.append(bin_path)
+        collector = BinaryCollector(bin_path, 2000, compression="none")
+        collector.collect([
+            make_interpreter(0, [make_thread(1, [frame])])
+        ])
+        collector.set_stats(2000, 1.25, 4.0)
+        collector.export(None)
+
+        with open(bin_path, "rb") as file:
+            data = file.read()
+        stats = data[-88:-32]
+        footer = bytearray(data[-32:])
+        old_stats = stats[:16] + b"TACHSTAT" + struct.pack("=II", 1, 32)
+        old_data = bytearray(data[:-88] + old_stats + footer)
+        struct.pack_into("=Q", old_data, -24, len(old_data))
+        with open(bin_path, "wb") as file:
+            file.write(old_data)
+
+        with BinaryReader(bin_path) as reader:
+            info = reader.get_info()
+        self.assertEqual(info["duration_sec"], 1.25)
+        self.assertEqual(info["sample_rate"], 4.0)
+        self.assertIsNone(info["error_rate"])
+        self.assertIsNone(info["missed_samples"])
+
+
 class TestBinaryReplayToJsonl(BinaryFormatTestBase):
     """Tests for binary -> JSONL replay via convert_binary_to_format."""
 
-    def _replay_to_jsonl(self, samples, interval=1000):
-        bin_path = self.create_binary_file(samples, interval=interval)
+    def _replay_to_jsonl(self, samples, interval=1000, mode=None):
+        bin_path = self.create_binary_file(
+            samples, interval=interval, mode=mode
+        )
         with tempfile.NamedTemporaryFile(suffix=".jsonl", delete=False) as f:
             jsonl_path = f.name
         self.temp_files.append(jsonl_path)
@@ -1613,6 +1900,16 @@ class TestBinaryReplayToJsonl(BinaryFormatTestBase):
 
         self.assertEqual(len(frame_defs), 1)
         self.assertEqual(frame_defs[0]["line"], 99)
+
+    def test_binary_replay_to_jsonl_preserves_mode(self):
+        frame = make_frame("hot.py", 99, "hot_func")
+        records = self._replay_to_jsonl(
+            [[make_interpreter(0, [make_thread(1, [frame])])]],
+            mode=PROFILING_MODE_CPU,
+        )
+
+        meta = next(record for record in records if record["type"] == "meta")
+        self.assertEqual(meta["mode"], "cpu")
 
     def test_binary_replay_to_jsonl_rle_weight_propagation(self):
         """RLE-batched identical samples land as a single agg entry with the right total."""
