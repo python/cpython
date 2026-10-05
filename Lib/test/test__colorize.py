@@ -2,7 +2,6 @@ import contextlib
 import dataclasses
 import io
 import sys
-import tempfile
 import unittest
 import unittest.mock
 import _colorize
@@ -189,8 +188,8 @@ class TestColorizeFunction(unittest.TestCase):
                 self.assertEqual(_colorize.can_colorize(file=file), False)
 
             # gh-157581: A closed file raises ValueError from fileno().
-            file = tempfile.TemporaryFile(mode="w")
-            file.close()
+            file = unittest.mock.Mock()
+            file.fileno.side_effect = ValueError
             self.assertFalse(_colorize.can_colorize(file=file))
 
 
