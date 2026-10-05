@@ -1,0 +1,3 @@
+Fix ``_Py_ThreadId()`` compilation on Windows ARM64 with MinGW toolchains,
+where ``__getReg()`` is unavailable. The TEB address is now read directly
+from ``x18``. Patch by Christian Aurich.

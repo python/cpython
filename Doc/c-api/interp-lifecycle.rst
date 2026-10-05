@@ -127,6 +127,11 @@ Initializing and finalizing the interpreter
    interpreter, populating the runtime configuration structure, and querying
    the returned status structure.
 
+   .. versionchanged:: next
+      The function no longer returns an exit code if a command line option
+      wants to exit Python. Instead, the option is processed in
+      :c:func:`Py_RunMain`.
+
 
 .. c:function:: int Py_IsInitialized()
 
@@ -509,7 +514,7 @@ Process-wide parameters
    Return the version of this Python interpreter.  This is a string that looks
    something like ::
 
-      "3.0a5+ (py3k:63103M, May 12 2008, 00:53:55) \n[GCC 4.2.3]"
+      "3.15.0rc2 (3.15.0~rc2-1.fc44.x86_64, Sep  3 2026, 00:00:00) [GCC 16.2.1 20260819 (Red Hat 16.2.1-2)]"
 
    .. index:: single: version (in module sys)
 

@@ -340,6 +340,40 @@ class RemoteInspectionTestBase(unittest.TestCase):
             finally:
                 _cleanup_sockets(client_socket, server_socket)
 
+    @contextmanager
+    def _target_process(self, script_body):
+        """Context manager for running a target process with socket sync."""
+        port = find_unused_port()
+        script = f"""\
+import socket
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+sock.connect(('localhost', {port}))
+{textwrap.dedent(script_body)}
+"""
+
+        with os_helper.temp_dir() as work_dir:
+            script_dir = os.path.join(work_dir, "script_pkg")
+            os.mkdir(script_dir)
+
+            server_socket = _create_server_socket(port)
+            script_name = _make_test_script(script_dir, "script", script)
+            client_socket = None
+
+            try:
+                with _managed_subprocess([sys.executable, script_name]) as p:
+                    client_socket, _ = server_socket.accept()
+                    server_socket.close()
+                    server_socket = None
+
+                    def make_unwinder(cache_frames=True):
+                        return RemoteUnwinder(
+                            p.pid, all_threads=True, cache_frames=cache_frames
+                        )
+
+                    yield p, client_socket, make_unwinder
+            finally:
+                _cleanup_sockets(client_socket, server_socket)
+
     def _find_frame_in_trace(self, stack_trace, predicate):
         """
         Find a frame matching predicate in stack trace.
@@ -1510,6 +1544,71 @@ class TestGetStackTrace(RemoteInspectionTestBase):
         sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
         "Test only runs on Linux with process_vm_readv support",
     )
+    def test_async_awaited_by_skips_set_tombstones(self):
+        script_body = """\
+            import asyncio
+
+            class RemovedTask(asyncio.Task):
+                def __hash__(self):
+                    return 0
+
+            class RemainingTask(asyncio.Task):
+                def __hash__(self):
+                    return 1
+
+            async def main():
+                victim = asyncio.current_task()
+                victim.set_name("victim")
+                removed = RemovedTask(
+                    asyncio.sleep(10_000), name="removed"
+                )
+                remaining = RemainingTask(
+                    asyncio.sleep(10_000), name="remaining"
+                )
+
+                asyncio.future_add_to_awaited_by(victim, removed)
+                asyncio.future_add_to_awaited_by(victim, remaining)
+
+                # Removing hash 0 leaves a dummy in slot 0 before the only
+                # active entry in slot 1. It must not count toward the set's
+                # used entries.
+                asyncio.future_discard_from_awaited_by(victim, removed)
+
+                sock.sendall(b"ready")
+                sock.recv(16)
+
+            asyncio.run(main())
+            """
+
+        with self._target_process(script_body) as (
+            _,
+            client_socket,
+            make_unwinder,
+        ):
+            _wait_for_signal(client_socket, b"ready")
+
+            for method_name in (
+                "get_async_stack_trace",
+                "get_all_awaited_by",
+            ):
+                with self.subTest(method=method_name):
+                    unwinder = make_unwinder(cache_frames=False)
+                    stack_trace = getattr(unwinder, method_name)()
+                    relationships = self._get_awaited_by_relationships(
+                        stack_trace
+                    )
+                    self.assertEqual(
+                        relationships["victim"],
+                        {"remaining"},
+                    )
+
+            client_socket.sendall(b"done")
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
     def test_async_global_awaited_by_from_non_main_thread(self):
         port = find_unused_port()
         script = textwrap.dedent(
@@ -2327,6 +2426,127 @@ while True:
                   location.col_offset, location.end_col_offset)
         self.assertIn(actual, valid_locations)
 
+    @skip_if_not_supported
+    @unittest.skipIf(sys._is_gil_enabled(), "Requires free-threading")
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Requires process_vm_readv",
+    )
+    def test_tlbc_cache_refresh_after_growth(self):
+        # Reproducer from gh-157660.
+        script = textwrap.dedent("""\
+            import os, threading
+            from _remote_debugging import RemoteUnwinder
+            from test import support
+
+            go = threading.Event()
+            stop = threading.Event()
+
+            def leaf():
+                stop.wait()
+
+            def wait_for_leaf_frames(u, expected_count):
+                for _ in support.sleeping_retry(
+                    support.SHORT_TIMEOUT,
+                    f"Expected {expected_count} leaf frames",
+                ):
+                    try:
+                        traces = u.get_stack_trace()
+                    except RuntimeError as exc:
+                        if str(exc) != "Failed to parse initial frame in chain":
+                            raise
+                        continue
+                    count = sum(
+                        f.funcname == "leaf"
+                        for i in traces
+                        for t in i.threads for f in t.frame_info
+                    )
+                    if count == expected_count:
+                        return
+
+            threading.Thread(target=leaf, daemon=True).start()
+            for _ in range(16):
+                threading.Thread(target=stop.wait, daemon=True).start()
+            threading.Thread(target=lambda: (go.wait(), leaf()), daemon=True).start()
+
+            u = RemoteUnwinder(os.getpid(), all_threads=True, cache_frames=False)
+            wait_for_leaf_frames(u, 1)
+            go.set()
+            wait_for_leaf_frames(u, 2)
+            """)
+        result = subprocess.run(
+            [sys.executable, "-X", "gil=0", "-X", "tlbc=1", "-c", script],
+            capture_output=True,
+            text=True,
+            timeout=SHORT_TIMEOUT,
+        )
+        self.assertEqual(
+            result.returncode, 0,
+            f"stdout: {result.stdout}\nstderr: {result.stderr}",
+        )
+
+    @skip_if_not_supported
+    @unittest.skipIf(sys._is_gil_enabled(), "Requires free-threading")
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Requires process_vm_readv",
+    )
+    def test_tlbc_cache_refresh_after_slot_fill(self):
+        # Reproducer from gh-157660.
+        script = textwrap.dedent("""\
+            import os, threading
+            from _remote_debugging import RemoteUnwinder
+
+            go = threading.Event()
+            stop = threading.Event()
+
+            def leaf():
+                stop.wait()
+
+            from test import support
+
+            def lines(u, expected_count):
+                for _ in support.sleeping_retry(
+                    support.SHORT_TIMEOUT,
+                    f"Expected {expected_count} leaf frames",
+                ):
+                    try:
+                        traces = u.get_stack_trace()
+                    except RuntimeError as exc:
+                        if str(exc) != "Failed to parse initial frame in chain":
+                            raise
+                        continue
+                    result = sorted(
+                        f.location.lineno
+                        for i in traces
+                        for t in i.threads for f in t.frame_info
+                        if f.funcname == "leaf"
+                    )
+                    # A new frame can still point at the function definition.
+                    if (len(result) == expected_count and
+                        leaf.__code__.co_firstlineno not in result):
+                        return result
+
+            threading.Thread(target=leaf, daemon=True).start()
+            threading.Thread(target=lambda: (go.wait(), leaf()), daemon=True).start()
+            u = RemoteUnwinder(os.getpid(), all_threads=True, cache_frames=False)
+            before = lines(u, 1)
+            assert before == [8], before
+            go.set()
+            cached = lines(u, 2)
+            assert cached == [8, 8], cached
+            """)
+        result = subprocess.run(
+            [sys.executable, "-X", "gil=0", "-X", "tlbc=1", "-c", script],
+            capture_output=True,
+            text=True,
+            timeout=SHORT_TIMEOUT,
+        )
+        self.assertEqual(
+            result.returncode, 0,
+            f"stdout: {result.stdout}\nstderr: {result.stderr}",
+        )
+
 
 class TestUnsupportedPlatformHandling(unittest.TestCase):
     @unittest.skipIf(
@@ -3068,40 +3288,6 @@ class TestFrameCaching(RemoteInspectionTestBase):
     Uses socket-based synchronization for deterministic testing.
     All tests verify cache reuse via object identity checks (assertIs).
     """
-
-    @contextmanager
-    def _target_process(self, script_body):
-        """Context manager for running a target process with socket sync."""
-        port = find_unused_port()
-        script = f"""\
-import socket
-sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-sock.connect(('localhost', {port}))
-{textwrap.dedent(script_body)}
-"""
-
-        with os_helper.temp_dir() as work_dir:
-            script_dir = os.path.join(work_dir, "script_pkg")
-            os.mkdir(script_dir)
-
-            server_socket = _create_server_socket(port)
-            script_name = _make_test_script(script_dir, "script", script)
-            client_socket = None
-
-            try:
-                with _managed_subprocess([sys.executable, script_name]) as p:
-                    client_socket, _ = server_socket.accept()
-                    server_socket.close()
-                    server_socket = None
-
-                    def make_unwinder(cache_frames=True):
-                        return RemoteUnwinder(
-                            p.pid, all_threads=True, cache_frames=cache_frames
-                        )
-
-                    yield p, client_socket, make_unwinder
-            finally:
-                _cleanup_sockets(client_socket, server_socket)
 
     def _get_frames_with_retry(self, unwinder, required_funcs):
         """Get frames containing required_funcs, with retry for transient errors."""
@@ -3987,7 +4173,7 @@ class TestMetadataDegradation(RemoteInspectionTestBase):
         location instead of failing the whole sample."""
         src = (
             "def big(sample):\n"
-            + "    x = 1\n" * 16_000
+            + "    x = 1\n" * 20_000
             + "    return sample()\n"
         )
         ns = {}
@@ -4009,51 +4195,186 @@ class TestMetadataDegradation(RemoteInspectionTestBase):
     def test_dead_process_raises_not_degrades(self):
         """Death of the target raises ProcessLookupError instead of
         degrading to synthetic frames."""
-        port = find_unused_port()
-        script = textwrap.dedent(
-            f"""\
-            import time, socket
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.connect(('localhost', {port}))
+        script_body = """\
+            import time
             sock.sendall(b"ready")
             time.sleep(10_000)
             """
+        with self._target_process(script_body) as (p, client_socket, make_unwinder):
+            _wait_for_signal(client_socket, b"ready")
+            unwinder = make_unwinder()
+            _get_stack_trace_with_retry(unwinder)
+
+            p.kill()
+            p.wait()
+
+            for _ in busy_retry(SHORT_TIMEOUT, error=False):
+                try:
+                    unwinder.get_stack_trace()
+                except ProcessLookupError:
+                    break
+                except RuntimeError:
+                    continue
+            else:
+                self.fail("ProcessLookupError never raised for dead process")
+
+
+@requires_remote_subprocess_debugging()
+class TestFrameChainLimits(RemoteInspectionTestBase):
+    """Frame chain walks abort instead of looping/overflowing on deep chains."""
+
+    # Limits plus one, to exceed them (must match MAX_FRAME_CHAIN_DEPTH /
+    # MAX_TASK_WAITER_WALK_TASKS from _remote_debugging.h)
+    FRAME_CHAIN_DEPTH = 1024 + 512 + 1
+    TASK_WAITER_WALK_TASKS = 2**14 + 1
+
+    def _assert_unwinder_limit_error(self, unwind, expected_substring):
+        """Call unwind() until it raises the frame chain limit error.
+
+        unwind must construct the RemoteUnwinder and call it, so that
+        transient RuntimeErrors from either step are retried; a successful
+        call means the limit never triggered and fails immediately.
+        """
+        last_error = None
+        for _ in busy_retry(SHORT_TIMEOUT, error=False):
+            try:
+                unwind()
+            except TRANSIENT_ERRORS as e:
+                if expected_substring in str(e):
+                    return
+                last_error = e
+                continue
+            self.fail(
+                "frame chain limit did not trigger; call returned a result"
+            )
+        self.fail(
+            f"frame chain limit never raised; last transient error: "
+            f"{last_error!r}"
         )
 
-        with os_helper.temp_dir() as work_dir:
-            script_dir = os.path.join(work_dir, "script_pkg")
-            os.mkdir(script_dir)
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
+    def test_get_stack_trace_deep_frame_chain_aborts(self):
+        """Test that a frame chain deeper than the limit aborts the
+        synchronous stack walk instead of walking it indefinitely."""
+        script_body = f"""\
+            import sys
+            sys.setrecursionlimit({self.FRAME_CHAIN_DEPTH * 2})
 
-            server_socket = _create_server_socket(port)
-            script_name = _make_test_script(script_dir, "script", script)
-            client_socket = None
+            def recurse(n):
+                if n <= 0:
+                    sock.sendall(b"ready")
+                    sock.recv(16)
+                    return
+                recurse(n - 1)
 
-            try:
-                with _managed_subprocess([sys.executable, script_name]) as p:
-                    client_socket, _ = server_socket.accept()
-                    server_socket.close()
-                    server_socket = None
-                    _wait_for_signal(client_socket, b"ready")
+            recurse({self.FRAME_CHAIN_DEPTH})
+            """
+        with self._target_process(script_body) as (p, client_socket, _):
+            _wait_for_signal(client_socket, b"ready")
+            self._assert_unwinder_limit_error(
+                lambda: RemoteUnwinder(p.pid).get_stack_trace(),
+                "Too many stack frames",
+            )
+            client_socket.sendall(b"done")
 
-                    unwinder = RemoteUnwinder(p.pid, all_threads=True)
-                    _get_stack_trace_with_retry(unwinder)
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
+    def test_get_async_stack_trace_deep_task_waiter_chain_aborts(self):
+        """Test that a task waiter chain deeper than the limit aborts
+        the walk instead of overflowing the C stack."""
+        script_body = f"""\
+            import asyncio
 
-                    p.kill()
-                    p.wait()
+            async def chain(n):
+                if n <= 0:
+                    sock.sendall(b"ready")
+                    sock.recv(16)
+                    return
 
-                    for _ in busy_retry(SHORT_TIMEOUT, error=False):
-                        try:
-                            unwinder.get_stack_trace()
-                        except ProcessLookupError:
-                            break
-                        except RuntimeError:
-                            continue
-                    else:
-                        self.fail(
-                            "ProcessLookupError never raised for dead process"
-                        )
-            finally:
-                _cleanup_sockets(client_socket, server_socket)
+                task = asyncio.create_task(chain(n - 1))
+                await task
+
+            asyncio.run(chain({self.TASK_WAITER_WALK_TASKS}))
+            """
+        with self._target_process(script_body) as (p, client_socket, _):
+            _wait_for_signal(client_socket, b"ready")
+            self._assert_unwinder_limit_error(
+                lambda: RemoteUnwinder(p.pid).get_async_stack_trace(),
+                "Too many task waiters",
+            )
+            client_socket.sendall(b"done")
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
+    def test_get_async_stack_trace_deep_frame_chain_aborts(self):
+        """Test that a frame chain deeper than the limit aborts the async
+        stack walk instead of walking it indefinitely."""
+        script_body = f"""\
+            import sys, asyncio
+            sys.setrecursionlimit({self.FRAME_CHAIN_DEPTH * 2})
+
+            def recurse(n):
+                if n <= 0:
+                    sock.sendall(b"ready")
+                    sock.recv(16)
+                    return
+                recurse(n - 1)
+
+            async def deep():
+                recurse({self.FRAME_CHAIN_DEPTH})
+
+            asyncio.run(deep())
+            """
+        with self._target_process(script_body) as (p, client_socket, _):
+            _wait_for_signal(client_socket, b"ready")
+            self._assert_unwinder_limit_error(
+                lambda: RemoteUnwinder(p.pid).get_async_stack_trace(),
+                "Too many async stack frames",
+            )
+            client_socket.sendall(b"done")
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
+    def test_get_all_awaited_by_deep_coro_chain_aborts(self):
+        """Test that a coroutine await chain deeper than the limit aborts
+        the walk instead of overflowing the C stack."""
+        script_body = f"""\
+            import sys, asyncio
+            sys.setrecursionlimit({self.FRAME_CHAIN_DEPTH * 2})
+
+            async def chain(n):
+                if n <= 0:
+                    await asyncio.sleep(10_000)
+                    return
+                await chain(n - 1)
+
+            async def main():
+                task = asyncio.create_task(chain({self.FRAME_CHAIN_DEPTH}))
+                await asyncio.sleep(0)
+                sock.sendall(b"ready")
+                await task
+
+            asyncio.run(main())
+            """
+        with self._target_process(script_body) as (p, client_socket, _):
+            _wait_for_signal(client_socket, b"ready")
+            self._assert_unwinder_limit_error(
+                lambda: RemoteUnwinder(p.pid).get_all_awaited_by(),
+                "Too many coroutine frames",
+            )
 
 
 if __name__ == "__main__":

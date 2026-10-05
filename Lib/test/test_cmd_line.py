@@ -14,6 +14,7 @@ import unittest
 from test import support
 from test.support import os_helper
 from test.support import force_not_colorized
+from test.support import import_helper
 from test.support import threading_helper
 from test.support.script_helper import (
     spawn_python, kill_python, assert_python_ok, assert_python_failure,
@@ -60,14 +61,17 @@ class CmdLineTest(unittest.TestCase):
     @support.cpython_only
     @support.force_not_colorized
     def test_help(self):
-        self.verify_valid_flag('-h')
-        self.verify_valid_flag('-?')
-        out = self.verify_valid_flag('--help')
-        lines = out.splitlines()
-        self.assertIn(b'usage', lines[0])
-        self.assertNotIn(b'PYTHONHOME', out)
-        self.assertNotIn(b'-X dev', out)
-        self.assertLess(len(lines), 50)
+        options = ['-h', '-?', '--help']
+        if support.MS_WINDOWS:
+            options.append('/?')
+        for opt in options:
+            with self.subTest(opt=opt):
+                out = self.verify_valid_flag(opt)
+                lines = out.splitlines()
+                self.assertIn(b'usage', lines[0])
+                self.assertNotIn(b'PYTHONHOME', out)
+                self.assertNotIn(b'-X dev', out)
+                self.assertLess(len(lines), 50)
 
     @support.cpython_only
     @support.force_not_colorized
@@ -133,11 +137,16 @@ class CmdLineTest(unittest.TestCase):
 
     @support.cpython_only
     def test_version(self):
-        version = ('Python %d.%d' % sys.version_info[:2]).encode("ascii")
-        for switch in '-V', '--version', '-VV':
-            rc, out, err = assert_python_ok(switch)
-            self.assertNotStartsWith(err, version)
-            self.assertStartsWith(out, version)
+        short_version = ('Python %d.%d' % sys.version_info[:2])
+        for switch in ('-V', '--version'):
+            with self.subTest(switch=switch):
+                rc, out, err = assert_python_ok(switch)
+                self.assertStartsWith(out, short_version.encode())
+                self.assertEqual(err, b'')
+
+        rc, out, err = assert_python_ok('-VV')
+        self.assertEqual(out.rstrip(), f"Python {sys.version}".encode())
+        self.assertEqual(err, b'')
 
     def test_verbose(self):
         # -v causes imports to write to stderr.  If the write to
@@ -675,16 +684,22 @@ class CmdLineTest(unittest.TestCase):
 
     @support.cpython_only
     def test_unknown_options(self):
-        rc, out, err = assert_python_failure('-E', '-z')
-        self.assertIn(b'Unknown option: -z', err)
-        self.assertEqual(err.splitlines().count(b'Unknown option: -z'), 1)
-        self.assertEqual(b'', out)
+        # Test unknown option
+        for option in ('-z', '--long-option', '---'):
+            with self.subTest(option=option):
+                rc, out, err = assert_python_failure('-E', option)
+                errmsg = f'Unknown option: {option}'.encode()
+                self.assertIn(errmsg, err)
+                self.assertEqual(err.splitlines().count(errmsg), 1)
+                self.assertEqual(b'', out)
+
         # Add "without='-E'" to prevent _assert_python to append -E
         # to env_vars and change the output of stderr
         rc, out, err = assert_python_failure('-z', without='-E')
         self.assertIn(b'Unknown option: -z', err)
         self.assertEqual(err.splitlines().count(b'Unknown option: -z'), 1)
         self.assertEqual(b'', out)
+
         rc, out, err = assert_python_failure('-a', '-z', without='-E')
         self.assertIn(b'Unknown option: -a', err)
         # only the first unknown option is reported
@@ -1397,6 +1412,97 @@ class CmdLineTest(unittest.TestCase):
         proc = assert_python_failure(*cmd, PYTHONHOME=nonexistent)
         self.assertIn(b'Python path configuration:', proc.err)
         self.assertIn(f"PYTHONHOME = '{nonexistent}'".encode(), proc.err)
+
+    def test_short_options(self):
+        # Skip the test if _testcapi cannot be imported:
+        # the test uses _testcapi.config_get().
+        import_helper.import_module('_testcapi')
+
+        # Test short command line options
+        def check(options, config_names, expected):
+            if isinstance(config_names, str):
+                config_names = (config_names,)
+            if isinstance(options, str):
+                options = (options,)
+            expr = ', '.join(f'config_get({name!a})' for name in config_names)
+            code = f'from _testcapi import config_get; print({expr})'
+            args = options + ("-c", code)
+            proc = assert_python_ok(*args)
+            self.assertEqual(proc.out.rstrip(), expected.encode())
+
+        def check_ignored(option):
+            # Just test that passing the option doesn't fail
+            assert_python_ok(option, "-c", "pass")
+
+        check('-b', 'bytes_warning', '1')
+        check('-bb', 'bytes_warning', '2')
+        check('-B', 'write_bytecode', 'False')
+        check('-d', 'parser_debug', 'True')
+        check('-E', 'use_environment', 'False')
+        check('-i', ('inspect', 'interactive'), 'True True')
+        check('-I', 'isolated', 'True')
+        check('-O', 'optimization_level', '1')
+        check('-OO', 'optimization_level', '2')
+        check('-P', 'safe_path', 'True')
+        check('-q', 'quiet', 'True')
+        check('-R', 'use_hash_seed', 'False')
+        check('-s', 'user_site_directory', 'False')
+        check('-S', 'site_import', 'False')
+        check_ignored('-t')
+        check('-u', 'buffered_stdio', 'False')
+        check('-v', 'verbose', '1')
+        check('-Wignore', 'warnoptions', "['ignore']")
+        check('-x', 'skip_source_first_line', 'True')
+        check(('-X', 'xoption=value'), 'xoptions',
+              # assert_python_ok() adds -X faulthandler
+              "{'faulthandler': True, 'xoption': 'value'}")
+
+        # Short options can be combined
+        check('-bIs', ('bytes_warning', 'isolated', 'user_site_directory'),
+              '1 True False')
+
+        # -c, -h, -m, -V and -? are tested elsewhere
+
+    def test_missing_argument(self):
+        def check_missing_arg(option):
+            proc = assert_python_failure(option)
+            self.assertEqual(proc.rc, 2)
+            errmsg = f"Argument expected for the {option} option"
+            self.assertStartsWith(proc.err.rstrip(), errmsg.encode())
+
+        check_missing_arg('-c')
+        check_missing_arg('-m')
+        check_missing_arg('-W')
+        check_missing_arg('-X')
+        check_missing_arg('--check-hash-based-pycs')
+
+    def test_long_options(self):
+        # Test long command line options
+
+        # Test --check-hash-based-pycs option
+        code = 'import _imp; print(_imp.check_hash_based_pycs)'
+        opt = f"--check-hash-based-pycs"
+        for value in ('always', 'never', 'default'):
+            with self.subTest(value=value):
+                proc = assert_python_ok(opt, value, "-c", code)
+                self.assertEqual(proc.out.rstrip(), value.encode())
+
+        # "Expected long option" error
+        proc = assert_python_ok("-b-")
+        self.assertEqual(proc.out, b'')
+        self.assertEqual(proc.err.rstrip(), b"Expected long option")
+
+        # Other long options --help-all, --help-env, --help-xoptions
+        # and --version are tested elsewhere
+
+    def test_dash_option(self):
+        # Test -- in the command line
+        code = (
+            'import sys; '
+            'print(sys.flags.isolated, sys.flags.optimize, sys.argv)'
+        )
+        proc = assert_python_ok('-I', '-c', code, '--', '-O')
+        self.assertEqual(proc.out.rstrip(), b"1 0 ['-c', '--', '-O']")
 
 
 @unittest.skipIf(interpreter_requires_environment(),

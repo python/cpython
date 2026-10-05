@@ -58,6 +58,9 @@ module_exec(PyObject *mod)
     if (_PyTestLimitedCAPI_Init_Set(mod) < 0) {
         return -1;
     }
+    if (_PyTestLimitedCAPI_Init_Slice(mod) < 0) {
+        return -1;
+    }
     if (_PyTestLimitedCAPI_Init_Slots(mod) < 0) {
         return -1;
     }
@@ -92,6 +95,9 @@ module_exec(PyObject *mod)
         return -1;
     }
     if (_PyTestLimitedCAPI_Init_Hash(mod) < 0) {
+        return -1;
+    }
+    if (_PyTestLimitedCAPI_Init_Build(mod) < 0) {
         return -1;
     }
     return 0;

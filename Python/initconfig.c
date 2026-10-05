@@ -204,6 +204,7 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
     SPEC(module_search_paths_set, BOOL, INIT_ONLY, NO_SYS),
     SPEC(pythonpath_env, WSTR_OPT, INIT_ONLY, NO_SYS),
     SPEC(sys_path_0, WSTR_OPT, INIT_ONLY, NO_SYS),
+    SPEC(_deferred_cmdline_option, INT, INIT_ONLY, NO_SYS),
 
     // Array terminator
     {NULL, 0, 0, 0, NO_SYS},
@@ -2996,19 +2997,23 @@ static PyStatus
 config_parse_cmdline(PyConfig *config, PyWideStringList *warnoptions,
                      Py_ssize_t *opt_index)
 {
+    // Only store the first option
+#define DEFER_OPTION(OPTION) \
+        do { \
+            if (config->_deferred_cmdline_option == 0) { \
+                config->_deferred_cmdline_option = (OPTION); \
+            } \
+        } while (0)
+
     PyStatus status;
     const PyWideStringList *argv = &config->argv;
     int print_version = 0;
-    const wchar_t* program = config->program_name;
-    if (!program && argv->length >= 1) {
-        program = argv->items[0];
-    }
 
-    _PyOS_ResetGetOpt();
+    struct _PyOS_GetOpt getopt;
+    _PyOS_GetOpt_Init(&getopt, argv->length, argv->items);
     do {
-        int longindex = -1;
-        int c = _PyOS_GetOpt(argv->length, argv->items, &longindex);
-        if (c == EOF) {
+        int c = _PyOS_GetOpt(&getopt);
+        if (c == -1) {
             break;
         }
 
@@ -3017,12 +3022,12 @@ config_parse_cmdline(PyConfig *config, PyWideStringList *warnoptions,
                 /* -c is the last option; following arguments
                    that look like options are left for the
                    command to interpret. */
-                size_t len = wcslen(_PyOS_optarg) + 1 + 1;
+                size_t len = wcslen(getopt.arg) + 1 + 1;
                 wchar_t *command = PyMem_RawMalloc(sizeof(wchar_t) * len);
                 if (command == NULL) {
                     return _PyStatus_NO_MEMORY();
                 }
-                memcpy(command, _PyOS_optarg, (len - 2) * sizeof(wchar_t));
+                memcpy(command, getopt.arg, (len - 2) * sizeof(wchar_t));
                 command[len - 2] = '\n';
                 command[len - 1] = 0;
                 config->run_command = command;
@@ -3035,7 +3040,7 @@ config_parse_cmdline(PyConfig *config, PyWideStringList *warnoptions,
                that look like options are left for the
                module to interpret. */
             if (config->run_module == NULL) {
-                config->run_module = _PyMem_RawWcsdup(_PyOS_optarg);
+                config->run_module = _PyMem_RawWcsdup(getopt.arg);
                 if (config->run_module == NULL) {
                     return _PyStatus_NO_MEMORY();
                 }
@@ -3045,39 +3050,36 @@ config_parse_cmdline(PyConfig *config, PyWideStringList *warnoptions,
 
         switch (c) {
         // Integers represent long options, see Python/getopt.c
-        case 0:
-            // check-hash-based-pycs
-            if (wcscmp(_PyOS_optarg, L"always") == 0
-                || wcscmp(_PyOS_optarg, L"never") == 0
-                || wcscmp(_PyOS_optarg, L"default") == 0)
+        case 1:
+            // --check-hash-based-pycs option
+            if (wcscmp(getopt.arg, L"always") == 0
+                || wcscmp(getopt.arg, L"never") == 0
+                || wcscmp(getopt.arg, L"default") == 0)
             {
                 status = PyConfig_SetString(config, &config->check_hash_pycs_mode,
-                                            _PyOS_optarg);
+                                            getopt.arg);
                 if (_PyStatus_EXCEPTION(status)) {
                     return status;
                 }
             } else {
-                fprintf(stderr, "--check-hash-based-pycs must be one of "
-                        "'default', 'always', or 'never'\n");
-                config_usage(1, program);
-                return _PyStatus_EXIT(2);
+                DEFER_OPTION(c);
             }
             break;
 
-        case 1:
-            // help-all
-            config_complete_usage(program);
-            return _PyStatus_EXIT(0);
-
         case 2:
-            // help-env
-            config_envvars_usage();
-            return _PyStatus_EXIT(0);
+            // --help-all option
+            DEFER_OPTION(c);
+            break;
 
         case 3:
-            // help-xoptions
-            config_xoptions_usage();
-            return _PyStatus_EXIT(0);
+            // --help-env option
+            DEFER_OPTION(c);
+            break;
+
+        case 4:
+            // --help-xoptions option
+            DEFER_OPTION(c);
+            break;
 
         case 'b':
             config->bytes_warning++;
@@ -3136,15 +3138,15 @@ config_parse_cmdline(PyConfig *config, PyWideStringList *warnoptions,
 
         case 'h':
         case '?':
-            config_usage(0, program);
-            return _PyStatus_EXIT(0);
+            DEFER_OPTION(c);
+            break;
 
         case 'V':
             print_version++;
             break;
 
         case 'W':
-            status = PyWideStringList_Append(warnoptions, _PyOS_optarg);
+            status = PyWideStringList_Append(warnoptions, getopt.arg);
             if (_PyStatus_EXCEPTION(status)) {
                 return status;
             }
@@ -3162,36 +3164,106 @@ config_parse_cmdline(PyConfig *config, PyWideStringList *warnoptions,
 
         default:
             /* unknown argument: parsing failed */
-            config_usage(1, program);
-            return _PyStatus_EXIT(2);
+            DEFER_OPTION(c);
+            break;
         }
-    } while (1);
+    } while (config->_deferred_cmdline_option == 0);
 
-    if (print_version) {
-        printf("Python %s\n",
-                (print_version >= 2) ? Py_GetVersion() : PY_VERSION);
-        return _PyStatus_EXIT(0);
+    if (print_version >= 2) {
+        DEFER_OPTION('W');
+    }
+    else if (print_version >= 1) {
+        DEFER_OPTION('V');
     }
 
     if (config->run_command == NULL && config->run_module == NULL
-        && _PyOS_optind < argv->length
-        && wcscmp(argv->items[_PyOS_optind], L"-") != 0
+        && getopt.index < argv->length
+        && wcscmp(argv->items[getopt.index], L"-") != 0
         && config->run_filename == NULL)
     {
-        config->run_filename = _PyMem_RawWcsdup(argv->items[_PyOS_optind]);
+        config->run_filename = _PyMem_RawWcsdup(argv->items[getopt.index]);
         if (config->run_filename == NULL) {
             return _PyStatus_NO_MEMORY();
         }
     }
 
     if (config->run_command != NULL || config->run_module != NULL) {
-        /* Backup _PyOS_optind */
-        _PyOS_optind--;
+        /* Backup getopt.index */
+        getopt.index--;
     }
 
-    *opt_index = _PyOS_optind;
+    *opt_index = getopt.index;
 
     return _PyStatus_OK();
+
+#undef DEFER_OPTION
+}
+
+
+int
+_PyConfig_ProcessDeferredCmdlineOption(PyConfig *config)
+{
+    int c = config->_deferred_cmdline_option;
+    config->_deferred_cmdline_option = 0;
+    if (c == 0) {
+        // There is no deferred option
+        return -1;
+    }
+
+    // Select the program name
+    const PyWideStringList *argv = &config->argv;
+    const wchar_t* program = config->program_name;
+    if (!program && argv->length >= 1) {
+        program = argv->items[0];
+    }
+    if (!program) {
+        program = L"python";
+    }
+
+    switch (c) {
+    case 'h':
+    case '?':
+        config_usage(0, program);
+        return 0;
+
+    case 'V':
+        printf("Python %s\n", PY_VERSION);
+        return 0;
+
+    case 'W':  // -VV or more -V options
+        printf("Python %s\n", Py_GetVersion());
+        return 0;
+
+    // Integers represent long options, see Python/getopt.c
+    case 1:
+        // check-hash-based-pycs
+        fprintf(stderr, "--check-hash-based-pycs must be one of "
+                "'default', 'always', or 'never'\n");
+        config_usage(1, program);
+        return 2;
+
+    case 2:
+        // help-all
+        config_complete_usage(program);
+        return 0;
+
+    case 3:
+        // help-env
+        config_envvars_usage();
+        return 0;
+
+    case 4:
+        // help-xoptions
+        config_xoptions_usage();
+        return 0;
+
+    case '_':
+        // Unknown option or missing argument
+        _Py_FALLTHROUGH;
+    default:
+        config_usage(1, program);
+        return 2;
+    }
 }
 
 
@@ -3634,7 +3706,6 @@ config_argv0_add_exe(PyConfig *config)
 
    * Command line arguments
    * Environment variables
-   * Py_xxx global configuration variables
 
    The only side effects are to modify config and to call _Py_SetArgcArgv(). */
 PyStatus
@@ -3966,22 +4037,7 @@ PyInitConfig_Free(PyInitConfig *config)
 int
 PyInitConfig_GetError(PyInitConfig* config, const char **perr_msg)
 {
-    if (_PyStatus_IS_EXIT(config->status)) {
-        char buffer[22];  // len("exit code -2147483648\0")
-        PyOS_snprintf(buffer, sizeof(buffer),
-                      "exit code %i",
-                      config->status.exitcode);
-
-        if (config->err_msg != NULL) {
-            free(config->err_msg);
-        }
-        config->err_msg = strdup(buffer);
-        if (config->err_msg != NULL) {
-            *perr_msg = config->err_msg;
-            return 1;
-        }
-        config->status = _PyStatus_NO_MEMORY();
-    }
+    assert(!_PyStatus_IS_EXIT(config->status));
 
     if (_PyStatus_IS_ERROR(config->status) && config->status.err_msg != NULL) {
         *perr_msg = config->status.err_msg;
@@ -3997,13 +4053,8 @@ PyInitConfig_GetError(PyInitConfig* config, const char **perr_msg)
 int
 PyInitConfig_GetExitCode(PyInitConfig* config, int *exitcode)
 {
-    if (_PyStatus_IS_EXIT(config->status)) {
-        *exitcode = config->status.exitcode;
-        return 1;
-    }
-    else {
-        return 0;
-    }
+    assert(!_PyStatus_IS_EXIT(config->status));
+    return 0;
 }
 
 
@@ -4102,7 +4153,9 @@ static char*
 wstr_to_utf8(PyInitConfig *config, wchar_t *wstr)
 {
     char *utf8;
-    int res = _Py_EncodeUTF8Ex(wstr, &utf8, NULL, NULL, 1, _Py_ERROR_STRICT);
+    size_t utf8_len;
+    int res = _Py_EncodeUTF8(wstr, &utf8, &utf8_len,
+                             NULL, 1, _Py_ERROR_STRICT);
     if (res == -2) {
         initconfig_set_error(config, "encoding error");
         return NULL;
@@ -4113,7 +4166,7 @@ wstr_to_utf8(PyInitConfig *config, wchar_t *wstr)
     }
 
     // Copy to use the malloc() memory allocator
-    size_t size = strlen(utf8) + 1;
+    size_t size = utf8_len + 1;
     char *str = malloc(size);
     if (str == NULL) {
         PyMem_RawFree(utf8);
@@ -4272,12 +4325,13 @@ utf8_to_wstr(PyInitConfig *config, const char *str)
 {
     wchar_t *wstr;
     size_t wlen;
-    int res = _Py_DecodeUTF8Ex(str, strlen(str), &wstr, &wlen, NULL, _Py_ERROR_STRICT);
-    if (res == -2) {
+    int res = _Py_DecodeUTF8(str, strlen(str), &wstr, &wlen, _Py_ERROR_STRICT);
+    if (res == _Py_CODEC_DECODE_ERROR) {
         initconfig_set_error(config, "decoding error");
         return NULL;
     }
     if (res < 0) {
+        assert(res == _Py_CODEC_MEMORY_ERROR);
         config->status = _PyStatus_NO_MEMORY();
         return NULL;
     }
