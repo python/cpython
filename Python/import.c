@@ -287,7 +287,6 @@ _PyImport_ClearLazyModules(PyInterpreterState *interp)
 int
 _PyImport_DiscardLazyModule(PyInterpreterState *interp, PyObject *name)
 {
-    // Destructors can still run after finalization cleared the set.
     if (LAZY_MODULES(interp) == NULL) {
         return 0;
     }
@@ -4220,7 +4219,6 @@ register_lazy_on_parent(PyThreadState *tstate, PyObject *name, PyObject *source)
 {
     PyDictObject *pending =
         (PyDictObject *)LAZY_PENDING_SUBMODULES(tstate->interp);
-    // Destructors can still run after finalization cleared the dict.
     if (pending == NULL) {
         return 0;
     }
