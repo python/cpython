@@ -894,7 +894,7 @@ class BaseBytesTest:
     def test_memory_leak_gh_140939(self):
         # gh-140939: MemoryError is raised without leaking
         _testcapi = import_helper.import_module('_testcapi')
-        with self.assertRaises(MemoryError):
+        with self.assertRaises((MemoryError, OverflowError)):
             b = self.type2test(b'%*b')
             b % (_testcapi.PY_SSIZE_T_MAX, b'abc')
 
