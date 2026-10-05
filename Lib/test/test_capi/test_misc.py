@@ -2837,6 +2837,30 @@ class TestInternalFrameApi(unittest.TestCase):
         self.assertEqual(d['z'], 7)
 
 
+    def test_code_get_localsplus_names(self):
+        def outer(a, b):
+            c = a
+            def inner():
+                return a, d
+            d = b
+            return inner
+
+        names = _testinternalcapi.code_get_localsplus_names(outer.__code__)
+        self.assertIsInstance(names, tuple)
+        # Arguments and locals come first, followed by cells that are not
+        # arguments; here a and d are cells.
+        self.assertEqual(sorted(names), sorted(['a', 'b', 'c', 'd', 'inner']))
+        self.assertEqual(names[:2], ('a', 'b'))
+
+        inner = outer(1, 2)
+        names = _testinternalcapi.code_get_localsplus_names(inner.__code__)
+        self.assertEqual(names, ('a', 'd'))
+        self.assertEqual(names[inner.__code__.co_nlocals:], ('a', 'd'))
+
+        with self.assertRaises(TypeError):
+            _testinternalcapi.code_get_localsplus_names(None)
+
+
 SUFFICIENT_TO_DEOPT_AND_SPECIALIZE = 100
 
 class Test_Pep523API(unittest.TestCase):

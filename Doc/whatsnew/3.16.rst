@@ -1178,7 +1178,9 @@ New features
   (Contributed by Victor Stinner in :gh:`148233`.)
 
 * Add :c:func:`PyUnstable_InterpreterFrame_GetLocal` to read a local variable
-  of an internal interpreter frame by its localsplus index.
+  of an internal interpreter frame by its localsplus index, and
+  :c:func:`PyUnstable_Code_GetLocalPlusNames` to get the matching variable
+  names.
   (Contributed by Guilherme Leobas in :gh:`156133`.)
 
 Porting to Python 3.16

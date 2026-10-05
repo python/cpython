@@ -1553,24 +1553,28 @@ get_frame_locals(PyObject *self, PyObject *Py_UNUSED(ignored))
     if (dict == NULL) {
         return NULL;
     }
+    PyObject *names = PyUnstable_Code_GetLocalPlusNames(co);
     for (Py_ssize_t i = 0; i < n; i++) {
         PyObject *value;
         int rc = PyUnstable_InterpreterFrame_GetLocal(frame, i, &value);
         if (rc < 0) {
+            Py_DECREF(names);
             Py_DECREF(dict);
             return NULL;
         }
         if (rc == 0) {
             continue;  // unset or hidden slot
         }
-        PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
+        PyObject *name = PyTuple_GET_ITEM(names, i);
         int err = PyDict_SetItem(dict, name, value);
         Py_DECREF(value);
         if (err < 0) {
+            Py_DECREF(names);
             Py_DECREF(dict);
             return NULL;
         }
     }
+    Py_DECREF(names);
     return dict;
 }
 
