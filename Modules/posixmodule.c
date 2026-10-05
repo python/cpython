@@ -9660,6 +9660,7 @@ os_getlogin_impl(PyObject *module)
         errno = old_errno;
     }
     else {
+        _Py_MSAN_UNPOISON(name, sizeof(name));
         result = PyUnicode_DecodeFSDefault(name);
     }
 #else
@@ -16822,6 +16823,8 @@ os_getrandom_impl(PyObject *module, Py_ssize_t size, int flags)
         PyErr_SetFromErrno(PyExc_OSError);
         goto error;
     }
+
+    _Py_MSAN_UNPOISON(PyBytes_AS_STRING(bytes), n);
 
     if (n != size) {
         _PyBytes_Resize(&bytes, n);

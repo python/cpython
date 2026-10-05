@@ -577,6 +577,8 @@ extern "C" {
 #    if !defined(_Py_MEMORY_SANITIZER)
 #      define _Py_MEMORY_SANITIZER
 #      define _Py_NO_SANITIZE_MEMORY __attribute__((no_sanitize_memory))
+#      define _Py_MSAN_UNPOISON(PTR, SIZE)  (__msan_unpoison(PTR, SIZE))
+#      define _Py_MSAN_UNPOISON_STRING(STR)  (__msan_unpoison_string(STR))
 #    endif
 #  endif
 #  if __has_feature(address_sanitizer)
@@ -614,6 +616,12 @@ extern "C" {
 #endif
 #ifndef _Py_NO_SANITIZE_MEMORY
 #  define _Py_NO_SANITIZE_MEMORY
+#endif
+#ifndef _Py_MSAN_UNPOISON
+#  define _Py_MSAN_UNPOISON(PTR, SIZE)
+#endif
+#ifndef _Py_MSAN_UNPOISON_STRING
+#  define _Py_MSAN_UNPOISON_STRING(STR)
 #endif
 
 /* AIX has __bool__ redefined in it's system header file. */
