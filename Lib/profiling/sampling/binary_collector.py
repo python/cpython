@@ -111,6 +111,8 @@ class BinaryCollector(Collector):
         try:
             self._writer.write_sample(stack_frames, timestamp_us)
         except OverflowError as e:
+            if not self._writer.limit_reached:
+                raise
             self.running = False
             print(f"Warning: {e}; stopping early and keeping the data "
                   "collected so far.",
@@ -153,9 +155,5 @@ class BinaryCollector(Collector):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        """Context manager exit - finalize unless there was an error."""
-        if exc_type is None:
-            self._writer.finalize()
-        else:
-            self._writer.close()
-        return False
+        """Finalize if the writer can still produce a valid file."""
+        return self._writer.__exit__(exc_type, exc_val, exc_tb)
