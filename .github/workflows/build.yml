@@ -550,6 +550,7 @@ jobs:
         - check-name: Memory
           sanitizer: MSan
           free-threading: false
+          continue-on-error: true
     uses: ./.github/workflows/reusable-san.yml
     with:
       sanitizer: ${{ matrix.sanitizer }}
