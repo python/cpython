@@ -1871,7 +1871,7 @@ The :mod:`!test.support.import_helper` module provides support for import tests.
    ("legacy" == single-phase init)
 
    This only applies to modules that haven't been imported yet.
-   It overrides the PyInterpreterConfig.check_multi_interp_extensions
+   It overrides the ``PyInterpreterConfig.check_multi_interp_extensions``
    setting.
 
 
