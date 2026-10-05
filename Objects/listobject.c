@@ -93,6 +93,8 @@ ensure_shared_on_resize(PyListObject *self)
 
 #define LIST_SMALL_ALLOCATED 32
 
+Py_NO_INLINE static int py_list_resize(PyListObject *self, Py_ssize_t newsize);
+
 /* Ensure ob_item has room for at least newsize elements, and set
  * ob_size to newsize.  If newsize > ob_size on entry, the content
  * of the new slots at exit is undefined heap trash; it's the caller's
@@ -102,10 +104,9 @@ ensure_shared_on_resize(PyListObject *self)
  * Note that self->ob_item may change, and even if newsize is less
  * than ob_size on entry.
  */
-static int
+static inline Py_ALWAYS_INLINE int
 list_resize(PyListObject *self, Py_ssize_t newsize)
 {
-    size_t new_allocated, target_bytes;
     Py_ssize_t allocated = self->allocated;
 
     /* Bypass realloc() when a previous overallocation is large enough
@@ -121,6 +122,14 @@ list_resize(PyListObject *self, Py_ssize_t newsize)
         Py_SET_SIZE(self, newsize);
         return 0;
     }
+    return py_list_resize(self, newsize);
+}
+
+Py_NO_INLINE static int
+py_list_resize(PyListObject *self, Py_ssize_t newsize)
+{
+    size_t new_allocated, target_bytes;
+    Py_ssize_t allocated = self->allocated;
 
     /* This over-allocates proportional to the list size, making room
      * for additional growth.  The over-allocation is mild, but is
