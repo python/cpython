@@ -1694,9 +1694,9 @@ The :mod:`!test.support.import_helper` module provides support for import tests.
 .. versionadded:: 3.10
 
 
-.. function:: forget(module_name)
+.. function:: forget(modname)
 
-   Remove the module named *module_name* from ``sys.modules`` and delete any
+   Remove the module named *modname* from ``sys.modules`` and delete any
    byte-compiled files of the module.
 
 
