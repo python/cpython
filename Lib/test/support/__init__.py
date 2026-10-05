@@ -1373,11 +1373,7 @@ def nomemtest(test):
         import_module('_testcapi')
         return test(*args, **kwargs)
 
-    use_tsan = check_sanitizer(thread=True)
-    reason ='not working with thread sanitizer (gh-157415)'
-    skip_if_tsan = unittest.skipIf(use_tsan, reason)
-
-    return cpython_only(skip_if_tsan(internal))
+    return cpython_only(internal)
 
 def bigaddrspacetest(f):
     """Decorator for tests that fill the address space."""
@@ -3529,14 +3525,44 @@ def check_immutable_type(testcase, type):
 
 def built_with_c_assertions():
     """Check if Python was built with C assertions (assert())."""
-
-    if MS_WINDOWS:
-        # On Windows, rely on the Py_DEBUG macro to check for assertions
+    try:
+        import _testlimitedcapi
+    except ImportError:
         return Py_DEBUG
+    else:
+        return bool(_testlimitedcapi._py_getbuiltwithassert())
 
-    # Check if the NDEBUG macro is defined in C compiler flags
-    PY_CFLAGS = (sysconfig.get_config_var('PY_CFLAGS') or '')
-    if '-DNDEBUG' in PY_CFLAGS:
-        return False
 
-    return True
+def inject_memory_error(start=0, stop=0):
+    """
+    Memory allocation fails after 'start' allocation requests, and until 'stop'
+    allocation requests except when 'stop' is negative or equal to 0 (default)
+    in which case allocation failures never stop.
+
+    Raise SkipTest if the _testcapi extension module is missing
+    """
+    try:
+        import _testcapi
+    except ImportError:
+        raise unittest.SkipTest("_testcapi required")
+
+    _testcapi.set_nomemory(start, stop)
+
+
+@contextlib.contextmanager
+def inject_memory_error_cm(start=0, stop=0):
+    """
+    Similar to inject_memory_error() but can be used as a context manager.
+
+    Raise SkipTest if the _testcapi extension module is missing
+    """
+    try:
+        import _testcapi
+    except ImportError:
+        raise unittest.SkipTest("_testcapi required")
+
+    try:
+        _testcapi.set_nomemory(start, stop)
+        yield
+    finally:
+        _testcapi.remove_mem_hooks()

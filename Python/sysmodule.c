@@ -1435,19 +1435,20 @@ static PyStructSequence_Desc asyncgen_hooks_desc = {
     2
 };
 
+/*[clinic input]
+sys.set_asyncgen_hooks
+
+    firstiter: object = NULL
+    finalizer: object = NULL
+
+Set a finalizer for async generators objects.
+[clinic start generated code]*/
+
 static PyObject *
-sys_set_asyncgen_hooks(PyObject *self, PyObject *args, PyObject *kw)
+sys_set_asyncgen_hooks_impl(PyObject *module, PyObject *firstiter,
+                            PyObject *finalizer)
+/*[clinic end generated code: output=6fe3b2dd3f9a9db5 input=ef6a1e96361234be]*/
 {
-    static char *keywords[] = {"firstiter", "finalizer", NULL};
-    PyObject *firstiter = NULL;
-    PyObject *finalizer = NULL;
-
-    if (!PyArg_ParseTupleAndKeywords(
-            args, kw, "|OO", keywords,
-            &firstiter, &finalizer)) {
-        return NULL;
-    }
-
     if (finalizer && finalizer != Py_None) {
         if (!PyCallable_Check(finalizer)) {
             PyErr_Format(PyExc_TypeError,
@@ -1492,12 +1493,6 @@ error:
     _PyEval_SetAsyncGenFinalizer(cur_finalizer);
     return NULL;
 }
-
-PyDoc_STRVAR(set_asyncgen_hooks_doc,
-"set_asyncgen_hooks([firstiter] [, finalizer])\n\
-\n\
-Set a finalizer for async generators objects."
-);
 
 /*[clinic input]
 sys.get_asyncgen_hooks
@@ -1957,18 +1952,21 @@ _PySys_GetSizeOf(PyObject *o)
     return (size_t)size + presize;
 }
 
-static PyObject *
-sys_getsizeof(PyObject *self, PyObject *args, PyObject *kwds)
-{
-    static char *kwlist[] = {"object", "default", 0};
-    size_t size;
-    PyObject *o, *dflt = NULL;
-    PyThreadState *tstate = _PyThreadState_GET();
+/*[clinic input]
+sys.getsizeof
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|O:getsizeof",
-                                     kwlist, &o, &dflt)) {
-        return NULL;
-    }
+    object as o: object
+    default as dflt: object = NULL
+
+Return the size of object in bytes.
+[clinic start generated code]*/
+
+static PyObject *
+sys_getsizeof_impl(PyObject *module, PyObject *o, PyObject *dflt)
+/*[clinic end generated code: output=c9dee8179ae2a973 input=fd71e98f0e3ae131]*/
+{
+    size_t size;
+    PyThreadState *tstate = _PyThreadState_GET();
 
     size = _PySys_GetSizeOf(o);
 
@@ -1984,11 +1982,6 @@ sys_getsizeof(PyObject *self, PyObject *args, PyObject *kwds)
 
     return PyLong_FromSize_t(size);
 }
-
-PyDoc_STRVAR(getsizeof_doc,
-"getsizeof(object [, default]) -> int\n\
-\n\
-Return the size of object in bytes.");
 
 /*[clinic input]
 sys.getrefcount -> Py_ssize_t
@@ -2914,8 +2907,7 @@ static PyMethodDef sys_methods[] = {
     SYS_GETTOTALREFCOUNT_METHODDEF
     SYS_GETREFCOUNT_METHODDEF
     SYS_GETRECURSIONLIMIT_METHODDEF
-    {"getsizeof", _PyCFunction_CAST(sys_getsizeof),
-     METH_VARARGS | METH_KEYWORDS, getsizeof_doc},
+    SYS_GETSIZEOF_METHODDEF
     SYS__GETFRAME_METHODDEF
     SYS__GETFRAMEMODULENAME_METHODDEF
     SYS_GETWINDOWSVERSION_METHODDEF
@@ -2938,8 +2930,7 @@ static PyMethodDef sys_methods[] = {
     SYS__DEBUGMALLOCSTATS_METHODDEF
     SYS_SET_COROUTINE_ORIGIN_TRACKING_DEPTH_METHODDEF
     SYS_GET_COROUTINE_ORIGIN_TRACKING_DEPTH_METHODDEF
-    {"set_asyncgen_hooks", _PyCFunction_CAST(sys_set_asyncgen_hooks),
-     METH_VARARGS | METH_KEYWORDS, set_asyncgen_hooks_doc},
+    SYS_SET_ASYNCGEN_HOOKS_METHODDEF
     SYS_GET_ASYNCGEN_HOOKS_METHODDEF
     SYS_GETANDROIDAPILEVEL_METHODDEF
     SYS_ACTIVATE_STACK_TRAMPOLINE_METHODDEF
@@ -4490,7 +4481,8 @@ make_sys_argv(int argc, wchar_t * const * argv)
     return list;
 }
 
-void
+// Function removed from Python 3.16 limited C API, but kept in the stable ABI
+PyAPI_FUNC(void)
 PySys_SetArgvEx(int argc, wchar_t **argv, int updatepath)
 {
     wchar_t* empty_argv[1] = {L""};
@@ -4537,13 +4529,18 @@ PySys_SetArgvEx(int argc, wchar_t **argv, int updatepath)
     }
 }
 
-void
+// Function removed from Python 3.16 limited C API, but kept in the stable ABI
+PyAPI_FUNC(void)
 PySys_SetArgv(int argc, wchar_t **argv)
 {
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
-    PySys_SetArgvEx(argc, argv, Py_IsolatedFlag == 0);
-_Py_COMP_DIAG_POP
+    int isolated = 0;
+    PyThreadState *tstate = PyThreadState_GetUnchecked();
+    if (tstate != NULL) {
+        const PyConfig *config = &tstate->interp->config;
+        isolated = config->isolated;
+    }
+
+    PySys_SetArgvEx(argc, argv, isolated == 0);
 }
 
 /* Reimplementation of PyFile_WriteString() no calling indirectly
