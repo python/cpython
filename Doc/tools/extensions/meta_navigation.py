@@ -79,6 +79,8 @@ def _splice_flow(
     ):
         target_position = position + offset
         if not 0 <= target_position < len(flow):
+            context.pop(direction, None)
+            relation_links.pop(accesskey, None)
             continue
 
         target = flow[target_position]
@@ -119,22 +121,26 @@ def add_meta_page_relations(
     if pagename in _TEMPLATE_SOURCES:
         context['page_source_path'] = _TEMPLATE_SOURCES[pagename]
 
-    index_flow = ['glossary']
-    if _has_module_index(app):
-        index_flow.append('py-modindex')
-    if app.builder.search:
-        index_flow.append('search')
-    index_flow.extend(_genindex_pages(app, context))
-    index_flow.append('bugs')
-    _splice_flow(app, pagename, context, index_flow)
+    flow = []
+    docname = app.config.root_doc
+    while docname is not None:
+        if docname == 'glossary':
+            if _has_module_index(app):
+                flow.append('py-modindex')
+            flow.extend(_genindex_pages(app, context))
 
-    if 'download' in app.config.html_additional_pages:
-        _splice_flow(
-            app,
-            pagename,
-            context,
-            ['copyright', 'download', 'about'],
-        )
+        flow.append(docname)
+        if docname == 'glossary' and app.builder.search:
+            flow.append('search')
+        if (
+            docname == 'bugs'
+            and 'download' in app.config.html_additional_pages
+        ):
+            flow.append('download')
+
+        docname = app.builder.relations[docname][2]
+
+    _splice_flow(app, pagename, context, flow)
 
 
 def setup(app: Sphinx) -> ExtensionMetadata:
