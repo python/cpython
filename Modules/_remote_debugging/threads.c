@@ -17,10 +17,15 @@
 #include <sys/wait.h>
 #endif
 
-/* Upper bound on how far the handled-exception chain (exc_info->previous_item)
- * is followed in remote memory. The chain is normally at most a couple of
- * entries deep; the bound only guards against corrupted memory. */
-#define MAX_EXCEPTION_CHAIN_DEPTH 16
+/* Bound traversal of corrupted remote exception chains. */
+#define MAX_EXCEPTION_CHAIN_DEPTH (2 << 15)
+
+/* Derive unexported offsets from adjacent fields to keep the debug-offset
+ * table compatible across patch releases. */
+static_assert(offsetof(PyThreadState, exc_info) ==
+              offsetof(PyThreadState, current_exception) + sizeof(uintptr_t));
+static_assert(offsetof(_PyErr_StackItem, previous_item) ==
+              offsetof(_PyErr_StackItem, exc_value) + sizeof(uintptr_t));
 
 /* ============================================================================
  * THREAD ITERATION FUNCTIONS
@@ -441,25 +446,18 @@ unwind_stack_for_thread(
         has_exception = 1;
     }
 
-    // Check the exception currently being handled by an except block.
-    //
-    // The active _PyErr_StackItem is normally exc_state, embedded in the
-    // thread state, but generators, coroutines and async generators repoint
-    // tstate->exc_info at their own _PyErr_StackItem while they run. Reading
-    // only the embedded exc_state therefore misses every handler that runs in
-    // a generator or coroutine, or in a function one of them calls. Follow
-    // exc_info and walk previous_item like _PyErr_GetTopmostException() so
-    // that an outer handler is still found while a generator without a handler
-    // of its own is running.
+    // Generators and coroutines use their own exception stack items.
+    // Follow exc_info to find the innermost handler, as sys.exception() does.
     if (!has_exception) {
         uintptr_t exc_info = GET_MEMBER(uintptr_t, ts,
-            unwinder->debug_offsets.thread_state.exc_info);
+            unwinder->debug_offsets.thread_state.current_exception +
+            sizeof(uintptr_t));
         uintptr_t exc_state_addr =
             *current_tstate + unwinder->debug_offsets.thread_state.exc_state;
         uintptr_t exc_value_offset =
             unwinder->debug_offsets.err_stackitem.exc_value;
         uintptr_t previous_item_offset =
-            unwinder->debug_offsets.err_stackitem.previous_item;
+            exc_value_offset + sizeof(uintptr_t);
 
         for (int depth = 0; exc_info != 0 && depth < MAX_EXCEPTION_CHAIN_DEPTH;
              depth++)

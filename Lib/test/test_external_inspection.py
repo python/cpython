@@ -3046,23 +3046,6 @@ class TestExceptionDetectionScenarios(RemoteInspectionTestBase):
 
     4. finally_no_exception: Finally block with no exception raised
        -> Should NOT have HAS_EXCEPTION (no exception state)
-
-    5. except_block_in_generator: Thread inside an except block running in a
-       generator
-       -> SHOULD have HAS_EXCEPTION (exc_info points at the generator's
-          _PyErr_StackItem, not the thread's embedded exc_state)
-
-    6. except_block_in_genexpr_callee: Except block in a function called from a
-       generator expression
-       -> SHOULD have HAS_EXCEPTION (same reason as 5)
-
-    7. except_block_in_coroutine: Thread inside an except block running in a
-       coroutine
-       -> SHOULD have HAS_EXCEPTION (same reason as 5)
-
-    8. except_block_in_callee_from_coroutine: Except block in a function called
-       from a coroutine
-       -> SHOULD have HAS_EXCEPTION (same reason as 5)
     """
 
     def _make_single_scenario_script(self, port, scenario):
@@ -3145,105 +3128,6 @@ def target_thread():
     finally:
         while True:
             time.sleep(0.01)
-
-t = threading.Thread(target=target_thread)
-t.start()
-t.join()
-""",
-            "except_block_in_generator": f"""\
-import socket
-import threading
-import time
-
-def target_thread():
-    '''Inside except block that runs in a generator'''
-    conn = socket.create_connection(("localhost", {port}))
-    conn.sendall(b"ready:" + str(threading.get_native_id()).encode())
-
-    def gen():
-        try:
-            raise ValueError("test")
-        except ValueError:
-            while True:
-                time.sleep(0.01)
-        yield
-
-    for _ in gen():
-        pass
-
-t = threading.Thread(target=target_thread)
-t.start()
-t.join()
-""",
-            "except_block_in_genexpr_callee": f"""\
-import socket
-import threading
-import time
-
-def target_thread():
-    '''Inside except block in a function called from a generator expression'''
-    conn = socket.create_connection(("localhost", {port}))
-    conn.sendall(b"ready:" + str(threading.get_native_id()).encode())
-
-    def callee():
-        try:
-            raise ValueError("test")
-        except ValueError:
-            while True:
-                time.sleep(0.01)
-
-    list(callee() for _ in range(1))
-
-t = threading.Thread(target=target_thread)
-t.start()
-t.join()
-""",
-            "except_block_in_coroutine": f"""\
-import asyncio
-import socket
-import threading
-import time
-
-def target_thread():
-    '''Inside except block that runs in a coroutine'''
-    conn = socket.create_connection(("localhost", {port}))
-    conn.sendall(b"ready:" + str(threading.get_native_id()).encode())
-
-    async def coro():
-        try:
-            raise ValueError("test")
-        except ValueError:
-            while True:
-                time.sleep(0.01)
-
-    asyncio.run(coro())
-
-t = threading.Thread(target=target_thread)
-t.start()
-t.join()
-""",
-            "except_block_in_callee_from_coroutine": f"""\
-import asyncio
-import socket
-import threading
-import time
-
-def target_thread():
-    '''Inside except block in a function called from a coroutine'''
-    conn = socket.create_connection(("localhost", {port}))
-    conn.sendall(b"ready:" + str(threading.get_native_id()).encode())
-
-    def callee():
-        try:
-            raise ValueError("test")
-        except ValueError:
-            while True:
-                time.sleep(0.01)
-
-    async def coro():
-        callee()
-
-    asyncio.run(coro())
 
 t = threading.Thread(target=target_thread)
 t.start()
@@ -3408,72 +3292,6 @@ t.join()
             self.assertIsNotNone(thread_tid, "Thread ID not received")
             self._check_exception_status(p, thread_tid, expect_exception=False)
 
-    @unittest.skipIf(
-        sys.platform not in ("linux", "darwin", "win32"),
-        "Test only runs on supported platforms (Linux, macOS, or Windows)",
-    )
-    @unittest.skipIf(
-        sys.platform == "android", "Android raises Linux-specific exception"
-    )
-    def test_except_block_in_generator_has_exception(self):
-        """gh-158539: a handler running in a generator has HAS_EXCEPTION.
-
-        Generators repoint ``tstate->exc_info`` at their own
-        ``_PyErr_StackItem``, so the embedded ``exc_state`` stays empty and the
-        profiler must follow ``exc_info`` to see the handled exception.
-        """
-        with self._run_scenario_process("except_block_in_generator") as (p, thread_tid):
-            self.assertIsNotNone(thread_tid, "Thread ID not received")
-            self._check_exception_status(p, thread_tid, expect_exception=True)
-
-    @unittest.skipIf(
-        sys.platform not in ("linux", "darwin", "win32"),
-        "Test only runs on supported platforms (Linux, macOS, or Windows)",
-    )
-    @unittest.skipIf(
-        sys.platform == "android", "Android raises Linux-specific exception"
-    )
-    def test_except_block_in_genexpr_callee_has_exception(self):
-        """gh-158539: a handler in a function called from a generator expression.
-
-        The handler itself lives in an ordinary function, but the generator
-        expression on the stack means ``exc_info`` does not point at the
-        thread's embedded ``exc_state``.
-        """
-        with self._run_scenario_process(
-            "except_block_in_genexpr_callee"
-        ) as (p, thread_tid):
-            self.assertIsNotNone(thread_tid, "Thread ID not received")
-            self._check_exception_status(p, thread_tid, expect_exception=True)
-
-    @unittest.skipIf(
-        sys.platform not in ("linux", "darwin", "win32"),
-        "Test only runs on supported platforms (Linux, macOS, or Windows)",
-    )
-    @unittest.skipIf(
-        sys.platform == "android", "Android raises Linux-specific exception"
-    )
-    def test_except_block_in_coroutine_has_exception(self):
-        """gh-158539: a handler running in a coroutine has HAS_EXCEPTION."""
-        with self._run_scenario_process("except_block_in_coroutine") as (p, thread_tid):
-            self.assertIsNotNone(thread_tid, "Thread ID not received")
-            self._check_exception_status(p, thread_tid, expect_exception=True)
-
-    @unittest.skipIf(
-        sys.platform not in ("linux", "darwin", "win32"),
-        "Test only runs on supported platforms (Linux, macOS, or Windows)",
-    )
-    @unittest.skipIf(
-        sys.platform == "android", "Android raises Linux-specific exception"
-    )
-    def test_except_block_in_callee_from_coroutine_has_exception(self):
-        """gh-158539: a handler in a function called from a coroutine."""
-        with self._run_scenario_process(
-            "except_block_in_callee_from_coroutine"
-        ) as (p, thread_tid):
-            self.assertIsNotNone(thread_tid, "Thread ID not received")
-            self._check_exception_status(p, thread_tid, expect_exception=True)
-
 
 class TestExceptionDetectionInProcess(RemoteInspectionTestBase):
     """gh-158539: HAS_EXCEPTION for handlers running in generators/coroutines.
@@ -3488,7 +3306,7 @@ class TestExceptionDetectionInProcess(RemoteInspectionTestBase):
     def setUpClass(cls):
         try:
             RemoteUnwinder(os.getpid(), all_threads=True).get_stack_trace()
-        except Exception as exc:
+        except PermissionError as exc:
             raise unittest.SkipTest(f"self-inspection is unavailable: {exc}")
 
     def _check_running_handler(
@@ -3645,6 +3463,28 @@ class TestExceptionDetectionInProcess(RemoteInspectionTestBase):
                 pass
 
         self._check_running_handler(target, expect_exception=False)
+
+    def test_outer_handler_while_nested_generators_run(self):
+        def target(ready, stop):
+            def gen(depth):
+                if depth:
+                    yield from gen(depth - 1)
+                else:
+                    self._busy_until_stopped(ready, stop)
+                yield
+
+            try:
+                raise ValueError("outer")
+            except ValueError:
+                for _ in gen(32):
+                    pass
+
+        self._check_running_handler(
+            target,
+            expect_exception=True,
+            mode=PROFILING_MODE_EXCEPTION,
+            skip_non_matching_threads=True,
+        )
 
     def test_generator_finally_after_except(self):
         """The handled exception is cleared before the generator's finally."""
