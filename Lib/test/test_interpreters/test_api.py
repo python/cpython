@@ -289,6 +289,21 @@ class ListAllTests(TestBase):
         for interp1, interp2 in zip(actual, expected):
             self.assertIs(interp1, interp2)
 
+    def test_destroyed_by_gc(self):
+        # gh-155997: the interpreter is destroyed while list_all() runs.
+        interp = interpreters.create()
+        interpid = interp.id
+        cycle = []
+        cycle.append(cycle)
+        cycle.append(interp)
+        # The cycle holds the only reference, so only the collector frees it.
+        with support.disable_gc():
+            del interp, cycle
+
+        with support.gc_threshold(1):
+            ids = [i.id for i in interpreters.list_all()]
+        self.assertNotIn(interpid, ids)
+
     def test_created_with_capi(self):
         mainid, *_ = _interpreters.get_main()
         interpid1 = _interpreters.create()

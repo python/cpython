@@ -527,8 +527,8 @@ sys_addaudithook_impl(PyObject *module, PyObject *hook)
 
     /* Invoke existing audit hooks to allow them an opportunity to abort. */
     if (_PySys_Audit(tstate, "sys.addaudithook", NULL) < 0) {
-        if (_PyErr_ExceptionMatches(tstate, PyExc_Exception)) {
-            /* We do not report errors derived from Exception */
+        if (_PyErr_ExceptionMatches(tstate, PyExc_RuntimeError)) {
+            /* We do not report errors derived from RuntimeError */
             _PyErr_Clear(tstate);
             Py_RETURN_NONE;
         }
@@ -1435,19 +1435,20 @@ static PyStructSequence_Desc asyncgen_hooks_desc = {
     2
 };
 
+/*[clinic input]
+sys.set_asyncgen_hooks
+
+    firstiter: object = NULL
+    finalizer: object = NULL
+
+Set a finalizer for async generators objects.
+[clinic start generated code]*/
+
 static PyObject *
-sys_set_asyncgen_hooks(PyObject *self, PyObject *args, PyObject *kw)
+sys_set_asyncgen_hooks_impl(PyObject *module, PyObject *firstiter,
+                            PyObject *finalizer)
+/*[clinic end generated code: output=6fe3b2dd3f9a9db5 input=ef6a1e96361234be]*/
 {
-    static char *keywords[] = {"firstiter", "finalizer", NULL};
-    PyObject *firstiter = NULL;
-    PyObject *finalizer = NULL;
-
-    if (!PyArg_ParseTupleAndKeywords(
-            args, kw, "|OO", keywords,
-            &firstiter, &finalizer)) {
-        return NULL;
-    }
-
     if (finalizer && finalizer != Py_None) {
         if (!PyCallable_Check(finalizer)) {
             PyErr_Format(PyExc_TypeError,
@@ -1492,12 +1493,6 @@ error:
     _PyEval_SetAsyncGenFinalizer(cur_finalizer);
     return NULL;
 }
-
-PyDoc_STRVAR(set_asyncgen_hooks_doc,
-"set_asyncgen_hooks([firstiter] [, finalizer])\n\
-\n\
-Set a finalizer for async generators objects."
-);
 
 /*[clinic input]
 sys.get_asyncgen_hooks
@@ -1633,6 +1628,7 @@ static PyStructSequence_Field windows_version_fields[] = {
     {"suite_mask", "Bit mask identifying available product suites"},
     {"product_type", "System product type"},
     {"platform_version", "Diagnostic version number"},
+    {"device_family", "'Desktop', 'Xbox' or 'UWP'"},
     {0}
 };
 
@@ -1645,13 +1641,10 @@ static PyStructSequence_Desc windows_version_desc = {
                                       via indexing, the rest are name only */
 };
 
+#ifdef MS_WINDOWS_DESKTOP
 static PyObject *
 _sys_getwindowsversion_from_kernel32(void)
 {
-#ifndef MS_WINDOWS_DESKTOP
-    PyErr_SetString(PyExc_OSError, "cannot read version info on this platform");
-    return NULL;
-#else
     HANDLE hKernel32;
     wchar_t kernel32_path[MAX_PATH];
     LPVOID verblock;
@@ -1688,8 +1681,8 @@ _sys_getwindowsversion_from_kernel32(void)
     realBuild = HIWORD(ffi->dwProductVersionLS);
     PyMem_RawFree(verblock);
     return Py_BuildValue("(kkk)", realMajor, realMinor, realBuild);
-#endif /* !MS_WINDOWS_DESKTOP */
 }
+#endif /* MS_WINDOWS_DESKTOP */
 
 /* Disable deprecation warnings about GetVersionEx as the result is
    being passed straight through to the caller, who is responsible for
@@ -1719,7 +1712,6 @@ sys_getwindowsversion_impl(PyObject *module)
 {
     PyObject *version;
     int pos = 0;
-    OSVERSIONINFOEXW ver;
 
     if (PyObject_GetOptionalAttrString(module, "_cached_windows_version", &version) < 0) {
         return NULL;
@@ -1729,6 +1721,8 @@ sys_getwindowsversion_impl(PyObject *module)
     }
     Py_XDECREF(version);
 
+    OSVERSIONINFOEXW ver;
+    ZeroMemory(&ver, sizeof(ver));
     ver.dwOSVersionInfoSize = sizeof(ver);
     if (!GetVersionExW((OSVERSIONINFOW*) &ver))
         return PyErr_SetFromWindowsErr(0);
@@ -1756,6 +1750,7 @@ sys_getwindowsversion_impl(PyObject *module)
     SET_VERSION_INFO(PyLong_FromLong(ver.wSuiteMask));
     SET_VERSION_INFO(PyLong_FromLong(ver.wProductType));
 
+#if defined(MS_WINDOWS_DESKTOP)
     // GetVersion will lie if we are running in a compatibility mode.
     // We need to read the version info from a system file resource
     // to accurately identify the OS version. If we fail for any reason,
@@ -1775,6 +1770,14 @@ sys_getwindowsversion_impl(PyObject *module)
     }
 
     SET_VERSION_INFO(realVersion);
+    SET_VERSION_INFO(PyUnicode_FromString("Desktop"));
+#elif defined(MS_WINDOWS_GAMES)
+    SET_VERSION_INFO(Py_BuildValue("(kkk)", ver.dwMajorVersion, ver.dwMinorVersion, ver.dwBuildNumber));
+    SET_VERSION_INFO(PyUnicode_FromString("Xbox"));
+#else
+    SET_VERSION_INFO(Py_BuildValue("(kkk)", ver.dwMajorVersion, ver.dwMinorVersion, ver.dwBuildNumber));
+    SET_VERSION_INFO(PyUnicode_FromString("UWP"));
+#endif
 
 #undef SET_VERSION_INFO
 
@@ -1949,18 +1952,21 @@ _PySys_GetSizeOf(PyObject *o)
     return (size_t)size + presize;
 }
 
-static PyObject *
-sys_getsizeof(PyObject *self, PyObject *args, PyObject *kwds)
-{
-    static char *kwlist[] = {"object", "default", 0};
-    size_t size;
-    PyObject *o, *dflt = NULL;
-    PyThreadState *tstate = _PyThreadState_GET();
+/*[clinic input]
+sys.getsizeof
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|O:getsizeof",
-                                     kwlist, &o, &dflt)) {
-        return NULL;
-    }
+    object as o: object
+    default as dflt: object = NULL
+
+Return the size of object in bytes.
+[clinic start generated code]*/
+
+static PyObject *
+sys_getsizeof_impl(PyObject *module, PyObject *o, PyObject *dflt)
+/*[clinic end generated code: output=c9dee8179ae2a973 input=fd71e98f0e3ae131]*/
+{
+    size_t size;
+    PyThreadState *tstate = _PyThreadState_GET();
 
     size = _PySys_GetSizeOf(o);
 
@@ -1976,11 +1982,6 @@ sys_getsizeof(PyObject *self, PyObject *args, PyObject *kwds)
 
     return PyLong_FromSize_t(size);
 }
-
-PyDoc_STRVAR(getsizeof_doc,
-"getsizeof(object [, default]) -> int\n\
-\n\
-Return the size of object in bytes.");
 
 /*[clinic input]
 sys.getrefcount -> Py_ssize_t
@@ -2340,7 +2341,9 @@ sys_activate_stack_trampoline_impl(PyObject *module, const char *backend)
 {
 #ifdef PY_HAVE_PERF_TRAMPOLINE
 #ifdef _Py_JIT
-    if (_PyInterpreterState_GET()->jit) {
+    // Perf state is process-wide, and only the main interpreter can enable
+    // the JIT. Check it even when called from a subinterpreter (gh-157247).
+    if (_PyInterpreterState_Main()->jit) {
         PyErr_SetString(PyExc_ValueError, "Cannot activate the perf trampoline if the JIT is active");
         return NULL;
     }
@@ -2904,8 +2907,7 @@ static PyMethodDef sys_methods[] = {
     SYS_GETTOTALREFCOUNT_METHODDEF
     SYS_GETREFCOUNT_METHODDEF
     SYS_GETRECURSIONLIMIT_METHODDEF
-    {"getsizeof", _PyCFunction_CAST(sys_getsizeof),
-     METH_VARARGS | METH_KEYWORDS, getsizeof_doc},
+    SYS_GETSIZEOF_METHODDEF
     SYS__GETFRAME_METHODDEF
     SYS__GETFRAMEMODULENAME_METHODDEF
     SYS_GETWINDOWSVERSION_METHODDEF
@@ -2928,8 +2930,7 @@ static PyMethodDef sys_methods[] = {
     SYS__DEBUGMALLOCSTATS_METHODDEF
     SYS_SET_COROUTINE_ORIGIN_TRACKING_DEPTH_METHODDEF
     SYS_GET_COROUTINE_ORIGIN_TRACKING_DEPTH_METHODDEF
-    {"set_asyncgen_hooks", _PyCFunction_CAST(sys_set_asyncgen_hooks),
-     METH_VARARGS | METH_KEYWORDS, set_asyncgen_hooks_doc},
+    SYS_SET_ASYNCGEN_HOOKS_METHODDEF
     SYS_GET_ASYNCGEN_HOOKS_METHODDEF
     SYS_GETANDROIDAPILEVEL_METHODDEF
     SYS_ACTIVATE_STACK_TRAMPOLINE_METHODDEF
@@ -3860,6 +3861,8 @@ static PyStructSequence_Desc emscripten_info_desc = {
     4
 };
 
+EM_JS_DEPS(_Py_emscripten_runtime, "$stringToNewUTF8")
+
 EM_JS(char *, _Py_emscripten_runtime, (void), {
     var info;
     if (typeof process === "object") {
@@ -4478,7 +4481,8 @@ make_sys_argv(int argc, wchar_t * const * argv)
     return list;
 }
 
-void
+// Function removed from Python 3.16 limited C API, but kept in the stable ABI
+PyAPI_FUNC(void)
 PySys_SetArgvEx(int argc, wchar_t **argv, int updatepath)
 {
     wchar_t* empty_argv[1] = {L""};
@@ -4525,13 +4529,18 @@ PySys_SetArgvEx(int argc, wchar_t **argv, int updatepath)
     }
 }
 
-void
+// Function removed from Python 3.16 limited C API, but kept in the stable ABI
+PyAPI_FUNC(void)
 PySys_SetArgv(int argc, wchar_t **argv)
 {
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
-    PySys_SetArgvEx(argc, argv, Py_IsolatedFlag == 0);
-_Py_COMP_DIAG_POP
+    int isolated = 0;
+    PyThreadState *tstate = PyThreadState_GetUnchecked();
+    if (tstate != NULL) {
+        const PyConfig *config = &tstate->interp->config;
+        isolated = config->isolated;
+    }
+
+    PySys_SetArgvEx(argc, argv, isolated == 0);
 }
 
 /* Reimplementation of PyFile_WriteString() no calling indirectly

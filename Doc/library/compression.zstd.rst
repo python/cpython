@@ -346,7 +346,7 @@ Compressing and decompressing data in memory
       will be set to ``True``.
 
       Attempting to decompress data after the end of a frame will raise a
-      :exc:`ZstdError`. Any data found after the end of the frame is ignored
+      :exc:`EOFError`. Any data found after the end of the frame is ignored
       and saved in the :attr:`~.unused_data` attribute.
 
    .. attribute:: eof
@@ -503,7 +503,7 @@ Advanced parameter control
    The :meth:`~.bounds` method can be used on any attribute to get the valid
    values for that parameter.
 
-   Parameters are optional; any omitted parameter will have it's value selected
+   Parameters are optional; any omitted parameter will have its value selected
    automatically.
 
    Example getting the lower and upper bound of :attr:`~.compression_level`::
@@ -732,7 +732,7 @@ Advanced parameter control
 
    An :class:`~enum.IntEnum` containing the advanced decompression parameter
    keys that can be used when decompressing data. Parameters are optional; any
-   omitted parameter will have it's value selected automatically.
+   omitted parameter will have its value selected automatically.
 
    The :meth:`~.bounds` method can be used on any attribute to get the valid
    values for that parameter.
@@ -827,10 +827,45 @@ Miscellaneous
    The default compression level for Zstandard: ``3``.
 
 
-.. attribute:: zstd_version_info
+Information about the version of the zstd library in use is available through
+the following constants:
 
-   Version number of the runtime zstd library as a tuple of integers
-   (major, minor, release).
+
+.. data:: ZSTD_VERSION
+
+   The version string of the zstd library that was used for building the module.
+   This may be different from the zstd library actually used at runtime, which
+   is available as :const:`zstd_version`.
+
+   .. versionadded:: next
+
+
+.. data:: zstd_version
+
+   The version string of the zstd library actually loaded by the interpreter.
+
+
+.. data:: ZSTD_VERSION_INFO
+
+   A named tuple containing the three components of the zstd library
+   version that was used for building the module:
+   *major*, *minor*, and *patch*.  All values are integers.
+   The components can also be accessed by name, so ``zstd.ZSTD_VERSION_INFO[0]``
+   is equivalent to ``zstd.ZSTD_VERSION_INFO.major`` and so on.
+   This may be different from the zstd library actually used at runtime, which
+   is available as :const:`zstd_version_info`.
+
+   .. versionadded:: next
+
+
+.. data:: zstd_version_info
+
+   A named tuple containing the version of the zstd library
+   actually loaded by the interpreter,
+   with the same fields as :const:`ZSTD_VERSION_INFO`.
+
+   .. versionchanged:: next
+      It is now a named tuple.
 
 
 Examples
