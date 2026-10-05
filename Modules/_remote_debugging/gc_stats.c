@@ -103,12 +103,42 @@ get_gc_stats_from_interpreter_state(RuntimeOffsets *offsets,
     }
 
     struct gc_stats stats;
-    if (_Py_RemoteDebug_ReadRemoteMemory(&offsets->handle,
-                                         gc_stats_addr,
-                                         sizeof(stats),
-                                         &stats) < 0) {
-        set_exception_cause(offsets, PyExc_RuntimeError, "Failed to read GC state");
-        return -1;
+    uintptr_t sequence_address = gc_stats_addr
+        + offsetof(struct gc_stats, update_seq);
+    /* A short GC update may finish before a second attempt. */
+    for (int attempt = 0; attempt < 2; attempt++) {
+        uint32_t before;
+        if (_Py_RemoteDebug_ReadRemoteMemory(&offsets->handle,
+                                             sequence_address,
+                                             sizeof(before), &before) < 0) {
+            set_exception_cause(offsets, PyExc_RuntimeError,
+                                "Failed to read GC update sequence");
+            return -1;
+        }
+        if (_Py_RemoteDebug_ReadRemoteMemory(&offsets->handle,
+                                             gc_stats_addr,
+                                             sizeof(stats),
+                                             &stats) < 0) {
+            set_exception_cause(offsets, PyExc_RuntimeError, "Failed to read GC state");
+            return -1;
+        }
+
+        uint32_t after;
+        if (_Py_RemoteDebug_ReadRemoteMemory(&offsets->handle,
+                                             sequence_address,
+                                             sizeof(after), &after) < 0) {
+            set_exception_cause(offsets, PyExc_RuntimeError,
+                                "Failed to read GC update sequence");
+            return -1;
+        }
+        if (before == after && before == stats.update_seq && !(after & 1)) {
+            break;
+        }
+        if (attempt == 1) {
+            PyErr_SetString(PyExc_RuntimeError,
+                            "GC stats changed while being read; retry later");
+            return -1;
+        }
     }
 
     if (read_gc_stats(&stats, iid, ctx->result,

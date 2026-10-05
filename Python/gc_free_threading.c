@@ -2287,6 +2287,12 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
 
     /* Update stats. */
     PyMutex_Lock(&gcstate->stats_mutex);
+    struct gc_stats *generation_stats = gcstate->generation_stats;
+    uint32_t seq = _Py_atomic_load_uint32_relaxed(&generation_stats->update_seq);
+    assert((seq & 1) == 0);
+    /* Odd seq tells the reader that an update is in progress. */
+    _Py_atomic_store_uint32_relaxed(&generation_stats->update_seq, seq + 1);
+    _Py_atomic_fence_seq_cst();
     struct gc_generation_stats *stats = get_stats(gcstate, generation);
     stats->ts_start = start;
     stats->ts_stop = stop;
@@ -2295,6 +2301,7 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     stats->uncollectable += n;
     stats->duration += duration;
     stats->candidates += state.candidates;
+    _Py_atomic_store_uint32_release(&generation_stats->update_seq, seq + 2);
     PyMutex_Unlock(&gcstate->stats_mutex);
 
     GC_STAT_ADD(generation, objects_collected, m);
