@@ -72,6 +72,8 @@ jobs:
     - name: MSan option setup
       if: inputs.sanitizer == 'MSan'
       run: |
+        sudo sysctl -w vm.mmap_rnd_bits=28  # Reduce ASLR to avoid MSan re-executing
+
         echo "MSAN_OPTIONS=${SAN_LOG_OPTION} allocator_may_return_null=1 handle_segv=0" >> "$GITHUB_ENV"
         # MSan reports false positives for memory initialized by libraries
         # that are not built with MSan, so disable modules that use them.
