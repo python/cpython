@@ -34,8 +34,8 @@ CURRENT_THREAD_HEADER = fr'{CURRENT_THREAD_ID} \(most recent call first\):'
 
 
 def skip_if_sanitizer_signal(signame):
-    return support.skip_if_sanitizer(f"TSAN/UBSan itercepts {signame}",
-                                     thread=True, ub=True)
+    return support.skip_if_sanitizer(f"TSan/UBSan/MSan intercepts {signame}",
+                                     thread=True, ub=True, memory=True)
 
 
 def expected_traceback(lineno1, lineno2, header, min_count=1):
