@@ -210,6 +210,52 @@ class RaceTestBase:
 
             self.assertEqual(target, expected)
 
+    def test_intersection_update_three_operands_concurrent(self):
+        """Test three-operand intersection updates of one shared set."""
+        NUM_ITERS = 10
+        BLOCK_SIZE = self.SET_SIZE * 100
+
+        updates = [
+            (
+                set(range(0, 10 * BLOCK_SIZE, 2)),
+                set(range(0, 9 * BLOCK_SIZE, 3)),
+                set(range(0, 8 * BLOCK_SIZE, 5)),
+            ),
+            (
+                set(range(0, 6 * BLOCK_SIZE, 5)),
+                set(range(0, 5 * BLOCK_SIZE, 2)),
+                set(range(0, 4 * BLOCK_SIZE)),
+            ),
+            (
+                set(range(0, 3 * BLOCK_SIZE, 3)),
+                set(range(0, 2 * BLOCK_SIZE, 5)),
+                set(range(0, BLOCK_SIZE)),
+            ),
+            (
+                set(range(0, 9 * BLOCK_SIZE, 2)),
+                set(range(0, 8 * BLOCK_SIZE, 3)),
+                set(range(0, 7 * BLOCK_SIZE)),
+            ),
+        ]
+        expected = set(range(0, BLOCK_SIZE, 30))
+
+        for _ in range(NUM_ITERS):
+            target = set(range(10 * BLOCK_SIZE))
+            barrier = Barrier(len(updates), timeout=2)
+
+            def intersect(first, second, third):
+                barrier.wait()
+                target.intersection_update(first, second, third)
+
+            threads = [Thread(target=intersect, args=operands)
+                       for operands in updates]
+            for thread in threads:
+                thread.start()
+            for thread in threads:
+                thread.join()
+
+            self.assertEqual(target, expected)
+
     def test_intersection_update_suspended_lock(self):
         """Test an update while a later operand's lock is held."""
         NUM_ITERS = 200
