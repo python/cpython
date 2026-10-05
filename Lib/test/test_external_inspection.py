@@ -3219,6 +3219,241 @@ t.join()
             self._check_exception_status(p, thread_tid, expect_exception=False)
 
 
+class TestExceptionDetectionInProcess(RemoteInspectionTestBase):
+    """gh-158539: HAS_EXCEPTION for handlers running in generators/coroutines.
+
+    ``TestExceptionDetectionScenarios`` samples a child process and therefore
+    needs subprocess debugging permissions. These tests inspect the current
+    process with ``RemoteUnwinder`` and only need self-inspection, so they also
+    run on macOS without special entitlements.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        try:
+            RemoteUnwinder(os.getpid(), all_threads=True).get_stack_trace()
+        except PermissionError as exc:
+            raise unittest.SkipTest(f"self-inspection is unavailable: {exc}")
+
+    def _check_running_handler(
+        self, target, expect_exception, *, mode=PROFILING_MODE_ALL,
+        skip_non_matching_threads=False,
+    ):
+        """Run *target* in a thread and check its HAS_EXCEPTION flag.
+
+        *target* receives ``(ready, stop)`` events and must signal ``ready``
+        only once it is executing inside the code region under test, then keep
+        running until ``stop`` is set.
+        """
+        stop = threading.Event()
+        ready = threading.Event()
+        failure = []
+
+        def runner():
+            try:
+                target(ready, stop)
+            except BaseException as exc:
+                failure.append(exc)
+                ready.set()
+
+        thread = threading.Thread(target=runner, daemon=True)
+        thread.start()
+        try:
+            self.assertTrue(ready.wait(SHORT_TIMEOUT), "handler never started")
+            self.assertFalse(failure, f"handler raised {failure!r}")
+
+            unwinder = RemoteUnwinder(
+                os.getpid(),
+                all_threads=True,
+                mode=mode,
+                skip_non_matching_threads=skip_non_matching_threads,
+            )
+            observed = []
+            for _ in busy_retry(SHORT_TIMEOUT):
+                with contextlib.suppress(*TRANSIENT_ERRORS):
+                    statuses = self._get_thread_statuses(unwinder.get_stack_trace())
+                    status = statuses.get(thread.native_id)
+                    if status is None:
+                        continue
+                    has_exception = bool(status & THREAD_STATUS_HAS_EXCEPTION)
+                    observed.append(has_exception)
+                    if has_exception == expect_exception:
+                        break
+            self.assertTrue(
+                observed, "target thread status was never observed"
+            )
+            self.assertIn(
+                expect_exception,
+                observed,
+                f"HAS_EXCEPTION was never {expect_exception} while the "
+                f"handler was running (observed {observed})",
+            )
+        finally:
+            stop.set()
+            thread.join(SHORT_TIMEOUT)
+
+    def _busy_until_stopped(self, ready, stop):
+        ready.set()
+        while not stop.is_set():
+            time.sleep(0.001)
+
+    def test_handler_in_function(self):
+        def target(ready, stop):
+            try:
+                raise ValueError("test")
+            except ValueError:
+                self._busy_until_stopped(ready, stop)
+
+        self._check_running_handler(target, expect_exception=True)
+
+    def test_handler_in_generator(self):
+        def target(ready, stop):
+            def gen():
+                try:
+                    raise ValueError("test")
+                except ValueError:
+                    self._busy_until_stopped(ready, stop)
+                yield
+
+            for _ in gen():
+                pass
+
+        self._check_running_handler(target, expect_exception=True)
+
+    def test_handler_in_genexpr_callee(self):
+        def target(ready, stop):
+            def callee():
+                try:
+                    raise ValueError("test")
+                except ValueError:
+                    self._busy_until_stopped(ready, stop)
+
+            list(callee() for _ in range(1))
+
+        self._check_running_handler(target, expect_exception=True)
+
+    def test_handler_in_coroutine(self):
+        async def coro(ready, stop):
+            try:
+                raise ValueError("test")
+            except ValueError:
+                self._busy_until_stopped(ready, stop)
+
+        def target(ready, stop):
+            asyncio.run(coro(ready, stop))
+
+        self._check_running_handler(target, expect_exception=True)
+
+    def test_handler_in_callee_from_coroutine(self):
+        def callee(ready, stop):
+            try:
+                raise ValueError("test")
+            except ValueError:
+                self._busy_until_stopped(ready, stop)
+
+        async def coro(ready, stop):
+            callee(ready, stop)
+
+        def target(ready, stop):
+            asyncio.run(coro(ready, stop))
+
+        self._check_running_handler(target, expect_exception=True)
+
+    def test_outer_handler_while_generator_runs(self):
+        """A generator with no handler of its own must not hide the outer one.
+
+        ``exc_info`` points at the generator's empty ``_PyErr_StackItem`` whose
+        ``previous_item`` is the thread's ``exc_state``, so the profiler has to
+        walk the chain to find the exception ``sys.exception()`` reports.
+        """
+        def target(ready, stop):
+            def gen():
+                self._busy_until_stopped(ready, stop)
+                yield
+
+            try:
+                raise ValueError("outer")
+            except ValueError:
+                for _ in gen():
+                    pass
+
+        self._check_running_handler(target, expect_exception=True)
+
+    def test_generator_without_exception(self):
+        def target(ready, stop):
+            def gen():
+                self._busy_until_stopped(ready, stop)
+                yield
+
+            for _ in gen():
+                pass
+
+        self._check_running_handler(target, expect_exception=False)
+
+    def test_outer_handler_while_nested_generators_run(self):
+        def target(ready, stop):
+            def gen(depth):
+                if depth:
+                    yield from gen(depth - 1)
+                else:
+                    self._busy_until_stopped(ready, stop)
+                yield
+
+            try:
+                raise ValueError("outer")
+            except ValueError:
+                for _ in gen(32):
+                    pass
+
+        self._check_running_handler(
+            target,
+            expect_exception=True,
+            mode=PROFILING_MODE_EXCEPTION,
+            skip_non_matching_threads=True,
+        )
+
+    def test_generator_finally_after_except(self):
+        """The handled exception is cleared before the generator's finally."""
+        def target(ready, stop):
+            def gen():
+                try:
+                    raise ValueError("test")
+                except ValueError:
+                    pass
+                finally:
+                    self._busy_until_stopped(ready, stop)
+                yield
+
+            for _ in gen():
+                pass
+
+        self._check_running_handler(target, expect_exception=False)
+
+    def test_exception_mode_filter_keeps_generator_handler(self):
+        """The exception-mode thread filter must not drop a generator handler.
+
+        This mirrors what ``--mode=exception`` actually does: threads without
+        HAS_EXCEPTION are skipped before their stack is unwound.
+        """
+        def target(ready, stop):
+            def gen():
+                try:
+                    raise ValueError("test")
+                except ValueError:
+                    self._busy_until_stopped(ready, stop)
+                yield
+
+            for _ in gen():
+                pass
+
+        self._check_running_handler(
+            target,
+            expect_exception=True,
+            mode=PROFILING_MODE_EXCEPTION,
+            skip_non_matching_threads=True,
+        )
+
+
 @requires_remote_subprocess_debugging()
 class TestFrameCaching(RemoteInspectionTestBase):
     """Test that frame caching produces correct results.
