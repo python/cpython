@@ -2807,5 +2807,45 @@ class CircularImportLazyTests(unittest.TestCase):
         self.assertIn("ImportError", result.stderr)
 
 
+@support.requires_subprocess()
+class LazyImportFinalizationTests(unittest.TestCase):
+    """Destructors that use lazy imports after finalization freed their state."""
+
+    def test_declare(self):
+        code = textwrap.dedent("""
+            import builtins, os
+
+            class Canary:
+                def __del__(self, write=os.write, exec=exec,
+                            builtins={"__lazy_import__": builtins.__lazy_import__}):
+                    exec("lazy import a.b", {"__builtins__": builtins})
+                    write(1, b"ok")
+
+            # Only this placeholder keeps the canary alive.
+            exec("lazy import pkg.mod", {"__builtins__": {
+                "__lazy_import__": builtins.__lazy_import__, "c": Canary()}})
+        """)
+        self.assertEqual(assert_python_ok("-c", code).out, b"ok")
+
+    def test_resolve(self):
+        code = textwrap.dedent("""
+            import contextvars, json, os, types
+
+            def safe_import(name, *args, allowed={"json": json}):
+                return allowed[name]
+
+            # Not in sys.modules, with builtins that still work at shutdown.
+            ns = types.ModuleType("ns")
+            ns.json = __lazy_import__("json", {"__builtins__": {"__import__": safe_import}})
+
+            class Canary:
+                def __del__(self, write=os.write, type=type, ns=ns):
+                    write(1, type(ns.json).__name__.encode())
+
+            contextvars.ContextVar("v").set(Canary())
+        """)
+        self.assertEqual(assert_python_ok("-c", code).out, b"module")
+
+
 if __name__ == '__main__':
     unittest.main()
