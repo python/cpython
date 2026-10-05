@@ -1,0 +1,2 @@
+Speed up creation of :class:`~enum.Enum` classes with many members: adding a
+member no longer scans the list of every value added before it.
