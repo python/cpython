@@ -16824,6 +16824,8 @@ os_getrandom_impl(PyObject *module, Py_ssize_t size, int flags)
         goto error;
     }
 
+    _Py_MSAN_UNPOISON(PyBytes_AS_STRING(bytes), n);
+
     if (n != size) {
         _PyBytes_Resize(&bytes, n);
     }
