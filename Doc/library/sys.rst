@@ -1621,7 +1621,7 @@ always available.
 
         sys.exit(sys.EXIT_SUCCESS)
 
-    .. versionadded:: 3.10
+    .. versionadded:: 3.16
 
 .. data:: EXIT_FAILURE
 
@@ -1631,7 +1631,7 @@ always available.
 
         sys.exit(sys.EXIT_FAILURE)
 
-    .. versionadded:: 3.10
+    .. versionadded:: 3.16
 
 .. rubric:: Citations
 
