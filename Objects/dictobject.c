@@ -1186,8 +1186,6 @@ do_lookup(PyDictObject *mp, PyDictKeysObject *dk, PyObject *key, Py_hash_t hash,
             return DKIX_EMPTY;
         }
         else if (hashpos && freeslot < 0 && !is_unusable_slot(ix)) {
-            // Reuse the first dummy slot, otherwise repeated insertions
-            // and deletions would make the probe sequence longer.
             freeslot = (Py_ssize_t)i;
         }
         perturb >>= PERTURB_SHIFT;
@@ -1250,6 +1248,17 @@ static Py_ssize_t _Py_HOT_FUNCTION
 unicodekeys_lookup_unicode(PyDictKeysObject* dk, PyObject *key, Py_hash_t hash)
 {
     return do_lookup(NULL, dk, key, hash, compare_unicode_unicode, NULL);
+}
+
+/* Like unicodekeys_lookup_unicode(), but also reports in *hashpos the index
+   table slot an insertion or deletion of the key needs (see do_lookup()).
+   Kept separate from the reader above so that readers keep generating code
+   without the slot bookkeeping. */
+static Py_ssize_t
+unicodekeys_lookup_unicode_pos(PyDictKeysObject* dk, PyObject *key, Py_hash_t hash,
+                               Py_ssize_t *hashpos)
+{
+    return do_lookup(NULL, dk, key, hash, compare_unicode_unicode, hashpos);
 }
 
 static inline int
@@ -1906,7 +1915,7 @@ _PyDict_EnablePerThreadRefcounting(PyObject *op)
 /* Internal function to find slot for an item from its hash
    when it is known that the key is not present in the dict.
  */
-static inline Py_ALWAYS_INLINE Py_ssize_t
+static Py_ssize_t
 find_empty_slot(PyDictKeysObject *keys, Py_hash_t hash)
 {
     assert(keys != NULL);
@@ -1931,7 +1940,7 @@ dict_lookup_pos(PyDictObject *mp, PyObject *key, Py_hash_t hash,
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(mp);
     PyDictKeysObject *dk = mp->ma_keys;
     if (dk->dk_kind == DICT_KEYS_UNICODE && PyUnicode_CheckExact(key)) {
-        Py_ssize_t ix = do_lookup(NULL, dk, key, hash, compare_unicode_unicode, hashpos);
+        Py_ssize_t ix = unicodekeys_lookup_unicode_pos(dk, key, hash, hashpos);
         *value_addr = ix >= 0 ? DK_UNICODE_ENTRIES(dk)[ix].me_value : NULL;
         return ix;
     }
@@ -2002,6 +2011,7 @@ insert_split_key(PyDictKeysObject *keys, PyObject *key, Py_hash_t hash)
 {
     assert(PyUnicode_CheckExact(key));
     Py_ssize_t ix;
+    Py_ssize_t hashpos = -1;
 
 
 #ifdef Py_GIL_DISABLED
@@ -2018,7 +2028,7 @@ insert_split_key(PyDictKeysObject *keys, PyObject *key, Py_hash_t hash)
 #endif
 
     LOCK_KEYS(keys);
-    ix = unicodekeys_lookup_unicode(keys, key, hash);
+    ix = unicodekeys_lookup_unicode_pos(keys, key, hash, &hashpos);
     if (ix == DKIX_EMPTY && keys->dk_usable > 0) {
         // Insert into new slot
         FT_ATOMIC_STORE_UINT32_RELAXED(keys->dk_version, 0);
@@ -2028,7 +2038,6 @@ insert_split_key(PyDictKeysObject *keys, PyObject *key, Py_hash_t hash)
             // we acquired the type lock above
             _PyType_Modified_Unlocked(type);
         }
-        Py_ssize_t hashpos = find_empty_slot(keys, hash);
         ix = keys->dk_nentries;
         dictkeys_set_index(keys, hashpos, ix);
         PyDictUnicodeEntry *ep = &DK_UNICODE_ENTRIES(keys)[ix];
@@ -2997,12 +3006,6 @@ delitem_common(PyDictObject *mp, Py_hash_t hash, Py_ssize_t ix,
 
     PyObject *old_key;
 
-    if (hashpos < 0) {
-        hashpos = lookdict_index(mp->ma_keys, hash, ix);
-    }
-    assert(hashpos >= 0);
-    assert(hashpos == lookdict_index(mp->ma_keys, hash, ix));
-
     STORE_USED(mp, mp->ma_used - 1);
     if (_PyDict_HasSplitTable(mp)) {
         assert(old_value == mp->ma_values->values[ix]);
@@ -3013,6 +3016,12 @@ delitem_common(PyDictObject *mp, Py_hash_t hash, Py_ssize_t ix,
         ASSERT_CONSISTENT(mp);
     }
     else {
+        if (hashpos < 0) {
+            hashpos = lookdict_index(mp->ma_keys, hash, ix);
+        }
+        assert(hashpos >= 0);
+        assert(hashpos == lookdict_index(mp->ma_keys, hash, ix));
+
         FT_ATOMIC_STORE_UINT32_RELAXED(mp->ma_keys->dk_version, 0);
         dictkeys_set_index(mp->ma_keys, hashpos, DKIX_DUMMY);
         if (DK_IS_UNICODE(mp->ma_keys)) {
@@ -3060,13 +3069,13 @@ _PyDict_DelItem_KnownHash_LockHeld(PyObject *op, PyObject *key, Py_hash_t hash)
     }
 
     Py_ssize_t ix;
+    Py_ssize_t hashpos;
     PyObject *old_value;
     PyDictObject *mp = (PyDictObject *)op;
     assert(can_modify_dict(mp));
 
     assert(key);
     assert(hash != -1);
-    Py_ssize_t hashpos;
     ix = dict_lookup_pos(mp, key, hash, &old_value, &hashpos);
     if (ix == DKIX_ERROR)
         return -1;
