@@ -177,10 +177,17 @@ def add_annotations(app: Sphinx, doctree: nodes.document) -> None:
 
         # Stable ABI annotation.
         if record := stable_abi_data.get(name):
-            if ROLE_TO_OBJECT_TYPE[record.role] != objtype:
+            record_object_type = ROLE_TO_OBJECT_TYPE[record.role]
+            if (
+                record_object_type != objtype
+                # Some macros are documented as functions
+                and not (
+                    record_object_type == 'macro' and objtype == 'function'
+                )
+            ):
                 msg = (
                     f"Object type mismatch in limited API annotation for {name}: "
-                    f"{ROLE_TO_OBJECT_TYPE[record.role]!r} != {objtype!r}"
+                    f"{record_object_type!r} != {objtype!r}"
                 )
                 raise ValueError(msg)
             annotation = _stable_abi_annotation(record)

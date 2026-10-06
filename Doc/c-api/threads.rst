@@ -608,6 +608,10 @@ C extensions.
 
    See also :c:func:`PyThreadState_GetUnchecked`.
 
+.. c:function:: PyThreadState* PyThreadState_GET()
+
+   Alias to :c:func:`PyThreadState_Get`.
+
 .. c:function:: PyThreadState* PyThreadState_GetUnchecked()
 
    Similar to :c:func:`PyThreadState_Get`, but don't kill the process with a
