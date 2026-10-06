@@ -4269,12 +4269,12 @@ dict_dict_merge(PyDictObject *mp, PyDictObject *other, int override, PyObject **
 
     while (_PyDict_Next((PyObject*)other, &pos, &key, &value, &hash)) {
         int err = 0;
-        Py_INCREF(key);
-        Py_INCREF(value);
         if (override == 1) {
             err = insertdict(mp, Py_NewRef(key), hash, Py_NewRef(value));
         }
         else {
+            Py_INCREF(key);
+            Py_INCREF(value);
             err = _PyDict_Contains_KnownHash((PyObject *)mp, key, hash);
             if (err == 0) {
                 err = insertdict(mp, Py_NewRef(key), hash, Py_NewRef(value));
@@ -4287,9 +4287,9 @@ dict_dict_merge(PyDictObject *mp, PyDictObject *other, int override, PyObject **
                 }
                 err = 0;
             }
+            Py_DECREF(value);
+            Py_DECREF(key);
         }
-        Py_DECREF(value);
-        Py_DECREF(key);
         if (err != 0)
             return -1;
 
