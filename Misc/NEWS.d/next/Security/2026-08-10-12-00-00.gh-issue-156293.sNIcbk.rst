@@ -1,0 +1,7 @@
+Fix a crash in :mod:`ssl` when an :attr:`~ssl.SSLContext.sni_callback`
+switches a connection to another :class:`~ssl.SSLContext` and the context
+that carries the callback is no longer referenced by the application.
+Servers that keep their ``sni_callback`` context alive (the usual case when
+it wraps the listening socket or is stored on the server object) were not
+affected.
+This addresses :cve:`2026-19445`.

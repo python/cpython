@@ -33,6 +33,8 @@ Copyright (C) 1994 Steen Lumholt.
 #include "pycore_long.h"          // _PyLong_IsNegative()
 #include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8String
 
+#include <signal.h>               // SIGINT
+
 #ifdef MS_WINDOWS
 #  include <windows.h>
 #endif
@@ -227,7 +229,25 @@ Tkinter_TkInit(Tcl_Interp *interp)
        does not search. Mount the DLL using Zipfs if possible.  */
     mount_tk_dll_zip();
 #endif
-    return Tk_Init(interp);
+#ifdef __APPLE__
+    /* Tk on macOS replaces the handlers of these signals with its own,
+       which exits the process.  Keep the handlers installed by Python
+       (gh-157672). */
+    static const int signals[] = {SIGINT, SIGHUP, SIGTERM};
+    PyOS_sighandler_t handlers[Py_ARRAY_LENGTH(signals)];
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(signals); i++) {
+        handlers[i] = PyOS_getsig(signals[i]);
+    }
+#endif
+    int result = Tk_Init(interp);
+#ifdef __APPLE__
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(signals); i++) {
+        if (handlers[i] != SIG_DFL) {
+            PyOS_setsig(signals[i], handlers[i]);
+        }
+    }
+#endif
+    return result;
 }
 
 /* The threading situation is complicated.  Tcl is not thread-safe, except
@@ -1670,14 +1690,21 @@ done:
       interpreter thread, so we ship the PyObject* args to the target thread,
       and perform processing there. */
 
+/*[clinic input]
+_tkinter.tkapp.call
+
+    *args: tuple
+
+[clinic start generated code]*/
+
 static PyObject *
-Tkapp_Call(PyObject *selfptr, PyObject *args)
+_tkinter_tkapp_call_impl(TkappObject *self, PyObject *args)
+/*[clinic end generated code: output=2af3af48d1927065 input=60052dc395d80297]*/
 {
     Tcl_Obj *objStore[ARGSZ];
     Tcl_Obj **objv = NULL;
     Tcl_Size objc;
     PyObject *res = NULL;
-    TkappObject *self = TkappObject_CAST(selfptr);
     int flags = TCL_EVAL_DIRECT | TCL_EVAL_GLOBAL;
 
     /* If args is a single tuple, replace with contents of tuple */
@@ -3211,18 +3238,23 @@ _tkinter_tkapp_loadtk_impl(TkappObject *self)
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+_tkinter.tkapp.wantobjects
+
+    value: int = -1
+    /
+
+Return the current setting, or set it if the argument is not -1.
+[clinic start generated code]*/
+
 static PyObject *
-Tkapp_WantObjects(PyObject *op, PyObject *args)
+_tkinter_tkapp_wantobjects_impl(TkappObject *self, int value)
+/*[clinic end generated code: output=10ce2bffa4adb3a4 input=69a4045e2c202385]*/
 {
-    TkappObject *self = TkappObject_CAST(op);
-    int wantobjects = -1;
-    if (!PyArg_ParseTuple(args, "|i:wantobjects", &wantobjects)) {
-        return NULL;
-    }
-    if (wantobjects == -1) {
+    if (value == -1) {
         return PyLong_FromLong(self->wantobjects);
     }
-    self->wantobjects = wantobjects;
+    self->wantobjects = value;
     Py_RETURN_NONE;
 }
 
@@ -3560,10 +3592,10 @@ static PyType_Spec Tktt_Type_spec = {
 static PyMethodDef Tkapp_methods[] =
 {
     _TKINTER_TKAPP_WILLDISPATCH_METHODDEF
-    {"wantobjects",            Tkapp_WantObjects, METH_VARARGS},
+    _TKINTER_TKAPP_WANTOBJECTS_METHODDEF
     _TKINTER_TKAPP_SETTRACE_METHODDEF
     _TKINTER_TKAPP_GETTRACE_METHODDEF
-    {"call",                   Tkapp_Call, METH_VARARGS},
+    _TKINTER_TKAPP_CALL_METHODDEF
     _TKINTER_TKAPP_EVAL_METHODDEF
     _TKINTER_TKAPP_EVALFILE_METHODDEF
     _TKINTER_TKAPP_RECORD_METHODDEF
@@ -3845,6 +3877,14 @@ PyInit__tkinter(void)
         return NULL;
     }
     if (PyModule_AddStringConstant(m, "TCL_VERSION", TCL_VERSION)) {
+        Py_DECREF(m);
+        return NULL;
+    }
+    if (PyModule_AddStringConstant(m, "TK_PATCH_LEVEL", TK_PATCH_LEVEL)) {
+        Py_DECREF(m);
+        return NULL;
+    }
+    if (PyModule_AddStringConstant(m, "TCL_PATCH_LEVEL", TCL_PATCH_LEVEL)) {
         Py_DECREF(m);
         return NULL;
     }

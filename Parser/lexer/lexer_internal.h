@@ -2,7 +2,7 @@
 #define _PY_LEXER_INTERNAL_H_
 
 #include "errcode.h"
-#include "lexer.h"
+#include "state.h"
 
 #define is_potential_identifier_start(c) (\
               (c >= 'a' && c <= 'z')\
@@ -50,6 +50,12 @@ tok_nextc(struct tok_state *tok)
         tok->source.bytes[tok->cur++ - tok->source.base_offset]);
 }
 
+/* Return -1 on error, otherwise whether the line is blank. */
+int _PyLexer_BeginLine(struct tok_state *);
+int _PyLexer_ContinueLine(struct tok_state *);
+int _PyLexer_IndentationToken(struct tok_state *, struct token *);
+/* Return zero when the newline is suppressed, otherwise its token type. */
+int _PyLexer_Newline(struct tok_state *, struct token *, int);
 void _PyLexer_backup(struct tok_state *, int);
 int _PyLexer_record_ftstring_comment(
     struct tok_state *, ftstring_state *, _PyTok_Off, _PyTok_Off);
@@ -60,7 +66,8 @@ int _PyLexer_close_ftstring_expr(
 void _PyLexer_mark_ftstring_debug(struct tok_state *, ftstring_state *);
 int _PyLexer_check_string_prefixes(struct tok_state *, int, int, int, int, int);
 int _PyLexer_scan_number(struct tok_state *, struct token *, int, int);
-int _PyLexer_scan_fstring_start(struct tok_state *, struct token *, int);
+int _PyLexer_scan_fstring_start(
+    struct tok_state *, struct token *, int, ftstring_kind);
 int _PyLexer_scan_string(struct tok_state *, struct token *, int);
 int _PyLexer_get_normal(struct tok_state *, ftstring_state *, struct token *);
 int _PyLexer_get_ftstring(struct tok_state *, ftstring_state *, struct token *);
