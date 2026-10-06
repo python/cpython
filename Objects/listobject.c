@@ -104,8 +104,7 @@ static int py_list_resize(PyListObject *self, Py_ssize_t newsize);
  * Note that self->ob_item may change, and even if newsize is less
  * than ob_size on entry.
  *
- * list_resize() only handles the fast path that does not need realloc().
- * Always inlining this function makes the fast path a few instructions 
+ * Always inlining list_resize() makes the fast path a few instructions
  * in each caller instead of a function call.
  */
 static inline Py_ALWAYS_INLINE int
