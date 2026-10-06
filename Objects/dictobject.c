@@ -1041,6 +1041,10 @@ clone_combined_dict_keys(PyDictObject *orig)
 
     memcpy(keys, orig->ma_keys, keys_size);
 
+    /* The keys version must be unique per keys object: the specializer
+       and the JIT optimizer rely on it to identify a dict's keys. */
+    keys->dk_version = 0;
+
     /* After copying key/value pairs, we need to incref all
        keys and values and they are about to be co-owned by a
        new dict object. */
@@ -2009,6 +2013,35 @@ _PyDict_InsertSplitValue(PyDictObject *mp, PyObject *key, PyObject *value, Py_ss
     ASSERT_CONSISTENT(mp);
 }
 
+// Replace a value at an existing entry. Steals the new value reference.
+static void
+replace_value(PyDictObject *mp, PyObject *key, Py_ssize_t ix,
+              PyObject *old_value, PyObject *value)
+{
+    assert(can_modify_dict(mp));
+    assert(old_value != NULL);
+
+    if (old_value != value) {
+        _PyDict_NotifyEvent(PyDict_EVENT_MODIFIED, mp, key, value);
+        if (DK_IS_UNICODE(mp->ma_keys)) {
+            if (_PyDict_HasSplitTable(mp)) {
+                STORE_SPLIT_VALUE(mp, ix, value);
+            }
+            else {
+                PyDictUnicodeEntry *ep = &DK_UNICODE_ENTRIES(mp->ma_keys)[ix];
+                STORE_VALUE(ep, value);
+            }
+        }
+        else {
+            PyDictKeyEntry *ep = &DK_ENTRIES(mp->ma_keys)[ix];
+            STORE_VALUE(ep, value);
+        }
+    }
+    Py_DECREF(old_value); /* which **CAN** re-enter (see gh-66843) */
+
+    ASSERT_CONSISTENT(mp);
+}
+
 /*
 Internal routine to insert a new item into the table.
 Used both by the internal resize routine and by the public insert routine.
@@ -2056,25 +2089,7 @@ insertdict(PyDictObject *mp,
         return 0;
     }
 
-    if (old_value != value) {
-        _PyDict_NotifyEvent(PyDict_EVENT_MODIFIED, mp, key, value);
-        assert(old_value != NULL);
-        if (DK_IS_UNICODE(mp->ma_keys)) {
-            if (_PyDict_HasSplitTable(mp)) {
-                STORE_SPLIT_VALUE(mp, ix, value);
-            }
-            else {
-                PyDictUnicodeEntry *ep = &DK_UNICODE_ENTRIES(mp->ma_keys)[ix];
-                STORE_VALUE(ep, value);
-            }
-        }
-        else {
-            PyDictKeyEntry *ep = &DK_ENTRIES(mp->ma_keys)[ix];
-            STORE_VALUE(ep, value);
-        }
-    }
-    Py_XDECREF(old_value); /* which **CAN** re-enter (see issue #22653) */
-    ASSERT_CONSISTENT(mp);
+    replace_value(mp, key, ix, old_value, value);
     Py_DECREF(key);
     return 0;
 
@@ -2700,44 +2715,7 @@ _PyDict_GetItemStringWithError(PyObject *v, const char *key)
     return rv;
 }
 
-/* Fast version of global value lookup (LOAD_GLOBAL).
- * Lookup in globals, then builtins.
- *
- *
- *
- *
- * Raise an exception and return NULL if an error occurred (ex: computing the
- * key hash failed, key comparison failed, ...). Return NULL if the key doesn't
- * exist. Return the value if the key exists.
- *
- * Returns a new reference.
- */
 PyObject *
-_PyDict_LoadGlobal(PyDictObject *globals, PyDictObject *builtins, PyObject *key)
-{
-    Py_ssize_t ix;
-    Py_hash_t hash;
-    PyObject *value;
-
-    hash = _PyObject_HashDictKey(key);
-    if (hash == -1) {
-        return NULL;
-    }
-
-    /* namespace 1: globals */
-    ix = _Py_dict_lookup_threadsafe(globals, key, hash, &value);
-    if (ix == DKIX_ERROR)
-        return NULL;
-    if (ix != DKIX_EMPTY && value != NULL)
-        return value;
-
-    /* namespace 2: builtins */
-    ix = _Py_dict_lookup_threadsafe(builtins, key, hash, &value);
-    assert(ix >= 0 || value == NULL);
-    return value;
-}
-
-void
 _PyDict_LoadGlobalStackRef(PyDictObject *globals, PyDictObject *builtins, PyObject *key, _PyStackRef *res)
 {
     Py_ssize_t ix;
@@ -2746,21 +2724,22 @@ _PyDict_LoadGlobalStackRef(PyDictObject *globals, PyDictObject *builtins, PyObje
     hash = _PyObject_HashDictKey(key);
     if (hash == -1) {
         *res = PyStackRef_NULL;
-        return;
+        return NULL;
     }
 
     /* namespace 1: globals */
     ix = _Py_dict_lookup_threadsafe_stackref(globals, key, hash, res);
     if (ix == DKIX_ERROR) {
-        return;
+        return NULL;
     }
     if (ix != DKIX_EMPTY && !PyStackRef_IsNull(*res)) {
-        return;
+        return (PyObject *)globals;
     }
 
     /* namespace 2: builtins */
     ix = _Py_dict_lookup_threadsafe_stackref(builtins, key, hash, res);
     assert(ix >= 0 || PyStackRef_IsNull(*res));
+    return PyStackRef_IsNull(*res) ? NULL : (PyObject *)builtins;
 }
 
 PyObject *
@@ -3103,6 +3082,35 @@ _PyDict_DelItemIf(PyObject *op, PyObject *key,
     res = delitemif_lock_held(op, key, predicate, arg);
     Py_END_CRITICAL_SECTION();
     return res;
+}
+
+int
+_PyDict_ReplaceItemIf(PyObject *op, PyObject *key,
+                      PyObject *expected, PyObject *replacement)
+{
+    assert(PyDict_Check(op));
+    assert(expected != NULL);
+    assert(replacement != NULL);
+
+    Py_hash_t hash = PyObject_Hash(key);
+    if (hash == -1) {
+        return -1;
+    }
+    int result = 0;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    PyDictObject *mp = (PyDictObject *)op;
+    PyObject *current;
+    Py_ssize_t ix = _Py_dict_lookup(mp, key, hash, &current);
+    if (ix == DKIX_ERROR) {
+        result = -1;
+    }
+    else if (current == expected) {
+        // Do not look up the key again: equality can execute Python code.
+        replace_value(mp, key, ix, current, Py_NewRef(replacement));
+        result = 1;
+    }
+    Py_END_CRITICAL_SECTION();
+    return result;
 }
 
 static void
@@ -4261,12 +4269,12 @@ dict_dict_merge(PyDictObject *mp, PyDictObject *other, int override, PyObject **
 
     while (_PyDict_Next((PyObject*)other, &pos, &key, &value, &hash)) {
         int err = 0;
-        Py_INCREF(key);
-        Py_INCREF(value);
         if (override == 1) {
             err = insertdict(mp, Py_NewRef(key), hash, Py_NewRef(value));
         }
         else {
+            Py_INCREF(key);
+            Py_INCREF(value);
             err = _PyDict_Contains_KnownHash((PyObject *)mp, key, hash);
             if (err == 0) {
                 err = insertdict(mp, Py_NewRef(key), hash, Py_NewRef(value));
@@ -4279,9 +4287,9 @@ dict_dict_merge(PyDictObject *mp, PyDictObject *other, int override, PyObject **
                 }
                 err = 0;
             }
+            Py_DECREF(value);
+            Py_DECREF(key);
         }
-        Py_DECREF(value);
-        Py_DECREF(key);
         if (err != 0)
             return -1;
 
@@ -5624,6 +5632,7 @@ dictiter_new(PyDictObject *dict, PyTypeObject *itertype)
     used = GET_USED(dict);
     di->di_used = used;
     di->len = used;
+    di->di_result = NULL;
     if (itertype == &PyDictRevIterKey_Type ||
          itertype == &PyDictRevIterItem_Type ||
          itertype == &PyDictRevIterValue_Type) {
@@ -5637,6 +5646,10 @@ dictiter_new(PyDictObject *dict, PyTypeObject *itertype)
     else {
         di->di_pos = 0;
     }
+    /* gh-152107: track before allocating di_result. A dictiter with a NULL
+       di_result is a valid state for dictiter_traverse()/dictiter_dealloc(),
+       so a failure of the allocation below can safely DECREF a tracked di. */
+    _PyObject_GC_TRACK(di);
     if (itertype == &PyDictIterItem_Type ||
         itertype == &PyDictRevIterItem_Type) {
         di->di_result = _PyTuple_FromPairSteal(Py_None, Py_None);
@@ -5645,10 +5658,6 @@ dictiter_new(PyDictObject *dict, PyTypeObject *itertype)
             return NULL;
         }
     }
-    else {
-        di->di_result = NULL;
-    }
-    _PyObject_GC_TRACK(di);
     return (PyObject *)di;
 }
 
@@ -6302,6 +6311,12 @@ dictreviter_iter_lock_held(PyDictObject *d, PyObject *self)
             key = entry_ptr->me_key;
             value = entry_ptr->me_value;
         }
+    }
+    // We found an element, but did not expect it
+    if (di->len == 0) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "dictionary keys changed during iteration");
+        goto fail;
     }
     di->di_pos = i-1;
     di->len--;

@@ -65,6 +65,37 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(property___set_name____doc__,
+"__set_name__($self, owner, name, /)\n"
+"--\n"
+"\n"
+"Method to set name of a property.");
+
+#define PROPERTY___SET_NAME___METHODDEF    \
+    {"__set_name__", _PyCFunction_CAST(property___set_name__), METH_FASTCALL, property___set_name____doc__},
+
+static PyObject *
+property___set_name___impl(propertyobject *self, PyObject *owner,
+                           PyObject *name);
+
+static PyObject *
+property___set_name__(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *owner;
+    PyObject *name;
+
+    if (!_PyArg_CheckPositional("__set_name__", nargs, 2, 2)) {
+        goto exit;
+    }
+    owner = args[0];
+    name = args[1];
+    return_value = property___set_name___impl((propertyobject *)self, owner, name);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(property_init__doc__,
 "property(fget=None, fset=None, fdel=None, doc=None)\n"
 "--\n"
@@ -179,4 +210,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2e8df497abc4f915 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fb62ee8be13af793 input=a9049054013a1b77]*/

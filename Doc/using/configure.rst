@@ -95,8 +95,7 @@ Dependencies to build optional modules are:
      -
      - :mod:`curses`
    * - `OpenSSL <https://openssl-library.org/>`_
-     - | 3.0.18 recommended
-       | (1.1.1 minimum)
+     - [8]_
      - :mod:`ssl`, :mod:`hashlib` [6]_
    * - `SQLite <https://sqlite.org/>`_
      - 3.15.2
@@ -131,6 +130,14 @@ Dependencies to build optional modules are:
    See :option:`--with-builtin-hashlib-hashes` for *forcing* usage of OpenSSL.
 .. [7] See :option:`--with-zlib` for choosing the backend for the
    :mod:`zlib` module.
+.. [8] OpenSSL 1.1.1 is the minimum possible version to build against,
+   but the series is end-of-life and no longer receives public security
+   fixes.  Use the latest patch release of a currently supported LTS
+   release series (see the `OpenSSL Roadmap
+   <https://openssl-library.org/roadmap/index.html>`__), or the package
+   provided by your operating system if available.  Other libraries that
+   offer an API compatible with OpenSSL 1.1.1 or later may work, but are
+   not officially supported.
 
 Note that the table does not include all optional modules; in particular,
 platform-specific modules like :mod:`winreg` are not listed here.
@@ -1015,9 +1022,26 @@ Debug options
 
    .. versionadded:: 3.6
 
+.. option:: --with-hwaddress-sanitizer
+
+   Enable HWAddressSanitizer memory error detector, ``hwasan`` (default is no).
+   Note that on x86-64 this uses `page aliasing
+   <https://clang.llvm.org/docs/HardwareAssistedAddressSanitizerDesign.html#supported-architectures>`_,
+   which only tags heap allocations and is unsafe for programs that ``fork()``,
+   including much of the test suite.
+   See the `LLVM HWASan design documentation
+   <https://clang.llvm.org/docs/HardwareAssistedAddressSanitizerDesign.html>`_
+   for more information.
+
+   .. versionadded:: next
+
 .. option:: --with-memory-sanitizer
 
    Enable MemorySanitizer allocation error detector, ``msan`` (default is no).
+
+   MSan reports false positives for memory initialized by libraries that are
+   not built with MSan, so either build all dependencies with MSan or disable
+   the extension modules that use them in :file:`Modules/Setup.local`.
 
    .. versionadded:: 3.6
 
