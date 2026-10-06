@@ -1,0 +1,2 @@
+Make :func:`os.strerror` thread-safe: use the reentrant ``strerror_r()``
+function if available. Patch by Victor Stinner.

@@ -5587,6 +5587,9 @@ AC_CHECK_FUNCS([ \
   wait wait3 wait4 waitid waitpid wcscoll wcsftime wcsxfrm wmemcmp writev \
 ])
 
+PY_CHECK_FUNC_PRIVATE([strerror_r], [@%:@include <string.h>])
+
+
 # os.statx uses Linux's statx function.  AIX also has a function named statx,
 # but it's unrelated.  Check only on Linux (including Android).
 AS_CASE([$ac_sys_system],

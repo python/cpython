@@ -2214,6 +2214,9 @@
 /* Define if you have the 'sinpi' function. */
 #undef _Py_HAVE_SINPI
 
+/* Define if you have the 'strerror_r' function. */
+#undef _Py_HAVE_STRERROR_R
+
 /* Define if you have the 'tanpi' function. */
 #undef _Py_HAVE_TANPI
 
