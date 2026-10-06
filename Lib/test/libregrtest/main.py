@@ -285,7 +285,6 @@ class Regrtest:
             fail_fast=False,
             match_tests_dict=match_tests_dict,
             output_on_failure=False,
-            # Annotate tests which fail again
             github_annotations=bool(os.environ.get("GITHUB_STEP_SUMMARY")))
         self.logger.set_tests(runtests)
 
@@ -495,11 +494,6 @@ class Regrtest:
             return
         # Tests which failed in the last run (the re-run, if any)
         failed = self.results.rerun_results
-        if not self.results.rerun:
-            # Failed tests were not re-run (ex: --python): annotate them now.
-            # Otherwise, they were annotated when they failed again.
-            for result in failed:
-                result.print_github_annotations()
         cases = [(result.errors or []) + (result.failures or [])
                  for result in failed]
         ncase = sum(map(len, cases))
@@ -561,7 +555,10 @@ class Regrtest:
             hunt_refleak=self.hunt_refleak,
             test_dir=self.test_dir,
             use_junit=(self.junit_filename is not None),
-            github_annotations=False,
+            # Only annotate failures of the last run: the re-run, if any
+            github_annotations=(bool(os.environ.get("GITHUB_STEP_SUMMARY"))
+                                and not (self.want_rerun
+                                         and not self.python_cmd)),
             coverage=self.coverage,
             memory_limit=self.memory_limit,
             gc_threshold=self.gc_threshold,

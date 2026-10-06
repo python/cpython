@@ -1,6 +1,5 @@
 import dataclasses
 import json
-import os
 from _colorize import get_colors  # type: ignore[import-not-found]
 from typing import Any
 
@@ -179,34 +178,17 @@ class TestResult:
     def has_meaningful_duration(self):
         return State.has_meaningful_duration(self.state)
 
-    def get_github_annotations(self) -> list[tuple[str, str]]:
-        """(test case name, message) of each failed test case.
-
-        Without test case details (crash, timeout, env changed, etc.), return
-        the test name and the test result.
-        """
-        if not os.environ.get("GITHUB_STEP_SUMMARY"):
-            return []
-        annotations = (self.errors or []) + (self.failures or [])
-        if not annotations:
-            message = "\n".join([str(self), *(self.env_changed_reasons or ())])
-            annotations = [(self.test_name, message)]
-        return annotations
-
-    def print_github_annotations(self) -> None:
-        """Print a GitHub Actions error annotation per failed test case."""
-        for title, message in self.get_github_annotations():
-            print(github_annotation(title, message), flush=True)
-
     def print_github_crash_annotation(self, fail_env_changed: bool) -> None:
         """Annotate a failed test without test case failures.
 
-        Test case failures are annotated by the test runner, where they are
-        reported (see RegressionTestResult.printErrorList()).
+        For example: crash, timeout, env changed. Test case failures are
+        annotated by the test runner, where they are reported (see
+        RegressionTestResult.printErrorList()).
         """
         if (self.is_failed(fail_env_changed)
                 and not self.errors and not self.failures):
-            self.print_github_annotations()
+            message = "\n".join([str(self), *(self.env_changed_reasons or ())])
+            print(github_annotation(self.test_name, message), flush=True)
 
     def set_env_changed(self, *reasons):
         if self.state is None or self.state == State.PASSED:

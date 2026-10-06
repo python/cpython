@@ -154,11 +154,16 @@ class RegressionTestResult(unittest.TextTestResult):
 
 class QuietRegressionTestRunner:
     def __init__(self, stream, buffer=False):
+        # Wrap the stream as TextTestRunner does, for printErrors()
+        stream = unittest.runner._WritelnDecorator(stream)
         self.result = RegressionTestResult(stream, None, 0)
         self.result.buffer = buffer
 
     def run(self, test):
         test(self.result)
+        if self.result.GITHUB_ANNOTATIONS:
+            # Report annotated failures, as in verbose mode
+            self.result.printErrors()
         return self.result
 
 def get_test_runner_class(verbosity, buffer=False):
