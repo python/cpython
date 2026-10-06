@@ -2094,6 +2094,9 @@
 /* Define if you have the 'PR_SET_VMA_ANON_NAME' constant. */
 #undef _Py_HAVE_PR_SET_VMA_ANON_NAME
 
+/* Define if you have the 'strerror_r' function. */
+#undef _Py_HAVE_STRERROR_R
+
 /* Thread stack size set by the linker (in bytes). */
 #undef _Py_LINKER_THREAD_STACK_SIZE
 
