@@ -13,6 +13,7 @@ import os
 import contextlib
 
 from test import support
+from test.support import threading_helper
 from test.support.script_helper import assert_python_ok, assert_python_failure
 
 try:
@@ -364,6 +365,29 @@ class LazyImportTypeTests(LazyImportTestCase):
 
             main()
         """)
+
+    @threading_helper.requires_working_threading()
+    def test_concurrent_resolve_returns_one_object(self):
+        """Concurrent reifications of one proxy all return the same object."""
+        import builtins
+        ns = {"__builtins__": {
+            "__lazy_import__": builtins.__lazy_import__,
+            "__import__": lambda name, *args: types.ModuleType(name),
+        }}
+        exec("lazy import target_module", ns)
+        proxy = ns["target_module"]
+        barrier = threading.Barrier(8)
+        results = []
+
+        def worker():
+            barrier.wait()
+            results.append(proxy.resolve())
+
+        with threading_helper.start_threads(
+                threading.Thread(target=worker) for _ in range(8)):
+            pass
+        self.assertEqual(len(results), 8)
+        self.assertTrue(all(r is results[0] for r in results))
 
     @support.requires_subprocess()
     def test_from_import_proxy_remembers_the_attribute(self):

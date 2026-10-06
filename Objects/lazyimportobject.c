@@ -23,6 +23,8 @@ typedef struct {
     // in lz_from, and the attribute to import from (PyUnicode) it in lz_attr.
     PyObject *lz_from;
     PyObject *lz_attr;
+    // Result of the first successful resolution, or NULL.
+    PyObject *lz_resolved;
     // Declaration location.
     PyCodeObject *lz_code;
     int lz_instr_offset;
@@ -70,6 +72,7 @@ _PyLazyImport_New(_PyInterpreterFrame *frame, PyObject *builtins,
     m->lz_builtins = Py_XNewRef(builtins);
     m->lz_from = Py_NewRef(name);
     m->lz_attr = Py_XNewRef(fromlist);
+    m->lz_resolved = NULL;
 
     m->lz_code = NULL;
     m->lz_instr_offset = -1;
@@ -156,6 +159,7 @@ lazy_import_traverse(PyObject *op, visitproc visit, void *arg)
     Py_VISIT(m->lz_builtins);
     Py_VISIT(m->lz_from);
     Py_VISIT(m->lz_attr);
+    Py_VISIT(m->lz_resolved);
     Py_VISIT(m->lz_code);
     return 0;
 }
@@ -167,6 +171,7 @@ lazy_import_clear(PyObject *op)
     Py_CLEAR(m->lz_builtins);
     Py_CLEAR(m->lz_from);
     Py_CLEAR(m->lz_attr);
+    Py_CLEAR(m->lz_resolved);
     Py_CLEAR(m->lz_code);
     return 0;
 }
@@ -368,6 +373,10 @@ lazy_import_resolve_impl(PyThreadState *tstate, PyObject *lazy_import,
     assert(PyLazyImport_CheckExact(lazy_import));
 
     PyLazyImportObject *lz = (PyLazyImportObject *)lazy_import;
+    PyObject *resolved = FT_ATOMIC_LOAD_PTR_ACQUIRE(lz->lz_resolved);
+    if (resolved != NULL) {
+        return Py_NewRef(resolved);
+    }
 
     // Walk back to the placeholder IMPORT_NAME left, and the first lookup on it.
     PyLazyImportObject *root = lz, *first = NULL;
@@ -534,6 +543,15 @@ done:
             Py_CLEAR(obj);
         }
         Py_XDECREF(name);
+    }
+    if (obj != NULL) {
+        // Concurrent resolutions return the first result that was stored.
+        PyObject *expected = NULL;
+        if (!_Py_atomic_compare_exchange_ptr(&lz->lz_resolved, &expected,
+                                             Py_NewRef(obj))) {
+            Py_DECREF(obj);
+            Py_SETREF(obj, Py_NewRef(expected));
+        }
     }
     if (resolving != NULL) {
         // A failed set resize can leave the placeholder inserted. Removing by
