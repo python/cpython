@@ -1,6 +1,5 @@
 import contextlib
 import faulthandler
-import linecache
 import locale
 import math
 import os.path
@@ -142,63 +141,13 @@ def print_warning(msg: str) -> None:
 orig_unraisablehook: Callable[..., None] | None = None
 
 
-def traceback_location(traceback: str) -> dict[str, str | int] | None:
-    """Location of the last frame of a traceback, relative to the repository.
-
-    Return a dict with file and line, plus col and endColumn when the
-    traceback underlines the failing expression (~~~^^^).
-    """
-    lines = traceback.splitlines()
-    for index in reversed(range(len(lines))):
-        if match := re.match(r'  File "(.+)", line (\d+)', lines[index]):
-            break
-    else:
-        return None
-    filename, lineno = match.group(1), int(match.group(2))
-    # Map the stdlib directory (Lib/ in a source checkout or an installed
-    # lib/python3.X/) to Lib/ in the repository
-    stdlib_dir = os.path.dirname(os.__file__) + os.sep
-    if not filename.startswith(stdlib_dir):
-        return None
-    relpath = filename.removeprefix(stdlib_dir).replace(os.sep, "/")
-    location: dict[str, str | int] = {"file": f"Lib/{relpath}", "line": lineno}
-
-    # The frame is followed by the dedented source line ("    code") and,
-    # for a single-line expression, by a line of ~ and ^ markers.
-    markers = lines[index + 2] if index + 2 < len(lines) else ""
-    source = linecache.getline(filename, lineno)
-    if markers.strip() and not markers.strip(" ~^") and source:
-        indent = len(source) - len(source.lstrip())
-        start = len(markers) - len(markers.lstrip())
-        location["col"] = indent + start - 4 + 1
-        location["endColumn"] = indent + len(markers.rstrip()) - 4
-    return location
-
-
-def traceback_exception(traceback: str) -> str:
-    """The exception which ends a traceback: type, message and notes.
-
-    Return traceback unchanged if it has no frame.
-    """
-    lines = traceback.splitlines()
-    for index in reversed(range(len(lines))):
-        if lines[index].startswith('  File "'):
-            break
-    else:
-        return traceback
-    # Skip the frame's indented source line and ~^ markers
-    index += 1
-    while index < len(lines) and lines[index].startswith("    "):
-        index += 1
-    return "\n".join(lines[index:])
-
-
-def github_annotation(title: str, message: str) -> str:
+def github_annotation(title: str, message: str,
+                      filename: str | None = None) -> str:
     """Format a GitHub Actions error annotation.
 
-    message is a traceback or a failure description. Locate the annotation at
-    the last frame of the traceback, if any, and only keep the exception which
-    ends the traceback: the job log has the full traceback.
+    message is a traceback or a failure description. Only keep the exception
+    which ends the traceback: the job log has the full traceback. Locate the
+    annotation at the last frame of the traceback in filename, if any.
     """
     def escape(text: str) -> str:
         return (text.replace("%", "%25").replace("\r", "%0D")
@@ -208,12 +157,21 @@ def github_annotation(title: str, message: str) -> str:
         return escape(text).replace(":", "%3A").replace(",", "%2C")
 
     message = decolor(message)
-    props: dict[str, str | int] = {}
-    if location := traceback_location(message):
-        props |= location
+    props: dict[str, str] = {}
+    # Map the stdlib directory (Lib/ in a source checkout or an installed
+    # lib/python3.X/) to Lib/ in the repository
+    stdlib_dir = os.path.dirname(os.__file__) + os.sep
+    if filename and filename.startswith(stdlib_dir):
+        lines = re.findall(rf'^  File "{re.escape(filename)}", line (\d+)',
+                           message, re.MULTILINE)
+        if lines:
+            relpath = filename.removeprefix(stdlib_dir).replace(os.sep, "/")
+            props |= {"file": f"Lib/{relpath}", "line": lines[-1]}
     props["title"] = title
-    message = traceback_exception(message).strip()
-    props_text = ",".join(f"{key}={escape_property(str(value))}"
+    # Strip the frames: each "  File" line and its indented source lines
+    message = re.split(r'^  File .*\n(?:    .*\n)*', message,
+                       flags=re.MULTILINE)[-1].strip()
+    props_text = ",".join(f"{key}={escape_property(value)}"
                           for key, value in props.items())
     return f"::error {props_text}::{escape(message)}"
 
