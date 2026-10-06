@@ -1872,6 +1872,19 @@
 [function.PyThread_start_new_thread]
     added = '3.2'
 
+# Python 3.2 macros
+
+[macro.Py_CLEAR]
+    added = '3.2'
+[macro.Py_DECREF]
+    added = '3.2'
+[macro.Py_INCREF]
+    added = '3.2'
+[macro.Py_XDECREF]
+    added = '3.2'
+[macro.Py_XINCREF]
+    added = '3.2'
+
 
 ### Python 3.3 ##############################################################
 
@@ -2223,6 +2236,13 @@
 [function.PyObject_GC_IsFinalized]
     added = '3.9'
 [function.PyObject_GC_IsTracked]
+    added = '3.9'
+
+# Python 3.9 macros
+
+[macro.Py_SET_REFCNT]
+    added = '3.9'
+[macro.Py_SET_TYPE]
     added = '3.9'
 
 
