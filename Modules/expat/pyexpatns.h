@@ -41,9 +41,6 @@
 #define testingAccountingGetCountBytesDirect PyExpat_testingAccountingGetCountBytesDirect
 #define testingAccountingGetCountBytesIndirect PyExpat_testingAccountingGetCountBytesIndirect
 #define unsignedCharToPrintable PyExpat_unsignedCharToPrintable
-#define xcscmp PyExpat_xcscmp
-#define xcslen PyExpat_xcslen
-#define xcsncmp PyExpat_xcsncmp
 #define XML_DefaultCurrent              PyExpat_XML_DefaultCurrent
 #define XML_ErrorString                 PyExpat_XML_ErrorString
 #define XML_ExpatVersion                PyExpat_XML_ExpatVersion
