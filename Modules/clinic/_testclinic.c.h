@@ -5309,8 +5309,4 @@ vc_kwonly_vectorcall(PyObject *type, PyObject *const *args,
         kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
         NULL, kwnames);
 }
-<<<<<<< HEAD
-/*[clinic end generated code: output=e7c7714b56289ffe input=a9049054013a1b77]*/
-=======
-/*[clinic end generated code: output=e1f97f59fec61b6b input=a9049054013a1b77]*/
->>>>>>> master
+/*[clinic end generated code: output=b18344bb0b57e66c input=a9049054013a1b77]*/
