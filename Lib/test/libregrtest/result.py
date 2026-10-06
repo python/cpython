@@ -1,11 +1,12 @@
 import dataclasses
 import json
-from _colorize import get_colors  # type: ignore[import-not-found]
+import os
+from _colorize import decolor, get_colors  # type: ignore[import-not-found]
 from typing import Any
 
 from .utils import (
     StrJSON, TestName, FilterTuple,
-    format_duration, normalize_test_name, print_warning)
+    format_duration, normalize_test_name, print_warning, traceback_location)
 
 
 @dataclasses.dataclass(slots=True)
@@ -177,6 +178,40 @@ class TestResult:
 
     def has_meaningful_duration(self):
         return State.has_meaningful_duration(self.state)
+
+    def print_github_annotations(self) -> None:
+        """Print a GitHub Actions error annotation per failed test case."""
+        if not os.environ.get("GITHUB_STEP_SUMMARY"):
+            return
+
+        def escape(text: str) -> str:
+            return (text.replace("%", "%25").replace("\r", "%0D")
+                    .replace("\n", "%0A"))
+
+        def escape_property(text: str) -> str:
+            return escape(text).replace(":", "%3A").replace(",", "%2C")
+
+        annotations = [(f"{self.test_name}: {name}", traceback)
+                       for name, traceback in (self.errors or [])
+                                              + (self.failures or [])]
+        if not annotations:
+            # No test case details: crash, timeout, env changed, etc.
+            message = "\n".join([str(self), *(self.env_changed_reasons or ())])
+            annotations = [(self.test_name, message)]
+        for title, message in annotations:
+            message = decolor(message)
+            props: dict[str, str | int] = {}
+            if location := traceback_location(message):
+                props |= location
+                # The job log only shows the message: start it with the location
+                position = ":".join(str(location[key])
+                                    for key in ("file", "line", "col")
+                                    if key in location)
+                message = f"{position}\n{message}"
+            props["title"] = title
+            props_text = ",".join(f"{key}={escape_property(str(value))}"
+                                  for key, value in props.items())
+            print(f"::error {props_text}::{escape(message)}", flush=True)
 
     def set_env_changed(self, *reasons):
         if self.state is None or self.state == State.PASSED:

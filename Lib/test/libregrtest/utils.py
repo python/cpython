@@ -174,31 +174,6 @@ def traceback_location(traceback: str) -> dict[str, str | int] | None:
     return location
 
 
-def github_annotation(level: str, title: str, message: str) -> None:
-    """Emit a GitHub Actions annotation (workflow command).
-
-    Point it at the last frame of the traceback in message, if any.
-    """
-    def escape(text: str) -> str:
-        return (text.replace("%", "%25").replace("\r", "%0D")
-                .replace("\n", "%0A"))
-
-    def escape_property(text: str) -> str:
-        return escape(text).replace(":", "%3A").replace(",", "%2C")
-
-    props: dict[str, str | int] = {}
-    if location := traceback_location(message):
-        props |= location
-        # The job log only shows the message: start it with the location
-        position = ":".join(str(location[key])
-                            for key in ("file", "line", "col") if key in location)
-        message = f"{position}\n{message}"
-    props["title"] = title
-    props_text = ",".join(f"{key}={escape_property(str(value))}"
-                          for key, value in props.items())
-    print(f"::{level} {props_text}::{escape(message)}", flush=True)
-
-
 def regrtest_unraisable_hook(unraisable) -> None:
     global orig_unraisablehook
     support.set_environment_altered(

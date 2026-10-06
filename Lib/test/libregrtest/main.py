@@ -27,7 +27,7 @@ from .utils import (
     printlist, get_temp_dir, get_work_dir, exit_timeout,
     display_header, cleanup_temp_dir, print_warning,
     is_cross_compiled, get_host_runner, display_title,
-    get_process_memory_usage, github_annotation, EXIT_TIMEOUT)
+    get_process_memory_usage, EXIT_TIMEOUT)
 
 
 class Regrtest:
@@ -395,6 +395,8 @@ class Regrtest:
             result = run_single_test(test_name, runtests)
 
         self.results.accumulate_result(result, runtests)
+        if runtests.rerun and result.is_failed(runtests.fail_env_changed):
+            result.print_github_annotations()
 
         return result
 
@@ -491,6 +493,11 @@ class Regrtest:
             return
         # Tests which failed in the last run (the re-run, if any)
         failed = self.results.rerun_results
+        if not self.results.rerun:
+            # Failed tests were not re-run (ex: --python): annotate them now.
+            # Otherwise, they were annotated when they failed again.
+            for result in failed:
+                result.print_github_annotations()
         cases = [(result.errors or []) + (result.failures or [])
                  for result in failed]
         ncase = sum(map(len, cases))
@@ -507,14 +514,7 @@ class Regrtest:
                 if result.env_changed_reasons:
                     write("\n".join(f"- {reason}"
                                     for reason in result.env_changed_reasons))
-                if not result_cases:
-                    message = "\n".join([str(result),
-                                         *(result.env_changed_reasons or ())])
-                    github_annotation("error", result.test_name,
-                                      decolor(message))
                 for name, traceback in result_cases:
-                    github_annotation("error", f"{result.test_name}: {name}",
-                                      decolor(traceback))
                     # Expand short tracebacks when there are only a few
                     is_open = ncase <= 5 and traceback.count("\n") < 30
                     write(f"<details{' open' if is_open else ''}>"
