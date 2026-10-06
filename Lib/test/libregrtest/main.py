@@ -1,3 +1,5 @@
+import contextlib
+import io
 import os
 import random
 import re
@@ -6,7 +8,7 @@ import sys
 import sysconfig
 import time
 import trace
-from _colorize import get_colors  # type: ignore[import-not-found]
+from _colorize import decolor, get_colors  # type: ignore[import-not-found]
 from typing import NoReturn
 
 from test.support import os_helper, MS_WINDOWS, flush_std_streams
@@ -479,6 +481,25 @@ class Regrtest:
 
         if self.junit_filename:
             self.results.write_junit(self.junit_filename)
+
+        self.write_github_summary()
+
+    def write_github_summary(self) -> None:
+        filename = os.environ.get("GITHUB_STEP_SUMMARY")
+        if not filename:
+            return
+        with contextlib.redirect_stdout(io.StringIO()) as summary:
+            self.display_summary()
+        lines = ["## Test results",
+                 f"```\n{decolor(summary.getvalue()).strip()}\n```"]
+        # Tests which failed in the last run (the re-run, if any)
+        for result in self.results.rerun_results:
+            lines.append(f"### {decolor(str(result))}")
+            for name, traceback in (result.errors or []) + (result.failures or []):
+                lines.append(f"<details><summary>{name}</summary>\n\n"
+                             f"```\n{traceback}\n```\n</details>")
+        with open(filename, "a", encoding="utf-8") as fp:
+            fp.write("\n\n".join(lines) + "\n")
 
     def display_summary(self) -> None:
         if self.first_runtests is None:

@@ -1,0 +1,2 @@
+Individual test failures and an overall summary is now written by
+:mod:`test.regrtest` to the Github Action Summary.
