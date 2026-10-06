@@ -2800,6 +2800,92 @@ class TestInternalFrameApi(unittest.TestCase):
         firstline = self.func.__code__.co_firstlineno
         self.assertEqual(line, firstline + 2)
 
+    # get_frame_locals() returns the caller frame's locals as a name -> value
+    # dict via PyUnstable_InterpreterFrame_GetLocal (one strong reference per
+    # localsplus index).
+    def helper_plain(self, a, b):
+        c = a + b
+        return _testinternalcapi.get_frame_locals()
+
+    def test_get_local_plain(self):
+        d = self.helper_plain(3, 4)
+        self.assertEqual(d['a'], 3)
+        self.assertEqual(d['b'], 4)
+        self.assertEqual(d['c'], 7)
+        self.assertIs(d['self'], self)
+
+    def test_get_local_cell(self):
+        # y is a cell variable of this frame because inner closes over it.
+        y = 100
+
+        def inner():
+            return y
+
+        d = _testinternalcapi.get_frame_locals()
+        self.assertEqual(d['y'], 100)
+        self.assertIs(d['inner'], inner)
+
+    def test_get_local_free(self):
+        # z is a free variable of inner, read from the closure.
+        z = 7
+
+        def inner():
+            _ = z
+            return _testinternalcapi.get_frame_locals()
+
+        d = inner()
+        self.assertEqual(d['z'], 7)
+
+    def test_get_local_index_out_of_range(self):
+        def f(index):
+            return _testinternalcapi.get_frame_local(index)
+
+        # f has no cell or free variables, so co_nlocalsplus == co_nlocals.
+        code = f.__code__
+        self.assertFalse(code.co_cellvars or code.co_freevars)
+        nlocalsplus = code.co_nlocals
+        for index in (-1, nlocalsplus, nlocalsplus + 1):
+            with self.subTest(index=index):
+                with self.assertRaises(IndexError):
+                    f(index)
+
+    def test_get_local_unset(self):
+        def f():
+            if False:
+                unset = 1
+            names = f.__code__.co_varnames
+            return _testinternalcapi.get_frame_local(names.index('unset'))
+
+        self.assertEqual(f(), (0, None))
+
+    def test_get_local_set(self):
+        x = 5
+        index = self.test_get_local_set.__code__.co_varnames.index('x')
+        self.assertEqual(_testinternalcapi.get_frame_local(index), (1, 5))
+
+    def test_code_get_localsplus_names(self):
+        def outer(a, b):
+            c = a
+            def inner():
+                return a, d
+            d = b
+            return inner
+
+        names = _testinternalcapi.code_get_localsplus_names(outer.__code__)
+        self.assertIsInstance(names, tuple)
+        # Arguments and locals come first, followed by cells that are not
+        # arguments; here a and d are cells.
+        self.assertEqual(sorted(names), sorted(['a', 'b', 'c', 'd', 'inner']))
+        self.assertEqual(names[:2], ('a', 'b'))
+
+        inner = outer(1, 2)
+        names = _testinternalcapi.code_get_localsplus_names(inner.__code__)
+        self.assertEqual(names, ('a', 'd'))
+        self.assertEqual(names[inner.__code__.co_nlocals:], ('a', 'd'))
+
+        with self.assertRaises(TypeError):
+            _testinternalcapi.code_get_localsplus_names(None)
+
 
 SUFFICIENT_TO_DEOPT_AND_SPECIALIZE = 100
 
