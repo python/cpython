@@ -1,7 +1,5 @@
-
-/* Return the compiler identification, if possible. */
-
 #include "Python.h"
+#include <stdio.h>                // printf()
 
 // PC/pyconfig.h defines _Py_COMPILER
 #ifdef _Py_COMPILER
@@ -25,8 +23,9 @@
 
 #endif /* !COMPILER */
 
-const char *
-Py_GetCompiler(void)
+int main()
 {
-    return COMPILER;
+    const char *compiler = COMPILER;
+    printf("%s\n", compiler);
+    return 0;
 }

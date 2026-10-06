@@ -1,63 +1,40 @@
-#ifndef Py_BUILD_CORE_BUILTIN
-#  define Py_BUILD_CORE_MODULE 1
-#endif
+/* Functions to get information about the Python build */
 
 #include "Python.h"
-#include "pycore_pylifecycle.h"   // _Py_gitidentifier()
 
-#ifndef DONT_HAVE_STDIO_H
-#include <stdio.h>
-#endif
+#include "getbuildinfo.h"
 
-#ifndef DATE
-#ifdef __DATE__
-#define DATE __DATE__
-#else
-#define DATE "Jan 01 1970"
-#endif
-#endif
+static const char copyright[] =
+"\
+Copyright (c) 2001 Python Software Foundation.\n\
+All Rights Reserved.\n\
+\n\
+Copyright (c) 2000 BeOpen.com.\n\
+All Rights Reserved.\n\
+\n\
+Copyright (c) 1995-2001 Corporation for National Research Initiatives.\n\
+All Rights Reserved.\n\
+\n\
+Copyright (c) 1991-1995 Stichting Mathematisch Centrum, Amsterdam.\n\
+All Rights Reserved.";
 
-#ifndef TIME
-#ifdef __TIME__
-#define TIME __TIME__
-#else
-#define TIME "00:00:00"
-#endif
-#endif
-
-/* XXX Only unix build process has been tested */
-#ifndef GITVERSION
-#define GITVERSION ""
-#endif
-#ifndef GITTAG
-#define GITTAG ""
-#endif
-#ifndef GITBRANCH
-#define GITBRANCH ""
-#endif
-
-static int initialized = 0;
-static char buildinfo[50 + sizeof(GITVERSION) +
-                      ((sizeof(GITTAG) > sizeof(GITBRANCH)) ?
-                       sizeof(GITTAG) : sizeof(GITBRANCH))];
 
 const char *
-Py_GetBuildInfo(void)
+Py_GetCopyright(void)
 {
-    if (initialized) {
-        return buildinfo;
-    }
-    initialized = 1;
-    const char *revision = _Py_gitversion();
-    const char *sep = *revision ? ":" : "";
-    const char *gitid = _Py_gitidentifier();
-    if (!(*gitid)) {
-        gitid = "main";
-    }
-    PyOS_snprintf(buildinfo, sizeof(buildinfo),
-                  "%s%s%s, %.20s, %.9s", gitid, sep, revision,
-                  DATE, TIME);
-    return buildinfo;
+    return copyright;
+}
+
+const char *
+Py_GetCompiler(void)
+{
+    return COMPILER;
+}
+
+const char *
+Py_GetPlatform(void)
+{
+    return PLATFORM;
 }
 
 const char *
@@ -69,13 +46,26 @@ _Py_gitversion(void)
 const char *
 _Py_gitidentifier(void)
 {
-    const char *gittag, *gitid;
-    gittag = GITTAG;
-    if ((*gittag) && strcmp(gittag, "undefined") != 0)
-        gitid = gittag;
-    else
-        gitid = GITBRANCH;
-    return gitid;
+    return GIT_IDENTIFIER;
+}
+
+const char *
+Py_GetBuildInfo(void)
+{
+    return BUILDINFO;
+}
+
+// Export the Python hex version as a constant.
+const unsigned long Py_Version = PY_VERSION_HEX;
+
+// Keep the 'version' variable for backward compatibility.
+// Some debuggers inspect directly the variable.
+static const char *version = GET_VERSION;
+
+const char *
+Py_GetVersion(void)
+{
+    return version;
 }
 
 

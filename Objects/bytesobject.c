@@ -3831,13 +3831,23 @@ byteswriter_resize(PyBytesWriter *writer, Py_ssize_t new_size, int resize)
     }
 
     Py_ssize_t alloc = new_size;
-    if (resize && writer->overallocate) {
-        if (alloc <= (PY_SSIZE_T_MAX - alloc / OVERALLOCATE_FACTOR)) {
-            alloc += alloc / OVERALLOCATE_FACTOR;
-        }
-    }
 
     if (writer->obj != NULL) {
+        if (resize && writer->overallocate) {
+            if (alloc <= (PY_SSIZE_T_MAX - alloc / OVERALLOCATE_FACTOR)) {
+                alloc += alloc / OVERALLOCATE_FACTOR;
+            }
+        }
+
+        if (new_size <= old_allocated + old_allocated / 8) {
+            /* Moderate upsize; overallocate similar to list_resize() */
+            alloc = new_size + (new_size >> 3);
+        }
+        else {
+            /* Major upsize; resize up to exact size */
+            alloc = new_size;
+        }
+
         if (writer->use_bytearray) {
             if (PyByteArray_Resize(writer->obj, alloc)) {
 #ifdef Py_DEBUG
@@ -3860,6 +3870,9 @@ byteswriter_resize(PyBytesWriter *writer, Py_ssize_t new_size, int resize)
         assert(writer->obj != NULL);
     }
     else {
+        // Do not overallocate when the first bytes/bytearray object is
+        // allocated
+
         char *data;
         if (writer->use_bytearray) {
             writer->obj = PyByteArray_FromStringAndSize(NULL, alloc);
