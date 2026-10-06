@@ -214,12 +214,12 @@
 //
 // gh-158810: Do not use __builtin_types_compatible_p() in strict C ANSI mode
 // and on C++.
-#if (defined(__GNUC__) && __GNUC__ >= 4 \
+#if (defined(__GNUC__) && __GNUC__ >= 4 && defined(_Py_TYPEOF) \
         && !defined(__STRICT_ANSI__) && !defined(__cplusplus))
 #define Py_ARRAY_LENGTH(array) \
     (sizeof(array) / sizeof((array)[0]) \
-     + Py_BUILD_ASSERT_EXPR(!__builtin_types_compatible_p(typeof(array), \
-                                                          typeof(&(array)[0]))))
+     + Py_BUILD_ASSERT_EXPR(!__builtin_types_compatible_p(_Py_TYPEOF(array), \
+                                                          _Py_TYPEOF(&(array)[0]))))
 #else
 #define Py_ARRAY_LENGTH(array) \
     (sizeof(array) / sizeof((array)[0]))

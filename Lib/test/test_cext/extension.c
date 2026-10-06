@@ -388,6 +388,11 @@ module_exec(PyObject *module)
         return -1;
     }
 #endif
+#ifdef __STRICT_ANSI__
+    if (PyModule_AddIntConstant(module, "__STRICT_ANSI__", 1) < 0) {
+        return -1;
+    }
+#endif
 #ifdef __cplusplus
     if (PyModule_AddIntMacro(module, __cplusplus) < 0) {
         return -1;
