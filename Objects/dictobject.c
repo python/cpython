@@ -1186,6 +1186,8 @@ do_lookup(PyDictObject *mp, PyDictKeysObject *dk, PyObject *key, Py_hash_t hash,
             return DKIX_EMPTY;
         }
         else if (hashpos && freeslot < 0 && !is_unusable_slot(ix)) {
+            // Reuse the first dummy slot, otherwise repeated insertions
+            // and deletions would make the probe sequence longer.
             freeslot = (Py_ssize_t)i;
         }
         perturb >>= PERTURB_SHIFT;
@@ -1248,15 +1250,6 @@ static Py_ssize_t _Py_HOT_FUNCTION
 unicodekeys_lookup_unicode(PyDictKeysObject* dk, PyObject *key, Py_hash_t hash)
 {
     return do_lookup(NULL, dk, key, hash, compare_unicode_unicode, NULL);
-}
-
-/* Like unicodekeys_lookup_unicode(), but also reports in *hashpos the index
-   table slot an insertion or deletion of the key needs (see do_lookup()). */
-static Py_ssize_t
-unicodekeys_lookup_unicode_pos(PyDictKeysObject* dk, PyObject *key, Py_hash_t hash,
-                               Py_ssize_t *hashpos)
-{
-    return do_lookup(NULL, dk, key, hash, compare_unicode_unicode, hashpos);
 }
 
 static inline int
@@ -1913,7 +1906,7 @@ _PyDict_EnablePerThreadRefcounting(PyObject *op)
 /* Internal function to find slot for an item from its hash
    when it is known that the key is not present in the dict.
  */
-static Py_ssize_t
+static inline Py_ALWAYS_INLINE Py_ssize_t
 find_empty_slot(PyDictKeysObject *keys, Py_hash_t hash)
 {
     assert(keys != NULL);
@@ -1939,7 +1932,7 @@ dict_lookup_pos(PyDictObject *mp, PyObject *key, Py_hash_t hash,
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(mp);
     PyDictKeysObject *dk = mp->ma_keys;
     if (dk->dk_kind == DICT_KEYS_UNICODE && PyUnicode_CheckExact(key)) {
-        Py_ssize_t ix = unicodekeys_lookup_unicode_pos(dk, key, hash, hashpos);
+        Py_ssize_t ix = do_lookup(NULL, dk, key, hash, compare_unicode_unicode, hashpos);
         *value_addr = ix >= 0 ? DK_UNICODE_ENTRIES(dk)[ix].me_value : NULL;
         return ix;
     }
@@ -3032,7 +3025,6 @@ delitem_common(PyDictObject *mp, Py_hash_t hash, Py_ssize_t ix,
             old_key = ep->me_key;
             STORE_KEY(ep, NULL);
             STORE_VALUE(ep, NULL);
-            STORE_HASH(ep, 0);
         }
         Py_DECREF(old_key);
     }
@@ -5144,7 +5136,6 @@ dict_popitem_impl(PyDictObject *self)
         hash = ep0[i].me_hash;
         value = ep0[i].me_value;
         STORE_KEY(&ep0[i], NULL);
-        STORE_HASH(&ep0[i], -1);
         STORE_VALUE(&ep0[i], NULL);
     }
 
