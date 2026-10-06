@@ -507,7 +507,7 @@ class TestSelfStackTrace(RemoteInspectionTestBase):
     def test_all_awaited_by_covers_every_interpreter(self):
         # gh-158880
         async def main_worker():
-            await asyncio.sleep(2)
+            await asyncio.sleep(SHORT_TIMEOUT)
 
         async def main():
             with InterpreterPoolExecutor() as pool:
