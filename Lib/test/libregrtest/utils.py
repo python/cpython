@@ -1,5 +1,6 @@
 import contextlib
 import faulthandler
+import linecache
 import locale
 import math
 import os.path
@@ -140,6 +141,39 @@ def print_warning(msg: str) -> None:
 orig_unraisablehook: Callable[..., None] | None = None
 
 
+def traceback_location(traceback: str) -> dict[str, str | int] | None:
+    """Location of the last frame of a traceback, relative to the repository.
+
+    Return a dict with file and line, plus col and endColumn when the
+    traceback underlines the failing expression (~~~^^^).
+    """
+    lines = traceback.splitlines()
+    for index in reversed(range(len(lines))):
+        if match := re.match(r'  File "(.+)", line (\d+)', lines[index]):
+            break
+    else:
+        return None
+    filename, lineno = match.group(1), int(match.group(2))
+    # Map the stdlib directory (Lib/ in a source checkout or an installed
+    # lib/python3.X/) to Lib/ in the repository
+    stdlib_dir = os.path.dirname(os.__file__) + os.sep
+    if not filename.startswith(stdlib_dir):
+        return None
+    relpath = filename.removeprefix(stdlib_dir).replace(os.sep, "/")
+    location: dict[str, str | int] = {"file": f"Lib/{relpath}", "line": lineno}
+
+    # The frame is followed by the dedented source line ("    code") and,
+    # for a single-line expression, by a line of ~ and ^ markers.
+    markers = lines[index + 2] if index + 2 < len(lines) else ""
+    source = linecache.getline(filename, lineno)
+    if markers.strip() and not markers.strip(" ~^") and source:
+        indent = len(source) - len(source.lstrip())
+        start = len(markers) - len(markers.lstrip())
+        location["col"] = indent + start - 4 + 1
+        location["endColumn"] = indent + len(markers.rstrip()) - 4
+    return location
+
+
 def github_annotation(level: str, title: str, message: str) -> None:
     """Emit a GitHub Actions annotation (workflow command).
 
@@ -152,16 +186,17 @@ def github_annotation(level: str, title: str, message: str) -> None:
     def escape_property(text: str) -> str:
         return escape(text).replace(":", "%3A").replace(",", "%2C")
 
-    props = f"title={escape_property(title)}"
-    frames = re.findall(r'^  File "(.+)", line (\d+)', message, re.MULTILINE)
-    # Map the stdlib directory (Lib/ in a source checkout or an installed
-    # lib/python3.X/) to Lib/ in the repository
-    stdlib_dir = os.path.dirname(os.__file__) + os.sep
-    if frames and frames[-1][0].startswith(stdlib_dir):
-        filename, line = frames[-1]
-        filename = filename.removeprefix(stdlib_dir).replace(os.sep, "/")
-        props = f"file=Lib/{escape_property(filename)},line={line},{props}"
-    print(f"::{level} {props}::{escape(message)}", flush=True)
+    props: dict[str, str | int] = {}
+    if location := traceback_location(message):
+        props |= location
+        # The job log only shows the message: start it with the location
+        position = ":".join(str(location[key])
+                            for key in ("file", "line", "col") if key in location)
+        message = f"{position}\n{message}"
+    props["title"] = title
+    props_text = ",".join(f"{key}={escape_property(str(value))}"
+                          for key, value in props.items())
+    print(f"::{level} {props_text}::{escape(message)}", flush=True)
 
 
 def regrtest_unraisable_hook(unraisable) -> None:
