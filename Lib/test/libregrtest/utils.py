@@ -175,10 +175,13 @@ def traceback_location(traceback: str) -> dict[str, str | int] | None:
     return location
 
 
-def github_annotation(title: str, message: str) -> str:
+def github_annotation(title: str, message: str, *,
+                      include_message: bool = True) -> str:
     """Format a GitHub Actions error annotation.
 
-    Locate it at the last frame of the traceback in message, if any.
+    Locate it at the last frame of the traceback in message, if any. If
+    include_message is false, the annotation only has the location and the
+    title.
     """
     def escape(text: str) -> str:
         return (text.replace("%", "%25").replace("\r", "%0D")
@@ -199,7 +202,7 @@ def github_annotation(title: str, message: str) -> str:
     props["title"] = title
     # The job log only shows the message, not the properties: start the
     # message with the location and the title
-    message = f"{header}\n{message}"
+    message = f"{header}\n{message}" if include_message else header
     props_text = ",".join(f"{key}={escape_property(str(value))}"
                           for key, value in props.items())
     return f"::error {props_text}::{escape(message)}"

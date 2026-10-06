@@ -135,20 +135,13 @@ class RegressionTestResult(unittest.TextTestResult):
         if not self.GITHUB_ANNOTATIONS:
             super().printErrorList(flavour, errors)
             return
-        stream = self.stream
         for test, err in errors:
-            # Precede each failure report with a GitHub Actions annotation
-            # which has the report as message, so that the annotation links
-            # to the report in the job log.
-            self.stream = unittest.runner._WritelnDecorator(io.StringIO())
-            try:
-                super().printErrorList(flavour, [(test, err)])
-                report = self.stream.getvalue()
-            finally:
-                self.stream = stream
-            stream.writeln(github_annotation(str(test), report))
-            stream.write(report)
-            stream.flush()
+            # Precede each failure report with a GitHub Actions annotation,
+            # so that the annotation links to the report in the job log. The
+            # report follows: don't repeat it in the annotation.
+            self.stream.writeln(github_annotation(str(test), err,
+                                                  include_message=False))
+            super().printErrorList(flavour, [(test, err)])
 
     def get_xml_element(self):
         if not self.USE_XML:
