@@ -1240,7 +1240,7 @@ _PyModule_IsPossiblyShadowing(PyObject *origin)
 {
     int result = 0;
     wchar_t *root = NULL;
-    wchar_t *cwd_buf = NULL;
+    wchar_t *sys_path_0_buf = NULL;
 
     // origin must be a unicode subtype
     // Returns 1 if the module at origin could be shadowing a module of the
