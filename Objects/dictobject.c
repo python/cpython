@@ -1922,9 +1922,8 @@ find_empty_slot(PyDictKeysObject *keys, Py_hash_t hash)
     return i;
 }
 
-/* Like _Py_dict_lookup(), for callers which are about to insert or delete
-   the key. *hashpos is set as by do_lookup() for the most common case
-   (exact str key in a combined unicode table), else to -1. */
+/* _Py_dict_lookup() that also sets *hashpos for exact str keys in a
+   combined unicode table, and to -1 otherwise. */
 static inline Py_ALWAYS_INLINE Py_ssize_t
 dict_lookup_pos(PyDictObject *mp, PyObject *key, Py_hash_t hash,
                 PyObject **value_addr, Py_ssize_t *hashpos)
@@ -3345,9 +3344,9 @@ PyDict_Next(PyObject *op, Py_ssize_t *ppos, PyObject **pkey, PyObject **pvalue)
 
 
 /* Internal version of dict.pop(). */
-int
-_PyDict_Pop_KnownHash(PyDictObject *mp, PyObject *key, Py_hash_t hash,
-                      PyObject **result)
+static inline Py_ALWAYS_INLINE int
+pop_known_hash_lock_held(PyDictObject *mp, PyObject *key, Py_hash_t hash,
+                         PyObject **result)
 {
     assert(PyDict_Check(mp));
     assert(can_modify_dict(mp));
@@ -3390,6 +3389,13 @@ _PyDict_Pop_KnownHash(PyDictObject *mp, PyObject *key, Py_hash_t hash,
     return 1;
 }
 
+int
+_PyDict_Pop_KnownHash(PyDictObject *mp, PyObject *key, Py_hash_t hash,
+                      PyObject **result)
+{
+    return pop_known_hash_lock_held(mp, key, hash, result);
+}
+
 static int
 pop_lock_held(PyObject *op, PyObject *key, PyObject **result)
 {
@@ -3423,7 +3429,7 @@ pop_lock_held(PyObject *op, PyObject *key, PyObject **result)
         }
         return -1;
     }
-    return _PyDict_Pop_KnownHash(dict, key, hash, result);
+    return pop_known_hash_lock_held(dict, key, hash, result);
 }
 
 int
