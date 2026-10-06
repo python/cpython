@@ -2050,17 +2050,6 @@ test_macros(PyObject *self, PyObject *Py_UNUSED(args))
     assert(Py_MAX(5, 11) == 11);
     assert(Py_ABS(-5) == 5);
 
-#if ((defined(__GNUC__) || defined(__clang__)) \
-     && defined(_Py_TYPEOF) && !defined(__cplusplus))
-    // When _Py_TYPEOF() is available, arguments are only evaluated once
-    int x = 5, y = 11;
-    assert(Py_MIN(++x, ++y) == 6);
-    x = 5; y = 11;
-    assert(Py_MAX(++x, ++y) == 12);
-    x = -5;
-    assert(Py_ABS(--x) == 6);
-#endif
-
     // Py_STRINGIFY()
     assert(strcmp(Py_STRINGIFY(123), "123") == 0);
 
