@@ -538,17 +538,15 @@ extern "C" {
 //
 // Example: _Py_TYPEOF(x) x_copy = (x);
 //
-// On C23, use typeof(). On C++11, use decltype(). Otherwise, use __typeof__()
+// On C23, use typeof(). Otherwise, use __typeof__()
 // if on GCC, clang or MSVC 17.9 and newer.
 //
-// On MSVC, check also _MSVC_LANG since __cplusplus is 199711L unless
-// the /Zc:__cplusplus flag is used.
+// gh-157649: Do not use decltype() on C++, since it produces invalid code in
+// Py_CLEAR()/Py_SETREF().
 #if defined (__STDC_VERSION__) && __STDC_VERSION__ >= 202311L
 #  define _Py_TYPEOF(expr) typeof(expr)
-#elif defined(__cplusplus) && (__cplusplus >= 201103L ||  _MSVC_LANG >= 201103L)
-#  define _Py_TYPEOF(expr) decltype(expr)
-#elif defined(__GNUC__) || defined(__clang__) || \
-    (defined(_MSC_VER) && _MSC_VER >= 1939)
+#elif (defined(__GNUC__) || defined(__clang__) \
+       || (defined(_MSC_VER) && _MSC_VER >= 1939 && !defined(__cplusplus)))
 #  define _Py_TYPEOF(expr) __typeof__(expr)
 #endif
 
@@ -560,6 +558,7 @@ extern "C" {
 #      define _Py_MEMORY_SANITIZER
 #      define _Py_NO_SANITIZE_MEMORY __attribute__((no_sanitize_memory))
 #      define _Py_MSAN_UNPOISON(PTR, SIZE)  (__msan_unpoison(PTR, SIZE))
+#      define _Py_MSAN_UNPOISON_STRING(STR)  (__msan_unpoison_string(STR))
 #    endif
 #  endif
 #  if __has_feature(address_sanitizer)
@@ -609,6 +608,9 @@ extern "C" {
 #endif
 #ifndef _Py_MSAN_UNPOISON
 #  define _Py_MSAN_UNPOISON(PTR, SIZE)
+#endif
+#ifndef _Py_MSAN_UNPOISON_STRING
+#  define _Py_MSAN_UNPOISON_STRING(STR)
 #endif
 
 /* AIX has __bool__ redefined in it's system header file. */
