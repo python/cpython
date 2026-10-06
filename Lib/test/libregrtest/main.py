@@ -1,5 +1,3 @@
-import contextlib
-import io
 import os
 import random
 import re
@@ -491,18 +489,31 @@ class Regrtest:
                                              self.fail_rerun)
         if not filename or not exitcode:
             return
-        with contextlib.redirect_stdout(io.StringIO()) as summary:
-            self.display_summary()
-        lines = ["## Test results",
-                 f"```\n{decolor(summary.getvalue()).strip()}\n```"]
         # Tests which failed in the last run (the re-run, if any)
-        for result in self.results.rerun_results:
-            lines.append(f"### {decolor(str(result))}")
-            for name, traceback in (result.errors or []) + (result.failures or []):
-                lines.append(f"<details><summary>{name}</summary>\n\n"
-                             f"```pytb\n{decolor(traceback)}\n```\n</details>")
+        failed = self.results.rerun_results
+        cases = [(result.errors or []) + (result.failures or [])
+                 for result in failed]
+        ncase = sum(map(len, cases))
         with open(filename, "a", encoding="utf-8") as fp:
-            fp.write("\n\n".join(lines) + "\n")
+            def write(text: str) -> None:
+                # Separate Markdown blocks with an empty line
+                print(text, end="\n\n", file=fp)
+
+            write(f"## {decolor(self.get_state())}: "
+                  f"{count(len(failed), 'test file')} and "
+                  f"{count(ncase, 'test case')} failed")
+            for result, result_cases in zip(failed, cases):
+                write(f"### {decolor(str(result))}")
+                if result.env_changed_reasons:
+                    write("\n".join(f"- {reason}"
+                                    for reason in result.env_changed_reasons))
+                for name, traceback in result_cases:
+                    # Expand short tracebacks when there are only a few
+                    is_open = ncase <= 5 and traceback.count("\n") < 30
+                    write(f"<details{' open' if is_open else ''}>"
+                          f"<summary>{name}</summary>")
+                    write(f"```pytb\n{decolor(traceback).rstrip()}\n```")
+                    write("</details>")
 
     def display_summary(self) -> None:
         if self.first_runtests is None:
