@@ -2986,8 +2986,10 @@ delete_index_from_values(PyDictValues *values, Py_ssize_t ix)
     values->size = size;
 }
 
-/* hashpos is the slot of the index table found by dict_lookup_pos(),
-   or -1 if it is not known. */
+/* Remove entry ix, whose value is old_value, from the dict. The reference
+   the entry held to old_value is transferred to the caller. hashpos is the
+   slot of the index table found by dict_lookup_pos(), or -1 if it is not
+   known. */
 static void
 delitem_common(PyDictObject *mp, Py_hash_t hash, Py_ssize_t ix,
                PyObject *old_value, Py_ssize_t hashpos)
@@ -3028,7 +3030,6 @@ delitem_common(PyDictObject *mp, Py_hash_t hash, Py_ssize_t ix,
         }
         Py_DECREF(old_key);
     }
-    Py_DECREF(old_value);
 
     ASSERT_CONSISTENT(mp);
 }
@@ -3077,6 +3078,7 @@ _PyDict_DelItem_KnownHash_LockHeld(PyObject *op, PyObject *key, Py_hash_t hash)
 
     _PyDict_NotifyEvent(PyDict_EVENT_DELETED, mp, key, NULL);
     delitem_common(mp, hash, ix, old_value, hashpos);
+    Py_DECREF(old_value);
     return 0;
 }
 
@@ -3122,6 +3124,7 @@ delitemif_lock_held(PyObject *op, PyObject *key,
     if (res > 0) {
         _PyDict_NotifyEvent(PyDict_EVENT_DELETED, mp, key, NULL);
         delitem_common(mp, hash, ix, old_value, -1);
+        Py_DECREF(old_value);
         return 1;
     } else {
         return 0;
@@ -3375,7 +3378,7 @@ _PyDict_Pop_KnownHash(PyDictObject *mp, PyObject *key, Py_hash_t hash,
 
     assert(old_value != NULL);
     _PyDict_NotifyEvent(PyDict_EVENT_DELETED, mp, key, NULL);
-    delitem_common(mp, hash, ix, Py_NewRef(old_value), hashpos);
+    delitem_common(mp, hash, ix, old_value, hashpos);
 
     ASSERT_CONSISTENT(mp);
     if (result) {
