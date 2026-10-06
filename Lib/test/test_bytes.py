@@ -2085,6 +2085,22 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         alloc = b.__alloc__()
         self.assertGreater(alloc, len(b))
 
+    def test_init_from_iterator_with_offset(self):
+        # gh-158928: Inserting form an iterator in __init__ needs to take into
+        # account if there is a start offset.
+        b = bytearray()
+        def iterator_which_resets():
+            # __init__ reset ob_start. Make it an offset inside by allocating
+            # then doing fast prefix delete.
+            nonlocal b
+            b.resize(200)
+            del b[:100]
+            # Fill remaining already allocated space
+            yield from b'A' * 100
+        # Fill to end. Used to land out of bounds and crash.
+        b.__init__(iterator_which_resets())
+        self.assertEqual(b, bytes(100) + b'A' * 100)
+
     def test_extend(self):
         orig = b'hello'
         a = bytearray(orig)

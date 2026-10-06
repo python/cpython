@@ -1158,17 +1158,26 @@ slowpath:
         /* Interpret it as an int (__index__) */
         rc = _getbytevalue(item, &value);
         Py_DECREF(item);
-        if (!rc)
+        if (!rc) {
             goto error;
+        }
 
-        /* Append the byte */
-        if (Py_SIZE(self) + 1 < self->ob_alloc) {
+        /* Append the byte.
+
+           Iterators are arbitrary code which could modify the bytearray so
+           this must always re-calculate if there is enough space(gh-158928). */
+        Py_ssize_t needed =
+            self->ob_start - self->ob_bytes + Py_SIZE(self) + 1;
+        if (needed < self->ob_alloc) {
             Py_SET_SIZE(self, Py_SIZE(self) + 1);
             bytearray_write_trailing_null_byte(self);
         }
-        else if (PyByteArray_Resize((PyObject *)self, Py_SIZE(self)+1) < 0)
+        else if (PyByteArray_Resize((PyObject *)self, Py_SIZE(self)+1) < 0) {
             goto error;
+        }
         PyByteArray_AS_STRING(self)[Py_SIZE(self)-1] = value;
+        assert(self->ob_start - self->ob_bytes + Py_SIZE(self) <=
+               self->ob_alloc);
     }
 
     /* Clean up and return success */
