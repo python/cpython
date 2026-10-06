@@ -175,13 +175,30 @@ def traceback_location(traceback: str) -> dict[str, str | int] | None:
     return location
 
 
-def github_annotation(title: str, message: str, *,
-                      include_message: bool = True) -> str:
+def traceback_exception(traceback: str) -> str:
+    """The exception which ends a traceback: type, message and notes.
+
+    Return traceback unchanged if it has no frame.
+    """
+    lines = traceback.splitlines()
+    for index in reversed(range(len(lines))):
+        if lines[index].startswith('  File "'):
+            break
+    else:
+        return traceback
+    # Skip the frame's indented source line and ~^ markers
+    index += 1
+    while index < len(lines) and lines[index].startswith("    "):
+        index += 1
+    return "\n".join(lines[index:])
+
+
+def github_annotation(title: str, message: str) -> str:
     """Format a GitHub Actions error annotation.
 
-    Locate it at the last frame of the traceback in message, if any. If
-    include_message is false, the annotation only has the location and the
-    title.
+    message is a traceback or a failure description. Locate the annotation at
+    the last frame of the traceback, if any, and only keep the exception which
+    ends the traceback: the job log has the full traceback.
     """
     def escape(text: str) -> str:
         return (text.replace("%", "%25").replace("\r", "%0D")
@@ -202,7 +219,7 @@ def github_annotation(title: str, message: str, *,
     props["title"] = title
     # The job log only shows the message, not the properties: start the
     # message with the location and the title
-    message = f"{header}\n{message}" if include_message else header
+    message = f"{header}\n{traceback_exception(message).strip()}"
     props_text = ",".join(f"{key}={escape_property(str(value))}"
                           for key, value in props.items())
     return f"::error {props_text}::{escape(message)}"

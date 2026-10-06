@@ -137,10 +137,8 @@ class RegressionTestResult(unittest.TextTestResult):
             return
         for test, err in errors:
             # Precede each failure report with a GitHub Actions annotation,
-            # so that the annotation links to the report in the job log. The
-            # report follows: don't repeat it in the annotation.
-            self.stream.writeln(github_annotation(str(test), err,
-                                                  include_message=False))
+            # so that the annotation links to the report in the job log
+            self.stream.writeln(github_annotation(str(test), err))
             super().printErrorList(flavour, [(test, err)])
 
     def get_xml_element(self):
