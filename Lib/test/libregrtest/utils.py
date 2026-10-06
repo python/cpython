@@ -140,6 +140,29 @@ def print_warning(msg: str) -> None:
 orig_unraisablehook: Callable[..., None] | None = None
 
 
+def github_annotation(level: str, title: str, message: str) -> None:
+    """Emit a GitHub Actions annotation (workflow command).
+
+    Point it at the last frame of the traceback in message, if any.
+    """
+    def escape(text: str) -> str:
+        return (text.replace("%", "%25").replace("\r", "%0D")
+                .replace("\n", "%0A"))
+
+    def escape_property(text: str) -> str:
+        return escape(text).replace(":", "%3A").replace(",", "%2C")
+
+    props = f"title={escape_property(title)}"
+    frames = re.findall(r'^  File "(.+)", line (\d+)', message, re.MULTILINE)
+    # Source checkout which contains Lib/
+    srcdir = os.path.dirname(os.path.dirname(os.__file__)) + os.sep
+    if frames and frames[-1][0].startswith(srcdir):
+        filename, line = frames[-1]
+        filename = filename.removeprefix(srcdir).replace(os.sep, "/")
+        props = f"file={escape_property(filename)},line={line},{props}"
+    print(f"::{level} {props}::{escape(message)}", flush=True)
+
+
 def regrtest_unraisable_hook(unraisable) -> None:
     global orig_unraisablehook
     support.set_environment_altered(

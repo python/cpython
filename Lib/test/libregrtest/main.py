@@ -30,15 +30,6 @@ from .utils import (
     get_process_memory_usage, EXIT_TIMEOUT)
 
 
-def github_error(title: str, message: str) -> None:
-    # Emit a GitHub Actions error annotation (workflow command)
-    def escape(text: str) -> str:
-        return (text.replace("%", "%25").replace("\r", "%0D")
-                .replace("\n", "%0A"))
-    title = escape(title).replace(":", "%3A").replace(",", "%2C")
-    print(f"::error title={title}::{escape(message)}", flush=True)
-
-
 class Regrtest:
     """Execute a test suite.
 
@@ -513,14 +504,10 @@ class Regrtest:
                   f"{count(ncase, 'test case')} failed")
             for result, result_cases in zip(failed, cases):
                 write(f"### {decolor(str(result))}")
-                if not result_cases:
-                    github_error(result.test_name, decolor(str(result)))
                 if result.env_changed_reasons:
                     write("\n".join(f"- {reason}"
                                     for reason in result.env_changed_reasons))
                 for name, traceback in result_cases:
-                    github_error(f"{result.test_name}: {name}",
-                                 decolor(traceback))
                     # Expand short tracebacks when there are only a few
                     is_open = ncase <= 5 and traceback.count("\n") < 30
                     write(f"<details{' open' if is_open else ''}>"
