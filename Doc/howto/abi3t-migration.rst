@@ -174,14 +174,17 @@ or :c:member:`PyTypeObject.tp_itemsize`), it cannot be ported to
 Setting up the build
 ====================
 
-If your build tool supports ``abi3t``, use it to select the ABI.
-See the documentation for `meson-python
-<https://mesonbuild.com/meson-python/how-to-guides/limited-api.html#the-abi3t-stable-abi>`__,
-`scikit-build-core
-<https://scikit-build-core.readthedocs.io/en/stable/configuration/#customizing-the-output-wheel>`__,
-and `Maturin <https://www.maturin.rs/bindings#py_limited_apiabi3>`__,
-all of which support ``abi3t``.
-You may want to verify that it set the right flag by temporarily adding the
+If you use a build tool, search its documentation for "``abi3t``", and follow
+any instructions to select the ABI.
+For reference, here are direct links for several popular build tools:
+
+- `meson-python
+<https://mesonbuild.com/meson-python/how-to-guides/limited-api.html#the-abi3t-stable-abi>`__
+- `scikit-build-core
+<https://scikit-build-core.readthedocs.io/en/stable/configuration/#customizing-the-output-wheel>`__
+- `Maturin <https://www.maturin.rs/bindings#py_limited_apiabi3>`__
+
+You may want to verify that the tool set the right flag by temporarily adding the
 following just after ``#include <Python.h>``::
 
    #if Py_TARGET_ABI3T+0 <= 0x30f0000
