@@ -486,7 +486,10 @@ class Regrtest:
 
     def write_github_summary(self) -> None:
         filename = os.environ.get("GITHUB_STEP_SUMMARY")
-        if not filename:
+        # Only write a summary on failure: a CI run has many test jobs
+        exitcode = self.results.get_exitcode(self.fail_env_changed,
+                                             self.fail_rerun)
+        if not filename or not exitcode:
             return
         with contextlib.redirect_stdout(io.StringIO()) as summary:
             self.display_summary()
@@ -497,7 +500,7 @@ class Regrtest:
             lines.append(f"### {decolor(str(result))}")
             for name, traceback in (result.errors or []) + (result.failures or []):
                 lines.append(f"<details><summary>{name}</summary>\n\n"
-                             f"```\n{traceback}\n```\n</details>")
+                             f"```pytb\n{decolor(traceback)}\n```\n</details>")
         with open(filename, "a", encoding="utf-8") as fp:
             fp.write("\n\n".join(lines) + "\n")
 
