@@ -179,9 +179,9 @@ any instructions to select the ABI.
 For reference, here are direct links for several popular build tools:
 
 - `meson-python
-<https://mesonbuild.com/meson-python/how-to-guides/limited-api.html#the-abi3t-stable-abi>`__
+  <https://mesonbuild.com/meson-python/how-to-guides/limited-api.html#the-abi3t-stable-abi>`__
 - `scikit-build-core
-<https://scikit-build-core.readthedocs.io/en/stable/configuration/#customizing-the-output-wheel>`__
+  <https://scikit-build-core.readthedocs.io/en/stable/configuration/#customizing-the-output-wheel>`__
 - `Maturin <https://www.maturin.rs/bindings#py_limited_apiabi3>`__
 
 You may want to verify that the tool set the right flag by temporarily adding the
