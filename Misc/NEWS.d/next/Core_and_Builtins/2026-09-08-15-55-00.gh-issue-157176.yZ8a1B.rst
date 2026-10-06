@@ -1,1 +1,1 @@
-Track :func:`time.struct_time` and :func:`sys.get_asyncgen_hooks` objects in the garbage collector to prevent reference cycle leaks. Patch by Shamil Abdulaev.
+Make the :class:`time.struct_time` type immutable to prevent reference cycles between the type and its instances. Patch by Shamil Abdulaev.

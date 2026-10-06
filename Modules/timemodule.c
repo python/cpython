@@ -5,6 +5,7 @@
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_namespace.h"     // _PyNamespace_New()
 #include "pycore_runtime.h"       // _Py_ID()
+#include "pycore_structseq.h"     // _PyStructSequence_NewType()
 #include "pycore_time.h"          // _PyTimeFraction
 
 #include <time.h>                 // clock()
@@ -497,7 +498,6 @@ tmtotuple(time_module_state *state, struct tm *p
 #undef SET
 #undef SET_ITEM
 
-    PyObject_GC_Track(v);
     return v;
 }
 
@@ -2111,7 +2111,8 @@ time_exec(PyObject *module)
     }
 
     // struct_time type
-    state->struct_time_type = PyStructSequence_NewType(&struct_time_type_desc);
+    state->struct_time_type = _PyStructSequence_NewType(
+        &struct_time_type_desc, Py_TPFLAGS_IMMUTABLETYPE);
     if (state->struct_time_type == NULL) {
         return -1;
     }

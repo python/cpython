@@ -351,9 +351,9 @@ class StructSeqTest(unittest.TestCase):
         # was cleared first, the structseq instance would crash in the
         # destructor.
         script_helper.assert_python_ok("-c", textwrap.dedent(r"""
-            import time
-            t = time.gmtime()
-            type(t).refcyle = t
+            import os
+            t = os.stat('.')
+            type(t).refcycle = t
         """))
 
     def test_replace_gc_tracked(self):
@@ -365,12 +365,10 @@ class StructSeqTest(unittest.TestCase):
 
         self.assertTrue(gc.is_tracked(replaced_struct))
 
-    def test_gc_tracked(self):
-        # Instances created via Python or stdlib callers that may participate
-        # in cycles are GC-tracked; simple instances like os.stat_result are not.
-        self.assertTrue(gc.is_tracked(time.gmtime()))
-        self.assertTrue(gc.is_tracked(time.struct_time((2020, 1, 1, 0, 0, 0, 0, 1, 0))))
-        self.assertFalse(gc.is_tracked(os.stat(__file__)))
+    def test_struct_time_type_immutable(self):
+        t = time.gmtime()
+        with self.assertRaisesRegex(TypeError, "immutable type"):
+            type(t).refcycle = t
 
 if __name__ == "__main__":
     unittest.main()

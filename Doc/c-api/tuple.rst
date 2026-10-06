@@ -232,10 +232,6 @@ type.
    Creates an instance of *type*, which must have been created with
    :c:func:`PyStructSequence_NewType`.
 
-   The returned instance is not tracked by the garbage collector. If the
-   instance can contain objects that participate in reference cycles, call
-   :c:func:`PyObject_GC_Track` after populating its fields.
-
    Return ``NULL`` with an exception set on failure.
 
 

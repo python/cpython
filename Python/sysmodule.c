@@ -1531,7 +1531,6 @@ sys_get_asyncgen_hooks_impl(PyObject *module)
     PyStructSequence_SET_ITEM(res, 0, Py_NewRef(firstiter));
     PyStructSequence_SET_ITEM(res, 1, Py_NewRef(finalizer));
 
-    PyObject_GC_Track(res);
     return res;
 }
 
