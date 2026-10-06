@@ -2884,3 +2884,7 @@
 
 [function.Py_HashBuffer]
     added = '3.16'
+[macro.Py_SETREF]
+    added = '3.16'
+[macro.Py_XSETREF]
+    added = '3.16'
