@@ -16,7 +16,7 @@ from .findtests import findtests, split_test_packages, list_cases, collect_cases
 from .logger import Logger
 from .pgo import setup_pgo_tests
 from .result import TestResult
-from .results import TestResults, EXITCODE_INTERRUPTED
+from .results import TestResults, EXITCODE_INTERRUPTED, annotate_github
 from .runtests import RunTests, HuntRefleak
 from .setup import setup_process, setup_test_dir
 from .single import run_single_test, PROGRESS_MIN_TIME
@@ -491,6 +491,10 @@ class Regrtest:
             return
         # Tests which failed in the last run (the re-run, if any)
         failed = self.results.rerun_results
+        if not self.results.rerun:
+            # Failed tests were not re-run (ex: --python): annotate them now
+            for result in failed:
+                annotate_github(result)
         cases = [(result.errors or []) + (result.failures or [])
                  for result in failed]
         ncase = sum(map(len, cases))

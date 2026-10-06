@@ -10,7 +10,6 @@ import tempfile
 import threading
 import time
 import traceback
-from _colorize import decolor  # type: ignore[import-not-found]
 from typing import Any, Literal, TextIO
 
 from test import support
@@ -520,11 +519,6 @@ class RunWorkers:
         else:
             self.worker_timeout = None
         self.workers: list[WorkerThread] = []
-        # On GitHub Actions, fold the first run's log into groups: ranges of
-        # passing tests, and one group per failed test. Re-runs aren't folded.
-        self.github_groups = (not runtests.rerun
-                              and bool(os.environ.get("GITHUB_STEP_SUMMARY")))
-        self.in_github_group = False
 
         jobs = self.runtests.get_jobs()
         if jobs is not None:
@@ -617,16 +611,7 @@ class RunWorkers:
         self.test_index += 1
         mp_result = item[1]
         result = mp_result.result
-        failed = result.is_failed(self.runtests.fail_env_changed)
-        if self.github_groups and failed:
-            # Keep the failure annotation out of collapsed groups
-            self.github_group(None)
         self.results.accumulate_result(result, self.runtests)
-        if self.github_groups:
-            if failed:
-                self.github_group(decolor(str(result)))
-            elif not self.in_github_group:
-                self.github_group(f"Tests from #{self.test_index}")
         self.display_result(mp_result)
 
         # Display worker stdout
@@ -639,18 +624,8 @@ class RunWorkers:
             stdout = mp_result.worker_stdout
             if stdout:
                 print(stdout, flush=True)
-        if self.github_groups and failed:
-            self.github_group(None)
 
         return result
-
-    def github_group(self, title: str | None) -> None:
-        """End the current GitHub Actions log group, start a new one if title."""
-        if self.in_github_group:
-            print("::endgroup::", flush=True)
-        self.in_github_group = title is not None
-        if title is not None:
-            print(f"::group::{title}", flush=True)
 
     def get_mem_usage(self):
         usage = 0
@@ -684,7 +659,6 @@ class RunWorkers:
             print()
             self.results.interrupted = True
         finally:
-            self.github_group(None)
             if self.timeout is not None:
                 faulthandler.cancel_dump_traceback_later()
 

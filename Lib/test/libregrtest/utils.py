@@ -154,12 +154,13 @@ def github_annotation(level: str, title: str, message: str) -> None:
 
     props = f"title={escape_property(title)}"
     frames = re.findall(r'^  File "(.+)", line (\d+)', message, re.MULTILINE)
-    # Source checkout which contains Lib/
-    srcdir = os.path.dirname(os.path.dirname(os.__file__)) + os.sep
-    if frames and frames[-1][0].startswith(srcdir):
+    # Map the stdlib directory (Lib/ in a source checkout or an installed
+    # lib/python3.X/) to Lib/ in the repository
+    stdlib_dir = os.path.dirname(os.__file__) + os.sep
+    if frames and frames[-1][0].startswith(stdlib_dir):
         filename, line = frames[-1]
-        filename = filename.removeprefix(srcdir).replace(os.sep, "/")
-        props = f"file={escape_property(filename)},line={line},{props}"
+        filename = filename.removeprefix(stdlib_dir).replace(os.sep, "/")
+        props = f"file=Lib/{escape_property(filename)},line={line},{props}"
     print(f"::{level} {props}::{escape(message)}", flush=True)
 
 
