@@ -1238,6 +1238,10 @@ _PyModuleSpec_GetFileOrigin(PyObject *spec, PyObject **p_origin)
 int
 _PyModule_IsPossiblyShadowing(PyObject *origin)
 {
+    int result = 0;
+    wchar_t *root = NULL;
+    wchar_t *cwd_buf = NULL;
+
     // origin must be a unicode subtype
     // Returns 1 if the module at origin could be shadowing a module of the
     // same name later in the module search path. The condition we check is basically:
@@ -1256,24 +1260,21 @@ _PyModule_IsPossiblyShadowing(PyObject *origin)
     }
 
     // root = os.path.dirname(origin.removesuffix(os.sep + "__init__.py"))
-    wchar_t root[MAXPATHLEN + 1];
-    Py_ssize_t size = PyUnicode_AsWideChar(origin, root, MAXPATHLEN);
-    if (size < 0) {
+    root = PyUnicode_AsWideCharString(origin, NULL);
+    if (root == NULL) {
         return -1;
     }
-    assert(size <= MAXPATHLEN);
-    root[size] = L'\0';
 
     wchar_t *sep = wcsrchr(root, SEP);
     if (sep == NULL) {
-        return 0;
+        goto done;
     }
     // If it's a package then we need to look one directory further up
     if (wcscmp(sep + 1, L"__init__.py") == 0) {
         *sep = L'\0';
         sep = wcsrchr(root, SEP);
         if (sep == NULL) {
-            return 0;
+            goto done;
         }
     }
     *sep = L'\0';
@@ -1281,21 +1282,30 @@ _PyModule_IsPossiblyShadowing(PyObject *origin)
     // sys.path[0] or os.getcwd()
     wchar_t *sys_path_0 = config->sys_path_0;
     if (!sys_path_0) {
-        return 0;
+        goto done;
     }
 
-    wchar_t sys_path_0_buf[MAXPATHLEN];
     if (sys_path_0[0] == L'\0') {
         // if sys.path[0] == "", treat it as if it were the current directory
+        sys_path_0_buf = PyMem_Malloc(MAXPATHLEN * sizeof(wchar_t));
+        if (sys_path_0_buf == NULL) {
+            PyErr_NoMemory();
+            result = -1;
+            goto done;
+        }
         if (!_Py_wgetcwd(sys_path_0_buf, MAXPATHLEN)) {
             // If we failed to getcwd, don't raise an exception and instead
             // let the caller proceed assuming no shadowing
-            return 0;
+            goto done;
         }
         sys_path_0 = sys_path_0_buf;
     }
 
-    int result = wcscmp(sys_path_0, root) == 0;
+    result = (wcscmp(sys_path_0, root) == 0);
+
+done:
+    PyMem_Free(root);
+    PyMem_Free(sys_path_0_buf);
     return result;
 }
 
