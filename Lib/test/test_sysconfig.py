@@ -791,10 +791,14 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
             #define IPHONEOS_DEPLOYMENT_TARGET "13.0"
             #define MACOSX_DEPLOYMENT_TARGET 10
 
+            // Spaces are tolerated after the name, not before
+            #define SPACES_AFTER    1
+            #define    IGNORED_SPACES_BEFORE 1
+
             // Ignore macro without value
             #define IGNORE_NO_VALUE
 
-            // Ignore macro with an invalid name
+            // Ignore macros with an invalid name
             #define _PRIVATE_IGNORED 1
             #define aLOWER_IGNORED 1
             #define 123IGNORED 1
@@ -825,6 +829,7 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
             'ANDROID_API_LEVEL': 0,
             'IPHONEOS_DEPLOYMENT_TARGET': '13.0',
             'MACOSX_DEPLOYMENT_TARGET': '10',  # str, not int
+            'SPACES_AFTER': 1,
         }
         self.assertEqual(vars, expected)
 
