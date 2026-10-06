@@ -191,9 +191,7 @@ class TestResult:
         def escape_property(text: str) -> str:
             return escape(text).replace(":", "%3A").replace(",", "%2C")
 
-        annotations = [(f"{self.test_name}: {name}", traceback)
-                       for name, traceback in (self.errors or [])
-                                              + (self.failures or [])]
+        annotations = (self.errors or []) + (self.failures or [])
         if not annotations:
             # No test case details: crash, timeout, env changed, etc.
             message = "\n".join([str(self), *(self.env_changed_reasons or ())])
