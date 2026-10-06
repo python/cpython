@@ -789,7 +789,7 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
             # _ALWAYS_STR: don't convert values to an integer,
             # but quotes are removed
             #define IPHONEOS_DEPLOYMENT_TARGET "13.0"
-            #define MACOSX_DEPLOYMENT_TARGET 10.9
+            #define MACOSX_DEPLOYMENT_TARGET 10
 
             // Ignore macro without value
             #define IGNORE_NO_VALUE
@@ -824,7 +824,7 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
             'ALT_SOABI': 'cpython-316t-x86_64-linux-gnu',
             'ANDROID_API_LEVEL': 0,
             'IPHONEOS_DEPLOYMENT_TARGET': '13.0',
-            'MACOSX_DEPLOYMENT_TARGET': '10.9',
+            'MACOSX_DEPLOYMENT_TARGET': '10',  # str, not int
         }
         self.assertEqual(vars, expected)
 
