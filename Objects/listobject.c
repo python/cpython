@@ -2284,7 +2284,7 @@ merge_init(MergeState *ms, Py_ssize_t list_size, int has_keyfunc,
     while (list_size >> ms->mr_e >= MAX_MINRUN) {
         ++ms->mr_e;
     }
-    ms->mr_mask = (1 << ms->mr_e) - 1;
+    ms->mr_mask = ((Py_ssize_t)1 << ms->mr_e) - 1;
     ms->mr_current = 0;
 }
 

@@ -3,6 +3,7 @@ preserve
 [clinic start generated code]*/
 
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
 PyDoc_STRVAR(time_time__doc__,
 "time($module, /)\n"
@@ -697,13 +698,8 @@ time_get_clock_info(PyObject *module, PyObject *arg)
         _PyArg_BadArgument("get_clock_info", "argument", "str", arg);
         goto exit;
     }
-    Py_ssize_t name_length;
-    name = PyUnicode_AsUTF8AndSize(arg, &name_length);
+    name = _PyUnicode_AsUTF8NoNUL(arg);
     if (name == NULL) {
-        goto exit;
-    }
-    if (strlen(name) != (size_t)name_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = time_get_clock_info_impl(module, name);
@@ -751,4 +747,4 @@ exit:
 #ifndef TIME_THREAD_TIME_NS_METHODDEF
     #define TIME_THREAD_TIME_NS_METHODDEF
 #endif /* !defined(TIME_THREAD_TIME_NS_METHODDEF) */
-/*[clinic end generated code: output=540a094cac69e0d4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d89be8cc2b2a7b05 input=a9049054013a1b77]*/

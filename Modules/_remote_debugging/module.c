@@ -904,27 +904,29 @@ exit:
 }
 
 /*[clinic input]
-@permit_long_summary
+@permit_long_docstring_body
 @critical_section
 _remote_debugging.RemoteUnwinder.get_all_awaited_by
 
-Get all tasks and their awaited_by relationships from the remote process.
+Get awaited_by relationships for tasks in the remote process.
 
-This provides a tree structure showing which tasks are waiting for
-other tasks.
+Returns:
+    A list of AwaitedInfo objects, where each object contains:
 
-For each task, returns:
-1. The call stack frames leading to where the task is currently
-   executing
-2. The name of the task
-3. A list of tasks that this task is waiting for, with their own
-   frames/names/etc
+    - thread_id (int): Identifier of the thread, or 0 for tasks in the
+      interpreter's fallback task list.
+    - awaited_by (list[TaskInfo]): Tasks registered with this thread.
 
-Returns a list of [frames, task_name, subtasks] where:
-- frames: List of (func_name, filename, lineno) showing the call
-  stack
-- task_name: String identifier for the task
-- subtasks: List of tasks being awaited by this task, in same format
+Each TaskInfo contains:
+    - task_id (int): Identifier of the task.
+    - task_name (str): Name of the task.
+    - coroutine_stack (list[CoroInfo]): Stack of coroutine frames.
+    - awaited_by (list[CoroInfo]): Coroutine information for tasks or futures
+      awaiting this task.
+
+Each CoroInfo contains:
+    - call_stack (list[FrameInfo]): Call stack frames for the coroutine.
+    - task_name (int): Identifier of the task or future.
 
 Raises:
     RuntimeError: If AsyncioDebug section is not available in the
@@ -933,29 +935,25 @@ Raises:
     OSError: If reading from the remote process fails
 
 Example output:
-[
-    # Task c2_root waiting for two subtasks
+
     [
-        # Call stack of c2_root
-        [("c5", "script.py", 10), ("c4", "script.py", 14)],
-        "c2_root",
-        [
-            # First subtask (sub_main_2) and what it's waiting for
-            [
-                [("c1", "script.py", 23)],
-                "sub_main_2",
-                [...]
-            ],
-            # Second subtask and its waiters
-            [...]
-        ]
+        AwaitedInfo(
+            thread_id=12345,
+            awaited_by=[
+                TaskInfo(
+                    task_id=1,
+                    task_name="Task-1",
+                    coroutine_stack=[...],
+                    awaited_by=[]
+                )
+            ]
+        )
     ]
-]
 [clinic start generated code]*/
 
 static PyObject *
 _remote_debugging_RemoteUnwinder_get_all_awaited_by_impl(RemoteUnwinderObject *self)
-/*[clinic end generated code: output=6a49cd345e8aec53 input=c22bfee0612e0b69]*/
+/*[clinic end generated code: output=6a49cd345e8aec53 input=79e556b3973d21a8]*/
 {
     if (ensure_async_debug_offsets(self) < 0) {
         return NULL;
@@ -1791,7 +1789,15 @@ _remote_debugging_BinaryWriter_write_sample_impl(BinaryWriterObject *self,
         return NULL;
     }
 
+    if (self->writer->state == BINARY_WRITER_BROKEN) {
+        PyErr_SetString(PyExc_ValueError, "Writer is broken");
+        return NULL;
+    }
+    self->writer->state = BINARY_WRITER_OPEN;
     if (binary_writer_write_sample(self->writer, stack_frames, timestamp_us) < 0) {
+        if (self->writer->state != BINARY_WRITER_LIMIT_REACHED) {
+            self->writer->state = BINARY_WRITER_BROKEN;
+        }
         return NULL;
     }
 
@@ -1854,7 +1860,12 @@ _remote_debugging_BinaryWriter_set_stats_impl(BinaryWriterObject *self,
 static int
 binary_writer_finalize_and_cache(BinaryWriterObject *self)
 {
+    if (self->writer->state == BINARY_WRITER_BROKEN) {
+        PyErr_SetString(PyExc_ValueError, "Writer is broken");
+        return -1;
+    }
     if (binary_writer_finalize(self->writer) < 0) {
+        self->writer->state = BINARY_WRITER_BROKEN;
         return -1;
     }
     self->cached_total_samples = self->writer->total_samples;
@@ -1935,8 +1946,7 @@ _remote_debugging_BinaryWriter___exit___impl(BinaryWriterObject *self,
 /*[clinic end generated code: output=61831f47c72a53c6 input=12334ce1009af37f]*/
 {
     if (self->writer) {
-        /* Only finalize on normal exit (no exception) */
-        if (exc_type == Py_None) {
+        if (self->writer->state != BINARY_WRITER_BROKEN) {
             if (binary_writer_finalize_and_cache(self) < 0) {
                 if (self->writer) {
                     binary_writer_destroy(self->writer);
@@ -1985,8 +1995,17 @@ BinaryWriter_get_total_samples(PyObject *op, void *closure)
     return PyLong_FromUnsignedLongLong(self->writer->total_samples);
 }
 
+static PyObject *
+BinaryWriter_get_limit_reached(PyObject *op, void *closure)
+{
+    BinaryWriter *writer = BinaryWriter_CAST(op)->writer;
+    return PyBool_FromLong(writer && writer->state == BINARY_WRITER_LIMIT_REACHED);
+}
+
 static PyGetSetDef BinaryWriter_getset[] = {
     {"total_samples", BinaryWriter_get_total_samples, NULL, "Total samples written", NULL},
+    {"limit_reached", BinaryWriter_get_limit_reached, NULL,
+     "A format limit was reached; the collected samples can still be finalized", NULL},
     {NULL}
 };
 
