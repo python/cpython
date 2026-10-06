@@ -86,15 +86,35 @@ The walk stops at a class: nested scopes do not see class locals.
 Class-closure names that would otherwise be free through a class become
 `GLOBAL_IMPLICIT`.
 
+If the inlined name is `LOCAL` or `CELL` but the nearest non-inlined
+enclosing table has it as `FREE`, resolve it as `FREE` so the
+comprehension reuses that localsplus slot. `compiler_cellvars()` also
+skips adding those child cells, which would otherwise create a second
+same-named entry.
+
 ### Isolating iteration variables
 
 `codegen_push_inlined_comprehension_locals()` in
-[`Python/codegen.c`](../Python/codegen.c) isolates names bound in the
-comprehension:
+[`Python/codegen.c`](../Python/codegen.c) isolates each name bound in
+the comprehension on one of two paths:
 
-* `LOAD_FAST_AND_CLEAR` saves the enclosing value (possibly `NULL`) and
-  clears the slot.
-* `MAKE_CELL` runs if the name is a cell for this comprehension.
+Reuse an enclosing free (`_PyCompile_GetRefType()` is `FREE`):
+
+* `LOAD_CLOSURE_AND_CLEAR` saves the enclosing cell.
+* `MAKE_CELL` always runs, so the slot holds a fresh empty cell.
+  The comprehension then uses `DEREF`; it must not store into the
+  enclosing cell.
+* Restore uses `STORE_CLOSURE`.
+* Those pseudo instructions carry a cell/free index so
+  `fix_cell_offsets` can remap them; they become `LOAD_FAST_AND_CLEAR`
+  / `STORE_FAST` in the assembler.
+
+Own fast-local slot (everything else):
+
+* `LOAD_FAST_AND_CLEAR` saves the enclosing value (possibly `NULL`)
+  and clears the slot.
+* `MAKE_CELL` runs only if the name is a cell for this comprehension.
+* Restore uses `STORE_FAST_MAYBE_NULL`.
 * In module and class units the name is added to `u_fasthidden` so
   assemble can set `CO_FAST_HIDDEN`.
 
@@ -105,10 +125,13 @@ or `finally` sees the original values.
 Runtime
 -------
 
-An inlined comprehension cell can share a localsplus name with an
-enclosing free variable (for example `[lambda: x for x in x]` inside a
-nested function). `FrameLocalsProxy` keys, values, items, and `len`
-keep the first slot of each name so they agree with `getitem`.
+An inlined comprehension local that collides with an enclosing free
+(for example `[x for x in x]` or `[lambda: x for x in x]` inside a
+nested function) reuses the free slot. Isolation saves that cell and
+installs a temporary one so `STORE_DEREF` does not change the value
+seen by existing closures; lambdas that capture the iteration variable
+share the temporary cell. After the comprehension, the original cell
+is restored.
 
 Source
 ------
@@ -128,5 +151,3 @@ Source
   `InlinedComprehensionBlock`
 * [`Include/internal/pycore_compile.h`](../Include/internal/pycore_compile.h):
   `_PyCompile_InlinedComprehensionState`
-* [`Objects/frameobject.c`](../Objects/frameobject.c):
-  `FrameLocalsProxy` duplicate-name handling

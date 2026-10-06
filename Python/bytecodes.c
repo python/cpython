@@ -270,6 +270,20 @@ dummy_func(
             LOAD_FAST,
         };
 
+        /* Like LOAD_FAST_AND_CLEAR, but the oparg is a cell/free index
+         * remapped in fix_cell_offsets. Used to isolate an inlined
+         * comprehension local that reuses an enclosing free slot. */
+        pseudo(LOAD_CLOSURE_AND_CLEAR, (-- unused)) = {
+            LOAD_FAST_AND_CLEAR,
+        };
+
+        /* Like STORE_FAST, but the oparg is a cell/free index remapped
+         * in fix_cell_offsets. Restores the cell saved by
+         * LOAD_CLOSURE_AND_CLEAR. */
+        pseudo(STORE_CLOSURE, (unused --)) = {
+            STORE_FAST,
+        };
+
         inst(LOAD_FAST_CHECK, (-- value)) {
             _PyStackRef value_s = GETLOCAL(oparg);
             if (PyStackRef_IsNull(value_s)) {

@@ -4915,21 +4915,31 @@ codegen_push_inlined_comprehension_locals(compiler *c, location loc,
                     return ERROR;
                 }
             }
-            // in the case of a cell, this will actually push the cell
-            // itself to the stack, then we'll create a new one for the
-            // comprehension and restore the original one after
-            ADDOP_NAME(c, loc, LOAD_FAST_AND_CLEAR, k, varnames);
-            if (scope == CELL) {
-                ADDOP_NAME(c, loc, MAKE_CELL, k, cellvars);
+            int reftype = _PyCompile_GetRefType(c, k);
+            RETURN_IF_ERROR(reftype);
+            if (reftype == FREE) {
+                // Reuse the enclosing free slot. Save that cell, then
+                // install a fresh empty cell for the comprehension.
+                ADDOP_NAME(c, loc, LOAD_CLOSURE_AND_CLEAR, k, freevars);
+                ADDOP_NAME(c, loc, MAKE_CELL, k, freevars);
+            }
+            else {
+                // in the case of a cell, this will actually push the cell
+                // itself to the stack, then we'll create a new one for the
+                // comprehension and restore the original one after
+                ADDOP_NAME(c, loc, LOAD_FAST_AND_CLEAR, k, varnames);
+                if (scope == CELL) {
+                    ADDOP_NAME(c, loc, MAKE_CELL, k, cellvars);
+                }
+                if (METADATA(c)->u_fasthidden != NULL) {
+                    /* For Module/Class scopes, assemble needs to set CO_FAST_HIDDEN on these names */
+                    if (PySet_Add(METADATA(c)->u_fasthidden, k) < 0) {
+                        return ERROR;
+                    }
+                }
             }
             if (PyList_Append(state->pushed_locals, k) < 0) {
                 return ERROR;
-            }
-            if (METADATA(c)->u_fasthidden != NULL) {
-                /* For Module/Class scopes, assemble needs to set CO_FAST_HIDDEN on these names */
-                if (PySet_Add(METADATA(c)->u_fasthidden, k) < 0) {
-                    return ERROR;
-                }
             }
         }
     }
@@ -4987,7 +4997,14 @@ restore_inlined_comprehension_locals(compiler *c, location loc,
         if (k == NULL) {
             return ERROR;
         }
-        ADDOP_NAME(c, loc, STORE_FAST_MAYBE_NULL, k, varnames);
+        int reftype = _PyCompile_GetRefType(c, k);
+        RETURN_IF_ERROR(reftype);
+        if (reftype == FREE) {
+            ADDOP_NAME(c, loc, STORE_CLOSURE, k, freevars);
+        }
+        else {
+            ADDOP_NAME(c, loc, STORE_FAST_MAYBE_NULL, k, varnames);
+        }
     }
     return SUCCESS;
 }

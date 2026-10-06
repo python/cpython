@@ -316,6 +316,49 @@ class ListComprehensionTest(unittest.TestCase):
         outputs = {"z": [2, 2], "w": 99}
         self._check_in_scopes(code, outputs)
 
+    def test_inlined_comp_reuses_enclosing_free_slot(self):
+        # An inlined local that collides with an enclosing free reuses that
+        # free slot instead of adding a second same-named localsplus entry.
+        def outer(x):
+            def inner():
+                return [x for x in x]
+            return inner
+        code = outer([1]).__code__
+        self.assertEqual(code.co_varnames, ())
+        self.assertEqual(code.co_cellvars, ())
+        self.assertEqual(code.co_freevars, ('x',))
+
+    def test_inlined_comp_cell_reuses_enclosing_free_slot(self):
+        def outer(x):
+            def inner():
+                return [lambda: x for x in x]
+            return inner
+        code = outer([1]).__code__
+        self.assertEqual(code.co_varnames, ())
+        self.assertEqual(code.co_cellvars, ())
+        self.assertEqual(code.co_freevars, ('x',))
+
+    def test_nested_inlined_comp_reuses_enclosing_free_slot(self):
+        def outer(x):
+            def inner():
+                return [[x for _ in (0,)] for x in x]
+            return inner
+        code = outer([1]).__code__
+        self.assertNotIn('x', code.co_varnames)
+        self.assertNotIn('x', code.co_cellvars)
+        self.assertEqual(code.co_freevars, ('x',))
+
+    def test_inlined_comp_exception_restores_enclosing_free(self):
+        def outer(x):
+            def inner():
+                try:
+                    [1 / 0 for x in x]
+                except ZeroDivisionError:
+                    pass
+                return x
+            return inner()
+        self.assertEqual(outer([1, 2]), [1, 2])
+
     def test_free_inner_cell_outer(self):
         code = """
             g = 2
@@ -942,6 +985,36 @@ class ListComprehensionTest(unittest.TestCase):
         self._check_in_scopes(
             code,
             {"snaps": [1, 2], "vals": [2, 2], "consistent": [True, True]},
+            ns={"sys": sys}, scopes=["module", "function"])
+
+    def test_frame_locals_comp_local_and_enclosing_free(self):
+        # Same-name collision without a lambda: the inlined local reuses the
+        # enclosing free slot. f_locals keys must still be unique.
+        code = """
+            def outer(x):
+                def inner():
+                    return [(dict(**sys._getframe().f_locals),
+                             len(sys._getframe().f_locals),
+                             list(sys._getframe().f_locals.keys()),
+                             list(sys._getframe().f_locals.values()),
+                             list(sys._getframe().f_locals.items()),
+                             dict(sys._getframe().f_locals.items()))
+                            for x in x]
+                return inner()
+            result = outer([1, 2])
+            snaps = [d['x'] for d, *_ in result]
+            consistent = []
+            for d, n, ks, vs, it, d_items in result:
+                consistent.append(
+                    n == len(ks) == len(vs) == len(it)
+                    and ks.count('x') == 1
+                    and d == d_items == dict(zip(ks, vs))
+                )
+        """
+        import sys
+        self._check_in_scopes(
+            code,
+            {"snaps": [1, 2], "consistent": [True, True]},
             ns={"sys": sys}, scopes=["module", "function"])
 
     def test_frame_locals_nested_comp_cell_and_enclosing_free(self):

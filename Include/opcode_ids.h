@@ -247,11 +247,13 @@ extern "C" {
 #define JUMP_IF_TRUE                           259
 #define JUMP_NO_INTERRUPT                      260
 #define LOAD_CLOSURE                           261
-#define POP_BLOCK                              262
-#define SETUP_CLEANUP                          263
-#define SETUP_FINALLY                          264
-#define SETUP_WITH                             265
-#define STORE_FAST_MAYBE_NULL                  266
+#define LOAD_CLOSURE_AND_CLEAR                 262
+#define POP_BLOCK                              263
+#define SETUP_CLEANUP                          264
+#define SETUP_FINALLY                          265
+#define SETUP_WITH                             266
+#define STORE_CLOSURE                          267
+#define STORE_FAST_MAYBE_NULL                  268
 
 #define HAVE_ARGUMENT                           41
 #define MIN_SPECIALIZED_OPCODE                 129

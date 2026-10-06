@@ -3654,6 +3654,14 @@ convert_pseudo_ops(cfg_builder *g)
                 assert(is_pseudo_target(LOAD_CLOSURE, LOAD_FAST));
                 instr->i_opcode = LOAD_FAST;
             }
+            else if (instr->i_opcode == LOAD_CLOSURE_AND_CLEAR) {
+                assert(is_pseudo_target(LOAD_CLOSURE_AND_CLEAR, LOAD_FAST_AND_CLEAR));
+                instr->i_opcode = LOAD_FAST_AND_CLEAR;
+            }
+            else if (instr->i_opcode == STORE_CLOSURE) {
+                assert(is_pseudo_target(STORE_CLOSURE, STORE_FAST));
+                instr->i_opcode = STORE_FAST;
+            }
             else if (instr->i_opcode == STORE_FAST_MAYBE_NULL) {
                 assert(is_pseudo_target(STORE_FAST_MAYBE_NULL, STORE_FAST));
                 instr->i_opcode = STORE_FAST;
@@ -3975,6 +3983,8 @@ fix_cell_offsets(_PyCompile_CodeUnitMetadata *umd, basicblock *entryblock, int *
             switch(inst->i_opcode) {
                 case MAKE_CELL:
                 case LOAD_CLOSURE:
+                case LOAD_CLOSURE_AND_CLEAR:
+                case STORE_CLOSURE:
                 case LOAD_DEREF:
                 case STORE_DEREF:
                 case DELETE_DEREF:
