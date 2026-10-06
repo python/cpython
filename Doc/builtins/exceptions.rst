@@ -338,16 +338,26 @@ The following exceptions are the exceptions that are usually raised.
 
 .. exception:: NotImplementedError
 
-   This exception is derived from :exc:`RuntimeError`.  In user defined base
-   classes, abstract methods should raise this exception when they require
-   derived classes to override the method, or while the class is being
-   developed to indicate that the real implementation still needs to be added.
+   This exception is derived from :exc:`RuntimeError`. In user-defined base
+   classes, any **non**-abstract method should raise this exception when derived
+   classes are required to override the method, indicating that the real
+   implementation still needs to be added.
 
    .. note::
 
       It should not be used to indicate that an operator or method is not
       meant to be supported at all -- in that case either leave the operator /
       method undefined or, if a subclass, set it to :data:`None`.
+
+   .. caution::
+
+      Methods decorated with :func:`abc.abstractmethod` designate a member function
+      as abstract, which prompts the ABC metaclass enforcement mechanism to verify
+      that a concrete implementation resides within the instantiated subclass.
+      Consequently, the Python interpreter invokes the overridden child class implementation
+      directly; the original base class method body remains uncalled during regular
+      polymorphic execution, rendering the inclusion of a :exc:`NotImplementedError`
+      entirely superfluous and redundant.
 
    .. caution::
 
