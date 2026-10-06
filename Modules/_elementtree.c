@@ -3775,7 +3775,6 @@ ignore_attribute_error(PyObject *value)
 }
 
 /*[clinic input]
-@permit_long_summary
 _elementtree.XMLParser.__init__
 
     *
@@ -3793,7 +3792,7 @@ file: http://www.iana.org/assignments/character-sets
 static int
 _elementtree_XMLParser___init___impl(XMLParserObject *self, PyObject *target,
                                      const char *encoding)
-/*[clinic end generated code: output=3ae45ec6cdf344e4 input=43dcd316382c80a2]*/
+/*[clinic end generated code: output=3ae45ec6cdf344e4 input=a77eb075d276d487]*/
 {
     self->entity = PyDict_New();
     if (!self->entity)
