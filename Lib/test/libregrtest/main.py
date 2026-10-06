@@ -16,7 +16,7 @@ from .findtests import findtests, split_test_packages, list_cases, collect_cases
 from .logger import Logger
 from .pgo import setup_pgo_tests
 from .result import TestResult
-from .results import TestResults, EXITCODE_INTERRUPTED, annotate_github
+from .results import TestResults, EXITCODE_INTERRUPTED
 from .runtests import RunTests, HuntRefleak
 from .setup import setup_process, setup_test_dir
 from .single import run_single_test, PROGRESS_MIN_TIME
@@ -27,7 +27,7 @@ from .utils import (
     printlist, get_temp_dir, get_work_dir, exit_timeout,
     display_header, cleanup_temp_dir, print_warning,
     is_cross_compiled, get_host_runner, display_title,
-    get_process_memory_usage, EXIT_TIMEOUT)
+    get_process_memory_usage, github_annotation, EXIT_TIMEOUT)
 
 
 class Regrtest:
@@ -491,10 +491,6 @@ class Regrtest:
             return
         # Tests which failed in the last run (the re-run, if any)
         failed = self.results.rerun_results
-        if not self.results.rerun:
-            # Failed tests were not re-run (ex: --python): annotate them now
-            for result in failed:
-                annotate_github(result)
         cases = [(result.errors or []) + (result.failures or [])
                  for result in failed]
         ncase = sum(map(len, cases))
@@ -511,7 +507,14 @@ class Regrtest:
                 if result.env_changed_reasons:
                     write("\n".join(f"- {reason}"
                                     for reason in result.env_changed_reasons))
+                if not result_cases:
+                    message = "\n".join([str(result),
+                                         *(result.env_changed_reasons or ())])
+                    github_annotation("error", result.test_name,
+                                      decolor(message))
                 for name, traceback in result_cases:
+                    github_annotation("error", f"{result.test_name}: {name}",
+                                      decolor(traceback))
                     # Expand short tracebacks when there are only a few
                     is_open = ncase <= 5 and traceback.count("\n") < 30
                     write(f"<details{' open' if is_open else ''}>"

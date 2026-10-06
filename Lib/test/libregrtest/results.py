@@ -1,14 +1,13 @@
-import os
 import sys
 import trace
-from _colorize import decolor, get_colors  # type: ignore[import-not-found]
+from _colorize import get_colors  # type: ignore[import-not-found]
 lazy from xml.etree.ElementTree import Element
 
 from .runtests import RunTests
 from .result import State, TestResult, TestStats, Location
 from .utils import (
     StrPath, TestName, TestTuple, TestList, FilterDict,
-    printlist, count, format_duration, github_annotation)
+    printlist, count, format_duration)
 
 
 # Python uses exit code 1 when an exception is not caught
@@ -18,16 +17,6 @@ EXITCODE_ENV_CHANGED = 3
 EXITCODE_NO_TESTS_RAN = 4
 EXITCODE_RERUN_FAIL = 5
 EXITCODE_INTERRUPTED = 130   # 128 + signal.SIGINT=2
-
-
-def annotate_github(result: TestResult) -> None:
-    cases = (result.errors or []) + (result.failures or [])
-    for name, traceback in cases:
-        github_annotation("error", f"{result.test_name}: {name}",
-                          decolor(traceback))
-    if not cases:
-        message = "\n".join([str(result), *(result.env_changed_reasons or ())])
-        github_annotation("error", result.test_name, decolor(message))
 
 
 class TestResults:
@@ -138,11 +127,6 @@ class TestResults:
 
         if result.state == State.WORKER_BUG:
             self.worker_bug = True
-
-        if (os.environ.get("GITHUB_STEP_SUMMARY") and rerun
-                and result.is_failed(fail_env_changed)):
-            # Only annotate tests which fail again when re-run
-            annotate_github(result)
 
         if result.has_meaningful_duration() and not rerun:
             if result.duration is None:
