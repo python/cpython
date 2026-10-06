@@ -538,8 +538,14 @@ decode_current_locale(const char* arg, wchar_t **wstr, size_t *wlen,
         // +1 to write also the trailing NUL character
         size_t count = _Py_mbstowcs(res, arg, argsize + 1);
         if (count != DECODE_ERROR) {
-            // Success
+            // String decoded successfully.
+
+            // gh-158893: This assertion can fail if the input string was
+            // mutated during this function call. For example, the assertion
+            // fails on decoding strerror() result if another thread mutated
+            // the string in-place by calling strerror() in parallel.
             assert(count == argsize);
+
             *wstr = res;
             if (wlen != NULL) {
                 *wlen = count;
@@ -694,6 +700,7 @@ _Py_DecodeLocale(const char* arg, wchar_t **wstr, size_t *wlen,
     assert(wstr != NULL);
 
 #ifdef Py_DEBUG
+    size_t arglen = strlen(arg);
     size_t wlen_canary = (size_t)-2;
     if (wlen) {
         *wlen = wlen_canary;
@@ -719,6 +726,11 @@ _Py_DecodeLocale(const char* arg, wchar_t **wstr, size_t *wlen,
         // Success
         assert(*wstr != NULL);
 #ifdef Py_DEBUG
+        // gh-158893: Detect if the input string was mutated during the
+        // function call. For example, the assertion fails on decoding
+        // strerror() result if another thread mutated the string in-place by
+        // calling strerror() in parallel.
+        assert(strlen(arg) == arglen);
         if (wlen != NULL) {
             assert(*wlen == wcslen(*wstr));
         }
