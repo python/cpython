@@ -187,14 +187,22 @@ def github_annotation(title: str, message: str) -> str:
     def escape_property(text: str) -> str:
         return escape(text).replace(":", "%3A").replace(",", "%2C")
 
-    message = decolor(message)
+    message = decolor(message).rstrip()
     props: dict[str, str | int] = {}
+    header = title
     if location := traceback_location(message):
         props |= location
+        position = ":".join(str(location[key])
+                            for key in ("file", "line", "col")
+                            if key in location)
+        header = f"{position}: {title}"
     props["title"] = title
+    # The job log only shows the message, not the properties: start the
+    # message with the location and the title
+    message = f"{header}\n{message}"
     props_text = ",".join(f"{key}={escape_property(str(value))}"
                           for key, value in props.items())
-    return f"::error {props_text}::{escape(message.rstrip())}"
+    return f"::error {props_text}::{escape(message)}"
 
 
 def regrtest_unraisable_hook(unraisable) -> None:
