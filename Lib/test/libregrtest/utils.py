@@ -207,19 +207,12 @@ def github_annotation(title: str, message: str) -> str:
     def escape_property(text: str) -> str:
         return escape(text).replace(":", "%3A").replace(",", "%2C")
 
-    message = decolor(message).rstrip()
+    message = decolor(message)
     props: dict[str, str | int] = {}
-    header = title
     if location := traceback_location(message):
         props |= location
-        position = ":".join(str(location[key])
-                            for key in ("file", "line", "col")
-                            if key in location)
-        header = f"{position}: {title}"
     props["title"] = title
-    # The job log only shows the message, not the properties: start the
-    # message with the location and the title
-    message = f"{header}\n{traceback_exception(message).strip()}"
+    message = traceback_exception(message).strip()
     props_text = ",".join(f"{key}={escape_property(str(value))}"
                           for key, value in props.items())
     return f"::error {props_text}::{escape(message)}"
