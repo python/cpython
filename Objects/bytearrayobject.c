@@ -977,6 +977,7 @@ bytearray_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 /*[clinic input]
+@vectorcall
 bytearray.__init__
 
     source as arg: object = NULL
@@ -988,7 +989,7 @@ bytearray.__init__
 static int
 bytearray___init___impl(PyByteArrayObject *self, PyObject *arg,
                         const char *encoding, const char *errors)
-/*[clinic end generated code: output=4ce1304649c2f8b3 input=1141a7122eefd7b9]*/
+/*[clinic end generated code: output=4ce1304649c2f8b3 input=24ddb84055f432dd]*/
 {
     Py_ssize_t count;
     PyObject *it;
@@ -1080,6 +1081,33 @@ bytearray___init___impl(PyByteArrayObject *self, PyObject *arg,
             }
             return 0;
         }
+    }
+
+    /* optimization: Adopt bytes rather than copying. */
+    if (PyBytes_CheckExact(arg)
+        && PyUnstable_Object_IsUniqueReferencedTemporary(arg)
+        && _PyBytes_GET_CACHED_HASH((PyBytesObject *)arg) == -1)
+    {
+        /* Reinit before taking a reference: it asserts the bytes is
+           uniquely referenced. */
+        self->ob_bytes_object = arg;
+        bytearray_reinit_from_bytes(self, PyBytes_GET_SIZE(arg));
+        Py_INCREF(arg);
+        return 0;
+    }
+
+    /* optimization: Adopt bytearray rather than copying. */
+    if (PyByteArray_CheckExact(arg)
+        && PyUnstable_Object_IsUniqueReferencedTemporary(arg))
+    {
+        PyObject *bytes = bytearray_take_bytes_impl((PyByteArrayObject *)arg,
+                                                    Py_None);
+        if (bytes == NULL) {
+            return -1;
+        }
+        self->ob_bytes_object = bytes;
+        bytearray_reinit_from_bytes(self, PyBytes_GET_SIZE(bytes));
+        return 0;
     }
 
     /* Use the buffer API */
@@ -3027,6 +3055,7 @@ PyTypeObject PyByteArray_Type = {
     PyType_GenericAlloc,                /* tp_alloc */
     bytearray_new,                      /* tp_new */
     PyObject_Free,                      /* tp_free */
+    .tp_vectorcall = bytearray_vectorcall,
     .tp_version_tag = _Py_TYPE_VERSION_BYTEARRAY,
 };
 

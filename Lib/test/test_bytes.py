@@ -16,6 +16,7 @@ import re
 import sys
 import tempfile
 import textwrap
+lazy import tracemalloc
 import threading
 import unittest
 from _codecs import _unregister_error as _codecs_unregister_error
@@ -1808,6 +1809,23 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         taken = ba.take_bytes()
         self.assertEqual(taken, b'Hello')
         self.assertEqual(hash(taken), hash(b'Hello'))
+
+    @support.cpython_only
+    @support.bigmemtest(size=support._1G, memuse=1)
+    def test_unique_temporary_take_memory(self, size):
+        # Optimization: When passed a unique temporary adopt it rather than
+        # allocate + copy + deallocate.
+        def peak(func):
+            tracemalloc.start()
+            try:
+                func()
+                return tracemalloc.get_traced_memory()[1]
+            finally:
+                tracemalloc.stop()
+        # Copy would be 2.0, 1.5 gives space for other allocations.
+        self.assertLess(peak(lambda: bytearray(bytes(size))), size * 1.5)
+        self.assertLess(peak(lambda: bytearray(bytearray(size))), size * 1.5)
+        self.assertLess(peak(lambda: bytes(bytearray(size))), size * 1.5)
 
     def test_take_bytes_reentrant_resize(self):
         # gh-153570: n.__index__() can resize the bytearray, so take_bytes()
