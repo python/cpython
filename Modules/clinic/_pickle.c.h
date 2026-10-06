@@ -2,6 +2,13 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
+#endif
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
+
 PyDoc_STRVAR(_pickle_Pickler_clear_memo__doc__,
 "clear_memo($self, /)\n"
 "--\n"
@@ -20,9 +27,9 @@ static PyObject *
 _pickle_Pickler_clear_memo_impl(PicklerObject *self);
 
 static PyObject *
-_pickle_Pickler_clear_memo(PicklerObject *self, PyObject *Py_UNUSED(ignored))
+_pickle_Pickler_clear_memo(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _pickle_Pickler_clear_memo_impl(self);
+    return _pickle_Pickler_clear_memo_impl((PicklerObject *)self);
 }
 
 PyDoc_STRVAR(_pickle_Pickler_dump__doc__,
@@ -32,7 +39,30 @@ PyDoc_STRVAR(_pickle_Pickler_dump__doc__,
 "Write a pickled representation of the given object to the open file.");
 
 #define _PICKLE_PICKLER_DUMP_METHODDEF    \
-    {"dump", (PyCFunction)_pickle_Pickler_dump, METH_O, _pickle_Pickler_dump__doc__},
+    {"dump", _PyCFunction_CAST(_pickle_Pickler_dump), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _pickle_Pickler_dump__doc__},
+
+static PyObject *
+_pickle_Pickler_dump_impl(PicklerObject *self, PyTypeObject *cls,
+                          PyObject *obj);
+
+static PyObject *
+_pickle_Pickler_dump(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    PyObject *obj;
+
+    if (!_PyArg_NoKwnames("dump", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("dump", nargs, 1, 1)) {
+        goto exit;
+    }
+    obj = args[0];
+    return_value = _pickle_Pickler_dump_impl((PicklerObject *)self, cls, obj);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(_pickle_Pickler___sizeof____doc__,
 "__sizeof__($self, /)\n"
@@ -43,20 +73,20 @@ PyDoc_STRVAR(_pickle_Pickler___sizeof____doc__,
 #define _PICKLE_PICKLER___SIZEOF___METHODDEF    \
     {"__sizeof__", (PyCFunction)_pickle_Pickler___sizeof__, METH_NOARGS, _pickle_Pickler___sizeof____doc__},
 
-static Py_ssize_t
+static size_t
 _pickle_Pickler___sizeof___impl(PicklerObject *self);
 
 static PyObject *
-_pickle_Pickler___sizeof__(PicklerObject *self, PyObject *Py_UNUSED(ignored))
+_pickle_Pickler___sizeof__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *return_value = NULL;
-    Py_ssize_t _return_value;
+    size_t _return_value;
 
-    _return_value = _pickle_Pickler___sizeof___impl(self);
-    if ((_return_value == -1) && PyErr_Occurred()) {
+    _return_value = _pickle_Pickler___sizeof___impl((PicklerObject *)self);
+    if ((_return_value == (size_t)-1) && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = PyLong_FromSsize_t(_return_value);
+    return_value = PyLong_FromSize_t(_return_value);
 
 exit:
     return return_value;
@@ -69,8 +99,9 @@ PyDoc_STRVAR(_pickle_Pickler___init____doc__,
 "This takes a binary file for writing a pickle data stream.\n"
 "\n"
 "The optional *protocol* argument tells the pickler to use the given\n"
-"protocol; supported protocols are 0, 1, 2, 3 and 4.  The default\n"
-"protocol is 3; a backward-incompatible protocol designed for Python 3.\n"
+"protocol; supported protocols are 0, 1, 2, 3, 4 and 5.  The default\n"
+"protocol is 5. It was introduced in Python 3.8, and is incompatible\n"
+"with previous versions.\n"
 "\n"
 "Specifying a negative protocol version selects the highest protocol\n"
 "version supported.  The higher the protocol used, the more recent the\n"
@@ -105,8 +136,33 @@ static int
 _pickle_Pickler___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 4
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(file), &_Py_ID(protocol), &_Py_ID(fix_imports), &_Py_ID(buffer_callback), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"file", "protocol", "fix_imports", "buffer_callback", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "Pickler", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "Pickler",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[4];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
@@ -116,7 +172,8 @@ _pickle_Pickler___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     int fix_imports = 1;
     PyObject *buffer_callback = Py_None;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 4, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 4, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -160,9 +217,9 @@ static PyObject *
 _pickle_PicklerMemoProxy_clear_impl(PicklerMemoProxyObject *self);
 
 static PyObject *
-_pickle_PicklerMemoProxy_clear(PicklerMemoProxyObject *self, PyObject *Py_UNUSED(ignored))
+_pickle_PicklerMemoProxy_clear(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _pickle_PicklerMemoProxy_clear_impl(self);
+    return _pickle_PicklerMemoProxy_clear_impl((PicklerMemoProxyObject *)self);
 }
 
 PyDoc_STRVAR(_pickle_PicklerMemoProxy_copy__doc__,
@@ -178,9 +235,9 @@ static PyObject *
 _pickle_PicklerMemoProxy_copy_impl(PicklerMemoProxyObject *self);
 
 static PyObject *
-_pickle_PicklerMemoProxy_copy(PicklerMemoProxyObject *self, PyObject *Py_UNUSED(ignored))
+_pickle_PicklerMemoProxy_copy(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _pickle_PicklerMemoProxy_copy_impl(self);
+    return _pickle_PicklerMemoProxy_copy_impl((PicklerMemoProxyObject *)self);
 }
 
 PyDoc_STRVAR(_pickle_PicklerMemoProxy___reduce____doc__,
@@ -196,9 +253,40 @@ static PyObject *
 _pickle_PicklerMemoProxy___reduce___impl(PicklerMemoProxyObject *self);
 
 static PyObject *
-_pickle_PicklerMemoProxy___reduce__(PicklerMemoProxyObject *self, PyObject *Py_UNUSED(ignored))
+_pickle_PicklerMemoProxy___reduce__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _pickle_PicklerMemoProxy___reduce___impl(self);
+    return _pickle_PicklerMemoProxy___reduce___impl((PicklerMemoProxyObject *)self);
+}
+
+PyDoc_STRVAR(_pickle_Unpickler_persistent_load__doc__,
+"persistent_load($self, pid, /)\n"
+"--\n"
+"\n");
+
+#define _PICKLE_UNPICKLER_PERSISTENT_LOAD_METHODDEF    \
+    {"persistent_load", _PyCFunction_CAST(_pickle_Unpickler_persistent_load), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _pickle_Unpickler_persistent_load__doc__},
+
+static PyObject *
+_pickle_Unpickler_persistent_load_impl(UnpicklerObject *self,
+                                       PyTypeObject *cls, PyObject *pid);
+
+static PyObject *
+_pickle_Unpickler_persistent_load(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    PyObject *pid;
+
+    if (!_PyArg_NoKwnames("persistent_load", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("persistent_load", nargs, 1, 1)) {
+        goto exit;
+    }
+    pid = args[0];
+    return_value = _pickle_Unpickler_persistent_load_impl((UnpicklerObject *)self, cls, pid);
+
+exit:
+    return return_value;
 }
 
 PyDoc_STRVAR(_pickle_Unpickler_load__doc__,
@@ -212,15 +300,19 @@ PyDoc_STRVAR(_pickle_Unpickler_load__doc__,
 "specified therein.");
 
 #define _PICKLE_UNPICKLER_LOAD_METHODDEF    \
-    {"load", (PyCFunction)_pickle_Unpickler_load, METH_NOARGS, _pickle_Unpickler_load__doc__},
+    {"load", _PyCFunction_CAST(_pickle_Unpickler_load), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _pickle_Unpickler_load__doc__},
 
 static PyObject *
-_pickle_Unpickler_load_impl(UnpicklerObject *self);
+_pickle_Unpickler_load_impl(UnpicklerObject *self, PyTypeObject *cls);
 
 static PyObject *
-_pickle_Unpickler_load(UnpicklerObject *self, PyObject *Py_UNUSED(ignored))
+_pickle_Unpickler_load(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    return _pickle_Unpickler_load_impl(self);
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
+        PyErr_SetString(PyExc_TypeError, "load() takes no arguments");
+        return NULL;
+    }
+    return _pickle_Unpickler_load_impl((UnpicklerObject *)self, cls);
 }
 
 PyDoc_STRVAR(_pickle_Unpickler_find_class__doc__,
@@ -237,26 +329,29 @@ PyDoc_STRVAR(_pickle_Unpickler_find_class__doc__,
 "needed.  Both arguments passed are str objects.");
 
 #define _PICKLE_UNPICKLER_FIND_CLASS_METHODDEF    \
-    {"find_class", (PyCFunction)(void(*)(void))_pickle_Unpickler_find_class, METH_FASTCALL, _pickle_Unpickler_find_class__doc__},
+    {"find_class", _PyCFunction_CAST(_pickle_Unpickler_find_class), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _pickle_Unpickler_find_class__doc__},
 
 static PyObject *
-_pickle_Unpickler_find_class_impl(UnpicklerObject *self,
+_pickle_Unpickler_find_class_impl(UnpicklerObject *self, PyTypeObject *cls,
                                   PyObject *module_name,
                                   PyObject *global_name);
 
 static PyObject *
-_pickle_Unpickler_find_class(UnpicklerObject *self, PyObject *const *args, Py_ssize_t nargs)
+_pickle_Unpickler_find_class(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     PyObject *module_name;
     PyObject *global_name;
 
+    if (!_PyArg_NoKwnames("find_class", kwnames)) {
+        goto exit;
+    }
     if (!_PyArg_CheckPositional("find_class", nargs, 2, 2)) {
         goto exit;
     }
     module_name = args[0];
     global_name = args[1];
-    return_value = _pickle_Unpickler_find_class_impl(self, module_name, global_name);
+    return_value = _pickle_Unpickler_find_class_impl((UnpicklerObject *)self, cls, module_name, global_name);
 
 exit:
     return return_value;
@@ -271,20 +366,20 @@ PyDoc_STRVAR(_pickle_Unpickler___sizeof____doc__,
 #define _PICKLE_UNPICKLER___SIZEOF___METHODDEF    \
     {"__sizeof__", (PyCFunction)_pickle_Unpickler___sizeof__, METH_NOARGS, _pickle_Unpickler___sizeof____doc__},
 
-static Py_ssize_t
+static size_t
 _pickle_Unpickler___sizeof___impl(UnpicklerObject *self);
 
 static PyObject *
-_pickle_Unpickler___sizeof__(UnpicklerObject *self, PyObject *Py_UNUSED(ignored))
+_pickle_Unpickler___sizeof__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *return_value = NULL;
-    Py_ssize_t _return_value;
+    size_t _return_value;
 
-    _return_value = _pickle_Unpickler___sizeof___impl(self);
-    if ((_return_value == -1) && PyErr_Occurred()) {
+    _return_value = _pickle_Unpickler___sizeof___impl((UnpicklerObject *)self);
+    if ((_return_value == (size_t)-1) && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = PyLong_FromSsize_t(_return_value);
+    return_value = PyLong_FromSize_t(_return_value);
 
 exit:
     return return_value;
@@ -325,8 +420,33 @@ static int
 _pickle_Unpickler___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 5
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(file), &_Py_ID(fix_imports), &_Py_ID(encoding), &_Py_ID(errors), &_Py_ID(buffers), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"file", "fix_imports", "encoding", "errors", "buffers", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "Unpickler", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "Unpickler",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[5];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
@@ -337,7 +457,8 @@ _pickle_Unpickler___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     const char *errors = "strict";
     PyObject *buffers = NULL;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -359,13 +480,8 @@ _pickle_Unpickler___init__(PyObject *self, PyObject *args, PyObject *kwargs)
             _PyArg_BadArgument("Unpickler", "argument 'encoding'", "str", fastargs[2]);
             goto exit;
         }
-        Py_ssize_t encoding_length;
-        encoding = PyUnicode_AsUTF8AndSize(fastargs[2], &encoding_length);
+        encoding = _PyUnicode_AsUTF8NoNUL(fastargs[2]);
         if (encoding == NULL) {
-            goto exit;
-        }
-        if (strlen(encoding) != (size_t)encoding_length) {
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
         if (!--noptargs) {
@@ -377,13 +493,8 @@ _pickle_Unpickler___init__(PyObject *self, PyObject *args, PyObject *kwargs)
             _PyArg_BadArgument("Unpickler", "argument 'errors'", "str", fastargs[3]);
             goto exit;
         }
-        Py_ssize_t errors_length;
-        errors = PyUnicode_AsUTF8AndSize(fastargs[3], &errors_length);
+        errors = _PyUnicode_AsUTF8NoNUL(fastargs[3]);
         if (errors == NULL) {
-            goto exit;
-        }
-        if (strlen(errors) != (size_t)errors_length) {
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
         if (!--noptargs) {
@@ -411,9 +522,9 @@ static PyObject *
 _pickle_UnpicklerMemoProxy_clear_impl(UnpicklerMemoProxyObject *self);
 
 static PyObject *
-_pickle_UnpicklerMemoProxy_clear(UnpicklerMemoProxyObject *self, PyObject *Py_UNUSED(ignored))
+_pickle_UnpicklerMemoProxy_clear(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _pickle_UnpicklerMemoProxy_clear_impl(self);
+    return _pickle_UnpicklerMemoProxy_clear_impl((UnpicklerMemoProxyObject *)self);
 }
 
 PyDoc_STRVAR(_pickle_UnpicklerMemoProxy_copy__doc__,
@@ -429,9 +540,9 @@ static PyObject *
 _pickle_UnpicklerMemoProxy_copy_impl(UnpicklerMemoProxyObject *self);
 
 static PyObject *
-_pickle_UnpicklerMemoProxy_copy(UnpicklerMemoProxyObject *self, PyObject *Py_UNUSED(ignored))
+_pickle_UnpicklerMemoProxy_copy(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _pickle_UnpicklerMemoProxy_copy_impl(self);
+    return _pickle_UnpicklerMemoProxy_copy_impl((UnpicklerMemoProxyObject *)self);
 }
 
 PyDoc_STRVAR(_pickle_UnpicklerMemoProxy___reduce____doc__,
@@ -447,9 +558,9 @@ static PyObject *
 _pickle_UnpicklerMemoProxy___reduce___impl(UnpicklerMemoProxyObject *self);
 
 static PyObject *
-_pickle_UnpicklerMemoProxy___reduce__(UnpicklerMemoProxyObject *self, PyObject *Py_UNUSED(ignored))
+_pickle_UnpicklerMemoProxy___reduce__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _pickle_UnpicklerMemoProxy___reduce___impl(self);
+    return _pickle_UnpicklerMemoProxy___reduce___impl((UnpicklerMemoProxyObject *)self);
 }
 
 PyDoc_STRVAR(_pickle_dump__doc__,
@@ -463,8 +574,8 @@ PyDoc_STRVAR(_pickle_dump__doc__,
 "be more efficient.\n"
 "\n"
 "The optional *protocol* argument tells the pickler to use the given\n"
-"protocol; supported protocols are 0, 1, 2, 3 and 4.  The default\n"
-"protocol is 4. It was introduced in Python 3.4, it is incompatible\n"
+"protocol; supported protocols are 0, 1, 2, 3, 4 and 5.  The default\n"
+"protocol is 5. It was introduced in Python 3.8, and is incompatible\n"
 "with previous versions.\n"
 "\n"
 "Specifying a negative protocol version selects the highest protocol\n"
@@ -485,7 +596,7 @@ PyDoc_STRVAR(_pickle_dump__doc__,
 "*buffer_callback* is not None and *protocol* is None or smaller than 5.");
 
 #define _PICKLE_DUMP_METHODDEF    \
-    {"dump", (PyCFunction)(void(*)(void))_pickle_dump, METH_FASTCALL|METH_KEYWORDS, _pickle_dump__doc__},
+    {"dump", _PyCFunction_CAST(_pickle_dump), METH_FASTCALL|METH_KEYWORDS, _pickle_dump__doc__},
 
 static PyObject *
 _pickle_dump_impl(PyObject *module, PyObject *obj, PyObject *file,
@@ -496,8 +607,33 @@ static PyObject *
 _pickle_dump(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 5
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(obj), &_Py_ID(file), &_Py_ID(protocol), &_Py_ID(fix_imports), &_Py_ID(buffer_callback), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"obj", "file", "protocol", "fix_imports", "buffer_callback", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "dump", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "dump",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     PyObject *obj;
@@ -506,7 +642,8 @@ _pickle_dump(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     int fix_imports = 1;
     PyObject *buffer_callback = Py_None;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 3, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -550,8 +687,8 @@ PyDoc_STRVAR(_pickle_dumps__doc__,
 "Return the pickled representation of the object as a bytes object.\n"
 "\n"
 "The optional *protocol* argument tells the pickler to use the given\n"
-"protocol; supported protocols are 0, 1, 2, 3 and 4.  The default\n"
-"protocol is 4. It was introduced in Python 3.4, it is incompatible\n"
+"protocol; supported protocols are 0, 1, 2, 3, 4 and 5.  The default\n"
+"protocol is 5. It was introduced in Python 3.8, and is incompatible\n"
 "with previous versions.\n"
 "\n"
 "Specifying a negative protocol version selects the highest protocol\n"
@@ -567,7 +704,7 @@ PyDoc_STRVAR(_pickle_dumps__doc__,
 "*buffer_callback* is not None and *protocol* is None or smaller than 5.");
 
 #define _PICKLE_DUMPS_METHODDEF    \
-    {"dumps", (PyCFunction)(void(*)(void))_pickle_dumps, METH_FASTCALL|METH_KEYWORDS, _pickle_dumps__doc__},
+    {"dumps", _PyCFunction_CAST(_pickle_dumps), METH_FASTCALL|METH_KEYWORDS, _pickle_dumps__doc__},
 
 static PyObject *
 _pickle_dumps_impl(PyObject *module, PyObject *obj, PyObject *protocol,
@@ -577,8 +714,33 @@ static PyObject *
 _pickle_dumps(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 4
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(obj), &_Py_ID(protocol), &_Py_ID(fix_imports), &_Py_ID(buffer_callback), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"obj", "protocol", "fix_imports", "buffer_callback", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "dumps", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "dumps",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[4];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *obj;
@@ -586,7 +748,8 @@ _pickle_dumps(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     int fix_imports = 1;
     PyObject *buffer_callback = Py_None;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -651,7 +814,7 @@ PyDoc_STRVAR(_pickle_load__doc__,
 "string instances as bytes objects.");
 
 #define _PICKLE_LOAD_METHODDEF    \
-    {"load", (PyCFunction)(void(*)(void))_pickle_load, METH_FASTCALL|METH_KEYWORDS, _pickle_load__doc__},
+    {"load", _PyCFunction_CAST(_pickle_load), METH_FASTCALL|METH_KEYWORDS, _pickle_load__doc__},
 
 static PyObject *
 _pickle_load_impl(PyObject *module, PyObject *file, int fix_imports,
@@ -662,8 +825,33 @@ static PyObject *
 _pickle_load(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 5
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(file), &_Py_ID(fix_imports), &_Py_ID(encoding), &_Py_ID(errors), &_Py_ID(buffers), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"file", "fix_imports", "encoding", "errors", "buffers", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "load", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "load",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *file;
@@ -672,7 +860,8 @@ _pickle_load(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     const char *errors = "strict";
     PyObject *buffers = NULL;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -694,13 +883,8 @@ _pickle_load(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
             _PyArg_BadArgument("load", "argument 'encoding'", "str", args[2]);
             goto exit;
         }
-        Py_ssize_t encoding_length;
-        encoding = PyUnicode_AsUTF8AndSize(args[2], &encoding_length);
+        encoding = _PyUnicode_AsUTF8NoNUL(args[2]);
         if (encoding == NULL) {
-            goto exit;
-        }
-        if (strlen(encoding) != (size_t)encoding_length) {
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
         if (!--noptargs) {
@@ -712,13 +896,8 @@ _pickle_load(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
             _PyArg_BadArgument("load", "argument 'errors'", "str", args[3]);
             goto exit;
         }
-        Py_ssize_t errors_length;
-        errors = PyUnicode_AsUTF8AndSize(args[3], &errors_length);
+        errors = _PyUnicode_AsUTF8NoNUL(args[3]);
         if (errors == NULL) {
-            goto exit;
-        }
-        if (strlen(errors) != (size_t)errors_length) {
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
         if (!--noptargs) {
@@ -734,7 +913,7 @@ exit:
 }
 
 PyDoc_STRVAR(_pickle_loads__doc__,
-"loads($module, /, data, *, fix_imports=True, encoding=\'ASCII\',\n"
+"loads($module, data, /, *, fix_imports=True, encoding=\'ASCII\',\n"
 "      errors=\'strict\', buffers=())\n"
 "--\n"
 "\n"
@@ -754,7 +933,7 @@ PyDoc_STRVAR(_pickle_loads__doc__,
 "string instances as bytes objects.");
 
 #define _PICKLE_LOADS_METHODDEF    \
-    {"loads", (PyCFunction)(void(*)(void))_pickle_loads, METH_FASTCALL|METH_KEYWORDS, _pickle_loads__doc__},
+    {"loads", _PyCFunction_CAST(_pickle_loads), METH_FASTCALL|METH_KEYWORDS, _pickle_loads__doc__},
 
 static PyObject *
 _pickle_loads_impl(PyObject *module, PyObject *data, int fix_imports,
@@ -765,8 +944,33 @@ static PyObject *
 _pickle_loads(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"data", "fix_imports", "encoding", "errors", "buffers", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "loads", 0};
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 4
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(fix_imports), &_Py_ID(encoding), &_Py_ID(errors), &_Py_ID(buffers), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"", "fix_imports", "encoding", "errors", "buffers", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "loads",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *data;
@@ -775,7 +979,8 @@ _pickle_loads(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     const char *errors = "strict";
     PyObject *buffers = NULL;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -797,13 +1002,8 @@ _pickle_loads(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
             _PyArg_BadArgument("loads", "argument 'encoding'", "str", args[2]);
             goto exit;
         }
-        Py_ssize_t encoding_length;
-        encoding = PyUnicode_AsUTF8AndSize(args[2], &encoding_length);
+        encoding = _PyUnicode_AsUTF8NoNUL(args[2]);
         if (encoding == NULL) {
-            goto exit;
-        }
-        if (strlen(encoding) != (size_t)encoding_length) {
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
         if (!--noptargs) {
@@ -815,13 +1015,8 @@ _pickle_loads(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
             _PyArg_BadArgument("loads", "argument 'errors'", "str", args[3]);
             goto exit;
         }
-        Py_ssize_t errors_length;
-        errors = PyUnicode_AsUTF8AndSize(args[3], &errors_length);
+        errors = _PyUnicode_AsUTF8NoNUL(args[3]);
         if (errors == NULL) {
-            goto exit;
-        }
-        if (strlen(errors) != (size_t)errors_length) {
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
         if (!--noptargs) {
@@ -835,4 +1030,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=de075ec48d4ee0e1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=df810fb55415996f input=a9049054013a1b77]*/

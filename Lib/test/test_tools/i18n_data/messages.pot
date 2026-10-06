@@ -1,0 +1,99 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2000-01-01 00:00+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+
+
+#: messages.py:16
+msgid ""
+msgstr ""
+
+#: messages.py:19 messages.py:20 messages.py:21
+msgid "parentheses"
+msgstr ""
+
+#: messages.py:24
+msgid "Hello, world!"
+msgstr ""
+
+#: messages.py:27
+msgid ""
+"Hello,\n"
+"    multiline!\n"
+msgstr ""
+
+#: messages.py:46 messages.py:89 messages.py:90 messages.py:93 messages.py:94
+#: messages.py:99 messages.py:100 messages.py:101
+msgid "foo"
+msgid_plural "foos"
+msgstr[0] ""
+msgstr[1] ""
+
+#: messages.py:47
+msgid "something"
+msgstr ""
+
+#: messages.py:50
+msgid "Hello, {}!"
+msgstr ""
+
+#: messages.py:54
+msgid "1"
+msgstr ""
+
+#: messages.py:54
+msgid "2"
+msgstr ""
+
+#: messages.py:55 messages.py:56
+msgid "A"
+msgstr ""
+
+#: messages.py:55 messages.py:56
+msgid "B"
+msgstr ""
+
+#: messages.py:57
+msgid "set"
+msgstr ""
+
+#: messages.py:62 messages.py:63
+msgid "nested string"
+msgstr ""
+
+#: messages.py:68
+msgid "baz"
+msgstr ""
+
+#: messages.py:71 messages.py:75
+msgid "default value"
+msgstr ""
+
+#: messages.py:91 messages.py:92 messages.py:95 messages.py:96
+msgctxt "context"
+msgid "foo"
+msgid_plural "foos"
+msgstr[0] ""
+msgstr[1] ""
+
+#: messages.py:102
+msgid "domain foo"
+msgstr ""
+
+#: messages.py:118 messages.py:119
+msgid "world"
+msgid_plural "worlds"
+msgstr[0] ""
+msgstr[1] ""
+

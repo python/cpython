@@ -1,0 +1,1 @@
+The ``DELETE_NAME`` opcode is now replaced with ``PUSH_NULL; STORE_NAME``.

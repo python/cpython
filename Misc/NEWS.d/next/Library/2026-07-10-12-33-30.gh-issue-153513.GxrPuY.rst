@@ -1,0 +1,5 @@
+Values of several Tcl object types returned by :mod:`tkinter` are now
+converted to the corresponding Python type instead of being wrapped in a
+:class:`!_tkinter.Tcl_Obj`: ``index``, ``window``, ``nsName`` and
+``parsedVarName`` objects to :class:`str`, and ``pixel`` screen distances
+with no unit suffix to :class:`int` or :class:`float`.

@@ -145,6 +145,9 @@ class CommonTest(unittest.TestCase):
         self.assertEqual(self.type2test(LyingTuple((2,))), self.type2test((1,)))
         self.assertEqual(self.type2test(LyingList([2])), self.type2test([1]))
 
+        with self.assertRaises(TypeError):
+            self.type2test(unsupported_arg=[])
+
     def test_truth(self):
         self.assertFalse(self.type2test())
         self.assertTrue(self.type2test([42]))
@@ -258,23 +261,20 @@ class CommonTest(unittest.TestCase):
         self.assertEqual(min(u), 0)
         self.assertEqual(max(u), 2)
 
-    def test_addmul(self):
+    def test_add(self):
         u1 = self.type2test([0])
         u2 = self.type2test([0, 1])
         self.assertEqual(u1, u1 + self.type2test())
         self.assertEqual(u1, self.type2test() + u1)
         self.assertEqual(u1 + self.type2test([1]), u2)
         self.assertEqual(self.type2test([-1]) + u1, self.type2test([-1, 0]))
-        self.assertEqual(self.type2test(), u2*0)
-        self.assertEqual(self.type2test(), 0*u2)
+
+    def test_mul(self):
+        u2 = self.type2test([0, 1])
         self.assertEqual(self.type2test(), u2*0)
         self.assertEqual(self.type2test(), 0*u2)
         self.assertEqual(u2, u2*1)
         self.assertEqual(u2, 1*u2)
-        self.assertEqual(u2, u2*1)
-        self.assertEqual(u2, 1*u2)
-        self.assertEqual(u2+u2, u2*2)
-        self.assertEqual(u2+u2, 2*u2)
         self.assertEqual(u2+u2, u2*2)
         self.assertEqual(u2+u2, 2*u2)
         self.assertEqual(u2+u2+u2, u2*3)
@@ -283,8 +283,9 @@ class CommonTest(unittest.TestCase):
         class subclass(self.type2test):
             pass
         u3 = subclass([0, 1])
-        self.assertEqual(u3, u3*1)
-        self.assertIsNot(u3, u3*1)
+        r = u3*1
+        self.assertEqual(r, u3)
+        self.assertIsNot(r, u3)
 
     def test_iadd(self):
         u = self.type2test([0, 1])
@@ -344,6 +345,21 @@ class CommonTest(unittest.TestCase):
         self.assertEqual(a.__getitem__(slice(3,5)), self.type2test([]))
         self.assertRaises(ValueError, a.__getitem__, slice(0, 10, 0))
         self.assertRaises(TypeError, a.__getitem__, 'x')
+
+    def _assert_cmp(self, a, b, r):
+        self.assertIs(a == b, r == 0)
+        self.assertIs(a != b, r != 0)
+        self.assertIs(a > b, r > 0)
+        self.assertIs(a <= b, r <= 0)
+        self.assertIs(a < b, r < 0)
+        self.assertIs(a >= b, r >= 0)
+
+    def test_cmp(self):
+        a = self.type2test([0, 1])
+        self._assert_cmp(a, a, 0)
+        self._assert_cmp(a, self.type2test([0, 1]), 0)
+        self._assert_cmp(a, self.type2test([0]), 1)
+        self._assert_cmp(a, self.type2test([0, 2]), -1)
 
     def test_count(self):
         a = self.type2test([0, 1, 2])*3

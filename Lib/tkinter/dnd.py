@@ -108,7 +108,7 @@ __all__ = ["dnd_start", "DndHandler"]
 
 def dnd_start(source, event):
     h = DndHandler(source, event)
-    if h.root:
+    if h.root is not None:
         return h
     else:
         return None
@@ -119,6 +119,10 @@ def dnd_start(source, event):
 class DndHandler:
 
     root = None
+
+    # The drag cursor is shown only once the pointer has moved this many
+    # pixels from the initial press, so that a plain click does not flash it.
+    threshold = 3
 
     def __init__(self, source, event):
         if event.num > 5:
@@ -134,16 +138,17 @@ class DndHandler:
         self.target = None
         self.initial_button = button = event.num
         self.initial_widget = widget = event.widget
+        self.dragging = False
+        self.x_origin, self.y_origin = event.x_root, event.y_root
         self.release_pattern = "<B%d-ButtonRelease-%d>" % (button, button)
         self.save_cursor = widget['cursor'] or ""
         widget.bind(self.release_pattern, self.on_release)
         widget.bind("<Motion>", self.on_motion)
-        widget['cursor'] = "hand2"
 
     def __del__(self):
         root = self.root
         self.root = None
-        if root:
+        if root is not None:
             try:
                 del root.__dnd
             except AttributeError:
@@ -154,27 +159,38 @@ class DndHandler:
         target_widget = self.initial_widget.winfo_containing(x, y)
         source = self.source
         new_target = None
-        while target_widget:
+        while target_widget is not None:
             try:
                 attr = target_widget.dnd_accept
             except AttributeError:
                 pass
             else:
                 new_target = attr(source, event)
-                if new_target:
+                if new_target is not None:
                     break
             target_widget = target_widget.master
         old_target = self.target
         if old_target is new_target:
-            if old_target:
+            if old_target is not None:
                 old_target.dnd_motion(source, event)
         else:
-            if old_target:
+            if old_target is not None:
                 self.target = None
                 old_target.dnd_leave(source, event)
-            if new_target:
+            if new_target is not None:
                 new_target.dnd_enter(source, event)
                 self.target = new_target
+        self.update_cursor(x, y)
+
+    def update_cursor(self, x, y):
+        # Show the drag cursor only once the pointer has actually started
+        # moving past the threshold, so that a plain click does not flash it.
+        if not self.dragging:
+            if (abs(x - self.x_origin) <= self.threshold and
+                    abs(y - self.y_origin) <= self.threshold):
+                return
+            self.dragging = True
+            self.initial_widget['cursor'] = "hand2"
 
     def on_release(self, event):
         self.finish(event, 1)
@@ -193,7 +209,7 @@ class DndHandler:
             self.initial_widget.unbind("<Motion>")
             widget['cursor'] = self.save_cursor
             self.target = self.source = self.initial_widget = self.root = None
-            if target:
+            if target is not None:
                 if commit:
                     target.dnd_commit(source, event)
                 else:
@@ -215,9 +231,9 @@ class Icon:
         if canvas is self.canvas:
             self.canvas.coords(self.id, x, y)
             return
-        if self.canvas:
+        if self.canvas is not None:
             self.detach()
-        if not canvas:
+        if canvas is None:
             return
         label = tkinter.Label(canvas, text=self.name,
                               borderwidth=2, relief="raised")
@@ -229,7 +245,7 @@ class Icon:
 
     def detach(self):
         canvas = self.canvas
-        if not canvas:
+        if canvas is None:
             return
         id = self.id
         label = self.label

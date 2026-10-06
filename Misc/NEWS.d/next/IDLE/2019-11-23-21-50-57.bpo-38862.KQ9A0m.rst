@@ -1,2 +1,0 @@
-'Strip Trailing Whitespace' on the Format menu removes extra newlines
-at the end of non-shell files.

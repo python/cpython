@@ -1,0 +1,2 @@
+Avoid possible crash in ``_winapi.c`` where a device has no memory left. Now
+it properly raises a :exc:`MemoryError`. Patch by Ivy Xu.

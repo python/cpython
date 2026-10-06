@@ -2,6 +2,12 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
+#endif
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+
 PyDoc_STRVAR(cmath_acos__doc__,
 "acos($module, z, /)\n"
 "--\n"
@@ -638,10 +644,11 @@ PyDoc_STRVAR(cmath_log__doc__,
 "\n"
 "log(z[, base]) -> the logarithm of z to the given base.\n"
 "\n"
-"If the base not specified, returns the natural logarithm (base e) of z.");
+"If the base is not specified, returns the natural logarithm (base e)\n"
+"of z.");
 
 #define CMATH_LOG_METHODDEF    \
-    {"log", (PyCFunction)(void(*)(void))cmath_log, METH_FASTCALL, cmath_log__doc__},
+    {"log", _PyCFunction_CAST(cmath_log), METH_FASTCALL, cmath_log__doc__},
 
 static PyObject *
 cmath_log_impl(PyObject *module, Py_complex x, PyObject *y_obj);
@@ -736,9 +743,9 @@ PyDoc_STRVAR(cmath_rect__doc__,
 "Convert from polar coordinates to rectangular coordinates.");
 
 #define CMATH_RECT_METHODDEF    \
-    {"rect", (PyCFunction)(void(*)(void))cmath_rect, METH_FASTCALL, cmath_rect__doc__},
+    {"rect", _PyCFunction_CAST(cmath_rect), METH_FASTCALL, cmath_rect__doc__},
 
-static PyObject *
+static Py_complex
 cmath_rect_impl(PyObject *module, double r, double phi);
 
 static PyObject *
@@ -747,6 +754,7 @@ cmath_rect(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     double r;
     double phi;
+    Py_complex _return_value;
 
     if (!_PyArg_CheckPositional("rect", nargs, 2, 2)) {
         goto exit;
@@ -771,7 +779,18 @@ cmath_rect(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
             goto exit;
         }
     }
-    return_value = cmath_rect_impl(module, r, phi);
+    _return_value = cmath_rect_impl(module, r, phi);
+    if (errno == EDOM) {
+        PyErr_SetString(PyExc_ValueError, "math domain error");
+        goto exit;
+    }
+    else if (errno == ERANGE) {
+        PyErr_SetString(PyExc_OverflowError, "math range error");
+        goto exit;
+    }
+    else {
+        return_value = PyComplex_FromCComplex(_return_value);
+    }
 
 exit:
     return return_value;
@@ -876,14 +895,15 @@ PyDoc_STRVAR(cmath_isclose__doc__,
 "\n"
 "Return True if a is close in value to b, and False otherwise.\n"
 "\n"
-"For the values to be considered close, the difference between them must be\n"
-"smaller than at least one of the tolerances.\n"
+"For the values to be considered close, the difference between them must\n"
+"be smaller than at least one of the tolerances.\n"
 "\n"
-"-inf, inf and NaN behave similarly to the IEEE 754 Standard. That is, NaN is\n"
-"not close to anything, even itself. inf and -inf are only close to themselves.");
+"-inf, inf and NaN behave similarly to the IEEE 754 Standard.  That is,\n"
+"NaN is not close to anything, even itself. inf and -inf are only close\n"
+"to themselves.");
 
 #define CMATH_ISCLOSE_METHODDEF    \
-    {"isclose", (PyCFunction)(void(*)(void))cmath_isclose, METH_FASTCALL|METH_KEYWORDS, cmath_isclose__doc__},
+    {"isclose", _PyCFunction_CAST(cmath_isclose), METH_FASTCALL|METH_KEYWORDS, cmath_isclose__doc__},
 
 static int
 cmath_isclose_impl(PyObject *module, Py_complex a, Py_complex b,
@@ -893,8 +913,33 @@ static PyObject *
 cmath_isclose(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 4
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { _Py_LATIN1_CHR('a'), _Py_LATIN1_CHR('b'), &_Py_ID(rel_tol), &_Py_ID(abs_tol), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"a", "b", "rel_tol", "abs_tol", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "isclose", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "isclose",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[4];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     Py_complex a;
@@ -903,7 +948,8 @@ cmath_isclose(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     double abs_tol = 0.0;
     int _return_value;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -953,4 +999,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=353347db2e808e0d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=89513888cb105a65 input=a9049054013a1b77]*/

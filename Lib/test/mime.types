@@ -1,11 +1,11 @@
 # This is a comment. I love comments.		    -*- indent-tabs-mode: t -*-
 
-# This file controls what Internet media types are sent to the client for
+# This file controls what internet media types are sent to the client for
 # given file extension(s).  Sending the correct media type to the client
 # is important so they know how to handle the content of the file.
 # Extra types can either be added here or by using an AddType directive
-# in your config files. For more information about Internet media types,
-# please read RFC 2045, 2046, 2047, 2048, and 2077.  The Internet media type
+# in your config files. For more information about internet media types,
+# please read RFC 2045, 2046, 2047, 2048, and 2077.  The internet media type
 # registry is at <http://www.iana.org/assignments/media-types/>.
 
 # IANA types

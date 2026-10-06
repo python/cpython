@@ -1,0 +1,2 @@
+The highlighting of a syntax error in the IDLE Shell is now removed when the
+next statement is entered, not only when the next syntax error occurs.

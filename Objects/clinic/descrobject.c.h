@@ -2,6 +2,18 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
+#endif
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+
+PyDoc_STRVAR(mappingproxy_new__doc__,
+"mappingproxy(mapping)\n"
+"--\n"
+"\n"
+"Read-only proxy of a mapping.");
+
 static PyObject *
 mappingproxy_new_impl(PyTypeObject *type, PyObject *mapping);
 
@@ -9,19 +21,76 @@ static PyObject *
 mappingproxy_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(mapping), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"mapping", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "mappingproxy", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "mappingproxy",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[1];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     PyObject *mapping;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
     mapping = fastargs[0];
     return_value = mappingproxy_new_impl(type, mapping);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(property___set_name____doc__,
+"__set_name__($self, owner, name, /)\n"
+"--\n"
+"\n"
+"Method to set name of a property.");
+
+#define PROPERTY___SET_NAME___METHODDEF    \
+    {"__set_name__", _PyCFunction_CAST(property___set_name__), METH_FASTCALL, property___set_name____doc__},
+
+static PyObject *
+property___set_name___impl(propertyobject *self, PyObject *owner,
+                           PyObject *name);
+
+static PyObject *
+property___set_name__(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *owner;
+    PyObject *name;
+
+    if (!_PyArg_CheckPositional("__set_name__", nargs, 2, 2)) {
+        goto exit;
+    }
+    owner = args[0];
+    name = args[1];
+    return_value = property___set_name___impl((propertyobject *)self, owner, name);
 
 exit:
     return return_value;
@@ -72,8 +141,33 @@ static int
 property_init(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 4
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(fget), &_Py_ID(fset), &_Py_ID(fdel), &_Py_ID(doc), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"fget", "fset", "fdel", "doc", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "property", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "property",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[4];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
@@ -83,7 +177,8 @@ property_init(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject *fdel = NULL;
     PyObject *doc = NULL;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 4, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 4, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -115,4 +210,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=916624e717862abc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fb62ee8be13af793 input=a9049054013a1b77]*/
