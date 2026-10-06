@@ -90,13 +90,10 @@ Node classes
                   end_lineno
                   end_col_offset
 
-      Instances of :class:`ast.stmt`, :class:`ast.expr`,
-      :class:`ast.excepthandler`, :class:`ast.arg`, :class:`ast.keyword`,
-      :class:`ast.alias`, :class:`ast.pattern` and :class:`ast.type_param`
-      subclasses have the :attr:`lineno`, :attr:`col_offset`,
-      :attr:`end_lineno`, and :attr:`end_col_offset` attributes.  These are the
-      classes carrying an ``attributes`` clause in the abstract grammar
-      :ref:`above <abstract-grammar>`; no other class has them.
+      A class has the :attr:`lineno`, :attr:`col_offset`, :attr:`end_lineno`
+      and :attr:`end_col_offset` attributes when it is a subclass of one that
+      carries an ``attributes`` clause in the abstract grammar
+      :ref:`above <abstract-grammar>`, and no other class has them.
       The :attr:`lineno` and :attr:`end_lineno`
       are the first and last line numbers of source text span (1-indexed so the
       first line is line 1) and the :attr:`col_offset` and :attr:`end_col_offset`
@@ -106,9 +103,8 @@ Node classes
 
       The end positions are optional on the classes that already existed when
       they were added in Python 3.8, so that code written before then can still
-      build those nodes; a class added afterwards requires them.  The abstract
-      grammar spells this out, declaring the two fields ``int?`` in the first
-      case and ``int`` in the second.  The end offset is *after* the last
+      build those nodes; a class added since then requires them.
+      The end offset is *after* the last
       symbol, for example
       one can get the source segment of a one-line expression node using
       ``source_line[node.col_offset : node.end_col_offset]``.
