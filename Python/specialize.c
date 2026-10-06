@@ -748,7 +748,8 @@ specialize_attr_loadclassattr(PyObject *owner, _Py_CODEUNIT *instr,
                               PyObject *name, PyObject *descr,
                               unsigned int tp_version,
                               DescriptorClassification kind, bool is_method,
-                              uint32_t shared_keys_version);
+                              uint32_t shared_keys_version,
+                              uint16_t slot_offset);
 static int specialize_class_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject* name);
 
 /* Returns true if instances of obj's class are
@@ -785,9 +786,45 @@ instance_has_key(PyObject *obj, PyObject *name, uint32_t *shared_keys_version)
     return result;
 }
 
+/* Returns true if `owner`'s inline slot for `name` (an entry in the class's
+ * shared keys) holds a value, or if there is no inline slot a specialized
+ * instruction could check.  Returns false if the slot is empty, and stores
+ * its byte offset from the start of the object in *empty_slot_offset.  An
+ * empty slot means the attribute is not set on this instance even though the
+ * class's shared keys have an entry for it (e.g. from __static_attributes__),
+ * so a load finds the class attribute.
+ */
+static bool
+inline_slot_is_set(PyObject *owner, PyObject *name, uint16_t *empty_slot_offset)
+{
+    PyTypeObject *type = Py_TYPE(owner);
+    if (!(type->tp_flags & Py_TPFLAGS_INLINE_VALUES)) {
+        return true;
+    }
+    bool set = true;
+    Py_BEGIN_CRITICAL_SECTION(owner);
+    PyDictValues *values = _PyObject_InlineValues(owner);
+    if (FT_ATOMIC_LOAD_UINT8(values->valid)) {
+        PyDictKeysObject *keys = ((PyHeapTypeObject *)type)->ht_cached_keys;
+        Py_ssize_t index = _PyDictKeys_StringLookupSplit(keys, name);
+        if (index >= 0 && index < values->capacity &&
+            FT_ATOMIC_LOAD_PTR_RELAXED(values->values[index]) == NULL)
+        {
+            Py_ssize_t slot = (char *)&values->values[index] - (char *)owner;
+            if (slot == (uint16_t)slot) {
+                *empty_slot_offset = (uint16_t)slot;
+                set = false;
+            }
+        }
+    }
+    Py_END_CRITICAL_SECTION();
+    return set;
+}
+
 static int
 do_specialize_instance_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject* name,
                                  bool shadow, uint32_t shared_keys_version,
+                                 uint16_t empty_slot_offset,
                                  DescriptorClassification kind, PyObject *descr, unsigned int tp_version)
 {
     _PyAttrCache *cache = (_PyAttrCache *)(instr + 1);
@@ -809,7 +846,8 @@ do_specialize_instance_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject*
             if (oparg & 1) {
                 if (specialize_attr_loadclassattr(owner, instr, name, descr,
                                                   tp_version, kind, true,
-                                                  shared_keys_version)) {
+                                                  shared_keys_version,
+                                                  empty_slot_offset)) {
                     return 0;
                 }
                 else {
@@ -955,7 +993,8 @@ do_specialize_instance_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject*
             if ((oparg & 1) == 0) {
                 if (specialize_attr_loadclassattr(owner, instr, name, descr,
                                                   tp_version, kind, false,
-                                                  shared_keys_version)) {
+                                                  shared_keys_version,
+                                                  empty_slot_offset)) {
                     return 0;
                 }
             }
@@ -989,8 +1028,14 @@ specialize_instance_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject* na
     // then the type version, this ensures we will still deopt if that happens.
     DescriptorClassification kind = analyze_descriptor_load(type, name, &descr, &tp_version);
     uint32_t shared_keys_version = 0;
-    bool shadow = instance_has_key(owner, name, &shared_keys_version);
-    int result = do_specialize_instance_load_attr(owner, instr, name, shadow, shared_keys_version, kind, descr, tp_version);
+    uint16_t empty_slot_offset = 0;
+    /* True if this instance has its own value for the name.  For inline
+     * values, the name being in the shared keys is not enough: the slot may
+     * be empty, and then the load finds the class attribute. */
+    bool shadow = instance_has_key(owner, name, &shared_keys_version) &&
+                  inline_slot_is_set(owner, name, &empty_slot_offset);
+    int result = do_specialize_instance_load_attr(owner, instr, name, shadow, shared_keys_version,
+                                                  empty_slot_offset, kind, descr, tp_version);
     Py_XDECREF(descr);
     return result;
 }
@@ -1265,7 +1310,8 @@ specialize_attr_loadclassattr(PyObject *owner, _Py_CODEUNIT *instr,
                               PyObject *name, PyObject *descr,
                               unsigned int tp_version,
                               DescriptorClassification kind, bool is_method,
-                              uint32_t shared_keys_version)
+                              uint32_t shared_keys_version,
+                              uint16_t slot_offset)
 {
     _PyLoadMethodCache *cache = (_PyLoadMethodCache *)(instr + 1);
     PyTypeObject *owner_cls = Py_TYPE(owner);
@@ -1283,13 +1329,14 @@ specialize_attr_loadclassattr(PyObject *owner, _Py_CODEUNIT *instr,
     unsigned long tp_flags = PyType_GetFlags(owner_cls);
     if (tp_flags & Py_TPFLAGS_INLINE_VALUES) {
         #ifndef Py_GIL_DISABLED
-        assert(_PyDictKeys_StringLookup(
+        assert(slot_offset != 0 || _PyDictKeys_StringLookup(
                    ((PyHeapTypeObject *)owner_cls)->ht_cached_keys, name) < 0);
         #endif
         if (shared_keys_version == 0) {
             SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OUT_OF_VERSIONS);
             return 0;
         }
+        cache->keys_version[0] = slot_offset;
         specialize(instr, is_method ? LOAD_ATTR_METHOD_WITH_VALUES : LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES);
     }
     else {

@@ -3951,6 +3951,14 @@
             break;
         }
 
+        case _GUARD_SHADOWING_SLOT_EMPTY: {
+            uint16_t slot_offset = (uint16_t)this_instr->operand0;
+            if (slot_offset == 0) {
+                ADD_OP(_NOP, 0, 0);
+            }
+            break;
+        }
+
         case _LOAD_ATTR_METHOD_WITH_VALUES: {
             JitOptRef owner;
             JitOptRef attr;
