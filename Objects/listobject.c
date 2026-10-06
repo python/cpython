@@ -93,7 +93,7 @@ ensure_shared_on_resize(PyListObject *self)
 
 #define LIST_SMALL_ALLOCATED 32
 
-Py_NO_INLINE static int py_list_resize(PyListObject *self, Py_ssize_t newsize);
+static int py_list_resize(PyListObject *self, Py_ssize_t newsize);
 
 /* Ensure ob_item has room for at least newsize elements, and set
  * ob_size to newsize.  If newsize > ob_size on entry, the content
@@ -103,6 +103,10 @@ Py_NO_INLINE static int py_list_resize(PyListObject *self, Py_ssize_t newsize);
  * Failure is impossible if newsize <= self.allocated on entry.
  * Note that self->ob_item may change, and even if newsize is less
  * than ob_size on entry.
+ *
+ * list_resize() only handles the fast path that does not need realloc().
+ * Always inlining this function makes the fast path a few instructions 
+ * in each caller instead of a function call.
  */
 static inline Py_ALWAYS_INLINE int
 list_resize(PyListObject *self, Py_ssize_t newsize)
@@ -112,7 +116,7 @@ list_resize(PyListObject *self, Py_ssize_t newsize)
     /* Bypass realloc() when a previous overallocation is large enough
        to accommodate the newsize.  If the newsize falls lower than half
        the allocated size, then proceed with the realloc() to shrink the list.
-       gh-158602: do not shrink a small list, the realloc() cost is bigger
+       gh-158592: do not shrink a small list, the realloc() cost is bigger
        than the memory we get back.
     */
     if (allocated >= newsize
@@ -125,7 +129,8 @@ list_resize(PyListObject *self, Py_ssize_t newsize)
     return py_list_resize(self, newsize);
 }
 
-Py_NO_INLINE static int
+/* Slow path of list_resize(): allocate or reallocate ob_item. */
+static int
 py_list_resize(PyListObject *self, Py_ssize_t newsize)
 {
     size_t new_allocated, target_bytes;
