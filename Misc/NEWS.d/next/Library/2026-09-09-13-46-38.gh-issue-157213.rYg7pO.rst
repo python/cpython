@@ -1,0 +1,2 @@
+Fix :func:`asyncio.gather` leaving stale await-graph edges on children that
+outlive it.
