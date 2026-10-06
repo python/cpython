@@ -1,0 +1,7 @@
+Fix specialization of attribute loads that find a class attribute because the
+instance has not set its own value, when the class assigns that attribute on
+``self`` elsewhere, such as the separators of :class:`json.JSONEncoder` or the
+lock methods of :class:`threading.Condition`. These loads were specialized as
+``LOAD_ATTR_INSTANCE_VALUE``, which failed its guard on every execution and
+fell back to the generic path. They are now specialized as class attribute
+loads that check the instance's own value is still unset.
