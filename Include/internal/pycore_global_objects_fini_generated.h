@@ -45,6 +45,9 @@ _PyStaticObjects_CheckAll(PyInterpreterState *interp) {
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_STR(native), "<native>", 8);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_STR(str_replace_inf), "1e309", 5);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_STR(type_params), ".type_params", 12);
+    _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_STR(unknown_file), "<unknown file>", 14);
+    _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_STR(unknown_function), "<unknown function>", 18);
+    _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_STR(unreadable_frame), "<unreadable frame>", 18);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_STR(utf_8), "utf-8", 5);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(AGEN_CLOSED), "AGEN_CLOSED", 11);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(AGEN_CREATED), "AGEN_CREATED", 12);

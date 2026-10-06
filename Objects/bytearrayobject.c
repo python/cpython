@@ -58,8 +58,13 @@ bytearray_reinit_from_bytes(PyByteArrayObject *self, Py_ssize_t size)
     Py_ssize_t alloc = PyBytes_GET_SIZE(self->ob_bytes_object);
     assert(0 <= size && size <= alloc);
 
-    /* Only the empty bytes may be immortal. */
-    assert((alloc == 0) == _Py_IsImmortal(self->ob_bytes_object));
+    if (alloc != 0) {
+        assert(_PyBytes_IsMutable(self->ob_bytes_object));
+    }
+    else {
+        // Use the empty bytes string singleton for an empty bytearray
+        assert(_Py_IsImmortal(self->ob_bytes_object));
+    }
 
     self->ob_bytes = self->ob_start = PyBytes_AS_STRING(self->ob_bytes_object);
     Py_SET_SIZE(self, size);
@@ -1030,7 +1035,8 @@ bytearray___init___impl(PyByteArrayObject *self, PyObject *arg,
 
         /* Most encodes return a new unique bytes, just use it as buffer. */
         if (_PyObject_IsUniquelyReferenced(encoded)
-            && PyBytes_CheckExact(encoded))
+            && PyBytes_CheckExact(encoded)
+            && _PyBytes_GET_CACHED_HASH((PyBytesObject*)encoded) == -1)
         {
             Py_ssize_t size = PyBytes_GET_SIZE(encoded);
             self->ob_bytes_object = encoded;
@@ -2593,7 +2599,19 @@ bytearray_decode_impl(PyByteArrayObject *self, const char *encoding,
 {
     if (encoding == NULL)
         encoding = PyUnicode_GetDefaultEncoding();
-    return PyUnicode_FromEncodedObject((PyObject*)self, encoding, errors);
+    if (Py_TYPE(self)->tp_as_buffer->bf_getbuffer != bytearray_getbuffer) {
+        /* A subclass may export a different buffer. */
+        return PyUnicode_FromEncodedObject((PyObject*)self, encoding, errors);
+    }
+
+    /* Decode the storage directly instead of exporting a buffer, which
+       would re-acquire the critical section we already hold.  Increase
+       exports to prevent the storage from changing during the decode. */
+    self->ob_exports++;
+    PyObject *res = PyUnicode_Decode(PyByteArray_AS_STRING(self),
+                                     Py_SIZE(self), encoding, errors);
+    self->ob_exports--;
+    return res;
 }
 
 PyDoc_STRVAR(alloc_doc,

@@ -28,7 +28,12 @@ def main():
     testmod = importlib.import_module(module_name)
 
     newline = False
-    for name in ('__STDC_VERSION__', '__cplusplus', '_MSVC_LANG'):
+    for name in (
+        '__STDC_VERSION__',
+        '__STRICT_ANSI__',
+        '__cplusplus',
+        '_MSVC_LANG',
+    ):
         try:
             value = getattr(testmod, name)
         except AttributeError:
