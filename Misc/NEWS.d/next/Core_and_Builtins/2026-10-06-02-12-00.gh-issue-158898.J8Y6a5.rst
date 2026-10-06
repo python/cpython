@@ -1,0 +1,6 @@
+Speed up inserting and deleting string keys in :class:`dict` by reusing the
+index table slot found by the initial lookup instead of probing the table a
+second time.  :meth:`dict.pop`, :meth:`dict.setdefault` and ``del d[key]``
+are affected; lookups and other key types keep their previous behaviour.
+
+Patch by Lucas Zhou and Pieter Eendebak
