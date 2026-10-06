@@ -69,7 +69,7 @@ The :mod:`!csv` module defines the following functions:
 
    .. note::
       If *csvfile* is an iterable of strings (such as a list) and the CSV format
-      contains quoted fields with embedded newlines, ensure that the strings 
+      contains quoted fields with embedded newlines, ensure that the strings
       retain their newline characters. For example, using :meth:`~str.splitlines`
       without ``keepends=True`` will strip these newlines, causing them to be
       lost when the quoted fields are reconstructed.
