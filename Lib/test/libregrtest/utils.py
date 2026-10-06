@@ -14,6 +14,7 @@ import sysconfig
 import tempfile
 import textwrap
 import types
+from _colorize import decolor  # type: ignore[import-not-found]
 from collections.abc import Callable
 _winapi: types.ModuleType | None
 try:
@@ -172,6 +173,28 @@ def traceback_location(traceback: str) -> dict[str, str | int] | None:
         location["col"] = indent + start - 4 + 1
         location["endColumn"] = indent + len(markers.rstrip()) - 4
     return location
+
+
+def github_annotation(title: str, message: str) -> str:
+    """Format a GitHub Actions error annotation.
+
+    Locate it at the last frame of the traceback in message, if any.
+    """
+    def escape(text: str) -> str:
+        return (text.replace("%", "%25").replace("\r", "%0D")
+                .replace("\n", "%0A"))
+
+    def escape_property(text: str) -> str:
+        return escape(text).replace(":", "%3A").replace(",", "%2C")
+
+    message = decolor(message)
+    props: dict[str, str | int] = {}
+    if location := traceback_location(message):
+        props |= location
+    props["title"] = title
+    props_text = ",".join(f"{key}={escape_property(str(value))}"
+                          for key, value in props.items())
+    return f"::error {props_text}::{escape(message.rstrip())}"
 
 
 def regrtest_unraisable_hook(unraisable) -> None:

@@ -93,6 +93,8 @@ class RunTests:
     hunt_refleak: HuntRefleak | None
     test_dir: StrPath | None
     use_junit: bool
+    # Print a GitHub Actions error annotation before each failure report
+    github_annotations: bool
     coverage: bool
     memory_limit: str | None
     gc_threshold: int | None

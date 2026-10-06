@@ -9,10 +9,11 @@ import time
 import traceback
 import unittest
 from test import support
-from test.libregrtest.utils import sanitize_xml
+from test.libregrtest.utils import github_annotation, sanitize_xml
 
 class RegressionTestResult(unittest.TextTestResult):
     USE_XML = False
+    GITHUB_ANNOTATIONS = False
 
     def __init__(self, stream, descriptions, verbosity):
         super().__init__(stream=stream, descriptions=descriptions,
@@ -129,6 +130,25 @@ class RegressionTestResult(unittest.TextTestResult):
     def addUnexpectedSuccess(self, test):
         self._add_result(test, outcome='UNEXPECTED_SUCCESS')
         super().addUnexpectedSuccess(test)
+
+    def printErrorList(self, flavour, errors):
+        if not self.GITHUB_ANNOTATIONS:
+            super().printErrorList(flavour, errors)
+            return
+        stream = self.stream
+        for test, err in errors:
+            # Precede each failure report with a GitHub Actions annotation
+            # which has the report as message, so that the annotation links
+            # to the report in the job log.
+            self.stream = unittest.runner._WritelnDecorator(io.StringIO())
+            try:
+                super().printErrorList(flavour, [(test, err)])
+                report = self.stream.getvalue()
+            finally:
+                self.stream = stream
+            stream.writeln(github_annotation(str(test), report))
+            stream.write(report)
+            stream.flush()
 
     def get_xml_element(self):
         if not self.USE_XML:

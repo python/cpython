@@ -284,7 +284,9 @@ class Regrtest:
             forever=False,
             fail_fast=False,
             match_tests_dict=match_tests_dict,
-            output_on_failure=False)
+            output_on_failure=False,
+            # Annotate tests which fail again
+            github_annotations=bool(os.environ.get("GITHUB_STEP_SUMMARY")))
         self.logger.set_tests(runtests)
 
         msg = f"Re-running {len(tests)} failed tests in verbose mode"
@@ -395,8 +397,8 @@ class Regrtest:
             result = run_single_test(test_name, runtests)
 
         self.results.accumulate_result(result, runtests)
-        if runtests.rerun and result.is_failed(runtests.fail_env_changed):
-            result.print_github_annotations()
+        if runtests.github_annotations:
+            result.print_github_crash_annotation(runtests.fail_env_changed)
 
         return result
 
@@ -559,6 +561,7 @@ class Regrtest:
             hunt_refleak=self.hunt_refleak,
             test_dir=self.test_dir,
             use_junit=(self.junit_filename is not None),
+            github_annotations=False,
             coverage=self.coverage,
             memory_limit=self.memory_limit,
             gc_threshold=self.gc_threshold,
