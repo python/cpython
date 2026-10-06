@@ -13923,9 +13923,17 @@ static PyObject *
 os_strerror_impl(PyObject *module, int code)
 /*[clinic end generated code: output=baebf09fa02a78f2 input=75a8673d97915a91]*/
 {
-#if (defined(_Py_HAVE_STRERROR_R) && defined(__GLIBC__) \
-        && !((_POSIX_C_SOURCE >= 200112L) && !defined(_GNU_SOURCE)))
-    // Implementation for the glibc GNU flavor of strerror_r()
+#ifdef _Py_HAVE_STRERROR_R
+   // Check which strerror_r() API is used
+#  if defined(__GLIBC__) && !((_POSIX_C_SOURCE >= 200112L) && !defined(_GNU_SOURCE))
+#    define Py_STRERROR_R_GNU
+#  elif defined(__ANDROID__) && defined(_GNU_SOURCE)
+#    define Py_STRERROR_R_GNU
+#  endif
+#endif
+
+#ifdef Py_STRERROR_R_GNU
+    // Implementation for the GNU flavor of strerror_r()
 
     // On Linux, the longest translated strerror() message is 86 bytes
     // (including the NUL byte).
