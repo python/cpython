@@ -1171,6 +1171,11 @@ Build changes
 
   (Contributed by Stan Ulbrych in :gh:`139314`.)
 
+* Add the :option:`--with-hwaddress-sanitizer` :program:`configure` option to
+  build with `HWAddressSanitizer <https://clang.llvm.org/docs/HardwareAssistedAddressSanitizerDesign.html>`_.
+
+  (Contributed by Stan Ulbrych, Florian Mayer and AnnaAr321 in :gh:`156049`.)
+
 
 C API changes
 =============
@@ -1180,6 +1185,10 @@ New features
 
 * Add :c:func:`Py_HashBuffer` to the limited C API.
   (Contributed by Victor Stinner in :gh:`148233`.)
+
+* Add :c:macro:`Py_SETREF` and :c:macro:`Py_XSETREF` macros to the limited C
+  API.
+  (Contributed by Nathan Goldbaum and Victor Stinner in :gh:`158842`.)
 
 Porting to Python 3.16
 ----------------------
