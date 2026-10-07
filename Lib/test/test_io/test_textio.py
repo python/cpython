@@ -1661,7 +1661,7 @@ class CTextIOWrapperTest(TextIOWrapperTest, CTestCase):
                 self.assertEqual(method(), "ab\n")
                 with self.assertRaisesRegex(ValueError,
                                             "underlying buffer has been detached"):
-                    wrapper.buffer
+                    getattr(wrapper, 'buffer')
 
     def test_reentrant_seek_during_tell(self):
         # gh-153539: reading short of _CHUNK_SIZE leaves residual bytes in the
