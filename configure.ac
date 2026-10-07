@@ -3526,8 +3526,29 @@ AC_ARG_WITH([address_sanitizer],
 AC_MSG_RESULT([$withval])
 BASECFLAGS="-fsanitize=address -fno-omit-frame-pointer $BASECFLAGS"
 LDFLAGS="-fsanitize=address $LDFLAGS"
-# ASan works by controlling memory allocation, our own malloc interferes.
-with_pymalloc="no"
+],
+[AC_MSG_RESULT([no])])
+
+AC_MSG_CHECKING([for --with-hwaddress-sanitizer])
+AC_ARG_WITH(
+  [hwaddress_sanitizer],
+  [AS_HELP_STRING(
+    [--with-hwaddress-sanitizer],
+    [enable HWAddressSanitizer memory error detector, 'hwasan' (default is no)]
+  )],
+[
+AC_MSG_RESULT([$withval])
+hwasan_flags="-fsanitize=hwaddress"
+# x86-64 lacks address tagging, so HWASan needs the page aliasing mode there.
+# See gh-156049 and
+# https://clang.llvm.org/docs/HardwareAssistedAddressSanitizerDesign.html#supported-architectures
+AS_CASE([$host_cpu],
+  [x86_64|amd64], [hwasan_flags="$hwasan_flags -fsanitize-hwaddress-experimental-aliasing"]
+)
+AX_CHECK_COMPILE_FLAG([$hwasan_flags],[
+BASECFLAGS="$hwasan_flags -fno-omit-frame-pointer $BASECFLAGS"
+LDFLAGS="$hwasan_flags $LDFLAGS"
+],[AC_MSG_ERROR([The selected compiler doesn't support hardware address sanitizer])])
 ],
 [AC_MSG_RESULT([no])])
 
@@ -3544,8 +3565,6 @@ AX_CHECK_COMPILE_FLAG([-fsanitize=memory],[
 BASECFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 -fno-omit-frame-pointer $BASECFLAGS"
 LDFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 $LDFLAGS"
 ],[AC_MSG_ERROR([The selected compiler doesn't support memory sanitizer])])
-# MSan works by controlling memory allocation, our own malloc interferes.
-with_pymalloc="no"
 ],
 [AC_MSG_RESULT([no])])
 
@@ -5558,6 +5577,9 @@ AC_CHECK_FUNCS([ \
   tmpnam tmpnam_r truncate ttyname_r umask uname unlinkat unlockpt utimensat utimes vfork \
   wait wait3 wait4 waitid waitpid wcscoll wcsftime wcsxfrm wmemcmp writev \
 ])
+
+PY_CHECK_FUNC_PRIVATE([strerror_r], [@%:@include <string.h>])
+
 
 # os.statx uses Linux's statx function.  AIX also has a function named statx,
 # but it's unrelated.  Check only on Linux (including Android).
