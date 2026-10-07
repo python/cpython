@@ -46,9 +46,16 @@ for the WASI SDK is done via:
 2. `WASI_SDK_PATH` environment variable
 3. `/opt` where the WASI SDK has been unpacked from its tarball
 
-In the end, you will end up with a "build Python" which is a local build of
-Python used for cross-builds. You will also have the WASI build.
+Note that all prerequisites are included and configured appropriately in the
+[WASI dev container image](https://github.com/python/cpython-devcontainers/pkgs/container/wasicontainer).
+You can download it via:
 
+```shell
+podman pull ghcr.io/python/wasicontainer:latest
+```
+
+The `latest` image contains the WASI SDK versions required by all supported
+CPython branches.
 
 ### Development loop
 
@@ -57,6 +64,9 @@ The common way to get started is to first do a full build:
 ```shell
 python3 Platforms/WASI build --quiet --logdir cross-build/logs -- --with-pydebug --config-cache
 ```
+
+In the end, you will end up with a "build Python" which is a local build of
+Python used for cross-builds. You will also have the WASI build.
 
 Once you have the build you can run the test you want.
 
