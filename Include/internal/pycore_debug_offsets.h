@@ -104,6 +104,7 @@ typedef struct _Py_DebugOffsets {
         uint64_t current_frame;
         uint64_t base_frame;
         uint64_t last_profiled_frame;
+        uint64_t last_profiled_frame_seq;
         uint64_t thread_id;
         uint64_t native_thread_id;
         uint64_t datastack_chunk;
@@ -294,6 +295,7 @@ typedef struct _Py_DebugOffsets {
         .current_frame = offsetof(PyThreadState, current_frame), \
         .base_frame = offsetof(PyThreadState, base_frame), \
         .last_profiled_frame = offsetof(PyThreadState, last_profiled_frame), \
+        .last_profiled_frame_seq = offsetof(PyThreadState, last_profiled_frame_seq), \
         .thread_id = offsetof(PyThreadState, thread_id), \
         .native_thread_id = offsetof(PyThreadState, native_thread_id), \
         .datastack_chunk = offsetof(PyThreadState, datastack_chunk), \

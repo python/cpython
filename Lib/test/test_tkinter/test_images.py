@@ -694,12 +694,12 @@ class PhotoImageTest(BaseImageTest, AbstractTkTest, unittest.TestCase):
 
     def test_transparency(self):
         image = self.create()
-        self.assertEqual(image.transparency_get(0, 0), True)
-        self.assertEqual(image.transparency_get(4, 6), False)
+        self.assertIs(image.transparency_get(0, 0), True)
+        self.assertIs(image.transparency_get(4, 6), False)
         image.transparency_set(4, 6, True)
-        self.assertEqual(image.transparency_get(4, 6), True)
+        self.assertIs(image.transparency_get(4, 6), True)
         image.transparency_set(4, 6, False)
-        self.assertEqual(image.transparency_get(4, 6), False)
+        self.assertIs(image.transparency_get(4, 6), False)
         self.assertRaises(tkinter.TclError, image.transparency_get, -1, 0)
         self.assertRaises(tkinter.TclError, image.transparency_get, 16, 0)
         self.assertRaises(tkinter.TclError, image.transparency_set, -1, 0, True)

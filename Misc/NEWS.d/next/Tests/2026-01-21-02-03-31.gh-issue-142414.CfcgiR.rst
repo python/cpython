@@ -1,0 +1,2 @@
+Isolate reloading modules in test_interpreters to avoid having broken
+references.

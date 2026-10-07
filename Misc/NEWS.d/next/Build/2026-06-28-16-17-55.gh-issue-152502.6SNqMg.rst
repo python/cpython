@@ -1,0 +1,4 @@
+The :mod:`curses` module now detects its optional functions with
+:program:`configure` capability probes instead of assuming ncurses, so it
+builds against narrow (non-wide) ncurses and other curses implementations such
+as NetBSD curses, exposing exactly the functions they provide.

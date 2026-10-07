@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
 PyDoc_STRVAR(builtin___import____doc__,
 "__import__($module, /, name, globals=None, locals=None, fromlist=(),\n"
@@ -415,13 +416,8 @@ builtin_compile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
         _PyArg_BadArgument("compile", "argument 'mode'", "str", args[2]);
         goto exit;
     }
-    Py_ssize_t mode_length;
-    mode = PyUnicode_AsUTF8AndSize(args[2], &mode_length);
+    mode = _PyUnicode_AsUTF8NoNUL(args[2]);
     if (mode == NULL) {
-        goto exit;
-    }
-    if (strlen(mode) != (size_t)mode_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     if (!noptargs) {
@@ -475,6 +471,49 @@ exit:
     /* Cleanup for filename */
     Py_XDECREF(filename);
 
+    return return_value;
+}
+
+PyDoc_STRVAR(builtin_dir__doc__,
+"dir($module, object=<unrepresentable>, /)\n"
+"--\n"
+"\n"
+"Return an alphabetized list of the attributes of the object.\n"
+"\n"
+"If called without an argument, return the names in the current scope.\n"
+"Else, return an alphabetized list of names comprising (some of) the\n"
+"attributes of the given object, and of attributes reachable from it.\n"
+"If the object supplies a method named __dir__, it will be used;\n"
+"otherwise the default dir() logic is used and returns:\n"
+"  for a module object: the module\'s attributes.\n"
+"  for a class object:  its attributes, and recursively the attributes\n"
+"    of its bases.\n"
+"  for any other object: its attributes, its class\'s attributes, and\n"
+"    recursively the attributes of its class\'s base classes.");
+
+#define BUILTIN_DIR_METHODDEF    \
+    {"dir", _PyCFunction_CAST(builtin_dir), METH_FASTCALL, builtin_dir__doc__},
+
+static PyObject *
+builtin_dir_impl(PyObject *module, PyObject *arg);
+
+static PyObject *
+builtin_dir(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *arg = NULL;
+
+    if (!_PyArg_CheckPositional("dir", nargs, 0, 1)) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    arg = args[0];
+skip_optional:
+    return_value = builtin_dir_impl(module, arg);
+
+exit:
     return return_value;
 }
 
@@ -850,48 +889,162 @@ PyDoc_STRVAR(builtin_hex__doc__,
 #define BUILTIN_HEX_METHODDEF    \
     {"hex", (PyCFunction)builtin_hex, METH_O, builtin_hex__doc__},
 
-PyDoc_STRVAR(builtin_aiter__doc__,
-"aiter($module, async_iterable, /)\n"
+PyDoc_STRVAR(builtin_iter__doc__,
+"iter($module, object, /, [stop_value], *, stop_exception=StopIteration)\n"
 "--\n"
 "\n"
-"Return an AsyncIterator for an AsyncIterable object.");
-
-#define BUILTIN_AITER_METHODDEF    \
-    {"aiter", (PyCFunction)builtin_aiter, METH_O, builtin_aiter__doc__},
-
-PyDoc_STRVAR(builtin_anext__doc__,
-"anext($module, async_iterator, default=<unrepresentable>, /)\n"
-"--\n"
+"Get an iterator from an object.\n"
 "\n"
-"Return the next item from the async iterator.\n"
-"\n"
-"If default is given and the async iterator is exhausted,\n"
-"it is returned instead of raising StopAsyncIteration.");
+"In the first form, the argument must supply its own iterator, or be a\n"
+"sequence.  In the second form, the callable is called until it returns\n"
+"the stop value or raises the specified exception.");
 
-#define BUILTIN_ANEXT_METHODDEF    \
-    {"anext", _PyCFunction_CAST(builtin_anext), METH_FASTCALL, builtin_anext__doc__},
+#define BUILTIN_ITER_METHODDEF    \
+    {"iter", _PyCFunction_CAST(builtin_iter), METH_FASTCALL|METH_KEYWORDS, builtin_iter__doc__},
 
 static PyObject *
-builtin_anext_impl(PyObject *module, PyObject *aiterator,
-                   PyObject *default_value);
+builtin_iter_impl(PyObject *module, PyObject *object, PyObject *stop_value,
+                  PyObject *stop_exception);
 
 static PyObject *
-builtin_anext(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+builtin_iter(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    PyObject *aiterator;
-    PyObject *default_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    if (!_PyArg_CheckPositional("anext", nargs, 1, 2)) {
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(stop_value), &_Py_ID(stop_exception), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"", "stop_value", "stop_exception", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "iter",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[3];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    PyObject *object;
+    PyObject *stop_value = NULL;
+    PyObject *stop_exception = NULL;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
         goto exit;
     }
-    aiterator = args[0];
-    if (nargs < 2) {
-        goto skip_optional;
+    object = args[0];
+    if (!noptargs) {
+        goto skip_optional_pos;
     }
-    default_value = args[1];
-skip_optional:
-    return_value = builtin_anext_impl(module, aiterator, default_value);
+    if (args[1]) {
+        stop_value = args[1];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+skip_optional_pos:
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    stop_exception = args[2];
+skip_optional_kwonly:
+    return_value = builtin_iter_impl(module, object, stop_value, stop_exception);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(builtin_aiter__doc__,
+"aiter($module, object, /, [stop_value], *, stop_exception=StopAsyncIteration)\n"
+"--\n"
+"\n"
+"Return an AsyncIterator for an AsyncIterable object.\n"
+"\n"
+"In the second form, the callable is called and its result is awaited\n"
+"until it returns the stop value or raises the specified exception.");
+
+#define BUILTIN_AITER_METHODDEF    \
+    {"aiter", _PyCFunction_CAST(builtin_aiter), METH_FASTCALL|METH_KEYWORDS, builtin_aiter__doc__},
+
+static PyObject *
+builtin_aiter_impl(PyObject *module, PyObject *object, PyObject *stop_value,
+                   PyObject *stop_exception);
+
+static PyObject *
+builtin_aiter(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(stop_value), &_Py_ID(stop_exception), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"", "stop_value", "stop_exception", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "aiter",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[3];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    PyObject *object;
+    PyObject *stop_value = NULL;
+    PyObject *stop_exception = NULL;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    object = args[0];
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[1]) {
+        stop_value = args[1];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+skip_optional_pos:
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    stop_exception = args[2];
+skip_optional_kwonly:
+    return_value = builtin_aiter_impl(module, object, stop_value, stop_exception);
 
 exit:
     return return_value;
@@ -1249,6 +1402,41 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(builtin_vars__doc__,
+"vars($module, object=<unrepresentable>, /)\n"
+"--\n"
+"\n"
+"Show vars.\n"
+"\n"
+"Without arguments, equivalent to locals().\n"
+"With an argument, equivalent to object.__dict__.");
+
+#define BUILTIN_VARS_METHODDEF    \
+    {"vars", _PyCFunction_CAST(builtin_vars), METH_FASTCALL, builtin_vars__doc__},
+
+static PyObject *
+builtin_vars_impl(PyObject *module, PyObject *v);
+
+static PyObject *
+builtin_vars(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *v = NULL;
+
+    if (!_PyArg_CheckPositional("vars", nargs, 0, 1)) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    v = args[0];
+skip_optional:
+    return_value = builtin_vars_impl(module, v);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(builtin_sum__doc__,
 "sum($module, iterable, /, start=0)\n"
 "--\n"
@@ -1387,4 +1575,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=84efa9c5cc737ce5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ac4800dc25f87f6e input=a9049054013a1b77]*/

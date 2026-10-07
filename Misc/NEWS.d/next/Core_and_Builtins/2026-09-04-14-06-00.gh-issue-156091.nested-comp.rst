@@ -1,0 +1,3 @@
+Fix a crash when compiling deeply nested inlined list, set, or dict
+comprehensions. A :exc:`SyntaxError` is now raised when the nesting exceeds
+the compiler's static block limit.

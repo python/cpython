@@ -437,11 +437,11 @@ PyCursesPanel_Clear(PyObject *op)
     PyCursesPanelObject *self = _PyCursesPanelObject_CAST(op);
     PyObject *extra = (PyObject *)panel_userptr(self->pan);
     if (extra != NULL) {
-        Py_DECREF(extra);
         if (set_panel_userptr(self->pan, NULL) == ERR) {
             curses_panel_panel_set_error(self, "set_panel_userptr", NULL);
             return -1;
         }
+        Py_DECREF(extra);
     }
     // self->wo should not be cleared because an associated WINDOW may exist
     return 0;
@@ -454,20 +454,21 @@ PyCursesPanel_Dealloc(PyObject *self)
     PyObject_GC_UnTrack(self);
 
     PyCursesPanelObject *po = _PyCursesPanelObject_CAST(self);
-    if (PyCursesPanel_Clear(self) < 0) {
+    PyObject *extra = (PyObject *)panel_userptr(po->pan);
+    if (extra != NULL && set_panel_userptr(po->pan, NULL) == ERR) {
+        curses_panel_panel_set_error(po, "set_panel_userptr", "__del__");
+        PyErr_FormatUnraisable("Exception ignored in PyCursesPanel_Dealloc()");
+    }
+    if (po->wo != NULL && remove_lop(po) < 0) {
+        PyErr_SetString(PyExc_RuntimeError, "__del__: no panel object to delete");
         PyErr_FormatUnraisable("Exception ignored in PyCursesPanel_Dealloc()");
     }
     if (del_panel(po->pan) == ERR && !PyErr_Occurred()) {
         curses_panel_panel_set_error(po, "del_panel", "__del__");
         PyErr_FormatUnraisable("Exception ignored in PyCursesPanel_Dealloc()");
     }
-    if (po->wo != NULL) {
-        Py_DECREF(po->wo);
-        if (remove_lop(po) < 0) {
-            PyErr_SetString(PyExc_RuntimeError, "__del__: no panel object to delete");
-            PyErr_FormatUnraisable("Exception ignored in PyCursesPanel_Dealloc()");
-        }
-    }
+    Py_XDECREF(extra);
+    Py_XDECREF(po->wo);
     tp->tp_free(po);
     Py_DECREF(tp);
 }
@@ -594,6 +595,12 @@ _curses_panel_panel_replace_impl(PyCursesPanelObject *self,
         return NULL;
     }
 
+    if (win->win == NULL) {
+        _curses_panel_state *state = get_curses_panel_state_by_panel(self);
+        PyErr_SetString(state->error, "the window has been detached");
+        return NULL;
+    }
+
     int rtn = replace_panel(self->pan, win->win);
     if (rtn == ERR) {
         curses_panel_panel_set_error(self, "replace_panel", "replace");
@@ -672,7 +679,13 @@ static PyMethodDef PyCursesPanel_Methods[] = {
 
 /* -------------------------------------------------------*/
 
+PyDoc_STRVAR(PyCursesPanel_Type_doc,
+"A curses panel.\n"
+"\n"
+"Panel objects are returned by new_panel().");
+
 static PyType_Slot PyCursesPanel_Type_slots[] = {
+    {Py_tp_doc, (void *)PyCursesPanel_Type_doc},
     {Py_tp_clear, PyCursesPanel_Clear},
     {Py_tp_dealloc, PyCursesPanel_Dealloc},
     {Py_tp_traverse, PyCursesPanel_Traverse},
@@ -681,7 +694,7 @@ static PyType_Slot PyCursesPanel_Type_slots[] = {
 };
 
 static PyType_Spec PyCursesPanel_Type_spec = {
-    .name = "_curses_panel.panel",
+    .name = "curses.panel.panel",
     .basicsize = sizeof(PyCursesPanelObject),
     .flags = (
         Py_TPFLAGS_DEFAULT
@@ -820,9 +833,11 @@ _curses_panel_exec(PyObject *mod)
         return -1;
     }
 
-    /* For exception _curses_panel.error */
-    state->error = PyErr_NewException(
-        "_curses_panel.error", NULL, NULL);
+    /* For exception curses.panel.error */
+    state->error = PyErr_NewExceptionWithDoc(
+        "curses.panel.error",
+        "Exception raised when a curses panel library function returns an error.",
+        NULL, NULL);
 
     if (PyModule_AddObjectRef(mod, "error", state->error) < 0) {
         return -1;

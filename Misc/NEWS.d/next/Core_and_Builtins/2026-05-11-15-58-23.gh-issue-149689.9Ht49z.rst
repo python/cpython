@@ -1,0 +1,2 @@
+Fix missing error propagation in parser action helpers when memory allocation
+fails. Patch by Thomas Kowalski.

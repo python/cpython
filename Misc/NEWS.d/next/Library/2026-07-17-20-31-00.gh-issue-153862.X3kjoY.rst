@@ -1,0 +1,3 @@
+On a wide :mod:`curses` build, :meth:`curses.window.inch` now returns the
+locale-encoded byte of a non-ASCII character, matching
+:meth:`~curses.window.instr`, instead of the low byte of its code point.

@@ -235,8 +235,8 @@ Functions
    annotate functions that support the :attr:`~Format.STRING` format but
    do not have access to the code creating the annotations.
 
-   For example, this is used to implement the :attr:`~Format.STRING` for
-   :class:`typing.TypedDict` classes created through the functional syntax:
+   For example, this is used to implement the :attr:`~Format.STRING` format
+   for :class:`typing.TypedDict` classes created through the functional syntax:
 
    .. doctest::
 
@@ -535,9 +535,9 @@ following attributes:
   :attr:`~Format.VALUE_WITH_FAKE_GLOBALS`.
 * A :ref:`code object <code-objects>` ``__code__`` containing the compiled code for the
   annotate function.
-* Optional: A tuple of the function's positional defaults ``__kwdefaults__``, if the
+* Optional: A tuple of the function's positional defaults ``__defaults__``, if the
   function represented by ``__code__`` uses any positional defaults.
-* Optional: A dict of the function's keyword defaults ``__defaults__``, if the function
+* Optional: A dict of the function's keyword defaults ``__kwdefaults__``, if the function
   represented by ``__code__`` uses any keyword defaults.
 * Optional: All other :ref:`function attributes <inspect-types>`.
 

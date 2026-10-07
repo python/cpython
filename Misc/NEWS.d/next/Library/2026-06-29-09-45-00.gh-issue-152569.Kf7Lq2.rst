@@ -1,0 +1,3 @@
+Fix :func:`asyncio.wait` leaking waiting tasks via the await-graph when racing a
+future that never resolves. The waiting task is now discarded from every future's
+``awaited_by`` set once :func:`~asyncio.wait` returns, even for pending futures.

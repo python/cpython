@@ -1,0 +1,2 @@
+Fix :class:`asyncio.Task` raising :exc:`AttributeError` when created with
+``eager_start=True`` and no explicit *loop* argument.

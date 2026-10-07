@@ -1,0 +1,3 @@
+Fix :attr:`sqlite3.Cursor.arraysize` being set to 0 if the assigned value is
+too large.
+The attribute is now left unchanged if the assignment fails.

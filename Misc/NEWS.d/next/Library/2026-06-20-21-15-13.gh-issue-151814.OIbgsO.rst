@@ -1,0 +1,2 @@
+Fix unbounded memory growth in :class:`io.TextIOWrapper` when repeatedly
+writing an empty string.
