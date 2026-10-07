@@ -1866,14 +1866,7 @@ regen-all: regen-cases regen-slots \
 ############################################################################
 # Special rules for object files
 
-Modules/getbuildinfo.h: $(PARSER_OBJS) \
-			$(OBJECT_OBJS) \
-			$(PYTHON_OBJS) \
-			$(MODULE_OBJS) \
-			$(MODOBJS) \
-			$(DTRACE_OBJS) \
-			Programs/_getcompiler \
-			$(srcdir)/Tools/build/generate_getbuildinfo.py
+Modules/getbuildinfo.h: $(srcdir)/Tools/build/generate_getbuildinfo.py Programs/_getcompiler
 		$(PYTHON_FOR_REGEN) $(srcdir)/Tools/build/generate_getbuildinfo.py $@ \
 			"$(MACHDEP)" \
 			`LC_ALL=C $(GITVERSION)` \
