@@ -222,11 +222,7 @@
     <ClCompile Include="..\Python\gc_gil.c" />
     <ClCompile Include="..\Python\gc_free_threading.c" />
     <ClCompile Include="..\Python\getargs.c" />
-    <ClCompile Include="..\Python\getcompiler.c" />
-    <ClCompile Include="..\Python\getcopyright.c" />
     <ClCompile Include="..\Python\getopt.c" />
-    <ClCompile Include="..\Python\getplatform.c" />
-    <ClCompile Include="..\Python\getversion.c" />
     <ClCompile Include="..\Python\ceval_gil.c" />
     <ClCompile Include="..\Python\hamt.c" />
     <ClCompile Include="..\Python\hashtable.c" />
