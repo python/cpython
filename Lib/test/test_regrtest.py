@@ -38,6 +38,7 @@ from test.libregrtest import setup
 from test.libregrtest import utils
 from test.libregrtest.filter import get_match_tests, match_test
 from test.libregrtest.result import TestStats
+from test.libregrtest.save_env import saved_test_environment
 from test.libregrtest.utils import normalize_test_name
 
 if not support.has_subprocess_support:
@@ -1782,7 +1783,7 @@ class ArgsTestCase(BaseTestCase):
             'parallel': ['-j2', '-W'],
             # iOS and WASI run tests in the main process: a crash kills it
             'single-process': ['--fast-ci', '--single-process'],
-            # Profile task of PGO and BOLT builds: no annotations
+            # Profile task of PGO and BOLT builds: failures stop the build
             'pgo': ['--pgo'],
         }
         for name, args in command_lines.items():
@@ -1793,14 +1794,11 @@ class ArgsTestCase(BaseTestCase):
                 output, summary = self.run_tests_github(
                     *args, *tests, exitcode=EXITCODE_BAD_TEST)
 
-                annotations = []
-                if '--pgo' not in args:
-                    annotations += test_cases
-                    if '--fast-ci' in args:
-                        annotations.append((env_changed, path(env_changed),
-                                            None))
-                    if crash in tests:
-                        annotations.append((crash, path(crash), None))
+                annotations = list(test_cases)
+                if '--fast-ci' in args:
+                    annotations.append((env_changed, path(env_changed), None))
+                if crash in tests:
+                    annotations.append((crash, path(crash), None))
                 self.assertCountEqual(self.parse_github_annotations(output),
                                       annotations, output)
                 # Each test case is annotated right after its failure report
@@ -1810,6 +1808,13 @@ class ArgsTestCase(BaseTestCase):
                         output,
                         rf'(?m)^(?:ERROR|FAIL): {title}\n'
                         rf'(?:(?!={{70}}$).*\n)*?::error .*title={title}::')
+                # The env changed annotation comes right after the warnings
+                if '--fast-ci' in args:
+                    self.assertRegex(
+                        output,
+                        rf'(?m)^Warning -- os\.environ was modified by '
+                        rf'{env_changed}\n(?:Warning -- .*\n)*'
+                        rf'::error .*title={env_changed}::')
 
                 # The job summary lists the failed tests in completion order
                 summary_lines = summary.splitlines()
@@ -1820,7 +1825,9 @@ class ArgsTestCase(BaseTestCase):
                     [line for line in summary_lines
                      if line.startswith('### ')],
                     [test_files[name] for name in tests])
-                self.assertIn('- os.environ was modified', summary_lines)
+                self.assertIn('- os.environ was modified: '
+                              'added REGRTEST_GITHUB_ENV_CHANGED',
+                              summary_lines)
                 self.assertCountEqual(
                     re.findall(r'<summary>(.*)</summary>', summary),
                     [title for title, _, _ in test_cases])
@@ -2950,6 +2957,14 @@ class MultiprocessIteratorTestCase(unittest.TestCase):
 
 
 class TestUtils(unittest.TestCase):
+    def test_describe_os_environ(self):
+        describe = saved_test_environment.describe_os_environ
+        before = {'A': '1', 'B': '2', 'C': '3'}
+        after = {'A': '1', 'B': 'secret', 'D': '4'}
+        self.assertEqual(describe((0, None, before), (0, None, after)),
+                         'added D; removed C; changed B')
+        self.assertEqual(describe((0, None, before), (1, None, before)), '')
+
     def test_format_duration(self):
         self.assertEqual(utils.format_duration(0),
                          '0 ms')

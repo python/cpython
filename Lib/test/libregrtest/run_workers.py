@@ -613,8 +613,6 @@ class RunWorkers:
         result = mp_result.result
         self.results.accumulate_result(result, self.runtests)
         self.display_result(mp_result)
-        if self.runtests.github_annotations:
-            result.print_github_annotation(self.runtests)
 
         # Display worker stdout
         if not self.runtests.output_on_failure:
@@ -626,6 +624,9 @@ class RunWorkers:
             stdout = mp_result.worker_stdout
             if stdout:
                 print(stdout, flush=True)
+        # Annotate after the output: env changed warnings, crash traceback
+        if self.runtests.github_annotations:
+            result.print_github_annotation(self.runtests)
 
         return result
 

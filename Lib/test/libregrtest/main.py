@@ -541,11 +541,12 @@ class Regrtest:
 
     def create_run_tests(self, tests: TestTuple) -> RunTests:
         # Annotate test failures in the GitHub Actions job log of the last
-        # run (the re-run, if any), if it reports failures
+        # run (the re-run, if any), if it reports failures: -v, -W or --pgo
         will_rerun = self.want_rerun and not self.python_cmd
         github_annotations = (bool(os.environ.get("GITHUB_STEP_SUMMARY"))
                               and not will_rerun
-                              and bool(self.verbose or self.output_on_failure))
+                              and bool(self.verbose or self.output_on_failure
+                                       or self.pgo))
         return RunTests(
             tests,
             fail_fast=self.fail_fast,
