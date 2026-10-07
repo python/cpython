@@ -1735,6 +1735,54 @@ class HandlerTests(unittest.TestCase):
                               "proxy.example.com:3128",
                               )
 
+    def test_proxy_basic_auth_ignores_direct_407(self):
+        # gh-158907: a direct HTTP origin that returns 407 must not receive
+        # credentials registered for the same authority over HTTPS.
+        opener = OpenerDirector()
+        opener.add_handler(urllib.request.ProxyHandler({}))
+        password_manager = urllib.request.HTTPPasswordMgr()
+        auth_handler = urllib.request.ProxyBasicAuthHandler(password_manager)
+        realm = "test-realm"
+        http_handler = MockHTTPHandlerRedirect(
+            407, 'Proxy-Authenticate: Basic realm="%s"\r\n\r\n' % realm)
+        opener.add_handler(auth_handler)
+        opener.add_handler(http_handler)
+
+        password_manager.add_password(
+            realm, "https://example.com/", "victim-user", "victim-secret")
+        opener.open("http://example.com/resource")
+
+        self.assertEqual(len(http_handler.requests), 1)
+        self.assertFalse(
+            http_handler.requests[0].has_header("Proxy-authorization"))
+
+    def test_proxy_basic_auth_https_tunnel_still_authenticates(self):
+        # 407 from the proxy during an HTTPS tunnel must still be answered.
+        class MockHTTPSHandlerRedirect(MockHTTPHandlerRedirect):
+            def https_open(self, req):
+                return self.http_open(req)
+
+        opener = OpenerDirector()
+        opener.add_handler(urllib.request.ProxyHandler(
+            dict(https="proxy.example.com:3128")))
+        password_manager = urllib.request.HTTPPasswordMgr()
+        auth_handler = urllib.request.ProxyBasicAuthHandler(password_manager)
+        realm = "ACME Networks"
+        http_handler = MockHTTPSHandlerRedirect(
+            407, 'Proxy-Authenticate: Basic realm="%s"\r\n\r\n' % realm)
+        opener.add_handler(auth_handler)
+        opener.add_handler(http_handler)
+
+        password_manager.add_password(
+            realm, "proxy.example.com:3128", "wile", "coyote")
+        opener.open("https://acme.example.com/protected")
+
+        self.assertEqual(len(http_handler.requests), 2)
+        self.assertFalse(
+            http_handler.requests[0].has_header("Proxy-authorization"))
+        self.assertTrue(
+            http_handler.requests[1].has_header("Proxy-authorization"))
+
     def test_basic_and_digest_auth_handlers(self):
         # HTTPDigestAuthHandler raised an exception if it couldn't handle a 40*
         # response (https://bugs.python.org/issue1479302), where it should instead

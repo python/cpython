@@ -1048,6 +1048,12 @@ class ProxyBasicAuthHandler(AbstractBasicAuthHandler, BaseHandler):
     auth_header = 'Proxy-authorization'
 
     def http_error_407(self, req, fp, code, msg, headers):
+        # A direct origin is not a proxy. req.host has no scheme, so a
+        # password stored for https://HOST/ would match and be sent in
+        # cleartext on the retry (gh-158907). HTTPS tunnels set
+        # _tunnel_host instead of making has_proxy() true.
+        if not req.has_proxy() and not req._tunnel_host:
+            return None
         # http_error_auth_reqed requires that there is no userinfo component in
         # authority.  Assume there isn't one, since urllib.request does not (and
         # should not, RFC 3986 s. 3.2.1) support requests for URLs containing
