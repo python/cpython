@@ -577,8 +577,8 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
         data = b"abcdef"
         with self.ioclass(data) as memio:
             memio.seek(position)
-            with self.assertRaises(TypeError):
-                getattr(memio, method)(buffer)
+            op = getattr(memio, method)
+            self.assertRaises(TypeError, op, buffer)
             self.assertEqual(memio.tell(), position)
             self.assertEqual(memio.read(), data[position:])
 
