@@ -1,0 +1,3 @@
+:func:`~dataclasses.dataclass` no longer fails when a string annotation names a
+:ref:`lazy import <lazy-imports>` that cannot be resolved, matching the
+behavior for non-string annotations.
