@@ -1,0 +1,3 @@
+Improve syntax error messages for misplaced ``not`` after an operator
+in contexts where a generic "invalid syntax" error was previously reported,
+such as ``1 << 2 + not x`` and ``1 * + not x``.

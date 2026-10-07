@@ -1,0 +1,6 @@
+Fix :func:`readline.write_history_file` and
+:func:`readline.append_history_file` producing a history file that
+:func:`readline.read_history_file` could not load when a limit was set with
+:func:`readline.set_history_length` and Python was built against
+``libedit``.  This works around `NetBSD PR 60322
+<https://gnats.netbsd.org/60322>`_.

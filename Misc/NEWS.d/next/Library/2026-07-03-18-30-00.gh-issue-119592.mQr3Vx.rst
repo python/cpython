@@ -1,0 +1,11 @@
+Fix :class:`concurrent.futures.ProcessPoolExecutor` stranding submitted
+work forever when a worker process exited upon reaching its
+*max_tasks_per_child* limit after
+:meth:`~concurrent.futures.Executor.shutdown` was called with
+``wait=False``: a replacement worker is now spawned and the remaining work
+executed as documented. If the executor has instead been garbage collected
+without ``shutdown()`` (:gh:`152967`), or a replacement worker cannot be
+started, the remaining futures now fail with
+:exc:`~concurrent.futures.process.BrokenProcessPool` instead of never
+resolving. A worker exit racing ``shutdown(wait=False)`` can also no
+longer crash the executor management thread.

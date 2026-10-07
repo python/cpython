@@ -16,7 +16,7 @@ from ._constants import *
 from ._casefix import _EXTRA_CASES
 from ._optimizer import (
     _combine_flags, _compile_charset, _optimize_charset, _compile_info,
-    _simple, _CHARSET_ALL, _CODEBITS, MAXCODE,
+    _simple, _CHARSET_ALL, _CODEBITS, MAXCODE, optimize,
 )
 
 assert _sre.MAGIC == MAGIC, "SRE module mismatch"
@@ -219,6 +219,10 @@ def isstring(obj):
 def _code(p, flags):
 
     flags = p.state.flags | flags
+
+    # run the optimizer passes over the parsed pattern
+    optimize(p)
+
     code = []
 
     # compile info block

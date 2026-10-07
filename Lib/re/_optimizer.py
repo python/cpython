@@ -56,7 +56,39 @@ def _compile_charset(charset, flags, code):
     emit(FAILURE)
 
 def _optimize_charset(charset, iscased=None, fixup=None, fixes=None):
-    # internal: optimize character set
+    # internal: optimize character set.
+    #
+    # The engine's charset() walk toggles polarity on every NEGATE (see
+    # Modules/_sre/sre_lib.h), so NEGATE markers split the set into
+    # alternating-polarity segments: a leading NEGATE is a complemented class
+    # [^...], an interior one is set difference (RL1.3).  Each segment is a
+    # plain union, optimized on its own with the NEGATE boundaries kept in place.
+    negates = [i for i, (op, _av) in enumerate(charset) if op is NEGATE]
+    if not negates or negates == [0]:
+        # Fast path: a plain union, optionally complemented as a whole -- every
+        # charset the parser produces today, optimized as before.
+        return _optimize_charset_segment(charset, iscased, fixup, fixes)
+
+    # Optimize each NEGATE-delimited run on its own.  _allow_anyall is off: the
+    # [\s\S] -> ANY_ALL / [^\s\S] -> empty shortcuts rewrite a whole set and
+    # would inject or drop a NEGATE mid-segment.
+    out = []
+    hascased = False
+    start = 0
+    for i in negates + [len(charset)]:
+        if i > start:                  # skip an empty run (e.g. a leading NEGATE)
+            opt, cased = _optimize_charset_segment(
+                charset[start:i], iscased, fixup, fixes, _allow_anyall=False)
+            out.extend(opt)
+            hascased |= cased
+        if i < len(charset):
+            out.append((NEGATE, None))
+        start = i + 1
+    return out, hascased
+
+def _optimize_charset_segment(charset, iscased=None, fixup=None, fixes=None,
+                              _allow_anyall=True):
+    # internal: optimize one NEGATE-free union of character-set members
     out = []
     tail = []
     charmap = bytearray(256)
@@ -94,7 +126,7 @@ def _optimize_charset(charset, iscased=None, fixup=None, fixes=None):
                             charmap[i] = 1
                 elif op is NEGATE:
                     out.append((op, av))
-                elif op is CATEGORY and tail and (CATEGORY, CH_NEGATE[av]) in tail:
+                elif op is CATEGORY and _allow_anyall and tail and (CATEGORY, CH_NEGATE[av]) in tail:
                     # Optimize [\s\S] etc.
                     out = [] if out else _CHARSET_ALL
                     return out, False
@@ -395,3 +427,83 @@ def _compile_info(code, pattern, flags):
     elif charset:
         _compile_charset(charset, flags, code)
     code[skip] = len(code) - skip
+
+# Difference-fusion peephole: rewrite [A--B]-style A(?<![B]) into a single
+# charset (see the engine's NEGATE polarity toggle).
+def _subpatterns(op, av):
+    # Yield the nested SubPatterns of one item, to recurse into.
+    if op is BRANCH:
+        yield from av[1]
+    elif op in (ASSERT, ASSERT_NOT):
+        yield av[1]
+    elif op is SUBPATTERN:
+        yield av[3]
+    elif op is ATOMIC_GROUP:
+        yield av
+    elif op in (MIN_REPEAT, MAX_REPEAT, POSSESSIVE_REPEAT):
+        yield av[2]
+    elif op is GROUPREF_EXISTS:
+        yield av[1]                 # the "yes" branch is always present
+        if av[2] is not None:       # the "no" branch is optional
+            yield av[2]
+
+def _fuse_branch(av):
+    # Fold a BRANCH of one-character matchers into a single charset: their union
+    # is the concatenation of the item lists.  charset() lets only the final
+    # polarity segment subtract, so at most one alternative may be
+    # complement-bearing (carry a NEGATE) and it must trail; two would cross
+    # (e.g. [a-z--b]||[a-z--c]) and are left as a BRANCH.
+    items = []
+    tail = None
+    for sp in av[1]:
+        cs = _parser._flat_items(sp.data, True)
+        if cs is None:
+            return None
+        if any(op is NEGATE for op, _av in cs):
+            if tail is not None:
+                return None
+            tail = cs
+        else:
+            items += cs
+    return items if tail is None else items + tail
+
+def _fuse_difference(data):
+    # Replace  <flat charset A> (?<![B1]) (?<![B2]) ...  with the single charset
+    # [NEGATE] B1 B2 ... [NEGATE] A.  Each negative lookbehind over a flat
+    # charset subtracts its set from the character A matches.
+    out = []
+    head = None        # _flat_items(A) for the fused difference now at out[-1]
+    subtrahend = None  # its accumulated B items, or None when not fusing
+    for op, av in data:
+        if op is ASSERT_NOT and av[0] < 0:          # a negative lookbehind
+            b = _parser._flat_items(av[1].data)
+            if b is not None:
+                if subtrahend is None and out:
+                    # the first lookbehind of a run: only now is it worth
+                    # checking whether the preceding item A is a flat charset.
+                    head = _parser._flat_items([out[-1]])
+                    if head is not None:
+                        subtrahend = []
+                if subtrahend is not None:
+                    subtrahend += b
+                    out[-1] = (IN, [(NEGATE, None)] + subtrahend
+                                   + [(NEGATE, None)] + head)
+                    continue
+        head = subtrahend = None
+        out.append((op, av))
+    data[:] = out
+
+def _walk(seq):
+    for i, (op, av) in enumerate(seq):
+        for sub in _subpatterns(op, av):
+            _walk(sub.data)
+        if op is BRANCH:
+            items = _fuse_branch(av)
+            if items is not None:
+                seq[i] = (IN, items)
+    _fuse_difference(seq)
+
+def optimize(pattern):
+    """Rewrite a parsed pattern in place and return it."""
+    _walk(pattern.data)
+    return pattern

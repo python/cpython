@@ -120,7 +120,7 @@ resource_prlimit(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     pid = PyLong_AsPid(args[0]);
-    if (pid == -1 && PyErr_Occurred()) {
+    if (pid == (pid_t)(-1) && PyErr_Occurred()) {
         goto exit;
     }
     resource = PyLong_AsInt(args[1]);
@@ -174,4 +174,4 @@ exit:
 #ifndef RESOURCE_PRLIMIT_METHODDEF
     #define RESOURCE_PRLIMIT_METHODDEF
 #endif /* !defined(RESOURCE_PRLIMIT_METHODDEF) */
-/*[clinic end generated code: output=8e905b2f5c35170e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4044ef9ffbf7278b input=a9049054013a1b77]*/

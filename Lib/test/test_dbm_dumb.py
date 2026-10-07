@@ -114,6 +114,16 @@ class DumbDBMTestCase(unittest.TestCase):
         with contextlib.closing(dumbdbm.open(_fname)) as f:
             self.assertEqual(f[b'1'], b'hello2')
 
+    def test_reorganize_persists_changed_offsets(self):
+        with dumbdbm.open(_fname, 'n') as f:
+            f[b'deleted'] = b'x'
+            f[b'retained'] = b'value'
+            del f[b'deleted']
+            f.reorganize()
+
+        with dumbdbm.open(_fname, 'r') as f:
+            self.assertEqual(f[b'retained'], b'value')
+
     def test_str_read(self):
         self.init_db()
         with contextlib.closing(dumbdbm.open(_fname, 'r')) as f:

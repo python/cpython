@@ -8,14 +8,14 @@ Migrating to Stable ABI for free threading (``abi3t``)
 
 Starting with the 3.15 release, CPython supports a variant of the Stable ABI
 that supports :term:`free-threaded <free threading>` Python:
-Stable ABI for Free-Threaded Builds, or ``abi3t`` for short.
+the Stable ABI for Free-Threaded Builds, or ``abi3t`` for short.
 This document describes how to adapt C API extensions to support free threading.
 
 Why do this
 ===========
 
-The typical reason to use Stable ABI is to reduce the number of artifacts that
-you need to build and distribute for each version of your library.
+The typical reason to use the Stable ABI is to reduce the number of artifacts
+that you need to build and distribute for each version of your library.
 
 Without the Stable ABI, you must build a separate shared library, and typically
 a *wheel* distribution, for each feature version of CPython you wish
@@ -87,16 +87,16 @@ builds; even the 3.15+ ones that this table "attributes" to ``abi3t``.)
 Why *not* do this
 -----------------
 
-There are two main downsides to Stable ABI.
+There are two main downsides to the Stable ABI.
 
-First, you extension may become slower, since Stable ABI prioritizes
+First, your extension may become slower, since the Stable ABI prioritizes
 compatibility over performance.
 The difference is usually not noticeable, and often can be mitigated by
 using the same source to build both a Stable ABI build and a few
 version-specific ones for "tier 1" CPython versions.
 
 Second, not all of the C API is available.
-Extensions need to be ported to build for Stable ABI, which may be difficult
+Extensions need to be ported to build for the Stable ABI, which may be difficult
 or, in rare cases, impossible.
 
 Specifically, ``abi3t`` requires APIs added in CPython 3.15.
@@ -127,7 +127,7 @@ Prerequisites
 This guide assumes that you have an extension written directly in C (or C++),
 which you want to port to ``abi3t``.
 
-If your extenstion uses a code generator (like Cython) or language binding
+If your extension uses a code generator (like Cython) or language binding
 (like PyO3), it's best to wait until that tool has support for ``abi3t``.
 If you maintain such a tool, you might be able to adapt the instructions
 here for your tool.
@@ -135,7 +135,7 @@ here for your tool.
 Non-free-threaded Stable ABI
 ----------------------------
 
-Your extension should support the Stable ABI (``abi3t``).
+Your extension should support the non-free-threaded Stable ABI (``abi3``).
 If not, either port it first, or follow this guide but be prepared to fix
 issues it does not mention.
 
@@ -169,21 +169,36 @@ or :c:member:`PyTypeObject.tp_itemsize`), it cannot be ported to
 ``abi3t`` 3.15.
 
 
+.. _abi3t-migration-build:
+
 Setting up the build
 ====================
 
-If you use a build tool (such as setuptools, meson-python, scikit-build-core),
-search its documentation for a way to select ``abi3t``.
-At the time of writing, not all of them have this; but if your tool does,
-use it.
-You may want to verify that it set the right flag by temporarily adding the
+If you use a build tool, search its documentation for "``abi3t``", and follow
+any instructions to select the ABI.
+For reference, here are direct links for several popular build tools:
+
+- `meson-python
+  <https://mesonbuild.com/meson-python/how-to-guides/limited-api.html#the-abi3t-stable-abi>`__
+- `scikit-build-core
+  <https://scikit-build-core.readthedocs.io/en/stable/configuration/#customizing-the-output-wheel>`__
+- `Maturin <https://www.maturin.rs/bindings#py_limited_apiabi3>`__
+
+You may want to verify that the tool set the right flag by temporarily adding the
 following just after ``#include <Python.h>``::
 
    #if Py_TARGET_ABI3T+0 <= 0x30f0000
    #error "abi3t define is not set!"
    #endif
 
-This should result in a different error than "``abt3t`` define is not set".
+This should result in a different error than "``abi3t`` define is not set".
+
+.. seealso::
+
+   `Building and distributing abi3t extensions
+   <https://py-free-threading.github.io/abi3t/>`__:
+   Build configuration and wheel testing examples in the community-maintained
+   Python Free-Threading Guide.
 
 .. note::
 
@@ -217,9 +232,9 @@ Module export hook
 
 Unless you've done this step already, your extension module defines a
 :ref:`module initialization function <extension-pyinit>`
-named :samp:`PyInit_{<module_name>}`.
+named :samp:`PyInit_{<modname>}` (where ``modname`` is the name of your module).
 You will need to port it to a :ref:`module export hook <extension-export-hook>`,
-:samp:`PyModExport_{<module name>}`, a feature added in CPython 3.15 in
+:samp:`PyModExport_{<modname>}`, a feature added in CPython 3.15 in
 :pep:`793`.
 
 Your existing init function should look like this (with your own names
@@ -296,6 +311,34 @@ As in the example, your ``PyModExport_`` function should *only* return a
 pointer to static data.
 If you cannot avoid additional code, refer to the
 :ref:`caveats in PyModExport documentation <pymodexport-api-caveats>`.
+
+.. note::
+
+   When building for Windows using the Setuptools_ build tool,
+   removing the :samp:`PyInit_{<modname>}` function may result in the linker error
+   :samp:`LINK : error LNK2001: unresolved external symbol PyInit_{<modname>}`.
+   This is caused by Setuptools passing an ``/EXPORT`` linker flag, which
+   is redundant since Python 3.15 (see :gh:`141671`).
+   A workaround is to add a dummy :samp:`PyInit_{<modname>}` function
+   to your code.
+   Python 3.15+ will never call this function if
+   :samp:`PyModExport_{<modname>}` is present, so it can always fail:
+
+   .. code-block:: c
+
+      // Workaround for https://github.com/pypa/distutils/issues/387
+      PyMODINIT_FUNC
+      PyInit_<modname>(void)
+      {
+          PyErr_SetString(PyExc_SystemError,
+                          "PyInit_* called for module with PyModExport_*");
+          return NULL;
+      }
+
+   (This issue is present in Setuptools 84.0.0; it might be fixed in newer
+   versions.)
+
+.. _Setuptools: https://setuptools.pypa.io/
 
 
 Existing slots
@@ -705,7 +748,7 @@ Testing
 Note that when you build an extension compatible with multiple versions of
 CPython, you should always *test* it with each version it supports (for
 example, 3.15, 3.16, and so on).
-Stable ABI only guarantees *ABI* compatibility; there may also be behavior
+The Stable ABI only guarantees *ABI* compatibility; there may also be behavior
 changes -- both intentional ones (covered by :pep:`387`) and bugs.
 
 Be sure to run tests on both free-threaded and non-free-threaded builds

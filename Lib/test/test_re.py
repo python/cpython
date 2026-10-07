@@ -1061,6 +1061,19 @@ class ReTests(unittest.TestCase):
         self.assertIsNone(re.fullmatch(r'\p{ASCII_Hex_Digit}', '０'))
         self.assertIsNone(re.fullmatch(r'\p{Hex_Digit}', 'g'))
 
+        # A negated multi-range property (not backed by an engine category) can
+        # be a set member; it is alternated in with the other members.
+        self.assertIsNone(re.fullmatch(r'[\P{ASCII}]', 'a'))
+        self.assertTrue(re.fullmatch(r'[\P{ASCII}]', 'ä'))
+        self.assertTrue(re.fullmatch(r'[\P{ASCII}abc]+', 'abäc日'))
+        self.assertIsNone(re.fullmatch(r'[\P{ASCII}abc]', 'd'))
+        self.assertTrue(re.fullmatch(r'[abc\P{ASCII}]+', 'abäc日'))
+        self.assertTrue(re.fullmatch(r'[^\P{ASCII}]+', 'AZ09~'))   # = ASCII
+        self.assertIsNone(re.fullmatch(r'[^\P{ASCII}]', 'ä'))
+        # Composes with set operations.
+        self.assertTrue(re.fullmatch(r'[\w--\P{ASCII}]+', 'AZ09_'))  # \w and ASCII
+        self.assertIsNone(re.fullmatch(r'[\w--\P{ASCII}]', 'д'))
+
         # Errors.
         self.checkPatternError(r'\p', 'missing {, expected property name', 2)
         self.checkPatternError(r'[\p]', 'missing {, expected property name', 3)
@@ -1072,10 +1085,6 @@ class ReTests(unittest.TestCase):
         # \p is not special in bytes patterns.
         self.checkPatternError(br'\p{Lu}', r'bad escape \p', 0)
         self.checkPatternError(br'\P{Lu}', r'bad escape \P', 0)
-        # A negated multi-range property (one not backed by an engine
-        # category) cannot be a set member.
-        self.checkPatternError(r'[\P{ASCII}]',
-                               r'bad escape \P in character class', 1)
 
     def test_word_boundaries(self):
         # See http://bugs.python.org/issue10713
@@ -1528,6 +1537,10 @@ class ReTests(unittest.TestCase):
         with warnings.catch_warnings():
             warnings.simplefilter('error', FutureWarning)
             re.compile(r'[a-z--[aeiou]]')
+        # A reserved construct inside a nested operand warns against the caller.
+        with self.assertWarnsRegex(FutureWarning, 'Possible nested set ') as w:
+            re.compile(r'[\w--[[:digit:]]]')
+        self.assertEqual(w.filename, __file__)
 
         # Set union  A||B == A or B (an explicit form of [AB]); flat operands
         # merge into one charset, otherwise the operations are alternated.
@@ -1548,6 +1561,10 @@ class ReTests(unittest.TestCase):
             self.assertEqual(re.findall(r'[\d~~1]', s), list('0123456789~'))
         self.assertEqual(w.filename, __file__)
         self.assertEqual(re.findall(r'[~~1]', s), list('1~'))
+        with self.assertWarnsRegex(FutureWarning,
+                                   'Possible set symmetric difference ') as w:
+            re.compile(r'[\w--[\d~~1]]')
+        self.assertEqual(w.filename, __file__)
 
     def test_search_coverage(self):
         self.assertEqual(re.search(r"\s(b)", " b").group(1), "b")
@@ -2136,6 +2153,28 @@ class ReTests(unittest.TestCase):
         self.assertRaises(ValueError, re.compile, b'(?a)', re.LOCALE)
         self.assertRaises(re.PatternError, re.compile, b'(?aL)')
 
+    def test_locale_ignorecase_negated_set(self):
+        IL = re.LOCALE | re.IGNORECASE
+        # [bc] matches b'B', so [^bc] must not.
+        self.assertTrue(re.fullmatch(rb'[bc]', b'B', IL))
+        self.assertIsNone(re.fullmatch(rb'[^bc]', b'B', IL))
+        self.assertIsNone(re.fullmatch(rb'[^b-c]', b'C', IL))
+        self.assertIsNone(re.fullmatch(rb'[^bc]', b'c', IL))
+        self.assertTrue(re.fullmatch(rb'[^bc]', b'a', IL))
+        # A one-member set compiles to NOT_LITERAL_LOC_IGNORE.
+        self.assertIsNone(re.fullmatch(rb'[^b]', b'B', IL))
+        self.assertTrue(re.fullmatch(rb'[^b]', b'a', IL))
+        self.assertIsNone(re.fullmatch(rb'[^\wq]', b'Q', IL))
+        # A sparse set compiles to a bitmap instead of ranges.
+        self.assertTrue(re.fullmatch(rb'[ace]', b'C', IL))
+        self.assertIsNone(re.fullmatch(rb'[^ace]', b'C', IL))
+        self.assertTrue(re.fullmatch(rb'[^ace]', b'b', IL))
+        # An alternation folded into a set puts NEGATE in the middle of it.
+        self.assertIsNone(re.fullmatch(rb'(?:a|[^bc])', b'B', IL))
+        self.assertTrue(re.fullmatch(rb'(?:a|[^bc])', b'A', IL))
+        self.assertIsNone(re.fullmatch(rb'\w(?<!b)', b'B', IL))
+        self.assertTrue(re.fullmatch(rb'\w(?<!b)', b'A', IL))
+
     def test_scoped_flags(self):
         self.assertTrue(re.match(r'(?i:a)b', 'Ab'))
         self.assertIsNone(re.match(r'(?i:a)b', 'aB'))
@@ -2242,7 +2281,7 @@ class ReTests(unittest.TestCase):
 
     # The huge memuse is because of re.sub() using a list and a join()
     # to create the replacement result.
-    @bigmemtest(size=_2G, memuse=16 + 2)
+    @bigmemtest(size=_2G, memuse=16 + 3)
     def test_large_subn(self, size):
         # Issue #10182: indices were 32-bit-truncated.
         s = 'a' * size

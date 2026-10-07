@@ -116,6 +116,26 @@ class DictTest(unittest.TestCase):
         self.assertRaises(TypeError, d.items, None)
         self.assertEqual(repr(dict(a=1).items()), "dict_items([('a', 1)])")
 
+    @support.cpython_only
+    def test_item_iterator_oom(self):
+        import_helper.import_module('_testcapi')
+        from test.support.script_helper import assert_python_ok
+        code = """if 1:
+            import _testcapi
+            items = {1: 2, 3: 4}.items()
+            ballast = [(i, i) for i in range(3000)]
+            held = []
+            for start in range(1, 5):
+                _testcapi.set_nomemory(start)
+                try:
+                    held.append(iter(items))
+                except MemoryError:
+                    pass
+                finally:
+                    _testcapi.remove_mem_hooks()
+            """
+        assert_python_ok('-c', code)
+
     def test_views_mapping(self):
         mappingproxy = type(type.__dict__)
         class Dict(dict):
@@ -678,6 +698,7 @@ class DictTest(unittest.TestCase):
         d = {1: BadRepr()}
         self.assertRaises(Exc, repr, d)
 
+    @support.run_with_limited_c_stack()
     @support.skip_wasi_stack_overflow()
     @support.skip_emscripten_stack_overflow()
     def test_repr_deep(self):
@@ -1401,6 +1422,52 @@ class DictTest(unittest.TestCase):
         self.assertEqual(list(reversed(A(1, 2).__dict__)), ['y', 'x'])
         self.assertEqual(list(reversed(A(1, 0).__dict__)), ['x'])
         self.assertEqual(list(reversed(A(0, 1).__dict__)), ['y'])
+
+    def test_reversed_dict_after_clear_and_restore(self):
+        d = {}
+        for i in range(1000):
+            d[f"k{i}"] = i
+
+        for i in range(1, 1000):
+            del d[f"k{i}"]
+
+        iterators = (
+            reversed(d),
+            reversed(d.keys()),
+            reversed(d.values()),
+            reversed(d.items()),
+        )
+
+        d.clear()
+        d["k0"] = 0
+
+        for it in iterators:
+            self.assertEqual(list(it), [])
+
+    def test_reversed_dict_keys_changed_during_iteration(self):
+        d = dict.fromkeys(range(10))
+        for i in range(7):
+            del d[i]
+
+        iterators = (
+            reversed(d),
+            reversed(d.keys()),
+            reversed(d.values()),
+            reversed(d.items()),
+        )
+        for it in iterators:
+            next(it)
+
+        # Same size as before, but with different keys below
+        # the iterators' current position.
+        d.clear()
+        d.update(dict.fromkeys(range(10)))
+        for i in range(3, 10):
+            del d[i]
+
+        for it in iterators:
+            with self.assertRaisesRegex(RuntimeError, 'keys changed'):
+                list(it)
 
     def test_dict_copy_order(self):
         # bpo-34320

@@ -31,7 +31,7 @@ HANDSHAKE_TIMEOUT = support.LONG_TIMEOUT
 
 
 def tearDownModule():
-    asyncio.events._set_event_loop_policy(None)
+    asyncio.set_event_loop(None)
 
 
 class MyBaseProto(asyncio.Protocol):
@@ -184,9 +184,6 @@ class TestSSL(test_utils.TestCase):
 
     def new_loop(self):
         return asyncio.new_event_loop()
-
-    def new_policy(self):
-        return asyncio.DefaultEventLoopPolicy()
 
     async def wait_closed(self, obj):
         if not isinstance(obj, asyncio.StreamWriter):

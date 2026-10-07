@@ -63,11 +63,14 @@ exposed by the :mod:`!weakref` module for the benefit of advanced uses.
 Not all objects can be weakly referenced. Objects which support weak references
 include class instances, functions written in Python (but not in C), instance methods,
 sets, frozensets, some :term:`file objects <file object>`, :term:`generators <generator>`,
-type objects, sockets, arrays, deques, regular expression pattern objects, and code
-objects.
+type objects, sockets, arrays, deques, regular expression pattern objects, code
+objects, and frame objects.
 
 .. versionchanged:: 3.2
    Added support for thread.lock, threading.Lock, and code objects.
+
+.. versionchanged:: 3.16
+   Added support for frame objects.
 
 Several built-in types such as :class:`list` and :class:`dict` do not directly
 support weak references but can add support through subclassing::
@@ -287,9 +290,10 @@ same issues as the :meth:`WeakKeyDictionary.keyrefs` method.
    from an object's :meth:`~object.__del__` method or a weak reference's
    callback.
 
-   When the program exits, each remaining live finalizer is called
-   unless its :attr:`atexit` attribute has been set to false.  They
-   are called in reverse order of creation.
+   When the program exits (or more generally, at :term:`interpreter shutdown`),
+   each remaining live finalizer is called unless its :attr:`atexit` attribute
+   has been set to false.
+   They are called in reverse order of creation.
 
    A finalizer will never invoke its callback during the later part of
    the :term:`interpreter shutdown` when module globals are liable to have
@@ -318,9 +322,9 @@ same issues as the :meth:`WeakKeyDictionary.keyrefs` method.
 
    .. attribute:: atexit
 
-      A writable boolean property which by default is true.  When the
-      program exits, it calls all remaining live finalizers for which
-      :attr:`.atexit` is true.  They are called in reverse order of
+      A writable boolean property which by default is true.  At
+      :term:`interpreter shutdown`, all remaining live finalizers for which
+      :attr:`.atexit` is true are called in reverse order of
       creation.
 
    .. note::
