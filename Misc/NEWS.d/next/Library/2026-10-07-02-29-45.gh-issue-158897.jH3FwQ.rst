@@ -1,0 +1,5 @@
+Optimize :meth:`!io.BufferedReader.readline` when lines are close to the
+buffer size (128 kB by default) or longer than the buffer size. Replace the
+C loop searching for the newline byte in the buffer with a :c:func:`!memchr`
+call which is more efficient. In the good case, it makes ``readline()`` up to
+4x faster! Patch by Victor Stinner.
