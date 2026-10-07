@@ -491,7 +491,7 @@
     </PropertyGroup>
 
     <Message Text="Run generate_getbuildinfo.py" Importance="high" />
-    <Exec Command='$(PythonForBuild) Tools/build/generate_getbuildinfo.py Modules\getbuildinfo.h win32 $(GitVersion) $(GitTag) $(GitBranch) "$(Compiler)" $(GilEnabled)'
+    <Exec Command='$(PythonForBuild) Tools/build/generate_getbuildinfo.py --platform=win32 --git-version="$(GitVersion)" --git-tag="$(GitTag)" --git-branch="$(GitBranch)" --compiler="$(Compiler)" --gil-enabled=$(GilEnabled)'
           WorkingDirectory="$(PySourcePath)" />
   </Target>
   <Target Name="_RebuildFrozen" AfterTargets="AfterBuild" Condition="$(Configuration) != 'PGUpdate'">

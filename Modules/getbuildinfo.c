@@ -40,7 +40,7 @@ Py_GetPlatform(void)
 const char *
 _Py_gitversion(void)
 {
-    return GITVERSION;
+    return GIT_VERSION;
 }
 
 const char *
@@ -52,7 +52,7 @@ _Py_gitidentifier(void)
 const char *
 Py_GetBuildInfo(void)
 {
-    return BUILDINFO;
+    return BUILD_INFO;
 }
 
 // Export the Python hex version as a constant.
@@ -60,7 +60,7 @@ const unsigned long Py_Version = PY_VERSION_HEX;
 
 // Keep the 'version' variable for backward compatibility.
 // Some debuggers inspect directly the variable.
-static const char *version = GET_VERSION;
+static const char *version = VERSION;
 
 const char *
 Py_GetVersion(void)

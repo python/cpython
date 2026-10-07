@@ -1,8 +1,11 @@
 # Script to generate Modules/getbuildinfo.h
 
+import argparse
 import locale
 import os
 import re
+import shlex
+import subprocess
 import sys
 import time
 
@@ -11,22 +14,36 @@ SCRIPT_NAME = os.path.basename(__file__)
 SCRIPT_FULLNAME = f'Tools/build/{SCRIPT_NAME}'
 
 # Get PY_VERSION from Include/patchlevel.h
-PY_VERSION_REGEX = re.compile(r'#define PY_VERSION +"(.*)"')
+PY_VERSION_REGEX = re.compile(r'^#define PY_VERSION +"(.*)"$', re.MULTILINE)
+
+# Get HOSTRUNNER from Makefile
+HOSTRUNNER_REGEX = re.compile(r'^HOSTRUNNER *= *(.*)$', re.MULTILINE)
 
 # Py_GIL_DISABLED from pyconfig.h
-Py_GIL_DISABLED_DEF_REGEX = re.compile(r'#define Py_GIL_DISABLED 1')
-Py_GIL_DISABLED_UNDEF_REGEX = re.compile(r'/\* #undef Py_GIL_DISABLED \*/')
+Py_GIL_DISABLED_DEF_REGEX = re.compile(r'^#define Py_GIL_DISABLED 1$', re.MULTILINE)
+Py_GIL_DISABLED_UNDEF_REGEX = re.compile(r'^/\* #undef Py_GIL_DISABLED \*/$', re.MULTILINE)
+
+
+def parse_file(variable_name, filename, regex):
+    with open(filename, encoding='utf8') as fp:
+        code = fp.read()
+    match = regex.search(code)
+    if not match:
+        print(f"ERROR: Unable to locate {variable_name} in {filename}")
+        sys.exit(1)
+    return match.group(1)
 
 
 def get_py_version():
     patchlevel_h = os.path.join(SRC_DIR, 'Include', 'patchlevel.h')
-    with open(patchlevel_h, encoding='utf8') as fp:
-        code = fp.read()
-    match = PY_VERSION_REGEX.search(code)
-    if not match:
-        print(f"ERROR: Unable to locate PY_VERSION in {patchlevel_h}")
-        sys.exit(1)
-    return match.group(1)
+    return parse_file('PY_VERSION ', patchlevel_h, PY_VERSION_REGEX)
+
+
+def get_host_runner():
+    # Look in the current working directory
+    makefile = 'Makefile'
+    HOSTRUNNER = parse_file('HOSTRUNNER', makefile, HOSTRUNNER_REGEX)
+    return HOSTRUNNER.rstrip()
 
 
 def get_gil_disable():
@@ -54,79 +71,114 @@ def get_date_time():
     day = time.strftime("%d", time_tuple)
     if day.startswith("0"):
         day = " " + day[1:]
-    DATE = time.strftime(f"%b {day} %Y", time_tuple)
-    TIME = time.strftime("%H:%M:%S", time_tuple)
-    return (DATE, TIME)
+    build_date = time.strftime(f"%b {day} %Y", time_tuple)
+    build_time = time.strftime("%H:%M:%S", time_tuple)
+    return (build_date, build_time)
+
+
+def get_build_info(git_tag, git_branch, git_version, build_date, build_time):
+    if git_tag and git_tag != "undefined":
+        git_id = git_tag
+    else:
+        git_id = git_branch
+    if not git_id:
+        git_id = "main"
+
+    sep = ":" if git_version else ""
+
+    build_info = f"{git_id}{sep}{git_version}, {build_date:.20s}, {build_time:.9s}"
+    return (build_info, git_id)
+
+
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-o', '--output', type=str)
+    parser.add_argument('--platform', type=str, required=True)
+    parser.add_argument('--git-version', type=str, required=True)
+    parser.add_argument('--git-tag', type=str, required=True)
+    parser.add_argument('--git-branch', type=str, required=True)
+    parser.add_argument('--compiler', type=str)
+    parser.add_argument('--gil-enabled', type=int)
+    return parser.parse_args()
+
+
+def run_command(cmd):
+    try:
+        proc = subprocess.run(cmd, stdout=subprocess.PIPE, text=True)
+    except OSError as exc:
+        error = f'with: {exc!r}'
+    else:
+        exitcode = proc.returncode
+        if exitcode:
+            error = f'with exit code {exitcode}'
+        else:
+            error = None
+
+    if error:
+        print(f"Command {shlex.join(cmd)} failed {error}")
+        sys.exit(1)
+    return proc.stdout.rstrip()
 
 
 def main():
-    if len(sys.argv) != 8:
-        print(f"usage: {SCRIPT_NAME} "
-              "OUTPUT PLATFORM GITVERSION GITTAG GITBRANCH COMPILER GIL_ENABLED")
-        sys.exit(1)
-
-    OUTPUT = sys.argv[1]
-    PLATFORM = sys.argv[2]
-    GITVERSION = sys.argv[3]
-    GITTAG = sys.argv[4]
-    GITBRANCH = sys.argv[5]
-    COMPILER = sys.argv[6]
-    GIL_ENABLED = sys.argv[7]
-
-    if not PLATFORM:
-        PLATFORM = "unknown"
-
     # Force the C locale to format date as English
     locale.setlocale(locale.LC_ALL, 'C')
 
-    gittag = GITTAG
-    if gittag and gittag != "undefined":
-        gitid = gittag
-    else:
-        gitid = GITBRANCH
+    args = parse_args()
+    output_filename = args.output
+    platform = args.platform
+    git_version = args.git_version
+    git_tag = args.git_tag
+    git_branch = args.git_branch
+    compiler = args.compiler
+    gil_enabled = args.gil_enabled
 
-    revision = GITVERSION
-    sep = ":" if revision else ""
-    if not gitid:
-        gitid = "main"
+    if not output_filename:
+        # In the current directory
+        output_filename = os.path.join('Modules', 'getbuildinfo.h')
+    if not platform:
+        platform = "unknown"
 
-    DATE, TIME = get_date_time()
+    if not compiler:
+        getcompiler = os.path.join('Programs', '_getcompiler')
+        HOSTRUNNER = get_host_runner()
+        if HOSTRUNNER:
+            runner = shlex.split(HOSTRUNNER)[0]
+            compiler = run_command([runner, getcompiler])
+        else:
+            compiler = run_command([getcompiler])
+
+    build_date, build_time = get_date_time()
+    build_info, git_id = get_build_info(git_tag, git_branch, git_version, build_date, build_time)
+
+    # Get PY_VERSION macro from Include/patchlevel.h
     PY_VERSION = get_py_version()
-    if GIL_ENABLED  == 'use_pyconfig':
+    if gil_enabled is None:
+        # Get Py_GIL_DISABLED macro from pyconfig.h (defined or undefined)
         Py_GIL_DISABLED = get_gil_disable()
-        GIL_ENABLED = not Py_GIL_DISABLED
-    else:
-        GIL_ENABLED = int(GIL_ENABLED)
-    BUILDINFO = f"{gitid}{sep}{revision}, {DATE:.20s}, {TIME:.9s}"
+        gil_enabled = not Py_GIL_DISABLED
 
-    if not GIL_ENABLED:
-        GET_VERSION = f"{PY_VERSION} free-threading build ({BUILDINFO}) {COMPILER}"
+    if not gil_enabled:
+        version = f"{PY_VERSION} free-threading build ({build_info}) {compiler}"
     else:
-        GET_VERSION = f"{PY_VERSION} ({BUILDINFO}) {COMPILER}"
+        version = f"{PY_VERSION} ({build_info}) {compiler}"
 
-    new_filename = OUTPUT + ".new"
+    new_filename = output_filename + ".new"
     with open(new_filename, "w", encoding="utf8") as fp:
         def write_macro(name, value):
             print(f'#define {name} "{value}"', file=fp)
 
         print(f'// Header file auto-generated by {SCRIPT_FULLNAME}', file=fp)
         print(file=fp)
-        write_macro('DATE', DATE)
-        write_macro('TIME', TIME)
-        write_macro('COMPILER', COMPILER)
-        print(file=fp)
-        write_macro('PLATFORM', PLATFORM)
-        print(file=fp)
-        write_macro('GITBRANCH', GITBRANCH)
-        write_macro('GITTAG', GITTAG)
-        write_macro('GITVERSION', GITVERSION)
-        write_macro('GIT_IDENTIFIER', gitid)
-        print(file=fp)
-        write_macro('BUILDINFO', BUILDINFO)
-        write_macro('GET_VERSION', GET_VERSION)
+        write_macro('PLATFORM', platform)
+        write_macro('COMPILER', compiler)
+        write_macro('GIT_VERSION', git_version)
+        write_macro('GIT_IDENTIFIER', git_id)
+        write_macro('BUILD_INFO', build_info)
+        write_macro('VERSION', version)
 
-    os.replace(new_filename, OUTPUT)
-    print(f"{OUTPUT} updated")
+    os.replace(new_filename, output_filename)
+    print(f"{output_filename} updated")
 
 
 if __name__ == "__main__":
