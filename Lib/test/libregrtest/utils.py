@@ -141,14 +141,30 @@ def print_warning(msg: str) -> None:
 orig_unraisablehook: Callable[..., None] | None = None
 
 
+def repository_path(filename: str) -> str:
+    """Path of a stdlib file relative to the repository.
+
+    Map the stdlib directory (Lib/ in a source checkout or an installed
+    lib/python3.X/) to Lib/. Return other paths unchanged.
+    """
+    stdlib_dir = os.path.dirname(os.__file__) + os.sep
+    if not filename.startswith(stdlib_dir):
+        return filename
+    return "Lib/" + filename.removeprefix(stdlib_dir).replace(os.sep, "/")
+
+
 def github_annotation(title: str, message: str,
-                      filename: str | None = None) -> str:
+                      filename: str | None) -> str:
     """Format a GitHub Actions error annotation.
 
     message is a traceback or a failure description. Only keep the exception
     which ends the traceback: the job log has the full traceback. Locate the
-    annotation at the last frame of the traceback in filename, if any.
+    annotation in filename, the test file, at the last frame of the traceback
+    in this file, if any.
     """
+    if not filename:
+        raise ValueError(f"missing test file of annotation {title!r}")
+
     def escape(text: str) -> str:
         return (text.replace("%", "%25").replace("\r", "%0D")
                 .replace("\n", "%0A"))
@@ -157,18 +173,15 @@ def github_annotation(title: str, message: str,
         return escape(text).replace(":", "%3A").replace(",", "%2C")
 
     message = decolor(message)
-    props: dict[str, str] = {}
-    # Map the stdlib directory (Lib/ in a source checkout or an installed
-    # lib/python3.X/) to Lib/ in the repository
-    stdlib_dir = os.path.dirname(os.__file__) + os.sep
-    if filename and filename.startswith(stdlib_dir):
-        lines = re.findall(rf'^  File "{re.escape(filename)}", line (\d+)',
-                           message, re.MULTILINE)
-        if lines:
-            relpath = filename.removeprefix(stdlib_dir).replace(os.sep, "/")
-            props |= {"file": f"Lib/{relpath}", "line": lines[-1]}
+    props = {"file": repository_path(filename)}
+    # Line of the last traceback frame ('  File "filename", line 123') or
+    # failed doctest example (same, but not indented) in filename
+    if lines := re.findall(rf'^ *File "{re.escape(filename)}", line (\d+)',
+                           message, re.MULTILINE):
+        props["line"] = lines[-1]
     props["title"] = title
-    # Strip the frames: each "  File" line and its indented source lines
+    # Only keep the exception: strip the traceback frames, each one a
+    # '  File' line followed by its indented source lines
     message = re.split(r'^  File .*\n(?:    .*\n)*', message,
                        flags=re.MULTILINE)[-1].strip()
     props_text = ",".join(f"{key}={escape_property(value)}"

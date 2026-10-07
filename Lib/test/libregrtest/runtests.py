@@ -93,7 +93,7 @@ class RunTests:
     hunt_refleak: HuntRefleak | None
     test_dir: StrPath | None
     use_junit: bool
-    # Print a GitHub Actions error annotation before each failure report
+    # Annotate test failures in the GitHub Actions job log
     github_annotations: bool
     coverage: bool
     memory_limit: str | None

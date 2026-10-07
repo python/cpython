@@ -856,6 +856,8 @@ class BaseTestCase(unittest.TestCase):
         if env is None:
             env = dict(os.environ)
             env.pop('SOURCE_DATE_EPOCH', None)
+            # Don't annotate the GitHub Actions job of the test suite
+            env.pop('GITHUB_STEP_SUMMARY', None)
 
         proc = subprocess.run(args,
                               text=True,
@@ -1638,6 +1640,177 @@ class ArgsTestCase(BaseTestCase):
                                               match=None,
                                               success=True),
                                   stats=2)
+
+    def create_marked_test(self, name, code):
+        # Create a test: return its name and the line number of each of its
+        # "# marker" comments
+        code = textwrap.dedent(code)
+        name = self.create_test(name, code)
+        markers = {match[1]: str(lineno)
+                   for lineno, text in enumerate(code.splitlines(), 1)
+                   if (match := re.search(r'# (\w+)$', text))}
+        return name, markers
+
+    def run_tests_github(self, *args, exitcode=0):
+        # Run tests as in GitHub Actions: return the output and the job
+        # summary (None if regrtest didn't write it)
+        filename = os.path.join(self.tmptestdir, 'github_step_summary.md')
+        self.addCleanup(os_helper.unlink, filename)
+        os_helper.unlink(filename)
+        env = dict(os.environ)
+        env.pop('SOURCE_DATE_EPOCH', None)
+        env['GITHUB_STEP_SUMMARY'] = filename
+        output = self.run_tests(*args, env=env, exitcode=exitcode)
+        try:
+            with open(filename, encoding='utf-8') as fp:
+                return output, fp.read()
+        except FileNotFoundError:
+            return output, None
+
+    @staticmethod
+    def parse_github_annotations(output):
+        # Return the (title, file, line) of each "::error" annotation
+        def unescape(text):
+            return (text.replace('%3A', ':').replace('%2C', ',')
+                    .replace('%0A', '\n').replace('%0D', '\r')
+                    .replace('%25', '%'))
+
+        annotations = []
+        for match in re.finditer(r'^::error (.*?)::', output, re.MULTILINE):
+            props = dict(prop.split('=', 1) for prop in match[1].split(','))
+            props = {key: unescape(value) for key, value in props.items()}
+            annotations.append((props['title'], props['file'],
+                                props.get('line')))
+        return annotations
+
+    def test_github_annotations(self):
+        # Every test failure is annotated once in the GitHub Actions job log,
+        # located in the test file, at the failing line of the test file if
+        # there is a traceback. The job summary lists the failures.
+        cases, lines = self.create_marked_test('github_cases', """
+            import doctest, json, sys, unittest
+
+            def load_tests(loader, tests, pattern):
+                tests.addTests(doctest.DocTestSuite(sys.modules[__name__]))
+                return tests
+
+            def doctest_fail():
+                '''
+                >>> 1 + 1  # doctest
+                3
+                '''
+
+            class Tests(unittest.TestCase):
+                def test_error(self):
+                    json.loads("{")  # error
+
+                def test_fail(self):
+                    self.assertEqual(1, 2)  # fail
+
+                def test_subtest(self):
+                    with self.subTest(x=1.5):
+                        self.fail("subtest")  # subtest
+
+            class SetUpClassTests(unittest.TestCase):
+                @classmethod
+                def setUpClass(cls):
+                    raise ValueError("setUpClass")  # setUpClass
+
+                def test_never(self):
+                    pass
+        """)
+        setup_module, setup_module_lines = self.create_marked_test(
+            'github_setup_module', """
+            import unittest
+
+            def setUpModule():
+                raise ValueError("setUpModule")  # setUpModule
+
+            class Tests(unittest.TestCase):
+                def test_never(self):
+                    pass
+        """)
+        env_changed, _ = self.create_marked_test('github_env_changed', """
+            import os, unittest
+
+            class Tests(unittest.TestCase):
+                def test_env_changed(self):
+                    os.environ["REGRTEST_GITHUB_ENV_CHANGED"] = "1"
+        """)
+        crash, _ = self.create_marked_test('github_crash', """
+            import os, unittest
+
+            class Tests(unittest.TestCase):
+                def test_crash(self):
+                    os._exit(1)
+        """)
+
+        def path(name):
+            return os.path.join(self.tmptestdir, f'{name}.py')
+
+        # Test cases: (title, file, line)
+        test_cases = [
+            (f'test_error ({cases}.Tests.test_error)',
+             path(cases), lines['error']),
+            (f'test_fail ({cases}.Tests.test_fail)',
+             path(cases), lines['fail']),
+            (f'test_subtest ({cases}.Tests.test_subtest) (x=1.5)',
+             path(cases), lines['subtest']),
+            # Doctest examples are subtests: "[0]" is the example index
+            (f'doctest_fail ({cases}) [0]',
+             path(cases), lines['doctest']),
+            (f'setUpClass ({cases}.SetUpClassTests)',
+             path(cases), lines['setUpClass']),
+            (f'setUpModule ({setup_module})',
+             path(setup_module), setup_module_lines['setUpModule']),
+        ]
+        # Test files: heading in the job summary
+        test_files = {
+            cases: f'### {cases} failed (2 errors, 3 failures)',
+            setup_module: f'### {setup_module} failed (1 error)',
+            env_changed: f'### {env_changed} failed (env changed)',
+            crash: f'### {crash} worker non-zero exit code',
+        }
+
+        for args in (['-j2', '-W'], ['-j2', '--rerun'], ['-j0', '-W']):
+            tests = list(test_files)
+            if '-j0' in args:
+                # A crash kills the main process
+                tests.remove(crash)
+            with self.subTest(args=args):
+                output, summary = self.run_tests_github(
+                    '--fail-env-changed', *args, *tests,
+                    exitcode=EXITCODE_BAD_TEST)
+
+                self.assertCountEqual(
+                    self.parse_github_annotations(output),
+                    [*test_cases,
+                     *((name, path(name), None)
+                       for name in (env_changed, crash) if name in tests)],
+                    output)
+
+                # The job summary lists the failed tests in completion order
+                summary_lines = summary.splitlines()
+                self.assertEqual(summary_lines[0],
+                                 f'## FAILURE: {len(tests)} test files and '
+                                 f'{len(test_cases)} test cases failed')
+                self.assertCountEqual(
+                    [line for line in summary_lines
+                     if line.startswith('### ')],
+                    [test_files[name] for name in tests])
+                self.assertIn('- os.environ was modified', summary_lines)
+                self.assertCountEqual(
+                    re.findall(r'<summary>(.*)</summary>', summary),
+                    [title for title, _, _ in test_cases])
+                self.assertEqual(summary.count('```pytb\n'),
+                                 len(test_cases))
+
+    def test_github_summary_success(self):
+        # No annotation and no job summary when all tests pass
+        testname = self.create_test()
+        output, summary = self.run_tests_github(testname)
+        self.assertNotIn('::error', output)
+        self.assertIsNone(summary)
 
     def test_rerun_fail(self):
         # FAILURE then FAILURE

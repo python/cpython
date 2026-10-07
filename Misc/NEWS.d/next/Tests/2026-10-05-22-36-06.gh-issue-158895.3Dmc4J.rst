@@ -1,2 +1,3 @@
-Individual test failures and an overall summary is now written by
-:mod:`test.regrtest` to the Github Action Summary.
+When run in GitHub Actions, :mod:`test.regrtest` now annotates each test
+failure in the job log and writes a summary of the failures to the job
+summary.

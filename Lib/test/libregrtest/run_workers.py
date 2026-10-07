@@ -614,7 +614,7 @@ class RunWorkers:
         self.results.accumulate_result(result, self.runtests)
         self.display_result(mp_result)
         if self.runtests.github_annotations:
-            result.print_github_crash_annotation(self.runtests.fail_env_changed)
+            result.print_github_annotation(self.runtests)
 
         # Display worker stdout
         if not self.runtests.output_on_failure:

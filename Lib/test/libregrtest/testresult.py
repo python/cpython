@@ -4,6 +4,7 @@
 
 import functools
 import io
+import re
 import sys
 import time
 import traceback
@@ -132,18 +133,24 @@ class RegressionTestResult(unittest.TextTestResult):
         super().addUnexpectedSuccess(test)
 
     def printErrorList(self, flavour, errors):
-        if not self.GITHUB_ANNOTATIONS:
-            super().printErrorList(flavour, errors)
-            return
         for test, err in errors:
-            # Precede each failure report with a GitHub Actions annotation,
-            # so that the annotation links to the report in the job log
-            # Locate the annotation in the test file
-            case = getattr(test, "test_case", test)  # subTest()
-            module = sys.modules.get(type(case).__module__)
-            self.stream.writeln(github_annotation(
-                str(test), err, getattr(module, "__file__", None)))
+            if self.GITHUB_ANNOTATIONS:
+                # Write the annotation just before the failure report, so
+                # that it links to the report in the job log
+                self.stream.writeln(github_annotation(str(test), err,
+                                                      self._test_file(test)))
             super().printErrorList(flavour, [(test, err)])
+
+    @staticmethod
+    def _test_file(test):
+        # Test id: "module.Class.method", "module.function" (doctest), or
+        # "setUpClass (module.Class)" (error in a class or module fixture)
+        name = getattr(test, 'test_case', test).id()  # subTest()
+        if match := re.fullmatch(r'\w+ \((.+)\)', name):
+            name = match[1]
+        while name and name not in sys.modules:
+            name = name.rpartition('.')[0]
+        return getattr(sys.modules.get(name), '__file__', None)
 
     def get_xml_element(self):
         if not self.USE_XML:
@@ -156,16 +163,11 @@ class RegressionTestResult(unittest.TextTestResult):
 
 class QuietRegressionTestRunner:
     def __init__(self, stream, buffer=False):
-        # Wrap the stream as TextTestRunner does, for printErrors()
-        stream = unittest.runner._WritelnDecorator(stream)
         self.result = RegressionTestResult(stream, None, 0)
         self.result.buffer = buffer
 
     def run(self, test):
         test(self.result)
-        if self.result.GITHUB_ANNOTATIONS:
-            # Report annotated failures, as in verbose mode
-            self.result.printErrors()
         return self.result
 
 def get_test_runner_class(verbosity, buffer=False):
