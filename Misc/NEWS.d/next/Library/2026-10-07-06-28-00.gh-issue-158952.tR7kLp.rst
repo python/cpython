@@ -1,0 +1,3 @@
+The pure Python implementation of :meth:`io.BufferedIOBase.readinto` and
+:meth:`~io.BufferedIOBase.readinto1` now rejects read-only buffers before
+reading input, without changing the stream position.
