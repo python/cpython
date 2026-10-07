@@ -1772,25 +1772,44 @@ class ArgsTestCase(BaseTestCase):
             crash: f'### {crash} worker non-zero exit code',
         }
 
-        # Only failures of the last run are annotated: with --rerun and -W,
-        # failures of the first run are reported, but not annotated
-        for args in (['-j2', '-W'], ['-j2', '--rerun'],
-                     ['-j2', '-W', '--rerun'], ['-j0', '-W']):
-            tests = list(test_files)
-            if '-j0' in args:
-                # A crash kills the main process
-                tests.remove(crash)
-            with self.subTest(args=args):
+        # Representative command lines of the CI jobs
+        command_lines = {
+            # "make ci", Windows, macOS, installed Python; the JIT jobs use
+            # the equivalent "-j0 --verbose2 --verbose3". Only failures of
+            # the re-run are annotated, not the reported first failures.
+            'fast-ci': ['--fast-ci', '-j2'],
+            # Sanitizers and Hypothesis: env changed is not a failure
+            'parallel': ['-j2', '-W'],
+            # iOS and WASI run tests in the main process: a crash kills it
+            'single-process': ['--fast-ci', '--single-process'],
+            # Profile task of PGO and BOLT builds: no annotations
+            'pgo': ['--pgo'],
+        }
+        for name, args in command_lines.items():
+            with self.subTest(name):
+                tests = list(test_files)
+                if '--single-process' in args or '--pgo' in args:
+                    tests.remove(crash)
                 output, summary = self.run_tests_github(
-                    '--fail-env-changed', *args, *tests,
-                    exitcode=EXITCODE_BAD_TEST)
+                    *args, *tests, exitcode=EXITCODE_BAD_TEST)
 
-                self.assertCountEqual(
-                    self.parse_github_annotations(output),
-                    [*test_cases,
-                     *((name, path(name), None)
-                       for name in (env_changed, crash) if name in tests)],
-                    output)
+                annotations = []
+                if '--pgo' not in args:
+                    annotations += test_cases
+                    if '--fast-ci' in args:
+                        annotations.append((env_changed, path(env_changed),
+                                            None))
+                    if crash in tests:
+                        annotations.append((crash, path(crash), None))
+                self.assertCountEqual(self.parse_github_annotations(output),
+                                      annotations, output)
+                # Each test case is annotated right after its failure report
+                for title, _, _ in annotations[:len(test_cases)]:
+                    title = re.escape(title)
+                    self.assertRegex(
+                        output,
+                        rf'(?m)^(?:ERROR|FAIL): {title}\n'
+                        rf'(?:(?!={{70}}$).*\n)*?::error .*title={title}::')
 
                 # The job summary lists the failed tests in completion order
                 summary_lines = summary.splitlines()
