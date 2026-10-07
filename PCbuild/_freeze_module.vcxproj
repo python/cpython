@@ -486,12 +486,12 @@
       <GitTag Condition="Exists('$(IntDir)gittag.txt')">$([System.IO.File]::ReadAllText('$(IntDir)gittag.txt').Trim())</GitTag>
       <Compiler Condition="Exists('$(IntDir)compiler.txt')">$([System.IO.File]::ReadAllText('$(IntDir)compiler.txt').Trim())</Compiler>
 
-      <GilEnabled Condition="$(DisableGil) == 'true'">0</GilEnabled>
-      <GilEnabled Condition="$(DisableGil) != 'true'">1</GilEnabled>
+      <FreeThreading Condition="$(DisableGil) == 'true'">1</FreeThreading>
+      <FreeThreading Condition="$(DisableGil) != 'true'">0</FreeThreading>
     </PropertyGroup>
 
     <Message Text="Run generate_getbuildinfo.py" Importance="high" />
-    <Exec Command='$(PythonForBuild) Tools/build/generate_getbuildinfo.py --platform=win32 --git-version="$(GitVersion)" --git-tag="$(GitTag)" --git-branch="$(GitBranch)" --compiler="$(Compiler)" --gil-enabled=$(GilEnabled)'
+    <Exec Command='$(PythonForBuild) Tools/build/generate_getbuildinfo.py --platform=win32 --git-version="$(GitVersion)" --git-tag="$(GitTag)" --git-branch="$(GitBranch)" --compiler="$(Compiler)" --free-threading=$(FreeThreading)'
           WorkingDirectory="$(PySourcePath)" />
   </Target>
   <Target Name="_RebuildFrozen" AfterTargets="AfterBuild" Condition="$(Configuration) != 'PGUpdate'">

@@ -7,6 +7,7 @@ import re
 import shlex
 import subprocess
 import sys
+import sysconfig.__main__
 import time
 
 SRC_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
@@ -15,17 +16,6 @@ SCRIPT_FULLNAME = f'Tools/build/{SCRIPT_NAME}'
 
 # Get PY_VERSION from Include/patchlevel.h
 PY_VERSION_REGEX = re.compile(r'^#define PY_VERSION +"(.*)"$', re.MULTILINE)
-
-def create_makefile_regex(name):
-    return re.compile(fr'^{name}[ \t]*=[ \t]*(.*)$', re.MULTILINE)
-
-# Get HOSTRUNNER and CC from Makefile
-HOSTRUNNER_REGEX = create_makefile_regex('HOSTRUNNER')
-CC_REGEX = create_makefile_regex('CC')
-
-# Py_GIL_DISABLED from pyconfig.h
-Py_GIL_DISABLED_DEF_REGEX = re.compile(r'^#define Py_GIL_DISABLED 1$', re.MULTILINE)
-Py_GIL_DISABLED_UNDEF_REGEX = re.compile(r'^/\* #undef Py_GIL_DISABLED \*/$', re.MULTILINE)
 
 
 def exit_error(msg):
@@ -48,32 +38,18 @@ def get_py_version():
     return parse_file('PY_VERSION ', patchlevel_h, PY_VERSION_REGEX)
 
 
-def get_host_runner():
+def get_makefile_vars():
     # Look in the current working directory
     makefile = 'Makefile'
-    HOSTRUNNER = parse_file('HOSTRUNNER', makefile, HOSTRUNNER_REGEX)
-    return HOSTRUNNER.rstrip()
-
-
-def get_makefile_cc():
-    # Look in the current working directory
-    makefile = 'Makefile'
-    CC = parse_file('CC', makefile, CC_REGEX)
-    return CC.rstrip()
+    return sysconfig.__main__._parse_makefile(makefile)
 
 
 def get_gil_disable():
     # Look in the current working directory
     pyconfig_h = 'pyconfig.h'
-    with open(pyconfig_h, encoding='utf8') as fp:
-        code = fp.read()
-
-    if Py_GIL_DISABLED_DEF_REGEX.search(code):
-        return True
-    if Py_GIL_DISABLED_UNDEF_REGEX.search(code):
-        return False
-
-    exit_error(f"ERROR: Unable to locate Py_GIL_DISABLED in {pyconfig_h}")
+    with open(pyconfig_h, encoding="utf-8") as fp:
+        config_vars = sysconfig.parse_config_h(fp)
+    return bool(config_vars['Py_GIL_DISABLED'])
 
 
 def get_date_time():
@@ -91,7 +67,9 @@ def get_date_time():
     return (build_date, build_time)
 
 
-def get_build_info(git_tag, git_branch, git_version, build_date, build_time):
+def get_build_info(git_tag, git_branch, git_version):
+    build_date, build_time = get_date_time()
+
     if git_tag and git_tag != "undefined":
         git_id = git_tag
     else:
@@ -113,7 +91,7 @@ def parse_args():
     parser.add_argument('--git-tag', type=str, required=True)
     parser.add_argument('--git-branch', type=str, required=True)
     parser.add_argument('--compiler', type=str)
-    parser.add_argument('--gil-enabled', type=int)
+    parser.add_argument('--free-threading', type=int)
     return parser.parse_args()
 
 
@@ -143,9 +121,11 @@ def run_command(cmd, *, check=True):
 
 
 def get_compiler():
+    makefile_vars = get_makefile_vars()
+
     # Run _getcompiler program
     getcompiler = os.path.join('Programs', '_getcompiler')
-    HOSTRUNNER = get_host_runner()
+    HOSTRUNNER = makefile_vars.get('HOSTRUNNER')
     if HOSTRUNNER:
         # Cross-compilation
         runner = shlex.split(HOSTRUNNER)[0]
@@ -157,7 +137,10 @@ def get_compiler():
         return compiler
 
     # Running _getcompiler failed, run directly the compiler (--version)
-    cc = get_makefile_cc()
+    CC = makefile_vars.get('CC')
+    if not CC:
+        exit_error(f"ERROR: Unable to locate CC in Makefile")
+
     cc = shlex.split(cc)
     output = run_command([*cc, '--version'])
     output = output.splitlines()[0]
@@ -175,7 +158,7 @@ def main():
     git_tag = args.git_tag
     git_branch = args.git_branch
     compiler = args.compiler
-    gil_enabled = args.gil_enabled
+    free_threading = args.free_threading
 
     if not output_filename:
         # Write to the current directory
@@ -186,17 +169,15 @@ def main():
     if not compiler:
         compiler = get_compiler()
 
-    build_date, build_time = get_date_time()
-    build_info, git_id = get_build_info(git_tag, git_branch, git_version, build_date, build_time)
+    build_info, git_id = get_build_info(git_tag, git_branch, git_version)
 
     # Get PY_VERSION macro from Include/patchlevel.h
     PY_VERSION = get_py_version()
-    if gil_enabled is None:
+    if free_threading is None:
         # Get Py_GIL_DISABLED macro from pyconfig.h (defined or undefined)
-        Py_GIL_DISABLED = get_gil_disable()
-        gil_enabled = not Py_GIL_DISABLED
+        free_threading = get_gil_disable()
 
-    if not gil_enabled:
+    if free_threading:
         version = f"{PY_VERSION} free-threading build ({build_info}) {compiler}"
     else:
         version = f"{PY_VERSION} ({build_info}) {compiler}"
