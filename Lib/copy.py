@@ -48,12 +48,12 @@ __getstate__() and __setstate__().  See the documentation for module
 "pickle" for information on these methods.
 """
 
-import types
 import weakref
 from copyreg import dispatch_table
 
 class Error(Exception):
-    pass
+    def dummy(self):  # for define MethodType
+        pass
 error = Error   # backward compatibility
 
 try:
@@ -106,13 +106,16 @@ _copy_dispatch = d = {}
 
 def _copy_immutable(x):
     return x
+
+CodeType = type(compile("pass", "<string>", "exec"))
+BuiltinFunctionType = type(eval)
+FunctionType = type(_copy_immutable)
+MethodType = type(Error().dummy)
+
 for t in (type(None), int, float, bool, complex, str, tuple,
           bytes, frozenset, type, range, slice, property,
-          types.BuiltinFunctionType, type(Ellipsis), type(NotImplemented),
-          types.FunctionType, weakref.ref):
-    d[t] = _copy_immutable
-t = getattr(types, "CodeType", None)
-if t is not None:
+          BuiltinFunctionType, type(Ellipsis), type(NotImplemented),
+          FunctionType, CodeType, weakref.ref):
     d[t] = _copy_immutable
 
 d[list] = list.copy
@@ -190,11 +193,11 @@ d[bool] = _deepcopy_atomic
 d[complex] = _deepcopy_atomic
 d[bytes] = _deepcopy_atomic
 d[str] = _deepcopy_atomic
-d[types.CodeType] = _deepcopy_atomic
+d[CodeType] = _deepcopy_atomic
 d[type] = _deepcopy_atomic
 d[range] = _deepcopy_atomic
-d[types.BuiltinFunctionType] = _deepcopy_atomic
-d[types.FunctionType] = _deepcopy_atomic
+d[BuiltinFunctionType] = _deepcopy_atomic
+d[FunctionType] = _deepcopy_atomic
 d[weakref.ref] = _deepcopy_atomic
 d[property] = _deepcopy_atomic
 
@@ -236,7 +239,7 @@ if PyStringMap is not None:
 
 def _deepcopy_method(x, memo): # Copy instance methods
     return type(x)(x.__func__, deepcopy(x.__self__, memo))
-d[types.MethodType] = _deepcopy_method
+d[MethodType] = _deepcopy_method
 
 del d
 
@@ -301,4 +304,4 @@ def _reconstruct(x, memo, func, args,
                 y[key] = value
     return y
 
-del types, weakref, PyStringMap
+del weakref, PyStringMap
