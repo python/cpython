@@ -23,7 +23,7 @@ extern int _Py_IsLocaleCoercionTarget(const char *ctype_loc);
 
 /* Various one-time initializers */
 
-extern void _Py_InitVersion(void);
+extern PyStatus _Py_GetVersion_Init(void);
 extern PyStatus _PyFaulthandler_Init(int enable);
 extern PyObject * _PyBuiltin_Init(PyInterpreterState *interp);
 extern int _PyBuiltin_InitPythonFunctions(PyObject *dict);
@@ -43,6 +43,7 @@ extern PyStatus _PyDateTime_InitTypes(PyInterpreterState *interp);
 
 /* Various internal finalizers */
 
+extern void _Py_GetVersion_Fini(void);
 extern int _PySignal_Init(int install_signal_handlers);
 extern void _PySignal_Fini(void);
 

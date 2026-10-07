@@ -1,0 +1,1 @@
+Speed up :meth:`list.insert` and item deletion via :keyword:`del` in free-threaded builds by using :manpage:`memmove(3)`.

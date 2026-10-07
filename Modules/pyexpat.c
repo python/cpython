@@ -1079,7 +1079,6 @@ pyexpat_xmlparser_GetSpecifiedAttributeCount_impl(xmlparseobject *self)
 }
 
 /*[clinic input]
-@permit_long_summary
 pyexpat.xmlparser.GetInputContext
 
 Return the input which generated the current event as bytes.
@@ -1093,7 +1092,7 @@ available.
 
 static PyObject *
 pyexpat_xmlparser_GetInputContext_impl(xmlparseobject *self)
-/*[clinic end generated code: output=a88026d683fc22cc input=13840373d8320ab6]*/
+/*[clinic end generated code: output=a88026d683fc22cc input=2d605aaa9edbb415]*/
 {
     if (self->in_callback) {
         int offset, size;
@@ -2436,6 +2435,78 @@ pyexpat_capsule_destructor(PyObject *capsule)
 }
 
 
+PyDoc_STRVAR(version_info__doc__,
+"pyexpat.version_info\n\
+\n\
+Expat version information as a named tuple.");
+
+static PyStructSequence_Field version_info_fields[] = {
+    {"major", "Major release number"},
+    {"minor", "Minor release number"},
+    {"micro", "Micro release number"},
+    {0}
+};
+
+static PyStructSequence_Desc version_info_desc = {
+    "pyexpat.version_info",     /* name */
+    version_info__doc__,        /* doc */
+    version_info_fields,        /* fields */
+    3
+};
+
+static PyObject *
+make_version_info(PyTypeObject *type, int major, int minor, int micro)
+{
+    PyObject *version;
+    int pos = 0;
+
+    version = PyStructSequence_New(type);
+    if (version == NULL) {
+        return NULL;
+    }
+
+#define SetItem(VALUE) \
+    PyStructSequence_SET_ITEM(version, pos++, VALUE); \
+    if (PyErr_Occurred()) { \
+        Py_DECREF(version); \
+        return NULL; \
+    }
+
+    SetItem(PyLong_FromLong(major))
+    SetItem(PyLong_FromLong(minor))
+    SetItem(PyLong_FromLong(micro))
+#undef SetItem
+
+    return version;
+}
+
+static int
+add_version_info(PyObject *mod)
+{
+    PyTypeObject *version_type;
+    version_type = PyStructSequence_NewType(&version_info_desc);
+    if (version_type == NULL) {
+        return -1;
+    }
+    if (PyModule_Add(mod, "VERSION_INFO",
+            make_version_info(version_type, XML_MAJOR_VERSION,
+                              XML_MINOR_VERSION, XML_MICRO_VERSION)) < 0)
+    {
+        Py_DECREF(version_type);
+        return -1;
+    }
+    XML_Expat_Version info = XML_ExpatVersionInfo();
+    if (PyModule_Add(mod, "version_info",
+            make_version_info(version_type, info.major,
+                              info.minor, info.micro)) < 0)
+    {
+        Py_DECREF(version_type);
+        return -1;
+    }
+    Py_DECREF(version_type);
+    return 0;
+}
+
 static int
 pyexpat_exec(PyObject *mod)
 {
@@ -2479,15 +2550,8 @@ pyexpat_exec(PyObject *mod)
                                    XML_ExpatVersion()) < 0) {
         return -1;
     }
-    {
-        XML_Expat_Version info = XML_ExpatVersionInfo();
-        PyObject *versionInfo = Py_BuildValue("(iii)",
-                                              info.major,
-                                              info.minor,
-                                              info.micro);
-        if (PyModule_Add(mod, "version_info", versionInfo) < 0) {
-            return -1;
-        }
+    if (add_version_info(mod) < 0) {
+        return -1;
     }
     /* XXX When Expat supports some way of figuring out how it was
        compiled, this should check and set native_encoding

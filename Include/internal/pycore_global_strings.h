@@ -54,6 +54,9 @@ struct _Py_global_strings {
         STRUCT_FOR_STR(native, "<native>")
         STRUCT_FOR_STR(str_replace_inf, "1e309")
         STRUCT_FOR_STR(type_params, ".type_params")
+        STRUCT_FOR_STR(unknown_file, "<unknown file>")
+        STRUCT_FOR_STR(unknown_function, "<unknown function>")
+        STRUCT_FOR_STR(unreadable_frame, "<unreadable frame>")
         STRUCT_FOR_STR(utf_8, "utf-8")
     } literals;
 
@@ -366,6 +369,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(canonical)
         STRUCT_FOR_ID(capath)
         STRUCT_FOR_ID(capitals)
+        STRUCT_FOR_ID(capture_features)
         STRUCT_FOR_ID(category)
         STRUCT_FOR_ID(cb_type)
         STRUCT_FOR_ID(certfile)
@@ -499,7 +503,9 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(filter)
         STRUCT_FOR_ID(filters)
         STRUCT_FOR_ID(final)
+        STRUCT_FOR_ID(finalizer)
         STRUCT_FOR_ID(find_class)
+        STRUCT_FOR_ID(firstiter)
         STRUCT_FOR_ID(fix_imports)
         STRUCT_FOR_ID(flags)
         STRUCT_FOR_ID(flush)

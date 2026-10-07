@@ -1,0 +1,2 @@
+Fix :c:func:`!_PyUnicodeWriter_WriteLatin1String` when the writer buffer
+kind is UCS-2 or UCS-4. Patch by Victor Stinner.

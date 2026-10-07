@@ -45,6 +45,9 @@ _PyStaticObjects_CheckAll(PyInterpreterState *interp) {
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_STR(native), "<native>", 8);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_STR(str_replace_inf), "1e309", 5);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_STR(type_params), ".type_params", 12);
+    _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_STR(unknown_file), "<unknown file>", 14);
+    _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_STR(unknown_function), "<unknown function>", 18);
+    _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_STR(unreadable_frame), "<unreadable frame>", 18);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_STR(utf_8), "utf-8", 5);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(AGEN_CLOSED), "AGEN_CLOSED", 11);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(AGEN_CREATED), "AGEN_CREATED", 12);
@@ -354,6 +357,7 @@ _PyStaticObjects_CheckAll(PyInterpreterState *interp) {
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(canonical), "canonical", 9);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(capath), "capath", 6);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(capitals), "capitals", 8);
+    _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(capture_features), "capture_features", 16);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(category), "category", 8);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(cb_type), "cb_type", 7);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(certfile), "certfile", 8);
@@ -487,7 +491,9 @@ _PyStaticObjects_CheckAll(PyInterpreterState *interp) {
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(filter), "filter", 6);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(filters), "filters", 7);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(final), "final", 5);
+    _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(finalizer), "finalizer", 9);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(find_class), "find_class", 10);
+    _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(firstiter), "firstiter", 9);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(fix_imports), "fix_imports", 11);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(flags), "flags", 5);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(flush), "flush", 5);
