@@ -377,10 +377,15 @@ class TestConsole(TestCase):
         reader.prepare()
         reader.refresh()
 
-        console._sigcont_handler(signal.SIGCONT, None)
-        reader.handle1(block=False)
+        _os_write.reset_mock()
 
-        self.assertEqual(reader.screen, [">>> "])
+        console._sigcont_handler(signal.SIGCONT, None)
+        self.assertTrue(reader.handle1(block=False))
+
+        self.assertIn(
+            b">>> ",
+            b"".join(c.args[1] for c in _os_write.mock_calls),
+        )
         console.restore()
 
     def test_getheightwidth_with_invalid_environ(self, _os_write):
