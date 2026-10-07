@@ -437,8 +437,8 @@ Release build                        ``"pymalloc"``           ``malloc``        
 Debug build                          ``"pymalloc_debug"``     ``malloc`` + debug    ``pymalloc`` + debug    ``pymalloc`` + debug
 Release build, without pymalloc      ``"malloc"``             ``malloc``            ``malloc``              ``malloc``
 Debug build, without pymalloc        ``"malloc_debug"``       ``malloc`` + debug    ``malloc`` + debug      ``malloc`` + debug
-Release build, with sanitizer        ``"malloc"``             ``malloc``            ``malloc``              ``malloc``
-Debug build, with sanitizer          ``"malloc_debug"``       ``malloc`` + debug    ``malloc`` + debug      ``malloc`` + debug
+Release build, with ASan or MSan     ``"malloc"``             ``malloc``            ``malloc``              ``malloc``
+Debug build, with ASan or MSan       ``"malloc_debug"``       ``malloc`` + debug    ``malloc`` + debug      ``malloc`` + debug
 Free-threaded build                  ``"mimalloc"``           ``mimalloc``          ``mimalloc``            ``mimalloc``
 Free-threaded debug build            ``"mimalloc_debug"``     ``mimalloc`` + debug  ``mimalloc`` + debug    ``mimalloc`` + debug
 ===================================  =======================  ====================  ======================  ======================
@@ -453,9 +453,10 @@ Legend:
 * "+ debug": with :ref:`debug hooks on the Python memory allocators
   <pymem-debug-hooks>`.
 * "Debug build": :ref:`Python build in debug mode <debug-build>`.
-* "with sanitizer": build with the :option:`--with-address-sanitizer`,
-  :option:`--with-memory-sanitizer`, and/or
-  :option:`--with-hwaddress-sanitizer` option.
+* "with ASan or MSan": sanitizer build as configured using the
+  :option:`--with-address-sanitizer`,
+  :option:`--with-hwaddress-sanitizer`, and/or
+  :option:`--with-memory-sanitizer` option.
 
 .. _customize-memory-allocators:
 
