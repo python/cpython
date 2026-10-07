@@ -112,7 +112,6 @@ def main():
         write_macro('TIME', TIME)
         write_macro('COMPILER', COMPILER)
         print(file=fp)
-        write_macro('PY_VERSION', PY_VERSION)
         write_macro('PLATFORM', PLATFORM)
         print(file=fp)
         write_macro('GITBRANCH', GITBRANCH)
