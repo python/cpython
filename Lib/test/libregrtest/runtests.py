@@ -159,7 +159,7 @@ class RunTests:
         if '-u' not in python_opts:
             cmd.append('-u')  # Unbuffered stdout and stderr
         if self.coverage:
-            cmd.append("-Xpresite=test.cov")
+            cmd.append("-Xpresite=test.cov:enable")
         return cmd
 
     def bisect_cmd_args(self) -> list[str]:

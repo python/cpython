@@ -38,38 +38,8 @@ class DummyEditwin:
         self.text.undo_block_stop = mock.Mock()
 
 
-class ZZDummyTest(unittest.TestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        requires('gui')
-        root = cls.root = Tk()
-        root.withdraw()
-        text = cls.text = Text(cls.root)
-        cls.editor = DummyEditwin(root, text)
-        zzdummy.idleConf.userCfg = testcfg
-
-    @classmethod
-    def tearDownClass(cls):
-        zzdummy.idleConf.userCfg = usercfg
-        del cls.editor, cls.text
-        cls.root.update_idletasks()
-        for id in cls.root.tk.call('after', 'info'):
-            cls.root.after_cancel(id)  # Need for EditorWindow.
-        cls.root.destroy()
-        del cls.root
-
-    def setUp(self):
-        text = self.text
-        text.insert('1.0', code_sample)
-        text.undo_block_start.reset_mock()
-        text.undo_block_stop.reset_mock()
-        zz = self.zz = zzdummy.ZzDummy(self.editor)
-        zzdummy.ZzDummy.ztext = '# ignore #'
-
-    def tearDown(self):
-        self.text.delete('1.0', 'end')
-        del self.zz
+class ZZDummyMixin:
+    """Shared tests for ZzDummy with default and user configs."""
 
     def checklines(self, text, value):
         # Verify that there are lines being checked.
@@ -89,7 +59,8 @@ class ZZDummyTest(unittest.TestCase):
 
     def test_reload(self):
         self.assertEqual(self.zz.ztext, '# ignore #')
-        testcfg['extensions'].SetOption('ZzDummy', 'z-text', 'spam')
+        zzdummy.idleConf.userCfg['extensions'].SetOption(
+            'ZzDummy', 'z-text', 'spam')
         zzdummy.ZzDummy.reload()
         self.assertEqual(self.zz.ztext, 'spam')
 
@@ -146,6 +117,76 @@ class ZZDummyTest(unittest.TestCase):
         zz.z_out_event()
 
         self.assertEqual(text.get('1.0', 'end-1c'), code_sample)
+
+
+class ZZDummyTest(ZZDummyMixin, unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        requires('gui')
+        root = cls.root = Tk()
+        root.withdraw()
+        text = cls.text = Text(cls.root)
+        cls.editor = DummyEditwin(root, text)
+        zzdummy.idleConf.userCfg = testcfg
+
+    @classmethod
+    def tearDownClass(cls):
+        zzdummy.idleConf.userCfg = usercfg
+        del cls.editor, cls.text
+        cls.root.update_idletasks()
+        for id in cls.root.tk.call('after', 'info'):
+            cls.root.after_cancel(id)  # Need for EditorWindow.
+        cls.root.destroy()
+        del cls.root
+
+    def setUp(self):
+        text = self.text
+        text.insert('1.0', code_sample)
+        text.undo_block_start.reset_mock()
+        text.undo_block_stop.reset_mock()
+        zz = self.zz = zzdummy.ZzDummy(self.editor)
+        zzdummy.ZzDummy.ztext = '# ignore #'
+
+    def tearDown(self):
+        self.text.delete('1.0', 'end')
+        del self.zz
+
+    def test_exists(self):
+        conf = zzdummy.idleConf
+        self.assertEqual(
+            conf.GetSectionList('user', 'extensions'), [])
+        self.assertEqual(
+            conf.GetSectionList('default', 'extensions'),
+            ['AutoComplete', 'CodeContext', 'FormatParagraph',
+             'ParenMatch', 'ZzDummy', 'ZzDummy_cfgBindings',
+             'ZzDummy_bindings'])
+        self.assertIn("ZzDummy", conf.GetExtensions(False))
+        self.assertNotIn("ZzDummy", conf.GetExtensions())
+        self.assertEqual(
+            conf.GetExtensionKeys("ZzDummy"), {})
+        self.assertEqual(
+            conf.GetExtensionBindings("ZzDummy"),
+            {'<<z-out>>': ['<Control-Shift-KeyRelease-Delete>']})
+
+    def test_exists_user(self):
+        conf = zzdummy.idleConf
+        conf.userCfg["extensions"].read_dict({
+            "ZzDummy": {'enable': 'True'}
+        })
+        self.assertEqual(
+            conf.GetSectionList('user', 'extensions'),
+            ["ZzDummy"])
+        self.assertIn("ZzDummy", conf.GetExtensions())
+        self.assertEqual(
+            conf.GetExtensionKeys("ZzDummy"),
+            {'<<z-in>>': ['<Control-Shift-KeyRelease-Insert>']})
+        self.assertEqual(
+            conf.GetExtensionBindings("ZzDummy"),
+            {'<<z-in>>': ['<Control-Shift-KeyRelease-Insert>'],
+             '<<z-out>>': ['<Control-Shift-KeyRelease-Delete>']})
+        # Restore
+        conf.userCfg["extensions"].remove_section("ZzDummy")
 
 
 if __name__ == '__main__':

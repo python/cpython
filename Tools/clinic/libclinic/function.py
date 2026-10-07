@@ -173,12 +173,12 @@ class Function:
 
         Pydoc adds indentation when displaying functions and methods.
         To keep the total width of within 80 characters, we use a
-        maximum of 76 characters for global functions and classes,
-        and 72 characters for methods.
+        maximum of 72 characters for global functions and classes,
+        and 68 characters for methods.
         """
         if self.cls is not None and not self.kind.new_or_init:
-            return 72
-        return 76
+            return 68
+        return 72
 
     def __repr__(self) -> str:
         return f'<clinic.Function {self.name!r}>'

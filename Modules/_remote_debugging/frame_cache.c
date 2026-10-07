@@ -30,6 +30,7 @@ frame_cache_cleanup(RemoteUnwinderObject *unwinder)
         return;
     }
     for (int i = 0; i < FRAME_CACHE_MAX_THREADS; i++) {
+        Py_CLEAR(unwinder->frame_cache[i].thread_id_obj);
         Py_CLEAR(unwinder->frame_cache[i].frame_list);
     }
     PyMem_Free(unwinder->frame_cache);
@@ -46,6 +47,21 @@ frame_cache_find(RemoteUnwinderObject *unwinder, uint64_t thread_id)
     for (int i = 0; i < FRAME_CACHE_MAX_THREADS; i++) {
         assert(i >= 0 && i < FRAME_CACHE_MAX_THREADS);
         if (unwinder->frame_cache[i].thread_id == thread_id) {
+            assert(unwinder->frame_cache[i].num_addrs <= FRAME_CACHE_MAX_FRAMES);
+            return &unwinder->frame_cache[i];
+        }
+    }
+    return NULL;
+}
+
+FrameCacheEntry *
+frame_cache_find_by_tstate(RemoteUnwinderObject *unwinder, uintptr_t tstate_addr)
+{
+    if (!unwinder->frame_cache || tstate_addr == 0) {
+        return NULL;
+    }
+    for (int i = 0; i < FRAME_CACHE_MAX_THREADS; i++) {
+        if (unwinder->frame_cache[i].thread_state_addr == tstate_addr) {
             assert(unwinder->frame_cache[i].num_addrs <= FRAME_CACHE_MAX_FRAMES);
             return &unwinder->frame_cache[i];
         }
@@ -127,8 +143,10 @@ frame_cache_invalidate_stale(RemoteUnwinderObject *unwinder, PyObject *result)
         }
         if (!found) {
             // Clear this entry
+            Py_CLEAR(unwinder->frame_cache[i].thread_id_obj);
             Py_CLEAR(unwinder->frame_cache[i].frame_list);
             unwinder->frame_cache[i].thread_id = 0;
+            unwinder->frame_cache[i].thread_state_addr = 0;
             unwinder->frame_cache[i].num_addrs = 0;
             STATS_INC(unwinder, stale_cache_invalidations);
         }
@@ -216,6 +234,7 @@ frame_cache_store(
     PyObject *frame_list,
     const uintptr_t *addrs,
     Py_ssize_t num_addrs,
+    uintptr_t thread_state_addr,
     uintptr_t base_frame_addr,
     uintptr_t last_frame_visited)
 {
@@ -257,6 +276,13 @@ frame_cache_store(
         return -1;
     }
     entry->thread_id = thread_id;
+    entry->thread_state_addr = thread_state_addr;
+    if (entry->thread_id_obj == NULL) {
+        entry->thread_id_obj = PyLong_FromUnsignedLongLong(thread_id);
+        if (entry->thread_id_obj == NULL) {
+            return -1;
+        }
+    }
     memcpy(entry->addrs, addrs, num_addrs * sizeof(uintptr_t));
     entry->num_addrs = num_addrs;
     assert(entry->num_addrs == num_addrs);

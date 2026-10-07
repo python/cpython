@@ -7,7 +7,7 @@ import re
 import shlex
 import sys
 from collections.abc import Callable
-from types import FunctionType, NoneType
+from types import FunctionType
 from typing import TYPE_CHECKING, Any, NamedTuple
 
 import libclinic
@@ -947,16 +947,17 @@ class DSLParser:
             name = f'var_keyword_{name}'
 
         value: object
+        has_c_default = 'c_default' in kwargs
         if not function_args.defaults:
-            if is_vararg or is_var_keyword:
-                value = NULL
-            else:
-                if self.parameter_state is ParamState.OPTIONAL:
-                    fail(f"Can't have a parameter without a default ({parameter_name!r}) "
-                          "after a parameter with a default!")
-                value = unspecified
+            value = unspecified
+            if (not is_vararg and not is_var_keyword
+                    and self.parameter_state is ParamState.OPTIONAL):
+                fail(f"Can't have a parameter without a default ({parameter_name!r}) "
+                     "after a parameter with a default!")
             if 'py_default' in kwargs:
                 fail("You can't specify py_default without specifying a default value!")
+            if has_c_default:
+                fail("You can't specify c_default without specifying a default value!")
         else:
             expr = function_args.defaults[0]
             default = ast_input[expr.col_offset: expr.end_col_offset].strip()
@@ -965,7 +966,7 @@ class DSLParser:
                 self.parameter_state = ParamState.OPTIONAL
             bad = False
             try:
-                if 'c_default' not in kwargs:
+                if not has_c_default:
                     # we can only represent very simple data values in C.
                     # detect whether default is okay, via a denylist
                     # of disallowed ast nodes.
@@ -1011,18 +1012,15 @@ class DSLParser:
                     fail(f"Unsupported expression as default value: {default!r}")
 
                 # mild hack: explicitly support NULL as a default value
-                c_default: str | None
                 if isinstance(expr, ast.Name) and expr.id == 'NULL':
                     value = NULL
                     py_default = '<unrepresentable>'
-                    c_default = "NULL"
                 elif (isinstance(expr, ast.BinOp) or
                     (isinstance(expr, ast.UnaryOp) and
                      not (isinstance(expr.operand, ast.Constant) and
                           type(expr.operand.value) in {int, float, complex})
                     )):
-                    c_default = kwargs.get("c_default")
-                    if not (isinstance(c_default, str) and c_default):
+                    if not has_c_default:
                         fail(f"When you specify an expression ({default!r}) "
                              f"as your default value, "
                              f"you MUST specify a valid c_default.",
@@ -1041,8 +1039,7 @@ class DSLParser:
                     a.append(n.id)
                     py_default = ".".join(reversed(a))
 
-                    c_default = kwargs.get("c_default")
-                    if not (isinstance(c_default, str) and c_default):
+                    if not has_c_default:
                         fail(f"When you specify a named constant ({py_default!r}) "
                              "as your default value, "
                              "you MUST specify a valid c_default.")
@@ -1054,23 +1051,15 @@ class DSLParser:
                 else:
                     value = ast.literal_eval(expr)
                     py_default = repr(value)
-                    if isinstance(value, (bool, NoneType)):
-                        c_default = "Py_" + py_default
-                    elif isinstance(value, str):
-                        c_default = libclinic.c_repr(value)
-                    else:
-                        c_default = py_default
 
             except (ValueError, AttributeError):
                 value = unknown
-                c_default = kwargs.get("c_default")
                 py_default = default
-                if not (isinstance(c_default, str) and c_default):
+                if not has_c_default:
                     fail("When you specify a named constant "
                          f"({py_default!r}) as your default value, "
                          "you MUST specify a valid c_default.")
 
-            kwargs.setdefault('c_default', c_default)
             kwargs.setdefault('py_default', py_default)
 
         dict = legacy_converters if legacy else converters
@@ -1093,12 +1082,10 @@ class DSLParser:
 
         if isinstance(converter, self_converter):
             if len(self.function.parameters) == 1:
-                if self.parameter_state is not ParamState.REQUIRED:
-                    fail("A 'self' parameter cannot be marked optional.")
-                if value is not unspecified:
-                    fail("A 'self' parameter cannot have a default value.")
                 if self.group:
                     fail("A 'self' parameter cannot be in an optional group.")
+                assert self.parameter_state is ParamState.REQUIRED
+                assert value is unspecified
                 kind = inspect.Parameter.POSITIONAL_ONLY
                 self.parameter_state = ParamState.START
                 self.function.parameters.clear()
@@ -1109,14 +1096,12 @@ class DSLParser:
         if isinstance(converter, defining_class_converter):
             _lp = len(self.function.parameters)
             if _lp == 1:
-                if self.parameter_state is not ParamState.REQUIRED:
-                    fail("A 'defining_class' parameter cannot be marked optional.")
-                if value is not unspecified:
-                    fail("A 'defining_class' parameter cannot have a default value.")
                 if self.group:
                     fail("A 'defining_class' parameter cannot be in an optional group.")
                 if self.function.cls is None:
                     fail("A 'defining_class' parameter cannot be defined at module level.")
+                assert self.parameter_state is ParamState.REQUIRED
+                assert value is unspecified
                 kind = inspect.Parameter.POSITIONAL_ONLY
             else:
                 fail("A 'defining_class' parameter, if specified, must either "

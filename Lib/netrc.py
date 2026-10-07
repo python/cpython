@@ -152,23 +152,28 @@ class netrc:
                 else:
                     raise NetrcParseError("bad follower token %r" % tt,
                                           file, lexer.lineno)
-            self._security_check(fp, default_netrc, self.hosts[entryname][0])
 
-    def _security_check(self, fp, default_netrc, login):
-        if _can_security_check() and default_netrc and login != "anonymous":
-            prop = os.fstat(fp.fileno())
-            current_user_id = os.getuid()
-            if prop.st_uid != current_user_id:
-                fowner = _getpwuid(prop.st_uid)
-                user = _getpwuid(current_user_id)
-                raise NetrcParseError(
-                    f"~/.netrc file owner ({fowner}) does not match"
-                    f" current user ({user})")
-            if (prop.st_mode & (stat.S_IRWXG | stat.S_IRWXO)):
-                raise NetrcParseError(
-                    "~/.netrc access too permissive: access"
-                    " permissions must restrict access to only"
-                    " the owner")
+        if _can_security_check() and default_netrc:
+            for entry in self.hosts.values():
+                if entry[0] != "anonymous":
+                    # Raises on security issue; once passed once can exit.
+                    self._security_check(fp)
+                    return
+
+    def _security_check(self, fp):
+        prop = os.fstat(fp.fileno())
+        current_user_id = os.getuid()
+        if prop.st_uid != current_user_id:
+            fowner = _getpwuid(prop.st_uid)
+            user = _getpwuid(current_user_id)
+            raise NetrcParseError(
+                f"~/.netrc file owner ({fowner}) does not match"
+                f" current user ({user})")
+        if (prop.st_mode & (stat.S_IRWXG | stat.S_IRWXO)):
+            raise NetrcParseError(
+                "~/.netrc access too permissive: access"
+                " permissions must restrict access to only"
+                " the owner")
 
     def authenticators(self, host):
         """Return a (user, account, password) tuple for given host."""

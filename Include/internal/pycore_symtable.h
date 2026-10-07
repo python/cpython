@@ -90,6 +90,7 @@ typedef struct _symtable_entry {
     PyObject *ste_id;        /* int: key in ste_table->st_blocks */
     PyObject *ste_symbols;   /* dict: variable names to flags */
     PyObject *ste_name;      /* string: name of current block */
+    PyObject *ste_function_name;  /* string or NULL: for annotation blocks: name of the corresponding functions */
     PyObject *ste_varnames;  /* list of function parameters */
     PyObject *ste_children;  /* list of child blocks */
     PyObject *ste_directives;/* locations of global and nonlocal statements */

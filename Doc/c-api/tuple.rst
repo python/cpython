@@ -99,7 +99,8 @@ Tuple Objects
 
    Insert a reference to object *o* at position *pos* of the tuple pointed to by
    *p*.  Return ``0`` on success.  If *pos* is out of bounds, return ``-1``
-   and set an :exc:`IndexError` exception.
+   and set an :exc:`IndexError` exception. This function should only be used to fill in brand new tuples;
+   using it on an existing tuple is thread-unsafe.
 
    .. note::
 
@@ -110,7 +111,7 @@ Tuple Objects
 .. c:function:: void PyTuple_SET_ITEM(PyObject *p, Py_ssize_t pos, PyObject *o)
 
    Like :c:func:`PyTuple_SetItem`, but does no error checking, and should *only* be
-   used to fill in brand new tuples.
+   used to fill in brand new tuples, using it on an existing tuple is thread-unsafe.
 
    Bounds checking is performed as an assertion if Python is built in
    :ref:`debug mode <debug-build>` or :option:`with assertions <--with-assertions>`.
@@ -236,6 +237,8 @@ type.
 .. c:function:: PyObject* PyStructSequence_GetItem(PyObject *p, Py_ssize_t pos)
 
    Return the object at position *pos* in the struct sequence pointed to by *p*.
+   The returned reference is borrowed from the struct sequence *p*
+   (that is: it is only valid as long as you hold a reference to *p*).
 
    Bounds checking is performed as an assertion if Python is built in
    :ref:`debug mode <debug-build>` or :option:`with assertions <--with-assertions>`.

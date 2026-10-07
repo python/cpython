@@ -129,7 +129,7 @@ thoughts in mind:
   they are used.  Consequently, if the search functions are used in a loop,
   the key function may be called again and again on the same array elements.
   If the key function isn't fast, consider wrapping it with
-  :py:func:`functools.cache` to avoid duplicate computations.  Alternatively,
+  :py:deco:`functools.cache` to avoid duplicate computations.  Alternatively,
   consider searching an array of precomputed keys to locate the insertion
   point (as shown in the examples section below).
 
@@ -200,9 +200,9 @@ example uses :py:func:`~bisect.bisect` to look up a letter grade for an exam sco
 based on a set of ordered numeric breakpoints: 90 and up is an 'A', 80 to 89 is
 a 'B', and so on::
 
-   >>> def grade(score, breakpoints=[60, 70, 80, 90], grades='FDCBA'):
-   ...     i = bisect(breakpoints, score)
-   ...     return grades[i]
+   >>> def grade(score):
+   ...     i = bisect([60, 70, 80, 90], score)
+   ...     return "FDCBA"[i]
    ...
    >>> [grade(score) for score in [33, 99, 77, 70, 89, 90, 100]]
    ['F', 'A', 'C', 'C', 'B', 'A', 'A']

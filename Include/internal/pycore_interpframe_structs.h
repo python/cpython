@@ -44,7 +44,8 @@ struct _PyInterpreterFrame {
     char owner;
 #ifdef Py_DEBUG
     uint8_t visited:1;
-    uint8_t lltrace:7;
+    uint8_t stackpointer_valid:1;
+    uint8_t lltrace:6;
 #else
     uint8_t visited;
 #endif

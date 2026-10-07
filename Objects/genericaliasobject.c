@@ -242,7 +242,6 @@ _Py_make_parameters(PyObject *args)
                     len += needed;
                     if (_PyTuple_Resize(&parameters, len) < 0) {
                         Py_DECREF(subparams);
-                        Py_DECREF(parameters);
                         Py_XDECREF(tuple_args);
                         return NULL;
                     }
@@ -299,6 +298,8 @@ subs_tvars(PyObject *obj, PyObject *params,
                                     &PyTuple_GET_ITEM(arg, 0),
                                     PyTuple_GET_SIZE(arg));
                     if (j < 0) {
+                        Py_DECREF(subparams);
+                        Py_DECREF(subargs);
                         return NULL;
                     }
                     continue;
@@ -411,6 +412,9 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
                             self);
     }
     item = _unpack_args(item);
+    if (item == NULL) {
+        return NULL;
+    }
     for (Py_ssize_t i = 0; i < nparams; i++) {
         PyObject *param = PyTuple_GET_ITEM(parameters, i);
         PyObject *prepare, *tmp;
@@ -455,6 +459,7 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
     if (is_args_list) {
         args = tuple_args = PySequence_Tuple(args);
         if (args == NULL) {
+            Py_DECREF(item);
             return NULL;
         }
     }
@@ -567,7 +572,8 @@ PyDoc_STRVAR(genericalias__doc__,
 "--\n\n"
 "Represent a PEP 585 generic type\n"
 "\n"
-"E.g. for t = list[int], t.__origin__ is list and t.__args__ is (int,).");
+"For example, for t = list[int], t.__origin__ is list and t.__args__\n"
+"is (int,).");
 
 static PyObject *
 ga_getitem(PyObject *self, PyObject *item)
@@ -647,7 +653,7 @@ ga_vectorcall(PyObject *self, PyObject *const *args,
               size_t nargsf, PyObject *kwnames)
 {
     gaobject *alias = (gaobject *) self;
-    PyObject *obj = PyVectorcall_Function(alias->origin)(alias->origin, args, nargsf, kwnames);
+    PyObject *obj = PyObject_Vectorcall(alias->origin, args, nargsf, kwnames);
     return set_orig_class(obj, self);
 }
 

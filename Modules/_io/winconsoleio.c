@@ -315,16 +315,16 @@ _io._WindowsConsoleIO.__init__
 
 Open a console buffer by file descriptor.
 
-The mode can be 'rb' (default), or 'wb' for reading or writing bytes. All
-other mode characters will be ignored. Mode 'b' will be assumed if it is
-omitted. The *opener* parameter is always ignored.
+The mode can be 'rb' (default), or 'wb' for reading or writing
+bytes.  All other mode characters will be ignored.  Mode 'b' will be
+assumed if it is omitted.  The *opener* parameter is always ignored.
 [clinic start generated code]*/
 
 static int
 _io__WindowsConsoleIO___init___impl(winconsoleio *self, PyObject *nameobj,
                                     const char *mode, int closefd,
                                     PyObject *opener)
-/*[clinic end generated code: output=3fd9cbcdd8d95429 input=7a3eed6bbe998fd9]*/
+/*[clinic end generated code: output=3fd9cbcdd8d95429 input=f31100e2cd724617]*/
 {
     const char *s;
     wchar_t *name = NULL;
@@ -673,12 +673,13 @@ read_console_w(HANDLE handle, DWORD maxlen, DWORD *readlen) {
             maxlen += 1;
             Py_BLOCK_THREADS
             newbuf = (wchar_t*)PyMem_Realloc(buf, maxlen * sizeof(wchar_t));
-            Py_UNBLOCK_THREADS
             if (!newbuf) {
                 sig = -1;
                 PyErr_NoMemory();
+                Py_UNBLOCK_THREADS
                 break;
             }
+            Py_UNBLOCK_THREADS
             buf = newbuf;
             /* Only advance by n and not BUFSIZ in this case */
             off += n;

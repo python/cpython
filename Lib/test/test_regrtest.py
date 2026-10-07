@@ -41,7 +41,11 @@ if not support.has_subprocess_support:
 
 ROOT_DIR = os.path.join(os.path.dirname(__file__), '..', '..')
 ROOT_DIR = os.path.abspath(os.path.normpath(ROOT_DIR))
-LOG_PREFIX = r'[0-9]+:[0-9]+:[0-9]+ (?:load avg: [0-9]+\.[0-9]{2} )?'
+LOG_PREFIX = (
+    r'[0-9]+:[0-9]+:[0-9]+ '
+    r'(?:load avg: [0-9]+\.[0-9]{2} )?'
+    r'(?:mem: [0-9]+\.[0-9] (?:MiB|GiB) )?'
+)
 RESULT_REGEX = (
     'passed',
     'failed',
@@ -570,6 +574,13 @@ class ParseArgsTestCase(unittest.TestCase):
             regrtest = self.create_regrtest(args)
         self.assertEqual(regrtest.num_workers, 0)
         self.assertTrue(regrtest.single_process)
+
+    def test_pythoninfo(self):
+        ns = self.parse_args([])
+        self.assertFalse(ns.pythoninfo)
+
+        ns = self.parse_args(['--pythoninfo'])
+        self.assertTrue(ns.pythoninfo)
 
 
 @dataclasses.dataclass(slots=True)
@@ -2223,10 +2234,7 @@ class ArgsTestCase(BaseTestCase):
         self.check_executed_tests(output, tests, stats=3)
 
     def check_add_python_opts(self, option):
-        # --fast-ci and --slow-ci add "-u -W default -bb -E" options to Python
-
-        # Skip test if _testinternalcapi is missing
-        import_helper.import_module('_testinternalcapi')
+        # --fast-ci and --slow-ci add "-u -W error -bb -E" options to Python
 
         code = textwrap.dedent(r"""
             import sys
@@ -2241,25 +2249,26 @@ class ArgsTestCase(BaseTestCase):
             use_environment = (support.is_emscripten or support.is_wasi)
 
             class WorkerTests(unittest.TestCase):
-                @unittest.skipUnless(config_get is None, 'need config_get()')
+                @unittest.skipIf(config_get is None, 'need config_get()')
                 def test_config(self):
-                    config = config_get()
                     # -u option
                     self.assertEqual(config_get('buffered_stdio'), 0)
-                    # -W default option
-                    self.assertTrue(config_get('warnoptions'), ['default'])
+                    # -W error option
+                    self.assertEqual(config_get('warnoptions'),
+                                     ['error', 'error::BytesWarning'])
                     # -bb option
-                    self.assertTrue(config_get('bytes_warning'), 2)
+                    self.assertEqual(config_get('bytes_warning'), 2)
                     # -E option
-                    self.assertTrue(config_get('use_environment'), use_environment)
+                    self.assertEqual(config_get('use_environment'), use_environment)
 
                 def test_python_opts(self):
                     # -u option
                     self.assertTrue(sys.__stdout__.write_through)
                     self.assertTrue(sys.__stderr__.write_through)
 
-                    # -W default option
-                    self.assertTrue(sys.warnoptions, ['default'])
+                    # -W error option
+                    self.assertEqual(sys.warnoptions,
+                                     ['error', 'error::BytesWarning'])
 
                     # -bb option
                     self.assertEqual(sys.flags.bytes_warning, 2)
@@ -2278,7 +2287,8 @@ class ArgsTestCase(BaseTestCase):
         proc = subprocess.run(cmd,
                               stdout=subprocess.PIPE,
                               stderr=subprocess.STDOUT,
-                              text=True)
+                              text=True,
+                              env=support.make_clean_env())
         self.assertEqual(proc.returncode, 0, proc)
 
     def test_add_python_opts(self):
@@ -2426,6 +2436,11 @@ class ArgsTestCase(BaseTestCase):
         tests = output.strip().split()
         self.assertNotIn('test_re', tests)
         self.assertEqual(len(tests), len(pgo_tests) - 1)
+
+    def test_pythoninfo(self):
+        testname = self.create_test()
+        output = self.run_tests('--pythoninfo', testname)
+        self.assertIn("Python build information", output)
 
 
 class TestUtils(unittest.TestCase):

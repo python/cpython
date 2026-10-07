@@ -172,7 +172,7 @@ class TestProgram(object):
                             help='Show local variables in tracebacks')
         parser.add_argument('--durations', dest='durations', type=int,
                             default=None, metavar="N",
-                            help='Show the N slowest test cases (N=0 for all)')
+                            help='Show the `N` slowest test cases (`N=0` for all)')
         if self.failfast is None:
             parser.add_argument('-f', '--failfast', dest='failfast',
                                 action='store_true',
@@ -181,12 +181,12 @@ class TestProgram(object):
         if self.catchbreak is None:
             parser.add_argument('-c', '--catch', dest='catchbreak',
                                 action='store_true',
-                                help='Catch Ctrl-C and display results so far')
+                                help='Catch `Ctrl-C` and display results so far')
             self.catchbreak = False
         if self.buffer is None:
             parser.add_argument('-b', '--buffer', dest='buffer',
                                 action='store_true',
-                                help='Buffer stdout and stderr during tests')
+                                help='Buffer `stdout` and `stderr` during tests')
             self.buffer = False
         if self.testNamePatterns is None:
             parser.add_argument('-k', dest='testNamePatterns',
@@ -197,7 +197,7 @@ class TestProgram(object):
         return parser
 
     def _getMainArgParser(self, parent):
-        parser = argparse.ArgumentParser(parents=[parent], color=True)
+        parser = argparse.ArgumentParser(parents=[parent])
         parser.prog = self.progName
         parser.print_help = self._print_help
 
@@ -208,16 +208,16 @@ class TestProgram(object):
         return parser
 
     def _getDiscoveryArgParser(self, parent):
-        parser = argparse.ArgumentParser(parents=[parent], color=True)
+        parser = argparse.ArgumentParser(parents=[parent])
         parser.prog = '%s discover' % self.progName
         parser.epilog = ('For test discovery all test modules must be '
                          'importable from the top level directory of the '
                          'project.')
 
         parser.add_argument('-s', '--start-directory', dest='start',
-                            help="Directory to start discovery ('.' default)")
+                            help="Directory to start discovery (`.` default)")
         parser.add_argument('-p', '--pattern', dest='pattern',
-                            help="Pattern to match tests ('test*.py' default)")
+                            help="Pattern to match tests (`test*.py` default)")
         parser.add_argument('-t', '--top-level-directory', dest='top',
                             help='Top level directory of project (defaults to '
                                  'start directory)')

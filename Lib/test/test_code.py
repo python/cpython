@@ -87,7 +87,7 @@ cellvars: ()
 freevars: ()
 nlocals: 0
 flags: 67108867
-consts: ("'doc string'", 'None')
+consts: ("'doc string'",)
 
 >>> def keywordonly_args(a,b,*,k1):
 ...     return a,b,k1
@@ -161,7 +161,7 @@ cellvars: ()
 freevars: ()
 nlocals: 3
 flags: 67108995
-consts: ("'This is a docstring from async function'", 'None')
+consts: ("'This is a docstring from async function'",)
 
 >>> def no_docstring(x, y, z):
 ...     return x + "hello" + y + z + "world"
@@ -424,13 +424,6 @@ class CodeTest(unittest.TestCase):
         new_code = code = func.__code__.replace(co_linetable=b'')
         self.assertEqual(list(new_code.co_lines()), [])
 
-    def test_co_lnotab_is_deprecated(self):  # TODO: remove in 3.14
-        def func():
-            pass
-
-        with self.assertWarns(DeprecationWarning):
-            func.__code__.co_lnotab
-
     @unittest.skipIf(_testinternalcapi is None, '_testinternalcapi is missing')
     def test_returns_only_none(self):
         value = True
@@ -539,7 +532,7 @@ class CodeTest(unittest.TestCase):
             ],
             [
                 ("PUSH_EXC_INFO", None),
-                ("LOAD_CONST", None), # artificial 'None'
+                ("LOAD_COMMON_CONSTANT", None), # artificial 'None'
                 ("STORE_NAME", "e"),  # XX: we know the location for this
                 ("DELETE_NAME", "e"),
                 ("RERAISE", 1),
@@ -1164,6 +1157,18 @@ class CodeTest(unittest.TestCase):
                     with self.assertRaises(Exception):
                         _testinternalcapi.verify_stateless_code(func)
 
+    def test_code_richcompare_raise_exception(self):
+        class BadStr(str):
+            def __eq__(self, _):
+                raise RuntimeError("Poison!")
+
+            __hash__ = str.__hash__
+
+        c1 = compile("pass", "test", "exec")
+        c2 = c1.replace(co_name=BadStr("poison"))
+        c3 = compile("pass", "poison", "exec")
+        with self.assertRaises(RuntimeError):
+            c2 == c3
 
 def isinterned(s):
     return s is sys.intern(('_' + s + '_')[1:-1])
@@ -1437,6 +1442,7 @@ class CodeLocationTest(unittest.TestCase):
             co_code=bytes(
                 [
                     dis.opmap["RESUME"], 0,
+                    dis.opmap["CACHE"], 0,
                     dis.opmap["LOAD_COMMON_CONSTANT"], 0,
                     dis.opmap["RAISE_VARARGS"], 1,
                 ]
@@ -1445,7 +1451,7 @@ class CodeLocationTest(unittest.TestCase):
                 [
                     (1 << 7)
                     | (PY_CODE_LOCATION_INFO_NO_COLUMNS << 3)
-                    | (3 - 1),
+                    | (4 - 1),
                     0,
                 ]
             ),
@@ -1453,7 +1459,7 @@ class CodeLocationTest(unittest.TestCase):
         self.assertRaises(AssertionError, f)
         self.assertEqual(
             list(f.__code__.co_positions()),
-            3 * [(42, 42, None, None)],
+            4 * [(42, 42, None, None)],
         )
 
     @cpython_only

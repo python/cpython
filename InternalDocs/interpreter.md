@@ -507,6 +507,38 @@ After the last `DEOPT_IF` has passed, a hit should be recorded with
 After an optimization has been deferred in the adaptive instruction,
 that should be recorded with `STAT_INC(BASE_INSTRUCTION, deferred)`.
 
+## Interpreter types
+There are three different types of interpreters to choose from based on compiler support:
+
+ * traditional switch-case interpreter
+   
+   Supported by all compilers covered in PEP 7.
+ 
+ * computed-gotos interpreter
+ 
+   Enabled using configure option `--with-computed-gotos` and used by default on supported compilers.
+   It uses [Labels as Values](https://gcc.gnu.org/onlinedocs/gcc/Labels-as-Values.html)
+   for more efficient dispatching.
+ 
+ * tail-calling interpreter
+
+   Enabled using configure option `--with-tail-call-interp` (or `--tail-call-interp` for build.bat on Windows).
+   It uses [tail calls](https://clang.llvm.org/docs/AttributeReference.html#musttail) and the
+   [preserve_none](https://clang.llvm.org/docs/AttributeReference.html#preserve-none)
+   calling convention between the small C functions that implement individual Python opcodes.
+
+   Not all compilers support these and if they do not all targets might be supported (for example,
+   MSVC currently only supports x64 and only in optimized builds).
+
+   In addition, compilers must do [escape analysis](https://gcc.gnu.org/onlinedocs/gcc/Common-Attributes.html#index-musttail)
+   of the lifetimes of automatic variables, function parameters, and temporaries to ensure proper tail-calls. They
+   emit a compile error in case of a violation or detection failure. The ability to detect this varies depending on the compiler and
+   also on the optimization level. Following techniques are particularly helpful to the MSVC compiler in this regard
+   * [Introducing additional scopes](https://github.com/python/cpython/blob/3908593039bde9d4b591ab09919003ee57418d64/Python/bytecodes.c#L2526)
+   * [extracting problematic code paths into a separate function](https://github.com/python/cpython/pull/143068/files#diff-729a985b0cb8b431cb291f1edb561bbbfea22e3f8c262451cd83328a0936a342R3724)
+   * [returning a pointer instead of taking it as an output parameter](https://github.com/python/cpython/blob/3908593039bde9d4b591ab09919003ee57418d64/Include/internal/pycore_ceval.h#L489-L492)
+   
+   Using `restrict` is another (currently unused) remedy.
 
 Additional resources
 --------------------

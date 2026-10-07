@@ -196,13 +196,10 @@ INSTRUMENTED_EVENTS = [
     (E.BRANCH, "branch"),
 ]
 
-EXCEPT_EVENTS = [
+SIMPLE_EVENTS = INSTRUMENTED_EVENTS + [
     (E.RAISE, "raise"),
-    (E.PY_UNWIND, "unwind"),
     (E.EXCEPTION_HANDLED, "exception_handled"),
-]
-
-SIMPLE_EVENTS = INSTRUMENTED_EVENTS + EXCEPT_EVENTS + [
+    (E.PY_UNWIND, "unwind"),
     (E.C_RAISE, "c_raise"),
     (E.C_RETURN, "c_return"),
 ]
@@ -738,18 +735,6 @@ class TestDisable(MonitoringTestBase, unittest.TestCase):
                 sys.monitoring.register_callback(TEST_TOOL, event, None)
 
 
-    def test_disable_illegal_events(self):
-        for event, name in EXCEPT_EVENTS:
-            try:
-                counter = CounterWithDisable()
-                counter.disable = True
-                sys.monitoring.register_callback(TEST_TOOL, event, counter)
-                sys.monitoring.set_events(TEST_TOOL, event)
-                with self.assertRaises(ValueError):
-                    self.raise_handle_reraise()
-            finally:
-                sys.monitoring.set_events(TEST_TOOL, 0)
-                sys.monitoring.register_callback(TEST_TOOL, event, None)
 
 
 class ExceptionRecorder:
@@ -1214,19 +1199,20 @@ class TestLineAndInstructionEvents(CheckEvents):
             line3 = 3
 
         self.check_events(func1, recorders = LINE_AND_INSTRUCTION_RECORDERS, expected = [
-            ('line', 'get_events', 10),
-            ('line', 'func1', 1),
-            ('instruction', 'func1', 2),
-            ('instruction', 'func1', 4),
-            ('line', 'func1', 2),
-            ('instruction', 'func1', 6),
-            ('instruction', 'func1', 8),
-            ('line', 'func1', 3),
-            ('instruction', 'func1', 10),
-            ('instruction', 'func1', 12),
-            ('instruction', 'func1', 14),
-            ('instruction', 'func1', 16),
-            ('line', 'get_events', 11)])
+            ("line", "get_events", 10),
+            ("line", "func1", 1),
+            ("instruction", "func1", 4),
+            ("instruction", "func1", 6),
+            ("line", "func1", 2),
+            ("instruction", "func1", 8),
+            ("instruction", "func1", 10),
+            ("line", "func1", 3),
+            ("instruction", "func1", 12),
+            ("instruction", "func1", 14),
+            ("instruction", "func1", 16),
+            ("instruction", "func1", 18),
+            ("line", "get_events", 11),
+        ])
 
     def test_c_call(self):
 
@@ -1236,22 +1222,23 @@ class TestLineAndInstructionEvents(CheckEvents):
             line3 = 3
 
         self.check_events(func2, recorders = LINE_AND_INSTRUCTION_RECORDERS, expected = [
-            ('line', 'get_events', 10),
-            ('line', 'func2', 1),
-            ('instruction', 'func2', 2),
-            ('instruction', 'func2', 4),
-            ('line', 'func2', 2),
-            ('instruction', 'func2', 6),
-            ('instruction', 'func2', 8),
-            ('instruction', 'func2', 28),
-            ('instruction', 'func2', 30),
-            ('instruction', 'func2', 38),
-            ('line', 'func2', 3),
-            ('instruction', 'func2', 40),
-            ('instruction', 'func2', 42),
-            ('instruction', 'func2', 44),
-            ('instruction', 'func2', 46),
-            ('line', 'get_events', 11)])
+            ("line", "get_events", 10),
+            ("line", "func2", 1),
+            ("instruction", "func2", 4),
+            ("instruction", "func2", 6),
+            ("line", "func2", 2),
+            ("instruction", "func2", 8),
+            ("instruction", "func2", 10),
+            ("instruction", "func2", 30),
+            ("instruction", "func2", 32),
+            ("instruction", "func2", 40),
+            ("line", "func2", 3),
+            ("instruction", "func2", 42),
+            ("instruction", "func2", 44),
+            ("instruction", "func2", 46),
+            ("instruction", "func2", 48),
+            ("line", "get_events", 11),
+        ])
 
     def test_try_except(self):
 
@@ -1264,28 +1251,29 @@ class TestLineAndInstructionEvents(CheckEvents):
             line = 6
 
         self.check_events(func3, recorders = LINE_AND_INSTRUCTION_RECORDERS, expected = [
-            ('line', 'get_events', 10),
-            ('line', 'func3', 1),
-            ('instruction', 'func3', 2),
-            ('line', 'func3', 2),
-            ('instruction', 'func3', 4),
-            ('instruction', 'func3', 6),
-            ('line', 'func3', 3),
-            ('instruction', 'func3', 8),
-            ('instruction', 'func3', 18),
-            ('instruction', 'func3', 20),
-            ('line', 'func3', 4),
-            ('instruction', 'func3', 22),
-            ('line', 'func3', 5),
-            ('instruction', 'func3', 24),
-            ('instruction', 'func3', 26),
-            ('instruction', 'func3', 28),
-            ('line', 'func3', 6),
-            ('instruction', 'func3', 30),
-            ('instruction', 'func3', 32),
-            ('instruction', 'func3', 34),
-            ('instruction', 'func3', 36),
-            ('line', 'get_events', 11)])
+            ("line", "get_events", 10),
+            ("line", "func3", 1),
+            ("instruction", "func3", 4),
+            ("line", "func3", 2),
+            ("instruction", "func3", 6),
+            ("instruction", "func3", 8),
+            ("line", "func3", 3),
+            ("instruction", "func3", 10),
+            ("instruction", "func3", 20),
+            ("instruction", "func3", 22),
+            ("line", "func3", 4),
+            ("instruction", "func3", 24),
+            ("line", "func3", 5),
+            ("instruction", "func3", 26),
+            ("instruction", "func3", 28),
+            ("instruction", "func3", 30),
+            ("line", "func3", 6),
+            ("instruction", "func3", 32),
+            ("instruction", "func3", 34),
+            ("instruction", "func3", 36),
+            ("instruction", "func3", 38),
+            ("line", "get_events", 11),
+        ])
 
     def test_with_restart(self):
         def func1():
@@ -1296,16 +1284,16 @@ class TestLineAndInstructionEvents(CheckEvents):
         self.check_events(func1, recorders = LINE_AND_INSTRUCTION_RECORDERS, expected = [
             ('line', 'get_events', 10),
             ('line', 'func1', 1),
-            ('instruction', 'func1', 2),
             ('instruction', 'func1', 4),
-            ('line', 'func1', 2),
             ('instruction', 'func1', 6),
+            ('line', 'func1', 2),
             ('instruction', 'func1', 8),
-            ('line', 'func1', 3),
             ('instruction', 'func1', 10),
+            ('line', 'func1', 3),
             ('instruction', 'func1', 12),
             ('instruction', 'func1', 14),
             ('instruction', 'func1', 16),
+            ('instruction', 'func1', 18),
             ('line', 'get_events', 11)])
 
         sys.monitoring.restart_events()
@@ -1313,16 +1301,16 @@ class TestLineAndInstructionEvents(CheckEvents):
         self.check_events(func1, recorders = LINE_AND_INSTRUCTION_RECORDERS, expected = [
             ('line', 'get_events', 10),
             ('line', 'func1', 1),
-            ('instruction', 'func1', 2),
             ('instruction', 'func1', 4),
-            ('line', 'func1', 2),
             ('instruction', 'func1', 6),
+            ('line', 'func1', 2),
             ('instruction', 'func1', 8),
-            ('line', 'func1', 3),
             ('instruction', 'func1', 10),
+            ('line', 'func1', 3),
             ('instruction', 'func1', 12),
             ('instruction', 'func1', 14),
             ('instruction', 'func1', 16),
+            ('instruction', 'func1', 18),
             ('line', 'get_events', 11)])
 
     def test_turn_off_only_instruction(self):
@@ -1370,10 +1358,10 @@ class TestInstallIncrementally(MonitoringTestBase, unittest.TestCase):
         line1 = 1
 
     MUST_INCLUDE_LI = [
-            ('instruction', 'func1', 2),
-            ('line', 'func1', 2),
             ('instruction', 'func1', 4),
-            ('instruction', 'func1', 6)]
+            ('line', 'func1', 2),
+            ('instruction', 'func1', 6),
+            ('instruction', 'func1', 8)]
 
     def test_line_then_instruction(self):
         recorders = [ LineRecorder, InstructionRecorder ]
@@ -1390,11 +1378,11 @@ class TestInstallIncrementally(MonitoringTestBase, unittest.TestCase):
         len(())
 
     MUST_INCLUDE_CI = [
-            ('instruction', 'func2', 2),
+            ('instruction', 'func2', 4),
             ('call', 'func2', sys.monitoring.MISSING),
             ('call', 'len', ()),
-            ('instruction', 'func2', 12),
-            ('instruction', 'func2', 14)]
+            ('instruction', 'func2', 14),
+            ('instruction', 'func2', 16)]
 
 
 
@@ -1478,8 +1466,334 @@ class TestLocalEvents(MonitoringTestBase, unittest.TestCase):
             ('line', 'func3', 6)])
 
     def test_set_non_local_event(self):
+        # C_RETURN/C_RAISE are ancillary (derived) events — not settable as local
         with self.assertRaises(ValueError):
-            sys.monitoring.set_local_events(TEST_TOOL, just_call.__code__, E.RAISE)
+            sys.monitoring.set_local_events(TEST_TOOL, just_call.__code__, E.C_RETURN)
+
+    def test_local_reraise(self):
+        """RERAISE fires as a local event only for the instrumented code object."""
+
+        def foo():
+            try:
+                raise RuntimeError("test")
+            except RuntimeError:
+                raise
+
+        def bar():
+            try:
+                raise RuntimeError("test")
+            except RuntimeError:
+                raise
+
+        events = set()
+
+        def callback(code, offset, exc):
+            events.add(code.co_name)
+
+        try:
+            sys.monitoring.register_callback(TEST_TOOL, E.RERAISE, callback)
+            sys.monitoring.set_local_events(TEST_TOOL, foo.__code__, E.RERAISE)
+            try:
+                foo()
+            except RuntimeError:
+                pass
+            try:
+                bar()  # should NOT trigger the callback
+            except RuntimeError:
+                pass
+            self.assertEqual(events, {'foo'})
+        finally:
+            sys.monitoring.set_local_events(TEST_TOOL, foo.__code__, 0)
+            sys.monitoring.register_callback(TEST_TOOL, E.RERAISE, None)
+
+    def test_local_reraise_disable(self):
+        """Returning DISABLE from a RERAISE callback disables it for that code object."""
+
+        call_count = 0
+
+        def foo():
+            try:
+                raise RuntimeError("test")
+            except RuntimeError:
+                raise
+
+        def callback(code, offset, exc):
+            nonlocal call_count
+            call_count += 1
+            return sys.monitoring.DISABLE
+
+        try:
+            sys.monitoring.register_callback(TEST_TOOL, E.RERAISE, callback)
+            sys.monitoring.set_local_events(TEST_TOOL, foo.__code__, E.RERAISE)
+            try:
+                foo()
+            except RuntimeError:
+                pass
+            self.assertEqual(call_count, 1)
+            try:
+                foo()
+            except RuntimeError:
+                pass
+            self.assertEqual(call_count, 1)  # not fired again — disabled
+        finally:
+            sys.monitoring.set_local_events(TEST_TOOL, foo.__code__, 0)
+            sys.monitoring.register_callback(TEST_TOOL, E.RERAISE, None)
+
+    def test_local_py_throw(self):
+        """PY_THROW fires as a local event only for the instrumented code object."""
+
+        def gen_foo():
+            yield 1
+            yield 2
+
+        def gen_bar():
+            yield 1
+            yield 2
+
+        events = []
+
+        def callback(code, offset, exc):
+            events.append(code.co_name)
+
+        try:
+            sys.monitoring.register_callback(TEST_TOOL, E.PY_THROW, callback)
+            sys.monitoring.set_local_events(TEST_TOOL, gen_foo.__code__, E.PY_THROW)
+
+            g = gen_foo()
+            next(g)
+            try:
+                g.throw(RuntimeError("test"))
+            except RuntimeError:
+                pass
+
+            h = gen_bar()
+            next(h)
+            try:
+                h.throw(RuntimeError("test"))  # should NOT trigger the callback
+            except RuntimeError:
+                pass
+
+            self.assertEqual(events, ['gen_foo'])
+        finally:
+            sys.monitoring.set_local_events(TEST_TOOL, gen_foo.__code__, 0)
+            sys.monitoring.register_callback(TEST_TOOL, E.PY_THROW, None)
+
+    def test_local_py_throw_disable(self):
+        """Returning DISABLE from a PY_THROW callback disables it for that code object."""
+
+        call_count = 0
+
+        def gen_foo():
+            yield 1
+            yield 2
+
+        def callback(code, offset, exc):
+            nonlocal call_count
+            call_count += 1
+            return sys.monitoring.DISABLE
+
+        try:
+            sys.monitoring.register_callback(TEST_TOOL, E.PY_THROW, callback)
+            sys.monitoring.set_local_events(TEST_TOOL, gen_foo.__code__, E.PY_THROW)
+
+            g = gen_foo()
+            next(g)
+            try:
+                g.throw(RuntimeError("test"))
+            except RuntimeError:
+                pass
+            self.assertEqual(call_count, 1)
+
+            g2 = gen_foo()
+            next(g2)
+            try:
+                g2.throw(RuntimeError("test"))
+            except RuntimeError:
+                pass
+            self.assertEqual(call_count, 1)  # not fired again — disabled
+        finally:
+            sys.monitoring.set_local_events(TEST_TOOL, gen_foo.__code__, 0)
+            sys.monitoring.register_callback(TEST_TOOL, E.PY_THROW, None)
+
+    def test_local_raise(self):
+        """RAISE fires as a local event only for the instrumented code object."""
+
+        def foo():
+            try:
+                raise RuntimeError("test")
+            except RuntimeError:
+                pass
+
+        def bar():
+            try:
+                raise RuntimeError("test")
+            except RuntimeError:
+                pass
+
+        events = []
+
+        def callback(code, offset, exc):
+            events.append(code.co_name)
+
+        try:
+            sys.monitoring.register_callback(TEST_TOOL, E.RAISE, callback)
+            sys.monitoring.set_local_events(TEST_TOOL, foo.__code__, E.RAISE)
+            foo()
+            bar()  # should NOT trigger the callback
+            self.assertEqual(events, ['foo'])
+        finally:
+            sys.monitoring.set_local_events(TEST_TOOL, foo.__code__, 0)
+            sys.monitoring.register_callback(TEST_TOOL, E.RAISE, None)
+
+    def test_local_raise_disable(self):
+        """Returning DISABLE from a RAISE callback disables it for that code object."""
+
+        call_count = 0
+
+        def foo():
+            try:
+                raise RuntimeError("test")
+            except RuntimeError:
+                pass
+
+        def callback(code, offset, exc):
+            nonlocal call_count
+            call_count += 1
+            return sys.monitoring.DISABLE
+
+        try:
+            sys.monitoring.register_callback(TEST_TOOL, E.RAISE, callback)
+            sys.monitoring.set_local_events(TEST_TOOL, foo.__code__, E.RAISE)
+            foo()
+            self.assertEqual(call_count, 1)
+            foo()
+            self.assertEqual(call_count, 1)  # not fired again — disabled
+        finally:
+            sys.monitoring.set_local_events(TEST_TOOL, foo.__code__, 0)
+            sys.monitoring.register_callback(TEST_TOOL, E.RAISE, None)
+
+    def test_local_exception_handled(self):
+        """EXCEPTION_HANDLED fires as a local event only for the instrumented code object."""
+
+        def foo():
+            try:
+                raise RuntimeError("test")
+            except RuntimeError:
+                pass
+
+        def bar():
+            try:
+                raise RuntimeError("test")
+            except RuntimeError:
+                pass
+
+        events = []
+
+        def callback(code, offset, exc):
+            events.append(code.co_name)
+
+        try:
+            sys.monitoring.register_callback(TEST_TOOL, E.EXCEPTION_HANDLED, callback)
+            sys.monitoring.set_local_events(TEST_TOOL, foo.__code__, E.EXCEPTION_HANDLED)
+            foo()
+            bar()  # should NOT trigger the callback
+            self.assertEqual(events, ['foo'])
+        finally:
+            sys.monitoring.set_local_events(TEST_TOOL, foo.__code__, 0)
+            sys.monitoring.register_callback(TEST_TOOL, E.EXCEPTION_HANDLED, None)
+
+    def test_local_exception_handled_disable(self):
+        """Returning DISABLE from an EXCEPTION_HANDLED callback disables it for that code object."""
+
+        call_count = 0
+
+        def foo():
+            try:
+                raise RuntimeError("test")
+            except RuntimeError:
+                pass
+
+        def callback(code, offset, exc):
+            nonlocal call_count
+            call_count += 1
+            return sys.monitoring.DISABLE
+
+        try:
+            sys.monitoring.register_callback(TEST_TOOL, E.EXCEPTION_HANDLED, callback)
+            sys.monitoring.set_local_events(TEST_TOOL, foo.__code__, E.EXCEPTION_HANDLED)
+            foo()
+            self.assertEqual(call_count, 1)
+            foo()
+            self.assertEqual(call_count, 1)  # not fired again — disabled
+        finally:
+            sys.monitoring.set_local_events(TEST_TOOL, foo.__code__, 0)
+            sys.monitoring.register_callback(TEST_TOOL, E.EXCEPTION_HANDLED, None)
+
+    def test_local_py_unwind(self):
+        """PY_UNWIND fires as a local event only for the instrumented code object."""
+
+        def foo():
+            raise RuntimeError("test")
+
+        def bar():
+            raise RuntimeError("test")
+
+        events = []
+
+        def callback(code, offset, exc):
+            events.append(code.co_name)
+
+        try:
+            sys.monitoring.register_callback(TEST_TOOL, E.PY_UNWIND, callback)
+            sys.monitoring.set_local_events(TEST_TOOL, foo.__code__, E.PY_UNWIND)
+
+            try:
+                foo()
+            except RuntimeError:
+                pass
+
+            try:
+                bar()  # should NOT trigger the callback
+            except RuntimeError:
+                pass
+
+            self.assertEqual(events, ['foo'])
+        finally:
+            sys.monitoring.set_local_events(TEST_TOOL, foo.__code__, 0)
+            sys.monitoring.register_callback(TEST_TOOL, E.PY_UNWIND, None)
+
+    def test_local_py_unwind_disable(self):
+        """Returning DISABLE from a PY_UNWIND callback disables it for that code object."""
+
+        call_count = 0
+
+        def foo():
+            raise RuntimeError("test")
+
+        def callback(code, offset, exc):
+            nonlocal call_count
+            call_count += 1
+            return sys.monitoring.DISABLE
+
+        try:
+            sys.monitoring.register_callback(TEST_TOOL, E.PY_UNWIND, callback)
+            sys.monitoring.set_local_events(TEST_TOOL, foo.__code__, E.PY_UNWIND)
+
+            try:
+                foo()
+            except RuntimeError:
+                pass
+            self.assertEqual(call_count, 1)  # fired once
+
+            try:
+                foo()
+            except RuntimeError:
+                pass
+            self.assertEqual(call_count, 1)  # not fired again — disabled by DISABLE return
+
+        finally:
+            sys.monitoring.set_local_events(TEST_TOOL, foo.__code__, 0)
+            sys.monitoring.register_callback(TEST_TOOL, E.PY_UNWIND, None)
 
 def line_from_offset(code, offset):
     for start, end, line in code.co_lines():
@@ -1609,11 +1923,11 @@ class TestBranchAndJumpEvents(CheckEvents):
             ('branch right', 'whilefunc', 1, 3)])
 
         self.check_events(func, recorders = BRANCH_OFFSET_RECORDERS, expected = [
-            ('branch left', 'func', 28, 32),
-            ('branch right', 'func', 44, 58),
-            ('branch left', 'func', 28, 32),
-            ('branch left', 'func', 44, 50),
-            ('branch right', 'func', 28, 70)])
+            ('branch left', 'func', 32, 36),
+            ('branch right', 'func', 48, 62),
+            ('branch left', 'func', 32, 36),
+            ('branch left', 'func', 48, 54),
+            ('branch right', 'func', 32, 74)])
 
     def test_except_star(self):
 
@@ -1640,8 +1954,8 @@ class TestBranchAndJumpEvents(CheckEvents):
             ('branch', 'func', 4, 4),
             ('line', 'func', 5),
             ('line', 'meth', 1),
-            ('jump', 'func', 5, '[offset=120]'),
-            ('branch', 'func', '[offset=124]', '[offset=130]'),
+            ('jump', 'func', 5, '[offset=122]'),
+            ('branch', 'func', '[offset=126]', '[offset=132]'),
             ('line', 'get_events', 11)])
 
         self.check_events(func, recorders = FLOW_AND_LINE_RECORDERS, expected = [
@@ -1655,8 +1969,8 @@ class TestBranchAndJumpEvents(CheckEvents):
             ('line', 'func', 5),
             ('line', 'meth', 1),
             ('return', 'meth', None),
-            ('jump', 'func', 5, '[offset=120]'),
-            ('branch', 'func', '[offset=124]', '[offset=130]'),
+            ('jump', 'func', 5, '[offset=122]'),
+            ('branch', 'func', '[offset=126]', '[offset=132]'),
             ('return', 'func', None),
             ('line', 'get_events', 11)])
 
@@ -1668,8 +1982,8 @@ class TestBranchAndJumpEvents(CheckEvents):
                 n += 1
             return None
 
-        in_loop = ('branch left', 'foo', 10, 16)
-        exit_loop = ('branch right', 'foo', 10, 40)
+        in_loop = ('branch left', 'foo', 12, 18)
+        exit_loop = ('branch right', 'foo', 12, 42)
         self.check_events(foo, recorders = BRANCH_OFFSET_RECORDERS, expected = [
             in_loop,
             in_loop,

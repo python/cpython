@@ -374,8 +374,8 @@ class AbstractEventLoop:
 
         If host is an empty string or None all interfaces are assumed
         and a list of multiple sockets will be returned (most likely
-        one for IPv4 and another one for IPv6). The host parameter can also be
-        a sequence (e.g. list) of hosts to bind to.
+        one for IPv4 and another one for IPv6). The host parameter can also
+        be a sequence (e.g. list) of hosts to bind to.
 
         family can be set to either AF_INET or AF_INET6 to force the
         socket to use IPv4 or IPv6. If not set it will be determined
@@ -415,8 +415,9 @@ class AbstractEventLoop:
 
         start_serving set to True (default) causes the created server
         to start accepting connections immediately.  When set to False,
-        the user should await Server.start_serving() or Server.serve_forever()
-        to make the server to start accepting connections.
+        the user should await Server.start_serving() or
+        Server.serve_forever() to make the server to start accepting
+        connections.
         """
         raise NotImplementedError
 
@@ -479,8 +480,9 @@ class AbstractEventLoop:
 
         start_serving set to True (default) causes the created server
         to start accepting connections immediately.  When set to False,
-        the user should await Server.start_serving() or Server.serve_forever()
-        to make the server to start accepting connections.
+        the user should await Server.start_serving() or
+        Server.serve_forever() to make the server to start accepting
+        connections.
         """
         raise NotImplementedError
 
@@ -511,8 +513,8 @@ class AbstractEventLoop:
 
         protocol_factory must be a callable returning a protocol instance.
 
-        socket family AF_INET, socket.AF_INET6 or socket.AF_UNIX depending on
-        host (or family if specified), socket type SOCK_DGRAM.
+        socket family AF_INET, socket.AF_INET6 or socket.AF_UNIX depending
+        on host (or family if specified), socket type SOCK_DGRAM.
 
         reuse_address tells the kernel to reuse a local socket in
         TIME_WAIT state, without waiting for its natural timeout to
@@ -552,7 +554,8 @@ class AbstractEventLoop:
     async def connect_write_pipe(self, protocol_factory, pipe):
         """Register write pipe in event loop.
 
-        protocol_factory should instantiate object with BaseProtocol interface.
+        protocol_factory should instantiate object with BaseProtocol
+        interface.
         Pipe is file-like object already switched to nonblocking.
         Return pair (transport, protocol), where transport support
         WriteTransport interface."""

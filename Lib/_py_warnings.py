@@ -620,17 +620,18 @@ def warn_explicit(message, category, filename, lineno,
     linecache.getlines(filename, module_globals)
 
     # Print message and context
-    msg = _wm.WarningMessage(message, category, filename, lineno, source=source)
+    msg = _wm.WarningMessage(message, category, filename, lineno,
+                             module=module, source=source)
     _wm._showwarnmsg(msg)
 
 
 class WarningMessage(object):
 
     _WARNING_DETAILS = ("message", "category", "filename", "lineno", "file",
-                        "line", "source")
+                        "line", "source", "module")
 
     def __init__(self, message, category, filename, lineno, file=None,
-                 line=None, source=None):
+                 line=None, source=None, module=None):
         self.message = message
         self.category = category
         self.filename = filename
@@ -638,12 +639,14 @@ class WarningMessage(object):
         self.file = file
         self.line = line
         self.source = source
+        self.module = module
         self._category_name = category.__name__ if category else None
 
     def __str__(self):
-        return ("{message : %r, category : %r, filename : %r, lineno : %s, "
-                    "line : %r}" % (self.message, self._category_name,
-                                    self.filename, self.lineno, self.line))
+        return ("{message : %r, category : %r, module : %r, "
+                "filename : %r, lineno : %s, line : %r}" % (
+                    self.message, self._category_name, self.module,
+                    self.filename, self.lineno, self.line))
 
     def __repr__(self):
         return f'<{type(self).__qualname__} {self}>'
@@ -703,8 +706,8 @@ class catch_warnings(object):
                 context = None
                 self._filters = self._module.filters
                 self._module.filters = self._filters[:]
-                self._showwarning = self._module.showwarning
                 self._showwarnmsg_impl = self._module._showwarnmsg_impl
+            self._showwarning = self._module.showwarning
             self._module._filters_mutated_lock_held()
             if self._record:
                 if _use_context:
@@ -712,9 +715,9 @@ class catch_warnings(object):
                 else:
                     log = []
                     self._module._showwarnmsg_impl = log.append
-                    # Reset showwarning() to the default implementation to make sure
-                    # that _showwarnmsg() calls _showwarnmsg_impl()
-                    self._module.showwarning = self._module._showwarning_orig
+                # Reset showwarning() to the default implementation to make sure
+                # that _showwarnmsg() calls _showwarnmsg_impl()
+                self._module.showwarning = self._module._showwarning_orig
             else:
                 log = None
         if self._filter is not None:
@@ -729,8 +732,8 @@ class catch_warnings(object):
                 self._module._warnings_context.set(self._saved_context)
             else:
                 self._module.filters = self._filters
-                self._module.showwarning = self._showwarning
                 self._module._showwarnmsg_impl = self._showwarnmsg_impl
+            self._module.showwarning = self._showwarning
             self._module._filters_mutated_lock_held()
 
 

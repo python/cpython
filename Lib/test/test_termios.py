@@ -1,3 +1,4 @@
+import contextlib
 import errno
 import os
 import sys
@@ -9,6 +10,19 @@ from test.support import threading_helper
 from test.support.import_helper import import_module
 
 termios = import_module('termios')
+
+
+# Skip the test on ENOTTY error
+@contextlib.contextmanager
+def skip_enotty_error(testcase, func, platforms):
+    try:
+        yield
+    except termios.error as exc:
+        if (exc.args[0] == errno.ENOTTY
+            and sys.platform.startswith(platforms)):
+            testcase.skipTest(f'termios.{func}() is not supported '
+                              f'with pseudo-terminals (?) on {sys.platform}')
+        raise
 
 
 @unittest.skipUnless(hasattr(os, 'openpty'), "need os.openpty()")
@@ -90,7 +104,8 @@ class TestFunctions(unittest.TestCase):
             self.assertRaises(TypeError, termios.tcsetattr, self.fd, termios.TCSANOW, attrs2)
         self.assertRaises(TypeError, termios.tcsetattr, self.fd, termios.TCSANOW, object())
         self.assertRaises(TypeError, termios.tcsetattr, self.fd, termios.TCSANOW)
-        self.assertRaisesTermiosError(errno.EINVAL, termios.tcsetattr, self.fd, -1, attrs)
+        if sys.platform != 'cygwin':
+            self.assertRaisesTermiosError(errno.EINVAL, termios.tcsetattr, self.fd, -1, attrs)
         self.assertRaises(OverflowError, termios.tcsetattr, self.fd, 2**1000, attrs)
         self.assertRaises(TypeError, termios.tcsetattr, self.fd, object(), attrs)
         self.assertRaisesTermiosError(errno.ENOTTY, termios.tcsetattr, self.bad_fd, termios.TCSANOW, attrs)
@@ -101,14 +116,10 @@ class TestFunctions(unittest.TestCase):
 
     @support.skip_android_selinux('tcsendbreak')
     def test_tcsendbreak(self):
-        try:
+        with skip_enotty_error(self, 'tcsendbreak',
+                               ('freebsd', 'netbsd', 'cygwin')):
             termios.tcsendbreak(self.fd, 1)
-        except termios.error as exc:
-            if exc.args[0] == errno.ENOTTY and sys.platform.startswith(('freebsd', "netbsd")):
-                self.skipTest('termios.tcsendbreak() is not supported '
-                              'with pseudo-terminals (?) on this platform')
-            raise
-        termios.tcsendbreak(self.stream, 1)
+            termios.tcsendbreak(self.stream, 1)
 
     @support.skip_android_selinux('tcsendbreak')
     def test_tcsendbreak_errors(self):
@@ -123,8 +134,9 @@ class TestFunctions(unittest.TestCase):
 
     @support.skip_android_selinux('tcdrain')
     def test_tcdrain(self):
-        termios.tcdrain(self.fd)
-        termios.tcdrain(self.stream)
+        with skip_enotty_error(self, 'tcdrain', ('cygwin',)):
+            termios.tcdrain(self.fd)
+            termios.tcdrain(self.stream)
 
     @support.skip_android_selinux('tcdrain')
     def test_tcdrain_errors(self):
@@ -149,6 +161,7 @@ class TestFunctions(unittest.TestCase):
         self.assertRaises(TypeError, termios.tcflush, object(), termios.TCIFLUSH)
         self.assertRaises(TypeError, termios.tcflush, self.fd)
 
+    @unittest.skipIf(sys.platform == 'cygwin', 'test fails on Cygwin')
     def test_tcflush_clear_input_or_output(self):
         wfd = self.fd
         rfd = self.master_fd
@@ -176,14 +189,16 @@ class TestFunctions(unittest.TestCase):
 
     @support.skip_android_selinux('tcflow')
     def test_tcflow(self):
-        termios.tcflow(self.fd, termios.TCOOFF)
-        termios.tcflow(self.fd, termios.TCOON)
-        termios.tcflow(self.fd, termios.TCIOFF)
-        termios.tcflow(self.fd, termios.TCION)
+        with skip_enotty_error(self, 'tcflow', ('cygwin',)):
+            termios.tcflow(self.fd, termios.TCOOFF)
+            termios.tcflow(self.fd, termios.TCOON)
+            termios.tcflow(self.fd, termios.TCIOFF)
+            termios.tcflow(self.fd, termios.TCION)
 
     @support.skip_android_selinux('tcflow')
     def test_tcflow_errors(self):
-        self.assertRaisesTermiosError(errno.EINVAL, termios.tcflow, self.fd, -1)
+        if sys.platform != 'cygwin':
+            self.assertRaisesTermiosError(errno.EINVAL, termios.tcflow, self.fd, -1)
         self.assertRaises(OverflowError, termios.tcflow, self.fd, 2**1000)
         self.assertRaises(TypeError, termios.tcflow, self.fd, object())
         self.assertRaisesTermiosError(errno.ENOTTY, termios.tcflow, self.bad_fd, termios.TCOON)

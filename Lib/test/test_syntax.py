@@ -2061,6 +2061,30 @@ SyntaxError: trailing comma not allowed without surrounding parentheses
 Traceback (most recent call last):
 SyntaxError: trailing comma not allowed without surrounding parentheses
 
+>>> with item,: pass
+Traceback (most recent call last):
+SyntaxError: the last 'with' item has a trailing comma
+
+>>> with item as x,: pass
+Traceback (most recent call last):
+SyntaxError: the last 'with' item has a trailing comma
+
+>>> with item1, item2,: pass
+Traceback (most recent call last):
+SyntaxError: the last 'with' item has a trailing comma
+
+>>> with item1 as x, item2,: pass
+Traceback (most recent call last):
+SyntaxError: the last 'with' item has a trailing comma
+
+>>> with item1 as x, item2 as y,: pass
+Traceback (most recent call last):
+SyntaxError: the last 'with' item has a trailing comma
+
+>>> with item1, item2 as y,: pass
+Traceback (most recent call last):
+SyntaxError: the last 'with' item has a trailing comma
+
 >>> import a from b
 Traceback (most recent call last):
 SyntaxError: Did you mean to use 'from ... import ...' instead?

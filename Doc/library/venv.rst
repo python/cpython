@@ -77,6 +77,9 @@ containing a copy or symlink of the Python executable
 It also creates a :file:`lib/pythonX.Y/site-packages` subdirectory
 (on Windows, this is :file:`Lib\\site-packages`).
 If an existing directory is specified, it will be re-used.
+Reusing an existing directory does not leave it unchanged: ``venv`` may create,
+update, or replace files in the target directory. Use a dedicated directory for
+the virtual environment, and avoid placing project files directly inside it.
 
 .. versionchanged:: 3.5
    The use of ``venv`` is now recommended for creating virtual environments.
@@ -126,7 +129,9 @@ The command, if run with ``-h``, will show the available options::
 
 .. option:: --clear
 
-   Delete the contents of the environment directory if it already exists, before environment creation.
+   Delete all contents of the environment directory if it already exists,
+   including files that were not created by ``venv``,
+   before environment creation.
 
 .. option:: --upgrade
 

@@ -624,3 +624,58 @@ To inject and execute a Python script in a remote process:
 6. Set ``_PY_EVAL_PLEASE_STOP_BIT`` in the ``eval_breaker`` field.
 7. Resume the process (if suspended). The script will execute at the next safe
    evaluation point.
+
+.. _remote-debugging-threat-model:
+
+Security and threat model
+=========================
+
+The remote debugging protocol relies on the same operating system primitives
+used by native debuggers such as GDB and LLDB.  Attaching to a process
+requires the **same privileges** that those debuggers require, for example
+``ptrace`` / Yama LSM on Linux, ``task_for_pid`` on macOS, and
+``SeDebugPrivilege`` on Windows.  Python does not introduce any new privilege
+escalation path; if an attacker already possesses the permissions needed to
+attach to a process, they could equally use GDB to read memory or inject
+code.
+
+The following principles define what is, and is not, considered a security
+vulnerability in this feature:
+
+Attaching requires OS-level privileges
+   On every supported platform the operating system gates cross-process
+   memory access behind privilege checks (``CAP_SYS_PTRACE``, root, or
+   administrator rights).  A report that demonstrates an issue only after
+   these privileges have already been obtained is **not** a vulnerability in
+   CPython, since the OS security boundary was already crossed.
+
+Crashes or memory errors when reading a compromised process are not vulnerabilities
+   A tool that reads internal interpreter state from a target process must
+   trust that memory to be well-formed.  If the target process has been
+   corrupted or is controlled by an attacker, the debugger or profiler may
+   crash, produce garbage output, or behave unpredictably.  This is the same
+   risk accepted by every ``ptrace``-based debugger.  Bugs in this category
+   (buffer overflows, segmentation faults, or undefined behaviour triggered
+   by reading corrupted state) are **not** treated as security issues, though
+   fixes that improve robustness are welcome.
+
+Vulnerabilities in the target process are not in scope
+   If the Python process being debugged has already been compromised, the
+   attacker already controls execution in that process.  Demonstrating further
+   impact from that starting point does not constitute a vulnerability in the
+   remote debugging protocol.
+
+When to use ``PYTHON_DISABLE_REMOTE_DEBUG``
+-------------------------------------------
+
+The environment variable :envvar:`PYTHON_DISABLE_REMOTE_DEBUG` (and the
+equivalent :option:`-X disable_remote_debug` flag) allows operators to disable
+the in-process side of the protocol as a **defence-in-depth** measure.  This
+may be useful in hardened or sandboxed deployment environments where no
+debugging or profiling of the process is expected and reducing attack surface
+is a priority, even though the OS-level privilege checks already prevent
+unprivileged access.
+
+Setting this variable does **not** affect other OS-level debugging interfaces
+(``ptrace``, ``/proc``, ``task_for_pid``, etc.), which remain available
+according to their own permission models.

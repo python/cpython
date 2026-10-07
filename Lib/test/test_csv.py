@@ -553,6 +553,33 @@ class Test_Csv(unittest.TestCase):
                         self.assertEqual(row, rows[i])
 
 
+    def test_reader_reentrant_iterator(self):
+        # gh-145105: re-entering the reader from the iterator must not crash.
+        class ReentrantIter:
+            def __init__(self):
+                self.reader = None
+                self.n = 0
+            def __iter__(self):
+                return self
+            def __next__(self):
+                self.n += 1
+                if self.n == 1:
+                    try:
+                        next(self.reader)
+                    except StopIteration:
+                        pass
+                    return "a,b"
+                if self.n == 2:
+                    return "x"
+                raise StopIteration
+
+        it = ReentrantIter()
+        reader = csv.reader(it)
+        it.reader = reader
+        with self.assertRaises(csv.Error):
+            next(reader)
+
+
 class TestDialectRegistry(unittest.TestCase):
     def test_registry_badargs(self):
         self.assertRaises(TypeError, csv.list_dialects, None)
@@ -1279,6 +1306,19 @@ class TestDialectValidity(unittest.TestCase):
                 if field_name != "delimiter":
                     self.assertRaises(ValueError, create_invalid, field_name, " ",
                                       skipinitialspace=True)
+
+    def test_dialect_getattr_non_attribute_error_propagates(self):
+        # gh-145966: non-AttributeError exceptions raised by __getattr__
+        # during dialect attribute lookup must propagate, not be silenced.
+        class BadDialect:
+            def __getattr__(self, name):
+                raise RuntimeError("boom")
+
+        with self.assertRaises(RuntimeError):
+            csv.reader([], dialect=BadDialect())
+
+        with self.assertRaises(RuntimeError):
+            csv.writer(StringIO(), dialect=BadDialect())
 
 
 class TestSniffer(unittest.TestCase):

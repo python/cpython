@@ -77,6 +77,30 @@ class PipeTests(unittest.TestCase):
         else:
             raise RuntimeError('expected ERROR_INVALID_HANDLE')
 
+    def test_pipe_handle_close_after_external_close(self):
+        # gh-149388: PipeHandle.close() must clear ``_handle`` before calling
+        # CloseHandle so that if CloseHandle raises on a stale handle the
+        # PipeHandle is still marked closed and __del__ / subsequent close()
+        # calls are silent no-ops.
+        h1, h2 = windows_utils.pipe(overlapped=(False, False))
+        try:
+            p = windows_utils.PipeHandle(h1)
+            # Simulate an external close of the underlying handle (e.g.
+            # a finalizer race or a concurrent close on the same object).
+            _winapi.CloseHandle(p.handle)
+            # First close() still propagates the OSError from CloseHandle,
+            # but must clear ``_handle`` first.
+            with self.assertRaises(OSError):
+                p.close()
+            self.assertIsNone(p.handle)
+            # Second close() is a no-op.
+            p.close()
+            # __del__ through GC is also a silent no-op — no unraisable.
+            del p
+            support.gc_collect()
+        finally:
+            _winapi.CloseHandle(h2)
+
 
 class PopenTests(unittest.TestCase):
 

@@ -237,7 +237,9 @@ For example::
     [('the', 1143), ('and', 966), ('to', 762), ('of', 669), ('i', 631),
      ('you', 554),  ('a', 546), ('my', 514), ('hamlet', 471), ('in', 451)]
 
-.. class:: Counter([iterable-or-mapping])
+.. class:: Counter(**kwargs)
+           Counter(iterable, /, **kwargs)
+           Counter(mapping, /, **kwargs)
 
     A :class:`Counter` is a :class:`dict` subclass for counting :term:`hashable` objects.
     It is a collection where elements are stored as dictionary keys
@@ -287,7 +289,7 @@ For example::
             >>> sorted(c.elements())
             ['a', 'a', 'a', 'a', 'b', 'b']
 
-    .. method:: most_common([n])
+    .. method:: most_common(n=None)
 
         Return a list of the *n* most common elements and their counts from the
         most common to the least.  If *n* is omitted or ``None``,
@@ -297,7 +299,9 @@ For example::
             >>> Counter('abracadabra').most_common(3)
             [('a', 5), ('b', 2), ('r', 2)]
 
-    .. method:: subtract([iterable-or-mapping])
+    .. method:: subtract(**kwargs)
+                subtract(iterable, /, **kwargs)
+                subtract(mapping, /, **kwargs)
 
         Elements are subtracted from an *iterable* or from another *mapping*
         (or counter).  Like :meth:`dict.update` but subtracts counts instead
@@ -322,13 +326,15 @@ For example::
         .. versionadded:: 3.10
 
     The usual dictionary methods are available for :class:`Counter` objects
-    except for two which work differently for counters.
+    except for these two which work differently for counters:
 
     .. method:: fromkeys(iterable)
 
         This class method is not implemented for :class:`Counter` objects.
 
-    .. method:: update([iterable-or-mapping])
+    .. method:: update(**kwargs)
+                update(iterable, /, **kwargs)
+                update(mapping, /, **kwargs)
 
         Elements are counted from an *iterable* or added-in from another
         *mapping* (or counter).  Like :meth:`dict.update` but adds counts
@@ -478,17 +484,19 @@ or subtracting from an empty counter.
     Unix. They are also useful for tracking transactions and other pools of data
     where only the most recent activity is of interest.
 
+    Deques are :ref:`generic <generics>` over the type of their contents.
+
 
     Deque objects support the following methods:
 
-    .. method:: append(x)
+    .. method:: append(item, /)
 
-        Add *x* to the right side of the deque.
+        Add *item* to the right side of the deque.
 
 
-    .. method:: appendleft(x)
+    .. method:: appendleft(item, /)
 
-        Add *x* to the left side of the deque.
+        Add *item* to the left side of the deque.
 
 
     .. method:: clear()
@@ -503,38 +511,38 @@ or subtracting from an empty counter.
         .. versionadded:: 3.5
 
 
-    .. method:: count(x)
+    .. method:: count(value, /)
 
-        Count the number of deque elements equal to *x*.
+        Count the number of deque elements equal to *value*.
 
         .. versionadded:: 3.2
 
 
-    .. method:: extend(iterable)
+    .. method:: extend(iterable, /)
 
         Extend the right side of the deque by appending elements from the iterable
         argument.
 
 
-    .. method:: extendleft(iterable)
+    .. method:: extendleft(iterable, /)
 
         Extend the left side of the deque by appending elements from *iterable*.
         Note, the series of left appends results in reversing the order of
         elements in the iterable argument.
 
 
-    .. method:: index(x[, start[, stop]])
+    .. method:: index(value[, start[, stop]])
 
-        Return the position of *x* in the deque (at or after index *start*
+        Return the position of *value* in the deque (at or after index *start*
         and before index *stop*).  Returns the first match or raises
         :exc:`ValueError` if not found.
 
         .. versionadded:: 3.5
 
 
-    .. method:: insert(i, x)
+    .. method:: insert(index, value, /)
 
-        Insert *x* into the deque at position *i*.
+        Insert *value* into the deque at position *index*.
 
         If the insertion would cause a bounded deque to grow beyond *maxlen*,
         an :exc:`IndexError` is raised.
@@ -554,7 +562,7 @@ or subtracting from an empty counter.
         elements are present, raises an :exc:`IndexError`.
 
 
-    .. method:: remove(value)
+    .. method:: remove(value, /)
 
         Remove the first occurrence of *value*.  If not found, raises a
         :exc:`ValueError`.
@@ -567,7 +575,7 @@ or subtracting from an empty counter.
         .. versionadded:: 3.2
 
 
-    .. method:: rotate(n=1)
+    .. method:: rotate(n=1, /)
 
         Rotate the deque *n* steps to the right.  If *n* is negative, rotate
         to the left.
@@ -719,7 +727,9 @@ stack manipulations such as ``dup``, ``drop``, ``swap``, ``over``, ``pick``,
 :class:`defaultdict` objects
 ----------------------------
 
-.. class:: defaultdict(default_factory=None, /, [...])
+.. class:: defaultdict(default_factory=None, /, **kwargs)
+           defaultdict(default_factory, mapping, /, **kwargs)
+           defaultdict(default_factory, iterable, /, **kwargs)
 
     Return a new dictionary-like object.  :class:`defaultdict` is a subclass of the
     built-in :class:`dict` class.  It overrides one method and adds one writable
@@ -731,11 +741,14 @@ stack manipulations such as ``dup``, ``drop``, ``swap``, ``over``, ``pick``,
     as if they were passed to the :class:`dict` constructor, including keyword
     arguments.
 
+    :class:`!defaultdict`\s are :ref:`generic <generics>` over two types,
+    signifying (respectively) the types of the dictionary's keys and values.
+
 
     :class:`defaultdict` objects support the following method in addition to the
     standard :class:`dict` operations:
 
-    .. method:: __missing__(key)
+    .. method:: __missing__(key, /)
 
         If the :attr:`default_factory` attribute is ``None``, this raises a
         :exc:`KeyError` exception with the *key* as argument.
@@ -941,7 +954,7 @@ In addition to the methods inherited from tuples, named tuples support
 three additional methods and two attributes.  To prevent conflicts with
 field names, the method and attribute names start with an underscore.
 
-.. classmethod:: somenamedtuple._make(iterable)
+.. classmethod:: somenamedtuple._make(iterable, /)
 
     Class method that makes a new instance from an existing sequence or iterable.
 
@@ -1138,7 +1151,9 @@ Some differences from :class:`dict` still remain:
 * Until Python 3.8, :class:`dict` lacked a :meth:`~object.__reversed__` method.
 
 
-.. class:: OrderedDict([items])
+.. class:: OrderedDict(**kwargs)
+           OrderedDict(mapping, /, **kwargs)
+           OrderedDict(iterable, /, **kwargs)
 
     Return an instance of a :class:`dict` subclass that has methods
     specialized for rearranging dictionary order.
@@ -1213,12 +1228,12 @@ original insertion position is changed and moved to the end::
             self.move_to_end(key)
 
 An :class:`OrderedDict` would also be useful for implementing
-variants of :func:`functools.lru_cache`:
+variants of :deco:`functools.lru_cache`:
 
 .. testcode::
 
     from collections import OrderedDict
-    from time import time
+    from time import monotonic
 
     class TimeBoundedLRU:
         "LRU Cache that invalidates and refreshes old entries."
@@ -1233,10 +1248,10 @@ variants of :func:`functools.lru_cache`:
             if args in self.cache:
                 self.cache.move_to_end(args)
                 timestamp, result = self.cache[args]
-                if time() - timestamp <= self.maxage:
+                if monotonic() - timestamp <= self.maxage:
                     return result
             result = self.func(*args)
-            self.cache[args] = time(), result
+            self.cache[args] = monotonic(), result
             if len(self.cache) > self.maxsize:
                 self.cache.popitem(last=False)
             return result
@@ -1319,23 +1334,31 @@ subclass directly from :class:`dict`; however, this class can be easier
 to work with because the underlying dictionary is accessible as an
 attribute.
 
-.. class:: UserDict([initialdata])
+.. class:: UserDict(**kwargs)
+           UserDict(mapping, /, **kwargs)
+           UserDict(iterable, /, **kwargs)
 
     Class that simulates a dictionary.  The instance's contents are kept in a
     regular dictionary, which is accessible via the :attr:`data` attribute of
-    :class:`UserDict` instances.  If *initialdata* is provided, :attr:`data` is
-    initialized with its contents; note that a reference to *initialdata* will not
-    be kept, allowing it to be used for other purposes.
+    :class:`!UserDict` instances.  If arguments are provided, they are used to
+    initialize :attr:`data`, like a regular dictionary.
 
     In addition to supporting the methods and operations of mappings,
-    :class:`UserDict` instances provide the following attribute:
+    :class:`!UserDict` instances provide the following attribute:
 
     .. attribute:: data
 
         A real dictionary used to store the contents of the :class:`UserDict`
         class.
 
+    :class:`!UserDict` instances also override the following method:
 
+    .. method:: popitem
+
+        Remove and return a ``(key, value)`` pair from the wrapped dictionary. Pairs are
+        returned in the same order as ``data.popitem()``. (For the default
+        :meth:`dict.popitem`, this order is :abbr:`LIFO (last-in, first-out)`.) If the
+        dictionary is empty, raises a :exc:`KeyError`.
 
 :class:`UserList` objects
 -------------------------

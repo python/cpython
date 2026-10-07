@@ -152,3 +152,22 @@ class Test_ABIInfo_Check(unittest.TestCase):
             msg = "only compatible with free-threaded CPython"
         with self.assertRaisesRegex(ImportError, msg):
             _testcapi.pyabiinfo_check(modname, 1, minor, ft_flag, build, 0)
+
+
+class TestModsupport(unittest.TestCase):
+    def test_pyarg_parsearray(self):
+        func = _testcapi.pyarg_parsearray
+        self.assertEqual(func(1, 2), (1, 2, 0))
+        self.assertEqual(func(1, 2, 3), (1, 2, 3))
+        self.assertRaises(TypeError, func, 1)
+        self.assertRaises(TypeError, func, "str", 2)
+
+    def test_funcandkeywords(self):
+        func = _testcapi.pyarg_parsearrayandkeywords
+        self.assertEqual(func(1, 2), (1, 2, 0))
+        self.assertEqual(func(1, 2, 3), (1, 2, 3))
+        self.assertEqual(func(1, b=2), (1, 2, 0))
+        self.assertEqual(func(1, b=2, c=3), (1, 2, 3))
+        self.assertRaises(TypeError, func, 1)
+        self.assertRaises(TypeError, func, "str", 2)
+        self.assertRaises(TypeError, func, 1, z=2)

@@ -1,0 +1,2 @@
+Remove the :exc:`!shutil.ExecError` exception which has been deprecated
+since Python 3.14.

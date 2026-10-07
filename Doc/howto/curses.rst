@@ -6,9 +6,6 @@
 
 .. currentmodule:: curses
 
-:Author: A.M. Kuchling, Eric S. Raymond
-:Release: 2.04
-
 
 .. topic:: Abstract
 

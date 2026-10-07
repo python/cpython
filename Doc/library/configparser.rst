@@ -24,6 +24,11 @@ can be customized by end users easily.
    This library does *not* interpret or write the value-type prefixes used in
    the Windows Registry extended version of INI syntax.
 
+.. warning::
+   Be cautious when parsing data from untrusted sources. A malicious
+   INI file may cause the decoder to consume considerable CPU and memory
+   resources. Limiting the size of data to be parsed is recommended.
+
 .. seealso::
 
    Module :mod:`tomllib`

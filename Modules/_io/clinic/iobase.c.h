@@ -19,11 +19,13 @@ PyDoc_STRVAR(_io__IOBase_seek__doc__,
 "  whence\n"
 "    The relative position to seek from.\n"
 "\n"
-"The offset is interpreted relative to the position indicated by whence.\n"
-"Values for whence are:\n"
+"The offset is interpreted relative to the position indicated by\n"
+"whence.  Values for whence are:\n"
 "\n"
-"* os.SEEK_SET or 0 -- start of stream (the default); offset should be zero or positive\n"
-"* os.SEEK_CUR or 1 -- current stream position; offset may be negative\n"
+"* os.SEEK_SET or 0 -- start of stream (the default); offset should\n"
+"  be zero or positive\n"
+"* os.SEEK_CUR or 1 -- current stream position; offset may be\n"
+"  negative\n"
 "* os.SEEK_END or 2 -- end of stream; offset is usually negative\n"
 "\n"
 "Return the new absolute position.");
@@ -103,8 +105,8 @@ PyDoc_STRVAR(_io__IOBase_truncate__doc__,
 "\n"
 "Truncate file to size bytes.\n"
 "\n"
-"File pointer is left unchanged. Size defaults to the current IO position\n"
-"as reported by tell(). Return the new size.");
+"File pointer is left unchanged.  Size defaults to the current IO\n"
+"position as reported by tell().  Return the new size.");
 
 #define _IO__IOBASE_TRUNCATE_METHODDEF    \
     {"truncate", _PyCFunction_CAST(_io__IOBase_truncate), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io__IOBase_truncate__doc__},
@@ -443,4 +445,4 @@ _io__RawIOBase_readall(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _io__RawIOBase_readall_impl(self);
 }
-/*[clinic end generated code: output=9359e74d95534bef input=a9049054013a1b77]*/
+/*[clinic end generated code: output=28c06bb6db32c096 input=a9049054013a1b77]*/

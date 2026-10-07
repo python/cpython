@@ -1379,6 +1379,11 @@ class BlobTests(unittest.TestCase):
     def test_blob_get_empty_slice(self):
         self.assertEqual(self.blob[5:5], b"")
 
+    def test_blob_get_empty_slice_oob_indices(self):
+        self.cx.execute("insert into test(b) values (?)", (b"abc",))
+        with self.cx.blobopen("test", "b", 2) as blob:
+            self.assertEqual(blob[5:-5], b"")
+
     def test_blob_get_slice_negative_index(self):
         self.assertEqual(self.blob[5:-5], self.data[5:-5])
 
@@ -1393,6 +1398,18 @@ class BlobTests(unittest.TestCase):
 
     def test_blob_set_empty_slice(self):
         self.blob[0:0] = b""
+        self.assertEqual(self.blob[:], self.data)
+
+    def test_blob_set_empty_slice_wrong_type(self):
+        with self.assertRaises(TypeError):
+            self.blob[5:5] = None
+
+    def test_blob_set_empty_slice_wrong_size(self):
+        with self.assertRaisesRegex(IndexError, "wrong size"):
+            self.blob[5:5] = b"123"
+
+    def test_blob_set_empty_slice_correct(self):
+        self.blob[5:5] = b""
         self.assertEqual(self.blob[:], self.data)
 
     def test_blob_set_slice_with_skip(self):

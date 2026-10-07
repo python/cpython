@@ -555,6 +555,30 @@ pyobject_dump(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+pysentinel_new(PyObject *self, PyObject *args)
+{
+    const char *name;
+    const char *module_name = NULL;
+    const char *repr = NULL;
+    if (!PyArg_ParseTuple(args, "s|ss", &name, &module_name, &repr)) {
+        return NULL;
+    }
+    return PySentinel_New(name, module_name, repr);
+}
+
+static PyObject *
+pysentinel_check(PyObject *self, PyObject *obj)
+{
+    return PyBool_FromLong(PySentinel_Check(obj));
+}
+
+static PyObject *
+pysentinel_checkexact(PyObject *self, PyObject *obj)
+{
+    return PyBool_FromLong(PySentinel_CheckExact(obj));
+}
+
 
 static PyMethodDef test_methods[] = {
     {"call_pyobject_print", call_pyobject_print, METH_VARARGS},
@@ -585,6 +609,9 @@ static PyMethodDef test_methods[] = {
     {"clear_managed_dict", clear_managed_dict, METH_O, NULL},
     {"is_uniquely_referenced", is_uniquely_referenced, METH_O},
     {"pyobject_dump", pyobject_dump, METH_VARARGS},
+    {"pysentinel_new", pysentinel_new, METH_VARARGS},
+    {"pysentinel_check", pysentinel_check, METH_O},
+    {"pysentinel_checkexact", pysentinel_checkexact, METH_O},
     {NULL},
 };
 

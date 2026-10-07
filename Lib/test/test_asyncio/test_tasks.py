@@ -11,6 +11,7 @@ import sys
 import traceback
 import types
 import unittest
+import inspect
 from unittest import mock
 from types import GenericAlias
 
@@ -20,7 +21,6 @@ from asyncio import tasks
 from test.test_asyncio import utils as test_utils
 from test import support
 from test.support.script_helper import assert_python_ok
-from test.support.warnings_helper import ignore_warnings
 
 
 def tearDownModule():
@@ -1940,30 +1940,11 @@ class BaseTaskTests:
         self.assertFalse(task.cancelled())
         self.assertIs(task.exception(), base_exc)
 
-    @ignore_warnings(category=DeprecationWarning)
-    def test_iscoroutinefunction(self):
-        def fn():
-            pass
-
-        self.assertFalse(asyncio.iscoroutinefunction(fn))
-
-        def fn1():
-            yield
-        self.assertFalse(asyncio.iscoroutinefunction(fn1))
-
-        async def fn2():
-            pass
-        self.assertTrue(asyncio.iscoroutinefunction(fn2))
-
-        self.assertFalse(asyncio.iscoroutinefunction(mock.Mock()))
-        self.assertTrue(asyncio.iscoroutinefunction(mock.AsyncMock()))
-
-    @ignore_warnings(category=DeprecationWarning)
     def test_coroutine_non_gen_function(self):
         async def func():
             return 'test'
 
-        self.assertTrue(asyncio.iscoroutinefunction(func))
+        self.assertTrue(inspect.iscoroutinefunction(func))
 
         coro = func()
         self.assertTrue(asyncio.iscoroutine(coro))

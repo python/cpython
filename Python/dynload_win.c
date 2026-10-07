@@ -151,11 +151,16 @@ static char *GetPythonImport (HINSTANCE hModule)
    to this python DLL is loaded, not a python3.dll that might be on the path
    by chance.
    Return whether the DLL was found.
+   On free-threaded builds, PY3_DLLNAME is undefined and this is a no-op.
+   _Py_CheckPython3t will check for python3t.dll in that case.
 */
 extern HMODULE PyWin_DLLhModule;
 static int
 _Py_CheckPython3(void)
 {
+#ifndef PY3_DLLNAME
+    return 1;
+#else
     static int python3_checked = 0;
     static HANDLE hPython3;
     #define MAXPATHLEN 512
@@ -169,10 +174,11 @@ _Py_CheckPython3(void)
        use that DLL */
     if (PyWin_DLLhModule && GetModuleFileNameW(PyWin_DLLhModule, py3path, MAXPATHLEN)) {
         wchar_t *p = wcsrchr(py3path, L'\\');
+
         if (p) {
-            wcscpy(p + 1, PY3_DLLNAME);
+            wcscpy(p + 1, PY3_DLLNAME L".dll");
             hPython3 = LoadLibraryExW(py3path, NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
-            if (hPython3 != NULL) {
+            if (hPython3) {
                 return 1;
             }
         }
@@ -180,7 +186,7 @@ _Py_CheckPython3(void)
 
     /* If we can locate python3.dll in our application dir,
        use that DLL */
-    hPython3 = LoadLibraryExW(PY3_DLLNAME, NULL, LOAD_LIBRARY_SEARCH_APPLICATION_DIR);
+    hPython3 = LoadLibraryExW(PY3_DLLNAME L".dll", NULL, LOAD_LIBRARY_SEARCH_APPLICATION_DIR);
     if (hPython3 != NULL) {
         return 1;
     }
@@ -192,13 +198,78 @@ _Py_CheckPython3(void)
     assert(config->prefix);
     if (config->prefix) {
         wcscpy_s(py3path, MAXPATHLEN, config->prefix);
-        if (py3path[0] && _Py_add_relfile(py3path, L"DLLs\\" PY3_DLLNAME, MAXPATHLEN) >= 0) {
+        if (py3path[0] && _Py_add_relfile(py3path, L"DLLs\\" PY3_DLLNAME L".dll", MAXPATHLEN) >= 0) {
             hPython3 = LoadLibraryExW(py3path, NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
         }
     }
     return hPython3 != NULL;
     #undef MAXPATHLEN
+#endif /* PY3_DLLNAME */
 }
+
+/* To support extensions that can load with both abi3 and abi3t, we also need to
+ * preload python3t.dll. Due to 3.15 still supporting intermingled layouts, the
+ * check is a bit more complicated on that version as we need to try loading
+ * from a subdirectory first in case the adjacent python3t.dll is meant for
+ * python315t.dll (and we are python315.dll).
+ */
+static int
+_Py_CheckPython3t(void)
+{
+#ifndef ABI3T_DLLNAME
+    return 1;
+#else
+#if defined(PY3_DLLNAME) && PY_MAJOR_VERSION==3 && PY_MINOR_VERSION==15
+    /* GIL-enabled builds of 3.15 might have a python3t.dll adjacent that is for
+       a free-threaded build. So we first check in a subdirectory in that case.
+       If it's not there, we'll look adjacent. */
+    #define ABI3T_COMPAT_DLLNAME L"abi3t-compat\\" ABI3T_DLLNAME L".dll"
+#endif
+    static int python3t_checked = 0;
+    static HANDLE hPython3t;
+    #define MAXPATHLEN 512
+    wchar_t py3path[MAXPATHLEN+1];
+    if (python3t_checked) {
+        return hPython3t != NULL;
+    }
+    python3t_checked = 1;
+
+    /* If there is a python3t.dll [in the abi3t-compat dir] next to the
+       python3y.dll, use that DLL */
+    if (PyWin_DLLhModule && GetModuleFileNameW(PyWin_DLLhModule, py3path, MAXPATHLEN)) {
+        wchar_t *p = wcsrchr(py3path, L'\\');
+
+        if (p) {
+#ifdef ABI3T_COMPAT_DLLNAME
+            wcscpy(p + 1, ABI3T_COMPAT_DLLNAME);
+            hPython3t = LoadLibraryExW(py3path, NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
+            if (hPython3t == NULL)
+#endif
+            {
+                wcscpy(p + 1, ABI3T_DLLNAME L".dll");
+                hPython3t = LoadLibraryExW(py3path, NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
+            }
+            if (hPython3t) {
+                return 1;
+            }
+        }
+    }
+
+    /* If we can locate python3.dll in our application dir,
+       use that DLL */
+#ifdef ABI3T_COMPAT_DLLNAME
+    hPython3t = LoadLibraryExW(ABI3T_COMPAT_DLLNAME, NULL, LOAD_LIBRARY_SEARCH_APPLICATION_DIR);
+    #undef ABI3T_COMPAT_DLLNAME
+    if (hPython3t == NULL)
+#endif
+    {
+        hPython3t = LoadLibraryExW(ABI3T_DLLNAME L".dll", NULL, LOAD_LIBRARY_SEARCH_APPLICATION_DIR);
+    }
+    return hPython3t != NULL;
+    #undef MAXPATHLEN
+#endif /* ABI3T_DLLNAME */
+}
+
 #endif /* Py_ENABLE_SHARED */
 
 dl_funcptr _PyImport_FindSharedFuncptrWindows(const char *prefix,
@@ -210,6 +281,7 @@ dl_funcptr _PyImport_FindSharedFuncptrWindows(const char *prefix,
 
 #ifdef Py_ENABLE_SHARED
     _Py_CheckPython3();
+    _Py_CheckPython3t();
 #endif /* Py_ENABLE_SHARED */
 
     wchar_t *wpathname = PyUnicode_AsWideCharString(pathname, NULL);

@@ -139,8 +139,7 @@
 #ifdef DOUBLE_IS_LITTLE_ENDIAN_IEEE754
 #  define IEEE_8087
 #endif
-#if defined(DOUBLE_IS_BIG_ENDIAN_IEEE754) ||  \
-  defined(DOUBLE_IS_ARM_MIXED_ENDIAN_IEEE754)
+#if defined(DOUBLE_IS_BIG_ENDIAN_IEEE754)
 #  define IEEE_MC68k
 #endif
 #if defined(IEEE_8087) + defined(IEEE_MC68k) != 1
@@ -149,8 +148,7 @@
 
 /* The code below assumes that the endianness of integers matches the
    endianness of the two 32-bit words of a double.  Check this. */
-#if defined(WORDS_BIGENDIAN) && (defined(DOUBLE_IS_LITTLE_ENDIAN_IEEE754) || \
-                                 defined(DOUBLE_IS_ARM_MIXED_ENDIAN_IEEE754))
+#if defined(WORDS_BIGENDIAN) && defined(DOUBLE_IS_LITTLE_ENDIAN_IEEE754)
 #error "doubles and ints have incompatible endianness"
 #endif
 

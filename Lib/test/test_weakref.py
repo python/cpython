@@ -167,6 +167,11 @@ class ReferencesTestCase(TestBase):
         self.check_basic_callback(create_function)
         self.check_basic_callback(create_bound_method)
 
+    def test_non_callable_callback(self):
+        c = C()
+        self.assertRaises(TypeError, weakref.ref, c, 42)
+        self.assertRaises(TypeError, weakref.proxy, c, 42)
+
     @support.cpython_only
     def test_cfunction(self):
         _testcapi = import_helper.import_module("_testcapi")

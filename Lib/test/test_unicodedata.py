@@ -12,7 +12,9 @@ from http.client import HTTPException
 import sys
 import unicodedata
 import unittest
+import weakref
 from test.support import (
+    gc_collect,
     open_urlresource,
     requires_resource,
     script_helper,
@@ -378,6 +380,12 @@ class BaseUnicodeFunctionsTest:
         # New in 17.0.0
         self.assertEqual(self.db.decomposition('\uA7F1'), '' if self.old else '<super> 0053')
 
+        # Hangul characters
+        self.assertEqual(self.db.decomposition('\uAC00'), '1100 1161')
+        self.assertEqual(self.db.decomposition('\uD4DB'), '1111 1171 11B6')
+        self.assertEqual(self.db.decomposition('\uC2F8'), '110A 1161')
+        self.assertEqual(self.db.decomposition('\uD7A3'), '1112 1175 11C2')
+
         self.assertRaises(TypeError, self.db.decomposition)
         self.assertRaises(TypeError, self.db.decomposition, 'xx')
 
@@ -608,6 +616,34 @@ class BaseUnicodeFunctionsTest:
         b = 'C\u0338' * 20  + '\xC7'
         self.assertEqual(self.db.normalize('NFC', a), b)
 
+    def test_long_combining_mark_run(self):
+        # gh-149079: avoid quadratic canonical ordering.
+        payload = "a" + ("\u0300\u0327" * 32)
+        nfd = "a" + ("\u0327" * 32) + ("\u0300" * 32)
+        nfc = "\u00e0" + ("\u0327" * 32) + ("\u0300" * 31)
+
+        self.assertEqual(self.db.normalize("NFD", payload), nfd)
+        self.assertEqual(self.db.normalize("NFKD", payload), nfd)
+        self.assertEqual(self.db.normalize("NFC", payload), nfc)
+        self.assertEqual(self.db.normalize("NFKC", payload), nfc)
+
+    def test_combining_mark_run_fast_paths(self):
+        # gh-149079: cover short runs and already-sorted long runs.
+        short_payload = "a" + ("\u0300\u0327" * 9) + "\u0300"
+        short_nfd = "a" + ("\u0327" * 9) + ("\u0300" * 10)
+        short_nfc = "\u00e0" + ("\u0327" * 9) + ("\u0300" * 9)
+        long_sorted = "a" + ("\u0327" * 30) + ("\u0300" * 30)
+        long_sorted_nfc = "\u00e0" + ("\u0327" * 30) + ("\u0300" * 29)
+
+        self.assertEqual(self.db.normalize("NFD", short_payload), short_nfd)
+        self.assertEqual(self.db.normalize("NFKD", short_payload), short_nfd)
+        self.assertEqual(self.db.normalize("NFC", short_payload), short_nfc)
+        self.assertEqual(self.db.normalize("NFKC", short_payload), short_nfc)
+        self.assertEqual(self.db.normalize("NFD", long_sorted), long_sorted)
+        self.assertEqual(self.db.normalize("NFKD", long_sorted), long_sorted)
+        self.assertEqual(self.db.normalize("NFC", long_sorted), long_sorted_nfc)
+        self.assertEqual(self.db.normalize("NFKC", long_sorted), long_sorted_nfc)
+
     def test_issue29456(self):
         # Fix #29456
         u1176_str_a = '\u1100\u1176\u11a8'
@@ -687,9 +723,9 @@ class UnicodeFunctionsTest(unittest.TestCase, BaseUnicodeFunctionsTest):
 
     # Update this if the database changes. Make sure to do a full rebuild
     # (e.g. 'make distclean && make') to get the correct checksum.
-    expectedchecksum = ('668dbbea1136e69d4f00677a5988b23bc78aefc6'
+    expectedchecksum = ('00b13fa975a60b1d3f490f1fc8c126ab24990c75'
                         if quicktest else
-                        'b869af769bd8fe352c04622ab90533dc54df5cf3')
+                        'ebfc9dd281c2226998fd435744dd2e9321899beb')
 
     @requires_resource('network')
     def test_all_names(self):
@@ -1068,9 +1104,9 @@ class UnicodeFunctionsTest(unittest.TestCase, BaseUnicodeFunctionsTest):
 class Unicode_3_2_0_FunctionsTest(unittest.TestCase, BaseUnicodeFunctionsTest):
     db = unicodedata.ucd_3_2_0
     old = True
-    expectedchecksum = ('2164a66700e03cba9c9f5ed9e9a8d594d2da136a'
+    expectedchecksum = ('cb5bbbd1f55b67371e18222b90a8e21c87f16b72'
                         if quicktest else
-                        'a8276cec9b6991779c5bdaa46c1ae7cc50bc2403')
+                        '74936dffe949d99203a47e6a66565b2fc337bae7')
 
 
 class UnicodeMiscTest(unittest.TestCase):
@@ -1097,6 +1133,22 @@ class UnicodeMiscTest(unittest.TestCase):
         error = "SyntaxError: (unicode error) \\N escapes not supported " \
             "(can't load unicodedata module)"
         self.assertIn(error, result.err.decode("ascii"))
+
+    def test_unicodedata_unload_reload(self):
+        # gh-149449: dropping unicodedata and running gc must not leave the
+        # cached _ucnhash_CAPI pointer dangling.
+        code = (
+            "import gc, sys\n"
+            "assert '\\N{GRINNING FACE}'.encode("
+            "    'ascii', errors='namereplace') == b'\\\\N{GRINNING FACE}'\n"
+            "compile(r\"x = '\\\\N{LATIN CAPITAL LETTER A}'\", '<x>', 'exec')\n"
+            "del sys.modules['unicodedata']\n"
+            "gc.collect()\n"
+            "assert '\\N{WINKING FACE}'.encode("
+            "    'ascii', errors='namereplace') == b'\\\\N{WINKING FACE}'\n"
+            "compile(r\"x = '\\\\N{LATIN CAPITAL LETTER B}'\", '<x>', 'exec')\n"
+        )
+        script_helper.assert_python_ok("-c", code)
 
     def test_decimal_numeric_consistent(self):
         # Test that decimal and numeric are consistent,
@@ -1331,6 +1383,28 @@ class GraphemeBreakTest(unittest.TestCase):
                     self.assertEqual(list(map(str, result)), chunks[i:], comment)
                     self.assertEqual([x.start for x in result], breaks[i:-1], comment)
                     self.assertEqual([x.end for x in result], breaks[i+1:], comment)
+
+    def test_reference_loops(self):
+        # Test that reference loops involving GraphemeBreakIterator or
+        # Segment can be broken by the garbage collector.
+        class S(str):
+            pass
+
+        s = S('abc')
+        s.ref = unicodedata.iter_graphemes(s)
+        wr = weakref.ref(s)
+        del s
+        self.assertIsNotNone(wr())
+        gc_collect()
+        self.assertIsNone(wr())
+
+        s = S('abc')
+        s.ref = next(unicodedata.iter_graphemes(s))
+        wr = weakref.ref(s)
+        del s
+        self.assertIsNotNone(wr())
+        gc_collect()
+        self.assertIsNone(wr())
 
 
 if __name__ == "__main__":

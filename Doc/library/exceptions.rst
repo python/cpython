@@ -221,7 +221,7 @@ The following exceptions are the exceptions that are usually raised.
 .. exception:: EOFError
 
    Raised when the :func:`input` function hits an end-of-file condition (EOF)
-   without reading any data. (Note: the :meth:`!io.IOBase.read` and
+   without reading any data. (Note: the :meth:`io.TextIOBase.read` and
    :meth:`io.IOBase.readline` methods return an empty string when they hit EOF.)
 
 
@@ -271,7 +271,7 @@ The following exceptions are the exceptions that are usually raised.
    A subclass of :exc:`ImportError` which is raised when a lazy import fails
    because it (directly or indirectly) tries to import itself.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. exception:: IndexError
 
@@ -983,6 +983,9 @@ their subgroups based on the types of the contained exceptions.
    automatic. The :exc:`ExceptionGroup` constructor, on the other hand,
    raises a :exc:`TypeError` if any contained exception is not an
    :exc:`Exception` subclass.
+
+   Exception groups are :ref:`generic <generics>` over the type of their
+   contained exceptions.
 
    .. impl-detail::
 

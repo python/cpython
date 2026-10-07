@@ -1,10 +1,14 @@
+import codecs
 import io
 import _pyio as pyio
 import threading
 from unittest import TestCase
 from test.support import threading_helper
+from test.support.threading_helper import run_concurrently
 from random import randint
 from sys import getsizeof
+
+threading_helper.requires_working_threading(module=True)
 
 
 class ThreadSafetyMixin:
@@ -115,3 +119,54 @@ class CBytesIOTest(ThreadSafetyMixin, TestCase):
 
 class PyBytesIOTest(ThreadSafetyMixin, TestCase):
      ioclass = pyio.BytesIO
+
+
+class IncrementalNewlineDecoderTest(TestCase):
+    def make_decoder(self):
+        utf8_decoder = codecs.getincrementaldecoder('utf-8')()
+        return io.IncrementalNewlineDecoder(utf8_decoder, translate=True)
+
+    def test_concurrent_reset(self):
+        decoder = self.make_decoder()
+
+        def worker():
+            for _ in range(100):
+                decoder.reset()
+
+        run_concurrently(worker_func=worker, nthreads=2)
+
+    def test_concurrent_decode(self):
+        decoder = self.make_decoder()
+
+        def worker():
+            for _ in range(100):
+                decoder.decode(b"line\r\n", final=False)
+
+        run_concurrently(worker_func=worker, nthreads=2)
+
+    def test_concurrent_getstate_setstate(self):
+        decoder = self.make_decoder()
+        state = decoder.getstate()
+
+        def getstate_worker():
+            for _ in range(100):
+                decoder.getstate()
+
+        def setstate_worker():
+            for _ in range(100):
+                decoder.setstate(state)
+
+        run_concurrently([getstate_worker] * 2 + [setstate_worker] * 2)
+
+    def test_concurrent_decode_and_reset(self):
+        decoder = self.make_decoder()
+
+        def decode_worker():
+            for _ in range(100):
+                decoder.decode(b"line\r\n", final=False)
+
+        def reset_worker():
+            for _ in range(100):
+                decoder.reset()
+
+        run_concurrently([decode_worker] * 2 + [reset_worker] * 2)

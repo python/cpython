@@ -1,0 +1,1 @@
+Update Android and iOS installers to use OpenSSL 3.5.7.

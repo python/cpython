@@ -928,7 +928,7 @@ _PyPreConfig_Write(const PyPreConfig *src_config)
         return status;
     }
 
-    if (_PyRuntime.core_initialized) {
+    if (_Py_IsCoreInitialized()) {
         /* bpo-34008: Calling this functions after Py_Initialize() ignores
            the new configuration. */
         return _PyStatus_OK();

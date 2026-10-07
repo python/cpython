@@ -47,7 +47,11 @@ class ZoneInfo(tzinfo):
         cls._strong_cache[key] = cls._strong_cache.pop(key, instance)
 
         if len(cls._strong_cache) > cls._strong_cache_size:
-            cls._strong_cache.popitem(last=False)
+            try:
+                cls._strong_cache.popitem(last=False)
+            except KeyError:
+                # another thread may have already emptied the cache
+                pass
 
         return instance
 
@@ -334,7 +338,7 @@ class ZoneInfo(tzinfo):
             if not isdsts[comp_idx]:
                 dstoff = utcoff - utcoffsets[comp_idx]
 
-            if not dstoff and idx < (typecnt - 1):
+            if not dstoff and idx < (typecnt - 1) and i + 1 < len(trans_idx):
                 comp_idx = trans_idx[i + 1]
 
                 # If the following transition is also DST and we couldn't

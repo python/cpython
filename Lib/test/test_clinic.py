@@ -1081,6 +1081,187 @@ class ClinicParserTest(TestCase):
         p = function.parameters['follow_symlinks']
         self.assertEqual(True, p.default)
 
+    def test_param_default_none(self):
+        function = self.parse_function(r"""
+            module test
+            test.func
+                obj: object = None
+                str: str(accept={str, NoneType}) = None
+                buf: Py_buffer(accept={str, buffer, NoneType}) = None
+            """)
+        p = function.parameters['obj']
+        self.assertIs(p.default, None)
+        self.assertEqual(p.converter.py_default, 'None')
+        self.assertEqual(p.converter.c_default, 'Py_None')
+
+        p = function.parameters['str']
+        self.assertIs(p.default, None)
+        self.assertEqual(p.converter.py_default, 'None')
+        self.assertEqual(p.converter.c_default, 'NULL')
+
+        p = function.parameters['buf']
+        self.assertIs(p.default, None)
+        self.assertEqual(p.converter.py_default, 'None')
+        self.assertEqual(p.converter.c_default, '{NULL, NULL}')
+
+    def test_param_default_null(self):
+        function = self.parse_function(r"""
+            module test
+            test.func
+                obj: object = NULL
+                str: str = NULL
+                buf: Py_buffer = NULL
+                fsencoded: unicode_fs_encoded = NULL
+                fsdecoded: unicode_fs_decoded = NULL
+            """)
+        p = function.parameters['obj']
+        self.assertIs(p.default, NULL)
+        self.assertEqual(p.converter.py_default, '<unrepresentable>')
+        self.assertEqual(p.converter.c_default, 'NULL')
+
+        p = function.parameters['str']
+        self.assertIs(p.default, NULL)
+        self.assertEqual(p.converter.py_default, '<unrepresentable>')
+        self.assertEqual(p.converter.c_default, 'NULL')
+
+        p = function.parameters['buf']
+        self.assertIs(p.default, NULL)
+        self.assertEqual(p.converter.py_default, '<unrepresentable>')
+        self.assertEqual(p.converter.c_default, '{NULL, NULL}')
+
+        p = function.parameters['fsencoded']
+        self.assertIs(p.default, NULL)
+        self.assertEqual(p.converter.py_default, '<unrepresentable>')
+        self.assertEqual(p.converter.c_default, 'NULL')
+
+        p = function.parameters['fsdecoded']
+        self.assertIs(p.default, NULL)
+        self.assertEqual(p.converter.py_default, '<unrepresentable>')
+        self.assertEqual(p.converter.c_default, 'NULL')
+
+    def test_param_default_str_literal(self):
+        function = self.parse_function(r"""
+            module test
+            test.func
+                str: str = ' \t\n\r\v\f\xa0'
+                buf: Py_buffer(accept={str, buffer}) = ' \t\n\r\v\f\xa0'
+            """)
+        p = function.parameters['str']
+        self.assertEqual(p.default, ' \t\n\r\v\f\xa0')
+        self.assertEqual(p.converter.py_default, r"' \t\n\r\x0b\x0c\xa0'")
+        self.assertEqual(p.converter.c_default, r'" \t\n\r\v\f\u00a0"')
+
+        p = function.parameters['buf']
+        self.assertEqual(p.default, ' \t\n\r\v\f\xa0')
+        self.assertEqual(p.converter.py_default, r"' \t\n\r\x0b\x0c\xa0'")
+        self.assertEqual(p.converter.c_default,
+                         r'{.buf = " \t\n\r\v\f\302\240", .obj = NULL, .len = 8}')
+
+    def test_param_default_bytes_literal(self):
+        function = self.parse_function(r"""
+            module test
+            test.func
+                str: str(accept={robuffer}) = b' \t\n\r\v\f\xa0'
+                buf: Py_buffer = b' \t\n\r\v\f\xa0'
+            """)
+        p = function.parameters['str']
+        self.assertEqual(p.default, b' \t\n\r\v\f\xa0')
+        self.assertEqual(p.converter.py_default, r"b' \t\n\r\x0b\x0c\xa0'")
+        self.assertEqual(p.converter.c_default, r'" \t\n\r\v\f\240"')
+
+        p = function.parameters['buf']
+        self.assertEqual(p.default, b' \t\n\r\v\f\xa0')
+        self.assertEqual(p.converter.py_default, r"b' \t\n\r\x0b\x0c\xa0'")
+        self.assertEqual(p.converter.c_default,
+                         r'{.buf = " \t\n\r\v\f\240", .obj = NULL, .len = 7}')
+
+    def test_param_default_byte_literal(self):
+        function = self.parse_function(r"""
+            module test
+            test.func
+                zero: char = b'\0'
+                one: char = b'\1'
+                lf: char = b'\n'
+                nbsp: char = b'\xa0'
+            """)
+        p = function.parameters['zero']
+        self.assertEqual(p.default, b'\0')
+        self.assertEqual(p.converter.py_default, r"b'\x00'")
+        self.assertEqual(p.converter.c_default, r"'\0'")
+
+        p = function.parameters['one']
+        self.assertEqual(p.default, b'\1')
+        self.assertEqual(p.converter.py_default, r"b'\x01'")
+        self.assertEqual(p.converter.c_default, r"'\001'")
+
+        p = function.parameters['lf']
+        self.assertEqual(p.default, b'\n')
+        self.assertEqual(p.converter.py_default, r"b'\n'")
+        self.assertEqual(p.converter.c_default, r"'\n'")
+
+        p = function.parameters['nbsp']
+        self.assertEqual(p.default, b'\xa0')
+        self.assertEqual(p.converter.py_default, r"b'\xa0'")
+        self.assertEqual(p.converter.c_default, r"'\240'")
+
+    def test_param_default_unicode_char(self):
+        function = self.parse_function(r"""
+            module test
+            test.func
+                zero: int(accept={str}) = '\0'
+                one: int(accept={str}) = '\1'
+                lf: int(accept={str}) = '\n'
+                nbsp: int(accept={str}) = '\xa0'
+                snake: int(accept={str}) = '\U0001f40d'
+            """)
+        p = function.parameters['zero']
+        self.assertEqual(p.default, '\0')
+        self.assertEqual(p.converter.py_default, r"'\x00'")
+        self.assertEqual(p.converter.c_default, '0')
+
+        p = function.parameters['one']
+        self.assertEqual(p.default, '\1')
+        self.assertEqual(p.converter.py_default, r"'\x01'")
+        self.assertEqual(p.converter.c_default, '0x01')
+
+        p = function.parameters['lf']
+        self.assertEqual(p.default, '\n')
+        self.assertEqual(p.converter.py_default, r"'\n'")
+        self.assertEqual(p.converter.c_default, r"'\n'")
+
+        p = function.parameters['nbsp']
+        self.assertEqual(p.default, '\xa0')
+        self.assertEqual(p.converter.py_default, r"'\xa0'")
+        self.assertEqual(p.converter.c_default, '0xa0')
+
+        p = function.parameters['snake']
+        self.assertEqual(p.default, '\U0001f40d')
+        self.assertEqual(p.converter.py_default, "'\U0001f40d'")
+        self.assertEqual(p.converter.c_default, '0x1f40d')
+
+    def test_param_default_bool(self):
+        function = self.parse_function(r"""
+            module test
+            test.func
+                bool: bool = True
+                intbool: bool(accept={int}) = True
+                intbool2: bool(accept={int}) = 2
+            """)
+        p = function.parameters['bool']
+        self.assertIs(p.default, True)
+        self.assertEqual(p.converter.py_default, 'True')
+        self.assertEqual(p.converter.c_default, '1')
+
+        p = function.parameters['intbool']
+        self.assertIs(p.default, True)
+        self.assertEqual(p.converter.py_default, 'True')
+        self.assertEqual(p.converter.c_default, '1')
+
+        p = function.parameters['intbool2']
+        self.assertEqual(p.default, 2)
+        self.assertEqual(p.converter.py_default, '2')
+        self.assertEqual(p.converter.c_default, '2')
+
     def test_param_default_expr_named_constant(self):
         function = self.parse_function("""
             module os
@@ -4431,6 +4612,56 @@ class FormatHelperTests(unittest.TestCase):
         expected = "{{}}, {{a}}"
         out = libclinic.format_escape(line)
         self.assertEqual(out, expected)
+
+    def test_c_bytes_repr(self):
+        c_bytes_repr = libclinic.c_bytes_repr
+        self.assertEqual(c_bytes_repr(b''), '""')
+        self.assertEqual(c_bytes_repr(b'abc'), '"abc"')
+        self.assertEqual(c_bytes_repr(b'\a\b\f\n\r\t\v'), r'"\a\b\f\n\r\t\v"')
+        self.assertEqual(c_bytes_repr(b' \0\x7f'), r'" \000\177"')
+        self.assertEqual(c_bytes_repr(b'"'), r'"\""')
+        self.assertEqual(c_bytes_repr(b"'"), r'''"'"''')
+        self.assertEqual(c_bytes_repr(b'\\'), r'"\\"')
+        self.assertEqual(c_bytes_repr(b'??/'), r'"?\?/"')
+        self.assertEqual(c_bytes_repr(b'???/'), r'"?\?\?/"')
+        self.assertEqual(c_bytes_repr(b'/*****/ /*/ */*'), r'"/\*****\/ /\*\/ *\/\*"')
+        self.assertEqual(c_bytes_repr(b'\xa0'), r'"\240"')
+        self.assertEqual(c_bytes_repr(b'\xff'), r'"\377"')
+
+    def test_c_str_repr(self):
+        c_str_repr = libclinic.c_str_repr
+        self.assertEqual(c_str_repr(''), '""')
+        self.assertEqual(c_str_repr('abc'), '"abc"')
+        self.assertEqual(c_str_repr('\a\b\f\n\r\t\v'), r'"\a\b\f\n\r\t\v"')
+        self.assertEqual(c_str_repr(' \0\x7f'), r'" \000\177"')
+        self.assertEqual(c_str_repr('"'), r'"\""')
+        self.assertEqual(c_str_repr("'"), r'''"'"''')
+        self.assertEqual(c_str_repr('\\'), r'"\\"')
+        self.assertEqual(c_str_repr('??/'), r'"?\?/"')
+        self.assertEqual(c_str_repr('???/'), r'"?\?\?/"')
+        self.assertEqual(c_str_repr('/*****/ /*/ */*'), r'"/\*****\/ /\*\/ *\/\*"')
+        self.assertEqual(c_str_repr('\xa0'), r'"\u00a0"')
+        self.assertEqual(c_str_repr('\xff'), r'"\u00ff"')
+        self.assertEqual(c_str_repr('\u20ac'), r'"\u20ac"')
+        self.assertEqual(c_str_repr('\U0001f40d'), r'"\U0001f40d"')
+
+    def test_c_unichar_repr(self):
+        c_unichar_repr = libclinic.c_unichar_repr
+        self.assertEqual(c_unichar_repr('a'), "'a'")
+        self.assertEqual(c_unichar_repr('\n'), r"'\n'")
+        self.assertEqual(c_unichar_repr('\b'), r"'\b'")
+        self.assertEqual(c_unichar_repr('\0'), '0')
+        self.assertEqual(c_unichar_repr('\1'), '0x01')
+        self.assertEqual(c_unichar_repr('\x7f'), '0x7f')
+        self.assertEqual(c_unichar_repr(' '), "' '")
+        self.assertEqual(c_unichar_repr('"'), """'"'""")
+        self.assertEqual(c_unichar_repr("'"), r"'\''")
+        self.assertEqual(c_unichar_repr('\\'), r"'\\'")
+        self.assertEqual(c_unichar_repr('?'), "'?'")
+        self.assertEqual(c_unichar_repr('\xa0'), '0xa0')
+        self.assertEqual(c_unichar_repr('\xff'), '0xff')
+        self.assertEqual(c_unichar_repr('\u20ac'), '0x20ac')
+        self.assertEqual(c_unichar_repr('\U0001f40d'), '0x1f40d')
 
     def test_indent_all_lines(self):
         # Blank lines are expected to be unchanged.

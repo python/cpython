@@ -5,6 +5,7 @@
 *.cover
 *.iml
 *.o
+*.o.tmp
 *.lto
 *.a
 *.so
@@ -137,8 +138,10 @@ Tools/unicode/data/
 /config.status
 /config.status.lineno
 /.ccache
-/cross-build/
+/cross-build*/
 /jit_stencils*.h
+/jit_unwind_info*.h
+.jit-stamp
 /platform
 /profile-clean-stamp
 /profile-run-stamp

@@ -272,12 +272,12 @@ DateTime Objects
 
 A working example follows. The server code::
 
-   import datetime
+   import datetime as dt
    from xmlrpc.server import SimpleXMLRPCServer
    import xmlrpc.client
 
    def today():
-       today = datetime.datetime.today()
+       today = dt.datetime.today()
        return xmlrpc.client.DateTime(today)
 
    server = SimpleXMLRPCServer(("localhost", 8000))
@@ -288,14 +288,14 @@ A working example follows. The server code::
 The client code for the preceding server::
 
    import xmlrpc.client
-   import datetime
+   import datetime as dt
 
    proxy = xmlrpc.client.ServerProxy("http://localhost:8000/")
 
    today = proxy.today()
-   # convert the ISO8601 string to a datetime object
-   converted = datetime.datetime.strptime(today.value, "%Y%m%dT%H:%M:%S")
-   print("Today: %s" % converted.strftime("%d.%m.%Y, %H:%M"))
+   # convert the ISO 8601 string to a datetime object
+   converted = dt.datetime.strptime(today.value, "%Y%m%dT%H:%M:%S")
+   print(f"Today: {converted.strftime('%d.%m.%Y, %H:%M')}")
 
 .. _binary-objects:
 

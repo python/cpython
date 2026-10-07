@@ -1,1 +1,0 @@
-Add built-in :class:`frozendict` type. Patch by Victor Stinner.

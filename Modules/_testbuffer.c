@@ -351,7 +351,7 @@ pack_from_list(PyObject *obj, PyObject *items, PyObject *format,
 
         item = PySequence_Fast_GET_ITEM(items, i);
         if ((PyBytes_Check(item) || PyLong_Check(item) ||
-             PyFloat_Check(item)) && nmemb == 1) {
+             PyFloat_Check(item) || PyComplex_Check(item)) && nmemb == 1) {
             PyTuple_SET_ITEM(args, 2, item);
         }
         else if ((PyList_Check(item) || PyTuple_Check(item)) &&
@@ -433,7 +433,7 @@ pack_single(char *ptr, PyObject *item, const char *fmt, Py_ssize_t itemsize)
     PyTuple_SET_ITEM(args, 1, zero);
 
     if ((PyBytes_Check(item) || PyLong_Check(item) ||
-         PyFloat_Check(item)) && nmemb == 1) {
+         PyFloat_Check(item) || PyComplex_Check(item)) && nmemb == 1) {
          PyTuple_SET_ITEM(args, 2, item);
     }
     else if ((PyList_Check(item) || PyTuple_Check(item)) &&
