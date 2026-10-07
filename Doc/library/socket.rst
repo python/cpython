@@ -1497,7 +1497,7 @@ Socket Objects
    of :meth:`socket.getpeername` but not the actual OS resource.  Unlike
    :func:`socket.fromfd`, *fileno* will return the same socket and not a
    duplicate. This may help close a detached socket using
-   :meth:`socket.close`.
+   :meth:`~socket.socket.close`.
 
    The newly created socket is :ref:`non-inheritable <fd_inheritance>`.
 
@@ -1544,7 +1544,7 @@ Socket Objects
 
    .. versionchanged:: 3.2
       Support for the :term:`context manager` protocol was added.  Exiting the
-      context manager is equivalent to calling :meth:`~socket.close`.
+      context manager is equivalent to calling :meth:`~socket.socket.close`.
 
 
    .. method:: accept()
@@ -1769,7 +1769,7 @@ Socket Objects
 
       Closing the file object returned by :meth:`makefile` won't close the
       original socket unless all other file objects have been closed and
-      :meth:`socket.close` has been called on the socket object.
+      :meth:`~socket.socket.close` has been called on the socket object.
 
       .. note::
 

@@ -9,6 +9,7 @@ preserve
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_long.h"          // _PyLong_UInt16_Converter()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
 #if (defined(HAVE_ACCEPT) || defined(HAVE_ACCEPT4))
 
@@ -1485,13 +1486,8 @@ _socket_getservbyname(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("getservbyname", "argument 1", "str", args[0]);
         goto exit;
     }
-    Py_ssize_t name_length;
-    name = PyUnicode_AsUTF8AndSize(args[0], &name_length);
+    name = _PyUnicode_AsUTF8NoNUL(args[0]);
     if (name == NULL) {
-        goto exit;
-    }
-    if (strlen(name) != (size_t)name_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     if (nargs < 2) {
@@ -1501,13 +1497,8 @@ _socket_getservbyname(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("getservbyname", "argument 2", "str", args[1]);
         goto exit;
     }
-    Py_ssize_t proto_length;
-    proto = PyUnicode_AsUTF8AndSize(args[1], &proto_length);
+    proto = _PyUnicode_AsUTF8NoNUL(args[1]);
     if (proto == NULL) {
-        goto exit;
-    }
-    if (strlen(proto) != (size_t)proto_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
 skip_optional:
@@ -1557,13 +1548,8 @@ _socket_getservbyport(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("getservbyport", "argument 2", "str", args[1]);
         goto exit;
     }
-    Py_ssize_t proto_length;
-    proto = PyUnicode_AsUTF8AndSize(args[1], &proto_length);
+    proto = _PyUnicode_AsUTF8NoNUL(args[1]);
     if (proto == NULL) {
-        goto exit;
-    }
-    if (strlen(proto) != (size_t)proto_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
 skip_optional:
@@ -1599,13 +1585,8 @@ _socket_getprotobyname(PyObject *module, PyObject *arg)
         _PyArg_BadArgument("getprotobyname", "argument", "str", arg);
         goto exit;
     }
-    Py_ssize_t name_length;
-    name = PyUnicode_AsUTF8AndSize(arg, &name_length);
+    name = _PyUnicode_AsUTF8NoNUL(arg);
     if (name == NULL) {
-        goto exit;
-    }
-    if (strlen(name) != (size_t)name_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = _socket_getprotobyname_impl(module, name);
@@ -1835,13 +1816,8 @@ _socket_inet_aton(PyObject *module, PyObject *arg)
         _PyArg_BadArgument("inet_aton", "argument", "str", arg);
         goto exit;
     }
-    Py_ssize_t ip_addr_length;
-    ip_addr = PyUnicode_AsUTF8AndSize(arg, &ip_addr_length);
+    ip_addr = _PyUnicode_AsUTF8NoNUL(arg);
     if (ip_addr == NULL) {
-        goto exit;
-    }
-    if (strlen(ip_addr) != (size_t)ip_addr_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = _socket_inet_aton_impl(module, ip_addr);
@@ -1920,13 +1896,8 @@ _socket_inet_pton(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("inet_pton", "argument 2", "str", args[1]);
         goto exit;
     }
-    Py_ssize_t ip_length;
-    ip = PyUnicode_AsUTF8AndSize(args[1], &ip_length);
+    ip = _PyUnicode_AsUTF8NoNUL(args[1]);
     if (ip == NULL) {
-        goto exit;
-    }
-    if (strlen(ip) != (size_t)ip_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = _socket_inet_pton_impl(module, af, ip);
@@ -2159,7 +2130,7 @@ PyDoc_STRVAR(_socket_setdefaulttimeout__doc__,
 #define _SOCKET_SETDEFAULTTIMEOUT_METHODDEF    \
     {"setdefaulttimeout", (PyCFunction)_socket_setdefaulttimeout, METH_O, _socket_setdefaulttimeout__doc__},
 
-#if (defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS))
+#if (defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS_DESKTOP))
 
 PyDoc_STRVAR(_socket_if_nameindex__doc__,
 "if_nameindex($module, /)\n"
@@ -2179,9 +2150,9 @@ _socket_if_nameindex(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _socket_if_nameindex_impl(module);
 }
 
-#endif /* (defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS)) */
+#endif /* (defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS_DESKTOP)) */
 
-#if (defined(HAVE_IF_NAMETOINDEX) || defined(MS_WINDOWS))
+#if (defined(HAVE_IF_NAMETOINDEX) || defined(MS_WINDOWS_DESKTOP))
 
 PyDoc_STRVAR(_socket_if_nametoindex__doc__,
 "if_nametoindex($module, oname, /)\n"
@@ -2213,9 +2184,9 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(HAVE_IF_NAMETOINDEX) || defined(MS_WINDOWS)) */
+#endif /* (defined(HAVE_IF_NAMETOINDEX) || defined(MS_WINDOWS_DESKTOP)) */
 
-#if (defined(HAVE_IF_INDEXTONAME) || defined(MS_WINDOWS))
+#if (defined(HAVE_IF_INDEXTONAME) || defined(MS_WINDOWS_DESKTOP))
 
 PyDoc_STRVAR(_socket_if_indextoname__doc__,
 "if_indextoname($module, if_index, /)\n"
@@ -2244,7 +2215,7 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(HAVE_IF_INDEXTONAME) || defined(MS_WINDOWS)) */
+#endif /* (defined(HAVE_IF_INDEXTONAME) || defined(MS_WINDOWS_DESKTOP)) */
 
 #if defined(CMSG_LEN)
 
@@ -2478,4 +2449,4 @@ exit:
 #ifndef _SOCKET_CMSG_SPACE_METHODDEF
     #define _SOCKET_CMSG_SPACE_METHODDEF
 #endif /* !defined(_SOCKET_CMSG_SPACE_METHODDEF) */
-/*[clinic end generated code: output=aa9082b592c39fa5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bca43f33969d67ad input=a9049054013a1b77]*/

@@ -8,6 +8,7 @@ import tempfile
 import token
 import tokenize
 import unittest
+import weakref
 from io import BytesIO, StringIO
 from textwrap import dedent
 from unittest import TestCase, mock
@@ -1234,6 +1235,20 @@ f'''
     FSTRING_END \'"\'           (2, 2) (2, 3)
     """)
 
+    def test_ineq_tokens(self):
+        self.check_tokenize("1 != 2", """\
+    NUMBER     '1'           (1, 0) (1, 1)
+    OP         '!='          (1, 2) (1, 4)
+    NUMBER     '2'           (1, 5) (1, 6)
+""")
+        self.check_tokenize("1 <> 2", """\
+    NUMBER     '1'           (1, 0) (1, 1)
+    OP         '<'           (1, 2) (1, 3)
+    OP         '>'           (1, 3) (1, 4)
+    NUMBER     '2'           (1, 5) (1, 6)
+""")
+
+
 class GenerateTokensTest(TokenizeTest):
     def check_tokenize(self, s, expected):
         # Format the tokens in s in a table format.
@@ -2254,6 +2269,18 @@ class CTokenizeTest(TestCase):
             )
             self.assertEqual(result, expected.rstrip().splitlines())
 
+    def test_readline_reference_cycle(self):
+        class Readline:
+            def __call__(self):
+                return ""
+
+        readline = Readline()
+        readline.iterator = _tokenize.TokenizerIter(readline, extra_tokens=True)
+        ref = weakref.ref(readline)
+        del readline
+        support.gc_collect()
+        self.assertIsNone(ref())
+
     def test_encoding(self):
         def readline(encoding):
             yield "1+1".encode(encoding)
@@ -2327,6 +2354,20 @@ class CTokenizeTest(TestCase):
             tokenize.TokenInfo(token.ENDMARKER, "", (2, 0), (2, 0), ""),
         ])
 
+    def test_utf8_decoder_spans_many_readline_calls(self):
+        for prefix in (b"", b"previous\n"):
+            with self.subTest(prefix=prefix):
+                chunks = ([prefix + b"x\xc3"] + [b"\xa9\xc3"] * 100
+                          + [b"\xa9\n", b"z\xc3", b"\xa9\n", b""])
+                source = b"".join(chunks)
+                expected = list(_tokenize.TokenizerIter(
+                    BytesIO(source).readline, encoding="utf-8", extra_tokens=True
+                ))
+                tokens = list(_tokenize.TokenizerIter(
+                    iter(chunks).__next__, encoding="utf-8", extra_tokens=True
+                ))
+                self.assertEqual(tokens, expected)
+
     def test_utf8_decoder_replaces_incomplete_input_at_eof(self):
         expected = [
             tokenize.TokenInfo(token.NAME, "x�", (1, 0), (1, 2), "x�"),
@@ -2381,6 +2422,12 @@ class CTokenizeTest(TestCase):
             (token.ENDMARKER, "", (3, 0), (3, 0), ""),
         )
         self.assertEqual(readline.call_count, 2)
+
+    def test_readline_memory_error_in_string(self):
+        readline = mock.Mock(side_effect=['"""first\n', MemoryError])
+        iterator = _tokenize.TokenizerIter(readline, extra_tokens=True)
+        with self.assertRaises(MemoryError):
+            next(iterator)
 
     def test_readline_callback_is_not_read_ahead(self):
         readline = mock.Mock(side_effect=["x\n", "y\n", ""])
@@ -2572,6 +2619,40 @@ class CTokenizeTest(TestCase):
             caught.exception.args,
             ("f-string: single '}' is not allowed", (1, 11)),
         )
+
+    def test_carriage_return_after_debug_comment(self):
+        for prefix in ("f", "t"):
+            with self.subTest(prefix=prefix):
+                tokens = self._get_tokens(f"{prefix}'''{{x=# comment\r}}'''")
+                self.assertEqual(tokens[4].string, "# comment\r}")
+
+    def test_incomplete_formatted_string_comment_after_carriage_return(self):
+        for prefix in ("f", "t"):
+            with self.subTest(prefix=prefix):
+                for extra_tokens in (False, True):
+                    with self.assertRaises(tokenize.TokenError) as caught:
+                        self._get_tokens(
+                            f"{prefix}'{{#\r!", extra_tokens=extra_tokens
+                        )
+                    self.assertEqual(
+                        caught.exception.args,
+                        ("unexpected EOF in multi-line statement", (1, 7)),
+                    )
+
+    def test_formatted_string_nesting_limit(self):
+        def nested_string(depth, prefix):
+            source = "'x'"
+            for _ in range(depth):
+                source = f'{prefix}"{{{source}}}"'
+            return source
+
+        for prefix in ("f", "t"):
+            with self.subTest(prefix=prefix):
+                self._get_tokens(nested_string(149, prefix))
+                with self.assertRaisesRegex(
+                        tokenize.TokenError,
+                        "too many nested f-strings or t-strings"):
+                    self._get_tokens(nested_string(150, prefix))
 
     def test_escaped_fstring_brace_has_a_position_gap(self):
         tokens = self._get_tokens('f"a{{"', extra_tokens=True)

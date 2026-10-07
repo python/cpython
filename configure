@@ -642,7 +642,6 @@ ac_includes_default="\
 #endif"
 
 ac_header_c_list=
-ac_func_c_list=
 ac_subst_vars='LTLIBOBJS
 MODULE_BLOCK
 JIT_SHIM_BUILD_O
@@ -1123,6 +1122,7 @@ with_frame_pointers
 enable_experimental_jit
 with_dsymutil
 with_address_sanitizer
+with_hwaddress_sanitizer
 with_memory_sanitizer
 with_undefined_behavior_sanitizer
 with_thread_sanitizer
@@ -1931,6 +1931,9 @@ Optional Packages:
   --with-address-sanitizer
                           enable AddressSanitizer memory error detector,
                           'asan' (default is no)
+  --with-hwaddress-sanitizer
+                          enable HWAddressSanitizer memory error detector,
+                          'hwasan' (default is no)
   --with-memory-sanitizer enable MemorySanitizer allocation error detector,
                           'msan' (default is no)
   --with-undefined-behavior-sanitizer
@@ -3440,13 +3443,6 @@ as_fn_append ac_header_c_list " sys/types.h sys_types_h HAVE_SYS_TYPES_H"
 as_fn_append ac_header_c_list " unistd.h unistd_h HAVE_UNISTD_H"
 as_fn_append ac_header_c_list " wchar.h wchar_h HAVE_WCHAR_H"
 as_fn_append ac_header_c_list " minix/config.h minix_config_h HAVE_MINIX_CONFIG_H"
-as_fn_append ac_func_c_list " acospi HAVE_ACOSPI"
-as_fn_append ac_func_c_list " asinpi HAVE_ASINPI"
-as_fn_append ac_func_c_list " atanpi HAVE_ATANPI"
-as_fn_append ac_func_c_list " atan2pi HAVE_ATAN2PI"
-as_fn_append ac_func_c_list " cospi HAVE_COSPI"
-as_fn_append ac_func_c_list " sinpi HAVE_SINPI"
-as_fn_append ac_func_c_list " tanpi HAVE_TANPI"
 
 # Auxiliary files required by this configure script.
 ac_aux_files="install-sh config.guess config.sub"
@@ -3613,6 +3609,8 @@ ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+
 
 
 
@@ -7436,29 +7434,29 @@ printf %s "checking for PEP 11 support tier... " >&6; }
 case $host/$ac_cv_cc_name in #(
   x86_64-*-linux-gnu/gcc) :
     PY_SUPPORT_TIER=1 ;; #(
-    x86_64-apple-darwin*/clang) :
-    PY_SUPPORT_TIER=1 ;; #(
     aarch64-apple-darwin*/clang) :
+    PY_SUPPORT_TIER=1 ;; #(
+    aarch64-*-linux-gnu/gcc) :
     PY_SUPPORT_TIER=1 ;; #(
     i686-pc-windows-msvc/msvc) :
     PY_SUPPORT_TIER=1 ;; #(
     x86_64-pc-windows-msvc/msvc) :
     PY_SUPPORT_TIER=1 ;; #(
 
-  aarch64-*-linux-gnu/gcc) :
+  aarch64-*-linux-gnu/clang) :
     PY_SUPPORT_TIER=2 ;; #(
-    aarch64-*-linux-gnu/clang) :
-    PY_SUPPORT_TIER=2 ;; #(
-  powerpc64le-*-linux-gnu/gcc) :
+    aarch64-pc-windows-msvc/msvc) :
     PY_SUPPORT_TIER=2 ;; #(
     wasm32-unknown-wasip1/clang) :
+    PY_SUPPORT_TIER=2 ;; #(
+    x86_64-apple-darwin*/clang) :
     PY_SUPPORT_TIER=2 ;; #(
     x86_64-*-linux-gnu/clang) :
     PY_SUPPORT_TIER=2 ;; #(
 
-  aarch64-pc-windows-msvc/msvc) :
+  armv7l-*-linux-gnueabihf/gcc) :
     PY_SUPPORT_TIER=3 ;; #(
-    armv7l-*-linux-gnueabihf/gcc) :
+    powerpc64le-*-linux-gnu/gcc) :
     PY_SUPPORT_TIER=3 ;; #(
     powerpc64le-*-linux-gnu/clang) :
     PY_SUPPORT_TIER=3 ;; #(
@@ -9974,11 +9972,9 @@ fi
 
         as_fn_append LINKFORSHARED " -sALLOW_MEMORY_GROWTH -sINITIAL_MEMORY=20971520"
 
-        as_fn_append LDFLAGS_NODIST " -sWASM_BIGINT"
-
         as_fn_append LINKFORSHARED " -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"
     as_fn_append LINKFORSHARED " -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV,HEAPU32,TTY,ERRNO_CODES"
-    as_fn_append LINKFORSHARED " -sEXPORTED_FUNCTIONS=_main,_Py_Version,__PyRuntime,_PyGILState_GetThisThreadState,__PyEM_EMSCRIPTEN_TRAMPOLINE_OFFSET"
+    as_fn_append LINKFORSHARED " -sEXPORTED_FUNCTIONS=_main,_Py_Version,_PyGILState_GetThisThreadState,__PyEM_EMSCRIPTEN_TRAMPOLINE_OFFSET"
     as_fn_append LINKFORSHARED " -sSTACK_SIZE=5MB"
         as_fn_append LINKFORSHARED " -sTEXTDECODER=2"
 
@@ -14165,6 +14161,85 @@ esac
 fi
 
 
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-hwaddress-sanitizer" >&5
+printf %s "checking for --with-hwaddress-sanitizer... " >&6; }
+
+# Check whether --with-hwaddress_sanitizer was given.
+if test ${with_hwaddress_sanitizer+y}
+then :
+  withval=$with_hwaddress_sanitizer;
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $withval" >&5
+printf "%s\n" "$withval" >&6; }
+hwasan_flags="-fsanitize=hwaddress"
+# x86-64 lacks address tagging, so HWASan needs the page aliasing mode there.
+# See gh-156049 and
+# https://clang.llvm.org/docs/HardwareAssistedAddressSanitizerDesign.html#supported-architectures
+case $host_cpu in #(
+  x86_64|amd64) :
+    hwasan_flags="$hwasan_flags -fsanitize-hwaddress-experimental-aliasing"
+ ;; #(
+  *) :
+     ;;
+esac
+as_CACHEVAR=`printf "%s\n" "ax_cv_check_cflags__$hwasan_flags" | sed "$as_sed_sh"`
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts $hwasan_flags" >&5
+printf %s "checking whether C compiler accepts $hwasan_flags... " >&6; }
+if eval test \${$as_CACHEVAR+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e)
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  $hwasan_flags"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  eval "$as_CACHEVAR=yes"
+else case e in #(
+  e) eval "$as_CACHEVAR=no" ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags ;;
+esac
+fi
+eval ac_res=\$$as_CACHEVAR
+	       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+printf "%s\n" "$ac_res" >&6; }
+if eval test \"x\$"$as_CACHEVAR"\" = x"yes"
+then :
+
+BASECFLAGS="$hwasan_flags -fno-omit-frame-pointer $BASECFLAGS"
+LDFLAGS="$hwasan_flags $LDFLAGS"
+
+else case e in #(
+  e) as_fn_error $? "The selected compiler doesn't support hardware address sanitizer" "$LINENO" 5 ;;
+esac
+fi
+
+# HWASan works by controlling memory allocation, our own malloc interferes,
+# so disable it by default, but allow --with-pymalloc to override.
+if test -z "$with_pymalloc"; then
+  with_pymalloc="no"
+fi
+
+else case e in #(
+  e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; } ;;
+esac
+fi
+
+
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-memory-sanitizer" >&5
 printf %s "checking for --with-memory-sanitizer... " >&6; }
 
@@ -14915,7 +14990,7 @@ fi
 printf "%s\n" "$ac_cv_have_iconv" >&6; }
   if test "$ac_cv_have_iconv" != no; then
 
-printf "%s\n" "#define HAVE_ICONV 1" >>confdefs.h
+printf "%s\n" "#define _Py_HAVE_ICONV 1" >>confdefs.h
 
     if test "$ac_cv_have_iconv" = -liconv; then
       LIBS="-liconv $LIBS"
@@ -16688,7 +16763,7 @@ int main(void)
     {
         return 2;
     }
-    ffi_arg rc;
+    ffi_arg rc = 0;
     ffi_call(&cif, FFI_FN(z_is_expected), &rc, values);
     return !rc;
 }
@@ -16780,7 +16855,7 @@ printf "%s\n" "$ac_cv_float16_supported" >&6; }
 if test "x$ac_cv_float16_supported" = xyes
 then :
 
-printf "%s\n" "#define HAVE_FLOAT16 1" >>confdefs.h
+printf "%s\n" "#define _Py_HAVE_FLOAT16 1" >>confdefs.h
 
 fi
 
@@ -18454,6 +18529,34 @@ esac
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $have_ndbm ($dbm_ndbm)" >&5
 printf "%s\n" "$have_ndbm ($dbm_ndbm)" >&6; }
 
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether ndbm.h is provided by gdbm" >&5
+printf %s "checking whether ndbm.h is provided by gdbm... " >&6; }
+if test ${ac_cv_ndbm_h_is_gdbm+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+                 #include <ndbm.h>
+                 #ifndef _GDBM_H_
+                 #error "not gdbm"
+                 #endif
+
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_ndbm_h_is_gdbm=yes
+else case e in #(
+  e) ac_cv_ndbm_h_is_gdbm=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_ndbm_h_is_gdbm" >&5
+printf "%s\n" "$ac_cv_ndbm_h_is_gdbm" >&6; }
+
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for gdbm/ndbm.h" >&5
 printf %s "checking for gdbm/ndbm.h... " >&6; }
 if test ${ac_cv_header_gdbm_slash_ndbm_h+y}
@@ -18729,6 +18832,10 @@ for db in $with_dbmliborder; do
       if test "$have_ndbm" = yes; then
         DBM_CFLAGS="-DUSE_NDBM"
         DBM_LIBS="$dbm_ndbm"
+        if test "x$ac_cv_ndbm_h_is_gdbm" = xyes
+then :
+  DBM_LIBS="$DBM_LIBS $GDBM_LIBS"
+fi
         have_dbm=yes
         break
       fi
@@ -18736,7 +18843,7 @@ for db in $with_dbmliborder; do
     gdbm)
       if test "$have_gdbm_compat" = yes; then
         DBM_CFLAGS="-DUSE_GDBM_COMPAT"
-        DBM_LIBS="-lgdbm_compat"
+        DBM_LIBS="-lgdbm_compat $GDBM_LIBS"
         have_dbm=yes
         break
       fi
@@ -21621,6 +21728,50 @@ then :
   printf "%s\n" "#define HAVE_WRITEV 1" >>confdefs.h
 
 fi
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for strerror_r" >&5
+printf %s "checking for strerror_r... " >&6; }
+if test ${ac_cv_func_strerror_r+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <string.h>
+int
+main (void)
+{
+void *x=strerror_r
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_func_strerror_r=yes
+else case e in #(
+  e) ac_cv_func_strerror_r=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_strerror_r" >&5
+printf "%s\n" "$ac_cv_func_strerror_r" >&6; }
+  if test "x$ac_cv_func_strerror_r" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_STRERROR_R 1" >>confdefs.h
+
+fi
+
+
+
+
 
 
 # os.statx uses Linux's statx function.  AIX also has a function named statx,
@@ -27591,22 +27742,296 @@ fi
 
 done
 
-ac_func=
-for ac_item in $ac_func_c_list
-do
-  if test $ac_func; then
-    ac_fn_c_check_func "$LINENO" $ac_func ac_cv_func_$ac_func
-    if eval test \"x\$ac_cv_func_$ac_func\" = xyes; then
-      echo "#define $ac_item 1" >> confdefs.h
-    fi
-    ac_func=
-  else
-    ac_func=$ac_item
-  fi
-done
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for acospi" >&5
+printf %s "checking for acospi... " >&6; }
+if test ${ac_cv_func_acospi+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <math.h>
+int
+main (void)
+{
+void *x=acospi
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_func_acospi=yes
+else case e in #(
+  e) ac_cv_func_acospi=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_acospi" >&5
+printf "%s\n" "$ac_cv_func_acospi" >&6; }
+  if test "x$ac_cv_func_acospi" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_ACOSPI 1" >>confdefs.h
+
+fi
 
 
 
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for asinpi" >&5
+printf %s "checking for asinpi... " >&6; }
+if test ${ac_cv_func_asinpi+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <math.h>
+int
+main (void)
+{
+void *x=asinpi
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_func_asinpi=yes
+else case e in #(
+  e) ac_cv_func_asinpi=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_asinpi" >&5
+printf "%s\n" "$ac_cv_func_asinpi" >&6; }
+  if test "x$ac_cv_func_asinpi" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_ASINPI 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for atanpi" >&5
+printf %s "checking for atanpi... " >&6; }
+if test ${ac_cv_func_atanpi+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <math.h>
+int
+main (void)
+{
+void *x=atanpi
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_func_atanpi=yes
+else case e in #(
+  e) ac_cv_func_atanpi=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_atanpi" >&5
+printf "%s\n" "$ac_cv_func_atanpi" >&6; }
+  if test "x$ac_cv_func_atanpi" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_ATANPI 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for atan2pi" >&5
+printf %s "checking for atan2pi... " >&6; }
+if test ${ac_cv_func_atan2pi+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <math.h>
+int
+main (void)
+{
+void *x=atan2pi
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_func_atan2pi=yes
+else case e in #(
+  e) ac_cv_func_atan2pi=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_atan2pi" >&5
+printf "%s\n" "$ac_cv_func_atan2pi" >&6; }
+  if test "x$ac_cv_func_atan2pi" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_ATAN2PI 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for cospi" >&5
+printf %s "checking for cospi... " >&6; }
+if test ${ac_cv_func_cospi+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <math.h>
+int
+main (void)
+{
+void *x=cospi
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_func_cospi=yes
+else case e in #(
+  e) ac_cv_func_cospi=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_cospi" >&5
+printf "%s\n" "$ac_cv_func_cospi" >&6; }
+  if test "x$ac_cv_func_cospi" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_COSPI 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for sinpi" >&5
+printf %s "checking for sinpi... " >&6; }
+if test ${ac_cv_func_sinpi+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <math.h>
+int
+main (void)
+{
+void *x=sinpi
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_func_sinpi=yes
+else case e in #(
+  e) ac_cv_func_sinpi=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_sinpi" >&5
+printf "%s\n" "$ac_cv_func_sinpi" >&6; }
+  if test "x$ac_cv_func_sinpi" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_SINPI 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for tanpi" >&5
+printf %s "checking for tanpi... " >&6; }
+if test ${ac_cv_func_tanpi+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <math.h>
+int
+main (void)
+{
+void *x=tanpi
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_func_tanpi=yes
+else case e in #(
+  e) ac_cv_func_tanpi=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_tanpi" >&5
+printf "%s\n" "$ac_cv_func_tanpi" >&6; }
+  if test "x$ac_cv_func_tanpi" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_TANPI 1" >>confdefs.h
+
+fi
 
 
 
@@ -31452,21 +31877,22 @@ main (void)
 {
 
         #ifndef is_pad
-        void *x=is_pad
+        void * volatile x = (void *)is_pad; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_is_pad=yes
 else case e in #(
   e) ac_cv_lib_curses_is_pad=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -31512,21 +31938,22 @@ main (void)
 {
 
         #ifndef is_term_resized
-        void *x=is_term_resized
+        void * volatile x = (void *)is_term_resized; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_is_term_resized=yes
 else case e in #(
   e) ac_cv_lib_curses_is_term_resized=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -31572,21 +31999,22 @@ main (void)
 {
 
         #ifndef resize_term
-        void *x=resize_term
+        void * volatile x = (void *)resize_term; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_resize_term=yes
 else case e in #(
   e) ac_cv_lib_curses_resize_term=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -31632,21 +32060,22 @@ main (void)
 {
 
         #ifndef resizeterm
-        void *x=resizeterm
+        void * volatile x = (void *)resizeterm; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_resizeterm=yes
 else case e in #(
   e) ac_cv_lib_curses_resizeterm=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -31692,21 +32121,22 @@ main (void)
 {
 
         #ifndef immedok
-        void *x=immedok
+        void * volatile x = (void *)immedok; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_immedok=yes
 else case e in #(
   e) ac_cv_lib_curses_immedok=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -31752,21 +32182,22 @@ main (void)
 {
 
         #ifndef syncok
-        void *x=syncok
+        void * volatile x = (void *)syncok; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_syncok=yes
 else case e in #(
   e) ac_cv_lib_curses_syncok=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -31812,21 +32243,22 @@ main (void)
 {
 
         #ifndef wchgat
-        void *x=wchgat
+        void * volatile x = (void *)wchgat; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_wchgat=yes
 else case e in #(
   e) ac_cv_lib_curses_wchgat=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -31872,21 +32304,22 @@ main (void)
 {
 
         #ifndef filter
-        void *x=filter
+        void * volatile x = (void *)filter; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_filter=yes
 else case e in #(
   e) ac_cv_lib_curses_filter=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -31932,21 +32365,22 @@ main (void)
 {
 
         #ifndef nofilter
-        void *x=nofilter
+        void * volatile x = (void *)nofilter; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_nofilter=yes
 else case e in #(
   e) ac_cv_lib_curses_nofilter=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -31992,21 +32426,22 @@ main (void)
 {
 
         #ifndef has_key
-        void *x=has_key
+        void * volatile x = (void *)has_key; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_has_key=yes
 else case e in #(
   e) ac_cv_lib_curses_has_key=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -32052,21 +32487,22 @@ main (void)
 {
 
         #ifndef has_mouse
-        void *x=has_mouse
+        void * volatile x = (void *)has_mouse; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_has_mouse=yes
 else case e in #(
   e) ac_cv_lib_curses_has_mouse=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -32112,21 +32548,22 @@ main (void)
 {
 
         #ifndef is_keypad
-        void *x=is_keypad
+        void * volatile x = (void *)is_keypad; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_is_keypad=yes
 else case e in #(
   e) ac_cv_lib_curses_is_keypad=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -32172,21 +32609,22 @@ main (void)
 {
 
         #ifndef is_leaveok
-        void *x=is_leaveok
+        void * volatile x = (void *)is_leaveok; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_is_leaveok=yes
 else case e in #(
   e) ac_cv_lib_curses_is_leaveok=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -32232,21 +32670,22 @@ main (void)
 {
 
         #ifndef typeahead
-        void *x=typeahead
+        void * volatile x = (void *)typeahead; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_typeahead=yes
 else case e in #(
   e) ac_cv_lib_curses_typeahead=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -32292,21 +32731,22 @@ main (void)
 {
 
         #ifndef use_env
-        void *x=use_env
+        void * volatile x = (void *)use_env; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_use_env=yes
 else case e in #(
   e) ac_cv_lib_curses_use_env=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -32352,21 +32792,22 @@ main (void)
 {
 
         #ifndef new_prescr
-        void *x=new_prescr
+        void * volatile x = (void *)new_prescr; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_new_prescr=yes
 else case e in #(
   e) ac_cv_lib_curses_new_prescr=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -32412,21 +32853,22 @@ main (void)
 {
 
         #ifndef use_screen
-        void *x=use_screen
+        void * volatile x = (void *)use_screen; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_use_screen=yes
 else case e in #(
   e) ac_cv_lib_curses_use_screen=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -32472,21 +32914,22 @@ main (void)
 {
 
         #ifndef use_window
-        void *x=use_window
+        void * volatile x = (void *)use_window; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_use_window=yes
 else case e in #(
   e) ac_cv_lib_curses_use_window=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -32532,21 +32975,22 @@ main (void)
 {
 
         #ifndef key_defined
-        void *x=key_defined
+        void * volatile x = (void *)key_defined; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_key_defined=yes
 else case e in #(
   e) ac_cv_lib_curses_key_defined=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -32592,21 +33036,22 @@ main (void)
 {
 
         #ifndef term_attrs
-        void *x=term_attrs
+        void * volatile x = (void *)term_attrs; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_term_attrs=yes
 else case e in #(
   e) ac_cv_lib_curses_term_attrs=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -32652,21 +33097,22 @@ main (void)
 {
 
         #ifndef define_key
-        void *x=define_key
+        void * volatile x = (void *)define_key; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_define_key=yes
 else case e in #(
   e) ac_cv_lib_curses_define_key=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -32712,21 +33158,22 @@ main (void)
 {
 
         #ifndef keyok
-        void *x=keyok
+        void * volatile x = (void *)keyok; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_keyok=yes
 else case e in #(
   e) ac_cv_lib_curses_keyok=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -32772,21 +33219,22 @@ main (void)
 {
 
         #ifndef set_escdelay
-        void *x=set_escdelay
+        void * volatile x = (void *)set_escdelay; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_set_escdelay=yes
 else case e in #(
   e) ac_cv_lib_curses_set_escdelay=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -32832,21 +33280,22 @@ main (void)
 {
 
         #ifndef set_tabsize
-        void *x=set_tabsize
+        void * volatile x = (void *)set_tabsize; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_set_tabsize=yes
 else case e in #(
   e) ac_cv_lib_curses_set_tabsize=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -32892,21 +33341,22 @@ main (void)
 {
 
         #ifndef wattr_get
-        void *x=wattr_get
+        void * volatile x = (void *)wattr_get; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_wattr_get=yes
 else case e in #(
   e) ac_cv_lib_curses_wattr_get=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -32952,21 +33402,22 @@ main (void)
 {
 
         #ifndef wattr_set
-        void *x=wattr_set
+        void * volatile x = (void *)wattr_set; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_wattr_set=yes
 else case e in #(
   e) ac_cv_lib_curses_wattr_set=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -33012,21 +33463,22 @@ main (void)
 {
 
         #ifndef wattr_on
-        void *x=wattr_on
+        void * volatile x = (void *)wattr_on; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_wattr_on=yes
 else case e in #(
   e) ac_cv_lib_curses_wattr_on=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -33072,21 +33524,22 @@ main (void)
 {
 
         #ifndef wattr_off
-        void *x=wattr_off
+        void * volatile x = (void *)wattr_off; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_wattr_off=yes
 else case e in #(
   e) ac_cv_lib_curses_wattr_off=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -33132,21 +33585,22 @@ main (void)
 {
 
         #ifndef wcolor_set
-        void *x=wcolor_set
+        void * volatile x = (void *)wcolor_set; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_wcolor_set=yes
 else case e in #(
   e) ac_cv_lib_curses_wcolor_set=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -33192,21 +33646,22 @@ main (void)
 {
 
         #ifndef slk_attr_on
-        void *x=slk_attr_on
+        void * volatile x = (void *)slk_attr_on; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_slk_attr_on=yes
 else case e in #(
   e) ac_cv_lib_curses_slk_attr_on=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -33252,21 +33707,22 @@ main (void)
 {
 
         #ifndef slk_attr_off
-        void *x=slk_attr_off
+        void * volatile x = (void *)slk_attr_off; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_slk_attr_off=yes
 else case e in #(
   e) ac_cv_lib_curses_slk_attr_off=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -33312,21 +33768,22 @@ main (void)
 {
 
         #ifndef slk_attr_set
-        void *x=slk_attr_set
+        void * volatile x = (void *)slk_attr_set; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_slk_attr_set=yes
 else case e in #(
   e) ac_cv_lib_curses_slk_attr_set=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -33372,21 +33829,22 @@ main (void)
 {
 
         #ifndef slk_color
-        void *x=slk_color
+        void * volatile x = (void *)slk_color; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_slk_color=yes
 else case e in #(
   e) ac_cv_lib_curses_slk_color=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -33600,21 +34058,22 @@ main (void)
 {
 
         #ifndef scr_dump
-        void *x=scr_dump
+        void * volatile x = (void *)scr_dump; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_scr_dump=yes
 else case e in #(
   e) ac_cv_lib_curses_scr_dump=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -33660,21 +34119,22 @@ main (void)
 {
 
         #ifndef scr_set
-        void *x=scr_set
+        void * volatile x = (void *)scr_set; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_scr_set=yes
 else case e in #(
   e) ac_cv_lib_curses_scr_set=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -34338,7 +34798,11 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
     #include <stddef.h>
     #include <unistd.h>
     #include <sys/syscall.h>
-    #include <linux/random.h>
+    #include <linux/random.h>  // GRND_NONBLOCK
+
+    #if !defined(SYS_getrandom) && defined(__NR_getrandom)
+    #  define SYS_getrandom __NR_getrandom
+    #endif
 
     int main(void) {
         char buffer[1];
