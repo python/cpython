@@ -5,6 +5,7 @@ import os
 import subprocess
 import sys
 import textwrap
+import time
 import unittest
 from unittest import mock
 
@@ -213,3 +214,59 @@ class TestBlockingModeCLI(unittest.TestCase):
                 replay.returncode, 0,
                 f"stdout:\n{replay.stdout}\nstderr:\n{replay.stderr}",
             )
+
+
+@requires_remote_subprocess_debugging()
+@unittest.skipUnless(sys.platform == "win32", "Windows only")
+class TestBlockingModeSuspension(unittest.TestCase):
+    def test_all_threads_stop_before_pause_returns(self):
+        import mmap
+
+        tag = f"cpython_blocking_{os.getpid()}_{id(self)}"
+        script = textwrap.dedent(f'''
+            import mmap
+            import struct
+            import threading
+
+            memory = mmap.mmap(-1, 16, tagname={tag!r})
+
+            def worker(offset):
+                counter = 0
+                while True:
+                    counter += 1
+                    struct.pack_into("q", memory, offset, counter)
+
+            for offset in (0, 8):
+                threading.Thread(target=worker, args=(offset,), daemon=True).start()
+            _test_sock.sendall(b"working")
+            _test_sock.recv(1)
+        ''')
+        with mmap.mmap(-1, 16, tagname=tag) as memory:
+            with test_subprocess(script, wait_for_working=True) as subproc:
+                unwinder = _remote_debugging.RemoteUnwinder(
+                    subproc.process.pid, all_threads=True)
+                deadline = time.monotonic() + SHORT_TIMEOUT
+                while not all(memory[offset:offset + 8] != bytes(8)
+                              for offset in (0, 8)):
+                    self.assertLess(time.monotonic(), deadline,
+                                    "Worker threads did not start")
+                    time.sleep(0.001)
+                for _ in range(100):
+                    self.assertTrue(unwinder.pause_threads())
+                    try:
+                        before = memory[:]
+                        self.assertFalse(unwinder.pause_threads())
+                        unwinder.get_stack_trace()
+                        time.sleep(0.001)
+                        self.assertEqual(memory[:], before,
+                                         "Target memory changed while paused")
+                    finally:
+                        unwinder.resume_threads()
+                    self.assertFalse(unwinder.resume_threads())
+                before = memory[:]
+                deadline = time.monotonic() + SHORT_TIMEOUT
+                while any(memory[offset:offset + 8] == before[offset:offset + 8]
+                          for offset in (0, 8)):
+                    self.assertLess(time.monotonic(), deadline,
+                                    "Worker threads did not resume")
+                    time.sleep(0.001)
