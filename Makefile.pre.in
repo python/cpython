@@ -1882,7 +1882,8 @@ Modules/getbuildinfo.h: $(PARSER_OBJS) \
 			"`Programs/_getcompiler`"
 
 Modules/getbuildinfo.o: $(srcdir)/Modules/getbuildinfo.c Modules/getbuildinfo.h
-		$(CC) -c $(PY_CORE_CFLAGS) -o $@ $(srcdir)/Modules/getbuildinfo.c
+		# Add local Modules/ to include directories to get Modules/getbuildinfo.h
+		$(CC) -c $(PY_CORE_CFLAGS) -IModules/ -o $@ $(srcdir)/Modules/getbuildinfo.c
 
 Modules/getpath.o: $(srcdir)/Modules/getpath.c Python/frozen_modules/getpath.h Makefile $(PYTHON_HEADERS)
 	$(CC) -c $(PY_CORE_CFLAGS) -DPYTHONPATH='"$(PYTHONPATH)"' \
