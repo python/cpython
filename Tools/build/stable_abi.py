@@ -51,13 +51,13 @@ UNIXY = MACOS or (sys.platform == "linux")  # XXX should this be "not Windows"?
 
 # "Macros" implemented as static inline functions, documented as macros
 # by Misc/stable_abi.toml, and not listed by gcc_get_limited_api_macros()
-STATIC_INLINE_FUNCTIONS = set((
+STATIC_INLINE_FUNCTIONS = {
     'Py_INCREF',
     'Py_SET_REFCNT',
     'Py_SET_TYPE',
     'Py_XDECREF',
     'Py_XINCREF',
-))
+}
 
 
 # The stable ABI manifest (Misc/stable_abi.toml) exists only to fill the
