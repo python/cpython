@@ -281,7 +281,7 @@ class _remote_debugging.RemoteUnwinder "RemoteUnwinderObject *" "&RemoteUnwinder
 /*[clinic input]
 @permit_long_summary
 _remote_debugging.RemoteUnwinder.__init__
-    pid: int
+    pid: pid_t
     *
     all_threads: bool = False
     only_active_thread: bool = False
@@ -334,14 +334,14 @@ Raises:
 
 static int
 _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
-                                               int pid, int all_threads,
+                                               pid_t pid, int all_threads,
                                                int only_active_thread,
                                                int mode, int debug,
                                                int skip_non_matching_threads,
                                                int native, int gc,
                                                int opcodes, int cache_frames,
                                                int stats)
-/*[clinic end generated code: output=0031f743f4b9ad52 input=9d25ae328d62626d]*/
+/*[clinic end generated code: output=acfe554c8a92cf6b input=3b5a5ad153709125]*/
 {
     // Validate that all_threads and only_active_thread are not both True
     if (all_threads && only_active_thread) {
@@ -904,27 +904,29 @@ exit:
 }
 
 /*[clinic input]
-@permit_long_summary
+@permit_long_docstring_body
 @critical_section
 _remote_debugging.RemoteUnwinder.get_all_awaited_by
 
-Get all tasks and their awaited_by relationships from the remote process.
+Get awaited_by relationships for tasks in the remote process.
 
-This provides a tree structure showing which tasks are waiting for
-other tasks.
+Returns:
+    A list of AwaitedInfo objects, where each object contains:
 
-For each task, returns:
-1. The call stack frames leading to where the task is currently
-   executing
-2. The name of the task
-3. A list of tasks that this task is waiting for, with their own
-   frames/names/etc
+    - thread_id (int): Identifier of the thread, or 0 for tasks in the
+      interpreter's fallback task list.
+    - awaited_by (list[TaskInfo]): Tasks registered with this thread.
 
-Returns a list of [frames, task_name, subtasks] where:
-- frames: List of (func_name, filename, lineno) showing the call
-  stack
-- task_name: String identifier for the task
-- subtasks: List of tasks being awaited by this task, in same format
+Each TaskInfo contains:
+    - task_id (int): Identifier of the task.
+    - task_name (str): Name of the task.
+    - coroutine_stack (list[CoroInfo]): Stack of coroutine frames.
+    - awaited_by (list[CoroInfo]): Coroutine information for tasks or futures
+      awaiting this task.
+
+Each CoroInfo contains:
+    - call_stack (list[FrameInfo]): Call stack frames for the coroutine.
+    - task_name (int): Identifier of the task or future.
 
 Raises:
     RuntimeError: If AsyncioDebug section is not available in the
@@ -933,29 +935,25 @@ Raises:
     OSError: If reading from the remote process fails
 
 Example output:
-[
-    # Task c2_root waiting for two subtasks
+
     [
-        # Call stack of c2_root
-        [("c5", "script.py", 10), ("c4", "script.py", 14)],
-        "c2_root",
-        [
-            # First subtask (sub_main_2) and what it's waiting for
-            [
-                [("c1", "script.py", 23)],
-                "sub_main_2",
-                [...]
-            ],
-            # Second subtask and its waiters
-            [...]
-        ]
+        AwaitedInfo(
+            thread_id=12345,
+            awaited_by=[
+                TaskInfo(
+                    task_id=1,
+                    task_name="Task-1",
+                    coroutine_stack=[...],
+                    awaited_by=[]
+                )
+            ]
+        )
     ]
-]
 [clinic start generated code]*/
 
 static PyObject *
 _remote_debugging_RemoteUnwinder_get_all_awaited_by_impl(RemoteUnwinderObject *self)
-/*[clinic end generated code: output=6a49cd345e8aec53 input=c22bfee0612e0b69]*/
+/*[clinic end generated code: output=6a49cd345e8aec53 input=79e556b3973d21a8]*/
 {
     if (ensure_async_debug_offsets(self) < 0) {
         return NULL;
@@ -1376,7 +1374,7 @@ cleanup_runtime_offsets(RuntimeOffsets *offsets)
 }
 
 static int
-init_runtime_offsets(RuntimeOffsets *offsets, int pid, int debug)
+init_runtime_offsets(RuntimeOffsets *offsets, pid_t pid, int debug)
 {
     offsets->debug = debug;
     if (_Py_RemoteDebug_InitProcHandle(&offsets->handle, pid) < 0) {
@@ -1414,7 +1412,7 @@ class _remote_debugging.GCMonitor "GCMonitorObject *" "&GCMonitor_Type"
 /*[clinic input]
 @permit_long_summary
 _remote_debugging.GCMonitor.__init__
-    pid: int
+    pid: pid_t
     *
     debug: bool = False
 
@@ -1437,9 +1435,9 @@ Raises:
 [clinic start generated code]*/
 
 static int
-_remote_debugging_GCMonitor___init___impl(GCMonitorObject *self, int pid,
+_remote_debugging_GCMonitor___init___impl(GCMonitorObject *self, pid_t pid,
                                           int debug)
-/*[clinic end generated code: output=2cdf351c2f6335db input=03da0b2d3282ae1b]*/
+/*[clinic end generated code: output=03b4c92bef0673ad input=dcc6ee2ec5a16fa1]*/
 {
     return init_runtime_offsets(&self->offsets, pid, debug);
 }
@@ -1717,6 +1715,8 @@ _remote_debugging.BinaryWriter.__init__
     start_time_us: unsigned_long_long
     *
     compression: int = 0
+    mode: int = -1
+    capture_features: int = -1
 
 High-performance binary writer for profiling data.
 
@@ -1726,6 +1726,9 @@ Arguments:
     start_time_us: Start timestamp in microseconds (from
         time.monotonic() * 1e6)
     compression: 0=none, 1=zstd (default: 0)
+    mode: Profiling mode, or -1 if unknown (default: -1)
+    capture_features: Capture feature bit mask, or -1 if unknown
+        (default: -1)
 
 Use as a context manager or call finalize() when done.
 [clinic start generated code]*/
@@ -1735,14 +1738,26 @@ _remote_debugging_BinaryWriter___init___impl(BinaryWriterObject *self,
                                              PyObject *filename,
                                              unsigned long long sample_interval_us,
                                              unsigned long long start_time_us,
-                                             int compression)
-/*[clinic end generated code: output=00446656ea2e5986 input=2e3f298c69fc7666]*/
+                                             int compression, int mode,
+                                             int capture_features)
+/*[clinic end generated code: output=3c1c9576795658ce input=98add735b20403ad]*/
 {
+    if (mode < -1 || mode > PROFILING_MODE_EXCEPTION) {
+        PyErr_SetString(PyExc_ValueError, "invalid profiling mode");
+        return -1;
+    }
+    if (capture_features < -1 ||
+        capture_features > (int)PROFILING_FEATURE_MASK) {
+        PyErr_SetString(PyExc_ValueError, "invalid capture features");
+        return -1;
+    }
     if (self->writer) {
         binary_writer_destroy(self->writer);
     }
 
-    self->writer = binary_writer_create(filename, sample_interval_us, compression, start_time_us);
+    self->writer = binary_writer_create(
+        filename, sample_interval_us, compression, start_time_us, mode,
+        capture_features);
     if (!self->writer) {
         return -1;
     }
@@ -1774,10 +1789,65 @@ _remote_debugging_BinaryWriter_write_sample_impl(BinaryWriterObject *self,
         return NULL;
     }
 
+    if (self->writer->state == BINARY_WRITER_BROKEN) {
+        PyErr_SetString(PyExc_ValueError, "Writer is broken");
+        return NULL;
+    }
+    self->writer->state = BINARY_WRITER_OPEN;
     if (binary_writer_write_sample(self->writer, stack_frames, timestamp_us) < 0) {
+        if (self->writer->state != BINARY_WRITER_LIMIT_REACHED) {
+            self->writer->state = BINARY_WRITER_BROKEN;
+        }
         return NULL;
     }
 
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+_remote_debugging.BinaryWriter.set_stats
+    duration_sec: double
+    sample_rate: double
+    error_rate: object = None
+    missed_samples: object = None
+
+Store measured profile statistics in the binary file.
+[clinic start generated code]*/
+
+static PyObject *
+_remote_debugging_BinaryWriter_set_stats_impl(BinaryWriterObject *self,
+                                              double duration_sec,
+                                              double sample_rate,
+                                              PyObject *error_rate,
+                                              PyObject *missed_samples)
+/*[clinic end generated code: output=28ab1bdd7c631a97 input=1646e7182f4c2259]*/
+{
+    if (!self->writer) {
+        PyErr_SetString(PyExc_ValueError, "Writer is closed");
+        return NULL;
+    }
+    uint32_t present = 0;
+    double error_rate_value = 0.0;
+    double missed_samples_value = 0.0;
+    if (error_rate != Py_None) {
+        error_rate_value = PyFloat_AsDouble(error_rate);
+        if (error_rate_value == -1.0 && PyErr_Occurred()) {
+            return NULL;
+        }
+        present |= PROFILE_STATS_ERROR_RATE;
+    }
+    if (missed_samples != Py_None) {
+        missed_samples_value = PyFloat_AsDouble(missed_samples);
+        if (missed_samples_value == -1.0 && PyErr_Occurred()) {
+            return NULL;
+        }
+        present |= PROFILE_STATS_MISSED;
+    }
+    if (binary_writer_set_stats(self->writer, duration_sec, sample_rate,
+                                error_rate_value, missed_samples_value,
+                                present) < 0) {
+        return NULL;
+    }
     Py_RETURN_NONE;
 }
 
@@ -1790,7 +1860,12 @@ _remote_debugging_BinaryWriter_write_sample_impl(BinaryWriterObject *self,
 static int
 binary_writer_finalize_and_cache(BinaryWriterObject *self)
 {
+    if (self->writer->state == BINARY_WRITER_BROKEN) {
+        PyErr_SetString(PyExc_ValueError, "Writer is broken");
+        return -1;
+    }
     if (binary_writer_finalize(self->writer) < 0) {
+        self->writer->state = BINARY_WRITER_BROKEN;
         return -1;
     }
     self->cached_total_samples = self->writer->total_samples;
@@ -1871,8 +1946,7 @@ _remote_debugging_BinaryWriter___exit___impl(BinaryWriterObject *self,
 /*[clinic end generated code: output=61831f47c72a53c6 input=12334ce1009af37f]*/
 {
     if (self->writer) {
-        /* Only finalize on normal exit (no exception) */
-        if (exc_type == Py_None) {
+        if (self->writer->state != BINARY_WRITER_BROKEN) {
             if (binary_writer_finalize_and_cache(self) < 0) {
                 if (self->writer) {
                     binary_writer_destroy(self->writer);
@@ -1921,13 +1995,23 @@ BinaryWriter_get_total_samples(PyObject *op, void *closure)
     return PyLong_FromUnsignedLongLong(self->writer->total_samples);
 }
 
+static PyObject *
+BinaryWriter_get_limit_reached(PyObject *op, void *closure)
+{
+    BinaryWriter *writer = BinaryWriter_CAST(op)->writer;
+    return PyBool_FromLong(writer && writer->state == BINARY_WRITER_LIMIT_REACHED);
+}
+
 static PyGetSetDef BinaryWriter_getset[] = {
     {"total_samples", BinaryWriter_get_total_samples, NULL, "Total samples written", NULL},
+    {"limit_reached", BinaryWriter_get_limit_reached, NULL,
+     "A format limit was reached; the collected samples can still be finalized", NULL},
     {NULL}
 };
 
 static PyMethodDef BinaryWriter_methods[] = {
     _REMOTE_DEBUGGING_BINARYWRITER_WRITE_SAMPLE_METHODDEF
+    _REMOTE_DEBUGGING_BINARYWRITER_SET_STATS_METHODDEF
     _REMOTE_DEBUGGING_BINARYWRITER_FINALIZE_METHODDEF
     _REMOTE_DEBUGGING_BINARYWRITER_CLOSE_METHODDEF
     _REMOTE_DEBUGGING_BINARYWRITER___ENTER___METHODDEF
@@ -2226,7 +2310,7 @@ _remote_debugging_zstd_available_impl(PyObject *module)
 /*[clinic input]
 _remote_debugging.get_child_pids
 
-    pid: int
+    pid: pid_t
         Process ID of the parent process
     *
     recursive: bool = True
@@ -2248,24 +2332,24 @@ Raises:
 [clinic start generated code]*/
 
 static PyObject *
-_remote_debugging_get_child_pids_impl(PyObject *module, int pid,
+_remote_debugging_get_child_pids_impl(PyObject *module, pid_t pid,
                                       int recursive)
-/*[clinic end generated code: output=1ae2289c6b953e4b input=c6437b52e2fdd880]*/
+/*[clinic end generated code: output=fa3dfd1b02eed29b input=3325d95e9f39d75d]*/
 {
-    return enumerate_child_pids((pid_t)pid, recursive);
+    return enumerate_child_pids(pid, recursive);
 }
 
 /*[clinic input]
 _remote_debugging.is_python_process
 
-    pid: int
+    pid: pid_t
 
 Check if a process is a Python process.
 [clinic start generated code]*/
 
 static PyObject *
-_remote_debugging_is_python_process_impl(PyObject *module, int pid)
-/*[clinic end generated code: output=22947dc8afcac362 input=13488e28c7295d84]*/
+_remote_debugging_is_python_process_impl(PyObject *module, pid_t pid)
+/*[clinic end generated code: output=63541478c889e536 input=ff998fef4aeef433]*/
 {
     proc_handle_t handle;
 
@@ -2288,7 +2372,7 @@ _remote_debugging_is_python_process_impl(PyObject *module, int pid)
 /*[clinic input]
 _remote_debugging.get_gc_stats
 
-    pid: int
+    pid: pid_t
     *
     all_interpreters: bool = False
         If True, return GC statistics from all interpreters.
@@ -2314,9 +2398,9 @@ Raises:
 [clinic start generated code]*/
 
 static PyObject *
-_remote_debugging_get_gc_stats_impl(PyObject *module, int pid,
+_remote_debugging_get_gc_stats_impl(PyObject *module, pid_t pid,
                                     int all_interpreters)
-/*[clinic end generated code: output=d9dce5f7add149bb input=a2a08a45a8f0b119]*/
+/*[clinic end generated code: output=dd33199ccb6a56e9 input=41399e77788aa369]*/
 {
     RuntimeOffsets offsets;
     if (init_runtime_offsets(&offsets, pid, /*debug=*/1) < 0) {

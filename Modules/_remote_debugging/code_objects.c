@@ -32,9 +32,12 @@ get_tlbc_cache_entry(RemoteUnwinderObject *self, uintptr_t code_addr, uint32_t c
     TLBCCacheEntry *entry = _Py_hashtable_get(self->tlbc_cache, key);
 
     if (entry && entry->generation != current_generation) {
-        // Entry is stale, remove it by setting to NULL
-        _Py_hashtable_set(self->tlbc_cache, key, NULL);
-        entry = NULL;
+        // Entry is stale, remove it from the cache and destroy it
+        TLBCCacheEntry *old = _Py_hashtable_steal(self->tlbc_cache, key);
+        if (old != NULL) {
+            tlbc_cache_entry_destroy(old);
+        }
+        return NULL;
     }
 
     return entry;
@@ -338,11 +341,16 @@ parse_code_object(RemoteUnwinderObject *unwinder,
                   PyObject **result,
                   const CodeObjectContext *ctx)
 {
+    _Py_DECLARE_STR(unknown_function, "<unknown function>");
+    _Py_DECLARE_STR(unknown_file, "<unknown file>");
+    _Py_DECLARE_STR(unreadable_frame, "<unreadable frame>");
+
     void *key = (void *)ctx->code_addr;
     CachedCodeMetadata *meta = NULL;
     PyObject *func = NULL;
     PyObject *file = NULL;
     PyObject *linetable = NULL;
+    int code_metadata_incomplete = 0;
 
 #ifdef Py_GIL_DISABLED
     // In free threading builds, code object addresses might have the low bit set
@@ -366,30 +374,50 @@ parse_code_object(RemoteUnwinderObject *unwinder,
         if (_Py_RemoteDebug_PagedReadRemoteMemory(
                 &unwinder->handle, real_address, SIZEOF_CODE_OBJ, code_object) < 0)
         {
-            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read code object");
-            goto error;
+            if (_Py_RemoteDebug_IsFatalReadError()) {
+                goto error;
+            }
+            PyErr_Clear();
+            func = Py_NewRef(&_Py_STR(unreadable_frame));
+            file = Py_NewRef(_Py_LATIN1_CHR('~'));
+            goto degraded;
         }
 
         func = read_py_str(unwinder,
             GET_MEMBER(uintptr_t, code_object, unwinder->debug_offsets.code_object.qualname), 1024);
         if (!func) {
-            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read function name from code object");
-            goto error;
+            if (_Py_RemoteDebug_IsFatalReadError()) {
+                goto error;
+            }
+            PyErr_Clear();
+            func = Py_NewRef(&_Py_STR(unknown_function));
+            code_metadata_incomplete = 1;
         }
 
         file = read_py_str(unwinder,
             GET_MEMBER(uintptr_t, code_object, unwinder->debug_offsets.code_object.filename), 1024);
         if (!file) {
-            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read filename from code object");
-            goto error;
+            if (_Py_RemoteDebug_IsFatalReadError()) {
+                goto error;
+            }
+            PyErr_Clear();
+            file = Py_NewRef(&_Py_STR(unknown_file));
+            code_metadata_incomplete = 1;
+        }
+
+        if (code_metadata_incomplete) {
+            goto degraded;
         }
 
         linetable = read_py_bytes(unwinder,
             GET_MEMBER(uintptr_t, code_object, unwinder->debug_offsets.code_object.linetable),
             MAX_LINETABLE_SIZE);
         if (!linetable) {
-            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read linetable from code object");
-            goto error;
+            if (_Py_RemoteDebug_IsFatalReadError()) {
+                goto error;
+            }
+            PyErr_Clear();
+            goto degraded;
         }
 
         meta = PyMem_RawMalloc(sizeof(CachedCodeMetadata));
@@ -447,6 +475,22 @@ parse_code_object(RemoteUnwinderObject *unwinder,
             goto error;
         }
         tlbc_entry = get_tlbc_cache_entry(unwinder, real_address, unwinder->tlbc_generation);
+    }
+
+    if (tlbc_entry && ctx->tlbc_index >= 0) {
+        uintptr_t *entries = (uintptr_t *)((char *)tlbc_entry->tlbc_array + sizeof(Py_ssize_t));
+        if (ctx->tlbc_index >= tlbc_entry->tlbc_array_size ||
+            entries[ctx->tlbc_index] == 0) {
+            TLBCCacheEntry *old = _Py_hashtable_steal(unwinder->tlbc_cache, (void *)real_address);
+            if (old != NULL) {
+                tlbc_cache_entry_destroy(old);
+            }
+            if (!cache_tlbc_array(unwinder, real_address, real_address + unwinder->debug_offsets.code_object.co_tlbc,
+                                unwinder->tlbc_generation)) {
+                goto error;
+            }
+            tlbc_entry = get_tlbc_cache_entry(unwinder, real_address, unwinder->tlbc_generation);
+        }
     }
 
     // Validate tlbc_index and check TLBC cache
@@ -541,6 +585,18 @@ done_tlbc:
 
     *result = tuple;
     return 0;
+
+degraded: {
+    PyObject *degraded_tuple = make_frame_info(unwinder, file, Py_None,
+                                               func, Py_None);
+    Py_CLEAR(func);
+    Py_CLEAR(file);
+    if (!degraded_tuple) {
+        return -1;
+    }
+    *result = degraded_tuple;
+    return 0;
+}
 
 error:
     Py_XDECREF(func);

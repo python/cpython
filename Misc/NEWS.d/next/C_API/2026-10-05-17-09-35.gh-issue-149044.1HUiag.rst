@@ -1,0 +1,2 @@
+Fix the :c:macro:`PySlot_END` macro for C++: initialize all members to avoid
+compiler warnings. Patch by Victor Stinner.

@@ -18,7 +18,7 @@ jobs:
 
     steps:
       - name: Check there's no DO-NOT-MERGE
-        uses: mheap/github-action-required-labels@0ac283b4e65c1fb28ce6079dea5546ceca98ccbe # v5.5.2
+        uses: mheap/github-action-required-labels@23e10fde7e062233401931a0eece796cd9bf3177 # v5.6.0
         with:
           mode: exactly
           count: 0
@@ -36,7 +36,7 @@ jobs:
     steps:
       # Check that the PR is not awaiting changes from the author due to previous review.
       - name: Check there's no required changes
-        uses: mheap/github-action-required-labels@0ac283b4e65c1fb28ce6079dea5546ceca98ccbe # v5.5.2
+        uses: mheap/github-action-required-labels@23e10fde7e062233401931a0eece796cd9bf3177 # v5.6.0
         with:
           mode: exactly
           count: 0
@@ -45,7 +45,7 @@ jobs:
             awaiting change review
       - id: is-feature
         name: Check whether this PR is a feature (contains a "type-feature" label)
-        uses: mheap/github-action-required-labels@0ac283b4e65c1fb28ce6079dea5546ceca98ccbe # v5.5.2
+        uses: mheap/github-action-required-labels@23e10fde7e062233401931a0eece796cd9bf3177 # v5.6.0
         with:
           mode: exactly
           count: 1
@@ -56,9 +56,12 @@ jobs:
       - id: awaiting-merge
         if: steps.is-feature.outputs.status == 'success'
         name: Check for complete review
-        uses: mheap/github-action-required-labels@0ac283b4e65c1fb28ce6079dea5546ceca98ccbe # v5.5.2
+        uses: mheap/github-action-required-labels@23e10fde7e062233401931a0eece796cd9bf3177 # v5.6.0
         with:
           mode: exactly
           count: 1
           labels: |
             awaiting merge
+          message: >-
+            This PR is labelled type-feature. All features require approval from a
+            core team member before merge. Found: {{ applied }}

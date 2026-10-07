@@ -1,0 +1,2 @@
+Fix :class:`asyncio.TaskGroup` hang when a task created by
+:func:`asyncio.eager_task_factory` cancels the group before suspending.

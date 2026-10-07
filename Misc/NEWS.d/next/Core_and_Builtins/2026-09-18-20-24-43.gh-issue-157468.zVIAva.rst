@@ -1,0 +1,7 @@
+Fix the JIT optimizer folding a builtin name to a constant taken from the
+interpreter's builtins dictionary even when the running function uses a
+different ``__builtins__`` mapping, such as one created with
+``vars(builtins).copy()``. The optimizer now only folds when the function's
+builtins is the interpreter's, and the folded constant is guarded at runtime so
+that another function sharing the same code object but a different builtins
+mapping does not use it.
