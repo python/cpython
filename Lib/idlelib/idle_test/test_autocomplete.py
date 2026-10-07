@@ -230,16 +230,14 @@ class AutoCompleteTest(unittest.TestCase):
         # For file completion, a large list containing all files in the path,
         # and a small list containing files that do not start with '.'.
         acp = self.autocomplete
-        small, large = acp.fetch_completions(
-                '', ac.ATTRS)
-        if hasattr(__main__, '__file__') and __main__.__file__ != ac.__file__:
-            self.assertNotIn('AutoComplete', small)  # See issue 36405.
 
-        # Test attributes
-        s, b = acp.fetch_completions('', ac.ATTRS)
-        self.assertLess(len(small), len(large))
-        self.assertTrue(all(filter(lambda x: x.startswith('_'), s)))
-        self.assertTrue(any(filter(lambda x: x.startswith('_'), b)))
+        # Test current module (what='') attributes.
+        small, large = acp.fetch_completions('', ac.ATTRS)
+        if hasattr(__main__, '__file__') and __main__.__file__ != ac.__file__:
+            self.assertNotIn('AutoComplete', small)  # See gh-80586.
+        self.assertLess(len(small), len(large))  # Not equal
+        self.assertFalse(any(a[:1] == '_' for a in small))
+        self.assertTrue(any(a[:1] == '_' for a in large))
 
         # Test smalll should respect to __all__.
         with patch.dict('__main__.__dict__', {'__all__': ['a', 'b']}):

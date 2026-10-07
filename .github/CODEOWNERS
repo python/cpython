@@ -63,14 +63,14 @@
 .azure-pipelines/             @AA-Turner
 
 # GitHub & related scripts
-.github/                                    @ezio-melotti @hugovk @AA-Turner @webknjaz
-Tools/build/compute-changes.py              @AA-Turner @hugovk @webknjaz
-Lib/test/test_tools/test_compute_changes.py @AA-Turner @hugovk @webknjaz
+.github/                                    @ezio-melotti @hugovk @AA-Turner @webknjaz @StanFromIreland
+Tools/build/compute-changes.py              @AA-Turner @hugovk @webknjaz @StanFromIreland
+Lib/test/test_tools/test_compute_changes.py @AA-Turner @hugovk @webknjaz @StanFromIreland
 Tools/build/verify_ensurepip_wheels.py      @AA-Turner @pfmoore @pradyunsg
 
 # Pre-commit
-.pre-commit-config.yaml       @hugovk
-.ruff.toml                    @hugovk @AlexWaygood @AA-Turner
+.pre-commit-config.yaml       @hugovk @StanFromIreland
+.ruff.toml                    @hugovk @AlexWaygood @AA-Turner @StanFromIreland
 
 # Patchcheck
 Tools/patchcheck/             @AA-Turner
@@ -227,7 +227,7 @@ Tools/cases_generator/        @markshannon
 Python/assemble.c             @markshannon @iritkatriel
 Python/codegen.c              @markshannon @iritkatriel
 Python/compile.c              @markshannon @iritkatriel
-Python/flowgraph.c            @markshannon @iritkatriel
+Python/flowgraph.c            @markshannon @iritkatriel @eclips4
 Python/instruction_sequence.c @iritkatriel
 Python/symtable.c             @JelleZijlstra @carljm
 
