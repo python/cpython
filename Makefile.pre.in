@@ -1614,7 +1614,7 @@ Programs/_testembed: Programs/_testembed.o $(LINK_PYTHON_DEPS)
 	$(LINKCC) $(PY_CORE_EXE_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/_testembed.o $(LINK_PYTHON_OBJS) $(LIBS) $(MODLIBS) $(SYSLIBS)
 
 Programs/_getcompiler: Programs/_getcompiler.c
-	$(LINKCC) $(PY_CORE_EXE_LDFLAGS) $(LINKFORSHARED) $(PY_CPPFLAGS) -o $@ $<
+	$(LINKCC) $(PY_CPPFLAGS) -o $@ $<
 
 ############################################################################
 # "Bootstrap Python" used to run Programs/_freeze_module.py
