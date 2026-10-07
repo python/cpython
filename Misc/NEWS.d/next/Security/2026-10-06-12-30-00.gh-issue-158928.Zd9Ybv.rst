@@ -1,2 +1,2 @@
-Fix buffer overflow in :meth:`bytearray.__init__` when initializing from an
+Fix a buffer overflow when initializing a :class:`bytearray` from an
 iterator.
