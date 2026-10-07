@@ -1306,7 +1306,8 @@ by returning a value from the subgenerator's underlying function:
 Where :keyword:`yield` expressions are allowed
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The yield expression can only be used in the body of a function definition.
+A :keyword:`yield` expression can only be used in the body of a
+function definition.
 More precisely, it can only be used when the closest enclosing *block*
 is a function definition, not a module-level or class block.
 (See :ref:`prog_structure` for an explanation of blocks.)
@@ -1339,8 +1340,11 @@ For :keyword:`!yield from` expressions, the same restrictions apply.
    implement comprehensions and generator expressions.
 
 
-Formal grammar of :keyword:`yield` expressions
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Formal grammar of :keyword:`!yield` expressions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The formal grammar of :keyword:`!yield` and :keyword:`!yield from`
+expressions is:
 
 .. grammar-snippet::
    :group: python-grammar
@@ -1355,12 +1359,10 @@ Formal grammar of :keyword:`yield` expressions
       | `expression_list`
       | `starred_expression` "," [`starred_expression_list`]
 
+Note that ``yield_expression``, the unparenthesized rule, also appears in
+:token:`~python-grammar:expression_stmt` and
+:token:`~python-grammar:assignment_stmt`.
 
-.. seealso::
-
-   :pep:`525` - Asynchronous Generators
-      The proposal that expanded on :pep:`492` by adding generator capabilities to
-      coroutine functions.
 
 .. index:: single: yield; examples
 
@@ -1488,6 +1490,12 @@ of a *finalizer* method see the implementation of
 
 The expression ``yield from <expr>`` is a syntax error when used in an
 asynchronous generator function.
+
+.. seealso::
+
+   :pep:`525` - Asynchronous Generators
+      The proposal that expanded on :pep:`492` by adding generator capabilities to
+      coroutine functions.
 
 .. _primaries:
 
