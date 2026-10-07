@@ -282,7 +282,6 @@ void
 _PyWarnings_BeforeFork(PyInterpreterState *interp)
 {
     WarningsState *st = warnings_get_state(interp);
-    // Record ownership before fork(): the thread ID can change in the child.
     st->lock_held_at_fork = _PyRecursiveMutex_IsLockedByCurrentThread(&st->lock);
 }
 
@@ -290,16 +289,7 @@ void
 _PyWarnings_AfterFork(PyInterpreterState *interp)
 {
     WarningsState *st = warnings_get_state(interp);
-    if (st->lock_held_at_fork) {
-        // The surviving thread will still release the lock as its stack
-        // unwinds. Preserve the recursion depth, but discard dead waiters.
-        st->lock.mutex = (PyMutex){._bits = _Py_LOCKED};
-        st->lock.thread = PyThread_get_thread_ident_ex();
-    }
-    else {
-        // The owner (if any) no longer exists in the child.
-        st->lock = (_PyRecursiveMutex){0};
-    }
+    _PyRecursiveMutex_at_fork_reinit(&st->lock, st->lock_held_at_fork);
     st->lock_held_at_fork = false;
 }
 #endif
