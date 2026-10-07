@@ -1196,6 +1196,8 @@ A different value can be given by using the generator iterator's
    Traceback (most recent call last):
    StopIteration
 
+.. _yield-expression-parentheses:
+
 A :keyword:`!yield` expression can also appear as part of a larger expression.
 In this case, it must be enclosed in parentheses.
 For example::
@@ -1225,17 +1227,24 @@ expression is:
 .. index::
    single: from; yield from expression
 
-:keyword:`yield from` expressions
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+:keyword:`!yield from` expressions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-When :samp:`yield from {subiterable}` is used, *subiterable* must evaluate to
-an iterable.
-At runtime, the current generator's operations are :dfn:`delegated` to the
-subiterable: the values produced by the subiterable are passed directly
-to the consumer of the current generator.
+An expression of the form :samp:`yield from {subiterable}` is
+a :keyword:`!yield from` expression.
+
+Like a :keyword:`yield` expression, a :keyword:`!yield from` expression
+is only allowed in functions and turns the enclosing function into a generator.
+It must be parenthesized in some contexts; :ref:`the rules <yield-expression-parentheses>`
+are the same as for :keyword:`!yield` expressions.
+
+At runtime, *subiterable* -- the expression after the :keyword:`!yield from`
+keywords -- must evaluate to an iterable.
 
 For simple iterables, :samp:`yield from {subiterable}` is essentially
-a shortened form of :samp:`for item in {subiterable}: yield item`::
+a shortened form of :samp:`for item in {subiterable}: yield item`.
+Values produced by *subiterable* are passed directly
+to the consumer of the current generator. For example::
 
    >>> hand_movements = ['put hands up', 'put hands down']
 
@@ -1252,18 +1261,24 @@ a shortened form of :samp:`for item in {subiterable}: yield item`::
    put hands up
    put hands down
 
-However, unlike an ordinary loop, ``yield from`` delegates the entire generator
-protocol: it allows the subiterable to receive sent and thrown values directly
-from the consumer, and return a final value to the delegating function.
+However, unlike an ordinary loop, :keyword:`!yield from` delegates the
+entire generator protocol.
+Any values passed in with :meth:`~generator.send` and any exceptions passed
+in with :meth:`~generator.throw` and :func:`~generator.close` are passed
+to the subiterator if it has the appropriate methods.
+If this is not the case, then :meth:`~generator.send` will raise
+:exc:`AttributeError` or :exc:`TypeError`, while :meth:`~generator.throw`
+and :func:`~generator.close` will raise the passed in exception immediately.
 
-When the subiterable is complete, the :attr:`~StopIteration.value`
+When a :keyword:`!yield from` expression's *subiterable* is complete,
+the :attr:`~StopIteration.value`
 attribute of the raised :exc:`StopIteration` instance becomes the value of
-the ``yield from`` expression.
+the :keyword:`!yield from` expression.
 The value can be either set explicitly when raising
 :exc:`StopIteration`, or, when the subiterator is a generator,
-by returning a value from the subgenerator's underlying function::
+by returning a value from the subgenerator's underlying function:
 
-   TODO: find a good example
+.. code-block:: pycon
 
    >>> def subgen():
    ...     yield 1
@@ -1272,18 +1287,10 @@ by returning a value from the subgenerator's underlying function::
 
    >>> def maingen():
    ...     result = yield from subgen()
-   ...     yield result
-   ...     yield from subgen()
+   ...     yield ('result:', result)
 
    >>> list(maingen())
-   [1, 2, 3, 1, 2]
-
-Any values passed in with :meth:`~generator.send` and any exceptions passed
-in with :meth:`~generator.throw` are passed to the subiterator if it
-has the appropriate methods.
-If this is not the case, then :meth:`~generator.send` will raise
-:exc:`AttributeError` or :exc:`TypeError`, while :meth:`~generator.throw`
-will raise the passed in exception immediately.
+   [1, 2, ('result:', 3)]
 
 .. versionchanged:: 3.3
    Added ``yield from <expr>`` to delegate control flow to a subiterator.
@@ -1325,7 +1332,7 @@ Due to their side effects on the containing scope, ``yield`` expressions
 are not permitted as part of the implicitly defined scopes used to
 implement comprehensions and generator expressions.
 
-For :keyword:`yield from` expressions, the same restrictions apply.
+For :keyword:`!yield from` expressions, the same restrictions apply.
 
 .. versionchanged:: 3.8
    Yield expressions prohibited in the implicitly nested scopes used to
