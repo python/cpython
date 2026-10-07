@@ -4,6 +4,7 @@ preserve
 
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
 PyDoc_STRVAR(array_array_clear__doc__,
 "clear($self, /)\n"
@@ -631,13 +632,8 @@ array__array_reconstructor(PyObject *module, PyObject *const *args, Py_ssize_t n
         _PyArg_BadArgument("_array_reconstructor", "argument 2", "str", args[1]);
         goto exit;
     }
-    Py_ssize_t typecode_length;
-    typecode = PyUnicode_AsUTF8AndSize(args[1], &typecode_length);
+    typecode = _PyUnicode_AsUTF8NoNUL(args[1]);
     if (typecode == NULL) {
-        goto exit;
-    }
-    if (strlen(typecode) != (size_t)typecode_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     mformat_code = PyLong_AsInt(args[2]);
@@ -726,4 +722,4 @@ array_arrayiterator___setstate__(PyObject *self, PyObject *state)
 
     return return_value;
 }
-/*[clinic end generated code: output=54ec10a63676f320 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=172a9af0316afc14 input=a9049054013a1b77]*/

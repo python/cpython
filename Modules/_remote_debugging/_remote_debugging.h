@@ -105,6 +105,7 @@ typedef struct {
 #ifdef MS_WINDOWS
 #define STATUS_SUCCESS                   ((NTSTATUS)0x00000000L)
 #define STATUS_INFO_LENGTH_MISMATCH      ((NTSTATUS)0xC0000004L)
+#define STATUS_NO_MORE_ENTRIES           ((NTSTATUS)0x8000001AL)
 typedef enum _WIN32_THREADSTATE {
     WIN32_THREADSTATE_INITIALIZED = 0,
     WIN32_THREADSTATE_READY       = 1,
@@ -728,7 +729,7 @@ extern int parse_async_frame_chain(
     RemoteUnwinderObject *unwinder,
     PyObject *calls,
     uintptr_t address_of_thread,
-    uintptr_t running_task_code_obj
+    uintptr_t running_task_frame
 );
 
 extern int process_single_task_node(
@@ -744,10 +745,10 @@ extern int find_running_task_in_thread(
     uintptr_t *running_task_addr
 );
 
-extern int get_task_code_object(
+extern int get_task_frame(
     RemoteUnwinderObject *unwinder,
     uintptr_t task_addr,
-    uintptr_t *code_obj_addr
+    uintptr_t *frame_addr
 );
 
 extern int append_awaited_by(
