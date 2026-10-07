@@ -86,6 +86,25 @@ class TestPathInfoFunctions(unittest.TestCase):
             self.assertEqual(module_type, 'stdlib')
             self.assertIn('os', module_name)
 
+    def test_extract_module_name_with_site_packages_inside_stdlib(self):
+        """Test extract_module_name when site-packages is inside stdlib."""
+        stdlib = Path('/usr/lib/python3.15')
+        site_packages = stdlib / 'site-packages'
+        # On Windows, site.getsitepackages() also includes sys.prefix
+        path_info = {
+            'stdlib': stdlib,
+            'site_packages': [Path('/usr'), site_packages],
+            'sys_path': [],
+        }
+
+        site_packages_file = str(site_packages / 'requests' / 'api.py')
+        self.assertEqual(extract_module_name(site_packages_file, path_info),
+                         ('requests.api', 'site-packages'))
+
+        stdlib_file = str(stdlib / 'json' / 'decoder.py')
+        self.assertEqual(extract_module_name(stdlib_file, path_info),
+                         ('json.decoder', 'stdlib'))
+
     def test_extract_module_name_with_project_file(self):
         """Test extract_module_name with a project file."""
         path_info = get_python_path_info()
