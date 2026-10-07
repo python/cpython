@@ -568,20 +568,19 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
         memio.readinto(b)
         self.assertEqual(b, b"")
 
-    def test_readinto_readonly_buffer(self):
+    @support.subTests("method", ("readinto", "readinto1"))
+    @support.subTests("buffer", (
+        b"xxx", memoryview(b"xxx"), b"", memoryview(b""),
+    ))
+    @support.subTests("position", (0, 4, 10))
+    def test_readinto_readonly_buffer(self, method, buffer, position):
         data = b"abcdef"
-        for method in ("readinto", "readinto1"):
-            for buffer in (b"xxx", memoryview(b"xxx"),
-                           b"", memoryview(b"")):
-                for position in (0, 4, 10):
-                    with self.subTest(method=method, buffer=buffer,
-                                      position=position):
-                        with self.ioclass(data) as memio:
-                            memio.seek(position)
-                            with self.assertRaises(TypeError):
-                                getattr(memio, method)(buffer)
-                            self.assertEqual(memio.tell(), position)
-                            self.assertEqual(memio.read(), data[position:])
+        with self.ioclass(data) as memio:
+            memio.seek(position)
+            with self.assertRaises(TypeError):
+                getattr(memio, method)(buffer)
+            self.assertEqual(memio.tell(), position)
+            self.assertEqual(memio.read(), data[position:])
 
     def test_relative_seek(self):
         buf = self.buftype("1234567890")
