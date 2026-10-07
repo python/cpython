@@ -1,0 +1,1 @@
+Fix data race in repr of :class:`threading.RLock` in free-threading build.

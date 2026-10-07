@@ -16,8 +16,10 @@
 This module provides functions for encoding binary data to printable
 ASCII characters and decoding such encodings back to binary data.
 This includes the :ref:`encodings specified in <base64-rfc-4648>`
-:rfc:`4648` (Base64, Base32 and Base16)
-and the non-standard :ref:`Base85 encodings <base64-base-85>`.
+:rfc:`4648` (Base64, Base32 and Base16), the :ref:`Base85 encoding
+<base64-base-85>` specified in `PDF 2.0
+<https://pdfa.org/resource/iso-32000-2/>`_, and non-standard variants
+of Base85 used elsewhere.
 
 There are two interfaces provided by this module.  The modern interface
 supports encoding :term:`bytes-like objects <bytes-like object>` to ASCII
@@ -73,8 +75,8 @@ POST request.
       Added the *padded* and *wrapcol* parameters.
 
 
-.. function:: b64decode(s, altchars=None, validate=False, *, padded=True)
-              b64decode(s, altchars=None, validate=True, *, ignorechars, padded=True)
+.. function:: b64decode(s, altchars=None, validate=False, *, padded=True, canonical=False)
+              b64decode(s, altchars=None, validate=True, *, ignorechars, padded=True, canonical=False)
 
    Decode the Base64 encoded :term:`bytes-like object` or ASCII string
    *s* and return the decoded :class:`bytes`.
@@ -112,10 +114,13 @@ POST request.
    If *validate* is true, these non-alphabet characters in the input
    result in a :exc:`binascii.Error`.
 
+   If *canonical* is true, non-zero padding bits are rejected.
+   See :func:`binascii.a2b_base64` for details.
+
    For more information about the strict base64 check, see :func:`binascii.a2b_base64`
 
    .. versionchanged:: 3.15
-      Added the *ignorechars* and *padded* parameters.
+      Added the *canonical*, *ignorechars*, and *padded* parameters.
 
    .. deprecated:: 3.15
       Accepting the ``+`` and ``/`` characters with an alternative alphabet
@@ -179,7 +184,7 @@ POST request.
       Added the *padded* and *wrapcol* parameters.
 
 
-.. function:: b32decode(s, casefold=False, map01=None, *, padded=True, ignorechars=b'')
+.. function:: b32decode(s, casefold=False, map01=None, *, padded=True, ignorechars=b'', canonical=False)
 
    Decode the Base32 encoded :term:`bytes-like object` or ASCII string *s* and
    return the decoded :class:`bytes`.
@@ -205,12 +210,15 @@ POST request.
    *ignorechars* should be a :term:`bytes-like object` containing characters
    to ignore from the input.
 
+   If *canonical* is true, non-zero padding bits are rejected.
+   See :func:`binascii.a2b_base32` for details.
+
    A :exc:`binascii.Error` is raised if *s* is
    incorrectly padded or if there are non-alphabet characters present in the
    input.
 
    .. versionchanged:: 3.15
-      Added the *ignorechars* and *padded* parameters.
+      Added the *canonical*, *ignorechars*, and *padded* parameters.
 
 
 .. function:: b32hexencode(s, *, padded=True, wrapcol=0)
@@ -224,7 +232,7 @@ POST request.
       Added the *padded* and *wrapcol* parameters.
 
 
-.. function:: b32hexdecode(s, casefold=False, *, padded=True, ignorechars=b'')
+.. function:: b32hexdecode(s, casefold=False, *, padded=True, ignorechars=b'', canonical=False)
 
    Similar to :func:`b32decode` but uses the Extended Hex Alphabet, as defined in
    :rfc:`4648`.
@@ -237,7 +245,7 @@ POST request.
    .. versionadded:: 3.10
 
    .. versionchanged:: 3.15
-      Added the *ignorechars* and *padded* parameters.
+      Added the *canonical*, *ignorechars*, and *padded* parameters.
 
 
 .. function:: b16encode(s, *, wrapcol=0)
@@ -278,19 +286,28 @@ POST request.
 Base85 Encodings
 -----------------
 
-Base85 encoding is not formally specified but rather a de facto standard,
-thus different systems perform the encoding differently.
+Base85 encoding is a family of algorithms which represent four bytes
+using five ASCII characters.  Originally implemented in the Unix
+``btoa(1)`` utility, a version of it was later adopted by Adobe in the
+PostScript language and is standardized in PDF 2.0 (ISO 32000-2).
+This version, in both its ``btoa`` and PDF variants, is implemented by
+:func:`a85encode`.
 
-The :func:`a85encode` and :func:`b85encode` functions in this module are two implementations of
-the de facto standard. You should call the function with the Base85
-implementation used by the software you intend to work with.
+A separate version, using a different output character set, was
+defined as an April Fool's joke in :rfc:`1924` but is now used by Git
+and other software.  This version is implemented by :func:`b85encode`.
 
-The two functions present in this module differ in how they handle the following:
+Finally, a third version, using yet another output character set
+designed for safe inclusion in programming language strings, is
+defined by ZeroMQ and implemented here by :func:`z85encode`.
 
-* Whether to include enclosing ``<~`` and ``~>`` markers
-* Whether to include newline characters
-* The set of ASCII characters used for encoding
-* Handling of null bytes
+The functions present in this module differ in how they handle the following:
+
+* Whether to include and expect enclosing ``<~`` and ``~>`` markers.
+* Whether to fold the input into multiple lines.
+* The set of ASCII characters used for encoding.
+* Compact encodings of sequences of spaces and null bytes.
+* The encoding of zero-padding bytes applied to the input.
 
 Refer to the documentation of the individual functions for more information.
 
@@ -301,40 +318,54 @@ Refer to the documentation of the individual functions for more information.
 
    *foldspaces* is an optional flag that uses the special short sequence 'y'
    instead of 4 consecutive spaces (ASCII 0x20) as supported by 'btoa'. This
-   feature is not supported by the "standard" Ascii85 encoding.
+   feature is not supported by the standard encoding used in PDF.
 
    If *wrapcol* is non-zero, insert a newline (``b'\n'``) character
    after at most every *wrapcol* characters.
    If *wrapcol* is zero (default), do not insert any newlines.
 
-   If *pad* is true, the input is padded with ``b'\0'`` so its length is a
-   multiple of 4 bytes before encoding.
-   Note that the ``btoa`` implementation always pads.
+   *pad* controls whether zero-padding applied to the end of the input
+   is fully retained in the output encoding, as done by ``btoa``,
+   producing an exact multiple of 5 bytes of output. This is not part
+   of the standard encoding used in PDF, as it does not preserve the
+   length of the data.
 
-   *adobe* controls whether the encoded byte sequence is framed with ``<~``
-   and ``~>``, which is used by the Adobe implementation.
+   *adobe* controls whether the encoded byte sequence is framed with
+   ``<~`` and ``~>``, as in a PostScript base-85 string literal.  Note
+   that while ASCII85Decode streams in PDF documents *must* be
+   terminated with ``~>``, they *must not* use a leading ``<~``.
 
    .. versionadded:: 3.4
 
 
-.. function:: a85decode(b, *, foldspaces=False, adobe=False, ignorechars=b' \t\n\r\v')
+.. function:: a85decode(b, *, foldspaces=False, adobe=False, ignorechars=b' \t\n\r\v', canonical=False)
 
    Decode the Ascii85 encoded :term:`bytes-like object` or ASCII string *b* and
    return the decoded :class:`bytes`.
 
    *foldspaces* is a flag that specifies whether the 'y' short sequence
    should be accepted as shorthand for 4 consecutive spaces (ASCII 0x20).
-   This feature is not supported by the "standard" Ascii85 encoding.
+   This feature is not supported by the standard Ascii85 encoding used in
+   PDF and PostScript.
 
-   *adobe* controls whether the input sequence is in Adobe Ascii85 format
-   (i.e. is framed with <~ and ~>).
+   *adobe* controls whether the ``<~`` and ``~>`` markers are
+   present. While the leading ``<~`` is not required, the input must
+   end with ``~>``, or a :exc:`ValueError` is raised.
 
    *ignorechars* should be a :term:`bytes-like object` containing characters
    to ignore from the input.
    This should only contain whitespace characters, and by
    default contains all whitespace characters in ASCII.
 
+   If *canonical* is true, non-canonical encodings are rejected.
+   See :func:`binascii.a2b_ascii85` for details.
+
    .. versionadded:: 3.4
+
+   .. versionchanged:: 3.15
+      Added the *canonical* parameter.
+      Single-character final groups are now always rejected as encoding
+      violations.
 
 
 .. function:: b85encode(b, pad=False, *, wrapcol=0)
@@ -342,8 +373,11 @@ Refer to the documentation of the individual functions for more information.
    Encode the :term:`bytes-like object` *b* using base85 (as used in e.g.
    git-style binary diffs) and return the encoded :class:`bytes`.
 
-   If *pad* is true, the input is padded with ``b'\0'`` so its length is a
-   multiple of 4 bytes before encoding.
+   The input is padded with ``b'\0'`` so its length is a multiple of 4
+   bytes before encoding.  If *pad* is true, all the resulting
+   characters are retained in the output, which will always be a
+   multiple of 5 bytes, and thus the length of the data may not be
+   preserved on decoding.
 
    If *wrapcol* is non-zero, insert a newline (``b'\n'``) character
    after at most every *wrapcol* characters.
@@ -355,29 +389,34 @@ Refer to the documentation of the individual functions for more information.
       Added the *wrapcol* parameter.
 
 
-.. function:: b85decode(b, *, ignorechars=b'')
+.. function:: b85decode(b, *, ignorechars=b'', canonical=False)
 
    Decode the base85-encoded :term:`bytes-like object` or ASCII string *b* and
-   return the decoded :class:`bytes`.  Padding is implicitly removed, if
-   necessary.
+   return the decoded :class:`bytes`.
 
    *ignorechars* should be a :term:`bytes-like object` containing characters
    to ignore from the input.
 
+   If *canonical* is true, non-canonical encodings are rejected.
+   See :func:`binascii.a2b_base85` for details.
+
    .. versionadded:: 3.4
 
    .. versionchanged:: 3.15
-      Added the *ignorechars* parameter.
+      Added the *canonical* and *ignorechars* parameters.
+      Single-character final groups are now always rejected as encoding
+      violations.
 
 
 .. function:: z85encode(s, pad=False, *, wrapcol=0)
 
    Encode the :term:`bytes-like object` *s* using Z85 (as used in ZeroMQ)
-   and return the encoded :class:`bytes`.  See `Z85  specification
-   <https://rfc.zeromq.org/spec/32/>`_ for more information.
+   and return the encoded :class:`bytes`.
 
-   If *pad* is true, the input is padded with ``b'\0'`` so its length is a
-   multiple of 4 bytes before encoding.
+   The input is padded with ``b'\0'`` so its length is a multiple of 4
+   bytes before encoding.  If *pad* is true, all the resulting
+   characters are retained in the output, which will always be a
+   multiple of 5 bytes, as required by the ZeroMQ standard.
 
    If *wrapcol* is non-zero, insert a newline (``b'\n'``) character
    after at most every *wrapcol* characters.
@@ -392,19 +431,23 @@ Refer to the documentation of the individual functions for more information.
       Added the *wrapcol* parameter.
 
 
-.. function:: z85decode(s, *, ignorechars=b'')
+.. function:: z85decode(s, *, ignorechars=b'', canonical=False)
 
    Decode the Z85-encoded :term:`bytes-like object` or ASCII string *s* and
-   return the decoded :class:`bytes`.  See `Z85  specification
-   <https://rfc.zeromq.org/spec/32/>`_ for more information.
+   return the decoded :class:`bytes`.
 
    *ignorechars* should be a :term:`bytes-like object` containing characters
    to ignore from the input.
 
+   If *canonical* is true, non-canonical encodings are rejected.
+   See :func:`binascii.a2b_base85` for details.
+
    .. versionadded:: 3.13
 
    .. versionchanged:: 3.15
-      Added the *ignorechars* parameter.
+      Added the *canonical* and *ignorechars* parameters.
+      Single-character final groups are now always rejected as encoding
+      violations.
 
 
 .. _base64-legacy:
@@ -475,3 +518,11 @@ recommended to review the security section for any code deployed to production.
       Section 5.2, "Base64 Content-Transfer-Encoding," provides the definition of the
       base64 encoding.
 
+   `ISO 32000-2 Portable document format - Part 2: PDF 2.0 <https://pdfa.org/resource/iso-32000-2/>`_
+      Section 7.4.3, "ASCII85Decode Filter," provides the definition
+      of the Ascii85 encoding used in PDF and PostScript, including
+      the output character set and the details of data length preservation
+      using zero-padding and partial output groups.
+
+   `ZeroMQ RFC 32/Z85 <https://rfc.zeromq.org/spec/32/>`_
+      The "Formal Specification" section provides the character set used in Z85.

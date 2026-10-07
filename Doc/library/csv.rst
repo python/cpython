@@ -1,4 +1,4 @@
-:mod:`!csv` --- CSV File Reading and Writing
+:mod:`!csv` --- CSV file reading and writing
 ============================================
 
 .. module:: csv
@@ -42,7 +42,7 @@ using the :class:`DictReader` and :class:`DictWriter` classes.
 
 .. _csv-contents:
 
-Module Contents
+Module contents
 ---------------
 
 The :mod:`!csv` module defines the following functions:
@@ -81,6 +81,13 @@ The :mod:`!csv` module defines the following functions:
       Spam, Spam, Spam, Spam, Spam, Baked Beans
       Spam, Lovely Spam, Wonderful Spam
 
+   where :file:`eggs.csv` contains:
+
+   .. code-block:: text
+
+      Spam Spam Spam Spam Spam |Baked Beans|
+      Spam |Lovely Spam| |Wonderful Spam|
+
 
 .. function:: writer(csvfile, /, dialect='excel', **fmtparams)
 
@@ -109,6 +116,13 @@ The :mod:`!csv` module defines the following functions:
                                   quotechar='|', quoting=csv.QUOTE_MINIMAL)
           spamwriter.writerow(['Spam'] * 5 + ['Baked Beans'])
           spamwriter.writerow(['Spam', 'Lovely Spam', 'Wonderful Spam'])
+
+   which writes :file:`eggs.csv` containing:
+
+   .. code-block:: text
+
+      Spam Spam Spam Spam Spam |Baked Beans|
+      Spam |Lovely Spam| |Wonderful Spam|
 
 
 .. function:: register_dialect(name, /, dialect='excel', **fmtparams)
@@ -191,6 +205,14 @@ The :mod:`!csv` module defines the following classes:
        >>> print(row)
        {'first_name': 'John', 'last_name': 'Cleese'}
 
+   where :file:`names.csv` contains:
+
+   .. code-block:: text
+
+      first_name,last_name
+      Eric,Idle
+      John,Cleese
+
 
 .. class:: DictWriter(f, fieldnames, restval='', extrasaction='raise', \
                       dialect='excel', *args, **kwds)
@@ -227,6 +249,15 @@ The :mod:`!csv` module defines the following classes:
            writer.writerow({'first_name': 'Baked', 'last_name': 'Beans'})
            writer.writerow({'first_name': 'Lovely', 'last_name': 'Spam'})
            writer.writerow({'first_name': 'Wonderful', 'last_name': 'Spam'})
+
+   which writes :file:`names.csv` containing:
+
+   .. code-block:: text
+
+      first_name,last_name
+      Baked,Beans
+      Lovely,Spam
+      Wonderful,Spam
 
 
 .. class:: Dialect
@@ -281,6 +312,33 @@ The :mod:`!csv` module defines the following classes:
       is given, it is interpreted as a string containing possible valid
       delimiter characters.
 
+      The dialect is deduced by parsing the sample with every plausible
+      combination of parameters
+      and choosing the combination which splits the sample into rows
+      with the most consistent number of fields,
+      so the returned dialect is consistent with how :func:`reader`
+      will parse the sample.
+      Raise :exc:`Error` if no combination fits the sample,
+      in particular if it is a single column,
+      so there is no delimiter to find.
+
+      If several combinations fit the sample equally well ---
+      for example if both ``','`` and ``';'`` split every row consistently ---
+      the delimiters listed in the :attr:`~Sniffer.preferred` attribute
+      are preferred, in that order,
+      no matter how many times each of them occurs.
+
+      The *lineterminator* parameter is deduced separately,
+      by a majority vote among the line endings of the sample.
+      A tie is broken in the order ``'\r\n'``, ``'\n'``, ``'\r'``,
+      so a sample without a complete line gives ``'\r\n'``.
+
+      .. versionchanged:: next
+         The dialect is now deduced by trial parsing
+         and the results may differ from those of earlier Python versions.
+         The *escapechar* and *lineterminator* parameters can now be detected,
+         and the requested *delimiters* are not restricted to ASCII.
+
 
    .. method:: has_header(sample)
 
@@ -300,6 +358,15 @@ The :mod:`!csv` module defines the following classes:
 
       This method is a rough heuristic and may produce both false positives and
       negatives.
+
+   The :class:`Sniffer` class has the following attribute:
+
+   .. attribute:: preferred
+
+      The list of the delimiters preferred for breaking ties,
+      in the order of preference.
+      It can be modified.
+      Its initial value is ``[',', '\t', ';', ' ', ':']``.
 
 An example for :class:`Sniffer` use::
 
@@ -324,6 +391,8 @@ The :mod:`!csv` module defines the following constants:
    Instructs :class:`writer` objects to only quote those fields which contain
    special characters such as *delimiter*, *quotechar*, ``'\r'``, ``'\n'``
    or any of the characters in *lineterminator*.
+   If *doublequote* is :const:`False` and *escapechar* is set,
+   the *quotechar* is escaped instead of causing the field to be quoted.
 
 
 .. data:: QUOTE_NONNUMERIC
@@ -382,7 +451,7 @@ The :mod:`!csv` module defines the following exception:
 
 .. _csv-fmt-params:
 
-Dialects and Formatting Parameters
+Dialects and formatting parameters
 ----------------------------------
 
 To make it easier to specify the format of input and output records, specific
@@ -427,6 +496,10 @@ Dialects support the following attributes:
 
    On reading, the *escapechar* removes any special meaning from
    the following character. It defaults to :const:`None`, which disables escaping.
+
+   .. versionchanged:: 3.10
+      Previously the *escapechar* itself was not escaped,
+      which lost it on reading.
 
    .. versionchanged:: 3.11
       An empty *escapechar* is not allowed.
@@ -475,9 +548,16 @@ Dialects support the following attributes:
    When ``True``, raise exception :exc:`Error` on bad CSV input.
    The default is ``False``.
 
+Dialects support :func:`copy.replace`,
+which returns a copy of the dialect
+with the specified formatting parameters replaced.
+
+.. versionchanged:: next
+   Added support for :func:`copy.replace`.
+
 .. _reader-objects:
 
-Reader Objects
+Reader objects
 --------------
 
 Reader objects (:class:`DictReader` instances and objects returned by the
@@ -514,7 +594,7 @@ DictReader objects have the following public attribute:
 
 
 
-Writer Objects
+Writer objects
 --------------
 
 :class:`writer` objects (:class:`DictWriter` instances and objects returned by
@@ -593,17 +673,16 @@ The corresponding simplest possible writing example is::
        writer.writerows(someiterable)
 
 Since :func:`open` is used to open a CSV file for reading, the file
-will by default be decoded into unicode using the system default
-encoding (see :func:`locale.getencoding`).  To decode a file
+will by default be decoded into Unicode using UTF-8.  To decode a file
 using a different encoding, use the ``encoding`` argument of open::
 
    import csv
-   with open('some.csv', newline='', encoding='utf-8') as f:
+   with open('some.csv', newline='', encoding='latin-1') as f:
        reader = csv.reader(f)
        for row in reader:
            print(row)
 
-The same applies to writing in something other than the system default
+The same applies to writing in something other than the default
 encoding: specify the encoding argument when opening the output file.
 
 Registering a new dialect::

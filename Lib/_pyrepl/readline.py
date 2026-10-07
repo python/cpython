@@ -26,8 +26,6 @@ on top of pyrepl.  Not all functionalities are supported.  Contains
 extensions for multiline input.
 """
 
-from __future__ import annotations
-
 import warnings
 from dataclasses import dataclass, field
 
@@ -40,7 +38,7 @@ from . import commands, historical_reader
 from .completing_reader import CompletingReader, stripcolor
 from .console import Console as ConsoleType
 from ._module_completer import ModuleCompleter, make_default_module_completer
-from .fancycompleter import Completer as FancyCompleter
+from .fancycompleter import Completer as FancyCompleter, colorize_matches
 
 Console: type[ConsoleType]
 _error: tuple[type[Exception], ...] | type[Exception]
@@ -55,13 +53,10 @@ ENCODING = sys.getdefaultencoding() or "latin1"
 
 # types
 Command = commands.Command
-from collections.abc import Callable, Collection
+from collections.abc import Callable, Collection, Mapping
 from .types import Callback, Completer, KeySpec, CommandName, CompletionAction
 
-TYPE_CHECKING = False
-
-if TYPE_CHECKING:
-    from typing import Any, Mapping
+lazy from typing import Any
 
 
 MoreLinesCallable = Callable[[str], bool]
@@ -104,6 +99,7 @@ class ReadlineConfig:
     readline_completer: Completer | None = None
     completer_delims: frozenset[str] = frozenset(" \t\n`~!@#$%^&*()-=+[{]}\\|;:'\",<>/?")
     module_completer: ModuleCompleter = field(default_factory=make_default_module_completer)
+    colorize_completions: Callable[[list[str], list[Any]], list[str]] | None = None
 
 @dataclass(kw_only=True)
 class ReadlineAlikeReader(historical_reader.HistoricalReader, CompletingReader):
@@ -169,8 +165,17 @@ class ReadlineAlikeReader(historical_reader.HistoricalReader, CompletingReader):
         return result, None
 
     def get_module_completions(self) -> tuple[list[str], CompletionAction | None] | None:
-        line = self.get_line()
-        return self.config.module_completer.get_completions(line)
+        line = stripcolor(self.get_line())
+        colorize_completions = self.config.colorize_completions
+        result = self.config.module_completer.get_completions(
+            line, include_values=bool(colorize_completions)
+        )
+        if result is None:
+            return None
+        names, values, action = result
+        if colorize_completions:
+            names = colorize_completions(names, values)
+        return names, action
 
     def get_trimmed_history(self, maxlength: int) -> list[str]:
         if maxlength >= 0:
@@ -616,13 +621,19 @@ def _setup(namespace: Mapping[str, Any]) -> None:
     # set up namespace in rlcompleter, which requires it to be a bona fide dict
     if not isinstance(namespace, dict):
         namespace = dict(namespace)
-    _wrapper.config.module_completer = ModuleCompleter(namespace)
     use_basic_completer = (
         not sys.flags.ignore_environment
         and os.getenv("PYTHON_BASIC_COMPLETER")
     )
     completer_cls = RLCompleter if use_basic_completer else FancyCompleter
-    _wrapper.config.readline_completer = completer_cls(namespace).complete
+    completer = completer_cls(namespace)
+    _wrapper.config.readline_completer = completer.complete
+    if isinstance(completer, FancyCompleter) and completer.use_colors:
+        theme = completer.theme
+        def _colorize(names: list[str], values: list[object]) -> list[str]:
+            return colorize_matches(names, values, theme)
+        _wrapper.config.colorize_completions = _colorize
+    _wrapper.config.module_completer = ModuleCompleter(namespace)
 
     # this is not really what readline.c does.  Better than nothing I guess
     import builtins

@@ -8,6 +8,13 @@ Bytes Objects
 These functions raise :exc:`TypeError` when expecting a bytes parameter and
 called with a non-bytes parameter.
 
+.. impl-detail::
+
+   The internal buffer of :c:type:`PyBytesObject` always includes an extra
+   trailing null byte for compatibility with null terminated C strings.
+   This extra byte is not counted in :c:func:`PyBytes_Size` nor in the
+   various *length* and *size* arguments of the functions below.
+
 .. index:: pair: object; bytes
 
 
@@ -47,9 +54,9 @@ called with a non-bytes parameter.
    *len* on success, and ``NULL`` on failure.  If *v* is ``NULL``, the contents of
    the bytes object are uninitialized.
 
-   .. deprecated:: 3.15
-      ``PyBytes_FromStringAndSize(NULL, len)`` is :term:`soft deprecated`,
-      use the :c:type:`PyBytesWriter` API instead.
+   .. soft-deprecated:: 3.15
+      Use the :c:type:`PyBytesWriter` API instead of
+      ``PyBytes_FromStringAndSize(NULL, len)``.
 
 
 .. c:function:: PyObject* PyBytes_FromFormat(const char *format, ...)
@@ -184,10 +191,11 @@ called with a non-bytes parameter.
 .. c:function:: void PyBytes_Concat(PyObject **bytes, PyObject *newpart)
 
    Create a new bytes object in *\*bytes* containing the contents of *newpart*
-   appended to *bytes*; the caller will own the new reference.  The reference to
-   the old value of *bytes* will be stolen.  If the new object cannot be
-   created, the old reference to *bytes* will still be discarded and the value
-   of *\*bytes* will be set to ``NULL``; the appropriate exception will be set.
+   appended to *bytes*; the caller will own the new reference.
+   The reference to the old value of *bytes* will be ":term:`stolen <steal>`".
+   If the new object cannot be created, the old reference to *bytes* will still
+   be "stolen", the value of *\*bytes* will be set to ``NULL``, and
+   the appropriate exception will be set.
 
    .. note::
       If *newpart* implements the buffer protocol, then the buffer
@@ -230,6 +238,7 @@ called with a non-bytes parameter.
    Resize a bytes object. *newsize* will be the new length of the bytes object.
    You can think of it as creating a new bytes object and destroying the old
    one, only more efficiently.
+
    Pass the address of an
    existing bytes object as an lvalue (it may be written into), and the new size
    desired.  On success, *\*bytes* holds the resized bytes object and ``0`` is
@@ -238,9 +247,13 @@ called with a non-bytes parameter.
    *\*bytes* is set to ``NULL``, :exc:`MemoryError` is set, and ``-1`` is
    returned.
 
-   .. deprecated:: 3.15
-      The function is :term:`soft deprecated`,
-      use the :c:type:`PyBytesWriter` API instead.
+   While bytes objects are usually immutable in Python, this special C API
+   allows mutating a bytes object in-place. The returned bytes object can still
+   be mutated using :c:func:`PyBytes_AsString`; except if *newsize* is
+   zero in which case it returns the immutable empty bytes string.
+
+   .. soft-deprecated:: 3.15
+      Use the :c:type:`PyBytesWriter` API instead.
 
 
 .. c:function:: PyObject *PyBytes_Repr(PyObject *bytes, int smartquotes)
@@ -290,10 +303,10 @@ object.
 
 .. c:type:: PyBytesWriter
 
-   A bytes writer instance.
+   A bytes writer object.
 
-   The API is **not thread safe**: a writer should only be used by a single
-   thread at the same time.
+   The API is **not thread safe**. To share a writer with multiple threads, a
+   critical section or a lock is needed.
 
    The instance must be destroyed by :c:func:`PyBytesWriter_Finish` on
    success, or :c:func:`PyBytesWriter_Discard` on error.
@@ -385,14 +398,18 @@ Getters
 
    Get the writer size.
 
+   The function does not invalidate pointers returned by
+   :c:func:`PyBytesWriter_GetData`.
+
    The function cannot fail.
 
 .. c:function:: void* PyBytesWriter_GetData(PyBytesWriter *writer)
 
    Get the writer data: start of the internal buffer.
 
-   The pointer is valid until :c:func:`PyBytesWriter_Finish` or
-   :c:func:`PyBytesWriter_Discard` is called on *writer*.
+   The pointer remains valid until a :c:type:`PyBytesWriter` function other
+   than :c:func:`PyBytesWriter_GetData` or :c:func:`PyBytesWriter_GetSize` is
+   called on *writer*.
 
    The function cannot fail.
 
@@ -425,7 +442,7 @@ Low-level API
    On success, return ``0``.
    On error, set an exception and return ``-1``.
 
-   *size* can be negative to shrink the writer.
+   *grow* can be negative to shrink the writer.
 
 .. c:function:: void* PyBytesWriter_GrowAndUpdatePointer(PyBytesWriter *writer, Py_ssize_t size, void *buf)
 

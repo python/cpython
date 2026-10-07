@@ -1,0 +1,3 @@
+Fix :meth:`datetime.datetime.fromisoformat` raising :exc:`AssertionError`
+instead of :exc:`ValueError` for some malformed strings in the pure-Python
+implementation, matching the C implementation.

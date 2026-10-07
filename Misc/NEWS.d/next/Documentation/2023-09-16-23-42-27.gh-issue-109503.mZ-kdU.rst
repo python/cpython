@@ -1,0 +1,3 @@
+Fix documentation for :func:`shutil.move` on usage of
+:func:`os.rename` since nonatomic move might be used even if the files are
+on the same filesystem. Patch by Fang Li

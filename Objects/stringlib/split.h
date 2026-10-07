@@ -4,6 +4,8 @@
 #error must include "stringlib/fastsearch.h" before including this module
 #endif
 
+#include "pycore_list.h"          // _PyList_AppendTakeRef()
+
 /* Overallocate the initial list to reduce the number of reallocs for small
    split sizes.  Eg, "A A A A A A A A A A".split() (10 elements) has three
    resizes, to sizes 4, 8, then 16.  Most observed string splits are for human
@@ -22,12 +24,8 @@
                         (right) - (left));      \
     if (sub == NULL)                            \
         goto onError;                           \
-    if (PyList_Append(list, sub)) {             \
-        Py_DECREF(sub);                         \
-        goto onError;                           \
-    }                                           \
-    else                                        \
-        Py_DECREF(sub);
+    if (_PyList_AppendTakeRef((PyListObject *)list, sub)) \
+        goto onError;
 
 #define SPLIT_ADD(data, left, right) {          \
     sub = STRINGLIB_NEW((data) + (left),        \
@@ -37,12 +35,8 @@
     if (count < MAX_PREALLOC) {                 \
         PyList_SET_ITEM(list, count, sub);      \
     } else {                                    \
-        if (PyList_Append(list, sub)) {         \
-            Py_DECREF(sub);                     \
+        if (_PyList_AppendTakeRef((PyListObject *)list, sub)) \
             goto onError;                       \
-        }                                       \
-        else                                    \
-            Py_DECREF(sub);                     \
     }                                           \
     count++; }
 

@@ -3,8 +3,11 @@ import operator
 import sys
 import pickle
 import gc
+import threading
+
 
 from test import support
+from test.support import threading_helper
 
 class G:
     'Sequence using __getitem__'
@@ -290,6 +293,29 @@ class TestLongStart(EnumerateStartTestCase):
 
     seq, res = 'abc', [(sys.maxsize+1,'a'), (sys.maxsize+2,'b'),
                        (sys.maxsize+3,'c')]
+
+
+@threading_helper.requires_working_threading()
+class TestThreadSafety(EnumerateStartTestCase):
+    def test_thread_safety_while_iterating(self):
+        # gh-153932: calling reduce while iterating should pass with TSAN
+
+        en = enumerate(range(10_000))
+        stop = threading.Event()
+
+        def advance():
+            for _ in en:
+                pass
+            stop.set()
+
+        def read():
+            while not stop.is_set():
+                en.__reduce__()
+
+        threads = [threading.Thread(target=advance), threading.Thread(target=read)]
+
+        with threading_helper.start_threads(threads):
+            pass
 
 
 if __name__ == "__main__":

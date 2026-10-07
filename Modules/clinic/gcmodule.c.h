@@ -224,14 +224,14 @@ PyDoc_STRVAR(gc_set_threshold__doc__,
 "Setting \'threshold0\' to zero disables collection.");
 
 #define GC_SET_THRESHOLD_METHODDEF    \
-    {"set_threshold", (PyCFunction)gc_set_threshold, METH_VARARGS, gc_set_threshold__doc__},
+    {"set_threshold", _PyCFunction_CAST(gc_set_threshold), METH_FASTCALL, gc_set_threshold__doc__},
 
 static PyObject *
 gc_set_threshold_impl(PyObject *module, int threshold0, int group_right_1,
                       int threshold1, int group_right_2, int threshold2);
 
 static PyObject *
-gc_set_threshold(PyObject *module, PyObject *args)
+gc_set_threshold(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int threshold0;
@@ -240,28 +240,27 @@ gc_set_threshold(PyObject *module, PyObject *args)
     int group_right_2 = 0;
     int threshold2 = 0;
 
-    switch (PyTuple_GET_SIZE(args)) {
-        case 1:
-            if (!PyArg_ParseTuple(args, "i:set_threshold", &threshold0)) {
-                goto exit;
-            }
-            break;
-        case 2:
-            if (!PyArg_ParseTuple(args, "ii:set_threshold", &threshold0, &threshold1)) {
-                goto exit;
-            }
-            group_right_1 = 1;
-            break;
-        case 3:
-            if (!PyArg_ParseTuple(args, "iii:set_threshold", &threshold0, &threshold1, &threshold2)) {
-                goto exit;
-            }
-            group_right_1 = 1;
-            group_right_2 = 1;
-            break;
-        default:
-            PyErr_SetString(PyExc_TypeError, "gc.set_threshold requires 1 to 3 arguments");
+    if (nargs < 1 || nargs > 3) {
+        PyErr_SetString(PyExc_TypeError, "gc.set_threshold requires 1 to 3 arguments");
+        goto exit;
+    }
+    threshold0 = PyLong_AsInt(args[0]);
+    if (threshold0 == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (nargs >= 2) {
+        threshold1 = PyLong_AsInt(args[1]);
+        if (threshold1 == -1 && PyErr_Occurred()) {
             goto exit;
+        }
+        group_right_1 = 1;
+    }
+    if (nargs >= 3) {
+        threshold2 = PyLong_AsInt(args[2]);
+        if (threshold2 == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        group_right_2 = 1;
     }
     return_value = gc_set_threshold_impl(module, threshold0, group_right_1, threshold1, group_right_2, threshold2);
 
@@ -376,8 +375,8 @@ PyDoc_STRVAR(gc_get_objects__doc__,
 "  generation\n"
 "    Generation to extract the objects from.\n"
 "\n"
-"If generation is not None, return only the objects tracked by the collector\n"
-"that are in that generation.");
+"If generation is not None, return only the objects tracked by the\n"
+"collector that are in that generation.");
 
 #define GC_GET_OBJECTS_METHODDEF    \
     {"get_objects", _PyCFunction_CAST(gc_get_objects), METH_FASTCALL|METH_KEYWORDS, gc_get_objects__doc__},
@@ -520,9 +519,10 @@ PyDoc_STRVAR(gc_freeze__doc__,
 "\n"
 "Freeze all current tracked objects and ignore them for future collections.\n"
 "\n"
-"This can be used before a POSIX fork() call to make the gc copy-on-write friendly.\n"
-"Note: collection before a POSIX fork() call may free pages for future allocation\n"
-"which can cause copy-on-write.");
+"This can be used before a POSIX fork() call to make the gc copy-on-write\n"
+"friendly.\n"
+"Note: collection before a POSIX fork() call may free pages for future\n"
+"allocation which can cause copy-on-write.");
 
 #define GC_FREEZE_METHODDEF    \
     {"freeze", (PyCFunction)gc_freeze, METH_NOARGS, gc_freeze__doc__},
@@ -583,4 +583,4 @@ gc_get_freeze_count(PyObject *module, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=19738854607938db input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d0cb000f41ffe433 input=a9049054013a1b77]*/

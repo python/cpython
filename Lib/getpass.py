@@ -428,7 +428,7 @@ def getuser():
 
     try:
         import pwd
-        return pwd.getpwuid(os.getuid())[0]
+        return pwd.getpwuid(os.getuid()).pw_name
     except (ImportError, KeyError) as e:
         raise OSError('No username set in the environment') from e
 

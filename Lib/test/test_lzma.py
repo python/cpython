@@ -383,6 +383,12 @@ class CompressorDecompressorTestCase(unittest.TestCase):
         self.assertEqual(LZMADecompressor.__new__(LZMADecompressor).
                          decompress(bytes()), b'')
 
+    def test_riscv_filter_constant_exists(self):
+        self.assertTrue(lzma.FILTER_RISCV)
+
+    def test_arm64_filter_constant_exists(self):
+        self.assertTrue(lzma.FILTER_ARM64)
+
 
 class CompressDecompressFunctionTestCase(unittest.TestCase):
 
@@ -1506,6 +1512,41 @@ class OpenTestCase(unittest.TestCase):
 
 
 class MiscellaneousTestCase(unittest.TestCase):
+
+    def _test_lzma_version(self, v, string):
+        self.assertIsInstance(v[:], tuple)
+        self.assertEqual(len(v), 4)
+        self.assertIsInstance(v[0], int)
+        self.assertIsInstance(v[1], int)
+        self.assertIsInstance(v[2], int)
+        self.assertIsInstance(v[3], str)
+        self.assertIsInstance(v.major, int)
+        self.assertIsInstance(v.minor, int)
+        self.assertIsInstance(v.patch, int)
+        self.assertIsInstance(v.stability, str)
+        self.assertEqual(v[0], v.major)
+        self.assertEqual(v[1], v.minor)
+        self.assertEqual(v[2], v.patch)
+        self.assertEqual(v[3], v.stability)
+        self.assertGreaterEqual(v.major, 0)
+        self.assertGreaterEqual(v.minor, 0)
+        self.assertGreaterEqual(v.patch, 0)
+        self.assertIn(v.stability, {'alpha', 'beta', 'stable'})
+
+        if v.stability == 'stable':
+            self.assertEqual(string, '%d.%d.%d' % v[:3])
+        else:
+            self.assertStartsWith(string, '%d.%d.%d%s' % v)
+
+    def test_lzma_version(self):
+        if support.verbose:
+            print(f'LZMA_VERSION = {lzma.LZMA_VERSION}', flush=True)
+            print(f'lzma_version = {lzma.lzma_version}', flush=True)
+            print(f'LZMA_VERSION_INFO = {lzma.LZMA_VERSION_INFO}', flush=True)
+            print(f'lzma_version_info = {lzma.lzma_version_info}', flush=True)
+        self._test_lzma_version(lzma.LZMA_VERSION_INFO, lzma.LZMA_VERSION)
+        self._test_lzma_version(lzma.lzma_version_info, lzma.lzma_version)
+        self.assertEqual(lzma.LZMA_VERSION_INFO[0], lzma.lzma_version_info[0])
 
     def test_is_check_supported(self):
         # CHECK_NONE and CHECK_CRC32 should always be supported,

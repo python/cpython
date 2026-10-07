@@ -1,0 +1,2 @@
+:mod:`hmac`: ensure that HMAC objects are properly initialized to prevent
+rare crashes on allocation failures. Patch by Bénédikt Tran.

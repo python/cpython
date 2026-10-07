@@ -716,7 +716,7 @@ static int
 call_show_warning(PyThreadState *tstate, PyObject *category,
                   PyObject *text, PyObject *message,
                   PyObject *filename, int lineno, PyObject *lineno_obj,
-                  PyObject *sourceline, PyObject *source)
+                  PyObject *sourceline, PyObject *source, PyObject *module)
 {
     PyObject *show_fn, *msg, *res, *warnmsg_cls = NULL;
     PyInterpreterState *interp = tstate->interp;
@@ -747,7 +747,9 @@ call_show_warning(PyThreadState *tstate, PyObject *category,
     }
 
     msg = PyObject_CallFunctionObjArgs(warnmsg_cls, message, category,
-            filename, lineno_obj, Py_None, Py_None, source,
+            filename, lineno_obj, Py_None,
+            sourceline ? sourceline : Py_None,
+            source ? source : Py_None, module,
             NULL);
     Py_DECREF(warnmsg_cls);
     if (msg == NULL)
@@ -878,7 +880,7 @@ warn_explicit(PyThreadState *tstate, PyObject *category, PyObject *message,
         goto return_none;
     if (rc == 0) {
         if (call_show_warning(tstate, category, text, message, filename,
-                              lineno, lineno_obj, sourceline, source) < 0)
+                              lineno, lineno_obj, sourceline, source, module) < 0)
             goto cleanup;
     }
     else /* if (rc == -1) */
@@ -1154,7 +1156,7 @@ warn as warnings_warn
     source: object = None
       If supplied, the destroyed object which emitted a ResourceWarning
     *
-    skip_file_prefixes: object(type='PyTupleObject *', subclass_of='&PyTuple_Type') = NULL
+    skip_file_prefixes: object(type='PyTupleObject *', subclass_of='&PyTuple_Type', c_default='NULL') = ()
       An optional tuple of module filename prefixes indicating frames to skip
       during stacklevel computations for stack frame attribution.
 
@@ -1165,7 +1167,7 @@ static PyObject *
 warnings_warn_impl(PyObject *module, PyObject *message, PyObject *category,
                    Py_ssize_t stacklevel, PyObject *source,
                    PyTupleObject *skip_file_prefixes)
-/*[clinic end generated code: output=a68e0f6906c65f80 input=eb37c6a18bec4ea1]*/
+/*[clinic end generated code: output=a68e0f6906c65f80 input=2b52e8b20f508f51]*/
 {
     category = get_category(message, category);
     if (category == NULL)
@@ -1199,11 +1201,32 @@ get_source_line(PyInterpreterState *interp, PyObject *module_globals, int lineno
         return NULL;
     }
 
-    int rc = PyDict_GetItemRef(module_globals, &_Py_ID(__name__),
-                               &module_name);
-    if (rc < 0 || rc == 0) {
+    /* Prefer __spec__.name: __name__ is "__main__" for the module executed
+       as a script, but the loader can only handle its own module name. */
+    PyObject *spec;
+    if (PyDict_GetItemRef(module_globals, &_Py_ID(__spec__), &spec) < 0) {
         Py_DECREF(loader);
         return NULL;
+    }
+    module_name = NULL;
+    if (spec != NULL) {
+        int rc = PyObject_GetOptionalAttr(spec, &_Py_ID(name), &module_name);
+        Py_DECREF(spec);
+        if (rc < 0) {
+            Py_DECREF(loader);
+            return NULL;
+        }
+        if (module_name == Py_None) {
+            Py_CLEAR(module_name);
+        }
+    }
+    if (module_name == NULL) {
+        int rc = PyDict_GetItemRef(module_globals, &_Py_ID(__name__),
+                                   &module_name);
+        if (rc <= 0) {  // not found or error
+            Py_DECREF(loader);
+            return NULL;
+        }
     }
 
     /* Make sure the loader implements the optional get_source() method. */
@@ -1218,6 +1241,11 @@ get_source_line(PyInterpreterState *interp, PyObject *module_globals, int lineno
     Py_DECREF(get_source);
     Py_DECREF(module_name);
     if (!source) {
+        /* The source line is optional: the loader can be unable to provide
+           the source of the module, for example if it is not its loader. */
+        if (PyErr_ExceptionMatches(PyExc_ImportError)) {
+            PyErr_Clear();
+        }
         return NULL;
     }
     if (source == Py_None) {
@@ -1233,8 +1261,11 @@ get_source_line(PyInterpreterState *interp, PyObject *module_globals, int lineno
     }
 
     /* Get the source line. */
-    source_line = PyList_GetItem(source_list, lineno-1);
-    Py_XINCREF(source_line);
+    if (lineno < 1 || lineno > PyList_GET_SIZE(source_list)) {
+        Py_DECREF(source_list);
+        return NULL;
+    }
+    source_line = Py_NewRef(PyList_GET_ITEM(source_list, lineno-1));
     Py_DECREF(source_list);
     return source_line;
 }

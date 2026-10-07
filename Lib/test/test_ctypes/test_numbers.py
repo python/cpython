@@ -119,14 +119,23 @@ class NumberTestCase(unittest.TestCase, ComplexesAreIdenticalMixin):
     @unittest.skipUnless(hasattr(ctypes, "c_double_complex"),
                          "requires C11 complex type")
     def test_complex(self):
-        for t in [ctypes.c_double_complex, ctypes.c_float_complex,
-                  ctypes.c_longdouble_complex]:
+        for format, t in [
+            ('Zd', ctypes.c_double_complex),
+            ('Zf', ctypes.c_float_complex),
+            ('Zg', ctypes.c_longdouble_complex),
+        ]:
             self.assertEqual(t(1).value, 1+0j)
             self.assertEqual(t(1.0).value, 1+0j)
             self.assertEqual(t(1+0.125j).value, 1+0.125j)
             self.assertEqual(t(IndexLike()).value, 2+0j)
             self.assertEqual(t(FloatLike()).value, 2+0j)
             self.assertEqual(t(ComplexLike()).value, 1+1j)
+
+            prefix = '>' if sys.byteorder == 'big' else '<'
+            num = t(1.0)
+            self.assertEqual(memoryview(num).format, prefix + format)
+            array = (t * 3)()
+            self.assertEqual(memoryview(array).format, prefix + format)
 
     @unittest.skipUnless(hasattr(ctypes, "c_double_complex"),
                          "requires C11 complex type")
@@ -230,6 +239,26 @@ class NumberTestCase(unittest.TestCase, ComplexesAreIdenticalMixin):
                 self.assertRaises(OverflowError, t.__ctype_be__, big_int)
             if (hasattr(t, "__ctype_le__")):
                 self.assertRaises(OverflowError, t.__ctype_le__, big_int)
+
+        # gh-156865: be silent in overflows of C types
+        self.assertEqual(ctypes.c_float(3e300).value, float('inf'))
+        self.assertEqual(ctypes.c_float.__ctype_le__(3e300).value, float('inf'))
+        self.assertEqual(ctypes.c_float.__ctype_be__(3e300).value, float('inf'))
+
+    @unittest.skipUnless(hasattr(ctypes, "c_float_complex"),
+                         "requires C11 complex type")
+    def test_complex_overflow(self):
+        # gh-156865: be silent in overflows of C types
+        self.assertEqual(ctypes.c_float_complex(3e300).value, complex('inf'))
+        self.assertEqual(ctypes.c_float_complex.__ctype_le__(3e300).value,
+                         complex('inf'))
+        self.assertEqual(ctypes.c_float_complex.__ctype_be__(3e300).value,
+                         complex('inf'))
+        self.assertEqual(ctypes.c_float_complex(3e300j).value, complex('infj'))
+        self.assertEqual(ctypes.c_float_complex.__ctype_le__(3e300j).value,
+                         complex('infj'))
+        self.assertEqual(ctypes.c_float_complex.__ctype_be__(3e300j).value,
+                         complex('infj'))
 
 
 if __name__ == '__main__':

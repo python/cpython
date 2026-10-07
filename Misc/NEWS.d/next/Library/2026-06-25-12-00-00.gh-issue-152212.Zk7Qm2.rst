@@ -1,0 +1,3 @@
+Fix the pure-Python :mod:`zoneinfo` parser accepting a POSIX TZ string with a
+``std`` abbreviation but no offset. This is invalid per POSIX and now
+raises :exc:`ValueError`, matching the C accelerator. Patch by tonghuaroot.
