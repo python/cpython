@@ -649,6 +649,10 @@ struct _warnings_runtime_state {
     PyObject *once_registry;  /* Dict */
     PyObject *default_action; /* String */
     _PyRecursiveMutex lock;
+#ifdef HAVE_FORK
+    // Whether the thread calling fork() owns the warnings lock.
+    bool lock_held_at_fork;
+#endif
     long filters_version;
     PyObject *context;
 };
