@@ -324,9 +324,11 @@ class _FutureIter:
         return self.__gen.send(v)
 
     def throw(self, *args):
+        self.fi_future = None
         return self.__gen.throw(*args)
 
     def close(self):
+        self.fi_future = None
         self.__gen.close()
 
 
