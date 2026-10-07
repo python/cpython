@@ -182,5 +182,19 @@ class PyMemDefaultTests(PyMemDebugTests):
     PYTHONMALLOC = ''
 
 
+@requires_subprocess()
+@support.requires_gil_enabled("PYTHONMALLOC='malloc' needs GIL build")
+@unittest.skipUnless(support.check_sanitizer(address=True),
+                     'need address sanitizer')
+class AddressSanitizerTests(unittest.TestCase):
+    def test_buffer_overflow(self):
+        with support.SuppressCrashReport():
+            out = assert_python_failure(
+                '-c', 'import _testcapi; _testcapi.pymem_buffer_overflow()',
+                PYTHONMALLOC='malloc',
+            )
+        self.assertIn(b'AddressSanitizer', out.err)
+
+
 if __name__ == "__main__":
     unittest.main()
