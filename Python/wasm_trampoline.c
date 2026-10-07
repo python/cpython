@@ -7,7 +7,7 @@ typedef PyObject* (*two_arg)(PyObject*, PyObject*);
 typedef PyObject* (*one_arg)(PyObject*);
 typedef PyObject* (*zero_arg)(void);
 
-#define TRY_RETURN_CALL(ty, args...) \
+#define RETCALL_IF_SIG_MATCHES(ty, args...) \
   if (__builtin_wasm_test_function_pointer_signature((ty)func)) { \
     return ((ty)func)(args); \
   }
@@ -18,10 +18,10 @@ _PyWasm_TrampolineCall(PyCFunctionWithKeywords func,
                        PyObject* args,
                        PyObject* kw)
 {
-    TRY_RETURN_CALL(three_arg, self, args, kw);
-    TRY_RETURN_CALL(two_arg, self, args);
-    TRY_RETURN_CALL(one_arg, self);
-    TRY_RETURN_CALL(zero_arg);
+    RETCALL_IF_SIG_MATCHES(three_arg, self, args, kw);
+    RETCALL_IF_SIG_MATCHES(two_arg, self, args);
+    RETCALL_IF_SIG_MATCHES(one_arg, self);
+    RETCALL_IF_SIG_MATCHES(zero_arg);
     PyErr_SetString(PyExc_SystemError, "Handler has incorrect signature");
     return NULL;
 }
@@ -37,10 +37,10 @@ _PyWasm_TrampolineCallSetter(setter func,
                              PyObject* val,
                              void* closure)
 {
-    TRY_RETURN_CALL(setter_three_arg, self, val, closure);
-    TRY_RETURN_CALL(setter_two_arg, self, val);
-    TRY_RETURN_CALL(setter_one_arg, self);
-    TRY_RETURN_CALL(setter_zero_arg);
+    RETCALL_IF_SIG_MATCHES(setter_three_arg, self, val, closure);
+    RETCALL_IF_SIG_MATCHES(setter_two_arg, self, val);
+    RETCALL_IF_SIG_MATCHES(setter_one_arg, self);
+    RETCALL_IF_SIG_MATCHES(setter_zero_arg);
     PyErr_SetString(PyExc_SystemError, "Handler has incorrect signature");
     return -1;
 }
