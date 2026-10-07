@@ -302,17 +302,23 @@ class Future:
         return self.result()  # May raise too.
 
     def __await__(self):
+        # Return an object that exposes fi_future in addition to being
+        # a generator, for compatability with the C version.
         return _FutureIter(self)
 
     __iter__ = __await__  # make compatible with 'yield from'.
 
 
 class _FutureIter:
+    __slots__ = ('__future', '__gen')
+
     def __init__(self, fut):
-        # The whole point of this class is to expose fi_future, like the C
-        # version
-        self.fi_future = fut
+        self.__future = fut
         self.__gen = fut._await()
+
+    @property
+    def fi_future(self):
+        return self.__future
 
     def __iter__(self):
         return self
@@ -324,11 +330,11 @@ class _FutureIter:
         return self.__gen.send(v)
 
     def throw(self, *args):
-        self.fi_future = None
+        self.__future = None
         return self.__gen.throw(*args)
 
     def close(self):
-        self.fi_future = None
+        self.__future = None
         self.__gen.close()
 
 
