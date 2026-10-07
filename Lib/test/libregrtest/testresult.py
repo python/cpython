@@ -4,13 +4,22 @@
 
 import functools
 import io
-import re
 import sys
 import time
 import traceback
 import unittest
 from test import support
 from test.libregrtest.utils import print_github_annotation, sanitize_xml
+
+def test_to_filename(test):
+    test = getattr(test, 'test_case', test)  # subTest()
+    if dt_test := getattr(test, '_dt_test', None):  # doctest.DocTestCase
+        return dt_test.filename
+    module = type(test).__module__
+    # Fixture errors (setUpClass, setUpModule) are not supported
+    if module.startswith('unittest.'):
+        return None
+    return getattr(sys.modules.get(module), '__file__', None)
 
 class RegressionTestResult(unittest.TextTestResult):
     USE_XML = False
@@ -136,19 +145,9 @@ class RegressionTestResult(unittest.TextTestResult):
             super().printErrorList(flavour, [(test, err)])
             # Annotate just after the failure report, so that the annotation
             # links to the report in the job log
-            print_github_annotation(str(test), err, self._test_file(test),
-                                    file=self.stream)
-
-    @staticmethod
-    def _test_file(test):
-        # Test id: "module.Class.method", "module.function" (doctest), or
-        # "setUpClass (module.Class)" (error in a class or module fixture)
-        name = getattr(test, 'test_case', test).id()  # subTest()
-        if match := re.fullmatch(r'\w+ \((.+)\)', name):
-            name = match[1]
-        while name and name not in sys.modules:
-            name = name.rpartition('.')[0]
-        return getattr(sys.modules.get(name), '__file__', None)
+            if filename := test_to_filename(test):
+                print_github_annotation(str(test), err, filename,
+                                        file=self.stream)
 
     def get_xml_element(self):
         if not self.USE_XML:

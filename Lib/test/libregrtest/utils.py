@@ -3,6 +3,7 @@ import faulthandler
 import locale
 import math
 import os.path
+import pathlib
 import platform
 import random
 import re
@@ -141,16 +142,21 @@ def print_warning(msg: str) -> None:
 orig_unraisablehook: Callable[..., None] | None = None
 
 
+# Stdlib directory: Lib/ in a source checkout or an installed lib/python3.X/
+STDLIB_DIR = pathlib.Path(os.__file__).parent
+# Stdlib directory relative to the repository
+REPOSITORY_LIB_DIR = pathlib.Path("Lib")
+
+
 def repository_path(filename: str) -> str:
     """Path of a stdlib file relative to the repository.
 
-    Map the stdlib directory (Lib/ in a source checkout or an installed
-    lib/python3.X/) to Lib/. Return other paths unchanged.
+    Map STDLIB_DIR to Lib/. Return other paths unchanged.
     """
-    stdlib_dir = os.path.dirname(os.__file__) + os.sep
-    if not filename.startswith(stdlib_dir):
+    path = pathlib.Path(filename)
+    if not path.is_relative_to(STDLIB_DIR):
         return filename
-    return "Lib/" + filename.removeprefix(stdlib_dir).replace(os.sep, "/")
+    return (REPOSITORY_LIB_DIR / path.relative_to(STDLIB_DIR)).as_posix()
 
 
 # Escape the data and the properties of GitHub Actions workflow commands
