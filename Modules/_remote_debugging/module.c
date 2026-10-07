@@ -969,7 +969,8 @@ _remote_debugging_RemoteUnwinder_get_all_awaited_by_impl(RemoteUnwinderObject *s
     }
 
     // Process all threads
-    if (iterate_threads(self, process_thread_for_awaited_by, result) < 0) {
+    if (iterate_threads(self, self->interpreter_addr,
+                        process_thread_for_awaited_by, result) < 0) {
         goto result_err;
     }
 
@@ -1053,9 +1054,6 @@ _remote_debugging_RemoteUnwinder_get_async_stack_trace_impl(RemoteUnwinderObject
     if (ensure_async_debug_offsets(self) < 0) {
         return NULL;
     }
-    if (refresh_generation_caches_for_interpreter(self, self->interpreter_addr) < 0) {
-        return NULL;
-    }
 
     PyObject *result = PyList_New(0);
     if (result == NULL) {
@@ -1063,9 +1061,27 @@ _remote_debugging_RemoteUnwinder_get_async_stack_trace_impl(RemoteUnwinderObject
         return NULL;
     }
 
-    // Process all threads
-    if (iterate_threads(self, process_thread_for_async_stack_trace, result) < 0) {
-        goto result_err;
+    // gh-158968: Running tasks live in every interpreter, not only the one at the list head
+    uintptr_t interp = self->interpreter_addr;
+    while (interp != 0) {
+        if (refresh_generation_caches_for_interpreter(self, interp) < 0) {
+            goto result_err;
+        }
+
+        // Process all threads
+        if (iterate_threads(self, interp,
+                            process_thread_for_async_stack_trace, result) < 0) {
+            goto result_err;
+        }
+
+        if (_Py_RemoteDebug_PagedReadRemoteMemory(
+                &self->handle,
+                interp + (uintptr_t)self->debug_offsets.interpreter_state.next,
+                sizeof(void*),
+                &interp) < 0) {
+            set_exception_cause(self, PyExc_RuntimeError, "Failed to read next interpreter address");
+            goto result_err;
+        }
     }
 
     _Py_RemoteDebug_ClearCache(&self->handle);
