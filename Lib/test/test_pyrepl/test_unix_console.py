@@ -257,10 +257,9 @@ class TestConsole(TestCase):
         _os_write.assert_any_call(ANY, b"1")
         _os_write.assert_any_call(ANY, TERM_CAPABILITIES["cub"] + b":1")
         _os_write.assert_any_call(ANY, b"2")
+        self.assertIsNotNone(con.ich1)
         self.assertEqual(
-            _os_write.mock_calls.count(
-                call(ANY, TERM_CAPABILITIES["ich"] + b":1")
-            ),
+            _os_write.mock_calls.count(call(ANY, con.ich1)),
             1,
         )
         con.restore()
