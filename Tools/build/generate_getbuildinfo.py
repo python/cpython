@@ -16,12 +16,22 @@ SCRIPT_FULLNAME = f'Tools/build/{SCRIPT_NAME}'
 # Get PY_VERSION from Include/patchlevel.h
 PY_VERSION_REGEX = re.compile(r'^#define PY_VERSION +"(.*)"$', re.MULTILINE)
 
-# Get HOSTRUNNER from Makefile
-HOSTRUNNER_REGEX = re.compile(r'^HOSTRUNNER *= *(.*)$', re.MULTILINE)
+def create_makefile_regex(name):
+    return re.compile(fr'^{name}[ \t]*=[ \t]*(.*)$', re.MULTILINE)
+
+# Get HOSTRUNNER and CC from Makefile
+HOSTRUNNER_REGEX = create_makefile_regex('HOSTRUNNER')
+CC_REGEX = create_makefile_regex('CC')
 
 # Py_GIL_DISABLED from pyconfig.h
 Py_GIL_DISABLED_DEF_REGEX = re.compile(r'^#define Py_GIL_DISABLED 1$', re.MULTILINE)
 Py_GIL_DISABLED_UNDEF_REGEX = re.compile(r'^/\* #undef Py_GIL_DISABLED \*/$', re.MULTILINE)
+
+
+def exit_error(msg):
+    print(msg)
+    print("cwd: {os.getcwd()}")
+    sys.exit(1)
 
 
 def parse_file(variable_name, filename, regex):
@@ -29,8 +39,7 @@ def parse_file(variable_name, filename, regex):
         code = fp.read()
     match = regex.search(code)
     if not match:
-        print(f"ERROR: Unable to locate {variable_name} in {filename}")
-        sys.exit(1)
+        exit_error(f"ERROR: Unable to locate {variable_name} in {filename}")
     return match.group(1)
 
 
@@ -46,6 +55,13 @@ def get_host_runner():
     return HOSTRUNNER.rstrip()
 
 
+def get_makefile_cc():
+    # Look in the current working directory
+    makefile = 'Makefile'
+    CC = parse_file('CC', makefile, CC_REGEX)
+    return CC.rstrip()
+
+
 def get_gil_disable():
     # Look in the current working directory
     pyconfig_h = 'pyconfig.h'
@@ -57,8 +73,7 @@ def get_gil_disable():
     if Py_GIL_DISABLED_UNDEF_REGEX.search(code):
         return False
 
-    print(f"ERROR: Unable to locate Py_GIL_DISABLED in {pyconfig_h}")
-    sys.exit(1)
+    exit_error(f"ERROR: Unable to locate Py_GIL_DISABLED in {pyconfig_h}")
 
 
 def get_date_time():
@@ -102,7 +117,9 @@ def parse_args():
     return parser.parse_args()
 
 
-def run_command(cmd):
+def run_command(cmd, *, check=True):
+    cmd_str = shlex.join(cmd)
+    print(f"+ {cmd_str}")
     try:
         proc = subprocess.run(cmd, stdout=subprocess.PIPE, text=True)
     except OSError as exc:
@@ -115,9 +132,36 @@ def run_command(cmd):
             error = None
 
     if error:
-        print(f"Command {shlex.join(cmd)} failed {error}")
-        sys.exit(1)
+        msg = f"Command {cmd_str} failed {error}"
+        if check:
+            exit_error(msg)
+        else:
+            print(msg)
+        return None
+
     return proc.stdout.rstrip()
+
+
+def get_compiler():
+    # Run _getcompiler program
+    getcompiler = os.path.join('Programs', '_getcompiler')
+    HOSTRUNNER = get_host_runner()
+    if HOSTRUNNER:
+        # Cross-compilation
+        runner = shlex.split(HOSTRUNNER)[0]
+        compiler = run_command([runner, getcompiler], check=False)
+    else:
+        compiler = run_command([getcompiler], check=False)
+
+    if compiler:
+        return compiler
+
+    # Running _getcompiler failed, run directly the compiler (--version)
+    cc = get_makefile_cc()
+    cc = shlex.split(cc)
+    output = run_command([*cc, '--version'])
+    output = output.splitlines()[0]
+    return f'[{output}]'
 
 
 def main():
@@ -134,19 +178,13 @@ def main():
     gil_enabled = args.gil_enabled
 
     if not output_filename:
-        # In the current directory
+        # Write to the current directory
         output_filename = os.path.join('Modules', 'getbuildinfo.h')
     if not platform:
         platform = "unknown"
 
     if not compiler:
-        getcompiler = os.path.join('Programs', '_getcompiler')
-        HOSTRUNNER = get_host_runner()
-        if HOSTRUNNER:
-            runner = shlex.split(HOSTRUNNER)[0]
-            compiler = run_command([runner, getcompiler])
-        else:
-            compiler = run_command([getcompiler])
+        compiler = get_compiler()
 
     build_date, build_time = get_date_time()
     build_info, git_id = get_build_info(git_tag, git_branch, git_version, build_date, build_time)

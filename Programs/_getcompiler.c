@@ -1,4 +1,4 @@
-// Do not link to python3x.lib
+// On Windows, do not link the program to python3x.lib
 #define Py_NO_LINK_LIB
 
 #include "Python.h"
