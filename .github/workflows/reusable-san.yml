@@ -17,7 +17,7 @@ permissions:
 
 env:
   FORCE_COLOR: 1
-  OPENSSL_VER: 3.5.8
+  OPENSSL_VER: 3.5.9
 
 jobs:
   build-san-reusable:
@@ -30,7 +30,7 @@ jobs:
     runs-on: ubuntu-26.04
     timeout-minutes: 60
     steps:
-    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         persist-credentials: false
     - name: Runner image version
@@ -60,7 +60,7 @@ jobs:
             || ''
           }}
     - name: UBSan option setup
-      if: inputs.sanitizer != 'TSan'
+      if: inputs.sanitizer == 'UBSan'
       run: >-
         echo
         "UBSAN_OPTIONS=${SAN_LOG_OPTION}
@@ -69,13 +69,29 @@ jobs:
         >> "$GITHUB_ENV"
       env:
         SAN_LOG_OPTION: log_path=${{ github.workspace }}/san_log
+    - name: MSan option setup
+      if: inputs.sanitizer == 'MSan'
+      run: |
+        sudo sysctl -w vm.mmap_rnd_bits=28  # Reduce ASLR to avoid MSan re-executing
+
+        echo "MSAN_OPTIONS=${SAN_LOG_OPTION} allocator_may_return_null=1 handle_segv=0" >> "$GITHUB_ENV"
+        # MSan reports false positives for memory initialized by libraries
+        # that are not built with MSan, so disable modules that use them.
+        # _remote_debugging links to libzstd directly, but we unpoision the memory.
+        {
+          echo '*disabled*'
+          echo '_bz2 _ctypes _curses _curses_panel _dbm _decimal _gdbm _hashlib'
+          echo '_lzma _sqlite3 _ssl _tkinter _uuid _zstd readline zlib'
+        } > Modules/Setup.local
+      env:
+        SAN_LOG_OPTION: log_path=${{ github.workspace }}/san_log
     - name: Add ccache to PATH
       run: |
         echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
     - name: 'Restore OpenSSL build (TSan)'
       id: cache-openssl
       if: inputs.sanitizer == 'TSan'
-      uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ./multissl/openssl/${{ env.OPENSSL_VER }}
         key: ${{ env.IMAGE_OS_VERSION }}-multissl-openssl-tsan-${{ env.OPENSSL_VER }}
@@ -90,16 +106,24 @@ jobs:
         --openssl="${OPENSSL_VER}"
         --system=Linux
         --tsan
+    # gh-157958: -O2 instead of the pydebug default -Og to avoid a clang 21
+    # compile-time blowup on some interpreter files.
+    # (https://github.com/llvm/llvm-project/issues/179695)
+    # MSan uses --with-assertions instead of --with-pydebug because its
+    # hooks on the Python memory allocators hide uninitialized reads.
     - name: Configure CPython
       run: >-
         ./configure
         --config-cache
+        OPT="-O2 -g"
         ${{
           inputs.sanitizer == 'TSan'
           && '--with-thread-sanitizer'
+          || inputs.sanitizer == 'MSan'
+          && '--with-memory-sanitizer'
           || '--with-undefined-behavior-sanitizer --with-strict-overflow'
         }}
-        --with-pydebug
+        ${{ inputs.sanitizer == 'MSan' && '--with-assertions' || '--with-pydebug' }}
         ${{ inputs.sanitizer == 'TSan' && '--with-openssl="$OPENSSL_DIR" --with-openssl-rpath=auto' || '' }}
         ${{ inputs.free-threading && '--disable-gil' || '' }}
     - name: Build CPython
@@ -121,7 +145,7 @@ jobs:
       run: find "${GITHUB_WORKSPACE}" -name 'san_log.*' | xargs head -n 1000
     - name: Archive logs
       if: always()
-      uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
       with:
         name: >-
           ${{ inputs.sanitizer }}-logs-${{

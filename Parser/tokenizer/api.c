@@ -4,7 +4,6 @@
 
 #include "tokenizer.h"
 #include "reader.h"
-#include "reader_internal.h"
 #include "../lexer/state.h"
 
 _PyTokenizer_Info
@@ -12,6 +11,7 @@ _PyTokenizer_GetInfo(const struct tok_state *tok)
 {
     _PyTokenizer_Info info = {
         .status = tok->done,
+        .diagnostic = tok->diagnostic,
         .location = {tok->lineno, tok->line_start < 0
             ? -1 : (int)(tok->cur - tok->line_start)},
         .cursor = tok->cur,
@@ -20,7 +20,7 @@ _PyTokenizer_GetInfo(const struct tok_state *tok)
         .level = tok->level,
         .delimiter_loc = {-1, -1},
         .in_formatted_string = tok->ftstring_depth != 0,
-        .is_interactive = tok->reader->kind == _PYTOK_READER_INTERACTIVE,
+        .is_interactive = _PyTok_ReaderIsInteractive(tok),
         .is_file = tok->fp != NULL && tok->fp != stdin,
         .filename = tok->filename,
         .module = tok->module,
@@ -81,32 +81,7 @@ const char *
 _PyTokenizer_LineView(const struct tok_state *tok, Py_ssize_t lineno,
                       Py_ssize_t *length)
 {
-    const char *line = _PyTokenizer_RetainedSource(tok);
-    if (line == NULL) {
-        line = _PyLexer_BufferPointer(tok, tok->buf_offset);
-    }
-    for (Py_ssize_t i = 1; i < lineno; i++) {
-        const char *next = strchr(line, '\n');
-        if (next == NULL) {
-            break;
-        }
-        line = next + 1;
-    }
-    const char *end = strchr(line, '\n');
-    *length = end != NULL ? end - line : (Py_ssize_t)strlen(line);
-    return line;
-}
-
-const char *
-_PyTokenizer_RetainedSource(const struct tok_state *tok)
-{
-    if (tok->reader->kind == _PYTOK_READER_PREPARED) {
-        return _PyTok_SourceData(&tok->source);
-    }
-    if (tok->reader->kind == _PYTOK_READER_INTERACTIVE) {
-        return tok->source.bytes;
-    }
-    return NULL;
+    return _PyTok_SourceLineView(&tok->source, lineno, length);
 }
 
 void
@@ -130,10 +105,7 @@ _PyTokenizer_SetOptions(struct tok_state *tok, int extra_tokens,
 void
 _PyTokenizer_ImplyDedents(struct tok_state *tok)
 {
-    if (tok->indent != 0) {
-        tok->pendin = -tok->indent;
-        tok->indent = 0;
-    }
+    _PyLexer_ImplyDedents(tok);
 }
 
 int
@@ -160,11 +132,11 @@ _PyTokenizer_HasTrailingStatement(const struct tok_state *tok)
 int
 _PyTokenizer_IsInteractive(const struct tok_state *tok)
 {
-    return tok->prompt != NULL;
+    return _PyTok_ReaderIsInteractive(tok);
 }
 
 void
 _PyTokenizer_StopInteractive(struct tok_state *tok)
 {
-    tok->interactive_underflow = IUNDERFLOW_STOP;
+    _PyTok_ReaderStopInteractive(tok);
 }
