@@ -1093,7 +1093,7 @@ list_ass_item_lock_held(PyListObject *a, Py_ssize_t i, PyObject *v)
         for (Py_ssize_t idx = i; idx < size - 1; idx++) {
             FT_ATOMIC_STORE_PTR_RELAXED(a->ob_item[idx], a->ob_item[idx + 1]);
         }
-        Py_SET_SIZE(a, size - 1);
+        list_resize(a, size - 1);  // NB: shrinking a list can't fail
     }
     else {
         FT_ATOMIC_STORE_PTR_RELEASE(a->ob_item[i], Py_NewRef(v));
