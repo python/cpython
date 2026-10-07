@@ -3204,14 +3204,6 @@ class dir_fd_converter(CConverter):
     def c_default_init(self):
         self.c_default = 'DEFAULT_DIR_FD'
 
-class uid_t_converter(CConverter):
-    type = "uid_t"
-    converter = '_Py_Uid_Converter'
-
-class gid_t_converter(CConverter):
-    type = "gid_t"
-    converter = '_Py_Gid_Converter'
-
 class dev_t_converter(CConverter):
     type = 'dev_t'
     converter = '_Py_Dev_Converter'
@@ -3268,7 +3260,7 @@ class confname_converter(CConverter):
         """, argname=argname, converter=self.converter, table=self.table)
 
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=e459765bdf453ebf]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=7ceccf55bb600f61]*/
 
 /*[clinic input]
 
@@ -10146,6 +10138,7 @@ os_getlogin_impl(PyObject *module)
         errno = old_errno;
     }
     else {
+        _Py_MSAN_UNPOISON(name, sizeof(name));
         result = PyUnicode_DecodeFSDefault(name);
     }
 #else
@@ -13930,6 +13923,78 @@ static PyObject *
 os_strerror_impl(PyObject *module, int code)
 /*[clinic end generated code: output=baebf09fa02a78f2 input=75a8673d97915a91]*/
 {
+#ifdef _Py_HAVE_STRERROR_R
+   // Check which strerror_r() API is used
+#  if defined(__GLIBC__) && !((_POSIX_C_SOURCE >= 200112L) && !defined(_GNU_SOURCE))
+#    define Py_STRERROR_R_GNU
+#  elif defined(__ANDROID__) && defined(_GNU_SOURCE)
+#    define Py_STRERROR_R_GNU
+#  endif
+#endif
+
+#ifdef Py_STRERROR_R_GNU
+    // Implementation for the GNU flavor of strerror_r()
+
+    // On Linux, the longest translated strerror() message is 86 bytes
+    // (including the NUL byte).
+    char buffer[100];
+    char *message = strerror_r(code, buffer, Py_ARRAY_LENGTH(buffer));
+    // The strerror_r() GNU flavor doesn't provide a way to check if the error
+    // message was truncated or not.
+    //
+    // When the buffer is used, a trailing NUL byte is always written.
+    assert(message != buffer || memchr(buffer, 0, Py_ARRAY_LENGTH(buffer)) != NULL);
+    return PyUnicode_DecodeLocale(message, "surrogateescape");
+
+#elif defined(_Py_HAVE_STRERROR_R)
+    // Implementation for the XSI-compliant flavor of strerror_r()
+
+    // On Linux and FreeBSD, the longest translated strerror() message is 86
+    // bytes (including the NUL byte).
+    char small_buffer[100];
+    size_t buflen = Py_ARRAY_LENGTH(small_buffer);
+    char *buffer = NULL;
+#ifndef NDEBUG
+    // Make sure that strerror_r() writes a trailing null byte
+    small_buffer[buflen - 1] = '#';
+#endif
+    int len = strerror_r(code, small_buffer, buflen);
+    if (len == ERANGE) {
+        while (len == ERANGE) {
+            if (buflen > (size_t)PY_SSIZE_T_MAX / 2) {
+                PyMem_Free(buffer);
+                PyErr_NoMemory();
+                return NULL;
+            }
+            buflen = buflen * 2;
+
+            char *new_buffer = PyMem_Realloc(buffer, buflen);
+            if (new_buffer == NULL) {
+                PyMem_Free(buffer);
+                PyErr_NoMemory();
+                return NULL;
+            }
+            buffer = new_buffer;
+#ifndef NDEBUG
+            buffer[buflen - 1] = '#';
+#endif
+            len = strerror_r(code, buffer, buflen);
+        }
+    }
+    else {
+        buffer = small_buffer;
+    }
+
+    // strerror_r() always writes a trailing NUL byte
+    assert(memchr(buffer, 0, buflen) != NULL);
+    PyObject *result = PyUnicode_DecodeLocale(buffer, "surrogateescape");
+    if (buffer != small_buffer) {
+        PyMem_Free(buffer);
+    }
+    return result;
+
+#else
+    // strerror() implementation
     char *message = strerror(code);
     if (message == NULL) {
         PyErr_SetString(PyExc_ValueError,
@@ -13937,6 +14002,7 @@ os_strerror_impl(PyObject *module, int code)
         return NULL;
     }
     return PyUnicode_DecodeLocale(message, "surrogateescape");
+#endif
 }
 
 
@@ -16396,8 +16462,9 @@ os_set_blocking_impl(PyObject *module, int fd, int blocking)
 
 /*[clinic input]
 class os.DirEntry "DirEntry *" "DirEntryType"
+class os.ScandirIterator "PyObject *" "ScandirIteratorType"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=3c18c7a448247980]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=b845e502eb4a0406]*/
 
 typedef struct {
     PyObject_HEAD
@@ -17286,11 +17353,20 @@ ScandirIterator_enter(PyObject *self, PyObject *Py_UNUSED(dummy))
     return Py_NewRef(self);
 }
 
+/*[clinic input]
+os.ScandirIterator.__exit__
+
+    *exc_info: array
+
+Close the scandir iterator.
+[clinic start generated code]*/
+
 static PyObject *
-ScandirIterator_exit(PyObject *op, PyObject *Py_UNUSED(args))
+os_ScandirIterator___exit___impl(PyObject *self, PyObject * const *exc_info,
+                                 Py_ssize_t exc_info_length)
+/*[clinic end generated code: output=5d3941725a7c97c7 input=ff3ffe83ae605a36]*/
 {
-    ScandirIterator *self = ScandirIterator_CAST(op);
-    ScandirIterator_closedir(self);
+    ScandirIterator_closedir(ScandirIterator_CAST(self));
     Py_RETURN_NONE;
 }
 
@@ -17337,7 +17413,7 @@ ScandirIterator_dealloc(PyObject *op)
 
 static PyMethodDef ScandirIterator_methods[] = {
     {"__enter__", ScandirIterator_enter, METH_NOARGS},
-    {"__exit__", ScandirIterator_exit, METH_VARARGS},
+    OS_SCANDIRITERATOR___EXIT___METHODDEF
     {"close", ScandirIterator_close, METH_NOARGS},
     {NULL}
 };

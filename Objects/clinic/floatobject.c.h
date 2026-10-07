@@ -3,6 +3,7 @@ preserve
 [clinic start generated code]*/
 
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
 PyDoc_STRVAR(float_is_integer__doc__,
 "is_integer($self, /)\n"
@@ -310,13 +311,8 @@ float___getformat__(PyObject *type, PyObject *arg)
         _PyArg_BadArgument("__getformat__", "argument", "str", arg);
         goto exit;
     }
-    Py_ssize_t typestr_length;
-    typestr = PyUnicode_AsUTF8AndSize(arg, &typestr_length);
+    typestr = _PyUnicode_AsUTF8NoNUL(arg);
     if (typestr == NULL) {
-        goto exit;
-    }
-    if (strlen(typestr) != (size_t)typestr_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = float___getformat___impl((PyTypeObject *)type, typestr);
@@ -353,4 +349,4 @@ float___format__(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5d7b0bf9e47ff997 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e0ffc05aa7fc4b10 input=a9049054013a1b77]*/

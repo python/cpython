@@ -1755,6 +1755,10 @@ These prefabricated library loaders are available:
       :c:expr:`int`, which is of course not always the truth, so you have to assign
       the correct :attr:`!restype` attribute to use these functions.
 
+      .. note::
+
+         If the Python interpreter is statically linked, this may be ``None``.
+
 .. audit-event:: ctypes.dlopen name ctypes.LibraryLoader
 
    Loading a library through any of these objects raises an

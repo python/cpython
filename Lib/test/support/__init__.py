@@ -448,11 +448,12 @@ def skip_if_buildbot(reason=None):
         isbuildbot = False
     return unittest.skipIf(isbuildbot, reason)
 
-def check_sanitizer(*, address=False, memory=False, ub=False, thread=False,
-                    function=True):
+def check_sanitizer(*, address=False, hwaddress=False, memory=False, ub=False,
+                    thread=False, function=True):
     """Returns True if Python is compiled with sanitizer support"""
-    if not (address or memory or ub or thread):
-        raise ValueError('At least one of address, memory, ub or thread must be True')
+    if not (address or hwaddress or memory or ub or thread):
+        raise ValueError('At least one of address, hwaddress, memory, ub or '
+                         'thread must be True')
 
 
     cflags = sysconfig.get_config_var('CFLAGS') or ''
@@ -461,9 +462,14 @@ def check_sanitizer(*, address=False, memory=False, ub=False, thread=False,
         '-fsanitize=memory' in cflags or
         '--with-memory-sanitizer' in config_args
     )
+    hwaddress_sanitizer = (
+        '-fsanitize=hwaddress' in cflags or
+        '--with-hwaddress-sanitizer' in config_args
+    )
     address_sanitizer = (
         '-fsanitize=address' in cflags or
-        '--with-address-sanitizer' in config_args
+        '--with-address-sanitizer' in config_args or
+        hwaddress_sanitizer
     )
     ub_sanitizer = (
         '-fsanitize=undefined' in cflags or
@@ -479,6 +485,7 @@ def check_sanitizer(*, address=False, memory=False, ub=False, thread=False,
     return (
         (memory and memory_sanitizer) or
         (address and address_sanitizer) or
+        (hwaddress and hwaddress_sanitizer) or
         (ub and ub_sanitizer) or
         (thread and thread_sanitizer) or
         (function and function_sanitizer)
@@ -3525,17 +3532,12 @@ def check_immutable_type(testcase, type):
 
 def built_with_c_assertions():
     """Check if Python was built with C assertions (assert())."""
-
-    if MS_WINDOWS:
-        # On Windows, rely on the Py_DEBUG macro to check for assertions
+    try:
+        import _testlimitedcapi
+    except ImportError:
         return Py_DEBUG
-
-    # Check if the NDEBUG macro is defined in C compiler flags
-    PY_CFLAGS = (sysconfig.get_config_var('PY_CFLAGS') or '')
-    if '-DNDEBUG' in PY_CFLAGS:
-        return False
-
-    return True
+    else:
+        return bool(_testlimitedcapi._py_getbuiltwithassert())
 
 
 def inject_memory_error(start=0, stop=0):

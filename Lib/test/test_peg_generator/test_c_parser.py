@@ -239,6 +239,21 @@ class TestCParser(unittest.TestCase):
         """
         self.run_test(grammar_source, test_source)
 
+    def test_optional_gather_with_invalid_separator(self) -> None:
+        grammar_source = """
+        start: 'prefix' guard_without_invalid NAME NEWLINE ENDMARKER
+        guard_without_invalid:
+            | [invalid_separator.(NAME NAME)+] { _PyPegen_dummy_name(p) }
+        invalid_separator: '+'
+        """
+        test_source = """
+        self.check_input_strings_for_grammar(
+            valid_cases=["prefix hello", "prefix a b hello", "prefix a b + c d hello"],
+            invalid_cases=["prefix", "prefix a b"],
+        )
+        """
+        self.run_test(grammar_source, test_source)
+
     def test_cut(self) -> None:
         grammar_source = """
         start: X ~ Y Z | X Q S
@@ -401,6 +416,132 @@ class TestCParser(unittest.TestCase):
             expected_ast = ast.parse(stmt)
             actual_ast = parse.parse_string(stmt, mode=1)
             self.assertEqual(ast_dump(expected_ast), ast_dump(actual_ast))
+        """
+        self.run_test(grammar_source, test_source)
+
+    def test_alternative_variable_bindings(self) -> None:
+        grammar_source = """
+        start[mod_ty]: a=stmt NEWLINE ENDMARKER {
+            _PyAST_Module((asdl_stmt_seq *)_PyPegen_singleton_seq(p, a), NULL, p->arena) }
+        stmt[stmt_ty]:
+            | &NAME NAME name_var[expr_ty]=NAME NUMBER? {
+                _PyAST_Expr(name_var_1, EXTRA) }
+            | &NUMBER name_var=NUMBER name_var[expr_ty]=NAME {
+                _PyAST_Expr(name_var_1, EXTRA) }
+        """
+        test_source = """
+        for source in ("first second", "first second 42", "42 second"):
+            actual = parse.parse_string(source, mode=1)
+            self.assertEqual(len(actual.body), 1)
+            self.assertIsInstance(actual.body[0], ast.Expr)
+            self.assertIsInstance(actual.body[0].value, ast.Name)
+            self.assertEqual(actual.body[0].value.id, "second")
+        """
+        self.run_test(grammar_source, test_source)
+
+    def test_rule_cleanup(self) -> None:
+        grammar_source = """
+        @subheader '''
+        #define CHECK_INVALID(expected) \\
+            (assert(p->call_invalid_rules == (expected)), _PyPegen_dummy_name(p))
+        '''
+        start: enable (checked_without_invalid '+' | checked_without_invalid after | after) NEWLINE ENDMARKER
+        enable: 'enable' { (p->call_invalid_rules = 1, _PyPegen_dummy_name(p)) }
+        checked_without_invalid (memo): "value" ~ NAME { CHECK_INVALID(0) }
+        after: NAME { CHECK_INVALID(1) }
+        """
+        test_source = """
+        self.check_input_strings_for_grammar([
+            "enable value name +",  # Successful rule return.
+            "enable value name tail",  # Memoized return after backtracking.
+            "enable fallback",  # Failed rule return.
+            "enable value",  # Early return through a cut.
+        ])
+        """
+        self.run_test(grammar_source, test_source)
+
+    def test_left_recursive_rule_cleanup(self) -> None:
+        grammar_source = """
+        @subheader '''
+        #define CHECK_INVALID(expected) \\
+            (assert(p->call_invalid_rules == (expected)), _PyPegen_dummy_name(p))
+        '''
+        start: enable (expr_without_invalid after | after) NEWLINE ENDMARKER
+        enable: 'enable' { (p->call_invalid_rules = 1, _PyPegen_dummy_name(p)) }
+        expr_without_invalid:
+            | expr_without_invalid '+' NAME { CHECK_INVALID(0) }
+            | NAME { CHECK_INVALID(0) }
+        after: NAME { CHECK_INVALID(1) } | NUMBER { CHECK_INVALID(1) }
+        """
+        test_source = """
+        self.check_input_strings_for_grammar([
+            "enable name tail",
+            "enable name + other + last tail",
+            "enable fallback",  # Backtrack past a successful recursive rule.
+            "enable 42",  # The recursive rule has no successful alternative.
+        ])
+        """
+        self.run_test(grammar_source, test_source)
+
+    def test_nested_rule_cleanup(self) -> None:
+        grammar_source = """
+        @subheader '''
+        #define CHECK_INVALID(expected) \\
+            (assert(p->call_invalid_rules == (expected)), _PyPegen_dummy_name(p))
+        '''
+        start: enable outer_without_invalid after NEWLINE ENDMARKER
+        enable: 'enable' { (p->call_invalid_rules = 1, _PyPegen_dummy_name(p)) }
+        outer_without_invalid:
+            | inner_without_invalid '+' { CHECK_INVALID(0) }
+            | inner_without_invalid inside { CHECK_INVALID(0) }
+            | inside { CHECK_INVALID(0) }
+        inner_without_invalid (memo): 'value' NAME { CHECK_INVALID(0) }
+        inside: NAME { CHECK_INVALID(0) }
+        after: NAME { CHECK_INVALID(1) }
+        """
+        test_source = """
+        self.check_input_strings_for_grammar([
+            "enable value name + tail",  # Restore the enclosing disabled state.
+            "enable value name middle tail",  # Restore it on a memoized return.
+            "enable fallback tail",  # Restore it when the inner rule fails.
+        ])
+        """
+        self.run_test(grammar_source, test_source)
+
+    def test_repetition_result_order(self) -> None:
+        grammar_source = """
+        start[mod_ty]: a=statements NEWLINE ENDMARKER {
+            _PyAST_Module(a, NULL, p->arena) }
+        statements[asdl_stmt_seq*]:
+            | 'repeat0' a=stmt* { (asdl_stmt_seq*)a }
+            | 'repeat1' a=stmt+ { (asdl_stmt_seq*)a }
+            | 'gather' a=','.stmt+ { (asdl_stmt_seq*)a }
+        stmt[stmt_ty]: a=NAME { _PyAST_Expr(a, EXTRA) }
+        """
+        test_source = """
+        for mode, separator in (("repeat0", " "), ("repeat1", " "), ("gather", ",")):
+            for count in (1, 2, 5, 17):
+                with self.subTest(mode=mode, count=count):
+                    names = ["name" + str(index) for index in range(count)]
+                    result = parse.parse_string(mode + " " + separator.join(names), mode=1)
+                    self.assertEqual([stmt.value.id for stmt in result.body], names)
+        result = parse.parse_string("repeat0", mode=1)
+        self.assertEqual(result.body, [])
+        """
+        self.run_test(grammar_source, test_source)
+
+    def test_repetition_action_errors(self) -> None:
+        grammar_source = """
+        start: ('repeat0' item* | 'repeat1' item+ | 'gather' ','.item+) NEWLINE ENDMARKER
+        item: NAME | 'fail' { PyTuple_New(-1) }
+        """
+        test_source = """
+        for mode, separator in (("repeat0", " "), ("repeat1", " "), ("gather", ",")):
+            for items in (("fail",), ("first", "second", "fail")):
+                with self.subTest(mode=mode, items=items):
+                    with self.assertRaises(SystemError):
+                        parse.parse_string(mode + " " + separator.join(items), mode=0)
+            parse.parse_string(mode + " first", mode=0)
         """
         self.run_test(grammar_source, test_source)
 
