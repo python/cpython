@@ -958,11 +958,6 @@ _remote_debugging_RemoteUnwinder_get_all_awaited_by_impl(RemoteUnwinderObject *s
     if (ensure_async_debug_offsets(self) < 0) {
         return NULL;
     }
-    PyObject *seen = PySet_New(NULL);
-    if (seen == NULL) {
-        set_exception_cause(self, PyExc_MemoryError, "Failed to create interpreter set");
-        return NULL;
-    }
 
     PyObject *result = PyList_New(0);
     if (result == NULL) {
@@ -971,24 +966,8 @@ _remote_debugging_RemoteUnwinder_get_all_awaited_by_impl(RemoteUnwinderObject *s
     }
 
     // gh-158880: Tasks live in every interpreter, not only the one at the list head
-    for (uintptr_t interp = self->interpreter_addr; interp != 0; ) {
-        PyObject *addr = PyLong_FromUnsignedLongLong(interp);
-        if (addr == NULL) {
-            set_exception_cause(self, PyExc_MemoryError, "Failed to create interpreter address");
-            goto result_err;
-        }
-        Py_ssize_t seen_count = PySet_GET_SIZE(seen);
-        int marked = PySet_Add(seen, addr);
-        Py_DECREF(addr);
-        if (marked < 0) {
-            set_exception_cause(self, PyExc_RuntimeError, "Failed to mark interpreter as seen");
-            goto result_err;
-        }
-        if (PySet_GET_SIZE(seen) == seen_count) {
-            // already walked
-            break;
-        }
-
+    uintptr_t interp = self->interpreter_addr;
+    while (interp != 0) {
         if (refresh_generation_caches_for_interpreter(self, interp) < 0) {
             goto result_err;
         }
@@ -1023,12 +1002,10 @@ _remote_debugging_RemoteUnwinder_get_all_awaited_by_impl(RemoteUnwinderObject *s
     }
 
     _Py_RemoteDebug_ClearCache(&self->handle);
-    Py_DECREF(seen);
     return result;
 
 result_err:
     _Py_RemoteDebug_ClearCache(&self->handle);
-    Py_DECREF(seen);
     Py_XDECREF(result);
     return NULL;
 }
