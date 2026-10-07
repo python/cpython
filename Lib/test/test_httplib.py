@@ -1334,9 +1334,10 @@ class BasicTest(TestCase):
 
     def test_malformed_chunk_size(self):
         # RFC 9112: chunk-size = 1*HEXDIG.  Reject sizes that int(_, 16) accepts
-        # but the grammar forbids (a sign, an "0x" prefix or underscores).
+        # but the grammar forbids (a sign, an "0x" prefix, underscores or
+        # leading whitespace).
         start = 'HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n'
-        for size in ('-5', '+5', '0x5', '1_f'):
+        for size in ('-5', '+5', '0x5', '1_f', ' 5'):
             with self.subTest(size=size):
                 sock = FakeSocket(start + '%s\r\nHELLO\r\n0\r\n\r\n' % size)
                 resp = client.HTTPResponse(sock, method="GET")
