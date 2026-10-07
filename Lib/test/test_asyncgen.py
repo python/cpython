@@ -1048,9 +1048,10 @@ class AsyncGenAsyncioTest(unittest.TestCase):
         self.assertEqual(result, "completed")
 
     def test_anext_traceback_filename(self):
-        # anext() is implemented in Python in Lib/_pybuiltins.py, which is
-        # frozen under the builtins ID, so its frames name builtins rather
-        # than the module they are frozen from.
+        # The coroutine awaited by anext() with a default is implemented in
+        # Python in Lib/_pybuiltins.py, which is frozen under the builtins
+        # ID, so its frames name builtins rather than the module they are
+        # frozen from.
         def filenames(exc):
             return [frame.filename
                     for frame in traceback.extract_tb(exc.__traceback__)]
@@ -1063,13 +1064,6 @@ class AsyncGenAsyncioTest(unittest.TestCase):
 
         # assertRaises() drops the traceback, so catch the exceptions here.
         async def do_test():
-            try:
-                anext(42, "default")
-            except TypeError as exc:
-                self.assertIn("<frozen builtins>", filenames(exc))
-            else:
-                self.fail("TypeError was not raised")
-
             try:
                 await anext(AIter(), "default")
             except ZeroDivisionError as exc:

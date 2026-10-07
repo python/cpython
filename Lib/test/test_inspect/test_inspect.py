@@ -6229,7 +6229,7 @@ class TestSignatureDefinitions(unittest.TestCase):
         needs_groups = {"range", "slice", "getattr", "next"}
         no_signature |= needs_groups
         # These have unrepresentable parameter default values of NULL
-        unsupported_signature = {"aiter", "iter", "dir", "vars"}
+        unsupported_signature = {"anext", "aiter", "iter", "dir", "vars"}
         # These need *args support in Argument Clinic
         needs_varargs = {"min", "max", "__build_class__"}
         no_signature |= needs_varargs

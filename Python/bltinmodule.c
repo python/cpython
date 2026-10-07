@@ -1964,6 +1964,53 @@ builtin_aiter_impl(PyObject *module, PyObject *object, PyObject *stop_value,
 }
 
 /*[clinic input]
+anext as builtin_anext
+
+    async_iterator as aiterator: object
+    default: object = NULL
+    /
+
+Return the next item from the async iterator.
+
+If default is given and the async iterator is exhausted,
+it is returned instead of raising StopAsyncIteration.
+[clinic start generated code]*/
+
+static PyObject *
+builtin_anext_impl(PyObject *module, PyObject *aiterator,
+                   PyObject *default_value)
+/*[clinic end generated code: output=f02c060c163a81fa input=f3dc5a93f073e5ac]*/
+{
+    PyTypeObject *t = Py_TYPE(aiterator);
+    if (t->tp_as_async == NULL || t->tp_as_async->am_anext == NULL) {
+        PyErr_Format(PyExc_TypeError,
+            "'%.200s' object is not an async iterator",
+            t->tp_name);
+        return NULL;
+    }
+
+    PyObject *awaitable = (*t->tp_as_async->am_anext)(aiterator);
+    if (awaitable == NULL || default_value == NULL) {
+        return awaitable;
+    }
+
+    /* gh-157361: the default is handled by a Python coroutine so that
+       introspection tools can see through it into the awaitable. */
+    PyObject *helper = _PyInterpreterState_GET()->anext_with_default;
+    if (helper == NULL) {
+        Py_DECREF(awaitable);
+        PyErr_SetString(PyExc_RuntimeError,
+                        "anext() with a default is not available");
+        return NULL;
+    }
+    PyObject *args[2] = {awaitable, default_value};
+    PyObject *res = PyObject_Vectorcall(helper, args, 2, NULL);
+    Py_DECREF(awaitable);
+    return res;
+}
+
+
+/*[clinic input]
 len as builtin_len
 
     obj: object
@@ -3461,6 +3508,7 @@ static PyMethodDef builtin_methods[] = {
     {"max", _PyCFunction_CAST(builtin_max), METH_FASTCALL | METH_KEYWORDS, max_doc},
     {"min", _PyCFunction_CAST(builtin_min), METH_FASTCALL | METH_KEYWORDS, min_doc},
     {"next", _PyCFunction_CAST(builtin_next), METH_FASTCALL, next_doc},
+    BUILTIN_ANEXT_METHODDEF
     BUILTIN_OCT_METHODDEF
     BUILTIN_ORD_METHODDEF
     BUILTIN_POW_METHODDEF
@@ -3504,7 +3552,8 @@ static struct PyModuleDef builtinsmodule = {
    Lib/_pybuiltins.py is frozen into the interpreter as a bootstrap module
    (see Tools/build/freeze_modules.py), so it can be imported here before
    the import system exists.  The names in its __all__ are copied into the
-   builtins dict. */
+   builtins dict, and helpers used by C builtins are kept on the
+   interpreter. */
 
 int
 _PyBuiltin_InitPythonFunctions(PyObject *dict)
@@ -3541,6 +3590,13 @@ _PyBuiltin_InitPythonFunctions(PyObject *dict)
         if (r < 0) {
             goto done;
         }
+    }
+
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    interp->anext_with_default = PyObject_GetAttrString(
+        mod, "_anext_with_default");
+    if (interp->anext_with_default == NULL) {
+        goto done;
     }
     rc = 0;
 

@@ -891,6 +891,7 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
 
     Py_CLEAR(interp->sysdict_copy);
     Py_CLEAR(interp->builtins_copy);
+    Py_CLEAR(interp->anext_with_default);
     Py_CLEAR(interp->dict);
 #ifdef HAVE_FORK
     Py_CLEAR(interp->before_forkers);

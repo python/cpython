@@ -924,6 +924,8 @@ struct _is {
 
     PyObject *sysdict_copy;
     PyObject *builtins_copy;
+    // _pybuiltins._anext_with_default(), used by anext() with a default.
+    PyObject *anext_with_default;
     // Initialized to _PyEval_EvalFrameDefault().
     _PyFrameEvalFunction eval_frame;
     int eval_frame_allow_specialization;

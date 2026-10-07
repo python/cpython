@@ -1,0 +1,3 @@
+Fix a performance regression in :func:`anext` introduced in :gh:`157361`.
+The one-argument form is implemented in C again and calls the async
+iterator's :meth:`~object.__anext__` slot directly.
