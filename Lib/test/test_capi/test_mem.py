@@ -183,7 +183,7 @@ class PyMemDefaultTests(PyMemDebugTests):
 
 
 @requires_subprocess()
-@support.requires_gil_enabled()
+@support.requires_gil_enabled("PYTHONMALLOC='malloc' needs GIL build")
 @unittest.skipUnless(support.check_sanitizer(address=True),
                      'need address sanitizer')
 class AddressSanitizerTests(unittest.TestCase):
