@@ -1164,8 +1164,8 @@ slowpath:
 
         /* Append the byte.
 
-           Iterators are arbitrary code which could modify the bytearray so
-           this must always re-calculate if there is enough space(gh-158928). */
+           gh-158928: Iterators are arbitrary code which could modify the
+           bytearray so this must re-calculate if there is enough space(). */
         Py_ssize_t needed =
             self->ob_start - self->ob_bytes + Py_SIZE(self) + 1;
         if (needed < self->ob_alloc) {
