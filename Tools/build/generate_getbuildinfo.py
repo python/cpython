@@ -30,7 +30,8 @@ def get_py_version():
 
 
 def get_gil_disable():
-    pyconfig_h = os.path.join(SRC_DIR, 'pyconfig.h')
+    # Look in the current working directory
+    pyconfig_h = 'pyconfig.h'
     with open(pyconfig_h, encoding='utf8') as fp:
         code = fp.read()
 
