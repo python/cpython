@@ -986,8 +986,19 @@ class TestTLS_FTPClass(TestCase):
 
         def transfercmd(*args, **kwargs):
             sock = original(*args, **kwargs)
+            real_unwrap = sock.unwrap
 
             def unwrap():
+                # Shut the TLS layer down before reporting the error.  A
+                # peer that fails the shutdown has still received (or sent)
+                # the whole payload, but closing the data connection without
+                # the close_notify handshake lets the dummy server below
+                # mistake a partial TLS read for end-of-stream and drop the
+                # tail of the transfer.
+                try:
+                    real_unwrap()
+                except OSError:
+                    pass
                 raise exc
 
             sock.unwrap = unwrap
