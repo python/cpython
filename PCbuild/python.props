@@ -258,6 +258,7 @@
     <PyExeName Condition="$(PyExeName) == ''">python</PyExeName>
     <PythonExe Condition="'$(PythonExe)' == ''">$(BuildPath)$(PyExeName)$(PyDebugExt).exe</PythonExe>
     <PyWExeName Condition="$(PyWExeName) == ''">pythonw</PyWExeName>
+    <GetCompilerExe Condition="'$(GetCompilerExe)' == ''">$(BuildPath)_getcompiler$(PyDebugExt).exe</GetCompilerExe>
 
     <!-- The name of the resulting pythonXY.dll (without the extension) -->
     <PyDllName Condition="$(DisableGil) == 'true'">python$(MajorVersionNumber)$(MinorVersionNumber)t$(PyDebugExt)</PyDllName>

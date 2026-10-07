@@ -1,3 +1,6 @@
+// Do not link to python3x.lib
+#define Py_NO_LINK_LIB
+
 #include "Python.h"
 #include <stdio.h>                // printf()
 

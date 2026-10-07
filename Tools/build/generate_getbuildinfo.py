@@ -60,11 +60,9 @@ def get_date_time():
 
 
 def main():
-    if len(sys.argv) != 7:
+    if len(sys.argv) != 8:
         print(f"usage: {SCRIPT_NAME} "
-              "OUTPUT PLATFORM GITVERSION GITTAG GITBRANCH COMPILER")
-        print(sys.argv)
-        print(len(sys.argv))
+              "OUTPUT PLATFORM GITVERSION GITTAG GITBRANCH COMPILER GIL_ENABLED")
         sys.exit(1)
 
     OUTPUT = sys.argv[1]
@@ -73,6 +71,7 @@ def main():
     GITTAG = sys.argv[4]
     GITBRANCH = sys.argv[5]
     COMPILER = sys.argv[6]
+    GIL_ENABLED = sys.argv[7]
 
     if not PLATFORM:
         PLATFORM = "unknown"
@@ -93,10 +92,14 @@ def main():
 
     DATE, TIME = get_date_time()
     PY_VERSION = get_py_version()
-    Py_GIL_DISABLED = get_gil_disable()
+    if GIL_ENABLED  == 'use_pyconfig':
+        Py_GIL_DISABLED = get_gil_disable()
+        GIL_ENABLED = not Py_GIL_DISABLED
+    else:
+        GIL_ENABLED = int(GIL_ENABLED)
     BUILDINFO = f"{gitid}{sep}{revision}, {DATE:.20s}, {TIME:.9s}"
 
-    if Py_GIL_DISABLED:
+    if not GIL_ENABLED:
         GET_VERSION = f"{PY_VERSION} free-threading build ({BUILDINFO}) {COMPILER}"
     else:
         GET_VERSION = f"{PY_VERSION} ({BUILDINFO}) {COMPILER}"

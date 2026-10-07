@@ -1872,7 +1872,8 @@ Modules/getbuildinfo.h: $(srcdir)/Tools/build/generate_getbuildinfo.py Programs/
 			`LC_ALL=C $(GITVERSION)` \
 			`LC_ALL=C $(GITTAG)` \
 			`LC_ALL=C $(GITBRANCH)` \
-			"`Programs/_getcompiler`"
+			"`Programs/_getcompiler`" \
+			use_pyconfig
 
 Modules/getbuildinfo.o: $(srcdir)/Modules/getbuildinfo.c Modules/getbuildinfo.h
 		# Add local Modules/ include directory to get Modules/getbuildinfo.h
