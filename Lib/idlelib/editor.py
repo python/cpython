@@ -609,16 +609,20 @@ class EditorWindow:
 
     def cut(self,event):
         if not self.text.tag_ranges('sel'):
-            self.text.tag_add('sel', 'insert linestart', 'insert+1l linestart')
-            self.text.mark_set('insert', 'insert linestart')
-        self.text.event_generate("<<Cut>>")
+            self.copy(event)
+            self.text.delete('insert', 'insert+1l')
+        else:
+            self.text.event_generate("<<Cut>>")
         return "break"
 
     def copy(self,event):
-        if not self.text.tag_ranges("sel"):
-            self.text.tag_add('sel', 'insert linestart', 'insert+1l linestart')
+        if not self.text.tag_ranges('sel'):
             self.text.mark_set('insert', 'insert linestart')
-        self.text.event_generate("<<Copy>>")
+            line = self.text.get('insert', 'insert+1l')
+            self.text.clipboard_clear()
+            self.text.clipboard_append(line)
+        else:
+            self.text.event_generate("<<Copy>>")
         return "break"
 
     def paste(self,event):
