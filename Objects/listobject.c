@@ -91,6 +91,10 @@ ensure_shared_on_resize(PyListObject *self)
 #endif
 }
 
+#define LIST_SMALL_ALLOCATED 32
+
+static int py_list_resize(PyListObject *self, Py_ssize_t newsize);
+
 /* Ensure ob_item has room for at least newsize elements, and set
  * ob_size to newsize.  If newsize > ob_size on entry, the content
  * of the new slots at exit is undefined heap trash; it's the caller's
@@ -99,22 +103,37 @@ ensure_shared_on_resize(PyListObject *self)
  * Failure is impossible if newsize <= self.allocated on entry.
  * Note that self->ob_item may change, and even if newsize is less
  * than ob_size on entry.
+ *
+ * Always inlining list_resize() makes the fast path a few instructions
+ * in each caller instead of a function call.
  */
-static int
+static inline Py_ALWAYS_INLINE int
 list_resize(PyListObject *self, Py_ssize_t newsize)
 {
-    size_t new_allocated, target_bytes;
     Py_ssize_t allocated = self->allocated;
 
     /* Bypass realloc() when a previous overallocation is large enough
        to accommodate the newsize.  If the newsize falls lower than half
        the allocated size, then proceed with the realloc() to shrink the list.
+       gh-158592: do not shrink a small list, the realloc() cost is bigger
+       than the memory we get back.
     */
-    if (allocated >= newsize && newsize >= (allocated >> 1)) {
+    if (allocated >= newsize
+        && (newsize >= (allocated >> 1) || allocated <= LIST_SMALL_ALLOCATED))
+    {
         assert(self->ob_item != NULL || newsize == 0);
         Py_SET_SIZE(self, newsize);
         return 0;
     }
+    return py_list_resize(self, newsize);
+}
+
+/* Slow path of list_resize(): allocate or reallocate ob_item. */
+static int
+py_list_resize(PyListObject *self, Py_ssize_t newsize)
+{
+    size_t new_allocated, target_bytes;
+    Py_ssize_t allocated = self->allocated;
 
     /* This over-allocates proportional to the list size, making room
      * for additional growth.  The over-allocation is mild, but is
@@ -135,6 +154,8 @@ list_resize(PyListObject *self, Py_ssize_t newsize)
 
     if (newsize == 0)
         new_allocated = 0;
+
+    assert(newsize > allocated || new_allocated < (size_t)allocated);
 
     ensure_shared_on_resize(self);
 

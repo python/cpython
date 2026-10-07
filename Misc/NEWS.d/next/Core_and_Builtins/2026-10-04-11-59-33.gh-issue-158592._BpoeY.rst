@@ -1,0 +1,2 @@
+Skip the array reallocation when shrinking a small :class:`list`. Patch by
+Donghee Na.
