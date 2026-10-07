@@ -596,6 +596,9 @@ dictbytype(PyObject *src, int scope_type, int flag, Py_ssize_t offset)
 }
 
 static int
+compiler_should_reuse_enclosing_free(PySTEntryObject *enclosing, PyObject *name);
+
+static int
 add_cell_names_from_symbols(PyObject *symbols, PyObject *names,
                             PySTEntryObject *skip_if_free)
 {
@@ -612,9 +615,9 @@ add_cell_names_from_symbols(PyObject *symbols, PyObject *names,
         /* Inlined cells that collide with an enclosing free reuse that
          * slot instead of adding a second same-named localsplus entry. */
         if (skip_if_free != NULL) {
-            int enclosing = _PyST_GetScope(skip_if_free, k);
-            RETURN_IF_ERROR(enclosing);
-            if (enclosing == FREE) {
+            int reuse = compiler_should_reuse_enclosing_free(skip_if_free, k);
+            RETURN_IF_ERROR(reuse);
+            if (reuse) {
                 continue;
             }
         }
@@ -1000,6 +1003,30 @@ enclosing_non_inlined_ste(PySTEntryObject *ste)
     return ste;
 }
 
+/* True if an inlined LOCAL/CELL should reuse enclosing's freevars slot.
+ * Class-closure names are excluded: zero-arg super() and class-cell
+ * bookkeeping depend on the real free cell. DEF_FREE_CLASS counts as a
+ * free slot even though _PyST_GetScope() returns LOCAL. */
+static int
+compiler_should_reuse_enclosing_free(PySTEntryObject *enclosing, PyObject *name)
+{
+    if (_PyST_IsClassClosureName(name)) {
+        return 0;
+    }
+    PyObject *v = PyDict_GetItemWithError(enclosing->ste_symbols, name);
+    if (v == NULL) {
+        return PyErr_Occurred() ? ERROR : 0;
+    }
+    long flags = PyLong_AsLong(v);
+    if (flags == -1 && PyErr_Occurred()) {
+        return ERROR;
+    }
+    if (SYMBOL_TO_SCOPE(flags) == FREE || (flags & DEF_FREE_CLASS)) {
+        return 1;
+    }
+    return 0;
+}
+
 /* Inlined comprehensions are compiled in the enclosing unit. If a name is
  * FREE in the comprehension, or is absent from its table (scope 0), resolve
  * it in enclosing tables until it is bound. Stop if the next table is a class:
@@ -1007,9 +1034,9 @@ enclosing_non_inlined_ste(PySTEntryObject *ste)
  * the name stays FREE. __class__ and friends are not allowed to be free
  * through a class; treat those loads as implicit globals.
  *
- * A LOCAL or CELL on the inlined table that is FREE in the nearest
- * non-inlined enclosing table reuses that free slot, so the compilation
- * unit does not grow a second same-named localsplus entry.
+ * A LOCAL or CELL on the inlined table that collides with an enclosing free
+ * (or DEF_FREE_CLASS) reuses that free slot, so the compilation unit does not
+ * grow a second same-named localsplus entry.
  *
  * Names with no entry (scope 0) include loads synthesized by codegen, such as
  * the implicit receiver for zero-arg super(). */
@@ -1040,9 +1067,9 @@ compiler_resolve_inlined_free(PySTEntryObject **ste, PyObject *name)
     {
         PySTEntryObject *enclosing = enclosing_non_inlined_ste(*ste);
         if (enclosing != NULL) {
-            int enclosing_scope = _PyST_GetScope(enclosing, name);
-            RETURN_IF_ERROR(enclosing_scope);
-            if (enclosing_scope == FREE) {
+            int reuse = compiler_should_reuse_enclosing_free(enclosing, name);
+            RETURN_IF_ERROR(reuse);
+            if (reuse) {
                 *ste = enclosing;
                 return FREE;
             }

@@ -87,10 +87,12 @@ Class-closure names that would otherwise be free through a class become
 `GLOBAL_IMPLICIT`.
 
 If the inlined name is `LOCAL` or `CELL` but the nearest non-inlined
-enclosing table has it as `FREE`, resolve it as `FREE` so the
-comprehension reuses that localsplus slot. `compiler_cellvars()` also
-skips adding those child cells, which would otherwise create a second
-same-named entry.
+enclosing table has it as `FREE` (or `DEF_FREE_CLASS`), resolve it as
+`FREE` so the comprehension reuses that localsplus slot.
+`compiler_cellvars()` also skips adding those child cells, which would
+otherwise create a second same-named entry. Class-closure names
+(`__class__` and friends) are never reused: zero-arg `super()` and
+class-cell bookkeeping need the real free cell.
 
 ### Isolating iteration variables
 
@@ -100,14 +102,12 @@ the comprehension on one of two paths:
 
 Reuse an enclosing free (`_PyCompile_GetRefType()` is `FREE`):
 
-* `LOAD_CLOSURE_AND_CLEAR` saves the enclosing cell.
-* `MAKE_CELL` always runs, so the slot holds a fresh empty cell.
-  The comprehension then uses `DEREF`; it must not store into the
-  enclosing cell.
-* Restore uses `STORE_CLOSURE`.
-* Those pseudo instructions carry a cell/free index so
-  `fix_cell_offsets` can remap them; they become `LOAD_FAST_AND_CLEAR`
-  / `STORE_FAST` in the assembler.
+* `LOAD_CLOSURE` saves the enclosing cell without clearing the slot
+  (so free-slot introspection never sees a NULL).
+* `MAKE_CELL` on a `CO_FAST_FREE` slot always installs a fresh empty
+  cell, replacing the saved one. The comprehension then uses `DEREF`.
+* Restore uses `STORE_CLOSURE` (a cell/free-index pseudo that becomes
+  `STORE_FAST` after `fix_cell_offsets`).
 
 Own fast-local slot (everything else):
 
@@ -132,6 +132,12 @@ installs a temporary one so `STORE_DEREF` does not change the value
 seen by existing closures; lambdas that capture the iteration variable
 share the temporary cell. After the comprehension, the original cell
 is restored.
+
+While the temporary cell is installed, `_PyFrame_IsInlinedCompTempFree()`
+is true (frame cell differs from `func_closure`). That drives
+class/module `locals()` to use `FrameLocalsProxy` even without a
+`CO_FAST_HIDDEN` slot, and makes an empty temporary cell raise
+`UnboundLocalError` rather than `NameError`.
 
 Source
 ------

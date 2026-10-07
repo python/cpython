@@ -2247,6 +2247,35 @@ frame_get_var(_PyInterpreterFrame *frame, PyCodeObject *co, int i,
 
 
 bool
+_PyFrame_IsInlinedCompTempFree(_PyInterpreterFrame *frame, int oparg)
+{
+    PyCodeObject *co = _PyFrame_GetCode(frame);
+    if (oparg < 0 || oparg >= co->co_nlocalsplus) {
+        return false;
+    }
+    if (!(_PyLocals_GetKind(co->co_localspluskinds, oparg) & CO_FAST_FREE)) {
+        return false;
+    }
+    if (!PyStackRef_FunctionCheck(frame->f_funcobj)) {
+        return false;
+    }
+    PyFunctionObject *func =
+        (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+    PyObject *closure = func->func_closure;
+    if (closure == NULL) {
+        return false;
+    }
+    int free_index = oparg - (co->co_nlocalsplus - co->co_nfreevars);
+    if (free_index < 0 || free_index >= co->co_nfreevars) {
+        return false;
+    }
+    assert(free_index < PyTuple_GET_SIZE(closure));
+    PyObject *closure_cell = PyTuple_GET_ITEM(closure, free_index);
+    PyObject *frame_cell = PyStackRef_AsPyObjectBorrow(frame->localsplus[oparg]);
+    return frame_cell != NULL && frame_cell != closure_cell;
+}
+
+bool
 _PyFrame_HasHiddenLocals(_PyInterpreterFrame *frame)
 {
     /*
@@ -2260,6 +2289,14 @@ _PyFrame_HasHiddenLocals(_PyInterpreterFrame *frame)
 
         if (kind & CO_FAST_HIDDEN) {
             if (framelocalsproxy_hasval(frame, co, i)) {
+                return true;
+            }
+        }
+        else if (kind & CO_FAST_FREE) {
+            /* A free slot whose cell was swapped for an inlined
+             * comprehension temporary must also force FrameLocalsProxy
+             * in class/module scopes (no separate HIDDEN slot). */
+            if (_PyFrame_IsInlinedCompTempFree(frame, i)) {
                 return true;
             }
         }

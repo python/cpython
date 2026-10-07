@@ -1,11 +1,12 @@
 import doctest
+import sys
 import textwrap
 import traceback
 import types
 import unittest
 
 from test import support
-from test.support import BrokenIter
+from test.support import BrokenIter, import_helper
 
 
 doctests = """
@@ -358,6 +359,133 @@ class ListComprehensionTest(unittest.TestCase):
                 return x
             return inner()
         self.assertEqual(outer([1, 2]), [1, 2])
+
+    def test_reuse_class_closure_name_as_param_with_lambda(self):
+        # Class-closure names are not reused. Lambdas share the last
+        # iteration value; the enclosing binding is unchanged.
+        def outer(__class__):
+            class C:
+                result = [lambda: __class__ for __class__ in __class__]
+            return [f() for f in C.result], __class__
+        self.assertEqual(outer([1, 2]), ([2, 2], [1, 2]))
+
+        def outer(__classdict__):
+            class C:
+                result = [lambda: __classdict__ for __classdict__ in __classdict__]
+            return [f() for f in C.result], __classdict__
+        self.assertEqual(outer([1, 2]), ([2, 2], [1, 2]))
+
+    def test_reuse_class_closure_name_as_param_preserves_enclosing(self):
+        def outer(__class__):
+            class C:
+                result = [__class__ for __class__ in __class__]
+            return C.result, __class__
+        self.assertEqual(outer([1, 2]), ([1, 2], [1, 2]))
+
+        def outer(__classdict__):
+            class C:
+                result = [__classdict__ for __classdict__ in __classdict__]
+            return C.result, __classdict__
+        self.assertEqual(outer([1, 2]), ([1, 2], [1, 2]))
+
+    def test_reuse_free_slot_visible_to_opcode_trace_getvar(self):
+        # Isolation must not leave a free slot temporarily NULL where
+        # PyFrame_GetVar() (and similar) assume a cell is always present.
+        _testcapi = import_helper.import_module("_testcapi")
+
+        def outer(x):
+            def inner():
+                return [x for x in x]
+            return inner
+
+        f = outer([1])
+
+        def trace(frame, event, arg):
+            if frame.f_code is f.__code__:
+                frame.f_trace_opcodes = True
+                if event == "opcode":
+                    try:
+                        _testcapi.frame_getvar(frame, "x")
+                    except NameError:
+                        pass
+            return trace
+
+        sys.settrace(trace)
+        try:
+            self.assertEqual(f(), [1])
+        finally:
+            sys.settrace(None)
+
+    def test_reuse_does_not_break_zero_arg_super(self):
+        # Temporary reuse of the __class__ free must not change what
+        # zero-argument super() observes during the comprehension.
+        class C:
+            def method(self):
+                __class__
+                return [super() for __class__ in (int,)]
+
+        self.assertIs(C().method()[0].__thisclass__, C)
+
+    def test_reuse_class_body_locals_sees_iteration_var(self):
+        # Class-body locals() must still expose the comprehension target
+        # when that name reuses an enclosing free (no separate hidden slot).
+        def outer(x):
+            class C:
+                values = [locals()["x"] for x in x]
+            return C.values
+        self.assertEqual(outer([1, 2]), [1, 2])
+
+        def outer_eval(x):
+            class C:
+                values = [eval("x") for x in x]
+            return C.values
+        self.assertEqual(outer_eval([1, 2]), [1, 2])
+
+    def test_reuse_uninitialized_comp_local_is_unbound_local(self):
+        # Reading the comprehension target before it is assigned must remain
+        # UnboundLocalError, not NameError from LOAD_DEREF on a free slot.
+        def outer(x):
+            def inner():
+                return [x for y in x for x in x]
+            return inner()
+
+        with self.assertRaises(UnboundLocalError):
+            outer([1, 2])
+
+        def outer_lambda(x):
+            def inner():
+                return [lambda: x for y in x for x in x]
+            return inner()
+
+        with self.assertRaises(UnboundLocalError):
+            outer_lambda([1, 2])
+
+    def test_reuse_def_free_class_avoids_duplicate_f_locals(self):
+        # Class-local names with DEF_FREE_CLASS are in freevars but scoped
+        # LOCAL; reuse must still apply so f_locals has a unique 'x'.
+        def outer():
+            x = 1
+            class C:
+                x = 2
+                vals = [(
+                    dict(**sys._getframe().f_locals),
+                    len(sys._getframe().f_locals),
+                    list(sys._getframe().f_locals.keys()),
+                    list(sys._getframe().f_locals.values()),
+                    list(sys._getframe().f_locals.items()),
+                ) for x in [3]]
+                def m():
+                    return x
+            return C
+
+        d, n, ks, vs, it = outer().vals[0]
+        self.assertEqual(d["x"], 3)
+        self.assertEqual(n, len(ks))
+        self.assertEqual(n, len(vs))
+        self.assertEqual(n, len(it))
+        self.assertEqual(ks.count("x"), 1)
+        self.assertEqual(d, dict(zip(ks, vs)))
+        self.assertEqual(d, dict(it))
 
     def test_free_inner_cell_outer(self):
         code = """

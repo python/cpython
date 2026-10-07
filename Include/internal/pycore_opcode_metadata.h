@@ -19,7 +19,6 @@ extern "C" {
 
 #define IS_PSEUDO_INSTR(OP)  ( \
     ((OP) == LOAD_CLOSURE) || \
-    ((OP) == LOAD_CLOSURE_AND_CLEAR) || \
     ((OP) == STORE_CLOSURE) || \
     ((OP) == STORE_FAST_MAYBE_NULL) || \
     ((OP) == ANNOTATIONS_PLACEHOLDER) || \
@@ -335,8 +334,6 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
         case LOAD_BUILD_CLASS:
             return 0;
         case LOAD_CLOSURE:
-            return 0;
-        case LOAD_CLOSURE_AND_CLEAR:
             return 0;
         case LOAD_COMMON_CONSTANT:
             return 0;
@@ -835,8 +832,6 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
             return 1;
         case LOAD_CLOSURE:
             return 1;
-        case LOAD_CLOSURE_AND_CLEAR:
-            return 1;
         case LOAD_COMMON_CONSTANT:
             return 1;
         case LOAD_CONST:
@@ -1047,7 +1042,7 @@ enum InstructionFormat {
 };
 
 #define IS_VALID_OPCODE(OP) \
-    (((OP) >= 0) && ((OP) < 269) && \
+    (((OP) >= 0) && ((OP) < 268) && \
      (_PyOpcode_opcode_metadata[(OP)].valid_entry))
 
 #define HAS_ARG_FLAG (1)
@@ -1107,9 +1102,9 @@ struct opcode_metadata {
     uint32_t flags;
 };
 
-PyAPI_DATA(const struct opcode_metadata) _PyOpcode_opcode_metadata[269];
+PyAPI_DATA(const struct opcode_metadata) _PyOpcode_opcode_metadata[268];
 #ifdef NEED_OPCODE_METADATA
-const struct opcode_metadata _PyOpcode_opcode_metadata[269] = {
+const struct opcode_metadata _PyOpcode_opcode_metadata[268] = {
     [BINARY_OP] = { true, INSTR_FMT_IBC0000, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG | HAS_RECORDS_VALUE_FLAG },
     [BINARY_OP_ADD_FLOAT] = { true, INSTR_FMT_IXC0000, HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG },
     [BINARY_OP_ADD_INT] = { true, INSTR_FMT_IXC0000, HAS_EXIT_FLAG },
@@ -1347,7 +1342,6 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[269] = {
     [JUMP_IF_TRUE] = { true, -1, HAS_ARG_FLAG | HAS_JUMP_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [JUMP_NO_INTERRUPT] = { true, -1, HAS_ARG_FLAG | HAS_JUMP_FLAG },
     [LOAD_CLOSURE] = { true, -1, HAS_ARG_FLAG | HAS_LOCAL_FLAG | HAS_PURE_FLAG },
-    [LOAD_CLOSURE_AND_CLEAR] = { true, -1, HAS_ARG_FLAG | HAS_LOCAL_FLAG },
     [POP_BLOCK] = { true, -1, HAS_PURE_FLAG },
     [SETUP_CLEANUP] = { true, -1, HAS_PURE_FLAG | HAS_ARG_FLAG },
     [SETUP_FINALLY] = { true, -1, HAS_PURE_FLAG | HAS_ARG_FLAG },
@@ -1561,9 +1555,9 @@ _PyOpcode_macro_expansion[256] = {
 };
 #endif // NEED_OPCODE_METADATA
 
-PyAPI_DATA(const char) *_PyOpcode_OpName[269];
+PyAPI_DATA(const char) *_PyOpcode_OpName[268];
 #ifdef NEED_OPCODE_METADATA
-const char *_PyOpcode_OpName[269] = {
+const char *_PyOpcode_OpName[268] = {
     [ANNOTATIONS_PLACEHOLDER] = "ANNOTATIONS_PLACEHOLDER",
     [BINARY_OP] = "BINARY_OP",
     [BINARY_OP_ADD_FLOAT] = "BINARY_OP_ADD_FLOAT",
@@ -1713,7 +1707,6 @@ const char *_PyOpcode_OpName[269] = {
     [LOAD_ATTR_WITH_HINT] = "LOAD_ATTR_WITH_HINT",
     [LOAD_BUILD_CLASS] = "LOAD_BUILD_CLASS",
     [LOAD_CLOSURE] = "LOAD_CLOSURE",
-    [LOAD_CLOSURE_AND_CLEAR] = "LOAD_CLOSURE_AND_CLEAR",
     [LOAD_COMMON_CONSTANT] = "LOAD_COMMON_CONSTANT",
     [LOAD_CONST] = "LOAD_CONST",
     [LOAD_DEREF] = "LOAD_DEREF",
@@ -2133,11 +2126,10 @@ struct pseudo_targets {
     uint8_t as_sequence;
     uint8_t targets[4];
 };
-extern const struct pseudo_targets _PyOpcode_PseudoTargets[13];
+extern const struct pseudo_targets _PyOpcode_PseudoTargets[12];
 #ifdef NEED_OPCODE_METADATA
-const struct pseudo_targets _PyOpcode_PseudoTargets[13] = {
+const struct pseudo_targets _PyOpcode_PseudoTargets[12] = {
     [LOAD_CLOSURE-256] = { 0, { LOAD_FAST, 0, 0, 0 } },
-    [LOAD_CLOSURE_AND_CLEAR-256] = { 0, { LOAD_FAST_AND_CLEAR, 0, 0, 0 } },
     [STORE_CLOSURE-256] = { 0, { STORE_FAST, 0, 0, 0 } },
     [STORE_FAST_MAYBE_NULL-256] = { 0, { STORE_FAST, 0, 0, 0 } },
     [ANNOTATIONS_PLACEHOLDER-256] = { 0, { NOP, 0, 0, 0 } },
@@ -2154,7 +2146,7 @@ const struct pseudo_targets _PyOpcode_PseudoTargets[13] = {
 #endif // NEED_OPCODE_METADATA
 static inline bool
 is_pseudo_target(int pseudo, int target) {
-    if (pseudo < 256 || pseudo >= 269) {
+    if (pseudo < 256 || pseudo >= 268) {
         return false;
     }
     for (int i = 0; _PyOpcode_PseudoTargets[pseudo-256].targets[i]; i++) {

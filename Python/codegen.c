@@ -4918,9 +4918,11 @@ codegen_push_inlined_comprehension_locals(compiler *c, location loc,
             int reftype = _PyCompile_GetRefType(c, k);
             RETURN_IF_ERROR(reftype);
             if (reftype == FREE) {
-                // Reuse the enclosing free slot. Save that cell, then
-                // install a fresh empty cell for the comprehension.
-                ADDOP_NAME(c, loc, LOAD_CLOSURE_AND_CLEAR, k, freevars);
+                // Reuse the enclosing free slot. Save that cell without
+                // clearing (avoids a NULL free slot), then MAKE_CELL
+                // replaces it with a fresh empty cell (see MAKE_CELL on
+                // CO_FAST_FREE).
+                ADDOP_NAME(c, loc, LOAD_CLOSURE, k, freevars);
                 ADDOP_NAME(c, loc, MAKE_CELL, k, freevars);
             }
             else {

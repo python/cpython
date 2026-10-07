@@ -270,16 +270,9 @@ dummy_func(
             LOAD_FAST,
         };
 
-        /* Like LOAD_FAST_AND_CLEAR, but the oparg is a cell/free index
-         * remapped in fix_cell_offsets. Used to isolate an inlined
-         * comprehension local that reuses an enclosing free slot. */
-        pseudo(LOAD_CLOSURE_AND_CLEAR, (-- unused)) = {
-            LOAD_FAST_AND_CLEAR,
-        };
-
         /* Like STORE_FAST, but the oparg is a cell/free index remapped
-         * in fix_cell_offsets. Restores the cell saved by
-         * LOAD_CLOSURE_AND_CLEAR. */
+         * in fix_cell_offsets. Restores the cell saved by LOAD_CLOSURE
+         * when isolating an inlined comprehension that reuses a free. */
         pseudo(STORE_CLOSURE, (unused --)) = {
             STORE_FAST,
         };
@@ -2353,7 +2346,14 @@ dummy_func(
         inst(MAKE_CELL, (--)) {
             // "initial" is probably NULL but not if it's an arg (or set
             // via the f_locals proxy before MAKE_CELL has run).
-            PyObject *initial = PyStackRef_AsPyObjectBorrow(GETLOCAL(oparg));
+            // For CO_FAST_FREE, always start empty: used to isolate an
+            // inlined comprehension that reuses a free slot after
+            // LOAD_CLOSURE saved the enclosing cell on the stack.
+            PyObject *initial = NULL;
+            PyCodeObject *co = _PyFrame_GetCode(frame);
+            if (!(_PyLocals_GetKind(co->co_localspluskinds, oparg) & CO_FAST_FREE)) {
+                initial = PyStackRef_AsPyObjectBorrow(GETLOCAL(oparg));
+            }
             PyObject *cell = PyCell_New(initial);
             if (cell == NULL) {
                 ERROR_NO_POP();
@@ -2410,7 +2410,15 @@ dummy_func(
             PyCellObject *cell = (PyCellObject *)PyStackRef_AsPyObjectBorrow(GETLOCAL(oparg));
             value = _PyCell_GetStackRef(cell);
             if (PyStackRef_IsNull(value)) {
-                _PyEval_FormatExcUnbound(tstate, _PyFrame_GetCode(frame), oparg);
+                /* Same choice as _PyEval_FormatExcUnbound, plus: a free slot
+                 * reused as an inlined-comprehension temporary is unbound local. */
+                PyCodeObject *co = _PyFrame_GetCode(frame);
+                int unbound_local = (oparg < PyUnstable_Code_GetFirstFree(co) ||
+                                     _PyFrame_IsInlinedCompTempFree(frame, oparg));
+                _PyEval_FormatExcCheckArg(tstate,
+                    unbound_local ? PyExc_UnboundLocalError : PyExc_NameError,
+                    unbound_local ? UNBOUNDLOCAL_ERROR_MSG : UNBOUNDFREE_ERROR_MSG,
+                    PyTuple_GET_ITEM(co->co_localsplusnames, oparg));
                 ERROR_IF(true);
             }
         }

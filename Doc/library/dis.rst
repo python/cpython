@@ -2003,21 +2003,11 @@ but are replaced by real opcodes or removed before bytecode is generated.
    .. versionchanged:: 3.13
       This opcode is now a pseudo-instruction.
 
-.. opcode:: LOAD_CLOSURE_AND_CLEAR (i)
-
-   Pushes a reference to the cell contained in slot ``i`` of the "fast locals"
-   storage and clears that slot. Used to isolate an inlined comprehension
-   local that reuses an enclosing free variable.
-
-   Note that ``LOAD_CLOSURE_AND_CLEAR`` is replaced with
-   ``LOAD_FAST_AND_CLEAR`` in the assembler.
-
-   .. versionadded:: next
-
 .. opcode:: STORE_CLOSURE (i)
 
    Stores the TOS into the cell slot ``i`` of the "fast locals" storage.
-   Used to restore a cell saved by ``LOAD_CLOSURE_AND_CLEAR``.
+   Used to restore a cell saved by ``LOAD_CLOSURE`` when isolating an
+   inlined comprehension that reuses an enclosing free variable.
 
    Note that ``STORE_CLOSURE`` is replaced with ``STORE_FAST`` in the assembler.
 
