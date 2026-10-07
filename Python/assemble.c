@@ -81,8 +81,11 @@ assemble_init(struct assembler *a, int firstlineno)
     return SUCCESS;
 error:
     PyBytesWriter_Discard(a->a_bytecode_writer);
+    a->a_bytecode_writer = NULL;
     PyBytesWriter_Discard(a->a_linetable_writer);
+    a->a_linetable_writer = NULL;
     PyBytesWriter_Discard(a->a_except_table_writer);
+    a->a_except_table_writer = NULL;
     return ERROR;
 }
 
@@ -99,7 +102,7 @@ assemble_free(struct assembler *a)
 
 static inline void
 write_except_byte(struct assembler *a, int byte) {
-    unsigned char *p = (unsigned char *) PyBytesWriter_GetData(a->a_except_table_writer);
+    unsigned char *p = PyBytesWriter_GetData(a->a_except_table_writer);
     p[a->a_except_table_off++] = byte;
 }
 
@@ -534,13 +537,15 @@ compute_localsplus_info(_PyCompile_CodeUnitMetadata *umd, int nlocalsplus,
 
             _PyLocals_Kind kind = CO_FAST_LOCAL | argvarkinds[i].kind;
 
-            int has_key = PyDict_Contains(umd->u_fasthidden, k);
-            RETURN_IF_ERROR(has_key);
-            if (has_key) {
-                kind |= CO_FAST_HIDDEN;
+            if (umd->u_fasthidden != NULL) {
+                int hidden = PySet_Contains(umd->u_fasthidden, k);
+                RETURN_IF_ERROR(hidden);
+                if (hidden) {
+                    kind |= CO_FAST_HIDDEN;
+                }
             }
 
-            has_key = PyDict_Contains(umd->u_cellvars, k);
+            int has_key = PyDict_Contains(umd->u_cellvars, k);
             RETURN_IF_ERROR(has_key);
             if (has_key) {
                 kind |= CO_FAST_CELL;
