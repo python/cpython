@@ -426,6 +426,35 @@ class ListComprehensionTest(unittest.TestCase):
 
         self.assertIs(C().method()[0].__thisclass__, C)
 
+    def test_class_closure_name_not_duplicated_in_f_locals(self):
+        # Class-closure names are not slot-reused, so localsplus can hold
+        # both a hidden comprehension local and the free. FrameLocalsProxy
+        # must still present a unique key (first wins).
+        class C:
+            def method(self):
+                __class__
+                return [(
+                    dict(**sys._getframe().f_locals),
+                    len(sys._getframe().f_locals),
+                    list(sys._getframe().f_locals.keys()),
+                    list(sys._getframe().f_locals.values()),
+                    list(sys._getframe().f_locals.items()),
+                ) for __class__ in (int,)]
+
+        d, n, ks, vs, it = C().method()[0]
+        self.assertEqual(d["__class__"], int)
+        self.assertEqual(ks.count("__class__"), 1)
+        self.assertEqual(n, len(ks))
+        self.assertEqual(n, len(vs))
+        self.assertEqual(n, len(it))
+        self.assertEqual(d, dict(zip(ks, vs)))
+        self.assertEqual(d, dict(it))
+        # Duplicate slots are still present in the code object.
+        code = C.method.__code__
+        self.assertEqual(code.co_varnames.count("__class__")
+                         + code.co_cellvars.count("__class__")
+                         + code.co_freevars.count("__class__"), 2)
+
     def test_reuse_class_body_locals_sees_iteration_var(self):
         # Class-body locals() must still expose the comprehension target
         # when that name reuses an enclosing free (no separate hidden slot).

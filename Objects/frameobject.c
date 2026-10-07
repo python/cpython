@@ -14,6 +14,7 @@
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_opcode_metadata.h" // _PyOpcode_Caches
 #include "pycore_optimizer.h"     // _Py_Executors_InvalidateDependency()
+#include "pycore_symtable.h"      // _PyST_IsClassClosureName()
 #include "pycore_tuple.h"         // _PyTuple_FromPair
 #include "pycore_unicodeobject.h" // _PyUnicode_Equal()
 #include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
@@ -92,6 +93,28 @@ framelocalsproxy_hasval(_PyInterpreterFrame *frame, PyCodeObject *co, int i)
     }
     Py_DECREF(value);
     return true;
+}
+
+/* 1 = include, 0 = skip duplicate, -1 = error.
+ * Class-closure names are not slot-reused, so localsplus can hold both a
+ * comprehension local and a free; track only those names in seen. */
+static int
+framelocalsproxy_include_name(PyObject *seen, PyObject *name)
+{
+    if (!_PyST_IsClassClosureName(name)) {
+        return 1;
+    }
+    int found = PySet_Contains(seen, name);
+    if (found < 0) {
+        return -1;
+    }
+    if (found) {
+        return 0;
+    }
+    if (PySet_Add(seen, name) < 0) {
+        return -1;
+    }
+    return 1;
 }
 
 static int
@@ -380,13 +403,24 @@ framelocalsproxy_keys(PyObject *self, PyObject *Py_UNUSED(ignored))
     if (names == NULL) {
         return NULL;
     }
+    PyObject *seen = PySet_New(NULL);
+    if (seen == NULL) {
+        Py_DECREF(names);
+        return NULL;
+    }
 
     for (int i = 0; i < co->co_nlocalsplus; i++) {
         if (framelocalsproxy_hasval(frame->f_frame, co, i)) {
             PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
+            int include = framelocalsproxy_include_name(seen, name);
+            if (include < 0) {
+                goto error;
+            }
+            if (!include) {
+                continue;
+            }
             if (PyList_Append(names, name) < 0) {
-                Py_DECREF(names);
-                return NULL;
+                goto error;
             }
         }
     }
@@ -401,14 +435,20 @@ framelocalsproxy_keys(PyObject *self, PyObject *Py_UNUSED(ignored))
 
         while (PyDict_Next(frame->f_extra_locals, &i, &key, &value)) {
             if (PyList_Append(names, key) < 0) {
-                Py_DECREF(names);
-                return NULL;
+                goto error;
             }
         }
     }
 
+    Py_DECREF(seen);
     return names;
+
+error:
+    Py_DECREF(seen);
+    Py_DECREF(names);
+    return NULL;
 }
+
 
 static void
 framelocalsproxy_dealloc(PyObject *self)
@@ -589,14 +629,28 @@ framelocalsproxy_values(PyObject *self, PyObject *Py_UNUSED(ignored))
     if (values == NULL) {
         return NULL;
     }
+    PyObject *seen = PySet_New(NULL);
+    if (seen == NULL) {
+        Py_DECREF(values);
+        return NULL;
+    }
 
     for (int i = 0; i < co->co_nlocalsplus; i++) {
         PyObject *value = framelocalsproxy_getval(frame->f_frame, co, i);
         if (value) {
+            PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
+            int include = framelocalsproxy_include_name(seen, name);
+            if (include < 0) {
+                Py_DECREF(value);
+                goto error;
+            }
+            if (!include) {
+                Py_DECREF(value);
+                continue;
+            }
             if (PyList_Append(values, value) < 0) {
                 Py_DECREF(value);
-                Py_DECREF(values);
-                return NULL;
+                goto error;
             }
             Py_DECREF(value);
         }
@@ -609,14 +663,20 @@ framelocalsproxy_values(PyObject *self, PyObject *Py_UNUSED(ignored))
         PyObject *value = NULL;
         while (PyDict_Next(frame->f_extra_locals, &j, &key, &value)) {
             if (PyList_Append(values, value) < 0) {
-                Py_DECREF(values);
-                return NULL;
+                goto error;
             }
         }
     }
 
+    Py_DECREF(seen);
     return values;
+
+error:
+    Py_DECREF(seen);
+    Py_DECREF(values);
+    return NULL;
 }
+
 
 static PyObject *
 framelocalsproxy_items(PyObject *self, PyObject *Py_UNUSED(ignored))
@@ -627,12 +687,26 @@ framelocalsproxy_items(PyObject *self, PyObject *Py_UNUSED(ignored))
     if (items == NULL) {
         return NULL;
     }
+    PyObject *seen = PySet_New(NULL);
+    if (seen == NULL) {
+        Py_DECREF(items);
+        return NULL;
+    }
 
     for (int i = 0; i < co->co_nlocalsplus; i++) {
         PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
         PyObject *value = framelocalsproxy_getval(frame->f_frame, co, i);
 
         if (value) {
+            int include = framelocalsproxy_include_name(seen, name);
+            if (include < 0) {
+                Py_DECREF(value);
+                goto error;
+            }
+            if (!include) {
+                Py_DECREF(value);
+                continue;
+            }
             PyObject *pair = _PyTuple_FromPairSteal(Py_NewRef(name), value);
             if (pair == NULL) {
                 goto error;
@@ -660,12 +734,15 @@ framelocalsproxy_items(PyObject *self, PyObject *Py_UNUSED(ignored))
         }
     }
 
+    Py_DECREF(seen);
     return items;
 
 error:
+    Py_DECREF(seen);
     Py_DECREF(items);
     return NULL;
 }
+
 
 static Py_ssize_t
 framelocalsproxy_length(PyObject *self)
@@ -679,13 +756,27 @@ framelocalsproxy_length(PyObject *self)
         size += PyDict_Size(frame->f_extra_locals);
     }
 
+    PyObject *seen = PySet_New(NULL);
+    if (seen == NULL) {
+        return -1;
+    }
     for (int i = 0; i < co->co_nlocalsplus; i++) {
         if (framelocalsproxy_hasval(frame->f_frame, co, i)) {
-            size++;
+            PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
+            int include = framelocalsproxy_include_name(seen, name);
+            if (include < 0) {
+                Py_DECREF(seen);
+                return -1;
+            }
+            if (include) {
+                size++;
+            }
         }
     }
+    Py_DECREF(seen);
     return size;
 }
+
 
 static int
 framelocalsproxy_contains(PyObject *self, PyObject *key)
