@@ -1643,8 +1643,8 @@ _io_TextIOWrapper_detach_impl(textio *self)
     if (buffer == NULL) {
         return NULL;
     }
-    self->detached = 1;
     Py_CLEAR(self->buffer);
+    self->detached = 1;
     return buffer;
 }
 
