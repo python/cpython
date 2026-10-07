@@ -28,7 +28,6 @@
 
 int main()
 {
-return 1;
     const char *compiler = COMPILER;
     printf("%s\n", compiler);
     return 0;

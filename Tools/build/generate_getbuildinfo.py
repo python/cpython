@@ -137,7 +137,6 @@ def get_compiler():
         compiler = run_command([runner, getcompiler], check=False)
     else:
         compiler = run_command([getcompiler], check=False)
-
     if compiler:
         return compiler
 
@@ -147,9 +146,14 @@ def get_compiler():
         exit_error(f"ERROR: Unable to locate CC in Makefile")
 
     cmd = shlex.split(CC)
-    output = run_command([*cmd, '--version'])
-    # Get the first line
-    return output.splitlines()[0]
+    output = run_command([*cmd, '--version'], check=False)
+    if output:
+        # Get the first line
+        return output.splitlines()[0]
+
+    # Default compiler name when everything else failed
+    # (see Programs/_getcompiler.c)
+    return 'C'
 
 
 def main():
