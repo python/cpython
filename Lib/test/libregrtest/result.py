@@ -1,13 +1,15 @@
 import dataclasses
-import importlib.util
 import json
+import os
 from _colorize import get_colors  # type: ignore[import-not-found]
 from typing import Any
 
+from .findtests import findtestdir
 from .runtests import RunTests
 from .utils import (
-    StrJSON, TestName, FilterTuple, abs_module_name,
-    format_duration, normalize_test_name, print_warning, github_annotation)
+    StrJSON, TestName, FilterTuple,
+    format_duration, normalize_test_name, print_warning,
+    print_github_annotation)
 
 
 @dataclasses.dataclass(slots=True)
@@ -190,11 +192,14 @@ class TestResult:
         if (self.is_failed(runtests.fail_env_changed)
                 and not self.errors and not self.failures):
             message = "\n".join([str(self), *(self.env_changed_reasons or ())])
-            spec = importlib.util.find_spec(
-                abs_module_name(self.test_name, runtests.test_dir))
-            filename = spec.origin if spec is not None else None
-            print(github_annotation(self.test_name, message, filename),
-                  flush=True)
+            # Test file: "test_x" is test_x.py or test_x/__init__.py,
+            # "test.test_x.test_y" is test_x/test_y.py
+            name = self.test_name.removeprefix("test.")
+            path = os.path.join(findtestdir(runtests.test_dir), *name.split("."))
+            filename = path + ".py"
+            if not os.path.exists(filename):
+                filename = os.path.join(path, "__init__.py")
+            print_github_annotation(self.test_name, message, filename)
 
     def set_env_changed(self, *reasons):
         if self.state is None or self.state == State.PASSED:

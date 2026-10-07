@@ -38,7 +38,6 @@ from test.libregrtest import setup
 from test.libregrtest import utils
 from test.libregrtest.filter import get_match_tests, match_test
 from test.libregrtest.result import TestStats
-from test.libregrtest.save_env import saved_test_environment
 from test.libregrtest.utils import normalize_test_name
 
 if not support.has_subprocess_support:
@@ -625,6 +624,9 @@ class BaseTestCase(unittest.TestCase):
 
     def setUp(self):
         self.testdir = os.path.realpath(os.path.dirname(__file__))
+        # Don't annotate the GitHub Actions job running the test suite
+        env = self.enterContext(os_helper.EnvironmentVarGuard())
+        env.unset('GITHUB_STEP_SUMMARY')
 
         self.tmptestdir = tempfile.mkdtemp()
         self.addCleanup(os_helper.rmtree, self.tmptestdir)
@@ -857,8 +859,6 @@ class BaseTestCase(unittest.TestCase):
         if env is None:
             env = dict(os.environ)
             env.pop('SOURCE_DATE_EPOCH', None)
-            # Don't annotate the GitHub Actions job of the test suite
-            env.pop('GITHUB_STEP_SUMMARY', None)
 
         proc = subprocess.run(args,
                               text=True,
@@ -1825,9 +1825,7 @@ class ArgsTestCase(BaseTestCase):
                     [line for line in summary_lines
                      if line.startswith('### ')],
                     [test_files[name] for name in tests])
-                self.assertIn('- os.environ was modified: '
-                              'added REGRTEST_GITHUB_ENV_CHANGED',
-                              summary_lines)
+                self.assertIn('- os.environ was modified', summary_lines)
                 self.assertCountEqual(
                     re.findall(r'<summary>(.*)</summary>', summary),
                     [title for title, _, _ in test_cases])
@@ -2957,14 +2955,6 @@ class MultiprocessIteratorTestCase(unittest.TestCase):
 
 
 class TestUtils(unittest.TestCase):
-    def test_describe_os_environ(self):
-        describe = saved_test_environment.describe_os_environ
-        before = {'A': '1', 'B': '2', 'C': '3'}
-        after = {'A': '1', 'B': 'secret', 'D': '4'}
-        self.assertEqual(describe((0, None, before), (0, None, after)),
-                         'added D; removed C; changed B')
-        self.assertEqual(describe((0, None, before), (1, None, before)), '')
-
     def test_format_duration(self):
         self.assertEqual(utils.format_duration(0),
                          '0 ms')

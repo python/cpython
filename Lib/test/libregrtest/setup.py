@@ -118,7 +118,6 @@ def setup_tests(runtests: RunTests) -> None:
         RegressionTestResult.USE_XML = True
     else:
         support.junit_xml_list = None
-    RegressionTestResult.GITHUB_ANNOTATIONS = runtests.github_annotations
 
     if runtests.memory_limit is not None:
         support.set_memlimit(runtests.memory_limit)

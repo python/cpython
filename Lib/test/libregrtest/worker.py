@@ -28,8 +28,6 @@ def create_worker_process(runtests: WorkerRunTests, output_fd: int,
     cmd.extend(['-m', 'test.libregrtest.worker', worker_json])
 
     env = dict(os.environ)
-    # Only the main process writes the GitHub Actions job summary
-    env.pop('GITHUB_STEP_SUMMARY', None)
     if tmp_dir is not None:
         env['TMPDIR'] = tmp_dir
         env['TEMP'] = tmp_dir

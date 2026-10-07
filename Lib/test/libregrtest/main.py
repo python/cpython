@@ -285,8 +285,7 @@ class Regrtest:
             forever=False,
             fail_fast=False,
             match_tests_dict=match_tests_dict,
-            output_on_failure=False,
-            github_annotations=bool(os.environ.get("GITHUB_STEP_SUMMARY")))
+            output_on_failure=False)
         self.logger.set_tests(runtests)
 
         msg = f"Re-running {len(tests)} failed tests in verbose mode"
@@ -397,8 +396,7 @@ class Regrtest:
             result = run_single_test(test_name, runtests)
 
         self.results.accumulate_result(result, runtests)
-        if runtests.github_annotations:
-            result.print_github_annotation(runtests)
+        result.print_github_annotation(runtests)
 
         return result
 
@@ -540,13 +538,6 @@ class Regrtest:
         print(f"Result: {state}")
 
     def create_run_tests(self, tests: TestTuple) -> RunTests:
-        # Annotate test failures in the GitHub Actions job log of the last
-        # run (the re-run, if any), if it reports failures: -v, -W or --pgo
-        will_rerun = self.want_rerun and not self.python_cmd
-        github_annotations = (bool(os.environ.get("GITHUB_STEP_SUMMARY"))
-                              and not will_rerun
-                              and bool(self.verbose or self.output_on_failure
-                                       or self.pgo))
         return RunTests(
             tests,
             fail_fast=self.fail_fast,
@@ -564,7 +555,6 @@ class Regrtest:
             hunt_refleak=self.hunt_refleak,
             test_dir=self.test_dir,
             use_junit=(self.junit_filename is not None),
-            github_annotations=github_annotations,
             coverage=self.coverage,
             memory_limit=self.memory_limit,
             gc_threshold=self.gc_threshold,
@@ -627,10 +617,16 @@ class Regrtest:
         if use_load_tracker:
             self.logger.start_load_tracker()
         try:
-            if self.num_workers:
-                self._run_tests_mp(runtests, self.num_workers)
-            else:
-                self.run_tests_sequentially(runtests)
+            with os_helper.EnvironmentVarGuard() as env:
+                # In GitHub Actions, only annotate failures of the last run:
+                # not the first run if failed tests will be re-run (with
+                # --python, they are not: see rerun_failed_tests())
+                if self.want_rerun and not self.python_cmd:
+                    env.unset("GITHUB_STEP_SUMMARY")
+                if self.num_workers:
+                    self._run_tests_mp(runtests, self.num_workers)
+                else:
+                    self.run_tests_sequentially(runtests)
 
             coverage = self.results.get_coverage_results()
             self.display_result(runtests)

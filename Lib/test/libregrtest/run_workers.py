@@ -625,8 +625,7 @@ class RunWorkers:
             if stdout:
                 print(stdout, flush=True)
         # Annotate after the output: env changed warnings, crash traceback
-        if self.runtests.github_annotations:
-            result.print_github_annotation(self.runtests)
+        result.print_github_annotation(self.runtests)
 
         return result
 

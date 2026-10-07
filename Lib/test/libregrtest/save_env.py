@@ -139,18 +139,6 @@ class saved_test_environment:
         os.environ = saved_environ[1]
         os.environ.clear()
         os.environ.update(saved_environ[2])
-    @staticmethod
-    def describe_os_environ(original, current):
-        # Only list the keys: values can be secrets
-        before, after = original[2], current[2]
-        changes = (
-            ('added', after.keys() - before.keys()),
-            ('removed', before.keys() - after.keys()),
-            ('changed', {key for key in before.keys() & after.keys()
-                         if before[key] != after[key]}),
-        )
-        return '; '.join(f'{change} {", ".join(sorted(keys))}'
-                         for change, keys in changes if keys)
 
     def get_sys_path(self):
         return id(sys.path), sys.path, sys.path[:]
@@ -359,12 +347,7 @@ class saved_test_environment:
             current = get()
             # Check for changes to the resource's value
             if current != original:
-                reason = f"{name} was modified"
-                if name == 'os.environ':
-                    delta = self.describe_os_environ(original, current)
-                    if delta:
-                        reason = f"{reason}: {delta}"
-                support.set_environment_altered(reason)
+                support.set_environment_altered(f"{name} was modified")
                 restore(original)
                 if not self.quiet and not self.pgo:
                     print_warning(

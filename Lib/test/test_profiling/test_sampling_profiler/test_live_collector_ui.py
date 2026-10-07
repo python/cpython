@@ -11,7 +11,8 @@ import tempfile
 import time
 import unittest
 from unittest import mock
-from test.support import requires, requires_remote_subprocess_debugging
+from test.support import (
+    os_helper, requires, requires_remote_subprocess_debugging)
 from test.support.import_helper import import_module
 
 # Only run these tests if curses is available
@@ -856,6 +857,9 @@ class TestLiveModeErrors(unittest.TestCase):
 
     def test_run_failed_module_live(self):
         """Test that running a existing module that fails exits with clean error."""
+        # Don't write to the GitHub Actions job summary of the test suite
+        env = self.enterContext(os_helper.EnvironmentVarGuard())
+        env.unset('GITHUB_STEP_SUMMARY')
 
         args = [
             "profiling.sampling.cli", "run", "--live", "-m", "test",

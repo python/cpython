@@ -153,25 +153,25 @@ def repository_path(filename: str) -> str:
     return "Lib/" + filename.removeprefix(stdlib_dir).replace(os.sep, "/")
 
 
-def github_annotation(title: str, message: str,
-                      filename: str | None) -> str:
-    """Format a GitHub Actions error annotation.
+# Escape the data and the properties of GitHub Actions workflow commands
+GITHUB_ESCAPE_DATA = str.maketrans({"%": "%25", "\r": "%0D", "\n": "%0A"})
+GITHUB_ESCAPE_PROPERTY = GITHUB_ESCAPE_DATA | str.maketrans({":": "%3A",
+                                                             ",": "%2C"})
+
+
+def print_github_annotation(title: str, message: str, filename: str | None,
+                            file=None) -> None:
+    """Print a GitHub Actions error annotation, if run in GitHub Actions.
 
     message is a traceback or a failure description. Only keep the exception
     which ends the traceback: the job log has the full traceback. Locate the
     annotation in filename, the test file, at the last frame of the traceback
     in this file, if any.
     """
+    if not os.environ.get("GITHUB_STEP_SUMMARY"):
+        return
     if not filename:
         raise ValueError(f"missing test file of annotation {title!r}")
-
-    def escape(text: str) -> str:
-        return (text.replace("%", "%25").replace("\r", "%0D")
-                .replace("\n", "%0A"))
-
-    def escape_property(text: str) -> str:
-        return escape(text).replace(":", "%3A").replace(",", "%2C")
-
     message = decolor(message)
     props = {"file": repository_path(filename)}
     # Line of the last traceback frame ('  File "filename", line 123') or
@@ -184,9 +184,10 @@ def github_annotation(title: str, message: str,
     # '  File' line followed by its indented source lines
     message = re.split(r'^  File .*\n(?:    .*\n)*', message,
                        flags=re.MULTILINE)[-1].strip()
-    props_text = ",".join(f"{key}={escape_property(value)}"
+    props_text = ",".join(f"{key}={value.translate(GITHUB_ESCAPE_PROPERTY)}"
                           for key, value in props.items())
-    return f"::error {props_text}::{escape(message)}"
+    print(f"::error {props_text}::{message.translate(GITHUB_ESCAPE_DATA)}",
+          file=file, flush=True)
 
 
 def regrtest_unraisable_hook(unraisable) -> None:

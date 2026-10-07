@@ -10,11 +10,10 @@ import time
 import traceback
 import unittest
 from test import support
-from test.libregrtest.utils import github_annotation, sanitize_xml
+from test.libregrtest.utils import print_github_annotation, sanitize_xml
 
 class RegressionTestResult(unittest.TextTestResult):
     USE_XML = False
-    GITHUB_ANNOTATIONS = False
 
     def __init__(self, stream, descriptions, verbosity):
         super().__init__(stream=stream, descriptions=descriptions,
@@ -135,11 +134,10 @@ class RegressionTestResult(unittest.TextTestResult):
     def printErrorList(self, flavour, errors):
         for test, err in errors:
             super().printErrorList(flavour, [(test, err)])
-            if self.GITHUB_ANNOTATIONS:
-                # Write the annotation just after the failure report, so
-                # that it links to the report in the job log
-                self.stream.writeln(github_annotation(str(test), err,
-                                                      self._test_file(test)))
+            # Annotate just after the failure report, so that the annotation
+            # links to the report in the job log
+            print_github_annotation(str(test), err, self._test_file(test),
+                                    file=self.stream)
 
     @staticmethod
     def _test_file(test):
