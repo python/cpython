@@ -49,6 +49,17 @@ MACOS = (sys.platform == "darwin")
 UNIXY = MACOS or (sys.platform == "linux")  # XXX should this be "not Windows"?
 
 
+# "Macros" implemented as static inline functions, documented as macros
+# by Misc/stable_abi.toml, and not listed by gcc_get_limited_api_macros()
+STATIC_INLINE_FUNCTIONS = set((
+    'Py_INCREF',
+    'Py_SET_REFCNT',
+    'Py_SET_TYPE',
+    'Py_XDECREF',
+    'Py_XINCREF',
+))
+
+
 # The stable ABI manifest (Misc/stable_abi.toml) exists only to fill the
 # following dataclasses.
 # Feel free to change its syntax (and the `parse_manifest` function)
@@ -404,6 +415,7 @@ def do_unixy_check(manifest, args):
     # Get all macros first: we'll need feature macros like HAVE_FORK and
     # MS_WINDOWS for everything else
     present_macros = gcc_get_limited_api_macros(['Include/Python.h'])
+    present_macros |= STATIC_INLINE_FUNCTIONS
     feature_macros = {m.name for m in manifest.select({'feature_macro'})}
     feature_macros &= present_macros
 
