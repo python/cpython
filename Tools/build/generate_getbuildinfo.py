@@ -6,7 +6,6 @@ import re
 import sys
 import time
 
-
 SRC_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 SCRIPT_NAME = os.path.basename(__file__)
 SCRIPT_FULLNAME = f'Tools/build/{SCRIPT_NAME}'
@@ -40,7 +39,7 @@ def get_gil_disable():
     if Py_GIL_DISABLED_UNDEF_REGEX.search(code):
         return False
 
-    print(f"ERROR: Unable to locate Py_GIL_DISABLED in {patchlevel_h}")
+    print(f"ERROR: Unable to locate Py_GIL_DISABLED in {pyconfig_h}")
     sys.exit(1)
 
 
