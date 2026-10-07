@@ -141,8 +141,8 @@ def get_compiler():
     if not CC:
         exit_error(f"ERROR: Unable to locate CC in Makefile")
 
-    cc = shlex.split(cc)
-    output = run_command([*cc, '--version'])
+    cmd = shlex.split(CC)
+    output = run_command([*cmd, '--version'])
     output = output.splitlines()[0]
     return f'[{output}]'
 
