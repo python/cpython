@@ -1,0 +1,1 @@
+Make the :class:`time.struct_time` type immutable to prevent reference cycles between the type and its instances. Patch by Shamil Abdulaev.

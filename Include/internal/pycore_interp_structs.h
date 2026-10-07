@@ -219,6 +219,7 @@ struct gc_old_stats_buffer {
 struct gc_stats {
     struct gc_young_stats_buffer young;
     struct gc_old_stats_buffer old[2];
+    uint32_t update_seq;
 };
 
 struct _gc_runtime_state {

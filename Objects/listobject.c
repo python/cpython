@@ -478,10 +478,43 @@ end:;
     return ret;
 }
 
+static void ptr_wise_atomic_memmove(PyListObject *a, PyObject **dest,
+                                    PyObject **src, Py_ssize_t n);
+
+static inline void
+list_shift_items_right_lock_held(PyListObject *self, Py_ssize_t first,
+                                 Py_ssize_t last)
+{
+#ifdef Py_GIL_DISABLED
+    ptr_wise_atomic_memmove(self, &self->ob_item[first + 1],
+                            &self->ob_item[first], last - first);
+#else
+    PyObject **items = self->ob_item;
+    for (Py_ssize_t i = last; --i >= first; ) {
+        items[i + 1] = items[i];
+    }
+#endif
+}
+
+static inline void
+list_shift_items_left_lock_held(PyListObject *self, Py_ssize_t first,
+                                Py_ssize_t last)
+{
+#ifdef Py_GIL_DISABLED
+    ptr_wise_atomic_memmove(self, &self->ob_item[first],
+                            &self->ob_item[first + 1], last - first);
+#else
+    PyObject **items = self->ob_item;
+    for (Py_ssize_t i = first; i < last; i++) {
+        items[i] = items[i + 1];
+    }
+#endif
+}
+
 static int
 ins1(PyListObject *self, Py_ssize_t where, PyObject *v)
 {
-    Py_ssize_t i, n = Py_SIZE(self);
+    Py_ssize_t n = Py_SIZE(self);
     PyObject **items;
     if (v == NULL) {
         PyErr_BadInternalCall();
@@ -500,8 +533,9 @@ ins1(PyListObject *self, Py_ssize_t where, PyObject *v)
     if (where > n)
         where = n;
     items = self->ob_item;
-    for (i = n; --i >= where; )
-        FT_ATOMIC_STORE_PTR_RELEASE(items[i+1], items[i]);
+    if (where < n) {
+        list_shift_items_right_lock_held(self, where, n);
+    }
     FT_ATOMIC_STORE_PTR_RELEASE(items[where], Py_NewRef(v));
     return 0;
 }
@@ -1145,8 +1179,8 @@ list_ass_item_lock_held(PyListObject *a, Py_ssize_t i, PyObject *v)
     PyObject *tmp = a->ob_item[i];
     if (v == NULL) {
         Py_ssize_t size = Py_SIZE(a);
-        for (Py_ssize_t idx = i; idx < size - 1; idx++) {
-            FT_ATOMIC_STORE_PTR_RELEASE(a->ob_item[idx], a->ob_item[idx + 1]);
+        if (i < size - 1) {
+            list_shift_items_left_lock_held(a, i, size - 1);
         }
         Py_SET_SIZE(a, size - 1);
     }
@@ -2263,7 +2297,7 @@ merge_init(MergeState *ms, Py_ssize_t list_size, int has_keyfunc,
     while (list_size >> ms->mr_e >= MAX_MINRUN) {
         ++ms->mr_e;
     }
-    ms->mr_mask = (1 << ms->mr_e) - 1;
+    ms->mr_mask = ((Py_ssize_t)1 << ms->mr_e) - 1;
     ms->mr_current = 0;
 }
 
