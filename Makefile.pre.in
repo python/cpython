@@ -1869,9 +1869,9 @@ regen-all: regen-cases regen-slots \
 Modules/getbuildinfo.h: $(srcdir)/Tools/build/generate_getbuildinfo.py Programs/_getcompiler
 		$(PYTHON_FOR_REGEN) $(srcdir)/Tools/build/generate_getbuildinfo.py $@ \
 			"$(MACHDEP)" \
-			`LC_ALL=C $(GITVERSION)` \
-			`LC_ALL=C $(GITTAG)` \
-			`LC_ALL=C $(GITBRANCH)` \
+			"`LC_ALL=C $(GITVERSION)`" \
+			"`LC_ALL=C $(GITTAG)`" \
+			"`LC_ALL=C $(GITBRANCH)`" \
 			"`Programs/_getcompiler || echo COMPILER`" \
 			use_pyconfig
 
