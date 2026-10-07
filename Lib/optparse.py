@@ -1,12 +1,5 @@
 """A powerful, extensible, and easy-to-use option parser.
 
-By Greg Ward <gward@python.net>
-
-Originally distributed as Optik.
-
-For support, use the optik-users@lists.sourceforge.net mailing list
-(http://lists.sourceforge.net/lists/listinfo/optik-users).
-
 Simple usage example:
 
    from optparse import OptionParser

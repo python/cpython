@@ -22,7 +22,7 @@ _synchre = re.compile(r"""
     ^
     [ \t]*
     (?: while
-    |   else
+    |   else (?= [ \t]* : )   # not "else" of a conditional expression
     |   def
     |   return
     |   assert
@@ -34,7 +34,12 @@ _synchre = re.compile(r"""
     |   except
     |   raise
     |   import
-    |   yield
+    |   with
+    |   del
+    |   global
+    |   nonlocal
+    |   pass
+    |   finally
     )
     \b
 """, re.VERBOSE | re.MULTILINE).search
