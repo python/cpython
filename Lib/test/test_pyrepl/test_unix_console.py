@@ -15,7 +15,7 @@ from test.support import threading_helper
 from unittest import TestCase
 from unittest.mock import MagicMock, call, patch, ANY, Mock
 
-from .support import handle_all_events, code_to_events, more_lines, prepare_reader
+from .support import handle_all_events, code_to_events, more_lines
 
 try:
     from _pyrepl.console import Event
@@ -248,39 +248,36 @@ class TestConsole(TestCase):
         con.restore()
 
     def test_cursor_back_write(self, _os_write):
-        insert_char = b"<insert-char>"
-        events = iter(
-            itertools.chain(
-                code_to_events("1"),
-                [Event(evt="key", data="left", raw=bytearray(b"\x1bOD"))],
-                code_to_events("2"),
-            )
+        events = itertools.chain(
+            code_to_events("1"),
+            [Event(evt="key", data="left", raw=bytearray(b"\x1bOD"))],
+            code_to_events("2"),
         )
-        con = unix_console(events, ich1=insert_char)
-        reader = prepare_reader(con)
-
-        _os_write.reset_mock()
-        reader.handle1()
-        append_writes = [write.args[1] for write in _os_write.call_args_list]
-        self.assertIn(b"1", append_writes)
-        self.assertFalse(any(insert_char in output for output in append_writes))
-        self.assertEqual(reader.rendered_screen.screen_lines, ("1",))
-
-        _os_write.reset_mock()
-        reader.handle1()
+        _, con = handle_events_unix_console(events)
+        _os_write.assert_any_call(ANY, b"1")
         _os_write.assert_any_call(ANY, TERM_CAPABILITIES["cub"] + b":1")
+        _os_write.assert_any_call(ANY, b"2")
+        con.restore()
 
-        _os_write.reset_mock()
-        reader.handle1()
-        insertion_writes = [write.args[1] for write in _os_write.call_args_list]
-        insert_writes = [
-            index
-            for index, output in enumerate(insertion_writes)
-            if insert_char in output
-        ]
-        self.assertEqual(len(insert_writes), 1)
-        self.assertEqual(insertion_writes[insert_writes[0] + 1], b"2")
-        self.assertEqual(reader.rendered_screen.screen_lines, ("21",))
+    def test_insert_char_only_for_midline_insert(self, _os_write):
+        insert_char = b"<insert-char>"
+        events = itertools.chain(
+            code_to_events("1"),
+            [Event(evt="key", data="left", raw=bytearray(b"\x1bOD"))],
+            code_to_events("2"),
+        )
+        _, con = handle_all_events(
+            events,
+            prepare_console=partial(unix_console, ich1=insert_char),
+        )
+        relevant_writes = []
+        for write in _os_write.call_args_list:
+            output = write.args[1]
+            if insert_char in output:
+                relevant_writes.append(insert_char)
+            elif output in {b"1", b"2"}:
+                relevant_writes.append(output)
+        self.assertEqual(relevant_writes, [b"1", insert_char, b"2"])
         con.restore()
 
     def test_multiline_function_move_up_short_terminal(self, _os_write):
