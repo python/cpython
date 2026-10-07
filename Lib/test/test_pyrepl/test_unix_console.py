@@ -257,6 +257,12 @@ class TestConsole(TestCase):
         _os_write.assert_any_call(ANY, b"1")
         _os_write.assert_any_call(ANY, TERM_CAPABILITIES["cub"] + b":1")
         _os_write.assert_any_call(ANY, b"2")
+        self.assertEqual(
+            _os_write.mock_calls.count(
+                call(ANY, TERM_CAPABILITIES["ich"] + b":1")
+            ),
+            1,
+        )
         con.restore()
 
     def test_multiline_function_move_up_short_terminal(self, _os_write):
