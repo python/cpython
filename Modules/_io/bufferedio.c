@@ -1282,7 +1282,7 @@ _buffered_readline(buffered *self, Py_ssize_t limit)
         start = self->buffer;
         const char *newline = memchr(start, '\n', n);
         if (newline != NULL) {
-            n = newline - start;
+            n = newline - start + 1;
             if (PyBytesWriter_WriteBytes(writer, start, n) < 0) {
                 goto error;
             }
