@@ -1,0 +1,5 @@
+Fix :exc:`TypeError` when subscripting a generic alias such as
+``typing.Dict[T, D]`` and omitting a :class:`~typing.TypeVar` that has a
+default. Also fix the default of a :class:`~typing.TypeVarTuple` being
+inserted as a nested list when subscripting a :class:`types.GenericAlias`
+such as ``tuple[bool, *Ts][()]``.
