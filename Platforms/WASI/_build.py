@@ -113,6 +113,7 @@ def call(command, *, context=None, quiet=False, **kwargs):
     else:
         if (log_path := getattr(context, "log_path", None)) is None:
             log_path = pathlib.Path(tempfile.gettempdir())
+        log_path.mkdir(parents=True, exist_ok=True)
         stdout = tempfile.NamedTemporaryFile(
             "w",
             encoding="utf-8",
@@ -279,9 +280,10 @@ def make_wasi_python(context, working_dir):
 def clean_contents(context):
     """Delete all files created by this script."""
     context.clean = True
-    if context.cross_build_path.exists():
-        _shared.log("🧹", f"Deleting {context.cross_build_path} ...")
-        shutil.rmtree(context.cross_build_path)
+    for path in [context.cross_build_path, context.dist_path]:
+        if path.exists():
+            _shared.log("🧹", f"Deleting {path} ...")
+            shutil.rmtree(path)
 
 
 @subdir("build_python_path")
