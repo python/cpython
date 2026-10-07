@@ -6,6 +6,7 @@
  ******************************************************************************/
 
 #include "_remote_debugging.h"
+#include "pycore_fileutils.h"     // _Py_strerror()
 
 #ifndef MS_WINDOWS
 #include <unistd.h>
@@ -716,9 +717,13 @@ read_thread_ids(RemoteUnwinderObject *unwinder, _Py_RemoteDebug_ThreadsState *st
                 int err = errno;
                 closedir(dir);
                 _Py_RemoteDebug_InitThreadsState(unwinder, st);
-                _set_debug_oserror_from_errno_with_filename(err, task_path,
-                    "Failed to read process task directory '%s': %s",
-                    task_path, strerror(err));
+                PyObject *message = _Py_strerror(err);
+                if (message != NULL) {
+                    _set_debug_oserror_from_errno_with_filename(err, task_path,
+                        "Failed to read process task directory '%s': %S",
+                        task_path, message);
+                    Py_DECREF(message);
+                }
                 return -1;
             }
             break;
@@ -749,9 +754,13 @@ read_thread_ids(RemoteUnwinderObject *unwinder, _Py_RemoteDebug_ThreadsState *st
     if (closedir(dir) != 0) {
         int err = errno;
         _Py_RemoteDebug_InitThreadsState(unwinder, st);
-        _set_debug_oserror_from_errno_with_filename(err, task_path,
-            "Failed to close process task directory '%s': %s",
-            task_path, strerror(err));
+        PyObject *message = _Py_strerror(err);
+        if (message != NULL) {
+            _set_debug_oserror_from_errno_with_filename(err, task_path,
+                "Failed to close process task directory '%s': %S",
+                task_path, message);
+            Py_DECREF(message);
+        }
         return -1;
     }
     st->tids = unwinder->thread_tids;
@@ -816,8 +825,12 @@ _Py_RemoteDebug_StopAllThreads(RemoteUnwinderObject *unwinder, _Py_RemoteDebug_T
         }
         if (ret < 0) {
             detach_threads(st, seized);
-            _set_debug_oserror_from_errno(err,
-                "Failed to seize thread %d: %s", tid, strerror(err));
+            PyObject *message = _Py_strerror(err);
+            if (message != NULL) {
+                _set_debug_oserror_from_errno(err,
+                    "Failed to seize thread %d: %S", tid, message);
+                Py_DECREF(message);
+            }
             _Py_RemoteDebug_InitThreadsState(unwinder, st);
             return -1;
         }
@@ -827,8 +840,12 @@ _Py_RemoteDebug_StopAllThreads(RemoteUnwinderObject *unwinder, _Py_RemoteDebug_T
             err = errno;
             if (err != ESRCH) {
                 detach_threads(st, seized);
-                _set_debug_oserror_from_errno(err,
-                    "Failed to interrupt thread %d: %s", tid, strerror(err));
+                PyObject *message = _Py_strerror(err);
+                if (message != NULL) {
+                    _set_debug_oserror_from_errno(err,
+                        "Failed to interrupt thread %d: %S", tid, message);
+                    Py_DECREF(message);
+                }
                 _Py_RemoteDebug_InitThreadsState(unwinder, st);
                 return -1;
             }
@@ -839,8 +856,12 @@ _Py_RemoteDebug_StopAllThreads(RemoteUnwinderObject *unwinder, _Py_RemoteDebug_T
             err = errno;
             if (err != ECHILD && err != ESRCH) {
                 detach_threads(st, seized);
-                _set_debug_oserror_from_errno(err,
-                    "waitpid failed for thread %d: %s", tid, strerror(err));
+                PyObject *message = _Py_strerror(err);
+                if (message != NULL) {
+                    _set_debug_oserror_from_errno(err,
+                        "waitpid failed for thread %d: %S", tid, message);
+                    Py_DECREF(message);
+                }
                 _Py_RemoteDebug_InitThreadsState(unwinder, st);
                 return -1;
             }
