@@ -6,6 +6,7 @@ import re
 import textwrap
 import time
 import unittest
+from test import support
 from test.support import script_helper
 
 
@@ -366,9 +367,7 @@ class StructSeqTest(unittest.TestCase):
         self.assertTrue(gc.is_tracked(replaced_struct))
 
     def test_struct_time_type_immutable(self):
-        t = time.gmtime()
-        with self.assertRaisesRegex(TypeError, "immutable type"):
-            type(t).refcycle = t
+        support.check_immutable_type(self, type(time.gmtime()))
 
 if __name__ == "__main__":
     unittest.main()
