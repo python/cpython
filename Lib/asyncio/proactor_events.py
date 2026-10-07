@@ -722,8 +722,10 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         # call_soon(), which is forbidden when the event loop is closed.
         self._stop_accept_futures()
         self._close_self_pipe()
-        self._proactor.close()
-        self._proactor = None
+        proactor = getattr(self, '_proactor', None)
+        if proactor is not None:
+            proactor.close()
+            self._proactor = None
         self._selector = None
 
         # Close the event loop
@@ -799,14 +801,20 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
                 transp.resume_reading()
 
     def _close_self_pipe(self):
-        if self._self_reading_future is not None:
-            self._self_reading_future.cancel()
+        self_reading_future = getattr(self, '_self_reading_future', None)
+        if self_reading_future is not None:
+            self_reading_future.cancel()
             self._self_reading_future = None
-        self._ssock.close()
-        self._ssock = None
-        self._csock.close()
-        self._csock = None
-        self._internal_fds -= 1
+        ssock = getattr(self, '_ssock', None)
+        if ssock is not None:
+            ssock.close()
+            self._ssock = None
+        csock = getattr(self, '_csock', None)
+        if csock is not None:
+            csock.close()
+            self._csock = None
+        if getattr(self, '_internal_fds', 0) > 0:
+            self._internal_fds -= 1
 
     def _make_self_pipe(self):
         # A self-socket, really. :-)
@@ -911,9 +919,12 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         pass
 
     def _stop_accept_futures(self):
-        for future in self._accept_futures.values():
+        accept_futures = getattr(self, '_accept_futures', None)
+        if accept_futures is None:
+            return
+        for future in accept_futures.values():
             future.cancel()
-        self._accept_futures.clear()
+        accept_futures.clear()
 
     def _stop_serving(self, sock):
         future = self._accept_futures.pop(sock.fileno(), None)

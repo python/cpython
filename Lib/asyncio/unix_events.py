@@ -70,17 +70,19 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
 
     def close(self):
         super().close()
-        if not sys.is_finalizing():
-            for sig in list(self._signal_handlers):
-                self.remove_signal_handler(sig)
-        else:
-            if self._signal_handlers:
-                warnings.warn(f"Closing the loop {self!r} "
-                              f"on interpreter shutdown "
-                              f"stage, skipping signal handlers removal",
-                              ResourceWarning,
-                              source=self)
-                self._signal_handlers.clear()
+        signal_handlers = getattr(self, '_signal_handlers', None)
+        if signal_handlers is not None:
+            if not sys.is_finalizing():
+                for sig in list(signal_handlers):
+                    self.remove_signal_handler(sig)
+            else:
+                if signal_handlers:
+                    warnings.warn(f"Closing the loop {self!r} "
+                                  f"on interpreter shutdown "
+                                  f"stage, skipping signal handlers removal",
+                                  ResourceWarning,
+                                  source=self)
+                    signal_handlers.clear()
 
     def _process_self_data(self, data):
         for signum in data:

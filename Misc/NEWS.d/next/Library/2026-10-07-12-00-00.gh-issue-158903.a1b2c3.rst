@@ -1,0 +1,1 @@
+Fix :exc:`AttributeError` in ``asyncio.BaseEventLoop.__del__`` and ``close()`` when tearing down an event loop that was interrupted during initialization.

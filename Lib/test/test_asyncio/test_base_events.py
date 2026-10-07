@@ -217,10 +217,28 @@ class BaseEventLoopTests(test_utils.TestCase):
         self.loop.close()
         self.loop.close()
 
-        # operation blocked when the loop is closed
         f = self.loop.create_future()
         self.assertRaises(RuntimeError, self.loop.run_forever)
         self.assertRaises(RuntimeError, self.loop.run_until_complete, f)
+
+    def test_close_partially_initialized_loop(self):
+        # gh-158903: An event loop interrupted before socket setup finishes
+        # must close cleanly and be garbage collected without AttributeError.
+        class IncompleteSelectorLoop(asyncio.SelectorEventLoop):
+            def __init__(self):
+                super(asyncio.base_events.BaseEventLoop, self).__init__()
+
+        loop = IncompleteSelectorLoop.__new__(IncompleteSelectorLoop)
+        asyncio.base_events.BaseEventLoop.__init__(loop)
+
+        # Must not raise AttributeError
+        loop.close()
+
+        # Must not trigger unraisable exception during deallocation
+        with support.catch_unraisable_exception() as cm:
+            del loop
+            support.gc_collect()
+            self.assertIsNone(cm.unraisable)
 
     def test__add_callback_handle(self):
         h = asyncio.Handle(lambda: False, (), self.loop, None)

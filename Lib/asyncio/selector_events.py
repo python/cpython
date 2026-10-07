@@ -104,17 +104,24 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             return
         self._close_self_pipe()
         super().close()
-        if self._selector is not None:
-            self._selector.close()
+        selector = getattr(self, '_selector', None)
+        if selector is not None:
+            selector.close()
             self._selector = None
 
     def _close_self_pipe(self):
-        self._remove_reader(self._ssock.fileno())
-        self._ssock.close()
-        self._ssock = None
-        self._csock.close()
-        self._csock = None
-        self._internal_fds -= 1
+        ssock = getattr(self, '_ssock', None)
+        if ssock is not None:
+            if getattr(self, '_selector', None) is not None:
+                self._remove_reader(ssock.fileno())
+            ssock.close()
+            self._ssock = None
+        csock = getattr(self, '_csock', None)
+        if csock is not None:
+            csock.close()
+            self._csock = None
+        if getattr(self, '_internal_fds', 0) > 0:
+            self._internal_fds -= 1
 
     def _make_self_pipe(self):
         # A self-socket, really. :-)
