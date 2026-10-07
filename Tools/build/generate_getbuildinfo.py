@@ -17,6 +17,11 @@ SCRIPT_FULLNAME = f'Tools/build/{SCRIPT_NAME}'
 # Get PY_VERSION from Include/patchlevel.h
 PY_VERSION_REGEX = re.compile(r'^#define PY_VERSION +"(.*)"$', re.MULTILINE)
 
+# Parse verbose Clang version (truncated here with '...'):
+# 'Clang 24.0.0git (https:/github.com/llvm/llvm-project a06...8bf)'
+# 'Android (13691557, +pgo, ...) clang version 18.0.4 (https://android.googlesource.com/toolchain/llvm-project d80...262)'
+CLANG_VERBOSE_VERSION = re.compile(r'(Clang .*|clang version .*) \(https:/.*\)')
+
 
 def exit_error(msg):
     print(msg)
@@ -168,6 +173,11 @@ def main():
 
     if not compiler:
         compiler = get_compiler()
+
+    # Make verbose Clang version shorter: strip the prefix and URL
+    match = CLANG_VERBOSE_VERSION.search(compiler)
+    if match:
+        compiler = match.group(1)
 
     build_info, git_id = get_build_info(git_tag, git_branch, git_version)
 
