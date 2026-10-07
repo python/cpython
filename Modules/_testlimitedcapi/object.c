@@ -241,6 +241,44 @@ test_refcount_macros(PyObject *self, PyObject *Py_UNUSED(ignored))
     TEST_REFCOUNT();
 }
 
+
+// Test Py_MIN(), Py_MAX() and Py_ABS() macros.
+// On GCC/clang, they are implemented as a statement expression to only
+// evaluate each argument only once.
+static PyObject*
+test_min_max_abs_macros(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    int x = 5, y = 7, z = -11;
+
+    // Simple usage
+    assert(Py_MIN(x, y) == 5);
+    assert(Py_MAX(x, y) == 7);
+    assert(Py_ABS(z) == 11);
+
+    // Combined macros
+    assert(Py_MIN(x, Py_MIN(y, z)) == -11);
+    assert(Py_MAX(x, Py_MAX(y, z)) == 7);
+    assert(Py_MIN(x, Py_MAX(y, z)) == 5);
+    assert(Py_MAX(x, Py_MIN(y, z)) == 5);
+    assert(Py_ABS(Py_ABS(z)) == 11);
+
+#if ((defined(__GNUC__) || defined(__clang__)) \
+     && defined(_Py_TYPEOF) && !defined(__cplusplus))
+    // Check that arguments are only evaluated once
+    int a = 5, b = 7, c = -11;
+    assert(Py_MIN(++a, ++b) == 6);
+    assert(a == 6);
+    assert(b == 8);
+    assert(Py_MAX(++a, ++b) == 9);
+    assert(a == 7);
+    assert(b == 9);
+    assert(Py_ABS(--c) == 12);
+    assert(c == -12);
+#endif
+
+    Py_RETURN_NONE;
+}
+
 #undef Py_NewRef
 #undef Py_XNewRef
 
@@ -315,6 +353,7 @@ static PyMethodDef test_methods[] = {
     {"test_py_setref", test_py_setref, METH_NOARGS},
     {"test_refcount_macros", test_refcount_macros, METH_NOARGS},
     {"test_refcount_funcs", test_refcount_funcs, METH_NOARGS},
+    {"test_min_max_abs_macros", test_min_max_abs_macros, METH_NOARGS},
     {"test_py_is_macros", test_py_is_macros, METH_NOARGS},
     {"test_py_is_funcs", test_py_is_funcs, METH_NOARGS},
     {NULL},
