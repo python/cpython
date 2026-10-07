@@ -1772,7 +1772,10 @@ class ArgsTestCase(BaseTestCase):
             crash: f'### {crash} worker non-zero exit code',
         }
 
-        for args in (['-j2', '-W'], ['-j2', '--rerun'], ['-j0', '-W']):
+        # Only failures of the last run are annotated: with --rerun and -W,
+        # failures of the first run are reported, but not annotated
+        for args in (['-j2', '-W'], ['-j2', '--rerun'],
+                     ['-j2', '-W', '--rerun'], ['-j0', '-W']):
             tests = list(test_files)
             if '-j0' in args:
                 # A crash kills the main process
