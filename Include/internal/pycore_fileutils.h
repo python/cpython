@@ -314,6 +314,9 @@ extern int _Py_GetTicksPerSecond(long *ticks_per_second);
 // Export for '_testcapi' shared extension
 PyAPI_FUNC(int) _Py_IsValidFD(int fd);
 
+// Export for '_remote_debugging' shared extension
+PyAPI_FUNC(PyObject*) _Py_strerror(int code);
+
 #ifdef __cplusplus
 }
 #endif

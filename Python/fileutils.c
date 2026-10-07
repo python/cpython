@@ -3172,3 +3172,97 @@ _Py_IsValidFD(int fd)
     return (fstat(fd, &st) == 0);
 #endif
 }
+
+
+// Call strerror_r(code) if available, or use strerror() otherwise. Decode the
+// result from the locale encoding using surrogateescape error handler.
+//
+// On success, return a Unicode string. On error, set an exception and return
+// NULL.
+PyObject*
+_Py_strerror(int code)
+/*[clinic end generated code: output=baebf09fa02a78f2 input=75a8673d97915a91]*/
+{
+    const char *errors = "surrogateescape";
+
+#ifdef _Py_HAVE_STRERROR_R
+   // Check which strerror_r() API is used
+#  if defined(__GLIBC__) && !((_POSIX_C_SOURCE >= 200112L) && !defined(_GNU_SOURCE))
+#    define Py_STRERROR_R_GNU
+#  elif defined(__ANDROID__) && defined(_GNU_SOURCE)
+#    define Py_STRERROR_R_GNU
+#  endif
+#endif
+
+#ifdef Py_STRERROR_R_GNU
+    // Implementation for the GNU flavor of strerror_r()
+
+    // On Linux, the longest translated strerror() message is 86 bytes
+    // (including the NUL byte).
+    char buffer[100];
+    char *message = strerror_r(code, buffer, Py_ARRAY_LENGTH(buffer));
+    // The strerror_r() GNU flavor doesn't provide a way to check if the error
+    // message was truncated or not.
+    //
+    // When the buffer is used, a trailing NUL byte is always written.
+    assert(message != buffer || memchr(buffer, 0, Py_ARRAY_LENGTH(buffer)) != NULL);
+    return PyUnicode_DecodeLocale(message, errors);
+
+#elif defined(_Py_HAVE_STRERROR_R)
+    // Implementation for the XSI-compliant flavor of strerror_r()
+
+    // On Linux and FreeBSD, the longest translated strerror() message is 86
+    // bytes (including the NUL byte).
+    char small_buffer[100];
+    size_t buflen = Py_ARRAY_LENGTH(small_buffer);
+    char *buffer = NULL;
+#ifndef NDEBUG
+    // Make sure that strerror_r() writes a trailing null byte
+    small_buffer[buflen - 1] = '#';
+#endif
+    int len = strerror_r(code, small_buffer, buflen);
+    if (len == ERANGE) {
+        while (len == ERANGE) {
+            if (buflen > (size_t)PY_SSIZE_T_MAX / 2) {
+                PyMem_Free(buffer);
+                PyErr_NoMemory();
+                return NULL;
+            }
+            buflen = buflen * 2;
+
+            char *new_buffer = PyMem_Realloc(buffer, buflen);
+            if (new_buffer == NULL) {
+                PyMem_Free(buffer);
+                PyErr_NoMemory();
+                return NULL;
+            }
+            buffer = new_buffer;
+#ifndef NDEBUG
+            buffer[buflen - 1] = '#';
+#endif
+            len = strerror_r(code, buffer, buflen);
+        }
+    }
+    else {
+        buffer = small_buffer;
+    }
+
+    // strerror_r() always writes a trailing NUL byte
+    assert(memchr(buffer, 0, buflen) != NULL);
+    PyObject *result = PyUnicode_DecodeLocale(buffer, errors);
+    if (buffer != small_buffer) {
+        PyMem_Free(buffer);
+    }
+    return result;
+
+#else
+    // strerror() implementation (usually not thread-safe)
+    char *message = strerror(code);
+    if (message == NULL) {
+        PyErr_SetString(PyExc_ValueError,
+                        "strerror() argument out of range");
+        return NULL;
+    }
+    return PyUnicode_DecodeLocale(message, errors);
+#endif
+}
