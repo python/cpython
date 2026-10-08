@@ -16,7 +16,7 @@ To disable remote debugging support, use any of the following:
 
 * Set the :envvar:`PYTHON_DISABLE_REMOTE_DEBUG` environment variable to ``1`` before
   starting the interpreter.
-* Use the :option:`-X disable_remote_debug` command-line option.
+* Use the :option:`-X disable-remote-debug` command-line option.
 * Compile Python with the :option:`--without-remote-debug` build flag.
 
 .. _permission-requirements:
@@ -717,7 +717,7 @@ When to use ``PYTHON_DISABLE_REMOTE_DEBUG``
 -------------------------------------------
 
 The environment variable :envvar:`PYTHON_DISABLE_REMOTE_DEBUG` (and the
-equivalent :option:`-X disable_remote_debug` flag) allows operators to disable
+equivalent :option:`-X disable-remote-debug` flag) allows operators to disable
 the in-process side of the protocol as a **defence-in-depth** measure.  This
 may be useful in hardened or sandboxed deployment environments where no
 debugging or profiling of the process is expected and reducing attack surface
