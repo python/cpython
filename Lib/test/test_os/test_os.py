@@ -752,13 +752,13 @@ class StatAttributeTests(unittest.TestCase):
                 unpickled = pickle.loads(p)
                 self.assertEqual(result, unpickled)
 
-    def check_statx_attributes(self, filename):
+    def check_statx_attributes(self, filename, follow_symlinks=True):
         maximal_mask = 0
         for name in dir(os):
             if name.startswith('STATX_'):
                 maximal_mask |= getattr(os, name)
-        result = os.statx(filename, maximal_mask)
-        stat_result = os.stat(filename)
+        result = os.statx(filename, maximal_mask, follow_symlinks=follow_symlinks)
+        stat_result = os.stat(filename, follow_symlinks=follow_symlinks)
 
         time_attributes = ('stx_atime', 'stx_btime', 'stx_ctime', 'stx_mtime')
         # gh-83714: stx_btime can be None on tmpfs even if STATX_BTIME mask
@@ -872,6 +872,28 @@ class StatAttributeTests(unittest.TestCase):
     @unittest.skipUnless(hasattr(os, 'statx'), 'test needs os.statx()')
     def test_statx_attributes(self):
         self.check_statx_attributes(self.fname)
+
+    @unittest.skipUnless(hasattr(os, 'statx'), 'test needs os.statx()')
+    @os_helper.skip_unless_symlink
+    def test_statx_attributes_symlink(self):
+        link = self.fname + '-link'
+        os.symlink(os.path.basename(self.fname), link)
+        self.addCleanup(os_helper.unlink, link)
+
+        with self.subTest(broken=False, follow_symlinks=True):
+            self.check_statx_attributes(link, follow_symlinks=True)
+
+        with self.subTest(broken=False, follow_symlinks=False):
+            self.check_statx_attributes(link, follow_symlinks=False)
+
+        # break the symlink
+        os.unlink(self.fname)
+        with self.subTest(broken=True, follow_symlinks=True):
+            with self.assertRaises(FileNotFoundError):
+                self.check_statx_attributes(link, follow_symlinks=True)
+
+        with self.subTest(broken=True, follow_symlinks=False):
+            self.check_statx_attributes(link, follow_symlinks=False)
 
     @unittest.skipUnless(hasattr(os, 'statx'), 'test needs os.statx()')
     def test_statx_attributes_bytes(self):
