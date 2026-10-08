@@ -1926,6 +1926,7 @@ In particular, before it's filled with its final contents, a string:
 - must not be :c:func:`converted to UTF-8 <PyUnicode_AsUTF8AndSize>`,
   or another non-"canonical" representation,
 - must not have its reference count changed,
+- must not be accessed from another thread,
 - must not be shared with code that might do one of the above.
 
 This list is not exhaustive. Avoiding these uses is your responsibility;
