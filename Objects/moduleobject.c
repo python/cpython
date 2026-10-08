@@ -1362,29 +1362,6 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
     }
     if (attr) {
         if (PyLazyImport_CheckExact(attr)) {
-            // gh-144957: Module __getattr__ should get a chance to provide
-            // the attribute before resolving a lazy import placeholder.
-            // Resolving __getattr__ itself must not invoke the hook.
-            getattr = NULL;
-            if (!_PyUnicode_EqualToASCIIString(name, "__getattr__") &&
-                module_get_resolved_dict_item(
-                    m->md_dict, &_Py_ID(__getattr__), &getattr) < 0) {
-                Py_DECREF(attr);
-                return NULL;
-            }
-            if (getattr) {
-                PyObject *result = PyObject_CallOneArg(getattr, name);
-                Py_DECREF(getattr);
-                if (result != NULL) {
-                    Py_DECREF(attr);
-                    return result;
-                }
-                if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
-                    Py_DECREF(attr);
-                    return NULL;
-                }
-                PyErr_Clear();
-            }
             PyThreadState *tstate = PyThreadState_GET();
             if (suppress && _PyLazyImport_IsResolving(tstate, attr)) {
                 // Only direct reentry means this attribute is unavailable.
