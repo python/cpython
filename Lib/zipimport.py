@@ -808,6 +808,8 @@ def _get_module_code(self, fullname, *, compile_source=True):
             pass
         else:
             modpath = toc_entry[0]
+            if not isbytecode and not compile_source:
+                return None, ispackage, modpath
             data = _get_data(self.archive, toc_entry)
             code = None
             if isbytecode:
@@ -816,8 +818,6 @@ def _get_module_code(self, fullname, *, compile_source=True):
                 except ImportError as exc:
                     import_error = exc
             else:
-                if not compile_source:
-                    return None, ispackage, modpath
                 code = _compile_source(modpath, data, fullname)
             if code is None:
                 # bad magic number or non-matching mtime

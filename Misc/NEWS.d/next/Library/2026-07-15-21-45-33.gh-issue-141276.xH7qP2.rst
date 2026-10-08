@@ -1,2 +1,3 @@
-Fix duplicate :exc:`SyntaxWarning` messages when importing source modules
-from ZIP archives.
+``zipimporter.get_filename()`` and ``find_spec()`` no longer compile source
+modules; a :exc:`SyntaxError` in a zipped source module is now raised when the
+module is executed, matching the behavior of filesystem-based loaders.
