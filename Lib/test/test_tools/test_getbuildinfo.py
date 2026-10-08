@@ -11,10 +11,13 @@ from test import support
 from test.support import os_helper
 from test import test_tools
 
-SRC_DIR = os.path.dirname(test_tools.toolsdir)
+
+test_tools.skip_if_missing("build")
 
 with test_tools.imports_under_tool('build'):
     import generate_getbuildinfo
+
+SRC_DIR = os.path.dirname(test_tools.toolsdir)
 
 
 class TestGetBuildInfo(unittest.TestCase):
@@ -64,7 +67,7 @@ class TestGetBuildInfo(unittest.TestCase):
                              (f'main, {date_time}', 'main'))
 
     def test_get_compiler(self):
-        getcompiler = 'Programs/_getcompiler'
+        getcompiler = os.path.join('Programs', '_getcompiler')
         MOCK_COMPILER = 'MOCK_COMPILER'
 
         for hostrunner in ('', 'node'):
