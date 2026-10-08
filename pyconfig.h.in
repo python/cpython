@@ -392,7 +392,7 @@
 /* Define to 1 if you have the 'dup2' function. */
 #undef HAVE_DUP2
 
-/* Define if you have the 'dup3' function. */
+/* Define to 1 if you have the 'dup3' function. */
 #undef HAVE_DUP3
 
 /* Define if you have the '_dyld_shared_cache_contains_path' function. */
@@ -1052,7 +1052,7 @@
 /* Define to 1 if you have the 'pipe' function. */
 #undef HAVE_PIPE
 
-/* Define if you have the 'pipe2' function. */
+/* Define to 1 if you have the 'pipe2' function. */
 #undef HAVE_PIPE2
 
 /* Define to 1 if you have the 'plock' function. */
