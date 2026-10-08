@@ -3844,7 +3844,7 @@ PyDoc_STRVAR(emscripten_info__doc__,
 \n\
 WebAssembly Emscripten platform information.");
 
-static PyTypeObject *EmscriptenInfoType;
+static PyTypeObject EmscriptenInfoType;
 
 static PyStructSequence_Field emscripten_info_fields[] = {
     {"emscripten_version", "Emscripten version (major, minor, micro)"},
@@ -3908,7 +3908,7 @@ make_emscripten_info(void)
     char *ua;
     int pos = 0;
 
-    emscripten_info = PyStructSequence_New(EmscriptenInfoType);
+    emscripten_info = PyStructSequence_New(&EmscriptenInfoType);
     if (emscripten_info == NULL) {
         return NULL;
     }
@@ -4071,6 +4071,11 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
     SET_SYS_FROM_STRING("_vpath", VPATH);
 #endif
 
+#ifdef __EMSCRIPTEN__
+    ENSURE_INFO_TYPE(EmscriptenInfoType, emscripten_info_desc);
+    SET_SYS("_emscripten_info", make_emscripten_info());
+#endif
+
 #undef ENSURE_INFO_TYPE
 
     /* float repr style: 0.03 (short) vs 0.029999999999999999 (legacy) */
@@ -4090,16 +4095,6 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
     {
         goto type_init_failed;
     }
-
-#ifdef __EMSCRIPTEN__
-    if (EmscriptenInfoType == NULL) {
-        EmscriptenInfoType = PyStructSequence_NewType(&emscripten_info_desc);
-        if (EmscriptenInfoType == NULL) {
-            goto type_init_failed;
-        }
-    }
-    SET_SYS("_emscripten_info", make_emscripten_info());
-#endif
 
     /* adding sys.path_hooks and sys.path_importer_cache */
     SET_SYS("meta_path", PyList_New(0));
@@ -4408,9 +4403,7 @@ _PySys_FiniTypes(PyInterpreterState *interp)
     _PyStructSequence_FiniBuiltin(interp, &Hash_InfoType);
     _PyStructSequence_FiniBuiltin(interp, &AsyncGenHooksType);
 #ifdef __EMSCRIPTEN__
-    if (_Py_IsMainInterpreter(interp)) {
-        Py_CLEAR(EmscriptenInfoType);
-    }
+    _PyStructSequence_FiniBuiltin(interp, &EmscriptenInfoType);
 #endif
 }
 
