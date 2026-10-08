@@ -189,8 +189,8 @@ syslog_openlog_impl(PyObject *module, PyObject *ident, long logopt,
     }
 
     openlog(ident_str, logopt, facility);
-    Py_XSETREF(S_ident_o, ident);
     _Py_atomic_store_int(&S_log_open, 1);
+    Py_XSETREF(S_ident_o, ident);
 
     Py_RETURN_NONE;
 }
