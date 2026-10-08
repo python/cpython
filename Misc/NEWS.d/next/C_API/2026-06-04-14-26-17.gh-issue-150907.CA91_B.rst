@@ -1,0 +1,2 @@
+Fix ``dynamic_annotations.h`` header file when built with C++ and Valgrind:
+add ``extern "C++" scope`` for the C++ template. Patch by Victor Stinner.

@@ -389,6 +389,57 @@ if has_c_implementation:
         pickler = _pickle.Pickler
         unpickler = _pickle.Unpickler
 
+        def test_c_pickler_attributes(self):
+            pickler = _pickle.Pickler(io.BytesIO())
+            for name in 'bin', 'fast':
+                with self.subTest(name=name):
+                    for value in 0, 1, True:
+                        setattr(pickler, name, value)
+                        self.assertEqual(getattr(pickler, name), int(value))
+                    with self.assertRaises(TypeError):
+                        setattr(pickler, name, 'x')
+                    with self.assertRaises(OverflowError):
+                        setattr(pickler, name, sys.maxsize + 1)
+                    with self.assertRaises(OverflowError):
+                        setattr(pickler, name, -sys.maxsize - 2)
+                    with self.assertRaises(OverflowError):
+                        setattr(pickler, name, 2**1000)
+                    with self.assertRaises(OverflowError):
+                        setattr(pickler, name, -2**1000)
+                    with self.assertRaisesRegex(
+                            TypeError, "can't delete numeric/char attribute"):
+                        delattr(pickler, name)
+                    # a failed assignment does not change the value
+                    self.assertEqual(getattr(pickler, name), 1)
+
+            self.assertRaises(AttributeError, getattr, pickler,
+                              'dispatch_table')
+            table = {}
+            pickler.dispatch_table = table
+            self.assertIs(pickler.dispatch_table, table)
+            del pickler.dispatch_table
+            self.assertRaises(AttributeError, getattr, pickler,
+                              'dispatch_table')
+
+            pickler.memo = {}
+            self.assertEqual(pickler.memo.copy(), {})
+            with self.assertRaisesRegex(TypeError, 'must be a PicklerMemoProxy'):
+                pickler.memo = None
+            with self.assertRaisesRegex(TypeError,
+                                        'attribute deletion is not supported'):
+                del pickler.memo
+
+        def test_c_unpickler_attributes(self):
+            unpickler = _pickle.Unpickler(io.BytesIO(b'.'))
+            unpickler.memo = {}
+            self.assertEqual(unpickler.memo.copy(), {})
+            with self.assertRaisesRegex(TypeError,
+                                        'must be an UnpicklerMemoProxy'):
+                unpickler.memo = None
+            with self.assertRaisesRegex(TypeError,
+                                        'attribute deletion is not supported'):
+                del unpickler.memo
+
     class CPersPicklerTests(PyPersPicklerTests):
         pickler = _pickle.Pickler
         unpickler = _pickle.Unpickler
@@ -524,7 +575,7 @@ if has_c_implementation:
                 0)  # Write buffer is cleared after every dump().
 
         def test_unpickler(self):
-            basesize = support.calcobjsize('2P2n3P 2P2n2i5P 2P3n8P2n3i')
+            basesize = support.calcobjsize('2P2n3P 2P2n2i5P 2P5n8P2n3i')
             unpickler = _pickle.Unpickler
             P = struct.calcsize('P')  # Size of memo table entry.
             n = struct.calcsize('n')  # Size of mark table entry.
@@ -786,7 +837,11 @@ class CommandLineTest(unittest.TestCase):
             'b': ('character string', b'byte string'),
             'c': 'string'
         }
-        expect = "{'a': [1, 2.0, (3+4j)], 'b': ('character string', b'byte string'), 'c': 'string'}"
+        expect = '''
+            {'a': [1, 2.0, (3+4j)],
+             'b': ('character string', b'byte string'),
+             'c': 'string'}
+        '''
         self.set_pickle_data(data)
 
         with self.subTest(data=data):

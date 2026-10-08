@@ -4,6 +4,7 @@
 #include "Python.h"
 #include "pycore_audit.h"         // _PySys_Audit()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_ceval.h"         // _Py_ReachedRecursionLimitWithMargin()
 #include "pycore_fileutils.h"     // _PyFile_Flush
 #include "pycore_initconfig.h"    // _PyStatus_ERR()
 #include "pycore_pyerrors.h"      // _PyErr_Format()
@@ -12,6 +13,8 @@
 #include "pycore_structseq.h"     // _PyStructSequence_FiniBuiltin()
 #include "pycore_traceback.h"     // _PyTraceBack_FromFrame()
 #include "pycore_unicodeobject.h" // _PyUnicode_Equal()
+
+#include "../Parser/tokenizer/tokenizer.h"
 
 #ifdef MS_WINDOWS
 #  include <windows.h>
@@ -335,17 +338,27 @@ PyErr_GivenExceptionMatches(PyObject *err, PyObject *exc)
         return 0;
     }
     if (PyTuple_Check(exc)) {
-        Py_ssize_t i, n;
-        n = PyTuple_Size(exc);
-        for (i = 0; i < n; i++) {
-            /* Test recursively */
-             if (PyErr_GivenExceptionMatches(
-                 err, PyTuple_GET_ITEM(exc, i)))
-             {
-                 return 1;
-             }
+        PyThreadState *tstate = _PyThreadState_GET();
+        if (_Py_ReachedRecursionLimitWithMargin(tstate, 2)) {
+            PyObject *exc_value = _PyErr_GetRaisedException(tstate);
+            _PyErr_SetString(tstate, PyExc_RecursionError,
+                             "maximum recursion depth exceeded while "
+                             "checking exception tuple");
+            PyErr_FormatUnraisable("Exception ignored while "
+                                   "checking exception tuple");
+            _PyErr_SetRaisedException(tstate, exc_value);
+            return 0;
         }
-        return 0;
+        int res = 0;
+        Py_ssize_t n = PyTuple_GET_SIZE(exc);
+        for (Py_ssize_t i = 0; i < n; i++) {
+            /* Test recursively */
+            if (PyErr_GivenExceptionMatches(err, PyTuple_GET_ITEM(exc, i))) {
+                res = 1;
+                break;
+            }
+        }
+        return res;
     }
     /* err might be an instance, so check its class. */
     if (PyExceptionInstance_Check(err))
@@ -829,8 +842,7 @@ PyErr_SetFromErrnoWithFilenameObjects(PyObject *exc, PyObject *filenameObject, P
 
 #ifndef MS_WINDOWS
     if (i != 0) {
-        const char *s = strerror(i);
-        message = PyUnicode_DecodeLocale(s, "surrogateescape");
+        message = _Py_strerror(i);
     }
     else {
         /* Sometimes errno didn't get set */
@@ -2049,9 +2061,6 @@ PyErr_ProgramText(const char *filename, int lineno)
     Py_DECREF(filename_obj);
     return res;
 }
-
-/* Function from Parser/tokenizer/file_tokenizer.c */
-extern char* _PyTokenizer_FindEncodingFilename(int, PyObject *);
 
 PyObject *
 _PyErr_ProgramDecodedTextObject(PyObject *filename, int lineno, const char* encoding)

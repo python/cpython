@@ -173,11 +173,12 @@ def set_text_content(msg, string, subtype="plain", charset='utf-8', cte=None,
                      disposition=None, filename=None, cid=None,
                      params=None, headers=None):
     _prepare_set(msg, 'text', subtype, headers)
+
+    cs = email.charset.Charset(charset)
+    charset = cs.output_charset
     cte, payload = _encode_text(string, charset, cte, msg.policy)
     msg.set_payload(payload)
-    msg.set_param('charset',
-                  email.charset.ALIASES.get(charset, charset),
-                  replace=True)
+    msg.set_param('charset', charset, replace=True)
     msg['Content-Transfer-Encoding'] = cte
     _finalize_set(msg, disposition, filename, cid, params)
 raw_data_manager.add_set_handler(str, set_text_content)

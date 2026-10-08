@@ -36,8 +36,8 @@ PyDoc_STRVAR(_decimal_Context_Etop__doc__,
 "\n"
 "Return a value equal to Emax - prec + 1.\n"
 "\n"
-"This is the maximum exponent if the _clamp field of the context is set\n"
-"to 1 (IEEE clamp mode).  Etop() must not be negative.");
+"This is the maximum exponent if the _clamp field of the context is\n"
+"set to 1 (IEEE clamp mode).  Etop() must not be negative.");
 
 #define _DECIMAL_CONTEXT_ETOP_METHODDEF    \
     {"Etop", (PyCFunction)_decimal_Context_Etop, METH_NOARGS, _decimal_Context_Etop__doc__},
@@ -371,7 +371,7 @@ PyDoc_STRVAR(_decimal_Context_copy__doc__,
 "copy($self, /)\n"
 "--\n"
 "\n"
-"Return a duplicate of the context with all flags cleared.");
+"Return a duplicate of the context.");
 
 #define _DECIMAL_CONTEXT_COPY_METHODDEF    \
     {"copy", _PyCFunction_CAST(_decimal_Context_copy), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_copy__doc__},
@@ -408,6 +408,122 @@ _decimal_Context___copy__(PyObject *self, PyTypeObject *cls, PyObject *const *ar
         return NULL;
     }
     return _decimal_Context___copy___impl(self, cls);
+}
+
+PyDoc_STRVAR(_decimal_Context___replace____doc__,
+"__replace__($self, /, **changes)\n"
+"--\n"
+"\n"
+"Return a copy of the context with the specified attributes replaced.");
+
+#define _DECIMAL_CONTEXT___REPLACE___METHODDEF    \
+    {"__replace__", _PyCFunction_CAST(_decimal_Context___replace__), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context___replace____doc__},
+
+static PyObject *
+_decimal_Context___replace___impl(PyObject *self, PyTypeObject *cls,
+                                  PyObject *prec, PyObject *rounding,
+                                  PyObject *emin, PyObject *emax,
+                                  PyObject *capitals, PyObject *clamp,
+                                  PyObject *status, PyObject *traps);
+
+static PyObject *
+_decimal_Context___replace__(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 8
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(prec), &_Py_ID(rounding), &_Py_ID(Emin), &_Py_ID(Emax), &_Py_ID(capitals), &_Py_ID(clamp), &_Py_ID(flags), &_Py_ID(traps), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"prec", "rounding", "Emin", "Emax", "capitals", "clamp", "flags", "traps", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "__replace__",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[8];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    PyObject *prec = NULL;
+    PyObject *rounding = NULL;
+    PyObject *emin = NULL;
+    PyObject *emax = NULL;
+    PyObject *capitals = NULL;
+    PyObject *clamp = NULL;
+    PyObject *status = NULL;
+    PyObject *traps = NULL;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 0, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (args[0]) {
+        prec = args[0];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (args[1]) {
+        rounding = args[1];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (args[2]) {
+        emin = args[2];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (args[3]) {
+        emax = args[3];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (args[4]) {
+        capitals = args[4];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (args[5]) {
+        clamp = args[5];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (args[6]) {
+        status = args[6];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    traps = args[7];
+skip_optional_kwonly:
+    return_value = _decimal_Context___replace___impl(self, cls, prec, rounding, emin, emax, capitals, clamp, status, traps);
+
+exit:
+    return return_value;
 }
 
 PyDoc_STRVAR(_decimal_Context___reduce____doc__,
@@ -512,14 +628,14 @@ _decimal_localcontext(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
     PyObject *argsbuf[9];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *local = Py_None;
-    PyObject *prec = Py_None;
-    PyObject *rounding = Py_None;
-    PyObject *Emin = Py_None;
-    PyObject *Emax = Py_None;
-    PyObject *capitals = Py_None;
-    PyObject *clamp = Py_None;
-    PyObject *flags = Py_None;
-    PyObject *traps = Py_None;
+    PyObject *prec = NULL;
+    PyObject *rounding = NULL;
+    PyObject *Emin = NULL;
+    PyObject *Emax = NULL;
+    PyObject *capitals = NULL;
+    PyObject *clamp = NULL;
+    PyObject *flags = NULL;
+    PyObject *traps = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -589,6 +705,34 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_decimal_ContextManager___exit____doc__,
+"__exit__($self, /, *exc_info)\n"
+"--\n"
+"\n"
+"Restore the global context.");
+
+#define _DECIMAL_CONTEXTMANAGER___EXIT___METHODDEF    \
+    {"__exit__", _PyCFunction_CAST(_decimal_ContextManager___exit__), METH_FASTCALL, _decimal_ContextManager___exit____doc__},
+
+static PyObject *
+_decimal_ContextManager___exit___impl(PyDecContextManagerObject *self,
+                                      PyObject * const *exc_info,
+                                      Py_ssize_t exc_info_length);
+
+static PyObject *
+_decimal_ContextManager___exit__(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject * const *exc_info;
+    Py_ssize_t exc_info_length;
+
+    exc_info = args;
+    exc_info_length = nargs;
+    return_value = _decimal_ContextManager___exit___impl((PyDecContextManagerObject *)self, exc_info, exc_info_length);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_decimal_Decimal_from_float__doc__,
 "from_float($type, f, /)\n"
 "--\n"
@@ -618,25 +762,12 @@ static PyObject *
 _decimal_Decimal_from_float(PyObject *type, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "from_float",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *pyfloat;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("from_float", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("from_float", nargs, 1, 1)) {
         goto exit;
     }
     pyfloat = args[0];
@@ -670,25 +801,12 @@ static PyObject *
 _decimal_Decimal_from_number(PyObject *type, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "from_number",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *number;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("from_number", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("from_number", nargs, 1, 1)) {
         goto exit;
     }
     number = args[0];
@@ -719,25 +837,12 @@ static PyObject *
 _decimal_Context_create_decimal_from_float(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "create_decimal_from_float",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *f;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("create_decimal_from_float", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("create_decimal_from_float", nargs, 1, 1)) {
         goto exit;
     }
     f = args[0];
@@ -873,26 +978,13 @@ static PyObject *
 _decimal_Decimal___format__(PyObject *dec, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", "", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "__format__",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[2];
     PyObject *fmtarg;
     PyObject *override = NULL;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("__format__", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("__format__", nargs, 1, 2)) {
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
@@ -901,10 +993,10 @@ _decimal_Decimal___format__(PyObject *dec, PyTypeObject *cls, PyObject *const *a
     }
     fmtarg = args[0];
     if (nargs < 2) {
-        goto skip_optional_posonly;
+        goto skip_optional;
     }
     override = args[1];
-skip_optional_posonly:
+skip_optional:
     return_value = _decimal_Decimal___format___impl(dec, cls, fmtarg, override);
 
 exit:
@@ -1092,10 +1184,10 @@ PyDoc_STRVAR(_decimal_Decimal_to_integral_exact__doc__,
 "\n"
 "Round to the nearest integer.\n"
 "\n"
-"Decimal.to_integral_exact() signals Inexact or Rounded as appropriate\n"
-"if rounding occurs.  The rounding mode is determined by the rounding\n"
-"parameter if given, else by the given context. If neither parameter is\n"
-"given, then the rounding mode of the current default context is used.");
+"This method signals Inexact or Rounded as appropriate if rounding\n"
+"occurs.  The rounding mode is determined by the rounding parameter\n"
+"if given, else by the given context.  If neither parameter is given,\n"
+"then the rounding mode of the current default context is used.");
 
 #define _DECIMAL_DECIMAL_TO_INTEGRAL_EXACT_METHODDEF    \
     {"to_integral_exact", _PyCFunction_CAST(_decimal_Decimal_to_integral_exact), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_to_integral_exact__doc__},
@@ -1180,32 +1272,19 @@ static PyObject *
 _decimal_Decimal___round__(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "__round__",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *ndigits = NULL;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("__round__", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("__round__", nargs, 0, 1)) {
         goto exit;
     }
     if (nargs < 1) {
-        goto skip_optional_posonly;
+        goto skip_optional;
     }
     ndigits = args[0];
-skip_optional_posonly:
+skip_optional:
     return_value = _decimal_Decimal___round___impl(self, cls, ndigits);
 
 exit:
@@ -1638,7 +1717,8 @@ PyDoc_STRVAR(_decimal_Decimal_sqrt__doc__,
 "\n"
 "Return the square root of the argument to full precision.\n"
 "\n"
-"The result is correctly rounded using the ROUND_HALF_EVEN rounding mode.");
+"The result is correctly rounded using the ROUND_HALF_EVEN rounding\n"
+"mode.");
 
 #define _DECIMAL_DECIMAL_SQRT_METHODDEF    \
     {"sqrt", _PyCFunction_CAST(_decimal_Decimal_sqrt), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_sqrt__doc__},
@@ -2113,10 +2193,10 @@ PyDoc_STRVAR(_decimal_Decimal_next_toward__doc__,
 "\n"
 "Returns the number closest to self, in the direction towards other.\n"
 "\n"
-"If the two operands are unequal, return the number closest to the first\n"
-"operand in the direction of the second operand.  If both operands are\n"
-"numerically equal, return a copy of the first operand with the sign set\n"
-"to be the same as the sign of the second operand.");
+"If the two operands are unequal, return the number closest to the\n"
+"first operand in the direction of the second operand.  If both\n"
+"operands are numerically equal, return a copy of the first operand\n"
+"with the sign set to be the same as the sign of the second operand.");
 
 #define _DECIMAL_DECIMAL_NEXT_TOWARD_METHODDEF    \
     {"next_toward", _PyCFunction_CAST(_decimal_Decimal_next_toward), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_next_toward__doc__},
@@ -2185,10 +2265,10 @@ PyDoc_STRVAR(_decimal_Decimal_remainder_near__doc__,
 "Return the remainder from dividing self by other.\n"
 "\n"
 "This differs from self % other in that the sign of the remainder is\n"
-"chosen so as to minimize its absolute value. More precisely, the return\n"
-"value is self - n * other where n is the integer nearest to the exact\n"
-"value of self / other, and if two integers are equally near then the\n"
-"even one is chosen.\n"
+"chosen so as to minimize its absolute value. More precisely, the\n"
+"return value is self - n * other where n is the integer nearest to\n"
+"the exact value of self / other, and if two integers are equally\n"
+"near then the even one is chosen.\n"
 "\n"
 "If the result is zero then its sign will be the sign of self.");
 
@@ -2671,8 +2751,8 @@ PyDoc_STRVAR(_decimal_Decimal_radix__doc__,
 "\n"
 "Return Decimal(10).\n"
 "\n"
-"This is the radix (base) in which the Decimal class does\n"
-"all its arithmetic. Included for compatibility with the specification.");
+"This is the radix (base) in which the Decimal class does all its\n"
+"arithmetic. Included for compatibility with the specification.");
 
 #define _DECIMAL_DECIMAL_RADIX_METHODDEF    \
     {"radix", _PyCFunction_CAST(_decimal_Decimal_radix), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_radix__doc__},
@@ -2812,9 +2892,9 @@ PyDoc_STRVAR(_decimal_Decimal_logb__doc__,
 "\n"
 "Return the adjusted exponent of the operand as a Decimal instance.\n"
 "\n"
-"If the operand is a zero, then Decimal(\'-Infinity\') is returned and the\n"
-"DivisionByZero condition is raised. If the operand is an infinity then\n"
-"Decimal(\'Infinity\') is returned.");
+"If the operand is a zero, then Decimal(\'-Infinity\') is returned and\n"
+"the DivisionByZero condition is raised.  If the operand is an\n"
+"infinity then Decimal(\'Infinity\') is returned.");
 
 #define _DECIMAL_DECIMAL_LOGB_METHODDEF    \
     {"logb", _PyCFunction_CAST(_decimal_Decimal_logb), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_logb__doc__},
@@ -2894,7 +2974,8 @@ PyDoc_STRVAR(_decimal_Decimal_number_class__doc__,
 "    * \'+Normal\', indicating that the operand is a positive normal\n"
 "      number.\n"
 "    * \'+Infinity\', indicating that the operand is positive infinity.\n"
-"    * \'NaN\', indicating that the operand is a quiet NaN (Not a Number).\n"
+"    * \'NaN\', indicating that the operand is a quiet NaN (Not a\n"
+"      Number).\n"
 "    * \'sNaN\', indicating that the operand is a signaling NaN.");
 
 #define _DECIMAL_DECIMAL_NUMBER_CLASS_METHODDEF    \
@@ -2961,12 +3042,12 @@ PyDoc_STRVAR(_decimal_Decimal_to_eng_string__doc__,
 "\n"
 "Convert to an engineering-type string.\n"
 "\n"
-"Engineering notation has an exponent which is a multiple of 3, so there\n"
-"are up to 3 digits left of the decimal place. For example,\n"
+"Engineering notation has an exponent which is a multiple of 3, so\n"
+"there are up to 3 digits left of the decimal place.  For example,\n"
 "Decimal(\'123E+1\') is converted to Decimal(\'1.23E+3\').\n"
 "\n"
-"The value of context.capitals determines whether the exponent sign is\n"
-"lower or upper case. Otherwise, the context does not affect the\n"
+"The value of context.capitals determines whether the exponent sign\n"
+"is lower or upper case.  Otherwise, the context does not affect the\n"
 "operation.");
 
 #define _DECIMAL_DECIMAL_TO_ENG_STRING_METHODDEF    \
@@ -3033,25 +3114,25 @@ PyDoc_STRVAR(_decimal_Decimal_compare_total__doc__,
 "\n"
 "Compare two operands using their abstract representation.\n"
 "\n"
-"Similar to the compare() method, but the result\n"
-"gives a total ordering on Decimal instances.  Two Decimal instances with\n"
-"the same numeric value but different representations compare unequal\n"
-"in this ordering:\n"
+"Similar to the compare() method, but the result gives a total\n"
+"ordering on Decimal instances.  Two Decimal instances with the same\n"
+"numeric value but different representations compare unequal in this\n"
+"ordering:\n"
 "\n"
 "    >>> Decimal(\'12.0\').compare_total(Decimal(\'12\'))\n"
 "    Decimal(\'-1\')\n"
 "\n"
-"Quiet and signaling NaNs are also included in the total ordering. The\n"
-"result of this function is Decimal(\'0\') if both operands have the same\n"
-"representation, Decimal(\'-1\') if the first operand is lower in the\n"
-"total order than the second, and Decimal(\'1\') if the first operand is\n"
-"higher in the total order than the second operand. See the\n"
-"specification for details of the total order.\n"
+"Quiet and signaling NaNs are also included in the total ordering.\n"
+"The result of this function is Decimal(\'0\') if both operands have\n"
+"the same representation, Decimal(\'-1\') if the first operand is lower\n"
+"in the total order than the second, and Decimal(\'1\') if the first\n"
+"operand is higher in the total order than the second operand.  See\n"
+"the specification for details of the total order.\n"
 "\n"
 "This operation is unaffected by context and is quiet: no flags are\n"
-"changed and no rounding is performed. As an exception, the C version\n"
-"may raise InvalidOperation if the second operand cannot be converted\n"
-"exactly.");
+"changed and no rounding is performed.  As an exception, the C\n"
+"version may raise InvalidOperation if the second operand cannot be\n"
+"converted exactly.");
 
 #define _DECIMAL_DECIMAL_COMPARE_TOTAL_METHODDEF    \
     {"compare_total", _PyCFunction_CAST(_decimal_Decimal_compare_total), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_compare_total__doc__},
@@ -3544,12 +3625,13 @@ PyDoc_STRVAR(_decimal_Decimal_rotate__doc__,
 "\n"
 "Returns a rotated copy of self\'s digits, value-of-other times.\n"
 "\n"
-"The second operand must be an integer in the range -precision through\n"
-"precision. The absolute value of the second operand gives the number of\n"
-"places to rotate. If the second operand is positive then rotation is to\n"
-"the left; otherwise rotation is to the right.  The coefficient of the\n"
-"first operand is padded on the left with zeros to length precision if\n"
-"necessary. The sign and exponent of the first operand are unchanged.");
+"The second operand must be an integer in the range -precision\n"
+"through precision.  The absolute value of the second operand gives\n"
+"the number of places to rotate.  If the second operand is positive\n"
+"then rotation is to the left; otherwise rotation is to the right.\n"
+"The coefficient of the first operand is padded on the left with\n"
+"zeros to length precision if necessary.  The sign and exponent of\n"
+"the first operand are unchanged.");
 
 #define _DECIMAL_DECIMAL_ROTATE_METHODDEF    \
     {"rotate", _PyCFunction_CAST(_decimal_Decimal_rotate), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_rotate__doc__},
@@ -3686,12 +3768,12 @@ PyDoc_STRVAR(_decimal_Decimal_shift__doc__,
 "\n"
 "Returns a shifted copy of self\'s digits, value-of-other times.\n"
 "\n"
-"The second operand must be an integer in the range -precision through\n"
-"precision. The absolute value of the second operand gives the number\n"
-"of places to shift. If the second operand is positive, then the shift\n"
-"is to the left; otherwise the shift is to the right. Digits shifted\n"
-"into the coefficient are zeros. The sign and exponent of the first\n"
-"operand are unchanged.");
+"The second operand must be an integer in the range -precision\n"
+"through precision.  The absolute value of the second operand gives\n"
+"the number of places to shift.  If the second operand is positive,\n"
+"then the shift is to the left; otherwise the shift is to the right.\n"
+"Digits shifted into the coefficient are zeros.  The sign and\n"
+"exponent of the first operand are unchanged.");
 
 #define _DECIMAL_DECIMAL_SHIFT_METHODDEF    \
     {"shift", _PyCFunction_CAST(_decimal_Decimal_shift), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_shift__doc__},
@@ -3774,11 +3856,11 @@ PyDoc_STRVAR(_decimal_Decimal_quantize__doc__,
 "Also unlike other operations, quantize never signals Underflow, even\n"
 "if the result is subnormal and inexact.\n"
 "\n"
-"If the exponent of the second operand is larger than that of the first,\n"
-"then rounding may be necessary. In this case, the rounding mode is\n"
-"determined by the rounding argument if given, else by the given context\n"
-"argument; if neither argument is given, the rounding mode of the\n"
-"current thread\'s context is used.");
+"If the exponent of the second operand is larger than that of the\n"
+"first, then rounding may be necessary.  In this case, the rounding\n"
+"mode is determined by the rounding argument if given, else by the\n"
+"given context argument; if neither argument is given, the rounding\n"
+"mode of the current thread\'s context is used.");
 
 #define _DECIMAL_DECIMAL_QUANTIZE_METHODDEF    \
     {"quantize", _PyCFunction_CAST(_decimal_Decimal_quantize), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_quantize__doc__},
@@ -4009,25 +4091,12 @@ static PyObject *
 _decimal_Context_abs(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "abs",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *x;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("abs", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("abs", nargs, 1, 1)) {
         goto exit;
     }
     x = args[0];
@@ -4053,25 +4122,12 @@ static PyObject *
 _decimal_Context_exp(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "exp",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *x;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("exp", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("exp", nargs, 1, 1)) {
         goto exit;
     }
     x = args[0];
@@ -4097,25 +4153,12 @@ static PyObject *
 _decimal_Context_ln(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "ln",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *x;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("ln", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("ln", nargs, 1, 1)) {
         goto exit;
     }
     x = args[0];
@@ -4142,25 +4185,12 @@ static PyObject *
 _decimal_Context_log10(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "log10",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *x;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("log10", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("log10", nargs, 1, 1)) {
         goto exit;
     }
     x = args[0];
@@ -4189,25 +4219,12 @@ static PyObject *
 _decimal_Context_minus(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "minus",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *x;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("minus", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("minus", nargs, 1, 1)) {
         goto exit;
     }
     x = args[0];
@@ -4234,25 +4251,12 @@ static PyObject *
 _decimal_Context_next_minus(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "next_minus",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *x;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("next_minus", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("next_minus", nargs, 1, 1)) {
         goto exit;
     }
     x = args[0];
@@ -4279,25 +4283,12 @@ static PyObject *
 _decimal_Context_next_plus(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "next_plus",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *x;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("next_plus", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("next_plus", nargs, 1, 1)) {
         goto exit;
     }
     x = args[0];
@@ -4324,25 +4315,12 @@ static PyObject *
 _decimal_Context_normalize(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "normalize",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *x;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("normalize", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("normalize", nargs, 1, 1)) {
         goto exit;
     }
     x = args[0];
@@ -4370,25 +4348,12 @@ static PyObject *
 _decimal_Context_plus(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "plus",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *x;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("plus", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("plus", nargs, 1, 1)) {
         goto exit;
     }
     x = args[0];
@@ -4415,25 +4380,12 @@ static PyObject *
 _decimal_Context_to_integral_value(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "to_integral_value",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *x;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("to_integral_value", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("to_integral_value", nargs, 1, 1)) {
         goto exit;
     }
     x = args[0];
@@ -4460,25 +4412,12 @@ static PyObject *
 _decimal_Context_to_integral_exact(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "to_integral_exact",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *x;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("to_integral_exact", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("to_integral_exact", nargs, 1, 1)) {
         goto exit;
     }
     x = args[0];
@@ -4505,25 +4444,12 @@ static PyObject *
 _decimal_Context_to_integral(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "to_integral",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *x;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("to_integral", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("to_integral", nargs, 1, 1)) {
         goto exit;
     }
     x = args[0];
@@ -4549,25 +4475,12 @@ static PyObject *
 _decimal_Context_sqrt(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "sqrt",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *x;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("sqrt", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("sqrt", nargs, 1, 1)) {
         goto exit;
     }
     x = args[0];
@@ -4594,26 +4507,13 @@ static PyObject *
 _decimal_Context_add(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", "", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "add",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[2];
     PyObject *x;
     PyObject *y;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("add", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("add", nargs, 2, 2)) {
         goto exit;
     }
     x = args[0];
@@ -4641,26 +4541,13 @@ static PyObject *
 _decimal_Context_compare(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", "", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "compare",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[2];
     PyObject *x;
     PyObject *y;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("compare", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("compare", nargs, 2, 2)) {
         goto exit;
     }
     x = args[0];
@@ -4688,26 +4575,13 @@ static PyObject *
 _decimal_Context_compare_signal(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", "", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "compare_signal",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[2];
     PyObject *x;
     PyObject *y;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("compare_signal", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("compare_signal", nargs, 2, 2)) {
         goto exit;
     }
     x = args[0];
@@ -4735,26 +4609,13 @@ static PyObject *
 _decimal_Context_divide(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", "", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "divide",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[2];
     PyObject *x;
     PyObject *y;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("divide", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("divide", nargs, 2, 2)) {
         goto exit;
     }
     x = args[0];
@@ -4782,26 +4643,13 @@ static PyObject *
 _decimal_Context_divide_int(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", "", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "divide_int",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[2];
     PyObject *x;
     PyObject *y;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("divide_int", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("divide_int", nargs, 2, 2)) {
         goto exit;
     }
     x = args[0];
@@ -4829,26 +4677,13 @@ static PyObject *
 _decimal_Context_max(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", "", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "max",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[2];
     PyObject *x;
     PyObject *y;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("max", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("max", nargs, 2, 2)) {
         goto exit;
     }
     x = args[0];
@@ -4876,26 +4711,13 @@ static PyObject *
 _decimal_Context_max_mag(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", "", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "max_mag",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[2];
     PyObject *x;
     PyObject *y;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("max_mag", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("max_mag", nargs, 2, 2)) {
         goto exit;
     }
     x = args[0];
@@ -4923,26 +4745,13 @@ static PyObject *
 _decimal_Context_min(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", "", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "min",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[2];
     PyObject *x;
     PyObject *y;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("min", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("min", nargs, 2, 2)) {
         goto exit;
     }
     x = args[0];
@@ -4970,26 +4779,13 @@ static PyObject *
 _decimal_Context_min_mag(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", "", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "min_mag",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[2];
     PyObject *x;
     PyObject *y;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("min_mag", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("min_mag", nargs, 2, 2)) {
         goto exit;
     }
     x = args[0];
@@ -5017,26 +4813,13 @@ static PyObject *
 _decimal_Context_multiply(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", "", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "multiply",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[2];
     PyObject *x;
     PyObject *y;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("multiply", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("multiply", nargs, 2, 2)) {
         goto exit;
     }
     x = args[0];
@@ -5064,26 +4847,13 @@ static PyObject *
 _decimal_Context_next_toward(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", "", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "next_toward",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[2];
     PyObject *x;
     PyObject *y;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("next_toward", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("next_toward", nargs, 2, 2)) {
         goto exit;
     }
     x = args[0];
@@ -5111,26 +4881,13 @@ static PyObject *
 _decimal_Context_quantize(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", "", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "quantize",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[2];
     PyObject *x;
     PyObject *y;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("quantize", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("quantize", nargs, 2, 2)) {
         goto exit;
     }
     x = args[0];
@@ -5161,26 +4918,13 @@ static PyObject *
 _decimal_Context_remainder(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", "", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "remainder",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[2];
     PyObject *x;
     PyObject *y;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("remainder", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("remainder", nargs, 2, 2)) {
         goto exit;
     }
     x = args[0];
@@ -5197,8 +4941,8 @@ PyDoc_STRVAR(_decimal_Context_remainder_near__doc__,
 "\n"
 "Return x - y * n.\n"
 "\n"
-"Here n is the integer nearest the exact value of x / y (if the result\n"
-"is 0 then its sign will be the sign of x).");
+"Here n is the integer nearest the exact value of x / y (if the\n"
+"result is 0 then its sign will be the sign of x).");
 
 #define _DECIMAL_CONTEXT_REMAINDER_NEAR_METHODDEF    \
     {"remainder_near", _PyCFunction_CAST(_decimal_Context_remainder_near), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_remainder_near__doc__},
@@ -5211,26 +4955,13 @@ static PyObject *
 _decimal_Context_remainder_near(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", "", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "remainder_near",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[2];
     PyObject *x;
     PyObject *y;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("remainder_near", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("remainder_near", nargs, 2, 2)) {
         goto exit;
     }
     x = args[0];
@@ -5258,26 +4989,13 @@ static PyObject *
 _decimal_Context_subtract(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", "", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "subtract",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[2];
     PyObject *x;
     PyObject *y;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("subtract", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("subtract", nargs, 2, 2)) {
         goto exit;
     }
     x = args[0];
@@ -5336,7 +5054,8 @@ PyDoc_STRVAR(_decimal_Context_power__doc__,
 "    * all three arguments must be integral\n"
 "    * \'b\' must be nonnegative\n"
 "    * at least one of \'a\' or \'b\' must be nonzero\n"
-"    * modulo must be nonzero and less than 10**prec in absolute value");
+"    * modulo must be nonzero and less than 10**prec in absolute\n"
+"      value");
 
 #define _DECIMAL_CONTEXT_POWER_METHODDEF    \
     {"power", _PyCFunction_CAST(_decimal_Context_power), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_power__doc__},
@@ -5417,27 +5136,14 @@ static PyObject *
 _decimal_Context_fma(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", "", "", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "fma",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[3];
     PyObject *x;
     PyObject *y;
     PyObject *z;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 3, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("fma", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("fma", nargs, 3, 3)) {
         goto exit;
     }
     x = args[0];
@@ -5488,25 +5194,12 @@ static PyObject *
 _decimal_Context_is_normal(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "is_normal",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *x;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("is_normal", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("is_normal", nargs, 1, 1)) {
         goto exit;
     }
     x = args[0];
@@ -5533,25 +5226,12 @@ static PyObject *
 _decimal_Context_is_subnormal(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "is_subnormal",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *x;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("is_subnormal", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("is_subnormal", nargs, 1, 1)) {
         goto exit;
     }
     x = args[0];
@@ -5578,25 +5258,12 @@ static PyObject *
 _decimal_Context_is_finite(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "is_finite",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *x;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("is_finite", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("is_finite", nargs, 1, 1)) {
         goto exit;
     }
     x = args[0];
@@ -5623,25 +5290,12 @@ static PyObject *
 _decimal_Context_is_infinite(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "is_infinite",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *x;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("is_infinite", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("is_infinite", nargs, 1, 1)) {
         goto exit;
     }
     x = args[0];
@@ -5668,25 +5322,12 @@ static PyObject *
 _decimal_Context_is_nan(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "is_nan",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *x;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("is_nan", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("is_nan", nargs, 1, 1)) {
         goto exit;
     }
     x = args[0];
@@ -5713,25 +5354,12 @@ static PyObject *
 _decimal_Context_is_qnan(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "is_qnan",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *x;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("is_qnan", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("is_qnan", nargs, 1, 1)) {
         goto exit;
     }
     x = args[0];
@@ -5758,25 +5386,12 @@ static PyObject *
 _decimal_Context_is_snan(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "is_snan",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *x;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("is_snan", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("is_snan", nargs, 1, 1)) {
         goto exit;
     }
     x = args[0];
@@ -5803,25 +5418,12 @@ static PyObject *
 _decimal_Context_is_signed(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "is_signed",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *x;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("is_signed", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("is_signed", nargs, 1, 1)) {
         goto exit;
     }
     x = args[0];
@@ -5848,25 +5450,12 @@ static PyObject *
 _decimal_Context_is_zero(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "is_zero",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *x;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("is_zero", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("is_zero", nargs, 1, 1)) {
         goto exit;
     }
     x = args[0];
@@ -5893,25 +5482,12 @@ static PyObject *
 _decimal_Context_is_canonical(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "is_canonical",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *x;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("is_canonical", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("is_canonical", nargs, 1, 1)) {
         goto exit;
     }
     x = args[0];
@@ -5938,25 +5514,12 @@ static PyObject *
 _decimal_Context__apply(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "_apply",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *x;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("_apply", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("_apply", nargs, 1, 1)) {
         goto exit;
     }
     x = args[0];
@@ -5985,25 +5548,12 @@ static PyObject *
 _decimal_Context_apply(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "apply",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *x;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("apply", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("apply", nargs, 1, 1)) {
         goto exit;
     }
     x = args[0];
@@ -6032,25 +5582,12 @@ static PyObject *
 _decimal_Context_canonical(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "canonical",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *x;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("canonical", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("canonical", nargs, 1, 1)) {
         goto exit;
     }
     x = args[0];
@@ -6077,25 +5614,12 @@ static PyObject *
 _decimal_Context_copy_abs(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "copy_abs",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *x;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("copy_abs", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("copy_abs", nargs, 1, 1)) {
         goto exit;
     }
     x = args[0];
@@ -6122,25 +5646,12 @@ static PyObject *
 _decimal_Context_copy_decimal(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "copy_decimal",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *x;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("copy_decimal", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("copy_decimal", nargs, 1, 1)) {
         goto exit;
     }
     x = args[0];
@@ -6167,25 +5678,12 @@ static PyObject *
 _decimal_Context_copy_negate(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "copy_negate",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *x;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("copy_negate", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("copy_negate", nargs, 1, 1)) {
         goto exit;
     }
     x = args[0];
@@ -6211,25 +5709,12 @@ static PyObject *
 _decimal_Context_logb(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "logb",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *x;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("logb", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("logb", nargs, 1, 1)) {
         goto exit;
     }
     x = args[0];
@@ -6269,25 +5754,12 @@ static PyObject *
 _decimal_Context_logical_invert(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "logical_invert",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *x;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("logical_invert", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("logical_invert", nargs, 1, 1)) {
         goto exit;
     }
     x = args[0];
@@ -6314,25 +5786,12 @@ static PyObject *
 _decimal_Context_number_class(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "number_class",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *x;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("number_class", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("number_class", nargs, 1, 1)) {
         goto exit;
     }
     x = args[0];
@@ -6359,25 +5818,12 @@ static PyObject *
 _decimal_Context_to_sci_string(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "to_sci_string",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *x;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("to_sci_string", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("to_sci_string", nargs, 1, 1)) {
         goto exit;
     }
     x = args[0];
@@ -6404,25 +5850,12 @@ static PyObject *
 _decimal_Context_to_eng_string(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "to_eng_string",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *x;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("to_eng_string", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("to_eng_string", nargs, 1, 1)) {
         goto exit;
     }
     x = args[0];
@@ -6449,26 +5882,13 @@ static PyObject *
 _decimal_Context_compare_total(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", "", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "compare_total",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[2];
     PyObject *x;
     PyObject *y;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("compare_total", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("compare_total", nargs, 2, 2)) {
         goto exit;
     }
     x = args[0];
@@ -6496,26 +5916,13 @@ static PyObject *
 _decimal_Context_compare_total_mag(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", "", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "compare_total_mag",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[2];
     PyObject *x;
     PyObject *y;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("compare_total_mag", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("compare_total_mag", nargs, 2, 2)) {
         goto exit;
     }
     x = args[0];
@@ -6543,26 +5950,13 @@ static PyObject *
 _decimal_Context_copy_sign(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", "", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "copy_sign",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[2];
     PyObject *x;
     PyObject *y;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("copy_sign", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("copy_sign", nargs, 2, 2)) {
         goto exit;
     }
     x = args[0];
@@ -6611,26 +6005,13 @@ static PyObject *
 _decimal_Context_logical_and(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", "", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "logical_and",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[2];
     PyObject *x;
     PyObject *y;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("logical_and", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("logical_and", nargs, 2, 2)) {
         goto exit;
     }
     x = args[0];
@@ -6679,26 +6060,13 @@ static PyObject *
 _decimal_Context_logical_or(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", "", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "logical_or",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[2];
     PyObject *x;
     PyObject *y;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("logical_or", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("logical_or", nargs, 2, 2)) {
         goto exit;
     }
     x = args[0];
@@ -6747,26 +6115,13 @@ static PyObject *
 _decimal_Context_logical_xor(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", "", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "logical_xor",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[2];
     PyObject *x;
     PyObject *y;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("logical_xor", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("logical_xor", nargs, 2, 2)) {
         goto exit;
     }
     x = args[0];
@@ -6794,26 +6149,13 @@ static PyObject *
 _decimal_Context_rotate(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", "", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "rotate",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[2];
     PyObject *x;
     PyObject *y;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("rotate", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("rotate", nargs, 2, 2)) {
         goto exit;
     }
     x = args[0];
@@ -6841,26 +6183,13 @@ static PyObject *
 _decimal_Context_scaleb(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", "", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "scaleb",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[2];
     PyObject *x;
     PyObject *y;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("scaleb", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("scaleb", nargs, 2, 2)) {
         goto exit;
     }
     x = args[0];
@@ -6888,26 +6217,13 @@ static PyObject *
 _decimal_Context_shift(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", "", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "shift",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[2];
     PyObject *x;
     PyObject *y;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("shift", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("shift", nargs, 2, 2)) {
         goto exit;
     }
     x = args[0];
@@ -6935,26 +6251,13 @@ static PyObject *
 _decimal_Context_same_quantum(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", "", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "same_quantum",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[2];
     PyObject *x;
     PyObject *y;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("same_quantum", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("same_quantum", nargs, 2, 2)) {
         goto exit;
     }
     x = args[0];
@@ -6980,4 +6283,4 @@ exit:
 #ifndef _DECIMAL_CONTEXT_APPLY_METHODDEF
     #define _DECIMAL_CONTEXT_APPLY_METHODDEF
 #endif /* !defined(_DECIMAL_CONTEXT_APPLY_METHODDEF) */
-/*[clinic end generated code: output=b288181c82fdc9f1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=783d0db339199a30 input=a9049054013a1b77]*/

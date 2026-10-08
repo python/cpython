@@ -38,12 +38,6 @@ class EventQueueTestBase:
         eq.insert(Event("key", "a", b"a"))
         self.assertFalse(eq.empty())
 
-    def test_flush_buf(self):
-        eq = self.make_eventqueue()
-        eq.buf.extend(b"test")
-        self.assertEqual(eq.flush_buf(), b"test")
-        self.assertEqual(eq.buf, bytearray())
-
     def test_insert(self):
         eq = self.make_eventqueue()
         event = Event("key", "a", b"a")
@@ -93,7 +87,7 @@ class EventQueueTestBase:
         eq.push(b"a")
         mock_keymap.compile_keymap.assert_called()
         self.assertTrue(eq.empty())
-        eq.flush_buf()
+        eq.buf.resize(0)
         eq.push(b"\033")
         self.assertEqual(eq.events[0].evt, "key")
         self.assertEqual(eq.events[0].data, "\033")

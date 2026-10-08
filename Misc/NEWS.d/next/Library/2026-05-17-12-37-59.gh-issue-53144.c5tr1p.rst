@@ -1,0 +1,2 @@
+The :mod:`email` package now supports all aliases of Python codecs and uses
+MIME/IANA names for all IANA registered charsets.

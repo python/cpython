@@ -103,6 +103,7 @@ from enum import _simple_enum
 import _ssl             # if we can't import it, let the error propagate
 
 from _ssl import OPENSSL_VERSION_NUMBER, OPENSSL_VERSION_INFO, OPENSSL_VERSION
+from _ssl import OPENSSL_API_VERSION_INFO
 from _ssl import _SSLContext, MemoryBIO, SSLSession
 from _ssl import (
     SSLError, SSLZeroReturnError, SSLWantReadError, SSLWantWriteError,
@@ -371,6 +372,20 @@ def _ipaddress_match(cert_ipaddress, host_ip):
     # commonly with IPv6 addresses. Strip off trailing \n.
     ip = _inet_paton(cert_ipaddress.rstrip())
     return ip == host_ip
+
+
+def _check_sslobject_params(server_side, context=None, server_hostname=None, session=None):
+    """Raises a ValueError if SSLObject._create() parameters aren't valid.
+    """
+    if server_side:
+        if server_hostname:
+            raise ValueError("server_hostname can only be specified "
+                             "in client mode")
+        if session is not None:
+            raise ValueError("session can only be specified in "
+                             "client mode")
+    if context.check_hostname and not server_hostname:
+        raise ValueError("check_hostname requires server_hostname")
 
 
 DefaultVerifyPaths = namedtuple("DefaultVerifyPaths",
@@ -721,10 +736,9 @@ def create_default_context(purpose=Purpose.SERVER_AUTH, *, cafile=None,
         # root CA certificates for the given purpose. This may fail silently.
         context.load_default_certs(purpose)
     # OpenSSL 1.1.1 keylog file
-    if hasattr(context, 'keylog_filename'):
-        keylogfile = os.environ.get('SSLKEYLOGFILE')
-        if keylogfile and not sys.flags.ignore_environment:
-            context.keylog_filename = keylogfile
+    keylogfile = os.environ.get('SSLKEYLOGFILE')
+    if keylogfile and not sys.flags.ignore_environment:
+        context.keylog_filename = keylogfile
     return context
 
 def _create_unverified_context(protocol=None, *, cert_reqs=CERT_NONE,
@@ -755,11 +769,11 @@ def _create_unverified_context(protocol=None, *, cert_reqs=CERT_NONE,
         raise ValueError(purpose)
 
     context = SSLContext(protocol)
+    # Setting verify_mode to CERT_NONE fails while check_hostname is
+    # enabled, so assign check_hostname first (gh-114905).
     context.check_hostname = check_hostname
     if cert_reqs is not None:
         context.verify_mode = cert_reqs
-    if check_hostname:
-        context.check_hostname = True
 
     if keyfile and not certfile:
         raise ValueError("certfile must be specified")
@@ -775,10 +789,9 @@ def _create_unverified_context(protocol=None, *, cert_reqs=CERT_NONE,
         # root CA certificates for the given purpose. This may fail silently.
         context.load_default_certs(purpose)
     # OpenSSL 1.1.1 keylog file
-    if hasattr(context, 'keylog_filename'):
-        keylogfile = os.environ.get('SSLKEYLOGFILE')
-        if keylogfile and not sys.flags.ignore_environment:
-            context.keylog_filename = keylogfile
+    keylogfile = os.environ.get('SSLKEYLOGFILE')
+    if keylogfile and not sys.flags.ignore_environment:
+        context.keylog_filename = keylogfile
     return context
 
 # Used by http.client if no context is explicitly passed.
@@ -813,6 +826,8 @@ class SSLObject:
     @classmethod
     def _create(cls, incoming, outgoing, server_side=False,
                  server_hostname=None, session=None, context=None):
+        _check_sslobject_params(server_side=server_side, context=context,
+                                server_hostname=server_hostname, session=session)
         self = cls.__new__(cls)
         sslobj = context._wrap_bio(
             incoming, outgoing, server_side=server_side,
@@ -1009,15 +1024,8 @@ class SSLSocket(socket):
                 context=None, session=None):
         if sock.getsockopt(SOL_SOCKET, SO_TYPE) != SOCK_STREAM:
             raise NotImplementedError("only stream sockets are supported")
-        if server_side:
-            if server_hostname:
-                raise ValueError("server_hostname can only be specified "
-                                 "in client mode")
-            if session is not None:
-                raise ValueError("session can only be specified in "
-                                 "client mode")
-        if context.check_hostname and not server_hostname:
-            raise ValueError("check_hostname requires server_hostname")
+        _check_sslobject_params(server_side=server_side, context=context,
+                                server_hostname=server_hostname, session=session)
 
         sock_timeout = sock.gettimeout()
         kwargs = dict(
@@ -1055,7 +1063,12 @@ class SSLSocket(socket):
                     notconn_pre_handshake_data = self.recv(1)
                 except OSError as e:
                     # EINVAL occurs for recv(1) on non-connected on unix sockets.
-                    if e.errno not in (errno.ENOTCONN, errno.EINVAL):
+                    if e.errno in (errno.ENOTCONN, errno.EINVAL):
+                        pass
+                    elif sys.platform == 'cygwin' and e.errno == errno.EAGAIN:
+                        # EAGAIN occurs on Cygwin.
+                        pass
+                    else:
                         raise
                     notconn_pre_handshake_data = b''
                 self.setblocking(blocking)

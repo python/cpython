@@ -31,12 +31,12 @@ Sentinel objects
 
    .. versionadded:: 3.15
 
-.. c:function:: PyObject* PySentinel_New(const char *name, const char *module_name)
+.. c:function:: PyObject* PySentinel_New(const char *name, const char *module_name, const char *repr)
 
    Return a new :class:`sentinel` object with :attr:`~sentinel.__name__` set to
    *name* and :attr:`~sentinel.__module__` set to *module_name*.
    *name* must not be ``NULL``. If *module_name* is ``NULL``, :attr:`~sentinel.__module__`
-   is set to ``None``.
+   is set to ``None``. If *repr* is ``NULL``, ``repr()`` returns :attr:`~sentinel.__name__`.
    Return ``NULL`` with an exception set on failure.
 
    For pickling to work, *module_name* must be the name of an importable

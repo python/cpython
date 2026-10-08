@@ -10,7 +10,7 @@ the source code location, which is useful for debuggers and other tools.
 Since 3.11, the final field of the `PyCodeObject` C struct is an array
 of indeterminate length containing the bytecode, `code->co_code_adaptive`.
 (In older versions the code object was a
-[`bytes`](https://docs.python.org/dev/library/stdtypes.html#bytes)
+[`bytes`](https://docs.python.org/dev/builtins/stdtypes.html#bytes)
 object, `code->co_code`; this was changed to save an allocation and to
 allow it to be mutated.)
 
@@ -48,7 +48,7 @@ Note that traceback objects don't store all this information -- they store the s
 number, for backward compatibility, and the "last instruction" value.
 The rest can be computed from the last instruction (`tb_lasti`) with the help of the
 locations table. For Python code, there is a convenience method
-(`codeobject.co_positions`)[https://docs.python.org/dev/reference/datamodel.html#codeobject.co_positions]
+[`codeobject.co_positions`](https://docs.python.org/dev/reference/datamodel.html#codeobject.co_positions)
 which returns an iterator of `({line}, {endline}, {column}, {endcolumn})` tuples,
 one per instruction.
 There is also `co_lines()` which returns an iterator of `({start}, {end}, {line})` tuples,

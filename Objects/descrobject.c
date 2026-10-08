@@ -19,6 +19,8 @@ class property "propertyobject *" "&PyProperty_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=556352653fd4c02e]*/
 
+#include "clinic/descrobject.c.h"
+
 static void
 descr_dealloc(PyObject *self)
 {
@@ -621,9 +623,17 @@ static PyObject *
 descr_get_qualname(PyObject *self, void *Py_UNUSED(ignored))
 {
     PyDescrObject *descr = (PyDescrObject *)self;
-    if (descr->d_qualname == NULL)
-        descr->d_qualname = calculate_qualname(descr);
-    return Py_XNewRef(descr->d_qualname);
+    PyObject *qualname;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    if (descr->d_qualname == NULL) {
+        PyObject *new_qualname = calculate_qualname(descr);
+        if (new_qualname != NULL) {
+            Py_XSETREF(descr->d_qualname, new_qualname);
+        }
+    }
+    qualname = Py_XNewRef(descr->d_qualname);
+    Py_END_CRITICAL_SECTION();
+    return qualname;
 }
 
 static PyObject *
@@ -928,8 +938,7 @@ PyDescr_NewMethod(PyTypeObject *type, PyMethodDef *method)
 {
     /* Figure out correct vectorcall function to use */
     vectorcallfunc vectorcall;
-    switch (method->ml_flags & (METH_VARARGS | METH_FASTCALL | METH_NOARGS |
-                                METH_O | METH_KEYWORDS | METH_METHOD))
+    switch (method->ml_flags & _Py_METH_CALL_FLAGS)
     {
         case METH_VARARGS:
             vectorcall = method_vectorcall_VARARGS;
@@ -1178,7 +1187,7 @@ static PyMethodDef mappingproxy_methods[] = {
     {"copy",      mappingproxy_copy,       METH_NOARGS,
      PyDoc_STR("D.copy() -> a shallow copy of D")},
     {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS,
-     PyDoc_STR("See PEP 585")},
+     PyDoc_STR("mappingproxy objects are generic over two types, signifying (respectively) the types of their keys and values")},
     {"__reversed__", mappingproxy_reversed, METH_NOARGS,
      PyDoc_STR("D.__reversed__() -> reverse iterator")},
     {0}
@@ -1232,8 +1241,29 @@ mappingproxy_traverse(PyObject *self, visitproc visit, void *arg)
 static PyObject *
 mappingproxy_richcompare(PyObject *self, PyObject *w, int op)
 {
-    mappingproxyobject *v = (mappingproxyobject *)self;
     if (op == Py_EQ || op == Py_NE) {
+        mappingproxyobject *v = (mappingproxyobject *)self;
+        // We have to guard the mutable `dict` instances, because it can
+        // otherwise mutate the type's `__dict__` entries and cause crashes.
+        // But, do not create copies on known types like `OrderedDict`
+        // or immutable types like `frozendict`
+        // for memory optimization. See gh-152405 for the details.
+        if (
+            PyDict_CheckExact(v->mapping) &&
+            !(PyAnyDict_CheckExact(w) ||
+                Py_TYPE(w) == &PyDictProxy_Type ||
+                PyODict_CheckExact(w))
+        ) {
+            // So, instead we send a copy:
+            PyObject *copy = PyDict_Copy(v->mapping);
+            if (copy == NULL) {
+                return NULL;
+            }
+            PyObject *res = PyObject_RichCompare(copy, w, op);
+            Py_DECREF(copy);
+            return res;
+        }
+        // Otherwise we are free to share the mapping directly:
         return PyObject_RichCompare(v->mapping, w, op);
     }
     Py_RETURN_NOTIMPLEMENTED;
@@ -1253,32 +1283,6 @@ mappingproxy_check_mapping(PyObject *mapping)
     return 0;
 }
 
-/*[clinic input]
-@classmethod
-mappingproxy.__new__ as mappingproxy_new
-
-    mapping: object
-
-Read-only proxy of a mapping.
-[clinic start generated code]*/
-
-static PyObject *
-mappingproxy_new_impl(PyTypeObject *type, PyObject *mapping)
-/*[clinic end generated code: output=65f27f02d5b68fa7 input=c156df096ef7590c]*/
-{
-    mappingproxyobject *mappingproxy;
-
-    if (mappingproxy_check_mapping(mapping) == -1)
-        return NULL;
-
-    mappingproxy = PyObject_GC_New(mappingproxyobject, &PyDictProxy_Type);
-    if (mappingproxy == NULL)
-        return NULL;
-    mappingproxy->mapping = Py_NewRef(mapping);
-    _PyObject_GC_TRACK(mappingproxy);
-    return (PyObject *)mappingproxy;
-}
-
 PyObject *
 PyDictProxy_New(PyObject *mapping)
 {
@@ -1293,6 +1297,22 @@ PyDictProxy_New(PyObject *mapping)
         _PyObject_GC_TRACK(pp);
     }
     return (PyObject *)pp;
+}
+
+/*[clinic input]
+@classmethod
+mappingproxy.__new__ as mappingproxy_new
+
+    mapping: object
+
+Read-only proxy of a mapping.
+[clinic start generated code]*/
+
+static PyObject *
+mappingproxy_new_impl(PyTypeObject *type, PyObject *mapping)
+/*[clinic end generated code: output=65f27f02d5b68fa7 input=c156df096ef7590c]*/
+{
+    return PyDictProxy_New(mapping);
 }
 
 
@@ -1599,26 +1619,22 @@ property_deleter(PyObject *self, PyObject *deleter)
 }
 
 
-PyDoc_STRVAR(set_name_doc,
-             "__set_name__($self, owner, name, /)\n"
-             "--\n"
-             "\n"
-             "Method to set name of a property.");
+/*[clinic input]
+property.__set_name__
+
+    owner: object
+    name: object
+    /
+
+Method to set name of a property.
+[clinic start generated code]*/
 
 static PyObject *
-property_set_name(PyObject *self, PyObject *args) {
-    if (PyTuple_GET_SIZE(args) != 2) {
-        PyErr_Format(
-                PyExc_TypeError,
-                "__set_name__() takes 2 positional arguments but %zd were given",
-                PyTuple_GET_SIZE(args));
-        return NULL;
-    }
-
-    propertyobject *prop = (propertyobject *)self;
-    PyObject *name = PyTuple_GET_ITEM(args, 1);
-
-    Py_XSETREF(prop->prop_name, Py_XNewRef(name));
+property___set_name___impl(propertyobject *self, PyObject *owner,
+                           PyObject *name)
+/*[clinic end generated code: output=959e301a91f7fb85 input=0211b5b7ace099c5]*/
+{
+    Py_XSETREF(self->prop_name, Py_XNewRef(name));
 
     Py_RETURN_NONE;
 }
@@ -1627,7 +1643,7 @@ static PyMethodDef property_methods[] = {
     {"getter", property_getter, METH_O, getter_doc},
     {"setter", property_setter, METH_O, setter_doc},
     {"deleter", property_deleter, METH_O, deleter_doc},
-    {"__set_name__", property_set_name, METH_VARARGS, set_name_doc},
+    PROPERTY___SET_NAME___METHODDEF
     {0}
 };
 
@@ -1995,7 +2011,6 @@ property_clear(PyObject *self)
     return 0;
 }
 
-#include "clinic/descrobject.c.h"
 
 PyTypeObject PyDictProxy_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)

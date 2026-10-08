@@ -1,4 +1,6 @@
+import builtins
 import contextlib
+import dis
 import itertools
 import sys
 import textwrap
@@ -11,7 +13,7 @@ import _opcode
 
 from test.support import (script_helper, requires_specialization,
                           import_helper, Py_GIL_DISABLED, requires_jit_enabled,
-                          reset_code)
+                          reset_code, SHORT_TIMEOUT, isolation)
 
 _testinternalcapi = import_helper.import_module("_testinternalcapi")
 
@@ -246,6 +248,28 @@ class TestUops(unittest.TestCase):
         self.assertIsNotNone(ex)
         self.assertTrue(any((opcode, oparg, operand) == ("_LOAD_FAST_BORROW", 259, 0)
                             for opcode, oparg, _, operand in list(ex)))
+
+    def test_jump_backward_extended_arg(self):
+        # gh-152192: a JUMP_BACKWARD that needs an EXTENDED_ARG must record its
+        # deopt target at the EXTENDED_ARG, not the JUMP_BACKWARD.
+        ns = {}
+        src = ("def f(n):\n"
+               "    i = 0\n"
+               "    while i < n:\n"
+               "        i += 1\n"
+               + "".join(f"        a = {j}\n" for j in range(140)))
+        exec(src, ns)
+        f = ns["f"]
+
+        instrs = list(dis.get_instructions(f))
+        ext, jb = next((p, i) for p, i in zip(instrs, instrs[1:])
+                       if i.opname == "JUMP_BACKWARD" and p.opname == "EXTENDED_ARG")
+
+        f(TIER2_THRESHOLD + 1)
+        ex = _opcode.get_executor(f.__code__, ext.offset)
+        set_ips = {t for op, _, t, _ in ex if op == "_SET_IP"}
+        self.assertIn(ext.offset // 2, set_ips)
+        self.assertNotIn(jb.offset // 2, set_ips)
 
     def test_unspecialized_unpack(self):
         # An example of an unspecialized opcode
@@ -1789,6 +1813,37 @@ class TestUopsOptimization(unittest.TestCase):
         # __init__ resolution allows promotion of range to constant
         self.assertNotIn("_LOAD_GLOBAL_BUILTINS", uops)
 
+    # See https://github.com/python/cpython/issues/158072
+    def test_init_with_default_argument(self):
+        script_helper.assert_python_ok("-c", textwrap.dedent(f"""\
+            sentinel = object()
+
+            class WithDefault:
+                def __init__(self, value=sentinel):
+                    if value is not sentinel:
+                        pass
+
+            for _ in range({TIER2_THRESHOLD * 3}):
+                WithDefault()
+            """), PYTHON_JIT="1")
+
+    def test_init_with_changed_code_argcount(self):
+        class C:
+            def __init__(self, value):
+                self.value = False
+
+            def varargs_init(self, *args):
+                self.value = isinstance(args, tuple)
+
+        def testfunc(n):
+            for _ in range(n):
+                result = C(42).value
+            return result
+
+        self.assertFalse(testfunc(100))
+        C.__init__.__code__ = C.varargs_init.__code__
+        self.assertTrue(testfunc(TIER2_THRESHOLD * 3))
+
     def test_init_guards_removed(self):
         class MyPoint:
             def __init__(self, x, y):
@@ -2422,7 +2477,18 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(uops.count("_STORE_SUBSCR_DICT_KNOWN_HASH"), 1)
         self.assertEqual(uops.count("_GUARD_NOS_DICT_SUBSCRIPT"), 0)
         self.assertEqual(uops.count("_GUARD_NOS_DICT_STORE_SUBSCRIPT"), 0)
-        self.assertEqual(uops.count("_GUARD_TYPE"), 1)
+        self.assertEqual(uops.count("_GUARD_NOS_TYPE"), 1)
+
+    def test_dict_subscr_probable_type(self):
+        def f(d):
+            for _ in range(TIER2_THRESHOLD):
+                value = d["key"]
+            return value
+
+        res, ex = self._run_with_optimizer(f, {"key": 1})
+        self.assertEqual(res, 1)
+        self.assertIsNotNone(ex)
+        self.assertIn("_GUARD_NOS_TYPE", get_opnames(ex))
 
     def test_dict_subclass_subscr_with_override(self):
         class MyDict(dict):
@@ -3154,7 +3220,7 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertNotIn("_CHECK_IS_NOT_PY_CALLABLE_KW", uops)
 
-    def test_call_len_string(self):
+    def test_call_len_string_frozen_set_dict(self):
         def testfunc(n):
             for _ in range(n):
                 _ = len("abc")
@@ -3162,12 +3228,14 @@ class TestUopsOptimization(unittest.TestCase):
                 _ = len(d)
                 _ = len(b"def")
                 _ = len(b"")
+                _ = len(FROZEN_SET_CONST)
+                _ = len(FROZEN_DICT_CONST)
 
         _, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertNotIn("_CALL_LEN", uops)
-        self.assertGreaterEqual(count_ops(ex, "_LOAD_CONST_INLINE_BORROW"), 8)
+        self.assertGreaterEqual(count_ops(ex, "_LOAD_CONST_INLINE_BORROW"), 10)
 
     def test_call_len_known_length_small_int(self):
         # Make sure that len(t) is optimized for a tuple of length 5.
@@ -3281,6 +3349,186 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertIn("_CALL_BUILTIN_FAST_WITH_KEYWORDS", uops)
         self.assertNotIn("_GUARD_CALLABLE_BUILTIN_FAST_WITH_KEYWORDS", uops)
+
+    def test_call_builtin_o_extra_flags(self):
+        # Extra method flags must not prevent callable guard elimination.
+        _testcapi = import_helper.import_module("_testcapi")
+        self.addCleanup(_testinternalcapi.clear_executor_deletion_list)
+
+        namespace = {
+            "METH_CLASS_O": _testcapi.MethClass.meth_o,
+            "METH_STATIC_O": _testcapi.MethStatic.meth_o,
+            "METH_COEXIST_O": {}.__contains__,
+        }
+
+        @reset_code
+        def testfunc(n):
+            for _ in range(n):
+                class_result = METH_CLASS_O(1)
+                static_result = METH_STATIC_O(1)
+                coexist_result = METH_COEXIST_O(1)
+            return class_result, static_result, coexist_result
+
+        testfunc = types.FunctionType(testfunc.__code__, namespace)
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, ((_testcapi.MethClass, 1), (None, 1), False))
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertEqual(uops.count("_CALL_BUILTIN_O"), 3)
+        self.assertNotIn("_GUARD_CALLABLE_BUILTIN_O", uops)
+
+    def test_call_builtin_fast_extra_flags(self):
+        _testcapi = import_helper.import_module("_testcapi")
+        self.addCleanup(_testinternalcapi.clear_executor_deletion_list)
+
+        obj = _testcapi.MethInstance()
+        namespace = {
+            "METH_CLASS_FASTCALL": _testcapi.MethClass.meth_fastcall,
+            "METH_STATIC_FASTCALL": _testcapi.MethStatic.meth_fastcall,
+            "METH_COEXIST_FASTCALL": obj.meth_fastcall_coexist,
+        }
+
+        @reset_code
+        def testfunc(n):
+            for _ in range(n):
+                class_result = METH_CLASS_FASTCALL(1, 2)
+                static_result = METH_STATIC_FASTCALL(1, 2)
+                coexist_result = METH_COEXIST_FASTCALL(1, 2)
+            return class_result, static_result, coexist_result
+
+        testfunc = types.FunctionType(testfunc.__code__, namespace)
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, (
+            (_testcapi.MethClass, (1, 2)),
+            (None, (1, 2)),
+            (obj, (1, 2)),
+        ))
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertEqual(uops.count("_CALL_BUILTIN_FAST"), 3)
+        self.assertNotIn("_GUARD_CALLABLE_BUILTIN_FAST", uops)
+
+    def test_call_builtin_fast_with_keywords_extra_flags(self):
+        _testcapi = import_helper.import_module("_testcapi")
+        self.addCleanup(_testinternalcapi.clear_executor_deletion_list)
+
+        obj = _testcapi.MethInstance()
+        namespace = {
+            "METH_CLASS_FASTCALL_KEYWORDS": (
+                _testcapi.MethClass.meth_fastcall_keywords),
+            "METH_STATIC_FASTCALL_KEYWORDS": (
+                _testcapi.MethStatic.meth_fastcall_keywords),
+            "METH_COEXIST_FASTCALL_KEYWORDS": (
+                obj.meth_fastcall_keywords_coexist),
+        }
+
+        @reset_code
+        def testfunc(n):
+            # Use positional arguments to exercise CALL, not CALL_KW.
+            for _ in range(n):
+                class_result = METH_CLASS_FASTCALL_KEYWORDS(1, 2)
+                static_result = METH_STATIC_FASTCALL_KEYWORDS(1, 2)
+                coexist_result = METH_COEXIST_FASTCALL_KEYWORDS(1, 2)
+            return class_result, static_result, coexist_result
+
+        testfunc = types.FunctionType(testfunc.__code__, namespace)
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, (
+            (_testcapi.MethClass, (1, 2), {}),
+            (None, (1, 2), {}),
+            (obj, (1, 2), {}),
+        ))
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertEqual(uops.count("_CALL_BUILTIN_FAST_WITH_KEYWORDS"), 3)
+        self.assertNotIn("_GUARD_CALLABLE_BUILTIN_FAST_WITH_KEYWORDS", uops)
+
+    def test_call_method_descriptor_o_extra_flags(self):
+        self.addCleanup(_testinternalcapi.clear_executor_deletion_list)
+
+        @reset_code
+        def testfunc(n):
+            d = {1: None}
+            for _ in range(n):
+                result = d.__contains__(1)
+            return result
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertIs(res, True)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertEqual(uops.count("_CALL_METHOD_DESCRIPTOR_O_INLINE"), 1)
+        self.assertNotIn("_GUARD_CALLABLE_METHOD_DESCRIPTOR_O", uops)
+
+    def test_call_method_descriptor_noargs_extra_flags(self):
+        _testcapi = import_helper.import_module("_testcapi")
+        self.addCleanup(_testinternalcapi.clear_executor_deletion_list)
+
+        namespace = {
+            "METH_COEXIST_NOARGS_OBJECT": _testcapi.DocStringNoSignatureTest(),
+        }
+
+        @reset_code
+        def testfunc(n):
+            for _ in range(n):
+                result = METH_COEXIST_NOARGS_OBJECT.meth_noargs_coexist()
+            return result
+
+        testfunc = types.FunctionType(testfunc.__code__, namespace)
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertIsNone(res)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertEqual(
+            uops.count("_CALL_METHOD_DESCRIPTOR_NOARGS_INLINE"), 1)
+        self.assertNotIn("_GUARD_CALLABLE_METHOD_DESCRIPTOR_NOARGS", uops)
+
+    def test_call_method_descriptor_fast_extra_flags(self):
+        _testcapi = import_helper.import_module("_testcapi")
+        self.addCleanup(_testinternalcapi.clear_executor_deletion_list)
+
+        obj = _testcapi.MethInstance()
+        namespace = {"METH_COEXIST_FAST_OBJECT": obj}
+
+        @reset_code
+        def testfunc(n):
+            for _ in range(n):
+                result = METH_COEXIST_FAST_OBJECT.meth_fastcall_coexist(1, 2)
+            return result
+
+        testfunc = types.FunctionType(testfunc.__code__, namespace)
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, (obj, (1, 2)))
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertEqual(uops.count("_CALL_METHOD_DESCRIPTOR_FAST_INLINE"), 1)
+        self.assertNotIn("_GUARD_CALLABLE_METHOD_DESCRIPTOR_FAST", uops)
+
+    def test_call_method_descriptor_fast_with_keywords_extra_flags(self):
+        _testcapi = import_helper.import_module("_testcapi")
+        self.addCleanup(_testinternalcapi.clear_executor_deletion_list)
+
+        obj = _testcapi.MethInstance()
+        namespace = {"METH_COEXIST_FAST_OBJECT": obj}
+
+        @reset_code
+        def testfunc(n):
+            # Use positional arguments to exercise CALL, not CALL_KW.
+            for _ in range(n):
+                result = (
+                    METH_COEXIST_FAST_OBJECT.meth_fastcall_keywords_coexist(
+                        1, 2))
+            return result
+
+        testfunc = types.FunctionType(testfunc.__code__, namespace)
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, (obj, (1, 2), {}))
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertEqual(
+            uops.count("_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS_INLINE"), 1)
+        self.assertNotIn(
+            "_GUARD_CALLABLE_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS", uops)
 
     def test_call_method_descriptor_o(self):
         def testfunc(n):
@@ -4850,6 +5098,27 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertLessEqual(count_ops(ex, "_POP_TOP"), 3)
         self.assertIn("_POP_TOP_NOP", uops)
 
+    def test_to_bool_noncompact_int(self):
+        # gh-155486: non-compact exact integer should remain specialized
+        # as _TO_BOOL_INT in Tier 2.
+        def f(n, value=1 << 100):
+            for _ in range(n):
+                if not value:
+                    return 0
+                # The second check should reuse the exact-int type established by the first guard.
+                if not value:
+                    return 0
+            return 1
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, 1)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_TO_BOOL_INT", uops)
+        self.assertLessEqual(count_ops(ex, "_GUARD_TOS_EXACT_INT"), 1)
+        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 3)
+        self.assertIn("_POP_TOP_NOP", uops)
+
     def test_to_bool_list(self):
         def f(n):
             for i in range(n):
@@ -5008,6 +5277,119 @@ class TestUopsOptimization(unittest.TestCase):
         with self.assertRaises(NameError):
             jitted([f, f_with_bad_globals])
 
+    def test_jitted_code_sees_changed_copied_builtins(self):
+        # Trace-time check.  The traced function's builtins is a copy of the
+        # canonical dict with the same keys version, so a version check
+        # cannot tell them apart.  The optimizer must see that func_builtins
+        # is not interp->builtins and keep _LOAD_GLOBAL_BUILTINS, which reads
+        # the frame's own dict, rather than fold a constant from the
+        # canonical one.  No runtime guard is involved.
+
+        def f(n):
+            return [len("hello") for _ in range(n)]
+
+        copied_builtins = vars(builtins).copy()
+        f = types.FunctionType(f.__code__, {"__builtins__": copied_builtins})
+
+        f(TIER2_THRESHOLD)
+        ex = get_first_executor(f)
+        self.assertIsNotNone(ex)
+        # Not folded: the load must still consult the frame's builtins.
+        self.assertIn("_LOAD_GLOBAL_BUILTINS", get_opnames(ex))
+
+        # Replacing an existing value does not change the keys version.
+        copied_builtins["len"] = lambda s: 42
+        self.assertEqual(f(8), [42] * 8)
+
+    def test_jitted_code_sees_changed_copied_globals(self):
+        # Copying a dict must not carry over the keys version of the source.
+        # The optimizer folds a global to a constant guarded only by the
+        # globals keys version plus a watcher on the traced dict.  A copy is
+        # not watched, and replacing an existing value does not change the
+        # keys version, so a function whose globals are a copy of the traced
+        # dict would otherwise pass _GUARD_GLOBALS_VERSION and see the stale
+        # constant.
+        def f(n):
+            for _ in range(n):
+                x = COPIED_GLOBAL
+            return x
+
+        for copy in (dict.copy, dict):
+            with self.subTest(copy=copy):
+                original = {"COPIED_GLOBAL": 1}
+                # A fresh code object, so that each subtest traces anew.
+                f_original = types.FunctionType(f.__code__.replace(), original)
+                self.assertEqual(f_original(TIER2_THRESHOLD), 1)
+                ex = get_first_executor(f_original)
+                self.assertIsNotNone(ex)
+                uops = get_opnames(ex)
+                self.assertIn("_GUARD_GLOBALS_VERSION", uops)
+                # The global was folded to a constant.
+                self.assertNotIn("_LOAD_GLOBAL_MODULE", uops)
+
+                copied = copy(original)
+                copied["COPIED_GLOBAL"] = 2
+                # Share the code object, so that the same executor is entered.
+                f_copied = types.FunctionType(f_original.__code__, copied)
+                self.assertEqual(f_copied(TIER2_THRESHOLD), 2)
+                self.assertEqual(f_original(TIER2_THRESHOLD), 1)
+
+    def test_jitted_code_sees_different_builtins(self):
+        # Runtime check.  The traced function's builtins IS the canonical
+        # dict, so folding len to a constant is correct at trace time.
+        # A second function sharing the code object then enters the same
+        # executor with other builtins, so only the runtime guard on the
+        # executing frame's builtins can catch it.
+        def f(n):
+            return [len("hello") for _ in range(n)]
+
+        namespace = {"__builtins__": builtins}
+        f_canonical = types.FunctionType(f.__code__, namespace)
+        copied_builtins = vars(builtins).copy()
+        namespace["__builtins__"] = copied_builtins
+        f_copied = types.FunctionType(f.__code__, namespace)
+
+
+        f_canonical(TIER2_THRESHOLD)
+        ex = get_first_executor(f_canonical)
+        self.assertIsNotNone(ex)
+        self.assertIn("_GUARD_BUILTINS_IS_CANONICAL", get_opnames(ex))
+
+        copied_builtins["len"] = lambda s: 42
+        # The executor's owner still sees the canonical len.
+        self.assertEqual(f_canonical(8), [5] * 8)
+        # A different function enters the same executor with other builtins.
+        self.assertEqual(f_copied(8), [42] * 8)
+
+    def test_builtins_guard_emitted_once_per_frame(self):
+        # A frame's builtins cannot change once the frame is pushed, so
+        # repeated builtin loads in one frame share a single guard, just as
+        # they already share a single _GUARD_GLOBALS_VERSION.
+
+        def warmup(n):
+            x = 0
+            for _ in range(n):
+                x += len("ab")
+            return x
+
+        def one_frame(n):
+            x = 0
+            for _ in range(n):
+                x += len("ab") + abs(-1) + ord("c")
+            return x
+
+        # The optimizer context is reused for every compilation, so compile an
+        # unrelated trace first: state that is not reset per frame leaks here.
+        warmup(TIER2_THRESHOLD)
+        self.assertIsNotNone(get_first_executor(warmup))
+
+        _, ex = self._run_with_optimizer(one_frame, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uop_names = get_opnames(ex)
+        self.assertNotIn("_LOAD_GLOBAL_BUILTINS", uop_names)  # all folded
+        self.assertEqual(uop_names.count("_GUARD_BUILTINS_IS_CANONICAL"), 1)
+        self.assertEqual(uop_names.count("_GUARD_GLOBALS_VERSION"), 1)
+
     def test_reference_tracking_across_call_doesnt_crash(self):
 
         def f1():
@@ -5101,6 +5483,16 @@ class TestUopsOptimization(unittest.TestCase):
                     self.fail(f"_DEOPT encountered first at executor"
                               f" {executor} at offset {idx} rather"
                               f" than expected _EXIT_TRACE")
+
+    def test_jit_shutdown_after_cold_executor_creation(self):
+        script_helper.assert_python_ok("-c", textwrap.dedent(f"""
+            def f():
+                for x in range({TIER2_THRESHOLD + 3}):
+                    for y in range({TIER2_THRESHOLD + 3}):
+                        z = x + y
+
+            f()
+        """), PYTHON_JIT="1")
 
     def test_enter_executor_valid_op_arg(self):
         script_helper.assert_python_ok("-c", textwrap.dedent("""
@@ -5543,6 +5935,20 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_FOR_ITER_GEN_FRAME", uops)
         self.assertIn("_SEND_VIRTUAL_TIER_TWO", uops)
 
+    def test_send_virtual_exhausted(self):
+        # gh-155823: warm up on a non-empty list, then take the exhausted exit.
+        def gen(x):
+            yield from x
+        def testfunc(n, x):
+            total = 0
+            for _ in range(n):
+                for v in gen(x):
+                    total += v
+            return total
+
+        testfunc(TIER2_THRESHOLD * 10, [1])
+        self.assertEqual(testfunc(1000, []), 0)
+
     def test_binary_op_subscr_init_frame(self):
         class B:
             def __getitem__(self, other):
@@ -5696,12 +6102,13 @@ class TestUopsOptimization(unittest.TestCase):
     def test_match_class(self):
         def testfunc(n):
             class A:
+                __match_args__ = ("val",)
                 val = 1
             x = A()
             ret = 0
             for _ in range(n):
                 match x:
-                    case A():
+                    case A(1):
                         ret += x.val
             return ret
 
@@ -5710,7 +6117,7 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
 
         self.assertIn("_MATCH_CLASS", uops)
-        self.assertEqual(count_ops(ex, "_POP_TOP_NOP"), 4)
+        self.assertEqual(count_ops(ex, "_POP_TOP_NOP"), 5)
 
     def test_dict_update(self):
         def testfunc(n):
@@ -5920,6 +6327,44 @@ class TestUopsOptimization(unittest.TestCase):
 
         f1()
         """), PYTHON_JIT="1", PYTHON_JIT_STRESS="1")
+        self.assertEqual(result[0].rc, 0, result)
+
+    def test_149335_trace_buffer_guard(self):
+        # https://github.com/python/cpython/issues/149335
+
+        result = script_helper.run_python_until_end('-c', textwrap.dedent("""
+        import sys
+
+        def f1():
+            for i_3178 in 0, 2, 10:
+                mv162 = 162
+
+            mv3 = mv1 = mv_165 = mv16 = \
+            mv167 = mv168 = \
+            mv169 = \
+                mv_1403_170 = \
+                169
+
+            mv_1403_170
+
+            mv_172 = mv_3 = mv_4 = mv175 = mv176 = mv17 = mv178 = mv179 = mv0 = mv1 = mv182 = (
+            mv3
+            ) = mv4 = mv185 = mv186 = mv187 = mv18 = mv189 = mv0 = mv1 = mv192 = mv3 = mv4 = (
+            mv195
+            ) = mv196 = mv197 = mv_198 = mv19 = mv0 = mv1 = mv2 = mv3 = mv4 = mv05 = mv06 = (
+            mv07
+            ) = mv08 = mv09 = mv0 = mv1 = mv2 = mv3 = mv4 = mv15 = mv16 = mv17 = mv18 = mv19 = (
+            mv0
+            ) = mv1 = mv_2 = mv3 = mv4 = mv_25 = mv_26 = mv_27 = mv_28 = mv_29 = mv0 = mv1 = (
+            mv2
+            ) = mv_1403 = mv4 = mv35 = mv36 = mv37 = mv38 = mv39 = mv0 = -sys.maxsize / 3
+
+            mv1 = mv_12 = mv3 = mv_14 = mv45 = sys.float_info.epsilon
+            mv46 = sys.float_info.epsilon
+
+        for i in range(15000):
+            f1()
+        """), PYTHON_JIT="1")
         self.assertEqual(result[0].rc, 0, result)
 
     def test_144068_daemon_thread_jit_cleanup(self):
@@ -6151,6 +6596,28 @@ class TestUopsOptimization(unittest.TestCase):
             for _ in range({TIER2_THRESHOLD + 5}):
                 f1()
         """), PYTHON_JIT="1")
+
+    @isolation.runInSubprocess(timeout=SHORT_TIMEOUT)
+    def test_for_iter_side_exit_does_not_self_link(self):
+        def exhaust(iterator):
+            for _ in iterator:
+                pass
+
+        values = range(TIER2_THRESHOLD)
+        # After the initial trace, MAX_CHAIN_DEPTH side exits cause the final
+        # executor to be installed at FOR_ITER.
+        warmup_iterators = (
+            iter(set(values)),
+            iter(dict.fromkeys(values)),
+            iter(values),
+            enumerate(values),
+            zip(values, values),
+        )
+        for iterator in warmup_iterators:
+            exhaust(iterator)
+
+        # A different iterator type must not link that executor to itself.
+        exhaust(map(bool, values))
 
 def global_identity(x):
     return x

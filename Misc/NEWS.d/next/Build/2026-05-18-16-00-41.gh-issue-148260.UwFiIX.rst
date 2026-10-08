@@ -1,0 +1,3 @@
+On Linux when Python is linked to the musl C library, use a thread stack
+size of at least 1 MiB instead of musl default which is 128 kiB. Patch by
+Victor Stinner.

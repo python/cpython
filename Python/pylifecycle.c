@@ -11,7 +11,7 @@
 #include "pycore_fileutils.h"     // _Py_ResetForceASCII()
 #include "pycore_floatobject.h"   // _PyFloat_InitTypes()
 #include "pycore_freelist.h"      // _PyObject_ClearFreeLists()
-#include "pycore_global_objects_fini_generated.h"  // _PyStaticObjects_CheckRefcnt()
+#include "pycore_global_objects_fini_generated.h"  // _PyStaticObjects_CheckAll()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interpolation.h" // _PyInterpolation_InitTypes()
 #include "pycore_long.h"          // _PyLong_InitTypes()
@@ -28,6 +28,7 @@
 #include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_runtime_init.h"  // _PyRuntimeState_INIT
 #include "pycore_setobject.h"     // _PySet_NextEntry()
+#include "pycore_stackref.h"      // PyStackRef_FromPyObjectBorrow()
 #include "pycore_stats.h"         // _PyStats_InterpInit()
 #include "pycore_sysmodule.h"     // _PySys_ClearAttrString()
 #include "pycore_traceback.h"     // PyUnstable_TracebackThreads()
@@ -428,7 +429,8 @@ interpreter_update_config(PyThreadState *tstate, int only_update_path_config)
         }
     }
 
-    tstate->interp->long_state.max_str_digits = config->int_max_str_digits;
+    _Py_atomic_store_int(&tstate->interp->long_state.max_str_digits,
+                         config->int_max_str_digits);
 
     // Update the sys module for the new configuration
     if (_PySys_UpdateConfig(tstate) < 0) {
@@ -557,7 +559,11 @@ pycore_init_runtime(_PyRuntimeState *runtime,
      */
     _PyRuntimeState_SetFinalizing(runtime, NULL);
 
-    _Py_InitVersion();
+    status = _Py_GetVersion_Init();
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
     _Py_DumpTraceback_Init();
 
     status = _Py_HashRandomization_Init(config);
@@ -878,22 +884,28 @@ pycore_init_builtins(PyThreadState *tstate)
         goto error;
     }
 
-    interp->common_consts[CONSTANT_ASSERTIONERROR] = PyExc_AssertionError;
-    interp->common_consts[CONSTANT_NOTIMPLEMENTEDERROR] = PyExc_NotImplementedError;
-    interp->common_consts[CONSTANT_BUILTIN_TUPLE] = (PyObject *)&PyTuple_Type;
-    interp->common_consts[CONSTANT_BUILTIN_ALL] = all;
-    interp->common_consts[CONSTANT_BUILTIN_ANY] = any;
-    interp->common_consts[CONSTANT_BUILTIN_LIST] = (PyObject *)&PyList_Type;
-    interp->common_consts[CONSTANT_BUILTIN_SET] = (PyObject *)&PySet_Type;
-    interp->common_consts[CONSTANT_NONE] = Py_None;
-    interp->common_consts[CONSTANT_EMPTY_STR] =
+    PyObject *common_objs[NUM_COMMON_CONSTANTS] = {NULL};
+    common_objs[CONSTANT_ASSERTIONERROR] = PyExc_AssertionError;
+    common_objs[CONSTANT_NOTIMPLEMENTEDERROR] = PyExc_NotImplementedError;
+    common_objs[CONSTANT_BUILTIN_TUPLE] = (PyObject *)&PyTuple_Type;
+    common_objs[CONSTANT_BUILTIN_ALL] = all;
+    common_objs[CONSTANT_BUILTIN_ANY] = any;
+    common_objs[CONSTANT_BUILTIN_LIST] = (PyObject *)&PyList_Type;
+    common_objs[CONSTANT_BUILTIN_SET] = (PyObject *)&PySet_Type;
+    common_objs[CONSTANT_NONE] = Py_None;
+    common_objs[CONSTANT_EMPTY_STR] =
         Py_GetConstantBorrowed(Py_CONSTANT_EMPTY_STR);
-    interp->common_consts[CONSTANT_TRUE] = Py_True;
-    interp->common_consts[CONSTANT_FALSE] = Py_False;
-    interp->common_consts[CONSTANT_MINUS_ONE] =
+    common_objs[CONSTANT_TRUE] = Py_True;
+    common_objs[CONSTANT_FALSE] = Py_False;
+    common_objs[CONSTANT_MINUS_ONE] =
         (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS - 1];
+    common_objs[CONSTANT_BUILTIN_FROZENSET] = (PyObject *)&PyFrozenSet_Type;
+    common_objs[CONSTANT_EMPTY_TUPLE] =
+        Py_GetConstantBorrowed(Py_CONSTANT_EMPTY_TUPLE);
     for (int i = 0; i < NUM_COMMON_CONSTANTS; i++) {
-        assert(interp->common_consts[i] != NULL);
+        assert(common_objs[i] != NULL);
+        _Py_SetImmortal(common_objs[i]);
+        interp->common_consts[i] = PyStackRef_FromPyObjectBorrow(common_objs[i]);
     }
 
     PyObject *list_append = _PyType_Lookup(&PyList_Type, &_Py_ID(append));
@@ -914,6 +926,16 @@ pycore_init_builtins(PyThreadState *tstate)
 
     if (_PyBuiltins_AddExceptions(bimod) < 0) {
         return _PyStatus_ERR("failed to add exceptions to builtins");
+    }
+
+    /* The Python-implemented builtins live in the frozen _pybuiltins module.
+       Programs/_freeze_module has no frozen modules (it's what creates
+       them) and opts out via _install_importlib, like the import system. */
+    const PyConfig *config = _PyInterpreterState_GetConfig(interp);
+    if (config->_install_importlib) {
+        if (_PyBuiltin_InitPythonFunctions(builtins_dict) < 0) {
+            return _PyStatus_ERR("failed to add Python-implemented builtins");
+        }
     }
 
     interp->builtins_copy = PyDict_Copy(interp->builtins);
@@ -1486,15 +1508,11 @@ init_interp_main(PyThreadState *tstate)
 
     // Initialize lazy imports based on configuration. Do this after site
     // module is imported to avoid circular imports during startup.
-    if (config->lazy_imports != -1) {
-        PyImport_LazyImportsMode lazy_mode;
-        if (config->lazy_imports == 1) {
-            lazy_mode = PyImport_LAZY_ALL;
-        }
-        else {
-            lazy_mode = PyImport_LAZY_NONE;
-        }
-        if (PyImport_SetLazyImportsMode(lazy_mode) < 0) {
+    if (config->lazy_imports == 0) {
+        return _PyStatus_ERR("PyConfig.lazy_imports=0 is not supported");
+    }
+    if (config->lazy_imports == 1) {
+        if (PyImport_SetLazyImportsMode(PyImport_LAZY_ALL) < 0) {
             return _PyStatus_ERR("failed to set lazy imports mode");
         }
     }
@@ -2100,7 +2118,7 @@ finalize_interp_types(PyInterpreterState *interp)
 #endif
 
 #ifdef Py_DEBUG
-    _PyStaticObjects_CheckRefcnt(interp);
+    _PyStaticObjects_CheckAll(interp);
 #endif
 }
 
@@ -3066,7 +3084,18 @@ create_stdio(const PyConfig *config, PyObject* io,
     newline = "\n";
 #endif
 
-    PyObject *encoding_str = PyUnicode_FromWideChar(encoding, -1);
+    PyObject *encoding_str;
+    if (encoding != NULL) {
+        encoding_str = PyUnicode_FromWideChar(encoding, -1);
+    }
+    else {
+        /* gh-86427: use the encoding of the device. */
+        encoding_str = _Py_device_encoding(fd);
+        if (encoding_str == Py_None) {
+            Py_DECREF(encoding_str);
+            encoding_str = _Py_GetLocaleEncodingObject();
+        }
+    }
     if (encoding_str == NULL) {
         Py_CLEAR(buf);
         goto error;
@@ -3324,7 +3353,9 @@ apple_log_write_impl(PyObject *self, PyObject *args)
 
     // Pass the user-provided text through explicit %s formatting
     // to avoid % literals being interpreted as a formatting directive.
-    os_log_with_type(OS_LOG_DEFAULT, logtype, "%s", text);
+    // Using {public} ensures "dynamic" string messages are visible
+    // in the log without special configuration.
+    os_log_with_type(OS_LOG_DEFAULT, logtype, "%{public}s", text);
     Py_RETURN_NONE;
 }
 
@@ -3726,7 +3757,9 @@ fatal_error(int fd, int header, const char *prefix, const char *msg,
        This function already did its best to display a traceback.
        Disable faulthandler to prevent writing a second traceback
        on abort(). */
-    _PyFaulthandler_Fini();
+    if (has_tstate_and_gil) {
+        _PyFaulthandler_Fini();
+    }
 
     /* Check if the current Python thread hold the GIL */
     if (has_tstate_and_gil) {
@@ -3801,10 +3834,9 @@ _Py_FatalRefcountErrorFunc(const char *func, const char *msg)
 void _Py_NO_RETURN
 Py_ExitStatusException(PyStatus status)
 {
-    if (_PyStatus_IS_EXIT(status)) {
-        exit(status.exitcode);
-    }
-    else if (_PyStatus_IS_ERROR(status)) {
+    assert(!_PyStatus_IS_EXIT(status));
+
+    if (_PyStatus_IS_ERROR(status)) {
         fatal_error(fileno(stderr), 1, status.func, status.err_msg, 1);
     }
     else {
@@ -3819,8 +3851,8 @@ handle_thread_shutdown_exception(PyThreadState *tstate)
     assert(tstate != NULL);
     assert(_PyErr_Occurred(tstate));
     PyInterpreterState *interp = tstate->interp;
-    assert(interp->threads.head != NULL);
     _PyEval_StopTheWorld(interp);
+    assert(interp->threads.head != NULL);
 
     // We don't have to worry about locking this because the
     // world is stopped.

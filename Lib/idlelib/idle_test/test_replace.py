@@ -246,32 +246,108 @@ class ReplaceDialogTest(unittest.TestCase):
         equal(text.get('1.2', '1.5'), 'was')
 
     def test_replace_all(self):
+        # The default mode, forward with wrap around, replaces every
+        # match, both below and above the current position.
+        equal = self.assertEqual
         text = self.text
         pv = self.engine.patvar
         rv = self.dialog.replvar
         replace_all = self.dialog.replace_all
 
-        text.insert('insert', '\n')
-        text.insert('insert', text.get('1.0', 'end')*100)
-        pv.set('is')
-        rv.set('was')
+        text.delete('1.0', 'end')
+        text.insert('1.0', 'a\na\na\n')
+        text.mark_set('insert', '2.1')
+        pv.set('a')
+        rv.set('b')
         replace_all()
-        self.assertNotIn('is', text.get('1.0', 'end'))
+        equal(text.get('1.0', '3.end'), 'b\nb\nb')  # Wrapped around.
 
+        # An empty regular expression is reported as an error.
         self.engine.revar.set(True)
         pv.set('')
         replace_all()
         self.assertIn('error', showerror.title)
         self.assertIn('Empty', showerror.message)
 
+        # An invalid replacement expression is reported as an error,
+        # and nothing is replaced.
+        text.delete('1.0', 'end')
+        text.insert('1.0', 'asT')
         pv.set('[s][T]')
         rv.set('\\')
         replace_all()
+        self.assertIn('error', showerror.title)
+        self.assertIn('Invalid Replace Expression', showerror.message)
+        equal(text.get('1.0', '1.end'), 'asT')
 
+        # A pattern that is not present replaces nothing.
         self.engine.revar.set(False)
+        text.delete('1.0', 'end')
+        text.insert('1.0', 'unchanged')
         pv.set('text which is not present')
         rv.set('foobar')
         replace_all()
+        equal(text.get('1.0', '1.end'), 'unchanged')
+
+    def test_replace_all_backwards_no_wrap(self):
+        # gh-71956: 'up' without wrap replaces all matches from the start
+        # of the text down to the current position, not just one up.
+        equal = self.assertEqual
+        text = self.text
+        pv = self.engine.patvar
+        rv = self.dialog.replvar
+        replace_all = self.dialog.replace_all
+        self.engine.backvar.set(True)
+        self.engine.wrapvar.set(False)
+
+        text.delete('1.0', 'end')
+        text.insert('1.0', 'a\na\na\n')
+        text.mark_set('insert', '2.1')
+        pv.set('a')
+        rv.set('b')
+        replace_all()
+        equal(text.get('1.0', '1.end'), 'b')  # Above the cursor.
+        equal(text.get('2.0', '2.end'), 'b')  # At the cursor.
+        equal(text.get('3.0', '3.end'), 'a')  # Below the cursor, untouched.
+
+    def test_replace_all_forwards_no_wrap(self):
+        # 'down' without wrap replaces all matches from the current
+        # position to the end of the text, and none before it.
+        equal = self.assertEqual
+        text = self.text
+        pv = self.engine.patvar
+        rv = self.dialog.replvar
+        replace_all = self.dialog.replace_all
+        self.engine.backvar.set(False)
+        self.engine.wrapvar.set(False)
+
+        text.delete('1.0', 'end')
+        text.insert('1.0', 'a\na\na\n')
+        text.mark_set('insert', '2.1')
+        pv.set('a')
+        rv.set('b')
+        replace_all()
+        equal(text.get('1.0', '1.end'), 'a')  # Before the cursor, untouched.
+        equal(text.get('2.0', '2.end'), 'a')  # Before the cursor, untouched.
+        equal(text.get('3.0', '3.end'), 'b')  # After the cursor.
+
+    def test_replace_all_backwards_wrap(self):
+        # With wrap around, an 'up' search also replaces every match.
+        equal = self.assertEqual
+        text = self.text
+        pv = self.engine.patvar
+        rv = self.dialog.replvar
+        replace_all = self.dialog.replace_all
+        self.engine.backvar.set(True)
+        self.engine.wrapvar.set(True)
+
+        text.delete('1.0', 'end')
+        text.insert('1.0', 'a\na\na\n')
+        text.mark_set('insert', '2.1')
+        pv.set('a')
+        rv.set('b')
+        replace_all()
+        equal(text.get('1.0', '3.end'), 'b\nb\nb')
 
     def test_default_command(self):
         text = self.text

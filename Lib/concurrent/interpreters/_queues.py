@@ -185,7 +185,8 @@ class Queue:
         underlying data is actually shared.  Furthermore, some types
         can be sent through a queue more efficiently than others.  This
         group includes various immutable types like int, str, bytes, and
-        tuple (if the items are likewise efficiently shareable).  See interpreters.is_shareable().
+        tuple (if the items are likewise efficiently shareable).
+        See interpreters.is_shareable().
 
         "unbounditems" controls the behavior of Queue.get() for the given
         object if the current interpreter (calling put()) is later
@@ -219,12 +220,12 @@ class Queue:
             timeout = int(timeout)
             if timeout < 0:
                 raise ValueError(f'timeout value must be non-negative')
-            end = time.time() + timeout
+            end = time.monotonic() + timeout
         while True:
             try:
                 _queues.put(self._id, obj, unboundop)
             except QueueFull:
-                if timeout is not None and time.time() >= end:
+                if timeout is not None and time.monotonic() >= end:
                     raise  # re-raise
                 time.sleep(_delay)
             else:
@@ -254,12 +255,12 @@ class Queue:
             timeout = int(timeout)
             if timeout < 0:
                 raise ValueError(f'timeout value must be non-negative')
-            end = time.time() + timeout
+            end = time.monotonic() + timeout
         while True:
             try:
                 obj, unboundop = _queues.get(self._id)
             except QueueEmpty:
-                if timeout is not None and time.time() >= end:
+                if timeout is not None and time.monotonic() >= end:
                     raise  # re-raise
                 time.sleep(_delay)
             else:

@@ -5,11 +5,9 @@ import collections
 import html
 import importlib.resources
 import json
-import locale
 import math
 import os
 import platform
-import site
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -598,7 +596,7 @@ class HeatmapCollector(StackTraceCollector):
         """
         if not self.file_samples:
             print("Warning: No heatmap data to export")
-            return
+            return False
 
         try:
             output_dir = self._prepare_output_directory(output_path)
@@ -612,6 +610,7 @@ class HeatmapCollector(StackTraceCollector):
             self._generate_index_html(output_dir / 'index.html', file_stats)
 
             self._print_export_summary(output_dir, file_stats)
+            return True
 
         except Exception as e:
             print(f"Error: Failed to export heatmap: {e}")
@@ -784,14 +783,14 @@ class HeatmapCollector(StackTraceCollector):
                           line_counts: Dict[int, int], self_counts: Dict[int, int],
                           file_stat: FileStats):
         """Generate HTML for a single source file with heatmap coloring."""
-        # Read source file
+        source_lines = [f"# Source file not available: {filename}"]
         try:
-            source_lines = Path(filename).read_text(encoding='utf-8', errors='replace').splitlines()
-        except (IOError, OSError) as e:
-            if not (filename.startswith('<') or filename.startswith('[') or
-                    filename in ('~', '...', '.') or len(filename) < 2):
-                print(f"Warning: Could not read source file {filename}: {e}")
-            source_lines = [f"# Source file not available: {filename}"]
+            path = Path(filename)
+            if path.is_file():
+                source_lines = path.read_text(
+                    encoding='utf-8', errors='replace').splitlines()
+        except (IOError, OSError):
+            pass
 
         # Generate HTML for each line
         max_samples = max(line_counts.values()) if line_counts else 1

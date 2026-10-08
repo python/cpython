@@ -54,8 +54,10 @@ class RefcountTestCase(unittest.TestCase):
         gc.collect()
         self.assertEqual(sys.getrefcount(func), orig_refcount)
 
-        class X(ctypes.Structure):
-            _fields_ = [("a", OtherCallback)]
+        @ctypes.util.struct
+        class X:
+            a: OtherCallback
+
         x = X()
         x.a = OtherCallback(func)
 
@@ -127,9 +129,9 @@ class PyObjectRestypeTest(unittest.TestCase):
     def test_restype_py_object_with_null_return(self):
         # Test that a function which returns a NULL PyObject *
         # without setting an exception does not crash.
-        PyErr_Occurred = ctypes.pythonapi.PyErr_Occurred
-        PyErr_Occurred.argtypes = []
-        PyErr_Occurred.restype = ctypes.py_object
+        @ctypes.util.wrap_dll_function(ctypes.pythonapi)
+        def PyErr_Occurred() -> ctypes.py_object:
+            pass
 
         # At this point, there's no exception set, so PyErr_Occurred
         # returns NULL. Given the restype is py_object, the

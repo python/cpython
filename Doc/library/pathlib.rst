@@ -131,10 +131,11 @@ we also call *flavours*:
       >>> PurePath(Path('foo'), Path('bar'))
       PurePosixPath('foo/bar')
 
-   When *pathsegments* is empty, the current directory is assumed::
+   When *pathsegments* is empty or consists only of empty strings,
+   the current directory is assumed::
 
-      >>> PurePath()
-      PurePosixPath('.')
+      >>> PurePath(), PurePath('')
+      (PurePosixPath('.'), PurePosixPath('.'))
 
    If a segment is an absolute path, all previous segments are ignored
    (like :func:`os.path.join`)::
@@ -1040,8 +1041,8 @@ Querying file type and status
 
 .. method:: Path.exists(*, follow_symlinks=True)
 
-   Return ``True`` if the path points to an existing file or directory.
-   ``False`` will be returned if the path is invalid, inaccessible or missing.
+   Return ``True`` if the path points to an existing file or directory and
+   ``False`` if the path is invalid, inaccessible or missing.
    Use :meth:`Path.stat` to distinguish between these cases.
 
    This method normally follows symlinks; to check if a symlink exists, add
@@ -1049,6 +1050,8 @@ Querying file type and status
 
    ::
 
+      >>> Path('').exists()  # The current directory.
+      True
       >>> Path('.').exists()
       True
       >>> Path('setup.py').exists()
@@ -1518,7 +1521,8 @@ Creating files and directories
       :meth:`~Path.write_bytes` methods are often used to create files.
 
 
-.. method:: Path.mkdir(mode=0o777, parents=False, exist_ok=False)
+.. method:: Path.mkdir(mode=0o777, parents=False, exist_ok=False, *, \
+                       parent_mode=None)
 
    Create a new directory at this given path.  If *mode* is given, it is
    combined with the process's ``umask`` value to determine the file mode
@@ -1528,6 +1532,12 @@ Creating files and directories
    If *parents* is true, any missing parents of this path are created
    as needed; they are created with the default permissions without taking
    *mode* into account (mimicking the POSIX ``mkdir -p`` command).
+
+   If *parent_mode* is not ``None``, it is used as the mode for any
+   newly-created, intermediate-level directories when *parents* is true.
+   Like *mode*, it is combined with the process's ``umask`` value.
+   Otherwise, intermediate directories are created with the default
+   permissions (also subject to the umask).
 
    If *parents* is false (the default), a missing parent raises
    :exc:`FileNotFoundError`.
@@ -1541,6 +1551,9 @@ Creating files and directories
 
    .. versionchanged:: 3.5
       The *exist_ok* parameter was added.
+
+   .. versionadded:: 3.15
+      The *parent_mode* parameter.
 
 
 .. method:: Path.symlink_to(target, target_is_directory=False)

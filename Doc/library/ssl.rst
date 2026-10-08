@@ -146,9 +146,9 @@ purposes.
    *cadata* is given) or uses :meth:`SSLContext.load_default_certs` to load
    default CA certificates.
 
-   When :attr:`~SSLContext.keylog_filename` is supported and the environment
-   variable :envvar:`SSLKEYLOGFILE` is set, :func:`create_default_context`
-   enables key logging.
+   When the environment variable :envvar:`!SSLKEYLOGFILE` is set,
+   :func:`create_default_context` enables key logging by setting
+   :attr:`~SSLContext.keylog_filename` to the variable's value.
 
    The default settings for this context include
    :data:`VERIFY_X509_PARTIAL_CHAIN` and :data:`VERIFY_X509_STRICT`.
@@ -982,13 +982,25 @@ Constants
 
 .. data:: OPENSSL_VERSION_INFO
 
-   A tuple of five integers representing version information about the
-   OpenSSL library::
+   A named tuple of five integers representing version information about the
+   OpenSSL library loaded by the interpreter:
+   *major*, *minor*, *fix*, *patch* and *status*::
 
     >>> ssl.OPENSSL_VERSION_INFO
-    (1, 0, 2, 11, 15)
+    ssl.OPENSSL_VERSION_INFO(major=3, minor=0, fix=0, patch=13, status=0)
 
    .. versionadded:: 3.2
+
+   .. versionchanged:: next
+      It is now a named tuple.
+
+.. data:: OPENSSL_API_VERSION_INFO
+
+   A named tuple containing the version of the OpenSSL library that was used
+   for building the module, with the same fields as :const:`OPENSSL_VERSION_INFO`.
+   This may be different from the OpenSSL library actually used at runtime.
+
+   .. versionadded:: next
 
 .. data:: OPENSSL_VERSION_NUMBER
 
@@ -1121,7 +1133,7 @@ SSL sockets
       :meth:`SSLContext.wrap_socket` to wrap a socket.
 
    .. versionchanged:: 3.7
-      :class:`SSLSocket` instances must to created with
+      :class:`SSLSocket` instances must be created with
       :meth:`~SSLContext.wrap_socket`. In earlier versions, it was possible
       to create instances directly. This was never documented or officially
       supported.
@@ -1847,6 +1859,12 @@ to speed up repeated connections from the same clients.
    :class:`SSLContext` representing a certificate chain that matches the server
    name.
 
+   If the callback assigns a new context to :attr:`SSLSocket.context`, any
+   further ClientHello message on the same connection (for example after a
+   TLS 1.3 HelloRetryRequest) is dispatched to the new context's
+   *sni_callback*, if it has one; the original callback is not called again
+   for that connection.
+
    Due to the early negotiation phase of the TLS connection, only limited
    methods and attributes are usable like
    :meth:`SSLSocket.selected_alpn_protocol` and :attr:`SSLSocket.context`.
@@ -1870,6 +1888,11 @@ to speed up repeated connections from the same clients.
    had OPENSSL_NO_TLSEXT defined when it was built.
 
    .. versionadded:: 3.7
+
+   .. versionchanged:: next
+      After the callback assigns a new :attr:`SSLSocket.context`, later
+      ClientHello messages on the connection are dispatched to the new
+      context's *sni_callback*.
 
 .. method:: SSLContext.set_servername_callback(server_name_callback)
 
@@ -1992,7 +2015,11 @@ to speed up repeated connections from the same clients.
    outgoing BIO.
 
    The *server_side*, *server_hostname* and *session* parameters have the
-   same meaning as in :meth:`SSLContext.wrap_socket`.
+   same meaning as in :meth:`SSLContext.wrap_socket`, and are validated in
+   the same way: in particular a :exc:`ValueError` is raised when
+   :attr:`~SSLContext.check_hostname` is enabled but no *server_hostname* is
+   given, since there would be no name to match the peer's certificate
+   against.
 
    .. versionchanged:: 3.6
       *session* argument was added.
@@ -2000,6 +2027,13 @@ to speed up repeated connections from the same clients.
    .. versionchanged:: 3.7
       The method returns an instance of :attr:`SSLContext.sslobject_class`
       instead of hard-coded :class:`SSLObject`.
+
+   .. versionchanged:: next
+      The *server_side*, *server_hostname* and *session* parameters are now
+      validated as :meth:`SSLContext.wrap_socket` validates them. Previously
+      a context with :attr:`~SSLContext.check_hostname` enabled and no
+      *server_hostname* was accepted, and verified the certificate chain but
+      never the peer's identity.
 
 .. attribute:: SSLContext.sslobject_class
 
@@ -2076,7 +2110,7 @@ to speed up repeated connections from the same clients.
    :attr:`~SSLContext.minimum_version` and
    :attr:`SSLContext.options` all affect the supported SSL
    and TLS versions of the context. The implementation does not prevent
-   invalid combination. For example a context with
+   invalid combinations. For example a context with
    :attr:`OP_NO_TLSv1_2` in :attr:`~SSLContext.options` and
    :attr:`~SSLContext.maximum_version` set to :attr:`TLSVersion.TLSv1_2`
    will not be able to establish a TLS 1.2 connection.
@@ -2473,79 +2507,67 @@ Visual inspection shows that the certificate does identify the desired service
 (that is, the HTTPS host ``www.python.org``)::
 
    >>> pprint.pprint(cert)
-   {
-       'OCSP': ('http://ocsp.digicert.com',),
-       'caIssuers': ('http://cacerts.digicert.com/DigiCertSHA2ExtendedValidationServerCA.crt',),
-       'crlDistributionPoints': (
-           'http://crl3.digicert.com/sha2-ev-server-g1.crl',
-           'http://crl4.digicert.com/sha2-ev-server-g1.crl',
-       ),
-       'issuer': (
-           (('countryName', 'US'),),
-           (('organizationName', 'DigiCert Inc'),),
-           (('organizationalUnitName', 'www.digicert.com'),),
-           (('commonName', 'DigiCert SHA2 Extended Validation Server CA'),),
-       ),
-       'notAfter': 'Sep  9 12:00:00 2016 GMT',
-       'notBefore': 'Sep  5 00:00:00 2014 GMT',
-       'serialNumber': '01BB6F00122B177F36CAB49CEA8B6B26',
-       'subject': (
-           (('businessCategory', 'Private Organization'),),
-           (('1.3.6.1.4.1.311.60.2.1.3', 'US'),),
-           (('1.3.6.1.4.1.311.60.2.1.2', 'Delaware'),),
-           (('serialNumber', '3359300'),),
-           (('streetAddress', '16 Allen Rd'),),
-           (('postalCode', '03894-4801'),),
-           (('countryName', 'US'),),
-           (('stateOrProvinceName', 'NH'),),
-           (('localityName', 'Wolfeboro'),),
-           (('organizationName', 'Python Software Foundation'),),
-           (('commonName', 'www.python.org'),),
-       ),
-       'subjectAltName': (
-           ('DNS', 'www.python.org'),
-           ('DNS', 'python.org'),
-           ('DNS', 'pypi.org'),
-           ('DNS', 'docs.python.org'),
-           ('DNS', 'testpypi.org'),
-           ('DNS', 'bugs.python.org'),
-           ('DNS', 'wiki.python.org'),
-           ('DNS', 'hg.python.org'),
-           ('DNS', 'mail.python.org'),
-           ('DNS', 'packaging.python.org'),
-           ('DNS', 'pythonhosted.org'),
-           ('DNS', 'www.pythonhosted.org'),
-           ('DNS', 'test.pythonhosted.org'),
-           ('DNS', 'us.pycon.org'),
-           ('DNS', 'id.python.org'),
-       ),
-       'version': 3,
-   }
+   {'OCSP': ('http://ocsp.digicert.com',),
+    'caIssuers': ('http://cacerts.digicert.com/DigiCertSHA2ExtendedValidationServerCA.crt',),
+    'crlDistributionPoints': ('http://crl3.digicert.com/sha2-ev-server-g1.crl',
+                              'http://crl4.digicert.com/sha2-ev-server-g1.crl'),
+    'issuer': ((('countryName', 'US'),),
+               (('organizationName', 'DigiCert Inc'),),
+               (('organizationalUnitName', 'www.digicert.com'),),
+               (('commonName', 'DigiCert SHA2 Extended Validation Server CA'),)),
+    'notAfter': 'Sep  9 12:00:00 2016 GMT',
+    'notBefore': 'Sep  5 00:00:00 2014 GMT',
+    'serialNumber': '01BB6F00122B177F36CAB49CEA8B6B26',
+    'subject': ((('businessCategory', 'Private Organization'),),
+                (('1.3.6.1.4.1.311.60.2.1.3', 'US'),),
+                (('1.3.6.1.4.1.311.60.2.1.2', 'Delaware'),),
+                (('serialNumber', '3359300'),),
+                (('streetAddress', '16 Allen Rd'),),
+                (('postalCode', '03894-4801'),),
+                (('countryName', 'US'),),
+                (('stateOrProvinceName', 'NH'),),
+                (('localityName', 'Wolfeboro'),),
+                (('organizationName', 'Python Software Foundation'),),
+                (('commonName', 'www.python.org'),)),
+    'subjectAltName': (('DNS', 'www.python.org'),
+                       ('DNS', 'python.org'),
+                       ('DNS', 'pypi.org'),
+                       ('DNS', 'docs.python.org'),
+                       ('DNS', 'testpypi.org'),
+                       ('DNS', 'bugs.python.org'),
+                       ('DNS', 'wiki.python.org'),
+                       ('DNS', 'hg.python.org'),
+                       ('DNS', 'mail.python.org'),
+                       ('DNS', 'packaging.python.org'),
+                       ('DNS', 'pythonhosted.org'),
+                       ('DNS', 'www.pythonhosted.org'),
+                       ('DNS', 'test.pythonhosted.org'),
+                       ('DNS', 'us.pycon.org'),
+                       ('DNS', 'id.python.org')),
+    'version': 3}
 
 Now the SSL channel is established and the certificate verified, you can
 proceed to talk with the server::
 
    >>> conn.sendall(b"HEAD / HTTP/1.0\r\nHost: linuxfr.org\r\n\r\n")
    >>> pprint.pprint(conn.recv(1024).split(b"\r\n"))
-   [
-       b'HTTP/1.1 200 OK',
-       b'Date: Sat, 18 Oct 2014 18:27:20 GMT',
-       b'Server: nginx',
-       b'Content-Type: text/html; charset=utf-8',
-       b'X-Frame-Options: SAMEORIGIN',
-       b'Content-Length: 45679',
-       b'Accept-Ranges: bytes',
-       b'Via: 1.1 varnish',
-       b'Age: 2188',
-       b'X-Served-By: cache-lcy1134-LCY',
-       b'X-Cache: HIT',
-       b'X-Cache-Hits: 11',
-       b'Vary: Cookie',
-       b'Strict-Transport-Security: max-age=63072000; includeSubDomains',
-       b'Connection: close',
-       b'',
-       b'',
-   ]
+   [b'HTTP/1.1 200 OK',
+    b'Date: Sat, 18 Oct 2014 18:27:20 GMT',
+    b'Server: nginx',
+    b'Content-Type: text/html; charset=utf-8',
+    b'X-Frame-Options: SAMEORIGIN',
+    b'Content-Length: 45679',
+    b'Accept-Ranges: bytes',
+    b'Via: 1.1 varnish',
+    b'Age: 2188',
+    b'X-Served-By: cache-lcy1134-LCY',
+    b'X-Cache: HIT',
+    b'X-Cache-Hits: 11',
+    b'Vary: Cookie',
+    b'Strict-Transport-Security: max-age=63072000; includeSubDomains',
+    b'Connection: close',
+    b'',
+    b'']
 
 See the discussion of :ref:`ssl-security` below.
 
@@ -2891,11 +2913,11 @@ disabled by default.
 ::
 
    >>> client_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-   >>> client_context.minimum_version = ssl.TLSVersion.TLSv1_3
+   >>> client_context.minimum_version = ssl.TLSVersion.TLSv1_2
    >>> client_context.maximum_version = ssl.TLSVersion.TLSv1_3
 
 
-The SSL context created above will only allow TLSv1.3 and later (if
+The SSL client context created above will only allow TLSv1.2 and TLSv1.3 (if
 supported by your system) connections to a server. :const:`PROTOCOL_TLS_CLIENT`
 implies certificate validation and hostname checks by default. You have to
 load certificates into the context.

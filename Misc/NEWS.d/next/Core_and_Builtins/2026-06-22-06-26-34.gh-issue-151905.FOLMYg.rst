@@ -1,0 +1,1 @@
+Fix OOM error handling in :c:func:`PyFrame_GetBack` to propagate exceptions instead of masking them as None.

@@ -182,6 +182,8 @@ _CONFIG_VARS_LOCK = threading.RLock()
 _CONFIG_VARS = None
 # True iff _CONFIG_VARS has been fully initialized.
 _CONFIG_VARS_INITIALIZED = False
+_config_vars_cached_prefix = None
+_config_vars_cached_exec_prefix = None
 _USER_BASE = None
 
 
@@ -435,8 +437,10 @@ def parse_config_h(fp, vars=None):
     if vars is None:
         vars = {}
     import re
-    define_rx = re.compile("#define ([A-Z][A-Za-z0-9_]+) (.*)\n")
-    undef_rx = re.compile("/[*] #undef ([A-Z][A-Za-z0-9_]+) [*]/\n")
+    name_rx = '(?:[A-Z]|_Py_)[A-Za-z0-9_]+'
+    define_rx = re.compile(fr"#define ({name_rx}) (.*)\n")
+    undef_rx = re.compile(fr"/[*] #undef ({name_rx}) [*]/\n")
+    quoted_re = re.compile(r'"(.*)"')
 
     while True:
         line = fp.readline()
@@ -445,6 +449,8 @@ def parse_config_h(fp, vars=None):
         m = define_rx.match(line)
         if m:
             n, v = m.group(1, 2)
+            if mq := quoted_re.fullmatch(v):
+                v = mq.group(1)
             try:
                 if n in _ALWAYS_STR:
                     raise ValueError
@@ -597,16 +603,20 @@ def get_config_vars(*args):
     each argument in the configuration variable dictionary.
     """
     global _CONFIG_VARS_INITIALIZED
+    global _config_vars_cached_prefix
+    global _config_vars_cached_exec_prefix
 
     # Avoid claiming the lock once initialization is complete.
+    prefix = os.path.normpath(sys.prefix)
+    exec_prefix = os.path.normpath(sys.exec_prefix)
     if _CONFIG_VARS_INITIALIZED:
         # GH-126789: If sys.prefix or sys.exec_prefix were updated, invalidate the cache.
-        prefix = os.path.normpath(sys.prefix)
-        exec_prefix = os.path.normpath(sys.exec_prefix)
-        if _CONFIG_VARS['prefix'] != prefix or _CONFIG_VARS['exec_prefix'] != exec_prefix:
+        if _config_vars_cached_prefix != prefix or _config_vars_cached_exec_prefix != exec_prefix:
             with _CONFIG_VARS_LOCK:
                 _CONFIG_VARS_INITIALIZED = False
                 _init_config_vars()
+                _config_vars_cached_prefix = prefix
+                _config_vars_cached_exec_prefix = exec_prefix
     else:
         # Initialize the config_vars cache.
         with _CONFIG_VARS_LOCK:
@@ -616,6 +626,8 @@ def get_config_vars(*args):
             # don't re-enter init_config_vars().
             if _CONFIG_VARS is None:
                 _init_config_vars()
+            _config_vars_cached_prefix = prefix
+            _config_vars_cached_exec_prefix = exec_prefix
 
     if args:
         vals = []

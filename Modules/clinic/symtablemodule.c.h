@@ -7,12 +7,15 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
 PyDoc_STRVAR(_symtable_symtable__doc__,
 "symtable($module, source, filename, startstr, /, *, module=None)\n"
 "--\n"
 "\n"
-"Return symbol and scope dictionaries used internally by compiler.");
+"Return symbol and scope dictionaries used internally by compiler.\n"
+"\n"
+"The source can be a string, a bytes object, or an AST object.");
 
 #define _SYMTABLE_SYMTABLE_METHODDEF    \
     {"symtable", _PyCFunction_CAST(_symtable_symtable), METH_FASTCALL|METH_KEYWORDS, _symtable_symtable__doc__},
@@ -73,13 +76,8 @@ _symtable_symtable(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
         _PyArg_BadArgument("symtable", "argument 3", "str", args[2]);
         goto exit;
     }
-    Py_ssize_t startstr_length;
-    startstr = PyUnicode_AsUTF8AndSize(args[2], &startstr_length);
+    startstr = _PyUnicode_AsUTF8NoNUL(args[2]);
     if (startstr == NULL) {
-        goto exit;
-    }
-    if (strlen(startstr) != (size_t)startstr_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     if (!noptargs) {
@@ -95,4 +93,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=0137be60c487c841 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=910e4f6ce98ae0a1 input=a9049054013a1b77]*/

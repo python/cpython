@@ -68,6 +68,7 @@ The module defines the following exception and functions:
    Pack the values *v1*, *v2*, ... according to the format string *format* and
    write the packed bytes into the writable buffer *buffer* starting at
    position *offset*.  Note that *offset* is a required argument.
+   A negative *offset* counts from the end of *buffer*.
 
 
 .. function:: unpack(format, buffer)
@@ -84,6 +85,7 @@ The module defines the following exception and functions:
    string *format*.  The result is a tuple even if it contains exactly one
    item.  The buffer's size in bytes, starting at position *offset*, must be at
    least the size required by the format, as reflected by :func:`calcsize`.
+   A negative *offset* counts from the end of *buffer*.
 
 
 .. function:: iter_unpack(format, buffer)
@@ -261,10 +263,6 @@ platform-dependent.
 +--------+--------------------------+--------------------+----------------+------------+
 | ``d``  | :c:expr:`double`         | float              | 8              | \(4)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``F``  | :c:expr:`float complex`  | complex            | 8              | \(10)      |
-+--------+--------------------------+--------------------+----------------+------------+
-| ``D``  | :c:expr:`double complex` | complex            | 16             | \(10)      |
-+--------+--------------------------+--------------------+----------------+------------+
 | ``Zf`` | :c:expr:`float complex`  | complex            | 8              | \(10)      |
 +--------+--------------------------+--------------------+----------------+------------+
 | ``Zd`` | :c:expr:`double complex` | complex            | 16             | \(10)      |
@@ -287,6 +285,9 @@ platform-dependent.
 
 .. versionchanged:: 3.15
    Added support for the ``'Zf'`` and ``'Zd'`` formats.
+
+.. versionchanged:: 3.16
+   ``'F'`` and ``'D'`` formats are deprecated.
 
 .. seealso::
 
@@ -377,13 +378,15 @@ Notes:
    are accepted.
 
 (10)
-   For the ``'F'`` and ``'D'`` type codes, the packed representation uses
+   For the ``'Zf'`` and ``'Zd'`` type codes, the packed representation uses
    the IEEE 754 binary32 and binary64 format for components of the complex
    number, regardless of the floating-point format used by the platform.
-   Note that complex types (``F``/``Zf`` and ``D``/``Zd``) are available unconditionally,
+   Note that complex types are available unconditionally,
    despite complex types being an optional feature in C.
    As specified in the C11 standard, each complex type is represented by a
    two-element C array containing, respectively, the real and imaginary parts.
+   The ``'F'`` and ``'D'`` (for ``'Zf'`` and ``'Zd'``, respectively) format
+   characters are supported for compatibility.
 
 
 A type code may be preceded by an integral repeat count.  For example,
