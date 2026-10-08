@@ -1,0 +1,5 @@
+Fix :mod:`profiling.sampling` exception mode discarding samples for code
+running inside an ``except`` block in a generator or coroutine. The remote
+debugger now follows ``tstate->exc_info`` and its ``previous_item`` chain
+instead of only reading the embedded ``exc_state``, matching the exception
+that :func:`sys.exception` reports.

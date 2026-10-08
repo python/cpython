@@ -547,6 +547,9 @@ jobs:
         - check-name: Undefined behavior
           sanitizer: UBSan
           free-threading: false
+        - check-name: Memory
+          sanitizer: MSan
+          free-threading: false
     uses: ./.github/workflows/reusable-san.yml
     with:
       sanitizer: ${{ matrix.sanitizer }}
