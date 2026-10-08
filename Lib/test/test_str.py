@@ -566,6 +566,18 @@ class StrTest(string_tests.StringLikeTest,
         self.checkequalnofix('a b c d', ' ', 'join', ['a', 'b', 'c', 'd'])
         self.checkequalnofix('abcd', '', 'join', ('a', 'b', 'c', 'd'))
         self.checkequalnofix('w x y z', ' ', 'join', string_tests.Sequence('wxyz'))
+        # mixed kinds of the separator and the items
+        self.checkequalnofix('a\xe9b', '\xe9', 'join', ['a', 'b'])
+        self.checkequalnofix('a\u20acb', '\u20ac', 'join', ['a', 'b'])
+        self.checkequalnofix('a\xe9', '', 'join', ['a', '\xe9'])
+        self.checkequalnofix('\u20ac\xe9', '', 'join', ['\u20ac', '\xe9'])
+        self.checkequalnofix('\xe9-\u20ac-\U0001f600', '-', 'join',
+                             ['\xe9', '\u20ac', '\U0001f600'])
+        self.checkequalnofix('\U0001f600-a', '-', 'join', ['\U0001f600', 'a'])
+        # a single item which is a str subclass is copied
+        class S(str): pass
+        for s in 'a', '\xe9', '\u20ac', '\U0001f600':
+            self.checkequalnofix(s, '-', 'join', [S(s)])
         self.checkraises(TypeError, ' ', 'join', ['1', '2', MyWrapper('foo')])
         self.checkraises(TypeError, ' ', 'join', ['1', '2', '3', bytes()])
         self.checkraises(TypeError, ' ', 'join', [1, 2, 3])
