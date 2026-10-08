@@ -1,0 +1,3 @@
+Fix :mod:`!test.test_math` failing to import on musl-based systems. The
+skip condition of ``test_fma_zero_result`` compared the boolean returned by
+:func:`!test.support.linked_to_musl` with a version tuple.
