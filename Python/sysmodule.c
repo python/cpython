@@ -64,6 +64,10 @@ extern const char *PyWin_DLLVersionString;
 #  include <emscripten.h>
 #endif
 
+#ifdef __wasi__
+#  include <wasi/version.h>
+#endif
+
 #ifdef HAVE_FCNTL_H
 #  include <fcntl.h>
 #endif
@@ -3837,6 +3841,49 @@ error:
 }
 
 
+#ifdef __wasi__
+
+static PyObject *
+make_wasi_info(void)
+{
+#if defined(__wasip1__)
+    const char *wasi_version = "p1";
+#elif defined(__wasip2__)
+    const char *wasi_version = "p2";
+#elif defined(__wasip3__)
+    const char *wasi_version = "p3";
+#else
+#  error "Unknown WASI target version"
+#endif
+
+    // The SDK version is only defined for SDK builds of wasi-libc.
+#ifdef __wasi_sdk_version__
+    const char *wasi_sdk_version = __wasi_sdk_version__;
+#else
+#  error "Unknown WASI SDK version"
+#endif
+
+#ifdef __wasi_cooperative_threads__
+    PyObject *cooperative_threads = Py_True;
+#else
+    PyObject *cooperative_threads = Py_False;
+#endif
+
+    PyObject *wasi_info = Py_BuildValue(
+        "{s:s,s:s,s:O}",
+        "wasi_version", wasi_version,
+        "wasi_sdk_version", wasi_sdk_version,
+        "cooperative_threads", cooperative_threads);
+    if (wasi_info == NULL) {
+        return NULL;
+    }
+    PyObject *ns = _PyNamespace_New(wasi_info);
+    Py_DECREF(wasi_info);
+    return ns;
+}
+
+#endif // __wasi__
+
 #ifdef __EMSCRIPTEN__
 
 PyDoc_STRVAR(emscripten_info__doc__,
@@ -4083,6 +4130,10 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
     SET_SYS("thread_info", PyThread_GetInfo());
 
     SET_SYS("abi_info", make_abi_info());
+
+#ifdef __wasi__
+    SET_SYS("_wasi_info", make_wasi_info());
+#endif
 
     /* initialize asyncgen_hooks */
     if (_PyStructSequence_InitBuiltin(interp, &AsyncGenHooksType,
