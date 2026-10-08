@@ -70,37 +70,37 @@ class TestGetBuildInfo(unittest.TestCase):
     def test_get_compiler(self):
         getcompiler = os.path.join('Programs', '_getcompiler')
         MOCK_COMPILER = 'MOCK_COMPILER'
+        CC = 'gcc -std=c11'
 
         for hostrunner in ('', 'node'):
-            makefile_vars = {
-                'HOSTRUNNER': hostrunner,
-                'CC': 'gcc -std=c11',
-            }
             for use_cc in (False, True):
-                with mock.patch.object(generate_getbuildinfo,
-                                       'get_makefile_vars',
-                                       return_value=makefile_vars):
-                    with mock.patch.object(generate_getbuildinfo,
-                                           'run_command') as mock_run_command:
-                        if use_cc:
-                            mock_run_command.side_effect = ('', MOCK_COMPILER)
-                        else:
-                            mock_run_command.return_value = MOCK_COMPILER
-                        compiler = generate_getbuildinfo._get_compiler()
-                        self.assertEqual(compiler, MOCK_COMPILER)
-                        if hostrunner:
-                            cmd = [hostrunner, getcompiler]
-                        else:
-                            cmd = [getcompiler]
-                        if use_cc:
-                            self.assertEqual(mock_run_command.call_args_list,
-                                [
-                                    mock.call(cmd, check=False),
-                                    mock.call(['gcc', '-std=c11', '--version'], check=False),
-                                ]
-                            )
-                        else:
-                            mock_run_command.assert_called_once_with(cmd, check=False)
+                with (mock.patch.object(generate_getbuildinfo,
+                                       'get_hostrunner',
+                                       return_value=hostrunner),
+                     mock.patch.object(generate_getbuildinfo,
+                                       'get_makefile_cc',
+                                       return_value=CC),
+                     mock.patch.object(generate_getbuildinfo,
+                                       'run_command') as mock_run_command):
+                    if use_cc:
+                        mock_run_command.side_effect = ('', MOCK_COMPILER)
+                    else:
+                        mock_run_command.return_value = MOCK_COMPILER
+                    compiler = generate_getbuildinfo._get_compiler()
+                    self.assertEqual(compiler, MOCK_COMPILER)
+                    if hostrunner:
+                        cmd = [hostrunner, getcompiler]
+                    else:
+                        cmd = [getcompiler]
+                    if use_cc:
+                        self.assertEqual(mock_run_command.call_args_list,
+                            [
+                                mock.call(cmd, check=False),
+                                mock.call(['gcc', '-std=c11', '--version'], check=False),
+                            ]
+                        )
+                    else:
+                        mock_run_command.assert_called_once_with(cmd, check=False)
 
     def test_compact_compiler(self):
         get_compiler = generate_getbuildinfo.get_compiler

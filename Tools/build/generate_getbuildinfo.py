@@ -7,7 +7,7 @@ import re
 import shlex
 import subprocess
 import sys
-import sysconfig.__main__
+import sysconfig
 import time
 
 SRC_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
@@ -16,6 +16,13 @@ SCRIPT_FULLNAME = f'Tools/build/{SCRIPT_NAME}'
 
 # Get PY_VERSION from Include/patchlevel.h
 PY_VERSION_REGEX = re.compile(r'^#define PY_VERSION +"(.*)"$', re.MULTILINE)
+
+def create_makefile_regex(name):
+    return re.compile(fr'^{name}[ \t]*=[ \t]*(.*)$', re.MULTILINE)
+
+# Get HOSTRUNNER and CC from Makefile
+HOSTRUNNER_REGEX = create_makefile_regex('HOSTRUNNER')
+CC_REGEX = create_makefile_regex('CC')
 
 # Parse Clang version (truncated examples using '...'):
 # 'Clang 21.0.0 (clang-2100.1.1.101)'
@@ -48,10 +55,27 @@ def get_py_version():
     return match.group(1)
 
 
-def get_makefile_vars():
+def parse_file(variable_name, filename, regex):
+    with open(filename, encoding='utf8') as fp:
+        code = fp.read()
+    match = regex.search(code)
+    if not match:
+        exit_error(f"ERROR: Unable to locate {variable_name} in {filename}")
+    return match.group(1)
+
+
+def get_hostrunner():
     # Look in the current working directory
     makefile = 'Makefile'
-    return sysconfig.__main__._parse_makefile(makefile)
+    HOSTRUNNER = parse_file('HOSTRUNNER', makefile, HOSTRUNNER_REGEX)
+    return HOSTRUNNER.rstrip()
+
+
+def get_makefile_cc():
+    # Look in the current working directory
+    makefile = 'Makefile'
+    CC = parse_file('CC', makefile, CC_REGEX)
+    return CC.rstrip()
 
 
 def get_gil_disabled():
@@ -131,11 +155,9 @@ def run_command(cmd, *, check=True):
 
 
 def _get_compiler():
-    makefile_vars = get_makefile_vars()
-
     # Run _getcompiler program
     getcompiler = os.path.join('Programs', '_getcompiler')
-    HOSTRUNNER = makefile_vars.get('HOSTRUNNER')
+    HOSTRUNNER = get_hostrunner()
     if HOSTRUNNER:
         # Cross-compilation
         runner = shlex.split(HOSTRUNNER)[0]
@@ -146,7 +168,7 @@ def _get_compiler():
         return compiler
 
     # Running _getcompiler failed, run the compiler with --version
-    CC = makefile_vars.get('CC')
+    CC = get_makefile_cc()
     if not CC:
         exit_error(f"ERROR: Unable to locate CC in Makefile")
 
