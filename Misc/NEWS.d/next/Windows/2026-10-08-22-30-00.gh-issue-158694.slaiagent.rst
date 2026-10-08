@@ -1,0 +1,1 @@
+On Windows, :data:`os.environ` now preserves empty environment variable values in child processes and across :func:`os.reload_environ`.

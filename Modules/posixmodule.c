@@ -1792,21 +1792,59 @@ static PyObject *
 convertenviron(void)
 {
     PyObject *d;
-#ifdef MS_WINDOWS
-    wchar_t **e;
-#else
-    char **e;
-#endif
 
     d = PyDict_New();
     if (d == NULL)
         return NULL;
 #ifdef MS_WINDOWS
-    /* _wenviron must be initialized in this way if the program is started
-       through main() instead of wmain(). */
-    (void)_wgetenv(L"");
-    e = _wenviron;
-#elif defined(USE_DARWIN_NS_GET_ENVIRON)
+    wchar_t *environment = GetEnvironmentStringsW();
+    if (environment == NULL) {
+        Py_DECREF(d);
+        return PyErr_SetFromWindowsErr(0);
+    }
+
+    for (wchar_t *entry = environment; *entry != L'\0';
+         entry += wcslen(entry) + 1)
+    {
+        /* Entries whose names start with '=' are hidden drive-current-
+           directory variables. The CRT does not expose them, so continue
+           to omit them from os.environ. */
+        if (*entry == L'=') {
+            continue;
+        }
+
+        const wchar_t *p = wcschr(entry, L'=');
+        if (p == NULL) {
+            continue;
+        }
+
+        PyObject *k = PyUnicode_FromWideChar(entry, (Py_ssize_t)(p - entry));
+        if (k == NULL) {
+            FreeEnvironmentStringsW(environment);
+            Py_DECREF(d);
+            return NULL;
+        }
+        PyObject *v = PyUnicode_FromWideChar(p + 1, -1);
+        if (v == NULL) {
+            Py_DECREF(k);
+            FreeEnvironmentStringsW(environment);
+            Py_DECREF(d);
+            return NULL;
+        }
+        if (PyDict_SetDefaultRef(d, k, v, NULL) < 0) {
+            Py_DECREF(v);
+            Py_DECREF(k);
+            FreeEnvironmentStringsW(environment);
+            Py_DECREF(d);
+            return NULL;
+        }
+        Py_DECREF(k);
+        Py_DECREF(v);
+    }
+    FreeEnvironmentStringsW(environment);
+#else
+    char **e;
+#ifdef USE_DARWIN_NS_GET_ENVIRON
     /* environ is not accessible as an extern in a shared object on OSX; use
        _NSGetEnviron to resolve it. The value changes if you add environment
        variables between calls to Py_Initialize, so don't cache the value. */
@@ -1817,29 +1855,16 @@ convertenviron(void)
     if (e == NULL)
         return d;
     for (; *e != NULL; e++) {
-        PyObject *k;
-        PyObject *v;
-#ifdef MS_WINDOWS
-        const wchar_t *p = wcschr(*e, L'=');
-#else
         const char *p = strchr(*e, '=');
-#endif
         if (p == NULL)
             continue;
-#ifdef MS_WINDOWS
-        k = PyUnicode_FromWideChar(*e, (Py_ssize_t)(p-*e));
-#else
-        k = PyBytes_FromStringAndSize(*e, (Py_ssize_t)(p-*e));
-#endif
+
+        PyObject *k = PyBytes_FromStringAndSize(*e, (Py_ssize_t)(p - *e));
         if (k == NULL) {
             Py_DECREF(d);
             return NULL;
         }
-#ifdef MS_WINDOWS
-        v = PyUnicode_FromWideChar(p+1, -1);
-#else
-        v = PyBytes_FromStringAndSize(p+1, strlen(p+1));
-#endif
+        PyObject *v = PyBytes_FromStringAndSize(p + 1, strlen(p + 1));
         if (v == NULL) {
             Py_DECREF(k);
             Py_DECREF(d);
@@ -1854,6 +1879,7 @@ convertenviron(void)
         Py_DECREF(k);
         Py_DECREF(v);
     }
+#endif
     return d;
 }
 
@@ -13777,6 +13803,25 @@ win32_putenv(PyObject *name, PyObject *value)
         PyMem_Free(env);
         return NULL;
     }
+
+    if (value != NULL && PyUnicode_GET_LENGTH(value) == 0) {
+        /* The CRT treats "NAME=" as removing NAME. Preserve the empty value
+           in the PEB so that os.environ, os.reload_environ(), and child
+           processes observe the value requested by the Python caller. */
+        wchar_t *name_wstr = PyUnicode_AsWideCharString(name, NULL);
+        if (name_wstr == NULL) {
+            PyMem_Free(env);
+            return NULL;
+        }
+        if (!SetEnvironmentVariableW(name_wstr, L"")) {
+            DWORD error = GetLastError();
+            PyMem_Free(name_wstr);
+            PyMem_Free(env);
+            return PyErr_SetFromWindowsErr(error);
+        }
+        PyMem_Free(name_wstr);
+    }
+
     PyMem_Free(env);
 
     Py_RETURN_NONE;

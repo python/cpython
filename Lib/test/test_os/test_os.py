@@ -1489,6 +1489,24 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
                                   stdout=subprocess.PIPE, text=True)
             self.assertEqual(proc.stdout.rstrip(), repr(None))
 
+    @unittest.skipUnless(sys.platform == "win32", "Windows specific test")
+    @support.requires_subprocess()
+    def test_environ_empty_value(self):
+        name = "PYTHONTESTVAR"
+        code = f'import os; print(repr(os.environ.get({name!r})))'
+
+        with os_helper.EnvironmentVarGuard() as env:
+            env.pop(name, None)
+            os.environ[name] = ''
+            self.assertEqual(os.environ[name], '')
+
+            proc = subprocess.run([sys.executable, '-c', code], check=True,
+                                  stdout=subprocess.PIPE, text=True)
+            self.assertEqual(proc.stdout.rstrip(), repr(''))
+
+            os.reload_environ()
+            self.assertEqual(os.environ[name], '')
+
     # On OS X < 10.6, unsetenv() doesn't return a value (bpo-13415).
     @support.requires_mac_ver(10, 6)
     def test_putenv_unsetenv_error(self):
