@@ -313,6 +313,23 @@ class BufferedReaderTest(CommonBufferedTests):
         self.assertEqual(bufio.readinto(b), 1)
         self.assertEqual(b, b"cb")
 
+    @support.subTests("method", ("readinto", "readinto1"))
+    @support.subTests("buffer", (
+        b"xxx", memoryview(b"xxx"),
+    ))
+    @support.subTests("position", (0, 4))
+    @support.subTests("buffered", (False, True))
+    def test_readinto_readonly_buffer(self, method, buffer, position, buffered):
+        data = b"abcdef"
+        with self.tp(self.BytesIO(data)) as bufio:
+            bufio.seek(position)
+            if buffered:
+                bufio.peek(1)
+            op = getattr(bufio, method)
+            self.assertRaises(TypeError, op, buffer)
+            self.assertEqual(bufio.tell(), position)
+            self.assertEqual(bufio.read(), data[position:])
+
     def test_readinto1(self):
         buffer_size = 10
         rawio = self.MockRawIO((b"abc", b"de", b"fgh", b"jkl"))
