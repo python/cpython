@@ -15,6 +15,7 @@ from test import support
 from test.support import import_helper
 from test.support import isolation
 from test.support import os_helper
+from test.support import threading_helper
 from test.support import warnings_helper
 from test.support import force_not_colorized
 from test.support.script_helper import assert_python_ok, assert_python_failure
@@ -1806,6 +1807,7 @@ a=A()
         self.assertStartsWith(err, expected)
 
 
+@support.requires_working_socket()
 class AsyncTests(BaseTest):
     """Verifies that the catch_warnings() context manager behaves
     as expected when used inside async co-routines.  This requires
@@ -1900,6 +1902,7 @@ class PyAsyncTests(AsyncTests, unittest.TestCase):
     module = py_warnings
 
 
+@threading_helper.requires_working_threading()
 class ThreadTests(BaseTest):
     """Verifies that the catch_warnings() context manager behaves as
     expected when used within threads.  This requires that both the
