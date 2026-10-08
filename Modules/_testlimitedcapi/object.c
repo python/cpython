@@ -262,6 +262,25 @@ test_min_max_abs_macros(PyObject *self, PyObject *Py_UNUSED(ignored))
     assert(Py_MAX(x, Py_MIN(y, z)) == 5);
     assert(Py_ABS(Py_ABS(z)) == 11);
 
+    // A few more tests
+    assert(Py_MIN(2, Py_MIN(6, 12)) == 2);
+    assert(Py_MAX(2, Py_MAX(6, 12)) == 12);
+    assert(Py_MIN(2, Py_MAX(6, 12)) == 2);
+    assert(Py_MAX(2, Py_MIN(6, 12)) == 6);
+    assert(Py_MIN(Py_MIN(2, 6), 12) == 2);
+    assert(Py_MAX(Py_MAX(2, 6), 12) == 12);
+    assert(Py_MIN(Py_MAX(2, 6), 12) == 6);
+    assert(Py_MAX(Py_MIN(2, 6), 12) == 12);
+    assert(Py_ABS(Py_ABS(12)) == 12);
+    assert(Py_ABS(Py_ABS(12)) == 12);
+
+    // Integer limits
+    assert(Py_MIN(123, INT_MIN) == INT_MIN);
+    assert(Py_MAX(123, INT_MAX) == INT_MAX);
+    assert(Py_ABS(INT_MAX) == INT_MAX);
+    // Do not tests Py_ABS(INT_MIN), since the behavior is documented.
+    // This limitation is documented in Py_ABS() documentation.
+
 #if ((defined(__GNUC__) || defined(__clang__)) \
      && defined(_Py_TYPEOF) && !defined(__cplusplus))
     // Check that arguments are only evaluated once
