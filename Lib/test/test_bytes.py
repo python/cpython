@@ -671,12 +671,13 @@ class BaseBytesTest:
         # mutate the joined sequence (simulated here by mutating in __buffer__).
         # See: https://github.com/python/cpython/issues/151295
         def make_seq(mutate):
-            # Item is only referenced from the list slot, so mutate() frees it.
+            # The first two items are only referenced from their list slots,
+            # so mutate() frees them.
             class Item:
                 def __buffer__(self, flags):
                     mutate(seq)
                     return memoryview(b'x')
-            seq = [b'a', Item(), b'c']
+            seq = [bytes(2), Item(), b'c']
             return seq
 
         for sep in (self.type2test(b''), self.type2test(b'::')):
@@ -686,11 +687,11 @@ class BaseBytesTest:
                 self.assertRaises(RuntimeError, sep.join, seq)
 
                 # The list length is unchanged, so the size-change recheck
-                # cannot fire: only keeping the item alive avoids the crash.
+                # cannot fire: only keeping the items alive avoids the crash.
                 def replace(seq):
-                    seq[1] = b'z'
+                    seq[0] = seq[1] = b'z'
                 seq = make_seq(replace)
-                self.assertEqual(sep.join(seq), sep.join([b'a', b'x', b'c']))
+                self.assertEqual(sep.join(seq), sep.join([bytes(2), b'x', b'c']))
 
     def test_count(self):
         b = self.type2test(b'mississippi')
