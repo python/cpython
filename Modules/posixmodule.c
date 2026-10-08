@@ -89,6 +89,9 @@
 #ifdef HAVE_SYS_STAT_H
 #  include <sys/stat.h>
 #endif
+#if defined(__linux__) && !defined(HAVE_STRUCT_STATX) && defined(HAVE_LINUX_STAT_H)
+#  include <linux/stat.h>          // struct statx on older libc versions
+#endif
 
 #ifdef HAVE_SYS_WAIT_H
 #  include <sys/wait.h>           // WNOHANG
@@ -416,9 +419,31 @@ extern char *ctermid_r(char *);
 #  define STRUCT_STAT struct stat
 #endif
 
-#ifdef HAVE_STATX
+#if defined(__linux__) && defined(__NR_statx) && \
+    (defined(HAVE_STRUCT_STATX) || \
+     (defined(HAVE_LINUX_STAT_H) && defined(STATX_BASIC_STATS)))
+#  define _Py_HAVE_STATX
+#endif
+
+#if defined(_Py_HAVE_STATX) && defined(HAVE_STATX)
 /* until we can assume glibc 2.28 at runtime, we must weakly link */
 #  pragma weak statx
+#endif
+
+#ifdef _Py_HAVE_STATX
+/* These Linux UAPI flags may be missing from older libc headers.  Including
+   linux/fcntl.h alongside fcntl.h would redefine libc structures. */
+#  ifndef AT_NO_AUTOMOUNT
+#    define AT_NO_AUTOMOUNT 0x800
+#  endif
+#  ifndef AT_EMPTY_PATH
+#    define AT_EMPTY_PATH 0x1000
+#  endif
+#  ifndef AT_STATX_SYNC_AS_STAT
+#    define AT_STATX_SYNC_AS_STAT 0x0000
+#    define AT_STATX_FORCE_SYNC 0x2000
+#    define AT_STATX_DONT_SYNC 0x4000
+#  endif
 static const unsigned int _Py_STATX_KNOWN = (STATX_BASIC_STATS | STATX_BTIME
 #ifdef STATX_MNT_ID
                                              | STATX_MNT_ID
@@ -439,7 +464,7 @@ static const unsigned int _Py_STATX_KNOWN = (STATX_BASIC_STATS | STATX_BTIME
                                              | STATX_DIO_READ_ALIGN
 #endif
                                             );
-#endif /* HAVE_STATX */
+#endif /* _Py_HAVE_STATX */
 
 
 #if !defined(EX_OK) && defined(EXIT_SUCCESS)
@@ -1221,7 +1246,7 @@ typedef struct {
 #endif
     newfunc statresult_new_orig;
     PyObject *StatResultType;
-#ifdef HAVE_STATX
+#ifdef _Py_HAVE_STATX
     PyObject *StatxResultType;
 #endif
     PyObject *StatVFSResultType;
@@ -2590,7 +2615,7 @@ _posix_clear(PyObject *module)
     Py_CLEAR(state->SchedParamType);
 #endif
     Py_CLEAR(state->StatResultType);
-#ifdef HAVE_STATX
+#ifdef _Py_HAVE_STATX
     Py_CLEAR(state->StatxResultType);
 #endif
     Py_CLEAR(state->StatVFSResultType);
@@ -2618,7 +2643,7 @@ _posix_traverse(PyObject *module, visitproc visit, void *arg)
     Py_VISIT(state->SchedParamType);
 #endif
     Py_VISIT(state->StatResultType);
-#ifdef HAVE_STATX
+#ifdef _Py_HAVE_STATX
     Py_VISIT(state->StatxResultType);
 #endif
     Py_VISIT(state->StatVFSResultType);
@@ -3315,7 +3340,7 @@ os_lstat_impl(PyObject *module, path_t *path, int dir_fd)
 }
 
 
-#ifdef HAVE_STATX
+#ifdef _Py_HAVE_STATX
 typedef struct {
     PyObject_HEAD
     dev_t rdev, dev;
@@ -3671,12 +3696,21 @@ os_statx_impl(PyObject *module, path_t *path, unsigned int mask, int flags,
     }
 
     int result;
-    Py_BEGIN_ALLOW_THREADS
+    int statx_dir_fd = path->is_fd ? path->fd : dir_fd;
+    const char *statx_path = path->is_fd ? "" : path->narrow;
     if (path->is_fd) {
-        result = statx(path->fd, "", flags | AT_EMPTY_PATH, mask, &v->stx);
+        flags |= AT_EMPTY_PATH;
     }
-    else {
-        result = statx(dir_fd, path->narrow, flags, mask, &v->stx);
+    Py_BEGIN_ALLOW_THREADS
+#ifdef HAVE_STATX
+    if (statx != NULL) {
+        result = statx(statx_dir_fd, statx_path, flags, mask, &v->stx);
+    }
+    else
+#endif
+    {
+        result = syscall(__NR_statx, statx_dir_fd, statx_path, flags, mask,
+                         &v->stx);
     }
     Py_END_ALLOW_THREADS
 
@@ -3691,7 +3725,7 @@ os_statx_impl(PyObject *module, path_t *path, unsigned int mask, int flags,
     assert(!PyErr_Occurred());
     return (PyObject *)v;
 }
-#endif /* HAVE_STATX */
+#endif /* _Py_HAVE_STATX */
 
 
 /*[clinic input]
@@ -18667,7 +18701,7 @@ all_ins(PyObject *m)
     if (PyModule_AddIntMacro(m, AT_NO_AUTOMOUNT)) return -1;
 #endif
 
-#ifdef HAVE_STATX
+#ifdef _Py_HAVE_STATX
     if (PyModule_AddIntMacro(m, STATX_TYPE)) return -1;
     if (PyModule_AddIntMacro(m, STATX_MODE)) return -1;
     if (PyModule_AddIntMacro(m, STATX_NLINK)) return -1;
@@ -18704,7 +18738,7 @@ all_ins(PyObject *m)
     if (PyModule_AddIntMacro(m, AT_STATX_FORCE_SYNC)) return -1;
     if (PyModule_AddIntMacro(m, AT_STATX_DONT_SYNC)) return -1;
     /* STATX_ATTR_* constants are in the stat module */
-#endif /* HAVE_STATX */
+#endif /* _Py_HAVE_STATX */
 
 #if defined(__APPLE__)
     if (PyModule_AddIntConstant(m, "_COPYFILE_DATA", COPYFILE_DATA)) return -1;
@@ -18977,21 +19011,10 @@ posixmodule_exec(PyObject *m)
     }
 #endif
 
-#ifdef HAVE_STATX
-    if (statx == NULL) {
-        PyObject* dct = PyModule_GetDict(m);
-        if (dct == NULL) {
-            return -1;
-        }
-        if (PyDict_PopString(dct, "statx", NULL) < 0) {
-            return -1;
-        }
-    }
-    else {
-        state->StatxResultType = PyType_FromModuleAndSpec(m, &pystatx_result_spec, NULL);
-        if (PyModule_AddObjectRef(m, "statx_result", state->StatxResultType) < 0) {
-            return -1;
-        }
+#ifdef _Py_HAVE_STATX
+    state->StatxResultType = PyType_FromModuleAndSpec(m, &pystatx_result_spec, NULL);
+    if (PyModule_AddObjectRef(m, "statx_result", state->StatxResultType) < 0) {
+        return -1;
     }
 #endif
 

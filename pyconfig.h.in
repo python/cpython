@@ -883,6 +883,9 @@
 /* Define to 1 if you have the <linux/soundcard.h> header file. */
 #undef HAVE_LINUX_SOUNDCARD_H
 
+/* Define to 1 if you have the <linux/stat.h> header file. */
+#undef HAVE_LINUX_STAT_H
+
 /* Define to 1 if you have the <linux/tipc.h> header file. */
 #undef HAVE_LINUX_TIPC_H
 
@@ -1458,6 +1461,9 @@
 
 /* Define to 1 if 'pw_passwd' is a member of 'struct passwd'. */
 #undef HAVE_STRUCT_PASSWD_PW_PASSWD
+
+/* Define to 1 if the system has the type 'struct statx'. */
+#undef HAVE_STRUCT_STATX
 
 /* Define to 1 if 'stx_atomic_write_unit_max_opt' is a member of 'struct
    statx'. */

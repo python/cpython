@@ -3196,7 +3196,7 @@ AC_DEFINE([STDC_HEADERS], [1],
 AC_CHECK_HEADERS([ \
   alloca.h asm/types.h bluetooth.h conio.h direct.h dlfcn.h endian.h errno.h fcntl.h grp.h \
   io.h langinfo.h libintl.h libutil.h linux/auxvec.h sys/auxv.h linux/fs.h linux/limits.h linux/memfd.h \
-  linux/netfilter_ipv4.h linux/random.h linux/soundcard.h linux/sched.h \
+  linux/netfilter_ipv4.h linux/random.h linux/soundcard.h linux/sched.h linux/stat.h \
   linux/tipc.h linux/wait.h netdb.h net/ethernet.h netinet/in.h netpacket/packet.h poll.h process.h pthread.h pty.h \
   sched.h setjmp.h shadow.h signal.h spawn.h sys/audioio.h sys/bsdtty.h sys/devpoll.h \
   sys/endian.h sys/epoll.h sys/event.h sys/eventfd.h sys/file.h sys/ioctl.h sys/kern_control.h \
@@ -6197,23 +6197,30 @@ AC_CHECK_MEMBERS([struct passwd.pw_gecos, struct passwd.pw_passwd], [], [], [[
 # Issue #21085: In Cygwin, siginfo_t does not have si_band field.
 AC_CHECK_MEMBERS([siginfo_t.si_band], [], [], [[@%:@include <signal.h>]])
 
-if test "$ac_cv_func_statx" = yes; then
+AS_CASE([$ac_sys_system], [Linux*], [
+  # Older libc headers may lack struct statx even when the kernel headers
+  # provide it for use with the syscall.
+  AC_CHECK_TYPES([struct statx], [], [], [[#include <sys/stat.h>]])
+
   # Some systems have the definitions of the mask bits without having the
   # corresponding members in struct statx.  Check for members added after Linux
-  # 4.11 (when statx itself was added).
-  AC_CHECK_MEMBERS([struct statx.stx_mnt_id])
-  AC_CHECK_MEMBERS([struct statx.stx_dio_mem_align])
-  # stx_dio_offset_align was added together with stx_dio_mem_align
-  AC_CHECK_MEMBERS([struct statx.stx_subvol])
-  AC_CHECK_MEMBERS([struct statx.stx_atomic_write_unit_min])
-  # stx_atomic_write_unit_max and stx_atomic_write_segments_max were added
-  # together with stx_atomic_write_unit_min
-  AC_CHECK_MEMBERS([struct statx.stx_dio_read_offset_align])
-  # stx_atomic_write_unit_max_opt was added in Linux 6.16, but is controlled by
-  # the STATX_WRITE_ATOMIC mask bit added in Linux 6.11, so having the mask bit
-  # doesn't imply having the member.
-  AC_CHECK_MEMBERS([struct statx.stx_atomic_write_unit_max_opt])
-fi
+  # 4.11 (when statx itself was added).  stx_dio_offset_align was added with
+  # stx_dio_mem_align; stx_atomic_write_unit_max and
+  # stx_atomic_write_segments_max were added with stx_atomic_write_unit_min.
+  # The mask bit for stx_atomic_write_unit_max_opt predates that member.
+  AC_CHECK_MEMBERS([
+    struct statx.stx_mnt_id,
+    struct statx.stx_dio_mem_align,
+    struct statx.stx_subvol,
+    struct statx.stx_atomic_write_unit_min,
+    struct statx.stx_dio_read_offset_align,
+    struct statx.stx_atomic_write_unit_max_opt], [], [], [[
+    #include <sys/stat.h>
+    #if !defined(HAVE_STRUCT_STATX) && defined(HAVE_LINUX_STAT_H)
+    #  include <linux/stat.h>
+    #endif
+  ]])
+])
 
 AC_CACHE_CHECK([for time.h that defines altzone], [ac_cv_header_time_altzone], [
   AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[@%:@include <time.h>]], [[return altzone;]])],

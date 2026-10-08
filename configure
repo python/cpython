@@ -12027,6 +12027,12 @@ then :
   printf "%s\n" "#define HAVE_LINUX_SCHED_H 1" >>confdefs.h
 
 fi
+ac_fn_c_check_header_compile "$LINENO" "linux/stat.h" "ac_cv_header_linux_stat_h" "$ac_includes_default"
+if test "x$ac_cv_header_linux_stat_h" = xyes
+then :
+  printf "%s\n" "#define HAVE_LINUX_STAT_H 1" >>confdefs.h
+
+fi
 ac_fn_c_check_header_compile "$LINENO" "linux/tipc.h" "ac_cv_header_linux_tipc_h" "$ac_includes_default"
 if test "x$ac_cv_header_linux_tipc_h" = xyes
 then :
@@ -26464,11 +26470,35 @@ printf "%s\n" "#define HAVE_SIGINFO_T_SI_BAND 1" >>confdefs.h
 fi
 
 
-if test "$ac_cv_func_statx" = yes; then
+case $ac_sys_system in #(
+  Linux*) :
+
+  # Older libc headers may lack struct statx even when the kernel headers
+  # provide it for use with the syscall.
+  ac_fn_c_check_type "$LINENO" "struct statx" "ac_cv_type_struct_statx" "#include <sys/stat.h>
+"
+if test "x$ac_cv_type_struct_statx" = xyes
+then :
+
+printf "%s\n" "#define HAVE_STRUCT_STATX 1" >>confdefs.h
+
+
+fi
+
+
   # Some systems have the definitions of the mask bits without having the
   # corresponding members in struct statx.  Check for members added after Linux
-  # 4.11 (when statx itself was added).
-  ac_fn_c_check_member "$LINENO" "struct statx" "stx_mnt_id" "ac_cv_member_struct_statx_stx_mnt_id" "$ac_includes_default"
+  # 4.11 (when statx itself was added).  stx_dio_offset_align was added with
+  # stx_dio_mem_align; stx_atomic_write_unit_max and
+  # stx_atomic_write_segments_max were added with stx_atomic_write_unit_min.
+  # The mask bit for stx_atomic_write_unit_max_opt predates that member.
+  ac_fn_c_check_member "$LINENO" "struct statx" "stx_mnt_id" "ac_cv_member_struct_statx_stx_mnt_id" "
+    #include <sys/stat.h>
+    #if !defined(HAVE_STRUCT_STATX) && defined(HAVE_LINUX_STAT_H)
+    #  include <linux/stat.h>
+    #endif
+
+"
 if test "x$ac_cv_member_struct_statx_stx_mnt_id" = xyes
 then :
 
@@ -26476,8 +26506,13 @@ printf "%s\n" "#define HAVE_STRUCT_STATX_STX_MNT_ID 1" >>confdefs.h
 
 
 fi
+ac_fn_c_check_member "$LINENO" "struct statx" "stx_dio_mem_align" "ac_cv_member_struct_statx_stx_dio_mem_align" "
+    #include <sys/stat.h>
+    #if !defined(HAVE_STRUCT_STATX) && defined(HAVE_LINUX_STAT_H)
+    #  include <linux/stat.h>
+    #endif
 
-  ac_fn_c_check_member "$LINENO" "struct statx" "stx_dio_mem_align" "ac_cv_member_struct_statx_stx_dio_mem_align" "$ac_includes_default"
+"
 if test "x$ac_cv_member_struct_statx_stx_dio_mem_align" = xyes
 then :
 
@@ -26485,9 +26520,13 @@ printf "%s\n" "#define HAVE_STRUCT_STATX_STX_DIO_MEM_ALIGN 1" >>confdefs.h
 
 
 fi
+ac_fn_c_check_member "$LINENO" "struct statx" "stx_subvol" "ac_cv_member_struct_statx_stx_subvol" "
+    #include <sys/stat.h>
+    #if !defined(HAVE_STRUCT_STATX) && defined(HAVE_LINUX_STAT_H)
+    #  include <linux/stat.h>
+    #endif
 
-  # stx_dio_offset_align was added together with stx_dio_mem_align
-  ac_fn_c_check_member "$LINENO" "struct statx" "stx_subvol" "ac_cv_member_struct_statx_stx_subvol" "$ac_includes_default"
+"
 if test "x$ac_cv_member_struct_statx_stx_subvol" = xyes
 then :
 
@@ -26495,8 +26534,13 @@ printf "%s\n" "#define HAVE_STRUCT_STATX_STX_SUBVOL 1" >>confdefs.h
 
 
 fi
+ac_fn_c_check_member "$LINENO" "struct statx" "stx_atomic_write_unit_min" "ac_cv_member_struct_statx_stx_atomic_write_unit_min" "
+    #include <sys/stat.h>
+    #if !defined(HAVE_STRUCT_STATX) && defined(HAVE_LINUX_STAT_H)
+    #  include <linux/stat.h>
+    #endif
 
-  ac_fn_c_check_member "$LINENO" "struct statx" "stx_atomic_write_unit_min" "ac_cv_member_struct_statx_stx_atomic_write_unit_min" "$ac_includes_default"
+"
 if test "x$ac_cv_member_struct_statx_stx_atomic_write_unit_min" = xyes
 then :
 
@@ -26504,10 +26548,13 @@ printf "%s\n" "#define HAVE_STRUCT_STATX_STX_ATOMIC_WRITE_UNIT_MIN 1" >>confdefs
 
 
 fi
+ac_fn_c_check_member "$LINENO" "struct statx" "stx_dio_read_offset_align" "ac_cv_member_struct_statx_stx_dio_read_offset_align" "
+    #include <sys/stat.h>
+    #if !defined(HAVE_STRUCT_STATX) && defined(HAVE_LINUX_STAT_H)
+    #  include <linux/stat.h>
+    #endif
 
-  # stx_atomic_write_unit_max and stx_atomic_write_segments_max were added
-  # together with stx_atomic_write_unit_min
-  ac_fn_c_check_member "$LINENO" "struct statx" "stx_dio_read_offset_align" "ac_cv_member_struct_statx_stx_dio_read_offset_align" "$ac_includes_default"
+"
 if test "x$ac_cv_member_struct_statx_stx_dio_read_offset_align" = xyes
 then :
 
@@ -26515,11 +26562,13 @@ printf "%s\n" "#define HAVE_STRUCT_STATX_STX_DIO_READ_OFFSET_ALIGN 1" >>confdefs
 
 
 fi
+ac_fn_c_check_member "$LINENO" "struct statx" "stx_atomic_write_unit_max_opt" "ac_cv_member_struct_statx_stx_atomic_write_unit_max_opt" "
+    #include <sys/stat.h>
+    #if !defined(HAVE_STRUCT_STATX) && defined(HAVE_LINUX_STAT_H)
+    #  include <linux/stat.h>
+    #endif
 
-  # stx_atomic_write_unit_max_opt was added in Linux 6.16, but is controlled by
-  # the STATX_WRITE_ATOMIC mask bit added in Linux 6.11, so having the mask bit
-  # doesn't imply having the member.
-  ac_fn_c_check_member "$LINENO" "struct statx" "stx_atomic_write_unit_max_opt" "ac_cv_member_struct_statx_stx_atomic_write_unit_max_opt" "$ac_includes_default"
+"
 if test "x$ac_cv_member_struct_statx_stx_atomic_write_unit_max_opt" = xyes
 then :
 
@@ -26528,7 +26577,10 @@ printf "%s\n" "#define HAVE_STRUCT_STATX_STX_ATOMIC_WRITE_UNIT_MAX_OPT 1" >>conf
 
 fi
 
-fi
+ ;; #(
+  *) :
+     ;;
+esac
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for time.h that defines altzone" >&5
 printf %s "checking for time.h that defines altzone... " >&6; }
