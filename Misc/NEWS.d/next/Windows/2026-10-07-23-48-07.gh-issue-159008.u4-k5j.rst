@@ -1,0 +1,3 @@
+Link :file:`libcrypto-3.dll` with ``/DELAYLOAD:user32.dll`` so that
+importing :mod:`hashlib` or :mod:`ssl` no longer loads :file:`user32.dll`
+and its GDI dependencies into the process.
