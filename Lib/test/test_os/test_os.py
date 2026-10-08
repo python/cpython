@@ -890,7 +890,7 @@ class StatAttributeTests(unittest.TestCase):
         os.unlink(self.fname)
         with self.subTest(broken=True, follow_symlinks=True):
             with self.assertRaises(FileNotFoundError):
-                self.check_statx_attributes(link, follow_symlinks=True)
+                os.statx(link, os.STATX_BASIC_STATS, follow_symlinks=True)
 
         with self.subTest(broken=True, follow_symlinks=False):
             self.check_statx_attributes(link, follow_symlinks=False)
