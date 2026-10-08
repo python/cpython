@@ -497,6 +497,14 @@ _PyCode_Validate(struct _PyCodeConstructor *con)
         return -1;
     }
 
+    /* co_framesize (nlocalsplus + stacksize + FRAME_SPECIALS_SIZE) is stored and used 
+    as C int throughout the interpreter. untrusted stacksize shouldnt overflow. */
+    Py_ssize_t nlocalsplus = PyTuple_GET_SIZE(con->localsplusnames);
+    if (con->stacksize > INT_MAX - nlocalsplus - FRAME_SPECIALS_SIZE) {
+        PyErr_SetString(PyExc_OverflowError, "code: co_stacksize is too large");
+        return -1;
+    }
+
     return 0;
 }
 

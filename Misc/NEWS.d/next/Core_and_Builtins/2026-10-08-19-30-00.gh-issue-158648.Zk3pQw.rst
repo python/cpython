@@ -1,0 +1,5 @@
+Fix an integer overflow in code object construction 
+(:mod:`marshal`, :func:`types.CodeType`, and :meth:`CodeType.replace`)
+where excessively large ``co_stacksize`` could overflow
+``co_framesize`` and corrupt the interpreter's stack. 
+``stacksize`` is now rejected with :exc:`OverflowError`.

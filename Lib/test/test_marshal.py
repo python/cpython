@@ -209,6 +209,17 @@ class CodeTestCase(unittest.TestCase):
             if isinstance(obj, types.CodeType):
                 self.assertIs(co.co_filename, obj.co_filename)
 
+    def test_huge_stacksize(self):
+        # gh-158648: a code object's stacksize shouldnt overflow
+        # co_framesize (nlocalsplus + stacksize + FRAME_SPECIALS_SIZE)
+        # is stored and used as a C int throughout the interpreter.
+        # marshal data is explicitly documented as unsafe for untrusted
+        # input, but unmarshalling a maliciously crafted stacksize must
+        # still fail cleanly
+        co = ExceptionTestCase.test_exceptions.__code__
+        with self.assertRaises(OverflowError):
+            co.replace(co_stacksize=2**31 - 1)
+
 class ContainerTestCase(unittest.TestCase, HelperMixin):
     d = {'astring': 'foo@bar.baz.spam',
          'afloat': 7283.43,
