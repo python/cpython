@@ -3273,6 +3273,30 @@ def fib(n):
         except SyntaxError:
             self.fail("Indented statement over multiple lines is valid")
 
+    @support.subTests("indent", ("\t", " \t", "\t ", "    "))
+    @support.subTests("continuations", (1, 3))
+    @support.subTests("newline", ("\n", "\r\n"))
+    @support.subTests("first_statement", (False, True))
+    def test_continuation_tab_indentation(self, indent, continuations,
+                                          newline, first_statement):
+        lines = ["if True:"]
+        if not first_statement:
+            lines.append(f"{indent}pass")
+        lines.extend([f"{indent}\\"] * continuations)
+        lines.extend(["pass", f"{indent}pass", "pass", ""])
+        compile(newline.join(lines), "<test>", "exec")
+
+    @support.subTests("indents", (
+        ("        ", "\t"), ("\t", "        "),
+    ))
+    @support.subTests("continuations", (1, 3))
+    def test_continuation_inconsistent_tabs(self, indents, continuations):
+        previous, continued = indents
+        lines = ["if True:", f"{previous}pass"]
+        lines.extend([f"{continued}\\"] * continuations)
+        lines.extend(["pass", ""])
+        self.assertRaises(TabError, compile, "\n".join(lines), "<test>", "exec")
+
     def test_continuation_bad_indentation(self):
         # Check that code that breaks indentation across multiple lines raises a syntax error
 
