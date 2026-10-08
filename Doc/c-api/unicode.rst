@@ -154,29 +154,6 @@ access to internal read-only data of Unicode objects:
    .. versionadded:: 3.3
 
 
-.. c:function:: void PyUnicode_WRITE(int kind, void *data, \
-                                     Py_ssize_t index, Py_UCS4 value)
-
-   Write the code point *value* to the given zero-based *index* in a string.
-
-   The *kind* value and *data* pointer must have been obtained from a
-   string using :c:func:`PyUnicode_KIND` and :c:func:`PyUnicode_DATA`
-   respectively. You must hold a reference to that string while calling
-   :c:func:`!PyUnicode_WRITE`. All requirements of
-   :c:func:`PyUnicode_WriteChar` also apply.
-
-   The function performs no checks for any of its requirements,
-   and is intended for usage in loops.
-
-   While :class:`str` objects are usually immutable in Python, this special C API allows
-   mutating a fresh :class:`str` object if the string has not been "used" yet.
-
-   .. versionadded:: 3.3
-
-   .. soft-deprecated:: next
-      Use the :c:type:`PyUnicodeWriter` API instead.
-
-
 .. c:function:: Py_UCS4 PyUnicode_READ(int kind, void *data, Py_ssize_t index)
 
    Read a code point from a canonical representation *data* (as obtained with
@@ -384,44 +361,6 @@ Creating and accessing Unicode strings
 
 To create Unicode objects and access their basic sequence properties, use these
 APIs:
-
-.. c:function:: PyObject* PyUnicode_New(Py_ssize_t size, Py_UCS4 maxchar)
-
-   Create a new Unicode object.  *maxchar* should be the true maximum code point
-   to be placed in the string.  As an approximation, it can be rounded up to the
-   nearest value in the sequence 127, 255, 65535, 1114111.
-
-   On error, set an exception and return ``NULL``.
-
-   After creation, the string can be filled by :c:func:`PyUnicode_WriteChar`,
-   :c:func:`PyUnicode_CopyCharacters`, :c:func:`PyUnicode_Fill`,
-   :c:func:`PyUnicode_WRITE` or similar.
-   Since strings are supposed to be immutable, take care to not “use” the
-   result while it is being modified. In particular, before it's filled
-   with its final contents, a string:
-
-   - must not be hashed,
-   - must not be :c:func:`converted to UTF-8 <PyUnicode_AsUTF8AndSize>`,
-     or another non-"canonical" representation,
-   - must not have its reference count changed,
-   - must not be shared with code that might do one of the above.
-
-   This list is not exhaustive. Avoiding these uses is your responsibility;
-   Python does not always check these requirements.
-
-   To avoid accidentally exposing a partially-written string object, prefer
-   using the :c:type:`PyUnicodeWriter` API, or one of the ``PyUnicode_From*``
-   functions below.
-
-   While :class:`str` objects are usually immutable in Python, this special C API
-   returns a :class:`str` object that can be mutated, except if *size* is zero, in which
-   case it returns the immutable empty string constant.
-
-   .. versionadded:: 3.3
-
-   .. soft-deprecated:: next
-      Use the :c:type:`PyUnicodeWriter` API instead.
-
 
 .. c:function:: PyObject* PyUnicode_FromKindAndData(int kind, const void *buffer, \
                                                     Py_ssize_t size)
@@ -753,96 +692,6 @@ APIs:
       The length does not count the trailing null character.
 
    .. versionadded:: 3.3
-
-
-.. c:function:: Py_ssize_t PyUnicode_CopyCharacters(PyObject *to, \
-                                                    Py_ssize_t to_start, \
-                                                    PyObject *from, \
-                                                    Py_ssize_t from_start, \
-                                                    Py_ssize_t how_many)
-
-   Copy characters from one Unicode object into another.  This function performs
-   character conversion when necessary and falls back to :c:func:`!memcpy` if
-   possible.  Returns ``-1`` and sets an exception on error, otherwise returns
-   the number of copied characters.
-
-   While :class:`str` objects are usually immutable in Python, this special C API allows
-   mutating a fresh :class:`str` object if the string has not been "used" yet.
-
-   See :c:func:`PyUnicode_New` for details.
-
-   .. versionadded:: 3.3
-
-   .. soft-deprecated:: next
-      Use the :c:type:`PyUnicodeWriter` API instead.
-
-
-.. c:function:: int PyUnicode_Resize(PyObject **unicode, Py_ssize_t length);
-
-   Resize a Unicode object *\*unicode* to the new *length* in code points.
-
-   Try to resize the string in place (which is usually faster than allocating
-   a new string and copying characters), or create a new string.
-
-   *\*unicode* is modified to point to the new (resized) object and ``0`` is
-   returned on success. Otherwise, ``-1`` is returned and an exception is set,
-   and *\*unicode* is left untouched.
-
-   The function doesn't check string content, the result may not be a
-   string in canonical representation.
-
-   While :class:`str` objects are usually immutable in Python, this special C API
-   can resize a :class:`str` object in-place if the string has not been "used" yet.
-   It returns a :class:`str` object which can be mutated, except if *size* is zero, in
-   which case it returns the immutable empty string constant.
-
-   .. soft-deprecated:: next
-      Use the :c:type:`PyUnicodeWriter` API instead.
-
-
-.. c:function:: Py_ssize_t PyUnicode_Fill(PyObject *unicode, Py_ssize_t start, \
-                        Py_ssize_t length, Py_UCS4 fill_char)
-
-   Fill a string with a character: write *fill_char* into
-   ``unicode[start:start+length]``.
-
-   Fail if *fill_char* is bigger than the string maximum character, or if the
-   string has more than 1 reference.
-
-   Return the number of written characters, or return ``-1`` and raise an
-   exception on error.
-
-   While :class:`str` objects are usually immutable in Python, this special C API allows
-   mutating a fresh :class:`str` object if the string has not been "used" yet.
-
-   See :c:func:`PyUnicode_New` for details.
-
-   .. versionadded:: 3.3
-
-   .. soft-deprecated:: next
-      Use the :c:type:`PyUnicodeWriter` API instead.
-
-
-.. c:function:: int PyUnicode_WriteChar(PyObject *unicode, Py_ssize_t index, \
-                                        Py_UCS4 character)
-
-   Write a *character* to the string *unicode* at the zero-based *index*.
-   Return ``0`` on success, ``-1`` on error with an exception set.
-
-   This function checks that *unicode* is a Unicode object, that the index is
-   not out of bounds, and that the object's reference count is one.
-   See :c:func:`PyUnicode_WRITE` for a version that skips these checks,
-   making them your responsibility.
-
-   While :class:`str` objects are usually immutable in Python, this special C API allows
-   mutating a fresh :class:`str` object if the string has not been "used" yet.
-
-   See :c:func:`PyUnicode_New` for details.
-
-   .. versionadded:: 3.3
-
-   .. soft-deprecated:: next
-      Use the :c:type:`PyUnicodeWriter` API instead.
 
 
 .. c:function:: Py_UCS4 PyUnicode_ReadChar(PyObject *unicode, Py_ssize_t index)
@@ -2053,3 +1902,154 @@ The following API is deprecated.
       This API does nothing since Python 3.12.
       Previously, this could be called to check if
       :c:func:`PyUnicode_READY` is necessary.
+
+
+.. c:function:: PyObject* PyUnicode_New(Py_ssize_t size, Py_UCS4 maxchar)
+
+   Create a new Unicode object.  *maxchar* should be the true maximum code point
+   to be placed in the string.  As an approximation, it can be rounded up to the
+   nearest value in the sequence 127, 255, 65535, 1114111.
+
+   On error, set an exception and return ``NULL``.
+
+   After creation, the string can be filled by :c:func:`PyUnicode_WriteChar`,
+   :c:func:`PyUnicode_CopyCharacters`, :c:func:`PyUnicode_Fill`,
+   :c:func:`PyUnicode_WRITE` or similar.
+   Since strings are supposed to be immutable, take care to not “use” the
+   result while it is being modified. In particular, before it's filled
+   with its final contents, a string:
+
+   - must not be hashed,
+   - must not be :c:func:`converted to UTF-8 <PyUnicode_AsUTF8AndSize>`,
+     or another non-"canonical" representation,
+   - must not have its reference count changed,
+   - must not be shared with code that might do one of the above.
+
+   This list is not exhaustive. Avoiding these uses is your responsibility;
+   Python does not always check these requirements.
+
+   To avoid accidentally exposing a partially-written string object, prefer
+   using the :c:type:`PyUnicodeWriter` API, or one of the ``PyUnicode_From*``
+   functions below.
+
+   While :class:`str` objects are usually immutable in Python, this special C API
+   returns a :class:`str` object that can be mutated, except if *size* is zero, in which
+   case it returns the immutable empty string constant.
+
+   .. versionadded:: 3.3
+
+   .. soft-deprecated:: next
+      Use the :c:type:`PyUnicodeWriter` API instead.
+
+
+.. c:function:: void PyUnicode_WRITE(int kind, void *data, \
+                                     Py_ssize_t index, Py_UCS4 value)
+
+   Write the code point *value* to the given zero-based *index* in a string.
+
+   The *kind* value and *data* pointer must have been obtained from a
+   string using :c:func:`PyUnicode_KIND` and :c:func:`PyUnicode_DATA`
+   respectively. You must hold a reference to that string while calling
+   :c:func:`!PyUnicode_WRITE`. All requirements of
+   :c:func:`PyUnicode_WriteChar` also apply.
+
+   The function performs no checks for any of its requirements,
+   and is intended for usage in loops.
+
+   While :class:`str` objects are usually immutable in Python, this special C API allows
+   mutating a fresh :class:`str` object if the string has not been "used" yet.
+
+   .. versionadded:: 3.3
+
+   .. soft-deprecated:: next
+      Use the :c:type:`PyUnicodeWriter` API instead.
+
+
+.. c:function:: Py_ssize_t PyUnicode_CopyCharacters(PyObject *to, \
+                                                    Py_ssize_t to_start, \
+                                                    PyObject *from, \
+                                                    Py_ssize_t from_start, \
+                                                    Py_ssize_t how_many)
+
+   Copy characters from one Unicode object into another.  This function performs
+   character conversion when necessary and falls back to :c:func:`!memcpy` if
+   possible.  Returns ``-1`` and sets an exception on error, otherwise returns
+   the number of copied characters.
+
+   While :class:`str` objects are usually immutable in Python, this special C API allows
+   mutating a fresh :class:`str` object if the string has not been "used" yet.
+
+   See :c:func:`PyUnicode_New` for details.
+
+   .. versionadded:: 3.3
+
+   .. soft-deprecated:: next
+      Use the :c:type:`PyUnicodeWriter` API instead.
+
+
+.. c:function:: int PyUnicode_Resize(PyObject **unicode, Py_ssize_t length);
+
+   Resize a Unicode object *\*unicode* to the new *length* in code points.
+
+   Try to resize the string in place (which is usually faster than allocating
+   a new string and copying characters), or create a new string.
+
+   *\*unicode* is modified to point to the new (resized) object and ``0`` is
+   returned on success. Otherwise, ``-1`` is returned and an exception is set,
+   and *\*unicode* is left untouched.
+
+   The function doesn't check string content, the result may not be a
+   string in canonical representation.
+
+   While :class:`str` objects are usually immutable in Python, this special C API
+   can resize a :class:`str` object in-place if the string has not been "used" yet.
+   It returns a :class:`str` object which can be mutated, except if *size* is zero, in
+   which case it returns the immutable empty string constant.
+
+   .. soft-deprecated:: next
+      Use the :c:type:`PyUnicodeWriter` API instead.
+
+
+.. c:function:: Py_ssize_t PyUnicode_Fill(PyObject *unicode, Py_ssize_t start, \
+                        Py_ssize_t length, Py_UCS4 fill_char)
+
+   Fill a string with a character: write *fill_char* into
+   ``unicode[start:start+length]``.
+
+   Fail if *fill_char* is bigger than the string maximum character, or if the
+   string has more than 1 reference.
+
+   Return the number of written characters, or return ``-1`` and raise an
+   exception on error.
+
+   While :class:`str` objects are usually immutable in Python, this special C API allows
+   mutating a fresh :class:`str` object if the string has not been "used" yet.
+
+   See :c:func:`PyUnicode_New` for details.
+
+   .. versionadded:: 3.3
+
+   .. soft-deprecated:: next
+      Use the :c:type:`PyUnicodeWriter` API instead.
+
+
+.. c:function:: int PyUnicode_WriteChar(PyObject *unicode, Py_ssize_t index, \
+                                        Py_UCS4 character)
+
+   Write a *character* to the string *unicode* at the zero-based *index*.
+   Return ``0`` on success, ``-1`` on error with an exception set.
+
+   This function checks that *unicode* is a Unicode object, that the index is
+   not out of bounds, and that the object's reference count is one.
+   See :c:func:`PyUnicode_WRITE` for a version that skips these checks,
+   making them your responsibility.
+
+   While :class:`str` objects are usually immutable in Python, this special C API allows
+   mutating a fresh :class:`str` object if the string has not been "used" yet.
+
+   See :c:func:`PyUnicode_New` for details.
+
+   .. versionadded:: 3.3
+
+   .. soft-deprecated:: next
+      Use the :c:type:`PyUnicodeWriter` API instead.
