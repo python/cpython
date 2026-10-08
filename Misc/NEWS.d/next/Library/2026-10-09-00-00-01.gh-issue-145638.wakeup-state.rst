@@ -1,0 +1,3 @@
+Add :func:`signal.get_wakeup` and conditional ``check_previous`` support
+to :func:`signal.set_wakeup_fd`, allowing cooperating event loops and
+hosts to avoid overwriting each other's signal wakeup configuration.

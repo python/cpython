@@ -548,7 +548,41 @@ The :mod:`!signal` module defines the following functions:
    .. availability:: Unix.
 
 
-.. function:: set_wakeup_fd(fd, *, warn_on_full_buffer=True)
+.. function:: get_wakeup()
+
+   Return a :class:`wakeup` snapshot of the current signal wakeup
+   configuration without changing it.  This can be used with
+   :func:`set_wakeup_fd` to update the process-wide wakeup configuration only
+   if another owner has not changed it.
+
+   When threads are enabled, this function can only be called from
+   :ref:`the main thread of the main interpreter <signals-and-threads>`;
+   attempting to call it from other threads will cause a :exc:`ValueError`
+   exception to be raised.
+
+   .. versionadded:: 3.16
+
+
+.. class:: wakeup
+
+   An immutable snapshot of the signal wakeup configuration.  It has these
+   read-only attributes:
+
+   .. attribute:: wakeup.fd
+
+      The wakeup file descriptor, or ``-1`` if wakeups are disabled.
+
+   .. attribute:: wakeup.warn_on_full_buffer
+
+      Whether a full wakeup buffer reports warnings.
+
+   .. attribute:: wakeup.is_socket
+
+      Whether *fd* is used as a socket on Windows.  This is always false on
+      other platforms.
+
+
+.. function:: set_wakeup_fd(fd, *, warn_on_full_buffer=True, check_previous=None)
 
    Set the wakeup file descriptor to *fd*.  When a signal your program has
    registered a signal handler for is received, the signal number is written as
@@ -561,6 +595,11 @@ The :mod:`!signal` module defines the following functions:
    enabled).  If *fd* is -1, file descriptor wakeup is disabled.
    If not -1, *fd* must be non-blocking.  It is up to the library to remove
    any bytes from *fd* before calling poll or select again.
+
+   If *check_previous* is a :class:`wakeup` snapshot, change the wakeup
+   configuration only if it is still equal to the current configuration.
+   Otherwise, raise :exc:`RuntimeError` without changing it.  Pass ``None``
+   (the default) to update unconditionally.
 
    When threads are enabled, this function can only be called
    from :ref:`the main thread of the main interpreter <signals-and-threads>`;
@@ -593,6 +632,9 @@ The :mod:`!signal` module defines the following functions:
 
    .. versionchanged:: 3.7
       Added ``warn_on_full_buffer`` parameter.
+
+   .. versionchanged:: 3.16
+      Added the ``check_previous`` parameter.
 
 .. function:: siginterrupt(signalnum, flag)
 

@@ -281,8 +281,27 @@ exit:
 
 #endif /* defined(HAVE_SIGINTERRUPT) */
 
+PyDoc_STRVAR(signal_get_wakeup__doc__,
+"get_wakeup($module, /)\n"
+"--\n"
+"\n"
+"Return the current signal wakeup configuration without modifying it.");
+
+#define SIGNAL_GET_WAKEUP_METHODDEF    \
+    {"get_wakeup", (PyCFunction)signal_get_wakeup, METH_NOARGS, signal_get_wakeup__doc__},
+
+static PyObject *
+signal_get_wakeup_impl(PyObject *module);
+
+static PyObject *
+signal_get_wakeup(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return signal_get_wakeup_impl(module);
+}
+
 PyDoc_STRVAR(signal_set_wakeup_fd__doc__,
-"set_wakeup_fd($module, fd, /, *, warn_on_full_buffer=True)\n"
+"set_wakeup_fd($module, fd, /, *, warn_on_full_buffer=True,\n"
+"              check_previous=None)\n"
 "--\n"
 "\n"
 "Sets the fd to be written to (with the signal number) when a signal comes in.\n"
@@ -290,14 +309,15 @@ PyDoc_STRVAR(signal_set_wakeup_fd__doc__,
 "A library can use this to wakeup select or poll.\n"
 "The previous fd or -1 is returned.\n"
 "\n"
-"The fd must be non-blocking.");
+"If check_previous is not None, it must equal the current signal.wakeup\n"
+"value. The fd must be non-blocking.");
 
 #define SIGNAL_SET_WAKEUP_FD_METHODDEF    \
     {"set_wakeup_fd", _PyCFunction_CAST(signal_set_wakeup_fd), METH_FASTCALL|METH_KEYWORDS, signal_set_wakeup_fd__doc__},
 
 static PyObject *
 signal_set_wakeup_fd_impl(PyObject *module, PyObject *fdobj,
-                          int warn_on_full_buffer);
+                          int warn_on_full_buffer, PyObject *check_previous);
 
 static PyObject *
 signal_set_wakeup_fd(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -305,7 +325,7 @@ signal_set_wakeup_fd(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 1
+    #define NUM_KEYWORDS 2
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -314,7 +334,7 @@ signal_set_wakeup_fd(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(warn_on_full_buffer), },
+        .ob_item = { &_Py_ID(warn_on_full_buffer), &_Py_ID(check_previous), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -323,17 +343,18 @@ signal_set_wakeup_fd(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"", "warn_on_full_buffer", NULL};
+    static const char * const _keywords[] = {"", "warn_on_full_buffer", "check_previous", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "set_wakeup_fd",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *fdobj;
     int warn_on_full_buffer = 1;
+    PyObject *check_previous = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -344,12 +365,18 @@ signal_set_wakeup_fd(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    warn_on_full_buffer = PyObject_IsTrue(args[1]);
-    if (warn_on_full_buffer < 0) {
-        goto exit;
+    if (args[1]) {
+        warn_on_full_buffer = PyObject_IsTrue(args[1]);
+        if (warn_on_full_buffer < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
     }
+    check_previous = args[2];
 skip_optional_kwonly:
-    return_value = signal_set_wakeup_fd_impl(module, fdobj, warn_on_full_buffer);
+    return_value = signal_set_wakeup_fd_impl(module, fdobj, warn_on_full_buffer, check_previous);
 
 exit:
     return return_value;
@@ -807,4 +834,4 @@ exit:
 #ifndef SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF
     #define SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF
 #endif /* !defined(SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF) */
-/*[clinic end generated code: output=2a04ec31f49b1c93 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=89ccccba73bb278d input=a9049054013a1b77]*/

@@ -362,6 +362,7 @@ _PyStaticObjects_CheckAll(PyInterpreterState *interp) {
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(cb_type), "cb_type", 7);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(certfile), "certfile", 8);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(chain), "chain", 5);
+    _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(check_previous), "check_previous", 14);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(check_same_thread), "check_same_thread", 17);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(clamp), "clamp", 5);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(clear), "clear", 5);

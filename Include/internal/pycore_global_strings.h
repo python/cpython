@@ -374,6 +374,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(cb_type)
         STRUCT_FOR_ID(certfile)
         STRUCT_FOR_ID(chain)
+        STRUCT_FOR_ID(check_previous)
         STRUCT_FOR_ID(check_same_thread)
         STRUCT_FOR_ID(clamp)
         STRUCT_FOR_ID(clear)

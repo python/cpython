@@ -663,11 +663,13 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         self._selector = proactor   # convenient alias
         self._self_reading_future = None
         self._accept_futures = {}   # socket file descriptor => Future
+        self._wakeup = None
         proactor.set_loop(self)
         self._make_self_pipe()
         if threading.current_thread() is threading.main_thread():
             # wakeup fd can only be installed to a file descriptor from the main thread
             signal.set_wakeup_fd(self._csock.fileno())
+            self._wakeup = signal.get_wakeup()
 
     def _make_socket_transport(self, sock, protocol, waiter=None,
                                extra=None, server=None, context=None):
@@ -715,8 +717,14 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         if self.is_closed():
             return
 
-        if threading.current_thread() is threading.main_thread():
-            signal.set_wakeup_fd(-1)
+        if (threading.current_thread() is threading.main_thread()
+                and self._wakeup is not None):
+            try:
+                signal.set_wakeup_fd(-1, check_previous=self._wakeup)
+            except RuntimeError:
+                # Another loop or host replaced the process-global wakeup fd.
+                pass
+            self._wakeup = None
         # Call these methods before closing the event loop (before calling
         # BaseEventLoop.close), because they can schedule callbacks with
         # call_soon(), which is forbidden when the event loop is closed.

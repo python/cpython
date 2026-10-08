@@ -288,6 +288,48 @@ class WakeupFDTests(unittest.TestCase):
         self.assertEqual(signal.set_wakeup_fd(-1), fd2)
         self.assertEqual(signal.set_wakeup_fd(-1), -1)
 
+    @unittest.skipUnless(support.has_socket_support, "needs working sockets.")
+    def test_wakeup_state_and_conditional_update(self):
+        first, second = socket.socketpair()
+        self.addCleanup(first.close)
+        self.addCleanup(second.close)
+        first.setblocking(False)
+        second.setblocking(False)
+        self.addCleanup(signal.set_wakeup_fd, -1)
+
+        initial_state = signal.get_wakeup()
+        self.assertEqual(initial_state.fd, -1)
+        self.assertFalse(initial_state.is_socket)
+        signal.set_wakeup_fd(first.fileno(), warn_on_full_buffer=False)
+        first_state = signal.get_wakeup()
+        self.assertEqual(first_state.fd, first.fileno())
+        self.assertFalse(first_state.warn_on_full_buffer)
+        self.assertEqual(first_state.is_socket, sys.platform == "win32")
+
+        signal.set_wakeup_fd(
+            first.fileno(),
+            warn_on_full_buffer=True,
+            check_previous=first_state,
+        )
+        changed_state = signal.get_wakeup()
+        self.assertEqual(changed_state.fd, first.fileno())
+        self.assertTrue(changed_state.warn_on_full_buffer)
+
+        with self.assertRaisesRegex(RuntimeError,
+                                    "signal wakeup configuration changed"):
+            signal.set_wakeup_fd(second.fileno(), check_previous=first_state)
+        self.assertEqual(signal.get_wakeup(), changed_state)
+
+        signal.set_wakeup_fd(second.fileno(), check_previous=changed_state)
+        second_state = signal.get_wakeup()
+        self.assertEqual(second_state.fd, second.fileno())
+        self.assertTrue(second_state.warn_on_full_buffer)
+
+        with self.assertRaisesRegex(RuntimeError,
+                                    "signal wakeup configuration changed"):
+            signal.set_wakeup_fd(-1, check_previous=first_state)
+        self.assertEqual(signal.get_wakeup(), second_state)
+
     # On Windows, files are always blocking and Windows does not provide a
     # function to test if a socket is in non-blocking mode.
     @unittest.skipIf(sys.platform == "win32", "tests specific to POSIX")

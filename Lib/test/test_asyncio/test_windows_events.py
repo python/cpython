@@ -78,6 +78,29 @@ class ProactorLoopCtrlC(WindowsEventsTestCase):
         thread.join()
 
 
+class ProactorWakeupOwnershipTests(WindowsEventsTestCase):
+
+    def test_close_preserves_newer_loop_wakeup(self):
+        initial = signal.get_wakeup()
+        first = asyncio.ProactorEventLoop()
+        second = asyncio.ProactorEventLoop()
+        try:
+            newer_wakeup = signal.get_wakeup()
+            self.assertEqual(newer_wakeup.fd, second._csock.fileno())
+
+            first.close()
+            self.assertEqual(signal.get_wakeup(), newer_wakeup)
+        finally:
+            if not first.is_closed():
+                first.close()
+            if not second.is_closed():
+                second.close()
+            signal.set_wakeup_fd(
+                initial.fd,
+                warn_on_full_buffer=initial.warn_on_full_buffer,
+            )
+
+
 class ProactorMultithreading(WindowsEventsTestCase):
     def test_run_from_nonmain_thread(self):
         finished = False

@@ -1649,6 +1649,7 @@ extern "C" {
     INIT_ID(cb_type), \
     INIT_ID(certfile), \
     INIT_ID(chain), \
+    INIT_ID(check_previous), \
     INIT_ID(check_same_thread), \
     INIT_ID(clamp), \
     INIT_ID(clear), \

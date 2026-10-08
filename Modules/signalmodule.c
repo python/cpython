@@ -126,6 +126,7 @@ typedef struct {
     PyObject *itimer_error;
 #endif
     PyTypeObject *siginfo_type;
+    PyTypeObject *wakeup_type;
 } _signal_module_state;
 
 
@@ -703,6 +704,107 @@ signal_siginterrupt_impl(PyObject *module, int signalnum, int flag)
 #endif
 
 
+PyDoc_STRVAR(signal_wakeup__doc__,
+"signal.wakeup: Current signal wakeup configuration.");
+
+static PyStructSequence_Field signal_wakeup_fields[] = {
+    {"fd", "file descriptor or socket handle used to wake the main thread"},
+    {"warn_on_full_buffer", "whether a full wakeup buffer reports warnings"},
+    {"is_socket", "whether the wakeup fd is a socket on Windows"},
+    {0}
+};
+
+static PyStructSequence_Desc signal_wakeup_desc = {
+    "signal.wakeup",
+    signal_wakeup__doc__,
+    signal_wakeup_fields,
+    3
+};
+
+/*[clinic input]
+signal.get_wakeup
+
+Return the current signal wakeup configuration without modifying it.
+[clinic start generated code]*/
+
+static PyObject *
+signal_get_wakeup_impl(PyObject *module)
+/*[clinic end generated code: output=3f3acef64b5f426c input=4b9da8dd3f679d8c]*/
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (!_Py_ThreadCanHandleSignals(tstate->interp)) {
+        _PyErr_SetString(tstate, PyExc_ValueError,
+                         "get_wakeup only works in main thread "
+                         "of the main interpreter");
+        return NULL;
+    }
+
+    _signal_module_state *modstate = get_signal_state(module);
+    PyObject *result = PyStructSequence_New(modstate->wakeup_type);
+    if (result == NULL) {
+        return NULL;
+    }
+
+#ifdef MS_WINDOWS
+    if (wakeup.fd == INVALID_FD) {
+        PyStructSequence_SET_ITEM(result, 0, PyLong_FromLong(-1));
+    }
+    else {
+        PyStructSequence_SET_ITEM(result, 0,
+                                  PyLong_FromSocket_t((SOCKET_T)wakeup.fd));
+    }
+#else
+    PyStructSequence_SET_ITEM(result, 0, PyLong_FromLong(wakeup.fd));
+#endif
+    PyStructSequence_SET_ITEM(result, 1,
+                              PyBool_FromLong(wakeup.warn_on_full_buffer));
+#ifdef MS_WINDOWS
+    PyStructSequence_SET_ITEM(result, 2, PyBool_FromLong(wakeup.use_send));
+#else
+    PyStructSequence_SET_ITEM(result, 2, PyBool_FromLong(0));
+#endif
+    if (PyErr_Occurred()) {
+        Py_DECREF(result);
+        return NULL;
+    }
+    return result;
+}
+
+
+static int
+signal_check_wakeup(PyObject *module, PyObject *check_previous)
+{
+    if (check_previous == Py_None) {
+        return 0;
+    }
+    else {
+        _signal_module_state *modstate = get_signal_state(module);
+        if (!PyObject_TypeCheck(check_previous, modstate->wakeup_type)) {
+            PyErr_SetString(PyExc_TypeError,
+                            "check_previous must be signal.wakeup or None");
+            return -1;
+        }
+
+        PyObject *current = signal_get_wakeup(module, NULL);
+        if (current == NULL) {
+            return -1;
+        }
+        int equal = PyObject_RichCompareBool(check_previous, current, Py_EQ);
+        Py_DECREF(current);
+        if (equal < 0) {
+            return -1;
+        }
+        if (equal) {
+            return 0;
+        }
+    }
+
+    PyErr_SetString(PyExc_RuntimeError,
+                    "signal wakeup configuration changed");
+    return -1;
+}
+
+
 /*[clinic input]
 @permit_long_summary
 signal.set_wakeup_fd
@@ -711,19 +813,21 @@ signal.set_wakeup_fd
     /
     *
     warn_on_full_buffer: bool = True
+    check_previous: object = None
 
 Sets the fd to be written to (with the signal number) when a signal comes in.
 
 A library can use this to wakeup select or poll.
 The previous fd or -1 is returned.
 
-The fd must be non-blocking.
+If check_previous is not None, it must equal the current signal.wakeup
+value. The fd must be non-blocking.
 [clinic start generated code]*/
 
 static PyObject *
 signal_set_wakeup_fd_impl(PyObject *module, PyObject *fdobj,
-                          int warn_on_full_buffer)
-/*[clinic end generated code: output=2280d72dd2a54c4f input=1b914d48079e9274]*/
+                          int warn_on_full_buffer, PyObject *check_previous)
+/*[clinic end generated code: output=c89866b8ec8e2573 input=cbb7cc5082881dfe]*/
 {
     struct _Py_stat_struct status;
 #ifdef MS_WINDOWS
@@ -748,6 +852,10 @@ signal_set_wakeup_fd_impl(PyObject *module, PyObject *fdobj,
         _PyErr_SetString(tstate, PyExc_ValueError,
                          "set_wakeup_fd only works in main thread "
                          "of the main interpreter");
+        return NULL;
+    }
+
+    if (signal_check_wakeup(module, check_previous) < 0) {
         return NULL;
     }
 
@@ -1356,6 +1464,7 @@ static PyMethodDef signal_methods[] = {
     SIGNAL_STRSIGNAL_METHODDEF
     SIGNAL_GETSIGNAL_METHODDEF
     SIGNAL_SET_WAKEUP_FD_METHODDEF
+    SIGNAL_GET_WAKEUP_METHODDEF
     SIGNAL_SIGINTERRUPT_METHODDEF
     SIGNAL_PAUSE_METHODDEF
     SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF
@@ -1656,13 +1765,19 @@ signal_module_exec(PyObject *m)
     }
 #endif
 
+    modstate->wakeup_type = PyStructSequence_NewType(&signal_wakeup_desc);
+    if (modstate->wakeup_type == NULL) {
+        return -1;
+    }
+    if (PyModule_AddType(m, modstate->wakeup_type) < 0) {
+        return -1;
+    }
+
 #if defined(HAVE_SIGWAITINFO) || defined(HAVE_SIGTIMEDWAIT)
     modstate->siginfo_type = PyStructSequence_NewType(&struct_siginfo_desc);
     if (modstate->siginfo_type == NULL) {
         return -1;
     }
-#endif
-#if defined(HAVE_SIGWAITINFO) || defined(HAVE_SIGTIMEDWAIT)
     if (PyModule_AddType(m, modstate->siginfo_type) < 0) {
         return -1;
     }
@@ -1680,13 +1795,15 @@ signal_module_exec(PyObject *m)
 }
 
 
-#ifdef PYHAVE_ITIMER_ERROR
 static int
 _signal_module_traverse(PyObject *module, visitproc visit, void *arg)
 {
     _signal_module_state *state = get_signal_state(module);
+#ifdef PYHAVE_ITIMER_ERROR
     Py_VISIT(state->itimer_error);
+#endif
     Py_VISIT(state->siginfo_type);
+    Py_VISIT(state->wakeup_type);
     return 0;
 }
 
@@ -1694,8 +1811,11 @@ static int
 _signal_module_clear(PyObject *module)
 {
     _signal_module_state *state = get_signal_state(module);
+#ifdef PYHAVE_ITIMER_ERROR
     Py_CLEAR(state->itimer_error);
+#endif
     Py_CLEAR(state->siginfo_type);
+    Py_CLEAR(state->wakeup_type);
     return 0;
 }
 
@@ -1704,7 +1824,6 @@ _signal_module_free(void *module)
 {
     _signal_module_clear((PyObject *)module);
 }
-#endif  // PYHAVE_ITIMER_ERROR
 
 
 static PyModuleDef_Slot signal_slots[] = {
@@ -1722,11 +1841,9 @@ static struct PyModuleDef signal_module = {
     .m_size = sizeof(_signal_module_state),
     .m_methods = signal_methods,
     .m_slots = signal_slots,
-#ifdef PYHAVE_ITIMER_ERROR
     .m_traverse = _signal_module_traverse,
     .m_clear = _signal_module_clear,
     .m_free = _signal_module_free,
-#endif
 };
 
 

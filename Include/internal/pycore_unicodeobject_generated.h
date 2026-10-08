@@ -326,6 +326,7 @@ _PyUnicode_InitStaticStrings(PyInterpreterState *interp) {
         offsetof(struct _Py_global_strings, identifiers._py_cb_type._ascii.ob_base),
         offsetof(struct _Py_global_strings, identifiers._py_certfile._ascii.ob_base),
         offsetof(struct _Py_global_strings, identifiers._py_chain._ascii.ob_base),
+        offsetof(struct _Py_global_strings, identifiers._py_check_previous._ascii.ob_base),
         offsetof(struct _Py_global_strings, identifiers._py_check_same_thread._ascii.ob_base),
         offsetof(struct _Py_global_strings, identifiers._py_clamp._ascii.ob_base),
         offsetof(struct _Py_global_strings, identifiers._py_clear._ascii.ob_base),

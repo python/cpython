@@ -768,19 +768,24 @@ class BaseProactorEventLoopTests(test_utils.TestCase):
 
         with mock.patch('asyncio.proactor_events.socket.socketpair',
                         return_value=(self.ssock, self.csock)):
-            with mock.patch('signal.set_wakeup_fd'):
+            with mock.patch('signal.set_wakeup_fd'), \
+                 mock.patch('signal.get_wakeup'):
                 self.loop = BaseProactorEventLoop(self.proactor)
+        self.loop._wakeup = None
         self.set_event_loop(self.loop)
 
     @mock.patch('asyncio.proactor_events.socket.socketpair')
     def test_ctor(self, socketpair):
         ssock, csock = socketpair.return_value = (
             mock.Mock(), mock.Mock())
-        with mock.patch('signal.set_wakeup_fd'):
+        with mock.patch('signal.set_wakeup_fd'), \
+             mock.patch('signal.get_wakeup'):
             loop = BaseProactorEventLoop(self.proactor)
         self.assertIs(loop._ssock, ssock)
         self.assertIs(loop._csock, csock)
         self.assertEqual(loop._internal_fds, 1)
+        # The wakeup state is mocked in this unit test.
+        loop._wakeup = None
         loop.close()
 
     def test_close_self_pipe(self):
