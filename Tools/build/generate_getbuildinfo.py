@@ -22,6 +22,9 @@ PY_VERSION_REGEX = re.compile(r'^#define PY_VERSION +"(.*)"$', re.MULTILINE)
 # 'Android (13691557, +pgo, ...) clang version 18.0.4 (https://android.googlesource.com/toolchain/llvm-project d80...262)'
 CLANG_VERBOSE_VERSION = re.compile(r'(Clang .*|clang version .*) \(https:/.*\)')
 
+# Parse short Clang version: 'clang version 18.0.4'
+CLANG_SHORT_VERSION = re.compile(r'clang version (.*)')
+
 
 def exit_error(msg):
     print(msg)
@@ -29,18 +32,14 @@ def exit_error(msg):
     sys.exit(1)
 
 
-def parse_file(variable_name, filename, regex):
+def get_py_version():
+    filename = os.path.join(SRC_DIR, 'Include', 'patchlevel.h')
     with open(filename, encoding='utf8') as fp:
         code = fp.read()
-    match = regex.search(code)
+    match = PY_VERSION_REGEX.search(code)
     if not match:
-        exit_error(f"ERROR: Unable to locate {variable_name} in {filename}")
+        exit_error(f"ERROR: Unable to locate PY_VERSION in {filename}")
     return match.group(1)
-
-
-def get_py_version():
-    patchlevel_h = os.path.join(SRC_DIR, 'Include', 'patchlevel.h')
-    return parse_file('PY_VERSION ', patchlevel_h, PY_VERSION_REGEX)
 
 
 def get_makefile_vars():
@@ -60,10 +59,11 @@ def get_gil_disable():
 def get_date_time():
     if os.environ.get('SOURCE_DATE_EPOCH'):
         ts = int(os.environ['SOURCE_DATE_EPOCH'])
+        time_tuple = time.gmtime(ts)
     else:
         ts = time.time()
+        time_tuple = time.localtime(ts)
 
-    time_tuple = time.localtime(ts)
     day = time.strftime("%d", time_tuple)
     if day.startswith("0"):
         day = " " + day[1:]
@@ -154,6 +154,20 @@ def _get_compiler():
     return None
 
 
+def shorter_clang_version(compiler):
+    # Make verbose Clang version shorter: strip the prefix and URL
+    match = CLANG_VERBOSE_VERSION.search(compiler)
+    if match:
+        compiler = match.group(1)
+
+    # Use a full match: don't replace 'Apple clang version 21.0.0' for example
+    match = CLANG_SHORT_VERSION.fullmatch(compiler)
+    if match:
+        compiler = 'Clang ' + match.group(1)
+
+    return compiler
+
+
 def get_compiler(compiler):
     if not compiler:
         compiler = _get_compiler()
@@ -162,10 +176,7 @@ def get_compiler(compiler):
         # (see Programs/_getcompiler.c)
         compiler = 'C'
 
-    # Make verbose Clang version shorter: strip the prefix and URL
-    match = CLANG_VERBOSE_VERSION.search(compiler)
-    if match:
-        compiler = match.group(1)
+    compiler = shorter_clang_version(compiler)
 
     return f'[{compiler}]'
 
@@ -194,8 +205,9 @@ def main():
 
     # Get PY_VERSION macro from Include/patchlevel.h
     PY_VERSION = get_py_version()
+
     if free_threading is None:
-        # Get Py_GIL_DISABLED macro from pyconfig.h (defined or undefined)
+        # Get Py_GIL_DISABLED macro from pyconfig.h
         free_threading = get_gil_disable()
 
     if free_threading:
