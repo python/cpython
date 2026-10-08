@@ -1124,6 +1124,13 @@ reused in custom filters:
 
   Return the modified ``TarInfo`` member.
 
+  .. warning::
+
+     This filter does not check link targets (:attr:`TarInfo.linkname`).
+     It allows benign cases (like links to ``/dev/null``), but it also allows
+     links (symbolic and hard) to arbitrary files on the filesystem,
+     potentially granting unintended access to these files.
+
   .. versionchanged:: next
 
      Filenames containing ``..`` components are now normalized.
