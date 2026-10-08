@@ -1,0 +1,2 @@
+On Linux, :func:`os.statx` falls back to the raw syscall when the libc Python is built against does not provide the
+wrapper function. This makes it possible for this function to be available on interpreters built against a libc older than glibc 2.28.
