@@ -1,5 +1,8 @@
 import unittest
 
+from test import support
+from test.support.os_helper import temp_cwd
+from test.support.script_helper import assert_python_ok
 from test.test_string._support import TStringBaseCase, fstring
 
 
@@ -79,6 +82,31 @@ class TestTString(unittest.TestCase, TStringBaseCase):
         )
         self.assertEqual(fstring(t), "Name: Bob, Age: 30")
 
+    def test_interpolation_expression_in_file_after_buffer_resize(self):
+        expression = "(\n" + (" " * 64 + "\n") * 256 + "1\n)"
+        with temp_cwd():
+            script = 'script.py'
+            source = (
+                f"template = t'''{{{expression}}}'''\n"
+                "interpolation = template.interpolations[0]\n"
+                f"assert interpolation.expression == {expression!r}\n"
+            )
+            with open(script, 'w') as f:
+                f.write(source)
+            assert_python_ok(script)
+
+    @support.requires_resource('cpu')
+    def test_many_tstrings_in_module(self):
+        fields = ''.join(f'{{x{i}}}' for i in range(100))
+        source = ''.join(
+            f"value_{i} = t'{fields}'\n" for i in range(1_000)
+        )
+        namespace = {f'x{i}': str(i) for i in range(100)}
+        expected = ''.join(str(i) for i in range(100))
+        exec(source, namespace)
+        self.assertEqual(fstring(namespace['value_0']), expected)
+        self.assertEqual(fstring(namespace['value_999']), expected)
+
     def test_format_specifiers(self):
         # Test basic format specifiers
         value = 3.14159
@@ -87,6 +115,14 @@ class TestTString(unittest.TestCase, TStringBaseCase):
             t, ("Pi: ", ""), [(value, "value", None, ".2f")]
         )
         self.assertEqual(fstring(t), "Pi: 3.14")
+
+        a = 3
+        b = 4
+        t = t"{a!=b:>10}"
+        self.assertTStringEqual(
+            t, ("", ""), [(a != b, "a!=b", None, ">10")]
+        )
+        self.assertEqual(fstring(t), "         1")
 
     def test_conversions(self):
         # Test !s conversion (str)
@@ -136,9 +172,90 @@ class TestTString(unittest.TestCase, TStringBaseCase):
         # Test white space in debug specifier
         t = t"Value: {value = }"
         self.assertTStringEqual(
-            t, ("Value: value = ", ""), [(value, "value", "r")]
+            t, ("Value: value = ", ""), [(value, "value ", "r")]
         )
         self.assertEqual(fstring(t), "Value: value = 42")
+
+        # Explicit line continuations after the debug marker are part of
+        # the debug text, not the interpolation expression.
+        for template, strings, interpolation, rendered in (
+            (
+                t"""Value: {value =\
+}""",
+                ("Value: value =\\\n", ""),
+                (value, "value ", "r"),
+                "Value: value =\\\n42",
+            ),
+            (
+                t"""Value: {value =\
+!r}""",
+                ("Value: value =\\\n", ""),
+                (value, "value ", "r"),
+                "Value: value =\\\n42",
+            ),
+            (
+                t"""Value: {value =\
+:04}""",
+                ("Value: value =\\\n", ""),
+                (value, "value ", None, "04"),
+                "Value: value =\\\n0042",
+            ),
+            (
+                t"""Value: {value =\
+\
+}""",
+                ("Value: value =\\\n\\\n", ""),
+                (value, "value ", "r"),
+                "Value: value =\\\n\\\n42",
+            ),
+        ):
+            with self.subTest(template=template):
+                self.assertTStringEqual(template, strings, [interpolation])
+                self.assertEqual(fstring(template), rendered)
+
+        class C:
+            def __format__(self, spec):
+                return f"FORMAT-{spec}"
+
+        x = y = C()
+        t = t"{x:{y:{value=}}}"
+        self.assertEqual(t.interpolations[0].format_spec,
+                         "FORMAT-value=42")
+
+    def test_interpolation_expression_whitespace(self):
+        x = 42
+        for template, expected in (
+            (t"{x}", "x"),
+            (t"{x }", "x "),
+            (t"{ x}", " x"),
+            (t"{ x }", " x "),
+            (t"{  x  }", "  x  "),
+            (t"""{
+  x
+}""", "\n  x\n"),
+            (t"{ x !r}", " x "),
+            (t"{ x :.2f}", " x "),
+            (t"{ x = }", " x "),
+            (t"{ x = !r}", " x "),
+            (t"{ x = :.2f}", " x "),
+            (t"{x == 42 = }", "x == 42 "),
+        ):
+            with self.subTest(template=template):
+                self.assertEqual(
+                    template.interpolations[0].expression,
+                    expected,
+                )
+
+    def test_interpolation_expression_with_reconstructed_metadata(self):
+        regular = t'''{(
+            1,  # Force lexer metadata reconstruction.
+            "\"#")}'''
+        debug = t'''{(
+            1,  # Force lexer metadata reconstruction.
+            "\"#")=}'''
+        expected = '(\n            1,  \n            "\\"#")'
+        self.assertEqual(regular.interpolations[0].expression, expected)
+        self.assertEqual(debug.interpolations[0].expression, expected)
 
     def test_raw_tstrings(self):
         path = r"C:\Users"
@@ -150,6 +267,13 @@ class TestTString(unittest.TestCase, TStringBaseCase):
         t = tr"{path}\Documents"
         self.assertTStringEqual(t, ("", r"\Documents"), [(path, "path")])
 
+        value = 42
+        t = rt"{value:{f'\xFF'}}\n"
+        self.assertTStringEqual(
+            t, ("", "\\n"), [(value, "value", None, 'ÿ')])
+        t = t"{value:{rf'\xFF'}}\n"
+        self.assertTStringEqual(
+            t, ("", "\n"), [(value, "value", None, '\\xFF')])
 
     def test_template_concatenation(self):
         # Test template + template
@@ -161,9 +285,10 @@ class TestTString(unittest.TestCase, TStringBaseCase):
 
         # Test template + string
         t1 = t"Hello"
-        combined = t1 + ", world"
-        self.assertTStringEqual(combined, ("Hello, world",), ())
-        self.assertEqual(fstring(combined), "Hello, world")
+        expected_msg = 'can only concatenate string.templatelib.Template ' \
+            '\\(not "str"\\) to string.templatelib.Template'
+        with self.assertRaisesRegex(TypeError, expected_msg):
+            t1 + ", world"
 
         # Test template + template with interpolation
         name = "Python"
@@ -174,9 +299,10 @@ class TestTString(unittest.TestCase, TStringBaseCase):
         self.assertEqual(fstring(combined), "Hello, Python")
 
         # Test string + template
-        t = "Hello, " + t"{name}"
-        self.assertTStringEqual(t, ("Hello, ", ""), [(name, "name")])
-        self.assertEqual(fstring(t), "Hello, Python")
+        expected_msg = 'can only concatenate str ' \
+            '\\(not "string.templatelib.Template"\\) to str'
+        with self.assertRaisesRegex(TypeError, expected_msg):
+            "Hello, " + t"{name}"
 
     def test_nested_templates(self):
         # Test a template inside another template expression
@@ -197,6 +323,8 @@ class TestTString(unittest.TestCase, TStringBaseCase):
 
     def test_syntax_errors(self):
         for case, err in (
+            ('t"""{(\n1\n)}\ntail', "unterminated triple-quoted t-string literal"),
+            ('f"""{(\n1\n)}\ntail', "unterminated triple-quoted f-string literal"),
             ("t'", "unterminated t-string literal"),
             ("t'''", "unterminated triple-quoted t-string literal"),
             ("t''''", "unterminated triple-quoted t-string literal"),
@@ -216,9 +344,14 @@ class TestTString(unittest.TestCase, TStringBaseCase):
             ("t'{x=!}'", "t-string: missing conversion character"),
             ("t'{x!z}'", "t-string: invalid conversion character 'z': "
                          "expected 's', 'r', or 'a'"),
+            ("f\"{t'{x!z}'}\"", "t-string: invalid conversion character 'z': "
+                                "expected 's', 'r', or 'a'"),
+            ("t'{f\"{x!z}\"}'", "f-string: invalid conversion character 'z': "
+                                "expected 's', 'r', or 'a'"),
             ("t'{lambda:1}'", "t-string: lambda expressions are not allowed "
                               "without parentheses"),
             ("t'{x:{;}}'", "t-string: expecting a valid expression after '{'"),
+            ("t'{1:d\n}'", "t-string: newlines are not allowed in format specifiers")
         ):
             with self.subTest(case), self.assertRaisesRegex(SyntaxError, err):
                 eval(case)
@@ -240,52 +373,28 @@ class TestTString(unittest.TestCase, TStringBaseCase):
         self.assertTStringEqual(t, ("Hello, ", ""), [(name, "name")])
         self.assertEqual(fstring(t), "Hello, Python")
 
-        # Test concatenation with string literal
-        name = "Python"
-        t = t"Hello, {name}" "and welcome!"
-        self.assertTStringEqual(
-            t, ("Hello, ", "and welcome!"), [(name, "name")]
-        )
-        self.assertEqual(fstring(t), "Hello, Pythonand welcome!")
-
-        # Test concatenation with Unicode literal
-        name = "Python"
-        t = t"Hello, {name}" u"and welcome!"
-        self.assertTStringEqual(
-            t, ("Hello, ", "and welcome!"), [(name, "name")]
-        )
-        self.assertEqual(fstring(t), "Hello, Pythonand welcome!")
-
-        # Test concatenation with f-string literal
-        tab = '\t'
-        t = t"Tab: {tab}. " f"f-tab: {tab}."
-        self.assertTStringEqual(t, ("Tab: ", ". f-tab: \t."), [(tab, "tab")])
-        self.assertEqual(fstring(t), "Tab: \t. f-tab: \t.")
-
-        # Test concatenation with raw string literal
-        tab = '\t'
-        t = t"Tab: {tab}. " r"Raw tab: \t."
-        self.assertTStringEqual(
-            t, ("Tab: ", r". Raw tab: \t."), [(tab, "tab")]
-        )
-        self.assertEqual(fstring(t), "Tab: \t. Raw tab: \\t.")
-
-        # Test concatenation with raw f-string literal
-        tab = '\t'
-        t = t"Tab: {tab}. " rf"f-tab: {tab}. Raw tab: \t."
-        self.assertTStringEqual(
-            t, ("Tab: ", ". f-tab: \t. Raw tab: \\t."), [(tab, "tab")]
-        )
-        self.assertEqual(fstring(t), "Tab: \t. f-tab: \t. Raw tab: \\t.")
-
+        # Test disallowed mix of t-string and string/f-string (incl. bytes)
         what = 't'
-        expected_msg = 'cannot mix bytes and nonbytes literals'
+        expected_msg = 'cannot mix t-string literals with string or bytes literals'
         for case in (
+            "t'{what}-string literal' 'str literal'",
+            "t'{what}-string literal' u'unicode literal'",
+            "t'{what}-string literal' f'f-string literal'",
+            "t'{what}-string literal' r'raw string literal'",
+            "t'{what}-string literal' rf'raw f-string literal'",
             "t'{what}-string literal' b'bytes literal'",
             "t'{what}-string literal' br'raw bytes literal'",
+            "'str literal' t'{what}-string literal'",
+            "u'unicode literal' t'{what}-string literal'",
+            "f'f-string literal' t'{what}-string literal'",
+            "r'raw string literal' t'{what}-string literal'",
+            "rf'raw f-string literal' t'{what}-string literal'",
+            "b'bytes literal' t'{what}-string literal'",
+            "br'raw bytes literal' t'{what}-string literal'",
         ):
-            with self.assertRaisesRegex(SyntaxError, expected_msg):
-                eval(case)
+            with self.subTest(case):
+                with self.assertRaisesRegex(SyntaxError, expected_msg):
+                    eval(case)
 
     def test_triple_quoted(self):
         # Test triple-quoted t-strings
@@ -308,6 +417,23 @@ class TestTString(unittest.TestCase, TStringBaseCase):
             t, ("\n        Hello,\n        ", "\n        "), [(name, "name")]
         )
         self.assertEqual(fstring(t), "\n        Hello,\n        Python\n        ")
+
+        t = t'{"""a" # inside"""}'
+        self.assertEqual(t.interpolations[0].expression,
+                         '"""a" # inside"""')
+
+        t = t'{"""a""""#" # outside
+}'
+        self.assertEqual(t.interpolations[0].expression, '"""a""""#" \n')
+
+        x, y = 1, 2
+        t = t'{x != y # outside
+}'
+        self.assertEqual(t.interpolations[0].expression, 'x != y \n')
+
+        d = {'a#b': 42}
+        t = t'''{f"{d["a#b"]}"}'''
+        self.assertEqual(t.interpolations[0].expression, 'f"{d["a#b"]}"')
 
 if __name__ == '__main__':
     unittest.main()

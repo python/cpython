@@ -5,8 +5,6 @@
    :synopsis: Load a robots.txt file and answer questions about
               fetchability of other URLs.
 
-.. sectionauthor:: Skip Montanaro <skip.montanaro@gmail.com>
-
 **Source code:** :source:`Lib/urllib/robotparser.py`
 
 .. index::
@@ -19,18 +17,25 @@
 
 This module provides a single class, :class:`RobotFileParser`, which answers
 questions about whether or not a particular user agent can fetch a URL on the
-web site that published the :file:`robots.txt` file.  For more details on the
-structure of :file:`robots.txt` files, see http://www.robotstxt.org/orig.html.
+website that published the :file:`robots.txt` file.  For more details on the
+structure of :file:`robots.txt` files, see :rfc:`9309`.
 
 
 .. class:: RobotFileParser(url='')
 
    This class provides methods to read, parse and answer questions about the
-   :file:`robots.txt` file at *url*.
+   :file:`robots.txt` file at *url* or a :class:`urllib.request.Request` object.
+
+   .. versionchanged:: next
+     *url* parameter can be a :class:`urllib.request.Request` object.
 
    .. method:: set_url(url)
 
-      Sets the URL referring to a :file:`robots.txt` file.
+      Sets the URL referring to a :file:`robots.txt` file or a
+      :class:`urllib.request.Request` object.
+
+      .. versionchanged:: next
+        *url* parameter can be a :class:`urllib.request.Request` object.
 
    .. method:: read()
 
@@ -91,16 +96,30 @@ class::
 
    >>> import urllib.robotparser
    >>> rp = urllib.robotparser.RobotFileParser()
-   >>> rp.set_url("http://www.musi-cal.com/robots.txt")
+   >>> rp.set_url("http://www.pythontest.net/robots.txt")
    >>> rp.read()
    >>> rrate = rp.request_rate("*")
    >>> rrate.requests
-   3
+   1
    >>> rrate.seconds
-   20
+   1
    >>> rp.crawl_delay("*")
    6
-   >>> rp.can_fetch("*", "http://www.musi-cal.com/cgi-bin/search?city=San+Francisco")
-   False
-   >>> rp.can_fetch("*", "http://www.musi-cal.com/")
+   >>> rp.can_fetch("*", "http://www.pythontest.net/")
    True
+   >>> rp.can_fetch("*", "http://www.pythontest.net/no-robots-here/")
+   False
+
+
+The following example demonstrates use of a :class:`urllib.request.Request`
+object with additional user-agent headers populated::
+
+   >>> import urllib.robotparser
+   >>> import urllib.request
+   >>> rp = urllib.robotparser.RobotFileParser()
+   >>> rp.set_url(urllib.request.Request("http://www.pythontest.net/robots.txt", headers={"User-Agent": "IsraBot"}))
+   >>> rp.read()
+   >>> rp.can_fetch("*", "http://www.pythontest.net/")
+   True
+   >>> rp.can_fetch("*", "http://www.pythontest.net/no-robots-here/")
+   False

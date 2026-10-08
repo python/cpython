@@ -27,14 +27,14 @@ _Py_HashPointerRaw(const void *ptr)
  *   pppppppp ssssssss ........  fnv -- two Py_hash_t
  *   k0k0k0k0 k1k1k1k1 ........  siphash -- two uint64_t
  *   ........ ........ ssssssss  djbx33a -- 16 bytes padding + one Py_hash_t
- *   ........ ........ eeeeeeee  pyexpat XML hash salt
+ *   eeeeeeee eeeeeeee eeeeeeee  pyexpat XML hash salt
  *
  * memory layout on 32 bit systems
  *   cccccccc cccccccc cccccccc  uc
  *   ppppssss ........ ........  fnv -- two Py_hash_t
  *   k0k0k0k0 k1k1k1k1 ........  siphash -- two uint64_t (*)
  *   ........ ........ ssss....  djbx33a -- 16 bytes padding + one Py_hash_t
- *   ........ ........ eeee....  pyexpat XML hash salt
+ *   eeeeeeee eeeeeeee eeee....  pyexpat XML hash salt
  *
  * (*) The siphash member may not be available on 32 bit platforms without
  *     an unsigned int64 data type.
@@ -58,7 +58,9 @@ typedef union {
         Py_hash_t suffix;
     } djbx33a;
     struct {
-        unsigned char padding[16];
+        /* 16 bytes for XML_SetHashSalt16Bytes */
+        uint8_t hashsalt16[16];
+        /* 4/8 bytes for legacy XML_SetHashSalt */
         Py_hash_t hashsalt;
     } expat;
 } _Py_HashSecret_t;

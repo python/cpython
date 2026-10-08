@@ -77,23 +77,23 @@ class TestAbstractAsyncContextManager(unittest.TestCase):
             async def __aexit__(self, exc_type, exc_value, traceback):
                 return None
 
-        self.assertTrue(issubclass(ManagerFromScratch, AbstractAsyncContextManager))
+        self.assertIsSubclass(ManagerFromScratch, AbstractAsyncContextManager)
 
         class DefaultEnter(AbstractAsyncContextManager):
             async def __aexit__(self, *args):
                 await super().__aexit__(*args)
 
-        self.assertTrue(issubclass(DefaultEnter, AbstractAsyncContextManager))
+        self.assertIsSubclass(DefaultEnter, AbstractAsyncContextManager)
 
         class NoneAenter(ManagerFromScratch):
             __aenter__ = None
 
-        self.assertFalse(issubclass(NoneAenter, AbstractAsyncContextManager))
+        self.assertNotIsSubclass(NoneAenter, AbstractAsyncContextManager)
 
         class NoneAexit(ManagerFromScratch):
             __aexit__ = None
 
-        self.assertFalse(issubclass(NoneAexit, AbstractAsyncContextManager))
+        self.assertNotIsSubclass(NoneAexit, AbstractAsyncContextManager)
 
 
 class AsyncContextManagerTestCase(unittest.TestCase):
@@ -403,6 +403,144 @@ class AsyncContextManagerTestCase(unittest.TestCase):
         self.assertFalse(entered)
 
     @_async_test
+    async def test_decorator_decorate_sync_function(self):
+        @asynccontextmanager
+        async def context():
+            state.append(1)
+            yield
+            state.append(999)
+
+        state = []
+        @context()
+        def test(x):
+            self.assertEqual(state, [1])
+            state.append(x)
+
+        await test("something")
+        self.assertEqual(state, [1, "something", 999])
+
+    @_async_test
+    async def test_decorator_decorate_generator_function(self):
+        @asynccontextmanager
+        async def context():
+            state.append(1)
+            yield
+            state.append(999)
+
+        state = []
+        @context()
+        def test(x):
+            self.assertEqual(state, [1])
+            state.append(x)
+            yield
+            state.append("second item")
+
+        async for _ in test("something"):
+            self.assertEqual(state, [1, "something"])
+        self.assertEqual(state, [1, "something", "second item", 999])
+
+    @_async_test
+    async def test_decorator_decorate_asyncgen_function(self):
+        @asynccontextmanager
+        async def context():
+            state.append(1)
+            yield
+            state.append(999)
+
+        state = []
+        @context()
+        async def test(x):
+            self.assertEqual(state, [1])
+            state.append(x)
+            yield
+            state.append("second item")
+
+        async for _ in test("something"):
+            self.assertEqual(state, [1, "something"])
+        self.assertEqual(state, [1, "something", "second item", 999])
+
+    @_async_test
+    async def test_decorator_decorate_asyncgen_function_exception(self):
+        @asynccontextmanager
+        async def context():
+            state.append("enter")
+            try:
+                yield
+            finally:
+                state.append("exit")
+
+        state = []
+        @context()
+        async def test():
+            state.append("body")
+            yield
+            raise ZeroDivisionError
+
+        with self.assertRaises(ZeroDivisionError):
+            async for _ in test():
+                pass
+        self.assertEqual(state, ["enter", "body", "exit"])
+
+    @_async_test
+    async def test_decorator_decorate_asyncgen_function_early_stop(self):
+        @asynccontextmanager
+        async def context():
+            state.append("enter")
+            try:
+                yield
+            finally:
+                state.append("exit")
+
+        state = []
+        @context()
+        async def test():
+            try:
+                yield 1
+                yield 2
+            finally:
+                state.append("inner closed")
+
+        agen = test()
+        async for value in agen:
+            self.assertEqual(value, 1)
+            break
+        await agen.aclose()
+        # The inner async generator is closed before the context
+        # manager exits.
+        self.assertEqual(state, ["enter", "inner closed", "exit"])
+
+    @_async_test
+    async def test_decorator_decorate_asyncgen_function_asend_athrow(self):
+        @asynccontextmanager
+        async def context():
+            yield
+
+        @context()
+        async def test():
+            try:
+                received = yield "first"
+                state.append(("received", received))
+                yield "second"
+            except ValueError:
+                state.append("inner saw ValueError")
+                raise
+            finally:
+                state.append("inner closed")
+
+        # asend() values and athrow() exceptions are not forwarded to the
+        # wrapped generator (a documented limitation).
+        state = []
+        agen = test()
+        self.assertEqual(await agen.__anext__(), "first")
+        self.assertEqual(await agen.asend("VALUE"), "second")
+        # The inner generator received None, not "VALUE".
+        self.assertEqual(state, [("received", None)])
+        with self.assertRaises(ValueError):
+            await agen.athrow(ValueError)
+        # The inner generator was closed, not thrown into.
+        self.assertEqual(state, [("received", None), "inner closed"])
+
+    @_async_test
     async def test_decorator_with_exception(self):
         entered = False
 
@@ -640,6 +778,78 @@ class TestAsyncExitStack(TestBaseExitStack, unittest.TestCase):
             result.append(2)
 
         self.assertEqual(result, [1, 2, 3, 4])
+
+    @_async_test
+    async def test_enter_async_context_classmethod(self):
+        class TestCM:
+            @classmethod
+            async def __aenter__(cls):
+                result.append(('enter', cls))
+            @classmethod
+            async def __aexit__(cls, *exc_details):
+                result.append(('exit', cls, *exc_details))
+
+        cm = TestCM()
+        result = []
+        async with self.exit_stack() as stack:
+            await stack.enter_async_context(cm)
+            self.assertEqual(result, [('enter', TestCM)])
+        self.assertEqual(result, [('enter', TestCM),
+                                  ('exit', TestCM, None, None, None)])
+
+        result = []
+        async with self.exit_stack() as stack:
+            stack.push_async_exit(cm)
+            self.assertEqual(result, [])
+        self.assertEqual(result, [('exit', TestCM, None, None, None)])
+
+    @_async_test
+    async def test_enter_async_context_staticmethod(self):
+        class TestCM:
+            @staticmethod
+            async def __aenter__():
+                result.append('enter')
+            @staticmethod
+            async def __aexit__(*exc_details):
+                result.append(('exit', *exc_details))
+
+        cm = TestCM()
+        result = []
+        async with self.exit_stack() as stack:
+            await stack.enter_async_context(cm)
+            self.assertEqual(result, ['enter'])
+        self.assertEqual(result, ['enter', ('exit', None, None, None)])
+
+        result = []
+        async with self.exit_stack() as stack:
+            stack.push_async_exit(cm)
+            self.assertEqual(result, [])
+        self.assertEqual(result, [('exit', None, None, None)])
+
+    @_async_test
+    async def test_enter_async_context_slots(self):
+        class TestCM:
+            __slots__ = ('__aenter__', '__aexit__')
+            def __init__(self):
+                async def enter():
+                    result.append('enter')
+                async def exit(*exc_details):
+                    result.append(('exit', *exc_details))
+                self.__aenter__ = enter
+                self.__aexit__ = exit
+
+        cm = TestCM()
+        result = []
+        async with self.exit_stack() as stack:
+            await stack.enter_async_context(cm)
+            self.assertEqual(result, ['enter'])
+        self.assertEqual(result, ['enter', ('exit', None, None, None)])
+
+        result = []
+        async with self.exit_stack() as stack:
+            stack.push_async_exit(cm)
+            self.assertEqual(result, [])
+        self.assertEqual(result, [('exit', None, None, None)])
 
     @_async_test
     async def test_enter_async_context_errors(self):

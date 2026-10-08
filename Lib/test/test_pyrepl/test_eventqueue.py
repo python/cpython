@@ -3,6 +3,8 @@ import unittest
 from unittest.mock import patch
 from test import support
 
+from _pyrepl import terminfo
+
 try:
     from _pyrepl.console import Event
     from _pyrepl import base_eventqueue
@@ -35,12 +37,6 @@ class EventQueueTestBase:
         self.assertTrue(eq.empty())
         eq.insert(Event("key", "a", b"a"))
         self.assertFalse(eq.empty())
-
-    def test_flush_buf(self):
-        eq = self.make_eventqueue()
-        eq.buf.extend(b"test")
-        self.assertEqual(eq.flush_buf(), b"test")
-        self.assertEqual(eq.buf, bytearray())
 
     def test_insert(self):
         eq = self.make_eventqueue()
@@ -91,7 +87,7 @@ class EventQueueTestBase:
         eq.push(b"a")
         mock_keymap.compile_keymap.assert_called()
         self.assertTrue(eq.empty())
-        eq.flush_buf()
+        eq.buf.resize(0)
         eq.push(b"\033")
         self.assertEqual(eq.events[0].evt, "key")
         self.assertEqual(eq.events[0].data, "\033")
@@ -172,17 +168,22 @@ class EventQueueTestBase:
         self.assertEqual(eq.get(), _event("key", "a"))
 
 
+class EmptyTermInfo(terminfo.TermInfo):
+    def get(self, cap: str) -> bytes:
+        return b""
+
+
 @unittest.skipIf(support.MS_WINDOWS, "No Unix event queue on Windows")
 class TestUnixEventQueue(EventQueueTestBase, unittest.TestCase):
     def setUp(self):
-        self.enterContext(patch("_pyrepl.curses.tigetstr", lambda x: b""))
         self.file = tempfile.TemporaryFile()
 
     def tearDown(self) -> None:
         self.file.close()
 
     def make_eventqueue(self) -> base_eventqueue.BaseEventQueue:
-        return unix_eventqueue.EventQueue(self.file.fileno(), "utf-8")
+        ti = EmptyTermInfo("ansi")
+        return unix_eventqueue.EventQueue(self.file.fileno(), "utf-8", ti)
 
 
 @unittest.skipUnless(support.MS_WINDOWS, "No Windows event queue on Unix")

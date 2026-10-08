@@ -1,15 +1,8 @@
 from __future__ import annotations
 
-from typing import (
-    AbstractSet,
-    Any,
-    Iterable,
-    Iterator,
-    List,
-    Optional,
-    Tuple,
-    Union,
-)
+from collections.abc import Iterable, Iterator, Set
+from enum import Enum, auto
+from typing import Any
 
 
 class GrammarError(Exception):
@@ -34,7 +27,7 @@ class GrammarVisitor:
 
 
 class Grammar:
-    def __init__(self, rules: Iterable[Rule], metas: Iterable[Tuple[str, Optional[str]]]):
+    def __init__(self, rules: Iterable[Rule], metas: Iterable[tuple[str, str | None]]):
         # Check if there are repeated rules in "rules"
         all_rules = {}
         for rule in rules:
@@ -65,20 +58,36 @@ class Grammar:
 SIMPLE_STR = True
 
 
+class RuleKind(Enum):
+    NORMAL = auto()
+    LOOP0 = auto()
+    LOOP1 = auto()
+    GATHER = auto()
+
+
 class Rule:
-    def __init__(self, name: str, type: Optional[str], rhs: Rhs, memo: Optional[object] = None):
+    def __init__(
+        self,
+        name: str,
+        type: str | None,
+        rhs: Rhs,
+        flags: frozenset[str] | None = None,
+        *,
+        kind: RuleKind = RuleKind.NORMAL,
+    ):
         self.name = name
         self.type = type
         self.rhs = rhs
-        self.memo = bool(memo)
+        self.flags = flags or frozenset()
+        self.kind = kind
         self.left_recursive = False
         self.leader = False
 
     def is_loop(self) -> bool:
-        return self.name.startswith("_loop")
+        return self.kind in (RuleKind.LOOP0, RuleKind.LOOP1)
 
     def is_gather(self) -> bool:
-        return self.name.startswith("_gather")
+        return self.kind is RuleKind.GATHER
 
     def __str__(self) -> str:
         if SIMPLE_STR or self.type is None:
@@ -92,22 +101,18 @@ class Rule:
         return "\n".join(lines)
 
     def __repr__(self) -> str:
-        return f"Rule({self.name!r}, {self.type!r}, {self.rhs!r})"
+        kind = f", kind=RuleKind.{self.kind.name}" if self.kind is not RuleKind.NORMAL else ""
+        return f"Rule({self.name!r}, {self.type!r}, {self.rhs!r}{kind})"
 
     def __iter__(self) -> Iterator[Rhs]:
         yield self.rhs
 
     def flatten(self) -> Rhs:
         # If it's a single parenthesized group, flatten it.
-        rhs = self.rhs
-        if (
-            not self.is_loop()
-            and len(rhs.alts) == 1
-            and len(rhs.alts[0].items) == 1
-            and isinstance(rhs.alts[0].items[0].item, Group)
-        ):
-            rhs = rhs.alts[0].items[0].item.rhs
-        return rhs
+        match self.rhs:
+            case Rhs(alts=[Alt(items=[NamedItem(item=Group(rhs=rhs))])]) if not self.is_loop():
+                return rhs
+        return self.rhs
 
 
 class Leaf:
@@ -141,9 +146,8 @@ class StringLeaf(Leaf):
 
 
 class Rhs:
-    def __init__(self, alts: List[Alt]):
+    def __init__(self, alts: list[Alt]):
         self.alts = alts
-        self.memo: Optional[Tuple[Optional[str], str]] = None
 
     def __str__(self) -> str:
         return " | ".join(str(alt) for alt in self.alts)
@@ -151,21 +155,20 @@ class Rhs:
     def __repr__(self) -> str:
         return f"Rhs({self.alts!r})"
 
-    def __iter__(self) -> Iterator[List[Alt]]:
+    def __iter__(self) -> Iterator[list[Alt]]:
         yield self.alts
 
     @property
     def can_be_inlined(self) -> bool:
-        if len(self.alts) != 1 or len(self.alts[0].items) != 1:
-            return False
-        # If the alternative has an action we cannot inline
-        if getattr(self.alts[0], "action", None) is not None:
-            return False
-        return True
+        match self.alts:
+            case [Alt(items=[_], action=None)]:
+                return True
+            case _:
+                return False
 
 
 class Alt:
-    def __init__(self, items: List[NamedItem], *, icut: int = -1, action: Optional[str] = None):
+    def __init__(self, items: list[NamedItem], *, icut: int = -1, action: str | None = None):
         self.items = items
         self.icut = icut
         self.action = action
@@ -185,12 +188,12 @@ class Alt:
             args.append(f"action={self.action!r}")
         return f"Alt({', '.join(args)})"
 
-    def __iter__(self) -> Iterator[List[NamedItem]]:
+    def __iter__(self) -> Iterator[list[NamedItem]]:
         yield self.items
 
 
 class NamedItem:
-    def __init__(self, name: Optional[str], item: Item, type: Optional[str] = None):
+    def __init__(self, name: str | None, item: Item, type: str | None = None):
         self.name = name
         self.item = item
         self.type = type
@@ -271,7 +274,6 @@ class Repeat:
 
     def __init__(self, node: Plain):
         self.node = node
-        self.memo: Optional[Tuple[Optional[str], str]] = None
 
     def __iter__(self) -> Iterator[Plain]:
         yield self.node
@@ -334,12 +336,12 @@ class Cut:
         pass
 
     def __repr__(self) -> str:
-        return f"Cut()"
+        return "Cut()"
 
     def __str__(self) -> str:
-        return f"~"
+        return "~"
 
-    def __iter__(self) -> Iterator[Tuple[str, str]]:
+    def __iter__(self) -> Iterator[tuple[str, str]]:
         yield from ()
 
     def __eq__(self, other: object) -> bool:
@@ -347,15 +349,15 @@ class Cut:
             return NotImplemented
         return True
 
-    def initial_names(self) -> AbstractSet[str]:
+    def initial_names(self) -> Set[str]:
         return set()
 
 
-Plain = Union[Leaf, Group]
-Item = Union[Plain, Opt, Repeat, Forced, Lookahead, Rhs, Cut]
-RuleName = Tuple[str, Optional[str]]
-MetaTuple = Tuple[str, Optional[str]]
-MetaList = List[MetaTuple]
-RuleList = List[Rule]
-NamedItemList = List[NamedItem]
-LookaheadOrCut = Union[Lookahead, Cut]
+Plain = Leaf | Group
+Item = Plain | Opt | Repeat | Forced | Lookahead | Rhs | Cut
+RuleName = tuple[str, str | None]
+MetaTuple = tuple[str, str | None]
+MetaList = list[MetaTuple]
+RuleList = list[Rule]
+NamedItemList = list[NamedItem]
+LookaheadOrCut = Lookahead | Cut

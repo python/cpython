@@ -305,7 +305,7 @@ xx_modexec(PyObject *m)
 static PyModuleDef_Slot xx_slots[] = {
     {Py_mod_exec, xx_modexec},
 #ifdef Py_GIL_DISABLED
-    // These definitions are in the limited API, but not until 3.13.
+    // In a free-threaded build, we don't use Limited API.
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
 #endif
     {0, NULL}

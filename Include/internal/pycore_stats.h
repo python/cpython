@@ -15,39 +15,56 @@ extern "C" {
 
 #include "pycore_bitutils.h"  // _Py_bit_length
 
-#define STAT_INC(opname, name) do { if (_Py_stats) _Py_stats->opcode_stats[opname].specialization.name++; } while (0)
-#define STAT_DEC(opname, name) do { if (_Py_stats) _Py_stats->opcode_stats[opname].specialization.name--; } while (0)
-#define OPCODE_EXE_INC(opname) do { if (_Py_stats) _Py_stats->opcode_stats[opname].execution_count++; } while (0)
-#define CALL_STAT_INC(name) do { if (_Py_stats) _Py_stats->call_stats.name++; } while (0)
-#define OBJECT_STAT_INC(name) do { if (_Py_stats) _Py_stats->object_stats.name++; } while (0)
-#define OBJECT_STAT_INC_COND(name, cond) \
-    do { if (_Py_stats && cond) _Py_stats->object_stats.name++; } while (0)
-#define EVAL_CALL_STAT_INC(name) do { if (_Py_stats) _Py_stats->call_stats.eval_calls[name]++; } while (0)
-#define EVAL_CALL_STAT_INC_IF_FUNCTION(name, callable) \
-    do { if (_Py_stats && PyFunction_Check(callable)) _Py_stats->call_stats.eval_calls[name]++; } while (0)
-#define GC_STAT_ADD(gen, name, n) do { if (_Py_stats) _Py_stats->gc_stats[(gen)].name += (n); } while (0)
-#define OPT_STAT_INC(name) do { if (_Py_stats) _Py_stats->optimization_stats.name++; } while (0)
-#define OPT_STAT_ADD(name, n) do { if (_Py_stats) _Py_stats->optimization_stats.name += (n); } while (0)
-#define UOP_STAT_INC(opname, name) do { if (_Py_stats) { assert(opname < 512); _Py_stats->optimization_stats.opcode[opname].name++; } } while (0)
-#define UOP_PAIR_INC(uopcode, lastuop)                                              \
-    do {                                                                            \
-        if (lastuop && _Py_stats) {                                                 \
-            _Py_stats->optimization_stats.opcode[lastuop].pair_count[uopcode]++;    \
-        }                                                                           \
-        lastuop = uopcode;                                                          \
-    } while (0)
-#define OPT_UNSUPPORTED_OPCODE(opname) do { if (_Py_stats) _Py_stats->optimization_stats.unsupported_opcode[opname]++; } while (0)
-#define OPT_ERROR_IN_OPCODE(opname) do { if (_Py_stats) _Py_stats->optimization_stats.error_in_opcode[opname]++; } while (0)
-#define OPT_HIST(length, name) \
+#define STAT_INC(opname, name) _Py_STATS_EXPR(opcode_stats[opname].specialization.name++)
+#define STAT_DEC(opname, name) _Py_STATS_EXPR(opcode_stats[opname].specialization.name--)
+#define OPCODE_EXE_INC(opname) _Py_STATS_EXPR(opcode_stats[opname].execution_count++)
+#define CALL_STAT_INC(name) _Py_STATS_EXPR(call_stats.name++)
+#define OBJECT_STAT_INC(name) _Py_STATS_EXPR(object_stats.name++)
+#define OBJECT_STAT_INC_COND(name, cond) _Py_STATS_COND_EXPR(cond, object_stats.name++)
+#define EVAL_CALL_STAT_INC(name) _Py_STATS_EXPR(call_stats.eval_calls[name]++)
+#define EVAL_CALL_STAT_INC_IF_FUNCTION(name, callable) _Py_STATS_COND_EXPR(PyFunction_Check(callable), call_stats.eval_calls[name]++)
+#define GC_STAT_ADD(gen, name, n) _Py_STATS_EXPR(gc_stats[(gen)].name += (n))
+#define OPT_STAT_INC(name) _Py_STATS_EXPR(optimization_stats.name++)
+#define OPT_STAT_ADD(name, n) _Py_STATS_EXPR(optimization_stats.name += (n))
+#define UOP_STAT_INC(opname, name) \
     do { \
-        if (_Py_stats) { \
-            int bucket = _Py_bit_length(length >= 1 ? length - 1 : 0); \
-            bucket = (bucket >= _Py_UOP_HIST_SIZE) ? _Py_UOP_HIST_SIZE - 1 : bucket; \
-            _Py_stats->optimization_stats.name[bucket]++; \
+        PyStats *s = _PyStats_GET(); \
+        if (s) { \
+            assert(opname < 512); \
+            s->optimization_stats.opcode[opname].name++; \
         } \
     } while (0)
-#define RARE_EVENT_STAT_INC(name) do { if (_Py_stats) _Py_stats->rare_event_stats.name++; } while (0)
-#define OPCODE_DEFERRED_INC(opname) do { if (_Py_stats && opcode == opname) _Py_stats->opcode_stats[opname].specialization.deferred++; } while (0)
+#define UOP_PAIR_INC(uopcode, lastuop) \
+    do { \
+        PyStats *s = _PyStats_GET(); \
+        if (lastuop && s) { \
+            s->optimization_stats.opcode[lastuop].pair_count[uopcode]++; \
+        } \
+        lastuop = uopcode; \
+    } while (0)
+#define OPT_UNSUPPORTED_OPCODE(opname) _Py_STATS_EXPR(optimization_stats.unsupported_opcode[opname]++)
+#define OPT_ERROR_IN_OPCODE(opname) _Py_STATS_EXPR(optimization_stats.error_in_opcode[opname]++)
+#define OPT_HIST(length, name) \
+    do { \
+        PyStats *s = _PyStats_GET(); \
+        if (s) { \
+            int bucket = _Py_bit_length(length >= 1 ? length - 1 : 0); \
+            bucket = (bucket >= _Py_UOP_HIST_SIZE) ? _Py_UOP_HIST_SIZE - 1 : bucket; \
+            s->optimization_stats.name[bucket]++; \
+        } \
+    } while (0)
+#define RARE_EVENT_STAT_INC(name) _Py_STATS_EXPR(rare_event_stats.name++)
+#define OPCODE_DEFERRED_INC(opname) _Py_STATS_COND_EXPR(opcode==opname, opcode_stats[opname].specialization.deferred++)
+
+#ifdef Py_GIL_DISABLED
+#define FT_STAT_MUTEX_SLEEP_INC() _Py_STATS_EXPR(ft_stats.mutex_sleeps++)
+#define FT_STAT_QSBR_POLL_INC() _Py_STATS_EXPR(ft_stats.qsbr_polls++)
+#define FT_STAT_WORLD_STOP_INC() _Py_STATS_EXPR(ft_stats.world_stops++)
+#else
+#define FT_STAT_MUTEX_SLEEP_INC()
+#define FT_STAT_QSBR_POLL_INC()
+#define FT_STAT_WORLD_STOP_INC()
+#endif
 
 // Export for '_opcode' shared extension
 PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
@@ -71,13 +88,16 @@ PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
 #define OPT_HIST(length, name) ((void)0)
 #define RARE_EVENT_STAT_INC(name) ((void)0)
 #define OPCODE_DEFERRED_INC(opname) ((void)0)
+#define FT_STAT_MUTEX_SLEEP_INC()
+#define FT_STAT_QSBR_POLL_INC()
+#define FT_STAT_WORLD_STOP_INC()
 #endif  // !Py_STATS
 
 
 #define RARE_EVENT_INTERP_INC(interp, name) \
     do { \
         /* saturating add */ \
-        int val = FT_ATOMIC_LOAD_UINT8_RELAXED(interp->rare_events.name); \
+        uint8_t val = FT_ATOMIC_LOAD_UINT8_RELAXED(interp->rare_events.name); \
         if (val < UINT8_MAX) { \
             FT_ATOMIC_STORE_UINT8(interp->rare_events.name, val + 1); \
         } \
@@ -90,6 +110,11 @@ PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
         RARE_EVENT_INTERP_INC(interp, name); \
     } while (0); \
 
+PyStatus _PyStats_InterpInit(PyInterpreterState *);
+bool _PyStats_ThreadInit(PyInterpreterState *, _PyThreadStateImpl *);
+void _PyStats_ThreadFini(_PyThreadStateImpl *);
+void _PyStats_Attach(_PyThreadStateImpl *);
+void _PyStats_Detach(_PyThreadStateImpl *);
 
 #ifdef __cplusplus
 }

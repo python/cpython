@@ -1,0 +1,3 @@
+:c:func:`PyWeakref_NewRef` and :c:func:`PyWeakref_NewProxy` now raise
+:exc:`TypeError` if the *callback* argument is not callable, ``None``, or
+``NULL``.

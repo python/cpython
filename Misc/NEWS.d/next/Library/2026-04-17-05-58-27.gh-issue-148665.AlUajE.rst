@@ -1,0 +1,1 @@
+socket.shutdown function is now enabled for Emscripten builds. However, if the runtime does not implement the shutdown syscall, it will show "Function not implemented" error.

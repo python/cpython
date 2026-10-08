@@ -1,0 +1,4 @@
+:meth:`!tkinter.Misc.focus_get`, :meth:`!focus_displayof`,
+:meth:`!focus_lastfor` and :meth:`!winfo_containing` now return ``None``
+instead of raising :exc:`KeyError` when the widget was not created by
+:mod:`tkinter` (for example a torn-off menu).

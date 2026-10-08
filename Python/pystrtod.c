@@ -43,7 +43,7 @@ _Py_parse_inf_or_nan(const char *p, char **endptr)
         s += 3;
         if (case_insensitive_match(s, "inity"))
             s += 5;
-        retval = negate ? -Py_INFINITY : Py_INFINITY;
+        retval = negate ? -INFINITY : INFINITY;
     }
     else if (case_insensitive_match(s, "nan")) {
         s += 3;
@@ -286,7 +286,7 @@ _PyOS_ascii_strtod(const char *nptr, char **endptr)
    string, -1.0 is returned and again ValueError is raised.
 
    On overflow (e.g., when trying to convert '1e500' on an IEEE 754 machine),
-   if overflow_exception is NULL then +-Py_INFINITY is returned, and no Python
+   if overflow_exception is NULL then +-INFINITY is returned, and no Python
    exception is raised.  Otherwise, overflow_exception should point to
    a Python exception, this exception will be raised, -1.0 will be returned,
    and *endptr will point just past the end of the converted value.
@@ -400,6 +400,15 @@ _Py_string_to_number_with_underscores(
                  "%R", what, obj);
     return NULL;
 }
+
+/* Largest precision magnitude accepted by PyOS_double_to_string().  The
+   output buffer sizes computed below and within _Py_dg_dtoa() use int and
+   Py_ssize_t arithmetic on roughly precision + (digits before the point, at
+   most DBL_MAX_10_EXP + 1 == 309) + a few bytes of sign, point and exponent.
+   Staying this far inside the int range keeps all of those sums in range.
+   (Only C callers can pass a negative precision.)  _Py_dg_dtoa() applies
+   the same bound to its ndigits argument. */
+#define DOUBLE_TO_STRING_PRECISION_MAX (INT_MAX - 1024)
 
 #if _PY_SHORT_FLOAT_REPR == 0
 
@@ -765,6 +774,13 @@ char * PyOS_double_to_string(double val,
     char *buf;
     int t, exp;
     int upper = 0;
+
+    if (precision > DOUBLE_TO_STRING_PRECISION_MAX
+        || precision < -DOUBLE_TO_STRING_PRECISION_MAX)
+    {
+        PyErr_SetString(PyExc_ValueError, "precision too big");
+        return NULL;
+    }
 
     /* Validate format_code, and map upper and lower case */
     switch (format_code) {
@@ -1226,6 +1242,13 @@ char * PyOS_double_to_string(double val,
 {
     const char * const *float_strings = lc_float_strings;
     int mode;
+
+    if (precision > DOUBLE_TO_STRING_PRECISION_MAX
+        || precision < -DOUBLE_TO_STRING_PRECISION_MAX)
+    {
+        PyErr_SetString(PyExc_ValueError, "precision too big");
+        return NULL;
+    }
 
     /* Validate format_code, and map upper and lower case. Compute the
        mode and make any adjustments as needed. */

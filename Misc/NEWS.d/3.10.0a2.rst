@@ -212,7 +212,7 @@ Micro optimization for range.index if step is 1. Patch by Donghee Na.
 .. bpo: 41435
 .. date: 2020-08-07-13-42-48
 .. nonce: qPWjJA
-.. section: Core and Builtins
+.. section: Library
 
 Add ``sys._current_exceptions()`` function to retrieve a dictionary mapping
 each thread's identifier to the topmost exception currently active in that
@@ -593,7 +593,7 @@ of treating them as a match.
 .. nonce: ONk9Na
 .. section: Library
 
-Fix ``--outfile`` for :mod:`cProfile` / :mod:`profile` not writing the
+Fix ``--outfile`` for :mod:`!cProfile` / :mod:`!profile` not writing the
 output file in the original directory when the program being profiled
 changes the working directory.  PR by Anthony Sottile.
 

@@ -88,7 +88,7 @@ Patch by Pablo Galindo.
 .. bpo: 42819
 .. date: 2021-01-04-23-54-34
 .. nonce: 4KO6wU
-.. section: Core and Builtins
+.. section: Library
 
 :mod:`readline`: Explicitly disable bracketed paste in the interactive
 interpreter, even if it's set in the inputrc, is enabled by default (eg GNU
@@ -144,7 +144,7 @@ Implement :pep:`634` (structural pattern matching). Patch by Brandt Bucher.
 .. bpo: 40692
 .. date: 2020-05-19-22-10-05
 .. nonce: ajEhrR
-.. section: Core and Builtins
+.. section: Library
 
 In the :class:`concurrent.futures.ProcessPoolExecutor`, validate that
 :func:`multiprocess.synchronize` is available on a given platform and rely

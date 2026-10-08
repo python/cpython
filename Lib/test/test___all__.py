@@ -72,6 +72,8 @@ class AllTest(unittest.TestCase):
                 all_set = set(all_list)
                 self.assertCountEqual(all_set, all_list, "in module {}".format(modname))
                 self.assertEqual(keys, all_set, "in module {}".format(modname))
+                # Verify __dir__ is non-empty and doesn't produce an error
+                self.assertTrue(dir(sys.modules[modname]))
 
     def walk_modules(self, basedir, modpath):
         for fn in sorted(os.listdir(basedir)):

@@ -17,8 +17,9 @@ class IsolatedAssembleTests(AssemblerTestCase):
             metadata.setdefault(key, key)
         for key in ['consts']:
             metadata.setdefault(key, [])
-        for key in ['names', 'varnames', 'cellvars', 'freevars', 'fasthidden']:
+        for key in ['names', 'varnames', 'cellvars', 'freevars']:
             metadata.setdefault(key, {})
+        metadata.setdefault('fasthidden', None)
         for key in ['argcount', 'posonlyargcount', 'kwonlyargcount']:
             metadata.setdefault(key, 0)
         metadata.setdefault('firstlineno', 1)
@@ -146,4 +147,4 @@ class IsolatedAssembleTests(AssemblerTestCase):
                                          L1 to L2 -> L2 [0]
                                          L2 to L3 -> L3 [1] lasti
                                     """)
-        self.assertTrue(output.getvalue().endswith(exc_table))
+        self.assertEndsWith(output.getvalue(), exc_table)

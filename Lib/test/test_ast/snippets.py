@@ -118,6 +118,12 @@ exec_tests = [
     # ImportFrom
     "from sys import x as y",
     "from sys import v",
+    # Lazy Import
+    "lazy import sys",
+    "lazy import foo as bar",
+    # Lazy ImportFrom
+    "lazy from sys import x as y",
+    "lazy from sys import v",
     # Global
     "global v",
     # Expr
@@ -460,10 +466,14 @@ exec_results = [
 ('Module', [('TryStar', (1, 0, 7, 6), [('Pass', (2, 2, 2, 6))], [('ExceptHandler', (3, 0, 4, 6), ('Name', (3, 8, 3, 17), 'Exception', ('Load',)), 'exc', [('Pass', (4, 2, 4, 6))])], [('Pass', (5, 7, 5, 11))], [('Pass', (7, 2, 7, 6))])], []),
 ('Module', [('Assert', (1, 0, 1, 8), ('Name', (1, 7, 1, 8), 'v', ('Load',)), None)], []),
 ('Module', [('Assert', (1, 0, 1, 19), ('Name', (1, 7, 1, 8), 'v', ('Load',)), ('Constant', (1, 10, 1, 19), 'message', None))], []),
-('Module', [('Import', (1, 0, 1, 10), [('alias', (1, 7, 1, 10), 'sys', None)])], []),
-('Module', [('Import', (1, 0, 1, 17), [('alias', (1, 7, 1, 17), 'foo', 'bar')])], []),
-('Module', [('ImportFrom', (1, 0, 1, 22), 'sys', [('alias', (1, 16, 1, 22), 'x', 'y')], 0)], []),
-('Module', [('ImportFrom', (1, 0, 1, 17), 'sys', [('alias', (1, 16, 1, 17), 'v', None)], 0)], []),
+('Module', [('Import', (1, 0, 1, 10), [('alias', (1, 7, 1, 10), 'sys', None)], 0)], []),
+('Module', [('Import', (1, 0, 1, 17), [('alias', (1, 7, 1, 17), 'foo', 'bar')], 0)], []),
+('Module', [('ImportFrom', (1, 0, 1, 22), 'sys', [('alias', (1, 16, 1, 22), 'x', 'y')], 0, 0)], []),
+('Module', [('ImportFrom', (1, 0, 1, 17), 'sys', [('alias', (1, 16, 1, 17), 'v', None)], 0, 0)], []),
+('Module', [('Import', (1, 0, 1, 15), [('alias', (1, 12, 1, 15), 'sys', None)], 1)], []),
+('Module', [('Import', (1, 0, 1, 22), [('alias', (1, 12, 1, 22), 'foo', 'bar')], 1)], []),
+('Module', [('ImportFrom', (1, 0, 1, 27), 'sys', [('alias', (1, 21, 1, 27), 'x', 'y')], 0, 1)], []),
+('Module', [('ImportFrom', (1, 0, 1, 22), 'sys', [('alias', (1, 21, 1, 22), 'v', None)], 0, 1)], []),
 ('Module', [('Global', (1, 0, 1, 8), ['v'])], []),
 ('Module', [('Expr', (1, 0, 1, 1), ('Constant', (1, 0, 1, 1), 1, None))], []),
 ('Module', [('Pass', (1, 0, 1, 4))], []),

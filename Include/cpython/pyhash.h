@@ -7,7 +7,7 @@
 
 /* Parameters used for the numeric hash implementation.  See notes for
    _Py_HashDouble in Python/pyhash.c.  Numeric hashes are based on
-   reduction modulo the prime 2**_PyHASH_BITS - 1. */
+   reduction modulo the prime 2**PyHASH_BITS - 1. */
 
 #if SIZEOF_VOID_P >= 8
 #  define PyHASH_BITS 61
@@ -15,7 +15,7 @@
 #  define PyHASH_BITS 31
 #endif
 
-#define PyHASH_MODULUS (((size_t)1 << _PyHASH_BITS) - 1)
+#define PyHASH_MODULUS (((size_t)1 << PyHASH_BITS) - 1)
 #define PyHASH_INF 314159
 #define PyHASH_IMAG PyHASH_MULTIPLIER
 
@@ -50,5 +50,3 @@ _Py_HashPointer(const void *ptr)
 }
 
 PyAPI_FUNC(Py_hash_t) PyObject_GenericHash(PyObject *);
-
-PyAPI_FUNC(Py_hash_t) Py_HashBuffer(const void *ptr, Py_ssize_t len);

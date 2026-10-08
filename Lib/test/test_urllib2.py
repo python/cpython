@@ -270,6 +270,50 @@ class RequestHdrsTests(unittest.TestCase):
         self.assertEqual(find_user_pass("i", "http://j.example.com:80"),
                          (None, None))
 
+    def test_password_manager_scheme(self):
+        mgr = urllib.request.HTTPPasswordMgr()
+        mgr.add_password(
+            "realm", "https://example.com/", "user", "password")
+
+        self.assertEqual(
+            mgr.find_user_password("realm", "https://example.com/"),
+            ("user", "password"))
+        self.assertEqual(
+            mgr.find_user_password("realm", "http://example.com/"),
+            (None, None))
+        # Support an authority without a scheme.
+        self.assertEqual(
+            mgr.find_user_password("realm", "example.com"),
+            ("user", "password"))
+        # An authority without a scheme continues to match any scheme.
+        mgr.add_password(
+            "realm", "schemeless.example.com", "user", "password")
+        for scheme in "http", "https":
+            with self.subTest(scheme=scheme):
+                self.assertEqual(
+                    mgr.find_user_password(
+                        "realm", f"{scheme}://schemeless.example.com/"),
+                    ("user", "password"))
+
+        # A network-path reference also has no scheme.
+        mgr.add_password(
+            "realm", "//network-path.example.com/", "user", "password")
+        self.assertEqual(
+            mgr.find_user_password(
+                "realm", "https://network-path.example.com/"),
+            ("user", "password"))
+
+    def test_password_manager_reduced_uri(self):
+        mgr = urllib.request.HTTPPasswordMgr()
+
+        self.assertEqual(
+            mgr.reduce_uri("http://example.com/path"),
+            ("example.com:80", "/path"))
+        self.assertTrue(
+            mgr.is_suburi(
+                ("example.com", "/path"),
+                ("example.com", "/path/subpath")))
+
 
 class MockOpener:
     addheaders = []
@@ -576,6 +620,23 @@ class OpenerDirectorTests(unittest.TestCase):
             pass
         self.assertRaises(TypeError,
                           OpenerDirector().add_handler, NonHandler())
+
+    def test_no_protocol_methods(self):
+        # test the case that methods starts with handler type without the protocol
+        # like open*() or _open*().
+        # These methods should be ignored
+
+        o = OpenerDirector()
+        meth_spec = [
+            ["open"],
+            ["_open"],
+            ["error"]
+        ]
+
+        add_ordered_mock_handlers(o, meth_spec)
+
+        self.assertEqual(len(o.handle_open), 0)
+        self.assertEqual(len(o.handle_error), 0)
 
     def test_badly_named_methods(self):
         # test work-around for three methods that accidentally follow the
@@ -962,6 +1023,35 @@ class HandlerTests(unittest.TestCase):
             self.assertEqual(req.unredirected_hdrs["Content-type"], "bar")
             self.assertEqual(req.unredirected_hdrs["Host"], "baz")
             self.assertEqual(req.unredirected_hdrs["Spam"], "foo")
+
+    def test_http_header_priority(self):
+        # gh-47005: regular headers set via add_header() must override
+        # unredirected headers with the same name in do_open(), consistent
+        # with get_header() and header_items().
+        cases = [
+            ("Content-Type", "application/json", "application/x-www-form-urlencoded"),
+            ("Content-Length", "99", "0"),
+            ("Host", "override.example.com", "internal.example.com"),
+            ("Authorization", "Bearer user-token", "Basic stale="),
+            ("Cookie", "a=1", "b=2"),
+            ("User-Agent", "MyApp/1.0", "Python-urllib/test"),
+        ]
+        h = urllib.request.AbstractHTTPHandler()
+        h.parent = MockOpener()
+
+        for key, regular, unredirected in cases:
+            req = Request("http://example.com/", headers={key: regular})
+            req.timeout = None
+            req.add_unredirected_header(key, unredirected)
+
+            http = MockHTTPClass()
+            h.do_open(http, req)
+
+            sent_headers = dict(http.req_headers)
+            self.assertEqual(sent_headers[key], regular)
+            # key is capitalized by add_header() and add_unredirected_header() calls
+            self.assertEqual(req.get_header(key.capitalize()), regular)
+            self.assertEqual(dict(req.header_items())[key.capitalize()], regular)
 
     def test_http_body_file(self):
         # A regular file - chunked encoding is used unless Content Length is
@@ -1778,6 +1868,18 @@ class HandlerTests(unittest.TestCase):
 
         # expect request to be sent with auth header
         self.assertTrue(http_handler.has_auth_header)
+
+    def test_basic_prior_auth_different_scheme(self):
+        pwd_manager = HTTPPasswordMgrWithPriorAuth()
+        auth_handler = HTTPBasicAuthHandler(pwd_manager)
+        auth_handler.add_password(
+            None, "https://example.com/", "user", "password",
+            is_authenticated=True)
+
+        request = Request("http://example.com/")
+        auth_handler.http_request(request)
+
+        self.assertFalse(request.has_header("Authorization"))
 
     def test_basic_prior_auth_send_after_first_success(self):
         # Auto send auth header after authentication is successful once

@@ -5,7 +5,7 @@ import weakref
 from concurrent import futures
 from operator import add
 from test import support
-from test.support import Py_GIL_DISABLED
+from test.support import Py_GIL_DISABLED, warnings_helper
 
 
 def mul(x, y):
@@ -29,6 +29,12 @@ def raiser(exception, msg='std'):
     raise exception(msg)
 
 
+def timeout_on_one(x):
+    if x == 1:
+        raise TimeoutError
+    return x
+
+
 class FalseyBoolException(Exception):
     def __bool__(self):
         return False
@@ -43,10 +49,12 @@ class ExecutorTest:
 
     # Executor.shutdown() and context manager usage is tested by
     # ExecutorShutdownTest.
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_submit(self):
         future = self.executor.submit(pow, 2, 8)
         self.assertEqual(256, future.result())
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_submit_keyword(self):
         future = self.executor.submit(mul, 2, y=8)
         self.assertEqual(16, future.result())
@@ -57,6 +65,7 @@ class ExecutorTest:
         with self.assertRaises(TypeError):
             self.executor.submit(arg=1)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_map(self):
         self.assertEqual(
                 list(self.executor.map(pow, range(10), range(10))),
@@ -66,21 +75,46 @@ class ExecutorTest:
                 list(self.executor.map(pow, range(10), range(10), chunksize=3)),
                 list(map(pow, range(10), range(10))))
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_map_exception(self):
-        i = self.executor.map(divmod, [1, 1, 1, 1], [2, 3, 0, 5])
-        self.assertEqual(i.__next__(), (0, 1))
-        self.assertEqual(i.__next__(), (0, 1))
-        with self.assertRaises(ZeroDivisionError):
-            i.__next__()
+        i = self.executor.map(divmod, [5, 5, 5, 5], [2, 3, 0, 5])
+        self.assertEqual(next(i), (2, 1))
+        self.assertEqual(next(i), (1, 2))
+        self.assertRaises(ZeroDivisionError, next, i)
+        self.assertEqual(next(i), (1, 0))
+        self.assertRaises(StopIteration, next, i)
+        self.assertRaises(StopIteration, next, i)
 
+        i = self.executor.map(divmod, [5, 5, 5, 5], [2, 0, 3, 5], chunksize=3)
+        self.assertEqual(next(i), (2, 1))
+        self.assertRaises(ZeroDivisionError, next, i)
+        self.assertEqual(next(i), (1, 2))
+        self.assertEqual(next(i), (1, 0))
+        self.assertRaises(StopIteration, next, i)
+        self.assertRaises(StopIteration, next, i)
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_map_timeout_from_callable(self):
+        # A TimeoutError from the callable is not the map() timeout, whether
+        # or not a map() timeout is set.
+        for timeout in (None, support.SHORT_TIMEOUT):
+            with self.subTest(timeout=timeout):
+                i = self.executor.map(timeout_on_one, [0, 1, 2, 3],
+                                      timeout=timeout)
+                self.assertEqual(next(i), 0)
+                self.assertRaises(TimeoutError, next, i)
+                self.assertEqual(next(i), 2)
+                self.assertEqual(next(i), 3)
+                self.assertRaises(StopIteration, next, i)
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @support.requires_resource('walltime')
     def test_map_timeout(self):
         results = []
+        i = self.executor.map(time.sleep, [0, 0, 6], timeout=5)
         try:
-            for i in self.executor.map(time.sleep,
-                                       [0, 0, 6],
-                                       timeout=5):
-                results.append(i)
+            for result in i:
+                results.append(result)
         except futures.TimeoutError:
             pass
         else:
@@ -89,6 +123,24 @@ class ExecutorTest:
         # gh-110097: On heavily loaded systems, the launch of the worker may
         # take longer than the specified timeout.
         self.assertIn(results, ([None, None], [None], []))
+
+        # The remaining calls are cancelled, so the iterator is exhausted.
+        self.assertRaises(StopIteration, next, i)
+        self.assertRaises(StopIteration, next, i)
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_map_close(self):
+        i = self.executor.map(divmod, [5, 5, 5, 5], [2, 0, 3, 5])
+        self.assertEqual(next(i), (2, 1))
+        i.close()
+        self.assertRaises(StopIteration, next, i)
+        self.assertRaises(StopIteration, next, i)
+
+        i = self.executor.map(divmod, [5, 5, 5, 5], [2, 0, 3, 5], chunksize=3)
+        self.assertEqual(next(i), (2, 1))
+        i.close()
+        self.assertRaises(StopIteration, next, i)
+        self.assertRaises(StopIteration, next, i)
 
     def test_map_buffersize_type_validation(self):
         for buffersize in ("foo", 2.0):
@@ -108,6 +160,7 @@ class ExecutorTest:
                 ):
                     self.executor.map(str, range(4), buffersize=buffersize)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_map_buffersize(self):
         ints = range(4)
         for buffersize in (1, 2, len(ints), len(ints) * 2):
@@ -115,6 +168,7 @@ class ExecutorTest:
                 res = self.executor.map(str, ints, buffersize=buffersize)
                 self.assertListEqual(list(res), ["0", "1", "2", "3"])
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_map_buffersize_on_multiple_iterables(self):
         ints = range(4)
         for buffersize in (1, 2, len(ints), len(ints) * 2):
@@ -122,12 +176,14 @@ class ExecutorTest:
                 res = self.executor.map(add, ints, ints, buffersize=buffersize)
                 self.assertListEqual(list(res), [0, 2, 4, 6])
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_map_buffersize_on_infinite_iterable(self):
         res = self.executor.map(str, itertools.count(), buffersize=2)
         self.assertEqual(next(res, None), "0")
         self.assertEqual(next(res, None), "1")
         self.assertEqual(next(res, None), "2")
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_map_buffersize_on_multiple_infinite_iterables(self):
         res = self.executor.map(
             add,
@@ -147,6 +203,7 @@ class ExecutorTest:
         res = self.executor.map(str, buffersize=2)
         self.assertIsNone(next(res, None))
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_map_buffersize_when_buffer_is_full(self):
         ints = iter(range(4))
         buffersize = 2
@@ -158,6 +215,7 @@ class ExecutorTest:
             msg="should have fetched only `buffersize` elements from `ints`.",
         )
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_shutdown_race_issue12456(self):
         # Issue #12456: race condition at shutdown where trying to post a
         # sentinel in the call queue blocks (the queue is full while processes
@@ -165,6 +223,7 @@ class ExecutorTest:
         self.executor.map(str, [2] * (self.worker_count + 1))
         self.executor.shutdown()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @support.cpython_only
     def test_no_stale_references(self):
         # Issue #16284: check that the executors don't unnecessarily hang onto
@@ -209,6 +268,7 @@ class ExecutorTest:
                                         "than 0"):
                 self.executor_type(max_workers=number)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_free_reference(self):
         # Issue #14406: Result iterator should not keep an internal
         # reference to result objects.
@@ -221,6 +281,7 @@ class ExecutorTest:
                 if wr() is None:
                     break
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_swallows_falsey_exceptions(self):
         # see gh-132063: Prevent exceptions that evaluate as falsey
         # from being ignored.

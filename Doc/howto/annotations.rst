@@ -4,8 +4,6 @@
 Annotations Best Practices
 **************************
 
-:author: Larry Hastings
-
 .. topic:: Abstract
 
   This document is designed to encapsulate the best practices
@@ -154,7 +152,7 @@ on an arbitrary object ``o``:
   as the ``globals``, and ``dict(vars(o))`` as the ``locals``,
   when calling :func:`eval`.
 * If ``o`` is a wrapped callable using :func:`functools.update_wrapper`,
-  :func:`functools.wraps`, or :func:`functools.partial`, iteratively
+  :deco:`functools.wraps`, or :func:`functools.partial`, iteratively
   unwrap it by accessing either ``o.__wrapped__`` or ``o.func`` as
   appropriate, until you have found the root unwrapped function.
 * If ``o`` is a callable (but not a class), use
@@ -248,4 +246,9 @@ quirks by using :func:`annotationlib.get_annotations` on Python 3.14+ or
 :func:`inspect.get_annotations` on Python 3.10+. On earlier versions of
 Python, you can avoid these bugs by accessing the annotations from the
 class's :attr:`~type.__dict__`
-(e.g., ``cls.__dict__.get('__annotations__', None)``).
+(for example, ``cls.__dict__.get('__annotations__', None)``).
+
+In some versions of Python, instances of classes may have an ``__annotations__``
+attribute. However, this is not supported functionality. If you need the
+annotations of an instance, you can use :func:`type` to access its class
+(for example, ``annotationlib.get_annotations(type(myinstance))`` on Python 3.14+).

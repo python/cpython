@@ -1,0 +1,7 @@
+When a worker process terminates unexpectedly,
+:class:`concurrent.futures.ProcessPoolExecutor` now sets a separate
+:exc:`~concurrent.futures.process.BrokenProcessPool` exception on each pending
+future instead of sharing a single instance among them all.  Sharing one
+exception produced malformed tracebacks: each
+:meth:`Future.result() <concurrent.futures.Future.result>` call re-raised the
+same object, appending another copy of the traceback to it.
