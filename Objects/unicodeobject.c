@@ -6478,6 +6478,10 @@ _PyUnicode_EncodeUTF16(PyObject *str,
             }
         }
         moreunits += pos - newpos;
+        if (newpos < pos && kind == PyUnicode_4BYTE_KIND) {
+            /* re-encoded characters may need a surrogate pair */
+            moreunits += pos - newpos;
+        }
         pos = newpos;
 
         /* two bytes are reserved for each surrogate */
