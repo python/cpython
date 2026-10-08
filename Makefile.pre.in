@@ -1613,8 +1613,8 @@ regen-re: $(BUILDPYTHON)
 Programs/_testembed: Programs/_testembed.o $(LINK_PYTHON_DEPS)
 	$(LINKCC) $(PY_CORE_EXE_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/_testembed.o $(LINK_PYTHON_OBJS) $(LIBS) $(MODLIBS) $(SYSLIBS)
 
-Programs/_getcompiler: Programs/_getcompiler.c
-	$(LINKCC) $(PY_CPPFLAGS) -o $@ $<
+Programs/_getcompiler: $(srcdir)/Programs/_getcompiler.c
+	$(LINKCC) $(PY_CPPFLAGS) -o $@ $(srcdir)/Programs/_getcompiler.c
 
 ############################################################################
 # "Bootstrap Python" used to run Programs/_freeze_module.py
@@ -1867,12 +1867,12 @@ regen-all: regen-cases regen-slots \
 # Special rules for object files
 
 Modules/getbuildinfo.h: $(srcdir)/Tools/build/generate_getbuildinfo.py Programs/_getcompiler
-		$(PYTHON_FOR_REGEN) $(srcdir)/Tools/build/generate_getbuildinfo.py \
-			-o $@ \
-			--platform="$(MACHDEP)" \
-			--git-version="`LC_ALL=C $(GITVERSION)`" \
-			--git-tag="`LC_ALL=C $(GITTAG)`" \
-			--git-branch="`LC_ALL=C $(GITBRANCH)`"
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/build/generate_getbuildinfo.py \
+		-o $@ \
+		--platform="$(MACHDEP)" \
+		--git-version="`LC_ALL=C $(GITVERSION)`" \
+		--git-tag="`LC_ALL=C $(GITTAG)`" \
+		--git-branch="`LC_ALL=C $(GITBRANCH)`"
 
 Modules/getbuildinfo.o: $(srcdir)/Modules/getbuildinfo.c Modules/getbuildinfo.h
 		# Add local Modules/ include directory to get Modules/getbuildinfo.h
