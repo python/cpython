@@ -1,4 +1,4 @@
-"""Tests Tools/build/generate_getbuildinfo.py."""
+"""Test Tools/build/generate_getbuildinfo.py."""
 
 import locale
 import os
@@ -71,11 +71,11 @@ class TestGetBuildInfo(unittest.TestCase):
         MOCK_COMPILER = 'MOCK_COMPILER'
 
         for hostrunner in ('', 'node'):
+            makefile_vars = {
+                'HOSTRUNNER': hostrunner,
+                'CC': 'gcc -std=c11',
+            }
             for use_cc in (False, True):
-                makefile_vars = {
-                    'HOSTRUNNER': hostrunner,
-                    'CC': 'gcc -std=c11',
-                }
                 with mock.patch.object(generate_getbuildinfo,
                                        'get_makefile_vars',
                                        return_value=makefile_vars):
@@ -101,14 +101,14 @@ class TestGetBuildInfo(unittest.TestCase):
                         else:
                             mock_run_command.assert_called_once_with(cmd, check=False)
 
-    def test_shorter_clang_version(self):
-        shorter_clang_version = generate_getbuildinfo.shorter_clang_version
+    def test_compact_compiler(self):
+        compact_compiler = generate_getbuildinfo.compact_compiler
 
         def check(compiler, expected):
-            self.assertEqual(shorter_clang_version(compiler), expected)
+            self.assertEqual(compact_compiler(compiler), expected)
 
         def check_unchanged(compiler):
-            self.assertEqual(shorter_clang_version(compiler), compiler)
+            self.assertEqual(compact_compiler(compiler), compiler)
 
         compiler = (
             'Android (13691557, +pgo, +bolt, +lto, +mlgo, based on r522817d) '
@@ -116,7 +116,7 @@ class TestGetBuildInfo(unittest.TestCase):
             '(https://android.googlesource.com/toolchain/llvm-project'
             ' d8003a456d14a3deb8054cdaa529ffbf02d9b262)'
         )
-        check(compiler, 'Clang 18.0.4')
+        check(compiler, 'Android Clang 18.0.4')
 
         compiler = (
             'Clang 18.0.4 '
@@ -132,8 +132,16 @@ class TestGetBuildInfo(unittest.TestCase):
         )
         check(compiler, 'Clang 24.0.0git')
 
-        check_unchanged('Clang 21.0.0 (clang-2100.1.1.101)')
-        check_unchanged('Apple clang version 21.0.0 (clang-2100.1.1.101)')
+        check('Clang 21.0.0 (clang-2100.1.1.101)',
+              'Clang 21.0.0')
+        check('Apple clang version 21.0.0 (clang-2100.1.1.101)',
+              'Apple Clang 21.0.0')
+        check('Custom Vendor (something) Clang 22.1.0+dev',
+              'Custom Vendor Clang 22.1.0+dev')
+
+        check_unchanged('GCC 16.2.1 20260819 (Red Hat 16.2.1-2)')
+        check_unchanged('GCC 15.2.0')
+        check_unchanged('MSC v.1951 32 bit (Intel)')
 
     def test_functional(self):
         old_locale = locale.setlocale(locale.LC_ALL)

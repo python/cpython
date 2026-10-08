@@ -17,13 +17,16 @@ SCRIPT_FULLNAME = f'Tools/build/{SCRIPT_NAME}'
 # Get PY_VERSION from Include/patchlevel.h
 PY_VERSION_REGEX = re.compile(r'^#define PY_VERSION +"(.*)"$', re.MULTILINE)
 
-# Parse verbose Clang version (truncated here with '...'):
-# 'Clang 24.0.0git (https:/github.com/llvm/llvm-project a06...8bf)'
-# 'Android (13691557, +pgo, ...) clang version 18.0.4 (https://android.googlesource.com/toolchain/llvm-project d80...262)'
-CLANG_VERBOSE_VERSION = re.compile(r'(Clang .*|clang version .*) \(https:/.*\)')
-
-# Parse short Clang version: 'clang version 18.0.4'
-CLANG_SHORT_VERSION = re.compile(r'clang version (.*)')
+# Parse Clang version (truncated examples using '...'):
+# 'Clang 21.0.0 (clang-2100.1.1.101)'
+# 'clang version 18.0.4'
+# 'Apple clang version 21.0.0 (clang-2100.1.1.101)'
+# 'Clang 18.0.4 (https://android.googlesource.com/toolchain/llvm-project d80...62)'
+CLANG_VERSION_REGEX = re.compile(
+    r'(?:([A-Za-z_-][A-Za-z_ -]+) .*)?'  # Vendor name: 'Android' or 'Apple'
+    r'(?:Clang|clang version) '          # 'Clang' or 'clang version'
+    r'([0-9]+\.[0-9a-z.+]+)'             # version
+)
 
 
 def exit_error(msg):
@@ -48,7 +51,7 @@ def get_makefile_vars():
     return sysconfig.__main__._parse_makefile(makefile)
 
 
-def get_gil_disable():
+def get_gil_disabled():
     # Look in the current working directory
     pyconfig_h = 'pyconfig.h'
     with open(pyconfig_h, encoding="utf-8") as fp:
@@ -83,8 +86,7 @@ def get_build_info(git_tag, git_branch, git_version):
         git_id = "main"
 
     sep = ":" if git_version else ""
-
-    build_info = f"{git_id}{sep}{git_version}, {build_date:.20s}, {build_time:.9s}"
+    build_info = f"{git_id}{sep}{git_version}, {build_date}, {build_time}"
     return (build_info, git_id)
 
 
@@ -140,7 +142,7 @@ def _get_compiler():
     if compiler:
         return compiler
 
-    # Running _getcompiler failed, run directly the compiler (--version)
+    # Running _getcompiler failed, run the compiler with --version
     CC = makefile_vars.get('CC')
     if not CC:
         exit_error(f"ERROR: Unable to locate CC in Makefile")
@@ -154,16 +156,15 @@ def _get_compiler():
     return None
 
 
-def shorter_clang_version(compiler):
-    # Make verbose Clang version shorter: strip the prefix and URL
-    match = CLANG_VERBOSE_VERSION.search(compiler)
+def compact_compiler(compiler):
+    match = CLANG_VERSION_REGEX.search(compiler)
     if match:
-        compiler = match.group(1)
-
-    # Use a full match: don't replace 'Apple clang version 21.0.0' for example
-    match = CLANG_SHORT_VERSION.fullmatch(compiler)
-    if match:
-        compiler = 'Clang ' + match.group(1)
+        vendor = match.group(1)
+        version = match.group(2)
+        if vendor:
+            compiler = f'{vendor} Clang {version}'
+        else:
+            compiler = f'Clang {version}'
 
     return compiler
 
@@ -176,7 +177,7 @@ def get_compiler(compiler):
         # (see Programs/_getcompiler.c)
         compiler = 'C'
 
-    compiler = shorter_clang_version(compiler)
+    compiler = compact_compiler(compiler)
 
     return f'[{compiler}]'
 
@@ -208,7 +209,7 @@ def main():
 
     if free_threading is None:
         # Get Py_GIL_DISABLED macro from pyconfig.h
-        free_threading = get_gil_disable()
+        free_threading = get_gil_disabled()
 
     if free_threading:
         version = f"{PY_VERSION} free-threading build ({build_info}) {compiler}"
