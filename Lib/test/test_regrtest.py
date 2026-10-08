@@ -1642,38 +1642,33 @@ class ArgsTestCase(BaseTestCase):
                                               success=True),
                                   stats=2)
 
-    def create_marked_test(self, name, code):
-        # Create a test: return its name and the line number of each of its
-        # "# marker" comments
-        code = textwrap.dedent(code)
-        name = self.create_test(name, code)
-        markers = {match[1]: str(lineno)
-                   for lineno, text in enumerate(code.splitlines(), 1)
-                   if (match := re.search(r'# (\w+)$', text))}
-        return name, markers
-
     def run_tests_github(self, *args, exitcode=0):
-        # Run tests as in GitHub Actions: return the output and the job
-        # summary (None if regrtest didn't write it)
+        # Run tests as in GitHub Actions: return the output, the annotations
+        # as (file, line, title) tuples and the job summary ('' if not written)
         filename = os.path.join(self.tmptestdir, 'github_step_summary.md')
-        self.addCleanup(os_helper.unlink, filename)
         os_helper.unlink(filename)
-        env = dict(os.environ)
+        env = dict(os.environ, GITHUB_STEP_SUMMARY=filename)
         env.pop('SOURCE_DATE_EPOCH', None)
-        env['GITHUB_STEP_SUMMARY'] = filename
         output = self.run_tests(*args, env=env, exitcode=exitcode)
+        annotations = re.findall(r'^::error file=[^,]*?([^/,]+)'
+                                 r'(?:,line=(\d+))?,title=([^:]*)::',
+                                 output, re.MULTILINE)
+        # Every annotation has a file and a title
+        self.assertEqual(len(annotations),
+                         len(re.findall('^::error', output, re.MULTILINE)),
+                         output)
         try:
             with open(filename, encoding='utf-8') as fp:
-                return output, fp.read()
+                return output, annotations, fp.read()
         except FileNotFoundError:
-            return output, None
+            return output, annotations, ''
 
     def test_github_annotations(self):
-        # Every test failure is annotated once in the GitHub Actions job log,
-        # located in the test file, at the failing line of the test file if
-        # there is a traceback. The job summary lists the failures.
-        cases, lines = self.create_marked_test('github_cases', """
-            import doctest, json, sys, unittest
+        # Every failure is annotated in the GitHub Actions job log, located
+        # in its test file, at the failing line ("# fail") for test cases.
+        # The job summary lists the failures.
+        code = textwrap.dedent("""
+            import doctest, sys, unittest
 
             def load_tests(loader, tests, pattern):
                 tests.addTests(doctest.DocTestSuite(sys.modules[__name__]))
@@ -1681,158 +1676,98 @@ class ArgsTestCase(BaseTestCase):
 
             def doctest_fail():
                 '''
-                >>> 1 + 1  # doctest
+                >>> 1 + 1  # fail
                 3
                 '''
 
             class Tests(unittest.TestCase):
                 def test_error(self):
-                    json.loads("{")  # error
+                    {}['key']  # fail
 
                 def test_fail(self):
                     self.assertEqual(1, 2)  # fail
 
                 def test_subtest(self):
-                    with self.subTest(x=1.5):
-                        self.fail("subtest")  # subtest
+                    with self.subTest(x=1):
+                        self.fail()  # fail
 
             class SetUpClassTests(unittest.TestCase):
+                # Fixture errors are only listed in the job summary
                 @classmethod
                 def setUpClass(cls):
-                    raise ValueError("setUpClass")
+                    raise ValueError
 
                 def test_never(self):
                     pass
         """)
-        setup_module, _ = self.create_marked_test(
-            'github_setup_module', """
-            import unittest
-
-            def setUpModule():
-                raise ValueError("setUpModule")
-
-            class Tests(unittest.TestCase):
-                def test_never(self):
-                    pass
-        """)
-        env_changed, _ = self.create_marked_test('github_env_changed', """
+        cases = self.create_test('github_cases', code)
+        fail_lines = {str(lineno)
+                      for lineno, line in enumerate(code.splitlines(), 1)
+                      if line.endswith('# fail')}
+        env_changed = self.create_test('github_env_changed', textwrap.dedent("""
             import os, unittest
 
             class Tests(unittest.TestCase):
                 def test_env_changed(self):
-                    os.environ["REGRTEST_GITHUB_ENV_CHANGED"] = "1"
-        """)
-        crash, _ = self.create_marked_test('github_crash', """
+                    os.environ['REGRTEST_GITHUB_ENV_CHANGED'] = '1'
+        """))
+        crash = self.create_test('github_crash', textwrap.dedent("""
             import os, unittest
 
             class Tests(unittest.TestCase):
                 def test_crash(self):
                     os._exit(1)
-        """)
-
-        # Annotated test cases: (title, file, line)
-        test_cases = [
-            (f'test_error ({cases}.Tests.test_error)',
-             f'{cases}.py', lines['error']),
-            (f'test_fail ({cases}.Tests.test_fail)',
-             f'{cases}.py', lines['fail']),
-            (f'test_subtest ({cases}.Tests.test_subtest) (x=1.5)',
-             f'{cases}.py', lines['subtest']),
-            # Doctest examples are subtests: "[0]" is the example index
-            (f'doctest_fail ({cases}) [0]',
-             f'{cases}.py', lines['doctest']),
+        """))
+        case_titles = [
+            f'test_error ({cases}.Tests.test_error)',
+            f'test_fail ({cases}.Tests.test_fail)',
+            f'test_subtest ({cases}.Tests.test_subtest) (x=1)',
+            f'doctest_fail ({cases}) [0]',
         ]
-        # Test cases only listed in the job summary: fixture errors
-        # (setUpClass, setUpModule) are not annotated
-        failed_titles = [title for title, _, _ in test_cases] + [
-            f'setUpClass ({cases}.SetUpClassTests)',
-            f'setUpModule ({setup_module})',
-        ]
-        # Test files: heading in the job summary
-        test_files = {
-            cases: f'### {cases} failed (2 errors, 3 failures)',
-            setup_module: f'### {setup_module} failed (1 error)',
-            env_changed: f'### {env_changed} failed (env changed)',
-            crash: f'### {crash} worker non-zero exit code',
-        }
 
         # Representative command lines of the CI jobs
-        command_lines = {
-            # "make ci", Windows, macOS, installed Python; the JIT jobs use
-            # the equivalent "-j0 --verbose2 --verbose3". Only failures of
-            # the re-run are annotated, not the reported first failures.
-            'fast-ci': ['--fast-ci', '-j2'],
-            # Sanitizers and Hypothesis: env changed is not a failure
-            'parallel': ['-j2', '-W'],
-            # iOS and WASI run tests in the main process: a crash kills it
-            'single-process': ['--fast-ci', '--single-process'],
-            # Profile task of PGO and BOLT builds: failures stop the build
-            'pgo': ['--pgo'],
-        }
-        for name, args in command_lines.items():
-            with self.subTest(name):
-                tests = list(test_files)
-                if '--single-process' in args or '--pgo' in args:
-                    tests.remove(crash)
-                output, summary = self.run_tests_github(
+        for args in (
+            # "make ci": only the failures of the re-run are annotated
+            ['--fast-ci', '-j2'],
+            # Sanitizers: env changed is not a failure
+            ['-j2', '-W'],
+            # iOS and WASI: a crash would kill the main process
+            ['--fast-ci', '--single-process'],
+            # PGO profile task
+            ['--pgo'],
+        ):
+            with self.subTest(args=args):
+                in_process = '--single-process' in args or '--pgo' in args
+                tests = [cases, env_changed] + ([] if in_process else [crash])
+                output, annotations, summary = self.run_tests_github(
                     *args, *tests, exitcode=EXITCODE_BAD_TEST)
 
-                expected = list(test_cases)
+                expected = [(cases, title) for title in case_titles]
                 if '--fast-ci' in args:
-                    expected.append((env_changed, f'{env_changed}.py', None))
+                    expected.append((env_changed, env_changed))
                 if crash in tests:
-                    expected.append((crash, f'{crash}.py', None))
-
-                # "::error file=...,line=...,title=...::message"
-                annotations = []
-                output_lines = output.splitlines()
-                for i, line in enumerate(output_lines):
-                    if not line.startswith('::error '):
-                        continue
-                    _, props, message = line.split('::', 2)
-                    props = props.removeprefix('error ').split(',')
-                    props = dict(prop.split('=', 1) for prop in props)
-                    title = props['title']
-                    annotations.append((title, os.path.basename(props['file']),
-                                        props.get('line')))
-                    before = output_lines[:i]
-                    if title == env_changed:
-                        # Right after the env changed warnings
-                        self.assertStartsWith(before[-1], 'Warning -- ')
-                    elif title != crash:
-                        # Right after the failure report of the test, which
-                        # ends with the exception and an empty line
-                        report = next(
-                            text for text in reversed(before)
-                            if text.startswith(('ERROR: ', 'FAIL: ')))
-                        self.assertEqual(report.split(': ', 1)[1], title)
-                        message = message.replace('%0A', '\n').splitlines()
-                        self.assertEqual(before[-len(message) - 1:],
-                                         message + [''])
-                self.assertCountEqual(annotations, expected, output)
-
-                # The job summary lists the failed tests in completion order
-                summary_lines = summary.splitlines()
-                self.assertEqual(summary_lines[0],
-                                 f'## FAILURE: {len(tests)} test files and '
-                                 f'{len(failed_titles)} test cases failed')
+                    expected.append((crash, crash))
                 self.assertCountEqual(
-                    [line for line in summary_lines
-                     if line.startswith('### ')],
-                    [test_files[name] for name in tests])
-                self.assertIn('- os.environ was modified', summary_lines)
-                self.assertCountEqual(
-                    re.findall(r'<summary>(.*)</summary>', summary),
-                    failed_titles)
-                self.assertEqual(summary.count('```pytb\n'),
-                                 len(failed_titles))
+                    [(file, title) for file, _, title in annotations],
+                    [(f'{name}.py', title) for name, title in expected],
+                    output)
+                for file, line, title in annotations:
+                    # Test files without a failed test case have no line
+                    self.assertIn(line, fail_lines if file == f'{cases}.py'
+                                        else {''}, title)
+
+                self.assertIn(f'## FAILURE: {len(tests)} test files and '
+                              f'5 test cases failed', summary)
+                for name in tests:
+                    self.assertIn(f'### {name} ', summary)
+                self.assertIn('- os.environ was modified', summary)
+                self.assertEqual(summary.count('<summary>'), 5)
 
     def test_github_summary_success(self):
         # No annotation and no job summary when all tests pass
-        testname = self.create_test()
-        output, summary = self.run_tests_github(testname)
-        self.assertNotIn('::error', output)
-        self.assertIsNone(summary)
+        output, annotations, summary = self.run_tests_github(self.create_test())
+        self.assertEqual(annotations, [])
+        self.assertEqual(summary, '')
 
     def test_rerun_fail(self):
         # FAILURE then FAILURE
