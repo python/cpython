@@ -42,7 +42,7 @@ struct PySlot {
 #define PySlot_STATIC_DATA(NAME, VALUE) \
     {.sl_id=(NAME), .sl_flags=PySlot_STATIC, .sl_ptr=(VALUE)}
 
-#define PySlot_END {0}
+#define PySlot_END {0, 0, {0}, {_Py_NULL}}
 
 
 // Macros without designated initializers (for C++11 and below):

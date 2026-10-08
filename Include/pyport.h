@@ -558,12 +558,19 @@ extern "C" {
 #      define _Py_MEMORY_SANITIZER
 #      define _Py_NO_SANITIZE_MEMORY __attribute__((no_sanitize_memory))
 #      define _Py_MSAN_UNPOISON(PTR, SIZE)  (__msan_unpoison(PTR, SIZE))
+#      define _Py_MSAN_UNPOISON_STRING(STR)  (__msan_unpoison_string(STR))
 #    endif
 #  endif
 #  if __has_feature(address_sanitizer)
 #    if !defined(_Py_ADDRESS_SANITIZER)
 #      define _Py_ADDRESS_SANITIZER
 #      define _Py_NO_SANITIZE_ADDRESS __attribute__((no_sanitize_address))
+#    endif
+#  endif
+#  if __has_feature(hwaddress_sanitizer)
+#    if !defined(_Py_ADDRESS_SANITIZER)
+#      define _Py_ADDRESS_SANITIZER
+#      define _Py_NO_SANITIZE_ADDRESS __attribute__((no_sanitize("hwaddress")))
 #    endif
 #  endif
 #  if __has_feature(thread_sanitizer)
@@ -576,6 +583,9 @@ extern "C" {
 #  if defined(__SANITIZE_ADDRESS__)
 #    define _Py_ADDRESS_SANITIZER
 #    define _Py_NO_SANITIZE_ADDRESS __attribute__((no_sanitize_address))
+#  elif defined(__SANITIZE_HWADDRESS__)
+#    define _Py_ADDRESS_SANITIZER
+#    define _Py_NO_SANITIZE_ADDRESS __attribute__((no_sanitize("hwaddress")))
 #  endif
 #  if defined(__SANITIZE_THREAD__)
 #    define _Py_THREAD_SANITIZER
@@ -598,6 +608,9 @@ extern "C" {
 #endif
 #ifndef _Py_MSAN_UNPOISON
 #  define _Py_MSAN_UNPOISON(PTR, SIZE)
+#endif
+#ifndef _Py_MSAN_UNPOISON_STRING
+#  define _Py_MSAN_UNPOISON_STRING(STR)
 #endif
 
 /* AIX has __bool__ redefined in it's system header file. */

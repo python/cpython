@@ -264,18 +264,6 @@ def config_symlink(config_path, context):
     return [(symlink, config_path) for symlink in symlinks]
 
 
-def filename_stem(context):
-    """Calculate the stem of the archive file name."""
-    version_info = context.wasi_build_details["language"]["version_info"]
-    version = f"python-{version_info['major']}.{version_info['minor']}.{version_info['micro']}"
-    if version_info["releaselevel"] != "final":
-        version += version_info["releaselevel"][0] + str(
-            version_info["serial"]
-        )
-
-    return f"{version}-{context.host_triple}"
-
-
 def copy_files(files, base):
     for dest, src in files:
         target = base / dest
@@ -296,13 +284,13 @@ def gather(context):
     py_version = python_version(context)
     py_d_version = python_version(context, debug_ok=True)
 
-    dist = context.checkout / "dist"
+    dist = context.dist_path
     if dist.exists():
         _shared.log("🧹", f"Deleting {dist} ...")
         shutil.rmtree(dist)
 
     indent = "  "
-    base = dist / filename_stem(context)
+    base = context.archive_dir
     _shared.log("📝", f"Copying files to {base} ...")
 
     _shared.log("📁", "bin/", spacing=indent * 2)
@@ -365,12 +353,12 @@ def gather(context):
 
 
 def archive(context):
-    file_name = f"{filename_stem(context)}.tar.xz"
-    file_path = context.checkout / "dist" / file_name
+    file_name = f"{context.archive_stem}.tar.xz"
+    file_path = context.dist_path / file_name
     if file_path.exists():
         _shared.log("🧹", f"Deleting {file_path} ...")
         file_path.unlink()
-    to_compress = context.checkout / "dist" / filename_stem(context)
+    to_compress = context.archive_dir
     _shared.log("🗜️", f"Archiving to {file_path} ...")
     mtime_format = "%Y-%m-%dT%H:%M:%SZ"
     if source_date_epoch := os.environ.get("SOURCE_DATE_EPOCH"):
