@@ -11,6 +11,7 @@ extern "C" {
 #include "pycore_fileutils.h"     // _Py_error_handler
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
 #include "pycore_runtime.h"       // _Py_LATIN1_CHR()
+#include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_LOAD_PTR_ACQUIRE
 
 
 // Maximum code point of Unicode 6.0: 0x10ffff (1,114,111).
@@ -108,6 +109,11 @@ _PyUnicode_EnsureUnicode(PyObject *obj)
     return 0;
 }
 
+static inline char* _PyUnicode_UTF8(PyObject *op)
+{
+    return FT_ATOMIC_LOAD_PTR_ACQUIRE(_PyCompactUnicodeObject_CAST(op)->utf8);
+}
+
 #ifndef NDEBUG
 static inline int
 _PyUnicodeWriter_CanWrite(_PyUnicodeWriter *writer)
@@ -125,6 +131,9 @@ _PyUnicodeWriter_CanWrite(_PyUnicodeWriter *writer)
     assert(PyUnstable_Unicode_GET_CACHED_HASH(buffer) == -1);
     assert(!PyUnicode_CHECK_INTERNED(buffer));
     assert(!_Py_IsImmortal(buffer));
+    assert(PyUnicode_IS_COMPACT_ASCII(buffer)
+           || _PyUnicode_UTF8(buffer) == NULL
+           || _PyUnicode_UTF8(buffer) == PyUnicode_DATA(buffer));
     return 1;
 }
 #endif

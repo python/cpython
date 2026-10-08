@@ -114,11 +114,6 @@ NOTE: In the interpreter's initialization phase, some globals are currently
 #  define _PyUnicode_CHECK(op) PyUnicode_Check(op)
 #endif
 
-static inline char* _PyUnicode_UTF8(PyObject *op)
-{
-    return FT_ATOMIC_LOAD_PTR_ACQUIRE(_PyCompactUnicodeObject_CAST(op)->utf8);
-}
-
 static inline char* PyUnicode_UTF8(PyObject *op)
 {
     assert(_PyUnicode_CHECK(op));
@@ -1767,6 +1762,9 @@ _PyUnicode_IsModifiable(PyObject *unicode)
         return 0;
     if (PyUnicode_CHECK_INTERNED(unicode))
         return 0;
+    if (_PyUnicode_HAS_UTF8_MEMORY(unicode)) {
+        return 0;
+    }
 #ifdef Py_DEBUG
     /* singleton refcount is greater than 1 */
     assert(!unicode_is_singleton(unicode));
