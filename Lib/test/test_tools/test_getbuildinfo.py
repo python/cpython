@@ -18,6 +18,7 @@ with test_tools.imports_under_tool('build'):
     import generate_getbuildinfo
 
 SRC_DIR = os.path.dirname(test_tools.toolsdir)
+SCRIPT_NAME = 'generate_getbuildinfo.py'
 
 
 class TestGetBuildInfo(unittest.TestCase):
@@ -102,6 +103,7 @@ class TestGetBuildInfo(unittest.TestCase):
                             mock_run_command.assert_called_once_with(cmd, check=False)
 
     def test_compact_compiler(self):
+        get_compiler = generate_getbuildinfo.get_compiler
         compact_compiler = generate_getbuildinfo.compact_compiler
 
         def check(compiler, expected):
@@ -143,6 +145,13 @@ class TestGetBuildInfo(unittest.TestCase):
         check_unchanged('GCC 15.2.0')
         check_unchanged('MSC v.1951 32 bit (Intel)')
 
+        with support.captured_stdout() as stdout:
+            compiler = get_compiler('Clang 21.0.0 (clang-2100.1.1.101)')
+            self.assertEqual(compiler, '[Clang 21.0.0]')
+        self.assertEqual(stdout.getvalue(),
+            f"{SCRIPT_NAME}: Truncate compiler string 'Clang 21.0.0 "
+            "(clang-2100.1.1.101)' to 'Clang 21.0.0'\n")
+
     def test_functional(self):
         old_locale = locale.setlocale(locale.LC_ALL)
         self.addCleanup(locale.setlocale, locale.LC_ALL, old_locale)
@@ -165,7 +174,7 @@ class TestGetBuildInfo(unittest.TestCase):
                 env['SOURCE_DATE_EPOCH'] = str(1791419852)
                 with support.captured_stdout() as stdout:
                     generate_getbuildinfo.main()
-                self.assertEqual(stdout.getvalue(), f'{filename} updated\n')
+                self.assertEqual(stdout.getvalue(), f'{SCRIPT_NAME}: {filename} updated\n')
 
         with open(filename) as fp:
             output = fp.read()

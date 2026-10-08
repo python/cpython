@@ -29,9 +29,12 @@ CLANG_VERSION_REGEX = re.compile(
 )
 
 
+def log(msg):
+    print(f"{SCRIPT_NAME}: {msg}")
+
+
 def exit_error(msg):
-    print(msg)
-    print("cwd: {os.getcwd()}")
+    log(msg)
     sys.exit(1)
 
 
@@ -104,7 +107,7 @@ def parse_args():
 
 def run_command(cmd, *, check=True):
     cmd_str = shlex.join(cmd)
-    print(f"+ {cmd_str}")
+    log(f"+ {cmd_str}")
     try:
         proc = subprocess.run(cmd, stdout=subprocess.PIPE, text=True)
     except OSError as exc:
@@ -121,7 +124,7 @@ def run_command(cmd, *, check=True):
         if check:
             exit_error(msg)
         else:
-            print(msg)
+            log(msg)
         return None
 
     return proc.stdout.rstrip()
@@ -177,7 +180,10 @@ def get_compiler(compiler):
         # (see Programs/_getcompiler.c)
         compiler = 'C'
 
-    compiler = compact_compiler(compiler)
+    old_compiler = compiler
+    compiler = compact_compiler(old_compiler)
+    if compiler != old_compiler:
+        log(f"Truncate compiler string {old_compiler!r} to {compiler!r}")
 
     return f'[{compiler}]'
 
@@ -231,7 +237,7 @@ def main():
         write_macro('VERSION', version)
 
     os.replace(new_filename, output_filename)
-    print(f"{output_filename} updated")
+    log(f"{output_filename} updated")
 
 
 if __name__ == "__main__":
