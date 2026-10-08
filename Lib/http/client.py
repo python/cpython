@@ -165,6 +165,11 @@ _contains_disallowed_url_pchar_re = re.compile('[\x00-\x20\x7f]')
 # to prevent http header injection.
 _contains_disallowed_method_pchar_re = re.compile('[\x00-\x1f]')
 
+# RFC 9112: Content-Length = 1*DIGIT and chunk-size = 1*HEXDIG.
+# int() is more permissive, so we match against the grammar before calling it.
+_is_legal_content_length = re.compile(r'[0-9]+').fullmatch
+_is_legal_chunk_size = re.compile(rb'[0-9a-fA-F]+').fullmatch
+
 # We always set the Content-Length header for these methods because some
 # servers will otherwise respond with a 411
 _METHODS_EXPECTING_BODY = {'PATCH', 'POST', 'PUT'}
@@ -392,14 +397,8 @@ class HTTPResponse(io.BufferedIOBase):
         # NOTE: RFC 2616, S4.4, #3 says we ignore this if tr_enc is "chunked"
         self.length = None
         length = self.headers.get("content-length")
-        if length and not self.chunked:
-            try:
-                self.length = int(length)
-            except ValueError:
-                self.length = None
-            else:
-                if self.length < 0:  # ignore nonsensical negative lengths
-                    self.length = None
+        if length and not self.chunked and _is_legal_content_length(length):
+            self.length = int(length)
         else:
             self.length = None
 
@@ -566,7 +565,10 @@ class HTTPResponse(io.BufferedIOBase):
         i = line.find(b";")
         if i >= 0:
             line = line[:i] # strip chunk-extensions
+        line = line.rstrip()
         try:
+            if not _is_legal_chunk_size(line):
+                raise ValueError("invalid chunk size")
             return int(line, 16)
         except ValueError:
             # close the connection as protocol synchronisation is
