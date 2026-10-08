@@ -3544,9 +3544,13 @@ features:
 
    .. seealso:: The :manpage:`statx(2)` man page.
 
-   .. availability:: Linux >= 4.11 with glibc >= 2.28.
+   .. availability:: Linux >= 4.11.
 
    .. versionadded:: 3.15
+
+   .. versionchanged:: 3.16
+      The function is also available when Python is built against a libc
+      that lacks ``statx()``, such as glibc older than 2.28.
 
 
 .. class:: statx_result
@@ -3576,7 +3580,7 @@ features:
       Equal to ``None`` if :data:`STATX_WRITE_ATOMIC` is missing from
       :attr:`~statx_result.stx_mask`.
 
-      .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
+      .. availability:: Linux >= 4.11 and build-time kernel
          userspace API headers >= 6.11.
 
    .. attribute:: stx_atomic_write_unit_max
@@ -3586,7 +3590,7 @@ features:
       Equal to ``None`` if :data:`STATX_WRITE_ATOMIC` is missing from
       :attr:`~statx_result.stx_mask`.
 
-      .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
+      .. availability:: Linux >= 4.11 and build-time kernel
          userspace API headers >= 6.11.
 
    .. attribute:: stx_atomic_write_unit_max_opt
@@ -3596,7 +3600,7 @@ features:
       Equal to ``None`` if :data:`STATX_WRITE_ATOMIC` is missing from
       :attr:`~statx_result.stx_mask`.
 
-      .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
+      .. availability:: Linux >= 4.11 and build-time kernel
          userspace API headers >= 6.16.
 
    .. attribute:: stx_atomic_write_unit_min
@@ -3606,7 +3610,7 @@ features:
       Equal to ``None`` if :data:`STATX_WRITE_ATOMIC` is missing from
       :attr:`~statx_result.stx_mask`.
 
-      .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
+      .. availability:: Linux >= 4.11 and build-time kernel
          userspace API headers >= 6.11.
 
    .. attribute:: stx_attributes
@@ -3680,7 +3684,7 @@ features:
       Equal to ``None`` if :data:`STATX_DIOALIGN` is missing from
       :attr:`~statx_result.stx_mask`.
 
-      .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
+      .. availability:: Linux >= 4.11 and build-time kernel
          userspace API headers >= 6.1.
 
    .. attribute:: stx_dio_offset_align
@@ -3690,7 +3694,7 @@ features:
       Equal to ``None`` if :data:`STATX_DIOALIGN` is missing from
       :attr:`~statx_result.stx_mask`.
 
-      .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
+      .. availability:: Linux >= 4.11 and build-time kernel
          userspace API headers >= 6.1.
 
    .. attribute:: stx_dio_read_offset_align
@@ -3700,7 +3704,7 @@ features:
       Equal to ``None`` if :data:`STATX_DIO_READ_ALIGN` is missing from
       :attr:`~statx_result.stx_mask`.
 
-      .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
+      .. availability:: Linux >= 4.11 and build-time kernel
          userspace API headers >= 6.14.
 
    .. attribute:: stx_gid
@@ -3729,7 +3733,7 @@ features:
       Equal to ``None`` if :data:`STATX_MNT_ID` is missing from
       :attr:`~statx_result.stx_mask`.
 
-      .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
+      .. availability:: Linux >= 4.11 and build-time kernel
          userspace API headers >= 5.8.
 
    .. attribute:: stx_mode
@@ -3789,7 +3793,7 @@ features:
       Equal to ``None`` if :data:`STATX_SUBVOL` is missing from
       :attr:`~statx_result.stx_mask`.
 
-      .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
+      .. availability:: Linux >= 4.11 and build-time kernel
          userspace API headers >= 6.10.
 
    .. attribute:: stx_uid
@@ -3801,7 +3805,7 @@ features:
 
    .. seealso:: The :manpage:`statx(2)` man page.
 
-   .. availability:: Linux >= 4.11 with glibc >= 2.28.
+   .. availability:: Linux >= 4.11.
 
    .. versionadded:: 3.15
 
@@ -3830,7 +3834,7 @@ features:
    flags may be available even when their corresponding members in
    :class:`statx_result` are not available.
 
-   .. availability:: Linux >= 4.11 with glibc >= 2.28.
+   .. availability:: Linux >= 4.11.
 
    .. versionadded:: 3.15
 
@@ -3840,7 +3844,7 @@ features:
    up-to-date information even when doing so is expensive (for example,
    requiring a round trip to the server for a file on a network filesystem).
 
-   .. availability:: Linux >= 4.11 with glibc >= 2.28.
+   .. availability:: Linux >= 4.11.
 
    .. versionadded:: 3.15
 
@@ -3849,7 +3853,7 @@ features:
    A flag for the :func:`os.statx` function.  Requests that the kernel return
    cached information if possible.
 
-   .. availability:: Linux >= 4.11 with glibc >= 2.28.
+   .. availability:: Linux >= 4.11.
 
    .. versionadded:: 3.15
 
@@ -3861,7 +3865,7 @@ features:
    In the absence of the other two flags, the kernel will generally return
    information as fresh as :func:`os.stat` would return.
 
-   .. availability:: Linux >= 4.11 with glibc >= 2.28.
+   .. availability:: Linux >= 4.11.
 
    .. versionadded:: 3.15
 
