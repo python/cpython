@@ -1904,6 +1904,34 @@ The following API is deprecated.
       :c:func:`PyUnicode_READY` is necessary.
 
 
+.. _pyobject-new-mutating:
+
+Mutating string objects
+"""""""""""""""""""""""
+
+The following functions allow creating a blank string object of a given size,
+then filling in its contents.
+They are :term:`soft deprecated`: they break the assumption that
+strings are immutable, making them hard to use correctly.
+
+Prefer using the :c:type:`PyUnicodeWriter` API,
+or one of the ``PyUnicode_From*``
+functions such as :c:func:`PyUnicode_FromStringAndSize`.
+
+If you do use the functions below, take care to not "use" such a string while
+it is being modified.
+In particular, before it's filled with its final contents, a string:
+
+- must not be hashed,
+- must not be :c:func:`converted to UTF-8 <PyUnicode_AsUTF8AndSize>`,
+  or another non-"canonical" representation,
+- must not have its reference count changed,
+- must not be shared with code that might do one of the above.
+
+This list is not exhaustive. Avoiding these uses is your responsibility;
+Python does not always check these requirements.
+
+
 .. c:function:: PyObject* PyUnicode_New(Py_ssize_t size, Py_UCS4 maxchar)
 
    Create a new Unicode object.  *maxchar* should be the true maximum code point
@@ -1912,34 +1940,12 @@ The following API is deprecated.
 
    On error, set an exception and return ``NULL``.
 
-   After creation, the string can be filled by :c:func:`PyUnicode_WriteChar`,
-   :c:func:`PyUnicode_CopyCharacters`, :c:func:`PyUnicode_Fill`,
-   :c:func:`PyUnicode_WRITE` or similar.
-   Since strings are supposed to be immutable, take care to not “use” the
-   result while it is being modified. In particular, before it's filled
-   with its final contents, a string:
-
-   - must not be hashed,
-   - must not be :c:func:`converted to UTF-8 <PyUnicode_AsUTF8AndSize>`,
-     or another non-"canonical" representation,
-   - must not have its reference count changed,
-   - must not be shared with code that might do one of the above.
-
-   This list is not exhaustive. Avoiding these uses is your responsibility;
-   Python does not always check these requirements.
-
-   To avoid accidentally exposing a partially-written string object, prefer
-   using the :c:type:`PyUnicodeWriter` API, or one of the ``PyUnicode_From*``
-   functions below.
-
-   While :class:`str` objects are usually immutable in Python, this special C API
-   returns a :class:`str` object that can be mutated, except if *size* is zero, in which
-   case it returns the immutable empty string constant.
+   See :ref:`pyobject-new-mutating` for important warnings and caveats.
 
    .. versionadded:: 3.3
 
    .. soft-deprecated:: next
-      Use the :c:type:`PyUnicodeWriter` API instead.
+      See :ref:`pyobject-new-mutating`.
 
 
 .. c:function:: void PyUnicode_WRITE(int kind, void *data, \
@@ -1956,8 +1962,8 @@ The following API is deprecated.
    The function performs no checks for any of its requirements,
    and is intended for usage in loops.
 
-   While :class:`str` objects are usually immutable in Python, this special C API allows
-   mutating a fresh :class:`str` object if the string has not been "used" yet.
+   The owning string must not be "used" yet.
+   See :ref:`pyobject-new-mutating` for details.
 
    .. versionadded:: 3.3
 
@@ -1976,10 +1982,8 @@ The following API is deprecated.
    possible.  Returns ``-1`` and sets an exception on error, otherwise returns
    the number of copied characters.
 
-   While :class:`str` objects are usually immutable in Python, this special C API allows
-   mutating a fresh :class:`str` object if the string has not been "used" yet.
-
-   See :c:func:`PyUnicode_New` for details.
+   The destination string must not be "used" yet.
+   See :ref:`pyobject-new-mutating` for details.
 
    .. versionadded:: 3.3
 
@@ -2001,10 +2005,8 @@ The following API is deprecated.
    The function doesn't check string content, the result may not be a
    string in canonical representation.
 
-   While :class:`str` objects are usually immutable in Python, this special C API
-   can resize a :class:`str` object in-place if the string has not been "used" yet.
-   It returns a :class:`str` object which can be mutated, except if *size* is zero, in
-   which case it returns the immutable empty string constant.
+   *\*unicode* must not be "used" yet.
+   See :ref:`pyobject-new-mutating` for details.
 
    .. soft-deprecated:: next
       Use the :c:type:`PyUnicodeWriter` API instead.
@@ -2022,10 +2024,8 @@ The following API is deprecated.
    Return the number of written characters, or return ``-1`` and raise an
    exception on error.
 
-   While :class:`str` objects are usually immutable in Python, this special C API allows
-   mutating a fresh :class:`str` object if the string has not been "used" yet.
-
-   See :c:func:`PyUnicode_New` for details.
+   *unicode* must not be "used" yet.
+   See :ref:`pyobject-new-mutating` for details.
 
    .. versionadded:: 3.3
 
@@ -2044,10 +2044,8 @@ The following API is deprecated.
    See :c:func:`PyUnicode_WRITE` for a version that skips these checks,
    making them your responsibility.
 
-   While :class:`str` objects are usually immutable in Python, this special C API allows
-   mutating a fresh :class:`str` object if the string has not been "used" yet.
-
-   See :c:func:`PyUnicode_New` for details.
+   *unicode* must not be "used" yet.
+   See :ref:`pyobject-new-mutating` for details.
 
    .. versionadded:: 3.3
 
