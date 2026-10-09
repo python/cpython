@@ -68,7 +68,7 @@ class TestGetBuildInfo(unittest.TestCase):
                              (f'main, {date_time}', 'main'))
 
     def test_get_compiler(self):
-        getcompiler = os.path.join('Programs', '_getcompiler')
+        GETCOMPILER = 'GETCOMPILER'
         MOCK_COMPILER = 'MOCK_COMPILER'
         CC = 'gcc -std=c11'
 
@@ -86,13 +86,17 @@ class TestGetBuildInfo(unittest.TestCase):
                         mock_run_command.side_effect = ('', MOCK_COMPILER)
                     else:
                         mock_run_command.return_value = MOCK_COMPILER
-                    compiler = generate_getbuildinfo._get_compiler()
-                    self.assertEqual(compiler, MOCK_COMPILER)
-                    if hostrunner:
-                        cmd = [hostrunner, getcompiler]
+                    compiler = generate_getbuildinfo._get_compiler(GETCOMPILER)
+                    if use_cc and support.MS_WINDOWS:
+                        self.assertIsNone(compiler)
                     else:
-                        cmd = [getcompiler]
-                    if use_cc:
+                        self.assertEqual(compiler, MOCK_COMPILER)
+
+                    if hostrunner and not support.MS_WINDOWS:
+                        cmd = [hostrunner, GETCOMPILER]
+                    else:
+                        cmd = [GETCOMPILER]
+                    if use_cc and not support.MS_WINDOWS:
                         self.assertEqual(mock_run_command.call_args_list,
                             [
                                 mock.call(cmd, check=False),
