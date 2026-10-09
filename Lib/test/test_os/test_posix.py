@@ -1947,8 +1947,7 @@ class TestPosixDirFd(unittest.TestCase):
         with self.assertRaises(NotImplementedError):
             os.readlink(fd)
 
-    @unittest.skipUnless(hasattr(os, "supports_fd") and hasattr(os, "readlink"),
-                         "feature not supported on this platform")
+    @unittest.skipUnless(hasattr(os, "readlink"), "needs os.readlink")
     def test_readlink_is_in_supports_fd_on_supported_platforms(self):
         self.assertEqual(os.readlink in os.supports_fd, self._support_readlink_with_fd)
 
