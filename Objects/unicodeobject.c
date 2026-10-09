@@ -1237,8 +1237,10 @@ const void *_PyUnicode_data(void *unicode_raw) {
     printf("compact %d\n", PyUnicode_IS_COMPACT(unicode));
     printf("compact ascii %d\n", PyUnicode_IS_COMPACT_ASCII(unicode));
     printf("ascii op %p\n", (void*)(_PyASCIIObject_CAST(unicode) + 1));
-    printf("compact op %p\n", (void*)(_PyCompactUnicodeObject_CAST(unicode) + 1));
-    printf("compact data %p\n", _PyUnicode_COMPACT_DATA(unicode));
+    if (!PyUnicode_IS_COMPACT_ASCII(unicode)) {
+        printf("compact op %p\n", (void*)(_PyCompactUnicodeObject_CAST(unicode) + 1));
+        printf("compact data %p\n", _PyUnicode_COMPACT_DATA(unicode));
+    }
     return PyUnicode_DATA(unicode);
 }
 
@@ -1246,25 +1248,22 @@ void
 _PyUnicode_Dump(PyObject *op)
 {
     PyASCIIObject *ascii = _PyASCIIObject_CAST(op);
-    PyCompactUnicodeObject *compact = _PyCompactUnicodeObject_CAST(op);
-    PyUnicodeObject *unicode = _PyUnicodeObject_CAST(op);
-    const void *data;
+    const void *data = PyUnicode_DATA(op);
 
-    if (ascii->state.compact)
-    {
-        if (ascii->state.ascii)
-            data = (ascii + 1);
-        else
-            data = (compact + 1);
-    }
-    else
-        data = unicode->data.any;
-    printf("%s: len=%zu, ", unicode_kind_name(op), ascii->length);
+    printf("%s: len=%zu", unicode_kind_name(op), ascii->length);
 
     if (!ascii->state.ascii) {
-        printf("utf8=%p (%zu)", (void *)compact->utf8, compact->utf8_length);
+        PyCompactUnicodeObject *compact = _PyCompactUnicodeObject_CAST(op);
+        if (compact->utf8 == NULL) {
+            printf(", utf8=NULL");
+        }
+        else {
+            printf(", utf8=%p", (void *)compact->utf8);
+        }
+        printf(" (%zu)", compact->utf8_length);
     }
-    printf(", data=%p\n", data);
+    printf(", data=%p\n", PyUnicode_DATA(op));
+    fflush(stdout);
 }
 #endif
 

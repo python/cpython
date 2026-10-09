@@ -4,7 +4,7 @@ import unittest
 from test import support
 from test.support import import_helper
 from test.support import threading_helper
-from test.support.script_helper import assert_python_failure
+from test.support.script_helper import assert_python_failure, assert_python_ok
 from threading import Thread
 
 try:
@@ -1965,6 +1965,46 @@ class CAPITest(unittest.TestCase):
 
         # CRASHES unicode_equal("abc", NULL)
         # CRASHES unicode_equal(NULL, "abc")
+
+    def test_pyunicode_dump(self):
+        try:
+            ctypes.pythonapi._PyUnicode_Dump
+        except AttributeError:
+            self.skipTest("_PyUnicode_Dump not available")
+        proc = assert_python_ok('-c', """
+            import sys, ctypes
+            _PyUnicode_Dump = ctypes.pythonapi._PyUnicode_Dump
+            _PyUnicode_Dump.argtypes = [ctypes.py_object]
+            _PyUnicode_Dump.restype = None
+            PyUnicode_AsUTF8 = ctypes.pythonapi.PyUnicode_AsUTF8
+            PyUnicode_AsUTF8.argtypes = [ctypes.py_object]
+            PyUnicode_AsUTF8.restype = ctypes.c_char_p
+            for s in (
+                "ASCII parrot", "latin1 møøse",
+                "UCS2 half‐a‐bee", "UCS4 \N{RABBIT}"
+            ):
+                print(s, flush=True)
+                _PyUnicode_Dump(s)
+                PyUnicode_AsUTF8(s)
+                _PyUnicode_Dump(s)
+                sys.stdout.flush()
+        """.encode(), PYTHONIOENCODING='UTF-8')
+        self.assertRegex(proc.out.decode(), textwrap.dedent(r"""
+            \A
+            ASCII parrot\n
+            ascii: len=12, data=[^\n]*\n
+            ascii: len=12, data=[^\n]*\n
+            latin1 møøse\n
+            latin1: len=12, utf8=NULL \(0\), data=[^\n]*\n
+            latin1: len=12, utf8=[^\n]* \(14\), data=[^\n]*\n
+            UCS2 half‐a‐bee\n
+            UCS2: len=15, utf8=NULL \(0\), data=[^\n]*\n
+            UCS2: len=15, utf8=[^\n]* \(19\), data=[^\n]*\n
+            UCS4 \N{RABBIT}\n
+            UCS4: len=6, utf8=NULL \(0\), data=[^\n]*\n
+            UCS4: len=6, utf8=[^\n]* \(9\), data=[^\n]*\n
+            \Z
+            """).strip().replace('\n', ''))
 
 
 class PyUnicodeWriterTest(unittest.TestCase):

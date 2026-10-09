@@ -458,6 +458,10 @@ extern int _PyUnicode_WideCharString_Opt_Converter(PyObject *, void *);
 // Export for test_peg_generator
 PyAPI_FUNC(Py_ssize_t) _PyUnicode_ScanIdentifier(PyObject *);
 
+#ifdef Py_DEBUG
+PyAPI_FUNC(void) _PyUnicode_Dump(PyObject *op);
+#endif
+
 /* --- Runtime lifecycle -------------------------------------------------- */
 
 extern void _PyUnicode_InitState(PyInterpreterState *);
