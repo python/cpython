@@ -1904,7 +1904,7 @@ The following API is deprecated.
       :c:func:`PyUnicode_READY` is necessary.
 
 
-.. _pyobject-new-mutating:
+.. _pyunicode-new-mutating:
 
 Mutating string objects
 """""""""""""""""""""""
@@ -1941,12 +1941,12 @@ Python does not always check these requirements.
 
    On error, set an exception and return ``NULL``.
 
-   See :ref:`pyobject-new-mutating` for important warnings and caveats.
+   See :ref:`pyunicode-new-mutating` for important warnings and caveats.
 
    .. versionadded:: 3.3
 
    .. soft-deprecated:: next
-      See :ref:`pyobject-new-mutating`.
+      See :ref:`pyunicode-new-mutating`.
 
 
 .. c:function:: void PyUnicode_WRITE(int kind, void *data, \
@@ -1964,7 +1964,7 @@ Python does not always check these requirements.
    and is intended for usage in loops.
 
    The owning string must not be "used" yet.
-   See :ref:`pyobject-new-mutating` for details.
+   See :ref:`pyunicode-new-mutating` for details.
 
    .. versionadded:: 3.3
 
@@ -1984,7 +1984,7 @@ Python does not always check these requirements.
    the number of copied characters.
 
    The destination string must not be "used" yet.
-   See :ref:`pyobject-new-mutating` for details.
+   See :ref:`pyunicode-new-mutating` for details.
 
    .. versionadded:: 3.3
 
@@ -2007,7 +2007,7 @@ Python does not always check these requirements.
    string in canonical representation.
 
    *\*unicode* must not be "used" yet.
-   See :ref:`pyobject-new-mutating` for details.
+   See :ref:`pyunicode-new-mutating` for details.
 
    .. soft-deprecated:: next
       Use the :c:type:`PyUnicodeWriter` API instead.
@@ -2026,7 +2026,7 @@ Python does not always check these requirements.
    exception on error.
 
    *unicode* must not be "used" yet.
-   See :ref:`pyobject-new-mutating` for details.
+   See :ref:`pyunicode-new-mutating` for details.
 
    .. versionadded:: 3.3
 
@@ -2046,7 +2046,7 @@ Python does not always check these requirements.
    making them your responsibility.
 
    *unicode* must not be "used" yet.
-   See :ref:`pyobject-new-mutating` for details.
+   See :ref:`pyunicode-new-mutating` for details.
 
    .. versionadded:: 3.3
 
