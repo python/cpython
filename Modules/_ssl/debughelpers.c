@@ -185,6 +185,12 @@ _PySSLContext_set_keylog_filename(PyObject *op, PyObject *arg,
     PySSLContext *self = PySSLContext_CAST(op);
     FILE *fp;
 
+    if (arg == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                     "attribute 'keylog_filename' of '%.100s' objects "
+                     "cannot be deleted", Py_TYPE(op)->tp_name);
+        return -1;
+    }
 #if defined(MS_WINDOWS) && defined(Py_DEBUG)
     PyErr_SetString(PyExc_NotImplementedError,
                     "set_keylog_filename: unavailable on Windows debug build");
