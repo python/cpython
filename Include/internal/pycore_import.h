@@ -44,6 +44,10 @@ extern PyObject * _PyImport_TryLoadLazySubmodule(
     PyObject *module, PyObject *attr_name, int suppress, int *recheck_dict);
 extern int _PyImport_ClearLazySubmodule(
     PyThreadState *tstate, PyObject *name, int bind);
+extern int _PyImport_RegisterLazySubmodules(
+    PyThreadState *tstate, PyObject *name, PyObject *source);
+extern PyObject *_PyImport_GetLazyGroup(
+    PyThreadState *tstate, PyObject *root, PyObject *globals, PyObject *candidate);
 extern PyObject * _PyImport_LazyImportModuleLevelObject(
     PyThreadState *tstate, PyObject *name, PyObject *builtins,
     PyObject *globals, PyObject *locals, PyObject *fromlist, int level);

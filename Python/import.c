@@ -270,9 +270,17 @@ PyObject *
 _PyImport_InitLazyModules(PyInterpreterState *interp)
 {
     assert(LAZY_MODULES(interp) == NULL &&
-           LAZY_PENDING_SUBMODULES(interp) == NULL);
+           LAZY_PENDING_SUBMODULES(interp) == NULL &&
+           interp->imports.lazy_import_groups == NULL);
 
     LAZY_PENDING_SUBMODULES(interp) = PyDict_New();
+    if (LAZY_PENDING_SUBMODULES(interp) == NULL) {
+        return NULL;
+    }
+    interp->imports.lazy_import_groups = PyDict_New();
+    if (interp->imports.lazy_import_groups == NULL) {
+        return NULL;
+    }
     LAZY_MODULES(interp) = PySet_New(0);
     return LAZY_MODULES(interp);
 }
@@ -282,6 +290,7 @@ _PyImport_ClearLazyModules(PyInterpreterState *interp)
 {
     Py_CLEAR(LAZY_MODULES(interp));
     Py_CLEAR(LAZY_PENDING_SUBMODULES(interp));
+    Py_CLEAR(interp->imports.lazy_import_groups);
 }
 
 int
@@ -4144,7 +4153,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
 // Add *name* to `sys.lazy_modules`.
 // Skip the registration if *name* is already imported, and fully initialized.
 // If *existing_mod_p* is not NULL, set it to the already imported object (or
-// NULL if not found), for use by register_lazy_on_parent.
+// NULL if not found), for use by _PyImport_RegisterLazySubmodules.
 static int
 lazy_modules_add(PyThreadState *tstate, PyObject *name,
                  PyObject **existing_mod_p)
@@ -4204,53 +4213,271 @@ ensure_lazy_pending_submodules(PyDictObject *lazy_modules, PyObject *parent)
     return lazy_submodules;
 }
 
+static int lazy_submodule_matches(PyObject *value, void *expected);
+
+static PyObject *
+remove_lazy_group(PyObject *args, PyObject *reference)
+{
+    PyObject *groups = PyTuple_GET_ITEM(args, 0);
+    PyObject *key = PyTuple_GET_ITEM(args, 1);
+    if (_PyDict_DelItemIf(groups, key, lazy_submodule_matches, reference) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+// The index owns only weak references. Public placeholders own the groups.
+PyObject *
+_PyImport_GetLazyGroup(PyThreadState *tstate, PyObject *root,
+                       PyObject *globals, PyObject *candidate)
+{
+    static PyMethodDef remove_group = {
+        "remove_lazy_group", remove_lazy_group, METH_O
+    };
+    PyObject *groups = tstate->interp->imports.lazy_import_groups;
+    PyObject *owner = PyLong_FromVoidPtr(globals);
+    PyObject *key = owner == NULL ? NULL : PyTuple_Pack(2, root, owner);
+    Py_XDECREF(owner);
+    if (key == NULL) {
+        return NULL;
+    }
+    PyObject *args = PyTuple_Pack(2, groups, key);
+    PyObject *callback = args == NULL ? NULL : PyCFunction_New(&remove_group, args);
+    Py_XDECREF(args);
+    PyObject *reference = callback == NULL ? NULL :
+        PyWeakref_NewRef(candidate, callback);
+    Py_XDECREF(callback);
+    PyObject *result = NULL;
+    while (reference != NULL) {
+        PyObject *previous = NULL;
+        int present = PyDict_SetDefaultRef(groups, key, reference, &previous);
+        if (present >= 0 && PyWeakref_GetRef(previous, &result) >= 0 &&
+            result == NULL) {
+            // A dead group's callback may still be waiting to remove its entry.
+            present = _PyDict_ReplaceItemIf(groups, key, previous, reference);
+            if (present > 0) {
+                result = Py_NewRef(candidate);
+            }
+        }
+        Py_XDECREF(previous);
+        if (result != NULL || PyErr_Occurred()) {
+            break;
+        }
+    }
+    Py_XDECREF(reference);
+    Py_DECREF(key);
+    return result;
+}
+
+// Entries contain one declaration per builtins mapping. The first owner and
+// activated declarations are strong; other owners remain weak until resolved.
+static PyObject *
+lazy_source_get(PyObject *reference)
+{
+    return PyWeakref_CheckRef(reference) ? _PyWeakref_GET_REF(reference) :
+                                         Py_NewRef(reference);
+}
+
+static Py_ssize_t
+lazy_sources_size(PyObject *entry)
+{
+    return entry == NULL || entry == Py_None ? 0 :
+        (PyTuple_CheckExact(entry) ? PyTuple_GET_SIZE(entry) : 1);
+}
+
+static PyObject *
+lazy_sources_item(PyObject *entry, Py_ssize_t index)
+{
+    return PyTuple_CheckExact(entry) ? PyTuple_GET_ITEM(entry, index) : entry;
+}
+
+static int
+lazy_sources_append(PyObject *sources, PyObject *reference)
+{
+    PyObject *source = lazy_source_get(reference);
+    if (source == NULL) {
+        return 0;
+    }
+    PyObject *owner = _PyLazyImport_GetBuiltins(source);
+    for (Py_ssize_t i = 0; i < PyList_GET_SIZE(sources); i++) {
+        PyObject *old_ref = PyList_GET_ITEM(sources, i);
+        PyObject *old = lazy_source_get(old_ref);
+        if (old == NULL) {
+            if (PySequence_DelItem(sources, i--) < 0) {
+                Py_DECREF(source);
+                return -1;
+            }
+            continue;
+        }
+        int matches = _PyLazyImport_GetBuiltins(old) == owner;
+        Py_DECREF(old);
+        if (matches) {
+            PyObject *replacement = !PyWeakref_CheckRef(old_ref) ||
+                !PyWeakref_CheckRef(reference) ? source : reference;
+            int err = PyList_SetItem(sources, i, Py_NewRef(replacement));
+            Py_DECREF(source);
+            return err;
+        }
+    }
+    int err = PyList_Append(sources,
+        PyList_GET_SIZE(sources) == 0 ? source : reference);
+    Py_DECREF(source);
+    return err;
+}
+
+static PyObject *
+merge_lazy_sources(PyObject *older, PyObject *newer)
+{
+    Py_ssize_t count = lazy_sources_size(older);
+    PyObject *sources = PyList_New(count);
+    if (sources == NULL) {
+        return NULL;
+    }
+    for (Py_ssize_t i = 0; i < count; i++) {
+        PyList_SET_ITEM(sources, i, Py_NewRef(lazy_sources_item(older, i)));
+    }
+    for (Py_ssize_t i = 0; i < lazy_sources_size(newer); i++) {
+        if (lazy_sources_append(sources, lazy_sources_item(newer, i)) < 0) {
+            Py_DECREF(sources);
+            return NULL;
+        }
+    }
+    Py_ssize_t size = PyList_GET_SIZE(sources);
+    PyObject *result = size == 0 ? Py_NewRef(Py_None) :
+        (size == 1 ? Py_NewRef(PyList_GET_ITEM(sources, 0)) : PyList_AsTuple(sources));
+    Py_DECREF(sources);
+    return result;
+}
+
+// Build outside the registry lock; finalizers can register more declarations.
+// Restore older snapshots without replacing declarations made by a callback.
+static int
+update_lazy_sources(PyObject *pending, PyObject *child, PyObject *source,
+                    int restore)
+{
+    for (;;) {
+        PyObject *previous = NULL;
+        if (PyDict_GetItemRef(pending, child, &previous) < 0) {
+            return -1;
+        }
+        if (previous == source) {
+            Py_DECREF(previous);
+            return 0;
+        }
+        PyObject *merged = restore ? merge_lazy_sources(source, previous) :
+                                    merge_lazy_sources(previous, source);
+        if (merged == NULL) {
+            Py_XDECREF(previous);
+            return -1;
+        }
+        int replaced;
+        if (previous == NULL) {
+            int present = PyDict_SetDefaultRef(pending, child, merged, NULL);
+            replaced = present < 0 ? -1 : !present;
+        }
+        else {
+            replaced = _PyDict_ReplaceItemIf(pending, child, previous, merged);
+        }
+        Py_XDECREF(previous);
+        Py_DECREF(merged);
+        if (replaced != 0) {
+            return replaced < 0 ? -1 : 0;
+        }
+    }
+}
+
+// A helper without its own declaration uses the first live owner's declaration.
+static PyObject *
+select_lazy_source(PyObject *entry, PyObject *builtins)
+{
+    PyObject *fallback = NULL;
+    for (Py_ssize_t i = 0; i < lazy_sources_size(entry); i++) {
+        PyObject *source = lazy_source_get(lazy_sources_item(entry, i));
+        if (source == NULL) {
+            continue;
+        }
+        if (_PyLazyImport_GetBuiltins(source) == builtins) {
+            Py_XDECREF(fallback);
+            return source;
+        }
+        if (fallback == NULL) {
+            fallback = source;
+        }
+        else {
+            Py_DECREF(source);
+        }
+    }
+    return fallback == NULL ? Py_NewRef(Py_None) : fallback;
+}
+
 // Records all parent-child relationships in lazy_pending_submodules
 // for a lazily imported module name. When a parent module's attribute
 // is accessed, _Py_module_getattro_impl will check lazy_pending_submodules
 // and trigger the import.
-static int
-register_lazy_on_parent(PyThreadState *tstate, PyObject *name, PyObject *source)
+int
+_PyImport_RegisterLazySubmodules(PyThreadState *tstate, PyObject *name,
+                               PyObject *source)
 {
     PyDictObject *pending =
         (PyDictObject *)LAZY_PENDING_SUBMODULES(tstate->interp);
     assert(pending != NULL);
+    PyObject *reference = source == Py_None || _PyLazyImport_IsActive(source) ?
+        Py_NewRef(source) : PyWeakref_NewRef(source, NULL);
+    if (reference == NULL) {
+        return -1;
+    }
+    int err = 0;
     Py_ssize_t end = PyUnicode_GET_LENGTH(name);
     while (true) {
         Py_ssize_t dot = PyUnicode_FindChar(name, '.', 0, end, -1);
         if (dot < 0) {
-            return dot == -1 ? 0 : -1;
+            err = dot == -1 ? 0 : -1;
+            break;
         }
         PyObject *parent = PyUnicode_Substring(name, 0, dot);
         if (parent == NULL) {
-            return -1;
+            err = -1;
+            break;
         }
         PyObject *child = PyUnicode_Substring(name, dot + 1, end);
         if (child == NULL) {
             Py_DECREF(parent);
-            return -1;
+            err = -1;
+            break;
         }
 
         PyObject *submodules = ensure_lazy_pending_submodules(pending, parent);
-        Py_DECREF(parent);
         PyObject *fullname = PyUnicode_Substring(name, 0, end);
         PyObject *cached = fullname == NULL ? NULL :
             import_get_module(tstate, fullname);
-        Py_XDECREF(fullname);
-        PyObject *value = cached != NULL && cached != Py_None ? Py_None : source;
-        int err = -1;
-        if (submodules != NULL && !PyErr_Occurred()) {
-            err = source == Py_None ?
+        PyObject *module = cached != NULL && cached != Py_None ?
+            import_get_module(tstate, parent) : NULL;
+        int bound = module != NULL && PyModule_Check(module) ?
+            PyDict_Contains(_PyModule_GetDict(module), child) : 0;
+        PyObject *value = bound > 0 ? Py_None : reference;
+        err = -1;
+        if (submodules != NULL && bound >= 0 && !PyErr_Occurred()) {
+            err = value == Py_None ?
                 PyDict_SetDefaultRef(submodules, child, value, NULL) :
-                PyDict_SetItem(submodules, child, value);
+                update_lazy_sources(submodules, child, value, 0);
+            if (err >= 0 && bound > 0 &&
+                source != Py_None && _PyLazyImport_IsActive(source)) {
+                err = _PyImport_ClearLazySubmodule(tstate, fullname, 0);
+            }
         }
+        Py_XDECREF(module);
         Py_XDECREF(cached);
+        Py_XDECREF(fullname);
+        Py_DECREF(parent);
         Py_DECREF(child);
         Py_XDECREF(submodules);
         if (err < 0) {
-            return -1;
+            break;
         }
         end = dot;
     }
+    Py_DECREF(reference);
+    return err < 0 ? -1 : 0;
 }
 
 static int
@@ -4274,7 +4501,7 @@ register_from_lazy_on_parent(PyThreadState *tstate, PyObject *existing_module,
 
     rc = lazy_modules_add(tstate, fromname, NULL);
     if (rc == 0) {
-        rc = register_lazy_on_parent(tstate, fromname, Py_None);
+        rc = _PyImport_RegisterLazySubmodules(tstate, fromname, Py_None);
     }
     Py_DECREF(fromname);
     return rc;
@@ -4367,11 +4594,15 @@ _PyImport_TryLoadLazySubmodule(PyObject *module, PyObject *attr_name,
     if (PyDict_GetItemRef(mod_dict, &_Py_ID(__name__), &mod_name) <= 0) {
         return NULL;
     }
-    PyObject *mod = NULL, *pending_set = NULL, *source = NULL;
-    if (!PyUnicode_Check(mod_name)) {
+    PyObject *mod = NULL, *pending_set = NULL, *source = NULL, *entry = NULL;
+    PyObject *import_func = NULL, *key = NULL, *full_name = NULL;
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyThreadStateImpl *ts = (_PyThreadStateImpl *)tstate;
+    int custom = 0, resolving = 0;
+    attr_name = PyUnicode_FromObject(attr_name);
+    if (attr_name == NULL || !PyUnicode_Check(mod_name)) {
         goto done;
     }
-    PyThreadState *tstate = _PyThreadState_GET();
     PyObject *lazy_pending = LAZY_PENDING_SUBMODULES(tstate->interp);
     if (lazy_pending == NULL ||
         PyDict_GetItemRef(lazy_pending, mod_name, &pending_set) <= 0) {
@@ -4379,18 +4610,74 @@ _PyImport_TryLoadLazySubmodule(PyObject *module, PyObject *attr_name,
     }
 
     *recheck_dict = 1;
-    if (PyDict_GetItemRef(pending_set, attr_name, &source) <= 0) {
+    if (PyDict_GetItemRef(pending_set, attr_name, &entry) <= 0) {
         goto done;
     }
-    PyObject *full_name = PyUnicode_FromFormat("%U.%U", mod_name, attr_name);
+    source = select_lazy_source(entry, _PyEval_GetBuiltins(tstate));
+    full_name = PyUnicode_FromFormat("%U.%U", mod_name, attr_name);
     if (full_name == NULL) {
         goto done;
     }
+    if (source == Py_None && ts->lazy_imports != NULL) {
+        PyObject *active;
+        Py_hash_t hash;
+        Py_ssize_t pos = 0;
+        while (_PySet_NextEntry(ts->lazy_imports, &pos, &active, &hash)) {
+            if (PyTuple_CheckExact(active) && PyTuple_GET_SIZE(active) == 2 &&
+                PyUnicode_CheckExact(PyTuple_GET_ITEM(active, 1)) &&
+                PyUnicode_Compare(PyTuple_GET_ITEM(active, 1), full_name) == 0) {
+                mod = PyImport_GetModule(full_name);
+                if (mod == Py_None) {
+                    Py_CLEAR(mod);
+                }
+                goto done;
+            }
+        }
+    }
+    if (source != Py_None) {
+        // Guard before reading __import__: custom builtins can reenter here.
+        PyObject *builtins = _PyLazyImport_GetBuiltins(source);
+        PyObject *owner = PyLong_FromVoidPtr(builtins);
+        key = owner == NULL ? NULL : PyTuple_Pack(2, owner, full_name);
+        Py_XDECREF(owner);
+        if (key == NULL) {
+            goto done;
+        }
+        int active = ts->lazy_imports == NULL ? 0 : PySet_Contains(ts->lazy_imports, key);
+        if (active != 0) {
+            if (active > 0) {
+                mod = PyImport_GetModule(full_name);
+                if (mod == Py_None) {
+                    Py_CLEAR(mod);
+                }
+            }
+            goto done;
+        }
+        if (ts->lazy_imports == NULL) {
+            ts->lazy_imports = PySet_New(NULL);
+            if (ts->lazy_imports == NULL) {
+                goto done;
+            }
+        }
+        resolving = 1;
+        if (PySet_Add(ts->lazy_imports, key) < 0) {
+            goto done;
+        }
+        if (PyMapping_GetOptionalItem(builtins, &_Py_ID(__import__),
+                                      &import_func) < 0) {
+            goto done;
+        }
+        if (import_func == NULL) {
+            PyErr_SetString(PyExc_ImportError, "__import__ not found");
+            goto done;
+        }
+        custom = !_PyImport_IsDefaultImportFunc(tstate->interp, import_func);
+    }
     // Match eager from-imports: accept a partial module in an import cycle.
-    if (source != Py_None && !suppress &&
+    if (source != Py_None && (custom || (!suppress &&
         (_PyLazyImport_IsActive(source) ||
-         !PyDict_Contains(mod_dict, &_Py_ID(__getattr__)))) {
-        mod = _PyLazyImport_LoadChild(tstate, source, full_name);
+         !PyDict_Contains(mod_dict, &_Py_ID(__getattr__)))))) {
+        mod = _PyLazyImport_LoadChild(tstate, source, full_name, import_func);
     }
     else {
         mod = PyImport_GetModule(full_name);
@@ -4406,13 +4693,33 @@ _PyImport_TryLoadLazySubmodule(PyObject *module, PyObject *attr_name,
         if (loaded != NULL && loaded != Py_None) {
             (void)_PyDict_DelItemIf(mod_dict, attr_name,
                                   lazy_submodule_matches, loaded);
-            (void)PyDict_SetDefaultRef(pending_set, attr_name, source, NULL);
         }
+        (void)update_lazy_sources(pending_set, attr_name, entry, 1);
         Py_XDECREF(loaded);
         PyErr_SetRaisedException(exc);
         remove_importlib_frames(tstate);
     }
     /* Keep missing children pending: a finder may provide them later. */
+    else if (custom) {
+        // Hooks own their assignments. An unpublished result must not replace
+        // the shared package attribute or consume another owner's declaration.
+        PyObject *completed = NULL;
+        int err = PyDict_GetItemRef(pending_set, attr_name, &completed);
+        if (err >= 0) {
+            err = PyDict_Contains(mod_dict, attr_name);
+            if (err == 0) {
+                err = update_lazy_sources(pending_set, attr_name, entry, 1);
+            }
+            else if (err > 0 && completed != NULL) {
+                err = _PyDict_DelItemIf(pending_set, attr_name,
+                                      lazy_submodule_matches, completed);
+            }
+        }
+        Py_XDECREF(completed);
+        if (err < 0) {
+            Py_CLEAR(mod);
+        }
+    }
     else {
         PyObject *spec = NULL;
         int rc = mod == Py_None ? 0 :
@@ -4430,9 +4737,18 @@ _PyImport_TryLoadLazySubmodule(PyObject *module, PyObject *attr_name,
             Py_CLEAR(mod);
         }
     }
-    Py_DECREF(full_name);
-
 done:
+    if (resolving && PySet_Discard(ts->lazy_imports, key) < 0) {
+        Py_CLEAR(mod);
+    }
+    if (resolving && PySet_GET_SIZE(ts->lazy_imports) == 0) {
+        (void)PySet_Clear(ts->lazy_imports);
+    }
+    Py_XDECREF(full_name);
+    Py_XDECREF(key);
+    Py_XDECREF(import_func);
+    Py_XDECREF(entry);
+    Py_XDECREF(attr_name);
     Py_XDECREF(source);
     Py_XDECREF(pending_set);
     Py_DECREF(mod_name);
@@ -4549,9 +4865,10 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
             }
         }
     }
-    else if (register_lazy_on_parent(tstate, abs_name, res) < 0) {
+    else if (_PyImport_RegisterLazySubmodules(tstate, abs_name, res) < 0) {
         goto error;
     }
+    Py_SETREF(res, _PyLazyImport_Group(tstate, res, globals));
 
     goto done;
 error:
@@ -4771,6 +5088,7 @@ _PyImport_ClearCore(PyInterpreterState *interp)
     Py_CLEAR(IMPORT_FUNC(interp));
     Py_CLEAR(LAZY_IMPORT_FUNC(interp));
     Py_CLEAR(interp->imports.lazy_pending_submodules);
+    Py_CLEAR(interp->imports.lazy_import_groups);
     Py_CLEAR(interp->imports.lazy_modules);
     Py_CLEAR(interp->imports.lazy_imports_filter);
 }

@@ -19,7 +19,13 @@ PyAPI_FUNC(PyObject *) _PyLazyImport_New(
     PyObject *name, PyObject *fromlist);
 
 extern PyObject *_PyLazyImport_LoadChild(
-    PyThreadState *tstate, PyObject *declaration, PyObject *name);
+    PyThreadState *tstate, PyObject *declaration, PyObject *name,
+    PyObject *import_func);
+// Borrowed references from the original import declaration.
+extern PyObject *_PyLazyImport_GetBuiltins(PyObject *declaration);
+// Share declaration ownership with plain imports in the same namespace.
+extern PyObject *_PyLazyImport_Group(
+    PyThreadState *tstate, PyObject *source, PyObject *globals);
 extern int _PyLazyImport_IsActive(PyObject *declaration);
 
 extern int _PyLazyImport_IsResolving(PyThreadState *tstate, PyObject *op);
