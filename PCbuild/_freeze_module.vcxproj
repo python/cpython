@@ -474,18 +474,13 @@
       <GIT Condition="$(GIT) == ''">git</GIT>
       <_GIT>$(GIT)</_GIT>
     </PropertyGroup>
-    <Message Text="Getting compiler version string" Importance="high" />
-    <MakeDir Directories="$(IntDir)" Condition="!Exists($(IntDir))" />
-    <Exec Command='"$(GetCompilerExe)"  &gt; &quot;$(IntDir)compiler.txt&quot;' ContinueOnError="true" />
     <PropertyGroup>
-      <Compiler Condition="Exists('$(IntDir)compiler.txt')">$([System.IO.File]::ReadAllText('$(IntDir)compiler.txt').Trim())</Compiler>
-
       <FreeThreading Condition="$(DisableGil) == 'true'">1</FreeThreading>
       <FreeThreading Condition="$(DisableGil) != 'true'">0</FreeThreading>
     </PropertyGroup>
 
     <Message Text="Run generate_getbuildinfo.py" Importance="high" />
-    <Exec Command='$(PythonForBuild) Tools\build\generate_getbuildinfo.py --platform=win32 --git-program="$(_GIT)" --compiler="$(Compiler)" --free-threading=$(FreeThreading)'
+    <Exec Command='$(PythonForBuild) Tools\build\generate_getbuildinfo.py --platform=win32 --git-program="$(_GIT)" --getcompiler-program="$(GetCompilerExe)" --free-threading=$(FreeThreading)'
           WorkingDirectory="$(PySourcePath)" />
   </Target>
   <Target Name="_RebuildFrozen" AfterTargets="AfterBuild" Condition="$(Configuration) != 'PGUpdate'">

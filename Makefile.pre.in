@@ -1870,6 +1870,7 @@ Modules/getbuildinfo.h: $(srcdir)/Tools/build/generate_getbuildinfo.py Programs/
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/build/generate_getbuildinfo.py \
 		-o $@ \
 		--platform="$(MACHDEP)" \
+		--getcompiler-program="Programs/_getcompiler" \
 		--git-version="`LC_ALL=C $(GITVERSION)`" \
 		--git-tag="`LC_ALL=C $(GITTAG)`" \
 		--git-branch="`LC_ALL=C $(GITBRANCH)`"

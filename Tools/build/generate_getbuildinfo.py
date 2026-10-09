@@ -10,6 +10,8 @@ import sys
 import sysconfig
 import time
 
+
+MS_WINDOWS = (sys.platform == 'win32')
 SRC_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 SCRIPT_NAME = os.path.basename(__file__)
 SCRIPT_FULLNAME = f'Tools/build/{SCRIPT_NAME}'
@@ -125,6 +127,7 @@ def parse_args():
     parser.add_argument('--git-version', type=str)
     parser.add_argument('--git-tag', type=str)
     parser.add_argument('--git-branch', type=str)
+    parser.add_argument('--getcompiler-program', type=str)
     parser.add_argument('--compiler', type=str)
     parser.add_argument('--free-threading', type=int)
     return parser.parse_args()
@@ -155,10 +158,14 @@ def run_command(cmd, *, check=True):
     return proc.stdout.rstrip()
 
 
-def _get_compiler():
+def _get_compiler(getcompiler):
     # Run _getcompiler program
-    getcompiler = os.path.join('Programs', '_getcompiler')
-    HOSTRUNNER = get_hostrunner()
+    if not getcompiler:
+        getcompiler = os.path.join('Programs', '_getcompiler')
+    if not MS_WINDOWS:
+        HOSTRUNNER = get_hostrunner()
+    else:
+        HOSTRUNNER = None
     if HOSTRUNNER:
         # Cross-compilation
         runner = shlex.split(HOSTRUNNER)[0]
@@ -167,6 +174,9 @@ def _get_compiler():
         compiler = run_command([getcompiler], check=False)
     if compiler:
         return compiler
+
+    if MS_WINDOWS:
+        return None
 
     # Running _getcompiler failed, run the compiler with --version
     CC = get_makefile_cc()
@@ -206,9 +216,9 @@ def compact_compiler(compiler):
     return compiler
 
 
-def get_compiler(compiler):
+def get_compiler(compiler, getcompiler_program):
     if not compiler:
-        compiler = _get_compiler()
+        compiler = _get_compiler(getcompiler_program)
     if not compiler:
         # Default compiler name when everything else failed
         # (see Programs/_getcompiler.c)
@@ -254,7 +264,7 @@ def main():
     if not platform:
         platform = "unknown"
 
-    compiler = get_compiler(args.compiler)
+    compiler = get_compiler(args.compiler, args.getcompiler_program)
 
     build_info, git_id = get_build_info(git_tag, git_branch, git_version)
 
