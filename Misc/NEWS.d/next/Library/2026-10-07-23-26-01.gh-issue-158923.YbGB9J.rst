@@ -1,0 +1,3 @@
+Fix a crash when exporting a buffer from the object behind a
+:class:`memoryview` shared with another interpreter via
+:mod:`concurrent.interpreters`. Patch by Christian Aurich Zanettini Martins.
