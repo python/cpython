@@ -217,7 +217,12 @@ class EagerTaskFactoryLoopTests:
         # See https://github.com/python/cpython/issues/124309
 
         async def fail():
-            await asyncio.sleep(0)
+            # Fail without suspending first.  staggered_race() awaits the
+            # coroutines inline and cancels every one of them that has not
+            # finished once another one wins, so a coroutine that yields before
+            # raising may be cancelled instead, and excs[2] would report a
+            # CancelledError.  Raising right away keeps the outcome
+            # independent of how busy the event loop is.
             raise ValueError("no good")
 
         async def blocked():
