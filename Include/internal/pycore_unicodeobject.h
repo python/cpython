@@ -109,7 +109,8 @@ _PyUnicode_EnsureUnicode(PyObject *obj)
     return 0;
 }
 
-static inline char* _PyUnicode_UTF8(PyObject *op)
+static inline char*
+_PyUnicode_UTF8(PyObject *op)
 {
     return FT_ATOMIC_LOAD_PTR_ACQUIRE(_PyCompactUnicodeObject_CAST(op)->utf8);
 }
