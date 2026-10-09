@@ -1,0 +1,1 @@
+Fix handling of the ``#HttpOnly_`` prefix in :class:`http.cookiejar.MozillaCookieJar`.
