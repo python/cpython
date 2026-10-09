@@ -3102,6 +3102,7 @@ class CTask_CFuture_Tests(BaseTaskTests, SetMethodsTest,
         loop = self.loop
         task = None
         var = contextvars.ContextVar('var')
+        # Avoid recreating the thread state's context after it is cleared.
         task_context = contextvars.Context()
 
         async def noop():
@@ -3113,11 +3114,15 @@ class CTask_CFuture_Tests(BaseTaskTests, SetMethodsTest,
                 task = loop.create_task(noop(), context=task_context)
 
         def create_finalizer():
+            # gh-159041: Run the finalizer when PyThreadState_Clear()
+            # clears the thread's context.
             var.set(CreatesTaskOnClear())
 
+        # threading.Thread owns its Context, so use _thread to make the
+        # Context lifetime match the thread state's lifetime.
         handle = _thread.start_joinable_thread(create_finalizer)
         handle.join(support.SHORT_TIMEOUT)
-        self.assertTrue(handle.is_done())
+        self.assertTrue(handle.is_done(), 'thread failed to exit')
         self.assertIsNotNone(task)
 
         try:
