@@ -1248,7 +1248,6 @@ void
 _PyUnicode_Dump(PyObject *op)
 {
     PyASCIIObject *ascii = _PyASCIIObject_CAST(op);
-    const void *data = PyUnicode_DATA(op);
 
     printf("%s: len=%zu", unicode_kind_name(op), ascii->length);
 
