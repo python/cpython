@@ -18,9 +18,9 @@ wheels = [{ url = "https://files.pythonhosted.org/packages/77/f5/21d2de20e8b8b04
 
 [[packages]]
 name = "blurb"
-version = "2.1.0"
-sdist = { url = "https://files.pythonhosted.org/packages/5b/9e/f38cff22d0e00f0ae5bb67bc57dbf3b6bfc9d61933b6451744568b90be7d/blurb-2.1.0.tar.gz", upload-time = 2026-08-27T15:32:29Z, size = 28097, hashes = { sha256 = "0154689a5aa009174b5e332a6997318e82e1b12b57fce03162ed49ea25c65652" } }
-wheels = [{ url = "https://files.pythonhosted.org/packages/01/f4/f4b0958ee24cd7355a4edccf6dbb5c76329544aa25eadb21963838e1e2c9/blurb-2.1.0-py3-none-any.whl", upload-time = 2026-08-27T15:32:28Z, size = 22980, hashes = { sha256 = "dfc96f59f2431a245df96f601df5b7b9a96e39e6887430046fa774fb61c910bb" } }]
+version = "2.2.0"
+sdist = { url = "https://files.pythonhosted.org/packages/0a/79/1e78c8d116720d85783c9dbc628b576e888c57d4b5e6a562451098d494fc/blurb-2.2.0.tar.gz", upload-time = 2026-10-09T10:48:19Z, size = 28063, hashes = { sha256 = "9ce54639a3a319e15dc7abbd2974cfa6817c27d9a5ba7d60c0851f53616e8391" } }
+wheels = [{ url = "https://files.pythonhosted.org/packages/98/f2/1862e5f4f4c681ee7e3427fdc54bf698a3991e3ef98d7ef607acc1a10b3c/blurb-2.2.0-py3-none-any.whl", upload-time = 2026-10-09T10:48:17Z, size = 22868, hashes = { sha256 = "d6b329c9cdfbb5abe18b28c095ff64f59078cfaf43318f59b7db7a1e9075791d" } }]
 
 [[packages]]
 name = "certifi"
