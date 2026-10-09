@@ -71,7 +71,8 @@ __all__ = [
     "BrokenIter",
     "in_systemd_nspawn_sync_suppressed",
     "run_no_yield_async_fn", "run_yielding_async_fn", "async_yield",
-    "reset_code", "on_github_actions"
+    "reset_code", "on_github_actions",
+    "requires_root_user", "requires_non_root_user",
     ]
 
 
@@ -3376,3 +3377,7 @@ def skip_on_low_desktop_heap_memory_subprocess(returncode):
     if returncode == STATUS_DLL_INIT_FAILED:
         raise unittest.SkipTest('gh-150436: DLL init failed, likely because '
                                 'of low desktop heap memory')
+
+_ROOT_IN_POSIX = hasattr(os, 'geteuid') and os.geteuid() == 0
+requires_root_user = unittest.skipUnless(_ROOT_IN_POSIX, "test needs root privilege")
+requires_non_root_user = unittest.skipIf(_ROOT_IN_POSIX, "test needs non-root account")
