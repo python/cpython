@@ -18,7 +18,7 @@
 
   <ItemDefinitionGroup>
     <FreezeProjects>
-      <Platform>$(PreferredToolArchitecture)</Platform>
+      <Platform>$(Platform)</Platform>
       <Configuration>$(Configuration)</Configuration>
       <Configuration Condition="$(Configuration) == 'PGInstrument'">Release</Configuration>
       <Properties></Properties>

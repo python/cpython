@@ -100,7 +100,6 @@
       <PreprocessorDefinitions>PY_ICON;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>pathcch.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>
@@ -108,7 +107,7 @@
     <ClCompile Include="..\Programs\_getcompiler.c" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="..\PC\python_exe.rc" />
+    <ResourceCompile Include="..\PC\python_nt.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
