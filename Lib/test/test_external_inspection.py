@@ -2253,6 +2253,139 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                   location.col_offset, location.end_col_offset)
         self.assertIn(actual, valid_locations)
 
+    @skip_if_not_supported
+    @unittest.skipIf(sys._is_gil_enabled(), "Requires free-threading")
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Requires process_vm_readv",
+    )
+    def test_tlbc_cache_refresh_after_growth(self):
+        # Reproducer from gh-157660.
+        script = textwrap.dedent("""\
+            import os, threading
+            from _remote_debugging import RemoteUnwinder
+            from _queue import SimpleQueue
+            from test import support
+
+            go = threading.Lock()
+            stop = threading.Lock()
+            go.acquire()
+            stop.acquire()
+            ready = SimpleQueue()
+
+            def leaf():
+                ready.put(None)
+                stop.acquire()
+
+            def start_leaf():
+                ready.put(None)
+                go.acquire()
+                leaf()
+
+            def park():
+                ready.put(None)
+                stop.acquire()
+
+            def leaf_count(u):
+                return sum(
+                    f.funcname == "leaf"
+                    for i in u.get_stack_trace()
+                    for t in i.threads for f in t.frame_info
+                )
+
+            # SimpleQueue.put() and Lock.acquire() do not push Python frames.
+            # Once notified, the worker's stack stays stable until go is released.
+            threading.Thread(target=leaf, daemon=True).start()
+            ready.get(timeout=support.SHORT_TIMEOUT)
+            for _ in range(16):
+                threading.Thread(target=park, daemon=True).start()
+                ready.get(timeout=support.SHORT_TIMEOUT)
+            threading.Thread(target=start_leaf, daemon=True).start()
+            ready.get(timeout=support.SHORT_TIMEOUT)
+
+            u = RemoteUnwinder(os.getpid(), all_threads=True, cache_frames=False)
+            assert leaf_count(u) == 1
+            go.release()
+            ready.get(timeout=support.SHORT_TIMEOUT)
+            assert leaf_count(u) == 2
+            """)
+        result = subprocess.run(
+            [sys.executable, "-X", "gil=0", "-X", "tlbc=1", "-c", script],
+            capture_output=True,
+            text=True,
+            timeout=SHORT_TIMEOUT,
+        )
+        self.assertEqual(
+            result.returncode, 0,
+            f"stdout: {result.stdout}\nstderr: {result.stderr}",
+        )
+
+    @skip_if_not_supported
+    @unittest.skipIf(sys._is_gil_enabled(), "Requires free-threading")
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Requires process_vm_readv",
+    )
+    def test_tlbc_cache_refresh_after_slot_fill(self):
+        # Reproducer from gh-157660.
+        script = textwrap.dedent("""\
+            import os, threading
+            from _remote_debugging import RemoteUnwinder
+            from _queue import SimpleQueue
+
+            go = threading.Lock()
+            stop = threading.Lock()
+            go.acquire()
+            stop.acquire()
+            ready = SimpleQueue()
+
+            def leaf():
+                ready.put(None)
+                stop.acquire()
+
+            def start_leaf():
+                ready.put(None)
+                go.acquire()
+                leaf()
+
+            from test import support
+
+            def lines(u):
+                return sorted(
+                    f.location.lineno
+                    for i in u.get_stack_trace()
+                    for t in i.threads for f in t.frame_info
+                    if f.funcname == "leaf"
+                )
+
+            # SimpleQueue.put() and Lock.acquire() do not push Python frames.
+            # Once notified, the worker's stack stays stable until go is released.
+            threading.Thread(target=leaf, daemon=True).start()
+            ready.get(timeout=support.SHORT_TIMEOUT)
+            threading.Thread(target=start_leaf, daemon=True).start()
+            ready.get(timeout=support.SHORT_TIMEOUT)
+            u = RemoteUnwinder(os.getpid(), all_threads=True, cache_frames=False)
+            before = lines(u)
+            # The notification can be observed before put() returns, so either
+            # line in leaf() is a valid sample.
+            assert before in ([12], [13]), before
+            go.release()
+            ready.get(timeout=support.SHORT_TIMEOUT)
+            cached = lines(u)
+            assert len(cached) == 2, cached
+            assert all(line in (12, 13) for line in cached), cached
+            """)
+        result = subprocess.run(
+            [sys.executable, "-X", "gil=0", "-X", "tlbc=1", "-c", script],
+            capture_output=True,
+            text=True,
+            timeout=SHORT_TIMEOUT,
+        )
+        self.assertEqual(
+            result.returncode, 0,
+            f"stdout: {result.stdout}\nstderr: {result.stderr}",
+        )
+
 
 class TestUnsupportedPlatformHandling(unittest.TestCase):
     @unittest.skipIf(
