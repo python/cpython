@@ -5665,7 +5665,8 @@ class VectorcallFunctionalTest(unittest.TestCase):
             return cls, partial(cls.__init__, cls(1))
 
         entry_points = [
-            through_new(enumerate),   # the only non-test @vectorcall function
+            through_new(enumerate),
+            through_new(float),
             through_new(ac_tester.VcNew),
             through_new(ac_tester.VcNewBase),
             through_new(ac_tester.VcKwOnly),
