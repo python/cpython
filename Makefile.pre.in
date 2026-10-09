@@ -1439,6 +1439,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_uop.h \
 		$(srcdir)/Include/internal/pycore_uop_ids.h \
 		$(srcdir)/Include/internal/pycore_uop_metadata.h \
+		$(srcdir)/Include/internal/pycore_wasm_trampoline.h \
 		$(srcdir)/Include/internal/pycore_warnings.h \
 		$(srcdir)/Include/internal/pycore_weakref.h \
 		$(DTRACE_HEADERS) \
@@ -3152,13 +3153,6 @@ Python/asm_trampoline_universal2.o: $(srcdir)/Python/asm_trampoline_aarch64.S $(
 		Python/asm_trampoline_x86_64-apple-darwin.o
 	rm -f Python/asm_trampoline_arm64-apple-darwin.o \
 	  Python/asm_trampoline_x86_64-apple-darwin.o
-
-Python/emscripten_trampoline_inner.wasm: $(srcdir)/Python/emscripten_trampoline_inner.c
-	# emcc has a path that ends with emsdk/upstream/emscripten/emcc, we're looking for emsdk/upstream/bin/clang.
-	$$(em-config LLVM_ROOT)/clang -o $@ $< -mgc -O2 -Wl,--no-entry -Wl,--import-table -Wl,--import-memory -target wasm32-unknown-unknown -nostdlib
-
-Python/emscripten_trampoline_wasm.c: Python/emscripten_trampoline_inner.wasm
-	$(PYTHON_FOR_REGEN) $(srcdir)/Platforms/emscripten/prepare_external_wasm.py $< $@ getWasmTrampolineModule
 
 JIT_SHIM_BUILD_OBJS=	@JIT_SHIM_BUILD_O@
 JIT_UNWIND_INFO_H=	$(if $(JIT_OBJS),jit_unwind_info.h $(patsubst jit_stencils-%.h,jit_unwind_info-%.h,@JIT_STENCILS_H@))
