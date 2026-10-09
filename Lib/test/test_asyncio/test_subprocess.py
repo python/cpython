@@ -1170,21 +1170,22 @@ if sys.platform != 'win32':
             # must not mistake this for process termination and attempt to reap
             # the child with waitpid(), which blocks the event loop thread.
             async def run():
-                proc = await asyncio.create_subprocess_exec(*PROGRAM_BLOCKED)
-                try:
-                    proc.send_signal(signal.SIGSTOP)
-                    # Verify event loop remains responsive while child is stopped
-                    for _ in range(3):
-                        await asyncio.sleep(0.05)
-                    self.assertIsNone(proc.returncode)
-                finally:
-                    if hasattr(signal, 'SIGCONT'):
-                        try:
-                            proc.send_signal(signal.SIGCONT)
-                        except ProcessLookupError:
-                            pass
-                    proc.kill()
-                    await proc.wait()
+                async with asyncio.timeout(support.SHORT_TIMEOUT):
+                    proc = await asyncio.create_subprocess_exec(*PROGRAM_BLOCKED)
+                    try:
+                        proc.send_signal(signal.SIGSTOP)
+                        # Verify event loop remains responsive while child is stopped
+                        for _ in range(3):
+                            await asyncio.sleep(0.05)
+                        self.assertIsNone(proc.returncode)
+                    finally:
+                        if hasattr(signal, 'SIGCONT'):
+                            try:
+                                proc.send_signal(signal.SIGCONT)
+                            except ProcessLookupError:
+                                pass
+                        proc.kill()
+                        await proc.wait()
 
             self.loop.run_until_complete(run())
 
