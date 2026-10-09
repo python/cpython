@@ -1989,7 +1989,8 @@ class CAPITest(unittest.TestCase):
                 _PyUnicode_Dump(s)
                 sys.stdout.flush()
         """.encode(), PYTHONIOENCODING='UTF-8')
-        self.assertRegex(proc.out.decode(), textwrap.dedent(r"""
+        stdout = proc.out.decode().replace('\r', '')
+        self.assertRegex(stdout, textwrap.dedent(r"""
             \A
             ASCII parrot\n
             ascii: len=12, data=[^\n]*\n
