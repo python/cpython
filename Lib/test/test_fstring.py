@@ -14,11 +14,13 @@ import os
 import re
 import types
 import decimal
+import subprocess
 import unittest
 import warnings
 from test import support
 from test.support.os_helper import temp_cwd
-from test.support.script_helper import assert_python_failure, assert_python_ok
+from test.support.script_helper import (
+    assert_python_failure, assert_python_ok, spawn_python)
 
 a_global = 'global variable'
 
@@ -617,6 +619,34 @@ except Exception:
                              r"""f'{("x}'""",
                              ])
 
+    def test_unclosed_multiline_replacement_field(self):
+        for prefix in ('f', 't', 'rf', 'rt'):
+            for quote in ('"', "'"):
+                triple = quote * 3
+                cases = (
+                    # The apparent closing quotes open a string in the field.
+                    ('var = "abc"\na = PREFIXQUOTE {var} extern "C" { QUOTE\n'
+                     'b = QUOTE string QUOTE', 2),
+                    # Parentheses and dictionaries inside the field must not
+                    # change which opening brace the diagnostic identifies.
+                    ('a = PREFIXQUOTE{\n(QUOTE', 1),
+                    ('a = PREFIXQUOTE{\n{0: QUOTE', 1),
+                    # Use the innermost format field or formatted string.
+                    ('a = PREFIXQUOTE{0:\n{1\nQUOTE', 2),
+                    ('a = f"{\nPREFIXQUOTE{1\nQUOTE', 2),
+                    # Account for parentheses outside the formatted string.
+                    ('a = (PREFIXQUOTE{1\nQUOTE', 1),
+                )
+                for source, lineno in cases:
+                    source = source.replace('PREFIX', prefix).replace('QUOTE', triple)
+                    with self.subTest(source=source):
+                        with self.assertRaises(SyntaxError) as cm:
+                            compile(source, '<test>', 'exec')
+                        self.assertEqual(
+                            cm.exception.msg,
+                            f"{prefix[-1]}-string: expecting '}}' to close '{{' "
+                            f"on line {lineno}")
+
     @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
     def test_mismatched_parens(self):
         self.assertAllRaise(SyntaxError, r"closing parenthesis '\}' "
@@ -821,6 +851,18 @@ except Exception:
         # Test lots of expressions and constants, concatenated.
         s = "f'{1}' 'x' 'y'" * 1024
         self.assertEqual(eval(s), '1xy' * 1024)
+
+    @support.requires_resource('cpu')
+    def test_many_fstrings_in_module(self):
+        fields = ''.join(f'{{x{i}}}' for i in range(100))
+        source = ''.join(
+            f"value_{i} = f'{fields}'\n" for i in range(1_000)
+        )
+        namespace = {f'x{i}': str(i) for i in range(100)}
+        expected = ''.join(str(i) for i in range(100))
+        exec(source, namespace)
+        self.assertEqual(namespace['value_0'], expected)
+        self.assertEqual(namespace['value_999'], expected)
 
     def test_format_specifier_expressions(self):
         width = 10
@@ -1338,6 +1380,9 @@ except Exception:
         self.assertEqual(f'{3!=4:}', 'True')
         self.assertEqual(f'{3!=4!s}', 'True')
         self.assertEqual(f'{3!=4!s:.3}', 'Tru')
+        a = 3
+        b = 4
+        self.assertEqual(f'{a!=b=:>10}', 'a!=b=         1')
 
     def test_equal_equal(self):
         # Because an expression ending in = has special meaning,
@@ -1791,6 +1836,32 @@ print(f'''{{
             _, stdout, _ = assert_python_ok(script)
         self.assertEqual(stdout.decode('utf-8').strip().replace('\r\n', '\n').replace('\r', '\n'),
                          "3\n=3")
+
+    @support.requires_subprocess()
+    def test_expression_in_interactive_after_buffer_resize(self):
+        expression = "(\n" + (" " * 64 + "\n") * 256 + "1\n)"
+        source = (
+            f"result = f'''{{{expression}=}}'''\n"
+            "print(repr(result))\n"
+        )
+        with spawn_python('-i', '-q', stderr=subprocess.PIPE) as process:
+            stdout, stderr = process.communicate(
+                source.encode(), timeout=support.SHORT_TIMEOUT)
+        self.assertEqual(process.returncode, 0, stderr)
+        self.assertEqual(stdout.decode().strip(), repr(expression + "=1"))
+
+    def test_debug_in_file_after_buffer_resize(self):
+        expression = "(\n" + (" " * 64 + "\n") * 256 + "1\n)"
+        expected = expression + "=1"
+        with temp_cwd():
+            script = 'script.py'
+            source = (
+                f"result = f'''{{{expression}=}}'''\n"
+                f"assert result == {expected!r}\n"
+            )
+            with open(script, 'w') as f:
+                f.write(source)
+            assert_python_ok(script)
 
     def test_syntax_warning_infinite_recursion_in_file(self):
         with temp_cwd():

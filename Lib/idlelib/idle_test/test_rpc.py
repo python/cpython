@@ -1,7 +1,26 @@
 "Test rpc, coverage 20%."
 
 from idlelib import rpc
+import socket
+import struct
 import unittest
+
+
+class SocketIOTest(unittest.TestCase):
+
+    def test_reconnect_discards_partial_packet(self):
+        # gh-89544: RPCClient.accept() reinitializes the SocketIO after
+        # a restart; a partially received packet must not be kept.
+        old_sock, old_peer = socket.socketpair()
+        new_sock, new_peer = socket.socketpair()
+        with old_sock, old_peer, new_sock, new_peer:
+            sockio = rpc.SocketIO(old_sock)
+            old_peer.sendall(struct.pack('<i', 100) + b'x' * 10)
+            self.assertIsNone(sockio.pollpacket(1))
+            sockio.close()
+            rpc.SocketIO.__init__(sockio, new_sock)
+            new_peer.sendall(struct.pack('<i', 3) + b'abc')
+            self.assertEqual(sockio.pollpacket(1), b'abc')
 
 
 
