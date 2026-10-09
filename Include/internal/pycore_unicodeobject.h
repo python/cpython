@@ -115,6 +115,15 @@ _PyUnicode_UTF8(PyObject *op)
     return FT_ATOMIC_LOAD_PTR_ACQUIRE(_PyCompactUnicodeObject_CAST(op)->utf8);
 }
 
+/* true if the Unicode object has an allocated UTF-8 memory block
+   (not shared with other data) */
+static inline int _PyUnicode_HAS_UTF8_MEMORY(PyObject *op)
+{
+    return (!PyUnicode_IS_COMPACT_ASCII(op)
+            && _PyUnicode_UTF8(op) != NULL
+            && _PyUnicode_UTF8(op) != PyUnicode_DATA(op));
+}
+
 #ifndef NDEBUG
 static inline int
 _PyUnicodeWriter_CanWrite(_PyUnicodeWriter *writer)
@@ -132,9 +141,7 @@ _PyUnicodeWriter_CanWrite(_PyUnicodeWriter *writer)
     assert(PyUnstable_Unicode_GET_CACHED_HASH(buffer) == -1);
     assert(!PyUnicode_CHECK_INTERNED(buffer));
     assert(!_Py_IsImmortal(buffer));
-    assert(PyUnicode_IS_COMPACT_ASCII(buffer)
-           || _PyUnicode_UTF8(buffer) == NULL
-           || _PyUnicode_UTF8(buffer) == PyUnicode_DATA(buffer));
+    assert(!_PyUnicode_HAS_UTF8_MEMORY(buffer));
     return 1;
 }
 #endif

@@ -170,15 +170,6 @@ static inline int _PyUnicode_SHARE_UTF8(PyObject *op)
     return (_PyUnicode_UTF8(op) == PyUnicode_DATA(op));
 }
 
-/* true if the Unicode object has an allocated UTF-8 memory block
-   (not shared with other data) */
-static inline int _PyUnicode_HAS_UTF8_MEMORY(PyObject *op)
-{
-    return (!PyUnicode_IS_COMPACT_ASCII(op)
-            && _PyUnicode_UTF8(op) != NULL
-            && _PyUnicode_UTF8(op) != PyUnicode_DATA(op));
-}
-
 
 #define LATIN1 _Py_LATIN1_CHR
 
