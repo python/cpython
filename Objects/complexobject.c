@@ -796,7 +796,10 @@ static PyObject *
 complex_abs(PyObject *op)
 {
     PyComplexObject *v = _PyComplexObject_CAST(op);
-    double result = _Py_c_abs(v->cval);
+    double result;
+
+    errno = 0;
+    result = _Py_c_abs(v->cval);
     if (errno == ERANGE) {
         PyErr_SetString(PyExc_OverflowError,
                         "absolute value too large");

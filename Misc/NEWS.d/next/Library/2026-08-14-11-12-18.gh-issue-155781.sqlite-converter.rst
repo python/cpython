@@ -1,3 +1,0 @@
-Fix a possible crash in free-threaded builds when the :mod:`sqlite3`
-converter registry is modified concurrently while a cursor builds its row
-cast map.

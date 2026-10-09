@@ -146,6 +146,33 @@ class CallStackTestBase:
             'async generator CallStackTestBase.test_stack_async_gen.<locals>.gen()',
             stack_for_gen_nested_call[1])
 
+    async def test_stack_wait_for_non_positive_timeout(self):
+        # gh-157058: wait_for(fut, 0) must still record the waiter
+        cleanup = asyncio.Future()
+
+        async def worker():
+            try:
+                await asyncio.Future()
+            finally:
+                await cleanup
+
+        async def probe(t):
+            await asyncio.wait_for(t, 0)
+
+        t = asyncio.ensure_future(worker())
+        p = asyncio.create_task(probe(t), name='probe')
+        for _ in range(5):
+            await asyncio.sleep(0)
+
+        stack = capture_test_stack(fut=t)
+
+        cleanup.set_result(None)
+        await asyncio.gather(p, t, return_exceptions=True)
+
+        self.assertEqual(stack[0][2], [
+            ['T<probe>', ['a _cancel_and_wait', 'a wait_for', 'a probe'], []],
+        ])
+
     async def test_stack_gather(self):
 
         stack_for_deep = None
@@ -174,6 +201,29 @@ class CallStackTestBase:
                 ['T<anon>', ['a main', 'a test_stack_gather'], []]
             ]
         ])
+
+    async def test_stack_gather_survivor(self):
+        # gh-157213: a child that outlives gather() must not be shown as awaited
+
+        async def fail():
+            raise ValueError
+
+        async def survivor():
+            await asyncio.Future()
+
+        t = asyncio.create_task(survivor(), name='survivor')
+        with self.assertRaises(ValueError):
+            await asyncio.gather(t, fail())
+
+        self.assertEqual(capture_test_stack(fut=t)[0], [
+            'T<survivor>',
+            ['a survivor'],
+            []
+        ])
+
+        t.cancel()
+        with self.assertRaises(asyncio.CancelledError):
+            await t
 
     async def test_stack_shield(self):
 
@@ -424,6 +474,26 @@ class CallStackTestBase:
                 asyncio.print_call_graph(task, file=buf)
                 self.assertEqual(asyncio.capture_call_graph(task).call_stack, ())
                 self.assertIn(f"name={task.get_name()!r}", buf.getvalue())
+
+    async def test_capture_call_graph_generator_keeps_caller_frames(self):
+        # gh-156988: sync gen should not clear the call chain
+        stack = None
+
+        def gen():
+            nonlocal stack
+            graph = asyncio.capture_call_graph()
+            stack = [entry.frame.f_code.co_name for entry in graph.call_stack]
+            yield
+
+        def middle():
+            for _ in gen():
+                pass
+
+        async def main():
+            middle()
+
+        await main()
+        self.assertEqual(stack[:3], ['gen', 'middle', 'main'])
 
 
 @unittest.skipIf(

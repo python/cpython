@@ -80,7 +80,7 @@ Key ideas
   using memoization.
 - If parsing fails completely (no rule succeeds in parsing all the input text), the
   PEG parser doesn't have a concept of "where the
-  [`SyntaxError`](https://docs.python.org/3/library/exceptions.html#SyntaxError) is".
+  [`SyntaxError`](https://docs.python.org/3/builtins/exceptions.html#SyntaxError) is".
 
 
 > [!IMPORTANT]
@@ -654,7 +654,7 @@ is, and it will unwind the stack and report the exception. This means that if a
 [rule action](#grammar-actions) raises an exception, all parsing will
 stop at that exact point. This is done to allow to correctly propagate any
 exception set by calling Python's C API functions. This also includes
-[`SyntaxError`](https://docs.python.org/3/library/exceptions.html#SyntaxError)
+[`SyntaxError`](https://docs.python.org/3/builtins/exceptions.html#SyntaxError)
 exceptions and it is the main mechanism the parser uses to report custom syntax
 error messages.
 
@@ -715,7 +715,7 @@ acts in two phases:
 > When defining invalid rules:
 >
 > - Make sure all custom invalid rules raise
->   [`SyntaxError`](https://docs.python.org/3/library/exceptions.html#SyntaxError)
+>   [`SyntaxError`](https://docs.python.org/3/builtins/exceptions.html#SyntaxError)
 >   exceptions (or a subclass of it).
 > - Make sure **all** invalid rules start with the `invalid_` prefix to not
 >   impact performance of parsing correct Python code.
@@ -823,7 +823,7 @@ $ python -m pegen python <PATH TO YOUR GRAMMAR FILE>
 > Python's grammar (the `Grammar/python.gram` file) is written for the
 > C backend. To experiment, you will need to write a grammar
 > without C-specific parts like actions and the trailer.
-> See [#133560](https://github.com/python/cpython/issues/133560) 
+> See [#133560](https://github.com/python/cpython/issues/133560)
 > and [#96424](https://github.com/python/cpython/issues/96424) for more information.
 
 This will generate a file called `parse.py` in the same directory that you
