@@ -1,0 +1,4 @@
+Add the ``%Nf`` format code (where *N* is from 1 to 6) to
+:meth:`datetime.datetime.strftime`, :meth:`datetime.time.strftime`,
+:meth:`datetime.date.strftime`, :meth:`datetime.datetime.strptime` and
+:meth:`datetime.time.strptime`.
