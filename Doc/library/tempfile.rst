@@ -213,7 +213,7 @@ The module defines the following user-callable items:
       Files outside of the tree may have their permissions and file flags reset.
 
       On systems where :data:`shutil.rmtree.avoids_symlink_attacks` is
-      false, manipulating symbolic links during cleanup
+      false, and on Android, manipulating symbolic links during cleanup
       may cause files outside of the tree to be removed.
 
    .. audit-event:: tempfile.mkdtemp fullpath tempfile.TemporaryDirectory

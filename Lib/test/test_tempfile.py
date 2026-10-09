@@ -2141,6 +2141,9 @@ class TestTemporaryDirectory(BaseTestCase):
         'regression test for supported platforms')
     @unittest.skipIf(support.MS_WINDOWS, 'dirfd not used on Windows')
     @unittest.skipIf(support.is_wasi, 'WASI has no chmod')
+    @unittest.skipIf(
+        sys.platform == "android",
+        "On Android, os.chmod doesn't support dir_fd until API level 23")
     def test_cleanup_safe(self):
         """Verify that cleanup uses the safer code path"""
         # This is a regression test. Feel free to add exceptions for new
