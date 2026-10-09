@@ -76,6 +76,28 @@ class FileCompareTestCase(unittest.TestCase):
         self.assertTrue(len(filecmp._cache) == 0,
                         "Cache not cleared after calling clear_cache")
 
+    def test_cmp_cache_hit(self):
+        filecmp.clear_cache()
+        res1 = filecmp.cmp(self.name, self.name_same)
+        res2 = filecmp.cmp(self.name, self.name_same)
+        self.assertTrue(res1)
+        self.assertEqual(res1, res2)
+
+    def test_cmp_cache_clearing_on_overflow(self):
+        filecmp.clear_cache()
+        fake_sig = (33188, 100, 12345)
+        for i in range(105):
+            filecmp._cache[(f"fake_f1_{i}", f"fake_f2_{i}", fake_sig, fake_sig)] = True
+            
+        self.assertGreater(len(filecmp._cache), 100)
+        
+        # Вот тут должны быть РЕАЛЬНЫЕ файлы из setUp!
+        filecmp.cmp(self.name, self.name_same_shallow, shallow=False)
+        
+        self.assertEqual(len(filecmp._cache), 1)
+
+
+
 class DirCompareTestCase(unittest.TestCase):
     def setUp(self):
         tmpdir = tempfile.gettempdir()
