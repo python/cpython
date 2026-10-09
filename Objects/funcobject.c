@@ -926,12 +926,13 @@ function___annotate___get_impl(PyFunctionObject *self)
 /*[clinic input]
 @critical_section
 @setter
+@deleter
 function.__annotate__
 [clinic start generated code]*/
 
 static int
 function___annotate___set_impl(PyFunctionObject *self, PyObject *value)
-/*[clinic end generated code: output=05b7dfc07ada66cd input=eb6225e358d97448]*/
+/*[clinic end generated code: output=05b7dfc07ada66cd input=4bcfad0bdcfec768]*/
 {
     if (value == NULL) {
         PyErr_SetString(PyExc_TypeError,
@@ -980,12 +981,13 @@ function___annotations___get_impl(PyFunctionObject *self)
 /*[clinic input]
 @critical_section
 @setter
+@deleter
 function.__annotations__
 [clinic start generated code]*/
 
 static int
 function___annotations___set_impl(PyFunctionObject *self, PyObject *value)
-/*[clinic end generated code: output=a61795d4a95eede4 input=5302641f686f0463]*/
+/*[clinic end generated code: output=a61795d4a95eede4 input=71f6a58c00ac6745]*/
 {
     if (value == Py_None)
         value = NULL;
@@ -1025,12 +1027,13 @@ function___type_params___get_impl(PyFunctionObject *self)
 /*[clinic input]
 @critical_section
 @setter
+@deleter
 function.__type_params__
 [clinic start generated code]*/
 
 static int
 function___type_params___set_impl(PyFunctionObject *self, PyObject *value)
-/*[clinic end generated code: output=038b4cda220e56fb input=3862fbd4db2b70e8]*/
+/*[clinic end generated code: output=038b4cda220e56fb input=c0e33abc5901a2f5]*/
 {
     /* Not legal to del f.__type_params__ or to set it to anything
      * other than a tuple object. */

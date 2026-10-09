@@ -47,8 +47,8 @@ The file consists of five required sections and one optional extension:
 |   String Table   |  Variable size
 +------------------+  frame_table_offset
 |   Frame Table    |  Variable size
-+------------------+  file_size - 64 (when stats are present)
-| Profile Stats    |  32 bytes (optional)
++------------------+  file_size - 88 (when stats are present)
+| Profile Stats    |  56 bytes (optional)
 +------------------+  file_size - 32
 |     Footer       |  32 bytes (fixed)
 +------------------+  file_size
@@ -84,14 +84,22 @@ with a single seek to `file_size - 32`, without first reading the header.
 |        |      |         | reserved)                              |
 |   12   |  8   | uint64  | Start timestamp (microseconds)         |
 |   20   |  8   | uint64  | Sample interval (microseconds)         |
-|   28   |  4   | uint32  | Total sample count                     |
-|   32   |  4   | uint32  | Thread count                           |
-|   36   |  8   | uint64  | String table offset                    |
-|   44   |  8   | uint64  | Frame table offset                     |
-|   52   |  4   | uint32  | Compression type (0=none, 1=zstd)      |
-|   56   |  8   | bytes   | Reserved (zero-filled)                 |
+|   28   |  8   | uint64  | Total sample count                     |
+|   36   |  4   | uint32  | Thread count                           |
+|   40   |  8   | uint64  | String table offset                    |
+|   48   |  8   | uint64  | Frame table offset                     |
+|   56   |  4   | uint32  | Compression type (0=none, 1=zstd)      |
+|   60   |  4   | uint32  | Profiling configuration bit field      |
 +--------+------+---------+----------------------------------------+
 ```
+
+The low three configuration bits contain the
+`_remote_debugging.PROFILING_MODE_*` value plus one. Zero means that the mode
+was not recorded, which is also the value in binaries written before this
+field was defined. Bit 3 indicates that capture features are known; when set,
+bits 4 through 8 respectively record `--all-threads`, `--native`, GC frames,
+`--opcodes`, and `--blocking`. Remaining bits are reserved for future capture
+features.
 
 The magic number `0x54414348` ("TACH" for Tachyon) identifies the file format
 and also serves as an **endianness marker**. When read on a system with
@@ -212,6 +220,7 @@ The status byte is a bitfield encoding thread state at sample time:
 |  2  | THREAD_STATUS_UNKNOWN | Thread state could not be determined       |
 |  3  | THREAD_STATUS_GIL_REQUESTED | Thread is waiting to acquire the GIL  |
 |  4  | THREAD_STATUS_HAS_EXCEPTION | Thread has a pending exception         |
+|  5  | THREAD_STATUS_MAIN_THREAD | Thread is the interpreter's main thread |
 
 Multiple flags can be set simultaneously (e.g., a thread can hold the GIL
 while also running on CPU). Analysis tools use these to filter samples or
@@ -567,9 +576,10 @@ one write() call (or feeds through the compression stream).
 ## Future Considerations
 
 The optional profile-statistics block provides an extensible metadata area.
-The 16-byte checksum field in the footer is currently unused. The version
-field allows incompatible changes with graceful rejection. New compression
-types could be added (compression_type > 1).
+The Python-version field retains one reserved byte. The 16-byte checksum
+field in the footer is currently unused. The version field allows
+incompatible changes with graceful rejection. New compression types could
+be added (compression_type > 1).
 
 Any changes that alter the meaning of existing fields or the parsing logic
 should increment the version number to prevent older readers from

@@ -1144,6 +1144,16 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                     tokenizer_mode *the_current_tok = TOK_GET_MODE(tok);
                     if (the_current_tok->quote == quote &&
                         the_current_tok->quote_size == quote_size) {
+                        int level = tok->level - the_current_tok->curly_bracket_depth
+                                    + the_current_tok->curly_bracket_expr_start_depth;
+                        assert(level >= 0 && level < tok->level);
+                        assert(tok->parenstack[level] == '{');
+                        int lineno = tok->parenlinenostack[level];
+                        if (lineno != tok->lineno) {
+                            return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok,
+                                "%c-string: expecting '}' to close '{' on line %d",
+                                TOK_GET_STRING_PREFIX(tok), lineno));
+                        }
                         return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok,
                             "%c-string: expecting '}'", TOK_GET_STRING_PREFIX(tok)));
                     }
@@ -1235,6 +1245,9 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
     {
         int c2 = tok_nextc(tok);
         int current_token = _PyToken_TwoChars(c, c2);
+        if (c == '<' && c2 == '>' && !tok->barry_as_bdfl) {
+            current_token = OP;
+        }
         if (current_token != OP) {
             int c3 = tok_nextc(tok);
             int current_token3 = _PyToken_ThreeChars(c, c2, c3);

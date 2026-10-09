@@ -694,6 +694,8 @@ class ModifiedInterpreter(InteractiveInterpreter):
 
     def runsource(self, source):
         "Extend base class method: Stuff the source in the line cache first"
+        # Remove the highlighting of a previous syntax error (gh-93966).
+        self.tkconsole.text.tag_remove("ERROR", "1.0", "end")
         filename = self.stuffsource(source)
         # at the moment, InteractiveInterpreter expects str
         assert isinstance(source, str)
@@ -730,7 +732,6 @@ class ModifiedInterpreter(InteractiveInterpreter):
         """
         tkconsole = self.tkconsole
         text = tkconsole.text
-        text.tag_remove("ERROR", "1.0", "end")
         type, value, tb = sys.exc_info()
         msg = getattr(value, 'msg', '') or value or "<no detail available>"
         lineno = getattr(value, 'lineno', '') or 1
@@ -852,6 +853,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
 
 
 class PyShell(OutputWindow):
+    is_shell = True
     from idlelib.squeezer import Squeezer
 
     shell_title = "IDLE Shell"
@@ -909,7 +911,6 @@ class PyShell(OutputWindow):
         self.indentwidth = 4
 
         self.sys_ps1 = sys.ps1 if hasattr(sys, 'ps1') else '>>>\n'
-        self.prompt_last_line = self.sys_ps1.split('\n')[-1]
         self.prompt = self.sys_ps1  # Changes when debug active
 
         text = self.text
@@ -1624,6 +1625,12 @@ def main():
     root.withdraw()
     fix_scaling(root)
 
+    # Warn about configuration files that could not be parsed (gh-66172).
+    config_error = idleConf.file_load_error_message()
+    if config_error:
+        messagebox.showwarning('IDLE Configuration Warning', config_error,
+                               parent=root)
+
     # set application icon
     icondir = os.path.join(os.path.dirname(__file__), 'Icons')
     if system() == 'Windows':
@@ -1680,6 +1687,10 @@ def main():
         if filename and os.path.isfile(filename):
             shell.interp.execfile(filename)
     if cmd or script:
+        # Let the startup file finish first: the command or script
+        # is to run after it, in its namespace (gh-68453).
+        while shell.executing:
+            root.update()
         shell.interp.runcommand("""if 1:
             import sys as _sys
             _sys.argv = {!r}
