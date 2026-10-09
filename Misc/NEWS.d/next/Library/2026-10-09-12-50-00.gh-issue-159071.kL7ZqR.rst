@@ -1,0 +1,4 @@
+Fix :class:`UnicodeDecodeError` offsets reported by the ``utf-8-sig`` codec
+when the input starts with a BOM: ``start``, ``end`` and ``object`` are now
+relative to the original input, consistently with the ``utf-8``, ``utf-16``
+and ``utf-32`` codecs.

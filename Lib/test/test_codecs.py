@@ -1169,6 +1169,53 @@ class UTF8SigTest(UTF8Test, unittest.TestCase):
             got = ostream.getvalue()
             self.assertEqual(got, unistring)
 
+    def test_error_offsets(self):
+        # The BOM is stripped before decoding, so errors must be reported
+        # relative to the original input (gh-159071), like the utf-8 codec.
+        bad = self.BOM + b"abc\xff"
+        for data in (bad, self.BOM + b"\xc3", self.BOM + b"\xe2\x82"):
+            with self.subTest(data=data):
+                with self.assertRaises(UnicodeDecodeError) as cm:
+                    data.decode("utf-8")
+                expected = (cm.exception.start, cm.exception.end)
+                for decode in (lambda d: d.decode(self.encoding),
+                               codecs.getdecoder(self.encoding),
+                               lambda d: codecs.decode(d, self.encoding)):
+                    with self.assertRaises(UnicodeDecodeError) as cm:
+                        decode(data)
+                    self.assertEqual((cm.exception.start, cm.exception.end),
+                                     expected)
+                    self.assertEqual(cm.exception.object, data)
+
+    def test_incremental_error_offsets(self):
+        decoder = codecs.getincrementaldecoder(self.encoding)()
+        with self.assertRaises(UnicodeDecodeError) as cm:
+            decoder.decode(self.BOM + b"abc\xff", True)
+        self.assertEqual((cm.exception.start, cm.exception.end), (6, 7))
+        self.assertEqual(cm.exception.object, self.BOM + b"abc\xff")
+
+        # The BOM split over two calls: offsets are relative to the buffered
+        # input as a whole, not to the chunk passed to the second call.
+        decoder = codecs.getincrementaldecoder(self.encoding)()
+        self.assertEqual(decoder.decode(self.BOM[:2]), "")
+        with self.assertRaises(UnicodeDecodeError) as cm:
+            decoder.decode(self.BOM[2:] + b"\xff", True)
+        self.assertEqual((cm.exception.start, cm.exception.end), (3, 4))
+        self.assertEqual(cm.exception.object, self.BOM + b"\xff")
+
+    def test_stream_error_offsets(self):
+        bad = self.BOM + b"abc\xff"
+        readers = (lambda data: codecs.getreader(self.encoding)(
+                       io.BytesIO(data)).read(),
+                   lambda data: io.TextIOWrapper(
+                       io.BytesIO(data), encoding=self.encoding).read(),
+                   lambda data: list(codecs.iterdecode([data], self.encoding)))
+        for read in readers:
+            with self.assertRaises(UnicodeDecodeError) as cm:
+                read(bad)
+            self.assertEqual((cm.exception.start, cm.exception.end), (6, 7))
+            self.assertEqual(cm.exception.object, bad)
+
 
 class EscapeDecodeTest(unittest.TestCase):
     def test_empty(self):

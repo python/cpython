@@ -9,6 +9,18 @@ This work similar to UTF-8 with the following changes:
 """
 import codecs
 
+def _fix_decode_error(exc, data, prefix):
+    # The BOM was stripped before decoding, so the error points into the
+    # remainder rather than into 'data'. Rebase it to the original input.
+    # 'data' may be a buffer (str.decode() passes a memoryview), but the
+    # exception's object attribute only accepts bytes.
+    if not isinstance(data, bytes):
+        data = bytes(data)
+    exc.start += prefix
+    exc.end += prefix
+    exc.object = data
+    return exc
+
 ### Codec APIs
 
 def encode(input, errors='strict'):
@@ -16,11 +28,17 @@ def encode(input, errors='strict'):
             len(input))
 
 def decode(input, errors='strict'):
+    data = input
     prefix = 0
-    if input[:3] == codecs.BOM_UTF8:
-        input = input[3:]
+    if data[:3] == codecs.BOM_UTF8:
+        input = data[3:]
         prefix = 3
-    (output, consumed) = codecs.utf_8_decode(input, errors, True)
+    try:
+        (output, consumed) = codecs.utf_8_decode(input, errors, True)
+    except UnicodeDecodeError as exc:
+        if prefix:
+            raise _fix_decode_error(exc, data, prefix) from None
+        raise
     return (output, consumed+prefix)
 
 class IncrementalEncoder(codecs.IncrementalEncoder):
@@ -63,8 +81,11 @@ class IncrementalDecoder(codecs.BufferedIncrementalDecoder):
             else:
                 self.first = 0
                 if input[:3] == codecs.BOM_UTF8:
-                    (output, consumed) = \
-                       codecs.utf_8_decode(input[3:], errors, final)
+                    try:
+                        (output, consumed) = \
+                           codecs.utf_8_decode(input[3:], errors, final)
+                    except UnicodeDecodeError as exc:
+                        raise _fix_decode_error(exc, input, 3) from None
                     return (output, consumed+3)
         return codecs.utf_8_decode(input, errors, final)
 
@@ -110,7 +131,10 @@ class StreamReader(codecs.StreamReader):
                 return ("", 0)
         elif input[:3] == codecs.BOM_UTF8:
             self.decode = codecs.utf_8_decode
-            (output, consumed) = codecs.utf_8_decode(input[3:],errors)
+            try:
+                (output, consumed) = codecs.utf_8_decode(input[3:],errors)
+            except UnicodeDecodeError as exc:
+                raise _fix_decode_error(exc, input, 3) from None
             return (output, consumed+3)
         # (else) no BOM present
         self.decode = codecs.utf_8_decode
