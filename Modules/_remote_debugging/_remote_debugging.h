@@ -150,6 +150,7 @@ typedef enum _WIN32_THREADSTATE {
 #define MAX_SET_TABLE_SIZE (1 << 20)  /* 1 million entries max for set iteration */
 #define MAX_FRAME_CHAIN_DEPTH (1024 + 512)  /* Iteration bound for frame chain walks */
 #define MAX_TASK_WAITER_WALK_TASKS (1 << 14)  /* Total-task bound for waiter walks */
+#define MAX_INTERPRETERS 256  /* Iteration bound for interpreter list walks */
 
 #ifndef MAX
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
@@ -485,6 +486,12 @@ typedef int (*interpreter_processor_func)(
     RuntimeOffsets *offsets,
     uintptr_t interpreter_state_addr,
     int64_t iid,
+    void *context
+);
+
+typedef int (*unwinder_interpreter_func)(
+    RemoteUnwinderObject *unwinder,
+    uintptr_t interpreter_addr,
     void *context
 );
 

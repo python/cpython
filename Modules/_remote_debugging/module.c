@@ -599,6 +599,32 @@ refresh_generation_caches_for_interpreter(
 }
 
 static int
+iterate_unwinder_interpreters(
+    RemoteUnwinderObject *self,
+    unwinder_interpreter_func func,
+    void *context)
+{
+    uintptr_t interp = self->interpreter_addr;
+    for (size_t count = 0; interp != 0 && count < MAX_INTERPRETERS; count++) {
+        if (refresh_generation_caches_for_interpreter(self, interp) < 0) {
+            return -1;
+        }
+        if (func(self, interp, context) < 0) {
+            return -1;
+        }
+        if (_Py_RemoteDebug_PagedReadRemoteMemory(
+                &self->handle,
+                interp + (uintptr_t)self->debug_offsets.interpreter_state.next,
+                sizeof(void*),
+                &interp) < 0) {
+            set_exception_cause(self, PyExc_RuntimeError, "Failed to read next interpreter address");
+            return -1;
+        }
+    }
+    return 0;
+}
+
+static int
 read_interp_state_and_maybe_thread_frame(
     RemoteUnwinderObject *unwinder,
     uintptr_t interpreter_addr,
@@ -997,6 +1023,17 @@ result_err:
     return NULL;
 }
 
+static int
+process_interpreter_for_async_stack_trace(
+    RemoteUnwinderObject *self,
+    uintptr_t interpreter_addr,
+    void *context)
+{
+    // Process all threads
+    return iterate_threads(self, interpreter_addr,
+                           process_thread_for_async_stack_trace, context);
+}
+
 /*[clinic input]
 @permit_long_summary
 @critical_section
@@ -1062,26 +1099,9 @@ _remote_debugging_RemoteUnwinder_get_async_stack_trace_impl(RemoteUnwinderObject
     }
 
     // gh-158968: Running tasks live in every interpreter, not only the one at the list head
-    uintptr_t interp = self->interpreter_addr;
-    while (interp != 0) {
-        if (refresh_generation_caches_for_interpreter(self, interp) < 0) {
-            goto result_err;
-        }
-
-        // Process all threads
-        if (iterate_threads(self, interp,
-                            process_thread_for_async_stack_trace, result) < 0) {
-            goto result_err;
-        }
-
-        if (_Py_RemoteDebug_PagedReadRemoteMemory(
-                &self->handle,
-                interp + (uintptr_t)self->debug_offsets.interpreter_state.next,
-                sizeof(void*),
-                &interp) < 0) {
-            set_exception_cause(self, PyExc_RuntimeError, "Failed to read next interpreter address");
-            goto result_err;
-        }
+    if (iterate_unwinder_interpreters(self, process_interpreter_for_async_stack_trace,
+                                      result) < 0) {
+        goto result_err;
     }
 
     _Py_RemoteDebug_ClearCache(&self->handle);
