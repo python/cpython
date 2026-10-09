@@ -141,8 +141,10 @@ class TestGetBuildInfo(unittest.TestCase):
         check('Custom Vendor (something) Clang 22.1.0+dev',
               'Custom Vendor Clang 22.1.0+dev')
 
+        check_unchanged('Clang 22.1.3 64 bit (AMD64) with MSC v.1951 CRT')
         check_unchanged('GCC 16.2.1 20260819 (Red Hat 16.2.1-2)')
         check_unchanged('GCC 15.2.0')
+        check_unchanged('MSC v.1951 64 bit (AMD64)')
         check_unchanged('MSC v.1951 32 bit (Intel)')
 
         with support.captured_stdout() as stdout:

@@ -182,6 +182,17 @@ def _get_compiler():
 
 
 def compact_compiler(compiler):
+    if '64 bit (AMD64)' in compiler:
+        # On Windows, the '64 bit (AMD64)' pattern is expected by multiple
+        # tools such as sysconfig.get_platform() and ctypes.util.find_msvcrt().
+        # Example: 'MSC v.1951 64 bit (AMD64)'.
+        return compiler
+    if ' with MSC v' in compiler:
+        # Do not truncate "Clang with MSC" version:
+        # ''Clang 22.1.3 64 bit (AMD64) with MSC v.1951 CRT'
+        return compiler
+
+    # Truncate long Clang version (ex: strip long URL)
     match = CLANG_VERSION_REGEX.search(compiler)
     if match:
         vendor = match.group(1)
