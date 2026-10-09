@@ -6,6 +6,8 @@ import stat
 import sys
 import zipfile
 
+from collections.abc import Iterable, Callable
+
 __all__ = ['ZipAppError', 'create_archive', 'get_interpreter']
 
 
@@ -177,6 +179,46 @@ def get_interpreter(archive):
         if f.read(2) == b'#!':
             return f.readline().strip().decode(shebang_encoding)
 
+def _make_glob_filter(
+    includes: Iterable[str] | None,
+    excludes: Iterable[str] | None,
+) -> Callable[[pathlib.Path], bool]:
+    """
+    Build a filter(relative_path: Path) -> bool applying includes first, then excludes.
+
+    Semantics:
+      - Patterns are standard glob patterns as implemented by PurePath.match.
+      - If 'includes' is empty, all files/dirs are initially eligible.
+      - If any exclude pattern matches, the path is rejected.
+    """
+
+    def _normalize_patterns(values: Iterable[str] | None) -> list[str]:
+        """
+        Return patterns exactly as provided by the CLI (no comma splitting).
+        Each item is stripped of surrounding whitespace; empty items are dropped.
+        """
+        if not values:
+            return []
+        out: list[str] = []
+        for v in values:
+            v = v.strip()
+            if v:
+                out.append(v)
+        return out
+
+    inc = _normalize_patterns(values=includes)
+    exc = _normalize_patterns(values=excludes)
+
+    def _filter(rel: pathlib.Path) -> bool:
+        # If includes were provided, at least one must match.
+        if inc and not any(rel.match(pat) for pat in inc):
+            return False
+        # Any exclude match removes the path.
+        if exc and any(rel.match(pat) for pat in exc):
+            return False
+        return True
+
+    return _filter
 
 def main(args=None):
     """Run the zipapp command line interface.
@@ -204,6 +246,15 @@ def main(args=None):
             help="Display the interpreter from the archive.")
     parser.add_argument('source',
             help="Source directory (or existing archive).")
+    parser.add_argument('--include', action='extend', nargs='+', default=None,
+            help=("Glob pattern(s) of files/dirs to include (relative to SOURCE). "
+                  "Repeat the flag for multiple patterns. "
+                  "To include a directory and its contents, use 'foo/**'."))
+    parser.add_argument('--exclude', action='extend', nargs='+', default=None,
+            help=("Glob pattern(s) of files/dirs to exclude (relative to SOURCE). "
+                  "Repeat the flag for multiple patterns. "
+                  "To exclude a directory and its contents, use 'foo/**'. "
+                  "Applied after --include."))
 
     args = parser.parse_args(args)
 
@@ -222,9 +273,19 @@ def main(args=None):
         if args.main:
             raise SystemExit("Cannot change the main function when copying")
 
+    # build a filter from include and exclude flags
+    filter_fn = None
+    src_path = pathlib.Path(args.source)
+    if src_path.exists() and src_path.is_dir() and (args.include or args.exclude):
+        filter_fn = _make_glob_filter(
+            includes=args.include,
+            excludes=args.exclude
+        )
+
     create_archive(args.source, args.output,
                    interpreter=args.python, main=args.main,
-                   compressed=args.compress)
+                   compressed=args.compress,
+                   filter=filter_fn)
 
 
 if __name__ == '__main__':
