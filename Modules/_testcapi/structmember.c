@@ -17,12 +17,33 @@ typedef struct {
     long long_member;
     unsigned long ulong_member;
     Py_ssize_t pyssizet_member;
+    size_t size_member;
     float float_member;
     double double_member;
     char inplace_member[6];
     long long longlong_member;
     unsigned long long ulonglong_member;
     char char_member;
+    int8_t int8_member;
+    uint8_t uint8_member;
+    uint8_t xint8_member;
+    int16_t int16_member;
+    uint16_t uint16_member;
+    uint16_t xint16_member;
+    int32_t int32_member;
+    uint32_t uint32_member;
+    uint32_t xint32_member;
+    int64_t int64_member;
+    uint64_t uint64_member;
+    uint64_t xint64_member;
+    intptr_t intptr_member;
+    uintptr_t uintptr_member;
+#ifdef MS_WINDOWS
+    long long off_member;
+#else
+    off_t off_member;
+#endif
+    pid_t pid_member;
 } all_structmembers;
 
 typedef struct {
@@ -42,12 +63,30 @@ static struct PyMemberDef test_members_newapi[] = {
     {"T_LONG", Py_T_LONG, offsetof(test_structmembers, structmembers.long_member), 0, NULL},
     {"T_ULONG", Py_T_ULONG, offsetof(test_structmembers, structmembers.ulong_member), 0, NULL},
     {"T_PYSSIZET", Py_T_PYSSIZET, offsetof(test_structmembers, structmembers.pyssizet_member), 0, NULL},
+    {"T_SSIZE", Py_T_SSIZE, offsetof(test_structmembers, structmembers.pyssizet_member), 0, NULL},
+    {"T_SIZE", Py_T_SIZE, offsetof(test_structmembers, structmembers.size_member), 0, NULL},
     {"T_FLOAT", Py_T_FLOAT, offsetof(test_structmembers, structmembers.float_member), 0, NULL},
     {"T_DOUBLE", Py_T_DOUBLE, offsetof(test_structmembers, structmembers.double_member), 0, NULL},
     {"T_STRING_INPLACE", Py_T_STRING_INPLACE, offsetof(test_structmembers, structmembers.inplace_member), 0, NULL},
     {"T_LONGLONG", Py_T_LONGLONG, offsetof(test_structmembers, structmembers.longlong_member), 0, NULL},
     {"T_ULONGLONG", Py_T_ULONGLONG, offsetof(test_structmembers, structmembers.ulonglong_member), 0, NULL},
     {"T_CHAR", Py_T_CHAR, offsetof(test_structmembers, structmembers.char_member), 0, NULL},
+    {"T_INT8", Py_T_INT8, offsetof(test_structmembers, structmembers.int8_member), 0, NULL},
+    {"T_UINT8", Py_T_UINT8, offsetof(test_structmembers, structmembers.uint8_member), 0, NULL},
+    {"T_XINT8", Py_T_INT8|Py_T_UINT8, offsetof(test_structmembers, structmembers.xint8_member), 0, NULL},
+    {"T_INT16", Py_T_INT16, offsetof(test_structmembers, structmembers.int16_member), 0, NULL},
+    {"T_UINT16", Py_T_UINT16, offsetof(test_structmembers, structmembers.uint16_member), 0, NULL},
+    {"T_XINT16", Py_T_INT16|Py_T_UINT16, offsetof(test_structmembers, structmembers.xint16_member), 0, NULL},
+    {"T_INT32", Py_T_INT32, offsetof(test_structmembers, structmembers.int32_member), 0, NULL},
+    {"T_UINT32", Py_T_UINT32, offsetof(test_structmembers, structmembers.uint32_member), 0, NULL},
+    {"T_XINT32", Py_T_INT32|Py_T_UINT32, offsetof(test_structmembers, structmembers.xint32_member), 0, NULL},
+    {"T_INT64", Py_T_INT64, offsetof(test_structmembers, structmembers.int64_member), 0, NULL},
+    {"T_UINT64", Py_T_UINT64, offsetof(test_structmembers, structmembers.uint64_member), 0, NULL},
+    {"T_XINT64", Py_T_INT64|Py_T_UINT64, offsetof(test_structmembers, structmembers.xint64_member), 0, NULL},
+    {"T_INTPTR", Py_T_INTPTR, offsetof(test_structmembers, structmembers.intptr_member), 0, NULL},
+    {"T_UINTPTR", Py_T_UINTPTR, offsetof(test_structmembers, structmembers.uintptr_member), 0, NULL},
+    {"T_OFF", Py_T_OFF, offsetof(test_structmembers, structmembers.off_member), 0, NULL},
+    {"T_PID", Py_T_PID, offsetof(test_structmembers, structmembers.pid_member), 0, NULL},
     {NULL}
 };
 
