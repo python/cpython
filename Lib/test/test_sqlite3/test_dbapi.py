@@ -1396,6 +1396,31 @@ class BlobTests(unittest.TestCase):
         actual = self.cx.execute("select b from test").fetchone()[0]
         self.assertEqual(actual, expected)
 
+    def test_blob_slice_with_negative_step(self):
+        # gh-150449: this used to raise SystemError
+        for sl in (slice(9, 0, -2), slice(None, None, -1), slice(9, None, -2)):
+            with self.subTest(slice=sl):
+                with self.assertRaises(ValueError):
+                    self.blob[sl]
+                with self.assertRaises(ValueError):
+                    self.blob[sl] = b"1" * len(self.data[sl])
+        # an empty slice selects nothing and is still allowed
+        self.assertEqual(self.blob[3:8:-1], b"")
+        self.blob[3:8:-1] = b""
+        self.assertEqual(self.blob[:], self.data)
+
+    def test_blob_set_slice_with_step_keeps_bytes_intact(self):
+        # The buffer used for the read-patch-write cycle must not be the
+        # bytes object read from the blob: for a single byte it is an
+        # immortal singleton.
+        old_byte = self.data[5]
+        self.blob[5:6:2] = b"\xab"
+        self.assertEqual(bytes([old_byte])[0], old_byte)
+        self.assertEqual(self.blob[5:6], b"\xab")
+        expected = self.data[:5] + b"\xab" + self.data[6:]
+        actual = self.cx.execute("select b from test").fetchone()[0]
+        self.assertEqual(actual, expected)
+
     def test_blob_set_empty_slice(self):
         self.blob[0:0] = b""
         self.assertEqual(self.blob[:], self.data)
