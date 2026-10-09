@@ -1,0 +1,3 @@
+Make ``test_3_join_in_forked_from_thread`` in ``test_threading`` wait for the
+forking thread, so that the fork happens while the main thread is still
+running rather than racing interpreter shutdown.

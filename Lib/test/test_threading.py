@@ -1580,6 +1580,14 @@ class ThreadJoinOnShutdown(BaseTestCase):
 
             main_thread = threading.current_thread()
             def worker():
+                # fork() must happen before the interpreter starts shutting
+                # down: otherwise the main thread is already marked as
+                # stopped in the parent, the child inherits that state, and
+                # the test below succeeds without testing anything.
+                if not main_thread.is_alive():
+                    print('main thread stopped before fork()',
+                          file=sys.stderr, flush=True)
+                    os._exit(3)
                 childpid = os.fork()
                 if childpid != 0:
                     # parent process
@@ -1595,6 +1603,9 @@ class ThreadJoinOnShutdown(BaseTestCase):
 
             w = threading.Thread(target=worker)
             w.start()
+            # Keep the main thread alive until worker() has forked, so that
+            # the check above cannot be lost to interpreter shutdown.
+            w.join()
             """
         self._run_and_join(script)
 
