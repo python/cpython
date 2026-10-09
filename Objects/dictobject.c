@@ -1113,15 +1113,32 @@ lookdict_index(PyDictKeysObject *k, Py_hash_t hash, Py_ssize_t index)
     Py_UNREACHABLE();
 }
 
+static inline int
+is_unusable_slot(Py_ssize_t ix)
+{
+#ifdef Py_GIL_DISABLED
+    return ix >= 0 || ix == DKIX_DUMMY;
+#else
+    return ix >= 0;
+#endif
+}
+
+/* If hashpos is not NULL, also store in *hashpos the slot of the index table
+   an insertion or deletion of the key needs, so that the caller does not have
+   to probe again: if the key is found, the slot that refers to its entry (see
+   lookdict_index()), otherwise the slot find_empty_slot() would return.
+   Only valid if check_lookup() cannot mutate the dict. */
 static inline Py_ALWAYS_INLINE Py_ssize_t
 do_lookup(PyDictObject *mp, PyDictKeysObject *dk, PyObject *key, Py_hash_t hash,
-          int (*check_lookup)(PyDictObject *, PyDictKeysObject *, void *, Py_ssize_t ix, PyObject *key, Py_hash_t))
+          int (*check_lookup)(PyDictObject *, PyDictKeysObject *, void *, Py_ssize_t ix, PyObject *key, Py_hash_t),
+          Py_ssize_t *hashpos)
 {
     void *ep0 = _DK_ENTRIES(dk);
     size_t mask = DK_MASK(dk);
     size_t perturb = hash;
     size_t i = (size_t)hash & mask;
     Py_ssize_t ix;
+    Py_ssize_t freeslot = -1;
     for (;;) {
         ix = dictkeys_get_index(dk, i);
         if (ix >= 0) {
@@ -1129,11 +1146,22 @@ do_lookup(PyDictObject *mp, PyDictKeysObject *dk, PyObject *key, Py_hash_t hash,
             if (cmp < 0) {
                 return cmp;
             } else if (cmp) {
+                if (hashpos) {
+                    *hashpos = (Py_ssize_t)i;
+                }
                 return ix;
             }
         }
         else if (ix == DKIX_EMPTY) {
+            if (hashpos) {
+                *hashpos = freeslot >= 0 ? freeslot : (Py_ssize_t)i;
+            }
             return DKIX_EMPTY;
+        }
+        else if (hashpos && freeslot < 0 && !is_unusable_slot(ix)) {
+            // Reuse the first dummy slot, otherwise repeated insertions
+            // and deletions would make the probe sequence longer.
+            freeslot = (Py_ssize_t)i;
         }
         perturb >>= PERTURB_SHIFT;
         i = mask & (i*5 + perturb + 1);
@@ -1145,11 +1173,20 @@ do_lookup(PyDictObject *mp, PyDictKeysObject *dk, PyObject *key, Py_hash_t hash,
             if (cmp < 0) {
                 return cmp;
             } else if (cmp) {
+                if (hashpos) {
+                    *hashpos = (Py_ssize_t)i;
+                }
                 return ix;
             }
         }
         else if (ix == DKIX_EMPTY) {
+            if (hashpos) {
+                *hashpos = freeslot >= 0 ? freeslot : (Py_ssize_t)i;
+            }
             return DKIX_EMPTY;
+        }
+        else if (hashpos && freeslot < 0 && !is_unusable_slot(ix)) {
+            freeslot = (Py_ssize_t)i;
         }
         perturb >>= PERTURB_SHIFT;
         i = mask & (i*5 + perturb + 1);
@@ -1189,7 +1226,7 @@ compare_unicode_generic(PyDictObject *mp, PyDictKeysObject *dk,
 static Py_ssize_t
 unicodekeys_lookup_generic(PyDictObject *mp, PyDictKeysObject* dk, PyObject *key, Py_hash_t hash)
 {
-    return do_lookup(mp, dk, key, hash, compare_unicode_generic);
+    return do_lookup(mp, dk, key, hash, compare_unicode_generic, NULL);
 }
 
 static inline int
@@ -1210,7 +1247,18 @@ compare_unicode_unicode(PyDictObject *mp, PyDictKeysObject *dk,
 static Py_ssize_t _Py_HOT_FUNCTION
 unicodekeys_lookup_unicode(PyDictKeysObject* dk, PyObject *key, Py_hash_t hash)
 {
-    return do_lookup(NULL, dk, key, hash, compare_unicode_unicode);
+    return do_lookup(NULL, dk, key, hash, compare_unicode_unicode, NULL);
+}
+
+/* Like unicodekeys_lookup_unicode(), but also reports in *hashpos the index
+   table slot an insertion or deletion of the key needs (see do_lookup()).
+   Kept separate from the reader above so that readers keep generating code
+   without the slot bookkeeping. */
+static Py_ssize_t
+unicodekeys_lookup_unicode_pos(PyDictKeysObject* dk, PyObject *key, Py_hash_t hash,
+                               Py_ssize_t *hashpos)
+{
+    return do_lookup(NULL, dk, key, hash, compare_unicode_unicode, hashpos);
 }
 
 static inline int
@@ -1244,7 +1292,7 @@ compare_generic(PyDictObject *mp, PyDictKeysObject *dk,
 static Py_ssize_t
 dictkeys_generic_lookup(PyDictObject *mp, PyDictKeysObject* dk, PyObject *key, Py_hash_t hash)
 {
-    return do_lookup(mp, dk, key, hash, compare_generic);
+    return do_lookup(mp, dk, key, hash, compare_generic, NULL);
 }
 
 static bool
@@ -1525,7 +1573,7 @@ compare_unicode_generic_threadsafe(PyDictObject *mp, PyDictKeysObject *dk,
 static Py_ssize_t
 unicodekeys_lookup_generic_threadsafe(PyDictObject *mp, PyDictKeysObject* dk, PyObject *key, Py_hash_t hash)
 {
-    return do_lookup(mp, dk, key, hash, compare_unicode_generic_threadsafe);
+    return do_lookup(mp, dk, key, hash, compare_unicode_generic_threadsafe, NULL);
 }
 
 static inline Py_ALWAYS_INLINE int
@@ -1561,7 +1609,7 @@ compare_unicode_unicode_threadsafe(PyDictObject *mp, PyDictKeysObject *dk,
 static Py_ssize_t _Py_HOT_FUNCTION
 unicodekeys_lookup_unicode_threadsafe(PyDictKeysObject* dk, PyObject *key, Py_hash_t hash)
 {
-    return do_lookup(NULL, dk, key, hash, compare_unicode_unicode_threadsafe);
+    return do_lookup(NULL, dk, key, hash, compare_unicode_unicode_threadsafe, NULL);
 }
 
 static inline Py_ALWAYS_INLINE int
@@ -1598,7 +1646,7 @@ compare_generic_threadsafe(PyDictObject *mp, PyDictKeysObject *dk,
 static Py_ssize_t
 dictkeys_generic_lookup_threadsafe(PyDictObject *mp, PyDictKeysObject* dk, PyObject *key, Py_hash_t hash)
 {
-    return do_lookup(mp, dk, key, hash, compare_generic_threadsafe);
+    return do_lookup(mp, dk, key, hash, compare_generic_threadsafe, NULL);
 }
 
 Py_ssize_t
@@ -1864,16 +1912,6 @@ _PyDict_EnablePerThreadRefcounting(PyObject *op)
 #endif
 }
 
-static inline int
-is_unusable_slot(Py_ssize_t ix)
-{
-#ifdef Py_GIL_DISABLED
-    return ix >= 0 || ix == DKIX_DUMMY;
-#else
-    return ix >= 0;
-#endif
-}
-
 /* Internal function to find slot for an item from its hash
    when it is known that the key is not present in the dict.
  */
@@ -1893,15 +1931,35 @@ find_empty_slot(PyDictKeysObject *keys, Py_hash_t hash)
     return i;
 }
 
+/* _Py_dict_lookup() that also sets *hashpos for exact str keys in a
+   combined unicode table, and to -1 otherwise. */
+static inline Py_ALWAYS_INLINE Py_ssize_t
+dict_lookup_pos(PyDictObject *mp, PyObject *key, Py_hash_t hash,
+                PyObject **value_addr, Py_ssize_t *hashpos)
+{
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(mp);
+    PyDictKeysObject *dk = mp->ma_keys;
+    if (dk->dk_kind == DICT_KEYS_UNICODE && PyUnicode_CheckExact(key)) {
+        Py_ssize_t ix = unicodekeys_lookup_unicode_pos(dk, key, hash, hashpos);
+        *value_addr = ix >= 0 ? DK_UNICODE_ENTRIES(dk)[ix].me_value : NULL;
+        return ix;
+    }
+    *hashpos = -1;
+    return _Py_dict_lookup(mp, key, hash, value_addr);
+}
+
 static int
 insertion_resize(PyDictObject *mp, int unicode)
 {
     return dictresize(mp, calculate_log2_keysize(GROWTH_RATE(mp)), unicode);
 }
 
+/* hashpos is the slot of the index table found by dict_lookup_pos(),
+   or -1 if it is not known. */
 static inline int
 insert_combined_dict(PyDictObject *mp,
-                     Py_hash_t hash, PyObject *key, PyObject *value)
+                     Py_hash_t hash, PyObject *key, PyObject *value,
+                     Py_ssize_t hashpos)
 {
     // gh-140551: If dict was cleared in _Py_dict_lookup,
     // we have to resize one more time to force general key kind.
@@ -1909,6 +1967,7 @@ insert_combined_dict(PyDictObject *mp,
         if (insertion_resize(mp, 0) < 0)
             return -1;
         assert(mp->ma_keys->dk_kind == DICT_KEYS_GENERAL);
+        hashpos = -1;
     }
 
     if (mp->ma_keys->dk_usable <= 0) {
@@ -1916,12 +1975,16 @@ insert_combined_dict(PyDictObject *mp,
         if (insertion_resize(mp, 1) < 0) {
             return -1;
         }
+        hashpos = -1;
     }
 
     _PyDict_NotifyEvent(PyDict_EVENT_ADDED, mp, key, value);
     FT_ATOMIC_STORE_UINT32_RELAXED(mp->ma_keys->dk_version, 0);
 
-    Py_ssize_t hashpos = find_empty_slot(mp->ma_keys, hash);
+    if (hashpos < 0) {
+        hashpos = find_empty_slot(mp->ma_keys, hash);
+    }
+    assert(hashpos == find_empty_slot(mp->ma_keys, hash));
     dictkeys_set_index(mp->ma_keys, hashpos, mp->ma_keys->dk_nentries);
 
     if (DK_IS_UNICODE(mp->ma_keys)) {
@@ -1948,6 +2011,7 @@ insert_split_key(PyDictKeysObject *keys, PyObject *key, Py_hash_t hash)
 {
     assert(PyUnicode_CheckExact(key));
     Py_ssize_t ix;
+    Py_ssize_t hashpos = -1;
 
 
 #ifdef Py_GIL_DISABLED
@@ -1964,7 +2028,7 @@ insert_split_key(PyDictKeysObject *keys, PyObject *key, Py_hash_t hash)
 #endif
 
     LOCK_KEYS(keys);
-    ix = unicodekeys_lookup_unicode(keys, key, hash);
+    ix = unicodekeys_lookup_unicode_pos(keys, key, hash, &hashpos);
     if (ix == DKIX_EMPTY && keys->dk_usable > 0) {
         // Insert into new slot
         FT_ATOMIC_STORE_UINT32_RELAXED(keys->dk_version, 0);
@@ -1974,7 +2038,6 @@ insert_split_key(PyDictKeysObject *keys, PyObject *key, Py_hash_t hash)
             // we acquired the type lock above
             _PyType_Modified_Unlocked(type);
         }
-        Py_ssize_t hashpos = find_empty_slot(keys, hash);
         ix = keys->dk_nentries;
         dictkeys_set_index(keys, hashpos, ix);
         PyDictUnicodeEntry *ep = &DK_UNICODE_ENTRIES(keys)[ix];
@@ -2056,6 +2119,7 @@ insertdict(PyDictObject *mp,
 
     PyObject *old_value = NULL;
     Py_ssize_t ix;
+    Py_ssize_t hashpos = -1;
 
     if (_PyDict_HasSplitTable(mp) && PyUnicode_CheckExact(key)) {
         ix = insert_split_key(mp->ma_keys, key, hash);
@@ -2068,7 +2132,7 @@ insertdict(PyDictObject *mp,
         // No space in shared keys. Go to insert_combined_dict() below.
     }
     else {
-        ix = _Py_dict_lookup(mp, key, hash, &old_value);
+        ix = dict_lookup_pos(mp, key, hash, &old_value, &hashpos);
         if (ix == DKIX_ERROR)
             goto Fail;
     }
@@ -2081,7 +2145,7 @@ insertdict(PyDictObject *mp,
         //
         // NOTE: ix may not be DKIX_EMPTY because split table may have key
         // without value.
-        if (insert_combined_dict(mp, hash, key, value) < 0) {
+        if (insert_combined_dict(mp, hash, key, value, hashpos) < 0) {
             goto Fail;
         }
         STORE_USED(mp, mp->ma_used + 1);
@@ -2930,16 +2994,17 @@ delete_index_from_values(PyDictValues *values, Py_ssize_t ix)
     values->size = size;
 }
 
+/* Remove entry ix, whose value is old_value, from the dict. The reference
+   the entry held to old_value is transferred to the caller. hashpos is the
+   slot of the index table found by dict_lookup_pos(), or -1 if it is not
+   known. */
 static void
 delitem_common(PyDictObject *mp, Py_hash_t hash, Py_ssize_t ix,
-               PyObject *old_value)
+               PyObject *old_value, Py_ssize_t hashpos)
 {
     assert(can_modify_dict(mp));
 
     PyObject *old_key;
-
-    Py_ssize_t hashpos = lookdict_index(mp->ma_keys, hash, ix);
-    assert(hashpos >= 0);
 
     STORE_USED(mp, mp->ma_used - 1);
     if (_PyDict_HasSplitTable(mp)) {
@@ -2951,6 +3016,12 @@ delitem_common(PyDictObject *mp, Py_hash_t hash, Py_ssize_t ix,
         ASSERT_CONSISTENT(mp);
     }
     else {
+        if (hashpos < 0) {
+            hashpos = lookdict_index(mp->ma_keys, hash, ix);
+        }
+        assert(hashpos >= 0);
+        assert(hashpos == lookdict_index(mp->ma_keys, hash, ix));
+
         FT_ATOMIC_STORE_UINT32_RELAXED(mp->ma_keys->dk_version, 0);
         dictkeys_set_index(mp->ma_keys, hashpos, DKIX_DUMMY);
         if (DK_IS_UNICODE(mp->ma_keys)) {
@@ -2964,11 +3035,9 @@ delitem_common(PyDictObject *mp, Py_hash_t hash, Py_ssize_t ix,
             old_key = ep->me_key;
             STORE_KEY(ep, NULL);
             STORE_VALUE(ep, NULL);
-            STORE_HASH(ep, 0);
         }
         Py_DECREF(old_key);
     }
-    Py_DECREF(old_value);
 
     ASSERT_CONSISTENT(mp);
 }
@@ -3000,13 +3069,14 @@ _PyDict_DelItem_KnownHash_LockHeld(PyObject *op, PyObject *key, Py_hash_t hash)
     }
 
     Py_ssize_t ix;
+    Py_ssize_t hashpos;
     PyObject *old_value;
     PyDictObject *mp = (PyDictObject *)op;
     assert(can_modify_dict(mp));
 
     assert(key);
     assert(hash != -1);
-    ix = _Py_dict_lookup(mp, key, hash, &old_value);
+    ix = dict_lookup_pos(mp, key, hash, &old_value, &hashpos);
     if (ix == DKIX_ERROR)
         return -1;
     if (ix == DKIX_EMPTY || old_value == NULL) {
@@ -3015,7 +3085,8 @@ _PyDict_DelItem_KnownHash_LockHeld(PyObject *op, PyObject *key, Py_hash_t hash)
     }
 
     _PyDict_NotifyEvent(PyDict_EVENT_DELETED, mp, key, NULL);
-    delitem_common(mp, hash, ix, old_value);
+    delitem_common(mp, hash, ix, old_value, hashpos);
+    Py_DECREF(old_value);
     return 0;
 }
 
@@ -3060,7 +3131,8 @@ delitemif_lock_held(PyObject *op, PyObject *key,
 
     if (res > 0) {
         _PyDict_NotifyEvent(PyDict_EVENT_DELETED, mp, key, NULL);
-        delitem_common(mp, hash, ix, old_value);
+        delitem_common(mp, hash, ix, old_value, -1);
+        Py_DECREF(old_value);
         return 1;
     } else {
         return 0;
@@ -3281,9 +3353,9 @@ PyDict_Next(PyObject *op, Py_ssize_t *ppos, PyObject **pkey, PyObject **pvalue)
 
 
 /* Internal version of dict.pop(). */
-int
-_PyDict_Pop_KnownHash(PyDictObject *mp, PyObject *key, Py_hash_t hash,
-                      PyObject **result)
+static inline Py_ALWAYS_INLINE int
+pop_known_hash_lock_held(PyDictObject *mp, PyObject *key, Py_hash_t hash,
+                         PyObject **result)
 {
     assert(PyDict_Check(mp));
     assert(can_modify_dict(mp));
@@ -3296,7 +3368,8 @@ _PyDict_Pop_KnownHash(PyDictObject *mp, PyObject *key, Py_hash_t hash,
     }
 
     PyObject *old_value;
-    Py_ssize_t ix = _Py_dict_lookup(mp, key, hash, &old_value);
+    Py_ssize_t hashpos;
+    Py_ssize_t ix = dict_lookup_pos(mp, key, hash, &old_value, &hashpos);
     if (ix == DKIX_ERROR) {
         if (result) {
             *result = NULL;
@@ -3313,7 +3386,7 @@ _PyDict_Pop_KnownHash(PyDictObject *mp, PyObject *key, Py_hash_t hash,
 
     assert(old_value != NULL);
     _PyDict_NotifyEvent(PyDict_EVENT_DELETED, mp, key, NULL);
-    delitem_common(mp, hash, ix, Py_NewRef(old_value));
+    delitem_common(mp, hash, ix, old_value, hashpos);
 
     ASSERT_CONSISTENT(mp);
     if (result) {
@@ -3323,6 +3396,13 @@ _PyDict_Pop_KnownHash(PyDictObject *mp, PyObject *key, Py_hash_t hash,
         Py_DECREF(old_value);
     }
     return 1;
+}
+
+int
+_PyDict_Pop_KnownHash(PyDictObject *mp, PyObject *key, Py_hash_t hash,
+                      PyObject **result)
+{
+    return pop_known_hash_lock_held(mp, key, hash, result);
 }
 
 static int
@@ -3358,7 +3438,7 @@ pop_lock_held(PyObject *op, PyObject *key, PyObject **result)
         }
         return -1;
     }
-    return _PyDict_Pop_KnownHash(dict, key, hash, result);
+    return pop_known_hash_lock_held(dict, key, hash, result);
 }
 
 int
@@ -4837,6 +4917,7 @@ dict_setdefault_ref_lock_held(PyObject *d, PyObject *key, PyObject *default_valu
     PyObject *value;
     Py_hash_t hash;
     Py_ssize_t ix;
+    Py_ssize_t hashpos = -1;
 
     hash = _PyObject_HashDictKey(key);
     if (hash == -1) {
@@ -4878,7 +4959,7 @@ dict_setdefault_ref_lock_held(PyObject *d, PyObject *key, PyObject *default_valu
         // No space in shared keys. Go to insert_combined_dict() below.
     }
     else {
-        ix = _Py_dict_lookup(mp, key, hash, &value);
+        ix = dict_lookup_pos(mp, key, hash, &value, &hashpos);
         if (ix == DKIX_ERROR) {
             if (result) {
                 *result = NULL;
@@ -4891,7 +4972,7 @@ dict_setdefault_ref_lock_held(PyObject *d, PyObject *key, PyObject *default_valu
         value = default_value;
 
         // See comment to this function in insertdict.
-        if (insert_combined_dict(mp, hash, Py_NewRef(key), Py_NewRef(value)) < 0) {
+        if (insert_combined_dict(mp, hash, Py_NewRef(key), Py_NewRef(value), hashpos) < 0) {
             Py_DECREF(key);
             Py_DECREF(value);
             if (result) {
@@ -5073,7 +5154,6 @@ dict_popitem_impl(PyDictObject *self)
         hash = ep0[i].me_hash;
         value = ep0[i].me_value;
         STORE_KEY(&ep0[i], NULL);
-        STORE_HASH(&ep0[i], -1);
         STORE_VALUE(&ep0[i], NULL);
     }
 
