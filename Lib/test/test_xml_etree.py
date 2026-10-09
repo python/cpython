@@ -1058,6 +1058,34 @@ class ElementTreeTest(unittest.TestCase):
         self.assertRaises(ValueError, ET.XML, xml('undefined').encode('ascii'))
         self.assertRaises(LookupError, ET.XML, xml('xxx').encode('ascii'))
 
+    def test_parse_text_source(self):
+        # gh-99064: The encoding declared in the document does not apply
+        # to a source which is already decoded.
+        def check(encoding, body):
+            xml = (f"<?xml version='1.0' encoding='{encoding}'?>"
+                   f"<xml>{body}</xml>")
+            with self.subTest(encoding=encoding):
+                self.assertEqual(ET.parse(io.StringIO(xml)).getroot().text,
+                                 body)
+                # the same with an explicitly created parser
+                self.assertEqual(
+                    ET.parse(io.StringIO(xml), ET.XMLParser()).getroot().text,
+                    body)
+        check("ascii", 'a')
+        check("iso-8859-1", '\xbd')
+        check("iso-8859-15", '\u20ac')
+        check("cp437", '\u221a')
+        check("utf-8", '\u4e2d')
+        # not ASCII compatible, unsupported for a bytes source
+        check("utf-16", '\u4e2d')
+        check("utf-32", '\u4e2d')
+
+    def test_parse_text_source_multiple_chunks(self):
+        # the encoding is overridden before the first chunk is parsed
+        body = '\xe4' * 100_000
+        xml = "<?xml version='1.0' encoding='ISO-8859-1'?><xml>%s</xml>" % body
+        self.assertEqual(ET.parse(io.StringIO(xml)).getroot().text, body)
+
     def test_methods(self):
         # Test serialization methods.
 
@@ -4035,6 +4063,21 @@ class TreeBuilderTest(unittest.TestCase):
         self.assertEqual(parser.close(),
             ('html', '-//W3C//DTD XHTML 1.0 Transitional//EN',
              'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'))
+
+        for doctype, expected in [
+            ('<!DOCTYPE html>', ('html', None, None)),
+            ('<!DOCTYPE html [<!ENTITY e "v">]>', ('html', None, None)),
+            ('<!DOCTYPE html SYSTEM "a.dtd">', ('html', None, 'a.dtd')),
+            ('<!DOCTYPE html SYSTEM "a.dtd" [<!ENTITY e "v">]>',
+             ('html', None, 'a.dtd')),
+            ('<!DOCTYPE html PUBLIC "-//P" "a.dtd">', ('html', '-//P', 'a.dtd')),
+            ("<!DOCTYPE\nhtml\nPUBLIC\n'-//P'\n'a.dtd'\n>",
+             ('html', '-//P', 'a.dtd')),
+        ]:
+            with self.subTest(doctype=doctype):
+                parser = ET.XMLParser(target=DoctypeParser())
+                parser.feed(doctype + '<html/>')
+                self.assertEqual(parser.close(), expected)
 
     def test_builder_lookup_errors(self):
         class RaisingBuilder:
