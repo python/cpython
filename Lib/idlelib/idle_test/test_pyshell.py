@@ -69,6 +69,82 @@ class PyShellFileListTest(unittest.TestCase):
 ##        self.assertIsInstance(ps, pyshell.PyShell)
 
 
+class PyShellTest(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        requires('gui')
+        cls.root = Tk()
+        cls.root.withdraw()
+        cls.shell = pyshell.PyShell(pyshell.PyShellFileList(cls.root))
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.shell.close()
+        del cls.shell
+        cls.root.destroy()
+        del cls.root
+
+    def setUp(self):
+        text = self.shell.text
+        self.shell.per.bottom.delete('1.0', 'end')
+        text.mark_set('iomark', '1.0')  # As after begin().
+        text.mark_gravity('iomark', 'left')
+        self.shell.undo.reset_undo()
+
+    def test_output_at_prompt(self):
+        # gh-75512: output from a thread while a prompt is shown goes
+        # before the prompt, which stays with the input in progress.
+        shell = self.shell
+        text = shell.text
+        shell.write('x\n', 'stdout')
+        shell.resetoutput()
+        text.tag_add('console', 'iomark-1c')  # As showprompt() does.
+        text.insert('end-1c', 'a = (')
+        shell.write('hel', 'stdout')
+        shell.write('lo\n', 'stdout')
+        self.assertEqual(text.get('iomark-6c', 'end-1c'), 'hello\na = (')
+        self.assertIn('console', text.tag_names('iomark-1c'))
+        self.assertNotIn('console', text.tag_names('iomark-7c'))
+        self.assertEqual(shell.shell_sidebar.line_prompts, {3: '>>>'})
+
+
+class InputStatementlTest(unittest.TestCase):
+    # Test handling of response to input statements in user code.
+
+    @classmethod
+    def setUpClass(cls):
+        requires('gui')
+        cls.root = Tk()
+        cls.root.withdraw()
+        cls.shell = pyshell.PyShell(pyshell.PyShellFileList(cls.root))
+        # As after begin().
+        cls.shell.text.mark_set('iomark', 'insert')
+        cls.shell.text.mark_gravity('iomark', 'left')
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.shell.close()
+        del cls.shell
+        cls.root.destroy()
+        del cls.root
+
+    def test_input_not_colorized(self):
+        # gh-64007: input for input() is not colorized, unlike code.
+        shell = self.shell
+        text = shell.text
+        color = shell.color
+        shell.resetoutput()
+        color.reading = True
+        text.insert('end-1c', 'for x in y')
+        color.recolorize_main()
+        self.assertEqual(text.tag_ranges('KEYWORD'), ())
+        color.reading = False
+        color.notify_range('iomark', 'end')
+        color.recolorize_main()
+        self.assertEqual(len(text.tag_ranges('KEYWORD')), 4)
+
+
 class PyShellRemoveLastNewlineAndSurroundingWhitespaceTest(unittest.TestCase):
     regexp = pyshell.PyShell._last_newline_re
 
