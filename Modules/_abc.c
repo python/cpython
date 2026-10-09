@@ -628,6 +628,11 @@ _abc__abc_instancecheck_impl(PyObject *module, PyObject *self,
     if (impl == NULL) {
         return NULL;
     }
+    PyObject *dict = _PyType_GetDict((PyTypeObject *)self);
+    if (!PyDict_Contains(dict, &_Py_ID(_abc_impl))) {
+        _abc__abc_init(module, self);
+        impl = _get_impl(module, self);
+    }
 
     if (PyObject_GetOptionalAttr(instance, &_Py_ID(__class__), &subclass) < 0) {
         Py_DECREF(impl);
@@ -726,6 +731,11 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
     _abc_data *impl = _get_impl(module, self);
     if (impl == NULL) {
         return NULL;
+    }
+    PyObject *dict = _PyType_GetDict((PyTypeObject *)self);
+    if (!PyDict_Contains(dict, &_Py_ID(_abc_impl))) {
+        _abc__abc_init(module, self);
+        impl = _get_impl(module, self);
     }
 
     /* 1. Check cache. */
