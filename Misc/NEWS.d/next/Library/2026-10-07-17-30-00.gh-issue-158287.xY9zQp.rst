@@ -1,1 +1,1 @@
-Fix a bug in :mod:`asyncio` where stopping a child process with ``SIGSTOP`` on macOS caused the event loop to block indefinitely in ``_ThreadedChildWatcher``.
+Fix a bug in :mod:`asyncio` where stopping a child process (such as with ``SIGSTOP``) on macOS caused the event loop to block indefinitely.
