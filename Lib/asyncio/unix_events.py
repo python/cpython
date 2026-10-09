@@ -973,22 +973,12 @@ class _ThreadedChildWatcher:
                     # On macOS, waitid() with WEXITED incorrectly returns stopped
                     # child processes (si_code == CLD_STOPPED). Consume the stop
                     # notification so we wait for actual process termination.
-                    if (
-                        res is not None
-                        and hasattr(os, 'CLD_STOPPED')
-                        and res.si_code in (os.CLD_STOPPED, getattr(os, 'CLD_TRAPPED', None))
-                    ):
-                        consume_flags = getattr(os, 'WSTOPPED', 0)
-                        if hasattr(os, 'WCONTINUED'):
-                            consume_flags |= os.WCONTINUED
-                        if hasattr(os, 'WNOHANG'):
-                            consume_flags |= os.WNOHANG
-                        if consume_flags:
-                            try:
-                                os.waitid(os.P_PID, expected_pid, consume_flags)
-                            except ChildProcessError:
-                                pass
-                            continue
+                    if res.si_code == os.CLD_STOPPED:
+                        try:
+                            os.waitid(os.P_PID, expected_pid, os.WSTOPPED | os.WNOHANG)
+                        except ChildProcessError:
+                            pass
+                        continue
                     break
             except ChildProcessError:
                 # The child process is already reaped
